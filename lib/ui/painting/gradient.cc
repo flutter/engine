@@ -32,24 +32,24 @@ void CanvasGradient::initLinear(const tonic::Float32List& end_points,
   FML_DCHECK(colors.num_elements() == color_stops.num_elements() ||
              color_stops.data() == nullptr);
 
-  static_assert(sizeof(SkPoint) == sizeof(float) * 2,
-                "SkPoint doesn't use floats.");
-  static_assert(sizeof(SkColor) == sizeof(int32_t),
-                "SkColor doesn't use int32_t.");
+  static_assert(sizeof(DlFPoint) == sizeof(float) * 2,
+                "DlFPoint doesn't use floats.");
+  static_assert(sizeof(DlColor) == sizeof(int32_t),
+                "DlColor doesn't use int32_t.");
 
-  SkMatrix sk_matrix;
+  DlTransform dl_matrix;
   bool has_matrix = matrix4.data() != nullptr;
   if (has_matrix) {
-    sk_matrix = ToSkMatrix(matrix4);
+    dl_matrix = ToDlTransform(matrix4);
   }
 
-  SkPoint p0 = SkPoint::Make(end_points[0], end_points[1]);
-  SkPoint p1 = SkPoint::Make(end_points[2], end_points[3]);
+  DlFPoint p0 = DlFPoint(end_points[0], end_points[1]);
+  DlFPoint p1 = DlFPoint(end_points[2], end_points[3]);
   const DlColor* colors_array = reinterpret_cast<const DlColor*>(colors.data());
 
   dl_shader_ = DlColorSource::MakeLinear(
       p0, p1, colors.num_elements(), colors_array, color_stops.data(),
-      tile_mode, has_matrix ? &sk_matrix : nullptr);
+      tile_mode, has_matrix ? &dl_matrix : nullptr);
   // Just a sanity check, all gradient shaders should be thread-safe
   FML_DCHECK(dl_shader_->isUIThreadSafe());
 }
@@ -64,21 +64,21 @@ void CanvasGradient::initRadial(double center_x,
   FML_DCHECK(colors.num_elements() == color_stops.num_elements() ||
              color_stops.data() == nullptr);
 
-  static_assert(sizeof(SkColor) == sizeof(int32_t),
-                "SkColor doesn't use int32_t.");
+  static_assert(sizeof(DlColor) == sizeof(int32_t),
+                "DlColor doesn't use int32_t.");
 
-  SkMatrix sk_matrix;
+  DlTransform dl_matrix;
   bool has_matrix = matrix4.data() != nullptr;
   if (has_matrix) {
-    sk_matrix = ToSkMatrix(matrix4);
+    dl_matrix = ToDlTransform(matrix4);
   }
 
   const DlColor* colors_array = reinterpret_cast<const DlColor*>(colors.data());
 
   dl_shader_ = DlColorSource::MakeRadial(
-      SkPoint::Make(SafeNarrow(center_x), SafeNarrow(center_y)),
+      DlFPoint(SafeNarrow(center_x), SafeNarrow(center_y)),
       SafeNarrow(radius), colors.num_elements(), colors_array,
-      color_stops.data(), tile_mode, has_matrix ? &sk_matrix : nullptr);
+      color_stops.data(), tile_mode, has_matrix ? &dl_matrix : nullptr);
   // Just a sanity check, all gradient shaders should be thread-safe
   FML_DCHECK(dl_shader_->isUIThreadSafe());
 }
@@ -94,23 +94,23 @@ void CanvasGradient::initSweep(double center_x,
   FML_DCHECK(colors.num_elements() == color_stops.num_elements() ||
              color_stops.data() == nullptr);
 
-  static_assert(sizeof(SkColor) == sizeof(int32_t),
-                "SkColor doesn't use int32_t.");
+  static_assert(sizeof(DlColor) == sizeof(int32_t),
+                "DlColor doesn't use int32_t.");
 
-  SkMatrix sk_matrix;
+  DlTransform dl_matrix;
   bool has_matrix = matrix4.data() != nullptr;
   if (has_matrix) {
-    sk_matrix = ToSkMatrix(matrix4);
+    dl_matrix = ToDlTransform(matrix4);
   }
 
   const DlColor* colors_array = reinterpret_cast<const DlColor*>(colors.data());
 
   dl_shader_ = DlColorSource::MakeSweep(
-      SkPoint::Make(SafeNarrow(center_x), SafeNarrow(center_y)),
+      DlFPoint(SafeNarrow(center_x), SafeNarrow(center_y)),
       SafeNarrow(start_angle) * 180.0f / static_cast<float>(M_PI),
       SafeNarrow(end_angle) * 180.0f / static_cast<float>(M_PI),
       colors.num_elements(), colors_array, color_stops.data(), tile_mode,
-      has_matrix ? &sk_matrix : nullptr);
+      has_matrix ? &dl_matrix : nullptr);
   // Just a sanity check, all gradient shaders should be thread-safe
   FML_DCHECK(dl_shader_->isUIThreadSafe());
 }
@@ -128,23 +128,23 @@ void CanvasGradient::initTwoPointConical(double start_x,
   FML_DCHECK(colors.num_elements() == color_stops.num_elements() ||
              color_stops.data() == nullptr);
 
-  static_assert(sizeof(SkColor) == sizeof(int32_t),
-                "SkColor doesn't use int32_t.");
+  static_assert(sizeof(DlColor) == sizeof(int32_t),
+                "DlColor doesn't use int32_t.");
 
-  SkMatrix sk_matrix;
+  DlTransform dl_matrix;
   bool has_matrix = matrix4.data() != nullptr;
   if (has_matrix) {
-    sk_matrix = ToSkMatrix(matrix4);
+    dl_matrix = ToDlTransform(matrix4);
   }
 
   const DlColor* colors_array = reinterpret_cast<const DlColor*>(colors.data());
 
   dl_shader_ = DlColorSource::MakeConical(
-      SkPoint::Make(SafeNarrow(start_x), SafeNarrow(start_y)),
+      DlFPoint(SafeNarrow(start_x), SafeNarrow(start_y)),
       SafeNarrow(start_radius),
-      SkPoint::Make(SafeNarrow(end_x), SafeNarrow(end_y)),
+      DlFPoint(SafeNarrow(end_x), SafeNarrow(end_y)),
       SafeNarrow(end_radius), colors.num_elements(), colors_array,
-      color_stops.data(), tile_mode, has_matrix ? &sk_matrix : nullptr);
+      color_stops.data(), tile_mode, has_matrix ? &dl_matrix : nullptr);
   // Just a sanity check, all gradient shaders should be thread-safe
   FML_DCHECK(dl_shader_->isUIThreadSafe());
 }

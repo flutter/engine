@@ -40,7 +40,7 @@ template <typename BaseT>
 class LayerTestBase : public CanvasTestBase<BaseT> {
   using TestT = CanvasTestBase<BaseT>;
 
-  const SkRect kDlBounds = SkRect::MakeWH(500, 500);
+  static constexpr DlFRect kDlBounds = DlFRect::MakeWH(500, 500);
 
  public:
   LayerTestBase()
@@ -98,7 +98,7 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             // clang-format on
         } {
     use_null_raster_cache();
-    preroll_state_stack_.set_preroll_delegate(kGiantRect, SkMatrix::I());
+    preroll_state_stack_.set_preroll_delegate(kMaxCullRect, DlTransform());
     paint_state_stack_.set_delegate(&TestT::mock_canvas());
     display_list_state_stack_.set_delegate(&display_list_builder_);
     checkerboard_state_stack_.set_delegate(&display_list_builder_);
@@ -211,7 +211,7 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
 
   static constexpr SkColor checkerboard_color_ = 0x42424242;
 
-  static void draw_checkerboard(DlCanvas* canvas, const SkRect& rect) {
+  static void draw_checkerboard(DlCanvas* canvas, const DlFRect& rect) {
     if (canvas) {
       DlPaint paint;
       paint.setColor(checkerboard_color_);

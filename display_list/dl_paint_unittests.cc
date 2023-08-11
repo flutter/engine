@@ -70,7 +70,7 @@ TEST(DisplayListPaint, ConstructorDefaults) {
   DlBlurMaskFilter mask_filter(DlBlurStyle::kInner, 3.14);
   EXPECT_NE(paint, DlPaint().setMaskFilter(mask_filter.shared()));
 
-  SkScalar intervals[] = {1.0f, 2.0f};
+  DlScalar intervals[] = {1.0f, 2.0f};
   auto path_effect = DlDashPathEffect::Make(intervals, 2, 0.0f);
   EXPECT_NE(paint, DlPaint().setPathEffect(path_effect.get()));
 }
@@ -104,7 +104,7 @@ TEST(DisplayListPaint, NullSharedPointerSetGet) {
 }
 
 TEST(DisplayListPaint, ChainingConstructor) {
-  SkScalar intervals[] = {1.0f, 2.0f};
+  DlScalar intervals[] = {1.0f, 2.0f};
   auto path_effect = DlDashPathEffect::Make(intervals, 2, 0.0f);
 
   DlPaint paint =

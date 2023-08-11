@@ -139,7 +139,7 @@ std::unique_ptr<LayerTree> Scene::BuildLayerTree(uint32_t width,
     return nullptr;
   }
   return std::make_unique<LayerTree>(layer_tree_config_,
-                                     SkISize::Make(width, height));
+                                     DlISize(width, height));
 }
 
 }  // namespace flutter

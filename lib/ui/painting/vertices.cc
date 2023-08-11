@@ -49,19 +49,19 @@ bool Vertices::init(Dart_Handle vertices_handle,
     return false;
   }
 
-  // positions are required for SkVertices::Builder
+  // positions are required for DlVertices::Builder
   builder.store_vertices(positions.data());
 
   if (texture_coordinates.data()) {
-    // SkVertices::Builder assumes equal numbers of elements
+    // DlVertices::Builder assumes equal numbers of elements
     FML_DCHECK(positions.num_elements() == texture_coordinates.num_elements());
     builder.store_texture_coordinates(texture_coordinates.data());
   }
 
   if (colors.data()) {
-    // SkVertices::Builder assumes equal numbers of elements
+    // DlVertices::Builder assumes equal numbers of elements
     FML_DCHECK(positions.num_elements() / 2 == colors.num_elements());
-    builder.store_colors(reinterpret_cast<const SkColor*>(colors.data()));
+    builder.store_colors(reinterpret_cast<const DlColor*>(colors.data()));
   }
 
   if (indices.data() && indices.num_elements() > 0) {

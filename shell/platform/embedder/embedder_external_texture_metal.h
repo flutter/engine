@@ -8,8 +8,6 @@
 #include "flutter/common/graphics/texture.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "third_party/skia/include/core/SkImage.h"
-#include "third_party/skia/include/core/SkSize.h"
 
 namespace flutter {
 
@@ -29,11 +27,11 @@ class EmbedderExternalTextureMetal : public flutter::Texture {
 
   sk_sp<DlImage> ResolveTexture(int64_t texture_id,
                                 GrDirectContext* context,
-                                const SkISize& size);
+                                const DlISize& size);
 
   // |flutter::Texture|
   void Paint(PaintContext& context,
-             const SkRect& bounds,
+             const DlFRect& bounds,
              bool freeze,
              const DlImageSampling sampling) override;
 

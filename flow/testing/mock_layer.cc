@@ -12,7 +12,7 @@
 namespace flutter {
 namespace testing {
 
-MockLayer::MockLayer(const SkPath& path, DlPaint paint)
+MockLayer::MockLayer(const DlPath& path, DlPaint paint)
     : fake_paint_path_(path), fake_paint_(std::move(paint)) {}
 
 bool MockLayer::IsReplacing(DiffContext* context, const Layer* layer) const {
@@ -26,13 +26,13 @@ bool MockLayer::IsReplacing(DiffContext* context, const Layer* layer) const {
 
 void MockLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
-  context->AddLayerBounds(fake_paint_path_.getBounds());
+  context->AddLayerBounds(fake_paint_path_.Bounds());
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
 
 void MockLayer::Preroll(PrerollContext* context) {
   context->state_stack.fill(&parent_mutators_);
-  parent_matrix_ = context->state_stack.transform_3x3();
+  parent_matrix_ = context->state_stack.transform();
   parent_cull_rect_ = context->state_stack.local_cull_rect();
 
   set_parent_has_platform_view(context->has_platform_view);
@@ -40,7 +40,7 @@ void MockLayer::Preroll(PrerollContext* context) {
 
   context->has_platform_view = fake_has_platform_view();
   context->has_texture_layer = fake_has_texture_layer();
-  set_paint_bounds(fake_paint_path_.getBounds());
+  set_paint_bounds(fake_paint_path_.Bounds());
   if (fake_reads_surface()) {
     context->surface_needs_readback = true;
   }
@@ -53,7 +53,7 @@ void MockLayer::Paint(PaintContext& context) const {
   FML_DCHECK(needs_painting(context));
 
   if (expected_paint_matrix_.has_value()) {
-    SkMatrix matrix = context.canvas->GetTransform();
+    DlTransform matrix = context.canvas->GetTransform();
 
     EXPECT_EQ(matrix, expected_paint_matrix_.value());
   }
@@ -67,7 +67,7 @@ void MockCacheableContainerLayer::Preroll(PrerollContext* context) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
   auto cache = AutoCache(layer_raster_cache_item_.get(), context,
-                         context->state_stack.transform_3x3());
+                         context->state_stack.transform());
 
   ContainerLayer::Preroll(context);
 }
@@ -76,7 +76,7 @@ void MockCacheableLayer::Preroll(PrerollContext* context) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
   auto cache = AutoCache(raster_cache_item_.get(), context,
-                         context->state_stack.transform_3x3());
+                         context->state_stack.transform());
 
   MockLayer::Preroll(context);
 }

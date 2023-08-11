@@ -8,13 +8,13 @@
 
 namespace flutter {
 
-PlatformViewLayer::PlatformViewLayer(const SkPoint& offset,
-                                     const SkSize& size,
+PlatformViewLayer::PlatformViewLayer(const DlFPoint& offset,
+                                     const DlFSize& size,
                                      int64_t view_id)
     : offset_(offset), size_(size), view_id_(view_id) {}
 
 void PlatformViewLayer::Preroll(PrerollContext* context) {
-  set_paint_bounds(SkRect::MakeXYWH(offset_.x(), offset_.y(), size_.width(),
+  set_paint_bounds(DlFRect::MakeXYWH(offset_.x(), offset_.y(), size_.width(),
                                     size_.height()));
 
   if (context->view_embedder == nullptr) {
@@ -27,7 +27,7 @@ void PlatformViewLayer::Preroll(PrerollContext* context) {
   MutatorsStack mutators;
   context->state_stack.fill(&mutators);
   std::unique_ptr<EmbeddedViewParams> params =
-      std::make_unique<EmbeddedViewParams>(context->state_stack.transform_3x3(),
+      std::make_unique<EmbeddedViewParams>(context->state_stack.transform(),
                                            size_, mutators);
   context->view_embedder->PrerollCompositeEmbeddedView(view_id_,
                                                        std::move(params));

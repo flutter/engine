@@ -40,7 +40,7 @@ class SnapshotController {
   // be converted to a DlImageGPU if it is to be handed back to the UI
   // thread.
   virtual sk_sp<DlImage> MakeRasterSnapshot(sk_sp<DisplayList> display_list,
-                                            SkISize size) = 0;
+                                            DlISize size) = 0;
 
   virtual sk_sp<SkImage> ConvertToRasterImage(sk_sp<SkImage> image) = 0;
 

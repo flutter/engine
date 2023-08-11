@@ -15,10 +15,10 @@ class SkTextBlob;
 
 namespace flutter {
 
-const int kDisplayRasterizerStatistics = 1 << 0;
-const int kVisualizeRasterizerStatistics = 1 << 1;
-const int kDisplayEngineStatistics = 1 << 2;
-const int kVisualizeEngineStatistics = 1 << 3;
+[[maybe_unused]] constexpr int kDisplayRasterizerStatistics = 1 << 0;
+[[maybe_unused]] constexpr int kVisualizeRasterizerStatistics = 1 << 1;
+[[maybe_unused]] constexpr int kDisplayEngineStatistics = 1 << 2;
+[[maybe_unused]] constexpr int kVisualizeEngineStatistics = 1 << 3;
 
 class PerformanceOverlayLayer : public Layer {
  public:

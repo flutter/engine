@@ -16,10 +16,10 @@ namespace {
 
 void VisualizeStopWatch(DlCanvas* canvas,
                         const Stopwatch& stopwatch,
-                        SkScalar x,
-                        SkScalar y,
-                        SkScalar width,
-                        SkScalar height,
+                        DlScalar x,
+                        DlScalar y,
+                        DlScalar width,
+                        DlScalar height,
                         bool show_graph,
                         bool show_labels,
                         const std::string& label_prefix,
@@ -28,7 +28,7 @@ void VisualizeStopWatch(DlCanvas* canvas,
   const int label_y = -10;  // distance from y+height
 
   if (show_graph) {
-    SkRect visualization_rect = SkRect::MakeXYWH(x, y, width, height);
+    DlFRect visualization_rect = DlFRect::MakeXYWH(x, y, width, height);
     stopwatch.Visualize(canvas, visualization_rect);
   }
 
@@ -93,10 +93,10 @@ void PerformanceOverlayLayer::Paint(PaintContext& context) const {
     return;
   }
 
-  SkScalar x = paint_bounds().x() + padding;
-  SkScalar y = paint_bounds().y() + padding;
-  SkScalar width = paint_bounds().width() - (padding * 2);
-  SkScalar height = paint_bounds().height() / 2;
+  DlScalar x = paint_bounds().x() + padding;
+  DlScalar y = paint_bounds().y() + padding;
+  DlScalar width = paint_bounds().width() - (padding * 2);
+  DlScalar height = paint_bounds().height() / 2;
   auto mutator = context.state_stack.save();
 
   VisualizeStopWatch(

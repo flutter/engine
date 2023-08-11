@@ -16,6 +16,10 @@
 #include "flutter/display_list/effects/dl_image_filter.h"
 #include "flutter/display_list/effects/dl_mask_filter.h"
 #include "flutter/display_list/effects/dl_path_effect.h"
+#include "flutter/display_list/geometry/dl_point.h"
+#include "flutter/display_list/geometry/dl_rect.h"
+#include "flutter/display_list/geometry/dl_round_rect.h"
+#include "flutter/display_list/geometry/dl_rstransform.h"
 #include "flutter/display_list/image/dl_image.h"
 
 namespace flutter {
@@ -35,8 +39,9 @@ class DlOpReceiver {
   using SrcRectConstraint = DlCanvas::SrcRectConstraint;
 
  public:
-  // MaxDrawPointsCount * sizeof(SkPoint) must be less than 1 << 32
+  // DrawPoints array storage must be less than 1 << 32
   static constexpr int kMaxDrawPointsCount = ((1 << 29) - 1);
+  static_assert(kMaxDrawPointsCount * sizeof(DlFPoint) < (1L << 32));
 
   // The following methods are nearly 1:1 with the methods on DlPaint and
   // carry the same meanings. Each method sets a persistent value for the
@@ -77,19 +82,19 @@ class DlOpReceiver {
   // specified in calling a |DisplayListBuilder| as they will be ignored.
   // The |backdrop| filter, if not null, is used to initialize the new
   // layer before further rendering happens.
-  virtual void saveLayer(const SkRect* bounds,
+  virtual void saveLayer(const DlFRect* bounds,
                          const SaveLayerOptions options,
                          const DlImageFilter* backdrop = nullptr) = 0;
   virtual void restore() = 0;
 
-  virtual void translate(SkScalar tx, SkScalar ty) = 0;
-  virtual void scale(SkScalar sx, SkScalar sy) = 0;
-  virtual void rotate(SkScalar degrees) = 0;
-  virtual void skew(SkScalar sx, SkScalar sy) = 0;
+  virtual void translate(DlScalar tx, DlScalar ty) = 0;
+  virtual void scale(DlScalar sx, DlScalar sy) = 0;
+  virtual void rotate(DlScalar degrees) = 0;
+  virtual void skew(DlScalar sx, DlScalar sy) = 0;
 
   // The transform methods all assume the following math for transforming
   // an arbitrary 3D homogenous point (x, y, z, w).
-  // All coordinates in the rendering methods (and SkPoint and SkRect objects)
+  // All coordinates in the rendering methods (and DlFPoint/DlFRect objects)
   // represent a simplified coordinate (x, y, 0, 1).
   //   x' = x * mxx + y * mxy + z * mxz + w * mxt
   //   y' = x * myx + y * myy + z * myz + w * myt
@@ -170,8 +175,8 @@ class DlOpReceiver {
   //   [ myx  myy   0   myt ]
   //   [  0    0    1    0  ]
   //   [  0    0    0    1  ]
-  virtual void transform2DAffine(SkScalar mxx, SkScalar mxy, SkScalar mxt,
-                                 SkScalar myx, SkScalar myy, SkScalar myt) = 0;
+  virtual void transform2DAffine(DlScalar mxx, DlScalar mxy, DlScalar mxt,
+                                 DlScalar myx, DlScalar myy, DlScalar myt) = 0;
   // |transformFullPerspective| is equivalent to concatenating the internal
   // 4x4 transform with the following row major transform matrix:
   //   [ mxx  mxy  mxz  mxt ]
@@ -179,18 +184,18 @@ class DlOpReceiver {
   //   [ mzx  mzy  mzz  mzt ]
   //   [ mwx  mwy  mwz  mwt ]
   virtual void transformFullPerspective(
-      SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
-      SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
-      SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
-      SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) = 0;
+      DlScalar mxx, DlScalar mxy, DlScalar mxz, DlScalar mxt,
+      DlScalar myx, DlScalar myy, DlScalar myz, DlScalar myt,
+      DlScalar mzx, DlScalar mzy, DlScalar mzz, DlScalar mzt,
+      DlScalar mwx, DlScalar mwy, DlScalar mwz, DlScalar mwt) = 0;
   // clang-format on
 
   // Clears the transformation stack.
   virtual void transformReset() = 0;
 
-  virtual void clipRect(const SkRect& rect, ClipOp clip_op, bool is_aa) = 0;
-  virtual void clipRRect(const SkRRect& rrect, ClipOp clip_op, bool is_aa) = 0;
-  virtual void clipPath(const SkPath& path, ClipOp clip_op, bool is_aa) = 0;
+  virtual void clipRect(const DlFRect& rect, ClipOp clip_op, bool is_aa) = 0;
+  virtual void clipRRect(const DlFRRect& rrect, ClipOp clip_op, bool is_aa) = 0;
+  virtual void clipPath(const DlPath& path, ClipOp clip_op, bool is_aa) = 0;
 
   // The following rendering methods all take their rendering attributes
   // from the last value set by the attribute methods above (regardless
@@ -201,56 +206,56 @@ class DlOpReceiver {
   // stream, or assume default attributes.
   virtual void drawColor(DlColor color, DlBlendMode mode) = 0;
   virtual void drawPaint() = 0;
-  virtual void drawLine(const SkPoint& p0, const SkPoint& p1) = 0;
-  virtual void drawRect(const SkRect& rect) = 0;
-  virtual void drawOval(const SkRect& bounds) = 0;
-  virtual void drawCircle(const SkPoint& center, SkScalar radius) = 0;
-  virtual void drawRRect(const SkRRect& rrect) = 0;
-  virtual void drawDRRect(const SkRRect& outer, const SkRRect& inner) = 0;
-  virtual void drawPath(const SkPath& path) = 0;
-  virtual void drawArc(const SkRect& oval_bounds,
-                       SkScalar start_degrees,
-                       SkScalar sweep_degrees,
+  virtual void drawLine(const DlFPoint& p0, const DlFPoint& p1) = 0;
+  virtual void drawRect(const DlFRect& rect) = 0;
+  virtual void drawOval(const DlFRect& bounds) = 0;
+  virtual void drawCircle(const DlFPoint& center, DlScalar radius) = 0;
+  virtual void drawRRect(const DlFRRect& rrect) = 0;
+  virtual void drawDRRect(const DlFRRect& outer, const DlFRRect& inner) = 0;
+  virtual void drawPath(const DlPath& path) = 0;
+  virtual void drawArc(const DlFRect& oval_bounds,
+                       DlScalar start_degrees,
+                       DlScalar sweep_degrees,
                        bool use_center) = 0;
   virtual void drawPoints(PointMode mode,
                           uint32_t count,
-                          const SkPoint points[]) = 0;
+                          const DlFPoint points[]) = 0;
   virtual void drawVertices(const DlVertices* vertices, DlBlendMode mode) = 0;
   virtual void drawImage(const sk_sp<DlImage> image,
-                         const SkPoint point,
+                         const DlFPoint point,
                          DlImageSampling sampling,
                          bool render_with_attributes) = 0;
   virtual void drawImageRect(
       const sk_sp<DlImage> image,
-      const SkRect& src,
-      const SkRect& dst,
+      const DlFRect& src,
+      const DlFRect& dst,
       DlImageSampling sampling,
       bool render_with_attributes,
       SrcRectConstraint constraint = SrcRectConstraint::kFast) = 0;
   virtual void drawImageNine(const sk_sp<DlImage> image,
-                             const SkIRect& center,
-                             const SkRect& dst,
+                             const DlIRect& center,
+                             const DlFRect& dst,
                              DlFilterMode filter,
                              bool render_with_attributes) = 0;
   virtual void drawAtlas(const sk_sp<DlImage> atlas,
-                         const SkRSXform xform[],
-                         const SkRect tex[],
+                         const DlRSTransform xform[],
+                         const DlFRect tex[],
                          const DlColor colors[],
                          int count,
                          DlBlendMode mode,
                          DlImageSampling sampling,
-                         const SkRect* cull_rect,
+                         const DlFRect* cull_rect,
                          bool render_with_attributes) = 0;
   virtual void drawDisplayList(const sk_sp<DisplayList> display_list,
-                               SkScalar opacity = SK_Scalar1) = 0;
+                               DlScalar opacity = SK_Scalar1) = 0;
   virtual void drawTextBlob(const sk_sp<SkTextBlob> blob,
-                            SkScalar x,
-                            SkScalar y) = 0;
-  virtual void drawShadow(const SkPath& path,
+                            DlScalar x,
+                            DlScalar y) = 0;
+  virtual void drawShadow(const DlPath& path,
                           const DlColor color,
-                          const SkScalar elevation,
+                          const DlScalar elevation,
                           bool transparent_occluder,
-                          SkScalar dpr) = 0;
+                          DlScalar dpr) = 0;
 };
 
 }  // namespace flutter

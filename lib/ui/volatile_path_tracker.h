@@ -10,10 +10,10 @@
 #include <mutex>
 #include <vector>
 
+#include "flutter/display_list/geometry/dl_path.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/task_runner.h"
 #include "flutter/fml/trace_event.h"
-#include "third_party/skia/include/core/SkPath.h"
 
 namespace flutter {
 
@@ -39,7 +39,7 @@ class VolatilePathTracker {
   struct TrackedPath {
     bool tracking_volatility = false;
     int frame_count = 0;
-    SkPath path;
+    DlPath path;
   };
 
   VolatilePathTracker(fml::RefPtr<fml::TaskRunner> ui_task_runner,

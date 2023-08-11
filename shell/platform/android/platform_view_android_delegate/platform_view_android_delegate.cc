@@ -162,7 +162,7 @@ void PlatformViewAndroidDelegate::UpdateSemantics(
       buffer_float32[position++] = node.rect.top();
       buffer_float32[position++] = node.rect.right();
       buffer_float32[position++] = node.rect.bottom();
-      node.transform.getColMajor(&buffer_float32[position]);
+      node.transform.GetColMajor(&buffer_float32[position]);
       position += 16;
 
       buffer_int32[position++] = node.childrenInTraversalOrder.size();

@@ -6,8 +6,8 @@
 #import <Metal/Metal.h>
 
 #include "flutter/common/graphics/texture.h"
+#include "flutter/display_list/geometry/dl_rect.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
-#include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkImage.h"
 
 @interface FlutterDarwinExternalTextureSkImageWrapper : NSObject
@@ -34,7 +34,7 @@
                                enableImpeller:(BOOL)enableImpeller;
 
 - (void)paintContext:(flutter::Texture::PaintContext&)context
-              bounds:(const SkRect&)bounds
+              bounds:(const flutter::DlFRect&)bounds
               freeze:(BOOL)freeze
             sampling:(const flutter::DlImageSampling)sampling;
 

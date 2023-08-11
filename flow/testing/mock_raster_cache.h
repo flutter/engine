@@ -13,7 +13,6 @@
 #include "flutter/testing/mock_canvas.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
-#include "third_party/skia/include/core/SkSize.h"
 
 namespace flutter {
 namespace testing {
@@ -27,14 +26,14 @@ namespace testing {
  */
 class MockRasterCacheResult : public RasterCacheResult {
  public:
-  explicit MockRasterCacheResult(SkRect device_rect);
+  explicit MockRasterCacheResult(DlFRect device_rect);
 
   void draw(DlCanvas& canvas,
             const DlPaint* paint = nullptr,
             bool preserve_rtree = false) const override{};
 
-  SkISize image_dimensions() const override {
-    return SkSize::Make(device_rect_.width(), device_rect_.height()).toCeil();
+  DlISize image_dimensions() const override {
+    return DlISize(ceil(device_rect_.width()), ceil(device_rect_.height()));
   };
 
   int64_t image_bytes() const override {
@@ -43,7 +42,7 @@ class MockRasterCacheResult : public RasterCacheResult {
   }
 
  private:
-  SkRect device_rect_;
+  DlFRect device_rect_;
 };
 
 static std::vector<RasterCacheItem*> raster_cache_items_;
@@ -62,7 +61,7 @@ class MockRasterCache : public RasterCache {
           RasterCacheUtil::kDefaultPictureAndDisplayListCacheLimitPerFrame)
       : RasterCache(access_threshold,
                     picture_and_display_list_cache_limit_per_frame) {
-    preroll_state_stack_.set_preroll_delegate(SkMatrix::I());
+    preroll_state_stack_.set_preroll_delegate(DlTransform());
     paint_state_stack_.set_delegate(&mock_canvas_);
   }
 
@@ -136,11 +135,11 @@ bool RasterCacheItemPrerollAndTryToRasterCache(
     DisplayListRasterCacheItem& display_list_item,
     PrerollContext& context,
     PaintContext& paint_context,
-    const SkMatrix& matrix);
+    const DlTransform& matrix);
 
 void RasterCacheItemPreroll(DisplayListRasterCacheItem& display_list_item,
                             PrerollContext& context,
-                            const SkMatrix& matrix);
+                            const DlTransform& matrix);
 
 bool RasterCacheItemTryToRasterCache(
     DisplayListRasterCacheItem& display_list_item,

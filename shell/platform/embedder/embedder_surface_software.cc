@@ -55,7 +55,7 @@ sk_sp<GrDirectContext> EmbedderSurfaceSoftware::CreateResourceContext() const {
 
 // |GPUSurfaceSoftwareDelegate|
 sk_sp<SkSurface> EmbedderSurfaceSoftware::AcquireBackingStore(
-    const SkISize& size) {
+    const DlISize& size) {
   TRACE_EVENT0("flutter", "EmbedderSurfaceSoftware::AcquireBackingStore");
   if (!IsValid()) {
     FML_LOG(ERROR)
@@ -64,13 +64,13 @@ sk_sp<SkSurface> EmbedderSurfaceSoftware::AcquireBackingStore(
   }
 
   if (sk_surface_ != nullptr &&
-      SkISize::Make(sk_surface_->width(), sk_surface_->height()) == size) {
+      DlISize::MakeSize(*sk_surface_) == size) {
     // The old and new surface sizes are the same. Nothing to do here.
     return sk_surface_;
   }
 
   SkImageInfo info = SkImageInfo::MakeN32(
-      size.fWidth, size.fHeight, kPremul_SkAlphaType, SkColorSpace::MakeSRGB());
+      size.width(), size.height(), kPremul_SkAlphaType, SkColorSpace::MakeSRGB());
   sk_surface_ = SkSurfaces::Raster(info, nullptr);
 
   if (sk_surface_ == nullptr) {

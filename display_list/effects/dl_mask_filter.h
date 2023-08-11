@@ -6,9 +6,8 @@
 #define FLUTTER_DISPLAY_LIST_EFFECTS_DL_MASK_FILTER_H_
 
 #include "flutter/display_list/dl_attributes.h"
+#include "flutter/display_list/dl_base_types.h"
 #include "flutter/fml/logging.h"
-
-#include "third_party/skia/include/core/SkScalar.h"
 
 namespace flutter {
 
@@ -42,7 +41,7 @@ class DlMaskFilter : public DlAttribute<DlMaskFilter, DlMaskFilterType> {
 // filter is then used to combine those colors.
 class DlBlurMaskFilter final : public DlMaskFilter {
  public:
-  DlBlurMaskFilter(DlBlurStyle style, SkScalar sigma, bool respect_ctm = true)
+  DlBlurMaskFilter(DlBlurStyle style, DlScalar sigma, bool respect_ctm = true)
       : style_(style), sigma_(sigma), respect_ctm_(respect_ctm) {}
   DlBlurMaskFilter(const DlBlurMaskFilter& filter)
       : DlBlurMaskFilter(filter.style_, filter.sigma_, filter.respect_ctm_) {}
@@ -51,9 +50,9 @@ class DlBlurMaskFilter final : public DlMaskFilter {
   }
 
   static std::shared_ptr<DlMaskFilter> Make(DlBlurStyle style,
-                                            SkScalar sigma,
+                                            DlScalar sigma,
                                             bool respect_ctm = true) {
-    if (SkScalarIsFinite(sigma) && sigma > 0) {
+    if (DlScalar_IsFinite(sigma) && sigma > 0) {
       return std::make_shared<DlBlurMaskFilter>(style, sigma, respect_ctm);
     }
     return nullptr;
@@ -69,7 +68,7 @@ class DlBlurMaskFilter final : public DlMaskFilter {
   const DlBlurMaskFilter* asBlur() const override { return this; }
 
   DlBlurStyle style() const { return style_; }
-  SkScalar sigma() const { return sigma_; }
+  DlScalar sigma() const { return sigma_; }
   bool respectCTM() const { return respect_ctm_; }
 
  protected:
@@ -82,7 +81,7 @@ class DlBlurMaskFilter final : public DlMaskFilter {
 
  private:
   DlBlurStyle style_;
-  SkScalar sigma_;
+  DlScalar sigma_;
   // Added for backward compatibility with Flutter text shadow rendering which
   // uses Skia blur filters with this flag set to false.
   bool respect_ctm_;

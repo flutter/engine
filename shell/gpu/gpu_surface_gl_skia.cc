@@ -129,7 +129,7 @@ static SkColorType FirstSupportedColorType(GrDirectContext* context,
 }
 
 static sk_sp<SkSurface> WrapOnscreenSurface(GrDirectContext* context,
-                                            const SkISize& size,
+                                            const DlISize& size,
                                             intptr_t fbo) {
   GrGLenum format = kUnknown_SkColorType;
   const SkColorType color_type = FirstSupportedColorType(context, &format);
@@ -158,10 +158,10 @@ static sk_sp<SkSurface> WrapOnscreenSurface(GrDirectContext* context,
   );
 }
 
-bool GPUSurfaceGLSkia::CreateOrUpdateSurfaces(const SkISize& size) {
+bool GPUSurfaceGLSkia::CreateOrUpdateSurfaces(const DlISize& size) {
   if (onscreen_surface_ != nullptr &&
-      size == SkISize::Make(onscreen_surface_->width(),
-                            onscreen_surface_->height())) {
+      size == DlISize(onscreen_surface_->width(),
+                      onscreen_surface_->height())) {
     // Surface size appears unchanged. So bail.
     return true;
   }
@@ -173,7 +173,7 @@ bool GPUSurfaceGLSkia::CreateOrUpdateSurfaces(const SkISize& size) {
   onscreen_surface_ = nullptr;
   fbo_id_ = 0;
 
-  if (size.isEmpty()) {
+  if (size.is_empty()) {
     FML_LOG(ERROR) << "Cannot create surfaces of empty size.";
     return false;
   }
@@ -203,13 +203,13 @@ bool GPUSurfaceGLSkia::CreateOrUpdateSurfaces(const SkISize& size) {
 }
 
 // |Surface|
-SkMatrix GPUSurfaceGLSkia::GetRootTransformation() const {
+DlTransform GPUSurfaceGLSkia::GetRootTransformation() const {
   return delegate_->GLContextSurfaceTransformation();
 }
 
 // |Surface|
 std::unique_ptr<SurfaceFrame> GPUSurfaceGLSkia::AcquireFrame(
-    const SkISize& size) {
+    const DlISize& size) {
   if (delegate_ == nullptr) {
     return nullptr;
   }
@@ -243,7 +243,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLSkia::AcquireFrame(
     return nullptr;
   }
 
-  surface->getCanvas()->setMatrix(root_surface_transformation);
+  surface->getCanvas()->setMatrix(root_surface_transformation.ToSkMatrix());
   SurfaceFrame::SubmitCallback submit_callback =
       [weak = weak_factory_.GetWeakPtr()](const SurfaceFrame& surface_frame,
                                           DlCanvas* canvas) {
@@ -284,7 +284,7 @@ bool GPUSurfaceGLSkia::PresentSurface(const SurfaceFrame& frame,
 
   if (delegate_->GLContextFBOResetAfterPresent()) {
     auto current_size =
-        SkISize::Make(onscreen_surface_->width(), onscreen_surface_->height());
+        DlISize(onscreen_surface_->width(), onscreen_surface_->height());
 
     GLFrameInfo frame_info = {static_cast<uint32_t>(current_size.width()),
                               static_cast<uint32_t>(current_size.height())};
@@ -311,13 +311,13 @@ bool GPUSurfaceGLSkia::PresentSurface(const SurfaceFrame& frame,
 }
 
 sk_sp<SkSurface> GPUSurfaceGLSkia::AcquireRenderSurface(
-    const SkISize& untransformed_size,
-    const SkMatrix& root_surface_transformation) {
-  const auto transformed_rect = root_surface_transformation.mapRect(
-      SkRect::MakeWH(untransformed_size.width(), untransformed_size.height()));
+    const DlISize& untransformed_size,
+    const DlTransform& root_surface_transformation) {
+  const auto transformed_rect = root_surface_transformation.TransformRect(
+      DlFRect::MakeWH(untransformed_size.width(), untransformed_size.height()));
 
   const auto transformed_size =
-      SkISize::Make(transformed_rect.width(), transformed_rect.height());
+      DlISize(transformed_rect.width(), transformed_rect.height());
 
   if (!CreateOrUpdateSurfaces(transformed_size)) {
     return nullptr;

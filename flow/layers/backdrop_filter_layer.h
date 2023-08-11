@@ -5,8 +5,8 @@
 #ifndef FLUTTER_FLOW_LAYERS_BACKDROP_FILTER_LAYER_H_
 #define FLUTTER_FLOW_LAYERS_BACKDROP_FILTER_LAYER_H_
 
+#include "flutter/display_list/effects/dl_image_filter.h"
 #include "flutter/flow/layers/container_layer.h"
-#include "third_party/skia/include/core/SkImageFilter.h"
 
 namespace flutter {
 

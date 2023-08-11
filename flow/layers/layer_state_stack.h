@@ -123,9 +123,10 @@ class LayerStateStack {
   // clip and transform information for a Preroll phase. This ensures
   // that only one delegate - either a DlCanvas or a preroll accumulator -
   // is present at any one time.
-  void set_preroll_delegate(const SkRect& cull_rect, const SkMatrix& matrix);
-  void set_preroll_delegate(const SkRect& cull_rect);
-  void set_preroll_delegate(const SkMatrix& matrix);
+  void set_preroll_delegate(const DlFRect& cull_rect,
+                            const DlTransform& matrix);
+  void set_preroll_delegate(const DlFRect& cull_rect);
+  void set_preroll_delegate(const DlTransform& matrix);
 
   // Fills the supplied MatatorsStack object with the mutations recorded
   // by this LayerStateStack in the order encountered.
@@ -145,7 +146,7 @@ class LayerStateStack {
     }
 
    private:
-    AutoRestore(LayerStateStack* stack, const SkRect& bounds, int flags)
+    AutoRestore(LayerStateStack* stack, const DlFRect& bounds, int flags)
         : layer_state_stack_(stack),
           stack_restore_count_(stack->stack_count()) {
       if (stack->needs_save_layer(flags)) {
@@ -170,20 +171,20 @@ class LayerStateStack {
     // onto the canvas or builder to be applied at the next matching
     // restore. A saveLayer is always executed by this method even if
     // there are no outstanding attributes.
-    void saveLayer(const SkRect& bounds);
+    void saveLayer(const DlFRect& bounds);
 
     // Records the opacity for application at the next call to
     // saveLayer or applyState. A saveLayer may be executed at
     // this time if the opacity cannot be batched with other
     // outstanding attributes.
-    void applyOpacity(const SkRect& bounds, SkScalar opacity);
+    void applyOpacity(const DlFRect& bounds, DlScalar opacity);
 
     // Records the image filter for application at the next call to
     // saveLayer or applyState. A saveLayer may be executed at
     // this time if the image filter cannot be batched with other
     // outstanding attributes.
     // (Currently only opacity is recorded for batching)
-    void applyImageFilter(const SkRect& bounds,
+    void applyImageFilter(const DlFRect& bounds,
                           const std::shared_ptr<const DlImageFilter>& filter);
 
     // Records the color filter for application at the next call to
@@ -191,7 +192,7 @@ class LayerStateStack {
     // this time if the color filter cannot be batched with other
     // outstanding attributes.
     // (Currently only opacity is recorded for batching)
-    void applyColorFilter(const SkRect& bounds,
+    void applyColorFilter(const DlFRect& bounds,
                           const std::shared_ptr<const DlColorFilter>& filter);
 
     // Saves the state stack and immediately executes a saveLayer
@@ -202,19 +203,18 @@ class LayerStateStack {
     // builder installed at the time that this call is made, and
     // subsequent canvas or builder objects that are made delegates
     // will only see a saveLayer with the indicated blend_mode.
-    void applyBackdropFilter(const SkRect& bounds,
+    void applyBackdropFilter(const DlFRect& bounds,
                              const std::shared_ptr<const DlImageFilter>& filter,
                              DlBlendMode blend_mode);
 
-    void translate(SkScalar tx, SkScalar ty);
-    void translate(SkPoint tp) { translate(tp.fX, tp.fY); }
-    void transform(const SkM44& m44);
-    void transform(const SkMatrix& matrix);
+    void translate(DlScalar tx, DlScalar ty);
+    void translate(DlFPoint tp) { translate(tp.x(), tp.y()); }
+    void transform(const DlTransform& matrix);
     void integralTransform();
 
-    void clipRect(const SkRect& rect, bool is_aa);
-    void clipRRect(const SkRRect& rrect, bool is_aa);
-    void clipPath(const SkPath& path, bool is_aa);
+    void clipRect(const DlFRect& rect, bool is_aa);
+    void clipRRect(const DlFRRect& rrect, bool is_aa);
+    void clipPath(const DlPath& path, bool is_aa);
 
    private:
     MutatorContext(LayerStateStack* stack)
@@ -248,12 +248,12 @@ class LayerStateStack {
   //
   // An AutoRestore instance will always be returned even if there
   // was no saveLayer applied.
-  [[nodiscard]] inline AutoRestore applyState(const SkRect& bounds,
+  [[nodiscard]] inline AutoRestore applyState(const DlFRect& bounds,
                                               int can_apply_flags) {
     return AutoRestore(this, bounds, can_apply_flags);
   }
 
-  SkScalar outstanding_opacity() const { return outstanding_.opacity; }
+  DlScalar outstanding_opacity() const { return outstanding_.opacity; }
 
   std::shared_ptr<const DlColorFilter> outstanding_color_filter() const {
     return outstanding_.color_filter;
@@ -270,7 +270,7 @@ class LayerStateStack {
   // of any outstanding attributes will include the output bounds of
   // applying any nested attributes. Thus, only the innermost content
   // bounds received will be sufficient to apply all outstanding attributes.
-  SkRect outstanding_bounds() const { return outstanding_.save_layer_bounds; }
+  DlFRect outstanding_bounds() const { return outstanding_.save_layer_bounds; }
 
   // Fill the provided paint object with any oustanding attributes and
   // return a pointer to it, or return a nullptr if there were no
@@ -279,26 +279,18 @@ class LayerStateStack {
 
   // The cull_rect (not the exact clip) relative to the device pixels.
   // This rectangle may be a conservative estimate of the true clip region.
-  SkRect device_cull_rect() const { return delegate_->device_cull_rect(); }
+  DlFRect device_cull_rect() const { return delegate_->device_cull_rect(); }
 
   // The cull_rect (not the exact clip) relative to the local coordinates.
   // This rectangle may be a conservative estimate of the true clip region.
-  SkRect local_cull_rect() const { return delegate_->local_cull_rect(); }
+  DlFRect local_cull_rect() const { return delegate_->local_cull_rect(); }
 
   // The transform from the local coordinates to the device coordinates
   // in the most capable 4x4 matrix representation. This matrix may be
   // more information than is needed to compute bounds for a 2D rendering
   // primitive, but it will accurately concatenate with other 4x4 matrices
   // without losing information.
-  SkM44 transform_4x4() const { return delegate_->matrix_4x4(); }
-
-  // The transform from the local coordinates to the device coordinates
-  // in a more compact 3x3 matrix represenation that provides enough
-  // information to accurately transform 2D primitives into their
-  // resulting 2D bounds. This matrix also has enough information to
-  // concat with other 2D affine transforms, but does not carry enough
-  // information to accurately concat with fully perspective matrics.
-  SkMatrix transform_3x3() const { return delegate_->matrix_3x3(); }
+  DlTransform transform() const { return delegate_->matrix(); }
 
   // Tests if painting content with the current outstanding attributes
   // will produce any content. This method does not check the current
@@ -310,7 +302,7 @@ class LayerStateStack {
   // This method does not check the outstanding attributes to verify that
   // they produce visible results.
   // See |painting_is_nop|
-  bool content_culled(const SkRect& content_bounds) const {
+  bool content_culled(const DlFRect& content_bounds) const {
     return delegate_->content_culled(content_bounds);
   }
 
@@ -335,23 +327,22 @@ class LayerStateStack {
   // and then apply it to the current canvas and builder.
   // ---------------------
   // void push_attributes();
-  void push_opacity(const SkRect& rect, SkScalar opacity);
-  void push_color_filter(const SkRect& bounds,
+  void push_opacity(const DlFRect& rect, DlScalar opacity);
+  void push_color_filter(const DlFRect& bounds,
                          const std::shared_ptr<const DlColorFilter>& filter);
-  void push_image_filter(const SkRect& bounds,
+  void push_image_filter(const DlFRect& bounds,
                          const std::shared_ptr<const DlImageFilter>& filter);
-  void push_backdrop(const SkRect& bounds,
+  void push_backdrop(const DlFRect& bounds,
                      const std::shared_ptr<const DlImageFilter>& filter,
                      DlBlendMode blend_mode);
 
-  void push_translate(SkScalar tx, SkScalar ty);
-  void push_transform(const SkM44& matrix);
-  void push_transform(const SkMatrix& matrix);
+  void push_translate(DlScalar tx, DlScalar ty);
+  void push_transform(const DlTransform& matrix);
   void push_integral_transform();
 
-  void push_clip_rect(const SkRect& rect, bool is_aa);
-  void push_clip_rrect(const SkRRect& rrect, bool is_aa);
-  void push_clip_path(const SkPath& path, bool is_aa);
+  void push_clip_rect(const DlFRect& rect, bool is_aa);
+  void push_clip_rrect(const DlFRRect& rrect, bool is_aa);
+  void push_clip_path(const DlPath& path, bool is_aa);
   // ---------------------
 
   // The maybe/needs_save_layer methods will determine if the indicated
@@ -362,11 +353,11 @@ class LayerStateStack {
   // ---------------------
   bool needs_save_layer(int flags) const;
   void do_save();
-  void save_layer(const SkRect& bounds);
+  void save_layer(const DlFRect& bounds);
   void maybe_save_layer_for_transform(bool needs_save);
   void maybe_save_layer_for_clip(bool needs_save);
   void maybe_save_layer(int apply_flags);
-  void maybe_save_layer(SkScalar opacity);
+  void maybe_save_layer(DlScalar opacity);
   void maybe_save_layer(const std::shared_ptr<const DlColorFilter>& filter);
   void maybe_save_layer(const std::shared_ptr<const DlImageFilter>& filter);
   // ---------------------
@@ -381,9 +372,9 @@ class LayerStateStack {
     // the existing outstanding attributes - thus we need to record
     // the bounds that were supplied with the most recent previous
     // attribute to be applied.
-    SkRect save_layer_bounds{0, 0, 0, 0};
+    DlFRect save_layer_bounds;
 
-    SkScalar opacity = SK_Scalar1;
+    DlScalar opacity = kDlScalar_One;
     std::shared_ptr<const DlColorFilter> color_filter;
     std::shared_ptr<const DlImageFilter> image_filter;
 
@@ -419,8 +410,7 @@ class LayerStateStack {
   friend class ImageFilterEntry;
   friend class ColorFilterEntry;
   friend class TranslateEntry;
-  friend class TransformMatrixEntry;
-  friend class TransformM44Entry;
+  friend class TransformEntry;
   friend class IntegralTransformEntry;
   friend class ClipEntry;
   friend class ClipRectEntry;
@@ -445,27 +435,25 @@ class LayerStateStack {
 
     virtual DlCanvas* canvas() const { return nullptr; }
 
-    virtual SkRect local_cull_rect() const = 0;
-    virtual SkRect device_cull_rect() const = 0;
-    virtual SkM44 matrix_4x4() const = 0;
-    virtual SkMatrix matrix_3x3() const = 0;
-    virtual bool content_culled(const SkRect& content_bounds) const = 0;
+    virtual DlFRect local_cull_rect() const = 0;
+    virtual DlFRect device_cull_rect() const = 0;
+    virtual DlTransform matrix() const = 0;
+    virtual bool content_culled(const DlFRect& content_bounds) const = 0;
 
     virtual void save() = 0;
-    virtual void saveLayer(const SkRect& bounds,
+    virtual void saveLayer(const DlFRect& bounds,
                            RenderingAttributes& attributes,
                            DlBlendMode blend,
                            const DlImageFilter* backdrop) = 0;
     virtual void restore() = 0;
 
-    virtual void translate(SkScalar tx, SkScalar ty) = 0;
-    virtual void transform(const SkM44& m44) = 0;
-    virtual void transform(const SkMatrix& matrix) = 0;
+    virtual void translate(DlScalar tx, DlScalar ty) = 0;
+    virtual void transform(const DlTransform& matrix) = 0;
     virtual void integralTransform() = 0;
 
-    virtual void clipRect(const SkRect& rect, ClipOp op, bool is_aa) = 0;
-    virtual void clipRRect(const SkRRect& rrect, ClipOp op, bool is_aa) = 0;
-    virtual void clipPath(const SkPath& path, ClipOp op, bool is_aa) = 0;
+    virtual void clipRect(const DlFRect& rect, ClipOp op, bool is_aa) = 0;
+    virtual void clipRRect(const DlFRRect& rrect, ClipOp op, bool is_aa) = 0;
+    virtual void clipPath(const DlPath& path, ClipOp op, bool is_aa) = 0;
   };
   friend class DummyDelegate;
   friend class DlCanvasDelegate;

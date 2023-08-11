@@ -22,7 +22,7 @@ sk_sp<DlDeferredImageGPUImpeller> DlDeferredImageGPUImpeller::Make(
 
 sk_sp<DlDeferredImageGPUImpeller> DlDeferredImageGPUImpeller::Make(
     sk_sp<DisplayList> display_list,
-    const SkISize& size,
+    const DlISize& size,
     fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
     fml::RefPtr<fml::TaskRunner> raster_task_runner) {
   return sk_sp<DlDeferredImageGPUImpeller>(new DlDeferredImageGPUImpeller(
@@ -69,11 +69,11 @@ bool DlDeferredImageGPUImpeller::isUIThreadSafe() const {
 }
 
 // |DlImage|
-SkISize DlDeferredImageGPUImpeller::dimensions() const {
+DlISize DlDeferredImageGPUImpeller::dimensions() const {
   if (!wrapper_) {
-    return SkISize::MakeEmpty();
+    return DlISize();
   }
-  return wrapper_->size();
+  return DlISize(wrapper_->size());
 }
 
 // |DlImage|
@@ -94,7 +94,7 @@ size_t DlDeferredImageGPUImpeller::GetApproximateByteSize() const {
 std::shared_ptr<DlDeferredImageGPUImpeller::ImageWrapper>
 DlDeferredImageGPUImpeller::ImageWrapper::Make(
     sk_sp<DisplayList> display_list,
-    const SkISize& size,
+    const DlISize& size,
     fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
     fml::RefPtr<fml::TaskRunner> raster_task_runner) {
   auto wrapper = std::shared_ptr<ImageWrapper>(new ImageWrapper(
@@ -118,7 +118,7 @@ DlDeferredImageGPUImpeller::ImageWrapper::Make(
 
 DlDeferredImageGPUImpeller::ImageWrapper::ImageWrapper(
     sk_sp<DisplayList> display_list,
-    const SkISize& size,
+    const DlISize& size,
     fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
     fml::RefPtr<fml::TaskRunner> raster_task_runner)
     : size_(size),
@@ -172,7 +172,7 @@ void DlDeferredImageGPUImpeller::ImageWrapper::SnapshotDisplayList(
 
         if (layer_tree) {
           wrapper->display_list_ = layer_tree->Flatten(
-              SkRect::MakeWH(wrapper->size_.width(), wrapper->size_.height()),
+              DlFRect::MakeSize(wrapper->size_),
               wrapper->texture_registry_);
         }
         auto snapshot = snapshot_delegate->MakeRasterSnapshot(

@@ -10,27 +10,27 @@ namespace flutter {
 namespace testing {
 
 sk_sp<DisplayList> GetSampleDisplayList() {
-  DisplayListBuilder builder(SkRect::MakeWH(150, 100));
-  builder.DrawRect(SkRect::MakeXYWH(10, 10, 80, 80), DlPaint(DlColor::kRed()));
+  DisplayListBuilder builder(DlFRect::MakeWH(150, 100));
+  builder.DrawRect(DlFRect::MakeXYWH(10, 10, 80, 80), DlPaint(DlColor::kRed()));
   return builder.Build();
 }
 
 sk_sp<DisplayList> GetSampleNestedDisplayList() {
-  DisplayListBuilder builder(SkRect::MakeWH(150, 100));
+  DisplayListBuilder builder(DlFRect::MakeWH(150, 100));
   DlPaint paint;
   for (int y = 10; y <= 60; y += 10) {
     for (int x = 10; x <= 60; x += 10) {
       paint.setColor(((x + y) % 20) == 10 ? SK_ColorRED : SK_ColorBLUE);
-      builder.DrawRect(SkRect::MakeXYWH(x, y, 80, 80), paint);
+      builder.DrawRect(DlFRect::MakeXYWH(x, y, 80, 80), paint);
     }
   }
-  DisplayListBuilder outer_builder(SkRect::MakeWH(150, 100));
+  DisplayListBuilder outer_builder(DlFRect::MakeWH(150, 100));
   outer_builder.DrawDisplayList(builder.Build());
   return outer_builder.Build();
 }
 
 sk_sp<DisplayList> GetSampleDisplayList(int ops) {
-  DisplayListBuilder builder(SkRect::MakeWH(150, 100));
+  DisplayListBuilder builder(DlFRect::MakeWH(150, 100));
   for (int i = 0; i < ops; i++) {
     builder.DrawColor(DlColor::kRed(), DlBlendMode::kSrc);
   }
@@ -116,16 +116,16 @@ std::vector<DisplayListInvocationGroup> CreateAllAttributesOps() {
        }},
       {"SetColorSource",
        {
-           {0, 96, 0, 0,
+           {0, 120, 0, 0,
             [](DlOpReceiver& r) { r.setColorSource(&kTestSource1); }},
            // stop_count * (sizeof(float) + sizeof(uint32_t)) = 80
-           {0, 80 + 6 * 4, 0, 0,
+           {0, 112 + 6 * 4, 0, 0,
             [](DlOpReceiver& r) { r.setColorSource(kTestSource2.get()); }},
-           {0, 80 + 6 * 4, 0, 0,
+           {0, 104 + 6 * 4, 0, 0,
             [](DlOpReceiver& r) { r.setColorSource(kTestSource3.get()); }},
-           {0, 88 + 6 * 4, 0, 0,
+           {0, 120 + 6 * 4, 0, 0,
             [](DlOpReceiver& r) { r.setColorSource(kTestSource4.get()); }},
-           {0, 80 + 6 * 4, 0, 0,
+           {0, 112 + 6 * 4, 0, 0,
             [](DlOpReceiver& r) { r.setColorSource(kTestSource5.get()); }},
            {0, 0, 0, 0, [](DlOpReceiver& r) { r.setColorSource(nullptr); }},
        }},
@@ -157,15 +157,15 @@ std::vector<DisplayListInvocationGroup> CreateAllAttributesOps() {
             [](DlOpReceiver& r) { r.setImageFilter(&kTestErodeImageFilter2); }},
            {0, 24, 0, 0,
             [](DlOpReceiver& r) { r.setImageFilter(&kTestErodeImageFilter3); }},
-           {0, 64, 0, 0,
+           {0, 88, 0, 0,
             [](DlOpReceiver& r) {
               r.setImageFilter(&kTestMatrixImageFilter1);
             }},
-           {0, 64, 0, 0,
+           {0, 88, 0, 0,
             [](DlOpReceiver& r) {
               r.setImageFilter(&kTestMatrixImageFilter2);
             }},
-           {0, 64, 0, 0,
+           {0, 88, 0, 0,
             [](DlOpReceiver& r) {
               r.setImageFilter(&kTestMatrixImageFilter3);
             }},
@@ -190,7 +190,7 @@ std::vector<DisplayListInvocationGroup> CreateAllAttributesOps() {
             [](DlOpReceiver& r) {
               r.setImageFilter(
                   kTestBlurImageFilter1
-                      .makeWithLocalMatrix(SkMatrix::Translate(2, 2))
+                      .makeWithLocalMatrix(DlTransform::MakeTranslate(2, 2))
                       .get());
             }},
        }},
@@ -254,9 +254,10 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
             [](DlOpReceiver& r) {
               r.saveLayer(nullptr, SaveLayerOptions::kNoAttributes,
                           &kTestCFImageFilter1);
-              r.clipRect({0, 0, 25, 25}, DlCanvas::ClipOp::kIntersect, true);
-              r.drawRect({5, 5, 15, 15});
-              r.drawRect({10, 10, 20, 20});
+              r.clipRect(DlFRect::MakeLTRB(0, 0, 25, 25),
+                         DlCanvas::ClipOp::kIntersect, true);
+              r.drawRect(DlFRect::MakeLTRB(5, 5, 15, 15));
+              r.drawRect(DlFRect::MakeLTRB(10, 10, 20, 20));
               r.restore();
             }},
            // There are many reasons that save and restore can elide content,
@@ -269,77 +270,85 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
            {5, 96, 5, 96,
             [](DlOpReceiver& r) {
               r.save();
-              r.clipRect({0, 0, 25, 25}, DlCanvas::ClipOp::kIntersect, true);
-              r.drawRect({5, 5, 15, 15});
-              r.drawRect({10, 10, 20, 20});
+              r.clipRect(DlFRect::MakeLTRB(0, 0, 25, 25),
+                         DlCanvas::ClipOp::kIntersect, true);
+              r.drawRect(DlFRect::MakeLTRB(5, 5, 15, 15));
+              r.drawRect(DlFRect::MakeLTRB(10, 10, 20, 20));
               r.restore();
             }},
            {5, 96, 5, 96,
             [](DlOpReceiver& r) {
               r.saveLayer(nullptr, SaveLayerOptions::kNoAttributes);
-              r.clipRect({0, 0, 25, 25}, DlCanvas::ClipOp::kIntersect, true);
-              r.drawRect({5, 5, 15, 15});
-              r.drawRect({10, 10, 20, 20});
+              r.clipRect(DlFRect::MakeLTRB(0, 0, 25, 25),
+                         DlCanvas::ClipOp::kIntersect, true);
+              r.drawRect(DlFRect::MakeLTRB(5, 5, 15, 15));
+              r.drawRect(DlFRect::MakeLTRB(10, 10, 20, 20));
               r.restore();
             }},
            {5, 96, 5, 96,
             [](DlOpReceiver& r) {
               r.saveLayer(nullptr, SaveLayerOptions::kWithAttributes);
-              r.clipRect({0, 0, 25, 25}, DlCanvas::ClipOp::kIntersect, true);
-              r.drawRect({5, 5, 15, 15});
-              r.drawRect({10, 10, 20, 20});
+              r.clipRect(DlFRect::MakeLTRB(0, 0, 25, 25),
+                         DlCanvas::ClipOp::kIntersect, true);
+              r.drawRect(DlFRect::MakeLTRB(5, 5, 15, 15));
+              r.drawRect(DlFRect::MakeLTRB(10, 10, 20, 20));
               r.restore();
             }},
            {5, 112, 5, 112,
             [](DlOpReceiver& r) {
               r.saveLayer(&kTestBounds, SaveLayerOptions::kNoAttributes);
-              r.clipRect({0, 0, 25, 25}, DlCanvas::ClipOp::kIntersect, true);
-              r.drawRect({5, 5, 15, 15});
-              r.drawRect({10, 10, 20, 20});
+              r.clipRect(DlFRect::MakeLTRB(0, 0, 25, 25),
+                         DlCanvas::ClipOp::kIntersect, true);
+              r.drawRect(DlFRect::MakeLTRB(5, 5, 15, 15));
+              r.drawRect(DlFRect::MakeLTRB(10, 10, 20, 20));
               r.restore();
             }},
            {5, 112, 5, 112,
             [](DlOpReceiver& r) {
               r.saveLayer(&kTestBounds, SaveLayerOptions::kWithAttributes);
-              r.clipRect({0, 0, 25, 25}, DlCanvas::ClipOp::kIntersect, true);
-              r.drawRect({5, 5, 15, 15});
-              r.drawRect({10, 10, 20, 20});
+              r.clipRect(DlFRect::MakeLTRB(0, 0, 25, 25),
+                         DlCanvas::ClipOp::kIntersect, true);
+              r.drawRect(DlFRect::MakeLTRB(5, 5, 15, 15));
+              r.drawRect(DlFRect::MakeLTRB(10, 10, 20, 20));
               r.restore();
             }},
            // backdrop variants - using the TestCFImageFilter because it can be
            // reconstituted in the DL->SkCanvas->DL stream
            // {5, 104, 5, 104, [](DlOpReceiver& r) {
            //   r.saveLayer(nullptr, SaveLayerOptions::kNoAttributes,
-           //   &kTestCFImageFilter1); r.clipRect({0, 0, 25, 25},
-           //   SkClipOp::kIntersect, true); r.drawRect({5, 5, 15, 15});
-           //   r.drawRect({10, 10, 20, 20});
+           //   &kTestCFImageFilter1); r.clipRect(DlFRect::MakeLTRB(0, 0, 25, 25),
+           //   SkClipOp::kIntersect, true); r.drawRect(DlFRect::MakeLTRB(5, 5, 15, 15));
+           //   r.drawRect(DlFRect::MakeLTRB(10, 10, 20, 20));
            //   r.restore();
            // }},
            {5, 112, 5, 112,
             [](DlOpReceiver& r) {
               r.saveLayer(nullptr, SaveLayerOptions::kWithAttributes,
                           &kTestCFImageFilter1);
-              r.clipRect({0, 0, 25, 25}, DlCanvas::ClipOp::kIntersect, true);
-              r.drawRect({5, 5, 15, 15});
-              r.drawRect({10, 10, 20, 20});
+              r.clipRect(DlFRect::MakeLTRB(0, 0, 25, 25),
+                         DlCanvas::ClipOp::kIntersect, true);
+              r.drawRect(DlFRect::MakeLTRB(5, 5, 15, 15));
+              r.drawRect(DlFRect::MakeLTRB(10, 10, 20, 20));
               r.restore();
             }},
            {5, 128, 5, 128,
             [](DlOpReceiver& r) {
               r.saveLayer(&kTestBounds, SaveLayerOptions::kNoAttributes,
                           &kTestCFImageFilter1);
-              r.clipRect({0, 0, 25, 25}, DlCanvas::ClipOp::kIntersect, true);
-              r.drawRect({5, 5, 15, 15});
-              r.drawRect({10, 10, 20, 20});
+              r.clipRect(DlFRect::MakeLTRB(0, 0, 25, 25),
+                         DlCanvas::ClipOp::kIntersect, true);
+              r.drawRect(DlFRect::MakeLTRB(5, 5, 15, 15));
+              r.drawRect(DlFRect::MakeLTRB(10, 10, 20, 20));
               r.restore();
             }},
            {5, 128, 5, 128,
             [](DlOpReceiver& r) {
               r.saveLayer(&kTestBounds, SaveLayerOptions::kWithAttributes,
                           &kTestCFImageFilter1);
-              r.clipRect({0, 0, 25, 25}, DlCanvas::ClipOp::kIntersect, true);
-              r.drawRect({5, 5, 15, 15});
-              r.drawRect({10, 10, 20, 20});
+              r.clipRect(DlFRect::MakeLTRB(0, 0, 25, 25),
+                         DlCanvas::ClipOp::kIntersect, true);
+              r.drawRect(DlFRect::MakeLTRB(5, 5, 15, 15));
+              r.drawRect(DlFRect::MakeLTRB(10, 10, 20, 20));
               r.restore();
             }},
        }},
@@ -422,7 +431,7 @@ std::vector<DisplayListInvocationGroup> CreateAllClipOps() {
             }},
            {1, 24, 1, 24,
             [](DlOpReceiver& r) {
-              r.clipRect(kTestBounds.makeOffset(1, 1),
+              r.clipRect(kTestBounds.MakeOffset(1, 1),
                          DlCanvas::ClipOp::kIntersect, true);
             }},
            {1, 24, 1, 24,
@@ -446,7 +455,7 @@ std::vector<DisplayListInvocationGroup> CreateAllClipOps() {
             }},
            {1, 64, 1, 64,
             [](DlOpReceiver& r) {
-              r.clipRRect(kTestRRect.makeOffset(1, 1),
+              r.clipRRect(kTestRRect.MakeOffset(1, 1),
                           DlCanvas::ClipOp::kIntersect, true);
             }},
            {1, 64, 1, 64,
@@ -547,38 +556,38 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
        {
            {1, 24, 1, 24,
             [](DlOpReceiver& r) {
-              r.drawRect({0, 0, 10, 10});
+              r.drawRect(DlFRect::MakeLTRB(0, 0, 10, 10));
             }},
            {1, 24, 1, 24,
             [](DlOpReceiver& r) {
-              r.drawRect({0, 1, 10, 10});
+              r.drawRect(DlFRect::MakeLTRB(0, 1, 10, 10));
             }},
            {1, 24, 1, 24,
             [](DlOpReceiver& r) {
-              r.drawRect({0, 0, 20, 10});
+              r.drawRect(DlFRect::MakeLTRB(0, 0, 20, 10));
             }},
            {1, 24, 1, 24,
             [](DlOpReceiver& r) {
-              r.drawRect({0, 0, 10, 20});
+              r.drawRect(DlFRect::MakeLTRB(0, 0, 10, 20));
             }},
        }},
       {"DrawOval",
        {
            {1, 24, 1, 24,
             [](DlOpReceiver& r) {
-              r.drawOval({0, 0, 10, 10});
+              r.drawOval(DlFRect::MakeLTRB(0, 0, 10, 10));
             }},
            {1, 24, 1, 24,
             [](DlOpReceiver& r) {
-              r.drawOval({0, 1, 10, 10});
+              r.drawOval(DlFRect::MakeLTRB(0, 1, 10, 10));
             }},
            {1, 24, 1, 24,
             [](DlOpReceiver& r) {
-              r.drawOval({0, 0, 20, 10});
+              r.drawOval(DlFRect::MakeLTRB(0, 0, 20, 10));
             }},
            {1, 24, 1, 24,
             [](DlOpReceiver& r) {
-              r.drawOval({0, 0, 10, 20});
+              r.drawOval(DlFRect::MakeLTRB(0, 0, 10, 20));
             }},
        }},
       {"DrawCircle",
@@ -601,7 +610,7 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
        {
            {1, 56, 1, 56, [](DlOpReceiver& r) { r.drawRRect(kTestRRect); }},
            {1, 56, 1, 56,
-            [](DlOpReceiver& r) { r.drawRRect(kTestRRect.makeOffset(5, 5)); }},
+            [](DlOpReceiver& r) { r.drawRRect(kTestRRect.MakeOffset(5, 5)); }},
        }},
       {"DrawDRRect",
        {
@@ -609,8 +618,8 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
             [](DlOpReceiver& r) { r.drawDRRect(kTestRRect, kTestInnerRRect); }},
            {1, 112, 1, 112,
             [](DlOpReceiver& r) {
-              r.drawDRRect(kTestRRect.makeOffset(5, 5),
-                           kTestInnerRRect.makeOffset(4, 4));
+              r.drawDRRect(kTestRRect.MakeOffset(5, 5),
+                           kTestInnerRRect.MakeOffset(4, 4));
             }},
        }},
       {"DrawPath",
@@ -627,7 +636,7 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
             [](DlOpReceiver& r) { r.drawArc(kTestBounds, 45, 270, false); }},
            {1, 32, 1, 32,
             [](DlOpReceiver& r) {
-              r.drawArc(kTestBounds.makeOffset(1, 1), 45, 270, false);
+              r.drawArc(kTestBounds.MakeOffset(1, 1), 45, 270, false);
             }},
            {1, 32, 1, 32,
             [](DlOpReceiver& r) { r.drawArc(kTestBounds, 30, 270, false); }},
@@ -710,50 +719,58 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
        {
            {1, 56, -1, 80,
             [](DlOpReceiver& r) {
-              r.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
+              r.drawImageRect(TestImage1, DlFRect::MakeLTRB(10, 10, 20, 20),
+                              DlFRect::MakeLTRB(10, 10, 80, 80),
                               kNearestSampling, false,
                               DlCanvas::SrcRectConstraint::kFast);
             }},
            {1, 56, -1, 80,
             [](DlOpReceiver& r) {
-              r.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
+              r.drawImageRect(TestImage1, DlFRect::MakeLTRB(10, 10, 20, 20),
+                              DlFRect::MakeLTRB(10, 10, 80, 80),
                               kNearestSampling, true,
                               DlCanvas::SrcRectConstraint::kFast);
             }},
            {1, 56, -1, 80,
             [](DlOpReceiver& r) {
-              r.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
+              r.drawImageRect(TestImage1, DlFRect::MakeLTRB(10, 10, 20, 20),
+                              DlFRect::MakeLTRB(10, 10, 80, 80),
                               kNearestSampling, false,
                               DlCanvas::SrcRectConstraint::kStrict);
             }},
            {1, 56, -1, 80,
             [](DlOpReceiver& r) {
-              r.drawImageRect(TestImage1, {10, 10, 25, 20}, {10, 10, 80, 80},
+              r.drawImageRect(TestImage1, DlFRect::MakeLTRB(10, 10, 25, 20),
+                              DlFRect::MakeLTRB(10, 10, 80, 80),
                               kNearestSampling, false,
                               DlCanvas::SrcRectConstraint::kFast);
             }},
            {1, 56, -1, 80,
             [](DlOpReceiver& r) {
-              r.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 85, 80},
+              r.drawImageRect(TestImage1, DlFRect::MakeLTRB(10, 10, 20, 20),
+                              DlFRect::MakeLTRB(10, 10, 85, 80),
                               kNearestSampling, false,
                               DlCanvas::SrcRectConstraint::kFast);
             }},
            {1, 56, -1, 80,
             [](DlOpReceiver& r) {
-              r.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
+              r.drawImageRect(TestImage1, DlFRect::MakeLTRB(10, 10, 20, 20),
+                              DlFRect::MakeLTRB(10, 10, 80, 80),
                               kLinearSampling, false,
                               DlCanvas::SrcRectConstraint::kFast);
             }},
            {1, 56, -1, 80,
             [](DlOpReceiver& r) {
-              r.drawImageRect(TestImage2, {10, 10, 15, 15}, {10, 10, 80, 80},
+              r.drawImageRect(TestImage2, DlFRect::MakeLTRB(10, 10, 15, 15),
+                              DlFRect::MakeLTRB(10, 10, 80, 80),
                               kNearestSampling, false,
                               DlCanvas::SrcRectConstraint::kFast);
             }},
            {1, 56, -1, 80,
             [](DlOpReceiver& r) {
               auto dl_image = DlImage::Make(TestSkImage);
-              r.drawImageRect(dl_image, {10, 10, 15, 15}, {10, 10, 80, 80},
+              r.drawImageRect(dl_image, DlFRect::MakeLTRB(10, 10, 15, 15),
+                              DlFRect::MakeLTRB(10, 10, 80, 80),
                               kNearestSampling, false,
                               DlCanvas::SrcRectConstraint::kFast);
             }},
@@ -764,38 +781,45 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
            // drawImageLattice
            {1, 48, -1, 80,
             [](DlOpReceiver& r) {
-              r.drawImageNine(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
+              r.drawImageNine(TestImage1, DlIRect::MakeLTRB(10, 10, 20, 20),
+                              DlFRect::MakeLTRB(10, 10, 80, 80),
                               DlFilterMode::kNearest, false);
             }},
            {1, 48, -1, 80,
             [](DlOpReceiver& r) {
-              r.drawImageNine(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
+              r.drawImageNine(TestImage1, DlIRect::MakeLTRB(10, 10, 20, 20),
+                              DlFRect::MakeLTRB(10, 10, 80, 80),
                               DlFilterMode::kNearest, true);
             }},
            {1, 48, -1, 80,
             [](DlOpReceiver& r) {
-              r.drawImageNine(TestImage1, {10, 10, 25, 20}, {10, 10, 80, 80},
+              r.drawImageNine(TestImage1, DlIRect::MakeLTRB(10, 10, 25, 20),
+                              DlFRect::MakeLTRB(10, 10, 80, 80),
                               DlFilterMode::kNearest, false);
             }},
            {1, 48, -1, 80,
             [](DlOpReceiver& r) {
-              r.drawImageNine(TestImage1, {10, 10, 20, 20}, {10, 10, 85, 80},
+              r.drawImageNine(TestImage1, DlIRect::MakeLTRB(10, 10, 20, 20),
+                              DlFRect::MakeLTRB(10, 10, 85, 80),
                               DlFilterMode::kNearest, false);
             }},
            {1, 48, -1, 80,
             [](DlOpReceiver& r) {
-              r.drawImageNine(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
+              r.drawImageNine(TestImage1, DlIRect::MakeLTRB(10, 10, 20, 20),
+                              DlFRect::MakeLTRB(10, 10, 80, 80),
                               DlFilterMode::kLinear, false);
             }},
            {1, 48, -1, 80,
             [](DlOpReceiver& r) {
-              r.drawImageNine(TestImage2, {10, 10, 15, 15}, {10, 10, 80, 80},
+              r.drawImageNine(TestImage2, DlIRect::MakeLTRB(10, 10, 15, 15),
+                              DlFRect::MakeLTRB(10, 10, 80, 80),
                               DlFilterMode::kNearest, false);
             }},
            {1, 48, -1, 80,
             [](DlOpReceiver& r) {
               auto dl_image = DlImage::Make(TestSkImage);
-              r.drawImageNine(dl_image, {10, 10, 15, 15}, {10, 10, 80, 80},
+              r.drawImageNine(dl_image, DlIRect::MakeLTRB(10, 10, 15, 15),
+                              DlFRect::MakeLTRB(10, 10, 80, 80),
                               DlFilterMode::kNearest, false);
             }},
        }},
@@ -803,63 +827,79 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
        {
            {1, 48 + 32 + 8, -1, 48 + 32 + 32,
             [](DlOpReceiver& r) {
-              static SkRSXform xforms[] = {{1, 0, 0, 0}, {0, 1, 0, 0}};
-              static SkRect texs[] = {{10, 10, 20, 20}, {20, 20, 30, 30}};
+              static DlRSTransform xforms[] = {
+                  DlRSTransform::MakeScaledCosSinXY(1, 0, 0, 0),
+                  DlRSTransform::MakeScaledCosSinXY(0, 1, 0, 0)};
+              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20), DlFRect::MakeLTRB(20, 20, 30, 30)};
               r.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
                           DlBlendMode::kSrcIn, kNearestSampling, nullptr,
                           false);
             }},
            {1, 48 + 32 + 8, -1, 48 + 32 + 32,
             [](DlOpReceiver& r) {
-              static SkRSXform xforms[] = {{1, 0, 0, 0}, {0, 1, 0, 0}};
-              static SkRect texs[] = {{10, 10, 20, 20}, {20, 20, 30, 30}};
+              static DlRSTransform xforms[] = {
+                  DlRSTransform::MakeScaledCosSinXY(1, 0, 0, 0),
+                  DlRSTransform::MakeScaledCosSinXY(0, 1, 0, 0)};
+              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20), DlFRect::MakeLTRB(20, 20, 30, 30)};
               r.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
                           DlBlendMode::kSrcIn, kNearestSampling, nullptr, true);
             }},
            {1, 48 + 32 + 8, -1, 48 + 32 + 32,
             [](DlOpReceiver& r) {
-              static SkRSXform xforms[] = {{0, 1, 0, 0}, {0, 1, 0, 0}};
-              static SkRect texs[] = {{10, 10, 20, 20}, {20, 20, 30, 30}};
+              static DlRSTransform xforms[] = {
+                  DlRSTransform::MakeScaledCosSinXY(0, 1, 0, 0),
+                  DlRSTransform::MakeScaledCosSinXY(0, 1, 0, 0)};
+              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20), DlFRect::MakeLTRB(20, 20, 30, 30)};
               r.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
                           DlBlendMode::kSrcIn, kNearestSampling, nullptr,
                           false);
             }},
            {1, 48 + 32 + 8, -1, 48 + 32 + 32,
             [](DlOpReceiver& r) {
-              static SkRSXform xforms[] = {{1, 0, 0, 0}, {0, 1, 0, 0}};
-              static SkRect texs[] = {{10, 10, 20, 20}, {20, 25, 30, 30}};
+              static DlRSTransform xforms[] = {
+                  DlRSTransform::MakeScaledCosSinXY(1, 0, 0, 0),
+                  DlRSTransform::MakeScaledCosSinXY(0, 1, 0, 0)};
+              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20), DlFRect::MakeLTRB(20, 25, 30, 30)};
               r.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
                           DlBlendMode::kSrcIn, kNearestSampling, nullptr,
                           false);
             }},
            {1, 48 + 32 + 8, -1, 48 + 32 + 32,
             [](DlOpReceiver& r) {
-              static SkRSXform xforms[] = {{1, 0, 0, 0}, {0, 1, 0, 0}};
-              static SkRect texs[] = {{10, 10, 20, 20}, {20, 20, 30, 30}};
+              static DlRSTransform xforms[] = {
+                  DlRSTransform::MakeScaledCosSinXY(1, 0, 0, 0),
+                  DlRSTransform::MakeScaledCosSinXY(0, 1, 0, 0)};
+              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20), DlFRect::MakeLTRB(20, 20, 30, 30)};
               r.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
                           DlBlendMode::kSrcIn, kLinearSampling, nullptr, false);
             }},
            {1, 48 + 32 + 8, -1, 48 + 32 + 32,
             [](DlOpReceiver& r) {
-              static SkRSXform xforms[] = {{1, 0, 0, 0}, {0, 1, 0, 0}};
-              static SkRect texs[] = {{10, 10, 20, 20}, {20, 20, 30, 30}};
+              static DlRSTransform xforms[] = {
+                  DlRSTransform::MakeScaledCosSinXY(1, 0, 0, 0),
+                  DlRSTransform::MakeScaledCosSinXY(0, 1, 0, 0)};
+              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20), DlFRect::MakeLTRB(20, 20, 30, 30)};
               r.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
                           DlBlendMode::kDstIn, kNearestSampling, nullptr,
                           false);
             }},
            {1, 64 + 32 + 8, -1, 64 + 32 + 32,
             [](DlOpReceiver& r) {
-              static SkRSXform xforms[] = {{1, 0, 0, 0}, {0, 1, 0, 0}};
-              static SkRect texs[] = {{10, 10, 20, 20}, {20, 20, 30, 30}};
-              static SkRect cull_rect = {0, 0, 200, 200};
+              static DlRSTransform xforms[] = {
+                  DlRSTransform::MakeScaledCosSinXY(1, 0, 0, 0),
+                  DlRSTransform::MakeScaledCosSinXY(0, 1, 0, 0)};
+              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20), DlFRect::MakeLTRB(20, 20, 30, 30)};
+              static DlFRect cull_rect = DlFRect::MakeLTRB(0, 0, 200, 200);
               r.drawAtlas(TestImage2, xforms, texs, nullptr, 2,
                           DlBlendMode::kSrcIn, kNearestSampling, &cull_rect,
                           false);
             }},
            {1, 48 + 32 + 8 + 8, -1, 48 + 32 + 32 + 8,
             [](DlOpReceiver& r) {
-              static SkRSXform xforms[] = {{1, 0, 0, 0}, {0, 1, 0, 0}};
-              static SkRect texs[] = {{10, 10, 20, 20}, {20, 20, 30, 30}};
+              static DlRSTransform xforms[] = {
+                  DlRSTransform::MakeScaledCosSinXY(1, 0, 0, 0),
+                  DlRSTransform::MakeScaledCosSinXY(0, 1, 0, 0)};
+              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20), DlFRect::MakeLTRB(20, 20, 30, 30)};
               static DlColor colors[] = {DlColor::kBlue(), DlColor::kGreen()};
               r.drawAtlas(TestImage1, xforms, texs, colors, 2,
                           DlBlendMode::kSrcIn, kNearestSampling, nullptr,
@@ -867,10 +907,12 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
             }},
            {1, 64 + 32 + 8 + 8, -1, 64 + 32 + 32 + 8,
             [](DlOpReceiver& r) {
-              static SkRSXform xforms[] = {{1, 0, 0, 0}, {0, 1, 0, 0}};
-              static SkRect texs[] = {{10, 10, 20, 20}, {20, 20, 30, 30}};
+              static DlRSTransform xforms[] = {
+                  DlRSTransform::MakeScaledCosSinXY(1, 0, 0, 0),
+                  DlRSTransform::MakeScaledCosSinXY(0, 1, 0, 0)};
+              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20), DlFRect::MakeLTRB(20, 20, 30, 30)};
               static DlColor colors[] = {DlColor::kBlue(), DlColor::kGreen()};
-              static SkRect cull_rect = {0, 0, 200, 200};
+              static DlFRect cull_rect = DlFRect::MakeLTRB(0, 0, 200, 200);
               r.drawAtlas(TestImage1, xforms, texs, colors, 2,
                           DlBlendMode::kSrcIn, kNearestSampling, &cull_rect,
                           false);
@@ -878,8 +920,10 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
            {1, 48 + 32 + 8, -1, 48 + 32 + 32,
             [](DlOpReceiver& r) {
               auto dl_image = DlImage::Make(TestSkImage);
-              static SkRSXform xforms[] = {{1, 0, 0, 0}, {0, 1, 0, 0}};
-              static SkRect texs[] = {{10, 10, 20, 20}, {20, 20, 30, 30}};
+              static DlRSTransform xforms[] = {
+                  DlRSTransform::MakeScaledCosSinXY(1, 0, 0, 0),
+                  DlRSTransform::MakeScaledCosSinXY(0, 1, 0, 0)};
+              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20), DlFRect::MakeLTRB(20, 20, 30, 30)};
               r.drawAtlas(dl_image, xforms, texs, nullptr, 2,
                           DlBlendMode::kSrcIn, kNearestSampling, nullptr,
                           false);

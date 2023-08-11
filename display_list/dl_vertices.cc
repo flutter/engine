@@ -23,9 +23,9 @@ static void DlVerticesDeleter(void* p) {
 static size_t bytes_needed(int vertex_count, Flags flags, int index_count) {
   int needed = sizeof(DlVertices);
   // We always have vertices
-  needed += vertex_count * sizeof(SkPoint);
+  needed += vertex_count * sizeof(DlFPoint);
   if (flags.has_texture_coordinates) {
-    needed += vertex_count * sizeof(SkPoint);
+    needed += vertex_count * sizeof(DlFPoint);
   }
   if (flags.has_colors) {
     needed += vertex_count * sizeof(DlColor);
@@ -39,8 +39,8 @@ static size_t bytes_needed(int vertex_count, Flags flags, int index_count) {
 std::shared_ptr<DlVertices> DlVertices::Make(
     DlVertexMode mode,
     int vertex_count,
-    const SkPoint vertices[],
-    const SkPoint texture_coordinates[],
+    const DlFPoint vertices[],
+    const DlFPoint texture_coordinates[],
     const DlColor colors[],
     int index_count,
     const uint16_t indices[]) {
@@ -85,7 +85,7 @@ size_t DlVertices::size() const {
                       index_count_);
 }
 
-static SkRect compute_bounds(const SkPoint* points, int count) {
+static DlFRect compute_bounds(const DlFPoint* points, int count) {
   RectBoundsAccumulator accumulator;
   for (int i = 0; i < count; i++) {
     accumulator.accumulate(points[i]);
@@ -95,12 +95,12 @@ static SkRect compute_bounds(const SkPoint* points, int count) {
 
 DlVertices::DlVertices(DlVertexMode mode,
                        int unchecked_vertex_count,
-                       const SkPoint* vertices,
-                       const SkPoint* texture_coordinates,
+                       const DlFPoint* vertices,
+                       const DlFPoint* texture_coordinates,
                        const DlColor* colors,
                        int unchecked_index_count,
                        const uint16_t* indices,
-                       const SkRect* bounds)
+                       const DlFRect* bounds)
     : mode_(mode),
       vertex_count_(std::max(unchecked_vertex_count, 0)),
       index_count_(indices ? std::max(unchecked_index_count, 0) : 0) {
@@ -162,9 +162,9 @@ DlVertices::DlVertices(DlVertexMode mode,
     }
   };
 
-  vertices_offset_ = advance(sizeof(SkPoint), vertex_count_);
+  vertices_offset_ = advance(sizeof(DlFPoint), vertex_count_);
   texture_coordinates_offset_ = advance(
-      sizeof(SkPoint), flags.has_texture_coordinates ? vertex_count_ : 0);
+      sizeof(DlFPoint), flags.has_texture_coordinates ? vertex_count_ : 0);
   colors_offset_ =
       advance(sizeof(DlColor), flags.has_colors ? vertex_count_ : 0);
   indices_offset_ = advance(sizeof(uint16_t), index_count_);
@@ -217,13 +217,13 @@ DlVertices::Builder::Builder(DlVertexMode mode,
 }
 
 static void store_points(char* dst, int offset, const float* src, int count) {
-  SkPoint* points = reinterpret_cast<SkPoint*>(dst + offset);
+  DlFPoint* points = reinterpret_cast<DlFPoint*>(dst + offset);
   for (int i = 0; i < count; i++) {
-    points[i] = SkPoint::Make(src[i * 2], src[i * 2 + 1]);
+    points[i] = DlFPoint(src[i * 2], src[i * 2 + 1]);
   }
 }
 
-void DlVertices::Builder::store_vertices(const SkPoint vertices[]) {
+void DlVertices::Builder::store_vertices(const DlFPoint vertices[]) {
   FML_CHECK(is_valid());
   FML_CHECK(needs_vertices_);
   char* pod = reinterpret_cast<char*>(vertices_.get());
@@ -241,7 +241,7 @@ void DlVertices::Builder::store_vertices(const float vertices[]) {
   needs_vertices_ = false;
 }
 
-void DlVertices::Builder::store_texture_coordinates(const SkPoint coords[]) {
+void DlVertices::Builder::store_texture_coordinates(const DlFPoint coords[]) {
   FML_CHECK(is_valid());
   FML_CHECK(needs_texture_coords_);
   char* pod = reinterpret_cast<char*>(vertices_.get());

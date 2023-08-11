@@ -53,7 +53,7 @@ bool GPUSurfaceMetalImpeller::IsValid() {
 }
 
 // |Surface|
-std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISize& frame_size) {
+std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const DlISize& frame_size) {
   TRACE_EVENT0("impeller", "GPUSurfaceMetalImpeller::AcquireFrame");
 
   if (!IsValid()) {
@@ -61,7 +61,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
     return nullptr;
   }
 
-  if (frame_size.isEmpty()) {
+  if (frame_size.is_empty()) {
     FML_LOG(ERROR) << "Metal surface was asked for an empty frame.";
     return nullptr;
   }
@@ -85,7 +85,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
 }
 
 std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLayer(
-    const SkISize& frame_size) {
+    const DlISize& frame_size) {
   auto layer = delegate_->GetCAMetalLayer(frame_size);
 
   if (!layer) {
@@ -126,12 +126,12 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
             if (entry.first != texture) {
               // Accumulate damage for other framebuffers
               if (surface_frame.submit_info().frame_damage) {
-                entry.second.join(*surface_frame.submit_info().frame_damage);
+                entry.second.Join(*surface_frame.submit_info().frame_damage);
               }
             }
           }
           // Reset accumulated damage for current framebuffer
-          damage_[texture] = SkIRect::MakeEmpty();
+          damage_[texture] = DlIRect();
         }
 
         std::optional<impeller::IRect> clip_rect;
@@ -149,9 +149,9 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
         }
 
         impeller::IRect cull_rect = surface->coverage();
-        SkIRect sk_cull_rect = SkIRect::MakeWH(cull_rect.size.width, cull_rect.size.height);
+        DlIRect dl_cull_rect = DlIRect::MakeWH(cull_rect.size.width, cull_rect.size.height);
         impeller::DlDispatcher impeller_dispatcher(cull_rect);
-        display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
+        display_list->Dispatch(impeller_dispatcher, dl_cull_rect);
         auto picture = impeller_dispatcher.EndRecordingAsPicture();
 
         return renderer->Render(
@@ -186,7 +186,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
 }
 
 std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTexture(
-    const SkISize& frame_size) {
+    const DlISize& frame_size) {
   GPUMTLTextureInfo texture_info = delegate_->GetMTLTexture(frame_size);
   id<MTLTexture> mtl_texture = (id<MTLTexture>)(texture_info.texture);
 
@@ -224,12 +224,12 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
             if (entry.first != texture_ptr) {
               // Accumulate damage for other framebuffers
               if (surface_frame.submit_info().frame_damage) {
-                entry.second.join(*surface_frame.submit_info().frame_damage);
+                entry.second.Join(*surface_frame.submit_info().frame_damage);
               }
             }
           }
           // Reset accumulated damage for current framebuffer
-          damage_[texture_ptr] = SkIRect::MakeEmpty();
+          damage_[texture_ptr] = DlIRect();
         }
 
         std::optional<impeller::IRect> clip_rect;
@@ -247,9 +247,9 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
         }
 
         impeller::IRect cull_rect = surface->coverage();
-        SkIRect sk_cull_rect = SkIRect::MakeWH(cull_rect.size.width, cull_rect.size.height);
+        DlIRect dl_cull_rect = DlIRect::MakeWH(cull_rect.size.width, cull_rect.size.height);
         impeller::DlDispatcher impeller_dispatcher(cull_rect);
-        display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
+        display_list->Dispatch(impeller_dispatcher, dl_cull_rect);
         auto picture = impeller_dispatcher.EndRecordingAsPicture();
 
         return renderer->Render(
@@ -286,7 +286,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
 }
 
 // |Surface|
-SkMatrix GPUSurfaceMetalImpeller::GetRootTransformation() const {
+DlTransform GPUSurfaceMetalImpeller::GetRootTransformation() const {
   // This backend does not currently support root surface transformations. Just
   // return identity.
   return {};

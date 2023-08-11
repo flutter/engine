@@ -40,7 +40,7 @@ void DlSkCanvasDispatcher::restore() {
   canvas_->restore();
   restore_opacity();
 }
-void DlSkCanvasDispatcher::saveLayer(const SkRect* bounds,
+void DlSkCanvasDispatcher::saveLayer(const DlFRect* bounds,
                                      const SaveLayerOptions options,
                                      const DlImageFilter* backdrop) {
   if (bounds == nullptr && options.can_distribute_opacity() &&
@@ -64,31 +64,32 @@ void DlSkCanvasDispatcher::saveLayer(const SkRect* bounds,
     TRACE_EVENT0("flutter", "Canvas::saveLayer");
     const SkPaint* paint = safe_paint(options.renders_with_attributes());
     const sk_sp<SkImageFilter> sk_backdrop = ToSk(backdrop);
-    canvas_->saveLayer(
-        SkCanvas::SaveLayerRec(bounds, paint, sk_backdrop.get(), 0));
+    SkRect scratch;
+    canvas_->saveLayer(SkCanvas::SaveLayerRec(ToSk(&scratch, bounds), paint,
+                                              sk_backdrop.get(), 0));
     // saveLayer will apply the current opacity on behalf of the children
     // so they will inherit an opaque opacity.
     save_opacity(SK_Scalar1);
   }
 }
 
-void DlSkCanvasDispatcher::translate(SkScalar tx, SkScalar ty) {
+void DlSkCanvasDispatcher::translate(DlScalar tx, DlScalar ty) {
   canvas_->translate(tx, ty);
 }
-void DlSkCanvasDispatcher::scale(SkScalar sx, SkScalar sy) {
+void DlSkCanvasDispatcher::scale(DlScalar sx, DlScalar sy) {
   canvas_->scale(sx, sy);
 }
-void DlSkCanvasDispatcher::rotate(SkScalar degrees) {
+void DlSkCanvasDispatcher::rotate(DlScalar degrees) {
   canvas_->rotate(degrees);
 }
-void DlSkCanvasDispatcher::skew(SkScalar sx, SkScalar sy) {
+void DlSkCanvasDispatcher::skew(DlScalar sx, DlScalar sy) {
   canvas_->skew(sx, sy);
 }
 // clang-format off
 // 2x3 2D affine subset of a 4x4 transform in row major order
 void DlSkCanvasDispatcher::transform2DAffine(
-    SkScalar mxx, SkScalar mxy, SkScalar mxt,
-    SkScalar myx, SkScalar myy, SkScalar myt) {
+    DlScalar mxx, DlScalar mxy, DlScalar mxt,
+    DlScalar myx, DlScalar myy, DlScalar myt) {
   // Internally concat(SkMatrix) gets redirected to concat(SkM44)
   // so we just jump directly to the SkM44 version
   canvas_->concat(SkM44(mxx, mxy, 0, mxt,
@@ -98,10 +99,10 @@ void DlSkCanvasDispatcher::transform2DAffine(
 }
 // full 4x4 transform in row major order
 void DlSkCanvasDispatcher::transformFullPerspective(
-    SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
-    SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
-    SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
-    SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) {
+    DlScalar mxx, DlScalar mxy, DlScalar mxz, DlScalar mxt,
+    DlScalar myx, DlScalar myy, DlScalar myz, DlScalar myt,
+    DlScalar mzx, DlScalar mzy, DlScalar mzz, DlScalar mzt,
+    DlScalar mwx, DlScalar mwy, DlScalar mwz, DlScalar mwt) {
   canvas_->concat(SkM44(mxx, mxy, mxz, mxt,
                         myx, myy, myz, myt,
                         mzx, mzy, mzz, mzt,
@@ -112,20 +113,20 @@ void DlSkCanvasDispatcher::transformReset() {
   canvas_->setMatrix(original_transform_);
 }
 
-void DlSkCanvasDispatcher::clipRect(const SkRect& rect,
+void DlSkCanvasDispatcher::clipRect(const DlFRect& rect,
                                     ClipOp clip_op,
                                     bool is_aa) {
-  canvas_->clipRect(rect, ToSk(clip_op), is_aa);
+  canvas_->clipRect(ToSk(rect), ToSk(clip_op), is_aa);
 }
-void DlSkCanvasDispatcher::clipRRect(const SkRRect& rrect,
+void DlSkCanvasDispatcher::clipRRect(const DlFRRect& rrect,
                                      ClipOp clip_op,
                                      bool is_aa) {
-  canvas_->clipRRect(rrect, ToSk(clip_op), is_aa);
+  canvas_->clipRRect(ToSk(rrect), ToSk(clip_op), is_aa);
 }
-void DlSkCanvasDispatcher::clipPath(const SkPath& path,
+void DlSkCanvasDispatcher::clipPath(const DlPath& path,
                                     ClipOp clip_op,
                                     bool is_aa) {
-  canvas_->clipPath(path, ToSk(clip_op), is_aa);
+  canvas_->clipPath(path.GetSkiaPath(), ToSk(clip_op), is_aa);
 }
 
 void DlSkCanvasDispatcher::drawPaint() {
@@ -145,63 +146,64 @@ void DlSkCanvasDispatcher::drawColor(DlColor color, DlBlendMode mode) {
   color4f.fA *= opacity();
   canvas_->drawColor(color4f, ToSk(mode));
 }
-void DlSkCanvasDispatcher::drawLine(const SkPoint& p0, const SkPoint& p1) {
-  canvas_->drawLine(p0, p1, paint());
+void DlSkCanvasDispatcher::drawLine(const DlFPoint& p0, const DlFPoint& p1) {
+  canvas_->drawLine(ToSk(p0), ToSk(p1), paint());
 }
-void DlSkCanvasDispatcher::drawRect(const SkRect& rect) {
-  canvas_->drawRect(rect, paint());
+void DlSkCanvasDispatcher::drawRect(const DlFRect& rect) {
+  canvas_->drawRect(ToSk(rect), paint());
 }
-void DlSkCanvasDispatcher::drawOval(const SkRect& bounds) {
-  canvas_->drawOval(bounds, paint());
+void DlSkCanvasDispatcher::drawOval(const DlFRect& bounds) {
+  canvas_->drawOval(ToSk(bounds), paint());
 }
-void DlSkCanvasDispatcher::drawCircle(const SkPoint& center, SkScalar radius) {
-  canvas_->drawCircle(center, radius, paint());
+void DlSkCanvasDispatcher::drawCircle(const DlFPoint& center, DlScalar radius) {
+  canvas_->drawCircle(ToSk(center), radius, paint());
 }
-void DlSkCanvasDispatcher::drawRRect(const SkRRect& rrect) {
-  canvas_->drawRRect(rrect, paint());
+void DlSkCanvasDispatcher::drawRRect(const DlFRRect& rrect) {
+  canvas_->drawRRect(ToSk(rrect), paint());
 }
-void DlSkCanvasDispatcher::drawDRRect(const SkRRect& outer,
-                                      const SkRRect& inner) {
-  canvas_->drawDRRect(outer, inner, paint());
+void DlSkCanvasDispatcher::drawDRRect(const DlFRRect& outer,
+                                      const DlFRRect& inner) {
+  canvas_->drawDRRect(ToSk(outer), ToSk(inner), paint());
 }
-void DlSkCanvasDispatcher::drawPath(const SkPath& path) {
-  canvas_->drawPath(path, paint());
+void DlSkCanvasDispatcher::drawPath(const DlPath& path) {
+  canvas_->drawPath(path.GetSkiaPath(), paint());
 }
-void DlSkCanvasDispatcher::drawArc(const SkRect& bounds,
-                                   SkScalar start,
-                                   SkScalar sweep,
+void DlSkCanvasDispatcher::drawArc(const DlFRect& bounds,
+                                   DlScalar start,
+                                   DlScalar sweep,
                                    bool useCenter) {
-  canvas_->drawArc(bounds, start, sweep, useCenter, paint());
+  canvas_->drawArc(ToSk(bounds), start, sweep, useCenter, paint());
 }
 void DlSkCanvasDispatcher::drawPoints(PointMode mode,
                                       uint32_t count,
-                                      const SkPoint pts[]) {
-  canvas_->drawPoints(ToSk(mode), count, pts, paint());
+                                      const DlFPoint pts[]) {
+  canvas_->drawPoints(ToSk(mode), count, ToSk(pts), paint());
 }
 void DlSkCanvasDispatcher::drawVertices(const DlVertices* vertices,
                                         DlBlendMode mode) {
   canvas_->drawVertices(ToSk(vertices), ToSk(mode), paint());
 }
 void DlSkCanvasDispatcher::drawImage(const sk_sp<DlImage> image,
-                                     const SkPoint point,
+                                     const DlFPoint point,
                                      DlImageSampling sampling,
                                      bool render_with_attributes) {
-  canvas_->drawImage(image ? image->skia_image() : nullptr, point.fX, point.fY,
-                     ToSk(sampling), safe_paint(render_with_attributes));
+  canvas_->drawImage(image ? image->skia_image() : nullptr,  //
+                     point.x(), point.y(), ToSk(sampling),
+                     safe_paint(render_with_attributes));
 }
 void DlSkCanvasDispatcher::drawImageRect(const sk_sp<DlImage> image,
-                                         const SkRect& src,
-                                         const SkRect& dst,
+                                         const DlFRect& src,
+                                         const DlFRect& dst,
                                          DlImageSampling sampling,
                                          bool render_with_attributes,
                                          SrcRectConstraint constraint) {
-  canvas_->drawImageRect(image ? image->skia_image() : nullptr, src, dst,
-                         ToSk(sampling), safe_paint(render_with_attributes),
-                         ToSk(constraint));
+  canvas_->drawImageRect(image ? image->skia_image() : nullptr,  //
+                         ToSk(src), ToSk(dst), ToSk(sampling),   //
+                         safe_paint(render_with_attributes), ToSk(constraint));
 }
 void DlSkCanvasDispatcher::drawImageNine(const sk_sp<DlImage> image,
-                                         const SkIRect& center,
-                                         const SkRect& dst,
+                                         const DlIRect& center,
+                                         const DlFRect& dst,
                                          DlFilterMode filter,
                                          bool render_with_attributes) {
   if (!image) {
@@ -211,17 +213,17 @@ void DlSkCanvasDispatcher::drawImageNine(const sk_sp<DlImage> image,
   if (!skia_image) {
     return;
   }
-  canvas_->drawImageNine(skia_image.get(), center, dst, ToSk(filter),
-                         safe_paint(render_with_attributes));
+  canvas_->drawImageNine(skia_image.get(), ToSk(center), ToSk(dst),
+                         ToSk(filter), safe_paint(render_with_attributes));
 }
 void DlSkCanvasDispatcher::drawAtlas(const sk_sp<DlImage> atlas,
-                                     const SkRSXform xform[],
-                                     const SkRect tex[],
+                                     const DlRSTransform xform[],
+                                     const DlFRect tex[],
                                      const DlColor colors[],
                                      int count,
                                      DlBlendMode mode,
                                      DlImageSampling sampling,
-                                     const SkRect* cullRect,
+                                     const DlFRect* cullRect,
                                      bool render_with_attributes) {
   if (!atlas) {
     return;
@@ -231,22 +233,23 @@ void DlSkCanvasDispatcher::drawAtlas(const sk_sp<DlImage> atlas,
     return;
   }
   const SkColor* sk_colors = reinterpret_cast<const SkColor*>(colors);
-  canvas_->drawAtlas(skia_atlas.get(), xform, tex, sk_colors, count, ToSk(mode),
-                     ToSk(sampling), cullRect,
+  canvas_->drawAtlas(skia_atlas.get(), ToSk(xform), ToSk(tex), sk_colors, count,
+                     ToSk(mode), ToSk(sampling), ToSk(cullRect),
                      safe_paint(render_with_attributes));
 }
 void DlSkCanvasDispatcher::drawDisplayList(
     const sk_sp<DisplayList> display_list,
-    SkScalar opacity) {
+    DlScalar opacity) {
   const int restore_count = canvas_->getSaveCount();
 
   // Compute combined opacity and figure out whether we can apply it
   // during dispatch or if we need a saveLayer.
-  SkScalar combined_opacity = opacity * this->opacity();
+  DlScalar combined_opacity = opacity * this->opacity();
   if (combined_opacity < SK_Scalar1 &&
       !display_list->can_apply_group_opacity()) {
     TRACE_EVENT0("flutter", "Canvas::saveLayer");
-    canvas_->saveLayerAlphaf(&display_list->bounds(), combined_opacity);
+    SkRect dl_bounds = ToSk(display_list->bounds());
+    canvas_->saveLayerAlphaf(&dl_bounds, combined_opacity);
     combined_opacity = SK_Scalar1;
   } else {
     canvas_->save();
@@ -256,7 +259,7 @@ void DlSkCanvasDispatcher::drawDisplayList(
   // display_list from the current environment.
   DlSkCanvasDispatcher dispatcher(canvas_, combined_opacity);
   if (display_list->rtree()) {
-    display_list->Dispatch(dispatcher, canvas_->getLocalClipBounds());
+    display_list->Dispatch(dispatcher, ToDl(canvas_->getLocalClipBounds()));
   } else {
     display_list->Dispatch(dispatcher);
   }
@@ -265,17 +268,17 @@ void DlSkCanvasDispatcher::drawDisplayList(
   canvas_->restoreToCount(restore_count);
 }
 void DlSkCanvasDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,
-                                        SkScalar x,
-                                        SkScalar y) {
+                                        DlScalar x,
+                                        DlScalar y) {
   canvas_->drawTextBlob(blob, x, y, paint());
 }
 
 void DlSkCanvasDispatcher::DrawShadow(SkCanvas* canvas,
-                                      const SkPath& path,
+                                      const DlPath& path,
                                       DlColor color,
                                       float elevation,
                                       bool transparentOccluder,
-                                      SkScalar dpr) {
+                                      DlScalar dpr) {
   const SkScalar kAmbientAlpha = 0.039f;
   const SkScalar kSpotAlpha = 0.25f;
 
@@ -289,17 +292,17 @@ void DlSkCanvasDispatcher::DrawShadow(SkCanvas* canvas,
   SkShadowUtils::ComputeTonalColors(in_ambient, in_spot, &ambient_color,
                                     &spot_color);
   SkShadowUtils::DrawShadow(
-      canvas, path, SkPoint3::Make(0, 0, dpr * elevation),
+      canvas, path.GetSkiaPath(), SkPoint3::Make(0, 0, dpr * elevation),
       SkPoint3::Make(0, -1, 1),
       DlCanvas::kShadowLightRadius / DlCanvas::kShadowLightHeight,
       ambient_color, spot_color, flags);
 }
 
-void DlSkCanvasDispatcher::drawShadow(const SkPath& path,
+void DlSkCanvasDispatcher::drawShadow(const DlPath& path,
                                       const DlColor color,
-                                      const SkScalar elevation,
+                                      const DlScalar elevation,
                                       bool transparent_occluder,
-                                      SkScalar dpr) {
+                                      DlScalar dpr) {
   DrawShadow(canvas_, path, color, elevation, transparent_occluder, dpr);
 }
 

@@ -17,7 +17,7 @@ namespace flutter {
 
 sk_sp<DlImage> SnapshotControllerImpeller::MakeRasterSnapshot(
     sk_sp<DisplayList> display_list,
-    SkISize size) {
+    DlISize size) {
   sk_sp<DlImage> result;
   GetDelegate().GetIsGpuDisabledSyncSwitch()->Execute(
       fml::SyncSwitch::Handlers()
@@ -32,7 +32,7 @@ sk_sp<DlImage> SnapshotControllerImpeller::MakeRasterSnapshot(
 
 sk_sp<DlImage> SnapshotControllerImpeller::DoMakeRasterSnapshot(
     const sk_sp<DisplayList>& display_list,
-    SkISize size) {
+    DlISize size) {
   TRACE_EVENT0("flutter", __FUNCTION__);
   impeller::DlDispatcher dispatcher;
   display_list->Dispatch(dispatcher);

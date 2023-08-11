@@ -9,8 +9,7 @@
 namespace flutter {
 
 Layer::Layer()
-    : paint_bounds_(SkRect::MakeEmpty()),
-      unique_id_(NextUniqueID()),
+    : unique_id_(NextUniqueID()),
       original_layer_id_(unique_id_),
       subtree_has_platform_view_(false) {}
 

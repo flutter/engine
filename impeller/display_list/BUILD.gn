@@ -13,6 +13,7 @@ impeller_component("skia_conversions") {
   public_deps = [
     "../core",
     "../geometry",
+    "//flutter/display_list",
     "//flutter/fml",
     "//third_party/skia",
     "//third_party/skia/modules/skparagraph",

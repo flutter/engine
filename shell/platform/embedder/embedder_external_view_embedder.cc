@@ -31,9 +31,9 @@ void EmbedderExternalViewEmbedder::SetSurfaceTransformationCallback(
   surface_transformation_callback_ = std::move(surface_transformation_callback);
 }
 
-SkMatrix EmbedderExternalViewEmbedder::GetSurfaceTransformation() const {
+DlTransform EmbedderExternalViewEmbedder::GetSurfaceTransformation() const {
   if (!surface_transformation_callback_) {
-    return SkMatrix{};
+    return DlTransform{};
   }
 
   return surface_transformation_callback_();
@@ -51,7 +51,7 @@ void EmbedderExternalViewEmbedder::CancelFrame() {
 
 // |ExternalViewEmbedder|
 void EmbedderExternalViewEmbedder::BeginFrame(
-    SkISize frame_size,
+    DlISize frame_size,
     GrDirectContext* context,
     double device_pixel_ratio,
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
@@ -111,7 +111,7 @@ DlCanvas* EmbedderExternalViewEmbedder::CompositeEmbeddedView(int64_t view_id) {
 }
 
 static FlutterBackingStoreConfig MakeBackingStoreConfig(
-    const SkISize& backing_store_size) {
+    const DlISize& backing_store_size) {
   FlutterBackingStoreConfig config = {};
 
   config.struct_size = sizeof(config);

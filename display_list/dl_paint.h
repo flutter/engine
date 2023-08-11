@@ -46,8 +46,8 @@ enum class DlStrokeJoin {
 class DlPaint {
  public:
   static constexpr DlColor kDefaultColor = DlColor::kBlack();
-  static constexpr float kDefaultWidth = 0.0;
-  static constexpr float kDefaultMiter = 4.0;
+  static constexpr DlScalar kDefaultWidth = 0.0;
+  static constexpr DlScalar kDefaultMiter = 4.0;
 
   static const DlPaint kDefault;
 
@@ -78,13 +78,13 @@ class DlPaint {
     return *this;
   }
 
-  uint8_t getAlpha() const { return color_.argb >> 24; }
-  DlPaint& setAlpha(uint8_t alpha) {
+  DlAlpha getAlpha() const { return color_.argb >> 24; }
+  DlPaint& setAlpha(DlAlpha alpha) {
     color_.argb = alpha << 24 | (color_.argb & 0x00FFFFFF);
     return *this;
   }
-  SkScalar getOpacity() const { return color_.getAlphaF(); }
-  DlPaint& setOpacity(SkScalar opacity) {
+  DlScalar getOpacity() const { return color_.getAlphaF(); }
+  DlPaint& setOpacity(DlScalar opacity) {
     setAlpha(SkScalarRoundToInt(opacity * 0xff));
     return *this;
   }
@@ -121,14 +121,14 @@ class DlPaint {
     return *this;
   }
 
-  float getStrokeWidth() const { return strokeWidth_; }
-  DlPaint& setStrokeWidth(float width) {
+  DlScalar getStrokeWidth() const { return strokeWidth_; }
+  DlPaint& setStrokeWidth(DlScalar width) {
     strokeWidth_ = width;
     return *this;
   }
 
-  float getStrokeMiter() const { return strokeMiter_; }
-  DlPaint& setStrokeMiter(float miter) {
+  DlScalar getStrokeMiter() const { return strokeMiter_; }
+  DlPaint& setStrokeMiter(DlScalar miter) {
     strokeMiter_ = miter;
     return *this;
   }
@@ -230,8 +230,8 @@ class DlPaint {
   };
 
   DlColor color_;
-  float strokeWidth_;
-  float strokeMiter_;
+  DlScalar strokeWidth_;
+  DlScalar strokeMiter_;
 
   std::shared_ptr<const DlColorSource> colorSource_;
   std::shared_ptr<const DlColorFilter> colorFilter_;

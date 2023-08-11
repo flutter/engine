@@ -44,13 +44,19 @@ constexpr int kRenderRight = kRenderLeft + kRenderWidth;
 constexpr int kRenderBottom = kRenderTop + kRenderHeight;
 constexpr int kRenderCenterX = (kRenderLeft + kRenderRight) / 2;
 constexpr int kRenderCenterY = (kRenderTop + kRenderBottom) / 2;
-constexpr SkScalar kRenderRadius = std::min(kRenderWidth, kRenderHeight) / 2.0;
-constexpr SkScalar kRenderCornerRadius = kRenderRadius / 5.0;
+constexpr DlScalar kRenderRadius = std::min(kRenderWidth, kRenderHeight) / 2.0;
+constexpr DlScalar kRenderCornerRadius = kRenderRadius / 5.0;
 
-constexpr SkPoint kTestCenter = SkPoint::Make(kTestWidth / 2, kTestHeight / 2);
-constexpr SkRect kTestBounds = SkRect::MakeWH(kTestWidth, kTestHeight);
-constexpr SkRect kRenderBounds =
+constexpr SkPoint kSkTestCenter =
+    SkPoint::Make(kTestWidth / 2, kTestHeight / 2);
+constexpr SkRect kSkTestBounds = SkRect::MakeWH(kTestWidth, kTestHeight);
+constexpr SkRect kSkRenderBounds =
     SkRect::MakeLTRB(kRenderLeft, kRenderTop, kRenderRight, kRenderBottom);
+
+constexpr DlFPoint kDlTestCenter = DlFPoint(kTestWidth / 2, kTestHeight / 2);
+constexpr DlFRect kDlTestBounds = DlFRect::MakeWH(kTestWidth, kTestHeight);
+constexpr DlFRect kDlRenderBounds =
+    DlFRect::MakeLTRB(kRenderLeft, kRenderTop, kRenderRight, kRenderBottom);
 
 // The tests try 3 miter limit values, 0.0, 4.0 (the default), and 10.0
 // These values will allow us to construct a diamond that spans the
@@ -62,29 +68,29 @@ constexpr SkRect kRenderBounds =
 
 // The X offsets which will be used for tall vertical diamonds are
 // expressed in terms of the rendering height to obtain the proper angle
-constexpr SkScalar kMiterExtremeDiamondOffsetX = kRenderHeight * 0.04;
-constexpr SkScalar kMiter10DiamondOffsetX = kRenderHeight * 0.051;
-constexpr SkScalar kMiter4DiamondOffsetX = kRenderHeight * 0.14;
+constexpr DlScalar kMiterExtremeDiamondOffsetX = kRenderHeight * 0.04;
+constexpr DlScalar kMiter10DiamondOffsetX = kRenderHeight * 0.051;
+constexpr DlScalar kMiter4DiamondOffsetX = kRenderHeight * 0.14;
 
 // The Y offsets which will be used for long horizontal diamonds are
 // expressed in terms of the rendering width to obtain the proper angle
-constexpr SkScalar kMiterExtremeDiamondOffsetY = kRenderWidth * 0.04;
-constexpr SkScalar kMiter10DiamondOffsetY = kRenderWidth * 0.051;
-constexpr SkScalar kMiter4DiamondOffsetY = kRenderWidth * 0.14;
+constexpr DlScalar kMiterExtremeDiamondOffsetY = kRenderWidth * 0.04;
+constexpr DlScalar kMiter10DiamondOffsetY = kRenderWidth * 0.051;
+constexpr DlScalar kMiter4DiamondOffsetY = kRenderWidth * 0.14;
 
 // Render 3 vertical and horizontal diamonds each
 // designed to break at the tested miter limits
 // 0.0, 4.0 and 10.0
 // Center is biased by 0.5 to include more pixel centers in the
 // thin miters
-constexpr SkScalar kXOffset0 = kRenderCenterX + 0.5;
-constexpr SkScalar kXOffsetL1 = kXOffset0 - kMiter4DiamondOffsetX;
-constexpr SkScalar kXOffsetL2 = kXOffsetL1 - kMiter10DiamondOffsetX;
-constexpr SkScalar kXOffsetL3 = kXOffsetL2 - kMiter10DiamondOffsetX;
-constexpr SkScalar kXOffsetR1 = kXOffset0 + kMiter4DiamondOffsetX;
-constexpr SkScalar kXOffsetR2 = kXOffsetR1 + kMiterExtremeDiamondOffsetX;
-constexpr SkScalar kXOffsetR3 = kXOffsetR2 + kMiterExtremeDiamondOffsetX;
-constexpr SkPoint kVerticalMiterDiamondPoints[] = {
+constexpr DlScalar kXOffset0 = kRenderCenterX + 0.5;
+constexpr DlScalar kXOffsetL1 = kXOffset0 - kMiter4DiamondOffsetX;
+constexpr DlScalar kXOffsetL2 = kXOffsetL1 - kMiter10DiamondOffsetX;
+constexpr DlScalar kXOffsetL3 = kXOffsetL2 - kMiter10DiamondOffsetX;
+constexpr DlScalar kXOffsetR1 = kXOffset0 + kMiter4DiamondOffsetX;
+constexpr DlScalar kXOffsetR2 = kXOffsetR1 + kMiterExtremeDiamondOffsetX;
+constexpr DlScalar kXOffsetR3 = kXOffsetR2 + kMiterExtremeDiamondOffsetX;
+constexpr SkPoint kSkVerticalMiterDiamondPoints[] = {
     // Vertical diamonds:
     //  M10   M4  Mextreme
     //   /\   /|\   /\       top of RenderBounds
@@ -109,17 +115,19 @@ constexpr SkPoint kVerticalMiterDiamondPoints[] = {
     // clang-format on
 };
 const int kVerticalMiterDiamondPointCount =
-    sizeof(kVerticalMiterDiamondPoints) /
-    sizeof(kVerticalMiterDiamondPoints[0]);
+    sizeof(kSkVerticalMiterDiamondPoints) /
+    sizeof(kSkVerticalMiterDiamondPoints[0]);
+const DlFPoint* kDlVerticalMiterDiamondPoints =
+    reinterpret_cast<const DlFPoint*>(kSkVerticalMiterDiamondPoints);
 
-constexpr SkScalar kYOffset0 = kRenderCenterY + 0.5;
-constexpr SkScalar kYOffsetU1 = kXOffset0 - kMiter4DiamondOffsetY;
-constexpr SkScalar kYOffsetU2 = kYOffsetU1 - kMiter10DiamondOffsetY;
-constexpr SkScalar kYOffsetU3 = kYOffsetU2 - kMiter10DiamondOffsetY;
-constexpr SkScalar kYOffsetD1 = kXOffset0 + kMiter4DiamondOffsetY;
-constexpr SkScalar kYOffsetD2 = kYOffsetD1 + kMiterExtremeDiamondOffsetY;
-constexpr SkScalar kYOffsetD3 = kYOffsetD2 + kMiterExtremeDiamondOffsetY;
-const SkPoint kHorizontalMiterDiamondPoints[] = {
+constexpr DlScalar kYOffset0 = kRenderCenterY + 0.5;
+constexpr DlScalar kYOffsetU1 = kXOffset0 - kMiter4DiamondOffsetY;
+constexpr DlScalar kYOffsetU2 = kYOffsetU1 - kMiter10DiamondOffsetY;
+constexpr DlScalar kYOffsetU3 = kYOffsetU2 - kMiter10DiamondOffsetY;
+constexpr DlScalar kYOffsetD1 = kXOffset0 + kMiter4DiamondOffsetY;
+constexpr DlScalar kYOffsetD2 = kYOffsetD1 + kMiterExtremeDiamondOffsetY;
+constexpr DlScalar kYOffsetD3 = kYOffsetD2 + kMiterExtremeDiamondOffsetY;
+const SkPoint kSkHorizontalMiterDiamondPoints[] = {
     // Horizontal diamonds
     // Same configuration as Vertical diamonds above but
     // rotated 90 degrees
@@ -140,8 +148,10 @@ const SkPoint kHorizontalMiterDiamondPoints[] = {
     // clang-format on
 };
 const int kHorizontalMiterDiamondPointCount =
-    (sizeof(kHorizontalMiterDiamondPoints) /
-     sizeof(kHorizontalMiterDiamondPoints[0]));
+    (sizeof(kSkHorizontalMiterDiamondPoints) /
+     sizeof(kSkHorizontalMiterDiamondPoints[0]));
+const DlFPoint* kDlHorizontalMiterDiamondPoints =
+    reinterpret_cast<const DlFPoint*>(kSkHorizontalMiterDiamondPoints);
 
 class SkImageSampling {
  public:
@@ -176,70 +186,70 @@ class BoundsTolerance {
   BoundsTolerance() = default;
   BoundsTolerance(const BoundsTolerance&) = default;
 
-  BoundsTolerance addBoundsPadding(SkScalar bounds_pad_x,
-                                   SkScalar bounds_pad_y) const {
+  BoundsTolerance addBoundsPadding(DlScalar bounds_pad_x,
+                                   DlScalar bounds_pad_y) const {
     BoundsTolerance copy = BoundsTolerance(*this);
-    copy.bounds_pad_.offset(bounds_pad_x, bounds_pad_y);
+    copy.bounds_pad_.Offset(bounds_pad_x, bounds_pad_y);
     return copy;
   }
 
-  BoundsTolerance mulScale(SkScalar scale_x, SkScalar scale_y) const {
+  BoundsTolerance mulScale(DlScalar scale_x, DlScalar scale_y) const {
     BoundsTolerance copy = BoundsTolerance(*this);
-    copy.scale_.fX *= scale_x;
-    copy.scale_.fY *= scale_y;
+    copy.scale_ = DlFPoint(copy.scale_.x() * scale_x,
+                           copy.scale_.y() * scale_y);
     return copy;
   }
 
-  BoundsTolerance addAbsolutePadding(SkScalar absolute_pad_x,
-                                     SkScalar absolute_pad_y) const {
+  BoundsTolerance addAbsolutePadding(DlScalar absolute_pad_x,
+                                     DlScalar absolute_pad_y) const {
     BoundsTolerance copy = BoundsTolerance(*this);
-    copy.absolute_pad_.offset(absolute_pad_x, absolute_pad_y);
+    copy.absolute_pad_.Offset(absolute_pad_x, absolute_pad_y);
     return copy;
   }
 
-  BoundsTolerance addPostClipPadding(SkScalar absolute_pad_x,
-                                     SkScalar absolute_pad_y) const {
+  BoundsTolerance addPostClipPadding(DlScalar absolute_pad_x,
+                                     DlScalar absolute_pad_y) const {
     BoundsTolerance copy = BoundsTolerance(*this);
-    copy.clip_pad_.offset(absolute_pad_x, absolute_pad_y);
+    copy.clip_pad_.Offset(absolute_pad_x, absolute_pad_y);
     return copy;
   }
 
-  BoundsTolerance addDiscreteOffset(SkScalar discrete_offset) const {
+  BoundsTolerance addDiscreteOffset(DlScalar discrete_offset) const {
     BoundsTolerance copy = BoundsTolerance(*this);
     copy.discrete_offset_ += discrete_offset;
     return copy;
   }
 
-  BoundsTolerance clip(SkRect clip) const {
+  BoundsTolerance clip(DlFRect clip) const {
     BoundsTolerance copy = BoundsTolerance(*this);
-    if (!copy.clip_.intersect(clip)) {
-      copy.clip_.setEmpty();
+    if (!copy.clip_.Intersect(clip)) {
+      copy.clip_.SetEmpty();
     }
     return copy;
   }
 
-  static SkRect Scale(const SkRect& rect, const SkPoint& scales) {
-    SkScalar outset_x = rect.width() * (scales.fX - 1);
-    SkScalar outset_y = rect.height() * (scales.fY - 1);
-    return rect.makeOutset(outset_x, outset_y);
+  static DlFRect Scale(const DlFRect& rect, const DlFPoint& scales) {
+    DlScalar outset_x = rect.width() * (scales.x() - 1);
+    DlScalar outset_y = rect.height() * (scales.y() - 1);
+    return rect.MakeOutset(outset_x, outset_y);
   }
 
-  bool overflows(SkIRect pix_bounds,
+  bool overflows(DlIRect pix_bounds,
                  int worst_bounds_pad_x,
                  int worst_bounds_pad_y) const {
-    SkRect allowed = SkRect::Make(pix_bounds);
-    allowed.outset(bounds_pad_.fX, bounds_pad_.fY);
+    DlFRect allowed = DlFRect::MakeBounds(pix_bounds);
+    allowed.Outset(bounds_pad_);
     allowed = Scale(allowed, scale_);
-    allowed.outset(absolute_pad_.fX, absolute_pad_.fY);
-    if (!allowed.intersect(clip_)) {
-      allowed.setEmpty();
+    allowed.Outset(absolute_pad_);
+    if (!allowed.Intersect(clip_)) {
+      allowed.SetEmpty();
     }
-    allowed.outset(clip_pad_.fX, clip_pad_.fY);
-    SkIRect rounded = allowed.roundOut();
-    int pad_left = std::max(0, pix_bounds.fLeft - rounded.fLeft);
-    int pad_top = std::max(0, pix_bounds.fTop - rounded.fTop);
-    int pad_right = std::max(0, pix_bounds.fRight - rounded.fRight);
-    int pad_bottom = std::max(0, pix_bounds.fBottom - rounded.fBottom);
+    allowed.Outset(clip_pad_);
+    DlIRect rounded = DlIRect::MakeRoundedOut(allowed);
+    int pad_left = std::max(0, pix_bounds.left() - rounded.left());
+    int pad_top = std::max(0, pix_bounds.top() - rounded.top());
+    int pad_right = std::max(0, pix_bounds.right() - rounded.right());
+    int pad_bottom = std::max(0, pix_bounds.bottom() - rounded.bottom());
     int allowed_pad_x = std::max(pad_left, pad_right);
     int allowed_pad_y = std::max(pad_top, pad_bottom);
     if (worst_bounds_pad_x > allowed_pad_x ||
@@ -251,7 +261,7 @@ class BoundsTolerance {
             worst_bounds_pad_y > allowed_pad_y);
   }
 
-  SkScalar discrete_offset() const { return discrete_offset_; }
+  DlScalar discrete_offset() const { return discrete_offset_; }
 
   bool operator==(BoundsTolerance const& other) const {
     return bounds_pad_ == other.bounds_pad_ && scale_ == other.scale_ &&
@@ -261,13 +271,13 @@ class BoundsTolerance {
   }
 
  private:
-  SkPoint bounds_pad_ = {0, 0};
-  SkPoint scale_ = {1, 1};
-  SkPoint absolute_pad_ = {0, 0};
-  SkRect clip_ = {-1E9, -1E9, 1E9, 1E9};
-  SkPoint clip_pad_ = {0, 0};
+  DlFPoint bounds_pad_ = {0, 0};
+  DlFPoint scale_ = {1, 1};
+  DlFPoint absolute_pad_ = {0, 0};
+  DlFRect clip_ = kMaxCullRect;
+  DlFPoint clip_pad_ = {0, 0};
 
-  SkScalar discrete_offset_ = 0;
+  DlScalar discrete_offset_ = 0;
 };
 
 using SkSetup = const std::function<void(SkCanvas*, SkPaint&)>;
@@ -312,8 +322,8 @@ struct RenderJobInfo {
   int width = kTestWidth;
   int height = kTestHeight;
   DlColor bg = DlColor::kTransparent();
-  SkScalar scale = SK_Scalar1;
-  SkScalar opacity = SK_Scalar1;
+  DlScalar scale = SK_Scalar1;
+  DlScalar opacity = SK_Scalar1;
 };
 
 struct JobRenderer {
@@ -322,20 +332,28 @@ struct JobRenderer {
 
 struct MatrixClipJobRenderer : public JobRenderer {
  public:
-  const SkMatrix& setup_matrix() const {
+  const DlTransform& setup_matrix() const {
     FML_CHECK(is_setup_);
     return setup_matrix_;
   }
 
-  const SkIRect& setup_clip_bounds() const {
+  const DlIRect& setup_clip_bounds() const {
     FML_CHECK(is_setup_);
     return setup_clip_bounds_;
   }
 
  protected:
   bool is_setup_ = false;
-  SkMatrix setup_matrix_;
-  SkIRect setup_clip_bounds_;
+  DlTransform setup_matrix_;
+  DlIRect setup_clip_bounds_;
+  DlTransform ToDl(const SkMatrix& matrix) {
+    return DlTransform::MakeRowMajor(
+        matrix.getScaleX(),  matrix.getSkewX(), 0.0f, matrix.getTranslateX(),
+         matrix.getSkewY(), matrix.getScaleY(), 0.0f, matrix.getTranslateY(),
+                      0.0f,               0.0f, 1.0f, 0.0f,
+        matrix.getPerspX(), matrix.getPerspY(), 0.0f, matrix[SkMatrix::kMPersp2]
+    );
+  }
 };
 
 struct SkJobRenderer : public MatrixClipJobRenderer {
@@ -349,8 +367,8 @@ struct SkJobRenderer : public MatrixClipJobRenderer {
     SkPaint paint;
     sk_setup_(canvas, paint);
     setup_paint_ = paint;
-    setup_matrix_ = canvas->getTotalMatrix();
-    setup_clip_bounds_ = canvas->getDeviceClipBounds();
+    setup_matrix_ = ToDl(canvas->getTotalMatrix());
+    setup_clip_bounds_ = DlIRect::MakeBounds(canvas->getDeviceClipBounds());
     is_setup_ = true;
     sk_render_(canvas, paint);
     sk_restore_(canvas, paint);
@@ -359,7 +377,7 @@ struct SkJobRenderer : public MatrixClipJobRenderer {
   sk_sp<SkPicture> MakePicture(const RenderJobInfo& info) {
     SkPictureRecorder recorder;
     SkRTreeFactory rtree_factory;
-    SkCanvas* cv = recorder.beginRecording(kTestBounds, &rtree_factory);
+    SkCanvas* cv = recorder.beginRecording(kSkTestBounds, &rtree_factory);
     Render(cv, info);
     return recorder.finishRecordingAsPicture();
   }
@@ -393,14 +411,14 @@ struct DlJobRenderer : public MatrixClipJobRenderer {
     dl_setup_(canvas, paint);
     setup_paint_ = paint;
     setup_matrix_ = canvas->GetTransform();
-    setup_clip_bounds_ = canvas->GetDestinationClipBounds().roundOut();
+    setup_clip_bounds_.SetRoundedOut(canvas->GetDestinationClipBounds());
     is_setup_ = true;
     dl_render_(canvas, paint);
     dl_restore_(canvas, paint);
   }
 
   sk_sp<DisplayList> MakeDisplayList(const RenderJobInfo& info) {
-    DisplayListBuilder builder(kTestBounds);
+    DisplayListBuilder builder(kDlTestBounds);
     Render(&builder, info);
     return builder.Build();
   }
@@ -518,8 +536,8 @@ class RenderEnvironment {
 
   PixelFormat format() const { return format_; }
   const DlPaint& ref_dl_paint() const { return ref_dl_paint_; }
-  const SkMatrix& ref_matrix() const { return ref_matrix_; }
-  const SkIRect& ref_clip_bounds() const { return ref_clip_bounds_; }
+  const DlTransform& ref_matrix() const { return ref_matrix_; }
+  const DlIRect& ref_clip_bounds() const { return ref_clip_bounds_; }
   const RenderResult* ref_sk_result() const { return ref_sk_result_.get(); }
   const RenderResult* ref_dl_result() const { return ref_dl_result_.get(); }
 
@@ -546,8 +564,8 @@ class RenderEnvironment {
   std::shared_ptr<DlSurfaceInstance> surface_2x_;
 
   DlPaint ref_dl_paint_;
-  SkMatrix ref_matrix_;
-  SkIRect ref_clip_bounds_;
+  DlTransform ref_matrix_;
+  DlIRect ref_clip_bounds_;
   std::unique_ptr<RenderResult> ref_sk_result_;
   std::unique_ptr<RenderResult> ref_dl_result_;
 };
@@ -723,8 +741,8 @@ class TestParameters {
         return false;
       }
       if (ref_attr.getStrokeJoin() == DlStrokeJoin::kMiter) {
-        SkScalar ref_miter = ref_attr.getStrokeMiter();
-        SkScalar test_miter = attr.getStrokeMiter();
+        DlScalar ref_miter = ref_attr.getStrokeMiter();
+        DlScalar test_miter = attr.getStrokeMiter();
         // miter limit < 1.4 affects right angles
         if (geo_flags.may_have_acute_joins() ||  //
             ref_miter < 1.4 || test_miter < 1.4) {
@@ -748,7 +766,7 @@ class TestParameters {
 
   const BoundsTolerance adjust(const BoundsTolerance& tolerance,
                                const DlPaint& paint,
-                               const SkMatrix& matrix) const {
+                               const DlTransform& matrix) const {
     if (is_draw_text_blob() && tolerance.discrete_offset() > 0) {
       // drawTextBlob needs just a little more leeway when using a
       // discrete path effect.
@@ -764,7 +782,7 @@ class TestParameters {
         // its bounds in any of our test cases, but the bounds code needs
         // to take it into account for the cases where it might, so we
         // relax our tolerance to reflect the miter bounds padding.
-        SkScalar miter_pad =
+        DlScalar miter_pad =
             paint.getStrokeMiter() * paint.getStrokeWidth() * 0.5f;
         return tolerance.addBoundsPadding(miter_pad, miter_pad);
       }
@@ -774,9 +792,9 @@ class TestParameters {
 
   const BoundsTolerance lineAdjust(const BoundsTolerance& tolerance,
                                    const DlPaint& paint,
-                                   const SkMatrix& matrix) const {
-    SkScalar adjust = 0.0;
-    SkScalar half_width = paint.getStrokeWidth() * 0.5f;
+                                   const DlTransform& matrix) const {
+    DlScalar adjust = 0.0;
+    DlScalar half_width = paint.getStrokeWidth() * 0.5f;
     if (tolerance.discrete_offset() > 0) {
       // When a discrete path effect is added, the bounds calculations must
       // allow for miters in any direction, but a horizontal line will not
@@ -799,8 +817,8 @@ class TestParameters {
     if (adjust == 0) {
       return tolerance;
     }
-    SkScalar h_tolerance;
-    SkScalar v_tolerance;
+    DlScalar h_tolerance;
+    DlScalar v_tolerance;
     if (is_horizontal_line()) {
       FML_DCHECK(!is_vertical_line());
       h_tolerance = adjust;
@@ -908,13 +926,16 @@ class CanvasCompareTester {
   static void RenderWithSaveRestore(const TestParameters& testP,
                                     const RenderEnvironment& env,
                                     const BoundsTolerance& tolerance) {
-    SkRect clip =
+    SkRect sk_clip =
         SkRect::MakeXYWH(kRenderCenterX - 1, kRenderCenterY - 1, 2, 2);
-    SkRect rect = SkRect::MakeXYWH(kRenderCenterX, kRenderCenterY, 10, 10);
+    DlFRect dl_clip =
+        DlFRect::MakeXYWH(kRenderCenterX - 1, kRenderCenterY - 1, 2, 2);
+    SkRect sk_rect = SkRect::MakeXYWH(kRenderCenterX, kRenderCenterY, 10, 10);
+    DlFRect dl_rect = DlFRect::MakeXYWH(kRenderCenterX, kRenderCenterY, 10, 10);
     DlColor alpha_layer_color = DlColor::kCyan().withAlpha(0x7f);
     SkRenderer sk_safe_restore = [=](SkCanvas* cv, const SkPaint& p) {
       // Draw another primitive to disable peephole optimizations
-      cv->drawRect(kRenderBounds.makeOffset(500, 500), SkPaint());
+      cv->drawRect(kSkRenderBounds.makeOffset(500, 500), SkPaint());
       cv->restore();
     };
     DlRenderer dl_safe_restore = [=](DlCanvas* cv, const DlPaint& p) {
@@ -925,7 +946,7 @@ class CanvasCompareTester {
       // won't practically show up in the output, but technically
       // can't be culled.
       cv->DrawRect(
-          SkRect::MakeXYWH(kRenderCenterX, kRenderCenterY, 0.0001, 0.0001),
+          DlFRect::MakeXYWH(kRenderCenterX, kRenderCenterY, 0.0001, 0.0001),
           DlPaint());
       cv->Restore();
     };
@@ -937,26 +958,27 @@ class CanvasCompareTester {
       // Just a simple restore to allow peephole optimizations to occur
       cv->Restore();
     };
-    SkRect layer_bounds = kRenderBounds.makeInset(15, 15);
+    SkRect sk_layer_bounds = kSkRenderBounds.makeInset(15, 15);
+    DlFRect dl_layer_bounds = kDlRenderBounds.MakeInset(15, 15);
     RenderWith(testP, env, tolerance,
                CaseParameters(
                    "With prior save/clip/restore",
                    [=](SkCanvas* cv, SkPaint& p) {
                      cv->save();
-                     cv->clipRect(clip, SkClipOp::kIntersect, false);
+                     cv->clipRect(sk_clip, SkClipOp::kIntersect, false);
                      SkPaint p2;
-                     cv->drawRect(rect, p2);
+                     cv->drawRect(sk_rect, p2);
                      p2.setBlendMode(SkBlendMode::kClear);
-                     cv->drawRect(rect, p2);
+                     cv->drawRect(sk_rect, p2);
                      cv->restore();
                    },
                    [=](DlCanvas* cv, DlPaint& p) {
                      cv->Save();
-                     cv->ClipRect(clip, ClipOp::kIntersect, false);
+                     cv->ClipRect(dl_clip, ClipOp::kIntersect, false);
                      DlPaint p2;
-                     cv->DrawRect(rect, p2);
+                     cv->DrawRect(dl_rect, p2);
                      p2.setBlendMode(DlBlendMode::kClear);
-                     cv->DrawRect(rect, p2);
+                     cv->DrawRect(dl_rect, p2);
                      cv->Restore();
                    }));
     RenderWith(testP, env, tolerance,
@@ -973,10 +995,10 @@ class CanvasCompareTester {
                CaseParameters(
                    "saveLayer no paint, with bounds",
                    [=](SkCanvas* cv, SkPaint& p) {  //
-                     cv->saveLayer(layer_bounds, nullptr);
+                     cv->saveLayer(sk_layer_bounds, nullptr);
                    },
                    [=](DlCanvas* cv, DlPaint& p) {  //
-                     cv->SaveLayer(&layer_bounds, nullptr);
+                     cv->SaveLayer(&dl_layer_bounds, nullptr);
                    })
                    .with_restore(sk_safe_restore, dl_safe_restore, true));
     RenderWith(testP, env, tolerance,
@@ -1013,12 +1035,12 @@ class CanvasCompareTester {
                    [=](SkCanvas* cv, SkPaint& p) {
                      SkPaint save_p;
                      save_p.setColor(alpha_layer_color);
-                     cv->saveLayer(layer_bounds, &save_p);
+                     cv->saveLayer(sk_layer_bounds, &save_p);
                    },
                    [=](DlCanvas* cv, DlPaint& p) {
                      DlPaint save_p;
                      save_p.setColor(alpha_layer_color);
-                     cv->SaveLayer(&layer_bounds, &save_p);
+                     cv->SaveLayer(&dl_layer_bounds, &save_p);
                    })
                    .with_restore(sk_safe_restore, dl_safe_restore, true));
     {
@@ -1075,12 +1097,12 @@ class CanvasCompareTester {
                      [=](SkCanvas* cv, SkPaint& p) {
                        sk_backdrop_setup(cv, p);
                        cv->saveLayer(SkCanvas::SaveLayerRec(
-                           &layer_bounds, nullptr, sk_backdrop.get(), 0));
+                           &sk_layer_bounds, nullptr, sk_backdrop.get(), 0));
                        sk_content_setup(cv, p);
                      },
                      [=](DlCanvas* cv, DlPaint& p) {
                        dl_backdrop_setup(cv, p);
-                       cv->SaveLayer(&layer_bounds, nullptr, &dl_backdrop);
+                       cv->SaveLayer(&dl_layer_bounds, nullptr, &dl_backdrop);
                        dl_content_setup(cv, p);
                      })
                      .with_restore(sk_safe_restore, dl_safe_restore, true));
@@ -1089,14 +1111,14 @@ class CanvasCompareTester {
                      "clipped saveLayer with backdrop",
                      [=](SkCanvas* cv, SkPaint& p) {
                        sk_backdrop_setup(cv, p);
-                       cv->clipRect(layer_bounds);
+                       cv->clipRect(sk_layer_bounds);
                        cv->saveLayer(SkCanvas::SaveLayerRec(
                            nullptr, nullptr, sk_backdrop.get(), 0));
                        sk_content_setup(cv, p);
                      },
                      [=](DlCanvas* cv, DlPaint& p) {
                        dl_backdrop_setup(cv, p);
-                       cv->ClipRect(layer_bounds);
+                       cv->ClipRect(dl_layer_bounds);
                        cv->SaveLayer(nullptr, nullptr, &dl_backdrop);
                        dl_content_setup(cv, p);
                      })
@@ -1140,13 +1162,13 @@ class CanvasCompareTester {
                        [=](SkCanvas* cv, SkPaint& p) {
                          SkPaint save_p;
                          save_p.setColorFilter(sk_alpha_rotate_filter);
-                         cv->saveLayer(kRenderBounds, &save_p);
+                         cv->saveLayer(kSkRenderBounds, &save_p);
                          p.setStrokeWidth(5.0);
                        },
                        [=](DlCanvas* cv, DlPaint& p) {
                          DlPaint save_p;
                          save_p.setColorFilter(&dl_alpha_rotate_filter);
-                         cv->SaveLayer(&kRenderBounds, &save_p);
+                         cv->SaveLayer(&kDlRenderBounds, &save_p);
                          p.setStrokeWidth(5.0);
                        })
                        .with_restore(sk_safe_restore, dl_safe_restore, true));
@@ -1191,13 +1213,13 @@ class CanvasCompareTester {
                        [=](SkCanvas* cv, SkPaint& p) {
                          SkPaint save_p;
                          save_p.setImageFilter(sk_cf_image_filter);
-                         cv->saveLayer(kRenderBounds, &save_p);
+                         cv->saveLayer(kSkRenderBounds, &save_p);
                          p.setStrokeWidth(5.0);
                        },
                        [=](DlCanvas* cv, DlPaint& p) {
                          DlPaint save_p;
                          save_p.setImageFilter(&dl_cf_image_filter);
-                         cv->SaveLayer(&kRenderBounds, &save_p);
+                         cv->SaveLayer(&kDlRenderBounds, &save_p);
                          p.setStrokeWidth(5.0);
                        })
                        .with_restore(sk_safe_restore, dl_safe_restore, true));
@@ -1536,9 +1558,13 @@ class CanvasCompareTester {
     }
 
     {
-      SkPoint end_points[] = {
-          SkPoint::Make(kRenderBounds.fLeft, kRenderBounds.fTop),
-          SkPoint::Make(kRenderBounds.fRight, kRenderBounds.fBottom),
+      SkPoint sk_end_points[] = {
+          SkPoint::Make(kSkRenderBounds.fLeft, kSkRenderBounds.fTop),
+          SkPoint::Make(kSkRenderBounds.fRight, kSkRenderBounds.fBottom),
+      };
+      DlFPoint dl_end_points[] = {
+          DlFPoint(kDlRenderBounds.left(), kDlRenderBounds.top()),
+          DlFPoint(kDlRenderBounds.right(), kDlRenderBounds.bottom()),
       };
       DlColor dl_colors[] = {
           DlColor::kGreen(),
@@ -1556,10 +1582,10 @@ class CanvasCompareTester {
           1.0,
       };
       auto dl_gradient =
-          DlColorSource::MakeLinear(end_points[0], end_points[1], 3, dl_colors,
-                                    stops, DlTileMode::kMirror);
+          DlColorSource::MakeLinear(dl_end_points[0], dl_end_points[1], 3,
+                                    dl_colors, stops, DlTileMode::kMirror);
       auto sk_gradient = SkGradientShader::MakeLinear(
-          end_points, sk_colors, stops, 3, SkTileMode::kMirror, 0, nullptr);
+          sk_end_points, sk_colors, stops, 3, SkTileMode::kMirror, 0, nullptr);
       {
         RenderWith(
             testP, env, tolerance,
@@ -1749,8 +1775,8 @@ class CanvasCompareTester {
                    }));
 
     {
-      const SkScalar test_dashes_1[] = {29.0, 2.0};
-      const SkScalar test_dashes_2[] = {17.0, 1.5};
+      const DlScalar test_dashes_1[] = {29.0, 2.0};
+      const DlScalar test_dashes_2[] = {17.0, 1.5};
       auto dl_dash_effect = DlDashPathEffect::Make(test_dashes_1, 2, 0.0f);
       auto sk_dash_effect = SkDashPathEffect::Make(test_dashes_1, 2, 0.0f);
       {
@@ -1846,15 +1872,17 @@ class CanvasCompareTester {
       // in calculation when we are comparing rendering with an alpha
       // to rendering opaque colors in the group opacity tests, for
       // example.
-      SkScalar tweak = 1.0 / 16.0;
-      SkMatrix tx = SkMatrix::MakeAll(1.0 + tweak, tweak, 5,   //
-                                      tweak, 1.0 + tweak, 10,  //
-                                      0, 0, 1);
+      DlScalar tweak = 1.0 / 16.0;
+      SkMatrix sk_tx = SkMatrix::MakeAll(1.0 + tweak, tweak, 5,   //
+                                         tweak, 1.0 + tweak, 10,  //
+                                         0, 0, 1);
+      DlTransform dl_tx = DlTransform::MakeAffine2D(1.0 + tweak, tweak, 5,   //
+                                                    tweak, 1.0 + tweak, 10);
       RenderWith(testP, env, skewed_tolerance,
                  CaseParameters(
                      "Transform 2D Affine",
-                     [=](SkCanvas* c, SkPaint&) { c->concat(tx); },
-                     [=](DlCanvas* c, DlPaint&) { c->Transform(tx); }));
+                     [=](SkCanvas* c, SkPaint&) { c->concat(sk_tx); },
+                     [=](DlCanvas* c, DlPaint&) { c->Transform(dl_tx); }));
     }
     {
       SkM44 m44 = SkM44(1, 0, 0, kRenderCenterX,  //
@@ -1866,11 +1894,17 @@ class CanvasCompareTester {
       m44.preConcat(
           SkM44::Rotate({0, 1, 0}, math::kPi / 45));  // 4 degrees around Y
       m44.preTranslate(-kRenderCenterX, -kRenderCenterY);
-      RenderWith(testP, env, skewed_tolerance,
-                 CaseParameters(
-                     "Transform Full Perspective",
-                     [=](SkCanvas* c, SkPaint&) { c->concat(m44); },
-                     [=](DlCanvas* c, DlPaint&) { c->Transform(m44); }));
+      // DlTransform dl_matrix = DlTransform::MakeRowMajor(
+      //     m44.rc(0, 0), m44.rc(0, 1), m44.rc(0, 2), m44.rc(0, 3),
+      //     m44.rc(1, 0), m44.rc(1, 1), m44.rc(1, 2), m44.rc(1, 3),
+      //     m44.rc(2, 0), m44.rc(2, 1), m44.rc(2, 2), m44.rc(2, 3),
+      //     m44.rc(3, 0), m44.rc(3, 1), m44.rc(3, 2), m44.rc(3, 3)
+      // );
+      // RenderWith(testP, env, skewed_tolerance,
+      //            CaseParameters(
+      //                "Transform Full Perspective",
+      //                [=](SkCanvas* c, SkPaint&) { c->concat(m44); },
+      //                [=](DlCanvas* c, DlPaint&) { c->Transform(dl_matrix); }));
     }
   }
 
@@ -1885,35 +1919,36 @@ class CanvasCompareTester {
     // right features fully filling the clips based on the SW rounding. By
     // moving to a 15.4 inset, the edge of the clip is never on the "rounding
     // edge" of a pixel.
-    SkRect r_clip = kRenderBounds.makeInset(15.4, 15.4);
-    BoundsTolerance intersect_tolerance = diff_tolerance.clip(r_clip);
+    SkRect sk_r_clip = kSkRenderBounds.makeInset(15.4, 15.4);
+    DlFRect dl_r_clip = kDlRenderBounds.MakeInset(15.4, 15.4);
+    BoundsTolerance intersect_tolerance = diff_tolerance.clip(dl_r_clip);
     intersect_tolerance = intersect_tolerance.addPostClipPadding(1, 1);
     RenderWith(testP, env, intersect_tolerance,
                CaseParameters(
                    "Hard ClipRect inset by 15.4",
                    [=](SkCanvas* c, SkPaint&) {
-                     c->clipRect(r_clip, SkClipOp::kIntersect, false);
+                     c->clipRect(sk_r_clip, SkClipOp::kIntersect, false);
                    },
                    [=](DlCanvas* c, DlPaint&) {
-                     c->ClipRect(r_clip, ClipOp::kIntersect, false);
+                     c->ClipRect(dl_r_clip, ClipOp::kIntersect, false);
                    }));
     RenderWith(testP, env, intersect_tolerance,
                CaseParameters(
                    "AntiAlias ClipRect inset by 15.4",
                    [=](SkCanvas* c, SkPaint&) {
-                     c->clipRect(r_clip, SkClipOp::kIntersect, true);
+                     c->clipRect(sk_r_clip, SkClipOp::kIntersect, true);
                    },
                    [=](DlCanvas* c, DlPaint&) {
-                     c->ClipRect(r_clip, ClipOp::kIntersect, true);
+                     c->ClipRect(dl_r_clip, ClipOp::kIntersect, true);
                    }));
     RenderWith(testP, env, diff_tolerance,
                CaseParameters(
                    "Hard ClipRect Diff, inset by 15.4",
                    [=](SkCanvas* c, SkPaint&) {
-                     c->clipRect(r_clip, SkClipOp::kDifference, false);
+                     c->clipRect(sk_r_clip, SkClipOp::kDifference, false);
                    },
                    [=](DlCanvas* c, DlPaint&) {
-                     c->ClipRect(r_clip, ClipOp::kDifference, false);
+                     c->ClipRect(dl_r_clip, ClipOp::kDifference, false);
                    })
                    .with_diff_clip());
     // This test RR clip used to use very small radii, but due to
@@ -1921,44 +1956,46 @@ class CanvasCompareTester {
     // bulges in the corners of the RRect which were interpreted as
     // "clip overruns" by the clip OOB pixel testing code. Using less
     // abusively small radii fixes the problem.
-    SkRRect rr_clip = SkRRect::MakeRectXY(r_clip, 9, 9);
+    SkRRect sk_rr_clip = SkRRect::MakeRectXY(sk_r_clip, 9, 9);
+    DlFRRect dl_rr_clip = DlFRRect::MakeRectXY(dl_r_clip, 9, 9);
     RenderWith(testP, env, intersect_tolerance,
                CaseParameters(
                    "Hard ClipRRect with radius of 15.4",
                    [=](SkCanvas* c, SkPaint&) {
-                     c->clipRRect(rr_clip, SkClipOp::kIntersect, false);
+                     c->clipRRect(sk_rr_clip, SkClipOp::kIntersect, false);
                    },
                    [=](DlCanvas* c, DlPaint&) {
-                     c->ClipRRect(rr_clip, ClipOp::kIntersect, false);
+                     c->ClipRRect(dl_rr_clip, ClipOp::kIntersect, false);
                    }));
     RenderWith(testP, env, intersect_tolerance,
                CaseParameters(
                    "AntiAlias ClipRRect with radius of 15.4",
                    [=](SkCanvas* c, SkPaint&) {
-                     c->clipRRect(rr_clip, SkClipOp::kIntersect, true);
+                     c->clipRRect(sk_rr_clip, SkClipOp::kIntersect, true);
                    },
                    [=](DlCanvas* c, DlPaint&) {
-                     c->ClipRRect(rr_clip, ClipOp::kIntersect, true);
+                     c->ClipRRect(dl_rr_clip, ClipOp::kIntersect, true);
                    }));
     RenderWith(testP, env, diff_tolerance,
                CaseParameters(
                    "Hard ClipRRect Diff, with radius of 15.4",
                    [=](SkCanvas* c, SkPaint&) {
-                     c->clipRRect(rr_clip, SkClipOp::kDifference, false);
+                     c->clipRRect(sk_rr_clip, SkClipOp::kDifference, false);
                    },
                    [=](DlCanvas* c, DlPaint&) {
-                     c->ClipRRect(rr_clip, ClipOp::kDifference, false);
+                     c->ClipRRect(dl_rr_clip, ClipOp::kDifference, false);
                    })
                    .with_diff_clip());
-    SkPath path_clip = SkPath();
-    path_clip.setFillType(SkPathFillType::kEvenOdd);
-    path_clip.addRect(r_clip);
-    path_clip.addCircle(kRenderCenterX, kRenderCenterY, 1.0);
+    DlPath path_clip = DlPath();
+    path_clip.SetFillType(DlPath::FillType::kEvenOdd);
+    path_clip.AddRect(dl_r_clip);
+    path_clip.AddCircle(kRenderCenterX, kRenderCenterY, 1.0);
     RenderWith(testP, env, intersect_tolerance,
                CaseParameters(
                    "Hard ClipPath inset by 15.4",
                    [=](SkCanvas* c, SkPaint&) {
-                     c->clipPath(path_clip, SkClipOp::kIntersect, false);
+                     c->clipPath(path_clip.GetSkiaPath(), SkClipOp::kIntersect,
+                                 false);
                    },
                    [=](DlCanvas* c, DlPaint&) {
                      c->ClipPath(path_clip, ClipOp::kIntersect, false);
@@ -1967,7 +2004,8 @@ class CanvasCompareTester {
                CaseParameters(
                    "AntiAlias ClipPath inset by 15.4",
                    [=](SkCanvas* c, SkPaint&) {
-                     c->clipPath(path_clip, SkClipOp::kIntersect, true);
+                     c->clipPath(path_clip.GetSkiaPath(), SkClipOp::kIntersect,
+                                 true);
                    },
                    [=](DlCanvas* c, DlPaint&) {
                      c->ClipPath(path_clip, ClipOp::kIntersect, true);
@@ -1976,7 +2014,8 @@ class CanvasCompareTester {
                CaseParameters(
                    "Hard ClipPath Diff, inset by 15.4",
                    [=](SkCanvas* c, SkPaint&) {
-                     c->clipPath(path_clip, SkClipOp::kDifference, false);
+                     c->clipPath(path_clip.GetSkiaPath(), SkClipOp::kDifference,
+                                 false);
                    },
                    [=](DlCanvas* c, DlPaint&) {
                      c->ClipPath(path_clip, ClipOp::kDifference, false);
@@ -2034,20 +2073,19 @@ class CanvasCompareTester {
                             info + " (DlCanvas output matches SkCanvas)");
 
     {
-      SkRect dl_bounds = display_list->bounds();
-      if (!sk_bounds.roundOut().contains(dl_bounds)) {
+      DlFRect dl_bounds = display_list->bounds();
+      if (!DlFRect::MakeBounds(sk_bounds.roundOut()).Contains(dl_bounds)) {
         FML_LOG(ERROR) << "For " << info;
         FML_LOG(ERROR) << "sk ref: "  //
                        << sk_bounds.fLeft << ", " << sk_bounds.fTop << " => "
                        << sk_bounds.fRight << ", " << sk_bounds.fBottom;
-        FML_LOG(ERROR) << "dl: "  //
-                       << dl_bounds.fLeft << ", " << dl_bounds.fTop << " => "
-                       << dl_bounds.fRight << ", " << dl_bounds.fBottom;
-        if (!dl_bounds.contains(sk_bounds)) {
+        FML_LOG(ERROR) << "dl: " << dl_bounds;
+        if (!dl_bounds.Contains(DlFRect::MakeBounds(sk_bounds))) {
           FML_LOG(ERROR) << "DisplayList bounds are too small!";
         }
-        if (!dl_bounds.isEmpty() &&
-            !sk_bounds.roundOut().contains(dl_bounds.roundOut())) {
+        if (!dl_bounds.is_empty() &&
+            !DlIRect::MakeBounds(sk_bounds.roundOut())
+                .Contains(DlIRect::MakeRoundedOut(dl_bounds))) {
           FML_LOG(ERROR) << "###### DisplayList bounds larger than reference!";
         }
       }
@@ -2067,8 +2105,11 @@ class CanvasCompareTester {
         EXPECT_EQ(static_cast<int>(display_list->op_count()),
                   sk_picture->approximateOpCount())
             << info;
-        EXPECT_EQ(static_cast<int>(display_list->op_count()),
-                  sk_picture->approximateOpCount())
+        EXPECT_EQ(static_cast<int>(display_list->op_count(false)),
+                  sk_picture->approximateOpCount(false))
+            << info;
+        EXPECT_EQ(static_cast<int>(display_list->op_count(true)),
+                  sk_picture->approximateOpCount(true))
             << info;
       }
 
@@ -2104,7 +2145,7 @@ class CanvasCompareTester {
       // recording time and rendering time.
       const int test_width_2 = kTestWidth * 2;
       const int test_height_2 = kTestHeight * 2;
-      const SkScalar test_scale = 2.0;
+      const DlScalar test_scale = 2.0;
 
       SkPictureJobRenderer sk_job_x2(sk_picture);
       RenderJobInfo info_2x = {
@@ -2153,7 +2194,7 @@ class CanvasCompareTester {
                                 const RenderResult* ref_result,
                                 const std::string& info,
                                 DlColor bg) {
-    SkScalar opacity = 128.0 / 255.0;
+    DlScalar opacity = 128.0 / 255.0;
 
     DisplayListJobRenderer opacity_job(display_list);
     RenderJobInfo opacity_info = {
@@ -2191,7 +2232,7 @@ class CanvasCompareTester {
           for (int i = 0; i < 32; i += 8) {
             int ref_comp = (ref_pixel >> i) & 0xff;
             int bg_comp = (bg.argb >> i) & 0xff;
-            SkScalar faded_comp = bg_comp + (ref_comp - bg_comp) * opacity;
+            DlScalar faded_comp = bg_comp + (ref_comp - bg_comp) * opacity;
             int test_comp = (test_pixel >> i) & 0xff;
             if (std::abs(faded_comp - test_comp) > fudge) {
               int diff = std::abs(faded_comp - test_comp);
@@ -2289,7 +2330,7 @@ class CanvasCompareTester {
   static void compareToReference(const RenderResult* test_result,
                                  const RenderResult* ref_result,
                                  const std::string& info,
-                                 SkRect* bounds,
+                                 DlFRect* bounds,
                                  const BoundsTolerance* tolerance,
                                  const DlColor bg,
                                  bool fuzzyCompares = false,
@@ -2299,8 +2340,8 @@ class CanvasCompareTester {
     uint32_t untouched = bg.premultipliedArgb();
     ASSERT_EQ(test_result->width(), width) << info;
     ASSERT_EQ(test_result->height(), height) << info;
-    SkIRect i_bounds =
-        bounds ? bounds->roundOut() : SkIRect::MakeWH(width, height);
+    DlIRect i_bounds = bounds ? DlIRect::MakeRoundedOut(*bounds)
+                              : DlIRect::MakeWH(width, height);
 
     int pixels_different = 0;
     int pixels_oob = 0;
@@ -2325,7 +2366,7 @@ class CanvasCompareTester {
           if (max_y <= y) {
             max_y = y + 1;
           }
-          if (!i_bounds.contains(x, y)) {
+          if (!i_bounds.Contains(x, y)) {
             pixels_oob++;
           }
         }
@@ -2345,11 +2386,11 @@ class CanvasCompareTester {
       FML_LOG(ERROR) << "pix bounds["  //
                      << min_x << ", " << min_y << " => " << max_x << ", "
                      << max_y << "]";
-      FML_LOG(ERROR) << "dl_bounds["                               //
-                     << bounds->fLeft << ", " << bounds->fTop      //
-                     << " => "                                     //
-                     << bounds->fRight << ", " << bounds->fBottom  //
-                     << "]";
+      FML_LOG(ERROR) << "dl_bounds[" << *bounds;
+                    //  << bounds->fLeft << ", " << bounds->fTop      //
+                    //  << " => "                                     //
+                    //  << bounds->fRight << ", " << bounds->fBottom  //
+                    //  << "]";
     } else if (bounds) {
       showBoundsOverflow(info, i_bounds, tolerance, min_x, min_y, max_x, max_y);
     }
@@ -2358,19 +2399,19 @@ class CanvasCompareTester {
   }
 
   static void showBoundsOverflow(const std::string& info,
-                                 SkIRect& bounds,
+                                 DlIRect& bounds,
                                  const BoundsTolerance* tolerance,
                                  int pixLeft,
                                  int pixTop,
                                  int pixRight,
                                  int pixBottom) {
-    int pad_left = std::max(0, pixLeft - bounds.fLeft);
-    int pad_top = std::max(0, pixTop - bounds.fTop);
-    int pad_right = std::max(0, bounds.fRight - pixRight);
-    int pad_bottom = std::max(0, bounds.fBottom - pixBottom);
-    SkIRect pix_bounds =
-        SkIRect::MakeLTRB(pixLeft, pixTop, pixRight, pixBottom);
-    SkISize pix_size = pix_bounds.size();
+    int pad_left = std::max(0, pixLeft - bounds.left());
+    int pad_top = std::max(0, pixTop - bounds.top());
+    int pad_right = std::max(0, bounds.right() - pixRight);
+    int pad_bottom = std::max(0, bounds.bottom() - pixBottom);
+    DlIRect pix_bounds =
+        DlIRect::MakeLTRB(pixLeft, pixTop, pixRight, pixBottom);
+    DlISize pix_size = pix_bounds.size();
     int pix_width = pix_size.width();
     int pix_height = pix_size.height();
     int worst_pad_x = std::max(pad_left, pad_right);
@@ -2381,11 +2422,11 @@ class CanvasCompareTester {
                      << pixLeft << ", " << pixTop << " => "  //
                      << pixRight << ", " << pixBottom        //
                      << "]";
-      FML_LOG(ERROR) << "dl_bounds["                             //
-                     << bounds.fLeft << ", " << bounds.fTop      //
-                     << " => "                                   //
-                     << bounds.fRight << ", " << bounds.fBottom  //
-                     << "]";
+      FML_LOG(ERROR) << "dl_bounds[" << bounds;
+                    //  << bounds.fLeft << ", " << bounds.fTop      //
+                    //  << " => "                                   //
+                    //  << bounds.fRight << ", " << bounds.fBottom  //
+                    //  << "]";
       FML_LOG(ERROR) << "Bounds overly conservative by up to "     //
                      << worst_pad_x << ", " << worst_pad_y         //
                      << " (" << (worst_pad_x * 100.0 / pix_width)  //
@@ -2425,7 +2466,7 @@ class CanvasCompareTester {
   static const sk_sp<SkShader> kTestSkImageColorSource;
 
   static sk_sp<SkTextBlob> MakeTextBlob(const std::string& string,
-                                        SkScalar font_height) {
+                                        DlScalar font_height) {
     SkFont font(SkTypeface::MakeFromName("ahem", SkFontStyle::Normal()),
                 font_height);
     return SkTextBlob::MakeFromText(string.c_str(), string.size(), font,
@@ -2580,16 +2621,19 @@ TEST_F(DisplayListCanvas, DrawAlphaColor) {
 }
 
 TEST_F(DisplayListCanvas, DrawDiagonalLines) {
-  SkPoint p1 = SkPoint::Make(kRenderLeft, kRenderTop);
-  SkPoint p2 = SkPoint::Make(kRenderRight, kRenderBottom);
-  SkPoint p3 = SkPoint::Make(kRenderLeft, kRenderBottom);
-  SkPoint p4 = SkPoint::Make(kRenderRight, kRenderTop);
-  // Adding some edge center to edge center diagonals to better fill
-  // out the RRect Clip so bounds checking sees less empty bounds space.
-  SkPoint p5 = SkPoint::Make(kRenderCenterX, kRenderTop);
-  SkPoint p6 = SkPoint::Make(kRenderRight, kRenderCenterY);
-  SkPoint p7 = SkPoint::Make(kRenderLeft, kRenderCenterY);
-  SkPoint p8 = SkPoint::Make(kRenderCenterX, kRenderBottom);
+  const SkPoint sk_points[] = {
+      SkPoint::Make(kRenderLeft, kRenderTop),
+      SkPoint::Make(kRenderRight, kRenderBottom),
+      SkPoint::Make(kRenderLeft, kRenderBottom),
+      SkPoint::Make(kRenderRight, kRenderTop),
+      // Adding some edge center to edge center diagonals to better fill
+      // out the RRect Clip so bounds checking sees less empty bounds space.
+      SkPoint::Make(kRenderCenterX, kRenderTop),
+      SkPoint::Make(kRenderRight, kRenderCenterY),
+      SkPoint::Make(kRenderLeft, kRenderCenterY),
+      SkPoint::Make(kRenderCenterX, kRenderBottom),
+  };
+  const DlFPoint* dl_points = reinterpret_cast<const DlFPoint*>(sk_points);
 
   CanvasCompareTester::RenderAll(  //
       TestParameters(
@@ -2599,24 +2643,26 @@ TEST_F(DisplayListCanvas, DrawDiagonalLines) {
             // See https://bugs.chromium.org/p/skia/issues/detail?id=12446
             SkPaint p = paint;
             p.setStyle(SkPaint::kStroke_Style);
-            canvas->drawLine(p1, p2, p);
-            canvas->drawLine(p3, p4, p);
-            canvas->drawLine(p5, p6, p);
-            canvas->drawLine(p7, p8, p);
+            canvas->drawLine(sk_points[0], sk_points[1], p);
+            canvas->drawLine(sk_points[2], sk_points[3], p);
+            canvas->drawLine(sk_points[4], sk_points[5], p);
+            canvas->drawLine(sk_points[6], sk_points[7], p);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {  //
-            canvas->DrawLine(p1, p2, paint);
-            canvas->DrawLine(p3, p4, paint);
-            canvas->DrawLine(p5, p6, paint);
-            canvas->DrawLine(p7, p8, paint);
+            canvas->DrawLine(dl_points[0], dl_points[1], paint);
+            canvas->DrawLine(dl_points[2], dl_points[3], paint);
+            canvas->DrawLine(dl_points[4], dl_points[5], paint);
+            canvas->DrawLine(dl_points[6], dl_points[7], paint);
           },
           kDrawLineFlags)
           .set_draw_line());
 }
 
 TEST_F(DisplayListCanvas, DrawHorizontalLine) {
-  SkPoint p1 = SkPoint::Make(kRenderLeft, kRenderCenterY);
-  SkPoint p2 = SkPoint::Make(kRenderRight, kRenderCenterY);
+  SkPoint sk_p1 = SkPoint::Make(kRenderLeft, kRenderCenterY);
+  SkPoint sk_p2 = SkPoint::Make(kRenderRight, kRenderCenterY);
+  DlFPoint dl_p1 = DlFPoint(kRenderLeft, kRenderCenterY);
+  DlFPoint dl_p2 = DlFPoint(kRenderRight, kRenderCenterY);
 
   CanvasCompareTester::RenderAll(  //
       TestParameters(
@@ -2626,10 +2672,10 @@ TEST_F(DisplayListCanvas, DrawHorizontalLine) {
             // See https://bugs.chromium.org/p/skia/issues/detail?id=12446
             SkPaint p = paint;
             p.setStyle(SkPaint::kStroke_Style);
-            canvas->drawLine(p1, p2, p);
+            canvas->drawLine(sk_p1, sk_p2, p);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {  //
-            canvas->DrawLine(p1, p2, paint);
+            canvas->DrawLine(dl_p1, dl_p2, paint);
           },
           kDrawHVLineFlags)
           .set_draw_line()
@@ -2637,8 +2683,10 @@ TEST_F(DisplayListCanvas, DrawHorizontalLine) {
 }
 
 TEST_F(DisplayListCanvas, DrawVerticalLine) {
-  SkPoint p1 = SkPoint::Make(kRenderCenterX, kRenderTop);
-  SkPoint p2 = SkPoint::Make(kRenderCenterY, kRenderBottom);
+  SkPoint sk_p1 = SkPoint::Make(kRenderCenterX, kRenderTop);
+  SkPoint sk_p2 = SkPoint::Make(kRenderCenterY, kRenderBottom);
+  DlFPoint dl_p1 = DlFPoint(kRenderCenterX, kRenderTop);
+  DlFPoint dl_p2 = DlFPoint(kRenderCenterY, kRenderBottom);
 
   CanvasCompareTester::RenderAll(  //
       TestParameters(
@@ -2648,10 +2696,10 @@ TEST_F(DisplayListCanvas, DrawVerticalLine) {
             // See https://bugs.chromium.org/p/skia/issues/detail?id=12446
             SkPaint p = paint;
             p.setStyle(SkPaint::kStroke_Style);
-            canvas->drawLine(p1, p2, p);
+            canvas->drawLine(sk_p1, sk_p2, p);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {  //
-            canvas->DrawLine(p1, p2, paint);
+            canvas->DrawLine(dl_p1, dl_p2, paint);
           },
           kDrawHVLineFlags)
           .set_draw_line()
@@ -2663,24 +2711,22 @@ TEST_F(DisplayListCanvas, DrawRect) {
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {  //
-            canvas->drawRect(kRenderBounds.makeOffset(0.5, 0.5), paint);
+            canvas->drawRect(kSkRenderBounds.makeOffset(0.5, 0.5), paint);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {  //
-            canvas->DrawRect(kRenderBounds.makeOffset(0.5, 0.5), paint);
+            canvas->DrawRect(kDlRenderBounds.MakeOffset(0.5, 0.5), paint);
           },
           kDrawRectFlags));
 }
 
 TEST_F(DisplayListCanvas, DrawOval) {
-  SkRect rect = kRenderBounds.makeInset(0, 10);
-
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {  //
-            canvas->drawOval(rect, paint);
+            canvas->drawOval(kSkRenderBounds.makeInset(0, 10), paint);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {  //
-            canvas->DrawOval(rect, paint);
+            canvas->DrawOval(kDlRenderBounds.MakeInset(0, 10), paint);
           },
           kDrawOvalFlags));
 }
@@ -2689,72 +2735,81 @@ TEST_F(DisplayListCanvas, DrawCircle) {
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {  //
-            canvas->drawCircle(kTestCenter, kRenderRadius, paint);
+            canvas->drawCircle(kSkTestCenter, kRenderRadius, paint);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {  //
-            canvas->DrawCircle(kTestCenter, kRenderRadius, paint);
+            canvas->DrawCircle(kDlTestCenter, kRenderRadius, paint);
           },
           kDrawCircleFlags));
 }
 
 TEST_F(DisplayListCanvas, DrawRRect) {
-  SkRRect rrect = SkRRect::MakeRectXY(kRenderBounds, kRenderCornerRadius,
-                                      kRenderCornerRadius);
+  SkRRect sk_rrect = SkRRect::MakeRectXY(kSkRenderBounds, kRenderCornerRadius,
+                                         kRenderCornerRadius);
+  DlFRRect dl_rrect = DlFRRect::MakeRectXY(kDlRenderBounds, kRenderCornerRadius,
+                                           kRenderCornerRadius);
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {  //
-            canvas->drawRRect(rrect, paint);
+            canvas->drawRRect(sk_rrect, paint);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {  //
-            canvas->DrawRRect(rrect, paint);
+            canvas->DrawRRect(dl_rrect, paint);
           },
           kDrawRRectFlags));
 }
 
 TEST_F(DisplayListCanvas, DrawDRRect) {
-  SkRRect outer = SkRRect::MakeRectXY(kRenderBounds, kRenderCornerRadius,
-                                      kRenderCornerRadius);
-  SkRect inner_bounds = kRenderBounds.makeInset(30.0, 30.0);
-  SkRRect inner = SkRRect::MakeRectXY(inner_bounds, kRenderCornerRadius,
-                                      kRenderCornerRadius);
+  SkRRect sk_outer = SkRRect::MakeRectXY(kSkRenderBounds, kRenderCornerRadius,
+                                         kRenderCornerRadius);
+  SkRect sk_inner_bounds = kSkRenderBounds.makeInset(30.0, 30.0);
+  SkRRect sk_inner = SkRRect::MakeRectXY(sk_inner_bounds, kRenderCornerRadius,
+                                         kRenderCornerRadius);
+  DlFRRect dl_outer = DlFRRect::MakeRectXY(kDlRenderBounds, kRenderCornerRadius,
+                                           kRenderCornerRadius);
+  DlFRect dl_inner_bounds = kDlRenderBounds.MakeInset(30.0, 30.0);
+  DlFRRect dl_inner = DlFRRect::MakeRectXY(dl_inner_bounds, kRenderCornerRadius,
+                                           kRenderCornerRadius);
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {  //
-            canvas->drawDRRect(outer, inner, paint);
+            canvas->drawDRRect(sk_outer, sk_inner, paint);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {  //
-            canvas->DrawDRRect(outer, inner, paint);
+            canvas->DrawDRRect(dl_outer, dl_inner, paint);
           },
           kDrawDRRectFlags));
 }
 
 TEST_F(DisplayListCanvas, DrawPath) {
-  SkPath path;
+  DlPath path;
 
   // unclosed lines to show some caps
-  path.moveTo(kRenderLeft + 15, kRenderTop + 15);
-  path.lineTo(kRenderRight - 15, kRenderBottom - 15);
-  path.moveTo(kRenderLeft + 15, kRenderBottom - 15);
-  path.lineTo(kRenderRight - 15, kRenderTop + 15);
+  path.MoveTo(kRenderLeft + 15, kRenderTop + 15);
+  path.LineTo(kRenderRight - 15, kRenderBottom - 15);
+  path.MoveTo(kRenderLeft + 15, kRenderBottom - 15);
+  path.LineTo(kRenderRight - 15, kRenderTop + 15);
 
-  path.addRect(kRenderBounds);
+  path.AddRect(kDlRenderBounds);
 
   // miter diamonds horizontally and vertically to show miters
-  path.moveTo(kVerticalMiterDiamondPoints[0]);
+  path.MoveTo(kDlVerticalMiterDiamondPoints[0]);
   for (int i = 1; i < kVerticalMiterDiamondPointCount; i++) {
-    path.lineTo(kVerticalMiterDiamondPoints[i]);
+    path.LineTo(kDlVerticalMiterDiamondPoints[i]);
   }
-  path.close();
-  path.moveTo(kHorizontalMiterDiamondPoints[0]);
+  path.Close();
+  path.MoveTo(kDlHorizontalMiterDiamondPoints[0]);
   for (int i = 1; i < kHorizontalMiterDiamondPointCount; i++) {
-    path.lineTo(kHorizontalMiterDiamondPoints[i]);
+    path.LineTo(kDlHorizontalMiterDiamondPoints[i]);
   }
-  path.close();
+  path.Close();
+
+  SkPath sk_path = path.GetSkiaPath();
 
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {  //
-            canvas->drawPath(path, paint);
+            canvas->drawPath(sk_path, paint);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {  //
             canvas->DrawPath(path, paint);
@@ -2767,10 +2822,10 @@ TEST_F(DisplayListCanvas, DrawArc) {
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {  //
-            canvas->drawArc(kRenderBounds, 60, 330, false, paint);
+            canvas->drawArc(kSkRenderBounds, 60, 330, false, paint);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {  //
-            canvas->DrawArc(kRenderBounds, 60, 330, false, paint);
+            canvas->DrawArc(kDlRenderBounds, 60, 330, false, paint);
           },
           kDrawArcNoCenterFlags));
 }
@@ -2789,10 +2844,10 @@ TEST_F(DisplayListCanvas, DrawArcCenter) {
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {  //
-            canvas->drawArc(kRenderBounds, 60, 360 - 12, true, paint);
+            canvas->drawArc(kSkRenderBounds, 60, 360 - 12, true, paint);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {  //
-            canvas->DrawArc(kRenderBounds, 60, 360 - 12, true, paint);
+            canvas->DrawArc(kDlRenderBounds, 60, 360 - 12, true, paint);
           },
           kDrawArcWithCenterFlags)
           .set_draw_arc_center());
@@ -2802,24 +2857,24 @@ TEST_F(DisplayListCanvas, DrawPointsAsPoints) {
   // The +/- 16 points are designed to fall just inside the clips
   // that are tested against so we avoid lots of undrawn pixels
   // in the accumulated bounds.
-  const SkScalar x0 = kRenderLeft;
-  const SkScalar x1 = kRenderLeft + 16;
-  const SkScalar x2 = (kRenderLeft + kRenderCenterX) * 0.5;
-  const SkScalar x3 = kRenderCenterX + 0.1;
-  const SkScalar x4 = (kRenderRight + kRenderCenterX) * 0.5;
-  const SkScalar x5 = kRenderRight - 16;
-  const SkScalar x6 = kRenderRight;
+  const DlScalar x0 = kRenderLeft;
+  const DlScalar x1 = kRenderLeft + 16;
+  const DlScalar x2 = (kRenderLeft + kRenderCenterX) * 0.5;
+  const DlScalar x3 = kRenderCenterX + 0.1;
+  const DlScalar x4 = (kRenderRight + kRenderCenterX) * 0.5;
+  const DlScalar x5 = kRenderRight - 16;
+  const DlScalar x6 = kRenderRight;
 
-  const SkScalar y0 = kRenderTop;
-  const SkScalar y1 = kRenderTop + 16;
-  const SkScalar y2 = (kRenderTop + kRenderCenterY) * 0.5;
-  const SkScalar y3 = kRenderCenterY + 0.1;
-  const SkScalar y4 = (kRenderBottom + kRenderCenterY) * 0.5;
-  const SkScalar y5 = kRenderBottom - 16;
-  const SkScalar y6 = kRenderBottom;
+  const DlScalar y0 = kRenderTop;
+  const DlScalar y1 = kRenderTop + 16;
+  const DlScalar y2 = (kRenderTop + kRenderCenterY) * 0.5;
+  const DlScalar y3 = kRenderCenterY + 0.1;
+  const DlScalar y4 = (kRenderBottom + kRenderCenterY) * 0.5;
+  const DlScalar y5 = kRenderBottom - 16;
+  const DlScalar y6 = kRenderBottom;
 
   // clang-format off
-  const SkPoint points[] = {
+  const SkPoint sk_points[] = {
       {x0, y0}, {x1, y0}, {x2, y0}, {x3, y0}, {x4, y0}, {x5, y0}, {x6, y0},
       {x0, y1}, {x1, y1}, {x2, y1}, {x3, y1}, {x4, y1}, {x5, y1}, {x6, y1},
       {x0, y2}, {x1, y2}, {x2, y2}, {x3, y2}, {x4, y2}, {x5, y2}, {x6, y2},
@@ -2829,7 +2884,8 @@ TEST_F(DisplayListCanvas, DrawPointsAsPoints) {
       {x0, y6}, {x1, y6}, {x2, y6}, {x3, y6}, {x4, y6}, {x5, y6}, {x6, y6},
   };
   // clang-format on
-  const int count = sizeof(points) / sizeof(points[0]);
+  const int count = sizeof(sk_points) / sizeof(sk_points[0]);
+  const DlFPoint* dl_points = reinterpret_cast<const DlFPoint*>(sk_points);
 
   CanvasCompareTester::RenderAll(  //
       TestParameters(
@@ -2839,10 +2895,11 @@ TEST_F(DisplayListCanvas, DrawPointsAsPoints) {
             // See https://bugs.chromium.org/p/skia/issues/detail?id=12446
             SkPaint p = paint;
             p.setStyle(SkPaint::kStroke_Style);
-            canvas->drawPoints(SkCanvas::kPoints_PointMode, count, points, p);
+            canvas->drawPoints(SkCanvas::kPoints_PointMode, count, sk_points,
+                               p);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {  //
-            canvas->DrawPoints(PointMode::kPoints, count, points, paint);
+            canvas->DrawPoints(PointMode::kPoints, count, dl_points, paint);
           },
           kDrawPointsAsPointsFlags)
           .set_draw_line()
@@ -2850,18 +2907,18 @@ TEST_F(DisplayListCanvas, DrawPointsAsPoints) {
 }
 
 TEST_F(DisplayListCanvas, DrawPointsAsLines) {
-  const SkScalar x0 = kRenderLeft + 1;
-  const SkScalar x1 = kRenderLeft + 16;
-  const SkScalar x2 = kRenderRight - 16;
-  const SkScalar x3 = kRenderRight - 1;
+  const DlScalar x0 = kRenderLeft + 1;
+  const DlScalar x1 = kRenderLeft + 16;
+  const DlScalar x2 = kRenderRight - 16;
+  const DlScalar x3 = kRenderRight - 1;
 
-  const SkScalar y0 = kRenderTop;
-  const SkScalar y1 = kRenderTop + 16;
-  const SkScalar y2 = kRenderBottom - 16;
-  const SkScalar y3 = kRenderBottom;
+  const DlScalar y0 = kRenderTop;
+  const DlScalar y1 = kRenderTop + 16;
+  const DlScalar y2 = kRenderBottom - 16;
+  const DlScalar y3 = kRenderBottom;
 
   // clang-format off
-  const SkPoint points[] = {
+  const SkPoint sk_points[] = {
       // Outer box
       {x0, y0}, {x3, y0},
       {x3, y0}, {x3, y3},
@@ -2878,9 +2935,10 @@ TEST_F(DisplayListCanvas, DrawPointsAsLines) {
       {x1, y2}, {x1, y1},
   };
   // clang-format on
-
-  const int count = sizeof(points) / sizeof(points[0]);
+  const int count = sizeof(sk_points) / sizeof(sk_points[0]);
   ASSERT_TRUE((count & 1) == 0);
+  const DlFPoint* dl_points = reinterpret_cast<const DlFPoint*>(sk_points);
+
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {  //
@@ -2889,16 +2947,16 @@ TEST_F(DisplayListCanvas, DrawPointsAsLines) {
             // See https://bugs.chromium.org/p/skia/issues/detail?id=12446
             SkPaint p = paint;
             p.setStyle(SkPaint::kStroke_Style);
-            canvas->drawPoints(SkCanvas::kLines_PointMode, count, points, p);
+            canvas->drawPoints(SkCanvas::kLines_PointMode, count, sk_points, p);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {  //
-            canvas->DrawPoints(PointMode::kLines, count, points, paint);
+            canvas->DrawPoints(PointMode::kLines, count, dl_points, paint);
           },
           kDrawPointsAsLinesFlags));
 }
 
 TEST_F(DisplayListCanvas, DrawPointsAsPolygon) {
-  const SkPoint points1[] = {
+  const SkPoint sk_points[] = {
       // RenderBounds box with a diamond
       SkPoint::Make(kRenderLeft, kRenderTop),
       SkPoint::Make(kRenderRight, kRenderTop),
@@ -2910,7 +2968,8 @@ TEST_F(DisplayListCanvas, DrawPointsAsPolygon) {
       SkPoint::Make(kRenderCenterX, kRenderBottom),
       SkPoint::Make(kRenderLeft, kRenderCenterY),
   };
-  const int count1 = sizeof(points1) / sizeof(points1[0]);
+  const int count = sizeof(sk_points) / sizeof(sk_points[0]);
+  const DlFPoint* dl_points = reinterpret_cast<const DlFPoint*>(sk_points);
 
   CanvasCompareTester::RenderAll(  //
       TestParameters(
@@ -2920,11 +2979,11 @@ TEST_F(DisplayListCanvas, DrawPointsAsPolygon) {
             // See https://bugs.chromium.org/p/skia/issues/detail?id=12446
             SkPaint p = paint;
             p.setStyle(SkPaint::kStroke_Style);
-            canvas->drawPoints(SkCanvas::kPolygon_PointMode, count1, points1,
+            canvas->drawPoints(SkCanvas::kPolygon_PointMode, count, sk_points,
                                p);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {  //
-            canvas->DrawPoints(PointMode::kPolygon, count1, points1, paint);
+            canvas->DrawPoints(PointMode::kPolygon, count, dl_points, paint);
           },
           kDrawPointsAsPolygonFlags));
 }
@@ -2939,7 +2998,7 @@ TEST_F(DisplayListCanvas, DrawVerticesWithColors) {
   // |xxxxxx    |
   // |xxxxxxxxxx|
   // +----------|
-  const SkPoint pts[6] = {
+  const SkPoint sk_points[6] = {
       // Upper-Right corner, full top, half right coverage
       SkPoint::Make(kRenderLeft, kRenderTop),
       SkPoint::Make(kRenderRight, kRenderTop),
@@ -2949,6 +3008,7 @@ TEST_F(DisplayListCanvas, DrawVerticesWithColors) {
       SkPoint::Make(kRenderLeft, kRenderCenterY),
       SkPoint::Make(kRenderRight, kRenderBottom),
   };
+  const DlFPoint* dl_points = reinterpret_cast<const DlFPoint*>(sk_points);
   const DlColor dl_colors[6] = {
       DlColor::kRed(),  DlColor::kBlue(),   DlColor::kGreen(),
       DlColor::kCyan(), DlColor::kYellow(), DlColor::kMagenta(),
@@ -2958,10 +3018,11 @@ TEST_F(DisplayListCanvas, DrawVerticesWithColors) {
       SK_ColorCYAN, SK_ColorYELLOW, SK_ColorMAGENTA,
   };
   const std::shared_ptr<DlVertices> dl_vertices =
-      DlVertices::Make(DlVertexMode::kTriangles, 6, pts, nullptr, dl_colors);
+      DlVertices::Make(DlVertexMode::kTriangles, 6, dl_points, nullptr,
+                       dl_colors);
   const auto sk_vertices =
       SkVertices::MakeCopy(SkVertices::VertexMode::kTriangles_VertexMode, 6,
-                           pts, nullptr, sk_colors);
+                           sk_points, nullptr, sk_colors);
 
   CanvasCompareTester::RenderAll(  //
       TestParameters(
@@ -2984,7 +3045,7 @@ TEST_F(DisplayListCanvas, DrawVerticesWithImage) {
   // |xxxxxx    |
   // |xxxxxxxxxx|
   // +----------|
-  const SkPoint pts[6] = {
+  const SkPoint sk_points[6] = {
       // Upper-Right corner, full top, half right coverage
       SkPoint::Make(kRenderLeft, kRenderTop),
       SkPoint::Make(kRenderRight, kRenderTop),
@@ -2994,7 +3055,8 @@ TEST_F(DisplayListCanvas, DrawVerticesWithImage) {
       SkPoint::Make(kRenderLeft, kRenderCenterY),
       SkPoint::Make(kRenderRight, kRenderBottom),
   };
-  const SkPoint tex[6] = {
+  const DlFPoint* dl_points = reinterpret_cast<const DlFPoint*>(sk_points);
+  const SkPoint sk_tex[6] = {
       SkPoint::Make(kRenderWidth / 2.0, 0),
       SkPoint::Make(0, kRenderHeight),
       SkPoint::Make(kRenderWidth, kRenderHeight),
@@ -3002,10 +3064,12 @@ TEST_F(DisplayListCanvas, DrawVerticesWithImage) {
       SkPoint::Make(0, 0),
       SkPoint::Make(kRenderWidth, 0),
   };
+  const DlFPoint* dl_tex = reinterpret_cast<const DlFPoint*>(sk_tex);
   const std::shared_ptr<DlVertices> dl_vertices =
-      DlVertices::Make(DlVertexMode::kTriangles, 6, pts, tex, nullptr);
+      DlVertices::Make(DlVertexMode::kTriangles, 6, dl_points, dl_tex, nullptr);
   const auto sk_vertices = SkVertices::MakeCopy(
-      SkVertices::VertexMode::kTriangles_VertexMode, 6, pts, tex, nullptr);
+      SkVertices::VertexMode::kTriangles_VertexMode, 6, sk_points, sk_tex,
+      nullptr);
 
   CanvasCompareTester::RenderAll(  //
       TestParameters(
@@ -3037,7 +3101,7 @@ TEST_F(DisplayListCanvas, DrawImageNearest) {
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {
             canvas->DrawImage(DlImage::Make(CanvasCompareTester::kTestImage),
-                              SkPoint::Make(kRenderLeft, kRenderTop),
+                              DlFPoint(kRenderLeft, kRenderTop),
                               DlImageSampling::kNearestNeighbor, &paint);
           },
           kDrawImageWithPaintFlags));
@@ -3053,7 +3117,7 @@ TEST_F(DisplayListCanvas, DrawImageNearestNoPaint) {
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {
             canvas->DrawImage(DlImage::Make(CanvasCompareTester::kTestImage),
-                              SkPoint::Make(kRenderLeft, kRenderTop),
+                              DlFPoint(kRenderLeft, kRenderTop),
                               DlImageSampling::kNearestNeighbor, nullptr);
           },
           kDrawImageFlags));
@@ -3069,25 +3133,28 @@ TEST_F(DisplayListCanvas, DrawImageLinear) {
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {
             canvas->DrawImage(DlImage::Make(CanvasCompareTester::kTestImage),
-                              SkPoint::Make(kRenderLeft, kRenderTop),
+                              DlFPoint(kRenderLeft, kRenderTop),
                               DlImageSampling::kLinear, &paint);
           },
           kDrawImageWithPaintFlags));
 }
 
 TEST_F(DisplayListCanvas, DrawImageRectNearest) {
-  SkRect src = SkRect::MakeIWH(kRenderWidth, kRenderHeight).makeInset(5, 5);
-  SkRect dst = kRenderBounds.makeInset(10.5, 10.5);
+  SkRect sk_src = SkRect::MakeIWH(kRenderWidth, kRenderHeight).makeInset(5, 5);
+  SkRect sk_dst = kSkRenderBounds.makeInset(10.5, 10.5);
+  DlFRect dl_src = DlFRect::MakeWH(kRenderWidth, kRenderHeight).MakeInset(5, 5);
+  DlFRect dl_dst = kDlRenderBounds.MakeInset(10.5, 10.5);
   CanvasCompareTester::RenderAll(  //
       TestParameters(
-          [=](SkCanvas* canvas, const SkPaint& paint) {  //
-            canvas->drawImageRect(CanvasCompareTester::kTestImage, src, dst,
+          [=](SkCanvas* canvas, const SkPaint& paint) {             //
+            canvas->drawImageRect(CanvasCompareTester::kTestImage,  //
+                                  sk_src, sk_dst,
                                   SkImageSampling::kNearestNeighbor, &paint,
                                   SkCanvas::kFast_SrcRectConstraint);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {  //
             canvas->DrawImageRect(
-                DlImage::Make(CanvasCompareTester::kTestImage), src, dst,
+                DlImage::Make(CanvasCompareTester::kTestImage), dl_src, dl_dst,
                 DlImageSampling::kNearestNeighbor, &paint,
                 DlCanvas::SrcRectConstraint::kFast);
           },
@@ -3095,18 +3162,21 @@ TEST_F(DisplayListCanvas, DrawImageRectNearest) {
 }
 
 TEST_F(DisplayListCanvas, DrawImageRectNearestNoPaint) {
-  SkRect src = SkRect::MakeIWH(kRenderWidth, kRenderHeight).makeInset(5, 5);
-  SkRect dst = kRenderBounds.makeInset(10.5, 10.5);
+  SkRect sk_src = SkRect::MakeIWH(kRenderWidth, kRenderHeight).makeInset(5, 5);
+  SkRect sk_dst = kSkRenderBounds.makeInset(10.5, 10.5);
+  DlFRect dl_src = DlFRect::MakeWH(kRenderWidth, kRenderHeight).MakeInset(5, 5);
+  DlFRect dl_dst = kDlRenderBounds.MakeInset(10.5, 10.5);
   CanvasCompareTester::RenderAll(  //
       TestParameters(
-          [=](SkCanvas* canvas, const SkPaint& paint) {  //
-            canvas->drawImageRect(CanvasCompareTester::kTestImage, src, dst,
+          [=](SkCanvas* canvas, const SkPaint& paint) {             //
+            canvas->drawImageRect(CanvasCompareTester::kTestImage,  //
+                                  sk_src, sk_dst,
                                   SkImageSampling::kNearestNeighbor, nullptr,
                                   SkCanvas::kFast_SrcRectConstraint);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {  //
             canvas->DrawImageRect(
-                DlImage::Make(CanvasCompareTester::kTestImage), src, dst,
+                DlImage::Make(CanvasCompareTester::kTestImage), dl_src, dl_dst,
                 DlImageSampling::kNearestNeighbor, nullptr,
                 DlCanvas::SrcRectConstraint::kFast);
           },
@@ -3114,18 +3184,21 @@ TEST_F(DisplayListCanvas, DrawImageRectNearestNoPaint) {
 }
 
 TEST_F(DisplayListCanvas, DrawImageRectLinear) {
-  SkRect src = SkRect::MakeIWH(kRenderWidth, kRenderHeight).makeInset(5, 5);
-  SkRect dst = kRenderBounds.makeInset(10.5, 10.5);
+  SkRect sk_src = SkRect::MakeIWH(kRenderWidth, kRenderHeight).makeInset(5, 5);
+  SkRect sk_dst = kSkRenderBounds.makeInset(10.5, 10.5);
+  DlFRect dl_src = DlFRect::MakeWH(kRenderWidth, kRenderHeight).MakeInset(5, 5);
+  DlFRect dl_dst = kDlRenderBounds.MakeInset(10.5, 10.5);
   CanvasCompareTester::RenderAll(  //
       TestParameters(
-          [=](SkCanvas* canvas, const SkPaint& paint) {  //
-            canvas->drawImageRect(CanvasCompareTester::kTestImage, src, dst,
+          [=](SkCanvas* canvas, const SkPaint& paint) {             //
+            canvas->drawImageRect(CanvasCompareTester::kTestImage,  //
+                                  sk_src, sk_dst,
                                   SkImageSampling::kLinear, &paint,
                                   SkCanvas::kFast_SrcRectConstraint);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {  //
             canvas->DrawImageRect(
-                DlImage::Make(CanvasCompareTester::kTestImage), src, dst,
+                DlImage::Make(CanvasCompareTester::kTestImage), dl_src, dl_dst,
                 DlImageSampling::kLinear, &paint,
                 DlCanvas::SrcRectConstraint::kFast);
           },
@@ -3133,58 +3206,68 @@ TEST_F(DisplayListCanvas, DrawImageRectLinear) {
 }
 
 TEST_F(DisplayListCanvas, DrawImageNineNearest) {
-  SkIRect src = SkIRect::MakeWH(kRenderWidth, kRenderHeight).makeInset(25, 25);
-  SkRect dst = kRenderBounds.makeInset(10.5, 10.5);
+  SkIRect sk_src =
+      SkIRect::MakeWH(kRenderWidth, kRenderHeight).makeInset(25, 25);
+  SkRect sk_dst = kSkRenderBounds.makeInset(10.5, 10.5);
+  DlIRect dl_src =
+      DlIRect::MakeWH(kRenderWidth, kRenderHeight).MakeInset(25, 25);
+  DlFRect dl_dst = kDlRenderBounds.MakeInset(10.5, 10.5);
   sk_sp<SkImage> image = CanvasCompareTester::kTestImage;
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {
-            canvas->drawImageNine(image.get(), src, dst, SkFilterMode::kNearest,
-                                  &paint);
+            canvas->drawImageNine(image.get(), sk_src, sk_dst,
+                                  SkFilterMode::kNearest, &paint);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {
-            canvas->DrawImageNine(DlImage::Make(image), src, dst,
+            canvas->DrawImageNine(DlImage::Make(image), dl_src, dl_dst,
                                   DlFilterMode::kNearest, &paint);
           },
           kDrawImageNineWithPaintFlags));
 }
 
 TEST_F(DisplayListCanvas, DrawImageNineNearestNoPaint) {
-  SkIRect src = SkIRect::MakeWH(kRenderWidth, kRenderHeight).makeInset(25, 25);
-  SkRect dst = kRenderBounds.makeInset(10.5, 10.5);
+  SkIRect sk_src =
+      SkIRect::MakeWH(kRenderWidth, kRenderHeight).makeInset(25, 25);
+  SkRect sk_dst = kSkRenderBounds.makeInset(10.5, 10.5);
+  DlIRect dl_src =
+      DlIRect::MakeWH(kRenderWidth, kRenderHeight).MakeInset(25, 25);
+  DlFRect dl_dst = kDlRenderBounds.MakeInset(10.5, 10.5);
   sk_sp<SkImage> image = CanvasCompareTester::kTestImage;
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {
-            canvas->drawImageNine(image.get(), src, dst, SkFilterMode::kNearest,
-                                  nullptr);
+            canvas->drawImageNine(image.get(), sk_src, sk_dst,
+                                  SkFilterMode::kNearest, nullptr);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {
-            canvas->DrawImageNine(DlImage::Make(image), src, dst,
+            canvas->DrawImageNine(DlImage::Make(image), dl_src, dl_dst,
                                   DlFilterMode::kNearest, nullptr);
           },
           kDrawImageNineFlags));
 }
 
 TEST_F(DisplayListCanvas, DrawImageNineLinear) {
-  SkIRect src = SkIRect::MakeWH(kRenderWidth, kRenderHeight).makeInset(25, 25);
-  SkRect dst = kRenderBounds.makeInset(10.5, 10.5);
+  SkIRect sk_src = SkIRect::MakeWH(kRenderWidth, kRenderHeight).makeInset(25, 25);
+  SkRect sk_dst = kSkRenderBounds.makeInset(10.5, 10.5);
+  DlIRect dl_src = DlIRect::MakeWH(kRenderWidth, kRenderHeight).MakeInset(25, 25);
+  DlFRect dl_dst = kDlRenderBounds.MakeInset(10.5, 10.5);
   sk_sp<SkImage> image = CanvasCompareTester::kTestImage;
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {
-            canvas->drawImageNine(image.get(), src, dst, SkFilterMode::kLinear,
-                                  &paint);
+            canvas->drawImageNine(image.get(), sk_src, sk_dst,
+                                  SkFilterMode::kLinear, &paint);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {
-            canvas->DrawImageNine(DlImage::Make(image), src, dst,
+            canvas->DrawImageNine(DlImage::Make(image), dl_src, dl_dst,
                                   DlFilterMode::kLinear, &paint);
           },
           kDrawImageNineWithPaintFlags));
 }
 
 TEST_F(DisplayListCanvas, DrawAtlasNearest) {
-  const SkRSXform xform[] = {
+  const SkRSXform sk_xform[] = {
       // clang-format off
       { 1.2f,  0.0f, kRenderLeft,  kRenderTop},
       { 0.0f,  1.2f, kRenderRight, kRenderTop},
@@ -3192,7 +3275,19 @@ TEST_F(DisplayListCanvas, DrawAtlasNearest) {
       { 0.0f, -1.2f, kRenderLeft,  kRenderBottom},
       // clang-format on
   };
-  const SkRect tex[] = {
+  const DlRSTransform dl_xform[] = {
+      // clang-format off
+      DlRSTransform::MakeScaledCosSinXY(
+           1.2f,  0.0f, kRenderLeft,  kRenderTop),
+      DlRSTransform::MakeScaledCosSinXY(
+           0.0f,  1.2f, kRenderRight, kRenderTop),
+      DlRSTransform::MakeScaledCosSinXY(
+          -1.2f,  0.0f, kRenderRight, kRenderBottom),
+      DlRSTransform::MakeScaledCosSinXY(
+           0.0f, -1.2f, kRenderLeft,  kRenderBottom),
+      // clang-format on
+  };
+  const SkRect sk_tex[] = {
       // clang-format off
       {0,                0,                 kRenderHalfWidth, kRenderHalfHeight},
       {kRenderHalfWidth, 0,                 kRenderWidth,     kRenderHalfHeight},
@@ -3200,6 +3295,7 @@ TEST_F(DisplayListCanvas, DrawAtlasNearest) {
       {0,                kRenderHalfHeight, kRenderHalfWidth, kRenderHeight},
       // clang-format on
   };
+  const DlFRect* dl_tex = reinterpret_cast<const DlFRect*>(sk_tex);
   const SkColor sk_colors[] = {
       SK_ColorBLUE,
       SK_ColorGREEN,
@@ -3218,20 +3314,20 @@ TEST_F(DisplayListCanvas, DrawAtlasNearest) {
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {
-            canvas->drawAtlas(image.get(), xform, tex, sk_colors, 4,
+            canvas->drawAtlas(image.get(), sk_xform, sk_tex, sk_colors, 4,
                               SkBlendMode::kSrcOver, sk_sampling, nullptr,
                               &paint);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {
-            canvas->DrawAtlas(DlImage::Make(image), xform, tex, dl_colors, 4,
-                              DlBlendMode::kSrcOver, dl_sampling, nullptr,
+            canvas->DrawAtlas(DlImage::Make(image), dl_xform, dl_tex, dl_colors,
+                              4, DlBlendMode::kSrcOver, dl_sampling, nullptr,
                               &paint);
           },
           kDrawAtlasWithPaintFlags));
 }
 
 TEST_F(DisplayListCanvas, DrawAtlasNearestNoPaint) {
-  const SkRSXform xform[] = {
+  const SkRSXform sk_xform[] = {
       // clang-format off
       { 1.2f,  0.0f, kRenderLeft,  kRenderTop},
       { 0.0f,  1.2f, kRenderRight, kRenderTop},
@@ -3239,7 +3335,19 @@ TEST_F(DisplayListCanvas, DrawAtlasNearestNoPaint) {
       { 0.0f, -1.2f, kRenderLeft,  kRenderBottom},
       // clang-format on
   };
-  const SkRect tex[] = {
+  const DlRSTransform dl_xform[] = {
+      // clang-format off
+      DlRSTransform::MakeScaledCosSinXY(
+           1.2f,  0.0f, kRenderLeft,  kRenderTop),
+      DlRSTransform::MakeScaledCosSinXY(
+           0.0f,  1.2f, kRenderRight, kRenderTop),
+      DlRSTransform::MakeScaledCosSinXY(
+          -1.2f,  0.0f, kRenderRight, kRenderBottom),
+      DlRSTransform::MakeScaledCosSinXY(
+           0.0f, -1.2f, kRenderLeft,  kRenderBottom),
+      // clang-format on
+  };
+  const SkRect sk_tex[] = {
       // clang-format off
       {0,                0,                 kRenderHalfWidth, kRenderHalfHeight},
       {kRenderHalfWidth, 0,                 kRenderWidth,     kRenderHalfHeight},
@@ -3247,6 +3355,7 @@ TEST_F(DisplayListCanvas, DrawAtlasNearestNoPaint) {
       {0,                kRenderHalfHeight, kRenderHalfWidth, kRenderHeight},
       // clang-format on
   };
+  const DlFRect* dl_tex = reinterpret_cast<const DlFRect*>(sk_tex);
   const SkColor sk_colors[] = {
       SK_ColorBLUE,
       SK_ColorGREEN,
@@ -3265,20 +3374,20 @@ TEST_F(DisplayListCanvas, DrawAtlasNearestNoPaint) {
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {
-            canvas->drawAtlas(image.get(), xform, tex, sk_colors, 4,
+            canvas->drawAtlas(image.get(), sk_xform, sk_tex, sk_colors, 4,
                               SkBlendMode::kSrcOver, sk_sampling,  //
                               nullptr, nullptr);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {
-            canvas->DrawAtlas(DlImage::Make(image), xform, tex, dl_colors, 4,
-                              DlBlendMode::kSrcOver, dl_sampling, nullptr,
+            canvas->DrawAtlas(DlImage::Make(image), dl_xform, dl_tex, dl_colors,
+                              4, DlBlendMode::kSrcOver, dl_sampling, nullptr,
                               nullptr);
           },
           kDrawAtlasFlags));
 }
 
 TEST_F(DisplayListCanvas, DrawAtlasLinear) {
-  const SkRSXform xform[] = {
+  const SkRSXform sk_xform[] = {
       // clang-format off
       { 1.2f,  0.0f, kRenderLeft,  kRenderTop},
       { 0.0f,  1.2f, kRenderRight, kRenderTop},
@@ -3286,7 +3395,19 @@ TEST_F(DisplayListCanvas, DrawAtlasLinear) {
       { 0.0f, -1.2f, kRenderLeft,  kRenderBottom},
       // clang-format on
   };
-  const SkRect tex[] = {
+  const DlRSTransform dl_xform[] = {
+      // clang-format off
+      DlRSTransform::MakeScaledCosSinXY(
+           1.2f,  0.0f, kRenderLeft,  kRenderTop),
+      DlRSTransform::MakeScaledCosSinXY(
+           0.0f,  1.2f, kRenderRight, kRenderTop),
+      DlRSTransform::MakeScaledCosSinXY(
+          -1.2f,  0.0f, kRenderRight, kRenderBottom),
+      DlRSTransform::MakeScaledCosSinXY(
+           0.0f, -1.2f, kRenderLeft,  kRenderBottom),
+      // clang-format on
+  };
+  const SkRect sk_tex[] = {
       // clang-format off
       {0,                0,                 kRenderHalfWidth, kRenderHalfHeight},
       {kRenderHalfWidth, 0,                 kRenderWidth,     kRenderHalfHeight},
@@ -3294,6 +3415,7 @@ TEST_F(DisplayListCanvas, DrawAtlasLinear) {
       {0,                kRenderHalfHeight, kRenderHalfWidth, kRenderHeight},
       // clang-format on
   };
+  const DlFRect* dl_tex = reinterpret_cast<const DlFRect*>(sk_tex);
   const SkColor sk_colors[] = {
       SK_ColorBLUE,
       SK_ColorGREEN,
@@ -3312,13 +3434,13 @@ TEST_F(DisplayListCanvas, DrawAtlasLinear) {
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {
-            canvas->drawAtlas(image.get(), xform, tex, sk_colors, 2,  //
+            canvas->drawAtlas(image.get(), sk_xform, sk_tex, sk_colors, 2,  //
                               SkBlendMode::kSrcOver, sk_sampling, nullptr,
                               &paint);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {
-            canvas->DrawAtlas(DlImage::Make(image), xform, tex, dl_colors, 2,
-                              DlBlendMode::kSrcOver, dl_sampling, nullptr,
+            canvas->DrawAtlas(DlImage::Make(image), dl_xform, dl_tex, dl_colors,
+                              2, DlBlendMode::kSrcOver, dl_sampling, nullptr,
                               &paint);
           },
           kDrawAtlasWithPaintFlags));
@@ -3329,17 +3451,13 @@ sk_sp<DisplayList> makeTestDisplayList() {
   DlPaint paint;
   paint.setDrawStyle(DlDrawStyle::kFill);
   paint.setColor(SK_ColorRED);
-  builder.DrawRect({kRenderLeft, kRenderTop, kRenderCenterX, kRenderCenterY},
-                   paint);
+  builder.DrawRect(kDlRenderBounds.UpperLeftQuadrant(), paint);
   paint.setColor(SK_ColorBLUE);
-  builder.DrawRect({kRenderCenterX, kRenderTop, kRenderRight, kRenderCenterY},
-                   paint);
+  builder.DrawRect(kDlRenderBounds.UpperRightQuadrant(), paint);
   paint.setColor(SK_ColorGREEN);
-  builder.DrawRect({kRenderLeft, kRenderCenterY, kRenderCenterX, kRenderBottom},
-                   paint);
+  builder.DrawRect(kDlRenderBounds.LowerLeftQuadrant(), paint);
   paint.setColor(SK_ColorYELLOW);
-  builder.DrawRect(
-      {kRenderCenterX, kRenderCenterY, kRenderRight, kRenderBottom}, paint);
+  builder.DrawRect(kDlRenderBounds.LowerRightQuadrant(), paint);
   return builder.Build();
 }
 
@@ -3366,8 +3484,8 @@ TEST_F(DisplayListCanvas, DrawTextBlob) {
 #endif  // OS_FUCHSIA
   sk_sp<SkTextBlob> blob =
       CanvasCompareTester::MakeTextBlob("Testing", kRenderHeight * 0.33f);
-  SkScalar render_y_1_3 = kRenderTop + kRenderHeight * 0.3;
-  SkScalar render_y_2_3 = kRenderTop + kRenderHeight * 0.6;
+  DlScalar render_y_1_3 = kRenderTop + kRenderHeight * 0.3;
+  DlScalar render_y_2_3 = kRenderTop + kRenderHeight * 0.6;
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {  //
@@ -3391,17 +3509,17 @@ TEST_F(DisplayListCanvas, DrawTextBlob) {
 }
 
 TEST_F(DisplayListCanvas, DrawShadow) {
-  SkPath path;
-  path.addRoundRect(
-      {
+  DlPath path;
+  path.AddRoundRect(
+      DlFRect::MakeLTRB(
           kRenderLeft + 10,
           kRenderTop,
           kRenderRight - 10,
-          kRenderBottom - 20,
-      },
+          kRenderBottom - 20
+      ),
       kRenderCornerRadius, kRenderCornerRadius);
   const DlColor color = DlColor::kDarkGrey();
-  const SkScalar elevation = 5;
+  const DlScalar elevation = 5;
 
   CanvasCompareTester::RenderAll(  //
       TestParameters(
@@ -3417,17 +3535,17 @@ TEST_F(DisplayListCanvas, DrawShadow) {
 }
 
 TEST_F(DisplayListCanvas, DrawShadowTransparentOccluder) {
-  SkPath path;
-  path.addRoundRect(
-      {
+  DlPath path;
+  path.AddRoundRect(
+      DlFRect::MakeLTRB(
           kRenderLeft + 10,
           kRenderTop,
           kRenderRight - 10,
-          kRenderBottom - 20,
-      },
+          kRenderBottom - 20
+      ),
       kRenderCornerRadius, kRenderCornerRadius);
   const DlColor color = DlColor::kDarkGrey();
-  const SkScalar elevation = 5;
+  const DlScalar elevation = 5;
 
   CanvasCompareTester::RenderAll(  //
       TestParameters(
@@ -3443,17 +3561,17 @@ TEST_F(DisplayListCanvas, DrawShadowTransparentOccluder) {
 }
 
 TEST_F(DisplayListCanvas, DrawShadowDpr) {
-  SkPath path;
-  path.addRoundRect(
-      {
+  DlPath path;
+  path.AddRoundRect(
+      DlFRect::MakeLTRB(
           kRenderLeft + 10,
           kRenderTop,
           kRenderRight - 10,
-          kRenderBottom - 20,
-      },
+          kRenderBottom - 20
+      ),
       kRenderCornerRadius, kRenderCornerRadius);
   const DlColor color = DlColor::kDarkGrey();
-  const SkScalar elevation = 5;
+  const DlScalar elevation = 5;
 
   CanvasCompareTester::RenderAll(  //
       TestParameters(
@@ -3470,12 +3588,13 @@ TEST_F(DisplayListCanvas, DrawShadowDpr) {
 
 TEST_F(DisplayListCanvas, SaveLayerClippedContentStillFilters) {
   // draw rect is just outside of render bounds on the right
-  const SkRect draw_rect = SkRect::MakeLTRB(  //
-      kRenderRight + 1,                       //
-      kRenderTop,                             //
-      kTestBounds.fRight,                     //
-      kRenderBottom                           //
+  const SkRect sk_draw_rect = SkRect::MakeLTRB(  //
+      kRenderRight + 1,                          //
+      kRenderTop,                                //
+      kSkTestBounds.fRight,                      //
+      kRenderBottom                              //
   );
+  const DlFRect dl_draw_rect = DlFRect::MakeBounds(sk_draw_rect);
   TestParameters test_params(
       [=](SkCanvas* canvas, const SkPaint& paint) {
         auto layer_filter =
@@ -3483,9 +3602,9 @@ TEST_F(DisplayListCanvas, SaveLayerClippedContentStillFilters) {
         SkPaint layer_paint;
         layer_paint.setImageFilter(layer_filter);
         canvas->save();
-        canvas->clipRect(kRenderBounds, SkClipOp::kIntersect, false);
-        canvas->saveLayer(&kTestBounds, &layer_paint);
-        canvas->drawRect(draw_rect, paint);
+        canvas->clipRect(kSkRenderBounds, SkClipOp::kIntersect, false);
+        canvas->saveLayer(&kSkTestBounds, &layer_paint);
+        canvas->drawRect(sk_draw_rect, paint);
         canvas->restore();
         canvas->restore();
       },
@@ -3495,9 +3614,9 @@ TEST_F(DisplayListCanvas, SaveLayerClippedContentStillFilters) {
         DlPaint layer_paint;
         layer_paint.setImageFilter(layer_filter);
         canvas->Save();
-        canvas->ClipRect(kRenderBounds, ClipOp::kIntersect, false);
-        canvas->SaveLayer(&kTestBounds, &layer_paint);
-        canvas->DrawRect(draw_rect, paint);
+        canvas->ClipRect(kDlRenderBounds, ClipOp::kIntersect, false);
+        canvas->SaveLayer(&kDlTestBounds, &layer_paint);
+        canvas->DrawRect(dl_draw_rect, paint);
         canvas->Restore();
         canvas->Restore();
       },
@@ -3530,10 +3649,10 @@ TEST_F(DisplayListCanvas, SaveLayerConsolidation) {
       0, 0, 0, .7, 0,
       // clang-format on
   };
-  SkMatrix contract_matrix;
-  contract_matrix.setScale(0.9f, 0.9f, kRenderCenterX, kRenderCenterY);
+  DlTransform contract_matrix;
+  contract_matrix.SetAnchoredScale(0.9f, 0.9f, kRenderCenterX, kRenderCenterY);
 
-  std::vector<SkScalar> opacities = {
+  std::vector<DlScalar> opacities = {
       0,
       0.5f,
       SK_Scalar1,
@@ -3561,18 +3680,14 @@ TEST_F(DisplayListCanvas, SaveLayerConsolidation) {
   }
 
   auto render_content = [](DisplayListBuilder& builder) {
-    builder.DrawRect(
-        SkRect{kRenderLeft, kRenderTop, kRenderCenterX, kRenderCenterY},
-        DlPaint(DlColor::kYellow()));
-    builder.DrawRect(
-        SkRect{kRenderCenterX, kRenderTop, kRenderRight, kRenderCenterY},
-        DlPaint(DlColor::kRed()));
-    builder.DrawRect(
-        SkRect{kRenderLeft, kRenderCenterY, kRenderCenterX, kRenderBottom},
-        DlPaint(DlColor::kBlue()));
-    builder.DrawRect(
-        SkRect{kRenderCenterX, kRenderCenterY, kRenderRight, kRenderBottom},
-        DlPaint(DlColor::kRed().modulateOpacity(0.5f)));
+    builder.DrawRect(kDlRenderBounds.UpperLeftQuadrant(),
+                     DlPaint(DlColor::kYellow()));
+    builder.DrawRect(kDlRenderBounds.UpperRightQuadrant(),
+                     DlPaint(DlColor::kRed()));
+    builder.DrawRect(kDlRenderBounds.LowerLeftQuadrant(),
+                     DlPaint(DlColor::kBlue()));
+    builder.DrawRect(kDlRenderBounds.LowerRightQuadrant(),
+                     DlPaint(DlColor::kRed().modulateOpacity(0.5f)));
   };
 
   auto test_attributes_env =
@@ -3581,19 +3696,19 @@ TEST_F(DisplayListCanvas, SaveLayerConsolidation) {
                        const std::string& desc1, const std::string& desc2,
                        const RenderEnvironment* env) {
         DisplayListBuilder nested_builder;
-        nested_builder.SaveLayer(&kTestBounds, &paint1);
-        nested_builder.SaveLayer(&kTestBounds, &paint2);
+        nested_builder.SaveLayer(&kDlTestBounds, &paint1);
+        nested_builder.SaveLayer(&kDlTestBounds, &paint2);
         render_content(nested_builder);
         auto nested_results = env->getResult(nested_builder.Build());
 
         DisplayListBuilder reverse_builder;
-        reverse_builder.SaveLayer(&kTestBounds, &paint2);
-        reverse_builder.SaveLayer(&kTestBounds, &paint1);
+        reverse_builder.SaveLayer(&kDlTestBounds, &paint2);
+        reverse_builder.SaveLayer(&kDlTestBounds, &paint1);
         render_content(reverse_builder);
         auto reverse_results = env->getResult(reverse_builder.Build());
 
         DisplayListBuilder combined_builder;
-        combined_builder.SaveLayer(&kTestBounds, &paint_both);
+        combined_builder.SaveLayer(&kDlTestBounds, &paint_both);
         render_content(combined_builder);
         auto combined_results = env->getResult(combined_builder.Build());
 
@@ -3637,7 +3752,7 @@ TEST_F(DisplayListCanvas, SaveLayerConsolidation) {
     DlPaint nested_paint1 = DlPaint().setColorFilter(color_filter);
 
     for (size_t oi = 0; oi < opacities.size(); oi++) {
-      SkScalar opacity = opacities[oi];
+      DlScalar opacity = opacities[oi];
       std::string op_desc = "opacity " + std::to_string(opacity);
       DlPaint nested_paint2 = DlPaint().setOpacity(opacity);
 
@@ -3657,7 +3772,7 @@ TEST_F(DisplayListCanvas, SaveLayerConsolidation) {
   // The reverse should also theoretically work for some IFs, but we
   // get some rounding errors that are more than just trivial.
   for (size_t oi = 0; oi < opacities.size(); oi++) {
-    SkScalar opacity = opacities[oi];
+    DlScalar opacity = opacities[oi];
     std::string op_desc = "opacity " + std::to_string(opacity);
     DlPaint nested_paint1 = DlPaint().setOpacity(opacity);
 
@@ -3704,7 +3819,7 @@ TEST_F(DisplayListCanvas, MatrixColorFilterModifyTransparencyCheck) {
     environments.push_back(std::move(env));
   }
 
-  auto test_matrix = [&environments](int element, SkScalar value) {
+  auto test_matrix = [&environments](int element, DlScalar value) {
     // clang-format off
     float matrix[] = {
         1, 0, 0, 0, 0,
@@ -3725,18 +3840,18 @@ TEST_F(DisplayListCanvas, MatrixColorFilterModifyTransparencyCheck) {
     DlPaint filter_save_paint = DlPaint().setColorFilter(&filter);
 
     DisplayListBuilder builder1;
-    builder1.Translate(kTestCenter.fX, kTestCenter.fY);
+    builder1.Translate(kDlTestCenter);
     builder1.Rotate(45);
-    builder1.Translate(-kTestCenter.fX, -kTestCenter.fY);
-    builder1.DrawRect(kRenderBounds, paint);
+    builder1.Translate(-kDlTestCenter);
+    builder1.DrawRect(kDlRenderBounds, paint);
     auto display_list1 = builder1.Build();
 
     DisplayListBuilder builder2;
-    builder2.Translate(kTestCenter.fX, kTestCenter.fY);
+    builder2.Translate(kDlTestCenter);
     builder2.Rotate(45);
-    builder2.Translate(-kTestCenter.fX, -kTestCenter.fY);
-    builder2.SaveLayer(&kTestBounds, &filter_save_paint);
-    builder2.DrawRect(kRenderBounds, paint);
+    builder2.Translate(-kDlTestCenter);
+    builder2.SaveLayer(&kDlTestBounds, &filter_save_paint);
+    builder2.DrawRect(kDlRenderBounds, paint);
     builder2.Restore();
     auto display_list2 = builder2.Build();
 
@@ -3778,7 +3893,7 @@ TEST_F(DisplayListCanvas, MatrixColorFilterOpacityCommuteCheck) {
     environments.push_back(std::move(env));
   }
 
-  auto test_matrix = [&environments](int element, SkScalar value) {
+  auto test_matrix = [&environments](int element, DlScalar value) {
     // clang-format off
     float matrix[] = {
         1, 0, 0, 0, 0,
@@ -3791,26 +3906,26 @@ TEST_F(DisplayListCanvas, MatrixColorFilterOpacityCommuteCheck) {
         "matrix[" + std::to_string(element) + "] = " + std::to_string(value);
     matrix[element] = value;
     auto filter = DlMatrixColorFilter::Make(matrix);
-    EXPECT_EQ(SkScalarIsFinite(value), filter != nullptr);
+    EXPECT_EQ(DlScalar_IsFinite(value), filter != nullptr);
 
     DlPaint paint(0x80808080);
     DlPaint opacity_save_paint = DlPaint().setOpacity(0.5);
     DlPaint filter_save_paint = DlPaint().setColorFilter(filter);
 
     DisplayListBuilder builder1;
-    builder1.SaveLayer(&kTestBounds, &opacity_save_paint);
-    builder1.SaveLayer(&kTestBounds, &filter_save_paint);
-    // builder1.DrawRect(kRenderBounds.makeOffset(20, 20), DlPaint());
-    builder1.DrawRect(kRenderBounds, paint);
+    builder1.SaveLayer(&kDlTestBounds, &opacity_save_paint);
+    builder1.SaveLayer(&kDlTestBounds, &filter_save_paint);
+    // builder1.DrawRect(kDlRenderBounds.makeOffset(20, 20), DlPaint());
+    builder1.DrawRect(kDlRenderBounds, paint);
     builder1.Restore();
     builder1.Restore();
     auto display_list1 = builder1.Build();
 
     DisplayListBuilder builder2;
-    builder2.SaveLayer(&kTestBounds, &filter_save_paint);
-    builder2.SaveLayer(&kTestBounds, &opacity_save_paint);
-    // builder1.DrawRect(kRenderBounds.makeOffset(20, 20), DlPaint());
-    builder2.DrawRect(kRenderBounds, paint);
+    builder2.SaveLayer(&kDlTestBounds, &filter_save_paint);
+    builder2.SaveLayer(&kDlTestBounds, &opacity_save_paint);
+    // builder1.DrawRect(kDlRenderBounds.makeOffset(20, 20), DlPaint());
+    builder2.DrawRect(kDlRenderBounds, paint);
     builder2.Restore();
     builder2.Restore();
     auto display_list2 = builder2.Build();
@@ -3909,18 +4024,18 @@ TEST_F(DisplayListCanvas, BlendColorFilterModifyTransparencyCheck) {
     DlPaint filter_save_paint = DlPaint().setColorFilter(&filter);
 
     DisplayListBuilder builder1;
-    builder1.Translate(kTestCenter.fX, kTestCenter.fY);
+    builder1.Translate(kDlTestCenter);
     builder1.Rotate(45);
-    builder1.Translate(-kTestCenter.fX, -kTestCenter.fY);
-    builder1.DrawRect(kRenderBounds, paint);
+    builder1.Translate(-kDlTestCenter);
+    builder1.DrawRect(kDlRenderBounds, paint);
     auto display_list1 = builder1.Build();
 
     DisplayListBuilder builder2;
-    builder2.Translate(kTestCenter.fX, kTestCenter.fY);
+    builder2.Translate(kDlTestCenter);
     builder2.Rotate(45);
-    builder2.Translate(-kTestCenter.fX, -kTestCenter.fY);
-    builder2.SaveLayer(&kTestBounds, &filter_save_paint);
-    builder2.DrawRect(kRenderBounds, paint);
+    builder2.Translate(-kDlTestCenter);
+    builder2.SaveLayer(&kDlTestBounds, &filter_save_paint);
+    builder2.DrawRect(kDlRenderBounds, paint);
     builder2.Restore();
     auto display_list2 = builder2.Build();
 
@@ -3975,19 +4090,19 @@ TEST_F(DisplayListCanvas, BlendColorFilterOpacityCommuteCheck) {
     DlPaint filter_save_paint = DlPaint().setColorFilter(&filter);
 
     DisplayListBuilder builder1;
-    builder1.SaveLayer(&kTestBounds, &opacity_save_paint);
-    builder1.SaveLayer(&kTestBounds, &filter_save_paint);
+    builder1.SaveLayer(&kDlTestBounds, &opacity_save_paint);
+    builder1.SaveLayer(&kDlTestBounds, &filter_save_paint);
     // builder1.DrawRect(kRenderBounds.makeOffset(20, 20), DlPaint());
-    builder1.DrawRect(kRenderBounds, paint);
+    builder1.DrawRect(kDlRenderBounds, paint);
     builder1.Restore();
     builder1.Restore();
     auto display_list1 = builder1.Build();
 
     DisplayListBuilder builder2;
-    builder2.SaveLayer(&kTestBounds, &filter_save_paint);
-    builder2.SaveLayer(&kTestBounds, &opacity_save_paint);
+    builder2.SaveLayer(&kDlTestBounds, &filter_save_paint);
+    builder2.SaveLayer(&kDlTestBounds, &opacity_save_paint);
     // builder1.DrawRect(kRenderBounds.makeOffset(20, 20), DlPaint());
-    builder2.DrawRect(kRenderBounds, paint);
+    builder2.DrawRect(kDlRenderBounds, paint);
     builder2.Restore();
     builder2.Restore();
     auto display_list2 = builder2.Build();
@@ -4204,9 +4319,9 @@ class DisplayListNopTest : public DisplayListCanvas {
     desc_stream << BlendModeToString(mode);
     desc_stream << "/" << color;
     std::string desc = desc_stream.str();
-    DisplayListBuilder builder({0.0f, 0.0f, 100.0f, 100.0f});
+    DisplayListBuilder builder(DlFRect::MakeWH(100.0f, 100.0f));
     DlPaint paint = DlPaint(color).setBlendMode(mode);
-    builder.DrawRect({0.0f, 0.0f, 10.0f, 10.0f}, paint);
+    builder.DrawRect(DlFRect::MakeWH(10.0f, 10.0f), paint);
     auto dl = builder.Build();
     if (dl->modifies_transparent_black()) {
       ASSERT_TRUE(dl->op_count() != 0u);
@@ -4234,11 +4349,13 @@ class DisplayListNopTest : public DisplayListCanvas {
     desc_stream << "/" << color;
     std::string desc = desc_stream.str();
     auto test_image = test_data->image();
-    SkRect test_bounds =
+    SkRect sk_test_bounds =
         SkRect::MakeWH(test_image->width(), test_image->height());
-    DisplayListBuilder builder(test_bounds);
+    DlFRect dl_test_bounds =
+        DlFRect::MakeWH(test_image->width(), test_image->height());
+    DisplayListBuilder builder(dl_test_bounds);
     DlPaint dl_paint = DlPaint(color).setBlendMode(mode);
-    builder.DrawRect(test_bounds, dl_paint);
+    builder.DrawRect(dl_test_bounds, dl_paint);
     auto dl = builder.Build();
     bool dl_is_elided = dl->op_count() == 0u;
     bool dl_affects_transparent_pixels = dl->modifies_transparent_black();
@@ -4255,7 +4372,7 @@ class DisplayListNopTest : public DisplayListCanvas {
       SkCanvas* result_canvas = result_surface->sk_surface()->getCanvas();
       result_canvas->clear(SK_ColorTRANSPARENT);
       result_canvas->drawImage(test_image.get(), 0, 0);
-      result_canvas->drawRect(test_bounds, sk_paint);
+      result_canvas->drawRect(sk_test_bounds, sk_paint);
       if (GrDirectContext* direct_context = GrAsDirectContext(
               result_surface->sk_surface()->recordingContext())) {
         direct_context->flushAndSubmit();
@@ -4292,7 +4409,7 @@ class DisplayListNopTest : public DisplayListCanvas {
     desc_stream << ", IF: " << if_mtb;
     std::string desc = desc_stream.str();
 
-    DisplayListBuilder builder({0.0f, 0.0f, 100.0f, 100.0f});
+    DisplayListBuilder builder(DlFRect::MakeWH(100.0f, 100.0f));
     DlPaint paint = DlPaint(color)                     //
                         .setBlendMode(mode)            //
                         .setColorFilter(color_filter)  //

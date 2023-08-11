@@ -24,7 +24,7 @@ class DlDeferredImageGPUImpeller final : public DlImage {
 
   static sk_sp<DlDeferredImageGPUImpeller> Make(
       sk_sp<DisplayList> display_list,
-      const SkISize& size,
+      const DlISize& size,
       fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
       fml::RefPtr<fml::TaskRunner> raster_task_runner);
 
@@ -47,7 +47,7 @@ class DlDeferredImageGPUImpeller final : public DlImage {
   bool isUIThreadSafe() const override;
 
   // |DlImage|
-  SkISize dimensions() const override;
+  DlISize dimensions() const override;
 
   // |DlImage|
   size_t GetApproximateByteSize() const override;
@@ -65,7 +65,7 @@ class DlDeferredImageGPUImpeller final : public DlImage {
 
     static std::shared_ptr<ImageWrapper> Make(
         sk_sp<DisplayList> display_list,
-        const SkISize& size,
+        const DlISize& size,
         fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
         fml::RefPtr<fml::TaskRunner> raster_task_runner);
 
@@ -80,12 +80,12 @@ class DlDeferredImageGPUImpeller final : public DlImage {
       return texture_;
     }
 
-    const SkISize size() const { return size_; }
+    const DlISize size() const { return size_; }
 
     std::optional<std::string> get_error();
 
    private:
-    SkISize size_;
+    DlISize size_;
     sk_sp<DisplayList> display_list_;
     std::shared_ptr<impeller::Texture> texture_;
     fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate_;
@@ -97,7 +97,7 @@ class DlDeferredImageGPUImpeller final : public DlImage {
 
     ImageWrapper(
         sk_sp<DisplayList> display_list,
-        const SkISize& size,
+        const DlISize& size,
         fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
         fml::RefPtr<fml::TaskRunner> raster_task_runner);
 

@@ -35,10 +35,10 @@ class GPUSurfaceGLImpeller final : public Surface {
   fml::WeakPtrFactory<GPUSurfaceGLImpeller> weak_factory_;
 
   // |Surface|
-  std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size) override;
+  std::unique_ptr<SurfaceFrame> AcquireFrame(const DlISize& size) override;
 
   // |Surface|
-  SkMatrix GetRootTransformation() const override;
+  DlTransform GetRootTransformation() const override;
 
   // |Surface|
   GrDirectContext* GetContext() override;

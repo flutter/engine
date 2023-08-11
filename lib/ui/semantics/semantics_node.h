@@ -10,9 +10,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "third_party/skia/include/core/SkM44.h"
-#include "third_party/skia/include/core/SkRect.h"
-
+#include "flutter/display_list/geometry/dl_rect.h"
+#include "flutter/display_list/geometry/dl_transform.h"
 #include "flutter/lib/ui/semantics/string_attribute.h"
 
 namespace flutter {
@@ -44,14 +43,17 @@ enum class SemanticsAction : int32_t {
   kSetText = 1 << 21,
 };
 
+[[maybe_unused]]
 const int kVerticalScrollSemanticsActions =
     static_cast<int32_t>(SemanticsAction::kScrollUp) |
     static_cast<int32_t>(SemanticsAction::kScrollDown);
 
+[[maybe_unused]]
 const int kHorizontalScrollSemanticsActions =
     static_cast<int32_t>(SemanticsAction::kScrollLeft) |
     static_cast<int32_t>(SemanticsAction::kScrollRight);
 
+[[maybe_unused]]
 const int kScrollableSemanticsActions =
     kVerticalScrollSemanticsActions | kHorizontalScrollSemanticsActions;
 
@@ -90,6 +92,7 @@ enum class SemanticsFlags : int32_t {
   kIsCheckStateMixed = 1 << 25,
 };
 
+[[maybe_unused]]
 const int kScrollableSemanticsFlags =
     static_cast<int32_t>(SemanticsFlags::kHasImplicitScrolling);
 
@@ -134,8 +137,8 @@ struct SemanticsNode {
   std::string tooltip;
   int32_t textDirection = 0;  // 0=unknown, 1=rtl, 2=ltr
 
-  SkRect rect = SkRect::MakeEmpty();  // Local space, relative to parent.
-  SkM44 transform = SkM44{};          // Identity
+  DlFRect rect;  // Local space, relative to parent.
+  DlTransform transform;          // Identity
   std::vector<int32_t> childrenInTraversalOrder;
   std::vector<int32_t> childrenInHitTestOrder;
   std::vector<int32_t> customAccessibilityActions;

@@ -169,13 +169,15 @@ static impeller::SamplerDescriptor ToSamplerDescriptor(
   return desc;
 }
 
-static Matrix ToMatrix(const SkMatrix& m) {
+static Matrix ToMatrix(const flutter::DlTransform& matrix) {
+  flutter::DlScalar m[16];
+  matrix.GetColMajor(m);
   return Matrix{
       // clang-format off
-      m[0], m[3], 0, m[6],
-      m[1], m[4], 0, m[7],
-      0,    0,    1, 0,
-      m[2], m[5], 0, m[8],
+      m[ 0], m[ 1], m[ 2], m[ 3],
+      m[ 4], m[ 5], m[ 6], m[ 7],
+      m[ 8], m[ 9], m[10], m[11],
+      m[12], m[13], m[14], m[15],
       // clang-format on
   };
 }
@@ -217,12 +219,12 @@ void DlDispatcher::setColor(flutter::DlColor color) {
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::setStrokeWidth(SkScalar width) {
+void DlDispatcher::setStrokeWidth(flutter::DlScalar width) {
   paint_.stroke_width = width;
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::setStrokeMiter(SkScalar limit) {
+void DlDispatcher::setStrokeMiter(flutter::DlScalar limit) {
   paint_.stroke_miter = limit;
 }
 
@@ -362,10 +364,10 @@ void DlDispatcher::setColorSource(const flutter::DlColorSource* source) {
           source->asConicalGradient();
       FML_DCHECK(conical_gradient);
       Point center = skia_conversions::ToPoint(conical_gradient->end_center());
-      SkScalar radius = conical_gradient->end_radius();
+      flutter::DlScalar radius = conical_gradient->end_radius();
       Point focus_center =
           skia_conversions::ToPoint(conical_gradient->start_center());
-      SkScalar focus_radius = conical_gradient->start_radius();
+      flutter::DlScalar focus_radius = conical_gradient->start_radius();
       std::vector<Color> colors;
       std::vector<float> stops;
       ConvertStops(conical_gradient, &colors, &stops);
@@ -706,7 +708,7 @@ void DlDispatcher::save() {
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::saveLayer(const SkRect* bounds,
+void DlDispatcher::saveLayer(const flutter::DlFRect* bounds,
                              const flutter::SaveLayerOptions options,
                              const flutter::DlImageFilter* backdrop) {
   auto paint = options.renders_with_attributes() ? paint_ : Paint{};
@@ -720,32 +722,32 @@ void DlDispatcher::restore() {
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::translate(SkScalar tx, SkScalar ty) {
+void DlDispatcher::translate(flutter::DlScalar tx, flutter::DlScalar ty) {
   canvas_.Translate({tx, ty, 0.0});
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::scale(SkScalar sx, SkScalar sy) {
+void DlDispatcher::scale(flutter::DlScalar sx, flutter::DlScalar sy) {
   canvas_.Scale({sx, sy, 1.0});
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::rotate(SkScalar degrees) {
+void DlDispatcher::rotate(flutter::DlScalar degrees) {
   canvas_.Rotate(Degrees{degrees});
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::skew(SkScalar sx, SkScalar sy) {
+void DlDispatcher::skew(flutter::DlScalar sx, flutter::DlScalar sy) {
   canvas_.Skew(sx, sy);
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::transform2DAffine(SkScalar mxx,
-                                     SkScalar mxy,
-                                     SkScalar mxt,
-                                     SkScalar myx,
-                                     SkScalar myy,
-                                     SkScalar myt) {
+void DlDispatcher::transform2DAffine(flutter::DlScalar mxx,
+                                     flutter::DlScalar mxy,
+                                     flutter::DlScalar mxt,
+                                     flutter::DlScalar myx,
+                                     flutter::DlScalar myy,
+                                     flutter::DlScalar myt) {
   // clang-format off
   transformFullPerspective(
     mxx, mxy,  0, mxt,
@@ -757,22 +759,22 @@ void DlDispatcher::transform2DAffine(SkScalar mxx,
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::transformFullPerspective(SkScalar mxx,
-                                            SkScalar mxy,
-                                            SkScalar mxz,
-                                            SkScalar mxt,
-                                            SkScalar myx,
-                                            SkScalar myy,
-                                            SkScalar myz,
-                                            SkScalar myt,
-                                            SkScalar mzx,
-                                            SkScalar mzy,
-                                            SkScalar mzz,
-                                            SkScalar mzt,
-                                            SkScalar mwx,
-                                            SkScalar mwy,
-                                            SkScalar mwz,
-                                            SkScalar mwt) {
+void DlDispatcher::transformFullPerspective(flutter::DlScalar mxx,
+                                            flutter::DlScalar mxy,
+                                            flutter::DlScalar mxz,
+                                            flutter::DlScalar mxt,
+                                            flutter::DlScalar myx,
+                                            flutter::DlScalar myy,
+                                            flutter::DlScalar myz,
+                                            flutter::DlScalar myt,
+                                            flutter::DlScalar mzx,
+                                            flutter::DlScalar mzy,
+                                            flutter::DlScalar mzz,
+                                            flutter::DlScalar mzt,
+                                            flutter::DlScalar mwx,
+                                            flutter::DlScalar mwy,
+                                            flutter::DlScalar mwz,
+                                            flutter::DlScalar mwt) {
   // The order of arguments is row-major but Impeller matrices are
   // column-major.
   // clang-format off
@@ -803,22 +805,22 @@ static Entity::ClipOperation ToClipOperation(
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::clipRect(const SkRect& rect, ClipOp clip_op, bool is_aa) {
+void DlDispatcher::clipRect(const flutter::DlFRect& rect, ClipOp clip_op, bool is_aa) {
   canvas_.ClipRect(skia_conversions::ToRect(rect), ToClipOperation(clip_op));
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::clipRRect(const SkRRect& rrect, ClipOp clip_op, bool is_aa) {
-  if (rrect.isSimple()) {
+void DlDispatcher::clipRRect(const flutter::DlFRRect& rrect, ClipOp clip_op, bool is_aa) {
+  if (rrect.is_simple()) {
     canvas_.ClipRRect(skia_conversions::ToRect(rrect.rect()),
-                      rrect.getSimpleRadii().fX, ToClipOperation(clip_op));
+                      rrect.upper_left_radii().x(), ToClipOperation(clip_op));
   } else {
     canvas_.ClipPath(skia_conversions::ToPath(rrect), ToClipOperation(clip_op));
   }
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::clipPath(const SkPath& path, ClipOp clip_op, bool is_aa) {
+void DlDispatcher::clipPath(const flutter::DlPath& path, ClipOp clip_op, bool is_aa) {
   canvas_.ClipPath(skia_conversions::ToPath(path), ToClipOperation(clip_op));
 }
 
@@ -837,7 +839,7 @@ void DlDispatcher::drawPaint() {
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawLine(const SkPoint& p0, const SkPoint& p1) {
+void DlDispatcher::drawLine(const flutter::DlFPoint& p0, const flutter::DlFPoint& p1) {
   auto path =
       PathBuilder{}
           .AddLine(skia_conversions::ToPoint(p0), skia_conversions::ToPoint(p1))
@@ -849,14 +851,14 @@ void DlDispatcher::drawLine(const SkPoint& p0, const SkPoint& p1) {
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawRect(const SkRect& rect) {
+void DlDispatcher::drawRect(const flutter::DlFRect& rect) {
   canvas_.DrawRect(skia_conversions::ToRect(rect), paint_);
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawOval(const SkRect& bounds) {
+void DlDispatcher::drawOval(const flutter::DlFRect& bounds) {
   if (bounds.width() == bounds.height()) {
-    canvas_.DrawCircle(skia_conversions::ToPoint(bounds.center()),
+    canvas_.DrawCircle(skia_conversions::ToPoint(bounds.Center()),
                        bounds.width() * 0.5, paint_);
   } else {
     auto path = PathBuilder{}
@@ -868,22 +870,22 @@ void DlDispatcher::drawOval(const SkRect& bounds) {
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawCircle(const SkPoint& center, SkScalar radius) {
+void DlDispatcher::drawCircle(const flutter::DlFPoint& center, flutter::DlScalar radius) {
   canvas_.DrawCircle(skia_conversions::ToPoint(center), radius, paint_);
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawRRect(const SkRRect& rrect) {
-  if (rrect.isSimple()) {
+void DlDispatcher::drawRRect(const flutter::DlFRRect& rrect) {
+  if (rrect.is_simple()) {
     canvas_.DrawRRect(skia_conversions::ToRect(rrect.rect()),
-                      rrect.getSimpleRadii().fX, paint_);
+                      rrect.upper_left_radii().x(), paint_);
   } else {
     canvas_.DrawPath(skia_conversions::ToPath(rrect), paint_);
   }
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawDRRect(const SkRRect& outer, const SkRRect& inner) {
+void DlDispatcher::drawDRRect(const flutter::DlFRRect& outer, const flutter::DlFRRect& inner) {
   PathBuilder builder;
   builder.AddPath(skia_conversions::ToPath(outer));
   builder.AddPath(skia_conversions::ToPath(inner));
@@ -891,17 +893,17 @@ void DlDispatcher::drawDRRect(const SkRRect& outer, const SkRRect& inner) {
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawPath(const SkPath& path) {
-  SkRect rect;
-  SkRRect rrect;
-  SkRect oval;
-  if (path.isRect(&rect)) {
+void DlDispatcher::drawPath(const flutter::DlPath& path) {
+  flutter::DlFRect rect;
+  flutter::DlFRRect rrect;
+  flutter::DlFRect oval;
+  if (path.is_rect(&rect)) {
     canvas_.DrawRect(skia_conversions::ToRect(rect), paint_);
-  } else if (path.isRRect(&rrect) && rrect.isSimple()) {
+  } else if (path.is_rrect(&rrect) && rrect.is_simple()) {
     canvas_.DrawRRect(skia_conversions::ToRect(rrect.rect()),
-                      rrect.getSimpleRadii().fX, paint_);
-  } else if (path.isOval(&oval) && oval.width() == oval.height()) {
-    canvas_.DrawCircle(skia_conversions::ToPoint(oval.center()),
+                      rrect.upper_left_radii().x(), paint_);
+  } else if (path.is_oval(&oval) && oval.width() == oval.height()) {
+    canvas_.DrawCircle(skia_conversions::ToPoint(oval.Center()),
                        oval.width() * 0.5, paint_);
   } else {
     canvas_.DrawPath(skia_conversions::ToPath(path), paint_);
@@ -909,9 +911,9 @@ void DlDispatcher::drawPath(const SkPath& path) {
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawArc(const SkRect& oval_bounds,
-                           SkScalar start_degrees,
-                           SkScalar sweep_degrees,
+void DlDispatcher::drawArc(const flutter::DlFRect& oval_bounds,
+                           flutter::DlScalar start_degrees,
+                           flutter::DlScalar sweep_degrees,
                            bool use_center) {
   PathBuilder builder;
   builder.AddArc(skia_conversions::ToRect(oval_bounds), Degrees(start_degrees),
@@ -922,7 +924,7 @@ void DlDispatcher::drawArc(const SkRect& oval_bounds,
 // |flutter::DlOpReceiver|
 void DlDispatcher::drawPoints(PointMode mode,
                               uint32_t count,
-                              const SkPoint points[]) {
+                              const flutter::DlFPoint points[]) {
   Paint paint = paint_;
   paint.style = Paint::Style::kStroke;
   switch (mode) {
@@ -968,7 +970,7 @@ void DlDispatcher::drawVertices(const flutter::DlVertices* vertices,
 
 // |flutter::DlOpReceiver|
 void DlDispatcher::drawImage(const sk_sp<flutter::DlImage> image,
-                             const SkPoint point,
+                             const flutter::DlFPoint point,
                              flutter::DlImageSampling sampling,
                              bool render_with_attributes) {
   if (!image) {
@@ -981,9 +983,9 @@ void DlDispatcher::drawImage(const sk_sp<flutter::DlImage> image,
   }
 
   const auto size = texture->GetSize();
-  const auto src = SkRect::MakeWH(size.width, size.height);
+  const auto src = flutter::DlFRect::MakeWH(size.width, size.height);
   const auto dest =
-      SkRect::MakeXYWH(point.fX, point.fY, size.width, size.height);
+      flutter::DlFRect::MakeXYWH(point.x(), point.y(), size.width, size.height);
 
   drawImageRect(image,                      // image
                 src,                        // source rect
@@ -997,8 +999,8 @@ void DlDispatcher::drawImage(const sk_sp<flutter::DlImage> image,
 // |flutter::DlOpReceiver|
 void DlDispatcher::drawImageRect(
     const sk_sp<flutter::DlImage> image,
-    const SkRect& src,
-    const SkRect& dst,
+    const flutter::DlFRect& src,
+    const flutter::DlFRect& dst,
     flutter::DlImageSampling sampling,
     bool render_with_attributes,
     SrcRectConstraint constraint = SrcRectConstraint::kFast) {
@@ -1013,27 +1015,27 @@ void DlDispatcher::drawImageRect(
 
 // |flutter::DlOpReceiver|
 void DlDispatcher::drawImageNine(const sk_sp<flutter::DlImage> image,
-                                 const SkIRect& center,
-                                 const SkRect& dst,
+                                 const flutter::DlIRect& center,
+                                 const flutter::DlFRect& dst,
                                  flutter::DlFilterMode filter,
                                  bool render_with_attributes) {
   NinePatchConverter converter = {};
   converter.DrawNinePatch(
       std::make_shared<Image>(image->impeller_texture()),
-      Rect::MakeLTRB(center.fLeft, center.fTop, center.fRight, center.fBottom),
+      Rect::MakeLTRB(center.left(), center.top(), center.right(), center.bottom()),
       skia_conversions::ToRect(dst), ToSamplerDescriptor(filter), &canvas_,
       &paint_);
 }
 
 // |flutter::DlOpReceiver|
 void DlDispatcher::drawAtlas(const sk_sp<flutter::DlImage> atlas,
-                             const SkRSXform xform[],
-                             const SkRect tex[],
+                             const flutter::DlRSTransform xform[],
+                             const flutter::DlFRect tex[],
                              const flutter::DlColor colors[],
                              int count,
                              flutter::DlBlendMode mode,
                              flutter::DlImageSampling sampling,
-                             const SkRect* cull_rect,
+                             const flutter::DlFRect* cull_rect,
                              bool render_with_attributes) {
   canvas_.DrawAtlas(std::make_shared<Image>(atlas->impeller_texture()),
                     skia_conversions::ToRSXForms(xform, count),
@@ -1046,7 +1048,7 @@ void DlDispatcher::drawAtlas(const sk_sp<flutter::DlImage> atlas,
 // |flutter::DlOpReceiver|
 void DlDispatcher::drawDisplayList(
     const sk_sp<flutter::DisplayList> display_list,
-    SkScalar opacity) {
+    flutter::DlScalar opacity) {
   // Save all values that must remain untouched after the operation.
   Paint saved_paint = paint_;
   Matrix saved_initial_matrix = initial_matrix_;
@@ -1084,8 +1086,10 @@ void DlDispatcher::drawDisplayList(
     if (cull_bounds.has_value()) {
       Rect cull_rect = cull_bounds.value();
       display_list->Dispatch(
-          *this, SkRect::MakeLTRB(cull_rect.GetLeft(), cull_rect.GetTop(),
-                                  cull_rect.GetRight(), cull_rect.GetBottom()));
+          *this, flutter::DlFRect::MakeLTRB(cull_rect.GetLeft(),
+                                            cull_rect.GetTop(),
+                                            cull_rect.GetRight(),
+                                            cull_rect.GetBottom()));
     } else {
       display_list->Dispatch(*this);
     }
@@ -1102,8 +1106,8 @@ void DlDispatcher::drawDisplayList(
 
 // |flutter::DlOpReceiver|
 void DlDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,
-                                SkScalar x,
-                                SkScalar y) {
+                                flutter::DlScalar x,
+                                flutter::DlScalar y) {
   const auto text_frame = TextFrameFromTextBlob(blob);
   if (paint_.style == Paint::Style::kStroke) {
     auto path = skia_conversions::PathDataFromTextBlob(blob);
@@ -1125,11 +1129,11 @@ void DlDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawShadow(const SkPath& path,
+void DlDispatcher::drawShadow(const flutter::DlPath& path,
                               const flutter::DlColor color,
-                              const SkScalar elevation,
+                              const flutter::DlScalar elevation,
                               bool transparent_occluder,
-                              SkScalar dpr) {
+                              flutter::DlScalar dpr) {
   Color spot_color = skia_conversions::ToColor(color);
   spot_color.alpha *= 0.25;
 
@@ -1178,16 +1182,16 @@ void DlDispatcher::drawShadow(const SkPath& path,
   canvas_.PreConcat(
       Matrix::MakeTranslation(Vector2(0, -occluder_z * light_position.y)));
 
-  SkRect rect;
-  SkRRect rrect;
-  SkRect oval;
-  if (path.isRect(&rect)) {
+  flutter::DlFRect rect;
+  flutter::DlFRRect rrect;
+  flutter::DlFRect oval;
+  if (path.is_rect(&rect)) {
     canvas_.DrawRect(skia_conversions::ToRect(rect), paint);
-  } else if (path.isRRect(&rrect) && rrect.isSimple()) {
+  } else if (path.is_rrect(&rrect) && rrect.is_simple()) {
     canvas_.DrawRRect(skia_conversions::ToRect(rrect.rect()),
-                      rrect.getSimpleRadii().fX, paint);
-  } else if (path.isOval(&oval) && oval.width() == oval.height()) {
-    canvas_.DrawCircle(skia_conversions::ToPoint(oval.center()),
+                      rrect.upper_left_radii().x(), paint);
+  } else if (path.is_oval(&oval) && oval.width() == oval.height()) {
+    canvas_.DrawCircle(skia_conversions::ToPoint(oval.Center()),
                        oval.width() * 0.5, paint);
   } else {
     canvas_.DrawPath(skia_conversions::ToPath(path), paint);

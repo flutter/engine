@@ -15,7 +15,7 @@ using MockLayerTest = LayerTest;
 
 #ifndef NDEBUG
 TEST_F(MockLayerTest, PaintBeforePrerollDies) {
-  SkPath path = SkPath().addRect(5.0f, 6.0f, 20.5f, 21.5f);
+  DlPath path = DlPath::MakeRectLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   auto layer = std::make_shared<MockLayer>(path, DlPaint());
 
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
@@ -23,10 +23,10 @@ TEST_F(MockLayerTest, PaintBeforePrerollDies) {
 }
 
 TEST_F(MockLayerTest, PaintingEmptyLayerDies) {
-  auto layer = std::make_shared<MockLayer>(SkPath(), DlPaint());
+  auto layer = std::make_shared<MockLayer>(DlPath(), DlPaint());
 
   layer->Preroll(preroll_context());
-  EXPECT_EQ(layer->paint_bounds(), SkPath().getBounds());
+  EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
 
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
                             "needs_painting\\(context\\)");
@@ -34,13 +34,13 @@ TEST_F(MockLayerTest, PaintingEmptyLayerDies) {
 #endif
 
 TEST_F(MockLayerTest, SimpleParams) {
-  const SkPath path = SkPath().addRect(5.0f, 6.0f, 20.5f, 21.5f);
+  const DlPath path = DlPath::MakeRectLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   const DlPaint paint = DlPaint(DlColor::kBlue());
-  const SkMatrix start_matrix = SkMatrix::Translate(1.0f, 2.0f);
-  const SkMatrix scale_matrix = SkMatrix::Scale(0.5f, 0.5f);
-  const SkMatrix combined_matrix = SkMatrix::Concat(start_matrix, scale_matrix);
-  const SkRect local_cull_rect = SkRect::MakeWH(5.0f, 5.0f);
-  const SkRect device_cull_rect = combined_matrix.mapRect(local_cull_rect);
+  const DlTransform start_matrix = DlTransform::MakeTranslate(1.0f, 2.0f);
+  const DlTransform scale_matrix = DlTransform::MakeScale(0.5f, 0.5f);
+  const DlTransform combined_matrix = DlTransform::MakeConcat(start_matrix, scale_matrix);
+  const DlFRect local_cull_rect = DlFRect::MakeWH(5.0f, 5.0f);
+  const DlFRect device_cull_rect = combined_matrix.TransformRect(local_cull_rect);
   const bool parent_has_platform_view = true;
   auto layer = std::make_shared<MockLayer>(path, paint);
 
@@ -51,7 +51,7 @@ TEST_F(MockLayerTest, SimpleParams) {
   preroll_context()->has_platform_view = parent_has_platform_view;
   layer->Preroll(preroll_context());
   EXPECT_EQ(preroll_context()->has_platform_view, false);
-  EXPECT_EQ(layer->paint_bounds(), path.getBounds());
+  EXPECT_EQ(layer->paint_bounds(), path.Bounds());
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(layer->parent_mutators(), std::vector{Mutator(scale_matrix)});
   EXPECT_EQ(layer->parent_matrix(), combined_matrix);
@@ -65,7 +65,7 @@ TEST_F(MockLayerTest, SimpleParams) {
 }
 
 TEST_F(MockLayerTest, FakePlatformView) {
-  auto layer = std::make_shared<MockLayer>(SkPath(), DlPaint());
+  auto layer = std::make_shared<MockLayer>(DlPath(), DlPaint());
   layer->set_fake_has_platform_view(true);
   EXPECT_EQ(preroll_context()->has_platform_view, false);
 
@@ -74,7 +74,7 @@ TEST_F(MockLayerTest, FakePlatformView) {
 }
 
 TEST_F(MockLayerTest, SaveLayerOnLeafNodesCanvas) {
-  auto layer = std::make_shared<MockLayer>(SkPath(), DlPaint());
+  auto layer = std::make_shared<MockLayer>(DlPath(), DlPaint());
   layer->set_fake_has_platform_view(true);
   EXPECT_EQ(preroll_context()->has_platform_view, false);
 
@@ -83,7 +83,7 @@ TEST_F(MockLayerTest, SaveLayerOnLeafNodesCanvas) {
 }
 
 TEST_F(MockLayerTest, OpacityInheritance) {
-  auto path1 = SkPath().addRect({10, 10, 30, 30});
+  auto path1 = DlPath::MakeRectLTRB(10, 10, 30, 30);
   PrerollContext* context = preroll_context();
 
   auto mock1 = std::make_shared<MockLayer>(path1);
@@ -97,7 +97,7 @@ TEST_F(MockLayerTest, OpacityInheritance) {
 }
 
 TEST_F(MockLayerTest, FlagGetSet) {
-  auto mock_layer = std::make_shared<MockLayer>(SkPath());
+  auto mock_layer = std::make_shared<MockLayer>(DlPath());
 
   EXPECT_EQ(mock_layer->parent_has_platform_view(), false);
   mock_layer->set_parent_has_platform_view(true);

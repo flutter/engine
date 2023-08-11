@@ -40,7 +40,7 @@ void ColorFilterLayer::Preroll(PrerollContext* context) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
   AutoCache cache = AutoCache(layer_raster_cache_item_.get(), context,
-                              context->state_stack.transform_3x3());
+                              context->state_stack.transform());
 
   ContainerLayer::Preroll(context);
 

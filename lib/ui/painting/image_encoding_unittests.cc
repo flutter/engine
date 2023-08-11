@@ -36,7 +36,7 @@ class MockDlImage : public DlImage {
   MOCK_CONST_METHOD0(isOpaque, bool());
   MOCK_CONST_METHOD0(isTextureBacked, bool());
   MOCK_CONST_METHOD0(isUIThreadSafe, bool());
-  MOCK_CONST_METHOD0(dimensions, SkISize());
+  MOCK_CONST_METHOD0(dimensions, DlISize());
   MOCK_CONST_METHOD0(GetApproximateByteSize, size_t());
 };
 
@@ -224,7 +224,7 @@ std::shared_ptr<impeller::Context> MakeConvertDlImageToSkImageContext(
 TEST(ImageEncodingImpellerTest, ConvertDlImageToSkImage16Float) {
   sk_sp<MockDlImage> image(new MockDlImage());
   EXPECT_CALL(*image, dimensions)
-      .WillRepeatedly(Return(SkISize::Make(100, 100)));
+      .WillRepeatedly(Return(DlISize(100, 100)));
   impeller::TextureDescriptor desc;
   desc.format = impeller::PixelFormat::kR16G16B16A16Float;
   auto texture = std::make_shared<MockTexture>(desc);
@@ -250,7 +250,7 @@ TEST(ImageEncodingImpellerTest, ConvertDlImageToSkImage16Float) {
 TEST(ImageEncodingImpellerTest, ConvertDlImageToSkImage10XR) {
   sk_sp<MockDlImage> image(new MockDlImage());
   EXPECT_CALL(*image, dimensions)
-      .WillRepeatedly(Return(SkISize::Make(100, 100)));
+      .WillRepeatedly(Return(DlISize(100, 100)));
   impeller::TextureDescriptor desc;
   desc.format = impeller::PixelFormat::kB10G10R10XR;
   auto texture = std::make_shared<MockTexture>(desc);

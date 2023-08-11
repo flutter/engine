@@ -7,11 +7,11 @@
 
 #include <vector>
 
+#include "flutter/display_list/geometry/dl_rect.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/time/time_delta.h"
 
 #include "third_party/skia/include/core/SkData.h"
-#include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
 
 namespace flutter {
@@ -23,7 +23,7 @@ class LayerSnapshotData {
   LayerSnapshotData(int64_t layer_unique_id,
                     const fml::TimeDelta& duration,
                     const sk_sp<SkData>& snapshot,
-                    const SkRect& bounds);
+                    const DlFRect& bounds);
 
   ~LayerSnapshotData() = default;
 
@@ -33,13 +33,13 @@ class LayerSnapshotData {
 
   sk_sp<SkData> GetSnapshot() const { return snapshot_; }
 
-  SkRect GetBounds() const { return bounds_; }
+  DlFRect GetBounds() const { return bounds_; }
 
  private:
   const int64_t layer_unique_id_;
   const fml::TimeDelta duration_;
   const sk_sp<SkData> snapshot_;
-  const SkRect bounds_;
+  const DlFRect bounds_;
 };
 
 /// Collects snapshots of layers during frame rasterization.

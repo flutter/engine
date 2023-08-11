@@ -25,8 +25,8 @@ class DlSkPaintDispatchHelper : public virtual DlOpReceiver {
   void setDither(bool dither) override;
   void setDrawStyle(DlDrawStyle style) override;
   void setColor(DlColor color) override;
-  void setStrokeWidth(SkScalar width) override;
-  void setStrokeMiter(SkScalar limit) override;
+  void setStrokeWidth(DlScalar width) override;
+  void setStrokeMiter(DlScalar limit) override;
   void setStrokeCap(DlStrokeCap cap) override;
   void setStrokeJoin(DlStrokeJoin join) override;
   void setColorSource(const DlColorSource* source) override;

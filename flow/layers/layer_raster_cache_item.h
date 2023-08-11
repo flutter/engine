@@ -31,10 +31,11 @@ class LayerRasterCacheItem : public RasterCacheItem {
 
   std::optional<RasterCacheKeyID> GetId() const override;
 
-  void PrerollSetup(PrerollContext* context, const SkMatrix& matrix) override;
+  void PrerollSetup(PrerollContext* context,
+                    const DlTransform& transform) override;
 
   void PrerollFinalize(PrerollContext* context,
-                       const SkMatrix& matrix) override;
+                       const DlTransform& transform) override;
 
   bool Draw(const PaintContext& context, const DlPaint* paint) const override;
 
@@ -52,7 +53,7 @@ class LayerRasterCacheItem : public RasterCacheItem {
   bool IsCacheChildren() const { return cache_state_ == CacheState::kChildren; }
 
  protected:
-  const SkRect* GetPaintBoundsFromLayer() const;
+  const DlFRect* GetPaintBoundsFromLayer() const;
 
   Layer* layer_;
 

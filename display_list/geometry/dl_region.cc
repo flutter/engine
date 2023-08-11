@@ -94,11 +94,11 @@ void DlRegion::SpanBuffer::getSpans(SpanChunkHandle handle,
   end = begin + getChunkSize(handle);
 }
 
-DlRegion::DlRegion(const std::vector<SkIRect>& rects) {
+DlRegion::DlRegion(const std::vector<DlIRect>& rects) {
   setRects(rects);
 }
 
-DlRegion::DlRegion(const SkIRect& rect) : bounds_(rect) {
+DlRegion::DlRegion(const DlIRect& rect) : bounds_(rect) {
   Span span{rect.left(), rect.right()};
   lines_.push_back(makeLine(rect.top(), rect.bottom(), &span, &span + 1));
 }
@@ -248,17 +248,17 @@ size_t DlRegion::intersectLineSpans(std::vector<Span>& res,
   return new_span - res.data();
 }
 
-void DlRegion::setRects(const std::vector<SkIRect>& unsorted_rects) {
+void DlRegion::setRects(const std::vector<DlIRect>& unsorted_rects) {
   // setRects can only be called on empty regions.
   FML_DCHECK(lines_.empty());
 
   size_t count = unsorted_rects.size();
-  std::vector<const SkIRect*> rects(count);
+  std::vector<const DlIRect*> rects(count);
   for (size_t i = 0; i < count; i++) {
     rects[i] = &unsorted_rects[i];
-    bounds_.join(unsorted_rects[i]);
+    bounds_.Join(unsorted_rects[i]);
   }
-  std::sort(rects.begin(), rects.end(), [](const SkIRect* a, const SkIRect* b) {
+  std::sort(rects.begin(), rects.end(), [](const DlIRect* a, const DlIRect* b) {
     if (a->top() < b->top()) {
       return true;
     }
@@ -284,7 +284,7 @@ void DlRegion::setRects(const std::vector<SkIRect>& unsorted_rects) {
     // First prune passed rects out of the active list
     size_t preserve_end = 0;
     for (size_t i = 0; i < active_end; i++) {
-      const SkIRect* r = rects[i];
+      const DlIRect* r = rects[i];
       if (r->bottom() > cur_y) {
         rects[preserve_end++] = r;
       }
@@ -303,8 +303,8 @@ void DlRegion::setRects(const std::vector<SkIRect>& unsorted_rects) {
 
     // Next, insert any new rects we've reached into the active list
     while (next_rect < count) {
-      const SkIRect* r = rects[next_rect];
-      if (r->isEmpty()) {
+      const DlIRect* r = rects[next_rect];
+      if (r->is_empty()) {
         continue;
       }
       if (r->top() > cur_y) {
@@ -314,7 +314,7 @@ void DlRegion::setRects(const std::vector<SkIRect>& unsorted_rects) {
       next_rect++;
       size_t insert_at = active_end++;
       while (insert_at > 0) {
-        const SkIRect* ir = rects[insert_at - 1];
+        const DlIRect* ir = rects[insert_at - 1];
         if (ir->left() <= r->left()) {
           break;
         }
@@ -340,7 +340,7 @@ void DlRegion::setRects(const std::vector<SkIRect>& unsorted_rects) {
     int32_t end_x = rects[0]->right();
     int32_t end_y = rects[0]->bottom();
     for (size_t i = 1; i < active_end; i++) {
-      const SkIRect* r = rects[i];
+      const DlIRect* r = rects[i];
       if (r->left() > end_x) {
         working_spans.emplace_back(start_x, end_x);
         start_x = r->left();
@@ -407,15 +407,15 @@ DlRegion DlRegion::MakeUnion(const DlRegion& a, const DlRegion& b) {
     return b;
   } else if (b.isEmpty()) {
     return a;
-  } else if (a.isSimple() && a.bounds_.contains(b.bounds_)) {
+  } else if (a.isSimple() && a.bounds_.Contains(b.bounds_)) {
     return a;
-  } else if (b.isSimple() && b.bounds_.contains(a.bounds_)) {
+  } else if (b.isSimple() && b.bounds_.Contains(a.bounds_)) {
     return b;
   }
 
   DlRegion res;
   res.bounds_ = a.bounds_;
-  res.bounds_.join(b.bounds_);
+  res.bounds_.Join(b.bounds_);
   res.span_buffer_.reserve(a.span_buffer_.capacity() +
                            b.span_buffer_.capacity());
 
@@ -495,17 +495,17 @@ DlRegion DlRegion::MakeUnion(const DlRegion& a, const DlRegion& b) {
 }
 
 DlRegion DlRegion::MakeIntersection(const DlRegion& a, const DlRegion& b) {
-  if (!SkIRect::Intersects(a.bounds_, b.bounds_)) {
+  if (!a.bounds_.Intersects(b.bounds_)) {
     return DlRegion();
   } else if (a.isSimple() && b.isSimple()) {
-    SkIRect r(a.bounds_);
-    auto res = r.intersect(b.bounds_);
+    DlIRect r(a.bounds_);
+    auto res = r.Intersect(b.bounds_);
     (void)res;  // Suppress unused variable warning in release builds.
     FML_DCHECK(res);
     return DlRegion(r);
-  } else if (a.isSimple() && a.bounds_.contains(b.bounds_)) {
+  } else if (a.isSimple() && a.bounds_.Contains(b.bounds_)) {
     return b;
-  } else if (b.isSimple() && b.bounds_.contains(a.bounds_)) {
+  } else if (b.isSimple() && b.bounds_.Contains(a.bounds_)) {
     return a;
   }
 
@@ -544,7 +544,7 @@ DlRegion DlRegion::MakeIntersection(const DlRegion& a, const DlRegion& b) {
                                      b_buffer, b_it->chunk_handle);
       if (size > 0) {
         res.appendLine(top, bottom, tmp.data(), tmp.data() + size);
-        res.bounds_.join(SkIRect::MakeLTRB(
+        res.bounds_.Join(DlIRect::MakeLTRB(
             tmp.data()->left, top, (tmp.data() + size - 1)->right, bottom));
       }
       cur_top = bottom;
@@ -560,8 +560,8 @@ DlRegion DlRegion::MakeIntersection(const DlRegion& a, const DlRegion& b) {
   return res;
 }
 
-std::vector<SkIRect> DlRegion::getRects(bool deband) const {
-  std::vector<SkIRect> rects;
+std::vector<DlIRect> DlRegion::getRects(bool deband) const {
+  std::vector<DlIRect> rects;
   if (isEmpty()) {
     return rects;
   } else if (isSimple()) {
@@ -580,7 +580,8 @@ std::vector<SkIRect> DlRegion::getRects(bool deband) const {
     const Span *span_begin, *span_end;
     span_buffer_.getSpans(line.chunk_handle, span_begin, span_end);
     for (const auto* span = span_begin; span < span_end; ++span) {
-      SkIRect rect{span->left, line.top, span->right, line.bottom};
+      DlIRect rect =
+          DlIRect::MakeLTRB(span->left, line.top, span->right, line.bottom);
       if (deband) {
         auto iter = rects.begin() + previous_span_end;
         // If there is rectangle previously in rects on which this one is a
@@ -594,7 +595,7 @@ std::vector<SkIRect> DlRegion::getRects(bool deband) const {
           } else if (iter->left() == rect.left() &&
                      iter->right() == rect.right()) {
             FML_DCHECK(iter->bottom() == rect.top());
-            rect.fTop = iter->fTop;
+            rect.SetTop(iter->top());
             rects.erase(iter);
             --previous_span_end;
             break;
@@ -614,12 +615,12 @@ bool DlRegion::isComplex() const {
           span_buffer_.getChunkSize(lines_.front().chunk_handle) > 1);
 }
 
-bool DlRegion::intersects(const SkIRect& rect) const {
+bool DlRegion::intersects(const DlIRect& rect) const {
   if (isEmpty()) {
     return false;
   }
 
-  auto bounds_intersect = SkIRect::Intersects(bounds_, rect);
+  auto bounds_intersect = bounds_.Intersects(rect);
 
   if (isSimple()) {
     return bounds_intersect;
@@ -632,22 +633,22 @@ bool DlRegion::intersects(const SkIRect& rect) const {
   auto it = lines_.begin();
   auto end = lines_.end();
   if (lines_.size() > kBinarySearchThreshold &&
-      it[kBinarySearchThreshold].bottom <= rect.fTop) {
+      it[kBinarySearchThreshold].bottom <= rect.top()) {
     it = std::lower_bound(
-        lines_.begin() + kBinarySearchThreshold + 1, lines_.end(), rect.fTop,
+        lines_.begin() + kBinarySearchThreshold + 1, lines_.end(), rect.top(),
         [](const SpanLine& line, int32_t top) { return line.bottom <= top; });
   } else {
-    while (it != end && it->bottom <= rect.fTop) {
+    while (it != end && it->bottom <= rect.top()) {
       ++it;
       continue;
     }
   }
-  while (it != end && it->top < rect.fBottom) {
-    FML_DCHECK(rect.fTop < it->bottom && it->top < rect.fBottom);
+  while (it != end && it->top < rect.bottom()) {
+    FML_DCHECK(rect.top() < it->bottom && it->top < rect.bottom());
     const Span *begin, *end;
     span_buffer_.getSpans(it->chunk_handle, begin, end);
-    while (begin != end && begin->left < rect.fRight) {
-      if (begin->right > rect.fLeft) {
+    while (begin != end && begin->left < rect.right()) {
+      if (begin->right > rect.left()) {
         return true;
       }
       ++begin;
@@ -709,7 +710,7 @@ bool DlRegion::intersects(const DlRegion& region) const {
 
   auto our_complex = isComplex();
   auto their_complex = region.isComplex();
-  auto bounds_intersect = SkIRect::Intersects(bounds_, region.bounds_);
+  auto bounds_intersect = bounds_.Intersects(region.bounds_);
 
   if (!our_complex && !their_complex) {
     return bounds_intersect;

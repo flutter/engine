@@ -51,7 +51,7 @@ bool GPUSurfaceGLImpeller::IsValid() {
 
 // |Surface|
 std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
-    const SkISize& size) {
+    const DlISize& size) {
   if (!IsValid()) {
     FML_LOG(ERROR) << "OpenGL surface was invalid.";
     return nullptr;
@@ -112,7 +112,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
         impeller::DlDispatcher impeller_dispatcher(dl_cull_rect);
         display_list->Dispatch(
             impeller_dispatcher,
-            SkIRect::MakeWH(cull_rect.width, cull_rect.height));
+            DlIRect::MakeWH(cull_rect.width, cull_rect.height));
         auto picture = impeller_dispatcher.EndRecordingAsPicture();
 
         return renderer->Render(
@@ -135,7 +135,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
 }
 
 // |Surface|
-SkMatrix GPUSurfaceGLImpeller::GetRootTransformation() const {
+DlTransform GPUSurfaceGLImpeller::GetRootTransformation() const {
   // This backend does not currently support root surface transformations. Just
   // return identity.
   return {};

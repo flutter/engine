@@ -4,21 +4,23 @@
 
 #include "flutter/display_list/dl_canvas.h"
 
+#include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkPoint3.h"
 #include "third_party/skia/include/utils/SkShadowUtils.h"
 
 namespace flutter {
 
-SkRect DlCanvas::ComputeShadowBounds(const SkPath& path,
-                                     float elevation,
-                                     SkScalar dpr,
-                                     const SkMatrix& ctm) {
-  SkRect shadow_bounds(path.getBounds());
+DlFRect DlCanvas::ComputeShadowBounds(const DlPath& path,
+                                      float elevation,
+                                      DlScalar dpr,
+                                      const DlTransform& ctm) {
+  SkPath sk_path = path.GetSkiaPath();
+  SkRect shadow_bounds(sk_path.getBounds());
   SkShadowUtils::GetLocalBounds(
-      ctm, path, SkPoint3::Make(0, 0, dpr * elevation),
+      ctm.ToSkMatrix(), sk_path, SkPoint3::Make(0, 0, dpr * elevation),
       SkPoint3::Make(0, -1, 1), kShadowLightRadius / kShadowLightHeight,
       SkShadowFlags::kDirectionalLight_ShadowFlag, &shadow_bounds);
-  return shadow_bounds;
+  return DlFRect::MakeBounds(shadow_bounds);
 }
 
 }  // namespace flutter

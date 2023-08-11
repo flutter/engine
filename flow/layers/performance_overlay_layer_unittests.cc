@@ -85,7 +85,7 @@ static void TestPerformanceOverlayLayerGold(int refresh_rate) {
           flutter::kDisplayEngineStatistics |
           flutter::kVisualizeEngineStatistics,
       flutter::GetFontFile().c_str());
-  layer.set_paint_bounds(SkRect::MakeWH(1000, 400));
+  layer.set_paint_bounds(DlFRect::MakeWH(1000, 400));
   surface->getCanvas()->clear(SK_ColorTRANSPARENT);
   layer.Paint(paint_context);
 
@@ -137,7 +137,7 @@ TEST_F(PerformanceOverlayLayerTest, PaintingEmptyLayerDies) {
   auto layer = std::make_shared<PerformanceOverlayLayer>(overlay_opts);
 
   layer->Preroll(preroll_context());
-  EXPECT_EQ(layer->paint_bounds(), SkRect::MakeEmpty());
+  EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
   EXPECT_FALSE(layer->needs_painting(paint_context()));
 
   // Crashes reading a nullptr.
@@ -145,7 +145,7 @@ TEST_F(PerformanceOverlayLayerTest, PaintingEmptyLayerDies) {
 }
 
 TEST_F(PerformanceOverlayLayerTest, InvalidOptions) {
-  const SkRect layer_bounds = SkRect::MakeLTRB(0.0f, 0.0f, 64.0f, 64.0f);
+  const DlFRect layer_bounds = DlFRect::MakeLTRB(0.0f, 0.0f, 64.0f, 64.0f);
   const uint64_t overlay_opts = 0;
   auto layer = std::make_shared<PerformanceOverlayLayer>(overlay_opts);
 
@@ -163,7 +163,7 @@ TEST_F(PerformanceOverlayLayerTest, InvalidOptions) {
 }
 
 TEST_F(PerformanceOverlayLayerTest, SimpleRasterizerStatistics) {
-  const SkRect layer_bounds = SkRect::MakeLTRB(0.0f, 0.0f, 64.0f, 64.0f);
+  const DlFRect layer_bounds = DlFRect::MakeLTRB(0.0f, 0.0f, 64.0f, 64.0f);
   const uint64_t overlay_opts = kDisplayRasterizerStatistics;
   auto layer = std::make_shared<PerformanceOverlayLayer>(overlay_opts);
 
@@ -181,7 +181,7 @@ TEST_F(PerformanceOverlayLayerTest, SimpleRasterizerStatistics) {
   auto overlay_text_data = overlay_text->serialize(SkSerialProcs{});
   // Historically SK_ColorGRAY (== 0xFF888888) was used here
   DlPaint text_paint(0xFF888888);
-  SkPoint text_position = SkPoint::Make(16.0f, 22.0f);
+  DlFPoint text_position = DlFPoint(16.0f, 22.0f);
 
   // TODO(https://github.com/flutter/flutter/issues/82202): Remove once the
   // performance overlay can use Fuchsia's font manager instead of the empty
@@ -201,7 +201,7 @@ TEST_F(PerformanceOverlayLayerTest, MarkAsDirtyWhenResized) {
   // Create a PerformanceOverlayLayer.
   const uint64_t overlay_opts = kVisualizeRasterizerStatistics;
   auto layer = std::make_shared<PerformanceOverlayLayer>(overlay_opts);
-  layer->set_paint_bounds(SkRect::MakeLTRB(0.0f, 0.0f, 48.0f, 48.0f));
+  layer->set_paint_bounds(DlFRect::MakeLTRB(0.0f, 0.0f, 48.0f, 48.0f));
   layer->Preroll(preroll_context());
   layer->Paint(paint_context());
   auto data = mock_canvas().draw_calls().front().data;
@@ -210,7 +210,7 @@ TEST_F(PerformanceOverlayLayerTest, MarkAsDirtyWhenResized) {
 
   // Create a second PerformanceOverlayLayer with different bounds.
   layer = std::make_shared<PerformanceOverlayLayer>(overlay_opts);
-  layer->set_paint_bounds(SkRect::MakeLTRB(0.0f, 0.0f, 64.0f, 64.0f));
+  layer->set_paint_bounds(DlFRect::MakeLTRB(0.0f, 0.0f, 64.0f, 64.0f));
   layer->Preroll(preroll_context());
   layer->Paint(paint_context());
   data = mock_canvas().draw_calls().back().data;

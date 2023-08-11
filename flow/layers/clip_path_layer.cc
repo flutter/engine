@@ -6,11 +6,11 @@
 
 namespace flutter {
 
-ClipPathLayer::ClipPathLayer(const SkPath& clip_path, Clip clip_behavior)
+ClipPathLayer::ClipPathLayer(const DlPath& clip_path, Clip clip_behavior)
     : ClipShapeLayer(clip_path, clip_behavior) {}
 
-const SkRect& ClipPathLayer::clip_shape_bounds() const {
-  return clip_shape().getBounds();
+const DlFRect ClipPathLayer::clip_shape_bounds() const {
+  return clip_shape().Bounds();
 }
 
 void ClipPathLayer::ApplyClip(LayerStateStack::MutatorContext& mutator) const {

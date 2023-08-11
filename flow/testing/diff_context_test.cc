@@ -14,7 +14,7 @@ DiffContextTest::DiffContextTest() {}
 
 Damage DiffContextTest::DiffLayerTree(MockLayerTree& layer_tree,
                                       const MockLayerTree& old_layer_tree,
-                                      const SkIRect& additional_damage,
+                                      const DlIRect& additional_damage,
                                       int horizontal_clip_alignment,
                                       int vertical_clip_alignment,
                                       bool use_raster_cache,
@@ -25,13 +25,13 @@ Damage DiffContextTest::DiffLayerTree(MockLayerTree& layer_tree,
                  old_layer_tree.paint_region_map(), use_raster_cache,
                  impeller_enabled);
   dc.PushCullRect(
-      SkRect::MakeIWH(layer_tree.size().width(), layer_tree.size().height()));
+      DlFRect::MakeWH(layer_tree.size().width(), layer_tree.size().height()));
   layer_tree.root()->Diff(&dc, old_layer_tree.root());
   return dc.ComputeDamage(additional_damage, horizontal_clip_alignment,
                           vertical_clip_alignment);
 }
 
-sk_sp<DisplayList> DiffContextTest::CreateDisplayList(const SkRect& bounds,
+sk_sp<DisplayList> DiffContextTest::CreateDisplayList(const DlFRect& bounds,
                                                       DlColor color) {
   DisplayListBuilder builder;
   builder.DrawRect(bounds, DlPaint().setColor(color));
@@ -40,7 +40,7 @@ sk_sp<DisplayList> DiffContextTest::CreateDisplayList(const SkRect& bounds,
 
 std::shared_ptr<DisplayListLayer> DiffContextTest::CreateDisplayListLayer(
     const sk_sp<DisplayList>& display_list,
-    const SkPoint& offset) {
+    const DlFPoint& offset) {
   return std::make_shared<DisplayListLayer>(offset, display_list, false, false);
 }
 
@@ -55,8 +55,8 @@ std::shared_ptr<ContainerLayer> DiffContextTest::CreateContainerLayer(
 
 std::shared_ptr<OpacityLayer> DiffContextTest::CreateOpacityLater(
     std::initializer_list<std::shared_ptr<Layer>> layers,
-    SkAlpha alpha,
-    const SkPoint& offset) {
+    DlAlpha alpha,
+    const DlFPoint& offset) {
   auto res = std::make_shared<OpacityLayer>(alpha, offset);
   for (const auto& l : layers) {
     res->Add(l);

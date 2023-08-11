@@ -9,13 +9,13 @@
 
 namespace flutter {
 
-class ClipPathLayer : public ClipShapeLayer<SkPath> {
+class ClipPathLayer : public ClipShapeLayer<DlPath> {
  public:
-  explicit ClipPathLayer(const SkPath& clip_path,
+  explicit ClipPathLayer(const DlPath& clip_path,
                          Clip clip_behavior = Clip::antiAlias);
 
  protected:
-  const SkRect& clip_shape_bounds() const override;
+  const DlFRect clip_shape_bounds() const override;
 
   void ApplyClip(LayerStateStack::MutatorContext& mutator) const override;
 

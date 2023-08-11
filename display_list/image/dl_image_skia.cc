@@ -43,8 +43,12 @@ bool DlImageSkia::isUIThreadSafe() const {
 }
 
 // |DlImage|
-SkISize DlImageSkia::dimensions() const {
-  return image_ ? image_->dimensions() : SkISize::MakeEmpty();
+DlISize DlImageSkia::dimensions() const {
+  if (!image_) {
+    return DlISize();
+  }
+  SkISize dimensions = image_->dimensions();
+  return DlISize(dimensions.fWidth, dimensions.fHeight);
 }
 
 // |DlImage|

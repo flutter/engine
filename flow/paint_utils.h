@@ -6,15 +6,13 @@
 #define FLUTTER_FLOW_PAINT_UTILS_H_
 
 #include "flutter/display_list/dl_canvas.h"
-#include "third_party/skia/include/core/SkCanvas.h"
-#include "third_party/skia/include/core/SkColor.h"
-#include "third_party/skia/include/core/SkRect.h"
+#include "flutter/display_list/geometry/dl_rect.h"
 
 namespace flutter {
 
-typedef void (*CheckerboardFunc)(DlCanvas*, const SkRect&);
+typedef void (*CheckerboardFunc)(DlCanvas*, const DlFRect&);
 
-void DrawCheckerboard(DlCanvas* canvas, const SkRect& rect);
+void DrawCheckerboard(DlCanvas* canvas, const DlFRect& rect);
 
 }  // namespace flutter
 

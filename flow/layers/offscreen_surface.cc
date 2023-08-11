@@ -16,7 +16,7 @@
 namespace flutter {
 
 static sk_sp<SkSurface> CreateSnapshotSurface(GrDirectContext* surface_context,
-                                              const SkISize& size) {
+                                              const DlISize& size) {
   const auto image_info = SkImageInfo::MakeN32Premul(
       size.width(), size.height(), SkColorSpace::MakeSRGB());
   if (surface_context) {
@@ -67,7 +67,7 @@ static sk_sp<SkData> GetRasterData(const sk_sp<SkSurface>& offscreen_surface,
 }
 
 OffscreenSurface::OffscreenSurface(GrDirectContext* surface_context,
-                                   const SkISize& size) {
+                                   const DlISize& size) {
   offscreen_surface_ = CreateSnapshotSurface(surface_context, size);
   if (offscreen_surface_) {
     adapter_.set_canvas(offscreen_surface_->getCanvas());

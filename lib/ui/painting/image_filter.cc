@@ -71,7 +71,7 @@ void ImageFilter::initErode(double radius_x, double radius_y) {
 void ImageFilter::initMatrix(const tonic::Float64List& matrix4,
                              int filterQualityIndex) {
   auto sampling = ImageFilter::SamplingFromIndex(filterQualityIndex);
-  filter_ = DlMatrixImageFilter::Make(ToSkMatrix(matrix4), sampling);
+  filter_ = DlMatrixImageFilter::Make(ToDlTransform(matrix4), sampling);
 }
 
 void ImageFilter::initColorFilter(ColorFilter* colorFilter) {

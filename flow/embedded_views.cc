@@ -6,7 +6,7 @@
 
 namespace flutter {
 
-DisplayListEmbedderViewSlice::DisplayListEmbedderViewSlice(SkRect view_bounds) {
+DisplayListEmbedderViewSlice::DisplayListEmbedderViewSlice(DlFRect view_bounds) {
   builder_ = std::make_unique<DisplayListBuilder>(
       /*bounds=*/view_bounds,
       /*prepare_rtree=*/true);
@@ -21,8 +21,8 @@ void DisplayListEmbedderViewSlice::end_recording() {
   builder_ = nullptr;
 }
 
-std::list<SkRect> DisplayListEmbedderViewSlice::searchNonOverlappingDrawnRects(
-    const SkRect& query) const {
+std::list<DlFRect> DisplayListEmbedderViewSlice::searchNonOverlappingDrawnRects(
+    const DlFRect& query) const {
   return display_list_->rtree()->searchAndConsolidateRects(query);
 }
 
@@ -35,7 +35,7 @@ void DisplayListEmbedderViewSlice::dispatch(DlOpReceiver& receiver) {
 }
 
 bool DisplayListEmbedderViewSlice::is_empty() {
-  return display_list_->bounds().isEmpty();
+  return display_list_->bounds().is_empty();
 }
 
 bool DisplayListEmbedderViewSlice::recording_ended() {
@@ -49,22 +49,22 @@ void ExternalViewEmbedder::SubmitFrame(
   frame->Submit();
 }
 
-void MutatorsStack::PushClipRect(const SkRect& rect) {
+void MutatorsStack::PushClipRect(const DlFRect& rect) {
   std::shared_ptr<Mutator> element = std::make_shared<Mutator>(rect);
   vector_.push_back(element);
 }
 
-void MutatorsStack::PushClipRRect(const SkRRect& rrect) {
+void MutatorsStack::PushClipRRect(const DlFRRect& rrect) {
   std::shared_ptr<Mutator> element = std::make_shared<Mutator>(rrect);
   vector_.push_back(element);
 }
 
-void MutatorsStack::PushClipPath(const SkPath& path) {
+void MutatorsStack::PushClipPath(const DlPath& path) {
   std::shared_ptr<Mutator> element = std::make_shared<Mutator>(path);
   vector_.push_back(element);
 }
 
-void MutatorsStack::PushTransform(const SkMatrix& matrix) {
+void MutatorsStack::PushTransform(const DlTransform& matrix) {
   std::shared_ptr<Mutator> element = std::make_shared<Mutator>(matrix);
   vector_.push_back(element);
 }
@@ -76,7 +76,7 @@ void MutatorsStack::PushOpacity(const int& alpha) {
 
 void MutatorsStack::PushBackdropFilter(
     const std::shared_ptr<const DlImageFilter>& filter,
-    const SkRect& filter_rect) {
+    const DlFRect& filter_rect) {
   std::shared_ptr<Mutator> element =
       std::make_shared<Mutator>(filter, filter_rect);
   vector_.push_back(element);

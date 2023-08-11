@@ -7,12 +7,9 @@
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/dl_builder.h"
+#include "flutter/display_list/skia/dl_sk_canvas.h"
 
-#include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/include/effects/SkDashPathEffect.h"
-#include "third_party/skia/include/effects/SkGradientShader.h"
-#include "third_party/skia/include/effects/SkImageFilters.h"
 
 namespace flutter {
 namespace testing {
@@ -23,7 +20,7 @@ sk_sp<DisplayList> GetSampleNestedDisplayList();
 
 typedef const std::function<void(DlOpReceiver&)> DlInvoker;
 
-constexpr SkPoint kEndPoints[] = {
+constexpr DlFPoint kEndPoints[] = {
     {0, 0},
     {100, 100},
 };
@@ -55,10 +52,10 @@ constexpr float kInvertColorMatrix[20] = {
 };
 // clang-format on
 
-const SkScalar kTestDashes1[] = {4.0, 2.0};
-const SkScalar kTestDashes2[] = {1.0, 1.5};
+const DlScalar kTestDashes1[] = {4.0, 2.0};
+const DlScalar kTestDashes2[] = {1.0, 1.5};
 
-constexpr SkPoint TestPoints[] = {
+constexpr DlFPoint TestPoints[] = {
     {10, 10},
     {20, 20},
     {10, 20},
@@ -72,17 +69,17 @@ static DlImageSampling kLinearSampling = DlImageSampling::kLinear;
 static sk_sp<DlImage> MakeTestImage(int w, int h, int checker_size) {
   sk_sp<SkSurface> surface =
       SkSurfaces::Raster(SkImageInfo::MakeN32Premul(w, h));
-  SkCanvas* canvas = surface->getCanvas();
-  SkPaint p0, p1;
-  p0.setStyle(SkPaint::kFill_Style);
-  p0.setColor(SK_ColorGREEN);
-  p1.setStyle(SkPaint::kFill_Style);
-  p1.setColor(SK_ColorBLUE);
+  DlSkCanvasAdapter canvas(surface->getCanvas());
+  DlPaint p0, p1;
+  p0.setDrawStyle(DlDrawStyle::kFill);
+  p0.setColor(DlColor::kGreen());
+  p1.setDrawStyle(DlDrawStyle::kFill);
+  p1.setColor(DlColor::kBlue());
   p1.setAlpha(128);
   for (int y = 0; y < w; y += checker_size) {
     for (int x = 0; x < h; x += checker_size) {
-      SkPaint& cellp = ((x + y) & 1) == 0 ? p0 : p1;
-      canvas->drawRect(SkRect::MakeXYWH(x, y, checker_size, checker_size),
+      DlPaint& cellp = ((x + y) & 1) == 0 ? p0 : p1;
+      canvas.DrawRect(DlFRect::MakeXYWH(x, y, checker_size, checker_size),
                        cellp);
     }
   }
@@ -155,13 +152,13 @@ static const DlErodeImageFilter kTestErodeImageFilter1(4.0, 4.0);
 static const DlErodeImageFilter kTestErodeImageFilter2(4.0, 3.0);
 static const DlErodeImageFilter kTestErodeImageFilter3(3.0, 4.0);
 static const DlMatrixImageFilter kTestMatrixImageFilter1(
-    SkMatrix::RotateDeg(45),
+    DlTransform::MakeRotate(DlDegrees(45)),
     kNearestSampling);
 static const DlMatrixImageFilter kTestMatrixImageFilter2(
-    SkMatrix::RotateDeg(85),
+    DlTransform::MakeRotate(DlDegrees(85)),
     kNearestSampling);
 static const DlMatrixImageFilter kTestMatrixImageFilter3(
-    SkMatrix::RotateDeg(45),
+    DlTransform::MakeRotate(DlDegrees(45)),
     kLinearSampling);
 static const DlComposeImageFilter kTestComposeImageFilter1(
     kTestBlurImageFilter1,
@@ -185,21 +182,21 @@ static const DlBlurMaskFilter kTestMaskFilter2(DlBlurStyle::kNormal, 5.0);
 static const DlBlurMaskFilter kTestMaskFilter3(DlBlurStyle::kSolid, 3.0);
 static const DlBlurMaskFilter kTestMaskFilter4(DlBlurStyle::kInner, 3.0);
 static const DlBlurMaskFilter kTestMaskFilter5(DlBlurStyle::kOuter, 3.0);
-constexpr SkRect kTestBounds = SkRect::MakeLTRB(10, 10, 50, 60);
-static const SkRRect kTestRRect = SkRRect::MakeRectXY(kTestBounds, 5, 5);
-static const SkRRect kTestRRectRect = SkRRect::MakeRect(kTestBounds);
-static const SkRRect kTestInnerRRect =
-    SkRRect::MakeRectXY(kTestBounds.makeInset(5, 5), 2, 2);
-static const SkPath kTestPathRect = SkPath::Rect(kTestBounds);
-static const SkPath kTestPathOval = SkPath::Oval(kTestBounds);
-static const SkPath kTestPath1 =
-    SkPath::Polygon({{0, 0}, {10, 10}, {10, 0}, {0, 10}}, true);
-static const SkPath kTestPath2 =
-    SkPath::Polygon({{0, 0}, {10, 10}, {0, 10}, {10, 0}}, true);
-static const SkPath kTestPath3 =
-    SkPath::Polygon({{0, 0}, {10, 10}, {10, 0}, {0, 10}}, false);
-static const SkMatrix kTestMatrix1 = SkMatrix::Scale(2, 2);
-static const SkMatrix kTestMatrix2 = SkMatrix::RotateDeg(45);
+constexpr DlFRect kTestBounds = DlFRect::MakeLTRB(10, 10, 50, 60);
+static const DlFRRect kTestRRect = DlFRRect::MakeRectXY(kTestBounds, 5, 5);
+static const DlFRRect kTestRRectRect = DlFRRect::MakeRect(kTestBounds);
+static const DlFRRect kTestInnerRRect =
+    DlFRRect::MakeRectXY(kTestBounds.MakeInset(5, 5), 2, 2);
+static const DlPath kTestPathRect = DlPath::MakeRect(kTestBounds);
+static const DlPath kTestPathOval = DlPath::MakeOval(kTestBounds);
+static const DlPath kTestPath1 =
+    DlPath::MakePolygon({{0, 0}, {10, 10}, {10, 0}, {0, 10}}, true);
+static const DlPath kTestPath2 =
+    DlPath::MakePolygon({{0, 0}, {10, 10}, {0, 10}, {10, 0}}, true);
+static const DlPath kTestPath3 =
+    DlPath::MakePolygon({{0, 0}, {10, 10}, {10, 0}, {0, 10}}, false);
+static const DlTransform kTestMatrix1 = DlTransform::MakeScale(2, 2);
+static const DlTransform kTestMatrix2 = DlTransform::MakeRotate(DlDegrees(45));
 
 static std::shared_ptr<const DlVertices> TestVertices1 =
     DlVertices::Make(DlVertexMode::kTriangles,  //
@@ -214,9 +211,9 @@ static std::shared_ptr<const DlVertices> TestVertices2 =
                      nullptr,
                      kColors);
 
-static sk_sp<DisplayList> MakeTestDisplayList(int w, int h, SkColor color) {
+static sk_sp<DisplayList> MakeTestDisplayList(int w, int h, DlColor color) {
   DisplayListBuilder builder;
-  builder.DrawRect(SkRect::MakeWH(w, h), DlPaint(color));
+  builder.DrawRect(DlFRect::MakeWH(w, h), DlPaint(color));
   return builder.Build();
 }
 static sk_sp<DisplayList> TestDisplayList1 =

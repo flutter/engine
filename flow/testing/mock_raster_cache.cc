@@ -13,12 +13,12 @@
 namespace flutter {
 namespace testing {
 
-MockRasterCacheResult::MockRasterCacheResult(SkRect device_rect)
-    : RasterCacheResult(nullptr, SkRect::MakeEmpty(), "RasterCacheFlow::test"),
+MockRasterCacheResult::MockRasterCacheResult(DlFRect device_rect)
+    : RasterCacheResult(nullptr, DlFRect(), "RasterCacheFlow::test"),
       device_rect_(device_rect) {}
 
 void MockRasterCache::AddMockLayer(int width, int height) {
-  SkMatrix ctm = SkMatrix::I();
+  DlTransform ctm;
   SkPath path;
   path.addRect(100, 100, 100 + width, 100 + height);
   int layer_cached_threshold = 1;
@@ -37,7 +37,7 @@ void MockRasterCache::AddMockLayer(int width, int height) {
   UpdateCacheEntry(
       RasterCacheKeyID(layer.unique_id(), RasterCacheKeyType::kLayer),
       r_context, [&](DlCanvas* canvas) {
-        SkRect cache_rect = RasterCacheUtil::GetDeviceBounds(
+        DlFRect cache_rect = RasterCacheUtil::GetDeviceBounds(
             r_context.logical_rect, r_context.matrix);
         return std::make_unique<MockRasterCacheResult>(cache_rect);
       });
@@ -45,8 +45,8 @@ void MockRasterCache::AddMockLayer(int width, int height) {
 
 void MockRasterCache::AddMockPicture(int width, int height) {
   FML_DCHECK(access_threshold() > 0);
-  SkMatrix ctm = SkMatrix::I();
-  DisplayListBuilder builder(SkRect::MakeLTRB(0, 0, 200 + width, 200 + height));
+  DlTransform ctm;
+  DisplayListBuilder builder(DlFRect::MakeWH(200 + width, 200 + height));
   SkPath path;
   path.addRect(100, 100, 100 + width, 100 + height);
   builder.DrawPath(path, DlPaint());
@@ -59,7 +59,7 @@ void MockRasterCache::AddMockPicture(int width, int height) {
       GetSamplePaintContextHolder(state_stack, this, &raster_time, &ui_time);
   holder.paint_context.dst_color_space = color_space_.get();
 
-  DisplayListRasterCacheItem display_list_item(display_list, SkPoint(), true,
+  DisplayListRasterCacheItem display_list_item(display_list, DlFPoint(), true,
                                                false);
   for (size_t i = 0; i < access_threshold(); i++) {
     AutoCache(&display_list_item, &preroll_context_, ctm);
@@ -75,7 +75,7 @@ void MockRasterCache::AddMockPicture(int width, int height) {
   UpdateCacheEntry(RasterCacheKeyID(display_list->unique_id(),
                                     RasterCacheKeyType::kDisplayList),
                    r_context, [&](DlCanvas* canvas) {
-                     SkRect cache_rect = RasterCacheUtil::GetDeviceBounds(
+                     DlFRect cache_rect = RasterCacheUtil::GetDeviceBounds(
                          r_context.logical_rect, r_context.matrix);
                      return std::make_unique<MockRasterCacheResult>(cache_rect);
                    });
@@ -138,7 +138,7 @@ bool RasterCacheItemPrerollAndTryToRasterCache(
     DisplayListRasterCacheItem& display_list_item,
     PrerollContext& context,
     PaintContext& paint_context,
-    const SkMatrix& matrix) {
+    const DlTransform& matrix) {
   RasterCacheItemPreroll(display_list_item, context, matrix);
   context.raster_cache->EvictUnusedCacheEntries();
   return RasterCacheItemTryToRasterCache(display_list_item, paint_context);
@@ -146,7 +146,7 @@ bool RasterCacheItemPrerollAndTryToRasterCache(
 
 void RasterCacheItemPreroll(DisplayListRasterCacheItem& display_list_item,
                             PrerollContext& context,
-                            const SkMatrix& matrix) {
+                            const DlTransform& matrix) {
   display_list_item.PrerollSetup(&context, matrix);
   display_list_item.PrerollFinalize(&context, matrix);
 }

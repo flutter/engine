@@ -35,7 +35,7 @@ Dart_Handle ImageShader::initWithImage(CanvasImage* image,
 
   image_ = image->image();
   tonic::Float64List matrix4(matrix_handle);
-  SkMatrix local_matrix = ToSkMatrix(matrix4);
+  DlTransform local_matrix = ToDlTransform(matrix4);
   matrix4.Release();
   sampling_is_locked_ = filter_quality_index >= 0;
   DlImageSampling sampling =

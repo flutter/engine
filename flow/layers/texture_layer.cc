@@ -8,8 +8,8 @@
 
 namespace flutter {
 
-TextureLayer::TextureLayer(const SkPoint& offset,
-                           const SkSize& size,
+TextureLayer::TextureLayer(const DlFPoint& offset,
+                           const DlFSize& size,
                            int64_t texture_id,
                            bool freeze,
                            DlImageSampling sampling)
@@ -35,14 +35,12 @@ void TextureLayer::Diff(DiffContext* context, const Layer* old_layer) {
   // See ContainerLayer::DiffChildren
   // https://github.com/flutter/flutter/issues/92925
   context->MarkSubtreeHasTextureLayer();
-  context->AddLayerBounds(SkRect::MakeXYWH(offset_.x(), offset_.y(),
-                                           size_.width(), size_.height()));
+  context->AddLayerBounds(DlFRect::MakeOriginSize(offset_, size_));
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
 
 void TextureLayer::Preroll(PrerollContext* context) {
-  set_paint_bounds(SkRect::MakeXYWH(offset_.x(), offset_.y(), size_.width(),
-                                    size_.height()));
+  set_paint_bounds(DlFRect::MakeOriginSize(offset_, size_));
   context->has_texture_layer = true;
   context->renderable_state_flags = LayerStateStack::kCallerCanApplyOpacity;
 }

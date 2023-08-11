@@ -8,7 +8,8 @@
 
 namespace flutter {
 
-TransformLayer::TransformLayer(const SkM44& transform) : transform_(transform) {
+TransformLayer::TransformLayer(const DlTransform& transform)
+    : transform_(transform) {
   // Checks (in some degree) that SkM44 transform_ is valid and initialized.
   //
   // If transform_ is uninitialized, this assert may look flaky as it doesn't
@@ -18,10 +19,10 @@ TransformLayer::TransformLayer(const SkM44& transform) : transform_(transform) {
   //
   // We have to write this flaky test because there is no reliable way to test
   // whether a variable is initialized or not in C++.
-  FML_DCHECK(transform_.isFinite());
-  if (!transform_.isFinite()) {
+  FML_DCHECK(transform_.is_finite());
+  if (!transform_.is_finite()) {
     FML_LOG(ERROR) << "TransformLayer is constructed with an invalid matrix.";
-    transform_.setIdentity();
+    transform_.SetIdentity();
   }
 }
 
@@ -43,7 +44,7 @@ void TransformLayer::Preroll(PrerollContext* context) {
   auto mutator = context->state_stack.save();
   mutator.transform(transform_);
 
-  SkRect child_paint_bounds = SkRect::MakeEmpty();
+  DlFRect child_paint_bounds;
   PrerollChildren(context, &child_paint_bounds);
 
   // We convert to a 3x3 matrix here primarily because the SkM44 object
@@ -61,7 +62,7 @@ void TransformLayer::Preroll(PrerollContext* context) {
   // is otherwise optimal for non-perspective matrices. If SkM44 ever exposes
   // a mapRect operation, or if SkMatrix ever optimizes its handling of
   // the perspective elements, this issue will become moot.
-  transform_.asM33().mapRect(&child_paint_bounds);
+  child_paint_bounds = transform_.TransformRect(child_paint_bounds);
   set_paint_bounds(child_paint_bounds);
 }
 

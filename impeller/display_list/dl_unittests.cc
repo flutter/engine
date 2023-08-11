@@ -37,6 +37,13 @@
 namespace impeller {
 namespace testing {
 
+using DlFRect = flutter::DlFRect;
+using DlIRect = flutter::DlIRect;
+using DlFPoint = flutter::DlFPoint;
+using DlFRRect = flutter::DlFRRect;
+using DlPath = flutter::DlPath;
+using DlTransform = flutter::DlTransform;
+
 flutter::DlColor toColor(const float* components) {
   return flutter::DlColor(Color::ToIColor(
       Color(components[0], components[1], components[2], components[3])));
@@ -47,20 +54,20 @@ INSTANTIATE_PLAYGROUND_SUITE(DisplayListTest);
 
 TEST_P(DisplayListTest, DrawPictureWithAClip) {
   flutter::DisplayListBuilder sub_builder;
-  sub_builder.ClipRect(SkRect::MakeXYWH(0, 0, 24, 24));
+  sub_builder.ClipRect(DlFRect::MakeWH(24, 24));
   sub_builder.DrawPaint(flutter::DlPaint(flutter::DlColor::kBlue()));
 
   auto display_list = sub_builder.Build();
   flutter::DisplayListBuilder builder;
   builder.DrawDisplayList(display_list);
-  builder.DrawRect(SkRect::MakeXYWH(30, 30, 24, 24),
+  builder.DrawRect(DlFRect::MakeXYWH(30, 30, 24, 24),
                    flutter::DlPaint(flutter::DlColor::kRed()));
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
 TEST_P(DisplayListTest, CanDrawRect) {
   flutter::DisplayListBuilder builder;
-  builder.DrawRect(SkRect::MakeXYWH(10, 10, 100, 100),
+  builder.DrawRect(DlFRect::MakeXYWH(10, 10, 100, 100),
                    flutter::DlPaint(flutter::DlColor::kBlue()));
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -110,7 +117,7 @@ TEST_P(DisplayListTest, CanDrawTextWithSaveLayer) {
 TEST_P(DisplayListTest, CanDrawImage) {
   auto texture = CreateTextureForFixture("embarcadero.jpg");
   flutter::DisplayListBuilder builder;
-  builder.DrawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
+  builder.DrawImage(DlImageImpeller::Make(texture), DlFPoint(100, 100),
                     flutter::DlImageSampling::kNearestNeighbor, nullptr);
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -208,7 +215,7 @@ TEST_P(DisplayListTest, CanDrawArc) {
     paint.setStrokeCap(cap);
     paint.setStrokeJoin(flutter::DlStrokeJoin::kMiter);
     paint.setStrokeMiter(10);
-    auto rect = SkRect::MakeLTRB(p1.x, p1.y, p2.x, p2.y);
+    auto rect = DlFRect::MakeLTRB(p1.x, p1.y, p2.x, p2.y);
     paint.setColor(SK_ColorGREEN);
     paint.setStrokeWidth(2);
     builder.DrawRect(rect, paint);
@@ -282,18 +289,18 @@ TEST_P(DisplayListTest, StrokedPathsDrawCorrectly) {
 
     // Rectangle
     builder.Translate(100, 100);
-    builder.DrawRect(SkRect::MakeSize({100, 100}), paint);
+    builder.DrawRect(DlFRect::MakeWH(100, 100), paint);
 
     // Rounded rectangle
     builder.Translate(150, 0);
-    builder.DrawRRect(SkRRect::MakeRectXY(SkRect::MakeSize({100, 50}), 10, 10),
+    builder.DrawRRect(DlFRRect::MakeRectXY(DlFRect::MakeWH(100, 50), 10, 10),
                       paint);
 
     // Double rounded rectangle
     builder.Translate(150, 0);
     builder.DrawDRRect(
-        SkRRect::MakeRectXY(SkRect::MakeSize({100, 50}), 10, 10),
-        SkRRect::MakeRectXY(SkRect::MakeXYWH(10, 10, 80, 30), 10, 10), paint);
+        DlFRRect::MakeRectXY(DlFRect::MakeWH(100, 50), 10, 10),
+        DlFRRect::MakeRectXY(DlFRect::MakeXYWH(10, 10, 80, 30), 10, 10), paint);
 
     // Contour with duplicate join points
     {
@@ -421,7 +428,7 @@ TEST_P(DisplayListTest, CanDrawWithMaskBlur) {
     auto filter =
         flutter::DlBlurMaskFilter(flutter::DlBlurStyle::kNormal, 10.0f);
     paint.setMaskFilter(&filter);
-    builder.DrawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
+    builder.DrawImage(DlImageImpeller::Make(texture), DlFPoint(100, 100),
                       flutter::DlImageSampling::kNearestNeighbor, &paint);
   }
 
@@ -431,7 +438,7 @@ TEST_P(DisplayListTest, CanDrawWithMaskBlur) {
     auto filter =
         flutter::DlBlurMaskFilter(flutter::DlBlurStyle::kOuter, 10.0f);
     paint.setMaskFilter(&filter);
-    builder.DrawArc(SkRect::MakeXYWH(410, 110, 100, 100), 45, 270, true, paint);
+    builder.DrawArc(DlFRect::MakeXYWH(410, 110, 100, 100), 45, 270, true, paint);
   }
 
   // Mask blurred text.
@@ -467,7 +474,7 @@ TEST_P(DisplayListTest, IgnoreMaskFilterWhenSavingLayer) {
   flutter::DlPaint paint;
   paint.setMaskFilter(&filter);
   builder.SaveLayer(nullptr, &paint);
-  builder.DrawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
+  builder.DrawImage(DlImageImpeller::Make(texture), DlFPoint(100, 100),
                     flutter::DlImageSampling::kNearestNeighbor);
   builder.Restore();
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -483,7 +490,7 @@ TEST_P(DisplayListTest, CanDrawWithBlendColorFilter) {
     auto filter = flutter::DlBlendColorFilter(SK_ColorYELLOW,
                                               flutter::DlBlendMode::kModulate);
     paint.setColorFilter(&filter);
-    builder.DrawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
+    builder.DrawImage(DlImageImpeller::Make(texture), DlFPoint(100, 100),
                       flutter::DlImageSampling::kNearestNeighbor, &paint);
   }
 
@@ -492,7 +499,7 @@ TEST_P(DisplayListTest, CanDrawWithBlendColorFilter) {
     auto filter =
         flutter::DlBlendColorFilter(SK_ColorRED, flutter::DlBlendMode::kScreen);
     paint.setColorFilter(&filter);
-    builder.DrawImage(DlImageImpeller::Make(texture), SkPoint::Make(250, 250),
+    builder.DrawImage(DlImageImpeller::Make(texture), DlFPoint(250, 250),
                       flutter::DlImageSampling::kNearestNeighbor, &paint);
   }
 
@@ -516,12 +523,12 @@ TEST_P(DisplayListTest, CanDrawWithColorFilterImageFilter) {
       std::make_shared<flutter::DlColorFilterImageFilter>(color_filter);
 
   paint.setImageFilter(image_filter.get());
-  builder.DrawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
+  builder.DrawImage(DlImageImpeller::Make(texture), DlFPoint(100, 100),
                     flutter::DlImageSampling::kNearestNeighbor, &paint);
 
   builder.Translate(0, 700);
   paint.setColorFilter(color_filter.get());
-  builder.DrawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
+  builder.DrawImage(DlImageImpeller::Make(texture), DlFPoint(100, 100),
                     flutter::DlImageSampling::kNearestNeighbor, &paint);
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -542,7 +549,7 @@ TEST_P(DisplayListTest, CanDrawWithImageBlurFilter) {
     auto filter = flutter::DlBlurImageFilter(sigma[0], sigma[1],
                                              flutter::DlTileMode::kClamp);
     paint.setImageFilter(&filter);
-    builder.DrawImage(DlImageImpeller::Make(texture), SkPoint::Make(200, 200),
+    builder.DrawImage(DlImageImpeller::Make(texture), DlFPoint(200, 200),
                       flutter::DlImageSampling::kNearestNeighbor, &paint);
 
     return builder.Build();
@@ -562,11 +569,11 @@ TEST_P(DisplayListTest, CanDrawWithComposeImageFilter) {
   auto close = std::make_shared<flutter::DlComposeImageFilter>(erode, dilate);
 
   paint.setImageFilter(open.get());
-  builder.DrawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
+  builder.DrawImage(DlImageImpeller::Make(texture), DlFPoint(100, 100),
                     flutter::DlImageSampling::kNearestNeighbor, &paint);
   builder.Translate(0, 700);
   paint.setImageFilter(close.get());
-  builder.DrawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
+  builder.DrawImage(DlImageImpeller::Make(texture), DlFPoint(100, 100),
                     flutter::DlImageSampling::kNearestNeighbor, &paint);
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -598,7 +605,7 @@ TEST_P(DisplayListTest, CanClampTheResultingColorOfColorMatrixFilter) {
   flutter::DisplayListBuilder builder;
   flutter::DlPaint paint;
   paint.setImageFilter(compose.get());
-  builder.DrawImage(DlImageImpeller::Make(texture), SkPoint::Make(100, 100),
+  builder.DrawImage(DlImageImpeller::Make(texture), DlFPoint(100, 100),
                     flutter::DlImageSampling::kNearestNeighbor, &paint);
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -633,21 +640,21 @@ TEST_P(DisplayListTest, CanDrawBackdropFilter) {
     auto filter = flutter::DlBlurImageFilter(sigma[0], sigma[1],
                                              flutter::DlTileMode::kClamp);
 
-    std::optional<SkRect> bounds;
+    std::optional<DlFRect> bounds;
     if (use_bounds) {
       auto [p1, p2] = IMPELLER_PLAYGROUND_LINE(
           Point(350, 150), Point(800, 600), 20, Color::White(), Color::White());
-      bounds = SkRect::MakeLTRB(p1.x, p1.y, p2.x, p2.y);
+      bounds = DlFRect::MakeLTRB(p1.x, p1.y, p2.x, p2.y);
     }
 
     // Insert a clip to test that the backdrop filter handles stencil depths > 0
     // correctly.
     if (add_clip) {
-      builder.ClipRect(SkRect::MakeLTRB(0, 0, 99999, 99999),
+      builder.ClipRect(DlFRect::MakeLTRB(0, 0, 99999, 99999),
                        flutter::DlCanvas::ClipOp::kIntersect, true);
     }
 
-    builder.DrawImage(DlImageImpeller::Make(texture), SkPoint::Make(200, 200),
+    builder.DrawImage(DlImageImpeller::Make(texture), DlFPoint(200, 200),
                       flutter::DlImageSampling::kNearestNeighbor, nullptr);
     builder.SaveLayer(bounds.has_value() ? &bounds.value() : nullptr, nullptr,
                       &filter);
@@ -678,9 +685,9 @@ TEST_P(DisplayListTest, CanDrawNinePatchImage) {
   auto size = texture->GetSize();
   builder.DrawImageNine(
       DlImageImpeller::Make(texture),
-      SkIRect::MakeLTRB(size.width / 4, size.height / 4, size.width * 3 / 4,
+      DlIRect::MakeLTRB(size.width / 4, size.height / 4, size.width * 3 / 4,
                         size.height * 3 / 4),
-      SkRect::MakeLTRB(0, 0, size.width * 2, size.height * 2),
+      DlFRect::MakeLTRB(0, 0, size.width * 2, size.height * 2),
       flutter::DlFilterMode::kNearest, nullptr);
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -694,9 +701,9 @@ TEST_P(DisplayListTest, CanDrawNinePatchImageCenterWidthBiggerThanDest) {
   auto size = texture->GetSize();
   builder.DrawImageNine(
       DlImageImpeller::Make(texture),
-      SkIRect::MakeLTRB(size.width / 4, size.height / 4, size.width * 3 / 4,
+      DlIRect::MakeLTRB(size.width / 4, size.height / 4, size.width * 3 / 4,
                         size.height * 3 / 4),
-      SkRect::MakeLTRB(0, 0, size.width / 2, size.height),
+      DlFRect::MakeLTRB(0, 0, size.width / 2, size.height),
       flutter::DlFilterMode::kNearest, nullptr);
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -710,9 +717,9 @@ TEST_P(DisplayListTest, CanDrawNinePatchImageCenterHeightBiggerThanDest) {
   auto size = texture->GetSize();
   builder.DrawImageNine(
       DlImageImpeller::Make(texture),
-      SkIRect::MakeLTRB(size.width / 4, size.height / 4, size.width * 3 / 4,
+      DlIRect::MakeLTRB(size.width / 4, size.height / 4, size.width * 3 / 4,
                         size.height * 3 / 4),
-      SkRect::MakeLTRB(0, 0, size.width, size.height / 2),
+      DlFRect::MakeLTRB(0, 0, size.width, size.height / 2),
       flutter::DlFilterMode::kNearest, nullptr);
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -725,9 +732,9 @@ TEST_P(DisplayListTest, CanDrawNinePatchImageCenterBiggerThanDest) {
   auto size = texture->GetSize();
   builder.DrawImageNine(
       DlImageImpeller::Make(texture),
-      SkIRect::MakeLTRB(size.width / 4, size.height / 4, size.width * 3 / 4,
+      DlIRect::MakeLTRB(size.width / 4, size.height / 4, size.width * 3 / 4,
                         size.height * 3 / 4),
-      SkRect::MakeLTRB(0, 0, size.width / 2, size.height / 2),
+      DlFRect::MakeLTRB(0, 0, size.width / 2, size.height / 2),
       flutter::DlFilterMode::kNearest, nullptr);
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -740,16 +747,16 @@ TEST_P(DisplayListTest, CanDrawNinePatchImageCornersScaledDown) {
   auto size = texture->GetSize();
   builder.DrawImageNine(
       DlImageImpeller::Make(texture),
-      SkIRect::MakeLTRB(size.width / 4, size.height / 4, size.width * 3 / 4,
+      DlIRect::MakeLTRB(size.width / 4, size.height / 4, size.width * 3 / 4,
                         size.height * 3 / 4),
-      SkRect::MakeLTRB(0, 0, size.width / 4, size.height / 4),
+      DlFRect::MakeLTRB(0, 0, size.width / 4, size.height / 4),
       flutter::DlFilterMode::kNearest, nullptr);
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
 TEST_P(DisplayListTest, CanDrawPoints) {
   flutter::DisplayListBuilder builder;
-  SkPoint points[7] = {
+  DlFPoint points[7] = {
       {0, 0},      //
       {100, 100},  //
       {100, 0},    //
@@ -819,22 +826,21 @@ TEST_P(DisplayListTest, CanDrawShadow) {
   constexpr SkScalar spike_size = 10;
   constexpr SkScalar outer_radius = radius + spike_size;
   constexpr SkScalar inner_radius = radius - spike_size;
-  std::array<SkPoint, star_spikes * 2> star;
+  std::array<DlFPoint, star_spikes * 2> star;
   for (size_t i = 0; i < star_spikes; i++) {
     const SkScalar rotation = half_spike_rotation * i * 2;
-    star[i * 2] = SkPoint::Make(50 + std::sin(rotation) * outer_radius,
-                                50 - std::cos(rotation) * outer_radius);
-    star[i * 2 + 1] = SkPoint::Make(
+    star[i * 2] = DlFPoint(50 + std::sin(rotation) * outer_radius,
+                           50 - std::cos(rotation) * outer_radius);
+    star[i * 2 + 1] = DlFPoint(
         50 + std::sin(rotation + half_spike_rotation) * inner_radius,
         50 - std::cos(rotation + half_spike_rotation) * inner_radius);
   }
 
-  std::array<SkPath, 4> paths = {
-      SkPath{}.addRect(SkRect::MakeXYWH(0, 0, 200, 100)),
-      SkPath{}.addRRect(
-          SkRRect::MakeRectXY(SkRect::MakeXYWH(20, 0, 200, 100), 30, 30)),
-      SkPath{}.addCircle(100, 50, 50),
-      SkPath{}.addPoly(star.data(), star.size(), true),
+  std::array<DlPath, 4> paths = {
+      DlPath::MakeRect(DlFRect::MakeXYWH(0, 0, 200, 100)),
+      DlPath::MakeRoundRect(DlFRect::MakeXYWH(20, 0, 200, 100), 30, 30),
+      DlPath::MakeCircle(100, 50, 50),
+      DlPath::MakePolygon(star.data(), star.size(), true),
   };
   paint.setColor(flutter::DlColor::kWhite());
   builder.DrawPaint(paint);
@@ -859,7 +865,7 @@ TEST_P(DisplayListTest, TransparentShadowProducesCorrectColor) {
   DlDispatcher dispatcher;
   dispatcher.save();
   dispatcher.scale(1.618, 1.618);
-  dispatcher.drawShadow(SkPath{}.addRect(SkRect::MakeXYWH(0, 0, 200, 100)),
+  dispatcher.drawShadow(DlPath::MakeRect(DlFRect::MakeWH(200, 100)),
                         SK_ColorTRANSPARENT, 15, false, 1);
   dispatcher.restore();
   auto picture = dispatcher.EndRecordingAsPicture();
@@ -888,16 +894,16 @@ TEST_P(DisplayListTest, CanConvertTriangleFanToTriangles) {
   auto center_to_flat = 1.73 / 2 * hexagon_radius;
 
   // clang-format off
-  std::vector<SkPoint> vertices = {
-    SkPoint::Make(hex_start.x, hex_start.y),
-    SkPoint::Make(hex_start.x + center_to_flat, hex_start.y + 0.5 * hexagon_radius),
-    SkPoint::Make(hex_start.x + center_to_flat, hex_start.y + 1.5 * hexagon_radius),
-    SkPoint::Make(hex_start.x + center_to_flat, hex_start.y + 1.5 * hexagon_radius),
-    SkPoint::Make(hex_start.x, hex_start.y + 2 * hexagon_radius),
-    SkPoint::Make(hex_start.x, hex_start.y + 2 * hexagon_radius),
-    SkPoint::Make(hex_start.x - center_to_flat, hex_start.y + 1.5 * hexagon_radius),
-    SkPoint::Make(hex_start.x - center_to_flat, hex_start.y + 1.5 * hexagon_radius),
-    SkPoint::Make(hex_start.x - center_to_flat, hex_start.y + 0.5 * hexagon_radius)
+  std::vector<DlFPoint> vertices = {
+    DlFPoint(hex_start.x, hex_start.y),
+    DlFPoint(hex_start.x + center_to_flat, hex_start.y + 0.5 * hexagon_radius),
+    DlFPoint(hex_start.x + center_to_flat, hex_start.y + 1.5 * hexagon_radius),
+    DlFPoint(hex_start.x + center_to_flat, hex_start.y + 1.5 * hexagon_radius),
+    DlFPoint(hex_start.x, hex_start.y + 2 * hexagon_radius),
+    DlFPoint(hex_start.x, hex_start.y + 2 * hexagon_radius),
+    DlFPoint(hex_start.x - center_to_flat, hex_start.y + 1.5 * hexagon_radius),
+    DlFPoint(hex_start.x - center_to_flat, hex_start.y + 1.5 * hexagon_radius),
+    DlFPoint(hex_start.x - center_to_flat, hex_start.y + 0.5 * hexagon_radius)
   };
   // clang-format on
   auto paint = flutter::DlPaint(flutter::DlColor::kDarkGrey());
@@ -927,17 +933,17 @@ TEST_P(DisplayListTest, CanDrawZeroWidthLine) {
           .setDrawStyle(flutter::DlDrawStyle::kStroke)  //
           .setStrokeCap(flutter::DlStrokeCap::kSquare)  //
           .setStrokeWidth(1);
-  SkPath path = SkPath().addPoly({{150, 50}, {160, 50}}, false);
+  DlPath path = DlPath::MakePolygon({{150, 50}, {160, 50}}, false);
   for (auto cap : caps) {
     paint.setStrokeCap(cap);
     builder.DrawLine({50, 50}, {60, 50}, paint);
-    builder.DrawRect({45, 45, 65, 55}, outline_paint);
+    builder.DrawRect(DlFRect::MakeLTRB(45, 45, 65, 55), outline_paint);
     builder.DrawLine({100, 50}, {100, 50}, paint);
     if (cap != flutter::DlStrokeCap::kButt) {
-      builder.DrawRect({95, 45, 105, 55}, outline_paint);
+      builder.DrawRect(DlFRect::MakeLTRB(95, 45, 105, 55), outline_paint);
     }
     builder.DrawPath(path, paint);
-    builder.DrawRect(path.getBounds().makeOutset(5, 5), outline_paint);
+    builder.DrawRect(path.Bounds().MakeOutset(5, 5), outline_paint);
     builder.Translate(0, 150);
   }
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -1002,16 +1008,14 @@ TEST_P(DisplayListTest, CanDrawWithMatrixFilter) {
 
       // Set the current transform
       auto ctm_matrix =
-          SkMatrix::MakeAll(ctm_scale[0], ctm_skew[0], ctm_translation[0],  //
-                            ctm_skew[1], ctm_scale[1], ctm_translation[1],  //
-                            0, 0, 1);
+          DlTransform::MakeAffine2D(ctm_scale[0], ctm_skew[0], ctm_translation[0],
+                                    ctm_skew[1], ctm_scale[1], ctm_translation[1]);
       builder.Transform(ctm_matrix);
 
       // Set the matrix filter
       auto filter_matrix =
-          SkMatrix::MakeAll(scale[0], skew[0], translation[0],  //
-                            skew[1], scale[1], translation[1],  //
-                            0, 0, 1);
+          DlTransform::MakeAffine2D(scale[0], skew[0], translation[0],
+                                    skew[1], scale[1], translation[1]);
 
       if (enable) {
         switch (selected_matrix_type) {
@@ -1061,17 +1065,17 @@ TEST_P(DisplayListTest, CanDrawWithMatrixFilterWhenSavingLayer) {
     builder.Scale(2.0, 2.0);
     flutter::DlPaint paint;
     paint.setColor(flutter::DlColor::kYellow());
-    builder.DrawRect(SkRect::MakeWH(300, 300), paint);
+    builder.DrawRect(DlFRect::MakeWH(300, 300), paint);
     paint.setStrokeWidth(1.0);
     paint.setDrawStyle(flutter::DlDrawStyle::kStroke);
     paint.setColor(flutter::DlColor::kBlack().withAlpha(0x80));
-    builder.DrawLine(SkPoint::Make(150, 0), SkPoint::Make(150, 300), paint);
-    builder.DrawLine(SkPoint::Make(0, 150), SkPoint::Make(300, 150), paint);
+    builder.DrawLine(DlFPoint(150, 0), DlFPoint(150, 300), paint);
+    builder.DrawLine(DlFPoint(0, 150), DlFPoint(300, 150), paint);
 
     flutter::DlPaint save_paint;
-    SkRect bounds = SkRect::MakeXYWH(100, 100, 100, 100);
-    SkMatrix translate_matrix =
-        SkMatrix::Translate(translation[0], translation[1]);
+    DlFRect bounds = DlFRect::MakeXYWH(100, 100, 100, 100);
+    DlTransform translate_matrix =
+        DlTransform::MakeTranslate(translation[0], translation[1]);
     if (enable_save_layer) {
       auto filter = flutter::DlMatrixImageFilter(
           translate_matrix, flutter::DlImageSampling::kNearestNeighbor);
@@ -1082,10 +1086,10 @@ TEST_P(DisplayListTest, CanDrawWithMatrixFilterWhenSavingLayer) {
       builder.Transform(translate_matrix);
     }
 
-    SkMatrix filter_matrix = SkMatrix::I();
-    filter_matrix.postTranslate(-150, -150);
-    filter_matrix.postScale(0.2f, 0.2f);
-    filter_matrix.postTranslate(150, 150);
+    DlTransform filter_matrix;
+    filter_matrix.TranslateOuter(-150, -150);
+    filter_matrix.ScaleOuter(0.2f, 0.2f);
+    filter_matrix.TranslateOuter(150, 150);
     auto filter = flutter::DlMatrixImageFilter(
         filter_matrix, flutter::DlImageSampling::kNearestNeighbor);
 
@@ -1108,11 +1112,11 @@ TEST_P(DisplayListTest, CanDrawRectWithLinearToSrgbColorFilter) {
   paint.setColor(flutter::DlColor(0xFF2196F3).withAlpha(128));
   flutter::DisplayListBuilder builder;
   paint.setColorFilter(flutter::DlLinearToSrgbGammaColorFilter::instance.get());
-  builder.DrawRect(SkRect::MakeXYWH(0, 0, 200, 200), paint);
+  builder.DrawRect(DlFRect::MakeXYWH(0, 0, 200, 200), paint);
   builder.Translate(0, 200);
 
   paint.setColorFilter(flutter::DlSrgbToLinearGammaColorFilter::instance.get());
-  builder.DrawRect(SkRect::MakeXYWH(0, 0, 200, 200), paint);
+  builder.DrawRect(DlFRect::MakeXYWH(0, 0, 200, 200), paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -1125,7 +1129,7 @@ TEST_P(DisplayListTest, CanDrawPaintWithColorSource) {
   const float stops[2] = {0.0, 1.0};
   flutter::DlPaint paint;
   flutter::DisplayListBuilder builder;
-  auto clip_bounds = SkRect::MakeWH(300.0, 300.0);
+  auto clip_bounds = DlFRect::MakeWH(300.0, 300.0);
   builder.Save();
   builder.Translate(100, 100);
   builder.ClipRect(clip_bounds, flutter::DlCanvas::ClipOp::kIntersect, false);
@@ -1177,10 +1181,10 @@ TEST_P(DisplayListTest, CanBlendDstOverAndDstCorrectly) {
     builder.Translate(100, 100);
     flutter::DlPaint paint;
     paint.setColor(flutter::DlColor::kRed());
-    builder.DrawRect(SkRect::MakeSize({200, 200}), paint);
+    builder.DrawRect(DlFRect::MakeWH(200, 200), paint);
     paint.setColor(flutter::DlColor::kBlue().withAlpha(127));
     paint.setBlendMode(flutter::DlBlendMode::kSrcOver);
-    builder.DrawRect(SkRect::MakeSize({200, 200}), paint);
+    builder.DrawRect(DlFRect::MakeWH(200, 200), paint);
     builder.Restore();
   }
   {
@@ -1188,10 +1192,10 @@ TEST_P(DisplayListTest, CanBlendDstOverAndDstCorrectly) {
     builder.Translate(300, 100);
     flutter::DlPaint paint;
     paint.setColor(flutter::DlColor::kBlue().withAlpha(127));
-    builder.DrawRect(SkRect::MakeSize({200, 200}), paint);
+    builder.DrawRect(DlFRect::MakeWH(200, 200), paint);
     paint.setColor(flutter::DlColor::kRed());
     paint.setBlendMode(flutter::DlBlendMode::kDstOver);
-    builder.DrawRect(SkRect::MakeSize({200, 200}), paint);
+    builder.DrawRect(DlFRect::MakeWH(200, 200), paint);
     builder.Restore();
   }
   {
@@ -1199,10 +1203,10 @@ TEST_P(DisplayListTest, CanBlendDstOverAndDstCorrectly) {
     builder.Translate(100, 300);
     flutter::DlPaint paint;
     paint.setColor(flutter::DlColor::kRed());
-    builder.DrawRect(SkRect::MakeSize({200, 200}), paint);
+    builder.DrawRect(DlFRect::MakeWH(200, 200), paint);
     paint.setColor(flutter::DlColor::kBlue().withAlpha(127));
     paint.setBlendMode(flutter::DlBlendMode::kSrc);
-    builder.DrawRect(SkRect::MakeSize({200, 200}), paint);
+    builder.DrawRect(DlFRect::MakeWH(200, 200), paint);
     builder.Restore();
   }
   {
@@ -1210,10 +1214,10 @@ TEST_P(DisplayListTest, CanBlendDstOverAndDstCorrectly) {
     builder.Translate(300, 300);
     flutter::DlPaint paint;
     paint.setColor(flutter::DlColor::kBlue().withAlpha(127));
-    builder.DrawRect(SkRect::MakeSize({200, 200}), paint);
+    builder.DrawRect(DlFRect::MakeWH(200, 200), paint);
     paint.setColor(flutter::DlColor::kRed());
     paint.setBlendMode(flutter::DlBlendMode::kDst);
-    builder.DrawRect(SkRect::MakeSize({200, 200}), paint);
+    builder.DrawRect(DlFRect::MakeWH(200, 200), paint);
     builder.Restore();
   }
 
@@ -1245,7 +1249,7 @@ TEST_P(DisplayListTest, CanDrawCorrectlyWithColorFilterAndImageFilter) {
   paint.setColor(flutter::DlColor::kRed());
   paint.setColorFilter(green_color_filter);
   paint.setImageFilter(blue_image_filter);
-  builder.DrawRect(SkRect::MakeLTRB(100, 100, 500, 500), paint);
+  builder.DrawRect(DlFRect::MakeLTRB(100, 100, 500, 500), paint);
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
@@ -1261,7 +1265,7 @@ TEST_P(DisplayListTest, MaskBlursApplyCorrectlyToColorSources) {
   std::array<std::shared_ptr<flutter::DlColorSource>, 2> color_sources = {
       std::make_shared<flutter::DlColorColorSource>(flutter::DlColor::kWhite()),
       flutter::DlColorSource::MakeLinear(
-          SkPoint::Make(0, 0), SkPoint::Make(100, 50), 2, colors.data(),
+          DlFPoint(0, 0), DlFPoint(100, 50), 2, colors.data(),
           stops.data(), flutter::DlTileMode::kClamp)};
 
   int offset = 100;
@@ -1272,12 +1276,12 @@ TEST_P(DisplayListTest, MaskBlursApplyCorrectlyToColorSources) {
 
     paint.setDrawStyle(flutter::DlDrawStyle::kFill);
     builder.DrawRRect(
-        SkRRect::MakeRectXY(SkRect::MakeXYWH(100, offset, 100, 50), 30, 30),
+        DlFRRect::MakeRectXY(DlFRect::MakeXYWH(100, offset, 100, 50), 30, 30),
         paint);
     paint.setDrawStyle(flutter::DlDrawStyle::kStroke);
     paint.setStrokeWidth(10);
     builder.DrawRRect(
-        SkRRect::MakeRectXY(SkRect::MakeXYWH(300, offset, 100, 50), 30, 30),
+        DlFRRect::MakeRectXY(DlFRect::MakeXYWH(300, offset, 100, 50), 30, 30),
         paint);
 
     offset += 100;
@@ -1289,9 +1293,9 @@ TEST_P(DisplayListTest, MaskBlursApplyCorrectlyToColorSources) {
 TEST_P(DisplayListTest, DrawVerticesSolidColorTrianglesWithoutIndices) {
   // Use negative coordinates and then scale the transform by -1, -1 to make
   // sure coverage is taking the transform into account.
-  std::vector<SkPoint> positions = {SkPoint::Make(-100, -300),
-                                    SkPoint::Make(-200, -100),
-                                    SkPoint::Make(-300, -300)};
+  std::vector<DlFPoint> positions = {DlFPoint(-100, -300),
+                                     DlFPoint(-200, -100),
+                                     DlFPoint(-300, -300)};
   std::vector<flutter::DlColor> colors = {flutter::DlColor::kWhite(),
                                           flutter::DlColor::kGreen(),
                                           flutter::DlColor::kWhite()};
@@ -1311,9 +1315,9 @@ TEST_P(DisplayListTest, DrawVerticesSolidColorTrianglesWithoutIndices) {
 }
 
 TEST_P(DisplayListTest, DrawVerticesLinearGradientWithoutIndices) {
-  std::vector<SkPoint> positions = {SkPoint::Make(100, 300),
-                                    SkPoint::Make(200, 100),
-                                    SkPoint::Make(300, 300)};
+  std::vector<DlFPoint> positions = {DlFPoint(100, 300),
+                                     DlFPoint(200, 100),
+                                     DlFPoint(300, 300)};
 
   auto vertices = flutter::DlVertices::Make(
       flutter::DlVertexMode::kTriangles, 3, positions.data(),
@@ -1337,12 +1341,12 @@ TEST_P(DisplayListTest, DrawVerticesLinearGradientWithoutIndices) {
 }
 
 TEST_P(DisplayListTest, DrawVerticesLinearGradientWithTextureCoordinates) {
-  std::vector<SkPoint> positions = {SkPoint::Make(100, 300),
-                                    SkPoint::Make(200, 100),
-                                    SkPoint::Make(300, 300)};
-  std::vector<SkPoint> texture_coordinates = {SkPoint::Make(300, 100),
-                                              SkPoint::Make(100, 200),
-                                              SkPoint::Make(300, 300)};
+  std::vector<DlFPoint> positions = {DlFPoint(100, 300),
+                                     DlFPoint(200, 100),
+                                     DlFPoint(300, 300)};
+  std::vector<DlFPoint> texture_coordinates = {DlFPoint(300, 100),
+                                               DlFPoint(100, 200),
+                                               DlFPoint(300, 300)};
 
   auto vertices = flutter::DlVertices::Make(
       flutter::DlVertexMode::kTriangles, 3, positions.data(),
@@ -1368,11 +1372,11 @@ TEST_P(DisplayListTest, DrawVerticesLinearGradientWithTextureCoordinates) {
 TEST_P(DisplayListTest, DrawVerticesImageSourceWithTextureCoordinates) {
   auto texture = CreateTextureForFixture("embarcadero.jpg");
   auto dl_image = DlImageImpeller::Make(texture);
-  std::vector<SkPoint> positions = {SkPoint::Make(100, 300),
-                                    SkPoint::Make(200, 100),
-                                    SkPoint::Make(300, 300)};
-  std::vector<SkPoint> texture_coordinates = {
-      SkPoint::Make(0, 0), SkPoint::Make(100, 200), SkPoint::Make(200, 100)};
+  std::vector<DlFPoint> positions = {DlFPoint(100, 300),
+                                     DlFPoint(200, 100),
+                                     DlFPoint(300, 300)};
+  std::vector<DlFPoint> texture_coordinates = {
+      DlFPoint(0, 0), DlFPoint(100, 200), DlFPoint(200, 100)};
 
   auto vertices = flutter::DlVertices::Make(
       flutter::DlVertexMode::kTriangles, 3, positions.data(),
@@ -1394,14 +1398,14 @@ TEST_P(DisplayListTest,
        DrawVerticesImageSourceWithTextureCoordinatesAndColorBlending) {
   auto texture = CreateTextureForFixture("embarcadero.jpg");
   auto dl_image = DlImageImpeller::Make(texture);
-  std::vector<SkPoint> positions = {SkPoint::Make(100, 300),
-                                    SkPoint::Make(200, 100),
-                                    SkPoint::Make(300, 300)};
+  std::vector<DlFPoint> positions = {DlFPoint(100, 300),
+                                     DlFPoint(200, 100),
+                                     DlFPoint(300, 300)};
   std::vector<flutter::DlColor> colors = {flutter::DlColor::kWhite(),
                                           flutter::DlColor::kGreen(),
                                           flutter::DlColor::kWhite()};
-  std::vector<SkPoint> texture_coordinates = {
-      SkPoint::Make(0, 0), SkPoint::Make(100, 200), SkPoint::Make(200, 100)};
+  std::vector<DlFPoint> texture_coordinates = {
+      DlFPoint(0, 0), DlFPoint(100, 200), DlFPoint(200, 100)};
 
   auto vertices = flutter::DlVertices::Make(
       flutter::DlVertexMode::kTriangles, 3, positions.data(),
@@ -1420,9 +1424,9 @@ TEST_P(DisplayListTest,
 }
 
 TEST_P(DisplayListTest, DrawVerticesSolidColorTrianglesWithIndices) {
-  std::vector<SkPoint> positions = {
-      SkPoint::Make(100, 300), SkPoint::Make(200, 100), SkPoint::Make(300, 300),
-      SkPoint::Make(200, 500)};
+  std::vector<DlFPoint> positions = {
+      DlFPoint(100, 300), DlFPoint(200, 100), DlFPoint(300, 300),
+      DlFPoint(200, 500)};
   std::vector<uint16_t> indices = {0, 1, 2, 0, 2, 3};
 
   auto vertices = flutter::DlVertices::Make(
@@ -1462,12 +1466,12 @@ TEST_P(DisplayListTest, DrawShapes) {
   for (auto join : joins) {
     paint.setStrokeJoin(join);
     stroke_paint.setStrokeJoin(join);
-    builder.DrawRect(SkRect::MakeXYWH(0, 0, 100, 100), paint);
-    builder.DrawRect(SkRect::MakeXYWH(0, 150, 100, 100), stroke_paint);
+    builder.DrawRect(DlFRect::MakeXYWH(0, 0, 100, 100), paint);
+    builder.DrawRect(DlFRect::MakeXYWH(0, 150, 100, 100), stroke_paint);
     builder.DrawRRect(
-        SkRRect::MakeRectXY(SkRect::MakeXYWH(150, 0, 100, 100), 30, 30), paint);
+        DlFRRect::MakeRectXY(DlFRect::MakeXYWH(150, 0, 100, 100), 30, 30), paint);
     builder.DrawRRect(
-        SkRRect::MakeRectXY(SkRect::MakeXYWH(150, 150, 100, 100), 30, 30),
+        DlFRRect::MakeRectXY(DlFRect::MakeXYWH(150, 150, 100, 100), 30, 30),
         stroke_paint);
     builder.DrawCircle({350, 50}, 50, paint);
     builder.DrawCircle({350, 200}, 50, stroke_paint);
@@ -1543,9 +1547,9 @@ TEST_P(DisplayListTest, DrawVerticesBlendModes) {
     }
     ImGui::End();
 
-    std::vector<SkPoint> positions = {SkPoint::Make(100, 300),
-                                      SkPoint::Make(200, 100),
-                                      SkPoint::Make(300, 300)};
+    std::vector<DlFPoint> positions = {DlFPoint(100, 300),
+                                       DlFPoint(200, 100),
+                                       DlFPoint(300, 300)};
     std::vector<flutter::DlColor> colors = {
         toColor(color0).modulateOpacity(dst_alpha),
         toColor(color1).modulateOpacity(dst_alpha),

@@ -20,7 +20,6 @@ DisplayList::DisplayList()
       nested_byte_count_(0),
       nested_op_count_(0),
       unique_id_(0),
-      bounds_({0, 0, 0, 0}),
       can_apply_group_opacity_(true),
       is_ui_thread_safe_(true),
       modifies_transparent_black_(false) {}
@@ -30,7 +29,7 @@ DisplayList::DisplayList(DisplayListStorage&& storage,
                          unsigned int op_count,
                          size_t nested_byte_count,
                          unsigned int nested_op_count,
-                         const SkRect& bounds,
+                         const DlFRect& bounds,
                          bool can_apply_group_opacity,
                          bool is_ui_thread_safe,
                          bool modifies_transparent_black,
@@ -144,16 +143,16 @@ void DisplayList::Dispatch(DlOpReceiver& receiver) const {
 }
 
 void DisplayList::Dispatch(DlOpReceiver& receiver,
-                           const SkIRect& cull_rect) const {
-  Dispatch(receiver, SkRect::Make(cull_rect));
+                           const DlIRect& cull_rect) const {
+  Dispatch(receiver, DlFRect::MakeBounds(cull_rect));
 }
 
 void DisplayList::Dispatch(DlOpReceiver& receiver,
-                           const SkRect& cull_rect) const {
-  if (cull_rect.isEmpty()) {
+                           const DlFRect& cull_rect) const {
+  if (cull_rect.is_empty()) {
     return;
   }
-  if (cull_rect.contains(bounds())) {
+  if (cull_rect.Contains(bounds())) {
     Dispatch(receiver);
     return;
   }

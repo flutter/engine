@@ -83,8 +83,8 @@ static void BM_PathVolatilityTracker(benchmark::State& state) {
     constexpr int path_count = 1000;
     for (int i = 0; i < path_count; i++) {
       auto path = std::make_shared<VolatilePathTracker::TrackedPath>();
-      path->path = SkPath();
-      path->path.setIsVolatile(true);
+      path->path = DlPath();
+      path->path.SetIsVolatile(true);
       paths.push_back(std::move(path));
     }
 

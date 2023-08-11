@@ -988,7 +988,7 @@ void Shell::OnPlatformViewSetViewportMetrics(int64_t view_id,
   {
     std::scoped_lock<std::mutex> lock(resize_mutex_);
     expected_frame_size_ =
-        SkISize::Make(metrics.physical_width, metrics.physical_height);
+        DlISize(metrics.physical_width, metrics.physical_height);
     device_pixel_ratio_ = metrics.device_pixel_ratio;
   }
 }
@@ -1213,7 +1213,7 @@ void Shell::OnAnimatorDraw(std::shared_ptr<LayerTreePipeline> pipeline) {
 
   auto discard_callback = [this](flutter::LayerTree& tree) {
     std::scoped_lock<std::mutex> lock(resize_mutex_);
-    return !expected_frame_size_.isEmpty() &&
+    return !expected_frame_size_.is_empty() &&
            tree.frame_size() != expected_frame_size_;
   };
 
@@ -1911,7 +1911,7 @@ static rapidjson::Value SerializeLayerSnapshot(
   result.AddMember("duration_micros", snapshot.GetDuration().ToMicroseconds(),
                    allocator);
 
-  const SkRect bounds = snapshot.GetBounds();
+  const DlFRect bounds = snapshot.GetBounds();
   result.AddMember("top", bounds.top(), allocator);
   result.AddMember("left", bounds.left(), allocator);
   result.AddMember("width", bounds.width(), allocator);

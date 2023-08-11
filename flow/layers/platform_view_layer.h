@@ -7,21 +7,20 @@
 
 #include "flutter/display_list/skia/dl_sk_canvas.h"
 #include "flutter/flow/layers/layer.h"
-#include "third_party/skia/include/core/SkPoint.h"
-#include "third_party/skia/include/core/SkSize.h"
 
 namespace flutter {
 
 class PlatformViewLayer : public Layer {
  public:
-  PlatformViewLayer(const SkPoint& offset, const SkSize& size, int64_t view_id);
+  PlatformViewLayer(const DlFPoint& offset, const DlFSize& size,
+                    int64_t view_id);
 
   void Preroll(PrerollContext* context) override;
   void Paint(PaintContext& context) const override;
 
  private:
-  SkPoint offset_;
-  SkSize size_;
+  DlFPoint offset_;
+  DlFSize size_;
   int64_t view_id_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewLayer);

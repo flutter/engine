@@ -15,13 +15,13 @@
 
 namespace flutter {
 
-DisplayListLayer::DisplayListLayer(const SkPoint& offset,
+DisplayListLayer::DisplayListLayer(const DlFPoint& offset,
                                    sk_sp<DisplayList> display_list,
                                    bool is_complex,
                                    bool will_change)
     : offset_(offset), display_list_(std::move(display_list)) {
   if (display_list_) {
-    bounds_ = display_list_->bounds().makeOffset(offset_.x(), offset_.y());
+    bounds_ = display_list_->bounds().MakeOffset(offset_.x(), offset_.y());
     display_list_raster_cache_item_ = DisplayListRasterCacheItem::Make(
         display_list_, offset_, is_complex, will_change);
   }
@@ -49,7 +49,7 @@ void DisplayListLayer::Diff(DiffContext* context, const Layer* old_layer) {
                Compare(dummy_statistics, this, prev));
 #endif
   }
-  context->PushTransform(SkMatrix::Translate(offset_.x(), offset_.y()));
+  context->PushTransform(DlTransform::MakeTranslate(offset_.x(), offset_.y()));
   if (context->has_raster_cache()) {
     context->WillPaintWithIntegralTransform();
   }
@@ -96,7 +96,7 @@ void DisplayListLayer::Preroll(PrerollContext* context) {
   DisplayList* disp_list = display_list();
 
   AutoCache cache = AutoCache(display_list_raster_cache_item_.get(), context,
-                              context->state_stack.transform_3x3());
+                              context->state_stack.transform());
   if (disp_list->can_apply_group_opacity()) {
     context->renderable_state_flags = LayerStateStack::kCallerCanApplyOpacity;
   }
@@ -149,7 +149,7 @@ void DisplayListLayer::Paint(PaintContext& context) const {
     const fml::TimeDelta offscreen_render_time =
         fml::TimePoint::Now() - start_time;
 
-    const SkRect device_bounds =
+    const DlFRect device_bounds =
         RasterCacheUtil::GetDeviceBounds(paint_bounds(), ctm);
     sk_sp<SkData> raster_data = offscreen_surface->GetRasterData(true);
     LayerSnapshotData snapshot_data(unique_id(), offscreen_render_time,

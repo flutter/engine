@@ -5,11 +5,13 @@
 #include "flutter/display_list/benchmarking/dl_benchmarks.h"
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/display_list/dl_op_flags.h"
+#include "flutter/display_list/geometry/dl_point.h"
+#include "flutter/display_list/geometry/dl_rect.h"
+#include "flutter/display_list/geometry/dl_round_rect.h"
 #include "flutter/display_list/skia/dl_sk_canvas.h"
 
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkImage.h"
-#include "third_party/skia/include/core/SkPoint.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
@@ -103,8 +105,8 @@ void BM_DrawLine(benchmark::State& state,
 
   state.counters["DrawCallCount"] = kLinesToDraw;
   for (size_t i = 0; i < kLinesToDraw; i++) {
-    builder.DrawLine(SkPoint::Make(i % length, 0),
-                     SkPoint::Make(length - i % length, length), paint);
+    builder.DrawLine(DlFPoint(i % length, 0),
+                     DlFPoint(length - i % length, length), paint);
   }
 
   auto display_list = builder.Build();
@@ -139,20 +141,20 @@ void BM_DrawRect(benchmark::State& state,
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
   auto canvas = DlSkCanvasAdapter(surface->getCanvas());
 
-  // As rects have SkScalar dimensions, we want to ensure that we also
+  // As rects have DlScalar dimensions, we want to ensure that we also
   // draw rects with non-integer position and size
-  const SkScalar offset = 0.5f;
-  SkRect rect = SkRect::MakeLTRB(0, 0, length, length);
+  const DlScalar offset = 0.5f;
+  DlFRect rect = DlFRect::MakeLTRB(0, 0, length, length);
 
   state.counters["DrawCallCount"] = kRectsToDraw;
   for (size_t i = 0; i < kRectsToDraw; i++) {
     builder.DrawRect(rect, paint);
-    rect.offset(offset, offset);
+    rect.Offset(offset, offset);
     if (rect.right() > canvas_size) {
-      rect.offset(-canvas_size, 0);
+      rect.Offset(-canvas_size, 0);
     }
     if (rect.bottom() > canvas_size) {
-      rect.offset(0, -canvas_size);
+      rect.Offset(0, -canvas_size);
     }
   }
 
@@ -188,18 +190,18 @@ void BM_DrawOval(benchmark::State& state,
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
   auto canvas = DlSkCanvasAdapter(surface->getCanvas());
 
-  SkRect rect = SkRect::MakeXYWH(0, 0, length * 1.5f, length);
-  const SkScalar offset = 0.5f;
+  DlFRect rect = DlFRect::MakeXYWH(0, 0, length * 1.5f, length);
+  const DlScalar offset = 0.5f;
 
   state.counters["DrawCallCount"] = kOvalsToDraw;
   for (size_t i = 0; i < kOvalsToDraw; i++) {
     builder.DrawOval(rect, paint);
-    rect.offset(offset, offset);
+    rect.Offset(offset, offset);
     if (rect.right() > canvas_size) {
-      rect.offset(-canvas_size, 0);
+      rect.Offset(-canvas_size, 0);
     }
     if (rect.bottom() > canvas_size) {
-      rect.offset(0, -canvas_size);
+      rect.Offset(0, -canvas_size);
     }
   }
   auto display_list = builder.Build();
@@ -234,20 +236,20 @@ void BM_DrawCircle(benchmark::State& state,
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
   auto canvas = DlSkCanvasAdapter(surface->getCanvas());
 
-  SkScalar radius = length / 2.0f;
-  const SkScalar offset = 0.5f;
+  DlScalar radius = length / 2.0f;
+  const DlScalar offset = 0.5f;
 
-  SkPoint center = SkPoint::Make(radius, radius);
+  DlFPoint center = DlFPoint(radius, radius);
 
   state.counters["DrawCallCount"] = kCirclesToDraw;
   for (size_t i = 0; i < kCirclesToDraw; i++) {
     builder.DrawCircle(center, radius, paint);
-    center.offset(offset, offset);
+    center.Offset(offset, offset);
     if (center.x() + radius > canvas_size) {
-      center.set(radius, center.y());
+      center.Set(radius, center.y());
     }
     if (center.y() + radius > canvas_size) {
-      center.set(center.x(), radius);
+      center.Set(center.x(), radius);
     }
   }
   auto display_list = builder.Build();
@@ -270,7 +272,7 @@ void BM_DrawCircle(benchmark::State& state,
 void BM_DrawRRect(benchmark::State& state,
                   BackendType backend_type,
                   unsigned attributes,
-                  SkRRect::Type type) {
+                  DlFRRect::Type type) {
   auto surface_provider = DlSurfaceProvider::Create(backend_type);
   DisplayListBuilder builder;
   DlPaint paint = GetPaintForRun(attributes);
@@ -283,49 +285,49 @@ void BM_DrawRRect(benchmark::State& state,
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
   auto canvas = DlSkCanvasAdapter(surface->getCanvas());
 
-  SkVector radii[4] = {};
+  DlFVector radii[4] = {};
   switch (type) {
-    case SkRRect::Type::kSimple_Type:
-      radii[0] = SkVector::Make(5.0f, 5.0f);
-      radii[1] = SkVector::Make(5.0f, 5.0f);
-      radii[2] = SkVector::Make(5.0f, 5.0f);
-      radii[3] = SkVector::Make(5.0f, 5.0f);
+    case DlFRRect::Type::kSimple:
+      radii[0] = DlFVector(5.0f, 5.0f);
+      radii[1] = DlFVector(5.0f, 5.0f);
+      radii[2] = DlFVector(5.0f, 5.0f);
+      radii[3] = DlFVector(5.0f, 5.0f);
       break;
-    case SkRRect::Type::kNinePatch_Type:
-      radii[0] = SkVector::Make(5.0f, 2.0f);
-      radii[1] = SkVector::Make(3.0f, 2.0f);
-      radii[2] = SkVector::Make(3.0f, 4.0f);
-      radii[3] = SkVector::Make(5.0f, 4.0f);
+    case DlFRRect::Type::kNinePatch:
+      radii[0] = DlFVector(5.0f, 2.0f);
+      radii[1] = DlFVector(3.0f, 2.0f);
+      radii[2] = DlFVector(3.0f, 4.0f);
+      radii[3] = DlFVector(5.0f, 4.0f);
       break;
-    case SkRRect::Type::kComplex_Type:
-      radii[0] = SkVector::Make(5.0f, 4.0f);
-      radii[1] = SkVector::Make(4.0f, 5.0f);
-      radii[2] = SkVector::Make(3.0f, 6.0f);
-      radii[3] = SkVector::Make(2.0f, 7.0f);
+    case DlFRRect::Type::kComplex:
+      radii[0] = DlFVector(5.0f, 4.0f);
+      radii[1] = DlFVector(4.0f, 5.0f);
+      radii[2] = DlFVector(3.0f, 6.0f);
+      radii[3] = DlFVector(2.0f, 7.0f);
       break;
     default:
       break;
   }
 
-  const SkScalar offset = 0.5f;
-  const SkScalar multiplier = length / 16.0f;
-  SkRRect rrect;
+  const DlScalar offset = 0.5f;
+  const DlScalar multiplier = length / 16.0f;
+  DlFRRect rrect;
 
-  SkVector set_radii[4];
+  DlFVector set_radii[4];
   for (size_t i = 0; i < 4; i++) {
     set_radii[i] = radii[i] * multiplier;
   }
-  rrect.setRectRadii(SkRect::MakeLTRB(0, 0, length, length), set_radii);
+  rrect.SetRectRadii(DlFRect::MakeWH(length, length), set_radii);
 
   state.counters["DrawCallCount"] = kRRectsToDraw;
   for (size_t i = 0; i < kRRectsToDraw; i++) {
     builder.DrawRRect(rrect, paint);
-    rrect.offset(offset, offset);
+    rrect.Offset(offset, offset);
     if (rrect.rect().right() > canvas_size) {
-      rrect.offset(-canvas_size, 0);
+      rrect.Offset(-canvas_size, 0);
     }
     if (rrect.rect().bottom() > canvas_size) {
-      rrect.offset(0, -canvas_size);
+      rrect.Offset(0, -canvas_size);
     }
   }
   auto display_list = builder.Build();
@@ -351,7 +353,7 @@ void BM_DrawRRect(benchmark::State& state,
 void BM_DrawDRRect(benchmark::State& state,
                    BackendType backend_type,
                    unsigned attributes,
-                   SkRRect::Type type) {
+                   DlFRRect::Type type) {
   auto surface_provider = DlSurfaceProvider::Create(backend_type);
   DisplayListBuilder builder;
   DlPaint paint = GetPaintForRun(attributes);
@@ -364,50 +366,50 @@ void BM_DrawDRRect(benchmark::State& state,
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
   auto canvas = DlSkCanvasAdapter(surface->getCanvas());
 
-  SkVector radii[4] = {};
+  DlFVector radii[4] = {};
   switch (type) {
-    case SkRRect::Type::kSimple_Type:
-      radii[0] = SkVector::Make(5.0f, 5.0f);
-      radii[1] = SkVector::Make(5.0f, 5.0f);
-      radii[2] = SkVector::Make(5.0f, 5.0f);
-      radii[3] = SkVector::Make(5.0f, 5.0f);
+    case DlFRRect::Type::kSimple:
+      radii[0] = DlFVector(5.0f, 5.0f);
+      radii[1] = DlFVector(5.0f, 5.0f);
+      radii[2] = DlFVector(5.0f, 5.0f);
+      radii[3] = DlFVector(5.0f, 5.0f);
       break;
-    case SkRRect::Type::kNinePatch_Type:
-      radii[0] = SkVector::Make(5.0f, 7.0f);
-      radii[1] = SkVector::Make(3.0f, 7.0f);
-      radii[2] = SkVector::Make(3.0f, 4.0f);
-      radii[3] = SkVector::Make(5.0f, 4.0f);
+    case DlFRRect::Type::kNinePatch:
+      radii[0] = DlFVector(5.0f, 7.0f);
+      radii[1] = DlFVector(3.0f, 7.0f);
+      radii[2] = DlFVector(3.0f, 4.0f);
+      radii[3] = DlFVector(5.0f, 4.0f);
       break;
-    case SkRRect::Type::kComplex_Type:
-      radii[0] = SkVector::Make(5.0f, 4.0f);
-      radii[1] = SkVector::Make(4.0f, 5.0f);
-      radii[2] = SkVector::Make(3.0f, 6.0f);
-      radii[3] = SkVector::Make(8.0f, 7.0f);
+    case DlFRRect::Type::kComplex:
+      radii[0] = DlFVector(5.0f, 4.0f);
+      radii[1] = DlFVector(4.0f, 5.0f);
+      radii[2] = DlFVector(3.0f, 6.0f);
+      radii[3] = DlFVector(8.0f, 7.0f);
       break;
     default:
       break;
   }
 
-  const SkScalar offset = 0.5f;
-  const SkScalar multiplier = length / 16.0f;
-  SkRRect rrect, rrect_2;
+  const DlScalar offset = 0.5f;
+  const DlScalar multiplier = length / 16.0f;
+  DlFRRect rrect, rrect_2;
 
-  SkVector set_radii[4];
+  DlFVector set_radii[4];
   for (size_t i = 0; i < 4; i++) {
     set_radii[i] = radii[i] * multiplier;
   }
-  rrect.setRectRadii(SkRect::MakeLTRB(0, 0, length, length), set_radii);
+  rrect.SetRectRadii(DlFRect::MakeWH(length, length), set_radii);
 
   state.counters["DrawCallCount"] = kDRRectsToDraw;
   for (size_t i = 0; i < kDRRectsToDraw; i++) {
-    rrect.inset(0.1f * length, 0.1f * length, &rrect_2);
+    rrect.Inset(0.1f * length, 0.1f * length, &rrect_2);
     builder.DrawDRRect(rrect, rrect_2, paint);
-    rrect.offset(offset, offset);
+    rrect.Offset(offset, offset);
     if (rrect.rect().right() > canvas_size) {
-      rrect.offset(-canvas_size, 0);
+      rrect.Offset(-canvas_size, 0);
     }
     if (rrect.rect().bottom() > canvas_size) {
-      rrect.offset(0, -canvas_size);
+      rrect.Offset(0, -canvas_size);
     }
   }
   auto display_list = builder.Build();
@@ -439,27 +441,27 @@ void BM_DrawArc(benchmark::State& state,
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
   auto canvas = DlSkCanvasAdapter(surface->getCanvas());
 
-  SkScalar starting_angle = 0.0f;
-  SkScalar offset = 0.5f;
+  DlScalar starting_angle = 0.0f;
+  DlScalar offset = 0.5f;
 
   // Just some random sweeps that will mostly circumnavigate the circle
-  std::vector<SkScalar> segment_sweeps = {5.5f,  -10.0f, 42.0f, 71.7f, 90.0f,
+  std::vector<DlScalar> segment_sweeps = {5.5f,  -10.0f, 42.0f, 71.7f, 90.0f,
                                           37.5f, 17.9f,  32.0f, 379.4f};
 
-  SkRect bounds = SkRect::MakeLTRB(0, 0, length, length);
+  DlFRect bounds = DlFRect::MakeWH(length, length);
 
   state.counters["DrawCallCount"] = kArcSweepSetsToDraw * segment_sweeps.size();
   for (size_t i = 0; i < kArcSweepSetsToDraw; i++) {
-    for (SkScalar sweep : segment_sweeps) {
+    for (DlScalar sweep : segment_sweeps) {
       builder.DrawArc(bounds, starting_angle, sweep, false, paint);
       starting_angle += sweep + 5.0f;
     }
-    bounds.offset(offset, offset);
+    bounds.Offset(offset, offset);
     if (bounds.right() > canvas_size) {
-      bounds.offset(-canvas_size, 0);
+      bounds.Offset(-canvas_size, 0);
     }
     if (bounds.bottom() > canvas_size) {
-      bounds.offset(0, -canvas_size);
+      bounds.Offset(0, -canvas_size);
     }
   }
 
@@ -478,16 +480,16 @@ void BM_DrawArc(benchmark::State& state,
 
 // Returns a list of SkPoints that represent `n` points equally spaced out
 // along the circumference of a circle with radius `r` and centered on `center`.
-std::vector<SkPoint> GetPolygonPoints(size_t n, SkPoint center, SkScalar r) {
-  std::vector<SkPoint> points;
-  SkScalar x, y;
+std::vector<DlFPoint> GetPolygonPoints(size_t n, DlFPoint center, DlScalar r) {
+  std::vector<DlFPoint> points;
+  DlScalar x, y;
   float angle;
   float full_circle = 2.0f * M_PI;
   for (size_t i = 0; i < n; i++) {
     angle = (full_circle / static_cast<float>(n)) * static_cast<float>(i);
     x = center.x() + r * std::cosf(angle);
     y = center.y() + r * std::sinf(angle);
-    points.push_back(SkPoint::Make(x, y));
+    points.push_back(DlFPoint(x, y));
   }
   return points;
 }
@@ -498,14 +500,15 @@ std::vector<SkPoint> GetPolygonPoints(size_t n, SkPoint center, SkScalar r) {
 // `radius` and `center`.
 //
 // The path segment connecting each control point is a line segment.
-void GetLinesPath(SkPath& path, size_t sides, SkPoint center, float radius) {
-  std::vector<SkPoint> points = GetPolygonPoints(sides, center, radius);
-  path.moveTo(points[0]);
+void GetLinesPath(
+    DlPath& path, size_t sides, DlFPoint center, DlScalar radius) {
+  std::vector<DlFPoint> points = GetPolygonPoints(sides, center, radius);
+  path.MoveTo(points[0]);
   for (size_t i = 1; i < sides; i++) {
-    path.lineTo(points[i]);
+    path.LineTo(points[i]);
   }
-  path.lineTo(points[0]);
-  path.close();
+  path.LineTo(points[0]);
+  path.Close();
 }
 
 // Creates a path that represents a regular polygon with `sides` sides,
@@ -517,17 +520,18 @@ void GetLinesPath(SkPath& path, size_t sides, SkPoint center, float radius) {
 // bezier control point being on a circle with 80% of `radius` and with the
 // control point angle half way between the start and end point angles for the
 // polygon segment.
-void GetQuadsPath(SkPath& path, size_t sides, SkPoint center, float radius) {
-  std::vector<SkPoint> points = GetPolygonPoints(sides, center, radius);
-  std::vector<SkPoint> control_points =
+void GetQuadsPath(
+    DlPath& path, size_t sides, DlFPoint center, DlScalar radius) {
+  std::vector<DlFPoint> points = GetPolygonPoints(sides, center, radius);
+  std::vector<DlFPoint> control_points =
       GetPolygonPoints(sides * 2, center, radius * 0.8f);
 
-  path.moveTo(points[0]);
+  path.MoveTo(points[0]);
   for (size_t i = 1; i < sides; i++) {
-    path.quadTo(control_points[2 * i - 1], points[i]);
+    path.QuadTo(control_points[2 * i - 1], points[i]);
   }
-  path.quadTo(control_points[2 * sides - 1], points[0]);
-  path.close();
+  path.QuadTo(control_points[2 * sides - 1], points[0]);
+  path.Close();
 }
 
 // Creates a path that represents a regular polygon with `sides` sides,
@@ -539,17 +543,18 @@ void GetQuadsPath(SkPath& path, size_t sides, SkPoint center, float radius) {
 // control point being on a circle with 80% of `radius` and with the
 // control point angle half way between the start and end point angles for the
 // polygon segment, and the conic weight set to 3.7f.
-void GetConicsPath(SkPath& path, size_t sides, SkPoint center, float radius) {
-  std::vector<SkPoint> points = GetPolygonPoints(sides, center, radius);
-  std::vector<SkPoint> control_points =
+void GetConicsPath(
+    DlPath& path, size_t sides, DlFPoint center, DlScalar radius) {
+  std::vector<DlFPoint> points = GetPolygonPoints(sides, center, radius);
+  std::vector<DlFPoint> control_points =
       GetPolygonPoints(sides * 2, center, radius * 0.8f);
 
-  path.moveTo(points[0]);
+  path.MoveTo(points[0]);
   for (size_t i = 1; i < sides; i++) {
-    path.conicTo(control_points[2 * i - 1], points[i], 3.7f);
+    path.ConicTo(control_points[2 * i - 1], points[i], 3.7f);
   }
-  path.conicTo(control_points[2 * sides - 1], points[0], 3.7f);
-  path.close();
+  path.ConicTo(control_points[2 * sides - 1], points[0], 3.7f);
+  path.Close();
 }
 
 // Creates a path that represents a regular polygon with `sides` sides,
@@ -562,21 +567,24 @@ void GetConicsPath(SkPath& path, size_t sides, SkPoint center, float radius) {
 // control point being on a circle with 120% of `radius`. The first
 // control point is 1/3, and the second control point is 2/3, of the angle
 // between the start and end point angles for the polygon segment.
-void GetCubicsPath(SkPath& path, size_t sides, SkPoint center, float radius) {
-  std::vector<SkPoint> points = GetPolygonPoints(sides, center, radius);
-  std::vector<SkPoint> inner_control_points =
+void GetCubicsPath(
+    DlPath& path, size_t sides, DlFPoint center, DlScalar radius) {
+  std::vector<DlFPoint> points = GetPolygonPoints(sides, center, radius);
+  std::vector<DlFPoint> inner_control_points =
       GetPolygonPoints(sides * 3, center, radius * 0.8f);
-  std::vector<SkPoint> outer_control_points =
+  std::vector<DlFPoint> outer_control_points =
       GetPolygonPoints(sides * 3, center, radius * 1.2f);
 
-  path.moveTo(points[0]);
+  path.MoveTo(points[0]);
   for (size_t i = 1; i < sides; i++) {
-    path.cubicTo(inner_control_points[3 * i - 2],
-                 outer_control_points[3 * i - 1], points[i]);
+    path.CubicTo(inner_control_points[3 * i - 2],  //
+                 outer_control_points[3 * i - 1],  //
+                 points[i]);
   }
-  path.cubicTo(inner_control_points[3 * sides - 2],
-               outer_control_points[3 * sides - 1], points[0]);
-  path.close();
+  path.CubicTo(inner_control_points[3 * sides - 2],  //
+               outer_control_points[3 * sides - 1],  //
+               points[0]);
+  path.Close();
 }
 
 // Returns a path generated by one of the above path generators
@@ -587,27 +595,27 @@ void GetCubicsPath(SkPath& path, size_t sides, SkPoint center, float radius) {
 // Each of the polygons will have `sides` sides, and the resulting path will be
 // bounded by a circle with radius of 150% of `radius` (or another 20% on top of
 // that for cubics)
-void MultiplyPath(SkPath& path,
-                  SkPath::Verb type,
-                  SkPoint center,
+void MultiplyPath(DlPath& path,
+                  DlPath::Verb type,
+                  DlFPoint center,
                   size_t sides,
                   size_t number,
-                  float radius) {
-  std::vector<SkPoint> center_points =
+                  DlScalar radius) {
+  std::vector<DlFPoint> center_points =
       GetPolygonPoints(number, center, radius / 2.0f);
 
-  for (SkPoint p : center_points) {
+  for (DlFPoint p : center_points) {
     switch (type) {
-      case SkPath::Verb::kLine_Verb:
+      case DlPath::Verb::kLineTo:
         GetLinesPath(path, sides, p, radius);
         break;
-      case SkPath::Verb::kQuad_Verb:
+      case DlPath::Verb::kQuadTo:
         GetQuadsPath(path, sides, p, radius);
         break;
-      case SkPath::Verb::kConic_Verb:
+      case DlPath::Verb::kConicTo:
         GetConicsPath(path, sides, p, radius);
         break;
-      case SkPath::Verb::kCubic_Verb:
+      case DlPath::Verb::kCubicTo:
         GetCubicsPath(path, sides, p, radius);
         break;
       default:
@@ -616,15 +624,15 @@ void MultiplyPath(SkPath& path,
   }
 }
 
-std::string VerbToString(SkPath::Verb type) {
+std::string VerbToString(DlPath::Verb type) {
   switch (type) {
-    case SkPath::Verb::kLine_Verb:
+    case DlPath::Verb::kLineTo:
       return "Lines";
-    case SkPath::Verb::kQuad_Verb:
+    case DlPath::Verb::kQuadTo:
       return "Quads";
-    case SkPath::Verb::kConic_Verb:
+    case DlPath::Verb::kConicTo:
       return "Conics";
-    case SkPath::Verb::kCubic_Verb:
+    case DlPath::Verb::kCubicTo:
       return "Cubics";
     default:
       return "Unknown";
@@ -641,7 +649,7 @@ std::string VerbToString(SkPath::Verb type) {
 void BM_DrawPath(benchmark::State& state,
                  BackendType backend_type,
                  unsigned attributes,
-                 SkPath::Verb type) {
+                 DlPath::Verb type) {
   auto surface_provider = DlSurfaceProvider::Create(backend_type);
   DisplayListBuilder builder;
   DlPaint paint = GetPaintForRun(attributes);
@@ -653,16 +661,16 @@ void BM_DrawPath(benchmark::State& state,
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
   auto canvas = DlSkCanvasAdapter(surface->getCanvas());
 
-  SkPath path;
+  DlPath path;
 
   std::string label = VerbToString(type);
-  SkPoint center = SkPoint::Make(length / 2.0f, length / 2.0f);
+  DlFPoint center = DlFPoint(length / 2.0f, length / 2.0f);
   float radius = length * 0.25f;
   state.SetComplexityN(state.range(0));
 
   MultiplyPath(path, type, center, 20, state.range(0), radius);
 
-  state.counters["VerbCount"] = path.countVerbs();
+  state.counters["VerbCount"] = path.verb_count();
   state.counters["DrawCallCount"] = 1;
 
   builder.DrawPath(path, paint);
@@ -691,16 +699,16 @@ void BM_DrawPath(benchmark::State& state,
 // and the final vertex being the center point of the disc.
 //
 // Each vertex colour will alternate through Red, Green, Blue and Cyan.
-std::shared_ptr<DlVertices> GetTestVertices(SkPoint center,
+std::shared_ptr<DlVertices> GetTestVertices(DlFPoint center,
                                             float radius,
                                             size_t vertex_count,
                                             DlVertexMode mode,
                                             size_t& final_vertex_count) {
   size_t outer_vertex_count = vertex_count / 2;
-  std::vector<SkPoint> outer_points =
+  std::vector<DlFPoint> outer_points =
       GetPolygonPoints(outer_vertex_count, center, radius);
 
-  std::vector<SkPoint> vertices;
+  std::vector<DlFPoint> vertices;
   std::vector<DlColor> colors;
 
   switch (mode) {
@@ -791,18 +799,18 @@ void BM_DrawVertices(benchmark::State& state,
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
   auto canvas = DlSkCanvasAdapter(surface->getCanvas());
 
-  SkPoint center = SkPoint::Make(length / 2.0f, length / 2.0f);
+  DlFPoint center = DlFPoint(length / 2.0f, length / 2.0f);
 
   float radius = length / 4.0f;
 
   size_t vertex_count, total_vertex_count = 0;
   size_t disc_count = state.range(0);
 
-  std::vector<SkPoint> center_points =
+  std::vector<DlFPoint> center_points =
       GetPolygonPoints(disc_count, center, radius / 4.0f);
 
   state.counters["DrawCallCount"] = center_points.size();
-  for (SkPoint p : center_points) {
+  for (DlFPoint p : center_points) {
     std::shared_ptr<DlVertices> vertices =
         GetTestVertices(p, radius, 50, mode, vertex_count);
     total_vertex_count += vertex_count;
@@ -832,22 +840,22 @@ void BM_DrawVertices(benchmark::State& state,
 // chosen to appear somewhat random.
 //
 // The points generated will wrap in x and y for the bounds of `canvas_size`.
-std::vector<SkPoint> GetTestPoints(size_t count, SkISize canvas_size) {
-  std::vector<SkPoint> points;
+std::vector<DlFPoint> GetTestPoints(size_t count, DlISize canvas_size) {
+  std::vector<DlFPoint> points;
 
   // Some arbitrary offsets to use when building the list of points
-  std::vector<SkScalar> delta_x = {10.0f, 6.3f, 15.0f, 3.5f, 22.6f, 4.7f};
-  std::vector<SkScalar> delta_y = {9.3f, -5.4f, 8.5f, -12.0f, 19.2f, -19.6f};
+  std::vector<DlScalar> delta_x = {10.0f, 6.3f, 15.0f, 3.5f, 22.6f, 4.7f};
+  std::vector<DlScalar> delta_y = {9.3f, -5.4f, 8.5f, -12.0f, 19.2f, -19.6f};
 
-  SkPoint current = SkPoint::Make(0.0f, 0.0f);
+  DlFPoint current = DlFPoint(0.0f, 0.0f);
   for (size_t i = 0; i < count; i++) {
     points.push_back(current);
-    current.offset(delta_x[i % delta_x.size()], delta_y[i % delta_y.size()]);
+    current.Offset(delta_x[i % delta_x.size()], delta_y[i % delta_y.size()]);
     if (current.x() > canvas_size.width()) {
-      current.offset(-canvas_size.width(), 25.0f);
+      current.Offset(-canvas_size.width(), 25.0f);
     }
     if (current.y() > canvas_size.height()) {
-      current.offset(0.0f, -canvas_size.height());
+      current.Offset(0.0f, -canvas_size.height());
     }
   }
 
@@ -905,8 +913,8 @@ void BM_DrawPoints(benchmark::State& state,
   state.counters["PointCount"] = point_count;
   state.counters["DrawCallCount"] = 1;
 
-  std::vector<SkPoint> points =
-      GetTestPoints(point_count, SkISize::Make(length, length));
+  std::vector<DlFPoint> points =
+      GetTestPoints(point_count, DlISize(length, length));
   builder.DrawPoints(mode, points.size(), points.data(), paint);
 
   auto display_list = builder.Build();
@@ -969,8 +977,8 @@ void BM_DrawImage(benchmark::State& state,
     offscreen->getCanvas()->clear(SK_ColorRED);
   }
 
-  SkScalar offset = 0.5f;
-  SkPoint dst = SkPoint::Make(0, 0);
+  DlScalar offset = 0.5f;
+  DlFPoint dst = DlFPoint(0, 0);
 
   state.counters["DrawCallCount"] = kImagesToDraw;
   for (size_t i = 0; i < kImagesToDraw; i++) {
@@ -978,12 +986,12 @@ void BM_DrawImage(benchmark::State& state,
                           : offscreen->makeImageSnapshot();
     builder.DrawImage(DlImage::Make(image), dst, options, &paint);
 
-    dst.offset(offset, offset);
+    dst.Offset(offset, offset);
     if (dst.x() + bitmap_size > canvas_size) {
-      dst.set(0, dst.y());
+      dst.Set(0, dst.y());
     }
     if (dst.y() + bitmap_size > canvas_size) {
-      dst.set(dst.x(), 0);
+      dst.Set(dst.x(), 0);
     }
   }
 
@@ -1052,11 +1060,10 @@ void BM_DrawImageRect(benchmark::State& state,
     offscreen->getCanvas()->clear(SK_ColorRED);
   }
 
-  SkScalar offset = 0.5f;
-  SkRect src = SkRect::MakeXYWH(bitmap_size / 4.0f, bitmap_size / 4.0f,
-                                bitmap_size / 2.0f, bitmap_size / 2.0f);
-  SkRect dst =
-      SkRect::MakeXYWH(0.0f, 0.0f, bitmap_size * 0.75f, bitmap_size * 0.75f);
+  DlScalar offset = 0.5f;
+  DlFRect src = DlFRect::MakeXYWH(bitmap_size / 4.0f, bitmap_size / 4.0f,
+                                  bitmap_size / 2.0f, bitmap_size / 2.0f);
+  DlFRect dst = DlFRect::MakeWH(bitmap_size * 0.75f, bitmap_size * 0.75f);
 
   state.counters["DrawCallCount"] = kImagesToDraw;
   for (size_t i = 0; i < kImagesToDraw; i++) {
@@ -1064,12 +1071,12 @@ void BM_DrawImageRect(benchmark::State& state,
                           : offscreen->makeImageSnapshot();
     builder.DrawImageRect(DlImage::Make(image), src, dst, options, &paint,
                           constraint);
-    dst.offset(offset, offset);
+    dst.Offset(offset, offset);
     if (dst.right() > canvas_size) {
-      dst.offsetTo(0, dst.y());
+      dst.SetLeft(0);
     }
     if (dst.bottom() > canvas_size) {
-      dst.offsetTo(dst.x(), 0);
+      dst.SetTop(0);
     }
   }
 
@@ -1121,8 +1128,10 @@ void BM_DrawImageNine(benchmark::State& state,
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
   auto canvas = DlSkCanvasAdapter(surface->getCanvas());
 
-  SkIRect center = SkIRect::MakeXYWH(bitmap_size / 4, bitmap_size / 4,
-                                     bitmap_size / 2, bitmap_size / 2);
+  DlInt quarter_size = bitmap_size / 4;
+  DlSize half_size = bitmap_size / 2;
+  DlIRect center = DlIRect::MakeXYWH(quarter_size, quarter_size,
+                                     half_size, half_size);
 
   sk_sp<SkImage> image;
   std::shared_ptr<DlSurfaceInstance> offscreen_instance;
@@ -1142,21 +1151,20 @@ void BM_DrawImageNine(benchmark::State& state,
     offscreen->getCanvas()->clear(SK_ColorRED);
   }
 
-  SkScalar offset = 0.5f;
-  SkRect dst =
-      SkRect::MakeXYWH(0.0f, 0.0f, bitmap_size * 0.75f, bitmap_size * 0.75f);
+  DlScalar offset = 0.5f;
+  DlFRect dst = DlFRect::MakeWH(bitmap_size * 0.75f, bitmap_size * 0.75f);
 
   state.counters["DrawCallCount"] = kImagesToDraw;
   for (size_t i = 0; i < kImagesToDraw; i++) {
     image = upload_bitmap ? ImageFromBitmapWithNewID(bitmap)
                           : offscreen->makeImageSnapshot();
     builder.DrawImageNine(DlImage::Make(image), center, dst, filter, &paint);
-    dst.offset(offset, offset);
+    dst.Offset(offset, offset);
     if (dst.right() > canvas_size) {
-      dst.offsetTo(0, dst.y());
+      dst.SetLeft(0);
     }
     if (dst.bottom() > canvas_size) {
-      dst.offsetTo(dst.x(), 0);
+      dst.SetTop(0);
     }
   }
 
@@ -1230,7 +1238,7 @@ void BM_DrawShadow(benchmark::State& state,
                    BackendType backend_type,
                    unsigned attributes,
                    bool transparent_occluder,
-                   SkPath::Verb type) {
+                   DlPath::Verb type) {
   auto surface_provider = DlSurfaceProvider::Create(backend_type);
   DisplayListBuilder builder;
   DlPaint paint = GetPaintForRun(attributes);
@@ -1242,29 +1250,29 @@ void BM_DrawShadow(benchmark::State& state,
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
   auto canvas = DlSkCanvasAdapter(surface->getCanvas());
 
-  SkPath path;
+  DlPath path;
 
-  SkPoint center = SkPoint::Make(length / 2.0f, length / 2.0f);
-  float radius = length * 0.25f;
+  DlFPoint center = DlFPoint(length / 2.0f, length / 2.0f);
+  DlScalar radius = length * 0.25f;
 
   switch (type) {
-    case SkPath::Verb::kLine_Verb:
+    case DlPath::Verb::kLineTo:
       GetLinesPath(path, 10, center, radius);
       break;
-    case SkPath::Verb::kQuad_Verb:
+    case DlPath::Verb::kQuadTo:
       GetQuadsPath(path, 10, center, radius);
       break;
-    case SkPath::Verb::kConic_Verb:
+    case DlPath::Verb::kConicTo:
       GetConicsPath(path, 10, center, radius);
       break;
-    case SkPath::Verb::kCubic_Verb:
+    case DlPath::Verb::kCubicTo:
       GetCubicsPath(path, 10, center, radius);
       break;
     default:
       break;
   }
 
-  float elevation = state.range(0);
+  DlScalar elevation = state.range(0);
   state.counters["DrawCallCount"] = 1;
 
   // We can hardcode dpr to 1.0f as we're varying elevation, and dpr is only
@@ -1309,9 +1317,9 @@ void BM_SaveLayer(benchmark::State& state,
   size_t save_layer_calls = state.range(0);
 
   // Ensure we draw two overlapping rects to avoid any peephole optimisations
-  SkRect rect1 = SkRect::MakeLTRB(0, 0, 0.75f * length, 0.75f * length);
-  SkRect rect2 =
-      SkRect::MakeLTRB(0.25f * length, 0.25f * length, length, length);
+  DlFRect rect1 = DlFRect::MakeLTRB(0, 0, 0.75f * length, 0.75f * length);
+  DlFRect rect2 =
+      DlFRect::MakeLTRB(0.25f * length, 0.25f * length, length, length);
 
   state.counters["DrawCallCount_Varies"] = save_layer_calls * save_depth;
   for (size_t i = 0; i < save_layer_calls; i++) {

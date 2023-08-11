@@ -48,7 +48,7 @@ static bool IsDisplayListWorthRasterizing(
 
 DisplayListRasterCacheItem::DisplayListRasterCacheItem(
     const sk_sp<DisplayList>& display_list,
-    const SkPoint& offset,
+    const DlFPoint& offset,
     bool is_complex,
     bool will_change)
     : RasterCacheItem(RasterCacheKeyID(display_list->unique_id(),
@@ -61,7 +61,7 @@ DisplayListRasterCacheItem::DisplayListRasterCacheItem(
 
 std::unique_ptr<DisplayListRasterCacheItem> DisplayListRasterCacheItem::Make(
     const sk_sp<DisplayList>& display_list,
-    const SkPoint& offset,
+    const DlFPoint& offset,
     bool is_complex,
     bool will_change) {
   return std::make_unique<DisplayListRasterCacheItem>(display_list, offset,
@@ -69,7 +69,7 @@ std::unique_ptr<DisplayListRasterCacheItem> DisplayListRasterCacheItem::Make(
 }
 
 void DisplayListRasterCacheItem::PrerollSetup(PrerollContext* context,
-                                              const SkMatrix& matrix) {
+                                              const DlTransform& matrix) {
   cache_state_ = CacheState::kNone;
   DisplayListComplexityCalculator* complexity_calculator =
       context->gr_context ? DisplayListComplexityCalculator::GetForBackend(
@@ -83,9 +83,9 @@ void DisplayListRasterCacheItem::PrerollSetup(PrerollContext* context,
   }
 
   transformation_matrix_ = matrix;
-  transformation_matrix_.preTranslate(offset_.x(), offset_.y());
+  transformation_matrix_.TranslateOuter(offset_.x(), offset_.y());
 
-  if (!transformation_matrix_.invert(nullptr)) {
+  if (!transformation_matrix_.Invert(nullptr)) {
     // The matrix was singular. No point in going further.
     return;
   }
@@ -98,13 +98,13 @@ void DisplayListRasterCacheItem::PrerollSetup(PrerollContext* context,
 }
 
 void DisplayListRasterCacheItem::PrerollFinalize(PrerollContext* context,
-                                                 const SkMatrix& matrix) {
+                                                 const DlTransform& matrix) {
   if (cache_state_ == CacheState::kNone || !context->raster_cache ||
       !context->raster_cached_entries) {
     return;
   }
   auto* raster_cache = context->raster_cache;
-  SkRect bounds = display_list_->bounds().makeOffset(offset_.x(), offset_.y());
+  DlFRect bounds = display_list_->bounds().MakeOffset(offset_.x(), offset_.y());
   bool visible = !context->state_stack.content_culled(bounds);
   RasterCache::CacheInfo cache_info =
       raster_cache->MarkSeen(key_id_, matrix, visible);
@@ -156,7 +156,7 @@ bool DisplayListRasterCacheItem::TryToPrepareRasterCache(
       !context.raster_cache->GenerateNewCacheInThisFrame() || !id.has_value()) {
     return false;
   }
-  SkRect bounds = display_list_->bounds().makeOffset(offset_.x(), offset_.y());
+  DlFRect bounds = display_list_->bounds().MakeOffset(offset_.x(), offset_.y());
   RasterCache::Context r_context = {
       // clang-format off
       .gr_context         = context.gr_context,

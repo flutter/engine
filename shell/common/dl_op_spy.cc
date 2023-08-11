@@ -29,7 +29,7 @@ void DlOpSpy::setColorSource(const DlColorSource* source) {
   will_draw_ = true;
 }
 void DlOpSpy::save() {}
-void DlOpSpy::saveLayer(const SkRect* bounds,
+void DlOpSpy::saveLayer(const DlFRect* bounds,
                         const SaveLayerOptions options,
                         const DlImageFilter* backdrop) {}
 void DlOpSpy::restore() {}
@@ -41,36 +41,36 @@ void DlOpSpy::drawPaint() {
 }
 // TODO(cyanglaz): check whether the shape (line, rect, oval, etc) needs to be
 // evaluated. https://github.com/flutter/flutter/issues/123803
-void DlOpSpy::drawLine(const SkPoint& p0, const SkPoint& p1) {
+void DlOpSpy::drawLine(const DlFPoint& p0, const DlFPoint& p1) {
   did_draw_ |= will_draw_;
 }
-void DlOpSpy::drawRect(const SkRect& rect) {
+void DlOpSpy::drawRect(const DlFRect& rect) {
   did_draw_ |= will_draw_;
 }
-void DlOpSpy::drawOval(const SkRect& bounds) {
+void DlOpSpy::drawOval(const DlFRect& bounds) {
   did_draw_ |= will_draw_;
 }
-void DlOpSpy::drawCircle(const SkPoint& center, SkScalar radius) {
+void DlOpSpy::drawCircle(const DlFPoint& center, DlScalar radius) {
   did_draw_ |= will_draw_;
 }
-void DlOpSpy::drawRRect(const SkRRect& rrect) {
+void DlOpSpy::drawRRect(const DlFRRect& rrect) {
   did_draw_ |= will_draw_;
 }
-void DlOpSpy::drawDRRect(const SkRRect& outer, const SkRRect& inner) {
+void DlOpSpy::drawDRRect(const DlFRRect& outer, const DlFRRect& inner) {
   did_draw_ |= will_draw_;
 }
-void DlOpSpy::drawPath(const SkPath& path) {
+void DlOpSpy::drawPath(const DlPath& path) {
   did_draw_ |= will_draw_;
 }
-void DlOpSpy::drawArc(const SkRect& oval_bounds,
-                      SkScalar start_degrees,
-                      SkScalar sweep_degrees,
+void DlOpSpy::drawArc(const DlFRect& oval_bounds,
+                      DlScalar start_degrees,
+                      DlScalar sweep_degrees,
                       bool use_center) {
   did_draw_ |= will_draw_;
 }
 void DlOpSpy::drawPoints(PointMode mode,
                          uint32_t count,
-                         const SkPoint points[]) {
+                         const DlFPoint points[]) {
   did_draw_ |= will_draw_;
 }
 void DlOpSpy::drawVertices(const DlVertices* vertices, DlBlendMode mode) {
@@ -82,39 +82,39 @@ void DlOpSpy::drawVertices(const DlVertices* vertices, DlBlendMode mode) {
 // Drawing a completely transparent image is not a valid use case, thus, such
 // case is ignored.
 void DlOpSpy::drawImage(const sk_sp<DlImage> image,
-                        const SkPoint point,
+                        const DlFPoint point,
                         DlImageSampling sampling,
                         bool render_with_attributes) {
   did_draw_ = true;
 }
 void DlOpSpy::drawImageRect(const sk_sp<DlImage> image,
-                            const SkRect& src,
-                            const SkRect& dst,
+                            const DlFRect& src,
+                            const DlFRect& dst,
                             DlImageSampling sampling,
                             bool render_with_attributes,
                             SrcRectConstraint constraint) {
   did_draw_ = true;
 }
 void DlOpSpy::drawImageNine(const sk_sp<DlImage> image,
-                            const SkIRect& center,
-                            const SkRect& dst,
+                            const DlIRect& center,
+                            const DlFRect& dst,
                             DlFilterMode filter,
                             bool render_with_attributes) {
   did_draw_ = true;
 }
 void DlOpSpy::drawAtlas(const sk_sp<DlImage> atlas,
-                        const SkRSXform xform[],
-                        const SkRect tex[],
+                        const DlRSTransform xform[],
+                        const DlFRect tex[],
                         const DlColor colors[],
                         int count,
                         DlBlendMode mode,
                         DlImageSampling sampling,
-                        const SkRect* cull_rect,
+                        const DlFRect* cull_rect,
                         bool render_with_attributes) {
   did_draw_ = true;
 }
 void DlOpSpy::drawDisplayList(const sk_sp<DisplayList> display_list,
-                              SkScalar opacity) {
+                              DlScalar opacity) {
   if (did_draw_ || opacity == 0) {
     return;
   }
@@ -123,15 +123,15 @@ void DlOpSpy::drawDisplayList(const sk_sp<DisplayList> display_list,
   did_draw_ |= receiver.did_draw();
 }
 void DlOpSpy::drawTextBlob(const sk_sp<SkTextBlob> blob,
-                           SkScalar x,
-                           SkScalar y) {
+                           DlScalar x,
+                           DlScalar y) {
   did_draw_ |= will_draw_;
 }
-void DlOpSpy::drawShadow(const SkPath& path,
+void DlOpSpy::drawShadow(const DlPath& path,
                          const DlColor color,
-                         const SkScalar elevation,
+                         const DlScalar elevation,
                          bool transparent_occluder,
-                         SkScalar dpr) {
+                         DlScalar dpr) {
   did_draw_ |= !color.isTransparent();
 }
 

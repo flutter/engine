@@ -21,7 +21,7 @@ using DisplayListLayerTest = LayerTest;
 
 #ifndef NDEBUG
 TEST_F(DisplayListLayerTest, PaintBeforePrerollInvalidDisplayListDies) {
-  const SkPoint layer_offset = SkPoint::Make(0.0f, 0.0f);
+  const DlFPoint layer_offset = DlFPoint(0.0f, 0.0f);
   auto layer = std::make_shared<DisplayListLayer>(
       layer_offset, sk_sp<DisplayList>(), false, false);
 
@@ -29,22 +29,22 @@ TEST_F(DisplayListLayerTest, PaintBeforePrerollInvalidDisplayListDies) {
 }
 
 TEST_F(DisplayListLayerTest, PaintBeforePrerollDies) {
-  const SkPoint layer_offset = SkPoint::Make(0.0f, 0.0f);
-  const SkRect picture_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
+  const DlFPoint layer_offset = DlFPoint(0.0f, 0.0f);
+  const DlFRect picture_bounds = DlFRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   DisplayListBuilder builder;
   builder.DrawRect(picture_bounds, DlPaint());
   auto display_list = builder.Build();
   auto layer = std::make_shared<DisplayListLayer>(layer_offset, display_list,
                                                   false, false);
 
-  EXPECT_EQ(layer->paint_bounds(), SkRect::MakeEmpty());
+  EXPECT_EQ(layer->paint_bounds(), DlFRect());
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
                             "needs_painting\\(context\\)");
 }
 
 TEST_F(DisplayListLayerTest, PaintingEmptyLayerDies) {
-  const SkPoint layer_offset = SkPoint::Make(0.0f, 0.0f);
-  const SkRect picture_bounds = SkRect::MakeEmpty();
+  const DlFPoint layer_offset = DlFPoint(0.0f, 0.0f);
+  const DlFRect picture_bounds;
   DisplayListBuilder builder;
   builder.DrawRect(picture_bounds, DlPaint());
   auto display_list = builder.Build();
@@ -52,7 +52,7 @@ TEST_F(DisplayListLayerTest, PaintingEmptyLayerDies) {
                                                   false, false);
 
   layer->Preroll(preroll_context());
-  EXPECT_EQ(layer->paint_bounds(), SkRect::MakeEmpty());
+  EXPECT_EQ(layer->paint_bounds(), DlFRect());
   EXPECT_FALSE(layer->needs_painting(paint_context()));
 
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
@@ -60,7 +60,7 @@ TEST_F(DisplayListLayerTest, PaintingEmptyLayerDies) {
 }
 
 TEST_F(DisplayListLayerTest, InvalidDisplayListDies) {
-  const SkPoint layer_offset = SkPoint::Make(0.0f, 0.0f);
+  const DlFPoint layer_offset = DlFPoint(0.0f, 0.0f);
   auto layer = std::make_shared<DisplayListLayer>(
       layer_offset, sk_sp<DisplayList>(), false, false);
 
@@ -70,8 +70,8 @@ TEST_F(DisplayListLayerTest, InvalidDisplayListDies) {
 #endif
 
 TEST_F(DisplayListLayerTest, SimpleDisplayList) {
-  const SkPoint layer_offset = SkPoint::Make(1.5f, -0.5f);
-  const SkRect picture_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
+  const DlFPoint layer_offset = DlFPoint(1.5f, -0.5f);
+  const DlFRect picture_bounds = DlFRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   DisplayListBuilder builder;
   builder.DrawRect(picture_bounds, DlPaint());
   auto display_list = builder.Build();
@@ -79,8 +79,7 @@ TEST_F(DisplayListLayerTest, SimpleDisplayList) {
                                                   false, false);
 
   layer->Preroll(preroll_context());
-  EXPECT_EQ(layer->paint_bounds(),
-            picture_bounds.makeOffset(layer_offset.fX, layer_offset.fY));
+  EXPECT_EQ(layer->paint_bounds(), picture_bounds.MakeOffset(layer_offset));
   EXPECT_EQ(layer->display_list(), display_list.get());
   EXPECT_TRUE(layer->needs_painting(paint_context()));
 
@@ -89,7 +88,7 @@ TEST_F(DisplayListLayerTest, SimpleDisplayList) {
   /* (DisplayList)layer::Paint */ {
     expected_builder.Save();
     {
-      expected_builder.Translate(layer_offset.fX, layer_offset.fY);
+      expected_builder.Translate(layer_offset.x(), layer_offset.y());
       expected_builder.DrawDisplayList(display_list);
     }
     expected_builder.Restore();
@@ -99,14 +98,14 @@ TEST_F(DisplayListLayerTest, SimpleDisplayList) {
 }
 
 TEST_F(DisplayListLayerTest, CachingDoesNotChangeCullRect) {
-  const SkPoint layer_offset = SkPoint::Make(10, 10);
+  const DlFPoint layer_offset = DlFPoint(10, 10);
   DisplayListBuilder builder;
-  builder.DrawRect({10, 10, 20, 20}, DlPaint());
+  builder.DrawRect(DlFRect::MakeLTRB(10, 10, 20, 20), DlPaint());
   auto display_list = builder.Build();
   auto layer = std::make_shared<DisplayListLayer>(layer_offset, display_list,
                                                   true, false);
 
-  SkRect original_cull_rect = preroll_context()->state_stack.device_cull_rect();
+  DlFRect original_cull_rect = preroll_context()->state_stack.device_cull_rect();
   use_mock_raster_cache();
   layer->Preroll(preroll_context());
   ASSERT_EQ(preroll_context()->state_stack.device_cull_rect(),
@@ -114,8 +113,8 @@ TEST_F(DisplayListLayerTest, CachingDoesNotChangeCullRect) {
 }
 
 TEST_F(DisplayListLayerTest, SimpleDisplayListOpacityInheritance) {
-  const SkPoint layer_offset = SkPoint::Make(1.5f, -0.5f);
-  const SkRect picture_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
+  const DlFPoint layer_offset = DlFPoint(1.5f, -0.5f);
+  const DlFRect picture_bounds = DlFRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   DisplayListBuilder builder;
   builder.DrawRect(picture_bounds, DlPaint());
   auto display_list = builder.Build();
@@ -129,8 +128,8 @@ TEST_F(DisplayListLayerTest, SimpleDisplayListOpacityInheritance) {
             LayerStateStack::kCallerCanApplyOpacity);
 
   int opacity_alpha = 0x7F;
-  SkScalar opacity = opacity_alpha / 255.0;
-  SkPoint opacity_offset = SkPoint::Make(10, 10);
+  DlScalar opacity = DlColor::toOpacity(opacity_alpha);
+  DlFPoint opacity_offset = DlFPoint(10, 10);
   auto opacity_layer =
       std::make_shared<OpacityLayer>(opacity_alpha, opacity_offset);
   opacity_layer->Add(display_list_layer);
@@ -145,11 +144,11 @@ TEST_F(DisplayListLayerTest, SimpleDisplayListOpacityInheritance) {
   /* opacity_layer::Paint() */ {
     expected_builder.Save();
     {
-      expected_builder.Translate(opacity_offset.fX, opacity_offset.fY);
+      expected_builder.Translate(opacity_offset.x(), opacity_offset.y());
       /* display_list_layer::Paint() */ {
         expected_builder.Save();
         {
-          expected_builder.Translate(layer_offset.fX, layer_offset.fY);
+          expected_builder.Translate(layer_offset.x(), layer_offset.y());
           expected_builder.DrawDisplayList(child_display_list, opacity);
         }
         expected_builder.Restore();
@@ -164,9 +163,9 @@ TEST_F(DisplayListLayerTest, SimpleDisplayListOpacityInheritance) {
 }
 
 TEST_F(DisplayListLayerTest, IncompatibleDisplayListOpacityInheritance) {
-  const SkPoint layer_offset = SkPoint::Make(1.5f, -0.5f);
-  const SkRect picture1_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
-  const SkRect picture2_bounds = SkRect::MakeLTRB(10.0f, 15.0f, 30.0f, 35.0f);
+  const DlFPoint layer_offset = DlFPoint(1.5f, -0.5f);
+  const DlFRect picture1_bounds = DlFRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
+  const DlFRect picture2_bounds = DlFRect::MakeLTRB(10.0f, 15.0f, 30.0f, 35.0f);
   DisplayListBuilder builder;
   builder.DrawRect(picture1_bounds, DlPaint());
   builder.DrawRect(picture2_bounds, DlPaint());
@@ -180,7 +179,7 @@ TEST_F(DisplayListLayerTest, IncompatibleDisplayListOpacityInheritance) {
   EXPECT_EQ(context->renderable_state_flags, 0);
 
   int opacity_alpha = 0x7F;
-  SkPoint opacity_offset = SkPoint::Make(10, 10);
+  DlFPoint opacity_offset = DlFPoint(10, 10);
   auto opacity_layer =
       std::make_shared<OpacityLayer>(opacity_alpha, opacity_offset);
   opacity_layer->Add(display_list_layer);
@@ -193,21 +192,21 @@ TEST_F(DisplayListLayerTest, IncompatibleDisplayListOpacityInheritance) {
   auto child_display_list = child_builder.Build();
 
   auto display_list_bounds = picture1_bounds;
-  display_list_bounds.join(picture2_bounds);
-  auto save_layer_bounds =
-      display_list_bounds.makeOffset(layer_offset.fX, layer_offset.fY);
+  display_list_bounds.Join(picture2_bounds);
+  DlFRect save_layer_bounds =
+      display_list_bounds.MakeOffset(layer_offset.x(), layer_offset.y());
   DisplayListBuilder expected_builder;
   /* opacity_layer::Paint() */ {
     expected_builder.Save();
     {
-      expected_builder.Translate(opacity_offset.fX, opacity_offset.fY);
+      expected_builder.Translate(opacity_offset.x(), opacity_offset.y());
       expected_builder.SaveLayer(&save_layer_bounds,
                                  &DlPaint().setAlpha(opacity_alpha));
       {
         /* display_list_layer::Paint() */ {
           expected_builder.Save();
           {
-            expected_builder.Translate(layer_offset.fX, layer_offset.fY);
+            expected_builder.Translate(layer_offset.x(), layer_offset.y());
             expected_builder.DrawDisplayList(child_display_list);
           }
           expected_builder.Restore();
@@ -224,9 +223,9 @@ TEST_F(DisplayListLayerTest, IncompatibleDisplayListOpacityInheritance) {
 }
 
 TEST_F(DisplayListLayerTest, CachedIncompatibleDisplayListOpacityInheritance) {
-  const SkPoint layer_offset = SkPoint::Make(1.5f, -0.5f);
-  const SkRect picture1_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
-  const SkRect picture2_bounds = SkRect::MakeLTRB(10.0f, 15.0f, 30.0f, 35.0f);
+  const DlFPoint layer_offset = DlFPoint(1.5f, -0.5f);
+  const DlFRect picture1_bounds = DlFRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
+  const DlFRect picture2_bounds = DlFRect::MakeLTRB(10.0f, 15.0f, 30.0f, 35.0f);
   DisplayListBuilder builder;
   builder.DrawRect(picture1_bounds, DlPaint());
   builder.DrawRect(picture2_bounds, DlPaint());
@@ -249,7 +248,7 @@ TEST_F(DisplayListLayerTest, CachedIncompatibleDisplayListOpacityInheritance) {
                               &paint_context(), false);
 
   int opacity_alpha = 0x7F;
-  SkPoint opacity_offset = SkPoint::Make(10, 10);
+  DlFPoint opacity_offset = DlFPoint(10, 10);
   auto opacity_layer =
       std::make_shared<OpacityLayer>(opacity_alpha, opacity_offset);
   opacity_layer->Add(display_list_layer);
@@ -257,27 +256,24 @@ TEST_F(DisplayListLayerTest, CachedIncompatibleDisplayListOpacityInheritance) {
   EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
 
   auto display_list_bounds = picture1_bounds;
-  display_list_bounds.join(picture2_bounds);
-  auto save_layer_bounds =
-      display_list_bounds.makeOffset(layer_offset.fX, layer_offset.fY);
-  save_layer_bounds.roundOut(&save_layer_bounds);
+  display_list_bounds.Join(picture2_bounds);
   auto opacity_integral_matrix =
-      RasterCacheUtil::GetIntegralTransCTM(SkMatrix::Translate(opacity_offset));
-  SkMatrix layer_offset_matrix = opacity_integral_matrix;
-  layer_offset_matrix.postTranslate(layer_offset.fX, layer_offset.fY);
+      DlTransform::MakeTranslate(opacity_offset).WithIntegerTranslation();
+  DlTransform layer_offset_matrix = opacity_integral_matrix;
+  layer_offset_matrix.TranslateOuter(layer_offset.x(), layer_offset.y());
   auto layer_offset_integral_matrix =
-      RasterCacheUtil::GetIntegralTransCTM(layer_offset_matrix);
-  DisplayListBuilder expected(SkRect::MakeWH(1000, 1000));
+      layer_offset_matrix.WithIntegerTranslation();
+  DisplayListBuilder expected(DlFRect::MakeWH(1000, 1000));
   /* opacity_layer::Paint() */ {
     expected.Save();
     {
-      expected.Translate(opacity_offset.fX, opacity_offset.fY);
+      expected.Translate(opacity_offset.x(), opacity_offset.y());
       expected.TransformReset();
       expected.Transform(opacity_integral_matrix);
       /* display_list_layer::Paint() */ {
         expected.Save();
         {
-          expected.Translate(layer_offset.fX, layer_offset.fY);
+          expected.Translate(layer_offset.x(), layer_offset.y());
           expected.TransformReset();
           expected.Transform(layer_offset_integral_matrix);
           context->raster_cache->Draw(display_list_layer->caching_key_id(),
@@ -295,21 +291,21 @@ TEST_F(DisplayListLayerTest, CachedIncompatibleDisplayListOpacityInheritance) {
 }
 
 TEST_F(DisplayListLayerTest, RasterCachePreservesRTree) {
-  const SkRect picture1_bounds = SkRect::MakeXYWH(10, 10, 10, 10);
-  const SkRect picture2_bounds = SkRect::MakeXYWH(15, 15, 10, 10);
+  const DlFRect picture1_bounds = DlFRect::MakeXYWH(10, 10, 10, 10);
+  const DlFRect picture2_bounds = DlFRect::MakeXYWH(15, 15, 10, 10);
   DisplayListBuilder builder(true);
   builder.DrawRect(picture1_bounds, DlPaint());
   builder.DrawRect(picture2_bounds, DlPaint());
   auto display_list = builder.Build();
   auto display_list_layer = std::make_shared<DisplayListLayer>(
-      SkPoint::Make(3, 3), display_list, true, false);
+      DlFPoint(3, 3), display_list, true, false);
 
   use_skia_raster_cache();
 
   auto context = preroll_context();
   {
     auto mutator = context->state_stack.save();
-    mutator.transform(SkMatrix::Scale(2.0, 2.0));
+    mutator.transform(DlTransform::MakeScale(2.0, 2.0));
     display_list_layer->Preroll(preroll_context());
     EXPECT_EQ(context->renderable_state_flags, 0);
 
@@ -328,9 +324,9 @@ TEST_F(DisplayListLayerTest, RasterCachePreservesRTree) {
                                           false));
   auto root_canvas_dl = expected_root_canvas.Build();
   const auto root_canvas_rects =
-      root_canvas_dl->rtree()->searchAndConsolidateRects(kGiantRect, true);
-  std::list<SkRect> root_canvas_rects_expected = {
-      SkRect::MakeLTRB(26, 26, 56, 56),
+      root_canvas_dl->rtree()->searchAndConsolidateRects(kMaxCullRect, true);
+  std::list<DlFRect> root_canvas_rects_expected = {
+      DlFRect::MakeLTRB(26, 26, 56, 56),
   };
   EXPECT_EQ(root_canvas_rects_expected, root_canvas_rects);
 
@@ -341,13 +337,13 @@ TEST_F(DisplayListLayerTest, RasterCachePreservesRTree) {
                                           true));
   auto overlay_canvas_dl = expected_overlay_canvas.Build();
   const auto overlay_canvas_rects =
-      overlay_canvas_dl->rtree()->searchAndConsolidateRects(kGiantRect, true);
+      overlay_canvas_dl->rtree()->searchAndConsolidateRects(kMaxCullRect, true);
 
   // Same bounds as root canvas, but preserves individual rects.
-  std::list<SkRect> overlay_canvas_rects_expected = {
-      SkRect::MakeLTRB(26, 26, 46, 36),
-      SkRect::MakeLTRB(26, 36, 56, 46),
-      SkRect::MakeLTRB(36, 46, 56, 56),
+  std::list<DlFRect> overlay_canvas_rects_expected = {
+      DlFRect::MakeLTRB(26, 26, 46, 36),
+      DlFRect::MakeLTRB(26, 36, 56, 46),
+      DlFRect::MakeLTRB(36, 46, 56, 56),
   };
   EXPECT_EQ(overlay_canvas_rects_expected, overlay_canvas_rects);
 };
@@ -355,93 +351,93 @@ TEST_F(DisplayListLayerTest, RasterCachePreservesRTree) {
 using DisplayListLayerDiffTest = DiffContextTest;
 
 TEST_F(DisplayListLayerDiffTest, SimpleDisplayList) {
-  auto display_list = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60));
+  auto display_list = CreateDisplayList(DlFRect::MakeLTRB(10, 10, 60, 60));
 
   MockLayerTree tree1;
   tree1.root()->Add(CreateDisplayListLayer(display_list));
 
   auto damage = DiffLayerTree(tree1, MockLayerTree());
-  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(10, 10, 60, 60));
+  EXPECT_EQ(damage.frame_damage, DlIRect::MakeLTRB(10, 10, 60, 60));
 
   MockLayerTree tree2;
   tree2.root()->Add(CreateDisplayListLayer(display_list));
 
   damage = DiffLayerTree(tree2, tree1);
-  EXPECT_TRUE(damage.frame_damage.isEmpty());
+  EXPECT_TRUE(damage.frame_damage.is_empty());
 
   MockLayerTree tree3;
   damage = DiffLayerTree(tree3, tree2);
-  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(10, 10, 60, 60));
+  EXPECT_EQ(damage.frame_damage, DlIRect::MakeLTRB(10, 10, 60, 60));
 }
 
 TEST_F(DisplayListLayerDiffTest, FractionalTranslation) {
-  auto display_list = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60));
+  auto display_list = CreateDisplayList(DlFRect::MakeLTRB(10, 10, 60, 60));
 
   MockLayerTree tree1;
   tree1.root()->Add(
-      CreateDisplayListLayer(display_list, SkPoint::Make(0.5, 0.5)));
+      CreateDisplayListLayer(display_list, DlFPoint(0.5, 0.5)));
 
   auto damage =
-      DiffLayerTree(tree1, MockLayerTree(), SkIRect::MakeEmpty(), 0, 0,
+      DiffLayerTree(tree1, MockLayerTree(), DlIRect(), 0, 0,
                     /*use_raster_cache=*/false);
-  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(10, 10, 61, 61));
+  EXPECT_EQ(damage.frame_damage, DlIRect::MakeLTRB(10, 10, 61, 61));
 }
 
 TEST_F(DisplayListLayerDiffTest, FractionalTranslationWithRasterCache) {
-  auto display_list = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60));
+  auto display_list = CreateDisplayList(DlFRect::MakeLTRB(10, 10, 60, 60));
 
   MockLayerTree tree1;
   tree1.root()->Add(
-      CreateDisplayListLayer(display_list, SkPoint::Make(0.5, 0.5)));
+      CreateDisplayListLayer(display_list, DlFPoint(0.5, 0.5)));
 
   auto damage =
-      DiffLayerTree(tree1, MockLayerTree(), SkIRect::MakeEmpty(), 0, 0,
+      DiffLayerTree(tree1, MockLayerTree(), DlIRect(), 0, 0,
                     /*use_raster_cache=*/true);
-  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(11, 11, 61, 61));
+  EXPECT_EQ(damage.frame_damage, DlIRect::MakeLTRB(11, 11, 61, 61));
 }
 
 TEST_F(DisplayListLayerDiffTest, DisplayListCompare) {
   MockLayerTree tree1;
   auto display_list1 =
-      CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), DlColor::kGreen());
+      CreateDisplayList(DlFRect::MakeLTRB(10, 10, 60, 60), DlColor::kGreen());
   tree1.root()->Add(CreateDisplayListLayer(display_list1));
 
   auto damage = DiffLayerTree(tree1, MockLayerTree());
-  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(10, 10, 60, 60));
+  EXPECT_EQ(damage.frame_damage, DlIRect::MakeLTRB(10, 10, 60, 60));
 
   MockLayerTree tree2;
   // same DL, same offset
   auto display_list2 =
-      CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), DlColor::kGreen());
+      CreateDisplayList(DlFRect::MakeLTRB(10, 10, 60, 60), DlColor::kGreen());
   tree2.root()->Add(CreateDisplayListLayer(display_list2));
 
   damage = DiffLayerTree(tree2, tree1);
-  EXPECT_EQ(damage.frame_damage, SkIRect::MakeEmpty());
+  EXPECT_EQ(damage.frame_damage, DlIRect());
 
   MockLayerTree tree3;
   auto display_list3 =
-      CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), DlColor::kGreen());
+      CreateDisplayList(DlFRect::MakeLTRB(10, 10, 60, 60), DlColor::kGreen());
   // add offset
   tree3.root()->Add(
-      CreateDisplayListLayer(display_list3, SkPoint::Make(10, 10)));
+      CreateDisplayListLayer(display_list3, DlFPoint(10, 10)));
 
   damage = DiffLayerTree(tree3, tree2);
-  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(10, 10, 70, 70));
+  EXPECT_EQ(damage.frame_damage, DlIRect::MakeLTRB(10, 10, 70, 70));
 
   MockLayerTree tree4;
   // different color
   auto display_list4 =
-      CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), DlColor::kRed());
+      CreateDisplayList(DlFRect::MakeLTRB(10, 10, 60, 60), DlColor::kRed());
   tree4.root()->Add(
-      CreateDisplayListLayer(display_list4, SkPoint::Make(10, 10)));
+      CreateDisplayListLayer(display_list4, DlFPoint(10, 10)));
 
   damage = DiffLayerTree(tree4, tree3);
-  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(20, 20, 70, 70));
+  EXPECT_EQ(damage.frame_damage, DlIRect::MakeLTRB(20, 20, 70, 70));
 }
 
 TEST_F(DisplayListLayerTest, LayerTreeSnapshotsWhenEnabled) {
-  const SkPoint layer_offset = SkPoint::Make(1.5f, -0.5f);
-  const SkRect picture_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
+  const DlFPoint layer_offset = DlFPoint(1.5f, -0.5f);
+  const DlFRect picture_bounds = DlFRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   DisplayListBuilder builder;
   builder.DrawRect(picture_bounds, DlPaint());
   auto display_list = builder.Build();
@@ -459,8 +455,8 @@ TEST_F(DisplayListLayerTest, LayerTreeSnapshotsWhenEnabled) {
 }
 
 TEST_F(DisplayListLayerTest, NoLayerTreeSnapshotsWhenDisabledByDefault) {
-  const SkPoint layer_offset = SkPoint::Make(1.5f, -0.5f);
-  const SkRect picture_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
+  const DlFPoint layer_offset = DlFPoint(1.5f, -0.5f);
+  const DlFRect picture_bounds = DlFRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   DisplayListBuilder builder;
   builder.DrawRect(picture_bounds, DlPaint());
   auto display_list = builder.Build();
@@ -475,10 +471,10 @@ TEST_F(DisplayListLayerTest, NoLayerTreeSnapshotsWhenDisabledByDefault) {
 }
 
 TEST_F(DisplayListLayerTest, DisplayListAccessCountDependsOnVisibility) {
-  const SkPoint layer_offset = SkPoint::Make(1.5f, -0.5f);
-  const SkRect picture_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
-  const SkRect missed_cull_rect = SkRect::MakeLTRB(100, 100, 200, 200);
-  const SkRect hit_cull_rect = SkRect::MakeLTRB(0, 0, 200, 200);
+  const DlFPoint layer_offset = DlFPoint(1.5f, -0.5f);
+  const DlFRect picture_bounds = DlFRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
+  const DlFRect missed_cull_rect = DlFRect::MakeLTRB(100, 100, 200, 200);
+  const DlFRect hit_cull_rect = DlFRect::MakeLTRB(0, 0, 200, 200);
   DisplayListBuilder builder;
   builder.DrawRect(picture_bounds, DlPaint());
   auto display_list = builder.Build();
@@ -499,7 +495,7 @@ TEST_F(DisplayListLayerTest, DisplayListAccessCountDependsOnVisibility) {
     ASSERT_EQ(raster_cache_item->cache_state(), RasterCacheItem::kNone);
     ASSERT_TRUE(raster_cache_item->GetId().has_value());
     ASSERT_EQ(preroll_context()->raster_cache->GetAccessCount(
-                  raster_cache_item->GetId().value(), SkMatrix::I()),
+                  raster_cache_item->GetId().value(), DlTransform()),
               0);
     ASSERT_EQ(preroll_context()->raster_cached_entries->size(), size_t(1));
     ASSERT_EQ(preroll_context()->raster_cache->EstimatePictureCacheByteSize(),
@@ -519,7 +515,7 @@ TEST_F(DisplayListLayerTest, DisplayListAccessCountDependsOnVisibility) {
   ASSERT_EQ(raster_cache_item->cache_state(), RasterCacheItem::kNone);
   ASSERT_TRUE(raster_cache_item->GetId().has_value());
   ASSERT_EQ(preroll_context()->raster_cache->GetAccessCount(
-                raster_cache_item->GetId().value(), SkMatrix::I()),
+                raster_cache_item->GetId().value(), DlTransform()),
             1);
   ASSERT_EQ(preroll_context()->raster_cached_entries->size(), size_t(1));
   ASSERT_EQ(preroll_context()->raster_cache->EstimatePictureCacheByteSize(),
@@ -539,7 +535,7 @@ TEST_F(DisplayListLayerTest, DisplayListAccessCountDependsOnVisibility) {
     ASSERT_EQ(raster_cache_item->cache_state(), RasterCacheItem::kNone);
     ASSERT_TRUE(raster_cache_item->GetId().has_value());
     ASSERT_EQ(preroll_context()->raster_cache->GetAccessCount(
-                  raster_cache_item->GetId().value(), SkMatrix::I()),
+                  raster_cache_item->GetId().value(), DlTransform()),
               i + 2);
     ASSERT_EQ(preroll_context()->raster_cached_entries->size(), size_t(1));
     ASSERT_EQ(preroll_context()->raster_cache->EstimatePictureCacheByteSize(),
@@ -559,7 +555,7 @@ TEST_F(DisplayListLayerTest, DisplayListAccessCountDependsOnVisibility) {
   ASSERT_EQ(raster_cache_item->cache_state(), RasterCacheItem::kCurrent);
   ASSERT_TRUE(raster_cache_item->GetId().has_value());
   ASSERT_EQ(preroll_context()->raster_cache->GetAccessCount(
-                raster_cache_item->GetId().value(), SkMatrix::I()),
+                raster_cache_item->GetId().value(), DlTransform()),
             12);
   ASSERT_EQ(preroll_context()->raster_cached_entries->size(), size_t(1));
   ASSERT_EQ(preroll_context()->raster_cache->EstimatePictureCacheByteSize(),
@@ -576,16 +572,16 @@ TEST_F(DisplayListLayerTest, OverflowCachedDisplayListOpacityInheritance) {
   int per_frame =
       RasterCacheUtil::kDefaultPictureAndDisplayListCacheLimitPerFrame;
   int layer_count = per_frame + 1;
-  SkPoint opacity_offset = {10, 10};
+  DlFPoint opacity_offset = {10, 10};
   auto opacity_layer = std::make_shared<OpacityLayer>(0.5f, opacity_offset);
   std::shared_ptr<DisplayListLayer> layers[layer_count];
   for (int i = 0; i < layer_count; i++) {
     DisplayListBuilder builder(false);
-    builder.DrawRect({0, 0, 100, 100}, DlPaint());
-    builder.DrawRect({50, 50, 100, 100}, DlPaint());
+    builder.DrawRect(DlFRect::MakeWH(100, 100), DlPaint());
+    builder.DrawRect(DlFRect::MakeLTRB(50, 50, 100, 100), DlPaint());
     auto display_list = builder.Build();
     ASSERT_FALSE(display_list->can_apply_group_opacity());
-    SkPoint offset = {i * 200.0f, 0};
+    DlFPoint offset = {i * 200.0f, 0};
 
     layers[i] =
         std::make_shared<DisplayListLayer>(offset, display_list, true, false);

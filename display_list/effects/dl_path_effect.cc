@@ -15,10 +15,10 @@ static void DlPathEffectDeleter(void* p) {
   ::operator delete(p);
 }
 
-std::shared_ptr<DlPathEffect> DlDashPathEffect::Make(const SkScalar* intervals,
+std::shared_ptr<DlPathEffect> DlDashPathEffect::Make(const DlScalar* intervals,
                                                      int count,
-                                                     SkScalar phase) {
-  size_t needed = sizeof(DlDashPathEffect) + sizeof(SkScalar) * count;
+                                                     DlScalar phase) {
+  size_t needed = sizeof(DlDashPathEffect) + sizeof(DlScalar) * count;
   void* storage = ::operator new(needed);
 
   std::shared_ptr<DlDashPathEffect> ret;
@@ -27,7 +27,7 @@ std::shared_ptr<DlPathEffect> DlDashPathEffect::Make(const SkScalar* intervals,
   return std::move(ret);
 }
 
-std::optional<SkRect> DlDashPathEffect::effect_bounds(SkRect& rect) const {
+std::optional<DlFRect> DlDashPathEffect::effect_bounds(DlFRect& rect) const {
   // The dashed path will always be a subset of the original.
   return rect;
 }

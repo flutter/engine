@@ -18,7 +18,7 @@ class DisplayListLayer : public Layer {
  public:
   static constexpr size_t kMaxBytesToCompare = 10000;
 
-  DisplayListLayer(const SkPoint& offset,
+  DisplayListLayer(const DlFPoint& offset,
                    sk_sp<DisplayList> display_list,
                    bool is_complex,
                    bool will_change);
@@ -49,8 +49,8 @@ class DisplayListLayer : public Layer {
  private:
   std::unique_ptr<DisplayListRasterCacheItem> display_list_raster_cache_item_;
 
-  SkPoint offset_;
-  SkRect bounds_;
+  DlFPoint offset_;
+  DlFRect bounds_;
 
   sk_sp<DisplayList> display_list_;
 

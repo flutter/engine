@@ -60,7 +60,7 @@ class DlDeferredImageGPUSkia final : public DlImage {
   bool isUIThreadSafe() const override;
 
   // |DlImage|
-  SkISize dimensions() const override;
+  DlISize dimensions() const override;
 
   // |DlImage|
   virtual size_t GetApproximateByteSize() const override;

@@ -67,7 +67,7 @@ static sk_sp<DlImage> CreateDeferredImage(
 #if IMPELLER_SUPPORTS_RENDERING
   if (impeller) {
     return DlDeferredImageGPUImpeller::Make(
-        std::move(display_list), SkISize::Make(width, height),
+        std::move(display_list), DlISize(width, height),
         std::move(snapshot_delegate), std::move(raster_task_runner));
   }
 #endif  // IMPELLER_SUPPORTS_RENDERING
@@ -202,12 +202,12 @@ Dart_Handle Picture::DoRasterizeToImage(const sk_sp<DisplayList>& display_list,
       fml::MakeCopyable([ui_task_runner, snapshot_delegate, display_list, width,
                          height, ui_task,
                          layer_tree = std::move(layer_tree)]() mutable {
-        auto picture_bounds = SkISize::Make(width, height);
+        auto picture_bounds = DlISize(width, height);
         sk_sp<DlImage> image;
         if (layer_tree) {
           FML_DCHECK(picture_bounds == layer_tree->frame_size());
           auto display_list =
-              layer_tree->Flatten(SkRect::MakeWH(width, height),
+              layer_tree->Flatten(DlFRect::MakeWH(width, height),
                                   snapshot_delegate->GetTextureRegistry(),
                                   snapshot_delegate->GetGrContext());
 

@@ -6,4 +6,22 @@
 
 namespace flutter {
 
+// DlIRect DlTRect::RoundOut() const {
+//   return DlIRect::MakeLTRB(
+//       static_cast<DlInt>(floor(left_)),
+//       static_cast<DlInt>(floor(top_)),
+//       static_cast<DlInt>(ceil(right_)),
+//       static_cast<DlInt>(ceil(bottom_))
+//   );
+// }
+
+// DlIRect DlFRect::Round() const {
+//   return DlIRect::MakeLTRB(
+//       static_cast<DlInt>(round(left_)),
+//       static_cast<DlInt>(round(top_)),
+//       static_cast<DlInt>(round(right_)),
+//       static_cast<DlInt>(round(bottom_))
+//   );
+// }
+
 }  // namespace flutter

@@ -17,7 +17,6 @@
 #include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
-#include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
@@ -25,7 +24,7 @@
 namespace flutter {
 
 RasterCacheResult::RasterCacheResult(sk_sp<DlImage> image,
-                                     const SkRect& logical_rect,
+                                     const DlFRect& logical_rect,
                                      const char* type,
                                      sk_sp<const DlRTree> rtree)
     : image_(std::move(image)),
@@ -38,15 +37,15 @@ void RasterCacheResult::draw(DlCanvas& canvas,
                              bool preserve_rtree) const {
   DlAutoCanvasRestore auto_restore(&canvas, true);
 
-  auto matrix = RasterCacheUtil::GetIntegralTransCTM(canvas.GetTransform());
-  SkRect bounds =
+  auto matrix = canvas.GetTransform().WithIntegerTranslation();
+  DlFRect bounds =
       RasterCacheUtil::GetRoundedOutDeviceBounds(logical_rect_, matrix);
   FML_DCHECK(std::abs(bounds.width() - image_->dimensions().width()) <= 1 &&
              std::abs(bounds.height() - image_->dimensions().height()) <= 1);
   canvas.TransformReset();
   flow_.Step();
   if (!preserve_rtree || !rtree_) {
-    canvas.DrawImage(image_, {bounds.fLeft, bounds.fTop},
+    canvas.DrawImage(image_, {bounds.left(), bounds.top()},
                      DlImageSampling::kNearestNeighbor, paint);
   } else {
     // On some platforms RTree from overlay layers is used for unobstructed
@@ -54,14 +53,14 @@ void RasterCacheResult::draw(DlCanvas& canvas,
     // paint individual rects instead of the whole image.
     auto rects = rtree_->region().getRects(true);
 
-    canvas.Translate(bounds.fLeft, bounds.fTop);
+    canvas.Translate(bounds.left(), bounds.top());
 
-    SkRect rtree_bounds =
+    DlFRect rtree_bounds =
         RasterCacheUtil::GetRoundedOutDeviceBounds(rtree_->bounds(), matrix);
     for (auto rect : rects) {
-      SkRect device_rect = RasterCacheUtil::GetRoundedOutDeviceBounds(
-          SkRect::Make(rect), matrix);
-      device_rect.offset(-rtree_bounds.fLeft, -rtree_bounds.fTop);
+      DlFRect device_rect = RasterCacheUtil::GetRoundedOutDeviceBounds(
+          DlFRect::MakeBounds(rect), matrix);
+      device_rect.Offset(-rtree_bounds.left(), -rtree_bounds.top());
       canvas.DrawImageRect(image_, device_rect, device_rect,
                            DlImageSampling::kNearestNeighbor, paint);
     }
@@ -79,10 +78,10 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
     const RasterCache::Context& context,
     sk_sp<const DlRTree> rtree,
     const std::function<void(DlCanvas*)>& draw_function,
-    const std::function<void(DlCanvas*, const SkRect& rect)>& draw_checkerboard)
+    const std::function<void(DlCanvas*, const DlFRect& rect)>& draw_checkerboard)
     const {
-  auto matrix = RasterCacheUtil::GetIntegralTransCTM(context.matrix);
-  SkRect dest_rect =
+  auto matrix = context.matrix.WithIntegerTranslation();
+  DlFRect dest_rect =
       RasterCacheUtil::GetRoundedOutDeviceBounds(context.logical_rect, matrix);
 
   const SkImageInfo image_info =
@@ -123,7 +122,7 @@ bool RasterCache::UpdateCacheEntry(
   RasterCacheKey key = RasterCacheKey(id, raster_cache_context.matrix);
   Entry& entry = cache_[key];
   if (!entry.image) {
-    void (*func)(DlCanvas*, const SkRect& rect) = DrawCheckerboard;
+    void (*func)(DlCanvas*, const DlFRect& rect) = DrawCheckerboard;
     entry.image = Rasterize(raster_cache_context, std::move(rtree),
                             render_function, func);
     if (entry.image != nullptr) {
@@ -142,7 +141,7 @@ bool RasterCache::UpdateCacheEntry(
 }
 
 RasterCache::CacheInfo RasterCache::MarkSeen(const RasterCacheKeyID& id,
-                                             const SkMatrix& matrix,
+                                             const DlTransform& matrix,
                                              bool visible) const {
   RasterCacheKey key = RasterCacheKey(id, matrix);
   Entry& entry = cache_[key];
@@ -155,7 +154,7 @@ RasterCache::CacheInfo RasterCache::MarkSeen(const RasterCacheKeyID& id,
 }
 
 int RasterCache::GetAccessCount(const RasterCacheKeyID& id,
-                                const SkMatrix& matrix) const {
+                                const DlTransform& matrix) const {
   RasterCacheKey key = RasterCacheKey(id, matrix);
   auto entry = cache_.find(key);
   if (entry != cache_.cend()) {
@@ -165,7 +164,7 @@ int RasterCache::GetAccessCount(const RasterCacheKeyID& id,
 }
 
 bool RasterCache::HasEntry(const RasterCacheKeyID& id,
-                           const SkMatrix& matrix) const {
+                           const DlTransform& matrix) const {
   RasterCacheKey key = RasterCacheKey(id, matrix);
   if (cache_.find(key) != cache_.cend()) {
     return true;

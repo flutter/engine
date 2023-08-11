@@ -36,7 +36,7 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
           const FlutterBackingStoreConfig& config)>;
   using PresentCallback =
       std::function<bool(const std::vector<const FlutterLayer*>& layers)>;
-  using SurfaceTransformationCallback = std::function<SkMatrix(void)>;
+  using SurfaceTransformationCallback = std::function<DlTransform(void)>;
 
   //----------------------------------------------------------------------------
   /// @brief      Creates an external view embedder used by the generic embedder
@@ -82,7 +82,7 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
 
   // |ExternalViewEmbedder|
   void BeginFrame(
-      SkISize frame_size,
+      DlISize frame_size,
       GrDirectContext* context,
       double device_pixel_ratio,
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
@@ -108,16 +108,16 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
   const CreateRenderTargetCallback create_render_target_callback_;
   const PresentCallback present_callback_;
   SurfaceTransformationCallback surface_transformation_callback_;
-  SkISize pending_frame_size_ = SkISize::Make(0, 0);
+  DlISize pending_frame_size_;
   double pending_device_pixel_ratio_ = 1.0;
-  SkMatrix pending_surface_transformation_;
+  DlTransform pending_surface_transformation_;
   EmbedderExternalView::PendingViews pending_views_;
   std::vector<EmbedderExternalView::ViewIdentifier> composition_order_;
   EmbedderRenderTargetCache render_target_cache_;
 
   void Reset();
 
-  SkMatrix GetSurfaceTransformation() const;
+  DlTransform GetSurfaceTransformation() const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderExternalViewEmbedder);
 };

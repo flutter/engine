@@ -60,8 +60,8 @@ const ImageGenerator::FrameInfo BuiltinSkiaImageGenerator::GetFrameInfo(
           .disposal_method = SkCodecAnimation::DisposalMethod::kKeep};
 }
 
-SkISize BuiltinSkiaImageGenerator::GetScaledDimensions(float desired_scale) {
-  return generator_->getInfo().dimensions();
+DlISize BuiltinSkiaImageGenerator::GetScaledDimensions(float desired_scale) {
+  return DlISize::MakeSize(generator_->getInfo());
 }
 
 bool BuiltinSkiaImageGenerator::GetPixels(
@@ -132,13 +132,13 @@ const ImageGenerator::FrameInfo BuiltinSkiaCodecImageGenerator::GetFrameInfo(
       .disposal_method = info.fDisposalMethod};
 }
 
-SkISize BuiltinSkiaCodecImageGenerator::GetScaledDimensions(
+DlISize BuiltinSkiaCodecImageGenerator::GetScaledDimensions(
     float desired_scale) {
   SkISize size = codec_->getScaledDimensions(desired_scale);
   if (SkEncodedOriginSwapsWidthHeight(codec_->getOrigin())) {
     std::swap(size.fWidth, size.fHeight);
   }
-  return size;
+  return DlISize::MakeSize(size);
 }
 
 bool BuiltinSkiaCodecImageGenerator::GetPixels(

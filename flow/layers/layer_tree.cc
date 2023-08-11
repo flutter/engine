@@ -14,10 +14,11 @@
 #include "flutter/flow/raster_cache_item.h"
 #include "flutter/fml/time/time_point.h"
 #include "flutter/fml/trace_event.h"
+#include "third_party/skia/include/core/SkColorSpace.h"
 
 namespace flutter {
 
-LayerTree::LayerTree(const Config& config, const SkISize& frame_size)
+LayerTree::LayerTree(const Config& config, const DlISize& frame_size)
     : root_layer_(config.root_layer),
       frame_size_(frame_size),
       rasterizer_tracing_threshold_(config.rasterizer_tracing_threshold),
@@ -31,7 +32,7 @@ inline SkColorSpace* GetColorSpace(DlCanvas* canvas) {
 
 bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
                         bool ignore_raster_cache,
-                        SkRect cull_rect) {
+                        DlFRect cull_rect) {
   TRACE_EVENT0("flutter", "LayerTree::Preroll");
 
   if (!root_layer_) {
@@ -156,7 +157,7 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
 }
 
 sk_sp<DisplayList> LayerTree::Flatten(
-    const SkRect& bounds,
+    const DlFRect& bounds,
     const std::shared_ptr<TextureRegistry>& texture_registry,
     GrDirectContext* gr_context) {
   TRACE_EVENT0("flutter", "LayerTree::Flatten");

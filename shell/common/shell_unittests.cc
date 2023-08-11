@@ -127,9 +127,9 @@ class MockSurface : public Surface {
   MOCK_METHOD0(IsValid, bool());
 
   MOCK_METHOD1(AcquireFrame,
-               std::unique_ptr<SurfaceFrame>(const SkISize& size));
+               std::unique_ptr<SurfaceFrame>(const DlISize& size));
 
-  MOCK_CONST_METHOD0(GetRootTransformation, SkMatrix());
+  MOCK_CONST_METHOD0(GetRootTransformation, DlTransform());
 
   MOCK_METHOD0(GetContext, GrDirectContext*());
 
@@ -325,8 +325,8 @@ static void PostSync(const fml::RefPtr<fml::TaskRunner>& task_runner,
 }
 
 static sk_sp<DisplayList> MakeSizedDisplayList(int width, int height) {
-  DisplayListBuilder builder(SkRect::MakeXYWH(0, 0, width, height));
-  builder.DrawRect(SkRect::MakeXYWH(0, 0, width, height),
+  DisplayListBuilder builder(DlFRect::MakeWH(width, height));
+  builder.DrawRect(DlFRect::MakeWH(width, height),
                    DlPaint(DlColor::kRed()));
   return builder.Build();
 }
@@ -828,7 +828,7 @@ TEST_F(ShellTest, ExternalEmbedderNoThreadMerger) {
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
+        DlFPoint(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
 
@@ -889,20 +889,20 @@ TEST_F(ShellTest, PushBackdropFilterToVisitedPlatformViews) {
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
     auto platform_view_layer = std::make_shared<PlatformViewLayer>(
-        SkPoint::Make(10, 10), SkSize::Make(10, 10), 50);
+        DlFPoint(10, 10), DlFSize(10, 10), 50);
     root->Add(platform_view_layer);
     auto transform_layer =
-        std::make_shared<TransformLayer>(SkMatrix::Translate(1, 1));
+        std::make_shared<TransformLayer>(DlTransform::MakeTranslate(1, 1));
     root->Add(transform_layer);
     auto clip_rect_layer = std::make_shared<ClipRectLayer>(
-        SkRect::MakeLTRB(0, 0, 30, 30), Clip::hardEdge);
+        DlFRect::MakeLTRB(0, 0, 30, 30), Clip::hardEdge);
     transform_layer->Add(clip_rect_layer);
     auto filter = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
     auto backdrop_filter_layer =
         std::make_shared<BackdropFilterLayer>(filter, DlBlendMode::kSrcOver);
     clip_rect_layer->Add(backdrop_filter_layer);
     auto platform_view_layer2 = std::make_shared<PlatformViewLayer>(
-        SkPoint::Make(10, 10), SkSize::Make(10, 10), 75);
+        DlFPoint(10, 10), DlFSize(10, 10), 75);
     backdrop_filter_layer->Add(platform_view_layer2);
   };
 
@@ -919,7 +919,7 @@ TEST_F(ShellTest, PushBackdropFilterToVisitedPlatformViews) {
   // Make sure the filterRect is in global coordinates (contains the (1,1)
   // translation).
   ASSERT_EQ(mutator->GetFilterMutation().GetFilterRect(),
-            SkRect::MakeLTRB(1, 1, 31, 31));
+            DlFRect::MakeLTRB(1, 1, 31, 31));
 
   DestroyShell(std::move(shell));
 }
@@ -962,7 +962,7 @@ TEST_F(ShellTest,
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
+        DlFPoint(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
 
@@ -1007,7 +1007,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyDisablesThreadMerger) {
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
+        DlFPoint(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
 
@@ -1073,7 +1073,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyAfterMergingThreads) {
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
+        DlFPoint(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
 
@@ -1141,7 +1141,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyWhenThreadsAreMerging) {
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
+        DlFPoint(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
 
@@ -1208,7 +1208,7 @@ TEST_F(ShellTest,
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
+        DlFPoint(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
   PumpOneFrame(shell.get(), 100, 100, builder);
@@ -1246,7 +1246,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyWithoutRasterThreadMerger) {
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
+        DlFPoint(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
   PumpOneFrame(shell.get(), 100, 100, builder);
@@ -1312,7 +1312,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyWithStaticThreadMerging) {
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
+        DlFPoint(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
   PumpOneFrame(shell.get(), 100, 100, builder);
@@ -1357,7 +1357,7 @@ TEST_F(ShellTest, GetUsedThisFrameShouldBeSetBeforeEndFrame) {
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
+        DlFPoint(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
   PumpOneFrame(shell.get(), 100, 100, builder);
@@ -1894,7 +1894,7 @@ class MockTexture : public Texture {
 
   // Called from raster thread.
   void Paint(PaintContext& context,
-             const SkRect& bounds,
+             const DlFRect& bounds,
              bool freeze,
              const DlImageSampling) override {}
 
@@ -2101,7 +2101,7 @@ TEST_F(ShellTest, Screenshot) {
 
   LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
     auto display_list_layer = std::make_shared<DisplayListLayer>(
-        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
+        DlFPoint(10, 10), MakeSizedDisplayList(80, 80), false, false);
     root->Add(display_list_layer);
   };
 
@@ -2279,8 +2279,8 @@ class SinglePixelImageGenerator : public ImageGenerator {
     return {std::nullopt, 0, SkCodecAnimation::DisposalMethod::kKeep};
   }
 
-  SkISize GetScaledDimensions(float scale) {
-    return SkISize::Make(info_.width(), info_.height());
+  DlISize GetScaledDimensions(float scale) {
+    return DlISize(info_.width(), info_.height());
   }
 
   bool GetPixels(const SkImageInfo& info,
@@ -2438,7 +2438,7 @@ TEST_F(ShellTest, RasterizerMakeRasterSnapshot) {
         SnapshotDelegate* delegate =
             reinterpret_cast<Rasterizer*>(shell->GetRasterizer().get());
         sk_sp<DlImage> image = delegate->MakeRasterSnapshot(
-            MakeSizedDisplayList(50, 50), SkISize::Make(50, 50));
+            MakeSizedDisplayList(50, 50), DlISize(50, 50));
         EXPECT_NE(image, nullptr);
 
         latch->Signal();
@@ -2454,8 +2454,8 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
   // 1. Construct a picture and a picture layer to be raster cached.
   sk_sp<DisplayList> display_list = MakeSizedDisplayList(10, 10);
   auto display_list_layer = std::make_shared<DisplayListLayer>(
-      SkPoint::Make(0, 0), MakeSizedDisplayList(100, 100), false, false);
-  display_list_layer->set_paint_bounds(SkRect::MakeWH(100, 100));
+      DlFPoint(), MakeSizedDisplayList(100, 100), false, false);
+  display_list_layer->set_paint_bounds(DlFRect::MakeWH(100, 100));
 
   // 2. Rasterize the picture and the picture layer in the raster cache.
   std::promise<bool> rasterized;
@@ -2506,9 +2506,9 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
         DlPaint paint;
         bool picture_cache_generated;
         DisplayListRasterCacheItem display_list_raster_cache_item(
-            display_list, SkPoint(), true, false);
+            display_list, DlFPoint(), true, false);
         for (int i = 0; i < 4; i += 1) {
-          SkMatrix matrix = SkMatrix::I();
+          DlTransform matrix;
           state_stack.set_preroll_delegate(matrix);
           display_list_raster_cache_item.PrerollSetup(&preroll_context, matrix);
           display_list_raster_cache_item.PrerollFinalize(&preroll_context,
@@ -2524,10 +2524,10 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
 
         // 2.2. Rasterize the picture layer.
         LayerRasterCacheItem layer_raster_cache_item(display_list_layer.get());
-        state_stack.set_preroll_delegate(SkMatrix::I());
-        layer_raster_cache_item.PrerollSetup(&preroll_context, SkMatrix::I());
+        state_stack.set_preroll_delegate(DlTransform());
+        layer_raster_cache_item.PrerollSetup(&preroll_context, DlTransform());
         layer_raster_cache_item.PrerollFinalize(&preroll_context,
-                                                SkMatrix::I());
+                                                DlTransform());
         state_stack.set_delegate(&dummy_canvas);
         layer_raster_cache_item.TryToPrepareRasterCache(paint_context);
         layer_raster_cache_item.Draw(paint_context, &dummy_canvas, &paint);
@@ -2665,8 +2665,8 @@ TEST_F(ShellTest, OnServiceProtocolRenderFrameWithRasterStatsWorks) {
 TEST_F(ShellTest, DISABLED_DiscardLayerTreeOnResize) {
   auto settings = CreateSettingsForFixture();
 
-  SkISize wrong_size = SkISize::Make(400, 100);
-  SkISize expected_size = SkISize::Make(400, 200);
+  DlISize wrong_size = DlISize(400, 100);
+  DlISize expected_size = DlISize(400, 200);
 
   fml::AutoResetWaitableEvent end_frame_latch;
   auto end_frame_callback =
@@ -2724,8 +2724,8 @@ TEST_F(ShellTest, DISABLED_DiscardLayerTreeOnResize) {
 TEST_F(ShellTest, DISABLED_DiscardResubmittedLayerTreeOnResize) {
   auto settings = CreateSettingsForFixture();
 
-  SkISize origin_size = SkISize::Make(400, 100);
-  SkISize new_size = SkISize::Make(400, 200);
+  DlISize origin_size = DlISize(400, 100);
+  DlISize new_size = DlISize(400, 200);
 
   fml::AutoResetWaitableEvent end_frame_latch;
 

@@ -10,9 +10,9 @@
 #include <utility>
 #include <vector>
 
+#include "flutter/display_list/geometry/dl_transform.h"
 #include "flutter/fml/hash_combine.h"
 #include "flutter/fml/logging.h"
-#include "third_party/skia/include/core/SkMatrix.h"
 
 namespace flutter {
 
@@ -78,17 +78,14 @@ class RasterCacheKey {
  public:
   RasterCacheKey(uint64_t unique_id,
                  RasterCacheKeyType type,
-                 const SkMatrix& ctm)
+                 const DlTransform& ctm)
       : RasterCacheKey(RasterCacheKeyID(unique_id, type), ctm) {}
 
-  RasterCacheKey(RasterCacheKeyID id, const SkMatrix& ctm)
-      : id_(std::move(id)), matrix_(ctm) {
-    matrix_[SkMatrix::kMTransX] = 0;
-    matrix_[SkMatrix::kMTransY] = 0;
-  }
+  RasterCacheKey(RasterCacheKeyID id, const DlTransform& ctm)
+      : id_(std::move(id)), matrix_(ctm.AsDeltaTransform()) {}
 
   const RasterCacheKeyID& id() const { return id_; }
-  const SkMatrix& matrix() const { return matrix_; }
+  const DlTransform& matrix() const { return matrix_; }
 
   RasterCacheKeyKind kind() const {
     switch (id_.type()) {
@@ -119,11 +116,9 @@ class RasterCacheKey {
  private:
   RasterCacheKeyID id_;
 
-  // ctm where only fractional (0-1) translations are preserved:
-  //   matrix_ = ctm;
-  //   matrix_[SkMatrix::kMTransX] = SkScalarFraction(ctm.getTranslateX());
-  //   matrix_[SkMatrix::kMTransY] = SkScalarFraction(ctm.getTranslateY());
-  SkMatrix matrix_;
+  // ctm where translation components are stripped because the translation
+  // is managed specially by the raster caching methods.
+  DlTransform matrix_;
 };
 
 }  // namespace flutter

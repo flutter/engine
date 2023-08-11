@@ -14,8 +14,6 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/trace_event.h"
-#include "third_party/skia/include/core/SkMatrix.h"
-#include "third_party/skia/include/core/SkRect.h"
 
 class GrDirectContext;
 class SkColorSpace;
@@ -27,7 +25,7 @@ enum class RasterCacheLayerStrategy { kLayer, kLayerChildren };
 class RasterCacheResult {
  public:
   RasterCacheResult(sk_sp<DlImage> image,
-                    const SkRect& logical_rect,
+                    const DlFRect& logical_rect,
                     const char* type,
                     sk_sp<const DlRTree> rtree = nullptr);
 
@@ -37,8 +35,8 @@ class RasterCacheResult {
                     const DlPaint* paint,
                     bool preserve_rtree) const;
 
-  virtual SkISize image_dimensions() const {
-    return image_ ? image_->dimensions() : SkISize::Make(0, 0);
+  virtual DlISize image_dimensions() const {
+    return image_ ? image_->dimensions() : DlISize(0, 0);
   };
 
   virtual int64_t image_bytes() const {
@@ -47,7 +45,7 @@ class RasterCacheResult {
 
  private:
   sk_sp<DlImage> image_;
-  SkRect logical_rect_;
+  DlFRect logical_rect_;
   fml::tracing::TraceFlow flow_;
   sk_sp<const DlRTree> rtree_;
 };
@@ -118,8 +116,8 @@ class RasterCache {
   struct Context {
     GrDirectContext* gr_context;
     const SkColorSpace* dst_color_space;
-    const SkMatrix& matrix;
-    const SkRect& logical_rect;
+    const DlTransform& matrix;
+    const DlFRect& logical_rect;
     const char* flow_type;
   };
   struct CacheInfo {
@@ -131,7 +129,7 @@ class RasterCache {
       const RasterCache::Context& context,
       sk_sp<const DlRTree> rtree,
       const std::function<void(DlCanvas*)>& draw_function,
-      const std::function<void(DlCanvas*, const SkRect& rect)>&
+      const std::function<void(DlCanvas*, const DlFRect& rect)>&
           draw_checkerboard) const;
 
   explicit RasterCache(
@@ -156,7 +154,7 @@ class RasterCache {
             const DlPaint* paint,
             bool preserve_rtree = false) const;
 
-  bool HasEntry(const RasterCacheKeyID& id, const SkMatrix&) const;
+  bool HasEntry(const RasterCacheKeyID& id, const DlTransform&) const;
 
   void BeginFrame();
 
@@ -232,14 +230,15 @@ class RasterCache {
    * For a new entry that will be 1 if it is visible, or zero if non-visible.
    */
   CacheInfo MarkSeen(const RasterCacheKeyID& id,
-                     const SkMatrix& matrix,
+                     const DlTransform& matrix,
                      bool visible) const;
 
   /**
    * Returns the access count (i.e. accesses_since_visible) for the given
    * entry in the cache, or -1 if no such entry exists.
    */
-  int GetAccessCount(const RasterCacheKeyID& id, const SkMatrix& matrix) const;
+  int GetAccessCount(const RasterCacheKeyID& id,
+                     const DlTransform& matrix) const;
 
   bool UpdateCacheEntry(const RasterCacheKeyID& id,
                         const Context& raster_cache_context,

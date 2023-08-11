@@ -15,6 +15,8 @@
 #include "flutter/display_list/dl_sampling_options.h"
 #include "flutter/display_list/dl_tile_mode.h"
 #include "flutter/display_list/effects/dl_runtime_effect.h"
+#include "flutter/display_list/geometry/dl_point.h"
+#include "flutter/display_list/geometry/dl_transform.h"
 #include "flutter/display_list/image/dl_image.h"
 #include "flutter/fml/logging.h"
 
@@ -64,43 +66,43 @@ enum class DlColorSourceType {
 class DlColorSource : public DlAttribute<DlColorSource, DlColorSourceType> {
  public:
   static std::shared_ptr<DlLinearGradientColorSource> MakeLinear(
-      const SkPoint start_point,
-      const SkPoint end_point,
+      const DlFPoint start_point,
+      const DlFPoint end_point,
       uint32_t stop_count,
       const DlColor* colors,
       const float* stops,
       DlTileMode tile_mode,
-      const SkMatrix* matrix = nullptr);
+      const DlTransform* matrix = nullptr);
 
   static std::shared_ptr<DlRadialGradientColorSource> MakeRadial(
-      SkPoint center,
-      SkScalar radius,
+      DlFPoint center,
+      DlScalar radius,
       uint32_t stop_count,
       const DlColor* colors,
       const float* stops,
       DlTileMode tile_mode,
-      const SkMatrix* matrix = nullptr);
+      const DlTransform* matrix = nullptr);
 
   static std::shared_ptr<DlConicalGradientColorSource> MakeConical(
-      SkPoint start_center,
-      SkScalar start_radius,
-      SkPoint end_center,
-      SkScalar end_radius,
+      DlFPoint start_center,
+      DlScalar start_radius,
+      DlFPoint end_center,
+      DlScalar end_radius,
       uint32_t stop_count,
       const DlColor* colors,
       const float* stops,
       DlTileMode tile_mode,
-      const SkMatrix* matrix = nullptr);
+      const DlTransform* matrix = nullptr);
 
   static std::shared_ptr<DlSweepGradientColorSource> MakeSweep(
-      SkPoint center,
-      SkScalar start,
-      SkScalar end,
+      DlFPoint center,
+      DlScalar start,
+      DlScalar end,
       uint32_t stop_count,
       const DlColor* colors,
       const float* stops,
       DlTileMode tile_mode,
-      const SkMatrix* matrix = nullptr);
+      const DlTransform* matrix = nullptr);
 
   static std::shared_ptr<DlRuntimeEffectColorSource> MakeRuntimeEffect(
       sk_sp<DlRuntimeEffect> runtime_effect,
@@ -200,17 +202,17 @@ class DlColorColorSource final : public DlColorSource {
 
 class DlMatrixColorSourceBase : public DlColorSource {
  public:
-  const SkMatrix& matrix() const { return matrix_; }
-  const SkMatrix* matrix_ptr() const {
-    return matrix_.isIdentity() ? nullptr : &matrix_;
+  const DlTransform& matrix() const { return matrix_; }
+  const DlTransform* matrix_ptr() const {
+    return matrix_.is_identity() ? nullptr : &matrix_;
   }
 
  protected:
-  DlMatrixColorSourceBase(const SkMatrix* matrix)
-      : matrix_(matrix ? *matrix : SkMatrix::I()) {}
+  DlMatrixColorSourceBase(const DlTransform* matrix)
+      : matrix_(matrix ? *matrix : DlTransform()) {}
 
  private:
-  const SkMatrix matrix_;
+  const DlTransform matrix_;
 };
 
 class DlImageColorSource final : public SkRefCnt,
@@ -220,12 +222,12 @@ class DlImageColorSource final : public SkRefCnt,
                      DlTileMode horizontal_tile_mode,
                      DlTileMode vertical_tile_mode,
                      DlImageSampling sampling = DlImageSampling::kLinear,
-                     const SkMatrix* matrix = nullptr)
+                     const DlTransform* matrix = nullptr)
       : DlMatrixColorSourceBase(matrix),
+        sampling_(sampling),
         image_(image),
         horizontal_tile_mode_(horizontal_tile_mode),
-        vertical_tile_mode_(vertical_tile_mode),
-        sampling_(sampling) {}
+        vertical_tile_mode_(vertical_tile_mode) {}
 
   bool isUIThreadSafe() const override {
     return image_ ? image_->isUIThreadSafe() : true;
@@ -264,10 +266,10 @@ class DlImageColorSource final : public SkRefCnt,
   }
 
  private:
+  DlImageSampling sampling_;
   sk_sp<const DlImage> image_;
   DlTileMode horizontal_tile_mode_;
   DlTileMode vertical_tile_mode_;
-  DlImageSampling sampling_;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(DlImageColorSource);
 };
@@ -299,7 +301,7 @@ class DlGradientColorSourceBase : public DlMatrixColorSourceBase {
  protected:
   DlGradientColorSourceBase(uint32_t stop_count,
                             DlTileMode tile_mode,
-                            const SkMatrix* matrix = nullptr)
+                            const DlTransform* matrix = nullptr)
       : DlMatrixColorSourceBase(matrix),
         mode_(tile_mode),
         stop_count_(stop_count) {}
@@ -366,8 +368,8 @@ class DlLinearGradientColorSource final : public DlGradientColorSourceBase {
                       tile_mode(), matrix_ptr());
   }
 
-  const SkPoint& start_point() const { return start_point_; }
-  const SkPoint& end_point() const { return end_point_; }
+  const DlFPoint& start_point() const { return start_point_; }
+  const DlFPoint& end_point() const { return end_point_; }
 
  protected:
   virtual const void* pod() const override { return this + 1; }
@@ -380,13 +382,13 @@ class DlLinearGradientColorSource final : public DlGradientColorSourceBase {
   }
 
  private:
-  DlLinearGradientColorSource(const SkPoint start_point,
-                              const SkPoint end_point,
+  DlLinearGradientColorSource(const DlFPoint start_point,
+                              const DlFPoint end_point,
                               uint32_t stop_count,
                               const DlColor* colors,
                               const float* stops,
                               DlTileMode tile_mode,
-                              const SkMatrix* matrix = nullptr)
+                              const DlTransform* matrix = nullptr)
       : DlGradientColorSourceBase(stop_count, tile_mode, matrix),
         start_point_(start_point),
         end_point_(end_point) {
@@ -402,8 +404,8 @@ class DlLinearGradientColorSource final : public DlGradientColorSourceBase {
     store_color_stops(this + 1, source->colors(), source->stops());
   }
 
-  SkPoint start_point_;
-  SkPoint end_point_;
+  DlFPoint start_point_;
+  DlFPoint end_point_;
 
   friend class DlColorSource;
   friend class DisplayListBuilder;
@@ -429,8 +431,8 @@ class DlRadialGradientColorSource final : public DlGradientColorSourceBase {
   }
   size_t size() const override { return sizeof(*this) + vector_sizes(); }
 
-  SkPoint center() const { return center_; }
-  SkScalar radius() const { return radius_; }
+  DlFPoint center() const { return center_; }
+  DlScalar radius() const { return radius_; }
 
  protected:
   virtual const void* pod() const override { return this + 1; }
@@ -443,13 +445,13 @@ class DlRadialGradientColorSource final : public DlGradientColorSourceBase {
   }
 
  private:
-  DlRadialGradientColorSource(SkPoint center,
-                              SkScalar radius,
+  DlRadialGradientColorSource(DlFPoint center,
+                              DlScalar radius,
                               uint32_t stop_count,
                               const DlColor* colors,
                               const float* stops,
                               DlTileMode tile_mode,
-                              const SkMatrix* matrix = nullptr)
+                              const DlTransform* matrix = nullptr)
       : DlGradientColorSourceBase(stop_count, tile_mode, matrix),
         center_(center),
         radius_(radius) {
@@ -465,8 +467,8 @@ class DlRadialGradientColorSource final : public DlGradientColorSourceBase {
     store_color_stops(this + 1, source->colors(), source->stops());
   }
 
-  SkPoint center_;
-  SkScalar radius_;
+  DlFPoint center_;
+  DlScalar radius_;
 
   friend class DlColorSource;
   friend class DisplayListBuilder;
@@ -493,10 +495,10 @@ class DlConicalGradientColorSource final : public DlGradientColorSourceBase {
   }
   size_t size() const override { return sizeof(*this) + vector_sizes(); }
 
-  SkPoint start_center() const { return start_center_; }
-  SkScalar start_radius() const { return start_radius_; }
-  SkPoint end_center() const { return end_center_; }
-  SkScalar end_radius() const { return end_radius_; }
+  DlFPoint start_center() const { return start_center_; }
+  DlScalar start_radius() const { return start_radius_; }
+  DlFPoint end_center() const { return end_center_; }
+  DlScalar end_radius() const { return end_radius_; }
 
  protected:
   virtual const void* pod() const override { return this + 1; }
@@ -511,15 +513,15 @@ class DlConicalGradientColorSource final : public DlGradientColorSourceBase {
   }
 
  private:
-  DlConicalGradientColorSource(SkPoint start_center,
-                               SkScalar start_radius,
-                               SkPoint end_center,
-                               SkScalar end_radius,
+  DlConicalGradientColorSource(DlFPoint start_center,
+                               DlScalar start_radius,
+                               DlFPoint end_center,
+                               DlScalar end_radius,
                                uint32_t stop_count,
                                const DlColor* colors,
                                const float* stops,
                                DlTileMode tile_mode,
-                               const SkMatrix* matrix = nullptr)
+                               const DlTransform* matrix = nullptr)
       : DlGradientColorSourceBase(stop_count, tile_mode, matrix),
         start_center_(start_center),
         start_radius_(start_radius),
@@ -539,10 +541,10 @@ class DlConicalGradientColorSource final : public DlGradientColorSourceBase {
     store_color_stops(this + 1, source->colors(), source->stops());
   }
 
-  SkPoint start_center_;
-  SkScalar start_radius_;
-  SkPoint end_center_;
-  SkScalar end_radius_;
+  DlFPoint start_center_;
+  DlScalar start_radius_;
+  DlFPoint end_center_;
+  DlScalar end_radius_;
 
   friend class DlColorSource;
   friend class DisplayListBuilder;
@@ -568,9 +570,9 @@ class DlSweepGradientColorSource final : public DlGradientColorSourceBase {
   }
   size_t size() const override { return sizeof(*this) + vector_sizes(); }
 
-  SkPoint center() const { return center_; }
-  SkScalar start() const { return start_; }
-  SkScalar end() const { return end_; }
+  DlFPoint center() const { return center_; }
+  DlScalar start() const { return start_; }
+  DlScalar end() const { return end_; }
 
  protected:
   virtual const void* pod() const override { return this + 1; }
@@ -583,14 +585,14 @@ class DlSweepGradientColorSource final : public DlGradientColorSourceBase {
   }
 
  private:
-  DlSweepGradientColorSource(SkPoint center,
-                             SkScalar start,
-                             SkScalar end,
+  DlSweepGradientColorSource(DlFPoint center,
+                             DlScalar start,
+                             DlScalar end,
                              uint32_t stop_count,
                              const DlColor* colors,
                              const float* stops,
                              DlTileMode tile_mode,
-                             const SkMatrix* matrix = nullptr)
+                             const DlTransform* matrix = nullptr)
       : DlGradientColorSourceBase(stop_count, tile_mode, matrix),
         center_(center),
         start_(start),
@@ -608,9 +610,9 @@ class DlSweepGradientColorSource final : public DlGradientColorSourceBase {
     store_color_stops(this + 1, source->colors(), source->stops());
   }
 
-  SkPoint center_;
-  SkScalar start_;
-  SkScalar end_;
+  DlFPoint center_;
+  DlScalar start_;
+  DlScalar end_;
 
   friend class DlColorSource;
   friend class DisplayListBuilder;

@@ -6,13 +6,15 @@
 #define FLUTTER_DISPLAY_LIST_EFFECTS_DL_IMAGE_FILTER_H_
 
 #include "flutter/display_list/dl_attributes.h"
+#include "flutter/display_list/dl_base_types.h"
 #include "flutter/display_list/dl_sampling_options.h"
 #include "flutter/display_list/dl_tile_mode.h"
 #include "flutter/display_list/effects/dl_color_filter.h"
+#include "flutter/display_list/geometry/dl_point.h"
+#include "flutter/display_list/geometry/dl_rect.h"
+#include "flutter/display_list/geometry/dl_transform.h"
 #include "flutter/display_list/utils/dl_comparable.h"
 #include "flutter/fml/logging.h"
-
-#include "third_party/skia/include/core/SkMatrix.h"
 
 namespace flutter {
 
@@ -71,7 +73,7 @@ class DlImageFilter : public DlAttribute<DlImageFilter, DlImageFilterType> {
   }
 
   virtual std::shared_ptr<DlImageFilter> makeWithLocalMatrix(
-      const SkMatrix& matrix) const;
+      const DlTransform& matrix) const;
 
   // Return a DlComposeImageFilter pointer to this object iff it is a Compose
   // type of ImageFilter, otherwise return nullptr.
@@ -97,8 +99,8 @@ class DlImageFilter : public DlAttribute<DlImageFilter, DlImageFilterType> {
   // can successfully compute the output bounds of the filter, otherwise the
   // method will return a nullptr and the output_bounds will be filled with
   // a best guess for the answer, even if just a copy of the input_bounds.
-  virtual SkRect* map_local_bounds(const SkRect& input_bounds,
-                                   SkRect& output_bounds) const = 0;
+  virtual DlFRect* map_local_bounds(const DlFRect& input_bounds,
+                                   DlFRect& output_bounds) const = 0;
 
   // Return the device bounds of the output for this image filtering operation
   // based on the supplied input device bounds where both are measured in the
@@ -111,9 +113,9 @@ class DlImageFilter : public DlAttribute<DlImageFilter, DlImageFilterType> {
   // can successfully compute the output bounds of the filter, otherwise the
   // method will return a nullptr and the output_bounds will be filled with
   // a best guess for the answer, even if just a copy of the input_bounds.
-  virtual SkIRect* map_device_bounds(const SkIRect& input_bounds,
-                                     const SkMatrix& ctm,
-                                     SkIRect& output_bounds) const = 0;
+  virtual DlIRect* map_device_bounds(const DlIRect& input_bounds,
+                                     const DlTransform& ctm,
+                                     DlIRect& output_bounds) const = 0;
 
   // Return the input bounds that will be needed in order for the filter to
   // properly fill the indicated output_bounds under the specified
@@ -124,64 +126,31 @@ class DlImageFilter : public DlAttribute<DlImageFilter, DlImageFilterType> {
   // can successfully compute the required input bounds, otherwise the
   // method will return a nullptr and the input_bounds will be filled with
   // a best guess for the answer, even if just a copy of the output_bounds.
-  virtual SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
-                                           const SkMatrix& ctm,
-                                           SkIRect& input_bounds) const = 0;
+  virtual DlIRect* get_input_device_bounds(const DlIRect& output_bounds,
+                                           const DlTransform& ctm,
+                                           DlIRect& input_bounds) const = 0;
 
   virtual MatrixCapability matrix_capability() const {
     return MatrixCapability::kScaleTranslate;
   }
 
  protected:
-  static SkVector map_vectors_affine(const SkMatrix& ctm,
-                                     SkScalar x,
-                                     SkScalar y) {
-    FML_DCHECK(SkScalarIsFinite(x) && x >= 0);
-    FML_DCHECK(SkScalarIsFinite(y) && y >= 0);
-    FML_DCHECK(ctm.isFinite() && !ctm.hasPerspective());
-
-    // The x and y scalars would have been used to expand a local space
-    // rectangle which is then transformed by ctm. In order to do the
-    // expansion correctly, we should look at the relevant math. The
-    // 4 corners will be moved outward by the following vectors:
-    //     (UL,UR,LR,LL) = ((-x, -y), (+x, -y), (+x, +y), (-x, +y))
-    // After applying the transform, each of these vectors could be
-    // pointing in any direction so we need to examine each transformed
-    // delta vector and how it affected the bounds.
-    // Looking at just the affine 2x3 entries of the CTM we can delta
-    // transform these corner offsets and get the following:
-    //     UL = dCTM(-x, -y) = (- x*m00 - y*m01, - x*m10 - y*m11)
-    //     UR = dCTM(+x, -y) = (  x*m00 - y*m01,   x*m10 - y*m11)
-    //     LR = dCTM(+x, +y) = (  x*m00 + y*m01,   x*m10 + y*m11)
-    //     LL = dCTM(-x, +y) = (- x*m00 + y*m01, - x*m10 + y*m11)
-    // The X vectors are all some variation of adding or subtracting
-    // the sum of x*m00 and y*m01 or their difference. Similarly the Y
-    // vectors are +/- the associated sum/difference of x*m10 and y*m11.
-    // The largest displacements, both left/right or up/down, will
-    // happen when the signs of the m00/m01/m10/m11 matrix entries
-    // coincide with the signs of the scalars, i.e. are all positive.
-    return {x * abs(ctm[0]) + y * abs(ctm[1]),
-            x * abs(ctm[3]) + y * abs(ctm[4])};
-  }
-
-  static SkIRect* inset_device_bounds(const SkIRect& input_bounds,
-                                      SkScalar radius_x,
-                                      SkScalar radius_y,
-                                      const SkMatrix& ctm,
-                                      SkIRect& output_bounds) {
-    if (ctm.isFinite()) {
-      if (ctm.hasPerspective()) {
-        SkMatrix inverse;
-        if (ctm.invert(&inverse)) {
-          SkRect local_bounds = inverse.mapRect(SkRect::Make(input_bounds));
-          local_bounds.inset(radius_x, radius_y);
-          output_bounds = ctm.mapRect(local_bounds).roundOut();
-          return &output_bounds;
-        }
-      } else {
-        SkVector device_radius = map_vectors_affine(ctm, radius_x, radius_y);
-        output_bounds = input_bounds.makeInset(floor(device_radius.fX),  //
-                                               floor(device_radius.fY));
+  static DlIRect* inset_device_bounds(const DlIRect& input_bounds,
+                                      DlScalar radius_x,
+                                      DlScalar radius_y,
+                                      const DlTransform& ctm,
+                                      DlIRect& output_bounds) {
+    if (ctm.is_finite()) {
+      auto expansion = ctm.ComputeTransformedExpansion(radius_x, radius_y);
+      if (expansion.has_value()) {
+        output_bounds = input_bounds.MakeInset(Floor(*expansion));
+        return &output_bounds;
+      }
+      DlTransform inverse;
+      if (ctm.Invert(&inverse)) {
+        DlFRect local_bounds = inverse.TransformRect(input_bounds);
+        local_bounds.Inset(radius_x, radius_y);
+        output_bounds.SetRoundedOut(ctm.TransformRect(local_bounds));
         return &output_bounds;
       }
     }
@@ -189,24 +158,22 @@ class DlImageFilter : public DlAttribute<DlImageFilter, DlImageFilterType> {
     return nullptr;
   }
 
-  static SkIRect* outset_device_bounds(const SkIRect& input_bounds,
-                                       SkScalar radius_x,
-                                       SkScalar radius_y,
-                                       const SkMatrix& ctm,
-                                       SkIRect& output_bounds) {
-    if (ctm.isFinite()) {
-      if (ctm.hasPerspective()) {
-        SkMatrix inverse;
-        if (ctm.invert(&inverse)) {
-          SkRect local_bounds = inverse.mapRect(SkRect::Make(input_bounds));
-          local_bounds.outset(radius_x, radius_y);
-          output_bounds = ctm.mapRect(local_bounds).roundOut();
-          return &output_bounds;
-        }
-      } else {
-        SkVector device_radius = map_vectors_affine(ctm, radius_x, radius_y);
-        output_bounds = input_bounds.makeOutset(ceil(device_radius.fX),  //
-                                                ceil(device_radius.fY));
+  static DlIRect* outset_device_bounds(const DlIRect& input_bounds,
+                                       DlScalar radius_x,
+                                       DlScalar radius_y,
+                                       const DlTransform& ctm,
+                                       DlIRect& output_bounds) {
+    if (ctm.is_finite()) {
+      auto expansion = ctm.ComputeTransformedExpansion(radius_x, radius_y);
+      if (expansion.has_value()) {
+        output_bounds = input_bounds.MakeOutset(Ceil(*expansion));
+        return &output_bounds;
+      }
+      DlTransform inverse;
+      if (ctm.Invert(&inverse)) {
+        DlFRect local_bounds = inverse.TransformRect(input_bounds);
+        local_bounds.Outset(radius_x, radius_y);
+        output_bounds.SetRoundedOut(ctm.TransformRect(local_bounds));
         return &output_bounds;
       }
     }
@@ -217,7 +184,7 @@ class DlImageFilter : public DlAttribute<DlImageFilter, DlImageFilterType> {
 
 class DlBlurImageFilter final : public DlImageFilter {
  public:
-  DlBlurImageFilter(SkScalar sigma_x, SkScalar sigma_y, DlTileMode tile_mode)
+  DlBlurImageFilter(DlScalar sigma_x, DlScalar sigma_y, DlTileMode tile_mode)
       : sigma_x_(sigma_x), sigma_y_(sigma_y), tile_mode_(tile_mode) {}
   explicit DlBlurImageFilter(const DlBlurImageFilter* filter)
       : DlBlurImageFilter(filter->sigma_x_,
@@ -226,17 +193,17 @@ class DlBlurImageFilter final : public DlImageFilter {
   explicit DlBlurImageFilter(const DlBlurImageFilter& filter)
       : DlBlurImageFilter(&filter) {}
 
-  static std::shared_ptr<DlImageFilter> Make(SkScalar sigma_x,
-                                             SkScalar sigma_y,
+  static std::shared_ptr<DlImageFilter> Make(DlScalar sigma_x,
+                                             DlScalar sigma_y,
                                              DlTileMode tile_mode) {
-    if (!SkScalarIsFinite(sigma_x) || !SkScalarIsFinite(sigma_y)) {
+    if (!DlScalars_AreFinite(sigma_x, sigma_y)) {
       return nullptr;
     }
-    if (sigma_x < SK_ScalarNearlyZero && sigma_y < SK_ScalarNearlyZero) {
+    if (sigma_x < kDlScalar_NearlyZero && sigma_y < kDlScalar_NearlyZero) {
       return nullptr;
     }
-    sigma_x = (sigma_x < SK_ScalarNearlyZero) ? 0 : sigma_x;
-    sigma_y = (sigma_y < SK_ScalarNearlyZero) ? 0 : sigma_y;
+    sigma_x = (sigma_x < kDlScalar_NearlyZero) ? 0 : sigma_x;
+    sigma_y = (sigma_y < kDlScalar_NearlyZero) ? 0 : sigma_y;
     return std::make_shared<DlBlurImageFilter>(sigma_x, sigma_y, tile_mode);
   }
 
@@ -251,28 +218,28 @@ class DlBlurImageFilter final : public DlImageFilter {
 
   bool modifies_transparent_black() const override { return false; }
 
-  SkRect* map_local_bounds(const SkRect& input_bounds,
-                           SkRect& output_bounds) const override {
-    output_bounds = input_bounds.makeOutset(sigma_x_ * 3.0f, sigma_y_ * 3.0f);
+  DlFRect* map_local_bounds(const DlFRect& input_bounds,
+                           DlFRect& output_bounds) const override {
+    output_bounds = input_bounds.MakeOutset(sigma_x_ * 3.0f, sigma_y_ * 3.0f);
     return &output_bounds;
   }
 
-  SkIRect* map_device_bounds(const SkIRect& input_bounds,
-                             const SkMatrix& ctm,
-                             SkIRect& output_bounds) const override {
+  DlIRect* map_device_bounds(const DlIRect& input_bounds,
+                             const DlTransform& ctm,
+                             DlIRect& output_bounds) const override {
     return outset_device_bounds(input_bounds, sigma_x_ * 3.0f, sigma_y_ * 3.0f,
                                 ctm, output_bounds);
   }
 
-  SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
-                                   const SkMatrix& ctm,
-                                   SkIRect& input_bounds) const override {
+  DlIRect* get_input_device_bounds(const DlIRect& output_bounds,
+                                   const DlTransform& ctm,
+                                   DlIRect& input_bounds) const override {
     // Blurs are symmetric in terms of output-for-input and input-for-output
     return map_device_bounds(output_bounds, ctm, input_bounds);
   }
 
-  SkScalar sigma_x() const { return sigma_x_; }
-  SkScalar sigma_y() const { return sigma_y_; }
+  DlScalar sigma_x() const { return sigma_x_; }
+  DlScalar sigma_y() const { return sigma_y_; }
   DlTileMode tile_mode() const { return tile_mode_; }
 
  protected:
@@ -284,24 +251,25 @@ class DlBlurImageFilter final : public DlImageFilter {
   }
 
  private:
-  SkScalar sigma_x_;
-  SkScalar sigma_y_;
+  DlScalar sigma_x_;
+  DlScalar sigma_y_;
   DlTileMode tile_mode_;
 };
 
 class DlDilateImageFilter final : public DlImageFilter {
  public:
-  DlDilateImageFilter(SkScalar radius_x, SkScalar radius_y)
+  DlDilateImageFilter(DlScalar radius_x, DlScalar radius_y)
       : radius_x_(radius_x), radius_y_(radius_y) {}
   explicit DlDilateImageFilter(const DlDilateImageFilter* filter)
       : DlDilateImageFilter(filter->radius_x_, filter->radius_y_) {}
   explicit DlDilateImageFilter(const DlDilateImageFilter& filter)
       : DlDilateImageFilter(&filter) {}
 
-  static std::shared_ptr<DlImageFilter> Make(SkScalar radius_x,
-                                             SkScalar radius_y) {
-    if (SkScalarIsFinite(radius_x) && radius_x > SK_ScalarNearlyZero &&
-        SkScalarIsFinite(radius_y) && radius_y > SK_ScalarNearlyZero) {
+  static std::shared_ptr<DlImageFilter> Make(DlScalar radius_x,
+                                             DlScalar radius_y) {
+    if (DlScalars_AreFinite(radius_x, radius_y) &&
+        radius_x > kDlScalar_NearlyZero &&  //
+        radius_y > kDlScalar_NearlyZero) {
       return std::make_shared<DlDilateImageFilter>(radius_x, radius_y);
     }
     return nullptr;
@@ -318,28 +286,28 @@ class DlDilateImageFilter final : public DlImageFilter {
 
   bool modifies_transparent_black() const override { return false; }
 
-  SkRect* map_local_bounds(const SkRect& input_bounds,
-                           SkRect& output_bounds) const override {
-    output_bounds = input_bounds.makeOutset(radius_x_, radius_y_);
+  DlFRect* map_local_bounds(const DlFRect& input_bounds,
+                           DlFRect& output_bounds) const override {
+    output_bounds = input_bounds.MakeOutset(radius_x_, radius_y_);
     return &output_bounds;
   }
 
-  SkIRect* map_device_bounds(const SkIRect& input_bounds,
-                             const SkMatrix& ctm,
-                             SkIRect& output_bounds) const override {
+  DlIRect* map_device_bounds(const DlIRect& input_bounds,
+                             const DlTransform& ctm,
+                             DlIRect& output_bounds) const override {
     return outset_device_bounds(input_bounds, radius_x_, radius_y_, ctm,
                                 output_bounds);
   }
 
-  SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
-                                   const SkMatrix& ctm,
-                                   SkIRect& input_bounds) const override {
+  DlIRect* get_input_device_bounds(const DlIRect& output_bounds,
+                                   const DlTransform& ctm,
+                                   DlIRect& input_bounds) const override {
     return inset_device_bounds(output_bounds, radius_x_, radius_y_, ctm,
                                input_bounds);
   }
 
-  SkScalar radius_x() const { return radius_x_; }
-  SkScalar radius_y() const { return radius_y_; }
+  DlScalar radius_x() const { return radius_x_; }
+  DlScalar radius_y() const { return radius_y_; }
 
  protected:
   bool equals_(const DlImageFilter& other) const override {
@@ -349,23 +317,24 @@ class DlDilateImageFilter final : public DlImageFilter {
   }
 
  private:
-  SkScalar radius_x_;
-  SkScalar radius_y_;
+  DlScalar radius_x_;
+  DlScalar radius_y_;
 };
 
 class DlErodeImageFilter final : public DlImageFilter {
  public:
-  DlErodeImageFilter(SkScalar radius_x, SkScalar radius_y)
+  DlErodeImageFilter(DlScalar radius_x, DlScalar radius_y)
       : radius_x_(radius_x), radius_y_(radius_y) {}
   explicit DlErodeImageFilter(const DlErodeImageFilter* filter)
       : DlErodeImageFilter(filter->radius_x_, filter->radius_y_) {}
   explicit DlErodeImageFilter(const DlErodeImageFilter& filter)
       : DlErodeImageFilter(&filter) {}
 
-  static std::shared_ptr<DlImageFilter> Make(SkScalar radius_x,
-                                             SkScalar radius_y) {
-    if (SkScalarIsFinite(radius_x) && radius_x > SK_ScalarNearlyZero &&
-        SkScalarIsFinite(radius_y) && radius_y > SK_ScalarNearlyZero) {
+  static std::shared_ptr<DlImageFilter> Make(DlScalar radius_x,
+                                             DlScalar radius_y) {
+    if (DlScalars_AreFinite(radius_x, radius_y) &&
+        radius_x > kDlScalar_NearlyZero &&  //
+        radius_y > kDlScalar_NearlyZero) {
       return std::make_shared<DlErodeImageFilter>(radius_x, radius_y);
     }
     return nullptr;
@@ -382,28 +351,28 @@ class DlErodeImageFilter final : public DlImageFilter {
 
   bool modifies_transparent_black() const override { return false; }
 
-  SkRect* map_local_bounds(const SkRect& input_bounds,
-                           SkRect& output_bounds) const override {
-    output_bounds = input_bounds.makeInset(radius_x_, radius_y_);
+  DlFRect* map_local_bounds(const DlFRect& input_bounds,
+                           DlFRect& output_bounds) const override {
+    output_bounds = input_bounds.MakeInset(radius_x_, radius_y_);
     return &output_bounds;
   }
 
-  SkIRect* map_device_bounds(const SkIRect& input_bounds,
-                             const SkMatrix& ctm,
-                             SkIRect& output_bounds) const override {
+  DlIRect* map_device_bounds(const DlIRect& input_bounds,
+                             const DlTransform& ctm,
+                             DlIRect& output_bounds) const override {
     return inset_device_bounds(input_bounds, radius_x_, radius_y_, ctm,
                                output_bounds);
   }
 
-  SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
-                                   const SkMatrix& ctm,
-                                   SkIRect& input_bounds) const override {
+  DlIRect* get_input_device_bounds(const DlIRect& output_bounds,
+                                   const DlTransform& ctm,
+                                   DlIRect& input_bounds) const override {
     return outset_device_bounds(output_bounds, radius_x_, radius_y_, ctm,
                                 input_bounds);
   }
 
-  SkScalar radius_x() const { return radius_x_; }
-  SkScalar radius_y() const { return radius_y_; }
+  DlScalar radius_x() const { return radius_x_; }
+  DlScalar radius_y() const { return radius_y_; }
 
  protected:
   bool equals_(const DlImageFilter& other) const override {
@@ -413,22 +382,22 @@ class DlErodeImageFilter final : public DlImageFilter {
   }
 
  private:
-  SkScalar radius_x_;
-  SkScalar radius_y_;
+  DlScalar radius_x_;
+  DlScalar radius_y_;
 };
 
 class DlMatrixImageFilter final : public DlImageFilter {
  public:
-  DlMatrixImageFilter(const SkMatrix& matrix, DlImageSampling sampling)
+  DlMatrixImageFilter(const DlTransform& matrix, DlImageSampling sampling)
       : matrix_(matrix), sampling_(sampling) {}
   explicit DlMatrixImageFilter(const DlMatrixImageFilter* filter)
       : DlMatrixImageFilter(filter->matrix_, filter->sampling_) {}
   explicit DlMatrixImageFilter(const DlMatrixImageFilter& filter)
       : DlMatrixImageFilter(&filter) {}
 
-  static std::shared_ptr<DlImageFilter> Make(const SkMatrix& matrix,
+  static std::shared_ptr<DlImageFilter> Make(const DlTransform& matrix,
                                              DlImageSampling sampling) {
-    if (matrix.isFinite() && !matrix.isIdentity()) {
+    if (matrix.is_finite() && !matrix.is_identity()) {
       return std::make_shared<DlMatrixImageFilter>(matrix, sampling);
     }
     return nullptr;
@@ -441,49 +410,44 @@ class DlMatrixImageFilter final : public DlImageFilter {
   DlImageFilterType type() const override { return DlImageFilterType::kMatrix; }
   size_t size() const override { return sizeof(*this); }
 
-  const SkMatrix& matrix() const { return matrix_; }
+  const DlTransform& matrix() const { return matrix_; }
   DlImageSampling sampling() const { return sampling_; }
 
   const DlMatrixImageFilter* asMatrix() const override { return this; }
 
   bool modifies_transparent_black() const override { return false; }
 
-  SkRect* map_local_bounds(const SkRect& input_bounds,
-                           SkRect& output_bounds) const override {
-    output_bounds = matrix_.mapRect(input_bounds);
+  DlFRect* map_local_bounds(const DlFRect& input_bounds,
+                           DlFRect& output_bounds) const override {
+    output_bounds = matrix_.TransformRect(input_bounds);
     return &output_bounds;
   }
 
-  SkIRect* map_device_bounds(const SkIRect& input_bounds,
-                             const SkMatrix& ctm,
-                             SkIRect& output_bounds) const override {
-    SkMatrix matrix;
-    if (!ctm.invert(&matrix)) {
+  DlIRect* map_device_bounds(const DlIRect& input_bounds,
+                             const DlTransform& ctm,
+                             DlIRect& output_bounds) const override {
+    DlTransform inverse;
+    if (!ctm.Invert(&inverse)) {
       output_bounds = input_bounds;
       return nullptr;
     }
-    matrix.postConcat(matrix_);
-    matrix.postConcat(ctm);
-    SkRect device_rect;
-    matrix.mapRect(&device_rect, SkRect::Make(input_bounds));
-    output_bounds = device_rect.roundOut();
+    inverse.ConcatOuter(matrix_);
+    inverse.ConcatOuter(ctm);
+    output_bounds.SetRoundedOut(inverse.TransformRect(input_bounds));
     return &output_bounds;
   }
 
-  SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
-                                   const SkMatrix& ctm,
-                                   SkIRect& input_bounds) const override {
-    SkMatrix matrix = SkMatrix::Concat(ctm, matrix_);
-    SkMatrix inverse;
-    if (!matrix.invert(&inverse)) {
+  DlIRect* get_input_device_bounds(const DlIRect& output_bounds,
+                                   const DlTransform& ctm,
+                                   DlIRect& input_bounds) const override {
+    DlTransform matrix = DlTransform::MakeConcat(ctm, matrix_);
+    DlTransform inverse;
+    if (!matrix.Invert(&inverse)) {
       input_bounds = output_bounds;
       return nullptr;
     }
-    inverse.postConcat(ctm);
-    SkRect bounds;
-    bounds.set(output_bounds);
-    inverse.mapRect(&bounds);
-    input_bounds = bounds.roundOut();
+    inverse.ConcatOuter(ctm);
+    input_bounds.SetRoundedOut(inverse.TransformRect(output_bounds));
     return &input_bounds;
   }
 
@@ -495,7 +459,7 @@ class DlMatrixImageFilter final : public DlImageFilter {
   }
 
  private:
-  SkMatrix matrix_;
+  DlTransform matrix_;
   DlImageSampling sampling_;
 };
 
@@ -549,16 +513,16 @@ class DlComposeImageFilter final : public DlImageFilter {
     return false;
   }
 
-  SkRect* map_local_bounds(const SkRect& input_bounds,
-                           SkRect& output_bounds) const override;
+  DlFRect* map_local_bounds(const DlFRect& input_bounds,
+                           DlFRect& output_bounds) const override;
 
-  SkIRect* map_device_bounds(const SkIRect& input_bounds,
-                             const SkMatrix& ctm,
-                             SkIRect& output_bounds) const override;
+  DlIRect* map_device_bounds(const DlIRect& input_bounds,
+                             const DlTransform& ctm,
+                             DlIRect& output_bounds) const override;
 
-  SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
-                                   const SkMatrix& ctm,
-                                   SkIRect& input_bounds) const override;
+  DlIRect* get_input_device_bounds(const DlIRect& output_bounds,
+                                   const DlTransform& ctm,
+                                   DlIRect& input_bounds) const override;
 
   MatrixCapability matrix_capability() const override {
     return std::min(outer_->matrix_capability(), inner_->matrix_capability());
@@ -621,22 +585,22 @@ class DlColorFilterImageFilter final : public DlImageFilter {
     return false;
   }
 
-  SkRect* map_local_bounds(const SkRect& input_bounds,
-                           SkRect& output_bounds) const override {
+  DlFRect* map_local_bounds(const DlFRect& input_bounds,
+                           DlFRect& output_bounds) const override {
     output_bounds = input_bounds;
     return modifies_transparent_black() ? nullptr : &output_bounds;
   }
 
-  SkIRect* map_device_bounds(const SkIRect& input_bounds,
-                             const SkMatrix& ctm,
-                             SkIRect& output_bounds) const override {
+  DlIRect* map_device_bounds(const DlIRect& input_bounds,
+                             const DlTransform& ctm,
+                             DlIRect& output_bounds) const override {
     output_bounds = input_bounds;
     return modifies_transparent_black() ? nullptr : &output_bounds;
   }
 
-  SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
-                                   const SkMatrix& ctm,
-                                   SkIRect& input_bounds) const override {
+  DlIRect* get_input_device_bounds(const DlIRect& output_bounds,
+                                   const DlTransform& ctm,
+                                   DlIRect& input_bounds) const override {
     return map_device_bounds(output_bounds, ctm, input_bounds);
   }
 
@@ -645,7 +609,7 @@ class DlColorFilterImageFilter final : public DlImageFilter {
   }
 
   std::shared_ptr<DlImageFilter> makeWithLocalMatrix(
-      const SkMatrix& matrix) const override {
+      const DlTransform& matrix) const override {
     return shared();
   }
 
@@ -662,7 +626,7 @@ class DlColorFilterImageFilter final : public DlImageFilter {
 
 class DlLocalMatrixImageFilter final : public DlImageFilter {
  public:
-  explicit DlLocalMatrixImageFilter(const SkMatrix& matrix,
+  explicit DlLocalMatrixImageFilter(const DlTransform& matrix,
                                     std::shared_ptr<DlImageFilter> filter)
       : matrix_(matrix), image_filter_(filter) {}
   explicit DlLocalMatrixImageFilter(const DlLocalMatrixImageFilter* filter)
@@ -678,7 +642,7 @@ class DlLocalMatrixImageFilter final : public DlImageFilter {
   }
   size_t size() const override { return sizeof(*this); }
 
-  const SkMatrix& matrix() const { return matrix_; }
+  const DlTransform& matrix() const { return matrix_; }
 
   const std::shared_ptr<DlImageFilter> image_filter() const {
     return image_filter_;
@@ -695,32 +659,32 @@ class DlLocalMatrixImageFilter final : public DlImageFilter {
     return image_filter_->modifies_transparent_black();
   }
 
-  SkRect* map_local_bounds(const SkRect& input_bounds,
-                           SkRect& output_bounds) const override {
+  DlFRect* map_local_bounds(const DlFRect& input_bounds,
+                           DlFRect& output_bounds) const override {
     if (!image_filter_) {
       return nullptr;
     }
     return image_filter_->map_local_bounds(input_bounds, output_bounds);
   }
 
-  SkIRect* map_device_bounds(const SkIRect& input_bounds,
-                             const SkMatrix& ctm,
-                             SkIRect& output_bounds) const override {
+  DlIRect* map_device_bounds(const DlIRect& input_bounds,
+                             const DlTransform& ctm,
+                             DlIRect& output_bounds) const override {
     if (!image_filter_) {
       return nullptr;
     }
     return image_filter_->map_device_bounds(
-        input_bounds, SkMatrix::Concat(ctm, matrix_), output_bounds);
+        input_bounds, DlTransform::MakeConcat(ctm, matrix_), output_bounds);
   }
 
-  SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
-                                   const SkMatrix& ctm,
-                                   SkIRect& input_bounds) const override {
+  DlIRect* get_input_device_bounds(const DlIRect& output_bounds,
+                                   const DlTransform& ctm,
+                                   DlIRect& input_bounds) const override {
     if (!image_filter_) {
       return nullptr;
     }
     return image_filter_->get_input_device_bounds(
-        output_bounds, SkMatrix::Concat(ctm, matrix_), input_bounds);
+        output_bounds, DlTransform::MakeConcat(ctm, matrix_), input_bounds);
   }
 
  protected:
@@ -732,7 +696,7 @@ class DlLocalMatrixImageFilter final : public DlImageFilter {
   }
 
  private:
-  SkMatrix matrix_;
+  DlTransform matrix_;
   std::shared_ptr<DlImageFilter> image_filter_;
 };
 

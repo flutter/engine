@@ -4,6 +4,7 @@
 
 #include "flutter/flow/layers/image_filter_layer.h"
 
+#include "flutter/display_list/geometry/dl_rect.h"
 #include "flutter/display_list/utils/dl_comparable.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/raster_cache_util.h"
@@ -11,7 +12,7 @@
 namespace flutter {
 
 ImageFilterLayer::ImageFilterLayer(std::shared_ptr<const DlImageFilter> filter,
-                                   const SkPoint& offset)
+                                   const DlFPoint& offset)
     : CacheableContainerLayer(
           RasterCacheUtil::kMinimumRendersBeforeCachingFilterLayer),
       offset_(offset),
@@ -28,20 +29,21 @@ void ImageFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
     }
   }
 
-  context->PushTransform(SkMatrix::Translate(offset_.fX, offset_.fY));
+  context->PushTransform(DlTransform::MakeTranslate(offset_));
   if (context->has_raster_cache()) {
     context->WillPaintWithIntegralTransform();
   }
 
   if (filter_) {
-    auto filter = filter_->makeWithLocalMatrix(context->GetTransform3x3());
+    auto filter = filter_->makeWithLocalMatrix(context->GetTransform());
     if (filter) {
       // This transform will be applied to every child rect in the subtree
-      context->PushFilterBoundsAdjustment([filter](SkRect rect) {
-        SkIRect filter_out_bounds;
-        filter->map_device_bounds(rect.roundOut(), SkMatrix::I(),
+      context->PushFilterBoundsAdjustment([filter](const DlFRect& rect) {
+        DlIRect filter_input_bounds = DlIRect::MakeRoundedOut(rect);
+        DlIRect filter_out_bounds;
+        filter->map_device_bounds(filter_input_bounds, DlTransform(),
                                   filter_out_bounds);
-        return SkRect::Make(filter_out_bounds);
+        return DlFRect::MakeBounds(filter_out_bounds);
       });
     }
   }
@@ -57,14 +59,14 @@ void ImageFilterLayer::Preroll(PrerollContext* context) {
       Layer::AutoPrerollSaveLayerState::Create(context);
 
   AutoCache cache = AutoCache(layer_raster_cache_item_.get(), context,
-                              context->state_stack.transform_3x3());
+                              context->state_stack.transform());
 
-  SkRect child_bounds = SkRect::MakeEmpty();
+  DlFRect child_bounds;
 
   PrerollChildren(context, &child_bounds);
 
   if (!filter_) {
-    child_bounds.offset(offset_);
+    child_bounds.Offset(offset_);
     set_paint_bounds(child_bounds);
     return;
   }
@@ -76,12 +78,12 @@ void ImageFilterLayer::Preroll(PrerollContext* context) {
       (LayerStateStack::kCallerCanApplyOpacity |
        LayerStateStack::kCallerCanApplyColorFilter);
 
-  const SkIRect filter_in_bounds = child_bounds.roundOut();
-  SkIRect filter_out_bounds;
-  filter_->map_device_bounds(filter_in_bounds, SkMatrix::I(),
+  const DlIRect filter_in_bounds = DlIRect::MakeRoundedOut(child_bounds);
+  DlIRect filter_out_bounds;
+  filter_->map_device_bounds(filter_in_bounds, DlTransform(),
                              filter_out_bounds);
-  child_bounds.set(filter_out_bounds);
-  child_bounds.offset(offset_);
+  child_bounds.Set(filter_out_bounds);
+  child_bounds.Offset(offset_);
 
   set_paint_bounds(child_bounds);
 
@@ -90,7 +92,7 @@ void ImageFilterLayer::Preroll(PrerollContext* context) {
   layer_raster_cache_item_->MarkNotCacheChildren();
 
   transformed_filter_ =
-      filter_->makeWithLocalMatrix(context->state_stack.transform_3x3());
+      filter_->makeWithLocalMatrix(context->state_stack.transform());
   if (transformed_filter_) {
     layer_raster_cache_item_->MarkCacheChildren();
   }

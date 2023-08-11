@@ -33,7 +33,7 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
   int GetSubmittedFrameCount();
 
   // Returns the size of last submitted frame surface.
-  SkISize GetLastSubmittedFrameSize();
+  DlISize GetLastSubmittedFrameSize();
 
   // Returns the mutators stack for the given platform view.
   MutatorsStack GetStack(int64_t);
@@ -47,7 +47,7 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
 
   // |ExternalViewEmbedder|
   void BeginFrame(
-      SkISize frame_size,
+      DlISize frame_size,
       GrDirectContext* context,
       double device_pixel_ratio,
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
@@ -70,7 +70,7 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
   // |ExternalViewEmbedder|
   void PushFilterToVisitedPlatformViews(
       std::shared_ptr<const DlImageFilter> filter,
-      const SkRect& filter_rect) override;
+      const DlFRect& filter_rect) override;
 
   // |ExternalViewEmbedder|
   void SubmitFrame(GrDirectContext* context,
@@ -93,13 +93,13 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
   PostPrerollResult post_preroll_result_;
 
   bool support_thread_merging_;
-  SkISize frame_size_;
+  DlISize frame_size_;
   std::map<int64_t, std::unique_ptr<EmbedderViewSlice>> slices_;
   std::map<int64_t, MutatorsStack> mutators_stacks_;
   std::map<int64_t, EmbeddedViewParams> current_composition_params_;
   std::vector<int64_t> visited_platform_views_;
   std::atomic<int> submitted_frame_count_;
-  std::atomic<SkISize> last_submitted_frame_size_;
+  std::atomic<DlISize> last_submitted_frame_size_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTestExternalViewEmbedder);
 };

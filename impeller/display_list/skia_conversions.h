@@ -4,42 +4,47 @@
 
 #pragma once
 
+#include "flutter/display_list/dl_color.h"
+#include "flutter/display_list/geometry/dl_path.h"
+#include "flutter/display_list/geometry/dl_point.h"
+#include "flutter/display_list/geometry/dl_rect.h"
+#include "flutter/display_list/geometry/dl_round_rect.h"
+#include "flutter/display_list/geometry/dl_rstransform.h"
 #include "impeller/core/formats.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/rect.h"
-#include "third_party/skia/include/core/SkColor.h"
 #include "third_party/skia/include/core/SkColorType.h"
-#include "third_party/skia/include/core/SkPath.h"
-#include "third_party/skia/include/core/SkPoint.h"
-#include "third_party/skia/include/core/SkRRect.h"
-#include "third_party/skia/include/core/SkRSXform.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 
 namespace impeller {
 namespace skia_conversions {
 
-Rect ToRect(const SkRect& rect);
+Rect ToRect(const flutter::DlFRect& rect);
 
-std::optional<Rect> ToRect(const SkRect* rect);
+std::optional<Rect> ToRect(const flutter::DlFRect* rect);
 
-std::vector<Rect> ToRects(const SkRect tex[], int count);
+std::vector<Rect> ToRects(const flutter::DlFRect tex[], int count);
 
-std::vector<Point> ToPoints(const SkPoint points[], int count);
+std::vector<Point> ToPoints(const flutter::DlFPoint points[], int count);
 
 Point ToPoint(const SkPoint& point);
 
-Color ToColor(const SkColor& color);
+Point ToPoint(const flutter::DlFPoint& point);
 
-std::vector<Matrix> ToRSXForms(const SkRSXform xform[], int count);
+Color ToColor(const flutter::DlColor& color);
 
-PathBuilder::RoundingRadii ToRoundingRadii(const SkRRect& rrect);
+std::vector<Matrix> ToRSXForms(const flutter::DlRSTransform xform[], int count);
+
+PathBuilder::RoundingRadii ToRoundingRadii(const flutter::DlFRRect& rrect);
 
 Path ToPath(const SkPath& path);
 
-Path ToPath(const SkRRect& rrect);
+Path ToPath(const flutter::DlPath& path);
+
+Path ToPath(const flutter::DlFRRect& rrect);
 
 Path PathDataFromTextBlob(const sk_sp<SkTextBlob>& blob);
 

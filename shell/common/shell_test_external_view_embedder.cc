@@ -24,7 +24,7 @@ int ShellTestExternalViewEmbedder::GetSubmittedFrameCount() {
   return submitted_frame_count_;
 }
 
-SkISize ShellTestExternalViewEmbedder::GetLastSubmittedFrameSize() {
+DlISize ShellTestExternalViewEmbedder::GetLastSubmittedFrameSize() {
   return last_submitted_frame_size_;
 }
 
@@ -41,7 +41,7 @@ void ShellTestExternalViewEmbedder::CancelFrame() {}
 
 // |ExternalViewEmbedder|
 void ShellTestExternalViewEmbedder::BeginFrame(
-    SkISize frame_size,
+    DlISize frame_size,
     GrDirectContext* context,
     double device_pixel_ratio,
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
@@ -54,7 +54,7 @@ void ShellTestExternalViewEmbedder::BeginFrame(
 void ShellTestExternalViewEmbedder::PrerollCompositeEmbeddedView(
     int64_t view_id,
     std::unique_ptr<EmbeddedViewParams> params) {
-  SkRect view_bounds = SkRect::Make(frame_size_);
+  DlFRect view_bounds = DlFRect::MakeSize(frame_size_);
   auto view = std::make_unique<DisplayListEmbedderViewSlice>(view_bounds);
   slices_.insert_or_assign(view_id, std::move(view));
 }
@@ -74,7 +74,7 @@ void ShellTestExternalViewEmbedder::PushVisitedPlatformView(int64_t view_id) {
 // |ExternalViewEmbedder|
 void ShellTestExternalViewEmbedder::PushFilterToVisitedPlatformViews(
     std::shared_ptr<const DlImageFilter> filter,
-    const SkRect& filter_rect) {
+    const DlFRect& filter_rect) {
   for (int64_t id : visited_platform_views_) {
     EmbeddedViewParams params = current_composition_params_[id];
     params.PushImageFilter(filter, filter_rect);
@@ -98,10 +98,10 @@ void ShellTestExternalViewEmbedder::SubmitFrame(
   }
   frame->Submit();
   if (frame->SkiaSurface()) {
-    last_submitted_frame_size_ = SkISize::Make(frame->SkiaSurface()->width(),
-                                               frame->SkiaSurface()->height());
+    last_submitted_frame_size_ = DlISize(frame->SkiaSurface()->width(),
+                                         frame->SkiaSurface()->height());
   } else {
-    last_submitted_frame_size_ = SkISize::MakeEmpty();
+    last_submitted_frame_size_ = DlISize();
   }
   submitted_frame_count_++;
 }

@@ -26,7 +26,7 @@ class MockViewEmbedder : public ExternalViewEmbedder {
 
   // |ExternalViewEmbedder|
   void BeginFrame(
-      SkISize frame_size,
+      DlISize frame_size,
       GrDirectContext* context,
       double device_pixel_ratio,
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;

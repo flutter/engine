@@ -63,7 +63,7 @@ DisplayListMetalComplexityCalculator::MetalHelper::BatchedComplexity() {
 }
 
 void DisplayListMetalComplexityCalculator::MetalHelper::saveLayer(
-    const SkRect* bounds,
+    const DlFRect* bounds,
     const SaveLayerOptions options,
     const DlImageFilter* backdrop) {
   if (IsComplex()) {
@@ -79,8 +79,8 @@ void DisplayListMetalComplexityCalculator::MetalHelper::saveLayer(
 }
 
 void DisplayListMetalComplexityCalculator::MetalHelper::drawLine(
-    const SkPoint& p0,
-    const SkPoint& p1) {
+    const DlFPoint& p0,
+    const DlFPoint& p1) {
   if (IsComplex()) {
     return;
   }
@@ -100,7 +100,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawLine(
 
   // Use an approximation for the distance to avoid floating point or
   // sqrt() calls.
-  SkScalar distance = abs(p0.x() - p1.x()) + abs(p0.y() - p1.y());
+  DlScalar distance = abs(p0.x() - p1.x()) + abs(p0.y() - p1.y());
 
   // The baseline complexity is for a hairline stroke with no AA.
   // m = 1/45
@@ -112,7 +112,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawLine(
 }
 
 void DisplayListMetalComplexityCalculator::MetalHelper::drawRect(
-    const SkRect& rect) {
+    const DlFRect& rect) {
   if (IsComplex()) {
     return;
   }
@@ -155,7 +155,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawRect(
 }
 
 void DisplayListMetalComplexityCalculator::MetalHelper::drawOval(
-    const SkRect& bounds) {
+    const DlFRect& bounds) {
   if (IsComplex()) {
     return;
   }
@@ -194,8 +194,8 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawOval(
 }
 
 void DisplayListMetalComplexityCalculator::MetalHelper::drawCircle(
-    const SkPoint& center,
-    SkScalar radius) {
+    const DlFPoint& center,
+    DlScalar radius) {
   if (IsComplex()) {
     return;
   }
@@ -232,7 +232,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawCircle(
 }
 
 void DisplayListMetalComplexityCalculator::MetalHelper::drawRRect(
-    const SkRRect& rrect) {
+    const DlFRRect& rrect) {
   if (IsComplex()) {
     return;
   }
@@ -245,7 +245,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawRRect(
   // Expensive: All filled style, symmetric w/AA.
   bool expensive =
       (DrawStyle() == DlDrawStyle::kFill) ||
-      ((rrect.getType() == SkRRect::Type::kSimple_Type) && IsAntiAliased());
+      ((rrect.type() == DlFRRect::Type::kSimple) && IsAntiAliased());
 
   unsigned int complexity;
 
@@ -268,8 +268,8 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawRRect(
 }
 
 void DisplayListMetalComplexityCalculator::MetalHelper::drawDRRect(
-    const SkRRect& outer,
-    const SkRRect& inner) {
+    const DlFRRect& outer,
+    const DlFRRect& inner) {
   if (IsComplex()) {
     return;
   }
@@ -294,7 +294,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawDRRect(
   // currently use it anywhere in Flutter.
   if (DrawStyle() == DlDrawStyle::kFill) {
     unsigned int area = outer.width() * outer.height();
-    if (outer.getType() == SkRRect::Type::kComplex_Type) {
+    if (outer.type() == DlFRRect::Type::kComplex) {
       // m = 1/1000
       // c = 1
       complexity = (area + 1000) / 10;
@@ -319,7 +319,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawDRRect(
 }
 
 void DisplayListMetalComplexityCalculator::MetalHelper::drawPath(
-    const SkPath& path) {
+    const DlPath& path) {
   if (IsComplex()) {
     return;
   }
@@ -352,9 +352,9 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawPath(
 }
 
 void DisplayListMetalComplexityCalculator::MetalHelper::drawArc(
-    const SkRect& oval_bounds,
-    SkScalar start_degrees,
-    SkScalar sweep_degrees,
+    const DlFRect& oval_bounds,
+    DlScalar start_degrees,
+    DlScalar sweep_degrees,
     bool use_center) {
   if (IsComplex()) {
     return;
@@ -402,7 +402,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawArc(
 void DisplayListMetalComplexityCalculator::MetalHelper::drawPoints(
     DlCanvas::PointMode mode,
     uint32_t count,
-    const SkPoint points[]) {
+    const DlFPoint points[]) {
   if (IsComplex()) {
     return;
   }
@@ -456,7 +456,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawVertices(
 
 void DisplayListMetalComplexityCalculator::MetalHelper::drawImage(
     const sk_sp<DlImage> image,
-    const SkPoint point,
+    const DlFPoint point,
     DlImageSampling sampling,
     bool render_with_attributes) {
   if (IsComplex()) {
@@ -469,7 +469,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawImage(
   // If we don't need to upload, then the cost scales linearly with the
   // area of the image. If it needs uploading, the cost scales linearly
   // with the square of the area (!!!).
-  SkISize dimensions = image->dimensions();
+  DlISize dimensions = image->dimensions();
   unsigned int area = dimensions.width() * dimensions.height();
 
   // m = 1/17000
@@ -490,7 +490,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawImage(
 }
 
 void DisplayListMetalComplexityCalculator::MetalHelper::ImageRect(
-    const SkISize& size,
+    const DlISize& size,
     bool texture_backed,
     bool render_with_attributes,
     bool enforce_src_edges) {
@@ -533,8 +533,8 @@ void DisplayListMetalComplexityCalculator::MetalHelper::ImageRect(
 
 void DisplayListMetalComplexityCalculator::MetalHelper::drawImageNine(
     const sk_sp<DlImage> image,
-    const SkIRect& center,
-    const SkRect& dst,
+    const DlIRect& center,
+    const DlFRect& dst,
     DlFilterMode filter,
     bool render_with_attributes) {
   if (IsComplex()) {
@@ -542,7 +542,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawImageNine(
   }
   // Whether uploading or not, the performance is comparable across all
   // variations.
-  SkISize dimensions = image->dimensions();
+  DlISize dimensions = image->dimensions();
   unsigned int area = dimensions.width() * dimensions.height();
 
   // m = 1/8000
@@ -553,7 +553,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawImageNine(
 
 void DisplayListMetalComplexityCalculator::MetalHelper::drawDisplayList(
     const sk_sp<DisplayList> display_list,
-    SkScalar opacity) {
+    DlScalar opacity) {
   if (IsComplex()) {
     return;
   }
@@ -567,8 +567,8 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawDisplayList(
 
 void DisplayListMetalComplexityCalculator::MetalHelper::drawTextBlob(
     const sk_sp<SkTextBlob> blob,
-    SkScalar x,
-    SkScalar y) {
+    DlScalar x,
+    DlScalar y) {
   if (IsComplex()) {
     return;
   }
@@ -582,11 +582,11 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawTextBlob(
 }
 
 void DisplayListMetalComplexityCalculator::MetalHelper::drawShadow(
-    const SkPath& path,
+    const DlPath& path,
     const DlColor color,
-    const SkScalar elevation,
+    const DlScalar elevation,
     bool transparent_occluder,
-    SkScalar dpr) {
+    DlScalar dpr) {
   if (IsComplex()) {
     return;
   }

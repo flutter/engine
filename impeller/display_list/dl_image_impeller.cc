@@ -4,6 +4,7 @@
 
 #include "impeller/display_list/dl_image_impeller.h"
 
+#include "flutter/display_list/geometry/dl_size.h"
 #include "impeller/aiks/aiks_context.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 
@@ -79,9 +80,9 @@ bool DlImageImpeller::isUIThreadSafe() const {
 }
 
 // |DlImage|
-SkISize DlImageImpeller::dimensions() const {
+flutter::DlISize DlImageImpeller::dimensions() const {
   const auto size = texture_ ? texture_->GetSize() : ISize{};
-  return SkISize::Make(size.width, size.height);
+  return flutter::DlISize(size.width, size.height);
 }
 
 // |DlImage|

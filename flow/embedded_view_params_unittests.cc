@@ -11,10 +11,10 @@ namespace testing {
 
 TEST(EmbeddedViewParams, GetBoundingRectAfterMutationsWithNoMutations) {
   MutatorsStack stack;
-  SkMatrix matrix;
+  DlTransform matrix;
 
-  EmbeddedViewParams params(matrix, SkSize::Make(1, 1), stack);
-  const SkRect& rect = params.finalBoundingRect();
+  EmbeddedViewParams params(matrix, DlFSize(1, 1), stack);
+  const DlFRect& rect = params.finalBoundingRect();
   ASSERT_TRUE(SkScalarNearlyEqual(rect.x(), 0));
   ASSERT_TRUE(SkScalarNearlyEqual(rect.y(), 0));
   ASSERT_TRUE(SkScalarNearlyEqual(rect.width(), 1));
@@ -23,11 +23,11 @@ TEST(EmbeddedViewParams, GetBoundingRectAfterMutationsWithNoMutations) {
 
 TEST(EmbeddedViewParams, GetBoundingRectAfterMutationsWithScale) {
   MutatorsStack stack;
-  SkMatrix matrix = SkMatrix::Scale(2, 2);
+  DlTransform matrix = DlTransform::MakeScale(2, 2);
   stack.PushTransform(matrix);
 
-  EmbeddedViewParams params(matrix, SkSize::Make(1, 1), stack);
-  const SkRect& rect = params.finalBoundingRect();
+  EmbeddedViewParams params(matrix, DlFSize(1, 1), stack);
+  const DlFRect& rect = params.finalBoundingRect();
   ASSERT_TRUE(SkScalarNearlyEqual(rect.x(), 0));
   ASSERT_TRUE(SkScalarNearlyEqual(rect.y(), 0));
   ASSERT_TRUE(SkScalarNearlyEqual(rect.width(), 2));
@@ -36,11 +36,11 @@ TEST(EmbeddedViewParams, GetBoundingRectAfterMutationsWithScale) {
 
 TEST(EmbeddedViewParams, GetBoundingRectAfterMutationsWithTranslate) {
   MutatorsStack stack;
-  SkMatrix matrix = SkMatrix::Translate(1, 1);
+  DlTransform matrix = DlTransform::MakeTranslate(1, 1);
   stack.PushTransform(matrix);
 
-  EmbeddedViewParams params(matrix, SkSize::Make(1, 1), stack);
-  const SkRect& rect = params.finalBoundingRect();
+  EmbeddedViewParams params(matrix, DlFSize(1, 1), stack);
+  const DlFRect& rect = params.finalBoundingRect();
   ASSERT_TRUE(SkScalarNearlyEqual(rect.x(), 1));
   ASSERT_TRUE(SkScalarNearlyEqual(rect.y(), 1));
   ASSERT_TRUE(SkScalarNearlyEqual(rect.width(), 1));
@@ -49,12 +49,12 @@ TEST(EmbeddedViewParams, GetBoundingRectAfterMutationsWithTranslate) {
 
 TEST(EmbeddedViewParams, GetBoundingRectAfterMutationsWithRotation90) {
   MutatorsStack stack;
-  SkMatrix matrix;
-  matrix.setRotate(90);
+  DlTransform matrix;
+  matrix.SetRotate(DlDegrees(90));
   stack.PushTransform(matrix);
 
-  EmbeddedViewParams params(matrix, SkSize::Make(1, 1), stack);
-  const SkRect& rect = params.finalBoundingRect();
+  EmbeddedViewParams params(matrix, DlFSize(1, 1), stack);
+  const DlFRect& rect = params.finalBoundingRect();
 
   ASSERT_TRUE(SkScalarNearlyEqual(rect.x(), -1));
   ASSERT_TRUE(SkScalarNearlyEqual(rect.y(), 0));
@@ -64,12 +64,12 @@ TEST(EmbeddedViewParams, GetBoundingRectAfterMutationsWithRotation90) {
 
 TEST(EmbeddedViewParams, GetBoundingRectAfterMutationsWithRotation45) {
   MutatorsStack stack;
-  SkMatrix matrix;
-  matrix.setRotate(45);
+  DlTransform matrix;
+  matrix.SetRotate(DlDegrees(45));
   stack.PushTransform(matrix);
 
-  EmbeddedViewParams params(matrix, SkSize::Make(1, 1), stack);
-  const SkRect& rect = params.finalBoundingRect();
+  EmbeddedViewParams params(matrix, DlFSize(1, 1), stack);
+  const DlFRect& rect = params.finalBoundingRect();
   ASSERT_TRUE(SkScalarNearlyEqual(rect.x(), -sqrt(2) / 2));
   ASSERT_TRUE(SkScalarNearlyEqual(rect.y(), 0));
   ASSERT_TRUE(SkScalarNearlyEqual(rect.width(), sqrt(2)));
@@ -78,15 +78,15 @@ TEST(EmbeddedViewParams, GetBoundingRectAfterMutationsWithRotation45) {
 
 TEST(EmbeddedViewParams,
      GetBoundingRectAfterMutationsWithTranslateScaleAndRotation) {
-  SkMatrix matrix = SkMatrix::Translate(2, 2);
-  matrix.preScale(3, 3);
-  matrix.preRotate(90);
+  DlTransform matrix = DlTransform::MakeTranslate(2, 2);
+  matrix.ScaleInner(3, 3);
+  matrix.RotateInner(DlDegrees(90));
 
   MutatorsStack stack;
   stack.PushTransform(matrix);
 
-  EmbeddedViewParams params(matrix, SkSize::Make(1, 1), stack);
-  const SkRect& rect = params.finalBoundingRect();
+  EmbeddedViewParams params(matrix, DlFSize(1, 1), stack);
+  const DlFRect& rect = params.finalBoundingRect();
   ASSERT_TRUE(SkScalarNearlyEqual(rect.x(), -1));
   ASSERT_TRUE(SkScalarNearlyEqual(rect.y(), 2));
   ASSERT_TRUE(SkScalarNearlyEqual(rect.width(), 3));

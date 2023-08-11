@@ -95,7 +95,10 @@ MultiFrameCodec::State::GetNextFrameImage(
       // starting point.
       bitmap.writePixels(lastRequiredFrame_->pixmap());
       if (restoreBGColorRect_.has_value()) {
-        bitmap.erase(SK_ColorTRANSPARENT, restoreBGColorRect_.value());
+        SkIRect sk_restore_rect = SkIRect::MakeLTRB(
+            restoreBGColorRect_->left(), restoreBGColorRect_->top(),
+            restoreBGColorRect_->right(), restoreBGColorRect_->bottom());
+        bitmap.erase(SK_ColorTRANSPARENT, sk_restore_rect);
       }
     }
   }

@@ -14,21 +14,21 @@
 
 namespace flutter {
 
-static SkISize TransformedSurfaceSize(const SkISize& size,
-                                      const SkMatrix& transformation) {
-  const auto source_rect = SkRect::MakeWH(size.width(), size.height());
-  const auto transformed_rect = transformation.mapRect(source_rect);
-  return SkISize::Make(transformed_rect.width(), transformed_rect.height());
+static DlISize TransformedSurfaceSize(const DlISize& size,
+                                      const DlTransform& transformation) {
+  const auto source_rect = DlFRect::MakeSize(size);
+  const auto transformed_rect = transformation.TransformRect(source_rect);
+  return DlISize(transformed_rect.width(), transformed_rect.height());
 }
 
 EmbedderExternalView::EmbedderExternalView(
-    const SkISize& frame_size,
-    const SkMatrix& surface_transformation)
+    const DlISize& frame_size,
+    const DlTransform& surface_transformation)
     : EmbedderExternalView(frame_size, surface_transformation, {}, nullptr) {}
 
 EmbedderExternalView::EmbedderExternalView(
-    const SkISize& frame_size,
-    const SkMatrix& surface_transformation,
+    const DlISize& frame_size,
+    const DlTransform& surface_transformation,
     ViewIdentifier view_identifier,
     std::unique_ptr<EmbeddedViewParams> params)
     : render_surface_size_(
@@ -37,7 +37,7 @@ EmbedderExternalView::EmbedderExternalView(
       view_identifier_(view_identifier),
       embedded_view_params_(std::move(params)),
       slice_(std::make_unique<DisplayListEmbedderViewSlice>(
-          SkRect::Make(frame_size))) {}
+          DlFRect::MakeSize(frame_size))) {}
 
 EmbedderExternalView::~EmbedderExternalView() = default;
 
@@ -50,7 +50,7 @@ DlCanvas* EmbedderExternalView::GetCanvas() {
   return slice_->canvas();
 }
 
-SkISize EmbedderExternalView::GetRenderSurfaceSize() const {
+DlISize EmbedderExternalView::GetRenderSurfaceSize() const {
   return render_surface_size_;
 }
 
@@ -95,7 +95,7 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target) {
     auto aiks_context = render_target.GetAiksContext();
 
     auto dl_builder = DisplayListBuilder();
-    dl_builder.SetTransform(&surface_transformation_);
+    dl_builder.SetTransform(surface_transformation_);
     slice_->render_into(&dl_builder);
 
     auto dispatcher = impeller::DlDispatcher();

@@ -34,7 +34,6 @@
 #include "flutter/shell/common/snapshot_surface_producer.h"
 #include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkImage.h"
-#include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
@@ -328,7 +327,7 @@ class Rasterizer final : public SnapshotDelegate,
     //--------------------------------------------------------------------------
     /// The size of the screenshot in texels.
     ///
-    SkISize frame_size = SkISize::MakeEmpty();
+    DlISize frame_size;
 
     //--------------------------------------------------------------------------
     /// Characterization of the format of the data in `data`.
@@ -348,7 +347,7 @@ class Rasterizer final : public SnapshotDelegate,
     /// @param[in]  p_format  The screenshot format.
     ///
     Screenshot(sk_sp<SkData> p_data,
-               SkISize p_size,
+               DlISize p_size,
                const std::string& p_format);
 
     //--------------------------------------------------------------------------
@@ -507,7 +506,7 @@ class Rasterizer final : public SnapshotDelegate,
 
   // |SnapshotDelegate|
   sk_sp<DlImage> MakeRasterSnapshot(sk_sp<DisplayList> display_list,
-                                    SkISize picture_size) override;
+                                    DlISize picture_size) override;
 
   // |SnapshotDelegate|
   sk_sp<SkImage> ConvertToRasterImage(sk_sp<SkImage> image) override;

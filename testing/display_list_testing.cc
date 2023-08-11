@@ -125,72 +125,38 @@ std::ostream& operator<<(std::ostream& os, const SaveLayerOptions& options) {
             << ")";
 }
 
-static std::ostream& operator<<(std::ostream& os, const SkPoint& point) {
-  return os << "SkPoint(" << point.fX << ", " << point.fY << ")";
-}
-
-static std::ostream& operator<<(std::ostream& os, const SkIRect& rect) {
-  return os << "SkIRect("
-            << "left: " << rect.fLeft << ", "
-            << "top: " << rect.fTop << ", "
-            << "right: " << rect.fRight << ", "
-            << "bottom: " << rect.fBottom
-            << ")";
-}
-
-static std::ostream& operator<<(std::ostream& os, const SkRect& rect) {
-  return os << "SkRect("
-            << "left: " << rect.fLeft << ", "
-            << "top: " << rect.fTop << ", "
-            << "right: " << rect.fRight << ", "
-            << "bottom: " << rect.fBottom
-            << ")";
-}
-
-static std::ostream& operator<<(std::ostream& os, const SkRect* rect) {
+static std::ostream& operator<<(std::ostream& os, const DlFRect* rect) {
   return rect ? (os << "&" << *rect) : os << "no rect";
 }
 
-static std::ostream& operator<<(std::ostream& os, const SkRRect& rrect) {
-  return os << "SkRRect("
+static std::ostream& operator<<(std::ostream& os, const DlFRRect& rrect) {
+  return os << "DlFRRect("
             << rrect.rect() << ", "
-            << "ul: (" << rrect.radii(SkRRect::kUpperLeft_Corner).fX << ", "
-                       << rrect.radii(SkRRect::kUpperLeft_Corner).fY << "), "
-            << "ur: (" << rrect.radii(SkRRect::kUpperRight_Corner).fX << ", "
-                       << rrect.radii(SkRRect::kUpperRight_Corner).fY << "), "
-            << "lr: (" << rrect.radii(SkRRect::kLowerRight_Corner).fX << ", "
-                       << rrect.radii(SkRRect::kLowerRight_Corner).fY << "), "
-            << "ll: (" << rrect.radii(SkRRect::kLowerLeft_Corner).fX << ", "
-                       << rrect.radii(SkRRect::kLowerLeft_Corner).fY << ")"
+            << "ul: " << rrect.upper_left_radii() << ", "
+            << "ur: " << rrect.upper_right_radii() << ", "
+            << "lr: " << rrect.lower_right_radii() << ", "
+            << "ll: " << rrect.lower_left_radii()
             << ")";
 }
 
-static std::ostream& operator<<(std::ostream& os, const SkPath& path) {
-  return os << "SkPath("
-            << "bounds: " << path.getBounds()
+static std::ostream& operator<<(std::ostream& os, const DlPath& path) {
+  return os << "DlPath("
+            << "bounds: " << path.Bounds()
             // should iterate over verbs and coordinates...
             << ")";
 }
 
-static std::ostream& operator<<(std::ostream& os, const SkMatrix& matrix) {
-  return os << "SkMatrix("
-            << "[" << matrix[0] << ", " << matrix[1] << ", " << matrix[2] << "], "
-            << "[" << matrix[3] << ", " << matrix[4] << ", " << matrix[5] << "], "
-            << "[" << matrix[6] << ", " << matrix[7] << ", " << matrix[8] << "]"
-            << ")";
-}
-
-static std::ostream& operator<<(std::ostream& os, const SkMatrix* matrix) {
+static std::ostream& operator<<(std::ostream& os, const DlTransform* matrix) {
   if (matrix) return os << "&" << *matrix;
   return os << "no matrix";
 }
 
-static std::ostream& operator<<(std::ostream& os, const SkRSXform& xform) {
-  return os << "SkRSXform("
-            << "scos: " << xform.fSCos << ", "
-            << "ssin: " << xform.fSSin << ", "
-            << "tx: " << xform.fTx << ", "
-            << "ty: " << xform.fTy << ")";
+static std::ostream& operator<<(std::ostream& os, const DlRSTransform& xform) {
+  return os << "DlRSTransform("
+            << "scos: " << xform.scaled_cos() << ", "
+            << "ssin: " << xform.scaled_sin() << ", "
+            << "tx: " << xform.translate_x() << ", "
+            << "ty: " << xform.translate_y() << ")";
 }
 
 std::ostream& operator<<(std::ostream& os, const DlCanvas::ClipOp& op) {
@@ -284,7 +250,8 @@ static std::ostream& operator<<(std::ostream& os, const SkTextBlob* blob) {
   if (blob == nullptr) {
     return os << "no text";
   }
-  return os << "&SkTextBlob(ID: " << blob->uniqueID() << ", " << blob->bounds() << ")";
+  return os << "&SkTextBlob(ID: " << blob->uniqueID() << ", "
+                                  << DlFRect::MakeBounds(blob->bounds()) << ")";
 }
 
 std::ostream& operator<<(std::ostream& os, const DlVertexMode& mode) {
@@ -360,10 +327,10 @@ void DisplayListStreamDispatcher::setDrawStyle(DlDrawStyle style) {
 void DisplayListStreamDispatcher::setColor(DlColor color) {
   startl() << "setColor(" << color << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::setStrokeWidth(SkScalar width) {
+void DisplayListStreamDispatcher::setStrokeWidth(DlScalar width) {
   startl() << "setStrokeWidth(" << width << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::setStrokeMiter(SkScalar limit) {
+void DisplayListStreamDispatcher::setStrokeMiter(DlScalar limit) {
   startl() << "setStrokeMiter(" << limit << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::setStrokeCap(DlStrokeCap cap) {
@@ -623,7 +590,7 @@ void DisplayListStreamDispatcher::save() {
   startl() << "{" << std::endl;
   indent();
 }
-void DisplayListStreamDispatcher::saveLayer(const SkRect* bounds,
+void DisplayListStreamDispatcher::saveLayer(const DlFRect* bounds,
                                             const SaveLayerOptions options,
                                             const DlImageFilter* backdrop) {
   startl() << "saveLayer(" << bounds << ", " << options;
@@ -646,21 +613,21 @@ void DisplayListStreamDispatcher::restore() {
   startl() << "restore();" << std::endl;
 }
 
-void DisplayListStreamDispatcher::translate(SkScalar tx, SkScalar ty) {
+void DisplayListStreamDispatcher::translate(DlScalar tx, DlScalar ty) {
   startl() << "translate(" << tx << ", " << ty << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::scale(SkScalar sx, SkScalar sy) {
+void DisplayListStreamDispatcher::scale(DlScalar sx, DlScalar sy) {
   startl() << "scale(" << sx << ", " << sy << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::rotate(SkScalar degrees) {
+void DisplayListStreamDispatcher::rotate(DlScalar degrees) {
   startl() << "rotate(" << degrees << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::skew(SkScalar sx, SkScalar sy) {
+void DisplayListStreamDispatcher::skew(DlScalar sx, DlScalar sy) {
   startl() << "skew(" << sx << ", " << sy << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::transform2DAffine(
-    SkScalar mxx, SkScalar mxy, SkScalar mxt,
-    SkScalar myx, SkScalar myy, SkScalar myt) {
+    DlScalar mxx, DlScalar mxy, DlScalar mxt,
+    DlScalar myx, DlScalar myy, DlScalar myt) {
   startl() << "transform2DAffine(" << std::endl;
   indent();
   {
@@ -675,10 +642,10 @@ void DisplayListStreamDispatcher::transform2DAffine(
   startl() << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::transformFullPerspective(
-    SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
-    SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
-    SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
-    SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) {
+    DlScalar mxx, DlScalar mxy, DlScalar mxz, DlScalar mxt,
+    DlScalar myx, DlScalar myy, DlScalar myz, DlScalar myt,
+    DlScalar mzx, DlScalar mzy, DlScalar mzz, DlScalar mzt,
+    DlScalar mwx, DlScalar mwy, DlScalar mwz, DlScalar mwt) {
   startl() << "transformFullPerspective(" << std::endl;
   indent();
   {
@@ -702,7 +669,7 @@ void DisplayListStreamDispatcher::transformReset() {
   startl() << "transformReset();" << std::endl;
 }
 
-void DisplayListStreamDispatcher::clipRect(const SkRect& rect, ClipOp clip_op,
+void DisplayListStreamDispatcher::clipRect(const DlFRect& rect, ClipOp clip_op,
                                            bool is_aa) {
   startl() << "clipRect("
            << rect << ", "
@@ -710,7 +677,7 @@ void DisplayListStreamDispatcher::clipRect(const SkRect& rect, ClipOp clip_op,
            << "isaa: " << is_aa
            << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::clipRRect(const SkRRect& rrect,
+void DisplayListStreamDispatcher::clipRRect(const DlFRRect& rrect,
                          ClipOp clip_op,
                          bool is_aa) {
   startl() << "clipRRect("
@@ -719,7 +686,7 @@ void DisplayListStreamDispatcher::clipRRect(const SkRRect& rrect,
            << "isaa: " << is_aa
            << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::clipPath(const SkPath& path, ClipOp clip_op,
+void DisplayListStreamDispatcher::clipPath(const DlPath& path, ClipOp clip_op,
                                            bool is_aa) {
   startl() << "clipPath("
            << path << ", "
@@ -737,34 +704,34 @@ void DisplayListStreamDispatcher::drawColor(DlColor color, DlBlendMode mode) {
 void DisplayListStreamDispatcher::drawPaint() {
   startl() << "drawPaint();" << std::endl;
 }
-void DisplayListStreamDispatcher::drawLine(const SkPoint& p0,
-                                           const SkPoint& p1) {
+void DisplayListStreamDispatcher::drawLine(const DlFPoint& p0,
+                                           const DlFPoint& p1) {
   startl() << "drawLine(" << p0 << ", " << p1 << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::drawRect(const SkRect& rect) {
+void DisplayListStreamDispatcher::drawRect(const DlFRect& rect) {
   startl() << "drawRect(" << rect << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::drawOval(const SkRect& bounds) {
+void DisplayListStreamDispatcher::drawOval(const DlFRect& bounds) {
   startl() << "drawOval(" << bounds << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::drawCircle(const SkPoint& center,
-                                             SkScalar radius) {
+void DisplayListStreamDispatcher::drawCircle(const DlFPoint& center,
+                                             DlScalar radius) {
   startl() << "drawCircle(" << center << ", " << radius << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::drawRRect(const SkRRect& rrect) {
+void DisplayListStreamDispatcher::drawRRect(const DlFRRect& rrect) {
   startl() << "drawRRect(" << rrect << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::drawDRRect(const SkRRect& outer,
-                                             const SkRRect& inner) {
+void DisplayListStreamDispatcher::drawDRRect(const DlFRRect& outer,
+                                             const DlFRRect& inner) {
   startl() << "drawDRRect(outer: " << outer << ", " << std::endl;
   startl() << "           inner: " << inner << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::drawPath(const SkPath& path) {
+void DisplayListStreamDispatcher::drawPath(const DlPath& path) {
   startl() << "drawPath(" << path << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::drawArc(const SkRect& oval_bounds,
-                                          SkScalar start_degrees,
-                                          SkScalar sweep_degrees,
+void DisplayListStreamDispatcher::drawArc(const DlFRect& oval_bounds,
+                                          DlScalar start_degrees,
+                                          DlScalar sweep_degrees,
                                           bool use_center) {
   startl() << "drawArc("
            << oval_bounds << ", "
@@ -775,7 +742,7 @@ void DisplayListStreamDispatcher::drawArc(const SkRect& oval_bounds,
 }
 void DisplayListStreamDispatcher::drawPoints(PointMode mode,
                                              uint32_t count,
-                                             const SkPoint points[]) {
+                                             const DlFPoint points[]) {
   startl() << "drawPoints(" << mode << ", ";
                           out_array("points", count, points)
            << ");" << std::endl;
@@ -792,7 +759,7 @@ void DisplayListStreamDispatcher::drawVertices(const DlVertices* vertices,
                    << "), " << mode << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::drawImage(const sk_sp<DlImage> image,
-                                            const SkPoint point,
+                                            const DlFPoint point,
                                             DlImageSampling sampling,
                                             bool render_with_attributes) {
   startl() << "drawImage(" << image.get() << "," << std::endl;
@@ -802,8 +769,8 @@ void DisplayListStreamDispatcher::drawImage(const sk_sp<DlImage> image,
            << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::drawImageRect(const sk_sp<DlImage> image,
-                                                const SkRect& src,
-                                                const SkRect& dst,
+                                                const DlFRect& src,
+                                                const DlFRect& dst,
                                                 DlImageSampling sampling,
                                                 bool render_with_attributes,
                                                 SrcRectConstraint constraint) {
@@ -816,8 +783,8 @@ void DisplayListStreamDispatcher::drawImageRect(const sk_sp<DlImage> image,
            << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::drawImageNine(const sk_sp<DlImage> image,
-                                                const SkIRect& center,
-                                                const SkRect& dst,
+                                                const DlIRect& center,
+                                                const DlFRect& dst,
                                                 DlFilterMode filter,
                                                 bool render_with_attributes) {
   startl() << "drawImageNine(" << image.get() << "," << std::endl;
@@ -828,13 +795,13 @@ void DisplayListStreamDispatcher::drawImageNine(const sk_sp<DlImage> image,
            << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::drawAtlas(const sk_sp<DlImage> atlas,
-                                            const SkRSXform xform[],
-                                            const SkRect tex[],
+                                            const DlRSTransform xform[],
+                                            const DlFRect tex[],
                                             const DlColor colors[],
                                             int count,
                                             DlBlendMode mode,
                                             DlImageSampling sampling,
-                                            const SkRect* cull_rect,
+                                            const DlFRect* cull_rect,
                                             bool render_with_attributes) {
   startl() << "drawAtlas(" << atlas.get() << ", ";
                    out_array("xforms", count, xform) << ", ";
@@ -845,7 +812,7 @@ void DisplayListStreamDispatcher::drawAtlas(const sk_sp<DlImage> atlas,
            << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::drawDisplayList(
-    const sk_sp<DisplayList> display_list, SkScalar opacity) {
+    const sk_sp<DisplayList> display_list, DlScalar opacity) {
   startl() << "drawDisplayList("
            << "ID: " << display_list->unique_id() << ", "
            << "bounds: " << display_list->bounds() << ", "
@@ -853,17 +820,17 @@ void DisplayListStreamDispatcher::drawDisplayList(
            << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,
-                                               SkScalar x,
-                                               SkScalar y) {
+                                               DlScalar x,
+                                               DlScalar y) {
   startl() << "drawTextBlob("
            << blob.get() << ", "
            << x << ", " << y << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::drawShadow(const SkPath& path,
+void DisplayListStreamDispatcher::drawShadow(const DlPath& path,
                                              const DlColor color,
-                                             const SkScalar elevation,
+                                             const DlScalar elevation,
                                              bool transparent_occluder,
-                                             SkScalar dpr) {
+                                             DlScalar dpr) {
   startl() << "drawShadow("
            << path << ", "
            << color << ", "

@@ -46,14 +46,10 @@ static const sk_sp<DlImage> kTestImage1 = MakeTestImage(10, 10, SK_ColorGREEN);
 static const sk_sp<DlImage> kTestAlphaImage1 =
     MakeTestImage(10, 10, SK_ColorTRANSPARENT);
 // clang-format off
-static const SkMatrix kTestMatrix1 =
-    SkMatrix::MakeAll(2, 0, 10,
-                      0, 3, 12,
-                      0, 0, 1);
-static const SkMatrix kTestMatrix2 =
-    SkMatrix::MakeAll(4, 0, 15,
-                      0, 7, 17,
-                      0, 0, 1);
+static const DlTransform kTestMatrix1 = DlTransform::MakeAffine2D(2, 0, 10,  //
+                                                                  0, 3, 12);
+static const DlTransform kTestMatrix2 = DlTransform::MakeAffine2D(4, 0, 15,  //
+                                                                  0, 7, 17);
 // clang-format on
 static constexpr int kTestStopCount = 3;
 static constexpr DlColor kTestColors[kTestStopCount] = {
@@ -76,13 +72,13 @@ static constexpr float kTestStops2[kTestStopCount] = {
     0.3f,
     1.0f,
 };
-static constexpr SkPoint kTestPoints[2] = {
-    SkPoint::Make(5, 15),
-    SkPoint::Make(7, 18),
+static constexpr DlFPoint kTestPoints[2] = {
+    DlFPoint(5, 15),
+    DlFPoint(7, 18),
 };
-static constexpr SkPoint kTestPoints2[2] = {
-    SkPoint::Make(100, 115),
-    SkPoint::Make(107, 118),
+static constexpr DlFPoint kTestPoints2[2] = {
+    DlFPoint(100, 115),
+    DlFPoint(107, 118),
 };
 
 TEST(DisplayListColorSource, ColorConstructor) {

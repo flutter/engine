@@ -8,9 +8,9 @@
 
 namespace flutter {
 
-EmbedderLayers::EmbedderLayers(SkISize frame_size,
+EmbedderLayers::EmbedderLayers(DlISize frame_size,
                                double device_pixel_ratio,
-                               SkMatrix root_surface_transformation)
+                               DlTransform root_surface_transformation)
     : frame_size_(frame_size),
       device_pixel_ratio_(device_pixel_ratio),
       root_surface_transformation_(root_surface_transformation) {}
@@ -24,11 +24,10 @@ void EmbedderLayers::PushBackingStoreLayer(const FlutterBackingStore* store) {
   layer.type = kFlutterLayerContentTypeBackingStore;
   layer.backing_store = store;
 
-  const auto layer_bounds =
-      SkRect::MakeWH(frame_size_.width(), frame_size_.height());
+  const auto layer_bounds = DlFRect::MakeSize(frame_size_);
 
   const auto transformed_layer_bounds =
-      root_surface_transformation_.mapRect(layer_bounds);
+      root_surface_transformation_.TransformRect(layer_bounds);
 
   layer.offset.x = transformed_layer_bounds.x();
   layer.offset.y = transformed_layer_bounds.y();
@@ -47,7 +46,7 @@ static std::unique_ptr<FlutterPlatformViewMutation> ConvertMutation(
 }
 
 static std::unique_ptr<FlutterPlatformViewMutation> ConvertMutation(
-    const SkRect& rect) {
+    const DlFRect& rect) {
   FlutterPlatformViewMutation mutation = {};
   mutation.type = kFlutterPlatformViewMutationTypeClipRect;
   mutation.clip_rect.left = rect.left();
@@ -57,7 +56,7 @@ static std::unique_ptr<FlutterPlatformViewMutation> ConvertMutation(
   return std::make_unique<FlutterPlatformViewMutation>(mutation);
 }
 
-static FlutterSize VectorToSize(const SkVector& vector) {
+static FlutterSize VectorToSize(const DlFVector& vector) {
   FlutterSize size = {};
   size.width = vector.x();
   size.height = vector.y();
@@ -65,7 +64,7 @@ static FlutterSize VectorToSize(const SkVector& vector) {
 }
 
 static std::unique_ptr<FlutterPlatformViewMutation> ConvertMutation(
-    const SkRRect& rrect) {
+    const DlFRRect& rrect) {
   FlutterPlatformViewMutation mutation = {};
   mutation.type = kFlutterPlatformViewMutationTypeClipRoundedRect;
   const auto& rect = rrect.rect();
@@ -74,29 +73,32 @@ static std::unique_ptr<FlutterPlatformViewMutation> ConvertMutation(
   mutation.clip_rounded_rect.rect.right = rect.right();
   mutation.clip_rounded_rect.rect.bottom = rect.bottom();
   mutation.clip_rounded_rect.upper_left_corner_radius =
-      VectorToSize(rrect.radii(SkRRect::Corner::kUpperLeft_Corner));
+      VectorToSize(rrect.upper_left_radii());
   mutation.clip_rounded_rect.upper_right_corner_radius =
-      VectorToSize(rrect.radii(SkRRect::Corner::kUpperRight_Corner));
+      VectorToSize(rrect.upper_right_radii());
   mutation.clip_rounded_rect.lower_right_corner_radius =
-      VectorToSize(rrect.radii(SkRRect::Corner::kLowerRight_Corner));
+      VectorToSize(rrect.lower_right_radii());
   mutation.clip_rounded_rect.lower_left_corner_radius =
-      VectorToSize(rrect.radii(SkRRect::Corner::kLowerLeft_Corner));
+      VectorToSize(rrect.lower_left_radii());
   return std::make_unique<FlutterPlatformViewMutation>(mutation);
 }
 
 static std::unique_ptr<FlutterPlatformViewMutation> ConvertMutation(
-    const SkMatrix& matrix) {
+    const DlTransform& matrix) {
   FlutterPlatformViewMutation mutation = {};
+  DlFVector3 x = matrix.eqnX_3();
+  DlFVector3 y = matrix.eqnY_3();
+  DlFVector3 w = matrix.eqnW_3();
   mutation.type = kFlutterPlatformViewMutationTypeTransformation;
-  mutation.transformation.scaleX = matrix[SkMatrix::kMScaleX];
-  mutation.transformation.skewX = matrix[SkMatrix::kMSkewX];
-  mutation.transformation.transX = matrix[SkMatrix::kMTransX];
-  mutation.transformation.skewY = matrix[SkMatrix::kMSkewY];
-  mutation.transformation.scaleY = matrix[SkMatrix::kMScaleY];
-  mutation.transformation.transY = matrix[SkMatrix::kMTransY];
-  mutation.transformation.pers0 = matrix[SkMatrix::kMPersp0];
-  mutation.transformation.pers1 = matrix[SkMatrix::kMPersp1];
-  mutation.transformation.pers2 = matrix[SkMatrix::kMPersp2];
+  mutation.transformation.scaleX = x[0];
+  mutation.transformation.skewX = x[1];
+  mutation.transformation.transX = x[2];
+  mutation.transformation.skewY = y[0];
+  mutation.transformation.scaleY = y[1];
+  mutation.transformation.transY = y[2];
+  mutation.transformation.pers0 = w[0];
+  mutation.transformation.pers1 = w[1];
+  mutation.transformation.pers2 = w[2];
   return std::make_unique<FlutterPlatformViewMutation>(mutation);
 }
 
@@ -132,7 +134,7 @@ void EmbedderLayers::PushPlatformViewLayer(
         } break;
         case MutatorType::kTransform: {
           const auto& matrix = mutator->GetMatrix();
-          if (!matrix.isIdentity()) {
+          if (!matrix.is_identity()) {
             mutations_array.push_back(
                 mutations_referenced_.emplace_back(ConvertMutation(matrix))
                     .get());
@@ -155,7 +157,7 @@ void EmbedderLayers::PushPlatformViewLayer(
     if (!mutations_array.empty()) {
       // If there are going to be any mutations, they must first take into
       // account the root surface transformation.
-      if (!root_surface_transformation_.isIdentity()) {
+      if (!root_surface_transformation_.is_identity()) {
         mutations_array.push_back(
             mutations_referenced_
                 .emplace_back(ConvertMutation(root_surface_transformation_))
@@ -182,14 +184,14 @@ void EmbedderLayers::PushPlatformViewLayer(
   layer.platform_view = platform_views_referenced_.back().get();
 
   const auto layer_bounds =
-      SkRect::MakeXYWH(params.finalBoundingRect().x(),                     //
-                       params.finalBoundingRect().y(),                     //
-                       params.sizePoints().width() * device_pixel_ratio_,  //
-                       params.sizePoints().height() * device_pixel_ratio_  //
+      DlFRect::MakeXYWH(params.finalBoundingRect().x(),                     //
+                        params.finalBoundingRect().y(),                     //
+                        params.sizePoints().width() * device_pixel_ratio_,  //
+                        params.sizePoints().height() * device_pixel_ratio_  //
       );
 
   const auto transformed_layer_bounds =
-      root_surface_transformation_.mapRect(layer_bounds);
+      root_surface_transformation_.TransformRect(layer_bounds);
 
   layer.offset.x = transformed_layer_bounds.x();
   layer.offset.y = transformed_layer_bounds.y();

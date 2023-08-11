@@ -61,8 +61,8 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
   void setDither(bool dither) override;
   void setDrawStyle(DlDrawStyle style) override;
   void setColor(DlColor color) override;
-  void setStrokeWidth(SkScalar width) override;
-  void setStrokeMiter(SkScalar limit) override;
+  void setStrokeWidth(DlScalar width) override;
+  void setStrokeMiter(DlScalar limit) override;
   void setStrokeCap(DlStrokeCap cap) override;
   void setStrokeJoin(DlStrokeJoin join) override;
   void setColorSource(const DlColorSource* source) override;
@@ -74,81 +74,81 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
   void setImageFilter(const DlImageFilter* filter) override;
 
   void save() override;
-  void saveLayer(const SkRect* bounds,
+  void saveLayer(const DlFRect* bounds,
                  const SaveLayerOptions options,
                  const DlImageFilter* backdrop) override;
   void restore() override;
 
-  void translate(SkScalar tx, SkScalar ty) override;
-  void scale(SkScalar sx, SkScalar sy) override;
-  void rotate(SkScalar degrees) override;
-  void skew(SkScalar sx, SkScalar sy) override;
+  void translate(DlScalar tx, DlScalar ty) override;
+  void scale(DlScalar sx, DlScalar sy) override;
+  void rotate(DlScalar degrees) override;
+  void skew(DlScalar sx, DlScalar sy) override;
   // clang-format off
-  void transform2DAffine(SkScalar mxx, SkScalar mxy, SkScalar mxt,
-                                 SkScalar myx, SkScalar myy, SkScalar myt) override;
+  void transform2DAffine(DlScalar mxx, DlScalar mxy, DlScalar mxt,
+                         DlScalar myx, DlScalar myy, DlScalar myt) override;
   void transformFullPerspective(
-      SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
-      SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
-      SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
-      SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) override;
+      DlScalar mxx, DlScalar mxy, DlScalar mxz, DlScalar mxt,
+      DlScalar myx, DlScalar myy, DlScalar myz, DlScalar myt,
+      DlScalar mzx, DlScalar mzy, DlScalar mzz, DlScalar mzt,
+      DlScalar mwx, DlScalar mwy, DlScalar mwz, DlScalar mwt) override;
   // clang-format on
   void transformReset() override;
 
-  void clipRect(const SkRect& rect, ClipOp clip_op, bool is_aa) override;
-  void clipRRect(const SkRRect& rrect, ClipOp clip_op, bool is_aa) override;
-  void clipPath(const SkPath& path, ClipOp clip_op, bool is_aa) override;
+  void clipRect(const DlFRect& rect, ClipOp clip_op, bool is_aa) override;
+  void clipRRect(const DlFRRect& rrect, ClipOp clip_op, bool is_aa) override;
+  void clipPath(const DlPath& path, ClipOp clip_op, bool is_aa) override;
 
   void drawColor(DlColor color, DlBlendMode mode) override;
   void drawPaint() override;
-  void drawLine(const SkPoint& p0, const SkPoint& p1) override;
-  void drawRect(const SkRect& rect) override;
-  void drawOval(const SkRect& bounds) override;
-  void drawCircle(const SkPoint& center, SkScalar radius) override;
-  void drawRRect(const SkRRect& rrect) override;
-  void drawDRRect(const SkRRect& outer, const SkRRect& inner) override;
-  void drawPath(const SkPath& path) override;
-  void drawArc(const SkRect& oval_bounds,
-               SkScalar start_degrees,
-               SkScalar sweep_degrees,
+  void drawLine(const DlFPoint& p0, const DlFPoint& p1) override;
+  void drawRect(const DlFRect& rect) override;
+  void drawOval(const DlFRect& bounds) override;
+  void drawCircle(const DlFPoint& center, DlScalar radius) override;
+  void drawRRect(const DlFRRect& rrect) override;
+  void drawDRRect(const DlFRRect& outer, const DlFRRect& inner) override;
+  void drawPath(const DlPath& path) override;
+  void drawArc(const DlFRect& oval_bounds,
+               DlScalar start_degrees,
+               DlScalar sweep_degrees,
                bool use_center) override;
   void drawPoints(PointMode mode,
                   uint32_t count,
-                  const SkPoint points[]) override;
+                  const DlFPoint points[]) override;
   void drawVertices(const DlVertices* vertices, DlBlendMode mode) override;
   void drawImage(const sk_sp<DlImage> image,
-                 const SkPoint point,
+                 const DlFPoint point,
                  DlImageSampling sampling,
                  bool render_with_attributes) override;
   void drawImageRect(const sk_sp<DlImage> image,
-                     const SkRect& src,
-                     const SkRect& dst,
+                     const DlFRect& src,
+                     const DlFRect& dst,
                      DlImageSampling sampling,
                      bool render_with_attributes,
                      SrcRectConstraint constraint) override;
   void drawImageNine(const sk_sp<DlImage> image,
-                     const SkIRect& center,
-                     const SkRect& dst,
+                     const DlIRect& center,
+                     const DlFRect& dst,
                      DlFilterMode filter,
                      bool render_with_attributes) override;
   void drawAtlas(const sk_sp<DlImage> atlas,
-                 const SkRSXform xform[],
-                 const SkRect tex[],
+                 const DlRSTransform xform[],
+                 const DlFRect tex[],
                  const DlColor colors[],
                  int count,
                  DlBlendMode mode,
                  DlImageSampling sampling,
-                 const SkRect* cull_rect,
+                 const DlFRect* cull_rect,
                  bool render_with_attributes) override;
   void drawDisplayList(const sk_sp<DisplayList> display_list,
-                       SkScalar opacity) override;
+                       DlScalar opacity) override;
   void drawTextBlob(const sk_sp<SkTextBlob> blob,
-                    SkScalar x,
-                    SkScalar y) override;
-  void drawShadow(const SkPath& path,
+                    DlScalar x,
+                    DlScalar y) override;
+  void drawShadow(const DlPath& path,
                   const DlColor color,
-                  const SkScalar elevation,
+                  const DlScalar elevation,
                   bool transparent_occluder,
-                  SkScalar dpr) override;
+                  DlScalar dpr) override;
 
  private:
   std::ostream& os_;

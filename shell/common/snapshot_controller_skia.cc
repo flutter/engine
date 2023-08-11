@@ -50,7 +50,7 @@ sk_sp<SkImage> DrawSnapshot(
 }  // namespace
 
 sk_sp<DlImage> SnapshotControllerSkia::DoMakeRasterSnapshot(
-    SkISize size,
+    DlISize size,
     std::function<void(SkCanvas*)> draw_callback) {
   TRACE_EVENT0("flutter", __FUNCTION__);
   sk_sp<SkImage> result;
@@ -131,7 +131,7 @@ sk_sp<DlImage> SnapshotControllerSkia::DoMakeRasterSnapshot(
 
 sk_sp<DlImage> SnapshotControllerSkia::MakeRasterSnapshot(
     sk_sp<DisplayList> display_list,
-    SkISize size) {
+    DlISize size) {
   return DoMakeRasterSnapshot(size, [display_list](SkCanvas* canvas) {
     DlSkCanvasAdapter(canvas).DrawDisplayList(display_list);
   });
@@ -151,7 +151,7 @@ sk_sp<SkImage> SnapshotControllerSkia::ConvertToRasterImage(
     return nullptr;
   }
 
-  SkISize image_size = image->dimensions();
+  DlISize image_size = DlISize::MakeSize(image->dimensions());
 
   auto result = DoMakeRasterSnapshot(
       image_size, [image = std::move(image)](SkCanvas* canvas) {

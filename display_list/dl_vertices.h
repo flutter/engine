@@ -8,8 +8,8 @@
 #include <memory>
 
 #include "flutter/display_list/dl_color.h"
-
-#include "third_party/skia/include/core/SkRect.h"
+#include "flutter/display_list/geometry/dl_point.h"
+#include "flutter/display_list/geometry/dl_rect.h"
 
 namespace flutter {
 
@@ -117,7 +117,7 @@ class DlVertices {
     /// @brief Copies the indicated list of points as vertices.
     ///
     /// fails if vertices have already been supplied.
-    void store_vertices(const SkPoint points[]);
+    void store_vertices(const DlFPoint points[]);
 
     /// @brief Copies the indicated list of float pairs as vertices.
     ///
@@ -128,7 +128,7 @@ class DlVertices {
     ///
     /// fails if texture coordinates have already been supplied or if they
     /// were not promised by the flags.has_texture_coordinates.
-    void store_texture_coordinates(const SkPoint points[]);
+    void store_texture_coordinates(const DlFPoint points[]);
 
     /// @brief Copies the indicated list of float pairs as texture coordinates.
     ///
@@ -172,7 +172,7 @@ class DlVertices {
   };
 
   //--------------------------------------------------------------------------
-  /// @brief     Constructs a DlVector with compact inline storage for all
+  /// @brief     Constructs a DlVertices with compact inline storage for all
   ///            of its required and optional lists of data.
   ///
   /// Vertices are always required. Optional texture coordinates
@@ -181,8 +181,8 @@ class DlVertices {
   /// non-null and the index_count is positive (>0).
   static std::shared_ptr<DlVertices> Make(DlVertexMode mode,
                                           int vertex_count,
-                                          const SkPoint vertices[],
-                                          const SkPoint texture_coordinates[],
+                                          const DlFPoint vertices[],
+                                          const DlFPoint texture_coordinates[],
                                           const DlColor colors[],
                                           int index_count = 0,
                                           const uint16_t indices[] = nullptr);
@@ -191,7 +191,7 @@ class DlVertices {
   size_t size() const;
 
   /// Returns the bounds of the vertices.
-  SkRect bounds() const { return bounds_; }
+  DlFRect bounds() const { return bounds_; }
 
   /// Returns the vertex mode that defines how the vertices (or the indices)
   /// are turned into triangles.
@@ -202,14 +202,14 @@ class DlVertices {
   int vertex_count() const { return vertex_count_; }
 
   /// Returns a pointer to the vertex information. Should be non-null.
-  const SkPoint* vertices() const {
-    return static_cast<const SkPoint*>(pod(vertices_offset_));
+  const DlFPoint* vertices() const {
+    return static_cast<const DlFPoint*>(pod(vertices_offset_));
   }
 
   /// Returns a pointer to the vertex texture coordinate
   /// or null if none were provided.
-  const SkPoint* texture_coordinates() const {
-    return static_cast<const SkPoint*>(pod(texture_coordinates_offset_));
+  const DlFPoint* texture_coordinates() const {
+    return static_cast<const DlFPoint*>(pod(texture_coordinates_offset_));
   }
 
   /// Returns a pointer to the vertex colors
@@ -239,12 +239,12 @@ class DlVertices {
   // the class body and all of its arrays, such as in Builder.
   DlVertices(DlVertexMode mode,
              int vertex_count,
-             const SkPoint vertices[],
-             const SkPoint texture_coordinates[],
+             const DlFPoint vertices[],
+             const DlFPoint texture_coordinates[],
              const DlColor colors[],
              int index_count,
              const uint16_t indices[],
-             const SkRect* bounds = nullptr);
+             const DlFRect* bounds = nullptr);
 
   // This constructor is specifically used by the DlVertices::Builder to
   // establish the object before the copying of data is requested.
@@ -269,7 +269,7 @@ class DlVertices {
   int index_count_;
   size_t indices_offset_;
 
-  SkRect bounds_;
+  DlFRect bounds_;
 
   const void* pod(int offset) const {
     if (offset <= 0) {

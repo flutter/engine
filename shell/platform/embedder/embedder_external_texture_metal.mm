@@ -8,7 +8,6 @@
 #include "flutter/fml/logging.h"
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.h"
 #include "third_party/skia/include/core/SkImage.h"
-#include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
@@ -33,19 +32,19 @@ EmbedderExternalTextureMetal::~EmbedderExternalTextureMetal() = default;
 
 // |flutter::Texture|
 void EmbedderExternalTextureMetal::Paint(PaintContext& context,
-                                         const SkRect& bounds,
+                                         const DlFRect& bounds,
                                          bool freeze,
                                          const DlImageSampling sampling) {
   if (last_image_ == nullptr) {
     last_image_ =
-        ResolveTexture(Id(), context.gr_context, SkISize::Make(bounds.width(), bounds.height()));
+        ResolveTexture(Id(), context.gr_context, DlISize(bounds.width(), bounds.height()));
   }
 
   DlCanvas* canvas = context.canvas;
   const DlPaint* paint = context.paint;
 
   if (last_image_) {
-    SkRect image_bounds = SkRect::Make(last_image_->bounds());
+    DlFRect image_bounds = DlFRect::MakeBounds(last_image_->bounds());
     if (bounds != image_bounds) {
       canvas->DrawImageRect(last_image_, image_bounds, bounds, sampling, paint);
     } else {
@@ -56,7 +55,7 @@ void EmbedderExternalTextureMetal::Paint(PaintContext& context,
 
 sk_sp<DlImage> EmbedderExternalTextureMetal::ResolveTexture(int64_t texture_id,
                                                             GrDirectContext* context,
-                                                            const SkISize& size) {
+                                                            const DlISize& size) {
   std::unique_ptr<FlutterMetalExternalTexture> texture =
       external_texture_callback_(texture_id, size.width(), size.height());
 

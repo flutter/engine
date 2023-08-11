@@ -7,15 +7,12 @@
 
 #include <vector>
 
+#include "flutter/display_list/dl_base_types.h"
 #include "flutter/display_list/dl_canvas.h"
+#include "flutter/display_list/geometry/dl_rect.h"
+#include "flutter/display_list/geometry/dl_round_rect.h"
+#include "flutter/display_list/geometry/dl_transform.h"
 #include "flutter/fml/logging.h"
-
-#include "third_party/skia/include/core/SkM44.h"
-#include "third_party/skia/include/core/SkMatrix.h"
-#include "third_party/skia/include/core/SkPath.h"
-#include "third_party/skia/include/core/SkRRect.h"
-#include "third_party/skia/include/core/SkRect.h"
-#include "third_party/skia/include/core/SkScalar.h"
 
 namespace flutter {
 
@@ -24,8 +21,8 @@ class DisplayListMatrixClipTracker {
   using ClipOp = DlCanvas::ClipOp;
 
  public:
-  DisplayListMatrixClipTracker(const SkRect& cull_rect, const SkMatrix& matrix);
-  DisplayListMatrixClipTracker(const SkRect& cull_rect, const SkM44& matrix);
+  DisplayListMatrixClipTracker(const DlFRect& cull_rect,
+                               const DlTransform& matrix);
 
   // This method should almost never be used as it breaks the encapsulation
   // of the enclosing clips. However it is needed for practical purposes in
@@ -36,21 +33,16 @@ class DisplayListMatrixClipTracker {
   // layer into the enclosing clipped area.
   // Omitting the |cull_rect| argument, or passing nullptr, will restore the
   // cull rect to the initial value it had when the tracker was constructed.
-  void resetCullRect(const SkRect* cull_rect = nullptr) {
+  void resetCullRect(const DlFRect* cull_rect = nullptr) {
     current_->resetBounds(cull_rect ? *cull_rect : original_cull_rect_);
   }
 
-  static bool is_3x3(const SkM44& m44);
+  DlFRect base_device_cull_rect() const { return saved_[0]->device_cull_rect(); }
 
-  SkRect base_device_cull_rect() const { return saved_[0]->device_cull_rect(); }
-
-  bool using_4x4_matrix() const { return current_->is_4x4(); }
-
-  SkM44 matrix_4x4() const { return current_->matrix_4x4(); }
-  SkMatrix matrix_3x3() const { return current_->matrix_3x3(); }
-  SkRect local_cull_rect() const { return current_->local_cull_rect(); }
-  SkRect device_cull_rect() const { return current_->device_cull_rect(); }
-  bool content_culled(const SkRect& content_bounds) const {
+  DlTransform matrix() const { return current_->matrix(); }
+  DlFRect local_cull_rect() const { return current_->local_cull_rect(); }
+  DlFRect device_cull_rect() const { return current_->device_cull_rect(); }
+  bool content_culled(const DlFRect& content_bounds) const {
     return current_->content_culled(content_bounds);
   }
   bool is_cull_rect_empty() const { return current_->is_cull_rect_empty(); }
@@ -65,75 +57,80 @@ class DisplayListMatrixClipTracker {
   }
   void restoreToCount(int restore_count);
 
-  void translate(SkScalar tx, SkScalar ty) { current_->translate(tx, ty); }
-  void scale(SkScalar sx, SkScalar sy) { current_->scale(sx, sy); }
-  void skew(SkScalar skx, SkScalar sky) { current_->skew(skx, sky); }
-  void rotate(SkScalar degrees) { current_->rotate(degrees); }
-  void transform(const SkM44& m44);
-  void transform(const SkMatrix& matrix) { current_->transform(matrix); }
+  void translate(DlScalar tx, DlScalar ty) { current_->translate(tx, ty); }
+  void scale(DlScalar sx, DlScalar sy) { current_->scale(sx, sy); }
+  void skew(DlScalar skx, DlScalar sky) { current_->skew(skx, sky); }
+  void rotate(DlScalar degrees) { current_->rotate(DlDegrees(degrees)); }
+  void transform(const DlTransform& matrix) { current_->transform(matrix); }
   // clang-format off
   void transform2DAffine(
-      SkScalar mxx, SkScalar mxy, SkScalar mxt,
-      SkScalar myx, SkScalar myy, SkScalar myt);
+      DlScalar mxx, DlScalar mxy, DlScalar mxt,
+      DlScalar myx, DlScalar myy, DlScalar myt);
   void transformFullPerspective(
-      SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
-      SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
-      SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
-      SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt);
+      DlScalar mxx, DlScalar mxy, DlScalar mxz, DlScalar mxt,
+      DlScalar myx, DlScalar myy, DlScalar myz, DlScalar myt,
+      DlScalar mzx, DlScalar mzy, DlScalar mzz, DlScalar mzt,
+      DlScalar mwx, DlScalar mwy, DlScalar mwz, DlScalar mwt);
   // clang-format on
-  void setTransform(const SkMatrix& matrix) { current_->setTransform(matrix); }
-  void setTransform(const SkM44& m44);
+  void setTransform(const DlTransform& matrix) {
+    current_->setTransform(matrix);
+  }
   void setIdentity() { current_->setIdentity(); }
-  bool mapRect(SkRect* rect) const { return current_->mapRect(*rect, rect); }
+  void setIntegerTranslation() {
+    current_->setTransform(current_->matrix().WithIntegerTranslation());
+  }
 
-  void clipRect(const SkRect& rect, ClipOp op, bool is_aa) {
+  bool mapRect(DlFRect* rect) const { return current_->mapRect(*rect, rect); }
+
+  void clipRect(const DlFRect& rect, ClipOp op, bool is_aa) {
     current_->clipBounds(rect, op, is_aa);
   }
-  void clipRRect(const SkRRect& rrect, ClipOp op, bool is_aa);
-  void clipPath(const SkPath& path, ClipOp op, bool is_aa);
+  void clipRRect(const DlFRRect& rrect, ClipOp op, bool is_aa);
+  void clipPath(const DlPath& path, ClipOp op, bool is_aa);
 
  private:
   class Data {
    public:
-    virtual ~Data() = default;
+    Data(const DlTransform& matrix, const DlFRect& rect)
+        : cull_rect_(rect), matrix_(matrix) {}
+    explicit Data(const Data* copy)
+        : cull_rect_(copy->device_cull_rect()), matrix_(copy->matrix()) {}
 
-    virtual bool is_4x4() const = 0;
+    ~Data() = default;
 
-    virtual SkMatrix matrix_3x3() const = 0;
-    virtual SkM44 matrix_4x4() const = 0;
+    DlTransform matrix() const { return matrix_; }
 
-    SkRect device_cull_rect() const { return cull_rect_; }
-    virtual SkRect local_cull_rect() const = 0;
-    virtual bool content_culled(const SkRect& content_bounds) const;
-    bool is_cull_rect_empty() const { return cull_rect_.isEmpty(); }
+    DlFRect device_cull_rect() const { return cull_rect_; }
+    DlFRect local_cull_rect() const;
+    bool content_culled(const DlFRect& content_bounds) const;
+    bool is_cull_rect_empty() const { return cull_rect_.is_empty(); }
 
-    virtual void translate(SkScalar tx, SkScalar ty) = 0;
-    virtual void scale(SkScalar sx, SkScalar sy) = 0;
-    virtual void skew(SkScalar skx, SkScalar sky) = 0;
-    virtual void rotate(SkScalar degrees) = 0;
-    virtual void transform(const SkMatrix& matrix) = 0;
-    virtual void transform(const SkM44& m44) = 0;
-    virtual void setTransform(const SkMatrix& matrix) = 0;
-    virtual void setTransform(const SkM44& m44) = 0;
-    virtual void setIdentity() = 0;
-    virtual bool mapRect(const SkRect& rect, SkRect* mapped) const = 0;
-    virtual bool canBeInverted() const = 0;
+    void translate(DlScalar tx, DlScalar ty) { matrix_.TranslateInner(tx, ty); }
+    void scale(DlScalar sx, DlScalar sy) { matrix_.ScaleInner(sx, sy); }
+    void skew(DlScalar skx, DlScalar sky) { matrix_.SkewInner(skx, sky); }
+    void rotate(const DlAngle& angle) { matrix_.RotateInner(angle); }
+    void transform(const DlTransform& matrix) { matrix_.ConcatInner(matrix); }
+    void setTransform(const DlTransform& matrix) { matrix_ = matrix; }
+    void setIdentity() { matrix_.SetIdentity(); }
+    bool mapRect(const DlFRect& rect, DlFRect* mapped) const {
+      *mapped = matrix_.TransformRect(rect);
+      return matrix_.rect_stays_rect();
+    }
+    bool canBeInverted() const { return matrix_.Invert(nullptr); }
 
-    virtual void clipBounds(const SkRect& clip, ClipOp op, bool is_aa);
+    void clipBounds(const DlFRect& clip, ClipOp op, bool is_aa);
 
-    virtual void resetBounds(const SkRect& cull_rect);
+    void resetBounds(const DlFRect& cull_rect);
 
    protected:
-    Data(const SkRect& rect) : cull_rect_(rect) {}
+    Data(const DlFRect& rect, const DlTransform& matrix)
+        : cull_rect_(rect), matrix_(matrix) {}
 
-    virtual bool has_perspective() const = 0;
-
-    SkRect cull_rect_;
+    DlFRect cull_rect_;
+    DlTransform matrix_;
   };
-  friend class Data3x3;
-  friend class Data4x4;
 
-  SkRect original_cull_rect_;
+  DlFRect original_cull_rect_;
   Data* current_;
   std::vector<std::unique_ptr<Data>> saved_;
 };

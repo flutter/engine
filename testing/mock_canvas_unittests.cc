@@ -14,12 +14,12 @@ using MockCanvasTest = CanvasTest;
 
 #ifndef NDEBUG
 TEST_F(MockCanvasTest, DrawRRectDies) {
-  EXPECT_DEATH_IF_SUPPORTED(mock_canvas().DrawRRect(SkRRect(), DlPaint()), "");
+  EXPECT_DEATH_IF_SUPPORTED(mock_canvas().DrawRRect(DlFRRect(), DlPaint()), "");
 }
 #endif
 
 TEST_F(MockCanvasTest, DrawCalls) {
-  const SkRect rect = SkRect::MakeWH(5.0f, 5.0f);
+  const DlFRect rect = DlFRect::MakeWH(5.0f, 5.0f);
   const DlPaint paint = DlPaint(DlColor::kGreen());
   const auto expected_draw_calls = std::vector{
       MockCanvas::DrawCall{0, MockCanvas::DrawRectData{rect, paint}}};

@@ -239,7 +239,7 @@ TEST(SurfacePool, DestroyLayersFrameSizeChanged) {
         EXPECT_CALL(*android_surface_mock, IsValid()).WillOnce(Return(true));
         return android_surface_mock;
       });
-  pool->SetFrameSize(SkISize::Make(10, 10));
+  pool->SetFrameSize(DlISize(10, 10));
   EXPECT_CALL(*jni_mock, FlutterViewDestroyOverlaySurfaces()).Times(0);
   EXPECT_CALL(*jni_mock, FlutterViewCreateOverlaySurface())
       .Times(1)
@@ -253,7 +253,7 @@ TEST(SurfacePool, DestroyLayersFrameSizeChanged) {
 
   ASSERT_TRUE(pool->HasLayers());
 
-  pool->SetFrameSize(SkISize::Make(20, 20));
+  pool->SetFrameSize(DlISize(20, 20));
   EXPECT_CALL(*jni_mock, FlutterViewDestroyOverlaySurfaces()).Times(1);
   EXPECT_CALL(*jni_mock, FlutterViewCreateOverlaySurface())
       .Times(1)

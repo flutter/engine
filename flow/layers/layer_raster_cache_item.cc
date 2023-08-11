@@ -21,12 +21,12 @@ LayerRasterCacheItem::LayerRasterCacheItem(Layer* layer,
       can_cache_children_(can_cache_children) {}
 
 void LayerRasterCacheItem::PrerollSetup(PrerollContext* context,
-                                        const SkMatrix& matrix) {
+                                        const DlTransform& transform) {
   cache_state_ = CacheState::kNone;
   if (context->raster_cache && context->raster_cached_entries) {
     context->raster_cached_entries->push_back(this);
     child_items_ = context->raster_cached_entries->size();
-    matrix_ = matrix;
+    matrix_ = transform;
   }
 }
 
@@ -39,7 +39,7 @@ std::unique_ptr<LayerRasterCacheItem> LayerRasterCacheItem::Make(
 }
 
 void LayerRasterCacheItem::PrerollFinalize(PrerollContext* context,
-                                           const SkMatrix& matrix) {
+                                           const DlTransform& transform) {
   if (!context->raster_cache || !context->raster_cached_entries) {
     return;
   }
@@ -85,7 +85,7 @@ std::optional<RasterCacheKeyID> LayerRasterCacheItem::GetId() const {
   }
 }
 
-const SkRect* LayerRasterCacheItem::GetPaintBoundsFromLayer() const {
+const DlFRect* LayerRasterCacheItem::GetPaintBoundsFromLayer() const {
   switch (cache_state_) {
     case CacheState::kCurrent:
       return &(layer_->paint_bounds());
@@ -145,7 +145,7 @@ bool LayerRasterCacheItem::TryToPrepareRasterCache(const PaintContext& context,
     return false;
   }
   if (cache_state_ != kNone) {
-    if (const SkRect* paint_bounds = GetPaintBoundsFromLayer()) {
+    if (const DlFRect* paint_bounds = GetPaintBoundsFromLayer()) {
       RasterCache::Context r_context = {
           // clang-format off
           .gr_context         = context.gr_context,

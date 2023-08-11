@@ -35,8 +35,8 @@ TEST_F(BackdropFilterLayerTest, PaintingEmptyLayerDies) {
 }
 
 TEST_F(BackdropFilterLayerTest, PaintBeforePrerollDies) {
-  const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
-  const SkPath child_path = SkPath().addRect(child_bounds);
+  const DlFRect child_bounds = DlFRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
+  const DlPath child_path = DlPath().AddRect(child_bounds);
   auto mock_layer = std::make_shared<MockLayer>(child_path);
   auto filter = DlBlurImageFilter(5, 5, DlTileMode::kClamp);
   auto layer = std::make_shared<BackdropFilterLayer>(filter.shared(),
@@ -51,9 +51,9 @@ TEST_F(BackdropFilterLayerTest, PaintBeforePrerollDies) {
 #endif
 
 TEST_F(BackdropFilterLayerTest, EmptyFilter) {
-  const SkMatrix initial_transform = SkMatrix::Translate(0.5f, 1.0f);
-  const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
-  const SkPath child_path = SkPath().addRect(child_bounds);
+  const DlTransform initial_transform = DlTransform::MakeTranslate(0.5f, 1.0f);
+  const DlFRect child_bounds = DlFRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
+  const DlPath child_path = DlPath().AddRect(child_bounds);
   const DlPaint child_paint = DlPaint(DlColor::kYellow());
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
   auto layer =
@@ -96,9 +96,9 @@ TEST_F(BackdropFilterLayerTest, EmptyFilter) {
 }
 
 TEST_F(BackdropFilterLayerTest, SimpleFilter) {
-  const SkMatrix initial_transform = SkMatrix::Translate(0.5f, 1.0f);
-  const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
-  const SkPath child_path = SkPath().addRect(child_bounds);
+  const DlTransform initial_transform = DlTransform::MakeTranslate(0.5f, 1.0f);
+  const DlFRect child_bounds = DlFRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
+  const DlPath child_path = DlPath().AddRect(child_bounds);
   const DlPaint child_paint = DlPaint(DlColor::kYellow());
   auto layer_filter =
       std::make_shared<DlBlurImageFilter>(2.5, 3.2, DlTileMode::kClamp);
@@ -144,9 +144,9 @@ TEST_F(BackdropFilterLayerTest, SimpleFilter) {
 }
 
 TEST_F(BackdropFilterLayerTest, NonSrcOverBlend) {
-  const SkMatrix initial_transform = SkMatrix::Translate(0.5f, 1.0f);
-  const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
-  const SkPath child_path = SkPath().addRect(child_bounds);
+  const DlTransform initial_transform = DlTransform::MakeTranslate(0.5f, 1.0f);
+  const DlFRect child_bounds = DlFRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
+  const DlPath child_path = DlPath().AddRect(child_bounds);
   const DlPaint child_paint = DlPaint(DlColor::kYellow());
   auto layer_filter =
       std::make_shared<DlBlurImageFilter>(2.5, 3.2, DlTileMode::kClamp);
@@ -196,15 +196,15 @@ TEST_F(BackdropFilterLayerTest, NonSrcOverBlend) {
 }
 
 TEST_F(BackdropFilterLayerTest, MultipleChildren) {
-  const SkMatrix initial_transform = SkMatrix::Translate(0.5f, 1.0f);
-  const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 2.5f, 3.5f);
-  const SkPath child_path1 = SkPath().addRect(child_bounds);
-  const SkPath child_path2 =
-      SkPath().addRect(child_bounds.makeOffset(3.0f, 0.0f));
+  const DlTransform initial_transform = DlTransform::MakeTranslate(0.5f, 1.0f);
+  const DlFRect child_bounds = DlFRect::MakeLTRB(5.0f, 6.0f, 2.5f, 3.5f);
+  const DlPath child_path1 = DlPath().AddRect(child_bounds);
+  const DlPath child_path2 =
+      DlPath().AddRect(child_bounds.MakeOffset(3.0f, 0.0f));
   const DlPaint child_paint1 = DlPaint(DlColor::kYellow());
   const DlPaint child_paint2 = DlPaint(DlColor::kCyan());
-  SkRect children_bounds = child_path1.getBounds();
-  children_bounds.join(child_path2.getBounds());
+  DlFRect children_bounds = child_path1.Bounds();
+  children_bounds.Join(child_path2.Bounds());
   auto layer_filter =
       std::make_shared<DlBlurImageFilter>(2.5, 3.2, DlTileMode::kClamp);
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
@@ -219,8 +219,8 @@ TEST_F(BackdropFilterLayerTest, MultipleChildren) {
 
   preroll_context()->state_stack.set_preroll_delegate(initial_transform);
   parent->Preroll(preroll_context());
-  EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
-  EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
+  EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.Bounds());
+  EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.Bounds());
   EXPECT_EQ(layer->paint_bounds(), children_bounds);
   EXPECT_EQ(layer->child_paint_bounds(), children_bounds);
   EXPECT_TRUE(mock_layer1->needs_painting(paint_context()));
@@ -260,15 +260,15 @@ TEST_F(BackdropFilterLayerTest, MultipleChildren) {
 }
 
 TEST_F(BackdropFilterLayerTest, Nested) {
-  const SkMatrix initial_transform = SkMatrix::Translate(0.5f, 1.0f);
-  const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 2.5f, 3.5f);
-  const SkPath child_path1 = SkPath().addRect(child_bounds);
-  const SkPath child_path2 =
-      SkPath().addRect(child_bounds.makeOffset(3.0f, 0.0f));
+  const DlTransform initial_transform = DlTransform::MakeTranslate(0.5f, 1.0f);
+  const DlFRect child_bounds = DlFRect::MakeLTRB(5.0f, 6.0f, 2.5f, 3.5f);
+  const DlPath child_path1 = DlPath().AddRect(child_bounds);
+  const DlPath child_path2 =
+      DlPath().AddRect(child_bounds.MakeOffset(3.0f, 0.0f));
   const DlPaint child_paint1 = DlPaint(DlColor::kYellow());
   const DlPaint child_paint2 = DlPaint(DlColor::kCyan());
-  SkRect children_bounds = child_path1.getBounds();
-  children_bounds.join(child_path2.getBounds());
+  DlFRect children_bounds = child_path1.Bounds();
+  children_bounds.Join(child_path2.Bounds());
   auto layer_filter1 =
       std::make_shared<DlBlurImageFilter>(2.5, 3.2, DlTileMode::kClamp);
   auto layer_filter2 =
@@ -289,8 +289,8 @@ TEST_F(BackdropFilterLayerTest, Nested) {
   preroll_context()->state_stack.set_preroll_delegate(initial_transform);
   parent->Preroll(preroll_context());
 
-  EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
-  EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
+  EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.Bounds());
+  EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.Bounds());
   EXPECT_EQ(layer1->paint_bounds(), children_bounds);
   EXPECT_EQ(layer2->paint_bounds(), children_bounds);
   EXPECT_TRUE(mock_layer1->needs_painting(paint_context()));
@@ -344,7 +344,7 @@ TEST_F(BackdropFilterLayerTest, Nested) {
 TEST_F(BackdropFilterLayerTest, Readback) {
   std::shared_ptr<DlImageFilter> no_filter;
   auto layer_filter = DlBlurImageFilter(5, 5, DlTileMode::kClamp);
-  auto initial_transform = SkMatrix();
+  auto initial_transform = DlTransform();
 
   // BDF with filter always reads from surface
   auto layer1 = std::make_shared<BackdropFilterLayer>(layer_filter.shared(),
@@ -367,7 +367,7 @@ TEST_F(BackdropFilterLayerTest, Readback) {
   EXPECT_TRUE(preroll_context()->surface_needs_readback);
 
   // BDF with no filter blocks child with readback
-  auto mock_layer = std::make_shared<MockLayer>(SkPath(), DlPaint());
+  auto mock_layer = std::make_shared<MockLayer>(DlPath(), DlPaint());
   mock_layer->set_fake_reads_surface(true);
   layer2->Add(mock_layer);
   preroll_context()->surface_needs_readback = false;
@@ -377,12 +377,12 @@ TEST_F(BackdropFilterLayerTest, Readback) {
 
 TEST_F(BackdropFilterLayerTest, OpacityInheritance) {
   auto backdrop_filter = DlBlurImageFilter(5, 5, DlTileMode::kClamp);
-  const SkPath mock_path = SkPath().addRect(SkRect::MakeLTRB(0, 0, 10, 10));
+  const DlPath mock_path = DlPath().AddRect(DlFRect::MakeLTRB(0, 0, 10, 10));
   const DlPaint mock_paint = DlPaint(DlColor::kRed());
-  const SkRect clip_rect = SkRect::MakeLTRB(0, 0, 100, 100);
+  const DlFRect clip_rect = DlFRect::MakeLTRB(0, 0, 100, 100);
 
   auto clip = std::make_shared<ClipRectLayer>(clip_rect, Clip::hardEdge);
-  auto parent = std::make_shared<OpacityLayer>(128, SkPoint::Make(0, 0));
+  auto parent = std::make_shared<OpacityLayer>(128, DlFPoint(0, 0));
   auto layer = std::make_shared<BackdropFilterLayer>(backdrop_filter.shared(),
                                                      DlBlendMode::kSrcOver);
   auto child = std::make_shared<MockLayer>(mock_path, mock_paint);
@@ -428,58 +428,59 @@ TEST_F(BackdropLayerDiffTest, BackdropLayer) {
 
   {
     // tests later assume 30px readback area, fail early if that's not the case
-    SkIRect readback;
-    EXPECT_EQ(filter.get_input_device_bounds(SkIRect::MakeWH(10, 10),
-                                             SkMatrix::I(), readback),
+    DlIRect readback;
+    EXPECT_EQ(filter.get_input_device_bounds(DlIRect::MakeWH(10, 10),
+                                             DlTransform(), readback),
               &readback);
-    EXPECT_EQ(readback, SkIRect::MakeLTRB(-30, -30, 40, 40));
+    EXPECT_EQ(readback, DlIRect::MakeLTRB(-30, -30, 40, 40));
   }
 
-  MockLayerTree l1(SkISize::Make(100, 100));
+  MockLayerTree l1(DlISize(100, 100));
   l1.root()->Add(std::make_shared<BackdropFilterLayer>(filter.shared(),
                                                        DlBlendMode::kSrcOver));
 
   // no clip, effect over entire surface
-  auto damage = DiffLayerTree(l1, MockLayerTree(SkISize::Make(100, 100)));
-  EXPECT_EQ(damage.frame_damage, SkIRect::MakeWH(100, 100));
+  auto damage = DiffLayerTree(l1, MockLayerTree(DlISize(100, 100)));
+  EXPECT_EQ(damage.frame_damage, DlIRect::MakeWH(100, 100));
 
-  MockLayerTree l2(SkISize::Make(100, 100));
+  MockLayerTree l2(DlISize(100, 100));
 
-  auto clip = std::make_shared<ClipRectLayer>(SkRect::MakeLTRB(20, 20, 60, 60),
+  auto clip = std::make_shared<ClipRectLayer>(DlFRect::MakeLTRB(20, 20, 60, 60),
                                               Clip::hardEdge);
   clip->Add(std::make_shared<BackdropFilterLayer>(filter.shared(),
                                                   DlBlendMode::kSrcOver));
   l2.root()->Add(clip);
-  damage = DiffLayerTree(l2, MockLayerTree(SkISize::Make(100, 100)));
+  damage = DiffLayerTree(l2, MockLayerTree(DlISize(100, 100)));
 
-  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(0, 0, 90, 90));
+  EXPECT_EQ(damage.frame_damage, DlIRect::MakeLTRB(0, 0, 90, 90));
 
   MockLayerTree l3;
-  auto scale = std::make_shared<TransformLayer>(SkMatrix::Scale(2.0, 2.0));
+  auto scale =
+      std::make_shared<TransformLayer>(DlTransform::MakeScale(2.0, 2.0));
   scale->Add(clip);
   l3.root()->Add(scale);
 
   damage = DiffLayerTree(l3, MockLayerTree());
-  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(0, 0, 180, 180));
+  EXPECT_EQ(damage.frame_damage, DlIRect::MakeLTRB(0, 0, 180, 180));
 
   MockLayerTree l4;
   l4.root()->Add(scale);
 
   // path just outside of readback region, doesn't affect blur
-  auto path1 = SkPath().addRect(SkRect::MakeLTRB(180, 180, 190, 190));
+  auto path1 = DlPath().AddRect(DlFRect::MakeLTRB(180, 180, 190, 190));
   l4.root()->Add(std::make_shared<MockLayer>(path1));
   damage = DiffLayerTree(l4, l3);
 
-  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(180, 180, 190, 190));
+  EXPECT_EQ(damage.frame_damage, DlIRect::MakeLTRB(180, 180, 190, 190));
 
   MockLayerTree l5;
   l5.root()->Add(scale);
 
   // path just inside of readback region, must trigger backdrop repaint
-  auto path2 = SkPath().addRect(SkRect::MakeLTRB(179, 179, 189, 189));
+  auto path2 = DlPath().AddRect(DlFRect::MakeLTRB(179, 179, 189, 189));
   l5.root()->Add(std::make_shared<MockLayer>(path2));
   damage = DiffLayerTree(l5, l4);
-  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(0, 0, 190, 190));
+  EXPECT_EQ(damage.frame_damage, DlIRect::MakeLTRB(0, 0, 190, 190));
 }
 
 TEST_F(BackdropLayerDiffTest, BackdropLayerInvalidTransform) {
@@ -487,25 +488,25 @@ TEST_F(BackdropLayerDiffTest, BackdropLayerInvalidTransform) {
 
   {
     // tests later assume 30px readback area, fail early if that's not the case
-    SkIRect readback;
-    EXPECT_EQ(filter.get_input_device_bounds(SkIRect::MakeWH(10, 10),
-                                             SkMatrix::I(), readback),
+    DlIRect readback;
+    EXPECT_EQ(filter.get_input_device_bounds(DlIRect::MakeWH(10, 10),
+                                             DlTransform(), readback),
               &readback);
-    EXPECT_EQ(readback, SkIRect::MakeLTRB(-30, -30, 40, 40));
+    EXPECT_EQ(readback, DlIRect::MakeLTRB(-30, -30, 40, 40));
   }
 
-  MockLayerTree l1(SkISize::Make(100, 100));
-  SkMatrix transform;
-  transform.setPerspX(0.1);
-  transform.setPerspY(0.1);
+  MockLayerTree l1(DlISize(100, 100));
+  DlTransform transform;
+  transform.SetPerspectiveX(0.1);
+  transform.SetPerspectiveY(0.1);
 
   auto transform_layer = std::make_shared<TransformLayer>(transform);
   l1.root()->Add(transform_layer);
   transform_layer->Add(std::make_shared<BackdropFilterLayer>(
       filter.shared(), DlBlendMode::kSrcOver));
 
-  auto damage = DiffLayerTree(l1, MockLayerTree(SkISize::Make(100, 100)));
-  EXPECT_EQ(damage.frame_damage, SkIRect::MakeWH(100, 100));
+  auto damage = DiffLayerTree(l1, MockLayerTree(DlISize(100, 100)));
+  EXPECT_EQ(damage.frame_damage, DlIRect::MakeWH(100, 100));
 }
 
 }  // namespace testing

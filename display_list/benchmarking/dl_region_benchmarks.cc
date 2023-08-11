@@ -4,6 +4,7 @@
 
 #include "flutter/benchmarking/benchmarking.h"
 
+#include "flutter/display_list/geometry/dl_rect.h"
 #include "flutter/display_list/geometry/dl_region.h"
 #include "flutter/fml/logging.h"
 #include "third_party/skia/include/core/SkRegion.h"
@@ -12,40 +13,44 @@
 
 namespace {
 
-template <typename RNG>
-std::vector<SkIRect> GenerateRects(RNG& rng,
-                                   const SkIRect& bounds,
-                                   int numRects,
-                                   int maxSize) {
-  auto max_size_x = std::min(maxSize, bounds.width());
-  auto max_size_y = std::min(maxSize, bounds.height());
+using DlIRect = flutter::DlIRect;
 
-  std::uniform_int_distribution pos_x(bounds.fLeft, bounds.fRight - max_size_x);
-  std::uniform_int_distribution pos_y(bounds.fTop, bounds.fBottom - max_size_y);
+template <typename RNG, typename IRect>
+std::vector<IRect> GenerateRects(RNG& rng,
+                                 const IRect& bounds,
+                                 int numRects,
+                                 int maxSize) {
+  auto max_size_x = std::min(maxSize, (int) bounds.width());
+  auto max_size_y = std::min(maxSize, (int) bounds.height());
+
+  std::uniform_int_distribution pos_x(bounds.left(),
+                                      bounds.right() - max_size_x);
+  std::uniform_int_distribution pos_y(bounds.top(),
+                                      bounds.bottom() - max_size_y);
   std::uniform_int_distribution size_x(1, max_size_x);
   std::uniform_int_distribution size_y(1, max_size_y);
 
-  std::vector<SkIRect> rects;
+  std::vector<IRect> rects;
   for (int i = 0; i < numRects; ++i) {
-    SkIRect rect =
-        SkIRect::MakeXYWH(pos_x(rng), pos_y(rng), size_x(rng), size_y(rng));
+    IRect rect =
+        IRect::MakeXYWH(pos_x(rng), pos_y(rng), size_x(rng), size_y(rng));
     rects.push_back(rect);
   }
   return rects;
 }
 
-template <typename RNG>
-SkIRect RandomSubRect(RNG& rng, const SkIRect& rect, double size_factor) {
+template <typename RNG, typename IRect>
+IRect RandomSubRect(RNG& rng, const IRect& rect, double size_factor) {
   FML_DCHECK(size_factor <= 1);
 
   int32_t width = rect.width() * size_factor;
   int32_t height = rect.height() * size_factor;
 
-  std::uniform_int_distribution pos_x(0, rect.width() - width);
-  std::uniform_int_distribution pos_y(0, rect.height() - height);
+  std::uniform_int_distribution pos_x(0, (int) (rect.width() - width));
+  std::uniform_int_distribution pos_y(0, (int) (rect.height() - height));
 
-  return SkIRect::MakeXYWH(rect.fLeft + pos_x(rng), rect.fTop + pos_y(rng),
-                           width, height);
+  return IRect::MakeXYWH(rect.left() + pos_x(rng), rect.top() + pos_y(rng),
+                         width, height);
 }
 
 class SkRegionAdapter {
@@ -92,7 +97,7 @@ class SkRegionAdapter {
 
 class DlRegionAdapter {
  public:
-  explicit DlRegionAdapter(const std::vector<SkIRect>& rects)
+  explicit DlRegionAdapter(const std::vector<DlIRect>& rects)
       : region_(rects) {}
 
   static DlRegionAdapter unionRegions(const DlRegionAdapter& a1,
@@ -107,15 +112,15 @@ class DlRegionAdapter {
         flutter::DlRegion::MakeIntersection(a1.region_, a2.region_));
   }
 
-  SkIRect getBounds() { return region_.bounds(); }
+  DlIRect getBounds() { return region_.bounds(); }
 
   bool intersects(const DlRegionAdapter& region) {
     return region_.intersects(region.region_);
   }
 
-  bool intersects(const SkIRect& rect) { return region_.intersects(rect); }
+  bool intersects(const DlIRect& rect) { return region_.intersects(rect); }
 
-  std::vector<SkIRect> getRects() { return region_.getRects(false); }
+  std::vector<DlIRect> getRects() { return region_.getRects(false); }
 
  private:
   explicit DlRegionAdapter(flutter::DlRegion&& region)
@@ -124,7 +129,7 @@ class DlRegionAdapter {
   flutter::DlRegion region_;
 };
 
-template <typename Region>
+template <typename Region, typename IRect>
 void RunFromRectsBenchmark(benchmark::State& state, int maxSize) {
   std::random_device d;
   std::seed_seq seed{2, 1, 3};
@@ -133,9 +138,9 @@ void RunFromRectsBenchmark(benchmark::State& state, int maxSize) {
   std::uniform_int_distribution pos(0, 4000);
   std::uniform_int_distribution size(1, maxSize);
 
-  std::vector<SkIRect> rects;
+  std::vector<IRect> rects;
   for (int i = 0; i < 2000; ++i) {
-    SkIRect rect = SkIRect::MakeXYWH(pos(rng), pos(rng), size(rng), size(rng));
+    IRect rect = IRect::MakeXYWH(pos(rng), pos(rng), size(rng), size(rng));
     rects.push_back(rect);
   }
 
@@ -144,7 +149,7 @@ void RunFromRectsBenchmark(benchmark::State& state, int maxSize) {
   }
 }
 
-template <typename Region>
+template <typename Region, typename IRect>
 void RunGetRectsBenchmark(benchmark::State& state, int maxSize) {
   std::random_device d;
   std::seed_seq seed{2, 1, 3};
@@ -153,9 +158,9 @@ void RunGetRectsBenchmark(benchmark::State& state, int maxSize) {
   std::uniform_int_distribution pos(0, 4000);
   std::uniform_int_distribution size(1, maxSize);
 
-  std::vector<SkIRect> rects;
+  std::vector<IRect> rects;
   for (int i = 0; i < 2000; ++i) {
-    SkIRect rect = SkIRect::MakeXYWH(pos(rng), pos(rng), size(rng), size(rng));
+    IRect rect = IRect::MakeXYWH(pos(rng), pos(rng), size(rng), size(rng));
     rects.push_back(rect);
   }
 
@@ -168,7 +173,7 @@ void RunGetRectsBenchmark(benchmark::State& state, int maxSize) {
 
 enum RegionOp { kUnion, kIntersection };
 
-template <typename Region>
+template <typename Region, typename IRect>
 void RunRegionOpBenchmark(benchmark::State& state,
                           RegionOp op,
                           bool withSingleRect,
@@ -178,8 +183,8 @@ void RunRegionOpBenchmark(benchmark::State& state,
   std::seed_seq seed{2, 1, 3};
   std::mt19937 rng(seed);
 
-  SkIRect bounds1 = SkIRect::MakeWH(4000, 4000);
-  SkIRect bounds2 = RandomSubRect(rng, bounds1, sizeFactor);
+  IRect bounds1 = IRect::MakeWH(4000, 4000);
+  IRect bounds2 = RandomSubRect(rng, bounds1, sizeFactor);
 
   auto rects = GenerateRects(rng, bounds1, 500, maxSize);
   Region region1(rects);
@@ -202,7 +207,7 @@ void RunRegionOpBenchmark(benchmark::State& state,
   }
 }
 
-template <typename Region>
+template <typename Region, typename IRect>
 void RunIntersectsRegionBenchmark(benchmark::State& state,
                                   int maxSize,
                                   double sizeFactor) {
@@ -210,8 +215,8 @@ void RunIntersectsRegionBenchmark(benchmark::State& state,
   std::seed_seq seed{2, 1, 3};
   std::mt19937 rng(seed);
 
-  SkIRect bounds1 = SkIRect::MakeWH(4000, 4000);
-  SkIRect bounds2 = RandomSubRect(rng, bounds1, sizeFactor);
+  IRect bounds1 = IRect::MakeWH(4000, 4000);
+  IRect bounds2 = RandomSubRect(rng, bounds1, sizeFactor);
 
   auto rects = GenerateRects(rng, bounds1, 500, maxSize);
   Region region1(rects);
@@ -224,7 +229,7 @@ void RunIntersectsRegionBenchmark(benchmark::State& state,
   }
 }
 
-template <typename Region>
+template <typename Region, typename IRect>
 void RunIntersectsSingleRectBenchmark(benchmark::State& state, int maxSize) {
   std::random_device d;
   std::seed_seq seed{2, 1, 3};
@@ -233,16 +238,16 @@ void RunIntersectsSingleRectBenchmark(benchmark::State& state, int maxSize) {
   std::uniform_int_distribution pos(0, 4000);
   std::uniform_int_distribution size(1, maxSize);
 
-  std::vector<SkIRect> rects;
+  std::vector<IRect> rects;
   for (int i = 0; i < 500; ++i) {
-    SkIRect rect = SkIRect::MakeXYWH(pos(rng), pos(rng), size(rng), size(rng));
+    IRect rect = IRect::MakeXYWH(pos(rng), pos(rng), size(rng), size(rng));
     rects.push_back(rect);
   }
   Region region1(rects);
 
   rects.clear();
   for (int i = 0; i < 100; ++i) {
-    SkIRect rect = SkIRect::MakeXYWH(pos(rng), pos(rng), size(rng), size(rng));
+    IRect rect = IRect::MakeXYWH(pos(rng), pos(rng), size(rng), size(rng));
     rects.push_back(rect);
   }
 
@@ -258,19 +263,19 @@ void RunIntersectsSingleRectBenchmark(benchmark::State& state, int maxSize) {
 namespace flutter {
 
 static void BM_DlRegion_FromRects(benchmark::State& state, int maxSize) {
-  RunFromRectsBenchmark<DlRegionAdapter>(state, maxSize);
+  RunFromRectsBenchmark<DlRegionAdapter, DlIRect>(state, maxSize);
 }
 
 static void BM_SkRegion_FromRects(benchmark::State& state, int maxSize) {
-  RunFromRectsBenchmark<SkRegionAdapter>(state, maxSize);
+  RunFromRectsBenchmark<SkRegionAdapter, SkIRect>(state, maxSize);
 }
 
 static void BM_DlRegion_GetRects(benchmark::State& state, int maxSize) {
-  RunGetRectsBenchmark<DlRegionAdapter>(state, maxSize);
+  RunGetRectsBenchmark<DlRegionAdapter, DlIRect>(state, maxSize);
 }
 
 static void BM_SkRegion_GetRects(benchmark::State& state, int maxSize) {
-  RunGetRectsBenchmark<SkRegionAdapter>(state, maxSize);
+  RunGetRectsBenchmark<SkRegionAdapter, SkIRect>(state, maxSize);
 }
 
 static void BM_DlRegion_Operation(benchmark::State& state,
@@ -278,8 +283,8 @@ static void BM_DlRegion_Operation(benchmark::State& state,
                                   bool withSingleRect,
                                   int maxSize,
                                   double sizeFactor) {
-  RunRegionOpBenchmark<DlRegionAdapter>(state, op, withSingleRect, maxSize,
-                                        sizeFactor);
+  RunRegionOpBenchmark<DlRegionAdapter, DlIRect>(state, op, withSingleRect,
+                                                 maxSize, sizeFactor);
 }
 
 static void BM_SkRegion_Operation(benchmark::State& state,
@@ -287,30 +292,33 @@ static void BM_SkRegion_Operation(benchmark::State& state,
                                   bool withSingleRect,
                                   int maxSize,
                                   double sizeFactor) {
-  RunRegionOpBenchmark<SkRegionAdapter>(state, op, withSingleRect, maxSize,
-                                        sizeFactor);
+  RunRegionOpBenchmark<SkRegionAdapter, SkIRect>(state, op, withSingleRect,
+                                                 maxSize, sizeFactor);
 }
 
 static void BM_DlRegion_IntersectsRegion(benchmark::State& state,
                                          int maxSize,
                                          double sizeFactor) {
-  RunIntersectsRegionBenchmark<DlRegionAdapter>(state, maxSize, sizeFactor);
+  RunIntersectsRegionBenchmark<DlRegionAdapter, DlIRect>(
+      state, maxSize, sizeFactor);
 }
 
 static void BM_SkRegion_IntersectsRegion(benchmark::State& state,
                                          int maxSize,
                                          double sizeFactor) {
-  RunIntersectsRegionBenchmark<SkRegionAdapter>(state, maxSize, sizeFactor);
+  RunIntersectsRegionBenchmark<SkRegionAdapter, SkIRect>(
+      state, maxSize, sizeFactor);
 }
 
 static void BM_DlRegion_IntersectsSingleRect(benchmark::State& state,
                                              int maxSize) {
-  RunIntersectsSingleRectBenchmark<DlRegionAdapter>(state, maxSize);
+  RunIntersectsSingleRectBenchmark<DlRegionAdapter,DlIRect>(
+      state, maxSize);
 }
 
 static void BM_SkRegion_IntersectsSingleRect(benchmark::State& state,
                                              int maxSize) {
-  RunIntersectsSingleRectBenchmark<SkRegionAdapter>(state, maxSize);
+  RunIntersectsSingleRectBenchmark<SkRegionAdapter, SkIRect>(state, maxSize);
 }
 
 const double kSizeFactorSmall = 0.3;

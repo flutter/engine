@@ -49,8 +49,8 @@ class MockSurface : public Surface {
  public:
   MOCK_METHOD0(IsValid, bool());
   MOCK_METHOD1(AcquireFrame,
-               std::unique_ptr<SurfaceFrame>(const SkISize& size));
-  MOCK_CONST_METHOD0(GetRootTransformation, SkMatrix());
+               std::unique_ptr<SurfaceFrame>(const DlISize& size));
+  MOCK_CONST_METHOD0(GetRootTransformation, DlTransform());
   MOCK_METHOD0(GetContext, GrDirectContext*());
   MOCK_METHOD0(GetExternalViewEmbedder, ExternalViewEmbedder*());
   MOCK_METHOD0(MakeRenderContextCurrent, std::unique_ptr<GLContextResult>());
@@ -63,7 +63,7 @@ class MockExternalViewEmbedder : public ExternalViewEmbedder {
   MOCK_METHOD0(GetRootCanvas, DlCanvas*());
   MOCK_METHOD0(CancelFrame, void());
   MOCK_METHOD4(BeginFrame,
-               void(SkISize frame_size,
+               void(DlISize frame_size,
                     GrDirectContext* context,
                     double device_pixel_ratio,
                     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger));
@@ -165,15 +165,15 @@ TEST(RasterizerTest,
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/nullptr, framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
-      /*frame_size=*/SkISize::Make(800, 600));
+      /*frame_size=*/DlISize(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
-  EXPECT_CALL(*surface, AcquireFrame(SkISize()))
+  EXPECT_CALL(*surface, AcquireFrame(DlISize()))
       .WillOnce(Return(ByMove(std::move(surface_frame))));
   EXPECT_CALL(*surface, MakeRenderContextCurrent())
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
 
   EXPECT_CALL(*external_view_embedder,
-              BeginFrame(/*frame_size=*/SkISize(), /*context=*/nullptr,
+              BeginFrame(/*frame_size=*/DlISize(), /*context=*/nullptr,
                          /*device_pixel_ratio=*/2.0,
                          /*raster_thread_merger=*/
                          fml::RefPtr<fml::RasterThreadMerger>(nullptr)))
@@ -192,7 +192,7 @@ TEST(RasterizerTest,
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     auto layer_tree =
         std::make_unique<LayerTree>(/*config=*/LayerTree::Config(),
-                                    /*frame_size=*/SkISize());
+                                    /*frame_size=*/DlISize());
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
         std::move(layer_tree), CreateFinishedBuildRecorder(),
         kDevicePixelRatio);
@@ -236,15 +236,15 @@ TEST(
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/nullptr, framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
-      /*frame_size=*/SkISize::Make(800, 600));
+      /*frame_size=*/DlISize(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
-  EXPECT_CALL(*surface, AcquireFrame(SkISize()))
+  EXPECT_CALL(*surface, AcquireFrame(DlISize()))
       .WillOnce(Return(ByMove(std::move(surface_frame))));
   EXPECT_CALL(*surface, MakeRenderContextCurrent())
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
 
   EXPECT_CALL(*external_view_embedder,
-              BeginFrame(/*frame_size=*/SkISize(), /*context=*/nullptr,
+              BeginFrame(/*frame_size=*/DlISize(), /*context=*/nullptr,
                          /*device_pixel_ratio=*/2.0,
                          /*raster_thread_merger=*/_))
       .Times(1);
@@ -258,7 +258,7 @@ TEST(
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
-        /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+        /*config=*/LayerTree::Config(), /*frame_size=*/DlISize());
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
         std::move(layer_tree), CreateFinishedBuildRecorder(),
         kDevicePixelRatio);
@@ -307,9 +307,9 @@ TEST(
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/nullptr, framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
-      /*frame_size=*/SkISize::Make(800, 600));
+      /*frame_size=*/DlISize(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
-  EXPECT_CALL(*surface, AcquireFrame(SkISize()))
+  EXPECT_CALL(*surface, AcquireFrame(DlISize()))
       .WillOnce(Return(ByMove(std::move(surface_frame))));
   EXPECT_CALL(*surface, MakeRenderContextCurrent())
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
@@ -317,7 +317,7 @@ TEST(
       .WillRepeatedly(Return(true));
 
   EXPECT_CALL(*external_view_embedder,
-              BeginFrame(/*frame_size=*/SkISize(), /*context=*/nullptr,
+              BeginFrame(/*frame_size=*/DlISize(), /*context=*/nullptr,
                          /*device_pixel_ratio=*/2.0,
                          /*raster_thread_merger=*/_))
       .Times(1);
@@ -330,7 +330,7 @@ TEST(
 
   auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
   auto layer_tree = std::make_unique<LayerTree>(/*config=*/LayerTree::Config(),
-                                                /*frame_size=*/SkISize());
+                                                /*frame_size=*/DlISize());
   auto layer_tree_item = std::make_unique<LayerTreeItem>(
       std::move(layer_tree), CreateFinishedBuildRecorder(), kDevicePixelRatio);
   PipelineProduceResult result =
@@ -374,15 +374,15 @@ TEST(RasterizerTest,
   auto surface_frame1 = std::make_unique<SurfaceFrame>(
       /*surface=*/nullptr, framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
-      /*frame_size=*/SkISize::Make(800, 600));
+      /*frame_size=*/DlISize(800, 600));
   auto surface_frame2 = std::make_unique<SurfaceFrame>(
       /*surface=*/nullptr, framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
-      /*frame_size=*/SkISize::Make(800, 600));
+      /*frame_size=*/DlISize(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled())
       .WillRepeatedly(Return(true));
   // Prepare two frames for Draw() and DrawLastLayerTree().
-  EXPECT_CALL(*surface, AcquireFrame(SkISize()))
+  EXPECT_CALL(*surface, AcquireFrame(DlISize()))
       .WillOnce(Return(ByMove(std::move(surface_frame1))))
       .WillOnce(Return(ByMove(std::move(surface_frame2))));
   EXPECT_CALL(*surface, MakeRenderContextCurrent())
@@ -391,7 +391,7 @@ TEST(RasterizerTest,
       .WillRepeatedly(Return(true));
 
   EXPECT_CALL(*external_view_embedder,
-              BeginFrame(/*frame_size=*/SkISize(), /*context=*/nullptr,
+              BeginFrame(/*frame_size=*/DlISize(), /*context=*/nullptr,
                          /*device_pixel_ratio=*/2.0,
                          /*raster_thread_merger=*/_))
       .Times(2);
@@ -404,7 +404,7 @@ TEST(RasterizerTest,
 
   auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
   auto layer_tree = std::make_unique<LayerTree>(/*config=*/LayerTree::Config(),
-                                                /*frame_size=*/SkISize());
+                                                /*frame_size=*/DlISize());
   auto layer_tree_item = std::make_unique<LayerTreeItem>(
       std::move(layer_tree), CreateFinishedBuildRecorder(), kDevicePixelRatio);
   PipelineProduceResult result =
@@ -453,7 +453,7 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNoSurfaceIsSet) {
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
-        /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+        /*config=*/LayerTree::Config(), /*frame_size=*/DlISize());
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
         std::move(layer_tree), CreateFinishedBuildRecorder(),
         kDevicePixelRatio);
@@ -494,7 +494,7 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNotUsedThisFrame) {
   rasterizer->Setup(std::move(surface));
 
   EXPECT_CALL(*external_view_embedder,
-              BeginFrame(/*frame_size=*/SkISize(), /*context=*/nullptr,
+              BeginFrame(/*frame_size=*/DlISize(), /*context=*/nullptr,
                          /*device_pixel_ratio=*/2.0,
                          /*raster_thread_merger=*/_))
       .Times(0);
@@ -509,7 +509,7 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNotUsedThisFrame) {
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
-        /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+        /*config=*/LayerTree::Config(), /*frame_size=*/DlISize());
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
         std::move(layer_tree), CreateFinishedBuildRecorder(),
         kDevicePixelRatio);
@@ -597,12 +597,12 @@ TEST(RasterizerTest,
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/nullptr, /*framebuffer_info=*/framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
-      /*frame_size=*/SkISize::Make(800, 600));
+      /*frame_size=*/DlISize(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
   ON_CALL(delegate, GetIsGpuDisabledSyncSwitch())
       .WillByDefault(Return(is_gpu_disabled_sync_switch));
   EXPECT_CALL(delegate, GetIsGpuDisabledSyncSwitch()).Times(0);
-  EXPECT_CALL(*surface, AcquireFrame(SkISize()))
+  EXPECT_CALL(*surface, AcquireFrame(DlISize()))
       .WillOnce(Return(ByMove(std::move(surface_frame))));
   EXPECT_CALL(*surface, MakeRenderContextCurrent())
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
@@ -612,7 +612,7 @@ TEST(RasterizerTest,
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
-        /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+        /*config=*/LayerTree::Config(), /*frame_size=*/DlISize());
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
         std::move(layer_tree), CreateFinishedBuildRecorder(),
         kDevicePixelRatio);
@@ -655,12 +655,12 @@ TEST(
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/nullptr, /*framebuffer_info=*/framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
-      /*frame_size=*/SkISize::Make(800, 600));
+      /*frame_size=*/DlISize(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
   ON_CALL(delegate, GetIsGpuDisabledSyncSwitch())
       .WillByDefault(Return(is_gpu_disabled_sync_switch));
   EXPECT_CALL(delegate, GetIsGpuDisabledSyncSwitch()).Times(0);
-  EXPECT_CALL(*surface, AcquireFrame(SkISize()))
+  EXPECT_CALL(*surface, AcquireFrame(DlISize()))
       .WillOnce(Return(ByMove(std::move(surface_frame))));
   EXPECT_CALL(*surface, MakeRenderContextCurrent())
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
@@ -670,7 +670,7 @@ TEST(
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
-        /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+        /*config=*/LayerTree::Config(), /*frame_size=*/DlISize());
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
         std::move(layer_tree), CreateFinishedBuildRecorder(),
         kDevicePixelRatio);
@@ -714,11 +714,11 @@ TEST(
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/nullptr, /*framebuffer_info=*/framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
-      /*frame_size=*/SkISize::Make(800, 600));
+      /*frame_size=*/DlISize(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(false));
   EXPECT_CALL(delegate, GetIsGpuDisabledSyncSwitch())
       .WillOnce(Return(is_gpu_disabled_sync_switch));
-  EXPECT_CALL(*surface, AcquireFrame(SkISize()))
+  EXPECT_CALL(*surface, AcquireFrame(DlISize()))
       .WillOnce(Return(ByMove(std::move(surface_frame))));
   EXPECT_CALL(*surface, MakeRenderContextCurrent())
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
@@ -728,7 +728,7 @@ TEST(
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
-        /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+        /*config=*/LayerTree::Config(), /*frame_size=*/DlISize());
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
         std::move(layer_tree), CreateFinishedBuildRecorder(),
         kDevicePixelRatio);
@@ -772,11 +772,11 @@ TEST(
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/nullptr, /*framebuffer_info=*/framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
-      /*frame_size=*/SkISize::Make(800, 600));
+      /*frame_size=*/DlISize(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(false));
   EXPECT_CALL(delegate, GetIsGpuDisabledSyncSwitch())
       .WillOnce(Return(is_gpu_disabled_sync_switch));
-  EXPECT_CALL(*surface, AcquireFrame(SkISize())).Times(0);
+  EXPECT_CALL(*surface, AcquireFrame(DlISize())).Times(0);
   EXPECT_CALL(*surface, MakeRenderContextCurrent())
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
 
@@ -785,7 +785,7 @@ TEST(
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
-        /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+        /*config=*/LayerTree::Config(), /*frame_size=*/DlISize());
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
         std::move(layer_tree), CreateFinishedBuildRecorder(),
         kDevicePixelRatio);
@@ -831,9 +831,9 @@ TEST(
       std::make_shared<const fml::SyncSwitch>(false);
   ON_CALL(delegate, GetIsGpuDisabledSyncSwitch())
       .WillByDefault(Return(is_gpu_disabled_sync_switch));
-  ON_CALL(*surface, AcquireFrame(SkISize()))
+  ON_CALL(*surface, AcquireFrame(DlISize()))
       .WillByDefault(::testing::Invoke([] { return nullptr; }));
-  EXPECT_CALL(*surface, AcquireFrame(SkISize()));
+  EXPECT_CALL(*surface, AcquireFrame(DlISize()));
   EXPECT_CALL(*surface, MakeRenderContextCurrent())
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
   rasterizer->Setup(std::move(surface));
@@ -841,7 +841,7 @@ TEST(
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
-        /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+        /*config=*/LayerTree::Config(), /*frame_size=*/DlISize());
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
         std::move(layer_tree), CreateFinishedBuildRecorder(),
         kDevicePixelRatio);
@@ -883,7 +883,7 @@ TEST(RasterizerTest,
   auto surface = std::make_unique<NiceMock<MockSurface>>();
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled())
       .WillRepeatedly(Return(true));
-  ON_CALL(*surface, AcquireFrame(SkISize()))
+  ON_CALL(*surface, AcquireFrame(DlISize()))
       .WillByDefault(::testing::Invoke([] {
         SurfaceFrame::FramebufferInfo framebuffer_info;
         framebuffer_info.supports_readback = true;
@@ -891,7 +891,7 @@ TEST(RasterizerTest,
             /*surface=*/nullptr, framebuffer_info,
             /*submit_callback=*/
             [](const SurfaceFrame& frame, DlCanvas*) { return true; },
-            /*frame_size=*/SkISize::Make(800, 600));
+            /*frame_size=*/DlISize(800, 600));
       }));
   ON_CALL(*surface, MakeRenderContextCurrent())
       .WillByDefault(::testing::Invoke(
@@ -920,7 +920,7 @@ TEST(RasterizerTest,
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     for (int i = 0; i < 2; i++) {
       auto layer_tree = std::make_unique<LayerTree>(
-          /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+          /*config=*/LayerTree::Config(), /*frame_size=*/DlISize());
       auto layer_tree_item = std::make_unique<LayerTreeItem>(
           std::move(layer_tree), CreateFinishedBuildRecorder(timestamps[i]),
           kDevicePixelRatio);
@@ -1062,7 +1062,7 @@ TEST(RasterizerTest, presentationTimeSetWhenVsyncTargetInFuture) {
   fml::CountDownLatch submit_latch(2);
   auto surface = std::make_unique<MockSurface>();
   ON_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillByDefault(Return(true));
-  ON_CALL(*surface, AcquireFrame(SkISize()))
+  ON_CALL(*surface, AcquireFrame(DlISize()))
       .WillByDefault(::testing::Invoke([&] {
         SurfaceFrame::FramebufferInfo framebuffer_info;
         framebuffer_info.supports_readback = true;
@@ -1078,7 +1078,7 @@ TEST(RasterizerTest, presentationTimeSetWhenVsyncTargetInFuture) {
               submit_latch.CountDown();
               return true;
             },
-            /*frame_size=*/SkISize::Make(800, 600));
+            /*frame_size=*/DlISize(800, 600));
       }));
 
   ON_CALL(*surface, MakeRenderContextCurrent())
@@ -1090,7 +1090,7 @@ TEST(RasterizerTest, presentationTimeSetWhenVsyncTargetInFuture) {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     for (int i = 0; i < 2; i++) {
       auto layer_tree = std::make_unique<LayerTree>(
-          /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+          /*config=*/LayerTree::Config(), /*frame_size=*/DlISize());
       auto layer_tree_item = std::make_unique<LayerTreeItem>(
           std::move(layer_tree), CreateFinishedBuildRecorder(timestamps[i]),
           kDevicePixelRatio);
@@ -1145,7 +1145,7 @@ TEST(RasterizerTest, presentationTimeNotSetWhenVsyncTargetInPast) {
   fml::CountDownLatch submit_latch(1);
   auto surface = std::make_unique<MockSurface>();
   ON_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillByDefault(Return(true));
-  ON_CALL(*surface, AcquireFrame(SkISize()))
+  ON_CALL(*surface, AcquireFrame(DlISize()))
       .WillByDefault(::testing::Invoke([&] {
         SurfaceFrame::FramebufferInfo framebuffer_info;
         framebuffer_info.supports_readback = true;
@@ -1159,7 +1159,7 @@ TEST(RasterizerTest, presentationTimeNotSetWhenVsyncTargetInPast) {
               submit_latch.CountDown();
               return true;
             },
-            /*frame_size=*/SkISize::Make(800, 600));
+            /*frame_size=*/DlISize(800, 600));
       }));
 
   ON_CALL(*surface, MakeRenderContextCurrent())
@@ -1170,7 +1170,7 @@ TEST(RasterizerTest, presentationTimeNotSetWhenVsyncTargetInPast) {
     rasterizer->Setup(std::move(surface));
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
-        /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+        /*config=*/LayerTree::Config(), /*frame_size=*/DlISize());
     auto layer_tree_item = std::make_unique<LayerTreeItem>(
         std::move(layer_tree), CreateFinishedBuildRecorder(first_timestamp),
         kDevicePixelRatio);

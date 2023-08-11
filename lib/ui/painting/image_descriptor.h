@@ -17,7 +17,6 @@
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkPixmap.h"
-#include "third_party/skia/include/core/SkSize.h"
 #include "third_party/tonic/dart_library_natives.h"
 
 namespace flutter {
@@ -99,11 +98,11 @@ class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
   /// @brief  Gets the scaled dimensions of this image, if backed by an
   ///         `ImageGenerator` that can perform efficient subpixel scaling.
   /// @see    `ImageGenerator::GetScaledDimensions`
-  SkISize get_scaled_dimensions(float scale) {
+  DlISize get_scaled_dimensions(float scale) {
     if (generator_) {
       return generator_->GetScaledDimensions(scale);
     }
-    return image_info_.dimensions();
+    return DlISize::MakeSize(image_info_);
   }
 
   /// @brief  Gets pixels for this image transformed based on the EXIF

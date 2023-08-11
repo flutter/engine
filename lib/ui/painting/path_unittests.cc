@@ -27,16 +27,16 @@ TEST_F(ShellTest, PathVolatilityOldPathsBecomeNonVolatile) {
     EXPECT_FALSE(Dart_IsError(result));
     CanvasPath* path = reinterpret_cast<CanvasPath*>(peer);
     EXPECT_TRUE(path);
-    EXPECT_TRUE(path->path().isVolatile());
+    EXPECT_TRUE(path->path().is_volatile());
     std::shared_ptr<VolatilePathTracker> tracker =
         UIDartState::Current()->GetVolatilePathTracker();
     EXPECT_TRUE(tracker);
 
     for (int i = 0; i < VolatilePathTracker::kFramesOfVolatility; i++) {
-      EXPECT_TRUE(path->path().isVolatile());
+      EXPECT_TRUE(path->path().is_volatile());
       tracker->OnFrame();
     }
-    EXPECT_FALSE(path->path().isVolatile());
+    EXPECT_FALSE(path->path().is_volatile());
     message_latch->Signal();
   };
 
@@ -77,16 +77,16 @@ TEST_F(ShellTest, PathVolatilityGCRemovesPathFromTracker) {
     EXPECT_FALSE(Dart_IsError(result));
     CanvasPath* path = reinterpret_cast<CanvasPath*>(peer);
     EXPECT_TRUE(path);
-    EXPECT_TRUE(path->path().isVolatile());
+    EXPECT_TRUE(path->path().is_volatile());
     std::shared_ptr<VolatilePathTracker> tracker =
         UIDartState::Current()->GetVolatilePathTracker();
     EXPECT_TRUE(tracker);
     EXPECT_EQ(GetLiveTrackedPathCount(tracker), 1ul);
-    EXPECT_TRUE(path->path().isVolatile());
+    EXPECT_TRUE(path->path().is_volatile());
 
     tracker->OnFrame();
     EXPECT_EQ(GetLiveTrackedPathCount(tracker), 1ul);
-    EXPECT_TRUE(path->path().isVolatile());
+    EXPECT_TRUE(path->path().is_volatile());
 
     // simulate GC
     path->Release();
@@ -139,7 +139,7 @@ TEST_F(ShellTest, DeterministicRenderingDisablesPathVolatility) {
     EXPECT_FALSE(Dart_IsError(result));
     CanvasPath* path = reinterpret_cast<CanvasPath*>(peer);
     EXPECT_TRUE(path);
-    EXPECT_FALSE(path->path().isVolatile());
+    EXPECT_FALSE(path->path().is_volatile());
     std::shared_ptr<VolatilePathTracker> tracker =
         UIDartState::Current()->GetVolatilePathTracker();
     EXPECT_TRUE(tracker);
@@ -147,9 +147,9 @@ TEST_F(ShellTest, DeterministicRenderingDisablesPathVolatility) {
 
     for (int i = 0; i < VolatilePathTracker::kFramesOfVolatility; i++) {
       tracker->OnFrame();
-      EXPECT_FALSE(path->path().isVolatile());
+      EXPECT_FALSE(path->path().is_volatile());
     }
-    EXPECT_FALSE(path->path().isVolatile());
+    EXPECT_FALSE(path->path().is_volatile());
     message_latch->Signal();
   };
 

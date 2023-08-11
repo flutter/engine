@@ -15,7 +15,7 @@ IOSExternalTextureMetal::IOSExternalTextureMetal(
 IOSExternalTextureMetal::~IOSExternalTextureMetal() = default;
 
 void IOSExternalTextureMetal::Paint(PaintContext& context,
-                                    const SkRect& bounds,
+                                    const DlFRect& bounds,
                                     bool freeze,
                                     const DlImageSampling sampling) {
   [darwin_external_texture_metal_ paintContext:context

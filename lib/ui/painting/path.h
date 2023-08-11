@@ -9,8 +9,6 @@
 #include "flutter/lib/ui/painting/rrect.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/volatile_path_tracker.h"
-#include "third_party/skia/include/core/SkPath.h"
-#include "third_party/skia/include/pathops/SkPathOps.h"
 #include "third_party/tonic/typed_data/typed_list.h"
 
 namespace flutter {
@@ -22,7 +20,7 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
  public:
   ~CanvasPath() override;
 
-  static void CreateFrom(Dart_Handle path_handle, const SkPath& src) {
+  static void CreateFrom(Dart_Handle path_handle, const DlPath& src) {
     auto path = fml::MakeRefCounted<CanvasPath>();
     path->AssociateWithDartWrapper(path_handle);
     path->tracked_path_->path = src;
@@ -114,7 +112,7 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
   bool op(CanvasPath* path1, CanvasPath* path2, int operation);
   void clone(Dart_Handle path_handle);
 
-  const SkPath& path() const { return tracked_path_->path; }
+  const DlPath& path() const { return tracked_path_->path; }
 
  private:
   CanvasPath();
@@ -125,7 +123,7 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
   // Must be called whenever the path is created or mutated.
   void resetVolatility();
 
-  SkPath& mutable_path() { return tracked_path_->path; }
+  DlPath& mutable_path() { return tracked_path_->path; }
 };
 
 }  // namespace flutter

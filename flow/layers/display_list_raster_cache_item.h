@@ -11,28 +11,27 @@
 #include "flutter/display_list/display_list.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/raster_cache_item.h"
-#include "third_party/skia/include/core/SkMatrix.h"
-#include "third_party/skia/include/core/SkPoint.h"
 
 namespace flutter {
 
 class DisplayListRasterCacheItem : public RasterCacheItem {
  public:
   DisplayListRasterCacheItem(const sk_sp<DisplayList>& display_list,
-                             const SkPoint& offset,
+                             const DlFPoint& offset,
                              bool is_complex = true,
                              bool will_change = false);
 
   static std::unique_ptr<DisplayListRasterCacheItem> Make(
       const sk_sp<DisplayList>&,
-      const SkPoint& offset,
+      const DlFPoint& offset,
       bool is_complex,
       bool will_change);
 
-  void PrerollSetup(PrerollContext* context, const SkMatrix& matrix) override;
+  void PrerollSetup(PrerollContext* context,
+                    const DlTransform& matrix) override;
 
   void PrerollFinalize(PrerollContext* context,
-                       const SkMatrix& matrix) override;
+                       const DlTransform& matrix) override;
 
   bool Draw(const PaintContext& context, const DlPaint* paint) const override;
 
@@ -43,16 +42,16 @@ class DisplayListRasterCacheItem : public RasterCacheItem {
   bool TryToPrepareRasterCache(const PaintContext& context,
                                bool parent_cached = false) const override;
 
-  void ModifyMatrix(SkPoint offset) const {
-    matrix_ = matrix_.preTranslate(offset.x(), offset.y());
+  void ModifyMatrix(DlFPoint offset) const {
+    matrix_ = matrix_.TranslateOuter(offset.x(), offset.y());
   }
 
   const DisplayList* display_list() const { return display_list_.get(); }
 
  private:
-  SkMatrix transformation_matrix_;
+  DlTransform transformation_matrix_;
   sk_sp<DisplayList> display_list_;
-  SkPoint offset_;
+  DlFPoint offset_;
   bool is_complex_;
   bool will_change_;
 };

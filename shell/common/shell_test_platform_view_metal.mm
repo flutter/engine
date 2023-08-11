@@ -125,7 +125,7 @@ std::shared_ptr<impeller::Context> ShellTestPlatformViewMetal::GetImpellerContex
 }
 
 // |GPUSurfaceMetalDelegate|
-GPUCAMetalLayerHandle ShellTestPlatformViewMetal::GetCAMetalLayer(const SkISize& frame_info) const {
+GPUCAMetalLayerHandle ShellTestPlatformViewMetal::GetCAMetalLayer(const DlISize& frame_info) const {
   FML_CHECK(false) << "A Metal Delegate configured with MTLRenderTargetType::kMTLTexture was asked "
                       "to acquire a layer.";
   return nullptr;
@@ -139,7 +139,7 @@ bool ShellTestPlatformViewMetal::PresentDrawable(GrMTLHandle drawable) const {
 }
 
 // |GPUSurfaceMetalDelegate|
-GPUMTLTextureInfo ShellTestPlatformViewMetal::GetMTLTexture(const SkISize& frame_info) const {
+GPUMTLTextureInfo ShellTestPlatformViewMetal::GetMTLTexture(const DlISize& frame_info) const {
   return metal_context_->offscreen_texture_info();
 }
 

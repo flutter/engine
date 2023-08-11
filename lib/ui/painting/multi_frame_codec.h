@@ -59,7 +59,7 @@ class MultiFrameCodec : public Codec {
 
     // The rectangle that should be cleared if the previous frame's disposal
     // method was kRestoreBGColor.
-    std::optional<SkIRect> restoreBGColorRect_;
+    std::optional<DlIRect> restoreBGColorRect_;
 
     std::pair<sk_sp<DlImage>, std::string> GetNextFrameImage(
         fml::WeakPtr<GrDirectContext> resourceContext,

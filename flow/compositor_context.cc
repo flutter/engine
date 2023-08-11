@@ -7,11 +7,10 @@
 #include <optional>
 #include <utility>
 #include "flutter/flow/layers/layer_tree.h"
-#include "third_party/skia/include/core/SkCanvas.h"
 
 namespace flutter {
 
-std::optional<SkRect> FrameDamage::ComputeClipRect(
+std::optional<DlFRect> FrameDamage::ComputeClipRect(
     flutter::LayerTree& layer_tree,
     bool has_raster_cache,
     bool impeller_enabled) {
@@ -21,7 +20,7 @@ std::optional<SkRect> FrameDamage::ComputeClipRect(
                         prev_layer_tree_ ? prev_layer_tree_->paint_region_map()
                                          : empty_paint_region_map,
                         has_raster_cache, impeller_enabled);
-    context.PushCullRect(SkRect::MakeIWH(layer_tree.frame_size().width(),
+    context.PushCullRect(DlFRect::MakeWH(layer_tree.frame_size().width(),
                                          layer_tree.frame_size().height()));
     {
       DiffContext::AutoSubtreeRestore subtree(&context);
@@ -30,7 +29,7 @@ std::optional<SkRect> FrameDamage::ComputeClipRect(
           prev_layer_tree_->frame_size() != layer_tree.frame_size()) {
         // If there is no previous layer tree assume the entire frame must be
         // repainted.
-        context.MarkSubtreeDirty(SkRect::MakeIWH(
+        context.MarkSubtreeDirty(DlFRect::MakeWH(
             layer_tree.frame_size().width(), layer_tree.frame_size().height()));
       } else {
         prev_root_layer = prev_layer_tree_->root_layer();
@@ -41,7 +40,7 @@ std::optional<SkRect> FrameDamage::ComputeClipRect(
     damage_ =
         context.ComputeDamage(additional_damage_, horizontal_clip_alignment_,
                               vertical_clip_alignment_);
-    return SkRect::Make(damage_->buffer_damage);
+    return DlFRect::MakeBounds(damage_->buffer_damage);
   }
   return std::nullopt;
 }
@@ -76,7 +75,7 @@ std::unique_ptr<CompositorContext::ScopedFrame> CompositorContext::AcquireFrame(
     GrDirectContext* gr_context,
     DlCanvas* canvas,
     ExternalViewEmbedder* view_embedder,
-    const SkMatrix& root_surface_transformation,
+    const DlTransform& root_surface_transformation,
     bool instrumentation_enabled,
     bool surface_supports_readback,
     fml::RefPtr<fml::RasterThreadMerger>
@@ -93,7 +92,7 @@ CompositorContext::ScopedFrame::ScopedFrame(
     GrDirectContext* gr_context,
     DlCanvas* canvas,
     ExternalViewEmbedder* view_embedder,
-    const SkMatrix& root_surface_transformation,
+    const DlTransform& root_surface_transformation,
     bool instrumentation_enabled,
     bool surface_supports_readback,
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger,
@@ -120,7 +119,7 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
     FrameDamage* frame_damage) {
   TRACE_EVENT0("flutter", "CompositorContext::ScopedFrame::Raster");
 
-  std::optional<SkRect> clip_rect;
+  std::optional<DlFRect> clip_rect;
   if (frame_damage) {
     clip_rect = frame_damage->ComputeClipRect(layer_tree, !ignore_raster_cache,
                                               !gr_context_);
@@ -133,7 +132,7 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
   }
 
   bool root_needs_readback = layer_tree.Preroll(
-      *this, ignore_raster_cache, clip_rect ? *clip_rect : kGiantRect);
+      *this, ignore_raster_cache, clip_rect ? *clip_rect : kMaxCullRect);
   bool needs_save_layer = root_needs_readback && !surface_supports_readback();
   PostPrerollResult post_preroll_result = PostPrerollResult::kSuccess;
   if (view_embedder_ && raster_thread_merger_) {
@@ -159,7 +158,7 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
 
 void CompositorContext::ScopedFrame::PaintLayerTreeSkia(
     flutter::LayerTree& layer_tree,
-    std::optional<SkRect> clip_rect,
+    std::optional<DlFRect> clip_rect,
     bool needs_save_layer,
     bool ignore_raster_cache) {
   DlAutoCanvasRestore restore(canvas(), clip_rect.has_value());
@@ -171,7 +170,8 @@ void CompositorContext::ScopedFrame::PaintLayerTreeSkia(
 
     if (needs_save_layer) {
       TRACE_EVENT0("flutter", "Canvas::saveLayer");
-      SkRect bounds = SkRect::Make(layer_tree.frame_size());
+      DlFRect bounds = DlFRect::MakeWH(layer_tree.frame_size().width(),
+                                       layer_tree.frame_size().height());
       DlPaint paint;
       paint.setBlendMode(DlBlendMode::kSrc);
       canvas()->SaveLayer(&bounds, &paint);
@@ -185,10 +185,10 @@ void CompositorContext::ScopedFrame::PaintLayerTreeSkia(
 
 void CompositorContext::ScopedFrame::PaintLayerTreeImpeller(
     flutter::LayerTree& layer_tree,
-    std::optional<SkRect> clip_rect,
+    std::optional<DlFRect> clip_rect,
     bool ignore_raster_cache) {
   if (canvas() && clip_rect) {
-    canvas()->Translate(-clip_rect->x(), -clip_rect->y());
+    canvas()->Translate(-clip_rect->left(), -clip_rect->top());
   }
 
   layer_tree.Paint(*this, ignore_raster_cache);
@@ -208,8 +208,8 @@ void CompositorContext::ScopedFrame::PaintLayerTreeImpeller(
 constexpr float kImpellerRepaintRatio = 0.7f;
 
 bool CompositorContext::ShouldPerformPartialRepaint(
-    std::optional<SkRect> damage_rect,
-    SkISize layer_tree_size) {
+    std::optional<DlFRect> damage_rect,
+    DlISize layer_tree_size) {
   if (!damage_rect.has_value()) {
     return false;
   }

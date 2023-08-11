@@ -29,14 +29,14 @@ EmbedderExternalTextureGL::~EmbedderExternalTextureGL() = default;
 
 // |flutter::Texture|
 void EmbedderExternalTextureGL::Paint(PaintContext& context,
-                                      const SkRect& bounds,
+                                      const DlFRect& bounds,
                                       bool freeze,
                                       const DlImageSampling sampling) {
   if (last_image_ == nullptr) {
     last_image_ =
-        ResolveTexture(Id(),                                           //
-                       context.gr_context,                             //
-                       SkISize::Make(bounds.width(), bounds.height())  //
+        ResolveTexture(Id(),                      //
+                       context.gr_context,        //
+                       DlISize::MakeSize(bounds)  //
         );
   }
 
@@ -44,7 +44,7 @@ void EmbedderExternalTextureGL::Paint(PaintContext& context,
   const DlPaint* paint = context.paint;
 
   if (last_image_) {
-    SkRect image_bounds = SkRect::Make(last_image_->bounds());
+    DlFRect image_bounds = DlFRect(last_image_->bounds());
     if (bounds != image_bounds) {
       canvas->DrawImageRect(last_image_, image_bounds, bounds, sampling, paint);
     } else {
@@ -56,7 +56,7 @@ void EmbedderExternalTextureGL::Paint(PaintContext& context,
 sk_sp<DlImage> EmbedderExternalTextureGL::ResolveTexture(
     int64_t texture_id,
     GrDirectContext* context,
-    const SkISize& size) {
+    const DlISize& size) {
   context->flushAndSubmit();
   context->resetContext(kAll_GrBackendState);
   std::unique_ptr<FlutterOpenGLTexture> texture =

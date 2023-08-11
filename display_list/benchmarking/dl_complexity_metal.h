@@ -37,47 +37,47 @@ class DisplayListMetalComplexityCalculator
           save_layer_count_(0),
           draw_text_blob_count_(0) {}
 
-    void saveLayer(const SkRect* bounds,
+    void saveLayer(const DlFRect* bounds,
                    const SaveLayerOptions options,
                    const DlImageFilter* backdrop) override;
 
-    void drawLine(const SkPoint& p0, const SkPoint& p1) override;
-    void drawRect(const SkRect& rect) override;
-    void drawOval(const SkRect& bounds) override;
-    void drawCircle(const SkPoint& center, SkScalar radius) override;
-    void drawRRect(const SkRRect& rrect) override;
-    void drawDRRect(const SkRRect& outer, const SkRRect& inner) override;
-    void drawPath(const SkPath& path) override;
-    void drawArc(const SkRect& oval_bounds,
-                 SkScalar start_degrees,
-                 SkScalar sweep_degrees,
+    void drawLine(const DlFPoint& p0, const DlFPoint& p1) override;
+    void drawRect(const DlFRect& rect) override;
+    void drawOval(const DlFRect& bounds) override;
+    void drawCircle(const DlFPoint& center, DlScalar radius) override;
+    void drawRRect(const DlFRRect& rrect) override;
+    void drawDRRect(const DlFRRect& outer, const DlFRRect& inner) override;
+    void drawPath(const DlPath& path) override;
+    void drawArc(const DlFRect& oval_bounds,
+                 DlScalar start_degrees,
+                 DlScalar sweep_degrees,
                  bool use_center) override;
     void drawPoints(DlCanvas::PointMode mode,
                     uint32_t count,
-                    const SkPoint points[]) override;
+                    const DlFPoint points[]) override;
     void drawVertices(const DlVertices* vertices, DlBlendMode mode) override;
     void drawImage(const sk_sp<DlImage> image,
-                   const SkPoint point,
+                   const DlFPoint point,
                    DlImageSampling sampling,
                    bool render_with_attributes) override;
     void drawImageNine(const sk_sp<DlImage> image,
-                       const SkIRect& center,
-                       const SkRect& dst,
+                       const DlIRect& center,
+                       const DlFRect& dst,
                        DlFilterMode filter,
                        bool render_with_attributes) override;
     void drawDisplayList(const sk_sp<DisplayList> display_list,
-                         SkScalar opacity) override;
+                         DlScalar opacity) override;
     void drawTextBlob(const sk_sp<SkTextBlob> blob,
-                      SkScalar x,
-                      SkScalar y) override;
-    void drawShadow(const SkPath& path,
+                      DlScalar x,
+                      DlScalar y) override;
+    void drawShadow(const DlPath& path,
                     const DlColor color,
-                    const SkScalar elevation,
+                    const DlScalar elevation,
                     bool transparent_occluder,
-                    SkScalar dpr) override;
+                    DlScalar dpr) override;
 
    protected:
-    void ImageRect(const SkISize& size,
+    void ImageRect(const DlISize& size,
                    bool texture_backed,
                    bool render_with_attributes,
                    bool enforce_src_edges) override;

@@ -15,8 +15,8 @@ TEST(MutatorsStack, Initialization) {
 
 TEST(MutatorsStack, CopyConstructor) {
   MutatorsStack stack;
-  auto rrect = SkRRect::MakeEmpty();
-  auto rect = SkRect::MakeEmpty();
+  auto rrect = DlFRRect();
+  auto rect = DlFRect();
   stack.PushClipRect(rect);
   stack.PushClipRRect(rrect);
   MutatorsStack copy = MutatorsStack(stack);
@@ -25,8 +25,8 @@ TEST(MutatorsStack, CopyConstructor) {
 
 TEST(MutatorsStack, CopyAndUpdateTheCopy) {
   MutatorsStack stack;
-  auto rrect = SkRRect::MakeEmpty();
-  auto rect = SkRect::MakeEmpty();
+  auto rrect = DlFRRect();
+  auto rect = DlFRect();
   stack.PushClipRect(rect);
   stack.PushClipRRect(rrect);
   MutatorsStack copy = MutatorsStack(stack);
@@ -45,7 +45,7 @@ TEST(MutatorsStack, CopyAndUpdateTheCopy) {
 
 TEST(MutatorsStack, PushClipRect) {
   MutatorsStack stack;
-  auto rect = SkRect::MakeEmpty();
+  auto rect = DlFRect();
   stack.PushClipRect(rect);
   auto iter = stack.Bottom();
   ASSERT_TRUE(iter->get()->GetType() == MutatorType::kClipRect);
@@ -54,7 +54,7 @@ TEST(MutatorsStack, PushClipRect) {
 
 TEST(MutatorsStack, PushClipRRect) {
   MutatorsStack stack;
-  auto rrect = SkRRect::MakeEmpty();
+  auto rrect = DlFRRect();
   stack.PushClipRRect(rrect);
   auto iter = stack.Bottom();
   ASSERT_TRUE(iter->get()->GetType() == MutatorType::kClipRRect);
@@ -72,8 +72,7 @@ TEST(MutatorsStack, PushClipPath) {
 
 TEST(MutatorsStack, PushTransform) {
   MutatorsStack stack;
-  SkMatrix matrix;
-  matrix.setIdentity();
+  DlTransform matrix;
   stack.PushTransform(matrix);
   auto iter = stack.Bottom();
   ASSERT_TRUE(iter->get()->GetType() == MutatorType::kTransform);
@@ -94,7 +93,7 @@ TEST(MutatorsStack, PushBackdropFilter) {
   const int num_of_mutators = 10;
   for (int i = 0; i < num_of_mutators; i++) {
     auto filter = std::make_shared<DlBlurImageFilter>(i, 5, DlTileMode::kClamp);
-    stack.PushBackdropFilter(filter, SkRect::MakeXYWH(i, i, i, i));
+    stack.PushBackdropFilter(filter, DlFRect::MakeXYWH(i, i, i, i));
   }
 
   auto iter = stack.Begin();
@@ -115,8 +114,7 @@ TEST(MutatorsStack, PushBackdropFilter) {
 
 TEST(MutatorsStack, Pop) {
   MutatorsStack stack;
-  SkMatrix matrix;
-  matrix.setIdentity();
+  DlTransform matrix;
   stack.PushTransform(matrix);
   stack.Pop();
   auto iter = stack.Bottom();
@@ -125,12 +123,11 @@ TEST(MutatorsStack, Pop) {
 
 TEST(MutatorsStack, Traversal) {
   MutatorsStack stack;
-  SkMatrix matrix;
-  matrix.setIdentity();
+  DlTransform matrix;
   stack.PushTransform(matrix);
-  auto rect = SkRect::MakeEmpty();
+  auto rect = DlFRect();
   stack.PushClipRect(rect);
-  auto rrect = SkRRect::MakeEmpty();
+  auto rrect = DlFRRect();
   stack.PushClipRRect(rrect);
   auto iter = stack.Bottom();
   int index = 0;
@@ -158,25 +155,25 @@ TEST(MutatorsStack, Traversal) {
 
 TEST(MutatorsStack, Equality) {
   MutatorsStack stack;
-  SkMatrix matrix = SkMatrix::Scale(1, 1);
+  DlTransform matrix = DlTransform::MakeScale(1, 1);
   stack.PushTransform(matrix);
-  SkRect rect = SkRect::MakeEmpty();
+  DlFRect rect = DlFRect();
   stack.PushClipRect(rect);
-  SkRRect rrect = SkRRect::MakeEmpty();
+  DlFRRect rrect = DlFRRect();
   stack.PushClipRRect(rrect);
   SkPath path;
   stack.PushClipPath(path);
   int alpha = 240;
   stack.PushOpacity(alpha);
   auto filter = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
-  stack.PushBackdropFilter(filter, SkRect::MakeEmpty());
+  stack.PushBackdropFilter(filter, DlFRect());
 
   MutatorsStack stack_other;
-  SkMatrix matrix_other = SkMatrix::Scale(1, 1);
+  DlTransform matrix_other = DlTransform::MakeScale(1, 1);
   stack_other.PushTransform(matrix_other);
-  SkRect rect_other = SkRect::MakeEmpty();
+  DlFRect rect_other = DlFRect();
   stack_other.PushClipRect(rect_other);
-  SkRRect rrect_other = SkRRect::MakeEmpty();
+  DlFRRect rrect_other = DlFRRect();
   stack_other.PushClipRRect(rrect_other);
   SkPath other_path;
   stack_other.PushClipPath(other_path);
@@ -184,18 +181,18 @@ TEST(MutatorsStack, Equality) {
   stack_other.PushOpacity(other_alpha);
   auto other_filter =
       std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
-  stack_other.PushBackdropFilter(other_filter, SkRect::MakeEmpty());
+  stack_other.PushBackdropFilter(other_filter, DlFRect());
 
   ASSERT_TRUE(stack == stack_other);
 }
 
 TEST(Mutator, Initialization) {
-  SkRect rect = SkRect::MakeEmpty();
+  DlFRect rect = DlFRect();
   Mutator mutator = Mutator(rect);
   ASSERT_TRUE(mutator.GetType() == MutatorType::kClipRect);
   ASSERT_TRUE(mutator.GetRect() == rect);
 
-  SkRRect rrect = SkRRect::MakeEmpty();
+  DlFRRect rrect = DlFRRect();
   Mutator mutator2 = Mutator(rrect);
   ASSERT_TRUE(mutator2.GetType() == MutatorType::kClipRRect);
   ASSERT_TRUE(mutator2.GetRRect() == rrect);
@@ -205,8 +202,7 @@ TEST(Mutator, Initialization) {
   ASSERT_TRUE(mutator3.GetType() == MutatorType::kClipPath);
   ASSERT_TRUE(mutator3.GetPath() == path);
 
-  SkMatrix matrix;
-  matrix.setIdentity();
+  DlTransform matrix;
   Mutator mutator4 = Mutator(matrix);
   ASSERT_TRUE(mutator4.GetType() == MutatorType::kTransform);
   ASSERT_TRUE(mutator4.GetMatrix() == matrix);
@@ -216,18 +212,18 @@ TEST(Mutator, Initialization) {
   ASSERT_TRUE(mutator5.GetType() == MutatorType::kOpacity);
 
   auto filter = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
-  Mutator mutator6 = Mutator(filter, SkRect::MakeEmpty());
+  Mutator mutator6 = Mutator(filter, DlFRect());
   ASSERT_TRUE(mutator6.GetType() == MutatorType::kBackdropFilter);
   ASSERT_TRUE(mutator6.GetFilterMutation().GetFilter() == *filter);
 }
 
 TEST(Mutator, CopyConstructor) {
-  SkRect rect = SkRect::MakeEmpty();
+  DlFRect rect = DlFRect();
   Mutator mutator = Mutator(rect);
   Mutator copy = Mutator(mutator);
   ASSERT_TRUE(mutator == copy);
 
-  SkRRect rrect = SkRRect::MakeEmpty();
+  DlFRRect rrect = DlFRRect();
   Mutator mutator2 = Mutator(rrect);
   Mutator copy2 = Mutator(mutator2);
   ASSERT_TRUE(mutator2 == copy2);
@@ -237,8 +233,7 @@ TEST(Mutator, CopyConstructor) {
   Mutator copy3 = Mutator(mutator3);
   ASSERT_TRUE(mutator3 == copy3);
 
-  SkMatrix matrix;
-  matrix.setIdentity();
+  DlTransform matrix;
   Mutator mutator4 = Mutator(matrix);
   Mutator copy4 = Mutator(mutator4);
   ASSERT_TRUE(mutator4 == copy4);
@@ -249,24 +244,23 @@ TEST(Mutator, CopyConstructor) {
   ASSERT_TRUE(mutator5 == copy5);
 
   auto filter = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
-  Mutator mutator6 = Mutator(filter, SkRect::MakeEmpty());
+  Mutator mutator6 = Mutator(filter, DlFRect());
   Mutator copy6 = Mutator(mutator6);
   ASSERT_TRUE(mutator6 == copy6);
 }
 
 TEST(Mutator, Equality) {
-  SkMatrix matrix;
-  matrix.setIdentity();
+  DlTransform matrix;
   Mutator mutator = Mutator(matrix);
   Mutator other_mutator = Mutator(matrix);
   ASSERT_TRUE(mutator == other_mutator);
 
-  SkRect rect = SkRect::MakeEmpty();
+  DlFRect rect = DlFRect();
   Mutator mutator2 = Mutator(rect);
   Mutator other_mutator2 = Mutator(rect);
   ASSERT_TRUE(mutator2 == other_mutator2);
 
-  SkRRect rrect = SkRRect::MakeEmpty();
+  DlFRRect rrect = DlFRRect();
   Mutator mutator3 = Mutator(rrect);
   Mutator other_mutator3 = Mutator(rrect);
   ASSERT_TRUE(mutator3 == other_mutator3);
@@ -283,16 +277,15 @@ TEST(Mutator, Equality) {
 
   auto filter1 = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
   auto filter2 = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
-  Mutator mutator6 = Mutator(filter1, SkRect::MakeEmpty());
-  Mutator other_mutator6 = Mutator(filter2, SkRect::MakeEmpty());
+  Mutator mutator6 = Mutator(filter1, DlFRect());
+  Mutator other_mutator6 = Mutator(filter2, DlFRect());
   ASSERT_TRUE(mutator6 == other_mutator6);
 }
 
 TEST(Mutator, UnEquality) {
-  SkRect rect = SkRect::MakeEmpty();
+  DlFRect rect = DlFRect();
   Mutator mutator = Mutator(rect);
-  SkMatrix matrix;
-  matrix.setIdentity();
+  DlTransform matrix;
   Mutator not_equal_mutator = Mutator(matrix);
   ASSERT_TRUE(not_equal_mutator != mutator);
 
@@ -305,8 +298,8 @@ TEST(Mutator, UnEquality) {
   auto filter = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
   auto filter2 =
       std::make_shared<DlBlurImageFilter>(10, 10, DlTileMode::kClamp);
-  Mutator mutator3 = Mutator(filter, SkRect::MakeEmpty());
-  Mutator other_mutator3 = Mutator(filter2, SkRect::MakeEmpty());
+  Mutator mutator3 = Mutator(filter, DlFRect());
+  Mutator other_mutator3 = Mutator(filter2, DlFRect());
   ASSERT_TRUE(mutator3 != other_mutator3);
 }
 

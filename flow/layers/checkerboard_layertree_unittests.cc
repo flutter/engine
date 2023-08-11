@@ -19,10 +19,10 @@ using ClipOp = DlCanvas::ClipOp;
 
 #ifndef NDEBUG
 TEST_F(CheckerBoardLayerTest, ClipRectSaveLayerCheckBoard) {
-  const SkMatrix initial_matrix = SkMatrix::Translate(0.5f, 1.0f);
-  const SkRect child_bounds = SkRect::MakeXYWH(1.0, 2.0, 2.0, 2.0);
-  const SkRect layer_bounds = SkRect::MakeXYWH(0.5, 1.0, 5.0, 6.0);
-  const SkPath child_path = SkPath().addRect(child_bounds);
+  const DlTransform initial_matrix = DlTransform::MakeTranslate(0.5f, 1.0f);
+  const DlFRect child_bounds = DlFRect::MakeXYWH(1.0, 2.0, 2.0, 2.0);
+  const DlFRect layer_bounds = DlFRect::MakeXYWH(0.5, 1.0, 5.0, 6.0);
+  const DlPath child_path = DlPath().AddRect(child_bounds);
   const DlPaint child_paint = DlPaint(DlColor::kYellow());
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
   auto layer = std::make_shared<ClipRectLayer>(layer_bounds,
@@ -33,7 +33,7 @@ TEST_F(CheckerBoardLayerTest, ClipRectSaveLayerCheckBoard) {
   layer->Preroll(preroll_context());
 
   // Untouched
-  EXPECT_EQ(preroll_context()->state_stack.device_cull_rect(), kGiantRect);
+  EXPECT_EQ(preroll_context()->state_stack.device_cull_rect(), kMaxCullRect);
   EXPECT_TRUE(preroll_context()->state_stack.is_empty());
 
   EXPECT_EQ(mock_layer->paint_bounds(), child_bounds);
@@ -82,7 +82,7 @@ TEST_F(CheckerBoardLayerTest, ClipRectSaveLayerCheckBoard) {
           /* mock_layer::Paint */ {
             expected_builder.DrawPath(child_path, child_paint);
           }
-          expected_builder.DrawRect(child_path.getBounds(),
+          expected_builder.DrawRect(child_path.Bounds(),
                                     checkerboard_paint());
         }
         expected_builder.Restore();
@@ -95,12 +95,12 @@ TEST_F(CheckerBoardLayerTest, ClipRectSaveLayerCheckBoard) {
 }
 
 TEST_F(CheckerBoardLayerTest, ClipPathSaveLayerCheckBoard) {
-  const SkMatrix initial_matrix = SkMatrix::Translate(0.5f, 1.0f);
-  const SkRect child_bounds = SkRect::MakeXYWH(1.0, 2.0, 2.0, 2.0);
-  const SkRect layer_bounds = SkRect::MakeXYWH(0.5, 1.0, 5.0, 6.0);
-  const SkPath child_path = SkPath().addRect(child_bounds);
-  const SkPath layer_path =
-      SkPath().addRect(layer_bounds).addRect(layer_bounds);
+  const DlTransform initial_matrix = DlTransform::MakeTranslate(0.5f, 1.0f);
+  const DlFRect child_bounds = DlFRect::MakeXYWH(1.0, 2.0, 2.0, 2.0);
+  const DlFRect layer_bounds = DlFRect::MakeXYWH(0.5, 1.0, 5.0, 6.0);
+  const DlPath child_path = DlPath().AddRect(child_bounds);
+  const DlPath layer_path =
+      DlPath().AddRect(layer_bounds).AddRect(layer_bounds);
   const DlPaint child_paint = DlPaint(DlColor::kYellow());
   const DlPaint clip_paint;
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
@@ -112,7 +112,7 @@ TEST_F(CheckerBoardLayerTest, ClipPathSaveLayerCheckBoard) {
   layer->Preroll(preroll_context());
 
   // Untouched
-  EXPECT_EQ(preroll_context()->state_stack.device_cull_rect(), kGiantRect);
+  EXPECT_EQ(preroll_context()->state_stack.device_cull_rect(), kMaxCullRect);
   EXPECT_TRUE(preroll_context()->state_stack.is_empty());
 
   EXPECT_EQ(mock_layer->paint_bounds(), child_bounds);
@@ -159,7 +159,7 @@ TEST_F(CheckerBoardLayerTest, ClipPathSaveLayerCheckBoard) {
           /* mock_layer::Paint */ {
             expected_builder.DrawPath(child_path, child_paint);
           }
-          expected_builder.DrawRect(child_path.getBounds(),
+          expected_builder.DrawRect(child_path.Bounds(),
                                     checkerboard_paint());
         }
         expected_builder.Restore();
@@ -172,11 +172,11 @@ TEST_F(CheckerBoardLayerTest, ClipPathSaveLayerCheckBoard) {
 }
 
 TEST_F(CheckerBoardLayerTest, ClipRRectSaveLayerCheckBoard) {
-  const SkMatrix initial_matrix = SkMatrix::Translate(0.5f, 1.0f);
-  const SkRect child_bounds = SkRect::MakeXYWH(1.0, 2.0, 2.0, 2.0);
-  const SkRect layer_bounds = SkRect::MakeXYWH(0.5, 1.0, 5.0, 6.0);
-  const SkPath child_path = SkPath().addRect(child_bounds);
-  const SkRRect layer_rrect = SkRRect::MakeRectXY(layer_bounds, .1, .1);
+  const DlTransform initial_matrix = DlTransform::MakeTranslate(0.5f, 1.0f);
+  const DlFRect child_bounds = DlFRect::MakeXYWH(1.0, 2.0, 2.0, 2.0);
+  const DlFRect layer_bounds = DlFRect::MakeXYWH(0.5, 1.0, 5.0, 6.0);
+  const DlPath child_path = DlPath().AddRect(child_bounds);
+  const DlFRRect layer_rrect = DlFRRect::MakeRectXY(layer_bounds, .1, .1);
   const DlPaint child_paint = DlPaint(DlColor::kYellow());
   const DlPaint clip_paint;
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
@@ -188,7 +188,7 @@ TEST_F(CheckerBoardLayerTest, ClipRRectSaveLayerCheckBoard) {
   layer->Preroll(preroll_context());
 
   // Untouched
-  EXPECT_EQ(preroll_context()->state_stack.device_cull_rect(), kGiantRect);
+  EXPECT_EQ(preroll_context()->state_stack.device_cull_rect(), kMaxCullRect);
   EXPECT_TRUE(preroll_context()->state_stack.is_empty());
 
   EXPECT_EQ(mock_layer->paint_bounds(), child_bounds);
@@ -235,7 +235,7 @@ TEST_F(CheckerBoardLayerTest, ClipRRectSaveLayerCheckBoard) {
           /* mock_layer::Paint */ {
             expected_builder.DrawPath(child_path, child_paint);
           }
-          expected_builder.DrawRect(child_path.getBounds(),
+          expected_builder.DrawRect(child_path.Bounds(),
                                     checkerboard_paint());
         }
         expected_builder.Restore();

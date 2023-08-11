@@ -511,7 +511,7 @@ InferMetalPlatformViewCreationCallback(
       };
   auto metal_get_texture =
       [ptr = config->metal.get_next_drawable_callback,
-       user_data](const SkISize& frame_size) -> flutter::GPUMTLTextureInfo {
+       user_data](const flutter::DlISize& frame_size) -> flutter::GPUMTLTextureInfo {
     FlutterFrameInfo frame_info = {};
     frame_info.struct_size = sizeof(FlutterFrameInfo);
     frame_info.size = {static_cast<uint32_t>(frame_size.width()),
@@ -1495,13 +1495,11 @@ void PopulateAOTSnapshotMappingCallbacks(
 // Translates engine semantic nodes to embedder semantic nodes.
 FlutterSemanticsNode CreateEmbedderSemanticsNode(
     const flutter::SemanticsNode& node) {
-  SkMatrix transform = node.transform.asM33();
+  flutter::DlTransform transform = node.transform;
   FlutterTransformation flutter_transform{
-      transform.get(SkMatrix::kMScaleX), transform.get(SkMatrix::kMSkewX),
-      transform.get(SkMatrix::kMTransX), transform.get(SkMatrix::kMSkewY),
-      transform.get(SkMatrix::kMScaleY), transform.get(SkMatrix::kMTransY),
-      transform.get(SkMatrix::kMPersp0), transform.get(SkMatrix::kMPersp1),
-      transform.get(SkMatrix::kMPersp2)};
+      transform.rc(0, 0), transform.rc(0, 1), transform.rc(0, 3),
+      transform.rc(1, 0), transform.rc(1, 1), transform.rc(1, 3),
+      transform.rc(3, 0), transform.rc(3, 1), transform.rc(3, 3)};
 
   // Do not add new members to FlutterSemanticsNode.
   // This would break the forward compatibility of FlutterSemanticsUpdate.
@@ -1526,8 +1524,8 @@ FlutterSemanticsNode CreateEmbedderSemanticsNode(
       node.increasedValue.c_str(),
       node.decreasedValue.c_str(),
       static_cast<FlutterTextDirection>(node.textDirection),
-      FlutterRect{node.rect.fLeft, node.rect.fTop, node.rect.fRight,
-                  node.rect.fBottom},
+      FlutterRect{node.rect.left(), node.rect.top(), node.rect.right(),
+                  node.rect.bottom()},
       flutter_transform,
       node.childrenInTraversalOrder.size(),
       node.childrenInTraversalOrder.data(),
@@ -1542,13 +1540,12 @@ FlutterSemanticsNode CreateEmbedderSemanticsNode(
 // Translates engine semantic nodes to embedder semantic nodes.
 FlutterSemanticsNode2 CreateEmbedderSemanticsNode2(
     const flutter::SemanticsNode& node) {
-  SkMatrix transform = node.transform.asM33();
+  flutter::DlTransform transform = node.transform;
   FlutterTransformation flutter_transform{
-      transform.get(SkMatrix::kMScaleX), transform.get(SkMatrix::kMSkewX),
-      transform.get(SkMatrix::kMTransX), transform.get(SkMatrix::kMSkewY),
-      transform.get(SkMatrix::kMScaleY), transform.get(SkMatrix::kMTransY),
-      transform.get(SkMatrix::kMPersp0), transform.get(SkMatrix::kMPersp1),
-      transform.get(SkMatrix::kMPersp2)};
+      transform.rc(0, 0), transform.rc(0, 1), transform.rc(0, 3),
+      transform.rc(1, 0), transform.rc(1, 1), transform.rc(1, 3),
+      transform.rc(3, 0), transform.rc(3, 1), transform.rc(3, 3)};
+
   return {
       sizeof(FlutterSemanticsNode2),
       node.id,
@@ -1569,8 +1566,8 @@ FlutterSemanticsNode2 CreateEmbedderSemanticsNode2(
       node.increasedValue.c_str(),
       node.decreasedValue.c_str(),
       static_cast<FlutterTextDirection>(node.textDirection),
-      FlutterRect{node.rect.fLeft, node.rect.fTop, node.rect.fRight,
-                  node.rect.fBottom},
+      FlutterRect{node.rect.left(), node.rect.top(), node.rect.right(),
+                  node.rect.bottom()},
       flutter_transform,
       node.childrenInTraversalOrder.size(),
       node.childrenInTraversalOrder.data(),

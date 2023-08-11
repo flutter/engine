@@ -27,7 +27,7 @@ void AndroidExternalViewEmbedder::PrerollCompositeEmbeddedView(
   TRACE_EVENT0("flutter",
                "AndroidExternalViewEmbedder::PrerollCompositeEmbeddedView");
 
-  SkRect view_bounds = SkRect::Make(frame_size_);
+  DlFRect view_bounds = DlFRect::MakeSize(frame_size_);
   std::unique_ptr<EmbedderViewSlice> view;
   view = std::make_unique<DisplayListEmbedderViewSlice>(view_bounds);
   slices_.insert_or_assign(view_id, std::move(view));
@@ -49,16 +49,12 @@ DlCanvas* AndroidExternalViewEmbedder::CompositeEmbeddedView(int64_t view_id) {
   return nullptr;
 }
 
-SkRect AndroidExternalViewEmbedder::GetViewRect(int64_t view_id) const {
+DlFRect AndroidExternalViewEmbedder::GetViewRect(int64_t view_id) const {
   const EmbeddedViewParams& params = view_params_.at(view_id);
   // TODO(egarciad): The rect should be computed from the mutator stack.
   // (Clipping is missing)
   // https://github.com/flutter/flutter/issues/59821
-  return SkRect::MakeXYWH(params.finalBoundingRect().x(),      //
-                          params.finalBoundingRect().y(),      //
-                          params.finalBoundingRect().width(),  //
-                          params.finalBoundingRect().height()  //
-  );
+  return DlFRect(params.finalBoundingRect());
 }
 
 // |ExternalViewEmbedder|
@@ -73,7 +69,7 @@ void AndroidExternalViewEmbedder::SubmitFrame(
     return;
   }
 
-  std::unordered_map<int64_t, SkRect> overlay_layers;
+  std::unordered_map<int64_t, DlFRect> overlay_layers;
   DlCanvas* background_canvas = frame->Canvas();
   auto current_frame_view_count = composition_order_.size();
 
@@ -90,7 +86,7 @@ void AndroidExternalViewEmbedder::SubmitFrame(
 
     slice->end_recording();
 
-    SkRect full_joined_rect = SkRect::MakeEmpty();
+    DlFRect full_joined_rect;
 
     // Determinate if Flutter UI intersects with any of the previous
     // platform views stacked by z position.
@@ -100,34 +96,34 @@ void AndroidExternalViewEmbedder::SubmitFrame(
     // view layer.
     for (ssize_t j = i; j >= 0; j--) {
       int64_t current_view_id = composition_order_[j];
-      SkRect current_view_rect = GetViewRect(current_view_id);
+      DlFRect current_view_rect = GetViewRect(current_view_id);
       // The rect above the `current_view_rect`
-      SkRect partial_joined_rect = SkRect::MakeEmpty();
+      DlFRect partial_joined_rect;
       // Each rect corresponds to a native view that renders Flutter UI.
-      std::list<SkRect> intersection_rects =
+      std::list<DlFRect> intersection_rects =
           slice->searchNonOverlappingDrawnRects(current_view_rect);
 
       // Limit the number of native views, so it doesn't grow forever.
       //
       // In this case, the rects are merged into a single one that is the union
       // of all the rects.
-      for (const SkRect& rect : intersection_rects) {
-        partial_joined_rect.join(rect);
+      for (const DlFRect& rect : intersection_rects) {
+        partial_joined_rect.Join(rect);
       }
       // Get the intersection rect with the `current_view_rect`,
-      partial_joined_rect.intersect(current_view_rect);
+      partial_joined_rect.Intersect(current_view_rect);
       // Join the `partial_joined_rect` into `full_joined_rect` to get the rect
       // above the current `slice`
-      full_joined_rect.join(partial_joined_rect);
+      full_joined_rect.Join(partial_joined_rect);
     }
-    if (!full_joined_rect.isEmpty()) {
+    if (!full_joined_rect.is_empty()) {
       // Subpixels in the platform may not align with the canvas subpixels.
       //
       // To workaround it, round the floating point bounds and make the rect
       // slightly larger.
       //
       // For example, {0.3, 0.5, 3.1, 4.7} becomes {0, 0, 4, 5}.
-      full_joined_rect.set(full_joined_rect.roundOut());
+      full_joined_rect.RoundOut();
       overlay_layers.insert({view_id, full_joined_rect});
       // Clip the background canvas, so it doesn't contain any of the pixels
       // drawn on the overlay layer.
@@ -151,7 +147,7 @@ void AndroidExternalViewEmbedder::SubmitFrame(
   }
 
   for (int64_t view_id : composition_order_) {
-    SkRect view_rect = GetViewRect(view_id);
+    DlFRect view_rect = GetViewRect(view_id);
     const EmbeddedViewParams& params = view_params_.at(view_id);
     // Display the platform view. If it's already displayed, then it's
     // just positioned and sized.
@@ -165,7 +161,7 @@ void AndroidExternalViewEmbedder::SubmitFrame(
         params.sizePoints().height() * device_pixel_ratio_,
         params.mutatorsStack()  //
     );
-    std::unordered_map<int64_t, SkRect>::const_iterator overlay =
+    std::unordered_map<int64_t, DlFRect>::const_iterator overlay =
         overlay_layers.find(view_id);
     if (overlay == overlay_layers.end()) {
       continue;
@@ -187,7 +183,7 @@ std::unique_ptr<SurfaceFrame>
 AndroidExternalViewEmbedder::CreateSurfaceIfNeeded(GrDirectContext* context,
                                                    int64_t view_id,
                                                    EmbedderViewSlice* slice,
-                                                   const SkRect& rect) {
+                                                   const DlFRect& rect) {
   std::shared_ptr<OverlayLayer> layer = surface_pool_->GetLayer(
       context, android_context_, jni_facade_, surface_factory_);
 
@@ -257,7 +253,7 @@ void AndroidExternalViewEmbedder::Reset() {
 
 // |ExternalViewEmbedder|
 void AndroidExternalViewEmbedder::BeginFrame(
-    SkISize frame_size,
+    DlISize frame_size,
     GrDirectContext* context,
     double device_pixel_ratio,
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {

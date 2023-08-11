@@ -4,6 +4,7 @@
 
 #include "impeller/display_list/dl_vertices_geometry.h"
 
+#include "flutter/display_list/geometry/dl_rect.h"
 #include "impeller/core/device_buffer.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
@@ -13,13 +14,11 @@
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/point.h"
 #include "impeller/renderer/render_pass.h"
-#include "third_party/skia/include/core/SkPoint.h"
-#include "third_party/skia/include/core/SkRect.h"
 
 namespace impeller {
 
-static Rect ToRect(const SkRect& rect) {
-  return Rect::MakeLTRB(rect.fLeft, rect.fTop, rect.fRight, rect.fBottom);
+static Rect ToRect(const flutter::DlFRect& rect) {
+  return Rect::MakeLTRB(rect.left(), rect.top(), rect.right(), rect.bottom());
 }
 
 // Fan mode isn't natively supported. Unroll into triangle mode by

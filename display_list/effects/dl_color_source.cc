@@ -20,13 +20,13 @@ static void DlGradientDeleter(void* p) {
 }
 
 std::shared_ptr<DlLinearGradientColorSource> DlColorSource::MakeLinear(
-    const SkPoint start_point,
-    const SkPoint end_point,
+    const DlFPoint start_point,
+    const DlFPoint end_point,
     uint32_t stop_count,
     const DlColor* colors,
     const float* stops,
     DlTileMode tile_mode,
-    const SkMatrix* matrix) {
+    const DlTransform* matrix) {
   size_t needed = sizeof(DlLinearGradientColorSource) +
                   (stop_count * (sizeof(uint32_t) + sizeof(float)));
 
@@ -41,13 +41,13 @@ std::shared_ptr<DlLinearGradientColorSource> DlColorSource::MakeLinear(
 }
 
 std::shared_ptr<DlRadialGradientColorSource> DlColorSource::MakeRadial(
-    SkPoint center,
-    SkScalar radius,
+    DlFPoint center,
+    DlScalar radius,
     uint32_t stop_count,
     const DlColor* colors,
     const float* stops,
     DlTileMode tile_mode,
-    const SkMatrix* matrix) {
+    const DlTransform* matrix) {
   size_t needed = sizeof(DlRadialGradientColorSource) +
                   (stop_count * (sizeof(uint32_t) + sizeof(float)));
 
@@ -61,15 +61,15 @@ std::shared_ptr<DlRadialGradientColorSource> DlColorSource::MakeRadial(
 }
 
 std::shared_ptr<DlConicalGradientColorSource> DlColorSource::MakeConical(
-    SkPoint start_center,
-    SkScalar start_radius,
-    SkPoint end_center,
-    SkScalar end_radius,
+    DlFPoint start_center,
+    DlScalar start_radius,
+    DlFPoint end_center,
+    DlScalar end_radius,
     uint32_t stop_count,
     const DlColor* colors,
     const float* stops,
     DlTileMode tile_mode,
-    const SkMatrix* matrix) {
+    const DlTransform* matrix) {
   size_t needed = sizeof(DlConicalGradientColorSource) +
                   (stop_count * (sizeof(uint32_t) + sizeof(float)));
 
@@ -84,14 +84,14 @@ std::shared_ptr<DlConicalGradientColorSource> DlColorSource::MakeConical(
 }
 
 std::shared_ptr<DlSweepGradientColorSource> DlColorSource::MakeSweep(
-    SkPoint center,
-    SkScalar start,
-    SkScalar end,
+    DlFPoint center,
+    DlScalar start,
+    DlScalar end,
     uint32_t stop_count,
     const DlColor* colors,
     const float* stops,
     DlTileMode tile_mode,
-    const SkMatrix* matrix) {
+    const DlTransform* matrix) {
   size_t needed = sizeof(DlSweepGradientColorSource) +
                   (stop_count * (sizeof(uint32_t) + sizeof(float)));
 

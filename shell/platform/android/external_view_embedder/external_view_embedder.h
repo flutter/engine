@@ -56,7 +56,7 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
 
   // |ExternalViewEmbedder|
   void BeginFrame(
-      SkISize frame_size,
+      DlISize frame_size,
       GrDirectContext* context,
       double device_pixel_ratio,
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
@@ -75,7 +75,7 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
 
   // Gets the rect based on the device pixel ratio of a platform view displayed
   // on the screen.
-  SkRect GetViewRect(int64_t view_id) const;
+  DlFRect GetViewRect(int64_t view_id) const;
 
  private:
   // The number of frames the rasterizer task runner will continue
@@ -101,7 +101,7 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
   const TaskRunners task_runners_;
 
   // The size of the root canvas.
-  SkISize frame_size_;
+  DlISize frame_size_;
 
   // The pixel ratio used to determinate the size of a platform view layer
   // relative to the device layout system.
@@ -139,7 +139,7 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
   std::unique_ptr<SurfaceFrame> CreateSurfaceIfNeeded(GrDirectContext* context,
                                                       int64_t view_id,
                                                       EmbedderViewSlice* slice,
-                                                      const SkRect& rect);
+                                                      const DlFRect& rect);
 };
 
 }  // namespace flutter

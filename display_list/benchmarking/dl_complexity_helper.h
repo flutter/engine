@@ -105,7 +105,7 @@ class ComplexityCalculatorHelper
   void setInvertColors(bool invert) override {}
   void setStrokeCap(DlStrokeCap cap) override {}
   void setStrokeJoin(DlStrokeJoin join) override {}
-  void setStrokeMiter(SkScalar limit) override {}
+  void setStrokeMiter(DlScalar limit) override {}
   void setColor(DlColor color) override {}
   void setBlendMode(DlBlendMode mode) override {}
   void setColorSource(const DlColorSource* source) override {}
@@ -124,7 +124,7 @@ class ComplexityCalculatorHelper
     current_paint_.setDrawStyle(style);
   }
 
-  void setStrokeWidth(SkScalar width) override {
+  void setStrokeWidth(DlScalar width) override {
     current_paint_.setStrokeWidth(width);
   }
 
@@ -147,8 +147,8 @@ class ComplexityCalculatorHelper
 
   void drawImageRect(
       const sk_sp<DlImage> image,
-      const SkRect& src,
-      const SkRect& dst,
+      const DlFRect& src,
+      const DlFRect& dst,
       DlImageSampling sampling,
       bool render_with_attributes,
       SrcRectConstraint constraint = SrcRectConstraint::kFast) override {
@@ -160,13 +160,13 @@ class ComplexityCalculatorHelper
   }
 
   void drawAtlas(const sk_sp<DlImage> atlas,
-                 const SkRSXform xform[],
-                 const SkRect tex[],
+                 const DlRSTransform xform[],
+                 const DlFRect tex[],
                  const DlColor colors[],
                  int count,
                  DlBlendMode mode,
                  DlImageSampling sampling,
-                 const SkRect* cull_rect,
+                 const DlFRect* cull_rect,
                  bool render_with_attributes) override {
     if (IsComplex()) {
       return;
@@ -174,7 +174,7 @@ class ComplexityCalculatorHelper
     // This API just does a series of drawImage calls from the atlas
     // This is equivalent to calling drawImageRect lots of times
     for (int i = 0; i < count; i++) {
-      ImageRect(SkISize::Make(tex[i].width(), tex[i].height()), true,
+      ImageRect(DlISize(tex[i].width(), tex[i].height()), true,
                 render_with_attributes, true);
     }
   }
@@ -216,14 +216,14 @@ class ComplexityCalculatorHelper
   inline unsigned int Ceiling() { return ceiling_; }
   inline unsigned int CurrentComplexityScore() { return complexity_score_; }
 
-  unsigned int CalculatePathComplexity(const SkPath& path,
+  unsigned int CalculatePathComplexity(const DlPath& path,
                                        unsigned int line_verb_cost,
                                        unsigned int quad_verb_cost,
                                        unsigned int conic_verb_cost,
                                        unsigned int cubic_verb_cost) {
-    int verb_count = path.countVerbs();
+    int verb_count = path.verb_count();
     uint8_t verbs[verb_count];
-    path.getVerbs(verbs, verb_count);
+    path.GetSkiaPath().getVerbs(verbs, verb_count);
 
     unsigned int complexity = 0;
     for (int i = 0; i < verb_count; i++) {
@@ -245,7 +245,7 @@ class ComplexityCalculatorHelper
     return complexity;
   }
 
-  virtual void ImageRect(const SkISize& size,
+  virtual void ImageRect(const DlISize& size,
                          bool texture_backed,
                          bool render_with_attributes,
                          bool enforce_src_edges) = 0;

@@ -47,10 +47,10 @@ class EmbedderExternalView {
 
   struct RenderTargetDescriptor {
     ViewIdentifier view_identifier;
-    SkISize surface_size;
+    DlISize surface_size;
 
     RenderTargetDescriptor(ViewIdentifier p_view_identifier,
-                           SkISize p_surface_size)
+                           DlISize p_surface_size)
         : view_identifier(p_view_identifier), surface_size(p_surface_size) {}
 
     struct Hash {
@@ -81,11 +81,11 @@ class EmbedderExternalView {
                                           ViewIdentifier::Hash,
                                           ViewIdentifier::Equal>;
 
-  EmbedderExternalView(const SkISize& frame_size,
-                       const SkMatrix& surface_transformation);
+  EmbedderExternalView(const DlISize& frame_size,
+                       const DlTransform& surface_transformation);
 
-  EmbedderExternalView(const SkISize& frame_size,
-                       const SkMatrix& surface_transformation,
+  EmbedderExternalView(const DlISize& frame_size,
+                       const DlTransform& surface_transformation,
                        ViewIdentifier view_identifier,
                        std::unique_ptr<EmbeddedViewParams> params);
 
@@ -105,7 +105,7 @@ class EmbedderExternalView {
 
   DlCanvas* GetCanvas();
 
-  SkISize GetRenderSurfaceSize() const;
+  DlISize GetRenderSurfaceSize() const;
 
   bool Render(const EmbedderRenderTarget& render_target);
 
@@ -114,8 +114,8 @@ class EmbedderExternalView {
   // Noop if the slice's recording has already ended.
   void TryEndRecording() const;
 
-  const SkISize render_surface_size_;
-  const SkMatrix surface_transformation_;
+  const DlISize render_surface_size_;
+  const DlTransform surface_transformation_;
   ViewIdentifier view_identifier_;
   std::unique_ptr<EmbeddedViewParams> embedded_view_params_;
   std::unique_ptr<DisplayListEmbedderViewSlice> slice_;

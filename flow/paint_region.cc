@@ -4,14 +4,16 @@
 
 #include "flutter/flow/paint_region.h"
 
+#include "flutter/display_list/utils/dl_bounds_accumulator.h"
+
 namespace flutter {
 
-SkRect PaintRegion::ComputeBounds() const {
-  SkRect res = SkRect::MakeEmpty();
+DlFRect PaintRegion::ComputeBounds() const {
+  RectBoundsAccumulator accumulator;
   for (const auto& r : *this) {
-    res.join(r);
+    accumulator.accumulate(r);
   }
-  return res;
+  return accumulator.bounds();
 }
 
 }  // namespace flutter

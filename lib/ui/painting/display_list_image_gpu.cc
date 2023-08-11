@@ -51,9 +51,9 @@ bool DlImageGPU::isUIThreadSafe() const {
 }
 
 // |DlImage|
-SkISize DlImageGPU::dimensions() const {
+DlISize DlImageGPU::dimensions() const {
   const auto image = skia_image();
-  return image ? image->dimensions() : SkISize::MakeEmpty();
+  return image ? DlISize::MakeSize(image->dimensions()) : DlISize();
 }
 
 // |DlImage|

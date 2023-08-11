@@ -82,9 +82,9 @@ bool DlDeferredImageGPUSkia::isUIThreadSafe() const {
 }
 
 // |DlImage|
-SkISize DlDeferredImageGPUSkia::dimensions() const {
-  return image_wrapper_ ? image_wrapper_->image_info().dimensions()
-                        : SkISize::MakeEmpty();
+DlISize DlDeferredImageGPUSkia::dimensions() const {
+  return image_wrapper_ ? DlISize::MakeSize(image_wrapper_->image_info())
+                        : DlISize();
 }
 
 // |DlImage|
@@ -180,8 +180,8 @@ void DlDeferredImageGPUSkia::ImageWrapper::SnapshotDisplayList(
         }
         if (layer_tree) {
           auto display_list =
-              layer_tree->Flatten(SkRect::MakeWH(wrapper->image_info_.width(),
-                                                 wrapper->image_info_.height()),
+              layer_tree->Flatten(DlFRect::MakeWH(wrapper->image_info_.width(),
+                                                  wrapper->image_info_.height()),
                                   snapshot_delegate->GetTextureRegistry(),
                                   snapshot_delegate->GetGrContext());
           wrapper->display_list_ = std::move(display_list);

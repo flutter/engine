@@ -6,8 +6,9 @@
 #define FLUTTER_FLOW_PAINT_REGION_H_
 
 #include <vector>
+
+#include "flutter/display_list/geometry/dl_rect.h"
 #include "flutter/fml/logging.h"
-#include "third_party/skia/include/core/SkRect.h"
 
 namespace flutter {
 
@@ -18,14 +19,14 @@ namespace flutter {
 //
 // Because there is a PaintRegion for each layer, it must be able to represent
 // the area with minimal overhead. This is accomplished by having one
-// vector<SkRect> shared between all paint regions, and each paint region
+// vector<DlFRect> shared between all paint regions, and each paint region
 // keeping begin and end index of rects relevant to particular subtree.
 //
 // All rects are in screen coordinates.
 class PaintRegion {
  public:
   PaintRegion() = default;
-  PaintRegion(std::shared_ptr<std::vector<SkRect>> rects,
+  PaintRegion(std::shared_ptr<std::vector<DlFRect>> rects,
               size_t from,
               size_t to,
               bool has_readback,
@@ -36,18 +37,18 @@ class PaintRegion {
         has_readback_(has_readback),
         has_texture_(has_texture) {}
 
-  std::vector<SkRect>::const_iterator begin() const {
+  std::vector<DlFRect>::const_iterator begin() const {
     FML_DCHECK(is_valid());
     return rects_->begin() + from_;
   }
 
-  std::vector<SkRect>::const_iterator end() const {
+  std::vector<DlFRect>::const_iterator end() const {
     FML_DCHECK(is_valid());
     return rects_->begin() + to_;
   }
 
   // Compute bounds for this region
-  SkRect ComputeBounds() const;
+  DlFRect ComputeBounds() const;
 
   bool is_valid() const { return rects_ != nullptr; }
 
@@ -60,7 +61,7 @@ class PaintRegion {
   bool has_texture() const { return has_texture_; }
 
  private:
-  std::shared_ptr<std::vector<SkRect>> rects_;
+  std::shared_ptr<std::vector<DlFRect>> rects_;
   size_t from_ = 0;
   size_t to_ = 0;
   bool has_readback_ = false;

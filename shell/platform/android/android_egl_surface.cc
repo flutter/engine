@@ -64,19 +64,19 @@ class AndroidEGLSurfaceDamage {
 
   void SetDamageRegion(EGLDisplay display,
                        EGLSurface surface,
-                       const std::optional<SkIRect>& region) {}
+                       const std::optional<DlIRect>& region) {}
 
   /// This was disabled after discussion in
   /// https://github.com/flutter/flutter/issues/123353
   bool SupportsPartialRepaint() const { return false; }
 
-  std::optional<SkIRect> InitialDamage(EGLDisplay display, EGLSurface surface) {
+  std::optional<DlIRect> InitialDamage(EGLDisplay display, EGLSurface surface) {
     return std::nullopt;
   }
 
   bool SwapBuffersWithDamage(EGLDisplay display,
                              EGLSurface surface,
-                             const std::optional<SkIRect>& damage) {
+                             const std::optional<DlIRect>& damage) {
     return eglSwapBuffers(display, surface);
   }
 };

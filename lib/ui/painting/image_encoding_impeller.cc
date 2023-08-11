@@ -33,11 +33,12 @@ std::optional<SkColorType> ToSkColorType(impeller::PixelFormat format) {
 sk_sp<SkImage> ConvertBufferToSkImage(
     const std::shared_ptr<impeller::DeviceBuffer>& buffer,
     SkColorType color_type,
-    SkISize dimensions) {
+    DlISize dimensions) {
   auto buffer_view = buffer->AsBufferView();
 
-  SkImageInfo image_info = SkImageInfo::Make(dimensions, color_type,
-                                             SkAlphaType::kPremul_SkAlphaType);
+  SkImageInfo image_info =
+      SkImageInfo::Make(dimensions.width(), dimensions.height(), color_type,
+                        SkAlphaType::kPremul_SkAlphaType);
 
   SkBitmap bitmap;
   auto func = [](void* addr, void* context) {
@@ -93,7 +94,7 @@ void ImageEncodingImpeller::ConvertDlImageToSkImage(
   auto dimensions = dl_image->dimensions();
   auto color_type = ToSkColorType(texture->GetTextureDescriptor().format);
 
-  if (dimensions.isEmpty()) {
+  if (dimensions.is_empty()) {
     FML_LOG(ERROR) << "Image dimensions were empty.";
     encode_task(nullptr);
     return;

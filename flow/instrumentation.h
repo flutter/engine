@@ -38,9 +38,9 @@ class Stopwatch {
 
   fml::TimeDelta AverageDelta() const;
 
-  void InitVisualizeSurface(SkISize size) const;
+  void InitVisualizeSurface(DlISize size) const;
 
-  void Visualize(DlCanvas* canvas, const SkRect& rect) const;
+  void Visualize(DlCanvas* canvas, const DlFRect& rect) const;
 
   void Start();
 

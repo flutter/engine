@@ -21,14 +21,12 @@ TEST(LayerStateStack, AccessorsDieWithoutDelegate) {
                             "LayerStateStack state queried without a delegate");
   EXPECT_DEATH_IF_SUPPORTED(state_stack.local_cull_rect(),
                             "LayerStateStack state queried without a delegate");
-  EXPECT_DEATH_IF_SUPPORTED(state_stack.transform_3x3(),
-                            "LayerStateStack state queried without a delegate");
-  EXPECT_DEATH_IF_SUPPORTED(state_stack.transform_4x4(),
+  EXPECT_DEATH_IF_SUPPORTED(state_stack.transform(),
                             "LayerStateStack state queried without a delegate");
   EXPECT_DEATH_IF_SUPPORTED(state_stack.content_culled({}),
                             "LayerStateStack state queried without a delegate");
   {
-    // state_stack.set_preroll_delegate(kGiantRect, SkMatrix::I());
+    // state_stack.set_preroll_delegate(kMaxCullRect, DlTransform());
     auto mutator = state_stack.save();
     mutator.applyOpacity({}, 0.5);
     state_stack.clear_delegate();
@@ -45,13 +43,12 @@ TEST(LayerStateStack, Defaults) {
   ASSERT_EQ(state_stack.outstanding_opacity(), SK_Scalar1);
   ASSERT_EQ(state_stack.outstanding_color_filter(), nullptr);
   ASSERT_EQ(state_stack.outstanding_image_filter(), nullptr);
-  ASSERT_EQ(state_stack.outstanding_bounds(), SkRect());
+  ASSERT_EQ(state_stack.outstanding_bounds(), DlFRect());
 
-  state_stack.set_preroll_delegate(kGiantRect, SkMatrix::I());
-  ASSERT_EQ(state_stack.device_cull_rect(), kGiantRect);
-  ASSERT_EQ(state_stack.local_cull_rect(), kGiantRect);
-  ASSERT_EQ(state_stack.transform_3x3(), SkMatrix::I());
-  ASSERT_EQ(state_stack.transform_4x4(), SkM44());
+  state_stack.set_preroll_delegate(kMaxCullRect, DlTransform());
+  ASSERT_EQ(state_stack.device_cull_rect(), kMaxCullRect);
+  ASSERT_EQ(state_stack.local_cull_rect(), kMaxCullRect);
+  ASSERT_EQ(state_stack.transform(), DlTransform());
 
   DlPaint dl_paint;
   state_stack.fill(dl_paint);
@@ -95,48 +92,48 @@ TEST(LayerStateStack, OldDelegateIsRolledBack) {
   DisplayListBuilder builder2;
   DlCanvas& canvas = builder2;
 
-  ASSERT_TRUE(builder.GetTransform().isIdentity());
-  ASSERT_TRUE(canvas.GetTransform().isIdentity());
+  ASSERT_TRUE(builder.GetTransform().is_identity());
+  ASSERT_TRUE(canvas.GetTransform().is_identity());
 
   state_stack.set_delegate(&builder);
 
-  ASSERT_TRUE(builder.GetTransform().isIdentity());
-  ASSERT_TRUE(canvas.GetTransform().isIdentity());
+  ASSERT_TRUE(builder.GetTransform().is_identity());
+  ASSERT_TRUE(canvas.GetTransform().is_identity());
 
   auto mutator = state_stack.save();
   mutator.translate({10, 10});
 
-  ASSERT_EQ(builder.GetTransform(), SkMatrix::Translate(10, 10));
-  ASSERT_TRUE(canvas.GetTransform().isIdentity());
+  ASSERT_EQ(builder.GetTransform(), DlTransform::MakeTranslate(10, 10));
+  ASSERT_TRUE(canvas.GetTransform().is_identity());
 
   state_stack.set_delegate(&canvas);
 
-  ASSERT_TRUE(builder.GetTransform().isIdentity());
-  ASSERT_EQ(canvas.GetTransform(), SkMatrix::Translate(10, 10));
+  ASSERT_TRUE(builder.GetTransform().is_identity());
+  ASSERT_EQ(canvas.GetTransform(), DlTransform::MakeTranslate(10, 10));
 
-  state_stack.set_preroll_delegate(SkRect::MakeWH(100, 100));
+  state_stack.set_preroll_delegate(DlFRect::MakeWH(100, 100));
 
-  ASSERT_TRUE(builder.GetTransform().isIdentity());
-  ASSERT_TRUE(canvas.GetTransform().isIdentity());
+  ASSERT_TRUE(builder.GetTransform().is_identity());
+  ASSERT_TRUE(canvas.GetTransform().is_identity());
 
   state_stack.set_delegate(&builder);
   state_stack.clear_delegate();
 
-  ASSERT_TRUE(builder.GetTransform().isIdentity());
-  ASSERT_TRUE(canvas.GetTransform().isIdentity());
+  ASSERT_TRUE(builder.GetTransform().is_identity());
+  ASSERT_TRUE(canvas.GetTransform().is_identity());
 
   state_stack.set_delegate(&canvas);
   state_stack.clear_delegate();
 
-  ASSERT_TRUE(builder.GetTransform().isIdentity());
-  ASSERT_TRUE(canvas.GetTransform().isIdentity());
+  ASSERT_TRUE(builder.GetTransform().is_identity());
+  ASSERT_TRUE(canvas.GetTransform().is_identity());
 }
 
 TEST(LayerStateStack, Opacity) {
-  SkRect rect = {10, 10, 20, 20};
+  DlFRect rect = DlFRect::MakeLTRB(10, 10, 20, 20);
 
   LayerStateStack state_stack;
-  state_stack.set_preroll_delegate(SkRect::MakeLTRB(0, 0, 50, 50));
+  state_stack.set_preroll_delegate(DlFRect::MakeLTRB(0, 0, 50, 50));
   {
     auto mutator = state_stack.save();
     mutator.applyOpacity(rect, 0.5f);
@@ -159,7 +156,7 @@ TEST(LayerStateStack, Opacity) {
         {
           auto restore = state_stack.applyState(rect, 0);
           ASSERT_EQ(state_stack.outstanding_opacity(), SK_Scalar1);
-          ASSERT_EQ(state_stack.outstanding_bounds(), SkRect());
+          ASSERT_EQ(state_stack.outstanding_bounds(), DlFRect());
 
           DlPaint paint;
           state_stack.fill(paint);
@@ -203,11 +200,11 @@ TEST(LayerStateStack, Opacity) {
   }
 
   ASSERT_EQ(state_stack.outstanding_opacity(), SK_Scalar1);
-  ASSERT_EQ(state_stack.outstanding_bounds(), SkRect());
+  ASSERT_EQ(state_stack.outstanding_bounds(), DlFRect());
 }
 
 TEST(LayerStateStack, ColorFilter) {
-  SkRect rect = {10, 10, 20, 20};
+  DlFRect rect = DlFRect::MakeLTRB(10, 10, 20, 20);
   std::shared_ptr<DlBlendColorFilter> outer_filter =
       std::make_shared<DlBlendColorFilter>(DlColor::kYellow(),
                                            DlBlendMode::kColorBurn);
@@ -216,7 +213,7 @@ TEST(LayerStateStack, ColorFilter) {
                                            DlBlendMode::kColorBurn);
 
   LayerStateStack state_stack;
-  state_stack.set_preroll_delegate(SkRect::MakeLTRB(0, 0, 50, 50));
+  state_stack.set_preroll_delegate(DlFRect::MakeLTRB(0, 0, 50, 50));
   {
     auto mutator = state_stack.save();
     mutator.applyColorFilter(rect, outer_filter);
@@ -257,7 +254,7 @@ TEST(LayerStateStack, ColorFilter) {
 
       // Verify output with applyState that accepts color filters
       {
-        SkRect rect = {10, 10, 20, 20};
+        DlFRect rect = DlFRect::MakeLTRB(10, 10, 20, 20);
         DisplayListBuilder builder;
         state_stack.set_delegate(&builder);
         {
@@ -287,18 +284,18 @@ TEST(LayerStateStack, ColorFilter) {
 }
 
 TEST(LayerStateStack, ImageFilter) {
-  SkRect rect = {10, 10, 20, 20};
+  DlFRect rect = DlFRect::MakeLTRB(10, 10, 20, 20);
   std::shared_ptr<DlBlurImageFilter> outer_filter =
       std::make_shared<DlBlurImageFilter>(2.0f, 2.0f, DlTileMode::kClamp);
   std::shared_ptr<DlBlurImageFilter> inner_filter =
       std::make_shared<DlBlurImageFilter>(3.0f, 3.0f, DlTileMode::kClamp);
-  SkRect inner_src_rect = rect;
-  SkRect outer_src_rect;
+  DlFRect inner_src_rect = rect;
+  DlFRect outer_src_rect;
   ASSERT_EQ(inner_filter->map_local_bounds(rect, outer_src_rect),
             &outer_src_rect);
 
   LayerStateStack state_stack;
-  state_stack.set_preroll_delegate(SkRect::MakeLTRB(0, 0, 50, 50));
+  state_stack.set_preroll_delegate(DlFRect::MakeLTRB(0, 0, 50, 50));
   {
     auto mutator = state_stack.save();
     mutator.applyImageFilter(outer_src_rect, outer_filter);
@@ -339,7 +336,7 @@ TEST(LayerStateStack, ImageFilter) {
 
       // Verify output with applyState that accepts color filters
       {
-        SkRect rect = {10, 10, 20, 20};
+        DlFRect rect = DlFRect::MakeLTRB(10, 10, 20, 20);
         DisplayListBuilder builder;
         state_stack.set_delegate(&builder);
         {
@@ -369,7 +366,7 @@ TEST(LayerStateStack, ImageFilter) {
 }
 
 TEST(LayerStateStack, OpacityAndColorFilterInteraction) {
-  SkRect rect = {10, 10, 20, 20};
+  DlFRect rect = DlFRect::MakeLTRB(10, 10, 20, 20);
   std::shared_ptr<DlBlendColorFilter> color_filter =
       std::make_shared<DlBlendColorFilter>(DlColor::kYellow(),
                                            DlBlendMode::kColorBurn);
@@ -429,7 +426,7 @@ TEST(LayerStateStack, OpacityAndColorFilterInteraction) {
 }
 
 TEST(LayerStateStack, OpacityAndImageFilterInteraction) {
-  SkRect rect = {10, 10, 20, 20};
+  DlFRect rect = DlFRect::MakeLTRB(10, 10, 20, 20);
   std::shared_ptr<DlBlurImageFilter> image_filter =
       std::make_shared<DlBlurImageFilter>(2.0f, 2.0f, DlTileMode::kClamp);
 
@@ -488,7 +485,7 @@ TEST(LayerStateStack, OpacityAndImageFilterInteraction) {
 }
 
 TEST(LayerStateStack, ColorFilterAndImageFilterInteraction) {
-  SkRect rect = {10, 10, 20, 20};
+  DlFRect rect = DlFRect::MakeLTRB(10, 10, 20, 20);
   std::shared_ptr<DlBlendColorFilter> color_filter =
       std::make_shared<DlBlendColorFilter>(DlColor::kYellow(),
                                            DlBlendMode::kColorBurn);

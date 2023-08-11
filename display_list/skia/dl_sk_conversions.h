@@ -68,53 +68,93 @@ inline SkCanvas::PointMode ToSk(DlCanvas::PointMode mode) {
   return static_cast<SkCanvas::PointMode>(mode);
 }
 
+inline SkPoint ToSk(const DlFPoint& dl_point) {
+  return SkPoint::Make(dl_point.x(), dl_point.y());
+}
+
+inline const SkPoint* ToSk(const DlFPoint* dl_points) {
+  return reinterpret_cast<const SkPoint*>(dl_points);
+}
+
+inline DlISize ToDl(const SkISize& sk_size) {
+  return sk_size.isEmpty() ? DlISize()
+                           : DlISize(sk_size.fWidth, sk_size.fHeight);
+}
+
+inline SkIRect ToSk(const DlIRect& dl_rect) {
+  return SkIRect::MakeLTRB(dl_rect.left(), dl_rect.top(),  //
+                           dl_rect.right(), dl_rect.bottom());
+}
+
+inline SkRect ToSk(const DlFRect& dl_rect) {
+  return SkRect::MakeLTRB(dl_rect.left(), dl_rect.top(),  //
+                          dl_rect.right(), dl_rect.bottom());
+}
+
+inline const SkRect* ToSk(SkRect* scratch, const DlFRect* dl_rect) {
+  if (dl_rect == nullptr) {
+    return nullptr;
+  }
+  scratch->setLTRB(dl_rect->left(), dl_rect->top(),  //
+                   dl_rect->right(), dl_rect->bottom());
+  return scratch;
+}
+
+inline DlFRect ToDl(const SkRect& sk_rect) {
+  return DlFRect::MakeLTRB(sk_rect.fLeft, sk_rect.fTop,  //
+                           sk_rect.fRight, sk_rect.fBottom);
+}
+
+inline const SkRect* ToSk(const DlFRect* dl_rects) {
+  return reinterpret_cast<const SkRect*>(dl_rects);
+}
+
+inline SkRRect ToSk(const DlFRRect& dl_rrect) {
+  SkRRect sk_rrect;
+  DlFPoint dl_radii[4];
+  dl_rrect.GetRadii(dl_radii);
+  sk_rrect.setRectRadii(ToSk(dl_rrect.Bounds()), ToSk(dl_radii));
+  return sk_rrect;
+}
+
+inline SkRSXform ToSk(const DlRSTransform& dl_rs) {
+  return SkRSXform::Make(dl_rs.scaled_cos(), dl_rs.scaled_sin(),
+                         dl_rs.translate_x(), dl_rs.translate_y());
+}
+
+inline const SkRSXform* ToSk(const DlRSTransform* dl_rs) {
+  return reinterpret_cast<const SkRSXform*>(dl_rs);
+}
+
+inline SkMatrix ToSk(const DlTransform& dl_transform) {
+  return dl_transform.ToSkMatrix();
+}
+
+inline SkMatrix* ToSk(SkMatrix* scratch, const DlTransform* dl_transform) {
+  if (dl_transform == nullptr) {
+    return nullptr;
+  }
+  *scratch = dl_transform->ToSkMatrix();
+  return scratch;
+}
+
+inline DlTransform ToDl(SkM44 transform) {
+  SkScalar matrix[16];
+  transform.getColMajor(matrix);
+  return DlTransform::MakeColMajor(matrix);
+}
+
 extern sk_sp<SkShader> ToSk(const DlColorSource* source);
-inline sk_sp<SkShader> ToSk(std::shared_ptr<const DlColorSource> source) {
-  return ToSk(source.get());
-}
-inline sk_sp<SkShader> ToSk(const DlColorSource& source) {
-  return ToSk(&source);
-}
 
 extern sk_sp<SkImageFilter> ToSk(const DlImageFilter* filter);
-inline sk_sp<SkImageFilter> ToSk(std::shared_ptr<const DlImageFilter> filter) {
-  return ToSk(filter.get());
-}
-inline sk_sp<SkImageFilter> ToSk(const DlImageFilter& filter) {
-  return ToSk(&filter);
-}
 
 extern sk_sp<SkColorFilter> ToSk(const DlColorFilter* filter);
-inline sk_sp<SkColorFilter> ToSk(std::shared_ptr<const DlColorFilter> filter) {
-  return ToSk(filter.get());
-}
-inline sk_sp<SkColorFilter> ToSk(const DlColorFilter& filter) {
-  return ToSk(&filter);
-}
 
 extern sk_sp<SkMaskFilter> ToSk(const DlMaskFilter* filter);
-inline sk_sp<SkMaskFilter> ToSk(std::shared_ptr<const DlMaskFilter> filter) {
-  return ToSk(filter.get());
-}
-inline sk_sp<SkMaskFilter> ToSk(const DlMaskFilter& filter) {
-  return ToSk(&filter);
-}
 
 extern sk_sp<SkPathEffect> ToSk(const DlPathEffect* effect);
-inline sk_sp<SkPathEffect> ToSk(std::shared_ptr<const DlPathEffect> effect) {
-  return ToSk(effect.get());
-}
-inline sk_sp<SkPathEffect> ToSk(const DlPathEffect& effect) {
-  return ToSk(&effect);
-}
 
 extern sk_sp<SkVertices> ToSk(const DlVertices* vertices);
-inline sk_sp<SkVertices> ToSk(std::shared_ptr<const DlVertices> vertices) {
-  return ToSk(vertices.get());
-}
-inline sk_sp<SkVertices> ToSk(const DlVertices& vertices) {
-  return ToSk(&vertices);
-}
 
 }  // namespace flutter
 

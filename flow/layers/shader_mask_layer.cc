@@ -8,7 +8,7 @@
 namespace flutter {
 
 ShaderMaskLayer::ShaderMaskLayer(std::shared_ptr<DlColorSource> color_source,
-                                 const SkRect& mask_rect,
+                                 const DlFRect& mask_rect,
                                  DlBlendMode blend_mode)
     : CacheableContainerLayer(
           RasterCacheUtil::kMinimumRendersBeforeCachingFilterLayer),
@@ -38,7 +38,7 @@ void ShaderMaskLayer::Preroll(PrerollContext* context) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
   AutoCache cache = AutoCache(layer_raster_cache_item_.get(), context,
-                              context->state_stack.transform_3x3());
+                              context->state_stack.transform());
 
   ContainerLayer::Preroll(context);
   // We always paint with a saveLayer (or a cached rendering),
@@ -60,7 +60,7 @@ void ShaderMaskLayer::Paint(PaintContext& context) const {
       return;
     }
   }
-  auto shader_rect = SkRect::MakeWH(mask_rect_.width(), mask_rect_.height());
+  auto shader_rect = DlFRect::MakeWH(mask_rect_.width(), mask_rect_.height());
 
   mutator.saveLayer(paint_bounds());
 

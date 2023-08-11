@@ -9,6 +9,7 @@
 #include <optional>
 
 #include "flutter/display_list/dl_sampling_options.h"
+#include "flutter/display_list/geometry/dl_rect.h"
 #include "flutter/display_list/geometry/dl_rtree.h"
 #include "flutter/fml/logging.h"
 
@@ -234,8 +235,8 @@ class DisplayList : public SkRefCnt {
   ~DisplayList();
 
   void Dispatch(DlOpReceiver& ctx) const;
-  void Dispatch(DlOpReceiver& ctx, const SkRect& cull_rect) const;
-  void Dispatch(DlOpReceiver& ctx, const SkIRect& cull_rect) const;
+  void Dispatch(DlOpReceiver& ctx, const DlFRect& cull_rect) const;
+  void Dispatch(DlOpReceiver& ctx, const DlIRect& cull_rect) const;
 
   // From historical behavior, SkPicture always included nested bytes,
   // but nested ops are only included if requested. The defaults used
@@ -251,7 +252,7 @@ class DisplayList : public SkRefCnt {
 
   uint32_t unique_id() const { return unique_id_; }
 
-  const SkRect& bounds() const { return bounds_; }
+  const DlFRect& bounds() const { return bounds_; }
 
   bool has_rtree() const { return rtree_ != nullptr; }
   sk_sp<const DlRTree> rtree() const { return rtree_; }
@@ -284,7 +285,7 @@ class DisplayList : public SkRefCnt {
               unsigned int op_count,
               size_t nested_byte_count,
               unsigned int nested_op_count,
-              const SkRect& bounds,
+              const DlFRect& bounds,
               bool can_apply_group_opacity,
               bool is_ui_thread_safe,
               bool modifies_transparent_black,
@@ -302,7 +303,7 @@ class DisplayList : public SkRefCnt {
   const unsigned int nested_op_count_;
 
   const uint32_t unique_id_;
-  const SkRect bounds_;
+  const DlFRect bounds_;
 
   const bool can_apply_group_opacity_;
   const bool is_ui_thread_safe_;

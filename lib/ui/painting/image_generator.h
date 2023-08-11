@@ -6,6 +6,8 @@
 #define FLUTTER_LIB_UI_PAINTING_IMAGE_GENERATOR_H_
 
 #include <optional>
+
+#include "flutter/display_list/geometry/dl_rect.h"
 #include "flutter/fml/macros.h"
 #include "third_party/skia/include/codec/SkCodec.h"
 #include "third_party/skia/include/codec/SkCodecAnimation.h"
@@ -13,7 +15,6 @@
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkImageGenerator.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
-#include "third_party/skia/include/core/SkSize.h"
 
 namespace flutter {
 
@@ -45,7 +46,7 @@ class ImageGenerator {
     SkCodecAnimation::DisposalMethod disposal_method;
 
     /// The region of the frame that is affected by the disposal method.
-    std::optional<SkIRect> disposal_rect;
+    std::optional<DlIRect> disposal_rect;
 
     /// How this frame should be blended with the previous frame.
     SkCodecAnimation::Blend blend_mode;
@@ -99,7 +100,7 @@ class ImageGenerator {
   /// @note       This method is called prior to `GetPixels` in order to query
   ///             for supported sizes.
   /// @see        `GetPixels`
-  virtual SkISize GetScaledDimensions(float scale) = 0;
+  virtual DlISize GetScaledDimensions(float scale) = 0;
 
   /// @brief      Decode the image into a given buffer. This method is currently
   ///             always used for sub-pixel image decoding. For full-sized still
@@ -162,7 +163,7 @@ class BuiltinSkiaImageGenerator : public ImageGenerator {
       unsigned int frame_index) override;
 
   // |ImageGenerator|
-  SkISize GetScaledDimensions(float desired_scale) override;
+  DlISize GetScaledDimensions(float desired_scale) override;
 
   // |ImageGenerator|
   bool GetPixels(
@@ -202,7 +203,7 @@ class BuiltinSkiaCodecImageGenerator : public ImageGenerator {
       unsigned int frame_index) override;
 
   // |ImageGenerator|
-  SkISize GetScaledDimensions(float desired_scale) override;
+  DlISize GetScaledDimensions(float desired_scale) override;
 
   // |ImageGenerator|
   bool GetPixels(

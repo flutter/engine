@@ -8,31 +8,28 @@
 #include "flutter/testing/display_list_testing.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkSerialProcs.h"
-#include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 
 namespace flutter {
 namespace testing {
 
-constexpr SkISize kSize = SkISize::Make(64, 64);
-
 MockCanvas::MockCanvas()
-    : tracker_(SkRect::Make(kSize), SkMatrix::I()), current_layer_(0) {}
+    : tracker_(DlFRect::MakeWH(64, 64), DlTransform()), current_layer_(0) {}
 
 MockCanvas::MockCanvas(int width, int height)
-    : tracker_(SkRect::MakeIWH(width, height), SkMatrix::I()),
+    : tracker_(DlFRect::MakeWH(width, height), DlTransform()),
       current_layer_(0) {}
 
 MockCanvas::~MockCanvas() {
   EXPECT_EQ(current_layer_, 0);
 }
 
-SkISize MockCanvas::GetBaseLayerSize() const {
-  return tracker_.base_device_cull_rect().roundOut().size();
+DlISize MockCanvas::GetBaseLayerSize() const {
+  return DlIRect::MakeRoundedOut(tracker_.base_device_cull_rect()).size();
 }
 
 SkImageInfo MockCanvas::GetImageInfo() const {
-  SkISize size = GetBaseLayerSize();
+  DlISize size = GetBaseLayerSize();
   return SkImageInfo::MakeUnknown(size.width(), size.height());
 }
 
@@ -43,14 +40,14 @@ void MockCanvas::Save() {
   current_layer_++;  // Must go here; func params order of eval is undefined
 }
 
-void MockCanvas::SaveLayer(const SkRect* bounds,
+void MockCanvas::SaveLayer(const DlFRect* bounds,
                            const DlPaint* paint,
                            const DlImageFilter* backdrop) {
   // saveLayer calls this prior to running, so we use it to track saveLayer
   // calls
   draw_calls_.emplace_back(DrawCall{
       current_layer_,
-      SaveLayerData{bounds ? *bounds : SkRect(), paint ? *paint : DlPaint(),
+      SaveLayerData{bounds ? *bounds : DlFRect(), paint ? *paint : DlPaint(),
                     backdrop ? backdrop->shared() : nullptr,
                     current_layer_ + 1}});
   tracker_.save();
@@ -69,79 +66,66 @@ void MockCanvas::Restore() {
 // clang-format off
 
 // 2x3 2D affine subset of a 4x4 transform in row major order
-void MockCanvas::Transform2DAffine(SkScalar mxx, SkScalar mxy, SkScalar mxt,
-                                   SkScalar myx, SkScalar myy, SkScalar myt) {
-  Transform(SkMatrix::MakeAll(mxx, mxy, mxt, myx, myy, myt, 0, 0, 1));
+void MockCanvas::Transform2DAffine(DlScalar mxx, DlScalar mxy, DlScalar mxt,
+                                   DlScalar myx, DlScalar myy, DlScalar myt) {
+  Transform(DlTransform::MakeAffine2D(mxx, mxy, mxt, myx, myy, myt));
 }
 
 // full 4x4 transform in row major order
 void MockCanvas::TransformFullPerspective(
-    SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
-    SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
-    SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
-    SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) {
-  Transform(SkM44(mxx, mxy, mxz, mxt,
-                  myx, myy, myz, myt,
-                  mzx, mzy, mzz, mzt,
-                  mwx, mwy, mwz, mwt));
+    DlScalar mxx, DlScalar mxy, DlScalar mxz, DlScalar mxt,
+    DlScalar myx, DlScalar myy, DlScalar myz, DlScalar myt,
+    DlScalar mzx, DlScalar mzy, DlScalar mzz, DlScalar mzt,
+    DlScalar mwx, DlScalar mwy, DlScalar mwz, DlScalar mwt) {
+  Transform(DlTransform::MakeRowMajor(mxx, mxy, mxz, mxt,
+                                      myx, myy, myz, myt,
+                                      mzx, mzy, mzz, mzt,
+                                      mwx, mwy, mwz, mwt));
 }
 
 // clang-format on
 
-void MockCanvas::Transform(const SkMatrix* matrix) {
+void MockCanvas::Transform(const DlTransform& matrix) {
   draw_calls_.emplace_back(
-      DrawCall{current_layer_, ConcatMatrixData{SkM44(*matrix)}});
-  tracker_.transform(*matrix);
+      DrawCall{current_layer_, ConcatMatrixData{matrix}});
+  tracker_.transform(matrix);
 }
 
-void MockCanvas::Transform(const SkM44* matrix) {
-  draw_calls_.emplace_back(DrawCall{current_layer_, ConcatMatrixData{*matrix}});
-  tracker_.transform(*matrix);
-}
-
-void MockCanvas::SetTransform(const SkMatrix* matrix) {
+void MockCanvas::SetTransform(const DlTransform& matrix) {
   draw_calls_.emplace_back(
-      DrawCall{current_layer_, SetMatrixData{SkM44(*matrix)}});
-  tracker_.setTransform(*matrix);
-}
-
-void MockCanvas::SetTransform(const SkM44* matrix) {
-  draw_calls_.emplace_back(DrawCall{current_layer_, SetMatrixData{*matrix}});
-  tracker_.setTransform(*matrix);
+      DrawCall{current_layer_, SetMatrixData{matrix}});
+  tracker_.setTransform(matrix);
 }
 
 void MockCanvas::TransformReset() {
-  draw_calls_.emplace_back(DrawCall{current_layer_, SetMatrixData{SkM44()}});
+  draw_calls_.emplace_back(
+      DrawCall{current_layer_, SetMatrixData{DlTransform()}});
   tracker_.setIdentity();
 }
 
-void MockCanvas::Translate(SkScalar x, SkScalar y) {
-  this->Transform(SkM44::Translate(x, y));
+void MockCanvas::Translate(DlScalar x, DlScalar y) {
+  this->Transform(DlTransform::MakeTranslate(x, y));
 }
 
-void MockCanvas::Scale(SkScalar x, SkScalar y) {
-  this->Transform(SkM44::Scale(x, y));
+void MockCanvas::Scale(DlScalar x, DlScalar y) {
+  this->Transform(DlTransform::MakeScale(x, y));
 }
 
-void MockCanvas::Rotate(SkScalar degrees) {
-  this->Transform(SkMatrix::RotateDeg(degrees));
+void MockCanvas::Rotate(DlScalar degrees) {
+  this->Transform(DlTransform::MakeRotate(DlDegrees(degrees)));
 }
 
-void MockCanvas::Skew(SkScalar sx, SkScalar sy) {
-  this->Transform(SkMatrix::Skew(sx, sy));
+void MockCanvas::Skew(DlScalar sx, DlScalar sy) {
+  this->Transform(DlTransform::MakeSkew(sx, sy));
 }
 
-SkM44 MockCanvas::GetTransformFullPerspective() const {
-  return tracker_.matrix_4x4();
-}
-
-SkMatrix MockCanvas::GetTransform() const {
-  return tracker_.matrix_3x3();
+DlTransform MockCanvas::GetTransform() const {
+  return tracker_.matrix();
 }
 
 void MockCanvas::DrawTextBlob(const sk_sp<SkTextBlob>& text,
-                              SkScalar x,
-                              SkScalar y,
+                              DlScalar x,
+                              DlScalar y,
                               const DlPaint& paint) {
   // This duplicates existing logic in SkCanvas::onDrawPicture
   // that should probably be split out so it doesn't need to be here as well.
@@ -157,82 +141,82 @@ void MockCanvas::DrawTextBlob(const sk_sp<SkTextBlob>& text,
   draw_calls_.emplace_back(DrawCall{
       current_layer_, DrawTextData{text ? text->serialize(SkSerialProcs{})
                                         : SkData::MakeUninitialized(0),
-                                   paint, SkPoint::Make(x, y)}});
+                                   paint, DlFPoint(x, y)}});
 }
 
-void MockCanvas::DrawRect(const SkRect& rect, const DlPaint& paint) {
+void MockCanvas::DrawRect(const DlFRect& rect, const DlPaint& paint) {
   draw_calls_.emplace_back(DrawCall{current_layer_, DrawRectData{rect, paint}});
 }
 
-void MockCanvas::DrawPath(const SkPath& path, const DlPaint& paint) {
+void MockCanvas::DrawPath(const DlPath& path, const DlPaint& paint) {
   draw_calls_.emplace_back(DrawCall{current_layer_, DrawPathData{path, paint}});
 }
 
-void MockCanvas::DrawShadow(const SkPath& path,
+void MockCanvas::DrawShadow(const DlPath& path,
                             const DlColor color,
-                            const SkScalar elevation,
+                            const DlScalar elevation,
                             bool transparent_occluder,
-                            SkScalar dpr) {
+                            DlScalar dpr) {
   draw_calls_.emplace_back(DrawCall{
       current_layer_,
       DrawShadowData{path, color, elevation, transparent_occluder, dpr}});
 }
 
 void MockCanvas::DrawImage(const sk_sp<DlImage>& image,
-                           SkPoint point,
+                           DlFPoint point,
                            const DlImageSampling options,
                            const DlPaint* paint) {
   if (paint) {
     draw_calls_.emplace_back(
         DrawCall{current_layer_,
-                 DrawImageData{image, point.fX, point.fY, options, *paint}});
+                 DrawImageData{image, point.x(), point.y(), options, *paint}});
   } else {
     draw_calls_.emplace_back(
         DrawCall{current_layer_,
-                 DrawImageDataNoPaint{image, point.fX, point.fY, options}});
+                 DrawImageDataNoPaint{image, point.x(), point.y(), options}});
   }
 }
 
 void MockCanvas::DrawDisplayList(const sk_sp<DisplayList> display_list,
-                                 SkScalar opacity) {
+                                 DlScalar opacity) {
   draw_calls_.emplace_back(
       DrawCall{current_layer_, DrawDisplayListData{display_list, opacity}});
 }
 
-void MockCanvas::ClipRect(const SkRect& rect, ClipOp op, bool is_aa) {
+void MockCanvas::ClipRect(const DlFRect& rect, ClipOp op, bool is_aa) {
   ClipEdgeStyle style = is_aa ? kSoft_ClipEdgeStyle : kHard_ClipEdgeStyle;
   draw_calls_.emplace_back(
       DrawCall{current_layer_, ClipRectData{rect, op, style}});
   tracker_.clipRect(rect, op, is_aa);
 }
 
-void MockCanvas::ClipRRect(const SkRRect& rrect, ClipOp op, bool is_aa) {
+void MockCanvas::ClipRRect(const DlFRRect& rrect, ClipOp op, bool is_aa) {
   ClipEdgeStyle style = is_aa ? kSoft_ClipEdgeStyle : kHard_ClipEdgeStyle;
   draw_calls_.emplace_back(
       DrawCall{current_layer_, ClipRRectData{rrect, op, style}});
   tracker_.clipRRect(rrect, op, is_aa);
 }
 
-void MockCanvas::ClipPath(const SkPath& path, ClipOp op, bool is_aa) {
+void MockCanvas::ClipPath(const DlPath& path, ClipOp op, bool is_aa) {
   ClipEdgeStyle style = is_aa ? kSoft_ClipEdgeStyle : kHard_ClipEdgeStyle;
   draw_calls_.emplace_back(
       DrawCall{current_layer_, ClipPathData{path, op, style}});
   tracker_.clipPath(path, op, is_aa);
 }
 
-SkRect MockCanvas::GetDestinationClipBounds() const {
+DlFRect MockCanvas::GetDestinationClipBounds() const {
   return tracker_.device_cull_rect();
 }
 
-SkRect MockCanvas::GetLocalClipBounds() const {
+DlFRect MockCanvas::GetLocalClipBounds() const {
   return tracker_.local_cull_rect();
 }
 
-bool MockCanvas::QuickReject(const SkRect& bounds) const {
+bool MockCanvas::QuickReject(const DlFRect& bounds) const {
   return tracker_.content_culled(bounds);
 }
 
-void MockCanvas::DrawDRRect(const SkRRect&, const SkRRect&, const DlPaint&) {
+void MockCanvas::DrawDRRect(const DlFRRect&, const DlFRRect&, const DlPaint&) {
   FML_DCHECK(false);
 }
 
@@ -244,44 +228,44 @@ void MockCanvas::DrawColor(DlColor color, DlBlendMode mode) {
   DrawPaint(DlPaint(color).setBlendMode(mode));
 }
 
-void MockCanvas::DrawLine(const SkPoint& p0,
-                          const SkPoint& p1,
+void MockCanvas::DrawLine(const DlFPoint& p0,
+                          const DlFPoint& p1,
                           const DlPaint& paint) {
   FML_DCHECK(false);
 }
 
 void MockCanvas::DrawPoints(PointMode,
                             uint32_t,
-                            const SkPoint[],
+                            const DlFPoint[],
                             const DlPaint&) {
   FML_DCHECK(false);
 }
 
-void MockCanvas::DrawOval(const SkRect&, const DlPaint&) {
+void MockCanvas::DrawOval(const DlFRect&, const DlPaint&) {
   FML_DCHECK(false);
 }
 
-void MockCanvas::DrawCircle(const SkPoint& center,
-                            SkScalar radius,
+void MockCanvas::DrawCircle(const DlFPoint& center,
+                            DlScalar radius,
                             const DlPaint& paint) {
   FML_DCHECK(false);
 }
 
-void MockCanvas::DrawArc(const SkRect&,
-                         SkScalar,
-                         SkScalar,
+void MockCanvas::DrawArc(const DlFRect&,
+                         DlScalar,
+                         DlScalar,
                          bool,
                          const DlPaint&) {
   FML_DCHECK(false);
 }
 
-void MockCanvas::DrawRRect(const SkRRect&, const DlPaint&) {
+void MockCanvas::DrawRRect(const DlFRRect&, const DlPaint&) {
   FML_DCHECK(false);
 }
 
 void MockCanvas::DrawImageRect(const sk_sp<DlImage>&,
-                               const SkRect&,
-                               const SkRect&,
+                               const DlFRect&,
+                               const DlFRect&,
                                const DlImageSampling,
                                const DlPaint*,
                                SrcRectConstraint constraint) {
@@ -289,8 +273,8 @@ void MockCanvas::DrawImageRect(const sk_sp<DlImage>&,
 }
 
 void MockCanvas::DrawImageNine(const sk_sp<DlImage>& image,
-                               const SkIRect& center,
-                               const SkRect& dst,
+                               const DlIRect& center,
+                               const DlFRect& dst,
                                DlFilterMode filter,
                                const DlPaint* paint) {
   FML_DCHECK(false);
@@ -301,13 +285,13 @@ void MockCanvas::DrawVertices(const DlVertices*, DlBlendMode, const DlPaint&) {
 }
 
 void MockCanvas::DrawAtlas(const sk_sp<DlImage>&,
-                           const SkRSXform[],
-                           const SkRect[],
+                           const DlRSTransform[],
+                           const DlFRect[],
                            const DlColor[],
                            int,
                            DlBlendMode,
                            const DlImageSampling,
-                           const SkRect*,
+                           const DlFRect*,
                            const DlPaint*) {
   FML_DCHECK(false);
 }
@@ -323,38 +307,28 @@ void MockCanvas::Flush() {
 // and in the long term, DlCanvas, and therefore this file will
 // eventually be cleaned of these SkObject dependencies and these
 // ostream operators will be converted to their DL equivalents.
-static std::ostream& operator<<(std::ostream& os, const SkPoint& r) {
-  return os << "XY: " << r.fX << ", " << r.fY;
+static std::ostream& operator<<(std::ostream& os, const DlFPoint& r) {
+  return os << "XY: " << r.x() << ", " << r.y();
 }
 
-static std::ostream& operator<<(std::ostream& os, const SkRect& r) {
-  return os << "LTRB: " << r.fLeft << ", " << r.fTop << ", " << r.fRight << ", "
-            << r.fBottom;
+static std::ostream& operator<<(std::ostream& os, const DlFRect& r) {
+  return os << "LTRB: "                             //
+            << r.left() << ", " << r.top() << ", "  //
+            << r.right() << ", " << r.bottom();
 }
 
-static std::ostream& operator<<(std::ostream& os, const SkRRect& r) {
-  return os << "LTRB: " << r.rect().fLeft << ", " << r.rect().fTop << ", "
-            << r.rect().fRight << ", " << r.rect().fBottom;
+static std::ostream& operator<<(std::ostream& os, const DlFRRect& r) {
+  return os << "LTRB: "                             //
+            << r.left() << ", " << r.top() << ", "  //
+            << r.right() << ", " << r.bottom();
 }
 
-static std::ostream& operator<<(std::ostream& os, const SkPath& r) {
-  return os << "Valid: " << r.isValid()
-            << ", FillType: " << static_cast<int>(r.getFillType())
-            << ", Bounds: " << r.getBounds();
+static std::ostream& operator<<(std::ostream& os, const DlPath& r) {
+  return os << "Valid: " << r.is_valid()
+            << ", FillType: " << static_cast<int>(r.fill_type())
+            << ", Bounds: " << r.Bounds();
 }
 // --------------------------------------------------------
-
-static std::ostream& operator<<(std::ostream& os, const SkM44& m) {
-  os << m.rc(0, 0) << ", " << m.rc(0, 1) << ", " << m.rc(0, 2) << ", "
-     << m.rc(0, 3) << std::endl;
-  os << m.rc(1, 0) << ", " << m.rc(1, 1) << ", " << m.rc(1, 2) << ", "
-     << m.rc(1, 3) << std::endl;
-  os << m.rc(2, 0) << ", " << m.rc(2, 1) << ", " << m.rc(2, 2) << ", "
-     << m.rc(2, 3) << std::endl;
-  os << m.rc(3, 0) << ", " << m.rc(3, 1) << ", " << m.rc(3, 2) << ", "
-     << m.rc(3, 3);
-  return os;
-}
 
 bool operator==(const MockCanvas::SaveData& a, const MockCanvas::SaveData& b) {
   return a.save_to_layer == b.save_to_layer;

@@ -19,7 +19,7 @@ namespace testing {
 class LayerTreeTest : public CanvasTest {
  public:
   LayerTreeTest()
-      : root_transform_(SkMatrix::Translate(1.0f, 1.0f)),
+      : root_transform_(DlTransform::MakeTranslate(1.0f, 1.0f)),
         scoped_frame_(compositor_context_.AcquireFrame(nullptr,
                                                        &mock_canvas(),
                                                        nullptr,
@@ -30,15 +30,15 @@ class LayerTreeTest : public CanvasTest {
                                                        nullptr)) {}
 
   CompositorContext::ScopedFrame& frame() { return *scoped_frame_.get(); }
-  const SkMatrix& root_transform() { return root_transform_; }
+  const DlTransform& root_transform() { return root_transform_; }
 
   std::unique_ptr<LayerTree> BuildLayerTree(const LayerTree::Config& config) {
-    return std::make_unique<LayerTree>(config, SkISize::Make(64, 64));
+    return std::make_unique<LayerTree>(config, DlISize(64, 64));
   }
 
  private:
   CompositorContext compositor_context_;
-  SkMatrix root_transform_;
+  DlTransform root_transform_;
   std::unique_ptr<CompositorContext::ScopedFrame> scoped_frame_;
 };
 
@@ -49,16 +49,16 @@ TEST_F(LayerTreeTest, PaintingEmptyLayerDies) {
       .root_layer = layer,
   });
   layer_tree->Preroll(frame());
-  EXPECT_EQ(layer->paint_bounds(), SkRect::MakeEmpty());
+  EXPECT_EQ(layer->paint_bounds(), DlFRect());
   EXPECT_TRUE(layer->is_empty());
 
   layer_tree->Paint(frame());
 }
 
 TEST_F(LayerTreeTest, PaintBeforePrerollDies) {
-  const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
-  SkPath child_path;
-  child_path.addRect(child_bounds);
+  const DlFRect child_bounds = DlFRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
+  DlPath child_path;
+  child_path.AddRect(child_bounds);
   auto mock_layer = std::make_shared<MockLayer>(child_path);
   auto layer = std::make_shared<ContainerLayer>();
   layer->Add(mock_layer);
@@ -76,8 +76,8 @@ TEST_F(LayerTreeTest, PaintBeforePrerollDies) {
 }
 
 TEST_F(LayerTreeTest, Simple) {
-  const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
-  const SkPath child_path = SkPath().addRect(child_bounds);
+  const DlFRect child_bounds = DlFRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
+  const DlPath child_path = DlPath().AddRect(child_bounds);
   const DlPaint child_paint = DlPaint(DlColor::kCyan());
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
   auto layer = std::make_shared<ContainerLayer>();
@@ -100,8 +100,8 @@ TEST_F(LayerTreeTest, Simple) {
 }
 
 TEST_F(LayerTreeTest, Multiple) {
-  const SkPath child_path1 = SkPath().addRect(5.0f, 6.0f, 20.5f, 21.5f);
-  const SkPath child_path2 = SkPath().addRect(8.0f, 2.0f, 16.5f, 14.5f);
+  const DlPath child_path1 = DlPath().AddRectLTRB(5.0f, 6.0f, 20.5f, 21.5f);
+  const DlPath child_path2 = DlPath().AddRectLTRB(8.0f, 2.0f, 16.5f, 14.5f);
   const DlPaint child_paint1 = DlPaint(DlColor::kMidGrey());
   const DlPaint child_paint2 = DlPaint(DlColor::kGreen());
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
@@ -111,23 +111,23 @@ TEST_F(LayerTreeTest, Multiple) {
   layer->Add(mock_layer1);
   layer->Add(mock_layer2);
 
-  SkRect expected_total_bounds = child_path1.getBounds();
-  expected_total_bounds.join(child_path2.getBounds());
+  DlFRect expected_total_bounds = child_path1.Bounds();
+  expected_total_bounds.Join(child_path2.Bounds());
   auto layer_tree = BuildLayerTree(LayerTree::Config{
       .root_layer = layer,
   });
   layer_tree->Preroll(frame());
-  EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
-  EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
+  EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.Bounds());
+  EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.Bounds());
   EXPECT_EQ(layer->paint_bounds(), expected_total_bounds);
   EXPECT_FALSE(mock_layer1->is_empty());
   EXPECT_FALSE(mock_layer2->is_empty());
   EXPECT_FALSE(layer->is_empty());
   EXPECT_EQ(mock_layer1->parent_matrix(), root_transform());
   EXPECT_EQ(mock_layer2->parent_matrix(), root_transform());
-  EXPECT_EQ(mock_layer1->parent_cull_rect(), kGiantRect);
+  EXPECT_EQ(mock_layer1->parent_cull_rect(), kMaxCullRect);
   EXPECT_EQ(mock_layer2->parent_cull_rect(),
-            kGiantRect);  // Siblings are independent
+            kMaxCullRect);  // Siblings are independent
 
   layer_tree->Paint(frame());
   EXPECT_EQ(
@@ -139,11 +139,11 @@ TEST_F(LayerTreeTest, Multiple) {
 }
 
 TEST_F(LayerTreeTest, MultipleWithEmpty) {
-  const SkPath child_path1 = SkPath().addRect(5.0f, 6.0f, 20.5f, 21.5f);
+  const DlPath child_path1 = DlPath().AddRectLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   const DlPaint child_paint1 = DlPaint(DlColor::kMidGrey());
   const DlPaint child_paint2 = DlPaint(DlColor::kGreen());
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
-  auto mock_layer2 = std::make_shared<MockLayer>(SkPath(), child_paint2);
+  auto mock_layer2 = std::make_shared<MockLayer>(DlPath(), child_paint2);
   auto layer = std::make_shared<ContainerLayer>();
   layer->Add(mock_layer1);
   layer->Add(mock_layer2);
@@ -152,16 +152,16 @@ TEST_F(LayerTreeTest, MultipleWithEmpty) {
       .root_layer = layer,
   });
   layer_tree->Preroll(frame());
-  EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
-  EXPECT_EQ(mock_layer2->paint_bounds(), SkPath().getBounds());
-  EXPECT_EQ(layer->paint_bounds(), child_path1.getBounds());
+  EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.Bounds());
+  EXPECT_EQ(mock_layer2->paint_bounds(), DlPath().Bounds());
+  EXPECT_EQ(layer->paint_bounds(), child_path1.Bounds());
   EXPECT_FALSE(mock_layer1->is_empty());
   EXPECT_TRUE(mock_layer2->is_empty());
   EXPECT_FALSE(layer->is_empty());
   EXPECT_EQ(mock_layer1->parent_matrix(), root_transform());
   EXPECT_EQ(mock_layer2->parent_matrix(), root_transform());
-  EXPECT_EQ(mock_layer1->parent_cull_rect(), kGiantRect);
-  EXPECT_EQ(mock_layer2->parent_cull_rect(), kGiantRect);
+  EXPECT_EQ(mock_layer1->parent_cull_rect(), kMaxCullRect);
+  EXPECT_EQ(mock_layer2->parent_cull_rect(), kMaxCullRect);
 
   layer_tree->Paint(frame());
   EXPECT_EQ(mock_canvas().draw_calls(),
@@ -170,8 +170,8 @@ TEST_F(LayerTreeTest, MultipleWithEmpty) {
 }
 
 TEST_F(LayerTreeTest, NeedsSystemComposite) {
-  const SkPath child_path1 = SkPath().addRect(5.0f, 6.0f, 20.5f, 21.5f);
-  const SkPath child_path2 = SkPath().addRect(8.0f, 2.0f, 16.5f, 14.5f);
+  const DlPath child_path1 = DlPath().AddRectLTRB(5.0f, 6.0f, 20.5f, 21.5f);
+  const DlPath child_path2 = DlPath().AddRectLTRB(8.0f, 2.0f, 16.5f, 14.5f);
   const DlPaint child_paint1 = DlPaint(DlColor::kMidGrey());
   const DlPaint child_paint2 = DlPaint(DlColor::kGreen());
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
@@ -180,22 +180,22 @@ TEST_F(LayerTreeTest, NeedsSystemComposite) {
   layer->Add(mock_layer1);
   layer->Add(mock_layer2);
 
-  SkRect expected_total_bounds = child_path1.getBounds();
-  expected_total_bounds.join(child_path2.getBounds());
+  DlFRect expected_total_bounds = child_path1.Bounds();
+  expected_total_bounds.Join(child_path2.Bounds());
   auto layer_tree = BuildLayerTree(LayerTree::Config{
       .root_layer = layer,
   });
   layer_tree->Preroll(frame());
-  EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
-  EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
+  EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.Bounds());
+  EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.Bounds());
   EXPECT_EQ(layer->paint_bounds(), expected_total_bounds);
   EXPECT_FALSE(mock_layer1->is_empty());
   EXPECT_FALSE(mock_layer2->is_empty());
   EXPECT_FALSE(layer->is_empty());
   EXPECT_EQ(mock_layer1->parent_matrix(), root_transform());
   EXPECT_EQ(mock_layer2->parent_matrix(), root_transform());
-  EXPECT_EQ(mock_layer1->parent_cull_rect(), kGiantRect);
-  EXPECT_EQ(mock_layer2->parent_cull_rect(), kGiantRect);
+  EXPECT_EQ(mock_layer1->parent_cull_rect(), kMaxCullRect);
+  EXPECT_EQ(mock_layer2->parent_cull_rect(), kMaxCullRect);
 
   layer_tree->Paint(frame());
   EXPECT_EQ(
@@ -208,7 +208,7 @@ TEST_F(LayerTreeTest, NeedsSystemComposite) {
 
 TEST_F(LayerTreeTest, PrerollContextInitialization) {
   LayerStateStack state_stack;
-  state_stack.set_preroll_delegate(kGiantRect, SkMatrix::I());
+  state_stack.set_preroll_delegate(kMaxCullRect, DlTransform());
   FixedRefreshRateStopwatch mock_raster_time;
   FixedRefreshRateStopwatch mock_ui_time;
   std::shared_ptr<TextureRegistry> mock_registry;
@@ -220,9 +220,8 @@ TEST_F(LayerTreeTest, PrerollContextInitialization) {
     EXPECT_EQ(context.view_embedder, nullptr);
     EXPECT_EQ(&context.state_stack, &state_stack);
     EXPECT_EQ(context.dst_color_space, nullptr);
-    EXPECT_EQ(context.state_stack.device_cull_rect(), kGiantRect);
-    EXPECT_EQ(context.state_stack.transform_3x3(), SkMatrix::I());
-    EXPECT_EQ(context.state_stack.transform_4x4(), SkM44());
+    EXPECT_EQ(context.state_stack.device_cull_rect(), kMaxCullRect);
+    EXPECT_EQ(context.state_stack.transform(), DlTransform());
     EXPECT_EQ(context.surface_needs_readback, false);
 
     EXPECT_EQ(&context.raster_time, &mock_raster_time);

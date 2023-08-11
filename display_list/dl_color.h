@@ -5,7 +5,7 @@
 #ifndef FLUTTER_DISPLAY_LIST_DL_COLOR_H_
 #define FLUTTER_DISPLAY_LIST_DL_COLOR_H_
 
-#include "third_party/skia/include/core/SkScalar.h"
+#include "flutter/display_list/dl_base_types.h"
 
 namespace flutter {
 
@@ -14,8 +14,8 @@ struct DlColor {
   constexpr DlColor() : argb(0xFF000000) {}
   constexpr DlColor(uint32_t argb) : argb(argb) {}
 
-  static constexpr uint8_t toAlpha(SkScalar opacity) { return toC(opacity); }
-  static constexpr SkScalar toOpacity(uint8_t alpha) { return toF(alpha); }
+  static constexpr uint8_t toAlpha(DlScalar opacity) { return toC(opacity); }
+  static constexpr DlScalar toOpacity(uint8_t alpha) { return toF(alpha); }
 
   // clang-format off
   static constexpr DlColor kTransparent()        {return 0x00000000;};

@@ -12,7 +12,6 @@
 #include "flutter/testing/testing.h"
 
 #include "third_party/skia/include/core/SkBitmap.h"
-#include "third_party/skia/include/core/SkColor.h"
 #include "third_party/skia/include/core/SkImage.h"
 
 namespace flutter {
@@ -31,13 +30,13 @@ std::vector<DisplayListComplexityCalculator*> AccumulatorCalculators() {
           DisplayListGLComplexityCalculator::GetInstance()};
 }
 
-std::vector<SkPoint> GetTestPoints() {
-  std::vector<SkPoint> points;
-  points.push_back(SkPoint::Make(0, 0));
-  points.push_back(SkPoint::Make(10, 0));
-  points.push_back(SkPoint::Make(10, 10));
-  points.push_back(SkPoint::Make(20, 10));
-  points.push_back(SkPoint::Make(20, 20));
+std::vector<DlFPoint> GetTestPoints() {
+  std::vector<DlFPoint> points;
+  points.push_back(DlFPoint(0, 0));
+  points.push_back(DlFPoint(10, 0));
+  points.push_back(DlFPoint(10, 10));
+  points.push_back(DlFPoint(20, 10));
+  points.push_back(DlFPoint(20, 20));
 
   return points;
 }
@@ -79,12 +78,12 @@ TEST(DisplayListComplexity, NestedDisplayList) {
 
 TEST(DisplayListComplexity, AntiAliasing) {
   DisplayListBuilder builder_no_aa;
-  builder_no_aa.DrawLine(SkPoint::Make(0, 0), SkPoint::Make(100, 100),
+  builder_no_aa.DrawLine(DlFPoint(0, 0), DlFPoint(100, 100),
                          DlPaint());
   auto display_list_no_aa = builder_no_aa.Build();
 
   DisplayListBuilder builder_aa;
-  builder_aa.DrawLine(SkPoint::Make(0, 0), SkPoint::Make(100, 100),
+  builder_aa.DrawLine(DlFPoint(0, 0), DlFPoint(100, 100),
                       DlPaint().setAntiAlias(true));
   auto display_list_aa = builder_aa.Build();
 
@@ -97,12 +96,12 @@ TEST(DisplayListComplexity, AntiAliasing) {
 
 TEST(DisplayListComplexity, StrokeWidth) {
   DisplayListBuilder builder_stroke_0;
-  builder_stroke_0.DrawLine(SkPoint::Make(0, 0), SkPoint::Make(100, 100),
+  builder_stroke_0.DrawLine(DlFPoint(0, 0), DlFPoint(100, 100),
                             DlPaint().setStrokeWidth(0.0f));
   auto display_list_stroke_0 = builder_stroke_0.Build();
 
   DisplayListBuilder builder_stroke_1;
-  builder_stroke_0.DrawLine(SkPoint::Make(0, 0), SkPoint::Make(100, 100),
+  builder_stroke_0.DrawLine(DlFPoint(0, 0), DlFPoint(100, 100),
                             DlPaint().setStrokeWidth(1.0f));
   auto display_list_stroke_1 = builder_stroke_1.Build();
 
@@ -115,12 +114,12 @@ TEST(DisplayListComplexity, StrokeWidth) {
 
 TEST(DisplayListComplexity, Style) {
   DisplayListBuilder builder_filled;
-  builder_filled.DrawRect(SkRect::MakeXYWH(10, 10, 80, 80),
+  builder_filled.DrawRect(DlFRect::MakeXYWH(10, 10, 80, 80),
                           DlPaint().setDrawStyle(DlDrawStyle::kFill));
   auto display_list_filled = builder_filled.Build();
 
   DisplayListBuilder builder_stroked;
-  builder_stroked.DrawRect(SkRect::MakeXYWH(10, 10, 80, 80),
+  builder_stroked.DrawRect(DlFRect::MakeXYWH(10, 10, 80, 80),
                            DlPaint().setDrawStyle(DlDrawStyle::kStroke));
   auto display_list_stroked = builder_stroked.Build();
 
@@ -144,34 +143,33 @@ TEST(DisplayListComplexity, SaveLayers) {
 
 TEST(DisplayListComplexity, DrawPath) {
   DisplayListBuilder builder_line;
-  SkPath line_path;
-  line_path.moveTo(SkPoint::Make(0, 0));
-  line_path.lineTo(SkPoint::Make(10, 10));
-  line_path.close();
+  DlPath line_path;
+  line_path.MoveTo(0, 0);
+  line_path.LineTo(10, 10);
+  line_path.Close();
   builder_line.DrawPath(line_path, DlPaint());
   auto display_list_line = builder_line.Build();
 
   DisplayListBuilder builder_quad;
-  SkPath quad_path;
-  quad_path.moveTo(SkPoint::Make(0, 0));
-  quad_path.quadTo(SkPoint::Make(10, 10), SkPoint::Make(10, 20));
-  quad_path.close();
+  DlPath quad_path;
+  quad_path.MoveTo(0, 0);
+  quad_path.QuadTo(10, 10, 10, 20);
+  quad_path.Close();
   builder_quad.DrawPath(quad_path, DlPaint());
   auto display_list_quad = builder_quad.Build();
 
   DisplayListBuilder builder_conic;
-  SkPath conic_path;
-  conic_path.moveTo(SkPoint::Make(0, 0));
-  conic_path.conicTo(SkPoint::Make(10, 10), SkPoint::Make(10, 20), 1.5f);
-  conic_path.close();
+  DlPath conic_path;
+  conic_path.MoveTo(0, 0);
+  conic_path.ConicTo(10, 10, 10, 20, 1.5f);
+  conic_path.Close();
   builder_conic.DrawPath(conic_path, DlPaint());
   auto display_list_conic = builder_conic.Build();
 
   DisplayListBuilder builder_cubic;
-  SkPath cubic_path;
-  cubic_path.moveTo(SkPoint::Make(0, 0));
-  cubic_path.cubicTo(SkPoint::Make(10, 10), SkPoint::Make(10, 20),
-                     SkPoint::Make(20, 20));
+  DlPath cubic_path;
+  cubic_path.MoveTo(0, 0);
+  cubic_path.CubicTo(10, 10, 10, 20, 20, 20);
   builder_cubic.DrawPath(cubic_path, DlPaint());
   auto display_list_cubic = builder_cubic.Build();
 
@@ -186,34 +184,33 @@ TEST(DisplayListComplexity, DrawPath) {
 
 TEST(DisplayListComplexity, DrawShadow) {
   DisplayListBuilder builder_line;
-  SkPath line_path;
-  line_path.moveTo(SkPoint::Make(0, 0));
-  line_path.lineTo(SkPoint::Make(10, 10));
-  line_path.close();
+  DlPath line_path;
+  line_path.MoveTo(0, 0);
+  line_path.LineTo(10, 10);
+  line_path.Close();
   builder_line.DrawShadow(line_path, SK_ColorRED, 10.0f, false, 1.0f);
   auto display_list_line = builder_line.Build();
 
   DisplayListBuilder builder_quad;
-  SkPath quad_path;
-  quad_path.moveTo(SkPoint::Make(0, 0));
-  quad_path.quadTo(SkPoint::Make(10, 10), SkPoint::Make(10, 20));
-  quad_path.close();
+  DlPath quad_path;
+  quad_path.MoveTo(0, 0);
+  quad_path.QuadTo(10, 10, 10, 20);
+  quad_path.Close();
   builder_quad.DrawShadow(quad_path, SK_ColorRED, 10.0f, false, 1.0f);
   auto display_list_quad = builder_quad.Build();
 
   DisplayListBuilder builder_conic;
-  SkPath conic_path;
-  conic_path.moveTo(SkPoint::Make(0, 0));
-  conic_path.conicTo(SkPoint::Make(10, 10), SkPoint::Make(10, 20), 1.5f);
-  conic_path.close();
+  DlPath conic_path;
+  conic_path.MoveTo(0, 0);
+  conic_path.ConicTo(10, 10, 10, 20, 1.5f);
+  conic_path.Close();
   builder_conic.DrawShadow(conic_path, SK_ColorRED, 10.0f, false, 1.0f);
   auto display_list_conic = builder_conic.Build();
 
   DisplayListBuilder builder_cubic;
-  SkPath cubic_path;
-  cubic_path.moveTo(SkPoint::Make(0, 0));
-  cubic_path.cubicTo(SkPoint::Make(10, 10), SkPoint::Make(10, 20),
-                     SkPoint::Make(20, 20));
+  DlPath cubic_path;
+  cubic_path.MoveTo(0, 0);
+  cubic_path.CubicTo(10, 10, 10, 20, 20, 20);
   builder_cubic.DrawShadow(cubic_path, SK_ColorRED, 10.0f, false, 1.0f);
   auto display_list_cubic = builder_cubic.Build();
 
@@ -228,7 +225,7 @@ TEST(DisplayListComplexity, DrawShadow) {
 
 TEST(DisplayListComplexity, DrawOval) {
   DisplayListBuilder builder;
-  builder.DrawOval(SkRect::MakeXYWH(10, 10, 100, 80), DlPaint());
+  builder.DrawOval(DlFRect::MakeXYWH(10, 10, 100, 80), DlPaint());
   auto display_list = builder.Build();
 
   auto calculators = AccumulatorCalculators();
@@ -239,7 +236,7 @@ TEST(DisplayListComplexity, DrawOval) {
 
 TEST(DisplayListComplexity, DrawCircle) {
   DisplayListBuilder builder;
-  builder.DrawCircle(SkPoint::Make(50, 50), 10.0f, DlPaint());
+  builder.DrawCircle(DlFPoint(50, 50), 10.0f, DlPaint());
   auto display_list = builder.Build();
 
   auto calculators = AccumulatorCalculators();
@@ -251,7 +248,7 @@ TEST(DisplayListComplexity, DrawCircle) {
 TEST(DisplayListComplexity, DrawRRect) {
   DisplayListBuilder builder;
   builder.DrawRRect(
-      SkRRect::MakeRectXY(SkRect::MakeXYWH(10, 10, 80, 80), 2.0f, 3.0f),
+      DlFRRect::MakeRectXY(DlFRect::MakeXYWH(10, 10, 80, 80), 2.0f, 3.0f),
       DlPaint());
   auto display_list = builder.Build();
 
@@ -263,10 +260,10 @@ TEST(DisplayListComplexity, DrawRRect) {
 
 TEST(DisplayListComplexity, DrawDRRect) {
   DisplayListBuilder builder;
-  SkRRect outer =
-      SkRRect::MakeRectXY(SkRect::MakeXYWH(10, 10, 80, 80), 2.0f, 3.0f);
-  SkRRect inner =
-      SkRRect::MakeRectXY(SkRect::MakeXYWH(15, 15, 70, 70), 1.5f, 1.5f);
+  DlFRRect outer =
+      DlFRRect::MakeRectXY(DlFRect::MakeXYWH(10, 10, 80, 80), 2.0f, 3.0f);
+  DlFRRect inner =
+      DlFRRect::MakeRectXY(DlFRect::MakeXYWH(15, 15, 70, 70), 1.5f, 1.5f);
   builder.DrawDRRect(outer, inner, DlPaint());
   auto display_list = builder.Build();
 
@@ -278,7 +275,7 @@ TEST(DisplayListComplexity, DrawDRRect) {
 
 TEST(DisplayListComplexity, DrawArc) {
   DisplayListBuilder builder;
-  builder.DrawArc(SkRect::MakeXYWH(10, 10, 100, 80), 0.0f, 10.0f, true,
+  builder.DrawArc(DlFRect::MakeXYWH(10, 10, 100, 80), 0.0f, 10.0f, true,
                   DlPaint());
   auto display_list = builder.Build();
 
@@ -357,7 +354,7 @@ TEST(DisplayListComplexity, DrawImage) {
   auto image = SkImages::RasterFromBitmap(bitmap);
 
   DisplayListBuilder builder;
-  builder.DrawImage(DlImage::Make(image), SkPoint::Make(0, 0),
+  builder.DrawImage(DlImage::Make(image), DlFPoint(0, 0),
                     DlImageSampling::kNearestNeighbor, nullptr);
   auto display_list = builder.Build();
 
@@ -375,8 +372,8 @@ TEST(DisplayListComplexity, DrawImageNine) {
   bitmap.allocPixels(info, 0);
   auto image = SkImages::RasterFromBitmap(bitmap);
 
-  SkIRect center = SkIRect::MakeXYWH(5, 5, 20, 20);
-  SkRect dest = SkRect::MakeXYWH(0, 0, 50, 50);
+  DlIRect center = DlIRect::MakeXYWH(5, 5, 20, 20);
+  DlFRect dest = DlFRect::MakeXYWH(0, 0, 50, 50);
 
   DisplayListBuilder builder;
   builder.DrawImageNine(DlImage::Make(image), center, dest,
@@ -397,8 +394,8 @@ TEST(DisplayListComplexity, DrawImageRect) {
   bitmap.allocPixels(info, 0);
   auto image = SkImages::RasterFromBitmap(bitmap);
 
-  SkRect src = SkRect::MakeXYWH(0, 0, 50, 50);
-  SkRect dest = SkRect::MakeXYWH(0, 0, 50, 50);
+  DlFRect src = DlFRect::MakeXYWH(0, 0, 50, 50);
+  DlFRect dest = DlFRect::MakeXYWH(0, 0, 50, 50);
 
   DisplayListBuilder builder;
   builder.DrawImageRect(DlImage::Make(image), src, dest,
@@ -419,11 +416,11 @@ TEST(DisplayListComplexity, DrawAtlas) {
   bitmap.allocPixels(info, 0);
   auto image = SkImages::RasterFromBitmap(bitmap);
 
-  std::vector<SkRect> rects;
-  std::vector<SkRSXform> xforms;
+  std::vector<DlFRect> rects;
+  std::vector<DlRSTransform> xforms;
   for (int i = 0; i < 10; i++) {
-    rects.push_back(SkRect::MakeXYWH(0, 0, 10, 10));
-    xforms.push_back(SkRSXform::Make(1, 0, 0, 0));
+    rects.push_back(DlFRect::MakeWH(10, 10));
+    xforms.push_back(DlRSTransform::MakeScaledCosSinXY(1, 0, 0, 0));
   }
 
   DisplayListBuilder builder;

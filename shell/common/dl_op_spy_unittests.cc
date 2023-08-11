@@ -7,7 +7,6 @@
 #include "flutter/shell/common/dl_op_spy.h"
 #include "flutter/testing/testing.h"
 #include "third_party/skia/include/core/SkBitmap.h"
-#include "third_party/skia/include/core/SkRSXform.h"
 
 namespace flutter {
 namespace testing {
@@ -45,7 +44,7 @@ TEST(DlOpSpy, SetColor) {
   {  // No Color set.
     DisplayListBuilder builder;
     DlPaint paint;
-    builder.DrawRect(SkRect::MakeWH(5, 5), paint);
+    builder.DrawRect(DlFRect::MakeWH(5, 5), paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);
@@ -54,7 +53,7 @@ TEST(DlOpSpy, SetColor) {
   {  // Set transparent color.
     DisplayListBuilder builder;
     DlPaint paint(DlColor::kTransparent());
-    builder.DrawRect(SkRect::MakeWH(5, 5), paint);
+    builder.DrawRect(DlFRect::MakeWH(5, 5), paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);
@@ -63,7 +62,7 @@ TEST(DlOpSpy, SetColor) {
   {  // Set black color.
     DisplayListBuilder builder;
     DlPaint paint(DlColor::kBlack());
-    builder.DrawRect(SkRect::MakeWH(5, 5), paint);
+    builder.DrawRect(DlFRect::MakeWH(5, 5), paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);
@@ -76,7 +75,7 @@ TEST(DlOpSpy, SetColorSource) {
     DisplayListBuilder builder;
     DlPaint paint;
     paint.setColorSource(nullptr);
-    builder.DrawRect(SkRect::MakeWH(5, 5), paint);
+    builder.DrawRect(DlFRect::MakeWH(5, 5), paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);
@@ -88,7 +87,7 @@ TEST(DlOpSpy, SetColorSource) {
     auto color = DlColor::kTransparent();
     DlColorColorSource color_source_transparent(color);
     paint.setColorSource(color_source_transparent.shared());
-    builder.DrawRect(SkRect::MakeWH(5, 5), paint);
+    builder.DrawRect(DlFRect::MakeWH(5, 5), paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);
@@ -100,7 +99,7 @@ TEST(DlOpSpy, SetColorSource) {
     auto color = DlColor::kBlack();
     DlColorColorSource color_source_transparent(color);
     paint.setColorSource(color_source_transparent.shared());
-    builder.DrawRect(SkRect::MakeWH(5, 5), paint);
+    builder.DrawRect(DlFRect::MakeWH(5, 5), paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);
@@ -163,7 +162,7 @@ TEST(DlOpSpy, DrawLine) {
   {  // black
     DisplayListBuilder builder;
     DlPaint paint(DlColor::kBlack());
-    builder.DrawLine(SkPoint::Make(0, 1), SkPoint::Make(1, 2), paint);
+    builder.DrawLine(DlFPoint(0, 1), DlFPoint(1, 2), paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);
@@ -172,7 +171,7 @@ TEST(DlOpSpy, DrawLine) {
   {  // transparent
     DisplayListBuilder builder;
     DlPaint paint(DlColor::kTransparent());
-    builder.DrawLine(SkPoint::Make(0, 1), SkPoint::Make(1, 2), paint);
+    builder.DrawLine(DlFPoint(0, 1), DlFPoint(1, 2), paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);
@@ -184,7 +183,7 @@ TEST(DlOpSpy, DrawRect) {
   {  // black
     DisplayListBuilder builder;
     DlPaint paint(DlColor::kBlack());
-    builder.DrawRect(SkRect::MakeWH(5, 5), paint);
+    builder.DrawRect(DlFRect::MakeWH(5, 5), paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);
@@ -193,7 +192,7 @@ TEST(DlOpSpy, DrawRect) {
   {  // transparent
     DisplayListBuilder builder;
     DlPaint paint(DlColor::kTransparent());
-    builder.DrawRect(SkRect::MakeWH(5, 5), paint);
+    builder.DrawRect(DlFRect::MakeWH(5, 5), paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);
@@ -205,7 +204,7 @@ TEST(DlOpSpy, DrawOval) {
   {  // black
     DisplayListBuilder builder;
     DlPaint paint(DlColor::kBlack());
-    builder.DrawOval(SkRect::MakeWH(5, 5), paint);
+    builder.DrawOval(DlFRect::MakeWH(5, 5), paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);
@@ -214,7 +213,7 @@ TEST(DlOpSpy, DrawOval) {
   {  // transparent
     DisplayListBuilder builder;
     DlPaint paint(DlColor::kTransparent());
-    builder.DrawOval(SkRect::MakeWH(5, 5), paint);
+    builder.DrawOval(DlFRect::MakeWH(5, 5), paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);
@@ -226,7 +225,7 @@ TEST(DlOpSpy, DrawCircle) {
   {  // black
     DisplayListBuilder builder;
     DlPaint paint(DlColor::kBlack());
-    builder.DrawCircle(SkPoint::Make(5, 5), 1.0, paint);
+    builder.DrawCircle(DlFPoint(5, 5), 1.0, paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);
@@ -235,7 +234,7 @@ TEST(DlOpSpy, DrawCircle) {
   {  // transparent
     DisplayListBuilder builder;
     DlPaint paint(DlColor::kTransparent());
-    builder.DrawCircle(SkPoint::Make(5, 5), 1.0, paint);
+    builder.DrawCircle(DlFPoint(5, 5), 1.0, paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);
@@ -247,7 +246,7 @@ TEST(DlOpSpy, DrawRRect) {
   {  // black
     DisplayListBuilder builder;
     DlPaint paint(DlColor::kBlack());
-    builder.DrawRRect(SkRRect::MakeRect(SkRect::MakeWH(5, 5)), paint);
+    builder.DrawRRect(DlFRRect::MakeRect(DlFRect::MakeWH(5, 5)), paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);
@@ -256,7 +255,7 @@ TEST(DlOpSpy, DrawRRect) {
   {  // transparent
     DisplayListBuilder builder;
     DlPaint paint(DlColor::kTransparent());
-    builder.DrawRRect(SkRRect::MakeRect(SkRect::MakeWH(5, 5)), paint);
+    builder.DrawRRect(DlFRRect::MakeRect(DlFRect::MakeWH(5, 5)), paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);
@@ -269,7 +268,7 @@ TEST(DlOpSpy, DrawPath) {
     DisplayListBuilder builder;
     DlPaint paint(DlColor::kBlack());
     paint.setDrawStyle(DlDrawStyle::kStroke);
-    builder.DrawPath(SkPath::Line(SkPoint::Make(0, 1), SkPoint::Make(1, 1)),
+    builder.DrawPath(DlPath::MakeLine(DlFPoint(0, 1), DlFPoint(1, 1)),
                      paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
@@ -279,10 +278,10 @@ TEST(DlOpSpy, DrawPath) {
   {  // triangle
     DisplayListBuilder builder;
     DlPaint paint(DlColor::kBlack());
-    SkPath path;
-    path.moveTo({0, 0});
-    path.lineTo({1, 0});
-    path.lineTo({0, 1});
+    DlPath path;
+    path.MoveTo({0, 0});
+    path.LineTo({1, 0});
+    path.LineTo({0, 1});
     builder.DrawPath(path, paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
@@ -293,7 +292,7 @@ TEST(DlOpSpy, DrawPath) {
     DisplayListBuilder builder;
     DlPaint paint(DlColor::kTransparent());
     paint.setDrawStyle(DlDrawStyle::kStroke);
-    builder.DrawPath(SkPath::Line(SkPoint::Make(0, 1), SkPoint::Make(1, 1)),
+    builder.DrawPath(DlPath::MakeLine(DlFPoint(0, 1), DlFPoint(1, 1)),
                      paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
@@ -306,7 +305,7 @@ TEST(DlOpSpy, DrawArc) {
   {  // black
     DisplayListBuilder builder;
     DlPaint paint(DlColor::kBlack());
-    builder.DrawArc(SkRect::MakeWH(5, 5), 0, 1, true, paint);
+    builder.DrawArc(DlFRect::MakeWH(5, 5), 0, 1, true, paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);
@@ -315,7 +314,7 @@ TEST(DlOpSpy, DrawArc) {
   {  // transparent
     DisplayListBuilder builder;
     DlPaint paint(DlColor::kTransparent());
-    builder.DrawArc(SkRect::MakeWH(5, 5), 0, 1, true, paint);
+    builder.DrawArc(DlFRect::MakeWH(5, 5), 0, 1, true, paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);
@@ -327,7 +326,7 @@ TEST(DlOpSpy, DrawPoints) {
   {  // black
     DisplayListBuilder builder;
     DlPaint paint(DlColor::kBlack());
-    const SkPoint points[] = {SkPoint::Make(5, 4)};
+    const DlFPoint points[] = {DlFPoint(5, 4)};
     builder.DrawPoints(DlCanvas::PointMode::kPoints, 1, points, paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
@@ -337,7 +336,7 @@ TEST(DlOpSpy, DrawPoints) {
   {  // transparent
     DisplayListBuilder builder;
     DlPaint paint(DlColor::kTransparent());
-    const SkPoint points[] = {SkPoint::Make(5, 4)};
+    const DlFPoint points[] = {DlFPoint(5, 4)};
     builder.DrawPoints(DlCanvas::PointMode::kPoints, 1, points, paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
@@ -350,15 +349,15 @@ TEST(DlOpSpy, DrawVertices) {
   {  // black
     DisplayListBuilder builder;
     DlPaint paint(DlColor::kBlack());
-    const SkPoint vertices[] = {
-        SkPoint::Make(5, 5),
-        SkPoint::Make(5, 15),
-        SkPoint::Make(15, 5),
+    const DlFPoint vertices[] = {
+        DlFPoint(5, 5),
+        DlFPoint(5, 15),
+        DlFPoint(15, 5),
     };
-    const SkPoint texture_coordinates[] = {
-        SkPoint::Make(5, 5),
-        SkPoint::Make(15, 5),
-        SkPoint::Make(5, 15),
+    const DlFPoint texture_coordinates[] = {
+        DlFPoint(5, 5),
+        DlFPoint(15, 5),
+        DlFPoint(5, 15),
     };
     const DlColor colors[] = {
         DlColor::kBlack(),
@@ -376,15 +375,15 @@ TEST(DlOpSpy, DrawVertices) {
   {  // transparent
     DisplayListBuilder builder;
     DlPaint paint(DlColor::kTransparent());
-    const SkPoint vertices[] = {
-        SkPoint::Make(5, 5),
-        SkPoint::Make(5, 15),
-        SkPoint::Make(15, 5),
+    const DlFPoint vertices[] = {
+        DlFPoint(5, 5),
+        DlFPoint(5, 15),
+        DlFPoint(15, 5),
     };
-    const SkPoint texture_coordinates[] = {
-        SkPoint::Make(5, 5),
-        SkPoint::Make(15, 5),
-        SkPoint::Make(5, 15),
+    const DlFPoint texture_coordinates[] = {
+        DlFPoint(5, 5),
+        DlFPoint(15, 5),
+        DlFPoint(5, 15),
     };
     const DlColor colors[] = {
         DlColor::kBlack(),
@@ -411,7 +410,7 @@ TEST(DlOpSpy, Images) {
     SkBitmap bitmap;
     bitmap.allocPixels(info, 0);
     auto sk_image = SkImages::RasterFromBitmap(bitmap);
-    builder.DrawImage(DlImage::Make(sk_image), SkPoint::Make(5, 5),
+    builder.DrawImage(DlImage::Make(sk_image), DlFPoint(5, 5),
                       DlImageSampling::kLinear);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
@@ -427,8 +426,8 @@ TEST(DlOpSpy, Images) {
     SkBitmap bitmap;
     bitmap.allocPixels(info, 0);
     auto sk_image = SkImages::RasterFromBitmap(bitmap);
-    builder.DrawImageRect(DlImage::Make(sk_image), SkRect::MakeWH(5, 5),
-                          SkRect::MakeWH(5, 5), DlImageSampling::kLinear);
+    builder.DrawImageRect(DlImage::Make(sk_image), DlFRect::MakeWH(5, 5),
+                          DlFRect::MakeWH(5, 5), DlImageSampling::kLinear);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);
@@ -443,8 +442,8 @@ TEST(DlOpSpy, Images) {
     SkBitmap bitmap;
     bitmap.allocPixels(info, 0);
     auto sk_image = SkImages::RasterFromBitmap(bitmap);
-    builder.DrawImageNine(DlImage::Make(sk_image), SkIRect::MakeWH(5, 5),
-                          SkRect::MakeWH(5, 5), DlFilterMode::kLinear);
+    builder.DrawImageNine(DlImage::Make(sk_image), DlIRect::MakeWH(5, 5),
+                          DlFRect::MakeWH(5, 5), DlFilterMode::kLinear);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);
@@ -459,9 +458,11 @@ TEST(DlOpSpy, Images) {
     SkBitmap bitmap;
     bitmap.allocPixels(info, 0);
     auto sk_image = SkImages::RasterFromBitmap(bitmap);
-    const SkRSXform xform[] = {SkRSXform::Make(1, 0, 0, 0)};
-    const SkRect tex[] = {SkRect::MakeXYWH(10, 10, 10, 10)};
-    SkRect cull_rect = SkRect::MakeWH(5, 5);
+    const DlRSTransform xform[] = {
+        DlRSTransform::MakeScaledCosSinXY(1, 0, 0, 0)
+    };
+    const DlFRect tex[] = {DlFRect::MakeXYWH(10, 10, 10, 10)};
+    DlFRect cull_rect = DlFRect::MakeWH(5, 5);
     builder.DrawAtlas(DlImage::Make(sk_image), xform, tex, nullptr, 1,
                       DlBlendMode::kSrc, DlImageSampling::kLinear, &cull_rect);
     sk_sp<DisplayList> dl = builder.Build();
@@ -572,7 +573,7 @@ TEST(DlOpSpy, DrawShadow) {
     DisplayListBuilder builder;
     DlPaint paint;
     DlColor color = DlColor::kBlack();
-    SkPath path = SkPath::Line(SkPoint::Make(0, 1), SkPoint::Make(1, 1));
+    DlPath path = DlPath::MakeLine(DlFPoint(0, 1), DlFPoint(1, 1));
     builder.DrawShadow(path, color, 1, false, 1);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
@@ -583,7 +584,7 @@ TEST(DlOpSpy, DrawShadow) {
     DisplayListBuilder builder;
     DlPaint paint;
     DlColor color = DlColor::kTransparent();
-    SkPath path = SkPath::Line(SkPoint::Make(0, 1), SkPoint::Make(1, 1));
+    DlPath path = DlPath::MakeLine(DlFPoint(0, 1), DlFPoint(1, 1));
     builder.DrawShadow(path, color, 1, false, 1);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;

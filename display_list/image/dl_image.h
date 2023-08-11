@@ -9,6 +9,7 @@
 #include <optional>
 #include <string>
 
+#include "flutter/display_list/geometry/dl_rect.h"
 #include "flutter/fml/macros.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
@@ -80,7 +81,7 @@ class DlImage : public SkRefCnt {
   //----------------------------------------------------------------------------
   /// @return     The dimensions of the pixel grid.
   ///
-  virtual SkISize dimensions() const = 0;
+  virtual DlISize dimensions() const = 0;
 
   //----------------------------------------------------------------------------
   /// @return     The approximate byte size of the allocation of this image.
@@ -105,7 +106,7 @@ class DlImage : public SkRefCnt {
   /// @return     The bounds of the pixel grid with 0, 0 as origin. A
   ///             convenience method that calls |DlImage::dimensions|.
   ///
-  SkIRect bounds() const;
+  DlIRect bounds() const;
 
   //----------------------------------------------------------------------------
   /// @return     Specifies which context was used to create this image. The

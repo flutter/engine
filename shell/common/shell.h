@@ -479,7 +479,7 @@ class Shell final : public PlatformView::Delegate,
   std::mutex resize_mutex_;
 
   // used to discard wrong size layer tree produced during interactive resizing
-  SkISize expected_frame_size_ = SkISize::MakeEmpty();
+  DlISize expected_frame_size_;
 
   // Used to communicate the right frame bounds via service protocol.
   double device_pixel_ratio_ = 0.0;

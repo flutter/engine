@@ -29,7 +29,7 @@ std::shared_ptr<DlColorSource> CreateCheckerboardShader(SkColor c1,
 
 }  // anonymous namespace
 
-void DrawCheckerboard(DlCanvas* canvas, const SkRect& rect) {
+void DrawCheckerboard(DlCanvas* canvas, const DlFRect& rect) {
   // Draw a checkerboard
   canvas->Save();
   canvas->ClipRect(rect, DlCanvas::ClipOp::kIntersect, false);

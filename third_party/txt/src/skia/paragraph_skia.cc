@@ -99,18 +99,18 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
   void drawRect(const SkRect& rect, const SkPaintOrID& paint) override {
     size_t paint_id = std::get<PaintID>(paint);
     FML_DCHECK(paint_id < dl_paints_.size());
-    builder_->DrawRect(rect, dl_paints_[paint_id]);
+    builder_->DrawRect(DlFRect::MakeBounds(rect), dl_paints_[paint_id]);
   }
 
   void drawFilledRect(const SkRect& rect,
                       const DecorationStyle& decor_style) override {
     DlPaint paint = toDlPaint(decor_style, DlDrawStyle::kFill);
-    builder_->DrawRect(rect, paint);
+    builder_->DrawRect(DlFRect::MakeBounds(rect), paint);
   }
 
   void drawPath(const SkPath& path,
                 const DecorationStyle& decor_style) override {
-    builder_->DrawPath(path, toDlPaint(decor_style));
+    builder_->DrawPath(DlPath(path), toDlPaint(decor_style));
   }
 
   void drawLine(SkScalar x0,
@@ -118,12 +118,12 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
                 SkScalar x1,
                 SkScalar y1,
                 const DecorationStyle& decor_style) override {
-    builder_->DrawLine(SkPoint::Make(x0, y0), SkPoint::Make(x1, y1),
+    builder_->DrawLine(DlFPoint(x0, y0), DlFPoint(x1, y1),
                        toDlPaint(decor_style));
   }
 
   void clipRect(const SkRect& rect) override {
-    builder_->ClipRect(rect, DlCanvas::ClipOp::kIntersect, false);
+    builder_->ClipRect(DlFRect::MakeBounds(rect), DlCanvas::ClipOp::kIntersect, false);
   }
 
   void translate(SkScalar dx, SkScalar dy) override {

@@ -36,15 +36,15 @@ TEST(DisplayListVertices, MakeWithZeroAndNegativeVerticesAndIndices) {
 }
 
 TEST(DisplayListVertices, MakeWithTexAndColorAndIndices) {
-  SkPoint coords[3] = {
-      SkPoint::Make(2, 3),
-      SkPoint::Make(5, 6),
-      SkPoint::Make(15, 20),
+  DlFPoint coords[3] = {
+      DlFPoint(2, 3),
+      DlFPoint(5, 6),
+      DlFPoint(15, 20),
   };
-  SkPoint texture_coords[3] = {
-      SkPoint::Make(102, 103),
-      SkPoint::Make(105, 106),
-      SkPoint::Make(115, 120),
+  DlFPoint texture_coords[3] = {
+      DlFPoint(102, 103),
+      DlFPoint(105, 106),
+      DlFPoint(115, 120),
   };
   DlColor colors[3] = {
       DlColor::kRed(),
@@ -65,7 +65,7 @@ TEST(DisplayListVertices, MakeWithTexAndColorAndIndices) {
   ASSERT_NE(vertices->colors(), nullptr);
   ASSERT_NE(vertices->indices(), nullptr);
 
-  ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
+  ASSERT_EQ(vertices->bounds(), DlFRect::MakeLTRB(2, 3, 15, 20));
   ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
@@ -80,15 +80,15 @@ TEST(DisplayListVertices, MakeWithTexAndColorAndIndices) {
 }
 
 TEST(DisplayListVertices, MakeWithTexAndColor) {
-  SkPoint coords[3] = {
-      SkPoint::Make(2, 3),
-      SkPoint::Make(5, 6),
-      SkPoint::Make(15, 20),
+  DlFPoint coords[3] = {
+      DlFPoint(2, 3),
+      DlFPoint(5, 6),
+      DlFPoint(15, 20),
   };
-  SkPoint texture_coords[3] = {
-      SkPoint::Make(102, 103),
-      SkPoint::Make(105, 106),
-      SkPoint::Make(115, 120),
+  DlFPoint texture_coords[3] = {
+      DlFPoint(102, 103),
+      DlFPoint(105, 106),
+      DlFPoint(115, 120),
   };
   DlColor colors[3] = {
       DlColor::kRed(),
@@ -105,7 +105,7 @@ TEST(DisplayListVertices, MakeWithTexAndColor) {
   ASSERT_NE(vertices->colors(), nullptr);
   ASSERT_EQ(vertices->indices(), nullptr);
 
-  ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
+  ASSERT_EQ(vertices->bounds(), DlFRect::MakeLTRB(2, 3, 15, 20));
   ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
@@ -117,15 +117,15 @@ TEST(DisplayListVertices, MakeWithTexAndColor) {
 }
 
 TEST(DisplayListVertices, MakeWithTexAndIndices) {
-  SkPoint coords[3] = {
-      SkPoint::Make(2, 3),
-      SkPoint::Make(5, 6),
-      SkPoint::Make(15, 20),
+  DlFPoint coords[3] = {
+      DlFPoint(2, 3),
+      DlFPoint(5, 6),
+      DlFPoint(15, 20),
   };
-  SkPoint texture_coords[3] = {
-      SkPoint::Make(102, 103),
-      SkPoint::Make(105, 106),
-      SkPoint::Make(115, 120),
+  DlFPoint texture_coords[3] = {
+      DlFPoint(102, 103),
+      DlFPoint(105, 106),
+      DlFPoint(115, 120),
   };
   uint16_t indices[6] = {
       2, 1, 0,  //
@@ -141,7 +141,7 @@ TEST(DisplayListVertices, MakeWithTexAndIndices) {
   ASSERT_EQ(vertices->colors(), nullptr);
   ASSERT_NE(vertices->indices(), nullptr);
 
-  ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
+  ASSERT_EQ(vertices->bounds(), DlFRect::MakeLTRB(2, 3, 15, 20));
   ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
@@ -155,10 +155,10 @@ TEST(DisplayListVertices, MakeWithTexAndIndices) {
 }
 
 TEST(DisplayListVertices, MakeWithColorAndIndices) {
-  SkPoint coords[3] = {
-      SkPoint::Make(2, 3),
-      SkPoint::Make(5, 6),
-      SkPoint::Make(15, 20),
+  DlFPoint coords[3] = {
+      DlFPoint(2, 3),
+      DlFPoint(5, 6),
+      DlFPoint(15, 20),
   };
   DlColor colors[3] = {
       DlColor::kRed(),
@@ -179,7 +179,7 @@ TEST(DisplayListVertices, MakeWithColorAndIndices) {
   ASSERT_NE(vertices->colors(), nullptr);
   ASSERT_NE(vertices->indices(), nullptr);
 
-  ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
+  ASSERT_EQ(vertices->bounds(), DlFRect::MakeLTRB(2, 3, 15, 20));
   ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
@@ -193,15 +193,15 @@ TEST(DisplayListVertices, MakeWithColorAndIndices) {
 }
 
 TEST(DisplayListVertices, MakeWithTex) {
-  SkPoint coords[3] = {
-      SkPoint::Make(2, 3),
-      SkPoint::Make(5, 6),
-      SkPoint::Make(15, 20),
+  DlFPoint coords[3] = {
+      DlFPoint(2, 3),
+      DlFPoint(5, 6),
+      DlFPoint(15, 20),
   };
-  SkPoint texture_coords[3] = {
-      SkPoint::Make(102, 103),
-      SkPoint::Make(105, 106),
-      SkPoint::Make(115, 120),
+  DlFPoint texture_coords[3] = {
+      DlFPoint(102, 103),
+      DlFPoint(105, 106),
+      DlFPoint(115, 120),
   };
 
   std::shared_ptr<const DlVertices> vertices = DlVertices::Make(
@@ -213,7 +213,7 @@ TEST(DisplayListVertices, MakeWithTex) {
   ASSERT_EQ(vertices->colors(), nullptr);
   ASSERT_EQ(vertices->indices(), nullptr);
 
-  ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
+  ASSERT_EQ(vertices->bounds(), DlFRect::MakeLTRB(2, 3, 15, 20));
   ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
@@ -224,10 +224,10 @@ TEST(DisplayListVertices, MakeWithTex) {
 }
 
 TEST(DisplayListVertices, MakeWithColor) {
-  SkPoint coords[3] = {
-      SkPoint::Make(2, 3),
-      SkPoint::Make(5, 6),
-      SkPoint::Make(15, 20),
+  DlFPoint coords[3] = {
+      DlFPoint(2, 3),
+      DlFPoint(5, 6),
+      DlFPoint(15, 20),
   };
   DlColor colors[3] = {
       DlColor::kRed(),
@@ -244,7 +244,7 @@ TEST(DisplayListVertices, MakeWithColor) {
   ASSERT_NE(vertices->colors(), nullptr);
   ASSERT_EQ(vertices->indices(), nullptr);
 
-  ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
+  ASSERT_EQ(vertices->bounds(), DlFRect::MakeLTRB(2, 3, 15, 20));
   ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
@@ -255,10 +255,10 @@ TEST(DisplayListVertices, MakeWithColor) {
 }
 
 TEST(DisplayListVertices, MakeWithIndices) {
-  SkPoint coords[3] = {
-      SkPoint::Make(2, 3),
-      SkPoint::Make(5, 6),
-      SkPoint::Make(15, 20),
+  DlFPoint coords[3] = {
+      DlFPoint(2, 3),
+      DlFPoint(5, 6),
+      DlFPoint(15, 20),
   };
   uint16_t indices[6] = {
       2, 1, 0,  //
@@ -274,7 +274,7 @@ TEST(DisplayListVertices, MakeWithIndices) {
   ASSERT_EQ(vertices->colors(), nullptr);
   ASSERT_NE(vertices->indices(), nullptr);
 
-  ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
+  ASSERT_EQ(vertices->bounds(), DlFRect::MakeLTRB(2, 3, 15, 20));
   ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
@@ -287,10 +287,10 @@ TEST(DisplayListVertices, MakeWithIndices) {
 }
 
 TEST(DisplayListVertices, MakeWithNoOptionalData) {
-  SkPoint coords[3] = {
-      SkPoint::Make(2, 3),
-      SkPoint::Make(5, 6),
-      SkPoint::Make(15, 20),
+  DlFPoint coords[3] = {
+      DlFPoint(2, 3),
+      DlFPoint(5, 6),
+      DlFPoint(15, 20),
   };
 
   std::shared_ptr<const DlVertices> vertices = DlVertices::Make(
@@ -302,7 +302,7 @@ TEST(DisplayListVertices, MakeWithNoOptionalData) {
   ASSERT_EQ(vertices->colors(), nullptr);
   ASSERT_EQ(vertices->indices(), nullptr);
 
-  ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
+  ASSERT_EQ(vertices->bounds(), DlFRect::MakeLTRB(2, 3, 15, 20));
   ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
@@ -312,10 +312,10 @@ TEST(DisplayListVertices, MakeWithNoOptionalData) {
 }
 
 TEST(DisplayListVertices, MakeWithIndicesButZeroIndexCount) {
-  SkPoint coords[3] = {
-      SkPoint::Make(2, 3),
-      SkPoint::Make(5, 6),
-      SkPoint::Make(15, 20),
+  DlFPoint coords[3] = {
+      DlFPoint(2, 3),
+      DlFPoint(5, 6),
+      DlFPoint(15, 20),
   };
   uint16_t indices[6] = {
       2, 1, 0,  //
@@ -331,7 +331,7 @@ TEST(DisplayListVertices, MakeWithIndicesButZeroIndexCount) {
   ASSERT_EQ(vertices->colors(), nullptr);
   ASSERT_EQ(vertices->indices(), nullptr);
 
-  ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
+  ASSERT_EQ(vertices->bounds(), DlFRect::MakeLTRB(2, 3, 15, 20));
   ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
@@ -341,10 +341,10 @@ TEST(DisplayListVertices, MakeWithIndicesButZeroIndexCount) {
 }
 
 TEST(DisplayListVertices, MakeWithIndicesButNegativeIndexCount) {
-  SkPoint coords[3] = {
-      SkPoint::Make(2, 3),
-      SkPoint::Make(5, 6),
-      SkPoint::Make(15, 20),
+  DlFPoint coords[3] = {
+      DlFPoint(2, 3),
+      DlFPoint(5, 6),
+      DlFPoint(15, 20),
   };
   uint16_t indices[6] = {
       2, 1, 0,  //
@@ -360,7 +360,7 @@ TEST(DisplayListVertices, MakeWithIndicesButNegativeIndexCount) {
   ASSERT_EQ(vertices->colors(), nullptr);
   ASSERT_EQ(vertices->indices(), nullptr);
 
-  ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
+  ASSERT_EQ(vertices->bounds(), DlFRect::MakeLTRB(2, 3, 15, 20));
   ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
@@ -438,15 +438,15 @@ TEST(DisplayListVertices, BuildWithZeroAndNegativeVerticesAndIndices) {
 }
 
 TEST(DisplayListVertices, BuildWithTexAndColorAndIndices) {
-  SkPoint coords[3] = {
-      SkPoint::Make(2, 3),
-      SkPoint::Make(5, 6),
-      SkPoint::Make(15, 20),
+  DlFPoint coords[3] = {
+      DlFPoint(2, 3),
+      DlFPoint(5, 6),
+      DlFPoint(15, 20),
   };
-  SkPoint texture_coords[3] = {
-      SkPoint::Make(102, 103),
-      SkPoint::Make(105, 106),
-      SkPoint::Make(115, 120),
+  DlFPoint texture_coords[3] = {
+      DlFPoint(102, 103),
+      DlFPoint(105, 106),
+      DlFPoint(115, 120),
   };
   DlColor colors[3] = {
       DlColor::kRed(),
@@ -472,7 +472,7 @@ TEST(DisplayListVertices, BuildWithTexAndColorAndIndices) {
   ASSERT_NE(vertices->colors(), nullptr);
   ASSERT_NE(vertices->indices(), nullptr);
 
-  ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
+  ASSERT_EQ(vertices->bounds(), DlFRect::MakeLTRB(2, 3, 15, 20));
   ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
@@ -502,15 +502,15 @@ TEST(DisplayListVertices, BuildWithTexAndColorAndIndices) {
 }
 
 TEST(DisplayListVertices, BuildWithTexAndColor) {
-  SkPoint coords[3] = {
-      SkPoint::Make(2, 3),
-      SkPoint::Make(5, 6),
-      SkPoint::Make(15, 20),
+  DlFPoint coords[3] = {
+      DlFPoint(2, 3),
+      DlFPoint(5, 6),
+      DlFPoint(15, 20),
   };
-  SkPoint texture_coords[3] = {
-      SkPoint::Make(102, 103),
-      SkPoint::Make(105, 106),
-      SkPoint::Make(115, 120),
+  DlFPoint texture_coords[3] = {
+      DlFPoint(102, 103),
+      DlFPoint(105, 106),
+      DlFPoint(115, 120),
   };
   DlColor colors[3] = {
       DlColor::kRed(),
@@ -531,7 +531,7 @@ TEST(DisplayListVertices, BuildWithTexAndColor) {
   ASSERT_NE(vertices->colors(), nullptr);
   ASSERT_EQ(vertices->indices(), nullptr);
 
-  ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
+  ASSERT_EQ(vertices->bounds(), DlFRect::MakeLTRB(2, 3, 15, 20));
   ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
@@ -543,15 +543,15 @@ TEST(DisplayListVertices, BuildWithTexAndColor) {
 }
 
 TEST(DisplayListVertices, BuildWithTexAndIndices) {
-  SkPoint coords[3] = {
-      SkPoint::Make(2, 3),
-      SkPoint::Make(5, 6),
-      SkPoint::Make(15, 20),
+  DlFPoint coords[3] = {
+      DlFPoint(2, 3),
+      DlFPoint(5, 6),
+      DlFPoint(15, 20),
   };
-  SkPoint texture_coords[3] = {
-      SkPoint::Make(102, 103),
-      SkPoint::Make(105, 106),
-      SkPoint::Make(115, 120),
+  DlFPoint texture_coords[3] = {
+      DlFPoint(102, 103),
+      DlFPoint(105, 106),
+      DlFPoint(115, 120),
   };
   uint16_t indices[6] = {
       2, 1, 0,  //
@@ -571,7 +571,7 @@ TEST(DisplayListVertices, BuildWithTexAndIndices) {
   ASSERT_EQ(vertices->colors(), nullptr);
   ASSERT_NE(vertices->indices(), nullptr);
 
-  ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
+  ASSERT_EQ(vertices->bounds(), DlFRect::MakeLTRB(2, 3, 15, 20));
   ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
@@ -585,15 +585,15 @@ TEST(DisplayListVertices, BuildWithTexAndIndices) {
 }
 
 TEST(DisplayListVertices, BuildWithColorAndIndices) {
-  SkPoint coords[3] = {
-      SkPoint::Make(2, 3),
-      SkPoint::Make(5, 6),
-      SkPoint::Make(15, 20),
+  DlFPoint coords[3] = {
+      DlFPoint(2, 3),
+      DlFPoint(5, 6),
+      DlFPoint(15, 20),
   };
-  SkColor colors[3] = {
-      SK_ColorRED,
-      SK_ColorCYAN,
-      SK_ColorGREEN,
+  DlColor colors[3] = {
+      DlColor::kRed(),
+      DlColor::kCyan(),
+      DlColor::kGreen(),
   };
   uint16_t indices[6] = {
       2, 1, 0,  //
@@ -613,7 +613,7 @@ TEST(DisplayListVertices, BuildWithColorAndIndices) {
   ASSERT_NE(vertices->colors(), nullptr);
   ASSERT_NE(vertices->indices(), nullptr);
 
-  ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
+  ASSERT_EQ(vertices->bounds(), DlFRect::MakeLTRB(2, 3, 15, 20));
   ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
@@ -627,15 +627,15 @@ TEST(DisplayListVertices, BuildWithColorAndIndices) {
 }
 
 TEST(DisplayListVertices, BuildWithTexUsingPoints) {
-  SkPoint coords[3] = {
-      SkPoint::Make(2, 3),
-      SkPoint::Make(5, 6),
-      SkPoint::Make(15, 20),
+  DlFPoint coords[3] = {
+      DlFPoint(2, 3),
+      DlFPoint(5, 6),
+      DlFPoint(15, 20),
   };
-  SkPoint texture_coords[3] = {
-      SkPoint::Make(102, 103),
-      SkPoint::Make(105, 106),
-      SkPoint::Make(115, 120),
+  DlFPoint texture_coords[3] = {
+      DlFPoint(102, 103),
+      DlFPoint(105, 106),
+      DlFPoint(115, 120),
   };
 
   Builder builder(DlVertexMode::kTriangles, 3,  //
@@ -650,7 +650,7 @@ TEST(DisplayListVertices, BuildWithTexUsingPoints) {
   ASSERT_EQ(vertices->colors(), nullptr);
   ASSERT_EQ(vertices->indices(), nullptr);
 
-  ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
+  ASSERT_EQ(vertices->bounds(), DlFRect::MakeLTRB(2, 3, 15, 20));
   ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
@@ -684,28 +684,28 @@ TEST(DisplayListVertices, BuildWithTexUsingFloats) {
   ASSERT_EQ(vertices->colors(), nullptr);
   ASSERT_EQ(vertices->indices(), nullptr);
 
-  ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
+  ASSERT_EQ(vertices->bounds(), DlFRect::MakeLTRB(2, 3, 15, 20));
   ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
-    ASSERT_EQ(vertices->vertices()[i].fX, coords[i * 2 + 0]);
-    ASSERT_EQ(vertices->vertices()[i].fY, coords[i * 2 + 1]);
-    ASSERT_EQ(vertices->texture_coordinates()[i].fX, texture_coords[i * 2 + 0]);
-    ASSERT_EQ(vertices->texture_coordinates()[i].fY, texture_coords[i * 2 + 1]);
+    ASSERT_EQ(vertices->vertices()[i].x(), coords[i * 2 + 0]);
+    ASSERT_EQ(vertices->vertices()[i].y(), coords[i * 2 + 1]);
+    ASSERT_EQ(vertices->texture_coordinates()[i].x(), texture_coords[i * 2 + 0]);
+    ASSERT_EQ(vertices->texture_coordinates()[i].y(), texture_coords[i * 2 + 1]);
   }
   ASSERT_EQ(vertices->index_count(), 0);
 }
 
 TEST(DisplayListVertices, BuildUsingFloatsSameAsPoints) {
-  SkPoint coord_points[3] = {
-      SkPoint::Make(2, 3),
-      SkPoint::Make(5, 6),
-      SkPoint::Make(15, 20),
+  DlFPoint coord_points[3] = {
+      DlFPoint(2, 3),
+      DlFPoint(5, 6),
+      DlFPoint(15, 20),
   };
-  SkPoint texture_coord_points[3] = {
-      SkPoint::Make(102, 103),
-      SkPoint::Make(105, 106),
-      SkPoint::Make(115, 120),
+  DlFPoint texture_coord_points[3] = {
+      DlFPoint(102, 103),
+      DlFPoint(105, 106),
+      DlFPoint(115, 120),
   };
 
   float coord_floats[6] = {
@@ -735,15 +735,15 @@ TEST(DisplayListVertices, BuildUsingFloatsSameAsPoints) {
 }
 
 TEST(DisplayListVertices, BuildWithColor) {
-  SkPoint coords[3] = {
-      SkPoint::Make(2, 3),
-      SkPoint::Make(5, 6),
-      SkPoint::Make(15, 20),
+  DlFPoint coords[3] = {
+      DlFPoint(2, 3),
+      DlFPoint(5, 6),
+      DlFPoint(15, 20),
   };
-  SkColor colors[3] = {
-      SK_ColorRED,
-      SK_ColorCYAN,
-      SK_ColorGREEN,
+  DlColor colors[3] = {
+      DlColor::kRed(),
+      DlColor::kCyan(),
+      DlColor::kGreen(),
   };
 
   Builder builder(DlVertexMode::kTriangles, 3,  //
@@ -758,7 +758,7 @@ TEST(DisplayListVertices, BuildWithColor) {
   ASSERT_NE(vertices->colors(), nullptr);
   ASSERT_EQ(vertices->indices(), nullptr);
 
-  ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
+  ASSERT_EQ(vertices->bounds(), DlFRect::MakeLTRB(2, 3, 15, 20));
   ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
@@ -769,10 +769,10 @@ TEST(DisplayListVertices, BuildWithColor) {
 }
 
 TEST(DisplayListVertices, BuildWithIndices) {
-  SkPoint coords[3] = {
-      SkPoint::Make(2, 3),
-      SkPoint::Make(5, 6),
-      SkPoint::Make(15, 20),
+  DlFPoint coords[3] = {
+      DlFPoint(2, 3),
+      DlFPoint(5, 6),
+      DlFPoint(15, 20),
   };
   uint16_t indices[6] = {
       2, 1, 0,  //
@@ -790,7 +790,7 @@ TEST(DisplayListVertices, BuildWithIndices) {
   ASSERT_EQ(vertices->colors(), nullptr);
   ASSERT_NE(vertices->indices(), nullptr);
 
-  ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
+  ASSERT_EQ(vertices->bounds(), DlFRect::MakeLTRB(2, 3, 15, 20));
   ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
@@ -803,10 +803,10 @@ TEST(DisplayListVertices, BuildWithIndices) {
 }
 
 TEST(DisplayListVertices, BuildWithNoOptionalData) {
-  SkPoint coords[3] = {
-      SkPoint::Make(2, 3),
-      SkPoint::Make(5, 6),
-      SkPoint::Make(15, 20),
+  DlFPoint coords[3] = {
+      DlFPoint(2, 3),
+      DlFPoint(5, 6),
+      DlFPoint(15, 20),
   };
 
   Builder builder(DlVertexMode::kTriangles, 3, Builder::kNone, 0);
@@ -819,7 +819,7 @@ TEST(DisplayListVertices, BuildWithNoOptionalData) {
   ASSERT_EQ(vertices->colors(), nullptr);
   ASSERT_EQ(vertices->indices(), nullptr);
 
-  ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
+  ASSERT_EQ(vertices->bounds(), DlFRect::MakeLTRB(2, 3, 15, 20));
   ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
@@ -829,10 +829,10 @@ TEST(DisplayListVertices, BuildWithNoOptionalData) {
 }
 
 TEST(DisplayListVertices, BuildWithNegativeIndexCount) {
-  SkPoint coords[3] = {
-      SkPoint::Make(2, 3),
-      SkPoint::Make(5, 6),
-      SkPoint::Make(15, 20),
+  DlFPoint coords[3] = {
+      DlFPoint(2, 3),
+      DlFPoint(5, 6),
+      DlFPoint(15, 20),
   };
 
   Builder builder(DlVertexMode::kTriangles, 3, Builder::kNone, -5);
@@ -845,7 +845,7 @@ TEST(DisplayListVertices, BuildWithNegativeIndexCount) {
   ASSERT_EQ(vertices->colors(), nullptr);
   ASSERT_EQ(vertices->indices(), nullptr);
 
-  ASSERT_EQ(vertices->bounds(), SkRect::MakeLTRB(2, 3, 15, 20));
+  ASSERT_EQ(vertices->bounds(), DlFRect::MakeLTRB(2, 3, 15, 20));
   ASSERT_EQ(vertices->mode(), DlVertexMode::kTriangles);
   ASSERT_EQ(vertices->vertex_count(), 3);
   for (int i = 0; i < 3; i++) {
@@ -855,15 +855,15 @@ TEST(DisplayListVertices, BuildWithNegativeIndexCount) {
 }
 
 TEST(DisplayListVertices, TestEquals) {
-  SkPoint coords[3] = {
-      SkPoint::Make(2, 3),
-      SkPoint::Make(5, 6),
-      SkPoint::Make(15, 20),
+  DlFPoint coords[3] = {
+      DlFPoint(2, 3),
+      DlFPoint(5, 6),
+      DlFPoint(15, 20),
   };
-  SkPoint texture_coords[3] = {
-      SkPoint::Make(102, 103),
-      SkPoint::Make(105, 106),
-      SkPoint::Make(115, 120),
+  DlFPoint texture_coords[3] = {
+      DlFPoint(102, 103),
+      DlFPoint(105, 106),
+      DlFPoint(115, 120),
   };
   DlColor colors[3] = {
       DlColor::kRed(),
@@ -883,29 +883,29 @@ TEST(DisplayListVertices, TestEquals) {
 }
 
 TEST(DisplayListVertices, TestNotEquals) {
-  SkPoint coords[4] = {
-      SkPoint::Make(2, 3),
-      SkPoint::Make(5, 6),
-      SkPoint::Make(15, 20),
-      SkPoint::Make(53, 62),
+  DlFPoint coords[4] = {
+      DlFPoint(2, 3),
+      DlFPoint(5, 6),
+      DlFPoint(15, 20),
+      DlFPoint(53, 62),
   };
-  SkPoint wrong_coords[4] = {
-      SkPoint::Make(2, 3),
-      SkPoint::Make(5, 6),
-      SkPoint::Make(15, 20),
-      SkPoint::Make(57, 62),
+  DlFPoint wrong_coords[4] = {
+      DlFPoint(2, 3),
+      DlFPoint(5, 6),
+      DlFPoint(15, 20),
+      DlFPoint(57, 62),
   };
-  SkPoint texture_coords[4] = {
-      SkPoint::Make(102, 103),
-      SkPoint::Make(105, 106),
-      SkPoint::Make(115, 120),
-      SkPoint::Make(153, 162),
+  DlFPoint texture_coords[4] = {
+      DlFPoint(102, 103),
+      DlFPoint(105, 106),
+      DlFPoint(115, 120),
+      DlFPoint(153, 162),
   };
-  SkPoint wrong_texture_coords[4] = {
-      SkPoint::Make(102, 103),
-      SkPoint::Make(105, 106),
-      SkPoint::Make(115, 121),
-      SkPoint::Make(153, 162),
+  DlFPoint wrong_texture_coords[4] = {
+      DlFPoint(102, 103),
+      DlFPoint(105, 106),
+      DlFPoint(115, 121),
+      DlFPoint(153, 162),
   };
   DlColor colors[4] = {
       DlColor::kRed(),

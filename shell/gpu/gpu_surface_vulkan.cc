@@ -8,7 +8,6 @@
 #include "flutter/fml/trace_event.h"
 
 #include "third_party/skia/include/core/SkColorSpace.h"
-#include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
@@ -32,13 +31,13 @@ bool GPUSurfaceVulkan::IsValid() {
 }
 
 std::unique_ptr<SurfaceFrame> GPUSurfaceVulkan::AcquireFrame(
-    const SkISize& frame_size) {
+    const DlISize& frame_size) {
   if (!IsValid()) {
     FML_LOG(ERROR) << "Vulkan surface was invalid.";
     return nullptr;
   }
 
-  if (frame_size.isEmpty()) {
+  if (frame_size.is_empty()) {
     FML_LOG(ERROR) << "Vulkan surface was asked for an empty frame.";
     return nullptr;
   }
@@ -87,12 +86,10 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkan::AcquireFrame(
                                         std::move(callback), frame_size);
 }
 
-SkMatrix GPUSurfaceVulkan::GetRootTransformation() const {
+DlTransform GPUSurfaceVulkan::GetRootTransformation() const {
   // This backend does not support delegating to the underlying platform to
   // query for root surface transformations. Just return identity.
-  SkMatrix matrix;
-  matrix.reset();
-  return matrix;
+  return DlTransform();
 }
 
 GrDirectContext* GPUSurfaceVulkan::GetContext() {
@@ -102,7 +99,7 @@ GrDirectContext* GPUSurfaceVulkan::GetContext() {
 sk_sp<SkSurface> GPUSurfaceVulkan::CreateSurfaceFromVulkanImage(
     const VkImage image,
     const VkFormat format,
-    const SkISize& size) {
+    const DlISize& size) {
   GrVkImageInfo image_info = {
       .fImage = image,
       .fImageTiling = VK_IMAGE_TILING_OPTIMAL,

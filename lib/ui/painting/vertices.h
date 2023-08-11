@@ -7,7 +7,6 @@
 
 #include "flutter/display_list/dl_vertices.h"
 #include "flutter/lib/ui/dart_wrapper.h"
-#include "third_party/skia/include/core/SkVertices.h"
 #include "third_party/tonic/typed_data/typed_list.h"
 
 namespace flutter {

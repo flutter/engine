@@ -43,7 +43,7 @@ bool GPUSurfaceVulkanImpeller::IsValid() {
 
 // |Surface|
 std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
-    const SkISize& size) {
+    const DlISize& size) {
   if (!IsValid()) {
     FML_LOG(ERROR) << "Vulkan surface was invalid.";
     return nullptr;
@@ -78,7 +78,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
         impeller::DlDispatcher impeller_dispatcher(dl_cull_rect);
         display_list->Dispatch(
             impeller_dispatcher,
-            SkIRect::MakeWH(cull_rect.width, cull_rect.height));
+            DlIRect::MakeWH(cull_rect.width, cull_rect.height));
         auto picture = impeller_dispatcher.EndRecordingAsPicture();
 
         return renderer->Render(
@@ -101,7 +101,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
 }
 
 // |Surface|
-SkMatrix GPUSurfaceVulkanImpeller::GetRootTransformation() const {
+DlTransform GPUSurfaceVulkanImpeller::GetRootTransformation() const {
   // This backend does not currently support root surface transformations. Just
   // return identity.
   return {};

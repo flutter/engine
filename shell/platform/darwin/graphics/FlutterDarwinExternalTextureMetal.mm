@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.h"
+#include "flutter/display_list/geometry/dl_rect.h"
 #include "flutter/display_list/image/dl_image.h"
 #include "impeller/base/validation.h"
 #include "impeller/display_list/dl_image_impeller.h"
@@ -54,7 +55,7 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)paintContext:(flutter::Texture::PaintContext&)context
-              bounds:(const SkRect&)bounds
+              bounds:(const flutter::DlFRect&)bounds
               freeze:(BOOL)freeze
             sampling:(const flutter::DlImageSampling)sampling {
   const bool needsUpdatedTexture = (!freeze && _textureFrameAvailable) || !_externalImage;
@@ -64,8 +65,10 @@ FLUTTER_ASSERT_ARC
   }
 
   if (_externalImage) {
+    flutter::DlFRect imageBounds =
+        flutter::DlFRect::MakeBounds(_externalImage->bounds());
     context.canvas->DrawImageRect(_externalImage,                                // image
-                                  SkRect::Make(_externalImage->bounds()),        // source rect
+                                  imageBounds,                                   // source rect
                                   bounds,                                        // destination rect
                                   sampling,                                      // sampling
                                   context.paint,                                 // paint

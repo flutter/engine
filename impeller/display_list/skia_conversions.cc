@@ -2,24 +2,26 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/display_list/geometry/dl_point.h"
+#include "flutter/display_list/geometry/dl_rect.h"
 #include "impeller/display_list/skia_conversions.h"
 #include "third_party/skia/modules/skparagraph/include/Paragraph.h"
 
 namespace impeller {
 namespace skia_conversions {
 
-Rect ToRect(const SkRect& rect) {
-  return Rect::MakeLTRB(rect.fLeft, rect.fTop, rect.fRight, rect.fBottom);
+Rect ToRect(const flutter::DlFRect& rect) {
+  return Rect::MakeLTRB(rect.left(), rect.top(), rect.right(), rect.bottom());
 }
 
-std::optional<Rect> ToRect(const SkRect* rect) {
+std::optional<Rect> ToRect(const flutter::DlFRect* rect) {
   if (rect == nullptr) {
     return std::nullopt;
   }
-  return Rect::MakeLTRB(rect->fLeft, rect->fTop, rect->fRight, rect->fBottom);
+  return ToRect(*rect);
 }
 
-std::vector<Rect> ToRects(const SkRect tex[], int count) {
+std::vector<Rect> ToRects(const flutter::DlFRect tex[], int count) {
   auto result = std::vector<Rect>();
   for (int i = 0; i < count; i++) {
     result.push_back(ToRect(tex[i]));
@@ -27,7 +29,7 @@ std::vector<Rect> ToRects(const SkRect tex[], int count) {
   return result;
 }
 
-std::vector<Point> ToPoints(const SkPoint points[], int count) {
+std::vector<Point> ToPoints(const flutter::DlFPoint points[], int count) {
   std::vector<Point> result(count);
   for (auto i = 0; i < count; i++) {
     result[i] = ToPoint(points[i]);
@@ -35,14 +37,17 @@ std::vector<Point> ToPoints(const SkPoint points[], int count) {
   return result;
 }
 
-PathBuilder::RoundingRadii ToRoundingRadii(const SkRRect& rrect) {
-  using Corner = SkRRect::Corner;
+PathBuilder::RoundingRadii ToRoundingRadii(const flutter::DlFRRect& rrect) {
   PathBuilder::RoundingRadii radii;
-  radii.bottom_left = ToPoint(rrect.radii(Corner::kLowerLeft_Corner));
-  radii.bottom_right = ToPoint(rrect.radii(Corner::kLowerRight_Corner));
-  radii.top_left = ToPoint(rrect.radii(Corner::kUpperLeft_Corner));
-  radii.top_right = ToPoint(rrect.radii(Corner::kUpperRight_Corner));
+  radii.bottom_left = ToPoint(rrect.lower_left_radii());
+  radii.bottom_right = ToPoint(rrect.lower_right_radii());
+  radii.top_left = ToPoint(rrect.upper_left_radii());
+  radii.top_right = ToPoint(rrect.upper_right_radii());
   return radii;
+}
+
+Path ToPath(const flutter::DlPath& dl_path) {
+  return ToPath(dl_path.GetSkiaPath());
 }
 
 Path ToPath(const SkPath& path) {
@@ -123,36 +128,44 @@ Path ToPath(const SkPath& path) {
   return builder.TakePath(fill_type);
 }
 
-Path ToPath(const SkRRect& rrect) {
+Path ToPath(const flutter::DlFRRect& rrect) {
   return PathBuilder{}
-      .AddRoundedRect(ToRect(rrect.getBounds()), ToRoundingRadii(rrect))
+      .AddRoundedRect(ToRect(rrect.Bounds()), ToRoundingRadii(rrect))
       .SetConvexity(Convexity::kConvex)
       .TakePath();
 }
 
 Point ToPoint(const SkPoint& point) {
-  return Point::MakeXY(point.fX, point.fY);
+  return Point::MakeXY(point.x(), point.y());
 }
 
-Color ToColor(const SkColor& color) {
+Point ToPoint(const flutter::DlFPoint& point) {
+  return Point::MakeXY(point.x(), point.y());
+}
+
+Color ToColor(const flutter::DlColor& color) {
   return {
-      static_cast<Scalar>(SkColorGetR(color) / 255.0),  //
-      static_cast<Scalar>(SkColorGetG(color) / 255.0),  //
-      static_cast<Scalar>(SkColorGetB(color) / 255.0),  //
-      static_cast<Scalar>(SkColorGetA(color) / 255.0)   //
+      color.getRedF(),    //
+      color.getGreenF(),  //
+      color.getBlueF(),   //
+      color.getAlphaF()   //
   };
 }
 
-std::vector<Matrix> ToRSXForms(const SkRSXform xform[], int count) {
+std::vector<Matrix> ToRSXForms(const flutter::DlRSTransform xform[], int count) {
   auto result = std::vector<Matrix>();
   for (int i = 0; i < count; i++) {
     auto form = xform[i];
+    auto scos = form.scaled_cos();
+    auto ssin = form.scaled_sin();
+    auto tx = form.translate_x();
+    auto ty = form.translate_y();
     // clang-format off
     auto matrix = Matrix{
-      form.fSCos, form.fSSin, 0, 0,
-     -form.fSSin, form.fSCos, 0, 0,
-      0,          0,          1, 0,
-      form.fTx,   form.fTy,   0, 1
+      scos, ssin, 0, 0,
+     -ssin, scos, 0, 0,
+      0,    0,    1, 0,
+      tx,   ty,   0, 1
     };
     // clang-format on
     result.push_back(matrix);

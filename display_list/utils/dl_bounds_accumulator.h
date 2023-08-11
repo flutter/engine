@@ -7,6 +7,9 @@
 
 #include <functional>
 
+#include "flutter/display_list/dl_base_types.h"
+#include "flutter/display_list/geometry/dl_point.h"
+#include "flutter/display_list/geometry/dl_rect.h"
 #include "flutter/display_list/geometry/dl_rtree.h"
 #include "flutter/fml/logging.h"
 
@@ -44,11 +47,11 @@ class BoundsAccumulator {
   /// |dest| rectangle to a copy of the input bounds (or a best
   /// guess) and return false to indicate that the bounds should not
   /// be trusted.
-  typedef bool BoundsModifier(const SkRect& original, SkRect* dest);
+  typedef bool BoundsModifier(const DlFRect& original, DlFRect* dest);
 
   virtual ~BoundsAccumulator() = default;
 
-  virtual void accumulate(const SkRect& r, int index = 0) = 0;
+  virtual void accumulate(const DlFRect& r, int index = 0) = 0;
 
   /// Save aside the rects/bounds currently being accumulated and start
   /// accumulating a new set of rects/bounds. When restore is called,
@@ -79,10 +82,10 @@ class BoundsAccumulator {
   /// If there are no saved accumulations to restore to, this method will
   /// NOP ignoring the map function and the optional clip entirely.
   virtual bool restore(
-      std::function<bool(const SkRect& original, SkRect& modified)> map,
-      const SkRect* clip = nullptr) = 0;
+      std::function<bool(const DlFRect& original, DlFRect& modified)> map,
+      const DlFRect* clip = nullptr) = 0;
 
-  virtual SkRect bounds() const = 0;
+  virtual DlFRect bounds() const = 0;
 
   virtual sk_sp<DlRTree> rtree() const = 0;
 
@@ -91,19 +94,21 @@ class BoundsAccumulator {
 
 class RectBoundsAccumulator final : public virtual BoundsAccumulator {
  public:
-  void accumulate(SkScalar x, SkScalar y) { rect_.accumulate(x, y); }
-  void accumulate(const SkPoint& p) { rect_.accumulate(p.fX, p.fY); }
-  void accumulate(const SkRect& r, int index) override;
+  void accumulate(DlScalar x, DlScalar y) { rect_.accumulate(x, y); }
+  void accumulate(const DlFPoint& p) { rect_.accumulate(p.x(), p.y()); }
+  void accumulate(const DlFRect& r, int index = 0) override {
+    rect_.accumulate(r.left(), r.top(), r.right(), r.bottom());
+  }
 
   bool is_empty() const { return rect_.is_empty(); }
   bool is_not_empty() const { return rect_.is_not_empty(); }
 
   void save() override;
   void restore() override;
-  bool restore(std::function<bool(const SkRect&, SkRect&)> mapper,
-               const SkRect* clip) override;
+  bool restore(std::function<bool(const DlFRect&, DlFRect&)> mapper,
+               const DlFRect* clip) override;
 
-  SkRect bounds() const override {
+  DlFRect bounds() const override {
     FML_DCHECK(saved_rects_.empty());
     return rect_.bounds();
   }
@@ -119,21 +124,23 @@ class RectBoundsAccumulator final : public virtual BoundsAccumulator {
    public:
     AccumulationRect();
 
-    void accumulate(SkScalar x, SkScalar y);
+    void accumulate(DlScalar x, DlScalar y);
+    void accumulate(DlScalar left, DlScalar top,  //
+                    DlScalar right, DlScalar bottom);
 
     bool is_empty() const { return min_x_ >= max_x_ || min_y_ >= max_y_; }
     bool is_not_empty() const { return min_x_ < max_x_ && min_y_ < max_y_; }
 
-    SkRect bounds() const;
+    DlFRect bounds() const;
 
    private:
-    SkScalar min_x_;
-    SkScalar min_y_;
-    SkScalar max_x_;
-    SkScalar max_y_;
+    DlScalar min_x_;
+    DlScalar min_y_;
+    DlScalar max_x_;
+    DlScalar max_y_;
   };
 
-  void pop_and_accumulate(SkRect& layer_bounds, const SkRect* clip);
+  void pop_and_accumulate(DlFRect& layer_bounds, const DlFRect* clip);
 
   AccumulationRect rect_;
   std::vector<AccumulationRect> saved_rects_;
@@ -141,15 +148,15 @@ class RectBoundsAccumulator final : public virtual BoundsAccumulator {
 
 class RTreeBoundsAccumulator final : public virtual BoundsAccumulator {
  public:
-  void accumulate(const SkRect& r, int index) override;
+  void accumulate(const DlFRect& r, int index) override;
   void save() override;
   void restore() override;
 
   bool restore(
-      std::function<bool(const SkRect& original, SkRect& modified)> map,
-      const SkRect* clip = nullptr) override;
+      std::function<bool(const DlFRect& original, DlFRect& modified)> map,
+      const DlFRect* clip = nullptr) override;
 
-  SkRect bounds() const override;
+  DlFRect bounds() const override;
 
   sk_sp<DlRTree> rtree() const override;
 
@@ -158,7 +165,7 @@ class RTreeBoundsAccumulator final : public virtual BoundsAccumulator {
   }
 
  private:
-  std::vector<SkRect> rects_;
+  std::vector<DlFRect> rects_;
   std::vector<int> rect_indices_;
   std::vector<size_t> saved_offsets_;
 };

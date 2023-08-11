@@ -7,21 +7,21 @@
 namespace flutter {
 
 std::shared_ptr<DlImageFilter> DlImageFilter::makeWithLocalMatrix(
-    const SkMatrix& matrix) const {
-  if (matrix.isIdentity()) {
+    const DlTransform& matrix) const {
+  if (matrix.is_identity()) {
     return shared();
   }
   // Matrix
   switch (this->matrix_capability()) {
     case MatrixCapability::kTranslate: {
-      if (!matrix.isTranslate()) {
+      if (!matrix.is_translate()) {
         // Nothing we can do at this point
         return nullptr;
       }
       break;
     }
     case MatrixCapability::kScaleTranslate: {
-      if (!matrix.isScaleTranslate()) {
+      if (!matrix.is_scale_translate()) {
         // Nothing we can do at this point
         return nullptr;
       }
@@ -33,10 +33,10 @@ std::shared_ptr<DlImageFilter> DlImageFilter::makeWithLocalMatrix(
   return std::make_shared<DlLocalMatrixImageFilter>(matrix, shared());
 }
 
-SkRect* DlComposeImageFilter::map_local_bounds(const SkRect& input_bounds,
-                                               SkRect& output_bounds) const {
-  SkRect cur_bounds = input_bounds;
-  SkRect* ret = &output_bounds;
+DlFRect* DlComposeImageFilter::map_local_bounds(const DlFRect& input_bounds,
+                                                DlFRect& output_bounds) const {
+  DlFRect cur_bounds = input_bounds;
+  DlFRect* ret = &output_bounds;
   // We set this result in case neither filter is present.
   output_bounds = input_bounds;
   if (inner_) {
@@ -53,11 +53,11 @@ SkRect* DlComposeImageFilter::map_local_bounds(const SkRect& input_bounds,
   return ret;
 }
 
-SkIRect* DlComposeImageFilter::map_device_bounds(const SkIRect& input_bounds,
-                                                 const SkMatrix& ctm,
-                                                 SkIRect& output_bounds) const {
-  SkIRect cur_bounds = input_bounds;
-  SkIRect* ret = &output_bounds;
+DlIRect* DlComposeImageFilter::map_device_bounds(const DlIRect& input_bounds,
+                                                 const DlTransform& ctm,
+                                                 DlIRect& output_bounds) const {
+  DlIRect cur_bounds = input_bounds;
+  DlIRect* ret = &output_bounds;
   // We set this result in case neither filter is present.
   output_bounds = input_bounds;
   if (inner_) {
@@ -74,12 +74,12 @@ SkIRect* DlComposeImageFilter::map_device_bounds(const SkIRect& input_bounds,
   return ret;
 }
 
-SkIRect* DlComposeImageFilter::get_input_device_bounds(
-    const SkIRect& output_bounds,
-    const SkMatrix& ctm,
-    SkIRect& input_bounds) const {
-  SkIRect cur_bounds = output_bounds;
-  SkIRect* ret = &input_bounds;
+DlIRect* DlComposeImageFilter::get_input_device_bounds(
+    const DlIRect& output_bounds,
+    const DlTransform& ctm,
+    DlIRect& input_bounds) const {
+  DlIRect cur_bounds = output_bounds;
+  DlIRect* ret = &input_bounds;
   // We set this result in case neither filter is present.
   input_bounds = output_bounds;
   if (outer_) {

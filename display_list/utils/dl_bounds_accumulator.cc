@@ -6,54 +6,47 @@
 
 namespace flutter {
 
-void RectBoundsAccumulator::accumulate(const SkRect& r, int index) {
-  if (r.fLeft < r.fRight && r.fTop < r.fBottom) {
-    rect_.accumulate(r.fLeft, r.fTop);
-    rect_.accumulate(r.fRight, r.fBottom);
-  }
-}
-
 void RectBoundsAccumulator::save() {
   saved_rects_.emplace_back(rect_);
   rect_ = AccumulationRect();
 }
 void RectBoundsAccumulator::restore() {
   if (!saved_rects_.empty()) {
-    SkRect layer_bounds = rect_.bounds();
+    DlFRect layer_bounds = rect_.bounds();
     pop_and_accumulate(layer_bounds, nullptr);
   }
 }
 bool RectBoundsAccumulator::restore(
-    std::function<bool(const SkRect&, SkRect&)> mapper,
-    const SkRect* clip) {
+    std::function<bool(const DlFRect&, DlFRect&)> mapper,
+    const DlFRect* clip) {
   bool success = true;
   if (!saved_rects_.empty()) {
-    SkRect layer_bounds = rect_.bounds();
+    DlFRect layer_bounds = rect_.bounds();
     success = mapper(layer_bounds, layer_bounds);
     pop_and_accumulate(layer_bounds, clip);
   }
   return success;
 }
-void RectBoundsAccumulator::pop_and_accumulate(SkRect& layer_bounds,
-                                               const SkRect* clip) {
+void RectBoundsAccumulator::pop_and_accumulate(DlFRect& layer_bounds,
+                                               const DlFRect* clip) {
   FML_DCHECK(!saved_rects_.empty());
 
   rect_ = saved_rects_.back();
   saved_rects_.pop_back();
 
-  if (clip == nullptr || layer_bounds.intersect(*clip)) {
+  if (clip == nullptr || layer_bounds.Intersect(*clip)) {
     accumulate(layer_bounds, -1);
   }
 }
 
 RectBoundsAccumulator::AccumulationRect::AccumulationRect() {
-  min_x_ = std::numeric_limits<SkScalar>::infinity();
-  min_y_ = std::numeric_limits<SkScalar>::infinity();
-  max_x_ = -std::numeric_limits<SkScalar>::infinity();
-  max_y_ = -std::numeric_limits<SkScalar>::infinity();
+  min_x_ = std::numeric_limits<DlScalar>::infinity();
+  min_y_ = std::numeric_limits<DlScalar>::infinity();
+  max_x_ = -std::numeric_limits<DlScalar>::infinity();
+  max_y_ = -std::numeric_limits<DlScalar>::infinity();
 }
-void RectBoundsAccumulator::AccumulationRect::accumulate(SkScalar x,
-                                                         SkScalar y) {
+void RectBoundsAccumulator::AccumulationRect::accumulate(DlScalar x,
+                                                         DlScalar y) {
   if (min_x_ > x) {
     min_x_ = x;
   }
@@ -67,14 +60,33 @@ void RectBoundsAccumulator::AccumulationRect::accumulate(SkScalar x,
     max_y_ = y;
   }
 }
-SkRect RectBoundsAccumulator::AccumulationRect::bounds() const {
+void RectBoundsAccumulator::AccumulationRect::accumulate(DlScalar left,
+                                                         DlScalar top,
+                                                         DlScalar right,
+                                                         DlScalar bottom) {
+  if (left < right && top < bottom) {
+    if (min_x_ > left) {
+      min_x_ = left;
+    }
+    if (min_y_ > top) {
+      min_y_ = top;
+    }
+    if (max_x_ < right) {
+      max_x_ = right;
+    }
+    if (max_y_ < bottom) {
+      max_y_ = bottom;
+    }
+  }
+}
+DlFRect RectBoundsAccumulator::AccumulationRect::bounds() const {
   return (max_x_ >= min_x_ && max_y_ >= min_y_)
-             ? SkRect::MakeLTRB(min_x_, min_y_, max_x_, max_y_)
-             : SkRect::MakeEmpty();
+             ? DlFRect::MakeLTRB(min_x_, min_y_, max_x_, max_y_)
+             : DlFRect();
 }
 
-void RTreeBoundsAccumulator::accumulate(const SkRect& r, int index) {
-  if (r.fLeft < r.fRight && r.fTop < r.fBottom) {
+void RTreeBoundsAccumulator::accumulate(const DlFRect& r, int index) {
+  if (!r.is_empty()) {
     rects_.push_back(r);
     rect_indices_.push_back(index);
   }
@@ -90,8 +102,8 @@ void RTreeBoundsAccumulator::restore() {
   saved_offsets_.pop_back();
 }
 bool RTreeBoundsAccumulator::restore(
-    std::function<bool(const SkRect& original, SkRect& modified)> map,
-    const SkRect* clip) {
+    std::function<bool(const DlFRect& original, DlFRect& modified)> map,
+    const DlFRect* clip) {
   if (saved_offsets_.empty()) {
     return true;
   }
@@ -101,11 +113,11 @@ bool RTreeBoundsAccumulator::restore(
 
   bool success = true;
   for (size_t i = previous_size; i < rects_.size(); i++) {
-    SkRect original = rects_[i];
+    DlFRect original = rects_[i];
     if (!map(original, original)) {
       success = false;
     }
-    if (clip == nullptr || original.intersect(*clip)) {
+    if (clip == nullptr || original.Intersect(*clip)) {
       rect_indices_[previous_size] = rect_indices_[i];
       rects_[previous_size] = original;
       previous_size++;
@@ -116,7 +128,7 @@ bool RTreeBoundsAccumulator::restore(
   return success;
 }
 
-SkRect RTreeBoundsAccumulator::bounds() const {
+DlFRect RTreeBoundsAccumulator::bounds() const {
   FML_DCHECK(saved_offsets_.empty());
   RectBoundsAccumulator accumulator;
   for (auto& rect : rects_) {

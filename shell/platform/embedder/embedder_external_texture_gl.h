@@ -6,9 +6,10 @@
 #define FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_EXTERNAL_TEXTURE_GL_H_
 
 #include "flutter/common/graphics/texture.h"
+#include "flutter/display_list/geometry/dl_rect.h"
+#include "flutter/display_list/geometry/dl_size.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "third_party/skia/include/core/SkSize.h"
 
 namespace flutter {
 
@@ -28,11 +29,11 @@ class EmbedderExternalTextureGL : public flutter::Texture {
 
   sk_sp<DlImage> ResolveTexture(int64_t texture_id,
                                 GrDirectContext* context,
-                                const SkISize& size);
+                                const DlISize& size);
 
   // |flutter::Texture|
   void Paint(PaintContext& context,
-             const SkRect& bounds,
+             const DlFRect& bounds,
              bool freeze,
              const DlImageSampling sampling) override;
 

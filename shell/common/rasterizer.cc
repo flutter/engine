@@ -19,11 +19,10 @@
 #include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
-#include "third_party/skia/include/core/SkMatrix.h"
+#include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkSerialProcs.h"
-#include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
@@ -368,7 +367,7 @@ std::unique_ptr<Rasterizer::GpuImageResult> Rasterizer::MakeSkiaGpuImage(
 }
 
 sk_sp<DlImage> Rasterizer::MakeRasterSnapshot(sk_sp<DisplayList> display_list,
-                                              SkISize picture_size) {
+                                              DlISize picture_size) {
   return snapshot_controller_->MakeRasterSnapshot(display_list, picture_size);
 }
 
@@ -547,8 +546,8 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
   // If the external view embedder has specified an optional root surface, the
   // root surface transformation is set by the embedder instead of
   // having to apply it here.
-  SkMatrix root_surface_transformation =
-      embedder_root_canvas ? SkMatrix{} : surface_->GetRootTransformation();
+  DlTransform root_surface_transformation =
+      embedder_root_canvas ? DlTransform() : surface_->GetRootTransformation();
 
   auto root_surface_canvas =
       embedder_root_canvas ? embedder_root_canvas : frame->Canvas();
@@ -659,8 +658,7 @@ static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
   recorder.beginRecording(
       SkRect::MakeWH(tree->frame_size().width(), tree->frame_size().height()));
 
-  SkMatrix root_surface_transformation;
-  root_surface_transformation.reset();
+  DlTransform root_surface_transformation;
   DlSkCanvasAdapter canvas(recorder.getRecordingCanvas());
 
   // TODO(amirh): figure out how to take a screenshot with embedded UIView.
@@ -700,10 +698,8 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
   // Draw the current layer tree into the snapshot surface.
   auto* canvas = snapshot_surface->GetCanvas();
 
-  // There is no root surface transformation for the screenshot layer. Reset
-  // the matrix to identity.
-  SkMatrix root_surface_transformation;
-  root_surface_transformation.reset();
+  // There is no root surface transformation for the screenshot layer.
+  DlTransform root_surface_transformation;
 
   // snapshot_surface->makeImageSnapshot needs the GL context to be set if the
   // render context is GL. frame->Raster() pops the gl context in platforms
@@ -852,7 +848,7 @@ std::optional<size_t> Rasterizer::GetResourceCacheMaxBytes() const {
 Rasterizer::Screenshot::Screenshot() {}
 
 Rasterizer::Screenshot::Screenshot(sk_sp<SkData> p_data,
-                                   SkISize p_size,
+                                   DlISize p_size,
                                    const std::string& p_format)
     : data(std::move(p_data)), frame_size(p_size), format(p_format) {}
 

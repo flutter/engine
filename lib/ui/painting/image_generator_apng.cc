@@ -62,8 +62,8 @@ const ImageGenerator::FrameInfo APNGImageGenerator::GetFrameInfo(
   return {};
 }
 
-SkISize APNGImageGenerator::GetScaledDimensions(float desired_scale) {
-  return image_info_.dimensions();
+DlISize APNGImageGenerator::GetScaledDimensions(float desired_scale) {
+  return DlISize::MakeSize(image_info_);
 }
 
 bool APNGImageGenerator::GetPixels(const SkImageInfo& info,
@@ -405,7 +405,7 @@ APNGImageGenerator::DemuxNextImage(const void* buffer_p,
         return std::make_pair(std::nullopt, nullptr);
     }
 
-    SkIRect frame_rect = SkIRect::MakeXYWH(
+    DlIRect frame_rect = DlIRect::MakeXYWH(
         control_data->get_x_offset(), control_data->get_y_offset(),
         control_data->get_width(), control_data->get_height());
     switch (control_data->get_dispose_op()) {

@@ -8,14 +8,14 @@
 #include "flutter/display_list/dl_blend_mode.h"
 #include "flutter/display_list/dl_paint.h"
 #include "flutter/display_list/dl_vertices.h"
+#include "flutter/display_list/geometry/dl_path.h"
+#include "flutter/display_list/geometry/dl_point.h"
+#include "flutter/display_list/geometry/dl_rect.h"
+#include "flutter/display_list/geometry/dl_round_rect.h"
+#include "flutter/display_list/geometry/dl_rstransform.h"
+#include "flutter/display_list/geometry/dl_transform.h"
 #include "flutter/display_list/image/dl_image.h"
 
-#include "third_party/skia/include/core/SkM44.h"
-#include "third_party/skia/include/core/SkMatrix.h"
-#include "third_party/skia/include/core/SkPath.h"
-#include "third_party/skia/include/core/SkRRect.h"
-#include "third_party/skia/include/core/SkRSXform.h"
-#include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 
 namespace flutter {
@@ -50,102 +50,93 @@ class DlCanvas {
 
   virtual ~DlCanvas() = default;
 
-  virtual SkISize GetBaseLayerSize() const = 0;
+  virtual DlISize GetBaseLayerSize() const = 0;
   virtual SkImageInfo GetImageInfo() const = 0;
 
   virtual void Save() = 0;
-  virtual void SaveLayer(const SkRect* bounds,
+  virtual void SaveLayer(const DlFRect* bounds,
                          const DlPaint* paint = nullptr,
                          const DlImageFilter* backdrop = nullptr) = 0;
   virtual void Restore() = 0;
   virtual int GetSaveCount() const = 0;
   virtual void RestoreToCount(int restore_count) = 0;
 
-  virtual void Translate(SkScalar tx, SkScalar ty) = 0;
-  virtual void Scale(SkScalar sx, SkScalar sy) = 0;
-  virtual void Rotate(SkScalar degrees) = 0;
-  virtual void Skew(SkScalar sx, SkScalar sy) = 0;
+  virtual void Translate(DlScalar tx, DlScalar ty) = 0;
+  void Translate(DlFPoint p) { Translate(p.x(), p.y()); }
+  virtual void Scale(DlScalar sx, DlScalar sy) = 0;
+  virtual void Rotate(DlScalar degrees) = 0;
+  virtual void Skew(DlScalar sx, DlScalar sy) = 0;
 
   // clang-format off
 
   // 2x3 2D affine subset of a 4x4 transform in row major order
-  virtual void Transform2DAffine(SkScalar mxx, SkScalar mxy, SkScalar mxt,
-                                 SkScalar myx, SkScalar myy, SkScalar myt) = 0;
+  virtual void Transform2DAffine(DlScalar mxx, DlScalar mxy, DlScalar mxt,
+                                 DlScalar myx, DlScalar myy, DlScalar myt) = 0;
   // full 4x4 transform in row major order
   virtual void TransformFullPerspective(
-      SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
-      SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
-      SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
-      SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) = 0;
+      DlScalar mxx, DlScalar mxy, DlScalar mxz, DlScalar mxt,
+      DlScalar myx, DlScalar myy, DlScalar myz, DlScalar myt,
+      DlScalar mzx, DlScalar mzy, DlScalar mzz, DlScalar mzt,
+      DlScalar mwx, DlScalar mwy, DlScalar mwz, DlScalar mwt) = 0;
   // clang-format on
   virtual void TransformReset() = 0;
-  virtual void Transform(const SkMatrix* matrix) = 0;
-  virtual void Transform(const SkM44* matrix44) = 0;
-  virtual void Transform(const SkMatrix& matrix) { Transform(&matrix); }
-  virtual void Transform(const SkM44& matrix44) { Transform(&matrix44); }
-  virtual void SetTransform(const SkMatrix* matrix) = 0;
-  virtual void SetTransform(const SkM44* matrix44) = 0;
-  virtual void SetTransform(const SkMatrix& matrix) { SetTransform(&matrix); }
-  virtual void SetTransform(const SkM44& matrix44) { SetTransform(&matrix44); }
+  virtual void Transform(const DlTransform& matrix) = 0;
+  virtual void SetTransform(const DlTransform& matrix) = 0;
 
-  /// Returns the 4x4 full perspective transform representing all transform
-  /// operations executed so far in this DisplayList within the enclosing
-  /// save stack.
-  virtual SkM44 GetTransformFullPerspective() const = 0;
   /// Returns the 3x3 partial perspective transform representing all transform
   /// operations executed so far in this DisplayList within the enclosing
   /// save stack.
-  virtual SkMatrix GetTransform() const = 0;
+  virtual DlTransform GetTransform() const = 0;
 
-  virtual void ClipRect(const SkRect& rect,
+  virtual void ClipRect(const DlFRect& rect,
                         ClipOp clip_op = ClipOp::kIntersect,
                         bool is_aa = false) = 0;
-  virtual void ClipRRect(const SkRRect& rrect,
+  virtual void ClipRRect(const DlFRRect& rrect,
                          ClipOp clip_op = ClipOp::kIntersect,
                          bool is_aa = false) = 0;
-  virtual void ClipPath(const SkPath& path,
+  virtual void ClipPath(const DlPath& path,
                         ClipOp clip_op = ClipOp::kIntersect,
                         bool is_aa = false) = 0;
 
   /// Conservative estimate of the bounds of all outstanding clip operations
   /// measured in the coordinate space within which this DisplayList will
   /// be rendered.
-  virtual SkRect GetDestinationClipBounds() const = 0;
+  virtual DlFRect GetDestinationClipBounds() const = 0;
   /// Conservative estimate of the bounds of all outstanding clip operations
   /// transformed into the local coordinate space in which currently
   /// recorded rendering operations are interpreted.
-  virtual SkRect GetLocalClipBounds() const = 0;
+  virtual DlFRect GetLocalClipBounds() const = 0;
 
   /// Return true iff the supplied bounds are easily shown to be outside
   /// of the current clip bounds. This method may conservatively return
   /// false if it cannot make the determination.
-  virtual bool QuickReject(const SkRect& bounds) const = 0;
+  virtual bool QuickReject(const DlFRect& bounds) const = 0;
 
   virtual void DrawPaint(const DlPaint& paint) = 0;
   virtual void DrawColor(DlColor color,
                          DlBlendMode mode = DlBlendMode::kSrcOver) = 0;
   void Clear(DlColor color) { DrawColor(color, DlBlendMode::kSrc); }
-  virtual void DrawLine(const SkPoint& p0,
-                        const SkPoint& p1,
+  virtual void DrawLine(const DlFPoint& p0,
+                        const DlFPoint& p1,
                         const DlPaint& paint) = 0;
-  virtual void DrawRect(const SkRect& rect, const DlPaint& paint) = 0;
-  virtual void DrawOval(const SkRect& bounds, const DlPaint& paint) = 0;
-  virtual void DrawCircle(const SkPoint& center,
-                          SkScalar radius,
+  virtual void DrawRect(const DlFRect& rect, const DlPaint& paint) = 0;
+  virtual void DrawOval(const DlFRect& bounds, const DlPaint& paint) = 0;
+  virtual void DrawCircle(const DlFPoint& center,
+                          DlScalar radius,
                           const DlPaint& paint) = 0;
-  virtual void DrawRRect(const SkRRect& rrect, const DlPaint& paint) = 0;
-  virtual void DrawDRRect(const SkRRect& outer,
-                          const SkRRect& inner,
+  virtual void DrawRRect(const DlFRRect& rrect, const DlPaint& paint) = 0;
+  virtual void DrawDRRect(const DlFRRect& outer,
+                          const DlFRRect& inner,
                           const DlPaint& paint) = 0;
-  virtual void DrawPath(const SkPath& path, const DlPaint& paint) = 0;
-  virtual void DrawArc(const SkRect& bounds,
-                       SkScalar start,
-                       SkScalar sweep,
+  virtual void DrawPath(const DlPath& path, const DlPaint& paint) = 0;
+  virtual void DrawArc(const DlFRect& bounds,
+                       DlScalar start,
+                       DlScalar sweep,
                        bool useCenter,
                        const DlPaint& paint) = 0;
   virtual void DrawPoints(PointMode mode,
                           uint32_t count,
-                          const SkPoint pts[],
+                          const DlFPoint pts[],
                           const DlPaint& paint) = 0;
   virtual void DrawVertices(const DlVertices* vertices,
                             DlBlendMode mode,
@@ -156,68 +147,69 @@ class DlCanvas {
     DrawVertices(vertices.get(), mode, paint);
   }
   virtual void DrawImage(const sk_sp<DlImage>& image,
-                         const SkPoint point,
+                         const DlFPoint point,
                          DlImageSampling sampling,
                          const DlPaint* paint = nullptr) = 0;
   virtual void DrawImageRect(
       const sk_sp<DlImage>& image,
-      const SkRect& src,
-      const SkRect& dst,
+      const DlFRect& src,
+      const DlFRect& dst,
       DlImageSampling sampling,
       const DlPaint* paint = nullptr,
       SrcRectConstraint constraint = SrcRectConstraint::kFast) = 0;
   virtual void DrawImageRect(
       const sk_sp<DlImage>& image,
-      const SkIRect& src,
-      const SkRect& dst,
+      const DlIRect& src,
+      const DlFRect& dst,
       DlImageSampling sampling,
       const DlPaint* paint = nullptr,
       SrcRectConstraint constraint = SrcRectConstraint::kFast) {
-    DrawImageRect(image, SkRect::Make(src), dst, sampling, paint, constraint);
+    DrawImageRect(image, DlFRect::MakeBounds(src), dst, sampling, paint,
+                  constraint);
   }
   virtual void DrawImageRect(
       const sk_sp<DlImage>& image,
-      const SkRect& dst,
+      const DlFRect& dst,
       DlImageSampling sampling,
       const DlPaint* paint = nullptr,
       SrcRectConstraint constraint = SrcRectConstraint::kFast) {
     DrawImageRect(image, image->bounds(), dst, sampling, paint, constraint);
   }
   virtual void DrawImageNine(const sk_sp<DlImage>& image,
-                             const SkIRect& center,
-                             const SkRect& dst,
+                             const DlIRect& center,
+                             const DlFRect& dst,
                              DlFilterMode filter,
                              const DlPaint* paint = nullptr) = 0;
   virtual void DrawAtlas(const sk_sp<DlImage>& atlas,
-                         const SkRSXform xform[],
-                         const SkRect tex[],
+                         const DlRSTransform xform[],
+                         const DlFRect tex[],
                          const DlColor colors[],
                          int count,
                          DlBlendMode mode,
                          DlImageSampling sampling,
-                         const SkRect* cullRect,
+                         const DlFRect* cullRect,
                          const DlPaint* paint = nullptr) = 0;
   virtual void DrawDisplayList(const sk_sp<DisplayList> display_list,
-                               SkScalar opacity = SK_Scalar1) = 0;
+                               DlScalar opacity = SK_Scalar1) = 0;
   virtual void DrawTextBlob(const sk_sp<SkTextBlob>& blob,
-                            SkScalar x,
-                            SkScalar y,
+                            DlScalar x,
+                            DlScalar y,
                             const DlPaint& paint) = 0;
-  virtual void DrawShadow(const SkPath& path,
+  virtual void DrawShadow(const DlPath& path,
                           const DlColor color,
-                          const SkScalar elevation,
+                          const DlScalar elevation,
                           bool transparent_occluder,
-                          SkScalar dpr) = 0;
+                          DlScalar dpr) = 0;
 
   virtual void Flush() = 0;
 
-  static constexpr SkScalar kShadowLightHeight = 600;
-  static constexpr SkScalar kShadowLightRadius = 800;
+  static constexpr DlScalar kShadowLightHeight = 600;
+  static constexpr DlScalar kShadowLightRadius = 800;
 
-  static SkRect ComputeShadowBounds(const SkPath& path,
-                                    float elevation,
-                                    SkScalar dpr,
-                                    const SkMatrix& ctm);
+  static DlFRect ComputeShadowBounds(const DlPath& path,
+                                     float elevation,
+                                     DlScalar dpr,
+                                     const DlTransform& ctm);
 };
 
 class DlAutoCanvasRestore {

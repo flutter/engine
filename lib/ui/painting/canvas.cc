@@ -37,8 +37,8 @@ void Canvas::Create(Dart_Handle wrapper,
 
   fml::RefPtr<Canvas> canvas =
       fml::MakeRefCounted<Canvas>(recorder->BeginRecording(
-          SkRect::MakeLTRB(SafeNarrow(left), SafeNarrow(top), SafeNarrow(right),
-                           SafeNarrow(bottom))));
+          DlFRect::MakeLTRB(SafeNarrow(left), SafeNarrow(top),  //
+                            SafeNarrow(right), SafeNarrow(bottom))));
   recorder->set_canvas(canvas);
   canvas->AssociateWithDartWrapper(wrapper);
 }
@@ -77,8 +77,8 @@ void Canvas::saveLayer(double left,
   Paint paint(paint_objects, paint_data);
 
   FML_DCHECK(paint.isNotNull());
-  SkRect bounds = SkRect::MakeLTRB(SafeNarrow(left), SafeNarrow(top),
-                                   SafeNarrow(right), SafeNarrow(bottom));
+  DlFRect bounds = DlFRect::MakeLTRB(SafeNarrow(left), SafeNarrow(top),
+                                     SafeNarrow(right), SafeNarrow(bottom));
   if (display_list_builder_) {
     DlPaint dl_paint;
     const DlPaint* save_paint = paint.paint(dl_paint, kSaveLayerWithPaintFlags);
@@ -134,7 +134,7 @@ void Canvas::skew(double sx, double sy) {
 
 void Canvas::transform(const tonic::Float64List& matrix4) {
   // The Float array stored by Dart Matrix4 is in column-major order
-  // Both DisplayList and SkM44 constructor take row-major matrix order
+  // DisplayList constructor takes row-major matrix order
   if (display_list_builder_) {
     // clang-format off
     builder()->TransformFullPerspective(
@@ -148,10 +148,9 @@ void Canvas::transform(const tonic::Float64List& matrix4) {
 
 void Canvas::getTransform(Dart_Handle matrix4_handle) {
   if (display_list_builder_) {
-    SkM44 sk_m44 = builder()->GetTransformFullPerspective();
-    SkScalar m44_values[16];
+    DlScalar m44_values[16];
     // The Float array stored by Dart Matrix4 is in column-major order
-    sk_m44.getColMajor(m44_values);
+    builder()->GetTransform().GetColMajor(m44_values);
     auto matrix4 = tonic::Float64List(matrix4_handle);
     for (int i = 0; i < 16; i++) {
       matrix4[i] = m44_values[i];
@@ -166,15 +165,16 @@ void Canvas::clipRect(double left,
                       DlCanvas::ClipOp clipOp,
                       bool doAntiAlias) {
   if (display_list_builder_) {
-    builder()->ClipRect(SkRect::MakeLTRB(SafeNarrow(left), SafeNarrow(top),
-                                         SafeNarrow(right), SafeNarrow(bottom)),
+    builder()->ClipRect(DlFRect::MakeLTRB(
+                            SafeNarrow(left), SafeNarrow(top),
+                            SafeNarrow(right), SafeNarrow(bottom)),
                         clipOp, doAntiAlias);
   }
 }
 
 void Canvas::clipRRect(const RRect& rrect, bool doAntiAlias) {
   if (display_list_builder_) {
-    builder()->ClipRRect(rrect.sk_rrect, DlCanvas::ClipOp::kIntersect,
+    builder()->ClipRRect(rrect.dl_rrect, DlCanvas::ClipOp::kIntersect,
                          doAntiAlias);
   }
 }
@@ -194,26 +194,26 @@ void Canvas::clipPath(const CanvasPath* path, bool doAntiAlias) {
 void Canvas::getDestinationClipBounds(Dart_Handle rect_handle) {
   if (display_list_builder_) {
     auto rect = tonic::Float64List(rect_handle);
-    SkRect bounds = builder()->GetDestinationClipBounds();
-    rect[0] = bounds.fLeft;
-    rect[1] = bounds.fTop;
-    rect[2] = bounds.fRight;
-    rect[3] = bounds.fBottom;
+    DlFRect bounds = builder()->GetDestinationClipBounds();
+    rect[0] = bounds.left();
+    rect[1] = bounds.top();
+    rect[2] = bounds.right();
+    rect[3] = bounds.bottom();
   }
 }
 
 void Canvas::getLocalClipBounds(Dart_Handle rect_handle) {
   if (display_list_builder_) {
     auto rect = tonic::Float64List(rect_handle);
-    SkRect bounds = builder()->GetLocalClipBounds();
-    rect[0] = bounds.fLeft;
-    rect[1] = bounds.fTop;
-    rect[2] = bounds.fRight;
-    rect[3] = bounds.fBottom;
+    DlFRect bounds = builder()->GetLocalClipBounds();
+    rect[0] = bounds.left();
+    rect[1] = bounds.top();
+    rect[2] = bounds.right();
+    rect[3] = bounds.bottom();
   }
 }
 
-void Canvas::drawColor(SkColor color, DlBlendMode blend_mode) {
+void Canvas::drawColor(uint32_t color, DlBlendMode blend_mode) {
   if (display_list_builder_) {
     builder()->DrawColor(color, blend_mode);
   }
@@ -231,8 +231,8 @@ void Canvas::drawLine(double x1,
   if (display_list_builder_) {
     DlPaint dl_paint;
     paint.paint(dl_paint, kDrawLineFlags);
-    builder()->DrawLine(SkPoint::Make(SafeNarrow(x1), SafeNarrow(y1)),
-                        SkPoint::Make(SafeNarrow(x2), SafeNarrow(y2)),
+    builder()->DrawLine(DlFPoint(SafeNarrow(x1), SafeNarrow(y1)),
+                        DlFPoint(SafeNarrow(x2), SafeNarrow(y2)),
                         dl_paint);
   }
 }
@@ -246,8 +246,8 @@ void Canvas::drawPaint(Dart_Handle paint_objects, Dart_Handle paint_data) {
     paint.paint(dl_paint, kDrawPaintFlags);
     std::shared_ptr<const DlImageFilter> filter = dl_paint.getImageFilter();
     if (filter && !filter->asColorFilter()) {
-      // drawPaint does an implicit saveLayer if an SkImageFilter is
-      // present that cannot be replaced by an SkColorFilter.
+      // drawPaint does an implicit saveLayer if an image filter is
+      // present that cannot be replaced by a color filter.
       TRACE_EVENT0("flutter", "ui.Canvas::saveLayer (Recorded)");
     }
     builder()->DrawPaint(dl_paint);
@@ -266,8 +266,9 @@ void Canvas::drawRect(double left,
   if (display_list_builder_) {
     DlPaint dl_paint;
     paint.paint(dl_paint, kDrawRectFlags);
-    builder()->DrawRect(SkRect::MakeLTRB(SafeNarrow(left), SafeNarrow(top),
-                                         SafeNarrow(right), SafeNarrow(bottom)),
+    builder()->DrawRect(DlFRect::MakeLTRB(
+                            SafeNarrow(left), SafeNarrow(top),
+                            SafeNarrow(right), SafeNarrow(bottom)),
                         dl_paint);
   }
 }
@@ -281,7 +282,7 @@ void Canvas::drawRRect(const RRect& rrect,
   if (display_list_builder_) {
     DlPaint dl_paint;
     paint.paint(dl_paint, kDrawRRectFlags);
-    builder()->DrawRRect(rrect.sk_rrect, dl_paint);
+    builder()->DrawRRect(rrect.dl_rrect, dl_paint);
   }
 }
 
@@ -295,7 +296,7 @@ void Canvas::drawDRRect(const RRect& outer,
   if (display_list_builder_) {
     DlPaint dl_paint;
     paint.paint(dl_paint, kDrawDRRectFlags);
-    builder()->DrawDRRect(outer.sk_rrect, inner.sk_rrect, dl_paint);
+    builder()->DrawDRRect(outer.dl_rrect, inner.dl_rrect, dl_paint);
   }
 }
 
@@ -311,8 +312,9 @@ void Canvas::drawOval(double left,
   if (display_list_builder_) {
     DlPaint dl_paint;
     paint.paint(dl_paint, kDrawOvalFlags);
-    builder()->DrawOval(SkRect::MakeLTRB(SafeNarrow(left), SafeNarrow(top),
-                                         SafeNarrow(right), SafeNarrow(bottom)),
+    builder()->DrawOval(DlFRect::MakeLTRB(
+                            SafeNarrow(left), SafeNarrow(top),
+                            SafeNarrow(right), SafeNarrow(bottom)),
                         dl_paint);
   }
 }
@@ -328,7 +330,7 @@ void Canvas::drawCircle(double x,
   if (display_list_builder_) {
     DlPaint dl_paint;
     paint.paint(dl_paint, kDrawCircleFlags);
-    builder()->DrawCircle(SkPoint::Make(SafeNarrow(x), SafeNarrow(y)),
+    builder()->DrawCircle(DlFPoint(SafeNarrow(x), SafeNarrow(y)),
                           SafeNarrow(radius), dl_paint);
   }
 }
@@ -351,8 +353,8 @@ void Canvas::drawArc(double left,
                               ? kDrawArcWithCenterFlags
                               : kDrawArcNoCenterFlags);
     builder()->DrawArc(
-        SkRect::MakeLTRB(SafeNarrow(left), SafeNarrow(top), SafeNarrow(right),
-                         SafeNarrow(bottom)),
+        DlFRect::MakeLTRB(SafeNarrow(left), SafeNarrow(top),  //
+                          SafeNarrow(right), SafeNarrow(bottom)),
         SafeNarrow(startAngle) * 180.0f / static_cast<float>(M_PI),
         SafeNarrow(sweepAngle) * 180.0f / static_cast<float>(M_PI), useCenter,
         dl_paint);
@@ -403,7 +405,7 @@ Dart_Handle Canvas::drawImage(const CanvasImage* image,
   if (display_list_builder_) {
     DlPaint dl_paint;
     const DlPaint* opt_paint = paint.paint(dl_paint, kDrawImageWithPaintFlags);
-    builder()->DrawImage(dl_image, SkPoint::Make(SafeNarrow(x), SafeNarrow(y)),
+    builder()->DrawImage(dl_image, DlFPoint(SafeNarrow(x), SafeNarrow(y)),
                          sampling, opt_paint);
   }
   return Dart_Null();
@@ -437,10 +439,12 @@ Dart_Handle Canvas::drawImageRect(const CanvasImage* image,
     return ToDart(error.value());
   }
 
-  SkRect src = SkRect::MakeLTRB(SafeNarrow(src_left), SafeNarrow(src_top),
-                                SafeNarrow(src_right), SafeNarrow(src_bottom));
-  SkRect dst = SkRect::MakeLTRB(SafeNarrow(dst_left), SafeNarrow(dst_top),
-                                SafeNarrow(dst_right), SafeNarrow(dst_bottom));
+  DlFRect src = DlFRect::MakeLTRB(
+      SafeNarrow(src_left), SafeNarrow(src_top),  //
+      SafeNarrow(src_right), SafeNarrow(src_bottom));
+  DlFRect dst = DlFRect::MakeLTRB(
+      SafeNarrow(dst_left), SafeNarrow(dst_top),  //
+      SafeNarrow(dst_right), SafeNarrow(dst_bottom));
   auto sampling = ImageFilter::SamplingFromIndex(filterQualityIndex);
   if (display_list_builder_) {
     DlPaint dl_paint;
@@ -479,13 +483,13 @@ Dart_Handle Canvas::drawImageNine(const CanvasImage* image,
     return ToDart(error.value());
   }
 
-  SkRect center =
-      SkRect::MakeLTRB(SafeNarrow(center_left), SafeNarrow(center_top),
-                       SafeNarrow(center_right), SafeNarrow(center_bottom));
-  SkIRect icenter;
-  center.round(&icenter);
-  SkRect dst = SkRect::MakeLTRB(SafeNarrow(dst_left), SafeNarrow(dst_top),
-                                SafeNarrow(dst_right), SafeNarrow(dst_bottom));
+  DlFRect center =
+      DlFRect::MakeLTRB(SafeNarrow(center_left), SafeNarrow(center_top),
+                        SafeNarrow(center_right), SafeNarrow(center_bottom));
+  DlIRect icenter = DlIRect::MakeRounded(center);
+  DlFRect dst =
+      DlFRect::MakeLTRB(SafeNarrow(dst_left), SafeNarrow(dst_top),
+                        SafeNarrow(dst_right), SafeNarrow(dst_bottom));
   auto filter = ImageFilter::FilterModeFromIndex(bitmapSamplingIndex);
   if (display_list_builder_) {
     DlPaint dl_paint;
@@ -517,8 +521,8 @@ void Canvas::drawPoints(Dart_Handle paint_objects,
                         const tonic::Float32List& points) {
   Paint paint(paint_objects, paint_data);
 
-  static_assert(sizeof(SkPoint) == sizeof(float) * 2,
-                "SkPoint doesn't use floats.");
+  static_assert(sizeof(DlFPoint) == sizeof(float) * 2,
+                "DlFPoint doesn't use floats.");
 
   FML_DCHECK(paint.isNotNull());
   if (display_list_builder_) {
@@ -535,8 +539,8 @@ void Canvas::drawPoints(Dart_Handle paint_objects,
         break;
     }
     builder()->DrawPoints(point_mode,
-                          points.num_elements() / 2,  // SkPoints have 2 floats
-                          reinterpret_cast<const SkPoint*>(points.data()),
+                          points.num_elements() / 2,  // DlFPoints have 2 floats
+                          reinterpret_cast<const DlFPoint*>(points.data()),
                           dl_paint);
   }
 }
@@ -583,10 +587,10 @@ Dart_Handle Canvas::drawAtlas(Dart_Handle paint_objects,
     return ToDart(error.value());
   }
 
-  static_assert(sizeof(SkRSXform) == sizeof(float) * 4,
-                "SkRSXform doesn't use floats.");
-  static_assert(sizeof(SkRect) == sizeof(float) * 4,
-                "SkRect doesn't use floats.");
+  static_assert(sizeof(DlRSTransform) == sizeof(float) * 4,
+                "DlRSTransform doesn't use floats.");
+  static_assert(sizeof(DlFRect) == sizeof(float) * 4,
+                "DlFRect doesn't use floats.");
 
   auto sampling = ImageFilter::SamplingFromIndex(filterQualityIndex);
 
@@ -600,18 +604,18 @@ Dart_Handle Canvas::drawAtlas(Dart_Handle paint_objects,
     DlPaint dl_paint;
     const DlPaint* opt_paint = paint.paint(dl_paint, kDrawAtlasWithPaintFlags);
     builder()->DrawAtlas(
-        dl_image, reinterpret_cast<const SkRSXform*>(transforms.data()),
-        reinterpret_cast<const SkRect*>(rects.data()),
+        dl_image, reinterpret_cast<const DlRSTransform*>(transforms.data()),
+        reinterpret_cast<const DlFRect*>(rects.data()),
         reinterpret_cast<const DlColor*>(colors.data()),
-        rects.num_elements() / 4,  // SkRect have four floats.
-        blend_mode, sampling, reinterpret_cast<const SkRect*>(cull_rect.data()),
-        opt_paint);
+        rects.num_elements() / 4,  // DlFRect have four floats.
+        blend_mode, sampling,
+        reinterpret_cast<const DlFRect*>(cull_rect.data()), opt_paint);
   }
   return Dart_Null();
 }
 
 void Canvas::drawShadow(const CanvasPath* path,
-                        SkColor color,
+                        uint32_t color,
                         double elevation,
                         bool transparentOccluder) {
   if (!path) {
@@ -621,7 +625,7 @@ void Canvas::drawShadow(const CanvasPath* path,
   }
 
   // Not using SafeNarrow because DPR will always be a relatively small number.
-  SkScalar dpr = static_cast<float>(UIDartState::Current()
+  DlScalar dpr = static_cast<float>(UIDartState::Current()
                                         ->platform_configuration()
                                         ->get_window(0)
                                         ->viewport_metrics()

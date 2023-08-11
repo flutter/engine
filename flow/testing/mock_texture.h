@@ -26,7 +26,7 @@ class MockTexture : public Texture {
 
   // Called from raster thread.
   void Paint(PaintContext& context,
-             const SkRect& bounds,
+             const DlFRect& bounds,
              bool freeze,
              const DlImageSampling sampling) override;
 

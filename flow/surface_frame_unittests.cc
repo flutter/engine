@@ -18,7 +18,7 @@ TEST(FlowTest, SurfaceFrameDoesNotSubmitInDtor) {
         EXPECT_FALSE(true);
         return true;
       },
-      SkISize::Make(800, 600));
+      DlISize(800, 600));
   surface_frame.reset();
 }
 
@@ -27,11 +27,11 @@ TEST(FlowTest, SurfaceFrameDoesNotHaveEmptyCanvas) {
   SurfaceFrame frame(
       /*surface=*/nullptr, framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
-      /*frame_size=*/SkISize::Make(800, 600),
+      /*frame_size=*/DlISize(800, 600),
       /*context_result=*/nullptr, /*display_list_fallback=*/true);
 
-  EXPECT_FALSE(frame.Canvas()->GetLocalClipBounds().isEmpty());
-  EXPECT_FALSE(frame.Canvas()->QuickReject(SkRect::MakeLTRB(10, 10, 50, 50)));
+  EXPECT_FALSE(frame.Canvas()->GetLocalClipBounds().is_empty());
+  EXPECT_FALSE(frame.Canvas()->QuickReject(DlFRect::MakeLTRB(10, 10, 50, 50)));
 }
 
 }  // namespace flutter

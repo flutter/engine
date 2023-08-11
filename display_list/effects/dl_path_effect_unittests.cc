@@ -6,36 +6,35 @@
 #include "flutter/display_list/testing/dl_test_equality.h"
 #include "flutter/display_list/utils/dl_comparable.h"
 #include "gtest/gtest.h"
-#include "third_party/skia/include/core/SkScalar.h"
 
 namespace flutter {
 namespace testing {
 
 TEST(DisplayListPathEffect, EffectShared) {
-  const SkScalar TestDashes2[] = {1.0, 1.5};
+  const DlScalar TestDashes2[] = {1.0, 1.5};
   auto effect = DlDashPathEffect::Make(TestDashes2, 2, 0.0);
   ASSERT_TRUE(Equals(effect->shared(), effect));
 }
 
 TEST(DisplayListPathEffect, DashEffectAsDash) {
-  const SkScalar TestDashes2[] = {1.0, 1.5};
+  const DlScalar TestDashes2[] = {1.0, 1.5};
   auto effect = DlDashPathEffect::Make(TestDashes2, 2, 0.0);
   ASSERT_NE(effect->asDash(), nullptr);
   ASSERT_EQ(effect->asDash(), effect.get());
 }
 
 TEST(DisplayListPathEffect, DashEffectEquals) {
-  const SkScalar TestDashes2[] = {1.0, 1.5};
+  const DlScalar TestDashes2[] = {1.0, 1.5};
   auto effect1 = DlDashPathEffect::Make(TestDashes2, 2, 0.0);
   auto effect2 = DlDashPathEffect::Make(TestDashes2, 2, 0.0);
   TestEquals(*effect1, *effect1);
 }
 
 TEST(DisplayListPathEffect, CheckEffectProperties) {
-  const SkScalar test_dashes[] = {4.0, 2.0};
-  const SkScalar TestDashes2[] = {5.0, 2.0};
-  const SkScalar TestDashes3[] = {4.0, 3.0};
-  const SkScalar TestDashes4[] = {4.0, 2.0, 6.0};
+  const DlScalar test_dashes[] = {4.0, 2.0};
+  const DlScalar TestDashes2[] = {5.0, 2.0};
+  const DlScalar TestDashes3[] = {4.0, 3.0};
+  const DlScalar TestDashes4[] = {4.0, 2.0, 6.0};
   auto effect1 = DlDashPathEffect::Make(test_dashes, 2, 0.0);
   auto effect2 = DlDashPathEffect::Make(TestDashes2, 2, 0.0);
   auto effect3 = DlDashPathEffect::Make(TestDashes3, 2, 0.0);

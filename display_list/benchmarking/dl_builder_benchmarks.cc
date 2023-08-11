@@ -98,7 +98,7 @@ static void BM_DisplayListBuilderWithPerspective(
 static void BM_DisplayListBuilderWithClipRect(
     benchmark::State& state,
     DisplayListBuilderBenchmarkType type) {
-  SkRect clip_bounds = SkRect::MakeLTRB(6.5, 7.3, 90.2, 85.7);
+  DlFRect clip_bounds = DlFRect::MakeLTRB(6.5, 7.3, 90.2, 85.7);
   bool prepare_rtree = NeedPrepareRTree(type);
   while (state.KeepRunning()) {
     DisplayListBuilder builder(prepare_rtree);
@@ -132,7 +132,7 @@ static void BM_DisplayListBuilderWithSaveLayerAndImageFilter(
     DisplayListBuilderBenchmarkType type) {
   DlPaint layer_paint;
   layer_paint.setImageFilter(&testing::kTestBlurImageFilter1);
-  SkRect layer_bounds = SkRect::MakeLTRB(6.5, 7.3, 35.2, 42.7);
+  DlFRect layer_bounds = DlFRect::MakeLTRB(6.5, 7.3, 35.2, 42.7);
   bool prepare_rtree = NeedPrepareRTree(type);
   while (state.KeepRunning()) {
     DisplayListBuilder builder(prepare_rtree);

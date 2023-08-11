@@ -16,9 +16,9 @@ VolatilePathTracker::VolatilePathTracker(
 void VolatilePathTracker::Track(const std::shared_ptr<TrackedPath>& path) {
   FML_DCHECK(ui_task_runner_->RunsTasksOnCurrentThread());
   FML_DCHECK(path);
-  FML_DCHECK(path->path.isVolatile());
+  FML_DCHECK(path->path.is_volatile());
   if (!enabled_) {
-    path->path.setIsVolatile(false);
+    path->path.SetIsVolatile(false);
     return;
   }
   paths_.push_back(path);
@@ -38,7 +38,7 @@ void VolatilePathTracker::OnFrame() {
                                 }
                                 path->frame_count++;
                                 if (path->frame_count >= kFramesOfVolatility) {
-                                  path->path.setIsVolatile(false);
+                                  path->path.SetIsVolatile(false);
                                   path->tracking_volatility = false;
                                   return true;
                                 }

@@ -84,8 +84,8 @@ void SemanticsUpdateBuilder::updateNode(
   node.scrollPosition = scrollPosition;
   node.scrollExtentMax = scrollExtentMax;
   node.scrollExtentMin = scrollExtentMin;
-  node.rect = SkRect::MakeLTRB(SafeNarrow(left), SafeNarrow(top),
-                               SafeNarrow(right), SafeNarrow(bottom));
+  node.rect = DlFRect::MakeLTRB(SafeNarrow(left), SafeNarrow(top),
+                                SafeNarrow(right), SafeNarrow(bottom));
   node.elevation = elevation;
   node.thickness = thickness;
   node.label = std::move(label);
@@ -100,11 +100,11 @@ void SemanticsUpdateBuilder::updateNode(
   pushStringAttributes(node.hintAttributes, hintAttributes);
   node.tooltip = std::move(tooltip);
   node.textDirection = textDirection;
-  SkScalar scalarTransform[16];
+  DlScalar scalarTransform[16];
   for (int i = 0; i < 16; ++i) {
     scalarTransform[i] = SafeNarrow(transform.data()[i]);
   }
-  node.transform = SkM44::ColMajor(scalarTransform);
+  node.transform = DlTransform::MakeColMajor(scalarTransform);
   node.childrenInTraversalOrder =
       std::vector<int32_t>(childrenInTraversalOrder.data(),
                            childrenInTraversalOrder.data() +
