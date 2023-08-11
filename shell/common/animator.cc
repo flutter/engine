@@ -66,17 +66,8 @@ void Animator::BeginFrame(
   frame_timings_recorder_ = std::move(frame_timings_recorder);
   frame_timings_recorder_->RecordBuildStart(fml::TimePoint::Now());
 
-  size_t flow_id_count = trace_flow_ids_.size();
-  std::unique_ptr<uint64_t[]> flow_ids =
-      std::make_unique<uint64_t[]>(flow_id_count);
-  for (size_t i = 0; i < flow_id_count; ++i) {
-    flow_ids.get()[i] = trace_flow_ids_.at(i);
-  }
-
   TRACE_EVENT_WITH_FRAME_NUMBER(frame_timings_recorder_, "flutter",
-                                "Animator::BeginFrame", flow_id_count,
-                                flow_ids.get());
-
+                                "Animator::BeginFrame");
   while (!trace_flow_ids_.empty()) {
     uint64_t trace_flow_id = trace_flow_ids_.front();
     TRACE_FLOW_END("flutter", "PointerEvent", trace_flow_id);
@@ -112,21 +103,6 @@ void Animator::BeginFrame(
   uint64_t frame_number = frame_timings_recorder_->GetFrameNumber();
   delegate_.OnAnimatorBeginFrame(frame_target_time, frame_number);
 
-  // Commit the pending continuation.
-  PipelineProduceResult result =
-      producer_continuation_.Complete(std::make_unique<FrameItem>(
-          std::move(layer_trees_tasks_), std::move(frame_timings_recorder_)));
-
-  if (!result.success) {
-    FML_DLOG(INFO) << "Failed to commit to the pipeline";
-  } else if (!result.is_first_item) {
-    // Do nothing. It has been successfully pushed to the pipeline but not as
-    // the first item. Eventually the 'Rasterizer' will consume it, so we don't
-    // need to notify the delegate.
-  } else {
-    delegate_.OnAnimatorDraw(layer_tree_pipeline_);
-  }
-
   if (!frame_scheduled_ && has_rendered_) {
     // Wait a tad more than 3 60hz frames before reporting a big idle period.
     // This is a heuristic that is meant to avoid giving false positives to the
@@ -152,9 +128,7 @@ void Animator::BeginFrame(
   }
 }
 
-void Animator::Render(int64_t view_id,
-                      std::unique_ptr<flutter::LayerTree> layer_tree,
-                      float device_pixel_ratio) {
+void Animator::Render(std::list<LayerTreeTask> render_tasks) {
   has_rendered_ = true;
 
   if (!frame_timings_recorder_) {
@@ -166,15 +140,31 @@ void Animator::Render(int64_t view_id,
   }
 
   TRACE_EVENT_WITH_FRAME_NUMBER(frame_timings_recorder_, "flutter",
-                                "Animator::Render", /*flow_id_count=*/0,
-                                /*flow_ids=*/nullptr);
+                                "Animator::Render");
   frame_timings_recorder_->RecordBuildEnd(fml::TimePoint::Now());
 
   delegate_.OnAnimatorUpdateLatestFrameTargetTime(
       frame_timings_recorder_->GetVsyncTargetTime());
 
-  layer_trees_tasks_.emplace_back(view_id, std::move(layer_tree),
-                                  device_pixel_ratio);
+  auto layer_tree_item = std::make_unique<FrameItem>(
+      std::move(render_tasks), std::move(frame_timings_recorder_));
+  // Commit the pending continuation.
+  PipelineProduceResult result =
+      producer_continuation_.Complete(std::move(layer_tree_item));
+
+  if (!result.success) {
+    FML_DLOG(INFO) << "No pending continuation to commit";
+    return;
+  }
+
+  if (!result.is_first_item) {
+    // It has been successfully pushed to the pipeline but not as the first
+    // item. Eventually the 'Rasterizer' will consume it, so we don't need to
+    // notify the delegate.
+    return;
+  }
+
+  delegate_.OnAnimatorDraw(layer_tree_pipeline_);
 }
 
 const std::weak_ptr<VsyncWaiter> Animator::GetVsyncWaiter() const {
@@ -266,17 +256,8 @@ void Animator::ScheduleMaybeClearTraceFlowIds() {
           return;
         }
         if (!self->frame_scheduled_ && !self->trace_flow_ids_.empty()) {
-          size_t flow_id_count = self->trace_flow_ids_.size();
-          std::unique_ptr<uint64_t[]> flow_ids =
-              std::make_unique<uint64_t[]>(flow_id_count);
-          for (size_t i = 0; i < flow_id_count; ++i) {
-            flow_ids.get()[i] = self->trace_flow_ids_.at(i);
-          }
-
-          TRACE_EVENT0_WITH_FLOW_IDS(
-              "flutter", "Animator::ScheduleMaybeClearTraceFlowIds - callback",
-              flow_id_count, flow_ids.get());
-
+          TRACE_EVENT0("flutter",
+                       "Animator::ScheduleMaybeClearTraceFlowIds - callback");
           while (!self->trace_flow_ids_.empty()) {
             auto flow_id = self->trace_flow_ids_.front();
             TRACE_FLOW_END("flutter", "PointerEvent", flow_id);

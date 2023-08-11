@@ -25,6 +25,15 @@ namespace testing {
 
 constexpr int64_t kImplicitViewId = 0;
 
+std::list<LayerTreeTask> SingleLayerTreeMap(
+    int64_t view_id,
+    std::unique_ptr<LayerTree> layer_tree,
+    float pixel_ratio) {
+  std::list<LayerTreeTask> tasks;
+  tasks.emplace_back(view_id, std::move(layer_tree), pixel_ratio);
+  return tasks;
+}
+
 class FakeAnimatorDelegate : public Animator::Delegate {
  public:
   MOCK_METHOD2(OnAnimatorBeginFrame,
@@ -160,7 +169,9 @@ TEST_F(ShellTest, AnimatorDoesNotNotifyIdleBeforeRender) {
         ASSERT_FALSE(delegate.notify_idle_called_);
         auto layer_tree = std::make_unique<LayerTree>(LayerTree::Config(),
                                                       SkISize::Make(600, 800));
-        animator->Render(kImplicitViewId, std::move(layer_tree), 1.0);
+
+        animator->Render(
+            SingleLayerTreeMap(kImplicitViewId, std::move(layer_tree), 1.0));
         task_runners.GetPlatformTaskRunner()->PostTask(flush_vsync_task);
       },
       // See kNotifyIdleTaskWaitTime in animator.cc.
@@ -243,7 +254,8 @@ TEST_F(ShellTest, AnimatorDoesNotNotifyDelegateIfPipelineIsNotEmpty) {
     PostTaskSync(task_runners.GetUITaskRunner(), [&] {
       auto layer_tree = std::make_unique<LayerTree>(LayerTree::Config(),
                                                     SkISize::Make(600, 800));
-      animator->Render(kImplicitViewId, std::move(layer_tree), 1.0);
+      animator->Render(
+          SingleLayerTreeMap(kImplicitViewId, std::move(layer_tree), 1.0));
     });
   }
 

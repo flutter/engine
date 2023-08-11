@@ -459,10 +459,8 @@ void Engine::ScheduleFrame(bool regenerate_layer_tree) {
   animator_->RequestFrame(regenerate_layer_tree);
 }
 
-void Engine::Render(int64_t view_id,
-                    std::unique_ptr<flutter::LayerTree> layer_tree,
-                    float device_pixel_ratio) {
-  animator_->Render(view_id, std::move(layer_tree), device_pixel_ratio);
+void Engine::Render(std::list<LayerTreeTask> render_tasks) {
+  animator_->Render(std::move(render_tasks));
 }
 
 void Engine::UpdateSemantics(SemanticsNodeUpdates update,

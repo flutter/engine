@@ -347,17 +347,23 @@ void RuntimeController::ScheduleFrame() {
 }
 
 // |PlatformConfigurationClient|
-void RuntimeController::Render(int64_t view_id, Scene* scene) {
-  auto window =
-      UIDartState::Current()->platform_configuration()->get_window(view_id);
-  if (window == nullptr) {
-    return;
+void RuntimeController::Render(std::unordered_map<int64_t, Scene*> scenes) {
+  std::list<LayerTreeTask> tasks;
+  for (auto& scene_pair : scenes) {
+    int64_t view_id = scene_pair.first;
+    Scene* scene = scene_pair.second;
+    auto window =
+        UIDartState::Current()->platform_configuration()->get_window(view_id);
+    if (window == nullptr) {
+      continue;
+    }
+    const auto& viewport_metrics = window->viewport_metrics();
+    tasks.emplace_back(view_id,
+                       scene->takeLayerTree(viewport_metrics.physical_width,
+                                            viewport_metrics.physical_height),
+                       viewport_metrics.device_pixel_ratio);
   }
-  const auto& viewport_metrics = window->viewport_metrics();
-  client_.Render(view_id,
-                 scene->takeLayerTree(viewport_metrics.physical_width,
-                                      viewport_metrics.physical_height),
-                 viewport_metrics.device_pixel_ratio);
+  client_.Render(std::move(tasks));
 }
 
 // |PlatformConfigurationClient|

@@ -658,7 +658,7 @@ class RuntimeController : public PlatformConfigurationClient {
   void ScheduleFrame() override;
 
   // |PlatformConfigurationClient|
-  void Render(int64_t view_id, Scene* scene) override;
+  void Render(std::unordered_map<int64_t, Scene*> scenes) override;
 
   // |PlatformConfigurationClient|
   void UpdateSemantics(SemanticsUpdate* update) override;

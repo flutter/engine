@@ -368,10 +368,20 @@ void PlatformConfiguration::CompletePlatformMessageResponse(
   response->Complete(std::make_unique<fml::DataMapping>(std::move(data)));
 }
 
-void PlatformConfigurationNativeApi::Render(int64_t view_id, Scene* scene) {
+void PlatformConfigurationNativeApi::RenderScenes(Dart_Handle native_view_ids,
+                                                  Dart_Handle native_scenes) {
+  std::vector<int64_t> view_ids =
+      tonic::DartConverter<std::vector<int64_t>>::FromDart(native_view_ids);
+  std::vector<Scene*> scenes =
+      tonic::DartConverter<std::vector<Scene*>>::FromDart(native_scenes);
+  FML_DCHECK(view_ids.size() == scenes.size());
+  std::unordered_map<int64_t, Scene*> scene_map;
+  for (size_t scene_idx = 0; scene_idx < view_ids.size(); scene_idx += 1) {
+    scene_map[view_ids[scene_idx]] = scenes[scene_idx];
+  }
   UIDartState::ThrowIfUIOperationsProhibited();
-  UIDartState::Current()->platform_configuration()->client()->Render(view_id,
-                                                                     scene);
+  UIDartState::Current()->platform_configuration()->client()->Render(
+      std::move(scene_map));
 }
 
 void PlatformConfigurationNativeApi::SetNeedsReportTimings(bool value) {

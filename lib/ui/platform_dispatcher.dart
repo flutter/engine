@@ -354,6 +354,19 @@ class PlatformDispatcher {
     _invoke(onDrawFrame, _onDrawFrameZone);
   }
 
+  void renderScenes(Map<int, Scene> scenes) {
+    final List<int> viewIds = <int>[];
+    final List<_NativeScene> nativeScenes = <_NativeScene>[];
+    scenes.forEach((int viewId, Scene scene) {
+      viewIds.add(viewId);
+      nativeScenes.add(scene as _NativeScene);
+    });
+    _renderScenes(viewIds, nativeScenes) ;
+  }
+
+  @Native<Void Function(Handle, Handle)>(symbol: 'PlatformConfigurationNativeApi::RenderScenes')
+  external static void _renderScenes(List<int> viewIds, List<_NativeScene> scenes);
+
   /// A callback that is invoked when pointer data is available.
   ///
   /// The framework invokes this callback in the same zone in which the callback
