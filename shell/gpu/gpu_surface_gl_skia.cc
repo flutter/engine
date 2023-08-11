@@ -160,8 +160,8 @@ static sk_sp<SkSurface> WrapOnscreenSurface(GrDirectContext* context,
 
 bool GPUSurfaceGLSkia::CreateOrUpdateSurfaces(const DlISize& size) {
   if (onscreen_surface_ != nullptr &&
-      size == DlISize(onscreen_surface_->width(),
-                      onscreen_surface_->height())) {
+      size ==
+          DlISize(onscreen_surface_->width(), onscreen_surface_->height())) {
     // Surface size appears unchanged. So bail.
     return true;
   }

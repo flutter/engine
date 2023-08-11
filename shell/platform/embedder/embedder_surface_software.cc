@@ -63,14 +63,14 @@ sk_sp<SkSurface> EmbedderSurfaceSoftware::AcquireBackingStore(
     return nullptr;
   }
 
-  if (sk_surface_ != nullptr &&
-      DlISize::MakeSize(*sk_surface_) == size) {
+  if (sk_surface_ != nullptr && DlISize::MakeSize(*sk_surface_) == size) {
     // The old and new surface sizes are the same. Nothing to do here.
     return sk_surface_;
   }
 
-  SkImageInfo info = SkImageInfo::MakeN32(
-      size.width(), size.height(), kPremul_SkAlphaType, SkColorSpace::MakeSRGB());
+  SkImageInfo info =
+      SkImageInfo::MakeN32(size.width(), size.height(), kPremul_SkAlphaType,
+                           SkColorSpace::MakeSRGB());
   sk_surface_ = SkSurfaces::Raster(info, nullptr);
 
   if (sk_surface_ == nullptr) {

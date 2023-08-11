@@ -96,9 +96,8 @@ void DlSkCanvasAdapter::SaveLayer(const DlFRect* bounds,
   SkOptionalPaint sk_paint(paint);
   TRACE_EVENT0("flutter", "Canvas::saveLayer");
   SkRect scratch;
-  delegate_->saveLayer(
-      SkCanvas::SaveLayerRec{ToSk(&scratch, bounds), sk_paint(),
-                             sk_backdrop.get(), 0});
+  delegate_->saveLayer(SkCanvas::SaveLayerRec{
+      ToSk(&scratch, bounds), sk_paint(), sk_backdrop.get(), 0});
 }
 
 void DlSkCanvasAdapter::Restore() {
@@ -293,8 +292,8 @@ void DlSkCanvasAdapter::DrawImageRect(const sk_sp<DlImage>& image,
                                       SrcRectConstraint constraint) {
   SkOptionalPaint sk_paint(paint);
   sk_sp<SkImage> sk_image = image->skia_image();
-  delegate_->drawImageRect(sk_image.get(), ToSk(src), ToSk(dst),
-                           ToSk(sampling), sk_paint(), ToSk(constraint));
+  delegate_->drawImageRect(sk_image.get(), ToSk(src), ToSk(dst), ToSk(sampling),
+                           sk_paint(), ToSk(constraint));
 }
 
 void DlSkCanvasAdapter::DrawImageNine(const sk_sp<DlImage>& image,

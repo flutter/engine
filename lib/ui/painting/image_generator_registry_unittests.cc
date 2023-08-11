@@ -66,9 +66,7 @@ class FakeImageGenerator : public ImageGenerator {
     return {std::nullopt, 0, SkCodecAnimation::DisposalMethod::kKeep};
   }
 
-  DlISize GetScaledDimensions(float scale) {
-    return DlISize::MakeSize(info_);
-  }
+  DlISize GetScaledDimensions(float scale) { return DlISize::MakeSize(info_); }
 
   bool GetPixels(const SkImageInfo& info,
                  void* pixels,

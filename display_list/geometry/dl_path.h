@@ -7,12 +7,13 @@
 
 #include <vector>
 
+#include "flutter/display_list/dl_base_types.h"
 #include "flutter/display_list/geometry/dl_angle.h"
 #include "flutter/display_list/geometry/dl_point.h"
 #include "flutter/display_list/geometry/dl_rect.h"
 #include "flutter/display_list/geometry/dl_round_rect.h"
 #include "flutter/display_list/geometry/dl_transform.h"
-#include "flutter/display_list/dl_base_types.h"
+
 #include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkRRect.h"
@@ -35,10 +36,8 @@ class DlPath {
   };
 
   enum class Direction {
-    // clockwise direction for adding closed contours
-    kCW,
-    // counter-clockwise direction for adding closed contours
-    kCCW,
+    kCW,   // clockwise direction for adding closed contours
+    kCCW,  // counter-clockwise direction for adding closed contours
   };
 
   // For arcs defined by an oval with radii (rx, ry) starting at the
@@ -47,8 +46,8 @@ class DlPath {
   // combine to allow the caller to choose from one of the four parts
   // of the oval which might match the given coordinate constraints.
   enum ArcSize {
-    kSmall_ArcSize, // smaller of the matching arc pairs
-    kLarge_ArcSize, // larger of the matching arc pairs
+    kSmall_ArcSize,  // smaller of the matching arc pairs
+    kLarge_ArcSize,  // larger of the matching arc pairs
   };
 
   enum class PathOp {
@@ -82,12 +81,16 @@ class DlPath {
     return MakeLine(p1.x(), p1.y(), p2.x(), p2.y());
   }
 
-  static DlPath MakeRectLTRB(DlScalar left, DlScalar top,  //
-                             DlScalar right, DlScalar bottom) {
+  static DlPath MakeRectLTRB(DlScalar left,
+                             DlScalar top,
+                             DlScalar right,
+                             DlScalar bottom) {
     return DlPath().AddRectLTRB(left, top, right, bottom);
   }
-  static DlPath MakeRectXYWH(DlScalar x, DlScalar y,  //
-                             DlScalar width, DlScalar height) {
+  static DlPath MakeRectXYWH(DlScalar x,
+                             DlScalar y,
+                             DlScalar width,
+                             DlScalar height) {
     return DlPath().AddRectXYWH(x, y, width, height);
   }
   static DlPath MakeRect(const DlFRect& rect) { return DlPath().AddRect(rect); }
@@ -96,21 +99,28 @@ class DlPath {
     return DlPath().AddRoundRect(rect, dx, dy);
   }
 
-  static DlPath MakeOvalLTRB(DlScalar left, DlScalar top,  //
-                             DlScalar right, DlScalar bottom) {
+  static DlPath MakeOvalLTRB(DlScalar left,
+                             DlScalar top,
+                             DlScalar right,
+                             DlScalar bottom) {
     return DlPath().AddOvalLTRB(left, top, right, bottom);
   }
-  static DlPath MakeOvalXYWH(DlScalar x, DlScalar y,  //
-                             DlScalar width, DlScalar height) {
+  static DlPath MakeOvalXYWH(DlScalar x,
+                             DlScalar y,
+                             DlScalar width,
+                             DlScalar height) {
     return DlPath().AddOvalXYWH(x, y, width, height);
   }
   static DlPath MakeOval(const DlFRect& rect) { return DlPath().AddOval(rect); }
 
-  static DlPath MakeCircle(DlScalar center_x, DlScalar center_y, DlScalar radius) {
+  static DlPath MakeCircle(DlScalar center_x,
+                           DlScalar center_y,
+                           DlScalar radius) {
     return DlPath().AddCircle(center_x, center_y, radius);
   }
 
-  static DlPath MakePolygon(const DlFPoint vertices[], int count,
+  static DlPath MakePolygon(const DlFPoint vertices[],
+                            int count,
                             bool is_closed) {
     DlPath path;
     if (count > 0) {
@@ -126,7 +136,7 @@ class DlPath {
   }
   static DlPath MakePolygon(const std::initializer_list<DlFPoint>& list,
                             bool isClosed) {
-      return MakePolygon(list.begin(), SkToInt(list.size()), isClosed);
+    return MakePolygon(list.begin(), SkToInt(list.size()), isClosed);
   }
 
   FillType fill_type() const {
@@ -183,33 +193,25 @@ class DlPath {
     path_.moveTo(x, y);
     return *this;
   }
-  DlPath& MoveTo(DlFPoint p) {
-    return MoveTo(p.x(), p.y());
-  }
+  DlPath& MoveTo(DlFPoint p) { return MoveTo(p.x(), p.y()); }
 
   DlPath& RelativeMoveTo(DlScalar x, DlScalar y) {
     path_.rMoveTo(x, y);
     return *this;
   }
-  DlPath& RelativeMoveTo(DlFPoint p) {
-    return RelativeMoveTo(p.x(), p.y());
-  }
+  DlPath& RelativeMoveTo(DlFPoint p) { return RelativeMoveTo(p.x(), p.y()); }
 
   DlPath& LineTo(DlScalar x, DlScalar y) {
     path_.lineTo(x, y);
     return *this;
   }
-  DlPath& LineTo(DlFPoint p) {
-    return LineTo(p.x(), p.y());
-  }
+  DlPath& LineTo(DlFPoint p) { return LineTo(p.x(), p.y()); }
 
   DlPath& RelativeLineTo(DlScalar x, DlScalar y) {
     path_.rLineTo(x, y);
     return *this;
   }
-  DlPath& RelativeLineTo(DlFPoint p) {
-    return RelativeLineTo(p.x(), p.y());
-  }
+  DlPath& RelativeLineTo(DlFPoint p) { return RelativeLineTo(p.x(), p.y()); }
 
   DlPath& QuadTo(DlScalar x1, DlScalar y1, DlScalar x2, DlScalar y2) {
     path_.quadTo(x1, y1, x2, y2);
@@ -227,7 +229,10 @@ class DlPath {
     return RelativeQuadTo(p1.x(), p1.y(), p2.x(), p2.y());
   }
 
-  DlPath& ConicTo(DlScalar x1, DlScalar y1, DlScalar x2, DlScalar y2,
+  DlPath& ConicTo(DlScalar x1,
+                  DlScalar y1,
+                  DlScalar x2,
+                  DlScalar y2,
                   DlScalar weight) {
     path_.conicTo(x1, y1, x2, y2, weight);
     return *this;
@@ -236,8 +241,11 @@ class DlPath {
     return ConicTo(p1.x(), p1.y(), p2.x(), p2.y(), weight);
   }
 
-  DlPath& RelativeConicTo(DlScalar x1, DlScalar y1, DlScalar x2, DlScalar y2,
-                  DlScalar weight) {
+  DlPath& RelativeConicTo(DlScalar x1,
+                          DlScalar y1,
+                          DlScalar x2,
+                          DlScalar y2,
+                          DlScalar weight) {
     path_.rConicTo(x1, y1, x2, y2, weight);
     return *this;
   }
@@ -245,8 +253,12 @@ class DlPath {
     return RelativeConicTo(p1.x(), p1.y(), p2.x(), p2.y(), weight);
   }
 
-  DlPath& CubicTo(DlScalar x1, DlScalar y1, DlScalar x2, DlScalar y2,
-                  DlScalar x3, DlScalar y3) {
+  DlPath& CubicTo(DlScalar x1,
+                  DlScalar y1,
+                  DlScalar x2,
+                  DlScalar y2,
+                  DlScalar x3,
+                  DlScalar y3) {
     path_.cubicTo(x1, y1, x2, y2, x3, y3);
     return *this;
   }
@@ -254,8 +266,12 @@ class DlPath {
     return CubicTo(p1.x(), p1.y(), p2.x(), p2.y(), p3.x(), p3.y());
   }
 
-  DlPath& RelativeCubicTo(DlScalar x1, DlScalar y1, DlScalar x2, DlScalar y2,
-                  DlScalar x3, DlScalar y3) {
+  DlPath& RelativeCubicTo(DlScalar x1,
+                          DlScalar y1,
+                          DlScalar x2,
+                          DlScalar y2,
+                          DlScalar x3,
+                          DlScalar y3) {
     path_.rCubicTo(x1, y1, x2, y2, x3, y3);
     return *this;
   }
@@ -263,30 +279,36 @@ class DlPath {
     return RelativeCubicTo(p1.x(), p1.y(), p2.x(), p2.y(), p3.x(), p3.y());
   }
 
-  void ArcTo(DlFRect oval, const DlAngle& startAngle,
-             const DlAngle& sweepAngle, bool forceMoveTo) {
+  void ArcTo(DlFRect oval,
+             const DlAngle& startAngle,
+             const DlAngle& sweepAngle,
+             bool forceMoveTo) {
     path_.arcTo(*reinterpret_cast<const SkRect*>(&oval),  //
                 startAngle.degrees(), sweepAngle.degrees(), forceMoveTo);
   }
 
-  void ArcToPoint(DlScalar radius_x, DlScalar radius_y,
-                  const DlAngle& x_axis_rotation,   //
-                  ArcSize arc_size, Direction dir,  //
-                  DlScalar arc_end_x, DlScalar arc_end_y) {
+  void ArcToPoint(DlScalar radius_x,
+                  DlScalar radius_y,
+                  const DlAngle& x_axis_rotation,
+                  ArcSize arc_size,
+                  Direction dir,
+                  DlScalar arc_end_x,
+                  DlScalar arc_end_y) {
     path_.arcTo(radius_x, radius_y, x_axis_rotation.degrees(),
                 static_cast<SkPath::ArcSize>(arc_size),
-                static_cast<SkPathDirection>(dir),
-                arc_end_x, arc_end_y);
+                static_cast<SkPathDirection>(dir), arc_end_x, arc_end_y);
   }
 
-  void RelativeArcToPoint(DlScalar radius_x, DlScalar radius_y,
+  void RelativeArcToPoint(DlScalar radius_x,
+                          DlScalar radius_y,
                           const DlAngle& x_axis_rotation,
-                          ArcSize arc_size, Direction dir,
-                          DlScalar arc_end_x, DlScalar arc_end_y) {
+                          ArcSize arc_size,
+                          Direction dir,
+                          DlScalar arc_end_x,
+                          DlScalar arc_end_y) {
     path_.rArcTo(radius_x, radius_y, x_axis_rotation.degrees(),
                  static_cast<SkPath::ArcSize>(arc_size),
-                 static_cast<SkPathDirection>(dir),
-                 arc_end_x, arc_end_y);
+                 static_cast<SkPathDirection>(dir), arc_end_x, arc_end_y);
   }
 
   DlPath& Close() {
@@ -307,17 +329,16 @@ class DlPath {
     path_.transform(matrix.ToSkMatrix(), &dst->path_);
   }
 
-  bool Contains(DlScalar x, DlScalar y) const {
-    return path_.contains(x, y);
-  }
+  bool Contains(DlScalar x, DlScalar y) const { return path_.contains(x, y); }
 
-  DlPath& AddRectLTRB(DlScalar left, DlScalar top,  //
-                      DlScalar right, DlScalar bottom) {
+  DlPath& AddRectLTRB(DlScalar left,
+                      DlScalar top,
+                      DlScalar right,
+                      DlScalar bottom) {
     path_.addRect(left, top, right, bottom);
     return *this;
   }
-  DlPath& AddRectXYWH(DlScalar x, DlScalar y,  //
-                      DlScalar width, DlScalar height) {
+  DlPath& AddRectXYWH(DlScalar x, DlScalar y, DlScalar width, DlScalar height) {
     path_.addRect(SkRect::MakeXYWH(x, y, width, height));
     return *this;
   }
@@ -326,13 +347,14 @@ class DlPath {
     return *this;
   }
 
-  DlPath& AddOvalLTRB(DlScalar left, DlScalar top,  //
-                      DlScalar right, DlScalar bottom) {
+  DlPath& AddOvalLTRB(DlScalar left,
+                      DlScalar top,
+                      DlScalar right,
+                      DlScalar bottom) {
     path_.addOval(SkRect::MakeLTRB(left, top, right, bottom));
     return *this;
   }
-  DlPath& AddOvalXYWH(DlScalar x, DlScalar y,  //
-                      DlScalar width, DlScalar height) {
+  DlPath& AddOvalXYWH(DlScalar x, DlScalar y, DlScalar width, DlScalar height) {
     path_.addOval(SkRect::MakeXYWH(x, y, width, height));
     return *this;
   }
@@ -346,7 +368,9 @@ class DlPath {
     return *this;
   }
 
-  DlPath& AddRoundRect(const DlFRect& rect, DlScalar dx, DlScalar dy,
+  DlPath& AddRoundRect(const DlFRect& rect,
+                       DlScalar dx,
+                       DlScalar dy,
                        Direction dir = Direction::kCW) {
     path_.addRoundRect(*reinterpret_cast<const SkRect*>(&rect), dx, dy,
                        static_cast<SkPathDirection>(dir));
@@ -359,7 +383,8 @@ class DlPath {
     return *this;
   }
 
-  DlPath& AddArc(const DlFRect& rect, const DlAngle& startAngle,
+  DlPath& AddArc(const DlFRect& rect,
+                 const DlAngle& startAngle,
                  const DlAngle& sweepAngle) {
     path_.addArc(*reinterpret_cast<const SkRect*>(&rect),  //
                  startAngle.degrees(), sweepAngle.degrees());
@@ -381,6 +406,9 @@ class DlPath {
 
  private:
   SkPath path_;
+
+  SkPath& GetMutableSkiaPath() { return path_; }
+  friend class CanvasPath;
 };
 
 }  // namespace flutter

@@ -172,8 +172,7 @@ void DlDeferredImageGPUImpeller::ImageWrapper::SnapshotDisplayList(
 
         if (layer_tree) {
           wrapper->display_list_ = layer_tree->Flatten(
-              DlFRect::MakeSize(wrapper->size_),
-              wrapper->texture_registry_);
+              DlFRect::MakeSize(wrapper->size_), wrapper->texture_registry_);
         }
         auto snapshot = snapshot_delegate->MakeRasterSnapshot(
             wrapper->display_list_, wrapper->size_);

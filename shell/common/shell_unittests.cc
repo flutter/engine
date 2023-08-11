@@ -326,8 +326,7 @@ static void PostSync(const fml::RefPtr<fml::TaskRunner>& task_runner,
 
 static sk_sp<DisplayList> MakeSizedDisplayList(int width, int height) {
   DisplayListBuilder builder(DlFRect::MakeWH(width, height));
-  builder.DrawRect(DlFRect::MakeWH(width, height),
-                   DlPaint(DlColor::kRed()));
+  builder.DrawRect(DlFRect::MakeWH(width, height), DlPaint(DlColor::kRed()));
   return builder.Build();
 }
 

@@ -169,8 +169,8 @@ DecompressResult ImageDecoderImpeller::DecompressTexture(
     auto dl_decode_size = descriptor->get_scaled_dimensions(std::max(
         static_cast<float>(target_size.width()) / source_size.width(),
         static_cast<float>(target_size.height()) / source_size.height()));
-    decode_size = SkISize::Make(dl_decode_size.width(),
-                                dl_decode_size.height());
+    decode_size =
+        SkISize::Make(dl_decode_size.width(), dl_decode_size.height());
   }
 
   //----------------------------------------------------------------------------

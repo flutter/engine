@@ -438,7 +438,8 @@ TEST_P(DisplayListTest, CanDrawWithMaskBlur) {
     auto filter =
         flutter::DlBlurMaskFilter(flutter::DlBlurStyle::kOuter, 10.0f);
     paint.setMaskFilter(&filter);
-    builder.DrawArc(DlFRect::MakeXYWH(410, 110, 100, 100), 45, 270, true, paint);
+    builder.DrawArc(DlFRect::MakeXYWH(410, 110, 100, 100), 45, 270, true,
+                    paint);
   }
 
   // Mask blurred text.
@@ -831,9 +832,9 @@ TEST_P(DisplayListTest, CanDrawShadow) {
     const SkScalar rotation = half_spike_rotation * i * 2;
     star[i * 2] = DlFPoint(50 + std::sin(rotation) * outer_radius,
                            50 - std::cos(rotation) * outer_radius);
-    star[i * 2 + 1] = DlFPoint(
-        50 + std::sin(rotation + half_spike_rotation) * inner_radius,
-        50 - std::cos(rotation + half_spike_rotation) * inner_radius);
+    star[i * 2 + 1] =
+        DlFPoint(50 + std::sin(rotation + half_spike_rotation) * inner_radius,
+                 50 - std::cos(rotation + half_spike_rotation) * inner_radius);
   }
 
   std::array<DlPath, 4> paths = {
@@ -1007,14 +1008,14 @@ TEST_P(DisplayListTest, CanDrawWithMatrixFilter) {
       builder.Scale(content_scale.x, content_scale.y);
 
       // Set the current transform
-      auto ctm_matrix =
-          DlTransform::MakeAffine2D(ctm_scale[0], ctm_skew[0], ctm_translation[0],
-                                    ctm_skew[1], ctm_scale[1], ctm_translation[1]);
+      auto ctm_matrix = DlTransform::MakeAffine2D(
+          ctm_scale[0], ctm_skew[0], ctm_translation[0],  //
+          ctm_skew[1], ctm_scale[1], ctm_translation[1]);
       builder.Transform(ctm_matrix);
 
       // Set the matrix filter
       auto filter_matrix =
-          DlTransform::MakeAffine2D(scale[0], skew[0], translation[0],
+          DlTransform::MakeAffine2D(scale[0], skew[0], translation[0],  //
                                     skew[1], scale[1], translation[1]);
 
       if (enable) {
@@ -1264,9 +1265,9 @@ TEST_P(DisplayListTest, MaskBlursApplyCorrectlyToColorSources) {
   std::array<float, 2> stops = {0, 1};
   std::array<std::shared_ptr<flutter::DlColorSource>, 2> color_sources = {
       std::make_shared<flutter::DlColorColorSource>(flutter::DlColor::kWhite()),
-      flutter::DlColorSource::MakeLinear(
-          DlFPoint(0, 0), DlFPoint(100, 50), 2, colors.data(),
-          stops.data(), flutter::DlTileMode::kClamp)};
+      flutter::DlColorSource::MakeLinear(DlFPoint(0, 0), DlFPoint(100, 50), 2,
+                                         colors.data(), stops.data(),
+                                         flutter::DlTileMode::kClamp)};
 
   int offset = 100;
   for (auto color_source : color_sources) {
@@ -1293,12 +1294,16 @@ TEST_P(DisplayListTest, MaskBlursApplyCorrectlyToColorSources) {
 TEST_P(DisplayListTest, DrawVerticesSolidColorTrianglesWithoutIndices) {
   // Use negative coordinates and then scale the transform by -1, -1 to make
   // sure coverage is taking the transform into account.
-  std::vector<DlFPoint> positions = {DlFPoint(-100, -300),
-                                     DlFPoint(-200, -100),
-                                     DlFPoint(-300, -300)};
-  std::vector<flutter::DlColor> colors = {flutter::DlColor::kWhite(),
-                                          flutter::DlColor::kGreen(),
-                                          flutter::DlColor::kWhite()};
+  std::vector<DlFPoint> positions = {
+      DlFPoint(-100, -300),
+      DlFPoint(-200, -100),
+      DlFPoint(-300, -300),
+  };
+  std::vector<flutter::DlColor> colors = {
+      flutter::DlColor::kWhite(),
+      flutter::DlColor::kGreen(),
+      flutter::DlColor::kWhite(),
+  };
 
   auto vertices = flutter::DlVertices::Make(
       flutter::DlVertexMode::kTriangles, 3, positions.data(),
@@ -1315,9 +1320,11 @@ TEST_P(DisplayListTest, DrawVerticesSolidColorTrianglesWithoutIndices) {
 }
 
 TEST_P(DisplayListTest, DrawVerticesLinearGradientWithoutIndices) {
-  std::vector<DlFPoint> positions = {DlFPoint(100, 300),
-                                     DlFPoint(200, 100),
-                                     DlFPoint(300, 300)};
+  std::vector<DlFPoint> positions = {
+      DlFPoint(100, 300),
+      DlFPoint(200, 100),
+      DlFPoint(300, 300),
+  };
 
   auto vertices = flutter::DlVertices::Make(
       flutter::DlVertexMode::kTriangles, 3, positions.data(),
@@ -1341,12 +1348,16 @@ TEST_P(DisplayListTest, DrawVerticesLinearGradientWithoutIndices) {
 }
 
 TEST_P(DisplayListTest, DrawVerticesLinearGradientWithTextureCoordinates) {
-  std::vector<DlFPoint> positions = {DlFPoint(100, 300),
-                                     DlFPoint(200, 100),
-                                     DlFPoint(300, 300)};
-  std::vector<DlFPoint> texture_coordinates = {DlFPoint(300, 100),
-                                               DlFPoint(100, 200),
-                                               DlFPoint(300, 300)};
+  std::vector<DlFPoint> positions = {
+      DlFPoint(100, 300),
+      DlFPoint(200, 100),
+      DlFPoint(300, 300),
+  };
+  std::vector<DlFPoint> texture_coordinates = {
+      DlFPoint(300, 100),
+      DlFPoint(100, 200),
+      DlFPoint(300, 300),
+  };
 
   auto vertices = flutter::DlVertices::Make(
       flutter::DlVertexMode::kTriangles, 3, positions.data(),
@@ -1372,9 +1383,11 @@ TEST_P(DisplayListTest, DrawVerticesLinearGradientWithTextureCoordinates) {
 TEST_P(DisplayListTest, DrawVerticesImageSourceWithTextureCoordinates) {
   auto texture = CreateTextureForFixture("embarcadero.jpg");
   auto dl_image = DlImageImpeller::Make(texture);
-  std::vector<DlFPoint> positions = {DlFPoint(100, 300),
-                                     DlFPoint(200, 100),
-                                     DlFPoint(300, 300)};
+  std::vector<DlFPoint> positions = {
+      DlFPoint(100, 300),
+      DlFPoint(200, 100),
+      DlFPoint(300, 300),
+  };
   std::vector<DlFPoint> texture_coordinates = {
       DlFPoint(0, 0), DlFPoint(100, 200), DlFPoint(200, 100)};
 
@@ -1398,12 +1411,16 @@ TEST_P(DisplayListTest,
        DrawVerticesImageSourceWithTextureCoordinatesAndColorBlending) {
   auto texture = CreateTextureForFixture("embarcadero.jpg");
   auto dl_image = DlImageImpeller::Make(texture);
-  std::vector<DlFPoint> positions = {DlFPoint(100, 300),
-                                     DlFPoint(200, 100),
-                                     DlFPoint(300, 300)};
-  std::vector<flutter::DlColor> colors = {flutter::DlColor::kWhite(),
-                                          flutter::DlColor::kGreen(),
-                                          flutter::DlColor::kWhite()};
+  std::vector<DlFPoint> positions = {
+      DlFPoint(100, 300),
+      DlFPoint(200, 100),
+      DlFPoint(300, 300),
+  };
+  std::vector<flutter::DlColor> colors = {
+      flutter::DlColor::kWhite(),
+      flutter::DlColor::kGreen(),
+      flutter::DlColor::kWhite(),
+  };
   std::vector<DlFPoint> texture_coordinates = {
       DlFPoint(0, 0), DlFPoint(100, 200), DlFPoint(200, 100)};
 
@@ -1425,8 +1442,11 @@ TEST_P(DisplayListTest,
 
 TEST_P(DisplayListTest, DrawVerticesSolidColorTrianglesWithIndices) {
   std::vector<DlFPoint> positions = {
-      DlFPoint(100, 300), DlFPoint(200, 100), DlFPoint(300, 300),
-      DlFPoint(200, 500)};
+      DlFPoint(100, 300),
+      DlFPoint(200, 100),
+      DlFPoint(300, 300),
+      DlFPoint(200, 500),
+  };
   std::vector<uint16_t> indices = {0, 1, 2, 0, 2, 3};
 
   auto vertices = flutter::DlVertices::Make(
@@ -1469,7 +1489,8 @@ TEST_P(DisplayListTest, DrawShapes) {
     builder.DrawRect(DlFRect::MakeXYWH(0, 0, 100, 100), paint);
     builder.DrawRect(DlFRect::MakeXYWH(0, 150, 100, 100), stroke_paint);
     builder.DrawRRect(
-        DlFRRect::MakeRectXY(DlFRect::MakeXYWH(150, 0, 100, 100), 30, 30), paint);
+        DlFRRect::MakeRectXY(DlFRect::MakeXYWH(150, 0, 100, 100), 30, 30),
+        paint);
     builder.DrawRRect(
         DlFRRect::MakeRectXY(DlFRect::MakeXYWH(150, 150, 100, 100), 30, 30),
         stroke_paint);
@@ -1547,9 +1568,11 @@ TEST_P(DisplayListTest, DrawVerticesBlendModes) {
     }
     ImGui::End();
 
-    std::vector<DlFPoint> positions = {DlFPoint(100, 300),
-                                       DlFPoint(200, 100),
-                                       DlFPoint(300, 300)};
+    std::vector<DlFPoint> positions = {
+        DlFPoint(100, 300),
+        DlFPoint(200, 100),
+        DlFPoint(300, 300),
+    };
     std::vector<flutter::DlColor> colors = {
         toColor(color0).modulateOpacity(dst_alpha),
         toColor(color1).modulateOpacity(dst_alpha),

@@ -6,7 +6,8 @@
 
 namespace flutter {
 
-void DlRSTransform::ToQuad(DlScalar width, DlScalar height,
+void DlRSTransform::ToQuad(DlScalar width,
+                           DlScalar height,
                            DlFVector quad[4]) const {
   // delta_transform(x, y) = {x * cos - y * sin, x * sin + y * cos}
   // h vector = delta_transform(width, 0)

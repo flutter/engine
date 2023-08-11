@@ -98,8 +98,8 @@ void DiffContext::AlignRect(DlIRect& rect,
   if (bottom % vertical_alignment != 0) {
     bottom += vertical_alignment - bottom % vertical_alignment;
   }
-  right = std::min(right, (int) frame_size_.width());
-  bottom = std::min(bottom, (int) frame_size_.height());
+  right = std::min(right, (int)frame_size_.width());
+  bottom = std::min(bottom, (int)frame_size_.height());
   rect = DlIRect::MakeLTRB(left, top, right, bottom);
 }
 

@@ -43,18 +43,15 @@ enum class SemanticsAction : int32_t {
   kSetText = 1 << 21,
 };
 
-[[maybe_unused]]
-const int kVerticalScrollSemanticsActions =
+[[maybe_unused]] const int kVerticalScrollSemanticsActions =
     static_cast<int32_t>(SemanticsAction::kScrollUp) |
     static_cast<int32_t>(SemanticsAction::kScrollDown);
 
-[[maybe_unused]]
-const int kHorizontalScrollSemanticsActions =
+[[maybe_unused]] const int kHorizontalScrollSemanticsActions =
     static_cast<int32_t>(SemanticsAction::kScrollLeft) |
     static_cast<int32_t>(SemanticsAction::kScrollRight);
 
-[[maybe_unused]]
-const int kScrollableSemanticsActions =
+[[maybe_unused]] const int kScrollableSemanticsActions =
     kVerticalScrollSemanticsActions | kHorizontalScrollSemanticsActions;
 
 /// C/C++ representation of `SemanticsFlags` defined in
@@ -92,8 +89,7 @@ enum class SemanticsFlags : int32_t {
   kIsCheckStateMixed = 1 << 25,
 };
 
-[[maybe_unused]]
-const int kScrollableSemanticsFlags =
+[[maybe_unused]] const int kScrollableSemanticsFlags =
     static_cast<int32_t>(SemanticsFlags::kHasImplicitScrolling);
 
 struct SemanticsNode {
@@ -137,8 +133,8 @@ struct SemanticsNode {
   std::string tooltip;
   int32_t textDirection = 0;  // 0=unknown, 1=rtl, 2=ltr
 
-  DlFRect rect;  // Local space, relative to parent.
-  DlTransform transform;          // Identity
+  DlFRect rect;           // Local space, relative to parent.
+  DlTransform transform;  // Identity
   std::vector<int32_t> childrenInTraversalOrder;
   std::vector<int32_t> childrenInHitTestOrder;
   std::vector<int32_t> customAccessibilityActions;

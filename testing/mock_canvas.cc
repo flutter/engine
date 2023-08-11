@@ -86,14 +86,12 @@ void MockCanvas::TransformFullPerspective(
 // clang-format on
 
 void MockCanvas::Transform(const DlTransform& matrix) {
-  draw_calls_.emplace_back(
-      DrawCall{current_layer_, ConcatMatrixData{matrix}});
+  draw_calls_.emplace_back(DrawCall{current_layer_, ConcatMatrixData{matrix}});
   tracker_.transform(matrix);
 }
 
 void MockCanvas::SetTransform(const DlTransform& matrix) {
-  draw_calls_.emplace_back(
-      DrawCall{current_layer_, SetMatrixData{matrix}});
+  draw_calls_.emplace_back(DrawCall{current_layer_, SetMatrixData{matrix}});
   tracker_.setTransform(matrix);
 }
 

@@ -33,18 +33,17 @@ void EmbedderExternalTextureGL::Paint(PaintContext& context,
                                       bool freeze,
                                       const DlImageSampling sampling) {
   if (last_image_ == nullptr) {
-    last_image_ =
-        ResolveTexture(Id(),                      //
-                       context.gr_context,        //
-                       DlISize::MakeSize(bounds)  //
-        );
+    last_image_ = ResolveTexture(Id(),                      //
+                                 context.gr_context,        //
+                                 DlISize::MakeSize(bounds)  //
+    );
   }
 
   DlCanvas* canvas = context.canvas;
   const DlPaint* paint = context.paint;
 
   if (last_image_) {
-    DlFRect image_bounds = DlFRect(last_image_->bounds());
+    DlFRect image_bounds = DlFRect::MakeBounds(last_image_->bounds());
     if (bounds != image_bounds) {
       canvas->DrawImageRect(last_image_, image_bounds, bounds, sampling, paint);
     } else {

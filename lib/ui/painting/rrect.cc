@@ -24,8 +24,8 @@ RRect DartConverter<flutter::RRect>::FromDart(Dart_Handle value) {
     return result;
   }
 
-  flutter::DlFRect rect = flutter::DlFRect::MakeLTRB(buffer[0], buffer[1],
-                                                     buffer[2], buffer[3]);
+  flutter::DlFRect rect =
+      flutter::DlFRect::MakeLTRB(buffer[0], buffer[1], buffer[2], buffer[3]);
   flutter::DlFVector radii[4] = {{buffer[4], buffer[5]},
                                  {buffer[6], buffer[7]},
                                  {buffer[8], buffer[9]},

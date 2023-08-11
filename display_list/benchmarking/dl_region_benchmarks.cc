@@ -20,8 +20,8 @@ std::vector<IRect> GenerateRects(RNG& rng,
                                  const IRect& bounds,
                                  int numRects,
                                  int maxSize) {
-  auto max_size_x = std::min(maxSize, (int) bounds.width());
-  auto max_size_y = std::min(maxSize, (int) bounds.height());
+  auto max_size_x = std::min(maxSize, (int)bounds.width());
+  auto max_size_y = std::min(maxSize, (int)bounds.height());
 
   std::uniform_int_distribution pos_x(bounds.left(),
                                       bounds.right() - max_size_x);
@@ -46,8 +46,8 @@ IRect RandomSubRect(RNG& rng, const IRect& rect, double size_factor) {
   int32_t width = rect.width() * size_factor;
   int32_t height = rect.height() * size_factor;
 
-  std::uniform_int_distribution pos_x(0, (int) (rect.width() - width));
-  std::uniform_int_distribution pos_y(0, (int) (rect.height() - height));
+  std::uniform_int_distribution pos_x(0, (int)(rect.width() - width));
+  std::uniform_int_distribution pos_y(0, (int)(rect.height() - height));
 
   return IRect::MakeXYWH(rect.left() + pos_x(rng), rect.top() + pos_y(rng),
                          width, height);
@@ -299,21 +299,20 @@ static void BM_SkRegion_Operation(benchmark::State& state,
 static void BM_DlRegion_IntersectsRegion(benchmark::State& state,
                                          int maxSize,
                                          double sizeFactor) {
-  RunIntersectsRegionBenchmark<DlRegionAdapter, DlIRect>(
-      state, maxSize, sizeFactor);
+  RunIntersectsRegionBenchmark<DlRegionAdapter, DlIRect>(state, maxSize,
+                                                         sizeFactor);
 }
 
 static void BM_SkRegion_IntersectsRegion(benchmark::State& state,
                                          int maxSize,
                                          double sizeFactor) {
-  RunIntersectsRegionBenchmark<SkRegionAdapter, SkIRect>(
-      state, maxSize, sizeFactor);
+  RunIntersectsRegionBenchmark<SkRegionAdapter, SkIRect>(state, maxSize,
+                                                         sizeFactor);
 }
 
 static void BM_DlRegion_IntersectsSingleRect(benchmark::State& state,
                                              int maxSize) {
-  RunIntersectsSingleRectBenchmark<DlRegionAdapter,DlIRect>(
-      state, maxSize);
+  RunIntersectsSingleRectBenchmark<DlRegionAdapter, DlIRect>(state, maxSize);
 }
 
 static void BM_SkRegion_IntersectsSingleRect(benchmark::State& state,

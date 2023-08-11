@@ -21,14 +21,17 @@ namespace flutter {
 
 class DlTransform {
  public:
-  DlTransform() : DlTransform(  //
-      1.0f, 0.0f, 0.0f, 0.0f,   //
-      0.0f, 1.0f, 0.0f, 0.0f,   //
-      0.0f, 0.0f, 1.0f, 0.0f,   //
-      0.0f, 0.0f, 0.0f, 1.0f,   //
+  // clang-format off
+  DlTransform() : DlTransform(
+      1.0f, 0.0f, 0.0f, 0.0f,
+      0.0f, 1.0f, 0.0f, 0.0f,
+      0.0f, 0.0f, 1.0f, 0.0f,
+      0.0f, 0.0f, 0.0f, 1.0f,
       Complexity::kIdentity) {}
+  // clang-format on
 
   static DlTransform MakeTranslate(DlScalar tx, DlScalar ty) {
+    // clang-format off
     return {
         1.0f, 0.0f, 0.0f, 0.0f,
         0.0f, 1.0f, 0.0f, 0.0f,
@@ -36,12 +39,14 @@ class DlTransform {
           tx,   ty, 0.0f, 1.0f,
         Complexity::kTranslate2D
     };
+    // clang-format on
   }
   static DlTransform MakeTranslate(DlFPoint p) {
     return MakeTranslate(p.x(), p.y());
   }
 
   static DlTransform MakeScale(DlScalar sx, DlScalar sy) {
+    // clang-format off
     return {
           sx, 0.0f, 0.0f, 0.0f,
         0.0f,   sy, 0.0f, 0.0f,
@@ -49,12 +54,16 @@ class DlTransform {
         0.0f, 0.0f, 0.0f, 1.0f,
         Complexity::kScaleTranslate2D
     };
+    // clang-format on
   }
 
-  static DlTransform MakeAnchoredScale(DlScalar sx, DlScalar sy,
-                                       DlScalar tx, DlScalar ty) {
+  static DlTransform MakeAnchoredScale(DlScalar sx,
+                                       DlScalar sy,
+                                       DlScalar tx,
+                                       DlScalar ty) {
     tx = tx - tx * sx;
     ty = ty - ty * sy;
+    // clang-format off
     return {
           sx, 0.0f, 0.0f, 0.0f,
         0.0f,   sy, 0.0f, 0.0f,
@@ -62,9 +71,11 @@ class DlTransform {
           tx,   ty, 0.0f, 1.0f,
         Complexity::kScaleTranslate2D
     };
+    // clang-format on
   }
 
   static DlTransform MakeSkew(DlScalar sx, DlScalar sy) {
+    // clang-format off
     return {
         1.0f,   sy, 0.0f, 0.0f,
           sx, 1.0f, 0.0f, 0.0f,
@@ -72,9 +83,11 @@ class DlTransform {
         0.0f, 0.0f, 0.0f, 1.0f,
         Complexity::kAffine2D
     };
+    // clang-format on
   }
 
   static DlTransform MakeCosSin(DlScalar cos, DlScalar sin) {
+    // clang-format off
     return {
          cos,  sin, 0.0f, 0.0f,
         -sin,  cos, 0.0f, 0.0f,
@@ -82,6 +95,7 @@ class DlTransform {
         0.0f, 0.0f, 0.0f, 1.0f,
         Complexity::kAffine2D
     };
+    // clang-format on
   }
   static DlTransform MakeCosSin(const DlFVector& cos_sin) {
     return MakeCosSin(cos_sin.x(), cos_sin.y());
@@ -105,6 +119,7 @@ class DlTransform {
     DlScalar s = sin;
     DlScalar t = 1 - c;
 
+    // clang-format off
     return {
         t*x*x + c,   t*x*y - s*z, t*x*z + s*y, 0,
         t*x*y + s*z, t*y*y + c,   t*y*z - s*x, 0,
@@ -112,6 +127,7 @@ class DlTransform {
         0,           0,           0,           1,
         Complexity::kUnknown
     };
+    // clang-format on
   }
   static DlTransform MakeCosSin(DlFVector3 axis, DlFVector cos_sin) {
     return MakeCosSin(axis, cos_sin.x(), cos_sin.y());
@@ -120,6 +136,7 @@ class DlTransform {
     return MakeCosSin(axis, angle.CosSin());
   }
 
+  // clang-format off
   static DlTransform MakeAffine2D(DlScalar mxx, DlScalar mxy, DlScalar mxt,
                                   DlScalar myx, DlScalar myy, DlScalar myt) {
     return {
@@ -130,10 +147,12 @@ class DlTransform {
         Complexity::kAffine2D
     };
   }
+  // clang-format on
 
   // Constructs a DlTransform from 16 matrix coefficients in row major format.
   // In other words, to compute the transformed X coordinate one would
   // use the formula |x * mxx + y * mxy + z * mxz + mxt|.
+  // clang-format off
   static DlTransform MakeRowMajor(
       DlScalar mxx, DlScalar mxy, DlScalar mxz, DlScalar mxt,
       DlScalar myx, DlScalar myy, DlScalar myz, DlScalar myt,
@@ -147,11 +166,13 @@ class DlTransform {
         Complexity::kUnknown
     };
   }
+  // clang-format on
 
   // Constructs a DlTransform from 16 matrix coefficients in column major
   // format.
   // In other words, to compute the transformed X coordinate one would
   // use the formula |x * mxx + y * mxy + z * mxz + mxt|.
+  // clang-format off
   static DlTransform MakeColMajor(
       DlScalar mxx, DlScalar myx, DlScalar mzx, DlScalar mwx,
       DlScalar mxy, DlScalar myy, DlScalar mzy, DlScalar mwy,
@@ -165,19 +186,22 @@ class DlTransform {
         Complexity::kUnknown
     };
   }
+  // clang-format on
 
   // Constructs a DlTransform from an array containing 16 matrix coefficients
   // in column major format.
   // In other words, to compute the transformed X coordinate one would
   // use the formula |x * m[0] + y * m[4] + z * m[8] + m[12]|.
   static DlTransform MakeColMajor(DlScalar m[]) {
+    // clang-format off
     return {
-      m[ 0], m[ 1], m[ 2], m[ 3],
-      m[ 4], m[ 5], m[ 6], m[ 7],
-      m[ 8], m[ 9], m[10], m[11],
-      m[12], m[13], m[14], m[15],
-      Complexity::kUnknown
+        m[ 0], m[ 1], m[ 2], m[ 3],
+        m[ 4], m[ 5], m[ 6], m[ 7],
+        m[ 8], m[ 9], m[10], m[11],
+        m[12], m[13], m[14], m[15],
+        Complexity::kUnknown
     };
+    // clang-format on
   }
 
   // Constructs a DlTransform from an array containing 16 matrix coefficients
@@ -185,13 +209,15 @@ class DlTransform {
   // In other words, to compute the transformed X coordinate one would
   // use the formula |x * m[0] + y * m[1] + z * m[2] + m[3]|.
   static DlTransform MakeRowMajor(DlScalar m[]) {
+    // clang-format off
     return {
-      m[ 0], m[ 4], m[ 8], m[12],
-      m[ 1], m[ 5], m[ 9], m[13],
-      m[ 2], m[ 6], m[10], m[14],
-      m[ 3], m[ 7], m[11], m[15],
-      Complexity::kUnknown
+        m[ 0], m[ 4], m[ 8], m[12],
+        m[ 1], m[ 5], m[ 9], m[13],
+        m[ 2], m[ 6], m[10], m[14],
+        m[ 3], m[ 7], m[11], m[15],
+        Complexity::kUnknown
     };
+    // clang-format on
   }
 
   static DlTransform MakeConcat(const DlTransform& outer,
@@ -213,7 +239,7 @@ class DlTransform {
   void GetRowMajor(DlScalar matrix[16]) const {
     for (int r = 0; r < 4; r++) {
       for (int c = 0; c < 4; c++) {
-        matrix[r*4 + c] = m_[c*4 + r];
+        matrix[r * 4 + c] = m_[c * 4 + r];
       }
     }
   }
@@ -248,15 +274,13 @@ class DlTransform {
 
   void SetCosSin(DlFVector cos_sin) {
     memcpy(m_, identity_values, sizeof(m_));
-    m_[kXX] =  cos_sin.x();
+    m_[kXX] = +cos_sin.x();
     m_[kXY] = -cos_sin.y();
-    m_[kYX] =  cos_sin.y();
-    m_[kYY] =  cos_sin.x();
+    m_[kYX] = +cos_sin.y();
+    m_[kYY] = +cos_sin.x();
     complexity_ = Complexity::kAffine2D;
   }
-  void SetRotate(const DlAngle& angle) {
-    SetCosSin(angle.CosSin());
-  }
+  void SetRotate(const DlAngle& angle) { SetCosSin(angle.CosSin()); }
 
   void SetPerspectiveX(DlScalar px) {
     m_[kWX] = px;
@@ -296,15 +320,11 @@ class DlTransform {
   bool operator!=(const DlTransform& other) const { return !(*this == other); }
 
   bool is_identity() const { return complexity() == Complexity::kIdentity; }
-  bool is_translate() const {
-    return complexity() <= Complexity::kTranslate2D;
-  }
+  bool is_translate() const { return complexity() <= Complexity::kTranslate2D; }
   bool is_scale_translate() const {
     return complexity() <= Complexity::kScaleTranslate2D;
   }
-  bool is_2D() const {
-    return complexity() <= Complexity::kAffine2D;
-  }
+  bool is_2D() const { return complexity() <= Complexity::kAffine2D; }
   bool has_perspective() const { return complexity() > Complexity::kAffine3D; }
   bool is_finite() const { return DlScalars_AreAllFinite(m_, 16); }
   bool rect_stays_rect() const;
@@ -390,10 +410,10 @@ class DlTransform {
   DlScalar Translate_forW() const { return m_[kWT]; }
 
   SkMatrix ToSkMatrix() const {
-    return SkMatrix::MakeAll(     //
-      m_[kXX], m_[kXY], m_[kXT],  //
-      m_[kYX], m_[kYY], m_[kYT],  //
-      m_[kWX], m_[kWY], m_[kWT]   //
+    return SkMatrix::MakeAll(       //
+        m_[kXX], m_[kXY], m_[kXT],  //
+        m_[kYX], m_[kYY], m_[kYT],  //
+        m_[kWX], m_[kWY], m_[kWT]   //
     );
   };
 
@@ -467,13 +487,16 @@ class DlTransform {
   };
 
   static constexpr DlScalar identity_values[16] = {
+      // clang-format off
       1.0f, 0.0f, 0.0f, 0.0f,
       0.0f, 1.0f, 0.0f, 0.0f,
       0.0f, 0.0f, 1.0f, 0.0f,
       0.0f, 0.0f, 0.0f, 1.0f,
+      // clang-format on
   };
 
   static constexpr Complexity complexity_values[16] = {
+      // clang-format off
       Complexity::kScaleTranslate2D,
       Complexity::kAffine2D,
       Complexity::kAffine3D,
@@ -493,6 +516,7 @@ class DlTransform {
       Complexity::kTranslate2D,
       Complexity::kAffine3D,
       Complexity::kPerspectiveAll,
+      // clang-format on
   };
 
   Complexity complexity() const;

@@ -15,11 +15,17 @@ typedef float DlScalar;
 [[maybe_unused]] constexpr DlScalar kDlScalar_NearlyZero = 1.0f / (1 << 14);
 [[maybe_unused]] constexpr DlScalar kDlScalar_Zero = 0.0f;
 [[maybe_unused]] constexpr DlScalar kDlScalar_One = 1.0f;
-[[maybe_unused]] constexpr DlScalar kDlScalar_Pi = ((DlScalar) M_PI);
+[[maybe_unused]] constexpr DlScalar kDlScalar_Pi = ((DlScalar)M_PI);
 
-static inline bool DlScalar_IsFinite(DlScalar v) { return std::isfinite(v); }
-static inline bool DlScalar_IsNaN(DlScalar v) { return std::isnan(v); }
-static inline bool DlScalar_IsInteger(DlScalar v) { return v == round(v); }
+static inline bool DlScalar_IsFinite(DlScalar v) {
+  return std::isfinite(v);
+}
+static inline bool DlScalar_IsNaN(DlScalar v) {
+  return std::isnan(v);
+}
+static inline bool DlScalar_IsInteger(DlScalar v) {
+  return v == round(v);
+}
 static inline bool DlScalar_IsNearlyZero(DlScalar v) {
   return v < -kDlScalar_NearlyZero || v > kDlScalar_NearlyZero;
 }

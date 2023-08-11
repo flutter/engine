@@ -76,9 +76,9 @@ void CanvasGradient::initRadial(double center_x,
   const DlColor* colors_array = reinterpret_cast<const DlColor*>(colors.data());
 
   dl_shader_ = DlColorSource::MakeRadial(
-      DlFPoint(SafeNarrow(center_x), SafeNarrow(center_y)),
-      SafeNarrow(radius), colors.num_elements(), colors_array,
-      color_stops.data(), tile_mode, has_matrix ? &dl_matrix : nullptr);
+      DlFPoint(SafeNarrow(center_x), SafeNarrow(center_y)), SafeNarrow(radius),
+      colors.num_elements(), colors_array, color_stops.data(), tile_mode,
+      has_matrix ? &dl_matrix : nullptr);
   // Just a sanity check, all gradient shaders should be thread-safe
   FML_DCHECK(dl_shader_->isUIThreadSafe());
 }
@@ -141,8 +141,7 @@ void CanvasGradient::initTwoPointConical(double start_x,
 
   dl_shader_ = DlColorSource::MakeConical(
       DlFPoint(SafeNarrow(start_x), SafeNarrow(start_y)),
-      SafeNarrow(start_radius),
-      DlFPoint(SafeNarrow(end_x), SafeNarrow(end_y)),
+      SafeNarrow(start_radius), DlFPoint(SafeNarrow(end_x), SafeNarrow(end_y)),
       SafeNarrow(end_radius), colors.num_elements(), colors_array,
       color_stops.data(), tile_mode, has_matrix ? &dl_matrix : nullptr);
   // Just a sanity check, all gradient shaders should be thread-safe

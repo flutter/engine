@@ -23,13 +23,17 @@ struct DlRSTransform {
  public:
   DlRSTransform() : DlRSTransform(1.0f, 0.0f, 0.0f, 0.0f) {}
 
-  static DlRSTransform MakeScaledCosSinXY(DlScalar scos, DlScalar ssin,  //
-                                          DlScalar tx, DlScalar ty) {
+  static DlRSTransform MakeScaledCosSinXY(DlScalar scos,
+                                          DlScalar ssin,
+                                          DlScalar tx,
+                                          DlScalar ty) {
     return {scos, ssin, tx, ty};
   }
 
-  static DlRSTransform MakeScaleAngleXY(DlScalar scale, const DlAngle& angle,
-                                        DlScalar tx, DlScalar ty) {
+  static DlRSTransform MakeScaleAngleXY(DlScalar scale,
+                                        const DlAngle& angle,
+                                        DlScalar tx,
+                                        DlScalar ty) {
     DlFVector scos_ssin = angle.CosSin() * scale;
     return {scos_ssin.x(), scos_ssin.y(), tx, ty};
   }
@@ -43,18 +47,18 @@ struct DlRSTransform {
     return trig_ == other.trig_ && origin_ == other.origin_;
   }
 
-  bool operator!=(const DlRSTransform& other) const { return !(*this == other); }
+  bool operator!=(const DlRSTransform& other) const {
+    return !(*this == other);
+  }
 
   bool is_identity() const {
-    return trig_.x() == 1.0f &&   //
-           trig_.y() == 0.0f &&   //
+    return trig_.x() == 1.0f &&    //
+           trig_.y() == 0.0f &&    //
            origin_.x() == 0.0f &&  //
            origin_.y() == 0.0f;
   }
 
-  bool is_finite() const {
-    return trig_.is_finite() && origin_.is_finite();
-  }
+  bool is_finite() const { return trig_.is_finite() && origin_.is_finite(); }
 
   // Returns the 4 corners of the parallelogram transformed from Rect(0,0,w,h)
   // in the order defined by going clockwise around the untransformed rect.

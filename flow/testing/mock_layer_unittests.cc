@@ -38,9 +38,11 @@ TEST_F(MockLayerTest, SimpleParams) {
   const DlPaint paint = DlPaint(DlColor::kBlue());
   const DlTransform start_matrix = DlTransform::MakeTranslate(1.0f, 2.0f);
   const DlTransform scale_matrix = DlTransform::MakeScale(0.5f, 0.5f);
-  const DlTransform combined_matrix = DlTransform::MakeConcat(start_matrix, scale_matrix);
+  const DlTransform combined_matrix =
+      DlTransform::MakeConcat(start_matrix, scale_matrix);
   const DlFRect local_cull_rect = DlFRect::MakeWH(5.0f, 5.0f);
-  const DlFRect device_cull_rect = combined_matrix.TransformRect(local_cull_rect);
+  const DlFRect device_cull_rect =
+      combined_matrix.TransformRect(local_cull_rect);
   const bool parent_has_platform_view = true;
   auto layer = std::make_shared<MockLayer>(path, paint);
 

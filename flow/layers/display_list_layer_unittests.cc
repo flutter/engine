@@ -105,7 +105,8 @@ TEST_F(DisplayListLayerTest, CachingDoesNotChangeCullRect) {
   auto layer = std::make_shared<DisplayListLayer>(layer_offset, display_list,
                                                   true, false);
 
-  DlFRect original_cull_rect = preroll_context()->state_stack.device_cull_rect();
+  DlFRect original_cull_rect =
+      preroll_context()->state_stack.device_cull_rect();
   use_mock_raster_cache();
   layer->Preroll(preroll_context());
   ASSERT_EQ(preroll_context()->state_stack.device_cull_rect(),
@@ -374,12 +375,10 @@ TEST_F(DisplayListLayerDiffTest, FractionalTranslation) {
   auto display_list = CreateDisplayList(DlFRect::MakeLTRB(10, 10, 60, 60));
 
   MockLayerTree tree1;
-  tree1.root()->Add(
-      CreateDisplayListLayer(display_list, DlFPoint(0.5, 0.5)));
+  tree1.root()->Add(CreateDisplayListLayer(display_list, DlFPoint(0.5, 0.5)));
 
-  auto damage =
-      DiffLayerTree(tree1, MockLayerTree(), DlIRect(), 0, 0,
-                    /*use_raster_cache=*/false);
+  auto damage = DiffLayerTree(tree1, MockLayerTree(), DlIRect(), 0, 0,
+                              /*use_raster_cache=*/false);
   EXPECT_EQ(damage.frame_damage, DlIRect::MakeLTRB(10, 10, 61, 61));
 }
 
@@ -387,12 +386,10 @@ TEST_F(DisplayListLayerDiffTest, FractionalTranslationWithRasterCache) {
   auto display_list = CreateDisplayList(DlFRect::MakeLTRB(10, 10, 60, 60));
 
   MockLayerTree tree1;
-  tree1.root()->Add(
-      CreateDisplayListLayer(display_list, DlFPoint(0.5, 0.5)));
+  tree1.root()->Add(CreateDisplayListLayer(display_list, DlFPoint(0.5, 0.5)));
 
-  auto damage =
-      DiffLayerTree(tree1, MockLayerTree(), DlIRect(), 0, 0,
-                    /*use_raster_cache=*/true);
+  auto damage = DiffLayerTree(tree1, MockLayerTree(), DlIRect(), 0, 0,
+                              /*use_raster_cache=*/true);
   EXPECT_EQ(damage.frame_damage, DlIRect::MakeLTRB(11, 11, 61, 61));
 }
 
@@ -418,8 +415,7 @@ TEST_F(DisplayListLayerDiffTest, DisplayListCompare) {
   auto display_list3 =
       CreateDisplayList(DlFRect::MakeLTRB(10, 10, 60, 60), DlColor::kGreen());
   // add offset
-  tree3.root()->Add(
-      CreateDisplayListLayer(display_list3, DlFPoint(10, 10)));
+  tree3.root()->Add(CreateDisplayListLayer(display_list3, DlFPoint(10, 10)));
 
   damage = DiffLayerTree(tree3, tree2);
   EXPECT_EQ(damage.frame_damage, DlIRect::MakeLTRB(10, 10, 70, 70));
@@ -428,8 +424,7 @@ TEST_F(DisplayListLayerDiffTest, DisplayListCompare) {
   // different color
   auto display_list4 =
       CreateDisplayList(DlFRect::MakeLTRB(10, 10, 60, 60), DlColor::kRed());
-  tree4.root()->Add(
-      CreateDisplayListLayer(display_list4, DlFPoint(10, 10)));
+  tree4.root()->Add(CreateDisplayListLayer(display_list4, DlFPoint(10, 10)));
 
   damage = DiffLayerTree(tree4, tree3);
   EXPECT_EQ(damage.frame_damage, DlIRect::MakeLTRB(20, 20, 70, 70));

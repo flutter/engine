@@ -14,20 +14,17 @@
 namespace flutter::testing {
 
 TEST(OffscreenSurfaceTest, EmptySurfaceIsInvalid) {
-  auto surface =
-      std::make_unique<OffscreenSurface>(nullptr, DlISize());
+  auto surface = std::make_unique<OffscreenSurface>(nullptr, DlISize());
   ASSERT_FALSE(surface->IsValid());
 }
 
 TEST(OffscreenSurfaceTest, OnexOneSurfaceIsValid) {
-  auto surface =
-      std::make_unique<OffscreenSurface>(nullptr, DlISize(1, 1));
+  auto surface = std::make_unique<OffscreenSurface>(nullptr, DlISize(1, 1));
   ASSERT_TRUE(surface->IsValid());
 }
 
 TEST(OffscreenSurfaceTest, PaintSurfaceBlack) {
-  auto surface =
-      std::make_unique<OffscreenSurface>(nullptr, DlISize(1, 1));
+  auto surface = std::make_unique<OffscreenSurface>(nullptr, DlISize(1, 1));
 
   DlCanvas* canvas = surface->GetCanvas();
   canvas->Clear(DlColor::kBlack());

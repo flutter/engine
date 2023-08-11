@@ -78,8 +78,7 @@ TEST(DisplayListComplexity, NestedDisplayList) {
 
 TEST(DisplayListComplexity, AntiAliasing) {
   DisplayListBuilder builder_no_aa;
-  builder_no_aa.DrawLine(DlFPoint(0, 0), DlFPoint(100, 100),
-                         DlPaint());
+  builder_no_aa.DrawLine(DlFPoint(0, 0), DlFPoint(100, 100), DlPaint());
   auto display_list_no_aa = builder_no_aa.Build();
 
   DisplayListBuilder builder_aa;

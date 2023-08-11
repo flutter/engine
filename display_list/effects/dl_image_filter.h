@@ -100,7 +100,7 @@ class DlImageFilter : public DlAttribute<DlImageFilter, DlImageFilterType> {
   // method will return a nullptr and the output_bounds will be filled with
   // a best guess for the answer, even if just a copy of the input_bounds.
   virtual DlFRect* map_local_bounds(const DlFRect& input_bounds,
-                                   DlFRect& output_bounds) const = 0;
+                                    DlFRect& output_bounds) const = 0;
 
   // Return the device bounds of the output for this image filtering operation
   // based on the supplied input device bounds where both are measured in the
@@ -219,7 +219,7 @@ class DlBlurImageFilter final : public DlImageFilter {
   bool modifies_transparent_black() const override { return false; }
 
   DlFRect* map_local_bounds(const DlFRect& input_bounds,
-                           DlFRect& output_bounds) const override {
+                            DlFRect& output_bounds) const override {
     output_bounds = input_bounds.MakeOutset(sigma_x_ * 3.0f, sigma_y_ * 3.0f);
     return &output_bounds;
   }
@@ -287,7 +287,7 @@ class DlDilateImageFilter final : public DlImageFilter {
   bool modifies_transparent_black() const override { return false; }
 
   DlFRect* map_local_bounds(const DlFRect& input_bounds,
-                           DlFRect& output_bounds) const override {
+                            DlFRect& output_bounds) const override {
     output_bounds = input_bounds.MakeOutset(radius_x_, radius_y_);
     return &output_bounds;
   }
@@ -352,7 +352,7 @@ class DlErodeImageFilter final : public DlImageFilter {
   bool modifies_transparent_black() const override { return false; }
 
   DlFRect* map_local_bounds(const DlFRect& input_bounds,
-                           DlFRect& output_bounds) const override {
+                            DlFRect& output_bounds) const override {
     output_bounds = input_bounds.MakeInset(radius_x_, radius_y_);
     return &output_bounds;
   }
@@ -418,7 +418,7 @@ class DlMatrixImageFilter final : public DlImageFilter {
   bool modifies_transparent_black() const override { return false; }
 
   DlFRect* map_local_bounds(const DlFRect& input_bounds,
-                           DlFRect& output_bounds) const override {
+                            DlFRect& output_bounds) const override {
     output_bounds = matrix_.TransformRect(input_bounds);
     return &output_bounds;
   }
@@ -514,7 +514,7 @@ class DlComposeImageFilter final : public DlImageFilter {
   }
 
   DlFRect* map_local_bounds(const DlFRect& input_bounds,
-                           DlFRect& output_bounds) const override;
+                            DlFRect& output_bounds) const override;
 
   DlIRect* map_device_bounds(const DlIRect& input_bounds,
                              const DlTransform& ctm,
@@ -586,7 +586,7 @@ class DlColorFilterImageFilter final : public DlImageFilter {
   }
 
   DlFRect* map_local_bounds(const DlFRect& input_bounds,
-                           DlFRect& output_bounds) const override {
+                            DlFRect& output_bounds) const override {
     output_bounds = input_bounds;
     return modifies_transparent_black() ? nullptr : &output_bounds;
   }
@@ -660,7 +660,7 @@ class DlLocalMatrixImageFilter final : public DlImageFilter {
   }
 
   DlFRect* map_local_bounds(const DlFRect& input_bounds,
-                           DlFRect& output_bounds) const override {
+                            DlFRect& output_bounds) const override {
     if (!image_filter_) {
       return nullptr;
     }

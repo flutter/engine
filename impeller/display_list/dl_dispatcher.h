@@ -122,13 +122,19 @@ class DlDispatcher final : public flutter::DlOpReceiver {
   void transformReset() override;
 
   // |flutter::DlOpReceiver|
-  void clipRect(const flutter::DlFRect& rect, ClipOp clip_op, bool is_aa) override;
+  void clipRect(const flutter::DlFRect& rect,
+                ClipOp clip_op,
+                bool is_aa) override;
 
   // |flutter::DlOpReceiver|
-  void clipRRect(const flutter::DlFRRect& rrect, ClipOp clip_op, bool is_aa) override;
+  void clipRRect(const flutter::DlFRRect& rrect,
+                 ClipOp clip_op,
+                 bool is_aa) override;
 
   // |flutter::DlOpReceiver|
-  void clipPath(const flutter::DlPath& path, ClipOp clip_op, bool is_aa) override;
+  void clipPath(const flutter::DlPath& path,
+                ClipOp clip_op,
+                bool is_aa) override;
 
   // |flutter::DlOpReceiver|
   void drawColor(flutter::DlColor color, flutter::DlBlendMode mode) override;
@@ -137,7 +143,8 @@ class DlDispatcher final : public flutter::DlOpReceiver {
   void drawPaint() override;
 
   // |flutter::DlOpReceiver|
-  void drawLine(const flutter::DlFPoint& p0, const flutter::DlFPoint& p1) override;
+  void drawLine(const flutter::DlFPoint& p0,
+                const flutter::DlFPoint& p1) override;
 
   // |flutter::DlOpReceiver|
   void drawRect(const flutter::DlFRect& rect) override;
@@ -146,13 +153,15 @@ class DlDispatcher final : public flutter::DlOpReceiver {
   void drawOval(const flutter::DlFRect& bounds) override;
 
   // |flutter::DlOpReceiver|
-  void drawCircle(const flutter::DlFPoint& center, flutter::DlScalar radius) override;
+  void drawCircle(const flutter::DlFPoint& center,
+                  flutter::DlScalar radius) override;
 
   // |flutter::DlOpReceiver|
   void drawRRect(const flutter::DlFRRect& rrect) override;
 
   // |flutter::DlOpReceiver|
-  void drawDRRect(const flutter::DlFRRect& outer, const flutter::DlFRRect& inner) override;
+  void drawDRRect(const flutter::DlFRRect& outer,
+                  const flutter::DlFRRect& inner) override;
 
   // |flutter::DlOpReceiver|
   void drawPath(const flutter::DlPath& path) override;

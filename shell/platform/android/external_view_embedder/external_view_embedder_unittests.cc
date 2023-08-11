@@ -144,8 +144,7 @@ TEST(AndroidExternalViewEmbedder, RasterizerRunsOnPlatformThread) {
   ASSERT_FALSE(raster_thread_merger->IsMerged());
 
   EXPECT_CALL(*jni_mock, FlutterViewBeginFrame());
-  embedder->BeginFrame(DlISize(10, 20), nullptr, 1.0,
-                       raster_thread_merger);
+  embedder->BeginFrame(DlISize(10, 20), nullptr, 1.0, raster_thread_merger);
   // Push a platform view.
   embedder->PrerollCompositeEmbeddedView(
       0, std::make_unique<EmbeddedViewParams>());
@@ -197,8 +196,7 @@ TEST(AndroidExternalViewEmbedder, PlatformViewRect) {
       GetThreadMergerFromPlatformThread(&rasterizer_thread);
 
   EXPECT_CALL(*jni_mock, FlutterViewBeginFrame());
-  embedder->BeginFrame(DlISize(100, 100), nullptr, 1.5,
-                       raster_thread_merger);
+  embedder->BeginFrame(DlISize(100, 100), nullptr, 1.5, raster_thread_merger);
 
   MutatorsStack stack;
   DlTransform matrix;
@@ -224,8 +222,7 @@ TEST(AndroidExternalViewEmbedder, PlatformViewRectChangedParams) {
       GetThreadMergerFromPlatformThread(&rasterizer_thread);
 
   EXPECT_CALL(*jni_mock, FlutterViewBeginFrame());
-  embedder->BeginFrame(DlISize(100, 100), nullptr, 1.5,
-                       raster_thread_merger);
+  embedder->BeginFrame(DlISize(100, 100), nullptr, 1.5, raster_thread_merger);
 
   auto view_id = 0;
 
@@ -233,8 +230,8 @@ TEST(AndroidExternalViewEmbedder, PlatformViewRectChangedParams) {
   // The framework always push a scale matrix based on the screen ratio.
   DlTransform matrix1 = DlTransform::MakeConcat(
       DlTransform::MakeScale(1.5, 1.5), DlTransform::MakeTranslate(10, 20));
-  auto view_params_1 = std::make_unique<EmbeddedViewParams>(
-      matrix1, DlFSize(30, 40), stack1);
+  auto view_params_1 =
+      std::make_unique<EmbeddedViewParams>(matrix1, DlFSize(30, 40), stack1);
 
   embedder->PrerollCompositeEmbeddedView(view_id, std::move(view_params_1));
 
@@ -243,12 +240,13 @@ TEST(AndroidExternalViewEmbedder, PlatformViewRectChangedParams) {
   // The framework always push a scale matrix based on the screen ratio.
   matrix2.ScaleInner(1.5, 1.5);
   matrix2.TranslateInner(50, 60);
-  auto view_params_2 = std::make_unique<EmbeddedViewParams>(
-      matrix2, DlFSize(70, 80), stack2);
+  auto view_params_2 =
+      std::make_unique<EmbeddedViewParams>(matrix2, DlFSize(70, 80), stack2);
 
   embedder->PrerollCompositeEmbeddedView(view_id, std::move(view_params_2));
 
-  ASSERT_EQ(DlFRect::MakeXYWH(75, 90, 105, 120), embedder->GetViewRect(view_id));
+  ASSERT_EQ(DlFRect::MakeXYWH(75, 90, 105, 120),
+            embedder->GetViewRect(view_id));
 }
 
 TEST(AndroidExternalViewEmbedder, SubmitFrame) {
@@ -499,8 +497,8 @@ TEST(AndroidExternalViewEmbedder, OverlayCoverTwoPlatformViews) {
     DlTransform matrix = DlTransform::MakeTranslate(100, 100);
     MutatorsStack stack;
     embedder->PrerollCompositeEmbeddedView(
-        0, std::make_unique<EmbeddedViewParams>(matrix, DlFSize(100, 100),
-                                                stack));
+        0,
+        std::make_unique<EmbeddedViewParams>(matrix, DlFSize(100, 100), stack));
     // The JNI call to display the Android view.
     EXPECT_CALL(*jni_mock, FlutterViewOnDisplayPlatformView(
                                0, 100, 100, 100, 100, 150, 150, stack));
@@ -511,8 +509,8 @@ TEST(AndroidExternalViewEmbedder, OverlayCoverTwoPlatformViews) {
     DlTransform matrix = DlTransform::MakeTranslate(300, 100);
     MutatorsStack stack;
     embedder->PrerollCompositeEmbeddedView(
-        1, std::make_unique<EmbeddedViewParams>(matrix, DlFSize(100, 100),
-                                                stack));
+        1,
+        std::make_unique<EmbeddedViewParams>(matrix, DlFSize(100, 100), stack));
     // The JNI call to display the Android view.
     EXPECT_CALL(*jni_mock, FlutterViewOnDisplayPlatformView(
                                1, 300, 100, 100, 100, 150, 150, stack));
@@ -599,8 +597,8 @@ TEST(AndroidExternalViewEmbedder, SubmitFrameOverlayComposition) {
     stack.PushTransform(DlTransform::MakeTranslate(0, 0));
 
     embedder->PrerollCompositeEmbeddedView(
-        0, std::make_unique<EmbeddedViewParams>(matrix, DlFSize(200, 200),
-                                                stack));
+        0,
+        std::make_unique<EmbeddedViewParams>(matrix, DlFSize(200, 200), stack));
     EXPECT_CALL(*jni_mock, FlutterViewOnDisplayPlatformView(0, 0, 0, 200, 200,
                                                             300, 300, stack));
   }
@@ -620,15 +618,15 @@ TEST(AndroidExternalViewEmbedder, SubmitFrameOverlayComposition) {
     stack.PushTransform(DlTransform::MakeTranslate(0, 100));
 
     embedder->PrerollCompositeEmbeddedView(
-        1, std::make_unique<EmbeddedViewParams>(matrix, DlFSize(100, 100),
-                                                stack));
+        1,
+        std::make_unique<EmbeddedViewParams>(matrix, DlFSize(100, 100), stack));
     EXPECT_CALL(*jni_mock, FlutterViewOnDisplayPlatformView(1, 0, 0, 100, 100,
                                                             150, 150, stack));
   }
   // This simulates Flutter UI that intersects with the first and second Android
   // views.
-  embedder->CompositeEmbeddedView(1)->DrawRect(DlFRect::MakeXYWH(25, 25, 80, 50),
-                                               rect_paint);
+  embedder->CompositeEmbeddedView(1)->DrawRect(
+      DlFRect::MakeXYWH(25, 25, 80, 50), rect_paint);
 
   embedder->CompositeEmbeddedView(1)->DrawRect(
       DlFRect::MakeXYWH(75, 75, 30, 100), rect_paint);
@@ -702,8 +700,8 @@ TEST(AndroidExternalViewEmbedder, SubmitFramePlatformViewWithoutAnyOverlay) {
     stack.PushTransform(DlTransform::MakeTranslate(0, 0));
 
     embedder->PrerollCompositeEmbeddedView(
-        0, std::make_unique<EmbeddedViewParams>(matrix, DlFSize(200, 200),
-                                                stack));
+        0,
+        std::make_unique<EmbeddedViewParams>(matrix, DlFSize(200, 200), stack));
     EXPECT_CALL(*jni_mock, FlutterViewOnDisplayPlatformView(0, 0, 0, 200, 200,
                                                             300, 300, stack));
   }
@@ -736,8 +734,7 @@ TEST(AndroidExternalViewEmbedder, DoesNotCallJNIPlatformThreadOnlyMethods) {
   auto raster_thread_merger = GetThreadMergerFromRasterThread(&platform_thread);
 
   EXPECT_CALL(*jni_mock, FlutterViewBeginFrame()).Times(0);
-  embedder->BeginFrame(DlISize(10, 20), nullptr, 1.0,
-                       raster_thread_merger);
+  embedder->BeginFrame(DlISize(10, 20), nullptr, 1.0, raster_thread_merger);
 
   EXPECT_CALL(*jni_mock, FlutterViewEndFrame()).Times(0);
   embedder->EndFrame(/*should_resubmit_frame=*/false, raster_thread_merger);
@@ -827,8 +824,7 @@ TEST(AndroidExternalViewEmbedder, DestroyOverlayLayersOnSizeChange) {
   EXPECT_CALL(*jni_mock, FlutterViewDestroyOverlaySurfaces());
   EXPECT_CALL(*jni_mock, FlutterViewBeginFrame());
   // Change the frame size.
-  embedder->BeginFrame(DlISize(30, 40), nullptr, 1.0,
-                       raster_thread_merger);
+  embedder->BeginFrame(DlISize(30, 40), nullptr, 1.0, raster_thread_merger);
 }
 
 TEST(AndroidExternalViewEmbedder, DoesNotDestroyOverlayLayersOnSizeChange) {
@@ -942,8 +938,7 @@ TEST(AndroidExternalViewEmbedder, DisableThreadMerger) {
 
   EXPECT_CALL(*jni_mock, FlutterViewBeginFrame()).Times(0);
 
-  embedder->BeginFrame(DlISize(10, 20), nullptr, 1.0,
-                       raster_thread_merger);
+  embedder->BeginFrame(DlISize(10, 20), nullptr, 1.0, raster_thread_merger);
   // Push a platform view.
   embedder->PrerollCompositeEmbeddedView(
       0, std::make_unique<EmbeddedViewParams>());

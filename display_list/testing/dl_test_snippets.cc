@@ -250,16 +250,6 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
   return {
       {"Save(Layer)+Restore",
        {
-           {5, 112, 5, 112,
-            [](DlOpReceiver& r) {
-              r.saveLayer(nullptr, SaveLayerOptions::kNoAttributes,
-                          &kTestCFImageFilter1);
-              r.clipRect(DlFRect::MakeLTRB(0, 0, 25, 25),
-                         DlCanvas::ClipOp::kIntersect, true);
-              r.drawRect(DlFRect::MakeLTRB(5, 5, 15, 15));
-              r.drawRect(DlFRect::MakeLTRB(10, 10, 20, 20));
-              r.restore();
-            }},
            // There are many reasons that save and restore can elide content,
            // including whether or not there are any draw operations between
            // them, whether or not there are any state changes to restore, and
@@ -314,13 +304,16 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
             }},
            // backdrop variants - using the TestCFImageFilter because it can be
            // reconstituted in the DL->SkCanvas->DL stream
-           // {5, 104, 5, 104, [](DlOpReceiver& r) {
-           //   r.saveLayer(nullptr, SaveLayerOptions::kNoAttributes,
-           //   &kTestCFImageFilter1); r.clipRect(DlFRect::MakeLTRB(0, 0, 25, 25),
-           //   SkClipOp::kIntersect, true); r.drawRect(DlFRect::MakeLTRB(5, 5, 15, 15));
-           //   r.drawRect(DlFRect::MakeLTRB(10, 10, 20, 20));
-           //   r.restore();
-           // }},
+           {5, 112, 5, 112,
+            [](DlOpReceiver& r) {
+              r.saveLayer(nullptr, SaveLayerOptions::kNoAttributes,
+                          &kTestCFImageFilter1);
+              r.clipRect(DlFRect::MakeLTRB(0, 0, 25, 25),
+                         DlCanvas::ClipOp::kIntersect, true);
+              r.drawRect(DlFRect::MakeLTRB(5, 5, 15, 15));
+              r.drawRect(DlFRect::MakeLTRB(10, 10, 20, 20));
+              r.restore();
+            }},
            {5, 112, 5, 112,
             [](DlOpReceiver& r) {
               r.saveLayer(nullptr, SaveLayerOptions::kWithAttributes,
@@ -830,7 +823,8 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
               static DlRSTransform xforms[] = {
                   DlRSTransform::MakeScaledCosSinXY(1, 0, 0, 0),
                   DlRSTransform::MakeScaledCosSinXY(0, 1, 0, 0)};
-              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20), DlFRect::MakeLTRB(20, 20, 30, 30)};
+              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20),
+                                       DlFRect::MakeLTRB(20, 20, 30, 30)};
               r.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
                           DlBlendMode::kSrcIn, kNearestSampling, nullptr,
                           false);
@@ -840,7 +834,8 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
               static DlRSTransform xforms[] = {
                   DlRSTransform::MakeScaledCosSinXY(1, 0, 0, 0),
                   DlRSTransform::MakeScaledCosSinXY(0, 1, 0, 0)};
-              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20), DlFRect::MakeLTRB(20, 20, 30, 30)};
+              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20),
+                                       DlFRect::MakeLTRB(20, 20, 30, 30)};
               r.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
                           DlBlendMode::kSrcIn, kNearestSampling, nullptr, true);
             }},
@@ -849,7 +844,8 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
               static DlRSTransform xforms[] = {
                   DlRSTransform::MakeScaledCosSinXY(0, 1, 0, 0),
                   DlRSTransform::MakeScaledCosSinXY(0, 1, 0, 0)};
-              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20), DlFRect::MakeLTRB(20, 20, 30, 30)};
+              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20),
+                                       DlFRect::MakeLTRB(20, 20, 30, 30)};
               r.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
                           DlBlendMode::kSrcIn, kNearestSampling, nullptr,
                           false);
@@ -859,7 +855,8 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
               static DlRSTransform xforms[] = {
                   DlRSTransform::MakeScaledCosSinXY(1, 0, 0, 0),
                   DlRSTransform::MakeScaledCosSinXY(0, 1, 0, 0)};
-              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20), DlFRect::MakeLTRB(20, 25, 30, 30)};
+              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20),
+                                       DlFRect::MakeLTRB(20, 25, 30, 30)};
               r.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
                           DlBlendMode::kSrcIn, kNearestSampling, nullptr,
                           false);
@@ -869,7 +866,8 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
               static DlRSTransform xforms[] = {
                   DlRSTransform::MakeScaledCosSinXY(1, 0, 0, 0),
                   DlRSTransform::MakeScaledCosSinXY(0, 1, 0, 0)};
-              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20), DlFRect::MakeLTRB(20, 20, 30, 30)};
+              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20),
+                                       DlFRect::MakeLTRB(20, 20, 30, 30)};
               r.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
                           DlBlendMode::kSrcIn, kLinearSampling, nullptr, false);
             }},
@@ -878,7 +876,8 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
               static DlRSTransform xforms[] = {
                   DlRSTransform::MakeScaledCosSinXY(1, 0, 0, 0),
                   DlRSTransform::MakeScaledCosSinXY(0, 1, 0, 0)};
-              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20), DlFRect::MakeLTRB(20, 20, 30, 30)};
+              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20),
+                                       DlFRect::MakeLTRB(20, 20, 30, 30)};
               r.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
                           DlBlendMode::kDstIn, kNearestSampling, nullptr,
                           false);
@@ -888,7 +887,8 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
               static DlRSTransform xforms[] = {
                   DlRSTransform::MakeScaledCosSinXY(1, 0, 0, 0),
                   DlRSTransform::MakeScaledCosSinXY(0, 1, 0, 0)};
-              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20), DlFRect::MakeLTRB(20, 20, 30, 30)};
+              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20),
+                                       DlFRect::MakeLTRB(20, 20, 30, 30)};
               static DlFRect cull_rect = DlFRect::MakeLTRB(0, 0, 200, 200);
               r.drawAtlas(TestImage2, xforms, texs, nullptr, 2,
                           DlBlendMode::kSrcIn, kNearestSampling, &cull_rect,
@@ -899,7 +899,8 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
               static DlRSTransform xforms[] = {
                   DlRSTransform::MakeScaledCosSinXY(1, 0, 0, 0),
                   DlRSTransform::MakeScaledCosSinXY(0, 1, 0, 0)};
-              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20), DlFRect::MakeLTRB(20, 20, 30, 30)};
+              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20),
+                                       DlFRect::MakeLTRB(20, 20, 30, 30)};
               static DlColor colors[] = {DlColor::kBlue(), DlColor::kGreen()};
               r.drawAtlas(TestImage1, xforms, texs, colors, 2,
                           DlBlendMode::kSrcIn, kNearestSampling, nullptr,
@@ -910,7 +911,8 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
               static DlRSTransform xforms[] = {
                   DlRSTransform::MakeScaledCosSinXY(1, 0, 0, 0),
                   DlRSTransform::MakeScaledCosSinXY(0, 1, 0, 0)};
-              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20), DlFRect::MakeLTRB(20, 20, 30, 30)};
+              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20),
+                                       DlFRect::MakeLTRB(20, 20, 30, 30)};
               static DlColor colors[] = {DlColor::kBlue(), DlColor::kGreen()};
               static DlFRect cull_rect = DlFRect::MakeLTRB(0, 0, 200, 200);
               r.drawAtlas(TestImage1, xforms, texs, colors, 2,
@@ -923,7 +925,8 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
               static DlRSTransform xforms[] = {
                   DlRSTransform::MakeScaledCosSinXY(1, 0, 0, 0),
                   DlRSTransform::MakeScaledCosSinXY(0, 1, 0, 0)};
-              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20), DlFRect::MakeLTRB(20, 20, 30, 30)};
+              static DlFRect texs[] = {DlFRect::MakeLTRB(10, 10, 20, 20),
+                                       DlFRect::MakeLTRB(20, 20, 30, 30)};
               r.drawAtlas(dl_image, xforms, texs, nullptr, 2,
                           DlBlendMode::kSrcIn, kNearestSampling, nullptr,
                           false);

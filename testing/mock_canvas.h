@@ -18,7 +18,6 @@
 namespace flutter {
 namespace testing {
 
-
 // Mock |DlCanvas|, useful for writing tests that use DlCanvas but do not
 // interact with the GPU.
 //

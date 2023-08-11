@@ -47,13 +47,9 @@ struct DlTHomogenous2D {
   }
   bool operator!=(const DlTHomogenous2D& p) const { return !(*this == p); }
 
-  bool is_finite() const {
-    return DlScalars_AreAllFinite(&x_, 3);
-  }
+  bool is_finite() const { return DlScalars_AreAllFinite(&x_, 3); }
 
-  bool is_unclipped() const {
-    return w_ >= kMinimumHomogenous;
-  }
+  bool is_unclipped() const { return w_ >= kMinimumHomogenous; }
 };
 
 using DlFHomogenous2D = DlTHomogenous2D<DlScalar>;

@@ -500,8 +500,10 @@ std::vector<DlFPoint> GetPolygonPoints(size_t n, DlFPoint center, DlScalar r) {
 // `radius` and `center`.
 //
 // The path segment connecting each control point is a line segment.
-void GetLinesPath(
-    DlPath& path, size_t sides, DlFPoint center, DlScalar radius) {
+void GetLinesPath(DlPath& path,
+                  size_t sides,
+                  DlFPoint center,
+                  DlScalar radius) {
   std::vector<DlFPoint> points = GetPolygonPoints(sides, center, radius);
   path.MoveTo(points[0]);
   for (size_t i = 1; i < sides; i++) {
@@ -520,8 +522,10 @@ void GetLinesPath(
 // bezier control point being on a circle with 80% of `radius` and with the
 // control point angle half way between the start and end point angles for the
 // polygon segment.
-void GetQuadsPath(
-    DlPath& path, size_t sides, DlFPoint center, DlScalar radius) {
+void GetQuadsPath(DlPath& path,
+                  size_t sides,
+                  DlFPoint center,
+                  DlScalar radius) {
   std::vector<DlFPoint> points = GetPolygonPoints(sides, center, radius);
   std::vector<DlFPoint> control_points =
       GetPolygonPoints(sides * 2, center, radius * 0.8f);
@@ -543,8 +547,10 @@ void GetQuadsPath(
 // control point being on a circle with 80% of `radius` and with the
 // control point angle half way between the start and end point angles for the
 // polygon segment, and the conic weight set to 3.7f.
-void GetConicsPath(
-    DlPath& path, size_t sides, DlFPoint center, DlScalar radius) {
+void GetConicsPath(DlPath& path,
+                   size_t sides,
+                   DlFPoint center,
+                   DlScalar radius) {
   std::vector<DlFPoint> points = GetPolygonPoints(sides, center, radius);
   std::vector<DlFPoint> control_points =
       GetPolygonPoints(sides * 2, center, radius * 0.8f);
@@ -567,8 +573,10 @@ void GetConicsPath(
 // control point being on a circle with 120% of `radius`. The first
 // control point is 1/3, and the second control point is 2/3, of the angle
 // between the start and end point angles for the polygon segment.
-void GetCubicsPath(
-    DlPath& path, size_t sides, DlFPoint center, DlScalar radius) {
+void GetCubicsPath(DlPath& path,
+                   size_t sides,
+                   DlFPoint center,
+                   DlScalar radius) {
   std::vector<DlFPoint> points = GetPolygonPoints(sides, center, radius);
   std::vector<DlFPoint> inner_control_points =
       GetPolygonPoints(sides * 3, center, radius * 0.8f);
@@ -1130,8 +1138,8 @@ void BM_DrawImageNine(benchmark::State& state,
 
   DlInt quarter_size = bitmap_size / 4;
   DlSize half_size = bitmap_size / 2;
-  DlIRect center = DlIRect::MakeXYWH(quarter_size, quarter_size,
-                                     half_size, half_size);
+  DlIRect center =
+      DlIRect::MakeXYWH(quarter_size, quarter_size, half_size, half_size);
 
   sk_sp<SkImage> image;
   std::shared_ptr<DlSurfaceInstance> offscreen_instance;

@@ -28,8 +28,7 @@ using OpacityLayerTest = LayerTest;
 
 #ifndef NDEBUG
 TEST_F(OpacityLayerTest, LeafLayer) {
-  auto layer =
-      std::make_shared<OpacityLayer>(kDlAlpha_Opaque, DlFPoint());
+  auto layer = std::make_shared<OpacityLayer>(kDlAlpha_Opaque, DlFPoint());
 
   EXPECT_DEATH_IF_SUPPORTED(layer->Preroll(preroll_context()),
                             "\\!layers\\(\\)\\.empty\\(\\)");
@@ -37,8 +36,7 @@ TEST_F(OpacityLayerTest, LeafLayer) {
 
 TEST_F(OpacityLayerTest, PaintingEmptyLayerDies) {
   auto mock_layer = std::make_shared<MockLayer>(DlPath());
-  auto layer =
-      std::make_shared<OpacityLayer>(kDlAlpha_Opaque, DlFPoint());
+  auto layer = std::make_shared<OpacityLayer>(kDlAlpha_Opaque, DlFPoint());
   layer->Add(mock_layer);
 
   layer->Preroll(preroll_context());
@@ -56,8 +54,7 @@ TEST_F(OpacityLayerTest, PaintBeforePrerollDies) {
   DlPath child_path;
   child_path.AddRectLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   auto mock_layer = std::make_shared<MockLayer>(child_path);
-  auto layer =
-      std::make_shared<OpacityLayer>(SK_AlphaOPAQUE, DlFPoint());
+  auto layer = std::make_shared<OpacityLayer>(SK_AlphaOPAQUE, DlFPoint());
   layer->Add(mock_layer);
 
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
@@ -89,8 +86,7 @@ TEST_F(OpacityLayerTest, CacheChild) {
   auto other_transform = DlTransform::MakeScale(1.0, 2.0);
   const DlPath child_path = DlPath().AddRectXYWH(0.0f, 0.0f, 5.0f, 5.0f);
   auto mock_layer = std::make_shared<MockLayer>(child_path);
-  auto layer =
-      std::make_shared<OpacityLayer>(alpha_half, DlFPoint());
+  auto layer = std::make_shared<OpacityLayer>(alpha_half, DlFPoint());
   layer->Add(mock_layer);
   DlPaint paint;
 
@@ -138,8 +134,7 @@ TEST_F(OpacityLayerTest, CacheChildren) {
   DlPaint paint;
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1);
   auto mock_layer2 = std::make_shared<MockLayer>(child_path2);
-  auto layer =
-      std::make_shared<OpacityLayer>(alpha_half, DlFPoint());
+  auto layer = std::make_shared<OpacityLayer>(alpha_half, DlFPoint());
   layer->Add(mock_layer1);
   layer->Add(mock_layer2);
 
@@ -180,8 +175,7 @@ TEST_F(OpacityLayerTest, CacheChildren) {
 
 TEST_F(OpacityLayerTest, ShouldNotCacheChildren) {
   DlPaint paint;
-  auto opacity_layer =
-      std::make_shared<OpacityLayer>(128, DlFPoint(20, 20));
+  auto opacity_layer = std::make_shared<OpacityLayer>(128, DlFPoint(20, 20));
   auto mock_layer = MockLayer::MakeOpacityCompatible(DlPath());
   opacity_layer->Add(mock_layer);
 
@@ -397,11 +391,10 @@ TEST_F(OpacityLayerTest, Nested) {
             DlTransform::MakeConcat(initial_transform, layer1_transform));
   EXPECT_EQ(mock_layer1->parent_mutators(),
             std::vector({Mutator(layer1_transform), Mutator(alpha1)}));
-  EXPECT_EQ(
-      mock_layer2->parent_matrix(),
-      DlTransform::MakeConcat(DlTransform::MakeConcat(initial_transform,
-                                                      layer1_transform),
-                              layer2_transform));
+  EXPECT_EQ(mock_layer2->parent_matrix(),
+            DlTransform::MakeConcat(
+                DlTransform::MakeConcat(initial_transform, layer1_transform),
+                layer2_transform));
   EXPECT_EQ(mock_layer2->parent_mutators(),
             std::vector({Mutator(layer1_transform), Mutator(alpha1),
                          Mutator(layer2_transform), Mutator(alpha2)}));
@@ -474,8 +467,7 @@ TEST_F(OpacityLayerTest, Readback) {
 TEST_F(OpacityLayerTest, CullRectIsTransformed) {
   auto clip_rect_layer = std::make_shared<ClipRectLayer>(
       DlFRect::MakeLTRB(0, 0, 10, 10), flutter::hardEdge);
-  auto opacity_layer =
-      std::make_shared<OpacityLayer>(128, DlFPoint(20, 20));
+  auto opacity_layer = std::make_shared<OpacityLayer>(128, DlFPoint(20, 20));
   auto mock_layer = std::make_shared<MockLayer>(DlPath());
   clip_rect_layer->Add(opacity_layer);
   opacity_layer->Add(mock_layer);
@@ -485,8 +477,7 @@ TEST_F(OpacityLayerTest, CullRectIsTransformed) {
 }
 
 TEST_F(OpacityLayerTest, OpacityInheritanceCompatibleChild) {
-  auto opacity_layer =
-      std::make_shared<OpacityLayer>(128, DlFPoint(20, 20));
+  auto opacity_layer = std::make_shared<OpacityLayer>(128, DlFPoint(20, 20));
   auto mock_layer = MockLayer::MakeOpacityCompatible(DlPath());
   opacity_layer->Add(mock_layer);
 
@@ -498,8 +489,7 @@ TEST_F(OpacityLayerTest, OpacityInheritanceCompatibleChild) {
 }
 
 TEST_F(OpacityLayerTest, OpacityInheritanceIncompatibleChild) {
-  auto opacity_layer =
-      std::make_shared<OpacityLayer>(128, DlFPoint(20, 20));
+  auto opacity_layer = std::make_shared<OpacityLayer>(128, DlFPoint(20, 20));
   auto mock_layer = MockLayer::Make(DlPath());
   opacity_layer->Add(mock_layer);
 
@@ -511,8 +501,7 @@ TEST_F(OpacityLayerTest, OpacityInheritanceIncompatibleChild) {
 }
 
 TEST_F(OpacityLayerTest, OpacityInheritanceThroughContainer) {
-  auto opacity_layer =
-      std::make_shared<OpacityLayer>(128, DlFPoint(20, 20));
+  auto opacity_layer = std::make_shared<OpacityLayer>(128, DlFPoint(20, 20));
   auto container_layer = std::make_shared<ContainerLayer>();
   auto mock_layer = MockLayer::MakeOpacityCompatible(DlPath());
   container_layer->Add(mock_layer);
@@ -526,9 +515,9 @@ TEST_F(OpacityLayerTest, OpacityInheritanceThroughContainer) {
 }
 
 TEST_F(OpacityLayerTest, OpacityInheritanceThroughTransform) {
-  auto opacity_layer =
-      std::make_shared<OpacityLayer>(128, DlFPoint(20, 20));
-  auto transformLayer = std::make_shared<TransformLayer>(DlTransform::MakeScale(2, 2));
+  auto opacity_layer = std::make_shared<OpacityLayer>(128, DlFPoint(20, 20));
+  auto transformLayer =
+      std::make_shared<TransformLayer>(DlTransform::MakeScale(2, 2));
   auto mock_layer = MockLayer::MakeOpacityCompatible(DlPath());
   transformLayer->Add(mock_layer);
   opacity_layer->Add(transformLayer);
@@ -541,8 +530,7 @@ TEST_F(OpacityLayerTest, OpacityInheritanceThroughTransform) {
 }
 
 TEST_F(OpacityLayerTest, OpacityInheritanceThroughImageFilter) {
-  auto opacity_layer =
-      std::make_shared<OpacityLayer>(128, DlFPoint(20, 20));
+  auto opacity_layer = std::make_shared<OpacityLayer>(128, DlFPoint(20, 20));
   auto filter_layer = std::make_shared<ImageFilterLayer>(
       std::make_shared<DlBlurImageFilter>(5.0, 5.0, DlTileMode::kClamp));
   auto mock_layer = MockLayer::MakeOpacityCompatible(DlPath());
@@ -659,8 +647,8 @@ TEST_F(OpacityLayerDiffTest, FractionalTranslation) {
   MockLayerTree tree1;
   tree1.root()->Add(layer);
 
-  auto damage = DiffLayerTree(tree1, MockLayerTree(), DlIRect(), 0,
-                              0, /*use_raster_cache=*/false);
+  auto damage = DiffLayerTree(tree1, MockLayerTree(), DlIRect(), 0, 0,
+                              /*use_raster_cache=*/false);
   EXPECT_EQ(damage.frame_damage, DlIRect::MakeLTRB(10, 10, 61, 61));
 }
 
@@ -672,8 +660,8 @@ TEST_F(OpacityLayerDiffTest, FractionalTranslationWithRasterCache) {
   MockLayerTree tree1;
   tree1.root()->Add(layer);
 
-  auto damage = DiffLayerTree(tree1, MockLayerTree(), DlIRect(), 0,
-                              0, /*use_raster_cache=*/true);
+  auto damage = DiffLayerTree(tree1, MockLayerTree(), DlIRect(), 0, 0,
+                              /*use_raster_cache=*/true);
   EXPECT_EQ(damage.frame_damage, DlIRect::MakeLTRB(11, 11, 61, 61));
 }
 

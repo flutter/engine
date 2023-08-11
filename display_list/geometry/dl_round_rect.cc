@@ -48,7 +48,7 @@ void DlFRRect::SetRectRadii(const DlFRect& rect, const DlFVector radii[4]) {
     return;
   }
   auto min_scale = [](double s, double t, double v) {
-    return std::min(s, t/v);
+    return std::min(s, t / v);
   };
   double x_scale, y_scale;
   x_scale = min_scale(2.0, rect_.width(), radii_[0].x() + radii[1].x());
@@ -70,10 +70,10 @@ void DlFRRect::SetRectRadii(const DlFRect& rect, const DlFVector radii[4]) {
   if (all_same && radii_[0].x() == radii_[0].y()) {
     type_ = Type::kSimple;
   } else {
-    if (radii_[0].x() == radii_[3].x() &&
-        radii_[1].x() == radii_[2].x() &&
-        radii_[0].y() == radii_[1].y() &&
-        radii_[2].y() == radii_[3].y()) {
+    if (radii_[0].y() == radii_[1].y() &&  //
+        radii_[1].x() == radii_[2].x() &&  //
+        radii_[2].y() == radii_[3].y() &&  //
+        radii_[3].x() == radii_[0].x()) {
       type_ = Type::kNinePatch;
     } else {
       type_ = Type::kComplex;

@@ -101,9 +101,8 @@ TEST_F(TextureLayerDiffTest, TextureInRetainedLayer) {
   MockLayerTree tree1;
   auto container = std::make_shared<ContainerLayer>();
   tree1.root()->Add(container);
-  auto layer = std::make_shared<TextureLayer>(DlFPoint(),
-                                              DlFSize(100, 100), 0, false,
-                                              DlImageSampling::kLinear);
+  auto layer = std::make_shared<TextureLayer>(DlFPoint(), DlFSize(100, 100), 0,
+                                              false, DlImageSampling::kLinear);
   container->Add(layer);
 
   MockLayerTree tree2;

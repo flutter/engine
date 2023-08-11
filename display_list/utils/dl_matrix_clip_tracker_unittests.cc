@@ -176,7 +176,7 @@ TEST(DisplayListMatrixClipTracker, TransformFullPerspectiveUsing4x4Matrix) {
   const DlTransform transform = DlTransform::MakeScale(4, 4);
 
   const DlTransform transformed_transform =
-      DlTransform::MakeConcat(transform,
+      DlTransform::MakeConcat(transform,                             //
                               DlTransform::MakeRowMajor(2, 0, 0, 5,  //
                                                         0, 2, 0, 6,  //
                                                         0, 0, 1, 7,  //

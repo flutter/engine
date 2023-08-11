@@ -30,8 +30,8 @@ static std::shared_ptr<DlColorSource> MakeFilter(DlColor color) {
       0,
       1,
   };
-  return DlColorSource::MakeLinear(DlFPoint(0, 0), DlFPoint(10, 10),
-                                   2, colors, stops, DlTileMode::kRepeat);
+  return DlColorSource::MakeLinear(DlFPoint(0, 0), DlFPoint(10, 10), 2, colors,
+                                   stops, DlTileMode::kRepeat);
 }
 
 #ifndef NDEBUG

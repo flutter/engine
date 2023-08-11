@@ -78,8 +78,8 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
     const RasterCache::Context& context,
     sk_sp<const DlRTree> rtree,
     const std::function<void(DlCanvas*)>& draw_function,
-    const std::function<void(DlCanvas*, const DlFRect& rect)>& draw_checkerboard)
-    const {
+    const std::function<void(DlCanvas*, const DlFRect& rect)>&
+        draw_checkerboard) const {
   auto matrix = context.matrix.WithIntegerTranslation();
   DlFRect dest_rect =
       RasterCacheUtil::GetRoundedOutDeviceBounds(context.logical_rect, matrix);

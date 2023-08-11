@@ -20,21 +20,23 @@ static const int kSkMatrixIndexToMatrix4Index[] = {
 };
 
 DlTransform ToDlTransform(const tonic::Float64List& matrix4) {
+  // clang-format off
   return DlTransform::MakeColMajor(
-    SafeNarrow(matrix4[ 0]), SafeNarrow(matrix4[ 1]), SafeNarrow(matrix4[ 2]), SafeNarrow(matrix4[ 3]),
-    SafeNarrow(matrix4[ 4]), SafeNarrow(matrix4[ 5]), SafeNarrow(matrix4[ 6]), SafeNarrow(matrix4[ 7]),
-    SafeNarrow(matrix4[ 8]), SafeNarrow(matrix4[ 9]), SafeNarrow(matrix4[10]), SafeNarrow(matrix4[11]),
-    SafeNarrow(matrix4[12]), SafeNarrow(matrix4[13]), SafeNarrow(matrix4[14]), SafeNarrow(matrix4[15])
+      SafeNarrow(matrix4[ 0]), SafeNarrow(matrix4[ 1]), SafeNarrow(matrix4[ 2]), SafeNarrow(matrix4[ 3]),
+      SafeNarrow(matrix4[ 4]), SafeNarrow(matrix4[ 5]), SafeNarrow(matrix4[ 6]), SafeNarrow(matrix4[ 7]),
+      SafeNarrow(matrix4[ 8]), SafeNarrow(matrix4[ 9]), SafeNarrow(matrix4[10]), SafeNarrow(matrix4[11]),
+      SafeNarrow(matrix4[12]), SafeNarrow(matrix4[13]), SafeNarrow(matrix4[14]), SafeNarrow(matrix4[15])
   );
+  // clang-format on
 }
 
 SkM44 ToSkM44(const tonic::Float64List& matrix4) {
   // clang-format off
   return SkM44(
-    SafeNarrow(matrix4[ 0]), SafeNarrow(matrix4[ 4]), SafeNarrow(matrix4[ 8]), SafeNarrow(matrix4[12]),
-    SafeNarrow(matrix4[ 1]), SafeNarrow(matrix4[ 5]), SafeNarrow(matrix4[ 9]), SafeNarrow(matrix4[13]),
-    SafeNarrow(matrix4[ 2]), SafeNarrow(matrix4[ 6]), SafeNarrow(matrix4[10]), SafeNarrow(matrix4[14]),
-    SafeNarrow(matrix4[ 3]), SafeNarrow(matrix4[ 7]), SafeNarrow(matrix4[11]), SafeNarrow(matrix4[15])
+      SafeNarrow(matrix4[ 0]), SafeNarrow(matrix4[ 4]), SafeNarrow(matrix4[ 8]), SafeNarrow(matrix4[12]),
+      SafeNarrow(matrix4[ 1]), SafeNarrow(matrix4[ 5]), SafeNarrow(matrix4[ 9]), SafeNarrow(matrix4[13]),
+      SafeNarrow(matrix4[ 2]), SafeNarrow(matrix4[ 6]), SafeNarrow(matrix4[10]), SafeNarrow(matrix4[14]),
+      SafeNarrow(matrix4[ 3]), SafeNarrow(matrix4[ 7]), SafeNarrow(matrix4[11]), SafeNarrow(matrix4[15])
   );
   // clang-format on
 }

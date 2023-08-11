@@ -165,10 +165,10 @@ void Canvas::clipRect(double left,
                       DlCanvas::ClipOp clipOp,
                       bool doAntiAlias) {
   if (display_list_builder_) {
-    builder()->ClipRect(DlFRect::MakeLTRB(
-                            SafeNarrow(left), SafeNarrow(top),
-                            SafeNarrow(right), SafeNarrow(bottom)),
-                        clipOp, doAntiAlias);
+    builder()->ClipRect(
+        DlFRect::MakeLTRB(SafeNarrow(left), SafeNarrow(top),  //
+                          SafeNarrow(right), SafeNarrow(bottom)),
+        clipOp, doAntiAlias);
   }
 }
 
@@ -232,8 +232,7 @@ void Canvas::drawLine(double x1,
     DlPaint dl_paint;
     paint.paint(dl_paint, kDrawLineFlags);
     builder()->DrawLine(DlFPoint(SafeNarrow(x1), SafeNarrow(y1)),
-                        DlFPoint(SafeNarrow(x2), SafeNarrow(y2)),
-                        dl_paint);
+                        DlFPoint(SafeNarrow(x2), SafeNarrow(y2)), dl_paint);
   }
 }
 
@@ -266,10 +265,10 @@ void Canvas::drawRect(double left,
   if (display_list_builder_) {
     DlPaint dl_paint;
     paint.paint(dl_paint, kDrawRectFlags);
-    builder()->DrawRect(DlFRect::MakeLTRB(
-                            SafeNarrow(left), SafeNarrow(top),
-                            SafeNarrow(right), SafeNarrow(bottom)),
-                        dl_paint);
+    builder()->DrawRect(
+        DlFRect::MakeLTRB(SafeNarrow(left), SafeNarrow(top),  //
+                          SafeNarrow(right), SafeNarrow(bottom)),
+        dl_paint);
   }
 }
 
@@ -312,10 +311,10 @@ void Canvas::drawOval(double left,
   if (display_list_builder_) {
     DlPaint dl_paint;
     paint.paint(dl_paint, kDrawOvalFlags);
-    builder()->DrawOval(DlFRect::MakeLTRB(
-                            SafeNarrow(left), SafeNarrow(top),
-                            SafeNarrow(right), SafeNarrow(bottom)),
-                        dl_paint);
+    builder()->DrawOval(
+        DlFRect::MakeLTRB(SafeNarrow(left), SafeNarrow(top),  //
+                          SafeNarrow(right), SafeNarrow(bottom)),
+        dl_paint);
   }
 }
 
@@ -439,12 +438,12 @@ Dart_Handle Canvas::drawImageRect(const CanvasImage* image,
     return ToDart(error.value());
   }
 
-  DlFRect src = DlFRect::MakeLTRB(
-      SafeNarrow(src_left), SafeNarrow(src_top),  //
-      SafeNarrow(src_right), SafeNarrow(src_bottom));
-  DlFRect dst = DlFRect::MakeLTRB(
-      SafeNarrow(dst_left), SafeNarrow(dst_top),  //
-      SafeNarrow(dst_right), SafeNarrow(dst_bottom));
+  DlFRect src =
+      DlFRect::MakeLTRB(SafeNarrow(src_left), SafeNarrow(src_top),  //
+                        SafeNarrow(src_right), SafeNarrow(src_bottom));
+  DlFRect dst =
+      DlFRect::MakeLTRB(SafeNarrow(dst_left), SafeNarrow(dst_top),  //
+                        SafeNarrow(dst_right), SafeNarrow(dst_bottom));
   auto sampling = ImageFilter::SamplingFromIndex(filterQualityIndex);
   if (display_list_builder_) {
     DlPaint dl_paint;

@@ -17,7 +17,8 @@ bool DlScalars_AreAllFinite(const DlScalar* m, int count) {
   return true;
 }
 
-bool DlScalars_AreAllEqual(const DlScalar v1[], const DlScalar v2[],
+bool DlScalars_AreAllEqual(const DlScalar v1[],
+                           const DlScalar v2[],
                            int count) {
   return memcmp(v1, v2, sizeof(DlScalar) * count) == 0;
 }

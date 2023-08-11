@@ -40,9 +40,15 @@ struct DlTPoint {
   inline void SetX(T x) { x_ = x; }
   inline void SetY(T y) { y_ = y; }
 
-  inline void Set(T x, T y) { x_ = x; y_ = y; }
+  inline void Set(T x, T y) {
+    x_ = x;
+    y_ = y;
+  }
 
-  void Offset(T dx, T dy) { x_ += dx; y_ += dy; }
+  void Offset(T dx, T dy) {
+    x_ += dx;
+    y_ += dy;
+  }
 
   template <typename U>
   void operator=(const U& p) {
@@ -50,24 +56,14 @@ struct DlTPoint {
     y_ = p.y();
   }
 
-  DlTPoint operator+(const DlTPoint& p) const {
-    return {x_ + p.x_, y_ + p.y_};
-  }
-  DlTPoint operator-(const DlTPoint& p) const {
-    return {x_ - p.x_, y_ - p.y_};
-  }
-  DlTPoint operator-() const {
-    return {-x_, -y_};
-  }
+  DlTPoint operator+(const DlTPoint& p) const { return {x_ + p.x_, y_ + p.y_}; }
+  DlTPoint operator-(const DlTPoint& p) const { return {x_ - p.x_, y_ - p.y_}; }
+  DlTPoint operator-() const { return {-x_, -y_}; }
 
-  bool operator==(const DlTPoint& p) const {
-    return x_ == p.x_ && y_ == p.y_;
-  }
+  bool operator==(const DlTPoint& p) const { return x_ == p.x_ && y_ == p.y_; }
   bool operator!=(const DlTPoint& p) const { return !(*this == p); }
 
-  bool is_finite() const {
-    return DlScalars_AreFinite(x_, y_);
-  }
+  bool is_finite() const { return DlScalars_AreFinite(x_, y_); }
 };
 
 using DlFPoint = DlTPoint<DlScalar>;
@@ -153,9 +149,7 @@ struct DlFVector3 : public DlTPoint<DlScalar> {
   DlFVector3 operator-(const DlFVector3& p) const {
     return {x_ - p.x_, y_ - p.y_, z_ - p.z_};
   }
-  DlFVector3 operator-() const {
-    return {-x_, -y_, -z_};
-  }
+  DlFVector3 operator-() const { return {-x_, -y_, -z_}; }
 
   bool operator==(const DlFVector3& p) const {
     return x_ == p.x_ && y_ == p.y_ && z_ == p.z_;
@@ -183,7 +177,7 @@ inline DlFVector3 operator/(const DlFVector3 p, T v) {
 static inline std::ostream& operator<<(std::ostream& os,
                                        const DlFVector3& point) {
   return os << "DlVector3(" << point.x() << ", " << point.y() << ", "
-                            << point.z() << ")";
+            << point.z() << ")";
 }
 
 [[maybe_unused]] constexpr DlFVector3 kDlAxis_X = DlFVector3(1.0f, 0.0f, 0.0f);
@@ -235,16 +229,6 @@ struct DlFVector4 : public DlFVector3 {
     y_ = p.y();
     z_ = p.z();
     w_ = p.w();
-  }
-
-  DlFVector4 operator+(const DlFVector4& p) const {
-    return {x_ + p.x_, y_ + p.y_, z_ + p.z_, w_ + p.w_};
-  }
-  DlFVector4 operator-(const DlFVector4& p) const {
-    return {x_ - p.x_, y_ - p.y_, z_ - p.z_, w_ - p.w_};
-  }
-  DlFVector4 operator-() const {
-    return {-x_, -y_, -z_, -w_};
   }
 
   bool operator==(const DlFVector4& p) const {

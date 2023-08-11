@@ -14,8 +14,7 @@ PlatformViewLayer::PlatformViewLayer(const DlFPoint& offset,
     : offset_(offset), size_(size), view_id_(view_id) {}
 
 void PlatformViewLayer::Preroll(PrerollContext* context) {
-  set_paint_bounds(DlFRect::MakeXYWH(offset_.x(), offset_.y(), size_.width(),
-                                    size_.height()));
+  set_paint_bounds(DlFRect::MakeOriginSize(offset_, size_));
 
   if (context->view_embedder == nullptr) {
     FML_LOG(ERROR) << "Trying to embed a platform view but the PrerollContext "

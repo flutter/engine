@@ -80,7 +80,7 @@ static sk_sp<DlImage> MakeTestImage(int w, int h, int checker_size) {
     for (int x = 0; x < h; x += checker_size) {
       DlPaint& cellp = ((x + y) & 1) == 0 ? p0 : p1;
       canvas.DrawRect(DlFRect::MakeXYWH(x, y, checker_size, checker_size),
-                       cellp);
+                      cellp);
     }
   }
   return DlImage::Make(surface->makeImageSnapshot());

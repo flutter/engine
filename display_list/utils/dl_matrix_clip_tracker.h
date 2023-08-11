@@ -37,7 +37,9 @@ class DisplayListMatrixClipTracker {
     current_->resetBounds(cull_rect ? *cull_rect : original_cull_rect_);
   }
 
-  DlFRect base_device_cull_rect() const { return saved_[0]->device_cull_rect(); }
+  DlFRect base_device_cull_rect() const {
+    return saved_[0]->device_cull_rect();
+  }
 
   DlTransform matrix() const { return current_->matrix(); }
   DlFRect local_cull_rect() const { return current_->local_cull_rect(); }

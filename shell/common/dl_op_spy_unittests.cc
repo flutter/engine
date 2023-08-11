@@ -268,8 +268,7 @@ TEST(DlOpSpy, DrawPath) {
     DisplayListBuilder builder;
     DlPaint paint(DlColor::kBlack());
     paint.setDrawStyle(DlDrawStyle::kStroke);
-    builder.DrawPath(DlPath::MakeLine(DlFPoint(0, 1), DlFPoint(1, 1)),
-                     paint);
+    builder.DrawPath(DlPath::MakeLine(DlFPoint(0, 1), DlFPoint(1, 1)), paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);
@@ -292,8 +291,7 @@ TEST(DlOpSpy, DrawPath) {
     DisplayListBuilder builder;
     DlPaint paint(DlColor::kTransparent());
     paint.setDrawStyle(DlDrawStyle::kStroke);
-    builder.DrawPath(DlPath::MakeLine(DlFPoint(0, 1), DlFPoint(1, 1)),
-                     paint);
+    builder.DrawPath(DlPath::MakeLine(DlFPoint(0, 1), DlFPoint(1, 1)), paint);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);
@@ -459,7 +457,7 @@ TEST(DlOpSpy, Images) {
     bitmap.allocPixels(info, 0);
     auto sk_image = SkImages::RasterFromBitmap(bitmap);
     const DlRSTransform xform[] = {
-        DlRSTransform::MakeScaledCosSinXY(1, 0, 0, 0)
+        DlRSTransform::MakeScaledCosSinXY(1, 0, 0, 0),
     };
     const DlFRect tex[] = {DlFRect::MakeXYWH(10, 10, 10, 10)};
     DlFRect cull_rect = DlFRect::MakeWH(5, 5);

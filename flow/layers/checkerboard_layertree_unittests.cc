@@ -82,8 +82,7 @@ TEST_F(CheckerBoardLayerTest, ClipRectSaveLayerCheckBoard) {
           /* mock_layer::Paint */ {
             expected_builder.DrawPath(child_path, child_paint);
           }
-          expected_builder.DrawRect(child_path.Bounds(),
-                                    checkerboard_paint());
+          expected_builder.DrawRect(child_path.Bounds(), checkerboard_paint());
         }
         expected_builder.Restore();
       }
@@ -159,8 +158,7 @@ TEST_F(CheckerBoardLayerTest, ClipPathSaveLayerCheckBoard) {
           /* mock_layer::Paint */ {
             expected_builder.DrawPath(child_path, child_paint);
           }
-          expected_builder.DrawRect(child_path.Bounds(),
-                                    checkerboard_paint());
+          expected_builder.DrawRect(child_path.Bounds(), checkerboard_paint());
         }
         expected_builder.Restore();
       }
@@ -235,8 +233,7 @@ TEST_F(CheckerBoardLayerTest, ClipRRectSaveLayerCheckBoard) {
           /* mock_layer::Paint */ {
             expected_builder.DrawPath(child_path, child_paint);
           }
-          expected_builder.DrawRect(child_path.Bounds(),
-                                    checkerboard_paint());
+          expected_builder.DrawRect(child_path.Bounds(), checkerboard_paint());
         }
         expected_builder.Restore();
       }

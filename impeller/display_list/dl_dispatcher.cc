@@ -805,12 +805,16 @@ static Entity::ClipOperation ToClipOperation(
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::clipRect(const flutter::DlFRect& rect, ClipOp clip_op, bool is_aa) {
+void DlDispatcher::clipRect(const flutter::DlFRect& rect,
+                            ClipOp clip_op,
+                            bool is_aa) {
   canvas_.ClipRect(skia_conversions::ToRect(rect), ToClipOperation(clip_op));
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::clipRRect(const flutter::DlFRRect& rrect, ClipOp clip_op, bool is_aa) {
+void DlDispatcher::clipRRect(const flutter::DlFRRect& rrect,
+                             ClipOp clip_op,
+                             bool is_aa) {
   if (rrect.is_simple()) {
     canvas_.ClipRRect(skia_conversions::ToRect(rrect.rect()),
                       rrect.upper_left_radii().x(), ToClipOperation(clip_op));
@@ -820,7 +824,9 @@ void DlDispatcher::clipRRect(const flutter::DlFRRect& rrect, ClipOp clip_op, boo
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::clipPath(const flutter::DlPath& path, ClipOp clip_op, bool is_aa) {
+void DlDispatcher::clipPath(const flutter::DlPath& path,
+                            ClipOp clip_op,
+                            bool is_aa) {
   canvas_.ClipPath(skia_conversions::ToPath(path), ToClipOperation(clip_op));
 }
 
@@ -839,7 +845,8 @@ void DlDispatcher::drawPaint() {
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawLine(const flutter::DlFPoint& p0, const flutter::DlFPoint& p1) {
+void DlDispatcher::drawLine(const flutter::DlFPoint& p0,
+                            const flutter::DlFPoint& p1) {
   auto path =
       PathBuilder{}
           .AddLine(skia_conversions::ToPoint(p0), skia_conversions::ToPoint(p1))
@@ -870,7 +877,8 @@ void DlDispatcher::drawOval(const flutter::DlFRect& bounds) {
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawCircle(const flutter::DlFPoint& center, flutter::DlScalar radius) {
+void DlDispatcher::drawCircle(const flutter::DlFPoint& center,
+                              flutter::DlScalar radius) {
   canvas_.DrawCircle(skia_conversions::ToPoint(center), radius, paint_);
 }
 
@@ -885,7 +893,8 @@ void DlDispatcher::drawRRect(const flutter::DlFRRect& rrect) {
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawDRRect(const flutter::DlFRRect& outer, const flutter::DlFRRect& inner) {
+void DlDispatcher::drawDRRect(const flutter::DlFRRect& outer,
+                              const flutter::DlFRRect& inner) {
   PathBuilder builder;
   builder.AddPath(skia_conversions::ToPath(outer));
   builder.AddPath(skia_conversions::ToPath(inner));
@@ -1020,11 +1029,11 @@ void DlDispatcher::drawImageNine(const sk_sp<flutter::DlImage> image,
                                  flutter::DlFilterMode filter,
                                  bool render_with_attributes) {
   NinePatchConverter converter = {};
-  converter.DrawNinePatch(
-      std::make_shared<Image>(image->impeller_texture()),
-      Rect::MakeLTRB(center.left(), center.top(), center.right(), center.bottom()),
-      skia_conversions::ToRect(dst), ToSamplerDescriptor(filter), &canvas_,
-      &paint_);
+  converter.DrawNinePatch(std::make_shared<Image>(image->impeller_texture()),
+                          Rect::MakeLTRB(center.left(), center.top(),
+                                         center.right(), center.bottom()),
+                          skia_conversions::ToRect(dst),
+                          ToSamplerDescriptor(filter), &canvas_, &paint_);
 }
 
 // |flutter::DlOpReceiver|
@@ -1085,11 +1094,10 @@ void DlDispatcher::drawDisplayList(
     auto cull_bounds = canvas_.GetCurrentLocalCullingBounds();
     if (cull_bounds.has_value()) {
       Rect cull_rect = cull_bounds.value();
-      display_list->Dispatch(
-          *this, flutter::DlFRect::MakeLTRB(cull_rect.GetLeft(),
-                                            cull_rect.GetTop(),
-                                            cull_rect.GetRight(),
-                                            cull_rect.GetBottom()));
+      display_list->Dispatch(*this,
+                             flutter::DlFRect::MakeLTRB(
+                                 cull_rect.GetLeft(), cull_rect.GetTop(),
+                                 cull_rect.GetRight(), cull_rect.GetBottom()));
     } else {
       display_list->Dispatch(*this);
     }

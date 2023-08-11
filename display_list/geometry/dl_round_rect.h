@@ -39,8 +39,9 @@ class DlFRRect {
     return r_rect;
   }
 
-  static constexpr DlFRRect MakeRectXY(const DlFRect& rect,  //
-                                       DlScalar dx, DlScalar dy) {
+  static constexpr DlFRRect MakeRectXY(const DlFRect& rect,
+                                       DlScalar dx,
+                                       DlScalar dy) {
     DlFRRect r_rect;
     r_rect.SetRectRadii(rect, dx, dy);
     return r_rect;
@@ -56,10 +57,10 @@ class DlFRRect {
   void SetRectRadii(const DlFRect& rect, const DlFVector radii[4]);
   void SetRectRadii(const DlFRect& rect, DlScalar dx, DlScalar dy) {
     DlFVector radii[4] = {
-      {dx, dy},
-      {dx, dy},
-      {dx, dy},
-      {dx, dy},
+        {dx, dy},
+        {dx, dy},
+        {dx, dy},
+        {dx, dy},
     };
     SetRectRadii(rect, radii);
   }
@@ -85,9 +86,7 @@ class DlFRRect {
     memcpy(radii, radii_, sizeof(radii_));
   }
 
-  void Offset(DlScalar dx, DlScalar dy) {
-    rect_.Offset(dx, dy);
-  }
+  void Offset(DlScalar dx, DlScalar dy) { rect_.Offset(dx, dy); }
   void Offset(const DlFVector& v) { Offset(v.x(), v.y()); }
   DlFRRect MakeOffset(DlScalar dx, DlScalar dy) const {
     DlFRRect r_rect = *this;

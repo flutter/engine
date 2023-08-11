@@ -12,7 +12,8 @@ namespace flutter {
 
 class PlatformViewLayer : public Layer {
  public:
-  PlatformViewLayer(const DlFPoint& offset, const DlFSize& size,
+  PlatformViewLayer(const DlFPoint& offset,
+                    const DlFSize& size,
                     int64_t view_id);
 
   void Preroll(PrerollContext* context) override;

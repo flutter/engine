@@ -195,7 +195,7 @@ class BoundsTolerance {
 
   BoundsTolerance mulScale(DlScalar scale_x, DlScalar scale_y) const {
     BoundsTolerance copy = BoundsTolerance(*this);
-    copy.scale_ = DlFPoint(copy.scale_.x() * scale_x,
+    copy.scale_ = DlFPoint(copy.scale_.x() * scale_x,  //
                            copy.scale_.y() * scale_y);
     return copy;
   }
@@ -347,12 +347,14 @@ struct MatrixClipJobRenderer : public JobRenderer {
   DlTransform setup_matrix_;
   DlIRect setup_clip_bounds_;
   DlTransform ToDl(const SkMatrix& matrix) {
+    // clang-format off
     return DlTransform::MakeRowMajor(
         matrix.getScaleX(),  matrix.getSkewX(), 0.0f, matrix.getTranslateX(),
          matrix.getSkewY(), matrix.getScaleY(), 0.0f, matrix.getTranslateY(),
                       0.0f,               0.0f, 1.0f, 0.0f,
         matrix.getPerspX(), matrix.getPerspY(), 0.0f, matrix[SkMatrix::kMPersp2]
     );
+    // clang-format on
   }
 };
 
@@ -1876,7 +1878,7 @@ class CanvasCompareTester {
       SkMatrix sk_tx = SkMatrix::MakeAll(1.0 + tweak, tweak, 5,   //
                                          tweak, 1.0 + tweak, 10,  //
                                          0, 0, 1);
-      DlTransform dl_tx = DlTransform::MakeAffine2D(1.0 + tweak, tweak, 5,   //
+      DlTransform dl_tx = DlTransform::MakeAffine2D(1.0 + tweak, tweak, 5,  //
                                                     tweak, 1.0 + tweak, 10);
       RenderWith(testP, env, skewed_tolerance,
                  CaseParameters(
@@ -1894,17 +1896,16 @@ class CanvasCompareTester {
       m44.preConcat(
           SkM44::Rotate({0, 1, 0}, math::kPi / 45));  // 4 degrees around Y
       m44.preTranslate(-kRenderCenterX, -kRenderCenterY);
-      // DlTransform dl_matrix = DlTransform::MakeRowMajor(
-      //     m44.rc(0, 0), m44.rc(0, 1), m44.rc(0, 2), m44.rc(0, 3),
-      //     m44.rc(1, 0), m44.rc(1, 1), m44.rc(1, 2), m44.rc(1, 3),
-      //     m44.rc(2, 0), m44.rc(2, 1), m44.rc(2, 2), m44.rc(2, 3),
-      //     m44.rc(3, 0), m44.rc(3, 1), m44.rc(3, 2), m44.rc(3, 3)
-      // );
-      // RenderWith(testP, env, skewed_tolerance,
-      //            CaseParameters(
-      //                "Transform Full Perspective",
-      //                [=](SkCanvas* c, SkPaint&) { c->concat(m44); },
-      //                [=](DlCanvas* c, DlPaint&) { c->Transform(dl_matrix); }));
+      DlTransform dl_matrix = DlTransform::MakeRowMajor(           //
+          m44.rc(0, 0), m44.rc(0, 1), m44.rc(0, 2), m44.rc(0, 3),  //
+          m44.rc(1, 0), m44.rc(1, 1), m44.rc(1, 2), m44.rc(1, 3),  //
+          m44.rc(2, 0), m44.rc(2, 1), m44.rc(2, 2), m44.rc(2, 3),  //
+          m44.rc(3, 0), m44.rc(3, 1), m44.rc(3, 2), m44.rc(3, 3));
+      RenderWith(testP, env, skewed_tolerance,
+                 CaseParameters(
+                     "Transform Full Perspective",
+                     [=](SkCanvas* c, SkPaint&) { c->concat(m44); },
+                     [=](DlCanvas* c, DlPaint&) { c->Transform(dl_matrix); }));
     }
   }
 
@@ -2085,7 +2086,7 @@ class CanvasCompareTester {
         }
         if (!dl_bounds.is_empty() &&
             !DlIRect::MakeBounds(sk_bounds.roundOut())
-                .Contains(DlIRect::MakeRoundedOut(dl_bounds))) {
+                 .Contains(DlIRect::MakeRoundedOut(dl_bounds))) {
           FML_LOG(ERROR) << "###### DisplayList bounds larger than reference!";
         }
       }
@@ -2387,10 +2388,6 @@ class CanvasCompareTester {
                      << min_x << ", " << min_y << " => " << max_x << ", "
                      << max_y << "]";
       FML_LOG(ERROR) << "dl_bounds[" << *bounds;
-                    //  << bounds->fLeft << ", " << bounds->fTop      //
-                    //  << " => "                                     //
-                    //  << bounds->fRight << ", " << bounds->fBottom  //
-                    //  << "]";
     } else if (bounds) {
       showBoundsOverflow(info, i_bounds, tolerance, min_x, min_y, max_x, max_y);
     }
@@ -2423,10 +2420,6 @@ class CanvasCompareTester {
                      << pixRight << ", " << pixBottom        //
                      << "]";
       FML_LOG(ERROR) << "dl_bounds[" << bounds;
-                    //  << bounds.fLeft << ", " << bounds.fTop      //
-                    //  << " => "                                   //
-                    //  << bounds.fRight << ", " << bounds.fBottom  //
-                    //  << "]";
       FML_LOG(ERROR) << "Bounds overly conservative by up to "     //
                      << worst_pad_x << ", " << worst_pad_y         //
                      << " (" << (worst_pad_x * 100.0 / pix_width)  //
@@ -3017,9 +3010,8 @@ TEST_F(DisplayListCanvas, DrawVerticesWithColors) {
       SK_ColorRED,  SK_ColorBLUE,   SK_ColorGREEN,
       SK_ColorCYAN, SK_ColorYELLOW, SK_ColorMAGENTA,
   };
-  const std::shared_ptr<DlVertices> dl_vertices =
-      DlVertices::Make(DlVertexMode::kTriangles, 6, dl_points, nullptr,
-                       dl_colors);
+  const std::shared_ptr<DlVertices> dl_vertices = DlVertices::Make(
+      DlVertexMode::kTriangles, 6, dl_points, nullptr, dl_colors);
   const auto sk_vertices =
       SkVertices::MakeCopy(SkVertices::VertexMode::kTriangles_VertexMode, 6,
                            sk_points, nullptr, sk_colors);
@@ -3067,9 +3059,9 @@ TEST_F(DisplayListCanvas, DrawVerticesWithImage) {
   const DlFPoint* dl_tex = reinterpret_cast<const DlFPoint*>(sk_tex);
   const std::shared_ptr<DlVertices> dl_vertices =
       DlVertices::Make(DlVertexMode::kTriangles, 6, dl_points, dl_tex, nullptr);
-  const auto sk_vertices = SkVertices::MakeCopy(
-      SkVertices::VertexMode::kTriangles_VertexMode, 6, sk_points, sk_tex,
-      nullptr);
+  const auto sk_vertices =
+      SkVertices::MakeCopy(SkVertices::VertexMode::kTriangles_VertexMode, 6,
+                           sk_points, sk_tex, nullptr);
 
   CanvasCompareTester::RenderAll(  //
       TestParameters(
@@ -3192,9 +3184,8 @@ TEST_F(DisplayListCanvas, DrawImageRectLinear) {
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {             //
             canvas->drawImageRect(CanvasCompareTester::kTestImage,  //
-                                  sk_src, sk_dst,
-                                  SkImageSampling::kLinear, &paint,
-                                  SkCanvas::kFast_SrcRectConstraint);
+                                  sk_src, sk_dst, SkImageSampling::kLinear,
+                                  &paint, SkCanvas::kFast_SrcRectConstraint);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {  //
             canvas->DrawImageRect(
@@ -3248,9 +3239,11 @@ TEST_F(DisplayListCanvas, DrawImageNineNearestNoPaint) {
 }
 
 TEST_F(DisplayListCanvas, DrawImageNineLinear) {
-  SkIRect sk_src = SkIRect::MakeWH(kRenderWidth, kRenderHeight).makeInset(25, 25);
+  SkIRect sk_src =
+      SkIRect::MakeWH(kRenderWidth, kRenderHeight).makeInset(25, 25);
   SkRect sk_dst = kSkRenderBounds.makeInset(10.5, 10.5);
-  DlIRect dl_src = DlIRect::MakeWH(kRenderWidth, kRenderHeight).MakeInset(25, 25);
+  DlIRect dl_src =
+      DlIRect::MakeWH(kRenderWidth, kRenderHeight).MakeInset(25, 25);
   DlFRect dl_dst = kDlRenderBounds.MakeInset(10.5, 10.5);
   sk_sp<SkImage> image = CanvasCompareTester::kTestImage;
   CanvasCompareTester::RenderAll(  //
@@ -3510,14 +3503,12 @@ TEST_F(DisplayListCanvas, DrawTextBlob) {
 
 TEST_F(DisplayListCanvas, DrawShadow) {
   DlPath path;
-  path.AddRoundRect(
-      DlFRect::MakeLTRB(
-          kRenderLeft + 10,
-          kRenderTop,
-          kRenderRight - 10,
-          kRenderBottom - 20
-      ),
-      kRenderCornerRadius, kRenderCornerRadius);
+  path.AddRoundRect(DlFRect::MakeLTRB(      //
+                        kRenderLeft + 10,   //
+                        kRenderTop,         //
+                        kRenderRight - 10,  //
+                        kRenderBottom - 20),
+                    kRenderCornerRadius, kRenderCornerRadius);
   const DlColor color = DlColor::kDarkGrey();
   const DlScalar elevation = 5;
 
@@ -3536,14 +3527,12 @@ TEST_F(DisplayListCanvas, DrawShadow) {
 
 TEST_F(DisplayListCanvas, DrawShadowTransparentOccluder) {
   DlPath path;
-  path.AddRoundRect(
-      DlFRect::MakeLTRB(
-          kRenderLeft + 10,
-          kRenderTop,
-          kRenderRight - 10,
-          kRenderBottom - 20
-      ),
-      kRenderCornerRadius, kRenderCornerRadius);
+  path.AddRoundRect(DlFRect::MakeLTRB(      //
+                        kRenderLeft + 10,   //
+                        kRenderTop,         //
+                        kRenderRight - 10,  //
+                        kRenderBottom - 20),
+                    kRenderCornerRadius, kRenderCornerRadius);
   const DlColor color = DlColor::kDarkGrey();
   const DlScalar elevation = 5;
 
@@ -3562,14 +3551,12 @@ TEST_F(DisplayListCanvas, DrawShadowTransparentOccluder) {
 
 TEST_F(DisplayListCanvas, DrawShadowDpr) {
   DlPath path;
-  path.AddRoundRect(
-      DlFRect::MakeLTRB(
-          kRenderLeft + 10,
-          kRenderTop,
-          kRenderRight - 10,
-          kRenderBottom - 20
-      ),
-      kRenderCornerRadius, kRenderCornerRadius);
+  path.AddRoundRect(DlFRect::MakeLTRB(      //
+                        kRenderLeft + 10,   //
+                        kRenderTop,         //
+                        kRenderRight - 10,  //
+                        kRenderBottom - 20),
+                    kRenderCornerRadius, kRenderCornerRadius);
   const DlColor color = DlColor::kDarkGrey();
   const DlScalar elevation = 5;
 

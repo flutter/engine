@@ -690,8 +690,10 @@ TEST(DisplayListVertices, BuildWithTexUsingFloats) {
   for (int i = 0; i < 3; i++) {
     ASSERT_EQ(vertices->vertices()[i].x(), coords[i * 2 + 0]);
     ASSERT_EQ(vertices->vertices()[i].y(), coords[i * 2 + 1]);
-    ASSERT_EQ(vertices->texture_coordinates()[i].x(), texture_coords[i * 2 + 0]);
-    ASSERT_EQ(vertices->texture_coordinates()[i].y(), texture_coords[i * 2 + 1]);
+    ASSERT_EQ(vertices->texture_coordinates()[i].x(),
+              texture_coords[i * 2 + 0]);
+    ASSERT_EQ(vertices->texture_coordinates()[i].y(),
+              texture_coords[i * 2 + 1]);
   }
   ASSERT_EQ(vertices->index_count(), 0);
 }

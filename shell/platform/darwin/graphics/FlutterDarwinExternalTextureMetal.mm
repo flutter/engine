@@ -65,8 +65,7 @@ FLUTTER_ASSERT_ARC
   }
 
   if (_externalImage) {
-    flutter::DlFRect imageBounds =
-        flutter::DlFRect::MakeBounds(_externalImage->bounds());
+    flutter::DlFRect imageBounds = flutter::DlFRect::MakeBounds(_externalImage->bounds());
     context.canvas->DrawImageRect(_externalImage,                                // image
                                   imageBounds,                                   // source rect
                                   bounds,                                        // destination rect

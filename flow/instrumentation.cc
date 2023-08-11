@@ -89,8 +89,8 @@ fml::TimeDelta Stopwatch::AverageDelta() const {
 void Stopwatch::InitVisualizeSurface(DlISize size) const {
   // Mark as dirty if the size has changed.
   if (visualize_cache_surface_) {
-    if ((int) size.width() != visualize_cache_surface_->width() ||
-        (int) size.height() != visualize_cache_surface_->height()) {
+    if ((int)size.width() != visualize_cache_surface_->width() ||
+        (int)size.height() != visualize_cache_surface_->height()) {
       cache_dirty_ = true;
     };
   }
@@ -219,8 +219,7 @@ void Stopwatch::Visualize(DlCanvas* canvas, const DlFRect& rect) const {
           height * (1.0 - (UnitFrameInterval((frame_index + 1) * one_frame_ms) /
                            max_unit_interval));
       cache_canvas.DrawLine(DlFPoint(x, y + frame_height),
-                            DlFPoint(width, y + frame_height),
-                             paint);
+                            DlFPoint(width, y + frame_height), paint);
     }
   }
 

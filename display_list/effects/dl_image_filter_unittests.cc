@@ -74,7 +74,7 @@ static void TestBoundsWithMatrix(const DlImageFilter& filter,
   ASSERT_EQ(filter.map_device_bounds(device_input_ibounds, matrix,
                                      device_filter_ibounds),
             &device_filter_ibounds);
-  ASSERT_TRUE(containsInclusive(device_filter_ibounds, expected_output_quad)) << device_filter_ibounds;;
+  ASSERT_TRUE(containsInclusive(device_filter_ibounds, expected_output_quad));
 
   DlIRect reverse_input_ibounds;
   ASSERT_EQ(filter.get_input_device_bounds(device_filter_ibounds, matrix,
@@ -538,15 +538,14 @@ static void TestUnboundedBounds(DlImageFilter& filter,
 
   DlIRect sourceIBounds = DlIRect::MakeRoundedOut(sourceBounds);
   DlIRect ibounds;
-  EXPECT_EQ(
-      filter.map_device_bounds(sourceIBounds, DlTransform(), ibounds),
-      nullptr);
+  EXPECT_EQ(filter.map_device_bounds(sourceIBounds, DlTransform(), ibounds),
+            nullptr);
   DlIRect expectedOutputIBounds = DlIRect::MakeRoundedOut(expectedOutputBounds);
   EXPECT_EQ(ibounds, expectedOutputIBounds);
 
-  EXPECT_EQ(filter.get_input_device_bounds(sourceIBounds,
-                                           DlTransform(), ibounds),
-            nullptr);
+  EXPECT_EQ(
+      filter.get_input_device_bounds(sourceIBounds, DlTransform(), ibounds),
+      nullptr);
   DlIRect expectedInputIBounds = DlIRect::MakeRoundedOut(expectedInputBounds);
   EXPECT_EQ(ibounds, expectedInputIBounds);
 }
@@ -718,9 +717,13 @@ TEST(DisplayListImageFilter, LocalImageFilterBounds) {
   std::vector<DlTransform> matrices = {
       DlTransform::MakeTranslate(10.0, 10.0),
       DlTransform::MakeScale(2.0, 2.0).TranslateInner(10.0, 10.0),
-      DlTransform::MakeRotate(DlDegrees(45)).TranslateInner(5.0, 5.0), persp};
-  std::vector<DlTransform> bounds_matrices{DlTransform::MakeTranslate(5.0, 10.0),
-                                           DlTransform::MakeScale(2.0, 2.0)};
+      DlTransform::MakeRotate(DlDegrees(45)).TranslateInner(5.0, 5.0),
+      persp,
+  };
+  std::vector<DlTransform> bounds_matrices{
+      DlTransform::MakeTranslate(5.0, 10.0),
+      DlTransform::MakeScale(2.0, 2.0),
+  };
 
   for (unsigned i = 0; i < sk_filters.size(); i++) {
     for (unsigned j = 0; j < matrices.size(); j++) {

@@ -98,8 +98,8 @@ void ShellTestExternalViewEmbedder::SubmitFrame(
   }
   frame->Submit();
   if (frame->SkiaSurface()) {
-    last_submitted_frame_size_ = DlISize(frame->SkiaSurface()->width(),
-                                         frame->SkiaSurface()->height());
+    last_submitted_frame_size_ =
+        DlISize(frame->SkiaSurface()->width(), frame->SkiaSurface()->height());
   } else {
     last_submitted_frame_size_ = DlISize();
   }

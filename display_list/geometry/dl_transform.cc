@@ -16,7 +16,7 @@ DlTransform DlTransform::MakeConcat(const DlTransform& outer,
     for (int c = 0; c < 4; c++) {
       DlScalar v = 0.0f;
       for (int i = 0; i < 4; i++) {
-        v += inner.m_[r*4 + i] * outer.m_[i*4 + c];
+        v += inner.m_[r * 4 + i] * outer.m_[i * 4 + c];
       }
       new_m[r * 4 + c] = v;
     }
@@ -69,9 +69,8 @@ DlTransform& DlTransform::TranslateInner(DlScalar tx, DlScalar ty) {
     case Complexity::kTranslate2D:
       m_[kXT] += tx;
       m_[kYT] += ty;
-      complexity_ = (m_[kXT] == 0 && m_[kYT] == 0)
-                        ? Complexity::kIdentity
-                        : Complexity::kTranslate2D;
+      complexity_ = (m_[kXT] == 0 && m_[kYT] == 0) ? Complexity::kIdentity
+                                                   : Complexity::kTranslate2D;
       break;
 
     case Complexity::kScaleTranslate2D:
@@ -109,10 +108,9 @@ DlTransform& DlTransform::TranslateOuter(DlScalar tx, DlScalar ty) {
   m_[kXT] += tx;
   m_[kYT] += ty;
   if (complexity() <= Complexity::kTranslate2D) {
-    complexity_ = (m_[kXT] == 0 && m_[kYT] == 0)
-                      ? Complexity::kIdentity
-                      : Complexity::kTranslate2D;
-  } // else anything higher and we stay the same regardless of tx/ty
+    complexity_ = (m_[kXT] == 0 && m_[kYT] == 0) ? Complexity::kIdentity
+                                                 : Complexity::kTranslate2D;
+  }  // else anything higher and we stay the same regardless of tx/ty
   return *this;
 }
 
@@ -156,11 +154,11 @@ DlFPoint DlTransform::TransformPoint(DlScalar x, DlScalar y) const {
       return DlFPoint(x + m_[12], y + m_[13]);
 
     case Complexity::kScaleTranslate2D:
-      return DlFPoint(x * m_[kXX] + m_[kXT], //
+      return DlFPoint(x * m_[kXX] + m_[kXT],  //
                       y * m_[kYY] + m_[kYT]);
 
-    case Complexity::kPerspectiveOnlyZ: // Perspective only on Z (which is 0)
-    case Complexity::kAffine3D: // We don't care about Z in or out
+    case Complexity::kPerspectiveOnlyZ:  // Perspective only on Z (which is 0)
+    case Complexity::kAffine3D:          // We don't care about Z in or out
     case Complexity::kAffine2D:
       return DlFPoint(x * m_[kXX] + y * m_[kXY] + m_[kXT],
                       x * m_[kYX] + y * m_[kYY] + m_[kYT]);
@@ -179,7 +177,8 @@ DlFPoint DlTransform::TransformPoint(DlScalar x, DlScalar y) const {
   }
 }
 
-void DlTransform::TransformPoints(DlFPoint dst[], const DlFPoint src[],
+void DlTransform::TransformPoints(DlFPoint dst[],
+                                  const DlFPoint src[],
                                   int count) const {
   switch (complexity()) {
     case Complexity::kIdentity:
@@ -208,8 +207,8 @@ void DlTransform::TransformPoints(DlFPoint dst[], const DlFPoint src[],
       break;
     }
 
-    case Complexity::kPerspectiveOnlyZ: // Perspective only on Z (which is 0)
-    case Complexity::kAffine3D: // We don't care about Z in or out
+    case Complexity::kPerspectiveOnlyZ:  // Perspective only on Z (which is 0)
+    case Complexity::kAffine3D:          // We don't care about Z in or out
     case Complexity::kAffine2D: {
       DlScalar mXX = m_[kXX];
       DlScalar mXY = m_[kXY];
@@ -221,7 +220,7 @@ void DlTransform::TransformPoints(DlFPoint dst[], const DlFPoint src[],
         DlFPoint p = src[i];
         DlScalar x = p.x();
         DlScalar y = p.y();
-        dst[i].Set(mXX * x + mXY * y + tx,
+        dst[i].Set(mXX * x + mXY * y + tx,  //
                    mYX * x + mYY * y + ty);
       }
       break;
@@ -273,8 +272,8 @@ DlFHomogenous2D DlTransform::TransformHomogenous2D(DlScalar x,
       return DlFHomogenous2D(x * m_[kXX] + m_[kXT],  //
                              x * m_[kYY] + m_[kYT]);
 
-    case Complexity::kPerspectiveOnlyZ: // Perspective only on Z (which is 0)
-    case Complexity::kAffine3D: // We don't care about Z in or out
+    case Complexity::kPerspectiveOnlyZ:  // Perspective only on Z (which is 0)
+    case Complexity::kAffine3D:          // We don't care about Z in or out
     case Complexity::kAffine2D:
       return DlFHomogenous2D(x * m_[kXX] + y * m_[kXY] + m_[kXT],
                              x * m_[kYX] + y * m_[kYY] + m_[kYT]);
@@ -298,35 +297,34 @@ DlFRect DlTransform::TransformRect(const DlFRect& rect) const {
       return rect;
 
     case Complexity::kTranslate2D:
-      return DlFRect::MakeLTRB(rect.left() + m_[kXT],
-                               rect.top() + m_[kYT],
-                               rect.right() + m_[kXT],
+      return DlFRect::MakeLTRB(rect.left() + m_[kXT],   //
+                               rect.top() + m_[kYT],    //
+                               rect.right() + m_[kXT],  //
                                rect.bottom() + m_[kYT]);
 
     case Complexity::kScaleTranslate2D: {
       DlFPoint ul = TransformPoint(DlFPoint(rect.left(), rect.top()));
       DlFPoint lr = TransformPoint(DlFPoint(rect.right(), rect.bottom()));
-      return DlFRect::MakeLTRB(    //
-        std::min(ul.x(), lr.x()),  //
-        std::min(ul.y(), lr.y()),  //
-        std::max(ul.x(), lr.x()),  //
-        std::max(ul.y(), lr.y())   //
+      return DlFRect::MakeLTRB(      //
+          std::min(ul.x(), lr.x()),  //
+          std::min(ul.y(), lr.y()),  //
+          std::max(ul.x(), lr.x()),  //
+          std::max(ul.y(), lr.y())   //
       );
     }
 
-    case Complexity::kPerspectiveOnlyZ: // Perspective only on Z (which is 0)
-    case Complexity::kAffine3D: // We don't care about Z in or out
+    case Complexity::kPerspectiveOnlyZ:  // Perspective only on Z (which is 0)
+    case Complexity::kAffine3D:          // We don't care about Z in or out
     case Complexity::kAffine2D: {
       DlFPoint ul = TransformPoint(DlFPoint(rect.left(), rect.top()));
       DlFPoint ur = TransformPoint(DlFPoint(rect.right(), rect.top()));
       DlFPoint ll = TransformPoint(DlFPoint(rect.left(), rect.bottom()));
       DlFPoint lr = TransformPoint(DlFPoint(rect.right(), rect.bottom()));
       return DlFRect::MakeLTRB(
-        std::min(std::min(ul.x(), ur.x()), std::min(ll.x(), lr.x())),
-        std::min(std::min(ul.y(), ur.y()), std::min(ll.y(), lr.y())),
-        std::max(std::max(ul.x(), ur.x()), std::max(ll.x(), lr.x())),
-        std::max(std::max(ul.y(), ur.y()), std::max(ll.y(), lr.y()))
-      );
+          std::min(std::min(ul.x(), ur.x()), std::min(ll.x(), lr.x())),
+          std::min(std::min(ul.y(), ur.y()), std::min(ll.y(), lr.y())),
+          std::max(std::max(ul.x(), ur.x()), std::max(ll.x(), lr.x())),
+          std::max(std::max(ul.y(), ur.y()), std::max(ll.y(), lr.y())));
     }
 
     case Complexity::kUnknown:
@@ -366,8 +364,8 @@ DlFRect DlTransform::TransformRect(const DlFRect& rect) const {
                                                     DlFHomogenous2D n) {
           FML_DCHECK(p.is_finite() && !p.is_unclipped());
           if (n.is_finite() && n.is_unclipped()) {
-            DlScalar fract = (DlFHomogenous2D::kMinimumHomogenous - p.w()) /
-                             (n.w() - p.w());
+            DlScalar fract =
+                (DlFHomogenous2D::kMinimumHomogenous - p.w()) / (n.w() - p.w());
             DlScalar x = n.x() * fract + p.x() * (1.0f - fract);
             DlScalar y = n.y() * fract + p.y() * (1.0f - fract);
             accumulator.accumulate(x / DlFHomogenous2D::kMinimumHomogenous,
@@ -401,7 +399,7 @@ DlScalar DlTransform::determinant() const {
     case Complexity::kIdentity:
     case Complexity::kTranslate2D:
       return kDlScalar_One;
-  
+
     case Complexity::kScaleTranslate2D:
       return m_[kXX] * m_[kYY];
 
@@ -485,9 +483,9 @@ bool DlTransform::Invert(DlTransform* inverted_result) const {
         return false;
       }
       if (inverted_result) {
-        DlScalar isxx =  syy * inv_det;
+        DlScalar isxx = +syy * inv_det;
         DlScalar isxy = -sxy * inv_det;
-        DlScalar isyy =  sxx * inv_det;
+        DlScalar isyy = +sxx * inv_det;
         DlScalar isyx = -syx * inv_det;
         DlScalar isxt = (sxy * syt - syy * sxt) * inv_det;
         DlScalar isyt = (syx * sxt - sxx * syt) * inv_det;
@@ -551,7 +549,8 @@ DlScalar DlTransform::Invert4x4Matrix(const DlScalar inMatrix[16],
   double b11 = a22 * a33 - a23 * a32;
 
   // Calculate the determinant
-  double determinant = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
+  double determinant =
+      b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
   double invdet = 1.0 / determinant;
   if (!DlScalar_IsFinite(invdet)) {
     return 0.0f;
@@ -570,34 +569,38 @@ DlScalar DlTransform::Invert4x4Matrix(const DlScalar inMatrix[16],
     b10 *= invdet;
     b11 *= invdet;
 
-    outMatrix[0]  = a11 * b11 - a12 * b10 + a13 * b09;
-    outMatrix[1]  = a02 * b10 - a01 * b11 - a03 * b09;
-    outMatrix[2]  = a31 * b05 - a32 * b04 + a33 * b03;
-    outMatrix[3]  = a22 * b04 - a21 * b05 - a23 * b03;
-    outMatrix[4]  = a12 * b08 - a10 * b11 - a13 * b07;
-    outMatrix[5]  = a00 * b11 - a02 * b08 + a03 * b07;
-    outMatrix[6]  = a32 * b02 - a30 * b05 - a33 * b01;
-    outMatrix[7]  = a20 * b05 - a22 * b02 + a23 * b01;
-    outMatrix[8]  = a10 * b10 - a11 * b08 + a13 * b06;
-    outMatrix[9]  = a01 * b08 - a00 * b10 - a03 * b06;
+    // clang-format off
+    outMatrix[ 0] = a11 * b11 - a12 * b10 + a13 * b09;
+    outMatrix[ 1] = a02 * b10 - a01 * b11 - a03 * b09;
+    outMatrix[ 2] = a31 * b05 - a32 * b04 + a33 * b03;
+    outMatrix[ 3] = a22 * b04 - a21 * b05 - a23 * b03;
+    outMatrix[ 4] = a12 * b08 - a10 * b11 - a13 * b07;
+    outMatrix[ 5] = a00 * b11 - a02 * b08 + a03 * b07;
+    outMatrix[ 6] = a32 * b02 - a30 * b05 - a33 * b01;
+    outMatrix[ 7] = a20 * b05 - a22 * b02 + a23 * b01;
+    outMatrix[ 8] = a10 * b10 - a11 * b08 + a13 * b06;
+    outMatrix[ 9] = a01 * b08 - a00 * b10 - a03 * b06;
     outMatrix[10] = a30 * b04 - a31 * b02 + a33 * b00;
     outMatrix[11] = a21 * b02 - a20 * b04 - a23 * b00;
     outMatrix[12] = a11 * b07 - a10 * b09 - a12 * b06;
     outMatrix[13] = a00 * b09 - a01 * b07 + a02 * b06;
     outMatrix[14] = a31 * b01 - a30 * b03 - a32 * b00;
     outMatrix[15] = a20 * b03 - a21 * b01 + a22 * b00;
+    // clang-format on
 
-    // If 1/det overflows to infinity (i.e. det is denormalized) or any of the inverted matrix
-    // values is non-finite, return zero to indicate a non-invertible matrix.
+    // If 1/det overflows to infinity (i.e. det is denormalized)
+    // or any of the inverted matrix values is non-finite,
+    // return zero to indicate a non-invertible matrix.
     if (!DlScalars_AreAllFinite(outMatrix, 16)) {
-        determinant = 0.0f;
+      determinant = 0.0f;
     }
   }
   return determinant;
 }
 
 std::optional<DlFVector> DlTransform::ComputeTransformedExpansion(
-    DlScalar dx, DlScalar dy) const {
+    DlScalar dx,
+    DlScalar dy) const {
   if (!DlScalars_AreFinite(dx, dy) || dx < 0 || dy < 0) {
     return {};
   }

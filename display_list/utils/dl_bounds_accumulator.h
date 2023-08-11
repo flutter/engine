@@ -125,8 +125,10 @@ class RectBoundsAccumulator final : public virtual BoundsAccumulator {
     AccumulationRect();
 
     void accumulate(DlScalar x, DlScalar y);
-    void accumulate(DlScalar left, DlScalar top,  //
-                    DlScalar right, DlScalar bottom);
+    void accumulate(DlScalar left,
+                    DlScalar top,
+                    DlScalar right,
+                    DlScalar bottom);
 
     bool is_empty() const { return min_x_ >= max_x_ || min_y_ >= max_y_; }
     bool is_not_empty() const { return min_x_ < max_x_ && min_y_ < max_y_; }

@@ -223,8 +223,7 @@ std::shared_ptr<impeller::Context> MakeConvertDlImageToSkImageContext(
 
 TEST(ImageEncodingImpellerTest, ConvertDlImageToSkImage16Float) {
   sk_sp<MockDlImage> image(new MockDlImage());
-  EXPECT_CALL(*image, dimensions)
-      .WillRepeatedly(Return(DlISize(100, 100)));
+  EXPECT_CALL(*image, dimensions).WillRepeatedly(Return(DlISize(100, 100)));
   impeller::TextureDescriptor desc;
   desc.format = impeller::PixelFormat::kR16G16B16A16Float;
   auto texture = std::make_shared<MockTexture>(desc);
@@ -249,8 +248,7 @@ TEST(ImageEncodingImpellerTest, ConvertDlImageToSkImage16Float) {
 
 TEST(ImageEncodingImpellerTest, ConvertDlImageToSkImage10XR) {
   sk_sp<MockDlImage> image(new MockDlImage());
-  EXPECT_CALL(*image, dimensions)
-      .WillRepeatedly(Return(DlISize(100, 100)));
+  EXPECT_CALL(*image, dimensions).WillRepeatedly(Return(DlISize(100, 100)));
   impeller::TextureDescriptor desc;
   desc.format = impeller::PixelFormat::kB10G10R10XR;
   auto texture = std::make_shared<MockTexture>(desc);

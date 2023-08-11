@@ -132,7 +132,9 @@ class PrerollDelegate : public LayerStateStack::Delegate {
   void decommission() override {}
 
   DlTransform matrix() const override { return tracker_.matrix(); }
-  DlFRect local_cull_rect() const override { return tracker_.local_cull_rect(); }
+  DlFRect local_cull_rect() const override {
+    return tracker_.local_cull_rect();
+  }
   DlFRect device_cull_rect() const override {
     return tracker_.device_cull_rect();
   }

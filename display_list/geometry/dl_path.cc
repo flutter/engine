@@ -4,6 +4,4 @@
 
 #include "flutter/display_list/geometry/dl_path.h"
 
-namespace flutter {
-
-}  // namespace flutter
+namespace flutter {}  // namespace flutter

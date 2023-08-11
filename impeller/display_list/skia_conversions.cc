@@ -2,9 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "impeller/display_list/skia_conversions.h"
+
 #include "flutter/display_list/geometry/dl_point.h"
 #include "flutter/display_list/geometry/dl_rect.h"
-#include "impeller/display_list/skia_conversions.h"
 #include "third_party/skia/modules/skparagraph/include/Paragraph.h"
 
 namespace impeller {
@@ -152,7 +153,8 @@ Color ToColor(const flutter::DlColor& color) {
   };
 }
 
-std::vector<Matrix> ToRSXForms(const flutter::DlRSTransform xform[], int count) {
+std::vector<Matrix> ToRSXForms(const flutter::DlRSTransform xform[],
+                               int count) {
   auto result = std::vector<Matrix>();
   for (int i = 0; i < count; i++) {
     auto form = xform[i];

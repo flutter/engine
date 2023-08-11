@@ -94,8 +94,7 @@ class TesterPlatformView : public PlatformView,
 
   // |GPUSurfaceSoftwareDelegate|
   sk_sp<SkSurface> AcquireBackingStore(const DlISize& size) override {
-    if (sk_surface_ != nullptr &&
-        DlISize::MakeSize(*sk_surface_) == size) {
+    if (sk_surface_ != nullptr && DlISize::MakeSize(*sk_surface_) == size) {
       // The old and new surface sizes are the same. Nothing to do here.
       return sk_surface_;
     }

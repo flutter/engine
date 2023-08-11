@@ -4,6 +4,4 @@
 
 #include "flutter/display_list/geometry/dl_homogenous.h"
 
-namespace flutter {
-
-}  // namespace flutter
+namespace flutter {}  // namespace flutter

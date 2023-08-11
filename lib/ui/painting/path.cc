@@ -9,6 +9,7 @@
 #include "flutter/lib/ui/floating_point.h"
 #include "flutter/lib/ui/painting/matrix.h"
 #include "flutter/lib/ui/ui_dart_state.h"
+#include "third_party/skia/include/pathops/SkPathOps.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_binding_macros.h"
@@ -101,8 +102,9 @@ void CanvasPath::relativeCubicTo(double x1,
                                  double y2,
                                  double x3,
                                  double y3) {
-  mutable_path().RelativeCubicTo(SafeNarrow(x1), SafeNarrow(y1), SafeNarrow(x2),
-                                 SafeNarrow(y2), SafeNarrow(x3), SafeNarrow(y3));
+  mutable_path()  //
+      .RelativeCubicTo(SafeNarrow(x1), SafeNarrow(y1), SafeNarrow(x2),
+                       SafeNarrow(y2), SafeNarrow(x3), SafeNarrow(y3));
   resetVolatility();
 }
 
@@ -129,11 +131,10 @@ void CanvasPath::arcTo(double left,
                        double startAngle,
                        double sweepAngle,
                        bool forceMoveTo) {
-  mutable_path().ArcTo(
-      DlFRect::MakeLTRB(SafeNarrow(left), SafeNarrow(top), SafeNarrow(right),
-                        SafeNarrow(bottom)),
-      DlRadians(SafeNarrow(startAngle)), DlRadians(SafeNarrow(sweepAngle)),
-      forceMoveTo);
+  mutable_path().ArcTo(DlFRect::MakeLTRB(SafeNarrow(left), SafeNarrow(top),  //
+                                         SafeNarrow(right), SafeNarrow(bottom)),
+                       DlRadians(SafeNarrow(startAngle)),
+                       DlRadians(SafeNarrow(sweepAngle)), forceMoveTo);
   resetVolatility();
 }
 
@@ -150,9 +151,9 @@ void CanvasPath::arcToPoint(double arcEndX,
       isClockwiseDirection ? DlPath::Direction::kCW : DlPath::Direction::kCCW;
 
   mutable_path().ArcToPoint(SafeNarrow(radiusX), SafeNarrow(radiusY),
-                            DlDegrees(SafeNarrow(xAxisRotation)),
-                            arcSize, direction,
-                            SafeNarrow(arcEndX), SafeNarrow(arcEndY));
+                            DlDegrees(SafeNarrow(xAxisRotation)), arcSize,
+                            direction, SafeNarrow(arcEndX),
+                            SafeNarrow(arcEndY));
   resetVolatility();
 }
 
@@ -168,8 +169,9 @@ void CanvasPath::relativeArcToPoint(double arcEndDeltaX,
   const auto direction =
       isClockwiseDirection ? DlPath::Direction::kCW : DlPath::Direction::kCCW;
   mutable_path().RelativeArcToPoint(
-      SafeNarrow(radiusX), SafeNarrow(radiusY), DlDegrees(SafeNarrow(xAxisRotation)),
-      arcSize, direction, SafeNarrow(arcEndDeltaX), SafeNarrow(arcEndDeltaY));
+      SafeNarrow(radiusX), SafeNarrow(radiusY),
+      DlDegrees(SafeNarrow(xAxisRotation)), arcSize, direction,
+      SafeNarrow(arcEndDeltaX), SafeNarrow(arcEndDeltaY));
   resetVolatility();
 }
 
@@ -216,9 +218,9 @@ void CanvasPath::addPath(CanvasPath* path, double dx, double dy) {
     Dart_ThrowException(ToDart("Path.addPath called with non-genuine Path."));
     return;
   }
-  // REMIND
-  // mutable_path().addPath(path->path(), SafeNarrow(dx), SafeNarrow(dy),
-  //                        SkPath::kAppend_AddPathMode);
+  mutable_path().GetMutableSkiaPath().addPath(path->path().GetSkiaPath(),
+                                              SafeNarrow(dx), SafeNarrow(dy),
+                                              SkPath::kAppend_AddPathMode);
   resetVolatility();
 }
 
@@ -239,8 +241,8 @@ void CanvasPath::addPathWithMatrix(CanvasPath* path,
   matrix4.Release();
   matrix.setTranslateX(matrix.getTranslateX() + SafeNarrow(dx));
   matrix.setTranslateY(matrix.getTranslateY() + SafeNarrow(dy));
-  // REMIND
-  // mutable_path().addPath(path->path(), matrix, SkPath::kAppend_AddPathMode);
+  mutable_path().GetMutableSkiaPath().addPath(
+      path->path().GetSkiaPath(), matrix, SkPath::kAppend_AddPathMode);
   resetVolatility();
 }
 
@@ -250,9 +252,9 @@ void CanvasPath::extendWithPath(CanvasPath* path, double dx, double dy) {
         ToDart("Path.extendWithPath called with non-genuine Path."));
     return;
   }
-  // REMIND
-  // mutable_path().addPath(path->path(), SafeNarrow(dx), SafeNarrow(dy),
-  //                        SkPath::kExtend_AddPathMode);
+  mutable_path().GetMutableSkiaPath().addPath(path->path().GetSkiaPath(),
+                                              SafeNarrow(dx), SafeNarrow(dy),
+                                              SkPath::kExtend_AddPathMode);
   resetVolatility();
 }
 
@@ -273,8 +275,8 @@ void CanvasPath::extendWithPathAndMatrix(CanvasPath* path,
   matrix4.Release();
   matrix.setTranslateX(matrix.getTranslateX() + SafeNarrow(dx));
   matrix.setTranslateY(matrix.getTranslateY() + SafeNarrow(dy));
-  // REMIND
-  // mutable_path().addPath(path->path(), matrix, SkPath::kExtend_AddPathMode);
+  mutable_path().GetMutableSkiaPath().addPath(
+      path->path().GetSkiaPath(), matrix, SkPath::kExtend_AddPathMode);
   resetVolatility();
 }
 
@@ -320,11 +322,11 @@ tonic::Float32List CanvasPath::getBounds() {
 }
 
 bool CanvasPath::op(CanvasPath* path1, CanvasPath* path2, int operation) {
-  // REMIND
-  // return Op(path1->path().GetSkiaPath(), path2->path().GetSkiaPath(), static_cast<SkPathOp>(operation),
-  //           &tracked_path_->path);
-  return true;
+  bool ret = Op(path1->path().GetSkiaPath(), path2->path().GetSkiaPath(),
+                static_cast<SkPathOp>(operation),
+                &tracked_path_->path.GetMutableSkiaPath());
   resetVolatility();
+  return ret;
 }
 
 void CanvasPath::clone(Dart_Handle path_handle) {

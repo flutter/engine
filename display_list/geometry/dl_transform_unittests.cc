@@ -6,8 +6,9 @@
 
 #include "fml/logging.h"
 #include "gtest/gtest.h"
-#include "third_party/skia/include/core/SkMatrix.h"
+
 #include "third_party/skia/include/core/SkM44.h"
+#include "third_party/skia/include/core/SkMatrix.h"
 
 namespace flutter {
 namespace testing {
@@ -24,20 +25,21 @@ static std::ostream& operator<<(std::ostream& os, const SkM44& t) {
 }
 
 static constexpr DlScalar kIdentityMatrix[16] = {
-  1.0f, 0.0f, 0.0f, 0.0f,
-  0.0f, 1.0f, 0.0f, 0.0f,
-  0.0f, 0.0f, 1.0f, 0.0f,
-  0.0f, 0.0f, 0.0f, 1.0f,
+    // clang-format off
+    1.0f, 0.0f, 0.0f, 0.0f,
+    0.0f, 1.0f, 0.0f, 0.0f,
+    0.0f, 0.0f, 1.0f, 0.0f,
+    0.0f, 0.0f, 0.0f, 1.0f,
+    // clang-format on
 };
 
 static bool CompareRowMajor(DlTransform transform, const DlScalar m[16]) {
   for (int r = 0; r < 4; r++) {
     for (int c = 0; c < 4; c++) {
-      if (transform.rc(r, c) != m[r*4 + c]) {
-        FML_LOG(ERROR)
-            << "(transform.rc(" << r << ", " << c << ") == "
-            << transform.rc(r, c) << ") != (m[" << (r*4 + c) << "] == "
-            << m[r*4 + c] << ")";
+      if (transform.rc(r, c) != m[r * 4 + c]) {
+        FML_LOG(ERROR) << "(transform.rc(" << r << ", " << c
+                       << ") == " << transform.rc(r, c) << ") != (m["
+                       << (r * 4 + c) << "] == " << m[r * 4 + c] << ")";
         return false;
       }
     }
@@ -45,14 +47,13 @@ static bool CompareRowMajor(DlTransform transform, const DlScalar m[16]) {
   return true;
 }
 
-template<typename FT> 
-std::enable_if_t<std::is_floating_point_v<FT>, FT>
-ulp(FT x)
-{
-    if (x > 0)
-        return std::nexttoward(x, std::numeric_limits<FT>::infinity()) - x;
-    else 
-        return x - std::nexttoward(x, -std::numeric_limits<FT>::infinity());
+template <typename FT>
+std::enable_if_t<std::is_floating_point_v<FT>, FT> ulp(FT x) {
+  if (x > 0) {
+    return std::nexttoward(x, std::numeric_limits<FT>::infinity()) - x;
+  } else {
+    return x - std::nexttoward(x, -std::numeric_limits<FT>::infinity());
+  }
 }
 
 static int diff_ulps(DlScalar a, DlScalar b) {
@@ -61,7 +62,8 @@ static int diff_ulps(DlScalar a, DlScalar b) {
   return ceilf(abs(a - b) / u);
 }
 
-static bool CloseEnough(DlScalar result, DlScalar expected,
+static bool CloseEnough(DlScalar result,
+                        DlScalar expected,
                         DlScalar max_diff = kDlScalar_NearlyZero,
                         int max_ulps = 1) {
   if (abs(result - expected) > max_diff) {
@@ -72,7 +74,8 @@ static bool CloseEnough(DlScalar result, DlScalar expected,
   return true;
 }
 
-static bool IsClose(const DlFPoint& result, const DlFPoint& expected,
+static bool IsClose(const DlFPoint& result,
+                    const DlFPoint& expected,
                     DlScalar max_diff = kDlScalar_NearlyZero,
                     int max_ulps = 3) {
   if (!CloseEnough(result.x(), expected.x(), max_diff, max_ulps) ||
@@ -90,19 +93,22 @@ static bool IsClose(const DlFPoint& result, const DlFPoint& expected,
   return true;
 }
 
-static bool IsClose(const DlFPoint& result, const SkPoint& expected,
+static bool IsClose(const DlFPoint& result,
+                    const SkPoint& expected,
                     DlScalar max_diff = kDlScalar_NearlyZero,
                     int max_ulps = 3) {
   return IsClose(result, DlFPoint(expected.x(), expected.y()));
 }
 
-static bool IsClose(const DlFPoint& result, const SkV4& expected,
+static bool IsClose(const DlFPoint& result,
+                    const SkV4& expected,
                     DlScalar max_diff = kDlScalar_NearlyZero,
                     int max_ulps = 3) {
   return IsClose(result, DlFPoint(expected.x, expected.y));
 }
 
-static bool IsClose(const DlTransform& result, const DlTransform& expected,
+static bool IsClose(const DlTransform& result,
+                    const DlTransform& expected,
                     DlScalar max_diff = kDlScalar_NearlyZero,
                     int max_ulps = 1) {
   for (int r = 0; r < 4; r++) {
@@ -110,7 +116,8 @@ static bool IsClose(const DlTransform& result, const DlTransform& expected,
       DlScalar rv = result.rc(r, c);
       DlScalar ev = expected.rc(r, c);
       if (!CloseEnough(rv, ev, max_diff, max_ulps)) {
-        FML_LOG(ERROR) << "At (" << r << ", " << c << "), " << rv << " !~ " << ev;
+        FML_LOG(ERROR) << "At (" << r << ", " << c << "), " << rv << " !~ "
+                       << ev;
         FML_LOG(ERROR) << "Result: " << result;
         FML_LOG(ERROR) << "Expected: " << expected;
         FML_LOG(ERROR) << "Difference: " << (rv - ev);
@@ -122,7 +129,8 @@ static bool IsClose(const DlTransform& result, const DlTransform& expected,
   return true;
 }
 
-static bool IsClose(const DlTransform& result, const SkM44& expected,
+static bool IsClose(const DlTransform& result,
+                    const SkM44& expected,
                     DlScalar max_diff = kDlScalar_NearlyZero,
                     int max_ulps = 1) {
   for (int r = 0; r < 4; r++) {
@@ -130,7 +138,8 @@ static bool IsClose(const DlTransform& result, const SkM44& expected,
       DlScalar rv = result.rc(r, c);
       DlScalar ev = expected.rc(r, c);
       if (!CloseEnough(rv, ev, max_diff, max_ulps)) {
-        FML_LOG(ERROR) << "At (" << r << ", " << c << "), " << rv << " !~ " << ev;
+        FML_LOG(ERROR) << "At (" << r << ", " << c << "), " << rv << " !~ "
+                       << ev;
         FML_LOG(ERROR) << "Result: " << result;
         FML_LOG(ERROR) << "Expected: " << expected;
         FML_LOG(ERROR) << "Difference: " << (rv - ev);
@@ -142,7 +151,8 @@ static bool IsClose(const DlTransform& result, const SkM44& expected,
   return true;
 }
 
-static bool IsClose(const DlTransform& result, const SkMatrix& expected,
+static bool IsClose(const DlTransform& result,
+                    const SkMatrix& expected,
                     DlScalar max_diff = kDlScalar_NearlyZero,
                     int max_ulps = 1) {
   return IsClose(result, SkM44(expected), max_diff, max_ulps);
@@ -199,10 +209,12 @@ TEST(DlTransformTest, TranslateConstructor) {
   EXPECT_FALSE(transform.has_perspective());
   EXPECT_EQ(transform.determinant(), kDlScalar_One);
   const DlScalar matrix[16] = {
+      // clang-format off
       1.0f, 0.0f, 0.0f, 5.0f,
       0.0f, 1.0f, 0.0f, 6.0f,
       0.0f, 0.0f, 1.0f, 0.0f,
       0.0f, 0.0f, 0.0f, 1.0f,
+      // clang-format on
   };
   EXPECT_TRUE(CompareRowMajor(transform, matrix));
   EXPECT_EQ(transform.TransformPoint(12.0f, 17.0f), DlFPoint(17.0f, 23.0f));
@@ -224,10 +236,12 @@ TEST(DlTransformTest, ScaleConstructor) {
   EXPECT_FALSE(transform.has_perspective());
   EXPECT_EQ(transform.determinant(), 30.0f);
   const DlScalar matrix[16] = {
-    5.0f, 0.0f, 0.0f, 0.0f,
-    0.0f, 6.0f, 0.0f, 0.0f,
-    0.0f, 0.0f, 1.0f, 0.0f,
-    0.0f, 0.0f, 0.0f, 1.0f,
+      // clang-format off
+      5.0f, 0.0f, 0.0f, 0.0f,
+      0.0f, 6.0f, 0.0f, 0.0f,
+      0.0f, 0.0f, 1.0f, 0.0f,
+      0.0f, 0.0f, 0.0f, 1.0f,
+      // clang-format on
   };
   EXPECT_TRUE(CompareRowMajor(transform, matrix));
   EXPECT_EQ(transform.TransformPoint(12.0f, 17.0f), DlFPoint(60.0f, 102.0f));
@@ -241,17 +255,21 @@ TEST(DlTransformTest, ConcatOrder) {
   DlTransform translate = DlTransform::MakeTranslate(10.0f, 12.0f);
 
   const DlScalar matrix_scale_translate[16] = {
-    5.0f, 0.0f, 0.0f, 50.0f,
-    0.0f, 6.0f, 0.0f, 72.0f,
-    0.0f, 0.0f, 1.0f, 0.0f,
-    0.0f, 0.0f, 0.0f, 1.0f,
+      // clang-format off
+      5.0f, 0.0f, 0.0f, 50.0f,
+      0.0f, 6.0f, 0.0f, 72.0f,
+      0.0f, 0.0f, 1.0f, 0.0f,
+      0.0f, 0.0f, 0.0f, 1.0f,
+      // clang-format on
   };
 
   const DlScalar matrix_translate_scale[16] = {
-    5.0f, 0.0f, 0.0f, 10.0f,
-    0.0f, 6.0f, 0.0f, 12.0f,
-    0.0f, 0.0f, 1.0f, 0.0f,
-    0.0f, 0.0f, 0.0f, 1.0f,
+      // clang-format off
+      5.0f, 0.0f, 0.0f, 10.0f,
+      0.0f, 6.0f, 0.0f, 12.0f,
+      0.0f, 0.0f, 1.0f, 0.0f,
+      0.0f, 0.0f, 0.0f, 1.0f,
+      // clang-format on
   };
 
   {
@@ -309,28 +327,29 @@ TEST(DlTransformTest, Concat) {
   auto perspY = DlTransform();
   perspY.SetPerspectiveY(0.001);
   std::vector<DlTransform> transforms = {
-    DlTransform(),
-    DlTransform::MakeTranslate(8.0f, 11.0f),
-    DlTransform::MakeScale(2.0f, 4.0f),
-    DlTransform::MakeSkew(0.125f, 0.25f),
-    DlTransform::MakeRotate(DlDegrees(30)),
-    perspX, perspY,
+      DlTransform(),
+      DlTransform::MakeTranslate(8.0f, 11.0f),
+      DlTransform::MakeScale(2.0f, 4.0f),
+      DlTransform::MakeSkew(0.125f, 0.25f),
+      DlTransform::MakeRotate(DlDegrees(30)),
+      perspX,
+      perspY,
   };
   std::vector<DlFPoint> points = {
-    DlFPoint(0, 0),
-    DlFPoint(10, 11),
-    DlFPoint(1.0e5f, 12),
-    DlFPoint(16, 1.0e5f),
+      DlFPoint(0, 0),
+      DlFPoint(10, 11),
+      DlFPoint(1.0e5f, 12),
+      DlFPoint(16, 1.0e5f),
   };
-  auto test = [points](const DlTransform& outer,
-                       const DlTransform& inner,
+  auto test = [points](const DlTransform& outer,  //
+                       const DlTransform& inner,  //
                        std::string desc) {
     DlTransform concat = DlTransform::MakeConcat(outer, inner);
     for (size_t i = 0; i < points.size(); i++) {
-      EXPECT_TRUE(IsClose(concat.TransformPoint(points[i]),
-                          outer.TransformPoint(
-                              inner.TransformPoint(points[i]))))
-          << desc << ", point#" << (i+1) << " = " << points[i] << std::endl
+      EXPECT_TRUE(
+          IsClose(concat.TransformPoint(points[i]),
+                  outer.TransformPoint(inner.TransformPoint(points[i]))))
+          << desc << ", point#" << (i + 1) << " = " << points[i] << std::endl
           << "outer=" << outer << std::endl
           << "inner=" << inner << std::endl
           << "concat=" << concat;
@@ -338,8 +357,8 @@ TEST(DlTransformTest, Concat) {
   };
   for (size_t i = 0; i < transforms.size(); i++) {
     for (size_t j = 0; j < transforms.size(); j++) {
-      std::string desc = "tx#" + std::to_string(i + 1) +
-                         " X tx#" + std::to_string(j + 1);
+      std::string desc =
+          "tx#" + std::to_string(i + 1) + " X tx#" + std::to_string(j + 1);
       test(transforms[i], transforms[j], desc);
     }
   }
@@ -351,32 +370,37 @@ TEST(DlTransformTest, Inverse) {
   auto perspY = DlTransform();
   perspY.SetPerspectiveY(0.001);
   std::vector<DlTransform> transforms = {
-    DlTransform(),
-    DlTransform::MakeTranslate(8.0f, 11.0f),
-    DlTransform::MakeScale(2.0f, 4.0f),
-    DlTransform::MakeSkew(0.125f, 0.25f),
-    DlTransform::MakeRotate(DlDegrees(45)),
-    perspX, perspY,
+      DlTransform(),
+      DlTransform::MakeTranslate(8.0f, 11.0f),
+      DlTransform::MakeScale(2.0f, 4.0f),
+      DlTransform::MakeSkew(0.125f, 0.25f),
+      DlTransform::MakeRotate(DlDegrees(45)),
+      perspX,
+      perspY,
   };
   for (size_t i = 0; i < transforms.size(); i++) {
     std::string desc1 = "tx#" + std::to_string(i + 1);
     DlTransform transform1 = transforms[i];
     DlTransform inverse1;
     EXPECT_TRUE(transform1.Invert(&inverse1)) << desc1;
-    EXPECT_TRUE(IsClose(DlTransform::MakeConcat(transform1, inverse1),
-                        DlTransform())) << desc1;
-    EXPECT_TRUE(IsClose(DlTransform::MakeConcat(inverse1, transform1),
-                        DlTransform())) << desc1;
+    EXPECT_TRUE(
+        IsClose(DlTransform::MakeConcat(transform1, inverse1), DlTransform()))
+        << desc1;
+    EXPECT_TRUE(
+        IsClose(DlTransform::MakeConcat(inverse1, transform1), DlTransform()))
+        << desc1;
     for (size_t j = 0; j < transforms.size(); j++) {
       std::string desc2 = desc1 + " X tx#" + std::to_string(j + 1);
       DlTransform transform2 =
           DlTransform::MakeConcat(transform1, transforms[j]);
       DlTransform inverse2;
       EXPECT_TRUE(transform2.Invert(&inverse2)) << desc2;
-      EXPECT_TRUE(IsClose(DlTransform::MakeConcat(transform2, inverse2),
-                          DlTransform())) << desc2;
-      EXPECT_TRUE(IsClose(DlTransform::MakeConcat(inverse2, transform2),
-                          DlTransform())) << desc2;
+      EXPECT_TRUE(
+          IsClose(DlTransform::MakeConcat(transform2, inverse2), DlTransform()))
+          << desc2;
+      EXPECT_TRUE(
+          IsClose(DlTransform::MakeConcat(inverse2, transform2), DlTransform()))
+          << desc2;
     }
   }
 }
@@ -403,10 +427,10 @@ static void TestChain(std::vector<TransformSetup*> setup_chain,
                       SkM44 sk4t,
                       std::string desc) {
   std::vector<DlFPoint> points = {
-    DlFPoint(0, 0),
-    DlFPoint(10, 11),
-    DlFPoint(1.0e5f, 12),
-    DlFPoint(16, 1.0e5f),
+      DlFPoint(0, 0),
+      DlFPoint(10, 11),
+      DlFPoint(1.0e5f, 12),
+      DlFPoint(16, 1.0e5f),
   };
   for (DlFPoint& p : points) {
     auto dl_result = dlt.TransformPoint(p);
@@ -430,66 +454,74 @@ static void TestChain(std::vector<TransformSetup*> setup_chain,
 
 TEST(DlTransformTest, CompareToSkia) {
   TransformSetup setups[] = {
-    {
-      "Identity",
-      []() { return DlTransform(); },
-      []() { return SkMatrix(); },
-      []() { return SkM44(); },
-      [](DlTransform& transform) { transform.SetIdentity(); },
-      [](SkMatrix& transform) { transform.setIdentity(); },
-      [](SkM44& transform) { transform.setIdentity(); },
-      [](DlTransform& transform) {},
-      [](SkMatrix& transform) {},
-      [](SkM44& transform) {},
-      [](DlTransform& transform) {},
-      [](SkMatrix& transform) {},
-      [](SkM44& transform) {},
-    },
-    {
-      "Translate(5, 10)",
-      []() { return DlTransform::MakeTranslate(5, 10); },
-      []() { return SkMatrix::Translate(5, 10); },
-      []() { return SkM44::Translate(5, 10); },
-      [](DlTransform& transform) { transform.SetTranslate(5, 10); },
-      [](SkMatrix& transform) { transform.setTranslate(5, 10); },
-      [](SkM44& transform) { transform.setTranslate(5, 10); },
-      [](DlTransform& transform) { transform.TranslateInner(5, 10); },
-      [](SkMatrix& transform) { transform.preTranslate(5, 10); },
-      [](SkM44& transform) { transform.preTranslate(5, 10); },
-      [](DlTransform& transform) { transform.TranslateOuter(5, 10); },
-      [](SkMatrix& transform) { transform.postTranslate(5, 10); },
-      [](SkM44& transform) { transform.postTranslate(5, 10); },
-    },
-    {
-      "Scale(5, 10)",
-      []() { return DlTransform::MakeScale(5, 10); },
-      []() { return SkMatrix::Scale(5, 10); },
-      []() { return SkM44::Scale(5, 10); },
-      [](DlTransform& transform) { transform.SetScale(5, 10); },
-      [](SkMatrix& transform) { transform.setScale(5, 10); },
-      [](SkM44& transform) { transform.setScale(5, 10); },
-      [](DlTransform& transform) { transform.ScaleInner(5, 10); },
-      [](SkMatrix& transform) { transform.preScale(5, 10); },
-      [](SkM44& transform) { transform.preScale(5, 10); },
-      [](DlTransform& transform) { transform.ScaleOuter(5, 10); },
-      [](SkMatrix& transform) { transform.postScale(5, 10); },
-      [](SkM44& transform) { transform.postConcat(SkM44::Scale(5, 10)); },
-    },
-    {
-      "Rotate(20 degrees)",
-      []() { return DlTransform::MakeRotate(DlDegrees(20)); },
-      []() { return SkMatrix::RotateDeg(20); },
-      []() { return SkM44::Rotate({0, 0, 1}, 20 * M_PI / 180); },
-      [](DlTransform& transform) { transform.SetRotate(DlDegrees(20)); },
-      [](SkMatrix& transform) { transform.setRotate(20); },
-      [](SkM44& transform) { transform.setRotate({0, 0, 1}, 20 * M_PI / 180); },
-      [](DlTransform& transform) { transform.RotateInner(DlDegrees(20)); },
-      [](SkMatrix& transform) { transform.preRotate(20); },
-      [](SkM44& transform) { transform.preConcat(SkM44::Rotate({0, 0, 1}, 20 * M_PI / 180)); },
-      [](DlTransform& transform) { transform.RotateOuter(DlDegrees(20)); },
-      [](SkMatrix& transform) { transform.postRotate(20); },
-      [](SkM44& transform) { transform.postConcat(SkM44::Rotate({0, 0, 1}, 20 * M_PI / 180)); },
-    },
+      {
+          "Identity",
+          []() { return DlTransform(); },
+          []() { return SkMatrix(); },
+          []() { return SkM44(); },
+          [](DlTransform& transform) { transform.SetIdentity(); },
+          [](SkMatrix& transform) { transform.setIdentity(); },
+          [](SkM44& transform) { transform.setIdentity(); },
+          [](DlTransform& transform) {},
+          [](SkMatrix& transform) {},
+          [](SkM44& transform) {},
+          [](DlTransform& transform) {},
+          [](SkMatrix& transform) {},
+          [](SkM44& transform) {},
+      },
+      {
+          "Translate(5, 10)",
+          []() { return DlTransform::MakeTranslate(5, 10); },
+          []() { return SkMatrix::Translate(5, 10); },
+          []() { return SkM44::Translate(5, 10); },
+          [](DlTransform& transform) { transform.SetTranslate(5, 10); },
+          [](SkMatrix& transform) { transform.setTranslate(5, 10); },
+          [](SkM44& transform) { transform.setTranslate(5, 10); },
+          [](DlTransform& transform) { transform.TranslateInner(5, 10); },
+          [](SkMatrix& transform) { transform.preTranslate(5, 10); },
+          [](SkM44& transform) { transform.preTranslate(5, 10); },
+          [](DlTransform& transform) { transform.TranslateOuter(5, 10); },
+          [](SkMatrix& transform) { transform.postTranslate(5, 10); },
+          [](SkM44& transform) { transform.postTranslate(5, 10); },
+      },
+      {
+          "Scale(5, 10)",
+          []() { return DlTransform::MakeScale(5, 10); },
+          []() { return SkMatrix::Scale(5, 10); },
+          []() { return SkM44::Scale(5, 10); },
+          [](DlTransform& transform) { transform.SetScale(5, 10); },
+          [](SkMatrix& transform) { transform.setScale(5, 10); },
+          [](SkM44& transform) { transform.setScale(5, 10); },
+          [](DlTransform& transform) { transform.ScaleInner(5, 10); },
+          [](SkMatrix& transform) { transform.preScale(5, 10); },
+          [](SkM44& transform) { transform.preScale(5, 10); },
+          [](DlTransform& transform) { transform.ScaleOuter(5, 10); },
+          [](SkMatrix& transform) { transform.postScale(5, 10); },
+          [](SkM44& transform) { transform.postConcat(SkM44::Scale(5, 10)); },
+      },
+      {
+          "Rotate(20 degrees)",
+          []() { return DlTransform::MakeRotate(DlDegrees(20)); },
+          []() { return SkMatrix::RotateDeg(20); },
+          []() {
+            return SkM44::Rotate({0, 0, 1}, 20 * M_PI / 180);
+          },
+          [](DlTransform& transform) { transform.SetRotate(DlDegrees(20)); },
+          [](SkMatrix& transform) { transform.setRotate(20); },
+          [](SkM44& transform) {
+            transform.setRotate({0, 0, 1}, 20 * M_PI / 180);
+          },
+          [](DlTransform& transform) { transform.RotateInner(DlDegrees(20)); },
+          [](SkMatrix& transform) { transform.preRotate(20); },
+          [](SkM44& transform) {
+            transform.preConcat(SkM44::Rotate({0, 0, 1}, 20 * M_PI / 180));
+          },
+          [](DlTransform& transform) { transform.RotateOuter(DlDegrees(20)); },
+          [](SkMatrix& transform) { transform.postRotate(20); },
+          [](SkM44& transform) {
+            transform.postConcat(SkM44::Rotate({0, 0, 1}, 20 * M_PI / 180));
+          },
+      },
   };
   int count = sizeof(setups) / sizeof(setups[0]);
   for (int i = 0; i < count; i++) {

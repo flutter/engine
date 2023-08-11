@@ -123,7 +123,8 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
   }
 
   void clipRect(const SkRect& rect) override {
-    builder_->ClipRect(DlFRect::MakeBounds(rect), DlCanvas::ClipOp::kIntersect, false);
+    builder_->ClipRect(DlFRect::MakeBounds(rect), DlCanvas::ClipOp::kIntersect,
+                       false);
   }
 
   void translate(SkScalar dx, SkScalar dy) override {

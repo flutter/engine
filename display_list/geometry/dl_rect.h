@@ -14,31 +14,21 @@
 
 namespace flutter {
 
-#define DL_ONLY_ON_INT(Type) DL_ONLY_ON_INT_M(, Type)
-#define DL_ONLY_ON_INT_M(Modifiers, Type) \
-  template <typename U = T>         \
-  Modifiers                         \
-  std::enable_if_t<std::is_integral_v<U>, Type>
-
 #define DL_ONLY_ON_FLOAT(Type) DL_ONLY_ON_FLOAT_M(, Type)
 #define DL_ONLY_ON_FLOAT_M(Modifiers, Type) \
-  template <typename U = T>           \
-  Modifiers                           \
-  std::enable_if_t<std::is_floating_point_v<U>, Type>
+  template <typename U = T>                 \
+  Modifiers std::enable_if_t<std::is_floating_point_v<U>, Type>
 
 #define DL_ONLY_FROM_FLOAT(FT, Type) DL_ONLY_FROM_FLOAT_M(FT, , Type)
 #define DL_ONLY_FROM_FLOAT_M(FT, Modifiers, Type) \
-  template <typename FT>                      \
-  Modifiers                                   \
-  std::enable_if_t<std::is_floating_point_v<FT>, Type>
+  template <typename FT>                          \
+  Modifiers std::enable_if_t<std::is_floating_point_v<FT>, Type>
 
 #define DL_ONLY_INT_FROM_FLOAT(Type) DL_ONLY_INT_FROM_FLOAT_M(IT, FT, Type)
-#define DL_ONLY_INT_FROM_FLOAT_M(IT, FT, Modifiers, Type)   \
-  template <typename IT = T, typename FT>        \
-  Modifiers                                      \
-  std::enable_if_t<std::is_integral_v<IT> &&     \
-                   std::is_floating_point_v<FT>, \
-                   Type>
+#define DL_ONLY_INT_FROM_FLOAT_M(IT, FT, Modifiers, Type) \
+  template <typename IT = T, typename FT>                 \
+  Modifiers std::enable_if_t<                             \
+      std::is_integral_v<IT> && std::is_floating_point_v<FT>, Type>
 
 template <typename T, typename LT>
 struct DlTRect {
@@ -150,9 +140,7 @@ struct DlTRect {
     return {x, y, SafeAdd(x, w), SafeAdd(y, h)};
   }
 
-  static constexpr DlTRect MakeWH(T w, T h) {
-    return {zero_, zero_, w, h};
-  }
+  static constexpr DlTRect MakeWH(T w, T h) { return {zero_, zero_, w, h}; }
 
   template <typename U>
   static constexpr DlTRect MakeSize(DlTSize<U> size) {
@@ -171,31 +159,31 @@ struct DlTRect {
 
   DL_ONLY_FROM_FLOAT_M(FT, static constexpr, DlTRect)
   MakeRoundedOut(const DlTRect<FT, FT>& r) {
-    return MakeLTRB(
-      static_cast<T>(floor(r.left())),
-      static_cast<T>(floor(r.top())),
-      static_cast<T>(ceil(r.right())),
-      static_cast<T>(ceil(r.bottom()))
+    return MakeLTRB(                      //
+        static_cast<T>(floor(r.left())),  //
+        static_cast<T>(floor(r.top())),   //
+        static_cast<T>(ceil(r.right())),  //
+        static_cast<T>(ceil(r.bottom()))  //
     );
   }
 
   DL_ONLY_FROM_FLOAT_M(FT, static constexpr, DlTRect)
   MakeRoundedIn(const DlTRect<FT, FT>& r) {
-    return MakeLTRB(
-      static_cast<T>(ceil(r.left())),
-      static_cast<T>(ceil(r.top())),
-      static_cast<T>(floor(r.right())),
-      static_cast<T>(floor(r.bottom()))
+    return MakeLTRB(                       //
+        static_cast<T>(ceil(r.left())),    //
+        static_cast<T>(ceil(r.top())),     //
+        static_cast<T>(floor(r.right())),  //
+        static_cast<T>(floor(r.bottom()))  //
     );
   }
 
   DL_ONLY_FROM_FLOAT_M(FT, static constexpr, DlTRect)
   MakeRounded(const DlTRect<FT, FT>& r) {
-    return MakeLTRB(
-      static_cast<T>(round(r.left())),
-      static_cast<T>(round(r.top())),
-      static_cast<T>(round(r.right())),
-      static_cast<T>(round(r.bottom()))
+    return MakeLTRB(                       //
+        static_cast<T>(round(r.left())),   //
+        static_cast<T>(round(r.top())),    //
+        static_cast<T>(round(r.right())),  //
+        static_cast<T>(round(r.bottom()))  //
     );
   }
 
@@ -208,7 +196,7 @@ struct DlTRect {
       OUTA = INB;                     \
       OUTB = INA;                     \
     }                                 \
-  } while(0)
+  } while (0)
 
   constexpr DlTRect MakeSorted() const {
     T l, r, t, b;
@@ -225,9 +213,7 @@ struct DlTRect {
     quad[3] = {left_, bottom_};
   }
 
-  void SetEmpty() {
-    left_ = top_ = right_ = bottom_ = zero_;
-  };
+  void SetEmpty() { left_ = top_ = right_ = bottom_ = zero_; };
 
   T x() const { return left_; }
   T y() const { return top_; }
@@ -240,31 +226,29 @@ struct DlTRect {
   bool is_empty() const { return !(right_ > left_ && bottom_ > top_); }
 
   DL_ONLY_ON_FLOAT(bool)
-  is_finite() const {
-    return DlScalars_AreAllFinite(&left_, 4);
-  }
+  is_finite() const { return DlScalars_AreAllFinite(&left_, 4); }
 
   DL_ONLY_ON_FLOAT(void)
   RoundOut() {
-    left_ = floor(left_),
-    top_ = floor(top_),
-    right_ = ceil(right_),
+    left_ = floor(left_);
+    top_ = floor(top_);
+    right_ = ceil(right_);
     bottom_ = ceil(bottom_);
   }
 
   DL_ONLY_ON_FLOAT(void)
   RoundIn() {
-    left_ = ceil(left_),
-    top_ = ceil(top_),
-    right_ = floor(right_),
+    left_ = ceil(left_);
+    top_ = ceil(top_);
+    right_ = floor(right_);
     bottom_ = floor(bottom_);
   }
 
   DL_ONLY_ON_FLOAT(void)
   Round() {
-    left_ = round(left_),
-    top_ = round(top_),
-    right_ = round(right_),
+    left_ = round(left_);
+    top_ = round(top_);
+    right_ = round(right_);
     bottom_ = round(bottom_);
   }
 
@@ -301,7 +285,12 @@ struct DlTRect {
   }
   void Inset(DlTPoint<T> v) { Inset(v.x(), v.y()); }
   DlTRect MakeInset(T marginX, T marginY) const {
-    return {left_ + marginX, top_ + marginY, right_ - marginX, bottom_ - marginY };
+    return {
+        left_ + marginX,
+        top_ + marginY,
+        right_ - marginX,
+        bottom_ - marginY,
+    };
   }
   DlTRect MakeInset(DlTPoint<T> v) const { return MakeInset(v.x(), v.y()); }
 
@@ -313,7 +302,12 @@ struct DlTRect {
   }
   void Outset(DlTPoint<T> v) { Outset(v.x(), v.y()); }
   DlTRect MakeOutset(T marginX, T marginY) const {
-    return {left_ - marginX, top_ - marginY, right_ + marginX, bottom_ + marginY };
+    return {
+        left_ - marginX,
+        top_ - marginY,
+        right_ + marginX,
+        bottom_ + marginY,
+    };
   }
   DlTRect MakeOutset(DlTPoint<T> v) const { return MakeOutset(v.x(), v.y()); }
 
@@ -325,7 +319,12 @@ struct DlTRect {
   }
   void Offset(DlTPoint<T> v) { Offset(v.x(), v.y()); }
   DlTRect MakeOffset(T dx, T dy) const {
-    return {left_ + dx, top_ + dy, right_ + dx, bottom_ + dy};
+    return {
+        left_ + dx,
+        top_ + dy,
+        right_ + dx,
+        bottom_ + dy,
+    };
   }
   DlTRect MakeOffset(DlTPoint<T> v) const { return MakeOffset(v.x(), v.y()); }
 
@@ -360,7 +359,7 @@ struct DlTRect {
   bool Intersect(const DlTRect& r) { return Intersect(&r); }
 
   bool Intersects(const DlTRect* r) const {
-    return !this->is_empty() &&
+    return !this->is_empty() &&  //
            this->left_ < r->right_ && r->left_ < this->right_ &&
            this->top_ < r->bottom_ && r->top_ < this->bottom_;
   }
@@ -374,15 +373,13 @@ struct DlTRect {
   bool Contains(DlTPoint<T> p) { return Contains(p.x(), p.y()); }
 
   bool Contains(const DlTRect* r) const {
-    return !this->is_empty() && !r->is_empty() &&
+    return !this->is_empty() && !r->is_empty() &&  //
            this->left_ <= r->left_ && this->right_ >= r->right_ &&
            this->top_ <= r->top_ && this->bottom_ >= r->bottom_;
   }
   bool Contains(const DlTRect& r) const { return Contains(&r); }
 };
 
-#undef DL_ONLY_ON_INT
-#undef DL_ONLY_ON_INT_M
 #undef DL_ONLY_ON_FLOAT
 #undef DL_ONLY_ON_FLOAT_M
 #undef DL_ONLY_FROM_FLOAT
@@ -394,16 +391,15 @@ using DlIRect = DlTRect<DlInt, DlSize>;
 using DlFRect = DlTRect<DlScalar, DlScalar>;
 
 template <typename T, typename LT>
-inline std::ostream& operator<<(std::ostream& os, const DlTRect<T,LT>& rect) {
+inline std::ostream& operator<<(std::ostream& os, const DlTRect<T, LT>& rect) {
   return os << "DlRect(" << rect.left() << ", " << rect.top() << " => "
-                         << rect.right() << ", " << rect.bottom() << ")";
+            << rect.right() << ", " << rect.bottom() << ")";
 }
 
-[[maybe_unused]]
-constexpr DlFRect kMaxCullRect = DlFRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
+[[maybe_unused]] constexpr DlFRect kMaxCullRect =
+    DlFRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 
-[[maybe_unused]]
-constexpr DlFRect kEmptyRect;
+[[maybe_unused]] constexpr DlFRect kEmptyRect;
 
 }  // namespace flutter
 

@@ -197,11 +197,10 @@ TEST_F(TransformLayerTest, Nested) {
   EXPECT_TRUE(mock_layer->needs_painting(paint_context()));
   EXPECT_TRUE(layer2->needs_painting(paint_context()));
   EXPECT_TRUE(layer1->needs_painting(paint_context()));
-  EXPECT_EQ(
-      mock_layer->parent_matrix(),
-      DlTransform::MakeConcat(DlTransform::MakeConcat(initial_transform,
-                                                      layer1_transform),
-                       layer2_transform));
+  EXPECT_EQ(mock_layer->parent_matrix(),
+            DlTransform::MakeConcat(
+                DlTransform::MakeConcat(initial_transform, layer1_transform),
+                layer2_transform));
   EXPECT_EQ(mock_layer->parent_cull_rect(),
             inverse_layer2_transform.TransformRect(
                 inverse_layer1_transform.TransformRect(local_cull_rect)));
@@ -273,11 +272,10 @@ TEST_F(TransformLayerTest, NestedSeparated) {
   EXPECT_TRUE(layer1->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer1->parent_matrix(),
             DlTransform::MakeConcat(initial_transform, layer1_transform));
-  EXPECT_EQ(
-      mock_layer2->parent_matrix(),
-      DlTransform::MakeConcat(DlTransform::MakeConcat(initial_transform,
-                                                      layer1_transform),
-                       layer2_transform));
+  EXPECT_EQ(mock_layer2->parent_matrix(),
+            DlTransform::MakeConcat(
+                DlTransform::MakeConcat(initial_transform, layer1_transform),
+                layer2_transform));
   EXPECT_EQ(mock_layer1->parent_cull_rect(),
             inverse_layer1_transform.TransformRect(local_cull_rect));
   EXPECT_EQ(mock_layer2->parent_cull_rect(),
