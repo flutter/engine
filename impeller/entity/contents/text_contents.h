@@ -28,6 +28,8 @@ class TextContents final : public Contents {
 
   void SetTextFrame(const TextFrame& frame);
 
+  TextFrame& GetTextFrame() { return frame_; }
+
   void SetColor(Color color);
 
   Color GetColor() const;
@@ -39,6 +41,8 @@ class TextContents final : public Contents {
   void SetInheritedOpacity(Scalar opacity) override;
 
   void SetOffset(Vector2 offset);
+
+  Vector2 GetOffset() const { return offset_; }
 
   std::optional<Rect> GetTextFrameBounds() const;
 

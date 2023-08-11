@@ -70,7 +70,8 @@ std::optional<Rect> TextContents::GetCoverage(const Entity& entity) const {
   if (!bounds.has_value()) {
     return std::nullopt;
   }
-  return bounds->TransformBounds(entity.GetTransformation());
+  return bounds->TransformBounds(entity.GetTransformation() *
+                                 Matrix::MakeTranslation(offset_));
 }
 
 void TextContents::PopulateGlyphAtlas(

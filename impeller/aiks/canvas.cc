@@ -14,7 +14,6 @@
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/color_source_text_contents.h"
 #include "impeller/entity/contents/solid_rrect_blur_contents.h"
-#include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/contents/vertices_contents.h"
 #include "impeller/entity/geometry/geometry.h"
@@ -528,6 +527,26 @@ void Canvas::SaveLayer(const Paint& paint,
 void Canvas::DrawTextFrame(const TextFrame& text_frame,
                            Point position,
                            const Paint& paint) {
+  if (GetCurrentPass().GetLastEntity() &&
+      GetCurrentPass().GetLastEntity()->GetContents() == last_text_contents_ &&
+      last_text_contents_->GetTextFrame().GetAtlasType() ==
+          text_frame.GetAtlasType() &&
+      // TODO(gaaclarke): By adding vertex colors we can batch text of different
+      //                  colors too.
+      last_text_contents_->GetColor() == paint.color) {
+    Vector2 offset = position - last_text_contents_->GetOffset();
+    // TODO(gaaclarke): Store offsets for each text run so we don't have to copy
+    // everything.
+    for (const TextRun& run : text_frame.GetRuns()) {
+      TextRun new_run(run.GetFont());
+      for (const TextRun::GlyphPosition& pos : run.GetGlyphPositions()) {
+        new_run.AddGlyph(pos.glyph, pos.position + offset);
+      }
+      last_text_contents_->GetTextFrame().AddTextRun(new_run);
+    }
+    return;
+  }
+
   Entity entity;
   entity.SetStencilDepth(GetStencilDepth());
   entity.SetBlendMode(paint.blend_mode);
@@ -559,11 +578,10 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
     return;
   }
 
+  last_text_contents_ = text_contents;
   text_contents->SetColor(paint.color);
-
-  entity.SetTransformation(GetCurrentTransformation() *
-                           Matrix::MakeTranslation(position));
-
+  text_contents->SetOffset(position);
+  entity.SetTransformation(GetCurrentTransformation());
   entity.SetContents(paint.WithFilters(std::move(text_contents), true));
 
   GetCurrentPass().AddEntity(entity);

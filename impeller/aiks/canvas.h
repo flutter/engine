@@ -15,6 +15,7 @@
 #include "impeller/aiks/paint.h"
 #include "impeller/aiks/picture.h"
 #include "impeller/core/sampler_descriptor.h"
+#include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/entity_pass.h"
 #include "impeller/entity/geometry/geometry.h"
 #include "impeller/entity/geometry/vertices_geometry.h"
@@ -163,6 +164,7 @@ class Canvas {
   EntityPass* current_pass_ = nullptr;
   std::deque<CanvasStackEntry> xformation_stack_;
   std::optional<Rect> initial_cull_rect_;
+  std::shared_ptr<TextContents> last_text_contents_;
 
   void Initialize(std::optional<Rect> cull_rect);
 
