@@ -73,6 +73,14 @@ class EntityPass {
 
   void AddEntity(Entity entity);
 
+  const Entity* GetLastEntity() const {
+    if (elements_.empty()) {
+      return nullptr;
+    }
+
+    return std::get_if<Entity>(&elements_.back());
+  }
+
   void SetElements(std::vector<Element> elements);
 
   /// @brief  Appends a given pass as a subpass.

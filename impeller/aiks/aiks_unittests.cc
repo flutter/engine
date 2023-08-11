@@ -1265,7 +1265,8 @@ TEST_P(AiksTest, CanRenderEmojiTextFrame) {
   Canvas canvas;
   canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
 
-  ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas, "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊",
+  ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas,
+                                 "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊",
 #if FML_OS_MACOSX
                                  "Apple Color Emoji.ttc"));
 #else
@@ -1278,7 +1279,8 @@ TEST_P(AiksTest, CanRenderEmojiTextFrameWithAlpha) {
   Canvas canvas;
   canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
 
-  ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas, "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊",
+  ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas,
+                                 "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊",
 #if FML_OS_MACOSX
                                  "Apple Color Emoji.ttc", { .alpha = 0.5 }
 #else
@@ -2078,7 +2080,6 @@ TEST_P(AiksTest, BatchDrawText) {
   TextFrame text_frame1 = TextFrameFromTextBlob(blob);
   canvas.DrawTextFrame(text_frame1, Point(200, 200), {.color = Color::Red()});
   Picture picture = canvas.EndRecordingAsPicture();
-  ASSERT_TRUE(OpenPlaygroundHere(picture));
 
   std::shared_ptr<ContextSpy> spy = ContextSpy::Make();
   std::shared_ptr<Context> real_context = GetContext();
@@ -2089,6 +2090,8 @@ TEST_P(AiksTest, BatchDrawText) {
   ASSERT_EQ(spy->render_passes_.size(), 1llu);
   std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
   ASSERT_EQ(render_pass->GetCommands().size(), 1llu);
+
+  ASSERT_TRUE(OpenPlaygroundHere(picture));
 }
 
 TEST_P(AiksTest, DrawRectAbsorbsClears) {

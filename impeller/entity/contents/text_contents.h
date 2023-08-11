@@ -28,6 +28,8 @@ class TextContents final : public Contents {
 
   void SetTextFrame(const TextFrame& frame);
 
+  TextFrame& GetTextFrame() { return frame_; }
+
   void SetColor(Color color);
 
   Color GetColor() const;
@@ -39,6 +41,8 @@ class TextContents final : public Contents {
   void SetInheritedOpacity(Scalar opacity) override;
 
   void SetOffset(Vector2 offset);
+
+  Vector2 GetOffset() const { return offset_; }
 
   std::optional<Rect> GetTextFrameBounds() const;
 
@@ -55,12 +59,21 @@ class TextContents final : public Contents {
               const Entity& entity,
               RenderPass& pass) const override;
 
+  /// Get the position that the text will be drawn to relative to its transform.
+  ///
+  /// This value is baked into the entity's transform but is useful for
+  /// calculating offsets for batching text draws.
+  const Point& GetPosition() const { return position_; }
+
+  void SetPosition(const Point& point) { position_ = point; }
+
  private:
   TextFrame frame_;
   Scalar scale_ = 1.0;
   Color color_;
   Scalar inherited_opacity_ = 1.0;
   Vector2 offset_;
+  Point position_;
 
   std::shared_ptr<GlyphAtlas> ResolveAtlas(
       GlyphAtlas::Type type,
