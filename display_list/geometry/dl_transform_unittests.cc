@@ -343,7 +343,7 @@ TEST(DlTransformTest, Concat) {
   };
   auto test = [points](const DlTransform& outer,  //
                        const DlTransform& inner,  //
-                       std::string desc) {
+                       const std::string& desc) {
     DlTransform concat = DlTransform::MakeConcat(outer, inner);
     for (size_t i = 0; i < points.size(); i++) {
       EXPECT_TRUE(
@@ -421,11 +421,11 @@ struct TransformSetup {
   std::function<void(SkM44& transform)> Sk44ApplyOuter;
 };
 
-static void TestChain(std::vector<TransformSetup*> setup_chain,
+static void TestChain(const std::vector<TransformSetup*>& setup_chain,
                       DlTransform dlt,
                       SkMatrix skt,
                       SkM44 sk4t,
-                      std::string desc) {
+                      const std::string& desc) {
   std::vector<DlFPoint> points = {
       DlFPoint(0, 0),
       DlFPoint(10, 11),

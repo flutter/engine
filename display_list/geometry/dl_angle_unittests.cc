@@ -54,7 +54,7 @@ TEST(DlAngleTest, RadiansToDegreesArgumentConversion) {
   DlRadians radians(M_PI);
   EXPECT_EQ(radians.radians(), kDlScalar_Pi);
   EXPECT_EQ(radians.degrees(), 180.0);
-  auto test = [](DlDegrees degrees) {
+  auto test = [](const DlDegrees& degrees) {
     EXPECT_EQ(degrees.radians(), kDlScalar_Pi);
     EXPECT_EQ(degrees.degrees(), 180.0);
   };
@@ -70,7 +70,7 @@ TEST(DlAngleTest, DegreesToRadiansArgumentConversion) {
   DlDegrees degrees(180.0);
   EXPECT_EQ(degrees.radians(), kDlScalar_Pi);
   EXPECT_EQ(degrees.degrees(), 180.0);
-  auto test = [](DlRadians radians) {
+  auto test = [](const DlRadians& radians) {
     EXPECT_EQ(radians.radians(), kDlScalar_Pi);
     EXPECT_EQ(radians.degrees(), 180.0);
   };
