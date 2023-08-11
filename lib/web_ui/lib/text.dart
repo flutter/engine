@@ -688,7 +688,7 @@ abstract class ParagraphBuilder {
 
   static bool get shouldDisableRoundingHack {
     return const bool.fromEnvironment('SKPARAGRAPH_REMOVE_ROUNDING_HACK', defaultValue: true)
-        || _roundingHackDisabledInDebugMode;
+        && _roundingHackDisabledInDebugMode;
   }
   static bool _roundingHackDisabledInDebugMode = true;
   static void setDisableRoundingHack(bool disableRoundingHack) {
