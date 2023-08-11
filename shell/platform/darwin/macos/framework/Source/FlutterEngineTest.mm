@@ -92,9 +92,10 @@ constexpr int64_t kImplicitViewId = 0ll;
 
 - (void)removeApplicationLifecycleDelegate:
     (nonnull NSObject<FlutterAppLifecycleDelegate>*)delegate {
-  auto i = std::find(_delegates.begin(), _delegates.end(), (__bridge void*)delegate);
-  NSAssert(i != _delegates.end(), @"Attempting to unregister a delegate that was not registered.");
-  _delegates.erase(i);
+  auto delegateIndex = std::find(_delegates.begin(), _delegates.end(), (__bridge void*)delegate);
+  NSAssert(delegateIndex != _delegates.end(),
+           @"Attempting to unregister a delegate that was not registered.");
+  _delegates.erase(delegateIndex);
 }
 
 - (BOOL)hasDelegate:(nonnull NSObject<FlutterAppLifecycleDelegate>*)delegate {
