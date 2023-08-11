@@ -4,19 +4,10 @@
 
 #pragma once
 
-#include <cstddef>
-
-#include "flutter/fml/build_config.h"
-#include "flutter/fml/macros.h"
-
 namespace impeller {
+namespace compiler {
 
-constexpr size_t DefaultUniformAlignment() {
-#if FML_OS_IOS && !TARGET_OS_SIMULATOR
-  return 16u;
-#else
-  return 256u;
-#endif
-}
+constexpr char kExternalTexturePrefix[] = "SAMPLER_EXTERNAL_OES_";
 
+}  // namespace compiler
 }  // namespace impeller
