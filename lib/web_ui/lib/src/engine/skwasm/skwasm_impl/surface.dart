@@ -24,11 +24,9 @@ class SkwasmSurface {
   SkwasmSurface._fromHandle(this.handle) : threadId = surfaceGetThreadId(handle);
   final SurfaceHandle handle;
   OnRenderCallbackHandle _callbackHandle = nullptr;
-  final Map<int, Completer<int>> _pendingCallbacks = <int, Completer<int>>{};
+  final Map<CallbackId, Completer<JSAny>> _pendingCallbacks = <int, Completer<JSAny>>{};
 
   final int threadId;
-
-  int acquireObjectId() => skwasmInstance.skwasmGenerateUniqueId().toDartDouble.toInt();
 
   void _initialize() {
     _callbackHandle =
@@ -43,8 +41,7 @@ class SkwasmSurface {
 
   Future<DomImageBitmap> renderPicture(SkwasmPicture picture) async {
     final int callbackId = surfaceRenderPicture(handle, picture.handle);
-    await _registerCallback(callbackId);
-    return skwasmInstance.skwasmGetObject(callbackId.toJS) as DomImageBitmap;
+    return (await _registerCallback(callbackId)) as DomImageBitmap;
   }
 
   Future<ByteData> rasterizeImage(SkwasmImage image, ui.ImageByteFormat format) async {
@@ -53,7 +50,7 @@ class SkwasmSurface {
       image.handle,
       format.index,
     );
-    final int context = await _registerCallback(callbackId);
+    final int context = (await _registerCallback(callbackId) as JSNumber).toDartInt;
     final SkDataHandle dataHandle = SkDataHandle.fromAddress(context);
     final int byteCount = skDataGetSize(dataHandle);
     final Pointer<Uint8> dataPointer = skDataGetConstPointer(dataHandle).cast<Uint8>();
@@ -65,16 +62,16 @@ class SkwasmSurface {
     return ByteData.sublistView(output);
   }
 
-  Future<int> _registerCallback(int callbackId) {
-    final Completer<int> completer = Completer<int>();
+  Future<JSAny> _registerCallback(int callbackId) {
+    final Completer<JSAny> completer = Completer<JSAny>();
     _pendingCallbacks[callbackId] = completer;
     return completer.future;
   }
 
-  void _callbackHandler(JSNumber jsCallbackId, JSNumber jsPointer) {
-    final int callbackId = jsCallbackId.toDartDouble.toInt();
-    final Completer<int> completer = _pendingCallbacks.remove(callbackId)!;
-    completer.complete(jsPointer.toDartDouble.toInt());
+  void _callbackHandler(JSNumber jsCallbackId, JSAny value) {
+    final CallbackId callbackId = jsCallbackId.toDartInt;
+    final Completer<JSAny> completer = _pendingCallbacks.remove(callbackId)!;
+    completer.complete(value);
   }
 
   void dispose() {

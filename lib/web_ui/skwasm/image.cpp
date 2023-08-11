@@ -81,14 +81,14 @@ class ExternalWebGLTexture : public GrExternalTexture {
 class VideoFrameImageGenerator : public GrExternalTextureGenerator {
  public:
   VideoFrameImageGenerator(SkImageInfo ii,
-                           SkwasmObjectId videoFrameId,
+                           SkwasmObject videoFrame,
                            Skwasm::Surface* surface)
       : GrExternalTextureGenerator(ii),
-        _videoFrameId(videoFrameId),
+        _videoFrame(videoFrame),
         _surface(surface) {}
 
   ~VideoFrameImageGenerator() override {
-    _surface->disposeVideoFrame(_videoFrameId);
+    _surface->disposeVideoFrame(_videoFrame);
   }
 
   std::unique_ptr<GrExternalTexture> generateExternalTexture(
@@ -96,7 +96,7 @@ class VideoFrameImageGenerator : public GrExternalTextureGenerator {
       GrMipMapped mipmapped) override {
     GrGLTextureInfo glInfo;
     glInfo.fID = skwasm_createGlTextureFromVideoFrame(
-        _videoFrameId, fInfo.width(), fInfo.height());
+        _videoFrame, fInfo.width(), fInfo.height());
     glInfo.fFormat = GL_RGBA8_OES;
     glInfo.fTarget = GL_TEXTURE_2D;
 
@@ -107,7 +107,7 @@ class VideoFrameImageGenerator : public GrExternalTextureGenerator {
   }
 
  private:
-  SkwasmObjectId _videoFrameId;
+  SkwasmObject _videoFrame;
   Skwasm::Surface* _surface;
 };
 
@@ -134,7 +134,7 @@ SKWASM_EXPORT SkImage* image_createFromPixels(SkData* data,
       .release();
 }
 
-SKWASM_EXPORT SkImage* image_createFromVideoFrame(SkwasmObjectId videoFrameId,
+SKWASM_EXPORT SkImage* image_createFromVideoFrame(SkwasmObject videoFrame,
                                                   int width,
                                                   int height,
                                                   Skwasm::Surface* surface) {
@@ -143,7 +143,7 @@ SKWASM_EXPORT SkImage* image_createFromVideoFrame(SkwasmObjectId videoFrameId,
                  SkImageInfo::Make(width, height,
                                    SkColorType::kRGBA_8888_SkColorType,
                                    SkAlphaType::kPremul_SkAlphaType),
-                 videoFrameId, surface))
+                 videoFrame, surface))
       .release();
 }
 

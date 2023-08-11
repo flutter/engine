@@ -50,10 +50,10 @@ class Surface {
   void setCallbackHandler(CallbackHandler* callbackHandler);
 
   // Any thread
-  void disposeVideoFrame(SkwasmObjectId videoFrameId);
+  void disposeVideoFrame(SkwasmObject videoFrame);
 
   // Worker thread only.
-  void notifyRenderComplete(uint32_t callbackId);
+  void notifyRenderComplete(uint32_t callbackId, SkwasmObject imageBitmap);
 
  private:
   void _runWorker();
@@ -65,12 +65,13 @@ class Surface {
   void _rasterizeImage(SkImage* image,
                        ImageByteFormat format,
                        uint32_t callbackId);
-  void _disposeVideoFrame(SkwasmObjectId objectId);
+  void _disposeVideoFrame(SkwasmObject videoFrame);
   void _onRasterizeComplete(SkData* data, uint32_t callbackId);
-  void _onRenderComplete(uint32_t callbackId);
+  void _onRenderComplete(uint32_t callbackId, SkwasmObject imageBitmap);
 
   std::string _canvasID;
   CallbackHandler* _callbackHandler = nullptr;
+  uint32_t _currentCallbackId = 0;
 
   int _canvasWidth = 0;
   int _canvasHeight = 0;
@@ -88,7 +89,11 @@ class Surface {
   static void fRenderPicture(Surface* surface,
                              SkPicture* picture,
                              uint32_t callbackId);
-  static void fOnRenderComplete(Surface* surface, uint32_t callbackId);
+  static void fOnRenderComplete(
+    Surface* surface,
+    uint32_t callbackId,
+    SkwasmObject imageBitmap
+  );
   static void fRasterizeImage(Surface* surface,
                               SkImage* image,
                               ImageByteFormat format,
@@ -96,6 +101,6 @@ class Surface {
   static void fOnRasterizeComplete(Surface* surface,
                                    SkData* imageData,
                                    uint32_t callbackId);
-  static void fDisposeVideoFrame(Surface* surface, SkwasmObjectId videoFrameId);
+  static void fDisposeVideoFrame(Surface* surface, SkwasmObject videoFrame);
 };
 }  // namespace Skwasm
