@@ -36,11 +36,13 @@ FLUTTER_DARWIN_EXPORT
 @property(nonnull, readonly) id<FlutterTextureRegistry> textures;
 
 /**
- * The default view displaying Flutter content.
+ * The view displaying Flutter content.
+ *
+ * This property is provided for backwards compatibility for apps
+ * that assume a single view. This will eventually be replaced by
+ * a multi-view API variant.
  *
  * This method may return |nil|, for instance in a headless environment.
- *
- * The default view is a special view operated by single-view APIs.
  */
 @property(nullable, readonly) NSView* view;
 
@@ -49,6 +51,13 @@ FLUTTER_DARWIN_EXPORT
  */
 - (void)addMethodCallDelegate:(nonnull id<FlutterPlugin>)delegate
                       channel:(nonnull FlutterMethodChannel*)channel;
+
+/**
+ * Registers the plugin as a receiver of `NSApplicationDelegate` calls.
+ *
+ * @param delegate The receiving object, such as the plugin's main class.
+ */
+- (void)addApplicationDelegate:(nonnull NSObject<FlutterAppLifecycleDelegate>*)delegate;
 
 /**
  * Registers a `FlutterPlatformViewFactory` for creation of platform views.

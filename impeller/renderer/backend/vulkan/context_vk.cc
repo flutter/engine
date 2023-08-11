@@ -18,7 +18,6 @@
 #include <vector>
 
 #include "flutter/fml/build_config.h"
-#include "flutter/fml/string_conversion.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/allocator_vk.h"
@@ -28,9 +27,8 @@
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/debug_report_vk.h"
 #include "impeller/renderer/backend/vulkan/fence_waiter_vk.h"
-#include "impeller/renderer/backend/vulkan/formats_vk.h"
-#include "impeller/renderer/backend/vulkan/surface_vk.h"
-#include "impeller/renderer/backend/vulkan/vk.h"
+#include "impeller/renderer/backend/vulkan/resource_manager_vk.h"
+#include "impeller/renderer/backend/vulkan/surface_context_vk.h"
 #include "impeller/renderer/capabilities.h"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
@@ -119,6 +117,10 @@ ContextVK::~ContextVK() {
   CommandPoolVK::ClearAllPools(this);
 }
 
+Context::BackendType ContextVK::GetBackendType() const {
+  return Context::BackendType::kVulkan;
+}
+
 void ContextVK::Setup(Settings settings) {
   TRACE_EVENT0("impeller", "ContextVK::Setup");
 
@@ -139,8 +141,18 @@ void ContextVK::Setup(Settings settings) {
   auto& dispatcher = VULKAN_HPP_DEFAULT_DISPATCHER;
   dispatcher.init(settings.proc_address_callback);
 
-  auto caps = std::shared_ptr<CapabilitiesVK>(
-      new CapabilitiesVK(settings.enable_validation));
+  // Enable Vulkan validation if either:
+  // 1. The user has explicitly enabled it.
+  // 2. We are in a combination of debug mode, and running on Android.
+  // (It's possible 2 is overly conservative and we can simplify this)
+  auto enable_validation = settings.enable_validation;
+
+#if defined(FML_OS_ANDROID) && !defined(NDEBUG)
+  enable_validation = true;
+#endif
+
+  auto caps =
+      std::shared_ptr<CapabilitiesVK>(new CapabilitiesVK(enable_validation));
 
   if (!caps->IsValid()) {
     VALIDATION_LOG << "Could not determine device capabilities.";
@@ -184,28 +196,21 @@ void ContextVK::Setup(Settings settings) {
   application_info.setPEngineName("Impeller");
   application_info.setPApplicationName("Impeller");
 
+  vk::StructureChain<vk::InstanceCreateInfo, vk::ValidationFeaturesEXT>
+      instance_chain;
+
+  if (!caps->AreValidationsEnabled()) {
+    instance_chain.unlink<vk::ValidationFeaturesEXT>();
+  }
+
   std::vector<vk::ValidationFeatureEnableEXT> enabled_validations = {
       vk::ValidationFeatureEnableEXT::eSynchronizationValidation,
   };
 
-  vk::ValidationFeaturesEXT validation;
+  auto validation = instance_chain.get<vk::ValidationFeaturesEXT>();
   validation.setEnabledValidationFeatures(enabled_validations);
 
-  vk::InstanceCreateInfo instance_info;
-  if (caps->AreValidationsEnabled()) {
-    std::stringstream ss;
-    ss << "Enabling validation layers, features: [";
-    for (const auto& validation : enabled_validations) {
-      ss << vk::to_string(validation) << " ";
-    }
-    ss << "]";
-    FML_LOG(ERROR) << ss.str();
-#if !defined(IMPELLER_ENABLE_VULKAN_VALIDATION_LAYERS) && FML_OS_ANDROID
-    FML_LOG(ERROR) << "Vulkan validation layers turned on but the gn argument "
-                      "`--enable-vulkan-validation-layers` is missing.";
-#endif
-    instance_info.pNext = &validation;
-  }
+  auto instance_info = instance_chain.get<vk::InstanceCreateInfo>();
   instance_info.setPEnabledLayerNames(enabled_layers_c);
   instance_info.setPEnabledExtensionNames(enabled_extensions_c);
   instance_info.setPApplicationInfo(&application_info);
@@ -233,7 +238,7 @@ void ContextVK::Setup(Settings settings) {
       std::make_unique<DebugReportVK>(*caps, device_holder->instance.get());
 
   if (!debug_report->IsValid()) {
-    VALIDATION_LOG << "Could not setup debug report.";
+    VALIDATION_LOG << "Could not set up debug report.";
     return;
   }
 
@@ -279,8 +284,8 @@ void ContextVK::Setup(Settings settings) {
   auto enabled_device_extensions =
       caps->GetEnabledDeviceExtensions(device_holder->physical_device);
   if (!enabled_device_extensions.has_value()) {
-    // This shouldn't happen since we already did device selection. But doesn't
-    // hurt to check again.
+    // This shouldn't happen since we already did device selection. But
+    // doesn't hurt to check again.
     return;
   }
 
@@ -380,6 +385,15 @@ void ContextVK::Setup(Settings settings) {
   }
 
   //----------------------------------------------------------------------------
+  /// Create the resource manager.
+  ///
+  auto resource_manager = ResourceManagerVK::Create();
+  if (!resource_manager) {
+    VALIDATION_LOG << "Could not create resource manager.";
+    return;
+  }
+
+  //----------------------------------------------------------------------------
   /// Fetch the queues.
   ///
   QueuesVK queues(device_holder->device.get(),  //
@@ -408,12 +422,13 @@ void ContextVK::Setup(Settings settings) {
   queues_ = std::move(queues);
   device_capabilities_ = std::move(caps);
   fence_waiter_ = std::move(fence_waiter);
+  resource_manager_ = std::move(resource_manager);
   device_name_ = std::string(physical_device_properties.deviceName);
   is_valid_ = true;
 
   //----------------------------------------------------------------------------
-  /// Label all the relevant objects. This happens after setup so that the debug
-  /// messengers have had a chance to be setup.
+  /// Label all the relevant objects. This happens after setup so that the
+  /// debug messengers have had a chance to be set up.
   ///
   SetDebugName(GetDevice(), device_holder_->device.get(), "ImpellerDevice");
 }
@@ -448,13 +463,9 @@ std::shared_ptr<PipelineLibrary> ContextVK::GetPipelineLibrary() const {
 }
 
 std::shared_ptr<CommandBuffer> ContextVK::CreateCommandBuffer() const {
-  auto encoder = CreateGraphicsCommandEncoder();
-  if (!encoder) {
-    return nullptr;
-  }
   return std::shared_ptr<CommandBufferVK>(
-      new CommandBufferVK(shared_from_this(),  //
-                          std::move(encoder))  //
+      new CommandBufferVK(shared_from_this(),                     //
+                          CreateGraphicsCommandEncoderFactory())  //
   );
 }
 
@@ -475,46 +486,8 @@ void ContextVK::Shutdown() {
   raster_message_loop_->Terminate();
 }
 
-std::unique_ptr<Surface> ContextVK::AcquireNextSurface() {
-  TRACE_EVENT0("impeller", __FUNCTION__);
-  auto surface = swapchain_ ? swapchain_->AcquireNextDrawable() : nullptr;
-  if (surface && pipeline_library_) {
-    pipeline_library_->DidAcquireSurfaceFrame();
-  }
-  return surface;
-}
-
-#ifdef FML_OS_ANDROID
-
-vk::UniqueSurfaceKHR ContextVK::CreateAndroidSurface(
-    ANativeWindow* window) const {
-  if (!device_holder_->instance) {
-    return vk::UniqueSurfaceKHR{VK_NULL_HANDLE};
-  }
-
-  auto create_info = vk::AndroidSurfaceCreateInfoKHR().setWindow(window);
-  auto surface_res =
-      device_holder_->instance->createAndroidSurfaceKHRUnique(create_info);
-
-  if (surface_res.result != vk::Result::eSuccess) {
-    VALIDATION_LOG << "Could not create Android surface, error: "
-                   << vk::to_string(surface_res.result);
-    return vk::UniqueSurfaceKHR{VK_NULL_HANDLE};
-  }
-
-  return std::move(surface_res.value);
-}
-
-#endif  // FML_OS_ANDROID
-
-bool ContextVK::SetWindowSurface(vk::UniqueSurfaceKHR surface) {
-  auto swapchain = SwapchainVK::Create(shared_from_this(), std::move(surface));
-  if (!swapchain) {
-    VALIDATION_LOG << "Could not create swapchain.";
-    return false;
-  }
-  swapchain_ = std::move(swapchain);
-  return true;
+std::shared_ptr<SurfaceContextVK> ContextVK::CreateSurfaceContext() {
+  return std::make_shared<SurfaceContextVK>(shared_from_this());
 }
 
 const std::shared_ptr<const Capabilities>& ContextVK::GetCapabilities() const {
@@ -533,22 +506,13 @@ std::shared_ptr<FenceWaiterVK> ContextVK::GetFenceWaiter() const {
   return fence_waiter_;
 }
 
-std::unique_ptr<CommandEncoderVK> ContextVK::CreateGraphicsCommandEncoder()
-    const {
-  auto tls_pool = CommandPoolVK::GetThreadLocal(this);
-  if (!tls_pool) {
-    return nullptr;
-  }
-  auto encoder = std::unique_ptr<CommandEncoderVK>(new CommandEncoderVK(
-      device_holder_,          //
-      queues_.graphics_queue,  //
-      tls_pool,                //
-      fence_waiter_            //
-      ));
-  if (!encoder->IsValid()) {
-    return nullptr;
-  }
-  return encoder;
+std::shared_ptr<ResourceManagerVK> ContextVK::GetResourceManager() const {
+  return resource_manager_;
+}
+
+std::unique_ptr<CommandEncoderFactoryVK>
+ContextVK::CreateGraphicsCommandEncoderFactory() const {
+  return std::make_unique<CommandEncoderFactoryVK>(weak_from_this());
 }
 
 }  // namespace impeller

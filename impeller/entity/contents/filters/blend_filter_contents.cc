@@ -91,6 +91,21 @@ static std::optional<Entity> AdvancedBlend(
     src_uvs = maybe_src_uvs.value();
   }
 
+  Rect subpass_coverage = coverage;
+  if (entity.GetContents()) {
+    auto coverage_hint = entity.GetContents()->GetCoverageHint();
+
+    if (coverage_hint.has_value()) {
+      auto maybe_subpass_coverage =
+          subpass_coverage.Intersection(*coverage_hint);
+      if (!maybe_subpass_coverage.has_value()) {
+        return std::nullopt;  // Nothing to render.
+      }
+
+      subpass_coverage = *maybe_subpass_coverage;
+    }
+  }
+
   //----------------------------------------------------------------------------
   /// Render to texture.
   ///
@@ -159,31 +174,26 @@ static std::optional<Entity> AdvancedBlend(
     auto blend_uniform = host_buffer.EmplaceUniform(blend_info);
     FS::BindBlendInfo(cmd, blend_uniform);
 
-    frame_info.mvp = Matrix::MakeOrthographic(size);
+    frame_info.mvp =
+        Matrix::MakeOrthographic(size) *
+        Matrix::MakeTranslation(coverage.origin - subpass_coverage.origin);
 
     auto uniform_view = host_buffer.EmplaceUniform(frame_info);
     VS::BindFrameInfo(cmd, uniform_view);
-    pass.AddCommand(cmd);
+    pass.AddCommand(std::move(cmd));
 
     return true;
   };
 
-  auto subpass_size = ISize(coverage.size);
-  if (entity.GetContents()) {
-    auto coverage_hint = entity.GetContents()->GetCoverageHint();
-    if (coverage_hint.has_value()) {
-      subpass_size = subpass_size.Min(ISize(coverage_hint->size));
-    }
-  }
-  auto out_texture =
-      renderer.MakeSubpass("Advanced Blend Filter", subpass_size, callback);
+  auto out_texture = renderer.MakeSubpass(
+      "Advanced Blend Filter", ISize(subpass_coverage.size), callback);
   if (!out_texture) {
     return std::nullopt;
   }
 
   return Entity::FromSnapshot(
       Snapshot{.texture = out_texture,
-               .transform = Matrix::MakeTranslation(coverage.origin),
+               .transform = Matrix::MakeTranslation(subpass_coverage.origin),
                // Since we absorbed the transform of the inputs and used the
                // respective snapshot sampling modes when blending, pass on
                // the default NN clamp sampler.
@@ -326,7 +336,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
     auto uniform_view = host_buffer.EmplaceUniform(frame_info);
     VS::BindFrameInfo(cmd, uniform_view);
 
-    return pass.AddCommand(cmd);
+    return pass.AddCommand(std::move(cmd));
   };
   CoverageProc coverage_proc =
       [coverage](const Entity& entity) -> std::optional<Rect> {
@@ -466,7 +476,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
     auto uniform_view = host_buffer.EmplaceUniform(frame_info);
     VS::BindFrameInfo(cmd, uniform_view);
 
-    return pass.AddCommand(cmd);
+    return pass.AddCommand(std::move(cmd));
   };
 
   CoverageProc coverage_proc =
@@ -498,7 +508,22 @@ static std::optional<Entity> PipelineBlend(
   auto dst_snapshot =
       inputs[0]->GetSnapshot("PipelineBlend(Dst)", renderer, entity);
   if (!dst_snapshot.has_value()) {
-    return std::nullopt;
+    return std::nullopt;  // Nothing to render.
+  }
+
+  Rect subpass_coverage = coverage;
+  if (entity.GetContents()) {
+    auto coverage_hint = entity.GetContents()->GetCoverageHint();
+
+    if (coverage_hint.has_value()) {
+      auto maybe_subpass_coverage =
+          subpass_coverage.Intersection(*coverage_hint);
+      if (!maybe_subpass_coverage.has_value()) {
+        return std::nullopt;  // Nothing to render.
+      }
+
+      subpass_coverage = *maybe_subpass_coverage;
+    }
   }
 
   ContentContext::SubpassCallback callback = [&](const ContentContext& renderer,
@@ -538,8 +563,7 @@ static std::optional<Entity> PipelineBlend(
 
       VS::FrameInfo frame_info;
       frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                       Matrix::MakeTranslation(
-                           -input->GetCoverage().value_or(coverage).origin) *
+                       Matrix::MakeTranslation(-subpass_coverage.origin) *
                        input->transform;
       frame_info.texture_sampler_y_coord_scale =
           input->texture->GetYCoordScale();
@@ -549,7 +573,7 @@ static std::optional<Entity> PipelineBlend(
       FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
       VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
 
-      pass.AddCommand(cmd);
+      pass.AddCommand(std::move(cmd));
       return true;
     };
 
@@ -595,15 +619,8 @@ static std::optional<Entity> PipelineBlend(
     return true;
   };
 
-  auto subpass_size = ISize(coverage.size);
-  if (entity.GetContents()) {
-    auto coverage_hint = entity.GetContents()->GetCoverageHint();
-    if (coverage_hint.has_value()) {
-      subpass_size = subpass_size.Min(ISize(coverage_hint->size));
-    }
-  }
-  auto out_texture =
-      renderer.MakeSubpass("Pipeline Blend Filter", subpass_size, callback);
+  auto out_texture = renderer.MakeSubpass(
+      "Pipeline Blend Filter", ISize(subpass_coverage.size), callback);
 
   if (!out_texture) {
     return std::nullopt;
@@ -611,7 +628,7 @@ static std::optional<Entity> PipelineBlend(
 
   return Entity::FromSnapshot(
       Snapshot{.texture = out_texture,
-               .transform = Matrix::MakeTranslation(coverage.origin),
+               .transform = Matrix::MakeTranslation(subpass_coverage.origin),
                // Since we absorbed the transform of the inputs and used the
                // respective snapshot sampling modes when blending, pass on
                // the default NN clamp sampler.

@@ -5,8 +5,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui';
-
-import 'package:zircon/zircon.dart';
+import 'dart:zircon';
 
 void main() {
   print('Launching touch-input-view');
@@ -83,7 +82,7 @@ class TestApp {
 
   void _reportTouchInput({double localX, double localY, int timeReceived}) {
     print('touch-input-view reporting touch input to TouchInputListener');
-    final message = utf8.encoder.convert(json.encode({
+    final message = utf8.encode(json.encode({
       'method': 'TouchInputListener.ReportTouchInput',
       'local_x': localX,
       'local_y': localY,

@@ -21,7 +21,7 @@ static bool DeviceSupportsFramebufferFetch(id<MTLDevice> device) {
   // The iOS simulator lies about supporting framebuffer fetch.
 #if FML_OS_IOS_SIMULATOR
   return false;
-#endif  // FML_OS_IOS_SIMULATOR
+#else  // FML_OS_IOS_SIMULATOR
 
   if (@available(macOS 10.15, iOS 13, tvOS 13, *)) {
     return [device supportsFamily:MTLGPUFamilyApple2];
@@ -34,6 +34,7 @@ static bool DeviceSupportsFramebufferFetch(id<MTLDevice> device) {
 #else
   return false;
 #endif  // FML_OS_IOS
+#endif  // FML_OS_IOS_SIMULATOR
 }
 
 static bool DeviceSupportsComputeSubgroups(id<MTLDevice> device) {
@@ -78,7 +79,7 @@ ContextMTL::ContextMTL(
       is_gpu_disabled_sync_switch_(std::move(is_gpu_disabled_sync_switch)) {
   // Validate device.
   if (!device_) {
-    VALIDATION_LOG << "Could not setup valid Metal device.";
+    VALIDATION_LOG << "Could not set up valid Metal device.";
     return;
   }
 
@@ -134,7 +135,7 @@ ContextMTL::ContextMTL(
     resource_allocator_ = std::shared_ptr<AllocatorMTL>(
         new AllocatorMTL(device_, "Impeller Permanents Allocator"));
     if (!resource_allocator_) {
-      VALIDATION_LOG << "Could not setup the resource allocator.";
+      VALIDATION_LOG << "Could not set up the resource allocator.";
       return;
     }
   }
@@ -218,7 +219,7 @@ static id<MTLDevice> CreateMetalDevice() {
 static id<MTLCommandQueue> CreateMetalCommandQueue(id<MTLDevice> device) {
   auto command_queue = device.newCommandQueue;
   if (!command_queue) {
-    VALIDATION_LOG << "Could not setup the command queue.";
+    VALIDATION_LOG << "Could not set up the command queue.";
     return nullptr;
   }
   command_queue.label = @"Impeller Command Queue";
@@ -284,6 +285,10 @@ std::shared_ptr<ContextMTL> ContextMTL::Create(
 }
 
 ContextMTL::~ContextMTL() = default;
+
+Context::BackendType ContextMTL::GetBackendType() const {
+  return Context::BackendType::kMetal;
+}
 
 // |Context|
 std::string ContextMTL::DescribeGpuModel() const {

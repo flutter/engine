@@ -14,6 +14,7 @@ import android.content.Context;
 import android.content.MutableContextWrapper;
 import android.content.res.AssetManager;
 import android.graphics.SurfaceTexture;
+import android.media.Image;
 import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.Surface;
@@ -39,6 +40,7 @@ import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.embedding.engine.systemchannels.MouseCursorChannel;
 import io.flutter.embedding.engine.systemchannels.PlatformViewsChannel;
+import io.flutter.embedding.engine.systemchannels.PlatformViewsChannel.PlatformViewTouch;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.common.MethodCall;
@@ -79,6 +81,8 @@ public class PlatformViewsControllerTest {
 
     @Override
     public void dispose() {
+      // We have been removed from the view hierarhy before the call to dispose.
+      assertNull(view.getParent());
       disposeCalls++;
     }
 
@@ -96,6 +100,46 @@ public class PlatformViewsControllerTest {
     public void onFlutterViewDetached() {
       detachCalls++;
     }
+  }
+
+  @Test
+  @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
+  public void itRemovesPlatformViewBeforeDiposeIsCalled() {
+    PlatformViewsController platformViewsController = new PlatformViewsController();
+    FlutterJNI jni = new FlutterJNI();
+    attach(jni, platformViewsController);
+    // Get the platform view registry.
+    PlatformViewRegistry registry = platformViewsController.getRegistry();
+
+    // Register a factory for our platform view.
+    registry.registerViewFactory(
+        CountingPlatformView.VIEW_TYPE_ID,
+        new PlatformViewFactory(StandardMessageCodec.INSTANCE) {
+          @Override
+          public PlatformView create(Context context, int viewId, Object args) {
+            return new CountingPlatformView(context);
+          }
+        });
+
+    // Create the platform view.
+    int viewId = 0;
+    final PlatformViewsChannel.PlatformViewCreationRequest request =
+        new PlatformViewsChannel.PlatformViewCreationRequest(
+            viewId,
+            CountingPlatformView.VIEW_TYPE_ID,
+            0,
+            0,
+            128,
+            128,
+            View.LAYOUT_DIRECTION_LTR,
+            null);
+    PlatformView pView = platformViewsController.createPlatformView(request, true);
+    assertTrue(pView instanceof CountingPlatformView);
+    CountingPlatformView cpv = (CountingPlatformView) pView;
+    platformViewsController.configureForTextureLayerComposition(pView, request);
+    assertEquals(0, cpv.disposeCalls);
+    platformViewsController.disposePlatformView(viewId);
+    assertEquals(1, cpv.disposeCalls);
   }
 
   @Test
@@ -121,7 +165,7 @@ public class PlatformViewsControllerTest {
     int viewId = 0;
     final PlatformViewsChannel.PlatformViewCreationRequest request =
         new PlatformViewsChannel.PlatformViewCreationRequest(
-            viewId++,
+            viewId,
             CountingPlatformView.VIEW_TYPE_ID,
             0,
             0,
@@ -189,6 +233,36 @@ public class PlatformViewsControllerTest {
 
     // Trigger the callback to ensure that it doesn't crash.
     resizeCallbackCaptor.getValue().run();
+  }
+
+  @Test
+  @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
+  public void virtualDisplay_ensureDisposeVirtualDisplayController() {
+    final int platformViewId = 0;
+    FlutterView fakeFlutterView = new FlutterView(ApplicationProvider.getApplicationContext());
+    VirtualDisplayController fakeVdController = mock(VirtualDisplayController.class);
+    PlatformViewsController platformViewsController = new PlatformViewsController();
+    FlutterJNI jni = new FlutterJNI();
+    attach(jni, platformViewsController);
+    platformViewsController.attachToView(fakeFlutterView);
+
+    PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
+    PlatformView platformView = mock(PlatformView.class);
+    Context context = ApplicationProvider.getApplicationContext();
+    View androidView = new View(context);
+    when(platformView.getView()).thenReturn(androidView);
+    when(viewFactory.create(any(), eq(platformViewId), any())).thenReturn(platformView);
+    platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
+    createPlatformView(
+        jni, platformViewsController, platformViewId, "testType", /* hybrid=*/ false);
+
+    platformViewsController.vdControllers.put(platformViewId, fakeVdController);
+
+    // Simulate dispose call from the framework.
+    disposePlatformView(jni, platformViewsController, platformViewId);
+
+    // Ensure VirtualDisplayController.dispose() is called
+    verify(fakeVdController, times(1)).dispose();
   }
 
   @Test
@@ -1491,6 +1565,27 @@ public class PlatformViewsControllerTest {
 
               @Override
               public void release() {}
+            };
+          }
+
+          @Override
+          public ImageTextureEntry createImageTexture() {
+            return new ImageTextureEntry() {
+              @Override
+              public long id() {
+                return 0;
+              }
+
+              @Override
+              public void release() {}
+
+              @Override
+              public void pushImage(Image image) {}
+
+              @Override
+              public Image acquireLatestImage() {
+                return null;
+              }
             };
           }
         };

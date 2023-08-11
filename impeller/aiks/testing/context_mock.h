@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "gmock/gmock-function-mocker.h"
 #include "gmock/gmock.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/context.h"
@@ -36,7 +37,7 @@ class CommandBufferMock : public CommandBuffer {
     return command_buffer->OnCreateRenderPass(render_target);
   }
 
-  MOCK_CONST_METHOD0(OnCreateBlitPass, std::shared_ptr<BlitPass>());
+  MOCK_METHOD0(OnCreateBlitPass, std::shared_ptr<BlitPass>());
   static std::shared_ptr<BlitPass> ForwardOnCreateBlitPass(
       CommandBuffer* command_buffer) {
     return command_buffer->OnCreateBlitPass();
@@ -53,7 +54,7 @@ class CommandBufferMock : public CommandBuffer {
     return command_buffer->OnWaitUntilScheduled();
   }
 
-  MOCK_CONST_METHOD0(OnCreateComputePass, std::shared_ptr<ComputePass>());
+  MOCK_METHOD0(OnCreateComputePass, std::shared_ptr<ComputePass>());
   static std::shared_ptr<ComputePass> ForwardOnCreateComputePass(
       CommandBuffer* command_buffer) {
     return command_buffer->OnCreateComputePass();
@@ -63,6 +64,8 @@ class CommandBufferMock : public CommandBuffer {
 class ContextMock : public Context {
  public:
   MOCK_CONST_METHOD0(DescribeGpuModel, std::string());
+
+  MOCK_CONST_METHOD0(GetBackendType, Context::BackendType());
 
   MOCK_CONST_METHOD0(IsValid, bool());
 

@@ -52,4 +52,19 @@ Matrix FilterContentsFilterInput::GetTransform(const Entity& entity) const {
   return filter_->GetTransform(entity.GetTransformation());
 }
 
+void FilterContentsFilterInput::PopulateGlyphAtlas(
+    const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
+    Scalar scale) {
+  filter_->PopulateGlyphAtlas(lazy_glyph_atlas, scale);
+}
+
+bool FilterContentsFilterInput::IsLeaf() const {
+  return false;
+}
+
+void FilterContentsFilterInput::SetLeafInputs(
+    const FilterInput::Vector& inputs) {
+  filter_->SetLeafInputs(inputs);
+}
+
 }  // namespace impeller

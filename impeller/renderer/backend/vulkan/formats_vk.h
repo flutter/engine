@@ -5,10 +5,10 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
+#include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/shader_types.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
-#include "vulkan/vulkan_enums.hpp"
 
 namespace impeller {
 
@@ -588,6 +588,9 @@ constexpr uint32_t ToArrayLayerCount(TextureType type) {
       return 1u;
     case TextureType::kTextureCube:
       return 6u;
+    case TextureType::kTextureExternalOES:
+      VALIDATION_LOG
+          << "kTextureExternalOES can not be used with the Vulkan backend.";
   }
   FML_UNREACHABLE();
 }
@@ -599,6 +602,9 @@ constexpr vk::ImageViewType ToVKImageViewType(TextureType type) {
       return vk::ImageViewType::e2D;
     case TextureType::kTextureCube:
       return vk::ImageViewType::eCube;
+    case TextureType::kTextureExternalOES:
+      VALIDATION_LOG
+          << "kTextureExternalOES can not be used with the Vulkan backend.";
   }
   FML_UNREACHABLE();
 }
@@ -610,6 +616,9 @@ constexpr vk::ImageCreateFlags ToVKImageCreateFlags(TextureType type) {
       return {};
     case TextureType::kTextureCube:
       return vk::ImageCreateFlagBits::eCubeCompatible;
+    case TextureType::kTextureExternalOES:
+      VALIDATION_LOG
+          << "kTextureExternalOES can not be used with the Vulkan backend.";
   }
   FML_UNREACHABLE();
 }
@@ -644,14 +653,5 @@ constexpr vk::ImageAspectFlags ToImageAspectFlags(PixelFormat format) {
   }
   FML_UNREACHABLE();
 }
-
-struct LayoutTransition {
-  vk::CommandBuffer cmd_buffer = {};
-  vk::ImageLayout new_layout = vk::ImageLayout::eUndefined;
-  vk::PipelineStageFlags src_stage = vk::PipelineStageFlagBits::eNone;
-  vk::AccessFlags src_access = vk::AccessFlagBits::eNone;
-  vk::PipelineStageFlags dst_stage = vk::PipelineStageFlagBits::eNone;
-  vk::AccessFlags dst_access = vk::AccessFlagBits::eNone;
-};
 
 }  // namespace impeller

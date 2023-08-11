@@ -1550,26 +1550,32 @@ class TextStyle {
   }
 
   @override
-  int get hashCode => Object.hash(
-    Object.hashAll(_encoded),
-    _leadingDistribution,
-    _fontFamily,
-    _fontFamilyFallback,
-    _fontSize,
-    _letterSpacing,
-    _wordSpacing,
-    _height,
-    _locale,
-    _background,
-    _foreground,
-    _shadows == null ? null : Object.hashAll(_shadows!),
-    _decorationThickness,
-    _fontFeatures == null ? null : Object.hashAll(_fontFeatures!),
-    _fontVariations == null ? null : Object.hashAll(_fontVariations!),
-  );
+  int get hashCode {
+    final List<Shadow>? shadows = _shadows;
+    final List<FontFeature>? fontFeatures = _fontFeatures;
+    final List<FontVariation>? fontVariations = _fontVariations;
+    return Object.hash(
+      Object.hashAll(_encoded),
+      _leadingDistribution,
+      _fontFamily,
+      _fontFamilyFallback,
+      _fontSize,
+      _letterSpacing,
+      _wordSpacing,
+      _height,
+      _locale,
+      _background,
+      _foreground,
+      shadows == null ? null : Object.hashAll(shadows),
+      _decorationThickness,
+      fontFeatures == null ? null : Object.hashAll(fontFeatures),
+      fontVariations == null ? null : Object.hashAll(fontVariations),
+    );
+  }
 
   @override
   String toString() {
+    final List<String>? fontFamilyFallback = _fontFamilyFallback;
     return 'TextStyle('
              'color: ${              _encoded[0] & 0x00002 == 0x00002  ? Color(_encoded[1])                           : "unspecified"}, '
              'decoration: ${         _encoded[0] & 0x00004 == 0x00004  ? TextDecoration._(_encoded[2])                : "unspecified"}, '
@@ -1583,8 +1589,8 @@ class TextStyle {
              'fontFamily: ${         _encoded[0] & 0x00200 == 0x00200
                                      && _fontFamily != ''              ? _fontFamily                                  : "unspecified"}, '
              'fontFamilyFallback: ${ _encoded[0] & 0x00200 == 0x00200
-                                     && _fontFamilyFallback != null
-                                     && _fontFamilyFallback!.isNotEmpty ? _fontFamilyFallback                         : "unspecified"}, '
+                                     && fontFamilyFallback != null
+                                     && fontFamilyFallback.isNotEmpty ? fontFamilyFallback                            : "unspecified"}, '
              'fontSize: ${           _encoded[0] & 0x00400 == 0x00400  ? _fontSize                                    : "unspecified"}, '
              'letterSpacing: ${      _encoded[0] & 0x00800 == 0x00800  ? "${_letterSpacing}x"                         : "unspecified"}, '
              'wordSpacing: ${        _encoded[0] & 0x01000 == 0x01000  ? "${_wordSpacing}x"                           : "unspecified"}, '
@@ -2798,7 +2804,7 @@ abstract class Paragraph {
   /// This only returns a valid value if asserts are enabled, and must not be
   /// used otherwise.
   bool get debugDisposed;
- }
+}
 
 @pragma('vm:entry-point')
 base class _NativeParagraph extends NativeFieldWrapperClass1 implements Paragraph {
@@ -3015,6 +3021,23 @@ abstract class ParagraphBuilder {
   /// [Paragraph].
   factory ParagraphBuilder(ParagraphStyle style) = _NativeParagraphBuilder;
 
+  /// Whether the rounding hack enabled by default in SkParagraph and TextPainter
+  /// is disabled.
+  ///
+  /// Do not rely on this getter as it exists for migration purposes only and
+  /// will soon be removed.
+  @Deprecated('''
+    The shouldDisableRoundingHack flag is for internal migration purposes only and should not be used.
+  ''')
+  static bool get shouldDisableRoundingHack => _shouldDisableRoundingHack;
+  static bool _shouldDisableRoundingHack = true;
+  /// Do not call this method as it is for migration purposes only and will soon
+  /// be removed.
+  // ignore: use_setters_to_change_properties
+  static void setDisableRoundingHack(bool disableRoundingHack) {
+    _shouldDisableRoundingHack = disableRoundingHack;
+  }
+
   /// The number of placeholders currently in the paragraph.
   int get placeholderCount;
 
@@ -3132,11 +3155,12 @@ base class _NativeParagraphBuilder extends NativeFieldWrapperClass1 implements P
         style._fontSize ?? 0,
         style._height ?? 0,
         style._ellipsis ?? '',
-        _encodeLocale(style._locale)
+        _encodeLocale(style._locale),
+        !ParagraphBuilder.shouldDisableRoundingHack,
       );
   }
 
-  @Native<Void Function(Handle, Handle, Handle, Handle, Handle, Double, Double, Handle, Handle)>(symbol: 'ParagraphBuilder::Create')
+  @Native<Void Function(Handle, Handle, Handle, Handle, Handle, Double, Double, Handle, Handle, Bool)>(symbol: 'ParagraphBuilder::Create')
   external void _constructor(
       Int32List encoded,
       ByteData? strutData,
@@ -3145,7 +3169,8 @@ base class _NativeParagraphBuilder extends NativeFieldWrapperClass1 implements P
       double fontSize,
       double height,
       String ellipsis,
-      String locale);
+      String locale,
+      bool applyRoundingHack);
 
   @override
   int get placeholderCount => _placeholderCount;
@@ -3161,8 +3186,9 @@ base class _NativeParagraphBuilder extends NativeFieldWrapperClass1 implements P
   void pushStyle(TextStyle style) {
     final List<String> fullFontFamilies = <String>[];
     fullFontFamilies.add(style._fontFamily);
-    if (style._fontFamilyFallback != null) {
-      fullFontFamilies.addAll(style._fontFamilyFallback!);
+    final List<String>? fontFamilyFallback = style._fontFamilyFallback;
+    if (fontFamilyFallback != null) {
+      fullFontFamilies.addAll(fontFamilyFallback);
     }
 
     final Int32List encoded = style._encoded;
@@ -3314,7 +3340,7 @@ Future<void> loadFontFromList(Uint8List list, {String? fontFamily}) {
   ).then((_) => _sendFontChangeMessage());
 }
 
-final ByteData _fontChangeMessage = utf8.encoder.convert(
+final ByteData _fontChangeMessage = utf8.encode(
   json.encode(<String, Object?>{'type': 'fontsChange'})
 ).buffer.asByteData();
 

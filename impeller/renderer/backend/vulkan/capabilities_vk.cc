@@ -141,8 +141,6 @@ CapabilitiesVK::GetEnabledInstanceExtensions() const {
     if (HasExtension("VK_EXT_validation_features")) {
       // It's valid to not have `VK_EXT_validation_features` available.  That's
       // the case when using AGI as a frame debugger.
-      FML_DLOG(INFO) << "Requested validations but could not find the "
-                        "VK_EXT_validation_features extension.";
       required.push_back("VK_EXT_validation_features");
     }
   }
@@ -207,6 +205,18 @@ CapabilitiesVK::GetEnabledDeviceExtensions(
   if (exts->find("VK_KHR_portability_subset") != exts->end()) {
     enabled.push_back("VK_KHR_portability_subset");
   }
+
+#ifdef FML_OS_ANDROID
+  if (exts->find("VK_ANDROID_external_memory_android_hardware_buffer") ==
+      exts->end()) {
+    VALIDATION_LOG
+        << "Device does not support "
+           "VK_ANDROID_external_memory_android_hardware_buffer extension.";
+    return std::nullopt;
+  }
+  enabled.push_back("VK_ANDROID_external_memory_android_hardware_buffer");
+  enabled.push_back("VK_EXT_queue_family_foreign");
+#endif
 
   // Enable all optional extensions if the device supports it.
   IterateOptionalDeviceExtensions([&](auto ext) {

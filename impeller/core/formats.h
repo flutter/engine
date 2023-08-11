@@ -234,6 +234,7 @@ enum class TextureType {
   kTexture2D,
   kTexture2DMultisample,
   kTextureCube,
+  kTextureExternalOES,
 };
 
 constexpr const char* TextureTypeToString(TextureType type) {
@@ -244,6 +245,8 @@ constexpr const char* TextureTypeToString(TextureType type) {
       return "Texture2DMultisample";
     case TextureType::kTextureCube:
       return "TextureCube";
+    case TextureType::kTextureExternalOES:
+      return "TextureExternalOES";
   }
   FML_UNREACHABLE();
 }
@@ -252,6 +255,7 @@ constexpr bool IsMultisampleCapable(TextureType type) {
   switch (type) {
     case TextureType::kTexture2D:
     case TextureType::kTextureCube:
+    case TextureType::kTextureExternalOES:
       return false;
     case TextureType::kTexture2DMultisample:
       return true;
@@ -293,8 +297,14 @@ constexpr const char* TextureUsageToString(TextureUsage usage) {
 
 std::string TextureUsageMaskToString(TextureUsageMask mask);
 
-enum class TextureIntent {
+// Texture coordinate system.
+enum class TextureCoordinateSystem {
+  // Alternative coordinate system used when uploading texture data from the
+  // host.
+  // (0, 0) is the bottom-left of the image with +Y going up.
   kUploadFromHost,
+  // Default coordinate system.
+  // (0, 0) is the top-left of the image with +Y going down.
   kRenderToTexture,
 };
 
@@ -546,6 +556,7 @@ struct StencilAttachmentDescriptor {
   /// Indicates what to do when both the stencil and depth tests pass.
   ///
   StencilOperation depth_stencil_pass = StencilOperation::kKeep;
+
   //----------------------------------------------------------------------------
   /// The mask applied to the reference and stencil buffer values before
   /// performing the stencil_compare operation.
@@ -567,7 +578,7 @@ struct StencilAttachmentDescriptor {
 
   constexpr size_t GetHash() const {
     return fml::HashCombine(stencil_compare, stencil_failure, depth_failure,
-                            depth_stencil_pass, read_mask);
+                            depth_stencil_pass, read_mask, write_mask);
   }
 };
 

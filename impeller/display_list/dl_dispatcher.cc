@@ -14,6 +14,7 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
+#include "impeller/aiks/color_filter.h"
 #include "impeller/core/formats.h"
 #include "impeller/display_list/dl_image_impeller.h"
 #include "impeller/display_list/dl_vertices_geometry.h"
@@ -185,7 +186,9 @@ void DlDispatcher::setAntiAlias(bool aa) {
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::setDither(bool dither) {}
+void DlDispatcher::setDither(bool dither) {
+  paint_.dither = dither;
+}
 
 static Paint::Style ToStyle(flutter::DlDrawStyle style) {
   switch (style) {
@@ -474,7 +477,7 @@ void DlDispatcher::setColorSource(const flutter::DlColorSource* source) {
   }
 }
 
-static Paint::ColorFilterProc ToColorFilterProc(
+static std::shared_ptr<ColorFilter> ToColorFilter(
     const flutter::DlColorFilter* filter) {
   if (filter == nullptr) {
     return nullptr;
@@ -484,28 +487,18 @@ static Paint::ColorFilterProc ToColorFilterProc(
       auto dl_blend = filter->asBlend();
       auto blend_mode = ToBlendMode(dl_blend->mode());
       auto color = skia_conversions::ToColor(dl_blend->color());
-      return [blend_mode, color](FilterInput::Ref input) {
-        return ColorFilterContents::MakeBlend(blend_mode, {std::move(input)},
-                                              color);
-      };
+      return ColorFilter::MakeBlend(blend_mode, color);
     }
     case flutter::DlColorFilterType::kMatrix: {
       const flutter::DlMatrixColorFilter* dl_matrix = filter->asMatrix();
       impeller::ColorMatrix color_matrix;
       dl_matrix->get_matrix(color_matrix.array);
-      return [color_matrix](FilterInput::Ref input) {
-        return ColorFilterContents::MakeColorMatrix({std::move(input)},
-                                                    color_matrix);
-      };
+      return ColorFilter::MakeMatrix(color_matrix);
     }
     case flutter::DlColorFilterType::kSrgbToLinearGamma:
-      return [](FilterInput::Ref input) {
-        return ColorFilterContents::MakeSrgbToLinearFilter({std::move(input)});
-      };
+      return ColorFilter::MakeSrgbToLinear();
     case flutter::DlColorFilterType::kLinearToSrgbGamma:
-      return [](FilterInput::Ref input) {
-        return ColorFilterContents::MakeLinearToSrgbFilter({std::move(input)});
-      };
+      return ColorFilter::MakeLinearToSrgb();
   }
   return nullptr;
 }
@@ -513,7 +506,7 @@ static Paint::ColorFilterProc ToColorFilterProc(
 // |flutter::DlOpReceiver|
 void DlDispatcher::setColorFilter(const flutter::DlColorFilter* filter) {
   // Needs https://github.com/flutter/flutter/issues/95434
-  paint_.color_filter = ToColorFilterProc(filter);
+  paint_.color_filter = ToColorFilter(filter);
 }
 
 // |flutter::DlOpReceiver|
@@ -662,14 +655,20 @@ static Paint::ImageFilterProc ToImageFilterProc(
     case flutter::DlImageFilterType::kColorFilter: {
       auto color_filter_image_filter = filter->asColorFilter();
       FML_DCHECK(color_filter_image_filter);
-      auto color_filter_proc =
-          ToColorFilterProc(color_filter_image_filter->color_filter().get());
-      if (!color_filter_proc) {
+      auto color_filter =
+          ToColorFilter(color_filter_image_filter->color_filter().get());
+      if (!color_filter) {
         return nullptr;
       }
-      return [color_filter = color_filter_proc](
-                 FilterInput::Ref input, const Matrix& effect_transform,
-                 bool is_subpass) { return color_filter(std::move(input)); };
+      return [filter = color_filter](FilterInput::Ref input,
+                                     const Matrix& effect_transform,
+                                     bool is_subpass) {
+        // When color filters are used as image filters, set the color filter's
+        // "absorb opacity" flag to false. For image filters, the snapshot
+        // opacity needs to be deferred until the result of the filter chain is
+        // being blended with the layer.
+        return filter->WrapWithGPUColorFilter(std::move(input), false);
+      };
       break;
     }
     case flutter::DlImageFilterType::kLocalMatrix: {
@@ -1055,6 +1054,10 @@ void DlDispatcher::drawDisplayList(
   Matrix saved_initial_matrix = initial_matrix_;
   int restore_count = canvas_.GetSaveCount();
 
+  // The display list may alter the clip, which must be restored to the current
+  // clip at the end of playback.
+  canvas_.Save();
+
   // Establish a new baseline for interpreting the new DL.
   // Matrix and clip are left untouched, the current
   // transform is saved as the new base matrix, and paint
@@ -1073,7 +1076,9 @@ void DlDispatcher::drawDisplayList(
     canvas_.SaveLayer(save_paint);
   }
 
-  if (display_list->has_rtree()) {
+  // TODO(131445): Remove this restriction if we can correctly cull with
+  // perspective transforms.
+  if (display_list->has_rtree() && !initial_matrix_.HasPerspective()) {
     // The canvas remembers the screen-space culling bounds clipped by
     // the surface and the history of clip calls. DisplayList can cull
     // the ops based on a rectangle expressed in its "destination bounds"
@@ -1103,10 +1108,23 @@ void DlDispatcher::drawDisplayList(
 void DlDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                 SkScalar x,
                                 SkScalar y) {
-  Scalar scale = canvas_.GetCurrentTransformation().GetMaxBasisLengthXY();
-  canvas_.DrawTextFrame(TextFrameFromTextBlob(blob, scale),  //
-                        impeller::Point{x, y},               //
-                        paint_                               //
+  const auto text_frame = TextFrameFromTextBlob(blob);
+  if (paint_.style == Paint::Style::kStroke) {
+    auto path = skia_conversions::PathDataFromTextBlob(blob);
+    auto bounds = text_frame.GetBounds();
+    if (!bounds.has_value()) {
+      return;
+    }
+    canvas_.Save();
+    canvas_.Translate({x + bounds->origin.x, y + bounds->origin.y, 0.0});
+    canvas_.DrawPath(path, paint_);
+    canvas_.Restore();
+    return;
+  }
+
+  canvas_.DrawTextFrame(text_frame,             //
+                        impeller::Point{x, y},  //
+                        paint_                  //
   );
 }
 

@@ -517,7 +517,7 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
 }
 
 - (FlutterViewId)viewId {
-  NSAssert([self attached], @"This view controller is not attched.");
+  NSAssert([self attached], @"This view controller is not attached.");
   return _viewId;
 }
 
@@ -953,6 +953,10 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
     return LayoutClue{resultChar, isDeadKey};
   }
   return LayoutClue{0, false};
+}
+
+- (nonnull NSDictionary*)getPressedState {
+  return [_keyboardManager getPressedState];
 }
 
 #pragma mark - NSResponder

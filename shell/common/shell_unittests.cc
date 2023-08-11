@@ -60,6 +60,8 @@
 namespace flutter {
 namespace testing {
 
+constexpr int64_t kImplicitViewId = 0ll;
+
 using ::testing::_;
 using ::testing::Return;
 
@@ -74,8 +76,8 @@ class MockPlatformViewDelegate : public PlatformView::Delegate {
   MOCK_METHOD1(OnPlatformViewSetNextFrameCallback,
                void(const fml::closure& closure));
 
-  MOCK_METHOD1(OnPlatformViewSetViewportMetrics,
-               void(const ViewportMetrics& metrics));
+  MOCK_METHOD2(OnPlatformViewSetViewportMetrics,
+               void(int64_t view_id, const ViewportMetrics& metrics));
 
   MOCK_METHOD1(OnPlatformViewDispatchPlatformMessage,
                void(std::unique_ptr<PlatformMessage> message));
@@ -576,7 +578,7 @@ TEST_F(ShellTest, LastEntrypointArgs) {
 TEST_F(ShellTest, DisallowedDartVMFlag) {
 #if defined(OS_FUCHSIA)
   GTEST_SKIP() << "This test flakes on Fuchsia. https://fxbug.dev/110006 ";
-#endif  // OS_FUCHSIA
+#else
 
   // Run this test in a thread-safe manner, otherwise gtest will complain.
   ::testing::FLAGS_gtest_death_test_style = "threadsafe";
@@ -589,6 +591,7 @@ TEST_F(ShellTest, DisallowedDartVMFlag) {
   const char* expected =
       "Encountered disallowed Dart VM flag: --verify_after_gc";
   ASSERT_DEATH(flutter::SettingsFromCommandLine(command_line), expected);
+#endif  // OS_FUCHSIA
 }
 
 TEST_F(ShellTest, AllowedDartVMFlag) {
@@ -841,7 +844,7 @@ TEST_F(ShellTest, PushBackdropFilterToVisitedPlatformViews) {
 #if defined(OS_FUCHSIA)
   GTEST_SKIP() << "RasterThreadMerger flakes on Fuchsia. "
                   "https://github.com/flutter/flutter/issues/59816 ";
-#endif
+#else
 
   auto settings = CreateSettingsForFixture();
 
@@ -920,6 +923,7 @@ TEST_F(ShellTest, PushBackdropFilterToVisitedPlatformViews) {
             SkRect::MakeLTRB(1, 1, 31, 31));
 
   DestroyShell(std::move(shell));
+#endif  // OS_FUCHSIA
 }
 
 // TODO(https://github.com/flutter/flutter/issues/59816): Enable on fuchsia.
@@ -928,7 +932,7 @@ TEST_F(ShellTest,
 #if defined(OS_FUCHSIA)
   GTEST_SKIP() << "RasterThreadMerger flakes on Fuchsia. "
                   "https://github.com/flutter/flutter/issues/59816 ";
-#endif
+#else
 
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
@@ -970,13 +974,14 @@ TEST_F(ShellTest,
   ASSERT_TRUE(end_frame_called);
 
   DestroyShell(std::move(shell));
+#endif  // OS_FUCHSIA
 }
 
 TEST_F(ShellTest, OnPlatformViewDestroyDisablesThreadMerger) {
 #if defined(OS_FUCHSIA)
   GTEST_SKIP() << "RasterThreadMerger flakes on Fuchsia. "
                   "https://github.com/flutter/flutter/issues/59816 ";
-#endif
+#else
 
   auto settings = CreateSettingsForFixture();
   fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger;
@@ -1024,13 +1029,14 @@ TEST_F(ShellTest, OnPlatformViewDestroyDisablesThreadMerger) {
   ValidateShell(shell.get());
   ASSERT_TRUE(raster_thread_merger->IsEnabled());
   DestroyShell(std::move(shell));
+#endif  // OS_FUCHSIA
 }
 
 TEST_F(ShellTest, OnPlatformViewDestroyAfterMergingThreads) {
 #if defined(OS_FUCHSIA)
   GTEST_SKIP() << "RasterThreadMerger flakes on Fuchsia. "
                   "https://github.com/flutter/flutter/issues/59816 ";
-#endif
+#else
 
   const int ThreadMergingLease = 10;
   auto settings = CreateSettingsForFixture();
@@ -1097,13 +1103,14 @@ TEST_F(ShellTest, OnPlatformViewDestroyAfterMergingThreads) {
   ValidateShell(shell.get());
 
   DestroyShell(std::move(shell));
+#endif  // OS_FUCHSIA
 }
 
 TEST_F(ShellTest, OnPlatformViewDestroyWhenThreadsAreMerging) {
 #if defined(OS_FUCHSIA)
   GTEST_SKIP() << "RasterThreadMerger flakes on Fuchsia. "
                   "https://github.com/flutter/flutter/issues/59816 ";
-#endif
+#else
 
   const int kThreadMergingLease = 10;
   auto settings = CreateSettingsForFixture();
@@ -1171,6 +1178,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyWhenThreadsAreMerging) {
   ValidateShell(shell.get());
 
   DestroyShell(std::move(shell));
+#endif  // OS_FUCHSIA
 }
 
 TEST_F(ShellTest,
@@ -1178,7 +1186,7 @@ TEST_F(ShellTest,
 #if defined(OS_FUCHSIA)
   GTEST_SKIP() << "RasterThreadMerger flakes on Fuchsia. "
                   "https://github.com/flutter/flutter/issues/59816 ";
-#endif
+#else
 
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
@@ -1227,6 +1235,7 @@ TEST_F(ShellTest,
   ValidateShell(shell.get());
 
   DestroyShell(std::move(shell));
+#endif  // OS_FUCHSIA
 }
 
 TEST_F(ShellTest, OnPlatformViewDestroyWithoutRasterThreadMerger) {
@@ -1271,7 +1280,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyWithStaticThreadMerging) {
 #if defined(OS_FUCHSIA)
   GTEST_SKIP() << "RasterThreadMerger flakes on Fuchsia. "
                   "https://github.com/flutter/flutter/issues/59816 ";
-#endif
+#else
 
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
@@ -1322,6 +1331,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyWithStaticThreadMerging) {
   ValidateShell(shell.get());
 
   DestroyShell(std::move(shell), task_runners);
+#endif  // OS_FUCHSIA
 }
 
 TEST_F(ShellTest, GetUsedThisFrameShouldBeSetBeforeEndFrame) {
@@ -1374,7 +1384,7 @@ TEST_F(ShellTest, DISABLED_SkipAndSubmitFrame) {
 #if defined(OS_FUCHSIA)
   GTEST_SKIP() << "RasterThreadMerger flakes on Fuchsia. "
                   "https://github.com/flutter/flutter/issues/59816 ";
-#endif
+#else
 
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
@@ -1422,6 +1432,7 @@ TEST_F(ShellTest, DISABLED_SkipAndSubmitFrame) {
 
   PlatformViewNotifyDestroyed(shell.get());
   DestroyShell(std::move(shell));
+#endif  // OS_FUCHSIA
 }
 
 TEST(SettingsTest, FrameTimingSetsAndGetsProperly) {
@@ -1637,7 +1648,8 @@ TEST_F(ShellTest, MultipleFluttersSetResourceCacheBytes) {
 
   RunEngine(shell.get(), std::move(configuration));
   PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-    shell->GetPlatformView()->SetViewportMetrics({1.0, 100, 100, 22, 0});
+    shell->GetPlatformView()->SetViewportMetrics(kImplicitViewId,
+                                                 {1.0, 100, 100, 22, 0});
   });
 
   // first cache bytes
@@ -1666,7 +1678,7 @@ TEST_F(ShellTest, MultipleFluttersSetResourceCacheBytes) {
   PostSync(second_shell->GetTaskRunners().GetPlatformTaskRunner(),
            [&second_shell]() {
              second_shell->GetPlatformView()->SetViewportMetrics(
-                 {1.0, 100, 100, 22, 0});
+                 kImplicitViewId, {1.0, 100, 100, 22, 0});
            });
   // first cache bytes + second cache bytes
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
@@ -1675,7 +1687,7 @@ TEST_F(ShellTest, MultipleFluttersSetResourceCacheBytes) {
   PostSync(second_shell->GetTaskRunners().GetPlatformTaskRunner(),
            [&second_shell]() {
              second_shell->GetPlatformView()->SetViewportMetrics(
-                 {1.0, 100, 300, 22, 0});
+                 kImplicitViewId, {1.0, 100, 300, 22, 0});
            });
   // first cache bytes + second cache bytes
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
@@ -1686,7 +1698,7 @@ TEST_F(ShellTest, MultipleFluttersSetResourceCacheBytes) {
   PostSync(third_shell->GetTaskRunners().GetPlatformTaskRunner(),
            [&third_shell]() {
              third_shell->GetPlatformView()->SetViewportMetrics(
-                 {1.0, 400, 100, 22, 0});
+                 kImplicitViewId, {1.0, 400, 100, 22, 0});
            });
   // first cache bytes + second cache bytes + third cache bytes
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
@@ -1695,7 +1707,7 @@ TEST_F(ShellTest, MultipleFluttersSetResourceCacheBytes) {
   PostSync(third_shell->GetTaskRunners().GetPlatformTaskRunner(),
            [&third_shell]() {
              third_shell->GetPlatformView()->SetViewportMetrics(
-                 {1.0, 800, 100, 22, 0});
+                 kImplicitViewId, {1.0, 800, 100, 22, 0});
            });
   // max bytes threshold
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
@@ -1708,7 +1720,7 @@ TEST_F(ShellTest, MultipleFluttersSetResourceCacheBytes) {
   PostSync(second_shell->GetTaskRunners().GetPlatformTaskRunner(),
            [&second_shell]() {
              second_shell->GetPlatformView()->SetViewportMetrics(
-                 {1.0, 100, 100, 22, 0});
+                 kImplicitViewId, {1.0, 100, 100, 22, 0});
            });
   // first cache bytes + second cache bytes
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
@@ -1752,7 +1764,8 @@ TEST_F(ShellTest, SetResourceCacheSize) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200, 22, 0});
+        shell->GetPlatformView()->SetViewportMetrics(kImplicitViewId,
+                                                     {1.0, 400, 200, 22, 0});
       });
   PumpOneFrame(shell.get());
 
@@ -1772,7 +1785,8 @@ TEST_F(ShellTest, SetResourceCacheSize) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics({1.0, 800, 400, 22, 0});
+        shell->GetPlatformView()->SetViewportMetrics(kImplicitViewId,
+                                                     {1.0, 800, 400, 22, 0});
       });
   PumpOneFrame(shell.get());
 
@@ -1789,7 +1803,8 @@ TEST_F(ShellTest, SetResourceCacheSizeEarly) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200, 22, 0});
+        shell->GetPlatformView()->SetViewportMetrics(kImplicitViewId,
+                                                     {1.0, 400, 200, 22, 0});
       });
   PumpOneFrame(shell.get());
 
@@ -1816,7 +1831,8 @@ TEST_F(ShellTest, SetResourceCacheSizeNotifiesDart) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200, 22, 0});
+        shell->GetPlatformView()->SetViewportMetrics(kImplicitViewId,
+                                                     {1.0, 400, 200, 22, 0});
       });
   PumpOneFrame(shell.get());
 
@@ -2683,6 +2699,7 @@ TEST_F(ShellTest, DISABLED_DiscardLayerTreeOnResize) {
       shell->GetTaskRunners().GetPlatformTaskRunner(),
       [&shell, &expected_size]() {
         shell->GetPlatformView()->SetViewportMetrics(
+            kImplicitViewId,
             {1.0, static_cast<double>(expected_size.width()),
              static_cast<double>(expected_size.height()), 22, 0});
       });
@@ -2760,6 +2777,7 @@ TEST_F(ShellTest, DISABLED_DiscardResubmittedLayerTreeOnResize) {
       shell->GetTaskRunners().GetPlatformTaskRunner(),
       [&shell, &origin_size]() {
         shell->GetPlatformView()->SetViewportMetrics(
+            kImplicitViewId,
             {1.0, static_cast<double>(origin_size.width()),
              static_cast<double>(origin_size.height()), 22, 0});
       });
@@ -2779,8 +2797,8 @@ TEST_F(ShellTest, DISABLED_DiscardResubmittedLayerTreeOnResize) {
       shell->GetTaskRunners().GetPlatformTaskRunner(),
       [&shell, &new_size, &resize_latch]() {
         shell->GetPlatformView()->SetViewportMetrics(
-            {1.0, static_cast<double>(new_size.width()),
-             static_cast<double>(new_size.height()), 22, 0});
+            kImplicitViewId, {1.0, static_cast<double>(new_size.width()),
+                              static_cast<double>(new_size.height()), 22, 0});
         resize_latch.Signal();
       });
 
@@ -2843,14 +2861,21 @@ TEST_F(ShellTest, IgnoresInvalidMetrics) {
   RunEngine(shell.get(), std::move(configuration));
 
   task_runner->PostTask([&]() {
-    shell->GetPlatformView()->SetViewportMetrics({0.0, 400, 200, 22, 0});
+    // This one is invalid for having 0 pixel ratio.
+    shell->GetPlatformView()->SetViewportMetrics(kImplicitViewId,
+                                                 {0.0, 400, 200, 22, 0});
     task_runner->PostTask([&]() {
-      shell->GetPlatformView()->SetViewportMetrics({0.8, 0.0, 200, 22, 0});
+      // This one is invalid for having 0 width.
+      shell->GetPlatformView()->SetViewportMetrics(kImplicitViewId,
+                                                   {0.8, 0.0, 200, 22, 0});
       task_runner->PostTask([&]() {
-        shell->GetPlatformView()->SetViewportMetrics({0.8, 400, 0.0, 22, 0});
+        // This one is invalid for having 0 height.
+        shell->GetPlatformView()->SetViewportMetrics(kImplicitViewId,
+                                                     {0.8, 400, 0.0, 22, 0});
         task_runner->PostTask([&]() {
+          // This one makes it through.
           shell->GetPlatformView()->SetViewportMetrics(
-              {0.8, 400, 200.0, 22, 0});
+              kImplicitViewId, {0.8, 400, 200.0, 22, 0});
         });
       });
     });
@@ -2862,12 +2887,59 @@ TEST_F(ShellTest, IgnoresInvalidMetrics) {
   latch.Reset();
 
   task_runner->PostTask([&]() {
-    shell->GetPlatformView()->SetViewportMetrics({1.2, 600, 300, 22, 0});
+    shell->GetPlatformView()->SetViewportMetrics(kImplicitViewId,
+                                                 {1.2, 600, 300, 22, 0});
   });
   latch.Wait();
   ASSERT_EQ(last_device_pixel_ratio, 1.2);
   ASSERT_EQ(last_width, 600.0);
   ASSERT_EQ(last_height, 300.0);
+
+  DestroyShell(std::move(shell), task_runners);
+}
+
+TEST_F(ShellTest, IgnoresMetricsUpdateToInvalidView) {
+  fml::AutoResetWaitableEvent latch;
+  double last_device_pixel_ratio;
+  // This callback will be called whenever any view's metrics change.
+  auto native_report_device_pixel_ratio = [&](Dart_NativeArguments args) {
+    // The correct call will have a DPR of 3.
+    auto dpr_handle = Dart_GetNativeArgument(args, 0);
+    ASSERT_TRUE(Dart_IsDouble(dpr_handle));
+    Dart_DoubleValue(dpr_handle, &last_device_pixel_ratio);
+    ASSERT_TRUE(last_device_pixel_ratio > 2.5);
+
+    latch.Signal();
+  };
+
+  Settings settings = CreateSettingsForFixture();
+  auto task_runner = CreateNewThread();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+
+  AddNativeCallback("ReportMetrics",
+                    CREATE_NATIVE_ENTRY(native_report_device_pixel_ratio));
+
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("reportMetrics");
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  task_runner->PostTask([&]() {
+    // This one is invalid for having an nonexistent view ID.
+    // Also, it has a DPR of 2.0 for detection.
+    shell->GetPlatformView()->SetViewportMetrics(2, {2.0, 400, 200, 22, 0});
+    task_runner->PostTask([&]() {
+      // This one is valid with DPR 3.0.
+      shell->GetPlatformView()->SetViewportMetrics(kImplicitViewId,
+                                                   {3.0, 400, 200, 22, 0});
+    });
+  });
+  latch.Wait();
+  ASSERT_EQ(last_device_pixel_ratio, 3.0);
+  latch.Reset();
 
   DestroyShell(std::move(shell), task_runners);
 }
@@ -3602,7 +3674,7 @@ TEST_F(ShellTest, CanCreateShellsWithGLBackend) {
 #if !SHELL_ENABLE_GL
   // GL emulation does not exist on Fuchsia.
   GTEST_SKIP();
-#endif  // !SHELL_ENABLE_GL
+#else
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell({
       .settings = settings,
@@ -3619,12 +3691,13 @@ TEST_F(ShellTest, CanCreateShellsWithGLBackend) {
   PumpOneFrame(shell.get());
   PlatformViewNotifyDestroyed(shell.get());
   DestroyShell(std::move(shell));
+#endif  // !SHELL_ENABLE_GL
 }
 
 TEST_F(ShellTest, CanCreateShellsWithVulkanBackend) {
 #if !SHELL_ENABLE_VULKAN
   GTEST_SKIP();
-#endif  // !SHELL_ENABLE_VULKAN
+#else
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell({
       .settings = settings,
@@ -3642,12 +3715,13 @@ TEST_F(ShellTest, CanCreateShellsWithVulkanBackend) {
   PumpOneFrame(shell.get());
   PlatformViewNotifyDestroyed(shell.get());
   DestroyShell(std::move(shell));
+#endif  // !SHELL_ENABLE_VULKAN
 }
 
 TEST_F(ShellTest, CanCreateShellsWithMetalBackend) {
 #if !SHELL_ENABLE_METAL
   GTEST_SKIP();
-#endif  // !SHELL_ENABLE_METAL
+#else
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell({
       .settings = settings,
@@ -3665,6 +3739,7 @@ TEST_F(ShellTest, CanCreateShellsWithMetalBackend) {
   PumpOneFrame(shell.get());
   PlatformViewNotifyDestroyed(shell.get());
   DestroyShell(std::move(shell));
+#endif  // !SHELL_ENABLE_METAL
 }
 
 TEST_F(ShellTest, UserTagSetOnStartup) {
@@ -3947,7 +4022,7 @@ TEST_F(ShellTest, PictureToImageSync) {
 #if !SHELL_ENABLE_GL
   // This test uses the GL backend.
   GTEST_SKIP();
-#endif  // !SHELL_ENABLE_GL
+#else
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell({
       .settings = settings,
@@ -3981,13 +4056,14 @@ TEST_F(ShellTest, PictureToImageSync) {
 
   PlatformViewNotifyDestroyed(shell.get());
   DestroyShell(std::move(shell));
+#endif  // !SHELL_ENABLE_GL
 }
 
 TEST_F(ShellTest, PictureToImageSyncImpellerNoSurface) {
 #if !SHELL_ENABLE_METAL
   // This test uses the Metal backend.
   GTEST_SKIP();
-#endif  // !SHELL_ENABLE_METAL
+#else
   auto settings = CreateSettingsForFixture();
   settings.enable_impeller = true;
   std::unique_ptr<Shell> shell = CreateShell({
@@ -4027,6 +4103,7 @@ TEST_F(ShellTest, PictureToImageSyncImpellerNoSurface) {
 
   PlatformViewNotifyDestroyed(shell.get());
   DestroyShell(std::move(shell));
+#endif  // !SHELL_ENABLE_METAL
 }
 
 #if SHELL_ENABLE_GL
@@ -4234,7 +4311,7 @@ TEST_F(ShellTest, NotifyDestroyed) {
 TEST_F(ShellTest, PrintsErrorWhenPlatformMessageSentFromWrongThread) {
 #if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_DEBUG || OS_FUCHSIA
   GTEST_SKIP() << "Test is for debug mode only on non-fuchsia targets.";
-#endif
+#else
   Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
                          ThreadHost::Type::Platform);
@@ -4243,34 +4320,60 @@ TEST_F(ShellTest, PrintsErrorWhenPlatformMessageSentFromWrongThread) {
                            task_runner);
   auto shell = CreateShell(settings, task_runners);
 
-  auto stream = std::make_shared<std::ostringstream>();
-  fml::CaptureNextLog(stream.get());
+  {
+    fml::testing::LogCapture log_capture;
 
-  // The next call will result in a thread checker violation.
-  fml::ThreadChecker::DisableNextThreadCheckFailure();
-  SendPlatformMessage(shell.get(), std::make_unique<PlatformMessage>(
-                                       "com.test.plugin", nullptr));
+    // The next call will result in a thread checker violation.
+    fml::ThreadChecker::DisableNextThreadCheckFailure();
+    SendPlatformMessage(shell.get(), std::make_unique<PlatformMessage>(
+                                         "com.test.plugin", nullptr));
 
-  EXPECT_THAT(stream->str(),
-              ::testing::EndsWith(
-                  "The 'com.test.plugin' channel sent a message from native to "
-                  "Flutter on a non-platform thread. Platform channel messages "
-                  "must be sent on the platform thread. Failure to do so may "
-                  "result in data loss or crashes, and must be fixed in the "
-                  "plugin or application code creating that channel.\nSee "
-                  "https://docs.flutter.dev/platform-integration/"
-                  "platform-channels#channels-and-platform-threading for more "
-                  "information.\n"));
+    EXPECT_THAT(
+        log_capture.str(),
+        ::testing::EndsWith(
+            "The 'com.test.plugin' channel sent a message from native to "
+            "Flutter on a non-platform thread. Platform channel messages "
+            "must be sent on the platform thread. Failure to do so may "
+            "result in data loss or crashes, and must be fixed in the "
+            "plugin or application code creating that channel.\nSee "
+            "https://docs.flutter.dev/platform-integration/"
+            "platform-channels#channels-and-platform-threading for more "
+            "information.\n"));
+  }
 
-  stream = std::make_shared<std::ostringstream>();
-  fml::CaptureNextLog(stream.get());
+  {
+    fml::testing::LogCapture log_capture;
 
-  // The next call will result in a thread checker violation.
-  fml::ThreadChecker::DisableNextThreadCheckFailure();
-  SendPlatformMessage(shell.get(), std::make_unique<PlatformMessage>(
-                                       "com.test.plugin", nullptr));
+    // The next call will result in a thread checker violation.
+    fml::ThreadChecker::DisableNextThreadCheckFailure();
+    SendPlatformMessage(shell.get(), std::make_unique<PlatformMessage>(
+                                         "com.test.plugin", nullptr));
 
-  EXPECT_EQ(stream->str(), "");
+    EXPECT_EQ(log_capture.str(), "");
+  }
+
+  DestroyShell(std::move(shell), task_runners);
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+#endif
+}
+
+TEST_F(ShellTest, DiesIfSoftwareRenderingAndImpellerAreEnabledDeathTest) {
+#if defined(OS_FUCHSIA)
+  GTEST_SKIP() << "Fuchsia";
+#else
+  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
+  Settings settings = CreateSettingsForFixture();
+  settings.enable_impeller = true;
+  settings.enable_software_rendering = true;
+  ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
+                         ThreadHost::Type::Platform);
+  auto task_runner = thread_host.platform_thread->GetTaskRunner();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+  EXPECT_DEATH_IF_SUPPORTED(
+      CreateShell(settings, task_runners),
+      "Software rendering is incompatible with Impeller.");
+#endif  // OS_FUCHSIA
 }
 
 }  // namespace testing

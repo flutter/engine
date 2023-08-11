@@ -13,6 +13,7 @@
 #include "impeller/entity/entity.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
+#include "impeller/entity/texture_fill_external.frag.h"
 #include "impeller/geometry/constants.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/render_pass.h"
@@ -109,11 +110,15 @@ bool TextureContents::Render(const ContentContext& renderer,
                              RenderPass& pass) const {
   using VS = TextureFillVertexShader;
   using FS = TextureFillFragmentShader;
+  using FSExternal = TextureFillExternalFragmentShader;
 
   if (destination_rect_.size.IsEmpty() || source_rect_.IsEmpty() ||
       texture_ == nullptr || texture_->GetSize().IsEmpty()) {
     return true;  // Nothing to render.
   }
+
+  bool is_external_texture =
+      texture_->GetTextureDescriptor().type == TextureType::kTextureExternalOES;
 
   // Expand the source rect by half a texel, which aligns sampled texels to the
   // pixel grid if the source rect is the same size as the destination rect.
@@ -135,9 +140,7 @@ bool TextureContents::Render(const ContentContext& renderer,
   frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransformation();
   frame_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
-
-  FS::FragInfo frag_info;
-  frag_info.alpha = GetOpacity();
+  frame_info.alpha = GetOpacity();
 
   Command cmd;
   cmd.label = "Texture Fill";
@@ -151,14 +154,25 @@ bool TextureContents::Render(const ContentContext& renderer,
   }
   pipeline_options.primitive_type = PrimitiveType::kTriangleStrip;
 
-  cmd.pipeline = renderer.GetTexturePipeline(pipeline_options);
+  if (is_external_texture) {
+    cmd.pipeline = renderer.GetTextureExternalPipeline(pipeline_options);
+  } else {
+    cmd.pipeline = renderer.GetTexturePipeline(pipeline_options);
+  }
   cmd.stencil_reference = entity.GetStencilDepth();
   cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
   VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
-  FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
-  FS::BindTextureSampler(cmd, texture_,
-                         renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-                             sampler_descriptor_));
+  if (is_external_texture) {
+    FSExternal::BindSAMPLEREXTERNALOESTextureSampler(
+        cmd, texture_,
+        renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+            sampler_descriptor_));
+  } else {
+    FS::BindTextureSampler(
+        cmd, texture_,
+        renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+            sampler_descriptor_));
+  }
   pass.AddCommand(std::move(cmd));
 
   return true;
