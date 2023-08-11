@@ -322,6 +322,7 @@ public class AccessibilityBridgeTest {
     verify(mockNodeInfo2, times(1)).setTraversalAfter(eq(mockRootView), eq(1));
   }
 
+  @TargetApi(24)
   @Test
   public void itSetsRootViewNotImportantForAccessibility() {
     AccessibilityViewEmbedder mockViewEmbedder = mock(AccessibilityViewEmbedder.class);
@@ -349,6 +350,7 @@ public class AccessibilityBridgeTest {
     verify(mockNodeInfo, times(1)).setImportantForAccessibility(eq(false));
   }
 
+  @TargetApi(24)
   @Test
   public void itSetsNodeImportantForAccessibilityIfItHasContent() {
     AccessibilityViewEmbedder mockViewEmbedder = mock(AccessibilityViewEmbedder.class);
@@ -378,6 +380,7 @@ public class AccessibilityBridgeTest {
     verify(mockNodeInfo, times(1)).setImportantForAccessibility(eq(true));
   }
 
+  @TargetApi(24)
   @Test
   public void itSetsNodeImportantForAccessibilityIfItHasActions() {
     AccessibilityViewEmbedder mockViewEmbedder = mock(AccessibilityViewEmbedder.class);
@@ -407,6 +410,7 @@ public class AccessibilityBridgeTest {
     verify(mockNodeInfo, times(1)).setImportantForAccessibility(eq(true));
   }
 
+  @TargetApi(24)
   @Test
   public void itSetsNodeUnImportantForAccessibilityIfItIsEmpty() {
     AccessibilityViewEmbedder mockViewEmbedder = mock(AccessibilityViewEmbedder.class);
