@@ -27,7 +27,7 @@ static inline bool DlScalar_IsInteger(DlScalar v) {
   return v == round(v);
 }
 static inline bool DlScalar_IsNearlyZero(DlScalar v) {
-  return v < -kDlScalar_NearlyZero || v > kDlScalar_NearlyZero;
+  return v > -kDlScalar_NearlyZero && v < kDlScalar_NearlyZero;
 }
 bool DlScalars_AreAllFinite(const DlScalar* m, int count);
 static inline bool DlScalars_AreFinite(DlScalar v1, DlScalar v2) {

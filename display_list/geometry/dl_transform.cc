@@ -416,34 +416,18 @@ DlScalar DlTransform::determinant() const {
   }
 }
 
-bool DlTransform::Invert(DlTransform* inverted_result) const {
+std::optional<DlTransform> DlTransform::Inverse() const {
   switch (complexity()) {
     case Complexity::kIdentity:
-      if (inverted_result) {
-        if (inverted_result != this) {
-          *inverted_result = *this;
-        }
-      }
-      return true;
+      return DlTransform();
 
     case Complexity::kTranslate2D: {
       DlScalar tx = m_[kXT];
       DlScalar ty = m_[kYT];
-      if (DlScalar_IsNaN(tx) || DlScalar_IsNaN(ty)) {
-        return false;
+      if (!DlScalar_IsNaN(tx) && !DlScalar_IsNaN(ty)) {
+        return DlTransform::MakeTranslate(-tx, -ty);
       }
-      if (inverted_result) {
-        if (inverted_result == this) {
-          inverted_result->m_[kXT] = -tx;
-          inverted_result->m_[kYT] = -ty;
-          if (tx == 0 && ty == 0) {
-            inverted_result->complexity_ = Complexity::kIdentity;
-          }
-        } else {
-          *inverted_result = DlTransform::MakeTranslate(-tx, -ty);
-        }
-      }
-      return true;
+      break;
     }
 
     case Complexity::kScaleTranslate2D: {
@@ -451,21 +435,12 @@ bool DlTransform::Invert(DlTransform* inverted_result) const {
       double sy = 1.0 / m_[kYY];
       double tx = m_[kXT];
       double ty = m_[kYT];
-      if (std::isnan(sx) || std::isnan(sy) ||  //
-          std::isnan(tx) || std::isnan(ty)) {
-        return false;
+      if (!DlScalar_IsNaN(sx) && !DlScalar_IsNaN(sy) &&  //
+          !DlScalar_IsNaN(tx) && !DlScalar_IsNaN(ty)) {
+        return DlTransform::MakeScale(sx, sy)  //
+            .TranslateInner(-tx, -ty);
       }
-      if (inverted_result) {
-        if (inverted_result == this) {
-          inverted_result->m_[kXX] = sx;
-          inverted_result->m_[kYY] = sy;
-        } else {
-          *inverted_result = DlTransform::MakeScale(sx, sy);
-        }
-        inverted_result->m_[kXT] = -tx * sx;
-        inverted_result->m_[kYT] = -ty * sy;
-      }
-      return true;
+      break;
     }
 
     case Complexity::kAffine2D: {
@@ -475,33 +450,21 @@ bool DlTransform::Invert(DlTransform* inverted_result) const {
       double syy = m_[kYY];
       double inv_det = 1.0 / (sxx * syy - sxy * syx);
       if (std::isnan(inv_det)) {
-        return false;
+        break;
       }
       double sxt = m_[kXT];
       double syt = m_[kYT];
       if (std::isnan(sxt) || std::isnan(syt)) {
-        return false;
+        break;
       }
-      if (inverted_result) {
-        DlScalar isxx = +syy * inv_det;
-        DlScalar isxy = -sxy * inv_det;
-        DlScalar isyy = +sxx * inv_det;
-        DlScalar isyx = -syx * inv_det;
-        DlScalar isxt = (sxy * syt - syy * sxt) * inv_det;
-        DlScalar isyt = (syx * sxt - sxx * syt) * inv_det;
-        if (inverted_result == this) {
-          inverted_result->m_[kXX] = isxx;
-          inverted_result->m_[kYX] = isyx;
-          inverted_result->m_[kXY] = isxy;
-          inverted_result->m_[kYY] = isyy;
-          inverted_result->m_[kXT] = isxt;
-          inverted_result->m_[kYT] = isyt;
-        } else {
-          *inverted_result = DlTransform::MakeAffine2D(isxx, isxy, isxt,  //
-                                                       isyx, isyy, isyt);
-        }
-      }
-      return true;
+      DlScalar isxx = +syy * inv_det;
+      DlScalar isxy = -sxy * inv_det;
+      DlScalar isyy = +sxx * inv_det;
+      DlScalar isyx = -syx * inv_det;
+      DlScalar isxt = (sxy * syt - syy * sxt) * inv_det;
+      DlScalar isyt = (syx * sxt - sxx * syt) * inv_det;
+      return DlTransform::MakeAffine2D(isxx, isxy, isxt,  //
+                                       isyx, isyy, isyt);
     }
 
     case Complexity::kUnknown:
@@ -509,11 +472,17 @@ bool DlTransform::Invert(DlTransform* inverted_result) const {
 
     case Complexity::kAffine3D:
     case Complexity::kPerspectiveOnlyZ:
-    case Complexity::kPerspectiveAll:
-      DlScalar determinant = Invert4x4Matrix(m_, inverted_result->m_);
-      inverted_result->complexity_ = Complexity::kUnknown;
-      return DlScalar_IsFinite(determinant) && determinant != 0.0f;
+    case Complexity::kPerspectiveAll: {
+      DlTransform inverse;
+      DlScalar determinant = Invert4x4Matrix(m_, inverse.m_);
+      if (DlScalar_IsFinite(determinant) && determinant != 0.0f) {
+        inverse.complexity_ = Complexity::kUnknown;
+        return inverse;
+      }
+      break;
+    }
   }
+  return {};
 }
 
 DlScalar DlTransform::Invert4x4Matrix(const DlScalar inMatrix[16],

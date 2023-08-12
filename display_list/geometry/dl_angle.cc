@@ -6,6 +6,16 @@
 
 namespace flutter {
 
+// This method could just return the results of the math library's
+// sin and cos functions but, due to IEEE floating point mantissa
+// scaling, the ability to represent numbers close to "1.0" and "-1.0" is
+// much more sparse than the ability to represent numbers close to "0.0".
+// As a result, this method will check for cases (which happen at the
+// quadrant angles of 0,90,180,270 degrees) where one of the pair is
+// returning its best answer of 1 or -1 and force the other value to 0.
+// This will help avoid "IEEE bit dirt" in transform matrices at quadrant
+// angles when trying to represent those angles as irrational numbers
+// in a limited-precision floating point world.
 DlFVector DlAngle::CosSin() const {
   DlScalar r = radians();
   DlScalar c = cosf(r);

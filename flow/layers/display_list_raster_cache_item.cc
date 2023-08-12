@@ -85,7 +85,7 @@ void DisplayListRasterCacheItem::PrerollSetup(PrerollContext* context,
   transformation_matrix_ = matrix;
   transformation_matrix_.TranslateOuter(offset_.x(), offset_.y());
 
-  if (!transformation_matrix_.Invert(nullptr)) {
+  if (!transformation_matrix_.is_invertible()) {
     // The matrix was singular. No point in going further.
     return;
   }

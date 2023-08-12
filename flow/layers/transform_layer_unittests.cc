@@ -14,6 +14,18 @@ namespace testing {
 
 using TransformLayerTest = LayerTest;
 
+// ASSERT_TRUE(result.has_value()) should be enough to prevent the test
+// code that follows it to run, but clang-tidy doesn't seem to recognize
+// that macro expansion as protective. This macro is more proactive
+// about ending execution at the place where the statement lives.
+#define ENFORCE_TRUE(condition) \
+  do {                          \
+    if (!(condition)) {         \
+      ASSERT_TRUE(condition);   \
+      return;                   \
+    }                           \
+  } while (0)
+
 #ifndef NDEBUG
 TEST_F(TransformLayerTest, PaintingEmptyLayerDies) {
   auto layer = std::make_shared<TransformLayer>(DlTransform());  // identity
@@ -78,8 +90,8 @@ TEST_F(TransformLayerTest, Simple) {
   DlFRect local_cull_rect = DlFRect::MakeXYWH(2.0f, 2.0f, 14.0f, 14.0f);
   DlFRect device_cull_rect = initial_transform.TransformRect(local_cull_rect);
   DlTransform layer_transform = DlTransform::MakeTranslate(2.5f, 2.5f);
-  DlTransform inverse_layer_transform;
-  EXPECT_TRUE(layer_transform.Invert(&inverse_layer_transform));
+  auto inverse_layer_transform = layer_transform.Inverse();
+  ENFORCE_TRUE(inverse_layer_transform.has_value());
 
   auto mock_layer = std::make_shared<MockLayer>(child_path, DlPaint());
   auto layer = std::make_shared<TransformLayer>(layer_transform);
@@ -97,7 +109,7 @@ TEST_F(TransformLayerTest, Simple) {
   EXPECT_EQ(mock_layer->parent_matrix(),
             DlTransform::MakeConcat(initial_transform, layer_transform));
   EXPECT_EQ(mock_layer->parent_cull_rect(),
-            inverse_layer_transform.TransformRect(local_cull_rect));
+            inverse_layer_transform->TransformRect(local_cull_rect));
   EXPECT_EQ(mock_layer->parent_mutators(),
             std::vector({Mutator(layer_transform)}));
 
@@ -129,8 +141,8 @@ TEST_F(TransformLayerTest, Complex) {
   // 10 degrees around the Y axis
   layer_transform.ConcatInner(
       DlTransform::MakeRotate(kDlAxis_Y, DlRadians(M_PI / 18.0f)));
-  DlTransform inverse_layer_transform;
-  EXPECT_TRUE(layer_transform.Invert(&inverse_layer_transform));
+  auto inverse_layer_transform = layer_transform.Inverse();
+  ENFORCE_TRUE(inverse_layer_transform.has_value());
 
   auto mock_layer = std::make_shared<MockLayer>(child_path, DlPaint());
   auto layer = std::make_shared<TransformLayer>(layer_transform);
@@ -148,7 +160,7 @@ TEST_F(TransformLayerTest, Complex) {
   EXPECT_EQ(mock_layer->parent_matrix(),
             DlTransform::MakeConcat(initial_transform, layer_transform));
   EXPECT_EQ(mock_layer->parent_cull_rect(),
-            inverse_layer_transform.TransformRect(local_cull_rect));
+            inverse_layer_transform->TransformRect(local_cull_rect));
   EXPECT_EQ(mock_layer->parent_mutators(),
             std::vector({Mutator(layer_transform)}));
 
@@ -174,9 +186,10 @@ TEST_F(TransformLayerTest, Nested) {
   DlFRect device_cull_rect = initial_transform.TransformRect(local_cull_rect);
   DlTransform layer1_transform = DlTransform::MakeTranslate(2.5f, 2.5f);
   DlTransform layer2_transform = DlTransform::MakeTranslate(3.5f, 3.5f);
-  DlTransform inverse_layer1_transform, inverse_layer2_transform;
-  EXPECT_TRUE(layer1_transform.Invert(&inverse_layer1_transform));
-  EXPECT_TRUE(layer2_transform.Invert(&inverse_layer2_transform));
+  auto inverse_layer1_transform = layer1_transform.Inverse();
+  auto inverse_layer2_transform = layer2_transform.Inverse();
+  ENFORCE_TRUE(inverse_layer1_transform.has_value());
+  ENFORCE_TRUE(inverse_layer2_transform.has_value());
 
   auto mock_layer = std::make_shared<MockLayer>(child_path, DlPaint());
   auto layer1 = std::make_shared<TransformLayer>(layer1_transform);
@@ -202,8 +215,8 @@ TEST_F(TransformLayerTest, Nested) {
                 DlTransform::MakeConcat(initial_transform, layer1_transform),
                 layer2_transform));
   EXPECT_EQ(mock_layer->parent_cull_rect(),
-            inverse_layer2_transform.TransformRect(
-                inverse_layer1_transform.TransformRect(local_cull_rect)));
+            inverse_layer2_transform->TransformRect(
+                inverse_layer1_transform->TransformRect(local_cull_rect)));
   EXPECT_EQ(
       mock_layer->parent_mutators(),
       std::vector({Mutator(layer1_transform), Mutator(layer2_transform)}));
@@ -237,9 +250,10 @@ TEST_F(TransformLayerTest, NestedSeparated) {
   DlFRect device_cull_rect = initial_transform.TransformRect(local_cull_rect);
   DlTransform layer1_transform = DlTransform::MakeTranslate(2.5f, 2.5f);
   DlTransform layer2_transform = DlTransform::MakeTranslate(3.5f, 3.5f);
-  DlTransform inverse_layer1_transform, inverse_layer2_transform;
-  EXPECT_TRUE(layer1_transform.Invert(&inverse_layer1_transform));
-  EXPECT_TRUE(layer2_transform.Invert(&inverse_layer2_transform));
+  auto inverse_layer1_transform = layer1_transform.Inverse();
+  auto inverse_layer2_transform = layer2_transform.Inverse();
+  ENFORCE_TRUE(inverse_layer1_transform.has_value());
+  ENFORCE_TRUE(inverse_layer2_transform.has_value());
   DlPaint child_paint1(DlColor::kBlue());
   DlPaint child_paint2(DlColor::kGreen());
 
@@ -277,10 +291,10 @@ TEST_F(TransformLayerTest, NestedSeparated) {
                 DlTransform::MakeConcat(initial_transform, layer1_transform),
                 layer2_transform));
   EXPECT_EQ(mock_layer1->parent_cull_rect(),
-            inverse_layer1_transform.TransformRect(local_cull_rect));
+            inverse_layer1_transform->TransformRect(local_cull_rect));
   EXPECT_EQ(mock_layer2->parent_cull_rect(),
-            inverse_layer2_transform.TransformRect(
-                inverse_layer1_transform.TransformRect(local_cull_rect)));
+            inverse_layer2_transform->TransformRect(
+                inverse_layer1_transform->TransformRect(local_cull_rect)));
   EXPECT_EQ(mock_layer1->parent_mutators(),
             std::vector({Mutator(layer1_transform)}));
   EXPECT_EQ(

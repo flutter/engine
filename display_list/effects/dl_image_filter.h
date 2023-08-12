@@ -146,9 +146,9 @@ class DlImageFilter : public DlAttribute<DlImageFilter, DlImageFilterType> {
         output_bounds = input_bounds.MakeInset(Floor(*expansion));
         return &output_bounds;
       }
-      DlTransform inverse;
-      if (ctm.Invert(&inverse)) {
-        DlFRect local_bounds = inverse.TransformRect(input_bounds);
+      auto inverse = ctm.Inverse();
+      if (inverse.has_value()) {
+        DlFRect local_bounds = inverse->TransformRect(input_bounds);
         local_bounds.Inset(radius_x, radius_y);
         output_bounds.SetRoundedOut(ctm.TransformRect(local_bounds));
         return &output_bounds;
@@ -169,9 +169,9 @@ class DlImageFilter : public DlAttribute<DlImageFilter, DlImageFilterType> {
         output_bounds = input_bounds.MakeOutset(Ceil(*expansion));
         return &output_bounds;
       }
-      DlTransform inverse;
-      if (ctm.Invert(&inverse)) {
-        DlFRect local_bounds = inverse.TransformRect(input_bounds);
+      auto inverse = ctm.Inverse();
+      if (inverse.has_value()) {
+        DlFRect local_bounds = inverse->TransformRect(input_bounds);
         local_bounds.Outset(radius_x, radius_y);
         output_bounds.SetRoundedOut(ctm.TransformRect(local_bounds));
         return &output_bounds;
@@ -426,14 +426,14 @@ class DlMatrixImageFilter final : public DlImageFilter {
   DlIRect* map_device_bounds(const DlIRect& input_bounds,
                              const DlTransform& ctm,
                              DlIRect& output_bounds) const override {
-    DlTransform inverse;
-    if (!ctm.Invert(&inverse)) {
+    auto inverse = ctm.Inverse();
+    if (!inverse.has_value()) {
       output_bounds = input_bounds;
       return nullptr;
     }
-    inverse.ConcatOuter(matrix_);
-    inverse.ConcatOuter(ctm);
-    output_bounds.SetRoundedOut(inverse.TransformRect(input_bounds));
+    inverse->ConcatOuter(matrix_);
+    inverse->ConcatOuter(ctm);
+    output_bounds.SetRoundedOut(inverse->TransformRect(input_bounds));
     return &output_bounds;
   }
 
@@ -441,13 +441,13 @@ class DlMatrixImageFilter final : public DlImageFilter {
                                    const DlTransform& ctm,
                                    DlIRect& input_bounds) const override {
     DlTransform matrix = DlTransform::MakeConcat(ctm, matrix_);
-    DlTransform inverse;
-    if (!matrix.Invert(&inverse)) {
+    auto inverse = matrix.Inverse();
+    if (!inverse.has_value()) {
       input_bounds = output_bounds;
       return nullptr;
     }
-    inverse.ConcatOuter(ctm);
-    input_bounds.SetRoundedOut(inverse.TransformRect(output_bounds));
+    inverse->ConcatOuter(ctm);
+    input_bounds.SetRoundedOut(inverse->TransformRect(output_bounds));
     return &input_bounds;
   }
 

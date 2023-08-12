@@ -233,8 +233,8 @@ DlFRect DisplayListMatrixClipTracker::Data::local_cull_rect() const {
   if (cull_rect_.is_empty()) {
     return cull_rect_;
   }
-  DlTransform inverse;
-  if (!matrix_.Invert(&inverse)) {
+  auto inverse = matrix_.Inverse();
+  if (!inverse.has_value()) {
     return DlFRect();
   }
   if (matrix_.has_perspective()) {
@@ -243,7 +243,7 @@ DlFRect DisplayListMatrixClipTracker::Data::local_cull_rect() const {
     // cull rect.
     return kMaxCullRect;
   }
-  return inverse.TransformRect(cull_rect_);
+  return inverse->TransformRect(cull_rect_);
 }
 
 }  // namespace flutter

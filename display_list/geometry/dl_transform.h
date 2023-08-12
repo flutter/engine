@@ -360,9 +360,12 @@ class DlTransform {
                                                        DlScalar dy) const;
 
   DlScalar determinant() const;
-  bool is_invertible() const { return determinant() != 0.0f; }
+  bool is_invertible() const {
+    DlScalar d = determinant();
+    return DlScalar_IsFinite(d) && d != 0.0;
+  }
 
-  bool Invert(DlTransform* inverted_result) const;
+  std::optional<DlTransform> Inverse() const;
 
   // Produces a version of this transform with integer translation
   // components.
@@ -382,32 +385,12 @@ class DlTransform {
 
   DlFVector4 eqnX() const { return {m_[kXX], m_[kXY], m_[kXZ], m_[kXT]}; }
   DlFVector4 eqnY() const { return {m_[kYX], m_[kYY], m_[kYZ], m_[kYT]}; }
-  DlFVector4 eqnZ() const { return {m_[kXX], m_[kZY], m_[kZZ], m_[kZT]}; }
+  DlFVector4 eqnZ() const { return {m_[kZX], m_[kZY], m_[kZZ], m_[kZT]}; }
   DlFVector4 eqnW() const { return {m_[kWX], m_[kWY], m_[kWZ], m_[kWT]}; }
 
   DlFVector3 eqnX_3() const { return {m_[kXX], m_[kXY], m_[kXT]}; }
   DlFVector3 eqnY_3() const { return {m_[kYX], m_[kYY], m_[kYT]}; }
   DlFVector3 eqnW_3() const { return {m_[kWX], m_[kWY], m_[kWT]}; }
-
-  DlScalar Xfactor_forX() const { return m_[kXX]; }
-  DlScalar Yfactor_forX() const { return m_[kXY]; }
-  DlScalar Zfactor_forX() const { return m_[kXZ]; }
-  DlScalar Translate_forX() const { return m_[kXT]; }
-
-  DlScalar Xfactor_forY() const { return m_[kYX]; }
-  DlScalar Yfactor_forY() const { return m_[kYY]; }
-  DlScalar Zfactor_forY() const { return m_[kYZ]; }
-  DlScalar Translate_forY() const { return m_[kYT]; }
-
-  DlScalar Xfactor_forZ() const { return m_[kZX]; }
-  DlScalar Yfactor_forZ() const { return m_[kZY]; }
-  DlScalar Zfactor_forZ() const { return m_[kZZ]; }
-  DlScalar Translate_forZ() const { return m_[kZT]; }
-
-  DlScalar Xfactor_forW() const { return m_[kWX]; }
-  DlScalar Yfactor_forW() const { return m_[kWY]; }
-  DlScalar Zfactor_forW() const { return m_[kWZ]; }
-  DlScalar Translate_forW() const { return m_[kWT]; }
 
   SkMatrix ToSkMatrix() const {
     return SkMatrix::MakeAll(       //

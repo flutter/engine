@@ -82,5 +82,21 @@ TEST(DlAngleTest, DegreesToRadiansArgumentConversion) {
   test2(degrees);
 }
 
+TEST(DlAngleTest, DegreesCosSin) {
+  for (int i = -360; i <= 720; i++) {
+    DlScalar radians = i * M_PI / 180.0;
+    {
+      DlFVector cos_sin = DlDegrees(i).CosSin();
+      EXPECT_TRUE(DlScalar_IsNearlyZero(cos_sin.x() - cosf(radians)));
+      EXPECT_TRUE(DlScalar_IsNearlyZero(cos_sin.y() - sinf(radians)));
+    }
+    {
+      DlFVector cos_sin = DlRadians(radians).CosSin();
+      EXPECT_TRUE(DlScalar_IsNearlyZero(cos_sin.x() - cosf(radians)));
+      EXPECT_TRUE(DlScalar_IsNearlyZero(cos_sin.y() - sinf(radians)));
+    }
+  }
+}
+
 }  // namespace testing
 }  // namespace flutter

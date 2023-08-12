@@ -13,6 +13,18 @@
 namespace flutter {
 namespace testing {
 
+// ASSERT_TRUE(result.has_value()) should be enough to prevent the test
+// code that follows it to run, but clang-tidy doesn't seem to recognize
+// that macro expansion as protective. This macro is more proactive
+// about ending execution at the place where the statement lives.
+#define ENFORCE_TRUE(condition) \
+  do {                          \
+    if (!(condition)) {         \
+      ASSERT_TRUE(condition);   \
+      return;                   \
+    }                           \
+  } while (0)
+
 static std::ostream& operator<<(std::ostream& os, const SkM44& t) {
   // clang-format off
   return os << "SkM44<RowMajor>(["
@@ -381,25 +393,25 @@ TEST(DlTransformTest, Inverse) {
   for (size_t i = 0; i < transforms.size(); i++) {
     std::string desc1 = "tx#" + std::to_string(i + 1);
     DlTransform transform1 = transforms[i];
-    DlTransform inverse1;
-    EXPECT_TRUE(transform1.Invert(&inverse1)) << desc1;
-    EXPECT_TRUE(
-        IsClose(DlTransform::MakeConcat(transform1, inverse1), DlTransform()))
+    auto inverse1 = transform1.Inverse();
+    ENFORCE_TRUE(inverse1.has_value());
+    EXPECT_TRUE(IsClose(DlTransform::MakeConcat(transform1, inverse1.value()),
+                        DlTransform()))
         << desc1;
     EXPECT_TRUE(
-        IsClose(DlTransform::MakeConcat(inverse1, transform1), DlTransform()))
+        IsClose(DlTransform::MakeConcat(*inverse1, transform1), DlTransform()))
         << desc1;
     for (size_t j = 0; j < transforms.size(); j++) {
       std::string desc2 = desc1 + " X tx#" + std::to_string(j + 1);
       DlTransform transform2 =
           DlTransform::MakeConcat(transform1, transforms[j]);
-      DlTransform inverse2;
-      EXPECT_TRUE(transform2.Invert(&inverse2)) << desc2;
-      EXPECT_TRUE(
-          IsClose(DlTransform::MakeConcat(transform2, inverse2), DlTransform()))
+      auto inverse2 = transform2.Inverse();
+      ENFORCE_TRUE(inverse2.has_value());
+      EXPECT_TRUE(IsClose(DlTransform::MakeConcat(transform2, *inverse2),
+                          DlTransform()))
           << desc2;
-      EXPECT_TRUE(
-          IsClose(DlTransform::MakeConcat(inverse2, transform2), DlTransform()))
+      EXPECT_TRUE(IsClose(DlTransform::MakeConcat(*inverse2, transform2),
+                          DlTransform()))
           << desc2;
     }
   }

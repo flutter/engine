@@ -130,12 +130,12 @@ static void TestBounds(const DlImageFilter& filter,
         // matrix.SetScale(scale, scale);
         // matrix.SkewOuter(skew / 8.0, skew / 8.0);
         // matrix.RotateOuter(DlDegrees(degrees));
-        ASSERT_TRUE(matrix.Invert(nullptr));
+        ASSERT_TRUE(matrix.is_invertible());
         TestBoundsWithMatrix(filter, matrix, sourceBounds,
                              expectedLocalOutputQuad);
         // matrix.SetPerspectiveX(0.001);
         // matrix.SetPerspectiveY(0.001);
-        // ASSERT_TRUE(matrix.Invert(nullptr));
+        // ASSERT_TRUE(matrix.is_invertible());
         // TestBoundsWithMatrix(filter, matrix, sourceBounds,
         //                      expectedLocalOutputQuad);
       }
@@ -411,8 +411,7 @@ TEST(DisplayListImageFilter, MatrixNotEquals) {
 TEST(DisplayListImageFilter, MatrixBounds) {
   DlTransform matrix = DlTransform::MakeAffine2D(2.0, 0.0, 10,  //
                                                  0.5, 3.0, 7);
-  DlTransform inverse;
-  ASSERT_TRUE(matrix.Invert(&inverse));
+  ASSERT_TRUE(matrix.is_invertible());
   DlMatrixImageFilter filter(matrix, DlImageSampling::kLinear);
   DlFRect input_bounds = DlFRect::MakeLTRB(20, 20, 80, 80);
   DlFPoint expectedOutputQuad[4] = {

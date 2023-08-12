@@ -118,7 +118,7 @@ class DisplayListMatrixClipTracker {
       *mapped = matrix_.TransformRect(rect);
       return matrix_.rect_stays_rect();
     }
-    bool canBeInverted() const { return matrix_.Invert(nullptr); }
+    bool canBeInverted() const { return matrix_.is_invertible(); }
 
     void clipBounds(const DlFRect& clip, ClipOp op, bool is_aa);
 
