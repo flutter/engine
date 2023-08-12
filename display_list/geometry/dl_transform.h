@@ -309,6 +309,9 @@ class DlTransform {
   DlTransform& RotateInner(const DlAngle& angle);
   DlTransform& RotateOuter(const DlAngle& angle);
 
+  DlTransform& RotateInner(DlFVector3 axis, const DlAngle& angle);
+  DlTransform& RotateOuter(DlFVector3 axis, const DlAngle& angle);
+
   DlTransform& ConcatInner(const DlTransform& inner);
   DlTransform& ConcatOuter(const DlTransform& outer);
 

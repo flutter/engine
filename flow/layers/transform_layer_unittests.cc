@@ -26,6 +26,27 @@ using TransformLayerTest = LayerTest;
     }                           \
   } while (0)
 
+static bool IsClose(DlScalar result, DlScalar expected, std::string label) {
+  if (DlScalar_IsNearlyZero(result - expected)) {
+    return true;
+  }
+  FML_LOG(ERROR) << label << ": " << std::hex                             //
+                 << result << " (0x" << (*(uint32_t*)&result) << ") != "  //
+                 << expected << " (0x" << (*(uint32_t*)&expected) << ")";
+  return false;
+}
+
+static bool IsClose(const DlFRect& result, const DlFRect& expected) {
+  if (IsClose(result.left(), expected.left(), "left") &&
+      IsClose(result.top(), expected.top(), "top") &&
+      IsClose(result.right(), expected.right(), "right") &&
+      IsClose(result.bottom(), expected.bottom(), "bottom")) {
+    return true;
+  }
+  FML_LOG(ERROR) << "Rects not close: " << result << " !~ " << expected;
+  return false;
+}
+
 #ifndef NDEBUG
 TEST_F(TransformLayerTest, PaintingEmptyLayerDies) {
   auto layer = std::make_shared<TransformLayer>(DlTransform());  // identity
@@ -133,14 +154,11 @@ TEST_F(TransformLayerTest, Complex) {
   DlTransform initial_transform = DlTransform::MakeTranslate(-0.5f, -0.5f);
   DlFRect local_cull_rect = DlFRect::MakeXYWH(2.0f, 2.0f, 14.0f, 14.0f);
   DlFRect device_cull_rect = initial_transform.TransformRect(local_cull_rect);
-  DlTransform layer_transform = DlTransform();
-  layer_transform.TranslateInner(2.5f, 2.5f);
+  DlTransform layer_transform = DlTransform::MakeTranslate(2.5f, 2.5f);
   // 20 degrees around the X axis
-  layer_transform.ConcatInner(
-      DlTransform::MakeRotate(kDlAxis_X, DlRadians(M_PI / 9.0f)));
+  layer_transform.RotateInner(kDlAxis_X, DlDegrees(20.0f));
   // 10 degrees around the Y axis
-  layer_transform.ConcatInner(
-      DlTransform::MakeRotate(kDlAxis_Y, DlRadians(M_PI / 18.0f)));
+  layer_transform.RotateInner(kDlAxis_Y, DlDegrees(10.0f));
   auto inverse_layer_transform = layer_transform.Inverse();
   ENFORCE_TRUE(inverse_layer_transform.has_value());
 
@@ -159,8 +177,8 @@ TEST_F(TransformLayerTest, Complex) {
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_matrix(),
             DlTransform::MakeConcat(initial_transform, layer_transform));
-  EXPECT_EQ(mock_layer->parent_cull_rect(),
-            inverse_layer_transform->TransformRect(local_cull_rect));
+  EXPECT_TRUE(IsClose(mock_layer->parent_cull_rect(),
+                      inverse_layer_transform->TransformRect(local_cull_rect)));
   EXPECT_EQ(mock_layer->parent_mutators(),
             std::vector({Mutator(layer_transform)}));
 

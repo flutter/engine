@@ -135,6 +135,13 @@ DlTransform& DlTransform::RotateOuter(const DlAngle& angle) {
   return ConcatOuter(MakeRotate(angle));
 }
 
+DlTransform& DlTransform::RotateInner(DlFVector3 axis, const DlAngle& angle) {
+  return ConcatInner(MakeRotate(axis, angle));
+}
+DlTransform& DlTransform::RotateOuter(DlFVector3 axis, const DlAngle& angle) {
+  return ConcatOuter(MakeRotate(axis, angle));
+}
+
 DlTransform& DlTransform::ConcatInner(const DlTransform& inner) {
   return *this = MakeConcat(*this, inner);
 }
