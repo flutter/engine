@@ -11,7 +11,7 @@
 #import "flutter/common/settings.h"
 #include "flutter/fml/synchronization/sync_switch.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelay.h"
+#import "flutter/shell/platform/darwin/common/framework/Source/FlutterBinaryMessengerRelay.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Test.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
@@ -20,6 +20,22 @@ FLUTTER_ASSERT_ARC
 
 @interface FlutterEngine () <FlutterTextInputDelegate>
 
+@end
+
+/// FlutterBinaryMessengerRelay used for testing that setting FlutterEngine.binaryMessenger to
+/// the current instance doesn't trigger a use-after-free bug.
+///
+/// See: testSetBinaryMessengerToSameBinaryMessenger
+@interface FakeBinaryMessengerRelay : FlutterBinaryMessengerRelay
+@property(nonatomic, assign) BOOL failOnDealloc;
+@end
+
+@implementation FakeBinaryMessengerRelay
+- (void)dealloc {
+  if (_failOnDealloc) {
+    XCTFail("FakeBinaryMessageRelay should not be deallocated");
+  }
+}
 @end
 
 @interface FlutterEngineTest : XCTestCase
@@ -146,6 +162,20 @@ FLUTTER_ASSERT_ARC
     engine = nil;
   }
   OCMVerify([plugin detachFromEngineForRegistrar:[OCMArg any]]);
+}
+
+- (void)testSetBinaryMessengerToSameBinaryMessenger {
+  FakeBinaryMessengerRelay* fakeBinaryMessenger = [[FakeBinaryMessengerRelay alloc] init];
+
+  FlutterEngine* engine = [[FlutterEngine alloc] init];
+  [engine setBinaryMessenger:fakeBinaryMessenger];
+
+  // Verify that the setter doesn't free the old messenger before setting the new messenger.
+  fakeBinaryMessenger.failOnDealloc = YES;
+  [engine setBinaryMessenger:fakeBinaryMessenger];
+
+  // Don't fail when ARC releases the binary messenger.
+  fakeBinaryMessenger.failOnDealloc = NO;
 }
 
 - (void)testRunningInitialRouteSendsNavigationMessage {

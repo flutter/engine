@@ -23,11 +23,16 @@ static constexpr int32_t kDefaultPointerDeviceId = 0;
 
 class MockFlutterWindow : public FlutterWindow {
  public:
-  MockFlutterWindow() : FlutterWindow(800, 600) {
+  MockFlutterWindow(bool reset_view_on_exit = true)
+      : FlutterWindow(800, 600), reset_view_on_exit_(reset_view_on_exit) {
     ON_CALL(*this, GetDpiScale())
         .WillByDefault(Return(this->FlutterWindow::GetDpiScale()));
   }
-  virtual ~MockFlutterWindow() { SetView(nullptr); }
+  virtual ~MockFlutterWindow() {
+    if (reset_view_on_exit_) {
+      SetView(nullptr);
+    }
+  }
 
   // Wrapper for GetCurrentDPI() which is a protected method.
   UINT GetDpi() { return GetCurrentDPI(); }
@@ -61,6 +66,7 @@ class MockFlutterWindow : public FlutterWindow {
   MOCK_METHOD1(Win32MapVkToChar, uint32_t(uint32_t));
   MOCK_METHOD0(GetPlatformWindow, HWND());
   MOCK_METHOD0(GetAxFragmentRootDelegate, ui::AXFragmentRootDelegateWin*());
+  MOCK_METHOD1(OnWindowStateEvent, void(WindowStateEvent));
 
  protected:
   // |KeyboardManager::WindowDelegate|
@@ -72,6 +78,7 @@ class MockFlutterWindow : public FlutterWindow {
   }
 
  private:
+  bool reset_view_on_exit_;
   FML_DISALLOW_COPY_AND_ASSIGN(MockFlutterWindow);
 };
 
@@ -341,6 +348,10 @@ TEST(FlutterWindowTest, LifecycleFocusMessages) {
       .WillByDefault([&last_event](HWND hwnd, WindowStateEvent event) {
         last_event = event;
       });
+  ON_CALL(win32window, OnWindowStateEvent)
+      .WillByDefault([&](WindowStateEvent event) {
+        win32window.FlutterWindow::OnWindowStateEvent(event);
+      });
 
   win32window.InjectWindowMessage(WM_SIZE, 0, 0);
   EXPECT_EQ(last_event, WindowStateEvent::kHide);
@@ -360,6 +371,10 @@ TEST(FlutterWindowTest, CachedLifecycleMessage) {
   ON_CALL(win32window, GetPlatformWindow).WillByDefault([]() {
     return reinterpret_cast<HWND>(1);
   });
+  ON_CALL(win32window, OnWindowStateEvent)
+      .WillByDefault([&](WindowStateEvent event) {
+        win32window.FlutterWindow::OnWindowStateEvent(event);
+      });
 
   // Restore
   win32window.InjectWindowMessage(WM_SIZE, 0, MAKEWORD(1, 1));
@@ -382,6 +397,37 @@ TEST(FlutterWindowTest, CachedLifecycleMessage) {
   win32window.SetView(&delegate);
   EXPECT_TRUE(focused);
   EXPECT_TRUE(restored);
+}
+
+TEST(FlutterWindowTest, PosthumousWindowMessage) {
+  MockWindowBindingHandlerDelegate delegate;
+  int msg_count = 0;
+  HWND hwnd;
+  ON_CALL(delegate, OnWindowStateEvent)
+      .WillByDefault([&](HWND hwnd, WindowStateEvent event) { msg_count++; });
+
+  {
+    MockFlutterWindow win32window(false);
+    ON_CALL(win32window, GetPlatformWindow).WillByDefault([&]() {
+      return win32window.FlutterWindow::GetPlatformWindow();
+    });
+    ON_CALL(win32window, OnWindowStateEvent)
+        .WillByDefault([&](WindowStateEvent event) {
+          win32window.FlutterWindow::OnWindowStateEvent(event);
+        });
+    win32window.SetView(&delegate);
+    win32window.InitializeChild("Title", 1, 1);
+    hwnd = win32window.GetPlatformWindow();
+    SendMessage(hwnd, WM_SIZE, 0, MAKEWORD(1, 1));
+    SendMessage(hwnd, WM_SETFOCUS, 0, 0);
+
+    // By setting this to zero before exiting the scope that contains
+    // win32window, and then checking its value afterwards, enforce that the
+    // window receive and process messages from its destructor without
+    // accessing out-of-bounds memory.
+    msg_count = 0;
+  }
+  EXPECT_GE(msg_count, 1);
 }
 
 }  // namespace testing

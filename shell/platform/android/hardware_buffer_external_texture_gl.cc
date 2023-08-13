@@ -6,6 +6,10 @@
 
 #include <android/hardware_buffer_jni.h>
 #include <android/sensor.h>
+#include "flutter/common/graphics/texture.h"
+#include "impeller/core/formats.h"
+#include "impeller/display_list/dl_image_impeller.h"
+#include "impeller/renderer/backend/gles/texture_gles.h"
 #include "impeller/toolkit/egl/image.h"
 #include "impeller/toolkit/gles/texture.h"
 #include "shell/platform/android/ndk_helpers.h"
@@ -18,29 +22,18 @@
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/ganesh/SkImageGanesh.h"
+#include "third_party/skia/include/gpu/ganesh/gl/GrGLBackendSurface.h"
+#include "third_party/skia/include/gpu/gl/GrGLTypes.h"
 
 namespace flutter {
 
-HardwareBufferExternalTextureGL::HardwareBufferExternalTextureGL(
-    const std::shared_ptr<AndroidContextGLSkia>& context,
-    int64_t id,
-    const fml::jni::ScopedJavaGlobalRef<jobject>& image_texture_entry,
-    const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade)
-    : Texture(id),
-      context_(context),
-      image_texture_entry_(image_texture_entry),
-      jni_facade_(jni_facade) {}
+void HardwareBufferExternalTextureGL::Detach() {
+  image_.reset();
+  texture_.reset();
+}
 
-HardwareBufferExternalTextureGL::~HardwareBufferExternalTextureGL() {}
-
-// Implementing flutter::Texture.
-void HardwareBufferExternalTextureGL::Paint(PaintContext& context,
-                                            const SkRect& bounds,
-                                            bool freeze,
-                                            const DlImageSampling sampling) {
-  if (state_ == AttachmentState::kDetached) {
-    return;
-  }
+void HardwareBufferExternalTextureGL::ProcessFrame(PaintContext& context,
+                                                   const SkRect& bounds) {
   if (state_ == AttachmentState::kUninitialized) {
     GLuint texture_name;
     glGenTextures(1, &texture_name);
@@ -48,79 +41,7 @@ void HardwareBufferExternalTextureGL::Paint(PaintContext& context,
     state_ = AttachmentState::kAttached;
   }
   glBindTexture(GL_TEXTURE_EXTERNAL_OES, texture_.get().texture_name);
-  if (!freeze && new_frame_ready_) {
-    new_frame_ready_ = false;
-    Update();
-  }
-  GrGLTextureInfo textureInfo = {GL_TEXTURE_EXTERNAL_OES,
-                                 texture_.get().texture_name, GL_RGBA8_OES};
-  GrBackendTexture backendTexture(1, 1, GrMipMapped::kNo, textureInfo);
-  sk_sp<SkImage> image = SkImages::BorrowTextureFrom(
-      context.gr_context, backendTexture, kTopLeft_GrSurfaceOrigin,
-      kRGBA_8888_SkColorType, kPremul_SkAlphaType, nullptr);
-  if (image) {
-    DlAutoCanvasRestore autoRestore(context.canvas, true);
-    context.canvas->Translate(bounds.x(), bounds.y());
-    context.canvas->Scale(bounds.width(), bounds.height());
-    auto dl_image = DlImage::Make(image);
-    context.canvas->DrawImage(dl_image, {0, 0}, sampling, context.paint);
-  } else {
-    FML_LOG(ERROR) << "Skia could not borrow texture";
-  }
-}
 
-// Implementing flutter::Texture.
-void HardwareBufferExternalTextureGL::MarkNewFrameAvailable() {
-  new_frame_ready_ = true;
-}
-
-// Implementing flutter::Texture.
-void HardwareBufferExternalTextureGL::OnTextureUnregistered() {}
-
-// Implementing flutter::ContextListener.
-void HardwareBufferExternalTextureGL::OnGrContextCreated() {
-  state_ = AttachmentState::kUninitialized;
-}
-
-AHardwareBuffer* HardwareBufferExternalTextureGL::GetLatestHardwareBuffer() {
-  JNIEnv* env = fml::jni::AttachCurrentThread();
-  FML_CHECK(env != nullptr);
-
-  // ImageTextureEntry.acquireLatestImage.
-  JavaLocalRef image_java = jni_facade_->ImageTextureEntryAcquireLatestImage(
-      JavaLocalRef(image_texture_entry_));
-  if (image_java.obj() == nullptr) {
-    return nullptr;
-  }
-
-  // Image.getHardwareBuffer.
-  JavaLocalRef hardware_buffer_java =
-      jni_facade_->ImageGetHardwareBuffer(image_java);
-  if (hardware_buffer_java.obj() == nullptr) {
-    jni_facade_->ImageClose(image_java);
-    return nullptr;
-  }
-
-  // Convert into NDK HardwareBuffer.
-  AHardwareBuffer* latest_hardware_buffer =
-      NDKHelpers::AHardwareBuffer_fromHardwareBuffer(
-          env, hardware_buffer_java.obj());
-  if (latest_hardware_buffer == nullptr) {
-    return nullptr;
-  }
-
-  // Keep hardware buffer alive.
-  NDKHelpers::AHardwareBuffer_acquire(latest_hardware_buffer);
-
-  // Now that we have referenced the native hardware buffer, close the Java
-  // Image and HardwareBuffer objects.
-  jni_facade_->HardwareBufferClose(hardware_buffer_java);
-  jni_facade_->ImageClose(image_java);
-
-  return latest_hardware_buffer;
-}
-
-void HardwareBufferExternalTextureGL::Update() {
   EGLDisplay display = eglGetCurrentDisplay();
   FML_CHECK(display != EGL_NO_DISPLAY);
 
@@ -136,6 +57,7 @@ void HardwareBufferExternalTextureGL::Update() {
       NDKHelpers::eglGetNativeClientBufferANDROID(latest_hardware_buffer);
   if (client_buffer == nullptr) {
     FML_LOG(WARNING) << "eglGetNativeClientBufferAndroid returned null.";
+    NDKHelpers::AHardwareBuffer_release(latest_hardware_buffer);
     return;
   }
   FML_CHECK(client_buffer != nullptr);
@@ -150,15 +72,102 @@ void HardwareBufferExternalTextureGL::Update() {
   // Drop our temporary reference to the hardware buffer as the call to
   // eglCreateImageKHR now has the reference.
   NDKHelpers::AHardwareBuffer_release(latest_hardware_buffer);
+
+  GrGLTextureInfo textureInfo = {GL_TEXTURE_EXTERNAL_OES,
+                                 texture_.get().texture_name, GL_RGBA8_OES};
+  auto backendTexture =
+      GrBackendTextures::MakeGL(1, 1, skgpu::Mipmapped::kNo, textureInfo);
+  dl_image_ = DlImage::Make(SkImages::BorrowTextureFrom(
+      context.gr_context, backendTexture, kTopLeft_GrSurfaceOrigin,
+      kRGBA_8888_SkColorType, kPremul_SkAlphaType, nullptr));
 }
 
-// Implementing flutter::ContextListener.
-void HardwareBufferExternalTextureGL::OnGrContextDestroyed() {
-  if (state_ == AttachmentState::kAttached) {
-    image_.reset();
-    texture_.reset();
+HardwareBufferExternalTextureGL::HardwareBufferExternalTextureGL(
+    const std::shared_ptr<AndroidContextGLSkia>& context,
+    int64_t id,
+    const fml::jni::ScopedJavaGlobalRef<jobject>& image_texture_entry,
+    const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade)
+    : HardwareBufferExternalTexture(id, image_texture_entry, jni_facade) {}
+
+HardwareBufferExternalTextureGL::~HardwareBufferExternalTextureGL() {}
+
+HardwareBufferExternalTextureImpellerGL::
+    HardwareBufferExternalTextureImpellerGL(
+        const std::shared_ptr<impeller::ContextGLES>& context,
+        int64_t id,
+        const fml::jni::ScopedJavaGlobalRef<jobject>&
+            hardware_buffer_texture_entry,
+        const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade)
+    : HardwareBufferExternalTexture(id,
+                                    hardware_buffer_texture_entry,
+                                    jni_facade),
+      impeller_context_(context) {}
+
+HardwareBufferExternalTextureImpellerGL::
+    ~HardwareBufferExternalTextureImpellerGL() {}
+
+void HardwareBufferExternalTextureImpellerGL::Detach() {
+  egl_image_.reset();
+}
+
+void HardwareBufferExternalTextureImpellerGL::ProcessFrame(
+    PaintContext& context,
+    const SkRect& bounds) {
+  EGLDisplay display = eglGetCurrentDisplay();
+  FML_CHECK(display != EGL_NO_DISPLAY);
+
+  if (state_ == AttachmentState::kUninitialized) {
+    // First processed frame we are attached.
+    state_ = AttachmentState::kAttached;
   }
-  state_ = AttachmentState::kDetached;
+
+  AHardwareBuffer* latest_hardware_buffer = GetLatestHardwareBuffer();
+  if (latest_hardware_buffer == nullptr) {
+    FML_LOG(ERROR) << "GetLatestHardwareBuffer returned null.";
+    return;
+  }
+
+  EGLClientBuffer client_buffer =
+      NDKHelpers::eglGetNativeClientBufferANDROID(latest_hardware_buffer);
+  if (client_buffer == nullptr) {
+    FML_LOG(ERROR) << "eglGetNativeClientBufferAndroid returned null.";
+    NDKHelpers::AHardwareBuffer_release(latest_hardware_buffer);
+    return;
+  }
+
+  FML_CHECK(client_buffer != nullptr);
+  egl_image_.reset(impeller::EGLImageKHRWithDisplay{
+      eglCreateImageKHR(display, EGL_NO_CONTEXT, EGL_NATIVE_BUFFER_ANDROID,
+                        client_buffer, 0),
+      display});
+  FML_CHECK(egl_image_.get().image != EGL_NO_IMAGE_KHR);
+
+  // Create the texture.
+  impeller::TextureDescriptor desc;
+  desc.type = impeller::TextureType::kTextureExternalOES;
+  desc.storage_mode = impeller::StorageMode::kDevicePrivate;
+  desc.format = impeller::PixelFormat::kR8G8B8A8UNormInt;
+  desc.size = {static_cast<int>(bounds.width()),
+               static_cast<int>(bounds.height())};
+  desc.mip_count = 1;
+  auto texture = std::make_shared<impeller::TextureGLES>(
+      impeller_context_->GetReactor(), desc,
+      impeller::TextureGLES::IsWrapped::kWrapped);
+  texture->SetCoordinateSystem(
+      impeller::TextureCoordinateSystem::kUploadFromHost);
+  if (!texture->Bind()) {
+    FML_LOG(ERROR) << "Could not bind texture.";
+    NDKHelpers::AHardwareBuffer_release(latest_hardware_buffer);
+    return;
+  }
+  // Associate the hardware buffer image with the texture.
+  glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES,
+                               (GLeglImageOES)egl_image_.get().image);
+
+  dl_image_ = impeller::DlImageImpeller::Make(texture);
+
+  // Release the reference acquired by GetLatestHardwareBuffer.
+  NDKHelpers::AHardwareBuffer_release(latest_hardware_buffer);
 }
 
 }  // namespace flutter

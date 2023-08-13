@@ -81,9 +81,7 @@ Window::Window(std::unique_ptr<WindowsProcTable> windows_proc_table,
   keyboard_manager_ = std::make_unique<KeyboardManager>(this);
 }
 
-Window::~Window() {
-  Destroy();
-}
+Window::~Window() {}
 
 void Window::InitializeChild(const char* title,
                              unsigned int width,

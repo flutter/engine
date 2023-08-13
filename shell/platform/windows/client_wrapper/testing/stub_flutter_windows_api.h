@@ -90,7 +90,7 @@ class StubFlutterWindowsApi {
   virtual void PluginRegistrarUnregisterTopLevelWindowProcDelegate(
       FlutterDesktopWindowProcCallback delegate) {}
 
-  // Claled for FlutterDesktopEngineProcessExternalWindowMessage.
+  // Called for FlutterDesktopEngineProcessExternalWindowMessage.
   virtual bool EngineProcessExternalWindowMessage(
       FlutterDesktopEngineRef engine,
       HWND hwnd,
