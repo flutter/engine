@@ -57,6 +57,7 @@ impeller_component("allocator_unittests") {
 
   deps = [
     ":core",
+    "../geometry",
     "//flutter/testing:testing_lib",
   ]
 }

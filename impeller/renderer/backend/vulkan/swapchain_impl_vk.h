@@ -44,9 +44,9 @@ class SwapchainImplVK final
     std::unique_ptr<Surface> surface;
     bool out_of_date = false;
 
-    explicit AcquireResult(bool p_out_of_date = false) : out_of_date(p_out_of_date) {}
+    AcquireResult(bool p_out_of_date = false) : out_of_date(p_out_of_date) {}
 
-    explicit AcquireResult(std::unique_ptr<Surface> p_surface)
+    AcquireResult(std::unique_ptr<Surface> p_surface)
         : surface(std::move(p_surface)) {}
   };
 
