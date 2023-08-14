@@ -26,7 +26,9 @@ using TransformLayerTest = LayerTest;
     }                           \
   } while (0)
 
-static bool IsClose(DlScalar result, DlScalar expected, std::string label) {
+static bool IsClose(DlScalar result,
+                    DlScalar expected,
+                    const std::string& label) {
   if (DlScalar_IsNearlyZero(result - expected)) {
     return true;
   }

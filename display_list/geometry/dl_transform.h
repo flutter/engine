@@ -119,11 +119,15 @@ class DlTransform {
     DlScalar s = sin;
     DlScalar t = 1 - c;
 
+    // Note that this is transposed as compared to the version in the Skia
+    // sources because, while both of our internal matrices may be col major,
+    // their constructor is row major and so their initializer list was
+    // transposed compared to the col major format of our matrix array.
     // clang-format off
     return {
-        t*x*x + c,   t*x*y - s*z, t*x*z + s*y, 0,
-        t*x*y + s*z, t*y*y + c,   t*y*z - s*x, 0,
-        t*x*z - s*y, t*y*z + s*x, t*z*z + c,   0,
+        t*x*x + c,   t*x*y + s*z, t*x*z - s*y, 0,
+        t*x*y - s*z, t*y*y + c,   t*y*z + s*x, 0,
+        t*x*z + s*y, t*y*z - s*x, t*z*z + c,   0,
         0,           0,           0,           1,
         Complexity::kUnknown
     };
@@ -281,6 +285,38 @@ class DlTransform {
     complexity_ = Complexity::kAffine2D;
   }
   void SetRotate(const DlAngle& angle) { SetCosSin(angle.CosSin()); }
+  void SetRotate(const DlFVector3& axis, const DlAngle& angle) {
+    // Copied from Skia, which in turn:
+    // Taken from "Essential Mathematics for Games and Interactive Applications"
+    //             James M. Van Verth and Lars M. Bishop -- third edition
+    DlScalar len = axis.length();
+    if (!DlScalar_IsFinite(len) || DlScalar_IsNearlyZero(len)) {
+      SetIdentity();
+      return;
+    }
+    const DlFVector3 unit_axis = axis / len;
+    const DlFVector cos_sin = angle.CosSin();
+    DlScalar x = unit_axis.x();
+    DlScalar y = unit_axis.y();
+    DlScalar z = unit_axis.z();
+    DlScalar c = cos_sin.x();
+    DlScalar s = cos_sin.y();
+    DlScalar t = 1 - c;
+
+    // Note that this is transposed as compared to the version in the Skia
+    // sources because, while both of our internal matrices may be col major,
+    // their constructor is row major and so their initializer list was
+    // transposed compared to the col major format of our matrix array.
+    // clang-format off
+    init_matrix(m_,
+        t*x*x + c,   t*x*y + s*z, t*x*z - s*y, 0,
+        t*x*y - s*z, t*y*y + c,   t*y*z + s*x, 0,
+        t*x*z + s*y, t*y*z - s*x, t*z*z + c,   0,
+        0,           0,           0,           1
+    );
+    // clang-format on
+    complexity_ = Complexity::kUnknown;
+  }
 
   void SetPerspectiveX(DlScalar px) {
     m_[kWX] = px;
@@ -342,9 +378,16 @@ class DlTransform {
 
   void TransformPoints(DlFPoint dst[], const DlFPoint src[], int count) const;
 
-  DlFHomogenous2D TransformHomogenous2D(DlScalar x, DlScalar y) const;
-  DlFHomogenous2D TransformHomogenous2D(const DlFPoint& point) const {
-    return TransformHomogenous2D(point.x(), point.y());
+  DlFHomogenous3D TransformHomogenous(DlScalar x,
+                                      DlScalar y,
+                                      DlScalar z = 0.0f,
+                                      DlScalar w = 1.0f) const;
+  DlFHomogenous3D TransformHomogenous(const DlFPoint& point) const {
+    return TransformHomogenous(point.x(), point.y());
+  }
+  DlFHomogenous3D TransformHomogenous(const DlFHomogenous3D& homogenous) const {
+    return TransformHomogenous(homogenous.x(), homogenous.y(), homogenous.z(),
+                               homogenous.w());
   }
 
   DlFRect TransformRect(const DlFRect& rect) const;
@@ -508,6 +551,20 @@ class DlTransform {
   Complexity complexity() const;
   static DlScalar Invert4x4Matrix(const DlScalar inMatrix[16],
                                   DlScalar outMatrix[16]);
+
+  // The 2 init_matrix templates allow for a compact initialization of the
+  // already allocated 16 entries in the array whether via constructor or
+  // a post-constructor setter
+  template <typename T, typename U>
+  void init_matrix(T* array, U x) {
+    *array = x;
+  }
+
+  template <typename T, typename U, typename... V>
+  void init_matrix(T* array, U x, V... y) {
+    *array = x;
+    init_matrix(array + 1, y...);
+  }
 
   // Internal format and private constructor are column-major for ease of
   // transform implementation.

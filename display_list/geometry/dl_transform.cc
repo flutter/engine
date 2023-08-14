@@ -61,6 +61,9 @@ bool DlTransform::rect_stays_rect() const {
 }
 
 DlTransform& DlTransform::TranslateInner(DlScalar tx, DlScalar ty) {
+  if (true) {
+    return ConcatInner(MakeTranslate(tx, ty));
+  }
   if (!DlScalars_AreFinite(tx, ty)) {
     return *this;
   }
@@ -80,10 +83,15 @@ DlTransform& DlTransform::TranslateInner(DlScalar tx, DlScalar ty) {
       break;
 
     case Complexity::kAffine2D:
-    case Complexity::kAffine3D:
-      // 2D or 3D makes no difference if we have no z to transform
       m_[kXT] += m_[kXX] * tx + m_[kXY] * ty;
       m_[kYT] += m_[kYX] * tx + m_[kYY] * ty;
+      // Whether or not translation goes away, we will still be Affine
+      break;
+
+    case Complexity::kAffine3D:
+      m_[kXT] += m_[kXX] * tx + m_[kXY] * ty;
+      m_[kYT] += m_[kYX] * tx + m_[kYY] * ty;
+      m_[kZT] += m_[kZX] * tx + m_[kZY] * ty;
       // Whether or not translation goes away, we will still be Affine
       break;
 
@@ -91,10 +99,10 @@ DlTransform& DlTransform::TranslateInner(DlScalar tx, DlScalar ty) {
       FML_DCHECK(complexity_ != Complexity::kUnknown);
     case Complexity::kPerspectiveOnlyZ:
     case Complexity::kPerspectiveAll:
-      DlFHomogenous2D transformed_tx = TransformHomogenous2D(tx, ty);
-      transformed_tx.normalize();
-      m_[kXT] += transformed_tx.x();
-      m_[kYT] += transformed_tx.y();
+      DlFHomogenous3D transformed_tx = TransformHomogenous(tx, ty);
+      DlFPoint normalized_tx = transformed_tx.normalizedToPoint();
+      m_[kXT] += normalized_tx.x();
+      m_[kYT] += normalized_tx.y();
       // Whether or not translation goes away, we will still be Affine
       break;
   }
@@ -102,6 +110,9 @@ DlTransform& DlTransform::TranslateInner(DlScalar tx, DlScalar ty) {
 }
 
 DlTransform& DlTransform::TranslateOuter(DlScalar tx, DlScalar ty) {
+  if (true) {
+    return ConcatOuter(MakeTranslate(tx, ty));
+  }
   if (!DlScalars_AreFinite(tx, ty)) {
     return *this;
   }
@@ -153,6 +164,7 @@ DlFPoint DlTransform::TransformPoint(DlScalar x, DlScalar y) const {
   if (!DlScalars_AreFinite(x, y)) {
     return {};
   }
+  complexity_ = Complexity::kPerspectiveAll;
   switch (complexity()) {
     case Complexity::kIdentity:
       return DlFPoint(x, y);
@@ -174,7 +186,7 @@ DlFPoint DlTransform::TransformPoint(DlScalar x, DlScalar y) const {
       FML_DCHECK(complexity_ != Complexity::kUnknown);
     case Complexity::kPerspectiveAll: {
       DlScalar w = x * m_[kWX] + y * m_[kWY] + m_[kWT];
-      if (w < DlFHomogenous2D::kMinimumHomogenous) {
+      if (w < kMinimumHomogenous) {
         return DlFPoint();
       }
       w = 1.0 / w;
@@ -250,7 +262,7 @@ void DlTransform::TransformPoints(DlFPoint dst[],
         DlScalar x = p.x();
         DlScalar y = p.y();
         DlScalar w = mWX * x + mWY * y + tw;
-        if (w < DlFHomogenous2D::kMinimumHomogenous) {
+        if (w < kMinimumHomogenous) {
           dst[i].Set(0, 0);
         } else {
           w = 1.0 / w;
@@ -263,34 +275,44 @@ void DlTransform::TransformPoints(DlFPoint dst[],
   }
 }
 
-DlFHomogenous2D DlTransform::TransformHomogenous2D(DlScalar x,
-                                                   DlScalar y) const {
+DlFHomogenous3D DlTransform::TransformHomogenous(DlScalar x,
+                                                 DlScalar y,
+                                                 DlScalar z,
+                                                 DlScalar w) const {
   if (!DlScalars_AreFinite(x, y)) {
     return {};
   }
   switch (complexity()) {
     case Complexity::kIdentity:
-      return DlFHomogenous2D(x, y);
+      return DlFHomogenous3D(x, y, z, w);
 
     case Complexity::kTranslate2D:
-      return DlFHomogenous2D(x + m_[kXT], y + m_[kYT]);
+      return DlFHomogenous3D(x + w * m_[kXT], y + w * m_[kYT], z, w);
 
     case Complexity::kScaleTranslate2D:
-      return DlFHomogenous2D(x * m_[kXX] + m_[kXT],  //
-                             x * m_[kYY] + m_[kYT]);
+      return DlFHomogenous3D(x * m_[kXX] + w * m_[kXT],
+                             y * m_[kYY] + w * m_[kYT], z, w);
 
-    case Complexity::kPerspectiveOnlyZ:  // Perspective only on Z (which is 0)
-    case Complexity::kAffine3D:          // We don't care about Z in or out
     case Complexity::kAffine2D:
-      return DlFHomogenous2D(x * m_[kXX] + y * m_[kXY] + m_[kXT],
-                             x * m_[kYX] + y * m_[kYY] + m_[kYT]);
+      return DlFHomogenous3D(x * m_[kXX] + y * m_[kXY] + w * m_[kXT],
+                             x * m_[kYX] + y * m_[kYY] + w * m_[kYT], z, w);
+
+    case Complexity::kAffine3D:
+      return DlFHomogenous3D(
+          x * m_[kXX] + y * m_[kXY] + z * m_[kXZ] + w * m_[kXT],
+          x * m_[kYX] + y * m_[kYY] + z * m_[kYZ] + w * m_[kYT],
+          x * m_[kZX] + y * m_[kZY] + z * m_[kZZ] + w * m_[kZT], w);
 
     case Complexity::kUnknown:
       FML_DCHECK(complexity_ != Complexity::kUnknown);
+
+    case Complexity::kPerspectiveOnlyZ:
     case Complexity::kPerspectiveAll: {
-      return DlFHomogenous2D(x * m_[kXX] + y * m_[kXY] + m_[kXT],
-                             x * m_[kYX] + y * m_[kYY] + m_[kYT],
-                             x * m_[kWX] + y * m_[kWY] + m_[kWT]);
+      return DlFHomogenous3D(
+          x * m_[kXX] + y * m_[kXY] + z * m_[kXZ] + w * m_[kXT],
+          x * m_[kYX] + y * m_[kYY] + z * m_[kYZ] + w * m_[kYT],
+          x * m_[kZX] + y * m_[kZY] + z * m_[kZZ] + w * m_[kZT],
+          x * m_[kWX] + y * m_[kWY] + z * m_[kWZ] + w * m_[kWT]);
     }
   }
 }
@@ -338,10 +360,10 @@ DlFRect DlTransform::TransformRect(const DlFRect& rect) const {
       FML_DCHECK(complexity_ != Complexity::kUnknown);
 
     case Complexity::kPerspectiveAll: {
-      DlFHomogenous2D ul = TransformHomogenous2D(rect.left(), rect.top());
-      DlFHomogenous2D ur = TransformHomogenous2D(rect.right(), rect.top());
-      DlFHomogenous2D ll = TransformHomogenous2D(rect.left(), rect.bottom());
-      DlFHomogenous2D lr = TransformHomogenous2D(rect.right(), rect.bottom());
+      DlFHomogenous3D ul = TransformHomogenous(rect.left(), rect.top());
+      DlFHomogenous3D ur = TransformHomogenous(rect.right(), rect.top());
+      DlFHomogenous3D ll = TransformHomogenous(rect.left(), rect.bottom());
+      DlFHomogenous3D lr = TransformHomogenous(rect.right(), rect.bottom());
 
       RectBoundsAccumulator accumulator;
 
@@ -352,14 +374,14 @@ DlFRect DlTransform::TransformRect(const DlFRect& rect) const {
       // interpolated towards the transformed coordinates of its 2 adjacent
       // corners and the point at which that side of the quad is clipped
       // will be included in the bounds.
-      auto ProcessCorner = [&accumulator](DlFHomogenous2D previous,
-                                          DlFHomogenous2D p,
-                                          DlFHomogenous2D next) {
+      auto ProcessCorner = [&accumulator](DlFHomogenous3D previous,
+                                          DlFHomogenous3D p,
+                                          DlFHomogenous3D next) {
         if (!p.is_finite()) {
           return;
         }
         if (p.is_unclipped()) {
-          accumulator.accumulate(p.normalize());
+          accumulator.accumulate(p.normalizedToPoint());
           return;
         }
         // Process a single corner against a single neighbor. The
@@ -367,16 +389,15 @@ DlFRect DlTransform::TransformRect(const DlFRect& rect) const {
         // is only processed if it is unclipped. We linearly interpolate
         // to find the point at which the edge between them goes
         // out of bounds against the near clipping plane.
-        auto InterpolateAndProcess = [&accumulator](DlFHomogenous2D p,
-                                                    DlFHomogenous2D n) {
+        auto InterpolateAndProcess = [&accumulator](DlFHomogenous3D p,
+                                                    DlFHomogenous3D n) {
           FML_DCHECK(p.is_finite() && !p.is_unclipped());
           if (n.is_finite() && n.is_unclipped()) {
-            DlScalar fract =
-                (DlFHomogenous2D::kMinimumHomogenous - p.w()) / (n.w() - p.w());
+            DlScalar fract = (kMinimumHomogenous - p.w()) / (n.w() - p.w());
             DlScalar x = n.x() * fract + p.x() * (1.0f - fract);
             DlScalar y = n.y() * fract + p.y() * (1.0f - fract);
-            accumulator.accumulate(x / DlFHomogenous2D::kMinimumHomogenous,
-                                   y / DlFHomogenous2D::kMinimumHomogenous);
+            accumulator.accumulate(x / kMinimumHomogenous,
+                                   y / kMinimumHomogenous);
           }
         };
         // Either, both, or neither of these interpolations may lead to a

@@ -109,7 +109,8 @@ static bool IsClose(const DlFPoint& result,
                     const SkPoint& expected,
                     DlScalar max_diff = kDlScalar_NearlyZero,
                     int max_ulps = 3) {
-  return IsClose(result, DlFPoint(expected.x(), expected.y()));
+  return IsClose(result, DlFPoint(expected.x(), expected.y()), max_diff,
+                 max_ulps);
 }
 
 static bool IsClose(const DlFPoint& result,
@@ -417,8 +418,13 @@ TEST(DlTransformTest, Inverse) {
   }
 }
 
+static constexpr int kCanTestSkMatrix = 1;
+static constexpr int kCanTestSkM44 = 2;
+static_assert((kCanTestSkMatrix & kCanTestSkM44) == 0);
+
 struct TransformSetup {
   std::string name;
+  int can_test;
   std::function<DlTransform()> DlCreate;
   std::function<SkMatrix()> SkCreate;
   std::function<SkM44()> Sk44Create;
@@ -435,8 +441,6 @@ struct TransformSetup {
 
 static void TestChain(const std::vector<TransformSetup*>& setup_chain,
                       DlTransform dlt,
-                      SkMatrix skt,
-                      SkM44 sk4t,
                       const std::string& desc) {
   std::vector<DlFPoint> points = {
       DlFPoint(0, 0),
@@ -444,23 +448,35 @@ static void TestChain(const std::vector<TransformSetup*>& setup_chain,
       DlFPoint(1.0e5f, 12),
       DlFPoint(16, 1.0e5f),
   };
+  int can_test = kCanTestSkMatrix | kCanTestSkM44;
+  for (auto& setup : setup_chain) {
+    can_test &= setup->can_test;
+  }
+  FML_DCHECK(can_test != 0);
   for (DlFPoint& p : points) {
     auto dl_result = dlt.TransformPoint(p);
-    auto dl_expected = p;
+    DlFHomogenous3D dl_expected = DlFHomogenous3D(p);
     for (auto& setup : setup_chain) {
-      dl_expected = setup->DlCreate().TransformPoint(dl_expected);
+      dl_expected = setup->DlCreate().TransformHomogenous(dl_expected);
     }
-    EXPECT_TRUE(IsClose(dl_result, dl_expected)) << desc << " (DL)";
-    SkPoint sk_expected = SkPoint::Make(p.x(), p.y());
-    for (auto& setup : setup_chain) {
-      sk_expected = setup->SkCreate().mapPoint(sk_expected);
+    EXPECT_TRUE(IsClose(dl_result, dl_expected.normalizedToPoint()))
+        << desc << " (DL)";
+
+    if (can_test & kCanTestSkMatrix) {
+      SkPoint sk_expected = SkPoint::Make(p.x(), p.y());
+      for (auto& setup : setup_chain) {
+        sk_expected = setup->SkCreate().mapPoint(sk_expected);
+      }
+      EXPECT_TRUE(IsClose(dl_result, sk_expected)) << desc << " (SkMatrix)";
     }
-    EXPECT_TRUE(IsClose(dl_result, sk_expected)) << desc << " (SkMatrix)";
-    SkV4 sk4_expected = {p.x(), p.y(), 0, 1};
-    for (auto& setup : setup_chain) {
-      sk4_expected = setup->Sk44Create() * sk4_expected;
+
+    if (can_test & kCanTestSkM44) {
+      SkV4 sk4_expected = {p.x(), p.y(), 0, 1};
+      for (auto& setup : setup_chain) {
+        sk4_expected = setup->Sk44Create() * sk4_expected;
+      }
+      EXPECT_TRUE(IsClose(dl_result, sk4_expected)) << desc << " (SkM44)";
     }
-    EXPECT_TRUE(IsClose(dl_result, sk4_expected)) << desc << " (SkM44)";
   }
 }
 
@@ -468,6 +484,7 @@ TEST(DlTransformTest, CompareToSkia) {
   TransformSetup setups[] = {
       {
           "Identity",
+          kCanTestSkMatrix | kCanTestSkM44,
           []() { return DlTransform(); },
           []() { return SkMatrix(); },
           []() { return SkM44(); },
@@ -483,6 +500,7 @@ TEST(DlTransformTest, CompareToSkia) {
       },
       {
           "Translate(5, 10)",
+          kCanTestSkMatrix | kCanTestSkM44,
           []() { return DlTransform::MakeTranslate(5, 10); },
           []() { return SkMatrix::Translate(5, 10); },
           []() { return SkM44::Translate(5, 10); },
@@ -498,6 +516,7 @@ TEST(DlTransformTest, CompareToSkia) {
       },
       {
           "Scale(5, 10)",
+          kCanTestSkMatrix | kCanTestSkM44,
           []() { return DlTransform::MakeScale(5, 10); },
           []() { return SkMatrix::Scale(5, 10); },
           []() { return SkM44::Scale(5, 10); },
@@ -512,7 +531,9 @@ TEST(DlTransformTest, CompareToSkia) {
           [](SkM44& transform) { transform.postConcat(SkM44::Scale(5, 10)); },
       },
       {
+          // Default rotate methods on DlTransform which assume Z axis
           "Rotate(20 degrees)",
+          kCanTestSkMatrix | kCanTestSkM44,
           []() { return DlTransform::MakeRotate(DlDegrees(20)); },
           []() { return SkMatrix::RotateDeg(20); },
           []() {
@@ -534,115 +555,267 @@ TEST(DlTransformTest, CompareToSkia) {
             transform.postConcat(SkM44::Rotate({0, 0, 1}, 20 * M_PI / 180));
           },
       },
+      {
+          // Rotate methods on DlTransform which explicitly specify Z axis
+          "RotateZ(20 degrees)",
+          kCanTestSkMatrix | kCanTestSkM44,
+          []() { return DlTransform::MakeRotate(kDlAxis_Z, DlDegrees(20)); },
+          []() { return SkMatrix::RotateDeg(20); },
+          []() {
+            return SkM44::Rotate({0, 0, 1}, 20 * M_PI / 180);
+          },
+          [](DlTransform& transform) {
+            transform.SetRotate(kDlAxis_Z, DlDegrees(20));
+          },
+          [](SkMatrix& transform) { transform.setRotate(20); },
+          [](SkM44& transform) {
+            transform.setRotate({0, 0, 1}, 20 * M_PI / 180);
+          },
+          [](DlTransform& transform) {
+            transform.RotateInner(kDlAxis_Z, DlDegrees(20));
+          },
+          [](SkMatrix& transform) { transform.preRotate(20); },
+          [](SkM44& transform) {
+            transform.preConcat(SkM44::Rotate({0, 0, 1}, 20 * M_PI / 180));
+          },
+          [](DlTransform& transform) {
+            transform.RotateOuter(kDlAxis_Z, DlDegrees(20));
+          },
+          [](SkMatrix& transform) { transform.postRotate(20); },
+          [](SkM44& transform) {
+            transform.postConcat(SkM44::Rotate({0, 0, 1}, 20 * M_PI / 180));
+          },
+      },
+      {
+          "RotateX(20 degrees)",
+          kCanTestSkM44,
+          []() { return DlTransform::MakeRotate(kDlAxis_X, DlDegrees(20)); },
+          []() { return SkMatrix(); },  // Not executed
+          []() {
+            return SkM44::Rotate({1, 0, 0}, 20 * M_PI / 180);
+          },
+          [](DlTransform& transform) {
+            transform.SetRotate(kDlAxis_X, DlDegrees(20));
+          },
+          [](SkMatrix& transform) {},  // Not executed
+          [](SkM44& transform) {
+            transform.setRotate({1, 0, 0}, 20 * M_PI / 180);
+          },
+          [](DlTransform& transform) {
+            transform.RotateInner(kDlAxis_X, DlDegrees(20));
+          },
+          [](SkMatrix& transform) {},  // Not executed
+          [](SkM44& transform) {
+            transform.preConcat(SkM44::Rotate({1, 0, 0}, 20 * M_PI / 180));
+          },
+          [](DlTransform& transform) {
+            transform.RotateOuter(kDlAxis_X, DlDegrees(20));
+          },
+          [](SkMatrix& transform) {},  // Not executed
+          [](SkM44& transform) {
+            transform.postConcat(SkM44::Rotate({1, 0, 0}, 20 * M_PI / 180));
+          },
+      },
+      {
+          "RotateY(20 degrees)",
+          kCanTestSkM44,
+          []() { return DlTransform::MakeRotate(kDlAxis_Y, DlDegrees(20)); },
+          []() { return SkMatrix(); },  // Not executed
+          []() {
+            return SkM44::Rotate({0, 1, 0}, 20 * M_PI / 180);
+          },
+          [](DlTransform& transform) {
+            transform.SetRotate(kDlAxis_Y, DlDegrees(20));
+          },
+          [](SkMatrix& transform) {},  // Not executed
+          [](SkM44& transform) {
+            transform.setRotate({0, 1, 0}, 20 * M_PI / 180);
+          },
+          [](DlTransform& transform) {
+            transform.RotateInner(kDlAxis_Y, DlDegrees(20));
+          },
+          [](SkMatrix& transform) {},  // Not executed
+          [](SkM44& transform) {
+            transform.preConcat(SkM44::Rotate({0, 1, 0}, 20 * M_PI / 180));
+          },
+          [](DlTransform& transform) {
+            transform.RotateOuter(kDlAxis_Y, DlDegrees(20));
+          },
+          [](SkMatrix& transform) {},  // Not executed
+          [](SkM44& transform) {
+            transform.postConcat(SkM44::Rotate({0, 1, 0}, 20 * M_PI / 180));
+          },
+      },
+      {
+          "RotateZ(200 degrees)",
+          kCanTestSkMatrix | kCanTestSkM44,
+          []() { return DlTransform::MakeRotate(DlDegrees(200)); },
+          []() { return SkMatrix::RotateDeg(200); },
+          []() {
+            return SkM44::Rotate({0, 0, 1}, 200 * M_PI / 180);
+          },
+          [](DlTransform& transform) { transform.SetRotate(DlDegrees(200)); },
+          [](SkMatrix& transform) { transform.setRotate(200); },
+          [](SkM44& transform) {
+            transform.setRotate({0, 0, 1}, 200 * M_PI / 180);
+          },
+          [](DlTransform& transform) { transform.RotateInner(DlDegrees(200)); },
+          [](SkMatrix& transform) { transform.preRotate(200); },
+          [](SkM44& transform) {
+            transform.preConcat(SkM44::Rotate({0, 0, 1}, 200 * M_PI / 180));
+          },
+          [](DlTransform& transform) { transform.RotateOuter(DlDegrees(200)); },
+          [](SkMatrix& transform) { transform.postRotate(200); },
+          [](SkM44& transform) {
+            transform.postConcat(SkM44::Rotate({0, 0, 1}, 200 * M_PI / 180));
+          },
+      },
   };
   int count = sizeof(setups) / sizeof(setups[0]);
   for (int i = 0; i < count; i++) {
     TransformSetup& setup1 = setups[i];
     std::string desc = setup1.name;
+    int can_test = setup1.can_test;
     {
       DlTransform dlt = setup1.DlCreate();
-      SkMatrix skt = setup1.SkCreate();
-      SkM44 sk4t = setup1.Sk44Create();
-      EXPECT_TRUE(IsClose(dlt, skt)) << desc << " (SkMatrix)";
-      EXPECT_TRUE(IsClose(dlt, sk4t)) << desc << " (SkM44)";
+      if (can_test & kCanTestSkMatrix) {
+        SkMatrix skt = setup1.SkCreate();
+        EXPECT_TRUE(IsClose(dlt, skt)) << desc << " (SkMatrix)";
+      }
+      if (can_test & kCanTestSkM44) {
+        SkM44 sk4t = setup1.Sk44Create();
+        EXPECT_TRUE(IsClose(dlt, sk4t)) << desc << " (SkM44)";
+      }
     }
     {
       DlTransform dlt;
       setup1.DlSet(dlt);
-      SkMatrix skt;
-      setup1.SkSet(skt);
-      SkM44 sk4t;
-      setup1.Sk44Set(sk4t);
-      EXPECT_TRUE(IsClose(dlt, skt)) << desc << " (SkMatrix)";
-      EXPECT_TRUE(IsClose(dlt, sk4t)) << desc << " (SkM44)";
+      if (can_test & kCanTestSkMatrix) {
+        SkMatrix skt;
+        setup1.SkSet(skt);
+        EXPECT_TRUE(IsClose(dlt, skt)) << desc << " (SkMatrix)";
+      }
+      if (can_test & kCanTestSkM44) {
+        SkM44 sk4t;
+        setup1.Sk44Set(sk4t);
+        EXPECT_TRUE(IsClose(dlt, sk4t)) << desc << " (SkM44)";
+      }
     }
     {
       DlTransform dlt;
       setup1.DlApplyInner(dlt);
-      SkMatrix skt;
-      setup1.SkApplyInner(skt);
-      SkM44 sk4t;
-      setup1.Sk44ApplyInner(sk4t);
-      EXPECT_TRUE(IsClose(dlt, skt)) << desc << " (SkMatrix)";
-      EXPECT_TRUE(IsClose(dlt, sk4t)) << desc << " (SkM44)";
+      if (can_test & kCanTestSkMatrix) {
+        SkMatrix skt;
+        setup1.SkApplyInner(skt);
+        EXPECT_TRUE(IsClose(dlt, skt)) << desc << " (SkMatrix)";
+      }
+      if (can_test & kCanTestSkM44) {
+        SkM44 sk4t;
+        setup1.Sk44ApplyInner(sk4t);
+        EXPECT_TRUE(IsClose(dlt, sk4t)) << desc << " (SkM44)";
+      }
     }
     {
       DlTransform dlt;
       setup1.DlApplyOuter(dlt);
-      SkMatrix skt;
-      setup1.SkApplyOuter(skt);
-      SkM44 sk4t;
-      setup1.Sk44ApplyOuter(sk4t);
-      EXPECT_TRUE(IsClose(dlt, skt)) << desc << " (SkMatrix)";
-      EXPECT_TRUE(IsClose(dlt, sk4t)) << desc << " (SkM44)";
+      if (can_test & kCanTestSkMatrix) {
+        SkMatrix skt;
+        setup1.SkApplyOuter(skt);
+        EXPECT_TRUE(IsClose(dlt, skt)) << desc << " (SkMatrix)";
+      }
+      if (can_test & kCanTestSkM44) {
+        SkM44 sk4t;
+        setup1.Sk44ApplyOuter(sk4t);
+        EXPECT_TRUE(IsClose(dlt, sk4t)) << desc << " (SkM44)";
+      }
     }
+    TestChain({&setup1}, setup1.DlCreate(), desc);
     for (int j = 0; j < count; j++) {
       TransformSetup setup2 = setups[j];
       desc = setup1.name + ", " + setup2.name;
+      can_test = setup1.can_test & setup2.can_test;
+      FML_DCHECK(can_test != 0);
       {
         DlTransform dlt;
         setup1.DlApplyInner(dlt);
         setup2.DlApplyInner(dlt);
-        SkMatrix skt;
-        setup1.SkApplyInner(skt);
-        setup2.SkApplyInner(skt);
-        SkM44 sk4t;
-        setup1.Sk44ApplyInner(sk4t);
-        setup2.Sk44ApplyInner(sk4t);
-        EXPECT_TRUE(IsClose(dlt, skt)) << desc << " (SkMatrix)";
-        EXPECT_TRUE(IsClose(dlt, sk4t)) << desc << " (SkM44)";
-        TestChain({&setup2, &setup1}, dlt, skt, sk4t, desc);
+        if (can_test & kCanTestSkMatrix) {
+          SkMatrix skt;
+          setup1.SkApplyInner(skt);
+          setup2.SkApplyInner(skt);
+          EXPECT_TRUE(IsClose(dlt, skt)) << desc << " (SkMatrix)";
+        }
+        if (can_test & kCanTestSkM44) {
+          SkM44 sk4t;
+          setup1.Sk44ApplyInner(sk4t);
+          setup2.Sk44ApplyInner(sk4t);
+          EXPECT_TRUE(IsClose(dlt, sk4t)) << desc << " (SkM44)";
+        }
+        TestChain({&setup2, &setup1}, dlt, desc);
       }
       {
         DlTransform dlt;
         setup1.DlApplyOuter(dlt);
         setup2.DlApplyOuter(dlt);
-        SkMatrix skt;
-        setup1.SkApplyOuter(skt);
-        setup2.SkApplyOuter(skt);
-        SkM44 sk4t;
-        setup1.Sk44ApplyOuter(sk4t);
-        setup2.Sk44ApplyOuter(sk4t);
-        EXPECT_TRUE(IsClose(dlt, skt)) << desc << " (SkMatrix)";
-        EXPECT_TRUE(IsClose(dlt, sk4t)) << desc << " (SkM44)";
-        TestChain({&setup1, &setup2}, dlt, skt, sk4t, desc);
+        if (can_test & kCanTestSkMatrix) {
+          SkMatrix skt;
+          setup1.SkApplyOuter(skt);
+          setup2.SkApplyOuter(skt);
+          EXPECT_TRUE(IsClose(dlt, skt)) << desc << " (SkMatrix)";
+        }
+        if (can_test & kCanTestSkM44) {
+          SkM44 sk4t;
+          setup1.Sk44ApplyOuter(sk4t);
+          setup2.Sk44ApplyOuter(sk4t);
+          EXPECT_TRUE(IsClose(dlt, sk4t)) << desc << " (SkM44)";
+        }
+        TestChain({&setup1, &setup2}, dlt, desc);
       }
       for (int k = 0; k < count; k++) {
         TransformSetup setup3 = setups[k];
         desc = setup1.name + ", " + setup2.name + ", " + setup3.name;
+        can_test = setup1.can_test & setup2.can_test & setup3.can_test;
         {
           DlTransform dlt;
           setup1.DlApplyInner(dlt);
           setup2.DlApplyInner(dlt);
           setup3.DlApplyInner(dlt);
-          SkMatrix skt;
-          setup1.SkApplyInner(skt);
-          setup2.SkApplyInner(skt);
-          setup3.SkApplyInner(skt);
-          SkM44 sk4t;
-          setup1.Sk44ApplyInner(sk4t);
-          setup2.Sk44ApplyInner(sk4t);
-          setup3.Sk44ApplyInner(sk4t);
-          EXPECT_TRUE(IsClose(dlt, skt)) << desc << " (SkMatrix)";
-          EXPECT_TRUE(IsClose(dlt, sk4t)) << desc << " (SkM44)";
-          TestChain({&setup3, &setup2, &setup1}, dlt, skt, sk4t, desc);
+          if (can_test & kCanTestSkMatrix) {
+            SkMatrix skt;
+            setup1.SkApplyInner(skt);
+            setup2.SkApplyInner(skt);
+            setup3.SkApplyInner(skt);
+            EXPECT_TRUE(IsClose(dlt, skt)) << desc << " (SkMatrix)";
+          }
+          if (can_test & kCanTestSkM44) {
+            SkM44 sk4t;
+            setup1.Sk44ApplyInner(sk4t);
+            setup2.Sk44ApplyInner(sk4t);
+            setup3.Sk44ApplyInner(sk4t);
+            EXPECT_TRUE(IsClose(dlt, sk4t)) << desc << " (SkM44)";
+          }
+          TestChain({&setup3, &setup2, &setup1}, dlt, desc);
         }
         {
           DlTransform dlt;
           setup1.DlApplyOuter(dlt);
           setup2.DlApplyOuter(dlt);
           setup3.DlApplyOuter(dlt);
-          SkMatrix skt;
-          setup1.SkApplyOuter(skt);
-          setup2.SkApplyOuter(skt);
-          setup3.SkApplyOuter(skt);
-          SkM44 sk4t;
-          setup1.Sk44ApplyOuter(sk4t);
-          setup2.Sk44ApplyOuter(sk4t);
-          setup3.Sk44ApplyOuter(sk4t);
-          EXPECT_TRUE(IsClose(dlt, skt)) << desc << " (SkMatrix)";
-          EXPECT_TRUE(IsClose(dlt, sk4t)) << desc << " (SkM44)";
-          TestChain({&setup1, &setup2, &setup3}, dlt, skt, sk4t, desc);
+          if (can_test & kCanTestSkMatrix) {
+            SkMatrix skt;
+            setup1.SkApplyOuter(skt);
+            setup2.SkApplyOuter(skt);
+            setup3.SkApplyOuter(skt);
+            EXPECT_TRUE(IsClose(dlt, skt)) << desc << " (SkMatrix)";
+          }
+          if (can_test & kCanTestSkM44) {
+            SkM44 sk4t;
+            setup1.Sk44ApplyOuter(sk4t);
+            setup2.Sk44ApplyOuter(sk4t);
+            setup3.Sk44ApplyOuter(sk4t);
+            EXPECT_TRUE(IsClose(dlt, sk4t)) << desc << " (SkM44)";
+          }
+          TestChain({&setup1, &setup2, &setup3}, dlt, desc);
         }
       }
     }

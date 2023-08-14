@@ -13,46 +13,54 @@
 
 namespace flutter {
 
+// The minimum practical value for a homogenous coordinate before
+// the point is considered clipped by the viewing plane.
+static constexpr DlScalar kMinimumHomogenous = 1.0 / (1 << 14);
+
 template <typename T>
-struct DlTHomogenous2D {
+struct DlTHomogenous3D {
  private:
+  static constexpr T zero_ = static_cast<T>(0);
+  static constexpr T one_ = static_cast<T>(1);
+
   T x_;
   T y_;
+  T z_;
   T w_;
 
  public:
-  // The minimum practical value for a homogenous coordinate before
-  // the point is considered clipped by the viewing plane.
-  static constexpr DlScalar kMinimumHomogenous = 1.0 / (1 << 14);
+  constexpr DlTHomogenous3D() : DlTHomogenous3D(0, 0) {}
+  constexpr DlTHomogenous3D(T x, T y, T z = zero_, T w = one_)
+      : x_(x), y_(y), z_(z), w_(w) {}
+  constexpr explicit DlTHomogenous3D(const DlTPoint<T> p)
+      : DlTHomogenous3D(p.x(), p.y()) {}
 
-  constexpr DlTHomogenous2D() : DlTHomogenous2D(0, 0, 0) {}
-  constexpr DlTHomogenous2D(T x, T y) : x_(x), y_(y), w_(1.0f) {}
-  constexpr DlTHomogenous2D(DlTPoint<T> p) : x_(p.x()), y_(p.y()), w_(1.0f) {}
-  constexpr DlTHomogenous2D(T x, T y, T w) : x_(x), y_(y), w_(w) {}
+  inline T x() const { return x_; }
+  inline T y() const { return y_; }
+  inline T z() const { return z_; }
+  inline T w() const { return w_; }
 
-  explicit constexpr DlTHomogenous2D(const DlTPoint<T>& p)
-      : DlTHomogenous2D(p.x, p.y) {}
-
-  inline T x() { return x_; }
-  inline T y() { return y_; }
-  inline T w() { return w_; }
-
-  DlTPoint<T> normalize() const {
-    DlScalar inv_w = DlScalar_IsNearlyZero(w_) ? 1.0f : 1.0f / w_;
+  [[nodiscard]] DlTPoint<T> normalizedToPoint() const {
+    T inv_w = DlScalar_IsNearlyZero(w_) ? one_ : one_ / w_;
     return {x_ * inv_w, y_ * inv_w};
   }
 
-  bool operator==(const DlTHomogenous2D& p) const {
-    return x_ == p.x_ && y_ == p.y_ && w_ == p.w_;
+  [[nodiscard]] DlTHomogenous3D normalized() const {
+    T inv_w = DlScalar_IsNearlyZero(w_) ? one_ : one_ / w_;
+    return {x_ * inv_w, y_ * inv_w, z_ * inv_w};
   }
-  bool operator!=(const DlTHomogenous2D& p) const { return !(*this == p); }
 
-  bool is_finite() const { return DlScalars_AreAllFinite(&x_, 3); }
+  bool operator==(const DlTHomogenous3D& p) const {
+    return x_ == p.x_ && y_ == p.y_ && z_ == p.z_ && w_ == p.w_;
+  }
+  bool operator!=(const DlTHomogenous3D& p) const { return !(*this == p); }
+
+  bool is_finite() const { return DlScalars_AreAllFinite(&x_, 4); }
 
   bool is_unclipped() const { return w_ >= kMinimumHomogenous; }
 };
 
-using DlFHomogenous2D = DlTHomogenous2D<DlScalar>;
+using DlFHomogenous3D = DlTHomogenous3D<DlScalar>;
 
 }  // namespace flutter
 
