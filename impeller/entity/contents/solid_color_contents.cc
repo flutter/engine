@@ -41,22 +41,13 @@ std::optional<Rect> SolidColorContents::GetCoverage(
   return geometry->GetCoverage(entity.GetTransformation());
 };
 
-bool SolidColorContents::ShouldRender(
-    const Entity& entity,
-    const std::optional<Rect>& stencil_coverage) const {
-  if (!stencil_coverage.has_value()) {
-    return false;
-  }
-  return Contents::ShouldRender(entity, stencil_coverage);
-}
-
 bool SolidColorContents::Render(const ContentContext& renderer,
                                 const Entity& entity,
                                 RenderPass& pass) const {
   using VS = SolidFillPipeline::VertexShader;
 
   Command cmd;
-  cmd.label = "Solid Fill";
+  DEBUG_COMMAND_INFO(cmd, "Solid Fill");
   cmd.stencil_reference = entity.GetStencilDepth();
 
   auto geometry_result =

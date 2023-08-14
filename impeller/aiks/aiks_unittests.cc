@@ -419,6 +419,119 @@ TEST_P(AiksTest, CanRenderLinearGradientDecalWithColorFilter) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+static void CanRenderLinearGradientWithDithering(AiksTest* aiks_test,
+                                                 bool use_dithering) {
+  Canvas canvas;
+  Paint paint;
+  canvas.Translate({100.0, 100.0, 0});
+
+  // 0xffcccccc --> 0xff333333, taken from
+  // https://github.com/flutter/flutter/issues/118073#issue-1521699748
+  std::vector<Color> colors = {Color{0.8, 0.8, 0.8, 1.0},
+                               Color{0.2, 0.2, 0.2, 1.0}};
+  std::vector<Scalar> stops = {0.0, 1.0};
+
+  paint.color_source = ColorSource::MakeLinearGradient(
+      {0, 0}, {800, 500}, std::move(colors), std::move(stops),
+      Entity::TileMode::kClamp, {});
+  paint.dither = use_dithering;
+  canvas.DrawRect({0, 0, 800, 500}, paint);
+  ASSERT_TRUE(aiks_test->OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderLinearGradientWithDitheringDisabled) {
+  CanRenderLinearGradientWithDithering(this, false);
+}
+
+TEST_P(AiksTest, CanRenderLinearGradientWithDitheringEnabled) {
+  CanRenderLinearGradientWithDithering(this, true);
+}  // namespace
+
+static void CanRenderRadialGradientWithDithering(AiksTest* aiks_test,
+                                                 bool use_dithering) {
+  Canvas canvas;
+  Paint paint;
+  canvas.Translate({100.0, 100.0, 0});
+
+  // #FFF -> #000
+  std::vector<Color> colors = {Color{1.0, 1.0, 1.0, 1.0},
+                               Color{0.0, 0.0, 0.0, 1.0}};
+  std::vector<Scalar> stops = {0.0, 1.0};
+
+  paint.color_source = ColorSource::MakeRadialGradient(
+      {600, 600}, 600, std::move(colors), std::move(stops),
+      Entity::TileMode::kClamp, {});
+  paint.dither = use_dithering;
+  canvas.DrawRect({0, 0, 1200, 1200}, paint);
+  ASSERT_TRUE(aiks_test->OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderRadialGradientWithDitheringDisabled) {
+  CanRenderRadialGradientWithDithering(this, false);
+}
+
+TEST_P(AiksTest, CanRenderRadialGradientWithDitheringEnabled) {
+  CanRenderRadialGradientWithDithering(this, true);
+}
+
+static void CanRenderSweepGradientWithDithering(AiksTest* aiks_test,
+                                                bool use_dithering) {
+  Canvas canvas;
+  canvas.Scale(aiks_test->GetContentScale());
+  Paint paint;
+  canvas.Translate({100.0, 100.0, 0});
+
+  // #FFF -> #000
+  std::vector<Color> colors = {Color{1.0, 1.0, 1.0, 1.0},
+                               Color{0.0, 0.0, 0.0, 1.0}};
+  std::vector<Scalar> stops = {0.0, 1.0};
+
+  paint.color_source = ColorSource::MakeSweepGradient(
+      {100, 100}, Degrees(45), Degrees(135), std::move(colors),
+      std::move(stops), Entity::TileMode::kMirror, {});
+  paint.dither = use_dithering;
+
+  canvas.DrawRect({0, 0, 600, 600}, paint);
+  ASSERT_TRUE(aiks_test->OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderSweepGradientWithDitheringDisabled) {
+  CanRenderSweepGradientWithDithering(this, false);
+}
+
+TEST_P(AiksTest, CanRenderSweepGradientWithDitheringEnabled) {
+  CanRenderSweepGradientWithDithering(this, true);
+}
+
+static void CanRenderConicalGradientWithDithering(AiksTest* aiks_test,
+                                                  bool use_dithering) {
+  Canvas canvas;
+  canvas.Scale(aiks_test->GetContentScale());
+  Paint paint;
+  canvas.Translate({100.0, 100.0, 0});
+
+  // #FFF -> #000
+  std::vector<Color> colors = {Color{1.0, 1.0, 1.0, 1.0},
+                               Color{0.0, 0.0, 0.0, 1.0}};
+  std::vector<Scalar> stops = {0.0, 1.0};
+
+  paint.color_source = ColorSource::MakeConicalGradient(
+      {100, 100}, 100, std::move(colors), std::move(stops), {0, 1}, 0,
+      Entity::TileMode::kMirror, {});
+  paint.dither = use_dithering;
+
+  canvas.DrawRect({0, 0, 600, 600}, paint);
+  ASSERT_TRUE(aiks_test->OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderConicalGradientWithDitheringDisabled) {
+  CanRenderConicalGradientWithDithering(this, false);
+}
+
+TEST_P(AiksTest, CanRenderConicalGradientWithDitheringEnabled) {
+  CanRenderConicalGradientWithDithering(this, true);
+}
+
 namespace {
 void CanRenderLinearGradientWithOverlappingStops(AiksTest* aiks_test,
                                                  Entity::TileMode tile_mode) {
@@ -2149,6 +2262,23 @@ TEST_P(AiksTest, CollapsedDrawPaintInSubpass) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, CollapsedDrawPaintInSubpassBackdropFilter) {
+  // Bug: https://github.com/flutter/flutter/issues/131576
+  Canvas canvas;
+  canvas.DrawPaint(
+      {.color = Color::Yellow(), .blend_mode = BlendMode::kSource});
+  canvas.SaveLayer({}, {},
+                   [](const FilterInput::Ref& input,
+                      const Matrix& effect_transform, bool is_subpass) {
+                     return FilterContents::MakeGaussianBlur(input, Sigma(20.0),
+                                                             Sigma(20.0));
+                   });
+  canvas.DrawPaint(
+      {.color = Color::CornflowerBlue(), .blend_mode = BlendMode::kSourceOver});
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, ForegroundBlendSubpassCollapseOptimization) {
   Canvas canvas;
 
@@ -2927,6 +3057,38 @@ TEST_P(AiksTest, DrawPictureWithText) {
       GetContext(), canvas,
       "the quick brown fox jumped over the smaller lazy dog!.?",
       "Roboto-Regular.ttf"));
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, MatrixSaveLayerFilter) {
+  Canvas canvas;
+  canvas.DrawPaint({.color = Color::Black()});
+  canvas.SaveLayer({}, std::nullopt);
+  {
+    canvas.DrawCircle(Point(200, 200), 100,
+                      {.color = Color::Green().WithAlpha(0.5),
+                       .blend_mode = BlendMode::kPlus});
+    // Should render a second circle, centered on the bottom-right-most edge of
+    // the circle.
+    canvas.SaveLayer({.image_filter =
+                          [](const FilterInput::Ref& input,
+                             const Matrix& effect_transform, bool is_subpass) {
+                            Matrix matrix =
+                                Matrix::MakeTranslation(
+                                    Vector2(1, 1) * (100 + 100 * k1OverSqrt2)) *
+                                Matrix::MakeScale(Vector2(1, 1) * 0.2) *
+                                Matrix::MakeTranslation(Vector2(-100, -100));
+                            return FilterContents::MakeMatrixFilter(
+                                input, matrix, {}, Matrix(), true);
+                          }},
+                     std::nullopt);
+    canvas.DrawCircle(Point(200, 200), 100,
+                      {.color = Color::Green().WithAlpha(0.5),
+                       .blend_mode = BlendMode::kPlus});
+    canvas.Restore();
+  }
+  canvas.Restore();
+
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 

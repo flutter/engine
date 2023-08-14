@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// FLUTTER_NOLINT: https://github.com/flutter/flutter/issues/132129
+
 #include "impeller/entity/entity_pass.h"
 
 #include <memory>
@@ -254,9 +256,8 @@ bool EntityPass::Render(ContentContext& renderer,
     return false;
   }
 
-  renderer.SetLazyGlyphAtlas(std::make_shared<LazyGlyphAtlas>());
   fml::ScopedCleanupClosure reset_lazy_glyph_atlas(
-      [&renderer]() { renderer.SetLazyGlyphAtlas(nullptr); });
+      [&renderer]() { renderer.GetLazyGlyphAtlas()->ResetTextFrames(); });
 
   IterateAllEntities([lazy_glyph_atlas =
                           renderer.GetLazyGlyphAtlas()](const Entity& entity) {
@@ -470,9 +471,9 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       auto texture = pass_context.GetTexture();
       // Render the backdrop texture before any of the pass elements.
       const auto& proc = subpass->backdrop_filter_proc_;
-      subpass_backdrop_filter_contents =
-          proc(FilterInput::Make(std::move(texture)), subpass->xformation_,
-               /*is_subpass*/ true);
+      subpass_backdrop_filter_contents = proc(
+          FilterInput::Make(std::move(texture)), subpass->xformation_.Basis(),
+          /*is_subpass*/ true);
 
       // The subpass will need to read from the current pass texture when
       // rendering the backdrop, so if there's an active pass, end it prior to
@@ -749,18 +750,19 @@ bool EntityPass::OnRender(
     render_element(backdrop_entity);
   }
 
-  bool is_collapsing_clear_colors = true;
+  bool is_collapsing_clear_colors = !collapsed_parent_pass &&
+                                    // Backdrop filters act as a entity before
+                                    // everything and disrupt the optimization.
+                                    !backdrop_filter_proc_;
   for (const auto& element : elements_) {
     // Skip elements that are incorporated into the clear color.
-    if (!collapsed_parent_pass) {
-      if (is_collapsing_clear_colors) {
-        auto [entity_color, _] =
-            ElementAsBackgroundColor(element, root_pass_size);
-        if (entity_color.has_value()) {
-          continue;
-        }
-        is_collapsing_clear_colors = false;
+    if (is_collapsing_clear_colors) {
+      auto [entity_color, _] =
+          ElementAsBackgroundColor(element, root_pass_size);
+      if (entity_color.has_value()) {
+        continue;
       }
+      is_collapsing_clear_colors = false;
     }
 
     EntityResult result =

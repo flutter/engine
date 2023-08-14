@@ -24,6 +24,8 @@ impeller_component("vulkan") {
   sources = [
     "allocator_vk.cc",
     "allocator_vk.h",
+    "android_hardware_buffer_texture_source_vk.cc",
+    "android_hardware_buffer_texture_source_vk.h",
     "barrier_vk.cc",
     "barrier_vk.h",
     "blit_command_vk.cc",
@@ -79,6 +81,8 @@ impeller_component("vulkan") {
     "shader_library_vk.h",
     "shared_object_vk.cc",
     "shared_object_vk.h",
+    "surface_context_vk.cc",
+    "surface_context_vk.h",
     "surface_vk.cc",
     "surface_vk.h",
     "swapchain_image_vk.cc",

@@ -32,12 +32,10 @@ void TextContents::SetTextFrame(const TextFrame& frame) {
 std::shared_ptr<GlyphAtlas> TextContents::ResolveAtlas(
     GlyphAtlas::Type type,
     const std::shared_ptr<LazyGlyphAtlas>& lazy_atlas,
-    std::shared_ptr<GlyphAtlasContext> atlas_context,
     std::shared_ptr<Context> context) const {
   FML_DCHECK(lazy_atlas);
   if (lazy_atlas) {
-    return lazy_atlas->CreateOrGetGlyphAtlas(type, std::move(atlas_context),
-                                             std::move(context));
+    return lazy_atlas->CreateOrGetGlyphAtlas(type, std::move(context));
   }
 
   return nullptr;
@@ -92,8 +90,7 @@ bool TextContents::Render(const ContentContext& renderer,
 
   auto type = frame_.GetAtlasType();
   auto atlas =
-      ResolveAtlas(type, renderer.GetLazyGlyphAtlas(),
-                   renderer.GetGlyphAtlasContext(type), renderer.GetContext());
+      ResolveAtlas(type, renderer.GetLazyGlyphAtlas(), renderer.GetContext());
 
   if (!atlas || !atlas->IsValid()) {
     VALIDATION_LOG << "Cannot render glyphs without prepared atlas.";
@@ -102,7 +99,7 @@ bool TextContents::Render(const ContentContext& renderer,
 
   // Information shared by all glyph draw calls.
   Command cmd;
-  cmd.label = "TextFrame";
+  DEBUG_COMMAND_INFO(cmd, "TextFrame");
   auto opts = OptionsFromPassAndEntity(pass, entity);
   opts.primitive_type = PrimitiveType::kTriangle;
   if (type == GlyphAtlas::Type::kAlphaBitmap) {
@@ -215,7 +212,7 @@ bool TextContents::Render(const ContentContext& renderer,
       .index_type = IndexType::kNone,
   });
 
-  return pass.AddCommand(cmd);
+  return pass.AddCommand(std::move(cmd));
 }
 
 }  // namespace impeller

@@ -8,6 +8,7 @@
 #include <optional>
 #include <unordered_map>
 
+#include "flutter/fml/build_config.h"
 #include "flutter/fml/hash_combine.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
@@ -54,6 +55,7 @@
 #include "impeller/entity/sweep_gradient_fill.frag.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
+#include "impeller/entity/texture_fill_external.frag.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
 #include "impeller/entity/uv.comp.h"
 #include "impeller/entity/vertices.frag.h"
@@ -144,6 +146,8 @@ using RRectBlurPipeline =
 using BlendPipeline = RenderPipelineT<BlendVertexShader, BlendFragmentShader>;
 using TexturePipeline =
     RenderPipelineT<TextureFillVertexShader, TextureFillFragmentShader>;
+using TextureExternalPipeline =
+    RenderPipelineT<TextureFillVertexShader, TextureFillExternalFragmentShader>;
 using PositionUVPipeline =
     RenderPipelineT<TextureFillVertexShader, TiledTextureFillFragmentShader>;
 using TiledTexturePipeline =
@@ -414,6 +418,11 @@ class ContentContext {
     return GetPipeline(texture_pipelines_, opts);
   }
 
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetTextureExternalPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(texture_external_pipelines_, opts);
+  }
+
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPositionUVPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(position_uv_pipelines_, opts);
@@ -681,9 +690,6 @@ class ContentContext {
 
   std::shared_ptr<Context> GetContext() const;
 
-  std::shared_ptr<GlyphAtlasContext> GetGlyphAtlasContext(
-      GlyphAtlas::Type type) const;
-
   const Capabilities& GetDeviceCapabilities() const;
 
   void SetWireframe(bool wireframe);
@@ -697,11 +703,6 @@ class ContentContext {
                                        ISize texture_size,
                                        const SubpassCallback& subpass_callback,
                                        bool msaa_enabled = true) const;
-
-  void SetLazyGlyphAtlas(
-      const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas) {
-    lazy_glyph_atlas_ = lazy_glyph_atlas;
-  }
 
   std::shared_ptr<LazyGlyphAtlas> GetLazyGlyphAtlas() const {
     return lazy_glyph_atlas_;
@@ -742,6 +743,7 @@ class ContentContext {
   mutable Variants<RRectBlurPipeline> rrect_blur_pipelines_;
   mutable Variants<BlendPipeline> texture_blend_pipelines_;
   mutable Variants<TexturePipeline> texture_pipelines_;
+  mutable Variants<TextureExternalPipeline> texture_external_pipelines_;
   mutable Variants<PositionUVPipeline> position_uv_pipelines_;
   mutable Variants<TiledTexturePipeline> tiled_texture_pipelines_;
   mutable Variants<GaussianBlurAlphaDecalPipeline>
@@ -862,8 +864,6 @@ class ContentContext {
 
   bool is_valid_ = false;
   std::shared_ptr<Tessellator> tessellator_;
-  std::shared_ptr<GlyphAtlasContext> alpha_glyph_atlas_context_;
-  std::shared_ptr<GlyphAtlasContext> color_glyph_atlas_context_;
   std::shared_ptr<scene::SceneContext> scene_context_;
   bool wireframe_ = false;
 
