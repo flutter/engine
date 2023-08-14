@@ -247,7 +247,7 @@ bool AtlasContents::Render(const ContentContext& renderer,
     auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
     Command cmd;
-    cmd.label = SPrintF("DrawAtlas Blend (%s)", BlendModeToString(blend_mode_));
+    DEBUG_COMMAND_INFO(cmd, SPrintF("DrawAtlas Blend (%s)", BlendModeToString(blend_mode_)));
     cmd.BindVertices(vtx_buffer);
     cmd.stencil_reference = entity.GetStencilDepth();
     auto options = OptionsFromPass(pass);
@@ -287,7 +287,7 @@ bool AtlasContents::Render(const ContentContext& renderer,
     auto uniform_view = host_buffer.EmplaceUniform(frame_info);
     VS::BindFrameInfo(cmd, uniform_view);
 
-    return pass.AddCommand(cmd);
+    return pass.AddCommand(std::move(cmd));
   }
 
   // Advanced blends.
