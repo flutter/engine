@@ -2748,6 +2748,7 @@ ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterApp
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate_Internal.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppLifecycleDelegate.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppLifecycleDelegateTest.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppLifecycleDelegate_Internal.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterChannelKeyResponder.h + ../../../flutter/LICENSE
@@ -5493,6 +5494,7 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDe
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppLifecycleDelegate.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppLifecycleDelegateTest.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppLifecycleDelegate_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterChannelKeyResponder.h
