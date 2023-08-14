@@ -128,6 +128,7 @@
 ../../../flutter/impeller/compiler/README.md
 ../../../flutter/impeller/compiler/compiler_unittests.cc
 ../../../flutter/impeller/compiler/switches_unittests.cc
+../../../flutter/impeller/core/allocator_unittests.cc
 ../../../flutter/impeller/display_list/dl_unittests.cc
 ../../../flutter/impeller/display_list/skia_conversions_unittests.cc
 ../../../flutter/impeller/docs
