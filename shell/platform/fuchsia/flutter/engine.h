@@ -14,8 +14,6 @@
 #include <fuchsia/ui/views/cpp/fidl.h>
 #include <lib/async-loop/cpp/loop.h>
 #include <lib/sys/cpp/service_directory.h>
-#include <lib/ui/scenic/cpp/id.h>
-#include <lib/ui/scenic/cpp/view_ref_pair.h>
 
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/surface.h"
@@ -55,12 +53,12 @@ class Engine final : public fuchsia::memorypressure::Watcher {
          std::shared_ptr<sys::ServiceDirectory> runner_services,
          flutter::Settings settings,
          fuchsia::ui::views::ViewCreationToken view_creation_token,
-         scenic::ViewRefPair view_ref_pair,
+         std::pair<fuchsia::ui::views::ViewRefControl,
+                   fuchsia::ui::views::ViewRef> view_ref_pair,
          UniqueFDIONS fdio_ns,
          fidl::InterfaceRequest<fuchsia::io::Directory> directory_request,
          FlutterRunnerProductConfiguration product_config,
-         const std::vector<std::string>& dart_entrypoint_args,
-         bool for_v1_component);
+         const std::vector<std::string>& dart_entrypoint_args);
 
   ~Engine();
 
@@ -74,15 +72,15 @@ class Engine final : public fuchsia::memorypressure::Watcher {
 
  private:
   void Initialize(
-      scenic::ViewRefPair view_ref_pair,
+      std::pair<fuchsia::ui::views::ViewRefControl, fuchsia::ui::views::ViewRef>
+          view_ref_pair,
       std::shared_ptr<sys::ServiceDirectory> svc,
       std::shared_ptr<sys::ServiceDirectory> runner_services,
       flutter::Settings settings,
       UniqueFDIONS fdio_ns,
       fidl::InterfaceRequest<fuchsia::io::Directory> directory_request,
       FlutterRunnerProductConfiguration product_config,
-      const std::vector<std::string>& dart_entrypoint_args,
-      bool for_v1_component);
+      const std::vector<std::string>& dart_entrypoint_args);
 
   static void WarmupSkps(
       fml::BasicTaskRunner* concurrent_task_runner,
