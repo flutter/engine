@@ -325,16 +325,19 @@ class FlutterView {
   ///  * [MediaQuery.of], a simpler mechanism to access this data.
   List<DisplayFeature> get displayFeatures => _viewConfiguration.displayFeatures;
 
-  /// Updates the view's rendering on the GPU with the newly provided [Scene].
+  /// Deprecated. Will be removed in a future version of Flutter.
   ///
-  /// This function must be called within the scope of the
-  /// [PlatformDispatcher.onBeginFrame] or [PlatformDispatcher.onDrawFrame]
-  /// callbacks being invoked.
+  /// Uploads this view's rendering on the GPU with the newly provided
+  /// [Scene].
   ///
-  /// If this function is called a second time during a single
-  /// [PlatformDispatcher.onBeginFrame]/[PlatformDispatcher.onDrawFrame]
-  /// callback sequence or called outside the scope of those callbacks, the call
-  /// will be ignored.
+  /// This method can only be used to upload one view's rendering per frame. To
+  /// upload multiple views per frame, use [PlatformDispatcher.renderScenes].
+  ///
+  /// This function or [PlatformDispatcher.renderScenes] can only be called once
+  /// after a [PlatformDispatcher.scheduleFrame]. If this method or
+  /// [PlatformDispatcher.renderScenes] is called a second time after
+  /// [PlatformDispatcher.scheduleFrame] (or is called before the first
+  /// [PlatformDispatcher.scheduleFrame]), the call will be ignored.
   ///
   /// To record graphical operations, first create a [PictureRecorder], then
   /// construct a [Canvas], passing that [PictureRecorder] to its constructor.
@@ -353,13 +356,12 @@ class FlutterView {
   ///   scheduling of frames.
   /// * [RendererBinding], the Flutter framework class which manages layout and
   ///   painting.
-  // TODO(dkwingsmt): Deprecation message
   @Deprecated(
     'Use PlatformDispatcher.renderScenes instead. '
   )
   void render(Scene scene) {
-    final Map<int, Scene> scenes = <int, Scene>{};
-    scenes[viewId] = scene;
+    final Map<FlutterView, Scene> scenes = <FlutterView, Scene>{};
+    scenes[this] = scene;
     PlatformDispatcher.instance.renderScenes(scenes);
   }
 

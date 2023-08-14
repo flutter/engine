@@ -63,6 +63,9 @@ typedef _SetNeedsReportTimingsFunc = void Function(bool value);
 /// compilation errors or process terminating errors.
 typedef ErrorCallback = bool Function(Object exception, StackTrace stackTrace);
 
+/// Signature for [PlatformDispatcher.debugRenderScenesOverride].
+typedef RenderScenesCallback = void Function(List<int> viewIds, List<Scene> scenes);
+
 // A gesture setting value that indicates it has not been set by the engine.
 const double _kUnsetGestureSetting = -1.0;
 
@@ -354,18 +357,56 @@ class PlatformDispatcher {
     _invoke(onDrawFrame, _onDrawFrameZone);
   }
 
-  void renderScenes(Map<int, Scene> scenes) {
+  /// Updates multiple view's rendering on the GPU with the newly provided
+  /// [Scene]s.
+  ///
+  /// This function or [FlutterView.render] can only be called once
+  /// after a [PlatformDispatcher.scheduleFrame]. If this method or
+  /// [FlutterView.render] is called a second time after
+  /// [PlatformDispatcher.scheduleFrame] (or is called before the first
+  /// [PlatformDispatcher.scheduleFrame]), the call will be ignored.
+  ///
+  /// To record graphical operations, first create a [PictureRecorder], then
+  /// construct a [Canvas], passing that [PictureRecorder] to its constructor.
+  /// After issuing all the graphical operations, call the
+  /// [PictureRecorder.endRecording] function on the [PictureRecorder] to obtain
+  /// the final [Picture] that represents the issued graphical operations.
+  ///
+  /// Next, create a [SceneBuilder], and add the [Picture] to it using
+  /// [SceneBuilder.addPicture]. With the [SceneBuilder.build] method you can
+  /// then obtain a [Scene] object, which you can display to the user via this
+  /// [renderScenes] function.
+  ///
+  /// See also:
+  ///
+  /// * [SchedulerBinding], the Flutter framework class which manages the
+  ///   scheduling of frames.
+  /// * [RendererBinding], the Flutter framework class which manages layout and
+  ///   painting.
+  void renderScenes(Map<FlutterView, Scene> scenes) {
     final List<int> viewIds = <int>[];
-    final List<_NativeScene> nativeScenes = <_NativeScene>[];
-    scenes.forEach((int viewId, Scene scene) {
-      viewIds.add(viewId);
-      nativeScenes.add(scene as _NativeScene);
+    final List<Scene> sceneList = <Scene>[];
+    scenes.forEach((FlutterView view, Scene scene) {
+      viewIds.add(view.viewId);
+      sceneList.add(scene);
     });
-    _renderScenes(viewIds, nativeScenes) ;
+    RenderScenesCallback renderScenesCallback = _renderScenes;
+    assert(() {
+      if (debugRenderScenesOverride != null) {
+        renderScenesCallback = debugRenderScenesOverride!;
+      }
+      return true;
+    }());
+    renderScenesCallback(viewIds, sceneList);
   }
 
   @Native<Void Function(Handle, Handle)>(symbol: 'PlatformConfigurationNativeApi::RenderScenes')
-  external static void _renderScenes(List<int> viewIds, List<_NativeScene> scenes);
+  external static void _renderScenes(List<int> viewIds, List<Scene> scenes);
+  /// Used in unit tests to override the native function with which
+  /// [renderScenes] sends scenes to the engine.
+  ///
+  /// In production, setting this property is a no-op.
+  RenderScenesCallback? debugRenderScenesOverride;
 
   /// A callback that is invoked when pointer data is available.
   ///
@@ -1256,6 +1297,16 @@ class PlatformDispatcher {
 
   @Native<Handle Function()>(symbol: 'PlatformConfigurationNativeApi::DefaultRouteName')
   external static String _defaultRouteName();
+
+  /// Used in unit tests to reset overridden methods.
+  ///
+  /// In production, this method is a no-op.
+  void debugClearOverride() {
+    assert(() {
+      debugRenderScenesOverride = null;
+      return true;
+    }());
+  }
 }
 
 /// Configuration of the platform.

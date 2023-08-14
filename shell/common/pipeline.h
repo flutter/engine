@@ -100,11 +100,6 @@ class Pipeline {
         continuation_ = nullptr;
         TRACE_EVENT_ASYNC_END0("flutter", "PipelineProduce", trace_id_);
         TRACE_FLOW_STEP("flutter", "PipelineItem", trace_id_);
-      } else {
-        // TODO: Remove this. This was added temporarily to catch if we
-        // complete the same continuation multiple itmes. This is a bug we
-        // should fix.
-        FML_LOG(ERROR) << "Continuation is null!";
       }
       return result;
     }
