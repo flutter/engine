@@ -74,12 +74,15 @@ std::unique_ptr<Surface> SurfaceContextVK::AcquireNextSurface() {
     impeller::PipelineLibraryVK::Cast(*pipeline_library)
         .DidAcquireSurfaceFrame();
   }
-  auto allocator = parent_->GetResourceAllocator();
-  if (allocator) {
-    allocator->DidAcquireSurfaceFrame();
-  }
+  parent_->DidAcquireSurfaceFrame();
   return surface;
 }
+
+// |Context|
+void SurfaceContextVK::DidAcquireSurfaceFrame() const {}
+
+// |Context|
+void SurfaceContextVK::DidFinishSurfaceFrame() const {}
 
 #ifdef FML_OS_ANDROID
 

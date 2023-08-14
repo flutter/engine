@@ -19,7 +19,7 @@ class SwapchainVK;
 class SurfaceContextVK : public Context,
                          public BackendCast<SurfaceContextVK, Context> {
  public:
-  SurfaceContextVK(const std::shared_ptr<ContextVK>& parent);
+  explicit SurfaceContextVK(const std::shared_ptr<ContextVK>& parent);
 
   // |Context|
   ~SurfaceContextVK() override;
@@ -50,6 +50,12 @@ class SurfaceContextVK : public Context,
 
   // |Context|
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
+
+  // |Context|
+  void DidAcquireSurfaceFrame() const override;
+
+  // |Context|
+  void DidFinishSurfaceFrame() const override;
 
   // |Context|
   void Shutdown() override;

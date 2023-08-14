@@ -441,7 +441,7 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
       return false;
     }
   }
-  context_strong->GetResourceAllocator()->DidFinishSurfaceFrame();
+  context_strong->DidFinishSurfaceFrame();
 
   context.GetConcurrentWorkerTaskRunner()->PostTask([&, index, image] {
     auto context_strong = context_.lock();

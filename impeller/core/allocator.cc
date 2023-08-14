@@ -36,6 +36,29 @@ std::shared_ptr<DeviceBuffer> Allocator::CreateBufferWithCopy(
   return new_buffer;
 }
 
+void Allocator::DidAcquireSurfaceFrame() {
+  for (auto& td : data_to_recycle_) {
+    td.used_this_frame = false;
+  }
+}
+
+void Allocator::DidFinishSurfaceFrame() {
+  std::vector<TextureData> retain;
+
+  for (auto td : data_to_recycle_) {
+    if (td.used_this_frame) {
+      retain.push_back(td);
+    }
+  }
+  data_to_recycle_.clear();
+  data_to_recycle_.insert(data_to_recycle_.end(), retain.begin(),
+                          retain.end());
+}
+
+void Allocator::SetEnableRenderTargetTextureCache(bool value) {
+  enable_render_target_texture_cache_ = value;
+}
+
 std::shared_ptr<DeviceBuffer> Allocator::CreateBufferWithCopy(
     const fml::Mapping& mapping) {
   return CreateBufferWithCopy(mapping.GetMapping(), mapping.GetSize());
@@ -54,22 +77,14 @@ std::shared_ptr<Texture> Allocator::CreateTexture(
                    << " exceeds maximum supported size of " << max_size;
     return nullptr;
   }
-  total_count_++;
-  if (desc.ignore_cache) {
-    return OnCreateTexture(desc);
-  }
-  if (desc.storage_mode != StorageMode::kHostVisible &&
+
+  if (enable_render_target_texture_cache_ && !desc.ignore_cache &&
+      desc.storage_mode != StorageMode::kHostVisible &&
       (desc.usage &
        static_cast<TextureUsageMask>(TextureUsage::kRenderTarget))) {
     for (auto& td : data_to_recycle_) {
       const auto other_desc = td.texture->GetTextureDescriptor();
-      if (!td.used_this_frame && desc.size.width == other_desc.size.width &&
-          desc.size.height == other_desc.size.height &&
-          desc.storage_mode == other_desc.storage_mode &&
-          desc.format == other_desc.format && desc.usage == other_desc.usage &&
-          desc.sample_count == other_desc.sample_count &&
-          desc.type == other_desc.type) {
-        hit_count_++;
+      if (!td.used_this_frame && desc.IsCompatibleWith(other_desc)) {
         td.used_this_frame = true;
         return td.texture;
       }

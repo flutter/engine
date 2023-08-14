@@ -154,6 +154,20 @@ class Context {
   ///
   virtual std::shared_ptr<CommandBuffer> CreateCommandBuffer() const = 0;
 
+  //---------------------------------------------------------------------------
+  /// @brief Indicate the beginning of a presentation cycle.
+  ///
+  ///        This may or may not indicate a new frame, or there may be multiple
+  ///        presents within a single frame due to platform view presence.
+  virtual void DidAcquireSurfaceFrame() const = 0;
+
+  //---------------------------------------------------------------------------
+  /// @brief Indicate the ending of a presentation cycle.
+  ///
+  ///        This may or may not indicate a new frame, or there may be multiple
+  ///        presents within a single frame due to platform view presence.
+  virtual void DidFinishSurfaceFrame() const = 0;
+
   //----------------------------------------------------------------------------
   /// @brief      Force all pending asynchronous work to finish. This is
   ///             achieved by deleting all owned concurrent message loops.

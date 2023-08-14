@@ -345,6 +345,7 @@ void ContextVK::Setup(Settings settings) {
     VALIDATION_LOG << "Could not create memory allocator.";
     return;
   }
+  allocator->SetEnableRenderTargetTextureCache(true);
 
   //----------------------------------------------------------------------------
   /// Setup the pipeline library.
@@ -508,6 +509,16 @@ std::shared_ptr<FenceWaiterVK> ContextVK::GetFenceWaiter() const {
 
 std::shared_ptr<ResourceManagerVK> ContextVK::GetResourceManager() const {
   return resource_manager_;
+}
+
+// |Context|
+void ContextVK::DidAcquireSurfaceFrame() const {
+  allocator_->DidAcquireSurfaceFrame();
+}
+
+// |Context|
+void ContextVK::DidFinishSurfaceFrame() const {
+  allocator_->DidFinishSurfaceFrame();
 }
 
 std::unique_ptr<CommandEncoderFactoryVK>

@@ -67,6 +67,19 @@ struct TextureDescriptor {
     return IsMultisampleCapable(type) ? count > 1 : count == 1;
   }
 
+  /// @brief Whether the [other] texture descriptor has the same properties.
+  ///
+  ///        This is used to check compatibility of already allocated textures
+  ///        in the render target cache..
+  constexpr bool IsCompatibleWith(const TextureDescriptor& other) const {
+    return size == other.size &&                  //
+           storage_mode == other.storage_mode &&  //
+           format == other.format &&              //
+           usage == other.usage &&                //
+           sample_count == other.sample_count &&  //
+           type == other.type;                    //
+  }
+
   constexpr bool IsValid() const {
     return format != PixelFormat::kUnknown &&  //
            size.IsPositive() &&                //

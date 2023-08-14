@@ -73,6 +73,12 @@ class ContextGLES final : public Context,
   std::shared_ptr<CommandBuffer> CreateCommandBuffer() const override;
 
   // |Context|
+  void DidAcquireSurfaceFrame() const override;
+
+  // |Context|
+  void DidFinishSurfaceFrame() const override;
+
+  // |Context|
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
 
   // |Context|

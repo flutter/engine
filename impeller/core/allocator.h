@@ -33,6 +33,8 @@ class Allocator {
 
   std::shared_ptr<Texture> CreateTexture(const TextureDescriptor& desc);
 
+  void SetEnableRenderTargetTextureCache(bool value);
+
   //------------------------------------------------------------------------------
   /// @brief      Minimum value for `row_bytes` on a Texture. The row
   ///             bytes parameter of that method must be aligned to this value.
@@ -49,27 +51,9 @@ class Allocator {
 
   /// @brief Increment an internal frame used to cycle through a ring buffer of
   /// allocation pools.
-  virtual void DidAcquireSurfaceFrame() {
-    for (auto& td : data_to_recycle_) {
-      td.used_this_frame = false;
-    }
-  }
+  virtual void DidAcquireSurfaceFrame();
 
-  virtual void DidFinishSurfaceFrame() {
-    std::vector<TextureData> retain;
-
-    for (auto td : data_to_recycle_) {
-      if (td.used_this_frame) {
-        retain.push_back(td);
-      }
-    }
-    data_to_recycle_.clear();
-    data_to_recycle_.insert(data_to_recycle_.end(), retain.begin(),
-                            retain.end());
-    FML_LOG(ERROR) << "" << hit_count_ << " / " << total_count_;
-    hit_count_ = 0;
-    total_count_ = 0;
-  }
+  virtual void DidFinishSurfaceFrame();
 
  protected:
   Allocator();
@@ -88,8 +72,7 @@ class Allocator {
       const TextureDescriptor& desc) = 0;
 
  private:
-  size_t hit_count_ = 0;
-  size_t total_count_ = 0;
+  bool enable_render_target_texture_cache_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Allocator);
 };

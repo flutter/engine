@@ -37,7 +37,7 @@ id<CAMetalDrawable> SurfaceMTL::GetMetalDrawableAndValidate(
     VALIDATION_LOG << "Could not acquire current drawable.";
     return nullptr;
   }
-  context->GetResourceAllocator()->DidAcquireSurfaceFrame();
+  context->DidAcquireSurfaceFrame();
   return current_drawable;
 }
 
@@ -225,7 +225,7 @@ bool SurfaceMTL::Present() const {
   if (!context) {
     return false;
   }
-  context->GetResourceAllocator()->DidFinishSurfaceFrame();
+  context->DidFinishSurfaceFrame();
 
   if (requires_blit_) {
     if (!(source_texture_ && destination_texture_)) {
