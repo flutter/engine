@@ -2810,6 +2810,7 @@ Future<void> testMain() async {
       expect(editingStrategy!.editingDeltaState.oldText, 'foo bar');
 
       editingStrategy!.setEditingState(EditingState(text: 'foo bar baz', baseOffset: 11, extentOffset: 11));
+      input.dispatchEvent(createDomEvent('Event', 'input'));
       expect(editingStrategy?.editingDeltaState.oldText, 'foo bar baz');
     });
   });
