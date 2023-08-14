@@ -547,7 +547,7 @@ class TextEditingDeltaState {
     if (isTextBeingRemoved) {
       // When text is deleted outside of the composing region or is cut using the native toolbar,
       // we calculate the length of the deleted text by comparing the new and old editing state lengths.
-      // If the deletion is backward, the length is susbtracted from the [deltaEnd]
+      // If the deletion is backward, the length is subtracted from the [deltaEnd]
       // that we set when beforeinput was fired to determine the [deltaStart].
       // If the deletion is forward, [deltaStart] is set to the new editing state baseOffset
       // and [deltaEnd] is set to [deltaStart] incremented by the length of the deletion.
@@ -1412,23 +1412,24 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
 
     if (inputType != null) {
       final bool isSelectionInverted = lastEditingState!.baseOffset! > lastEditingState!.extentOffset!;
+      final int deltaOffset = isSelectionInverted ? lastEditingState!.baseOffset! : lastEditingState!.extentOffset!;
       if (inputType.contains('delete')) {
         // The deltaStart is set in handleChange because there is where we get access
         // to the new selection baseOffset which is our new deltaStart.
         editingDeltaState.deltaText = '';
-        editingDeltaState.deltaEnd = isSelectionInverted ? lastEditingState!.baseOffset! : lastEditingState!.extentOffset!;
+        editingDeltaState.deltaEnd = deltaOffset;
       } else if (inputType == 'insertLineBreak'){
         // event.data is null on a line break, so we manually set deltaText as a line break by setting it to '\n'.
         editingDeltaState.deltaText = '\n';
-        editingDeltaState.deltaStart = isSelectionInverted ? lastEditingState!.baseOffset! : lastEditingState!.extentOffset!;
-        editingDeltaState.deltaEnd = isSelectionInverted ? lastEditingState!.baseOffset! : lastEditingState!.extentOffset!;
+        editingDeltaState.deltaStart = deltaOffset;
+        editingDeltaState.deltaEnd = deltaOffset;
       } else if (eventData != null) {
         // When event.data is not null we will begin by considering this delta as an insertion
         // at the selection extentOffset. This may change due to logic in handleChange to handle
         // composition and other IME behaviors.
         editingDeltaState.deltaText = eventData;
-        editingDeltaState.deltaStart = isSelectionInverted ? lastEditingState!.baseOffset! : lastEditingState!.extentOffset!;
-        editingDeltaState.deltaEnd = isSelectionInverted ? lastEditingState!.baseOffset! : lastEditingState!.extentOffset!;
+        editingDeltaState.deltaStart = deltaOffset;
+        editingDeltaState.deltaEnd = deltaOffset;
       }
     }
   }
