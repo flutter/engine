@@ -6,27 +6,22 @@ import 'dart:ffi';
 import 'dart:nativewrappers';
 import 'dart:typed_data';
 
-import 'context.dart';
-
 /// A reference to a byte range within a GPU-resident [Buffer].
 class BufferView {
   /// The buffer of this view.
-  final Buffer buffer;
+  final HostBuffer buffer;
 
   /// The start of the view, in bytes starting from the beginning of the
   /// [buffer].
   final int offsetInBytes;
 
-  /// The end of the view
+  /// The length of the view.
   final int lengthInBytes;
 
   /// Create a new view into a buffer on the GPU.
   const BufferView(this.buffer,
       {required this.offsetInBytes, required this.lengthInBytes});
 }
-
-/// A buffer that can be referenced by commands on the GPU.
-mixin Buffer {}
 
 /// [HostBuffer] is a [Buffer] which is allocated on the host (native CPU
 /// resident memory) and lazily uploaded to the GPU. A [HostBuffer] can be
@@ -41,7 +36,7 @@ mixin Buffer {}
 ///       accessing device buffer data. The [HostBuffer] takes these
 ///       requirements into account and automatically inserts padding between
 ///       emplaced data if necessary.
-class HostBuffer extends NativeFieldWrapperClass1 with Buffer {
+class HostBuffer extends NativeFieldWrapperClass1 {
   /// Creates a new HostBuffer.
   HostBuffer() {
     _initialize();

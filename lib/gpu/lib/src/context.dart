@@ -5,8 +5,6 @@
 import 'dart:ffi';
 import 'dart:nativewrappers';
 
-import 'buffer.dart';
-
 /// A handle to a graphics context. Used to create and manage GPU resources.
 ///
 /// To obtain the default graphics context, use [getContext].
