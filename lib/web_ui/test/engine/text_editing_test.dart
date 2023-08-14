@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:js_interop';
 import 'dart:js_util' as js_util;
 import 'dart:typed_data';
 
@@ -21,6 +22,17 @@ import 'package:ui/src/engine/vector_math.dart';
 
 import '../common/spy.dart';
 import '../common/test_initialization.dart';
+
+@JS('InputEvent')
+@staticInterop
+class MockDomInputEvent extends DomUIEvent {
+}
+
+extension MockDomInputEventExtension on MockDomInputEvent {
+  @JS('inputType')
+  external JSString get _inputType;
+  String get inputType => _inputType;
+}
 
 /// The `keyCode` of the "Enter" key.
 const int _kReturnKeyCode = 13;
@@ -1745,6 +1757,142 @@ Future<void> testMain() async {
                 'deltaEnd': -1,
                 'selectionBase': 2,
                 'selectionExtent': 5,
+                'composingBase': -1,
+                'composingExtent': -1
+              }
+            ],
+          }
+        ],
+      );
+      spy.messages.clear();
+
+      hideKeyboard();
+    });
+
+    test('Supports deletion at inverted selection', () {
+      final MethodCall setClient = MethodCall(
+          'TextInput.setClient', <dynamic>[123, createFlutterConfig('text', enableDeltaModel: true)]);
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      const MethodCall setEditingState =
+      MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': 'Hello world',
+        'selectionBase': 9,
+        'selectionExtent': 3,
+      });
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+
+      final DomHTMLInputElement input = textEditing!.strategy.domElement! as
+          DomHTMLInputElement;
+
+      final Object jsInputEvent = js_util.getProperty<Object>(domWindow, 'InputEvent');
+      final List<dynamic> eventArgs = <dynamic>[
+        'beforeinput',
+        js_util.jsify(<String, dynamic>{
+          'inputType': 'delete',
+        }),
+      ];
+      final MockDomInputEvent testEvent = js_util.callConstructor<MockDomInputEvent>(
+        jsInputEvent,
+        eventArgs,
+      );
+      input.dispatchEvent(testEvent);
+
+      EditingState editingState = EditingState(
+        text: 'Helld',
+        baseOffset: 3,
+        extentOffset: 3,
+      );
+      editingState.applyToDomElement(input);
+      input.dispatchEvent(createDomEvent('Event', 'input'));
+
+      expect(spy.messages, hasLength(1));
+      expect(spy.messages[0].channel, 'flutter/textinput');
+      expect(spy.messages[0].methodName, 'TextInputClient.updateEditingStateWithDeltas');
+      expect(
+        spy.messages[0].methodArguments,
+        <dynamic>[
+          123, // Client ID
+          <String, dynamic>{
+            'deltas': <Map<String, dynamic>>[
+              <String, dynamic>{
+                'oldText': 'Hello world',
+                'deltaText': '',
+                'deltaStart': 3,
+                'deltaEnd': 9,
+                'selectionBase': 3,
+                'selectionExtent': 3,
+                'composingBase': -1,
+                'composingExtent': -1
+              }
+            ],
+          }
+        ],
+      );
+      spy.messages.clear();
+
+      hideKeyboard();
+    });
+
+    test('Supports new line at inverted selection', () {
+      final MethodCall setClient = MethodCall(
+          'TextInput.setClient', <dynamic>[123, createFlutterConfig('text', enableDeltaModel: true)]);
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      const MethodCall setEditingState =
+      MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': 'Hello world',
+        'selectionBase': 9,
+        'selectionExtent': 3,
+      });
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+
+      final DomHTMLInputElement input = textEditing!.strategy.domElement! as
+          DomHTMLInputElement;
+
+      final Object jsInputEvent = js_util.getProperty<Object>(domWindow, 'InputEvent');
+      final List<dynamic> eventArgs = <dynamic>[
+        'beforeinput',
+        js_util.jsify(<String, dynamic>{
+          'inputType': 'insertLineBreak',
+        }),
+      ];
+      final MockDomInputEvent testEvent = js_util.callConstructor<MockDomInputEvent>(
+        jsInputEvent,
+        eventArgs,
+      );
+      input.dispatchEvent(testEvent);
+
+      EditingState editingState = EditingState(
+        text: 'Hel\nld',
+        baseOffset: 3,
+        extentOffset: 3,
+      );
+      editingState.applyToDomElement(input);
+      input.dispatchEvent(createDomEvent('Event', 'input'));
+
+      expect(spy.messages, hasLength(1));
+      expect(spy.messages[0].channel, 'flutter/textinput');
+      expect(spy.messages[0].methodName, 'TextInputClient.updateEditingStateWithDeltas');
+      expect(
+        spy.messages[0].methodArguments,
+        <dynamic>[
+          123, // Client ID
+          <String, dynamic>{
+            'deltas': <Map<String, dynamic>>[
+              <String, dynamic>{
+                'oldText': 'Hello world',
+                'deltaText': '\n',
+                'deltaStart': 3,
+                'deltaEnd': 9,
+                'selectionBase': 3,
+                'selectionExtent': 3,
                 'composingBase': -1,
                 'composingExtent': -1
               }

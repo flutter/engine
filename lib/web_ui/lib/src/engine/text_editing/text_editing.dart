@@ -1411,23 +1411,24 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     final String? inputType = getJsProperty<void>(event, 'inputType') as String?;
 
     if (inputType != null) {
+      final bool isSelectionInverted = lastEditingState!.baseOffset! > lastEditingState!.extentOffset!;
       if (inputType.contains('delete')) {
         // The deltaStart is set in handleChange because there is where we get access
         // to the new selection baseOffset which is our new deltaStart.
         editingDeltaState.deltaText = '';
-        editingDeltaState.deltaEnd = lastEditingState!.extentOffset!;
+        editingDeltaState.deltaEnd = isSelectionInverted ? lastEditingState!.baseOffset! : lastEditingState!.extentOffset!;
       } else if (inputType == 'insertLineBreak'){
         // event.data is null on a line break, so we manually set deltaText as a line break by setting it to '\n'.
         editingDeltaState.deltaText = '\n';
-        editingDeltaState.deltaStart = lastEditingState!.extentOffset!;
-        editingDeltaState.deltaEnd = lastEditingState!.extentOffset!;
+        editingDeltaState.deltaStart = isSelectionInverted ? lastEditingState!.baseOffset! : lastEditingState!.extentOffset!;
+        editingDeltaState.deltaEnd = isSelectionInverted ? lastEditingState!.baseOffset! : lastEditingState!.extentOffset!;
       } else if (eventData != null) {
         // When event.data is not null we will begin by considering this delta as an insertion
         // at the selection extentOffset. This may change due to logic in handleChange to handle
         // composition and other IME behaviors.
         editingDeltaState.deltaText = eventData;
-        editingDeltaState.deltaStart = lastEditingState!.extentOffset!;
-        editingDeltaState.deltaEnd = lastEditingState!.extentOffset!;
+        editingDeltaState.deltaStart = isSelectionInverted ? lastEditingState!.baseOffset! : lastEditingState!.extentOffset!;
+        editingDeltaState.deltaEnd = isSelectionInverted ? lastEditingState!.baseOffset! : lastEditingState!.extentOffset!;
       }
     }
   }
