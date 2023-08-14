@@ -595,6 +595,7 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.pointer/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.pointerinjector/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.policy/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.ui.scenic/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.input/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.test.scene/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.types/meta.json
@@ -668,6 +669,9 @@
 ../../../fuchsia/sdk/linux/pkg/magma_common/meta.json
 ../../../fuchsia/sdk/linux/pkg/media_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/media_cpp_no_converters/meta.json
+../../../fuchsia/sdk/linux/pkg/scenic_cpp/meta.json
+../../../fuchsia/sdk/linux/pkg/scenic_cpp_testing/include/lib/ui/scenic/cpp/testing
+../../../fuchsia/sdk/linux/pkg/scenic_cpp_testing/meta.json
 ../../../fuchsia/sdk/linux/pkg/stdcompat/meta.json
 ../../../fuchsia/sdk/linux/pkg/svc/meta.json
 ../../../fuchsia/sdk/linux/pkg/sync/meta.json
