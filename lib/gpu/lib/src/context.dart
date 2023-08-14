@@ -5,6 +5,8 @@
 import 'dart:ffi';
 import 'dart:nativewrappers';
 
+import 'buffer.dart';
+
 /// A handle to a graphics context. Used to create and manage GPU resources.
 ///
 /// To obtain the default graphics context, use [getContext].
@@ -22,6 +24,12 @@ class GpuContext extends NativeFieldWrapperClass1 {
   @Native<Handle Function(Handle)>(
       symbol: 'InternalFlutterGpu_Context_InitializeDefault')
   external String? _initializeDefault();
+
+  /// Create a new [HostBuffer] that can be used for staging and transferring
+  /// data from the host to the GPU.
+  HostBuffer createHostBuffer() {
+    return HostBuffer();
+  }
 }
 
 /// The default graphics context.
