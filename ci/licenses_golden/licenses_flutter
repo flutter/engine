@@ -1082,6 +1082,8 @@ ORIGIN: ../../../flutter/impeller/compiler/compiler_backend.cc + ../../../flutte
 ORIGIN: ../../../flutter/impeller/compiler/compiler_backend.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/compiler_test.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/compiler_test.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/compiler/constants.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/compiler/constants.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/impellerc_main.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/include_dir.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/includer.cc + ../../../flutter/LICENSE
@@ -1348,6 +1350,7 @@ ORIGIN: ../../../flutter/impeller/entity/shaders/sweep_gradient_fill.frag + ../.
 ORIGIN: ../../../flutter/impeller/entity/shaders/sweep_gradient_ssbo_fill.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/texture_fill.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/texture_fill.vert + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/texture_fill_external.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/tiled_texture_fill.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/vertices.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/yuv_to_rgb_filter.frag + ../../../flutter/LICENSE
@@ -1497,6 +1500,8 @@ ORIGIN: ../../../flutter/impeller/renderer/backend/metal/vertex_descriptor_mtl.h
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/vertex_descriptor_mtl.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/allocator_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/allocator_vk.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/android_hardware_buffer_texture_source_vk.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/android_hardware_buffer_texture_source_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/barrier_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/barrier_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/blit_command_vk.cc + ../../../flutter/LICENSE
@@ -2335,8 +2340,10 @@ ORIGIN: ../../../flutter/shell/platform/android/external_view_embedder/surface_p
 ORIGIN: ../../../flutter/shell/platform/android/external_view_embedder/surface_pool.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/flutter_main.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/flutter_main.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/android/hardware_buffer_external_texture.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/hardware_buffer_external_texture_gl.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/hardware_buffer_external_texture_gl.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/android/hardware_buffer_external_texture_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/FlutterInjector.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/Log.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/app/FlutterActivity.java + ../../../flutter/LICENSE
@@ -2845,6 +2852,8 @@ ORIGIN: ../../../flutter/shell/platform/embedder/embedder_render_target_impeller
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_render_target_impeller.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_render_target_skia.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_render_target_skia.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/embedder/embedder_semantics_update.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/embedder/embedder_semantics_update.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_struct_macros.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_surface.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_surface.h + ../../../flutter/LICENSE
@@ -3797,6 +3806,8 @@ FILE: ../../../flutter/impeller/compiler/compiler_backend.cc
 FILE: ../../../flutter/impeller/compiler/compiler_backend.h
 FILE: ../../../flutter/impeller/compiler/compiler_test.cc
 FILE: ../../../flutter/impeller/compiler/compiler_test.h
+FILE: ../../../flutter/impeller/compiler/constants.cc
+FILE: ../../../flutter/impeller/compiler/constants.h
 FILE: ../../../flutter/impeller/compiler/impellerc_main.cc
 FILE: ../../../flutter/impeller/compiler/include_dir.h
 FILE: ../../../flutter/impeller/compiler/includer.cc
@@ -4063,6 +4074,7 @@ FILE: ../../../flutter/impeller/entity/shaders/sweep_gradient_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/sweep_gradient_ssbo_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/texture_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/texture_fill.vert
+FILE: ../../../flutter/impeller/entity/shaders/texture_fill_external.frag
 FILE: ../../../flutter/impeller/entity/shaders/tiled_texture_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/vertices.frag
 FILE: ../../../flutter/impeller/entity/shaders/yuv_to_rgb_filter.frag
@@ -4212,6 +4224,8 @@ FILE: ../../../flutter/impeller/renderer/backend/metal/vertex_descriptor_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/vertex_descriptor_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/allocator_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/allocator_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/android_hardware_buffer_texture_source_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/android_hardware_buffer_texture_source_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/barrier_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/barrier_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/blit_command_vk.cc
@@ -5055,8 +5069,12 @@ FILE: ../../../flutter/shell/platform/android/external_view_embedder/surface_poo
 FILE: ../../../flutter/shell/platform/android/external_view_embedder/surface_pool.h
 FILE: ../../../flutter/shell/platform/android/flutter_main.cc
 FILE: ../../../flutter/shell/platform/android/flutter_main.h
+FILE: ../../../flutter/shell/platform/android/hardware_buffer_external_texture.cc
+FILE: ../../../flutter/shell/platform/android/hardware_buffer_external_texture.h
 FILE: ../../../flutter/shell/platform/android/hardware_buffer_external_texture_gl.cc
 FILE: ../../../flutter/shell/platform/android/hardware_buffer_external_texture_gl.h
+FILE: ../../../flutter/shell/platform/android/hardware_buffer_external_texture_vk.cc
+FILE: ../../../flutter/shell/platform/android/hardware_buffer_external_texture_vk.h
 FILE: ../../../flutter/shell/platform/android/io/flutter/FlutterInjector.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/Log.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterActivity.java
@@ -5581,6 +5599,8 @@ FILE: ../../../flutter/shell/platform/embedder/embedder_render_target_impeller.c
 FILE: ../../../flutter/shell/platform/embedder/embedder_render_target_impeller.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_render_target_skia.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_render_target_skia.h
+FILE: ../../../flutter/shell/platform/embedder/embedder_semantics_update.cc
+FILE: ../../../flutter/shell/platform/embedder/embedder_semantics_update.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_struct_macros.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface.h
