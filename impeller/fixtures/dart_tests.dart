@@ -21,15 +21,15 @@ void instantiateDefaultContext() {
 
 @pragma('vm:entry-point')
 void canEmplaceHostBuffer() {
-  final gpu.HostBuffer hostBuffer = gpu.gpuContext.createHostBuffer();
+  final gpu.HostBuffer hostBuffer = gpu.HostBuffer();
 
-  final gpu.BufferView view0 = hostBuffer.emplaceBytes(
-      bytes: Int8List.fromList(<int>[0, 1, 2, 3]).buffer.asByteData());
+  final gpu.BufferView view0 = hostBuffer
+      .emplace(Int8List.fromList(<int>[0, 1, 2, 3]).buffer.asByteData());
   assert(view0.offsetInBytes == 0);
   assert(view0.lengthInBytes == 4);
 
-  final gpu.BufferView view1 = hostBuffer.emplaceBytes(
-      bytes: Int8List.fromList(<int>[0, 1, 2, 3]).buffer.asByteData());
+  final gpu.BufferView view1 = hostBuffer
+      .emplace(Int8List.fromList(<int>[0, 1, 2, 3]).buffer.asByteData());
   assert(view1.offsetInBytes >= 4);
   assert(view1.lengthInBytes == 4);
 }

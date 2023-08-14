@@ -24,12 +24,6 @@ class GpuContext extends NativeFieldWrapperClass1 {
   @Native<Handle Function(Handle)>(
       symbol: 'InternalFlutterGpu_Context_InitializeDefault')
   external String? _initializeDefault();
-
-  /// Create a new [HostBuffer] that can be used for staging and transferring
-  /// data from the host to the GPU.
-  HostBuffer createHostBuffer() {
-    return HostBuffer();
-  }
 }
 
 /// The default graphics context.
