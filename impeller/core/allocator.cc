@@ -51,8 +51,7 @@ void Allocator::DidFinishSurfaceFrame() {
     }
   }
   data_to_recycle_.clear();
-  data_to_recycle_.insert(data_to_recycle_.end(), retain.begin(),
-                          retain.end());
+  data_to_recycle_.insert(data_to_recycle_.end(), retain.begin(), retain.end());
 }
 
 void Allocator::SetEnableRenderTargetTextureCache(bool value) {
