@@ -28,8 +28,7 @@ class RenderTargetAllocator {
   /// @brief Create a new render target texture, or recycle a previously
   /// allocated render
   ///        target texture.
-  virtual std::shared_ptr<Texture> CreateTexture(
-      const TextureDescriptor& desc);
+  virtual std::shared_ptr<Texture> CreateTexture(const TextureDescriptor& desc);
 
   /// @brief Mark the beginning of a frame workload.
   ///

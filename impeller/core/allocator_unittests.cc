@@ -127,7 +127,8 @@ namespace testing {
 
 //   allocator->DidAcquireSurfaceFrame();
 //   allocator->SetEnableRenderTargetTextureCache(true);
-//   // Create two textures of the same exact size/shape. Both should be marked as
+//   // Create two textures of the same exact size/shape. Both should be marked
+//   as
 //   // used this frame, so the cached data set will contain two.
 //   allocator->CreateTexture(desc);
 //   allocator->CreateTexture(desc);
