@@ -27,18 +27,6 @@ SkPaint ToSk(const DlPaint& paint, bool force_stroke) {
   SkPaint sk_paint;
 
   sk_paint.setAntiAlias(paint.isAntiAlias());
-
-  // On the Impeller backend, we will only support dithering of *gradients*,
-  // and it will be enabled by default (without the option to disable it). Until
-  // Skia support is completely removed, we only want to respect the dither flag
-  // for gradients (otherwise it will also apply to, for example, images, which
-  // is not supported in Impeller).
-  //
-  // See https://github.com/flutter/flutter/issues/112498.
-  if (paint.isDitherHintForSkBackend()) {
-    sk_paint.setDither(paint.isDither());
-  }
-
   sk_paint.setColor(paint.getColor());
   sk_paint.setBlendMode(ToSk(paint.getBlendMode()));
   sk_paint.setStyle(force_stroke ? SkPaint::kStroke_Style
@@ -59,6 +47,19 @@ SkPaint ToSk(const DlPaint& paint, bool force_stroke) {
     color_filter = invert_filter;
   }
   sk_paint.setColorFilter(color_filter);
+
+  // On the Impeller backend, we will only support dithering of *gradients*,
+  // and it will be enabled by default (without the option to disable it). Until
+  // Skia support is completely removed, we only want to respect the dither flag
+  // for gradients (otherwise it will also apply to, for example, images, which
+  // is not supported in Impeller).
+  //
+  // See https://github.com/flutter/flutter/issues/112498.
+  auto color_source = paint.getColorSourcePtr();
+  if (color_source && color_source->isGradient()) {
+    sk_paint.setDither(paint.isDither());
+  }
+
   sk_paint.setMaskFilter(ToSk(paint.getMaskFilterPtr()));
   sk_paint.setPathEffect(ToSk(paint.getPathEffectPtr()));
 

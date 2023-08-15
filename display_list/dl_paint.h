@@ -77,7 +77,7 @@ class DlPaint {
   // TODO(matanl): Remove this flag when the Skia backend is removed,
   // https://github.com/flutter/flutter/issues/112498.
   bool isDitherHintForSkBackend() const {
-    return colorSource_ ? colorSource_->isDitherHintForSkBackend() : false;
+    return colorSource_ ? colorSource_->isGradient() : false;
   }
 
   bool isInvertColors() const { return isInvertColors_; }
