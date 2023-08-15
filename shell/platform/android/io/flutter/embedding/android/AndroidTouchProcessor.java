@@ -346,15 +346,23 @@ public class AndroidTouchProcessor {
 
     packet.putLong(pointerData); // platformData
 
+    // See android scrollview for insperation.
+    // https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/core/java/android/widget/ScrollView.java;l=930?q=ScrollView&ss=android%2Fplatform%2Fsuperproject%2Fmain
     if (signalKind == PointerSignalKind.SCROLL) {
       double verticalScaleFactor = 1.0;
+      double horizontalScaleFactor = 1.0;
       if (context != null) {
+        horizontalScaleFactor = ViewConfiguration.get(context).getScaledHorizontalScrollFactor();
         verticalScaleFactor = ViewConfiguration.get(context).getScaledVerticalScrollFactor();
       }
-      packet.putDouble(-event.getAxisValue(MotionEvent.AXIS_X, pointerIndex)); // scroll_delta_x
-      packet.putDouble(
-          verticalScaleFactor
-              * -event.getAxisValue(MotionEvent.AXIS_Y, pointerIndex)); // scroll_delta_y
+      // Without flipping the sign of the value scroll moves the opposite direction of android
+      final double horizontalScrollDistance =
+          horizontalScaleFactor * -event.getAxisValue(MotionEvent.AXIS_HSCROLL, pointerIndex);
+      final double verticalScrollDistance =
+          verticalScaleFactor * -event.getAxisValue(MotionEvent.AXIS_VSCROLL, pointerIndex);
+
+      packet.putDouble(horizontalScrollDistance); // scroll_delta_x
+      packet.putDouble(verticalScrollDistance); // scroll_delta_y
     } else {
       packet.putDouble(0.0); // scroll_delta_x
       packet.putDouble(0.0); // scroll_delta_y
