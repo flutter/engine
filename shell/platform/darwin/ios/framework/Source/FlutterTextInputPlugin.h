@@ -164,4 +164,16 @@ FLUTTER_DARWIN_EXPORT
 - (instancetype)initWithOwner:(FlutterTextInputPlugin*)textInputPlugin NS_DESIGNATED_INITIALIZER;
 
 @end
+
+@interface UIViewController (FlutterScreenAndSceneIfLoaded)
+
+/// Returns a UIWindowScene if the UIViewController's view is loaded, and nil otherwise.
+- (UIWindowScene*)flutterWindowSceneIfViewLoaded API_AVAILABLE(ios(13.0));
+
+/// Before iOS 13, returns the main screen; After iOS 13, returns the screen the UIViewController is
+/// attached to if its view is loaded, and nil otherwise.
+- (UIScreen*)flutterScreenIfViewLoaded;
+
+@end
+
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTPLUGIN_H_

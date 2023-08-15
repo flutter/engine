@@ -2762,3 +2762,26 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   return NO;
 }
 @end
+
+@implementation UIViewController (FlutterScreenAndSceneIfLoaded)
+
+- (UIWindowScene*)flutterWindowSceneIfViewLoaded {
+  if (self.viewIfLoaded == nil) {
+    FML_LOG(WARNING) << "Trying to access the window scene before the view is loaded.";
+    return nil;
+  }
+  return self.viewIfLoaded.window.windowScene;
+}
+
+- (UIScreen*)flutterScreenIfViewLoaded {
+  if (@available(iOS 13.0, *)) {
+    if (self.viewIfLoaded == nil) {
+      FML_LOG(WARNING) << "Trying to access the screen before the view is loaded.";
+      return nil;
+    }
+    return [self flutterWindowSceneIfViewLoaded].screen;
+  }
+  return UIScreen.mainScreen;
+}
+
+@end
