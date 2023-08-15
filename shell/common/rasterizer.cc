@@ -173,12 +173,12 @@ void Rasterizer::DrawLastLayerTree(
   if (!last_layer_tree_ || !surface_) {
     return;
   }
-  RasterStatus raster_status = DrawToSurface(
+  DrawSurfaceStatus draw_surface_status = DrawToSurface(
       *frame_timings_recorder, *last_layer_tree_, last_device_pixel_ratio_);
 
   // EndFrame should perform cleanups for the external_view_embedder.
   if (external_view_embedder_ && external_view_embedder_->GetUsedThisFrame()) {
-    bool should_resubmit_frame = ShouldResubmitFrame(raster_status);
+    bool should_resubmit_frame = ShouldResubmitSurface(draw_surface_status);
     external_view_embedder_->SetUsedThisFrame(false);
     external_view_embedder_->EndFrame(should_resubmit_frame,
                                       raster_thread_merger_);
@@ -266,6 +266,12 @@ RasterStatus Rasterizer::Draw(
 bool Rasterizer::ShouldResubmitFrame(const RasterStatus& raster_status) {
   return raster_status == RasterStatus::kResubmit ||
          raster_status == RasterStatus::kSkipAndRetry;
+}
+
+bool Rasterizer::ShouldResubmitSurface(
+    const DrawSurfaceStatus& draw_surface_status) {
+  return draw_surface_status == DrawSurfaceStatus::kResubmit ||
+         draw_surface_status == DrawSurfaceStatus::kSkipAndRetry;
 }
 
 namespace {
@@ -399,20 +405,26 @@ RasterStatus Rasterizer::DoDraw(
   PersistentCache* persistent_cache = PersistentCache::GetCacheForProcess();
   persistent_cache->ResetStoredNewShaders();
 
-  RasterStatus raster_status =
+  DrawSurfaceStatus draw_surface_status =
       DrawToSurface(*frame_timings_recorder, *layer_tree, device_pixel_ratio);
-  if (raster_status == RasterStatus::kSuccess) {
+  if (draw_surface_status == DrawSurfaceStatus::kSuccess) {
     last_layer_tree_ = std::move(layer_tree);
     last_device_pixel_ratio_ = device_pixel_ratio;
-  } else if (ShouldResubmitFrame(raster_status)) {
+  } else if (ShouldResubmitSurface(draw_surface_status)) {
     resubmitted_pixel_ratio_ = device_pixel_ratio;
     resubmitted_layer_tree_ = std::move(layer_tree);
     resubmitted_recorder_ = frame_timings_recorder->CloneUntil(
         FrameTimingsRecorder::State::kBuildEnd);
-    return raster_status;
-  } else if (raster_status == RasterStatus::kDiscarded) {
-    return raster_status;
+    if (draw_surface_status == DrawSurfaceStatus::kResubmit) {
+      return RasterStatus::kResubmit;
+    } else {
+      return RasterStatus::kSkipAndRetry;
+    }
+  } else if (draw_surface_status == DrawSurfaceStatus::kDiscarded) {
+    return RasterStatus::kDiscarded;
   }
+  FML_DCHECK(draw_surface_status == DrawSurfaceStatus::kSuccess ||
+             draw_surface_status == DrawSurfaceStatus::kFailed);
 
   if (persistent_cache->IsDumpingSkp() &&
       persistent_cache->StoredNewShaders()) {
@@ -483,37 +495,42 @@ RasterStatus Rasterizer::DoDraw(
     }
   }
 
-  return raster_status;
+  if (draw_surface_status == DrawSurfaceStatus::kSuccess) {
+    return RasterStatus::kSuccess;
+  } else {
+    return RasterStatus::kFailed;
+  }
 }
 
-RasterStatus Rasterizer::DrawToSurface(
+Rasterizer::DrawSurfaceStatus Rasterizer::DrawToSurface(
     FrameTimingsRecorder& frame_timings_recorder,
     flutter::LayerTree& layer_tree,
     float device_pixel_ratio) {
   TRACE_EVENT0("flutter", "Rasterizer::DrawToSurface");
   FML_DCHECK(surface_);
 
-  RasterStatus raster_status;
+  DrawSurfaceStatus draw_surface_status;
   if (surface_->AllowsDrawingWhenGpuDisabled()) {
-    raster_status = DrawToSurfaceUnsafe(frame_timings_recorder, layer_tree,
-                                        device_pixel_ratio);
+    draw_surface_status = DrawToSurfaceUnsafe(frame_timings_recorder,
+                                              layer_tree, device_pixel_ratio);
   } else {
     delegate_.GetIsGpuDisabledSyncSwitch()->Execute(
         fml::SyncSwitch::Handlers()
-            .SetIfTrue([&] { raster_status = RasterStatus::kDiscarded; })
+            .SetIfTrue(
+                [&] { draw_surface_status = DrawSurfaceStatus::kDiscarded; })
             .SetIfFalse([&] {
-              raster_status = DrawToSurfaceUnsafe(
+              draw_surface_status = DrawToSurfaceUnsafe(
                   frame_timings_recorder, layer_tree, device_pixel_ratio);
             }));
   }
 
-  return raster_status;
+  return draw_surface_status;
 }
 
 /// Unsafe because it assumes we have access to the GPU which isn't the case
 /// when iOS is backgrounded, for example.
 /// \see Rasterizer::DrawToSurface
-RasterStatus Rasterizer::DrawToSurfaceUnsafe(
+Rasterizer::DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
     FrameTimingsRecorder& frame_timings_recorder,
     flutter::LayerTree& layer_tree,
     float device_pixel_ratio) {
@@ -542,7 +559,7 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
   if (frame == nullptr) {
     frame_timings_recorder.RecordRasterEnd(
         &compositor_context_->raster_cache());
-    return RasterStatus::kFailed;
+    return DrawSurfaceStatus::kFailed;
   }
 
   // If the external view embedder has specified an optional root surface, the
@@ -603,7 +620,7 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
                                  damage.get()          // frame damage
         );
     if (frame_status == FrameStatus::kSkipAndRetry) {
-      return RasterStatus::kSkipAndRetry;
+      return DrawSurfaceStatus::kSkipAndRetry;
     }
 
     SurfaceFrame::SubmitInfo submit_info;
@@ -646,13 +663,13 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     }
 
     if (frame_status == FrameStatus::kResubmit) {
-      return RasterStatus::kResubmit;
+      return DrawSurfaceStatus::kResubmit;
     } else {
-      return RasterStatus::kSuccess;
+      return DrawSurfaceStatus::kSuccess;
     }
   }
 
-  return RasterStatus::kFailed;
+  return DrawSurfaceStatus::kFailed;
 }
 
 static sk_sp<SkData> ScreenshotLayerTreeAsPicture(

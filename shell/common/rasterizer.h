@@ -502,6 +502,32 @@ class Rasterizer final : public SnapshotDelegate,
  private:
   using FrameStatus = CompositorContext::FrameStatus;
 
+  enum DrawSurfaceStatus {
+    // Frame has been successfully rasterized.
+    kSuccess,
+    // Frame is submitted twice. This is only used on Android when
+    // switching the background surface to FlutterImageView.
+    //
+    // On Android, the first frame doesn't make the image available
+    // to the ImageReader right away. The second frame does.
+    //
+    // TODO(egarciad): https://github.com/flutter/flutter/issues/65652
+    kResubmit,
+    // Frame is dropped and a new frame with the same layer tree is
+    // attempted.
+    //
+    // This is currently used to wait for the thread merger to merge
+    // the raster and platform threads.
+    //
+    // Since the thread merger may be disabled,
+    kSkipAndRetry,
+    // Failed to rasterize the frame.
+    kFailed,
+    // Layer tree was discarded due to LayerTreeDiscardCallback or inability to
+    // access the GPU.
+    kDiscarded,
+  };
+
   // |SnapshotDelegate|
   std::unique_ptr<GpuImageResult> MakeSkiaGpuImage(
       sk_sp<DisplayList> display_list,
@@ -561,18 +587,21 @@ class Rasterizer final : public SnapshotDelegate,
       std::unique_ptr<flutter::LayerTree> layer_tree,
       float device_pixel_ratio);
 
-  RasterStatus DrawToSurface(FrameTimingsRecorder& frame_timings_recorder,
-                             flutter::LayerTree& layer_tree,
-                             float device_pixel_ratio);
+  DrawSurfaceStatus DrawToSurface(FrameTimingsRecorder& frame_timings_recorder,
+                                  flutter::LayerTree& layer_tree,
+                                  float device_pixel_ratio);
 
-  RasterStatus DrawToSurfaceUnsafe(FrameTimingsRecorder& frame_timings_recorder,
-                                   flutter::LayerTree& layer_tree,
-                                   float device_pixel_ratio);
+  DrawSurfaceStatus DrawToSurfaceUnsafe(
+      FrameTimingsRecorder& frame_timings_recorder,
+      flutter::LayerTree& layer_tree,
+      float device_pixel_ratio);
 
   void FireNextFrameCallbackIfPresent();
 
   static bool NoDiscard(const flutter::LayerTree& layer_tree) { return false; }
   static bool ShouldResubmitFrame(const RasterStatus& raster_status);
+  static bool ShouldResubmitSurface(
+      const DrawSurfaceStatus& draw_surface_status);
 
   Delegate& delegate_;
   MakeGpuImageBehavior gpu_image_behavior_;
