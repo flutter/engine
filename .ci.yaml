@@ -262,6 +262,10 @@ targets:
       add_recipes_cq: "true"
       release_build: "true"
       config_name: linux_host_engine
+      dependencies: >-
+        [
+          {"dependency": "doxygen", "version": "version:1.9.7"}
+        ]
     drone_dimensions:
       - os=Linux
 
