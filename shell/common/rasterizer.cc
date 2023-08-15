@@ -597,14 +597,13 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
       ignore_raster_cache = false;
     }
 
-    RasterStatus raster_status =
+    FrameStatus frame_status =
         compositor_frame->Raster(layer_tree,           // layer tree
                                  ignore_raster_cache,  // ignore raster cache
                                  damage.get()          // frame damage
         );
-    if (raster_status == RasterStatus::kFailed ||
-        raster_status == RasterStatus::kSkipAndRetry) {
-      return raster_status;
+    if (frame_status == FrameStatus::kSkipAndRetry) {
+      return RasterStatus::kSkipAndRetry;
     }
 
     SurfaceFrame::SubmitInfo submit_info;
@@ -634,7 +633,7 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
 
     // Do not update raster cache metrics for kResubmit because that status
     // indicates that the frame was not actually painted.
-    if (raster_status != RasterStatus::kResubmit) {
+    if (frame_status != FrameStatus::kResubmit) {
       compositor_context_->raster_cache().EndFrame();
     }
 
@@ -646,7 +645,11 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
       surface_->GetContext()->performDeferredCleanup(kSkiaCleanupExpiration);
     }
 
-    return raster_status;
+    if (frame_status == FrameStatus::kResubmit) {
+      return RasterStatus::kResubmit;
+    } else {
+      return RasterStatus::kSuccess;
+    }
   }
 
   return RasterStatus::kFailed;

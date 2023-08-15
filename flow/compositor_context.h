@@ -114,6 +114,29 @@ class FrameDamage {
 
 class CompositorContext {
  public:
+  enum FrameStatus {
+    // Frame has been successfully rasterized.
+    kSuccess,
+    // Frame should be submitted twice. This is only used on Android when
+    // switching the background surface to FlutterImageView.
+    //
+    // On Android, the first frame doesn't make the image available
+    // to the ImageReader right away. The second frame does.
+    //
+    // TODO(egarciad): https://github.com/flutter/flutter/issues/65652
+    kResubmit,
+    // Frame is dropped and a new frame with the same layer tree should be
+    // attempted.
+    //
+    // This is currently used to wait for the thread merger to merge
+    // the raster and platform threads.
+    //
+    // Since the thread merger may be disabled,
+    // TODO(dkwingsmt): The original doc ended like this. I have no idea what
+    // the original author wanted to say.
+    kSkipAndRetry,
+  };
+
   class ScopedFrame {
    public:
     ScopedFrame(CompositorContext& context,
@@ -144,9 +167,9 @@ class CompositorContext {
 
     impeller::AiksContext* aiks_context() const { return aiks_context_; }
 
-    virtual RasterStatus Raster(LayerTree& layer_tree,
-                                bool ignore_raster_cache,
-                                FrameDamage* frame_damage);
+    virtual FrameStatus Raster(LayerTree& layer_tree,
+                               bool ignore_raster_cache,
+                               FrameDamage* frame_damage);
 
    private:
     void PaintLayerTreeSkia(flutter::LayerTree& layer_tree,
