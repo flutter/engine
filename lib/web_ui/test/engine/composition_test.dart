@@ -114,9 +114,9 @@ Future<void> testMain() async {
         mockWithCompositionAwareMixin.composingText = 'Test';
 
         expect(
-            mockWithCompositionAwareMixin
-                .determineCompositionState(editingState),
-            editingState);
+          mockWithCompositionAwareMixin.determineCompositionState(editingState),
+          editingState,
+        );
       });
 
       test('should return editing state if composingText is null', () {
@@ -130,9 +130,9 @@ Future<void> testMain() async {
             _MockWithCompositionAwareMixin();
 
         expect(
-            mockWithCompositionAwareMixin
-                .determineCompositionState(editingState),
-            editingState);
+          mockWithCompositionAwareMixin.determineCompositionState(editingState),
+          editingState,
+        );
       });
 
       test('should return editing state if text is null', () {
@@ -146,9 +146,9 @@ Future<void> testMain() async {
         mockWithCompositionAwareMixin.composingText = 'Test';
 
         expect(
-            mockWithCompositionAwareMixin
-                .determineCompositionState(editingState),
-            editingState);
+          mockWithCompositionAwareMixin.determineCompositionState(editingState),
+          editingState,
+        );
       });
 
       test(
@@ -167,9 +167,9 @@ Future<void> testMain() async {
         mockWithCompositionAwareMixin.composingText = composingText;
 
         expect(
-            mockWithCompositionAwareMixin
-                .determineCompositionState(editingState),
-            editingState);
+          mockWithCompositionAwareMixin.determineCompositionState(editingState),
+          editingState,
+        );
       });
 
       test('should return new composition state - compositing middle of text',
@@ -190,12 +190,12 @@ Future<void> testMain() async {
         const int expectedComposingBase = baseOffset - composingText.length;
 
         expect(
-            mockWithCompositionAwareMixin
-                .determineCompositionState(editingState),
-            editingState.copyWith(
-                composingBaseOffset: expectedComposingBase,
-                composingExtentOffset:
-                    expectedComposingBase + composingText.length));
+          mockWithCompositionAwareMixin.determineCompositionState(editingState),
+          editingState.copyWith(
+            composingBaseOffset: expectedComposingBase,
+            composingExtentOffset: expectedComposingBase + composingText.length,
+          ),
+        );
       });
 
       test(
