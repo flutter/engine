@@ -4,8 +4,8 @@
 
 #include "display_list/dl_tile_mode.h"
 #include "display_list/effects/dl_color_source.h"
-#include "flutter/display_list/skia/dl_sk_canvas.h"
 #include "flutter/display_list/dl_paint.h"
+#include "flutter/display_list/skia/dl_sk_canvas.h"
 
 #include "gtest/gtest.h"
 
