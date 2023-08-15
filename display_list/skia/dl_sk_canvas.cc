@@ -23,7 +23,7 @@ constexpr float kInvertColorMatrix[20] = {
 };
 // clang-format on
 
-static SkPaint ToSk(const DlPaint& paint, bool force_stroke) {
+SkPaint ToSk(const DlPaint& paint, bool force_stroke) {
   SkPaint sk_paint;
 
   sk_paint.setAntiAlias(paint.isAntiAlias());

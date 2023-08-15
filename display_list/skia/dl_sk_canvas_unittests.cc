@@ -5,8 +5,8 @@
 #include "display_list/dl_tile_mode.h"
 #include "display_list/effects/dl_color_source.h"
 #include "flutter/display_list/skia/dl_sk_canvas.h"
-
 #include "flutter/display_list/dl_paint.h"
+
 #include "gtest/gtest.h"
 
 namespace flutter {
@@ -24,10 +24,8 @@ TEST(DisplayListSkCanvas, ToSkDitheringDisabled) {
   DlPaint dl_paint;
   dl_paint.setDither(true);
 
-  // Convert to SkPaint.
   SkPaint sk_paint = ToSk(dl_paint);
 
-  // Verify that isDither is false.
   EXPECT_FALSE(sk_paint.isDither());
 }
 
@@ -47,10 +45,8 @@ TEST(DisplayListSkCanvas, ToSkDitheringEnabledForGradients) {
                                                     SkPoint::Make(100, 100), 0,
                                                     0, 0, DlTileMode::kClamp));
 
-  // Convert to SkPaint.
   SkPaint sk_paint = ToSk(dl_paint);
 
-  // Verify that isDither is true.
   EXPECT_TRUE(sk_paint.isDither());
 }
 
