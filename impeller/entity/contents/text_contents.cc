@@ -133,7 +133,6 @@ bool TextContents::Render(const ContentContext& renderer,
   frame_info.is_translation_scale =
       entity.GetTransformation().IsTranslationScaleOnly();
   frame_info.entity_transform = entity.GetTransformation();
-  frame_info.text_color = ToVector(color.Premultiply());
 
   VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
@@ -183,6 +182,7 @@ bool TextContents::Render(const ContentContext& renderer,
       vertex_count * sizeof(VS::PerVertexData), alignof(VS::PerVertexData),
       [&](uint8_t* contents) {
         VS::PerVertexData vtx;
+        vtx.glyph_color = ToVector(color.Premultiply());
         size_t vertex_offset = 0;
         for (const TextFrameInfo& frame_info : frames_) {
           for (const auto& run : frame_info.frame.GetRuns()) {

@@ -10,7 +10,6 @@ uniform FrameInfo {
   mat4 entity_transform;
   vec2 atlas_size;
   vec2 offset;
-  f16vec4 text_color;
   float is_translation_scale;
 }
 frame_info;
@@ -22,6 +21,7 @@ in vec4 glyph_bounds;
 
 in vec2 unit_position;
 in vec2 glyph_position;
+in vec4 glyph_color;
 
 out vec2 v_uv;
 
@@ -81,5 +81,5 @@ void main() {
 
   gl_Position = frame_info.mvp * position;
   v_uv = uv_origin + unit_position * uv_size;
-  v_text_color = frame_info.text_color;
+  v_text_color = glyph_color;
 }
