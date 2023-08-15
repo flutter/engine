@@ -22,13 +22,17 @@ class Context;
 
 class TextContents final : public Contents {
  public:
+  struct TextFrameInfo {
+    TextFrame frame;
+  };
+
   TextContents();
 
   ~TextContents();
 
   void AddTextFrame(const TextFrame& frame);
 
-  const std::vector<TextFrame>& GetTextFrames() { return frames_; }
+  const std::vector<TextFrameInfo>& GetTextFrames() { return frames_; }
 
   void SetColor(Color color);
 
@@ -68,7 +72,7 @@ class TextContents final : public Contents {
   void SetPosition(const Point& point) { position_ = point; }
 
  private:
-  std::vector<TextFrame> frames_;
+  std::vector<TextFrameInfo> frames_;
   Scalar scale_ = 1.0;
   Color color_;
   Scalar inherited_opacity_ = 1.0;

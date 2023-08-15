@@ -26,7 +26,7 @@ TextContents::TextContents() = default;
 TextContents::~TextContents() = default;
 
 void TextContents::AddTextFrame(const TextFrame& frame) {
-  frames_.push_back(frame);
+  frames_.emplace_back(TextFrameInfo{.frame = frame});
 }
 
 std::shared_ptr<GlyphAtlas> TextContents::ResolveAtlas(
@@ -50,7 +50,7 @@ Color TextContents::GetColor() const {
 }
 
 bool TextContents::CanInheritOpacity(const Entity& entity) const {
-  return frames_.size() == 1 ? !frames_[0].MaybeHasOverlapping() : false;
+  return frames_.size() == 1 ? !frames_[0].frame.MaybeHasOverlapping() : false;
 }
 
 void TextContents::SetInheritedOpacity(Scalar opacity) {
@@ -63,8 +63,8 @@ void TextContents::SetOffset(Vector2 offset) {
 
 std::optional<Rect> TextContents::GetTextFrameBounds() const {
   std::optional<Rect> result;
-  for (const TextFrame& text_frame : frames_) {
-    auto bounds = text_frame.GetBounds();
+  for (const TextFrameInfo& text_frame_info : frames_) {
+    auto bounds = text_frame_info.frame.GetBounds();
     if (bounds.has_value()) {
       result = result.has_value() ? result->Union(bounds.value()) : bounds;
     }
@@ -84,8 +84,8 @@ std::optional<Rect> TextContents::GetCoverage(const Entity& entity) const {
 void TextContents::PopulateGlyphAtlas(
     const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
     Scalar scale) {
-  for (const TextFrame& text_frame : frames_) {
-    lazy_glyph_atlas->AddTextFrame(text_frame, scale);
+  for (const TextFrameInfo& text_frame_info : frames_) {
+    lazy_glyph_atlas->AddTextFrame(text_frame_info.frame, scale);
   }
   scale_ = scale;
 }
@@ -99,7 +99,7 @@ bool TextContents::Render(const ContentContext& renderer,
   }
 
   FML_DCHECK(!frames_.empty());
-  auto type = frames_[0].GetAtlasType();
+  auto type = frames_[0].frame.GetAtlasType();
   auto atlas =
       ResolveAtlas(type, renderer.GetLazyGlyphAtlas(), renderer.GetContext());
 
@@ -172,8 +172,8 @@ bool TextContents::Render(const ContentContext& renderer,
 
   auto& host_buffer = pass.GetTransientsBuffer();
   size_t vertex_count = 0;
-  for (const TextFrame& frame : frames_) {
-    for (const auto& run : frame.GetRuns()) {
+  for (const TextFrameInfo& frame_info : frames_) {
+    for (const auto& run : frame_info.frame.GetRuns()) {
       vertex_count += run.GetGlyphPositions().size();
     }
   }
@@ -184,8 +184,8 @@ bool TextContents::Render(const ContentContext& renderer,
       [&](uint8_t* contents) {
         VS::PerVertexData vtx;
         size_t vertex_offset = 0;
-        for (const TextFrame& frame : frames_) {
-          for (const auto& run : frame.GetRuns()) {
+        for (const TextFrameInfo& frame_info : frames_) {
+          for (const auto& run : frame_info.frame.GetRuns()) {
             const Font& font = run.GetFont();
             auto rounded_scale = TextFrame::RoundScaledFontSize(
                 scale_, font.GetMetrics().point_size);
