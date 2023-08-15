@@ -114,7 +114,7 @@ CompositorContext::ScopedFrame::~ScopedFrame() {
   context_.EndFrame(*this, instrumentation_enabled_);
 }
 
-CompositorContext::FrameStatus CompositorContext::ScopedFrame::Raster(
+RasterStatus CompositorContext::ScopedFrame::Raster(
     flutter::LayerTree& layer_tree,
     bool ignore_raster_cache,
     FrameDamage* frame_damage) {
@@ -142,10 +142,10 @@ CompositorContext::FrameStatus CompositorContext::ScopedFrame::Raster(
   }
 
   if (post_preroll_result == PostPrerollResult::kResubmitFrame) {
-    return FrameStatus::kResubmit;
+    return RasterStatus::kResubmit;
   }
   if (post_preroll_result == PostPrerollResult::kSkipAndRetryFrame) {
-    return FrameStatus::kSkipAndRetry;
+    return RasterStatus::kSkipAndRetry;
   }
 
   if (aiks_context_) {
@@ -154,7 +154,7 @@ CompositorContext::FrameStatus CompositorContext::ScopedFrame::Raster(
     PaintLayerTreeSkia(layer_tree, clip_rect, needs_save_layer,
                        ignore_raster_cache);
   }
-  return FrameStatus::kSuccess;
+  return RasterStatus::kSuccess;
 }
 
 void CompositorContext::ScopedFrame::PaintLayerTreeSkia(

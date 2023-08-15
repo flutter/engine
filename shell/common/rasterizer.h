@@ -510,9 +510,9 @@ class Rasterizer final : public SnapshotDelegate,
   void DisableThreadMergerIfNeeded();
 
  private:
-  using FrameStatus = CompositorContext::FrameStatus;
+  using RasterStatus = RasterStatus;
 
-  enum DrawSurfaceStatus {
+  enum class DrawSurfaceStatus {
     // Frame has been successfully rasterized.
     kSuccess,
     // Frame is submitted twice. This is only used on Android when
@@ -531,6 +531,37 @@ class Rasterizer final : public SnapshotDelegate,
     //
     // Since the thread merger may be disabled,
     kSkipAndRetry,
+    // Failed to rasterize the frame.
+    kFailed,
+    // Layer tree was discarded due to LayerTreeDiscardCallback or inability to
+    // access the GPU.
+    kDiscarded,
+  };
+
+  enum class DoDrawStatus {
+    // Frame has been successfully rasterized.
+    kSuccess,
+    // Frame is submitted twice. This is only used on Android when
+    // switching the background surface to FlutterImageView.
+    //
+    // On Android, the first frame doesn't make the image available
+    // to the ImageReader right away. The second frame does.
+    //
+    // TODO(egarciad): https://github.com/flutter/flutter/issues/65652
+    kResubmit,
+    // Frame is dropped and a new frame with the same layer tree is
+    // attempted.
+    //
+    // This is currently used to wait for the thread merger to merge
+    // the raster and platform threads.
+    //
+    // Since the thread merger may be disabled,
+    kSkipAndRetry,
+    // Frame has been successfully rasterized, but "there are additional items
+    // in
+    // the pipeline waiting to be consumed. This is currently
+    // only used when thread configuration change occurs.
+    kEnqueuePipeline,
     // Failed to rasterize the frame.
     kFailed,
     // Layer tree was discarded due to LayerTreeDiscardCallback or inability to
@@ -592,7 +623,7 @@ class Rasterizer final : public SnapshotDelegate,
       GrDirectContext* surface_context,
       bool compressed);
 
-  RasterStatus DoDraw(
+  DoDrawStatus DoDraw(
       std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
       std::unique_ptr<flutter::LayerTree> layer_tree,
       float device_pixel_ratio);
@@ -609,7 +640,7 @@ class Rasterizer final : public SnapshotDelegate,
   void FireNextFrameCallbackIfPresent();
 
   static bool NoDiscard(const flutter::LayerTree& layer_tree) { return false; }
-  static bool ShouldResubmitFrame(const RasterStatus& raster_status);
+  static bool ShouldResubmitFrame(const DoDrawStatus& raster_status);
   static bool ShouldResubmitSurface(
       const DrawSurfaceStatus& draw_surface_status);
 
