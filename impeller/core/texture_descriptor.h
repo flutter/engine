@@ -78,14 +78,7 @@ struct TextureDescriptor {
   }
 
   constexpr bool operator!=(const TextureDescriptor& other) const {
-    return size != other.size ||                          //
-           storage_mode != other.storage_mode ||          //
-           format != other.format ||                      //
-           usage != other.usage ||                        //
-           sample_count != other.sample_count ||          //
-           type != other.type ||                          //
-           compression_type != other.compression_type ||  //
-           mip_count != other.mip_count;
+    return !(*this == other);
   }
 
   constexpr bool IsValid() const {
