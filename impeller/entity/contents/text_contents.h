@@ -26,9 +26,9 @@ class TextContents final : public Contents {
 
   ~TextContents();
 
-  void SetTextFrame(const TextFrame& frame);
+  void AddTextFrame(const TextFrame& frame);
 
-  TextFrame& GetTextFrame() { return frame_; }
+  const std::vector<TextFrame>& GetTextFrames() { return frames_; }
 
   void SetColor(Color color);
 
@@ -68,7 +68,7 @@ class TextContents final : public Contents {
   void SetPosition(const Point& point) { position_ = point; }
 
  private:
-  TextFrame frame_;
+  std::vector<TextFrame> frames_;
   Scalar scale_ = 1.0;
   Color color_;
   Scalar inherited_opacity_ = 1.0;

@@ -529,7 +529,7 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
                            const Paint& paint) {
   const Entity* last_entity = GetCurrentPass().GetLastEntity();
   if (last_entity && last_entity->GetContents() == last_text_contents_ &&
-      last_text_contents_->GetTextFrame().GetAtlasType() ==
+      last_text_contents_->GetTextFrames()[0].GetAtlasType() ==
           text_frame.GetAtlasType() &&
       // TODO(gaaclarke): By adding vertex colors we can batch text of different
       //                  colors too.
@@ -544,7 +544,9 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
       for (const TextRun::GlyphPosition& pos : run.GetGlyphPositions()) {
         new_run.AddGlyph(pos.glyph, pos.position + offset);
       }
-      last_text_contents_->GetTextFrame().AddTextRun(new_run);
+      TextFrame new_frame;
+      new_frame.AddTextRun(new_run);
+      last_text_contents_->AddTextFrame(new_frame);
     }
     return;
   }
@@ -554,7 +556,7 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
   entity.SetBlendMode(paint.blend_mode);
 
   auto text_contents = std::make_shared<TextContents>();
-  text_contents->SetTextFrame(text_frame);
+  text_contents->AddTextFrame(text_frame);
 
   if (paint.color_source.GetType() != ColorSource::Type::kColor) {
     auto color_text_contents = std::make_shared<ColorSourceTextContents>();
