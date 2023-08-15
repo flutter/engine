@@ -8,7 +8,6 @@
 #include "flutter/display_list/dl_tile_mode.h"
 #include "flutter/display_list/dl_vertices.h"
 #include "flutter/display_list/effects/dl_color_source.h"
-#include "flutter/display_list/skia/dl_sk_canvas.h"
 #include "flutter/display_list/skia/dl_sk_conversions.h"
 #include "gtest/gtest.h"
 #include "third_party/skia/include/core/SkSamplingOptions.h"
