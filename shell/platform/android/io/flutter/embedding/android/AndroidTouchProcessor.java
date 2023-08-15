@@ -141,7 +141,7 @@ public class AndroidTouchProcessor {
     if (updateForSinglePointer) {
       // ACTION_DOWN and ACTION_POINTER_DOWN always apply to a single pointer only.
       addPointerForIndex(
-          event, event.getActionIndex(), pointerChange, 0, transformMatrix, packet, null);
+          event, event.getActionIndex(), pointerChange, 0, transformMatrix, packet);
     } else if (updateForMultiplePointers) {
       // ACTION_UP and ACTION_POINTER_UP may contain position updates for other pointers.
       // We are converting these updates to move events here in order to preserve this data.
@@ -155,20 +155,19 @@ public class AndroidTouchProcessor {
               PointerChange.MOVE,
               POINTER_DATA_FLAG_BATCHED,
               transformMatrix,
-              packet,
-              null);
+              packet);
         }
       }
       // It's important that we're sending the UP event last. This allows PlatformView
       // to correctly batch everything back into the original Android event if needed.
       addPointerForIndex(
-          event, event.getActionIndex(), pointerChange, 0, transformMatrix, packet, null);
+          event, event.getActionIndex(), pointerChange, 0, transformMatrix, packet);
     } else {
       // ACTION_MOVE may not actually mean all pointers have moved
       // but it's the responsibility of a later part of the system to
       // ignore 0-deltas if desired.
       for (int p = 0; p < pointerCount; p++) {
-        addPointerForIndex(event, p, pointerChange, 0, transformMatrix, packet, null);
+        addPointerForIndex(event, p, pointerChange, 0, transformMatrix, packet);
       }
     }
 
@@ -221,6 +220,17 @@ public class AndroidTouchProcessor {
     renderer.dispatchPointerDataPacket(packet, packet.position());
     return true;
   }
+
+  /// Passes null for context when it is not available. Note that without context scroll wheel will not work.
+  private void addPointerForIndex(
+      MotionEvent event,
+      int pointerIndex,
+      int pointerChange,
+      int pointerData,
+      Matrix transformMatrix,
+      ByteBuffer packet) {
+        addPointerForIndex(event, pointerIndex, pointerChange, pointerData, transformMatrix, packet, null);
+      }
 
   // TODO(mattcarroll): consider creating a PointerPacket class instead of using a procedure that
   // mutates inputs.
