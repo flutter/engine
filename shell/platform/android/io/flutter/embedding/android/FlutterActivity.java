@@ -1408,16 +1408,16 @@ public class FlutterActivity extends Activity
   }
 
   /**
-   * Whether to manually attach the {@link FlutterView} to the engine by the host application.
+   * Whether to automatically attach the {@link FlutterView} to the engine.
    *
-   * <p>Returning {@code true} means that the responsibility of attaching the {@link FlutterView} to
-   * the engine will be taken over by the host application.
+   * <p>Returning {@code false} means that the task of attaching the {@link FlutterView} to the
+   * engine will be taken over by the host application.
    *
-   * <p>Defaults to {@code false}.
+   * <p>Defaults to {@code true}.
    */
   @Override
-  public boolean shouldAttachToEngineManually() {
-    return false;
+  public boolean attachToEngineAutomatically() {
+    return true;
   }
 
   @Override

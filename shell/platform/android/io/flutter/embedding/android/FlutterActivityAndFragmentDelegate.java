@@ -390,7 +390,7 @@ import java.util.List;
     // Add listener to be notified when Flutter renders its first frame.
     flutterView.addOnFirstFrameRenderedListener(flutterUiDisplayListener);
 
-    if (!host.shouldAttachToEngineManually()) {
+    if (host.attachToEngineAutomatically()) {
       Log.v(TAG, "Attaching FlutterEngine to FlutterView.");
       flutterView.attachToFlutterEngine(flutterEngine);
     }
@@ -1175,15 +1175,15 @@ import java.util.List;
     boolean shouldDispatchAppLifecycleState();
 
     /**
-     * Whether to manually attach the {@link FlutterView} to the engine by the host application.
+     * Whether to automatically attach the {@link FlutterView} to the engine.
      *
      * <p>In the add-to-app scenario where multiple {@link FlutterView} share the same {@link
      * FlutterEngine}, the host application desires to determine the timing of attaching the {@link
      * FlutterView} to the engine, for example, during the {@code onResume} instead of the {@code
      * onCreateView}.
      *
-     * <p>Defaults to {@code false}.
+     * <p>Defaults to {@code true}.
      */
-    boolean shouldAttachToEngineManually();
+    boolean attachToEngineAutomatically();
   }
 }

@@ -390,8 +390,8 @@ public class FlutterAndroidComponentTest {
     }
 
     @Override
-    public boolean shouldAttachToEngineManually() {
-      return false;
+    public boolean attachToEngineAutomatically() {
+      return true;
     }
 
     @Override

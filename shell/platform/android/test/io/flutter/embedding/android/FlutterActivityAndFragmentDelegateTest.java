@@ -90,7 +90,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     when(mockHost.shouldHandleDeeplinking()).thenReturn(false);
     when(mockHost.shouldDestroyEngineWithHost()).thenReturn(true);
     when(mockHost.shouldDispatchAppLifecycleState()).thenReturn(true);
-    when(mockHost.shouldAttachToEngineManually()).thenReturn(false);
+    when(mockHost.attachToEngineAutomatically()).thenReturn(true);
   }
 
   @Test
@@ -1260,7 +1260,7 @@ public class FlutterActivityAndFragmentDelegateTest {
   public void itDoesNotAttachFlutterViewToEngine() {
     // ---- Test setup ----
     // Create the real object that we're testing.
-    when(mockHost.shouldAttachToEngineManually()).thenReturn(true);
+    when(mockHost.attachToEngineAutomatically()).thenReturn(false);
     FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
     delegate.onAttach(ctx);
     delegate.onCreateView(null, null, null, 0, true);
