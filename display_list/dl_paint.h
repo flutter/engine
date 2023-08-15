@@ -66,6 +66,20 @@ class DlPaint {
     return *this;
   }
 
+  // In the Impeller backend, we'll *always* apply dithering to gradients, and
+  // *never* apply dithering otherwise, and there will be no user-facing feature
+  // to change this behavior.
+  //
+  // To temporarily match this behavior in the Skia backend, we tag gradients
+  // with a special flag, and then check for that flag when converting from
+  // DlPaint to SkPaint.
+  //
+  // TODO(matanl): Remove this flag when the Skia backend is removed,
+  // https://github.com/flutter/flutter/issues/112498.
+  bool isDitherHintForSkBackend() const {
+    return colorSource_ ? colorSource_->isDitherHintForSkBackend() : false;
+  }
+
   bool isInvertColors() const { return isInvertColors_; }
   DlPaint& setInvertColors(bool isInvertColors) {
     isInvertColors_ = isInvertColors;

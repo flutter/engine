@@ -10,6 +10,8 @@
 
 namespace flutter {
 
+static SkPaint ToSk(const DlPaint& paint, bool force_stroke = true);
+
 // An adapter to receive DlCanvas calls and dispatch them into
 // an SkCanvas.
 class DlSkCanvasAdapter final : public virtual DlCanvas {

@@ -23,11 +23,21 @@ constexpr float kInvertColorMatrix[20] = {
 };
 // clang-format on
 
-static SkPaint ToSk(const DlPaint& paint, bool force_stroke = false) {
+static SkPaint ToSk(const DlPaint& paint, bool force_stroke) {
   SkPaint sk_paint;
 
   sk_paint.setAntiAlias(paint.isAntiAlias());
-  sk_paint.setDither(paint.isDither());
+
+  // On the Impeller backend, we will only support dithering of *gradients*,
+  // and it will be enabled by default (without the option to disable it). Until
+  // Skia support is completely removed, we only want to respect the dither flag
+  // for gradients (otherwise it will also apply to, for example, images, which
+  // is not supported in Impeller).
+  //
+  // See https://github.com/flutter/flutter/issues/112498.
+  if (paint.isDitherHintForSkBackend()) {
+    sk_paint.setDither(paint.isDither());
+  }
 
   sk_paint.setColor(paint.getColor());
   sk_paint.setBlendMode(ToSk(paint.getBlendMode()));
