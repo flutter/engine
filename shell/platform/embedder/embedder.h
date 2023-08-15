@@ -1105,9 +1105,9 @@ typedef struct {
   FlutterStringAttributeType type;
   union {
     // Indicates the string should be announced character by character.
-    FlutterSpellOutStringAttribute* spell_out;
+    const FlutterSpellOutStringAttribute* spell_out;
     // Indicates the string should be announced using the specified locale.
-    FlutterLocaleStringAttribute* locale;
+    const FlutterLocaleStringAttribute* locale;
   };
 } FlutterStringAttribute;
 
@@ -1266,27 +1266,27 @@ typedef struct {
   size_t label_attribute_count;
   // Array of string attributes associated with the `label`.
   // Has length `label_attribute_count`.
-  FlutterStringAttribute** label_attributes;
+  const FlutterStringAttribute** label_attributes;
   // The number of string attributes associated with the `hint`.
   size_t hint_attribute_count;
   // Array of string attributes associated with the `hint`.
   // Has length `hint_attribute_count`.
-  FlutterStringAttribute** hint_attributes;
+  const FlutterStringAttribute** hint_attributes;
   // The number of string attributes associated with the `value`.
   size_t value_attribute_count;
   // Array of string attributes associated with the `value`.
   // Has length `value_attribute_count`.
-  FlutterStringAttribute** value_attributes;
+  const FlutterStringAttribute** value_attributes;
   // The number of string attributes associated with the `increased_value`.
   size_t increased_value_attribute_count;
   // Array of string attributes associated with the `increased_value`.
   // Has length `increased_value_attribute_count`.
-  FlutterStringAttribute** increased_value_attributes;
+  const FlutterStringAttribute** increased_value_attributes;
   // The number of string attributes associated with the `decreased_value`.
   size_t decreased_value_attribute_count;
   // Array of string attributes associated with the `decreased_value`.
   // Has length `decreased_value_attribute_count`.
-  FlutterStringAttribute** decreased_value_attributes;
+  const FlutterStringAttribute** decreased_value_attributes;
 } FlutterSemanticsNode2;
 
 /// `FlutterSemanticsCustomAction` ID used as a sentinel to signal the end of a

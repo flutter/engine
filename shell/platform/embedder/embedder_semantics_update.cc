@@ -193,7 +193,7 @@ void EmbedderSemanticsUpdate2::AddAction(
   });
 }
 
-std::pair<size_t, FlutterStringAttribute**>
+std::pair<size_t, const FlutterStringAttribute**>
 EmbedderSemanticsUpdate2::CreateStringAttributes(
     const StringAttributes& attributes) {
   // Minimize allocations if attributes are empty.
@@ -201,7 +201,7 @@ EmbedderSemanticsUpdate2::CreateStringAttributes(
     return std::make_pair(0, nullptr);
   }
 
-  auto result = std::make_unique<std::vector<FlutterStringAttribute*>>();
+  auto result = std::make_unique<std::vector<const FlutterStringAttribute*>>();
   result->reserve(attributes.size());
 
   for (const auto& attribute : attributes) {

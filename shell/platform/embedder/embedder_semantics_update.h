@@ -58,7 +58,7 @@ class EmbedderSemanticsUpdate2 {
   std::vector<FlutterSemanticsCustomAction2> actions_;
   std::vector<FlutterSemanticsCustomAction2*> action_pointers_;
 
-  std::vector<std::unique_ptr<std::vector<FlutterStringAttribute*>>>
+  std::vector<std::unique_ptr<std::vector<const FlutterStringAttribute*>>>
       node_string_attributes_;
   std::vector<std::unique_ptr<FlutterStringAttribute>> string_attributes_;
   std::vector<std::unique_ptr<FlutterLocaleStringAttribute>> locale_attributes_;
@@ -72,7 +72,7 @@ class EmbedderSemanticsUpdate2 {
   void AddAction(const CustomAccessibilityAction& action);
 
   // Translates engine string attributes to embedder string attributes.
-  std::pair<size_t, FlutterStringAttribute**> CreateStringAttributes(
+  std::pair<size_t, const FlutterStringAttribute**> CreateStringAttributes(
       const StringAttributes& attribute);
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderSemanticsUpdate2);
