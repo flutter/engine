@@ -81,12 +81,6 @@ class ContextVK final : public Context,
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
 
   // |Context|
-  void DidAcquireSurfaceFrame() const override;
-
-  // |Context|
-  void DidFinishSurfaceFrame() const override;
-
-  // |Context|
   void Shutdown() override;
 
   void SetOffscreenFormat(PixelFormat pixel_format);

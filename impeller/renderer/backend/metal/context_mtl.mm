@@ -138,7 +138,6 @@ ContextMTL::ContextMTL(
       VALIDATION_LOG << "Could not set up the resource allocator.";
       return;
     }
-    resource_allocator_->SetEnableRenderTargetTextureCache(true);
   }
 
   device_capabilities_ =
@@ -319,16 +318,6 @@ std::shared_ptr<SamplerLibrary> ContextMTL::GetSamplerLibrary() const {
 // |Context|
 std::shared_ptr<CommandBuffer> ContextMTL::CreateCommandBuffer() const {
   return CreateCommandBufferInQueue(command_queue_);
-}
-
-// |Context|
-void ContextMTL::DidAcquireSurfaceFrame() const {
-  resource_allocator_->DidAcquireSurfaceFrame();
-}
-
-// |Context|
-void ContextMTL::DidFinishSurfaceFrame() const {
-  resource_allocator_->DidFinishSurfaceFrame();
 }
 
 // |Context|

@@ -242,6 +242,8 @@ impeller_component("entity") {
     "geometry/vertices_geometry.h",
     "inline_pass_context.cc",
     "inline_pass_context.h",
+    "render_target_cache.h",
+    "render_target_cache.cc",
   ]
 
   if (impeller_debug) {

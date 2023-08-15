@@ -51,7 +51,6 @@ class AllocatorVK final : public Allocator {
   // |Allocator|
   bool IsValid() const;
 
-  // |Allocator|
   void DidAcquireSurfaceFrame() override;
 
   // |Allocator|

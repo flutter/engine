@@ -52,12 +52,6 @@ class SurfaceContextVK : public Context,
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
 
   // |Context|
-  void DidAcquireSurfaceFrame() const override;
-
-  // |Context|
-  void DidFinishSurfaceFrame() const override;
-
-  // |Context|
   void Shutdown() override;
 
   [[nodiscard]] bool SetWindowSurface(vk::UniqueSurfaceKHR surface);

@@ -167,11 +167,7 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
   is_valid_ = true;
 }
 
-AllocatorVK::~AllocatorVK() {
-  // The set of cached textures must be cleared before the VMA allocator is
-  // destructed.
-  data_to_recycle_.clear();
-}
+AllocatorVK::~AllocatorVK() {}
 
 // |Allocator|
 bool AllocatorVK::IsValid() const {
@@ -438,7 +434,6 @@ std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
 void AllocatorVK::DidAcquireSurfaceFrame() {
   frame_count_++;
   raster_thread_id_ = std::this_thread::get_id();
-  Allocator::DidAcquireSurfaceFrame();
 }
 
 // |Allocator|

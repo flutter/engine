@@ -85,12 +85,6 @@ class ContextMTL final : public Context,
   bool UpdateOffscreenLayerPixelFormat(PixelFormat format) override;
 
   // |Context|
-  void DidAcquireSurfaceFrame() const override;
-
-  // |Context|
-  void DidFinishSurfaceFrame() const override;
-
-  // |Context|
   void Shutdown() override;
 
   id<MTLCommandBuffer> CreateMTLCommandBuffer(const std::string& label) const;

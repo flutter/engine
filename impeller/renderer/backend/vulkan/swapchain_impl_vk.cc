@@ -463,7 +463,6 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
       return false;
     }
   }
-  context.DidFinishSurfaceFrame();
 
   context.GetConcurrentWorkerTaskRunner()->PostTask(
       [&, index, image, current_frame = current_frame_] {
