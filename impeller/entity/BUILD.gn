@@ -288,9 +288,7 @@ impeller_component("entity_unittests") {
 impeller_component("render_target_cache_unittests") {
   testonly = true
 
-  sources = [
-    "render_target_cache_unittests.cc",
-  ]
+  sources = [ "render_target_cache_unittests.cc" ]
 
   deps = [
     ":entity",
