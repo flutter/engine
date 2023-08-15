@@ -167,7 +167,7 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
   is_valid_ = true;
 }
 
-AllocatorVK::~AllocatorVK() {}
+AllocatorVK::~AllocatorVK() = default;
 
 // |Allocator|
 bool AllocatorVK::IsValid() const {

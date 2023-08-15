@@ -144,10 +144,6 @@ class TestImpellerContext : public impeller::Context {
     return nullptr;
   }
 
-  void DidAcquireSurfaceFrame() const override {}
-
-  void DidFinishSurfaceFrame() const override {}
-
   void Shutdown() override {}
 
   mutable size_t command_buffer_count_ = 0;

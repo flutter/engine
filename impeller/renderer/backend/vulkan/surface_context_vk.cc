@@ -74,7 +74,10 @@ std::unique_ptr<Surface> SurfaceContextVK::AcquireNextSurface() {
     impeller::PipelineLibraryVK::Cast(*pipeline_library)
         .DidAcquireSurfaceFrame();
   }
-  parent_->GetResourceAllocator()->DidAcquireSurfaceFrame();
+  auto allocator = parent_->GetResourceAllocator();
+  if (allocator) {
+    allocator->DidAcquireSurfaceFrame();
+  }
   return surface;
 }
 

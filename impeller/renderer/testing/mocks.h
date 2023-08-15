@@ -102,10 +102,6 @@ class MockImpellerContext : public Context {
 
   MOCK_CONST_METHOD0(GetPipelineLibrary, std::shared_ptr<PipelineLibrary>());
 
-  MOCK_CONST_METHOD0(DidAcquireSurfaceFrame, void());
-
-  MOCK_CONST_METHOD0(DidFinishSurfaceFrame, void());
-
   MOCK_CONST_METHOD0(CreateCommandBuffer, std::shared_ptr<CommandBuffer>());
 
   MOCK_CONST_METHOD0(GetCapabilities,
