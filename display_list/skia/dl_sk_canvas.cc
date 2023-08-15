@@ -56,7 +56,9 @@ SkPaint ToSk(const DlPaint& paint, bool force_stroke) {
     //
     // See https://github.com/flutter/flutter/issues/112498.
     if (color_source->isGradient()) {
-      sk_paint.setDither(paint.isDither());
+      // Originates from `dart:ui#Paint.enableDithering`.
+      auto user_specified_dither = paint.isDither();
+      sk_paint.setDither(user_specified_dither);
     }
     sk_paint.setShader(ToSk(color_source));
   }
