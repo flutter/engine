@@ -246,6 +246,10 @@ bool TextureGLES::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
       texture_type = GL_TEXTURE_CUBE_MAP;
       texture_target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + slice;
       break;
+    case TextureType::kTextureExternalOES:
+      texture_type = GL_TEXTURE_EXTERNAL_OES;
+      texture_target = GL_TEXTURE_EXTERNAL_OES;
+      break;
   }
 
   auto data = std::make_shared<TexImage2DData>(tex_descriptor.format,
@@ -440,6 +444,8 @@ bool TextureGLES::GenerateMipmap() {
       return false;
     case TextureType::kTextureCube:
       break;
+    case TextureType::kTextureExternalOES:
+      break;
   }
 
   if (!Bind()) {
@@ -506,10 +512,10 @@ bool TextureGLES::SetAsFramebufferAttachment(GLenum target,
 
 // |Texture|
 Scalar TextureGLES::GetYCoordScale() const {
-  switch (GetIntent()) {
-    case TextureIntent::kUploadFromHost:
+  switch (GetCoordinateSystem()) {
+    case TextureCoordinateSystem::kUploadFromHost:
       return 1.0;
-    case TextureIntent::kRenderToTexture:
+    case TextureCoordinateSystem::kRenderToTexture:
       return -1.0;
   }
   FML_UNREACHABLE();

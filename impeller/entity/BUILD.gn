@@ -65,11 +65,13 @@ impeller_shaders("entity_shaders") {
     "shaders/sweep_gradient_fill.frag",
     "shaders/texture_fill.frag",
     "shaders/texture_fill.vert",
+    "shaders/texture_fill_external.frag",
     "shaders/tiled_texture_fill.frag",
     "shaders/vertices.frag",
     "shaders/yuv_to_rgb_filter.frag",
     "shaders/yuv_to_rgb_filter.vert",
     "shaders/blending/porter_duff_blend.frag",
+    "shaders/blending/porter_duff_blend.vert",
   ]
 
   if (impeller_debug) {
