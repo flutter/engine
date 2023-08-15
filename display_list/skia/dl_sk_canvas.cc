@@ -35,8 +35,6 @@ SkPaint ToSk(const DlPaint& paint, bool force_stroke) {
   sk_paint.setStrokeMiter(paint.getStrokeMiter());
   sk_paint.setStrokeCap(ToSk(paint.getStrokeCap()));
   sk_paint.setStrokeJoin(ToSk(paint.getStrokeJoin()));
-
-  sk_paint.setShader(ToSk(paint.getColorSourcePtr()));
   sk_paint.setImageFilter(ToSk(paint.getImageFilterPtr()));
   auto color_filter = ToSk(paint.getColorFilterPtr());
   if (paint.isInvertColors()) {
@@ -56,6 +54,7 @@ SkPaint ToSk(const DlPaint& paint, bool force_stroke) {
   //
   // See https://github.com/flutter/flutter/issues/112498.
   auto color_source = paint.getColorSourcePtr();
+  sk_paint.setShader(ToSk(color_source));
   if (color_source && color_source->isGradient()) {
     sk_paint.setDither(paint.isDither());
   }
