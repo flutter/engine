@@ -116,6 +116,7 @@ if (enable_unittests) {
       "effects/dl_path_effect_unittests.cc",
       "geometry/dl_region_unittests.cc",
       "geometry/dl_rtree_unittests.cc",
+      "skia/dl_sk_canvas_unittests.cc",
       "skia/dl_sk_conversions_unittests.cc",
       "skia/dl_sk_paint_dispatcher_unittests.cc",
       "utils/dl_matrix_clip_tracker_unittests.cc",
