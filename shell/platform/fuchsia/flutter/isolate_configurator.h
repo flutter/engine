@@ -5,9 +5,8 @@
 #ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_ISOLATE_CONFIGURATOR_H_
 #define FLUTTER_SHELL_PLATFORM_FUCHSIA_ISOLATE_CONFIGURATOR_H_
 
-#include <fuchsia/sys/cpp/fidl.h>
-#include <fuchsia/ui/scenic/cpp/fidl.h>
-
+#include <lib/zx/channel.h>
+#include <lib/zx/eventpair.h>
 #include "flutter/fml/macros.h"
 #include "unique_fdio_ns.h"
 
@@ -19,7 +18,6 @@ namespace flutter_runner {
 class IsolateConfigurator final {
  public:
   IsolateConfigurator(UniqueFDIONS fdio_ns,
-                      fuchsia::sys::EnvironmentHandle environment,
                       zx::channel directory_request,
                       zx::eventpair view_ref);
 
@@ -32,7 +30,6 @@ class IsolateConfigurator final {
  private:
   bool used_ = false;
   UniqueFDIONS fdio_ns_;
-  fuchsia::sys::EnvironmentHandle environment_;
   zx::channel directory_request_;
   zx::eventpair view_ref_;
 
