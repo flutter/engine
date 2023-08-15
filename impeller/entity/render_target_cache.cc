@@ -27,6 +27,10 @@ void RenderTargetCache::End() {
   texture_data_.swap(retain);
 }
 
+size_t RenderTargetCache::CachedTextureCount() const {
+  return texture_data_.size();
+}
+
 std::shared_ptr<Texture> RenderTargetCache::CreateTexture(
     const TextureDescriptor& desc) {
   FML_DCHECK(desc.storage_mode != StorageMode::kHostVisible);
@@ -35,7 +39,7 @@ std::shared_ptr<Texture> RenderTargetCache::CreateTexture(
 
   for (auto& td : texture_data_) {
     const auto other_desc = td.texture->GetTextureDescriptor();
-    if (!td.used_this_frame && desc.IsCompatibleWith(other_desc)) {
+    if (!td.used_this_frame && desc == other_desc) {
       td.used_this_frame = true;
       return td.texture;
     }

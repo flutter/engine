@@ -28,6 +28,9 @@ class RenderTargetCache : public RenderTargetAllocator {
   std::shared_ptr<Texture> CreateTexture(
       const TextureDescriptor& desc) override;
 
+  // visible for testing.
+  size_t CachedTextureCount() const;
+
  private:
   struct TextureData {
     bool used_this_frame;
@@ -35,6 +38,8 @@ class RenderTargetCache : public RenderTargetAllocator {
   };
 
   std::vector<TextureData> texture_data_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(RenderTargetCache);
 };
 
 }  // namespace impeller

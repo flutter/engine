@@ -46,7 +46,6 @@ struct TextureDescriptor {
       static_cast<TextureUsageMask>(TextureUsage::kShaderRead);
   SampleCount sample_count = SampleCount::kCount1;
   CompressionType compression_type = CompressionType::kLossless;
-  bool ignore_cache = false;
 
   constexpr size_t GetByteSizeOfBaseMipLevel() const {
     if (!IsValid()) {
@@ -67,17 +66,26 @@ struct TextureDescriptor {
     return IsMultisampleCapable(type) ? count > 1 : count == 1;
   }
 
-  /// @brief Whether the [other] texture descriptor has the same properties.
-  ///
-  ///        This is used to check compatibility of already allocated textures
-  ///        in the render target cache..
-  constexpr bool IsCompatibleWith(const TextureDescriptor& other) const {
-    return size == other.size &&                  //
-           storage_mode == other.storage_mode &&  //
-           format == other.format &&              //
-           usage == other.usage &&                //
-           sample_count == other.sample_count &&  //
-           type == other.type;                    //
+  constexpr bool operator==(const TextureDescriptor& other) const {
+    return size == other.size &&                          //
+           storage_mode == other.storage_mode &&          //
+           format == other.format &&                      //
+           usage == other.usage &&                        //
+           sample_count == other.sample_count &&          //
+           type == other.type &&                          //
+           compression_type == other.compression_type &&  //
+           mip_count == other.mip_count;
+  }
+
+  constexpr bool operator!=(const TextureDescriptor& other) const {
+    return size != other.size ||                          //
+           storage_mode != other.storage_mode ||          //
+           format != other.format ||                      //
+           usage != other.usage ||                        //
+           sample_count != other.sample_count ||          //
+           type != other.type ||                          //
+           compression_type != other.compression_type ||  //
+           mip_count != other.mip_count;
   }
 
   constexpr bool IsValid() const {
