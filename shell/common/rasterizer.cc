@@ -185,14 +185,13 @@ void Rasterizer::DrawLastLayerTree(
   }
 }
 
-RasterStatus Rasterizer::Draw(
-    const std::shared_ptr<LayerTreePipeline>& pipeline,
-    LayerTreeDiscardCallback discard_callback) {
+DrawStatus Rasterizer::Draw(const std::shared_ptr<LayerTreePipeline>& pipeline,
+                            LayerTreeDiscardCallback discard_callback) {
   TRACE_EVENT0("flutter", "GPURasterizer::Draw");
   if (raster_thread_merger_ &&
       !raster_thread_merger_->IsOnRasterizingThread()) {
     // we yield and let this frame be serviced on the right thread.
-    return RasterStatus::kYielded;
+    return DrawStatus::kFailed;
   }
   FML_DCHECK(delegate_.GetTaskRunners()
                  .GetRasterTaskRunner()
@@ -215,7 +214,7 @@ RasterStatus Rasterizer::Draw(
 
   PipelineConsumeResult consume_result = pipeline->Consume(consumer);
   if (consume_result == PipelineConsumeResult::NoneAvailable) {
-    return RasterStatus::kFailed;
+    return DrawStatus::kFailed;
   }
   // if the raster status is to resubmit the frame, we push the frame to the
   // front of the queue and also change the consume status to more available.
@@ -260,7 +259,14 @@ RasterStatus Rasterizer::Draw(
       break;
   }
 
-  return raster_status;
+  switch (raster_status) {
+    case RasterStatus::kDiscarded:
+      return DrawStatus::kDiscarded;
+    case RasterStatus::kFailed:
+      return DrawStatus::kFailed;
+    default:
+      return DrawStatus::kSuccess;
+  }
 }
 
 bool Rasterizer::ShouldResubmitFrame(const RasterStatus& raster_status) {

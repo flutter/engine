@@ -518,8 +518,8 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNotUsedThisFrame) {
     EXPECT_TRUE(result.success);
     // Always discard the layer tree.
     auto discard_callback = [](LayerTree&) { return true; };
-    RasterStatus status = rasterizer->Draw(pipeline, discard_callback);
-    EXPECT_EQ(status, RasterStatus::kDiscarded);
+    DrawStatus status = rasterizer->Draw(pipeline, discard_callback);
+    EXPECT_EQ(status, DrawStatus::kDiscarded);
     latch.Signal();
   });
   latch.Wait();
@@ -562,8 +562,8 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenPipelineIsEmpty) {
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     auto no_discard = [](LayerTree&) { return false; };
-    RasterStatus status = rasterizer->Draw(pipeline, no_discard);
-    EXPECT_EQ(status, RasterStatus::kFailed);
+    DrawStatus status = rasterizer->Draw(pipeline, no_discard);
+    EXPECT_EQ(status, DrawStatus::kFailed);
     latch.Signal();
   });
   latch.Wait();
@@ -678,8 +678,8 @@ TEST(
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
     auto no_discard = [](LayerTree&) { return false; };
-    RasterStatus status = rasterizer->Draw(pipeline, no_discard);
-    EXPECT_EQ(status, RasterStatus::kSuccess);
+    DrawStatus status = rasterizer->Draw(pipeline, no_discard);
+    EXPECT_EQ(status, DrawStatus::kSuccess);
     latch.Signal();
   });
   latch.Wait();
@@ -736,8 +736,8 @@ TEST(
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
     auto no_discard = [](LayerTree&) { return false; };
-    RasterStatus status = rasterizer->Draw(pipeline, no_discard);
-    EXPECT_EQ(status, RasterStatus::kSuccess);
+    DrawStatus status = rasterizer->Draw(pipeline, no_discard);
+    EXPECT_EQ(status, DrawStatus::kSuccess);
     latch.Signal();
   });
   latch.Wait();
@@ -793,8 +793,8 @@ TEST(
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
     auto no_discard = [](LayerTree&) { return false; };
-    RasterStatus status = rasterizer->Draw(pipeline, no_discard);
-    EXPECT_EQ(status, RasterStatus::kDiscarded);
+    DrawStatus status = rasterizer->Draw(pipeline, no_discard);
+    EXPECT_EQ(status, DrawStatus::kDiscarded);
     latch.Signal();
   });
   latch.Wait();
@@ -849,8 +849,8 @@ TEST(
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
     auto no_discard = [](LayerTree&) { return false; };
-    RasterStatus status = rasterizer->Draw(pipeline, no_discard);
-    EXPECT_EQ(status, RasterStatus::kFailed);
+    DrawStatus status = rasterizer->Draw(pipeline, no_discard);
+    EXPECT_EQ(status, DrawStatus::kFailed);
     latch.Signal();
   });
   latch.Wait();

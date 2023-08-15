@@ -47,6 +47,16 @@ class AiksContext;
 
 namespace flutter {
 
+enum class DrawStatus {
+  // Frame has been successfully rasterized.
+  kSuccess,
+  // Failed to rasterize the frame.
+  kFailed,
+  // Layer tree was discarded due to LayerTreeDiscardCallback or inability to
+  // access the GPU.
+  kDiscarded,
+};
+
 //------------------------------------------------------------------------------
 /// The rasterizer is a component owned by the shell that resides on the raster
 /// task runner. Each shell owns exactly one instance of a rasterizer. The
@@ -273,8 +283,8 @@ class Rasterizer final : public SnapshotDelegate,
   /// @param[in]  discard_callback if specified and returns true, the layer tree
   ///                             is discarded instead of being rendered
   ///
-  RasterStatus Draw(const std::shared_ptr<LayerTreePipeline>& pipeline,
-                    LayerTreeDiscardCallback discard_callback = NoDiscard);
+  DrawStatus Draw(const std::shared_ptr<LayerTreePipeline>& pipeline,
+                  LayerTreeDiscardCallback discard_callback = NoDiscard);
 
   //----------------------------------------------------------------------------
   /// @brief      The type of the screenshot to obtain of the previously
