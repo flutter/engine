@@ -27,11 +27,15 @@
                    completion:(void (^)(void))completion;
 @end
 
+@interface UIApplication ()
+- (void)openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenExternalURLOptionsKey,id> *)options completionHandler:(void (^)(BOOL))completion;
+@end
+
 @implementation FlutterPlatformPluginTest
 - (void)testSearchWebInvoked {
   id mockApplication = OCMClassMock([UIApplication class]);
   OCMStub([mockApplication sharedApplication]).andReturn(mockApplication);
-  OCMStub([mockApplication openURL:[OCMArg any]]).andReturn(nil);
+  OCMStub([mockApplication openURL:[OCMArg any] options:[OCMArg any] completionHandler:[OCMArg any]]).andDo(nil);
 
   FlutterEngine* engine = [[[FlutterEngine alloc] initWithName:@"test" project:nil] autorelease];
   std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
@@ -46,15 +50,17 @@
   FlutterPlatformPlugin* mockPlugin = OCMPartialMock(plugin);
 
   FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"SearchWeb.invoke"
-                                                                    arguments:@"Test"];
+                                                                    arguments:@"Testing Word!"];
 
   FlutterResult result = ^(id result) {
-    OCMVerify([mockPlugin searchWeb:@"Test"]);
+    OCMVerify([mockPlugin searchWeb:@"Testing Word!"]);
+    OCMVerify([mockApplication openURL:[NSURL URLWithString:@"x-web-search://?Testing%20Word!"] options:@{} completionHandler:nil]);
     [invokeExpectation fulfill];
   };
 
   [mockPlugin handleMethodCall:methodCall result:result];
   [self waitForExpectationsWithTimeout:1 handler:nil];
+  [mockApplication stopMocking];
 }
 
 - (void)testLookUpCallInitiated {
