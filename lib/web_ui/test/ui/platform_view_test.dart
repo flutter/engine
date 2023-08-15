@@ -26,7 +26,7 @@ Future<void> testMain() async {
   const ui.Rect region = ui.Rect.fromLTWH(0, 0, 300, 300);
   const String platformViewType = 'test-platform-view';
 
-  setUpAll(() {
+  setUp(() {
     ui_web.platformViewRegistry.registerViewFactory(
       platformViewType,
       (int viewId) { 
@@ -37,11 +37,15 @@ Future<void> testMain() async {
     );
   });
 
+  tearDown(() {
+    platformViewManager.debugClear();
+  });
+
   test('Picture + Overlapping PlatformView', () async {
     await _createPlatformView(1, platformViewType);
 
     final ui.PictureRecorder recorder = ui.PictureRecorder();
-    final ui.Canvas canvas = ui.Canvas(recorder, region);
+    final ui.Canvas canvas = ui.Canvas(recorder);
     canvas.drawCircle(
       ui.Offset.zero,
       50,
@@ -69,7 +73,7 @@ Future<void> testMain() async {
     await _createPlatformView(1, platformViewType);
 
     final ui.PictureRecorder recorder = ui.PictureRecorder();
-    final ui.Canvas canvas = ui.Canvas(recorder, region);
+    final ui.Canvas canvas = ui.Canvas(recorder);
     canvas.drawCircle(
       ui.Offset.zero,
       50,
@@ -94,7 +98,7 @@ Future<void> testMain() async {
     sb.addPicture(const ui.Offset(175, 175), picture);
     await renderer.renderScene(sb.build());
 
-    await matchGoldenFile('picture_platformview_overlap.png', region: region);
+    await matchGoldenFile('picture_platformview_sandwich.png', region: region);
   });
 }
 

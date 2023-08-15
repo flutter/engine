@@ -457,7 +457,7 @@ class LayerBuilder {
   ui.Rect? platformViewRect;
 
   void flushSlices() {
-    print('Flushing slices');
+    //print('Flushing slices');
     if (pendingPictures.isNotEmpty) {
       final ui.Rect drawnRect = picturesRect ?? ui.Rect.zero;
       final ui.Rect rect = operation?.cullRect(drawnRect) ?? drawnRect;
@@ -524,18 +524,18 @@ class LayerBuilder {
   }
 
   void mergeLayer(PictureLayer layer) {
-    print('merging layer');
+    //print('merging layer');
     for (final LayerSlice slice in layer.slices) {
       switch (slice) {
         case PictureSlice():
-          print('adding picture from merged layer slice with bounds: ${slice.picture.cullRect}');
+          //print('adding picture from merged layer slice with bounds: ${slice.picture.cullRect}');
           addPicture(ui.Offset.zero, slice.picture);
         case PlatformViewSlice():
           final ui.Rect? occlusionRect = slice.occlusionRect;
           if (occlusionRect != null) {
             platformViewRect = platformViewRect?.expandToInclude(occlusionRect) ?? occlusionRect;
           }
-          print('adding views from merged platform view slice: ${slice.views}');
+          //print('adding views from merged platform view slice: ${slice.views}');
           pendingPlatformViews.addAll(slice.views);
       }
     }
@@ -543,7 +543,7 @@ class LayerBuilder {
 
   PictureLayer build() {
     flushSlices();
-    print('built layer with slices: ${layer.slices}');
+    //print('built layer with slices: ${layer.slices}');
     return layer;
   }
 }

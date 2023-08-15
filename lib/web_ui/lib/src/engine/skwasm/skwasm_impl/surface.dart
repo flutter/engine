@@ -11,6 +11,8 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
+
+
 class SkwasmSurface {
   factory SkwasmSurface() {
     final SurfaceHandle surfaceHandle = withStackScope((StackScope scope) {
@@ -29,19 +31,29 @@ class SkwasmSurface {
   final int threadId;
 
   void _initialize() {
-    _callbackHandle =
-      OnRenderCallbackHandle.fromAddress(
-        skwasmInstance.addFunction(
-          _callbackHandler.toJS,
-          'vii'.toJS
-        ).toDartDouble.toInt()
-      );
+    final WebAssemblyFunction wasmFunction = WebAssemblyFunction(
+      WebAssemblyFunctionType(
+        parameters: <JSString>[
+          'i32'.toJS,
+          'i32'.toJS,
+          'externref'.toJS
+        ].toJS,
+        results: <JSString>[].toJS
+      ),
+      _callbackHandler.toJS,
+    );
+    _callbackHandle = OnRenderCallbackHandle.fromAddress(
+      skwasmInstance.addFunction(wasmFunction).toDartInt,
+    );
     surfaceSetCallbackHandler(handle, _callbackHandle);
   }
 
   Future<DomImageBitmap> renderPicture(SkwasmPicture picture) async {
     final int callbackId = surfaceRenderPicture(handle, picture.handle);
-    return (await _registerCallback(callbackId)) as DomImageBitmap;
+    print('render picture with callbackID: $callbackId, rect: ${picture.cullRect}');
+    final DomImageBitmap bitmap = (await _registerCallback(callbackId)) as DomImageBitmap;
+    print('picture rendered with callbackID: $callbackId, rect: ${bitmap.width.toDartDouble} x ${bitmap.height.toDartDouble}');
+    return bitmap;
   }
 
   Future<ByteData> rasterizeImage(SkwasmImage image, ui.ImageByteFormat format) async {
@@ -68,10 +80,13 @@ class SkwasmSurface {
     return completer.future;
   }
 
-  void _callbackHandler(JSNumber jsCallbackId, JSAny value) {
-    final CallbackId callbackId = jsCallbackId.toDartInt;
-    final Completer<JSAny> completer = _pendingCallbacks.remove(callbackId)!;
-    completer.complete(value);
+  void _callbackHandler(JSNumber callbackId, JSNumber context, JSAny jsContext) {
+    final Completer<JSAny> completer = _pendingCallbacks.remove(callbackId.toDartInt)!;
+    if (jsContext.isUndefinedOrNull) {
+      completer.complete(context);
+    } else {
+      completer.complete(jsContext);
+    }
   }
 
   void dispose() {

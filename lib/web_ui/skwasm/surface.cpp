@@ -59,10 +59,8 @@ uint32_t Surface::rasterizeImage(SkImage* image, ImageByteFormat format) {
   return callbackId;
 }
 
-void Surface::disposeVideoFrame(SkwasmObject videoFrame) {
-  emscripten_dispatch_to_thread(_thread, EM_FUNC_SIG_VII,
-                                reinterpret_cast<void*>(fDisposeVideoFrame),
-                                nullptr, this, videoFrame);
+std::unique_ptr<VideoFrameWrapper> Surface::createVideoFrameWrapper(SkwasmObject videoFrame) {
+  return std::unique_ptr<VideoFrameWrapper>(new VideoFrameWrapper(_thread, videoFrame));
 }
 
 // Main thread only
@@ -74,7 +72,7 @@ void Surface::setCallbackHandler(CallbackHandler* callbackHandler) {
 // Worker thread only
 void Surface::_runWorker() {
   _init();
-  emscripten_unwind_to_js_event_loop();
+  emscripten_exit_with_live_runtime();
 }
 
 // Worker thread only
@@ -182,19 +180,13 @@ void Surface::_disposeVideoFrame(SkwasmObject videoFrame) {
 }
 
 void Surface::_onRasterizeComplete(SkData* data, uint32_t callbackId) {
-  _callbackHandler(callbackId, data);
-}
-
-// Worker thread only
-void Surface::notifyRenderComplete(uint32_t callbackId, SkwasmObject imageBitmap) {
-  emscripten_async_run_in_main_runtime_thread(
-      EM_FUNC_SIG_VII, fOnRenderComplete, this, imageBitmap);
+  _callbackHandler(callbackId, data, __builtin_wasm_ref_null_extern());
 }
 
 // Main thread only
-void Surface::_onRenderComplete(uint32_t callbackId, SkwasmObject imageBitmap) {
+void Surface::onRenderComplete(uint32_t callbackId, SkwasmObject imageBitmap) {
   assert(emscripten_is_main_browser_thread());
-  _callbackHandler(callbackId, imageBitmap);
+  _callbackHandler(callbackId, nullptr, imageBitmap);
 }
 
 void Surface::fDispose(Surface* surface) {
@@ -206,14 +198,6 @@ void Surface::fRenderPicture(Surface* surface,
                              uint32_t callbackId) {
   surface->_renderPicture(picture, callbackId);
   picture->unref();
-}
-
-void Surface::fOnRenderComplete(
-  Surface* surface,
-  uint32_t callbackId,
-  SkwasmObject imageBitmap
-) {
-  surface->_onRenderComplete(callbackId, imageBitmap);
 }
 
 void Surface::fOnRasterizeComplete(Surface* surface,
@@ -266,8 +250,8 @@ SKWASM_EXPORT uint32_t surface_rasterizeImage(Surface* surface,
 
 // This is used by the skwasm JS support code to call back into C++ when the
 // we finish creating the image bitmap, which is an asynchronous operation.
-SKWASM_EXPORT void surface_onCaptureComplete(Surface* surface,
+SKWASM_EXPORT void surface_onRenderComplete(Surface* surface,
                                              uint32_t callbackId,
                                              SkwasmObject imageBitmap) {
-  return surface->notifyRenderComplete(callbackId, imageBitmap);
+  return surface->onRenderComplete(callbackId, imageBitmap);
 }

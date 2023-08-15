@@ -125,6 +125,7 @@ class PlatformViewManager {
     int viewId,
     Object? params,
   ) {
+    print('render content $viewId');
     assert(knowsViewType(viewType),
         'Attempted to render contents of unregistered viewType: $viewType');
 

@@ -59,7 +59,7 @@ external ImageHandle imageCreateFromPixels(
 // annotations currently. For now, we can use JS interop to expose this function
 // instead.
 extension SkwasmImageExtension on SkwasmInstance {
-  @JS('image_createFromVideoFrame')
+  @JS('wasmExports.image_createFromVideoFrame')
   external JSNumber imageCreateFromVideoFrame(
     VideoFrame frame,
     JSNumber width,

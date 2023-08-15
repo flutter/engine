@@ -1427,6 +1427,11 @@ extension DomImageDataExtension on DomImageData {
 @staticInterop
 class DomImageBitmap {}
 
+extension DomImageBitmapExtension on DomImageBitmap {
+  external JSNumber get width;
+  external JSNumber get height;
+}
+
 @JS()
 @staticInterop
 class DomCanvasPattern {}

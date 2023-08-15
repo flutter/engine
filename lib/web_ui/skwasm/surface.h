@@ -33,10 +33,26 @@ enum class ImageByteFormat {
   png,
 };
 
+class VideoFrameWrapper {
+  public:
+    VideoFrameWrapper(unsigned long threadId, SkwasmObject videoFrame) : _rasterThreadId(threadId) {
+      skwasm_setAssociatedObjectOnThread(_rasterThreadId, this, videoFrame);
+    }
+
+    ~VideoFrameWrapper() {
+      skwasm_setAssociatedObjectOnThread(_rasterThreadId, this, __builtin_wasm_ref_null_extern());
+    }
+
+    SkwasmObject getVideoFrame() {
+      return skwasm_getAssociatedObject(this);
+    }
+  private:
+    unsigned long _rasterThreadId;
+};
+
 class Surface {
  public:
- public:
-  using CallbackHandler = void(uint32_t, void*);
+  using CallbackHandler = void(uint32_t, void*, SkwasmObject);
 
   // Main thread only
   Surface();
@@ -48,12 +64,10 @@ class Surface {
   uint32_t renderPicture(SkPicture* picture);
   uint32_t rasterizeImage(SkImage* image, ImageByteFormat format);
   void setCallbackHandler(CallbackHandler* callbackHandler);
+  void onRenderComplete(uint32_t callbackId, SkwasmObject imageBitmap);
 
   // Any thread
-  void disposeVideoFrame(SkwasmObject videoFrame);
-
-  // Worker thread only.
-  void notifyRenderComplete(uint32_t callbackId, SkwasmObject imageBitmap);
+  std::unique_ptr<VideoFrameWrapper> createVideoFrameWrapper(SkwasmObject videoFrame);
 
  private:
   void _runWorker();
@@ -67,7 +81,6 @@ class Surface {
                        uint32_t callbackId);
   void _disposeVideoFrame(SkwasmObject videoFrame);
   void _onRasterizeComplete(SkData* data, uint32_t callbackId);
-  void _onRenderComplete(uint32_t callbackId, SkwasmObject imageBitmap);
 
   std::string _canvasID;
   CallbackHandler* _callbackHandler = nullptr;

@@ -12,6 +12,8 @@ class Surface;
 using SkwasmObject = __externref_t;
 
 extern "C" {
+extern void skwasm_setAssociatedObjectOnThread(unsigned long threadId, void *pointer, SkwasmObject object);
+extern SkwasmObject skwasm_getAssociatedObject(void *pointer);
 extern void skwasm_registerMessageListener(pthread_t threadId);
 extern uint32_t skwasm_createOffscreenCanvas(int width, int height);
 extern void skwasm_resizeCanvas(uint32_t contextHandle, int width, int height);
@@ -24,5 +26,5 @@ extern unsigned int skwasm_createGlTextureFromVideoFrame(
     SkwasmObject videoFrame,
     int width,
     int height);
-extern void skwasm_disposeVideoFrame(SkwasmObject videoFrameId);
+extern void skwasm_disposeVideoFrame(SkwasmObject videoFrame);
 }

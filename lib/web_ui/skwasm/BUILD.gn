@@ -33,6 +33,7 @@ wasm_lib("skwasm") {
 
   cflags = [
     "-mreference-types",
+    "-pthread",
   ]
 
   ldflags = [
@@ -44,10 +45,9 @@ wasm_lib("skwasm") {
     "-sPTHREAD_POOL_SIZE=1",
     "-sALLOW_MEMORY_GROWTH",
     "-sALLOW_TABLE_GROWTH",
-    "-sUSE_PTHREADS=1",
     "-lexports.js",
     "-sEXPORTED_FUNCTIONS=[stackAlloc]",
-    "-sEXPORTED_RUNTIME_METHODS=[addFunction,removeFunction,skwasm_registerObject,skwasm_unregisterObject,skwasm_getObject,skwasm_transferObjectToThread,skwasm_generateUniqueId]",
+    "-sEXPORTED_RUNTIME_METHODS=[addFunction,wasmExports]",
     "-Wno-pthreads-mem-growth",
     "--js-library",
     rebase_path("library_skwasm_support.js"),
