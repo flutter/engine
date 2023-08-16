@@ -14,6 +14,7 @@ typedef PlatformMessageResponseCallback = void Function(ByteData? data);
 typedef PlatformMessageCallback = void Function(
     String name, ByteData? data, PlatformMessageResponseCallback? callback);
 typedef ErrorCallback = bool Function(Object exception, StackTrace stackTrace);
+typedef RenderScenesCallback = void Function(List<int> viewIds, List<Scene> scenes);
 
 // ignore: avoid_classes_with_only_static_members
 /// A token that represents a root isolate.
@@ -80,7 +81,8 @@ abstract class PlatformDispatcher {
 
   void scheduleFrame();
 
-  void render(Scene scene, [FlutterView view]);
+  void renderScenes(Map<FlutterView, Scene> scenes);
+  RenderScenesCallback? debugRenderScenesOverride;
 
   AccessibilityFeatures get accessibilityFeatures;
 
@@ -146,6 +148,8 @@ abstract class PlatformDispatcher {
 
   VoidCallback? get onFrameDataChanged => null;
   set onFrameDataChanged(VoidCallback? callback) {}
+
+  void debugClearOverride();
 }
 
 enum FramePhase {

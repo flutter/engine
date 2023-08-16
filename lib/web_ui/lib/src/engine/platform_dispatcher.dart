@@ -749,8 +749,11 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///  * [RendererBinding], the Flutter framework class which manages layout and
   ///    painting.
   @override
-  void render(ui.Scene scene, [ui.FlutterView? view]) {
-    renderer.renderScene(scene);
+  void renderScenes(Map<ui.FlutterView, ui.Scene> scenes) {
+    // TODO(dkwingsmt): Properly pass scenes to the renderer once Web supports
+    // multiple views.
+    assert(scenes.length == 1);
+    renderer.renderScene(scenes.entries.first.value);
   }
 
   /// Additional accessibility features that may be enabled by the platform.
@@ -1287,6 +1290,14 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   @override
   ui.FrameData get frameData => const ui.FrameData.webOnly();
+
+  @override
+  void debugClearOverride() {
+    assert(() {
+      debugRenderScenesOverride = null;
+      return true;
+    }());
+  }
 }
 
 bool _handleWebTestEnd2EndMessage(MethodCodec codec, ByteData? data) {
