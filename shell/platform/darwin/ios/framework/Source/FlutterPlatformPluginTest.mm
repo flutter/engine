@@ -47,25 +47,40 @@
       std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
   [engine runWithEntrypoint:nil];
 
-  XCTestExpectation* invokeExpectation =
-      [self expectationWithDescription:@"Web search launched with search term"];
+  XCTestExpectation* invokeExpectationEscaped =
+      [self expectationWithDescription:@"Web search launched with escaped search term"];
+
+  XCTestExpectation* invokeExpectationNotEscaped =
+      [self expectationWithDescription:@"Web search launched with non escaped search term"];
 
   FlutterPlatformPlugin* plugin =
       [[[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakPtr()] autorelease];
   FlutterPlatformPlugin* mockPlugin = OCMPartialMock(plugin);
 
-  FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"SearchWeb.invoke"
+  FlutterMethodCall* methodCallEscaped = [FlutterMethodCall methodCallWithMethodName:@"SearchWeb.invoke"
                                                                     arguments:@"Testing Word!"];
 
-  FlutterResult result = ^(id result) {
+  FlutterMethodCall* methodCallNotEscaped = [FlutterMethodCall methodCallWithMethodName:@"SearchWeb.invoke"
+                                                                    arguments:@"Test"];
+
+  FlutterResult resultEscaped = ^(id result) {
     OCMVerify([mockPlugin searchWeb:@"Testing Word!"]);
     OCMVerify([mockApplication openURL:[NSURL URLWithString:@"x-web-search://?Testing%20Word!"]
                                options:@{}
                      completionHandler:nil]);
-    [invokeExpectation fulfill];
+    [invokeExpectationEscaped fulfill];
   };
 
-  [mockPlugin handleMethodCall:methodCall result:result];
+  FlutterResult resultNotEscaped = ^(id result) {
+    OCMVerify([mockPlugin searchWeb:@"Test"]);
+    OCMVerify([mockApplication openURL:[NSURL URLWithString:@"x-web-search://?Test"]
+                               options:@{}
+                     completionHandler:nil]);
+    [invokeExpectationNotEscaped fulfill];
+  };
+
+  [mockPlugin handleMethodCall:methodCallEscaped result:resultEscaped];
+  [mockPlugin handleMethodCall:methodCallNotEscaped result:resultNotEscaped];
   [self waitForExpectationsWithTimeout:1 handler:nil];
   [mockApplication stopMocking];
 }
