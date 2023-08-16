@@ -14,7 +14,7 @@ extension SingletonFlutterWindowExtension on ui.SingletonFlutterWindow {
 
 /// Overrides the value of [ui.FlutterView.devicePixelRatio] in tests.
 void debugOverrideDevicePixelRatio(double? value) {
-  (ui.window as EngineSingletonFlutterWindow).debugOverrideDevicePixelRatio(value);
+  EngineFlutterDisplay.instance.debugDevicePixelRatioOverride = value;
 }
 
 /// Whether the Flutter engine is running in `flutter test` emulation mode.
