@@ -8,13 +8,13 @@ import 'package:ui/ui.dart' as ui;
 extension SingletonFlutterWindowExtension on ui.SingletonFlutterWindow {
   /// Overrides the value of [physicalSize] in tests.
   set debugPhysicalSizeOverride(ui.Size? value) {
-    (this as EngineSingletonFlutterWindow).debugPhysicalSizeOverride = value;
+    (this as EngineFlutterWindow).debugPhysicalSizeOverride = value;
   }
+}
 
-  /// Overrides the value of [devicePixelRatio] in tests.
-  set debugOverrideDevicePixelRatio(double? value) {
-    (this as EngineSingletonFlutterWindow).debugOverrideDevicePixelRatio(value);
-  }
+/// Overrides the value of [ui.FlutterView.devicePixelRatio] in tests.
+void debugOverrideDevicePixelRatio(double? value) {
+  (ui.window as EngineSingletonFlutterWindow).debugOverrideDevicePixelRatio(value);
 }
 
 /// Whether the Flutter engine is running in `flutter test` emulation mode.
