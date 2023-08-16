@@ -388,6 +388,11 @@ RuntimeController::ComputePlatformResolvedLocale(
   return client_.ComputePlatformResolvedLocale(supported_locale_data);
 }
 
+// |PlatformConfigurationClient|
+void RuntimeController::ChannelListenedTo(const std::string& name, bool listening) {
+  client_.ChannelListenedTo(name, listening);
+}
+
 Dart_Port RuntimeController::GetMainPort() {
   std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
   return root_isolate ? root_isolate->main_port() : ILLEGAL_PORT;

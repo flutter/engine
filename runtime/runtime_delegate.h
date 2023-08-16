@@ -56,6 +56,8 @@ class RuntimeDelegate {
   virtual std::weak_ptr<PlatformMessageHandler> GetPlatformMessageHandler()
       const = 0;
 
+  virtual void ChannelListenedTo(const std::string& name, bool listening) = 0;
+
  protected:
   virtual ~RuntimeDelegate();
 };

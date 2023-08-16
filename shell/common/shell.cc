@@ -1332,6 +1332,11 @@ void Shell::OnEngineHandlePlatformMessage(
   }
 }
 
+void Shell::OnEngineChannelListenedTo(const std::string& name, bool listening) {
+  FML_LOG(ERROR) << "Shell received indication of listening to " << name;
+  // TODO forward to platform view
+}
+
 void Shell::HandleEngineSkiaMessage(std::unique_ptr<PlatformMessage> message) {
   const auto& data = message->data();
 

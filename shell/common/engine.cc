@@ -565,6 +565,10 @@ std::weak_ptr<PlatformMessageHandler> Engine::GetPlatformMessageHandler()
   return delegate_.GetPlatformMessageHandler();
 }
 
+void Engine::ChannelListenedTo(const std::string& name, bool listening) {
+  delegate_.OnEngineChannelListenedTo(name, listening);
+}
+
 void Engine::LoadDartDeferredLibrary(
     intptr_t loading_unit_id,
     std::unique_ptr<const fml::Mapping> snapshot_data,

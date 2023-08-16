@@ -217,6 +217,8 @@ class PlatformConfigurationClient {
   ///
   virtual void RequestDartDeferredLibrary(intptr_t loading_unit_id) = 0;
 
+  virtual void ChannelListenedTo(const std::string& name, bool listening) = 0;
+
  protected:
   virtual ~PlatformConfigurationClient();
 };
