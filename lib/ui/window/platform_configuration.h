@@ -521,6 +521,8 @@ class PlatformConfigurationNativeApi {
   static void RespondToPlatformMessage(int response_id,
                                        const tonic::DartByteData& data);
 
+  static void PlatformChannelListenedTo(const std::string& name);
+
   //--------------------------------------------------------------------------
   /// @brief      Requests the Dart VM to adjusts the GC heuristics based on
   ///             the requested `performance_mode`. Returns the old performance
