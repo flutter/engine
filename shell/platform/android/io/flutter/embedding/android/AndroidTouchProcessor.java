@@ -183,9 +183,10 @@ public class AndroidTouchProcessor {
    * wheel movements, etc.
    *
    * @param event The generic motion event being processed.
+   * @param context For use by ViewConfiguration.get(context) to scale input.
    * @return True if the event was handled.
    */
-  public boolean onGenericMotionEvent(@NonNull MotionEvent event, Context context) {
+  public boolean onGenericMotionEvent(@NonNull MotionEvent event, @NonNull Context context) {
     // Method isFromSource is only available in API 18+ (Jelly Bean MR2)
     // Mouse hover support is not implemented for API < 18.
     boolean isPointerEvent =
@@ -195,7 +196,7 @@ public class AndroidTouchProcessor {
         (event.getActionMasked() == MotionEvent.ACTION_HOVER_MOVE
             || event.getActionMasked() == MotionEvent.ACTION_SCROLL);
     if (isPointerEvent && isMovementEvent) {
-      continue;
+      // Continue.
     } else {
       return false;
     }

@@ -301,7 +301,7 @@ public class AndroidTouchProcessorTest {
 
     final MotionEvent event =
         mocker.mockEvent(MotionEvent.ACTION_SCROLL, 1f, 1f, 1);
-    boolean handled = touchProcessor.onGenericMotionEvent(event, null);
+    boolean handled = touchProcessor.onTouchEvent(event);
 
     InOrder inOrder = inOrder(mockRenderer);
     inOrder
@@ -318,7 +318,7 @@ public class AndroidTouchProcessorTest {
   public void unexpectedPointerChange() {
     // Regression test for https://github.com/flutter/flutter/issues/129765
     MotionEventMocker mocker =
-        new MotionEventMocker(0, InputDevice.SOURCE_MOUSE, MotionEvent.TOOL_TYPE_MOUSE);
+        new MotionEventMocker(0, InputDevice.SOURCE_CLASS_POINTER, MotionEvent.TOOL_TYPE_MOUSE);
 
     touchProcessor.onTouchEvent(mocker.mockEvent(MotionEvent.ACTION_DOWN, 0.0f, 0.0f, 0));
     InOrder inOrder = inOrder(mockRenderer);
@@ -345,7 +345,7 @@ public class AndroidTouchProcessorTest {
     assertEquals(10.0, readPointerPanX(packet));
     assertEquals(5.0, readPointerPanY(packet));
 
-    touchProcessor.onGenericMotionEvent(mocker.mockEvent(MotionEvent.ACTION_SCROLL, 0.0f, 0.0f, 0), null);
+    touchProcessor.onGenericMotionEvent(mocker.mockEvent(MotionEvent.ACTION_SCROLL, 0.0f, 0.0f, 0), ApplicationProvider.getApplicationContext());
     inOrder
         .verify(mockRenderer)
         .dispatchPointerDataPacket(packetCaptor.capture(), packetSizeCaptor.capture());
