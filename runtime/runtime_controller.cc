@@ -358,18 +358,9 @@ void RuntimeController::Render(std::unordered_map<int64_t, Scene*> scenes) {
       continue;
     }
     const auto& viewport_metrics = window->viewport_metrics();
-    // Ensure frame dimensions are sane.
-    if (viewport_metrics.physical_width <= 0 ||
-        viewport_metrics.physical_height <= 0 ||
-        viewport_metrics.device_pixel_ratio <= 0) {
-      continue;
-    }
-    auto layer_tree = scene->takeLayerTree(viewport_metrics.physical_width,
-                                           viewport_metrics.physical_height);
-    if (layer_tree == nullptr) {
-      continue;
-    }
-    tasks.emplace_back(view_id, std::move(layer_tree),
+    tasks.emplace_back(view_id,
+                       scene->takeLayerTree(viewport_metrics.physical_width,
+                                            viewport_metrics.physical_height),
                        viewport_metrics.device_pixel_ratio);
   }
   client_.Render(std::move(tasks));
