@@ -80,7 +80,7 @@ abstract class PlatformDispatcher {
 
   void scheduleFrame();
 
-  void render(Scene scene, [FlutterView view]);
+  void renderScenes(Map<FlutterView, Scene> scenes);
 
   AccessibilityFeatures get accessibilityFeatures;
 
