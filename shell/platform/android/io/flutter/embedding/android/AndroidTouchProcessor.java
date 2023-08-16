@@ -149,18 +149,12 @@ public class AndroidTouchProcessor {
       for (int p = 0; p < pointerCount; p++) {
         if (p != event.getActionIndex() && event.getToolType(p) == MotionEvent.TOOL_TYPE_FINGER) {
           addPointerForIndex(
-              event,
-              p,
-              PointerChange.MOVE,
-              POINTER_DATA_FLAG_BATCHED,
-              transformMatrix,
-              packet);
+              event, p, PointerChange.MOVE, POINTER_DATA_FLAG_BATCHED, transformMatrix, packet);
         }
       }
       // It's important that we're sending the UP event last. This allows PlatformView
       // to correctly batch everything back into the original Android event if needed.
-      addPointerForIndex(
-          event, event.getActionIndex(), pointerChange, 0, transformMatrix, packet);
+      addPointerForIndex(event, event.getActionIndex(), pointerChange, 0, transformMatrix, packet);
     } else {
       // ACTION_MOVE may not actually mean all pointers have moved
       // but it's the responsibility of a later part of the system to
