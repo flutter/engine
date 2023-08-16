@@ -373,6 +373,11 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
       host->root_isolate_create_callback_();
     }
   };
+  args.channel_listened_to_callback = [](const char* name, size_t name_len, bool listening, void* user_data) {
+    auto host = static_cast<FlutterWindowsEngine*>(user_data);
+    std::string channel_name(name, name + name_len);
+    FML_LOG(ERROR) << "Engine receives notification for " << channel_name;
+  };
 
   args.custom_task_runners = &custom_task_runners;
 
