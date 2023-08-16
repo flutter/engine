@@ -115,7 +115,6 @@ targets:
     enabled_branches:
       - main
     recipe: engine_v2/cache
-    bringup: true
     presubmit: false
     properties:
       cache_name: "builder"
@@ -136,7 +135,6 @@ targets:
     enabled_branches:
       - main
     recipe: engine_v2/cache
-    bringup: true
     presubmit: false
     properties:
       cache_name: "builder"
@@ -156,7 +154,6 @@ targets:
     enabled_branches:
       - main
     recipe: engine_v2/cache
-    bringup: true
     presubmit: false
     properties:
       cache_name: "builder"
@@ -244,6 +241,19 @@ targets:
     timeout: 120
     properties:
       config_name: linux_clang_tidy
+    runIf:
+      - DEPS
+      - .ci.yaml
+      - tools/clang_tidy/**
+      - ci/builders/**
+      - ci/lint.sh
+      - "**.h"
+      - "**.c"
+      - "**.cc"
+      - "**.fbs"
+      - "**.frag"
+      - "**.vert"
+      - "**.py"
 
   - name: Linux linux_arm_host_engine
     recipe: engine_v2/engine_v2
@@ -367,8 +377,9 @@ targets:
     runIf:
       - DEPS
       - .ci.yaml
-      - tools/**
-      - ci/**
+      - tools/clang_tidy/**
+      - ci/builders/**
+      - ci/lint.sh
       - "**.h"
       - "**.c"
       - "**.cc"
