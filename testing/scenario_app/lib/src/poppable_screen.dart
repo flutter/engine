@@ -38,6 +38,7 @@ class PoppableScreenScenario extends Scenario {
     builder.pushOffset(0, 0);
     builder.addPicture(Offset.zero, picture);
     final Scene scene = builder.build();
+    // ignore: deprecated_member_use
     view.render(scene);
     scene.dispose();
   }

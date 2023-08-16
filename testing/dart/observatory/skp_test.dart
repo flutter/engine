@@ -35,6 +35,7 @@ void main() {
       builder.addPicture(Offset.zero, picture);
       final Scene scene = builder.build();
 
+      // ignore: deprecated_member_use
       PlatformDispatcher.instance.implicitView!.render(scene);
       scene.dispose();
       completer.complete();

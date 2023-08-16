@@ -209,6 +209,7 @@ class PlatformViewTwoIntersectingOverlaysScenario extends Scenario
     final Picture picture = recorder.endRecording();
     builder.addPicture(const Offset(300, 300), picture);
     final Scene scene = builder.build();
+    // ignore: deprecated_member_use
     view.render(scene);
     scene.dispose();
   }
@@ -256,6 +257,7 @@ class PlatformViewOneOverlayTwoIntersectingOverlaysScenario extends Scenario
     final Picture picture = recorder.endRecording();
     builder.addPicture(const Offset(300, 300), picture);
     final Scene scene = builder.build();
+    // ignore: deprecated_member_use
     view.render(scene);
     scene.dispose();
   }
@@ -310,6 +312,7 @@ class MultiPlatformViewWithoutOverlaysScenario extends Scenario
 
     builder.pop();
     final Scene scene = builder.build();
+    // ignore: deprecated_member_use
     view.render(scene);
     scene.dispose();
   }
@@ -361,6 +364,7 @@ class PlatformViewMaxOverlaysScenario extends Scenario
     final Picture picture = recorder.endRecording();
     builder.addPicture(const Offset(300, 300), picture);
     final Scene scene = builder.build();
+    // ignore: deprecated_member_use
     view.render(scene);
     scene.dispose();
   }
@@ -473,6 +477,7 @@ class MultiPlatformViewBackgroundForegroundScenario extends Scenario
     builder.addPicture(Offset.zero, picture);
 
     final Scene scene = builder.build();
+    // ignore: deprecated_member_use
     view.render(scene);
     scene.dispose();
   }
@@ -499,6 +504,7 @@ class MultiPlatformViewBackgroundForegroundScenario extends Scenario
     );
 
     final Scene scene = builder.build();
+    // ignore: deprecated_member_use
     view.render(scene);
     scene.dispose();
   }
@@ -922,6 +928,7 @@ class TwoPlatformViewClipRect extends Scenario
 
     builder.pop();
     final Scene scene = builder.build();
+    // ignore: deprecated_member_use
     view.render(scene);
     scene.dispose();
   }
@@ -991,6 +998,7 @@ class TwoPlatformViewClipRRect extends Scenario
 
     builder.pop();
     final Scene scene = builder.build();
+    // ignore: deprecated_member_use
     view.render(scene);
     scene.dispose();
   }
@@ -1054,6 +1062,7 @@ class TwoPlatformViewClipPath extends Scenario
 
     builder.pop();
     final Scene scene = builder.build();
+    // ignore: deprecated_member_use
     view.render(scene);
     scene.dispose();
   }
@@ -1261,6 +1270,7 @@ class PlatformViewForOverlappingPlatformViewsScenario extends Scenario
     builder.pop();
 
     final Scene scene = builder.build();
+    // ignore: deprecated_member_use
     view.render(scene);
     scene.dispose();
   }
@@ -1291,6 +1301,7 @@ class PlatformViewForOverlappingPlatformViewsScenario extends Scenario
     builder.pop();
 
     final Scene scene = builder.build();
+    // ignore: deprecated_member_use
     view.render(scene);
     scene.dispose();
   }
@@ -1435,6 +1446,7 @@ class PlatformViewWithOtherBackDropFilter extends PlatformViewScenario {
     builder.addPicture(const Offset(100, 100), picture3);
 
     final Scene scene = builder.build();
+    // ignore: deprecated_member_use
     view.render(scene);
     scene.dispose();
   }
@@ -1526,6 +1538,7 @@ class TwoPlatformViewsWithOtherBackDropFilter extends Scenario
     builder.addPicture(const Offset(100, 100), picture3);
 
     final Scene scene = builder.build();
+    // ignore: deprecated_member_use
     view.render(scene);
     scene.dispose();
   }
@@ -1588,6 +1601,7 @@ class PlatformViewWithNegativeBackDropFilter extends Scenario
     builder.pushBackdropFilter(filter);
 
     final Scene scene = builder.build();
+    // ignore: deprecated_member_use
     view.render(scene);
     scene.dispose();
   }
@@ -1666,6 +1680,7 @@ class PlatformViewScrollingUnderWidget extends Scenario
     builder.addPicture(const Offset(0, 20), picture);
 
     final Scene scene = builder.build();
+    // ignore: deprecated_member_use
     view.render(scene);
     scene.dispose();
   }
@@ -1752,6 +1767,7 @@ class PlatformViewsWithClipsScrolling extends Scenario
     }
 
     final Scene scene = builder.build();
+    // ignore: deprecated_member_use
     view.render(scene);
     scene.dispose();
   }
@@ -1929,6 +1945,7 @@ mixin _BasePlatformViewScenarioMixin on Scenario {
     final Picture picture = recorder.endRecording();
     sceneBuilder.addPicture(const Offset(300, 300), picture);
     final Scene scene = sceneBuilder.build();
+    // ignore: deprecated_member_use
     view.render(scene);
     scene.dispose();
   }

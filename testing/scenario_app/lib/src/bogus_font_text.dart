@@ -40,6 +40,7 @@ class BogusFontText extends Scenario {
       willChangeHint: true,
     );
     final Scene scene = builder.build();
+    // ignore: deprecated_member_use
     view.render(scene);
     scene.dispose();
 

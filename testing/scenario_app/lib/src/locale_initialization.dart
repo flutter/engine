@@ -35,6 +35,7 @@ class LocaleInitialization extends Scenario {
       picture,
     );
     final Scene scene = builder.build();
+    // ignore: deprecated_member_use
     view.render(scene);
     scene.dispose();
 
