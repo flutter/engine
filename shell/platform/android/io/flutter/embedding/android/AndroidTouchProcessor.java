@@ -140,8 +140,7 @@ public class AndroidTouchProcessor {
                 || maskedAction == MotionEvent.ACTION_POINTER_UP);
     if (updateForSinglePointer) {
       // ACTION_DOWN and ACTION_POINTER_DOWN always apply to a single pointer only.
-      addPointerForIndex(
-          event, event.getActionIndex(), pointerChange, 0, transformMatrix, packet);
+      addPointerForIndex(event, event.getActionIndex(), pointerChange, 0, transformMatrix, packet);
     } else if (updateForMultiplePointers) {
       // ACTION_UP and ACTION_POINTER_UP may contain position updates for other pointers.
       // We are converting these updates to move events here in order to preserve this data.
@@ -221,7 +220,8 @@ public class AndroidTouchProcessor {
     return true;
   }
 
-  /// Passes null for context when it is not available. Note that without context scroll wheel will not work.
+  /// Passes null for context when it is not available. Note that without context scroll wheel will
+  // not work.
   private void addPointerForIndex(
       MotionEvent event,
       int pointerIndex,
@@ -229,8 +229,9 @@ public class AndroidTouchProcessor {
       int pointerData,
       Matrix transformMatrix,
       ByteBuffer packet) {
-        addPointerForIndex(event, pointerIndex, pointerChange, pointerData, transformMatrix, packet, null);
-      }
+    addPointerForIndex(
+        event, pointerIndex, pointerChange, pointerData, transformMatrix, packet, null);
+  }
 
   // TODO(mattcarroll): consider creating a PointerPacket class instead of using a procedure that
   // mutates inputs.
@@ -372,8 +373,6 @@ public class AndroidTouchProcessor {
           horizontalScaleFactor * -event.getAxisValue(MotionEvent.AXIS_HSCROLL, pointerIndex);
       final double verticalScrollPixels =
           verticalScaleFactor * -event.getAxisValue(MotionEvent.AXIS_VSCROLL, pointerIndex);
-
-      Log.w("AndroidTouchProcessor", "index: " + pointerIndex + " VSF: " + verticalScaleFactor + " Distance: " + verticalScrollPixels);
       packet.putDouble(horizontalScrollPixels); // scroll_delta_x
       packet.putDouble(verticalScrollPixels); // scroll_delta_y
     } else {

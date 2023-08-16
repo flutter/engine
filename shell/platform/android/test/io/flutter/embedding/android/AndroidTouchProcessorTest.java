@@ -7,11 +7,12 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import android.content.Context;
-
 import android.annotation.TargetApi;
+import android.content.Context;
 import android.view.InputDevice;
 import android.view.MotionEvent;
+import android.view.ViewConfiguration;
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import java.nio.ByteBuffer;
@@ -24,8 +25,6 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.annotation.Config;
-import android.view.ViewConfiguration;
-import androidx.test.core.app.ApplicationProvider;
 
 @Config(manifest = Config.NONE)
 @RunWith(AndroidJUnit4.class)
@@ -99,10 +98,14 @@ public class AndroidTouchProcessorTest {
       when(event.getDevice()).thenReturn(null);
       when(event.getSource()).thenReturn(source);
       // Ensure that isFromSource does not auto default to false when source is passed in.
-      when(event.isFromSource(InputDevice.SOURCE_CLASS_POINTER)).thenReturn(source == InputDevice.SOURCE_CLASS_POINTER);
-      when(event.isFromSource(InputDevice.SOURCE_MOUSE)).thenReturn(source == InputDevice.SOURCE_MOUSE);
-      when(event.isFromSource(InputDevice.SOURCE_STYLUS)).thenReturn(source == InputDevice.SOURCE_STYLUS);
-      when(event.isFromSource(InputDevice.SOURCE_TOUCHSCREEN)).thenReturn(source == InputDevice.SOURCE_TOUCHSCREEN);
+      when(event.isFromSource(InputDevice.SOURCE_CLASS_POINTER))
+          .thenReturn(source == InputDevice.SOURCE_CLASS_POINTER);
+      when(event.isFromSource(InputDevice.SOURCE_MOUSE))
+          .thenReturn(source == InputDevice.SOURCE_MOUSE);
+      when(event.isFromSource(InputDevice.SOURCE_STYLUS))
+          .thenReturn(source == InputDevice.SOURCE_STYLUS);
+      when(event.isFromSource(InputDevice.SOURCE_TOUCHSCREEN))
+          .thenReturn(source == InputDevice.SOURCE_TOUCHSCREEN);
       when(event.getPointerCount()).thenReturn(1);
       when(event.getActionMasked()).thenReturn(action);
       when(event.getActionIndex()).thenReturn(0);
@@ -243,23 +246,26 @@ public class AndroidTouchProcessorTest {
     verify(mockRenderer, never()).dispatchPointerDataPacket(ByteBuffer.allocate(0), 0);
   }
 
-
   @Test
   public void scrollWheel() {
     // Pointer id must be zero to match actionIndex in mocked event.
     final int pointerId = 0;
     MotionEventMocker mocker =
-        new MotionEventMocker(pointerId, InputDevice.SOURCE_CLASS_POINTER, MotionEvent.TOOL_TYPE_MOUSE);
+        new MotionEventMocker(
+            pointerId, InputDevice.SOURCE_CLASS_POINTER, MotionEvent.TOOL_TYPE_MOUSE);
     final float horizontalScrollValue = -1f;
     final float verticalScrollValue = .5f;
     final Context context = ApplicationProvider.getApplicationContext();
-    final double horizontalScaleFactor = ViewConfiguration.get(context).getScaledHorizontalScrollFactor();
-    final double verticalScaleFactor = ViewConfiguration.get(context).getScaledVerticalScrollFactor();
+    final double horizontalScaleFactor =
+        ViewConfiguration.get(context).getScaledHorizontalScrollFactor();
+    final double verticalScaleFactor =
+        ViewConfiguration.get(context).getScaledVerticalScrollFactor();
     // Zero verticalScaleFactor will cause this test to miss bugs.
     assertEquals("zero horizontal scale factor", true, horizontalScaleFactor != 0);
     assertEquals("zero vertical scale factor", true, verticalScaleFactor != 0);
 
-    final MotionEvent event = mocker.mockEvent(MotionEvent.ACTION_SCROLL, horizontalScrollValue, verticalScrollValue, 1);
+    final MotionEvent event =
+        mocker.mockEvent(MotionEvent.ACTION_SCROLL, horizontalScrollValue, verticalScrollValue, 1);
     boolean handled = touchProcessor.onGenericMotionEvent(event, context);
 
     InOrder inOrder = inOrder(mockRenderer);
