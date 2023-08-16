@@ -2451,8 +2451,8 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 - (void)setEditableSizeAndTransform:(NSDictionary*)dictionary {
   NSArray* transform = dictionary[@"transform"];
   [_activeView setEditableTransform:transform];
-  int leftIndex = 12;
-  int topIndex = 13;
+  const int leftIndex = 12;
+  const int topIndex = 13;
   if ([_activeView isScribbleAvailable]) {
     // This is necessary to set up where the scribble interactable element will be.
     _inputHider.frame =
@@ -2462,6 +2462,9 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
         CGRectMake(0, 0, [dictionary[@"width"] intValue], [dictionary[@"height"] intValue]);
     _activeView.tintColor = [UIColor clearColor];
   } else {
+    // TODO: Also need to handle iOS 16 case, where the auto-correction highlight does
+    // not match the size of text.
+    // See https://github.com/flutter/flutter/issues/131695
     if (@available(iOS 17, *)) {
       // Move auto-correction highlight to overlap with the actual text.
       // This is to fix an issue where the system auto-correction highlight is displayed at
@@ -2498,16 +2501,20 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
                                                          : NSWritingDirectionRightToLeft]];
   }
 
+  BOOL shouldNotifyTextChange = NO;
   if (@available(iOS 17, *)) {
     // Force UIKit to query the selectionRects again on iOS 17+
     // This is to fix a bug on iOS 17+ where UIKit queries the outdated selectionRects after
     // entering a character, resulting in auto-correction highlight region missing the last
     // character.
+    shouldNotifyTextChange = YES;
+  }
+  if (shouldNotifyTextChange) {
     [_activeView.inputDelegate textWillChange:_activeView];
-    _activeView.selectionRects = rectsAsRect;
+  }
+  _activeView.selectionRects = rectsAsRect;
+  if (shouldNotifyTextChange) {
     [_activeView.inputDelegate textDidChange:_activeView];
-  } else {
-    _activeView.selectionRects = rectsAsRect;
   }
 }
 
