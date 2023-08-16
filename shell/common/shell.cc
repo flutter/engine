@@ -169,6 +169,8 @@ std::unique_ptr<Shell> Shell::Create(
 #if FML_OS_ANDROID || FML_OS_IOS
   if (!vm) {
     shorebird_report_launch_failure();
+  } else {
+    shorebird_report_launch_success();
   }
 #endif
   FML_CHECK(vm) << "Must be able to initialize the VM.";
