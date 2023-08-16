@@ -23,17 +23,6 @@ import 'package:ui/src/engine/vector_math.dart';
 import '../common/spy.dart';
 import '../common/test_initialization.dart';
 
-@JS('InputEvent')
-@staticInterop
-class MockDomInputEvent extends DomUIEvent {
-}
-
-extension MockDomInputEventExtension on MockDomInputEvent {
-  @JS('inputType')
-  external JSString get _inputType;
-  String get inputType => _inputType;
-}
-
 /// The `keyCode` of the "Enter" key.
 const int _kReturnKeyCode = 13;
 
@@ -1788,20 +1777,15 @@ Future<void> testMain() async {
       final DomHTMLInputElement input = textEditing!.strategy.domElement! as
           DomHTMLInputElement;
 
-      final Object jsInputEvent = js_util.getProperty<Object>(domWindow, 'InputEvent');
-      final List<dynamic> eventArgs = <dynamic>[
+      final DomInputEvent testEvent = createDomInputEvent(
         'beforeinput',
-        js_util.jsify(<String, dynamic>{
-          'inputType': 'delete',
-        }),
-      ];
-      final MockDomInputEvent testEvent = js_util.callConstructor<MockDomInputEvent>(
-        jsInputEvent,
-        eventArgs,
+        <Object?, Object?>{
+          'inputType': 'deleteContentBackward',
+        },
       );
       input.dispatchEvent(testEvent);
 
-      EditingState editingState = EditingState(
+      final EditingState editingState = EditingState(
         text: 'Helld',
         baseOffset: 3,
         extentOffset: 3,
@@ -1856,20 +1840,15 @@ Future<void> testMain() async {
       final DomHTMLInputElement input = textEditing!.strategy.domElement! as
           DomHTMLInputElement;
 
-      final Object jsInputEvent = js_util.getProperty<Object>(domWindow, 'InputEvent');
-      final List<dynamic> eventArgs = <dynamic>[
+      final DomInputEvent testEvent = createDomInputEvent(
         'beforeinput',
-        js_util.jsify(<String, dynamic>{
+        <Object?, Object?>{
           'inputType': 'insertLineBreak',
-        }),
-      ];
-      final MockDomInputEvent testEvent = js_util.callConstructor<MockDomInputEvent>(
-        jsInputEvent,
-        eventArgs,
+        },
       );
       input.dispatchEvent(testEvent);
 
-      EditingState editingState = EditingState(
+      final EditingState editingState = EditingState(
         text: 'Hel\nld',
         baseOffset: 3,
         extentOffset: 3,
@@ -1889,7 +1868,7 @@ Future<void> testMain() async {
               <String, dynamic>{
                 'oldText': 'Hello world',
                 'deltaText': '\n',
-                'deltaStart': 3,
+                'deltaStart': 9,
                 'deltaEnd': 9,
                 'selectionBase': 3,
                 'selectionExtent': 3,
