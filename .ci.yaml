@@ -56,7 +56,7 @@ platform_properties:
       os: Mac-12
       $flutter/osx_sdk : >-
         {
-          "sdk_version": "14e300c"
+          "sdk_version": "15a5219j"
         }
     dimensions:
       mac_model: "Macmini8,1|Macmini9,1"
@@ -389,7 +389,7 @@ targets:
         ]
       $flutter/osx_sdk : >-
         {
-          "sdk_version": "14e300c"
+          "sdk_version": "15a5219j"
         }
     drone_dimensions:
       - os=Mac-12
@@ -414,7 +414,7 @@ targets:
         ]
       $flutter/osx_sdk : >-
         {
-          "sdk_version": "14e300c"
+          "sdk_version": "15a5219j"
         }
     drone_dimensions:
       - os=Mac-12
