@@ -57,11 +57,11 @@
       [[[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakPtr()] autorelease];
   FlutterPlatformPlugin* mockPlugin = OCMPartialMock(plugin);
 
-  FlutterMethodCall* methodCallEscaped = [FlutterMethodCall methodCallWithMethodName:@"SearchWeb.invoke"
-                                                                    arguments:@"Testing Word!"];
+  FlutterMethodCall* methodCallEscaped =
+      [FlutterMethodCall methodCallWithMethodName:@"SearchWeb.invoke" arguments:@"Testing Word!"];
 
-  FlutterMethodCall* methodCallNotEscaped = [FlutterMethodCall methodCallWithMethodName:@"SearchWeb.invoke"
-                                                                    arguments:@"Test"];
+  FlutterMethodCall* methodCallNotEscaped =
+      [FlutterMethodCall methodCallWithMethodName:@"SearchWeb.invoke" arguments:@"Test"];
 
   FlutterResult resultEscaped = ^(id result) {
     OCMVerify([mockPlugin searchWeb:@"Testing Word!"]);
