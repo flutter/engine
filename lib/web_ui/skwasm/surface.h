@@ -34,20 +34,21 @@ enum class ImageByteFormat {
 };
 
 class VideoFrameWrapper {
-  public:
-    VideoFrameWrapper(unsigned long threadId, SkwasmObject videoFrame) : _rasterThreadId(threadId) {
-      skwasm_setAssociatedObjectOnThread(_rasterThreadId, this, videoFrame);
-    }
+ public:
+  VideoFrameWrapper(unsigned long threadId, SkwasmObject videoFrame)
+      : _rasterThreadId(threadId) {
+    skwasm_setAssociatedObjectOnThread(_rasterThreadId, this, videoFrame);
+  }
 
-    ~VideoFrameWrapper() {
-      skwasm_setAssociatedObjectOnThread(_rasterThreadId, this, __builtin_wasm_ref_null_extern());
-    }
+  ~VideoFrameWrapper() {
+    skwasm_setAssociatedObjectOnThread(_rasterThreadId, this,
+                                       __builtin_wasm_ref_null_extern());
+  }
 
-    SkwasmObject getVideoFrame() {
-      return skwasm_getAssociatedObject(this);
-    }
-  private:
-    unsigned long _rasterThreadId;
+  SkwasmObject getVideoFrame() { return skwasm_getAssociatedObject(this); }
+
+ private:
+  unsigned long _rasterThreadId;
 };
 
 class Surface {
@@ -67,7 +68,8 @@ class Surface {
   void onRenderComplete(uint32_t callbackId, SkwasmObject imageBitmap);
 
   // Any thread
-  std::unique_ptr<VideoFrameWrapper> createVideoFrameWrapper(SkwasmObject videoFrame);
+  std::unique_ptr<VideoFrameWrapper> createVideoFrameWrapper(
+      SkwasmObject videoFrame);
 
  private:
   void _runWorker();
@@ -102,11 +104,9 @@ class Surface {
   static void fRenderPicture(Surface* surface,
                              SkPicture* picture,
                              uint32_t callbackId);
-  static void fOnRenderComplete(
-    Surface* surface,
-    uint32_t callbackId,
-    SkwasmObject imageBitmap
-  );
+  static void fOnRenderComplete(Surface* surface,
+                                uint32_t callbackId,
+                                SkwasmObject imageBitmap);
   static void fRasterizeImage(Surface* surface,
                               SkImage* image,
                               ImageByteFormat format,

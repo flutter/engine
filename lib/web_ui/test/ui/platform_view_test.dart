@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -29,7 +30,7 @@ Future<void> testMain() async {
   setUp(() {
     ui_web.platformViewRegistry.registerViewFactory(
       platformViewType,
-      (int viewId) { 
+      (int viewId) {
         final DomElement element = createDomHTMLDivElement();
         element.style.backgroundColor = 'blue';
         return element;
@@ -62,7 +63,7 @@ Future<void> testMain() async {
       1,
       offset: const ui.Offset(125, 125),
       width: 50,
-      height: 50,  
+      height: 50,
     );
     await renderer.renderScene(sb.build());
 
@@ -90,15 +91,44 @@ Future<void> testMain() async {
 
     sb.addPlatformView(
       1,
-      offset: const ui.Offset(150, 150),
-      width: 50,
-      height: 50,
+      offset: const ui.Offset(100, 100),
+      width: 100,
+      height: 100,
     );
 
     sb.addPicture(const ui.Offset(175, 175), picture);
     await renderer.renderScene(sb.build());
 
     await matchGoldenFile('picture_platformview_sandwich.png', region: region);
+  });
+
+  test('Transformed platformview', () async {
+    await _createPlatformView(1, platformViewType);
+
+    final ui.PictureRecorder recorder = ui.PictureRecorder();
+    final ui.Canvas canvas = ui.Canvas(recorder);
+    canvas.drawCircle(
+      ui.Offset.zero,
+      50,
+      ui.Paint()
+        ..style = ui.PaintingStyle.fill
+        ..color = const ui.Color(0xFFFF0000)
+    );
+
+    final ui.SceneBuilder sb = ui.SceneBuilder();
+    sb.pushOffset(0, 0);
+    sb.addPicture(const ui.Offset(150, 150), recorder.endRecording());
+
+    sb.pushTransform(Matrix4.rotationZ(math.pi / 3.0).toFloat64());
+    sb.addPlatformView(
+      1,
+      offset: const ui.Offset(125, 125),
+      width: 50,
+      height: 50,
+    );
+    await renderer.renderScene(sb.build());
+
+    await matchGoldenFile('platformview_transformed.png', region: region);
   });
 }
 

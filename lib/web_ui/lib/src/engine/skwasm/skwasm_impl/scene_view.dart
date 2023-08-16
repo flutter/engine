@@ -101,13 +101,26 @@ final class PlatformViewSliceContainer extends SliceContainer {
       }
       // TODO: set all the styling here instead of just the position
       final DomCSSStyleDeclaration style = viewContainer.style;
-      final double logicalWidth = view.rect.width / window.devicePixelRatio;
-      final double logicalHeight = view.rect.height / window.devicePixelRatio;
+      final double logicalWidth = view.size.width / window.devicePixelRatio;
+      final double logicalHeight = view.size.height / window.devicePixelRatio;
       style.width = '${logicalWidth}px';
       style.height = '${logicalHeight}px';
       style.position = 'absolute';
-      style.left = '${view.rect.left}px';
-      style.top = '${view.rect.top}px';
+
+      final ui.Offset? offset = view.styling.position.offset;
+      style.left = '${offset?.dx ?? 0}px';
+      style.top = '${offset?.dy ?? 0}px';
+
+      final Matrix4? transform = view.styling.position.transform;
+      if (transform != null) {
+        style.transform = float64ListToCssTransform3d(transform.storage);
+      }
+    }
+
+    while (currentContainer != null) {
+      final DomElement? next = currentContainer.nextElementSibling;
+      currentContainer.remove();
+      currentContainer = next;
     }
   }
 }
@@ -135,17 +148,6 @@ class SkwasmSceneView {
     queuedRenders += 1;
 
     final List<LayerSlice> slices = scene.rootLayer.slices;
-    print('Rendering scene with slices: ${slices.map((LayerSlice slice) {
-      if (slice is PictureSlice) {
-        return 'PictureSlice(${slice.picture.cullRect})';
-      } else if (slice is PlatformViewSlice) {
-        return 'PlatformViewSlice(${slice.views.map((PlatformView view) {
-          return 'PlatformView(${view.viewId}, ${view.rect})';
-        })})';
-      } else {
-        return 'Unknown';
-      }
-    })}');
     final Iterable<Future<DomImageBitmap?>> renderFutures = slices.map(
       (LayerSlice slice) async => switch (slice) {
           PlatformViewSlice() => null,

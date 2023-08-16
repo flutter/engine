@@ -92,7 +92,7 @@ class VideoFrameImageGenerator : public GrExternalTextureGenerator {
       GrMipMapped mipmapped) override {
     GrGLTextureInfo glInfo;
     glInfo.fID = skwasm_createGlTextureFromVideoFrame(
-         _videoFrameWrapper->getVideoFrame(), fInfo.width(), fInfo.height());
+        _videoFrameWrapper->getVideoFrame(), fInfo.width(), fInfo.height());
     glInfo.fFormat = GL_RGBA8_OES;
     glInfo.fTarget = GL_TEXTURE_2D;
 
@@ -134,11 +134,12 @@ SKWASM_EXPORT SkImage* image_createFromVideoFrame(SkwasmObject videoFrame,
                                                   int height,
                                                   Skwasm::Surface* surface) {
   return SkImages::DeferredFromTextureGenerator(
-             std::unique_ptr<VideoFrameImageGenerator>(new VideoFrameImageGenerator(
-                 SkImageInfo::Make(width, height,
-                                   SkColorType::kRGBA_8888_SkColorType,
-                                   SkAlphaType::kPremul_SkAlphaType),
-                 videoFrame, surface)))
+             std::unique_ptr<VideoFrameImageGenerator>(
+                 new VideoFrameImageGenerator(
+                     SkImageInfo::Make(width, height,
+                                       SkColorType::kRGBA_8888_SkColorType,
+                                       SkAlphaType::kPremul_SkAlphaType),
+                     videoFrame, surface)))
       .release();
 }
 

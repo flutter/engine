@@ -50,9 +50,7 @@ class SkwasmSurface {
 
   Future<DomImageBitmap> renderPicture(SkwasmPicture picture) async {
     final int callbackId = surfaceRenderPicture(handle, picture.handle);
-    print('render picture with callbackID: $callbackId, rect: ${picture.cullRect}');
     final DomImageBitmap bitmap = (await _registerCallback(callbackId)) as DomImageBitmap;
-    print('picture rendered with callbackID: $callbackId, rect: ${bitmap.width.toDartDouble} x ${bitmap.height.toDartDouble}');
     return bitmap;
   }
 

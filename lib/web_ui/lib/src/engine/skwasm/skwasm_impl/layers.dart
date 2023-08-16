@@ -34,6 +34,9 @@ class BackdropFilterOperation implements LayerOperation {
   void post(SceneCanvas canvas, ui.Rect contentRect) {
     canvas.restore();
   }
+
+  @override
+  PlatformViewStyling createPlatformViewStyling() => const PlatformViewStyling();
 }
 
 class ClipPathLayer
@@ -66,6 +69,12 @@ class ClipPathOperation implements LayerOperation {
       canvas.restore();
     }
     canvas.restore();
+  }
+
+  @override
+  PlatformViewStyling createPlatformViewStyling() {
+    // TODO: implement this
+    return const PlatformViewStyling();
   }
 }
 
@@ -100,6 +109,12 @@ class ClipRectOperation implements LayerOperation {
     }
     canvas.restore();
   }
+
+  @override
+  PlatformViewStyling createPlatformViewStyling() {
+    // TODO: implement createPlatformViewStyling
+    return const PlatformViewStyling();
+  }
 }
 
 class ClipRRectLayer
@@ -133,6 +148,12 @@ class ClipRRectOperation implements LayerOperation {
     }
     canvas.restore();
   }
+
+  @override
+  PlatformViewStyling createPlatformViewStyling() {
+    // TODO: implement createPlatformViewStyling
+    return const PlatformViewStyling();
+  }
 }
 
 class ColorFilterLayer
@@ -158,6 +179,9 @@ class ColorFilterOperation implements LayerOperation {
   void post(SceneCanvas canvas, ui.Rect contentRect) {
     canvas.restore();
   }
+
+  @override
+  PlatformViewStyling createPlatformViewStyling() => const PlatformViewStyling();
 }
 
 class ImageFilterLayer
@@ -193,6 +217,17 @@ class ImageFilterOperation implements LayerOperation {
     }
     canvas.restore();
   }
+
+  @override
+  PlatformViewStyling createPlatformViewStyling() {
+    if (offset != ui.Offset.zero) {
+      return PlatformViewStyling(
+        position: PlatformViewPosition(offset: offset)
+      );
+    } else {
+      return const PlatformViewStyling();
+    }
+  }
 }
 
 class OffsetLayer
@@ -220,6 +255,11 @@ class OffsetOperation implements LayerOperation {
   void post(SceneCanvas canvas, ui.Rect contentRect) {
     canvas.restore();
   }
+
+  @override
+  PlatformViewStyling createPlatformViewStyling() => PlatformViewStyling(
+    position: PlatformViewPosition(offset: ui.Offset(dx, dy))
+  );
 }
 
 class OpacityLayer
@@ -256,6 +296,12 @@ class OpacityOperation implements LayerOperation {
       canvas.restore();
     }
   }
+
+  @override
+  PlatformViewStyling createPlatformViewStyling() => PlatformViewStyling(
+    position: offset != ui.Offset.zero ? PlatformViewPosition(offset: offset) : const PlatformViewPosition(),
+    opacity: alpha.toDouble() / 255.0,
+  );
 }
 
 class TransformLayer
@@ -287,6 +333,11 @@ class TransformOperation implements LayerOperation {
   void post(SceneCanvas canvas, ui.Rect contentRect) {
     canvas.restore();
   }
+
+  @override
+  PlatformViewStyling createPlatformViewStyling() => PlatformViewStyling(
+    position: PlatformViewPosition(transform: getMatrix()),
+  );
 }
 
 class ShaderMaskLayer
@@ -326,20 +377,23 @@ class ShaderMaskOperation implements LayerOperation {
     canvas.restore();
     canvas.restore();
   }
+
+  @override
+  PlatformViewStyling createPlatformViewStyling() {
+    // TODO: implement createPlatformViewStyling
+    return const PlatformViewStyling();
+  }
 }
 
 class PlatformView {
-  PlatformView(this.viewId, this.rect);
+  PlatformView(this.viewId, this.size, this.styling);
 
   int viewId;
 
   // The bounds of this platform view, in the layer's local coordinate space.
-  ui.Rect rect;
+  ui.Size size;
 
-  @override
-  String toString() {
-    return 'PlatformView(id: $viewId, rect: $rect)';
-  }
+  PlatformViewStyling styling;
 }
 
 sealed class LayerSlice {
@@ -357,13 +411,6 @@ class PlatformViewSlice implements LayerSlice {
 
   @override
   void dispose() {}
-
-  // TODO: Probably add some styling stuff in here
-
-  @override
-  String toString() {
-    return 'PlatformViewSlice($views)';
-  }
 }
 
 class PictureSlice implements LayerSlice {
@@ -401,6 +448,8 @@ abstract class LayerOperation {
   ui.Rect inverseMapRect(ui.Rect rect);
   void pre(SceneCanvas canvas, ui.Rect contentRect);
   void post(SceneCanvas canvas, ui.Rect contentRect);
+
+  PlatformViewStyling createPlatformViewStyling();
 }
 
 class PictureDrawCommand {
@@ -411,23 +460,74 @@ class PictureDrawCommand {
 }
 
 class PlatformViewPosition {
-  ui.Offset? offset;
-  Matrix4? transform;
+  const PlatformViewPosition({this.offset, this.transform});
+  const PlatformViewPosition.zero() : offset = null, transform = null;
+
+  final ui.Offset? offset;
+  final Matrix4? transform;
 
   static PlatformViewPosition combine(PlatformViewPosition outer, PlatformViewPosition inner) {
-    // Implement this
-    return outer;
+    final ui.Offset? outerOffset = outer.offset;
+    final Matrix4? outerTransform = outer.transform;
+    final ui.Offset? innerOffset = inner.offset;
+    final Matrix4? innerTransform = inner.transform;
+    if (innerTransform != null) {
+      if (innerOffset != null) {
+        if (outerTransform != null) {
+          final Matrix4 newTransform = innerTransform.clone();
+          newTransform.translate(innerOffset.dx, innerOffset.dy);
+          newTransform.multiply(outerTransform);
+          return PlatformViewPosition(offset: outerOffset, transform: newTransform);
+        } else {
+          final ui.Offset finalOffset = outerOffset != null ? (innerOffset + outerOffset) : innerOffset;
+          return PlatformViewPosition(offset: finalOffset, transform: innerTransform);
+        }
+      } else {
+        if (outerTransform != null) {
+          final Matrix4 newTransform = innerTransform.clone();
+          newTransform.multiply(outerTransform);
+          return PlatformViewPosition(offset: outerOffset, transform: newTransform);
+        } else {
+          return PlatformViewPosition(offset: outerOffset, transform: innerTransform);
+        }
+      }
+    } else {
+      if (innerOffset != null) {
+        if (outerTransform != null) {
+          final Matrix4 newTransform = Matrix4.translationValues(innerOffset.dx, innerOffset.dy, 0);
+          newTransform.multiply(outerTransform);
+          return PlatformViewPosition(offset: outerOffset, transform: newTransform);
+        } else {
+          final ui.Offset finalOffset = outerOffset != null ? (innerOffset + outerOffset) : innerOffset;
+          return PlatformViewPosition(offset: finalOffset);
+        }
+      } else {
+        return outer;
+      }
+    }
   }
 }
 
 class PlatformViewClip {
-
+  const PlatformViewClip();
 }
 
 class PlatformViewStyling {
-  PlatformViewPosition? position;
-  PlatformViewClip? clip;
-  double? opacity;
+  const PlatformViewStyling({
+    this.position = const PlatformViewPosition.zero(),
+    this.clip = const PlatformViewClip(),
+    this.opacity = 1.0
+  });
+
+  final PlatformViewPosition position;
+  final PlatformViewClip clip;
+  final double opacity;
+
+  static PlatformViewStyling combine(PlatformViewStyling outer, PlatformViewStyling inner) {
+    return PlatformViewStyling(
+      position: PlatformViewPosition.combine(outer.position, inner.position),
+    );
+  }
 }
 
 class LayerBuilder {
@@ -456,8 +556,25 @@ class LayerBuilder {
   ui.Rect? picturesRect;
   ui.Rect? platformViewRect;
 
+  PlatformViewStyling? _memoizedPlatformViewStyling;
+
+  PlatformViewStyling _createPlatformViewStyling() {
+    final PlatformViewStyling? innerStyling = operation?.createPlatformViewStyling();
+    final PlatformViewStyling? outerStyling = parent?.platformViewStyling;
+    if (innerStyling == null) {
+      return outerStyling ?? const PlatformViewStyling();
+    }
+    if (outerStyling == null) {
+      return innerStyling;
+    }
+    return PlatformViewStyling.combine(outerStyling, innerStyling);
+  }
+
+  PlatformViewStyling get platformViewStyling {
+    return _memoizedPlatformViewStyling ??= _createPlatformViewStyling();
+  }
+
   void flushSlices() {
-    //print('Flushing slices');
     if (pendingPictures.isNotEmpty) {
       final ui.Rect drawnRect = picturesRect ?? ui.Rect.zero;
       final ui.Rect rect = operation?.cullRect(drawnRect) ?? drawnRect;
@@ -478,7 +595,6 @@ class LayerBuilder {
       operation?.post(canvas, rect);
       final ui.Picture picture = recorder.endRecording();
       layer.slices.add(PictureSlice(picture as ScenePicture));
-      print('adding picture slice');
     }
 
     if (pendingPlatformViews.isNotEmpty) {
@@ -487,8 +603,6 @@ class LayerBuilder {
         occlusionRect = operation!.inverseMapRect(occlusionRect);
       }
       layer.slices.add(PlatformViewSlice(pendingPlatformViews, occlusionRect));
-      print('adding platform view slice with views: $pendingPlatformViews');
-      // TODO: attach styling information
     }
 
     pendingPictures.clear();
@@ -520,22 +634,28 @@ class LayerBuilder {
   }) {
     final ui.Rect bounds = ui.Rect.fromLTWH(offset.dx, offset.dy, width, height);
     platformViewRect = platformViewRect?.expandToInclude(bounds) ?? bounds;
-    pendingPlatformViews.add(PlatformView(viewId, bounds));
+    final PlatformViewStyling layerStyling = platformViewStyling;
+    final PlatformViewStyling viewStyling = offset == ui.Offset.zero
+      ? layerStyling
+      : PlatformViewStyling.combine(
+        PlatformViewStyling(
+          position: PlatformViewPosition(offset: offset),
+        ),
+        layerStyling,
+      );
+    pendingPlatformViews.add(PlatformView(viewId, ui.Size(width, height), viewStyling));
   }
 
   void mergeLayer(PictureLayer layer) {
-    //print('merging layer');
     for (final LayerSlice slice in layer.slices) {
       switch (slice) {
         case PictureSlice():
-          //print('adding picture from merged layer slice with bounds: ${slice.picture.cullRect}');
           addPicture(ui.Offset.zero, slice.picture);
         case PlatformViewSlice():
           final ui.Rect? occlusionRect = slice.occlusionRect;
           if (occlusionRect != null) {
             platformViewRect = platformViewRect?.expandToInclude(occlusionRect) ?? occlusionRect;
           }
-          //print('adding views from merged platform view slice: ${slice.views}');
           pendingPlatformViews.addAll(slice.views);
       }
     }
@@ -543,7 +663,6 @@ class LayerBuilder {
 
   PictureLayer build() {
     flushSlices();
-    //print('built layer with slices: ${layer.slices}');
     return layer;
   }
 }

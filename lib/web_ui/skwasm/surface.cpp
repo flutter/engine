@@ -60,8 +60,10 @@ uint32_t Surface::rasterizeImage(SkImage* image, ImageByteFormat format) {
   return callbackId;
 }
 
-std::unique_ptr<VideoFrameWrapper> Surface::createVideoFrameWrapper(SkwasmObject videoFrame) {
-  return std::unique_ptr<VideoFrameWrapper>(new VideoFrameWrapper(_thread, videoFrame));
+std::unique_ptr<VideoFrameWrapper> Surface::createVideoFrameWrapper(
+    SkwasmObject videoFrame) {
+  return std::unique_ptr<VideoFrameWrapper>(
+      new VideoFrameWrapper(_thread, videoFrame));
 }
 
 // Main thread only
@@ -215,8 +217,7 @@ void Surface::fRasterizeImage(Surface* surface,
   image->unref();
 }
 
-void Surface::fDisposeVideoFrame(Surface* surface,
-                                 SkwasmObject videoFrame) {
+void Surface::fDisposeVideoFrame(Surface* surface, SkwasmObject videoFrame) {
   surface->_disposeVideoFrame(videoFrame);
 }
 
@@ -252,7 +253,7 @@ SKWASM_EXPORT uint32_t surface_rasterizeImage(Surface* surface,
 // This is used by the skwasm JS support code to call back into C++ when the
 // we finish creating the image bitmap, which is an asynchronous operation.
 SKWASM_EXPORT void surface_onRenderComplete(Surface* surface,
-                                             uint32_t callbackId,
-                                             SkwasmObject imageBitmap) {
+                                            uint32_t callbackId,
+                                            SkwasmObject imageBitmap) {
   return surface->onRenderComplete(callbackId, imageBitmap);
 }

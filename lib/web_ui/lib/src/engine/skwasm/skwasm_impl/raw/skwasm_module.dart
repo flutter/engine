@@ -34,7 +34,7 @@ extension SkwasmInstanceExtension on SkwasmInstance {
 external SkwasmInstance get skwasmInstance;
 
 @JS()
-@staticInterop 
+@staticInterop
 @anonymous
 class WebAssemblyFunctionType {
   external factory WebAssemblyFunctionType({
