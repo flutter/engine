@@ -2449,18 +2449,27 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 }
 
 - (void)setEditableSizeAndTransform:(NSDictionary*)dictionary {
-  [_activeView setEditableTransform:dictionary[@"transform"]];
+  NSArray* transform = dictionary[@"transform"];
+  [_activeView setEditableTransform:transform];
+  int leftIndex = 12;
+  int topIndex = 13;
   if ([_activeView isScribbleAvailable]) {
     // This is necessary to set up where the scribble interactable element will be.
-    int leftIndex = 12;
-    int topIndex = 13;
     _inputHider.frame =
-        CGRectMake([dictionary[@"transform"][leftIndex] intValue],
-                   [dictionary[@"transform"][topIndex] intValue], [dictionary[@"width"] intValue],
-                   [dictionary[@"height"] intValue]);
+        CGRectMake([transform[leftIndex] intValue], [transform[topIndex] intValue],
+                   [dictionary[@"width"] intValue], [dictionary[@"height"] intValue]);
     _activeView.frame =
         CGRectMake(0, 0, [dictionary[@"width"] intValue], [dictionary[@"height"] intValue]);
     _activeView.tintColor = [UIColor clearColor];
+  } else {
+    if (@available(iOS 17, *)) {
+      // Move auto-correction highlight to overlap with the actual text.
+      // This is to fix an issue where the system auto-correction highlight is displayed at
+      // the top left corner of the screen on iOS 17+.
+      // See https://github.com/flutter/flutter/issues/131695
+      _inputHider.frame =
+          CGRectMake([transform[leftIndex] intValue], [transform[topIndex] intValue], 0, 0);
+    }
   }
 }
 
@@ -2488,7 +2497,18 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
                                                          ? NSWritingDirectionLeftToRight
                                                          : NSWritingDirectionRightToLeft]];
   }
-  _activeView.selectionRects = rectsAsRect;
+
+  if (@available(iOS 17, *)) {
+    // Force UIKit to query the selectionRects again on iOS 17+
+    // This is to fix a bug on iOS 17+ where UIKit queries the outdated selectionRects after
+    // entering a character, resulting in auto-correction highlight region missing the last
+    // character.
+    [_activeView.inputDelegate textWillChange:_activeView];
+    _activeView.selectionRects = rectsAsRect;
+    [_activeView.inputDelegate textDidChange:_activeView];
+  } else {
+    _activeView.selectionRects = rectsAsRect;
+  }
 }
 
 - (void)startLiveTextInput {
