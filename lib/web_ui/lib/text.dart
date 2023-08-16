@@ -686,16 +686,11 @@ abstract class ParagraphBuilder {
   factory ParagraphBuilder(ParagraphStyle style) =>
     engine.renderer.createParagraphBuilder(style);
 
-  static bool get shouldDisableRoundingHack {
-    return const bool.hasEnvironment('SKPARAGRAPH_REMOVE_ROUNDING_HACK')
-        || _roundingHackDisabledInDebugMode;
-  }
-  static bool _roundingHackDisabledInDebugMode = false;
+  static bool get shouldDisableRoundingHack => _shouldDisableRoundingHack;
+  static bool _shouldDisableRoundingHack = true;
+  // ignore: use_setters_to_change_properties
   static void setDisableRoundingHack(bool disableRoundingHack) {
-    assert(() {
-      _roundingHackDisabledInDebugMode = disableRoundingHack;
-      return true;
-    }());
+    _shouldDisableRoundingHack = disableRoundingHack;
   }
 
   void pushStyle(TextStyle style);

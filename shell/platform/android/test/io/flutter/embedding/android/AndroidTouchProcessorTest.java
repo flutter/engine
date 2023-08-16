@@ -281,4 +281,58 @@ public class AndroidTouchProcessorTest {
 
     inOrder.verifyNoMoreInteractions();
   }
+  
+  @Test
+  public void unexpectedPointerChange() {
+    // Regression test for https://github.com/flutter/flutter/issues/129765
+    MotionEventMocker mocker =
+        new MotionEventMocker(0, InputDevice.SOURCE_MOUSE, MotionEvent.TOOL_TYPE_MOUSE);
+
+    touchProcessor.onTouchEvent(mocker.mockEvent(MotionEvent.ACTION_DOWN, 0.0f, 0.0f, 0));
+    InOrder inOrder = inOrder(mockRenderer);
+    inOrder
+        .verify(mockRenderer)
+        .dispatchPointerDataPacket(packetCaptor.capture(), packetSizeCaptor.capture());
+    ByteBuffer packet = packetCaptor.getValue();
+    assertEquals(AndroidTouchProcessor.PointerChange.PAN_ZOOM_START, readPointerChange(packet));
+    assertEquals(AndroidTouchProcessor.PointerDeviceKind.TRACKPAD, readPointerDeviceKind(packet));
+    assertEquals(AndroidTouchProcessor.PointerSignalKind.NONE, readPointerSignalKind(packet));
+    assertEquals(0.0, readPointerPhysicalX(packet));
+    assertEquals(0.0, readPointerPhysicalY(packet));
+
+    touchProcessor.onTouchEvent(mocker.mockEvent(MotionEvent.ACTION_MOVE, 10.0f, 5.0f, 0));
+    inOrder
+        .verify(mockRenderer)
+        .dispatchPointerDataPacket(packetCaptor.capture(), packetSizeCaptor.capture());
+    packet = packetCaptor.getValue();
+    assertEquals(AndroidTouchProcessor.PointerChange.PAN_ZOOM_UPDATE, readPointerChange(packet));
+    assertEquals(AndroidTouchProcessor.PointerDeviceKind.TRACKPAD, readPointerDeviceKind(packet));
+    assertEquals(AndroidTouchProcessor.PointerSignalKind.NONE, readPointerSignalKind(packet));
+    assertEquals(0.0, readPointerPhysicalX(packet));
+    assertEquals(0.0, readPointerPhysicalY(packet));
+    assertEquals(10.0, readPointerPanX(packet));
+    assertEquals(5.0, readPointerPanY(packet));
+
+    touchProcessor.onGenericMotionEvent(mocker.mockEvent(MotionEvent.ACTION_SCROLL, 0.0f, 0.0f, 0));
+    inOrder
+        .verify(mockRenderer)
+        .dispatchPointerDataPacket(packetCaptor.capture(), packetSizeCaptor.capture());
+    packet = packetCaptor.getValue();
+    packet.rewind();
+    while (packet.hasRemaining()) {
+      assertEquals(0, packet.get());
+    }
+
+    touchProcessor.onTouchEvent(mocker.mockEvent(MotionEvent.ACTION_UP, 10.0f, 5.0f, 0));
+    inOrder
+        .verify(mockRenderer)
+        .dispatchPointerDataPacket(packetCaptor.capture(), packetSizeCaptor.capture());
+    packet = packetCaptor.getValue();
+    assertEquals(AndroidTouchProcessor.PointerChange.PAN_ZOOM_END, readPointerChange(packet));
+    assertEquals(AndroidTouchProcessor.PointerDeviceKind.TRACKPAD, readPointerDeviceKind(packet));
+    assertEquals(AndroidTouchProcessor.PointerSignalKind.NONE, readPointerSignalKind(packet));
+    assertEquals(0.0, readPointerPhysicalX(packet));
+    assertEquals(0.0, readPointerPhysicalY(packet));
+    inOrder.verifyNoMoreInteractions();
+  }
 }

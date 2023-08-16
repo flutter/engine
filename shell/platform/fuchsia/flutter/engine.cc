@@ -7,6 +7,7 @@
 #include <fuchsia/accessibility/semantics/cpp/fidl.h>
 #include <fuchsia/media/cpp/fidl.h>
 #include <lib/async/cpp/task.h>
+#include <lib/zx/eventpair.h>
 #include <lib/zx/thread.h>
 #include <zircon/rights.h>
 #include <zircon/status.h>
@@ -203,12 +204,12 @@ Engine::Engine(Delegate& delegate,
                std::shared_ptr<sys::ServiceDirectory> runner_services,
                flutter::Settings settings,
                fuchsia::ui::views::ViewCreationToken view_creation_token,
-               scenic::ViewRefPair view_ref_pair,
+               std::pair<fuchsia::ui::views::ViewRefControl,
+                         fuchsia::ui::views::ViewRef> view_ref_pair,
                UniqueFDIONS fdio_ns,
                fidl::InterfaceRequest<fuchsia::io::Directory> directory_request,
                FlutterRunnerProductConfiguration product_config,
-               const std::vector<std::string>& dart_entrypoint_args,
-               bool for_v1_component)
+               const std::vector<std::string>& dart_entrypoint_args)
     : delegate_(delegate),
       thread_label_(std::move(thread_label)),
       thread_host_(CreateThreadHost(thread_label_, runner_services)),
@@ -220,19 +221,19 @@ Engine::Engine(Delegate& delegate,
   Initialize(std::move(view_ref_pair), std::move(svc),
              std::move(runner_services), std::move(settings),
              std::move(fdio_ns), std::move(directory_request),
-             std::move(product_config), dart_entrypoint_args, for_v1_component);
+             std::move(product_config), dart_entrypoint_args);
 }
 
 void Engine::Initialize(
-    scenic::ViewRefPair view_ref_pair,
+    std::pair<fuchsia::ui::views::ViewRefControl, fuchsia::ui::views::ViewRef>
+        view_ref_pair,
     std::shared_ptr<sys::ServiceDirectory> svc,
     std::shared_ptr<sys::ServiceDirectory> runner_services,
     flutter::Settings settings,
     UniqueFDIONS fdio_ns,
     fidl::InterfaceRequest<fuchsia::io::Directory> directory_request,
     FlutterRunnerProductConfiguration product_config,
-    const std::vector<std::string>& dart_entrypoint_args,
-    bool for_v1_component) {
+    const std::vector<std::string>& dart_entrypoint_args) {
   // Flatland uses |view_creation_token_| for linking.
   FML_CHECK(view_creation_token_.value.is_valid());
 
@@ -315,11 +316,11 @@ void Engine::Initialize(
 
   // Make clones of the `ViewRef` before sending it to various places.
   fuchsia::ui::views::ViewRef platform_view_ref;
-  view_ref_pair.view_ref.Clone(&platform_view_ref);
+  view_ref_pair.second.Clone(&platform_view_ref);
   fuchsia::ui::views::ViewRef accessibility_view_ref;
-  view_ref_pair.view_ref.Clone(&accessibility_view_ref);
+  view_ref_pair.second.Clone(&accessibility_view_ref);
   fuchsia::ui::views::ViewRef isolate_view_ref;
-  view_ref_pair.view_ref.Clone(&isolate_view_ref);
+  view_ref_pair.second.Clone(&isolate_view_ref);
 
   // Session is terminated on the raster thread, but we must terminate ourselves
   // on the platform thread.
@@ -368,8 +369,8 @@ void Engine::Initialize(
             max_frames_in_flight, vsync_offset);
 
         fuchsia::ui::views::ViewIdentityOnCreation view_identity = {
-            .view_ref = std::move(view_ref_pair.view_ref),
-            .view_ref_control = std::move(view_ref_pair.control_ref)};
+            .view_ref = std::move(view_ref_pair.second),
+            .view_ref_control = std::move(view_ref_pair.first)};
         view_embedder_ = std::make_shared<ExternalViewEmbedder>(
             std::move(view_creation_token), std::move(view_identity),
             std::move(view_protocols), std::move(request), flatland_connection_,
@@ -584,18 +585,9 @@ void Engine::Initialize(
 
   // Shell has been created. Before we run the engine, set up the isolate
   // configurator.
-  {
-    fuchsia::sys::EnvironmentPtr environment;
-    if (for_v1_component) {
-      svc->Connect(environment.NewRequest());
-    }
-
-    isolate_configurator_ = std::make_unique<IsolateConfigurator>(
-        std::move(fdio_ns),
-        // v2 components do not use fuchsia.sys.Environment.
-        for_v1_component ? std::move(environment) : nullptr,
-        directory_request.TakeChannel(), std::move(isolate_view_ref.reference));
-  }
+  isolate_configurator_ = std::make_unique<IsolateConfigurator>(
+      std::move(fdio_ns), directory_request.TakeChannel(),
+      std::move(isolate_view_ref.reference));
 
   //  This platform does not get a separate surface platform view creation
   //  notification. Fire one eagerly.
