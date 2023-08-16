@@ -27,20 +27,10 @@
                    completion:(void (^)(void))completion;
 @end
 
-@interface UIApplication ()
-- (void)openURL:(NSURL*)url
-              options:(NSDictionary<UIApplicationOpenExternalURLOptionsKey, id>*)options
-    completionHandler:(void (^)(BOOL))completion;
-@end
-
 @implementation FlutterPlatformPluginTest
 - (void)testSearchWebInvoked {
   id mockApplication = OCMClassMock([UIApplication class]);
   OCMStub([mockApplication sharedApplication]).andReturn(mockApplication);
-  OCMStub([mockApplication openURL:[OCMArg any]
-                           options:[OCMArg any]
-                 completionHandler:[OCMArg any]])
-      .andDo(nil);
 
   FlutterEngine* engine = [[[FlutterEngine alloc] initWithName:@"test" project:nil] autorelease];
   std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
