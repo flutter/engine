@@ -132,13 +132,13 @@ static GBytes* send_on_channel_finish(FlBinaryMessenger* messenger,
 
 static void resize_channel(FlBinaryMessenger* messenger,
                            const gchar* channel,
-                           int new_size) {
+                           int64_t new_size) {
   // Fake implementation. Do nothing.
 }
 
-static void allow_channel_overflow(FlBinaryMessenger* messenger,
-                                   const gchar* channel,
-                                   bool allowed) {
+static void set_allow_channel_overflow(FlBinaryMessenger* messenger,
+                                       const gchar* channel,
+                                       bool allowed) {
   // Fake implementation. Do nothing.
 }
 
@@ -149,7 +149,7 @@ static void fl_fake_binary_messenger_iface_init(
   iface->send_on_channel = send_on_channel;
   iface->send_on_channel_finish = send_on_channel_finish;
   iface->resize_channel = resize_channel;
-  iface->allow_channel_overflow = allow_channel_overflow;
+  iface->set_allow_channel_overflow = set_allow_channel_overflow;
 }
 
 static void fl_fake_binary_messenger_init(FlFakeBinaryMessenger* self) {}
@@ -495,7 +495,8 @@ TEST(FlBinaryMessengerTest, AllowOverflowChannel) {
   EXPECT_EQ(error, nullptr);
 
   FlBinaryMessenger* messenger = fl_binary_messenger_new(engine);
-  fl_binary_messenger_allow_channel_overflow(messenger, "flutter/test", true);
+  fl_binary_messenger_set_allow_channel_overflow(messenger, "flutter/test",
+                                                 true);
 
   EXPECT_TRUE(called);
 }
