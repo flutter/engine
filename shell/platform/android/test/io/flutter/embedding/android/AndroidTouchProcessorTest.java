@@ -16,6 +16,8 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import java.nio.ByteBuffer;
+import java.util.concurrent.TimeUnit;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,11 +36,18 @@ public class AndroidTouchProcessorTest {
   AndroidTouchProcessor touchProcessor;
   @Captor ArgumentCaptor<ByteBuffer> packetCaptor;
   @Captor ArgumentCaptor<Integer> packetSizeCaptor;
+  // Used for mock events in SystemClock.uptimeMillis() time base.
+  // 2 days in milliseconds
+  final long eventTimeMilliseconds = 172800000;
 
   @Before
   public void setUp() {
     MockitoAnnotations.openMocks(this);
     touchProcessor = new AndroidTouchProcessor(mockRenderer, false);
+  }
+
+  private long readTimeStamp(ByteBuffer buffer) {
+    return buffer.getLong(1 * AndroidTouchProcessor.BYTES_PER_FIELD);
   }
 
   private long readPointerChange(ByteBuffer buffer) {
@@ -77,7 +86,7 @@ public class AndroidTouchProcessorTest {
     return buffer.getDouble(30 * AndroidTouchProcessor.BYTES_PER_FIELD);
   }
 
-  /// Utility method when trying to write a new test. Prefer named readPointerXXX.
+  /// Utility method when trying to write a new test. Prefer named readXXX.
   private double readOffset(int offset, ByteBuffer buffer) {
     return buffer.getDouble(offset * AndroidTouchProcessor.BYTES_PER_FIELD);
   }
@@ -97,6 +106,7 @@ public class AndroidTouchProcessorTest {
       MotionEvent event = mock(MotionEvent.class);
       when(event.getDevice()).thenReturn(null);
       when(event.getSource()).thenReturn(source);
+      when(event.getEventTime()).thenReturn(eventTimeMilliseconds);
       // Ensure that isFromSource does not auto default to false when source is passed in.
       when(event.isFromSource(InputDevice.SOURCE_CLASS_POINTER))
           .thenReturn(source == InputDevice.SOURCE_CLASS_POINTER);
@@ -281,7 +291,29 @@ public class AndroidTouchProcessorTest {
 
     inOrder.verifyNoMoreInteractions();
   }
-  
+
+  @Test
+  public void timeStamp() {
+    final int pointerId = 0;
+    MotionEventMocker mocker =
+        new MotionEventMocker(
+            pointerId, InputDevice.SOURCE_CLASS_POINTER, MotionEvent.TOOL_TYPE_MOUSE);
+
+    final MotionEvent event =
+        mocker.mockEvent(MotionEvent.ACTION_SCROLL, 1f, 1f, 1);
+    boolean handled = touchProcessor.onGenericMotionEvent(event, null);
+
+    InOrder inOrder = inOrder(mockRenderer);
+    inOrder
+        .verify(mockRenderer)
+        .dispatchPointerDataPacket(packetCaptor.capture(), packetSizeCaptor.capture());
+    ByteBuffer packet = packetCaptor.getValue();
+
+    assertEquals(TimeUnit.MILLISECONDS.toMicros(eventTimeMilliseconds), readTimeStamp(packet));
+
+    inOrder.verifyNoMoreInteractions();
+  }
+
   @Test
   public void unexpectedPointerChange() {
     // Regression test for https://github.com/flutter/flutter/issues/129765
@@ -313,7 +345,7 @@ public class AndroidTouchProcessorTest {
     assertEquals(10.0, readPointerPanX(packet));
     assertEquals(5.0, readPointerPanY(packet));
 
-    touchProcessor.onGenericMotionEvent(mocker.mockEvent(MotionEvent.ACTION_SCROLL, 0.0f, 0.0f, 0));
+    touchProcessor.onGenericMotionEvent(mocker.mockEvent(MotionEvent.ACTION_SCROLL, 0.0f, 0.0f, 0), null);
     inOrder
         .verify(mockRenderer)
         .dispatchPointerDataPacket(packetCaptor.capture(), packetSizeCaptor.capture());
