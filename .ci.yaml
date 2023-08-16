@@ -261,6 +261,8 @@ targets:
     properties:
       release_build: "true"
       config_name: linux_arm_host_engine
+    drone_dimensions:
+      - os=Linux
 
   - name: Linux linux_host_engine
     recipe: engine_v2/engine_v2
@@ -268,6 +270,8 @@ targets:
     properties:
       release_build: "true"
       config_name: linux_host_engine
+    drone_dimensions:
+      - os=Linux
 
   - name: Linux linux_host_desktop_engine
     bringup: true
@@ -276,6 +280,8 @@ targets:
     properties:
       release_build: "true"
       config_name: linux_host_desktop_engine
+    drone_dimensions:
+      - os=Linux
 
   - name: Linux linux_android_aot_engine
     recipe: engine_v2/engine_v2
@@ -283,6 +289,8 @@ targets:
     properties:
       release_build: "true"
       config_name: linux_android_aot_engine
+    drone_dimensions:
+      - os=Linux
 
   - name: Linux linux_android_debug_engine
     recipe: engine_v2/engine_v2
@@ -290,6 +298,8 @@ targets:
     properties:
       release_build: "true"
       config_name: linux_android_debug_engine
+    drone_dimensions:
+      - os=Linux
 
   - name: Linux linux_web_engine
     recipe: engine_v2/engine_v2
@@ -297,6 +307,8 @@ targets:
     properties:
       release_build: "true"
       config_name: linux_web_engine
+    drone_dimensions:
+      - os=Linux
 
   - name: Linux Web Framework tests
     recipe: engine/web_engine_framework
@@ -352,6 +364,8 @@ targets:
     timeout: 60
     properties:
       config_name: mac_android_aot_engine
+    drone_dimensions:
+      - os=Linux
 
   - name: Mac mac_host_engine
     recipe: engine_v2/engine_v2
@@ -456,6 +470,8 @@ targets:
         [
           {"dependency": "jazzy", "version": "0.14.1"}
         ]
+    drone_dimensions:
+      - os=Mac-12
 
   - name: Windows Android AOT Engine
     recipe: engine/engine
@@ -480,6 +496,8 @@ targets:
     properties:
       release_build: "true"
       config_name: windows_android_aot_engine
+    drone_dimensions:
+      - os=Windows
 
   - name: Windows windows_host_engine
     recipe: engine_v2/engine_v2
@@ -487,6 +505,8 @@ targets:
     properties:
       release_build: "true"
       config_name: windows_host_engine
+    drone_dimensions:
+      - os=Windows
 
   - name: Windows windows_arm_host_engine
     recipe: engine_v2/engine_v2
@@ -495,8 +515,9 @@ targets:
       # Don't run this on release branches
       - main
     properties:
-      release_build: "true"
       config_name: windows_arm_host_engine
+    drone_dimensions:
+      - os=Windows
 
   - name: Windows Unopt
     recipe: engine/engine_unopt
