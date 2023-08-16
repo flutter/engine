@@ -2,19 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "gfx_platform_view.h"
-
-#include <fuchsia/ui/gfx/cpp/fidl.h>
+#include <fuchsia/ui/composition/cpp/fidl.h>
+#include <fuchsia/ui/composition/cpp/fidl_test_base.h>
 #include <fuchsia/ui/input/cpp/fidl.h>
 #include <fuchsia/ui/input3/cpp/fidl.h>
 #include <fuchsia/ui/input3/cpp/fidl_test_base.h>
-#include <fuchsia/ui/scenic/cpp/fidl.h>
 #include <fuchsia/ui/views/cpp/fidl.h>
 #include <lib/async-loop/cpp/loop.h>
 #include <lib/async-loop/default.h>
 #include <lib/async/default.h>
 #include <lib/fidl/cpp/binding_set.h>
-#include <lib/ui/scenic/cpp/view_ref_pair.h>
+#include <lib/zx/eventpair.h>
 
 #include <memory>
 #include <ostream>
@@ -26,18 +24,18 @@
 #include "flutter/lib/ui/window/pointer_data.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
 #include "flutter/shell/common/context_options.h"
-#include "flutter/shell/platform/fuchsia/flutter/gfx_platform_view.h"
+#include "flutter/shell/platform/fuchsia/flutter/platform_view.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+#include "fakes/focuser.h"
+#include "fakes/platform_message.h"
+#include "fakes/touch_source.h"
+#include "fakes/view_ref_focused.h"
+#include "flutter/shell/platform/fuchsia/flutter/surface.h"
+#include "flutter/shell/platform/fuchsia/flutter/task_runner_adapter.h"
 #include "platform/assert.h"
-#include "surface.h"
-#include "task_runner_adapter.h"
-#include "tests/fakes/focuser.h"
-#include "tests/fakes/platform_message.h"
-#include "tests/fakes/touch_source.h"
-#include "tests/fakes/view_ref_focused.h"
-#include "tests/pointer_event_utility.h"
+#include "pointer_event_utility.h"
 
 namespace flutter_runner::testing {
 namespace {
@@ -108,6 +106,10 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
       std::unique_ptr<flutter::PointerDataPacket> packet) {
     pointer_packets_.push_back(std::move(packet));
   }
+  // |flutter::PlatformView::Delegate|
+  void OnPlatformViewDispatchKeyDataPacket(
+      std::unique_ptr<flutter::KeyDataPacket> packet,
+      std::function<void(bool)> callback) {}
   // |flutter::PlatformView::Delegate|
   void OnPlatformViewDispatchSemanticsAction(int32_t id,
                                              flutter::SemanticsAction action,
@@ -218,6 +220,116 @@ class MockKeyboard : public fuchsia::ui::input3::testing::Keyboard_TestBase {
   FML_DISALLOW_COPY_AND_ASSIGN(MockKeyboard);
 };
 
+class MockChildViewWatcher
+    : public fuchsia::ui::composition::testing::ChildViewWatcher_TestBase {
+ public:
+  explicit MockChildViewWatcher(
+      fidl::InterfaceRequest<fuchsia::ui::composition::ChildViewWatcher>
+          request)
+      : binding_(this, std::move(request)) {}
+  ~MockChildViewWatcher() = default;
+
+  // |fuchsia::ui::composition::ChildViewWatcher|
+  void GetStatus(GetStatusCallback callback) override {
+    // GetStatus only returns once as per flatland.fidl comments
+    if (get_status_returned_) {
+      return;
+    }
+    callback(fuchsia::ui::composition::ChildViewStatus::CONTENT_HAS_PRESENTED);
+    get_status_returned_ = true;
+  }
+
+  // |fuchsia::ui::composition::ChildViewWatcher|
+  void GetViewRef(GetViewRefCallback callback) override {
+    // GetViewRef only returns once as per flatland.fidl comments
+    ASSERT_FALSE(control_ref_.reference);
+    fuchsia::ui::views::ViewRefControl view_ref_control;
+    fuchsia::ui::views::ViewRef view_ref;
+    auto status = zx::eventpair::create(
+        /*options*/ 0u, &view_ref_control.reference, &view_ref.reference);
+    ZX_ASSERT(status == ZX_OK);
+    view_ref_control.reference.replace(
+        ZX_DEFAULT_EVENTPAIR_RIGHTS & (~ZX_RIGHT_DUPLICATE),
+        &view_ref_control.reference);
+    view_ref.reference.replace(ZX_RIGHTS_BASIC, &view_ref.reference);
+    control_ref_ = std::move(view_ref_control);
+    callback(std::move(view_ref));
+  }
+
+  void NotImplemented_(const std::string& name) override { FAIL(); }
+
+  fidl::Binding<fuchsia::ui::composition::ChildViewWatcher> binding_;
+  fuchsia::ui::views::ViewRefControl control_ref_;
+  bool get_status_returned_ = false;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(MockChildViewWatcher);
+};
+
+class MockParentViewportWatcher
+    : public fuchsia::ui::composition::testing::ParentViewportWatcher_TestBase {
+ public:
+  explicit MockParentViewportWatcher() : binding_(this, handle_.NewRequest()) {}
+  ~MockParentViewportWatcher() = default;
+
+  // |fuchsia::ui::composition::ParentViewportWatcher|
+  void GetStatus(GetStatusCallback callback) override {
+    // GetStatus only returns once as per flatland.fidl comments
+    if (get_status_returned_) {
+      return;
+    }
+    callback(
+        fuchsia::ui::composition::ParentViewportStatus::CONNECTED_TO_DISPLAY);
+    get_status_returned_ = true;
+  }
+
+  // |fuchsia::ui::composition::ParentViewportWatcher|
+  void GetLayout(GetLayoutCallback callback) override {
+    if (layout_changed_) {
+      callback(std::move(layout_));
+    } else {
+      FML_CHECK(!pending_callback_valid_);
+      pending_layout_callback_ = std::move(callback);
+      pending_callback_valid_ = true;
+    }
+  }
+
+  void SetLayout(uint32_t logical_size_x,
+                 uint32_t logical_size_y,
+                 float DPR = 1.0) {
+    ::fuchsia::math::SizeU logical_size;
+    logical_size.width = logical_size_x;
+    logical_size.height = logical_size_y;
+    layout_.set_logical_size(logical_size);
+    layout_.set_device_pixel_ratio({DPR, DPR});
+
+    if (pending_callback_valid_) {
+      pending_layout_callback_(std::move(layout_));
+      pending_callback_valid_ = false;
+    } else {
+      layout_changed_ = true;
+    }
+  }
+
+  fuchsia::ui::composition::ParentViewportWatcherHandle GetHandle() {
+    FML_CHECK(handle_);  // You can only get the handle once.
+    return std::move(handle_);
+  }
+
+  void NotImplemented_(const std::string& name) override { FAIL(); }
+
+  fuchsia::ui::composition::ParentViewportWatcherHandle handle_;
+  fidl::Binding<fuchsia::ui::composition::ParentViewportWatcher> binding_;
+
+  fuchsia::ui::composition::LayoutInfo layout_;
+  bool layout_changed_ = false;
+  GetLayoutCallback pending_layout_callback_;
+  bool pending_callback_valid_ = false;
+
+  bool get_status_returned_ = false;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(MockParentViewportWatcher);
+};
+
 // Used to construct partial instances of PlatformView for testing.  The
 // PlatformView constructor has many parameters, not all of which need to
 // be filled out for each test.  The builder allows you to initialize only
@@ -227,9 +339,20 @@ class PlatformViewBuilder {
  public:
   PlatformViewBuilder(flutter::PlatformView::Delegate& delegate,
                       flutter::TaskRunners task_runners)
-      : delegate_(delegate),
-        task_runners_(task_runners),
-        view_ref_pair_(scenic::ViewRefPair::New()) {}
+      : delegate_(delegate), task_runners_(task_runners) {
+    fuchsia::ui::views::ViewRefControl view_ref_control;
+    fuchsia::ui::views::ViewRef view_ref;
+    auto status = zx::eventpair::create(
+        /*options*/ 0u, &view_ref_control.reference, &view_ref.reference);
+    ZX_ASSERT(status == ZX_OK);
+    view_ref_control.reference.replace(
+        ZX_DEFAULT_EVENTPAIR_RIGHTS & (~ZX_RIGHT_DUPLICATE),
+        &view_ref_control.reference);
+    view_ref.reference.replace(ZX_RIGHTS_BASIC, &view_ref.reference);
+    auto view_ref_pair =
+        std::make_pair(std::move(view_ref_control), std::move(view_ref));
+    view_ref_pair_ = std::move(view_ref_pair);
+  }
 
   PlatformViewBuilder& SetExternalViewEmbedder(
       std::shared_ptr<flutter::ExternalViewEmbedder> embedder) {
@@ -272,60 +395,63 @@ class PlatformViewBuilder {
     return *this;
   }
 
-  PlatformViewBuilder& SetPointerinjectorRegistry(
+  PlatformViewBuilder& SetPointerInjectorRegistry(
       fuchsia::ui::pointerinjector::RegistryHandle pointerinjector_registry) {
     pointerinjector_registry_ = std::move(pointerinjector_registry);
     return *this;
   }
 
-  PlatformViewBuilder& SetSessionListenerRequest(
-      fidl::InterfaceRequest<fuchsia::ui::scenic::SessionListener> request) {
-    session_listener_request_ = std::move(request);
-    return *this;
-  }
-
-  PlatformViewBuilder& SetEnableWireframeCallback(OnEnableWireframe callback) {
+  PlatformViewBuilder& SetEnableWireframeCallback(
+      OnEnableWireframeCallback callback) {
     wireframe_enabled_callback_ = std::move(callback);
     return *this;
   }
 
-  PlatformViewBuilder& SetCreateViewCallback(OnCreateGfxView callback) {
+  PlatformViewBuilder& SetParentViewportWatcher(
+      fuchsia::ui::composition::ParentViewportWatcherHandle
+          parent_viewport_watcher) {
+    parent_viewport_watcher_ = std::move(parent_viewport_watcher);
+    return *this;
+  }
+
+  PlatformViewBuilder& SetCreateViewCallback(OnCreateViewCallback callback) {
     on_create_view_callback_ = std::move(callback);
     return *this;
   }
 
-  PlatformViewBuilder& SetUpdateViewCallback(OnUpdateView callback) {
-    on_update_view_callback_ = std::move(callback);
-    return *this;
-  }
-
-  PlatformViewBuilder& SetDestroyViewCallback(OnDestroyGfxView callback) {
+  PlatformViewBuilder& SetDestroyViewCallback(OnDestroyViewCallback callback) {
     on_destroy_view_callback_ = std::move(callback);
     return *this;
   }
 
-  PlatformViewBuilder& SetCreateSurfaceCallback(OnCreateSurface callback) {
+  PlatformViewBuilder& SetUpdateViewCallback(OnUpdateViewCallback callback) {
+    on_update_view_callback_ = std::move(callback);
+    return *this;
+  }
+
+  PlatformViewBuilder& SetCreateSurfaceCallback(
+      OnCreateSurfaceCallback callback) {
     on_create_surface_callback_ = std::move(callback);
     return *this;
   }
 
-  PlatformViewBuilder& SetShaderWarmupCallback(OnShaderWarmup callback) {
+  PlatformViewBuilder& SetShaderWarmupCallback(
+      OnShaderWarmupCallback callback) {
     on_shader_warmup_callback_ = std::move(callback);
     return *this;
   }
 
   // Once Build is called, the instance is no longer usable.
-  GfxPlatformView Build() {
+  PlatformView Build() {
     EXPECT_FALSE(std::exchange(built_, true))
         << "Build() was already called, this builder is good for one use only.";
-    return GfxPlatformView(
-        delegate_, task_runners_, std::move(view_ref_pair_.view_ref),
+    return PlatformView(
+        delegate_, task_runners_, std::move(view_ref_pair_.second),
         external_external_view_embedder_, std::move(ime_service_),
         std::move(keyboard_), std::move(touch_source_),
         std::move(mouse_source_), std::move(focuser_),
-        std::move(view_ref_focused_), std::move(pointerinjector_registry_),
-        std::move(session_listener_request_),
-        std::move(on_session_listener_error_callback_),
+        std::move(view_ref_focused_), std::move(parent_viewport_watcher_),
+        std::move(pointerinjector_registry_),
         std::move(wireframe_enabled_callback_),
         std::move(on_create_view_callback_),
         std::move(on_update_view_callback_),
@@ -342,7 +468,8 @@ class PlatformViewBuilder {
 
   flutter::PlatformView::Delegate& delegate_;
   flutter::TaskRunners task_runners_;
-  scenic::ViewRefPair view_ref_pair_;
+  std::pair<fuchsia::ui::views::ViewRefControl, fuchsia::ui::views::ViewRef>
+      view_ref_pair_;
 
   std::shared_ptr<flutter::ExternalViewEmbedder>
       external_external_view_embedder_;
@@ -353,17 +480,17 @@ class PlatformViewBuilder {
   fuchsia::ui::views::ViewRefFocusedHandle view_ref_focused_;
   fuchsia::ui::views::FocuserHandle focuser_;
   fuchsia::ui::pointerinjector::RegistryHandle pointerinjector_registry_;
-  fidl::InterfaceRequest<fuchsia::ui::scenic::SessionListener>
-      session_listener_request_;
   fit::closure on_session_listener_error_callback_;
-  OnEnableWireframe wireframe_enabled_callback_;
-  OnCreateGfxView on_create_view_callback_;
-  OnUpdateView on_update_view_callback_;
-  OnDestroyGfxView on_destroy_view_callback_;
-  OnCreateSurface on_create_surface_callback_;
-  OnSemanticsNodeUpdate on_semantics_node_update_callback_;
-  OnRequestAnnounce on_request_announce_callback_;
-  OnShaderWarmup on_shader_warmup_callback_;
+  OnEnableWireframeCallback wireframe_enabled_callback_;
+  fuchsia::ui::composition::ParentViewportWatcherHandle
+      parent_viewport_watcher_;
+  OnCreateViewCallback on_create_view_callback_;
+  OnDestroyViewCallback on_destroy_view_callback_;
+  OnUpdateViewCallback on_update_view_callback_;
+  OnCreateSurfaceCallback on_create_surface_callback_;
+  OnSemanticsNodeUpdateCallback on_semantics_node_update_callback_;
+  OnRequestAnnounceCallback on_request_announce_callback_;
+  OnShaderWarmupCallback on_shader_warmup_callback_;
 
   bool built_{false};
 };
@@ -396,6 +523,11 @@ class PlatformViewTests : public ::testing::Test {
     loop_.ResetQuit();
   }
 
+  void RunLoopOnce() {
+    loop_.Run(zx::time::infinite(), true);
+    loop_.ResetQuit();
+  }
+
   fuchsia::ui::input3::KeyEvent MakeEvent(
       fuchsia::ui::input3::KeyEventType event_type,
       std::optional<fuchsia::ui::input3::Modifiers> modifiers,
@@ -410,10 +542,20 @@ class PlatformViewTests : public ::testing::Test {
     return event;
   }
 
+  fuchsia::ui::composition::ChildViewWatcherPtr MakeChildViewWatcher() {
+    fuchsia::ui::composition::ChildViewWatcherPtr ptr;
+    auto watcher = std::make_unique<MockChildViewWatcher>(
+        ptr.NewRequest(loop_.dispatcher()));
+    child_view_watchers_.push_back(std::move(watcher));
+    return ptr;
+  }
+
  private:
   async::Loop loop_;
 
   uint64_t event_timestamp_{42};
+
+  std::vector<std::unique_ptr<MockChildViewWatcher>> child_view_watchers_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewTests);
 };
@@ -429,10 +571,9 @@ TEST_F(PlatformViewTests, InvalidPlatformMessageRequest) {
   fidl::BindingSet<fuchsia::ui::views::ViewRefFocused> vrf_bindings;
   auto vrf_handle = vrf_bindings.AddBinding(&vrf);
 
-  flutter_runner::GfxPlatformView platform_view =
-      PlatformViewBuilder(delegate, std::move(task_runners))
-          .SetViewRefFocused(std::move(vrf_handle))
-          .Build();
+  auto platform_view = PlatformViewBuilder(delegate, std::move(task_runners))
+                           .SetViewRefFocused(std::move(vrf_handle))
+                           .Build();
 
   // Cast platform_view to its base view so we can have access to the public
   // "HandlePlatformMessage" function.
@@ -506,11 +647,10 @@ TEST_F(PlatformViewTests, CreateSurfaceTest) {
         "PlatformViewTest", external_view_embedder, gr_context.get());
   };
 
-  flutter_runner::GfxPlatformView platform_view =
-      PlatformViewBuilder(delegate, std::move(task_runners))
-          .SetCreateSurfaceCallback(CreateSurfaceCallback)
-          .SetExternalViewEmbedder(external_view_embedder)
-          .Build();
+  auto platform_view = PlatformViewBuilder(delegate, std::move(task_runners))
+                           .SetCreateSurfaceCallback(CreateSurfaceCallback)
+                           .SetExternalViewEmbedder(external_view_embedder)
+                           .Build();
   platform_view.NotifyCreated();
 
   RunLoopUntilIdle();
@@ -524,122 +664,27 @@ TEST_F(PlatformViewTests, CreateSurfaceTest) {
 // MetricsEvents sent to it via FIDL, correctly parses the metrics it receives,
 // and calls the SetViewportMetrics callback with the appropriate parameters.
 TEST_F(PlatformViewTests, SetViewportMetrics) {
-  constexpr float invalid_pixel_ratio = -0.75f;
-  constexpr float valid_pixel_ratio = 0.75f;
-  constexpr float invalid_max_bound = -0.75f;
-  constexpr float valid_max_bound = 0.75f;
+  constexpr float kDPR = 2;
+  constexpr uint32_t width = 640;
+  constexpr uint32_t height = 480;
 
   MockPlatformViewDelegate delegate;
   EXPECT_EQ(delegate.metrics(), flutter::ViewportMetrics());
 
-  fuchsia::ui::scenic::SessionListenerPtr session_listener;
-  std::vector<fuchsia::ui::scenic::Event> events;
+  MockParentViewportWatcher watcher;
   flutter::TaskRunners task_runners("test_runners", nullptr, nullptr, nullptr,
                                     nullptr);
-  flutter_runner::GfxPlatformView platform_view =
-      PlatformViewBuilder(delegate, std::move(task_runners))
-          .SetSessionListenerRequest(session_listener.NewRequest())
-          .Build();
+  auto platform_view = PlatformViewBuilder(delegate, std::move(task_runners))
+                           .SetParentViewportWatcher(watcher.GetHandle())
+                           .Build();
   RunLoopUntilIdle();
   EXPECT_EQ(delegate.metrics(), flutter::ViewportMetrics());
 
-  // Test updating with an invalid pixel ratio.  The final metrics should be
-  // unchanged.
-  events.clear();
-  events.emplace_back(fuchsia::ui::scenic::Event::WithGfx(
-      fuchsia::ui::gfx::Event::WithMetrics(fuchsia::ui::gfx::MetricsEvent{
-          .node_id = 0,
-          .metrics =
-              fuchsia::ui::gfx::Metrics{
-                  .scale_x = invalid_pixel_ratio,
-                  .scale_y = 1.f,
-                  .scale_z = 1.f,
-              },
-      })));
-  session_listener->OnScenicEvent(std::move(events));
+  watcher.SetLayout(width, height, kDPR);
   RunLoopUntilIdle();
-  EXPECT_EQ(delegate.metrics(), flutter::ViewportMetrics());
-
-  // Test updating with an invalid size. The final metrics should be unchanged.
-  events.clear();
-  events.emplace_back(
-      fuchsia::ui::scenic::Event::WithGfx(
-          fuchsia::ui::gfx::Event::WithViewPropertiesChanged(
-              fuchsia::ui::gfx::ViewPropertiesChangedEvent{
-                  .view_id = 0,
-                  .properties =
-                      fuchsia::ui::gfx::ViewProperties{
-                          .bounding_box =
-                              fuchsia::ui::gfx::BoundingBox{
-                                  .min =
-                                      fuchsia::ui::gfx::vec3{
-                                          .x = 0.f,
-                                          .y = 0.f,
-                                          .z = 0.f,
-                                      },
-                                  .max =
-                                      fuchsia::ui::gfx::vec3{
-                                          .x = invalid_max_bound,
-                                          .y = invalid_max_bound,
-                                          .z = invalid_max_bound,
-                                      },
-                              },
-                      },
-              })));
-  session_listener->OnScenicEvent(std::move(events));
-  RunLoopUntilIdle();
-  EXPECT_EQ(delegate.metrics(), flutter::ViewportMetrics());
-
-  // Test updating the size only.  The final metrics should be unchanged until
-  // both pixel ratio and size are updated.
-  events.clear();
-  events.emplace_back(
-      fuchsia::ui::scenic::Event::WithGfx(
-          fuchsia::ui::gfx::Event::WithViewPropertiesChanged(
-              fuchsia::ui::gfx::ViewPropertiesChangedEvent{
-                  .view_id = 0,
-                  .properties =
-                      fuchsia::ui::gfx::ViewProperties{
-                          .bounding_box =
-                              fuchsia::ui::gfx::BoundingBox{
-                                  .min =
-                                      fuchsia::ui::gfx::vec3{
-                                          .x = 0.f,
-                                          .y = 0.f,
-                                          .z = 0.f,
-                                      },
-                                  .max =
-                                      fuchsia::ui::gfx::vec3{
-                                          .x = valid_max_bound,
-                                          .y = valid_max_bound,
-                                          .z = valid_max_bound,
-                                      },
-                              },
-                      },
-              })));
-  session_listener->OnScenicEvent(std::move(events));
-  RunLoopUntilIdle();
-  EXPECT_EQ(delegate.metrics(), flutter::ViewportMetrics());
-
-  // Test updating the pixel ratio only.  The final metrics should change now.
-  events.clear();
-  events.emplace_back(fuchsia::ui::scenic::Event::WithGfx(
-      fuchsia::ui::gfx::Event::WithMetrics(fuchsia::ui::gfx::MetricsEvent{
-          .node_id = 0,
-          .metrics =
-              fuchsia::ui::gfx::Metrics{
-                  .scale_x = valid_pixel_ratio,
-                  .scale_y = 1.f,
-                  .scale_z = 1.f,
-              },
-      })));
-  session_listener->OnScenicEvent(std::move(events));
-  RunLoopUntilIdle();
-  EXPECT_EQ(
-      delegate.metrics(),
-      flutter::ViewportMetrics(
-          valid_pixel_ratio, std::round(valid_pixel_ratio * valid_max_bound),
-          std::round(valid_pixel_ratio * valid_max_bound), -1.0, 0));
+  EXPECT_EQ(delegate.metrics(),
+            flutter::ViewportMetrics(kDPR, std::round(width * kDPR),
+                                     std::round(height * kDPR), -1.0, 0));
 }
 
 // This test makes sure that the PlatformView correctly registers semantics
@@ -653,7 +698,7 @@ TEST_F(PlatformViewTests, ChangesAccessibilitySettings) {
   EXPECT_FALSE(delegate.semantics_enabled());
   EXPECT_EQ(delegate.semantics_features(), 0);
 
-  flutter_runner::GfxPlatformView platform_view =
+  auto platform_view =
       PlatformViewBuilder(delegate, std::move(task_runners)).Build();
 
   RunLoopUntilIdle();
@@ -686,10 +731,9 @@ TEST_F(PlatformViewTests, EnableWireframeTest) {
     wireframe_enabled = should_enable;
   };
 
-  flutter_runner::GfxPlatformView platform_view =
-      PlatformViewBuilder(delegate, std::move(task_runners))
-          .SetEnableWireframeCallback(EnableWireframeCallback)
-          .Build();
+  auto platform_view = PlatformViewBuilder(delegate, std::move(task_runners))
+                           .SetEnableWireframeCallback(EnableWireframeCallback)
+                           .Build();
 
   // Cast platform_view to its base view so we can have access to the public
   // "HandlePlatformMessage" function.
@@ -720,6 +764,7 @@ TEST_F(PlatformViewTests, EnableWireframeTest) {
 // "flutter/platform_views" channel for Createview.
 TEST_F(PlatformViewTests, CreateViewTest) {
   MockPlatformViewDelegate delegate;
+  const uint64_t view_id = 42;
   flutter::TaskRunners task_runners =
       flutter::TaskRunners("test_runners",  // label
                            flutter_runner::CreateFMLTaskRunner(
@@ -733,20 +778,20 @@ TEST_F(PlatformViewTests, CreateViewTest) {
   // view was properly handled and parsed, this function should be called,
   // setting |wireframe_enabled| to true.
   bool create_view_called = false;
-  auto CreateViewCallback = [&create_view_called](
-                                int64_t view_id,
-                                flutter_runner::ViewCallback on_view_created,
-                                flutter_runner::GfxViewIdCallback on_view_bound,
-                                bool hit_testable, bool focusable) {
-    create_view_called = true;
-    on_view_created();
-    on_view_bound(0);
-  };
+  auto CreateViewCallback =
+      [&create_view_called, this](
+          int64_t view_id, flutter_runner::ViewCallback on_view_created,
+          flutter_runner::ViewCreatedCallback on_view_bound, bool hit_testable,
+          bool focusable) {
+        create_view_called = true;
+        on_view_created();
+        fuchsia::ui::composition::ContentId content_id;
+        on_view_bound(std::move(content_id), MakeChildViewWatcher());
+      };
 
-  flutter_runner::GfxPlatformView platform_view =
-      PlatformViewBuilder(delegate, std::move(task_runners))
-          .SetCreateViewCallback(CreateViewCallback)
-          .Build();
+  auto platform_view = PlatformViewBuilder(delegate, std::move(task_runners))
+                           .SetCreateViewCallback(CreateViewCallback)
+                           .Build();
 
   // Cast platform_view to its base view so we can have access to the public
   // "HandlePlatformMessage" function.
@@ -754,25 +799,41 @@ TEST_F(PlatformViewTests, CreateViewTest) {
   EXPECT_TRUE(base_view);
 
   // JSON for the message to be passed into the PlatformView.
-  const uint8_t txt[] =
-      "{"
-      "    \"method\":\"View.create\","
-      "    \"args\": {"
-      "       \"viewId\":42,"
-      "       \"hitTestable\":true,"
-      "       \"focusable\":true"
-      "    }"
-      "}";
+  std::ostringstream create_view_message;
+  create_view_message << "{"
+                      << "  \"method\":\"View.create\","
+                      << "  \"args\":{"
+                      << "    \"viewId\":" << view_id << ","
+                      << "    \"hitTestable\":true,"
+                      << "    \"focusable\":true"
+                      << "  }"
+                      << "}";
 
+  std::string create_view_call = create_view_message.str();
   std::unique_ptr<flutter::PlatformMessage> message =
       std::make_unique<flutter::PlatformMessage>(
-          "flutter/platform_views", fml::MallocMapping::Copy(txt, sizeof(txt)),
+          "flutter/platform_views",
+          fml::MallocMapping::Copy(create_view_call.c_str(),
+                                   create_view_call.size()),
           fml::RefPtr<flutter::PlatformMessageResponse>());
   base_view->HandlePlatformMessage(std::move(message));
 
   RunLoopUntilIdle();
 
   EXPECT_TRUE(create_view_called);
+
+  // Platform view forwards the 'View.viewConnected' message on the
+  // 'flutter/platform_views' channel when a view gets created.
+  std::ostringstream view_connected_expected_out;
+  view_connected_expected_out << "{"
+                              << "\"method\":\"View.viewConnected\","
+                              << "\"args\":{"
+                              << "  \"viewId\":" << view_id << "  }"
+                              << "}";
+
+  ASSERT_NE(delegate.message(), nullptr);
+  EXPECT_EQ(view_connected_expected_out.str(),
+            ToString(delegate.message()->data()));
 }
 
 // This test makes sure that the PlatformView forwards messages on the
@@ -794,10 +855,9 @@ TEST_F(PlatformViewTests, UpdateViewTest) {
     focusable_for_test = focusable;
   };
 
-  flutter_runner::GfxPlatformView platform_view =
-      PlatformViewBuilder(delegate, std::move(task_runners))
-          .SetUpdateViewCallback(UpdateViewCallback)
-          .Build();
+  auto platform_view = PlatformViewBuilder(delegate, std::move(task_runners))
+                           .SetUpdateViewCallback(UpdateViewCallback)
+                           .Build();
 
   // Cast platform_view to its base view so we can have access to the public
   // "HandlePlatformMessage" function.
@@ -895,6 +955,8 @@ TEST_F(PlatformViewTests, UpdateViewTest) {
 // "flutter/platform_views" channel for DestroyView.
 TEST_F(PlatformViewTests, DestroyViewTest) {
   MockPlatformViewDelegate delegate;
+  const uint64_t view_id = 42;
+
   flutter::TaskRunners task_runners =
       flutter::TaskRunners("test_runners",  // label
                            flutter_runner::CreateFMLTaskRunner(
@@ -904,181 +966,88 @@ TEST_F(PlatformViewTests, DestroyViewTest) {
                            nullptr                               // io
       );
 
-  // Test wireframe callback function. If the message sent to the platform
-  // view was properly handled and parsed, this function should be called,
-  // setting |wireframe_enabled| to true.
   bool destroy_view_called = false;
-  auto DestroyViewCallback =
-      [&destroy_view_called](
-          int64_t view_id, flutter_runner::GfxViewIdCallback on_view_unbound) {
-        destroy_view_called = true;
-        on_view_unbound(0);
-      };
 
-  flutter_runner::GfxPlatformView platform_view =
-      PlatformViewBuilder(delegate, std::move(task_runners))
-          .SetDestroyViewCallback(DestroyViewCallback)
-          .Build();
+  auto on_destroy_view = [&destroy_view_called](
+                             int64_t view_id,
+                             flutter_runner::ViewIdCallback on_view_unbound) {
+    destroy_view_called = true;
+    fuchsia::ui::composition::ContentId content_id;
+    on_view_unbound(std::move(content_id));
+  };
+
+  bool create_view_called = false;
+  auto on_create_view = [&create_view_called, this](
+                            int64_t view_id,
+                            flutter_runner::ViewCallback on_view_created,
+                            flutter_runner::ViewCreatedCallback on_view_bound,
+                            bool hit_testable, bool focusable) {
+    create_view_called = true;
+    on_view_created();
+    fuchsia::ui::composition::ContentId content_id;
+    on_view_bound(std::move(content_id), MakeChildViewWatcher());
+  };
+
+  auto platform_view = PlatformViewBuilder(delegate, std::move(task_runners))
+                           .SetCreateViewCallback(on_create_view)
+                           .SetDestroyViewCallback(on_destroy_view)
+                           .Build();
 
   // Cast platform_view to its base view so we can have access to the public
   // "HandlePlatformMessage" function.
   auto base_view = static_cast<flutter::PlatformView*>(&platform_view);
   EXPECT_TRUE(base_view);
 
-  // JSON for the message to be passed into the PlatformView.
-  const uint8_t txt[] =
-      "{"
-      "    \"method\":\"View.dispose\","
-      "    \"args\": {"
-      "       \"viewId\":42"
-      "    }"
-      "}";
+  std::ostringstream create_message;
+  create_message << "{"
+                 << "    \"method\":\"View.create\","
+                 << "    \"args\": {"
+                 << "       \"viewId\":" << view_id << ","
+                 << "       \"hitTestable\":true,"
+                 << "       \"focusable\":true"
+                 << "    }"
+                 << "}";
 
+  auto create_response = FakePlatformMessageResponse::Create();
+  base_view->HandlePlatformMessage(create_response->WithMessage(
+      "flutter/platform_views", create_message.str()));
+  RunLoopUntilIdle();
+
+  delegate.Reset();
+
+  // JSON for the message to be passed into the PlatformView.
+  std::ostringstream dispose_message;
+  dispose_message << "{"
+                  << "    \"method\":\"View.dispose\","
+                  << "    \"args\": {"
+                  << "       \"viewId\":" << view_id << "    }"
+                  << "}";
+
+  std::string dispose_view_call = dispose_message.str();
   std::unique_ptr<flutter::PlatformMessage> message =
       std::make_unique<flutter::PlatformMessage>(
-          "flutter/platform_views", fml::MallocMapping::Copy(txt, sizeof(txt)),
+          "flutter/platform_views",
+          fml::MallocMapping::Copy(dispose_view_call.c_str(),
+                                   dispose_view_call.size()),
           fml::RefPtr<flutter::PlatformMessageResponse>());
   base_view->HandlePlatformMessage(std::move(message));
 
   RunLoopUntilIdle();
 
   EXPECT_TRUE(destroy_view_called);
-}
 
-// This test makes sure that the PlatformView forwards messages on the
-// "flutter/platform_views" channel for ViewConnected, ViewDisconnected, and
-// ViewStateChanged events.
-TEST_F(PlatformViewTests, ViewEventsTest) {
-  constexpr int64_t kViewId = 33;
-  constexpr scenic::ResourceId kViewHolderId = 42;
-  MockPlatformViewDelegate delegate;
-
-  fuchsia::ui::scenic::SessionListenerPtr session_listener;
-  std::vector<fuchsia::ui::scenic::Event> events;
-  flutter::TaskRunners task_runners =
-      flutter::TaskRunners("test_runners",  // label
-                           flutter_runner::CreateFMLTaskRunner(
-                               async_get_default_dispatcher()),  // platform
-                           flutter_runner::CreateFMLTaskRunner(
-                               async_get_default_dispatcher()),  // raster
-                           flutter_runner::CreateFMLTaskRunner(
-                               async_get_default_dispatcher()),  // ui
-                           nullptr                               // io
-      );
-
-  auto on_create_view =
-      [kViewId](int64_t view_id, flutter_runner::ViewCallback on_view_created,
-                flutter_runner::GfxViewIdCallback on_view_bound,
-                bool hit_testable, bool focusable) {
-        ASSERT_EQ(view_id, kViewId);
-        on_view_created();
-        on_view_bound(kViewHolderId);
-      };
-
-  flutter_runner::GfxPlatformView platform_view =
-      PlatformViewBuilder(delegate, std::move(task_runners))
-          .SetSessionListenerRequest(session_listener.NewRequest())
-          .SetCreateViewCallback(on_create_view)
-          .Build();
-  RunLoopUntilIdle();
-  ASSERT_EQ(delegate.message(), nullptr);
-
-  // Create initial view for testing.
-  std::ostringstream create_view_message;
-  create_view_message << "{"
-                      << "  \"method\":\"View.create\","
-                      << "  \"args\":{"
-                      << "    \"viewId\":" << kViewId << ","
-                      << "    \"hitTestable\":true,"
-                      << "    \"focusable\":true"
-                      << "  }"
-                      << "}";
-  std::string create_view_call = create_view_message.str();
-  static_cast<flutter::PlatformView*>(&platform_view)
-      ->HandlePlatformMessage(std::make_unique<flutter::PlatformMessage>(
-          "flutter/platform_views",
-          fml::MallocMapping::Copy(create_view_call.c_str(),
-                                   create_view_call.size()),
-          fml::RefPtr<flutter::PlatformMessageResponse>()));
-  RunLoopUntilIdle();
-
-  // ViewConnected event.
-  delegate.Reset();
-  events.clear();
-  events.emplace_back(fuchsia::ui::scenic::Event::WithGfx(
-      fuchsia::ui::gfx::Event::WithViewConnected(
-          fuchsia::ui::gfx::ViewConnectedEvent{
-              .view_holder_id = kViewHolderId,
-          })));
-  session_listener->OnScenicEvent(std::move(events));
-  RunLoopUntilIdle();
-
-  flutter::PlatformMessage* view_connected_msg = delegate.message();
-  ASSERT_NE(view_connected_msg, nullptr);
-  std::ostringstream view_connected_expected_out;
-  view_connected_expected_out
-      << "{"
-      << "\"method\":\"View.viewConnected\","
-      << "\"args\":{"
-      << "  \"viewId\":" << kViewId  // ViewHolderToken handle
-      << "  }"
-      << "}";
-  EXPECT_EQ(view_connected_expected_out.str(),
-            ToString(view_connected_msg->data()));
-
-  // ViewDisconnected event.
-  delegate.Reset();
-  events.clear();
-  events.emplace_back(fuchsia::ui::scenic::Event::WithGfx(
-      fuchsia::ui::gfx::Event::WithViewDisconnected(
-          fuchsia::ui::gfx::ViewDisconnectedEvent{
-              .view_holder_id = kViewHolderId,
-          })));
-  session_listener->OnScenicEvent(std::move(events));
-  RunLoopUntilIdle();
-
-  flutter::PlatformMessage* view_disconnected_msg = delegate.message();
-  ASSERT_NE(view_disconnected_msg, nullptr);
+  // Platform view forwards the 'View.viewDisconnected' message on the
+  // 'flutter/platform_views' channel when a view gets destroyed.
   std::ostringstream view_disconnected_expected_out;
-  view_disconnected_expected_out
-      << "{"
-      << "\"method\":\"View.viewDisconnected\","
-      << "\"args\":{"
-      << "  \"viewId\":" << kViewId  // ViewHolderToken handle
-      << "  }"
-      << "}";
+  view_disconnected_expected_out << "{"
+                                 << "\"method\":\"View.viewDisconnected\","
+                                 << "\"args\":{"
+                                 << "  \"viewId\":" << view_id << "  }"
+                                 << "}";
+
+  ASSERT_NE(delegate.message(), nullptr);
   EXPECT_EQ(view_disconnected_expected_out.str(),
-            ToString(view_disconnected_msg->data()));
-
-  // ViewStateChanged event.
-  delegate.Reset();
-  events.clear();
-  events.emplace_back(fuchsia::ui::scenic::Event::WithGfx(
-      fuchsia::ui::gfx::Event::WithViewStateChanged(
-          fuchsia::ui::gfx::ViewStateChangedEvent{
-              .view_holder_id = kViewHolderId,
-              .state =
-                  fuchsia::ui::gfx::ViewState{
-                      .is_rendering = true,
-                  },
-          })));
-  session_listener->OnScenicEvent(std::move(events));
-  RunLoopUntilIdle();
-
-  flutter::PlatformMessage* view_state_changed_msg = delegate.message();
-  ASSERT_NE(view_state_changed_msg, nullptr);
-  std::ostringstream view_state_changed_expected_out;
-  view_state_changed_expected_out
-      << "{"
-      << "\"method\":\"View.viewStateChanged\","
-      << "\"args\":{"
-      << "  \"viewId\":" << kViewId << ","  // ViewHolderToken
-      << "  \"is_rendering\":true,"         // IsViewRendering
-      << "  \"state\":true"                 // IsViewRendering
-      << "  }"
-      << "}";
-  EXPECT_EQ(view_state_changed_expected_out.str(),
-            ToString(view_state_changed_msg->data()));
+            ToString(delegate.message()->data()));
 }
 
 // This test makes sure that the PlatformView forwards messages on the
@@ -1093,10 +1062,9 @@ TEST_F(PlatformViewTests, GetFocusStatesTest) {
   fidl::BindingSet<fuchsia::ui::views::ViewRefFocused> vrf_bindings;
   auto vrf_handle = vrf_bindings.AddBinding(&vrf);
 
-  flutter_runner::GfxPlatformView platform_view =
-      PlatformViewBuilder(delegate, std::move(task_runners))
-          .SetViewRefFocused(std::move(vrf_handle))
-          .Build();
+  auto platform_view = PlatformViewBuilder(delegate, std::move(task_runners))
+                           .SetViewRefFocused(std::move(vrf_handle))
+                           .Build();
 
   // Cast platform_view to its base view so we can have access to the public
   // "HandlePlatformMessage" function.
@@ -1147,91 +1115,227 @@ TEST_F(PlatformViewTests, GetFocusStatesTest) {
 TEST_F(PlatformViewTests, RequestFocusTest) {
   MockPlatformViewDelegate delegate;
   flutter::TaskRunners task_runners =
-      flutter::TaskRunners("test_runners", nullptr, nullptr, nullptr, nullptr);
+      flutter::TaskRunners("test_runners",  // label
+                           flutter_runner::CreateFMLTaskRunner(
+                               async_get_default_dispatcher()),  // platform
+                           nullptr,                              // raster
+                           nullptr,                              // ui
+                           nullptr                               // io
+      );
 
   FakeFocuser focuser;
   fidl::BindingSet<fuchsia::ui::views::Focuser> focuser_bindings;
   auto focuser_handle = focuser_bindings.AddBinding(&focuser);
 
-  flutter_runner::GfxPlatformView platform_view =
-      PlatformViewBuilder(delegate, std::move(task_runners))
-          .SetFocuser(std::move(focuser_handle))
-          .Build();
+  bool create_view_called = false;
+  auto on_create_view = [&create_view_called, this](
+                            int64_t view_id,
+                            flutter_runner::ViewCallback on_view_created,
+                            flutter_runner::ViewCreatedCallback on_view_bound,
+                            bool hit_testable, bool focusable) {
+    create_view_called = true;
+    on_view_created();
+    fuchsia::ui::composition::ContentId content_id;
+    on_view_bound(std::move(content_id), MakeChildViewWatcher());
+  };
+
+  auto platform_view = PlatformViewBuilder(delegate, std::move(task_runners))
+                           .SetFocuser(std::move(focuser_handle))
+                           .SetCreateViewCallback(on_create_view)
+                           .Build();
 
   // Cast platform_view to its base view so we can have access to the public
   // "HandlePlatformMessage" function.
   auto base_view = static_cast<flutter::PlatformView*>(&platform_view);
   EXPECT_TRUE(base_view);
 
-  // This "Mock" ViewRef serves as the target for the RequestFocus operation.
-  auto mock_view_ref_pair = scenic::ViewRefPair::New();
+  uint64_t view_id = 42;
 
-  // JSON for the message to be passed into the PlatformView.
-  std::ostringstream message;
-  message << "{"
-          << "    \"method\":\"View.focus.request\","
-          << "    \"args\": {"
-          << "       \"viewRef\":"
-          << mock_view_ref_pair.view_ref.reference.get() << "    }"
-          << "}";
+  std::ostringstream create_message;
+  create_message << "{"
+                 << "    \"method\":\"View.create\","
+                 << "    \"args\": {"
+                 << "       \"viewId\":" << view_id << ","
+                 << "       \"hitTestable\":true,"
+                 << "       \"focusable\":true"
+                 << "    }"
+                 << "}";
 
   // Dispatch the plaform message request.
-  auto response = FakePlatformMessageResponse::Create();
-  base_view->HandlePlatformMessage(
-      response->WithMessage("flutter/platform_views", message.str()));
+  auto create_response = FakePlatformMessageResponse::Create();
+  base_view->HandlePlatformMessage(create_response->WithMessage(
+      "flutter/platform_views", create_message.str()));
+
   RunLoopUntilIdle();
 
-  response->ExpectCompleted("[0]");
+  // JSON for the message to be passed into the PlatformView.
+  std::ostringstream focus_message;
+  focus_message << "{"
+                << "    \"method\":\"View.focus.requestById\","
+                << "    \"args\": {"
+                << "       \"viewId\":" << view_id << "    }"
+                << "}";
+
+  // Dispatch the plaform message request.
+  auto focus_response = FakePlatformMessageResponse::Create();
+  base_view->HandlePlatformMessage(focus_response->WithMessage(
+      "flutter/platform_views", focus_message.str()));
+  RunLoopUntilIdle();
+
+  focus_response->ExpectCompleted("[0]");
   EXPECT_TRUE(focuser.request_focus_called());
 }
 
-// This test makes sure that the PlatformView correctly replies with an error
-// response when a View.focus.request call fails.
-TEST_F(PlatformViewTests, RequestFocusFailTest) {
+// This test tries to set focus on a view without creating it first
+TEST_F(PlatformViewTests, RequestFocusNeverCreatedTest) {
   MockPlatformViewDelegate delegate;
   flutter::TaskRunners task_runners =
-      flutter::TaskRunners("test_runners", nullptr, nullptr, nullptr, nullptr);
+      flutter::TaskRunners("test_runners",  // label
+                           flutter_runner::CreateFMLTaskRunner(
+                               async_get_default_dispatcher()),  // platform
+                           nullptr,                              // raster
+                           nullptr,                              // ui
+                           nullptr                               // io
+      );
 
   FakeFocuser focuser;
-  focuser.fail_request_focus();
   fidl::BindingSet<fuchsia::ui::views::Focuser> focuser_bindings;
   auto focuser_handle = focuser_bindings.AddBinding(&focuser);
 
-  flutter_runner::GfxPlatformView platform_view =
-      PlatformViewBuilder(delegate, std::move(task_runners))
-          .SetFocuser(std::move(focuser_handle))
-          .Build();
+  bool create_view_called = false;
+  auto on_create_view = [&create_view_called, this](
+                            int64_t view_id,
+                            flutter_runner::ViewCallback on_view_created,
+                            flutter_runner::ViewCreatedCallback on_view_bound,
+                            bool hit_testable, bool focusable) {
+    create_view_called = true;
+    on_view_created();
+    fuchsia::ui::composition::ContentId content_id;
+    on_view_bound(std::move(content_id), MakeChildViewWatcher());
+  };
 
-  // Cast platform_view to its base view so we can have access to the public
-  // "HandlePlatformMessage" function.
+  auto platform_view = PlatformViewBuilder(delegate, std::move(task_runners))
+                           .SetFocuser(std::move(focuser_handle))
+                           .SetCreateViewCallback(on_create_view)
+                           .Build();
+
   auto base_view = static_cast<flutter::PlatformView*>(&platform_view);
   EXPECT_TRUE(base_view);
 
-  // This "Mock" ViewRef serves as the target for the RequestFocus operation.
-  auto mock_view_ref_pair = scenic::ViewRefPair::New();
+  uint64_t view_id = 42;
 
-  // JSON for the message to be passed into the PlatformView.
-  std::ostringstream message;
-  message << "{"
-          << "    \"method\":\"View.focus.request\","
-          << "    \"args\": {"
-          << "       \"viewRef\":"
-          << mock_view_ref_pair.view_ref.reference.get() << "    }"
-          << "}";
+  std::ostringstream focus_message;
+  focus_message << "{"
+                << "    \"method\":\"View.focus.requestById\","
+                << "    \"args\": {"
+                << "       \"viewId\":" << view_id << "    }"
+                << "}";
 
   // Dispatch the plaform message request.
-  auto response = FakePlatformMessageResponse::Create();
-  base_view->HandlePlatformMessage(
-      response->WithMessage("flutter/platform_views", message.str()));
+  auto focus_response = FakePlatformMessageResponse::Create();
+  base_view->HandlePlatformMessage(focus_response->WithMessage(
+      "flutter/platform_views", focus_message.str()));
   RunLoopUntilIdle();
 
-  response->ExpectCompleted(
-      "[" +
-      std::to_string(
-          static_cast<std::underlying_type_t<fuchsia::ui::views::Error>>(
-              fuchsia::ui::views::Error::DENIED)) +
-      "]");
-  EXPECT_TRUE(focuser.request_focus_called());
+  focus_response->ExpectCompleted("[1]");
+  EXPECT_FALSE(focuser.request_focus_called());
+}
+
+TEST_F(PlatformViewTests, RequestFocusDisposedTest) {
+  MockPlatformViewDelegate delegate;
+  flutter::TaskRunners task_runners =
+      flutter::TaskRunners("test_runners",  // label
+                           flutter_runner::CreateFMLTaskRunner(
+                               async_get_default_dispatcher()),  // platform
+                           nullptr,                              // raster
+                           nullptr,                              // ui
+                           nullptr                               // io
+      );
+
+  FakeFocuser focuser;
+  fidl::BindingSet<fuchsia::ui::views::Focuser> focuser_bindings;
+  auto focuser_handle = focuser_bindings.AddBinding(&focuser);
+
+  bool create_view_called = false;
+  auto on_create_view = [&create_view_called, this](
+                            int64_t view_id,
+                            flutter_runner::ViewCallback on_view_created,
+                            flutter_runner::ViewCreatedCallback on_view_bound,
+                            bool hit_testable, bool focusable) {
+    create_view_called = true;
+    on_view_created();
+    fuchsia::ui::composition::ContentId content_id;
+    on_view_bound(std::move(content_id), MakeChildViewWatcher());
+  };
+
+  bool destroy_view_called = false;
+
+  auto on_destroy_view = [&destroy_view_called](
+                             int64_t view_id,
+                             flutter_runner::ViewIdCallback on_view_unbound) {
+    destroy_view_called = true;
+    fuchsia::ui::composition::ContentId content_id;
+    on_view_unbound(std::move(content_id));
+  };
+
+  auto platform_view = PlatformViewBuilder(delegate, std::move(task_runners))
+                           .SetFocuser(std::move(focuser_handle))
+                           .SetCreateViewCallback(on_create_view)
+                           .SetDestroyViewCallback(on_destroy_view)
+                           .Build();
+
+  auto base_view = static_cast<flutter::PlatformView*>(&platform_view);
+  EXPECT_TRUE(base_view);
+
+  uint64_t view_id = 42;
+
+  // Create a new view
+  std::ostringstream create_message;
+  create_message << "{"
+                 << "    \"method\":\"View.create\","
+                 << "    \"args\": {"
+                 << "       \"viewId\":" << view_id << ","
+                 << "       \"hitTestable\":true,"
+                 << "       \"focusable\":true"
+                 << "    }"
+                 << "}";
+
+  auto create_response = FakePlatformMessageResponse::Create();
+  base_view->HandlePlatformMessage(create_response->WithMessage(
+      "flutter/platform_views", create_message.str()));
+  RunLoopUntilIdle();
+
+  EXPECT_FALSE(destroy_view_called);
+  // Dispose of the view
+  std::ostringstream dispose_message;
+  dispose_message << "{"
+                  << "    \"method\":\"View.dispose\","
+                  << "    \"args\": {"
+                  << "       \"viewId\":" << view_id << "    }"
+                  << "}";
+
+  auto dispose_response = FakePlatformMessageResponse::Create();
+  base_view->HandlePlatformMessage(dispose_response->WithMessage(
+      "flutter/platform_views", dispose_message.str()));
+  RunLoopUntilIdle();
+  EXPECT_TRUE(destroy_view_called);
+
+  // Request focus on newly disposed view
+  std::ostringstream focus_message;
+  focus_message << "{"
+                << "    \"method\":\"View.focus.requestById\","
+                << "    \"args\": {"
+                << "       \"viewId\":" << view_id << "    }"
+                << "}";
+
+  auto focus_response = FakePlatformMessageResponse::Create();
+  base_view->HandlePlatformMessage(focus_response->WithMessage(
+      "flutter/platform_views", focus_message.str()));
+  RunLoopUntilIdle();
+
+  // Expect it to fail
+  focus_response->ExpectCompleted("[1]");
+  EXPECT_FALSE(focuser.request_focus_called());
 }
 
 // Makes sure that OnKeyEvent is dispatched as a platform message.
@@ -1249,10 +1353,9 @@ TEST_F(PlatformViewTests, OnKeyEvent) {
   fuchsia::ui::input3::KeyboardHandle keyboard_service;
   MockKeyboard keyboard(keyboard_service.NewRequest());
 
-  flutter_runner::GfxPlatformView platform_view =
-      PlatformViewBuilder(delegate, std::move(task_runners))
-          .SetKeyboard(std::move(keyboard_service))
-          .Build();
+  auto platform_view = PlatformViewBuilder(delegate, std::move(task_runners))
+                           .SetKeyboard(std::move(keyboard_service))
+                           .Build();
   RunLoopUntilIdle();
 
   std::vector<EventFlow> events;
@@ -1330,7 +1433,7 @@ TEST_F(PlatformViewTests, OnShaderWarmup) {
   uint64_t height = 100;
   std::vector<std::string> shaders = {"foo.skp", "bar.skp", "baz.skp"};
 
-  OnShaderWarmup on_shader_warmup =
+  OnShaderWarmupCallback on_shader_warmup_callback =
       [&](const std::vector<std::string>& shaders_in,
           std::function<void(uint32_t)> completion_callback, uint64_t width_in,
           uint64_t height_in) {
@@ -1344,10 +1447,9 @@ TEST_F(PlatformViewTests, OnShaderWarmup) {
         completion_callback(shaders_in.size());
       };
 
-  flutter_runner::GfxPlatformView platform_view =
-      PlatformViewBuilder(delegate, std::move(task_runners))
-          .SetShaderWarmupCallback(on_shader_warmup)
-          .Build();
+  auto platform_view = PlatformViewBuilder(delegate, std::move(task_runners))
+                           .SetShaderWarmupCallback(on_shader_warmup_callback)
+                           .Build();
 
   std::ostringstream shaders_array_ostream;
   shaders_array_ostream << "[ ";
@@ -1390,68 +1492,34 @@ TEST_F(PlatformViewTests, OnShaderWarmup) {
 }
 
 TEST_F(PlatformViewTests, TouchSourceLogicalToPhysicalConversion) {
-  constexpr std::array<std::array<float, 2>, 2> kRect = {{{0, 0}, {20, 20}}};
+  constexpr uint32_t width = 640;
+  constexpr uint32_t height = 480;
+  constexpr std::array<std::array<float, 2>, 2> kRect = {
+      {{0, 0}, {width, height}}};
   constexpr std::array<float, 9> kIdentity = {1, 0, 0, 0, 1, 0, 0, 0, 1};
   constexpr fuchsia::ui::pointer::TouchInteractionId kIxnOne = {
       .device_id = 0u, .pointer_id = 1u, .interaction_id = 2u};
-  constexpr float valid_pixel_ratio = 2.f;
 
   MockPlatformViewDelegate delegate;
   flutter::TaskRunners task_runners("test_runners", nullptr, nullptr, nullptr,
                                     nullptr);
 
-  fuchsia::ui::scenic::SessionListenerPtr session_listener;
+  MockParentViewportWatcher viewport_watcher;
   FakeTouchSource touch_server;
   fidl::BindingSet<fuchsia::ui::pointer::TouchSource> touch_bindings;
   auto touch_handle = touch_bindings.AddBinding(&touch_server);
-  flutter_runner::GfxPlatformView platform_view =
+  auto platform_view =
       PlatformViewBuilder(delegate, std::move(task_runners))
-          .SetSessionListenerRequest(session_listener.NewRequest())
+          .SetParentViewportWatcher(viewport_watcher.GetHandle())
           .SetTouchSource(std::move(touch_handle))
           .Build();
   RunLoopUntilIdle();
   EXPECT_EQ(delegate.pointer_packets().size(), 0u);
 
-  // Set logical-to-physical metrics and logical view size
-  std::vector<fuchsia::ui::scenic::Event> scenic_events;
-  scenic_events.emplace_back(fuchsia::ui::scenic::Event::WithGfx(
-      fuchsia::ui::gfx::Event::WithMetrics(fuchsia::ui::gfx::MetricsEvent{
-          .node_id = 0,
-          .metrics =
-              fuchsia::ui::gfx::Metrics{
-                  .scale_x = valid_pixel_ratio,
-                  .scale_y = valid_pixel_ratio,
-                  .scale_z = valid_pixel_ratio,
-              },
-      })));
-  scenic_events.emplace_back(
-      fuchsia::ui::scenic::Event::WithGfx(
-          fuchsia::ui::gfx::Event::WithViewPropertiesChanged(
-              fuchsia::ui::gfx::ViewPropertiesChangedEvent{
-                  .view_id = 0,
-                  .properties =
-                      fuchsia::ui::gfx::ViewProperties{
-                          .bounding_box =
-                              fuchsia::ui::gfx::BoundingBox{
-                                  .min =
-                                      fuchsia::ui::gfx::vec3{
-                                          .x = 0.f,
-                                          .y = 0.f,
-                                          .z = 0.f,
-                                      },
-                                  .max =
-                                      fuchsia::ui::gfx::vec3{
-                                          .x = 20.f,
-                                          .y = 20.f,
-                                          .z = 20.f,
-                                      },
-                              },
-                      },
-              })));
-  session_listener->OnScenicEvent(std::move(scenic_events));
+  viewport_watcher.SetLayout(width, height);
   RunLoopUntilIdle();
   EXPECT_EQ(delegate.metrics(),
-            flutter::ViewportMetrics(2.f, 40.f, 40.f, -1, 0));
+            flutter::ViewportMetrics(1, width, height, -1, 0));
 
   // Inject
   std::vector<fuchsia::ui::pointer::TouchEvent> events =
@@ -1459,7 +1527,7 @@ TEST_F(PlatformViewTests, TouchSourceLogicalToPhysicalConversion) {
           .AddTime(/* in nanoseconds */ 1111789u)
           .AddViewParameters(kRect, kRect, kIdentity)
           .AddSample(kIxnOne, fuchsia::ui::pointer::EventPhase::ADD,
-                     {10.f, 10.f})
+                     {width / 2, height / 2})
           .AddResult(
               {.interaction = kIxnOne,
                .status = fuchsia::ui::pointer::TouchInteractionStatus::GRANTED})
@@ -1480,11 +1548,10 @@ TEST_F(PlatformViewTests, TouchSourceLogicalToPhysicalConversion) {
   EXPECT_EQ(flutter_events[1].change, flutter::PointerData::Change::kDown);
 
   // Examine coordinates
-  // With metrics defined, observe metrics ratio applied.
-  EXPECT_EQ(flutter_events[0].physical_x, 20.f);
-  EXPECT_EQ(flutter_events[0].physical_y, 20.f);
-  EXPECT_EQ(flutter_events[1].physical_x, 20.f);
-  EXPECT_EQ(flutter_events[1].physical_y, 20.f);
+  EXPECT_EQ(flutter_events[0].physical_x, width / 2);
+  EXPECT_EQ(flutter_events[0].physical_y, height / 2);
+  EXPECT_EQ(flutter_events[1].physical_x, width / 2);
+  EXPECT_EQ(flutter_events[1].physical_y, height / 2);
 }
 
 }  // namespace flutter_runner::testing

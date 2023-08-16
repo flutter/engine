@@ -2,13 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_GFX_EXTERNAL_VIEW_EMBEDDER_H_
-#define FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_GFX_EXTERNAL_VIEW_EMBEDDER_H_
+#ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_EXTERNAL_VIEW_EMBEDDER_H_
+#define FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_EXTERNAL_VIEW_EMBEDDER_H_
 
+#include <fuchsia/ui/composition/cpp/fidl.h>
 #include <fuchsia/ui/views/cpp/fidl.h>
-#include <lib/ui/scenic/cpp/id.h>
-#include <lib/ui/scenic/cpp/resources.h>
-#include <lib/ui/scenic/cpp/view_ref_pair.h>
+#include <lib/fit/function.h>
 
 #include <cstdint>  // For uint32_t & uint64_t
 #include <memory>
@@ -21,65 +20,40 @@
 #include "flutter/fml/macros.h"
 #include "flutter/shell/platform/fuchsia/flutter/canvas_spy.h"
 #include "flutter/shell/platform/fuchsia/flutter/rtree.h"
-#include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 #include "third_party/skia/include/core/SkPoint.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
-#include "gfx_session_connection.h"
+#include "flatland_connection.h"
 #include "surface_producer.h"
 
 namespace flutter_runner {
 
 using ViewCallback = std::function<void()>;
-using GfxViewIdCallback = std::function<void(scenic::ResourceId)>;
+using ViewCreatedCallback = std::function<void(
+    fuchsia::ui::composition::ContentId,
+    fuchsia::ui::composition::ChildViewWatcherHandle child_view_watcher)>;
+using ViewIdCallback = std::function<void(fuchsia::ui::composition::ContentId)>;
 
-// This struct represents a transformed clip rect.
-struct TransformedClip {
-  SkMatrix transform = SkMatrix::I();
-  SkRect rect = SkRect::MakeEmpty();
-
-  bool operator==(const TransformedClip& other) const {
-    return transform == other.transform && rect == other.rect;
-  }
-};
-
-// This struct represents all the mutators that can be applied to a
-// PlatformView, unpacked from the `MutatorStack`.
-struct ViewMutators {
-  std::vector<TransformedClip> clips;
-  SkMatrix total_transform = SkMatrix::I();
-  SkMatrix transform = SkMatrix::I();
-  SkScalar opacity = 1.f;
-
-  bool operator==(const ViewMutators& other) const {
-    return clips == other.clips && total_transform == other.total_transform &&
-           transform == other.transform && opacity == other.opacity;
-  }
-};
-
-// This class orchestrates interaction with the Scenic compositor on Fuchsia. It
-// ensures that flutter content and platform view content are both rendered
-// correctly in a unified scene.
-class GfxExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
+// This class orchestrates interaction with the Scenic's compositor on
+// Fuchsia. It ensures that flutter content and platform view content are both
+// rendered correctly in a unified scene.
+class ExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
  public:
-  // Layer separation is as infinitesimal as possible without introducing
-  // Z-fighting.
-  constexpr static float kScenicZElevationBetweenLayers = 0.0001f;
-  constexpr static float kScenicZElevationForPlatformView = 100.f;
-  constexpr static float kScenicElevationForInputInterceptor = 500.f;
-  constexpr static SkAlpha kBackgroundLayerOpacity = SK_AlphaOPAQUE;
-  constexpr static SkAlpha kOverlayLayerOpacity = SK_AlphaOPAQUE - 1;
+  constexpr static uint32_t kDefaultViewportSize = 32;
 
-  GfxExternalViewEmbedder(std::string debug_label,
-                          fuchsia::ui::views::ViewToken view_token,
-                          scenic::ViewRefPair view_ref_pair,
-                          std::shared_ptr<GfxSessionConnection> session,
-                          std::shared_ptr<SurfaceProducer> surface_producer,
-                          bool intercept_all_input = false);
-  ~GfxExternalViewEmbedder();
+  ExternalViewEmbedder(
+      fuchsia::ui::views::ViewCreationToken view_creation_token,
+      fuchsia::ui::views::ViewIdentityOnCreation view_identity,
+      fuchsia::ui::composition::ViewBoundProtocols endpoints,
+      fidl::InterfaceRequest<fuchsia::ui::composition::ParentViewportWatcher>
+          parent_viewport_watcher_request,
+      std::shared_ptr<FlatlandConnection> flatland,
+      std::shared_ptr<SurfaceProducer> surface_producer,
+      bool intercept_all_input = false);
+  ~ExternalViewEmbedder();
 
   // |ExternalViewEmbedder|
   flutter::DlCanvas* GetRootCanvas() override;
@@ -122,18 +96,49 @@ class GfxExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
   // View manipulation.
   // |SetViewProperties| doesn't manipulate the view directly -- it sets pending
   // properties for the next |UpdateView| call.
-  void EnableWireframe(bool enable);
   void CreateView(int64_t view_id,
                   ViewCallback on_view_created,
-                  GfxViewIdCallback on_view_bound);
-  void DestroyView(int64_t view_id, GfxViewIdCallback on_view_unbound);
+                  ViewCreatedCallback on_view_bound);
+  void DestroyView(int64_t view_id, ViewIdCallback on_view_unbound);
   void SetViewProperties(int64_t view_id,
                          const SkRect& occlusion_hint,
                          bool hit_testable,
                          bool focusable);
 
+  // Holds the clip transform that may be applied on a View.
+  struct ClipTransform {
+    fuchsia::ui::composition::TransformId transform_id;
+    std::vector<fuchsia::ui::composition::TransformId> children;
+  };
+
  private:
   void Reset();  // Reset state for a new frame.
+
+  // This struct represents a transformed clip rect.
+  struct TransformedClip {
+    SkMatrix transform = SkMatrix::I();
+    SkRect rect = SkRect::MakeEmpty();
+
+    bool operator==(const TransformedClip& other) const {
+      return transform == other.transform && rect == other.rect;
+    }
+  };
+
+  // This struct represents all the mutators that can be applied to a
+  // PlatformView, unpacked from the `MutatorStack`.
+  struct ViewMutators {
+    std::vector<TransformedClip> clips;
+    SkMatrix total_transform = SkMatrix::I();
+    SkMatrix transform = SkMatrix::I();
+    SkScalar opacity = 1.f;
+
+    bool operator==(const ViewMutators& other) const {
+      return clips == other.clips && total_transform == other.total_transform &&
+             transform == other.transform && opacity == other.opacity;
+    }
+  };
+
+  ViewMutators ParseMutatorStack(const flutter::MutatorsStack& mutators_stack);
 
   struct EmbedderLayer {
     EmbedderLayer(const SkISize& frame_size,
@@ -166,73 +171,47 @@ class GfxExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
   using EmbedderLayerId = std::optional<uint32_t>;
   constexpr static EmbedderLayerId kRootLayerId = EmbedderLayerId{};
 
-  struct ScenicView {
-    std::vector<scenic::EntityNode> clip_nodes;
-    scenic::OpacityNodeHACK opacity_node;
-    scenic::EntityNode transform_node;
-    scenic::ViewHolder view_holder;
-
+  struct View {
+    std::vector<ClipTransform> clip_transforms;
+    fuchsia::ui::composition::TransformId transform_id;
+    fuchsia::ui::composition::ContentId viewport_id;
     ViewMutators mutators;
-    float elevation = 0.f;
-
     SkSize size = SkSize::MakeEmpty();
-    SkRect occlusion_hint = SkRect::MakeEmpty();
     SkRect pending_occlusion_hint = SkRect::MakeEmpty();
-    bool hit_testable = true;
-    bool pending_hit_testable = true;
-    bool focusable = true;
-    bool pending_focusable = true;
+    SkRect occlusion_hint = SkRect::MakeEmpty();
+    fit::callback<void(const SkSize&, const SkRect&)>
+        pending_create_viewport_callback;
   };
 
-  // GFX resources required to render a composited flutter layer (i.e. an
-  // SkPicture).
-  struct ScenicImage {
-    scenic::ShapeNode shape_node;
-    scenic::Material material;
+  struct Layer {
+    // Transform on which Images are set.
+    fuchsia::ui::composition::TransformId transform_id;
   };
 
-  // All resources required to represent a flutter layer in the GFX scene
-  // graph. The structure of the subgraph for a particular layer is:
-  //
-  //         layer_node
-  //        /          \
-  //  image node     hit regions (zero or more)
-  //
-  // NOTE: `hit_regions` must be cleared before submitting each new frame;
-  // otherwise, we will report stale hittable geometry to scenic.
-  struct ScenicLayer {
-    // Root of the subtree containing the scenic resources for this layer.
-    scenic::EntityNode layer_node;
-
-    // Scenic resources used to render this layer's image.
-    ScenicImage image;
-
-    // Scenic resources that specify which parts of this layer are responsive
-    // to input.
-    std::vector<scenic::ShapeNode> hit_regions;
-  };
-
-  std::shared_ptr<GfxSessionConnection> session_;
+  std::shared_ptr<FlatlandConnection> flatland_;
   std::shared_ptr<SurfaceProducer> surface_producer_;
 
-  scenic::View root_view_;
-  scenic::EntityNode metrics_node_;
-  scenic::EntityNode layer_tree_node_;
-  std::optional<scenic::ShapeNode> input_interceptor_node_;
+  fuchsia::ui::composition::ParentViewportWatcherPtr parent_viewport_watcher_;
 
-  std::unordered_map<uint64_t, scenic::Rectangle> scenic_interceptor_rects_;
-  std::unordered_map<uint64_t, std::vector<scenic::Rectangle>> scenic_rects_;
-  std::unordered_map<int64_t, ScenicView> scenic_views_;
-  std::vector<ScenicLayer> scenic_layers_;
+  fuchsia::ui::composition::TransformId root_transform_id_;
+
+  std::unordered_map<int64_t, View> views_;
+  std::vector<Layer> layers_;
 
   std::unordered_map<EmbedderLayerId, EmbedderLayer> frame_layers_;
   std::vector<EmbedderLayerId> frame_composition_order_;
+  std::vector<fuchsia::ui::composition::TransformId> child_transforms_;
   SkISize frame_size_ = SkISize::Make(0, 0);
   float frame_dpr_ = 1.f;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(GfxExternalViewEmbedder);
+  // TransformId for the input interceptor node when input shield is turned on,
+  // std::nullptr otherwise.
+  std::optional<fuchsia::ui::composition::TransformId>
+      input_interceptor_transform_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);
 };
 
 }  // namespace flutter_runner
 
-#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_GFX_EXTERNAL_VIEW_EMBEDDER_H_
+#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_EXTERNAL_VIEW_EMBEDDER_H_
