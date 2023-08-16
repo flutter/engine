@@ -42,13 +42,13 @@ Future<void> testMain() async {
     platformViewManager.debugClear();
   });
 
-  test('Picture + Overlapping PlatformView', () async {
+  test('picture + overlapping platformView', () async {
     await _createPlatformView(1, platformViewType);
 
     final ui.PictureRecorder recorder = ui.PictureRecorder();
     final ui.Canvas canvas = ui.Canvas(recorder);
     canvas.drawCircle(
-      ui.Offset.zero,
+      const ui.Offset(50, 50),
       50,
       ui.Paint()
         ..style = ui.PaintingStyle.fill
@@ -57,7 +57,7 @@ Future<void> testMain() async {
 
     final ui.SceneBuilder sb = ui.SceneBuilder();
     sb.pushOffset(0, 0);
-    sb.addPicture(const ui.Offset(150, 150), recorder.endRecording());
+    sb.addPicture(const ui.Offset(100, 100), recorder.endRecording());
 
     sb.addPlatformView(
       1,
@@ -70,13 +70,13 @@ Future<void> testMain() async {
     await matchGoldenFile('picture_platformview_overlap.png', region: region);
   });
 
-  test('PlatformView sandwich', () async {
+  test('platformView sandwich', () async {
     await _createPlatformView(1, platformViewType);
 
     final ui.PictureRecorder recorder = ui.PictureRecorder();
     final ui.Canvas canvas = ui.Canvas(recorder);
     canvas.drawCircle(
-      ui.Offset.zero,
+      const ui.Offset(50, 50),
       50,
       ui.Paint()
         ..style = ui.PaintingStyle.fill
@@ -87,7 +87,7 @@ Future<void> testMain() async {
 
     final ui.SceneBuilder sb = ui.SceneBuilder();
     sb.pushOffset(0, 0);
-    sb.addPicture(const ui.Offset(125, 125), picture);
+    sb.addPicture(const ui.Offset(75, 75), picture);
 
     sb.addPlatformView(
       1,
@@ -96,19 +96,19 @@ Future<void> testMain() async {
       height: 100,
     );
 
-    sb.addPicture(const ui.Offset(175, 175), picture);
+    sb.addPicture(const ui.Offset(125, 125), picture);
     await renderer.renderScene(sb.build());
 
     await matchGoldenFile('picture_platformview_sandwich.png', region: region);
   });
 
-  test('Transformed platformview', () async {
+  test('transformed platformview', () async {
     await _createPlatformView(1, platformViewType);
 
     final ui.PictureRecorder recorder = ui.PictureRecorder();
     final ui.Canvas canvas = ui.Canvas(recorder);
     canvas.drawCircle(
-      ui.Offset.zero,
+      const ui.Offset(50, 50),
       50,
       ui.Paint()
         ..style = ui.PaintingStyle.fill
@@ -117,7 +117,7 @@ Future<void> testMain() async {
 
     final ui.SceneBuilder sb = ui.SceneBuilder();
     sb.pushOffset(0, 0);
-    sb.addPicture(const ui.Offset(150, 150), recorder.endRecording());
+    sb.addPicture(const ui.Offset(100, 100), recorder.endRecording());
 
     sb.pushTransform(Matrix4.rotationZ(math.pi / 3.0).toFloat64());
     sb.addPlatformView(
@@ -129,6 +129,35 @@ Future<void> testMain() async {
     await renderer.renderScene(sb.build());
 
     await matchGoldenFile('platformview_transformed.png', region: region);
+  });
+
+  test('platformview with opacity', () async {
+    await _createPlatformView(1, platformViewType);
+
+    final ui.PictureRecorder recorder = ui.PictureRecorder();
+    final ui.Canvas canvas = ui.Canvas(recorder);
+    canvas.drawCircle(
+      const ui.Offset(50, 50),
+      50,
+      ui.Paint()
+        ..style = ui.PaintingStyle.fill
+        ..color = const ui.Color(0xFFFF0000)
+    );
+
+    final ui.SceneBuilder sb = ui.SceneBuilder();
+    sb.pushOffset(0, 0);
+    sb.addPicture(const ui.Offset(100, 100), recorder.endRecording());
+
+    sb.pushOpacity(127);
+    sb.addPlatformView(
+      1,
+      offset: const ui.Offset(125, 125),
+      width: 50,
+      height: 50,
+    );
+    await renderer.renderScene(sb.build());
+
+    await matchGoldenFile('platformview_opacity.png', region: region);
   });
 }
 

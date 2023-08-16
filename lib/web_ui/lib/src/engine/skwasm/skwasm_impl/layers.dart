@@ -420,11 +420,6 @@ class PictureSlice implements LayerSlice {
 
   @override
   void dispose() => picture.dispose();
-
-  @override
-  String toString() {
-    return 'PictureSlice(${picture.cullRect})';
-  }
 }
 
 mixin PictureLayer implements ui.EngineLayer {
@@ -526,6 +521,7 @@ class PlatformViewStyling {
   static PlatformViewStyling combine(PlatformViewStyling outer, PlatformViewStyling inner) {
     return PlatformViewStyling(
       position: PlatformViewPosition.combine(outer.position, inner.position),
+      opacity: outer.opacity * inner.opacity,
     );
   }
 }

@@ -115,6 +115,10 @@ final class PlatformViewSliceContainer extends SliceContainer {
       if (transform != null) {
         style.transform = float64ListToCssTransform3d(transform.storage);
       }
+
+      if (view.styling.opacity != 1.0) {
+        style.opacity = '${view.styling.opacity}';
+      }
     }
 
     while (currentContainer != null) {
