@@ -1881,6 +1881,14 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
                                       user_data]() { return ptr(user_data); };
   }
 
+  flutter::PlatformViewEmbedder::ChannelListenedToCallback channel_listened_to_callback = nullptr;
+  if (SAFE_ACCESS(args, channel_listened_to_callback, nullptr) != nullptr) {
+    channel_listened_to_callback = [ptr = args->channel_listened_to_callback, user_data](const std::string& name, bool listening) {
+      size_t name_len = name.size();
+      ptr(name.data(), name_len, listening, user_data);
+    };
+  }
+
   auto external_view_embedder_result = InferExternalViewEmbedderFromArgs(
       SAFE_ACCESS(args, compositor, nullptr), settings.enable_impeller);
   if (external_view_embedder_result.second) {
@@ -1895,6 +1903,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
           vsync_callback,                             //
           compute_platform_resolved_locale_callback,  //
           on_pre_engine_restart_callback,             //
+          channel_listened_to_callback,               //
       };
 
   auto on_create_platform_view = InferPlatformViewCreationCallback(

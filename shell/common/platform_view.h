@@ -466,6 +466,9 @@ class PlatformView {
                                CustomAccessibilityActionUpdates actions);
 
   //----------------------------------------------------------------------------
+  virtual void ChannelListenedTo(const std::string& name, bool listening);
+
+  //----------------------------------------------------------------------------
   /// @brief      Used by embedders to specify the updated viewport metrics for
   ///             a view. In response to this call, on the raster thread, the
   ///             rasterizer may need to be reconfigured to the updated viewport

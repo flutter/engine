@@ -1326,6 +1326,12 @@ typedef void (*FlutterUpdateSemanticsCallback2)(
     const FlutterSemanticsUpdate2* /* semantics update */,
     void* /* user data*/);
 
+typedef void (*FlutterChannelListenedToCallback)(
+  const char* data /* name */,
+  size_t data_len /* name.size */,
+  bool /* listening */,
+  void* /* user data */);
+
 typedef struct _FlutterTaskRunner* FlutterTaskRunner;
 
 typedef struct {
@@ -2118,6 +2124,10 @@ typedef struct {
   /// and `update_semantics_callback2` may be provided; the others must be set
   /// to null.
   FlutterUpdateSemanticsCallback2 update_semantics_callback2;
+
+  /// The callback invoked by the engine in response to a channel listener
+  /// being registered on the framework side.
+  FlutterChannelListenedToCallback channel_listened_to_callback;
 } FlutterProjectArgs;
 
 #ifndef FLUTTER_ENGINE_NO_PROTOTYPES

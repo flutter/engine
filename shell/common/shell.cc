@@ -1333,8 +1333,15 @@ void Shell::OnEngineHandlePlatformMessage(
 }
 
 void Shell::OnEngineChannelListenedTo(const std::string& name, bool listening) {
-  FML_LOG(ERROR) << "Shell received indication of listening to " << name;
-  // TODO forward to platform view
+  FML_DCHECK(is_set_up_);
+  FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
+
+  task_runners_.GetPlatformTaskRunner()->PostTask(
+      [view = platform_view_->GetWeakPtr(), name, listening] {
+        if (view) {
+          view->ChannelListenedTo(name, listening);
+        }
+      });
 }
 
 void Shell::HandleEngineSkiaMessage(std::unique_ptr<PlatformMessage> message) {
