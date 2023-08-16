@@ -31,7 +31,7 @@ class TextContents final : public Contents {
 
   ~TextContents();
 
-  void AddTextFrame(const TextFrame& frame, const Color& color);
+  void AddTextFrame(TextFrame&& frame, const Color& color);
 
   const std::vector<TextFrameInfo>& GetTextFrames() { return frames_; }
 

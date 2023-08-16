@@ -2175,17 +2175,19 @@ TEST_P(EntityTest, InheritOpacityTest) {
   auto blob = SkTextBlob::MakeFromString("A", font);
   auto frame = TextFrameFromTextBlob(blob);
   auto lazy_glyph_atlas = std::make_shared<LazyGlyphAtlas>();
-  lazy_glyph_atlas->AddTextFrame(frame, 1.0f);
+  lazy_glyph_atlas->AddTextFrame(TextFrame(frame), 1.0f);
 
   auto text_contents = std::make_shared<TextContents>();
-  text_contents->AddTextFrame(frame, Color::Blue().WithAlpha(0.5));
+  text_contents->AddTextFrame(std::move(frame), Color::Blue().WithAlpha(0.5));
 
   ASSERT_TRUE(text_contents->CanInheritOpacity(entity));
 
   text_contents->SetInheritedOpacity(0.5);
-  ASSERT_EQ(text_contents->GetColor(text_contents->GetTextFrames()[0]).alpha, 0.25);
+  ASSERT_EQ(text_contents->GetColor(text_contents->GetTextFrames()[0]).alpha,
+            0.25);
   text_contents->SetInheritedOpacity(0.5);
-  ASSERT_EQ(text_contents->GetColor(text_contents->GetTextFrames()[0]).alpha, 0.25);
+  ASSERT_EQ(text_contents->GetColor(text_contents->GetTextFrames()[0]).alpha,
+            0.25);
 
   // Clips and restores trivially accept opacity.
   ASSERT_TRUE(ClipContents().CanInheritOpacity(entity));

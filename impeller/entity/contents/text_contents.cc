@@ -25,8 +25,9 @@ TextContents::TextContents() = default;
 
 TextContents::~TextContents() = default;
 
-void TextContents::AddTextFrame(const TextFrame& frame,  const Color& color) {
-  frames_.emplace_back(TextFrameInfo{.frame = frame, .color = color});
+void TextContents::AddTextFrame(TextFrame&& frame,  const Color& color) {
+  frames_.emplace_back(
+      TextFrameInfo{.frame = std::move(frame), .color = color});
 }
 
 std::shared_ptr<GlyphAtlas> TextContents::ResolveAtlas(

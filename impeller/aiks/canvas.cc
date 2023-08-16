@@ -544,8 +544,8 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
         new_run.AddGlyph(pos.glyph, pos.position + offset);
       }
       TextFrame new_frame;
-      new_frame.AddTextRun(new_run);
-      last_text_contents_->AddTextFrame(new_frame, paint.color);
+      new_frame.AddTextRun(std::move(new_run));
+      last_text_contents_->AddTextFrame(std::move(new_frame), paint.color);
     }
     return;
   }
@@ -555,7 +555,7 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
   entity.SetBlendMode(paint.blend_mode);
 
   auto text_contents = std::make_shared<TextContents>();
-  text_contents->AddTextFrame(text_frame, paint.color);
+  text_contents->AddTextFrame(TextFrame(text_frame), paint.color);
 
   if (paint.color_source.GetType() != ColorSource::Type::kColor) {
     auto color_text_contents = std::make_shared<ColorSourceTextContents>();
