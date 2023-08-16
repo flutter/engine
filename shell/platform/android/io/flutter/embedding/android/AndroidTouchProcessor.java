@@ -357,22 +357,25 @@ public class AndroidTouchProcessor {
     packet.putLong(pointerData); // platformData
 
     // See android scrollview for insperation.
-    // https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/core/java/android/widget/ScrollView.java;l=930?q=ScrollView&ss=android%2Fplatform%2Fsuperproject%2Fmain
+    // https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/core/java/android/widget/ScrollView.java?q=function:onGenericMotionEvent%20filepath:widget%2FScrollView.java&ss=android%2Fplatform%2Fsuperproject%2Fmain
     if (signalKind == PointerSignalKind.SCROLL) {
-      double verticalScaleFactor = 1.0;
-      double horizontalScaleFactor = 1.0;
+      // Default if context is null, chosen to ensure reasonable speed scrolling.
+      double verticalScaleFactor = 48.0;
+      double horizontalScaleFactor = 48.0;
       if (context != null) {
         horizontalScaleFactor = ViewConfiguration.get(context).getScaledHorizontalScrollFactor();
         verticalScaleFactor = ViewConfiguration.get(context).getScaledVerticalScrollFactor();
       }
-      // Without flipping the sign of the value scroll moves the opposite direction of android
-      final double horizontalScrollDistance =
+      // We flip the sign of the scroll value below because it aligns the pixel value with the
+      // scroll direction in native android.
+      final double horizontalScrollPixels =
           horizontalScaleFactor * -event.getAxisValue(MotionEvent.AXIS_HSCROLL, pointerIndex);
-      final double verticalScrollDistance =
+      final double verticalScrollPixels =
           verticalScaleFactor * -event.getAxisValue(MotionEvent.AXIS_VSCROLL, pointerIndex);
 
-      packet.putDouble(horizontalScrollDistance); // scroll_delta_x
-      packet.putDouble(verticalScrollDistance); // scroll_delta_y
+      Log.w("AndroidTouchProcessor", "index: " + pointerIndex + " VSF: " + verticalScaleFactor + " Distance: " + verticalScrollPixels);
+      packet.putDouble(horizontalScrollPixels); // scroll_delta_x
+      packet.putDouble(verticalScrollPixels); // scroll_delta_y
     } else {
       packet.putDouble(0.0); // scroll_delta_x
       packet.putDouble(0.0); // scroll_delta_y
