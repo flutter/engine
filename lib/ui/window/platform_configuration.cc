@@ -539,7 +539,7 @@ void PlatformConfigurationNativeApi::RegisterBackgroundIsolate(
   dart_state->SetPlatformMessageHandler(weak_platform_message_handler);
 }
 
-void PlatformConfigurationNativeApi::PlatformChannelListenedTo(const std::string& name) {
+void PlatformConfigurationNativeApi::PlatformChannelListenedTo(const std::string& name, bool listening) {
   // TODO implement this function
   FML_LOG(ERROR) << "Listening to platform channel named " << name;
 }

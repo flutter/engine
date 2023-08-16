@@ -521,7 +521,7 @@ class PlatformConfigurationNativeApi {
   static void RespondToPlatformMessage(int response_id,
                                        const tonic::DartByteData& data);
 
-  static void PlatformChannelListenedTo(const std::string& name);
+  static void PlatformChannelListenedTo(const std::string& name, bool listening);
 
   //--------------------------------------------------------------------------
   /// @brief      Requests the Dart VM to adjusts the GC heuristics based on
