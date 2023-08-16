@@ -460,7 +460,19 @@ void Engine::ScheduleFrame(bool regenerate_layer_tree) {
 }
 
 void Engine::Render(std::list<LayerTreeTask> render_tasks) {
-  animator_->Render(std::move(render_tasks));
+  auto task_iter = render_tasks.begin();
+  while (task_iter != render_tasks.end()) {
+    if (task_iter->layer_tree == nullptr ||
+        task_iter->layer_tree->frame_size().isEmpty() ||
+        task_iter->device_pixel_ratio <= 0.0f) {
+      task_iter = render_tasks.erase(task_iter);
+    } else {
+      ++task_iter;
+    }
+  }
+  if (!render_tasks.empty()) {
+    animator_->Render(std::move(render_tasks));
+  }
 }
 
 void Engine::UpdateSemantics(SemanticsNodeUpdates update,

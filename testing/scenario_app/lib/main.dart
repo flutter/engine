@@ -87,6 +87,7 @@ void _onBeginFrame(Duration duration) {
   if (currentScenario == null) {
     final SceneBuilder builder = SceneBuilder();
     final Scene scene = builder.build();
+    // ignore: deprecated_member_use
     _view.render(scene);
     scene.dispose();
     return;

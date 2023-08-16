@@ -19,6 +19,7 @@ class TouchesScenario extends Scenario {
   void onBeginFrame(Duration duration) {
     // It is necessary to render frames for touch events to work properly on iOS
     final Scene scene = SceneBuilder().build();
+    // ignore: deprecated_member_use
     view.render(scene);
     scene.dispose();
   }

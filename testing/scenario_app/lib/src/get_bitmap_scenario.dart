@@ -25,6 +25,7 @@ class GetBitmapScenario extends Scenario {
     final SceneBuilder builder = SceneBuilder();
     builder.addPicture(Offset.zero, picture);
     final Scene scene = builder.build();
+    // ignore: deprecated_member_use
     view.render(scene);
     picture.dispose();
     scene.dispose();

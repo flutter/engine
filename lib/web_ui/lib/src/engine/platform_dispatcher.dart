@@ -1290,6 +1290,14 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   @override
   ui.FrameData get frameData => const ui.FrameData.webOnly();
+
+  @override
+  void debugClearOverride() {
+    assert(() {
+      debugRenderScenesOverride = null;
+      return true;
+    }());
+  }
 }
 
 bool _handleWebTestEnd2EndMessage(MethodCodec codec, ByteData? data) {
