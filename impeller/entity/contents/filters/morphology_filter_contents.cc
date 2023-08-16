@@ -116,7 +116,7 @@ std::optional<Entity> DirectionalMorphologyFilterContents::RenderFilter(
         Point(transformed_texture_width, transformed_texture_height);
 
     Command cmd;
-    cmd.label = "Morphology Filter";
+    DEBUG_COMMAND_INFO(cmd, "Morphology Filter");
     auto options = OptionsFromPass(pass);
     options.blend_mode = BlendMode::kSource;
     cmd.pipeline = renderer.GetMorphologyFilterPipeline(options);
@@ -135,7 +135,7 @@ std::optional<Entity> DirectionalMorphologyFilterContents::RenderFilter(
     VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
     FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
 
-    return pass.AddCommand(cmd);
+    return pass.AddCommand(std::move(cmd));
   };
 
   auto out_texture = renderer.MakeSubpass("Directional Morphology Filter",

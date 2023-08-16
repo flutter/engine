@@ -11,7 +11,6 @@
 
 #include <fuchsia/component/runner/cpp/fidl.h>
 #include <fuchsia/io/cpp/fidl.h>
-#include <fuchsia/sys/cpp/fidl.h>
 #include <fuchsia/ui/app/cpp/fidl.h>
 #include <lib/async-loop/cpp/loop.h>
 #include <lib/async/default.h>
@@ -109,11 +108,6 @@ class ComponentV2 final
 
   // |fuchsia::component::runner::ComponentController|
   void Stop() override;
-
-  // |fuchsia::ui::app::ViewProvider|
-  void CreateViewWithViewRef(zx::eventpair view_token,
-                             fuchsia::ui::views::ViewRefControl control_ref,
-                             fuchsia::ui::views::ViewRef view_ref) override;
 
   // |fuchsia::ui::app::ViewProvider|
   void CreateView2(fuchsia::ui::app::CreateView2Args view_args) override;
