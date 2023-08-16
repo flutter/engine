@@ -307,9 +307,8 @@ class Shell final : public PlatformView::Delegate,
   ///         the engine to have views that the Dart VM doesn't.
   ///
   ///         The implicit view should never be added with this function.
-  ///         Instead, it is added internally on Shell initialization depending
-  ///         on `Settings.enable_implicit_view`. Trying to add
-  ///         `kFlutterImplicitViewId` triggers an assertion.
+  ///         Instead, it is added internally on Shell initialization. Trying to
+  ///         add `kFlutterImplicitViewId` triggers an assertion.
   ///
   /// @param[in]  view_id           The view ID of the new view.
   /// @param[in]  viewport_metrics  The initial viewport metrics for the view.

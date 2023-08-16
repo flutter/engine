@@ -715,9 +715,7 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
   weak_rasterizer_ = rasterizer_->GetWeakPtr();
   weak_platform_view_ = platform_view_->GetWeakPtr();
 
-  if (settings_.enable_implicit_view) {
-    engine_->AddView(kFlutterImplicitViewId, ViewportMetrics{});
-  }
+  engine_->AddView(kFlutterImplicitViewId, ViewportMetrics{});
   // Setup the time-consuming default font manager right after engine created.
   if (!settings_.prefetched_default_font_manager) {
     fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(),

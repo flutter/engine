@@ -373,12 +373,10 @@ void DartUI::InitForIsolate(const Settings& settings) {
     }
   }
 
-  if (settings.enable_implicit_view) {
-    result = Dart_SetField(dart_ui, ToDart("_implicitViewId"),
-                           Dart_NewInteger(kFlutterImplicitViewId));
-    if (Dart_IsError(result)) {
-      Dart_PropagateError(result);
-    }
+  result = Dart_SetField(dart_ui, ToDart("_implicitViewId"),
+                         Dart_NewInteger(kFlutterImplicitViewId));
+  if (Dart_IsError(result)) {
+    Dart_PropagateError(result);
   }
 }
 
