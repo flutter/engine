@@ -2462,7 +2462,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
         CGRectMake(0, 0, [dictionary[@"width"] intValue], [dictionary[@"height"] intValue]);
     _activeView.tintColor = [UIColor clearColor];
   } else {
-    // TODO: Also need to handle iOS 16 case, where the auto-correction highlight does
+    // TODO(hellohuanlin): Also need to handle iOS 16 case, where the auto-correction highlight does
     // not match the size of text.
     // See https://github.com/flutter/flutter/issues/131695
     if (@available(iOS 17, *)) {
