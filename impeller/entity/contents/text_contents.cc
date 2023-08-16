@@ -25,8 +25,8 @@ TextContents::TextContents() = default;
 
 TextContents::~TextContents() = default;
 
-void TextContents::AddTextFrame(const TextFrame& frame) {
-  frames_.emplace_back(TextFrameInfo{.frame = frame});
+void TextContents::AddTextFrame(const TextFrame& frame,  const Color& color) {
+  frames_.emplace_back(TextFrameInfo{.frame = frame, .color = color});
 }
 
 std::shared_ptr<GlyphAtlas> TextContents::ResolveAtlas(
@@ -41,12 +41,8 @@ std::shared_ptr<GlyphAtlas> TextContents::ResolveAtlas(
   return nullptr;
 }
 
-void TextContents::SetColor(Color color) {
-  color_ = color;
-}
-
-Color TextContents::GetColor() const {
-  return color_.WithAlpha(color_.alpha * inherited_opacity_);
+Color TextContents::GetColor(const TextFrameInfo& info) const {
+  return info.color.WithAlpha(info.color.alpha * inherited_opacity_);
 }
 
 bool TextContents::CanInheritOpacity(const Entity& entity) const {
@@ -93,10 +89,10 @@ void TextContents::PopulateGlyphAtlas(
 bool TextContents::Render(const ContentContext& renderer,
                           const Entity& entity,
                           RenderPass& pass) const {
-  auto color = GetColor();
-  if (color.IsTransparent()) {
-    return true;
-  }
+  // auto color = GetColor();
+  // if (color.IsTransparent()) {
+  //   return true;
+  // }
 
   FML_DCHECK(!frames_.empty());
   auto type = frames_[0].frame.GetAtlasType();
@@ -182,9 +178,10 @@ bool TextContents::Render(const ContentContext& renderer,
       vertex_count * sizeof(VS::PerVertexData), alignof(VS::PerVertexData),
       [&](uint8_t* contents) {
         VS::PerVertexData vtx;
-        vtx.glyph_color = ToVector(color.Premultiply());
         size_t vertex_offset = 0;
         for (const TextFrameInfo& frame_info : frames_) {
+          auto color = GetColor(frame_info);
+          vtx.glyph_color = ToVector(color.Premultiply());
           for (const auto& run : frame_info.frame.GetRuns()) {
             const Font& font = run.GetFont();
             auto rounded_scale = TextFrame::RoundScaledFontSize(

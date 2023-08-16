@@ -48,7 +48,6 @@ bool ColorSourceTextContents::Render(const ContentContext& renderer,
     return true;
   }
 
-  text_contents_->SetColor(Color::Black());
   color_source_contents_->SetGeometry(
       Geometry::MakeRect(Rect::MakeSize(text_bounds->size)));
 

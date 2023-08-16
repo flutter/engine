@@ -529,11 +529,10 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
                            const Paint& paint) {
   const Entity* last_entity = GetCurrentPass().GetLastEntity();
   if (last_entity && last_entity->GetContents() == last_text_contents_ &&
-      last_text_contents_->GetTextFrames()[0].GetAtlasType() ==
+      last_text_contents_->GetTextFrames()[0].frame.GetAtlasType() ==
           text_frame.GetAtlasType() &&
       // TODO(gaaclarke): By adding vertex colors we can batch text of different
       //                  colors too.
-      last_text_contents_->GetColor() == paint.color &&
       last_entity->GetBlendMode() == paint.blend_mode &&
       last_entity->GetTransformation() == GetCurrentTransformation()) {
     Vector2 offset = position - last_text_contents_->GetPosition();
@@ -546,7 +545,7 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
       }
       TextFrame new_frame;
       new_frame.AddTextRun(new_run);
-      last_text_contents_->AddTextFrame(new_frame);
+      last_text_contents_->AddTextFrame(new_frame, paint.color);
     }
     return;
   }
@@ -556,7 +555,7 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
   entity.SetBlendMode(paint.blend_mode);
 
   auto text_contents = std::make_shared<TextContents>();
-  text_contents->AddTextFrame(text_frame);
+  text_contents->AddTextFrame(text_frame, paint.color);
 
   if (paint.color_source.GetType() != ColorSource::Type::kColor) {
     auto color_text_contents = std::make_shared<ColorSourceTextContents>();
@@ -583,7 +582,6 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
   }
 
   last_text_contents_ = text_contents;
-  text_contents->SetColor(paint.color);
   text_contents->SetPosition(position);
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetContents(paint.WithFilters(std::move(text_contents), true));

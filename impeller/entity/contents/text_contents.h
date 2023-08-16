@@ -24,19 +24,18 @@ class TextContents final : public Contents {
  public:
   struct TextFrameInfo {
     TextFrame frame;
+    Color color;
   };
 
   TextContents();
 
   ~TextContents();
 
-  void AddTextFrame(const TextFrame& frame);
+  void AddTextFrame(const TextFrame& frame, const Color& color);
 
   const std::vector<TextFrameInfo>& GetTextFrames() { return frames_; }
 
-  void SetColor(Color color);
-
-  Color GetColor() const;
+  Color GetColor(const TextFrameInfo& info) const;
 
   // |Contents|
   bool CanInheritOpacity(const Entity& entity) const override;
@@ -74,7 +73,6 @@ class TextContents final : public Contents {
  private:
   std::vector<TextFrameInfo> frames_;
   Scalar scale_ = 1.0;
-  Color color_;
   Scalar inherited_opacity_ = 1.0;
   Vector2 offset_;
   Point position_;
