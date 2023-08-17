@@ -584,10 +584,9 @@ void FlutterWindowsEngine::SetNextFrameCallback(fml::closure callback) {
 }
 
 void FlutterWindowsEngine::SetLifecycleState(flutter::AppLifecycleState state) {
-  const char* state_name = flutter::AppLifecycleStateToString(state);
-  SendPlatformMessage("flutter/lifecycle",
-                      reinterpret_cast<const uint8_t*>(state_name),
-                      strlen(state_name), nullptr, nullptr);
+  if (lifecycle_manager_) {
+    lifecycle_manager_->SetLifecycleState(state);
+  }
 }
 
 void FlutterWindowsEngine::SendSystemLocales() {
@@ -631,7 +630,7 @@ FlutterWindowsEngine::CreateKeyboardKeyHandler(
     BinaryMessenger* messenger,
     KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state,
     KeyboardKeyEmbedderHandler::MapVirtualKeyToScanCode map_vk_to_scan) {
-  auto keyboard_key_handler = std::make_unique<KeyboardKeyHandler>();
+  auto keyboard_key_handler = std::make_unique<KeyboardKeyHandler>(messenger);
   keyboard_key_handler->AddDelegate(
       std::make_unique<KeyboardKeyEmbedderHandler>(
           [this](const FlutterKeyEvent& event, FlutterKeyEventCallback callback,
@@ -641,6 +640,7 @@ FlutterWindowsEngine::CreateKeyboardKeyHandler(
           get_key_state, map_vk_to_scan));
   keyboard_key_handler->AddDelegate(
       std::make_unique<KeyboardKeyChannelHandler>(messenger));
+  keyboard_key_handler->InitKeyboardChannel();
   return keyboard_key_handler;
 }
 
@@ -792,8 +792,31 @@ void FlutterWindowsEngine::OnDwmCompositionChanged() {
   view_->OnDwmCompositionChanged();
 }
 
+// TODO(yaakovschectman): This enables the flutter/lifecycle channel
+// once the System.initializationComplete message is received on
+// the flutter/system channel. This is a short-term workaround to
+// ensure the framework is initialized and ready to accept lifecycle
+// messages. This cross-channel dependency should be removed.
+// See: https://github.com/flutter/flutter/issues/132514
 void FlutterWindowsEngine::OnApplicationLifecycleEnabled() {
-  lifecycle_manager_->BeginProcessingClose();
+  lifecycle_manager_->BeginProcessingLifecycle();
+}
+
+void FlutterWindowsEngine::OnWindowStateEvent(HWND hwnd,
+                                              WindowStateEvent event) {
+  lifecycle_manager_->OnWindowStateEvent(hwnd, event);
+}
+
+std::optional<LRESULT> FlutterWindowsEngine::ProcessExternalWindowMessage(
+    HWND hwnd,
+    UINT message,
+    WPARAM wparam,
+    LPARAM lparam) {
+  if (lifecycle_manager_) {
+    return lifecycle_manager_->ExternalWindowMessage(hwnd, message, wparam,
+                                                     lparam);
+  }
+  return std::nullopt;
 }
 
 }  // namespace flutter

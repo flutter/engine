@@ -36,8 +36,14 @@ class FilterContentsFilterInput final : public FilterInput {
       const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
       Scalar scale) override;
 
+  // |FilterInput|
+  bool IsLeaf() const override;
+
+  // |FilterInput|
+  void SetLeafInputs(const FilterInput::Vector& inputs) override;
+
  private:
-  FilterContentsFilterInput(std::shared_ptr<FilterContents> filter);
+  explicit FilterContentsFilterInput(std::shared_ptr<FilterContents> filter);
 
   std::shared_ptr<FilterContents> filter_;
   mutable std::optional<Snapshot> snapshot_;
