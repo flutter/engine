@@ -47,6 +47,7 @@ class AiksContext;
 
 namespace flutter {
 
+// The result status of Rasterizer::DoDraw. This is only used for unit tests.
 enum class DrawStatus {
   // Frame has been successfully rasterized.
   kSuccess,
@@ -55,8 +56,11 @@ enum class DrawStatus {
   // Layer tree was discarded due to LayerTreeDiscardCallback or inability to
   // access the GPU.
   kDiscarded,
-  kWrongThread,
-  kPipelineUnavailable,
+  // Nothing was done, because the call was not on the raster thread. Yielded to
+  // let this frame be serviced on the right thread.
+  kYielded,
+  // Nothing was done, because pipeline has nothing in queue.
+  kPipelineNoneAvailable,
 };
 
 //------------------------------------------------------------------------------
@@ -514,6 +518,7 @@ class Rasterizer final : public SnapshotDelegate,
  private:
   using RasterStatus = RasterStatus;
 
+  // The result status of DrawToSurface and DrawToSurfaceUnsafe.
   enum class DrawSurfaceStatus {
     // Frame has been successfully rasterized.
     kSuccess,
@@ -534,6 +539,7 @@ class Rasterizer final : public SnapshotDelegate,
     kDiscarded,
   };
 
+  // The result status of DoDraw.
   enum class DoDrawStatus {
     // Frame has been successfully rasterized.
     kSuccess,

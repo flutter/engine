@@ -23,18 +23,19 @@ namespace flutter {
 
 class LayerTree;
 
+// The result status of CompositorContext::ScopedFrame::Raster.
 enum class RasterStatus {
   // Frame has been successfully rasterized.
   kSuccess,
-  // Frame should be submitted twice. This is only used on Android when
-  // switching the background surface to FlutterImageView.
+  // Frame has been submited, but should be submitted again. This is only used
+  // on Android when switching the background surface to FlutterImageView.
   //
   // On Android, the first frame doesn't make the image available
   // to the ImageReader right away. The second frame does.
   //
   // TODO(egarciad): https://github.com/flutter/flutter/issues/65652
   kResubmit,
-  // Frame is dropped and a new frame with the same layer tree should be
+  // Frame should be dropped and a new frame with the same layer tree should be
   // attempted.
   //
   // This is currently used to wait for the thread merger to merge

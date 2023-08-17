@@ -192,13 +192,13 @@ DrawStatus Rasterizer::Draw(const std::shared_ptr<LayerTreePipeline>& pipeline,
   if (raster_thread_merger_ &&
       !raster_thread_merger_->IsOnRasterizingThread()) {
     // we yield and let this frame be serviced on the right thread.
-    return DrawStatus::kWrongThread;
+    return DrawStatus::kYielded;
   }
   FML_DCHECK(delegate_.GetTaskRunners()
                  .GetRasterTaskRunner()
                  ->RunsTasksOnCurrentThread());
 
-  DoDrawStatus do_draw_status = DoDrawStatus::kFailed;
+  DoDrawStatus do_draw_status = DoDrawStatus::kSuccess;
   LayerTreePipeline::Consumer consumer =
       [&](std::unique_ptr<LayerTreeItem> item) {
         std::unique_ptr<LayerTree> layer_tree = std::move(item->layer_tree);
@@ -215,7 +215,7 @@ DrawStatus Rasterizer::Draw(const std::shared_ptr<LayerTreePipeline>& pipeline,
 
   PipelineConsumeResult consume_result = pipeline->Consume(consumer);
   if (consume_result == PipelineConsumeResult::NoneAvailable) {
-    return DrawStatus::kPipelineUnavailable;
+    return DrawStatus::kPipelineNoneAvailable;
   }
   // if the raster status is to resubmit the frame, we push the frame to the
   // front of the queue and also change the consume status to more available.
@@ -261,6 +261,8 @@ DrawStatus Rasterizer::Draw(const std::shared_ptr<LayerTreePipeline>& pipeline,
   }
 
   switch (do_draw_status) {
+    case DoDrawStatus::kEmpty:
+      return DrawStatus::kEmpty;
     case DoDrawStatus::kDiscarded:
       return DrawStatus::kDiscarded;
     case DoDrawStatus::kFailed:
@@ -551,6 +553,8 @@ Rasterizer::DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
   if (frame == nullptr) {
     frame_timings_recorder.RecordRasterEnd(
         &compositor_context_->raster_cache());
+    printf("frame empty\n");
+    fflush(stdout);
     return DrawSurfaceStatus::kFailed;
   }
 
