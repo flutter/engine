@@ -302,9 +302,9 @@ class PlatformDispatcher {
   // Called from the engine, via hooks.dart
   //
   // Updates the metrics of the window with the given id.
-  void _updateWindowMetrics(int id, _ViewConfiguration viewConfiguration) {
-    assert(_views.containsKey(id), 'View $id does not exist.');
-    _views[id]!._viewConfiguration = viewConfiguration;
+  void _updateWindowMetrics(int viewId, _ViewConfiguration viewConfiguration) {
+    assert(_views.containsKey(viewId), 'View $viewId does not exist.');
+    _views[viewId]!._viewConfiguration = viewConfiguration;
     _invoke(onMetricsChanged, _onMetricsChangedZone);
   }
 
