@@ -87,6 +87,14 @@ public class AndroidTouchProcessorTest {
     return buffer.getDouble(14 * AndroidTouchProcessor.BYTES_PER_FIELD);
   }
 
+  private double readPressureMin(ByteBuffer buffer) {
+    return buffer.getDouble(15 * AndroidTouchProcessor.BYTES_PER_FIELD);
+  }
+
+  private double readPressureMax(ByteBuffer buffer) {
+    return buffer.getDouble(16 * AndroidTouchProcessor.BYTES_PER_FIELD);
+  }
+
   private double readScrollDeltaX(ByteBuffer buffer) {
     return buffer.getDouble(27 * AndroidTouchProcessor.BYTES_PER_FIELD);
   }
@@ -429,6 +437,9 @@ public class AndroidTouchProcessorTest {
 
     // Always zero.
     assertEquals((double)pressure, readPressure(packet));
+    // Verify default range with null device.
+    assertEquals(0.0, readPressureMin(packet));
+    assertEquals(1.0, readPressureMax(packet));
 
     inOrder.verifyNoMoreInteractions();
   }
