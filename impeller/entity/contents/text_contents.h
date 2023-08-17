@@ -25,13 +25,14 @@ class TextContents final : public Contents {
   struct TextFrameInfo {
     TextFrame frame;
     Color color;
+    Point offset;
   };
 
   TextContents();
 
   ~TextContents();
 
-  void AddTextFrame(TextFrame&& frame, const Color& color);
+  void AddTextFrame(TextFrame&& frame, const Color& color, const Point& offset);
 
   const std::vector<TextFrameInfo>& GetTextFrames() { return frames_; }
 

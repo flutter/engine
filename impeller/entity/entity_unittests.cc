@@ -2178,7 +2178,8 @@ TEST_P(EntityTest, InheritOpacityTest) {
   lazy_glyph_atlas->AddTextFrame(TextFrame(frame), 1.0f);
 
   auto text_contents = std::make_shared<TextContents>();
-  text_contents->AddTextFrame(std::move(frame), Color::Blue().WithAlpha(0.5));
+  text_contents->AddTextFrame(std::move(frame), Color::Blue().WithAlpha(0.5),
+                              Point());
 
   ASSERT_TRUE(text_contents->CanInheritOpacity(entity));
 

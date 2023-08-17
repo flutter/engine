@@ -25,9 +25,11 @@ TextContents::TextContents() = default;
 
 TextContents::~TextContents() = default;
 
-void TextContents::AddTextFrame(TextFrame&& frame, const Color& color) {
-  frames_.emplace_back(
-      TextFrameInfo{.frame = std::move(frame), .color = color});
+void TextContents::AddTextFrame(TextFrame&& frame,
+                                const Color& color,
+                                const Point& offset) {
+  frames_.emplace_back(TextFrameInfo{
+      .frame = std::move(frame), .color = color, .offset = offset});
 }
 
 std::shared_ptr<GlyphAtlas> TextContents::ResolveAtlas(
@@ -63,7 +65,9 @@ std::optional<Rect> TextContents::GetTextFrameBounds() const {
   for (const TextFrameInfo& text_frame_info : frames_) {
     auto bounds = text_frame_info.frame.GetBounds();
     if (bounds.has_value()) {
-      result = result.has_value() ? result->Union(bounds.value()) : bounds;
+      result = result.has_value()
+                   ? result->Union(bounds.value().Shift(text_frame_info.offset))
+                   : bounds;
     }
   }
   return result;
@@ -74,8 +78,7 @@ std::optional<Rect> TextContents::GetCoverage(const Entity& entity) const {
   if (!bounds.has_value()) {
     return std::nullopt;
   }
-  return bounds->TransformBounds(entity.GetTransformation() *
-                                 Matrix::MakeTranslation(offset_));
+  return bounds->TransformBounds(entity.GetTransformation());
 }
 
 void TextContents::PopulateGlyphAtlas(
@@ -209,7 +212,7 @@ bool TextContents::Render(const ContentContext& renderer,
                           glyph_position.glyph.bounds.origin.y,
                           glyph_position.glyph.bounds.size.width,
                           glyph_position.glyph.bounds.size.height);
-              vtx.glyph_position = glyph_position.position;
+              vtx.glyph_position = frame_info.offset + glyph_position.position;
 
               for (const auto& point : unit_points) {
                 vtx.unit_position = point;
