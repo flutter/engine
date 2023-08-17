@@ -775,9 +775,14 @@ void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
     int64_t platform_view_id = composition_order_[i];
     std::vector<std::shared_ptr<FlutterPlatformViewLayer>> layers = layer_map[platform_view_id];
     UIView* platform_view_root = root_views_[platform_view_id].get();
-    [desired_platform_subviews addObject:platform_view_root];
+    
+    if (platform_view_root != nil) {
+      [desired_platform_subviews addObject:platform_view_root];
+    }
     for (const std::shared_ptr<FlutterPlatformViewLayer>& layer : layers) {
-      [desired_platform_subviews addObject:layer->overlay_view_wrapper];
+      if (layer->overlay_view_wrapper != nil) {
+        [desired_platform_subviews addObject:layer->overlay_view_wrapper];
+      }
     }
     active_composition_order_.push_back(platform_view_id);
   }
