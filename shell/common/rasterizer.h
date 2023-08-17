@@ -53,8 +53,7 @@ enum class DrawStatus {
   kSuccess,
   // Failed to rasterize the frame.
   kFailed,
-  // Layer tree was discarded due to LayerTreeDiscardCallback or inability to
-  // access the GPU.
+  // Layer tree was discarded due to LayerTreeDiscardCallback.
   kDiscarded,
   // Nothing was done, because the call was not on the raster thread. Yielded to
   // let this frame be serviced on the right thread.
@@ -536,9 +535,7 @@ class Rasterizer final : public SnapshotDelegate,
     kRetry,
     // Failed to rasterize the frame.
     kFailed,
-    // Layer tree was discarded due to LayerTreeDiscardCallback or inability to
-    // access the GPU.
-    kDiscarded,
+    // Layer tree was discarded due to inability to access the GPU.
     kGpuUnavailable,
   };
 
@@ -562,9 +559,9 @@ class Rasterizer final : public SnapshotDelegate,
     kEnqueuePipeline,
     // Failed to rasterize the frame.
     kFailed,
-    // Layer tree was discarded due to LayerTreeDiscardCallback or inability to
-    // access the GPU.
+    // Layer tree was discarded due to LayerTreeDiscardCallback.
     kDiscarded,
+    // Layer tree was discarded due to inability to access the GPU.
     kGpuUnavailable,
   };
 

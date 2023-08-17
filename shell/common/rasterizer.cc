@@ -414,8 +414,6 @@ Rasterizer::DoDrawStatus Rasterizer::DoDraw(
     resubmitted_recorder_ = frame_timings_recorder->CloneUntil(
         FrameTimingsRecorder::State::kBuildEnd);
     return DoDrawStatus::kRetry;
-  } else if (draw_surface_status == DrawSurfaceStatus::kDiscarded) {
-    return DoDrawStatus::kDiscarded;
   } else if (draw_surface_status == DrawSurfaceStatus::kGpuUnavailable) {
     return DoDrawStatus::kGpuUnavailable;
   }
@@ -556,8 +554,6 @@ Rasterizer::DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
   if (frame == nullptr) {
     frame_timings_recorder.RecordRasterEnd(
         &compositor_context_->raster_cache());
-    printf("frame empty\n");
-    fflush(stdout);
     return DrawSurfaceStatus::kFailed;
   }
 
