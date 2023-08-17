@@ -14,7 +14,7 @@ import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 class SkwasmRenderer implements Renderer {
   late SkwasmSurface surface;
-  late SkwasmSceneView sceneView;
+  late EngineSceneView sceneView;
 
   @override
   final SkwasmFontCollection fontCollection = SkwasmFontCollection();
@@ -193,7 +193,7 @@ class SkwasmRenderer implements Renderer {
   );
 
   @override
-  ui.SceneBuilder createSceneBuilder() => SkwasmSceneBuilder();
+  ui.SceneBuilder createSceneBuilder() => EngineSceneBuilder();
 
   @override
   ui.StrutStyle createStrutStyle({
@@ -348,7 +348,7 @@ class SkwasmRenderer implements Renderer {
   @override
   FutureOr<void> initialize() {
     surface = SkwasmSurface();
-    sceneView = SkwasmSceneView(surface);
+    sceneView = EngineSceneView(SkwasmPictureRenderer(surface));
   }
 
   @override
@@ -399,7 +399,7 @@ class SkwasmRenderer implements Renderer {
   }
 
   @override
-  Future<void> renderScene(ui.Scene scene) => sceneView.renderScene(scene as SkwasmScene);
+  Future<void> renderScene(ui.Scene scene) => sceneView.renderScene(scene as EngineScene);
 
   @override
   String get rendererTag => 'skwasm';
@@ -448,4 +448,14 @@ class SkwasmRenderer implements Renderer {
     baseline: baseline,
     lineNumber: lineNumber
   );
+}
+
+class SkwasmPictureRenderer implements PictureRenderer {
+  SkwasmPictureRenderer(this.surface);
+
+  SkwasmSurface surface;
+
+  @override
+  FutureOr<DomImageBitmap> renderPicture(ScenePicture picture) =>
+    surface.renderPicture(picture as SkwasmPicture);
 }

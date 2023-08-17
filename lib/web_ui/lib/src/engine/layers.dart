@@ -8,10 +8,10 @@ import 'package:ui/src/engine/scene_painting.dart';
 import 'package:ui/src/engine/vector_math.dart';
 import 'package:ui/ui.dart' as ui;
 
-class RootLayer with PictureLayer {}
+class EngineRootLayer with PictureEngineLayer {}
 
 class BackdropFilterLayer
-  with PictureLayer
+  with PictureEngineLayer
   implements ui.BackdropFilterEngineLayer {}
 class BackdropFilterOperation implements LayerOperation {
   BackdropFilterOperation(this.filter, this.mode);
@@ -40,7 +40,7 @@ class BackdropFilterOperation implements LayerOperation {
 }
 
 class ClipPathLayer
-  with PictureLayer
+  with PictureEngineLayer
   implements ui.ClipPathEngineLayer {}
 class ClipPathOperation implements LayerOperation {
   ClipPathOperation(this.path, this.clip);
@@ -73,13 +73,13 @@ class ClipPathOperation implements LayerOperation {
 
   @override
   PlatformViewStyling createPlatformViewStyling() {
-    // TODO: implement this
+    // TODO(jacksongardner): implement clip styling for platform views
     return const PlatformViewStyling();
   }
 }
 
 class ClipRectLayer
-  with PictureLayer
+  with PictureEngineLayer
   implements ui.ClipRectEngineLayer {}
 class ClipRectOperation implements LayerOperation {
   const ClipRectOperation(this.rect, this.clip);
@@ -112,13 +112,13 @@ class ClipRectOperation implements LayerOperation {
 
   @override
   PlatformViewStyling createPlatformViewStyling() {
-    // TODO: implement createPlatformViewStyling
+    // TODO(jacksongardner): implement clip styling for platform views
     return const PlatformViewStyling();
   }
 }
 
 class ClipRRectLayer
-  with PictureLayer
+  with PictureEngineLayer
   implements ui.ClipRRectEngineLayer {}
 class ClipRRectOperation implements LayerOperation {
   const ClipRRectOperation(this.rrect, this.clip);
@@ -151,13 +151,13 @@ class ClipRRectOperation implements LayerOperation {
 
   @override
   PlatformViewStyling createPlatformViewStyling() {
-    // TODO: implement createPlatformViewStyling
+    // TODO(jacksongardner): implement clip styling for platform views
     return const PlatformViewStyling();
   }
 }
 
 class ColorFilterLayer
-  with PictureLayer
+  with PictureEngineLayer
   implements ui.ColorFilterEngineLayer {}
 class ColorFilterOperation implements LayerOperation {
   ColorFilterOperation(this.filter);
@@ -185,7 +185,7 @@ class ColorFilterOperation implements LayerOperation {
 }
 
 class ImageFilterLayer
-  with PictureLayer
+  with PictureEngineLayer
   implements ui.ImageFilterEngineLayer {}
 class ImageFilterOperation implements LayerOperation {
   ImageFilterOperation(this.filter, this.offset);
@@ -194,7 +194,7 @@ class ImageFilterOperation implements LayerOperation {
   final ui.Offset offset;
 
   @override
-  ui.Rect cullRect(ui.Rect contentRect) => contentRect;
+  ui.Rect cullRect(ui.Rect contentRect) => (filter as SceneImageFilter).filterBounds(contentRect);
 
   @override
   ui.Rect inverseMapRect(ui.Rect rect) => rect;
@@ -231,7 +231,7 @@ class ImageFilterOperation implements LayerOperation {
 }
 
 class OffsetLayer
-  with PictureLayer
+  with PictureEngineLayer
   implements ui.OffsetEngineLayer {}
 class OffsetOperation implements LayerOperation {
   OffsetOperation(this.dx, this.dy);
@@ -263,7 +263,7 @@ class OffsetOperation implements LayerOperation {
 }
 
 class OpacityLayer
-  with PictureLayer
+  with PictureEngineLayer
   implements ui.OpacityEngineLayer {}
 class OpacityOperation implements LayerOperation {
   OpacityOperation(this.alpha, this.offset);
@@ -305,7 +305,7 @@ class OpacityOperation implements LayerOperation {
 }
 
 class TransformLayer
-  with PictureLayer
+  with PictureEngineLayer
   implements ui.TransformEngineLayer {}
 class TransformOperation implements LayerOperation {
   TransformOperation(this.transform);
@@ -341,7 +341,7 @@ class TransformOperation implements LayerOperation {
 }
 
 class ShaderMaskLayer
-  with PictureLayer
+  with PictureEngineLayer
   implements ui.ShaderMaskEngineLayer {}
 class ShaderMaskOperation implements LayerOperation {
   ShaderMaskOperation(this.shader, this.maskRect, this.blendMode);
@@ -379,10 +379,7 @@ class ShaderMaskOperation implements LayerOperation {
   }
 
   @override
-  PlatformViewStyling createPlatformViewStyling() {
-    // TODO: implement createPlatformViewStyling
-    return const PlatformViewStyling();
-  }
+  PlatformViewStyling createPlatformViewStyling() => const PlatformViewStyling();
 }
 
 class PlatformView {
@@ -422,7 +419,7 @@ class PictureSlice implements LayerSlice {
   void dispose() => picture.dispose();
 }
 
-mixin PictureLayer implements ui.EngineLayer {
+mixin PictureEngineLayer implements ui.EngineLayer {
   List<LayerSlice> slices = <LayerSlice>[];
 
   @override
@@ -503,19 +500,13 @@ class PlatformViewPosition {
   }
 }
 
-class PlatformViewClip {
-  const PlatformViewClip();
-}
-
 class PlatformViewStyling {
   const PlatformViewStyling({
     this.position = const PlatformViewPosition.zero(),
-    this.clip = const PlatformViewClip(),
     this.opacity = 1.0
   });
 
   final PlatformViewPosition position;
-  final PlatformViewClip clip;
   final double opacity;
 
   static PlatformViewStyling combine(PlatformViewStyling outer, PlatformViewStyling inner) {
@@ -528,12 +519,12 @@ class PlatformViewStyling {
 
 class LayerBuilder {
   factory LayerBuilder.rootLayer() {
-    return LayerBuilder._(null, RootLayer(), null);
+    return LayerBuilder._(null, EngineRootLayer(), null);
   }
 
   factory LayerBuilder.childLayer({
     required LayerBuilder parent,
-    required PictureLayer layer,
+    required PictureEngineLayer layer,
     required LayerOperation operation
   }) {
     return LayerBuilder._(parent, layer, operation);
@@ -545,7 +536,7 @@ class LayerBuilder {
     this.operation);
 
   final LayerBuilder? parent;
-  final PictureLayer layer;
+  final PictureEngineLayer layer;
   final LayerOperation? operation;
   final List<PictureDrawCommand> pendingPictures = <PictureDrawCommand>[];
   List<PlatformView> pendingPlatformViews = <PlatformView>[];
@@ -642,7 +633,7 @@ class LayerBuilder {
     pendingPlatformViews.add(PlatformView(viewId, ui.Size(width, height), viewStyling));
   }
 
-  void mergeLayer(PictureLayer layer) {
+  void mergeLayer(PictureEngineLayer layer) {
     for (final LayerSlice slice in layer.slices) {
       switch (slice) {
         case PictureSlice():
@@ -657,7 +648,7 @@ class LayerBuilder {
     }
   }
 
-  PictureLayer build() {
+  PictureEngineLayer build() {
     flushSlices();
     return layer;
   }

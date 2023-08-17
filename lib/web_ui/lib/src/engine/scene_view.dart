@@ -2,8 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
+
 import 'package:ui/src/engine.dart';
-import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
 const String kCanvasContainerTag = 'flt-canvas-container';
@@ -99,7 +100,6 @@ final class PlatformViewSliceContainer extends SliceContainer {
         }
         viewContainer.appendChild(platformView);
       }
-      // TODO: set all the styling here instead of just the position
       final DomCSSStyleDeclaration style = viewContainer.style;
       final double logicalWidth = view.size.width / window.devicePixelRatio;
       final double logicalHeight = view.size.height / window.devicePixelRatio;
@@ -119,6 +119,8 @@ final class PlatformViewSliceContainer extends SliceContainer {
       if (view.styling.opacity != 1.0) {
         style.opacity = '${view.styling.opacity}';
       }
+
+      // TODO(jacksongardner): Implement clip styling for platform views
     }
 
     while (currentContainer != null) {
@@ -129,15 +131,19 @@ final class PlatformViewSliceContainer extends SliceContainer {
   }
 }
 
-class SkwasmSceneView {
-  factory SkwasmSceneView(SkwasmSurface surface) {
+abstract class PictureRenderer {
+  FutureOr<DomImageBitmap> renderPicture(ScenePicture picture);
+}
+
+class EngineSceneView {
+  factory EngineSceneView(PictureRenderer pictureRenderer) {
     final DomElement sceneElement = createDomElement('flt-scene');
-    return SkwasmSceneView._(surface, sceneElement);
+    return EngineSceneView._(pictureRenderer, sceneElement);
   }
 
-  SkwasmSceneView._(this.surface, this.sceneElement);
+  EngineSceneView._(this.pictureRenderer, this.sceneElement);
 
-  final SkwasmSurface surface;
+  final PictureRenderer pictureRenderer;
   final DomElement sceneElement;
 
   List<SliceContainer> containers = <SliceContainer>[];
@@ -145,7 +151,7 @@ class SkwasmSceneView {
   int queuedRenders = 0;
   static const int kMaxQueuedRenders = 3;
 
-  Future<void> renderScene(SkwasmScene scene) async {
+  Future<void> renderScene(EngineScene scene) async {
     if (queuedRenders >= kMaxQueuedRenders) {
       return;
     }
@@ -155,7 +161,7 @@ class SkwasmSceneView {
     final Iterable<Future<DomImageBitmap?>> renderFutures = slices.map(
       (LayerSlice slice) async => switch (slice) {
           PlatformViewSlice() => null,
-          PictureSlice() => surface.renderPicture(slice.picture as SkwasmPicture),
+          PictureSlice() => pictureRenderer.renderPicture(slice.picture),
         }
     );
     final List<DomImageBitmap?> renderedBitmaps = await Future.wait(renderFutures);

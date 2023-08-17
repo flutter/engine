@@ -4,13 +4,13 @@
 
 import 'dart:typed_data';
 
-import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-class SkwasmScene implements ui.Scene {
-  SkwasmScene(this.rootLayer);
+class EngineScene implements ui.Scene {
+  EngineScene(this.rootLayer);
 
-  final RootLayer rootLayer;
+  final EngineRootLayer rootLayer;
 
   @override
   void dispose() {
@@ -36,7 +36,7 @@ class SkwasmScene implements ui.Scene {
   }
 }
 
-class SkwasmSceneBuilder implements ui.SceneBuilder {
+class EngineSceneBuilder implements ui.SceneBuilder {
   LayerBuilder currentBuilder = LayerBuilder.rootLayer();
 
   @override
@@ -78,7 +78,7 @@ class SkwasmSceneBuilder implements ui.SceneBuilder {
 
   @override
   void addRetained(ui.EngineLayer retainedLayer) {
-    currentBuilder.mergeLayer(retainedLayer as PictureLayer);
+    currentBuilder.mergeLayer(retainedLayer as PictureEngineLayer);
   }
 
   @override
@@ -222,13 +222,13 @@ class SkwasmSceneBuilder implements ui.SceneBuilder {
     while (currentBuilder.parent != null) {
       pop();
     }
-    final PictureLayer rootLayer = currentBuilder.build();
-    return SkwasmScene(rootLayer as RootLayer);
+    final PictureEngineLayer rootLayer = currentBuilder.build();
+    return EngineScene(rootLayer as EngineRootLayer);
   }
 
   @override
   void pop() {
-    final PictureLayer layer = currentBuilder.build();
+    final PictureEngineLayer layer = currentBuilder.build();
     final LayerBuilder? parentBuilder = currentBuilder.parent;
     if (parentBuilder == null) {
       throw StateError('Popped too many times.');
@@ -237,7 +237,7 @@ class SkwasmSceneBuilder implements ui.SceneBuilder {
     currentBuilder.mergeLayer(layer);
   }
 
-  T pushLayer<T extends PictureLayer>(T layer, LayerOperation operation) {
+  T pushLayer<T extends PictureEngineLayer>(T layer, LayerOperation operation) {
     currentBuilder = LayerBuilder.childLayer(
       parent: currentBuilder,
       layer: layer,
