@@ -157,6 +157,7 @@ class EngineSceneView {
     }
     queuedRenders += 1;
 
+    scene.isRendering = true;
     final List<LayerSlice> slices = scene.rootLayer.slices;
     final Iterable<Future<DomImageBitmap?>> renderFutures = slices.map(
       (LayerSlice slice) async => switch (slice) {
@@ -229,6 +230,7 @@ class EngineSceneView {
       sceneElement.removeChild(currentElement);
       currentElement = sibling;
     }
+    scene.isRendering = false;
 
     queuedRenders -= 1;
   }
