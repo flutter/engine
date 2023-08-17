@@ -294,7 +294,15 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     virtual const std::shared_ptr<PlatformMessageHandler>&
     GetPlatformMessageHandler() const = 0;
 
-    //----------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
+    /// @brief      Invoked when a listener is registered on a platform channel.
+    ///
+    /// @param[in]  name             The name of the platform channel to which a
+    ///                              listener has been registered or cleared.
+    /// 
+    /// @param[in]  listening        Whether the listener has been set (true) or
+    ///                              cleared (false).
+    ///
     virtual void OnEngineChannelListenedTo(const std::string& name, bool listening) = 0;
   };
 

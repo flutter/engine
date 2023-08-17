@@ -297,6 +297,8 @@ class FlutterWindowsEngine {
   // created. This is typically caused by a hot restart (Shift-R in CLI.)
   void OnPreEngineRestart();
 
+  // Invoked by the engine when a listener is set or cleared on a platform
+  // channel.
   virtual void OnChannelListenedTo(const std::string& name, bool listening);
 
  private:
