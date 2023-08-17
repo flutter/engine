@@ -301,6 +301,8 @@ class FlutterWindowsEngine {
   // created. This is typically caused by a hot restart (Shift-R in CLI.)
   void OnPreEngineRestart();
 
+  virtual void OnChannelListenedTo(const std::string& name, bool listening);
+
  private:
   // Allows swapping out embedder_api_ calls in tests.
   friend class EngineModifier;
