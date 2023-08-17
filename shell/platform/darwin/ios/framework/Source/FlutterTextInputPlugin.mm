@@ -2469,7 +2469,9 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
       // Move auto-correction highlight to overlap with the actual text.
       // This is to fix an issue where the system auto-correction highlight is displayed at
       // the top left corner of the screen on iOS 17+.
+      // This problem also happens on iOS 16, but the size of highlight does not match the text.
       // See https://github.com/flutter/flutter/issues/131695
+      // TODO(hellohuanlin): Investigate if we can use non-zero size.
       _inputHider.frame =
           CGRectMake([transform[leftIndex] intValue], [transform[topIndex] intValue], 0, 0);
     }
