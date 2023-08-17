@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "flow/frame_timings.h"
+#include "flutter/common/constants.h"
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/flow/layers/offscreen_surface.h"
 #include "flutter/fml/time/time_delta.h"

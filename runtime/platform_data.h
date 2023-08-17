@@ -9,7 +9,6 @@
 #include <string>
 #include <vector>
 
-#include "flutter/common/settings.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
 #include "flutter/shell/common/display.h"
 

@@ -7,6 +7,7 @@
 #include <mutex>
 #include <string_view>
 
+#include "flutter/common/constants.h"
 #include "flutter/common/settings.h"
 #include "flutter/fml/build_config.h"
 #include "flutter/lib/ui/compositing/scene.h"

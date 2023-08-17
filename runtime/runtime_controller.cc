@@ -6,6 +6,7 @@
 
 #include <utility>
 
+#include "flutter/common/constants.h"
 #include "flutter/common/settings.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/trace_event.h"
