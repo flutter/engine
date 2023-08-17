@@ -121,8 +121,11 @@ void PlatformConfiguration::AddView(int64_t view_id,
 }
 
 void PlatformConfiguration::RemoveView(int64_t view_id) {
-  FML_DCHECK(view_id != kFlutterImplicitViewId)
-      << "The implicit view #" << view_id << " should never be removed.";
+  if (view_id == kFlutterImplicitViewId) {
+    FML_LOG(ERROR) << "The implicit view #" << view_id << " cannot be removed.";
+    FML_DCHECK(false);
+    return;
+  }
   size_t erased_elements = metrics_.erase(view_id);
   FML_DCHECK(erased_elements != 0) << "View #" << view_id << " doesn't exist.";
   (void)erased_elements;  // Suppress unused variable warning
