@@ -21,6 +21,7 @@
 #include "flutter/fml/unique_fd.h"
 
 namespace flutter {
+
 class FrameTiming {
  public:
   enum Phase {
