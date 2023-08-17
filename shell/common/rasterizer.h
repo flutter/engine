@@ -59,8 +59,10 @@ enum class DrawStatus {
   // Nothing was done, because the call was not on the raster thread. Yielded to
   // let this frame be serviced on the right thread.
   kYielded,
-  // Nothing was done, because pipeline has nothing in queue.
-  kPipelineNoneAvailable,
+  // Nothing was done, because pipeline was empty.
+  kPipelineEmpty,
+  // Nothing was done, because GPU was unavailable.
+  kGpuUnavailable,
 };
 
 //------------------------------------------------------------------------------
@@ -537,6 +539,7 @@ class Rasterizer final : public SnapshotDelegate,
     // Layer tree was discarded due to LayerTreeDiscardCallback or inability to
     // access the GPU.
     kDiscarded,
+    kGpuUnavailable,
   };
 
   // The result status of DoDraw.
@@ -562,6 +565,7 @@ class Rasterizer final : public SnapshotDelegate,
     // Layer tree was discarded due to LayerTreeDiscardCallback or inability to
     // access the GPU.
     kDiscarded,
+    kGpuUnavailable,
   };
 
   // |SnapshotDelegate|

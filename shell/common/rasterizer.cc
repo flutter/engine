@@ -215,7 +215,7 @@ DrawStatus Rasterizer::Draw(const std::shared_ptr<LayerTreePipeline>& pipeline,
 
   PipelineConsumeResult consume_result = pipeline->Consume(consumer);
   if (consume_result == PipelineConsumeResult::NoneAvailable) {
-    return DrawStatus::kPipelineNoneAvailable;
+    return DrawStatus::kPipelineEmpty;
   }
   // if the raster status is to resubmit the frame, we push the frame to the
   // front of the queue and also change the consume status to more available.
@@ -261,8 +261,8 @@ DrawStatus Rasterizer::Draw(const std::shared_ptr<LayerTreePipeline>& pipeline,
   }
 
   switch (do_draw_status) {
-    case DoDrawStatus::kEmpty:
-      return DrawStatus::kEmpty;
+    case DoDrawStatus::kGpuUnavailable:
+      return DrawStatus::kGpuUnavailable;
     case DoDrawStatus::kDiscarded:
       return DrawStatus::kDiscarded;
     case DoDrawStatus::kFailed:
@@ -416,6 +416,8 @@ Rasterizer::DoDrawStatus Rasterizer::DoDraw(
     return DoDrawStatus::kRetry;
   } else if (draw_surface_status == DrawSurfaceStatus::kDiscarded) {
     return DoDrawStatus::kDiscarded;
+  } else if (draw_surface_status == DrawSurfaceStatus::kGpuUnavailable) {
+    return DoDrawStatus::kGpuUnavailable;
   }
   FML_DCHECK(draw_surface_status == DrawSurfaceStatus::kSuccess ||
              draw_surface_status == DrawSurfaceStatus::kFailed);
@@ -510,8 +512,9 @@ Rasterizer::DrawSurfaceStatus Rasterizer::DrawToSurface(
   } else {
     delegate_.GetIsGpuDisabledSyncSwitch()->Execute(
         fml::SyncSwitch::Handlers()
-            .SetIfTrue(
-                [&] { draw_surface_status = DrawSurfaceStatus::kDiscarded; })
+            .SetIfTrue([&] {
+              draw_surface_status = DrawSurfaceStatus::kGpuUnavailable;
+            })
             .SetIfFalse([&] {
               draw_surface_status = DrawToSurfaceUnsafe(
                   frame_timings_recorder, layer_tree, device_pixel_ratio);
