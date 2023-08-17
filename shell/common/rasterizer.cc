@@ -186,8 +186,7 @@ void Rasterizer::DrawLastLayerTree(
 }
 
 RasterStatus Rasterizer::Draw(
-    const std::shared_ptr<LayerTreePipeline>& pipeline,
-    LayerTreeDiscardCallback discard_callback) {
+    const std::shared_ptr<LayerTreePipeline>& pipeline) {
   TRACE_EVENT0("flutter", "GPURasterizer::Draw");
   if (raster_thread_merger_ &&
       !raster_thread_merger_->IsOnRasterizingThread()) {
@@ -205,7 +204,7 @@ RasterStatus Rasterizer::Draw(
         std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =
             std::move(item->frame_timings_recorder);
         float device_pixel_ratio = item->device_pixel_ratio;
-        if (discard_callback(*layer_tree.get())) {
+        if (delegate_.ShouldDiscardLayerTree(*layer_tree.get())) {
           raster_status = RasterStatus::kDiscarded;
         } else {
           raster_status = DoDraw(std::move(frame_timings_recorder),
@@ -248,10 +247,9 @@ RasterStatus Rasterizer::Draw(
     case PipelineConsumeResult::MoreAvailable: {
       delegate_.GetTaskRunners().GetRasterTaskRunner()->PostTask(
           fml::MakeCopyable(
-              [weak_this = weak_factory_.GetWeakPtr(), pipeline,
-               discard_callback = std::move(discard_callback)]() mutable {
+              [weak_this = weak_factory_.GetWeakPtr(), pipeline]() mutable {
                 if (weak_this) {
-                  weak_this->Draw(pipeline, std::move(discard_callback));
+                  weak_this->Draw(pipeline);
                 }
               }));
       break;

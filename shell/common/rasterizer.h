@@ -118,6 +118,8 @@ class Rasterizer final : public SnapshotDelegate,
         const = 0;
 
     virtual const Settings& GetSettings() const = 0;
+
+    virtual bool ShouldDiscardLayerTree(flutter::LayerTree& layer_tree) = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -240,8 +242,6 @@ class Rasterizer final : public SnapshotDelegate,
 
   std::shared_ptr<flutter::TextureRegistry> GetTextureRegistry() override;
 
-  using LayerTreeDiscardCallback = std::function<bool(flutter::LayerTree&)>;
-
   //----------------------------------------------------------------------------
   /// @brief      Takes the next item from the layer tree pipeline and executes
   ///             the raster thread frame workload for that pipeline item to
@@ -270,11 +270,8 @@ class Rasterizer final : public SnapshotDelegate,
   ///
   /// @param[in]  pipeline  The layer tree pipeline to take the next layer tree
   ///                       to render from.
-  /// @param[in]  discard_callback if specified and returns true, the layer tree
-  ///                             is discarded instead of being rendered
   ///
-  RasterStatus Draw(const std::shared_ptr<LayerTreePipeline>& pipeline,
-                    LayerTreeDiscardCallback discard_callback = NoDiscard);
+  RasterStatus Draw(const std::shared_ptr<LayerTreePipeline>& pipeline);
 
   //----------------------------------------------------------------------------
   /// @brief      The type of the screenshot to obtain of the previously
@@ -569,7 +566,6 @@ class Rasterizer final : public SnapshotDelegate,
 
   void FireNextFrameCallbackIfPresent();
 
-  static bool NoDiscard(const flutter::LayerTree& layer_tree) { return false; }
   static bool ShouldResubmitFrame(const RasterStatus& raster_status);
 
   Delegate& delegate_;
