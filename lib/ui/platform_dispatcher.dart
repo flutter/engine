@@ -263,9 +263,16 @@ class PlatformDispatcher {
   // Called from the engine, via hooks.dart
   //
   // Updates the metrics of the window with the given id.
-  void _updateWindowMetrics(int id, _ViewConfiguration viewConfiguration) {
-    assert(_views.containsKey(id), 'View $id does not exist.');
-    _views[id]!._viewConfiguration = viewConfiguration;
+  void _updateWindowMetrics(int viewId, _ViewConfiguration viewConfiguration) {
+    final FlutterView? view = _views[viewId];
+    if (viewId == _kImplicitViewId && view == null) {
+      // TODO(goderbauer): Remove the implicit creation of the implicit view
+      //   when we have an addView API and the implicit view is added via that.
+      _views[viewId] = FlutterView._(viewId, this, viewConfiguration);
+    } else {
+      assert(view != null);
+      view!._viewConfiguration = viewConfiguration;
+    }
     _invoke(onMetricsChanged, _onMetricsChangedZone);
   }
 
