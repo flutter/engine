@@ -1271,6 +1271,8 @@ ORIGIN: ../../../flutter/impeller/entity/geometry/vertices_geometry.cc + ../../.
 ORIGIN: ../../../flutter/impeller/entity/geometry/vertices_geometry.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/inline_pass_context.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/inline_pass_context.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/render_target_cache.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/render_target_cache.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/blending/advanced_blend.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/blending/advanced_blend.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/blending/advanced_blend_color.frag + ../../../flutter/LICENSE
@@ -1308,6 +1310,7 @@ ORIGIN: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_
 ORIGIN: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_screen.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_softlight.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/blending/porter_duff_blend.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/blending/porter_duff_blend.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/border_mask_blur.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/border_mask_blur.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/clip.frag + ../../../flutter/LICENSE
@@ -2316,8 +2319,6 @@ ORIGIN: ../../../flutter/shell/platform/android/android_egl_surface.h + ../../..
 ORIGIN: ../../../flutter/shell/platform/android/android_environment_gl.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/android_environment_gl.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/android_exports.lst + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/android/android_external_texture_gl.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/android/android_external_texture_gl.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/android_image_generator.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/android_image_generator.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/android_shell_holder.cc + ../../../flutter/LICENSE
@@ -2504,6 +2505,10 @@ ORIGIN: ../../../flutter/shell/platform/android/surface/android_surface_mock.cc 
 ORIGIN: ../../../flutter/shell/platform/android/surface/android_surface_mock.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/surface/snapshot_surface_producer.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/surface/snapshot_surface_producer.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/android/surface_texture_external_texture.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/android/surface_texture_external_texture.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/android/surface_texture_external_texture_gl.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/android/surface_texture_external_texture_gl.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/vsync_waiter_android.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/vsync_waiter_android.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/common/accessibility_bridge.cc + ../../../flutter/LICENSE
@@ -3991,6 +3996,8 @@ FILE: ../../../flutter/impeller/entity/geometry/vertices_geometry.cc
 FILE: ../../../flutter/impeller/entity/geometry/vertices_geometry.h
 FILE: ../../../flutter/impeller/entity/inline_pass_context.cc
 FILE: ../../../flutter/impeller/entity/inline_pass_context.h
+FILE: ../../../flutter/impeller/entity/render_target_cache.cc
+FILE: ../../../flutter/impeller/entity/render_target_cache.h
 FILE: ../../../flutter/impeller/entity/shaders/blending/advanced_blend.glsl
 FILE: ../../../flutter/impeller/entity/shaders/blending/advanced_blend.vert
 FILE: ../../../flutter/impeller/entity/shaders/blending/advanced_blend_color.frag
@@ -4028,6 +4035,7 @@ FILE: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_sa
 FILE: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_screen.frag
 FILE: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_softlight.frag
 FILE: ../../../flutter/impeller/entity/shaders/blending/porter_duff_blend.frag
+FILE: ../../../flutter/impeller/entity/shaders/blending/porter_duff_blend.vert
 FILE: ../../../flutter/impeller/entity/shaders/border_mask_blur.frag
 FILE: ../../../flutter/impeller/entity/shaders/border_mask_blur.vert
 FILE: ../../../flutter/impeller/entity/shaders/clip.frag
@@ -5041,8 +5049,6 @@ FILE: ../../../flutter/shell/platform/android/android_egl_surface.h
 FILE: ../../../flutter/shell/platform/android/android_environment_gl.cc
 FILE: ../../../flutter/shell/platform/android/android_environment_gl.h
 FILE: ../../../flutter/shell/platform/android/android_exports.lst
-FILE: ../../../flutter/shell/platform/android/android_external_texture_gl.cc
-FILE: ../../../flutter/shell/platform/android/android_external_texture_gl.h
 FILE: ../../../flutter/shell/platform/android/android_image_generator.cc
 FILE: ../../../flutter/shell/platform/android/android_image_generator.h
 FILE: ../../../flutter/shell/platform/android/android_shell_holder.cc
@@ -5241,6 +5247,10 @@ FILE: ../../../flutter/shell/platform/android/surface/android_surface_mock.cc
 FILE: ../../../flutter/shell/platform/android/surface/android_surface_mock.h
 FILE: ../../../flutter/shell/platform/android/surface/snapshot_surface_producer.cc
 FILE: ../../../flutter/shell/platform/android/surface/snapshot_surface_producer.h
+FILE: ../../../flutter/shell/platform/android/surface_texture_external_texture.cc
+FILE: ../../../flutter/shell/platform/android/surface_texture_external_texture.h
+FILE: ../../../flutter/shell/platform/android/surface_texture_external_texture_gl.cc
+FILE: ../../../flutter/shell/platform/android/surface_texture_external_texture_gl.h
 FILE: ../../../flutter/shell/platform/android/vsync_waiter_android.cc
 FILE: ../../../flutter/shell/platform/android/vsync_waiter_android.h
 FILE: ../../../flutter/shell/platform/common/accessibility_bridge.cc

@@ -1,4 +1,4 @@
-Signature: e11b0012a83e67c014786022a76030f7
+Signature: cbd286c5a1349ca0b2be0f6ff4a8d66b
 
 ====================================================================================================
 LIBRARY: etc1
@@ -8903,7 +8903,9 @@ ORIGIN: ../../../third_party/skia/include/private/chromium/GrSurfaceCharacteriza
 ORIGIN: ../../../third_party/skia/include/private/chromium/SkImageChromium.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/private/gpu/ganesh/GrTextureGenerator.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/bentleyottmann/include/EventQueue.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/modules/bentleyottmann/include/Point.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/bentleyottmann/src/EventQueue.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/modules/bentleyottmann/src/Point.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/base/SkBezierCurves.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/base/SkCubics.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/base/SkCubics.h + ../../../third_party/skia/LICENSE
@@ -9140,7 +9142,9 @@ FILE: ../../../third_party/skia/include/private/chromium/GrSurfaceCharacterizati
 FILE: ../../../third_party/skia/include/private/chromium/SkImageChromium.h
 FILE: ../../../third_party/skia/include/private/gpu/ganesh/GrTextureGenerator.h
 FILE: ../../../third_party/skia/modules/bentleyottmann/include/EventQueue.h
+FILE: ../../../third_party/skia/modules/bentleyottmann/include/Point.h
 FILE: ../../../third_party/skia/modules/bentleyottmann/src/EventQueue.cpp
+FILE: ../../../third_party/skia/modules/bentleyottmann/src/Point.cpp
 FILE: ../../../third_party/skia/src/base/SkBezierCurves.h
 FILE: ../../../third_party/skia/src/base/SkCubics.cpp
 FILE: ../../../third_party/skia/src/base/SkCubics.h
