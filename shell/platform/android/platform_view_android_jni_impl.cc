@@ -17,7 +17,7 @@
 #include "unicode/uchar.h"
 
 #include "flutter/assets/directory_asset_bundle.h"
-#include "flutter/common/settings.h"
+#include "flutter/common/constants.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/native_library.h"
