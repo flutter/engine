@@ -178,7 +178,8 @@ void Rasterizer::DrawLastLayerTree(
 
   // EndFrame should perform cleanups for the external_view_embedder.
   if (external_view_embedder_ && external_view_embedder_->GetUsedThisFrame()) {
-    bool should_resubmit_frame = ShouldResubmitSurface(draw_surface_status);
+    bool should_resubmit_frame =
+        draw_surface_status == DrawSurfaceStatus::kRetry;
     external_view_embedder_->SetUsedThisFrame(false);
     external_view_embedder_->EndFrame(should_resubmit_frame,
                                       raster_thread_merger_);
@@ -197,7 +198,7 @@ DrawStatus Rasterizer::Draw(const std::shared_ptr<LayerTreePipeline>& pipeline,
                  .GetRasterTaskRunner()
                  ->RunsTasksOnCurrentThread());
 
-  DoDrawStatus raster_status = DoDrawStatus::kFailed;
+  DoDrawStatus do_draw_status = DoDrawStatus::kFailed;
   LayerTreePipeline::Consumer consumer =
       [&](std::unique_ptr<LayerTreeItem> item) {
         std::unique_ptr<LayerTree> layer_tree = std::move(item->layer_tree);
@@ -205,10 +206,10 @@ DrawStatus Rasterizer::Draw(const std::shared_ptr<LayerTreePipeline>& pipeline,
             std::move(item->frame_timings_recorder);
         float device_pixel_ratio = item->device_pixel_ratio;
         if (discard_callback(*layer_tree.get())) {
-          raster_status = DoDrawStatus::kDiscarded;
+          do_draw_status = DoDrawStatus::kDiscarded;
         } else {
-          raster_status = DoDraw(std::move(frame_timings_recorder),
-                                 std::move(layer_tree), device_pixel_ratio);
+          do_draw_status = DoDraw(std::move(frame_timings_recorder),
+                                  std::move(layer_tree), device_pixel_ratio);
         }
       };
 
@@ -219,7 +220,7 @@ DrawStatus Rasterizer::Draw(const std::shared_ptr<LayerTreePipeline>& pipeline,
   // if the raster status is to resubmit the frame, we push the frame to the
   // front of the queue and also change the consume status to more available.
 
-  bool should_resubmit_frame = ShouldResubmitFrame(raster_status);
+  bool should_resubmit_frame = do_draw_status == DoDrawStatus::kRetry;
   if (should_resubmit_frame) {
     auto resubmitted_layer_tree_item = std::make_unique<LayerTreeItem>(
         std::move(resubmitted_layer_tree_), std::move(resubmitted_recorder_),
@@ -230,7 +231,7 @@ DrawStatus Rasterizer::Draw(const std::shared_ptr<LayerTreePipeline>& pipeline,
     if (result.success) {
       consume_result = PipelineConsumeResult::MoreAvailable;
     }
-  } else if (raster_status == DoDrawStatus::kEnqueuePipeline) {
+  } else if (do_draw_status == DoDrawStatus::kEnqueuePipeline) {
     consume_result = PipelineConsumeResult::MoreAvailable;
   }
 
@@ -259,7 +260,7 @@ DrawStatus Rasterizer::Draw(const std::shared_ptr<LayerTreePipeline>& pipeline,
       break;
   }
 
-  switch (raster_status) {
+  switch (do_draw_status) {
     case DoDrawStatus::kDiscarded:
       return DrawStatus::kDiscarded;
     case DoDrawStatus::kFailed:
@@ -267,17 +268,6 @@ DrawStatus Rasterizer::Draw(const std::shared_ptr<LayerTreePipeline>& pipeline,
     default:
       return DrawStatus::kSuccess;
   }
-}
-
-bool Rasterizer::ShouldResubmitFrame(const DoDrawStatus& raster_status) {
-  return raster_status == DoDrawStatus::kResubmit ||
-         raster_status == DoDrawStatus::kSkipAndRetry;
-}
-
-bool Rasterizer::ShouldResubmitSurface(
-    const DrawSurfaceStatus& draw_surface_status) {
-  return draw_surface_status == DrawSurfaceStatus::kResubmit ||
-         draw_surface_status == DrawSurfaceStatus::kSkipAndRetry;
 }
 
 namespace {
@@ -416,16 +406,12 @@ Rasterizer::DoDrawStatus Rasterizer::DoDraw(
   if (draw_surface_status == DrawSurfaceStatus::kSuccess) {
     last_layer_tree_ = std::move(layer_tree);
     last_device_pixel_ratio_ = device_pixel_ratio;
-  } else if (ShouldResubmitSurface(draw_surface_status)) {
+  } else if (draw_surface_status == DrawSurfaceStatus::kRetry) {
     resubmitted_pixel_ratio_ = device_pixel_ratio;
     resubmitted_layer_tree_ = std::move(layer_tree);
     resubmitted_recorder_ = frame_timings_recorder->CloneUntil(
         FrameTimingsRecorder::State::kBuildEnd);
-    if (draw_surface_status == DrawSurfaceStatus::kResubmit) {
-      return DoDrawStatus::kResubmit;
-    } else {
-      return DoDrawStatus::kSkipAndRetry;
-    }
+    return DoDrawStatus::kRetry;
   } else if (draw_surface_status == DrawSurfaceStatus::kDiscarded) {
     return DoDrawStatus::kDiscarded;
   }
@@ -626,7 +612,7 @@ Rasterizer::DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
                                  damage.get()          // frame damage
         );
     if (frame_status == RasterStatus::kSkipAndRetry) {
-      return DrawSurfaceStatus::kSkipAndRetry;
+      return DrawSurfaceStatus::kRetry;
     }
 
     SurfaceFrame::SubmitInfo submit_info;
@@ -669,7 +655,7 @@ Rasterizer::DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
     }
 
     if (frame_status == RasterStatus::kResubmit) {
-      return DrawSurfaceStatus::kResubmit;
+      return DrawSurfaceStatus::kRetry;
     } else {
       return DrawSurfaceStatus::kSuccess;
     }

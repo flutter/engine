@@ -515,22 +515,16 @@ class Rasterizer final : public SnapshotDelegate,
   enum class DrawSurfaceStatus {
     // Frame has been successfully rasterized.
     kSuccess,
-    // Frame is submitted twice. This is only used on Android when
-    // switching the background surface to FlutterImageView.
+    // Frame should be submitted again.
     //
-    // On Android, the first frame doesn't make the image available
-    // to the ImageReader right away. The second frame does.
-    //
+    // This can occur on Android when switching the background surface to
+    // FlutterImageView.  On Android, the first frame doesn't make the image
+    // available to the ImageReader right away. The second frame does.
     // TODO(egarciad): https://github.com/flutter/flutter/issues/65652
-    kResubmit,
-    // Frame is dropped and a new frame with the same layer tree is
-    // attempted.
     //
-    // This is currently used to wait for the thread merger to merge
-    // the raster and platform threads.
-    //
-    // Since the thread merger may be disabled,
-    kSkipAndRetry,
+    // This can also occur when the frame is dropped to wait for the thread
+    // merger to merge the raster and platform threads.
+    kRetry,
     // Failed to rasterize the frame.
     kFailed,
     // Layer tree was discarded due to LayerTreeDiscardCallback or inability to
@@ -541,26 +535,19 @@ class Rasterizer final : public SnapshotDelegate,
   enum class DoDrawStatus {
     // Frame has been successfully rasterized.
     kSuccess,
-    // Frame is submitted twice. This is only used on Android when
-    // switching the background surface to FlutterImageView.
+    // Frame should be submitted again.
     //
-    // On Android, the first frame doesn't make the image available
-    // to the ImageReader right away. The second frame does.
-    //
+    // This can occur on Android when switching the background surface to
+    // FlutterImageView.  On Android, the first frame doesn't make the image
+    // available to the ImageReader right away. The second frame does.
     // TODO(egarciad): https://github.com/flutter/flutter/issues/65652
-    kResubmit,
-    // Frame is dropped and a new frame with the same layer tree is
-    // attempted.
     //
-    // This is currently used to wait for the thread merger to merge
-    // the raster and platform threads.
-    //
-    // Since the thread merger may be disabled,
-    kSkipAndRetry,
-    // Frame has been successfully rasterized, but "there are additional items
-    // in
-    // the pipeline waiting to be consumed. This is currently
-    // only used when thread configuration change occurs.
+    // This can also occur when the frame is dropped to wait for the thread
+    // merger to merge the raster and platform threads.
+    kRetry,
+    // Frame has been successfully rasterized, but there are additional items
+    // in the pipeline waiting to be consumed. This is currently only used when
+    // thread configuration change occurs.
     kEnqueuePipeline,
     // Failed to rasterize the frame.
     kFailed,
@@ -640,9 +627,6 @@ class Rasterizer final : public SnapshotDelegate,
   void FireNextFrameCallbackIfPresent();
 
   static bool NoDiscard(const flutter::LayerTree& layer_tree) { return false; }
-  static bool ShouldResubmitFrame(const DoDrawStatus& raster_status);
-  static bool ShouldResubmitSurface(
-      const DrawSurfaceStatus& draw_surface_status);
 
   Delegate& delegate_;
   MakeGpuImageBehavior gpu_image_behavior_;
