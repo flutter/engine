@@ -39,6 +39,7 @@ public class AndroidTouchProcessorTest {
   // Used for mock events in SystemClock.uptimeMillis() time base.
   // 2 days in milliseconds
   final long eventTimeMilliseconds = 172800000;
+  final float pressure = 0.8f;
 
   @Before
   public void setUp() {
@@ -72,6 +73,18 @@ public class AndroidTouchProcessorTest {
 
   private double readPointerPhysicalY(ByteBuffer buffer) {
     return buffer.getDouble(8 * AndroidTouchProcessor.BYTES_PER_FIELD);
+  }
+
+  private double readObscured(ByteBuffer buffer) {
+    return buffer.getDouble(12 * AndroidTouchProcessor.BYTES_PER_FIELD);
+  }
+
+  private double readSynthesized(ByteBuffer buffer) {
+    return buffer.getDouble(13 * AndroidTouchProcessor.BYTES_PER_FIELD);
+  }
+
+  private double readPressure(ByteBuffer buffer) {
+    return buffer.getDouble(14 * AndroidTouchProcessor.BYTES_PER_FIELD);
   }
 
   private double readScrollDeltaX(ByteBuffer buffer) {
@@ -122,6 +135,7 @@ public class AndroidTouchProcessorTest {
       when(event.isFromSource(InputDevice.SOURCE_CLASS_POINTER)).thenReturn(true);
       when(event.getAxisValue(MotionEvent.AXIS_HSCROLL, pointerId)).thenReturn(x);
       when(event.getAxisValue(MotionEvent.AXIS_VSCROLL, pointerId)).thenReturn(y);
+      when(event.getPressure(0)).thenReturn(pressure);
       return event;
     }
   }
@@ -329,6 +343,92 @@ public class AndroidTouchProcessorTest {
 
     assertEquals(pointerId, readDevice(packet));
     verify(event).getPointerId(0);
+
+    inOrder.verifyNoMoreInteractions();
+  }
+
+  @Test
+  public void physicalXPhysicalY() {
+    MotionEventMocker mocker =
+        new MotionEventMocker(
+            1, InputDevice.SOURCE_CLASS_POINTER, MotionEvent.TOOL_TYPE_MOUSE);
+    final float x = 10.0f;
+    final float y = 20.0f;
+    final MotionEvent event =
+        mocker.mockEvent(MotionEvent.ACTION_DOWN, x, y, 0);
+    boolean handled = touchProcessor.onTouchEvent(event);
+
+    InOrder inOrder = inOrder(mockRenderer);
+    inOrder
+        .verify(mockRenderer)
+        .dispatchPointerDataPacket(packetCaptor.capture(), packetSizeCaptor.capture());
+    ByteBuffer packet = packetCaptor.getValue();
+
+    assertEquals((double)x, readPointerPhysicalX(packet));
+    assertEquals((double)y, readPointerPhysicalY(packet));
+
+    inOrder.verifyNoMoreInteractions();
+  }
+
+  @Test
+  public void obscured() {
+    MotionEventMocker mocker =
+        new MotionEventMocker(
+            1, InputDevice.SOURCE_CLASS_POINTER, MotionEvent.TOOL_TYPE_MOUSE);
+    final MotionEvent event =
+        mocker.mockEvent(MotionEvent.ACTION_DOWN, 10.0f, 20.0f, 0);
+    boolean handled = touchProcessor.onTouchEvent(event);
+
+    InOrder inOrder = inOrder(mockRenderer);
+    inOrder
+        .verify(mockRenderer)
+        .dispatchPointerDataPacket(packetCaptor.capture(), packetSizeCaptor.capture());
+    ByteBuffer packet = packetCaptor.getValue();
+
+    // Always zero.
+    assertEquals(0.0, readObscured(packet));
+
+    inOrder.verifyNoMoreInteractions();
+  }
+
+  @Test
+  public void synthesized() {
+    MotionEventMocker mocker =
+        new MotionEventMocker(
+            1, InputDevice.SOURCE_CLASS_POINTER, MotionEvent.TOOL_TYPE_MOUSE);
+    final MotionEvent event =
+        mocker.mockEvent(MotionEvent.ACTION_DOWN, 10.0f, 20.0f, 0);
+    boolean handled = touchProcessor.onTouchEvent(event);
+
+    InOrder inOrder = inOrder(mockRenderer);
+    inOrder
+        .verify(mockRenderer)
+        .dispatchPointerDataPacket(packetCaptor.capture(), packetSizeCaptor.capture());
+    ByteBuffer packet = packetCaptor.getValue();
+
+    // Always zero.
+    assertEquals(0.0, readSynthesized(packet));
+
+    inOrder.verifyNoMoreInteractions();
+  }
+
+  @Test
+  public void pressure() {
+    MotionEventMocker mocker =
+        new MotionEventMocker(
+            1, InputDevice.SOURCE_CLASS_POINTER, MotionEvent.TOOL_TYPE_MOUSE);
+    final MotionEvent event =
+        mocker.mockEvent(MotionEvent.ACTION_DOWN, 10.0f, 20.0f, 0);
+    boolean handled = touchProcessor.onTouchEvent(event);
+
+    InOrder inOrder = inOrder(mockRenderer);
+    inOrder
+        .verify(mockRenderer)
+        .dispatchPointerDataPacket(packetCaptor.capture(), packetSizeCaptor.capture());
+    ByteBuffer packet = packetCaptor.getValue();
+
+    // Always zero.
+    assertEquals((double)pressure, readPressure(packet));
 
     inOrder.verifyNoMoreInteractions();
   }
