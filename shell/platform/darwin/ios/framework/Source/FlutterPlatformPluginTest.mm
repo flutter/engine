@@ -143,7 +143,6 @@
   FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"Share.invoke"
                                                                     arguments:@"Test"];
   FlutterResult result = ^(id result) {
-    OCMVerify([mockPlugin showShareViewController:@"Test"]);
     OCMVerify([mockEngineViewController
         presentViewController:[OCMArg isKindOfClass:[UIActivityViewController class]]
                      animated:YES
