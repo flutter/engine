@@ -144,6 +144,22 @@ public class AndroidTouchProcessorTest {
     return buffer.getDouble(30 * AndroidTouchProcessor.BYTES_PER_FIELD);
   }
 
+  private double readPointerPanDeltaX(ByteBuffer buffer) {
+    return buffer.getDouble(31 * AndroidTouchProcessor.BYTES_PER_FIELD);
+  }
+
+  private double readPointerPanDeltaY(ByteBuffer buffer) {
+    return buffer.getDouble(32 * AndroidTouchProcessor.BYTES_PER_FIELD);
+  }
+
+  private double readScale(ByteBuffer buffer) {
+    return buffer.getDouble(33 * AndroidTouchProcessor.BYTES_PER_FIELD);
+  }
+
+  private double readRotation(ByteBuffer buffer) {
+    return buffer.getDouble(34 * AndroidTouchProcessor.BYTES_PER_FIELD);
+  }
+
   /// Utility method when trying to write a new test. Prefer named readXXX.
   private double readOffset(int offset, ByteBuffer buffer) {
     return buffer.getDouble(offset * AndroidTouchProcessor.BYTES_PER_FIELD);
@@ -254,6 +270,12 @@ public class AndroidTouchProcessorTest {
     assertEquals(0.0, readPointerPhysicalY(packet));
     assertEquals(10.0, readPointerPanX(packet));
     assertEquals(5.0, readPointerPanY(packet));
+    // Always zero.
+    assertEquals(0.0, readPointerPanDeltaX(packet));
+    assertEquals(0.0, readPointerPanDeltaY(packet));
+    assertEquals(0.0, readRotation(packet));
+    // Always 1.
+    assertEquals(1.0, readScale(packet));
     touchProcessor.onTouchEvent(mocker.mockEvent(MotionEvent.ACTION_UP, 10.0f, 5.0f, 0));
     inOrder
         .verify(mockRenderer)
