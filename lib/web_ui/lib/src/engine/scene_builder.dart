@@ -12,9 +12,29 @@ class EngineScene implements ui.Scene {
 
   final EngineRootLayer rootLayer;
 
+  bool _disposeCalled = false;
+  bool _isRendering = false;
+  bool _isDisposed = false;
+
+  set isRendering(bool isRendering) {
+    if (_isRendering != isRendering) {
+      _isRendering = isRendering;
+      _updateDispose();
+    }
+  }
+
   @override
   void dispose() {
+    _disposeCalled = true;
+    _updateDispose();
+  }
+
+  void _updateDispose() {
+    if (_isDisposed || _isRendering || !_disposeCalled) {
+      return;
+    }
     rootLayer.dispose();
+    _isDisposed = true;
   }
 
   @override
