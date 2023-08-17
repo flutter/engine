@@ -62,20 +62,11 @@ class TextContents final : public Contents {
               const Entity& entity,
               RenderPass& pass) const override;
 
-  /// Get the position that the text will be drawn to relative to its transform.
-  ///
-  /// This value is baked into the entity's transform but is useful for
-  /// calculating offsets for batching text draws.
-  const Point& GetPosition() const { return position_; }
-
-  void SetPosition(const Point& point) { position_ = point; }
-
  private:
   std::vector<TextFrameInfo> frames_;
   Scalar scale_ = 1.0;
   Scalar inherited_opacity_ = 1.0;
   Vector2 offset_;
-  Point position_;
 
   std::shared_ptr<GlyphAtlas> ResolveAtlas(
       GlyphAtlas::Type type,

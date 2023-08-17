@@ -535,7 +535,7 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
       //                  colors too.
       last_entity->GetBlendMode() == paint.blend_mode &&
       last_entity->GetTransformation() == GetCurrentTransformation()) {
-    Vector2 offset = position - last_text_contents_->GetPosition();
+    Vector2 offset = position - last_text_contents_->GetOffset();
     // TODO(gaaclarke): Store offsets for each text run so we don't have to copy
     // everything.
     for (const TextRun& run : text_frame.GetRuns()) {
@@ -582,7 +582,7 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
   }
 
   last_text_contents_ = text_contents;
-  text_contents->SetPosition(position);
+  text_contents->SetOffset(position);
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetContents(paint.WithFilters(std::move(text_contents), true));
 

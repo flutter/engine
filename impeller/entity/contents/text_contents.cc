@@ -75,7 +75,7 @@ std::optional<Rect> TextContents::GetCoverage(const Entity& entity) const {
     return std::nullopt;
   }
   return bounds->TransformBounds(entity.GetTransformation() *
-                                 Matrix::MakeTranslation(position_));
+                                 Matrix::MakeTranslation(offset_));
 }
 
 void TextContents::PopulateGlyphAtlas(
@@ -207,7 +207,7 @@ bool TextContents::Render(const ContentContext& renderer,
                           glyph_position.glyph.bounds.origin.y,
                           glyph_position.glyph.bounds.size.width,
                           glyph_position.glyph.bounds.size.height);
-              vtx.glyph_position = position_ + glyph_position.position;
+              vtx.glyph_position = glyph_position.position;
 
               for (const auto& point : unit_points) {
                 vtx.unit_position = point;
