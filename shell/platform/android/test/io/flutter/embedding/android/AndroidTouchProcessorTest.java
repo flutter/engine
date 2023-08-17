@@ -16,6 +16,7 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Before;
@@ -103,6 +104,26 @@ public class AndroidTouchProcessorTest {
     return buffer.getDouble(18 * AndroidTouchProcessor.BYTES_PER_FIELD);
   }
 
+  private double readSize(ByteBuffer buffer) {
+    return buffer.getDouble(19 * AndroidTouchProcessor.BYTES_PER_FIELD);
+  }
+
+  private double readRadiusMajor(ByteBuffer buffer) {
+    return buffer.getDouble(20 * AndroidTouchProcessor.BYTES_PER_FIELD);
+  }
+
+  private double readRadiusMinor(ByteBuffer buffer) {
+    return buffer.getDouble(21 * AndroidTouchProcessor.BYTES_PER_FIELD);
+  }
+
+  private double readRadiusMax(ByteBuffer buffer) {
+    return buffer.getDouble(22 * AndroidTouchProcessor.BYTES_PER_FIELD);
+  }
+
+  private double readRadiusMin(ByteBuffer buffer) {
+    return buffer.getDouble(23 * AndroidTouchProcessor.BYTES_PER_FIELD);
+  }
+
   private double readStylusTilt(ByteBuffer buffer) {
     return buffer.getDouble(25 * AndroidTouchProcessor.BYTES_PER_FIELD);
   }
@@ -146,19 +167,24 @@ public class AndroidTouchProcessorTest {
       when(event.getEventTime()).thenReturn(eventTimeMilliseconds);
       when(event.getPointerCount()).thenReturn(1);
       when(event.getActionMasked()).thenReturn(action);
-      when(event.getActionIndex()).thenReturn(0);
+      final int actionIndex = 0;
+      when(event.getActionIndex()).thenReturn(actionIndex);
       when(event.getButtonState()).thenReturn(buttonState);
-      when(event.getPointerId(0)).thenReturn(pointerId);
-      when(event.getX(0)).thenReturn(x);
-      when(event.getY(0)).thenReturn(y);
-      when(event.getToolType(0)).thenReturn(toolType);
+      when(event.getPointerId(actionIndex)).thenReturn(pointerId);
+      when(event.getX(actionIndex)).thenReturn(x);
+      when(event.getY(actionIndex)).thenReturn(y);
+      when(event.getToolType(actionIndex)).thenReturn(toolType);
       when(event.isFromSource(InputDevice.SOURCE_CLASS_POINTER)).thenReturn(true);
       when(event.getAxisValue(MotionEvent.AXIS_HSCROLL, pointerId)).thenReturn(x);
       when(event.getAxisValue(MotionEvent.AXIS_VSCROLL, pointerId)).thenReturn(y);
       // Use x and y values for convenience.
       when(event.getAxisValue(MotionEvent.AXIS_DISTANCE, pointerId)).thenReturn(x);
       when(event.getAxisValue(MotionEvent.AXIS_TILT, pointerId)).thenReturn(y);
-      when(event.getPressure(0)).thenReturn(pressure);
+      when(event.getPressure(actionIndex)).thenReturn(pressure);
+      // Use x and y values for convenience.
+      when(event.getSize(actionIndex)).thenReturn(x);
+      when(event.getToolMajor(actionIndex)).thenReturn(x);
+      when(event.getToolMinor(actionIndex)).thenReturn(y);
       return event;
     }
   }
@@ -464,10 +490,10 @@ public class AndroidTouchProcessorTest {
     MotionEventMocker mocker =
         new MotionEventMocker(
             0, InputDevice.SOURCE_STYLUS, MotionEvent.TOOL_TYPE_STYLUS);
-    final float x = 10.0f;
-    final float y = 20.0f;
+    final float distance = 10.0f;
+    final float tilt = 20.0f;
     final MotionEvent event =
-        mocker.mockEvent(MotionEvent.ACTION_DOWN, x, y, 0);
+        mocker.mockEvent(MotionEvent.ACTION_DOWN, distance, tilt, 0);
     boolean handled = touchProcessor.onTouchEvent(event);
 
     InOrder inOrder = inOrder(mockRenderer);
@@ -476,10 +502,42 @@ public class AndroidTouchProcessorTest {
         .dispatchPointerDataPacket(packetCaptor.capture(), packetSizeCaptor.capture());
     ByteBuffer packet = packetCaptor.getValue();
     assertEquals(AndroidTouchProcessor.PointerDeviceKind.STYLUS, readPointerDeviceKind(packet));
-    assertEquals((double)x, readDistance(packet));
+    assertEquals((double)distance, readDistance(packet));
     // Always zero.
     assertEquals(0.0, readDistanceMax(packet));
-    assertEquals((double)y, readStylusTilt(packet));
+    assertEquals((double)tilt, readStylusTilt(packet));
+
+    inOrder.verifyNoMoreInteractions();
+  }
+
+  @Test
+  public void sizeAndRadius() {
+    MotionEventMocker mocker =
+        new MotionEventMocker(
+            0, InputDevice.SOURCE_STYLUS, MotionEvent.TOOL_TYPE_STYLUS);
+    final float size = 10.0f;
+    final float radiusMajor = size;
+    final float radiusMinor = 30.0f;
+    final MotionEvent event =
+        mocker.mockEvent(MotionEvent.ACTION_DOWN, size, radiusMinor, 0);
+    boolean handled = touchProcessor.onTouchEvent(event);
+
+    InOrder inOrder = inOrder(mockRenderer);
+    inOrder
+        .verify(mockRenderer)
+        .dispatchPointerDataPacket(packetCaptor.capture(), packetSizeCaptor.capture());
+    ByteBuffer packet = packetCaptor.getValue();
+
+    verify(event).getSize(0);
+    verify(event).getToolMajor(0);
+    verify(event).getToolMinor(0);
+
+    assertEquals((double)size, readSize(packet));
+    assertEquals((double)radiusMajor, readRadiusMajor(packet));
+    assertEquals((double)radiusMinor, readRadiusMinor(packet));
+    // Always zero.
+    assertEquals(0.0, readRadiusMin(packet));
+    assertEquals(0.0, readRadiusMax(packet));
 
     inOrder.verifyNoMoreInteractions();
   }
