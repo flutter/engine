@@ -389,7 +389,8 @@ RuntimeController::ComputePlatformResolvedLocale(
 }
 
 // |PlatformConfigurationClient|
-void RuntimeController::ChannelListenedTo(const std::string& name, bool listening) {
+void RuntimeController::ChannelListenedTo(const std::string& name,
+                                          bool listening) {
   client_.ChannelListenedTo(name, listening);
 }
 

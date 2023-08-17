@@ -650,7 +650,8 @@ class Shell final : public PlatformView::Delegate,
   fml::TimePoint GetCurrentTimePoint() override;
 
   // |Engine::Delegate|
-  void OnEngineChannelListenedTo(const std::string& name, bool listening) override;
+  void OnEngineChannelListenedTo(const std::string& name,
+                                 bool listening) override;
 
   // |Rasterizer::Delegate|
   void OnFrameRasterized(const FrameTiming&) override;

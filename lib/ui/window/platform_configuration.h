@@ -222,7 +222,7 @@ class PlatformConfigurationClient {
   ///
   /// @param[in]  name             The name of the platform channel to which a
   ///                              listener has been registered or cleared.
-  /// 
+  ///
   /// @param[in]  listening        Whether the listener has been set (true) or
   ///                              cleared (false).
   ///
@@ -532,7 +532,8 @@ class PlatformConfigurationNativeApi {
   static void RespondToPlatformMessage(int response_id,
                                        const tonic::DartByteData& data);
 
-  static void PlatformChannelListenedTo(const std::string& name, bool listening);
+  static void PlatformChannelListenedTo(const std::string& name,
+                                        bool listening);
 
   //--------------------------------------------------------------------------
   /// @brief      Requests the Dart VM to adjusts the GC heuristics based on

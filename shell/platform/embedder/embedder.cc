@@ -1881,9 +1881,12 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
                                       user_data]() { return ptr(user_data); };
   }
 
-  flutter::PlatformViewEmbedder::ChannelListenedToCallback channel_listened_to_callback = nullptr;
+  flutter::PlatformViewEmbedder::ChannelListenedToCallback
+      channel_listened_to_callback = nullptr;
   if (SAFE_ACCESS(args, channel_listened_to_callback, nullptr) != nullptr) {
-    channel_listened_to_callback = [ptr = args->channel_listened_to_callback, user_data](const std::string& name, bool listening) {
+    channel_listened_to_callback = [ptr = args->channel_listened_to_callback,
+                                    user_data](const std::string& name,
+                                               bool listening) {
       size_t name_len = name.size();
       ptr(name.data(), name_len, listening, user_data);
     };

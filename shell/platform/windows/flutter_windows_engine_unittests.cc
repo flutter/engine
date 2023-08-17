@@ -1128,14 +1128,14 @@ TEST_F(FlutterWindowsEngineTest, ChannelListenedTo) {
 
   static bool listened_to = false;
   modifier.embedder_api().Run = MOCK_ENGINE_PROC(
-      Run, ([old_run](
-                size_t version, const FlutterRendererConfig* config,
-                const FlutterProjectArgs* args, void* user_data,
-                FLUTTER_API_SYMBOL(FlutterEngine) * engine_out) {
+      Run, ([old_run](size_t version, const FlutterRendererConfig* config,
+                      const FlutterProjectArgs* args, void* user_data,
+                      FLUTTER_API_SYMBOL(FlutterEngine) * engine_out) {
         FlutterProjectArgs new_args = *args;
-        new_args.channel_listened_to_callback = [](const char* name, size_t len, bool listening, void* user_data) {
-          listened_to = true;
-        };
+        new_args.channel_listened_to_callback =
+            [](const char* name, size_t len, bool listening, void* user_data) {
+              listened_to = true;
+            };
         return old_run(version, config, &new_args, user_data, engine_out);
       }));
   engine->Run();

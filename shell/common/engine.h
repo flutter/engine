@@ -299,11 +299,12 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     ///
     /// @param[in]  name             The name of the platform channel to which a
     ///                              listener has been registered or cleared.
-    /// 
+    ///
     /// @param[in]  listening        Whether the listener has been set (true) or
     ///                              cleared (false).
     ///
-    virtual void OnEngineChannelListenedTo(const std::string& name, bool listening) = 0;
+    virtual void OnEngineChannelListenedTo(const std::string& name,
+                                           bool listening) = 0;
   };
 
   //----------------------------------------------------------------------------
