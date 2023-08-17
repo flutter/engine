@@ -103,6 +103,10 @@ public class AndroidTouchProcessorTest {
     return buffer.getDouble(18 * AndroidTouchProcessor.BYTES_PER_FIELD);
   }
 
+  private double readStylusTilt(ByteBuffer buffer) {
+    return buffer.getDouble(25 * AndroidTouchProcessor.BYTES_PER_FIELD);
+  }
+
   private double readScrollDeltaX(ByteBuffer buffer) {
     return buffer.getDouble(27 * AndroidTouchProcessor.BYTES_PER_FIELD);
   }
@@ -151,8 +155,9 @@ public class AndroidTouchProcessorTest {
       when(event.isFromSource(InputDevice.SOURCE_CLASS_POINTER)).thenReturn(true);
       when(event.getAxisValue(MotionEvent.AXIS_HSCROLL, pointerId)).thenReturn(x);
       when(event.getAxisValue(MotionEvent.AXIS_VSCROLL, pointerId)).thenReturn(y);
-      // Use x value for convenience.
+      // Use x and y values for convenience.
       when(event.getAxisValue(MotionEvent.AXIS_DISTANCE, pointerId)).thenReturn(x);
+      when(event.getAxisValue(MotionEvent.AXIS_TILT, pointerId)).thenReturn(y);
       when(event.getPressure(0)).thenReturn(pressure);
       return event;
     }
@@ -460,8 +465,9 @@ public class AndroidTouchProcessorTest {
         new MotionEventMocker(
             0, InputDevice.SOURCE_STYLUS, MotionEvent.TOOL_TYPE_STYLUS);
     final float x = 10.0f;
+    final float y = 20.0f;
     final MotionEvent event =
-        mocker.mockEvent(MotionEvent.ACTION_DOWN, x, 20.0f, 0);
+        mocker.mockEvent(MotionEvent.ACTION_DOWN, x, y, 0);
     boolean handled = touchProcessor.onTouchEvent(event);
 
     InOrder inOrder = inOrder(mockRenderer);
@@ -473,6 +479,7 @@ public class AndroidTouchProcessorTest {
     assertEquals((double)x, readDistance(packet));
     // Always zero.
     assertEquals(0.0, readDistanceMax(packet));
+    assertEquals((double)y, readStylusTilt(packet));
 
     inOrder.verifyNoMoreInteractions();
   }
