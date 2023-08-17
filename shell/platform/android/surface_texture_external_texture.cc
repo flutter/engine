@@ -24,9 +24,9 @@ namespace flutter {
 SurfaceTextureExternalTexture::SurfaceTextureExternalTexture(
     int64_t id,
     const fml::jni::ScopedJavaGlobalRef<jobject>& surface_texture,
-    std::shared_ptr<PlatformViewAndroidJNI> jni_facade)
+    const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade)
     : Texture(id),
-      jni_facade_(std::move(jni_facade)),
+      jni_facade_(jni_facade),
       surface_texture_(surface_texture),
       transform_(SkMatrix::I()) {}
 
@@ -65,7 +65,7 @@ void SurfaceTextureExternalTexture::Paint(PaintContext& context,
         flutter::DlCanvas::SrcRectConstraint::kStrict  // enforce edges
     );
   } else {
-    FML_LOG(ERROR) << "No DlImage available.";
+    FML_LOG(WARNING) << "No DlImage available.";
   }
 }
 
