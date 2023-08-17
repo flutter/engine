@@ -1064,6 +1064,10 @@ typedef int64_t FlutterPlatformViewIdentifier;
 FLUTTER_EXPORT
 extern const int32_t kFlutterSemanticsNodeIdBatchEnd;
 
+// The enumeration of possible string attributes that affect how assistive
+// technologies announce a string.
+//
+// See dart:ui's implementers of the StringAttribute abstract class.
 typedef enum {
   // Indicates the string should be announced character by character.
   kSpellOut,
