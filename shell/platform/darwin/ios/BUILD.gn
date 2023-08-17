@@ -263,7 +263,6 @@ source_set("ios_test_flutter_mrc") {
 }
 
 shared_library("ios_test_flutter") {
-  testonly = true
   visibility = [ ":*" ]
   cflags = [
     "-fvisibility=default",
@@ -302,7 +301,6 @@ shared_library("ios_test_flutter") {
     "framework/Source/connection_collection_test.mm",
   ]
   deps = [
-    ":flutter_framework",
     ":flutter_framework_source",
     ":flutter_framework_source_arc",
     ":ios_gpu_configuration",
@@ -465,4 +463,8 @@ action("flutter_framework") {
   ]
 
   deps = [ ":universal_flutter_framework" ]
+
+  if (is_debug) {
+    deps += [ ":ios_test_flutter" ]
+  }
 }
