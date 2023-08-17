@@ -1124,7 +1124,25 @@ TEST_F(FlutterWindowsEngineTest, ChannelListenedTo) {
   FlutterWindowsEngine* engine = view.GetEngine();
   EngineModifier modifier(engine);
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
+  auto old_run = modifier.embedder_api().Run;
+
+  static bool listened_to = false;
+  modifier.embedder_api().Run = MOCK_ENGINE_PROC(
+      Run, ([old_run](
+                size_t version, const FlutterRendererConfig* config,
+                const FlutterProjectArgs* args, void* user_data,
+                FLUTTER_API_SYMBOL(FlutterEngine) * engine_out) {
+        FlutterProjectArgs new_args = *args;
+        new_args.channel_listened_to_callback = [](const char* name, size_t len, bool listening, void* user_data) {
+          listened_to = true;
+        };
+        return old_run(version, config, &new_args, user_data, engine_out);
+      }));
   engine->Run();
+
+  while (!listened_to) {
+    engine->task_runner()->ProcessTasks();
+  }
 }
 
 }  // namespace testing
