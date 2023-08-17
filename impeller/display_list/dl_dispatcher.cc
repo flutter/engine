@@ -279,17 +279,9 @@ static void ConvertStops(T* gradient,
 
   auto* dl_colors = gradient->colors();
   auto* dl_stops = gradient->stops();
-  if (dl_stops[0] != 0.0) {
-    colors->emplace_back(skia_conversions::ToColor(dl_colors[0]));
-    stops->emplace_back(0);
-  }
   for (auto i = 0; i < gradient->stop_count(); i++) {
     colors->emplace_back(skia_conversions::ToColor(dl_colors[i]));
-    stops->emplace_back(dl_stops[i]);
-  }
-  if (stops->back() != 1.0) {
-    colors->emplace_back(colors->back());
-    stops->emplace_back(1.0);
+    stops->emplace_back(std::clamp(dl_stops[i], 0.0f, 1.0f));
   }
 }
 
