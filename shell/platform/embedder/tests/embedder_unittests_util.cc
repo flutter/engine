@@ -153,6 +153,7 @@ bool ImageMatchesFixture(const std::string& fixture_file_name,
                          const sk_sp<SkImage>& scene_image) {
   printf("ImageMatchesFixture sync\n");fflush(stdout);
   fml::FileMapping fixture_image_mapping(OpenFixture(fixture_file_name));
+  printf("ImageMatchesFixture sync 1\n");fflush(stdout);
 
   FML_CHECK(fixture_image_mapping.GetSize() != 0u)
       << "Could not find fixture: " << fixture_file_name;
