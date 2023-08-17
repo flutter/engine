@@ -108,9 +108,9 @@ TEST_F(EmbedderTest, ExternalTextureMetal) {
   builder.SetMetalRendererConfig(texture_size);
 
   auto engine = builder.LaunchEngine();
-  ASSERT_TRUE(engine.is_valid());
+  EXPECT_TRUE(engine.is_valid());
 
-  ASSERT_EQ(FlutterEngineRegisterExternalTexture(engine.get(), texture_id), kSuccess);
+  EXPECT_EQ(FlutterEngineRegisterExternalTexture(engine.get(), texture_id), kSuccess);
 
   auto rendered_scene = context.GetNextSceneImage();
 
@@ -120,9 +120,9 @@ TEST_F(EmbedderTest, ExternalTextureMetal) {
   event.width = texture_size.width();
   event.height = texture_size.height();
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event), kSuccess);
+  EXPECT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event), kSuccess);
 
-  ASSERT_TRUE(ImageMatchesFixture("external_texture_metal.png", rendered_scene));
+  EXPECT_TRUE(ImageMatchesFixture("external_texture_metal.png", rendered_scene));
 }
 
 TEST_F(EmbedderTest, MetalCompositorMustBeAbleToRenderPlatformViews) {
@@ -220,7 +220,7 @@ TEST_F(EmbedderTest, CanRenderSceneWithoutCustomCompositorMetal) {
 
   printf("main 1\n");fflush(stdout);
   auto engine = builder.LaunchEngine();
-  ASSERT_TRUE(engine.is_valid());
+  EXPECT_TRUE(engine.is_valid());
   printf("main 2\n");fflush(stdout);
 
   // Send a window metrics events so frames may be scheduled.
@@ -229,10 +229,10 @@ TEST_F(EmbedderTest, CanRenderSceneWithoutCustomCompositorMetal) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event), kSuccess);
+  EXPECT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event), kSuccess);
   printf("main 3\n");fflush(stdout);
 
-  ASSERT_TRUE(ImageMatchesFixture("scene_without_custom_compositor.png", rendered_scene));
+  EXPECT_TRUE(ImageMatchesFixture("scene_without_custom_compositor.png", rendered_scene));
   printf("main 4\n");fflush(stdout);
 }
 
