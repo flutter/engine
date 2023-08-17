@@ -258,10 +258,6 @@ class FlutterWindowsEngine {
   // Called when a WM_DWMCOMPOSITIONCHANGED message is received.
   void OnDwmCompositionChanged();
 
-  // Called in response to the framework registering a ServiceBindings.
-  // Registers the top level handler for the WM_CLOSE window message.
-  void OnApplicationLifecycleEnabled();
-
   // Called when a Window receives an event that may alter the application
   // lifecycle state.
   void OnWindowStateEvent(HWND hwnd, WindowStateEvent event);

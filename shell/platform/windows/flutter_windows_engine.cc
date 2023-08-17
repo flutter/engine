@@ -797,16 +797,6 @@ void FlutterWindowsEngine::OnDwmCompositionChanged() {
   view_->OnDwmCompositionChanged();
 }
 
-// TODO(yaakovschectman): This enables the flutter/lifecycle channel
-// once the System.initializationComplete message is received on
-// the flutter/system channel. This is a short-term workaround to
-// ensure the framework is initialized and ready to accept lifecycle
-// messages. This cross-channel dependency should be removed.
-// See: https://github.com/flutter/flutter/issues/132514
-void FlutterWindowsEngine::OnApplicationLifecycleEnabled() {
-  lifecycle_manager_->BeginProcessingLifecycle();
-}
-
 void FlutterWindowsEngine::OnWindowStateEvent(HWND hwnd,
                                               WindowStateEvent event) {
   lifecycle_manager_->OnWindowStateEvent(hwnd, event);
