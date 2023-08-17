@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "flow/frame_timings.h"
+#include "flutter/common/constants.h"
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/flow/layers/offscreen_surface.h"
 #include "flutter/fml/time/time_delta.h"
@@ -156,6 +157,14 @@ void Rasterizer::NotifyLowMemoryWarning() const {
   context->performDeferredCleanup(std::chrono::milliseconds(0));
 }
 
+void Rasterizer::CollectView(int64_t view_id) {
+  // TODO(dkwingsmt): When Rasterizer supports multi-view, this method should
+  // correctly clear the view corresponding to the ID.
+  if (view_id == kFlutterImplicitViewId) {
+    last_layer_tree_.reset();
+  }
+}
+
 std::shared_ptr<flutter::TextureRegistry> Rasterizer::GetTextureRegistry() {
   return compositor_context_->texture_registry();
 }
@@ -200,6 +209,9 @@ RasterStatus Rasterizer::Draw(
   RasterStatus raster_status = RasterStatus::kFailed;
   LayerTreePipeline::Consumer consumer =
       [&](std::unique_ptr<LayerTreeItem> item) {
+        // TODO(dkwingsmt): Use a proper view ID when Rasterizer supports
+        // multi-view.
+        int64_t view_id = kFlutterImplicitViewId;
         std::unique_ptr<LayerTree> layer_tree = std::move(item->layer_tree);
         std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =
             std::move(item->frame_timings_recorder);

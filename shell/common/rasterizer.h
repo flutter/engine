@@ -207,6 +207,19 @@ class Rasterizer final : public SnapshotDelegate,
   fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> GetSnapshotDelegate() const;
 
   //----------------------------------------------------------------------------
+  /// @brief      Deallocate the resources for displaying a view.
+  ///
+  ///             This method should be called when a view is removed.
+  ///
+  ///             The rasterizer don't need views to be registered. Last-frame
+  ///             states for views are recorded when layer trees are rasterized
+  ///             to the view and used during `Rasterizer::DrawLastLayerTree`.
+  ///
+  /// @param[in]  view_id  The ID of the view.
+  ///
+  void CollectView(int64_t view_id);
+
+  //----------------------------------------------------------------------------
   /// @brief      Sometimes, it may be necessary to render the same frame again
   ///             without having to wait for the framework to build a whole new
   ///             layer tree describing the same contents. One such case is when
