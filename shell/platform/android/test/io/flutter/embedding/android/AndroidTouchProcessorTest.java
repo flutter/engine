@@ -107,15 +107,6 @@ public class AndroidTouchProcessorTest {
       when(event.getDevice()).thenReturn(null);
       when(event.getSource()).thenReturn(source);
       when(event.getEventTime()).thenReturn(eventTimeMilliseconds);
-      // Ensure that isFromSource does not auto default to false when source is passed in.
-      when(event.isFromSource(InputDevice.SOURCE_CLASS_POINTER))
-          .thenReturn(source == InputDevice.SOURCE_CLASS_POINTER);
-      when(event.isFromSource(InputDevice.SOURCE_MOUSE))
-          .thenReturn(source == InputDevice.SOURCE_MOUSE);
-      when(event.isFromSource(InputDevice.SOURCE_STYLUS))
-          .thenReturn(source == InputDevice.SOURCE_STYLUS);
-      when(event.isFromSource(InputDevice.SOURCE_TOUCHSCREEN))
-          .thenReturn(source == InputDevice.SOURCE_TOUCHSCREEN);
       when(event.getPointerCount()).thenReturn(1);
       when(event.getActionMasked()).thenReturn(action);
       when(event.getActionIndex()).thenReturn(0);
@@ -124,6 +115,7 @@ public class AndroidTouchProcessorTest {
       when(event.getX(0)).thenReturn(x);
       when(event.getY(0)).thenReturn(y);
       when(event.getToolType(0)).thenReturn(toolType);
+      when(event.isFromSource(InputDevice.SOURCE_CLASS_POINTER)).thenReturn(true);
       when(event.getAxisValue(MotionEvent.AXIS_HSCROLL, pointerId)).thenReturn(x);
       when(event.getAxisValue(MotionEvent.AXIS_VSCROLL, pointerId)).thenReturn(y);
       return event;
@@ -318,7 +310,7 @@ public class AndroidTouchProcessorTest {
   public void unexpectedPointerChange() {
     // Regression test for https://github.com/flutter/flutter/issues/129765
     MotionEventMocker mocker =
-        new MotionEventMocker(0, InputDevice.SOURCE_CLASS_POINTER, MotionEvent.TOOL_TYPE_MOUSE);
+        new MotionEventMocker(0, InputDevice.SOURCE_MOUSE, MotionEvent.TOOL_TYPE_MOUSE);
 
     touchProcessor.onTouchEvent(mocker.mockEvent(MotionEvent.ACTION_DOWN, 0.0f, 0.0f, 0));
     InOrder inOrder = inOrder(mockRenderer);
