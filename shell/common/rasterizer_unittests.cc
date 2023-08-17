@@ -563,7 +563,7 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenPipelineIsEmpty) {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     auto no_discard = [](LayerTree&) { return false; };
     DrawStatus status = rasterizer->Draw(pipeline, no_discard);
-    EXPECT_EQ(status, DrawStatus::kFailed);
+    EXPECT_EQ(status, DrawStatus::kPipelineUnavailable);
     latch.Signal();
   });
   latch.Wait();

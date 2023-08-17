@@ -55,6 +55,8 @@ enum class DrawStatus {
   // Layer tree was discarded due to LayerTreeDiscardCallback or inability to
   // access the GPU.
   kDiscarded,
+  kWrongThread,
+  kPipelineUnavailable,
 };
 
 //------------------------------------------------------------------------------
