@@ -298,6 +298,11 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     /// @brief      Synchronously invokes platform-specific APIs to apply the
     ///             system text scaling on the given unscaled font size.
     ///
+    ///             Platforms that support this feature (currently it's only
+    ///             implemented for Android SDK level 34+) will send a valid
+    ///             configuration_id to potential callers, before this method
+    ///             can be called.
+    ///
     /// @param[in]  unscaled_font_size  The unscaled font size specified by the
     ///                                 app developer. The value is in logical
     ///                                 pixels, and is guaranteed to be finite

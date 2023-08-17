@@ -1332,6 +1332,7 @@ class PlatformDispatcher {
     final int unscaledFloor = unscaledFontSize.floor();
     final int unscaledCeil = unscaledFontSize.ceil();
     if (unscaledFloor == unscaledCeil) {
+      // No need to interpolate if the input value is an integer.
       return _scaleAndMemoize(unscaledFloor) ?? unscaledFontSize * textScaleFactor;
     }
     assert(unscaledCeil - unscaledFloor == 1, 'Unexpected interpolation range: $unscaledFloor - $unscaledCeil.');
@@ -1344,6 +1345,7 @@ class PlatformDispatcher {
 
   // The cache is cleared when the text scale factor changes.
   Map<int, double>? _cachedFontSizes;
+  // This method returns null if an error is encountered.
   double? _scaleAndMemoize(int unscaledFontSize) {
     final int? configurationId = _configuration.configurationId;
     if (configurationId == null) {
@@ -1357,8 +1359,8 @@ class PlatformDispatcher {
       return cachedValue;
     }
 
-    final double unscaledFontSizeInt = unscaledFontSize.toDouble();
-    final double fontSize = PlatformDispatcher._getScaledFontSize(unscaledFontSizeInt, configurationId);
+    final double unscaledFontSizeDouble = unscaledFontSize.toDouble();
+    final double fontSize = PlatformDispatcher._getScaledFontSize(unscaledFontSizeDouble, configurationId);
     if (fontSize >= 0) {
       return (_cachedFontSizes ??= <int, double>{})[unscaledFontSize] = fontSize;
     }
@@ -1376,10 +1378,6 @@ class PlatformDispatcher {
   // Calls the platform's text scaling implementation to scale the given
   // `unscaledFontSize`.
   //
-  // Currently this is only implemented on newer versions of Android (SDK level
-  // 34, using the `TypedValue#applyDimension` API). This function returns -1 on
-  // other platforms.
-  //
   // The `configurationId` parameter tells the embedder which platform
   // configuration to use for computing the scaled font size. When the user
   // changes the platform configuration, the configuration data will first be
@@ -1391,7 +1389,11 @@ class PlatformDispatcher {
   // (`_configuration.configurationId`). Using an incorrect id could result in
   // an unrecoverable error.
   //
-  // Returns -1 when the specified configurationId does not match any configuration.
+  // Currently this is only implemented on newer versions of Android (SDK level
+  // 34, using the `TypedValue#applyDimension` API). Platforms that do not have
+  // the capability will never send a `configurationId` to [PlatformDispatcher],
+  // and should not call this method. This method returns -1 when the specified
+  // configurationId does not match any configuration.
   @Native<Double Function(Double, Int)>(symbol: 'PlatformConfigurationNativeApi::GetScaledFontSize')
   external static double _getScaledFontSize(double unscaledFontSize, int configurationId);
 }
