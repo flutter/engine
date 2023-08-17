@@ -549,6 +549,8 @@ class Rasterizer final : public SnapshotDelegate,
     kRetry,
     // Failed to rasterize the frame.
     kFailed,
+    // Layer tree was discarded due to LayerTreeDiscardCallback.
+    kDiscarded,
     // Layer tree was discarded due to inability to access the GPU.
     kGpuUnavailable,
   };
@@ -634,15 +636,18 @@ class Rasterizer final : public SnapshotDelegate,
       bool compressed);
 
   DoDrawStatus DoDraw(
+      LayerTreeDiscardCallback& discard_callback,
       std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
       std::unique_ptr<flutter::LayerTree> layer_tree,
       float device_pixel_ratio);
 
-  DrawSurfaceStatus DrawToSurface(FrameTimingsRecorder& frame_timings_recorder,
+  DrawSurfaceStatus DrawToSurface(LayerTreeDiscardCallback& discard_callback,
+                                  FrameTimingsRecorder& frame_timings_recorder,
                                   flutter::LayerTree& layer_tree,
                                   float device_pixel_ratio);
 
   DrawSurfaceStatus DrawToSurfaceUnsafe(
+      LayerTreeDiscardCallback& discard_callback,
       FrameTimingsRecorder& frame_timings_recorder,
       flutter::LayerTree& layer_tree,
       float device_pixel_ratio);

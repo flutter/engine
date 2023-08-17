@@ -182,8 +182,12 @@ void Rasterizer::DrawLastLayerTree(
   if (!last_layer_tree_ || !surface_) {
     return;
   }
-  DrawSurfaceStatus draw_surface_status = DrawToSurface(
-      *frame_timings_recorder, *last_layer_tree_, last_device_pixel_ratio_);
+  LayerTreeDiscardCallback no_discard = [](int64_t, flutter::LayerTree&) {
+    return false;
+  };
+  DrawSurfaceStatus draw_surface_status =
+      DrawToSurface(no_discard, *frame_timings_recorder, *last_layer_tree_,
+                    last_device_pixel_ratio_);
 
   // EndFrame should perform cleanups for the external_view_embedder.
   if (external_view_embedder_ && external_view_embedder_->GetUsedThisFrame()) {
@@ -210,19 +214,13 @@ DrawStatus Rasterizer::Draw(const std::shared_ptr<LayerTreePipeline>& pipeline,
   DoDrawStatus do_draw_status = DoDrawStatus::kSuccess;
   LayerTreePipeline::Consumer consumer =
       [&](std::unique_ptr<LayerTreeItem> item) {
-        // TODO(dkwingsmt): Use a proper view ID when Rasterizer supports
-        // multi-view.
-        int64_t view_id = kFlutterImplicitViewId;
         std::unique_ptr<LayerTree> layer_tree = std::move(item->layer_tree);
         std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =
             std::move(item->frame_timings_recorder);
         float device_pixel_ratio = item->device_pixel_ratio;
-        if (discard_callback(view_id, *layer_tree.get())) {
-          do_draw_status = DoDrawStatus::kDiscarded;
-        } else {
-          do_draw_status = DoDraw(std::move(frame_timings_recorder),
-                                  std::move(layer_tree), device_pixel_ratio);
-        }
+        do_draw_status =
+            DoDraw(discard_callback, std::move(frame_timings_recorder),
+                   std::move(layer_tree), device_pixel_ratio);
       };
 
   PipelineConsumeResult consume_result = pipeline->Consume(consumer);
@@ -398,6 +396,7 @@ fml::Milliseconds Rasterizer::GetFrameBudget() const {
 };
 
 Rasterizer::DoDrawStatus Rasterizer::DoDraw(
+    LayerTreeDiscardCallback& discard_callback,
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
     std::unique_ptr<flutter::LayerTree> layer_tree,
     float device_pixel_ratio) {
@@ -416,7 +415,8 @@ Rasterizer::DoDrawStatus Rasterizer::DoDraw(
   persistent_cache->ResetStoredNewShaders();
 
   DrawSurfaceStatus draw_surface_status =
-      DrawToSurface(*frame_timings_recorder, *layer_tree, device_pixel_ratio);
+      DrawToSurface(discard_callback, *frame_timings_recorder, *layer_tree,
+                    device_pixel_ratio);
   if (draw_surface_status == DrawSurfaceStatus::kSuccess) {
     last_layer_tree_ = std::move(layer_tree);
     last_device_pixel_ratio_ = device_pixel_ratio;
@@ -428,6 +428,8 @@ Rasterizer::DoDrawStatus Rasterizer::DoDraw(
     return DoDrawStatus::kRetry;
   } else if (draw_surface_status == DrawSurfaceStatus::kGpuUnavailable) {
     return DoDrawStatus::kGpuUnavailable;
+  } else if (draw_surface_status == DrawSurfaceStatus::kDiscarded) {
+    return DoDrawStatus::kDiscarded;
   }
   FML_DCHECK(draw_surface_status == DrawSurfaceStatus::kSuccess ||
              draw_surface_status == DrawSurfaceStatus::kFailed);
@@ -509,6 +511,7 @@ Rasterizer::DoDrawStatus Rasterizer::DoDraw(
 }
 
 Rasterizer::DrawSurfaceStatus Rasterizer::DrawToSurface(
+    LayerTreeDiscardCallback& discard_callback,
     FrameTimingsRecorder& frame_timings_recorder,
     flutter::LayerTree& layer_tree,
     float device_pixel_ratio) {
@@ -517,8 +520,9 @@ Rasterizer::DrawSurfaceStatus Rasterizer::DrawToSurface(
 
   DrawSurfaceStatus draw_surface_status;
   if (surface_->AllowsDrawingWhenGpuDisabled()) {
-    draw_surface_status = DrawToSurfaceUnsafe(frame_timings_recorder,
-                                              layer_tree, device_pixel_ratio);
+    draw_surface_status =
+        DrawToSurfaceUnsafe(discard_callback, frame_timings_recorder,
+                            layer_tree, device_pixel_ratio);
   } else {
     delegate_.GetIsGpuDisabledSyncSwitch()->Execute(
         fml::SyncSwitch::Handlers()
@@ -526,8 +530,9 @@ Rasterizer::DrawSurfaceStatus Rasterizer::DrawToSurface(
               draw_surface_status = DrawSurfaceStatus::kGpuUnavailable;
             })
             .SetIfFalse([&] {
-              draw_surface_status = DrawToSurfaceUnsafe(
-                  frame_timings_recorder, layer_tree, device_pixel_ratio);
+              draw_surface_status =
+                  DrawToSurfaceUnsafe(discard_callback, frame_timings_recorder,
+                                      layer_tree, device_pixel_ratio);
             }));
   }
 
@@ -538,10 +543,18 @@ Rasterizer::DrawSurfaceStatus Rasterizer::DrawToSurface(
 /// when iOS is backgrounded, for example.
 /// \see Rasterizer::DrawToSurface
 Rasterizer::DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
+    LayerTreeDiscardCallback& discard_callback,
     FrameTimingsRecorder& frame_timings_recorder,
     flutter::LayerTree& layer_tree,
     float device_pixel_ratio) {
   FML_DCHECK(surface_);
+
+  // TODO(dkwingsmt): Use a proper view ID when Rasterizer supports
+  // multi-view.
+  int64_t view_id = kFlutterImplicitViewId;
+  if (discard_callback(view_id, layer_tree)) {
+    return DrawSurfaceStatus::kDiscarded;
+  }
 
   compositor_context_->ui_time().SetLapTime(
       frame_timings_recorder.GetBuildDuration());
