@@ -95,6 +95,14 @@ public class AndroidTouchProcessorTest {
     return buffer.getDouble(16 * AndroidTouchProcessor.BYTES_PER_FIELD);
   }
 
+  private double readDistance(ByteBuffer buffer) {
+    return buffer.getDouble(17 * AndroidTouchProcessor.BYTES_PER_FIELD);
+  }
+
+  private double readDistanceMax(ByteBuffer buffer) {
+    return buffer.getDouble(18 * AndroidTouchProcessor.BYTES_PER_FIELD);
+  }
+
   private double readScrollDeltaX(ByteBuffer buffer) {
     return buffer.getDouble(27 * AndroidTouchProcessor.BYTES_PER_FIELD);
   }
@@ -143,6 +151,8 @@ public class AndroidTouchProcessorTest {
       when(event.isFromSource(InputDevice.SOURCE_CLASS_POINTER)).thenReturn(true);
       when(event.getAxisValue(MotionEvent.AXIS_HSCROLL, pointerId)).thenReturn(x);
       when(event.getAxisValue(MotionEvent.AXIS_VSCROLL, pointerId)).thenReturn(y);
+      // Use x value for convenience.
+      when(event.getAxisValue(MotionEvent.AXIS_DISTANCE, pointerId)).thenReturn(x);
       when(event.getPressure(0)).thenReturn(pressure);
       return event;
     }
@@ -440,6 +450,29 @@ public class AndroidTouchProcessorTest {
     // Verify default range with null device.
     assertEquals(0.0, readPressureMin(packet));
     assertEquals(1.0, readPressureMax(packet));
+
+    inOrder.verifyNoMoreInteractions();
+  }
+
+  @Test
+  public void stylusDistance() {
+    MotionEventMocker mocker =
+        new MotionEventMocker(
+            0, InputDevice.SOURCE_STYLUS, MotionEvent.TOOL_TYPE_STYLUS);
+    final float x = 10.0f;
+    final MotionEvent event =
+        mocker.mockEvent(MotionEvent.ACTION_DOWN, x, 20.0f, 0);
+    boolean handled = touchProcessor.onTouchEvent(event);
+
+    InOrder inOrder = inOrder(mockRenderer);
+    inOrder
+        .verify(mockRenderer)
+        .dispatchPointerDataPacket(packetCaptor.capture(), packetSizeCaptor.capture());
+    ByteBuffer packet = packetCaptor.getValue();
+    assertEquals(AndroidTouchProcessor.PointerDeviceKind.STYLUS, readPointerDeviceKind(packet));
+    assertEquals((double)x, readDistance(packet));
+    // Always zero.
+    assertEquals(0.0, readDistanceMax(packet));
 
     inOrder.verifyNoMoreInteractions();
   }
