@@ -13,7 +13,6 @@
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
-#include "flutter/lib/ui/window/window.h"
 #include "flutter/runtime/dart_isolate_group_data.h"
 #include "flutter/runtime/isolate_configuration.h"
 #include "flutter/runtime/runtime_delegate.h"
@@ -159,13 +158,7 @@ bool RuntimeController::SetViewportMetrics(int64_t view_id,
 
   platform_data_.viewport_metrics_for_views[view_id] = metrics;
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    Window* window = platform_configuration->get_window(view_id);
-    if (window) {
-      window->UpdateWindowMetrics(metrics);
-      return true;
-    } else {
-      FML_LOG(WARNING) << "View ID " << view_id << " does not exist.";
-    }
+    return platform_configuration->UpdateViewMetrics(view_id, metrics);
   }
 
   return false;
@@ -350,15 +343,14 @@ void RuntimeController::ScheduleFrame() {
 void RuntimeController::Render(Scene* scene) {
   // TODO(dkwingsmt): Currently only supports a single window.
   int64_t view_id = kFlutterImplicitViewId;
-  auto window =
-      UIDartState::Current()->platform_configuration()->get_window(view_id);
-  if (window == nullptr) {
+  const ViewportMetrics* view_metrics =
+      UIDartState::Current()->platform_configuration()->GetMetrics(view_id);
+  if (view_metrics == nullptr) {
     return;
   }
-  const auto& viewport_metrics = window->viewport_metrics();
-  client_.Render(scene->takeLayerTree(viewport_metrics.physical_width,
-                                      viewport_metrics.physical_height),
-                 viewport_metrics.device_pixel_ratio);
+  client_.Render(scene->takeLayerTree(view_metrics->physical_width,
+                                      view_metrics->physical_height),
+                 view_metrics->device_pixel_ratio);
 }
 
 // |PlatformConfigurationClient|

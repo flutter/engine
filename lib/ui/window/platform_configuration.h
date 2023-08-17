@@ -14,9 +14,9 @@
 #include "flutter/assets/asset_manager.h"
 #include "flutter/fml/time/time_point.h"
 #include "flutter/lib/ui/semantics/semantics_update.h"
+#include "flutter/lib/ui/window/platform_message_response.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
-#include "flutter/lib/ui/window/window.h"
 #include "flutter/shell/common/display.h"
 #include "third_party/tonic/dart_persistent_value.h"
 #include "third_party/tonic/typed_data/dart_byte_data.h"
@@ -283,6 +283,18 @@ class PlatformConfiguration final {
   void RemoveView(int64_t view_id);
 
   //----------------------------------------------------------------------------
+  /// @brief      Update the view metrics for the specified view.
+  ///
+  ///             If the view is not found, silently return false.
+  ///
+  /// @param[in]  view_id  The ID of the view.
+  /// @param[in]  metrics  The new metrics of the view.
+  ///
+  /// @return     Whether the view is found.
+  ///
+  bool UpdateViewMetrics(int64_t view_id, const ViewportMetrics& metrics);
+
+  //----------------------------------------------------------------------------
   /// @brief      Update the specified display data in the framework.
   ///
   /// @param[in]  displays  The display data to send to Dart.
@@ -430,7 +442,7 @@ class PlatformConfiguration final {
   /// @return     a pointer to the Window. Returns nullptr if the ID is not
   ///             found.
   ///
-  Window* get_window(int window_id);
+  const ViewportMetrics* GetMetrics(int view_id);
 
   //----------------------------------------------------------------------------
   /// @brief      Responds to a previous platform message to the engine from the
@@ -457,7 +469,9 @@ class PlatformConfiguration final {
  private:
   PlatformConfigurationClient* client_;
   tonic::DartPersistentValue on_error_;
+  tonic::DartPersistentValue add_view_;
   tonic::DartPersistentValue remove_view_;
+  tonic::DartPersistentValue update_window_metrics_;
   tonic::DartPersistentValue update_displays_;
   tonic::DartPersistentValue update_locales_;
   tonic::DartPersistentValue update_user_settings_data_;
@@ -471,10 +485,8 @@ class PlatformConfiguration final {
   tonic::DartPersistentValue draw_frame_;
   tonic::DartPersistentValue report_timings_;
 
-  tonic::DartPersistentValue library_;
-
-  // All current views mapped from view IDs.
-  std::unordered_map<int64_t, std::unique_ptr<Window>> windows_;
+  // All current views' view metrics mapped from view IDs.
+  std::unordered_map<int64_t, ViewportMetrics> metrics_;
 
   // ID starts at 1 because an ID of 0 indicates that no response is expected.
   int next_response_id_ = 1;
