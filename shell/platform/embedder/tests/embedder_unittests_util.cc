@@ -151,9 +151,11 @@ bool WriteImageToDisk(const fml::UniqueFD& directory,
 
 bool ImageMatchesFixture(const std::string& fixture_file_name,
                          const sk_sp<SkImage>& scene_image) {
-  printf("ImageMatchesFixture sync\n");fflush(stdout);
+  printf("ImageMatchesFixture sync\n");
+  fflush(stdout);
   fml::FileMapping fixture_image_mapping(OpenFixture(fixture_file_name));
-  printf("ImageMatchesFixture sync 1\n");fflush(stdout);
+  printf("ImageMatchesFixture sync 1\n");
+  fflush(stdout);
 
   FML_CHECK(fixture_image_mapping.GetSize() != 0u)
       << "Could not find fixture: " << fixture_file_name;
@@ -164,7 +166,8 @@ bool ImageMatchesFixture(const std::string& fixture_file_name,
       SkImages::DeferredFromEncodedData(std::move(encoded_image))
           ->makeRasterImage();
 
-  printf("ImageMatchesFixture 1\n");fflush(stdout);
+  printf("ImageMatchesFixture 1\n");
+  fflush(stdout);
   FML_CHECK(fixture_image) << "Could not create image from fixture: "
                            << fixture_file_name;
 
@@ -178,16 +181,19 @@ bool ImageMatchesFixture(const std::string& fixture_file_name,
       << "Could not create image subset for fixture comparison: "
       << scene_image_subset;
 
-  printf("ImageMatchesFixture 2\n");fflush(stdout);
+  printf("ImageMatchesFixture 2\n");
+  fflush(stdout);
   const auto images_are_same =
       RasterImagesAreSame(scene_image_subset, fixture_image);
-  printf("ImageMatchesFixture 3\n");fflush(stdout);
+  printf("ImageMatchesFixture 3\n");
+  fflush(stdout);
 
   // If the images are not the same, this predicate is going to indicate test
   // failure. Dump both the actual image and the expectation to disk to the
   // test author can figure out what went wrong.
   if (!images_are_same) {
-    printf("ImageMatchesFixture diff\n");fflush(stdout);
+    printf("ImageMatchesFixture diff\n");
+    fflush(stdout);
     const auto fixtures_path = GetFixturesPath();
 
     const auto actual_file_name = "actual_" + fixture_file_name;
@@ -210,7 +216,8 @@ bool ImageMatchesFixture(const std::string& fixture_file_name,
                    << fml::paths::JoinPaths({fixtures_path, actual_file_name})
                    << std::endl;
   }
-  printf("ImageMatchesFixture 4\n");fflush(stdout);
+  printf("ImageMatchesFixture 4\n");
+  fflush(stdout);
   return images_are_same;
 }
 

@@ -690,7 +690,8 @@ class Shell final : public PlatformView::Delegate,
   fml::TimePoint GetLatestFrameTargetTime() const override;
 
   // |Rasterizer::Delegate|
-  bool ShouldDiscardLayerTree(flutter::LayerTree& layer_tree) override;
+  bool ShouldDiscardLayerTree(int64_t view_id,
+                              flutter::LayerTree& tree) override;
 
   // |ServiceProtocol::Handler|
   fml::RefPtr<fml::TaskRunner> GetServiceProtocolHandlerTaskRunner(

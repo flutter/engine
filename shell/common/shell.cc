@@ -1577,10 +1577,11 @@ fml::TimePoint Shell::GetLatestFrameTargetTime() const {
 }
 
 // |Rasterizer::Delegate|
-bool Shell::ShouldDiscardLayerTree(flutter::LayerTree& tree) {
+bool Shell::ShouldDiscardLayerTree(int64_t view_id, flutter::LayerTree& tree) {
   std::scoped_lock<std::mutex> lock(resize_mutex_);
-  return !expected_frame_size_.isEmpty() &&
-         tree.frame_size() != expected_frame_size_;
+  auto expected_frame_size = ExpectedFrameSize(view_id);
+  return !expected_frame_size.isEmpty() &&
+         tree.frame_size() != expected_frame_size;
 }
 
 // |ServiceProtocol::Handler|

@@ -119,7 +119,8 @@ class Rasterizer final : public SnapshotDelegate,
 
     virtual const Settings& GetSettings() const = 0;
 
-    virtual bool ShouldDiscardLayerTree(flutter::LayerTree& layer_tree) = 0;
+    virtual bool ShouldDiscardLayerTree(int64_t view_id,
+                                        flutter::LayerTree& tree) = 0;
   };
 
   //----------------------------------------------------------------------------

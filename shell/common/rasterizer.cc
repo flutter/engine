@@ -216,7 +216,7 @@ RasterStatus Rasterizer::Draw(
         std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =
             std::move(item->frame_timings_recorder);
         float device_pixel_ratio = item->device_pixel_ratio;
-        if (delegate_.ShouldDiscardLayerTree(*layer_tree.get())) {
+        if (delegate_.ShouldDiscardLayerTree(view_id, *layer_tree.get())) {
           raster_status = RasterStatus::kDiscarded;
         } else {
           raster_status = DoDraw(std::move(frame_timings_recorder),

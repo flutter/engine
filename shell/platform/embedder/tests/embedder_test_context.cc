@@ -257,7 +257,8 @@ std::future<sk_sp<SkImage>> EmbedderTestContext::GetNextSceneImage() {
   auto future = promise.get_future();
   SetNextSceneCallback(
       fml::MakeCopyable([promise = std::move(promise)](auto image) mutable {
-        printf("Assign GetNextSceneImage\n");fflush(stdout);
+        printf("Assign GetNextSceneImage\n");
+        fflush(stdout);
         promise.set_value(image);
       }));
   return future;

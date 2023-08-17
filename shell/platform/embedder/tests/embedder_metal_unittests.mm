@@ -218,10 +218,12 @@ TEST_F(EmbedderTest, CanRenderSceneWithoutCustomCompositorMetal) {
 
   auto rendered_scene = context.GetNextSceneImage();
 
-  printf("main 1\n");fflush(stdout);
+  printf("main 1\n");
+  fflush(stdout);
   auto engine = builder.LaunchEngine();
   EXPECT_TRUE(engine.is_valid());
-  printf("main 2\n");fflush(stdout);
+  printf("main 2\n");
+  fflush(stdout);
 
   // Send a window metrics events so frames may be scheduled.
   FlutterWindowMetricsEvent event = {};
@@ -230,10 +232,12 @@ TEST_F(EmbedderTest, CanRenderSceneWithoutCustomCompositorMetal) {
   event.height = 600;
   event.pixel_ratio = 1.0;
   EXPECT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event), kSuccess);
-  printf("main 3\n");fflush(stdout);
+  printf("main 3\n");
+  fflush(stdout);
 
   EXPECT_TRUE(ImageMatchesFixture("scene_without_custom_compositor.png", rendered_scene));
-  printf("main 4\n");fflush(stdout);
+  printf("main 4\n");
+  fflush(stdout);
 }
 
 TEST_F(EmbedderTest, TextureDestructionCallbackCalledWithoutCustomCompositorMetal) {

@@ -43,7 +43,7 @@ class MockDelegate : public Rasterizer::Delegate {
   MOCK_CONST_METHOD0(GetIsGpuDisabledSyncSwitch,
                      std::shared_ptr<const fml::SyncSwitch>());
   MOCK_CONST_METHOD0(GetSettings, const Settings&());
-  MOCK_METHOD1(ShouldDiscardLayerTree, bool(flutter::LayerTree&));
+  MOCK_METHOD2(ShouldDiscardLayerTree, bool(int64_t, flutter::LayerTree&));
 };
 
 class MockSurface : public Surface {
