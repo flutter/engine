@@ -243,6 +243,7 @@ public class AndroidTouchProcessor {
     if (pointerChange == -1) {
       return;
     }
+    final int pointerId = event.getPointerId(pointerIndex);
 
     int pointerKind = getPointerDeviceTypeForToolType(event.getToolType(pointerIndex));
     // We use this in lieu of using event.getRawX and event.getRawY as we wish to support
@@ -258,7 +259,7 @@ public class AndroidTouchProcessor {
         // Some implementations translate trackpad scrolling into a mouse down-move-up event
         // sequence with buttons: 0, such as ARC on a Chromebook. See #11420, a legacy
         // implementation that uses the same condition but converts differently.
-        ongoingPans.put(event.getPointerId(pointerIndex), viewToScreenCoords);
+        ongoingPans.put(pointerId, viewToScreenCoords);
       }
     } else if (pointerKind == PointerDeviceKind.STYLUS) {
       buttons = (event.getButtonState() >> 4) & 0xF;
@@ -267,7 +268,7 @@ public class AndroidTouchProcessor {
     }
 
     int panZoomType = -1;
-    boolean isTrackpadPan = ongoingPans.containsKey(event.getPointerId(pointerIndex));
+    boolean isTrackpadPan = ongoingPans.containsKey(pointerId);
     if (isTrackpadPan) {
       panZoomType = getPointerChangeForPanZoom(pointerChange);
       if (panZoomType == -1) {
@@ -298,13 +299,13 @@ public class AndroidTouchProcessor {
       packet.putLong(pointerKind); // kind
     }
     packet.putLong(signalKind); // signal_kind
-    packet.putLong(event.getPointerId(pointerIndex)); // device
+    packet.putLong(pointerId); // device
     packet.putLong(0); // pointer_identifier, will be generated in pointer_data_packet_converter.cc.
 
     if (isTrackpadPan) {
-      float[] panStart = ongoingPans.get(event.getPointerId(pointerIndex));
-      packet.putDouble(panStart[0]);
-      packet.putDouble(panStart[1]);
+      float[] panStart = ongoingPans.get(pointerId);
+      packet.putDouble(panStart[0]); // physical_x
+      packet.putDouble(panStart[1]); // physical_y
     } else {
       packet.putDouble(viewToScreenCoords[0]); // physical_x
       packet.putDouble(viewToScreenCoords[1]); // physical_y
@@ -385,7 +386,7 @@ public class AndroidTouchProcessor {
     }
 
     if (isTrackpadPan) {
-      float[] panStart = ongoingPans.get(event.getPointerId(pointerIndex));
+      float[] panStart = ongoingPans.get(pointerId);
       packet.putDouble(viewToScreenCoords[0] - panStart[0]);
       packet.putDouble(viewToScreenCoords[1] - panStart[1]);
     } else {
@@ -398,7 +399,7 @@ public class AndroidTouchProcessor {
     packet.putDouble(0.0); // rotation
 
     if (isTrackpadPan && (panZoomType == PointerChange.PAN_ZOOM_END)) {
-      ongoingPans.remove(event.getPointerId(pointerIndex));
+      ongoingPans.remove(pointerId);
     }
   }
 

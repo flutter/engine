@@ -62,6 +62,10 @@ public class AndroidTouchProcessorTest {
     return buffer.getLong(4 * AndroidTouchProcessor.BYTES_PER_FIELD);
   }
 
+  private long readDevice(ByteBuffer buffer) {
+    return buffer.getLong(5 * AndroidTouchProcessor.BYTES_PER_FIELD);
+  }
+
   private double readPointerPhysicalX(ByteBuffer buffer) {
     return buffer.getDouble(7 * AndroidTouchProcessor.BYTES_PER_FIELD);
   }
@@ -302,6 +306,29 @@ public class AndroidTouchProcessorTest {
     ByteBuffer packet = packetCaptor.getValue();
 
     assertEquals(TimeUnit.MILLISECONDS.toMicros(eventTimeMilliseconds), readTimeStamp(packet));
+
+    inOrder.verifyNoMoreInteractions();
+  }
+
+  @Test
+  public void device() {
+    final int pointerId = 2;
+    MotionEventMocker mocker =
+        new MotionEventMocker(
+            pointerId, InputDevice.SOURCE_CLASS_POINTER, MotionEvent.TOOL_TYPE_MOUSE);
+
+    final MotionEvent event =
+        mocker.mockEvent(MotionEvent.ACTION_SCROLL, 1f, 1f, 1);
+    boolean handled = touchProcessor.onTouchEvent(event);
+
+    InOrder inOrder = inOrder(mockRenderer);
+    inOrder
+        .verify(mockRenderer)
+        .dispatchPointerDataPacket(packetCaptor.capture(), packetSizeCaptor.capture());
+    ByteBuffer packet = packetCaptor.getValue();
+
+    assertEquals(pointerId, readDevice(packet));
+    verify(event).getPointerId(0);
 
     inOrder.verifyNoMoreInteractions();
   }
