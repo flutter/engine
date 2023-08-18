@@ -26,7 +26,7 @@ bool CheckerboardContents::Render(const ContentContext& renderer,
   using FS = CheckerboardPipeline::FragmentShader;
 
   Command cmd;
-  cmd.label = "Checkerboard";
+  DEBUG_COMMAND_INFO(cmd, "Checkerboard");
 
   auto options = OptionsFromPass(pass);
   options.blend_mode = BlendMode::kSourceOver;
@@ -49,7 +49,7 @@ bool CheckerboardContents::Render(const ContentContext& renderer,
   frag_info.square_size = square_size_;
   FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
 
-  pass.AddCommand(cmd);
+  pass.AddCommand(std::move(cmd));
 
   return true;
 }

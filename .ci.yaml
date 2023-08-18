@@ -91,31 +91,10 @@ targets:
       config_name: linux_android_emulator
     timeout: 60
 
-  - name: Linux Android Emulator Tests
-    bringup: true
-    recipe: engine/scenarios
-    enabled_branches:
-      - main
-    properties:
-      dependencies: >-
-        [
-          {"dependency": "android_virtual_device", "version": "33"},
-          {"dependency": "goldctl", "version": "git_revision:f808dcff91b221ae313e540c09d79696cd08b8de"}
-        ]
-      upload_packages: "true"
-      clobber: "true"
-    timeout: 60
-    runIf:
-      - DEPS
-      - .ci.yaml
-      - testing/**
-      - shell/platform/android/**
-
   - name: Linux builder_cache
     enabled_branches:
       - main
     recipe: engine_v2/cache
-    bringup: true
     presubmit: false
     properties:
       cache_name: "builder"
@@ -136,7 +115,6 @@ targets:
     enabled_branches:
       - main
     recipe: engine_v2/cache
-    bringup: true
     presubmit: false
     properties:
       cache_name: "builder"
@@ -156,7 +134,6 @@ targets:
     enabled_branches:
       - main
     recipe: engine_v2/cache
-    bringup: true
     presubmit: false
     properties:
       cache_name: "builder"
@@ -179,14 +156,6 @@ targets:
     presubmit: false
     properties:
       config_name: linux_benchmarks
-    timeout: 60
-
-  - name: Linux Benchmarks (no-upload)
-    recipe: engine/engine_metrics
-    bringup: true
-    properties:
-      build_host: "true"
-      upload_metrics: "false"
     timeout: 60
 
   - name: Linux Fuchsia
@@ -244,6 +213,37 @@ targets:
     timeout: 120
     properties:
       config_name: linux_clang_tidy
+    runIf:
+      - DEPS
+      - .ci.yaml
+      - tools/clang_tidy/**
+      - ci/builders/**
+      - ci/clang_tidy.sh
+      - "**.h"
+      - "**.c"
+      - "**.cc"
+      - "**.fbs"
+      - "**.frag"
+      - "**.vert"
+
+  - name: Linux linux_clang_tidy_presubmit
+    bringup: true
+    recipe: engine_v2/engine_v2
+    timeout: 120
+    properties:
+      config_name: linux_clang_tidy_presubmit
+    runIf:
+      - DEPS
+      - .ci.yaml
+      - tools/clang_tidy/**
+      - ci/builders/**
+      - ci/clang_tidy.sh
+      - "**.h"
+      - "**.c"
+      - "**.cc"
+      - "**.fbs"
+      - "**.frag"
+      - "**.vert"
 
   - name: Linux linux_arm_host_engine
     recipe: engine_v2/engine_v2
@@ -367,8 +367,30 @@ targets:
     runIf:
       - DEPS
       - .ci.yaml
-      - tools/**
-      - ci/**
+      - tools/clang_tidy/**
+      - ci/builders/**
+      - ci/clang_tidy.sh
+      - "**.h"
+      - "**.c"
+      - "**.cc"
+      - "**.fbs"
+      - "**.frag"
+      - "**.vert"
+      - "**.m"
+      - "**.mm"
+
+  - name: Mac mac_clang_tidy_presubmit
+    bringup: true
+    recipe: engine_v2/engine_v2
+    timeout: 120
+    properties:
+      config_name: mac_clang_tidy_presubmit
+    runIf:
+      - DEPS
+      - .ci.yaml
+      - tools/clang_tidy/**
+      - ci/builders/**
+      - ci/clang_tidy.sh
       - "**.h"
       - "**.c"
       - "**.cc"

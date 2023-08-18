@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/fuchsia/flutter/flatland_external_view_embedder.h"
+#include "flutter/shell/platform/fuchsia/flutter/external_view_embedder.h"
 
 #include <fuchsia/math/cpp/fidl.h>
 #include <fuchsia/sysmem/cpp/fidl.h>
@@ -10,6 +10,7 @@
 #include <fuchsia/ui/views/cpp/fidl.h>
 #include <lib/async-testing/test_loop.h>
 #include <lib/zx/event.h>
+#include <lib/zx/eventpair.h>
 
 #include <cstdint>
 #include <functional>
@@ -321,7 +322,7 @@ fuchsia::ui::composition::OnNextFrameBeginValues WithPresentCredits(
   return values;
 }
 
-void DrawSimpleFrame(FlatlandExternalViewEmbedder& external_view_embedder,
+void DrawSimpleFrame(ExternalViewEmbedder& external_view_embedder,
                      SkISize frame_size,
                      float frame_dpr,
                      std::function<void(flutter::DlCanvas*)> draw_callback) {
@@ -344,7 +345,7 @@ void DrawSimpleFrame(FlatlandExternalViewEmbedder& external_view_embedder,
 }
 
 void DrawFrameWithView(
-    FlatlandExternalViewEmbedder& external_view_embedder,
+    ExternalViewEmbedder& external_view_embedder,
     SkISize frame_size,
     float frame_dpr,
     int view_id,
@@ -376,14 +377,14 @@ void DrawFrameWithView(
 
 };  // namespace
 
-class FlatlandExternalViewEmbedderTest : public ::testing::Test {
+class ExternalViewEmbedderTest : public ::testing::Test {
  protected:
-  FlatlandExternalViewEmbedderTest()
+  ExternalViewEmbedderTest()
       : session_subloop_(loop_.StartNewLoop()),
         flatland_connection_(CreateFlatlandConnection()),
         fake_surface_producer_(
             std::make_shared<FakeSurfaceProducer>(CreateFlatlandAllocator())) {}
-  ~FlatlandExternalViewEmbedderTest() override = default;
+  ~ExternalViewEmbedderTest() override = default;
 
   async::TestLoop& loop() { return loop_; }
 
@@ -435,22 +436,31 @@ class FlatlandExternalViewEmbedderTest : public ::testing::Test {
   std::shared_ptr<FakeSurfaceProducer> fake_surface_producer_;
 };
 
-TEST_F(FlatlandExternalViewEmbedderTest, RootScene) {
+TEST_F(ExternalViewEmbedderTest, RootScene) {
   fuchsia::ui::composition::ParentViewportWatcherPtr parent_viewport_watcher;
   fuchsia::ui::views::ViewportCreationToken viewport_creation_token;
   fuchsia::ui::views::ViewCreationToken view_creation_token;
-  fuchsia::ui::views::ViewRef view_ref;
+  fuchsia::ui::views::ViewRef view_ref_clone;
   auto view_creation_token_status = zx::channel::create(
       0u, &viewport_creation_token.value, &view_creation_token.value);
   ASSERT_EQ(view_creation_token_status, ZX_OK);
-  auto view_ref_pair = scenic::ViewRefPair::New();
-  view_ref_pair.view_ref.Clone(&view_ref);
 
-  FlatlandExternalViewEmbedder external_view_embedder(
+  fuchsia::ui::views::ViewRefControl view_ref_control;
+  fuchsia::ui::views::ViewRef view_ref;
+  auto status = zx::eventpair::create(
+      /*options*/ 0u, &view_ref_control.reference, &view_ref.reference);
+  ASSERT_EQ(status, ZX_OK);
+  view_ref_control.reference.replace(
+      ZX_DEFAULT_EVENTPAIR_RIGHTS & (~ZX_RIGHT_DUPLICATE),
+      &view_ref_control.reference);
+  view_ref.reference.replace(ZX_RIGHTS_BASIC, &view_ref.reference);
+  view_ref.Clone(&view_ref_clone);
+
+  ExternalViewEmbedder external_view_embedder(
       std::move(view_creation_token),
       fuchsia::ui::views::ViewIdentityOnCreation{
-          .view_ref = std::move(view_ref_pair.view_ref),
-          .view_ref_control = std::move(view_ref_pair.control_ref),
+          .view_ref = std::move(view_ref),
+          .view_ref_control = std::move(view_ref_control),
       },
       fuchsia::ui::composition::ViewBoundProtocols{},
       parent_viewport_watcher.NewRequest(), flatland_connection(),
@@ -467,27 +477,36 @@ TEST_F(FlatlandExternalViewEmbedderTest, RootScene) {
   loop().RunUntilIdle();
   EXPECT_THAT(fake_flatland().graph(),
               IsFlutterGraph(parent_viewport_watcher, viewport_creation_token,
-                             view_ref));
+                             view_ref_clone));
 }
 
-TEST_F(FlatlandExternalViewEmbedderTest, SimpleScene) {
+TEST_F(ExternalViewEmbedderTest, SimpleScene) {
   fuchsia::ui::composition::ParentViewportWatcherPtr parent_viewport_watcher;
   fuchsia::ui::views::ViewportCreationToken viewport_creation_token;
   fuchsia::ui::views::ViewCreationToken view_creation_token;
-  fuchsia::ui::views::ViewRef view_ref;
+  fuchsia::ui::views::ViewRef view_ref_clone;
   auto view_creation_token_status = zx::channel::create(
       0u, &viewport_creation_token.value, &view_creation_token.value);
   ASSERT_EQ(view_creation_token_status, ZX_OK);
-  auto view_ref_pair = scenic::ViewRefPair::New();
-  view_ref_pair.view_ref.Clone(&view_ref);
 
-  // Create the `FlatlandExternalViewEmbedder` and pump the message loop until
+  fuchsia::ui::views::ViewRefControl view_ref_control;
+  fuchsia::ui::views::ViewRef view_ref;
+  auto status = zx::eventpair::create(
+      /*options*/ 0u, &view_ref_control.reference, &view_ref.reference);
+  ASSERT_EQ(status, ZX_OK);
+  view_ref_control.reference.replace(
+      ZX_DEFAULT_EVENTPAIR_RIGHTS & (~ZX_RIGHT_DUPLICATE),
+      &view_ref_control.reference);
+  view_ref.reference.replace(ZX_RIGHTS_BASIC, &view_ref.reference);
+  view_ref.Clone(&view_ref_clone);
+
+  // Create the `ExternalViewEmbedder` and pump the message loop until
   // the initial scene graph is setup.
-  FlatlandExternalViewEmbedder external_view_embedder(
+  ExternalViewEmbedder external_view_embedder(
       std::move(view_creation_token),
       fuchsia::ui::views::ViewIdentityOnCreation{
-          .view_ref = std::move(view_ref_pair.view_ref),
-          .view_ref_control = std::move(view_ref_pair.control_ref),
+          .view_ref = std::move(view_ref),
+          .view_ref_control = std::move(view_ref_control),
       },
       fuchsia::ui::composition::ViewBoundProtocols{},
       parent_viewport_watcher.NewRequest(), flatland_connection(),
@@ -498,7 +517,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SimpleScene) {
   loop().RunUntilIdle();
   EXPECT_THAT(fake_flatland().graph(),
               IsFlutterGraph(parent_viewport_watcher, viewport_creation_token,
-                             view_ref));
+                             view_ref_clone));
 
   // Draw the scene.  The scene graph shouldn't change yet.
   const SkISize frame_size_signed = SkISize::Make(512, 512);
@@ -521,7 +540,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SimpleScene) {
                   });
   EXPECT_THAT(fake_flatland().graph(),
               IsFlutterGraph(parent_viewport_watcher, viewport_creation_token,
-                             view_ref));
+                             view_ref_clone));
 
   // Pump the message loop. The scene updates should propagate to flatland.
   loop().RunUntilIdle();
@@ -529,7 +548,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SimpleScene) {
   EXPECT_THAT(
       fake_flatland().graph(),
       IsFlutterGraph(
-          parent_viewport_watcher, viewport_creation_token, view_ref,
+          parent_viewport_watcher, viewport_creation_token, view_ref_clone,
           /*layers*/
           {IsImageLayer(
               frame_size, kFirstLayerBlendMode,
@@ -542,24 +561,33 @@ TEST_F(FlatlandExternalViewEmbedderTest, SimpleScene) {
                   fuchsia::ui::composition::HitTestInteraction::DEFAULT)})}));
 }
 
-TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
+TEST_F(ExternalViewEmbedderTest, SceneWithOneView) {
   fuchsia::ui::composition::ParentViewportWatcherPtr parent_viewport_watcher;
   fuchsia::ui::views::ViewportCreationToken viewport_creation_token;
   fuchsia::ui::views::ViewCreationToken view_creation_token;
-  fuchsia::ui::views::ViewRef view_ref;
+  fuchsia::ui::views::ViewRef view_ref_clone;
   auto view_creation_token_status = zx::channel::create(
       0u, &viewport_creation_token.value, &view_creation_token.value);
   ASSERT_EQ(view_creation_token_status, ZX_OK);
-  auto view_ref_pair = scenic::ViewRefPair::New();
-  view_ref_pair.view_ref.Clone(&view_ref);
 
-  // Create the `FlatlandExternalViewEmbedder` and pump the message loop until
+  fuchsia::ui::views::ViewRefControl view_ref_control;
+  fuchsia::ui::views::ViewRef view_ref;
+  auto status = zx::eventpair::create(
+      /*options*/ 0u, &view_ref_control.reference, &view_ref.reference);
+  ASSERT_EQ(status, ZX_OK);
+  view_ref_control.reference.replace(
+      ZX_DEFAULT_EVENTPAIR_RIGHTS & (~ZX_RIGHT_DUPLICATE),
+      &view_ref_control.reference);
+  view_ref.reference.replace(ZX_RIGHTS_BASIC, &view_ref.reference);
+  view_ref.Clone(&view_ref_clone);
+
+  // Create the `ExternalViewEmbedder` and pump the message loop until
   // the initial scene graph is setup.
-  FlatlandExternalViewEmbedder external_view_embedder(
+  ExternalViewEmbedder external_view_embedder(
       std::move(view_creation_token),
       fuchsia::ui::views::ViewIdentityOnCreation{
-          .view_ref = std::move(view_ref_pair.view_ref),
-          .view_ref_control = std::move(view_ref_pair.control_ref),
+          .view_ref = std::move(view_ref),
+          .view_ref_control = std::move(view_ref_control),
       },
       fuchsia::ui::composition::ViewBoundProtocols{},
       parent_viewport_watcher.NewRequest(), flatland_connection(),
@@ -570,7 +598,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
   loop().RunUntilIdle();
   EXPECT_THAT(fake_flatland().graph(),
               IsFlutterGraph(parent_viewport_watcher, viewport_creation_token,
-                             view_ref));
+                             view_ref_clone));
 
   // Create the view before drawing the scene.
   const SkSize child_view_size_signed = SkSize::Make(256.f, 512.f);
@@ -646,7 +674,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
       });
   EXPECT_THAT(fake_flatland().graph(),
               IsFlutterGraph(parent_viewport_watcher, viewport_creation_token,
-                             view_ref));
+                             view_ref_clone));
 
   // Pump the message loop.  The scene updates should propagate to flatland.
   loop().RunUntilIdle();
@@ -656,7 +684,8 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
   EXPECT_THAT(
       fake_flatland().graph(),
       IsFlutterGraph(
-          parent_viewport_watcher, viewport_creation_token, view_ref, /*layers*/
+          parent_viewport_watcher, viewport_creation_token,
+          view_ref_clone, /*layers*/
           {IsImageLayer(
                frame_size, kFirstLayerBlendMode,
                {IsHitRegion(
@@ -685,7 +714,8 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
   EXPECT_THAT(
       fake_flatland().graph(),
       IsFlutterGraph(
-          parent_viewport_watcher, viewport_creation_token, view_ref, /*layers*/
+          parent_viewport_watcher, viewport_creation_token,
+          view_ref_clone, /*layers*/
           {IsImageLayer(
                frame_size, kFirstLayerBlendMode,
                {IsHitRegion(
@@ -726,7 +756,8 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
   EXPECT_THAT(
       fake_flatland().graph(),
       IsFlutterGraph(
-          parent_viewport_watcher, viewport_creation_token, view_ref, /*layers*/
+          parent_viewport_watcher, viewport_creation_token,
+          view_ref_clone, /*layers*/
           {IsImageLayer(
                frame_size, kFirstLayerBlendMode,
                {IsHitRegion(
@@ -754,7 +785,8 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
   EXPECT_THAT(
       fake_flatland().graph(),
       IsFlutterGraph(
-          parent_viewport_watcher, viewport_creation_token, view_ref, /*layers*/
+          parent_viewport_watcher, viewport_creation_token,
+          view_ref_clone, /*layers*/
           {IsImageLayer(
               frame_size, kFirstLayerBlendMode,
               {IsHitRegion(
@@ -766,24 +798,33 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView) {
                   fuchsia::ui::composition::HitTestInteraction::DEFAULT)})}));
 }
 
-TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneClippedView) {
+TEST_F(ExternalViewEmbedderTest, SceneWithOneClippedView) {
   fuchsia::ui::composition::ParentViewportWatcherPtr parent_viewport_watcher;
   fuchsia::ui::views::ViewportCreationToken viewport_creation_token;
   fuchsia::ui::views::ViewCreationToken view_creation_token;
-  fuchsia::ui::views::ViewRef view_ref;
+  fuchsia::ui::views::ViewRef view_ref_clone;
   auto view_creation_token_status = zx::channel::create(
       0u, &viewport_creation_token.value, &view_creation_token.value);
   ASSERT_EQ(view_creation_token_status, ZX_OK);
-  auto view_ref_pair = scenic::ViewRefPair::New();
-  view_ref_pair.view_ref.Clone(&view_ref);
 
-  // Create the `FlatlandExternalViewEmbedder` and pump the message loop until
+  fuchsia::ui::views::ViewRefControl view_ref_control;
+  fuchsia::ui::views::ViewRef view_ref;
+  auto status = zx::eventpair::create(
+      /*options*/ 0u, &view_ref_control.reference, &view_ref.reference);
+  ASSERT_EQ(status, ZX_OK);
+  view_ref_control.reference.replace(
+      ZX_DEFAULT_EVENTPAIR_RIGHTS & (~ZX_RIGHT_DUPLICATE),
+      &view_ref_control.reference);
+  view_ref.reference.replace(ZX_RIGHTS_BASIC, &view_ref.reference);
+  view_ref.Clone(&view_ref_clone);
+
+  // Create the `ExternalViewEmbedder` and pump the message loop until
   // the initial scene graph is setup.
-  FlatlandExternalViewEmbedder external_view_embedder(
+  ExternalViewEmbedder external_view_embedder(
       std::move(view_creation_token),
       fuchsia::ui::views::ViewIdentityOnCreation{
-          .view_ref = std::move(view_ref_pair.view_ref),
-          .view_ref_control = std::move(view_ref_pair.control_ref),
+          .view_ref = std::move(view_ref),
+          .view_ref_control = std::move(view_ref_control),
       },
       fuchsia::ui::composition::ViewBoundProtocols{},
       parent_viewport_watcher.NewRequest(), flatland_connection(),
@@ -794,7 +835,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneClippedView) {
   loop().RunUntilIdle();
   EXPECT_THAT(fake_flatland().graph(),
               IsFlutterGraph(parent_viewport_watcher, viewport_creation_token,
-                             view_ref));
+                             view_ref_clone));
 
   // Create the view before drawing the scene.
   const SkSize child_view_size_signed = SkSize::Make(256.f, 512.f);
@@ -883,7 +924,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneClippedView) {
       });
   EXPECT_THAT(fake_flatland().graph(),
               IsFlutterGraph(parent_viewport_watcher, viewport_creation_token,
-                             view_ref));
+                             view_ref_clone));
 
   // Pump the message loop.  The scene updates should propagate to flatland.
   loop().RunUntilIdle();
@@ -893,7 +934,8 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneClippedView) {
   EXPECT_THAT(
       fake_flatland().graph(),
       IsFlutterGraph(
-          parent_viewport_watcher, viewport_creation_token, view_ref, /*layers*/
+          parent_viewport_watcher, viewport_creation_token,
+          view_ref_clone, /*layers*/
           {IsImageLayer(
                frame_size, kFirstLayerBlendMode,
                {IsHitRegion(
@@ -962,7 +1004,8 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneClippedView) {
   EXPECT_THAT(
       fake_flatland().graph(),
       IsFlutterGraph(
-          parent_viewport_watcher, viewport_creation_token, view_ref, /*layers*/
+          parent_viewport_watcher, viewport_creation_token,
+          view_ref_clone, /*layers*/
           {IsImageLayer(
                frame_size, kFirstLayerBlendMode,
                {IsHitRegion(
@@ -1006,7 +1049,8 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneClippedView) {
   EXPECT_THAT(
       fake_flatland().graph(),
       IsFlutterGraph(
-          parent_viewport_watcher, viewport_creation_token, view_ref, /*layers*/
+          parent_viewport_watcher, viewport_creation_token,
+          view_ref_clone, /*layers*/
           {IsImageLayer(
               frame_size, kFirstLayerBlendMode,
               {IsHitRegion(
@@ -1018,24 +1062,33 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneClippedView) {
                   fuchsia::ui::composition::HitTestInteraction::DEFAULT)})}));
 }
 
-TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView_NoOverlay) {
+TEST_F(ExternalViewEmbedderTest, SceneWithOneView_NoOverlay) {
   fuchsia::ui::composition::ParentViewportWatcherPtr parent_viewport_watcher;
   fuchsia::ui::views::ViewportCreationToken viewport_creation_token;
   fuchsia::ui::views::ViewCreationToken view_creation_token;
-  fuchsia::ui::views::ViewRef view_ref;
+  fuchsia::ui::views::ViewRef view_ref_clone;
   auto view_creation_token_status = zx::channel::create(
       0u, &viewport_creation_token.value, &view_creation_token.value);
   ASSERT_EQ(view_creation_token_status, ZX_OK);
-  auto view_ref_pair = scenic::ViewRefPair::New();
-  view_ref_pair.view_ref.Clone(&view_ref);
 
-  // Create the `FlatlandExternalViewEmbedder` and pump the message loop until
+  fuchsia::ui::views::ViewRefControl view_ref_control;
+  fuchsia::ui::views::ViewRef view_ref;
+  auto status = zx::eventpair::create(
+      /*options*/ 0u, &view_ref_control.reference, &view_ref.reference);
+  ASSERT_EQ(status, ZX_OK);
+  view_ref_control.reference.replace(
+      ZX_DEFAULT_EVENTPAIR_RIGHTS & (~ZX_RIGHT_DUPLICATE),
+      &view_ref_control.reference);
+  view_ref.reference.replace(ZX_RIGHTS_BASIC, &view_ref.reference);
+  view_ref.Clone(&view_ref_clone);
+
+  // Create the `ExternalViewEmbedder` and pump the message loop until
   // the initial scene graph is setup.
-  FlatlandExternalViewEmbedder external_view_embedder(
+  ExternalViewEmbedder external_view_embedder(
       std::move(view_creation_token),
       fuchsia::ui::views::ViewIdentityOnCreation{
-          .view_ref = std::move(view_ref_pair.view_ref),
-          .view_ref_control = std::move(view_ref_pair.control_ref),
+          .view_ref = std::move(view_ref),
+          .view_ref_control = std::move(view_ref_control),
       },
       fuchsia::ui::composition::ViewBoundProtocols{},
       parent_viewport_watcher.NewRequest(), flatland_connection(),
@@ -1046,7 +1099,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView_NoOverlay) {
   loop().RunUntilIdle();
   EXPECT_THAT(fake_flatland().graph(),
               IsFlutterGraph(parent_viewport_watcher, viewport_creation_token,
-                             view_ref));
+                             view_ref_clone));
 
   // Create the view before drawing the scene.
   const SkSize child_view_size_signed = SkSize::Make(256.f, 512.f);
@@ -1098,7 +1151,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView_NoOverlay) {
       [](flutter::DlCanvas* canvas) {});
   EXPECT_THAT(fake_flatland().graph(),
               IsFlutterGraph(parent_viewport_watcher, viewport_creation_token,
-                             view_ref));
+                             view_ref_clone));
 
   // Pump the message loop.  The scene updates should propagate to flatland.
   loop().RunUntilIdle();
@@ -1107,7 +1160,8 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView_NoOverlay) {
   EXPECT_THAT(
       fake_flatland().graph(),
       IsFlutterGraph(
-          parent_viewport_watcher, viewport_creation_token, view_ref, /*layers*/
+          parent_viewport_watcher, viewport_creation_token,
+          view_ref_clone, /*layers*/
           {IsImageLayer(
                frame_size, kFirstLayerBlendMode,
                {IsHitRegion(
@@ -1127,7 +1181,8 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView_NoOverlay) {
   EXPECT_THAT(
       fake_flatland().graph(),
       IsFlutterGraph(
-          parent_viewport_watcher, viewport_creation_token, view_ref, /*layers*/
+          parent_viewport_watcher, viewport_creation_token,
+          view_ref_clone, /*layers*/
           {IsImageLayer(
                frame_size, kFirstLayerBlendMode,
                {IsHitRegion(
@@ -1160,7 +1215,8 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView_NoOverlay) {
   EXPECT_THAT(
       fake_flatland().graph(),
       IsFlutterGraph(
-          parent_viewport_watcher, viewport_creation_token, view_ref, /*layers*/
+          parent_viewport_watcher, viewport_creation_token,
+          view_ref_clone, /*layers*/
           {IsImageLayer(
                frame_size, kFirstLayerBlendMode,
                {IsHitRegion(
@@ -1179,7 +1235,8 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView_NoOverlay) {
   EXPECT_THAT(
       fake_flatland().graph(),
       IsFlutterGraph(
-          parent_viewport_watcher, viewport_creation_token, view_ref, /*layers*/
+          parent_viewport_watcher, viewport_creation_token,
+          view_ref_clone, /*layers*/
           {IsImageLayer(
               frame_size, kFirstLayerBlendMode,
               {IsHitRegion(
@@ -1191,25 +1248,33 @@ TEST_F(FlatlandExternalViewEmbedderTest, SceneWithOneView_NoOverlay) {
                   fuchsia::ui::composition::HitTestInteraction::DEFAULT)})}));
 }
 
-TEST_F(FlatlandExternalViewEmbedderTest,
-       SceneWithOneView_DestroyBeforeDrawing) {
+TEST_F(ExternalViewEmbedderTest, SceneWithOneView_DestroyBeforeDrawing) {
   fuchsia::ui::composition::ParentViewportWatcherPtr parent_viewport_watcher;
   fuchsia::ui::views::ViewportCreationToken viewport_creation_token;
   fuchsia::ui::views::ViewCreationToken view_creation_token;
-  fuchsia::ui::views::ViewRef view_ref;
+  fuchsia::ui::views::ViewRef view_ref_clone;
   auto view_creation_token_status = zx::channel::create(
       0u, &viewport_creation_token.value, &view_creation_token.value);
   ASSERT_EQ(view_creation_token_status, ZX_OK);
-  auto view_ref_pair = scenic::ViewRefPair::New();
-  view_ref_pair.view_ref.Clone(&view_ref);
 
-  // Create the `FlatlandExternalViewEmbedder` and pump the message loop until
+  fuchsia::ui::views::ViewRefControl view_ref_control;
+  fuchsia::ui::views::ViewRef view_ref;
+  auto status = zx::eventpair::create(
+      /*options*/ 0u, &view_ref_control.reference, &view_ref.reference);
+  ASSERT_EQ(status, ZX_OK);
+  view_ref_control.reference.replace(
+      ZX_DEFAULT_EVENTPAIR_RIGHTS & (~ZX_RIGHT_DUPLICATE),
+      &view_ref_control.reference);
+  view_ref.reference.replace(ZX_RIGHTS_BASIC, &view_ref.reference);
+  view_ref.Clone(&view_ref_clone);
+
+  // Create the `ExternalViewEmbedder` and pump the message loop until
   // the initial scene graph is setup.
-  FlatlandExternalViewEmbedder external_view_embedder(
+  ExternalViewEmbedder external_view_embedder(
       std::move(view_creation_token),
       fuchsia::ui::views::ViewIdentityOnCreation{
-          .view_ref = std::move(view_ref_pair.view_ref),
-          .view_ref_control = std::move(view_ref_pair.control_ref),
+          .view_ref = std::move(view_ref),
+          .view_ref_control = std::move(view_ref_control),
       },
       fuchsia::ui::composition::ViewBoundProtocols{},
       parent_viewport_watcher.NewRequest(), flatland_connection(),
@@ -1220,7 +1285,7 @@ TEST_F(FlatlandExternalViewEmbedderTest,
   loop().RunUntilIdle();
   EXPECT_THAT(fake_flatland().graph(),
               IsFlutterGraph(parent_viewport_watcher, viewport_creation_token,
-                             view_ref));
+                             view_ref_clone));
 
   // Create the view before drawing the scene.
   auto [child_view_token, child_viewport_token] = ViewTokenPair::New();
@@ -1257,7 +1322,7 @@ TEST_F(FlatlandExternalViewEmbedderTest,
   EXPECT_THAT(
       fake_flatland().graph(),
       IsFlutterGraph(
-          parent_viewport_watcher, viewport_creation_token, view_ref,
+          parent_viewport_watcher, viewport_creation_token, view_ref_clone,
           /*layers*/
           {IsImageLayer(
               frame_size, kFirstLayerBlendMode,
@@ -1275,7 +1340,7 @@ TEST_F(FlatlandExternalViewEmbedderTest,
   EXPECT_THAT(
       fake_flatland().graph(),
       IsFlutterGraph(
-          parent_viewport_watcher, viewport_creation_token, view_ref,
+          parent_viewport_watcher, viewport_creation_token, view_ref_clone,
           /*layers*/
           {IsImageLayer(
               frame_size, kFirstLayerBlendMode,
@@ -1310,7 +1375,7 @@ TEST_F(FlatlandExternalViewEmbedderTest,
   EXPECT_THAT(
       fake_flatland().graph(),
       IsFlutterGraph(
-          parent_viewport_watcher, viewport_creation_token, view_ref,
+          parent_viewport_watcher, viewport_creation_token, view_ref_clone,
           /*layers*/
           {IsImageLayer(
               frame_size, kFirstLayerBlendMode,
@@ -1327,7 +1392,8 @@ TEST_F(FlatlandExternalViewEmbedderTest,
   EXPECT_THAT(
       fake_flatland().graph(),
       IsFlutterGraph(
-          parent_viewport_watcher, viewport_creation_token, view_ref, /*layers*/
+          parent_viewport_watcher, viewport_creation_token,
+          view_ref_clone, /*layers*/
           {IsImageLayer(
               new_frame_size, kFirstLayerBlendMode,
               {IsHitRegion(
@@ -1342,24 +1408,33 @@ TEST_F(FlatlandExternalViewEmbedderTest,
 // This test case exercises the scenario in which the view contains two disjoint
 // regions with painted content; we should generate two separate hit regions
 // matching the bounds of the painted regions in this case.
-TEST_F(FlatlandExternalViewEmbedderTest, SimpleScene_DisjointHitRegions) {
+TEST_F(ExternalViewEmbedderTest, SimpleScene_DisjointHitRegions) {
   fuchsia::ui::composition::ParentViewportWatcherPtr parent_viewport_watcher;
   fuchsia::ui::views::ViewportCreationToken viewport_creation_token;
   fuchsia::ui::views::ViewCreationToken view_creation_token;
-  fuchsia::ui::views::ViewRef view_ref;
+  fuchsia::ui::views::ViewRef view_ref_clone;
   auto view_creation_token_status = zx::channel::create(
       0u, &viewport_creation_token.value, &view_creation_token.value);
   ASSERT_EQ(view_creation_token_status, ZX_OK);
-  auto view_ref_pair = scenic::ViewRefPair::New();
-  view_ref_pair.view_ref.Clone(&view_ref);
 
-  // Create the `FlatlandExternalViewEmbedder` and pump the message loop until
+  fuchsia::ui::views::ViewRefControl view_ref_control;
+  fuchsia::ui::views::ViewRef view_ref;
+  auto status = zx::eventpair::create(
+      /*options*/ 0u, &view_ref_control.reference, &view_ref.reference);
+  ASSERT_EQ(status, ZX_OK);
+  view_ref_control.reference.replace(
+      ZX_DEFAULT_EVENTPAIR_RIGHTS & (~ZX_RIGHT_DUPLICATE),
+      &view_ref_control.reference);
+  view_ref.reference.replace(ZX_RIGHTS_BASIC, &view_ref.reference);
+  view_ref.Clone(&view_ref_clone);
+
+  // Create the `ExternalViewEmbedder` and pump the message loop until
   // the initial scene graph is setup.
-  FlatlandExternalViewEmbedder external_view_embedder(
+  ExternalViewEmbedder external_view_embedder(
       std::move(view_creation_token),
       fuchsia::ui::views::ViewIdentityOnCreation{
-          .view_ref = std::move(view_ref_pair.view_ref),
-          .view_ref_control = std::move(view_ref_pair.control_ref),
+          .view_ref = std::move(view_ref),
+          .view_ref_control = std::move(view_ref_control),
       },
       fuchsia::ui::composition::ViewBoundProtocols{},
       parent_viewport_watcher.NewRequest(), flatland_connection(),
@@ -1370,7 +1445,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SimpleScene_DisjointHitRegions) {
   loop().RunUntilIdle();
   EXPECT_THAT(fake_flatland().graph(),
               IsFlutterGraph(parent_viewport_watcher, viewport_creation_token,
-                             view_ref));
+                             view_ref_clone));
 
   // Draw the scene.  The scene graph shouldn't change yet.
   const SkISize frame_size_signed = SkISize::Make(512, 512);
@@ -1403,7 +1478,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SimpleScene_DisjointHitRegions) {
       });
   EXPECT_THAT(fake_flatland().graph(),
               IsFlutterGraph(parent_viewport_watcher, viewport_creation_token,
-                             view_ref));
+                             view_ref_clone));
 
   // Pump the message loop. The scene updates should propagate to flatland.
   loop().RunUntilIdle();
@@ -1411,7 +1486,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SimpleScene_DisjointHitRegions) {
   EXPECT_THAT(
       fake_flatland().graph(),
       IsFlutterGraph(
-          parent_viewport_watcher, viewport_creation_token, view_ref,
+          parent_viewport_watcher, viewport_creation_token, view_ref_clone,
           /*layers*/
           {IsImageLayer(
               frame_size, kFirstLayerBlendMode,
@@ -1435,24 +1510,33 @@ TEST_F(FlatlandExternalViewEmbedderTest, SimpleScene_DisjointHitRegions) {
 // overlapping regions with painted content; we should generate one hit
 // region matching the union of the bounds of the two painted regions in
 // this case.
-TEST_F(FlatlandExternalViewEmbedderTest, SimpleScene_OverlappingHitRegions) {
+TEST_F(ExternalViewEmbedderTest, SimpleScene_OverlappingHitRegions) {
   fuchsia::ui::composition::ParentViewportWatcherPtr parent_viewport_watcher;
   fuchsia::ui::views::ViewportCreationToken viewport_creation_token;
   fuchsia::ui::views::ViewCreationToken view_creation_token;
-  fuchsia::ui::views::ViewRef view_ref;
+  fuchsia::ui::views::ViewRef view_ref_clone;
   auto view_creation_token_status = zx::channel::create(
       0u, &viewport_creation_token.value, &view_creation_token.value);
   ASSERT_EQ(view_creation_token_status, ZX_OK);
-  auto view_ref_pair = scenic::ViewRefPair::New();
-  view_ref_pair.view_ref.Clone(&view_ref);
 
-  // Create the `FlatlandExternalViewEmbedder` and pump the message loop until
+  fuchsia::ui::views::ViewRefControl view_ref_control;
+  fuchsia::ui::views::ViewRef view_ref;
+  auto status = zx::eventpair::create(
+      /*options*/ 0u, &view_ref_control.reference, &view_ref.reference);
+  ASSERT_EQ(status, ZX_OK);
+  view_ref_control.reference.replace(
+      ZX_DEFAULT_EVENTPAIR_RIGHTS & (~ZX_RIGHT_DUPLICATE),
+      &view_ref_control.reference);
+  view_ref.reference.replace(ZX_RIGHTS_BASIC, &view_ref.reference);
+  view_ref.Clone(&view_ref_clone);
+
+  // Create the `ExternalViewEmbedder` and pump the message loop until
   // the initial scene graph is setup.
-  FlatlandExternalViewEmbedder external_view_embedder(
+  ExternalViewEmbedder external_view_embedder(
       std::move(view_creation_token),
       fuchsia::ui::views::ViewIdentityOnCreation{
-          .view_ref = std::move(view_ref_pair.view_ref),
-          .view_ref_control = std::move(view_ref_pair.control_ref),
+          .view_ref = std::move(view_ref),
+          .view_ref_control = std::move(view_ref_control),
       },
       fuchsia::ui::composition::ViewBoundProtocols{},
       parent_viewport_watcher.NewRequest(), flatland_connection(),
@@ -1463,7 +1547,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SimpleScene_OverlappingHitRegions) {
   loop().RunUntilIdle();
   EXPECT_THAT(fake_flatland().graph(),
               IsFlutterGraph(parent_viewport_watcher, viewport_creation_token,
-                             view_ref));
+                             view_ref_clone));
 
   // Draw the scene.  The scene graph shouldn't change yet.
   const SkISize frame_size_signed = SkISize::Make(512, 512);
@@ -1496,7 +1580,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SimpleScene_OverlappingHitRegions) {
       });
   EXPECT_THAT(fake_flatland().graph(),
               IsFlutterGraph(parent_viewport_watcher, viewport_creation_token,
-                             view_ref));
+                             view_ref_clone));
 
   // Pump the message loop. The scene updates should propagate to flatland.
   loop().RunUntilIdle();
@@ -1504,7 +1588,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, SimpleScene_OverlappingHitRegions) {
   EXPECT_THAT(
       fake_flatland().graph(),
       IsFlutterGraph(
-          parent_viewport_watcher, viewport_creation_token, view_ref,
+          parent_viewport_watcher, viewport_creation_token, view_ref_clone,
           /*layers*/
           {IsImageLayer(
               frame_size, kFirstLayerBlendMode,
@@ -1517,24 +1601,33 @@ TEST_F(FlatlandExternalViewEmbedderTest, SimpleScene_OverlappingHitRegions) {
                   fuchsia::ui::composition::HitTestInteraction::DEFAULT)})}));
 }
 
-TEST_F(FlatlandExternalViewEmbedderTest, ViewportCoveredWithInputInterceptor) {
+TEST_F(ExternalViewEmbedderTest, ViewportCoveredWithInputInterceptor) {
   fuchsia::ui::composition::ParentViewportWatcherPtr parent_viewport_watcher;
   fuchsia::ui::views::ViewportCreationToken viewport_creation_token;
   fuchsia::ui::views::ViewCreationToken view_creation_token;
-  fuchsia::ui::views::ViewRef view_ref;
+  fuchsia::ui::views::ViewRef view_ref_clone;
   auto view_creation_token_status = zx::channel::create(
       0u, &viewport_creation_token.value, &view_creation_token.value);
   ASSERT_EQ(view_creation_token_status, ZX_OK);
-  auto view_ref_pair = scenic::ViewRefPair::New();
-  view_ref_pair.view_ref.Clone(&view_ref);
 
-  // Create the `FlatlandExternalViewEmbedder` and pump the message loop until
+  fuchsia::ui::views::ViewRefControl view_ref_control;
+  fuchsia::ui::views::ViewRef view_ref;
+  auto status = zx::eventpair::create(
+      /*options*/ 0u, &view_ref_control.reference, &view_ref.reference);
+  ASSERT_EQ(status, ZX_OK);
+  view_ref_control.reference.replace(
+      ZX_DEFAULT_EVENTPAIR_RIGHTS & (~ZX_RIGHT_DUPLICATE),
+      &view_ref_control.reference);
+  view_ref.reference.replace(ZX_RIGHTS_BASIC, &view_ref.reference);
+  view_ref.Clone(&view_ref_clone);
+
+  // Create the `ExternalViewEmbedder` and pump the message loop until
   // the initial scene graph is setup.
-  FlatlandExternalViewEmbedder external_view_embedder(
+  ExternalViewEmbedder external_view_embedder(
       std::move(view_creation_token),
       fuchsia::ui::views::ViewIdentityOnCreation{
-          .view_ref = std::move(view_ref_pair.view_ref),
-          .view_ref_control = std::move(view_ref_pair.control_ref),
+          .view_ref = std::move(view_ref),
+          .view_ref_control = std::move(view_ref_control),
       },
       fuchsia::ui::composition::ViewBoundProtocols{},
       parent_viewport_watcher.NewRequest(), flatland_connection(),
@@ -1547,7 +1640,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, ViewportCoveredWithInputInterceptor) {
   loop().RunUntilIdle();
   EXPECT_THAT(fake_flatland().graph(),
               IsFlutterGraph(parent_viewport_watcher, viewport_creation_token,
-                             view_ref, {IsInputShield()}));
+                             view_ref_clone, {IsInputShield()}));
 
   // Create the view before drawing the scene.
   const SkSize child_view_size_signed = SkSize::Make(256.f, 512.f);
@@ -1623,7 +1716,7 @@ TEST_F(FlatlandExternalViewEmbedderTest, ViewportCoveredWithInputInterceptor) {
       });
   EXPECT_THAT(fake_flatland().graph(),
               IsFlutterGraph(parent_viewport_watcher, viewport_creation_token,
-                             view_ref, {IsInputShield()}));
+                             view_ref_clone, {IsInputShield()}));
 
   // Pump the message loop.  The scene updates should propagate to flatland.
   loop().RunUntilIdle();
@@ -1633,7 +1726,8 @@ TEST_F(FlatlandExternalViewEmbedderTest, ViewportCoveredWithInputInterceptor) {
   EXPECT_THAT(
       fake_flatland().graph(),
       IsFlutterGraph(
-          parent_viewport_watcher, viewport_creation_token, view_ref, /*layers*/
+          parent_viewport_watcher, viewport_creation_token,
+          view_ref_clone, /*layers*/
           {IsImageLayer(
                frame_size, kFirstLayerBlendMode,
                {IsHitRegion(

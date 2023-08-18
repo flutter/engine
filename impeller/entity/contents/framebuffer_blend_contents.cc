@@ -78,7 +78,7 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
   options.blend_mode = BlendMode::kSource;
 
   Command cmd;
-  cmd.label = "Framebuffer Advanced Blend Filter";
+  DEBUG_COMMAND_INFO(cmd, "Framebuffer Advanced Blend Filter");
   cmd.BindVertices(vtx_buffer);
   cmd.stencil_reference = entity.GetStencilDepth();
 
@@ -154,7 +154,7 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
   frag_info.src_input_alpha = src_snapshot->opacity;
   FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
 
-  return pass.AddCommand(cmd);
+  return pass.AddCommand(std::move(cmd));
 }
 
 }  // namespace impeller
