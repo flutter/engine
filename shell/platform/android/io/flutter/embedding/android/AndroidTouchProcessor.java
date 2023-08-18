@@ -217,8 +217,9 @@ public class AndroidTouchProcessor {
     return true;
   }
 
-  /// Passes null for context when it is not available. Note that without context scroll wheel will
-  // not work.
+  /// Calls addPointerForIndex with null for context.
+  ///
+  /// Without context the scroll wheel will not mimick android's scroll speed.
   private void addPointerForIndex(
       MotionEvent event,
       int pointerIndex,
