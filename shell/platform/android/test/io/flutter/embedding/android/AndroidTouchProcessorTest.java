@@ -174,21 +174,23 @@ public class AndroidTouchProcessorTest {
       this.source = source;
       this.toolType = toolType;
     }
+
     MotionEvent mockEvent(int action, float x, float y, int buttonState) {
       return mockEvent(action, x, y, buttonState, x, y, x, y, x, x, y);
     }
+
     MotionEvent mockEvent(
-      int action,
-      float x,
-      float y,
-      int buttonState,
-      float hScroll,
-      float vScroll,
-      float axisDistance,
-      float axisTilt,
-      float size,
-      float toolMajor,
-      float toolMinor) {
+        int action,
+        float x,
+        float y,
+        int buttonState,
+        float hScroll,
+        float vScroll,
+        float axisDistance,
+        float axisTilt,
+        float size,
+        float toolMajor,
+        float toolMinor) {
       MotionEvent event = mock(MotionEvent.class);
       when(event.getDevice()).thenReturn(null);
       when(event.getSource()).thenReturn(source);
@@ -366,7 +368,18 @@ public class AndroidTouchProcessorTest {
     assertEquals("zero vertical scale factor", true, verticalScaleFactor != 0);
 
     final MotionEvent event =
-        mocker.mockEvent(MotionEvent.ACTION_SCROLL, 0.0f, 0.0f, 1, horizontalScrollValue, verticalScrollValue, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+        mocker.mockEvent(
+            MotionEvent.ACTION_SCROLL,
+            0.0f,
+            0.0f,
+            1,
+            horizontalScrollValue,
+            verticalScrollValue,
+            0.0f,
+            0.0f,
+            0.0f,
+            0.0f,
+            0.0f);
     boolean handled = touchProcessor.onGenericMotionEvent(event, context);
 
     InOrder inOrder = inOrder(mockRenderer);
@@ -515,7 +528,17 @@ public class AndroidTouchProcessorTest {
     final float tilt = 20.0f;
     final MotionEvent event =
         mocker.mockEvent(
-            MotionEvent.ACTION_DOWN, 0.0f, 0.0f, MotionEvent.BUTTON_STYLUS_PRIMARY, 0.0f, 0.0f, distance, tilt, 0.0f, 0.0f, 0.0f);
+            MotionEvent.ACTION_DOWN,
+            0.0f,
+            0.0f,
+            MotionEvent.BUTTON_STYLUS_PRIMARY,
+            0.0f,
+            0.0f,
+            distance,
+            tilt,
+            0.0f,
+            0.0f,
+            0.0f);
     boolean handled = touchProcessor.onTouchEvent(event);
 
     InOrder inOrder = inOrder(mockRenderer);
@@ -540,7 +563,19 @@ public class AndroidTouchProcessorTest {
     final float size = 10.0f;
     final float radiusMajor = 20.0f;
     final float radiusMinor = 30.0f;
-    final MotionEvent event = mocker.mockEvent(MotionEvent.ACTION_DOWN, 0.0f, 0.0f, 0, 0.0f, 0.0f, 0.0f, 0.0f, size, radiusMajor, radiusMinor);
+    final MotionEvent event =
+        mocker.mockEvent(
+            MotionEvent.ACTION_DOWN,
+            0.0f,
+            0.0f,
+            0,
+            0.0f,
+            0.0f,
+            0.0f,
+            0.0f,
+            size,
+            radiusMajor,
+            radiusMinor);
     boolean handled = touchProcessor.onTouchEvent(event);
 
     InOrder inOrder = inOrder(mockRenderer);
