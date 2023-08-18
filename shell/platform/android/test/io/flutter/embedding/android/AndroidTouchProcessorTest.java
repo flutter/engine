@@ -501,14 +501,15 @@ public class AndroidTouchProcessorTest {
     inOrder.verifyNoMoreInteractions();
   }
 
-
   @Test
   public void stylusDistance() {
     MotionEventMocker mocker =
         new MotionEventMocker(0, InputDevice.SOURCE_STYLUS, MotionEvent.TOOL_TYPE_STYLUS);
     final float distance = 10.0f;
     final float tilt = 20.0f;
-    final MotionEvent event = mocker.mockEvent(MotionEvent.ACTION_DOWN, distance, tilt, MotionEvent.BUTTON_STYLUS_PRIMARY);
+    final MotionEvent event =
+        mocker.mockEvent(
+            MotionEvent.ACTION_DOWN, distance, tilt, MotionEvent.BUTTON_STYLUS_PRIMARY);
     boolean handled = touchProcessor.onTouchEvent(event);
 
     InOrder inOrder = inOrder(mockRenderer);
