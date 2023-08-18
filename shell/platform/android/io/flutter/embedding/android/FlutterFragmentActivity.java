@@ -545,6 +545,8 @@ public class FlutterFragmentActivity extends FragmentActivity
           .shouldAttachEngineToActivity(shouldAttachEngineToActivity())
           .destroyEngineWithFragment(shouldDestroyEngineWithHost())
           .shouldDelayFirstAndroidViewDraw(shouldDelayFirstAndroidViewDraw)
+          // TODO(justinmc): Unsure whether this is relevant to predictive back.
+          // .shouldAutomaticallyHandleOnBackPressed(Build.VERSION.SDK_INT >= 33)
           .build();
     } else {
       Log.v(

@@ -14,6 +14,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver.OnWindowFocusChangeListener;
+import android.window.OnBackInvokedCallback;
+import android.window.OnBackInvokedDispatcher;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -169,6 +171,8 @@ public class FlutterFragment extends Fragment
    */
   protected static final String ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED =
       "should_automatically_handle_on_back_pressed";
+
+  private boolean hasRegisteredBackCallback = false;
 
   @RequiresApi(18)
   private final OnWindowFocusChangeListener onWindowFocusChangeListener =
@@ -1023,6 +1027,20 @@ public class FlutterFragment extends Fragment
         }
       };
 
+  private final OnBackInvokedCallback onBackInvokedCallback =
+      Build.VERSION.SDK_INT >= 33
+          ? new OnBackInvokedCallback() {
+            // TODO(garyq): Remove SuppressWarnings annotation. This was added to workaround
+            // a google3 bug where the linter is not properly running against API 33, causing
+            // a failure here. See b/243609613 and https://github.com/flutter/flutter/issues/111295
+            @SuppressWarnings("Override")
+            @Override
+            public void onBackInvoked() {
+              onBackPressed();
+            }
+          }
+          : null;
+
   public FlutterFragment() {
     // Ensure that we at least have an empty Bundle of arguments so that we don't
     // need to continually check for null arguments before grabbing one.
@@ -1060,9 +1078,11 @@ public class FlutterFragment extends Fragment
     super.onAttach(context);
     delegate = delegateFactory.createDelegate(this);
     delegate.onAttach(context);
+    /*
     if (getArguments().getBoolean(ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED, false)) {
       requireActivity().getOnBackPressedDispatcher().addCallback(this, onBackPressedCallback);
     }
+    */
     context.registerComponentCallbacks(this);
   }
 
@@ -1682,6 +1702,55 @@ public class FlutterFragment extends Fragment
     }
     // Hook for subclass. No-op if returns false.
     return false;
+  }
+
+  @Override
+  public void setFrameworkHandlesBack(boolean frameworkHandlesBack) {
+    Log.e(
+        "justin",
+        "setFrameworkHandlesBack in FlutterFragment! setEnabled: " + frameworkHandlesBack);
+    if (frameworkHandlesBack && !hasRegisteredBackCallback) {
+      registerOnBackInvokedCallback();
+    } else if (!frameworkHandlesBack && hasRegisteredBackCallback) {
+      unregisterOnBackInvokedCallback();
+    }
+  }
+
+  /**
+   * Registers the callback with OnBackPressedDispatcher to capture back navigation gestures and
+   * pass them to the framework.
+   *
+   * <p>This replaces the deprecated onBackPressed method override in order to support API 33's
+   * predictive back navigation feature.
+   *
+   * <p>The callback must be unregistered in order to prevent unpredictable behavior once outside
+   * the Flutter app.
+   */
+  @VisibleForTesting
+  public void registerOnBackInvokedCallback() {
+    if (Build.VERSION.SDK_INT >= 33) {
+      getActivity()
+          .getOnBackInvokedDispatcher()
+          .registerOnBackInvokedCallback(
+              OnBackInvokedDispatcher.PRIORITY_DEFAULT, onBackInvokedCallback);
+      hasRegisteredBackCallback = true;
+    }
+  }
+
+  /**
+   * Unregisters the callback from OnBackPressedDispatcher.
+   *
+   * <p>This should be called when the activity is no longer in use to prevent unpredictable
+   * behavior such as being stuck and unable to press back.
+   */
+  @VisibleForTesting
+  public void unregisterOnBackInvokedCallback() {
+    if (Build.VERSION.SDK_INT >= 33) {
+      getActivity()
+          .getOnBackInvokedDispatcher()
+          .unregisterOnBackInvokedCallback(onBackInvokedCallback);
+      hasRegisteredBackCallback = false;
+    }
   }
 
   @VisibleForTesting
