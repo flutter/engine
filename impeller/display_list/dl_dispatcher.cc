@@ -269,22 +269,6 @@ static std::vector<Color> ToColors(const flutter::DlColor colors[], int count) {
   return result;
 }
 
-// Convert display list colors + stops into impeller colors and stops, taking
-// care to ensure that the stops always start with 0.0 and end with 1.0.
-template <typename T>
-static void ConvertStops(T* gradient,
-                         std::vector<Color>* colors,
-                         std::vector<float>* stops) {
-  FML_DCHECK(gradient->stop_count() >= 2);
-
-  auto* dl_colors = gradient->colors();
-  auto* dl_stops = gradient->stops();
-  for (auto i = 0; i < gradient->stop_count(); i++) {
-    colors->emplace_back(skia_conversions::ToColor(dl_colors[i]));
-    stops->emplace_back(std::clamp(dl_stops[i], 0.0f, 1.0f));
-  }
-}
-
 static std::optional<ColorSource::Type> ToColorSourceType(
     flutter::DlColorSourceType type) {
   switch (type) {
@@ -341,7 +325,7 @@ void DlDispatcher::setColorSource(const flutter::DlColorSource* source) {
       auto end_point = skia_conversions::ToPoint(linear->end_point());
       std::vector<Color> colors;
       std::vector<float> stops;
-      ConvertStops(linear, &colors, &stops);
+      skia_conversions::ConvertStops(linear, colors, stops);
 
       auto tile_mode = ToTileMode(linear->tile_mode());
       auto matrix = ToMatrix(linear->matrix());
@@ -362,7 +346,7 @@ void DlDispatcher::setColorSource(const flutter::DlColorSource* source) {
       SkScalar focus_radius = conical_gradient->start_radius();
       std::vector<Color> colors;
       std::vector<float> stops;
-      ConvertStops(conical_gradient, &colors, &stops);
+      skia_conversions::ConvertStops(conical_gradient, colors, stops);
 
       auto tile_mode = ToTileMode(conical_gradient->tile_mode());
       auto matrix = ToMatrix(conical_gradient->matrix());
@@ -380,7 +364,7 @@ void DlDispatcher::setColorSource(const flutter::DlColorSource* source) {
       auto radius = radialGradient->radius();
       std::vector<Color> colors;
       std::vector<float> stops;
-      ConvertStops(radialGradient, &colors, &stops);
+      skia_conversions::ConvertStops(radialGradient, colors, stops);
 
       auto tile_mode = ToTileMode(radialGradient->tile_mode());
       auto matrix = ToMatrix(radialGradient->matrix());
@@ -399,7 +383,7 @@ void DlDispatcher::setColorSource(const flutter::DlColorSource* source) {
       auto end_angle = Degrees(sweepGradient->end());
       std::vector<Color> colors;
       std::vector<float> stops;
-      ConvertStops(sweepGradient, &colors, &stops);
+      skia_conversions::ConvertStops(sweepGradient, colors, stops);
 
       auto tile_mode = ToTileMode(sweepGradient->tile_mode());
       auto matrix = ToMatrix(sweepGradient->matrix());
