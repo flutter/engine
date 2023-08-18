@@ -1,8 +1,10 @@
 package io.flutter.embedding.android;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Matrix;
 import android.os.Build;
+import android.util.TypedValue;
 import android.view.InputDevice;
 import android.view.MotionEvent;
 import android.view.ViewConfiguration;
@@ -82,6 +84,10 @@ public class AndroidTouchProcessor {
   private static final int POINTER_DATA_FIELD_COUNT = 35;
   @VisibleForTesting static final int BYTES_PER_FIELD = 8;
 
+  // Default if context is null, chosen to ensure reasonable speed scrolling.
+  @VisibleForTesting static final int DEFAULT_VERTICAL_SCROLL_FACTOR = 48;
+  @VisibleForTesting static final int DEFAULT_HORIZONTAL_SCROLL_FACTOR = 48;
+
   // This value must match the value in framework's platform_view.dart.
   // This flag indicates whether the original Android pointer events were batched together.
   private static final int POINTER_DATA_FLAG_BATCHED = 1;
@@ -94,6 +100,9 @@ public class AndroidTouchProcessor {
   private final boolean trackMotionEvents;
 
   private final Map<Integer, float[]> ongoingPans = new HashMap<>();
+
+  // Only used on api 25 and below to avoid requerying display metrics.
+  private int cachedVerticalScrollFactor;
 
   /**
    * Constructs an {@code AndroidTouchProcessor} that will send touch event data to the Flutter
@@ -231,8 +240,8 @@ public class AndroidTouchProcessor {
         event, pointerIndex, pointerChange, pointerData, transformMatrix, packet, null);
   }
 
-  // TODO(mattcarroll): consider creating a PointerPacket class instead of using a procedure that
-  // mutates inputs.
+  // TODO: consider creating a PointerPacket class instead of using a procedure that
+  // mutates inputs. https://github.com/flutter/flutter/issues/132853
   private void addPointerForIndex(
       MotionEvent event,
       int pointerIndex,
@@ -371,12 +380,11 @@ public class AndroidTouchProcessor {
     // See android scrollview for insperation.
     // https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/core/java/android/widget/ScrollView.java?q=function:onGenericMotionEvent%20filepath:widget%2FScrollView.java&ss=android%2Fplatform%2Fsuperproject%2Fmain
     if (signalKind == PointerSignalKind.SCROLL) {
-      // Default if context is null, chosen to ensure reasonable speed scrolling.
-      double verticalScaleFactor = 48.0;
-      double horizontalScaleFactor = 48.0;
+      double horizontalScaleFactor = DEFAULT_HORIZONTAL_SCROLL_FACTOR;
+      double verticalScaleFactor = DEFAULT_VERTICAL_SCROLL_FACTOR;
       if (context != null) {
-        horizontalScaleFactor = ViewConfiguration.get(context).getScaledHorizontalScrollFactor();
-        verticalScaleFactor = ViewConfiguration.get(context).getScaledVerticalScrollFactor();
+        horizontalScaleFactor = getHorizontalScrollFactor(context);
+        verticalScaleFactor = getVerticalScrollFactor(context);
       }
       // We flip the sign of the scroll value below because it aligns the pixel value with the
       // scroll direction in native android.
@@ -407,6 +415,44 @@ public class AndroidTouchProcessor {
     if (isTrackpadPan && (panZoomType == PointerChange.PAN_ZOOM_END)) {
       ongoingPans.remove(pointerId);
     }
+  }
+
+  private float getHorizontalScrollFactor(@NonNull Context context) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      return ViewConfiguration.get(context).getScaledHorizontalScrollFactor();
+    } else {
+      // Vertical scroll factor is not a typo. This is what View.java does in android.
+      return getVerticalScrollFactorPre26(context);
+    }
+  }
+
+  private float getVerticalScrollFactor(@NonNull Context context) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      return getVerticalScrollFactorAbove26(context);
+    } else {
+      return getVerticalScrollFactorPre26(context);
+    }
+  }
+
+  @TargetApi(26)
+  private float getVerticalScrollFactorAbove26(@NonNull Context context) {
+    return ViewConfiguration.get(context).getScaledVerticalScrollFactor();
+  }
+
+  // See
+  // https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/core/java/android/view/View.java?q=function:getVerticalScrollFactor%20filepath:android%2Fview%2FView.java&ss=android%2Fplatform%2Fsuperproject%2Fmain
+  private int getVerticalScrollFactorPre26(@NonNull Context context) {
+    if (cachedVerticalScrollFactor == 0) {
+      TypedValue outValue = new TypedValue();
+      if (!context
+          .getTheme()
+          .resolveAttribute(android.R.attr.listPreferredItemHeight, outValue, true)) {
+        return DEFAULT_VERTICAL_SCROLL_FACTOR;
+      }
+      cachedVerticalScrollFactor =
+          (int) outValue.getDimension(context.getResources().getDisplayMetrics());
+    }
+    return cachedVerticalScrollFactor;
   }
 
   @PointerChange

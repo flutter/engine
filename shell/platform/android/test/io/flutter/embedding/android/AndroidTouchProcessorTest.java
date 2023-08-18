@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.os.Build;
 import android.view.InputDevice;
 import android.view.MotionEvent;
 import android.view.ViewConfiguration;
@@ -350,7 +351,8 @@ public class AndroidTouchProcessorTest {
   }
 
   @Test
-  public void scrollWheel() {
+  @Config(minSdk = Build.VERSION_CODES.O)
+  public void scrollWheelAbove26() {
     // Pointer id must be zero to match actionIndex in mocked event.
     final int pointerId = 0;
     MotionEventMocker mocker =
@@ -392,6 +394,64 @@ public class AndroidTouchProcessorTest {
     assertEquals(-verticalScrollValue * verticalScaleFactor, readScrollDeltaY(packet));
     verify(event).getAxisValue(MotionEvent.AXIS_HSCROLL, pointerId);
     verify(event).getAxisValue(MotionEvent.AXIS_VSCROLL, pointerId);
+
+    inOrder.verifyNoMoreInteractions();
+  }
+
+  @Test
+  @Config(sdk = {Build.VERSION_CODES.N_MR1})
+  public void scrollWheelBelow26() {
+    // Pointer id must be zero to match actionIndex in mocked event.
+    final int pointerId = 0;
+    MotionEventMocker mocker =
+        new MotionEventMocker(
+            pointerId, InputDevice.SOURCE_CLASS_POINTER, MotionEvent.TOOL_TYPE_MOUSE);
+    final float horizontalScrollValue = -1f;
+    final float verticalScrollValue = .5f;
+    final Context context = ApplicationProvider.getApplicationContext();
+
+    final MotionEvent event =
+        mocker.mockEvent(
+            MotionEvent.ACTION_SCROLL,
+            0.0f,
+            0.0f,
+            1,
+            horizontalScrollValue,
+            verticalScrollValue,
+            0.0f,
+            0.0f,
+            0.0f,
+            0.0f,
+            0.0f);
+    boolean handled = touchProcessor.onGenericMotionEvent(event, context);
+    assertEquals(true, handled);
+
+    InOrder inOrder = inOrder(mockRenderer);
+    inOrder
+        .verify(mockRenderer)
+        .dispatchPointerDataPacket(packetCaptor.capture(), packetSizeCaptor.capture());
+    ByteBuffer packet = packetCaptor.getValue();
+
+    // Magic number from roboletric's theme.
+    final double magicScrollFactor = 64;
+    assertEquals(-horizontalScrollValue * magicScrollFactor, readScrollDeltaX(packet));
+    assertEquals(-verticalScrollValue * magicScrollFactor, readScrollDeltaY(packet));
+    verify(event).getAxisValue(MotionEvent.AXIS_HSCROLL, pointerId);
+    verify(event).getAxisValue(MotionEvent.AXIS_VSCROLL, pointerId);
+
+    // Trigger default values.
+    touchProcessor.onGenericMotionEvent(event, null);
+    inOrder
+        .verify(mockRenderer)
+        .dispatchPointerDataPacket(packetCaptor.capture(), packetSizeCaptor.capture());
+    packet = packetCaptor.getValue();
+
+    assertEquals(
+        (double) -horizontalScrollValue * AndroidTouchProcessor.DEFAULT_HORIZONTAL_SCROLL_FACTOR,
+        readScrollDeltaX(packet));
+    assertEquals(
+        (double) -verticalScrollValue * AndroidTouchProcessor.DEFAULT_VERTICAL_SCROLL_FACTOR,
+        readScrollDeltaY(packet));
 
     inOrder.verifyNoMoreInteractions();
   }
