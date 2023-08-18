@@ -9,12 +9,28 @@ FLUTTER_ASSERT_ARC
 #pragma mark - Basic message channel
 
 static NSString* const kFlutterChannelBuffersChannel = @"dev.flutter/channel-buffers";
+static NSString* const kResizeMethod = @"resize";
+static NSString* const kOverflowMethod = @"overflow";
 
 static void ResizeChannelBuffer(NSObject<FlutterBinaryMessenger>* binaryMessenger,
                                 NSString* channel,
                                 NSInteger newSize) {
-  NSString* messageString = [NSString stringWithFormat:@"resize\r%@\r%@", channel, @(newSize)];
-  NSData* message = [messageString dataUsingEncoding:NSUTF8StringEncoding];
+  NSArray* args = @[ channel, [NSNumber numberWithInt:newSize] ];
+  FlutterMethodCall* resizeMethodCall = [FlutterMethodCall methodCallWithMethodName:kResizeMethod
+                                                                          arguments:args];
+  NSObject<FlutterMethodCodec>* codec = [FlutterStandardMethodCodec sharedInstance];
+  NSData* message = [codec encodeMethodCall:resizeMethodCall];
+  [binaryMessenger sendOnChannel:kFlutterChannelBuffersChannel message:message];
+}
+
+static void SetAllowChannelOverflow(NSObject<FlutterBinaryMessenger>* binaryMessenger,
+                                    NSString* channel,
+                                    BOOL allowed) {
+  NSArray* args = @[ channel, [NSNumber numberWithBool:allowed] ];
+  FlutterMethodCall* overflowMethodCall =
+      [FlutterMethodCall methodCallWithMethodName:kOverflowMethod arguments:args];
+  NSObject<FlutterMethodCodec>* codec = [FlutterStandardMethodCodec sharedInstance];
+  NSData* message = [codec encodeMethodCall:overflowMethodCall];
   [binaryMessenger sendOnChannel:kFlutterChannelBuffersChannel message:message];
 }
 
@@ -114,8 +130,24 @@ static FlutterBinaryMessengerConnection SetMessageHandler(
   _connection = SetMessageHandler(_messenger, _name, messageHandler, _taskQueue);
 }
 
++ (void)resizeChannelWithName:(NSString*)name
+              binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
+                      newSize:(NSInteger)newSize {
+  ResizeChannelBuffer(messenger, name, newSize);
+}
+
 - (void)resizeChannelBuffer:(NSInteger)newSize {
   ResizeChannelBuffer(_messenger, _name, newSize);
+}
+
++ (void)setAllowOverflowChannelWithName:(NSString*)name
+                        binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
+                                allowed:(BOOL)allowed {
+  SetAllowChannelOverflow(messenger, name, allowed);
+}
+
+- (void)setAllowOverflow:(BOOL)allowed {
+  SetAllowChannelOverflow(_messenger, _name, allowed);
 }
 
 @end
