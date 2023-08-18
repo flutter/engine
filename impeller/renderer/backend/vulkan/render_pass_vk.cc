@@ -652,28 +652,42 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
 
   const auto& target_size = render_target_.GetRenderTargetSize();
 
-  auto render_pass = CreateVKRenderPass(vk_context);
-  if (!render_pass) {
-    VALIDATION_LOG << "Could not create renderpass.";
-    return false;
+  std::shared_ptr<RingBufferItem<RenderPassFrameBufferPair>>
+      render_pass_frame_buffer_pair = vk_context.GetRenderPassFrameBufferPair();
+
+  if (!render_pass_frame_buffer_pair->GetValue()) {
+    auto render_pass = CreateVKRenderPass(vk_context);
+    if (!render_pass) {
+      VALIDATION_LOG << "Could not create renderpass.";
+      return false;
+    }
+
+    auto framebuffer = CreateVKFramebuffer(vk_context, *render_pass);
+    if (!framebuffer) {
+      VALIDATION_LOG << "Could not create framebuffer.";
+      return false;
+    }
+
+    RenderPassFrameBufferPair pair = RenderPassFrameBufferPair{
+        .render_pass = render_pass,
+        .framebuffer = framebuffer,
+    };
+
+    render_pass_frame_buffer_pair->GetValue() = std::move(pair);
   }
   SetTextureLayouts(render_target_, command_buffer);
 
-  auto framebuffer = CreateVKFramebuffer(vk_context, *render_pass);
-  if (!framebuffer) {
-    VALIDATION_LOG << "Could not create framebuffer.";
-    return false;
-  }
-
-  if (!encoder->Track(framebuffer) || !encoder->Track(render_pass)) {
+  if (!encoder->Track(render_pass_frame_buffer_pair)) {
     return false;
   }
 
   auto clear_values = GetVKClearValues(render_target_);
 
   vk::RenderPassBeginInfo pass_info;
-  pass_info.renderPass = *render_pass;
-  pass_info.framebuffer = *framebuffer;
+  pass_info.renderPass =
+      *render_pass_frame_buffer_pair->GetValue()->render_pass;
+  pass_info.framebuffer =
+      *render_pass_frame_buffer_pair->GetValue()->framebuffer;
   pass_info.renderArea.extent.width = static_cast<uint32_t>(target_size.width);
   pass_info.renderArea.extent.height =
       static_cast<uint32_t>(target_size.height);
