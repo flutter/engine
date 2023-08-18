@@ -1218,11 +1218,8 @@ void Shell::OnAnimatorUpdateLatestFrameTargetTime(
 void Shell::OnAnimatorDraw(std::shared_ptr<LayerTreePipeline> pipeline) {
   FML_DCHECK(is_set_up_);
 
-  auto discard_callback = [this](int64_t view_id, flutter::LayerTree& tree) {
-    std::scoped_lock<std::mutex> lock(resize_mutex_);
-    auto expected_frame_size = ExpectedFrameSize(view_id);
-    return !expected_frame_size.isEmpty() &&
-           tree.frame_size() != expected_frame_size;
+  auto discard_callback = [](int64_t view_id, flutter::LayerTree& tree) {
+    return false;
   };
 
   task_runners_.GetRasterTaskRunner()->PostTask(fml::MakeCopyable(
