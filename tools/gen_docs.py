@@ -67,12 +67,22 @@ def generate_doxyfile(section, output_dir, log_file, doxy_file):
     f.write(doxyfile)
 
 
+def update_doxygen_assets(output_dir):
+  subprocess.call([
+      'doxygen', '-w', 'html', 'header.html', 'footer.html',
+      'flutter-doxygen.css'
+  ],
+                  cwd=output_dir)
+  subprocess.call(['doxygen', '-u'], cwd=output_dir)
+
+
 def process_section(name, section, destination):
   output_dir = tempfile.mkdtemp(prefix="doxygen")
   log_file = os.path.join(destination, '{}-doxygen.log'.format(name))
   zip_file = os.path.join(destination, '{}-docs.zip'.format(name))
   doxy_file = os.path.join(output_dir, 'Doxyfile')
   generate_doxyfile(section, output_dir, log_file, doxy_file)
+  update_doxygen_assets(output_dir)
   subprocess.call(['doxygen', doxy_file])
   html_dir = os.path.join(output_dir, 'html')
   with zipfile.ZipFile(zip_file, 'w') as zip:
