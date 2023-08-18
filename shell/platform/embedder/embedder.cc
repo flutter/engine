@@ -1887,8 +1887,8 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     channel_listened_to_callback = [ptr = args->channel_listened_to_callback,
                                     user_data](const std::string& name,
                                                bool listening) {
-      size_t name_len = name.size();
-      ptr(name.data(), name_len, listening, user_data);
+      FlutterChannelUpdate update{name.c_str(), listening};
+      ptr(&update, user_data);
     };
   }
 

@@ -1326,10 +1326,13 @@ typedef void (*FlutterUpdateSemanticsCallback2)(
     const FlutterSemanticsUpdate2* /* semantics update */,
     void* /* user data*/);
 
+typedef struct {
+  const char* channel;
+  bool listening;
+} FlutterChannelUpdate;
+
 typedef void (*FlutterChannelListenedToCallback)(
-    const char* data /* name */,
-    size_t data_len /* name.size */,
-    bool /* listening */,
+    const FlutterChannelUpdate* /* channel update */,
     void* /* user data */);
 
 typedef struct _FlutterTaskRunner* FlutterTaskRunner;
