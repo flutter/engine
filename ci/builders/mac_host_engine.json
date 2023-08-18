@@ -158,20 +158,7 @@
                 "$flutter/osx_sdk": {
                     "sdk_version": "14e300c"
                 }
-            },
-            "tests": [
-                {
-                    "language": "python3",
-                    "name": "Impeller-golden, dart and engine tests for host_release",
-                    "parameters": [
-                        "--variant",
-                        "host_release",
-                        "--type",
-                        "dart,engine,impeller-golden"
-                    ],
-                    "script": "flutter/testing/run_tests.py"
-                }
-            ]
+            }
         },
         {
             "archives": [
@@ -482,6 +469,34 @@
                         "--type",
                         "dart,engine",
                         "--engine-capture-core-dump"
+                    ],
+                    "script": "flutter/testing/run_tests.py"
+                }
+            ]
+        },
+        {
+            "name": "Mac Impeller-golden, dart and engine tests for host_release",
+            "recipe": "engine_v2/tester_engine",
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Mac-12",
+                "cpu=x86"
+            ],
+            "gclient_variables": {
+                "download_android_deps": false
+            },
+            "dependencies": [
+                "host_release"
+            ],
+            "tasks": [
+                {
+                    "language": "python3",
+                    "name": "Impeller-golden, dart and engine tests for host_release",
+                    "parameters": [
+                        "--variant",
+                        "host_release",
+                        "--type",
+                        "dart,engine,impeller-golden"
                     ],
                     "script": "flutter/testing/run_tests.py"
                 }
