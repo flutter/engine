@@ -47,19 +47,20 @@ Path PathDataFromTextBlob(const sk_sp<SkTextBlob>& blob);
 
 std::optional<impeller::PixelFormat> ToPixelFormat(SkColorType type);
 
-// Convert display list colors + stops into impeller colors and stops, taking
-// care to ensure that the stops always start with 0.0 and end with 1.0.
-//
-// The general process is:
-// * Ensure that the first gradient stop value is 0.0. If not, insert a new
-//   stop with a value of 0.0 and use the first gradient color.
-// * Ensure the last gradient stop value is 0.0. If not, insert a new stop
-//   with a value of 1.0 and use the last gradient color.
-// * Clamp all gradient values between the values of 0.0 and 1.0.
-// * For all stop values, ensure that the values are monotonically increasing
-//   by clamping each value to a minimum of the previous stop value and itself.
-//   For example, with stop values of 0.0 0.5 0.4 1.0, we would clamp such that
-//   the values were 0.0 0.5 0.5 1.0.
+/// @brief Convert display list colors + stops into impeller colors and stops,
+/// taking care to ensure that the stops monotonically increase from 0.0 to 1.0.
+///
+/// The general process is:
+/// * Ensure that the first gradient stop value is 0.0. If not, insert a new
+///   stop with a value of 0.0 and use the first gradient color as this new
+///   stops color.
+/// * Ensure the last gradient stop value is 1.0. If not, insert a new stop
+///   with a value of 1.0 and use the last gradient color as this stops color.
+/// * Clamp all gradient values between the values of 0.0 and 1.0.
+/// * For all stop values, ensure that the values are monotonically increasing
+///   by clamping each value to a minimum of the previous stop value and itself.
+///   For example, with stop values of 0.0, 0.5, 0.4, 1.0, we would clamp such
+///   that the values were 0.0, 0.5, 0.5, 1.0.
 void ConvertStops(const flutter::DlGradientColorSourceBase* gradient,
                   std::vector<Color>& colors,
                   std::vector<float>& stops);
