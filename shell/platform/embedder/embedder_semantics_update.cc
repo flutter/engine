@@ -169,16 +169,16 @@ void EmbedderSemanticsUpdate2::AddNode(const SemanticsNode& node) {
       node.customAccessibilityActions.data(),
       node.platformViewId,
       node.tooltip.c_str(),
-      label_attributes.first,
-      label_attributes.second,
-      hint_attributes.first,
-      hint_attributes.second,
-      value_attributes.first,
-      value_attributes.second,
-      increased_value_attributes.first,
-      increased_value_attributes.second,
-      decreased_value_attributes.first,
-      decreased_value_attributes.second,
+      label_attributes.count,
+      label_attributes.attributes,
+      hint_attributes.count,
+      hint_attributes.attributes,
+      value_attributes.count,
+      value_attributes.attributes,
+      increased_value_attributes.count,
+      increased_value_attributes.attributes,
+      decreased_value_attributes.count,
+      decreased_value_attributes.attributes,
   });
 }
 
@@ -193,14 +193,20 @@ void EmbedderSemanticsUpdate2::AddAction(
   });
 }
 
-std::pair<size_t, const FlutterStringAttribute**>
+EmbedderSemanticsUpdate2::EmbedderStringAttributes
 EmbedderSemanticsUpdate2::CreateStringAttributes(
     const StringAttributes& attributes) {
   // Minimize allocations if attributes are empty.
   if (attributes.empty()) {
-    return std::make_pair(0, nullptr);
+    return {.count = 0, .attributes = nullptr};
   }
 
+  // Translate the engine attributes to embedder attributes.
+  // The result vector's data is returned by this method.
+  // The result vector will be owned by |node_string_attributes_|
+  // so that the embedder attributes are cleaned up at the end of the
+  // semantics update callback when when the |EmbedderSemanticsUpdate2|
+  // is destroyed.
   auto result = std::make_unique<std::vector<const FlutterStringAttribute*>>();
   result->reserve(attributes.size());
 
@@ -246,8 +252,10 @@ EmbedderSemanticsUpdate2::CreateStringAttributes(
 
   node_string_attributes_.push_back(std::move(result));
 
-  return std::make_pair(node_string_attributes_.back()->size(),
-                        node_string_attributes_.back()->data());
+  return {
+      .count = node_string_attributes_.back()->size(),
+      .attributes = node_string_attributes_.back()->data(),
+  };
 }
 
 }  // namespace flutter

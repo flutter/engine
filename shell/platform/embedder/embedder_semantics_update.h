@@ -40,6 +40,11 @@ class EmbedderSemanticsUpdate {
 };
 
 // A semantic update, used by the embedder API's v3 semantic update callback.
+//
+// This holds temporary embedder-specific objects that are translated from
+// the engine's internal representation and passed back to the semantics
+// update callback. Once the callback finishes, this object is destroyed
+// and the temporary embedder-specific objects are automatically cleaned up.
 class EmbedderSemanticsUpdate2 {
  public:
   EmbedderSemanticsUpdate2(const SemanticsNodeUpdates& nodes,
@@ -52,6 +57,10 @@ class EmbedderSemanticsUpdate2 {
   FlutterSemanticsUpdate2* get() { return &update_; }
 
  private:
+  // These fields hold temporary embedder-specific objects that
+  // must remain valid for the duration of the semantics update callback.
+  // They are automatically cleaned up when |EmbedderSemanticsUpdate2| is
+  // destroyed.
   FlutterSemanticsUpdate2 update_;
   std::vector<FlutterSemanticsNode2> nodes_;
   std::vector<FlutterSemanticsNode2*> node_pointers_;
@@ -71,8 +80,16 @@ class EmbedderSemanticsUpdate2 {
   // actions.
   void AddAction(const CustomAccessibilityAction& action);
 
+  // A helper struct for |CreateStringAttributes|.
+  struct EmbedderStringAttributes {
+    // The number of string attribute pointers in |attributes|.
+    size_t count;
+    // An array of string attribute pointers.
+    const FlutterStringAttribute** attributes;
+  };
+
   // Translates engine string attributes to embedder string attributes.
-  std::pair<size_t, const FlutterStringAttribute**> CreateStringAttributes(
+  EmbedderStringAttributes CreateStringAttributes(
       const StringAttributes& attribute);
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderSemanticsUpdate2);
