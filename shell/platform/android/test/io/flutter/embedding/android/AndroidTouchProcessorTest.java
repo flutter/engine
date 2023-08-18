@@ -39,6 +39,8 @@ public class AndroidTouchProcessorTest {
   // 2 days in milliseconds
   final long eventTimeMilliseconds = 172800000;
   final float pressure = 0.8f;
+  // https://github.com/flutter/flutter/blob/master/packages/flutter/lib/src/gestures/events.dart
+  final int enginePrimaryStylusButton = 0x02;
 
   @Before
   public void setUp() {
@@ -72,6 +74,10 @@ public class AndroidTouchProcessorTest {
 
   private double readPointerPhysicalY(ByteBuffer buffer) {
     return buffer.getDouble(8 * AndroidTouchProcessor.BYTES_PER_FIELD);
+  }
+
+  private long readButtons(ByteBuffer buffer) {
+    return buffer.getLong(11 * AndroidTouchProcessor.BYTES_PER_FIELD);
   }
 
   private double readObscured(ByteBuffer buffer) {
@@ -114,11 +120,11 @@ public class AndroidTouchProcessorTest {
     return buffer.getDouble(21 * AndroidTouchProcessor.BYTES_PER_FIELD);
   }
 
-  private double readRadiusMax(ByteBuffer buffer) {
+  private double readRadiusMin(ByteBuffer buffer) {
     return buffer.getDouble(22 * AndroidTouchProcessor.BYTES_PER_FIELD);
   }
 
-  private double readRadiusMin(ByteBuffer buffer) {
+  private double readRadiusMax(ByteBuffer buffer) {
     return buffer.getDouble(23 * AndroidTouchProcessor.BYTES_PER_FIELD);
   }
 
@@ -495,13 +501,14 @@ public class AndroidTouchProcessorTest {
     inOrder.verifyNoMoreInteractions();
   }
 
+
   @Test
   public void stylusDistance() {
     MotionEventMocker mocker =
         new MotionEventMocker(0, InputDevice.SOURCE_STYLUS, MotionEvent.TOOL_TYPE_STYLUS);
     final float distance = 10.0f;
     final float tilt = 20.0f;
-    final MotionEvent event = mocker.mockEvent(MotionEvent.ACTION_DOWN, distance, tilt, 0);
+    final MotionEvent event = mocker.mockEvent(MotionEvent.ACTION_DOWN, distance, tilt, MotionEvent.BUTTON_STYLUS_PRIMARY);
     boolean handled = touchProcessor.onTouchEvent(event);
 
     InOrder inOrder = inOrder(mockRenderer);
@@ -514,6 +521,7 @@ public class AndroidTouchProcessorTest {
     // Always zero.
     assertEquals(0.0, readDistanceMax(packet));
     assertEquals((double) tilt, readStylusTilt(packet));
+    assertEquals(enginePrimaryStylusButton, readButtons(packet));
 
     inOrder.verifyNoMoreInteractions();
   }

@@ -262,6 +262,10 @@ public class AndroidTouchProcessor {
         ongoingPans.put(pointerId, viewToScreenCoords);
       }
     } else if (pointerKind == PointerDeviceKind.STYLUS) {
+      // Returns converted android button state into flutter framework normalized state
+      // and updates ongoingPans for chromebook trackpad scrolling.
+      // See https://github.com/flutter/flutter/blob/master/packages/flutter/lib/src/gestures/events.dart
+      // for target button constants.
       buttons = (event.getButtonState() >> 4) & 0xF;
     } else {
       buttons = 0;
