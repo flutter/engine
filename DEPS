@@ -262,7 +262,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/shorebirdtech/buildroot.git' + '@' + '59ef3bc35a2aa6d27d065ef4be146d0d042ff191',
+  'src': 'https://github.com/shorebirdtech/buildroot.git' + '@' + '8b97271b5f26b5f89e1806682f9b196e7f497eeb',
 
    # Fuchsia compatibility
    #
