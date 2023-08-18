@@ -36,7 +36,6 @@ public class SettingsChannelTest {
   }
 
   @Test
-  @Config(sdk = 34)
   public void configurationQueueWorks() {
     final SettingsChannel.ConfigurationQueue queue = new SettingsChannel.ConfigurationQueue();
     final int baseId = Integer.MIN_VALUE;
