@@ -164,7 +164,7 @@ public class SettingsChannel {
    * this queue finds the configuration with that identifier and also cleans up configurations that
    * are no longer needed.
    *
-   * <p>This mechanism is only needed because {@link TypedValue#applyDimension} does not take the
+   * <p>This mechanism is only needed because {@code TypedValue#applyDimension} does not take the
    * current text scale factor as an input. Once the AndroidX API that allows us to query the scaled
    * font size with a pure function is available, we can scrap this class and make the
    * implementation much simpler.
