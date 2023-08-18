@@ -5,6 +5,7 @@
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_binary_messenger.h"
 #include "flutter/shell/platform/linux/fl_binary_messenger_private.h"
 
+#include "flutter/fml/logging.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 #include "flutter/shell/platform/linux/fl_method_codec_private.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
@@ -344,6 +345,7 @@ static void resize_channel_response_cb(GObject* object,
 static void resize_channel(FlBinaryMessenger* messenger,
                            const gchar* channel,
                            int64_t new_size) {
+  FML_DCHECK(new_size >= 0);
   g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
   g_autoptr(FlValue) args = fl_value_new_list();
   fl_value_append_take(args, fl_value_new_string(channel));
