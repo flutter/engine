@@ -72,6 +72,7 @@ final class PlatformViewSliceContainer extends SliceContainer {
   PlatformViewSliceContainer(this._views);
 
   List<PlatformView> _views;
+  Map<int, DomElement> _slots = <int, DomElement>{};
 
   @override
   final DomElement container = domDocument.createElement(kPlatformViewSliceContainerTag);
@@ -85,8 +86,10 @@ final class PlatformViewSliceContainer extends SliceContainer {
   @override
   void updateContents() {
     DomElement? currentContainer = container.firstElementChild;
+    final Map<int, DomElement> newSlots = <int, DomElement>{};
     for (final PlatformView view in _views) {
-      final DomElement platformView = platformViewManager.getViewById(view.viewId);
+      final DomElement platformView = _slots[view.viewId] ?? createPlatformViewSlot(view.viewId);
+      newSlots[view.viewId] = platformView;
       final DomElement viewContainer;
       if (currentContainer != null && currentContainer.firstElementChild == platformView) {
         viewContainer = currentContainer;
@@ -112,14 +115,8 @@ final class PlatformViewSliceContainer extends SliceContainer {
       style.top = '${offset?.dy ?? 0}px';
 
       final Matrix4? transform = view.styling.position.transform;
-      if (transform != null) {
-        style.transform = float64ListToCssTransform3d(transform.storage);
-      }
-
-      if (view.styling.opacity != 1.0) {
-        style.opacity = '${view.styling.opacity}';
-      }
-
+      style.transform = transform != null ? float64ListToCssTransform3d(transform.storage) : '';
+      style.opacity = view.styling.opacity != 1.0 ? '${view.styling.opacity}' : '';
       // TODO(jacksongardner): Implement clip styling for platform views
     }
 
@@ -128,6 +125,8 @@ final class PlatformViewSliceContainer extends SliceContainer {
       currentContainer.remove();
       currentContainer = next;
     }
+
+    _slots = newSlots;
   }
 }
 
@@ -157,7 +156,7 @@ class EngineSceneView {
     }
     queuedRenders += 1;
 
-    scene.isRendering = true;
+    scene.beginRender();
     final List<LayerSlice> slices = scene.rootLayer.slices;
     final Iterable<Future<DomImageBitmap?>> renderFutures = slices.map(
       (LayerSlice slice) async => switch (slice) {
@@ -230,7 +229,7 @@ class EngineSceneView {
       sceneElement.removeChild(currentElement);
       currentElement = sibling;
     }
-    scene.isRendering = false;
+    scene.endRender();
 
     queuedRenders -= 1;
   }

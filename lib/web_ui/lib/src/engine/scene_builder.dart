@@ -12,29 +12,32 @@ class EngineScene implements ui.Scene {
 
   final EngineRootLayer rootLayer;
 
-  bool _disposeCalled = false;
-  bool _isRendering = false;
-  bool _isDisposed = false;
+  // We keep a refcount here because this can be asynchronously rendered, so we
+  // don't necessarily want to dispose immediately when the user calls dispose.
+  // Instead, we need to stay alive until we're done rendering.
+  int _refCount = 1;
 
-  set isRendering(bool isRendering) {
-    if (_isRendering != isRendering) {
-      _isRendering = isRendering;
-      _updateDispose();
-    }
+  void beginRender() {
+    assert(_refCount > 0);
+    _refCount++;
+  }
+
+  void endRender() {
+    _refCount--;
+    _disposeIfNeeded();
   }
 
   @override
   void dispose() {
-    _disposeCalled = true;
-    _updateDispose();
+    _refCount--;
+    _disposeIfNeeded();
   }
 
-  void _updateDispose() {
-    if (_isDisposed || _isRendering || !_disposeCalled) {
-      return;
+  void _disposeIfNeeded() {
+    assert(_refCount >= 0);
+    if (_refCount == 0) {
+      rootLayer.dispose();
     }
-    rootLayer.dispose();
-    _isDisposed = true;
   }
 
   @override
