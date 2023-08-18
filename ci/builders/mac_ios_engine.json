@@ -3,7 +3,8 @@
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12"
+                "os=Mac-12",
+		"cpu=arm64"
             ],
             "gn": [
                 "--ios",
@@ -25,7 +26,8 @@
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12"
+                "os=Mac-12",
+		"cpu=arm64"
             ],
             "gn": [
                 "--ios",
@@ -48,7 +50,8 @@
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12"
+                "os=Mac-12",
+		"cpu=arm64"
             ],
             "gn": [
                 "--ios",
@@ -71,7 +74,8 @@
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12"
+                "os=Mac-12",
+		"cpu=arm64"
             ],
             "gn": [
                 "--ios",
@@ -95,7 +99,8 @@
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12"
+                "os=Mac-12",
+		"cpu=arm64"
             ],
             "gn": [
                 "--ios",
