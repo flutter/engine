@@ -48,7 +48,8 @@ bool EmbedderTestCompositorSoftware::UpdateOffscrenComposition(
     switch (layer->type) {
       case kFlutterLayerContentTypeBackingStore:
         layer_image =
-            reinterpret_cast<SkSurface*>(layer->backing_store->user_data)
+            reinterpret_cast<EmbedderTestBackingStoreProducer::GLUserData*>(layer->backing_store->user_data)
+                ->surface
                 ->makeImageSnapshot();
 
         break;

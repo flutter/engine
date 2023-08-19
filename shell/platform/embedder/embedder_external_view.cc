@@ -108,7 +108,7 @@ static void InvalidateApiState(SkSurface& skia_surface) {
 }
 
 bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target,
-                                  bool clear_surface) { 
+                                  bool clear_surface) {
   TRACE_EVENT0("flutter", "EmbedderExternalView::Render");
   TryEndRecording();
   FML_DCHECK(HasEngineRenderedContents())
@@ -174,7 +174,7 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target,
 
   // clear the current render target (most likely EGLSurface) at the
   // end of this scope.
-  fml::ScopedCleanupClosure clear_surface([&]() {
+  fml::ScopedCleanupClosure clear_current_surface([&]() {
     auto [ok, invalidate_api_state] = render_target.MaybeClearCurrent();
     if (invalidate_api_state) {
       InvalidateApiState(*skia_surface);

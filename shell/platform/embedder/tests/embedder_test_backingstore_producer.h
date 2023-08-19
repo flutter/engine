@@ -21,6 +21,10 @@
 #include "flutter/testing/test_vulkan_context.h"  // nogncheck
 #endif
 
+#ifdef SHELL_ENABLE_GL
+#include "flutter/testing/test_gl_surface.h"
+#endif
+
 namespace flutter {
 namespace testing {
 
@@ -31,11 +35,17 @@ class EmbedderTestBackingStoreProducer {
     FlutterVulkanImage* image;
   };
 
+  struct GLUserData {
+    std::unique_ptr<TestGLOnscreenOnlySurface> gl_surface;
+    sk_sp<SkSurface> surface;
+  };
+
   enum class RenderTargetType {
     kSoftwareBuffer,
     kSoftwareBuffer2,
     kOpenGLFramebuffer,
     kOpenGLTexture,
+    kOpenGLSurface,
     kMetalTexture,
     kVulkanImage,
   };
@@ -46,6 +56,8 @@ class EmbedderTestBackingStoreProducer {
                                        kFlutterSoftwarePixelFormatNative32);
   ~EmbedderTestBackingStoreProducer();
 
+  void SetEGLContext(std::shared_ptr<TestEGLContext> context);
+
   bool Create(const FlutterBackingStoreConfig* config,
               FlutterBackingStore* renderer_out);
 
@@ -54,6 +66,9 @@ class EmbedderTestBackingStoreProducer {
                          FlutterBackingStore* renderer_out);
 
   bool CreateTexture(const FlutterBackingStoreConfig* config,
+                     FlutterBackingStore* renderer_out);
+
+  bool CreateSurface(const FlutterBackingStoreConfig* config,
                      FlutterBackingStore* renderer_out);
 
   bool CreateSoftware(const FlutterBackingStoreConfig* config,
@@ -71,6 +86,10 @@ class EmbedderTestBackingStoreProducer {
   sk_sp<GrDirectContext> context_;
   RenderTargetType type_;
   FlutterSoftwarePixelFormat software_pixfmt_;
+
+#ifdef SHELL_ENABLE_GL
+  std::shared_ptr<TestEGLContext> test_egl_context_;
+#endif
 
 #ifdef SHELL_ENABLE_METAL
   std::unique_ptr<TestMetalContext> test_metal_context_;
