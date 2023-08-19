@@ -211,19 +211,13 @@ RasterStatus Rasterizer::Draw(
   LayerTreePipeline::Consumer consumer =
       [&discard_callback, &raster_status,
        this](std::unique_ptr<LayerTreeItem> item) {
-        // TODO(dkwingsmt): Use a proper view ID when Rasterizer supports
-        // multi-view.
-        int64_t view_id = kFlutterImplicitViewId;
         std::unique_ptr<LayerTree> layer_tree = std::move(item->layer_tree);
         std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =
             std::move(item->frame_timings_recorder);
         float device_pixel_ratio = item->device_pixel_ratio;
-        if (discard_callback(view_id, *layer_tree.get())) {
-          raster_status = RasterStatus::kDiscarded;
-        } else {
-          raster_status = DoDraw(std::move(frame_timings_recorder),
-                                 std::move(layer_tree), device_pixel_ratio);
-        }
+        discard_callback();
+        raster_status = DoDraw(std::move(frame_timings_recorder),
+                               std::move(layer_tree), device_pixel_ratio);
       };
 
   PipelineConsumeResult consume_result = pipeline->Consume(consumer);

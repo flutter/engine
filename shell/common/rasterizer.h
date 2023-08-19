@@ -253,8 +253,7 @@ class Rasterizer final : public SnapshotDelegate,
 
   std::shared_ptr<flutter::TextureRegistry> GetTextureRegistry() override;
 
-  using LayerTreeDiscardCallback =
-      std::function<bool(int64_t, flutter::LayerTree&)>;
+  using LayerTreeDiscardCallback = std::function<void()>;
 
   //----------------------------------------------------------------------------
   /// @brief      Takes the next item from the layer tree pipeline and executes

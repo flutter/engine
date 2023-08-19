@@ -1214,9 +1214,7 @@ void Shell::OnAnimatorUpdateLatestFrameTargetTime(
   }
 }
 
-static bool NoDiscard(int64_t view_id, flutter::LayerTree& tree) {
-  return false;
-};
+static void NoDiscard() {}
 
 // |Animator::Delegate|
 void Shell::OnAnimatorDraw(std::shared_ptr<LayerTreePipeline> pipeline) {
