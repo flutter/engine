@@ -418,7 +418,8 @@ typedef struct {
   /// The size of this struct. Must be sizeof(FlutterOpenGLSurface).
   size_t struct_size;
 
-  /// User data to be returned on the invocation of the destruction callback.
+  /// User data to be passed to the make_current, clear_current and
+  /// destruction callback.
   void* user_data;
 
   /// Callback invoked (on an engine managed thread) that asks the embedder to
