@@ -209,7 +209,8 @@ RasterStatus Rasterizer::Draw(
 
   RasterStatus raster_status = RasterStatus::kFailed;
   LayerTreePipeline::Consumer consumer =
-      [&](std::unique_ptr<LayerTreeItem> item) {
+      [&discard_callback, &raster_status,
+       this](std::unique_ptr<LayerTreeItem> item) {
         // TODO(dkwingsmt): Use a proper view ID when Rasterizer supports
         // multi-view.
         int64_t view_id = kFlutterImplicitViewId;
