@@ -11,19 +11,19 @@ limitation of a separate pool for frame critical tasks is working around the
 separate limitation of not being able to specify a QoS to specific tasks and may
 be lifted in the future.
 
-There is also a separate component called the fence waiter operates on its own
-thread. The sole purpose of this thread is to wait for the GPU to complete
-processing commands so that Impeller can delete the resources when the GPU is
-done.
+There is also a separate component called the fence waiter which operates on its
+own thread. The purpose of the fence waiter is to ensure that the resource
+reference count lives at least as long as the GPU command buffer(s) that access
+this resource.
 
 Resource collection and pooling also happens on another thread called the
 resource manager. This is because touching the allocators is a potentially
-expensive operation and having the collection be done in a frame workload or on
+expensive operation and having the collection be done in a frame workload, or on
 the fence waiter thread may cause jank.
 
 With this overview, the total number of thread used by the Impeller Vulkan
-backend if the number of workers in the concurrent worker pool and the two
-threads for fence waiter and resource manager respectively.
+backend is the number of workers in the concurrent worker pool, and the two
+threads for the fence waiter and resource manager respectively.
 
 A summary of the interaction between the various threads is drawn below:
 
