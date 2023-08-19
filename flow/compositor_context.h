@@ -45,7 +45,6 @@ enum class RasterStatus {
   // the rendering threads are properly synchronized. This status
   // provides a mechanism to manage cases where synchronization is
   // essential for correct rendering outcomes.
-
   kSkipAndRetry,
   // Frame has been successfully rasterized, but there are additional items in
   // the pipeline waiting to be consumed. This is currently
