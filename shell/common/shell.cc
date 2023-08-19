@@ -1214,6 +1214,10 @@ void Shell::OnAnimatorUpdateLatestFrameTargetTime(
   }
 }
 
+static bool NoDiscard(int64_t view_id, flutter::LayerTree& tree) {
+  return false;
+};
+
 // |Animator::Delegate|
 void Shell::OnAnimatorDraw(std::shared_ptr<LayerTreePipeline> pipeline) {
   FML_DCHECK(is_set_up_);
@@ -1223,13 +1227,10 @@ void Shell::OnAnimatorDraw(std::shared_ptr<LayerTreePipeline> pipeline) {
        &waiting_for_first_frame_condition = waiting_for_first_frame_condition_,
        rasterizer = rasterizer_->GetWeakPtr(),
        weak_pipeline = std::weak_ptr<LayerTreePipeline>(pipeline)]() mutable {
-        auto discard_callback = [](int64_t view_id, flutter::LayerTree& tree) {
-          return false;
-        };
         if (rasterizer) {
           std::shared_ptr<LayerTreePipeline> pipeline = weak_pipeline.lock();
           if (pipeline) {
-            rasterizer->Draw(pipeline, discard_callback);
+            rasterizer->Draw(pipeline, NoDiscard);
           }
 
           if (waiting_for_first_frame.load()) {
