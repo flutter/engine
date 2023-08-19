@@ -129,7 +129,8 @@ TEST(RasterizerTest, drawEmptyPipeline) {
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-    rasterizer->Draw(pipeline, nullptr);
+    auto no_discard = [](int64_t, LayerTree&) { return false; };
+    rasterizer->Draw(pipeline, no_discard);
     latch.Signal();
   });
   latch.Wait();

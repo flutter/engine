@@ -288,7 +288,7 @@ class Rasterizer final : public SnapshotDelegate,
   ///                             is discarded instead of being rendered
   ///
   RasterStatus Draw(const std::shared_ptr<LayerTreePipeline>& pipeline,
-                    LayerTreeDiscardCallback discard_callback = NoDiscard);
+                    LayerTreeDiscardCallback discard_callback);
 
   //----------------------------------------------------------------------------
   /// @brief      The type of the screenshot to obtain of the previously
