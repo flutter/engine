@@ -292,6 +292,15 @@
             "contexts": [
                 "osx_sdk"
             ],
+            "properties": {
+                "$flutter/osx_sdk": {
+                    "runtime_versions": [
+                        "ios-16-4_14e300c",
+                        "ios-16-2_14c18"
+                    ],
+                    "sdk_version": "14e300c"
+                }
+            },
             "tasks": [
                 {
                     "language": "python3",
