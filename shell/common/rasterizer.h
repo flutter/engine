@@ -23,6 +23,7 @@
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/time/time_point.h"
+#include "impeller/typographer/backends/skia/text_render_context_skia.h"
 #if IMPELLER_SUPPORTS_RENDERING
 // GN is having trouble understanding how this works in the Fuchsia builds.
 #include "flutter/impeller/aiks/aiks_context.h"  // nogncheck
@@ -544,7 +545,8 @@ class Rasterizer final : public SnapshotDelegate,
       return surface_->GetAiksContext();
     }
     if (auto context = impeller_context_.lock()) {
-      return std::make_shared<impeller::AiksContext>(context);
+      return std::make_shared<impeller::AiksContext>(
+          context, impeller::TextRenderContextSkia::Make());
     }
 #endif
     return nullptr;
