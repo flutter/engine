@@ -210,11 +210,9 @@ bool CommandBufferMTL::SubmitCommandsAsync(
           return;
         }
 
-        auto mtl_render_pass =
-            static_cast<RenderPassMTL*>(render_pass.get());
+        auto mtl_render_pass = static_cast<RenderPassMTL*>(render_pass.get());
         if (!mtl_render_pass->label_.empty()) {
-          [render_command_encoder
-              setLabel:@(mtl_render_pass->label_.c_str())];
+          [render_command_encoder setLabel:@(mtl_render_pass->label_.c_str())];
         }
 
         auto result = mtl_render_pass->EncodeCommands(
