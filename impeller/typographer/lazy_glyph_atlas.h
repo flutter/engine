@@ -26,6 +26,7 @@ class LazyGlyphAtlas {
   void ResetTextFrames();
 
   std::shared_ptr<GlyphAtlas> CreateOrGetGlyphAtlas(
+      Context& context,
       GlyphAtlas::Type type) const;
 
  private:

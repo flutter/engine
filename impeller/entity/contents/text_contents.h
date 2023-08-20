@@ -63,6 +63,7 @@ class TextContents final : public Contents {
   Vector2 offset_;
 
   std::shared_ptr<GlyphAtlas> ResolveAtlas(
+      Context& context,
       GlyphAtlas::Type type,
       const std::shared_ptr<LazyGlyphAtlas>& lazy_atlas) const;
 

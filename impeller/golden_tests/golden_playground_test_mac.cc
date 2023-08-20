@@ -129,7 +129,7 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(
     std::unique_ptr<TextRenderContext> text_render_context_override) {
   auto text_context = text_render_context_override
                           ? std::move(text_render_context_override)
-                          : TextRenderContextSkia::Make(GetContext());
+                          : TextRenderContextSkia::Make();
   AiksContext renderer(GetContext(), std::move(text_context));
 
   auto screenshot = pimpl_->screenshoter->MakeScreenshot(renderer, picture,

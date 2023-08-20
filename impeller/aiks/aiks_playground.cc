@@ -20,7 +20,7 @@ bool AiksPlayground::OpenPlaygroundHere(
     std::unique_ptr<TextRenderContext> text_render_context_override) {
   auto text_context = text_render_context_override
                           ? std::move(text_render_context_override)
-                          : TextRenderContextSkia::Make(GetContext());
+                          : TextRenderContextSkia::Make();
   return OpenPlaygroundHere(
       [&picture](AiksContext& renderer, RenderTarget& render_target) -> bool {
         return renderer.Render(picture, render_target);
@@ -37,7 +37,7 @@ bool AiksPlayground::OpenPlaygroundHere(
 
   auto text_context = text_render_context_override
                           ? std::move(text_render_context_override)
-                          : TextRenderContextSkia::Make(GetContext());
+                          : TextRenderContextSkia::Make();
   AiksContext renderer(GetContext(), std::move(text_context));
 
   if (!renderer.IsValid()) {

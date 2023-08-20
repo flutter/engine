@@ -12,10 +12,8 @@
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
-#include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
-#include "impeller/tessellator/tessellator.h"
 #include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/lazy_glyph_atlas.h"
 
@@ -30,11 +28,12 @@ void TextContents::SetTextFrame(const TextFrame& frame) {
 }
 
 std::shared_ptr<GlyphAtlas> TextContents::ResolveAtlas(
+    Context& context,
     GlyphAtlas::Type type,
     const std::shared_ptr<LazyGlyphAtlas>& lazy_atlas) const {
   FML_DCHECK(lazy_atlas);
   if (lazy_atlas) {
-    return lazy_atlas->CreateOrGetGlyphAtlas(type);
+    return lazy_atlas->CreateOrGetGlyphAtlas(context, type);
   }
 
   return nullptr;
@@ -88,7 +87,8 @@ bool TextContents::Render(const ContentContext& renderer,
   }
 
   auto type = frame_.GetAtlasType();
-  auto atlas = ResolveAtlas(type, renderer.GetLazyGlyphAtlas());
+  auto atlas =
+      ResolveAtlas(*renderer.GetContext(), type, renderer.GetLazyGlyphAtlas());
 
   if (!atlas || !atlas->IsValid()) {
     VALIDATION_LOG << "Cannot render glyphs without prepared atlas.";

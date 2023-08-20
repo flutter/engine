@@ -20,8 +20,7 @@ bool EntityPlayground::OpenPlaygroundHere(EntityPass& entity_pass) {
     return true;
   }
 
-  ContentContext content_context(GetContext(),
-                                 TextRenderContextSkia::Make(GetContext()));
+  ContentContext content_context(GetContext(), TextRenderContextSkia::Make());
   if (!content_context.IsValid()) {
     return false;
   }
@@ -37,8 +36,7 @@ bool EntityPlayground::OpenPlaygroundHere(Entity entity) {
     return true;
   }
 
-  ContentContext content_context(GetContext(),
-                                 TextRenderContextSkia::Make(GetContext()));
+  ContentContext content_context(GetContext(), TextRenderContextSkia::Make());
   if (!content_context.IsValid()) {
     return false;
   }
@@ -53,8 +51,7 @@ bool EntityPlayground::OpenPlaygroundHere(EntityPlaygroundCallback callback) {
     return true;
   }
 
-  ContentContext content_context(GetContext(),
-                                 TextRenderContextSkia::Make(GetContext()));
+  ContentContext content_context(GetContext(), TextRenderContextSkia::Make());
   if (!content_context.IsValid()) {
     return false;
   }

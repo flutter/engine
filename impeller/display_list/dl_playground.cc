@@ -30,7 +30,7 @@ bool DlPlayground::OpenPlaygroundHere(DisplayListPlaygroundCallback callback) {
     return true;
   }
 
-  AiksContext context(GetContext(), TextRenderContextSkia::Make(GetContext()));
+  AiksContext context(GetContext(), TextRenderContextSkia::Make());
   if (!context.IsValid()) {
     return false;
   }

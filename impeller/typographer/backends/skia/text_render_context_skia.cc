@@ -16,8 +16,6 @@
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkFont.h"
-#include "third_party/skia/include/core/SkFontMetrics.h"
-#include "third_party/skia/include/core/SkRSXform.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
 namespace impeller {
@@ -30,13 +28,11 @@ using FontGlyphPairRefVector =
 //              https://github.com/flutter/flutter/issues/114563
 constexpr auto kPadding = 2;
 
-std::unique_ptr<TextRenderContext> TextRenderContextSkia::Make(
-    std::shared_ptr<Context> context) {
-  return std::make_unique<TextRenderContextSkia>(std::move(context));
+std::unique_ptr<TextRenderContext> TextRenderContextSkia::Make() {
+  return std::make_unique<TextRenderContextSkia>();
 }
 
-TextRenderContextSkia::TextRenderContextSkia(std::shared_ptr<Context> context)
-    : TextRenderContext(std::move(context)) {}
+TextRenderContextSkia::TextRenderContextSkia() = default;
 
 TextRenderContextSkia::~TextRenderContextSkia() = default;
 
@@ -310,6 +306,7 @@ static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
 }
 
 std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
+    Context& context,
     GlyphAtlas::Type type,
     std::shared_ptr<GlyphAtlasContext> atlas_context,
     const FontGlyphPair::Set& font_glyph_pairs) const {
@@ -429,8 +426,8 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
       format = PixelFormat::kR8G8B8A8UNormInt;
       break;
   }
-  auto texture = UploadGlyphTextureAtlas(GetContext()->GetResourceAllocator(),
-                                         bitmap, atlas_size, format);
+  auto texture = UploadGlyphTextureAtlas(context.GetResourceAllocator(), bitmap,
+                                         atlas_size, format);
   if (!texture) {
     return nullptr;
   }
