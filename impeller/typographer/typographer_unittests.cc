@@ -8,7 +8,6 @@
 #include "impeller/typographer/backends/skia/text_render_context_skia.h"
 #include "impeller/typographer/lazy_glyph_atlas.h"
 #include "impeller/typographer/rectangle_packer.h"
-#include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkFontMgr.h"
 #include "third_party/skia/include/core/SkRect.h"
@@ -48,12 +47,12 @@ TEST_P(TypographerTest, CanConvertTextBlob) {
 }
 
 TEST_P(TypographerTest, CanCreateRenderContext) {
-  auto context = TextRenderContext::Create(GetContext());
+  auto context = TextRenderContextSkia::Make(GetContext());
   ASSERT_TRUE(context && context->IsValid());
 }
 
 TEST_P(TypographerTest, CanCreateGlyphAtlas) {
-  auto context = TextRenderContext::Create(GetContext());
+  auto context = TextRenderContextSkia::Make(GetContext());
   auto atlas_context = std::make_shared<GlyphAtlasContext>();
   ASSERT_TRUE(context && context->IsValid());
   SkFont sk_font;
@@ -111,7 +110,7 @@ TEST_P(TypographerTest, LazyAtlasTracksColor) {
 
   ASSERT_FALSE(frame.GetAtlasType() == GlyphAtlas::Type::kColorBitmap);
 
-  LazyGlyphAtlas lazy_atlas;
+  LazyGlyphAtlas lazy_atlas(TextRenderContextSkia::Make(GetContext()));
 
   lazy_atlas.AddTextFrame(frame, 1.0f);
 
@@ -122,17 +121,17 @@ TEST_P(TypographerTest, LazyAtlasTracksColor) {
   lazy_atlas.AddTextFrame(frame, 1.0f);
 
   // Creates different atlases for color and alpha bitmap.
-  auto color_atlas = lazy_atlas.CreateOrGetGlyphAtlas(
-      GlyphAtlas::Type::kColorBitmap, GetContext());
+  auto color_atlas =
+      lazy_atlas.CreateOrGetGlyphAtlas(GlyphAtlas::Type::kColorBitmap);
 
-  auto bitmap_atlas = lazy_atlas.CreateOrGetGlyphAtlas(
-      GlyphAtlas::Type::kAlphaBitmap, GetContext());
+  auto bitmap_atlas =
+      lazy_atlas.CreateOrGetGlyphAtlas(GlyphAtlas::Type::kAlphaBitmap);
 
   ASSERT_FALSE(color_atlas == bitmap_atlas);
 }
 
 TEST_P(TypographerTest, GlyphAtlasWithOddUniqueGlyphSize) {
-  auto context = TextRenderContext::Create(GetContext());
+  auto context = TextRenderContextSkia::Make(GetContext());
   auto atlas_context = std::make_shared<GlyphAtlasContext>();
   ASSERT_TRUE(context && context->IsValid());
   SkFont sk_font;
@@ -149,7 +148,7 @@ TEST_P(TypographerTest, GlyphAtlasWithOddUniqueGlyphSize) {
 }
 
 TEST_P(TypographerTest, GlyphAtlasIsRecycledIfUnchanged) {
-  auto context = TextRenderContext::Create(GetContext());
+  auto context = TextRenderContextSkia::Make(GetContext());
   auto atlas_context = std::make_shared<GlyphAtlasContext>();
   ASSERT_TRUE(context && context->IsValid());
   SkFont sk_font;
@@ -172,7 +171,7 @@ TEST_P(TypographerTest, GlyphAtlasIsRecycledIfUnchanged) {
 }
 
 TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {
-  auto context = TextRenderContext::Create(GetContext());
+  auto context = TextRenderContextSkia::Make(GetContext());
   auto atlas_context = std::make_shared<GlyphAtlasContext>();
   ASSERT_TRUE(context && context->IsValid());
 
@@ -213,7 +212,7 @@ TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {
 }
 
 TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledIfUnchanged) {
-  auto context = TextRenderContext::Create(GetContext());
+  auto context = TextRenderContextSkia::Make(GetContext());
   auto atlas_context = std::make_shared<GlyphAtlasContext>();
   ASSERT_TRUE(context && context->IsValid());
   SkFont sk_font;
@@ -246,7 +245,7 @@ TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledIfUnchanged) {
 }
 
 TEST_P(TypographerTest, GlyphAtlasTextureIsRecreatedIfTypeChanges) {
-  auto context = TextRenderContext::Create(GetContext());
+  auto context = TextRenderContextSkia::Make(GetContext());
   auto atlas_context = std::make_shared<GlyphAtlasContext>();
   ASSERT_TRUE(context && context->IsValid());
   SkFont sk_font;

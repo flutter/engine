@@ -11,8 +11,10 @@
 
 namespace impeller {
 
-LazyGlyphAtlas::LazyGlyphAtlas()
-    : alpha_context_(std::make_shared<GlyphAtlasContext>()),
+LazyGlyphAtlas::LazyGlyphAtlas(
+    std::unique_ptr<TextRenderContext> text_render_context)
+    : text_render_context_(std::move(text_render_context)),
+      alpha_context_(std::make_shared<GlyphAtlasContext>()),
       color_context_(std::make_shared<GlyphAtlasContext>()) {}
 
 LazyGlyphAtlas::~LazyGlyphAtlas() = default;
@@ -33,8 +35,7 @@ void LazyGlyphAtlas::ResetTextFrames() {
 }
 
 std::shared_ptr<GlyphAtlas> LazyGlyphAtlas::CreateOrGetGlyphAtlas(
-    GlyphAtlas::Type type,
-    std::shared_ptr<Context> context) const {
+    GlyphAtlas::Type type) const {
   {
     auto atlas_it = atlas_map_.find(type);
     if (atlas_it != atlas_map_.end()) {
@@ -42,14 +43,21 @@ std::shared_ptr<GlyphAtlas> LazyGlyphAtlas::CreateOrGetGlyphAtlas(
     }
   }
 
-  auto text_context = TextRenderContext::Create(std::move(context));
-  if (!text_context || !text_context->IsValid()) {
+  if (!text_render_context_) {
+    VALIDATION_LOG << "Unable to render text because a TextRenderContext has "
+                      "not been set.";
     return nullptr;
   }
+  if (!text_render_context_->IsValid()) {
+    VALIDATION_LOG
+        << "Unable to render text because the TextRenderContext is invalid.";
+    return nullptr;
+  }
+
   auto& set = type == GlyphAtlas::Type::kAlphaBitmap ? alpha_set_ : color_set_;
   auto atlas_context =
       type == GlyphAtlas::Type::kAlphaBitmap ? alpha_context_ : color_context_;
-  auto atlas = text_context->CreateGlyphAtlas(type, atlas_context, set);
+  auto atlas = text_render_context_->CreateGlyphAtlas(type, atlas_context, set);
   if (!atlas || !atlas->IsValid()) {
     VALIDATION_LOG << "Could not create valid atlas.";
     return nullptr;

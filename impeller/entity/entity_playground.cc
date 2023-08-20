@@ -1,11 +1,12 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "impeller/entity/entity_playground.h"
 
 #include "impeller/entity/contents/content_context.h"
-
+#include "impeller/typographer/backends/skia/text_render_context_skia.h"
 #include "third_party/imgui/imgui.h"
 
 namespace impeller {
@@ -19,7 +20,8 @@ bool EntityPlayground::OpenPlaygroundHere(EntityPass& entity_pass) {
     return true;
   }
 
-  ContentContext content_context(GetContext());
+  ContentContext content_context(GetContext(),
+                                 TextRenderContextSkia::Make(GetContext()));
   if (!content_context.IsValid()) {
     return false;
   }
@@ -35,7 +37,8 @@ bool EntityPlayground::OpenPlaygroundHere(Entity entity) {
     return true;
   }
 
-  ContentContext content_context(GetContext());
+  ContentContext content_context(GetContext(),
+                                 TextRenderContextSkia::Make(GetContext()));
   if (!content_context.IsValid()) {
     return false;
   }
@@ -50,7 +53,8 @@ bool EntityPlayground::OpenPlaygroundHere(EntityPlaygroundCallback callback) {
     return true;
   }
 
-  ContentContext content_context(GetContext());
+  ContentContext content_context(GetContext(),
+                                 TextRenderContextSkia::Make(GetContext()));
   if (!content_context.IsValid()) {
     return false;
   }

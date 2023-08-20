@@ -31,11 +31,10 @@ void TextContents::SetTextFrame(const TextFrame& frame) {
 
 std::shared_ptr<GlyphAtlas> TextContents::ResolveAtlas(
     GlyphAtlas::Type type,
-    const std::shared_ptr<LazyGlyphAtlas>& lazy_atlas,
-    std::shared_ptr<Context> context) const {
+    const std::shared_ptr<LazyGlyphAtlas>& lazy_atlas) const {
   FML_DCHECK(lazy_atlas);
   if (lazy_atlas) {
-    return lazy_atlas->CreateOrGetGlyphAtlas(type, std::move(context));
+    return lazy_atlas->CreateOrGetGlyphAtlas(type);
   }
 
   return nullptr;
@@ -89,8 +88,7 @@ bool TextContents::Render(const ContentContext& renderer,
   }
 
   auto type = frame_.GetAtlasType();
-  auto atlas =
-      ResolveAtlas(type, renderer.GetLazyGlyphAtlas(), renderer.GetContext());
+  auto atlas = ResolveAtlas(type, renderer.GetLazyGlyphAtlas());
 
   if (!atlas || !atlas->IsValid()) {
     VALIDATION_LOG << "Cannot render glyphs without prepared atlas.";

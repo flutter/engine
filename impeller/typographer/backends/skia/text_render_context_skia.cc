@@ -12,6 +12,7 @@
 #include "impeller/core/allocator.h"
 #include "impeller/typographer/backends/skia/typeface_skia.h"
 #include "impeller/typographer/rectangle_packer.h"
+#include "impeller/typographer/text_render_context.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkFont.h"
@@ -24,16 +25,15 @@ namespace impeller {
 using FontGlyphPairRefVector =
     std::vector<std::reference_wrapper<const FontGlyphPair>>;
 
-std::unique_ptr<TextRenderContext> TextRenderContext::Create(
-    std::shared_ptr<Context> context) {
-  // There is only one backend today.
-  return std::make_unique<TextRenderContextSkia>(std::move(context));
-}
-
 // TODO(bdero): We might be able to remove this per-glyph padding if we fix
 //              the underlying causes of the overlap.
 //              https://github.com/flutter/flutter/issues/114563
 constexpr auto kPadding = 2;
+
+std::unique_ptr<TextRenderContext> TextRenderContextSkia::Make(
+    std::shared_ptr<Context> context) {
+  return std::make_unique<TextRenderContextSkia>(std::move(context));
+}
 
 TextRenderContextSkia::TextRenderContextSkia(std::shared_ptr<Context> context)
     : TextRenderContext(std::move(context)) {}

@@ -18,12 +18,15 @@ PlaygroundBackend GoldenPlaygroundTest::GetBackend() const {
   return GetParam();
 }
 
-bool GoldenPlaygroundTest::OpenPlaygroundHere(const Picture& picture) {
+bool GoldenPlaygroundTest::OpenPlaygroundHere(
+    const Picture& picture,
+    std::unique_ptr<TextRenderContext> text_render_context_override) {
   return false;
 }
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(
-    const AiksPlaygroundCallback& callback) {
+    const AiksPlaygroundCallback& callback,
+    std::unique_ptr<TextRenderContext> text_render_context_override) {
   return false;
 }
 

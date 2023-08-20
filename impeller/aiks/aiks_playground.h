@@ -20,9 +20,13 @@ class AiksPlayground : public PlaygroundTest {
 
   ~AiksPlayground();
 
-  bool OpenPlaygroundHere(const Picture& picture);
+  bool OpenPlaygroundHere(const Picture& picture,
+                          std::unique_ptr<TextRenderContext>
+                              text_render_context_override = nullptr);
 
-  bool OpenPlaygroundHere(AiksPlaygroundCallback callback);
+  bool OpenPlaygroundHere(AiksPlaygroundCallback callback,
+                          std::unique_ptr<TextRenderContext>
+                              text_render_context_override = nullptr);
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(AiksPlayground);

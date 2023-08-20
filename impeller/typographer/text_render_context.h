@@ -23,9 +23,6 @@ namespace impeller {
 ///
 class TextRenderContext {
  public:
-  static std::unique_ptr<TextRenderContext> Create(
-      std::shared_ptr<Context> context);
-
   virtual ~TextRenderContext();
 
   virtual bool IsValid() const;

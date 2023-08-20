@@ -56,7 +56,7 @@ class GoldenTests : public ::testing::Test {
   void SetUp() override {
     testing::GoldenDigest::Instance()->AddDimension(
         "gpu_string",
-        Screenshoter().GetContext().GetContext()->DescribeGpuModel());
+        Screenshoter().GetAiksContext().GetContext()->DescribeGpuModel());
   }
 
  private:

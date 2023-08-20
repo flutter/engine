@@ -32,9 +32,13 @@ class GoldenPlaygroundTest
 
   PlaygroundBackend GetBackend() const;
 
-  bool OpenPlaygroundHere(const Picture& picture);
+  bool OpenPlaygroundHere(const Picture& picture,
+                          std::unique_ptr<TextRenderContext>
+                              text_render_context_override = nullptr);
 
-  bool OpenPlaygroundHere(const AiksPlaygroundCallback& callback);
+  bool OpenPlaygroundHere(const AiksPlaygroundCallback& callback,
+                          std::unique_ptr<TextRenderContext>
+                              text_render_context_override = nullptr);
 
   std::shared_ptr<Texture> CreateTextureForFixture(
       const char* fixture_name,

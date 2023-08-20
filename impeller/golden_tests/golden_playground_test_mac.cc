@@ -10,6 +10,7 @@
 #include "flutter/impeller/aiks/picture.h"
 #include "flutter/impeller/golden_tests/golden_digest.h"
 #include "flutter/impeller/golden_tests/metal_screenshoter.h"
+#include "impeller/typographer/backends/skia/text_render_context_skia.h"
 
 namespace impeller {
 
@@ -123,14 +124,22 @@ PlaygroundBackend GoldenPlaygroundTest::GetBackend() const {
   return GetParam();
 }
 
-bool GoldenPlaygroundTest::OpenPlaygroundHere(const Picture& picture) {
-  auto screenshot =
-      pimpl_->screenshoter->MakeScreenshot(picture, pimpl_->window_size);
+bool GoldenPlaygroundTest::OpenPlaygroundHere(
+    const Picture& picture,
+    std::unique_ptr<TextRenderContext> text_render_context_override) {
+  auto text_context = text_render_context_override
+                          ? std::move(text_render_context_override)
+                          : TextRenderContextSkia::Make(GetContext());
+  AiksContext renderer(GetContext(), std::move(text_context));
+
+  auto screenshot = pimpl_->screenshoter->MakeScreenshot(renderer, picture,
+                                                         pimpl_->window_size);
   return SaveScreenshot(std::move(screenshot));
 }
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(
-    const AiksPlaygroundCallback& callback) {
+    const AiksPlaygroundCallback& callback,
+    std::unique_ptr<TextRenderContext> text_render_context_override) {
   return false;
 }
 
@@ -161,7 +170,7 @@ std::shared_ptr<RuntimeStage> GoldenPlaygroundTest::OpenAssetAsRuntimeStage(
 }
 
 std::shared_ptr<Context> GoldenPlaygroundTest::GetContext() const {
-  return pimpl_->screenshoter->GetContext().GetContext();
+  return pimpl_->screenshoter->GetPlayground().GetContext();
 }
 
 Point GoldenPlaygroundTest::GetContentScale() const {

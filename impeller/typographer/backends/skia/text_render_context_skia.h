@@ -11,6 +11,9 @@ namespace impeller {
 
 class TextRenderContextSkia : public TextRenderContext {
  public:
+  static std::unique_ptr<TextRenderContext> Make(
+      std::shared_ptr<Context> context);
+
   TextRenderContextSkia(std::shared_ptr<Context> context);
 
   ~TextRenderContextSkia() override;
