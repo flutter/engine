@@ -23,12 +23,12 @@
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/time/time_point.h"
-#include "impeller/typographer/backends/skia/text_render_context_skia.h"
 #if IMPELLER_SUPPORTS_RENDERING
 // GN is having trouble understanding how this works in the Fuchsia builds.
-#include "flutter/impeller/aiks/aiks_context.h"  // nogncheck
-#include "flutter/impeller/renderer/context.h"   // nogncheck
-#endif                                           // IMPELLER_SUPPORTS_RENDERING
+#include "impeller/aiks/aiks_context.h"  // nogncheck
+#include "impeller/renderer/context.h"   // nogncheck
+#include "impeller/typographer/backends/skia/text_render_context_skia.h"  // nogncheck
+#endif  // IMPELLER_SUPPORTS_RENDERING
 #include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/shell/common/pipeline.h"
 #include "flutter/shell/common/snapshot_controller.h"
