@@ -382,6 +382,7 @@ public class FlutterView extends FrameLayout
     } else {
       Log.v(TAG, "Internally using a FlutterImageView.");
       addView(flutterImageView);
+      flutterEngine.getRenderer().SetRenderingToImageView(true);
     }
 
     // FlutterView needs to be focusable so that the InputMethodManager can interact with it.
@@ -1339,6 +1340,7 @@ public class FlutterView extends FrameLayout
     if (flutterEngine != null) {
       renderSurface.attachToRenderer(flutterEngine.getRenderer());
     }
+    flutterEngine.getRenderer().SetRenderingToImageView(true);
   }
 
   /**
@@ -1384,6 +1386,7 @@ public class FlutterView extends FrameLayout
               flutterImageView.detachFromRenderer();
               releaseImageView();
             }
+            renderer.SetRenderingToImageView(false);
           }
 
           @Override
