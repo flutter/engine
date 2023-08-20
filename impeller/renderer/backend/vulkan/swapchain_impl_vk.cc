@@ -4,31 +4,33 @@
 
 #include "impeller/renderer/backend/vulkan/swapchain_impl_vk.h"
 
-#include "flutter/fml/trace_event.h"
-#include "fml/synchronization/semaphore.h"
+#include "fml/trace_event.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
-#include "impeller/renderer/backend/vulkan/fence_waiter_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_vk.h"
 #include "impeller/renderer/backend/vulkan/swapchain_image_vk.h"
+#include "impeller/renderer/backend/vulkan/fence_waiter_vk.h"
+#include "vulkan/vulkan_structs.hpp"
 
 namespace impeller {
 
 static constexpr size_t kMaxFramesInFlight = 3u;
+
+// Number of frames to poll for orientation changes. For example `1u` means
+// that the orientation will be polled every frame, while `2u` means that the
+// orientation will be polled every other frame.
+static constexpr size_t kPollFramesForOrientation = 1u;
 
 struct FrameSynchronizer {
   vk::UniqueFence acquire;
   vk::UniqueSemaphore render_ready;
   vk::UniqueSemaphore present_ready;
   std::shared_ptr<CommandBuffer> final_cmd_buffer;
-  std::shared_ptr<fml::Semaphore> present_completed_;
   bool is_valid = false;
 
-  explicit FrameSynchronizer(const vk::Device& device,
-                             const ContextVK& context_vk)
-      : present_completed_(std::make_shared<fml::Semaphore>(1u)) {
+  explicit FrameSynchronizer(const vk::Device& device) {
     auto acquire_res = device.createFenceUnique(
         vk::FenceCreateInfo{vk::FenceCreateFlagBits::eSignaled});
     auto render_res = device.createSemaphoreUnique({});
@@ -39,8 +41,6 @@ struct FrameSynchronizer {
       VALIDATION_LOG << "Could not create synchronizer.";
       return;
     }
-    context_vk.SetDebugName(acquire_res.value.get(),
-                            "Frame Synchronizer Fence");
     acquire = std::move(acquire_res.value);
     render_ready = std::move(render_res.value);
     present_ready = std::move(present_res.value);
@@ -50,12 +50,10 @@ struct FrameSynchronizer {
   ~FrameSynchronizer() = default;
 
   bool WaitForFence(const vk::Device& device) {
-    if (!present_completed_->Wait()) {
-      return false;
-    }
-    if (auto result = device.waitForFences(*acquire,  // fence
-                                           true,      // wait all
-                                           100000000  // timeout (ns) 100 ms
+    if (auto result = device.waitForFences(
+            *acquire,                             // fence
+            true,                                 // wait all
+            std::numeric_limits<uint64_t>::max()  // timeout (ns)
         );
         result != vk::Result::eSuccess) {
       VALIDATION_LOG << "Fence wait failed: " << vk::to_string(result);
@@ -134,16 +132,17 @@ static std::optional<vk::Queue> ChoosePresentQueue(
 std::shared_ptr<SwapchainImplVK> SwapchainImplVK::Create(
     const std::shared_ptr<Context>& context,
     vk::UniqueSurfaceKHR surface,
-    bool was_rotated,
-    vk::SwapchainKHR old_swapchain) {
+    vk::SwapchainKHR old_swapchain,
+    vk::SurfaceTransformFlagBitsKHR last_transform) {
   return std::shared_ptr<SwapchainImplVK>(new SwapchainImplVK(
-      context, std::move(surface), was_rotated, old_swapchain));
+      context, std::move(surface), old_swapchain, last_transform));
 }
 
-SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
-                                 vk::UniqueSurfaceKHR surface,
-                                 bool was_rotated,
-                                 vk::SwapchainKHR old_swapchain) {
+SwapchainImplVK::SwapchainImplVK(
+    const std::shared_ptr<Context>& context,
+    vk::UniqueSurfaceKHR surface,
+    vk::SwapchainKHR old_swapchain,
+    vk::SurfaceTransformFlagBitsKHR last_transform) {
   if (!context) {
     return;
   }
@@ -270,8 +269,7 @@ SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
 
   std::vector<std::unique_ptr<FrameSynchronizer>> synchronizers;
   for (size_t i = 0u; i < kMaxFramesInFlight; i++) {
-    auto sync =
-        std::make_unique<FrameSynchronizer>(vk_context.GetDevice(), vk_context);
+    auto sync = std::make_unique<FrameSynchronizer>(vk_context.GetDevice());
     if (!sync->is_valid) {
       VALIDATION_LOG << "Could not create frame synchronizers.";
       return;
@@ -289,8 +287,7 @@ SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
   synchronizers_ = std::move(synchronizers);
   current_frame_ = synchronizers_.size() - 1u;
   is_valid_ = true;
-  was_rotated_ = was_rotated;
-  is_rotated_ = was_rotated;
+  transform_if_changed_discard_swapchain_ = last_transform;
 }
 
 SwapchainImplVK::~SwapchainImplVK() {
@@ -322,6 +319,10 @@ vk::Format SwapchainImplVK::GetSurfaceFormat() const {
   return surface_format_;
 }
 
+vk::SurfaceTransformFlagBitsKHR SwapchainImplVK::GetLastTransform() const {
+  return transform_if_changed_discard_swapchain_;
+}
+
 std::shared_ptr<Context> SwapchainImplVK::GetContext() const {
   return context_.lock();
 }
@@ -330,10 +331,6 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
   auto context_strong = context_.lock();
   if (!context_strong) {
     return {};
-  }
-
-  if (was_rotated_ != is_rotated_) {
-    return AcquireResult{true /* out of date */};
   }
 
   const auto& context = ContextVK::Cast(*context_strong);
@@ -351,22 +348,36 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
   }
 
   //----------------------------------------------------------------------------
+  /// Poll to see if the orientation has changed.
+  ///
+  /// https://developer.android.com/games/optimize/vulkan-prerotation#using_polling
+  current_transform_poll_count_++;
+  if (current_transform_poll_count_ >= kPollFramesForOrientation) {
+    current_transform_poll_count_ = 0u;
+    auto [caps_result, caps] =
+        context.GetPhysicalDevice().getSurfaceCapabilitiesKHR(*surface_);
+    if (caps_result != vk::Result::eSuccess) {
+      VALIDATION_LOG << "Could not get surface capabilities: "
+                     << vk::to_string(caps_result);
+      return {};
+    }
+    if (caps.currentTransform != transform_if_changed_discard_swapchain_) {
+      transform_if_changed_discard_swapchain_ = caps.currentTransform;
+      return AcquireResult{true /* out of date */};
+    }
+  }
+
+  //----------------------------------------------------------------------------
   /// Get the next image index.
   ///
   auto [acq_result, index] = context.GetDevice().acquireNextImageKHR(
-      *swapchain_,                           // swapchain
-      std::numeric_limits<uint64_t>::max(),  // timeout (nanoseconds)
-      *sync->render_ready,                   // signal semaphore
-      nullptr                                // fence
+      *swapchain_,          // swapchain
+      1'000'000'000,        // timeout (ns) 1000ms
+      *sync->render_ready,  // signal semaphore
+      nullptr               // fence
   );
 
-  if (acq_result == vk::Result::eSuboptimalKHR) {
-    is_rotated_ = true;
-    return AcquireResult{true /* out of date */};
-  }
-
-  if (acq_result == vk::Result::eErrorOutOfDateKHR ||
-      acq_result == vk::Result::eTimeout) {
+  if (acq_result == vk::Result::eErrorOutOfDateKHR) {
     return AcquireResult{true /* out of date */};
   }
 
@@ -481,43 +492,48 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
     }
   }
 
-  context.GetConcurrentWorkerTaskRunner()->PostTask([&, index, image] {
-    auto context_strong = context_.lock();
-    if (!context_strong) {
-      return;
-    }
-    //----------------------------------------------------------------------------
-    /// Present the image.
-    ///
-    uint32_t indices[] = {static_cast<uint32_t>(index)};
+  context.GetConcurrentWorkerTaskRunner()->PostTask(
+      [&, index, image, current_frame = current_frame_] {
+        auto context_strong = context_.lock();
+        if (!context_strong) {
+          return;
+        }
 
-    vk::PresentInfoKHR present_info;
-    present_info.setSwapchains(*swapchain_);
-    present_info.setImageIndices(indices);
-    present_info.setWaitSemaphores(*sync->present_ready);
+        const auto& sync = synchronizers_[current_frame];
 
-    sync->present_completed_->Signal();
+        //----------------------------------------------------------------------------
+        /// Present the image.
+        ///
+        uint32_t indices[] = {static_cast<uint32_t>(index)};
 
-    switch (auto result = present_queue_.presentKHR(present_info)) {
-      case vk::Result::eErrorOutOfDateKHR:
-        // Caller will recreate the impl on acquisition, not submission.
-        [[fallthrough]];
-      case vk::Result::eErrorSurfaceLostKHR:
-        // Vulkan guarantees that the set of queue operations will still
-        // complete successfully.
-        [[fallthrough]];
-      case vk::Result::eSuccess:
-        is_rotated_ = false;
-        return;
-      case vk::Result::eSuboptimalKHR:
-        is_rotated_ = true;
-        return;
-      default:
-        VALIDATION_LOG << "Could not present queue: " << vk::to_string(result);
-        return;
-    }
-    FML_UNREACHABLE();
-  });
+        vk::PresentInfoKHR present_info;
+        present_info.setSwapchains(*swapchain_);
+        present_info.setImageIndices(indices);
+        present_info.setWaitSemaphores(*sync->present_ready);
+
+        switch (auto result = present_queue_.presentKHR(present_info)) {
+          case vk::Result::eErrorOutOfDateKHR:
+            // Caller will recreate the impl on acquisition, not submission.
+            [[fallthrough]];
+          case vk::Result::eErrorSurfaceLostKHR:
+            // Vulkan guarantees that the set of queue operations will still
+            // complete successfully.
+            [[fallthrough]];
+          case vk::Result::eSuboptimalKHR:
+            // Even though we're handling rotation changes via polling, we
+            // still need to handle the case where the swapchain signals that
+            // it's suboptimal (i.e. every frame when we are rotated given we
+            // aren't doing Vulkan pre-rotation).
+            [[fallthrough]];
+          case vk::Result::eSuccess:
+            return;
+          default:
+            VALIDATION_LOG << "Could not present queue: "
+                           << vk::to_string(result);
+            return;
+        }
+        FML_UNREACHABLE();
+      });
   return true;
 }
 

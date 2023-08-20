@@ -2,9 +2,11 @@ package io.flutter.embedding.android;
 
 import static android.content.ComponentCallbacks2.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNotNull;
@@ -88,6 +90,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     when(mockHost.shouldHandleDeeplinking()).thenReturn(false);
     when(mockHost.shouldDestroyEngineWithHost()).thenReturn(true);
     when(mockHost.shouldDispatchAppLifecycleState()).thenReturn(true);
+    when(mockHost.attachToEngineAutomatically()).thenReturn(true);
   }
 
   @Test
@@ -1241,6 +1244,31 @@ public class FlutterActivityAndFragmentDelegateTest {
     assertEquals(engineUnderTest, mockFlutterEngine);
   }
 
+  @Test
+  public void itDoesAttachFlutterViewToEngine() {
+    // ---- Test setup ----
+    // Create the real object that we're testing.
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+    delegate.onAttach(ctx);
+    delegate.onCreateView(null, null, null, 0, true);
+
+    // --- Execute the behavior under test ---
+    assertTrue(delegate.flutterView.isAttachedToFlutterEngine());
+  }
+
+  @Test
+  public void itDoesNotAttachFlutterViewToEngine() {
+    // ---- Test setup ----
+    // Create the real object that we're testing.
+    when(mockHost.attachToEngineAutomatically()).thenReturn(false);
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+    delegate.onAttach(ctx);
+    delegate.onCreateView(null, null, null, 0, true);
+
+    // --- Execute the behavior under test ---
+    assertFalse(delegate.flutterView.isAttachedToFlutterEngine());
+  }
+
   /**
    * Creates a mock {@link io.flutter.embedding.engine.FlutterEngine}.
    *
@@ -1259,6 +1287,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     when(fakeMessageBuilder.setPlatformBrightness(any(SettingsChannel.PlatformBrightness.class)))
         .thenReturn(fakeMessageBuilder);
     when(fakeMessageBuilder.setTextScaleFactor(any(Float.class))).thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setDisplayMetrics(any())).thenReturn(fakeMessageBuilder);
     when(fakeMessageBuilder.setNativeSpellCheckServiceDefined(any(Boolean.class)))
         .thenReturn(fakeMessageBuilder);
     when(fakeMessageBuilder.setBrieflyShowPassword(any(Boolean.class)))

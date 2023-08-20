@@ -15,6 +15,7 @@
 #include "impeller/core/formats.h"
 #include "impeller/core/sampler.h"
 #include "impeller/core/shader_types.h"
+#include "impeller/renderer/backend/vulkan/barrier_vk.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
@@ -24,11 +25,13 @@
 #include "impeller/renderer/backend/vulkan/sampler_vk.h"
 #include "impeller/renderer/backend/vulkan/shared_object_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
+#include "vulkan/vulkan_to_string.hpp"
 
 namespace impeller {
 
 static vk::AttachmentDescription CreateAttachmentDescription(
     const Attachment& attachment,
+    const std::shared_ptr<CommandBufferVK>& command_buffer,
     bool resolve_texture = false) {
   const auto& texture =
       resolve_texture ? attachment.resolve_texture : attachment.texture;
@@ -37,7 +40,7 @@ static vk::AttachmentDescription CreateAttachmentDescription(
   }
   const auto& texture_vk = TextureVK::Cast(*texture);
   const auto& desc = texture->GetTextureDescriptor();
-  const auto current_layout = texture_vk.GetLayout();
+  auto current_layout = texture_vk.GetLayout();
 
   auto load_action = attachment.load_action;
   auto store_action = attachment.store_action;
@@ -50,6 +53,22 @@ static vk::AttachmentDescription CreateAttachmentDescription(
     store_action = StoreAction::kDontCare;
   } else if (resolve_texture) {
     store_action = StoreAction::kStore;
+  }
+
+  if (current_layout != vk::ImageLayout::ePresentSrcKHR &&
+      current_layout != vk::ImageLayout::eUndefined) {
+    BarrierVK barrier;
+    barrier.new_layout = vk::ImageLayout::eGeneral;
+    barrier.cmd_buffer = command_buffer->GetEncoder()->GetCommandBuffer();
+    barrier.src_access = vk::AccessFlagBits::eShaderRead;
+    barrier.src_stage = vk::PipelineStageFlagBits::eFragmentShader;
+    barrier.dst_access = vk::AccessFlagBits::eColorAttachmentWrite |
+                         vk::AccessFlagBits::eTransferWrite;
+    barrier.dst_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput |
+                        vk::PipelineStageFlagBits::eTransfer;
+
+    texture_vk.SetLayout(barrier);
+    current_layout = vk::ImageLayout::eGeneral;
   }
 
   const auto attachment_desc =
@@ -68,7 +87,9 @@ static vk::AttachmentDescription CreateAttachmentDescription(
 }
 
 SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
-    const ContextVK& context) const {
+    const ContextVK& context,
+    const std::shared_ptr<CommandBufferVK>& command_buffer) const {
+  TRACE_EVENT0("impeller", "RenderPassVK::CreateVKRenderPass");
   std::vector<vk::AttachmentDescription> attachments;
 
   std::vector<vk::AttachmentReference> color_refs;
@@ -92,11 +113,13 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     color_refs[bind_point] =
         vk::AttachmentReference{static_cast<uint32_t>(attachments.size()),
                                 vk::ImageLayout::eColorAttachmentOptimal};
-    attachments.emplace_back(CreateAttachmentDescription(color));
+    attachments.emplace_back(
+        CreateAttachmentDescription(color, command_buffer));
     if (color.resolve_texture) {
       resolve_refs[bind_point] = vk::AttachmentReference{
           static_cast<uint32_t>(attachments.size()), vk::ImageLayout::eGeneral};
-      attachments.emplace_back(CreateAttachmentDescription(color, true));
+      attachments.emplace_back(
+          CreateAttachmentDescription(color, command_buffer, true));
     }
   }
 
@@ -104,7 +127,8 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     depth_stencil_ref = vk::AttachmentReference{
         static_cast<uint32_t>(attachments.size()),
         vk::ImageLayout::eDepthStencilAttachmentOptimal};
-    attachments.emplace_back(CreateAttachmentDescription(depth.value()));
+    attachments.emplace_back(
+        CreateAttachmentDescription(depth.value(), command_buffer));
   }
 
   if (auto stencil = render_target_.GetStencilAttachment();
@@ -112,7 +136,8 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     depth_stencil_ref = vk::AttachmentReference{
         static_cast<uint32_t>(attachments.size()),
         vk::ImageLayout::eDepthStencilAttachmentOptimal};
-    attachments.emplace_back(CreateAttachmentDescription(stencil.value()));
+    attachments.emplace_back(
+        CreateAttachmentDescription(stencil.value(), command_buffer));
   }
 
   vk::SubpassDescription subpass_desc;
@@ -198,6 +223,7 @@ static std::vector<vk::ClearValue> GetVKClearValues(
 SharedHandleVK<vk::Framebuffer> RenderPassVK::CreateVKFramebuffer(
     const ContextVK& context,
     const vk::RenderPass& pass) const {
+  TRACE_EVENT0("impeller", "RenderPassVK::CreateVKFramebuffer");
   vk::FramebufferCreateInfo fb_info;
 
   fb_info.renderPass = pass;
@@ -452,6 +478,7 @@ static bool EncodeCommand(const Context& context,
     return true;
   }
 
+#ifdef IMPELLER_DEBUG
   fml::ScopedCleanupClosure pop_marker(
       [&encoder]() { encoder.PopDebugGroup(); });
   if (!command.label.empty()) {
@@ -459,6 +486,7 @@ static bool EncodeCommand(const Context& context,
   } else {
     pop_marker.Release();
   }
+#endif  // IMPELLER_DEBUG
 
   const auto& cmd_buffer = encoder.GetCommandBuffer();
 
@@ -592,7 +620,7 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
 
   const auto& target_size = render_target_.GetRenderTargetSize();
 
-  auto render_pass = CreateVKRenderPass(vk_context);
+  auto render_pass = CreateVKRenderPass(vk_context, command_buffer);
   if (!render_pass) {
     VALIDATION_LOG << "Could not create renderpass.";
     return false;

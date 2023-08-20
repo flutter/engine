@@ -99,7 +99,7 @@ bool TextContents::Render(const ContentContext& renderer,
 
   // Information shared by all glyph draw calls.
   Command cmd;
-  cmd.label = "TextFrame";
+  DEBUG_COMMAND_INFO(cmd, "TextFrame");
   auto opts = OptionsFromPassAndEntity(pass, entity);
   opts.primitive_type = PrimitiveType::kTriangle;
   if (type == GlyphAtlas::Type::kAlphaBitmap) {
@@ -212,7 +212,7 @@ bool TextContents::Render(const ContentContext& renderer,
       .index_type = IndexType::kNone,
   });
 
-  return pass.AddCommand(cmd);
+  return pass.AddCommand(std::move(cmd));
 }
 
 }  // namespace impeller

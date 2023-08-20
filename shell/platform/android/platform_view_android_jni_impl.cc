@@ -12,12 +12,12 @@
 #include <sstream>
 #include <utility>
 
+#include "flutter/shell/platform/android/ndk_helpers.h"
 #include "include/android/SkImageAndroid.h"
-#include "shell/platform/android/ndk_helpers.h"
 #include "unicode/uchar.h"
 
 #include "flutter/assets/directory_asset_bundle.h"
-#include "flutter/common/settings.h"
+#include "flutter/common/constants.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/native_library.h"
@@ -28,20 +28,18 @@
 #include "flutter/lib/ui/plugins/callback_cache.h"
 #include "flutter/runtime/dart_service_isolate.h"
 #include "flutter/shell/common/run_configuration.h"
-#include "flutter/shell/platform/android/android_external_texture_gl.h"
 #include "flutter/shell/platform/android/android_shell_holder.h"
 #include "flutter/shell/platform/android/apk_asset_provider.h"
 #include "flutter/shell/platform/android/flutter_main.h"
 #include "flutter/shell/platform/android/hardware_buffer_external_texture_gl.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/platform_view_android.h"
+#include "flutter/shell/platform/android/surface_texture_external_texture_gl.h"
 
 #define ANDROID_SHELL_HOLDER \
   (reinterpret_cast<AndroidShellHolder*>(shell_holder))
 
 namespace flutter {
-
-static constexpr int64_t kFlutterImplicitViewId = 0ll;
 
 static fml::jni::ScopedJavaGlobalRef<jclass>* g_flutter_callback_info_class =
     nullptr;
@@ -94,6 +92,8 @@ static jmethodID g_handle_platform_message_response_method = nullptr;
 static jmethodID g_update_semantics_method = nullptr;
 
 static jmethodID g_update_custom_accessibility_actions_method = nullptr;
+
+static jmethodID g_get_scaled_font_size_method = nullptr;
 
 static jmethodID g_on_first_frame_method = nullptr;
 
@@ -895,6 +895,14 @@ bool RegisterApi(JNIEnv* env) {
     return false;
   }
 
+  g_get_scaled_font_size_method = env->GetMethodID(
+      g_flutter_jni_class->obj(), "getScaledFontSize", "(FJ)F");
+
+  if (g_get_scaled_font_size_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate FlutterJNI#getScaledFontSize method";
+    return false;
+  }
+
   g_update_semantics_method = env->GetMethodID(
       g_flutter_jni_class->obj(), "updateSemantics",
       "(Ljava/nio/ByteBuffer;[Ljava/lang/String;[Ljava/nio/ByteBuffer;)V");
@@ -1185,14 +1193,16 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
+  // Ensure we don't have any pending exceptions.
+  FML_CHECK(fml::jni::CheckException(env));
+
   g_image_get_hardware_buffer_method =
       env->GetMethodID(g_image_class->obj(), "getHardwareBuffer",
                        "()Landroid/hardware/HardwareBuffer;");
 
   if (g_image_get_hardware_buffer_method == nullptr) {
-    FML_LOG(ERROR) << "Could not locate getHardwareBuffer on "
-                      "Image class";
-    return false;
+    // Continue on as this method may not exist at API <= 29.
+    fml::jni::ClearException(env, true);
   }
 
   g_image_close_method = env->GetMethodID(g_image_class->obj(), "close", "()V");
@@ -1202,18 +1212,21 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
+  // Ensure we don't have any pending exceptions.
+  FML_CHECK(fml::jni::CheckException(env));
   g_hardware_buffer_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
       env, env->FindClass("android/hardware/HardwareBuffer"));
-  if (g_hardware_buffer_class->is_null()) {
-    FML_LOG(ERROR) << "Could not locate android.hardware.HardwareBuffer class";
-    return false;
-  }
 
-  g_hardware_buffer_close_method =
-      env->GetMethodID(g_hardware_buffer_class->obj(), "close", "()V");
-  if (g_hardware_buffer_close_method == nullptr) {
-    FML_LOG(ERROR) << "Could not locate close on HardwareBuffer class";
-    return false;
+  if (!g_hardware_buffer_class->is_null()) {
+    g_hardware_buffer_close_method =
+        env->GetMethodID(g_hardware_buffer_class->obj(), "close", "()V");
+    if (g_hardware_buffer_close_method == nullptr) {
+      // Continue on as this class may not exist at API <= 26.
+      fml::jni::ClearException(env, true);
+    }
+  } else {
+    // Continue on as this class may not exist at API <= 26.
+    fml::jni::ClearException(env, true);
   }
 
   g_compute_platform_resolved_locale_method = env->GetMethodID(
@@ -1310,6 +1323,23 @@ void PlatformViewAndroidJNIImpl::FlutterViewHandlePlatformMessageResponse(
   }
 
   FML_CHECK(fml::jni::CheckException(env));
+}
+
+double PlatformViewAndroidJNIImpl::FlutterViewGetScaledFontSize(
+    double font_size,
+    int configuration_id) const {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  auto java_object = java_object_.get(env);
+  if (java_object.is_null()) {
+    return -3;
+  }
+
+  const jfloat scaledSize =
+      env->CallFloatMethod(java_object.obj(), g_get_scaled_font_size_method,
+                           (jfloat)font_size, (jint)configuration_id);
+  FML_CHECK(fml::jni::CheckException(env));
+  return (double)scaledSize;
 }
 
 void PlatformViewAndroidJNIImpl::FlutterViewUpdateSemantics(
@@ -1538,6 +1568,7 @@ JavaLocalRef PlatformViewAndroidJNIImpl::ImageTextureEntryAcquireLatestImage(
 
 JavaLocalRef PlatformViewAndroidJNIImpl::ImageGetHardwareBuffer(
     JavaLocalRef image) {
+  FML_CHECK(g_image_get_hardware_buffer_method != nullptr);
   JNIEnv* env = fml::jni::AttachCurrentThread();
   if (image.is_null()) {
     // Return null.
@@ -1561,6 +1592,7 @@ void PlatformViewAndroidJNIImpl::ImageClose(JavaLocalRef image) {
 
 void PlatformViewAndroidJNIImpl::HardwareBufferClose(
     JavaLocalRef hardware_buffer) {
+  FML_CHECK(g_hardware_buffer_close_method != nullptr);
   JNIEnv* env = fml::jni::AttachCurrentThread();
   if (hardware_buffer.is_null()) {
     return;
