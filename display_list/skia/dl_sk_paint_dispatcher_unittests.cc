@@ -31,5 +31,20 @@ TEST(DisplayListUtils, OverRestore) {
   helper.restore();
 }
 
+// https://github.com/flutter/flutter/issues/132860.
+TEST(DisplayListUtils, SetDitherIgnoredIfColorSourceNotGradient) {
+  MockDispatchHelper helper;
+  helper.setDither(true);
+  EXPECT_FALSE(helper.paint().isDither());
+}
+
+// https://github.com/flutter/flutter/issues/132860.
+TEST(DisplayListUtils, SetColorSourceClearsDitherIfNotGradient) {
+  MockDispatchHelper helper;
+  helper.setDither(true);
+  helper.setColorSource(nullptr);
+  EXPECT_FALSE(helper.paint().isDither());
+}
+
 }  // namespace testing
 }  // namespace flutter
