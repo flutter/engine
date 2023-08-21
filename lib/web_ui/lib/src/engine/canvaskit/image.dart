@@ -350,6 +350,9 @@ class CkImage implements ui.Image, StackTraceDebugger {
     }
   }
 
+  @override
+  int get approximateBytesUsed => width * height * 4;
+
   static ByteData? _encodeImage({
     required SkImage skImage,
     required ui.ImageByteFormat format,

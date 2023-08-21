@@ -75,5 +75,8 @@ class SkwasmImage extends SkwasmObjectWrapper<RawImage> implements ui.Image {
   List<StackTrace>? debugGetOpenHandleStackTraces() => null;
 
   @override
+  int get approximateBytesUsed => width * height * 4;
+
+  @override
   String toString() => '[$width\u00D7$height]';
 }

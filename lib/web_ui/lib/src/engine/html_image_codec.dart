@@ -214,6 +214,9 @@ class HtmlImage implements ui.Image {
   @override
   ui.ColorSpace get colorSpace => ui.ColorSpace.sRGB;
 
+  @override
+  int get approximateBytesUsed => width * height * 4;
+
   DomHTMLImageElement cloneImageElement() {
     if (!_didClone) {
       _didClone = true;
