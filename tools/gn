@@ -299,6 +299,18 @@ def to_gn_args(args):
   gn_args['full_dart_sdk'] = args.full_dart_sdk
 
   if args.enable_unittests:
+    # Ensure that Android is *not* enabled for unit tests.
+    # https://github.com/flutter/flutter/issues/132611
+    if args.target_os == 'android':
+      raise Exception(
+        'Cannot use --enable-unittests with --target-os=android. If you are ' +
+        'trying to create an output directory to use for clangd (i.e. for ' +
+        'VSCode integration), use a host build instead:\n\n' +
+        '$ tools/gn --unopt\n' +
+        '\n' +
+        '# Or, to include the Vulkan headers:\n' +
+        '$ tools/gn --unopt --enable-impeller-vulkan'
+      )
     gn_args['enable_unittests'] = True
   if args.no_enable_unittests:
     gn_args['enable_unittests'] = False
