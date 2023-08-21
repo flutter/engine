@@ -113,7 +113,6 @@ class EngineSceneBuilder implements ui.SceneBuilder {
     bool freeze = false,
     ui.FilterQuality filterQuality = ui.FilterQuality.low
   }) {
-    // TODO(jacksongardner): implement addTexture
   }
 
   @override

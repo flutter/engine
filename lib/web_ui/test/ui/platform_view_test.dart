@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -119,7 +118,7 @@ Future<void> testMain() async {
     sb.pushOffset(0, 0);
     sb.addPicture(const ui.Offset(100, 100), recorder.endRecording());
 
-    sb.pushTransform(Matrix4.rotationZ(math.pi / 3.0).toFloat64());
+    sb.pushTransform(Matrix4.rotationZ(0.1).toFloat64());
     sb.addPlatformView(
       1,
       offset: const ui.Offset(125, 125),

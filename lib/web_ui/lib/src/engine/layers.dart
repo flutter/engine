@@ -466,9 +466,9 @@ class PlatformViewPosition {
     if (innerTransform != null) {
       if (innerOffset != null) {
         if (outerTransform != null) {
-          final Matrix4 newTransform = innerTransform.clone();
+          final Matrix4 newTransform = outerTransform.clone();
           newTransform.translate(innerOffset.dx, innerOffset.dy);
-          newTransform.multiply(outerTransform);
+          newTransform.multiply(innerTransform);
           return PlatformViewPosition(offset: outerOffset, transform: newTransform);
         } else {
           final ui.Offset finalOffset = outerOffset != null ? (innerOffset + outerOffset) : innerOffset;
@@ -476,8 +476,8 @@ class PlatformViewPosition {
         }
       } else {
         if (outerTransform != null) {
-          final Matrix4 newTransform = innerTransform.clone();
-          newTransform.multiply(outerTransform);
+          final Matrix4 newTransform = outerTransform.clone();
+          newTransform.multiply(innerTransform);
           return PlatformViewPosition(offset: outerOffset, transform: newTransform);
         } else {
           return PlatformViewPosition(offset: outerOffset, transform: innerTransform);
@@ -486,8 +486,8 @@ class PlatformViewPosition {
     } else {
       if (innerOffset != null) {
         if (outerTransform != null) {
-          final Matrix4 newTransform = Matrix4.translationValues(innerOffset.dx, innerOffset.dy, 0);
-          newTransform.multiply(outerTransform);
+          final Matrix4 newTransform = outerTransform.clone();
+          newTransform.translate(innerOffset.dx, innerOffset.dy);
           return PlatformViewPosition(offset: outerOffset, transform: newTransform);
         } else {
           final ui.Offset finalOffset = outerOffset != null ? (innerOffset + outerOffset) : innerOffset;
@@ -625,10 +625,10 @@ class LayerBuilder {
     final PlatformViewStyling viewStyling = offset == ui.Offset.zero
       ? layerStyling
       : PlatformViewStyling.combine(
+        layerStyling,
         PlatformViewStyling(
           position: PlatformViewPosition(offset: offset),
         ),
-        layerStyling,
       );
     pendingPlatformViews.add(PlatformView(viewId, ui.Size(width, height), viewStyling));
   }
