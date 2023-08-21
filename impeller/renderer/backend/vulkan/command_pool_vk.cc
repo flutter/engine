@@ -14,10 +14,6 @@
 
 namespace impeller {
 
-// This number comes from observing the recycled_buffers_ size while running
-// Wonderous and seeing it cap out at 7.
-static constexpr size_t kMaxRecycledBufferSize = 10;
-
 using CommandPoolMap = std::map<uint64_t, std::shared_ptr<CommandPoolVK>>;
 FML_THREAD_LOCAL fml::ThreadLocalUniquePtr<CommandPoolMap> tls_command_pool;
 
@@ -164,14 +160,12 @@ void CommandPoolVK::GarbageCollectBuffersIfAble() {
   if (std::this_thread::get_id() != owner_id_) {
     return;
   }
+
   for (auto& buffer : buffers_to_collect_) {
-    if (recycled_buffers_.size() >= kMaxRecycledBufferSize) {
-      // Don't grow boundlessly.
-      break;
-    }
     buffer->reset();
     recycled_buffers_.emplace_back(std::move(buffer));
   }
+
   buffers_to_collect_.clear();
 }
 
