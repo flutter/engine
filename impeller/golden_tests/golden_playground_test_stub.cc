@@ -6,7 +6,14 @@
 
 namespace impeller {
 
-GoldenPlaygroundTest::GoldenPlaygroundTest() {}
+GoldenPlaygroundTest::GoldenPlaygroundTest() = default;
+
+GoldenPlaygroundTest::~GoldenPlaygroundTest() = default;
+
+void GoldenPlaygroundTest::SetTextRenderContext(
+    std::shared_ptr<TextRenderContext> text_render_context) {
+  text_render_context_ = std::move(text_render_context);
+};
 
 void GoldenPlaygroundTest::TearDown() {}
 
@@ -18,15 +25,12 @@ PlaygroundBackend GoldenPlaygroundTest::GetBackend() const {
   return GetParam();
 }
 
-bool GoldenPlaygroundTest::OpenPlaygroundHere(
-    const Picture& picture,
-    std::unique_ptr<TextRenderContext> text_render_context_override) {
+bool GoldenPlaygroundTest::OpenPlaygroundHere(const Picture& picture) {
   return false;
 }
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(
-    const AiksPlaygroundCallback& callback,
-    std::unique_ptr<TextRenderContext> text_render_context_override) {
+    const AiksPlaygroundCallback& callback) {
   return false;
 }
 

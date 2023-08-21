@@ -17,7 +17,7 @@ namespace impeller {
 class LazyGlyphAtlas {
  public:
   explicit LazyGlyphAtlas(
-      std::unique_ptr<TextRenderContext> text_render_context);
+      std::shared_ptr<TextRenderContext> text_render_context);
 
   ~LazyGlyphAtlas();
 
@@ -30,7 +30,7 @@ class LazyGlyphAtlas {
       GlyphAtlas::Type type) const;
 
  private:
-  std::unique_ptr<TextRenderContext> text_render_context_;
+  std::shared_ptr<TextRenderContext> text_render_context_;
 
   FontGlyphPair::Set alpha_set_;
   FontGlyphPair::Set color_set_;

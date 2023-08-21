@@ -342,7 +342,7 @@ class ContentContext {
  public:
   explicit ContentContext(
       std::shared_ptr<Context> context,
-      std::unique_ptr<TextRenderContext> text_render_context);
+      std::shared_ptr<TextRenderContext> text_render_context);
 
   ~ContentContext();
 

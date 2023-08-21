@@ -4,6 +4,7 @@
 
 #include <dlfcn.h>
 #include <filesystem>
+#include <memory>
 
 #include "flutter/impeller/golden_tests/golden_playground_test.h"
 
@@ -11,6 +12,7 @@
 #include "flutter/impeller/golden_tests/golden_digest.h"
 #include "flutter/impeller/golden_tests/metal_screenshoter.h"
 #include "impeller/typographer/backends/skia/text_render_context_skia.h"
+#include "impeller/typographer/text_render_context.h"
 
 namespace impeller {
 
@@ -86,7 +88,15 @@ struct GoldenPlaygroundTest::GoldenPlaygroundTestImpl {
 };
 
 GoldenPlaygroundTest::GoldenPlaygroundTest()
-    : pimpl_(new GoldenPlaygroundTest::GoldenPlaygroundTestImpl()) {}
+    : text_render_context_(TextRenderContextSkia::Make()),
+      pimpl_(new GoldenPlaygroundTest::GoldenPlaygroundTestImpl()) {}
+
+GoldenPlaygroundTest::~GoldenPlaygroundTest() = default;
+
+void GoldenPlaygroundTest::SetTextRenderContext(
+    std::shared_ptr<TextRenderContext> text_render_context) {
+  text_render_context_ = std::move(text_render_context);
+};
 
 void GoldenPlaygroundTest::TearDown() {
   ASSERT_FALSE(dlopen("/usr/local/lib/libMoltenVK.dylib", RTLD_NOLOAD));
@@ -124,13 +134,8 @@ PlaygroundBackend GoldenPlaygroundTest::GetBackend() const {
   return GetParam();
 }
 
-bool GoldenPlaygroundTest::OpenPlaygroundHere(
-    const Picture& picture,
-    std::unique_ptr<TextRenderContext> text_render_context_override) {
-  auto text_context = text_render_context_override
-                          ? std::move(text_render_context_override)
-                          : TextRenderContextSkia::Make();
-  AiksContext renderer(GetContext(), std::move(text_context));
+bool GoldenPlaygroundTest::OpenPlaygroundHere(const Picture& picture) {
+  AiksContext renderer(GetContext(), text_render_context_);
 
   auto screenshot = pimpl_->screenshoter->MakeScreenshot(renderer, picture,
                                                          pimpl_->window_size);
@@ -138,8 +143,7 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(
 }
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(
-    const AiksPlaygroundCallback& callback,
-    std::unique_ptr<TextRenderContext> text_render_context_override) {
+    const AiksPlaygroundCallback& callback) {
   return false;
 }
 

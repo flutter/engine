@@ -10,7 +10,7 @@
 namespace impeller {
 
 AiksContext::AiksContext(std::shared_ptr<Context> context,
-                         std::unique_ptr<TextRenderContext> text_render_context)
+                         std::shared_ptr<TextRenderContext> text_render_context)
     : context_(std::move(context)) {
   if (!context_ || !context_->IsValid()) {
     return;

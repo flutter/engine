@@ -4,41 +4,38 @@
 
 #include "impeller/aiks/aiks_playground.h"
 
-#include "impeller/aiks/aiks_context.h"
+#include <memory>
 
+#include "impeller/aiks/aiks_context.h"
 #include "impeller/typographer/backends/skia/text_render_context_skia.h"
+#include "impeller/typographer/text_render_context.h"
 #include "third_party/imgui/imgui.h"
 
 namespace impeller {
 
-AiksPlayground::AiksPlayground() = default;
+AiksPlayground::AiksPlayground()
+    : text_render_context_(TextRenderContextSkia::Make()) {}
 
 AiksPlayground::~AiksPlayground() = default;
 
-bool AiksPlayground::OpenPlaygroundHere(
-    const Picture& picture,
-    std::unique_ptr<TextRenderContext> text_render_context_override) {
-  auto text_context = text_render_context_override
-                          ? std::move(text_render_context_override)
-                          : TextRenderContextSkia::Make();
+void AiksPlayground::SetTextRenderContext(
+    std::shared_ptr<TextRenderContext> text_render_context) {
+  text_render_context_ = std::move(text_render_context);
+}
+
+bool AiksPlayground::OpenPlaygroundHere(const Picture& picture) {
   return OpenPlaygroundHere(
       [&picture](AiksContext& renderer, RenderTarget& render_target) -> bool {
         return renderer.Render(picture, render_target);
-      },
-      std::move(text_context));
+      });
 }
 
-bool AiksPlayground::OpenPlaygroundHere(
-    AiksPlaygroundCallback callback,
-    std::unique_ptr<TextRenderContext> text_render_context_override) {
+bool AiksPlayground::OpenPlaygroundHere(AiksPlaygroundCallback callback) {
   if (!switches_.enable_playground) {
     return true;
   }
 
-  auto text_context = text_render_context_override
-                          ? std::move(text_render_context_override)
-                          : TextRenderContextSkia::Make();
-  AiksContext renderer(GetContext(), std::move(text_context));
+  AiksContext renderer(GetContext(), text_render_context_);
 
   if (!renderer.IsValid()) {
     return false;

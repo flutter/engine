@@ -10,16 +10,22 @@
 
 namespace impeller {
 
-EntityPlayground::EntityPlayground() = default;
+EntityPlayground::EntityPlayground()
+    : text_render_context_(TextRenderContextSkia::Make()) {}
 
 EntityPlayground::~EntityPlayground() = default;
+
+void EntityPlayground::SetTextRenderContext(
+    std::shared_ptr<TextRenderContext> text_render_context) {
+  text_render_context_ = std::move(text_render_context);
+}
 
 bool EntityPlayground::OpenPlaygroundHere(EntityPass& entity_pass) {
   if (!switches_.enable_playground) {
     return true;
   }
 
-  ContentContext content_context(GetContext(), TextRenderContextSkia::Make());
+  ContentContext content_context(GetContext(), text_render_context_);
   if (!content_context.IsValid()) {
     return false;
   }
@@ -35,7 +41,7 @@ bool EntityPlayground::OpenPlaygroundHere(Entity entity) {
     return true;
   }
 
-  ContentContext content_context(GetContext(), TextRenderContextSkia::Make());
+  ContentContext content_context(GetContext(), text_render_context_);
   if (!content_context.IsValid()) {
     return false;
   }
@@ -50,7 +56,7 @@ bool EntityPlayground::OpenPlaygroundHere(EntityPlaygroundCallback callback) {
     return true;
   }
 
-  ContentContext content_context(GetContext(), TextRenderContextSkia::Make());
+  ContentContext content_context(GetContext(), text_render_context_);
   if (!content_context.IsValid()) {
     return false;
   }

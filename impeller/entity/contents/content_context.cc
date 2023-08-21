@@ -162,7 +162,7 @@ static std::unique_ptr<PipelineT> CreateDefaultPipeline(
 
 ContentContext::ContentContext(
     std::shared_ptr<Context> context,
-    std::unique_ptr<TextRenderContext> text_render_context)
+    std::shared_ptr<TextRenderContext> text_render_context)
     : context_(std::move(context)),
       lazy_glyph_atlas_(
           std::make_shared<LazyGlyphAtlas>(std::move(text_render_context))),

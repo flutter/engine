@@ -28,8 +28,8 @@ using FontGlyphPairRefVector =
 //              https://github.com/flutter/flutter/issues/114563
 constexpr auto kPadding = 2;
 
-std::unique_ptr<TextRenderContext> TextRenderContextSkia::Make() {
-  return std::make_unique<TextRenderContextSkia>();
+std::shared_ptr<TextRenderContext> TextRenderContextSkia::Make() {
+  return std::make_shared<TextRenderContextSkia>();
 }
 
 TextRenderContextSkia::TextRenderContextSkia() = default;

@@ -12,7 +12,7 @@
 namespace impeller {
 
 LazyGlyphAtlas::LazyGlyphAtlas(
-    std::unique_ptr<TextRenderContext> text_render_context)
+    std::shared_ptr<TextRenderContext> text_render_context)
     : text_render_context_(std::move(text_render_context)),
       alpha_context_(std::make_shared<GlyphAtlasContext>()),
       color_context_(std::make_shared<GlyphAtlasContext>()) {}

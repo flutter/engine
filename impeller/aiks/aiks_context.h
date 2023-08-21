@@ -29,7 +29,7 @@ class AiksContext {
   ///                             text with Aiks will result in validation
   ///                             errors.
   AiksContext(std::shared_ptr<Context> context,
-              std::unique_ptr<TextRenderContext> text_render_context);
+              std::shared_ptr<TextRenderContext> text_render_context);
 
   ~AiksContext();
 
