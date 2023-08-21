@@ -34,13 +34,11 @@ class SurfaceContextVK;
 
 class EnqueuedCommandBuffer {
  public:
-  EnqueuedCommandBuffer() {};
+  EnqueuedCommandBuffer(){};
 
   ~EnqueuedCommandBuffer() = default;
 
-  std::shared_ptr<CommandEncoderVK>& WaitAndGet() {
-    return encoder_;
-  }
+  std::shared_ptr<CommandEncoderVK>& WaitAndGet() { return encoder_; }
 
   void SetEncoder(std::shared_ptr<CommandEncoderVK> encoder) {
     encoder_ = std::move(encoder);
