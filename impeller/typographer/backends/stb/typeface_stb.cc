@@ -4,7 +4,8 @@
 
 #include "impeller/typographer/backends/stb/typeface_stb.h"
 
-#include <cstring>  // memcpy
+#include <cstring>
+
 #include "flutter/fml/logging.h"
 
 namespace impeller {
@@ -12,33 +13,29 @@ namespace impeller {
 TypefaceSTB::~TypefaceSTB() = default;
 
 // Instantiate a typeface based on a .ttf or other font file
-TypefaceSTB::TypefaceSTB(const unsigned char* ttf_buffer, size_t buffer_size)
-    : _font_file(std::make_unique<const uint8_t[]>(buffer_size)),
-      _font_info(std::make_unique<stbtt_fontinfo>()),
-      is_valid(false) {
-  // As we lazily create atlases based on this font, we have to store the binary
-  // font file itself This seems memory intensive, so maybe we could improve
-  // this in time (extract needed info now e.g.).
-  memcpy((void*)_font_file.get(), (void*)ttf_buffer, buffer_size);
-
+TypefaceSTB::TypefaceSTB(std::unique_ptr<fml::Mapping> typeface_mapping)
+    : typeface_mapping_(std::move(typeface_mapping)),
+      font_info_(std::make_unique<stbtt_fontinfo>()),
+      is_valid_(false) {
   // We need an "offset" into the ttf file
-  auto offset = stbtt_GetFontOffsetForIndex(ttf_buffer, 0);
-  if (stbtt_InitFont(_font_info.get(), ttf_buffer, offset) == 0) {
+  auto offset = stbtt_GetFontOffsetForIndex(typeface_mapping_->GetMapping(), 0);
+  if (stbtt_InitFont(font_info_.get(), typeface_mapping_->GetMapping(),
+                     offset) == 0) {
     FML_LOG(ERROR) << "Failed to initialize stb font from binary data.";
   } else {
-    is_valid = true;
+    is_valid_ = true;
   }
 }
 
 bool TypefaceSTB::IsValid() const {
-  return is_valid;
+  return is_valid_;
 }
 
 std::size_t TypefaceSTB::GetHash() const {
   if (!IsValid()) {
     return 0u;
   }
-  return reinterpret_cast<size_t>(_font_file.get());
+  return reinterpret_cast<size_t>(typeface_mapping_->GetMapping());
 }
 
 bool TypefaceSTB::IsEqual(const Typeface& other) const {
@@ -47,11 +44,11 @@ bool TypefaceSTB::IsEqual(const Typeface& other) const {
 }
 
 const uint8_t* TypefaceSTB::GetTypefaceFile() const {
-  return _font_file.get();
+  return typeface_mapping_->GetMapping();
 }
 
 const stbtt_fontinfo* TypefaceSTB::GetFontInfo() const {
-  return _font_info.get();
+  return font_info_.get();
 }
 
 }  // namespace impeller

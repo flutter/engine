@@ -5,6 +5,7 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
+#include "flutter/fml/mapping.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/typographer/typeface.h"
 #include "third_party/stb/stb_truetype.h"
@@ -12,11 +13,15 @@
 namespace impeller {
 
 class TypefaceSTB final : public Typeface,
-                           public BackendCast<TypefaceSTB, Typeface> {
+                          public BackendCast<TypefaceSTB, Typeface> {
  public:
+  // "Typical" conversion from font Points to Pixels.
+  // This assumes a constant pixels per em.
+  static constexpr float kPointsToPixels = 96.0 / 72.0;
+
   TypefaceSTB() = delete;
 
-  TypefaceSTB(const unsigned char * ttf_buffer, size_t buffer_size);
+  explicit TypefaceSTB(std::unique_ptr<fml::Mapping> typeface_mapping);
 
   ~TypefaceSTB() override;
 
@@ -33,9 +38,9 @@ class TypefaceSTB final : public Typeface,
   const stbtt_fontinfo* GetFontInfo() const;
 
  private:
-  std::unique_ptr<const uint8_t[]> _font_file;
-  std::unique_ptr<stbtt_fontinfo> _font_info;
-  bool is_valid;
+  std::unique_ptr<fml::Mapping> typeface_mapping_;
+  std::unique_ptr<stbtt_fontinfo> font_info_;
+  bool is_valid_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(TypefaceSTB);
 };

@@ -8,6 +8,8 @@ impeller_component("typographer_stb_backend") {
   testonly = true
 
   sources = [
+    "text_frame_stb.cc",
+    "text_frame_stb.h",
     "text_render_context_stb.cc",
     "text_render_context_stb.h",
     "typeface_stb.cc",

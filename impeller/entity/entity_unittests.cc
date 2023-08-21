@@ -2174,7 +2174,7 @@ TEST_P(EntityTest, InheritOpacityTest) {
   SkFont font;
   font.setSize(30);
   auto blob = SkTextBlob::MakeFromString("A", font);
-  auto frame = TextFrameFromTextBlob(blob);
+  auto frame = MakeTextFrameFromTextBlobSkia(blob);
   auto lazy_glyph_atlas =
       std::make_shared<LazyGlyphAtlas>(TextRenderContextSkia::Make());
   lazy_glyph_atlas->AddTextFrame(frame, 1.0f);

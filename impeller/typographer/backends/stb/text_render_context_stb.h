@@ -6,21 +6,25 @@
 
 #include "impeller/typographer/text_render_context.h"
 
+#include <memory>
 #include "flutter/fml/macros.h"
 
 namespace impeller {
 
 class TextRenderContextSTB : public TextRenderContext {
  public:
-  TextRenderContextSTB(std::shared_ptr<Context> context);
+  static std::unique_ptr<TextRenderContext> Make();
+
+  TextRenderContextSTB();
 
   ~TextRenderContextSTB() override;
 
   // |TextRenderContext|
   std::shared_ptr<GlyphAtlas> CreateGlyphAtlas(
+      Context& context,
       GlyphAtlas::Type type,
       std::shared_ptr<GlyphAtlasContext> atlas_context,
-      FrameIterator iterator) const override;
+      const FontGlyphPair::Set& font_glyph_pairs) const override;
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(TextRenderContextSTB);
