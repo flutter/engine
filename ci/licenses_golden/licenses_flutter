@@ -1711,6 +1711,12 @@ ORIGIN: ../../../flutter/impeller/typographer/backends/skia/text_render_context_
 ORIGIN: ../../../flutter/impeller/typographer/backends/skia/text_render_context_skia.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/typographer/backends/skia/typeface_skia.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/typographer/backends/skia/typeface_skia.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/typographer/backends/stb/text_frame_stb.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/typographer/backends/stb/text_frame_stb.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/typographer/backends/stb/text_render_context_stb.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/typographer/backends/stb/text_render_context_stb.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/typographer/backends/stb/typeface_stb.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/typographer/backends/stb/typeface_stb.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/typographer/font.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/typographer/font.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/typographer/font_glyph_pair.cc + ../../../flutter/LICENSE
@@ -4442,6 +4448,12 @@ FILE: ../../../flutter/impeller/typographer/backends/skia/text_render_context_sk
 FILE: ../../../flutter/impeller/typographer/backends/skia/text_render_context_skia.h
 FILE: ../../../flutter/impeller/typographer/backends/skia/typeface_skia.cc
 FILE: ../../../flutter/impeller/typographer/backends/skia/typeface_skia.h
+FILE: ../../../flutter/impeller/typographer/backends/stb/text_frame_stb.cc
+FILE: ../../../flutter/impeller/typographer/backends/stb/text_frame_stb.h
+FILE: ../../../flutter/impeller/typographer/backends/stb/text_render_context_stb.cc
+FILE: ../../../flutter/impeller/typographer/backends/stb/text_render_context_stb.h
+FILE: ../../../flutter/impeller/typographer/backends/stb/typeface_stb.cc
+FILE: ../../../flutter/impeller/typographer/backends/stb/typeface_stb.h
 FILE: ../../../flutter/impeller/typographer/font.cc
 FILE: ../../../flutter/impeller/typographer/font.h
 FILE: ../../../flutter/impeller/typographer/font_glyph_pair.cc
