@@ -317,8 +317,8 @@ static void DrawGlyph(STBBitmap* bitmap,
         // Color bitmaps write as White (i.e. what is 0 in an alpha bitmap is
         // 255 in a color bitmap) But not alpha. Alpha still carries
         // transparency info in the normal way.
-        // TODO: There's some issue with color fonts, in that if the pixel color
-        // is nonzero, the alpha is ignored during rendering. That is, partially
+        // There's some issue with color fonts, in that if the pixel color is
+        // nonzero, the alpha is ignored during rendering. That is, partially
         // (or fully) transparent pixels with nonzero color are rendered as
         // fully opaque.
         uint8_t a = glyph_pixels[x + y * glyph_bitmap_width];
