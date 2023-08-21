@@ -71,6 +71,10 @@ class TextFrame {
   /// @brief      The type of atlas this run should be emplaced in.
   GlyphAtlas::Type GetAtlasType() const;
 
+  TextFrame& operator=(TextFrame&& other) = default;
+
+  TextFrame(const TextFrame& other) = default;
+
  private:
   std::vector<TextRun> runs_;
   bool has_color_ = false;
