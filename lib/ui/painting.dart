@@ -1839,6 +1839,15 @@ class Image {
     return stacks;
   }
 
+  /// Returns the approximate byte size of the allocation of this image.
+  ///
+  /// This takes into account details such as mip-mapping. The allocation
+  /// is usually resident in device memory.
+  int get approximateBytesUsed {
+    assert(!_disposed && !_image._disposed);
+    return _image.approximateBytesUsed;
+  }
+
   /// Creates a disposable handle to this image.
   ///
   /// Holders of an [Image] must dispose of the image when they no longer need
@@ -1994,6 +2003,10 @@ base class _Image extends NativeFieldWrapperClass1 {
 
   @Native<Int32 Function(Pointer<Void>)>(symbol: 'Image::colorSpace')
   external int get colorSpace;
+
+  @override
+  @Native<Uint64 Function(Pointer<Void>)>(symbol: 'Image::getAllocationSize', isLeaf: true)
+  external int get approximateBytesUsed;
 
   @override
   String toString() => '[$width\u00D7$height]';
