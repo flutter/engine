@@ -896,7 +896,7 @@ bool RegisterApi(JNIEnv* env) {
   }
 
   g_get_scaled_font_size_method = env->GetMethodID(
-      g_flutter_jni_class->obj(), "getScaledFontSize", "(FJ)F");
+      g_flutter_jni_class->obj(), "getScaledFontSize", "(FI)F");
 
   if (g_get_scaled_font_size_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate FlutterJNI#getScaledFontSize method";

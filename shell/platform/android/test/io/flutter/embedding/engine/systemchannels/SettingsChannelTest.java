@@ -67,4 +67,7 @@ public class SettingsChannelTest {
     assertEquals(baseId + 5, queue.getConfiguration(baseId + 5).generationNumber);
     assertEquals(baseId + 5, queue.getConfiguration(baseId + 5).generationNumber);
   }
+
+  // TODO(LongCatIsLooong): add tests for API 34 code path.
+  // https://github.com/flutter/flutter/issues/128825
 }
