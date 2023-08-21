@@ -303,9 +303,9 @@ def to_gn_args(args):
     # https://github.com/flutter/flutter/issues/132611
     if args.target_os == 'android':
       raise Exception(
-          'Cannot use --enable-unittests with --target-os=android. If you are ' +
-          'trying to create an output directory to use for clangd (i.e. for ' +
-          'VSCode integration), use a host build instead:\n\n' +
+          'Cannot use --enable-unittests with --target-os=android. If you ' +
+          'are trying to create an output directory to use for clangd (i.e. ' +
+          'for VSCode integration), use a host build instead:\n\n' +
           '$ tools/gn --unopt\n' +
           '\n' +
           '# Or, to include the Vulkan headers:\n' +
