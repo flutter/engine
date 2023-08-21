@@ -1842,7 +1842,7 @@ class Image {
   /// Returns the approximate byte size of the allocation of this image.
   ///
   /// This takes into account details such as mip-mapping. The allocation
-  /// is usually resident in device memory.
+  /// is usually resident in the device memory.
   int get approximateBytesUsed {
     assert(!_disposed && !_image._disposed);
     return _image.approximateBytesUsed;
