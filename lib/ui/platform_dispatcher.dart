@@ -315,7 +315,13 @@ class PlatformDispatcher {
   // calls to [FlutterView.render] must be ignored. Furthermore, if a given
   // [FlutterView] is already present in this set when its [FlutterView.render]
   // is called again, that call must be ignored as a duplicate.
+  //
+  // Between [onBeginFrame] and [onDrawFrame] the properties value is
+  // temporarily stored in `_renderedViewsBetweenCallbacks` so that it survives
+  // the gap between the two callbacks.
   Set<FlutterView>? _renderedViews;
+  // Temporary storage of the `_renderedViews` value between `_beginFrame` and
+  // `_drawFrame`.
   Set<FlutterView>? _renderedViewsBetweenCallbacks;
 
   /// A callback invoked when any view begins a frame.
