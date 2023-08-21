@@ -34,23 +34,20 @@ class SurfaceContextVK;
 
 class EnqueuedCommandBuffer {
  public:
-  EnqueuedCommandBuffer() : latch_(std::make_shared<fml::CountDownLatch>(1u)){};
+  EnqueuedCommandBuffer() {};
 
   ~EnqueuedCommandBuffer() = default;
 
   std::shared_ptr<CommandEncoderVK>& WaitAndGet() {
-    latch_->Wait();
     return encoder_;
   }
 
   void SetEncoder(std::shared_ptr<CommandEncoderVK> encoder) {
     encoder_ = std::move(encoder);
-    latch_->CountDown();
   }
 
  private:
   std::shared_ptr<CommandEncoderVK> encoder_;
-  std::shared_ptr<fml::CountDownLatch> latch_;
 };
 
 class CommandBufferQueue {

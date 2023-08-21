@@ -65,20 +65,20 @@ bool CommandBufferVK::SubmitCommandsAsync(std::shared_ptr<BlitPass> blit_pass) {
   const auto& context_vk = ContextVK::Cast(*context);
   auto pending = std::make_shared<EnqueuedCommandBuffer>();
   context_vk.GetCommandBufferQueue()->Enqueue(pending);
-  context_vk.GetConcurrentWorkerTaskRunner()->PostTask(
-      [cmd_buffer = shared_from_this(), pending, blit_pass,
-       weak_context = context_]() {
-        auto context = weak_context.lock();
-        if (!context || !cmd_buffer) {
-          return;
-        }
-        auto encoder = cmd_buffer->GetEncoder();
+  // context_vk.GetConcurrentWorkerTaskRunner()->PostTask(
+  //     [cmd_buffer = shared_from_this(), pending, blit_pass,
+  //      weak_context = context_]() {
+        // auto context = weak_context.lock();
+        // if (!context || !cmd_buffer) {
+        //   return;
+        // }
+        auto encoder = GetEncoder();
         if (!blit_pass->EncodeCommands(context->GetResourceAllocator()) ||
             !encoder->Finish()) {
           VALIDATION_LOG << "Failed to encode render pass.";
         }
         pending->SetEncoder(std::move(encoder));
-      });
+      // });
 
   return true;
 }
@@ -96,19 +96,19 @@ bool CommandBufferVK::SubmitCommandsAsync(
   const auto& context_vk = ContextVK::Cast(*context);
   auto pending = std::make_shared<EnqueuedCommandBuffer>();
   context_vk.GetCommandBufferQueue()->Enqueue(pending);
-  context_vk.GetConcurrentWorkerTaskRunner()->PostTask(
-      [cmd_buffer = shared_from_this(), pending, render_pass,
-       weak_context = context_]() {
-        auto context = weak_context.lock();
-        if (!context || !cmd_buffer) {
-          return;
-        }
-        auto encoder = cmd_buffer->GetEncoder();
+  // context_vk.GetConcurrentWorkerTaskRunner()->PostTask(
+  //     [cmd_buffer = shared_from_this(), pending, render_pass,
+  //      weak_context = context_]() {
+        // auto context = weak_context.lock();
+        // if (!context || !cmd_buffer) {
+        //   return;
+        // }
+        auto encoder = GetEncoder();
         if (!render_pass->EncodeCommands() || !encoder->Finish()) {
           VALIDATION_LOG << "Failed to encode render pass.";
         }
         pending->SetEncoder(std::move(encoder));
-      });
+      // });
   return true;
 }
 
