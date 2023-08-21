@@ -38,6 +38,10 @@ void CanvasImage::dispose() {
   ClearDartWrapper();
 }
 
+size_t CanvasImage::GetAllocationSize() const {
+  return image_->GetApproximateByteSize() + sizeof(CanvasImage);
+}
+
 int CanvasImage::colorSpace() {
   if (image_->skia_image()) {
     return ColorSpace::kSRGB;
