@@ -377,7 +377,7 @@ public class AndroidTouchProcessor {
 
     packet.putLong(pointerData); // platformData
 
-    // See android scrollview for insperation.
+    // See android scrollview for inspiration.
     // https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/core/java/android/widget/ScrollView.java?q=function:onGenericMotionEvent%20filepath:widget%2FScrollView.java&ss=android%2Fplatform%2Fsuperproject%2Fmain
     if (signalKind == PointerSignalKind.SCROLL) {
       double horizontalScaleFactor = DEFAULT_HORIZONTAL_SCROLL_FACTOR;
