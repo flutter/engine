@@ -84,6 +84,10 @@ void DlSkPaintDispatchHelper::setBlendMode(DlBlendMode mode) {
   paint_.setBlendMode(ToSk(mode));
 }
 void DlSkPaintDispatchHelper::setColorSource(const DlColorSource* source) {
+  if (!source) {
+    return;
+  }
+
   // On the Impeller backend, we will only support dithering of *gradients*,
   // and it will be enabled by default (without the option to disable it).
   // Until Skia support is completely removed, we only want to respect the
