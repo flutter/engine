@@ -39,5 +39,6 @@ class GNTestCase(unittest.TestCase):
     with self.assertRaises(SystemExit):
       self._gn_args(['--android', '--enable-unittests'])
 
+
 if __name__ == '__main__':
   unittest.main()
