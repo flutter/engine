@@ -2004,7 +2004,6 @@ base class _Image extends NativeFieldWrapperClass1 {
   @Native<Int32 Function(Pointer<Void>)>(symbol: 'Image::colorSpace')
   external int get colorSpace;
 
-  @override
   @Native<Uint64 Function(Pointer<Void>)>(symbol: 'Image::GetAllocationSize', isLeaf: true)
   external int get approximateBytesUsed;
 
