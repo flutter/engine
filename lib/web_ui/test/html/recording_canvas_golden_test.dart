@@ -781,6 +781,9 @@ class TestImage implements Image {
 
   @override
   ColorSpace get colorSpace => ColorSpace.sRGB;
+
+  @override
+  int get approximateBytesUsed => width * height * 4;
 }
 
 Paragraph createTestParagraph() {
