@@ -211,7 +211,7 @@ TEST_F(ImageFilterLayerTest, MultipleChildren) {
   const DlFRect child_bounds = DlFRect::MakeLTRB(5.0f, 6.0f, 2.5f, 3.5f);
   const DlPath child_path1 = DlPath().AddRect(child_bounds);
   const DlPath child_path2 =
-      DlPath().AddRect(child_bounds.MakeOffset(3.0f, 0.0f));
+      DlPath().AddRect(child_bounds.Translated(3.0f, 0.0f));
   const DlPaint child_paint1 = DlPaint(DlColor::kYellow());
   const DlPaint child_paint2 = DlPaint(DlColor::kCyan());
   auto dl_image_filter = std::make_shared<DlMatrixImageFilter>(
@@ -264,7 +264,7 @@ TEST_F(ImageFilterLayerTest, Nested) {
   const DlFRect child_bounds = DlFRect::MakeLTRB(5.0f, 6.0f, 2.5f, 3.5f);
   const DlPath child_path1 = DlPath().AddRect(child_bounds);
   const DlPath child_path2 =
-      DlPath().AddRect(child_bounds.MakeOffset(3.0f, 0.0f));
+      DlPath().AddRect(child_bounds.Translated(3.0f, 0.0f));
   const DlFRect child_bounds2 = child_path2.Bounds();
   const DlPaint child_paint1 = DlPaint(DlColor::kYellow());
   const DlPaint child_paint2 = DlPaint(DlColor::kCyan());
@@ -716,7 +716,7 @@ TEST_F(ImageFilterLayerTest, EmptyFilterWithOffset) {
   layer->Add(mock_layer);
 
   layer->Preroll(preroll_context());
-  EXPECT_EQ(layer->paint_bounds(), child_bounds.MakeOffset(offset));
+  EXPECT_EQ(layer->paint_bounds(), child_bounds.Translated(offset));
 }
 
 }  // namespace testing

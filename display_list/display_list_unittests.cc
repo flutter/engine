@@ -184,7 +184,7 @@ class DisplayListTestBase : public BaseT {
                                .setDrawStyle(DlDrawStyle::kStroke)   //
                                .setStrokeJoin(DlStrokeJoin::kRound)  //
                                .setStrokeWidth(2.0f);
-    DlFRect stroke_bounds = rect.MakeOutset(1.0f, 1.0f);
+    DlFRect stroke_bounds = rect.Padded(1.0f, 1.0f);
     verify_inverted_bounds(empty_setup, renderer, stroke_paint, invertedLR,
                            stroke_bounds, desc + " LR swapped, sw 2");
     verify_inverted_bounds(empty_setup, renderer, stroke_paint, invertedTB,
@@ -195,7 +195,7 @@ class DisplayListTestBase : public BaseT {
     DlBlurMaskFilter mask_filter(DlBlurStyle::kNormal, 2.0f);
     DlPaint maskblur_paint = DlPaint()  //
                                  .setMaskFilter(&mask_filter);
-    DlFRect maskblur_bounds = rect.MakeOutset(6.0f, 6.0f);
+    DlFRect maskblur_bounds = rect.Padded(6.0f, 6.0f);
     verify_inverted_bounds(empty_setup, renderer, maskblur_paint, invertedLR,
                            maskblur_bounds, desc + " LR swapped, mask 2");
     verify_inverted_bounds(empty_setup, renderer, maskblur_paint, invertedTB,
@@ -206,7 +206,7 @@ class DisplayListTestBase : public BaseT {
     DlErodeImageFilter erode_filter(2.0f, 2.0f);
     DlPaint erode_paint = DlPaint()  //
                               .setImageFilter(&erode_filter);
-    DlFRect erode_bounds = rect.MakeInset(2.0f, 2.0f);
+    DlFRect erode_bounds = rect.Padded(-2.0f, -2.0f);
     verify_inverted_bounds(empty_setup, renderer, erode_paint, invertedLR,
                            erode_bounds, desc + " LR swapped, erode 2");
     verify_inverted_bounds(empty_setup, renderer, erode_paint, invertedTB,
@@ -443,7 +443,7 @@ TEST_F(DisplayListTest, BuilderBoundsTransformComparedToSkia) {
   SkCanvas* canvas = recorder.beginRecording(frame_rect);
   ASSERT_EQ(builder.GetDestinationClipBounds(),
             DlFRect::MakeBounds(canvas->getDeviceClipBounds()));
-  ASSERT_EQ(builder.GetLocalClipBounds().MakeOutset(1, 1),
+  ASSERT_EQ(builder.GetLocalClipBounds().Padded(1, 1),
             DlFRect::MakeBounds(canvas->getLocalClipBounds()));
   auto sk_m44 = canvas->getLocalToDevice();
   auto dl_sk_m44 = DlTransform::MakeRowMajor(
@@ -530,7 +530,7 @@ TEST_F(DisplayListTest, UnclippedSaveLayerContentAccountsForFilter) {
 
   ASSERT_EQ(display_list->op_count(), 6u);
 
-  DlFRect result_rect = draw_rect.MakeOutset(30.0f, 30.0f);
+  DlFRect result_rect = draw_rect.Padded(30.0f, 30.0f);
   ASSERT_TRUE(result_rect.Intersect(clip_rect));
   ASSERT_EQ(result_rect, DlFRect::MakeLTRB(100.0f, 110.0f, 131.0f, 190.0f));
   ASSERT_EQ(display_list->bounds(), result_rect);
@@ -562,7 +562,7 @@ TEST_F(DisplayListTest, ClippedSaveLayerContentAccountsForFilter) {
 
   ASSERT_EQ(display_list->op_count(), 6u);
 
-  DlFRect result_rect = draw_rect.MakeOutset(30.0f, 30.0f);
+  DlFRect result_rect = draw_rect.Padded(30.0f, 30.0f);
   ASSERT_TRUE(result_rect.Intersect(clip_rect));
   ASSERT_EQ(result_rect, DlFRect::MakeLTRB(100.0f, 110.0f, 129.0f, 190.0f));
   ASSERT_EQ(display_list->bounds(), result_rect);

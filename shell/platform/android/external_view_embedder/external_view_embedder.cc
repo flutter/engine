@@ -123,7 +123,7 @@ void AndroidExternalViewEmbedder::SubmitFrame(
       // slightly larger.
       //
       // For example, {0.3, 0.5, 3.1, 4.7} becomes {0, 0, 4, 5}.
-      full_joined_rect.RoundOut();
+      full_joined_rect = full_joined_rect.RoundedOut();
       overlay_layers.insert({view_id, full_joined_rect});
       // Clip the background canvas, so it doesn't contain any of the pixels
       // drawn on the overlay layer.

@@ -161,7 +161,7 @@ void DisplayListMatrixClipTracker::Data::clipBounds(const DlFRect& clip,
       DlFRect rect;
       mapRect(clip, &rect);
       if (is_aa) {
-        rect.RoundOut();
+        rect = rect.RoundedOut();
       }
       if (!cull_rect_.Intersect(rect)) {
         cull_rect_.SetEmpty();
@@ -176,7 +176,7 @@ void DisplayListMatrixClipTracker::Data::clipBounds(const DlFRect& clip,
       if (mapRect(clip, &rect)) {
         // This technique only works if the transform is rect -> rect
         if (is_aa) {
-          rect.RoundIn();
+          rect = rect.RoundedIn();
           if (rect.is_empty()) {
             break;
           }

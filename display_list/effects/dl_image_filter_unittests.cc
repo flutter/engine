@@ -207,7 +207,7 @@ TEST(DisplayListImageFilter, BlurNotEquals) {
 TEST(DisplayListImageFilter, BlurBounds) {
   DlBlurImageFilter filter = DlBlurImageFilter(5, 10, DlTileMode::kDecal);
   DlFRect input_bounds = DlFRect::MakeLTRB(20, 20, 80, 80);
-  DlFRect expected_output_bounds = input_bounds.MakeOutset(15, 30);
+  DlFRect expected_output_bounds = input_bounds.Padded(15, 30);
   TestBounds(filter, input_bounds, expected_output_bounds);
 }
 
@@ -281,7 +281,7 @@ TEST(DisplayListImageFilter, DilateNotEquals) {
 TEST(DisplayListImageFilter, DilateBounds) {
   DlDilateImageFilter filter = DlDilateImageFilter(5, 10);
   DlFRect input_bounds = DlFRect::MakeLTRB(20, 20, 80, 80);
-  DlFRect expected_output_bounds = input_bounds.MakeOutset(5, 10);
+  DlFRect expected_output_bounds = input_bounds.Padded(5, 10);
   TestBounds(filter, input_bounds, expected_output_bounds);
 }
 
@@ -338,7 +338,7 @@ TEST(DisplayListImageFilter, ErodeNotEquals) {
 TEST(DisplayListImageFilter, ErodeBounds) {
   DlErodeImageFilter filter = DlErodeImageFilter(5, 10);
   DlFRect input_bounds = DlFRect::MakeLTRB(20, 20, 80, 80);
-  DlFRect expected_output_bounds = input_bounds.MakeInset(5, 10);
+  DlFRect expected_output_bounds = input_bounds.Padded(-5, -10);
   TestBounds(filter, input_bounds, expected_output_bounds);
 }
 
@@ -522,8 +522,7 @@ TEST(DisplayListImageFilter, ComposeBounds) {
   DlBlurImageFilter inner = DlBlurImageFilter(12, 5, DlTileMode::kDecal);
   DlComposeImageFilter filter = DlComposeImageFilter(outer, inner);
   DlFRect input_bounds = DlFRect::MakeLTRB(20, 20, 80, 80);
-  DlFRect expected_output_bounds =
-      input_bounds.MakeOutset(36, 15).MakeOutset(5, 10);
+  DlFRect expected_output_bounds = input_bounds.Padded(36, 15).Padded(5, 10);
   TestBounds(filter, input_bounds, expected_output_bounds);
 }
 

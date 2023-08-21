@@ -49,7 +49,7 @@ class DlFRRect {
 
   static constexpr DlFRRect MakeRect(const DlFRect& rect) {
     DlFRRect r_rect;
-    r_rect.rect_ = rect.MakeSorted();
+    r_rect.rect_ = rect.Sorted();
     r_rect.type_ = rect.is_empty() ? Type::kEmpty : Type::kRect;
     return r_rect;
   }
@@ -82,11 +82,13 @@ class DlFRRect {
   inline const DlFVector& lower_right_radii() const { return radii_[2]; }
   inline const DlFVector& lower_left_radii() const { return radii_[3]; }
 
+  // Fills the supplied array with the corner-specific radii in clockwise
+  // order upper left [0], upper right [1], lower right [2], lower left [3].
   inline void GetRadii(DlFPoint radii[4]) const {
     memcpy(radii, radii_, sizeof(radii_));
   }
 
-  void Offset(DlScalar dx, DlScalar dy) { rect_.Offset(dx, dy); }
+  void Offset(DlScalar dx, DlScalar dy) { rect_ = rect_.Translated(dx, dy); }
   void Offset(const DlFVector& v) { Offset(v.x(), v.y()); }
   DlFRRect MakeOffset(DlScalar dx, DlScalar dy) const {
     DlFRRect r_rect = *this;
@@ -98,7 +100,7 @@ class DlFRRect {
   }
 
   void Inset(DlScalar dx, DlScalar dy, DlFRRect* dst) {
-    DlFRect r = rect_.MakeInset(dx, dy);
+    DlFRect r = rect_.Padded(-dx, -dy);
     bool is_empty = false;
     if (r.left() >= r.right()) {
       is_empty = true;

@@ -65,6 +65,61 @@ struct DlTRect {
   constexpr DlTRect(const DlTRect& r) = default;
   constexpr DlTRect(DlTRect&& r) = default;
 
+  static constexpr DlTRect MakeLTRB(T left, T top, T right, T bottom) {
+    return {left, top, right, bottom};
+  }
+
+  static constexpr DlTRect MakeXYWH(T x, T y, LT w, LT h) {
+    return {x, y, SafeAdd(x, w), SafeAdd(y, h)};
+  }
+
+  static constexpr DlTRect MakeWH(T w, T h) { return {zero_, zero_, w, h}; }
+
+  template <typename U>
+  static constexpr DlTRect MakeSize(DlTSize<U> size) {
+    return MakeXYWH(0, 0, size.width(), size.height());
+  }
+
+  static constexpr DlTRect MakeOriginSize(DlTPoint<T> origin,
+                                          DlTSize<LT> size) {
+    return MakeXYWH(origin.x(), origin.y(), size.width(), size.height());
+  }
+
+  template <typename U>
+  static constexpr DlTRect MakeBounds(const U& r) {
+    return MakeLTRB(r.left(), r.top(), r.right(), r.bottom());
+  }
+
+  DL_ONLY_FROM_FLOAT_M(FT, static constexpr, DlTRect)
+  MakeRoundedOut(const DlTRect<FT, FT>& r) {
+    return MakeLTRB(                      //
+        static_cast<T>(floor(r.left())),  //
+        static_cast<T>(floor(r.top())),   //
+        static_cast<T>(ceil(r.right())),  //
+        static_cast<T>(ceil(r.bottom()))  //
+    );
+  }
+
+  DL_ONLY_FROM_FLOAT_M(FT, static constexpr, DlTRect)
+  MakeRoundedIn(const DlTRect<FT, FT>& r) {
+    return MakeLTRB(                       //
+        static_cast<T>(ceil(r.left())),    //
+        static_cast<T>(ceil(r.top())),     //
+        static_cast<T>(floor(r.right())),  //
+        static_cast<T>(floor(r.bottom()))  //
+    );
+  }
+
+  DL_ONLY_FROM_FLOAT_M(FT, static constexpr, DlTRect)
+  MakeRounded(const DlTRect<FT, FT>& r) {
+    return MakeLTRB(                       //
+        static_cast<T>(round(r.left())),   //
+        static_cast<T>(round(r.top())),    //
+        static_cast<T>(round(r.right())),  //
+        static_cast<T>(round(r.bottom()))  //
+    );
+  }
+
   DlTRect& operator=(const DlTRect& r) = default;
   DlTRect& operator=(DlTRect&& r) = default;
 
@@ -132,61 +187,6 @@ struct DlTRect {
   }
   bool operator!=(const DlTRect& r) const { return !(*this == r); }
 
-  static constexpr DlTRect MakeLTRB(T left, T top, T right, T bottom) {
-    return {left, top, right, bottom};
-  }
-
-  static constexpr DlTRect MakeXYWH(T x, T y, LT w, LT h) {
-    return {x, y, SafeAdd(x, w), SafeAdd(y, h)};
-  }
-
-  static constexpr DlTRect MakeWH(T w, T h) { return {zero_, zero_, w, h}; }
-
-  template <typename U>
-  static constexpr DlTRect MakeSize(DlTSize<U> size) {
-    return MakeXYWH(0, 0, size.width(), size.height());
-  }
-
-  static constexpr DlTRect MakeOriginSize(DlTPoint<T> origin,
-                                          DlTSize<LT> size) {
-    return MakeXYWH(origin.x(), origin.y(), size.width(), size.height());
-  }
-
-  template <typename U>
-  static constexpr DlTRect MakeBounds(const U& r) {
-    return MakeLTRB(r.left(), r.top(), r.right(), r.bottom());
-  }
-
-  DL_ONLY_FROM_FLOAT_M(FT, static constexpr, DlTRect)
-  MakeRoundedOut(const DlTRect<FT, FT>& r) {
-    return MakeLTRB(                      //
-        static_cast<T>(floor(r.left())),  //
-        static_cast<T>(floor(r.top())),   //
-        static_cast<T>(ceil(r.right())),  //
-        static_cast<T>(ceil(r.bottom()))  //
-    );
-  }
-
-  DL_ONLY_FROM_FLOAT_M(FT, static constexpr, DlTRect)
-  MakeRoundedIn(const DlTRect<FT, FT>& r) {
-    return MakeLTRB(                       //
-        static_cast<T>(ceil(r.left())),    //
-        static_cast<T>(ceil(r.top())),     //
-        static_cast<T>(floor(r.right())),  //
-        static_cast<T>(floor(r.bottom()))  //
-    );
-  }
-
-  DL_ONLY_FROM_FLOAT_M(FT, static constexpr, DlTRect)
-  MakeRounded(const DlTRect<FT, FT>& r) {
-    return MakeLTRB(                       //
-        static_cast<T>(round(r.left())),   //
-        static_cast<T>(round(r.top())),    //
-        static_cast<T>(round(r.right())),  //
-        static_cast<T>(round(r.bottom()))  //
-    );
-  }
-
 #define DL_SORT(OUTA, OUTB, INA, INB) \
   do {                                \
     if (INA <= INB) {                 \
@@ -198,12 +198,13 @@ struct DlTRect {
     }                                 \
   } while (0)
 
-  constexpr DlTRect MakeSorted() const {
+  [[nodiscard]] constexpr DlTRect Sorted() const {
     T l, r, t, b;
     DL_SORT(l, r, left_, right_);
     DL_SORT(t, b, top_, bottom_);
     return MakeLTRB(l, t, r, b);
   }
+#undef DL_SORT
 
   // Returns the 4 corners of the rectangle in the order UL, UR, LR, LL
   void ToQuad(DlTPoint<T> quad[4]) const {
@@ -228,80 +229,52 @@ struct DlTRect {
   DL_ONLY_ON_FLOAT(bool)
   is_finite() const { return DlScalars_AreAllFinite(&left_, 4); }
 
-  DL_ONLY_ON_FLOAT(void)
-  RoundOut() {
-    left_ = floor(left_);
-    top_ = floor(top_);
-    right_ = ceil(right_);
-    bottom_ = ceil(bottom_);
+#define DL_ROUNDED_UL_LR(ULF, LRF) \
+    MakeLTRB((ULF)(left_), (ULF)(top_), (LRF)(right_), (LRF)(bottom_))
+
+  DL_ONLY_ON_FLOAT_M([[nodiscard]] constexpr, DlTRect)
+  RoundedOut() const {
+    return DL_ROUNDED_UL_LR(floor, ceil);
   }
 
-  DL_ONLY_ON_FLOAT(void)
-  RoundIn() {
-    left_ = ceil(left_);
-    top_ = ceil(top_);
-    right_ = floor(right_);
-    bottom_ = floor(bottom_);
+  DL_ONLY_ON_FLOAT_M([[nodiscard]] constexpr, DlTRect)
+  RoundedIn() const {
+    return DL_ROUNDED_UL_LR(ceil, floor);
   }
 
-  DL_ONLY_ON_FLOAT(void)
-  Round() {
-    left_ = round(left_);
-    top_ = round(top_);
-    right_ = round(right_);
-    bottom_ = round(bottom_);
+  DL_ONLY_ON_FLOAT_M([[nodiscard]] constexpr, DlTRect)
+  Rounded() const {
+    return DL_ROUNDED_UL_LR(round, round);
   }
 
-  DlTPoint<T> Center() const {
+#undef DL_ROUNDED_UL_LR
+
+  [[nodiscard]] DlTPoint<T> Center() const {
     return DlTPoint<T>((left_ + right_) / static_cast<T>(2),
                        (top_ + bottom_) / static_cast<T>(2));
   }
 
-  DlTRect UpperLeftQuadrant() const {
+  [[nodiscard]] DlTRect UpperLeftQuadrant() const {
     auto center = Center();
     return {left_, top_, center.x(), center.y()};
   }
 
-  DlTRect UpperRightQuadrant() const {
+  [[nodiscard]] DlTRect UpperRightQuadrant() const {
     auto center = Center();
     return {center.x(), top_, right_, center.y()};
   }
 
-  DlTRect LowerLeftQuadrant() const {
+  [[nodiscard]] DlTRect LowerLeftQuadrant() const {
     auto center = Center();
     return {left_, center.y(), center.x(), bottom_};
   }
 
-  DlTRect LowerRightQuadrant() const {
+  [[nodiscard]] DlTRect LowerRightQuadrant() const {
     auto center = Center();
     return {center.x(), center.y(), right_, bottom_};
   }
 
-  void Inset(T marginX, T marginY) {
-    left_ += marginX;
-    top_ += marginY;
-    right_ -= marginX;
-    bottom_ -= marginY;
-  }
-  void Inset(DlTPoint<T> v) { Inset(v.x(), v.y()); }
-  DlTRect MakeInset(T marginX, T marginY) const {
-    return {
-        left_ + marginX,
-        top_ + marginY,
-        right_ - marginX,
-        bottom_ - marginY,
-    };
-  }
-  DlTRect MakeInset(DlTPoint<T> v) const { return MakeInset(v.x(), v.y()); }
-
-  void Outset(T marginX, T marginY) {
-    left_ -= marginX;
-    top_ -= marginY;
-    right_ += marginX;
-    bottom_ += marginY;
-  }
-  void Outset(DlTPoint<T> v) { Outset(v.x(), v.y()); }
-  DlTRect MakeOutset(T marginX, T marginY) const {
+  [[nodiscard]] DlTRect Padded(T marginX, T marginY) const {
     return {
         left_ - marginX,
         top_ - marginY,
@@ -309,16 +282,11 @@ struct DlTRect {
         bottom_ + marginY,
     };
   }
-  DlTRect MakeOutset(DlTPoint<T> v) const { return MakeOutset(v.x(), v.y()); }
-
-  void Offset(T dx, T dy) {
-    left_ += dx;
-    top_ += dy;
-    right_ += dx;
-    bottom_ += dy;
+  [[nodiscard]] DlTRect Padded(DlTPoint<T> v) const {
+    return Padded(v.x(), v.y());
   }
-  void Offset(DlTPoint<T> v) { Offset(v.x(), v.y()); }
-  DlTRect MakeOffset(T dx, T dy) const {
+
+  [[nodiscard]] DlTRect Translated(T dx, T dy) const {
     return {
         left_ + dx,
         top_ + dy,
@@ -326,7 +294,9 @@ struct DlTRect {
         bottom_ + dy,
     };
   }
-  DlTRect MakeOffset(DlTPoint<T> v) const { return MakeOffset(v.x(), v.y()); }
+  [[nodiscard]] DlTRect Translated(DlTPoint<T> v) const {
+    return Translated(v.x(), v.y());
+  }
 
   void Join(const DlTRect* r) {
     if (!r->is_empty()) {

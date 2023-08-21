@@ -13,7 +13,7 @@ void DlFRRect::SetRectRadii(const DlFRect& rect, const DlFVector radii[4]) {
     SetEmpty();
     return;
   }
-  rect_ = rect.MakeSorted();
+  rect_ = rect.Sorted();
   if (rect_.is_empty()) {
     SetEmpty();
     return;

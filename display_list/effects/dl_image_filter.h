@@ -143,13 +143,13 @@ class DlImageFilter : public DlAttribute<DlImageFilter, DlImageFilterType> {
     if (ctm.is_finite()) {
       auto expansion = ctm.ComputeTransformedExpansion(radius_x, radius_y);
       if (expansion.has_value()) {
-        output_bounds = input_bounds.MakeInset(Floor(*expansion));
+        output_bounds = input_bounds.Padded(-Floor(*expansion));
         return &output_bounds;
       }
       auto inverse = ctm.Inverse();
       if (inverse.has_value()) {
-        DlFRect local_bounds = inverse->TransformRect(input_bounds);
-        local_bounds.Inset(radius_x, radius_y);
+        DlFRect local_bounds =
+            inverse->TransformRect(input_bounds).Padded(-radius_x, -radius_y);
         output_bounds.SetRoundedOut(ctm.TransformRect(local_bounds));
         return &output_bounds;
       }
@@ -166,13 +166,13 @@ class DlImageFilter : public DlAttribute<DlImageFilter, DlImageFilterType> {
     if (ctm.is_finite()) {
       auto expansion = ctm.ComputeTransformedExpansion(radius_x, radius_y);
       if (expansion.has_value()) {
-        output_bounds = input_bounds.MakeOutset(Ceil(*expansion));
+        output_bounds = input_bounds.Padded(Ceil(*expansion));
         return &output_bounds;
       }
       auto inverse = ctm.Inverse();
       if (inverse.has_value()) {
         DlFRect local_bounds = inverse->TransformRect(input_bounds);
-        local_bounds.Outset(radius_x, radius_y);
+        local_bounds = local_bounds.Padded(radius_x, radius_y);
         output_bounds.SetRoundedOut(ctm.TransformRect(local_bounds));
         return &output_bounds;
       }
@@ -220,7 +220,7 @@ class DlBlurImageFilter final : public DlImageFilter {
 
   DlFRect* map_local_bounds(const DlFRect& input_bounds,
                             DlFRect& output_bounds) const override {
-    output_bounds = input_bounds.MakeOutset(sigma_x_ * 3.0f, sigma_y_ * 3.0f);
+    output_bounds = input_bounds.Padded(sigma_x_ * 3.0f, sigma_y_ * 3.0f);
     return &output_bounds;
   }
 
@@ -288,7 +288,7 @@ class DlDilateImageFilter final : public DlImageFilter {
 
   DlFRect* map_local_bounds(const DlFRect& input_bounds,
                             DlFRect& output_bounds) const override {
-    output_bounds = input_bounds.MakeOutset(radius_x_, radius_y_);
+    output_bounds = input_bounds.Padded(radius_x_, radius_y_);
     return &output_bounds;
   }
 
@@ -353,7 +353,7 @@ class DlErodeImageFilter final : public DlImageFilter {
 
   DlFRect* map_local_bounds(const DlFRect& input_bounds,
                             DlFRect& output_bounds) const override {
-    output_bounds = input_bounds.MakeInset(radius_x_, radius_y_);
+    output_bounds = input_bounds.Padded(-radius_x_, -radius_y_);
     return &output_bounds;
   }
 

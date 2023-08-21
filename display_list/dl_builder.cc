@@ -784,8 +784,7 @@ void DisplayListBuilder::DrawColor(DlColor color, DlBlendMode mode) {
   }
 }
 void DisplayListBuilder::drawLine(const DlFPoint& p0, const DlFPoint& p1) {
-  DlFRect bounds =
-      DlFRect::MakeLTRB(p0.x(), p0.y(), p1.x(), p1.y()).MakeSorted();
+  DlFRect bounds = DlFRect::MakeLTRB(p0.x(), p0.y(), p1.x(), p1.y()).Sorted();
   DisplayListAttributeFlags flags =
       (bounds.width() > 0.0f && bounds.height() > 0.0f) ? kDrawLineFlags
                                                         : kDrawHVLineFlags;
@@ -806,7 +805,7 @@ void DisplayListBuilder::drawRect(const DlFRect& rect) {
   DisplayListAttributeFlags flags = kDrawRectFlags;
   OpResult result = PaintResult(current_, flags);
   if (result != OpResult::kNoEffect &&
-      AccumulateOpBounds(rect.MakeSorted(), flags)) {
+      AccumulateOpBounds(rect.Sorted(), flags)) {
     Push<DrawRectOp>(0, 1, rect);
     CheckLayerOpacityCompatibility();
     UpdateLayerResult(result);
@@ -820,7 +819,7 @@ void DisplayListBuilder::drawOval(const DlFRect& bounds) {
   DisplayListAttributeFlags flags = kDrawOvalFlags;
   OpResult result = PaintResult(current_, flags);
   if (result != OpResult::kNoEffect &&
-      AccumulateOpBounds(bounds.MakeSorted(), flags)) {
+      AccumulateOpBounds(bounds.Sorted(), flags)) {
     Push<DrawOvalOp>(0, 1, bounds);
     CheckLayerOpacityCompatibility();
     UpdateLayerResult(result);
@@ -1277,7 +1276,7 @@ void DisplayListBuilder::drawTextBlob(const sk_sp<SkTextBlob> blob,
   if (result == OpResult::kNoEffect) {
     return;
   }
-  DlFRect bounds = DlFRect::MakeBounds(blob->bounds()).MakeOffset(x, y);
+  DlFRect bounds = DlFRect::MakeBounds(blob->bounds()).Translated(x, y);
   bool unclipped = AccumulateOpBounds(bounds, flags);
   // TODO(https://github.com/flutter/flutter/issues/82202): Remove once the
   // unit tests can use Fuchsia's font manager instead of the empty default.
@@ -1367,7 +1366,7 @@ bool DisplayListBuilder::AdjustBoundsForPaint(DlFRect& bounds,
       }
       DlScalar min_stroke_width = 0.01;
       pad *= std::max(current_.getStrokeWidth() * 0.5f, min_stroke_width);
-      bounds.Outset(pad, pad);
+      bounds = bounds.Padded(pad, pad);
     }
   }
 
@@ -1378,7 +1377,7 @@ bool DisplayListBuilder::AdjustBoundsForPaint(DlFRect& bounds,
         case DlMaskFilterType::kBlur: {
           FML_DCHECK(filter->asBlur());
           DlScalar mask_sigma_pad = filter->asBlur()->sigma() * 3.0;
-          bounds.Outset(mask_sigma_pad, mask_sigma_pad);
+          bounds = bounds.Padded(mask_sigma_pad, mask_sigma_pad);
         }
       }
     }

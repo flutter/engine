@@ -228,23 +228,23 @@ class BoundsTolerance {
     return copy;
   }
 
-  static DlFRect Scale(const DlFRect& rect, const DlFPoint& scales) {
+  static DlFRect Scaled(const DlFRect& rect, const DlFPoint& scales) {
     DlScalar outset_x = rect.width() * (scales.x() - 1);
     DlScalar outset_y = rect.height() * (scales.y() - 1);
-    return rect.MakeOutset(outset_x, outset_y);
+    return rect.Padded(outset_x, outset_y);
   }
 
   bool overflows(DlIRect pix_bounds,
                  int worst_bounds_pad_x,
                  int worst_bounds_pad_y) const {
     DlFRect allowed = DlFRect::MakeBounds(pix_bounds);
-    allowed.Outset(bounds_pad_);
-    allowed = Scale(allowed, scale_);
-    allowed.Outset(absolute_pad_);
+    allowed = allowed.Padded(bounds_pad_);
+    allowed = Scaled(allowed, scale_);
+    allowed = allowed.Padded(absolute_pad_);
     if (!allowed.Intersect(clip_)) {
       allowed.SetEmpty();
     }
-    allowed.Outset(clip_pad_);
+    allowed = allowed.Padded(clip_pad_);
     DlIRect rounded = DlIRect::MakeRoundedOut(allowed);
     int pad_left = std::max(0, pix_bounds.left() - rounded.left());
     int pad_top = std::max(0, pix_bounds.top() - rounded.top());
@@ -961,7 +961,7 @@ class CanvasCompareTester {
       cv->Restore();
     };
     SkRect sk_layer_bounds = kSkRenderBounds.makeInset(15, 15);
-    DlFRect dl_layer_bounds = kDlRenderBounds.MakeInset(15, 15);
+    DlFRect dl_layer_bounds = kDlRenderBounds.Padded(-15, -15);
     RenderWith(testP, env, tolerance,
                CaseParameters(
                    "With prior save/clip/restore",
@@ -1921,7 +1921,7 @@ class CanvasCompareTester {
     // moving to a 15.4 inset, the edge of the clip is never on the "rounding
     // edge" of a pixel.
     SkRect sk_r_clip = kSkRenderBounds.makeInset(15.4, 15.4);
-    DlFRect dl_r_clip = kDlRenderBounds.MakeInset(15.4, 15.4);
+    DlFRect dl_r_clip = kDlRenderBounds.Padded(-15.4, -15.4);
     BoundsTolerance intersect_tolerance = diff_tolerance.clip(dl_r_clip);
     intersect_tolerance = intersect_tolerance.addPostClipPadding(1, 1);
     RenderWith(testP, env, intersect_tolerance,
@@ -2707,7 +2707,7 @@ TEST_F(DisplayListCanvas, DrawRect) {
             canvas->drawRect(kSkRenderBounds.makeOffset(0.5, 0.5), paint);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {  //
-            canvas->DrawRect(kDlRenderBounds.MakeOffset(0.5, 0.5), paint);
+            canvas->DrawRect(kDlRenderBounds.Translated(0.5, 0.5), paint);
           },
           kDrawRectFlags));
 }
@@ -2719,7 +2719,7 @@ TEST_F(DisplayListCanvas, DrawOval) {
             canvas->drawOval(kSkRenderBounds.makeInset(0, 10), paint);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {  //
-            canvas->DrawOval(kDlRenderBounds.MakeInset(0, 10), paint);
+            canvas->DrawOval(kDlRenderBounds.Padded(0, -10), paint);
           },
           kDrawOvalFlags));
 }
@@ -2760,7 +2760,7 @@ TEST_F(DisplayListCanvas, DrawDRRect) {
                                          kRenderCornerRadius);
   DlFRRect dl_outer = DlFRRect::MakeRectXY(kDlRenderBounds, kRenderCornerRadius,
                                            kRenderCornerRadius);
-  DlFRect dl_inner_bounds = kDlRenderBounds.MakeInset(30.0, 30.0);
+  DlFRect dl_inner_bounds = kDlRenderBounds.Padded(-30.0, -30.0);
   DlFRRect dl_inner = DlFRRect::MakeRectXY(dl_inner_bounds, kRenderCornerRadius,
                                            kRenderCornerRadius);
   CanvasCompareTester::RenderAll(  //
@@ -3134,8 +3134,8 @@ TEST_F(DisplayListCanvas, DrawImageLinear) {
 TEST_F(DisplayListCanvas, DrawImageRectNearest) {
   SkRect sk_src = SkRect::MakeIWH(kRenderWidth, kRenderHeight).makeInset(5, 5);
   SkRect sk_dst = kSkRenderBounds.makeInset(10.5, 10.5);
-  DlFRect dl_src = DlFRect::MakeWH(kRenderWidth, kRenderHeight).MakeInset(5, 5);
-  DlFRect dl_dst = kDlRenderBounds.MakeInset(10.5, 10.5);
+  DlFRect dl_src = DlFRect::MakeWH(kRenderWidth, kRenderHeight).Padded(-5, -5);
+  DlFRect dl_dst = kDlRenderBounds.Padded(-10.5, -10.5);
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {             //
@@ -3156,8 +3156,8 @@ TEST_F(DisplayListCanvas, DrawImageRectNearest) {
 TEST_F(DisplayListCanvas, DrawImageRectNearestNoPaint) {
   SkRect sk_src = SkRect::MakeIWH(kRenderWidth, kRenderHeight).makeInset(5, 5);
   SkRect sk_dst = kSkRenderBounds.makeInset(10.5, 10.5);
-  DlFRect dl_src = DlFRect::MakeWH(kRenderWidth, kRenderHeight).MakeInset(5, 5);
-  DlFRect dl_dst = kDlRenderBounds.MakeInset(10.5, 10.5);
+  DlFRect dl_src = DlFRect::MakeWH(kRenderWidth, kRenderHeight).Padded(-5, -5);
+  DlFRect dl_dst = kDlRenderBounds.Padded(-10.5, -10.5);
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {             //
@@ -3178,8 +3178,8 @@ TEST_F(DisplayListCanvas, DrawImageRectNearestNoPaint) {
 TEST_F(DisplayListCanvas, DrawImageRectLinear) {
   SkRect sk_src = SkRect::MakeIWH(kRenderWidth, kRenderHeight).makeInset(5, 5);
   SkRect sk_dst = kSkRenderBounds.makeInset(10.5, 10.5);
-  DlFRect dl_src = DlFRect::MakeWH(kRenderWidth, kRenderHeight).MakeInset(5, 5);
-  DlFRect dl_dst = kDlRenderBounds.MakeInset(10.5, 10.5);
+  DlFRect dl_src = DlFRect::MakeWH(kRenderWidth, kRenderHeight).Padded(-5, -5);
+  DlFRect dl_dst = kDlRenderBounds.Padded(-10.5, -10.5);
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {             //
@@ -3201,8 +3201,8 @@ TEST_F(DisplayListCanvas, DrawImageNineNearest) {
       SkIRect::MakeWH(kRenderWidth, kRenderHeight).makeInset(25, 25);
   SkRect sk_dst = kSkRenderBounds.makeInset(10.5, 10.5);
   DlIRect dl_src =
-      DlIRect::MakeWH(kRenderWidth, kRenderHeight).MakeInset(25, 25);
-  DlFRect dl_dst = kDlRenderBounds.MakeInset(10.5, 10.5);
+      DlIRect::MakeWH(kRenderWidth, kRenderHeight).Padded(-25, -25);
+  DlFRect dl_dst = kDlRenderBounds.Padded(-10.5, -10.5);
   sk_sp<SkImage> image = CanvasCompareTester::kTestImage;
   CanvasCompareTester::RenderAll(  //
       TestParameters(
@@ -3222,8 +3222,8 @@ TEST_F(DisplayListCanvas, DrawImageNineNearestNoPaint) {
       SkIRect::MakeWH(kRenderWidth, kRenderHeight).makeInset(25, 25);
   SkRect sk_dst = kSkRenderBounds.makeInset(10.5, 10.5);
   DlIRect dl_src =
-      DlIRect::MakeWH(kRenderWidth, kRenderHeight).MakeInset(25, 25);
-  DlFRect dl_dst = kDlRenderBounds.MakeInset(10.5, 10.5);
+      DlIRect::MakeWH(kRenderWidth, kRenderHeight).Padded(-25, -25);
+  DlFRect dl_dst = kDlRenderBounds.Padded(-10.5, -10.5);
   sk_sp<SkImage> image = CanvasCompareTester::kTestImage;
   CanvasCompareTester::RenderAll(  //
       TestParameters(
@@ -3243,8 +3243,8 @@ TEST_F(DisplayListCanvas, DrawImageNineLinear) {
       SkIRect::MakeWH(kRenderWidth, kRenderHeight).makeInset(25, 25);
   SkRect sk_dst = kSkRenderBounds.makeInset(10.5, 10.5);
   DlIRect dl_src =
-      DlIRect::MakeWH(kRenderWidth, kRenderHeight).MakeInset(25, 25);
-  DlFRect dl_dst = kDlRenderBounds.MakeInset(10.5, 10.5);
+      DlIRect::MakeWH(kRenderWidth, kRenderHeight).Padded(-25, -25);
+  DlFRect dl_dst = kDlRenderBounds.Padded(-10.5, -10.5);
   sk_sp<SkImage> image = CanvasCompareTester::kTestImage;
   CanvasCompareTester::RenderAll(  //
       TestParameters(

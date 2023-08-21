@@ -200,7 +200,7 @@ TEST_F(BackdropFilterLayerTest, MultipleChildren) {
   const DlFRect child_bounds = DlFRect::MakeLTRB(5.0f, 6.0f, 2.5f, 3.5f);
   const DlPath child_path1 = DlPath().AddRect(child_bounds);
   const DlPath child_path2 =
-      DlPath().AddRect(child_bounds.MakeOffset(3.0f, 0.0f));
+      DlPath().AddRect(child_bounds.Translated(3.0f, 0.0f));
   const DlPaint child_paint1 = DlPaint(DlColor::kYellow());
   const DlPaint child_paint2 = DlPaint(DlColor::kCyan());
   DlFRect children_bounds = child_path1.Bounds();
@@ -264,7 +264,7 @@ TEST_F(BackdropFilterLayerTest, Nested) {
   const DlFRect child_bounds = DlFRect::MakeLTRB(5.0f, 6.0f, 2.5f, 3.5f);
   const DlPath child_path1 = DlPath().AddRect(child_bounds);
   const DlPath child_path2 =
-      DlPath().AddRect(child_bounds.MakeOffset(3.0f, 0.0f));
+      DlPath().AddRect(child_bounds.Translated(3.0f, 0.0f));
   const DlPaint child_paint1 = DlPaint(DlColor::kYellow());
   const DlPaint child_paint2 = DlPaint(DlColor::kCyan());
   DlFRect children_bounds = child_path1.Bounds();

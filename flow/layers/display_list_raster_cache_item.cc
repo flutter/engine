@@ -104,7 +104,7 @@ void DisplayListRasterCacheItem::PrerollFinalize(PrerollContext* context,
     return;
   }
   auto* raster_cache = context->raster_cache;
-  DlFRect bounds = display_list_->bounds().MakeOffset(offset_.x(), offset_.y());
+  DlFRect bounds = display_list_->bounds().Translated(offset_.x(), offset_.y());
   bool visible = !context->state_stack.content_culled(bounds);
   RasterCache::CacheInfo cache_info =
       raster_cache->MarkSeen(key_id_, matrix, visible);
@@ -156,7 +156,7 @@ bool DisplayListRasterCacheItem::TryToPrepareRasterCache(
       !context.raster_cache->GenerateNewCacheInThisFrame() || !id.has_value()) {
     return false;
   }
-  DlFRect bounds = display_list_->bounds().MakeOffset(offset_.x(), offset_.y());
+  DlFRect bounds = display_list_->bounds().Translated(offset_.x(), offset_.y());
   RasterCache::Context r_context = {
       // clang-format off
       .gr_context         = context.gr_context,

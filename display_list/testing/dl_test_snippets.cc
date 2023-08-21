@@ -424,7 +424,7 @@ std::vector<DisplayListInvocationGroup> CreateAllClipOps() {
             }},
            {1, 24, 1, 24,
             [](DlOpReceiver& r) {
-              r.clipRect(kTestBounds.MakeOffset(1, 1),
+              r.clipRect(kTestBounds.Translated(1, 1),
                          DlCanvas::ClipOp::kIntersect, true);
             }},
            {1, 24, 1, 24,
@@ -629,7 +629,7 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
             [](DlOpReceiver& r) { r.drawArc(kTestBounds, 45, 270, false); }},
            {1, 32, 1, 32,
             [](DlOpReceiver& r) {
-              r.drawArc(kTestBounds.MakeOffset(1, 1), 45, 270, false);
+              r.drawArc(kTestBounds.Translated(1, 1), 45, 270, false);
             }},
            {1, 32, 1, 32,
             [](DlOpReceiver& r) { r.drawArc(kTestBounds, 30, 270, false); }},

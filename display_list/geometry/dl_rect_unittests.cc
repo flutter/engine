@@ -108,21 +108,9 @@ TEST(DlRectTest, FRectRoundingEmpty) {
   ASSERT_EQ(DlIRect::MakeRoundedIn(rect), DlIRect());
   ASSERT_EQ(DlIRect::MakeRounded(rect), DlIRect());
 
-  {
-    DlFRect frounded_out = rect;
-    frounded_out.RoundOut();
-    ASSERT_EQ(frounded_out, DlFRect());
-  }
-  {
-    DlFRect frounded_in = rect;
-    frounded_in.RoundIn();
-    ASSERT_EQ(frounded_in, DlFRect());
-  }
-  {
-    DlFRect frounded = rect;
-    frounded.Round();
-    ASSERT_EQ(frounded, DlFRect());
-  }
+  ASSERT_EQ(rect.RoundedOut(), DlFRect());
+  ASSERT_EQ(rect.RoundedIn(), DlFRect());
+  ASSERT_EQ(rect.Rounded(), DlFRect());
 }
 
 TEST(DlRectTest, FRectRoundingSimple) {
@@ -137,21 +125,9 @@ TEST(DlRectTest, FRectRoundingSimple) {
   ASSERT_EQ(DlIRect::MakeRoundedIn(rect), DlIRect::MakeLTRB(6, 11, 20, 25));
   ASSERT_EQ(DlIRect::MakeRounded(rect), DlIRect::MakeLTRB(5, 10, 21, 25));
 
-  {
-    DlFRect frounded_out = rect;
-    frounded_out.RoundOut();
-    ASSERT_EQ(frounded_out, DlFRect::MakeLTRB(5.0f, 10.0f, 21.0f, 26.0f));
-  }
-  {
-    DlFRect frounded = rect;
-    frounded.Round();
-    ASSERT_EQ(frounded, DlFRect::MakeLTRB(5.0f, 10.0f, 21.0f, 25.0f));
-  }
-  {
-    DlFRect frounded_in = rect;
-    frounded_in.RoundIn();
-    ASSERT_EQ(frounded_in, DlFRect::MakeLTRB(6.0f, 11.0f, 20.0f, 25.0f));
-  }
+  ASSERT_EQ(rect.RoundedOut(), DlFRect::MakeLTRB(5.0f, 10.0f, 21.0f, 26.0f));
+  ASSERT_EQ(rect.RoundedIn(), DlFRect::MakeLTRB(6.0f, 11.0f, 20.0f, 25.0f));
+  ASSERT_EQ(rect.Rounded(), DlFRect::MakeLTRB(5.0f, 10.0f, 21.0f, 25.0f));
 }
 
 TEST(DlRectTest, FRectCopy) {

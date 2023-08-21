@@ -43,6 +43,43 @@ DlPaint GetPaintForRun(unsigned attributes) {
   return paint;
 }
 
+class BouncingRect {
+ public:
+  BouncingRect(const DlFRect& start, const DlFRect& arena)
+      : x_(start.x()),
+        y_(start.y()),
+        width_(start.width()),
+        height_(start.height()),
+        arena_(arena) {}
+
+  DlFRect Rect() const {
+    return DlFRect::MakeXYWH(x_, y_, width_, height_);
+  }
+
+  void Bounce(DlScalar dx, DlScalar dy) {
+    x_ = Clip(x_ + dx, arena_.left(), arena_.right());
+    y_ = Clip(y_ + dy, arena_.top(), arena_.bottom());
+  }
+
+ private:
+  DlScalar x_;
+  DlScalar y_;
+  DlScalar width_;
+  DlScalar height_;
+
+  DlFRect arena_;
+
+  static DlScalar Clip(DlScalar v, DlScalar min, DlScalar max) {
+    while (v < max) {
+      v -= (max - min);
+    }
+    while (v < min) {
+      v += (max - min);
+    }
+    return v;
+  }
+};
+
 static void FlushSubmitCpuSync(const sk_sp<SkSurface>& surface) {
   if (!surface) {
     return;
@@ -144,18 +181,13 @@ void BM_DrawRect(benchmark::State& state,
   // As rects have DlScalar dimensions, we want to ensure that we also
   // draw rects with non-integer position and size
   const DlScalar offset = 0.5f;
-  DlFRect rect = DlFRect::MakeLTRB(0, 0, length, length);
+  BouncingRect bounce(DlFRect::MakeWH(length, length),
+                      DlFRect::MakeWH(canvas_size, canvas_size));
 
   state.counters["DrawCallCount"] = kRectsToDraw;
   for (size_t i = 0; i < kRectsToDraw; i++) {
-    builder.DrawRect(rect, paint);
-    rect.Offset(offset, offset);
-    if (rect.right() > canvas_size) {
-      rect.Offset(-canvas_size, 0);
-    }
-    if (rect.bottom() > canvas_size) {
-      rect.Offset(0, -canvas_size);
-    }
+    builder.DrawRect(bounce.Rect(), paint);
+    bounce.Bounce(offset, offset);
   }
 
   auto display_list = builder.Build();
@@ -190,19 +222,14 @@ void BM_DrawOval(benchmark::State& state,
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
   auto canvas = DlSkCanvasAdapter(surface->getCanvas());
 
-  DlFRect rect = DlFRect::MakeXYWH(0, 0, length * 1.5f, length);
   const DlScalar offset = 0.5f;
+  BouncingRect bounce(DlFRect::MakeWH(length * 1.5f, length),
+                      DlFRect::MakeWH(canvas_size, canvas_size));
 
   state.counters["DrawCallCount"] = kOvalsToDraw;
   for (size_t i = 0; i < kOvalsToDraw; i++) {
-    builder.DrawOval(rect, paint);
-    rect.Offset(offset, offset);
-    if (rect.right() > canvas_size) {
-      rect.Offset(-canvas_size, 0);
-    }
-    if (rect.bottom() > canvas_size) {
-      rect.Offset(0, -canvas_size);
-    }
+    builder.DrawOval(bounce.Rect(), paint);
+    bounce.Bounce(offset, offset);
   }
   auto display_list = builder.Build();
 
@@ -238,19 +265,15 @@ void BM_DrawCircle(benchmark::State& state,
 
   DlScalar radius = length / 2.0f;
   const DlScalar offset = 0.5f;
+  BouncingRect bounce(DlFRect::MakeWH(radius * 2, radius * 2),
+                      DlFRect::MakeWH(canvas_size, canvas_size));
 
   DlFPoint center = DlFPoint(radius, radius);
 
   state.counters["DrawCallCount"] = kCirclesToDraw;
   for (size_t i = 0; i < kCirclesToDraw; i++) {
-    builder.DrawCircle(center, radius, paint);
-    center.Offset(offset, offset);
-    if (center.x() + radius > canvas_size) {
-      center.Set(radius, center.y());
-    }
-    if (center.y() + radius > canvas_size) {
-      center.Set(center.x(), radius);
-    }
+    builder.DrawCircle(bounce.Rect().Center(), radius, paint);
+    bounce.Bounce(offset, offset);
   }
   auto display_list = builder.Build();
 
@@ -448,21 +471,16 @@ void BM_DrawArc(benchmark::State& state,
   std::vector<DlScalar> segment_sweeps = {5.5f,  -10.0f, 42.0f, 71.7f, 90.0f,
                                           37.5f, 17.9f,  32.0f, 379.4f};
 
-  DlFRect bounds = DlFRect::MakeWH(length, length);
+  BouncingRect bounce(DlFRect::MakeWH(length, length),
+                      DlFRect::MakeWH(canvas_size, canvas_size));
 
   state.counters["DrawCallCount"] = kArcSweepSetsToDraw * segment_sweeps.size();
   for (size_t i = 0; i < kArcSweepSetsToDraw; i++) {
     for (DlScalar sweep : segment_sweeps) {
-      builder.DrawArc(bounds, starting_angle, sweep, false, paint);
+      builder.DrawArc(bounce.Rect(), starting_angle, sweep, false, paint);
       starting_angle += sweep + 5.0f;
     }
-    bounds.Offset(offset, offset);
-    if (bounds.right() > canvas_size) {
-      bounds.Offset(-canvas_size, 0);
-    }
-    if (bounds.bottom() > canvas_size) {
-      bounds.Offset(0, -canvas_size);
-    }
+    bounce.Bounce(offset, offset);
   }
 
   auto display_list = builder.Build();
@@ -1071,21 +1089,16 @@ void BM_DrawImageRect(benchmark::State& state,
   DlScalar offset = 0.5f;
   DlFRect src = DlFRect::MakeXYWH(bitmap_size / 4.0f, bitmap_size / 4.0f,
                                   bitmap_size / 2.0f, bitmap_size / 2.0f);
-  DlFRect dst = DlFRect::MakeWH(bitmap_size * 0.75f, bitmap_size * 0.75f);
+  BouncingRect bounce(DlFRect::MakeWH(bitmap_size * 0.75f, bitmap_size * 0.75f),
+                      DlFRect::MakeWH(canvas_size, canvas_size));
 
   state.counters["DrawCallCount"] = kImagesToDraw;
   for (size_t i = 0; i < kImagesToDraw; i++) {
     image = upload_bitmap ? ImageFromBitmapWithNewID(bitmap)
                           : offscreen->makeImageSnapshot();
-    builder.DrawImageRect(DlImage::Make(image), src, dst, options, &paint,
-                          constraint);
-    dst.Offset(offset, offset);
-    if (dst.right() > canvas_size) {
-      dst.SetLeft(0);
-    }
-    if (dst.bottom() > canvas_size) {
-      dst.SetTop(0);
-    }
+    builder.DrawImageRect(DlImage::Make(image), src, bounce.Rect(), options,
+                          &paint, constraint);
+    bounce.Bounce(offset, offset);
   }
 
   auto display_list = builder.Build();
@@ -1160,20 +1173,16 @@ void BM_DrawImageNine(benchmark::State& state,
   }
 
   DlScalar offset = 0.5f;
-  DlFRect dst = DlFRect::MakeWH(bitmap_size * 0.75f, bitmap_size * 0.75f);
+  BouncingRect bounce(DlFRect::MakeWH(bitmap_size * 0.75f, bitmap_size * 0.75f),
+                      DlFRect::MakeWH(canvas_size, canvas_size));
 
   state.counters["DrawCallCount"] = kImagesToDraw;
   for (size_t i = 0; i < kImagesToDraw; i++) {
     image = upload_bitmap ? ImageFromBitmapWithNewID(bitmap)
                           : offscreen->makeImageSnapshot();
-    builder.DrawImageNine(DlImage::Make(image), center, dst, filter, &paint);
-    dst.Offset(offset, offset);
-    if (dst.right() > canvas_size) {
-      dst.SetLeft(0);
-    }
-    if (dst.bottom() > canvas_size) {
-      dst.SetTop(0);
-    }
+    builder.DrawImageNine(DlImage::Make(image), center, bounce.Rect(), filter,
+                          &paint);
+    bounce.Bounce(offset, offset);
   }
 
   auto display_list = builder.Build();
