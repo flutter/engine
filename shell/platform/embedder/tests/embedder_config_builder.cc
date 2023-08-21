@@ -263,6 +263,11 @@ void EmbedderConfigBuilder::SetLogMessageCallbackHook() {
       EmbedderTestContext::GetLogMessageCallbackHook();
 }
 
+void EmbedderConfigBuilder::SetChannelListenedToCallbackHook() {
+  project_args_.channel_listened_to_callback =
+      context_.GetChannelListenedToCallbackHook();
+}
+
 void EmbedderConfigBuilder::SetLogTag(std::string tag) {
   log_tag_ = std::move(tag);
   project_args_.log_tag = log_tag_.c_str();

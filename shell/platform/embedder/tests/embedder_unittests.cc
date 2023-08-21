@@ -2562,6 +2562,20 @@ TEST_F(EmbedderTest, CanSendPointer) {
   message_latch.Wait();
 }
 
+TEST_F(EmbedderTest, RegisterChannelListener) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+
+  fml::AutoResetWaitableEvent latch;
+  context.AddNativeCallback("SignalNativeTest",
+    CREATE_NATIVE_ENTRY([&](Dart_NativeArguments){
+      latch.Signal();
+    }));
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+  builder.SetDartEntrypoint("channel_listener_response");
+}
+
 }  // namespace testing
 }  // namespace flutter
 
