@@ -84,10 +84,6 @@ void DlSkPaintDispatchHelper::setBlendMode(DlBlendMode mode) {
   paint_.setBlendMode(ToSk(mode));
 }
 void DlSkPaintDispatchHelper::setColorSource(const DlColorSource* source) {
-  if (!source) {
-    return;
-  }
-
   // On the Impeller backend, we will only support dithering of *gradients*,
   // and it will be enabled by default (without the option to disable it).
   // Until Skia support is completely removed, we only want to respect the
@@ -95,7 +91,7 @@ void DlSkPaintDispatchHelper::setColorSource(const DlColorSource* source) {
   // images, which is not supported in Impeller).
   //
   // See https://github.com/flutter/flutter/issues/112498.
-  color_source_gradient_ = source->isGradient();
+  color_source_gradient_ = source && source->isGradient();
   if (!color_source_gradient_) {
     paint_.setDither(false);
   }
