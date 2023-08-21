@@ -1,0 +1,21 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//flutter/impeller/tools/impeller.gni")
+
+impeller_component("typographer_stb_backend") {
+  testonly = true
+
+  sources = [
+    "text_render_context_stb.cc",
+    "text_render_context_stb.h",
+    "typeface_stb.cc",
+    "typeface_stb.h",
+  ]
+
+  public_deps = [
+    "//flutter/impeller/typographer",
+    "//third_party/stb:stb_truetype",
+  ]
+}
