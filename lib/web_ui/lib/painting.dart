@@ -344,6 +344,7 @@ abstract class Image {
   Future<ByteData?> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba});
   void dispose();
   bool get debugDisposed;
+  int get approximateBytesUsed => width * height * 4;
 
   Image clone() => this;
 
