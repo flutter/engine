@@ -1868,7 +1868,7 @@ Future<void> testMain() async {
               <String, dynamic>{
                 'oldText': 'Hello world',
                 'deltaText': '\n',
-                'deltaStart': 9,
+                'deltaStart': 3,
                 'deltaEnd': 9,
                 'selectionBase': 3,
                 'selectionExtent': 3,
