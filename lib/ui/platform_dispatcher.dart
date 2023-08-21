@@ -341,7 +341,7 @@ class PlatformDispatcher {
     assert(_renderedViews == null);
     assert(_renderedViewsBetweenCallbacks == null);
 
-    _renderedViews = Set<FlutterView>();
+    _renderedViews = <FlutterView>{};
     _invoke1<Duration>(
       onBeginFrame,
       _onBeginFrameZone,
