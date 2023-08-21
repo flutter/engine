@@ -50,7 +50,7 @@ GlyphAtlas::GlyphAtlas(Type type) : type_(type) {}
 GlyphAtlas::~GlyphAtlas() = default;
 
 bool GlyphAtlas::IsValid() const {
-  return !!texture_[index_];
+  return !!texture_;
 }
 
 GlyphAtlas::Type GlyphAtlas::GetType() const {
@@ -58,11 +58,11 @@ GlyphAtlas::Type GlyphAtlas::GetType() const {
 }
 
 const std::shared_ptr<Texture>& GlyphAtlas::GetTexture() const {
-  return texture_[index_];
+  return texture_;
 }
 
 void GlyphAtlas::SetTexture(std::shared_ptr<Texture> texture) {
-  texture_[index_] = std::move(texture);
+  texture_ = std::move(texture);
 }
 
 void GlyphAtlas::AddTypefaceGlyphPosition(const FontGlyphPair& pair,
