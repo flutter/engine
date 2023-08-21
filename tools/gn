@@ -306,8 +306,7 @@ def to_gn_args(args):
           'Cannot use --enable-unittests with --target-os=android. If you ' +
           'are trying to create an output directory to use for clangd (i.e. ' +
           'for VSCode integration), use a host build instead:\n\n' +
-          '$ tools/gn --unopt\n\n' +
-          '# Or, to include the Vulkan headers:\n' +
+          '$ tools/gn --unopt\n\n' + '# Or, to include the Vulkan headers:\n' +
           '$ tools/gn --unopt --enable-impeller-vulkan'
       )
     gn_args['enable_unittests'] = True
