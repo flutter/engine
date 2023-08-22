@@ -10,7 +10,6 @@ import androidx.annotation.Nullable;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
 import org.robolectric.annotation.RealObject;
-import org.robolectric.shadow.api.Shadow;
 import org.robolectric.shadows.ShadowResources;
 import org.robolectric.util.reflector.Direct;
 import org.robolectric.util.reflector.ForType;
@@ -23,6 +22,7 @@ public class SplashShadowResources extends ShadowResources {
 
   public static final int SPLASH_DRAWABLE_ID = 191919;
   public static final int THEMED_SPLASH_DRAWABLE_ID = 212121;
+
   @ForType(Resources.class)
   interface ResourcesReflector {
     @Direct

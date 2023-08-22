@@ -75,8 +75,10 @@ public class FlutterEngineGroupCacheTest {
   @Test
   public void itRemovesAllFlutterEngineGroups() {
     // --- Test Setup ---
-    FlutterEngineGroup flutterEngineGroup1 = new FlutterEngineGroup(ApplicationProvider.getApplicationContext());
-    FlutterEngineGroup flutterEngineGroup2 = new FlutterEngineGroup(ApplicationProvider.getApplicationContext());
+    FlutterEngineGroup flutterEngineGroup1 =
+        new FlutterEngineGroup(ApplicationProvider.getApplicationContext());
+    FlutterEngineGroup flutterEngineGroup2 =
+        new FlutterEngineGroup(ApplicationProvider.getApplicationContext());
     FlutterEngineGroupCache cache = new FlutterEngineGroupCache();
 
     // --- Execute Test ---

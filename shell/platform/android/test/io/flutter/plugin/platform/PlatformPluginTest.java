@@ -527,7 +527,6 @@ public class PlatformPluginTest {
     verify(mockActivity, never()).finish();
   }
 
-
   @SuppressWarnings("deprecation")
   // Robolectric.setupActivity.
   @Test

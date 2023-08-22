@@ -28,7 +28,6 @@ import io.flutter.embedding.android.FlutterImageView;
 import io.flutter.embedding.android.FlutterSurfaceView;
 import io.flutter.embedding.android.FlutterView;
 import io.flutter.embedding.android.MotionEventTracker;
-import io.flutter.embedding.android.RenderMode;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.FlutterOverlaySurface;

@@ -82,6 +82,7 @@ public class PlayStoreDeferredComponentManagerTest {
       loadDartLibrary(loadingUnitId, componentName);
     }
   }
+
   @SuppressWarnings("deprecation")
   // getApplicationInfo
   private Context createSpyContext(Bundle metadata) throws NameNotFoundException {

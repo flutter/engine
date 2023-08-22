@@ -49,7 +49,8 @@ public class ShimPluginRegistryTest {
     ShimPluginRegistry registryUnderTest = new ShimPluginRegistry(mockFlutterEngine);
     // Fully qualifed name because imports can not have deprecation supression.
     // This is the consumption side of the old plugins.
-    io.flutter.plugin.common.PluginRegistry.Registrar registrarUnderTest = registryUnderTest.registrarFor("test");
+    io.flutter.plugin.common.PluginRegistry.Registrar registrarUnderTest =
+        registryUnderTest.registrarFor("test");
 
     ArgumentCaptor<FlutterPlugin> shimAggregateCaptor =
         ArgumentCaptor.forClass(FlutterPlugin.class);
@@ -73,8 +74,10 @@ public class ShimPluginRegistryTest {
   public void itSuppliesMultipleOldPlugins() {
     ShimPluginRegistry registryUnderTest = new ShimPluginRegistry(mockFlutterEngine);
     // Fully qualifed name because imports can not have deprecation supression.
-    io.flutter.plugin.common.PluginRegistry.Registrar registrarUnderTest1 = registryUnderTest.registrarFor("test1");
-    io.flutter.plugin.common.PluginRegistry.Registrar registrarUnderTest2 = registryUnderTest.registrarFor("test2");
+    io.flutter.plugin.common.PluginRegistry.Registrar registrarUnderTest1 =
+        registryUnderTest.registrarFor("test1");
+    io.flutter.plugin.common.PluginRegistry.Registrar registrarUnderTest2 =
+        registryUnderTest.registrarFor("test2");
 
     ArgumentCaptor<FlutterPlugin> shimAggregateCaptor =
         ArgumentCaptor.forClass(FlutterPlugin.class);
@@ -96,7 +99,8 @@ public class ShimPluginRegistryTest {
   @Test
   public void itCanOnlySupplyActivityBindingWhenUpstreamActivityIsAttached() {
     ShimPluginRegistry registryUnderTest = new ShimPluginRegistry(mockFlutterEngine);
-    io.flutter.plugin.common.PluginRegistry.Registrar registrarUnderTest = registryUnderTest.registrarFor("test");
+    io.flutter.plugin.common.PluginRegistry.Registrar registrarUnderTest =
+        registryUnderTest.registrarFor("test");
 
     ArgumentCaptor<FlutterPlugin> shimAggregateCaptor =
         ArgumentCaptor.forClass(FlutterPlugin.class);

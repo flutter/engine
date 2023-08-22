@@ -267,7 +267,6 @@ public class FlutterAndroidComponentTest {
       return ApplicationProvider.getApplicationContext();
     }
 
-
     @SuppressWarnings("deprecation")
     // Robolectric.setupActivity
     @Nullable
