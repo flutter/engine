@@ -88,9 +88,9 @@ class PrePushCommand extends Command<bool> {
   }
 
   /// Returns the most recent `compile_commands.json` for the given root.
-  /// 
+  ///
   /// For example, if the following builds exist with the following timestamps:
-  /// 
+  ///
   /// ```txt
   /// <filename>                                       <last modified>
   /// out/host_debug_unopt_arm64/compile_commands.json 1/1/2023
@@ -98,7 +98,7 @@ class PrePushCommand extends Command<bool> {
   /// out/host_debug_unopt/compile_commands.json       1/3/2023
   /// out/host_debug/compile_commands.json             1/4/2023
   /// ```
-  /// 
+  ///
   /// ... then the returned file will be `out/host_debug/compile_commands.json`.
   @visibleForTesting
   static io.File? findMostRelevantCompileCommands(String flutterRoot, {required bool verbose}) {
@@ -109,7 +109,7 @@ class PrePushCommand extends Command<bool> {
       .where((io.File file) => file.existsSync())
       .map((io.File file) => (file, file.lastModifiedSync()))
       .toList();
-    
+
     // Sort the list by last modified time, most recent first.
     compileCommandsFiles.sort(((io.File, DateTime) a, (io.File, DateTime) b) => b.$2.compareTo(a.$2));
 

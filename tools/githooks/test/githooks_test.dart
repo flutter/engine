@@ -92,7 +92,7 @@ void main() {
       setUp();
 
       expect(
-        PrePushCommand.findMostRelevantCompileCommands(fakeFlutterRoot.path, verbose: false), 
+        PrePushCommand.findMostRelevantCompileCommands(fakeFlutterRoot.path, verbose: false),
         isNull,
       );
     });
@@ -105,7 +105,7 @@ void main() {
       createHostFor('host_debug_unopt_arm64', lastModified: DateTime(2023, 8, 6));
 
       expect(
-        PrePushCommand.findMostRelevantCompileCommands(fakeFlutterRoot.path, verbose: false)!.path, 
+        PrePushCommand.findMostRelevantCompileCommands(fakeFlutterRoot.path, verbose: false)!.path,
         equals(path.join(fakeFlutterRoot.path, 'out', 'host_debug_unopt_arm64', 'compile_commands.json')),
       );
     });

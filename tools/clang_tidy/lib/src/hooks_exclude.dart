@@ -18,7 +18,7 @@ const List<String> _kExcludeChecks = <String>[
 ];
 
 /// Given a `.clang-tidy` file, rewrites it to exclude non-performant checks.
-/// 
+///
 /// Returns a path to the rewritten file.
 io.File rewriteClangTidyConfig(io.File input) {
   // Because the file is YAML, and we aren't using a YAML package to parse it,
@@ -36,5 +36,5 @@ io.File rewriteClangTidyConfig(io.File input) {
   final io.File output = io.File(path.join(tmpDir.path, '.clang-tidy-for-githooks'));
   output.writeAsStringSync(contents);
 
-  return output;  
+  return output;
 }
