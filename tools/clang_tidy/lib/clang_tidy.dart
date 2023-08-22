@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:convert' show LineSplitter, jsonDecode;
-import 'dart:io' as io show File, stderr, stdout;
+import 'dart:io' as io show Directory, File, stderr, stdout;
 
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
@@ -161,10 +161,20 @@ class ClangTidy {
       );
     }
 
+    io.File? configPath = options.configPath;
+    io.Directory? rewriteDir;
+    if (configPath != null && options.excludeSlowChecks) {
+      configPath = _createClangTidyConfigExcludingSlowLints(configPath);
+      rewriteDir = io.Directory(path.dirname(configPath.path));
+    }
     final _ComputeJobsResult computeJobsResult = await _computeJobs(
       changedFileBuildCommands,
       options,
+      configPath,
     );
+    if (rewriteDir != null) {
+      rewriteDir.deleteSync(recursive: true);
+    }
     final int computeResult = computeJobsResult.sawMalformed ? 1 : 0;
     final List<WorkerJob> jobs = computeJobsResult.jobs;
 
@@ -298,11 +308,8 @@ class ClangTidy {
   Future<_ComputeJobsResult> _computeJobs(
     List<Command> commands,
     Options options,
+    io.File? configPath,
   ) async {
-    io.File? configPath = options.configPath;
-    if (configPath != null && options.excludeSlowChecks) {
-      configPath = _createClangTidyConfigExcludingSlowLints(configPath);
-    }
     bool sawMalformed = false;
     final List<WorkerJob> jobs = <WorkerJob>[];
     for (final Command command in commands) {
