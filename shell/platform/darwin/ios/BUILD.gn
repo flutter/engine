@@ -263,9 +263,9 @@ source_set("ios_test_flutter_mrc") {
 }
 
 shared_library("ios_test_flutter") {
+  testonly = true
   visibility = [
-    ":*",
-    "//flutter/shell/platform/darwin:*",
+    "*"
   ]
   cflags = [
     "-fvisibility=default",

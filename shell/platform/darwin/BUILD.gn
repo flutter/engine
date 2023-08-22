@@ -9,9 +9,6 @@ import("//flutter/shell/platform/config.gni")
 group("darwin") {
   if (is_ios) {
     deps = [ "ios:flutter_framework" ]
-    if (is_debug) {
-      deps += [ "//flutter/shell/platform/darwin/ios:ios_test_flutter" ]
-    }
   }
   if (is_mac) {
     deps = []
