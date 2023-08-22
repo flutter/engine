@@ -13,52 +13,46 @@ enum FontStyle {
 }
 
 /// The thickness of the glyphs used to draw the text
-class FontWeight {
-  const FontWeight._(this.index, this.value);
+enum FontWeight {
+  /// Thin, the least thick
+  w100._(100),
 
-  /// The encoded integer value of this font weight.
-  final int index;
+  /// Extra-light
+  w200._(200),
+
+  /// Light
+  w300._(300),
+
+  /// Normal / regular / plain
+  w400._(400),
+
+  /// Medium
+  w500._(500),
+
+  /// Semi-bold
+  w600._(600),
+
+  /// Bold
+  w700._(700),
+
+  /// Extra-bold
+  w800._(800),
+
+  /// Black, the most thick
+  w900._(900);
+
+  // Users are not allowed to specify a `FontWeight` outside of the w100-w900
+  // range but j
+  const FontWeight._(this.value);
 
   /// The thickness value of this font weight.
   final int value;
-
-  /// Thin, the least thick
-  static const FontWeight w100 = FontWeight._(0, 100);
-
-  /// Extra-light
-  static const FontWeight w200 = FontWeight._(1, 200);
-
-  /// Light
-  static const FontWeight w300 = FontWeight._(2, 300);
-
-  /// Normal / regular / plain
-  static const FontWeight w400 = FontWeight._(3, 400);
-
-  /// Medium
-  static const FontWeight w500 = FontWeight._(4, 500);
-
-  /// Semi-bold
-  static const FontWeight w600 = FontWeight._(5, 600);
-
-  /// Bold
-  static const FontWeight w700 = FontWeight._(6, 700);
-
-  /// Extra-bold
-  static const FontWeight w800 = FontWeight._(7, 800);
-
-  /// Black, the most thick
-  static const FontWeight w900 = FontWeight._(8, 900);
 
   /// The default font weight.
   static const FontWeight normal = w400;
 
   /// A commonly used font weight that is heavier than normal.
   static const FontWeight bold = w700;
-
-  /// A list of all the font weights.
-  static const List<FontWeight> values = <FontWeight>[
-    w100, w200, w300, w400, w500, w600, w700, w800, w900
-  ];
 
   /// Linearly interpolates between two font weights.
   ///
@@ -86,21 +80,6 @@ class FontWeight {
       return null;
     }
     return values[_lerpInt((a ?? normal).index, (b ?? normal).index, t).round().clamp(0, 8)];
-  }
-
-  @override
-  String toString() {
-    return const <int, String>{
-      0: 'FontWeight.w100',
-      1: 'FontWeight.w200',
-      2: 'FontWeight.w300',
-      3: 'FontWeight.w400',
-      4: 'FontWeight.w500',
-      5: 'FontWeight.w600',
-      6: 'FontWeight.w700',
-      7: 'FontWeight.w800',
-      8: 'FontWeight.w900',
-    }[index]!;
   }
 }
 
@@ -2575,6 +2554,18 @@ class LineMetrics {
     required this.lineNumber,
   });
 
+  LineMetrics._(
+    this.hardBreak,
+    this.ascent,
+    this.descent,
+    this.unscaledAscent,
+    this.height,
+    this.width,
+    this.left,
+    this.baseline,
+    this.lineNumber,
+  );
+
   /// True if this line ends with an explicit line break (e.g. '\n') or is the end
   /// of the paragraph. False otherwise.
   final bool hardBreak;
@@ -2795,6 +2786,14 @@ abstract class Paragraph {
   /// to repeatedly call this. Instead, cache the results.
   List<LineMetrics> computeLineMetrics();
 
+  LineMetrics? getLineMetricsAt(int lineNumber);
+
+  int get numberOfLines;
+
+  int? getLineNumber(int codeUnitOffset);
+
+  FontInfo? getFontInfoAt(int codeUnitOffset);
+
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
   void dispose();
@@ -2973,6 +2972,29 @@ base class _NativeParagraph extends NativeFieldWrapperClass1 implements Paragrap
 
   @Native<Handle Function(Pointer<Void>)>(symbol: 'Paragraph::computeLineMetrics')
   external Float64List _computeLineMetrics();
+
+  @override
+  LineMetrics? getLineMetricsAt(int lineNumber) {
+    return _getLineMetricsAt(lineNumber, LineMetrics._);
+  }
+  @Native<Handle Function(Pointer<Void>, Uint32, Handle)>(symbol: 'Paragraph::getLineMetricsAt')
+  external LineMetrics? _getLineMetricsAt(int lineNumber, Function constructor);
+
+  @override
+  FontInfo? getFontInfoAt(int codeUnitOffset) {
+    assert(codeUnitOffset >= 0);
+    return _getFontInfoAt(codeUnitOffset, FontInfo.new);
+  }
+  @Native<Handle Function(Pointer<Void>, Uint32, Handle)>(symbol: 'Paragraph::getFontInfoAt')
+  external FontInfo? _getFontInfoAt(int codeUnitOffset, Function constructor);
+
+  @override
+  @Native<Uint32 Function(Pointer<Void>)>(symbol: 'Paragraph::getNumberOfLines')
+  external int get numberOfLines;
+
+  @override
+  @Native<Uint32 Function(Pointer<Void>, Uint32)>(symbol: 'Paragraph::getLineNumberAt')
+  external int getLineNumber(int codeUnitOffset);
 
   @override
   void dispose() {
