@@ -717,22 +717,18 @@ ORIGIN: ../../../flutter/display_list/benchmarking/dl_complexity_metal.h + ../..
 ORIGIN: ../../../flutter/display_list/benchmarking/dl_region_benchmarks.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_builder.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_builder.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_attributes.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_blend_mode.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_blend_mode.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/dl_builder.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/dl_builder.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_canvas.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_canvas.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/dl_canvas_to_receiver.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/dl_canvas_to_receiver.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_color.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_op_flags.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_op_flags.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_op_receiver.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_op_receiver.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/dl_op_recorder.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/dl_op_recorder.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_op_records.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_op_records.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_paint.cc + ../../../flutter/LICENSE
@@ -1873,12 +1869,10 @@ ORIGIN: ../../../flutter/lib/ui/text/asset_manager_font_provider.cc + ../../../f
 ORIGIN: ../../../flutter/lib/ui/text/asset_manager_font_provider.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/text/font_collection.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/text/font_collection.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/lib/ui/text/line_metrics.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/text/paragraph.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/text/paragraph.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/text/paragraph_builder.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/text/paragraph_builder.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/lib/ui/text/text_box.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/ui.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/ui_benchmarks.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/ui_dart_state.cc + ../../../flutter/LICENSE
@@ -2146,6 +2140,7 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/ui.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/asset_manager.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/benchmarks.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/images.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/initialization.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/navigation/platform_location.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/navigation/url_strategy.dart + ../../../flutter/LICENSE
@@ -3444,22 +3439,18 @@ FILE: ../../../flutter/display_list/benchmarking/dl_complexity_metal.h
 FILE: ../../../flutter/display_list/benchmarking/dl_region_benchmarks.cc
 FILE: ../../../flutter/display_list/display_list.cc
 FILE: ../../../flutter/display_list/display_list.h
-FILE: ../../../flutter/display_list/display_list_builder.cc
-FILE: ../../../flutter/display_list/display_list_builder.h
 FILE: ../../../flutter/display_list/dl_attributes.h
 FILE: ../../../flutter/display_list/dl_blend_mode.cc
 FILE: ../../../flutter/display_list/dl_blend_mode.h
+FILE: ../../../flutter/display_list/dl_builder.cc
+FILE: ../../../flutter/display_list/dl_builder.h
 FILE: ../../../flutter/display_list/dl_canvas.cc
 FILE: ../../../flutter/display_list/dl_canvas.h
-FILE: ../../../flutter/display_list/dl_canvas_to_receiver.cc
-FILE: ../../../flutter/display_list/dl_canvas_to_receiver.h
 FILE: ../../../flutter/display_list/dl_color.h
 FILE: ../../../flutter/display_list/dl_op_flags.cc
 FILE: ../../../flutter/display_list/dl_op_flags.h
 FILE: ../../../flutter/display_list/dl_op_receiver.cc
 FILE: ../../../flutter/display_list/dl_op_receiver.h
-FILE: ../../../flutter/display_list/dl_op_recorder.cc
-FILE: ../../../flutter/display_list/dl_op_recorder.h
 FILE: ../../../flutter/display_list/dl_op_records.cc
 FILE: ../../../flutter/display_list/dl_op_records.h
 FILE: ../../../flutter/display_list/dl_paint.cc
@@ -4605,12 +4596,10 @@ FILE: ../../../flutter/lib/ui/text/asset_manager_font_provider.cc
 FILE: ../../../flutter/lib/ui/text/asset_manager_font_provider.h
 FILE: ../../../flutter/lib/ui/text/font_collection.cc
 FILE: ../../../flutter/lib/ui/text/font_collection.h
-FILE: ../../../flutter/lib/ui/text/line_metrics.h
 FILE: ../../../flutter/lib/ui/text/paragraph.cc
 FILE: ../../../flutter/lib/ui/text/paragraph.h
 FILE: ../../../flutter/lib/ui/text/paragraph_builder.cc
 FILE: ../../../flutter/lib/ui/text/paragraph_builder.h
-FILE: ../../../flutter/lib/ui/text/text_box.h
 FILE: ../../../flutter/lib/ui/ui.dart
 FILE: ../../../flutter/lib/ui/ui_benchmarks.cc
 FILE: ../../../flutter/lib/ui/ui_dart_state.cc
@@ -4878,6 +4867,7 @@ FILE: ../../../flutter/lib/web_ui/lib/ui.dart
 FILE: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web.dart
 FILE: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/asset_manager.dart
 FILE: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/benchmarks.dart
+FILE: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/images.dart
 FILE: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/initialization.dart
 FILE: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/navigation/platform_location.dart
 FILE: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/navigation/url_strategy.dart
