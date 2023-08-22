@@ -20,7 +20,6 @@ final Set<String> skippedPaths = <String>{
   r'build', // only used by build
   r'build_overrides', // only used by build
   r'buildtools', // only used by build
-  r'flutter/.clang-tidy-for-githooks', // nearly identical to .clang-tidy
   r'flutter/build',
   r'flutter/ci',
   r'flutter/docs',

@@ -6,6 +6,7 @@ import 'dart:io' as io;
 
 import 'package:args/command_runner.dart';
 import 'package:clang_tidy/clang_tidy.dart';
+import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 
 /// The command that implements the pre-push githook
@@ -39,7 +40,9 @@ class PrePushCommand extends Command<bool> {
     return !checkResults.contains(false);
   }
 
-  static const List<String> _checkForHostTargets = <String>[
+  /// Different `host_xxx` targets are built depending on the host platform.
+  @visibleForTesting
+  static const List<String> supportedHostTargets = <String>[
     'host_debug_unopt_arm64',
     'host_debug_arm64',
     'host_debug_unopt',
@@ -52,11 +55,11 @@ class PrePushCommand extends Command<bool> {
     
     // First ensure that out/host_{{flags}}/compile_commands.json exists by running
     // //flutter/tools/gn. See _checkForHostTargets above for supported targets.
-    final io.File? compileCommands = _findMostRelevantCompileCommands(flutterRoot, verbose: verbose);
+    final io.File? compileCommands = findMostRelevantCompileCommands(flutterRoot, verbose: verbose);
     if (compileCommands == null) {
       io.stderr.writeln(
         'clang-tidy requires a fully built host directory, such as: '
-        '${_checkForHostTargets.join(', ')}.'
+        '${supportedHostTargets.join(', ')}.'
       );
       return false;
     }
@@ -70,6 +73,7 @@ class PrePushCommand extends Command<bool> {
     final ClangTidy clangTidy = ClangTidy(
       buildCommandsPath: compileCommands,
       configPath: io.File(path.join(flutterRoot, '.clang-tidy-for-githooks')),
+      excludeSlowChecks: true,
       outSink: outBuffer,
       errSink: errBuffer,
     );
@@ -96,10 +100,11 @@ class PrePushCommand extends Command<bool> {
   /// ```
   /// 
   /// ... then the returned file will be `out/host_debug/compile_commands.json`.
-  io.File? _findMostRelevantCompileCommands(String flutterRoot, {required bool verbose}) {
+  @visibleForTesting
+  static io.File? findMostRelevantCompileCommands(String flutterRoot, {required bool verbose}) {
     // Create a list of all the compile_commands.json files that exist,
     // including their last modified time.
-    final List<(io.File, DateTime)> compileCommandsFiles = _checkForHostTargets
+    final List<(io.File, DateTime)> compileCommandsFiles = supportedHostTargets
       .map((String target) => io.File(path.join(flutterRoot, 'out', target, 'compile_commands.json')))
       .where((io.File file) => file.existsSync())
       .map((io.File file) => (file, file.lastModifiedSync()))

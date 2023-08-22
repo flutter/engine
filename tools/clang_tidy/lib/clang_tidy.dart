@@ -11,6 +11,7 @@ import 'package:process_runner/process_runner.dart';
 
 import 'src/command.dart';
 import 'src/git_repo.dart';
+import 'src/hooks_exclude.dart';
 import 'src/options.dart';
 
 const String _linterOutputHeader = '''
@@ -48,6 +49,7 @@ class ClangTidy {
   ///
   /// `buildCommandsPath` is the path to the build_commands.json file.
   /// `configPath` is a path to a `.clang-tidy` config file.
+  /// `excludeSlowChecks` when true indicates that slow checks should be skipped.
   /// `repoPath` is the path to the Engine repo.
   /// `checksArg` are specific checks for clang-tidy to do.
   /// `lintAll` when true indicates that all files should be linted.
@@ -58,6 +60,7 @@ class ClangTidy {
   ClangTidy({
     required io.File buildCommandsPath,
     io.File? configPath,
+    bool excludeSlowChecks = false,
     String checksArg = '',
     bool lintAll = false,
     bool lintHead = false,
@@ -68,6 +71,7 @@ class ClangTidy {
     options = Options(
       buildCommandsPath: buildCommandsPath,
       configPath: configPath,
+      excludeSlowChecks: excludeSlowChecks,
       checksArg: checksArg,
       lintAll: lintAll,
       lintHead: lintHead,
@@ -295,6 +299,10 @@ class ClangTidy {
     List<Command> commands,
     Options options,
   ) async {
+    io.File? configPath = options.configPath;
+    if (configPath != null && options.excludeSlowChecks) {
+      configPath = _createClangTidyConfigExcludingSlowLints(configPath);
+    }
     bool sawMalformed = false;
     final List<WorkerJob> jobs = <WorkerJob>[];
     for (final Command command in commands) {
@@ -314,7 +322,7 @@ class ClangTidy {
           sawMalformed = true;
         case LintAction.lint:
           _outSink.writeln('🔶 linting $relativePath');
-          jobs.add(command.createLintJob(options));
+          jobs.add(command.createLintJob(options, withPath: configPath));
         case LintAction.skipThirdParty:
           _outSink.writeln('🔷 ignoring $relativePath (third_party)');
         case LintAction.skipMissing:
@@ -322,6 +330,10 @@ class ClangTidy {
       }
     }
     return _ComputeJobsResult(jobs, sawMalformed);
+  }
+
+  static io.File _createClangTidyConfigExcludingSlowLints(io.File configPath) {
+    return rewriteClangTidyConfig(configPath);
   }
 
   static Iterable<String> _trimGenerator(String output) sync* {

@@ -29,6 +29,7 @@ class Options {
     this.help = false,
     this.verbose = false,
     this.configPath,
+    this.excludeSlowChecks = false,
     this.checksArg = '',
     this.lintAll = false,
     this.lintHead = false,
@@ -76,6 +77,7 @@ class Options {
       verbose: options['verbose'] as bool,
       buildCommandsPath: buildCommandsPath,
       configPath: options.wasParsed('config-file') ? io.File(options['config-file'] as String) : null,
+      excludeSlowChecks: options['exclude-slow-checks'] as bool,
       checksArg: options.wasParsed('checks') ? options['checks'] as String : '',
       lintAll: io.Platform.environment['FLUTTER_LINT_ALL'] != null ||
                options['lint-all'] as bool,
@@ -205,6 +207,11 @@ class Options {
       valueHelp: 'path/to/.clang-tidy',
     )
     ..addFlag(
+      'exclude-slow-checks',
+      help: 'Exclude checks that are too slow for git hooks.',
+      negatable: false,
+    )
+    ..addFlag(
       'enable-check-profile',
       help: 'Enable per-check timing profiles and print a report to stderr.',
       negatable: false,
@@ -221,6 +228,9 @@ class Options {
 
   /// A location of a `.clang-tidy` configuration file.
   final io.File? configPath;
+
+  /// Whether to exclude lints that are too slow for git hooks.
+  final bool excludeSlowChecks;
 
   /// The location of shard compile_commands.json files.
   final List<io.File> shardCommandsPaths;

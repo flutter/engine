@@ -131,12 +131,12 @@ class Command {
   }
 
   /// The job for the process runner for the lint needed for this command.
-  WorkerJob createLintJob(Options options) {
+  WorkerJob createLintJob(Options options, {io.File? withPath}) {
     final List<String> args = <String>[
       filePath,
       '--warnings-as-errors=${options.warningsAsErrors ?? '*'}',
       if (options.configPath != null)
-        '--config-file=${options.configPath}',
+        '--config-file=${withPath != null ? withPath.path : options.configPath}',
       if (options.checks != null)
         options.checks!,
       if (options.fix) ...<String>[
