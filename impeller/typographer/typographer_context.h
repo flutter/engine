@@ -26,6 +26,9 @@ class TypographerContext {
 
   virtual bool IsValid() const;
 
+  virtual std::shared_ptr<GlyphAtlasContext> CreateGlyphAtlasContext()
+      const = 0;
+
   // TODO(dnfield): Callers should not need to know which type of atlas to
   // create. https://github.com/flutter/flutter/issues/111640
 

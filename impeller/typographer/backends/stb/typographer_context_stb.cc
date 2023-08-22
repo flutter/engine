@@ -10,99 +10,18 @@
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/allocation.h"
 #include "impeller/core/allocator.h"
+#include "impeller/typographer/backends/stb/glyph_atlas_context_stb.h"
 #include "impeller/typographer/font_glyph_pair.h"
 #include "typeface_stb.h"
 
-// These values can be customize per build.
-// Glyph atlases are always square.
-#ifndef MAX_GLYPH_ATLAS_SIZE
-#define MAX_GLYPH_ATLAS_SIZE 4096u
-#endif
-#ifndef MIN_GLYPH_ATLAS_SIZE
-#define MIN_GLYPH_ATLAS_SIZE 8u
-#endif
-
 #define DISABLE_COLOR_FONT_SUPPORT 1
 #ifdef DISABLE_COLOR_FONT_SUPPORT
-#define COLOR_FONT_BPP 1
+constexpr auto kColorFontBitsPerPixel = 1;
 #else
-#define COLOR_FONT_BPP 4
+constexpr auto kColorFontBitsPerPixel = 4;
 #endif
 
 namespace impeller {
-
-// An simple bitmap in lieu of a skia bitmap.
-class STBBitmap {
- public:
-  ~STBBitmap() = default;
-
-  STBBitmap() = delete;
-
-  STBBitmap(size_t width, size_t height, size_t bytes_per_pixel)
-      : width_(width),
-        height_(height),
-        bytes_per_pixel_(bytes_per_pixel),
-        pixels_(std::make_unique<uint8_t[]>(width * height * bytes_per_pixel)) {
-  }
-
-  uint8_t* GetPixels() const { return pixels_.get(); }
-
-  uint8_t* GetPixelAddress(TPoint<size_t> coords) const {
-    FML_DCHECK(coords.x < width_);
-    FML_DCHECK(coords.x < height_);
-
-    return &pixels_.get()[(coords.x + width_ * coords.y) * bytes_per_pixel_];
-  }
-
-  size_t GetRowBytes() const { return width_ * bytes_per_pixel_; }
-
-  size_t GetWidth() const { return width_; }
-
-  size_t GetHeight() const { return height_; }
-
-  size_t GetSize() const { return width_ * height_ * bytes_per_pixel_; }
-
- private:
-  size_t width_;
-  size_t height_;
-  size_t bytes_per_pixel_;
-  std::unique_ptr<uint8_t[]> pixels_;
-};
-
-// Analogous to the bitmaps (one for each type) stored in each Atlas context.
-static auto alpha_bitmap =
-    std::make_shared<STBBitmap>(MIN_GLYPH_ATLAS_SIZE, MIN_GLYPH_ATLAS_SIZE, 1);
-static auto color_bitmap = std::make_shared<STBBitmap>(MIN_GLYPH_ATLAS_SIZE,
-                                                       MIN_GLYPH_ATLAS_SIZE,
-                                                       COLOR_FONT_BPP);
-
-static std::shared_ptr<STBBitmap> get_atlas_bitmap(
-    impeller::GlyphAtlas::Type type) {
-  switch (type) {
-    case impeller::GlyphAtlas::Type::kAlphaBitmap: {
-      return alpha_bitmap;
-      break;
-    }
-    case impeller::GlyphAtlas::Type::kColorBitmap: {
-      return color_bitmap;
-      break;
-    }
-  }
-}
-
-static void update_atlas_bitmap(std::shared_ptr<STBBitmap>& bitmap,
-                                impeller::GlyphAtlas::Type type) {
-  switch (type) {
-    case impeller::GlyphAtlas::Type::kAlphaBitmap: {
-      alpha_bitmap = bitmap;
-      break;
-    }
-    case impeller::GlyphAtlas::Type::kColorBitmap: {
-      color_bitmap = bitmap;
-      break;
-    }
-  }
-}
 
 using FontGlyphPairRefVector =
     std::vector<std::reference_wrapper<const FontGlyphPair>>;
@@ -116,6 +35,11 @@ std::unique_ptr<TypographerContext> TypographerContextSTB::Make() {
 TypographerContextSTB::TypographerContextSTB() : TypographerContext() {}
 
 TypographerContextSTB::~TypographerContextSTB() = default;
+
+std::shared_ptr<GlyphAtlasContext>
+TypographerContextSTB::CreateGlyphAtlasContext() const {
+  return std::make_shared<GlyphAtlasContextSTB>();
+}
 
 // Function returns the count of "remaining pairs" not packed into rect of given
 // size.
@@ -232,17 +156,20 @@ static bool CanAppendToExistingAtlas(
   return true;
 }
 
-namespace {
-ISize OptimumAtlasSizeForFontGlyphPairs(
+static ISize OptimumAtlasSizeForFontGlyphPairs(
     const FontGlyphPair::Set& pairs,
     std::vector<Rect>& glyph_positions,
-    const std::shared_ptr<GlyphAtlasContext>& atlas_context) {
-  static constexpr auto kMinAtlasSize = MIN_GLYPH_ATLAS_SIZE;
-  static constexpr auto kMaxAtlasSize = MAX_GLYPH_ATLAS_SIZE;
+    const std::shared_ptr<GlyphAtlasContext>& atlas_context,
+    GlyphAtlas::Type type) {
+  static constexpr auto kMinAtlasSize = 8u;
+  static constexpr auto kMinAlphaBitmapSize = 1024u;
+  static constexpr auto kMaxAtlasSize = 2048u;  // QNX required 2048 or less.
 
   TRACE_EVENT0("impeller", __FUNCTION__);
 
-  ISize current_size(kMinAtlasSize, kMinAtlasSize);
+  ISize current_size = type == GlyphAtlas::Type::kAlphaBitmap
+                           ? ISize(kMinAlphaBitmapSize, kMinAlphaBitmapSize)
+                           : ISize(kMinAtlasSize, kMinAtlasSize);
   size_t total_pairs = pairs.size() + 1;
   do {
     auto rect_packer = std::shared_ptr<RectanglePacker>(
@@ -267,9 +194,8 @@ ISize OptimumAtlasSizeForFontGlyphPairs(
            current_size.height <= kMaxAtlasSize);
   return ISize{0, 0};
 }
-}  // namespace
 
-static void DrawGlyph(STBBitmap* bitmap,
+static void DrawGlyph(BitmapSTB* bitmap,
                       const FontGlyphPair& font_glyph,
                       const Rect& location,
                       bool has_color) {
@@ -345,7 +271,7 @@ static void DrawGlyph(STBBitmap* bitmap,
 }
 
 static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
-                              const std::shared_ptr<STBBitmap>& bitmap,
+                              const std::shared_ptr<BitmapSTB>& bitmap,
                               const FontGlyphPairRefVector& new_pairs) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   FML_DCHECK(bitmap != nullptr);
@@ -362,16 +288,16 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
   return true;
 }
 
-static std::shared_ptr<STBBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
+static std::shared_ptr<BitmapSTB> CreateAtlasBitmap(const GlyphAtlas& atlas,
                                                     const ISize& atlas_size) {
   TRACE_EVENT0("impeller", __FUNCTION__);
 
   size_t bytes_per_pixel = 1;
   if (atlas.GetType() == GlyphAtlas::Type::kColorBitmap &&
       !DISABLE_COLOR_FONT_SUPPORT) {
-    bytes_per_pixel = COLOR_FONT_BPP;
+    bytes_per_pixel = kColorFontBitsPerPixel;
   }
-  auto bitmap = std::make_shared<STBBitmap>(atlas_size.width, atlas_size.height,
+  auto bitmap = std::make_shared<BitmapSTB>(atlas_size.width, atlas_size.height,
                                             bytes_per_pixel);
 
   bool has_color = atlas.GetType() == GlyphAtlas::Type::kColorBitmap;
@@ -386,7 +312,7 @@ static std::shared_ptr<STBBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
 }
 
 // static bool UpdateGlyphTextureAtlas(std::shared_ptr<SkBitmap> bitmap,
-static bool UpdateGlyphTextureAtlas(std::shared_ptr<STBBitmap>& bitmap,
+static bool UpdateGlyphTextureAtlas(std::shared_ptr<BitmapSTB>& bitmap,
                                     const std::shared_ptr<Texture>& texture) {
   TRACE_EVENT0("impeller", __FUNCTION__);
 
@@ -406,7 +332,7 @@ static bool UpdateGlyphTextureAtlas(std::shared_ptr<STBBitmap>& bitmap,
 
 static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
     const std::shared_ptr<Allocator>& allocator,
-    std::shared_ptr<STBBitmap>& bitmap,
+    std::shared_ptr<BitmapSTB>& bitmap,
     const ISize& atlas_size,
     PixelFormat format) {
   TRACE_EVENT0("impeller", __FUNCTION__);
@@ -454,6 +380,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
   if (!IsValid()) {
     return nullptr;
   }
+  auto& atlas_context_stb = GlyphAtlasContextSTB::Cast(*atlas_context);
   std::shared_ptr<GlyphAtlas> last_atlas = atlas_context->GetGlyphAtlas();
 
   if (font_glyph_pairs.empty()) {
@@ -499,7 +426,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
     // Step 4a: Draw new font-glyph pairs into the existing bitmap.
     // ---------------------------------------------------------------------------
     // auto bitmap = atlas_context->GetBitmap();
-    auto bitmap = get_atlas_bitmap(type);
+    auto bitmap = atlas_context_stb.GetBitmap();
     if (!UpdateAtlasBitmap(*last_atlas, bitmap, new_glyphs)) {
       return nullptr;
     }
@@ -519,7 +446,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
   // ---------------------------------------------------------------------------
   auto glyph_atlas = std::make_shared<GlyphAtlas>(type);
   auto atlas_size = OptimumAtlasSizeForFontGlyphPairs(
-      font_glyph_pairs, glyph_positions, atlas_context);
+      font_glyph_pairs, glyph_positions, atlas_context, type);
 
   atlas_context->UpdateGlyphAtlas(glyph_atlas, atlas_size);
   if (atlas_size.IsEmpty()) {
@@ -554,8 +481,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
   if (!bitmap) {
     return nullptr;
   }
-
-  update_atlas_bitmap(bitmap, type);
+  atlas_context_stb.UpdateBitmap(bitmap);
 
   // ---------------------------------------------------------------------------
   // Step 7b: Upload the atlas as a texture.

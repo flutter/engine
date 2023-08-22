@@ -1705,12 +1705,16 @@ ORIGIN: ../../../flutter/impeller/toolkit/egl/surface.cc + ../../../flutter/LICE
 ORIGIN: ../../../flutter/impeller/toolkit/egl/surface.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/toolkit/gles/gles.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/toolkit/gles/texture.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/typographer/backends/skia/glyph_atlas_context_skia.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/typographer/backends/skia/glyph_atlas_context_skia.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/typographer/backends/skia/text_frame_skia.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/typographer/backends/skia/text_frame_skia.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/typographer/backends/skia/typeface_skia.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/typographer/backends/skia/typeface_skia.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/typographer/backends/skia/typographer_context_skia.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/typographer/backends/skia/typographer_context_skia.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/typographer/backends/stb/glyph_atlas_context_stb.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/typographer/backends/stb/glyph_atlas_context_stb.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/typographer/backends/stb/text_frame_stb.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/typographer/backends/stb/text_frame_stb.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/typographer/backends/stb/typeface_stb.cc + ../../../flutter/LICENSE
@@ -4442,12 +4446,16 @@ FILE: ../../../flutter/impeller/toolkit/gles/gles.h
 FILE: ../../../flutter/impeller/toolkit/gles/texture.cc
 FILE: ../../../flutter/impeller/toolkit/gles/texture.h
 FILE: ../../../flutter/impeller/tools/malioc.json
+FILE: ../../../flutter/impeller/typographer/backends/skia/glyph_atlas_context_skia.cc
+FILE: ../../../flutter/impeller/typographer/backends/skia/glyph_atlas_context_skia.h
 FILE: ../../../flutter/impeller/typographer/backends/skia/text_frame_skia.cc
 FILE: ../../../flutter/impeller/typographer/backends/skia/text_frame_skia.h
 FILE: ../../../flutter/impeller/typographer/backends/skia/typeface_skia.cc
 FILE: ../../../flutter/impeller/typographer/backends/skia/typeface_skia.h
 FILE: ../../../flutter/impeller/typographer/backends/skia/typographer_context_skia.cc
 FILE: ../../../flutter/impeller/typographer/backends/skia/typographer_context_skia.h
+FILE: ../../../flutter/impeller/typographer/backends/stb/glyph_atlas_context_stb.cc
+FILE: ../../../flutter/impeller/typographer/backends/stb/glyph_atlas_context_stb.h
 FILE: ../../../flutter/impeller/typographer/backends/stb/text_frame_stb.cc
 FILE: ../../../flutter/impeller/typographer/backends/stb/text_frame_stb.h
 FILE: ../../../flutter/impeller/typographer/backends/stb/typeface_stb.cc

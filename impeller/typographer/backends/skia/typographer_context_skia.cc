@@ -10,6 +10,7 @@
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/allocation.h"
 #include "impeller/core/allocator.h"
+#include "impeller/typographer/backends/skia/glyph_atlas_context_skia.h"
 #include "impeller/typographer/backends/skia/typeface_skia.h"
 #include "impeller/typographer/rectangle_packer.h"
 #include "impeller/typographer/typographer_context.h"
@@ -35,6 +36,11 @@ std::shared_ptr<TypographerContext> TypographerContextSkia::Make() {
 TypographerContextSkia::TypographerContextSkia() = default;
 
 TypographerContextSkia::~TypographerContextSkia() = default;
+
+std::shared_ptr<GlyphAtlasContext>
+TypographerContextSkia::CreateGlyphAtlasContext() const {
+  return std::make_shared<GlyphAtlasContextSkia>();
+}
 
 static size_t PairsFitInAtlasOfSize(
     const FontGlyphPair::Set& pairs,
@@ -107,8 +113,7 @@ static bool CanAppendToExistingAtlas(
   return true;
 }
 
-namespace {
-ISize OptimumAtlasSizeForFontGlyphPairs(
+static ISize OptimumAtlasSizeForFontGlyphPairs(
     const FontGlyphPair::Set& pairs,
     std::vector<Rect>& glyph_positions,
     const std::shared_ptr<GlyphAtlasContext>& atlas_context,
@@ -146,7 +151,6 @@ ISize OptimumAtlasSizeForFontGlyphPairs(
            current_size.height <= kMaxAtlasSize);
   return ISize{0, 0};
 }
-}  // namespace
 
 static void DrawGlyph(SkCanvas* canvas,
                       const FontGlyphPair& font_glyph,
@@ -314,6 +318,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   if (!IsValid()) {
     return nullptr;
   }
+  auto& atlas_context_skia = GlyphAtlasContextSkia::Cast(*atlas_context);
   std::shared_ptr<GlyphAtlas> last_atlas = atlas_context->GetGlyphAtlas();
 
   if (font_glyph_pairs.empty()) {
@@ -358,7 +363,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
     // ---------------------------------------------------------------------------
     // Step 4a: Draw new font-glyph pairs into the existing bitmap.
     // ---------------------------------------------------------------------------
-    auto bitmap = atlas_context->GetBitmap();
+    auto bitmap = atlas_context_skia.GetBitmap();
     if (!UpdateAtlasBitmap(*last_atlas, bitmap, new_glyphs)) {
       return nullptr;
     }
@@ -412,7 +417,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   if (!bitmap) {
     return nullptr;
   }
-  atlas_context->UpdateBitmap(bitmap);
+  atlas_context_skia.UpdateBitmap(bitmap);
 
   // ---------------------------------------------------------------------------
   // Step 7b: Upload the atlas as a texture.

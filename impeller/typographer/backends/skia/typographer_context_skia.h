@@ -18,6 +18,9 @@ class TypographerContextSkia : public TypographerContext {
   ~TypographerContextSkia() override;
 
   // |TypographerContext|
+  std::shared_ptr<GlyphAtlasContext> CreateGlyphAtlasContext() const override;
+
+  // |TypographerContext|
   std::shared_ptr<GlyphAtlas> CreateGlyphAtlas(
       Context& context,
       GlyphAtlas::Type type,

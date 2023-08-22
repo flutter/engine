@@ -55,7 +55,7 @@ TEST_P(TypographerTest, CanCreateRenderContext) {
 
 TEST_P(TypographerTest, CanCreateGlyphAtlas) {
   auto context = TypographerContextSkia::Make();
-  auto atlas_context = std::make_shared<GlyphAtlasContext>();
+  auto atlas_context = context->CreateGlyphAtlasContext();
   ASSERT_TRUE(context && context->IsValid());
   SkFont sk_font;
   auto blob = SkTextBlob::MakeFromString("hello", sk_font);
@@ -135,7 +135,7 @@ TEST_P(TypographerTest, LazyAtlasTracksColor) {
 
 TEST_P(TypographerTest, GlyphAtlasWithOddUniqueGlyphSize) {
   auto context = TypographerContextSkia::Make();
-  auto atlas_context = std::make_shared<GlyphAtlasContext>();
+  auto atlas_context = context->CreateGlyphAtlasContext();
   ASSERT_TRUE(context && context->IsValid());
   SkFont sk_font;
   auto blob = SkTextBlob::MakeFromString("AGH", sk_font);
@@ -152,7 +152,7 @@ TEST_P(TypographerTest, GlyphAtlasWithOddUniqueGlyphSize) {
 
 TEST_P(TypographerTest, GlyphAtlasIsRecycledIfUnchanged) {
   auto context = TypographerContextSkia::Make();
-  auto atlas_context = std::make_shared<GlyphAtlasContext>();
+  auto atlas_context = context->CreateGlyphAtlasContext();
   ASSERT_TRUE(context && context->IsValid());
   SkFont sk_font;
   auto blob = SkTextBlob::MakeFromString("spooky skellingtons", sk_font);
@@ -175,7 +175,7 @@ TEST_P(TypographerTest, GlyphAtlasIsRecycledIfUnchanged) {
 
 TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {
   auto context = TypographerContextSkia::Make();
-  auto atlas_context = std::make_shared<GlyphAtlasContext>();
+  auto atlas_context = context->CreateGlyphAtlasContext();
   ASSERT_TRUE(context && context->IsValid());
 
   const char* test_string =
@@ -218,7 +218,7 @@ TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {
 
 TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledIfUnchanged) {
   auto context = TypographerContextSkia::Make();
-  auto atlas_context = std::make_shared<GlyphAtlasContext>();
+  auto atlas_context = context->CreateGlyphAtlasContext();
   ASSERT_TRUE(context && context->IsValid());
   SkFont sk_font;
   auto blob = SkTextBlob::MakeFromString("spooky 1", sk_font);
@@ -251,7 +251,7 @@ TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledIfUnchanged) {
 
 TEST_P(TypographerTest, GlyphAtlasTextureIsRecreatedIfTypeChanges) {
   auto context = TypographerContextSkia::Make();
-  auto atlas_context = std::make_shared<GlyphAtlasContext>();
+  auto atlas_context = context->CreateGlyphAtlasContext();
   ASSERT_TRUE(context && context->IsValid());
   SkFont sk_font;
   auto blob = SkTextBlob::MakeFromString("spooky 1", sk_font);
