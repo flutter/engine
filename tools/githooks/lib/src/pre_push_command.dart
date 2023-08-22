@@ -102,10 +102,12 @@ class PrePushCommand extends Command<bool> {
   /// ... then the returned file will be `out/host_debug/compile_commands.json`.
   @visibleForTesting
   static io.File? findMostRelevantCompileCommands(String flutterRoot, {required bool verbose}) {
+    final String engineRoot = path.normalize(path.join(flutterRoot, '../'));
+
     // Create a list of all the compile_commands.json files that exist,
     // including their last modified time.
     final List<(io.File, DateTime)> compileCommandsFiles = supportedHostTargets
-      .map((String target) => io.File(path.join(flutterRoot, 'out', target, 'compile_commands.json')))
+      .map((String target) => io.File(path.join(engineRoot, 'out', target, 'compile_commands.json')))
       .where((io.File file) => file.existsSync())
       .map((io.File file) => (file, file.lastModifiedSync()))
       .toList();
