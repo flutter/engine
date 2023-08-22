@@ -4,6 +4,7 @@
 
 import 'dart:typed_data';
 
+import 'package:meta/meta.dart';
 import 'package:ui/src/engine/scene_painting.dart';
 import 'package:ui/src/engine/vector_math.dart';
 import 'package:ui/ui.dart' as ui;
@@ -222,7 +223,7 @@ class ImageFilterOperation implements LayerOperation {
   PlatformViewStyling createPlatformViewStyling() {
     if (offset != ui.Offset.zero) {
       return PlatformViewStyling(
-        position: PlatformViewPosition(offset: offset)
+        position: PlatformViewPosition.offset(offset)
       );
     } else {
       return const PlatformViewStyling();
@@ -258,7 +259,7 @@ class OffsetOperation implements LayerOperation {
 
   @override
   PlatformViewStyling createPlatformViewStyling() => PlatformViewStyling(
-    position: PlatformViewPosition(offset: ui.Offset(dx, dy))
+    position: PlatformViewPosition.offset(ui.Offset(dx, dy))
   );
 }
 
@@ -299,7 +300,7 @@ class OpacityOperation implements LayerOperation {
 
   @override
   PlatformViewStyling createPlatformViewStyling() => PlatformViewStyling(
-    position: offset != ui.Offset.zero ? PlatformViewPosition(offset: offset) : const PlatformViewPosition(),
+    position: offset != ui.Offset.zero ? PlatformViewPosition.offset(offset) : const PlatformViewPosition.zero(),
     opacity: alpha.toDouble() / 255.0,
   );
 }
@@ -336,7 +337,7 @@ class TransformOperation implements LayerOperation {
 
   @override
   PlatformViewStyling createPlatformViewStyling() => PlatformViewStyling(
-    position: PlatformViewPosition(transform: getMatrix()),
+    position: PlatformViewPosition.transform(getMatrix()),
   );
 }
 
@@ -397,6 +398,7 @@ sealed class LayerSlice {
   void dispose();
 }
 
+// A slice that contains one or more platform views to be rendered.
 class PlatformViewSlice implements LayerSlice {
   PlatformViewSlice(this.views, this.occlusionRect);
 
@@ -410,6 +412,8 @@ class PlatformViewSlice implements LayerSlice {
   void dispose() {}
 }
 
+// A slice that contains flutter content to be rendered int he form of a single
+// ScenePicture.
 class PictureSlice implements LayerSlice {
   PictureSlice(this.picture);
 
@@ -420,6 +424,9 @@ class PictureSlice implements LayerSlice {
 }
 
 mixin PictureEngineLayer implements ui.EngineLayer {
+  // Each layer is represented as a series of "slices" which contain either
+  // flutter content or platform views. Slices in this list are ordered from
+  // bottom to top.
   List<LayerSlice> slices = <LayerSlice>[];
 
   @override
@@ -433,6 +440,9 @@ mixin PictureEngineLayer implements ui.EngineLayer {
 abstract class LayerOperation {
   const LayerOperation();
 
+  // Given an input content rectangle, this returns a conservative estimate of
+  // the covering rectangle of the content after it has been processed by the
+  // layer operation.
   ui.Rect cullRect(ui.Rect contentRect);
 
   // Takes a rectangle in the layer's coordinate space and maps it to the parent
@@ -451,65 +461,80 @@ class PictureDrawCommand {
   ui.Picture picture;
 }
 
+// Represents how a platform view should be positioned in the scene.
+// This object is immutable, so it can be reused across different platform 
+// views that have the same positioning.
 class PlatformViewPosition {
-  const PlatformViewPosition({this.offset, this.transform});
+  // No transformation at all. We leave both fields null.
   const PlatformViewPosition.zero() : offset = null, transform = null;
+
+  // A simple offset is the most common scenario. In those cases, we only
+  // store the offset and leave the transform as null
+  const PlatformViewPosition.offset(this.offset) : transform = null;
+
+  // In more complex cases, we store the transform. In those cases, the offset
+  // is left as null.
+  const PlatformViewPosition.transform(this.transform) : offset = null;
+
+  bool get isZero => (offset == null) && (transform == null);
 
   final ui.Offset? offset;
   final Matrix4? transform;
 
   static PlatformViewPosition combine(PlatformViewPosition outer, PlatformViewPosition inner) {
-    final ui.Offset? outerOffset = outer.offset;
-    final Matrix4? outerTransform = outer.transform;
-    final ui.Offset? innerOffset = inner.offset;
-    final Matrix4? innerTransform = inner.transform;
-    if (innerTransform != null) {
-      if (innerOffset != null) {
-        if (outerTransform != null) {
-          final Matrix4 newTransform = outerTransform.clone();
-          newTransform.translate(innerOffset.dx, innerOffset.dy);
-          newTransform.multiply(innerTransform);
-          return PlatformViewPosition(offset: outerOffset, transform: newTransform);
-        } else {
-          final ui.Offset finalOffset = outerOffset != null ? (innerOffset + outerOffset) : innerOffset;
-          return PlatformViewPosition(offset: finalOffset, transform: innerTransform);
-        }
-      } else {
-        if (outerTransform != null) {
-          final Matrix4 newTransform = outerTransform.clone();
-          newTransform.multiply(innerTransform);
-          return PlatformViewPosition(offset: outerOffset, transform: newTransform);
-        } else {
-          return PlatformViewPosition(offset: outerOffset, transform: innerTransform);
-        }
-      }
-    } else {
-      if (innerOffset != null) {
-        if (outerTransform != null) {
-          final Matrix4 newTransform = outerTransform.clone();
-          newTransform.translate(innerOffset.dx, innerOffset.dy);
-          return PlatformViewPosition(offset: outerOffset, transform: newTransform);
-        } else {
-          final ui.Offset finalOffset = outerOffset != null ? (innerOffset + outerOffset) : innerOffset;
-          return PlatformViewPosition(offset: finalOffset);
-        }
-      } else {
-        return outer;
-      }
+    // We try to reuse existing objects if possible, if they are immutable.
+    if (outer.isZero) {
+      return inner;
     }
+    if (inner.isZero) {
+      return outer;
+    }
+    final ui.Offset? outerOffset = outer.offset;
+    final ui.Offset? innerOffset = inner.offset;
+    if (outerOffset != null && innerOffset != null) {
+      // Both positions are simple offsets, so they can be combined cheaply
+      // into another offset.
+      return PlatformViewPosition.offset(outerOffset + innerOffset);
+    }
+
+    // Otherwise, at least one of the positions involves a matrix transform.
+    final Matrix4 newTransform;
+    if (outerOffset != null) {
+      newTransform = Matrix4.translationValues(outerOffset.dx, outerOffset.dy, 0);
+    } else {
+      newTransform = outer.transform!.clone();
+    }
+    if (innerOffset != null) {
+      newTransform.translate(innerOffset.dx, innerOffset.dy);
+    } else {
+      newTransform.multiply(inner.transform!);
+    }
+    return PlatformViewPosition.transform(newTransform);
   }
 }
 
+// Represents the styling to be performed on a platform view when it is
+// composited. This object is immutable so that it can be reused with different
+// platform views that have the same styling.
 class PlatformViewStyling {
   const PlatformViewStyling({
     this.position = const PlatformViewPosition.zero(),
     this.opacity = 1.0
   });
 
+  bool get isDefault => position.isZero && (opacity == 1.0);
+
   final PlatformViewPosition position;
   final double opacity;
 
   static PlatformViewStyling combine(PlatformViewStyling outer, PlatformViewStyling inner) {
+    // Attempt to reuse one of the existing immutable objects.
+    if (outer.isDefault) {
+      return inner;
+    }
+    if (inner.isDefault) {
+      return outer;
+    }
     return PlatformViewStyling(
       position: PlatformViewPosition.combine(outer.position, inner.position),
       opacity: outer.opacity * inner.opacity,
@@ -534,6 +559,9 @@ class LayerBuilder {
     this.parent,
     this.layer,
     this.operation);
+
+  @visibleForTesting
+  static (ui.PictureRecorder, SceneCanvas) Function(ui.Rect)? debugRecorderFactory;
 
   final LayerBuilder? parent;
   final PictureEngineLayer layer;
@@ -561,12 +589,22 @@ class LayerBuilder {
     return _memoizedPlatformViewStyling ??= _createPlatformViewStyling();
   }
 
+  (ui.PictureRecorder, SceneCanvas) _createRecorder(ui.Rect rect) {
+    if (debugRecorderFactory != null) {
+      return debugRecorderFactory!(rect);
+    }
+    final ui.PictureRecorder recorder = ui.PictureRecorder();
+    final SceneCanvas canvas = ui.Canvas(recorder, rect) as SceneCanvas;
+    return (recorder, canvas);
+  }
+
   void flushSlices() {
     if (pendingPictures.isNotEmpty) {
+      // Merge the existing draw commands into a single picture and add a slice
+      // with that picture to the slice list.
       final ui.Rect drawnRect = picturesRect ?? ui.Rect.zero;
       final ui.Rect rect = operation?.cullRect(drawnRect) ?? drawnRect;
-      final ui.PictureRecorder recorder = ui.PictureRecorder();
-      final SceneCanvas canvas = ui.Canvas(recorder, rect) as SceneCanvas;
+      final (ui.PictureRecorder recorder, SceneCanvas canvas) = _createRecorder(rect);
 
       operation?.pre(canvas, rect);
       for (final PictureDrawCommand command in pendingPictures) {
@@ -585,6 +623,8 @@ class LayerBuilder {
     }
 
     if (pendingPlatformViews.isNotEmpty) {
+      // Take any pending platform views and lower them into a platform view
+      // slice.
       ui.Rect? occlusionRect = platformViewRect;
       if (occlusionRect != null && operation != null) {
         occlusionRect = operation!.inverseMapRect(occlusionRect);
@@ -594,6 +634,9 @@ class LayerBuilder {
 
     pendingPictures.clear();
     pendingPlatformViews = <PlatformView>[];
+
+    // All the pictures and platform views have been lowered into slices. Clear
+    // our occlusion rectangles.
     picturesRect = null;
     platformViewRect = null;
   }
@@ -606,7 +649,16 @@ class LayerBuilder {
   }) {
     final ui.Rect cullRect = (picture as ScenePicture).cullRect;
     final ui.Rect shiftedRect = cullRect.shift(offset);
+
+    // Whenever we add a picture to our layer, we try to see if the picture
+    // will overlap with any platform views that are currently on top of our
+    // drawing surface. If they don't overlap with the platform views, they can
+    // be composited into the existing drawing surface.
     if (platformViewRect?.overlaps(shiftedRect) ?? false) {
+      // If they do overlap with the platform views, however, we need to create
+      // a new drawing surface to composite into. This lowers the current set
+      // of picture drawing commands into a picture slice and lowers the current
+      // set of platform views into a platform view slice.
       flushSlices();
     }
     pendingPictures.add(PictureDrawCommand(offset, picture));
@@ -627,13 +679,16 @@ class LayerBuilder {
       : PlatformViewStyling.combine(
         layerStyling,
         PlatformViewStyling(
-          position: PlatformViewPosition(offset: offset),
+          position: PlatformViewPosition.offset(offset),
         ),
       );
     pendingPlatformViews.add(PlatformView(viewId, ui.Size(width, height), viewStyling));
   }
 
   void mergeLayer(PictureEngineLayer layer) {
+    // When we merge layers, we attempt to merge slices as much as possible as
+    // well, based on ordering of pictures and platform views and reusing the
+    // occlusion logic for determining where we can lower each picture.
     for (final LayerSlice slice in layer.slices) {
       switch (slice) {
         case PictureSlice():
@@ -649,6 +704,7 @@ class LayerBuilder {
   }
 
   PictureEngineLayer build() {
+    // Lower any pending pictures or platform views to their respective slices.
     flushSlices();
     return layer;
   }

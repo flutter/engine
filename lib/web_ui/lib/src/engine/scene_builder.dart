@@ -7,6 +7,17 @@ import 'dart:typed_data';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
+// This file implements a SceneBuilder and Scene that works with any renderer
+// implementation that provides:
+//   * A `ui.Canvas` that conforms to `SceneCanvas`
+//   * A `ui.Picture` that conforms to `ScenePicture`
+//   * A `ui.ImageFilter` that conforms to `SceneImageFilter`
+//
+// These contain a few augmentations to the normal `dart:ui` API that provide
+// additional sizing information that the scene builder uses to determine how
+// these object might occlude one another.
+
+
 class EngineScene implements ui.Scene {
   EngineScene(this.rootLayer);
 
@@ -113,6 +124,7 @@ class EngineSceneBuilder implements ui.SceneBuilder {
     bool freeze = false,
     ui.FilterQuality filterQuality = ui.FilterQuality.low
   }) {
+    // addTexture is not implemented on web.
   }
 
   @override
@@ -217,10 +229,12 @@ class EngineSceneBuilder implements ui.SceneBuilder {
 
   @override
   void setCheckerboardOffscreenLayers(bool checkerboard) {
+    // Not implemented on web
   }
 
   @override
   void setCheckerboardRasterCacheImages(bool checkerboard) {
+    // Not implemented on web
   }
 
   @override
@@ -233,10 +247,12 @@ class EngineSceneBuilder implements ui.SceneBuilder {
     double insetLeft,
     bool focusable
   ) {
+    // Not implemented on web
   }
 
   @override
   void setRasterizerTracingThreshold(int frameInterval) {
+    // Not implemented on web
   }
 
   @override
