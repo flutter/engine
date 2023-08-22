@@ -41,8 +41,6 @@ enum FontWeight {
   /// Black, the most thick
   w900._(900);
 
-  // Users are not allowed to specify a `FontWeight` outside of the w100-w900
-  // range but j
   const FontWeight._(this.value);
 
   /// The thickness value of this font weight.
@@ -2554,18 +2552,6 @@ class LineMetrics {
     required this.lineNumber,
   });
 
-  LineMetrics._(
-    this.hardBreak,
-    this.ascent,
-    this.descent,
-    this.unscaledAscent,
-    this.height,
-    this.width,
-    this.left,
-    this.baseline,
-    this.lineNumber,
-  );
-
   /// True if this line ends with an explicit line break (e.g. '\n') or is the end
   /// of the paragraph. False otherwise.
   final bool hardBreak;
@@ -2786,14 +2772,6 @@ abstract class Paragraph {
   /// to repeatedly call this. Instead, cache the results.
   List<LineMetrics> computeLineMetrics();
 
-  LineMetrics? getLineMetricsAt(int lineNumber);
-
-  int get numberOfLines;
-
-  int? getLineNumber(int codeUnitOffset);
-
-  FontInfo? getFontInfoAt(int codeUnitOffset);
-
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
   void dispose();
@@ -2972,29 +2950,6 @@ base class _NativeParagraph extends NativeFieldWrapperClass1 implements Paragrap
 
   @Native<Handle Function(Pointer<Void>)>(symbol: 'Paragraph::computeLineMetrics')
   external Float64List _computeLineMetrics();
-
-  @override
-  LineMetrics? getLineMetricsAt(int lineNumber) {
-    return _getLineMetricsAt(lineNumber, LineMetrics._);
-  }
-  @Native<Handle Function(Pointer<Void>, Uint32, Handle)>(symbol: 'Paragraph::getLineMetricsAt')
-  external LineMetrics? _getLineMetricsAt(int lineNumber, Function constructor);
-
-  @override
-  FontInfo? getFontInfoAt(int codeUnitOffset) {
-    assert(codeUnitOffset >= 0);
-    return _getFontInfoAt(codeUnitOffset, FontInfo.new);
-  }
-  @Native<Handle Function(Pointer<Void>, Uint32, Handle)>(symbol: 'Paragraph::getFontInfoAt')
-  external FontInfo? _getFontInfoAt(int codeUnitOffset, Function constructor);
-
-  @override
-  @Native<Uint32 Function(Pointer<Void>)>(symbol: 'Paragraph::getNumberOfLines')
-  external int get numberOfLines;
-
-  @override
-  @Native<Uint32 Function(Pointer<Void>, Uint32)>(symbol: 'Paragraph::getLineNumberAt')
-  external int getLineNumber(int codeUnitOffset);
 
   @override
   void dispose() {
