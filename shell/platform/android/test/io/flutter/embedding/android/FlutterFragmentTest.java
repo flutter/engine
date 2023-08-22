@@ -283,6 +283,8 @@ public class FlutterFragmentTest {
     assertEquals(fragment.getExclusiveAppComponent(), delegate);
   }
 
+  @SuppressWarnings("deprecation")
+  // Robolectric.setupActivity
   @Test
   public void itDelegatesOnBackPressedAutomaticallyWhenEnabled() {
     // We need to mock FlutterJNI to avoid triggering native code.
@@ -317,6 +319,8 @@ public class FlutterFragmentTest {
     verify(mockDelegate, times(1)).onBackPressed();
   }
 
+  @SuppressWarnings("deprecation")
+  // Robolectric.setupActivity
   @Test
   public void itHandlesPopSystemNavigationAutomaticallyWhenEnabled() {
     // We need to mock FlutterJNI to avoid triggering native code.
