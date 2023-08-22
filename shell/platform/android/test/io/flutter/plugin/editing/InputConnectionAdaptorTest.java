@@ -135,6 +135,8 @@ public class InputConnectionAdaptorTest {
     assertEquals(editable.length(), Selection.getSelectionEnd(editable));
   }
 
+  @SuppressWarnings("deprecation")
+  // ClipboardManager.hasText is deprecated.
   @Test
   public void testPerformContextMenuAction_cut() {
     ClipboardManager clipboardManager = ctx.getSystemService(ClipboardManager.class);
@@ -152,6 +154,8 @@ public class InputConnectionAdaptorTest {
     assertFalse(editable.toString().contains(textToBeCut));
   }
 
+  @SuppressWarnings("deprecation")
+  // ClipboardManager.hasText is deprecated.
   @Test
   public void testPerformContextMenuAction_copy() {
     ClipboardManager clipboardManager = ctx.getSystemService(ClipboardManager.class);
@@ -171,6 +175,8 @@ public class InputConnectionAdaptorTest {
         clipboardManager.getPrimaryClip().getItemAt(0).getText());
   }
 
+  @SuppressWarnings("deprecation")
+  // ClipboardManager.setText is deprecated.
   @Test
   public void testPerformContextMenuAction_paste() {
     ClipboardManager clipboardManager = ctx.getSystemService(ClipboardManager.class);
