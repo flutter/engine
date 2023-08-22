@@ -51,7 +51,6 @@ wasm_lib("skwasm") {
     "-Wno-pthreads-mem-growth",
     "--js-library",
     rebase_path("library_skwasm_support.js"),
-    "--profiling",
   ]
 
   inputs = [ rebase_path("library_skwasm_support.js") ]
