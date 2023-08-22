@@ -80,7 +80,7 @@ FLUTTER_ASSERT_ARC
 
 - (void)testFLTGetApplicationBundleWhenCurrentTargetIsExtension {
   id mockMainBundle = OCMPartialMock([NSBundle mainBundle]);
-  NSURL *url = [[NSBundle mainBundle].bundleURL URLByAppendingPathComponent:@"foo/ext.appex"];
+  NSURL* url = [[NSBundle mainBundle].bundleURL URLByAppendingPathComponent:@"foo/ext.appex"];
   OCMStub([mockMainBundle bundleURL]).andReturn(url);
   NSBundle* bundle = FLTGetApplicationBundle();
   [mockMainBundle stopMocking];
