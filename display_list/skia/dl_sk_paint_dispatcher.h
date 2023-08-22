@@ -45,9 +45,7 @@ class DlSkPaintDispatchHelper : public virtual DlOpReceiver {
     // example, images, which is not supported in Impeller).
     //
     // See https://github.com/flutter/flutter/issues/112498.
-    if (color_source_gradient_ && dither_) {
-      paint_.setDither(true);
-    }
+    paint_.setDither(color_source_gradient_ && dither_);
     return paint_;
   }
 

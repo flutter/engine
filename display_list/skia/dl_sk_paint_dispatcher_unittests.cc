@@ -82,5 +82,23 @@ TEST(DisplayListUtils, SetDitherTrueThenRenderNonGradientThenRenderGradient) {
   EXPECT_TRUE(helper.paint().isDither());
 }
 
+// https://github.com/flutter/flutter/issues/132860.
+TEST(DisplayListUtils, SetDitherTrueThenGradientTHenNonGradientThenGradient) {
+  MockDispatchHelper helper;
+
+  // "Render" a dithered gradient.
+  helper.setDither(true);
+  helper.setColorSource(kTestLinearGradient.get());
+  EXPECT_TRUE(helper.paint().isDither());
+
+  // "Render" a non-gradient.
+  helper.setColorSource(nullptr);
+  EXPECT_FALSE(helper.paint().isDither());
+
+  // "Render" a gradient again.
+  helper.setColorSource(kTestLinearGradient.get());
+  EXPECT_TRUE(helper.paint().isDither());
+}
+
 }  // namespace testing
 }  // namespace flutter
