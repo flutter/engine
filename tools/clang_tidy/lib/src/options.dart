@@ -72,8 +72,8 @@ class Options {
     int? shardId,
   }) {
     io.File? configPath;
-    if (options.wasParsed('config')) {
-      configPath = io.File(options['config'] as String);
+    if (options.wasParsed('config-file')) {
+      configPath = io.File(options['config-file'] as String);
       if (!configPath.existsSync()) {
         return Options._error(
           'ERROR: Config file ${configPath.absolute.path} does not exist.',
@@ -208,6 +208,11 @@ class Options {
       help: 'Perform the given checks on the code. Defaults to the empty '
             'string, indicating all checks should be performed.',
       defaultsTo: '',
+    )
+    ..addOption(
+      'config-file',
+      help: 'Path to a .clang-tidy configuration file.',
+      valueHelp: 'path/to/.clang-tidy',
     )
     ..addFlag(
       'enable-check-profile',

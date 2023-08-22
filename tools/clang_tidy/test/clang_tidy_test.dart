@@ -148,6 +148,44 @@ Future<int> main(List<String> args) async {
     print(outBuffer);
   });
 
+  test('Accepts --config-file', () async {
+    // If buildCommands is in "$ENGINE/src/out/host_debug", then the config
+    // file should be in "$ENGINE/src/flutter/.clang-tidy-for-githooks".
+    late final String flutterRoot;
+
+    // Find the 'src' directory and append 'flutter/.clang-tidy-for-githooks'.
+    {
+      final List<String> buildCommandParts = path.split(path.absolute(buildCommands));
+      for (int i = 0; i < buildCommandParts.length; ++i) {
+        if (buildCommandParts[i] == 'src') {
+          flutterRoot = path.joinAll(<String>[
+            ...buildCommandParts.sublist(0, i + 1),
+            'flutter',
+          ]);
+          break;
+        }
+      }
+    }
+
+    final StringBuffer outBuffer = StringBuffer();
+    final StringBuffer errBuffer = StringBuffer();
+    final ClangTidy clangTidy = ClangTidy.fromCommandLine(
+      <String>[
+        '--compile-commands',
+        buildCommands,
+        '--config-file=${path.join(flutterRoot, '.clang-tidy-for-githooks')}',
+      ],
+      outSink: outBuffer,
+      errSink: errBuffer,
+    );
+
+    final int result = await clangTidy.run();
+
+    expect(result, equals(0));
+    expect(clangTidy.options.configPath?.path, endsWith('.clang-tidy-for-githooks'));
+    print(outBuffer);
+  });
+
   test('shard-id valid', () async {
     _withTempFile('shard-id-valid', (String path) {
       final Options options = Options.fromCommandLine( <String>[
