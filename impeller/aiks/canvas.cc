@@ -427,20 +427,29 @@ void Canvas::DrawPicture(const Picture& picture) {
     return;
   }
 
-  auto save_count = GetSaveCount();
-  Save();
-
   // Clone the base pass and account for the CTM updates.
   auto pass = picture.pass->Clone();
-  pass->IterateAllEntities([&](auto& entity) -> bool {
-    entity.IncrementStencilDepth(GetStencilDepth());
-    entity.SetTransformation(GetCurrentTransformation() *
-                             entity.GetTransformation());
-    return true;
+
+  pass->IterateAllElements([&](auto& element) -> bool {
+    if (auto entity = std::get_if<Entity>(&element)) {
+      entity->IncrementStencilDepth(GetStencilDepth());
+      entity->SetTransformation(GetCurrentTransformation() *
+                                entity->GetTransformation());
+      return true;
+    }
+
+    if (auto subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
+      subpass->get()->SetStencilDepth(subpass->get()->GetStencilDepth() +
+                                      GetStencilDepth());
+      return true;
+    }
+
+    FML_UNREACHABLE();
   });
+
   GetCurrentPass().AddSubpassInline(std::move(pass));
 
-  RestoreToCount(save_count);
+  RestoreClip();
 }
 
 void Canvas::DrawImage(const std::shared_ptr<Image>& image,
@@ -533,7 +542,7 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
   entity.SetBlendMode(paint.blend_mode);
 
   auto text_contents = std::make_shared<TextContents>();
-  text_contents->SetTextFrame(text_frame);
+  text_contents->SetTextFrame(TextFrame(text_frame));
 
   if (paint.color_source.GetType() != ColorSource::Type::kColor) {
     auto color_text_contents = std::make_shared<ColorSourceTextContents>();

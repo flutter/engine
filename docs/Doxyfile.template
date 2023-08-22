@@ -1,4 +1,10 @@
-# Doxyfile 1.9.7
+# Doxyfile 1.9.4
+
+# This file is a template for the Doxyfile used to generate Flutter
+# documentation for the Engine code using Doxygen. Fields with
+# @@FIELD_NAME@@ as the value will be substituted by the
+# tools/gen_docs.sh script to contain the appropriate values for a
+# specific documentation section configured in the script.
 
 # This file describes the settings to be used by the documentation system
 # doxygen (www.doxygen.org) for a project.
@@ -42,7 +48,7 @@ DOXYFILE_ENCODING      = UTF-8
 # title of most generated pages and in a few other places.
 # The default value is: My Project.
 
-PROJECT_NAME           = "Flutter Engine"
+PROJECT_NAME           = @@PROJECT_NAME@@
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number. This
 # could be handy for archiving the generated documentation or if some version
@@ -68,7 +74,7 @@ PROJECT_LOGO           = ./docs/flutter_logo.png
 # entered, it will be relative to the location where doxygen was started. If
 # left blank the current directory will be used.
 
-OUTPUT_DIRECTORY       = docs/doxygen
+OUTPUT_DIRECTORY       = @@OUTPUT_DIRECTORY@@
 
 # If the CREATE_SUBDIRS tag is set to YES then doxygen will create up to 4096
 # sub-directories (in 2 levels) under the output directory of each output format
@@ -79,6 +85,7 @@ OUTPUT_DIRECTORY       = docs/doxygen
 # control the number of sub-directories.
 # The default value is: NO.
 
+# For Flutter, this should be NO, so that URLs remain stable across versions.
 CREATE_SUBDIRS         = NO
 
 # Controls the number of sub-directories that will be created when
@@ -931,7 +938,7 @@ WARN_LINE_FORMAT       = "at line $line of file $file"
 # specified the warning and error messages are written to standard output
 # (stdout).
 
-WARN_LOGFILE           =
+WARN_LOGFILE           = @@LOG_FILE@@
 
 #---------------------------------------------------------------------------
 # Configuration options related to the input files
@@ -943,9 +950,7 @@ WARN_LOGFILE           =
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = . \
-                         ../third_party/skia/include \
-                         ../third_party/dart/runtime/include
+INPUT                  = @@INPUT_DIRECTORIES@@
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
@@ -989,7 +994,14 @@ FILE_PATTERNS          = *.h \
                          *.c \
                          *.cc \
                          *.m \
-                         *.mm
+                         *.mm \
+                         *.cpp \
+                         *.cxx \
+                         *.hh \
+                         *.hxx \
+                         *.hpp \
+                         *.c++ \
+                         *.h++
 
 # The RECURSIVE tag can be used to specify whether or not subdirectories should
 # be searched for input files as well.
@@ -1020,7 +1032,10 @@ EXCLUDE_SYMLINKS       = NO
 # Note that the wildcards are matched against the file with absolute path, so to
 # exclude all test directories for example use the pattern */test/*
 
-EXCLUDE_PATTERNS       =
+EXCLUDE_PATTERNS       = */tests/* \
+                         */testing/* \
+                         */test/* \
+                         */test_utils/*
 
 # The EXCLUDE_SYMBOLS tag can be used to specify one or more symbol names
 # (namespaces, classes, functions, etc.) that should be excluded from the
@@ -1422,7 +1437,7 @@ GENERATE_DOCSET        = YES
 # The default value is: Doxygen generated docs.
 # This tag requires that the tag GENERATE_DOCSET is set to YES.
 
-DOCSET_FEEDNAME        = "Flutter Engine"
+DOCSET_FEEDNAME        = @@DOCSET_FEEDNAME@@
 
 # This tag determines the URL of the docset feed. A documentation feed provides
 # an umbrella under which multiple documentation sets from a single provider
