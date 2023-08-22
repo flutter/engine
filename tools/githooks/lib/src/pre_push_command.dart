@@ -55,7 +55,7 @@ class PrePushCommand extends Command<bool> {
     if (compileCommands == null) {
       io.stderr.writeln(
         'clang-tidy requires a fully built host directory, such as: '
-        '${_checkForHostTargets.join(', ')}.'        
+        '${_checkForHostTargets.join(', ')}.'
       );
       return false;
     }
