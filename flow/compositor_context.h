@@ -68,7 +68,7 @@ class FrameDamage {
   // Adds additional damage (accumulated for double / triple buffering).
   // This is area that will be repainted alongside any changed part.
   void AddAdditionalDamage(const DlIRect& damage) {
-    additional_damage_.Join(damage);
+    additional_damage_ = additional_damage_.Union(damage);
   }
 
   // Specifies clip rect alignment.

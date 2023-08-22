@@ -106,17 +106,17 @@ void DiffContext::AlignRect(DlIRect& rect,
 Damage DiffContext::ComputeDamage(const DlIRect& accumulated_buffer_damage,
                                   int horizontal_clip_alignment,
                                   int vertical_clip_alignment) const {
-  DlFRect buffer_damage = DlFRect::MakeBounds(accumulated_buffer_damage);
-  buffer_damage.Join(damage_);
+  DlFRect buffer_damage =
+      DlFRect::MakeBounds(accumulated_buffer_damage).Union(damage_);
   DlFRect frame_damage(damage_);
 
   for (const auto& r : readbacks_) {
     DlFRect rect = DlFRect::MakeBounds(r.rect);
     if (rect.Intersects(frame_damage)) {
-      frame_damage.Join(rect);
+      frame_damage = frame_damage.Union(rect);
     }
     if (rect.Intersects(buffer_damage)) {
-      buffer_damage.Join(rect);
+      buffer_damage = buffer_damage.Union(rect);
     }
   }
 
@@ -229,12 +229,12 @@ PaintRegion DiffContext::CurrentSubtreeRegion() const {
 void DiffContext::AddDamage(const PaintRegion& damage) {
   FML_DCHECK(damage.is_valid());
   for (const auto& r : damage) {
-    damage_.Join(r);
+    damage_ = damage_.Union(r);
   }
 }
 
 void DiffContext::AddDamage(const DlFRect& rect) {
-  damage_.Join(rect);
+  damage_ = damage_.Union(rect);
 }
 
 void DiffContext::SetLayerPaintRegion(const Layer* layer,

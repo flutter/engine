@@ -454,8 +454,7 @@ TEST_F(ClipPathLayerTest, OpacityInheritanceSaveLayerPainting) {
   auto mock1 = MockLayer::MakeOpacityCompatible(path1);
   auto path2 = DlPath::MakeRect(DlFRect::MakeLTRB(20, 20, 40, 40));
   auto mock2 = MockLayer::MakeOpacityCompatible(path2);
-  auto children_bounds = path1.Bounds();
-  children_bounds.Join(path2.Bounds());
+  auto children_bounds = path1.Bounds().Union(path2.Bounds());
   auto layer_clip = DlPath()
                         .AddRect(DlFRect::MakeLTRB(5, 5, 25, 25))
                         .AddOval(DlFRect::MakeLTRB(20, 20, 40, 50));

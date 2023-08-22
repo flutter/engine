@@ -48,7 +48,8 @@ void BackdropFilterLayer::Preroll(PrerollContext* context) {
   }
   DlFRect child_paint_bounds;
   PrerollChildren(context, &child_paint_bounds);
-  child_paint_bounds.Join(context->state_stack.local_cull_rect());
+  child_paint_bounds =
+      child_paint_bounds.Union(context->state_stack.local_cull_rect());
   set_paint_bounds(child_paint_bounds);
   context->renderable_state_flags = kSaveLayerRenderFlags;
 }

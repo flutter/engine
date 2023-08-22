@@ -203,8 +203,7 @@ TEST_F(BackdropFilterLayerTest, MultipleChildren) {
       DlPath().AddRect(child_bounds.Translated(3.0f, 0.0f));
   const DlPaint child_paint1 = DlPaint(DlColor::kYellow());
   const DlPaint child_paint2 = DlPaint(DlColor::kCyan());
-  DlFRect children_bounds = child_path1.Bounds();
-  children_bounds.Join(child_path2.Bounds());
+  DlFRect children_bounds = child_path1.Bounds().Union(child_path2.Bounds());
   auto layer_filter =
       std::make_shared<DlBlurImageFilter>(2.5, 3.2, DlTileMode::kClamp);
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
@@ -267,8 +266,7 @@ TEST_F(BackdropFilterLayerTest, Nested) {
       DlPath().AddRect(child_bounds.Translated(3.0f, 0.0f));
   const DlPaint child_paint1 = DlPaint(DlColor::kYellow());
   const DlPaint child_paint2 = DlPaint(DlColor::kCyan());
-  DlFRect children_bounds = child_path1.Bounds();
-  children_bounds.Join(child_path2.Bounds());
+  DlFRect children_bounds = child_path1.Bounds().Union(child_path2.Bounds());
   auto layer_filter1 =
       std::make_shared<DlBlurImageFilter>(2.5, 3.2, DlTileMode::kClamp);
   auto layer_filter2 =

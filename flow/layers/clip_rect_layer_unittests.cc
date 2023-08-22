@@ -439,8 +439,7 @@ TEST_F(ClipRectLayerTest, OpacityInheritanceSaveLayerPainting) {
   auto mock1 = MockLayer::MakeOpacityCompatible(path1);
   auto path2 = DlPath::MakeRectLTRB(20, 20, 40, 40);
   auto mock2 = MockLayer::MakeOpacityCompatible(path2);
-  auto children_bounds = path1.Bounds();
-  children_bounds.Join(path2.Bounds());
+  auto children_bounds = path1.Bounds().Union(path2.Bounds());
   DlFRect clip_rect = DlFRect::MakeWH(500, 500);
   auto clip_rect_layer =
       std::make_shared<ClipRectLayer>(clip_rect, Clip::antiAliasWithSaveLayer);

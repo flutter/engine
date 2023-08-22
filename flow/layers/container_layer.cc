@@ -150,7 +150,7 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
       // See https://github.com/flutter/flutter/issues/93899
       all_renderable_state_flags = 0;
     }
-    child_paint_bounds->Join(layer->paint_bounds());
+    *child_paint_bounds = child_paint_bounds->Union(layer->paint_bounds());
 
     child_has_platform_view =
         child_has_platform_view || context->has_platform_view;

@@ -256,7 +256,7 @@ void DlRegion::setRects(const std::vector<DlIRect>& unsorted_rects) {
   std::vector<const DlIRect*> rects(count);
   for (size_t i = 0; i < count; i++) {
     rects[i] = &unsorted_rects[i];
-    bounds_.Join(unsorted_rects[i]);
+    bounds_ = bounds_.Union(unsorted_rects[i]);
   }
   std::sort(rects.begin(), rects.end(), [](const DlIRect* a, const DlIRect* b) {
     if (a->top() < b->top()) {
@@ -414,8 +414,7 @@ DlRegion DlRegion::MakeUnion(const DlRegion& a, const DlRegion& b) {
   }
 
   DlRegion res;
-  res.bounds_ = a.bounds_;
-  res.bounds_.Join(b.bounds_);
+  res.bounds_ = a.bounds_.Union(b.bounds_);
   res.span_buffer_.reserve(a.span_buffer_.capacity() +
                            b.span_buffer_.capacity());
 
@@ -541,7 +540,7 @@ DlRegion DlRegion::MakeIntersection(const DlRegion& a, const DlRegion& b) {
                                      b_buffer, b_it->chunk_handle);
       if (size > 0) {
         res.appendLine(top, bottom, tmp.data(), tmp.data() + size);
-        res.bounds_.Join(DlIRect::MakeLTRB(
+        res.bounds_ = res.bounds_.Union(DlIRect::MakeLTRB(
             tmp.data()->left, top, (tmp.data() + size - 1)->right, bottom));
       }
       cur_top = bottom;

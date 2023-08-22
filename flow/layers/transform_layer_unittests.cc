@@ -288,8 +288,8 @@ TEST_F(TransformLayerTest, NestedSeparated) {
   preroll_context()->state_stack.set_preroll_delegate(device_cull_rect,
                                                       initial_transform);
   layer1->Preroll(preroll_context());
-  DlFRect layer1_child_bounds = layer2->paint_bounds();
-  layer1_child_bounds.Join(mock_layer1->paint_bounds());
+  DlFRect layer1_child_bounds =
+      layer2->paint_bounds().Union(mock_layer1->paint_bounds());
   DlFRect expected_layer1_bounds =
       layer1_transform.TransformRect(layer1_child_bounds);
 

@@ -111,8 +111,8 @@ TEST_F(LayerTreeTest, Multiple) {
   layer->Add(mock_layer1);
   layer->Add(mock_layer2);
 
-  DlFRect expected_total_bounds = child_path1.Bounds();
-  expected_total_bounds.Join(child_path2.Bounds());
+  DlFRect expected_total_bounds =
+      child_path1.Bounds().Union(child_path2.Bounds());
   auto layer_tree = BuildLayerTree(LayerTree::Config{
       .root_layer = layer,
   });
@@ -180,8 +180,8 @@ TEST_F(LayerTreeTest, NeedsSystemComposite) {
   layer->Add(mock_layer1);
   layer->Add(mock_layer2);
 
-  DlFRect expected_total_bounds = child_path1.Bounds();
-  expected_total_bounds.Join(child_path2.Bounds());
+  DlFRect expected_total_bounds =
+      child_path1.Bounds().Union(child_path2.Bounds());
   auto layer_tree = BuildLayerTree(LayerTree::Config{
       .root_layer = layer,
   });

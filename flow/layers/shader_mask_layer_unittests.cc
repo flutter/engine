@@ -169,8 +169,7 @@ TEST_F(ShaderMaskLayerTest, MultipleChildren) {
   layer->Add(mock_layer1);
   layer->Add(mock_layer2);
 
-  DlFRect children_bounds = child_path1.Bounds();
-  children_bounds.Join(child_path2.Bounds());
+  DlFRect children_bounds = child_path1.Bounds().Union(child_path2.Bounds());
   preroll_context()->state_stack.set_preroll_delegate(initial_transform);
   layer->Preroll(preroll_context());
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.Bounds());
@@ -233,8 +232,7 @@ TEST_F(ShaderMaskLayerTest, Nested) {
   layer1->Add(mock_layer1);
   layer1->Add(layer2);
 
-  DlFRect children_bounds = child_path1.Bounds();
-  children_bounds.Join(child_path2.Bounds());
+  DlFRect children_bounds = child_path1.Bounds().Union(child_path2.Bounds());
   preroll_context()->state_stack.set_preroll_delegate(initial_transform);
   layer1->Preroll(preroll_context());
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.Bounds());

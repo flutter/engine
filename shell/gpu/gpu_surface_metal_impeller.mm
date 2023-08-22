@@ -125,9 +125,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
           for (auto& entry : damage_) {
             if (entry.first != texture) {
               // Accumulate damage for other framebuffers
-              if (surface_frame.submit_info().frame_damage) {
-                entry.second.Join(*surface_frame.submit_info().frame_damage);
-              }
+              entry.second = entry.second.Union(surface_frame.submit_info().frame_damage);
             }
           }
           // Reset accumulated damage for current framebuffer
@@ -223,9 +221,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
           for (auto& entry : damage_) {
             if (entry.first != texture_ptr) {
               // Accumulate damage for other framebuffers
-              if (surface_frame.submit_info().frame_damage) {
-                entry.second.Join(*surface_frame.submit_info().frame_damage);
-              }
+              entry.second = entry.second.Union(surface_frame.submit_info().frame_damage);
             }
           }
           // Reset accumulated damage for current framebuffer

@@ -368,9 +368,9 @@ TEST_F(OpacityLayerTest, Nested) {
 
   const DlFRect expected_layer2_bounds =
       layer2_transform.TransformRect(child2_path.Bounds());
-  DlFRect layer1_child_bounds = expected_layer2_bounds;
-  layer1_child_bounds.Join(child1_path.Bounds());
-  layer1_child_bounds.Join(child3_path.Bounds());
+  DlFRect layer1_child_bounds =
+      expected_layer2_bounds.Union(child1_path.Bounds())
+          .Union(child3_path.Bounds());
   DlFRect expected_layer1_bounds =
       layer1_transform.TransformRect(layer1_child_bounds);
   preroll_context()->state_stack.set_preroll_delegate(initial_transform);

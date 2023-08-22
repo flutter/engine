@@ -137,8 +137,8 @@ TEST_F(ContainerLayerTest, Multiple) {
   layer->Add(mock_layer1);
   layer->Add(mock_layer2);
 
-  DlFRect expected_total_bounds = child_path1.Bounds();
-  expected_total_bounds.Join(child_path2.Bounds());
+  DlFRect expected_total_bounds =
+      child_path1.Bounds().Union(child_path2.Bounds());
   preroll_context()->state_stack.set_preroll_delegate(initial_transform);
   layer->Preroll(preroll_context());
   EXPECT_TRUE(preroll_context()->has_platform_view);
@@ -223,8 +223,8 @@ TEST_F(ContainerLayerTest, NeedsSystemComposite) {
   layer->Add(mock_layer1);
   layer->Add(mock_layer2);
 
-  DlFRect expected_total_bounds = child_path1.Bounds();
-  expected_total_bounds.Join(child_path2.Bounds());
+  DlFRect expected_total_bounds =
+      child_path1.Bounds().Union(child_path2.Bounds());
   preroll_context()->state_stack.set_preroll_delegate(initial_transform);
   layer->Preroll(preroll_context());
   EXPECT_FALSE(preroll_context()->has_platform_view);

@@ -250,22 +250,22 @@ struct DlTRect {
     return Translated(v.x(), v.y());
   }
 
-  void Join(const DlTRect& r) {
-    if (!r.is_empty()) {
-      if (is_empty()) {
-        *this = r;
-      } else {
-        left_ = std::min(left_, r.left_);
-        top_ = std::min(top_, r.top_);
-        right_ = std::max(right_, r.right_);
-        bottom_ = std::max(bottom_, r.bottom_);
-      }
+  DlTRect Union(const DlTRect& r) const {
+    if (r.is_empty()) {
+      return *this;
     }
+    if (is_empty()) {
+      return r;
+    }
+    return MakeLTRB(                  //
+        std::min(left_, r.left_),     //
+        std::min(top_, r.top_),       //
+        std::max(right_, r.right_),   //
+        std::max(bottom_, r.bottom_)  //
+    );
   }
-  void Join(const std::optional<DlTRect>& r) {
-    if (r.has_value()) {
-      Join(r.value());
-    }  // else - Treat like joining with empty rect
+  DlTRect Union(const std::optional<DlTRect>& r) const {
+    return r.has_value() ? Union(r.value()) : *this;
   }
 
   std::optional<DlTRect> Intersection(const DlTRect& r) const {
@@ -280,11 +280,7 @@ struct DlTRect {
     );
   }
   std::optional<DlTRect> Intersection(const std::optional<DlTRect>& r) const {
-    if (!r.has_value()) {
-      // Treat like intersecting with empty rect
-      return std::nullopt;
-    }
-    return Intersection(r.value());
+    return r.has_value() ? Intersection(r.value()) : std::nullopt;
   }
   DlTRect IntersectionOrEmpty(const DlTRect& r) const {
     return Intersection(r).value_or(DlTRect());

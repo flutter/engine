@@ -222,9 +222,8 @@ TEST_F(ImageFilterLayerTest, MultipleChildren) {
   layer->Add(mock_layer1);
   layer->Add(mock_layer2);
 
-  DlFRect children_bounds = child_path1.Bounds();
-  children_bounds.Join(child_path2.Bounds());
-  DlFRect children_rounded_bounds = DlFRect::MakeRoundedOut(children_bounds);
+  DlFRect children_bounds = child_path1.Bounds().Union(child_path2.Bounds());
+  DlFRect children_rounded_bounds = children_bounds.RoundedOut();
 
   preroll_context()->state_stack.set_preroll_delegate(initial_transform);
   layer->Preroll(preroll_context());
@@ -280,12 +279,10 @@ TEST_F(ImageFilterLayerTest, Nested) {
   layer1->Add(mock_layer1);
   layer1->Add(layer2);
 
-  DlFRect children_bounds = child_path1.Bounds();
-  children_bounds.Join(DlFRect::MakeRoundedOut(child_bounds2));
-  const DlFRect children_rounded_bounds =
-      DlFRect::MakeRoundedOut(children_bounds);
-  const DlFRect mock_layer2_rounded_bounds =
-      DlFRect::MakeRoundedOut(child_path2.Bounds());
+  DlFRect children_bounds =
+      child_path1.Bounds().Union(child_bounds2.RoundedOut());
+  const DlFRect children_rounded_bounds = children_bounds.RoundedOut();
+  const DlFRect mock_layer2_rounded_bounds = child_path2.Bounds().RoundedOut();
 
   preroll_context()->state_stack.set_preroll_delegate(initial_transform);
   layer1->Preroll(preroll_context());
@@ -437,8 +434,6 @@ TEST_F(ImageFilterLayerTest, CacheChildren) {
 
   layer->Preroll(preroll_context());
 
-  DlFRect children_bounds = child_path1.Bounds();
-  children_bounds.Join(child_path2.Bounds());
   DlTransform snapped_matrix = DlTransform::MakeTranslate(
       SkScalarRoundToScalar(offset.x()), SkScalarRoundToScalar(offset.y()));
   DlTransform cache_matrix = initial_transform;

@@ -127,7 +127,7 @@ DlRTree::DlRTree(const DlFRect rects[],
         parent->child.count = 0;
       }
       FML_DCHECK(parent != nullptr);
-      parent->bounds.Join(nodes_[sibling_index++].bounds);
+      parent->bounds = parent->bounds.Union(nodes_[sibling_index++].bounds);
       parent->child.count++;
     }
     FML_DCHECK(D == 0);

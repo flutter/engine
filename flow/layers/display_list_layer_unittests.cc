@@ -192,8 +192,7 @@ TEST_F(DisplayListLayerTest, IncompatibleDisplayListOpacityInheritance) {
   child_builder.DrawRect(picture2_bounds, DlPaint());
   auto child_display_list = child_builder.Build();
 
-  auto display_list_bounds = picture1_bounds;
-  display_list_bounds.Join(picture2_bounds);
+  auto display_list_bounds = picture1_bounds.Union(picture2_bounds);
   DlFRect save_layer_bounds =
       display_list_bounds.Translated(layer_offset.x(), layer_offset.y());
   DisplayListBuilder expected_builder;
@@ -256,8 +255,6 @@ TEST_F(DisplayListLayerTest, CachedIncompatibleDisplayListOpacityInheritance) {
   opacity_layer->Preroll(context);
   EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
 
-  auto display_list_bounds = picture1_bounds;
-  display_list_bounds.Join(picture2_bounds);
   auto opacity_integral_matrix =
       DlTransform::MakeTranslate(opacity_offset).WithIntegerTranslation();
   DlTransform layer_offset_matrix = opacity_integral_matrix;

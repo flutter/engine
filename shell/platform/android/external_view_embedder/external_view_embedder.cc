@@ -108,13 +108,13 @@ void AndroidExternalViewEmbedder::SubmitFrame(
       // In this case, the rects are merged into a single one that is the union
       // of all the rects.
       for (const DlFRect& rect : intersection_rects) {
-        partial_joined_rect.Join(rect);
+        partial_joined_rect = partial_joined_rect.Union(rect);
       }
       // Get the intersection rect with the `current_view_rect`,
       auto overlap = partial_joined_rect.Intersection(current_view_rect);
       // Join the `partial_joined_rect` into `full_joined_rect` to get the rect
       // above the current `slice`
-      full_joined_rect.Join(overlap);
+      full_joined_rect = full_joined_rect.Union(overlap);
     }
     if (!full_joined_rect.is_empty()) {
       // Subpixels in the platform may not align with the canvas subpixels.
