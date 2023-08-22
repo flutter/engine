@@ -32,11 +32,10 @@ class BufferView {
 /// This is useful for efficiently chunking sparse data uploads, especially
 /// ephemeral uniform data that needs to change from frame to frame.
 ///
-/// Note: Different platforms have different data alignment requirements for
-///       accessing device buffer data. The [HostBuffer] takes these
-///       requirements into account and automatically inserts padding between
-///       emplaced data if necessary.
-class HostBuffer extends NativeFieldWrapperClass1 {
+/// Different platforms have different data alignment requirements for accessing
+/// device buffer data. The [HostBuffer] takes these requirements into account
+/// and automatically inserts padding between emplaced data if necessary.
+base class HostBuffer extends NativeFieldWrapperClass1 {
   /// Creates a new HostBuffer.
   HostBuffer() {
     _initialize();
