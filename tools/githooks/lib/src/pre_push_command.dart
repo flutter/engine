@@ -52,7 +52,7 @@ class PrePushCommand extends Command<bool> {
   Future<bool> _runClangTidy(String flutterRoot, bool verbose) async {
     io.stdout.writeln('Starting clang-tidy checks.');
     final Stopwatch sw = Stopwatch()..start();
-    
+
     // First ensure that out/host_{{flags}}/compile_commands.json exists by running
     // //flutter/tools/gn. See _checkForHostTargets above for supported targets.
     final io.File? compileCommands = findMostRelevantCompileCommands(flutterRoot, verbose: verbose);
