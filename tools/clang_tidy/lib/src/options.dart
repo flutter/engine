@@ -71,21 +71,11 @@ class Options {
     required List<io.File> shardCommandsPaths,
     int? shardId,
   }) {
-    io.File? configPath;
-    if (options.wasParsed('config-file')) {
-      configPath = io.File(options['config-file'] as String);
-      if (!configPath.existsSync()) {
-        return Options._error(
-          'ERROR: Config file ${configPath.absolute.path} does not exist.',
-          errSink: errSink,
-        );
-      }
-    }
     return Options(
       help: options['help'] as bool,
       verbose: options['verbose'] as bool,
       buildCommandsPath: buildCommandsPath,
-      configPath: configPath,
+      configPath: options.wasParsed('config-file') ? io.File(options['config-file'] as String) : null,
       checksArg: options.wasParsed('checks') ? options['checks'] as String : '',
       lintAll: io.Platform.environment['FLUTTER_LINT_ALL'] != null ||
                options['lint-all'] as bool,
@@ -289,6 +279,13 @@ class Options {
     final bool compileCommandsParsed = argResults.wasParsed('compile-commands');
     if (compileCommandsParsed && argResults.wasParsed('target-variant')) {
       return 'ERROR: --compile-commands option cannot be used with --target-variant.';
+    }
+
+    if (argResults.wasParsed('config-file')) {
+      final io.File configPath = io.File(argResults['config-file'] as String);
+      if (!configPath.existsSync()) {
+        return 'ERROR: Config file ${configPath.path} does not exist.';
+      }
     }
 
     if (compileCommandsParsed && argResults.wasParsed('src-dir')) {

@@ -49,9 +49,10 @@ class PrePushCommand extends Command<bool> {
   Future<bool> _runClangTidy(String flutterRoot, bool verbose) async {
     io.stdout.writeln('Starting clang-tidy checks.');
     final Stopwatch sw = Stopwatch()..start();
+    
     // First ensure that out/host_{{flags}}/compile_commands.json exists by running
     // //flutter/tools/gn. See _checkForHostTargets above for supported targets.
-    final io.File? compileCommands = _findCompileCommands(flutterRoot);
+    final io.File? compileCommands = _findMostRelevantCompileCommands(flutterRoot, verbose: verbose);
     if (compileCommands == null) {
       io.stderr.writeln(
         'clang-tidy requires a fully built host directory, such as: '
@@ -59,6 +60,11 @@ class PrePushCommand extends Command<bool> {
       );
       return false;
     }
+
+    // Because we are using a heuristic to pick a host build directory, we
+    // should print some debug information explaining which directory we picked.
+    io.stdout.writeln('Using compile_commands.json from ${compileCommands.parent.path}');
+
     final StringBuffer outBuffer = StringBuffer();
     final StringBuffer errBuffer = StringBuffer();
     final ClangTidy clangTidy = ClangTidy(
@@ -77,20 +83,41 @@ class PrePushCommand extends Command<bool> {
     return true;
   }
 
-  io.File? _findCompileCommands(String flutterRoot) {
-    for (final String dir in _checkForHostTargets) {
-      final io.File file = io.File(path.join(
-        flutterRoot,
-        '..',
-        'out',
-        dir,
-        'compile_commands.json',
-      ));
-      if (file.existsSync()) {
-        return file;
+  /// Returns the most recent `compile_commands.json` for the given root.
+  /// 
+  /// For example, if the following builds exist with the following timestamps:
+  /// 
+  /// ```txt
+  /// <filename>                                       <last modified>
+  /// out/host_debug_unopt_arm64/compile_commands.json 1/1/2023
+  /// out/host_debug_arm64/compile_commands.json       1/2/2023
+  /// out/host_debug_unopt/compile_commands.json       1/3/2023
+  /// out/host_debug/compile_commands.json             1/4/2023
+  /// ```
+  /// 
+  /// ... then the returned file will be `out/host_debug/compile_commands.json`.
+  io.File? _findMostRelevantCompileCommands(String flutterRoot, {required bool verbose}) {
+    // Create a list of all the compile_commands.json files that exist,
+    // including their last modified time.
+    final List<(io.File, DateTime)> compileCommandsFiles = _checkForHostTargets
+      .map((String target) => io.File(path.join(flutterRoot, 'out', target, 'compile_commands.json')))
+      .where((io.File file) => file.existsSync())
+      .map((io.File file) => (file, file.lastModifiedSync()))
+      .toList();
+    
+    // Sort the list by last modified time, most recent first.
+    compileCommandsFiles.sort(((io.File, DateTime) a, (io.File, DateTime) b) => b.$2.compareTo(a.$2));
+
+    // If there are more than one entry, and we're in verbose mode, explain.
+    if (verbose && compileCommandsFiles.length > 1) {
+      io.stdout.writeln('Found multiple compile_commands.json files. Using the most recent one.');
+      for (final (io.File file, DateTime lastModified) in compileCommandsFiles) {
+        io.stdout.writeln('  ${file.path} (last modified: $lastModified)');
       }
     }
-    return null;
+
+    // Return the first file in the list, or null if the list is empty.
+    return compileCommandsFiles.firstOrNull?.$1;
   }
 
   Future<bool> _runFormatter(String flutterRoot, bool verbose) async {
