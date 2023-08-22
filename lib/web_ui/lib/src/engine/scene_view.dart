@@ -8,8 +8,116 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
 const String kCanvasContainerTag = 'flt-canvas-container';
-const String kPlatformViewSliceContainerTag = 'flt-platform-view-slice';
-const String kPlatformViewContainerTag = 'flt-platform-view-container';
+
+// This is an interface that renders a `ScenePicture` as a `DomImageBitmap`.
+// It is optionally asynchronous. It is required for the `EngineSceneView` to
+// composite pictures into the canvases in the DOM tree it builds.
+abstract class PictureRenderer {
+  FutureOr<DomImageBitmap> renderPicture(ScenePicture picture);
+}
+
+// This class builds a DOM tree that composites an `EngineScene`.
+class EngineSceneView {
+  factory EngineSceneView(PictureRenderer pictureRenderer) {
+    final DomElement sceneElement = createDomElement('flt-scene');
+    return EngineSceneView._(pictureRenderer, sceneElement);
+  }
+
+  EngineSceneView._(this.pictureRenderer, this.sceneElement);
+
+  final PictureRenderer pictureRenderer;
+  final DomElement sceneElement;
+
+  List<SliceContainer> containers = <SliceContainer>[];
+
+  int queuedRenders = 0;
+  static const int kMaxQueuedRenders = 3;
+
+  Future<void> renderScene(EngineScene scene) async {
+    if (queuedRenders >= kMaxQueuedRenders) {
+      return;
+    }
+    queuedRenders += 1;
+
+    scene.beginRender();
+    final List<LayerSlice> slices = scene.rootLayer.slices;
+    final Iterable<Future<DomImageBitmap?>> renderFutures = slices.map(
+      (LayerSlice slice) async => switch (slice) {
+          PlatformViewSlice() => null,
+          PictureSlice() => pictureRenderer.renderPicture(slice.picture),
+        }
+    );
+    final List<DomImageBitmap?> renderedBitmaps = await Future.wait(renderFutures);
+    final List<SliceContainer?> reusableContainers = List<SliceContainer?>.from(containers);
+    final List<SliceContainer> newContainers = <SliceContainer>[];
+    for (int i = 0; i < slices.length; i++) {
+      final LayerSlice slice = slices[i];
+      switch (slice) {
+        case PictureSlice():
+          PictureSliceContainer? container;
+          for (int j = 0; j < reusableContainers.length; j++) {
+            final SliceContainer? candidate = reusableContainers[j];
+            if (candidate is PictureSliceContainer) {
+              container = candidate;
+              reusableContainers[j] = null;
+              break;
+            }
+          }
+
+          if (container != null) {
+            container.bounds = slice.picture.cullRect;
+          } else {
+            container = PictureSliceContainer(slice.picture.cullRect);
+          }
+          container.updateContents();
+          container.renderBitmap(renderedBitmaps[i]!);
+          newContainers.add(container);
+
+        case PlatformViewSlice():
+          for (final PlatformView view in slice.views) {
+            // Attempt to reuse a container for the existing view
+            PlatformViewContainer? container;
+            for (int j = 0; j < reusableContainers.length; j++) {
+              final SliceContainer? candidate = reusableContainers[j];
+              if (candidate is PlatformViewContainer && candidate.viewId == view.viewId) {
+                container = candidate;
+                reusableContainers[j] = null;
+                break;
+              }
+            }
+            container ??= PlatformViewContainer(view.viewId);
+            container.size = view.size;
+            container.styling = view.styling;
+            container.updateContents();
+            newContainers.add(container);
+          }
+      }
+    }
+
+    containers = newContainers;
+
+    DomElement? currentElement = sceneElement.firstElementChild;
+    for (final SliceContainer container in containers) {
+      if (currentElement == null) {
+        sceneElement.appendChild(container.container);
+      } else if (currentElement == container.container) {
+        currentElement = currentElement.nextElementSibling;
+      } else {
+        sceneElement.insertBefore(container.container, currentElement);
+      }
+    }
+
+    // Remove any other unused containers
+    while (currentElement != null) {
+      final DomElement? sibling = currentElement.nextElementSibling;
+      sceneElement.removeChild(currentElement);
+      currentElement = sibling;
+    }
+    scene.endRender();
+
+    queuedRenders -= 1;
+  }
+}
 
 sealed class SliceContainer {
   DomElement get container;
@@ -68,169 +176,53 @@ final class PictureSliceContainer extends SliceContainer {
   final DomCanvasElement canvas;
 }
 
-final class PlatformViewSliceContainer extends SliceContainer {
-  PlatformViewSliceContainer(this._views);
+final class PlatformViewContainer extends SliceContainer {
+  PlatformViewContainer(this.viewId) : container = createPlatformViewSlot(viewId);
 
-  List<PlatformView> _views;
-  Map<int, DomElement> _slots = <int, DomElement>{};
+  final int viewId;
+  PlatformViewStyling? _styling;
+  ui.Size? _size;
+  bool _dirty = false;
 
   @override
-  final DomElement container = domDocument.createElement(kPlatformViewSliceContainerTag);
+  final DomElement container;
 
-  set views(List<PlatformView> views) {
-    if (_views != views) {
-      _views = views;
+  set styling(PlatformViewStyling styling) {
+    if (_styling != styling) {
+      _styling = styling;
+      _dirty = true;
+    }
+  }
+
+  set size(ui.Size size) {
+    if (_size != size) {
+      _size = size;
+      _dirty = true;
     }
   }
 
   @override
   void updateContents() {
-    DomElement? currentContainer = container.firstElementChild;
-    final Map<int, DomElement> newSlots = <int, DomElement>{};
-    for (final PlatformView view in _views) {
-      final DomElement platformView = _slots[view.viewId] ?? createPlatformViewSlot(view.viewId);
-      newSlots[view.viewId] = platformView;
-      final DomElement viewContainer;
-      if (currentContainer != null && currentContainer.firstElementChild == platformView) {
-        viewContainer = currentContainer;
-        currentContainer = currentContainer.nextElementSibling;
-      } else {
-        viewContainer = domDocument.createElement(kPlatformViewContainerTag);
-        if (currentContainer != null) {
-          container.insertBefore(viewContainer, currentContainer);
-        } else {
-          container.appendChild(viewContainer);
-        }
-        viewContainer.appendChild(platformView);
-      }
-      final DomCSSStyleDeclaration style = viewContainer.style;
-      final double logicalWidth = view.size.width / window.devicePixelRatio;
-      final double logicalHeight = view.size.height / window.devicePixelRatio;
+    assert(_styling != null);
+    assert(_size != null);
+    if (_dirty) {
+      final DomCSSStyleDeclaration style = container.style;
+      final double logicalWidth = _size!.width / window.devicePixelRatio;
+      final double logicalHeight = _size!.height / window.devicePixelRatio;
       style.width = '${logicalWidth}px';
       style.height = '${logicalHeight}px';
       style.position = 'absolute';
 
-      final ui.Offset? offset = view.styling.position.offset;
+      final ui.Offset? offset = _styling!.position.offset;
       style.left = '${offset?.dx ?? 0}px';
       style.top = '${offset?.dy ?? 0}px';
 
-      final Matrix4? transform = view.styling.position.transform;
+      final Matrix4? transform = _styling!.position.transform;
       style.transform = transform != null ? float64ListToCssTransform3d(transform.storage) : '';
-      style.opacity = view.styling.opacity != 1.0 ? '${view.styling.opacity}' : '';
+      style.opacity = _styling!.opacity != 1.0 ? '${_styling!.opacity}' : '';
       // TODO(jacksongardner): Implement clip styling for platform views
+
+      _dirty = false;
     }
-
-    while (currentContainer != null) {
-      final DomElement? next = currentContainer.nextElementSibling;
-      currentContainer.remove();
-      currentContainer = next;
-    }
-
-    _slots = newSlots;
-  }
-}
-
-abstract class PictureRenderer {
-  FutureOr<DomImageBitmap> renderPicture(ScenePicture picture);
-}
-
-class EngineSceneView {
-  factory EngineSceneView(PictureRenderer pictureRenderer) {
-    final DomElement sceneElement = createDomElement('flt-scene');
-    return EngineSceneView._(pictureRenderer, sceneElement);
-  }
-
-  EngineSceneView._(this.pictureRenderer, this.sceneElement);
-
-  final PictureRenderer pictureRenderer;
-  final DomElement sceneElement;
-
-  List<SliceContainer> containers = <SliceContainer>[];
-
-  int queuedRenders = 0;
-  static const int kMaxQueuedRenders = 3;
-
-  Future<void> renderScene(EngineScene scene) async {
-    if (queuedRenders >= kMaxQueuedRenders) {
-      return;
-    }
-    queuedRenders += 1;
-
-    scene.beginRender();
-    final List<LayerSlice> slices = scene.rootLayer.slices;
-    final Iterable<Future<DomImageBitmap?>> renderFutures = slices.map(
-      (LayerSlice slice) async => switch (slice) {
-          PlatformViewSlice() => null,
-          PictureSlice() => pictureRenderer.renderPicture(slice.picture),
-        }
-    );
-    final List<DomImageBitmap?> renderedBitmaps = await Future.wait(renderFutures);
-    final List<SliceContainer?> reusableContainers = List<SliceContainer?>.from(containers);
-    final List<SliceContainer> newContainers = <SliceContainer>[];
-    for (int i = 0; i < slices.length; i++) {
-      final LayerSlice slice = slices[i];
-      switch (slice) {
-        case PictureSlice():
-          PictureSliceContainer? container;
-          for (int j = 0; j < reusableContainers.length; j++) {
-            final SliceContainer? candidate = reusableContainers[j];
-            if (candidate is PictureSliceContainer) {
-              container = candidate;
-              reusableContainers[j] = null;
-              break;
-            }
-          }
-
-          if (container != null) {
-            container.bounds = slice.picture.cullRect;
-          } else {
-            container = PictureSliceContainer(slice.picture.cullRect);
-          }
-          container.updateContents();
-          container.renderBitmap(renderedBitmaps[i]!);
-          newContainers.add(container);
-
-        case PlatformViewSlice():
-          PlatformViewSliceContainer? container;
-          for (int j = 0; j < reusableContainers.length; j++) {
-            final SliceContainer? candidate = reusableContainers[j];
-            if (candidate is PlatformViewSliceContainer) {
-              container = candidate;
-              reusableContainers[j] = null;
-              break;
-            }
-          }
-          if (container != null) {
-            container.views = slice.views;
-          } else {
-            container = PlatformViewSliceContainer(slice.views);
-          }
-          container.updateContents();
-          newContainers.add(container);
-      }
-    }
-
-    containers = newContainers;
-
-    DomElement? currentElement = sceneElement.firstElementChild;
-    for (final SliceContainer container in containers) {
-      if (currentElement == null) {
-        sceneElement.appendChild(container.container);
-      } else if (currentElement == container.container) {
-        currentElement = currentElement.nextElementSibling;
-      } else {
-        sceneElement.insertBefore(container.container, currentElement);
-      }
-    }
-
-    // Remove any other unused containers
-    while (currentElement != null) {
-      final DomElement? sibling = currentElement.nextElementSibling;
-      sceneElement.removeChild(currentElement);
-      currentElement = sibling;
-    }
-    scene.endRender();
-
-    queuedRenders -= 1;
   }
 }
