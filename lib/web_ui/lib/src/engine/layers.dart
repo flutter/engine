@@ -462,7 +462,7 @@ class PictureDrawCommand {
 }
 
 // Represents how a platform view should be positioned in the scene.
-// This object is immutable, so it can be reused across different platform 
+// This object is immutable, so it can be reused across different platform
 // views that have the same positioning.
 class PlatformViewPosition {
   // No transformation at all. We leave both fields null.
@@ -511,6 +511,22 @@ class PlatformViewPosition {
     }
     return PlatformViewPosition.transform(newTransform);
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! PlatformViewPosition) {
+      return false;
+    }
+    return (offset == other.offset) && (transform == other.transform);
+  }
+
+  @override
+  int get hashCode {
+    return Object.hash(offset, transform);
+  }
 }
 
 // Represents the styling to be performed on a platform view when it is
@@ -539,6 +555,22 @@ class PlatformViewStyling {
       position: PlatformViewPosition.combine(outer.position, inner.position),
       opacity: outer.opacity * inner.opacity,
     );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! PlatformViewStyling) {
+      return false;
+    }
+    return (position == other.position) && (opacity == other.opacity);
+  }
+
+  @override
+  int get hashCode {
+    return Object.hash(position, opacity);
   }
 }
 
@@ -650,16 +682,23 @@ class LayerBuilder {
     final ui.Rect cullRect = (picture as ScenePicture).cullRect;
     final ui.Rect shiftedRect = cullRect.shift(offset);
 
-    // Whenever we add a picture to our layer, we try to see if the picture
-    // will overlap with any platform views that are currently on top of our
-    // drawing surface. If they don't overlap with the platform views, they can
-    // be composited into the existing drawing surface.
-    if (platformViewRect?.overlaps(shiftedRect) ?? false) {
-      // If they do overlap with the platform views, however, we need to create
-      // a new drawing surface to composite into. This lowers the current set
-      // of picture drawing commands into a picture slice and lowers the current
-      // set of platform views into a platform view slice.
-      flushSlices();
+    final ui.Rect? currentPlatformViewRect = platformViewRect;
+    if (currentPlatformViewRect != null) {
+      // Whenever we add a picture to our layer, we try to see if the picture
+      // will overlap with any platform views that are currently on top of our
+      // drawing surface. If they don't overlap with the platform views, they
+      // can be grouped with the existing pending pictures.
+      if (pendingPictures.isEmpty || currentPlatformViewRect.overlaps(shiftedRect)) {
+        // If they do overlap with the platform views, however, we should flush
+        // all the current content into slices and start anew with a fresh
+        // group of pictures and platform views that will be rendered on top of
+        // the previous content. Note that we also flush if we have no pending
+        // pictures to group with. This is the case when platform views are
+        // the first thing in our stack of objects to composite, and it doesn't
+        // make sense to try to put a picture slice below the first platform
+        // view slice, even if the picture doesn't overlap.
+        flushSlices();
+      }
     }
     pendingPictures.add(PictureDrawCommand(offset, picture));
     picturesRect = picturesRect?.expandToInclude(shiftedRect) ?? shiftedRect;
