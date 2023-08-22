@@ -209,10 +209,10 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
   RenderTarget target;
   if (context->GetCapabilities()->SupportsOffscreenMSAA()) {
     target = RenderTarget::CreateOffscreenMSAA(
-        *context,                                // context
-        *renderer.GetRenderTargetCache().get(),  // allocator
-        size,                                    // size
-        "EntityPass",                            // label
+        *context,                          // context
+        *renderer.GetRenderTargetCache(),  // allocator
+        size,                              // size
+        "EntityPass",                      // label
         RenderTarget::AttachmentConfigMSAA{
             .storage_mode = StorageMode::kDeviceTransient,
             .resolve_storage_mode = StorageMode::kDevicePrivate,
@@ -223,10 +223,10 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
     );
   } else {
     target = RenderTarget::CreateOffscreen(
-        *context,                                // context
-        *renderer.GetRenderTargetCache().get(),  // allocator
-        size,                                    // size
-        "EntityPass",                            // label
+        *context,                          // context
+        *renderer.GetRenderTargetCache(),  // allocator
+        size,                              // size
+        "EntityPass",                      // label
         RenderTarget::AttachmentConfig{
             .storage_mode = StorageMode::kDevicePrivate,
             .load_action = LoadAction::kDontCare,
@@ -386,7 +386,7 @@ bool EntityPass::Render(ContentContext& renderer,
   // provided by the caller.
   else {
     root_render_target.SetupStencilAttachment(
-        *renderer.GetContext(), *renderer.GetRenderTargetCache().get(),
+        *renderer.GetContext(), *renderer.GetRenderTargetCache(),
         color0.texture->GetSize(),
         renderer.GetContext()->GetCapabilities()->SupportsOffscreenMSAA(),
         "ImpellerOnscreen",
@@ -881,6 +881,22 @@ bool EntityPass::OnRender(
   return true;
 }
 
+void EntityPass::IterateAllElements(
+    const std::function<bool(Element&)>& iterator) {
+  if (!iterator) {
+    return;
+  }
+
+  for (auto& element : elements_) {
+    if (!iterator(element)) {
+      return;
+    }
+    if (auto subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
+      subpass->get()->IterateAllElements(iterator);
+    }
+  }
+}
+
 void EntityPass::IterateAllEntities(
     const std::function<bool(Entity&)>& iterator) {
   if (!iterator) {
@@ -973,6 +989,10 @@ void EntityPass::SetTransformation(Matrix xformation) {
 
 void EntityPass::SetStencilDepth(size_t stencil_depth) {
   stencil_depth_ = stencil_depth;
+}
+
+size_t EntityPass::GetStencilDepth() {
+  return stencil_depth_;
 }
 
 void EntityPass::SetBlendMode(BlendMode blend_mode) {

@@ -123,12 +123,10 @@ source_set("ui") {
     "text/asset_manager_font_provider.h",
     "text/font_collection.cc",
     "text/font_collection.h",
-    "text/line_metrics.h",
     "text/paragraph.cc",
     "text/paragraph.h",
     "text/paragraph_builder.cc",
     "text/paragraph_builder.h",
-    "text/text_box.h",
     "ui_dart_state.cc",
     "ui_dart_state.h",
     "volatile_path_tracker.cc",
@@ -155,8 +153,6 @@ source_set("ui") {
     "window/pointer_data_packet_converter.h",
     "window/viewport_metrics.cc",
     "window/viewport_metrics.h",
-    "window/window.cc",
-    "window/window.h",
   ]
 
   public_configs = [ "//flutter:config" ]
