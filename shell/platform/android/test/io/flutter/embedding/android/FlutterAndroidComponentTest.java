@@ -207,6 +207,8 @@ public class FlutterAndroidComponentTest {
     verify(delegate, never()).detachFromFlutterEngine();
   }
 
+  @SuppressWarnings("deprecation")
+  // Robolectric.buildActivity
   @Test
   public void twoOverlappingFlutterActivitiesDoNotCrosstalk() {
     // ---- Test setup ----
@@ -265,6 +267,9 @@ public class FlutterAndroidComponentTest {
       return ApplicationProvider.getApplicationContext();
     }
 
+
+    @SuppressWarnings("deprecation")
+    // Robolectric.setupActivity
     @Nullable
     @Override
     public Activity getActivity() {
