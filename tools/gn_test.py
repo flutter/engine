@@ -39,6 +39,10 @@ class GNTestCase(unittest.TestCase):
     with self.assertRaises(SystemExit):
       self._gn_args(['--android', '--enable-unittests'])
 
+  def test_cannot_use_ios_and_enable_unittests(self):
+    with self.assertRaises(SystemExit):
+      self._gn_args(['--ios', '--enable-unittests'])
+
 
 if __name__ == '__main__':
   unittest.main()
