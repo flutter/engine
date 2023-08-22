@@ -185,6 +185,8 @@ public class InputConnectionAdaptorTest {
     assertTrue(editable.toString().startsWith(textToBePasted));
   }
 
+  @SuppressWarnings("deprecation")
+  // DartExecutor.send is deprecated.
   @Test
   public void testCommitContent() throws JSONException {
     View testView = new View(ctx);
@@ -244,6 +246,8 @@ public class InputConnectionAdaptorTest {
         });
   }
 
+  @SuppressWarnings("deprecation")
+  // DartExecutor.send is deprecated.
   @Test
   public void testPerformPrivateCommand_dataIsNull() throws JSONException {
     View testView = new View(ctx);
@@ -273,6 +277,8 @@ public class InputConnectionAdaptorTest {
         new String[] {"0", "{\"action\":\"actionCommand\"}"});
   }
 
+  @SuppressWarnings("deprecation")
+  // DartExecutor.send is deprecated.
   @Test
   public void testPerformPrivateCommand_dataIsByteArray() throws JSONException {
     View testView = new View(ctx);
@@ -308,6 +314,8 @@ public class InputConnectionAdaptorTest {
         });
   }
 
+  @SuppressWarnings("deprecation")
+  // DartExecutor.send is deprecated.
   @Test
   public void testPerformPrivateCommand_dataIsByte() throws JSONException {
     View testView = new View(ctx);
@@ -341,6 +349,8 @@ public class InputConnectionAdaptorTest {
         new String[] {"0", "{\"data\":{\"keyboard_layout\":3},\"action\":\"actionCommand\"}"});
   }
 
+  @SuppressWarnings("deprecation")
+  // DartExecutor.send is deprecated.
   @Test
   public void testPerformPrivateCommand_dataIsCharArray() throws JSONException {
     View testView = new View(ctx);
@@ -377,6 +387,8 @@ public class InputConnectionAdaptorTest {
         });
   }
 
+  @SuppressWarnings("deprecation")
+  // DartExecutor.send is deprecated.
   @Test
   public void testPerformPrivateCommand_dataIsChar() throws JSONException {
     View testView = new View(ctx);
@@ -410,6 +422,8 @@ public class InputConnectionAdaptorTest {
         new String[] {"0", "{\"data\":{\"keyboard_layout\":\"a\"},\"action\":\"actionCommand\"}"});
   }
 
+  @SuppressWarnings("deprecation")
+  // DartExecutor.send is deprecated.
   @Test
   public void testPerformPrivateCommand_dataIsCharSequenceArray() throws JSONException {
     View testView = new View(ctx);
@@ -447,6 +461,8 @@ public class InputConnectionAdaptorTest {
         });
   }
 
+  @SuppressWarnings("deprecation")
+  // DartExecutor.send is deprecated.
   @Test
   public void testPerformPrivateCommand_dataIsCharSequence() throws JSONException {
     View testView = new View(ctx);
@@ -482,6 +498,8 @@ public class InputConnectionAdaptorTest {
         });
   }
 
+  @SuppressWarnings("deprecation")
+  // DartExecutor.send is deprecated.
   @Test
   public void testPerformPrivateCommand_dataIsFloat() throws JSONException {
     View testView = new View(ctx);
@@ -515,6 +533,8 @@ public class InputConnectionAdaptorTest {
         new String[] {"0", "{\"data\":{\"keyboard_layout\":0.5},\"action\":\"actionCommand\"}"});
   }
 
+  @SuppressWarnings("deprecation")
+  // DartExecutor.send is deprecated.
   @Test
   public void testPerformPrivateCommand_dataIsFloatArray() throws JSONException {
     View testView = new View(ctx);
