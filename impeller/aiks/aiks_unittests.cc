@@ -1329,8 +1329,9 @@ TEST_P(AiksTest, CanRenderTextFrameSTB) {
   ASSERT_TRUE(RenderTextInCanvasSTB(
       GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
       "Roboto-Regular.ttf"));
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture(),
-                                 TextRenderContextSTB::Make()));
+
+  SetTextRenderContext(TextRenderContextSTB::Make());
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
 TEST_P(AiksTest, TextFrameSubpixelAlignment) {
