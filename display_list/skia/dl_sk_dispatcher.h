@@ -14,11 +14,15 @@
 namespace flutter {
 
 //------------------------------------------------------------------------------
-/// Can be fed to the dispatch() method of a DisplayList to feed the resulting
-/// rendering operations to an SkCanvas instance.
+/// @brief      A Dispatcher that feeds rendering operations to an SkCanvas.
 ///
-/// Receives all methods on Dispatcher and sends them to an SkCanvas
+/// This class is intended to be used as the developer-facing interface to Skia
+/// (with the DisplayList abstraction allowing different backends to be used,
+/// such as Impeller).
 ///
+/// @note       This class has contains clip and transform state (to know the
+///             transform or combined clip at any given operation, the clip and
+///             transform state is tracked within).
 class DlSkCanvasDispatcher : public virtual DlOpReceiver,
                              public DlSkPaintDispatchHelper {
  public:

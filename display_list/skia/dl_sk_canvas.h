@@ -10,8 +10,12 @@
 
 namespace flutter {
 
-// An adapter to receive DlCanvas calls and dispatch them into
-// an SkCanvas.
+// -----------------------------------------------------------------------------
+/// @brief      A Canvas implementation that delegates to an Skia-backed Canvas.
+///
+/// This class is intended to be used an internal implementation detail for the
+/// DisplayList package. @see DlSkCanvasDispatcher for the developer-facing
+/// interface to Skia.
 class DlSkCanvasAdapter final : public virtual DlCanvas {
  public:
   DlSkCanvasAdapter() : delegate_(nullptr) {}
