@@ -43,6 +43,7 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
+import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.android.FlutterView;
@@ -118,6 +119,8 @@ public class TextInputPluginTest {
         (ByteBuffer) encodedMethodCall.flip(), mock(BinaryMessenger.BinaryReply.class));
   }
 
+  @SuppressWarnings("deprecation")
+  // DartExecutor.send is deprecated.
   @Test
   public void textInputPlugin_RequestsReattachOnCreation() throws JSONException {
     // Initialize a general TextInputPlugin.
@@ -992,6 +995,7 @@ public class TextInputPluginTest {
   // need the restart.
   // Update: many other keyboards need this too:
   // https://github.com/flutter/flutter/issues/78827
+  @SuppressWarnings("deprecation") // InputMethodSubtype
   @Test
   public void setTextInputEditingState_restartsIMEOnlyWhenFrameworkChangesComposingRegion() {
     // Initialize a TextInputPlugin that needs to be always restarted.
@@ -1136,6 +1140,8 @@ public class TextInputPluginTest {
     verify(textInputChannel, times(1)).setTextInputMethodHandler(isNull());
   }
 
+  @SuppressWarnings("deprecation")
+  // DartExecutor.send is deprecated.
   @Test
   public void inputConnection_createsActionFromEnter() throws JSONException {
     TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
@@ -1192,6 +1198,7 @@ public class TextInputPluginTest {
         new String[] {"0", "TextInputAction.done"});
   }
 
+  @SuppressWarnings("deprecation") // InputMethodSubtype
   @Test
   public void inputConnection_finishComposingTextUpdatesIMM() throws JSONException {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
@@ -1446,8 +1453,10 @@ public class TextInputPluginTest {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
       return;
     }
+    try(ActivityScenario<Activity> scenario = ActivityScenario.launch(Activity.class)) {
+        scenario.onActivity(activity -> {
 
-    FlutterView testView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView testView = new FlutterView(activity);
     TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
@@ -1529,6 +1538,9 @@ public class TextInputPluginTest {
     verify(children[1]).setAutofillHints(aryEq(new String[] {"HINT2", "EXTRA"}));
     verify(children[1]).setDimens(anyInt(), anyInt(), anyInt(), anyInt(), gt(0), gt(0));
     verify(children[1], times(0)).setHint(any());
+
+        });
+       }
   }
 
   @Test
@@ -1939,6 +1951,8 @@ public class TextInputPluginTest {
   }
   // -------- End: Autofill Tests -------
 
+  @SuppressWarnings("deprecation")
+  // setMessageHandler is deprecated.
   @Test
   public void respondsToInputChannelMessages() {
     ArgumentCaptor<BinaryMessenger.BinaryMessageHandler> binaryMessageHandlerCaptor =
@@ -1966,6 +1980,8 @@ public class TextInputPluginTest {
     verify(mockHandler, times(1)).finishAutofillContext(false);
   }
 
+  @SuppressWarnings("deprecation")
+  // setMessageHandler is deprecated.
   @Test
   public void sendAppPrivateCommand_dataIsEmpty() throws JSONException {
     ArgumentCaptor<BinaryMessenger.BinaryMessageHandler> binaryMessageHandlerCaptor =
@@ -1995,6 +2011,8 @@ public class TextInputPluginTest {
         .sendAppPrivateCommand(any(View.class), eq("actionCommand"), eq(null));
   }
 
+  @SuppressWarnings("deprecation")
+  // setMessageHandler is deprecated.
   @Test
   public void sendAppPrivateCommand_hasData() throws JSONException {
     ArgumentCaptor<BinaryMessenger.BinaryMessageHandler> binaryMessageHandlerCaptor =
@@ -2029,6 +2047,9 @@ public class TextInputPluginTest {
   @Test
   @TargetApi(30)
   @Config(sdk = 30)
+  @SuppressWarnings("deprecation")
+  // getWindowSystemUiVisibility and SYSTEM_UI_FLAG_LAYOUT_STABLE are deprecated
+  // flutter#133074 tracks migration work.
   public void ime_windowInsetsSync_notLaidOutBehindNavigation_excludesNavigationBars() {
     FlutterView testView = spy(new FlutterView(Robolectric.setupActivity(Activity.class)));
     when(testView.getWindowSystemUiVisibility()).thenReturn(View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
@@ -2105,6 +2126,8 @@ public class TextInputPluginTest {
   @Test
   @TargetApi(30)
   @Config(sdk = 30)
+  @SuppressWarnings("deprecation")
+  // getWindowSystemUiVisibility is deprecated flutter#133074 tracks migration work.
   public void ime_windowInsetsSync_laidOutBehindNavigation_includesNavigationBars() {
     FlutterView testView = spy(new FlutterView(Robolectric.setupActivity(Activity.class)));
     when(testView.getWindowSystemUiVisibility())
@@ -2183,6 +2206,9 @@ public class TextInputPluginTest {
   @Test
   @TargetApi(30)
   @Config(sdk = 30)
+  @SuppressWarnings("deprecation")
+  // getWindowSystemUiVisibility and SYSTEM_UI_FLAG_LAYOUT_STABLE are deprecated
+  // flutter#133074 tracks migration work.
   public void lastWindowInsets_updatedOnSecondOnProgressCall() {
     FlutterView testView = spy(new FlutterView(Robolectric.setupActivity(Activity.class)));
     when(testView.getWindowSystemUiVisibility()).thenReturn(View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
