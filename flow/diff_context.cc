@@ -120,13 +120,14 @@ Damage DiffContext::ComputeDamage(const DlIRect& accumulated_buffer_damage,
     }
   }
 
-  Damage res;
-  res.buffer_damage.SetRoundedOut(buffer_damage);
-  res.frame_damage.SetRoundedOut(frame_damage);
+  Damage res = {
+      .frame_damage = DlIRect::MakeRoundedOut(frame_damage),
+      .buffer_damage = DlIRect::MakeRoundedOut(buffer_damage),
+  };
 
   DlIRect frame_clip = DlIRect::MakeSize(frame_size_);
-  res.buffer_damage.Intersect(frame_clip);
-  res.frame_damage.Intersect(frame_clip);
+  res.buffer_damage = res.buffer_damage.IntersectionOrEmpty(frame_clip);
+  res.frame_damage = res.frame_damage.IntersectionOrEmpty(frame_clip);
 
   if (horizontal_clip_alignment > 1 || vertical_clip_alignment > 1) {
     AlignRect(res.buffer_damage, horizontal_clip_alignment,

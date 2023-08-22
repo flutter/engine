@@ -82,7 +82,7 @@ void ImageFilterLayer::Preroll(PrerollContext* context) {
   DlIRect filter_out_bounds;
   filter_->map_device_bounds(filter_in_bounds, DlTransform(),
                              filter_out_bounds);
-  child_bounds.Set(filter_out_bounds);
+  child_bounds = DlFRect::MakeBounds(filter_out_bounds);
   child_bounds = child_bounds.Translated(offset_);
 
   set_paint_bounds(child_bounds);

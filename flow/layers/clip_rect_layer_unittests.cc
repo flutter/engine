@@ -108,10 +108,10 @@ TEST_F(ClipRectLayerTest, ChildOutsideBounds) {
   auto layer = std::make_shared<ClipRectLayer>(clip_rect, Clip::hardEdge);
   layer->Add(mock_layer);
 
-  DlFRect clip_cull_rect = local_cull_bounds;
-  ASSERT_TRUE(clip_cull_rect.Intersect(clip_rect));
-  DlFRect clip_layer_bounds = child_bounds;
-  ASSERT_TRUE(clip_layer_bounds.Intersect(clip_rect));
+  auto clip_cull_rect = local_cull_bounds.Intersection(clip_rect);
+  ASSERT_TRUE(clip_cull_rect.has_value());
+  auto clip_layer_bounds = child_bounds.Intersection(clip_rect);
+  ASSERT_TRUE(clip_layer_bounds.has_value());
 
   // Set up both contexts to cull clipped child
   preroll_context()->state_stack.set_preroll_delegate(device_cull_bounds,
@@ -128,9 +128,9 @@ TEST_F(ClipRectLayerTest, ChildOutsideBounds) {
   EXPECT_TRUE(preroll_context()->state_stack.is_empty());
 
   EXPECT_EQ(mock_layer->paint_bounds(), child_bounds);
-  EXPECT_EQ(layer->paint_bounds(), clip_layer_bounds);
+  EXPECT_EQ(layer->paint_bounds(), clip_layer_bounds.value());
   EXPECT_EQ(layer->child_paint_bounds(), child_bounds);
-  EXPECT_EQ(mock_layer->parent_cull_rect(), clip_cull_rect);
+  EXPECT_EQ(mock_layer->parent_cull_rect(), clip_cull_rect.value());
   EXPECT_EQ(mock_layer->parent_matrix(), initial_matrix);
   EXPECT_EQ(mock_layer->parent_mutators(), std::vector({Mutator(clip_rect)}));
 
@@ -195,10 +195,10 @@ TEST_F(ClipRectLayerTest, PartiallyContainedChild) {
   auto layer = std::make_shared<ClipRectLayer>(clip_rect, Clip::hardEdge);
   layer->Add(mock_layer);
 
-  DlFRect clip_cull_rect = clip_rect;
-  ASSERT_TRUE(clip_cull_rect.Intersect(local_cull_bounds));
-  DlFRect clip_layer_bounds = clip_rect;
-  ASSERT_TRUE(clip_layer_bounds.Intersect(child_bounds));
+  auto clip_cull_rect = clip_rect.Intersection(local_cull_bounds);
+  ASSERT_TRUE(clip_cull_rect.has_value());
+  auto clip_layer_bounds = clip_rect.Intersection(child_bounds);
+  ASSERT_TRUE(clip_layer_bounds.has_value());
 
   // Cull child
   preroll_context()->state_stack.set_preroll_delegate(device_cull_bounds,
@@ -211,11 +211,11 @@ TEST_F(ClipRectLayerTest, PartiallyContainedChild) {
   EXPECT_TRUE(preroll_context()->state_stack.is_empty());
 
   EXPECT_EQ(mock_layer->paint_bounds(), child_bounds);
-  EXPECT_EQ(layer->paint_bounds(), clip_layer_bounds);
+  EXPECT_EQ(layer->paint_bounds(), clip_layer_bounds.value());
   EXPECT_EQ(layer->child_paint_bounds(), child_bounds);
   EXPECT_TRUE(mock_layer->needs_painting(paint_context()));
   EXPECT_TRUE(layer->needs_painting(paint_context()));
-  EXPECT_EQ(mock_layer->parent_cull_rect(), clip_cull_rect);
+  EXPECT_EQ(mock_layer->parent_cull_rect(), clip_cull_rect.value());
   EXPECT_EQ(mock_layer->parent_matrix(), initial_matrix);
   EXPECT_EQ(mock_layer->parent_mutators(), std::vector({Mutator(clip_rect)}));
 

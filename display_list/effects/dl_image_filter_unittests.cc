@@ -147,7 +147,7 @@ static void TestBounds(const DlImageFilter& filter,
                        const DlFRect& sourceBounds,
                        const DlFRect& expectedLocalOutputBounds) {
   DlFPoint expected_local_output_quad[4];
-  expectedLocalOutputBounds.ToQuad(expected_local_output_quad);
+  expectedLocalOutputBounds.GetQuads(expected_local_output_quad);
   TestBounds(filter, sourceBounds, expected_local_output_quad);
 }
 

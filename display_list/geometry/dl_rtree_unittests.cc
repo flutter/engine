@@ -46,7 +46,7 @@ TEST(DisplayListRTree, ManySizes) {
   DlFRect rects[kMaxN + 1];
   int ids[kMaxN + 1];
   for (int i = 0; i <= kMaxN; i++) {
-    rects[i].SetXYWH(i * 20, i * 20, 10, 10);
+    rects[i] = DlFRect::MakeXYWH(i * 20, i * 20, 10, 10);
     ids[i] = i + 42;
   }
   std::vector<int> results;
@@ -97,7 +97,7 @@ TEST(DisplayListRTree, HugeSize) {
   DlFRect rects[N];
   int ids[N];
   for (int i = 0; i < N; i++) {
-    rects[i].SetXYWH(i * 20, i * 20, 10, 10);
+    rects[i] = DlFRect::MakeXYWH(i * 20, i * 20, 10, 10);
     ids[i] = i + 42;
   }
   DlRTree tree(rects, N, ids);
@@ -257,7 +257,7 @@ TEST(DisplayListRTree, OverlappingRects) {
     int y = 15 + 20 * r;
     for (int c = 0; c < 3; c++) {
       int x = 15 + 20 * c;
-      rects[r * 3 + c].SetLTRB(x - 15, y - 15, x + 15, y + 15);
+      rects[r * 3 + c] = DlFRect::MakeLTRB(x - 15, y - 15, x + 15, y + 15);
     }
   }
   DlRTree tree(rects, 9);

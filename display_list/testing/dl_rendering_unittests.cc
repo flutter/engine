@@ -222,9 +222,7 @@ class BoundsTolerance {
 
   BoundsTolerance clip(DlFRect clip) const {
     BoundsTolerance copy = BoundsTolerance(*this);
-    if (!copy.clip_.Intersect(clip)) {
-      copy.clip_.SetEmpty();
-    }
+    copy.clip_ = copy.clip_.IntersectionOrEmpty(clip);
     return copy;
   }
 
@@ -241,9 +239,7 @@ class BoundsTolerance {
     allowed = allowed.Padded(bounds_pad_);
     allowed = Scaled(allowed, scale_);
     allowed = allowed.Padded(absolute_pad_);
-    if (!allowed.Intersect(clip_)) {
-      allowed.SetEmpty();
-    }
+    allowed = allowed.IntersectionOrEmpty(clip_);
     allowed = allowed.Padded(clip_pad_);
     DlIRect rounded = DlIRect::MakeRoundedOut(allowed);
     int pad_left = std::max(0, pix_bounds.left() - rounded.left());
@@ -413,7 +409,8 @@ struct DlJobRenderer : public MatrixClipJobRenderer {
     dl_setup_(canvas, paint);
     setup_paint_ = paint;
     setup_matrix_ = canvas->GetTransform();
-    setup_clip_bounds_.SetRoundedOut(canvas->GetDestinationClipBounds());
+    setup_clip_bounds_ =
+        DlIRect::MakeRoundedOut(canvas->GetDestinationClipBounds());
     is_setup_ = true;
     dl_render_(canvas, paint);
     dl_restore_(canvas, paint);

@@ -122,7 +122,7 @@ DlRTree::DlRTree(const DlFRect rects[],
         D -= gen_count;
         FML_DCHECK(parent_index < gen_end + family_count);
         parent = &nodes_[parent_index++];
-        parent->bounds.SetEmpty();
+        parent->bounds = kEmptyRect;
         parent->child.index = sibling_index;
         parent->child.count = 0;
       }
@@ -205,7 +205,7 @@ const DlRegion& DlRTree::region() const {
     std::vector<DlIRect> rects;
     rects.resize(leaf_count_);
     for (int i = 0; i < leaf_count_; i++) {
-      rects[i].SetRoundedOut(nodes_[i].bounds);
+      rects[i] = DlIRect::MakeRoundedOut(nodes_[i].bounds);
     }
     region_.emplace(rects);
   }

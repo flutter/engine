@@ -150,7 +150,8 @@ class DlImageFilter : public DlAttribute<DlImageFilter, DlImageFilterType> {
       if (inverse.has_value()) {
         DlFRect local_bounds =
             inverse->TransformRect(input_bounds).Padded(-radius_x, -radius_y);
-        output_bounds.SetRoundedOut(ctm.TransformRect(local_bounds));
+        output_bounds =
+            DlIRect::MakeRoundedOut(ctm.TransformRect(local_bounds));
         return &output_bounds;
       }
     }
@@ -173,7 +174,8 @@ class DlImageFilter : public DlAttribute<DlImageFilter, DlImageFilterType> {
       if (inverse.has_value()) {
         DlFRect local_bounds = inverse->TransformRect(input_bounds);
         local_bounds = local_bounds.Padded(radius_x, radius_y);
-        output_bounds.SetRoundedOut(ctm.TransformRect(local_bounds));
+        output_bounds =
+            DlIRect::MakeRoundedOut(ctm.TransformRect(local_bounds));
         return &output_bounds;
       }
     }
@@ -433,7 +435,8 @@ class DlMatrixImageFilter final : public DlImageFilter {
     }
     inverse->ConcatOuter(matrix_);
     inverse->ConcatOuter(ctm);
-    output_bounds.SetRoundedOut(inverse->TransformRect(input_bounds));
+    output_bounds =
+        DlIRect::MakeRoundedOut(inverse->TransformRect(input_bounds));
     return &output_bounds;
   }
 
@@ -447,7 +450,8 @@ class DlMatrixImageFilter final : public DlImageFilter {
       return nullptr;
     }
     inverse->ConcatOuter(ctm);
-    input_bounds.SetRoundedOut(inverse->TransformRect(output_bounds));
+    input_bounds =
+        DlIRect::MakeRoundedOut(inverse->TransformRect(output_bounds));
     return &input_bounds;
   }
 

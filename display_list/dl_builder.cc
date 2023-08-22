@@ -1410,8 +1410,9 @@ bool DisplayListBuilder::AccumulateOpBounds(DlFRect& bounds,
 bool DisplayListBuilder::AccumulateBounds(DlFRect& bounds) {
   if (!bounds.is_empty()) {
     tracker_.mapRect(&bounds);
-    if (bounds.Intersect(tracker_.device_cull_rect())) {
-      accumulator()->accumulate(bounds, op_index_);
+    auto clipped = bounds.Intersection(tracker_.device_cull_rect());
+    if (clipped.has_value()) {
+      accumulator()->accumulate(clipped.value(), op_index_);
       return true;
     }
   }

@@ -164,5 +164,125 @@ TEST(DlRectTest, IRectCopy) {
   ASSERT_FALSE(copy.is_empty());
 }
 
+TEST(DlRectTest, IRectDoesNotIntersectEmpty) {
+  DlIRect rect = DlIRect::MakeLTRB(50, 50, 100, 100);
+
+  auto test = [&rect](DlInt l, DlInt t, DlInt r, DlInt b,
+                      const std::string& label) {
+    EXPECT_FALSE(rect.Intersects(DlIRect::MakeLTRB(l, b, r, t)))
+        << label << " with Top/Bottom swapped";
+    EXPECT_FALSE(rect.Intersects(DlIRect::MakeLTRB(r, b, l, t)))
+        << label << " with Left/Right swapped";
+    EXPECT_FALSE(rect.Intersects(DlIRect::MakeLTRB(r, t, l, b)))
+        << label << " with all sides swapped";
+  };
+
+  test(20, 20, 30, 30, "Above and Left");
+  test(70, 20, 80, 30, "Above");
+  test(120, 20, 130, 30, "Above and Right");
+  test(120, 70, 130, 80, "Right");
+  test(120, 120, 130, 130, "Below and Right");
+  test(70, 120, 80, 130, "Below");
+  test(20, 120, 30, 130, "Below and Left");
+  test(20, 70, 30, 80, "Left");
+
+  test(70, 80, 70, 80, "Inside");
+
+  test(40, 70, 60, 80, "Straddling Left");
+  test(70, 40, 80, 60, "Straddling Top");
+  test(90, 70, 110, 80, "Straddling Right");
+  test(70, 90, 80, 110, "Straddling Bottom");
+}
+
+TEST(DlRectTest, FRectDoesNotIntersectEmpty) {
+  DlFRect rect = DlFRect::MakeLTRB(50, 50, 100, 100);
+
+  auto test = [&rect](DlScalar l, DlScalar t, DlScalar r, DlScalar b,
+                      const std::string& label) {
+    EXPECT_FALSE(rect.Intersects(DlFRect::MakeLTRB(l, b, r, t)))
+        << label << " with Top/Bottom swapped";
+    EXPECT_FALSE(rect.Intersects(DlFRect::MakeLTRB(r, b, l, t)))
+        << label << " with Left/Right swapped";
+    EXPECT_FALSE(rect.Intersects(DlFRect::MakeLTRB(r, t, l, b)))
+        << label << " with all sides swapped";
+  };
+
+  test(20, 20, 30, 30, "Above and Left");
+  test(70, 20, 80, 30, "Above");
+  test(120, 20, 130, 30, "Above and Right");
+  test(120, 70, 130, 80, "Right");
+  test(120, 120, 130, 130, "Below and Right");
+  test(70, 120, 80, 130, "Below");
+  test(20, 120, 30, 130, "Below and Left");
+  test(20, 70, 30, 80, "Left");
+
+  test(70, 80, 70, 80, "Inside");
+
+  test(40, 70, 60, 80, "Straddling Left");
+  test(70, 40, 80, 60, "Straddling Top");
+  test(90, 70, 110, 80, "Straddling Right");
+  test(70, 90, 80, 110, "Straddling Bottom");
+}
+
+TEST(DlRectTest, EmptyIRectDoesNotIntersect) {
+  DlIRect rect = DlIRect::MakeLTRB(50, 50, 100, 100);
+
+  auto test = [&rect](DlInt l, DlInt t, DlInt r, DlInt b,
+                      const std::string& label) {
+    EXPECT_FALSE(DlIRect::MakeLTRB(l, b, r, t).Intersects(rect))
+        << label << " with Top/Bottom swapped";
+    EXPECT_FALSE(DlIRect::MakeLTRB(r, b, l, t).Intersects(rect))
+        << label << " with Left/Right swapped";
+    EXPECT_FALSE(DlIRect::MakeLTRB(r, t, l, b).Intersects(rect))
+        << label << " with all sides swapped";
+  };
+
+  test(20, 20, 30, 30, "Above and Left");
+  test(70, 20, 80, 30, "Above");
+  test(120, 20, 130, 30, "Above and Right");
+  test(120, 70, 130, 80, "Right");
+  test(120, 120, 130, 130, "Below and Right");
+  test(70, 120, 80, 130, "Below");
+  test(20, 120, 30, 130, "Below and Left");
+  test(20, 70, 30, 80, "Left");
+
+  test(70, 80, 70, 80, "Inside");
+
+  test(40, 70, 60, 80, "Straddling Left");
+  test(70, 40, 80, 60, "Straddling Top");
+  test(90, 70, 110, 80, "Straddling Right");
+  test(70, 90, 80, 110, "Straddling Bottom");
+}
+
+TEST(DlRectTest, EmptyFRectDoesNotIntersect) {
+  DlFRect rect = DlFRect::MakeLTRB(50, 50, 100, 100);
+
+  auto test = [&rect](DlScalar l, DlScalar t, DlScalar r, DlScalar b,
+                      const std::string& label) {
+    EXPECT_FALSE(DlFRect::MakeLTRB(l, b, r, t).Intersects(rect))
+        << label << " with Top/Bottom swapped";
+    EXPECT_FALSE(DlFRect::MakeLTRB(r, b, l, t).Intersects(rect))
+        << label << " with Left/Right swapped";
+    EXPECT_FALSE(DlFRect::MakeLTRB(r, t, l, b).Intersects(rect))
+        << label << " with all sides swapped";
+  };
+
+  test(20, 20, 30, 30, "Above and Left");
+  test(70, 20, 80, 30, "Above");
+  test(120, 20, 130, 30, "Above and Right");
+  test(120, 70, 130, 80, "Right");
+  test(120, 120, 130, 130, "Below and Right");
+  test(70, 120, 80, 130, "Below");
+  test(20, 120, 30, 130, "Below and Left");
+  test(20, 70, 30, 80, "Left");
+
+  test(70, 80, 70, 80, "Inside");
+
+  test(40, 70, 60, 80, "Straddling Left");
+  test(70, 40, 80, 60, "Straddling Top");
+  test(90, 70, 110, 80, "Straddling Right");
+  test(70, 90, 80, 110, "Straddling Bottom");
+}
+
 }  // namespace testing
 }  // namespace flutter

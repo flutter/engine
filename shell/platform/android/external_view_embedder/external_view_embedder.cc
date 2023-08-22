@@ -111,10 +111,10 @@ void AndroidExternalViewEmbedder::SubmitFrame(
         partial_joined_rect.Join(rect);
       }
       // Get the intersection rect with the `current_view_rect`,
-      partial_joined_rect.Intersect(current_view_rect);
+      auto overlap = partial_joined_rect.Intersection(current_view_rect);
       // Join the `partial_joined_rect` into `full_joined_rect` to get the rect
       // above the current `slice`
-      full_joined_rect.Join(partial_joined_rect);
+      full_joined_rect.Join(overlap);
     }
     if (!full_joined_rect.is_empty()) {
       // Subpixels in the platform may not align with the canvas subpixels.

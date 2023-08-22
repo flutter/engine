@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <optional>
 
 #include "flutter/display_list/dl_base_types.h"
 #include "flutter/display_list/geometry/dl_point.h"
@@ -30,7 +31,7 @@ namespace flutter {
   Modifiers std::enable_if_t<                             \
       std::is_integral_v<IT> && std::is_floating_point_v<FT>, Type>
 
-template <typename T, typename LT>
+template <typename T, typename ST>
 struct DlTRect {
  protected:
   static constexpr T zero_ = static_cast<T>(0);
@@ -44,18 +45,18 @@ struct DlTRect {
       : left_(left), top_(top), right_(right), bottom_(bottom) {}
 
   template <typename = std::enable_if<std::is_integral_v<T>>>
-  static T SafeAdd(T location, LT distance) {
-    if (distance <= static_cast<LT>(0)) {
+  static T SafeAdd(T location, ST distance) {
+    if (distance <= static_cast<ST>(0)) {
       return location;
     }
     T result = location + distance;
     if (result < location) {
-      return location;
+      return std::numeric_limits<T>::max();
     }
     return result;
   }
 
-  static inline T SafeAdd(T location, LT distance) {
+  static inline T SafeAdd(T location, ST distance) {
     return location + distance;
   }
 
@@ -69,19 +70,21 @@ struct DlTRect {
     return {left, top, right, bottom};
   }
 
-  static constexpr DlTRect MakeXYWH(T x, T y, LT w, LT h) {
+  static constexpr DlTRect MakeXYWH(T x, T y, ST w, ST h) {
     return {x, y, SafeAdd(x, w), SafeAdd(y, h)};
   }
 
-  static constexpr DlTRect MakeWH(T w, T h) { return {zero_, zero_, w, h}; }
+  static constexpr DlTRect MakeWH(T w, T h) {
+    return MakeLTRB(zero_, zero_, w, h);
+  }
 
   template <typename U>
   static constexpr DlTRect MakeSize(DlTSize<U> size) {
-    return MakeXYWH(0, 0, size.width(), size.height());
+    return MakeLTRB(zero_, zero_, size.width(), size.height());
   }
 
   static constexpr DlTRect MakeOriginSize(DlTPoint<T> origin,
-                                          DlTSize<LT> size) {
+                                          DlTSize<ST> size) {
     return MakeXYWH(origin.x(), origin.y(), size.width(), size.height());
   }
 
@@ -128,55 +131,33 @@ struct DlTRect {
   constexpr inline T right() const { return right_; }
   constexpr inline T bottom() const { return bottom_; }
 
-  inline void SetLeft(T left) { left_ = left; }
-  inline void SetTop(T top) { top_ = top; }
-  inline void SetRight(T right) { right_ = right; }
-  inline void SetBottom(T bottom) { bottom_ = bottom; }
-
-  inline void SetLTRB(T left, T top, T right, T bottom) {
-    left_ = left;
-    top_ = top;
-    right_ = right;
-    bottom_ = bottom;
+  constexpr inline T x() const { return left_; }
+  constexpr inline T y() const { return top_; }
+  constexpr inline DlTPoint<T> origin() const {
+    return DlTPoint<T>(left_, top_);
   }
 
-  inline void SetXYWH(T x, T y, LT w, LT h) {
-    left_ = x;
-    top_ = y;
-    right_ = x + w;
-    bottom_ = y + h;
+#define DL_RECT_DIM(min, max) min <= max ? max - min : zero_
+  constexpr inline ST width() const { return DL_RECT_DIM(left_, right_); }
+  constexpr inline ST height() const { return DL_RECT_DIM(top_, bottom_); }
+  constexpr inline DlTSize<ST> size() const {
+    return DlTSize<ST>(width(), height());
+  }
+#undef DL_RECT_DIM
+
+  constexpr inline bool is_empty() const {
+    return !(right_ > left_ && bottom_ > top_);
   }
 
-  DL_ONLY_FROM_FLOAT_M(FT, inline, void)
-  SetRoundedOut(const DlTRect<FT, FT>& r) {
-    left_ = static_cast<T>(floor(r.left()));
-    top_ = static_cast<T>(floor(r.top()));
-    right_ = static_cast<T>(ceil(r.right()));
-    bottom_ = static_cast<T>(ceil(r.bottom()));
-  }
+  DL_ONLY_ON_FLOAT(bool)
+  constexpr is_finite() const { return DlScalars_AreAllFinite(&left_, 4); }
 
-  DL_ONLY_FROM_FLOAT_M(FT, inline, void)
-  SetRoundedIn(const DlTRect<FT, FT>& r) {
-    left_ = static_cast<T>(ceil(r.left()));
-    top_ = static_cast<T>(ceil(r.top()));
-    right_ = static_cast<T>(floor(r.right()));
-    bottom_ = static_cast<T>(floor(r.bottom()));
-  }
-
-  DL_ONLY_FROM_FLOAT_M(FT, inline, void)
-  SetRounded(const DlTRect<FT, FT>& r) {
-    left_ = static_cast<T>(round(r.left()));
-    top_ = static_cast<T>(round(r.top()));
-    right_ = static_cast<T>(round(r.right()));
-    bottom_ = static_cast<T>(round(r.bottom()));
-  }
-
-  template <typename U>
-  inline void Set(const U& r) {
-    left_ = r.left();
-    top_ = r.top();
-    right_ = r.right();
-    bottom_ = r.bottom();
+  // Returns the 4 corners of the rectangle in the order UL, UR, LR, LL
+  void GetQuads(DlTPoint<T> quad[4]) const {
+    quad[0] = {left_, top_};
+    quad[1] = {right_, top_};
+    quad[2] = {right_, bottom_};
+    quad[3] = {left_, bottom_};
   }
 
   bool operator==(const DlTRect& r) const {
@@ -205,29 +186,6 @@ struct DlTRect {
     return MakeLTRB(l, t, r, b);
   }
 #undef DL_SORT
-
-  // Returns the 4 corners of the rectangle in the order UL, UR, LR, LL
-  void ToQuad(DlTPoint<T> quad[4]) const {
-    quad[0] = {left_, top_};
-    quad[1] = {right_, top_};
-    quad[2] = {right_, bottom_};
-    quad[3] = {left_, bottom_};
-  }
-
-  void SetEmpty() { left_ = top_ = right_ = bottom_ = zero_; };
-
-  T x() const { return left_; }
-  T y() const { return top_; }
-  DlTPoint<T> origin() const { return DlTPoint<T>(left_, top_); }
-
-  LT width() const { return left_ <= right_ ? right_ - left_ : 0; }
-  LT height() const { return top_ <= bottom_ ? bottom_ - top_ : 0; }
-  DlTSize<LT> size() const { return DlTSize<LT>(width(), height()); }
-
-  bool is_empty() const { return !(right_ > left_ && bottom_ > top_); }
-
-  DL_ONLY_ON_FLOAT(bool)
-  is_finite() const { return DlScalars_AreAllFinite(&left_, 4); }
 
 #define DL_ROUNDED_UL_LR(ULF, LRF) \
   MakeLTRB((ULF)(left_), (ULF)(top_), (LRF)(right_), (LRF)(bottom_))
@@ -292,56 +250,67 @@ struct DlTRect {
     return Translated(v.x(), v.y());
   }
 
-  void Join(const DlTRect* r) {
-    if (!r->is_empty()) {
+  void Join(const DlTRect& r) {
+    if (!r.is_empty()) {
       if (is_empty()) {
-        *this = *r;
+        *this = r;
       } else {
-        left_ = std::min(left_, r->left_);
-        top_ = std::min(top_, r->top_);
-        right_ = std::max(right_, r->right_);
-        bottom_ = std::max(bottom_, r->bottom_);
+        left_ = std::min(left_, r.left_);
+        top_ = std::min(top_, r.top_);
+        right_ = std::max(right_, r.right_);
+        bottom_ = std::max(bottom_, r.bottom_);
       }
     }
   }
-  void Join(const DlTRect& r) { Join(&r); }
-
-  bool Intersect(const DlTRect* r) {
-    if (is_empty()) {
-      return false;
-    }
-    if (r->is_empty()) {
-      SetEmpty();
-      return false;
-    }
-    left_ = std::max(left_, r->left_);
-    top_ = std::max(top_, r->top_);
-    right_ = std::min(right_, r->right_);
-    bottom_ = std::min(bottom_, r->bottom_);
-    return !is_empty();
+  void Join(const std::optional<DlTRect>& r) {
+    if (r.has_value()) {
+      Join(r.value());
+    }  // else - Treat like joining with empty rect
   }
-  bool Intersect(const DlTRect& r) { return Intersect(&r); }
 
-  bool Intersects(const DlTRect* r) const {
-    return !this->is_empty() &&  //
-           this->left_ < r->right_ && r->left_ < this->right_ &&
-           this->top_ < r->bottom_ && r->top_ < this->bottom_;
+  std::optional<DlTRect> Intersection(const DlTRect& r) const {
+    if (!Intersects(r)) {
+      return std::nullopt;
+    }
+    return MakeLTRB(                  //
+        std::max(left_, r.left_),     //
+        std::max(top_, r.top_),       //
+        std::min(right_, r.right_),   //
+        std::min(bottom_, r.bottom_)  //
+    );
   }
-  bool Intersects(const DlTRect& r) const { return Intersects(&r); }
+  std::optional<DlTRect> Intersection(const std::optional<DlTRect>& r) const {
+    if (!r.has_value()) {
+      // Treat like intersecting with empty rect
+      return std::nullopt;
+    }
+    return Intersection(r.value());
+  }
+  DlTRect IntersectionOrEmpty(const DlTRect& r) const {
+    return Intersection(r).value_or(DlTRect());
+  }
+  DlTRect IntersectionOrEmpty(const std::optional<DlTRect>& r) const {
+    return Intersection(r).value_or(DlTRect());
+  }
 
-  bool Contains(T x, T y) {
+  bool Intersects(const DlTRect& r) const {
+    return !this->is_empty() && !r.is_empty() &&  //
+           this->left_ < r.right_ && r.left_ < this->right_ &&
+           this->top_ < r.bottom_ && r.top_ < this->bottom_;
+  }
+
+  bool Contains(T x, T y) const {
     return !this->is_empty() && DlScalars_AreFinite(x, y) &&  //
            x >= left_ && x < right_ &&                        //
            y >= top_ && y < bottom_;
   }
-  bool Contains(DlTPoint<T> p) { return Contains(p.x(), p.y()); }
+  bool Contains(DlTPoint<T> p) const { return Contains(p.x(), p.y()); }
 
-  bool Contains(const DlTRect* r) const {
-    return !this->is_empty() && !r->is_empty() &&  //
-           this->left_ <= r->left_ && this->right_ >= r->right_ &&
-           this->top_ <= r->top_ && this->bottom_ >= r->bottom_;
+  bool Contains(const DlTRect& r) const {
+    return !this->is_empty() && !r.is_empty() &&  //
+           this->left_ <= r.left_ && this->right_ >= r.right_ &&
+           this->top_ <= r.top_ && this->bottom_ >= r.bottom_;
   }
-  bool Contains(const DlTRect& r) const { return Contains(&r); }
 };
 
 #undef DL_ONLY_ON_FLOAT
@@ -354,8 +323,8 @@ struct DlTRect {
 using DlIRect = DlTRect<DlInt, DlSize>;
 using DlFRect = DlTRect<DlScalar, DlScalar>;
 
-template <typename T, typename LT>
-inline std::ostream& operator<<(std::ostream& os, const DlTRect<T, LT>& rect) {
+template <typename T, typename ST>
+inline std::ostream& operator<<(std::ostream& os, const DlTRect<T, ST>& rect) {
   return os << "DlRect(" << rect.left() << ", " << rect.top() << " => "
             << rect.right() << ", " << rect.bottom() << ")";
 }

@@ -138,7 +138,7 @@ void DisplayListMatrixClipTracker::Data::resetBounds(const DlFRect& cull_rect) {
       return;
     }
   }
-  cull_rect_.SetEmpty();
+  cull_rect_ = kEmptyRect;
 }
 
 void DisplayListMatrixClipTracker::Data::clipBounds(const DlFRect& clip,
@@ -155,7 +155,7 @@ void DisplayListMatrixClipTracker::Data::clipBounds(const DlFRect& clip,
   switch (op) {
     case ClipOp::kIntersect: {
       if (clip.is_empty()) {
-        cull_rect_.SetEmpty();
+        cull_rect_ = kEmptyRect;
         break;
       }
       DlFRect rect;
@@ -163,9 +163,7 @@ void DisplayListMatrixClipTracker::Data::clipBounds(const DlFRect& clip,
       if (is_aa) {
         rect = rect.RoundedOut();
       }
-      if (!cull_rect_.Intersect(rect)) {
-        cull_rect_.SetEmpty();
-      }
+      cull_rect_ = cull_rect_.IntersectionOrEmpty(rect);
       break;
     }
     case ClipOp::kDifference: {
@@ -184,43 +182,41 @@ void DisplayListMatrixClipTracker::Data::clipBounds(const DlFRect& clip,
         if (!rect.Intersects(cull_rect_)) {
           break;
         }
-        if (rect.left() <= cull_rect_.left() &&
-            rect.right() >= cull_rect_.right()) {
+        DlScalar cull_left = cull_rect_.left();
+        DlScalar cull_right = cull_rect_.right();
+        DlScalar cull_top = cull_rect_.top();
+        DlScalar cull_bottom = cull_rect_.bottom();
+        if (rect.left() <= cull_left && rect.right() >= cull_right) {
           // bounds spans entire width of cull_rect_
           // therefore we can slice off a top or bottom
           // edge of the cull_rect_.
-          DlScalar top = cull_rect_.top();
-          DlScalar btm = cull_rect_.bottom();
-          if (rect.top() <= top) {
-            top = rect.bottom();
+          if (rect.top() <= cull_top) {
+            cull_top = rect.bottom();
           }
-          if (rect.bottom() >= btm) {
-            btm = rect.top();
+          if (rect.bottom() >= cull_bottom) {
+            cull_bottom = rect.top();
           }
-          if (top < btm) {
-            cull_rect_.SetTop(top);
-            cull_rect_.SetBottom(btm);
+          if (cull_top < cull_bottom) {
+            cull_rect_ =
+                DlFRect::MakeLTRB(cull_left, cull_top, cull_right, cull_bottom);
           } else {
-            cull_rect_.SetEmpty();
+            cull_rect_ = kEmptyRect;
           }
-        } else if (rect.top() <= cull_rect_.top() &&
-                   rect.bottom() >= cull_rect_.bottom()) {
+        } else if (rect.top() <= cull_top && rect.bottom() >= cull_bottom) {
           // bounds spans entire height of cull_rect_
           // therefore we can slice off a left or right
           // edge of the cull_rect_.
-          DlScalar lft = cull_rect_.left();
-          DlScalar rgt = cull_rect_.right();
-          if (rect.left() <= lft) {
-            lft = rect.right();
+          if (rect.left() <= cull_left) {
+            cull_left = rect.right();
           }
-          if (rect.right() >= rgt) {
-            rgt = rect.left();
+          if (rect.right() >= cull_right) {
+            cull_right = rect.left();
           }
-          if (lft < rgt) {
-            cull_rect_.SetLeft(lft);
-            cull_rect_.SetRight(rgt);
+          if (cull_left < cull_right) {
+            cull_rect_ =
+                DlFRect::MakeLTRB(cull_left, cull_top, cull_right, cull_bottom);
           } else {
-            cull_rect_.SetEmpty();
+            cull_rect_ = kEmptyRect;
           }
         }
       }

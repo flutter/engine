@@ -30,6 +30,18 @@
 
 namespace flutter {
 
+// ASSERT_TRUE(result.has_value()) should be enough to prevent the test
+// code that follows it to run, but clang-tidy doesn't seem to recognize
+// that macro expansion as protective. This macro is more proactive
+// about ending execution at the place where the statement lives.
+#define ENFORCE_TRUE(condition) \
+  do {                          \
+    if (!(condition)) {         \
+      ASSERT_TRUE(condition);   \
+      return;                   \
+    }                           \
+  } while (0)
+
 DlOpReceiver& DisplayListBuilderTestingAccessor(DisplayListBuilder& builder) {
   return builder.asReceiver();
 }
@@ -530,10 +542,11 @@ TEST_F(DisplayListTest, UnclippedSaveLayerContentAccountsForFilter) {
 
   ASSERT_EQ(display_list->op_count(), 6u);
 
-  DlFRect result_rect = draw_rect.Padded(30.0f, 30.0f);
-  ASSERT_TRUE(result_rect.Intersect(clip_rect));
-  ASSERT_EQ(result_rect, DlFRect::MakeLTRB(100.0f, 110.0f, 131.0f, 190.0f));
-  ASSERT_EQ(display_list->bounds(), result_rect);
+  auto result_rect = draw_rect.Padded(30.0f, 30.0f).Intersection(clip_rect);
+  ENFORCE_TRUE(result_rect.has_value());
+  ASSERT_EQ(result_rect.value(),
+            DlFRect::MakeLTRB(100.0f, 110.0f, 131.0f, 190.0f));
+  ASSERT_EQ(display_list->bounds(), result_rect.value());
 }
 
 TEST_F(DisplayListTest, ClippedSaveLayerContentAccountsForFilter) {
@@ -562,10 +575,11 @@ TEST_F(DisplayListTest, ClippedSaveLayerContentAccountsForFilter) {
 
   ASSERT_EQ(display_list->op_count(), 6u);
 
-  DlFRect result_rect = draw_rect.Padded(30.0f, 30.0f);
-  ASSERT_TRUE(result_rect.Intersect(clip_rect));
-  ASSERT_EQ(result_rect, DlFRect::MakeLTRB(100.0f, 110.0f, 129.0f, 190.0f));
-  ASSERT_EQ(display_list->bounds(), result_rect);
+  auto result_rect = draw_rect.Padded(30.0f, 30.0f).Intersection(clip_rect);
+  ENFORCE_TRUE(result_rect.has_value());
+  ASSERT_EQ(result_rect.value(),
+            DlFRect::MakeLTRB(100.0f, 110.0f, 129.0f, 190.0f));
+  ASSERT_EQ(display_list->bounds(), result_rect.value());
 }
 
 TEST_F(DisplayListTest, SingleOpSizes) {

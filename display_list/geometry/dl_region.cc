@@ -495,14 +495,11 @@ DlRegion DlRegion::MakeUnion(const DlRegion& a, const DlRegion& b) {
 }
 
 DlRegion DlRegion::MakeIntersection(const DlRegion& a, const DlRegion& b) {
-  if (!a.bounds_.Intersects(b.bounds_)) {
+  auto bounds_intersection = a.bounds_.Intersection(b.bounds_);
+  if (!bounds_intersection.has_value()) {
     return DlRegion();
   } else if (a.isSimple() && b.isSimple()) {
-    DlIRect r(a.bounds_);
-    auto res = r.Intersect(b.bounds_);
-    (void)res;  // Suppress unused variable warning in release builds.
-    FML_DCHECK(res);
-    return DlRegion(r);
+    return DlRegion(bounds_intersection.value());
   } else if (a.isSimple() && a.bounds_.Contains(b.bounds_)) {
     return b;
   } else if (b.isSimple() && b.bounds_.Contains(a.bounds_)) {
@@ -580,8 +577,10 @@ std::vector<DlIRect> DlRegion::getRects(bool deband) const {
     const Span *span_begin, *span_end;
     span_buffer_.getSpans(line.chunk_handle, span_begin, span_end);
     for (const auto* span = span_begin; span < span_end; ++span) {
-      DlIRect rect =
-          DlIRect::MakeLTRB(span->left, line.top, span->right, line.bottom);
+      int32_t left = span->left;
+      int32_t top = line.top;
+      int32_t right = span->right;
+      int32_t bottom = line.bottom;
       if (deband) {
         auto iter = rects.begin() + previous_span_end;
         // If there is rectangle previously in rects on which this one is a
@@ -589,20 +588,19 @@ std::vector<DlIRect> DlRegion::getRects(bool deband) const {
         // this one vertically to cover the area.
         while (iter != rects.begin()) {
           --iter;
-          if (iter->bottom() < rect.top()) {
+          if (iter->bottom() < top) {
             // Went all the way to previous span line.
             break;
-          } else if (iter->left() == rect.left() &&
-                     iter->right() == rect.right()) {
-            FML_DCHECK(iter->bottom() == rect.top());
-            rect.SetTop(iter->top());
+          } else if (iter->left() == left && iter->right() == right) {
+            FML_DCHECK(iter->bottom() == top);
+            top = iter->top();
             rects.erase(iter);
             --previous_span_end;
             break;
           }
         }
       }
-      rects.push_back(rect);
+      rects.push_back(DlIRect::MakeLTRB(left, top, right, bottom));
     }
     previous_span_end = rects.size();
   }

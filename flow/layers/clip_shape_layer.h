@@ -61,11 +61,8 @@ class ClipShapeLayer : public CacheableContainerLayer {
 
     DlFRect child_paint_bounds;
     PrerollChildren(context, &child_paint_bounds);
-    if (child_paint_bounds.Intersect(clip_shape_bounds())) {
-      set_paint_bounds(child_paint_bounds);
-    } else {
-      set_paint_bounds(DlFRect());
-    }
+    set_paint_bounds(
+        child_paint_bounds.IntersectionOrEmpty(clip_shape_bounds()));
 
     // If we use a SaveLayer then we can accept opacity on behalf
     // of our children and apply it in the saveLayer.

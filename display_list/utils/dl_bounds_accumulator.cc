@@ -34,8 +34,13 @@ void RectBoundsAccumulator::pop_and_accumulate(DlFRect& layer_bounds,
   rect_ = saved_rects_.back();
   saved_rects_.pop_back();
 
-  if (clip == nullptr || layer_bounds.Intersect(*clip)) {
+  if (clip == nullptr) {
     accumulate(layer_bounds, -1);
+  } else {
+    auto clipped = layer_bounds.Intersection(*clip);
+    if (clipped.has_value()) {
+      accumulate(clipped.value(), -1);
+    }
   }
 }
 
@@ -117,11 +122,16 @@ bool RTreeBoundsAccumulator::restore(
     if (!map(original, original)) {
       success = false;
     }
-    if (clip == nullptr || original.Intersect(*clip)) {
-      rect_indices_[previous_size] = rect_indices_[i];
-      rects_[previous_size] = original;
-      previous_size++;
+    if (clip != nullptr) {
+      auto clipped = original.Intersection(*clip);
+      if (!clipped.has_value()) {
+        continue;
+      }
+      original = clipped.value();
     }
+    rect_indices_[previous_size] = rect_indices_[i];
+    rects_[previous_size] = original;
+    previous_size++;
   }
   rects_.resize(previous_size);
   rect_indices_.resize(previous_size);

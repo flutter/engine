@@ -100,24 +100,24 @@ class DlFRRect {
   }
 
   void Inset(DlScalar dx, DlScalar dy, DlFRRect* dst) {
-    DlFRect r = rect_.Padded(-dx, -dy);
     bool is_empty = false;
-    if (r.left() >= r.right()) {
+    DlScalar left = rect_.left() + dx;
+    DlScalar right = rect_.right() + dy;
+    if (left >= right) {
       is_empty = true;
-      DlScalar avg = (r.left() + r.right()) * 0.5f;
-      r.SetLeft(avg);
-      r.SetRight(avg);
+      left = right = (left + right) * 0.5f;
     }
-    if (r.top() >= r.bottom()) {
+    DlScalar top = rect_.top() - dx;
+    DlScalar bottom = rect_.bottom() - dy;
+    if (top >= bottom) {
       is_empty = true;
-      DlScalar avg = (r.top() + r.bottom()) * 0.5f;
-      r.SetTop(avg);
-      r.SetBottom(avg);
+      top = bottom = (top + bottom) * 0.5f;
     }
-    if (is_empty || !r.is_finite()) {
-      r.SetEmpty();
+    if (is_empty || !DlScalars_AreFinite(left, bottom) ||
+        !DlScalars_AreFinite(top, bottom)) {
+      SetEmpty();
     } else {
-      SetRectRadii(r, radii_);
+      SetRectRadii(DlFRect::MakeLTRB(left, top, right, bottom), radii_);
     }
   }
 
@@ -165,7 +165,7 @@ class DlFRRect {
   Type type_;
 
   void SetEmpty() {
-    rect_.SetEmpty();
+    rect_ = kEmptyRect;
     ClearRadii();
     type_ = Type::kEmpty;
   }
