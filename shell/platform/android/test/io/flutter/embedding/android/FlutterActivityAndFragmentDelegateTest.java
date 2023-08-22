@@ -66,6 +66,8 @@ public class FlutterActivityAndFragmentDelegateTest {
   private FlutterEngine mockFlutterEngine;
   private FlutterActivityAndFragmentDelegate.Host mockHost;
 
+  @SuppressWarnings("deprecation")
+  // Robolectric.setupActivity
   @Before
   public void setup() {
     FlutterInjector.reset();
@@ -402,6 +404,8 @@ public class FlutterActivityAndFragmentDelegateTest {
     verify(mockHost, times(1)).onFlutterSurfaceViewCreated(isNotNull());
   }
 
+  @SuppressWarnings("deprecation")
+  // Robolectric.setupActivity
   @Test
   public void itGivesHostAnOpportunityToConfigureFlutterTextureView() {
     // ---- Test setup ----
