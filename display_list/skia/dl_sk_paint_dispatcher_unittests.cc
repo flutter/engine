@@ -22,6 +22,17 @@ class MockDispatchHelper final : public virtual DlOpReceiver,
   void restore() override { DlSkPaintDispatchHelper::restore_opacity(); }
 };
 
+static const DlColor kTestColors[2] = {0xFF000000, 0xFFFFFFFF};
+static const float kTestStops[2] = {0.0f, 1.0f};
+static const auto kTestLinearGradient =
+    DlColorSource::MakeLinear(SkPoint::Make(0.0f, 0.0f),
+                              SkPoint::Make(100.0f, 100.0f),
+                              2,
+                              kTestColors,
+                              kTestStops,
+                              DlTileMode::kClamp,
+                              nullptr);
+
 // Regression test for https://github.com/flutter/flutter/issues/100176.
 TEST(DisplayListUtils, OverRestore) {
   MockDispatchHelper helper;
@@ -49,19 +60,25 @@ TEST(DisplayListUtils, SetColorSourceClearsDitherIfNotGradient) {
 
 // https://github.com/flutter/flutter/issues/132860.
 TEST(DisplayListUtils, SetDitherTrueThenSetColorSourceDithersIfGradient) {
-  // Create a simple linear gradient.
-  const DlColor colors[2] = {0xFF000000, 0xFFFFFFFF};
-  const float stops[2] = {0.0f, 1.0f};
-  const auto linear_gradient = DlColorSource::MakeLinear(
-      SkPoint::Make(0.0f, 0.0f), SkPoint::Make(100.0f, 100.0f), 2, colors,
-      stops, DlTileMode::kClamp, nullptr);
-
   MockDispatchHelper helper;
 
   // A naive implementation would ignore the dither flag here since the current
   // color source is not a gradient.
   helper.setDither(true);
-  helper.setColorSource(linear_gradient.get());
+  helper.setColorSource(kTestLinearGradient.get());
+  EXPECT_TRUE(helper.paint().isDither());
+}
+
+// https://github.com/flutter/flutter/issues/132860.
+TEST(DisplayListUtils, SetDitherTrueThenRenderNonGradientThenRenderGradient) {
+  MockDispatchHelper helper;
+
+  // "Render" a dithered non-gradient.
+  helper.setDither(true);
+  EXPECT_FALSE(helper.paint().isDither());
+
+  // "Render" a gradient.
+  helper.setColorSource(kTestLinearGradient.get());
   EXPECT_TRUE(helper.paint().isDither());
 }
 

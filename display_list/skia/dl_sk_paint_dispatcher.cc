@@ -41,7 +41,7 @@ void DlSkPaintDispatchHelper::setAntiAlias(bool aa) {
   paint_.setAntiAlias(aa);
 }
 void DlSkPaintDispatchHelper::setDither(bool dither) {
-  paint_.setDither(dither);
+  dither_ = dither;
 }
 void DlSkPaintDispatchHelper::setInvertColors(bool invert) {
   invert_colors_ = invert;
