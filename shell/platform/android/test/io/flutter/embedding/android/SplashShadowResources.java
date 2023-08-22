@@ -15,6 +15,8 @@ import org.robolectric.shadows.ShadowResources;
 import org.robolectric.util.reflector.Direct;
 import org.robolectric.util.reflector.ForType;
 
+@SuppressWarnings("deprecation")
+// getDrawableInt
 @Implements(Resources.class)
 public class SplashShadowResources extends ShadowResources {
   @RealObject private Resources resources;
