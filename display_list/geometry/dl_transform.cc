@@ -61,9 +61,6 @@ bool DlTransform::rect_stays_rect() const {
 }
 
 DlTransform& DlTransform::TranslateInner(DlScalar tx, DlScalar ty) {
-  if (true) {
-    return ConcatInner(MakeTranslate(tx, ty));
-  }
   if (!DlScalars_AreFinite(tx, ty)) {
     return *this;
   }
@@ -110,9 +107,6 @@ DlTransform& DlTransform::TranslateInner(DlScalar tx, DlScalar ty) {
 }
 
 DlTransform& DlTransform::TranslateOuter(DlScalar tx, DlScalar ty) {
-  if (true) {
-    return ConcatOuter(MakeTranslate(tx, ty));
-  }
   if (!DlScalars_AreFinite(tx, ty)) {
     return *this;
   }
@@ -164,7 +158,6 @@ DlFPoint DlTransform::TransformPoint(DlScalar x, DlScalar y) const {
   if (!DlScalars_AreFinite(x, y)) {
     return {};
   }
-  complexity_ = Complexity::kPerspectiveAll;
   switch (complexity()) {
     case Complexity::kIdentity:
       return DlFPoint(x, y);
@@ -332,8 +325,8 @@ DlFRect DlTransform::TransformRect(const DlFRect& rect) const {
                                rect.bottom() + m_[kYT]);
 
     case Complexity::kScaleTranslate2D: {
-      DlFPoint ul = TransformPoint(DlFPoint(rect.left(), rect.top()));
-      DlFPoint lr = TransformPoint(DlFPoint(rect.right(), rect.bottom()));
+      DlFPoint ul = TransformPoint(rect.left(), rect.top());
+      DlFPoint lr = TransformPoint(rect.right(), rect.bottom());
       return DlFRect::MakeLTRB(      //
           std::min(ul.x(), lr.x()),  //
           std::min(ul.y(), lr.y()),  //
@@ -345,10 +338,10 @@ DlFRect DlTransform::TransformRect(const DlFRect& rect) const {
     case Complexity::kPerspectiveOnlyZ:  // Perspective only on Z (which is 0)
     case Complexity::kAffine3D:          // We don't care about Z in or out
     case Complexity::kAffine2D: {
-      DlFPoint ul = TransformPoint(DlFPoint(rect.left(), rect.top()));
-      DlFPoint ur = TransformPoint(DlFPoint(rect.right(), rect.top()));
-      DlFPoint ll = TransformPoint(DlFPoint(rect.left(), rect.bottom()));
-      DlFPoint lr = TransformPoint(DlFPoint(rect.right(), rect.bottom()));
+      DlFPoint ul = TransformPoint(rect.left(), rect.top());
+      DlFPoint ur = TransformPoint(rect.right(), rect.top());
+      DlFPoint ll = TransformPoint(rect.left(), rect.bottom());
+      DlFPoint lr = TransformPoint(rect.right(), rect.bottom());
       return DlFRect::MakeLTRB(
           std::min(std::min(ul.x(), ur.x()), std::min(ll.x(), lr.x())),
           std::min(std::min(ul.y(), ur.y()), std::min(ll.y(), lr.y())),

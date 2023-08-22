@@ -52,9 +52,7 @@ class BouncingRect {
         height_(start.height()),
         arena_(arena) {}
 
-  DlFRect Rect() const {
-    return DlFRect::MakeXYWH(x_, y_, width_, height_);
-  }
+  DlFRect Rect() const { return DlFRect::MakeXYWH(x_, y_, width_, height_); }
 
   void Bounce(DlScalar dx, DlScalar dy) {
     x_ = Clip(x_ + dx, arena_.left(), arena_.right());

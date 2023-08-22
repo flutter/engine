@@ -230,22 +230,16 @@ struct DlTRect {
   is_finite() const { return DlScalars_AreAllFinite(&left_, 4); }
 
 #define DL_ROUNDED_UL_LR(ULF, LRF) \
-    MakeLTRB((ULF)(left_), (ULF)(top_), (LRF)(right_), (LRF)(bottom_))
+  MakeLTRB((ULF)(left_), (ULF)(top_), (LRF)(right_), (LRF)(bottom_))
 
   DL_ONLY_ON_FLOAT_M([[nodiscard]] constexpr, DlTRect)
-  RoundedOut() const {
-    return DL_ROUNDED_UL_LR(floor, ceil);
-  }
+  RoundedOut() const { return DL_ROUNDED_UL_LR(floor, ceil); }
 
   DL_ONLY_ON_FLOAT_M([[nodiscard]] constexpr, DlTRect)
-  RoundedIn() const {
-    return DL_ROUNDED_UL_LR(ceil, floor);
-  }
+  RoundedIn() const { return DL_ROUNDED_UL_LR(ceil, floor); }
 
   DL_ONLY_ON_FLOAT_M([[nodiscard]] constexpr, DlTRect)
-  Rounded() const {
-    return DL_ROUNDED_UL_LR(round, round);
-  }
+  Rounded() const { return DL_ROUNDED_UL_LR(round, round); }
 
 #undef DL_ROUNDED_UL_LR
 
