@@ -8,10 +8,10 @@ impeller_component("typographer_skia_backend") {
   sources = [
     "text_frame_skia.cc",
     "text_frame_skia.h",
-    "text_render_context_skia.cc",
-    "text_render_context_skia.h",
     "typeface_skia.cc",
     "typeface_skia.h",
+    "typographer_context_skia.cc",
+    "typographer_context_skia.h",
   ]
 
   public_deps = [

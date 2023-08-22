@@ -36,10 +36,10 @@
 #include "impeller/scene/material.h"
 #include "impeller/scene/node.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
-#include "impeller/typographer/backends/skia/text_render_context_skia.h"
+#include "impeller/typographer/backends/skia/typographer_context_skia.h"
 #include "impeller/typographer/backends/stb/text_frame_stb.h"
-#include "impeller/typographer/backends/stb/text_render_context_stb.h"
 #include "impeller/typographer/backends/stb/typeface_stb.h"
+#include "impeller/typographer/backends/stb/typographer_context_stb.h"
 #include "third_party/imgui/imgui.h"
 #include "third_party/skia/include/core/SkData.h"
 
@@ -1330,7 +1330,7 @@ TEST_P(AiksTest, CanRenderTextFrameSTB) {
       GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
       "Roboto-Regular.ttf"));
 
-  SetTextRenderContext(TextRenderContextSTB::Make());
+  SetTypographerContext(TypographerContextSTB::Make());
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 

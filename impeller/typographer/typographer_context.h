@@ -20,9 +20,9 @@ namespace impeller {
 ///             rendering text on the GPU.
 ///
 ///
-class TextRenderContext {
+class TypographerContext {
  public:
-  virtual ~TextRenderContext();
+  virtual ~TypographerContext();
 
   virtual bool IsValid() const;
 
@@ -40,12 +40,12 @@ class TextRenderContext {
   /// @brief      Create a new context to render text that talks to an
   ///             underlying graphics context.
   ///
-  TextRenderContext();
+  TypographerContext();
 
  private:
   bool is_valid_ = false;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(TextRenderContext);
+  FML_DISALLOW_COPY_AND_ASSIGN(TypographerContext);
 };
 
 }  // namespace impeller

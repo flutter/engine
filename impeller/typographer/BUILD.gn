@@ -20,12 +20,12 @@ impeller_component("typographer") {
     "rectangle_packer.h",
     "text_frame.cc",
     "text_frame.h",
-    "text_render_context.cc",
-    "text_render_context.h",
     "text_run.cc",
     "text_run.h",
     "typeface.cc",
     "typeface.h",
+    "typographer_context.cc",
+    "typographer_context.h",
   ]
 
   public_deps = [

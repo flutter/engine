@@ -4,22 +4,22 @@
 
 #pragma once
 
-#include "impeller/typographer/text_render_context.h"
+#include "impeller/typographer/typographer_context.h"
 
 #include <memory>
 #include "flutter/fml/macros.h"
 
 namespace impeller {
 
-class TextRenderContextSTB : public TextRenderContext {
+class TypographerContextSTB : public TypographerContext {
  public:
-  static std::unique_ptr<TextRenderContext> Make();
+  static std::unique_ptr<TypographerContext> Make();
 
-  TextRenderContextSTB();
+  TypographerContextSTB();
 
-  ~TextRenderContextSTB() override;
+  ~TypographerContextSTB() override;
 
-  // |TextRenderContext|
+  // |TypographerContext|
   std::shared_ptr<GlyphAtlas> CreateGlyphAtlas(
       Context& context,
       GlyphAtlas::Type type,
@@ -27,7 +27,7 @@ class TextRenderContextSTB : public TextRenderContext {
       const FontGlyphPair::Set& font_glyph_pairs) const override;
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(TextRenderContextSTB);
+  FML_DISALLOW_COPY_AND_ASSIGN(TypographerContextSTB);
 };
 
 }  // namespace impeller

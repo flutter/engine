@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "impeller/typographer/backends/skia/text_render_context_skia.h"
+#include "impeller/typographer/backends/skia/typographer_context_skia.h"
 
 #include <utility>
 
@@ -12,7 +12,7 @@
 #include "impeller/core/allocator.h"
 #include "impeller/typographer/backends/skia/typeface_skia.h"
 #include "impeller/typographer/rectangle_packer.h"
-#include "impeller/typographer/text_render_context.h"
+#include "impeller/typographer/typographer_context.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkFont.h"
@@ -28,13 +28,13 @@ using FontGlyphPairRefVector =
 //              https://github.com/flutter/flutter/issues/114563
 constexpr auto kPadding = 2;
 
-std::shared_ptr<TextRenderContext> TextRenderContextSkia::Make() {
-  return std::make_shared<TextRenderContextSkia>();
+std::shared_ptr<TypographerContext> TypographerContextSkia::Make() {
+  return std::make_shared<TypographerContextSkia>();
 }
 
-TextRenderContextSkia::TextRenderContextSkia() = default;
+TypographerContextSkia::TypographerContextSkia() = default;
 
-TextRenderContextSkia::~TextRenderContextSkia() = default;
+TypographerContextSkia::~TypographerContextSkia() = default;
 
 static size_t PairsFitInAtlasOfSize(
     const FontGlyphPair::Set& pairs,
@@ -305,7 +305,7 @@ static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
   return texture;
 }
 
-std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
+std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
     Context& context,
     GlyphAtlas::Type type,
     std::shared_ptr<GlyphAtlasContext> atlas_context,

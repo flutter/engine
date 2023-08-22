@@ -10,10 +10,10 @@ impeller_component("typographer_stb_backend") {
   sources = [
     "text_frame_stb.cc",
     "text_frame_stb.h",
-    "text_render_context_stb.cc",
-    "text_render_context_stb.h",
     "typeface_stb.cc",
     "typeface_stb.h",
+    "typographer_context_stb.cc",
+    "typographer_context_stb.h",
   ]
 
   public_deps = [

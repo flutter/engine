@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "impeller/typographer/backends/stb/text_render_context_stb.h"
+#include "impeller/typographer/backends/stb/typographer_context_stb.h"
 
 #include <utility>
 
@@ -109,13 +109,13 @@ using FontGlyphPairRefVector =
 
 constexpr size_t kPadding = 1;
 
-std::unique_ptr<TextRenderContext> TextRenderContextSTB::Make() {
-  return std::make_unique<TextRenderContextSTB>();
+std::unique_ptr<TypographerContext> TypographerContextSTB::Make() {
+  return std::make_unique<TypographerContextSTB>();
 }
 
-TextRenderContextSTB::TextRenderContextSTB() : TextRenderContext() {}
+TypographerContextSTB::TypographerContextSTB() : TypographerContext() {}
 
-TextRenderContextSTB::~TextRenderContextSTB() = default;
+TypographerContextSTB::~TypographerContextSTB() = default;
 
 // Function returns the count of "remaining pairs" not packed into rect of given
 // size.
@@ -445,7 +445,7 @@ static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
   return texture;
 }
 
-std::shared_ptr<GlyphAtlas> TextRenderContextSTB::CreateGlyphAtlas(
+std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
     Context& context,
     GlyphAtlas::Type type,
     std::shared_ptr<GlyphAtlasContext> atlas_context,
