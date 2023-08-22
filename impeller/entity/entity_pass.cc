@@ -209,9 +209,10 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
   RenderTarget target;
   if (context->GetCapabilities()->SupportsOffscreenMSAA()) {
     target = RenderTarget::CreateOffscreenMSAA(
-        *context,      // context
-        size,          // size
-        "EntityPass",  // label
+        *context,                          // context
+        *renderer.GetRenderTargetCache(),  // allocator
+        size,                              // size
+        "EntityPass",                      // label
         RenderTarget::AttachmentConfigMSAA{
             .storage_mode = StorageMode::kDeviceTransient,
             .resolve_storage_mode = StorageMode::kDevicePrivate,
@@ -222,9 +223,10 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
     );
   } else {
     target = RenderTarget::CreateOffscreen(
-        *context,      // context
-        size,          // size
-        "EntityPass",  // label
+        *context,                          // context
+        *renderer.GetRenderTargetCache(),  // allocator
+        size,                              // size
+        "EntityPass",                      // label
         RenderTarget::AttachmentConfig{
             .storage_mode = StorageMode::kDevicePrivate,
             .load_action = LoadAction::kDontCare,
@@ -248,6 +250,7 @@ uint32_t EntityPass::GetTotalPassReads(ContentContext& renderer) const {
 
 bool EntityPass::Render(ContentContext& renderer,
                         const RenderTarget& render_target) const {
+  renderer.GetRenderTargetCache()->Start();
   auto root_render_target = render_target;
 
   if (root_render_target.GetColorAttachments().find(0u) ==
@@ -256,8 +259,10 @@ bool EntityPass::Render(ContentContext& renderer,
     return false;
   }
 
-  fml::ScopedCleanupClosure reset_lazy_glyph_atlas(
-      [&renderer]() { renderer.GetLazyGlyphAtlas()->ResetTextFrames(); });
+  fml::ScopedCleanupClosure reset_state([&renderer]() {
+    renderer.GetLazyGlyphAtlas()->ResetTextFrames();
+    renderer.GetRenderTargetCache()->End();
+  });
 
   IterateAllEntities([lazy_glyph_atlas =
                           renderer.GetLazyGlyphAtlas()](const Entity& entity) {
@@ -381,7 +386,8 @@ bool EntityPass::Render(ContentContext& renderer,
   // provided by the caller.
   else {
     root_render_target.SetupStencilAttachment(
-        *renderer.GetContext(), color0.texture->GetSize(),
+        *renderer.GetContext(), *renderer.GetRenderTargetCache(),
+        color0.texture->GetSize(),
         renderer.GetContext()->GetCapabilities()->SupportsOffscreenMSAA(),
         "ImpellerOnscreen",
         GetDefaultStencilConfig(reads_from_onscreen_backdrop));
@@ -875,6 +881,22 @@ bool EntityPass::OnRender(
   return true;
 }
 
+void EntityPass::IterateAllElements(
+    const std::function<bool(Element&)>& iterator) {
+  if (!iterator) {
+    return;
+  }
+
+  for (auto& element : elements_) {
+    if (!iterator(element)) {
+      return;
+    }
+    if (auto subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
+      subpass->get()->IterateAllElements(iterator);
+    }
+  }
+}
+
 void EntityPass::IterateAllEntities(
     const std::function<bool(Entity&)>& iterator) {
   if (!iterator) {
@@ -967,6 +989,10 @@ void EntityPass::SetTransformation(Matrix xformation) {
 
 void EntityPass::SetStencilDepth(size_t stencil_depth) {
   stencil_depth_ = stencil_depth;
+}
+
+size_t EntityPass::GetStencilDepth() {
+  return stencil_depth_;
 }
 
 void EntityPass::SetBlendMode(BlendMode blend_mode) {
