@@ -87,7 +87,8 @@
             "ninja": {
                 "config": "ios_debug_sim",
                 "targets": [
-                    "flutter/testing/scenario_app"
+                    "flutter/testing/scenario_app",
+                    "flutter/shell/platform/darwin/ios:ios_test_flutter"
                 ]
             },
             "tests": [
@@ -195,7 +196,8 @@
             "ninja": {
                 "config": "ios_debug_sim_arm64",
                 "targets": [
-                    "flutter/testing/scenario_app"
+                    "flutter/testing/scenario_app",
+                    "flutter/shell/platform/darwin/ios:ios_test_flutter"
                 ]
             },
             "tests": [
@@ -265,7 +267,8 @@
             "ninja": {
                 "config": "ios_debug_sim_arm64_extension_safe",
                 "targets": [
-                    "flutter/testing/scenario_app"
+                    "flutter/testing/scenario_app",
+                    "flutter/shell/platform/darwin/ios:ios_test_flutter"
                 ]
             },
             "tests": [
