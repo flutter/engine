@@ -28,6 +28,7 @@ class Options {
     required this.buildCommandsPath,
     this.help = false,
     this.verbose = false,
+    this.configPath,
     this.checksArg = '',
     this.lintAll = false,
     this.lintHead = false,
@@ -70,10 +71,21 @@ class Options {
     required List<io.File> shardCommandsPaths,
     int? shardId,
   }) {
+    io.File? configPath;
+    if (options.wasParsed('config')) {
+      configPath = io.File(options['config'] as String);
+      if (!configPath.existsSync()) {
+        return Options._error(
+          'ERROR: Config file ${configPath.absolute.path} does not exist.',
+          errSink: errSink,
+        );
+      }
+    }
     return Options(
       help: options['help'] as bool,
       verbose: options['verbose'] as bool,
       buildCommandsPath: buildCommandsPath,
+      configPath: configPath,
       checksArg: options.wasParsed('checks') ? options['checks'] as String : '',
       lintAll: io.Platform.environment['FLUTTER_LINT_ALL'] != null ||
                options['lint-all'] as bool,
@@ -211,6 +223,9 @@ class Options {
 
   /// The location of the compile_commands.json file.
   final io.File buildCommandsPath;
+
+  /// A location of a `.clang-tidy` configuration file.
+  final io.File? configPath;
 
   /// The location of shard compile_commands.json files.
   final List<io.File> shardCommandsPaths;

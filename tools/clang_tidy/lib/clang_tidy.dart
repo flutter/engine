@@ -47,6 +47,7 @@ class ClangTidy {
   /// an instance of [ClangTidy].
   ///
   /// `buildCommandsPath` is the path to the build_commands.json file.
+  /// `configPath` is a path to a `.clang-tidy` config file.
   /// `repoPath` is the path to the Engine repo.
   /// `checksArg` are specific checks for clang-tidy to do.
   /// `lintAll` when true indicates that all files should be linted.
@@ -56,6 +57,7 @@ class ClangTidy {
   /// will otherwise go to stderr.
   ClangTidy({
     required io.File buildCommandsPath,
+    io.File? configPath,
     String checksArg = '',
     bool lintAll = false,
     bool lintHead = false,
@@ -65,6 +67,7 @@ class ClangTidy {
   }) :
     options = Options(
       buildCommandsPath: buildCommandsPath,
+      configPath: configPath,
       checksArg: checksArg,
       lintAll: lintAll,
       lintHead: lintHead,

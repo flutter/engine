@@ -135,6 +135,8 @@ class Command {
     final List<String> args = <String>[
       filePath,
       '--warnings-as-errors=${options.warningsAsErrors ?? '*'}',
+      if (options.configPath != null)
+        '--config-file=${options.configPath}',
       if (options.checks != null)
         options.checks!,
       if (options.fix) ...<String>[

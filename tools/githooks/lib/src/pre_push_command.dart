@@ -24,8 +24,9 @@ class PrePushCommand extends Command<bool> {
     final String flutterRoot = globalResults!['flutter']! as String;
 
     if (!enableClangTidy) {
-      print('The clang-tidy check is disabled. To enable set the environment '
-            'variable PRE_PUSH_CLANG_TIDY to any value.');
+      print(
+        'The clang-tidy check was explicitly disabled. To enable clear '
+        'the environment variable PRE_PUSH_CLANG_TIDY or set it to true.');
     }
 
     final List<bool> checkResults = <bool>[
@@ -38,36 +39,31 @@ class PrePushCommand extends Command<bool> {
     return !checkResults.contains(false);
   }
 
+  static const List<String> _checkForHostTargets = <String>[
+    'host_debug_unopt_arm64',
+    'host_debug_arm64',
+    'host_debug_unopt',
+    'host_debug',
+  ];
+
   Future<bool> _runClangTidy(String flutterRoot, bool verbose) async {
     io.stdout.writeln('Starting clang-tidy checks.');
     final Stopwatch sw = Stopwatch()..start();
-    // First ensure that out/host_debug/compile_commands.json exists by running
-    // //flutter/tools/gn.
-    io.File compileCommands = io.File(path.join(
-      flutterRoot,
-      '..',
-      'out',
-      'host_debug',
-      'compile_commands.json',
-    ));
-    if (!compileCommands.existsSync()) {
-      compileCommands = io.File(path.join(
-        flutterRoot,
-        '..',
-        'out',
-        'host_debug_unopt',
-        'compile_commands.json',
-      ));
-      if (!compileCommands.existsSync()) {
-        io.stderr.writeln('clang-tidy requires a fully built host_debug or '
-                          'host_debug_unopt build directory');
-        return false;
-      }
+    // First ensure that out/host_{{flags}}/compile_commands.json exists by running
+    // //flutter/tools/gn. See _checkForHostTargets above for supported targets.
+    final io.File? compileCommands = _findCompileCommands(flutterRoot);
+    if (compileCommands == null) {
+      io.stderr.writeln(
+        'clang-tidy requires a fully built host directory, such as: '
+        '${_checkForHostTargets.join(', ')}.'        
+      );
+      return false;
     }
     final StringBuffer outBuffer = StringBuffer();
     final StringBuffer errBuffer = StringBuffer();
     final ClangTidy clangTidy = ClangTidy(
       buildCommandsPath: compileCommands,
+      configPath: io.File(path.join(flutterRoot, '.clang-tidy-for-githooks')),
       outSink: outBuffer,
       errSink: errBuffer,
     );
@@ -79,6 +75,22 @@ class PrePushCommand extends Command<bool> {
       return false;
     }
     return true;
+  }
+
+  io.File? _findCompileCommands(String flutterRoot) {
+    for (final String dir in _checkForHostTargets) {
+      final io.File file = io.File(path.join(
+        flutterRoot,
+        '..',
+        'out',
+        dir,
+        'compile_commands.json',
+      ));
+      if (file.existsSync()) {
+        return file;
+      }
+    }
+    return null;
   }
 
   Future<bool> _runFormatter(String flutterRoot, bool verbose) async {
