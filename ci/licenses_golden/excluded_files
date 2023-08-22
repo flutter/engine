@@ -14,6 +14,7 @@
 ../../../flutter/.ci.yaml
 ../../../flutter/.clang-format
 ../../../flutter/.clang-tidy
+../../../flutter/.clang-tidy-for-githooks
 ../../../flutter/.git
 ../../../flutter/.gitattributes
 ../../../flutter/.github
