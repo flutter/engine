@@ -23,6 +23,11 @@ namespace flutter {
 /// @note       This class has contains clip and transform state (to know the
 ///             transform or combined clip at any given operation, the clip and
 ///             transform state is tracked within).
+///
+///             Paint attributes in general are stateful; each "setX" method
+///             stores a persistent value for the ttribute for the rest of the
+///             display list or until it is reset by another method that changes
+///             the same attribute.
 class DlSkCanvasDispatcher : public virtual DlOpReceiver,
                              public DlSkPaintDispatchHelper {
  public:
