@@ -108,9 +108,9 @@ TEST_F(EmbedderTest, ExternalTextureMetal) {
   builder.SetMetalRendererConfig(texture_size);
 
   auto engine = builder.LaunchEngine();
-  EXPECT_TRUE(engine.is_valid());
+  ASSERT_TRUE(engine.is_valid());
 
-  EXPECT_EQ(FlutterEngineRegisterExternalTexture(engine.get(), texture_id), kSuccess);
+  ASSERT_EQ(FlutterEngineRegisterExternalTexture(engine.get(), texture_id), kSuccess);
 
   auto rendered_scene = context.GetNextSceneImage();
 
@@ -120,9 +120,9 @@ TEST_F(EmbedderTest, ExternalTextureMetal) {
   event.width = texture_size.width();
   event.height = texture_size.height();
   event.pixel_ratio = 1.0;
-  EXPECT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event), kSuccess);
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event), kSuccess);
 
-  EXPECT_TRUE(ImageMatchesFixture("external_texture_metal.png", rendered_scene));
+  ASSERT_TRUE(ImageMatchesFixture("external_texture_metal.png", rendered_scene));
 }
 
 TEST_F(EmbedderTest, MetalCompositorMustBeAbleToRenderPlatformViews) {
@@ -218,12 +218,8 @@ TEST_F(EmbedderTest, CanRenderSceneWithoutCustomCompositorMetal) {
 
   auto rendered_scene = context.GetNextSceneImage();
 
-  printf("main 1\n");
-  fflush(stdout);
   auto engine = builder.LaunchEngine();
-  EXPECT_TRUE(engine.is_valid());
-  printf("main 2\n");
-  fflush(stdout);
+  ASSERT_TRUE(engine.is_valid());
 
   // Send a window metrics events so frames may be scheduled.
   FlutterWindowMetricsEvent event = {};
@@ -231,13 +227,9 @@ TEST_F(EmbedderTest, CanRenderSceneWithoutCustomCompositorMetal) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  EXPECT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event), kSuccess);
-  printf("main 3\n");
-  fflush(stdout);
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event), kSuccess);
 
-  EXPECT_TRUE(ImageMatchesFixture("scene_without_custom_compositor.png", rendered_scene));
-  printf("main 4\n");
-  fflush(stdout);
+  ASSERT_TRUE(ImageMatchesFixture("scene_without_custom_compositor.png", rendered_scene));
 }
 
 TEST_F(EmbedderTest, TextureDestructionCallbackCalledWithoutCustomCompositorMetal) {
