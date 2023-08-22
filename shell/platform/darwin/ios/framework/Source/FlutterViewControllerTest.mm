@@ -1998,7 +1998,10 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   id mockVC = OCMPartialMock(flutterViewController);
   [[NSNotificationCenter defaultCenter] postNotification:applicationDidBecomeActiveNotification];
   [[NSNotificationCenter defaultCenter] postNotification:applicationWillResignActiveNotification];
+#if APPLICATION_EXTENSION_API_ONLY
+#else
   OCMVerify([mockVC goToApplicationLifecycle:@"AppLifecycleState.inactive"]);
+#endif
 
   XCTestExpectation* timeoutApplicationLifeCycle =
       [self expectationWithDescription:@"timeoutApplicationLifeCycle"];
