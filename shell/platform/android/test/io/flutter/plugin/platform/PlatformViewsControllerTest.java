@@ -25,6 +25,7 @@ import android.widget.FrameLayout.LayoutParams;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.android.FlutterImageView;
+import io.flutter.embedding.android.FlutterSurfaceView;
 import io.flutter.embedding.android.FlutterView;
 import io.flutter.embedding.android.MotionEventTracker;
 import io.flutter.embedding.android.RenderMode;
@@ -1521,7 +1522,7 @@ public class PlatformViewsControllerTest {
       FlutterJNI jni, PlatformViewsController platformViewsController) {
     final Context context = ApplicationProvider.getApplicationContext();
     final FlutterView flutterView =
-        new FlutterView(context, RenderMode.surface) {
+        new FlutterView(context, new FlutterSurfaceView(context)) {
           @Override
           public FlutterImageView createImageView() {
             final FlutterImageView view = mock(FlutterImageView.class);
