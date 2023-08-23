@@ -59,12 +59,25 @@ void GlyphAtlas::SetTexture(std::shared_ptr<Texture> texture) {
 
 void GlyphAtlas::AddTypefaceGlyphPosition(const FontGlyphPair& pair,
                                           Rect rect) {
-  positions_[pair] = rect;
+  auto [it, did_insert] = fonts_.insert(pair.font);
+  positions_[FontRefGlyphPair{
+      .font = *it,          //
+      .glyph = pair.glyph,  //
+      .scale = pair.scale   //
+  }] = rect;
 }
 
 std::optional<Rect> GlyphAtlas::FindFontGlyphBounds(
     const FontGlyphPair& pair) const {
-  const auto& found = positions_.find(pair);
+  auto font_it = fonts_.find(pair.font);
+  if (font_it == fonts_.end()) {
+    return std::nullopt;
+  }
+  const auto& found = positions_.find(FontRefGlyphPair{
+      .font = *font_it,     //
+      .glyph = pair.glyph,  //
+      .scale = pair.scale   //
+  });
   if (found == positions_.end()) {
     return std::nullopt;
   }
@@ -76,7 +89,7 @@ size_t GlyphAtlas::GetGlyphCount() const {
 }
 
 size_t GlyphAtlas::IterateGlyphs(
-    const std::function<bool(const FontGlyphPair& pair, const Rect& rect)>&
+    const std::function<bool(const FontRefGlyphPair& pair, const Rect& rect)>&
         iterator) const {
   if (!iterator) {
     return 0u;

@@ -19,18 +19,20 @@ namespace impeller {
 /// @brief      A font along with a glyph in that font rendered at a particular
 ///             scale. Used in glyph atlases as keys.
 ///
-struct FontGlyphPair {
+template <typename FontType>
+struct FontGlyphPairPrototype {
   struct Hash;
   struct Equal;
+  struct Less;
 
-  using Set = std::unordered_set<FontGlyphPair, Hash, Equal>;
+  using Set = std::unordered_set<FontGlyphPairPrototype<FontType>, Hash, Equal>;
 
-  Font font;
+  FontType font;
   Glyph glyph;
   Scalar scale;
 
   struct Hash {
-    std::size_t operator()(const FontGlyphPair& p) const {
+    std::size_t operator()(const FontGlyphPairPrototype<FontType>& p) const {
       static_assert(sizeof(p.glyph.index) == 2);
       static_assert(sizeof(p.glyph.type) == 1);
       size_t index = p.glyph.index;
@@ -48,11 +50,15 @@ struct FontGlyphPair {
     }
   };
   struct Equal {
-    bool operator()(const FontGlyphPair& lhs, const FontGlyphPair& rhs) const {
+    bool operator()(const FontGlyphPairPrototype<FontType>& lhs,
+                    const FontGlyphPairPrototype<FontType>& rhs) const {
       return lhs.font.IsEqual(rhs.font) && lhs.glyph.index == rhs.glyph.index &&
              lhs.glyph.type == rhs.glyph.type && lhs.scale == rhs.scale;
     }
   };
 };
+
+using FontGlyphPair = FontGlyphPairPrototype<Font>;
+using FontRefGlyphPair = FontGlyphPairPrototype<const Font&>;
 
 }  // namespace impeller

@@ -152,8 +152,10 @@ static ISize OptimumAtlasSizeForFontGlyphPairs(
   return ISize{0, 0};
 }
 
+namespace {
+template <typename T>
 static void DrawGlyph(SkCanvas* canvas,
-                      const FontGlyphPair& font_glyph,
+                      const T& font_glyph,
                       const Rect& location,
                       bool has_color) {
   const auto& metrics = font_glyph.font.GetMetrics();
@@ -184,6 +186,7 @@ static void DrawGlyph(SkCanvas* canvas,
       glyph_paint                                        // paint
   );
 }
+}  // namespace
 
 static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
                               const std::shared_ptr<SkBitmap>& bitmap,
@@ -243,7 +246,7 @@ static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
 
   bool has_color = atlas.GetType() == GlyphAtlas::Type::kColorBitmap;
 
-  atlas.IterateGlyphs([canvas, has_color](const FontGlyphPair& font_glyph,
+  atlas.IterateGlyphs([canvas, has_color](const FontRefGlyphPair& font_glyph,
                                           const Rect& location) -> bool {
     DrawGlyph(canvas, font_glyph, location, has_color);
     return true;

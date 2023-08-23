@@ -71,8 +71,9 @@ TEST_P(TypographerTest, CanCreateGlyphAtlas) {
   std::optional<FontGlyphPair> first_pair;
   Rect first_rect;
   atlas->IterateGlyphs(
-      [&](const FontGlyphPair& pair, const Rect& rect) -> bool {
-        first_pair = pair;
+      [&](const FontRefGlyphPair& pair, const Rect& rect) -> bool {
+        first_pair = FontGlyphPair{
+            .font = pair.font, .glyph = pair.glyph, .scale = pair.scale};
         first_rect = rect;
         return false;
       });
@@ -202,7 +203,7 @@ TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {
 
   std::set<uint16_t> unique_glyphs;
   std::vector<uint16_t> total_glyphs;
-  atlas->IterateGlyphs([&](const FontGlyphPair& pair, const Rect& rect) {
+  atlas->IterateGlyphs([&](const FontRefGlyphPair& pair, const Rect& rect) {
     unique_glyphs.insert(pair.glyph.index);
     total_glyphs.push_back(pair.glyph.index);
     return true;

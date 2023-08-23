@@ -7,6 +7,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <set>
 #include <unordered_map>
 
 #include "flutter/fml/macros.h"
@@ -97,7 +98,7 @@ class GlyphAtlas {
   /// @return     The number of glyphs iterated over.
   ///
   size_t IterateGlyphs(
-      const std::function<bool(const FontGlyphPair& pair, const Rect& rect)>&
+      const std::function<bool(const FontRefGlyphPair& pair, const Rect& rect)>&
           iterator) const;
 
   //----------------------------------------------------------------------------
@@ -113,11 +114,20 @@ class GlyphAtlas {
  private:
   const Type type_;
   std::shared_ptr<Texture> texture_;
+  struct FontHash {
+    std::size_t operator()(const Font& font) const { return font.GetHash(); }
+  };
+  struct FontEqual {
+    bool operator()(const Font& lhs, const Font& rhs) const {
+      return lhs.IsEqual(rhs);
+    }
+  };
+  std::unordered_set<Font, FontHash, FontEqual> fonts_;
 
-  std::unordered_map<FontGlyphPair,
+  std::unordered_map<FontRefGlyphPair,
                      Rect,
-                     FontGlyphPair::Hash,
-                     FontGlyphPair::Equal>
+                     FontRefGlyphPair::Hash,
+                     FontRefGlyphPair::Equal>
       positions_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(GlyphAtlas);

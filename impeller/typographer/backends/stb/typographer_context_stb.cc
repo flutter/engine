@@ -195,10 +195,12 @@ static ISize OptimumAtlasSizeForFontGlyphPairs(
   return ISize{0, 0};
 }
 
-static void DrawGlyph(BitmapSTB* bitmap,
-                      const FontGlyphPair& font_glyph,
-                      const Rect& location,
-                      bool has_color) {
+namespace {
+template <typename T>
+void DrawGlyph(BitmapSTB* bitmap,
+               const T& font_glyph,
+               const Rect& location,
+               bool has_color) {
   const auto& metrics = font_glyph.font.GetMetrics();
 
   const impeller::Font& font = font_glyph.font;
@@ -269,6 +271,7 @@ static void DrawGlyph(BitmapSTB* bitmap,
     stbtt_FreeBitmap(glyph_pixels, nullptr);
   }
 }
+}  // namespace
 
 static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
                               const std::shared_ptr<BitmapSTB>& bitmap,
@@ -302,7 +305,7 @@ static std::shared_ptr<BitmapSTB> CreateAtlasBitmap(const GlyphAtlas& atlas,
 
   bool has_color = atlas.GetType() == GlyphAtlas::Type::kColorBitmap;
 
-  atlas.IterateGlyphs([&bitmap, has_color](const FontGlyphPair& font_glyph,
+  atlas.IterateGlyphs([&bitmap, has_color](const FontRefGlyphPair& font_glyph,
                                            const Rect& location) -> bool {
     DrawGlyph(bitmap.get(), font_glyph, location, has_color);
     return true;
