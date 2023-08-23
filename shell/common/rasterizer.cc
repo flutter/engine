@@ -508,6 +508,13 @@ Rasterizer::DrawSurfaceStatus Rasterizer::DrawToSurface(
   TRACE_EVENT0("flutter", "Rasterizer::DrawToSurface");
   FML_DCHECK(surface_);
 
+  // TODO(dkwingsmt): Use a proper view ID when Rasterizer supports
+  // multi-view.
+  int64_t view_id = kFlutterImplicitViewId;
+  if (delegate_.ShouldDiscardLayerTree(view_id, layer_tree)) {
+    return DrawSurfaceStatus::kDiscarded;
+  }
+
   DrawSurfaceStatus draw_surface_status;
   if (surface_->AllowsDrawingWhenGpuDisabled()) {
     draw_surface_status = DrawToSurfaceUnsafe(frame_timings_recorder,
@@ -535,13 +542,6 @@ Rasterizer::DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
     flutter::LayerTree& layer_tree,
     float device_pixel_ratio) {
   FML_DCHECK(surface_);
-
-  // TODO(dkwingsmt): Use a proper view ID when Rasterizer supports
-  // multi-view.
-  int64_t view_id = kFlutterImplicitViewId;
-  if (delegate_.ShouldDiscardLayerTree(view_id, layer_tree)) {
-    return DrawSurfaceStatus::kDiscarded;
-  }
 
   compositor_context_->ui_time().SetLapTime(
       frame_timings_recorder.GetBuildDuration());

@@ -529,8 +529,6 @@ class Rasterizer final : public SnapshotDelegate,
   void DisableThreadMergerIfNeeded();
 
  private:
-  using RasterStatus = RasterStatus;
-
   // The result status of DrawToSurface and DrawToSurfaceUnsafe.
   enum class DrawSurfaceStatus {
     // Frame has been successfully rasterized.
