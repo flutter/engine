@@ -18,11 +18,8 @@ namespace {
 constexpr char kTextPlainFormat[] = "text/plain";
 const UInt32 kKeyPressClickSoundId = 1306;
 
-#if APPLICATION_EXTENSION_API_ONLY
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
+#if not APPLICATION_EXTENSION_API_ONLY
 const NSString* searchURLPrefix = @"x-web-search://?";
-#pragma GCC diagnostic pop
 #endif
 
 }  // namespace
