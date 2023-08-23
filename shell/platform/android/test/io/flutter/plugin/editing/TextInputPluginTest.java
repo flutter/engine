@@ -1449,15 +1449,12 @@ public class TextInputPluginTest {
 
   @Config(minSdk = Build.VERSION_CODES.O)
   @SuppressWarnings("deprecation")
-  // Robolectric.setupActivity.
-  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void autofill_onProvideVirtualViewStructure() {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
       return;
     }
-    // Migrate to ActivityScenario by following https://github.com/robolectric/robolectric/pull/4736
-    FlutterView testView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView testView = getTestView();
     TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
@@ -1542,8 +1539,6 @@ public class TextInputPluginTest {
   }
 
   @SuppressWarnings("deprecation")
-  // Robolectric.setupActivity.
-  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Config(minSdk = Build.VERSION_CODES.O)
   @Test
   public void autofill_onProvideVirtualViewStructure_singular_textfield() {
@@ -1551,7 +1546,7 @@ public class TextInputPluginTest {
       return;
     }
     // Migrate to ActivityScenario by following https://github.com/robolectric/robolectric/pull/4736
-    FlutterView testView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView testView = getTestView();
     TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
@@ -1597,9 +1592,6 @@ public class TextInputPluginTest {
   }
 
   @Config(minSdk = Build.VERSION_CODES.O)
-  @SuppressWarnings("deprecation")
-  // Robolectric.setupActivity.
-  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void autofill_testLifeCycle() {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
@@ -1607,7 +1599,7 @@ public class TextInputPluginTest {
     }
 
     TestAfm testAfm = Shadow.extract(ctx.getSystemService(AutofillManager.class));
-    FlutterView testView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView testView = getTestView();
     TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
@@ -1736,8 +1728,6 @@ public class TextInputPluginTest {
 
   @Config(minSdk = Build.VERSION_CODES.O)
   @SuppressWarnings("deprecation")
-  // Robolectric.setupActivity.
-  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void autofill_testAutofillUpdatesTheFramework() {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
@@ -1745,7 +1735,7 @@ public class TextInputPluginTest {
     }
 
     TestAfm testAfm = Shadow.extract(ctx.getSystemService(AutofillManager.class));
-    FlutterView testView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView testView = getTestView();
     TextInputChannel textInputChannel = spy(new TextInputChannel(mock(DartExecutor.class)));
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
@@ -1884,9 +1874,6 @@ public class TextInputPluginTest {
   }
 
   @Config(minSdk = Build.VERSION_CODES.O)
-  @SuppressWarnings("deprecation")
-  // Robolectric.setupActivity.
-  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void autofill_testSetTextIpnutClientUpdatesSideFields() {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
@@ -1894,7 +1881,7 @@ public class TextInputPluginTest {
     }
 
     TestAfm testAfm = Shadow.extract(ctx.getSystemService(AutofillManager.class));
-    FlutterView testView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView testView = getTestView();
     TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
@@ -1965,6 +1952,12 @@ public class TextInputPluginTest {
     assertEquals("Unfocused fields need love like everything does", testAfm.changeString);
   }
   // -------- End: Autofill Tests -------
+
+  @SuppressWarnings("deprecation")
+  private FlutterView getTestView() {
+    // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
+    return new FlutterView(Robolectric.setupActivity(Activity.class));
+  }
 
   @SuppressWarnings("deprecation")
   // setMessageHandler is deprecated.
@@ -2063,11 +2056,10 @@ public class TextInputPluginTest {
   @TargetApi(30)
   @Config(sdk = 30)
   @SuppressWarnings("deprecation")
-  // getWindowSystemUiVisibility, SYSTEM_UI_FLAG_LAYOUT_STABLE, Robolectric.setupActivity.
+  // getWindowSystemUiVisibility, SYSTEM_UI_FLAG_LAYOUT_STABLE.
   // flutter#133074 tracks migration work.
-  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   public void ime_windowInsetsSync_notLaidOutBehindNavigation_excludesNavigationBars() {
-    FlutterView testView = spy(new FlutterView(Robolectric.setupActivity(Activity.class)));
+    FlutterView testView = spy(getTestView());
     when(testView.getWindowSystemUiVisibility()).thenReturn(View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
 
     TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
@@ -2143,11 +2135,10 @@ public class TextInputPluginTest {
   @TargetApi(30)
   @Config(sdk = 30)
   @SuppressWarnings("deprecation")
-  // getWindowSystemUiVisibility, Robolectric.setupActivity.
+  // getWindowSystemUiVisibility
   // flutter#133074 tracks migration work.
-  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   public void ime_windowInsetsSync_laidOutBehindNavigation_includesNavigationBars() {
-    FlutterView testView = spy(new FlutterView(Robolectric.setupActivity(Activity.class)));
+    FlutterView testView = spy(getTestView());
     when(testView.getWindowSystemUiVisibility())
         .thenReturn(
             View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
@@ -2225,11 +2216,10 @@ public class TextInputPluginTest {
   @TargetApi(30)
   @Config(sdk = 30)
   @SuppressWarnings("deprecation")
-  // getWindowSystemUiVisibility, SYSTEM_UI_FLAG_LAYOUT_STABLE, Robolectric.setupActivity.
+  // getWindowSystemUiVisibility, SYSTEM_UI_FLAG_LAYOUT_STABLE
   // flutter#133074 tracks migration work.
-  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   public void lastWindowInsets_updatedOnSecondOnProgressCall() {
-    FlutterView testView = spy(new FlutterView(Robolectric.setupActivity(Activity.class)));
+    FlutterView testView = spy(getTestView());
     when(testView.getWindowSystemUiVisibility()).thenReturn(View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
 
     TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
