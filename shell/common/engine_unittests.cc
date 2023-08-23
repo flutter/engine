@@ -40,6 +40,8 @@ class MockDelegate : public Engine::Delegate {
   MOCK_CONST_METHOD0(GetPlatformMessageHandler,
                      const std::shared_ptr<PlatformMessageHandler>&());
   MOCK_METHOD2(OnEngineChannelListenedTo, void(const std::string&, bool));
+  MOCK_CONST_METHOD2(GetScaledFontSize,
+                     double(double font_size, int configuration_id));
 };
 
 class MockResponse : public PlatformMessageResponse {
@@ -69,6 +71,8 @@ class MockRuntimeDelegate : public RuntimeDelegate {
   MOCK_CONST_METHOD0(GetPlatformMessageHandler,
                      std::weak_ptr<PlatformMessageHandler>());
   MOCK_METHOD2(ChannelListenedTo, void(const std::string&, bool));
+  MOCK_CONST_METHOD2(GetScaledFontSize,
+                     double(double font_size, int configuration_id));
 };
 
 class MockRuntimeController : public RuntimeController {

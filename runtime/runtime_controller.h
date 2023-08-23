@@ -686,6 +686,10 @@ class RuntimeController : public PlatformConfigurationClient {
   // |PlatformConfigurationClient|
   void ChannelListenedTo(const std::string& name, bool listening) override;
 
+  // |PlatformConfigurationClient|
+  double GetScaledFontSize(double unscaled_font_size,
+                           int configuration_id) const override;
+
   FML_DISALLOW_COPY_AND_ASSIGN(RuntimeController);
 };
 

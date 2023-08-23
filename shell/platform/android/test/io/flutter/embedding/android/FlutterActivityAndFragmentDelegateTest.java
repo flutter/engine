@@ -66,6 +66,9 @@ public class FlutterActivityAndFragmentDelegateTest {
   private FlutterEngine mockFlutterEngine;
   private FlutterActivityAndFragmentDelegate.Host mockHost;
 
+  @SuppressWarnings("deprecation")
+  // Robolectric.setupActivity
+  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Before
   public void setup() {
     FlutterInjector.reset();
@@ -402,6 +405,9 @@ public class FlutterActivityAndFragmentDelegateTest {
     verify(mockHost, times(1)).onFlutterSurfaceViewCreated(isNotNull());
   }
 
+  @SuppressWarnings("deprecation")
+  // Robolectric.setupActivity
+  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void itGivesHostAnOpportunityToConfigureFlutterTextureView() {
     // ---- Test setup ----
@@ -1287,6 +1293,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     when(fakeMessageBuilder.setPlatformBrightness(any(SettingsChannel.PlatformBrightness.class)))
         .thenReturn(fakeMessageBuilder);
     when(fakeMessageBuilder.setTextScaleFactor(any(Float.class))).thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setDisplayMetrics(any())).thenReturn(fakeMessageBuilder);
     when(fakeMessageBuilder.setNativeSpellCheckServiceDefined(any(Boolean.class)))
         .thenReturn(fakeMessageBuilder);
     when(fakeMessageBuilder.setBrieflyShowPassword(any(Boolean.class)))

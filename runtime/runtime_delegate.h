@@ -56,6 +56,9 @@ class RuntimeDelegate {
 
   virtual void ChannelListenedTo(const std::string& name, bool listening) = 0;
 
+  virtual double GetScaledFontSize(double unscaled_font_size,
+                                   int configuration_id) const = 0;
+
  protected:
   virtual ~RuntimeDelegate();
 };

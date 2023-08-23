@@ -4,15 +4,24 @@
 
 #include "impeller/aiks/aiks_playground.h"
 
-#include "impeller/aiks/aiks_context.h"
+#include <memory>
 
+#include "impeller/aiks/aiks_context.h"
+#include "impeller/typographer/backends/skia/typographer_context_skia.h"
+#include "impeller/typographer/typographer_context.h"
 #include "third_party/imgui/imgui.h"
 
 namespace impeller {
 
-AiksPlayground::AiksPlayground() = default;
+AiksPlayground::AiksPlayground()
+    : typographer_context_(TypographerContextSkia::Make()) {}
 
 AiksPlayground::~AiksPlayground() = default;
+
+void AiksPlayground::SetTypographerContext(
+    std::shared_ptr<TypographerContext> typographer_context) {
+  typographer_context_ = std::move(typographer_context);
+}
 
 bool AiksPlayground::OpenPlaygroundHere(const Picture& picture) {
   return OpenPlaygroundHere(
@@ -26,7 +35,7 @@ bool AiksPlayground::OpenPlaygroundHere(AiksPlaygroundCallback callback) {
     return true;
   }
 
-  AiksContext renderer(GetContext());
+  AiksContext renderer(GetContext(), typographer_context_);
 
   if (!renderer.IsValid()) {
     return false;

@@ -638,4 +638,13 @@ void PlatformConfigurationNativeApi::PlatformChannelListenedTo(
       name, listening);
 }
 
+double PlatformConfigurationNativeApi::GetScaledFontSize(
+    double unscaled_font_size,
+    int configuration_id) {
+  UIDartState::ThrowIfUIOperationsProhibited();
+  return UIDartState::Current()
+      ->platform_configuration()
+      ->client()
+      ->GetScaledFontSize(unscaled_font_size, configuration_id);
+}
 }  // namespace flutter
