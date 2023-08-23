@@ -104,7 +104,7 @@ bool Command::BindResource(ShaderStage stage,
       };
       return true;
     case ShaderStage::kFragment:
-      vertex_bindings.sampled_images[slot.sampler_index] = TextureAndSampler{
+      fragment_bindings.sampled_images[slot.sampler_index] = TextureAndSampler{
           .slot = slot,
           .texture = {&metadata, texture},
           .sampler = {&metadata, sampler},
