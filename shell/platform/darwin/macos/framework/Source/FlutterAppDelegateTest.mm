@@ -46,9 +46,7 @@ TEST(FlutterAppDelegateTest, ReceivesOpenURLs) {
       [[AppDelegateTestFlutterAppLifecycleDelegate alloc] init];
   [appDelegate addApplicationLifecycleDelegate:delegate];
 
-  NSURL* URL = [NSURL URLWithString:@"https://flutter.dev"];
-  EXPECT_NE(URL, nil);
-  NSArray<NSURL*>* URLs = @[ URL ];
+  NSArray<NSURL*>* URLs = @[ [NSURL URLWithString:@"https://flutter.dev"] ];
   [appDelegate application:NSApplication.sharedApplication openURLs:URLs];
 
   EXPECT_EQ([delegate receivedURLs], URLs);
@@ -63,9 +61,7 @@ TEST(FlutterAppDelegateTest, OperURLsStopsAfterHandled) {
   [appDelegate addApplicationLifecycleDelegate:firstDelegate];
   [appDelegate addApplicationLifecycleDelegate:secondDelegate];
 
-  NSURL* URL = [NSURL URLWithString:@"https://flutter.dev"];
-  EXPECT_NE(URL, nil);
-  NSArray<NSURL*>* URLs = @[ URL ];
+  NSArray<NSURL*>* URLs = @[ [NSURL URLWithString:@"https://flutter.dev"] ];
   [appDelegate application:NSApplication.sharedApplication openURLs:URLs];
 
   EXPECT_EQ([firstDelegate receivedURLs], URLs);
