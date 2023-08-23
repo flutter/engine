@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/display_list/geometry/dl_rect.h"
+#include "fml/logging.h"
 #include "gtest/gtest.h"
 
 namespace flutter {
@@ -412,63 +413,112 @@ TEST(DlRectTest, IRectCutOut) {
   emptying(DlIRect::MakeLTRB(15, 15, 45, 45), "Smothering");
 }
 
+static constexpr inline DlFRect swap_nan(const DlFRect& rect, int index) {
+  DlScalar nan = std::numeric_limits<DlScalar>::quiet_NaN();
+  FML_DCHECK(index >= 0 && index < 4);
+  DlScalar l = (index == 0) ? nan : rect.left();
+  DlScalar t = (index == 1) ? nan : rect.top();
+  DlScalar r = (index == 2) ? nan : rect.right();
+  DlScalar b = (index == 3) ? nan : rect.bottom();
+  return DlFRect::MakeLTRB(l, t, r, b);
+}
+
 TEST(DlRectTest, FRectCutOut) {
   DlFRect cull_rect = DlFRect::MakeLTRB(20, 20, 40, 40);
   DlFRect empty_rect;
 
+  auto check_nans = [&cull_rect, &empty_rect](const DlFRect& diff_rect,
+                                              const std::string& label) {
+    ASSERT_TRUE(cull_rect.is_finite()) << label;
+    ASSERT_TRUE(diff_rect.is_finite()) << label;
+
+    for (int i = 0; i < 4; i++) {
+      // NaN in cull_rect produces empty
+      ASSERT_FALSE(swap_nan(cull_rect, i).CutOut(diff_rect).has_value())
+          << label << ", index " << i;
+      ASSERT_EQ(swap_nan(cull_rect, i).CutOutOrEmpty(diff_rect), empty_rect)
+          << label << ", index " << i;
+
+      // NaN in diff_rect is nop
+      ASSERT_TRUE(cull_rect.CutOut(swap_nan(diff_rect, i)).has_value())
+          << label << ", index " << i;
+      ASSERT_EQ(cull_rect.CutOutOrEmpty(swap_nan(diff_rect, i)), cull_rect)
+          << label << ", index " << i;
+
+      for (int j = 0; j < 4; j++) {
+        // NaN in both is also empty
+        ASSERT_FALSE(swap_nan(cull_rect, i).CutOut(swap_nan(diff_rect, j))
+                         .has_value())
+            << label << ", indices " << i << ", " << j;
+        ASSERT_EQ(swap_nan(cull_rect, i).CutOutOrEmpty(swap_nan(diff_rect, j)),
+                  empty_rect)
+            << label << ", indices " << i << ", " << j;
+      }
+    }
+  };
+
   auto check_empty_flips = [&cull_rect, &empty_rect](const DlFRect& diff_rect,
                                                      const std::string& label) {
-    ASSERT_FALSE(diff_rect.is_empty());
-    ASSERT_FALSE(cull_rect.is_empty());
+    ASSERT_FALSE(cull_rect.is_empty()) << label;
+    ASSERT_FALSE(diff_rect.is_empty()) << label;
 
     // unflipped cull_rect vs flipped(empty) diff_rect
     // == cull_rect
-    ASSERT_TRUE(cull_rect.CutOut(flip_lr(diff_rect)).has_value());
-    ASSERT_EQ(cull_rect.CutOut(flip_lr(diff_rect)), cull_rect);
-    ASSERT_TRUE(cull_rect.CutOut(flip_tb(diff_rect)).has_value());
-    ASSERT_EQ(cull_rect.CutOut(flip_tb(diff_rect)), cull_rect);
-    ASSERT_TRUE(cull_rect.CutOut(flip_lrtb(diff_rect)).has_value());
-    ASSERT_EQ(cull_rect.CutOut(flip_lrtb(diff_rect)), cull_rect);
+    ASSERT_TRUE(cull_rect.CutOut(flip_lr(diff_rect)).has_value()) << label;
+    ASSERT_EQ(cull_rect.CutOut(flip_lr(diff_rect)), cull_rect) << label;
+    ASSERT_TRUE(cull_rect.CutOut(flip_tb(diff_rect)).has_value()) << label;
+    ASSERT_EQ(cull_rect.CutOut(flip_tb(diff_rect)), cull_rect) << label;
+    ASSERT_TRUE(cull_rect.CutOut(flip_lrtb(diff_rect)).has_value()) << label;
+    ASSERT_EQ(cull_rect.CutOut(flip_lrtb(diff_rect)), cull_rect) << label;
 
     // flipped(empty) cull_rect vs flipped(empty) diff_rect
     // == empty
-    ASSERT_FALSE(flip_lr(cull_rect).CutOut(diff_rect).has_value());
-    ASSERT_EQ(flip_lr(cull_rect).CutOutOrEmpty(diff_rect), empty_rect);
-    ASSERT_FALSE(flip_tb(cull_rect).CutOut(diff_rect).has_value());
-    ASSERT_EQ(flip_tb(cull_rect).CutOutOrEmpty(diff_rect), empty_rect);
-    ASSERT_FALSE(flip_lrtb(cull_rect).CutOut(diff_rect).has_value());
-    ASSERT_EQ(flip_lrtb(cull_rect).CutOutOrEmpty(diff_rect), empty_rect);
+    ASSERT_FALSE(flip_lr(cull_rect).CutOut(diff_rect).has_value()) << label;
+    ASSERT_EQ(flip_lr(cull_rect).CutOutOrEmpty(diff_rect), empty_rect) << label;
+    ASSERT_FALSE(flip_tb(cull_rect).CutOut(diff_rect).has_value()) << label;
+    ASSERT_EQ(flip_tb(cull_rect).CutOutOrEmpty(diff_rect), empty_rect) << label;
+    ASSERT_FALSE(flip_lrtb(cull_rect).CutOut(diff_rect).has_value()) << label;
+    ASSERT_EQ(flip_lrtb(cull_rect).CutOutOrEmpty(diff_rect), empty_rect) << label;
 
     // flipped(empty) cull_rect vs unflipped diff_rect
     // == empty
-    ASSERT_FALSE(flip_lr(cull_rect).CutOut(flip_lr(diff_rect)).has_value());
-    ASSERT_EQ(flip_lr(cull_rect).CutOutOrEmpty(flip_lr(diff_rect)), empty_rect);
-    ASSERT_FALSE(flip_tb(cull_rect).CutOut(flip_tb(diff_rect)).has_value());
-    ASSERT_EQ(flip_tb(cull_rect).CutOutOrEmpty(flip_tb(diff_rect)), empty_rect);
-    ASSERT_FALSE(flip_lrtb(cull_rect).CutOut(flip_lrtb(diff_rect)).has_value());
+    ASSERT_FALSE(flip_lr(cull_rect).CutOut(flip_lr(diff_rect)).has_value())
+        << label;
+    ASSERT_EQ(flip_lr(cull_rect).CutOutOrEmpty(flip_lr(diff_rect)), empty_rect)
+        << label;
+    ASSERT_FALSE(flip_tb(cull_rect).CutOut(flip_tb(diff_rect)).has_value())
+        << label;
+    ASSERT_EQ(flip_tb(cull_rect).CutOutOrEmpty(flip_tb(diff_rect)), empty_rect)
+        << label;
+    ASSERT_FALSE(flip_lrtb(cull_rect).CutOut(flip_lrtb(diff_rect)).has_value())
+        << label;
     ASSERT_EQ(flip_lrtb(cull_rect).CutOutOrEmpty(flip_lrtb(diff_rect)),
-              empty_rect);
+              empty_rect) << label;
   };
 
-  auto non_reducing = [&cull_rect, &check_empty_flips](
+  auto non_reducing = [&cull_rect, &check_empty_flips, &check_nans](
                           const DlFRect& diff_rect, const std::string& label) {
     ASSERT_EQ(cull_rect.CutOut(diff_rect), cull_rect) << label;
     check_empty_flips(diff_rect, label);
+    check_nans(diff_rect, label);
   };
 
-  auto reducing = [&cull_rect, &check_empty_flips](const DlFRect& diff_rect,
-                                                   const DlFRect& result_rect,
-                                                   const std::string& label) {
+  auto reducing = [&cull_rect, &check_empty_flips, &check_nans](
+                      const DlFRect& diff_rect,
+                      const DlFRect& result_rect,
+                      const std::string& label) {
     ASSERT_TRUE(!result_rect.is_empty());
     ASSERT_EQ(cull_rect.CutOut(diff_rect), result_rect) << label;
     check_empty_flips(diff_rect, label);
+    check_nans(diff_rect, label);
   };
 
-  auto emptying = [&cull_rect, &empty_rect, &check_empty_flips](
+  auto emptying = [&cull_rect, &empty_rect, &check_empty_flips, &check_nans](
                       const DlFRect& diff_rect, const std::string& label) {
     ASSERT_FALSE(cull_rect.CutOut(diff_rect).has_value()) << label;
     ASSERT_EQ(cull_rect.CutOutOrEmpty(diff_rect), empty_rect) << label;
     check_empty_flips(diff_rect, label);
+    check_nans(diff_rect, label);
   };
 
   // Skim the corners and edge

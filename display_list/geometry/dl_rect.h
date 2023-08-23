@@ -290,22 +290,23 @@ struct DlTRect {
   }
 
   std::optional<DlTRect> CutOut(const DlTRect& sub) const {
-    if (is_empty()) {
-      return std::nullopt;
-    }
-    if (sub.is_empty()) {
-      return *this;
-    }
     T src_left = this->left_;
     T src_right = this->right_;
     T src_top = this->top_;
     T src_bottom = this->bottom_;
+    if (!(src_right > src_left && src_bottom > src_top)) {
+      // src has NaN values or is empty, result is empty
+      // Return nullopt to normalize all empty results
+      return std::nullopt;
+    }
     if (sub.left_ <= src_left && sub.right_ >= src_right) {
-      // subtracted bounds spans the entire width of this (source) rect
-      // therefore we can slice off a top or bottom edge of the src for
+      // horizontally, sub is non-empty and has no NaN values
+      // sub spans the entire width of this (source) rect so
+      // we can slice off a top or bottom edge of the src for
       // the result.
-      if (src_bottom <= sub.top_ || sub.bottom_ <= src_top) {
-        // No vertical intersection, no change in the rect
+      if (!(src_bottom > sub.top_ && sub.bottom_ > src_top)) {
+        // vertically, sub has NaN values or no intersection,
+        // no change in the rect
         return *this;
       }
       if (sub.top_ <= src_top) {
@@ -320,11 +321,13 @@ struct DlTRect {
         return std::nullopt;
       }
     } else if (sub.top_ <= src_top && sub.bottom_ >= src_bottom) {
-      // subtracted bounds spans the entire height of this (source) rect
-      // therefore we can slice off a left or right edge of the src for
+      // vertically, sub is non-empty and has no NaN values
+      // sub spans the entire height of this (source) rect so
+      // we can slice off a left or right edge of the src for
       // the result.
-      if (src_right <= sub.left_ || sub.right_ <= src_left) {
-        // No horizontal intersection, no change in the rect
+      if (!(src_right > sub.left_ && sub.right_ > src_left)) {
+        // horizontally, sub has NaN values or no intersection,
+        // no change in the rect
         return *this;
       }
       if (sub.left_ <= src_left) {
