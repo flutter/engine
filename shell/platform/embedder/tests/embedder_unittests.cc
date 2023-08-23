@@ -2586,6 +2586,7 @@ TEST_F(EmbedderTest, RegisterChannelListener) {
   ASSERT_TRUE(engine.is_valid());
 
   latch.Wait();
+  fml::MessageLoop::GetCurrent().RunExpiredTasksNow();
   latch2.Wait();
 
   ASSERT_TRUE(listening);
