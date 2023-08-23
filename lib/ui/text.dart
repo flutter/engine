@@ -41,7 +41,7 @@ enum FontStyle {
 ///
 ///  * [w800]: Extra-bold.
 ///
-///  * [w900]: Black, the thickest font meight.
+///  * [w900]: Black, the thickest font weight.
 ///
 /// For example, the font named "Roboto Medium" is typically exposed as a font
 /// with the name "Roboto" and the weight [FontWeight.w500].
@@ -982,7 +982,7 @@ class FontFeature {
 /// For example:
 ///
 /// ```dart
-/// TextStyle(fontVariations: <FontVariation>[FontVariation('wght', 800.0)])
+/// TextStyle(fontVariations: <ui.FontVariation>[ui.FontVariation('wght', 800.0)])
 /// ```
 ///
 /// Font variations are distinct from font features, as exposed by the
