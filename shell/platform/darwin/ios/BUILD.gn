@@ -227,6 +227,9 @@ source_set("ios_test_flutter_mrc") {
     "-F$platform_frameworks_path",
     "-mios-simulator-version-min=$ios_testing_deployment_target",
   ]
+  cflags_objcc = [
+    "-Wno-unguarded-availability-new",
+  ]
   sources = [
     "framework/Source/FlutterEnginePlatformViewTest.mm",
     "framework/Source/FlutterEngineTest_mrc.mm",
@@ -270,6 +273,9 @@ shared_library("ios_test_flutter") {
     "-F$platform_frameworks_path",
     "-fobjc-arc",
     "-mios-simulator-version-min=$ios_testing_deployment_target",
+  ]
+  cflags_objcc = [
+    "-Wno-unguarded-availability-new",
   ]
   ldflags = [
     "-F$platform_frameworks_path",
