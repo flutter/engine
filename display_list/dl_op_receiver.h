@@ -23,11 +23,19 @@ namespace flutter {
 class DisplayList;
 
 //------------------------------------------------------------------------------
-/// @brief      The pure virtual interface for interacting with a display list.
-///             This interface represents the methods used to build a list
-///             through the DisplayListBuilder and also the methods that will be
-///             invoked through the DisplayList::dispatch() method.
+/// @brief      Internal API for rendering recorded display lists to backends.
 ///
+/// The |DisplayList| object will play back recorded operations in this format.
+/// Most developers should not needed to deal with this interface unless they
+/// are writing a utility that needs to examine the contents of a display list.
+///
+/// Similar to |DlCanvas|, the only state carried by implementations of this
+/// interface are the clip and transform which are saved and restored by the
+/// |save|, |saveLayer|, and |restore| calls.
+///
+/// @see        DlSkCanvasDispatcher
+/// @see        impeller::DlDispatcher
+/// @see        DlOpSpy
 class DlOpReceiver {
  protected:
   using ClipOp = DlCanvas::ClipOp;
