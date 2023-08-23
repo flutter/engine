@@ -18,7 +18,7 @@ vars = {
   'llvm_git': 'https://llvm.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
-  'skia_revision': '76898dad9fda119aa14b05fba18d32965c54015e',
+  'skia_revision': 'a631fefdba37d8957d5a5c32d63e58e2856e6d4a',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -39,7 +39,7 @@ vars = {
   # The list of revisions for these tools comes from Fuchsia, here:
   # https://fuchsia.googlesource.com/integration/+/HEAD/toolchain
   # If there are problems with the toolchain, contact fuchsia-toolchain@.
-  'clang_version': 'git_revision:6d667d4b261e81f325756fdfd5bb43b3b3d2451d',
+  'clang_version': 'git_revision:020d2fb7711d70e296f19d83565f8d93d2cfda71',
 
   # The goma version and the clang version can be tightly coupled. If goma
   # stops working on a clang roll, this may need to be updated using the value
