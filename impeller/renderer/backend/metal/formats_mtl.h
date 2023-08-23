@@ -36,6 +36,8 @@ constexpr PixelFormat FromMTLPixelFormat(MTLPixelFormat format) {
       return PixelFormat::kR16G16B16A16Float;
     case MTLPixelFormatStencil8:
       return PixelFormat::kS8UInt;
+    case MTLPixelFormatDepth24Unorm_Stencil8:
+      return PixelFormat::kD24UnormS8Uint;
     case MTLPixelFormatDepth32Float_Stencil8:
       return PixelFormat::kD32FloatS8UInt;
     case MTLPixelFormatBGR10_XR_sRGB:
@@ -87,6 +89,8 @@ constexpr MTLPixelFormat ToMTLPixelFormat(PixelFormat format) {
       return MTLPixelFormatRGBA16Float;
     case PixelFormat::kS8UInt:
       return MTLPixelFormatStencil8;
+    case PixelFormat::kD24UnormS8Uint:
+      return MTLPixelFormatDepth24Unorm_Stencil8;
     case PixelFormat::kD32FloatS8UInt:
       return MTLPixelFormatDepth32Float_Stencil8;
     case PixelFormat::kB10G10R10XRSRGB:
