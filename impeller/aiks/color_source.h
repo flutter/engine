@@ -17,8 +17,8 @@
 #include "impeller/runtime_stage/runtime_stage.h"
 
 #if IMPELLER_ENABLE_3D
-#include "impeller/scene/node.h"
-#endif  // IMPELLER_ENABLE_3D
+#include "impeller/scene/node.h"  // nogncheck
+#endif                            // IMPELLER_ENABLE_3D
 
 namespace impeller {
 

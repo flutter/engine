@@ -18,7 +18,6 @@
 #include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/pipeline.h"
 #include "impeller/renderer/render_target.h"
-#include "impeller/scene/scene_context.h"
 #include "impeller/typographer/typographer_context.h"
 
 #ifdef IMPELLER_DEBUG
@@ -112,6 +111,10 @@
 #include "impeller/entity/framebuffer_blend_saturation.frag.h"
 #include "impeller/entity/framebuffer_blend_screen.frag.h"
 #include "impeller/entity/framebuffer_blend_softlight.frag.h"
+
+#if IMPELLER_ENABLE_3D
+#include "impeller/scene/scene_context.h"  // nogncheck
+#endif
 
 namespace impeller {
 

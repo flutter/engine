@@ -14,7 +14,7 @@
 #include "impeller/entity/mtl/modern_shaders.h"
 
 #if IMPELLER_ENABLE_3D
-#include "impeller/scene/shaders/mtl/scene_shaders.h"
+#include "impeller/scene/shaders/mtl/scene_shaders.h" // nogncheck
 #endif  // IMPELLER_ENABLE_3D
 
 FLUTTER_ASSERT_ARC
