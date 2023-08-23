@@ -284,5 +284,155 @@ TEST(DlRectTest, EmptyFRectDoesNotIntersect) {
   test(70, 90, 80, 110, "Straddling Bottom");
 }
 
+TEST(DlRectTest, IRectCutOut) {
+  DlIRect cull_rect = DlIRect::MakeLTRB(20, 20, 40, 40);
+
+  auto non_reducing = [&cull_rect](const DlIRect& diff_rect,
+                                   const std::string& label) {
+    ASSERT_EQ(cull_rect.CutOut(diff_rect), cull_rect) << label;
+  };
+
+  auto reducing = [&cull_rect](const DlIRect& diff_rect,
+                               const DlIRect& result_rect,
+                               const std::string& label) {
+    ASSERT_TRUE(!result_rect.is_empty());
+    ASSERT_EQ(cull_rect.CutOut(diff_rect), result_rect) << label;
+  };
+
+  auto empty = [&cull_rect](const DlIRect& diff_rect,
+                            const std::string& label) {
+    ASSERT_FALSE(cull_rect.CutOut(diff_rect).has_value()) << label;
+    ASSERT_EQ(cull_rect.CutOutOrEmpty(diff_rect), DlIRect()) << label;
+  };
+
+  // Skim the corners and edge
+  non_reducing(DlIRect::MakeLTRB(10, 10, 20, 20), "outside UL corner");
+  non_reducing(DlIRect::MakeLTRB(20, 10, 40, 20), "Above");
+  non_reducing(DlIRect::MakeLTRB(40, 10, 50, 20), "outside UR corner");
+  non_reducing(DlIRect::MakeLTRB(40, 20, 50, 40), "Right");
+  non_reducing(DlIRect::MakeLTRB(40, 40, 50, 50), "outside LR corner");
+  non_reducing(DlIRect::MakeLTRB(20, 40, 40, 50), "Below");
+  non_reducing(DlIRect::MakeLTRB(10, 40, 20, 50), "outside LR corner");
+  non_reducing(DlIRect::MakeLTRB(10, 20, 20, 40), "Left");
+
+  // Overlap corners
+  non_reducing(DlIRect::MakeLTRB(15, 15, 25, 25), "covering UL corner");
+  non_reducing(DlIRect::MakeLTRB(35, 15, 45, 25), "covering UR corner");
+  non_reducing(DlIRect::MakeLTRB(35, 35, 45, 45), "covering LR corner");
+  non_reducing(DlIRect::MakeLTRB(15, 35, 25, 45), "covering LL corner");
+
+  // Overlap edges, but not across an entire side
+  non_reducing(DlIRect::MakeLTRB(20, 15, 39, 25), "Top edge left-biased");
+  non_reducing(DlIRect::MakeLTRB(21, 15, 40, 25), "Top edge, right biased");
+  non_reducing(DlIRect::MakeLTRB(35, 20, 45, 39), "Right edge, top-biased");
+  non_reducing(DlIRect::MakeLTRB(35, 21, 45, 40), "Right edge, bottom-biased");
+  non_reducing(DlIRect::MakeLTRB(20, 35, 39, 45), "Bottom edge, left-biased");
+  non_reducing(DlIRect::MakeLTRB(21, 35, 40, 45), "Bottom edge, right-biased");
+  non_reducing(DlIRect::MakeLTRB(15, 20, 25, 39), "Left edge, top-biased");
+  non_reducing(DlIRect::MakeLTRB(15, 21, 25, 40), "Left edge, bottom-biased");
+
+  // Slice all the way through the middle
+  non_reducing(DlIRect::MakeLTRB(25, 15, 35, 45), "Vertical interior slice");
+  non_reducing(DlIRect::MakeLTRB(15, 25, 45, 35), "Horizontal interior slice");
+
+  // Slice off each edge
+  reducing(DlIRect::MakeLTRB(20, 15, 40, 25),  //
+           DlIRect::MakeLTRB(20, 25, 40, 40),  //
+           "Slice off top");
+  reducing(DlIRect::MakeLTRB(35, 20, 45, 40),  //
+           DlIRect::MakeLTRB(20, 20, 35, 40),  //
+           "Slice off right");
+  reducing(DlIRect::MakeLTRB(20, 35, 40, 45),  //
+           DlIRect::MakeLTRB(20, 20, 40, 35),  //
+           "Slice off bottom");
+  reducing(DlIRect::MakeLTRB(15, 20, 25, 40),  //
+           DlIRect::MakeLTRB(25, 20, 40, 40),  //
+           "Slice off left");
+
+  // cull rect contains diff rect
+  non_reducing(DlIRect::MakeLTRB(21, 21, 39, 39), "Contained, non-covering");
+
+  // cull rect equals diff rect
+  empty(cull_rect, "Perfectly covering");
+
+  // diff rect contains cull rect
+  empty(DlIRect::MakeLTRB(15, 15, 45, 45), "Smothering");
+}
+
+TEST(DlRectTest, FRectCutOut) {
+  DlFRect cull_rect = DlFRect::MakeLTRB(20, 20, 40, 40);
+
+  auto non_reducing = [&cull_rect](const DlFRect& diff_rect,
+                                   const std::string& label) {
+    ASSERT_EQ(cull_rect.CutOut(diff_rect), cull_rect) << label;
+  };
+
+  auto reducing = [&cull_rect](const DlFRect& diff_rect,
+                               const DlFRect& result_rect,
+                               const std::string& label) {
+    ASSERT_TRUE(!result_rect.is_empty());
+    ASSERT_EQ(cull_rect.CutOut(diff_rect), result_rect) << label;
+  };
+
+  auto empty = [&cull_rect](const DlFRect& diff_rect,
+                            const std::string& label) {
+    ASSERT_FALSE(cull_rect.CutOut(diff_rect).has_value()) << label;
+    ASSERT_EQ(cull_rect.CutOutOrEmpty(diff_rect), DlFRect()) << label;
+  };
+
+  // Skim the corners and edge
+  non_reducing(DlFRect::MakeLTRB(10, 10, 20, 20), "outside UL corner");
+  non_reducing(DlFRect::MakeLTRB(20, 10, 40, 20), "Above");
+  non_reducing(DlFRect::MakeLTRB(40, 10, 50, 20), "outside UR corner");
+  non_reducing(DlFRect::MakeLTRB(40, 20, 50, 40), "Right");
+  non_reducing(DlFRect::MakeLTRB(40, 40, 50, 50), "outside LR corner");
+  non_reducing(DlFRect::MakeLTRB(20, 40, 40, 50), "Below");
+  non_reducing(DlFRect::MakeLTRB(10, 40, 20, 50), "outside LR corner");
+  non_reducing(DlFRect::MakeLTRB(10, 20, 20, 40), "Left");
+
+  // Overlap corners
+  non_reducing(DlFRect::MakeLTRB(15, 15, 25, 25), "covering UL corner");
+  non_reducing(DlFRect::MakeLTRB(35, 15, 45, 25), "covering UR corner");
+  non_reducing(DlFRect::MakeLTRB(35, 35, 45, 45), "covering LR corner");
+  non_reducing(DlFRect::MakeLTRB(15, 35, 25, 45), "covering LL corner");
+
+  // Overlap edges, but not across an entire side
+  non_reducing(DlFRect::MakeLTRB(20, 15, 39, 25), "Top edge left-biased");
+  non_reducing(DlFRect::MakeLTRB(21, 15, 40, 25), "Top edge, right biased");
+  non_reducing(DlFRect::MakeLTRB(35, 20, 45, 39), "Right edge, top-biased");
+  non_reducing(DlFRect::MakeLTRB(35, 21, 45, 40), "Right edge, bottom-biased");
+  non_reducing(DlFRect::MakeLTRB(20, 35, 39, 45), "Bottom edge, left-biased");
+  non_reducing(DlFRect::MakeLTRB(21, 35, 40, 45), "Bottom edge, right-biased");
+  non_reducing(DlFRect::MakeLTRB(15, 20, 25, 39), "Left edge, top-biased");
+  non_reducing(DlFRect::MakeLTRB(15, 21, 25, 40), "Left edge, bottom-biased");
+
+  // Slice all the way through the middle
+  non_reducing(DlFRect::MakeLTRB(25, 15, 35, 45), "Vertical interior slice");
+  non_reducing(DlFRect::MakeLTRB(15, 25, 45, 35), "Horizontal interior slice");
+
+  // Slice off each edge
+  reducing(DlFRect::MakeLTRB(20, 15, 40, 25),  //
+           DlFRect::MakeLTRB(20, 25, 40, 40),  //
+           "Slice off top");
+  reducing(DlFRect::MakeLTRB(35, 20, 45, 40),  //
+           DlFRect::MakeLTRB(20, 20, 35, 40),  //
+           "Slice off right");
+  reducing(DlFRect::MakeLTRB(20, 35, 40, 45),  //
+           DlFRect::MakeLTRB(20, 20, 40, 35),  //
+           "Slice off bottom");
+  reducing(DlFRect::MakeLTRB(15, 20, 25, 40),  //
+           DlFRect::MakeLTRB(25, 20, 40, 40),  //
+           "Slice off left");
+
+  // cull rect contains diff rect
+  non_reducing(DlFRect::MakeLTRB(21, 21, 39, 39), "Contained, non-covering");
+
+  // cull rect equals diff rect
+  empty(cull_rect, "Perfectly covering");
+
+  // diff rect contains cull rect
+  empty(DlFRect::MakeLTRB(15, 15, 45, 45), "Smothering");
+}
+
 }  // namespace testing
 }  // namespace flutter

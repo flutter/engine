@@ -179,46 +179,7 @@ void DisplayListMatrixClipTracker::Data::clipBounds(const DlFRect& clip,
             break;
           }
         }
-        if (!rect.Intersects(cull_rect_)) {
-          break;
-        }
-        DlScalar cull_left = cull_rect_.left();
-        DlScalar cull_right = cull_rect_.right();
-        DlScalar cull_top = cull_rect_.top();
-        DlScalar cull_bottom = cull_rect_.bottom();
-        if (rect.left() <= cull_left && rect.right() >= cull_right) {
-          // bounds spans entire width of cull_rect_
-          // therefore we can slice off a top or bottom
-          // edge of the cull_rect_.
-          if (rect.top() <= cull_top) {
-            cull_top = rect.bottom();
-          }
-          if (rect.bottom() >= cull_bottom) {
-            cull_bottom = rect.top();
-          }
-          if (cull_top < cull_bottom) {
-            cull_rect_ =
-                DlFRect::MakeLTRB(cull_left, cull_top, cull_right, cull_bottom);
-          } else {
-            cull_rect_ = kEmptyRect;
-          }
-        } else if (rect.top() <= cull_top && rect.bottom() >= cull_bottom) {
-          // bounds spans entire height of cull_rect_
-          // therefore we can slice off a left or right
-          // edge of the cull_rect_.
-          if (rect.left() <= cull_left) {
-            cull_left = rect.right();
-          }
-          if (rect.right() >= cull_right) {
-            cull_right = rect.left();
-          }
-          if (cull_left < cull_right) {
-            cull_rect_ =
-                DlFRect::MakeLTRB(cull_left, cull_top, cull_right, cull_bottom);
-          } else {
-            cull_rect_ = kEmptyRect;
-          }
-        }
+        cull_rect_ = cull_rect_.CutOutOrEmpty(rect);
       }
       break;
     }

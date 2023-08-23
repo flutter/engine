@@ -289,6 +289,62 @@ struct DlTRect {
     return Intersection(r).value_or(DlTRect());
   }
 
+  std::optional<DlTRect> CutOut(const DlTRect& sub) const {
+    if (is_empty()) {
+      return std::nullopt;
+    }
+    if (sub.is_empty()) {
+      return *this;
+    }
+    T src_left = this->left_;
+    T src_right = this->right_;
+    T src_top = this->top_;
+    T src_bottom = this->bottom_;
+    if (sub.left_ <= src_left && sub.right_ >= src_right) {
+      // subtracted bounds spans the entire width of this (source) rect
+      // therefore we can slice off a top or bottom edge of the src for
+      // the result.
+      if (src_bottom <= sub.top_ || sub.bottom_ <= src_top) {
+        // No vertical intersection, no change in the rect
+        return *this;
+      }
+      if (sub.top_ <= src_top) {
+        src_top = sub.bottom_;
+      }
+      if (sub.bottom_ >= src_bottom) {
+        src_bottom = sub.top_;
+      }
+      if (src_top < src_bottom) {
+        return MakeLTRB(src_left, src_top, src_right, src_bottom);
+      } else {
+        return std::nullopt;
+      }
+    } else if (sub.top_ <= src_top && sub.bottom_ >= src_bottom) {
+      // subtracted bounds spans the entire height of this (source) rect
+      // therefore we can slice off a left or right edge of the src for
+      // the result.
+      if (src_right <= sub.left_ || sub.right_ <= src_left) {
+        // No horizontal intersection, no change in the rect
+        return *this;
+      }
+      if (sub.left_ <= src_left) {
+        src_left = sub.right_;
+      }
+      if (sub.right_ >= src_right) {
+        src_right = sub.left_;
+      }
+      if (src_left < src_right) {
+        return MakeLTRB(src_left, src_top, src_right, src_bottom);
+      } else {
+        return std::nullopt;
+      }
+    }
+    return *this;
+  }
+  DlTRect CutOutOrEmpty(const DlTRect& sub) const {
+    return CutOut(sub).value_or(DlTRect());
+  }
+
   bool Intersects(const DlTRect& r) const {
     return !this->is_empty() && !r.is_empty() &&  //
            this->left_ < r.right_ && r.left_ < this->right_ &&
