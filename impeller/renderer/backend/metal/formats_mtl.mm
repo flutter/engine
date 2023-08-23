@@ -111,9 +111,11 @@ MTLTextureDescriptor* ToMTLTextureDescriptor(const TextureDescriptor& desc) {
 }
 
 MTLPixelFormat SafeMTLPixelFormatDepth24Unorm_Stencil8() {
+#if !FML_OS_IOS
   if (@available(macOS 10.11, *)) {
     return MTLPixelFormatDepth24Unorm_Stencil8;
   }
+#endif  // FML_OS_IOS
   return MTLPixelFormatInvalid;
 }
 
