@@ -680,6 +680,10 @@ class Shell final : public PlatformView::Delegate,
   // |Engine::Delegate|
   fml::TimePoint GetCurrentTimePoint() override;
 
+  // |Engine::Delegate|
+  double GetScaledFontSize(double unscaled_font_size,
+                           int configuration_id) const override;
+
   // |Rasterizer::Delegate|
   void OnFrameRasterized(const FrameTiming&) override;
 
@@ -688,6 +692,10 @@ class Shell final : public PlatformView::Delegate,
 
   // |Rasterizer::Delegate|
   fml::TimePoint GetLatestFrameTargetTime() const override;
+
+  // |Rasterizer::Delegate|
+  bool ShouldDiscardLayerTree(int64_t view_id,
+                              const flutter::LayerTree& tree) override;
 
   // |ServiceProtocol::Handler|
   fml::RefPtr<fml::TaskRunner> GetServiceProtocolHandlerTaskRunner(

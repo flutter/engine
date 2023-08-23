@@ -1,4 +1,4 @@
-Signature: 35081aaab741d92f96234b951c783c4c
+Signature: 945ce2c9dd6939862f98780a7be5ac59
 
 ====================================================================================================
 LIBRARY: etc1
@@ -315,6 +315,7 @@ LIBRARY: libmicrohttpd
 LIBRARY: skia
 ORIGIN: ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
+FILE: ../../../third_party/skia/.bazelignore
 FILE: ../../../third_party/skia/.bazelproject
 FILE: ../../../third_party/skia/RELEASE_NOTES.md
 FILE: ../../../third_party/skia/go.mod
@@ -384,6 +385,7 @@ FILE: ../../../third_party/skia/modules/pathkit/perf/pathops.bench.js
 FILE: ../../../third_party/skia/modules/pathkit/perf/perfReporter.js
 FILE: ../../../third_party/skia/modules/skparagraph/test.html
 FILE: ../../../third_party/skia/package-lock.json
+FILE: ../../../third_party/skia/relnotes/sksl_always_on.md
 FILE: ../../../third_party/skia/relnotes/sksl_comma_array.md
 FILE: ../../../third_party/skia/src/core/SkOrderedReadBuffer.h
 FILE: ../../../third_party/skia/src/gpu/gpu_workaround_list.txt
@@ -6794,7 +6796,6 @@ ORIGIN: ../../../third_party/skia/gm/userfont.cpp + ../../../third_party/skia/LI
 ORIGIN: ../../../third_party/skia/gm/ycbcrimage.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/core/SkYUVAInfo.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/core/SkYUVAPixmaps.h + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/include/gpu/GrBackendSurfaceMutableState.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/gpu/GrYUVABackendTextures.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/gpu/d3d/GrD3DBackendContext.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/gpu/d3d/GrD3DTypes.h + ../../../third_party/skia/LICENSE
@@ -6928,7 +6929,6 @@ FILE: ../../../third_party/skia/gm/userfont.cpp
 FILE: ../../../third_party/skia/gm/ycbcrimage.cpp
 FILE: ../../../third_party/skia/include/core/SkYUVAInfo.h
 FILE: ../../../third_party/skia/include/core/SkYUVAPixmaps.h
-FILE: ../../../third_party/skia/include/gpu/GrBackendSurfaceMutableState.h
 FILE: ../../../third_party/skia/include/gpu/GrYUVABackendTextures.h
 FILE: ../../../third_party/skia/include/gpu/d3d/GrD3DBackendContext.h
 FILE: ../../../third_party/skia/include/gpu/d3d/GrD3DTypes.h
@@ -8900,8 +8900,10 @@ ORIGIN: ../../../third_party/skia/include/private/chromium/SkImageChromium.h + .
 ORIGIN: ../../../third_party/skia/include/private/gpu/ganesh/GrTextureGenerator.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/bentleyottmann/include/EventQueue.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/bentleyottmann/include/Point.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/modules/bentleyottmann/include/Segment.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/bentleyottmann/src/EventQueue.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/bentleyottmann/src/Point.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/modules/bentleyottmann/src/Segment.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/base/SkBezierCurves.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/base/SkCubics.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/base/SkCubics.h + ../../../third_party/skia/LICENSE
@@ -8950,7 +8952,6 @@ ORIGIN: ../../../third_party/skia/src/effects/colorfilters/SkGaussianColorFilter
 ORIGIN: ../../../third_party/skia/src/effects/colorfilters/SkMatrixColorFilter.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/effects/colorfilters/SkRuntimeColorFilter.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/effects/colorfilters/SkRuntimeColorFilter.h + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/src/effects/colorfilters/SkRuntimeColorFilter_none.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/effects/colorfilters/SkWorkingFormatColorFilter.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/effects/colorfilters/SkWorkingFormatColorFilter.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/encode/SkEncoder.cpp + ../../../third_party/skia/LICENSE
@@ -9139,8 +9140,10 @@ FILE: ../../../third_party/skia/include/private/chromium/SkImageChromium.h
 FILE: ../../../third_party/skia/include/private/gpu/ganesh/GrTextureGenerator.h
 FILE: ../../../third_party/skia/modules/bentleyottmann/include/EventQueue.h
 FILE: ../../../third_party/skia/modules/bentleyottmann/include/Point.h
+FILE: ../../../third_party/skia/modules/bentleyottmann/include/Segment.h
 FILE: ../../../third_party/skia/modules/bentleyottmann/src/EventQueue.cpp
 FILE: ../../../third_party/skia/modules/bentleyottmann/src/Point.cpp
+FILE: ../../../third_party/skia/modules/bentleyottmann/src/Segment.cpp
 FILE: ../../../third_party/skia/src/base/SkBezierCurves.h
 FILE: ../../../third_party/skia/src/base/SkCubics.cpp
 FILE: ../../../third_party/skia/src/base/SkCubics.h
@@ -9189,7 +9192,6 @@ FILE: ../../../third_party/skia/src/effects/colorfilters/SkGaussianColorFilter.h
 FILE: ../../../third_party/skia/src/effects/colorfilters/SkMatrixColorFilter.h
 FILE: ../../../third_party/skia/src/effects/colorfilters/SkRuntimeColorFilter.cpp
 FILE: ../../../third_party/skia/src/effects/colorfilters/SkRuntimeColorFilter.h
-FILE: ../../../third_party/skia/src/effects/colorfilters/SkRuntimeColorFilter_none.cpp
 FILE: ../../../third_party/skia/src/effects/colorfilters/SkWorkingFormatColorFilter.cpp
 FILE: ../../../third_party/skia/src/effects/colorfilters/SkWorkingFormatColorFilter.h
 FILE: ../../../third_party/skia/src/encode/SkEncoder.cpp

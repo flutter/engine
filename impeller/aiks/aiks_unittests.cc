@@ -1002,7 +1002,7 @@ TEST_P(AiksTest, CanPictureConvertToImage) {
   recorder_canvas.DrawRect({200.0, 200.0, 600, 600}, paint);
 
   Canvas canvas;
-  AiksContext renderer(GetContext());
+  AiksContext renderer(GetContext(), nullptr);
   paint.color = Color::BlackTransparent();
   canvas.DrawPaint(paint);
   Picture picture = recorder_canvas.EndRecordingAsPicture();
@@ -2139,7 +2139,7 @@ TEST_P(AiksTest, DrawPaintAbsorbsClears) {
   std::shared_ptr<ContextSpy> spy = ContextSpy::Make();
   std::shared_ptr<Context> real_context = GetContext();
   std::shared_ptr<ContextMock> mock_context = spy->MakeContext(real_context);
-  AiksContext renderer(mock_context);
+  AiksContext renderer(mock_context, nullptr);
   std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
 
   ASSERT_EQ(spy->render_passes_.size(), 1llu);
@@ -2159,7 +2159,7 @@ TEST_P(AiksTest, DrawRectAbsorbsClears) {
   Picture picture = canvas.EndRecordingAsPicture();
   std::shared_ptr<Context> real_context = GetContext();
   std::shared_ptr<ContextMock> mock_context = spy->MakeContext(real_context);
-  AiksContext renderer(mock_context);
+  AiksContext renderer(mock_context, nullptr);
   std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
 
   ASSERT_EQ(spy->render_passes_.size(), 1llu);
@@ -2179,7 +2179,7 @@ TEST_P(AiksTest, DrawRectAbsorbsClearsNegativeRRect) {
   Picture picture = canvas.EndRecordingAsPicture();
   std::shared_ptr<Context> real_context = GetContext();
   std::shared_ptr<ContextMock> mock_context = spy->MakeContext(real_context);
-  AiksContext renderer(mock_context);
+  AiksContext renderer(mock_context, nullptr);
   std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
 
   ASSERT_EQ(spy->render_passes_.size(), 1llu);
@@ -2199,7 +2199,7 @@ TEST_P(AiksTest, DrawRectAbsorbsClearsNegativeRotation) {
   Picture picture = canvas.EndRecordingAsPicture();
   std::shared_ptr<Context> real_context = GetContext();
   std::shared_ptr<ContextMock> mock_context = spy->MakeContext(real_context);
-  AiksContext renderer(mock_context);
+  AiksContext renderer(mock_context, nullptr);
   std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
 
   ASSERT_EQ(spy->render_passes_.size(), 1llu);
@@ -2219,7 +2219,7 @@ TEST_P(AiksTest, DrawRectAbsorbsClearsNegative) {
   Picture picture = canvas.EndRecordingAsPicture();
   std::shared_ptr<Context> real_context = GetContext();
   std::shared_ptr<ContextMock> mock_context = spy->MakeContext(real_context);
-  AiksContext renderer(mock_context);
+  AiksContext renderer(mock_context, nullptr);
   std::shared_ptr<Image> image = picture.ToImage(renderer, {301, 301});
 
   ASSERT_EQ(spy->render_passes_.size(), 1llu);
@@ -2243,7 +2243,7 @@ TEST_P(AiksTest, ClipRectElidesNoOpClips) {
   std::shared_ptr<ContextSpy> spy = ContextSpy::Make();
   std::shared_ptr<Context> real_context = GetContext();
   std::shared_ptr<ContextMock> mock_context = spy->MakeContext(real_context);
-  AiksContext renderer(mock_context);
+  AiksContext renderer(mock_context, nullptr);
   std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
 
   ASSERT_EQ(spy->render_passes_.size(), 1llu);
@@ -3057,6 +3057,26 @@ TEST_P(AiksTest, DrawPictureWithText) {
       GetContext(), canvas,
       "the quick brown fox jumped over the smaller lazy dog!.?",
       "Roboto-Regular.ttf"));
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, DrawPictureClipped) {
+  Canvas subcanvas;
+  subcanvas.ClipRRect(Rect::MakeLTRB(100, 100, 400, 400), 15);
+  subcanvas.DrawPaint({.color = Color::Red()});
+  auto picture = subcanvas.EndRecordingAsPicture();
+
+  Canvas canvas;
+  canvas.DrawPaint({.color = Color::CornflowerBlue()});
+
+  // Draw a red RRect via DrawPicture.
+  canvas.DrawPicture(picture);
+
+  // Draw over the picture with a larger green rectangle, completely covering it
+  // up.
+  canvas.ClipRRect(Rect::MakeLTRB(100, 100, 400, 400).Expand(20), 15);
+  canvas.DrawPaint({.color = Color::Green()});
+
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 

@@ -25,9 +25,10 @@
 #include "flutter/fml/time/time_point.h"
 #if IMPELLER_SUPPORTS_RENDERING
 // GN is having trouble understanding how this works in the Fuchsia builds.
-#include "flutter/impeller/aiks/aiks_context.h"  // nogncheck
-#include "flutter/impeller/renderer/context.h"   // nogncheck
-#endif                                           // IMPELLER_SUPPORTS_RENDERING
+#include "impeller/aiks/aiks_context.h"  // nogncheck
+#include "impeller/renderer/context.h"   // nogncheck
+#include "impeller/typographer/backends/skia/text_render_context_skia.h"  // nogncheck
+#endif  // IMPELLER_SUPPORTS_RENDERING
 #include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/shell/common/pipeline.h"
 #include "flutter/shell/common/snapshot_controller.h"
@@ -135,6 +136,9 @@ class Rasterizer final : public SnapshotDelegate,
         const = 0;
 
     virtual const Settings& GetSettings() const = 0;
+
+    virtual bool ShouldDiscardLayerTree(int64_t view_id,
+                                        const flutter::LayerTree& tree) = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -270,9 +274,6 @@ class Rasterizer final : public SnapshotDelegate,
 
   std::shared_ptr<flutter::TextureRegistry> GetTextureRegistry() override;
 
-  using LayerTreeDiscardCallback =
-      std::function<bool(int64_t, flutter::LayerTree&)>;
-
   //----------------------------------------------------------------------------
   /// @brief      Takes the next item from the layer tree pipeline and executes
   ///             the raster thread frame workload for that pipeline item to
@@ -301,11 +302,8 @@ class Rasterizer final : public SnapshotDelegate,
   ///
   /// @param[in]  pipeline  The layer tree pipeline to take the next layer tree
   ///                       to render from.
-  /// @param[in]  discard_callback if specified and returns true, the layer tree
-  ///                             is discarded instead of being rendered
   ///
-  DrawStatus Draw(const std::shared_ptr<LayerTreePipeline>& pipeline,
-                  LayerTreeDiscardCallback discard_callback = NoDiscard);
+  DrawStatus Draw(const std::shared_ptr<LayerTreePipeline>& pipeline);
 
   //----------------------------------------------------------------------------
   /// @brief      The type of the screenshot to obtain of the previously
@@ -611,7 +609,8 @@ class Rasterizer final : public SnapshotDelegate,
       return surface_->GetAiksContext();
     }
     if (auto context = impeller_context_.lock()) {
-      return std::make_shared<impeller::AiksContext>(context);
+      return std::make_shared<impeller::AiksContext>(
+          context, impeller::TextRenderContextSkia::Make());
     }
 #endif
     return nullptr;
@@ -636,27 +635,20 @@ class Rasterizer final : public SnapshotDelegate,
       bool compressed);
 
   DoDrawStatus DoDraw(
-      LayerTreeDiscardCallback& discard_callback,
       std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
       std::unique_ptr<flutter::LayerTree> layer_tree,
       float device_pixel_ratio);
 
-  DrawSurfaceStatus DrawToSurface(LayerTreeDiscardCallback& discard_callback,
-                                  FrameTimingsRecorder& frame_timings_recorder,
+  DrawSurfaceStatus DrawToSurface(FrameTimingsRecorder& frame_timings_recorder,
                                   flutter::LayerTree& layer_tree,
                                   float device_pixel_ratio);
 
   DrawSurfaceStatus DrawToSurfaceUnsafe(
-      LayerTreeDiscardCallback& discard_callback,
       FrameTimingsRecorder& frame_timings_recorder,
       flutter::LayerTree& layer_tree,
       float device_pixel_ratio);
 
   void FireNextFrameCallbackIfPresent();
-
-  static bool NoDiscard(int64_t view_id, const flutter::LayerTree& layer_tree) {
-    return false;
-  }
 
   Delegate& delegate_;
   MakeGpuImageBehavior gpu_image_behavior_;
