@@ -348,7 +348,9 @@ class ContentContext {
 
   bool IsValid() const;
 
+#if IMPELLER_ENABLE_3D
   std::shared_ptr<scene::SceneContext> GetSceneContext() const;
+#endif  // IMPELLER_ENABLE_3D
 
   std::shared_ptr<Tessellator> GetTessellator() const;
 
@@ -873,7 +875,9 @@ class ContentContext {
 
   bool is_valid_ = false;
   std::shared_ptr<Tessellator> tessellator_;
+#if IMPELLER_ENABLE_3D
   std::shared_ptr<scene::SceneContext> scene_context_;
+#endif  // IMPELLER_ENABLE_3D
   std::shared_ptr<RenderTargetAllocator> render_target_cache_;
   bool wireframe_ = false;
 
