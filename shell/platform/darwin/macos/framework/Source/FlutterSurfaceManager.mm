@@ -64,6 +64,7 @@ static void UpdateContentSubLayers(CALayer* layer,
                                    CGSize surfaceSize,
                                    NSColor* borderColor,
                                    const std::vector<FlutterRect>& paintRegion) {
+  // Adjust sublayer count to paintRegion count.
   while (layer.sublayers.count > paintRegion.size()) {
     [layer.sublayers.lastObject removeFromSuperlayer];
   }
