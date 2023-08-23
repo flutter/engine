@@ -10,8 +10,6 @@
 
 namespace impeller {
 
-TypefaceSTB::~TypefaceSTB() = default;
-
 // Instantiate a typeface based on a .ttf or other font file
 TypefaceSTB::TypefaceSTB(std::unique_ptr<fml::Mapping> typeface_mapping)
     : typeface_mapping_(std::move(typeface_mapping)),
@@ -26,6 +24,8 @@ TypefaceSTB::TypefaceSTB(std::unique_ptr<fml::Mapping> typeface_mapping)
     is_valid_ = true;
   }
 }
+
+TypefaceSTB::~TypefaceSTB() = default;
 
 bool TypefaceSTB::IsValid() const {
   return is_valid_;

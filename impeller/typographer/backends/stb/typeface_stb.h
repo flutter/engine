@@ -19,8 +19,6 @@ class TypefaceSTB final : public Typeface,
   // This assumes a constant pixels per em.
   static constexpr float kPointsToPixels = 96.0 / 72.0;
 
-  TypefaceSTB() = delete;
-
   explicit TypefaceSTB(std::unique_ptr<fml::Mapping> typeface_mapping);
 
   ~TypefaceSTB() override;
