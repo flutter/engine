@@ -284,25 +284,78 @@ TEST(DlRectTest, EmptyFRectDoesNotIntersect) {
   test(70, 90, 80, 110, "Straddling Bottom");
 }
 
+template <typename R>
+static constexpr inline R flip_lr(R rect) {
+  return R::MakeLTRB(rect.right(), rect.top(), rect.left(), rect.bottom());
+}
+
+template <typename R>
+static constexpr inline R flip_tb(R rect) {
+  return R::MakeLTRB(rect.left(), rect.bottom(), rect.right(), rect.top());
+}
+
+template <typename R>
+static constexpr inline R flip_lrtb(R rect) {
+  return flip_lr(flip_tb(rect));
+}
+
 TEST(DlRectTest, IRectCutOut) {
   DlIRect cull_rect = DlIRect::MakeLTRB(20, 20, 40, 40);
+  DlIRect empty_rect;
 
-  auto non_reducing = [&cull_rect](const DlIRect& diff_rect,
-                                   const std::string& label) {
-    ASSERT_EQ(cull_rect.CutOut(diff_rect), cull_rect) << label;
+  auto check_empty_flips = [&cull_rect, &empty_rect](const DlIRect& diff_rect,
+                                                     const std::string& label) {
+    ASSERT_FALSE(diff_rect.is_empty());
+    ASSERT_FALSE(cull_rect.is_empty());
+
+    // unflipped cull_rect vs flipped(empty) diff_rect
+    // == cull_rect
+    ASSERT_TRUE(cull_rect.CutOut(flip_lr(diff_rect)).has_value());
+    ASSERT_EQ(cull_rect.CutOut(flip_lr(diff_rect)), cull_rect);
+    ASSERT_TRUE(cull_rect.CutOut(flip_tb(diff_rect)).has_value());
+    ASSERT_EQ(cull_rect.CutOut(flip_tb(diff_rect)), cull_rect);
+    ASSERT_TRUE(cull_rect.CutOut(flip_lrtb(diff_rect)).has_value());
+    ASSERT_EQ(cull_rect.CutOut(flip_lrtb(diff_rect)), cull_rect);
+
+    // flipped(empty) cull_rect vs flipped(empty) diff_rect
+    // == empty
+    ASSERT_FALSE(flip_lr(cull_rect).CutOut(diff_rect).has_value());
+    ASSERT_EQ(flip_lr(cull_rect).CutOutOrEmpty(diff_rect), empty_rect);
+    ASSERT_FALSE(flip_tb(cull_rect).CutOut(diff_rect).has_value());
+    ASSERT_EQ(flip_tb(cull_rect).CutOutOrEmpty(diff_rect), empty_rect);
+    ASSERT_FALSE(flip_lrtb(cull_rect).CutOut(diff_rect).has_value());
+    ASSERT_EQ(flip_lrtb(cull_rect).CutOutOrEmpty(diff_rect), empty_rect);
+
+    // flipped(empty) cull_rect vs unflipped diff_rect
+    // == empty
+    ASSERT_FALSE(flip_lr(cull_rect).CutOut(flip_lr(diff_rect)).has_value());
+    ASSERT_EQ(flip_lr(cull_rect).CutOutOrEmpty(flip_lr(diff_rect)), empty_rect);
+    ASSERT_FALSE(flip_tb(cull_rect).CutOut(flip_tb(diff_rect)).has_value());
+    ASSERT_EQ(flip_tb(cull_rect).CutOutOrEmpty(flip_tb(diff_rect)), empty_rect);
+    ASSERT_FALSE(flip_lrtb(cull_rect).CutOut(flip_lrtb(diff_rect)).has_value());
+    ASSERT_EQ(flip_lrtb(cull_rect).CutOutOrEmpty(flip_lrtb(diff_rect)),
+              empty_rect);
   };
 
-  auto reducing = [&cull_rect](const DlIRect& diff_rect,
-                               const DlIRect& result_rect,
-                               const std::string& label) {
+  auto non_reducing = [&cull_rect, &check_empty_flips](
+                          const DlIRect& diff_rect, const std::string& label) {
+    ASSERT_EQ(cull_rect.CutOut(diff_rect), cull_rect) << label;
+    check_empty_flips(diff_rect, label);
+  };
+
+  auto reducing = [&cull_rect, &check_empty_flips](const DlIRect& diff_rect,
+                                                   const DlIRect& result_rect,
+                                                   const std::string& label) {
     ASSERT_TRUE(!result_rect.is_empty());
     ASSERT_EQ(cull_rect.CutOut(diff_rect), result_rect) << label;
+    check_empty_flips(diff_rect, label);
   };
 
-  auto empty = [&cull_rect](const DlIRect& diff_rect,
-                            const std::string& label) {
+  auto emptying = [&cull_rect, &empty_rect, &check_empty_flips](
+                      const DlIRect& diff_rect, const std::string& label) {
     ASSERT_FALSE(cull_rect.CutOut(diff_rect).has_value()) << label;
-    ASSERT_EQ(cull_rect.CutOutOrEmpty(diff_rect), DlIRect()) << label;
+    ASSERT_EQ(cull_rect.CutOutOrEmpty(diff_rect), empty_rect) << label;
+    check_empty_flips(diff_rect, label);
   };
 
   // Skim the corners and edge
@@ -353,31 +406,69 @@ TEST(DlRectTest, IRectCutOut) {
   non_reducing(DlIRect::MakeLTRB(21, 21, 39, 39), "Contained, non-covering");
 
   // cull rect equals diff rect
-  empty(cull_rect, "Perfectly covering");
+  emptying(cull_rect, "Perfectly covering");
 
   // diff rect contains cull rect
-  empty(DlIRect::MakeLTRB(15, 15, 45, 45), "Smothering");
+  emptying(DlIRect::MakeLTRB(15, 15, 45, 45), "Smothering");
 }
 
 TEST(DlRectTest, FRectCutOut) {
   DlFRect cull_rect = DlFRect::MakeLTRB(20, 20, 40, 40);
+  DlFRect empty_rect;
 
-  auto non_reducing = [&cull_rect](const DlFRect& diff_rect,
-                                   const std::string& label) {
-    ASSERT_EQ(cull_rect.CutOut(diff_rect), cull_rect) << label;
+  auto check_empty_flips = [&cull_rect, &empty_rect](const DlFRect& diff_rect,
+                                                     const std::string& label) {
+    ASSERT_FALSE(diff_rect.is_empty());
+    ASSERT_FALSE(cull_rect.is_empty());
+
+    // unflipped cull_rect vs flipped(empty) diff_rect
+    // == cull_rect
+    ASSERT_TRUE(cull_rect.CutOut(flip_lr(diff_rect)).has_value());
+    ASSERT_EQ(cull_rect.CutOut(flip_lr(diff_rect)), cull_rect);
+    ASSERT_TRUE(cull_rect.CutOut(flip_tb(diff_rect)).has_value());
+    ASSERT_EQ(cull_rect.CutOut(flip_tb(diff_rect)), cull_rect);
+    ASSERT_TRUE(cull_rect.CutOut(flip_lrtb(diff_rect)).has_value());
+    ASSERT_EQ(cull_rect.CutOut(flip_lrtb(diff_rect)), cull_rect);
+
+    // flipped(empty) cull_rect vs flipped(empty) diff_rect
+    // == empty
+    ASSERT_FALSE(flip_lr(cull_rect).CutOut(diff_rect).has_value());
+    ASSERT_EQ(flip_lr(cull_rect).CutOutOrEmpty(diff_rect), empty_rect);
+    ASSERT_FALSE(flip_tb(cull_rect).CutOut(diff_rect).has_value());
+    ASSERT_EQ(flip_tb(cull_rect).CutOutOrEmpty(diff_rect), empty_rect);
+    ASSERT_FALSE(flip_lrtb(cull_rect).CutOut(diff_rect).has_value());
+    ASSERT_EQ(flip_lrtb(cull_rect).CutOutOrEmpty(diff_rect), empty_rect);
+
+    // flipped(empty) cull_rect vs unflipped diff_rect
+    // == empty
+    ASSERT_FALSE(flip_lr(cull_rect).CutOut(flip_lr(diff_rect)).has_value());
+    ASSERT_EQ(flip_lr(cull_rect).CutOutOrEmpty(flip_lr(diff_rect)), empty_rect);
+    ASSERT_FALSE(flip_tb(cull_rect).CutOut(flip_tb(diff_rect)).has_value());
+    ASSERT_EQ(flip_tb(cull_rect).CutOutOrEmpty(flip_tb(diff_rect)), empty_rect);
+    ASSERT_FALSE(flip_lrtb(cull_rect).CutOut(flip_lrtb(diff_rect)).has_value());
+    ASSERT_EQ(flip_lrtb(cull_rect).CutOutOrEmpty(flip_lrtb(diff_rect)),
+              empty_rect);
   };
 
-  auto reducing = [&cull_rect](const DlFRect& diff_rect,
-                               const DlFRect& result_rect,
-                               const std::string& label) {
+  auto non_reducing = [&cull_rect, &check_empty_flips](
+                          const DlFRect& diff_rect, const std::string& label) {
+    ASSERT_EQ(cull_rect.CutOut(diff_rect), cull_rect) << label;
+    check_empty_flips(diff_rect, label);
+  };
+
+  auto reducing = [&cull_rect, &check_empty_flips](const DlFRect& diff_rect,
+                                                   const DlFRect& result_rect,
+                                                   const std::string& label) {
     ASSERT_TRUE(!result_rect.is_empty());
     ASSERT_EQ(cull_rect.CutOut(diff_rect), result_rect) << label;
+    check_empty_flips(diff_rect, label);
   };
 
-  auto empty = [&cull_rect](const DlFRect& diff_rect,
-                            const std::string& label) {
+  auto emptying = [&cull_rect, &empty_rect, &check_empty_flips](
+                      const DlFRect& diff_rect, const std::string& label) {
     ASSERT_FALSE(cull_rect.CutOut(diff_rect).has_value()) << label;
-    ASSERT_EQ(cull_rect.CutOutOrEmpty(diff_rect), DlFRect()) << label;
+    ASSERT_EQ(cull_rect.CutOutOrEmpty(diff_rect), empty_rect) << label;
+    check_empty_flips(diff_rect, label);
   };
 
   // Skim the corners and edge
@@ -428,10 +519,10 @@ TEST(DlRectTest, FRectCutOut) {
   non_reducing(DlFRect::MakeLTRB(21, 21, 39, 39), "Contained, non-covering");
 
   // cull rect equals diff rect
-  empty(cull_rect, "Perfectly covering");
+  emptying(cull_rect, "Perfectly covering");
 
   // diff rect contains cull rect
-  empty(DlFRect::MakeLTRB(15, 15, 45, 45), "Smothering");
+  emptying(DlFRect::MakeLTRB(15, 15, 45, 45), "Smothering");
 }
 
 }  // namespace testing
