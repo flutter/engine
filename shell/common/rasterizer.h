@@ -545,8 +545,6 @@ class Rasterizer final : public SnapshotDelegate,
     kRetry,
     // Failed to rasterize the frame.
     kFailed,
-    // Layer tree was discarded due to LayerTreeDiscardCallback.
-    kDiscarded,
     // Layer tree was discarded due to inability to access the GPU.
     kGpuUnavailable,
   };

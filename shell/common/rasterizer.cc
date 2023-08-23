@@ -403,6 +403,13 @@ Rasterizer::DoDrawStatus Rasterizer::DoDraw(
                  .GetRasterTaskRunner()
                  ->RunsTasksOnCurrentThread());
 
+  // TODO(dkwingsmt): Use a proper view ID when Rasterizer supports
+  // multi-view.
+  int64_t view_id = kFlutterImplicitViewId;
+  if (delegate_.ShouldDiscardLayerTree(view_id, *layer_tree)) {
+    return DoDrawStatus::kDiscarded;
+  }
+
   if (!layer_tree || !surface_) {
     return DoDrawStatus::kFailed;
   }
@@ -420,8 +427,6 @@ Rasterizer::DoDrawStatus Rasterizer::DoDraw(
     return DoDrawStatus::kRetry;
   } else if (draw_surface_status == DrawSurfaceStatus::kGpuUnavailable) {
     return DoDrawStatus::kGpuUnavailable;
-  } else if (draw_surface_status == DrawSurfaceStatus::kDiscarded) {
-    return DoDrawStatus::kDiscarded;
   }
   FML_DCHECK(draw_surface_status == DrawSurfaceStatus::kSuccess ||
              draw_surface_status == DrawSurfaceStatus::kFailed);
@@ -512,13 +517,6 @@ Rasterizer::DrawSurfaceStatus Rasterizer::DrawToSurface(
     float device_pixel_ratio) {
   TRACE_EVENT0("flutter", "Rasterizer::DrawToSurface");
   FML_DCHECK(surface_);
-
-  // TODO(dkwingsmt): Use a proper view ID when Rasterizer supports
-  // multi-view.
-  int64_t view_id = kFlutterImplicitViewId;
-  if (delegate_.ShouldDiscardLayerTree(view_id, layer_tree)) {
-    return DrawSurfaceStatus::kDiscarded;
-  }
 
   DrawSurfaceStatus draw_surface_status;
   if (surface_->AllowsDrawingWhenGpuDisabled()) {
