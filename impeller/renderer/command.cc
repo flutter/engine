@@ -67,7 +67,6 @@ bool Command::DoBindResource(ShaderStage stage,
     case ShaderStage::kFragment:
       fragment_bindings.buffers[slot.ext_res_0] = {
           .slot = slot, .view = BufferResource(metadata, view)};
-      BufferResource(metadata, view);
       return true;
     case ShaderStage::kCompute:
       VALIDATION_LOG << "Use ComputeCommands for compute shader stages.";
