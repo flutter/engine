@@ -153,16 +153,23 @@ final class PictureSliceContainer extends SliceContainer {
   void updateContents() {
     if (_dirty) {
       _dirty = false;
+
+      final ui.Rect roundedOutBounds = ui.Rect.fromLTRB(
+        bounds.left.floorToDouble(),
+        bounds.top.floorToDouble(),
+        bounds.right.ceilToDouble(),
+        bounds.bottom.ceilToDouble()
+      );
       final DomCSSStyleDeclaration style = canvas.style;
-      final double logicalWidth = bounds.width / window.devicePixelRatio;
-      final double logicalHeight = bounds.height / window.devicePixelRatio;
+      final double logicalWidth = roundedOutBounds.width / window.devicePixelRatio;
+      final double logicalHeight = roundedOutBounds.height / window.devicePixelRatio;
       style.width = '${logicalWidth}px';
       style.height = '${logicalHeight}px';
       style.position = 'absolute';
-      style.left = '${bounds.left}px';
-      style.top = '${bounds.top}px';
-      canvas.width = bounds.width.ceilToDouble();
-      canvas.height = bounds.height.ceilToDouble();
+      style.left = '${roundedOutBounds.left}px';
+      style.top = '${roundedOutBounds.top}px';
+      canvas.width = roundedOutBounds.width.ceilToDouble();
+      canvas.height = roundedOutBounds.height.ceilToDouble();
     }
   }
 
