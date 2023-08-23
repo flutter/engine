@@ -147,7 +147,8 @@ void EmbedderTestContext::SetPlatformMessageCallback(
   platform_message_callback_ = callback;
 }
 
-void EmbedderTestContext::SetChannelListenedToCallback(const ChannelListenedToCallback& callback) {
+void EmbedderTestContext::SetChannelListenedToCallback(
+    const ChannelListenedToCallback& callback) {
   channel_listened_to_callback_ = callback;
 }
 

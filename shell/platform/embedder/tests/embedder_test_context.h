@@ -33,7 +33,8 @@ using SemanticsActionCallback =
     std::function<void(const FlutterSemanticsCustomAction*)>;
 using LogMessageCallback =
     std::function<void(const char* tag, const char* message)>;
-using ChannelListenedToCallback = std::function<void(const FlutterChannelUpdate*)>;
+using ChannelListenedToCallback =
+    std::function<void(const FlutterChannelUpdate*)>;
 
 struct AOTDataDeleter {
   void operator()(FlutterEngineAOTData aot_data) {

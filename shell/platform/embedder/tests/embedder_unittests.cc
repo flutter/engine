@@ -2566,14 +2566,29 @@ TEST_F(EmbedderTest, RegisterChannelListener) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
 
   fml::AutoResetWaitableEvent latch;
-  context.AddNativeCallback("SignalNativeTest",
-    CREATE_NATIVE_ENTRY([&](Dart_NativeArguments){
-      latch.Signal();
-    }));
+  fml::AutoResetWaitableEvent latch2;
+  bool listening = false;
+  context.AddNativeCallback(
+      "SignalNativeTest",
+      CREATE_NATIVE_ENTRY([&](Dart_NativeArguments) { latch.Signal(); }));
+  context.SetChannelListenedToCallback([&](const FlutterChannelUpdate* update) {
+    if (strcmp(update->channel, "test/listen") == 0) {
+      listening = true;
+    }
+    latch2.Signal();
+  });
 
   EmbedderConfigBuilder builder(context);
   builder.SetSoftwareRendererConfig();
   builder.SetDartEntrypoint("channel_listener_response");
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  latch.Wait();
+  latch2.Wait();
+
+  ASSERT_TRUE(listening);
 }
 
 }  // namespace testing
