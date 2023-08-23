@@ -208,7 +208,7 @@ RasterStatus Rasterizer::Draw(
 
   DoDrawResult draw_result;
   LayerTreePipeline::Consumer consumer =
-      [&raster_status, this, &draw_result,
+      [&draw_result, this,
        &delegate = delegate_](std::unique_ptr<LayerTreeItem> item) {
         // TODO(dkwingsmt): Use a proper view ID when Rasterizer supports
         // multi-view.
