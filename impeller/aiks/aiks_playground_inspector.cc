@@ -205,13 +205,16 @@ void AiksInspector::RenderCapture(CaptureContext& capture_context) {
     if (coverage_property) {
       auto coverage = coverage_property->AsRect();
       if (coverage.has_value()) {
+        Scalar scale = ImGui::GetWindowDpiScale();
         ImGui::GetBackgroundDrawList()->AddRect(
-            ImVec2(coverage->GetLeft(), coverage->GetTop()),      // p_min
-            ImVec2(coverage->GetRight(), coverage->GetBottom()),  // p_max
-            0x992222FF,                                           // col
-            0.0,                                                  // rounding
-            ImDrawFlags_None,                                     // flags
-            8.0);                                                 // thickness
+            ImVec2(coverage->GetLeft() / scale,
+                   coverage->GetTop() / scale),  // p_min
+            ImVec2(coverage->GetRight() / scale,
+                   coverage->GetBottom() / scale),  // p_max
+            0x992222FF,                             // col
+            0.0,                                    // rounding
+            ImDrawFlags_None,                       // flags
+            8.0);                                   // thickness
       }
     }
   }
@@ -226,13 +229,16 @@ void AiksInspector::RenderCapture(CaptureContext& capture_context) {
     if (coverage_property) {
       auto coverage = coverage_property->AsRect();
       if (coverage.has_value()) {
+        Scalar scale = ImGui::GetWindowDpiScale();
         ImGui::GetBackgroundDrawList()->AddRect(
-            ImVec2(coverage->GetLeft(), coverage->GetTop()),      // p_min
-            ImVec2(coverage->GetRight(), coverage->GetBottom()),  // p_max
-            0x66FF2222,                                           // col
-            0.0,                                                  // rounding
-            ImDrawFlags_None,                                     // flags
-            8.0);                                                 // thickness
+            ImVec2(coverage->GetLeft() / scale,
+                   coverage->GetTop() / scale),  // p_min
+            ImVec2(coverage->GetRight() / scale,
+                   coverage->GetBottom() / scale),  // p_max
+            0x66FF2222,                             // col
+            0.0,                                    // rounding
+            ImDrawFlags_None,                       // flags
+            8.0);                                   // thickness
       }
     }
   }
