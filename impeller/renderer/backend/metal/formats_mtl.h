@@ -52,6 +52,11 @@ constexpr PixelFormat FromMTLPixelFormat(MTLPixelFormat format) {
   return PixelFormat::kUnknown;
 }
 
+/// Safe accessor for MTLPixelFormatDepth24Unorm_Stencil8.
+/// Returns PixelFormat::kUnknown if MTLPixelFormatDepth24Unorm_Stencil8 isn't
+/// supported.
+MTLPixelFormat SafeMTLPixelFormatDepth24Unorm_Stencil8();
+
 /// Safe accessor for MTLPixelFormatBGR10_XR_sRGB.
 /// Returns PixelFormat::kUnknown if MTLPixelFormatBGR10_XR_sRGB isn't
 /// supported.
@@ -90,7 +95,7 @@ constexpr MTLPixelFormat ToMTLPixelFormat(PixelFormat format) {
     case PixelFormat::kS8UInt:
       return MTLPixelFormatStencil8;
     case PixelFormat::kD24UnormS8Uint:
-      return MTLPixelFormatDepth24Unorm_Stencil8;
+      return SafeMTLPixelFormatDepth24Unorm_Stencil8();
     case PixelFormat::kD32FloatS8UInt:
       return MTLPixelFormatDepth32Float_Stencil8;
     case PixelFormat::kB10G10R10XRSRGB:
