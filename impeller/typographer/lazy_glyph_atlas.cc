@@ -14,8 +14,12 @@ namespace impeller {
 LazyGlyphAtlas::LazyGlyphAtlas(
     std::shared_ptr<TypographerContext> typographer_context)
     : typographer_context_(std::move(typographer_context)),
-      alpha_context_(typographer_context_->CreateGlyphAtlasContext()),
-      color_context_(typographer_context_->CreateGlyphAtlasContext()) {}
+      alpha_context_(typographer_context_
+                         ? typographer_context_->CreateGlyphAtlasContext()
+                         : nullptr),
+      color_context_(typographer_context_
+                         ? typographer_context_->CreateGlyphAtlasContext()
+                         : nullptr) {}
 
 LazyGlyphAtlas::~LazyGlyphAtlas() = default;
 
