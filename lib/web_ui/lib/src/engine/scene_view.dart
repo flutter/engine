@@ -161,8 +161,8 @@ final class PictureSliceContainer extends SliceContainer {
       style.position = 'absolute';
       style.left = '${bounds.left}px';
       style.top = '${bounds.top}px';
-      canvas.width = bounds.width;
-      canvas.height = bounds.height;
+      canvas.width = bounds.width.ceilToDouble();
+      canvas.height = bounds.height.ceilToDouble();
     }
   }
 
