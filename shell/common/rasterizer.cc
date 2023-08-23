@@ -208,7 +208,7 @@ RasterStatus Rasterizer::Draw(
 
   RasterStatus raster_status = RasterStatus::kFailed;
   LayerTreePipeline::Consumer consumer =
-      [&raster_status, weak_this = weak_factory_.GetWeakPtr(),
+      [&raster_status, this,
        &delegate = delegate_](std::unique_ptr<LayerTreeItem> item) {
         // TODO(dkwingsmt): Use a proper view ID when Rasterizer supports
         // multi-view.
@@ -217,13 +217,11 @@ RasterStatus Rasterizer::Draw(
         std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =
             std::move(item->frame_timings_recorder);
         float device_pixel_ratio = item->device_pixel_ratio;
-        if (!weak_this ||
-            delegate.ShouldDiscardLayerTree(view_id, *layer_tree.get())) {
+        if (delegate.ShouldDiscardLayerTree(view_id, *layer_tree.get())) {
           raster_status = RasterStatus::kDiscarded;
         } else {
-          raster_status =
-              weak_this->DoDraw(std::move(frame_timings_recorder),
-                                std::move(layer_tree), device_pixel_ratio);
+          raster_status = DoDraw(std::move(frame_timings_recorder),
+                                 std::move(layer_tree), device_pixel_ratio);
         }
       };
 
