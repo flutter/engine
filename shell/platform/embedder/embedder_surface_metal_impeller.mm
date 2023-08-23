@@ -18,8 +18,8 @@
 #include "impeller/renderer/backend/metal/context_mtl.h"
 
 #if IMPELLER_ENABLE_3D
-#include "impeller/scene/shaders/mtl/scene_shaders.h" // nogncheck
-#endif  // IMPELLER_ENABLE_3D
+#include "impeller/scene/shaders/mtl/scene_shaders.h"  // nogncheck
+#endif                                                 // IMPELLER_ENABLE_3D
 
 FLUTTER_ASSERT_NOT_ARC
 

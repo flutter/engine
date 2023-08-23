@@ -60,8 +60,8 @@ impeller_component("display_list_unittests") {
 
   deps = [
     ":display_list",
-    "//flutter/impeller/scene",
     "../playground:playground_test",
+    "//flutter/impeller/scene",
     "//flutter/impeller/typographer/backends/stb:typographer_stb_backend",
   ]
 
