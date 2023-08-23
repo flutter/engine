@@ -30,7 +30,6 @@
 
 @implementation FlutterPlatformPluginTest
 - (void)testSearchWebInvokedWithEscapedTerm {
-
   id mockApplication = OCMClassMock([UIApplication class]);
   OCMStub([mockApplication sharedApplication]).andReturn(mockApplication);
 
