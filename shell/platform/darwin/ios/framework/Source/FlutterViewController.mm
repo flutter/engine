@@ -1979,7 +1979,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
         currentInterfaceOrientation = 1 << windowScene.interfaceOrientation;
       } else {
 #if APPLICATION_EXTENSION_API_ONLY
-        FML_LOG(ERROR) << "Applicatioin based status bar orentiation update is not supported in "
+        FML_LOG(ERROR) << "Application based status bar orentiation update is not supported in "
                           "app extension. Orientation: "
                        << currentInterfaceOrientation;
 #else

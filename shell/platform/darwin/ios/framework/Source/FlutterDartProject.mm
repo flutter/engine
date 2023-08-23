@@ -119,7 +119,7 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
 
   // Checks to see if the flutter assets directory is already present.
   if (settings.assets_path.empty()) {
-    NSURL* assetsURL = FLTAssetsFromBundle(bundle);
+    NSURL* assetsURL = FLTAssetsURLFromBundle(bundle);
 
     if (!assetsURL) {
       NSLog(@"Failed to find assets path for 1\"%@\"", bundle);
