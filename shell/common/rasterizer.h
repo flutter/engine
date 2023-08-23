@@ -648,6 +648,8 @@ class Rasterizer final : public SnapshotDelegate,
 
   void FireNextFrameCallbackIfPresent();
 
+  static DrawStatus ToDrawStatus(DoDrawStatus do_draw_status);
+
   Delegate& delegate_;
   MakeGpuImageBehavior gpu_image_behavior_;
   std::weak_ptr<impeller::Context> impeller_context_;

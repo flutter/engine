@@ -263,6 +263,10 @@ DrawStatus Rasterizer::Draw(
       break;
   }
 
+  return ToDrawStatus(do_draw_status);
+}
+
+DrawStatus Rasterizer::ToDrawStatus(DoDrawStatus do_draw_status) {
   switch (do_draw_status) {
     case DoDrawStatus::kGpuUnavailable:
       return DrawStatus::kGpuUnavailable;
@@ -408,10 +412,7 @@ Rasterizer::DoDrawStatus Rasterizer::DoDraw(
 
   DrawSurfaceStatus draw_surface_status =
       DrawToSurface(*frame_timings_recorder, *layer_tree, device_pixel_ratio);
-  if (draw_surface_status == DrawSurfaceStatus::kSuccess) {
-    last_layer_tree_ = std::move(layer_tree);
-    last_device_pixel_ratio_ = device_pixel_ratio;
-  } else if (draw_surface_status == DrawSurfaceStatus::kRetry) {
+  if (draw_surface_status == DrawSurfaceStatus::kRetry) {
     resubmitted_pixel_ratio_ = device_pixel_ratio;
     resubmitted_layer_tree_ = std::move(layer_tree);
     resubmitted_recorder_ = frame_timings_recorder->CloneUntil(
@@ -424,6 +425,10 @@ Rasterizer::DoDrawStatus Rasterizer::DoDraw(
   }
   FML_DCHECK(draw_surface_status == DrawSurfaceStatus::kSuccess ||
              draw_surface_status == DrawSurfaceStatus::kFailed);
+  if (draw_surface_status == DrawSurfaceStatus::kSuccess) {
+    last_layer_tree_ = std::move(layer_tree);
+    last_device_pixel_ratio_ = device_pixel_ratio;
+  }
 
   if (persistent_cache->IsDumpingSkp() &&
       persistent_cache->StoredNewShaders()) {
