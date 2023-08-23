@@ -695,7 +695,7 @@ class Shell final : public PlatformView::Delegate,
 
   // |Rasterizer::Delegate|
   bool ShouldDiscardLayerTree(int64_t view_id,
-                              flutter::LayerTree& tree) override;
+                              const flutter::LayerTree& tree) override;
 
   // |ServiceProtocol::Handler|
   fml::RefPtr<fml::TaskRunner> GetServiceProtocolHandlerTaskRunner(
