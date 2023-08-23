@@ -376,10 +376,9 @@ public class PlatformPluginTest {
   }
 
   @SuppressWarnings("deprecation")
-  // Robolectric.buildActivity.
+  // SYSTEM_UI_FLAG_FULLSCREEN
   @Test
   public void setSystemUiModeListener_overlaysAreHidden() {
-    // Migrate to ActivityScenario by following https://github.com/robolectric/robolectric/pull/4736
     ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class);
     controller.setup();
     Activity fakeActivity = controller.get();
@@ -408,10 +407,9 @@ public class PlatformPluginTest {
   }
 
   @SuppressWarnings("deprecation")
-  // Robolectric.buildActivity.
+  // dispatchSystemUiVisibilityChanged
   @Test
   public void setSystemUiModeListener_overlaysAreVisible() {
-    // Migrate to ActivityScenario by following https://github.com/robolectric/robolectric/pull/4736
     ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class);
     controller.setup();
     Activity fakeActivity = controller.get();
@@ -529,6 +527,7 @@ public class PlatformPluginTest {
 
   @SuppressWarnings("deprecation")
   // Robolectric.setupActivity.
+  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void popSystemNavigatorFlutterFragment() {
     // Migrate to ActivityScenario by following https://github.com/robolectric/robolectric/pull/4736
@@ -558,9 +557,9 @@ public class PlatformPluginTest {
 
   @SuppressWarnings("deprecation")
   // Robolectric.setupActivity.
+  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void doesNotDoAnythingByDefaultIfFragmentPopSystemNavigatorOverridden() {
-    // Migrate to ActivityScenario by following https://github.com/robolectric/robolectric/pull/4736
     FragmentActivity activity = spy(Robolectric.setupActivity(FragmentActivity.class));
     PlatformChannel mockPlatformChannel = mock(PlatformChannel.class);
     PlatformPluginDelegate mockPlatformPluginDelegate = mock(PlatformPluginDelegate.class);

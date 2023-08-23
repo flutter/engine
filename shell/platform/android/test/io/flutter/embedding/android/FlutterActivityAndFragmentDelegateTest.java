@@ -68,6 +68,7 @@ public class FlutterActivityAndFragmentDelegateTest {
 
   @SuppressWarnings("deprecation")
   // Robolectric.setupActivity
+  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Before
   public void setup() {
     FlutterInjector.reset();
@@ -406,6 +407,7 @@ public class FlutterActivityAndFragmentDelegateTest {
 
   @SuppressWarnings("deprecation")
   // Robolectric.setupActivity
+  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void itGivesHostAnOpportunityToConfigureFlutterTextureView() {
     // ---- Test setup ----

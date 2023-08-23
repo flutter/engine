@@ -285,6 +285,7 @@ public class FlutterFragmentTest {
 
   @SuppressWarnings("deprecation")
   // Robolectric.setupActivity
+  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void itDelegatesOnBackPressedAutomaticallyWhenEnabled() {
     // We need to mock FlutterJNI to avoid triggering native code.
@@ -321,6 +322,7 @@ public class FlutterFragmentTest {
 
   @SuppressWarnings("deprecation")
   // Robolectric.setupActivity
+  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void itHandlesPopSystemNavigationAutomaticallyWhenEnabled() {
     // We need to mock FlutterJNI to avoid triggering native code.
