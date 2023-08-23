@@ -70,15 +70,18 @@ void main() {
   });
 
   group('findMostRelevantCompileCommands', () {
+    late io.Directory fakeEngineRoot;
     late io.Directory fakeFlutterRoot;
 
     // We can't use standard setUp because this package uses 'litetest'.
     void setUp() {
-      fakeFlutterRoot = io.Directory.systemTemp.createTempSync('flutter_tools_githooks_test');
+      fakeEngineRoot = io.Directory.systemTemp.createTempSync('flutter_tools_githooks_test');
+      fakeFlutterRoot = io.Directory(path.join(fakeEngineRoot.path, 'flutter'));
+      fakeFlutterRoot.createSync(recursive: true);
     }
 
     void createHostFor(String target, {DateTime? lastModified}) {
-      final io.Directory host = io.Directory(path.join(fakeFlutterRoot.path, 'out', target));
+      final io.Directory host = io.Directory(path.join(fakeEngineRoot.path, 'out', target));
       host.createSync(recursive: true);
 
       final io.File compileCommands = io.File(path.join(host.path, 'compile_commands.json'));
@@ -106,7 +109,7 @@ void main() {
 
       expect(
         PrePushCommand.findMostRelevantCompileCommands(fakeFlutterRoot.path, verbose: false)!.path,
-        equals(path.join(fakeFlutterRoot.path, 'out', 'host_debug_unopt_arm64', 'compile_commands.json')),
+        equals(path.join(fakeEngineRoot.path, 'out', 'host_debug_unopt_arm64', 'compile_commands.json')),
       );
     });
 
