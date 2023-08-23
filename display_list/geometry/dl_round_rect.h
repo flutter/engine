@@ -121,6 +121,8 @@ class DlFRRect {
     }
   }
 
+  bool Contains(const DlFPoint& p) const;
+
   DlFRRect& operator=(const DlFRRect& r) = default;
   DlFRRect& operator=(DlFRRect&& r) = default;
 

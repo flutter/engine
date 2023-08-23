@@ -48,19 +48,18 @@ std::unique_ptr<Surface> IOSSurfaceSoftware::CreateGPUSurface(GrDirectContext* g
   return surface;
 }
 
-sk_sp<SkSurface> IOSSurfaceSoftware::AcquireBackingStore(const SkISize& size) {
+sk_sp<SkSurface> IOSSurfaceSoftware::AcquireBackingStore(const DlISize& size) {
   TRACE_EVENT0("flutter", "IOSSurfaceSoftware::AcquireBackingStore");
   if (!IsValid()) {
     return nullptr;
   }
 
-  if (sk_surface_ != nullptr &&
-      SkISize::Make(sk_surface_->width(), sk_surface_->height()) == size) {
+  if (sk_surface_ != nullptr && DlISize::MakeSize(*sk_surface_) == size) {
     // The old and new surface sizes are the same. Nothing to do here.
     return sk_surface_;
   }
 
-  SkImageInfo info = SkImageInfo::MakeN32(size.fWidth, size.fHeight, kPremul_SkAlphaType,
+  SkImageInfo info = SkImageInfo::MakeN32(size.width(), size.height(), kPremul_SkAlphaType,
                                           SkColorSpace::MakeSRGB());
   sk_surface_ = SkSurfaces::Raster(info, nullptr);
   return sk_surface_;

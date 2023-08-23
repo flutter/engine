@@ -32,7 +32,7 @@ class IOSExternalViewEmbedder : public ExternalViewEmbedder {
 
   // |ExternalViewEmbedder|
   void BeginFrame(
-      SkISize frame_size,
+      DlISize frame_size,
       GrDirectContext* context,
       double device_pixel_ratio,
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
@@ -65,7 +65,7 @@ class IOSExternalViewEmbedder : public ExternalViewEmbedder {
   // |ExternalViewEmbedder|
   void PushFilterToVisitedPlatformViews(
       std::shared_ptr<const DlImageFilter> filter,
-      const SkRect& filter_rect) override;
+      const DlFRect& filter_rect) override;
 
   // |ExternalViewEmbedder|
   void PushVisitedPlatformView(int64_t view_id) override;

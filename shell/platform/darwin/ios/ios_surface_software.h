@@ -35,7 +35,7 @@ class IOSSurfaceSoftware final : public IOSSurface, public GPUSurfaceSoftwareDel
   std::unique_ptr<Surface> CreateGPUSurface(GrDirectContext* gr_context = nullptr) override;
 
   // |GPUSurfaceSoftwareDelegate|
-  sk_sp<SkSurface> AcquireBackingStore(const SkISize& size) override;
+  sk_sp<SkSurface> AcquireBackingStore(const DlISize& size) override;
 
   // |GPUSurfaceSoftwareDelegate|
   bool PresentBackingStore(sk_sp<SkSurface> backing_store) override;

@@ -39,13 +39,13 @@ class SK_API_AVAILABLE_CA_METAL_LAYER IOSSurfaceMetalSkia final : public IOSSurf
   std::unique_ptr<Surface> CreateGPUSurface(GrDirectContext* gr_context) override;
 
   // |GPUSurfaceMetalDelegate|
-  GPUCAMetalLayerHandle GetCAMetalLayer(const SkISize& frame_info) const override;
+  GPUCAMetalLayerHandle GetCAMetalLayer(const DlISize& frame_info) const override;
 
   // |GPUSurfaceMetalDelegate|
   bool PresentDrawable(GrMTLHandle drawable) const override;
 
   // |GPUSurfaceMetalDelegate|
-  GPUMTLTextureInfo GetMTLTexture(const SkISize& frame_info) const override;
+  GPUMTLTextureInfo GetMTLTexture(const DlISize& frame_info) const override;
 
   // |GPUSurfaceMetalDelegate|
   bool PresentTexture(GPUMTLTextureInfo texture) const override;

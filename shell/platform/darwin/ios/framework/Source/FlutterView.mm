@@ -137,7 +137,7 @@ static BOOL _forceSoftwareRendering;
   auto screenshot = [_delegate takeScreenshot:flutter::Rasterizer::ScreenshotType::UncompressedImage
                               asBase64Encoded:NO];
 
-  if (!screenshot.data || screenshot.data->isEmpty() || screenshot.frame_size.isEmpty()) {
+  if (!screenshot.data || screenshot.data->isEmpty() || screenshot.frame_size.is_empty()) {
     return;
   }
 

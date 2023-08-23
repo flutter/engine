@@ -426,8 +426,7 @@ class DlTransform {
 
   // Return the indicated entry from the transform matrix as if it was
   // implemented as a col-major matrix.
-  // Note the ordering of the arguments - col, row
-  DlScalar cr(int col, int row) const { return m_[col * 4 + row]; }
+  DlScalar cr(int row, int col) const { return m_[row * 4 + col]; }
 
   DlFVector4 eqnX() const { return {m_[kXX], m_[kXY], m_[kXZ], m_[kXT]}; }
   DlFVector4 eqnY() const { return {m_[kYX], m_[kYY], m_[kYZ], m_[kYT]}; }

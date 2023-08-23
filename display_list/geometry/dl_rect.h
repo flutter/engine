@@ -33,7 +33,7 @@ namespace flutter {
 
 template <typename T, typename ST>
 struct DlTRect {
- protected:
+ private:
   static constexpr T zero_ = static_cast<T>(0);
 
   T left_;
@@ -153,7 +153,7 @@ struct DlTRect {
   constexpr is_finite() const { return DlScalars_AreAllFinite(&left_, 4); }
 
   // Returns the 4 corners of the rectangle in the order UL, UR, LR, LL
-  void GetQuads(DlTPoint<T> quad[4]) const {
+  void GetQuad(DlTPoint<T> quad[4]) const {
     quad[0] = {left_, top_};
     quad[1] = {right_, top_};
     quad[2] = {right_, bottom_};

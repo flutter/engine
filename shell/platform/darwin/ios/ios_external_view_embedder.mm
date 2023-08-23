@@ -31,7 +31,7 @@ void IOSExternalViewEmbedder::CancelFrame() {
 
 // |ExternalViewEmbedder|
 void IOSExternalViewEmbedder::BeginFrame(
-    SkISize frame_size,
+    DlISize frame_size,
     GrDirectContext* context,
     double device_pixel_ratio,
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
@@ -91,7 +91,7 @@ bool IOSExternalViewEmbedder::SupportsDynamicThreadMerging() {
 // |ExternalViewEmbedder|
 void IOSExternalViewEmbedder::PushFilterToVisitedPlatformViews(
     std::shared_ptr<const DlImageFilter> filter,
-    const SkRect& filter_rect) {
+    const DlFRect& filter_rect) {
   platform_views_controller_->PushFilterToVisitedPlatformViews(filter, filter_rect);
 }
 

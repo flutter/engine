@@ -31,6 +31,8 @@
 }
 @end
 
+namespace flutter {
+
 // Determines if the `clip_rect` from a clipRect mutator contains the
 // `platformview_boundingrect`.
 //
@@ -39,11 +41,11 @@
 //
 // `platformview_boundingrect` is the final bounding rect of the PlatformView in the coordinate
 // space where the PlatformView is displayed.
-static bool ClipRectContainsPlatformViewBoundingRect(const SkRect& clip_rect,
-                                                     const SkRect& platformview_boundingrect,
-                                                     const SkMatrix& transform_matrix) {
-  SkRect transformed_rect = transform_matrix.mapRect(clip_rect);
-  return transformed_rect.contains(platformview_boundingrect);
+static bool ClipRectContainsPlatformViewBoundingRect(const DlFRect& clip_rect,
+                                                     const DlFRect& platformview_boundingrect,
+                                                     const DlTransform& transform_matrix) {
+  DlFRect transformed_rect = transform_matrix.TransformRect(clip_rect);
+  return transformed_rect.Contains(platformview_boundingrect);
 }
 
 // Determines if the `clipRRect` from a clipRRect mutator contains the
@@ -54,32 +56,20 @@ static bool ClipRectContainsPlatformViewBoundingRect(const SkRect& clip_rect,
 //
 // `platformview_boundingrect` is the final bounding rect of the PlatformView in the coordinate
 // space where the PlatformView is displayed.
-static bool ClipRRectContainsPlatformViewBoundingRect(const SkRRect& clip_rrect,
-                                                      const SkRect& platformview_boundingrect,
-                                                      const SkMatrix& transform_matrix) {
-  SkVector upper_left = clip_rrect.radii(SkRRect::Corner::kUpperLeft_Corner);
-  SkVector upper_right = clip_rrect.radii(SkRRect::Corner::kUpperRight_Corner);
-  SkVector lower_right = clip_rrect.radii(SkRRect::Corner::kLowerRight_Corner);
-  SkVector lower_left = clip_rrect.radii(SkRRect::Corner::kLowerLeft_Corner);
-  SkScalar transformed_upper_left_x = transform_matrix.mapRadius(upper_left.x());
-  SkScalar transformed_upper_left_y = transform_matrix.mapRadius(upper_left.y());
-  SkScalar transformed_upper_right_x = transform_matrix.mapRadius(upper_right.x());
-  SkScalar transformed_upper_right_y = transform_matrix.mapRadius(upper_right.y());
-  SkScalar transformed_lower_right_x = transform_matrix.mapRadius(lower_right.x());
-  SkScalar transformed_lower_right_y = transform_matrix.mapRadius(lower_right.y());
-  SkScalar transformed_lower_left_x = transform_matrix.mapRadius(lower_left.x());
-  SkScalar transformed_lower_left_y = transform_matrix.mapRadius(lower_left.y());
-  SkRect transformed_clip_rect = transform_matrix.mapRect(clip_rrect.rect());
-  SkRRect transformed_rrect;
-  SkVector corners[] = {{transformed_upper_left_x, transformed_upper_left_y},
-                        {transformed_upper_right_x, transformed_upper_right_y},
-                        {transformed_lower_right_x, transformed_lower_right_y},
-                        {transformed_lower_left_x, transformed_lower_left_y}};
-  transformed_rrect.setRectRadii(transformed_clip_rect, corners);
-  return transformed_rrect.contains(platformview_boundingrect);
+static bool ClipRRectContainsPlatformViewBoundingRect(const DlFRRect& clip_rrect,
+                                                      const DlFRect& platformview_boundingrect,
+                                                      const DlTransform& transform_matrix) {
+  auto inverse = transform_matrix.Inverse();
+  if (!inverse.has_value()) {
+    return false;
+  }
+  DlFVector corners[4];
+  platformview_boundingrect.GetQuad(corners);
+  inverse->TransformPoints(corners, corners, 4);
+  return clip_rrect.Contains(corners[0]) && clip_rrect.Contains(corners[1]) &&
+         clip_rrect.Contains(corners[2]) && clip_rrect.Contains(corners[3]);
 }
 
-namespace flutter {
 // Becomes NO if Apple's API changes and blurred backdrop filters cannot be applied.
 BOOL canApplyBlurBackdrop = YES;
 
@@ -314,7 +304,7 @@ void FlutterPlatformViewsController::RegisterViewFactory(
   gesture_recognizers_blocking_policies[idString] = gestureRecognizerBlockingPolicy;
 }
 
-void FlutterPlatformViewsController::BeginFrame(SkISize frame_size) {
+void FlutterPlatformViewsController::BeginFrame(DlISize frame_size) {
   ResetFrameState();
   frame_size_ = frame_size;
 }
@@ -370,7 +360,7 @@ void FlutterPlatformViewsController::EndFrame(
 
 void FlutterPlatformViewsController::PushFilterToVisitedPlatformViews(
     const std::shared_ptr<const DlImageFilter>& filter,
-    const SkRect& filter_rect) {
+    const DlFRect& filter_rect) {
   for (int64_t id : visited_platform_views_) {
     EmbeddedViewParams params = current_composition_params_[id];
     params.PushImageFilter(filter, filter_rect);
@@ -385,7 +375,7 @@ void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
   // so catransaction_added_ must be false.
   FML_DCHECK(!catransaction_added_);
 
-  SkRect view_bounds = SkRect::Make(frame_size_);
+  DlFRect view_bounds = DlFRect::MakeSize(frame_size_);
   std::unique_ptr<EmbedderViewSlice> view;
   view = std::make_unique<DisplayListEmbedderViewSlice>(view_bounds);
   slices_.insert_or_assign(view_id, std::move(view));
@@ -448,7 +438,7 @@ void FlutterPlatformViewsController::ClipViewSetMaskView(UIView* clipView) {
 // frame. See: `CompositeWithParams` for details.
 void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators_stack,
                                                    UIView* embedded_view,
-                                                   const SkRect& bounding_rect) {
+                                                   const DlFRect& bounding_rect) {
   if (flutter_view_ == nullptr) {
     return;
   }
@@ -456,7 +446,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   ResetAnchor(embedded_view.layer);
   ChildClippingView* clipView = (ChildClippingView*)embedded_view.superview;
 
-  SkMatrix transformMatrix;
+  DlTransform transformMatrix;
   NSMutableArray* blurFilters = [[[NSMutableArray alloc] init] autorelease];
   FML_DCHECK(!clipView.maskView ||
              [clipView.maskView isKindOfClass:[FlutterClippingMaskView class]]);
@@ -469,7 +459,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   while (iter != mutators_stack.End()) {
     switch ((*iter)->GetType()) {
       case kTransform: {
-        transformMatrix.preConcat((*iter)->GetMatrix());
+        transformMatrix.ConcatInner((*iter)->GetMatrix());
         break;
       }
       case kClipRect: {
@@ -510,7 +500,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
           break;
         }
         CGRect filterRect =
-            flutter::GetCGRectFromSkRect((*iter)->GetFilterMutation().GetFilterRect());
+            flutter::GetCGRectFromDlFRect((*iter)->GetFilterMutation().GetFilterRect());
         // `filterRect` is in global coordinates. We need to convert to local space.
         filterRect = CGRectApplyAffineTransform(
             filterRect, CGAffineTransformMakeScale(1 / screenScale, 1 / screenScale));
@@ -553,7 +543,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   // However, flow is based on the physical resolution. For example, 1000 pixels in flow equals
   // 500 points in UIKit for devices that has screenScale of 2. We need to scale the transformMatrix
   // down to the logical resoltion before applying it to the layer of PlatformView.
-  transformMatrix.postScale(1 / screenScale, 1 / screenScale);
+  transformMatrix.ScaleOuter(1 / screenScale, 1 / screenScale);
 
   // Reverse the offset of the clipView.
   // The clipView's frame includes the final translate of the final transform matrix.
@@ -562,9 +552,9 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   //
   // Note that the transforms are not applied to the clipping paths because clipping paths happen on
   // the mask view, whose origin is always (0,0) to the flutter_view.
-  transformMatrix.postTranslate(-clipView.frame.origin.x, -clipView.frame.origin.y);
+  transformMatrix.TranslateOuter(-clipView.frame.origin.x, -clipView.frame.origin.y);
 
-  embedded_view.layer.transform = flutter::GetCATransform3DFromSkMatrix(transformMatrix);
+  embedded_view.layer.transform = flutter::GetCATransform3DFromDlTransform(transformMatrix);
 }
 
 // Composite the PlatformView with `view_id`.
@@ -607,7 +597,7 @@ void FlutterPlatformViewsController::CompositeWithParams(int64_t view_id,
   // Because the translate matrix in the Mutator Stack also includes the offset,
   // when we apply the transforms matrix in |ApplyMutators|, we need
   // to remember to do a reverse translate.
-  const SkRect& rect = params.finalBoundingRect();
+  const DlFRect& rect = params.finalBoundingRect();
   CGFloat screenScale = [UIScreen mainScreen].scale;
   clippingView.frame = CGRectMake(rect.x() / screenScale, rect.y() / screenScale,
                                   rect.width() / screenScale, rect.height() / screenScale);
@@ -644,15 +634,15 @@ void FlutterPlatformViewsController::Reset() {
   visited_platform_views_.clear();
 }
 
-SkRect FlutterPlatformViewsController::GetPlatformViewRect(int64_t view_id) {
+DlFRect FlutterPlatformViewsController::GetPlatformViewRect(int64_t view_id) {
   UIView* platform_view = GetPlatformViewByID(view_id);
   UIScreen* screen = [UIScreen mainScreen];
   CGRect platform_view_cgrect = [platform_view convertRect:platform_view.bounds
                                                     toView:flutter_view_];
-  return SkRect::MakeXYWH(platform_view_cgrect.origin.x * screen.scale,    //
-                          platform_view_cgrect.origin.y * screen.scale,    //
-                          platform_view_cgrect.size.width * screen.scale,  //
-                          platform_view_cgrect.size.height * screen.scale  //
+  return DlFRect::MakeXYWH(platform_view_cgrect.origin.x * screen.scale,    //
+                           platform_view_cgrect.origin.y * screen.scale,    //
+                           platform_view_cgrect.size.width * screen.scale,  //
+                           platform_view_cgrect.size.height * screen.scale  //
   );
 }
 
@@ -693,8 +683,8 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
     // current platform view or any of the previous platform views.
     for (size_t j = i + 1; j > 0; j--) {
       int64_t current_platform_view_id = composition_order_[j - 1];
-      SkRect platform_view_rect = GetPlatformViewRect(current_platform_view_id);
-      std::list<SkRect> intersection_rects =
+      DlFRect platform_view_rect = GetPlatformViewRect(current_platform_view_id);
+      std::list<DlFRect> intersection_rects =
           slice->searchNonOverlappingDrawnRects(platform_view_rect);
       auto allocation_size = intersection_rects.size();
 
@@ -708,24 +698,26 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
       // TODO(egarciad): Consider making this configurable.
       // https://github.com/flutter/flutter/issues/52510
       if (allocation_size > kMaxLayerAllocations) {
-        SkRect joined_rect = SkRect::MakeEmpty();
-        for (const SkRect& rect : intersection_rects) {
-          joined_rect.join(rect);
+        DlFRect joined_rect;
+        for (const DlFRect& rect : intersection_rects) {
+          joined_rect = joined_rect.Union(rect);
         }
         // Replace the rects in the intersection rects list for a single rect that is
         // the union of all the rects in the list.
         intersection_rects.clear();
         intersection_rects.push_back(joined_rect);
       }
-      for (SkRect& joined_rect : intersection_rects) {
+      for (DlFRect& joined_rect : intersection_rects) {
         // Get the intersection rect between the current rect
         // and the platform view rect.
-        joined_rect.intersect(platform_view_rect);
         // Subpixels in the platform may not align with the canvas subpixels.
         // To workaround it, round the floating point bounds and make the rect slightly larger.
         // For example, {0.3, 0.5, 3.1, 4.7} becomes {0, 0, 4, 5}.
-        joined_rect.setLTRB(std::floor(joined_rect.left()), std::floor(joined_rect.top()),
-                            std::ceil(joined_rect.right()), std::ceil(joined_rect.bottom()));
+        auto joined = joined_rect.Intersection(platform_view_rect);
+        if (!joined.has_value()) {
+          continue;
+        }
+        joined_rect = joined.value().RoundedOut();
         // Clip the background canvas, so it doesn't contain any of the pixels drawn
         // on the overlay layer.
         background_canvas->ClipRect(joined_rect, DlCanvas::ClipOp::kDifference);
@@ -745,7 +737,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
     slice->render_into(background_canvas);
   }
 
-  // Manually trigger the SkAutoCanvasRestore before we submit the frame
+  // Manually trigger the DlAutoCanvasRestore before we submit the frame
   save.Restore();
 
   // If a layer was allocated in the previous frame, but it's not used in the current frame,
@@ -804,7 +796,7 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLay
     GrDirectContext* gr_context,
     const std::shared_ptr<IOSContext>& ios_context,
     EmbedderViewSlice* slice,
-    SkRect rect,
+    DlFRect rect,
     int64_t view_id,
     int64_t overlay_id) {
   FML_DCHECK(flutter_view_);

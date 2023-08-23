@@ -82,4 +82,49 @@ void DlFRRect::SetRectRadii(const DlFRect& rect, const DlFVector radii[4]) {
   type_ = all_same ? Type::kSimple : Type::kComplex;
 }
 
+// For coordinate (rel_x, rel_y) relative to a given corner, is the point
+// inside the distorted oval with radii (rad_x, rad_y) whose center is at
+// a relative position of (rad_x, rad_y) from the corner.
+static bool CornerContains(DlScalar rel_x, DlScalar rel_y, DlFVector radii) {
+  DlScalar rad_x = radii.x();
+  DlScalar rad_y = radii.y();
+
+  // Make the coordinate relative to the origin of the oval with positive
+  // values pointing at the corner. We already know that rel_x/y are within
+  // the bounds, so their relative position to the origin of the oval must
+  // be <= rad_x/y
+  rel_x = rad_x - rel_x;
+  rel_y = rad_y - rel_y;
+  if (rel_x <= 0 || rel_y <= 0) {
+    return true;
+  }
+  // ((rel_x / rad_x) ^ 2 + (rel_y / rad_y) ^ 2) <= 1.0
+  // (rel_x^2 * rad_y^2) + (rel_y^2 * rad_x^2) / (rad_x^2 * rad_y^2) <= 1.0
+  // (rel_x^2 * rad_y^2) + (rel_y^2 * rad_x^2) <= (rad_x^2 * rad_y^2)
+  rel_x = rel_x * rel_x;
+  rel_y = rel_y * rel_y;
+  rad_x = rad_x * rad_x;
+  rad_y = rad_y * rad_y;
+  return (rel_x * rad_y + rel_y * rad_x) <= (rad_x * rad_y);
+}
+
+bool DlFRRect::Contains(const DlFPoint& p) const {
+  if (!rect_.Contains(p)) {
+    return false;
+  }
+  if (type_ <= Type::kRect) {
+    return true;
+  }
+
+  DlScalar px_rel_left = p.x() - rect_.left();
+  DlScalar px_rel_right = rect_.right() - p.y();
+  DlScalar py_rel_top = p.y() - rect_.top();
+  DlScalar py_rel_bottom = rect_.bottom() - p.y();
+
+  return CornerContains(px_rel_left, py_rel_top, radii_[0]) &&
+         CornerContains(px_rel_right, py_rel_top, radii_[1]) &&
+         CornerContains(px_rel_right, py_rel_bottom, radii_[2]) &&
+         CornerContains(px_rel_left, py_rel_bottom, radii_[3]);
+}
+
 }  // namespace flutter

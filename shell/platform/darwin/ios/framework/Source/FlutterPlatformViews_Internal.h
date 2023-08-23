@@ -32,18 +32,18 @@
 
 // Adds a clip rect operation to the queue.
 //
-// The `clipSkRect` is transformed with the `matrix` before adding to the queue.
-- (void)clipRect:(const SkRect&)clipSkRect matrix:(const SkMatrix&)matrix;
+// The `clipDlFRect` is transformed with the `matrix` before adding to the queue.
+- (void)clipRect:(const flutter::DlFRect&)clipDlFRect matrix:(const flutter::DlTransform&)matrix;
 
 // Adds a clip rrect operation to the queue.
 //
-// The `clipSkRRect` is transformed with the `matrix` before adding to the queue.
-- (void)clipRRect:(const SkRRect&)clipSkRRect matrix:(const SkMatrix&)matrix;
+// The `clipDlFRRect` is transformed with the `matrix` before adding to the queue.
+- (void)clipRRect:(const flutter::DlFRRect&)clipDlFRRect matrix:(const flutter::DlTransform&)matrix;
 
 // Adds a clip path operation to the queue.
 //
 // The `path` is transformed with the `matrix` before adding to the queue.
-- (void)clipPath:(const SkPath&)path matrix:(const SkMatrix&)matrix;
+- (void)clipPath:(const flutter::DlPath&)path matrix:(const flutter::DlTransform&)matrix;
 
 @end
 
@@ -121,15 +121,14 @@
 @end
 
 namespace flutter {
-// Converts a SkMatrix to CATransform3D.
-// Certain fields are ignored in CATransform3D since SkMatrix is 3x3 and CATransform3D is 4x4.
-CATransform3D GetCATransform3DFromSkMatrix(const SkMatrix& matrix);
+// Converts a DlTransform to CATransform3D.
+CATransform3D GetCATransform3DFromDlTransform(const DlTransform& matrix);
 
 // Reset the anchor of `layer` to match the transform operation from flow.
 // The position of the `layer` should be unchanged after resetting the anchor.
 void ResetAnchor(CALayer* layer);
 
-CGRect GetCGRectFromSkRect(const SkRect& clipSkRect);
+CGRect GetCGRectFromDlFRect(const DlFRect& clipDlFRect);
 BOOL BlurRadiusEqualToBlurRadius(CGFloat radius1, CGFloat radius2);
 
 class IOSContextGL;
@@ -216,7 +215,7 @@ class FlutterPlatformViewsController {
       FlutterPlatformViewGestureRecognizersBlockingPolicy gestureRecognizerBlockingPolicy);
 
   // Called at the beginning of each frame.
-  void BeginFrame(SkISize frame_size);
+  void BeginFrame(DlISize frame_size);
 
   // Indicates that we don't compisite any platform views or overlays during this frame.
   // Also reverts the composition_order_ to its original state at the beginning of the frame.
@@ -244,7 +243,7 @@ class FlutterPlatformViewsController {
 
   // The rect of the platform view at index view_id. This rect has been translated into the
   // host view coordinate system. Units are device screen pixels.
-  SkRect GetPlatformViewRect(int64_t view_id);
+  DlFRect GetPlatformViewRect(int64_t view_id);
 
   // Discards all platform views instances and auxiliary resources.
   void Reset();
@@ -261,7 +260,7 @@ class FlutterPlatformViewsController {
 
   // Pushes backdrop filter mutation to the mutator stack of each visited platform view.
   void PushFilterToVisitedPlatformViews(const std::shared_ptr<const DlImageFilter>& filter,
-                                        const SkRect& filter_rect);
+                                        const DlFRect& filter_rect);
 
   // Pushes the view id of a visted platform view to the list of visied platform views.
   void PushVisitedPlatformView(int64_t view_id) { visited_platform_views_.push_back(view_id); }
@@ -301,7 +300,7 @@ class FlutterPlatformViewsController {
   // rect of the PlatformView, the clip mutator is not applied for performance optimization.
   void ApplyMutators(const MutatorsStack& mutators_stack,
                      UIView* embedded_view,
-                     const SkRect& bounding_rect);
+                     const DlFRect& bounding_rect);
 
   void CompositeWithParams(int64_t view_id, const EmbeddedViewParams& params);
 
@@ -310,7 +309,7 @@ class FlutterPlatformViewsController {
   std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrDirectContext* gr_context,
                                                      const std::shared_ptr<IOSContext>& ios_context,
                                                      EmbedderViewSlice* slice,
-                                                     SkRect rect,
+                                                     DlFRect rect,
                                                      int64_t view_id,
                                                      int64_t overlay_id);
   // Removes overlay views and platform views that aren't needed in the current frame.
@@ -357,7 +356,7 @@ class FlutterPlatformViewsController {
   // Mapping a platform view ID to the count of the clipping operations that were applied to the
   // platform view last time it was composited.
   std::map<int64_t, int64_t> clip_count_;
-  SkISize frame_size_;
+  DlISize frame_size_;
 
   // The number of frames the rasterizer task runner will continue
   // to run on the platform thread after no platform view is rendered.

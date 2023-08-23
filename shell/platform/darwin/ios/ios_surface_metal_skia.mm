@@ -49,7 +49,7 @@ std::unique_ptr<Surface> IOSSurfaceMetalSkia::CreateGPUSurface(GrDirectContext* 
 }
 
 // |GPUSurfaceMetalDelegate|
-GPUCAMetalLayerHandle IOSSurfaceMetalSkia::GetCAMetalLayer(const SkISize& frame_info) const {
+GPUCAMetalLayerHandle IOSSurfaceMetalSkia::GetCAMetalLayer(const DlISize& frame_info) const {
   CAMetalLayer* layer = layer_.get();
   layer.device = device_;
 
@@ -88,7 +88,7 @@ bool IOSSurfaceMetalSkia::PresentDrawable(GrMTLHandle drawable) const {
 }
 
 // |GPUSurfaceMetalDelegate|
-GPUMTLTextureInfo IOSSurfaceMetalSkia::GetMTLTexture(const SkISize& frame_info) const {
+GPUMTLTextureInfo IOSSurfaceMetalSkia::GetMTLTexture(const DlISize& frame_info) const {
   FML_CHECK(false) << "render to texture not supported on ios";
   return {.texture_id = -1, .texture = nullptr};
 }

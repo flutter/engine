@@ -45,7 +45,7 @@ std::unique_ptr<Surface> IOSSurfaceMetalImpeller::CreateGPUSurface(GrDirectConte
 }
 
 // |GPUSurfaceMetalDelegate|
-GPUCAMetalLayerHandle IOSSurfaceMetalImpeller::GetCAMetalLayer(const SkISize& frame_info) const {
+GPUCAMetalLayerHandle IOSSurfaceMetalImpeller::GetCAMetalLayer(const DlISize& frame_info) const {
   CAMetalLayer* layer = layer_.get();
   const auto drawable_size = CGSizeMake(frame_info.width(), frame_info.height());
   if (!CGSizeEqualToSize(drawable_size, layer.drawableSize)) {
@@ -71,7 +71,7 @@ bool IOSSurfaceMetalImpeller::PresentDrawable(GrMTLHandle drawable) const {
 }
 
 // |GPUSurfaceMetalDelegate|
-GPUMTLTextureInfo IOSSurfaceMetalImpeller::GetMTLTexture(const SkISize& frame_info) const {
+GPUMTLTextureInfo IOSSurfaceMetalImpeller::GetMTLTexture(const DlISize& frame_info) const {
   FML_CHECK(false);
   return GPUMTLTextureInfo{
       .texture_id = -1,   //

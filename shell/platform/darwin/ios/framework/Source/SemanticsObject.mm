@@ -35,23 +35,17 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   return flutter::SemanticsAction::kScrollUp;
 }
 
-SkM44 GetGlobalTransform(SemanticsObject* reference) {
-  SkM44 globalTransform = [reference node].transform;
+flutter::DlTransform GetGlobalTransform(SemanticsObject* reference) {
+  flutter::DlTransform globalTransform = [reference node].transform;
   for (SemanticsObject* parent = [reference parent]; parent; parent = parent.parent) {
-    globalTransform = parent.node.transform * globalTransform;
+    globalTransform.ConcatOuter(parent.node.transform);
   }
   return globalTransform;
 }
 
-SkPoint ApplyTransform(SkPoint& point, const SkM44& transform) {
-  SkV4 vector = transform.map(point.x(), point.y(), 0, 1);
-  return SkPoint::Make(vector.x / vector.w, vector.y / vector.w);
-}
-
 CGPoint ConvertPointToGlobal(SemanticsObject* reference, CGPoint local_point) {
-  SkM44 globalTransform = GetGlobalTransform(reference);
-  SkPoint point = SkPoint::Make(local_point.x, local_point.y);
-  point = ApplyTransform(point, globalTransform);
+  flutter::DlTransform globalTransform = GetGlobalTransform(reference);
+  flutter::DlFPoint point = globalTransform.TransformPoint(local_point.x, local_point.y);
   // `rect` is in the physical pixel coordinate system. iOS expects the accessibility frame in
   // the logical pixel coordinate system. Therefore, we divide by the `scale` (pixel ratio) to
   // convert.
@@ -63,22 +57,24 @@ CGPoint ConvertPointToGlobal(SemanticsObject* reference, CGPoint local_point) {
 }
 
 CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
-  SkM44 globalTransform = GetGlobalTransform(reference);
+  flutter::DlTransform globalTransform = GetGlobalTransform(reference);
 
-  SkPoint quad[4] = {
-      SkPoint::Make(local_rect.origin.x, local_rect.origin.y),                          // top left
-      SkPoint::Make(local_rect.origin.x + local_rect.size.width, local_rect.origin.y),  // top right
-      SkPoint::Make(local_rect.origin.x + local_rect.size.width,
-                    local_rect.origin.y + local_rect.size.height),  // bottom right
-      SkPoint::Make(local_rect.origin.x,
-                    local_rect.origin.y + local_rect.size.height)  // bottom left
+  flutter::DlFPoint quad[4] = {
+      flutter::DlFPoint(local_rect.origin.x, local_rect.origin.y),      // top left
+      flutter::DlFPoint(local_rect.origin.x + local_rect.size.width,    //
+                        local_rect.origin.y),                           // top right
+      flutter::DlFPoint(local_rect.origin.x + local_rect.size.width,    //
+                        local_rect.origin.y + local_rect.size.height),  // bottom right
+      flutter::DlFPoint(local_rect.origin.x,                            //
+                        local_rect.origin.y + local_rect.size.height)   // bottom left
   };
-  for (auto& point : quad) {
-    point = ApplyTransform(point, globalTransform);
+  globalTransform.TransformPoints(quad, quad, 4);
+  flutter::RectBoundsAccumulator accumulator;
+  for (auto point : quad) {
+    accumulator.accumulate(point);
   }
-  SkRect rect;
-  NSCAssert(rect.setBoundsCheck(quad, 4), @"Transformed points can't form a rect");
-  rect.setBounds(quad, 4);
+  flutter::DlFRect rect = accumulator.bounds();
+  NSCAssert(rect.is_finite(), @"Transformed points can't form a rect");
 
   // `rect` is in the physical pixel coordinate system. iOS expects the accessibility frame in
   // the logical pixel coordinate system. Therefore, we divide by the `scale` (pixel ratio) to
@@ -227,7 +223,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
 - (CGSize)contentSizeInternal {
   CGRect result;
-  const SkRect& rect = self.node.rect;
+  const flutter::DlFRect& rect = self.node.rect;
 
   if (self.node.actions & flutter::kVerticalScrollSemanticsActions) {
     result = CGRectMake(rect.x(), rect.y(), rect.width(), rect.height() + [self scrollExtentMax]);
@@ -242,7 +238,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 - (CGPoint)contentOffsetInternal {
   CGPoint result;
   CGPoint origin = _scrollView.frame.origin;
-  const SkRect& rect = self.node.rect;
+  const flutter::DlFRect& rect = self.node.rect;
   if (self.node.actions & flutter::kVerticalScrollSemanticsActions) {
     result = ConvertPointToGlobal(self, CGPointMake(rect.x(), rect.y() + [self scrollPosition]));
   } else if (self.node.actions & flutter::kHorizontalScrollSemanticsActions) {
@@ -666,7 +662,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 }
 
 - (CGRect)globalRect {
-  const SkRect& rect = [self node].rect;
+  const flutter::DlFRect& rect = [self node].rect;
   CGRect localRect = CGRectMake(rect.x(), rect.y(), rect.width(), rect.height());
   return ConvertRectToGlobal(self, localRect);
 }
