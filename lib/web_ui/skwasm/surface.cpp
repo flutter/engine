@@ -178,10 +178,6 @@ void Surface::_rasterizeImage(SkImage* image,
       EM_FUNC_SIG_VIII, fOnRasterizeComplete, this, data.release(), callbackId);
 }
 
-void Surface::_disposeVideoFrame(SkwasmObject videoFrame) {
-  skwasm_disposeVideoFrame(videoFrame);
-}
-
 void Surface::_onRasterizeComplete(SkData* data, uint32_t callbackId) {
   _callbackHandler(callbackId, data, __builtin_wasm_ref_null_extern());
 }
@@ -215,10 +211,6 @@ void Surface::fRasterizeImage(Surface* surface,
                               uint32_t callbackId) {
   surface->_rasterizeImage(image, format, callbackId);
   image->unref();
-}
-
-void Surface::fDisposeVideoFrame(Surface* surface, SkwasmObject videoFrame) {
-  surface->_disposeVideoFrame(videoFrame);
 }
 
 SKWASM_EXPORT Surface* surface_create() {

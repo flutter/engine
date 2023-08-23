@@ -41,8 +41,7 @@ class VideoFrameWrapper {
   }
 
   ~VideoFrameWrapper() {
-    skwasm_setAssociatedObjectOnThread(_rasterThreadId, this,
-                                       __builtin_wasm_ref_null_extern());
+    skwasm_disposeAssociatedObjectOnThread(_rasterThreadId, this);
   }
 
   SkwasmObject getVideoFrame() { return skwasm_getAssociatedObject(this); }
@@ -81,7 +80,6 @@ class Surface {
   void _rasterizeImage(SkImage* image,
                        ImageByteFormat format,
                        uint32_t callbackId);
-  void _disposeVideoFrame(SkwasmObject videoFrame);
   void _onRasterizeComplete(SkData* data, uint32_t callbackId);
 
   std::string _canvasID;
@@ -114,6 +112,5 @@ class Surface {
   static void fOnRasterizeComplete(Surface* surface,
                                    SkData* imageData,
                                    uint32_t callbackId);
-  static void fDisposeVideoFrame(Surface* surface, SkwasmObject videoFrame);
 };
 }  // namespace Skwasm

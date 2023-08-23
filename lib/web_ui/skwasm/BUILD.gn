@@ -61,6 +61,8 @@ wasm_lib("skwasm") {
       "-sASSERTIONS=1",
       "-sGL_ASSERTIONS=1",
     ]
+  } else {
+    ldflags += [ "--closure=1" ]
   }
 
   deps = [
