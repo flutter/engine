@@ -57,7 +57,6 @@
 #include "impeller/entity/sweep_gradient_fill.frag.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
-#include "impeller/entity/texture_fill_external.frag.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
 #include "impeller/entity/uv.comp.h"
 #include "impeller/entity/vertices.frag.h"
@@ -113,6 +112,10 @@
 #include "impeller/entity/framebuffer_blend_screen.frag.h"
 #include "impeller/entity/framebuffer_blend_softlight.frag.h"
 
+#ifdef FML_OS_ANDROID
+#include "impeller/entity/texture_fill_external.frag.h"
+#endif  // FML_OS_ANDROID
+
 namespace impeller {
 
 #ifdef IMPELLER_DEBUG
@@ -148,8 +151,6 @@ using RRectBlurPipeline =
 using BlendPipeline = RenderPipelineT<BlendVertexShader, BlendFragmentShader>;
 using TexturePipeline =
     RenderPipelineT<TextureFillVertexShader, TextureFillFragmentShader>;
-using TextureExternalPipeline =
-    RenderPipelineT<TextureFillVertexShader, TextureFillExternalFragmentShader>;
 using PositionUVPipeline =
     RenderPipelineT<TextureFillVertexShader, TiledTextureFillFragmentShader>;
 using TiledTexturePipeline =
@@ -287,6 +288,11 @@ using FramebufferBlendSoftLightPipeline =
 /// Geometry Pipelines
 using PointsComputeShaderPipeline = ComputePipelineBuilder<PointsComputeShader>;
 using UvComputeShaderPipeline = ComputePipelineBuilder<UvComputeShader>;
+
+#ifdef FML_OS_ANDROID
+using TextureExternalPipeline =
+    RenderPipelineT<TextureFillVertexShader, TextureFillExternalFragmentShader>;
+#endif  // FML_OS_ANDROID
 
 /// Pipeline state configuration.
 ///
@@ -426,10 +432,11 @@ class ContentContext {
 #ifdef FML_OS_ANDROID
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetTextureExternalPipeline(
       ContentContextOptions opts) const {
-    FML_DCHECK(GetContext()->GetBackendType() == Context::BackendType::kOpenGLES);
+    FML_DCHECK(GetContext()->GetBackendType() ==
+               Context::BackendType::kOpenGLES);
     return GetPipeline(texture_external_pipelines_, opts);
   }
-#endif // FML_OS_ANDROID
+#endif  // FML_OS_ANDROID
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPositionUVPipeline(
       ContentContextOptions opts) const {
@@ -757,7 +764,7 @@ class ContentContext {
   mutable Variants<TexturePipeline> texture_pipelines_;
 #ifdef FML_OS_ANDROID
   mutable Variants<TextureExternalPipeline> texture_external_pipelines_;
-#endif // FML_OS_ANDROID
+#endif  // FML_OS_ANDROID
   mutable Variants<PositionUVPipeline> position_uv_pipelines_;
   mutable Variants<TiledTexturePipeline> tiled_texture_pipelines_;
   mutable Variants<GaussianBlurAlphaDecalPipeline>
