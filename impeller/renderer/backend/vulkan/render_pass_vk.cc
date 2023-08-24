@@ -6,7 +6,6 @@
 
 #include <array>
 #include <cstdint>
-#include <unordered_map>
 #include <vector>
 
 #include "flutter/fml/logging.h"
@@ -322,14 +321,20 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
 
   auto& allocator = *context.GetResourceAllocator();
 
-  std::unordered_map<uint32_t, vk::DescriptorBufferInfo> buffers;
-  std::unordered_map<uint32_t, vk::DescriptorImageInfo> images;
+  vk::DescriptorImageInfo images[32];
+  vk::DescriptorBufferInfo buffers[32];
+  size_t image_count = 0u;
+  size_t buffer_count = 0u;
   std::vector<vk::WriteDescriptorSet> writes;
+  writes.reserve(command.vertex_bindings.buffers.size() +
+                 command.fragment_bindings.buffers.size() +
+                 command.fragment_bindings.sampled_images.size());
 
-  auto bind_images = [&encoder,     //
-                      &images,      //
-                      &writes,      //
-                      &vk_desc_set  //
+  auto bind_images = [&encoder,      //
+                      &images,       //
+                      &image_count,  //
+                      &writes,       //
+                      &vk_desc_set   //
   ](const Bindings& bindings) -> bool {
     for (const auto& [index, data] : bindings.sampled_images) {
       auto texture = data.texture.resource;
@@ -353,7 +358,9 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
       write_set.dstBinding = slot.binding;
       write_set.descriptorCount = 1u;
       write_set.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-      write_set.pImageInfo = &(images[slot.binding] = image_info);
+      FML_DCHECK(image_count < 32u);
+      write_set.pImageInfo = &(images[image_count] = image_info);
+      image_count++;
 
       writes.push_back(write_set);
     }
@@ -361,12 +368,13 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
     return true;
   };
 
-  auto bind_buffers = [&allocator,   //
-                       &encoder,     //
-                       &buffers,     //
-                       &writes,      //
-                       &desc_set,    //
-                       &vk_desc_set  //
+  auto bind_buffers = [&allocator,     //
+                       &encoder,       //
+                       &buffers,       //
+                       &buffer_count,  //
+                       &writes,        //
+                       &desc_set,      //
+                       &vk_desc_set    //
   ](const Bindings& bindings) -> bool {
     for (const auto& [buffer_index, data] : bindings.buffers) {
       const auto& buffer_view = data.view.resource.buffer;
@@ -415,7 +423,9 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
       write_set.dstBinding = uniform.binding;
       write_set.descriptorCount = 1u;
       write_set.descriptorType = ToVKDescriptorType(layout.descriptor_type);
-      write_set.pBufferInfo = &(buffers[uniform.binding] = buffer_info);
+      FML_DCHECK(buffer_count < 32u);
+      write_set.pBufferInfo = &(buffers[buffer_count] = buffer_info);
+      buffer_count++;
 
       writes.push_back(write_set);
     }
