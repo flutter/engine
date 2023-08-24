@@ -31,9 +31,8 @@ namespace impeller {
 
 static vk::AttachmentDescription CreateAttachmentDescription(
     const Attachment& attachment,
-    bool resolve_texture = false) {
-  const auto& texture =
-      resolve_texture ? attachment.resolve_texture : attachment.texture;
+    const std::shared_ptr<Texture> Attachment::*texture_ptr) {
+  const auto& texture = attachment.*texture_ptr;
   if (!texture) {
     return {};
   }
@@ -50,7 +49,7 @@ static vk::AttachmentDescription CreateAttachmentDescription(
 
   if (desc.storage_mode == StorageMode::kDeviceTransient) {
     store_action = StoreAction::kDontCare;
-  } else if (resolve_texture) {
+  } else if (texture_ptr == &Attachment::resolve_texture) {
     store_action = StoreAction::kStore;
   }
 
@@ -72,9 +71,8 @@ static void SetTextureLayout(
     const Attachment& attachment,
     const vk::AttachmentDescription& attachment_desc,
     const std::shared_ptr<CommandBufferVK>& command_buffer,
-    bool resolve_texture = false) {
-  const auto& texture =
-      resolve_texture ? attachment.resolve_texture : attachment.texture;
+    const std::shared_ptr<Texture> Attachment::*texture_ptr) {
+  const auto& texture = attachment.*texture_ptr;
   if (!texture) {
     return;
   }
@@ -126,14 +124,17 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     color_refs[bind_point] =
         vk::AttachmentReference{static_cast<uint32_t>(attachments.size()),
                                 vk::ImageLayout::eColorAttachmentOptimal};
-    attachments.emplace_back(CreateAttachmentDescription(color));
-    SetTextureLayout(color, attachments.back(), command_buffer);
+    attachments.emplace_back(
+        CreateAttachmentDescription(color, &Attachment::texture));
+    SetTextureLayout(color, attachments.back(), command_buffer,
+                     &Attachment::texture);
     if (color.resolve_texture) {
       resolve_refs[bind_point] = vk::AttachmentReference{
           static_cast<uint32_t>(attachments.size()), vk::ImageLayout::eGeneral};
       attachments.emplace_back(
-          CreateAttachmentDescription(color, true));
-      SetTextureLayout(color, attachments.back(), command_buffer, true);
+          CreateAttachmentDescription(color, &Attachment::resolve_texture));
+      SetTextureLayout(color, attachments.back(), command_buffer,
+                       &Attachment::resolve_texture);
     }
   }
 
@@ -142,8 +143,9 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
         static_cast<uint32_t>(attachments.size()),
         vk::ImageLayout::eDepthStencilAttachmentOptimal};
     attachments.emplace_back(
-        CreateAttachmentDescription(depth.value()));
-    SetTextureLayout(depth.value(), attachments.back(), command_buffer);
+        CreateAttachmentDescription(depth.value(), &Attachment::texture));
+    SetTextureLayout(depth.value(), attachments.back(), command_buffer,
+                     &Attachment::texture);
   }
 
   if (auto stencil = render_target_.GetStencilAttachment();
@@ -152,8 +154,9 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
         static_cast<uint32_t>(attachments.size()),
         vk::ImageLayout::eDepthStencilAttachmentOptimal};
     attachments.emplace_back(
-        CreateAttachmentDescription(stencil.value()));
-    SetTextureLayout(stencil.value(), attachments.back(), command_buffer);
+        CreateAttachmentDescription(stencil.value(), &Attachment::texture));
+    SetTextureLayout(stencil.value(), attachments.back(), command_buffer,
+                     &Attachment::texture);
   }
 
   vk::SubpassDescription subpass_desc;
