@@ -265,7 +265,6 @@ void ParagraphSkia::Layout(double width) {
 }
 
 bool ParagraphSkia::Paint(DisplayListBuilder* builder, double x, double y) {
-  FML_LOG(ERROR) << "impeller_enabled_: " << impeller_enabled_;
   DisplayListParagraphPainter painter(builder, dl_paints_, impeller_enabled_);
   paragraph_->paint(&painter, x, y);
   return true;
