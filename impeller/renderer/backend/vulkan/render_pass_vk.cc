@@ -260,8 +260,6 @@ SharedHandleVK<vk::Framebuffer> RenderPassVK::CreateVKFramebuffer(
   auto [result, framebuffer] =
       context.GetDevice().createFramebufferUnique(fb_info);
 
-  FML_LOG(ERROR) << "create framebuffer result is " << vk::to_string(result)
-                 << " ";  // << framebuffer.get();
   if (result != vk::Result::eSuccess) {
     VALIDATION_LOG << "Could not create framebuffer: " << vk::to_string(result);
     return {};
@@ -638,15 +636,12 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
 
   vk::RenderPassBeginInfo pass_info;
   pass_info.renderPass = *render_pass;
-  FML_LOG(ERROR) << target_size;
+  pass_info.framebuffer = *framebuffer;
   pass_info.renderArea.extent.width = static_cast<uint32_t>(target_size.width);
   pass_info.renderArea.extent.height =
       static_cast<uint32_t>(target_size.height);
   pass_info.setClearValues(clear_values);
 
-  VkRenderPassBeginInfo my_info = pass_info;
-  FML_LOG(ERROR) << "my_info is " << my_info.sType << " " << my_info.renderPass
-                 << " " << my_info.framebuffer;
   {
     TRACE_EVENT0("impeller", "EncodeRenderPassCommands");
     cmd_buffer.beginRenderPass(pass_info, vk::SubpassContents::eInline);
