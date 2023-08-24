@@ -817,9 +817,9 @@ std::optional<LRESULT> FlutterWindowsEngine::ProcessExternalWindowMessage(
 
 void FlutterWindowsEngine::OnChannelUpdate(const std::string& name,
                                            bool listening) {
-  if (name.compare("flutter/platform") == 0) {
+  if (name.compare("flutter/platform") == 0 && listening) {
     lifecycle_manager_->BeginProcessingExit();
-  } else if (name.compare("flutter/lifecycle") == 0) {
+  } else if (name.compare("flutter/lifecycle") == 0 && listening) {
     lifecycle_manager_->BeginProcessingLifecycle();
   }
 }
