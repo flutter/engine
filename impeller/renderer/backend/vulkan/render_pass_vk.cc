@@ -29,10 +29,8 @@
 
 namespace impeller {
 
-static vk::AttachmentDescription CreateAttachmentDescription(
-    const Attachment& attachment,
-    const std::shared_ptr<CommandBufferVK>& command_buffer,
-    bool resolve_texture = false) {
+static vk::AttachmentDescription foo(const Attachment& attachment,
+                                     bool resolve_texture = false) {
   const auto& texture =
       resolve_texture ? attachment.resolve_texture : attachment.texture;
   if (!texture) {
@@ -57,6 +55,31 @@ static vk::AttachmentDescription CreateAttachmentDescription(
 
   if (current_layout != vk::ImageLayout::ePresentSrcKHR &&
       current_layout != vk::ImageLayout::eUndefined) {
+    // Note: This should incur a barrier.
+    current_layout = vk::ImageLayout::eGeneral;
+  }
+
+  return CreateAttachmentDescription(desc.format,        //
+                                     desc.sample_count,  //
+                                     load_action,        //
+                                     store_action,       //
+                                     current_layout      //
+  );
+}
+
+static vk::AttachmentDescription CreateAttachmentDescription(
+    const Attachment& attachment,
+    const std::shared_ptr<CommandBufferVK>& command_buffer,
+    bool resolve_texture = false) {
+  const auto& texture =
+      resolve_texture ? attachment.resolve_texture : attachment.texture;
+  if (!texture) {
+    return {};
+  }
+  const auto& texture_vk = TextureVK::Cast(*texture);
+  vk::AttachmentDescription attachment_desc = foo(attachment, resolve_texture);
+
+  if (attachment_desc.initialLayout == vk::ImageLayout::eGeneral) {
     BarrierVK barrier;
     barrier.new_layout = vk::ImageLayout::eGeneral;
     barrier.cmd_buffer = command_buffer->GetEncoder()->GetCommandBuffer();
@@ -68,16 +91,7 @@ static vk::AttachmentDescription CreateAttachmentDescription(
                         vk::PipelineStageFlagBits::eTransfer;
 
     texture_vk.SetLayout(barrier);
-    current_layout = vk::ImageLayout::eGeneral;
   }
-
-  const auto attachment_desc =
-      CreateAttachmentDescription(desc.format,        //
-                                  desc.sample_count,  //
-                                  load_action,        //
-                                  store_action,       //
-                                  current_layout      //
-      );
 
   // Instead of transitioning layouts manually using barriers, we are going to
   // make the subpass perform our transitions.
