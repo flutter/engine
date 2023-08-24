@@ -97,9 +97,41 @@ static void SetTextureLayout(
   texture_vk.SetLayoutWithoutEncoding(attachment_desc.finalLayout);
 }
 
+namespace {
+void SetTextureLayouts(const RenderTarget& render_target,
+                       const std::shared_ptr<CommandBufferVK>& command_buffer) {
+  for (const auto& [bind_point, color] : render_target.GetColorAttachments()) {
+    SetTextureLayout(color,
+                     CreateAttachmentDescription(color, &Attachment::texture),
+                     command_buffer, &Attachment::texture);
+    if (color.resolve_texture) {
+      SetTextureLayout(
+          color,
+          CreateAttachmentDescription(color, &Attachment::resolve_texture),
+          command_buffer, &Attachment::resolve_texture);
+    }
+  }
+
+  if (auto depth = render_target.GetDepthAttachment(); depth.has_value()) {
+    SetTextureLayout(
+        depth.value(),
+        CreateAttachmentDescription(depth.value(), &Attachment::texture),
+        command_buffer, &Attachment::texture);
+  }
+
+  if (auto stencil = render_target.GetStencilAttachment();
+      stencil.has_value()) {
+    SetTextureLayout(
+        stencil.value(),
+        CreateAttachmentDescription(stencil.value(), &Attachment::texture),
+        command_buffer, &Attachment::texture);
+  }
+}
+}  // namespace
+
 SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
-    const ContextVK& context,
-    const std::shared_ptr<CommandBufferVK>& command_buffer) const {
+    const ContextVK& context) const {
+  TRACE_EVENT0("impeller", "RenderPassVK::CreateVKRenderPass");
   std::vector<vk::AttachmentDescription> attachments;
 
   std::vector<vk::AttachmentReference> color_refs;
@@ -125,15 +157,11 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
                                 vk::ImageLayout::eColorAttachmentOptimal};
     attachments.emplace_back(
         CreateAttachmentDescription(color, &Attachment::texture));
-    SetTextureLayout(color, attachments.back(), command_buffer,
-                     &Attachment::texture);
     if (color.resolve_texture) {
       resolve_refs[bind_point] = vk::AttachmentReference{
           static_cast<uint32_t>(attachments.size()), vk::ImageLayout::eGeneral};
       attachments.emplace_back(
           CreateAttachmentDescription(color, &Attachment::resolve_texture));
-      SetTextureLayout(color, attachments.back(), command_buffer,
-                       &Attachment::resolve_texture);
     }
   }
 
@@ -143,8 +171,6 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
         vk::ImageLayout::eDepthStencilAttachmentOptimal};
     attachments.emplace_back(
         CreateAttachmentDescription(depth.value(), &Attachment::texture));
-    SetTextureLayout(depth.value(), attachments.back(), command_buffer,
-                     &Attachment::texture);
   }
 
   if (auto stencil = render_target_.GetStencilAttachment();
@@ -154,8 +180,6 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
         vk::ImageLayout::eDepthStencilAttachmentOptimal};
     attachments.emplace_back(
         CreateAttachmentDescription(stencil.value(), &Attachment::texture));
-    SetTextureLayout(stencil.value(), attachments.back(), command_buffer,
-                     &Attachment::texture);
   }
 
   vk::SubpassDescription subpass_desc;
@@ -628,11 +652,12 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
 
   const auto& target_size = render_target_.GetRenderTargetSize();
 
-  auto render_pass = CreateVKRenderPass(vk_context, command_buffer);
+  auto render_pass = CreateVKRenderPass(vk_context);
   if (!render_pass) {
     VALIDATION_LOG << "Could not create renderpass.";
     return false;
   }
+  SetTextureLayouts(render_target_, command_buffer);
 
   auto framebuffer = CreateVKFramebuffer(vk_context, *render_pass);
   if (!framebuffer) {

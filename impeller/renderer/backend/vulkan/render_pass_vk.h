@@ -45,8 +45,7 @@ class RenderPassVK final : public RenderPass {
   bool OnEncodeCommands(const Context& context) const override;
 
   SharedHandleVK<vk::RenderPass> CreateVKRenderPass(
-      const ContextVK& context,
-      const std::shared_ptr<CommandBufferVK>& command_buffer) const;
+      const ContextVK& context) const;
 
   SharedHandleVK<vk::Framebuffer> CreateVKFramebuffer(
       const ContextVK& context,
