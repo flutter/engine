@@ -299,7 +299,7 @@ class FlutterWindowsEngine {
 
   // Invoked by the engine when a listener is set or cleared on a platform
   // channel.
-  virtual void OnChannelListenedTo(const std::string& name, bool listening);
+  virtual void OnChannelUpdate(const std::string& name, bool listening);
 
  private:
   // Allows swapping out embedder_api_ calls in tests.

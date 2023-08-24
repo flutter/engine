@@ -33,8 +33,7 @@ using SemanticsActionCallback =
     std::function<void(const FlutterSemanticsCustomAction*)>;
 using LogMessageCallback =
     std::function<void(const char* tag, const char* message)>;
-using ChannelListenedToCallback =
-    std::function<void(const FlutterChannelUpdate*)>;
+using ChannelUpdateCallback = std::function<void(const FlutterChannelUpdate*)>;
 
 struct AOTDataDeleter {
   void operator()(FlutterEngineAOTData aot_data) {
@@ -91,7 +90,7 @@ class EmbedderTestContext {
 
   void SetLogMessageCallback(const LogMessageCallback& log_message_callback);
 
-  void SetChannelListenedToCallback(const ChannelListenedToCallback& callback);
+  void SetChannelUpdateCallback(const ChannelUpdateCallback& callback);
 
   std::future<sk_sp<SkImage>> GetNextSceneImage();
 
@@ -136,7 +135,7 @@ class EmbedderTestContext {
   SemanticsUpdateCallback update_semantics_callback_;
   SemanticsNodeCallback update_semantics_node_callback_;
   SemanticsActionCallback update_semantics_custom_action_callback_;
-  ChannelListenedToCallback channel_listened_to_callback_;
+  ChannelUpdateCallback channel_update_callback_;
   std::function<void(const FlutterPlatformMessage*)> platform_message_callback_;
   LogMessageCallback log_message_callback_;
   std::unique_ptr<EmbedderTestCompositor> compositor_;
@@ -160,7 +159,7 @@ class EmbedderTestContext {
   static FlutterComputePlatformResolvedLocaleCallback
   GetComputePlatformResolvedLocaleCallbackHook();
 
-  FlutterChannelListenedToCallback GetChannelListenedToCallbackHook();
+  FlutterChannelUpdateCallback GetChannelUpdateCallbackHook();
 
   void SetupAOTMappingsIfNecessary();
 

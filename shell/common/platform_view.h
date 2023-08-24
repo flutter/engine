@@ -466,7 +466,15 @@ class PlatformView {
                                CustomAccessibilityActionUpdates actions);
 
   //----------------------------------------------------------------------------
-  virtual void ChannelListenedTo(const std::string& name, bool listening);
+  /// @brief      Used by the framework to tell the embedder that it has
+  ///             registered a listener on a given channel
+  ///
+  /// @param[in]  name      The name of the channel on which the listener has
+  ///                       set or cleared a listener.
+  /// @param[in]  listening True if a listener has been set, false if it has
+  ///                       been cleared.
+  ///
+  virtual void SendChannelUpdate(const std::string& name, bool listening);
 
   //----------------------------------------------------------------------------
   /// @brief      Used by embedders to specify the updated viewport metrics for

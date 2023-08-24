@@ -631,10 +631,9 @@ void PlatformConfigurationNativeApi::RegisterBackgroundIsolate(
   dart_state->SetPlatformMessageHandler(weak_platform_message_handler);
 }
 
-void PlatformConfigurationNativeApi::PlatformChannelListenedTo(
-    const std::string& name,
-    bool listening) {
-  UIDartState::Current()->platform_configuration()->client()->ChannelListenedTo(
+void PlatformConfigurationNativeApi::SendChannelUpdate(const std::string& name,
+                                                       bool listening) {
+  UIDartState::Current()->platform_configuration()->client()->SendChannelUpdate(
       name, listening);
 }
 

@@ -1132,7 +1132,7 @@ TEST_F(FlutterWindowsEngineTest, ChannelListenedTo) {
                       const FlutterProjectArgs* args, void* user_data,
                       FLUTTER_API_SYMBOL(FlutterEngine) * engine_out) {
         FlutterProjectArgs new_args = *args;
-        new_args.channel_listened_to_callback =
+        new_args.channel_update_callback =
             [](const FlutterChannelUpdate* update, void* user_data) {
               listened_to = true;
             };

@@ -373,11 +373,11 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
       host->root_isolate_create_callback_();
     }
   };
-  args.channel_listened_to_callback = [](const FlutterChannelUpdate* update,
-                                         void* user_data) {
+  args.channel_update_callback = [](const FlutterChannelUpdate* update,
+                                    void* user_data) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
     std::string channel_name(update->channel);
-    host->OnChannelListenedTo(channel_name, update->listening);
+    host->OnChannelUpdate(channel_name, update->listening);
   };
 
   args.custom_task_runners = &custom_task_runners;
@@ -815,8 +815,8 @@ std::optional<LRESULT> FlutterWindowsEngine::ProcessExternalWindowMessage(
   return std::nullopt;
 }
 
-void FlutterWindowsEngine::OnChannelListenedTo(const std::string& name,
-                                               bool listening) {
+void FlutterWindowsEngine::OnChannelUpdate(const std::string& name,
+                                           bool listening) {
   if (name.compare("flutter/platform") == 0) {
     lifecycle_manager_->BeginProcessingExit();
   } else if (name.compare("flutter/lifecycle") == 0) {

@@ -303,8 +303,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     /// @param[in]  listening        Whether the listener has been set (true) or
     ///                              cleared (false).
     ///
-    virtual void OnEngineChannelListenedTo(const std::string& name,
-                                           bool listening) = 0;
+    virtual void OnEngineChannelUpdate(const std::string& name,
+                                       bool listening) = 0;
 
     //--------------------------------------------------------------------------
     /// @brief      Synchronously invokes platform-specific APIs to apply the
@@ -990,7 +990,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
       const override;
 
   // |RuntimeDelegate|
-  void ChannelListenedTo(const std::string& name, bool listening) override;
+  void SendChannelUpdate(const std::string& name, bool listening) override;
 
   // |RuntimeDelegate|
   double GetScaledFontSize(double unscaled_font_size,

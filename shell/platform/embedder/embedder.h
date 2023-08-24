@@ -1407,7 +1407,7 @@ typedef struct {
   bool listening;
 } FlutterChannelUpdate;
 
-typedef void (*FlutterChannelListenedToCallback)(
+typedef void (*FlutterChannelUpdateCallback)(
     const FlutterChannelUpdate* /* channel update */,
     void* /* user data */);
 
@@ -2206,7 +2206,7 @@ typedef struct {
 
   /// The callback invoked by the engine in response to a channel listener
   /// being registered on the framework side.
-  FlutterChannelListenedToCallback channel_listened_to_callback;
+  FlutterChannelUpdateCallback channel_update_callback;
 } FlutterProjectArgs;
 
 #ifndef FLUTTER_ENGINE_NO_PROTOTYPES

@@ -216,7 +216,7 @@ class PlatformConfigurationClient {
   /// @param[in]  listening        Whether the listener has been set (true) or
   ///                              cleared (false).
   ///
-  virtual void ChannelListenedTo(const std::string& name, bool listening) = 0;
+  virtual void SendChannelUpdate(const std::string& name, bool listening) = 0;
 
   //--------------------------------------------------------------------------
   /// @brief      Synchronously invokes platform-specific APIs to apply the
@@ -582,8 +582,7 @@ class PlatformConfigurationNativeApi {
   static void RespondToPlatformMessage(int response_id,
                                        const tonic::DartByteData& data);
 
-  static void PlatformChannelListenedTo(const std::string& name,
-                                        bool listening);
+  static void SendChannelUpdate(const std::string& name, bool listening);
 
   //--------------------------------------------------------------------------
   /// @brief      Requests the Dart VM to adjusts the GC heuristics based on

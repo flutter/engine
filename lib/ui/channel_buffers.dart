@@ -380,7 +380,7 @@ class ChannelBuffers {
     assert(!name.contains('\u0000'), 'Channel names must not contain U+0000 NULL characters.');
     final _Channel channel = _channels.putIfAbsent(name, () => _Channel());
     channel.setListener(callback);
-    channelListenedTo(name, true);
+    sendChannelUpdate(name, true);
   }
 
   /// Clears the listener for the specified channel.
@@ -393,14 +393,14 @@ class ChannelBuffers {
     final _Channel? channel = _channels[name];
     if (channel != null) {
       channel.clearListener();
-      channelListenedTo(name, false);
+      sendChannelUpdate(name, false);
     }
   }
 
-  @Native<Void Function(Handle, Bool)>(symbol: 'PlatformConfigurationNativeApi::PlatformChannelListenedTo')
-  external static void _channelListenedTo(String name, bool listening);
+  @Native<Void Function(Handle, Bool)>(symbol: 'PlatformConfigurationNativeApi::SendChannelUpdate')
+  external static void _sendChannelUpdate(String name, bool listening);
 
-  void channelListenedTo(String name, bool listening) => _channelListenedTo(name, listening);
+  void sendChannelUpdate(String name, bool listening) => _sendChannelUpdate(name, listening);
 
   /// Deprecated. Migrate to [setListener] instead.
   ///

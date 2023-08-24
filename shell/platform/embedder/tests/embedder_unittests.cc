@@ -2571,7 +2571,7 @@ TEST_F(EmbedderTest, RegisterChannelListener) {
   context.AddNativeCallback(
       "SignalNativeTest",
       CREATE_NATIVE_ENTRY([&](Dart_NativeArguments) { latch.Signal(); }));
-  context.SetChannelListenedToCallback([&](const FlutterChannelUpdate* update) {
+  context.SetChannelUpdateCallback([&](const FlutterChannelUpdate* update) {
     if (strcmp(update->channel, "test/listen") == 0) {
       listening = true;
     }

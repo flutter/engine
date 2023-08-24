@@ -110,7 +110,7 @@ typedef CanvasPath Path;
   V(PlatformConfigurationNativeApi::GetRootIsolateToken, 0)           \
   V(PlatformConfigurationNativeApi::RegisterBackgroundIsolate, 1)     \
   V(PlatformConfigurationNativeApi::SendPortPlatformMessage, 4)       \
-  V(PlatformConfigurationNativeApi::PlatformChannelListenedTo, 2)     \
+  V(PlatformConfigurationNativeApi::SendChannelUpdate, 2)             \
   V(PlatformConfigurationNativeApi::GetScaledFontSize, 2)             \
   V(DartRuntimeHooks::Logger_PrintDebugString, 1)                     \
   V(DartRuntimeHooks::Logger_PrintString, 1)                          \
