@@ -28,9 +28,12 @@ namespace txt {
 class ParagraphBuilderSkia : public ParagraphBuilder {
  public:
   ParagraphBuilderSkia(const ParagraphStyle& style,
-                       std::shared_ptr<FontCollection> font_collection);
+                       std::shared_ptr<FontCollection> font_collection,
+                       const bool impeller_enabled);
 
   virtual ~ParagraphBuilderSkia();
+
+  bool IsImpellerEnabled() const { return impeller_enabled_; }
 
   virtual void PushStyle(const TextStyle& style) override;
   virtual void Pop() override;
@@ -47,6 +50,7 @@ class ParagraphBuilderSkia : public ParagraphBuilder {
 
   std::shared_ptr<skia::textlayout::ParagraphBuilder> builder_;
   TextStyle base_style_;
+  const bool impeller_enabled_;
   std::stack<TextStyle> txt_style_stack_;
   std::vector<flutter::DlPaint> dl_paints_;
 };

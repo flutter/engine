@@ -45,27 +45,25 @@ txt::FontStyle GetTxtFontStyle(SkFontStyle::Slant font_slant) {
 
 class DisplayListParagraphPainter : public skt::ParagraphPainter {
  public:
+  //----------------------------------------------------------------------------
+  /// @brief      Creates a |skt::ParagraphPainter| that draws to DisplayList.
+  ///
+  /// @param      builder  The display list builder.
+  /// @param[in]  dlPaints The paints referenced by ID in the `drawX` methods.
+  /// @param[in]  drawPathEffectNaively  If true, draw path effects naively by
+  ///                                    drawing multiple lines instead of
+  ///                                    providing a path effect to the paint.
+  ///
+  /// @note       Impeller does not support path effects, so this is a stop-gap
+  ///             API (see https://github.com/flutter/flutter/issues/126673)
+  ///             that probably deserves refactoring in the future (and/or usage
+  ///             of #ifdefs).
   DisplayListParagraphPainter(DisplayListBuilder* builder,
-                              const std::vector<DlPaint>& dl_paints)
-      : builder_(builder), dl_paints_(dl_paints) {}
-
-  DlPaint toDlPaint(const DecorationStyle& decor_style,
-                    DlDrawStyle draw_style = DlDrawStyle::kStroke) {
-    DlPaint paint;
-    paint.setDrawStyle(draw_style);
-    paint.setAntiAlias(true);
-    paint.setColor(decor_style.getColor());
-    paint.setStrokeWidth(decor_style.getStrokeWidth());
-    std::optional<DashPathEffect> dash_path_effect =
-        decor_style.getDashPathEffect();
-    if (dash_path_effect) {
-      std::array<SkScalar, 2> intervals{dash_path_effect->fOnLength,
-                                        dash_path_effect->fOffLength};
-      paint.setPathEffect(
-          DlDashPathEffect::Make(intervals.data(), intervals.size(), 0));
-    }
-    return paint;
-  }
+                              const std::vector<DlPaint>& dl_paints,
+                              bool draw_path_effect_naively)
+      : builder_(builder),
+        dl_paints_(dl_paints),
+        draw_path_effect_naively_(draw_path_effect_naively) {}
 
   void drawTextBlob(const sk_sp<SkTextBlob>& blob,
                     SkScalar x,
@@ -118,8 +116,29 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
                 SkScalar x1,
                 SkScalar y1,
                 const DecorationStyle& decor_style) override {
-    builder_->DrawLine(SkPoint::Make(x0, y0), SkPoint::Make(x1, y1),
-                       toDlPaint(decor_style));
+    auto dash_path_effect = decor_style.getDashPathEffect();
+    if (!draw_path_effect_naively_ || !dash_path_effect) {
+      DlPaint paint = toDlPaint(decor_style);
+      builder_->DrawLine(SkPoint::Make(x0, y0), SkPoint::Make(x1, y1), paint);
+      return;
+    }
+
+    // Draw the text decoration (i.e. dashed line) by drawing multiple lines.
+    auto dx = 0.0;
+    auto path = SkPath();
+    auto on = true;
+    while (dx < x1 - x0) {
+      if (on) {
+        path.moveTo(x0 + dx, y0);
+
+        dx += dash_path_effect->fOnLength;
+        path.lineTo(x0 + dx, y0);
+        path.close();
+      } else {
+        dx += dash_path_effect->fOffLength;
+      }
+      on = !on;
+    }
   }
 
   void clipRect(const SkRect& rect) override {
@@ -135,8 +154,26 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
   void restore() override { builder_->Restore(); }
 
  private:
+  DlPaint toDlPaint(const DecorationStyle& decor_style,
+                    DlDrawStyle draw_style = DlDrawStyle::kStroke) {
+    DlPaint paint;
+    paint.setDrawStyle(draw_style);
+    paint.setAntiAlias(true);
+    paint.setColor(decor_style.getColor());
+    paint.setStrokeWidth(decor_style.getStrokeWidth());
+    auto dash_path_effect = decor_style.getDashPathEffect();
+    if (!draw_path_effect_naively_ && dash_path_effect) {
+      std::array<SkScalar, 2> intervals{dash_path_effect->fOnLength,
+                                        dash_path_effect->fOffLength};
+      paint.setPathEffect(
+          DlDashPathEffect::Make(intervals.data(), intervals.size(), 0));
+    }
+    return paint;
+  }
+
   DisplayListBuilder* builder_;
   const std::vector<DlPaint>& dl_paints_;
+  bool draw_path_effect_naively_;
 };
 
 }  // anonymous namespace
@@ -223,7 +260,7 @@ void ParagraphSkia::Layout(double width) {
 }
 
 bool ParagraphSkia::Paint(DisplayListBuilder* builder, double x, double y) {
-  DisplayListParagraphPainter painter(builder, dl_paints_);
+  DisplayListParagraphPainter painter(builder, dl_paints_, impeller_enabled_);
   paragraph_->paint(&painter, x, y);
   return true;
 }

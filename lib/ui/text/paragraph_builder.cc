@@ -300,8 +300,10 @@ ParagraphBuilder::ParagraphBuilder(
                                         ->client()
                                         ->GetFontCollection();
 
+  auto impeller = UIDartState::Current()->GetIOManager()->GetImpellerContext();
+
   m_paragraphBuilder = txt::ParagraphBuilder::CreateSkiaBuilder(
-      style, font_collection.GetFontCollection());
+      style, font_collection.GetFontCollection(), impeller != nullptr);
 }
 
 ParagraphBuilder::~ParagraphBuilder() = default;
