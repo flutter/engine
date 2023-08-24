@@ -423,10 +423,13 @@ class ContentContext {
     return GetPipeline(texture_pipelines_, opts);
   }
 
+#ifdef FML_OS_ANDROID
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetTextureExternalPipeline(
       ContentContextOptions opts) const {
+    FML_DCHECK(GetContext()->GetBackendType() == Context::BackendType::kOpenGLES);
     return GetPipeline(texture_external_pipelines_, opts);
   }
+#endif // FML_OS_ANDROID
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPositionUVPipeline(
       ContentContextOptions opts) const {
@@ -752,7 +755,9 @@ class ContentContext {
   mutable Variants<RRectBlurPipeline> rrect_blur_pipelines_;
   mutable Variants<BlendPipeline> texture_blend_pipelines_;
   mutable Variants<TexturePipeline> texture_pipelines_;
+#ifdef FML_OS_ANDROID
   mutable Variants<TextureExternalPipeline> texture_external_pipelines_;
+#endif // FML_OS_ANDROID
   mutable Variants<PositionUVPipeline> position_uv_pipelines_;
   mutable Variants<TiledTexturePipeline> tiled_texture_pipelines_;
   mutable Variants<GaussianBlurAlphaDecalPipeline>

@@ -155,11 +155,16 @@ bool TextureContents::Render(const ContentContext& renderer,
   }
   pipeline_options.primitive_type = PrimitiveType::kTriangleStrip;
 
+#ifdef FML_OS_ANDROID
   if (is_external_texture) {
     cmd.pipeline = renderer.GetTextureExternalPipeline(pipeline_options);
   } else {
     cmd.pipeline = renderer.GetTexturePipeline(pipeline_options);
   }
+#else
+  cmd.pipeline = renderer.GetTexturePipeline(pipeline_options);
+#endif  // FML_OS_ANDROID
+
   cmd.stencil_reference = entity.GetStencilDepth();
   cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
   VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));

@@ -2,15 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-precision mediump float;
-
-#include <impeller/constants.glsl>
-#include <impeller/types.glsl>
-
 uniform sampler2D SAMPLER_EXTERNAL_OES_texture_sampler;
 
 in vec2 v_texture_coords;
-IMPELLER_MAYBE_FLAT in float16_t v_alpha;
+in float v_alpha;
 
 out vec4 frag_color;
 
