@@ -139,6 +139,8 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
       }
       on = !on;
     }
+
+    builder_->DrawPath(path, toDlPaint(decor_style));
   }
 
   void clipRect(const SkRect& rect) override {
@@ -179,8 +181,11 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
 }  // anonymous namespace
 
 ParagraphSkia::ParagraphSkia(std::unique_ptr<skt::Paragraph> paragraph,
-                             std::vector<flutter::DlPaint>&& dl_paints)
-    : paragraph_(std::move(paragraph)), dl_paints_(dl_paints) {}
+                             std::vector<flutter::DlPaint>&& dl_paints,
+                             const bool impeller_enabled)
+    : paragraph_(std::move(paragraph)),
+      dl_paints_(dl_paints),
+      impeller_enabled_(impeller_enabled) {}
 
 double ParagraphSkia::GetMaxWidth() {
   return SkScalarToDouble(paragraph_->getMaxWidth());
@@ -260,6 +265,7 @@ void ParagraphSkia::Layout(double width) {
 }
 
 bool ParagraphSkia::Paint(DisplayListBuilder* builder, double x, double y) {
+  FML_LOG(ERROR) << "impeller_enabled_: " << impeller_enabled_;
   DisplayListParagraphPainter painter(builder, dl_paints_, impeller_enabled_);
   paragraph_->paint(&painter, x, y);
   return true;

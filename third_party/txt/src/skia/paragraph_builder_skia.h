@@ -33,8 +33,6 @@ class ParagraphBuilderSkia : public ParagraphBuilder {
 
   virtual ~ParagraphBuilderSkia();
 
-  bool IsImpellerEnabled() const { return impeller_enabled_; }
-
   virtual void PushStyle(const TextStyle& style) override;
   virtual void Pop() override;
   virtual const TextStyle& PeekStyle() override;

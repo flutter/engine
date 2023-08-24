@@ -29,7 +29,8 @@ namespace txt {
 class ParagraphSkia : public Paragraph {
  public:
   ParagraphSkia(std::unique_ptr<skia::textlayout::Paragraph> paragraph,
-                std::vector<flutter::DlPaint>&& dl_paints);
+                std::vector<flutter::DlPaint>&& dl_paints,
+                const bool impeller_enabled);
 
   virtual ~ParagraphSkia() = default;
 

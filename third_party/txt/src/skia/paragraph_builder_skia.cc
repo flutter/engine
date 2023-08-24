@@ -86,8 +86,8 @@ void ParagraphBuilderSkia::AddPlaceholder(PlaceholderRun& span) {
 }
 
 std::unique_ptr<Paragraph> ParagraphBuilderSkia::Build() {
-  return std::make_unique<ParagraphSkia>(builder_->Build(),
-                                         std::move(dl_paints_));
+  return std::make_unique<ParagraphSkia>(
+      builder_->Build(), std::move(dl_paints_), impeller_enabled_);
 }
 
 skt::ParagraphPainter::PaintID ParagraphBuilderSkia::CreatePaintID(
