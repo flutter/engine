@@ -145,12 +145,12 @@ bool BufferBindingsGLES::BindUniformData(
     const Bindings& vertex_bindings,
     const Bindings& fragment_bindings) const {
   for (const auto& buffer : vertex_bindings.buffers) {
-    if (!BindUniformBuffer(gl, transients_allocator, buffer.second)) {
+    if (!BindUniformBuffer(gl, transients_allocator, buffer.second.view)) {
       return false;
     }
   }
   for (const auto& buffer : fragment_bindings.buffers) {
-    if (!BindUniformBuffer(gl, transients_allocator, buffer.second)) {
+    if (!BindUniformBuffer(gl, transients_allocator, buffer.second.view)) {
       return false;
     }
   }
@@ -177,12 +177,6 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
                                            Allocator& transients_allocator,
                                            const BufferResource& buffer) const {
   const auto* metadata = buffer.GetMetadata();
-  if (metadata == nullptr) {
-    // Vertex buffer bindings don't have metadata as those definitions are
-    // already handled by vertex attrib pointers. Keep going.
-    return true;
-  }
-
   auto device_buffer =
       buffer.resource.buffer->GetDeviceBuffer(transients_allocator);
   if (!device_buffer) {

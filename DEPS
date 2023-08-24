@@ -18,7 +18,7 @@ vars = {
   'llvm_git': 'https://llvm.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
-  'skia_revision': '76898dad9fda119aa14b05fba18d32965c54015e',
+  'skia_revision': 'b17ee34f337883f45840d16927eb9eb799df8768',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -39,7 +39,7 @@ vars = {
   # The list of revisions for these tools comes from Fuchsia, here:
   # https://fuchsia.googlesource.com/integration/+/HEAD/toolchain
   # If there are problems with the toolchain, contact fuchsia-toolchain@.
-  'clang_version': 'git_revision:6d667d4b261e81f325756fdfd5bb43b3b3d2451d',
+  'clang_version': 'git_revision:020d2fb7711d70e296f19d83565f8d93d2cfda71',
 
   # The goma version and the clang version can be tightly coupled. If goma
   # stops working on a clang roll, this may need to be updated using the value
@@ -182,7 +182,6 @@ vars = {
   "upstream_libwebp": "https://chromium.googlesource.com/webm/libwebp.git",
   "upstream_libxml": "https://gitlab.gnome.org/GNOME/libxml2.git",
   "upstream_leak_tracker": "https://github.com/dart-lang/leak_tracker.git",
-  "upstream_linter": "https://github.com/dart-lang/linter.git",
   "upstream_logging": "https://github.com/dart-lang/logging.git",
   "upstream_markdown": "https://github.com/dart-lang/markdown.git",
   "upstream_matcher": "https://github.com/dart-lang/matcher.git",
@@ -406,9 +405,6 @@ deps = {
 
   'src/third_party/dart/third_party/pkg/leak_tracker':
    Var('dart_git') + '/leak_tracker.git@098bafcf99a5220e3c352d895d991e163568ee03',
-
-  'src/third_party/dart/third_party/pkg/linter':
-   Var('dart_git') + '/linter.git@7f40f112f54124e8dbfdc1e5da048643ae019b9e',
 
   'src/third_party/dart/third_party/pkg/logging':
    Var('dart_git') + '/logging.git@521498757ed3eeae151c2d4796404e8947baa04c',
@@ -888,7 +884,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/mac-amd64',
-        'version': 'vJ6oaubpqgRM2nb1e_i0xzq5u59ChjEAmndn9yPIFiUC'
+        'version': 'jkVyhV_xfb8Mv43xjXG7mCqcFhF4nOLIt-09DcU4YP4C'
        }
      ],
      'condition': 'host_os == "mac" and not download_fuchsia_sdk',
@@ -898,7 +894,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/linux-amd64',
-        'version': '-HcyJtxGxUDcqX-joRgopminL0PbfzDP9E1TMp9xBSgC'
+        'version': '0kEa4JczTMD0Xus08aFASyutpbphg0hMC0EqbOwjcRUC'
        }
      ],
      'condition': 'host_os == "linux" and not download_fuchsia_sdk',

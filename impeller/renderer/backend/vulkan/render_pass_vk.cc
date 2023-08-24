@@ -89,7 +89,6 @@ static vk::AttachmentDescription CreateAttachmentDescription(
 SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     const ContextVK& context,
     const std::shared_ptr<CommandBufferVK>& command_buffer) const {
-  TRACE_EVENT0("impeller", "RenderPassVK::CreateVKRenderPass");
   std::vector<vk::AttachmentDescription> attachments;
 
   std::vector<vk::AttachmentReference> color_refs;
@@ -223,7 +222,6 @@ static std::vector<vk::ClearValue> GetVKClearValues(
 SharedHandleVK<vk::Framebuffer> RenderPassVK::CreateVKFramebuffer(
     const ContextVK& context,
     const vk::RenderPass& pass) const {
-  TRACE_EVENT0("impeller", "RenderPassVK::CreateVKFramebuffer");
   vk::FramebufferCreateInfo fb_info;
 
   fb_info.renderPass = pass;
@@ -368,8 +366,8 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
                        &desc_set,    //
                        &vk_desc_set  //
   ](const Bindings& bindings) -> bool {
-    for (const auto& [buffer_index, view] : bindings.buffers) {
-      const auto& buffer_view = view.resource.buffer;
+    for (const auto& [buffer_index, data] : bindings.buffers) {
+      const auto& buffer_view = data.view.resource.buffer;
 
       auto device_buffer = buffer_view->GetDeviceBuffer(allocator);
       if (!device_buffer) {
@@ -382,23 +380,18 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
         return false;
       }
 
-      // Reserved index used for per-vertex data.
-      if (buffer_index == VertexDescriptor::kReservedVertexBufferIndex) {
-        continue;
-      }
-
       if (!encoder.Track(device_buffer)) {
         return false;
       }
 
-      uint32_t offset = view.resource.range.offset;
+      uint32_t offset = data.view.resource.range.offset;
 
       vk::DescriptorBufferInfo buffer_info;
       buffer_info.buffer = buffer;
       buffer_info.offset = offset;
-      buffer_info.range = view.resource.range.length;
+      buffer_info.range = data.view.resource.range.length;
 
-      const ShaderUniformSlot& uniform = bindings.uniforms.at(buffer_index);
+      const ShaderUniformSlot& uniform = data.slot;
       auto layout_it = std::find_if(desc_set.begin(), desc_set.end(),
                                     [&uniform](DescriptorSetLayout& layout) {
                                       return layout.binding == uniform.binding;
