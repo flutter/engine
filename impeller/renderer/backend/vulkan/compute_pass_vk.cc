@@ -43,8 +43,8 @@ static bool UpdateBindingLayouts(const Bindings& bindings,
 
   barrier.new_layout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
-  for (const auto& [_, texture] : bindings.textures) {
-    if (!TextureVK::Cast(*texture.resource).SetLayout(barrier)) {
+  for (const auto& [_, data] : bindings.sampled_images) {
+    if (!TextureVK::Cast(*data.texture.resource).SetLayout(barrier)) {
       return false;
     }
   }
@@ -88,21 +88,17 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
                       &writes,      //
                       &vk_desc_set  //
   ](const Bindings& bindings) -> bool {
-    for (const auto& [index, sampler_handle] : bindings.samplers) {
-      if (bindings.textures.find(index) == bindings.textures.end()) {
-        return false;
-      }
-
-      auto texture = bindings.textures.at(index).resource;
+    for (const auto& [index, data] : bindings.sampled_images) {
+      auto texture = data.texture.resource;
       const auto& texture_vk = TextureVK::Cast(*texture);
-      const SamplerVK& sampler = SamplerVK::Cast(*sampler_handle.resource);
+      const SamplerVK& sampler = SamplerVK::Cast(*data.sampler.resource);
 
       if (!encoder.Track(texture) ||
           !encoder.Track(sampler.GetSharedSampler())) {
         return false;
       }
 
-      const SampledImageSlot& slot = bindings.sampled_images.at(index);
+      const SampledImageSlot& slot = data.slot;
 
       vk::DescriptorImageInfo image_info;
       image_info.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
@@ -129,8 +125,8 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
                        &desc_set,    //
                        &vk_desc_set  //
   ](const Bindings& bindings) -> bool {
-    for (const auto& [buffer_index, view] : bindings.buffers) {
-      const auto& buffer_view = view.resource.buffer;
+    for (const auto& [buffer_index, data] : bindings.buffers) {
+      const auto& buffer_view = data.view.resource.buffer;
 
       auto device_buffer = buffer_view->GetDeviceBuffer(allocator);
       if (!device_buffer) {
@@ -147,14 +143,14 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
         return false;
       }
 
-      uint32_t offset = view.resource.range.offset;
+      uint32_t offset = data.view.resource.range.offset;
 
       vk::DescriptorBufferInfo buffer_info;
       buffer_info.buffer = buffer;
       buffer_info.offset = offset;
-      buffer_info.range = view.resource.range.length;
+      buffer_info.range = data.view.resource.range.length;
 
-      const ShaderUniformSlot& uniform = bindings.uniforms.at(buffer_index);
+      const ShaderUniformSlot& uniform = data.slot;
       auto layout_it = std::find_if(desc_set.begin(), desc_set.end(),
                                     [&uniform](DescriptorSetLayout& layout) {
                                       return layout.binding == uniform.binding;
