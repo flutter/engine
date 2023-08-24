@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <numeric>
+#include "fml/logging.h"
 
 namespace txt {
 
@@ -49,21 +50,25 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
   /// @brief      Creates a |skt::ParagraphPainter| that draws to DisplayList.
   ///
   /// @param      builder  The display list builder.
-  /// @param[in]  dlPaints The paints referenced by ID in the `drawX` methods.
-  /// @param[in]  drawPathEffectNaively  If true, draw path effects naively by
-  ///                                    drawing multiple lines instead of
-  ///                                    providing a path effect to the paint.
+  /// @param[in]  dl_paints The paints referenced by ID in the `drawX` methods.
+  /// @param[in]  draw_path_effect  If true, draw path effects directly by
+  ///                               drawing multiple lines instead of providing
+  //                                a path effect to the paint.
   ///
-  /// @note       Impeller does not support path effects, so this is a stop-gap
-  ///             API (see https://github.com/flutter/flutter/issues/126673)
-  ///             that probably deserves refactoring in the future (and/or usage
-  ///             of #ifdefs).
+  /// @note       Impeller does not (and will not) support path effects, but the
+  ///             Skia backend does. That means that if we want to draw dashed
+  ///             and dotted lines, we need to draw them directly using the
+  ///             `drawLine` API instead of using a path effect.
+  ///
+  ///             See https://github.com/flutter/flutter/issues/126673. It
+  ///             probably makes sense to eventually make this a compile-time
+  ///             decision (i.e. with `#ifdef`) instead of a runtime option.
   DisplayListParagraphPainter(DisplayListBuilder* builder,
                               const std::vector<DlPaint>& dl_paints,
-                              bool draw_path_effect_naively)
+                              bool draw_path_effect)
       : builder_(builder),
         dl_paints_(dl_paints),
-        draw_path_effect_naively_(draw_path_effect_naively) {}
+        draw_path_effect_(draw_path_effect) {}
 
   void drawTextBlob(const sk_sp<SkTextBlob>& blob,
                     SkScalar x,
@@ -116,31 +121,25 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
                 SkScalar x1,
                 SkScalar y1,
                 const DecorationStyle& decor_style) override {
+    // We only support horizontal lines.
+    FML_DCHECK(y0 == y1);
+
+    // This function is called for both solid and dashed lines. If we're drawing
+    // a dashed line, and we're using the Impeller backend, then we need to draw
+    // the line directly using the `drawLine` API instead of using a path effect
+    // (because Impeller does not support path effects).
     auto dash_path_effect = decor_style.getDashPathEffect();
-    if (!draw_path_effect_naively_ || !dash_path_effect) {
-      DlPaint paint = toDlPaint(decor_style);
-      builder_->DrawLine(SkPoint::Make(x0, y0), SkPoint::Make(x1, y1), paint);
+    if (draw_path_effect_ && dash_path_effect) {
+      auto path = dashedLine(x0, x1, y0, *dash_path_effect);
+      builder_->DrawPath(path, toDlPaint(decor_style));
       return;
     }
 
-    // Draw the text decoration (i.e. dashed line) by drawing multiple lines.
-    auto dx = 0.0;
-    auto path = SkPath();
-    auto on = true;
-    while (dx < x1 - x0) {
-      if (on) {
-        path.moveTo(x0 + dx, y0);
-
-        dx += dash_path_effect->fOnLength;
-        path.lineTo(x0 + dx, y0);
-        path.close();
-      } else {
-        dx += dash_path_effect->fOffLength;
-      }
-      on = !on;
+    auto paint = toDlPaint(decor_style);
+    if (dash_path_effect) {
+      setPathEffect(paint, *dash_path_effect);
     }
-
-    builder_->DrawPath(path, toDlPaint(decor_style));
+    builder_->DrawLine(SkPoint::Make(x0, y0), SkPoint::Make(x1, y1), paint);
   }
 
   void clipRect(const SkRect& rect) override {
@@ -156,6 +155,31 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
   void restore() override { builder_->Restore(); }
 
  private:
+  SkPath dashedLine(SkScalar x0,
+                    SkScalar x1,
+                    SkScalar y0,
+                    const DashPathEffect& dash_path_effect) {
+    auto dx = 0.0;
+    auto path = SkPath();
+    auto on = true;
+    auto length = x1 - x0;
+    while (dx < length) {
+      if (on) {
+        // Draw the on part of the dash.
+        path.moveTo(x0 + dx, y0);
+        dx += dash_path_effect.fOnLength;
+        path.lineTo(x0 + dx, y0);
+      } else {
+        // Skip the off part of the dash.
+        dx += dash_path_effect.fOffLength;
+      }
+      on = !on;
+    }
+
+    path.close();
+    return path;
+  }
+
   DlPaint toDlPaint(const DecorationStyle& decor_style,
                     DlDrawStyle draw_style = DlDrawStyle::kStroke) {
     DlPaint paint;
@@ -163,26 +187,29 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
     paint.setAntiAlias(true);
     paint.setColor(decor_style.getColor());
     paint.setStrokeWidth(decor_style.getStrokeWidth());
-    auto dash_path_effect = decor_style.getDashPathEffect();
-    if (!draw_path_effect_naively_ && dash_path_effect) {
-      std::array<SkScalar, 2> intervals{dash_path_effect->fOnLength,
-                                        dash_path_effect->fOffLength};
-      paint.setPathEffect(
-          DlDashPathEffect::Make(intervals.data(), intervals.size(), 0));
-    }
     return paint;
+  }
+
+  void setPathEffect(DlPaint& paint, const DashPathEffect& dash_path_effect) {
+    // Impeller does not support path effects, so we should never be setting.
+    FML_DCHECK(!draw_path_effect_);
+
+    std::array<SkScalar, 2> intervals{dash_path_effect.fOnLength,
+                                      dash_path_effect.fOffLength};
+    auto effect = DlDashPathEffect::Make(intervals.data(), intervals.size(), 0);
+    paint.setPathEffect(effect);
   }
 
   DisplayListBuilder* builder_;
   const std::vector<DlPaint>& dl_paints_;
-  bool draw_path_effect_naively_;
+  bool draw_path_effect_;
 };
 
 }  // anonymous namespace
 
 ParagraphSkia::ParagraphSkia(std::unique_ptr<skt::Paragraph> paragraph,
                              std::vector<flutter::DlPaint>&& dl_paints,
-                             const bool impeller_enabled)
+                             bool impeller_enabled)
     : paragraph_(std::move(paragraph)),
       dl_paints_(dl_paints),
       impeller_enabled_(impeller_enabled) {}

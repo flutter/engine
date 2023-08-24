@@ -22,6 +22,12 @@
 
 namespace txt {
 
+//------------------------------------------------------------------------------
+/// @brief      Creates a |ParagraphBuilder| based on Skia's text layout module.
+///
+/// @param[in]  style             The style to use for the paragraph.
+/// @param[in]  font_collection   The font collection to use for the paragraph.
+/// @param[in]  impeller_enabled  Whether Impeller is enabled in the runtime.
 std::unique_ptr<ParagraphBuilder> ParagraphBuilder::CreateSkiaBuilder(
     const ParagraphStyle& style,
     std::shared_ptr<FontCollection> font_collection,

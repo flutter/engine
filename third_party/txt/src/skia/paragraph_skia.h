@@ -76,7 +76,7 @@ class ParagraphSkia : public Paragraph {
   std::vector<flutter::DlPaint> dl_paints_;
   std::optional<std::vector<LineMetrics>> line_metrics_;
   std::vector<TextStyle> line_metrics_styles_;
-  bool impeller_enabled_;
+  const bool impeller_enabled_;
 };
 
 }  // namespace txt
