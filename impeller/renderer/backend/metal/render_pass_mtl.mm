@@ -409,7 +409,8 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
                                   const Bindings& bindings,
                                   ShaderStage stage) -> bool {
     if (stage == ShaderStage::kVertex) {
-      if (!Bind(pass_bindings, *allocator, stage, VertexDescriptor::kReservedVertexBufferIndex,
+      if (!Bind(pass_bindings, *allocator, stage,
+                VertexDescriptor::kReservedVertexBufferIndex,
                 bindings.vertex_buffer.view.resource)) {
         return false;
       }
