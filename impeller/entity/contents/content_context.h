@@ -18,7 +18,7 @@
 #include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/pipeline.h"
 #include "impeller/renderer/render_target.h"
-#include "impeller/scene/scene_context.h"
+#include "impeller/typographer/typographer_context.h"
 
 #ifdef IMPELLER_DEBUG
 #include "impeller/entity/checkerboard.frag.h"
@@ -111,6 +111,10 @@
 #include "impeller/entity/framebuffer_blend_saturation.frag.h"
 #include "impeller/entity/framebuffer_blend_screen.frag.h"
 #include "impeller/entity/framebuffer_blend_softlight.frag.h"
+
+#if IMPELLER_ENABLE_3D
+#include "impeller/scene/scene_context.h"  // nogncheck
+#endif
 
 namespace impeller {
 
@@ -339,13 +343,17 @@ class RenderTargetCache;
 
 class ContentContext {
  public:
-  explicit ContentContext(std::shared_ptr<Context> context);
+  explicit ContentContext(
+      std::shared_ptr<Context> context,
+      std::shared_ptr<TypographerContext> typographer_context);
 
   ~ContentContext();
 
   bool IsValid() const;
 
+#if IMPELLER_ENABLE_3D
   std::shared_ptr<scene::SceneContext> GetSceneContext() const;
+#endif  // IMPELLER_ENABLE_3D
 
   std::shared_ptr<Tessellator> GetTessellator() const;
 
@@ -870,7 +878,9 @@ class ContentContext {
 
   bool is_valid_ = false;
   std::shared_ptr<Tessellator> tessellator_;
+#if IMPELLER_ENABLE_3D
   std::shared_ptr<scene::SceneContext> scene_context_;
+#endif  // IMPELLER_ENABLE_3D
   std::shared_ptr<RenderTargetAllocator> render_target_cache_;
   bool wireframe_ = false;
 

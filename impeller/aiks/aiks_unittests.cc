@@ -36,7 +36,10 @@
 #include "impeller/scene/material.h"
 #include "impeller/scene/node.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
-#include "impeller/typographer/backends/skia/text_render_context_skia.h"
+#include "impeller/typographer/backends/skia/typographer_context_skia.h"
+#include "impeller/typographer/backends/stb/text_frame_stb.h"
+#include "impeller/typographer/backends/stb/typeface_stb.h"
+#include "impeller/typographer/backends/stb/typographer_context_stb.h"
 #include "third_party/imgui/imgui.h"
 #include "third_party/skia/include/core/SkData.h"
 
@@ -1002,7 +1005,7 @@ TEST_P(AiksTest, CanPictureConvertToImage) {
   recorder_canvas.DrawRect({200.0, 200.0, 600, 600}, paint);
 
   Canvas canvas;
-  AiksContext renderer(GetContext());
+  AiksContext renderer(GetContext(), nullptr);
   paint.color = Color::BlackTransparent();
   canvas.DrawPaint(paint);
   Picture picture = recorder_canvas.EndRecordingAsPicture();
@@ -1249,11 +1252,11 @@ struct TextRenderOptions {
   Point position = Vector2(100, 200);
 };
 
-bool RenderTextInCanvas(const std::shared_ptr<Context>& context,
-                        Canvas& canvas,
-                        const std::string& text,
-                        const std::string& font_fixture,
-                        TextRenderOptions options = {}) {
+bool RenderTextInCanvasSkia(const std::shared_ptr<Context>& context,
+                            Canvas& canvas,
+                            const std::string& text,
+                            const std::string& font_fixture,
+                            TextRenderOptions options = {}) {
   // Draw the baseline.
   canvas.DrawRect({options.position.x - 50, options.position.y, 900, 10},
                   Paint{.color = Color::Aqua().WithAlpha(0.25)});
@@ -1274,7 +1277,36 @@ bool RenderTextInCanvas(const std::shared_ptr<Context>& context,
   }
 
   // Create the Impeller text frame and draw it at the designated baseline.
-  auto frame = TextFrameFromTextBlob(blob);
+  auto frame = MakeTextFrameFromTextBlobSkia(blob);
+
+  Paint text_paint;
+  text_paint.color = Color::Yellow().WithAlpha(options.alpha);
+  canvas.DrawTextFrame(frame, options.position, text_paint);
+  return true;
+}
+
+bool RenderTextInCanvasSTB(const std::shared_ptr<Context>& context,
+                           Canvas& canvas,
+                           const std::string& text,
+                           const std::string& font_fixture,
+                           TextRenderOptions options = {}) {
+  // Draw the baseline.
+  canvas.DrawRect({options.position.x - 50, options.position.y, 900, 10},
+                  Paint{.color = Color::Aqua().WithAlpha(0.25)});
+
+  // Mark the point at which the text is drawn.
+  canvas.DrawCircle(options.position, 5.0,
+                    Paint{.color = Color::Red().WithAlpha(0.25)});
+
+  // Construct the text blob.
+  auto mapping = flutter::testing::OpenFixtureAsMapping(font_fixture.c_str());
+  if (!mapping) {
+    return false;
+  }
+  auto typeface_stb = std::make_shared<TypefaceSTB>(std::move(mapping));
+
+  auto frame = MakeTextFrameSTB(
+      typeface_stb, Font::Metrics{.point_size = options.font_size}, text);
 
   Paint text_paint;
   text_paint.color = Color::Yellow().WithAlpha(options.alpha);
@@ -1285,9 +1317,20 @@ bool RenderTextInCanvas(const std::shared_ptr<Context>& context,
 TEST_P(AiksTest, CanRenderTextFrame) {
   Canvas canvas;
   canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
-  ASSERT_TRUE(RenderTextInCanvas(
+  ASSERT_TRUE(RenderTextInCanvasSkia(
       GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
       "Roboto-Regular.ttf"));
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderTextFrameSTB) {
+  Canvas canvas;
+  canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
+  ASSERT_TRUE(RenderTextInCanvasSTB(
+      GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
+      "Roboto-Regular.ttf"));
+
+  SetTypographerContext(TypographerContextSTB::Make());
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
@@ -1320,11 +1363,12 @@ TEST_P(AiksTest, TextFrameSubpixelAlignment) {
                                       GetSecondsElapsed() * speed)),  //
           200 + i * font_size * 1.1                                   //
       );
-      if (!RenderTextInCanvas(GetContext(), canvas,
-                              "the quick brown fox jumped over "
-                              "the lazy dog!.?",
-                              "Roboto-Regular.ttf",
-                              {.font_size = font_size, .position = position})) {
+      if (!RenderTextInCanvasSkia(
+              GetContext(), canvas,
+              "the quick brown fox jumped over "
+              "the lazy dog!.?",
+              "Roboto-Regular.ttf",
+              {.font_size = font_size, .position = position})) {
         return false;
       }
     }
@@ -1338,7 +1382,7 @@ TEST_P(AiksTest, CanRenderItalicizedText) {
   Canvas canvas;
   canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
 
-  ASSERT_TRUE(RenderTextInCanvas(
+  ASSERT_TRUE(RenderTextInCanvasSkia(
       GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
       "HomemadeApple.ttf"));
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
@@ -1348,12 +1392,12 @@ TEST_P(AiksTest, CanRenderEmojiTextFrame) {
   Canvas canvas;
   canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
 
-  ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas,
-                                 "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊",
+  ASSERT_TRUE(RenderTextInCanvasSkia(GetContext(), canvas,
+                                     "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊",
 #if FML_OS_MACOSX
-                                 "Apple Color Emoji.ttc"));
+                                     "Apple Color Emoji.ttc"));
 #else
-                                 "NotoColorEmoji.ttf"));
+                                     "NotoColorEmoji.ttf"));
 #endif
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
@@ -1362,14 +1406,14 @@ TEST_P(AiksTest, CanRenderEmojiTextFrameWithAlpha) {
   Canvas canvas;
   canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
 
-  ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas,
-                                 "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊",
+  ASSERT_TRUE(RenderTextInCanvasSkia(GetContext(), canvas,
+                                     "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊",
 #if FML_OS_MACOSX
-                                 "Apple Color Emoji.ttc", { .alpha = 0.5 }
+                                     "Apple Color Emoji.ttc", { .alpha = 0.5 }
 #else
-                                 "NotoColorEmoji.ttf", {.alpha = 0.5}
+                                     "NotoColorEmoji.ttf", {.alpha = 0.5}
 #endif
-                                 ));
+                                     ));
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
@@ -1382,13 +1426,13 @@ TEST_P(AiksTest, CanRenderTextInSaveLayer) {
 
   // Blend the layer with the parent pass using kClear to expose the coverage.
   canvas.SaveLayer({.blend_mode = BlendMode::kClear});
-  ASSERT_TRUE(RenderTextInCanvas(
+  ASSERT_TRUE(RenderTextInCanvasSkia(
       GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
       "Roboto-Regular.ttf"));
   canvas.Restore();
 
   // Render the text again over the cleared coverage rect.
-  ASSERT_TRUE(RenderTextInCanvas(
+  ASSERT_TRUE(RenderTextInCanvasSkia(
       GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
       "Roboto-Regular.ttf"));
 
@@ -1423,7 +1467,7 @@ TEST_P(AiksTest, CanRenderTextOutsideBoundaries) {
     {
       auto blob = SkTextBlob::MakeFromString(t.text, sk_font);
       ASSERT_NE(blob, nullptr);
-      auto frame = TextFrameFromTextBlob(blob);
+      auto frame = MakeTextFrameFromTextBlobSkia(blob);
       canvas.DrawTextFrame(frame, Point(), text_paint);
     }
     canvas.Restore();
@@ -1441,7 +1485,7 @@ TEST_P(AiksTest, TextRotated) {
                           0, 0.5, 0, 0,           //
                           0, 0, 0.3, 0,           //
                           100, 100, 0, 1.3));
-  ASSERT_TRUE(RenderTextInCanvas(
+  ASSERT_TRUE(RenderTextInCanvasSkia(
       GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
       "Roboto-Regular.ttf"));
 
@@ -2012,6 +2056,7 @@ TEST_P(AiksTest, SaveLayerFiltersScaleWithTransform) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+#if IMPELLER_ENABLE_3D
 TEST_P(AiksTest, SceneColorSource) {
   // Load up the scene.
   auto mapping =
@@ -2052,6 +2097,7 @@ TEST_P(AiksTest, SceneColorSource) {
 
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
+#endif  // IMPELLER_ENABLE_3D
 
 TEST_P(AiksTest, PaintWithFilters) {
   // validate that a paint with a color filter "HasFilters", no other filters
@@ -2139,7 +2185,7 @@ TEST_P(AiksTest, DrawPaintAbsorbsClears) {
   std::shared_ptr<ContextSpy> spy = ContextSpy::Make();
   std::shared_ptr<Context> real_context = GetContext();
   std::shared_ptr<ContextMock> mock_context = spy->MakeContext(real_context);
-  AiksContext renderer(mock_context);
+  AiksContext renderer(mock_context, nullptr);
   std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
 
   ASSERT_EQ(spy->render_passes_.size(), 1llu);
@@ -2159,7 +2205,7 @@ TEST_P(AiksTest, DrawRectAbsorbsClears) {
   Picture picture = canvas.EndRecordingAsPicture();
   std::shared_ptr<Context> real_context = GetContext();
   std::shared_ptr<ContextMock> mock_context = spy->MakeContext(real_context);
-  AiksContext renderer(mock_context);
+  AiksContext renderer(mock_context, nullptr);
   std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
 
   ASSERT_EQ(spy->render_passes_.size(), 1llu);
@@ -2179,7 +2225,7 @@ TEST_P(AiksTest, DrawRectAbsorbsClearsNegativeRRect) {
   Picture picture = canvas.EndRecordingAsPicture();
   std::shared_ptr<Context> real_context = GetContext();
   std::shared_ptr<ContextMock> mock_context = spy->MakeContext(real_context);
-  AiksContext renderer(mock_context);
+  AiksContext renderer(mock_context, nullptr);
   std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
 
   ASSERT_EQ(spy->render_passes_.size(), 1llu);
@@ -2199,7 +2245,7 @@ TEST_P(AiksTest, DrawRectAbsorbsClearsNegativeRotation) {
   Picture picture = canvas.EndRecordingAsPicture();
   std::shared_ptr<Context> real_context = GetContext();
   std::shared_ptr<ContextMock> mock_context = spy->MakeContext(real_context);
-  AiksContext renderer(mock_context);
+  AiksContext renderer(mock_context, nullptr);
   std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
 
   ASSERT_EQ(spy->render_passes_.size(), 1llu);
@@ -2219,7 +2265,7 @@ TEST_P(AiksTest, DrawRectAbsorbsClearsNegative) {
   Picture picture = canvas.EndRecordingAsPicture();
   std::shared_ptr<Context> real_context = GetContext();
   std::shared_ptr<ContextMock> mock_context = spy->MakeContext(real_context);
-  AiksContext renderer(mock_context);
+  AiksContext renderer(mock_context, nullptr);
   std::shared_ptr<Image> image = picture.ToImage(renderer, {301, 301});
 
   ASSERT_EQ(spy->render_passes_.size(), 1llu);
@@ -2243,7 +2289,7 @@ TEST_P(AiksTest, ClipRectElidesNoOpClips) {
   std::shared_ptr<ContextSpy> spy = ContextSpy::Make();
   std::shared_ptr<Context> real_context = GetContext();
   std::shared_ptr<ContextMock> mock_context = spy->MakeContext(real_context);
-  AiksContext renderer(mock_context);
+  AiksContext renderer(mock_context, nullptr);
   std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
 
   ASSERT_EQ(spy->render_passes_.size(), 1llu);
@@ -3011,7 +3057,7 @@ TEST_P(AiksTest, TextForegroundShaderWithTransform) {
 
   auto blob = SkTextBlob::MakeFromString("Hello", sk_font);
   ASSERT_NE(blob, nullptr);
-  auto frame = TextFrameFromTextBlob(blob);
+  auto frame = MakeTextFrameFromTextBlobSkia(blob);
   canvas.DrawTextFrame(frame, Point(), text_paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
@@ -3033,12 +3079,12 @@ TEST_P(AiksTest, CanCanvasDrawPicture) {
 
 TEST_P(AiksTest, DrawPictureWithText) {
   Canvas subcanvas;
-  ASSERT_TRUE(RenderTextInCanvas(
+  ASSERT_TRUE(RenderTextInCanvasSkia(
       GetContext(), subcanvas,
       "the quick brown fox jumped over the lazy dog!.?", "Roboto-Regular.ttf"));
   subcanvas.Translate({0, 10});
   subcanvas.Scale(Vector2(3, 3));
-  ASSERT_TRUE(RenderTextInCanvas(
+  ASSERT_TRUE(RenderTextInCanvasSkia(
       GetContext(), subcanvas,
       "the quick brown fox jumped over the very big lazy dog!.?",
       "Roboto-Regular.ttf"));
@@ -3053,7 +3099,7 @@ TEST_P(AiksTest, DrawPictureWithText) {
   canvas.Restore();
 
   canvas.Scale(Vector2(1.5, 1.5));
-  ASSERT_TRUE(RenderTextInCanvas(
+  ASSERT_TRUE(RenderTextInCanvasSkia(
       GetContext(), canvas,
       "the quick brown fox jumped over the smaller lazy dog!.?",
       "Roboto-Regular.ttf"));
@@ -3181,8 +3227,8 @@ TEST_P(AiksTest, DrawScaledTextWithPerspectiveNoSaveLayer) {
   ));
   // clang-format on
 
-  ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas, "Hello world",
-                                 "Roboto-Regular.ttf"));
+  ASSERT_TRUE(RenderTextInCanvasSkia(GetContext(), canvas, "Hello world",
+                                     "Roboto-Regular.ttf"));
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
@@ -3200,8 +3246,8 @@ TEST_P(AiksTest, DrawScaledTextWithPerspectiveSaveLayer) {
   ));
   // clang-format on
 
-  ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas, "Hello world",
-                                 "Roboto-Regular.ttf"));
+  ASSERT_TRUE(RenderTextInCanvasSkia(GetContext(), canvas, "Hello world",
+                                     "Roboto-Regular.ttf"));
 }
 
 TEST_P(AiksTest, PipelineBlendSingleParameter) {

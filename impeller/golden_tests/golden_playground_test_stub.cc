@@ -6,7 +6,14 @@
 
 namespace impeller {
 
-GoldenPlaygroundTest::GoldenPlaygroundTest() {}
+GoldenPlaygroundTest::GoldenPlaygroundTest() = default;
+
+GoldenPlaygroundTest::~GoldenPlaygroundTest() = default;
+
+void GoldenPlaygroundTest::SetTypographerContext(
+    std::shared_ptr<TypographerContext> typographer_context) {
+  typographer_context_ = std::move(typographer_context);
+};
 
 void GoldenPlaygroundTest::TearDown() {}
 
