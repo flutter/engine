@@ -1402,8 +1402,11 @@ typedef void (*FlutterUpdateSemanticsCallback2)(
     const FlutterSemanticsUpdate2* /* semantics update */,
     void* /* user data*/);
 
+/// An update to whether a message channel has a listener set or not.
 typedef struct {
+  /// The name of the channel.
   const char* channel;
+  /// True if a listener has been set, false if one has been cleared.
   bool listening;
 } FlutterChannelUpdate;
 
