@@ -321,20 +321,20 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
 
   auto& allocator = *context.GetResourceAllocator();
 
-  vk::DescriptorImageInfo images[32];
-  vk::DescriptorBufferInfo buffers[32];
-  size_t image_count = 0u;
-  size_t buffer_count = 0u;
+  std::vector<vk::DescriptorImageInfo> images;
+  std::vector<vk::DescriptorBufferInfo> buffers;
   std::vector<vk::WriteDescriptorSet> writes;
   writes.reserve(command.vertex_bindings.buffers.size() +
                  command.fragment_bindings.buffers.size() +
                  command.fragment_bindings.sampled_images.size());
+  images.reserve(command.fragment_bindings.sampled_images.size());
+  buffers.reserve(command.vertex_bindings.buffers.size() +
+                  command.fragment_bindings.buffers.size());
 
-  auto bind_images = [&encoder,      //
-                      &images,       //
-                      &image_count,  //
-                      &writes,       //
-                      &vk_desc_set   //
+  auto bind_images = [&encoder,     //
+                      &images,      //
+                      &writes,      //
+                      &vk_desc_set  //
   ](const Bindings& bindings) -> bool {
     for (const auto& [index, data] : bindings.sampled_images) {
       auto texture = data.texture.resource;
@@ -352,15 +352,14 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
       image_info.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
       image_info.sampler = sampler.GetSampler();
       image_info.imageView = texture_vk.GetImageView();
+      images.push_back(image_info);
 
       vk::WriteDescriptorSet write_set;
       write_set.dstSet = vk_desc_set.value();
       write_set.dstBinding = slot.binding;
       write_set.descriptorCount = 1u;
       write_set.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-      FML_DCHECK(image_count < 32u);
-      write_set.pImageInfo = &(images[image_count] = image_info);
-      image_count++;
+      write_set.pImageInfo = &images.back();
 
       writes.push_back(write_set);
     }
@@ -368,13 +367,12 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
     return true;
   };
 
-  auto bind_buffers = [&allocator,     //
-                       &encoder,       //
-                       &buffers,       //
-                       &buffer_count,  //
-                       &writes,        //
-                       &desc_set,      //
-                       &vk_desc_set    //
+  auto bind_buffers = [&allocator,   //
+                       &encoder,     //
+                       &buffers,     //
+                       &writes,      //
+                       &desc_set,    //
+                       &vk_desc_set  //
   ](const Bindings& bindings) -> bool {
     for (const auto& [buffer_index, data] : bindings.buffers) {
       const auto& buffer_view = data.view.resource.buffer;
@@ -405,6 +403,7 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
       buffer_info.buffer = buffer;
       buffer_info.offset = offset;
       buffer_info.range = data.view.resource.range.length;
+      buffers.push_back(buffer_info);
 
       const ShaderUniformSlot& uniform = data.slot;
       auto layout_it = std::find_if(desc_set.begin(), desc_set.end(),
@@ -423,9 +422,7 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
       write_set.dstBinding = uniform.binding;
       write_set.descriptorCount = 1u;
       write_set.descriptorType = ToVKDescriptorType(layout.descriptor_type);
-      FML_DCHECK(buffer_count < 32u);
-      write_set.pBufferInfo = &(buffers[buffer_count] = buffer_info);
-      buffer_count++;
+      write_set.pBufferInfo = &buffers.back();
 
       writes.push_back(write_set);
     }
