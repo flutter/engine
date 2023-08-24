@@ -255,6 +255,8 @@ class FlutterPlatformViewsController {
 
   void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
 
+  void OnBackgroundMethodCall(FlutterMethodCall* call, FlutterResult& result);
+
   // Returns the platform view id if the platform view (or any of its descendant view) is the first
   // responder. Returns -1 if no such platform view is found.
   long FindFirstResponderPlatformViewId();
@@ -279,6 +281,9 @@ class FlutterPlatformViewsController {
   void OnDispose(FlutterMethodCall* call, FlutterResult& result);
   void OnAcceptGesture(FlutterMethodCall* call, FlutterResult& result);
   void OnRejectGesture(FlutterMethodCall* call, FlutterResult& result);
+  void OnHitTestResult(FlutterMethodCall* call,
+                       FlutterResult& result,
+                       BOOL platformViewConsumesTouches);
   // Dispose the views in `views_to_dispose_`.
   void DisposeViews();
 
@@ -419,6 +424,8 @@ class FlutterPlatformViewsController {
                  (fml::WeakPtr<flutter::FlutterPlatformViewsController>)platformViewsController
     gestureRecognizersBlockingPolicy:
         (FlutterPlatformViewGestureRecognizersBlockingPolicy)blockingPolicy;
+
+- (void)respondToHitTestResult:(BOOL)platformViewConsumesTouches;
 
 // Stop delaying any active touch sequence (and let it arrive the embedded view).
 - (void)releaseGesture;

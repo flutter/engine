@@ -517,12 +517,14 @@ static UIView* GetViewOrPlaceholder(UIView* existing_view) {
   return pointer_data;
 }
 
-static void SendFakeTouchEvent(UIScreen* screen,
-                               FlutterEngine* engine,
-                               CGPoint location,
-                               flutter::PointerData::Change change) {
+- (void)sendFakeTouchEventWithLocation:(CGPoint)location
+                                change:(flutter::PointerData::Change)change {
+  UIScreen* screen = [self flutterScreenIfViewLoaded];
+  if (!screen) {
+    return;
+  }
   const CGFloat scale = screen.scale;
-  flutter::PointerData pointer_data = [[engine viewController] generatePointerDataForFake];
+  flutter::PointerData pointer_data = [[_engine.get() viewController] generatePointerDataForFake];
   pointer_data.physical_x = location.x * scale;
   pointer_data.physical_y = location.y * scale;
   auto packet = std::make_unique<flutter::PointerDataPacket>(/*count=*/1);
@@ -538,8 +540,8 @@ static void SendFakeTouchEvent(UIScreen* screen,
   CGPoint statusBarPoint = CGPointZero;
   UIScreen* screen = [self flutterScreenIfViewLoaded];
   if (screen) {
-    SendFakeTouchEvent(screen, _engine.get(), statusBarPoint, flutter::PointerData::Change::kDown);
-    SendFakeTouchEvent(screen, _engine.get(), statusBarPoint, flutter::PointerData::Change::kUp);
+    [self sendFakeTouchEventWithLocation:statusBarPoint change:flutter::PointerData::Change::kDown];
+    [self sendFakeTouchEventWithLocation:statusBarPoint change:flutter::PointerData::Change::kUp];
   }
   return NO;
 }

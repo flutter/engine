@@ -187,6 +187,17 @@ void FlutterPlatformViewsController::OnMethodCall(FlutterMethodCall* call, Flutt
   }
 }
 
+void FlutterPlatformViewsController::OnBackgroundMethodCall(FlutterMethodCall* call,
+                                                            FlutterResult& result) {
+  if ([[call method] isEqualToString:@"acceptGesture"]) {
+    OnHitTestResult(call, result, YES);
+  } else if ([[call method] isEqualToString:@"rejectGesture"]) {
+    OnHitTestResult(call, result, NO);
+  } else {
+    result(FlutterMethodNotImplemented);
+  }
+}
+
 void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterResult& result) {
   __block FlutterError* error = nil;
   dispatch_async(dispatch_get_main_queue(), ^(void) {
@@ -309,6 +320,25 @@ void FlutterPlatformViewsController::OnRejectGesture(FlutterMethodCall* call,
 
   FlutterTouchInterceptingView* view = touch_interceptors_[viewId].get();
   [view blockGesture];
+
+  result(nil);
+}
+
+void FlutterPlatformViewsController::OnHitTestResult(FlutterMethodCall* call,
+                                                     FlutterResult& result,
+                                                     BOOL platformViewConsumesTouches) {
+  NSDictionary<NSString*, id>* args = [call arguments];
+  int64_t viewId = [args[@"id"] longLongValue];
+
+  if (views_.count(viewId) == 0) {
+    result([FlutterError errorWithCode:@"unknown_view"
+                               message:@"trying to send hit test result for an unknown view"
+                               details:[NSString stringWithFormat:@"view id: '%lld'", viewId]]);
+    return;
+  }
+
+  FlutterTouchInterceptingView* view = touch_interceptors_[viewId].get();
+  [view respondToHitTestResult:platformViewConsumesTouches];
 
   result(nil);
 }
@@ -1011,15 +1041,17 @@ void FlutterPlatformViewsController::ResetFrameState() {
   return [[_embeddedView retain] autorelease];
 }
 
-- (void)releaseGesture {
-  _platformViewConsumesTouches = YES;
+- (void)respondToHitTestResult:(BOOL)platformViewConsumesTouches {
+  NSLog(@"respondToHitTestResult: %@", @(platformViewConsumesTouches));
+  _platformViewConsumesTouches = platformViewConsumesTouches;
   _platformViewsController->HitTestMutex().unlock();
+}
+
+- (void)releaseGesture {
   _delayingRecognizer.get().state = UIGestureRecognizerStateFailed;
 }
 
 - (void)blockGesture {
-  _platformViewConsumesTouches = NO;
-  _platformViewsController->HitTestMutex().unlock();
   switch (_blockingPolicy) {
     case FlutterPlatformViewGestureRecognizersBlockingPolicyEager:
       // We block all other gesture recognizers immediately in this policy.
