@@ -31,6 +31,12 @@ if [[ $1 == "" ]]; then
   exit 1
 fi
 
+#Validate version contains only lower case letters and numbers
+if ! [[ $1 =~ ^[[:lower:][:digit:]]+$ ]]; then
+    echo "Version tag can only consist of lower case letters and digits";
+    exit 1
+fi
+
 # Validate path contains depot_tools
 if [[ `which cipd` == "" ]]; then
   echo "'cipd' command not found. depot_tools should be on the path."
