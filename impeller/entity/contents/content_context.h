@@ -17,7 +17,9 @@
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/pipeline.h"
+#include "impeller/renderer/render_target.h"
 #include "impeller/scene/scene_context.h"
+#include "impeller/typographer/typographer_context.h"
 
 #ifdef IMPELLER_DEBUG
 #include "impeller/entity/checkerboard.frag.h"
@@ -44,6 +46,7 @@
 #include "impeller/entity/morphology_filter.vert.h"
 #include "impeller/entity/points.comp.h"
 #include "impeller/entity/porter_duff_blend.frag.h"
+#include "impeller/entity/porter_duff_blend.vert.h"
 #include "impeller/entity/radial_gradient_fill.frag.h"
 #include "impeller/entity/rrect_blur.frag.h"
 #include "impeller/entity/rrect_blur.vert.h"
@@ -182,7 +185,7 @@ using GlyphAtlasPipeline =
 using GlyphAtlasColorPipeline =
     RenderPipelineT<GlyphAtlasVertexShader, GlyphAtlasColorFragmentShader>;
 using PorterDuffBlendPipeline =
-    RenderPipelineT<BlendVertexShader, PorterDuffBlendFragmentShader>;
+    RenderPipelineT<PorterDuffBlendVertexShader, PorterDuffBlendFragmentShader>;
 // Instead of requiring new shaders for clips, the solid fill stages are used
 // to redirect writing to the stencil instead of color attachments.
 using ClipPipeline = RenderPipelineT<ClipVertexShader, ClipFragmentShader>;
@@ -333,10 +336,13 @@ struct ContentContextOptions {
 };
 
 class Tessellator;
+class RenderTargetCache;
 
 class ContentContext {
  public:
-  explicit ContentContext(std::shared_ptr<Context> context);
+  explicit ContentContext(
+      std::shared_ptr<Context> context,
+      std::shared_ptr<TypographerContext> typographer_context);
 
   ~ContentContext();
 
@@ -707,6 +713,10 @@ class ContentContext {
     return lazy_glyph_atlas_;
   }
 
+  std::shared_ptr<RenderTargetAllocator> GetRenderTargetCache() const {
+    return render_target_cache_;
+  }
+
  private:
   std::shared_ptr<Context> context_;
   std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas_;
@@ -864,6 +874,7 @@ class ContentContext {
   bool is_valid_ = false;
   std::shared_ptr<Tessellator> tessellator_;
   std::shared_ptr<scene::SceneContext> scene_context_;
+  std::shared_ptr<RenderTargetAllocator> render_target_cache_;
   bool wireframe_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContentContext);

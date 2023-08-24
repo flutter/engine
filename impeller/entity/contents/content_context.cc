@@ -10,11 +10,13 @@
 #include "impeller/base/strings.h"
 #include "impeller/core/formats.h"
 #include "impeller/entity/entity.h"
+#include "impeller/entity/render_target_cache.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/tessellator/tessellator.h"
+#include "impeller/typographer/typographer_context.h"
 
 namespace impeller {
 
@@ -158,11 +160,16 @@ static std::unique_ptr<PipelineT> CreateDefaultPipeline(
   return std::make_unique<PipelineT>(context, desc);
 }
 
-ContentContext::ContentContext(std::shared_ptr<Context> context)
+ContentContext::ContentContext(
+    std::shared_ptr<Context> context,
+    std::shared_ptr<TypographerContext> typographer_context)
     : context_(std::move(context)),
-      lazy_glyph_atlas_(std::make_shared<LazyGlyphAtlas>()),
+      lazy_glyph_atlas_(
+          std::make_shared<LazyGlyphAtlas>(std::move(typographer_context))),
       tessellator_(std::make_shared<Tessellator>()),
-      scene_context_(std::make_shared<scene::SceneContext>(context_)) {
+      scene_context_(std::make_shared<scene::SceneContext>(context_)),
+      render_target_cache_(std::make_shared<RenderTargetCache>(
+          context_->GetResourceAllocator())) {
   if (!context_ || !context_->IsValid()) {
     return;
   }
@@ -269,6 +276,8 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<BlendPipeline>(*context_);
   texture_pipelines_[default_options_] =
       CreateDefaultPipeline<TexturePipeline>(*context_);
+  texture_external_pipelines_[default_options_] =
+      CreateDefaultPipeline<TextureExternalPipeline>(*context_);
   position_uv_pipelines_[default_options_] =
       CreateDefaultPipeline<PositionUVPipeline>(*context_);
   tiled_texture_pipelines_[default_options_] =
@@ -357,7 +366,8 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
   RenderTarget subpass_target;
   if (context->GetCapabilities()->SupportsOffscreenMSAA() && msaa_enabled) {
     subpass_target = RenderTarget::CreateOffscreenMSAA(
-        *context, texture_size, SPrintF("%s Offscreen", label.c_str()),
+        *context, *GetRenderTargetCache(), texture_size,
+        SPrintF("%s Offscreen", label.c_str()),
         RenderTarget::kDefaultColorAttachmentConfigMSAA  //
 #ifndef FML_OS_ANDROID  // Reduce PSO variants for Vulkan.
         ,
@@ -366,7 +376,8 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
     );
   } else {
     subpass_target = RenderTarget::CreateOffscreen(
-        *context, texture_size, SPrintF("%s Offscreen", label.c_str()),
+        *context, *GetRenderTargetCache(), texture_size,
+        SPrintF("%s Offscreen", label.c_str()),
         RenderTarget::kDefaultColorAttachmentConfig  //
 #ifndef FML_OS_ANDROID  // Reduce PSO variants for Vulkan.
         ,

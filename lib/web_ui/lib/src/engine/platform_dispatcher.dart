@@ -580,6 +580,9 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
           case 'Clipboard.getData':
             ClipboardMessageHandler().getDataMethodCall(callback);
             return;
+          case 'Clipboard.hasStrings':
+            ClipboardMessageHandler().hasStringsMethodCall(callback);
+            return;
         }
 
       // Dispatched by the bindings to delay service worker initialization.
@@ -1284,6 +1287,9 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   @override
   ui.FrameData get frameData => const ui.FrameData.webOnly();
+
+  @override
+  double scaleFontSize(double unscaledFontSize) => unscaledFontSize * textScaleFactor;
 }
 
 bool _handleWebTestEnd2EndMessage(MethodCodec codec, ByteData? data) {

@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "flow/frame_timings.h"
+#include "flutter/common/constants.h"
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/flow/layers/offscreen_surface.h"
 #include "flutter/fml/time/time_delta.h"
@@ -156,6 +157,14 @@ void Rasterizer::NotifyLowMemoryWarning() const {
   context->performDeferredCleanup(std::chrono::milliseconds(0));
 }
 
+void Rasterizer::CollectView(int64_t view_id) {
+  // TODO(dkwingsmt): When Rasterizer supports multi-view, this method should
+  // correctly clear the view corresponding to the ID.
+  if (view_id == kFlutterImplicitViewId) {
+    last_layer_tree_.reset();
+  }
+}
+
 std::shared_ptr<flutter::TextureRegistry> Rasterizer::GetTextureRegistry() {
   return compositor_context_->texture_registry();
 }
@@ -186,8 +195,7 @@ void Rasterizer::DrawLastLayerTree(
 }
 
 RasterStatus Rasterizer::Draw(
-    const std::shared_ptr<LayerTreePipeline>& pipeline,
-    LayerTreeDiscardCallback discard_callback) {
+    const std::shared_ptr<LayerTreePipeline>& pipeline) {
   TRACE_EVENT0("flutter", "GPURasterizer::Draw");
   if (raster_thread_merger_ &&
       !raster_thread_merger_->IsOnRasterizingThread()) {
@@ -200,12 +208,16 @@ RasterStatus Rasterizer::Draw(
 
   RasterStatus raster_status = RasterStatus::kFailed;
   LayerTreePipeline::Consumer consumer =
-      [&](std::unique_ptr<LayerTreeItem> item) {
+      [&raster_status, this,
+       &delegate = delegate_](std::unique_ptr<LayerTreeItem> item) {
+        // TODO(dkwingsmt): Use a proper view ID when Rasterizer supports
+        // multi-view.
+        int64_t view_id = kFlutterImplicitViewId;
         std::unique_ptr<LayerTree> layer_tree = std::move(item->layer_tree);
         std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =
             std::move(item->frame_timings_recorder);
         float device_pixel_ratio = item->device_pixel_ratio;
-        if (discard_callback(*layer_tree.get())) {
+        if (delegate.ShouldDiscardLayerTree(view_id, *layer_tree.get())) {
           raster_status = RasterStatus::kDiscarded;
         } else {
           raster_status = DoDraw(std::move(frame_timings_recorder),
@@ -247,13 +259,11 @@ RasterStatus Rasterizer::Draw(
   switch (consume_result) {
     case PipelineConsumeResult::MoreAvailable: {
       delegate_.GetTaskRunners().GetRasterTaskRunner()->PostTask(
-          fml::MakeCopyable(
-              [weak_this = weak_factory_.GetWeakPtr(), pipeline,
-               discard_callback = std::move(discard_callback)]() mutable {
-                if (weak_this) {
-                  weak_this->Draw(pipeline, std::move(discard_callback));
-                }
-              }));
+          [weak_this = weak_factory_.GetWeakPtr(), pipeline]() {
+            if (weak_this) {
+              weak_this->Draw(pipeline);
+            }
+          });
       break;
     }
     default:

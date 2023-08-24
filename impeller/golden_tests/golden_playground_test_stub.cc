@@ -4,9 +4,18 @@
 
 #include "flutter/impeller/golden_tests/golden_playground_test.h"
 
+#include "impeller/aiks/picture.h"
+
 namespace impeller {
 
-GoldenPlaygroundTest::GoldenPlaygroundTest() {}
+GoldenPlaygroundTest::GoldenPlaygroundTest() = default;
+
+GoldenPlaygroundTest::~GoldenPlaygroundTest() = default;
+
+void GoldenPlaygroundTest::SetTypographerContext(
+    std::shared_ptr<TypographerContext> typographer_context) {
+  typographer_context_ = std::move(typographer_context);
+};
 
 void GoldenPlaygroundTest::TearDown() {}
 
@@ -18,12 +27,13 @@ PlaygroundBackend GoldenPlaygroundTest::GetBackend() const {
   return GetParam();
 }
 
-bool GoldenPlaygroundTest::OpenPlaygroundHere(const Picture& picture) {
+bool GoldenPlaygroundTest::OpenPlaygroundHere(Picture picture) {
   return false;
 }
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(
-    const AiksPlaygroundCallback& callback) {
+    AiksPlaygroundCallback
+        callback) {  // NOLINT(performance-unnecessary-value-param)
   return false;
 }
 
