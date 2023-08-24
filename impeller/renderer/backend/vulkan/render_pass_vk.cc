@@ -29,8 +29,9 @@
 
 namespace impeller {
 
-static vk::AttachmentDescription foo(const Attachment& attachment,
-                                     bool resolve_texture = false) {
+static vk::AttachmentDescription CreateAttachmentDescription(
+    const Attachment& attachment,
+    bool resolve_texture = false) {
   const auto& texture =
       resolve_texture ? attachment.resolve_texture : attachment.texture;
   if (!texture) {
@@ -67,17 +68,17 @@ static vk::AttachmentDescription foo(const Attachment& attachment,
   );
 }
 
-static vk::AttachmentDescription CreateAttachmentDescription(
+static void SetTextureLayout(
     const Attachment& attachment,
+    const vk::AttachmentDescription& attachment_desc,
     const std::shared_ptr<CommandBufferVK>& command_buffer,
     bool resolve_texture = false) {
   const auto& texture =
       resolve_texture ? attachment.resolve_texture : attachment.texture;
   if (!texture) {
-    return {};
+    return;
   }
   const auto& texture_vk = TextureVK::Cast(*texture);
-  vk::AttachmentDescription attachment_desc = foo(attachment, resolve_texture);
 
   if (attachment_desc.initialLayout == vk::ImageLayout::eGeneral) {
     BarrierVK barrier;
@@ -96,8 +97,6 @@ static vk::AttachmentDescription CreateAttachmentDescription(
   // Instead of transitioning layouts manually using barriers, we are going to
   // make the subpass perform our transitions.
   texture_vk.SetLayoutWithoutEncoding(attachment_desc.finalLayout);
-
-  return attachment_desc;
 }
 
 SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
@@ -127,13 +126,14 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     color_refs[bind_point] =
         vk::AttachmentReference{static_cast<uint32_t>(attachments.size()),
                                 vk::ImageLayout::eColorAttachmentOptimal};
-    attachments.emplace_back(
-        CreateAttachmentDescription(color, command_buffer));
+    attachments.emplace_back(CreateAttachmentDescription(color));
+    SetTextureLayout(color, attachments.back(), command_buffer);
     if (color.resolve_texture) {
       resolve_refs[bind_point] = vk::AttachmentReference{
           static_cast<uint32_t>(attachments.size()), vk::ImageLayout::eGeneral};
       attachments.emplace_back(
-          CreateAttachmentDescription(color, command_buffer, true));
+          CreateAttachmentDescription(color, true));
+      SetTextureLayout(color, attachments.back(), command_buffer, true);
     }
   }
 
@@ -142,7 +142,8 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
         static_cast<uint32_t>(attachments.size()),
         vk::ImageLayout::eDepthStencilAttachmentOptimal};
     attachments.emplace_back(
-        CreateAttachmentDescription(depth.value(), command_buffer));
+        CreateAttachmentDescription(depth.value()));
+    SetTextureLayout(depth.value(), attachments.back(), command_buffer);
   }
 
   if (auto stencil = render_target_.GetStencilAttachment();
@@ -151,7 +152,8 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
         static_cast<uint32_t>(attachments.size()),
         vk::ImageLayout::eDepthStencilAttachmentOptimal};
     attachments.emplace_back(
-        CreateAttachmentDescription(stencil.value(), command_buffer));
+        CreateAttachmentDescription(stencil.value()));
+    SetTextureLayout(stencil.value(), attachments.back(), command_buffer);
   }
 
   vk::SubpassDescription subpass_desc;
