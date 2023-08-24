@@ -14,7 +14,7 @@
                 "--unoptimized",
                 "--no-lto",
                 "--prebuilt-dart-sdk",
-                "--impeller-enable-3d"
+                "--enable-impeller-3d"
             ],
             "name": "host_debug_unopt",
             "ninja": {
