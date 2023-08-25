@@ -30,17 +30,17 @@ NSBundle* FLTFrameworkBundleInternal(NSString* flutterFrameworkBundleID, NSURL* 
 // `+[NSBundle bundleWithIdentifier:]`.
 NSBundle* FLTFrameworkBundleWithIdentifier(NSString* flutterFrameworkBundleID);
 
-// Find the bundle of the application.
+// Finds the bundle of the application.
 //
-// This returns [NSBundle mainBundle] if the current running process is the application.
+// Returns [NSBundle mainBundle] if the current running process is the application.
 NSBundle* FLTGetApplicationBundle();
 
-// Find the Flutter asset directory from `bundle`.
+// Finds the Flutter asset directory from `bundle`.
 //
 // The raw path can be set by the application via info.plist's `FLTAssetsPath` key.
 // If the key is not set, `flutter_assets` is used as the raw path value.
 //
-// If no valid asset is found under the raw path, return nil.
+// If no valid asset is found under the raw path, returns nil.
 NSURL* FLTAssetsURLFromBundle(NSBundle* bundle);
 
 NS_ASSUME_NONNULL_END
