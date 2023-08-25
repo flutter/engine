@@ -52,7 +52,7 @@ class PainterTestBase : public CanvasTestBase<T> {
   void PretendImpellerIsEnabled(bool impeller) { impeller_ = impeller; }
 
  protected:
-  sk_sp<DisplayList> draw(txt::TextDecorationStyle style) {
+  sk_sp<DisplayList> draw(txt::TextDecorationStyle style) const {
     auto t_style = makeDecoratedStyle(style);
     auto pb_skia = makeParagraphBuilder();
     pb_skia.PushStyle(t_style);
@@ -68,7 +68,7 @@ class PainterTestBase : public CanvasTestBase<T> {
   }
 
  private:
-  std::shared_ptr<txt::FontCollection> makeFontCollection() {
+  std::shared_ptr<txt::FontCollection> makeFontCollection() const {
     auto f_collection = std::make_shared<txt::FontCollection>();
     auto font_provider = std::make_unique<txt::TypefaceFontAssetProvider>();
     for (auto& font : GetTestFontData()) {
@@ -79,13 +79,13 @@ class PainterTestBase : public CanvasTestBase<T> {
     return f_collection;
   }
 
-  txt::ParagraphBuilderSkia makeParagraphBuilder() {
+  txt::ParagraphBuilderSkia makeParagraphBuilder() const {
     auto p_style = txt::ParagraphStyle();
     auto f_collection = makeFontCollection();
     return txt::ParagraphBuilderSkia(p_style, f_collection, impeller_);
   }
 
-  txt::TextStyle makeDecoratedStyle(txt::TextDecorationStyle style) {
+  txt::TextStyle makeDecoratedStyle(txt::TextDecorationStyle style) const {
     auto t_style = txt::TextStyle();
     t_style.color = SK_ColorBLACK;                // default
     t_style.font_weight = txt::FontWeight::w400;  // normal
