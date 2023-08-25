@@ -7,6 +7,7 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/impeller/renderer/backend/gles/surface_gles.h"
 #include "flutter/impeller/renderer/renderer.h"
+#include "flutter/impeller/typographer/backends/skia/typographer_context_skia.h"
 
 namespace flutter {
 
