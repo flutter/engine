@@ -68,10 +68,7 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
                               bool draw_path_effect)
       : builder_(builder),
         dl_paints_(dl_paints),
-        draw_path_effect_(draw_path_effect) {
-    FML_LOG(ERROR) << "DisplayListParagraphPainter draw_path_effect_: "
-                   << draw_path_effect_;
-  }
+        draw_path_effect_(draw_path_effect) {}
 
   void drawTextBlob(const sk_sp<SkTextBlob>& blob,
                     SkScalar x,
