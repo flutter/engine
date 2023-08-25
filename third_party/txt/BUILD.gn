@@ -156,7 +156,6 @@ if (enable_unittests) {
       ":txt_fixtures",
       "//flutter/fml",
       "//flutter/runtime:test_font",
-      "//flutter/shell/common:common",
       "//flutter/testing:skia",
       "//flutter/testing:testing_lib",
       "//third_party/skia/modules/skparagraph:skparagraph",

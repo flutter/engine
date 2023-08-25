@@ -3,29 +3,11 @@
 // found in the LICENSE file.
 
 #include <memory>
-#include "display_list/display_list.h"
-#include "display_list/dl_builder.h"
-#include "display_list/dl_op_records.h"
-#include "display_list/dl_paint.h"
-#include "display_list/effects/dl_path_effect.h"
-#include "flutter/fml/macros.h"
-#include "fml/command_line.h"
-#include "fml/icu_util.h"
+#include "display_list/utils/dl_receiver_utils.h"
 #include "gtest/gtest.h"
-#include "include/core/SkColor.h"
-#include "include/core/SkRefCnt.h"
-#include "include/core/SkTextBlob.h"
 #include "runtime/test_font_data.h"
-#include "shell/common/dl_op_spy.h"
 #include "skia/paragraph_builder_skia.h"
-#include "skia/paragraph_skia.h"
 #include "testing/canvas_test.h"
-#include "testing/display_list_testing.h"
-#include "third_party/skia/modules/skparagraph/include/ParagraphBuilder.h"
-#include "txt/font_collection.h"
-#include "txt/paragraph.h"
-#include "txt/text_decoration.h"
-#include "txt/typeface_font_asset_provider.h"
 
 namespace flutter {
 namespace testing {
