@@ -18,7 +18,6 @@
 #include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/pipeline.h"
 #include "impeller/renderer/render_target.h"
-#include "impeller/scene/scene_context.h"
 #include "impeller/typographer/typographer_context.h"
 
 #ifdef IMPELLER_DEBUG
@@ -115,6 +114,10 @@
 #ifdef IMPELLER_ENABLE_OPENGLES
 #include "impeller/entity/texture_fill_external.frag.h"
 #endif  // IMPELLER_ENABLE_OPENGLES
+
+#if IMPELLER_ENABLE_3D
+#include "impeller/scene/scene_context.h"  // nogncheck
+#endif
 
 namespace impeller {
 
@@ -354,7 +357,9 @@ class ContentContext {
 
   bool IsValid() const;
 
+#if IMPELLER_ENABLE_3D
   std::shared_ptr<scene::SceneContext> GetSceneContext() const;
+#endif  // IMPELLER_ENABLE_3D
 
   std::shared_ptr<Tessellator> GetTessellator() const;
 
@@ -885,7 +890,9 @@ class ContentContext {
 
   bool is_valid_ = false;
   std::shared_ptr<Tessellator> tessellator_;
+#if IMPELLER_ENABLE_3D
   std::shared_ptr<scene::SceneContext> scene_context_;
+#endif  // IMPELLER_ENABLE_3D
   std::shared_ptr<RenderTargetAllocator> render_target_cache_;
   bool wireframe_ = false;
 
