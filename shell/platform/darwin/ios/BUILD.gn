@@ -227,6 +227,11 @@ source_set("ios_test_flutter_mrc") {
     "-F$platform_frameworks_path",
     "-mios-simulator-version-min=$ios_testing_deployment_target",
   ]
+
+  # An XCode15-beta has a bug where iOS 17 API usage is not guarded.
+  # This bug results engine build failure since the engine treats warnings as errors.
+  # The `-Wno-unguarded-availability-new` can be removed when the XCode bug is fixed.
+  # See details in https://github.com/flutter/flutter/issues/128958.
   cflags_objcc = [ "-Wno-unguarded-availability-new" ]
   sources = [
     "framework/Source/FlutterEnginePlatformViewTest.mm",
@@ -272,6 +277,11 @@ shared_library("ios_test_flutter") {
     "-fobjc-arc",
     "-mios-simulator-version-min=$ios_testing_deployment_target",
   ]
+
+  # An XCode15-beta has a bug where iOS 17 API usage is not guarded.
+  # This bug results engine build failure since the engine treats warnings as errors.
+  # The `-Wno-unguarded-availability-new` can be removed when the XCode bug is fixed.
+  # See details in https://github.com/flutter/flutter/issues/128958.
   cflags_objcc = [ "-Wno-unguarded-availability-new" ]
   ldflags = [
     "-F$platform_frameworks_path",
