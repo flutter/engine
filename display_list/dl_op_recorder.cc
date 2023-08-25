@@ -382,7 +382,7 @@ void DlOpRecorder::restoreLayer(const DlImageFilter* filter,
     // Ideally we would insert this back in the list of rects with the
     // OpID of the original SaveLayer...
     if (!clip.isEmpty()) {
-      accumulator_->accumulate(clip, op_index_);
+      accumulator_->accumulate(clip, render_op_count_);
     }
   }
 }

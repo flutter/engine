@@ -16,7 +16,7 @@
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/tessellator/tessellator.h"
-#include "impeller/typographer/text_render_context.h"
+#include "impeller/typographer/typographer_context.h"
 
 namespace impeller {
 
@@ -162,12 +162,14 @@ static std::unique_ptr<PipelineT> CreateDefaultPipeline(
 
 ContentContext::ContentContext(
     std::shared_ptr<Context> context,
-    std::shared_ptr<TextRenderContext> text_render_context)
+    std::shared_ptr<TypographerContext> typographer_context)
     : context_(std::move(context)),
       lazy_glyph_atlas_(
-          std::make_shared<LazyGlyphAtlas>(std::move(text_render_context))),
+          std::make_shared<LazyGlyphAtlas>(std::move(typographer_context))),
       tessellator_(std::make_shared<Tessellator>()),
+#if IMPELLER_ENABLE_3D
       scene_context_(std::make_shared<scene::SceneContext>(context_)),
+#endif  // IMPELLER_ENABLE_3D
       render_target_cache_(std::make_shared<RenderTargetCache>(
           context_->GetResourceAllocator())) {
   if (!context_ || !context_->IsValid()) {
@@ -276,8 +278,6 @@ ContentContext::ContentContext(
       CreateDefaultPipeline<BlendPipeline>(*context_);
   texture_pipelines_[default_options_] =
       CreateDefaultPipeline<TexturePipeline>(*context_);
-  texture_external_pipelines_[default_options_] =
-      CreateDefaultPipeline<TextureExternalPipeline>(*context_);
   position_uv_pipelines_[default_options_] =
       CreateDefaultPipeline<PositionUVPipeline>(*context_);
   tiled_texture_pipelines_[default_options_] =
@@ -310,7 +310,13 @@ ContentContext::ContentContext(
       CreateDefaultPipeline<YUVToRGBFilterPipeline>(*context_);
   porter_duff_blend_pipelines_[default_options_] =
       CreateDefaultPipeline<PorterDuffBlendPipeline>(*context_);
-
+  // GLES only shader.
+#ifdef IMPELLER_ENABLE_OPENGLES
+  if (GetContext()->GetBackendType() == Context::BackendType::kOpenGLES) {
+    texture_external_pipelines_[default_options_] =
+        CreateDefaultPipeline<TextureExternalPipeline>(*context_);
+  }
+#endif  // IMPELLER_ENABLE_OPENGLES
   if (context_->GetCapabilities()->SupportsCompute()) {
     auto pipeline_desc =
         PointsComputeShaderPipeline::MakeDefaultPipelineDescriptor(*context_);
@@ -413,9 +419,11 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
   return subpass_texture;
 }
 
+#if IMPELLER_ENABLE_3D
 std::shared_ptr<scene::SceneContext> ContentContext::GetSceneContext() const {
   return scene_context_;
 }
+#endif  // IMPELLER_ENABLE_3D
 
 std::shared_ptr<Tessellator> ContentContext::GetTessellator() const {
   return tessellator_;

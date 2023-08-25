@@ -285,7 +285,9 @@ void DlCanvasToReceiver::Translate(SkScalar tx, SkScalar ty) {
   if (SkScalarIsFinite(tx) && SkScalarIsFinite(ty) &&
       (tx != 0.0 || ty != 0.0)) {
     receiver_->translate(tx, ty);
-    current_layer_->state_is_nop_ = receiver_->is_nop();
+    if (receiver_->is_nop()) {
+      current_layer_->state_is_nop_ = true;
+    }
   }
 }
 void DlCanvasToReceiver::Scale(SkScalar sx, SkScalar sy) {
@@ -293,14 +295,18 @@ void DlCanvasToReceiver::Scale(SkScalar sx, SkScalar sy) {
   if (SkScalarIsFinite(sx) && SkScalarIsFinite(sy) &&
       (sx != 1.0 || sy != 1.0)) {
     receiver_->scale(sx, sy);
-    current_layer_->state_is_nop_ = receiver_->is_nop();
+    if (receiver_->is_nop()) {
+      current_layer_->state_is_nop_ = true;
+    }
   }
 }
 void DlCanvasToReceiver::Rotate(SkScalar degrees) {
   CheckAlive();
   if (SkScalarMod(degrees, 360.0) != 0.0) {
     receiver_->rotate(degrees);
-    current_layer_->state_is_nop_ = receiver_->is_nop();
+    if (receiver_->is_nop()) {
+      current_layer_->state_is_nop_ = true;
+    }
   }
 }
 void DlCanvasToReceiver::Skew(SkScalar sx, SkScalar sy) {
@@ -308,7 +314,9 @@ void DlCanvasToReceiver::Skew(SkScalar sx, SkScalar sy) {
   if (SkScalarIsFinite(sx) && SkScalarIsFinite(sy) &&
       (sx != 0.0 || sy != 0.0)) {
     receiver_->skew(sx, sy);
-    current_layer_->state_is_nop_ = receiver_->is_nop();
+    if (receiver_->is_nop()) {
+      current_layer_->state_is_nop_ = true;
+    }
   }
 }
 
@@ -328,7 +336,9 @@ void DlCanvasToReceiver::Transform2DAffine(
     } else {
       receiver_->transform2DAffine(mxx, mxy, mxt,
                                    myx, myy, myt);
-      current_layer_->state_is_nop_ = receiver_->is_nop();
+      if (receiver_->is_nop()) {
+        current_layer_->state_is_nop_ = true;
+      }
     }
   }
 }
@@ -353,13 +363,17 @@ void DlCanvasToReceiver::TransformFullPerspective(
                                         myx, myy, myz, myt,
                                         mzx, mzy, mzz, mzt,
                                         mwx, mwy, mwz, mwt);
-    current_layer_->state_is_nop_ = receiver_->is_nop();
+    if (receiver_->is_nop()) {
+      current_layer_->state_is_nop_ = true;
+    }
   }
 }
 void DlCanvasToReceiver::TransformReset() {
   CheckAlive();
   receiver_->transformReset();
-  current_layer_->state_is_nop_ = receiver_->is_nop();
+  if (receiver_->is_nop()) {
+    current_layer_->state_is_nop_ = true;
+  }
 }
 void DlCanvasToReceiver::Transform(const SkMatrix* matrix) {
   CheckAlive();
@@ -397,7 +411,9 @@ void DlCanvasToReceiver::ClipRect(const SkRect& rect,
     return;
   }
   receiver_->clipRect(rect, clip_op, is_aa);
-  current_layer_->state_is_nop_ = receiver_->is_nop();
+  if (receiver_->is_nop()) {
+    current_layer_->state_is_nop_ = true;
+  }
 }
 void DlCanvasToReceiver::ClipRRect(const SkRRect& rrect,
                                    ClipOp clip_op,
@@ -407,7 +423,9 @@ void DlCanvasToReceiver::ClipRRect(const SkRRect& rrect,
     ClipRect(rrect.rect(), clip_op, is_aa);
   } else {
     receiver_->clipRRect(rrect, clip_op, is_aa);
-    current_layer_->state_is_nop_ = receiver_->is_nop();
+    if (receiver_->is_nop()) {
+      current_layer_->state_is_nop_ = true;
+    }
   }
 }
 void DlCanvasToReceiver::ClipPath(const SkPath& path,
@@ -432,7 +450,9 @@ void DlCanvasToReceiver::ClipPath(const SkPath& path,
     }
   }
   receiver_->clipPath(path, clip_op, is_aa);
-  current_layer_->state_is_nop_ = receiver_->is_nop();
+  if (receiver_->is_nop()) {
+    current_layer_->state_is_nop_ = true;
+  }
 }
 
 bool DlCanvasToReceiver::QuickReject(const SkRect& bounds) const {
