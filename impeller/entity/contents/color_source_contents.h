@@ -26,6 +26,8 @@ class ColorSourceContents : public Contents {
 
   void SetOpacity(Scalar opacity);
 
+  virtual bool IsSolidColor() const;
+
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
 

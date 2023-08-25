@@ -24,6 +24,10 @@ Color SolidColorContents::GetColor() const {
   return color_.WithAlpha(color_.alpha * GetOpacity());
 }
 
+bool SolidColorContents::IsSolidColor() const {
+  return true;
+}
+
 bool SolidColorContents::IsOpaque() const {
   return GetColor().IsOpaque();
 }
