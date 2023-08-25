@@ -21,6 +21,8 @@ vk::ImageLayout TextureSourceVK::GetLayout() const {
 
 vk::ImageLayout TextureSourceVK::SetLayoutWithoutEncoding(
     vk::ImageLayout layout) const {
+  FML_LOG(ERROR) << "SetLayoutWithoutEncoding " << GetImage() << " "
+                 << vk::to_string(layout);
   WriterLock lock(layout_mutex_);
   const auto old_layout = layout_;
   layout_ = layout;
@@ -32,6 +34,11 @@ bool TextureSourceVK::SetLayout(const BarrierVK& barrier) const {
   if (barrier.new_layout == old_layout) {
     return true;
   }
+  FML_LOG(ERROR) << "SetLayout " << GetImage() << " "
+                 << "src:" << vk::to_string(barrier.src_access) << " "
+                 << "dst:" << vk::to_string(barrier.dst_access) << " "
+                 << vk::to_string(old_layout) << " "
+                 << vk::to_string(barrier.new_layout);
 
   vk::ImageMemoryBarrier image_barrier;
   image_barrier.srcAccessMask = barrier.src_access;

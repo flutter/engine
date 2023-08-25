@@ -77,8 +77,10 @@ static void SetTextureLayout(
     return;
   }
   const auto& texture_vk = TextureVK::Cast(*texture);
+  auto current_layout = texture_vk.GetLayout();
 
-  if (attachment_desc.initialLayout == vk::ImageLayout::eGeneral) {
+  if (current_layout != vk::ImageLayout::ePresentSrcKHR &&
+      current_layout != vk::ImageLayout::eUndefined) {
     BarrierVK barrier;
     barrier.new_layout = vk::ImageLayout::eGeneral;
     barrier.cmd_buffer = command_buffer->GetEncoder()->GetCommandBuffer();
@@ -200,6 +202,27 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     return {};
   }
   context.SetDebugName(pass.get(), debug_label_.c_str());
+
+  std::stringstream ss;
+  ss << debug_label_ << " " << pass.get() << " " << std::endl;
+  for (const vk::AttachmentDescription& desc : attachments) {
+    ss << "    attachment"
+       << ", initial: " << vk::to_string(desc.initialLayout)
+       << ", final layout: " << vk::to_string(desc.finalLayout) << std::endl;
+  }
+
+  for (const vk::AttachmentReference& ref : color_refs) {
+    ss << "    color ref: " << vk::to_string(ref.layout);
+  }
+
+  for (const vk::AttachmentReference& ref : resolve_refs) {
+    ss << ", resolve ref: " << vk::to_string(ref.layout);
+  }
+
+  ss << ", depth stencil ref: " << vk::to_string(depth_stencil_ref.layout);
+
+  FML_LOG(ERROR) << ss.str();
+
   return MakeSharedVK(std::move(pass));
 }
 
@@ -675,7 +698,10 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
 
     render_pass_frame_buffer_pair->GetValue() = std::move(pair);
   }
+  FML_LOG(ERROR) << render_target_.ToString() << " "
+                 << render_pass_frame_buffer_pair->GetValue()->render_pass;
   SetTextureLayouts(render_target_, command_buffer);
+  FML_LOG(ERROR) << "end SetTextureLayouts";
 
   if (!encoder->Track(render_pass_frame_buffer_pair)) {
     return false;

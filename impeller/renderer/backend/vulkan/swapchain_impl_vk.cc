@@ -327,6 +327,7 @@ std::shared_ptr<Context> SwapchainImplVK::GetContext() const {
 
 SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
   auto context_strong = context_.lock();
+  FML_LOG(ERROR) << "SwapchainImplVK::AcquireNextDrawable";
   if (!context_strong) {
     return {};
   }
@@ -506,6 +507,7 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
         }
         FML_UNREACHABLE();
       });
+  FML_LOG(ERROR) << "SwapchainImplVK::Present";
   return true;
 }
 
