@@ -26,6 +26,9 @@ import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import java.nio.ByteBuffer;
 import java.util.Locale;
+import java.util.ArrayList;
+import java.util.List;
+import android.view.Choreographer;
 
 /**
  * Paints a Flutter UI provided by an {@link android.media.ImageReader} onto a {@link
@@ -40,13 +43,16 @@ import java.util.Locale;
  * onDraw}.
  */
 @TargetApi(19)
-public class FlutterImageView extends View implements RenderSurface {
+public class FlutterImageView extends View implements RenderSurface, ImageReader.OnImageAvailableListener {
   private static final String TAG = "FlutterImageView";
 
   @NonNull private ImageReader imageReader;
-  @Nullable private Image currentImage;
   @Nullable private Bitmap currentBitmap;
   @Nullable private FlutterRenderer flutterRenderer;
+  @Nullable private OnNewImageListener onNewImageListener;
+  /** Image pending to be draw. */
+  @Nullable private Image pendingImage;
+  private final List<Image> acquiredImages = new ArrayList<>();
 
   public ImageReader getImageReader() {
     return imageReader;
@@ -58,6 +64,14 @@ public class FlutterImageView extends View implements RenderSurface {
 
     /** Displays the overlay surface canvas. */
     overlay,
+
+    /** Displays the main Flutter UI. */
+    main,
+  }
+
+  /** Callback interface for being notified that a new image is available */
+  public interface OnNewImageListener {
+    public void onNewImage(@NonNull Image image);
   }
 
   /** The kind of surface. */
@@ -87,6 +101,7 @@ public class FlutterImageView extends View implements RenderSurface {
       @NonNull Context context, @NonNull ImageReader imageReader, SurfaceKind kind) {
     super(context, null);
     this.imageReader = imageReader;
+    setOnImageAvailableListener();
     this.kind = kind;
     init();
   }
@@ -97,6 +112,18 @@ public class FlutterImageView extends View implements RenderSurface {
 
   private static void logW(String format, Object... args) {
     Log.w(TAG, String.format(Locale.US, format, args));
+  }
+
+  private void setOnImageAvailableListener() {
+    if (imageReader != null) {
+      imageReader.setOnImageAvailableListener(this, null);
+    }
+  }
+
+  /** OnImageAvailableListener callback. */
+  @Override
+  public void onImageAvailable(ImageReader reader) {
+    acquireLatestImage();
   }
 
   @TargetApi(19)
@@ -140,6 +167,8 @@ public class FlutterImageView extends View implements RenderSurface {
    */
   @Override
   public void attachToRenderer(@NonNull FlutterRenderer flutterRenderer) {
+    this.flutterRenderer = flutterRenderer;
+    isAttachedToFlutterRenderer = true;
     switch (kind) {
       case background:
         flutterRenderer.swapSurface(imageReader.getSurface());
@@ -149,10 +178,26 @@ public class FlutterImageView extends View implements RenderSurface {
         // Do nothing since the attachment is done by the handler of
         // `FlutterJNI#createOverlaySurface()` in the native side.
         break;
+      case main:
+        connectSurfaceToRenderer();
+        break;
     }
     setAlpha(1.0f);
-    this.flutterRenderer = flutterRenderer;
-    isAttachedToFlutterRenderer = true;
+  }
+
+  private void connectSurfaceToRenderer() {
+    if (flutterRenderer == null || imageReader == null) {
+      throw new IllegalStateException(
+          "connectSurfaceToRenderer() should only be called when flutterRenderer and imageReader are non-null.");
+    }
+    
+    // When connecting the surface to the renderer, it's possible that the surface is currently
+    // paused. For instance, when a platform view is displayed, the current FlutterSurfaceView
+    // is paused, and rendering continues in a FlutterImageView buffer while the platform view
+    // is displayed.
+    //
+    // startRenderingToSurface stops rendering to an active surface if it isn't paused.
+    flutterRenderer.startRenderingToSurface(imageReader.getSurface(), false);
   }
 
   /**
@@ -171,7 +216,7 @@ public class FlutterImageView extends View implements RenderSurface {
     currentBitmap = null;
 
     // Close and clear the current image if any.
-    closeCurrentImage();
+    closeAllImages();
     invalidate();
     isAttachedToFlutterRenderer = false;
     if (kind == SurfaceKind.background) {
@@ -195,6 +240,7 @@ public class FlutterImageView extends View implements RenderSurface {
     if (!isAttachedToFlutterRenderer) {
       return false;
     }
+    closeImageIfNeeded(imageReader);
     // 1. `acquireLatestImage()` may return null if no new image is available.
     // 2. There's no guarantee that `onDraw()` is called after `invalidate()`.
     // For example, the device may not produce new frames if it's in sleep mode
@@ -203,10 +249,13 @@ public class FlutterImageView extends View implements RenderSurface {
     // 3. While the engine will also stop producing frames, there is a race condition.
     final Image newImage = imageReader.acquireLatestImage();
     if (newImage != null) {
-      // Only close current image after acquiring valid new image
-      closeCurrentImage();
-      currentImage = newImage;
+      acquiredImages.add(newImage);
+      pendingImage = newImage;
+      if (onNewImageListener != null) {
+        onNewImageListener.onNewImage(newImage);
+      }
       invalidate();
+      closeImageAfterDrawing(newImage);
     }
     return newImage != null;
   }
@@ -221,11 +270,12 @@ public class FlutterImageView extends View implements RenderSurface {
     }
 
     // Close resources.
-    closeCurrentImage();
+    closeAllImages();
     // Close the current image reader, then create a new one with the new size.
     // Image readers cannot be resized once created.
     closeImageReader();
     imageReader = createImageReader(width, height);
+    setOnImageAvailableListener();
   }
 
   /**
@@ -241,24 +291,17 @@ public class FlutterImageView extends View implements RenderSurface {
   @Override
   protected void onDraw(Canvas canvas) {
     super.onDraw(canvas);
-    if (currentImage != null) {
-      updateCurrentBitmap();
+    if (pendingImage != null) {
+      updateCurrentBitmap(pendingImage);
+      pendingImage = null;
     }
     if (currentBitmap != null) {
       canvas.drawBitmap(currentBitmap, 0, 0, null);
     }
   }
 
-  private void closeCurrentImage() {
-    // Close and clear the current image if any.
-    if (currentImage != null) {
-      currentImage.close();
-      currentImage = null;
-    }
-  }
-
   @TargetApi(29)
-  private void updateCurrentBitmap() {
+  private void updateCurrentBitmap(@NonNull final Image currentImage) {
     if (android.os.Build.VERSION.SDK_INT >= 29) {
       final HardwareBuffer buffer = currentImage.getHardwareBuffer();
       currentBitmap = Bitmap.wrapHardwareBuffer(buffer, ColorSpace.get(ColorSpace.Named.SRGB));
@@ -291,14 +334,78 @@ public class FlutterImageView extends View implements RenderSurface {
     if (width == imageReader.getWidth() && height == imageReader.getHeight()) {
       return;
     }
-    // `SurfaceKind.overlay` isn't resized. Instead, the `FlutterImageView` instance
-    // is destroyed. As a result, an instance with the new size is created by the surface
-    // pool in the native side.
-    if (kind == SurfaceKind.background && isAttachedToFlutterRenderer) {
-      resizeIfNeeded(width, height);
-      // Bind native window to the new surface, and create a new onscreen surface
-      // with the new size in the native side.
-      flutterRenderer.swapSurface(imageReader.getSurface());
+    if (isAttachedToFlutterRenderer) {
+      // `SurfaceKind.overlay` isn't resized. Instead, the `FlutterImageView` instance
+      // is destroyed. As a result, an instance with the new size is created by the surface
+      // pool in the native side.
+      if (kind == SurfaceKind.background) {
+        resizeIfNeeded(width, height);
+        // Bind native window to the new surface, and create a new onscreen surface
+        // with the new size in the native side.
+        flutterRenderer.swapSurface(imageReader.getSurface());
+      } else if (kind == SurfaceKind.main) {
+        resizeIfNeeded(width, height);
+        connectSurfaceToRenderer();
+      }
     }
+  }
+
+  /** Set a callback to be called when a new image arrives. */
+  public void setOnNewImageListener(@Nullable OnNewImageListener listener) {
+    onNewImageListener = listener;
+  }
+
+  /** Close the first image if exceeding the maximum number of images. */
+  private void closeImageIfNeeded(@Nullable ImageReader imageReader) {
+    if (imageReader == null) {
+      return;
+    }
+    int maxImage = imageReader.getMaxImages();
+    while (acquiredImages.size() >= maxImage - 1) {
+      if (acquiredImages.isEmpty()) {
+        break;
+      } else {
+        Image image = acquiredImages.remove(0);
+        image.close();
+        if (pendingImage == image) {
+          pendingImage = null;
+        }
+      }
+    }
+  }
+
+  private void closeAllImages() {
+    for (Image image : acquiredImages) {
+      image.close();
+    }
+    acquiredImages.clear();
+    pendingImage = null;
+  }
+
+  /** 
+   * Close the image after it is drawn on screen. 
+   * 
+   * The image might be drawn after the next FrameCallback.
+   * Close the image after the following FrameCallback to make sure it is drawn on screen.
+   */
+  private void closeImageAfterDrawing(@NonNull final Image image) {
+    Choreographer.getInstance().postFrameCallback(new Choreographer.FrameCallback() {
+      @Override
+      public void doFrame(long frameTimeNanos) {
+        Choreographer.getInstance().postFrameCallback(new Choreographer.FrameCallback() {
+          @Override
+          public void doFrame(long frameTimeNanos) {
+            if (acquiredImages.remove(image)) {
+              image.close();
+              if (pendingImage == image) {
+                pendingImage = null;
+              }
+            } else {
+              // The image is already closed
+            }
+          }
+        });
+      }
+    });
   }
 }
