@@ -1757,7 +1757,7 @@ Future<void> testMain() async {
       hideKeyboard();
     });
 
-    test('Supports deletion at inverted selection', () {
+    test('Supports deletion at inverted selection', () async {
       final MethodCall setClient = MethodCall(
           'TextInput.setClient', <dynamic>[123, createFlutterConfig('text', enableDeltaModel: true)]);
       sendFrameworkMessage(codec.encodeMethodCall(setClient));
@@ -1773,10 +1773,10 @@ Future<void> testMain() async {
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
-      // The "setSizeAndTransform" message has to be here before we call
-      // checkInputEditingState, since on some platforms (e.g. Desktop Safari)
-      // we don't put the input element into the DOM until we get its correct
-      // dimensions from the framework.
+      // // The "setSizeAndTransform" message has to be here before we call
+      // // checkInputEditingState, since on some platforms (e.g. Desktop Safari)
+      // // we don't put the input element into the DOM until we get its correct
+      // // dimensions from the framework.
       final MethodCall setSizeAndTransform =
           configureSetSizeAndTransformMethodCall(150, 50,
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
@@ -1831,7 +1831,7 @@ Future<void> testMain() async {
       hideKeyboard();
     });
 
-    test('Supports new line at inverted selection', () {
+    test('Supports new line at inverted selection', () async {
       final MethodCall setClient = MethodCall(
           'TextInput.setClient', <dynamic>[123, createFlutterConfig('text', enableDeltaModel: true)]);
       sendFrameworkMessage(codec.encodeMethodCall(setClient));
