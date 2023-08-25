@@ -9,7 +9,7 @@ The Android embedder is shipped to Flutter end-users, but gradle is not.
 1. If you have a flutter/engine checkout, then you should already have
 [Depot tools](http://commondatastorage.googleapis.com/chrome-infra-docs/flat/depot_tools/docs/html/depot_tools_tutorial.html#_setting_up) on your path.
 1. Ensure you have write access for cipd. go/flutter-luci-cipd
-1. Download the new version of gradle then Verify the checksum,
+1. Download the new version of gradle then verify the checksum,
 and unzip into a local directory.
 
 ## Update CIPD Steps
