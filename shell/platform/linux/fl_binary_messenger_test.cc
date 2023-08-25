@@ -525,8 +525,8 @@ TEST(FlBinaryMessengerTest, ControlChannelErrorResponse) {
       embedder_api->SendPlatformMessage;
   embedder_api->SendPlatformMessage = MOCK_ENGINE_PROC(
       SendPlatformMessage,
-      ([&called, old_handler](auto engine,
-                              const FlutterPlatformMessage* message) {
+      ([&called, old_handler, loop](auto engine,
+                                    const FlutterPlatformMessage* message) {
         // Expect to receive a message on the "control" channel.
         if (strcmp(message->channel, "dev.flutter/channel-buffers") != 0) {
           return old_handler(engine, message);
@@ -534,12 +534,13 @@ TEST(FlBinaryMessengerTest, ControlChannelErrorResponse) {
 
         called = true;
 
+        // Register a callback to quit the main loop when binary messenger work
+        // ends.
+        g_idle_add(quit_main_loop_cb, loop);
+
         // Simulates an internal error.
         return kInvalidArguments;
       }));
-
-  // Register a callbalk to quit the main loop when binary messenger work ends.
-  g_idle_add(quit_main_loop_cb, loop);
 
   fl_binary_messenger_set_allow_channel_overflow(messenger, "flutter/test",
                                                  true);
