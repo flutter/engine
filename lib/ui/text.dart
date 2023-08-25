@@ -982,7 +982,7 @@ class FontFeature {
 /// For example:
 ///
 /// ```dart
-/// TextStyle(fontVariations: <ui.FontVariation>[ui.FontVariation('wght', 800.0)])
+/// const TextStyle(fontVariations: <ui.FontVariation>[ui.FontVariation('wght', 800.0)])
 /// ```
 ///
 /// Font variations are distinct from font features, as exposed by the

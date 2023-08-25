@@ -18,7 +18,7 @@ vars = {
   'llvm_git': 'https://llvm.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
-  'skia_revision': '5428f147e632634a0fe273232e413161f4b79914',
+  'skia_revision': 'e67d9439a8c450df2e174b090e9eb2370e63d0e1',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -39,7 +39,7 @@ vars = {
   # The list of revisions for these tools comes from Fuchsia, here:
   # https://fuchsia.googlesource.com/integration/+/HEAD/toolchain
   # If there are problems with the toolchain, contact fuchsia-toolchain@.
-  'clang_version': 'git_revision:6d667d4b261e81f325756fdfd5bb43b3b3d2451d',
+  'clang_version': 'git_revision:020d2fb7711d70e296f19d83565f8d93d2cfda71',
 
   # The goma version and the clang version can be tightly coupled. If goma
   # stops working on a clang roll, this may need to be updated using the value
@@ -182,7 +182,6 @@ vars = {
   "upstream_libwebp": "https://chromium.googlesource.com/webm/libwebp.git",
   "upstream_libxml": "https://gitlab.gnome.org/GNOME/libxml2.git",
   "upstream_leak_tracker": "https://github.com/dart-lang/leak_tracker.git",
-  "upstream_linter": "https://github.com/dart-lang/linter.git",
   "upstream_logging": "https://github.com/dart-lang/logging.git",
   "upstream_markdown": "https://github.com/dart-lang/markdown.git",
   "upstream_matcher": "https://github.com/dart-lang/matcher.git",
@@ -214,6 +213,7 @@ vars = {
   "upstream_sqlite": "https://github.com/sqlite/sqlite.git",
   "upstream_sse": "https://github.com/dart-lang/sse.git",
   "upstream_stack_trace": "https://github.com/dart-lang/stack_trace.git",
+  "upstream_stb": "https://github.com/nothings/stb.git",
   "upstream_stream_channel": "https://github.com/dart-lang/stream_channel.git",
   "upstream_string_scanner": "https://github.com/dart-lang/string_scanner.git",
   "upstream_SwiftShader": "https://swiftshader.googlesource.com/SwiftShader.git",
@@ -257,7 +257,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'a067408d923ccf80742571bb7a71705499f5779e',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'f91786b0f7ed84f4d55fef7707b68bea180281f5',
 
    # Fuchsia compatibility
    #
@@ -405,9 +405,6 @@ deps = {
 
   'src/third_party/dart/third_party/pkg/leak_tracker':
    Var('dart_git') + '/leak_tracker.git@098bafcf99a5220e3c352d895d991e163568ee03',
-
-  'src/third_party/dart/third_party/pkg/linter':
-   Var('dart_git') + '/linter.git@7f40f112f54124e8dbfdc1e5da048643ae019b9e',
 
   'src/third_party/dart/third_party/pkg/logging':
    Var('dart_git') + '/logging.git@521498757ed3eeae151c2d4796404e8947baa04c',
@@ -681,10 +678,15 @@ deps = {
   'src/third_party/json':
   Var('github_git') + '/nlohmann/json.git' + '@' + '17d9eacd248f58b73f4d1be518ef649fe2295642',
 
+  'src/third_party/stb':
+  Var('github_git') + '/nothings/stb.git' + '@' + '5736b15f7ea0ffb08dd38af21067c314d6a3aae9',
+
   'src/third_party/gradle': {
     'packages': [
       {
-        'version': 'version:7.0.2',
+        # See tools/gradle/README.md for update instructions.
+        # Version here means the CIPD tag.
+        'version': 'version:7.5.1',
         'package': 'flutter/gradle'
       }
     ],
@@ -884,7 +886,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/mac-amd64',
-        'version': 'vJ6oaubpqgRM2nb1e_i0xzq5u59ChjEAmndn9yPIFiUC'
+        'version': 'Qj4BGsKtF7EJssKIKONF3EjBwsWNJ1LGIXWpqBMclbQC'
        }
      ],
      'condition': 'host_os == "mac" and not download_fuchsia_sdk',
@@ -894,7 +896,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/linux-amd64',
-        'version': '-HcyJtxGxUDcqX-joRgopminL0PbfzDP9E1TMp9xBSgC'
+        'version': 'u8ovJYTk3nN78xF4XDkt21AoQvutv5bbMKVQwMUs40AC'
        }
      ],
      'condition': 'host_os == "linux" and not download_fuchsia_sdk',

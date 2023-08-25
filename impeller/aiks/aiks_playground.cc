@@ -7,27 +7,26 @@
 #include <memory>
 
 #include "impeller/aiks/aiks_context.h"
-#include "impeller/typographer/backends/skia/text_render_context_skia.h"
-#include "impeller/typographer/text_render_context.h"
+#include "impeller/typographer/backends/skia/typographer_context_skia.h"
+#include "impeller/typographer/typographer_context.h"
 #include "third_party/imgui/imgui.h"
 
 namespace impeller {
 
 AiksPlayground::AiksPlayground()
-    : text_render_context_(TextRenderContextSkia::Make()) {}
+    : typographer_context_(TypographerContextSkia::Make()) {}
 
 AiksPlayground::~AiksPlayground() = default;
 
-void AiksPlayground::SetTextRenderContext(
-    std::shared_ptr<TextRenderContext> text_render_context) {
-  text_render_context_ = std::move(text_render_context);
+void AiksPlayground::SetTypographerContext(
+    std::shared_ptr<TypographerContext> typographer_context) {
+  typographer_context_ = std::move(typographer_context);
 }
 
-bool AiksPlayground::OpenPlaygroundHere(const Picture& picture) {
-  return OpenPlaygroundHere(
-      [&picture](AiksContext& renderer, RenderTarget& render_target) -> bool {
-        return renderer.Render(picture, render_target);
-      });
+bool AiksPlayground::OpenPlaygroundHere(Picture picture) {
+  return OpenPlaygroundHere([&picture](AiksContext& renderer) -> Picture {
+    return std::move(picture);
+  });
 }
 
 bool AiksPlayground::OpenPlaygroundHere(AiksPlaygroundCallback callback) {
@@ -35,20 +34,21 @@ bool AiksPlayground::OpenPlaygroundHere(AiksPlaygroundCallback callback) {
     return true;
   }
 
-  AiksContext renderer(GetContext(), text_render_context_);
+  AiksContext renderer(GetContext(), typographer_context_);
 
   if (!renderer.IsValid()) {
     return false;
   }
 
   return Playground::OpenPlaygroundHere(
-      [&renderer, &callback](RenderTarget& render_target) -> bool {
-        static bool wireframe = false;
-        if (ImGui::IsKeyPressed(ImGuiKey_Z)) {
-          wireframe = !wireframe;
-          renderer.GetContentContext().SetWireframe(wireframe);
+      [this, &renderer, &callback](RenderTarget& render_target) -> bool {
+        const std::optional<Picture>& picture = inspector_.RenderInspector(
+            renderer, [&]() { return callback(renderer); });
+
+        if (!picture.has_value()) {
+          return false;
         }
-        return callback(renderer, render_target);
+        return renderer.Render(*picture, render_target);
       });
 }
 
