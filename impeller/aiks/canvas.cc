@@ -12,7 +12,6 @@
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
-#include "impeller/entity/contents/color_source_text_contents.h"
 #include "impeller/entity/contents/solid_rrect_blur_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
@@ -543,31 +542,6 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
 
   auto text_contents = std::make_shared<TextContents>();
   text_contents->SetTextFrame(TextFrame(text_frame));
-
-  if (paint.color_source.GetType() != ColorSource::Type::kColor) {
-    auto color_text_contents = std::make_shared<ColorSourceTextContents>();
-    entity.SetTransformation(GetCurrentTransformation());
-
-    Entity test;
-    auto maybe_cvg = text_contents->GetCoverage(test);
-    FML_CHECK(maybe_cvg.has_value());
-    // Covered by FML_CHECK.
-    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
-    auto cvg = maybe_cvg.value();
-    color_text_contents->SetTextPosition(cvg.origin + position);
-
-    text_contents->SetOffset(-cvg.origin);
-    color_text_contents->SetTextContents(std::move(text_contents));
-    color_text_contents->SetColorSourceContents(
-        paint.color_source.GetContents(paint));
-
-    entity.SetContents(
-        paint.WithFilters(std::move(color_text_contents), false));
-
-    GetCurrentPass().AddEntity(entity);
-    return;
-  }
-
   text_contents->SetColor(paint.color);
 
   entity.SetTransformation(GetCurrentTransformation() *
