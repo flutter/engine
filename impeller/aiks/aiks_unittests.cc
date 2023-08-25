@@ -3307,7 +3307,7 @@ TEST_P(AiksTest, ClippedBlurFilterRendersCorrectly) {
   canvas.DrawPath(builder.TakePath(), paint);
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
-  
+
 TEST_P(AiksTest, CaptureContext) {
   auto capture_context = CaptureContext::MakeAllowlist({"TestDocument"});
 
@@ -3331,6 +3331,10 @@ TEST_P(AiksTest, CaptureContext) {
     return canvas.EndRecordingAsPicture();
   };
   OpenPlaygroundHere(callback);
+}
+
+TEST_P(AiksTest, CaptureInactivatedByDefault) {
+  ASSERT_FALSE(GetContext()->capture.IsActive());
 }
 
 }  // namespace testing

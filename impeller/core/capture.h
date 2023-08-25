@@ -269,6 +269,8 @@ class CaptureContext {
   static CaptureContext MakeAllowlist(
       std::initializer_list<std::string> allowlist);
 
+  bool IsActive() const;
+
   void Rewind();
 
   Capture GetDocument(const std::string& label);
