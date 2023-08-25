@@ -33,6 +33,9 @@ class DisplayList;
 /// interface are the clip and transform which are saved and restored by the
 /// |save|, |saveLayer|, and |restore| calls.
 ///
+/// Unlike DlCanvas, this interface has attribute state which is global across
+/// an entire DisplayList (not affected by save/restore).
+///
 /// @see        DlSkCanvasDispatcher
 /// @see        impeller::DlDispatcher
 /// @see        DlOpSpy
