@@ -1497,7 +1497,7 @@ class Paint {
     'and further support for dithering is expected to be handled by custom '
     'shaders, so this flag is being removed: '
     'https://github.com/flutter/flutter/issues/112498.'
-    'This feature was deprecated after 3.13.0-0.4.pre.'
+    'This feature was deprecated after 3.14.0-0.1.pre.'
   )
   static bool enableDithering = true;
 
