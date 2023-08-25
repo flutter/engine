@@ -27,7 +27,7 @@ class MockPlatformViewAndroidJNI : public PlatformViewAndroidJNI {
   MOCK_METHOD1(SurfaceTextureUpdateTexImage,
                void(JavaLocalRef surface_texture));
   MOCK_METHOD2(SurfaceTextureGetTransformMatrix,
-               void(JavaLocalRef surface_texture, SkMatrix& transform));
+               void(JavaLocalRef surface_texture, DlTransform& transform));
   MOCK_METHOD1(SurfaceTextureDetachFromGLContext,
                void(JavaLocalRef surface_texture));
   MOCK_METHOD8(FlutterViewOnDisplayPlatformView,

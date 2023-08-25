@@ -196,7 +196,7 @@ class DlTransform {
   // in column major format.
   // In other words, to compute the transformed X coordinate one would
   // use the formula |x * m[0] + y * m[4] + z * m[8] + m[12]|.
-  static DlTransform MakeColMajor(DlScalar m[]) {
+  static DlTransform MakeColMajor(DlScalar m[16]) {
     // clang-format off
     return {
         m[ 0], m[ 1], m[ 2], m[ 3],
@@ -212,7 +212,7 @@ class DlTransform {
   // in row major format.
   // In other words, to compute the transformed X coordinate one would
   // use the formula |x * m[0] + y * m[1] + z * m[2] + m[3]|.
-  static DlTransform MakeRowMajor(DlScalar m[]) {
+  static DlTransform MakeRowMajor(DlScalar m[16]) {
     // clang-format off
     return {
         m[ 0], m[ 4], m[ 8], m[12],

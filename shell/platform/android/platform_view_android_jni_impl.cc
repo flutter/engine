@@ -238,7 +238,7 @@ static void SurfaceChanged(JNIEnv* env,
                            jint width,
                            jint height) {
   ANDROID_SHELL_HOLDER->GetPlatformView()->NotifyChanged(
-      SkISize::Make(width, height));
+      DlISize(width, height));
 }
 
 static void SurfaceDestroyed(JNIEnv* env, jobject jcaller, jlong shell_holder) {
@@ -1344,7 +1344,7 @@ void PlatformViewAndroidJNIImpl::SurfaceTextureUpdateTexImage(
 
 void PlatformViewAndroidJNIImpl::SurfaceTextureGetTransformMatrix(
     JavaLocalRef surface_texture,
-    SkMatrix& transform) {
+    DlTransform& transform) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
 
   if (surface_texture.is_null()) {
@@ -1367,36 +1367,10 @@ void PlatformViewAndroidJNIImpl::SurfaceTextureGetTransformMatrix(
 
   float* m = env->GetFloatArrayElements(transformMatrix.obj(), nullptr);
 
-  // SurfaceTexture 4x4 Column Major -> Skia 3x3 Row Major
+  // SurfaceTexture 4x4 Column Major -> DlTransform
+  transform = DlTransform::MakeColMajor(m);
 
-  // SurfaceTexture 4x4 (Column Major):
-  // | m[0] m[4] m[ 8] m[12] |
-  // | m[1] m[5] m[ 9] m[13] |
-  // | m[2] m[6] m[10] m[14] |
-  // | m[3] m[7] m[11] m[15] |
-
-  // According to Android documentation, the 4x4 matrix returned should be used
-  // with texture coordinates in the form (s, t, 0, 1). Since the z component is
-  // always 0.0, we are free to ignore any element that multiplies with the z
-  // component. Converting this to a 3x3 matrix is easy:
-
-  // SurfaceTexture 3x3 (Column Major):
-  // | m[0] m[4] m[12] |
-  // | m[1] m[5] m[13] |
-  // | m[3] m[7] m[15] |
-
-  // Skia (Row Major):
-  // | m[0] m[1] m[2] |
-  // | m[3] m[4] m[5] |
-  // | m[6] m[7] m[8] |
-
-  SkScalar matrix3[] = {
-      m[0], m[4], m[12],  //
-      m[1], m[5], m[13],  //
-      m[3], m[7], m[15],  //
-  };
   env->ReleaseFloatArrayElements(transformMatrix.obj(), m, JNI_ABORT);
-  transform.set9(matrix3);
 }
 
 void PlatformViewAndroidJNIImpl::SurfaceTextureDetachFromGLContext(
@@ -1443,9 +1417,9 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
   while (iter != mutators_stack.End()) {
     switch ((*iter)->GetType()) {
       case kTransform: {
-        const SkMatrix& matrix = (*iter)->GetMatrix();
+        const DlTransform& matrix = (*iter)->GetMatrix();
         SkScalar matrix_array[9];
-        matrix.get9(matrix_array);
+        matrix.ToSkMatrix().get9(matrix_array);
         fml::jni::ScopedJavaLocalRef<jfloatArray> transformMatrix(
             env, env->NewFloatArray(9));
 
@@ -1456,7 +1430,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
         break;
       }
       case kClipRect: {
-        const SkRect& rect = (*iter)->GetRect();
+        const DlFRect& rect = (*iter)->GetRect();
         env->CallVoidMethod(
             mutatorsStack, g_mutators_stack_push_cliprect_method,
             static_cast<int>(rect.left()), static_cast<int>(rect.top()),
@@ -1464,13 +1438,13 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
         break;
       }
       case kClipRRect: {
-        const SkRRect& rrect = (*iter)->GetRRect();
-        const SkRect& rect = rrect.rect();
-        const SkVector& upper_left = rrect.radii(SkRRect::kUpperLeft_Corner);
-        const SkVector& upper_right = rrect.radii(SkRRect::kUpperRight_Corner);
-        const SkVector& lower_right = rrect.radii(SkRRect::kLowerRight_Corner);
-        const SkVector& lower_left = rrect.radii(SkRRect::kLowerLeft_Corner);
-        SkScalar radiis[8] = {
+        const DlFRRect& rrect = (*iter)->GetRRect();
+        const DlFRect& rect = rrect.rect();
+        const DlFVector& upper_left = rrect.upper_left_radii();
+        const DlFVector& upper_right = rrect.upper_right_radii();
+        const DlFVector& lower_right = rrect.lower_right_radii();
+        const DlFVector& lower_left = rrect.lower_left_radii();
+        DlScalar radiis[8] = {
             upper_left.x(),  upper_left.y(),  upper_right.x(), upper_right.y(),
             lower_right.x(), lower_right.y(), lower_left.x(),  lower_left.y(),
         };

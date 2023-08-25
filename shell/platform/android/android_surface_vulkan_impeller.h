@@ -31,7 +31,7 @@ class AndroidSurfaceVulkanImpeller : public AndroidSurface {
   void TeardownOnScreenContext() override;
 
   // |AndroidSurface|
-  bool OnScreenSurfaceResize(const SkISize& size) override;
+  bool OnScreenSurfaceResize(const DlISize& size) override;
 
   // |AndroidSurface|
   bool ResourceContextMakeCurrent() override;

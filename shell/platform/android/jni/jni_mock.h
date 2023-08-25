@@ -56,7 +56,7 @@ class JNIMock final : public PlatformViewAndroidJNI {
 
   MOCK_METHOD(void,
               SurfaceTextureGetTransformMatrix,
-              (JavaLocalRef surface_texture, SkMatrix& transform),
+              (JavaLocalRef surface_texture, DlTransform& transform),
               (override));
 
   MOCK_METHOD(void,

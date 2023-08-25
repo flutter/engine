@@ -49,7 +49,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
     return nullptr;
   }
 
-  if (size.isEmpty()) {
+  if (size.is_empty()) {
     FML_LOG(ERROR) << "Vulkan surface was asked for an empty frame.";
     return nullptr;
   }

@@ -35,7 +35,7 @@ class AndroidImageGenerator : public ImageGenerator {
       unsigned int frame_index) override;
 
   // |ImageGenerator|
-  SkISize GetScaledDimensions(float desired_scale) override;
+  DlISize GetScaledDimensions(float desired_scale) override;
 
   // |ImageGenerator|
   bool GetPixels(const SkImageInfo& info,

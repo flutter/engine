@@ -53,7 +53,7 @@ std::unique_ptr<Surface> AndroidSurfaceVulkanImpeller::CreateGPUSurface(
   return gpu_surface;
 }
 
-bool AndroidSurfaceVulkanImpeller::OnScreenSurfaceResize(const SkISize& size) {
+bool AndroidSurfaceVulkanImpeller::OnScreenSurfaceResize(const DlISize& size) {
   return true;
 }
 

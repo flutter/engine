@@ -22,7 +22,7 @@ class AndroidExternalTextureGL : public flutter::Texture {
   ~AndroidExternalTextureGL() override;
 
   void Paint(PaintContext& context,
-             const SkRect& bounds,
+             const DlFRect& bounds,
              bool freeze,
              const DlImageSampling sampling) override;
 
@@ -55,7 +55,7 @@ class AndroidExternalTextureGL : public flutter::Texture {
 
   GLuint texture_name_ = 0;
 
-  SkMatrix transform;
+  DlTransform transform;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidExternalTextureGL);
 };

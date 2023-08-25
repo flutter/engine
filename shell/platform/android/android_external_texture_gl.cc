@@ -25,8 +25,7 @@ AndroidExternalTextureGL::AndroidExternalTextureGL(
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade)
     : Texture(id),
       jni_facade_(std::move(jni_facade)),
-      surface_texture_(surface_texture),
-      transform(SkMatrix::I()) {}
+      surface_texture_(surface_texture) {}
 
 AndroidExternalTextureGL::~AndroidExternalTextureGL() {
   if (state_ == AttachmentState::attached) {
@@ -43,7 +42,7 @@ void AndroidExternalTextureGL::MarkNewFrameAvailable() {
 }
 
 void AndroidExternalTextureGL::Paint(PaintContext& context,
-                                     const SkRect& bounds,
+                                     const DlFRect& bounds,
                                      bool freeze,
                                      const DlImageSampling sampling) {
   if (state_ == AttachmentState::detached) {
@@ -74,7 +73,7 @@ void AndroidExternalTextureGL::Paint(PaintContext& context,
     context.canvas->Scale(bounds.width(), -bounds.height());
 
     auto dl_image = DlImage::Make(image);
-    if (!transform.isIdentity()) {
+    if (!transform.is_identity()) {
       DlImageColorSource source(dl_image, DlTileMode::kRepeat,
                                 DlTileMode::kRepeat, sampling, &transform);
 
@@ -83,7 +82,7 @@ void AndroidExternalTextureGL::Paint(PaintContext& context,
         paintWithShader = *context.paint;
       }
       paintWithShader.setColorSource(&source);
-      context.canvas->DrawRect(SkRect::MakeWH(1, 1), paintWithShader);
+      context.canvas->DrawRect(DlFRect::MakeWH(1, 1), paintWithShader);
     } else {
       context.canvas->DrawImage(dl_image, {0, 0}, sampling, context.paint);
     }
@@ -100,11 +99,12 @@ void AndroidExternalTextureGL::UpdateTransform() {
   // An Android transform that scales lookup by 0.5 (displaying 50% of the
   // texture) is the same as a Skia transform by 2.0 (scaling 50% of the image
   // outside of the virtual "clip rect"), so we invert the incoming matrix.
-  SkMatrix inverted;
-  if (!transform.invert(&inverted)) {
+  auto inverted = transform.Inverse();
+  if (!inverted.has_value()) {
     FML_LOG(FATAL) << "Invalid SurfaceTexture transformation matrix";
+  } else {
+    transform = inverted.value();
   }
-  transform = inverted;
 }
 
 void AndroidExternalTextureGL::OnGrContextDestroyed() {

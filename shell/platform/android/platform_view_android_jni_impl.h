@@ -48,7 +48,7 @@ class PlatformViewAndroidJNIImpl final : public PlatformViewAndroidJNI {
   void SurfaceTextureUpdateTexImage(JavaLocalRef surface_texture) override;
 
   void SurfaceTextureGetTransformMatrix(JavaLocalRef surface_texture,
-                                        SkMatrix& transform) override;
+                                        DlTransform& transform) override;
 
   void SurfaceTextureDetachFromGLContext(JavaLocalRef surface_texture) override;
 

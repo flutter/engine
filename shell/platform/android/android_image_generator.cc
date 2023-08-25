@@ -44,8 +44,8 @@ const ImageGenerator::FrameInfo AndroidImageGenerator::GetFrameInfo(
           .disposal_method = SkCodecAnimation::DisposalMethod::kKeep};
 }
 
-SkISize AndroidImageGenerator::GetScaledDimensions(float desired_scale) {
-  return GetInfo().dimensions();
+DlISize AndroidImageGenerator::GetScaledDimensions(float desired_scale) {
+  return DlISize::MakeSize(GetInfo().dimensions());
 }
 
 bool AndroidImageGenerator::GetPixels(const SkImageInfo& info,

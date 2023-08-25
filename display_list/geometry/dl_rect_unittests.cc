@@ -447,8 +447,8 @@ TEST(DlRectTest, FRectCutOut) {
 
       for (int j = 0; j < 4; j++) {
         // NaN in both is also empty
-        ASSERT_FALSE(swap_nan(cull_rect, i).CutOut(swap_nan(diff_rect, j))
-                         .has_value())
+        ASSERT_FALSE(
+            swap_nan(cull_rect, i).CutOut(swap_nan(diff_rect, j)).has_value())
             << label << ", indices " << i << ", " << j;
         ASSERT_EQ(swap_nan(cull_rect, i).CutOutOrEmpty(swap_nan(diff_rect, j)),
                   empty_rect)
@@ -478,7 +478,8 @@ TEST(DlRectTest, FRectCutOut) {
     ASSERT_FALSE(flip_tb(cull_rect).CutOut(diff_rect).has_value()) << label;
     ASSERT_EQ(flip_tb(cull_rect).CutOutOrEmpty(diff_rect), empty_rect) << label;
     ASSERT_FALSE(flip_lrtb(cull_rect).CutOut(diff_rect).has_value()) << label;
-    ASSERT_EQ(flip_lrtb(cull_rect).CutOutOrEmpty(diff_rect), empty_rect) << label;
+    ASSERT_EQ(flip_lrtb(cull_rect).CutOutOrEmpty(diff_rect), empty_rect)
+        << label;
 
     // flipped(empty) cull_rect vs unflipped diff_rect
     // == empty
@@ -493,7 +494,8 @@ TEST(DlRectTest, FRectCutOut) {
     ASSERT_FALSE(flip_lrtb(cull_rect).CutOut(flip_lrtb(diff_rect)).has_value())
         << label;
     ASSERT_EQ(flip_lrtb(cull_rect).CutOutOrEmpty(flip_lrtb(diff_rect)),
-              empty_rect) << label;
+              empty_rect)
+        << label;
   };
 
   auto non_reducing = [&cull_rect, &check_empty_flips, &check_nans](
@@ -504,8 +506,7 @@ TEST(DlRectTest, FRectCutOut) {
   };
 
   auto reducing = [&cull_rect, &check_empty_flips, &check_nans](
-                      const DlFRect& diff_rect,
-                      const DlFRect& result_rect,
+                      const DlFRect& diff_rect, const DlFRect& result_rect,
                       const std::string& label) {
     ASSERT_TRUE(!result_rect.is_empty());
     ASSERT_EQ(cull_rect.CutOut(diff_rect), result_rect) << label;

@@ -291,7 +291,7 @@ Rasterizer::Screenshot AndroidShellHolder::Screenshot(
     Rasterizer::ScreenshotType type,
     bool base64_encode) {
   if (!IsValid()) {
-    return {nullptr, SkISize::MakeEmpty(), ""};
+    return {nullptr, DlISize(), ""};
   }
   return shell_->Screenshot(type, base64_encode);
 }

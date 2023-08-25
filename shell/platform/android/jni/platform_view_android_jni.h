@@ -11,7 +11,6 @@
 #include "flutter/flow/embedded_views.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/shell/platform/android/surface/android_native_window.h"
-#include "third_party/skia/include/core/SkMatrix.h"
 
 #if FML_OS_ANDROID
 #include "flutter/fml/platform/android/scoped_java_ref.h"
@@ -101,7 +100,7 @@ class PlatformViewAndroidJNI {
   ///             and preserve the aspect ratio.
   ///
   virtual void SurfaceTextureGetTransformMatrix(JavaLocalRef surface_texture,
-                                                SkMatrix& transform) = 0;
+                                                DlTransform& transform) = 0;
 
   //----------------------------------------------------------------------------
   /// @brief      Detaches a SurfaceTexture from the OpenGL ES context.

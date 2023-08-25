@@ -14,6 +14,7 @@
 #include "flutter/shell/platform/android/android_shell_holder.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 
+#include "third_party//skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
@@ -79,20 +80,20 @@ std::unique_ptr<Surface> AndroidSurfaceSoftware::CreateGPUSurface(
 }
 
 sk_sp<SkSurface> AndroidSurfaceSoftware::AcquireBackingStore(
-    const SkISize& size) {
+    const DlISize& size) {
   TRACE_EVENT0("flutter", "AndroidSurfaceSoftware::AcquireBackingStore");
   if (!IsValid()) {
     return nullptr;
   }
 
   if (sk_surface_ != nullptr &&
-      SkISize::Make(sk_surface_->width(), sk_surface_->height()) == size) {
+      DlISize(sk_surface_->width(), sk_surface_->height()) == size) {
     // The old and new surface sizes are the same. Nothing to do here.
     return sk_surface_;
   }
 
   SkImageInfo image_info =
-      SkImageInfo::Make(size.fWidth, size.fHeight, target_color_type_,
+      SkImageInfo::Make(size.width(), size.height(), target_color_type_,
                         target_alpha_type_, SkColorSpace::MakeSRGB());
 
   sk_surface_ = SkSurfaces::Raster(image_info);
@@ -145,7 +146,7 @@ bool AndroidSurfaceSoftware::PresentBackingStore(
 
 void AndroidSurfaceSoftware::TeardownOnScreenContext() {}
 
-bool AndroidSurfaceSoftware::OnScreenSurfaceResize(const SkISize& size) {
+bool AndroidSurfaceSoftware::OnScreenSurfaceResize(const DlISize& size) {
   return true;
 }
 

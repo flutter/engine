@@ -41,7 +41,8 @@ class DlOpReceiver {
  public:
   // DrawPoints array storage must be less than 1 << 32
   static constexpr int kMaxDrawPointsCount = ((1 << 29) - 1);
-  static_assert(kMaxDrawPointsCount * sizeof(DlFPoint) < (1L << 32));
+  static_assert(kMaxDrawPointsCount * sizeof(DlFPoint) <
+                std::numeric_limits<uint32_t>::max());
 
   // The following methods are nearly 1:1 with the methods on DlPaint and
   // carry the same meanings. Each method sets a persistent value for the
