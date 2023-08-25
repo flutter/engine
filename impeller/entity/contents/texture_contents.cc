@@ -155,7 +155,7 @@ bool TextureContents::Render(const ContentContext& renderer,
   }
   pipeline_options.primitive_type = PrimitiveType::kTriangleStrip;
 
-#ifdef FML_OS_ANDROID
+#ifdef IMPELLER_ENABLE_OPENGLES
   if (is_external_texture) {
     cmd.pipeline = renderer.GetTextureExternalPipeline(pipeline_options);
   } else {
@@ -163,7 +163,7 @@ bool TextureContents::Render(const ContentContext& renderer,
   }
 #else
   cmd.pipeline = renderer.GetTexturePipeline(pipeline_options);
-#endif  // FML_OS_ANDROID
+#endif  // IMPELLER_ENABLE_OPENGLES
 
   cmd.stencil_reference = entity.GetStencilDepth();
   cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));

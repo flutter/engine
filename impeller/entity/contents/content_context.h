@@ -112,9 +112,9 @@
 #include "impeller/entity/framebuffer_blend_screen.frag.h"
 #include "impeller/entity/framebuffer_blend_softlight.frag.h"
 
-#ifdef FML_OS_ANDROID
+#ifdef IMPELLER_ENABLE_OPENGLES
 #include "impeller/entity/texture_fill_external.frag.h"
-#endif  // FML_OS_ANDROID
+#endif  // IMPELLER_ENABLE_OPENGLES
 
 namespace impeller {
 
@@ -289,10 +289,10 @@ using FramebufferBlendSoftLightPipeline =
 using PointsComputeShaderPipeline = ComputePipelineBuilder<PointsComputeShader>;
 using UvComputeShaderPipeline = ComputePipelineBuilder<UvComputeShader>;
 
-#ifdef FML_OS_ANDROID
+#ifdef IMPELLER_ENABLE_OPENGLES
 using TextureExternalPipeline =
     RenderPipelineT<TextureFillVertexShader, TextureFillExternalFragmentShader>;
-#endif  // FML_OS_ANDROID
+#endif  // IMPELLER_ENABLE_OPENGLES
 
 /// Pipeline state configuration.
 ///
@@ -429,14 +429,14 @@ class ContentContext {
     return GetPipeline(texture_pipelines_, opts);
   }
 
-#ifdef FML_OS_ANDROID
+#ifdef IMPELLER_ENABLE_OPENGLES
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetTextureExternalPipeline(
       ContentContextOptions opts) const {
     FML_DCHECK(GetContext()->GetBackendType() ==
                Context::BackendType::kOpenGLES);
     return GetPipeline(texture_external_pipelines_, opts);
   }
-#endif  // FML_OS_ANDROID
+#endif  // IMPELLER_ENABLE_OPENGLES
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPositionUVPipeline(
       ContentContextOptions opts) const {
@@ -762,9 +762,9 @@ class ContentContext {
   mutable Variants<RRectBlurPipeline> rrect_blur_pipelines_;
   mutable Variants<BlendPipeline> texture_blend_pipelines_;
   mutable Variants<TexturePipeline> texture_pipelines_;
-#ifdef FML_OS_ANDROID
+#ifdef IMPELLER_ENABLE_OPENGLES
   mutable Variants<TextureExternalPipeline> texture_external_pipelines_;
-#endif  // FML_OS_ANDROID
+#endif  // IMPELLER_ENABLE_OPENGLES
   mutable Variants<PositionUVPipeline> position_uv_pipelines_;
   mutable Variants<TiledTexturePipeline> tiled_texture_pipelines_;
   mutable Variants<GaussianBlurAlphaDecalPipeline>

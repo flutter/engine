@@ -308,13 +308,13 @@ ContentContext::ContentContext(
       CreateDefaultPipeline<YUVToRGBFilterPipeline>(*context_);
   porter_duff_blend_pipelines_[default_options_] =
       CreateDefaultPipeline<PorterDuffBlendPipeline>(*context_);
-  // GLES Android only shader.
-#ifdef FML_OS_ANDROID
+  // GLES only shader.
+#ifdef IMPELLER_ENABLE_OPENGLES
   if (GetContext()->GetBackendType() == Context::BackendType::kOpenGLES) {
     texture_external_pipelines_[default_options_] =
         CreateDefaultPipeline<TextureExternalPipeline>(*context_);
   }
-#endif
+#endif  // IMPELLER_ENABLE_OPENGLES
   if (context_->GetCapabilities()->SupportsCompute()) {
     auto pipeline_desc =
         PointsComputeShaderPipeline::MakeDefaultPipelineDescriptor(*context_);
