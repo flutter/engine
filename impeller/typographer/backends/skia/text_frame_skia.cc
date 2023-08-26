@@ -39,13 +39,14 @@ static Rect ToRect(const SkRect& rect) {
 
 static constexpr Scalar kScaleSize = 100000.0f;
 
-TextFrame MakeTextFrameFromTextBlobSkia(const sk_sp<SkTextBlob>& blob) {
+std::optional<TextFrame> MakeTextFrameFromTextBlobSkia(
+    const sk_sp<SkTextBlob>& blob) {
   if (!blob) {
     return {};
   }
 
-  TextFrame frame;
-
+  std::vector<TextRun> runs;
+  bool has_color = false;
   for (SkTextBlobRunIterator run(blob.get()); !run.done(); run.next()) {
     TextRun text_run(ToFont(run));
 
@@ -82,6 +83,7 @@ TextFrame MakeTextFrameFromTextBlobSkia(const sk_sp<SkTextBlob>& blob) {
           Glyph::Type type = paths.glyph(glyphs[i])->isColor()
                                  ? Glyph::Type::kBitmap
                                  : Glyph::Type::kPath;
+          has_color |= type == Glyph::Type::kBitmap;
 
           text_run.AddGlyph(
               Glyph{glyphs[i], type,
@@ -97,10 +99,12 @@ TextFrame MakeTextFrameFromTextBlobSkia(const sk_sp<SkTextBlob>& blob) {
         FML_DLOG(ERROR) << "Unimplemented.";
         continue;
     }
-    frame.AddTextRun(std::move(text_run));
+    runs.emplace_back(text_run);
   }
-
-  return frame;
+  auto sk_bounds = blob->bounds();
+  auto bounds = Rect::MakeLTRB(sk_bounds.left(), sk_bounds.top(),
+                               sk_bounds.right(), sk_bounds.bottom());
+  return TextFrame(runs, bounds, has_color);
 }
 
 }  // namespace impeller
