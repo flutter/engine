@@ -1,4 +1,4 @@
-Signature: 037575f99ed1b1b783807e1f7dc5ac89
+Signature: b6d0d7fd2120e02aee1fa651f8bae9a0
 
 ====================================================================================================
 LIBRARY: etc1
@@ -2728,8 +2728,6 @@ ORIGIN: ../../../third_party/skia/src/gpu/ganesh/effects/GrCoverageSetOpXP.cpp +
 ORIGIN: ../../../third_party/skia/src/gpu/ganesh/effects/GrCoverageSetOpXP.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/ganesh/effects/GrDisableColorXP.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/ganesh/effects/GrDisableColorXP.h + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/src/gpu/ganesh/effects/GrMatrixConvolutionEffect.cpp + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/src/gpu/ganesh/effects/GrMatrixConvolutionEffect.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/ganesh/effects/GrOvalEffect.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/ganesh/effects/GrOvalEffect.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/ganesh/effects/GrPorterDuffXferProcessor.cpp + ../../../third_party/skia/LICENSE
@@ -2894,8 +2892,6 @@ FILE: ../../../third_party/skia/src/gpu/ganesh/effects/GrCoverageSetOpXP.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/effects/GrCoverageSetOpXP.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/effects/GrDisableColorXP.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/effects/GrDisableColorXP.h
-FILE: ../../../third_party/skia/src/gpu/ganesh/effects/GrMatrixConvolutionEffect.cpp
-FILE: ../../../third_party/skia/src/gpu/ganesh/effects/GrMatrixConvolutionEffect.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/effects/GrOvalEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/effects/GrOvalEffect.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/effects/GrPorterDuffXferProcessor.cpp

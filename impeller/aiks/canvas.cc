@@ -8,6 +8,7 @@
 #include <optional>
 #include <utility>
 
+#include "display_list/geometry/dl_rtree.h"
 #include "flutter/fml/logging.h"
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/entity/contents/atlas_contents.h"
@@ -18,6 +19,7 @@
 #include "impeller/entity/contents/vertices_contents.h"
 #include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/path_builder.h"
+#include "include/core/SkRect.h"
 
 namespace impeller {
 
@@ -402,7 +404,7 @@ void Canvas::RestoreClip() {
   GetCurrentPass().AddEntity(entity);
 }
 
-void Canvas::DrawPoints(std::vector<Point> points,
+void Canvas::DrawPoints(const std::vector<Point>& points,
                         Scalar radius,
                         const Paint& paint,
                         PointStyle point_style) {
@@ -415,7 +417,7 @@ void Canvas::DrawPoints(std::vector<Point> points,
   entity.SetStencilDepth(GetStencilDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.WithFilters(paint.CreateContentsForGeometry(
-      Geometry::MakePointField(std::move(points), radius,
+      Geometry::MakePointField(points, radius,
                                /*round=*/point_style == PointStyle::kRound))));
 
   GetCurrentPass().AddEntity(entity);
@@ -491,7 +493,7 @@ void Canvas::DrawImageRect(const std::shared_ptr<Image>& image,
   Entity entity;
   entity.SetBlendMode(paint.blend_mode);
   entity.SetStencilDepth(GetStencilDepth());
-  entity.SetContents(paint.WithFilters(contents, false));
+  entity.SetContents(paint.WithFilters(contents));
   entity.SetTransformation(GetCurrentTransformation());
 
   GetCurrentPass().AddEntity(entity);
@@ -500,6 +502,19 @@ void Canvas::DrawImageRect(const std::shared_ptr<Image>& image,
 Picture Canvas::EndRecordingAsPicture() {
   Picture picture;
   picture.pass = std::move(base_pass_);
+
+  std::vector<SkRect> rects;
+  picture.pass->IterateAllEntities([&rects](const Entity& entity) {
+    auto coverage = entity.GetCoverage();
+    if (coverage.has_value()) {
+      rects.push_back(SkRect::MakeLTRB(coverage->GetLeft(), coverage->GetTop(),
+                                       coverage->GetRight(),
+                                       coverage->GetBottom()));
+    }
+    return true;
+  });
+  picture.rtree =
+      std::make_shared<flutter::DlRTree>(rects.data(), rects.size());
 
   Reset();
   Initialize(initial_cull_rect_);
@@ -547,7 +562,14 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
   entity.SetTransformation(GetCurrentTransformation() *
                            Matrix::MakeTranslation(position));
 
-  entity.SetContents(paint.WithFilters(std::move(text_contents), true));
+  // TODO(bdero): This mask blur application is a hack. It will always wind up
+  //              doing a gaussian blur that affects the color source itself
+  //              instead of just the mask. The color filter text support
+  //              needs to be reworked in order to interact correctly with
+  //              mask filters.
+  //              https://github.com/flutter/flutter/issues/133297
+  entity.SetContents(
+      paint.WithFilters(paint.WithMaskBlur(std::move(text_contents), true)));
 
   GetCurrentPass().AddEntity(entity);
 }
@@ -656,7 +678,7 @@ void Canvas::DrawAtlas(const std::shared_ptr<Image>& atlas,
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetStencilDepth(GetStencilDepth());
   entity.SetBlendMode(paint.blend_mode);
-  entity.SetContents(paint.WithFilters(contents, false));
+  entity.SetContents(paint.WithFilters(contents));
 
   GetCurrentPass().AddEntity(entity);
 }
