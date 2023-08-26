@@ -263,13 +263,13 @@ bool SurfaceMTL::Present() const {
       auto drawable = drawable_;
       dispatch_async(dispatch_get_main_queue(), ^{
         [CATransaction begin];
-          [command_buffer commit];
+        [command_buffer commit];
         [command_buffer waitUntilScheduled];
         [drawable present];
         [CATransaction commit];
       });
     }
-    }
+  }
 
   return true;
 }
