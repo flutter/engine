@@ -4,6 +4,8 @@
 
 #include "impeller/renderer/backend/metal/surface_mtl.h"
 
+#include <QuartzCore/QuartzCore.h>
+
 #include "flutter/fml/trace_event.h"
 #include "flutter/impeller/renderer/command_buffer.h"
 #include "impeller/base/validation.h"
@@ -252,10 +254,22 @@ bool SurfaceMTL::Present() const {
     id<MTLCommandBuffer> command_buffer =
         ContextMTL::Cast(context.get())
             ->CreateMTLCommandBuffer("Present Waiter Command Buffer");
-    [command_buffer commit];
-    [command_buffer waitUntilScheduled];
-    [drawable_ present];
-  }
+    if ([[NSThread currentThread] isMainThread]) {
+      [command_buffer commit];
+      [command_buffer waitUntilScheduled];
+      [drawable_ present];
+    } else {
+      TRACE_EVENT0("flutter", "SurfaceMTL::dispatch_async_and_wait");
+      auto drawable = drawable_;
+      dispatch_async(dispatch_get_main_queue(), ^{
+        [CATransaction begin];
+          [command_buffer commit];
+        [command_buffer waitUntilScheduled];
+        [drawable present];
+        [CATransaction commit];
+      });
+    }
+    }
 
   return true;
 }
