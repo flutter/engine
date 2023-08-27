@@ -96,7 +96,7 @@ final class Engine {
   /// Throws an [ArgumentError] if the path is not within a valid engine.
   factory Engine.findWithin([String? path]) {
     path ??= p.current;
-    
+
     // Search parent directories for a `src` directory.
     io.Directory maybeSrcDir = io.Directory(path);
 
