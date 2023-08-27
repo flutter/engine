@@ -236,9 +236,9 @@ static void PresentToMainThread(id<MTLCommandBuffer> command_buffer,
 #ifdef FML_OS_IOS
   dispatch_async(dispatch_get_main_queue(), ^{
     TRACE_EVENT0("flutter", "PresentToMainThread");
-    [CATransaction begin];
     [command_buffer commit];
     [command_buffer waitUntilScheduled];
+    [CATransaction begin];
     [drawable present];
     [CATransaction commit];
   });
