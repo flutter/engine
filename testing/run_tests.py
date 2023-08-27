@@ -952,6 +952,7 @@ def gather_clang_tidy_tests(build_dir):
         cwd=test_dir
     )
 
+
 def gather_engine_tools_lib_tests(build_dir):
   test_dir = os.path.join(
       BUILDROOT_DIR, 'flutter', 'tools', 'engine_tools_lib'
@@ -969,6 +970,7 @@ def gather_engine_tools_lib_tests(build_dir):
         flags=opts,
         cwd=test_dir
     )
+
 
 def gather_api_consistency_tests(build_dir):
   test_dir = os.path.join(BUILDROOT_DIR, 'flutter', 'tools', 'api_check')
