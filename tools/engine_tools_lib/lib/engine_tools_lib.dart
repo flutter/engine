@@ -21,6 +21,7 @@
 ///     print('Found compile_commands.json file at ${compileCommandsJson.path}');
 ///   }
 /// }
+/// ```
 library;
 
 import 'dart:io' as io;
