@@ -73,13 +73,12 @@ void TextContents::PopulateGlyphAtlas(
 bool TextContents::Render(const ContentContext& renderer,
                           const Entity& entity,
                           RenderPass& pass) const {
-  const auto frame = frame_;
   auto color = GetColor();
   if (color.IsTransparent()) {
     return true;
   }
 
-  auto type = frame.GetAtlasType();
+  auto type = frame_.GetAtlasType();
   auto atlas =
       ResolveAtlas(*renderer.GetContext(), type, renderer.GetLazyGlyphAtlas());
 
@@ -152,7 +151,7 @@ bool TextContents::Render(const ContentContext& renderer,
 
   auto& host_buffer = pass.GetTransientsBuffer();
   size_t vertex_count = 0;
-  for (const auto& run : frame.GetRuns()) {
+  for (const auto& run : frame_.GetRuns()) {
     vertex_count += run.GetGlyphPositions().size();
   }
   vertex_count *= 6;
@@ -163,7 +162,7 @@ bool TextContents::Render(const ContentContext& renderer,
         VS::PerVertexData vtx;
         VS::PerVertexData* vtx_contents =
             reinterpret_cast<VS::PerVertexData*>(contents);
-        for (const TextRun& run : frame.GetRuns()) {
+        for (const TextRun& run : frame_.GetRuns()) {
           const Font& font = run.GetFont();
           Scalar rounded_scale = TextFrame::RoundScaledFontSize(
               scale_, font.GetMetrics().point_size);
