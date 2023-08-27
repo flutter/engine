@@ -9,7 +9,7 @@ import 'package:path/path.dart' as p;
 
 void main() {
   late io.Directory emptyDir;
-  
+
   void setUp() {
     emptyDir = io.Directory.systemTemp.createTempSync('engine_tools_lib.test');
   }
@@ -92,7 +92,7 @@ void main() {
 
   group('Engine.findWithin', () {
     late io.Directory emptyDir;
-    
+
     void setUp() {
       emptyDir = io.Directory.systemTemp.createTempSync('engine_tools_lib.test');
     }

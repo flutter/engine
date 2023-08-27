@@ -3,11 +3,11 @@
 // found in the LICENSE file.
 
 /// A minimal library for discovering and probing a local engine repository.
-/// 
+///
 /// This library is intended to be used by tools that need to interact with a
 /// local engine repository, such as `clang_tidy` or `githooks`. For example,
 /// finding the `compile_commands.json` file for the most recently built output:
-/// 
+///
 /// ```dart
 /// final Engine engine = Engine.findWithin();
 /// final Output? output = engine.latestOutput();
@@ -28,19 +28,19 @@ import 'dart:io' as io;
 import 'package:path/path.dart' as p;
 
 /// Represents the `$ENGINE` directory (i.e. a checked-out Flutter engine).
-/// 
+///
 /// If you have a path to the `$ENGINE/src` directory, use [Engine.fromSrcPath].
 ///
 /// If you have a path to a directory within the `$ENGINE/src` directory, or
 /// want to use the current working directory, use [Engine.findWithin].
 final class Engine {
   /// Creates an [Engine] from a path such as `/Users/.../flutter/engine/src`.
-  /// 
+  ///
   /// ```dart
   /// final Engine engine = Engine.findWithin('/Users/.../engine/src');
   /// print(engine.srcDir.path); // /Users/.../engine/src
   /// ```
-  /// 
+  ///
   /// Throws an [ArgumentError] if the path does not point to a valid engine.
   factory Engine.fromSrcPath(String srcPath) {
     // If the path does not end in `/src`, fail.
@@ -80,19 +80,19 @@ final class Engine {
   }
 
   /// Creates an [Engine] by looking for a `src/` directory in the given path.
-  /// 
+  ///
   /// ```dart
   /// // Use the current working directory.
   /// final Engine engine = Engine.findWithin();
   /// print(engine.srcDir.path); // /Users/.../engine/src
-  /// 
+  ///
   /// // Use a specific directory.
   /// final Engine engine = Engine.findWithin('/Users/.../engine/src/foo/bar/baz');
   /// print(engine.srcDir.path); // /Users/.../engine/src
   /// ```
-  /// 
+  ///
   /// If a path is not provided, the current working directory is used.
-  /// 
+  ///
   /// Throws an [ArgumentError] if the path is not within a valid engine.
   factory Engine.findWithin([String? path]) {
     path ??= p.current;
@@ -149,7 +149,7 @@ final class Engine {
   }
 
   /// Returns the most recently modified output target in [outDir].
-  /// 
+  ///
   /// If there are no output targets, returns `null`.
   Output? latestOutput() {
     final List<Output> outputs = this.outputs();
@@ -171,7 +171,7 @@ final class Output {
   final io.Directory dir;
 
   /// The `compile_commands.json` file for this output target.
-  /// 
+  ///
   /// Returns `null` if the file does not exist.
   io.File? get compileCommandsJson {
     final io.File file = io.File(p.join(dir.path, 'compile_commands.json'));
