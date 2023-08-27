@@ -48,8 +48,6 @@ std::optional<TextFrame> MakeTextFrameFromTextBlobSkia(
   std::vector<TextRun> runs;
   bool has_color = false;
   for (SkTextBlobRunIterator run(blob.get()); !run.done(); run.next()) {
-    TextRun text_run(ToFont(run));
-
     // TODO(jonahwilliams): ask Skia for a public API to look this up.
     // https://github.com/flutter/flutter/issues/112005
     SkStrikeSpec strikeSpec = SkStrikeSpec::MakeWithNoDevice(run.font());
@@ -58,12 +56,6 @@ std::optional<TextFrame> MakeTextFrameFromTextBlobSkia(
     const auto glyph_count = run.glyphCount();
     const auto* glyphs = run.glyphs();
     switch (run.positioning()) {
-      case SkTextBlobRunIterator::kDefault_Positioning:
-        FML_DLOG(ERROR) << "Unimplemented.";
-        break;
-      case SkTextBlobRunIterator::kHorizontal_Positioning:
-        FML_DLOG(ERROR) << "Unimplemented.";
-        break;
       case SkTextBlobRunIterator::kFull_Positioning: {
         std::vector<SkRect> glyph_bounds;
         glyph_bounds.resize(glyph_count);
@@ -76,6 +68,8 @@ std::optional<TextFrame> MakeTextFrameFromTextBlobSkia(
         font.setSize(kScaleSize);
         font.getBounds(glyphs, glyph_count, glyph_bounds.data(), nullptr);
 
+        std::vector<TextRun::GlyphPosition> positions;
+        positions.reserve(glyph_count);
         for (auto i = 0u; i < glyph_count; i++) {
           // kFull_Positioning has two scalars per glyph.
           const SkPoint* glyph_points = run.points();
@@ -85,26 +79,21 @@ std::optional<TextFrame> MakeTextFrameFromTextBlobSkia(
                                  : Glyph::Type::kPath;
           has_color |= type == Glyph::Type::kBitmap;
 
-          text_run.AddGlyph(
+          positions.emplace_back(TextRun::GlyphPosition{
               Glyph{glyphs[i], type,
                     ToRect(glyph_bounds[i]).Scale(font_size / kScaleSize)},
-              Point{point->x(), point->y()});
+              Point{point->x(), point->y()}});
         }
+        TextRun text_run(ToFont(run), positions);
+        runs.emplace_back(text_run);
         break;
       }
-      case SkTextBlobRunIterator::kRSXform_Positioning:
-        FML_DLOG(ERROR) << "Unimplemented.";
-        break;
       default:
         FML_DLOG(ERROR) << "Unimplemented.";
         continue;
     }
-    runs.emplace_back(text_run);
   }
-  auto sk_bounds = blob->bounds();
-  auto bounds = Rect::MakeLTRB(sk_bounds.left(), sk_bounds.top(),
-                               sk_bounds.right(), sk_bounds.bottom());
-  return TextFrame(runs, bounds, has_color);
+  return TextFrame(runs, ToRect(blob->bounds()), has_color);
 }
 
 }  // namespace impeller

@@ -43,7 +43,8 @@ void ColorSourceTextContents::PopulateGlyphAtlas(
 bool ColorSourceTextContents::Render(const ContentContext& renderer,
                                      const Entity& entity,
                                      RenderPass& pass) const {
-  auto text_bounds = text_contents_->GetTextFrameBounds();
+  // TODO(jonahwilliams): delete this.
+  std::optional<Rect> text_bounds = std::nullopt;
   if (!text_bounds.has_value()) {
     return true;
   }

@@ -18,6 +18,8 @@ namespace impeller {
 ///
 class TextFrame {
  public:
+  TextFrame();
+
   TextFrame(std::vector<TextRun>& runs, Rect bounds, bool has_color);
 
   ~TextFrame();

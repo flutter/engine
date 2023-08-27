@@ -48,7 +48,7 @@ Color TextContents::GetColor() const {
 }
 
 bool TextContents::CanInheritOpacity(const Entity& entity) const {
-  return !frame_.has_value() || !frame_->MaybeHasOverlapping();
+  return !frame_.MaybeHasOverlapping();
 }
 
 void TextContents::SetInheritedOpacity(Scalar opacity) {
@@ -59,35 +59,21 @@ void TextContents::SetOffset(Vector2 offset) {
   offset_ = offset;
 }
 
-std::optional<Rect> TextContents::GetTextFrameBounds() const {
-  // TODO: delete.
-  return std::nullopt;
-}
-
 std::optional<Rect> TextContents::GetCoverage(const Entity& entity) const {
-  if (!frame_.has_value()) {
-    return std::nullopt;
-  }
-  return frame_->GetBounds().TransformBounds(entity.GetTransformation());
+  return frame_.GetBounds().TransformBounds(entity.GetTransformation());
 }
 
 void TextContents::PopulateGlyphAtlas(
     const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
     Scalar scale) {
-  if (frame_.has_value()) {
-    lazy_glyph_atlas->AddTextFrame(frame_.value(), scale);
-    scale_ = scale;
-  }
+  lazy_glyph_atlas->AddTextFrame(frame_, scale);
+  scale_ = scale;
 }
 
 bool TextContents::Render(const ContentContext& renderer,
                           const Entity& entity,
                           RenderPass& pass) const {
-  const auto maybe_text_frame = frame_;
-  if (!maybe_text_frame.has_value()) {
-    return true;
-  }
-  const auto frame = maybe_text_frame.value();
+  const auto frame = frame_;
   auto color = GetColor();
   if (color.IsTransparent()) {
     return true;

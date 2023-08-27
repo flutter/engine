@@ -56,7 +56,7 @@ class TextContents final : public Contents {
               RenderPass& pass) const override;
 
  private:
-  std::optional<TextFrame> frame_ = std::nullopt;
+  TextFrame frame_;
   Scalar scale_ = 1.0;
   Color color_;
   Scalar inherited_opacity_ = 1.0;

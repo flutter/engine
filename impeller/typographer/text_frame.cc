@@ -6,6 +6,8 @@
 
 namespace impeller {
 
+TextFrame::TextFrame() = default;
+
 TextFrame::TextFrame(std::vector<TextRun>& runs, Rect bounds, bool has_color)
     : runs_(std::move(runs)), bounds_(bounds), has_color_(has_color) {}
 
@@ -14,15 +16,6 @@ TextFrame::~TextFrame() = default;
 Rect TextFrame::GetBounds() const {
   return bounds_;
 }
-
-// bool TextFrame::AddTextRun(TextRun&& run) {
-//   if (!run.IsValid()) {
-//     return false;
-//   }
-//   has_color_ |= run.HasColor();
-//   runs_.emplace_back(std::move(run));
-//   return true;
-// }
 
 size_t TextFrame::GetRunCount() const {
   return runs_.size();
