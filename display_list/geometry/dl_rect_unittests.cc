@@ -101,10 +101,6 @@ TEST(DlRectTest, IRectSimple) {
 TEST(DlRectTest, FRectRoundingEmpty) {
   DlFRect rect;
 
-  ASSERT_EQ(DlFRect::MakeRoundedOut(rect), DlFRect());
-  ASSERT_EQ(DlFRect::MakeRoundedIn(rect), DlFRect());
-  ASSERT_EQ(DlFRect::MakeRounded(rect), DlFRect());
-
   ASSERT_EQ(DlIRect::MakeRoundedOut(rect), DlIRect());
   ASSERT_EQ(DlIRect::MakeRoundedIn(rect), DlIRect());
   ASSERT_EQ(DlIRect::MakeRounded(rect), DlIRect());
@@ -117,10 +113,6 @@ TEST(DlRectTest, FRectRoundingEmpty) {
 TEST(DlRectTest, FRectRoundingSimple) {
   // Using fractional-power-of-2 friendly values for equality tests
   DlFRect rect = DlFRect::MakeLTRB(5.125f, 10.25f, 20.625f, 25.375f);
-
-  ASSERT_EQ(DlFRect::MakeRoundedOut(rect), DlFRect::MakeLTRB(5, 10, 21, 26));
-  ASSERT_EQ(DlFRect::MakeRoundedIn(rect), DlFRect::MakeLTRB(6, 11, 20, 25));
-  ASSERT_EQ(DlFRect::MakeRounded(rect), DlFRect::MakeLTRB(5, 10, 21, 25));
 
   ASSERT_EQ(DlIRect::MakeRoundedOut(rect), DlIRect::MakeLTRB(5, 10, 21, 26));
   ASSERT_EQ(DlIRect::MakeRoundedIn(rect), DlIRect::MakeLTRB(6, 11, 20, 25));

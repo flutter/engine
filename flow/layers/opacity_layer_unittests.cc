@@ -317,7 +317,7 @@ TEST_F(OpacityLayerTest, HalfTransparent) {
             std::vector({Mutator(layer_transform), Mutator(alpha_half)}));
 
   DlFRect opacity_bounds =
-      DlFRect::MakeRoundedOut(expected_layer_bounds.Translated(-layer_offset));
+      expected_layer_bounds.Translated(-layer_offset).RoundedOut();
   DlPaint save_paint = DlPaint().setAlpha(alpha_half);
   DlPaint child_dl_paint = DlPaint(DlColor::kGreen());
 

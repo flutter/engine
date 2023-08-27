@@ -55,7 +55,7 @@ struct RasterCacheUtil {
 
   static DlFRect GetRoundedOutDeviceBounds(const DlFRect& rect,
                                            const DlTransform& ctm) {
-    return DlFRect::MakeRoundedOut(ctm.TransformRect(rect));
+    return ctm.TransformRect(rect).RoundedOut();
   }
 };
 
