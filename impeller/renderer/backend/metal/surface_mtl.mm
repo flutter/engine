@@ -4,7 +4,9 @@
 
 #include "impeller/renderer/backend/metal/surface_mtl.h"
 
+#ifdef FML_OS_IOS
 #include <QuartzCore/QuartzCore.h>
+#endif  // FML_OS_IOS
 
 #include "flutter/fml/trace_event.h"
 #include "flutter/impeller/renderer/command_buffer.h"
@@ -220,6 +222,32 @@ IRect SurfaceMTL::coverage() const {
   return IRect::MakeSize(resolve_texture_->GetSize());
 }
 
+// iOS has restrictions on operations that work from background threads and use
+// core animation transitions. To achieve stable frame rates, the presentation
+// of the drawable should use a core animation transition, but typical flutter
+// workloads place the raster task runner on a background thread. This is
+// usually OK, unless there is a native iOS ViewController/View also performing
+// an animation - which can trigger an assertion that Views cannot be modified
+// by both the main thread and a background thread. To work around this, we can
+// post the presentation of the drawable back to the main thread. This works as
+// an alternative to not using a CATransaction.
+static void PresentToMainThread(id<MTLCommandBuffer> command_buffer,
+                                id<MTLDrawable> drawable) {
+#ifdef FML_OS_IOS
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [CATransaction begin];
+    [command_buffer commit];
+    [command_buffer waitUntilScheduled];
+    [drawable present];
+    [CATransaction commit];
+  });
+#else
+  [command_buffer commit];
+  [command_buffer waitUntilScheduled];
+  [drawable present];
+#endif  // FML_OS_IOS
+}
+
 // |Surface|
 bool SurfaceMTL::Present() const {
   auto context = context_.lock();
@@ -259,15 +287,7 @@ bool SurfaceMTL::Present() const {
       [command_buffer waitUntilScheduled];
       [drawable_ present];
     } else {
-      TRACE_EVENT0("flutter", "SurfaceMTL::dispatch_async_and_wait");
-      auto drawable = drawable_;
-      dispatch_async(dispatch_get_main_queue(), ^{
-        [CATransaction begin];
-        [command_buffer commit];
-        [command_buffer waitUntilScheduled];
-        [drawable present];
-        [CATransaction commit];
-      });
+      PresentToMainThread(command_buffer, drawable_);
     }
   }
 
