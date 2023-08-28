@@ -1126,23 +1126,14 @@ TEST_F(FlutterWindowsEngineTest, ChannelListenedTo) {
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
   auto old_run = modifier.embedder_api().Run;
 
-  static bool listened_to = false;
-  modifier.embedder_api().Run = MOCK_ENGINE_PROC(
-      Run, ([old_run](size_t version, const FlutterRendererConfig* config,
-                      const FlutterProjectArgs* args, void* user_data,
-                      FLUTTER_API_SYMBOL(FlutterEngine) * engine_out) {
-        FlutterProjectArgs new_args = *args;
-        new_args.channel_update_callback =
-            [](const FlutterChannelUpdate* update, void* user_data) {
-              listened_to = true;
-              EXPECT_STREQ(update->channel, "flutter/lifecycle");
-              EXPECT_TRUE(update->listening);
-            };
-        return old_run(version, config, &new_args, user_data, engine_out);
-      }));
+  bool lifecycle_began = false;
+  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine);
+  handler->begin_processing_callback = [&]() { lifecycle_began = true; };
+  modifier.SetLifecycleManager(std::move(handler));
+
   engine->Run();
 
-  while (!listened_to) {
+  while (!lifecycle_began) {
     engine->task_runner()->ProcessTasks();
   }
 }
