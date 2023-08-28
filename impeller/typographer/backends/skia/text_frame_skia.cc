@@ -41,6 +41,8 @@ static constexpr Scalar kScaleSize = 100000.0f;
 
 std::optional<TextFrame> MakeTextFrameFromTextBlobSkia(
     const sk_sp<SkTextBlob>& blob) {
+  // Handling nullptr text blobs feels overly defensive here, as I don't
+  // actually know if this happens.
   if (!blob) {
     return {};
   }
