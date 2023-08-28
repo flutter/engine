@@ -26,12 +26,12 @@ class DisplayList;
 /// @brief      Internal API for rendering recorded display lists to backends.
 ///
 /// The |DisplayList| object will play back recorded operations in this format.
-/// Most developers should not needed to deal with this interface unless they
-/// are writing a utility that needs to examine the contents of a display list.
+/// Most developers should not need to deal with this interface unless they are
+/// writing a utility that needs to examine the contents of a display list.
 ///
-/// Similar to |DlCanvas|, the only state carried by implementations of this
-/// interface are the clip and transform which are saved and restored by the
-/// |save|, |saveLayer|, and |restore| calls.
+/// Similar to |DlCanvas|, this interface carries clip and transform state
+/// which are saved and restored by the |save|, |saveLayer|, and |restore|
+/// calls.
 ///
 /// Unlike DlCanvas, this interface has attribute state which is global across
 /// an entire DisplayList (not affected by save/restore).
