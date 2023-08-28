@@ -216,7 +216,7 @@ class PlatformConfigurationClient {
   /// @param[in]  listening        Whether the listener has been set (true) or
   ///                              cleared (false).
   ///
-  virtual void SendChannelUpdate(const std::string& name, bool listening) = 0;
+  virtual void SendChannelUpdate(std::string name, bool listening) = 0;
 
   //--------------------------------------------------------------------------
   /// @brief      Synchronously invokes platform-specific APIs to apply the

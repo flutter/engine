@@ -377,7 +377,7 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
                                     void* user_data) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
     std::string channel_name(update->channel);
-    host->OnChannelUpdate(channel_name, update->listening);
+    host->OnChannelUpdate(std::move(channel_name), update->listening);
   };
 
   args.custom_task_runners = &custom_task_runners;
@@ -815,8 +815,7 @@ std::optional<LRESULT> FlutterWindowsEngine::ProcessExternalWindowMessage(
   return std::nullopt;
 }
 
-void FlutterWindowsEngine::OnChannelUpdate(const std::string& name,
-                                           bool listening) {
+void FlutterWindowsEngine::OnChannelUpdate(std::string name, bool listening) {
   if (name == "flutter/platform" && listening) {
     lifecycle_manager_->BeginProcessingExit();
   } else if (name == "flutter/lifecycle" && listening) {

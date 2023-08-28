@@ -402,9 +402,8 @@ RuntimeController::ComputePlatformResolvedLocale(
 }
 
 // |PlatformConfigurationClient|
-void RuntimeController::SendChannelUpdate(const std::string& name,
-                                          bool listening) {
-  client_.SendChannelUpdate(name, listening);
+void RuntimeController::SendChannelUpdate(std::string name, bool listening) {
+  client_.SendChannelUpdate(std::move(name), listening);
 }
 
 Dart_Port RuntimeController::GetMainPort() {

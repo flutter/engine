@@ -41,7 +41,7 @@ class PlatformViewEmbedder final : public PlatformView {
       std::function<std::unique_ptr<std::vector<std::string>>(
           const std::vector<std::string>& supported_locale_data)>;
   using OnPreEngineRestartCallback = std::function<void()>;
-  using ChanneUpdateCallback = std::function<void(const std::string&, bool)>;
+  using ChanneUpdateCallback = std::function<void(std::string, bool)>;
 
   struct PlatformDispatchTable {
     UpdateSemanticsCallback update_semantics_callback;  // optional
@@ -137,7 +137,7 @@ class PlatformViewEmbedder final : public PlatformView {
       const std::vector<std::string>& supported_locale_data) override;
 
   // |PlatformView|
-  void SendChannelUpdate(const std::string& name, bool listening) override;
+  void SendChannelUpdate(std::string name, bool listening) override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewEmbedder);
 };

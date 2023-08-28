@@ -474,7 +474,7 @@ class PlatformView {
   /// @param[in]  listening True if a listener has been set, false if it has
   ///                       been cleared.
   ///
-  virtual void SendChannelUpdate(const std::string& name, bool listening);
+  virtual void SendChannelUpdate(std::string name, bool listening);
 
   //----------------------------------------------------------------------------
   /// @brief      Used by embedders to specify the updated viewport metrics for

@@ -634,7 +634,7 @@ void PlatformConfigurationNativeApi::RegisterBackgroundIsolate(
 void PlatformConfigurationNativeApi::SendChannelUpdate(const std::string& name,
                                                        bool listening) {
   UIDartState::Current()->platform_configuration()->client()->SendChannelUpdate(
-      name, listening);
+      std::move(name), listening);
 }
 
 double PlatformConfigurationNativeApi::GetScaledFontSize(

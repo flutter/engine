@@ -570,8 +570,8 @@ std::weak_ptr<PlatformMessageHandler> Engine::GetPlatformMessageHandler()
   return delegate_.GetPlatformMessageHandler();
 }
 
-void Engine::SendChannelUpdate(const std::string& name, bool listening) {
-  delegate_.OnEngineChannelUpdate(name, listening);
+void Engine::SendChannelUpdate(std::string name, bool listening) {
+  delegate_.OnEngineChannelUpdate(std::move(name), listening);
 }
 
 void Engine::LoadDartDeferredLibrary(
