@@ -1124,7 +1124,6 @@ TEST_F(FlutterWindowsEngineTest, ChannelListenedTo) {
   FlutterWindowsEngine* engine = view.GetEngine();
   EngineModifier modifier(engine);
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
-  auto old_run = modifier.embedder_api().Run;
 
   bool lifecycle_began = false;
   auto handler = std::make_unique<MockWindowsLifecycleManager>(engine);
