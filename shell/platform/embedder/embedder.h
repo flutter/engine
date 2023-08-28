@@ -1404,6 +1404,8 @@ typedef void (*FlutterUpdateSemanticsCallback2)(
 
 /// An update to whether a message channel has a listener set or not.
 typedef struct {
+  // The size of the struct. Must be sizeof(FlutterChannelUpdate).
+  size_t struct_size;
   /// The name of the channel.
   const char* channel;
   /// True if a listener has been set, false if one has been cleared.
@@ -2208,7 +2210,8 @@ typedef struct {
   FlutterUpdateSemanticsCallback2 update_semantics_callback2;
 
   /// The callback invoked by the engine in response to a channel listener
-  /// being registered on the framework side.
+  /// being registered on the framework side. The callback is invoked from
+  /// a task posted to the UI task runner.
   FlutterChannelUpdateCallback channel_update_callback;
 } FlutterProjectArgs;
 
