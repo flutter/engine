@@ -6,7 +6,6 @@
 
 #include <array>
 #include <cstdint>
-#include <unordered_map>
 #include <vector>
 
 #include "flutter/fml/logging.h"
@@ -31,10 +30,8 @@ namespace impeller {
 
 static vk::AttachmentDescription CreateAttachmentDescription(
     const Attachment& attachment,
-    const std::shared_ptr<CommandBufferVK>& command_buffer,
-    bool resolve_texture = false) {
-  const auto& texture =
-      resolve_texture ? attachment.resolve_texture : attachment.texture;
+    const std::shared_ptr<Texture> Attachment::*texture_ptr) {
+  const auto& texture = attachment.*texture_ptr;
   if (!texture) {
     return {};
   }
@@ -51,12 +48,36 @@ static vk::AttachmentDescription CreateAttachmentDescription(
 
   if (desc.storage_mode == StorageMode::kDeviceTransient) {
     store_action = StoreAction::kDontCare;
-  } else if (resolve_texture) {
+  } else if (texture_ptr == &Attachment::resolve_texture) {
     store_action = StoreAction::kStore;
   }
 
   if (current_layout != vk::ImageLayout::ePresentSrcKHR &&
       current_layout != vk::ImageLayout::eUndefined) {
+    // Note: This should incur a barrier.
+    current_layout = vk::ImageLayout::eGeneral;
+  }
+
+  return CreateAttachmentDescription(desc.format,        //
+                                     desc.sample_count,  //
+                                     load_action,        //
+                                     store_action,       //
+                                     current_layout      //
+  );
+}
+
+static void SetTextureLayout(
+    const Attachment& attachment,
+    const vk::AttachmentDescription& attachment_desc,
+    const std::shared_ptr<CommandBufferVK>& command_buffer,
+    const std::shared_ptr<Texture> Attachment::*texture_ptr) {
+  const auto& texture = attachment.*texture_ptr;
+  if (!texture) {
+    return;
+  }
+  const auto& texture_vk = TextureVK::Cast(*texture);
+
+  if (attachment_desc.initialLayout == vk::ImageLayout::eGeneral) {
     BarrierVK barrier;
     barrier.new_layout = vk::ImageLayout::eGeneral;
     barrier.cmd_buffer = command_buffer->GetEncoder()->GetCommandBuffer();
@@ -68,28 +89,16 @@ static vk::AttachmentDescription CreateAttachmentDescription(
                         vk::PipelineStageFlagBits::eTransfer;
 
     texture_vk.SetLayout(barrier);
-    current_layout = vk::ImageLayout::eGeneral;
   }
-
-  const auto attachment_desc =
-      CreateAttachmentDescription(desc.format,        //
-                                  desc.sample_count,  //
-                                  load_action,        //
-                                  store_action,       //
-                                  current_layout      //
-      );
 
   // Instead of transitioning layouts manually using barriers, we are going to
   // make the subpass perform our transitions.
   texture_vk.SetLayoutWithoutEncoding(attachment_desc.finalLayout);
-
-  return attachment_desc;
 }
 
 SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     const ContextVK& context,
     const std::shared_ptr<CommandBufferVK>& command_buffer) const {
-  TRACE_EVENT0("impeller", "RenderPassVK::CreateVKRenderPass");
   std::vector<vk::AttachmentDescription> attachments;
 
   std::vector<vk::AttachmentReference> color_refs;
@@ -114,12 +123,16 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
         vk::AttachmentReference{static_cast<uint32_t>(attachments.size()),
                                 vk::ImageLayout::eColorAttachmentOptimal};
     attachments.emplace_back(
-        CreateAttachmentDescription(color, command_buffer));
+        CreateAttachmentDescription(color, &Attachment::texture));
+    SetTextureLayout(color, attachments.back(), command_buffer,
+                     &Attachment::texture);
     if (color.resolve_texture) {
       resolve_refs[bind_point] = vk::AttachmentReference{
           static_cast<uint32_t>(attachments.size()), vk::ImageLayout::eGeneral};
       attachments.emplace_back(
-          CreateAttachmentDescription(color, command_buffer, true));
+          CreateAttachmentDescription(color, &Attachment::resolve_texture));
+      SetTextureLayout(color, attachments.back(), command_buffer,
+                       &Attachment::resolve_texture);
     }
   }
 
@@ -128,7 +141,9 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
         static_cast<uint32_t>(attachments.size()),
         vk::ImageLayout::eDepthStencilAttachmentOptimal};
     attachments.emplace_back(
-        CreateAttachmentDescription(depth.value(), command_buffer));
+        CreateAttachmentDescription(depth.value(), &Attachment::texture));
+    SetTextureLayout(depth.value(), attachments.back(), command_buffer,
+                     &Attachment::texture);
   }
 
   if (auto stencil = render_target_.GetStencilAttachment();
@@ -137,7 +152,9 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
         static_cast<uint32_t>(attachments.size()),
         vk::ImageLayout::eDepthStencilAttachmentOptimal};
     attachments.emplace_back(
-        CreateAttachmentDescription(stencil.value(), command_buffer));
+        CreateAttachmentDescription(stencil.value(), &Attachment::texture));
+    SetTextureLayout(stencil.value(), attachments.back(), command_buffer,
+                     &Attachment::texture);
   }
 
   vk::SubpassDescription subpass_desc;
@@ -223,7 +240,6 @@ static std::vector<vk::ClearValue> GetVKClearValues(
 SharedHandleVK<vk::Framebuffer> RenderPassVK::CreateVKFramebuffer(
     const ContextVK& context,
     const vk::RenderPass& pass) const {
-  TRACE_EVENT0("impeller", "RenderPassVK::CreateVKFramebuffer");
   vk::FramebufferCreateInfo fb_info;
 
   fb_info.renderPass = pass;
@@ -283,8 +299,8 @@ static bool UpdateBindingLayouts(const Bindings& bindings,
 
   barrier.new_layout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
-  for (const auto& [_, texture] : bindings.textures) {
-    if (!TextureVK::Cast(*texture.resource).SetLayout(barrier)) {
+  for (const auto& [_, data] : bindings.sampled_images) {
+    if (!TextureVK::Cast(*data.texture.resource).SetLayout(barrier)) {
       return false;
     }
   }
@@ -322,42 +338,45 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
 
   auto& allocator = *context.GetResourceAllocator();
 
-  std::unordered_map<uint32_t, vk::DescriptorBufferInfo> buffers;
-  std::unordered_map<uint32_t, vk::DescriptorImageInfo> images;
+  std::vector<vk::DescriptorImageInfo> images;
+  std::vector<vk::DescriptorBufferInfo> buffers;
   std::vector<vk::WriteDescriptorSet> writes;
+  writes.reserve(command.vertex_bindings.buffers.size() +
+                 command.fragment_bindings.buffers.size() +
+                 command.fragment_bindings.sampled_images.size());
+  images.reserve(command.fragment_bindings.sampled_images.size());
+  buffers.reserve(command.vertex_bindings.buffers.size() +
+                  command.fragment_bindings.buffers.size());
 
   auto bind_images = [&encoder,     //
                       &images,      //
                       &writes,      //
                       &vk_desc_set  //
   ](const Bindings& bindings) -> bool {
-    for (const auto& [index, sampler_handle] : bindings.samplers) {
-      if (bindings.textures.find(index) == bindings.textures.end()) {
-        return false;
-      }
-
-      auto texture = bindings.textures.at(index).resource;
+    for (const auto& [index, data] : bindings.sampled_images) {
+      auto texture = data.texture.resource;
       const auto& texture_vk = TextureVK::Cast(*texture);
-      const SamplerVK& sampler = SamplerVK::Cast(*sampler_handle.resource);
+      const SamplerVK& sampler = SamplerVK::Cast(*data.sampler.resource);
 
       if (!encoder.Track(texture) ||
           !encoder.Track(sampler.GetSharedSampler())) {
         return false;
       }
 
-      const SampledImageSlot& slot = bindings.sampled_images.at(index);
+      const SampledImageSlot& slot = data.slot;
 
       vk::DescriptorImageInfo image_info;
       image_info.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
       image_info.sampler = sampler.GetSampler();
       image_info.imageView = texture_vk.GetImageView();
+      images.push_back(image_info);
 
       vk::WriteDescriptorSet write_set;
       write_set.dstSet = vk_desc_set.value();
       write_set.dstBinding = slot.binding;
       write_set.descriptorCount = 1u;
       write_set.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-      write_set.pImageInfo = &(images[slot.binding] = image_info);
+      write_set.pImageInfo = &images.back();
 
       writes.push_back(write_set);
     }
@@ -372,8 +391,8 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
                        &desc_set,    //
                        &vk_desc_set  //
   ](const Bindings& bindings) -> bool {
-    for (const auto& [buffer_index, view] : bindings.buffers) {
-      const auto& buffer_view = view.resource.buffer;
+    for (const auto& [buffer_index, data] : bindings.buffers) {
+      const auto& buffer_view = data.view.resource.buffer;
 
       auto device_buffer = buffer_view->GetDeviceBuffer(allocator);
       if (!device_buffer) {
@@ -386,23 +405,19 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
         return false;
       }
 
-      // Reserved index used for per-vertex data.
-      if (buffer_index == VertexDescriptor::kReservedVertexBufferIndex) {
-        continue;
-      }
-
       if (!encoder.Track(device_buffer)) {
         return false;
       }
 
-      uint32_t offset = view.resource.range.offset;
+      uint32_t offset = data.view.resource.range.offset;
 
       vk::DescriptorBufferInfo buffer_info;
       buffer_info.buffer = buffer;
       buffer_info.offset = offset;
-      buffer_info.range = view.resource.range.length;
+      buffer_info.range = data.view.resource.range.length;
+      buffers.push_back(buffer_info);
 
-      const ShaderUniformSlot& uniform = bindings.uniforms.at(buffer_index);
+      const ShaderUniformSlot& uniform = data.slot;
       auto layout_it = std::find_if(desc_set.begin(), desc_set.end(),
                                     [&uniform](DescriptorSetLayout& layout) {
                                       return layout.binding == uniform.binding;
@@ -419,7 +434,7 @@ static bool AllocateAndBindDescriptorSets(const ContextVK& context,
       write_set.dstBinding = uniform.binding;
       write_set.descriptorCount = 1u;
       write_set.descriptorType = ToVKDescriptorType(layout.descriptor_type);
-      write_set.pBufferInfo = &(buffers[uniform.binding] = buffer_info);
+      write_set.pBufferInfo = &buffers.back();
 
       writes.push_back(write_set);
     }
