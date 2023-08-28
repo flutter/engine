@@ -42,40 +42,29 @@ final class Engine {
   /// print(engine.srcDir.path); // /Users/.../engine/src
   /// ```
   ///
-  /// Throws an [ArgumentError] if the path does not point to a valid engine.
+  /// Throws a [InvalidEngineException] if the path is not a valid engine root.
   factory Engine.fromSrcPath(String srcPath) {
     // If the path does not end in `/src`, fail.
     if (p.basename(srcPath) != 'src') {
-      throw ArgumentError(
-        'The path $srcPath does not end in `${p.separator}src`.\n'
-        '\n$_kHintFindWithinPath'
-      );
+      throw InvalidEngineException.doesNotEndWithSrc(srcPath);
     }
 
     // If the directory does not exist, or is not a directory, fail.
     final io.Directory srcDir = io.Directory(srcPath);
     if (!srcDir.existsSync()) {
-      throw ArgumentError(
-        'The path "$srcPath" does not exist or is not a directory.\n'
-        '\n$_kHintFindWithinPath'
-      );
+      throw InvalidEngineException.notADirectory(srcPath);
     }
 
     // Check for the existence of a `flutter` directory within `src`.
     final io.Directory flutterDir = io.Directory(p.join(srcPath, 'flutter'));
     if (!flutterDir.existsSync()) {
-      throw ArgumentError(
-        'The path "$srcPath" does not contain a "flutter" directory.'
-      );
+      throw InvalidEngineException.missingFlutterDirectory(srcPath);
     }
 
-    // Check for the existence of a `out` directory within `src`.
+    // We do **NOT** check for the existence of a `out` directory within `src`,
+    // it's not required to exist (i.e. a new checkout of the engine), and we
+    // don't want to fail if it doesn't exist.
     final io.Directory outDir = io.Directory(p.join(srcPath, 'out'));
-    if (!outDir.existsSync()) {
-      throw ArgumentError(
-        'The path "$srcPath" does not contain an "out" directory.'
-      );
-    }
 
     return Engine._(srcDir, flutterDir, outDir);
   }
@@ -94,7 +83,7 @@ final class Engine {
   ///
   /// If a path is not provided, the current working directory is used.
   ///
-  /// Throws an [ArgumentError] if the path is not within a valid engine.
+  /// Throws a [StateError] if the path is not within a valid engine.
   factory Engine.findWithin([String? path]) {
     path ??= p.current;
 
@@ -102,20 +91,22 @@ final class Engine {
     io.Directory maybeSrcDir = io.Directory(path);
 
     if (!maybeSrcDir.existsSync()) {
-      throw ArgumentError(
+      throw StateError(
         'The path "$path" does not exist or is not a directory.'
       );
     }
 
     do {
-      if (p.basename(maybeSrcDir.path) == 'src') {
+      try {
         return Engine.fromSrcPath(maybeSrcDir.path);
+      } on InvalidEngineException {
+        // Ignore, we'll keep searching.
       }
       maybeSrcDir = maybeSrcDir.parent;
     } while (maybeSrcDir.parent.path != maybeSrcDir.path /* at root */);
 
-    throw ArgumentError(
-      'The path "$path" does not contain a "src" directory.'
+    throw StateError(
+      'The path "$path" is not within a Flutter engine source directory.'
     );
   }
 
@@ -124,12 +115,6 @@ final class Engine {
     this.flutterDir,
     this.outDir,
   );
-
-  static final String _kHintFindWithinPath =
-      'This constructor is intended to be used only a path that points to '
-      'a Flutter engine source directory, i.e. a directory that ends in '
-      '${p.separator}src. Use "findWithin" to create an Engine from a '
-      'directory that lives within an engine source directory';
 
   /// The path to the `$ENGINE/src` directory.
   final io.Directory srcDir;
@@ -161,6 +146,63 @@ final class Engine {
       return b.dir.statSync().modified.compareTo(a.dir.statSync().modified);
     });
     return outputs.first;
+  }
+}
+
+/// Thrown when an [Engine] could not be created from a path.
+sealed class InvalidEngineException implements Exception {
+  /// Thrown when an [Engine] was created from a path not ending in `src`.
+  factory InvalidEngineException.doesNotEndWithSrc(String path) {
+    return InvalidEngineSrcPathException._(path);
+  }
+
+  /// Thrown when an [Engine] was created from a directory that does not exist.
+  factory InvalidEngineException.notADirectory(String path) {
+    return InvalidEngineNotADirectoryException._(path);
+  }
+
+  /// Thrown when an [Engine] was created from a path not containing `flutter/`.
+  factory InvalidEngineException.missingFlutterDirectory(String path) {
+    return InvalidEngineMissingFlutterDirectoryException._(path);
+  }
+}
+
+/// Thrown when an [Engine] was created from a path not ending in `src`.
+final class InvalidEngineSrcPathException implements InvalidEngineException {
+  InvalidEngineSrcPathException._(this.path);
+
+  /// The path that was used to create the [Engine].
+  final String path;
+
+  @override
+  String toString() {
+    return 'The path $path does not end in `${p.separator}src`.';
+  }
+}
+
+/// Thrown when an [Engine] was created from a path that is not a directory.
+final class InvalidEngineNotADirectoryException implements InvalidEngineException {
+  InvalidEngineNotADirectoryException._(this.path);
+
+  /// The path that was used to create the [Engine].
+  final String path;
+
+  @override
+  String toString() {
+    return 'The path "$path" does not exist or is not a directory.';
+  }
+}
+
+/// Thrown when an [Engine] was created from a path not containing `flutter/`.
+final class InvalidEngineMissingFlutterDirectoryException implements InvalidEngineException {
+  InvalidEngineMissingFlutterDirectoryException._(this.path);
+
+  /// The path that was used to create the [Engine].
+  final String path;
+
+  @override
+  String toString() {
+    return 'The path "$path" does not contain a "flutter" directory.';
   }
 }
 

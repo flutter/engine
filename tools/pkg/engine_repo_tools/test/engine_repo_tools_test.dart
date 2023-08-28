@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:io' as io;
+import 'package:async_helper/async_helper.dart';
 import 'package:engine_repo_tools/engine_repo_tools.dart';
 import 'package:litetest/litetest.dart';
 import 'package:path/path.dart' as p;
@@ -25,7 +26,7 @@ void main() {
         try {
           expect(
           () => Engine.fromSrcPath(emptyDir.path),
-          throwsArgumentError,
+          _throwsInvalidEngineException,
         );
         } finally {
           tearDown();
@@ -37,7 +38,7 @@ void main() {
         try {
           expect(
             () => Engine.fromSrcPath(p.join(emptyDir.path, 'src')),
-            throwsArgumentError,
+            _throwsInvalidEngineException,
           );
         } finally {
           tearDown();
@@ -50,21 +51,7 @@ void main() {
           final io.Directory srcDir = io.Directory(p.join(emptyDir.path, 'src'))..createSync();
           expect(
             () => Engine.fromSrcPath(srcDir.path),
-            throwsArgumentError,
-          );
-        } finally {
-          tearDown();
-        }
-      });
-
-      test('the path does not contain an "out" directory', () {
-        setUp();
-        try {
-          final io.Directory srcDir = io.Directory(p.join(emptyDir.path, 'src'))..createSync();
-          io.Directory(p.join(srcDir.path, 'flutter')).createSync();
-          expect(
-            () => Engine.fromSrcPath(srcDir.path),
-            throwsArgumentError,
+            _throwsInvalidEngineException,
           );
         } finally {
           tearDown();
@@ -107,7 +94,20 @@ void main() {
         try {
           expect(
             () => Engine.findWithin(emptyDir.path),
-            throwsArgumentError,
+            throwsStateError,
+          );
+        } finally {
+          tearDown();
+        }
+      });
+
+      test('the path contains a "src" directory but it is not an engine root', () {
+        setUp();
+        try {
+          final io.Directory srcDir = io.Directory(p.join(emptyDir.path, 'src'))..createSync();
+          expect(
+            () => Engine.findWithin(srcDir.path),
+            throwsStateError,
           );
         } finally {
           tearDown();
@@ -130,7 +130,48 @@ void main() {
           tearDown();
         }
       });
+
+      test('returns an Engine even if a "src" directory exists deeper in the tree', () {
+        // It's common to have "src" directories, so if we have something like:
+        //  /Users/.../engine/src/foo/bar/src/baz
+        //
+        // And we use `Engine.findWithin('/Users/.../engine/src/flutter/bar/src/baz')`,
+        // we should still find the engine (in this case, the engine root is
+        // `/Users/.../engine/src`).
+        setUp();
+        try {
+          final io.Directory srcDir = io.Directory(p.join(emptyDir.path, 'src'))..createSync();
+          io.Directory(p.join(srcDir.path, 'flutter')).createSync();
+          io.Directory(p.join(srcDir.path, 'out')).createSync();
+
+          final io.Directory nestedSrcDir = io.Directory(p.join(srcDir.path, 'flutter', 'bar', 'src', 'baz'))..createSync(recursive: true);
+
+          final Engine engine = Engine.findWithin(nestedSrcDir.path);
+
+          expect(engine.srcDir.path, srcDir.path);
+          expect(engine.flutterDir.path, p.join(srcDir.path, 'flutter'));
+          expect(engine.outDir.path, p.join(srcDir.path, 'out'));
+        } finally {
+          tearDown();
+        }
+      });
     });
+  });
+
+  test('outputs an empty list of targets', () {
+    setUp();
+
+    try {
+      // Create a valid engine.
+      io.Directory(p.join(emptyDir.path, 'src', 'flutter')).createSync(recursive: true);
+      io.Directory(p.join(emptyDir.path, 'src', 'out')).createSync(recursive: true);
+
+      final Engine engine = Engine.fromSrcPath(p.join(emptyDir.path, 'src'));
+      expect(engine.outputs(), <Output>[]);
+      expect(engine.latestOutput(), isNull);
+    } finally {
+      tearDown();
+    }
   });
 
   test('outputs a list of targets', () {
@@ -182,5 +223,35 @@ void main() {
     } finally {
       tearDown();
     }
+  });
+}
+
+// This is needed because async_minitest and friends is not a proper testing
+// library and is missing a lot of functionality that was exclusively added
+// to pkg/test.
+void _throwsInvalidEngineException(Object? o) {
+  _checkThrow<InvalidEngineException>(o, (_){});
+}
+
+// Mostly copied from async_minitest.
+void _checkThrow<T extends Object>(dynamic v, void Function(dynamic error) onError) {
+  if (v is Future) {
+    asyncStart();
+    v.then((_) {
+      Expect.fail('Did not throw');
+    }, onError: (Object e, StackTrace s) {
+      if (e is! T) {
+        // ignore: only_throw_errors
+        throw e;
+      }
+      onError(e);
+      asyncEnd();
+    });
+    return;
+  }
+  v as void Function();
+  Expect.throws<T>(v, (T e) {
+    onError(e);
+    return true;
   });
 }
