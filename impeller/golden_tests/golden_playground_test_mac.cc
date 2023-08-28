@@ -30,6 +30,9 @@ static const std::vector<std::string> kSkipTests = {
     "impeller_Play_AiksTest_CanRenderRadialGradientManyColors_Vulkan",
     "impeller_Play_AiksTest_CanRenderBackdropBlurInteractive_Metal",
     "impeller_Play_AiksTest_CanRenderBackdropBlurInteractive_Vulkan",
+    "impeller_Play_AiksTest_ClippedBlurFilterRendersCorrectlyInteractive_Metal",
+    "impeller_Play_AiksTest_ClippedBlurFilterRendersCorrectlyInteractive_"
+    "Vulkan",
     "impeller_Play_AiksTest_TextFrameSubpixelAlignment_Metal",
     "impeller_Play_AiksTest_TextFrameSubpixelAlignment_Vulkan",
     "impeller_Play_AiksTest_ColorWheel_Metal",
@@ -134,7 +137,7 @@ PlaygroundBackend GoldenPlaygroundTest::GetBackend() const {
   return GetParam();
 }
 
-bool GoldenPlaygroundTest::OpenPlaygroundHere(const Picture& picture) {
+bool GoldenPlaygroundTest::OpenPlaygroundHere(Picture picture) {
   AiksContext renderer(GetContext(), typographer_context_);
 
   auto screenshot = pimpl_->screenshoter->MakeScreenshot(renderer, picture,
@@ -143,7 +146,8 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(const Picture& picture) {
 }
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(
-    const AiksPlaygroundCallback& callback) {
+    AiksPlaygroundCallback
+        callback) {  // NOLINT(performance-unnecessary-value-param)
   return false;
 }
 
