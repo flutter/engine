@@ -72,6 +72,11 @@ class SkwasmImage extends SkwasmObjectWrapper<RawImage> implements ui.Image {
       context.transferFromImageBitmap(bitmap);
       final DomBlob blob = await offscreenCanvas.convertToBlob();
       final JSArrayBuffer arrayBuffer = (await blob.arrayBuffer().toDart)! as JSArrayBuffer;
+
+      // Zero out the contents of the canvas so that resources can be reclaimed
+      // by the browser.
+      offscreenCanvas.width = 0;
+      offscreenCanvas.height = 0;
       return ByteData.view(arrayBuffer.toDart);
     } else {
       return (renderer as SkwasmRenderer).surface.rasterizeImage(this, format);
