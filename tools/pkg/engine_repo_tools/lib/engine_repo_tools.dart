@@ -123,7 +123,7 @@ final class Engine {
   final io.Directory flutterDir;
 
   /// The path to the `$ENGINE/src/out` directory.
-  /// 
+  ///
   /// **NOTE**: This directory may not exist.
   final io.Directory outDir;
 
