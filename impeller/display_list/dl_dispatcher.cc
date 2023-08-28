@@ -1115,12 +1115,9 @@ void DlDispatcher::drawTextBlob(const sk_sp<SkTextBlob>& blob,
   if (paint_.style == Paint::Style::kStroke ||
       paint_.color_source.GetType() != ColorSource::Type::kColor) {
     auto path = skia_conversions::PathDataFromTextBlob(blob);
-    auto bounds = text_frame.GetBounds();
-    if (!bounds.has_value()) {
-      return;
-    }
+    auto bounds = blob->bounds();
     canvas_.Save();
-    canvas_.Translate({x + bounds->origin.x, y + bounds->origin.y, 0.0});
+    canvas_.Translate({x + bounds.left(), y + bounds.top(), 0.0});
     canvas_.DrawPath(path, paint_);
     canvas_.Restore();
     return;
