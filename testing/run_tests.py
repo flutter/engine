@@ -954,7 +954,9 @@ def gather_clang_tidy_tests(build_dir):
 
 
 def gather_engine_repo_tools_tests(build_dir):
-  test_dir = os.path.join(BUILDROOT_DIR, 'flutter', 'tools', 'pkg', 'engine_repo_tools')
+  test_dir = os.path.join(
+      BUILDROOT_DIR, 'flutter', 'tools', 'pkg', 'engine_repo_tools'
+  )
   dart_tests = glob.glob('%s/*_test.dart' % test_dir)
   for dart_test_file in dart_tests:
     opts = [
