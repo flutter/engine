@@ -467,7 +467,7 @@ class PlatformView {
 
   //----------------------------------------------------------------------------
   /// @brief      Used by the framework to tell the embedder that it has
-  ///             registered a listener on a given channel
+  ///             registered a listener on a given channel.
   ///
   /// @param[in]  name      The name of the channel on which the listener has
   ///                       set or cleared a listener.
