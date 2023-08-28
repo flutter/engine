@@ -167,6 +167,11 @@ void main() {
       // Create two targets in out: host_debug and host_debug_unopt_arm64.
       io.Directory(p.join(emptyDir.path, 'src', 'out', 'host_debug')).createSync(recursive: true);
       io.Directory(p.join(emptyDir.path, 'src', 'out', 'host_debug_unopt_arm64')).createSync(recursive: true);
+
+      // Intentionnally make host_debug a day old to ensure it is not picked.
+      final io.File oldJson = io.File(p.join(emptyDir.path, 'src', 'out', 'host_debug', 'compile_commands.json'))..createSync();
+      oldJson.setLastModifiedSync(oldJson.lastModifiedSync().subtract(const Duration(days: 1)));
+
       io.File(p.join(emptyDir.path, 'src', 'out', 'host_debug_unopt_arm64', 'compile_commands.json')).createSync();
 
       final Engine engine = Engine.fromSrcPath(p.join(emptyDir.path, 'src'));
