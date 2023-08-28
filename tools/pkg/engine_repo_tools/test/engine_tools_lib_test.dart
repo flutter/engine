@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:io' as io;
-import 'package:engine_tools_lib/engine_tools_lib.dart';
+import 'package:engine_repo_tools/engine_repo_tools.dart';
 import 'package:litetest/litetest.dart';
 import 'package:path/path.dart' as p;
 
@@ -11,7 +11,7 @@ void main() {
   late io.Directory emptyDir;
 
   void setUp() {
-    emptyDir = io.Directory.systemTemp.createTempSync('engine_tools_lib.test');
+    emptyDir = io.Directory.systemTemp.createTempSync('engine_repo_tools.test');
   }
 
   void tearDown() {
@@ -94,7 +94,7 @@ void main() {
     late io.Directory emptyDir;
 
     void setUp() {
-      emptyDir = io.Directory.systemTemp.createTempSync('engine_tools_lib.test');
+      emptyDir = io.Directory.systemTemp.createTempSync('engine_repo_tools.test');
     }
 
     void tearDown() {
