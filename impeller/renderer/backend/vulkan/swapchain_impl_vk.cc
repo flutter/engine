@@ -379,7 +379,8 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
     return AcquireResult{true /* out of date */};
   }
 
-  if (acq_result != vk::Result::eSuccess) {
+  if (acq_result != vk::Result::eSuccess &&
+      acq_result != vk::Result::eSuboptimalKHR) {
     VALIDATION_LOG << "Could not acquire next swapchain image: "
                    << vk::to_string(acq_result);
     return {};
@@ -435,7 +436,7 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
     barrier.dst_access = {};
     barrier.dst_stage = vk::PipelineStageFlagBits::eBottomOfPipe;
 
-    if (!image->SetLayout(barrier)) {
+    if (!image->SetLayout(barrier).ok()) {
       return false;
     }
 

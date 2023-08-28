@@ -336,6 +336,7 @@ public class FlutterRenderer implements TextureRegistry {
 
   @Keep
   final class ImageTextureRegistryEntry implements TextureRegistry.ImageTextureEntry {
+    private static final String TAG = "ImageTextureRegistryEntry";
     private final long id;
     private boolean released;
     private Image image;
@@ -370,8 +371,10 @@ public class FlutterRenderer implements TextureRegistry {
       if (toClose != null) {
         toClose.close();
       }
-      // Mark that we have a new frame available.
-      markTextureFrameAvailable(id);
+      if (image != null) {
+        // Mark that we have a new frame available.
+        markTextureFrameAvailable(id);
+      }
     }
 
     @Override

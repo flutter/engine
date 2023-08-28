@@ -25,9 +25,10 @@
 #include "flutter/fml/time/time_point.h"
 #if IMPELLER_SUPPORTS_RENDERING
 // GN is having trouble understanding how this works in the Fuchsia builds.
-#include "flutter/impeller/aiks/aiks_context.h"  // nogncheck
-#include "flutter/impeller/renderer/context.h"   // nogncheck
-#endif                                           // IMPELLER_SUPPORTS_RENDERING
+#include "impeller/aiks/aiks_context.h"  // nogncheck
+#include "impeller/renderer/context.h"   // nogncheck
+#include "impeller/typographer/backends/skia/typographer_context_skia.h"  // nogncheck
+#endif  // IMPELLER_SUPPORTS_RENDERING
 #include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/shell/common/pipeline.h"
 #include "flutter/shell/common/snapshot_controller.h"
@@ -118,6 +119,9 @@ class Rasterizer final : public SnapshotDelegate,
         const = 0;
 
     virtual const Settings& GetSettings() const = 0;
+
+    virtual bool ShouldDiscardLayerTree(int64_t view_id,
+                                        const flutter::LayerTree& tree) = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -205,6 +209,19 @@ class Rasterizer final : public SnapshotDelegate,
   fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> GetSnapshotDelegate() const;
 
   //----------------------------------------------------------------------------
+  /// @brief      Deallocate the resources for displaying a view.
+  ///
+  ///             This method should be called when a view is removed.
+  ///
+  ///             The rasterizer don't need views to be registered. Last-frame
+  ///             states for views are recorded when layer trees are rasterized
+  ///             to the view and used during `Rasterizer::DrawLastLayerTree`.
+  ///
+  /// @param[in]  view_id  The ID of the view.
+  ///
+  void CollectView(int64_t view_id);
+
+  //----------------------------------------------------------------------------
   /// @brief      Sometimes, it may be necessary to render the same frame again
   ///             without having to wait for the framework to build a whole new
   ///             layer tree describing the same contents. One such case is when
@@ -240,8 +257,6 @@ class Rasterizer final : public SnapshotDelegate,
 
   std::shared_ptr<flutter::TextureRegistry> GetTextureRegistry() override;
 
-  using LayerTreeDiscardCallback = std::function<bool(flutter::LayerTree&)>;
-
   //----------------------------------------------------------------------------
   /// @brief      Takes the next item from the layer tree pipeline and executes
   ///             the raster thread frame workload for that pipeline item to
@@ -270,11 +285,8 @@ class Rasterizer final : public SnapshotDelegate,
   ///
   /// @param[in]  pipeline  The layer tree pipeline to take the next layer tree
   ///                       to render from.
-  /// @param[in]  discard_callback if specified and returns true, the layer tree
-  ///                             is discarded instead of being rendered
   ///
-  RasterStatus Draw(const std::shared_ptr<LayerTreePipeline>& pipeline,
-                    LayerTreeDiscardCallback discard_callback = NoDiscard);
+  RasterStatus Draw(const std::shared_ptr<LayerTreePipeline>& pipeline);
 
   //----------------------------------------------------------------------------
   /// @brief      The type of the screenshot to obtain of the previously
@@ -500,6 +512,19 @@ class Rasterizer final : public SnapshotDelegate,
   void DisableThreadMergerIfNeeded();
 
  private:
+  // The result of `DoDraw`.
+  //
+  // Normally `DoDraw` returns simply a raster status. However, sometimes we
+  // need to attempt to rasterize the layer tree again. This happens when
+  // layer_tree has not successfully rasterized due to changes in the thread
+  // configuration, in which case the resubmitted task will be inserted to the
+  // front of the pipeline.
+  struct DoDrawResult {
+    RasterStatus raster_status = RasterStatus::kFailed;
+
+    std::unique_ptr<LayerTreeItem> resubmitted_layer_tree_item;
+  };
+
   // |SnapshotDelegate|
   std::unique_ptr<GpuImageResult> MakeSkiaGpuImage(
       sk_sp<DisplayList> display_list,
@@ -530,7 +555,8 @@ class Rasterizer final : public SnapshotDelegate,
       return surface_->GetAiksContext();
     }
     if (auto context = impeller_context_.lock()) {
-      return std::make_shared<impeller::AiksContext>(context);
+      return std::make_shared<impeller::AiksContext>(
+          context, impeller::TypographerContextSkia::Make());
     }
 #endif
     return nullptr;
@@ -554,7 +580,7 @@ class Rasterizer final : public SnapshotDelegate,
       GrDirectContext* surface_context,
       bool compressed);
 
-  RasterStatus DoDraw(
+  DoDrawResult DoDraw(
       std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
       std::unique_ptr<flutter::LayerTree> layer_tree,
       float device_pixel_ratio);
@@ -569,7 +595,6 @@ class Rasterizer final : public SnapshotDelegate,
 
   void FireNextFrameCallbackIfPresent();
 
-  static bool NoDiscard(const flutter::LayerTree& layer_tree) { return false; }
   static bool ShouldResubmitFrame(const RasterStatus& raster_status);
 
   Delegate& delegate_;
@@ -581,12 +606,6 @@ class Rasterizer final : public SnapshotDelegate,
   // This is the last successfully rasterized layer tree.
   std::unique_ptr<flutter::LayerTree> last_layer_tree_;
   float last_device_pixel_ratio_;
-  // Set when we need attempt to rasterize the layer tree again. This layer_tree
-  // has not successfully rasterized. This can happen due to the change in the
-  // thread configuration. This will be inserted to the front of the pipeline.
-  std::unique_ptr<flutter::LayerTree> resubmitted_layer_tree_;
-  std::unique_ptr<FrameTimingsRecorder> resubmitted_recorder_;
-  float resubmitted_pixel_ratio_;
   fml::closure next_frame_callback_;
   bool user_override_resource_cache_bytes_;
   std::optional<size_t> max_cache_bytes_;
