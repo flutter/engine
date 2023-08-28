@@ -1135,7 +1135,7 @@ TEST_F(FlutterWindowsEngineTest, ChannelListenedTo) {
         new_args.channel_update_callback =
             [](const FlutterChannelUpdate* update, void* user_data) {
               listened_to = true;
-              EXPECT_EQ(strcmp(update->channel, "flutter/lifecycle"), 0);
+              EXPECT_STREQ(update->channel, "flutter/lifecycle");
               EXPECT_TRUE(update->listening);
             };
         return old_run(version, config, &new_args, user_data, engine_out);
