@@ -151,7 +151,7 @@ final class BuildBucketGoldenScraper {
     final Set<_Golden> uniqueGoldens = goldens.toSet();
 
     // Write the goldens to disk (or pretend to in dry-run mode).
-    _outSink.writeln('Found ${uniqueGoldens.length} golden file changes:');
+    _outSink.writeln('${dryRun ? 'Found' : 'Wrote'} ${uniqueGoldens.length} golden file changes:');
     for (final _Golden golden in uniqueGoldens) {
       final String truncatedPathAfterFlutterDir = golden.outFile.path.split('flutter${p.separator}').last;
       _outSink.writeln('  $truncatedPathAfterFlutterDir');
