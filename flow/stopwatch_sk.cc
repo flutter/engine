@@ -18,43 +18,48 @@ static const size_t kMaxFrameMarkers = 8;
 void SkStopwatchVisualizer::InitVisualizeSurface(SkISize size) const {
   // Mark as dirty if the size has changed.
   if (visualize_cache_surface_) {
-    cache_dirty_ = size.width() != visualize_cache_surface_->width() ||
-                   size.height() != visualize_cache_surface_->height();
+    if (size.width() != visualize_cache_surface_->width() ||
+        size.height() != visualize_cache_surface_->height()) {
+      cache_dirty_ = true;
+    };
   }
+
   if (!cache_dirty_) {
     return;
   }
   cache_dirty_ = false;
+
+  // TODO(garyq): Use a GPU surface instead of a CPU surface.
   visualize_cache_surface_ =
       SkSurfaces::Raster(SkImageInfo::MakeN32Premul(size));
 
-  SkCanvas* canvas = visualize_cache_surface_->getCanvas();
+  SkCanvas* cache_canvas = visualize_cache_surface_->getCanvas();
 
   // Establish the graph position.
-  const SkScalar x = 10.0f;
-  const SkScalar y = 10.0f;
+  const SkScalar x = 0;
+  const SkScalar y = 0;
   const SkScalar width = size.width();
   const SkScalar height = size.height();
 
   SkPaint paint;
   paint.setColor(0x99FFFFFF);
-  canvas->drawRect(SkRect::MakeXYWH(x, y, width, height), paint);
+  cache_canvas->drawRect(SkRect::MakeXYWH(x, y, width, height), paint);
 
-  // Scale the graph to show frame times up to those that are 3x the frame time.
+  // Scale the graph to show frame times up to those that are 3 times the frame
+  // time.
   const double one_frame_ms = stopwatch_.GetFrameBudget().count();
   const double max_interval = one_frame_ms * 3.0;
   const double max_unit_interval = UnitFrameInterval(max_interval);
 
   // Draw the old data to initially populate the graph.
   // Prepare a path for the data. We start at the height of the last point, so
-  // it looks like we wrap around.
+  // it looks like we wrap around
   SkPath path;
   path.setIsVolatile(true);
   path.moveTo(x, height);
   path.lineTo(
       x, y + height * (1.0 - UnitHeight(stopwatch_.GetLap(0).ToMillisecondsF(),
                                         max_unit_interval)));
-
   double unit_x;
   double unit_next_x = 0.0;
   for (size_t i = 0; i < kMaxSamples; i += 1) {
@@ -77,15 +82,14 @@ void SkStopwatchVisualizer::InitVisualizeSurface(SkISize size) const {
 
   // Draw the graph.
   paint.setColor(0xAA0000FF);
-  canvas->drawPath(path, paint);
+  cache_canvas->drawPath(path, paint);
 }
 
 void SkStopwatchVisualizer::Visualize(DlCanvas* canvas,
                                       const SkRect& rect) const {
-  // Initialize the surface if necessary.
-  InitVisualizeSurface(rect.roundOut().size());
+  // Initialize visualize cache if it has not yet been initialized.
+  InitVisualizeSurface(SkISize::Make(rect.width(), rect.height()));
 
-  // Draw the cached surface.
   SkCanvas* cache_canvas = visualize_cache_surface_->getCanvas();
   SkPaint paint;
 
@@ -95,15 +99,17 @@ void SkStopwatchVisualizer::Visualize(DlCanvas* canvas,
   const SkScalar width = visualize_cache_surface_->width();
   const SkScalar height = visualize_cache_surface_->height();
 
-  // Scale the graph to show frame times up to those that are 3x the frame time.
+  // Scale the graph to show frame times up to those that are 3 times the frame
+  // time.
   const double one_frame_ms = stopwatch_.GetFrameBudget().count();
   const double max_interval = one_frame_ms * 3.0;
   const double max_unit_interval = UnitFrameInterval(max_interval);
+
   const double sample_unit_width = (1.0 / kMaxSamples);
 
   // Draw vertical replacement bar to erase old/stale pixels.
   paint.setColor(0x99FFFFFF);
-  paint.setStyle(SkPaint::kFill_Style);
+  paint.setStyle(SkPaint::Style::kFill_Style);
   paint.setBlendMode(SkBlendMode::kSrc);
   double sample_x =
       x + width * (static_cast<double>(prev_drawn_sample_index_) / kMaxSamples);
