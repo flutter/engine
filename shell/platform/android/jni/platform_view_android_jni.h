@@ -232,7 +232,8 @@ class PlatformViewAndroidJNI {
   ///
   /// @note       May be called from any thread.
   ///
-  virtual void OnRasterStart(const FrameTimingsRecorder& frame_timings_recorder) = 0;
+  virtual void OnRasterStart(
+      const FrameTimingsRecorder& frame_timings_recorder) = 0;
 };
 
 }  // namespace flutter

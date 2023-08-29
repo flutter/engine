@@ -386,7 +386,8 @@ import java.util.List;
       // Create the FlutterView that owns the FlutterTextureView.
       flutterView = new FlutterView(host.getContext(), flutterTextureView);
     } else {
-      FlutterImageView flutterImageView = new FlutterImageView(host.getContext(), 1, 1, FlutterImageView.SurfaceKind.main);
+      FlutterImageView flutterImageView =
+          new FlutterImageView(host.getContext(), 1, 1, FlutterImageView.SurfaceKind.main);
 
       // Allow our host to customize FlutterImageView, if desired.
       host.onFlutterImageViewCreated(flutterImageView);
@@ -1136,9 +1137,9 @@ import java.util.List;
      * io.flutter.embedding.android.FlutterView.RenderMode} is set to {@link
      * io.flutter.embedding.android.FlutterView.RenderMode#image}.
      *
-     * <p>This method is invoked before the given {@link FlutterImageView} is attached to the
-     * {@code View} hierarchy. Implementers should not attempt to climb the {@code View} hierarchy
-     * or make assumptions about relationships with other {@code View}s.
+     * <p>This method is invoked before the given {@link FlutterImageView} is attached to the {@code
+     * View} hierarchy. Implementers should not attempt to climb the {@code View} hierarchy or make
+     * assumptions about relationships with other {@code View}s.
      */
     void onFlutterImageViewCreated(@NonNull FlutterImageView flutterImageView);
 

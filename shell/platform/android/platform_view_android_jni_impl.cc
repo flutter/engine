@@ -1260,8 +1260,8 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
-  g_on_raster_start_method = env->GetMethodID(
-      g_flutter_jni_class->obj(), "onRasterStart", "(JJJ)V");
+  g_on_raster_start_method =
+      env->GetMethodID(g_flutter_jni_class->obj(), "onRasterStart", "(JJJ)V");
 
   if (g_on_raster_start_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate onRasterStart method";
@@ -1910,29 +1910,34 @@ bool PlatformViewAndroidJNIImpl::RequestDartDeferredLibrary(
   return true;
 }
 
-void PlatformViewAndroidJNIImpl::OnRasterStart(const FrameTimingsRecorder& frame_timings_recorder) {
+void PlatformViewAndroidJNIImpl::OnRasterStart(
+    const FrameTimingsRecorder& frame_timings_recorder) {
   fml::TimePoint now = fml::TimePoint::Now();
   fml::TimePoint wal_time = fml::TimePoint::CurrentWallTime();
-  
+
   JNIEnv* env = fml::jni::AttachCurrentThread();
   auto java_object = java_object_.get(env);
   if (java_object.is_null()) {
     return;
   }
 
-  fml::TimePoint build_start_wal_time = wal_time - 
-    (now - frame_timings_recorder.GetBuildStartTime());
+  fml::TimePoint build_start_wal_time =
+      wal_time - (now - frame_timings_recorder.GetBuildStartTime());
 
-  fml::TimePoint build_end_wal_time = wal_time - 
-    (now - frame_timings_recorder.GetBuildEndTime());
+  fml::TimePoint build_end_wal_time =
+      wal_time - (now - frame_timings_recorder.GetBuildEndTime());
 
-  fml::TimePoint raster_start_wal_time = wal_time - 
-    (now - frame_timings_recorder.GetRasterStartTime());
+  fml::TimePoint raster_start_wal_time =
+      wal_time - (now - frame_timings_recorder.GetRasterStartTime());
 
-  env->CallVoidMethod(java_object.obj(), g_on_raster_start_method,
-                      reinterpret_cast<jlong>(build_start_wal_time.ToEpochDelta().ToNanoseconds()), 
-                      reinterpret_cast<jlong>(build_end_wal_time.ToEpochDelta().ToNanoseconds()), 
-                      reinterpret_cast<jlong>(raster_start_wal_time.ToEpochDelta().ToNanoseconds()));
+  env->CallVoidMethod(
+      java_object.obj(), g_on_raster_start_method,
+      reinterpret_cast<jlong>(
+          build_start_wal_time.ToEpochDelta().ToNanoseconds()),
+      reinterpret_cast<jlong>(
+          build_end_wal_time.ToEpochDelta().ToNanoseconds()),
+      reinterpret_cast<jlong>(
+          raster_start_wal_time.ToEpochDelta().ToNanoseconds()));
   FML_CHECK(fml::jni::CheckException(env));
 }
 

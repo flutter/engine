@@ -319,7 +319,8 @@ void AndroidExternalViewEmbedder::DestroySurfaces() {
 }
 
 // |ExternalViewEmbedder|
-void AndroidExternalViewEmbedder::OnRasterStart(const FrameTimingsRecorder& frame_timings_recorder) {
+void AndroidExternalViewEmbedder::OnRasterStart(
+    const FrameTimingsRecorder& frame_timings_recorder) {
   jni_facade_->OnRasterStart(frame_timings_recorder);
 }
 

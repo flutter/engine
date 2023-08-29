@@ -98,7 +98,8 @@ class MockPlatformViewAndroidJNI : public PlatformViewAndroidJNI {
               FlutterViewGetScaledFontSize,
               (double font_size, int configuration_id),
               (const, override));
-  MOCK_METHOD1(OnRasterStart, void (const FrameTimingsRecorder& frame_timings_recorder));
+  MOCK_METHOD1(OnRasterStart,
+               void(const FrameTimingsRecorder& frame_timings_recorder));
 };
 
 class MockPlatformMessageResponse : public PlatformMessageResponse {

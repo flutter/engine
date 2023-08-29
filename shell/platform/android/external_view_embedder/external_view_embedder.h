@@ -78,7 +78,8 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
   SkRect GetViewRect(int64_t view_id) const;
 
   // |ExternalViewEmbedder|
-  void OnRasterStart(const FrameTimingsRecorder& frame_timings_recorder) override;
+  void OnRasterStart(
+      const FrameTimingsRecorder& frame_timings_recorder) override;
 
  private:
   // The number of frames the rasterizer task runner will continue
