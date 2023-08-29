@@ -219,14 +219,31 @@ extension CanvasKitExtension on CanvasKit {
   ) => _MakeImage(info, pixels.toJS, bytesPerRow.toJS);
 
   @JS('MakeLazyImageFromTextureSource')
-  external SkImage? _MakeLazyImageFromTextureSource(
+  external SkImage? _MakeLazyImageFromTextureSource1(
     JSAny src,
     SkPartialImageInfo info,
   );
-  SkImage? MakeLazyImageFromTextureSource(
+
+  @JS('MakeLazyImageFromTextureSource')
+  external SkImage? _MakeLazyImageFromTextureSource2(
+    JSAny src,
+    JSNumber zeroSecondArgument,
+    JSBoolean srcIsPremultiplied,
+  );
+
+  SkImage? MakeLazyImageFromTextureSourceWithInfo(
     Object src,
     SkPartialImageInfo info,
-  ) => _MakeLazyImageFromTextureSource(src.toJSAnyShallow, info);
+  ) => _MakeLazyImageFromTextureSource1(src.toJSAnyShallow, info);
+
+  SkImage? MakeLazyImageFromImageBitmap(
+    DomImageBitmap imageBitmap,
+    bool hasPremultipliedAlpha,
+  ) => _MakeLazyImageFromTextureSource2(
+    imageBitmap as JSAny,
+    0.toJS,
+    hasPremultipliedAlpha.toJS,
+  );
 }
 
 @JS('window.CanvasKitInit')

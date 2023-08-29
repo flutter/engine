@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:js_interop';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -292,6 +293,30 @@ Future<void> testMain() async {
 
     final ui.FrameInfo info = await codec.getNextFrame();
     return info.image;
+  });
+
+  emitImageTests('svg_image_bitmap', () async {
+    final DomBlob svgBlob = createDomBlob(<String>[
+'''
+<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150">
+  <path d="M25,75  A50,50 0 1,0 125 75 L75,25 Z" stroke="blue" stroke-width="10" fill="red"></path>
+</svg>
+'''
+    ], <String, String>{'type': 'image/svg+xml'});
+    final String url = domWindow.URL.createObjectURL(svgBlob);
+    final DomHTMLImageElement image = createDomHTMLImageElement();
+    final Completer<void> completer = Completer<void>();
+    late final DomEventListener loadListener;
+    loadListener = createDomEventListener((DomEvent event) {
+      completer.complete();
+      image.removeEventListener('load', loadListener);
+    });
+    image.addEventListener('load', loadListener);
+    image.src = url;
+    await completer.future;
+
+    final DomImageBitmap bitmap = (await createImageBitmap(image as JSAny).toDart)! as DomImageBitmap;
+    return renderer.createImageFromImageBitmap(bitmap);
   });
 
   emitImageTests('codec_list_resized', () async {
