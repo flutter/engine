@@ -24,7 +24,8 @@ class EngineFlutterDisplay extends ui.Display {
   @override
   final int id;
 
-  // TODO(mdebbar): `size` and `refreshRate` should be kept up-to-date with the
+  // TODO(mdebbar): https://github.com/flutter/flutter/issues/133562
+  // `size` and `refreshRate` should be kept up-to-date with the
   // browser. E.g. the window could be resized or moved to another display with
   // a different refresh rate.
 
