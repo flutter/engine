@@ -7,7 +7,6 @@
 namespace flutter {
 
 static const size_t kMaxSamples = 120;
-static const size_t kMaxFrameMarkers = 8;
 
 Stopwatch::Stopwatch(const RefreshRateUpdater& updater)
     : refresh_rate_updater_(updater),
