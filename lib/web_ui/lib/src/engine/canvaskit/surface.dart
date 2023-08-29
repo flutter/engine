@@ -109,12 +109,12 @@ class Surface {
   }
 
   Future<void> rasterizeToCanvas(
-      ui.Size frameSize, RenderCanvas canvas, CkPicture picture) async {
+      ui.Size frameSize, RenderCanvas canvas, List<CkPicture> pictures) async {
     canvas.ensureSize(frameSize);
 
     final CkCanvas skCanvas = _surface!.getCanvas();
     skCanvas.clear(const ui.Color(0x00000000));
-    skCanvas.drawPicture(picture);
+    pictures.forEach(skCanvas.drawPicture);
     _surface!.flush();
 
     DomImageBitmap bitmap;

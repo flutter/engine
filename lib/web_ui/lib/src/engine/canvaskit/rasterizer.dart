@@ -16,10 +16,11 @@ class Rasterizer {
   final Surface _offscreenSurface = Surface();
   ui.Size _currentFrameSize = ui.Size.zero;
 
-  /// Render the given [picture] so it is displayed by the given [canvas].
-  Future<void> rasterizeToCanvas(RenderCanvas canvas, CkPicture picture) async {
+  /// Render the given [pictures] so it is displayed by the given [canvas].
+  Future<void> rasterizeToCanvas(
+      RenderCanvas canvas, List<CkPicture> pictures) async {
     await _offscreenSurface.rasterizeToCanvas(
-        _currentFrameSize, canvas, picture);
+        _currentFrameSize, canvas, pictures);
   }
 
   /// Sets the maximum size of the Skia resource cache, in bytes.
@@ -49,7 +50,7 @@ class Rasterizer {
 
       RenderCanvasFactory.instance.baseCanvas.addToScene();
       rasterizeToCanvas(RenderCanvasFactory.instance.baseCanvas,
-          pictureRecorder.endRecording());
+          <CkPicture>[pictureRecorder.endRecording()]);
 
       HtmlViewEmbedder.instance.submitFrame();
     } finally {

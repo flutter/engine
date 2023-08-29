@@ -15,6 +15,7 @@ import '../window.dart';
 import 'canvas.dart';
 import 'embedded_views_diff.dart';
 import 'path.dart';
+import 'picture.dart';
 import 'picture_recorder.dart';
 import 'render_canvas.dart';
 import 'render_canvas_factory.dart';
@@ -47,6 +48,10 @@ class HtmlViewEmbedder {
   /// * The slot view in the stack (what shows the actual platform view contents).
   /// * The number of clipping elements used last time the view was composited.
   final Map<int, ViewClipChain> _viewClipChains = <int, ViewClipChain>{};
+
+  /// The maximum number of overlays to create. Too many overlays can cause a
+  /// performance burden.
+  static const int maximumOverlays = 7;
 
   /// Canvases used to draw on top of platform views, keyed by platform view ID.
   final Map<int, RenderCanvas> _overlays = <int, RenderCanvas>{};
@@ -359,22 +364,28 @@ class HtmlViewEmbedder {
         (_activeCompositionOrder.isEmpty || _compositionOrder.isEmpty)
             ? null
             : diffViewList(_activeCompositionOrder, _compositionOrder);
-    _updateOverlays(diffResult);
+    final List<OverlayGroup>? overlayGroups = _updateOverlays(diffResult);
     assert(
-      _context.pictureRecorders.length == _overlays.length,
-      'There should be the same number of picture recorders '
+      _context.pictureRecorders.length >= _overlays.length,
+      'There should at least as many picture recorders '
       '(${_context.pictureRecorders.length}) as overlays (${_overlays.length}).',
     );
 
     int pictureRecorderIndex = 0;
-    for (int i = 0; i < _compositionOrder.length; i++) {
-      final int viewId = _compositionOrder[i];
-      if (_overlays[viewId] != null) {
-        CanvasKitRenderer.instance.rasterizer.rasterizeToCanvas(
-            _overlays[viewId]!,
-            _context.pictureRecorders[pictureRecorderIndex].endRecording());
-        pictureRecorderIndex++;
+    if (overlayGroups != null) {
+      for (final OverlayGroup overlayGroup in overlayGroups) {
+        final RenderCanvas overlay = _overlays[overlayGroup.last]!;
+        final List<CkPicture> pictures = <CkPicture>[];
+        for (int i = 0; i < overlayGroup.visibleCount; i++) {
+          pictures.add(
+              _context.pictureRecorders[pictureRecorderIndex].endRecording());
+          pictureRecorderIndex++;
+        }
+        CanvasKitRenderer.instance.rasterizer
+            .rasterizeToCanvas(overlay, pictures);
       }
+    } else {
+      // The overlay groups are null, so it's the same as before.
     }
     for (final CkPictureRecorder recorder
         in _context.pictureRecordersCreatedDuringPreroll) {
@@ -537,13 +548,13 @@ class HtmlViewEmbedder {
   // composition order of the current and previous frame, respectively.
   //
   // TODO(hterkelsen): Test this more thoroughly.
-  void _updateOverlays(ViewListDiffResult? diffResult) {
+  List<OverlayGroup>? _updateOverlays(ViewListDiffResult? diffResult) {
     if (diffResult != null &&
         diffResult.viewsToAdd.isEmpty &&
         diffResult.viewsToRemove.isEmpty) {
       // The composition order has not changed, continue using the assigned
       // overlays.
-      return;
+      return null;
     }
     // Group platform views from their composition order.
     // Each group contains one visible view, and any number of invisible views
@@ -574,6 +585,7 @@ class HtmlViewEmbedder {
           .forEach(_initializeOverlay);
     }
     assert(_overlays.length == viewsNeedingOverlays.length);
+    return overlayGroups;
   }
 
   // Group the platform views into "overlay groups". These are sublists
@@ -586,7 +598,7 @@ class HtmlViewEmbedder {
   // the rest of the scene.
   List<OverlayGroup> getOverlayGroups(List<int> views) {
     final List<OverlayGroup> result = <OverlayGroup>[];
-    OverlayGroup currentGroup = OverlayGroup(<int>[]);
+    OverlayGroup currentGroup = OverlayGroup();
 
     for (int i = 0; i < views.length; i++) {
       final int view = views[i];
@@ -595,8 +607,10 @@ class HtmlViewEmbedder {
         currentGroup.add(view);
       } else {
         // `view` is visible.
-        if (!currentGroup.hasVisibleView) {
-          // If `view` is the first visible one of the group, add it.
+        if (!currentGroup.hasVisibleView ||
+            result.length + 1 >= HtmlViewEmbedder.maximumOverlays) {
+          // If `view` is the first visible one of the group or we've reached
+          // the maximum number of overlays, add it.
           currentGroup.add(view, visible: true);
         } else {
           // There's already a visible `view` in `currentGroup`, so a new
@@ -606,7 +620,8 @@ class HtmlViewEmbedder {
             // We only care about groups that have one visible view.
             result.add(currentGroup);
           }
-          currentGroup = OverlayGroup(<int>[view], visible: true);
+          currentGroup = OverlayGroup();
+          currentGroup.add(view, visible: true);
         }
       }
     }
@@ -667,29 +682,30 @@ class HtmlViewEmbedder {
 /// Every overlay group is a list containing a visible view preceded or followed
 /// by zero or more invisible views.
 class OverlayGroup {
-  /// Constructor
-  OverlayGroup(
-    List<int> viewGroup, {
-    bool visible = false,
-  })  : _group = viewGroup,
-        _containsVisibleView = visible;
+  OverlayGroup() : _group = <int>[];
 
   // The internal list of ints.
   final List<int> _group;
-  // A boolean flag to mark if any visible view has been added to the list.
-  bool _containsVisibleView;
+
+  /// The number of visible views in this group.
+  int _visibleCount = 0;
 
   /// Add a [view] (maybe [visible]) to this group.
   void add(int view, {bool visible = false}) {
     _group.add(view);
-    _containsVisibleView |= visible;
+    if (visible) {
+      _visibleCount++;
+    }
   }
 
   /// Get the "last" view added to this group.
   int get last => _group.last;
 
   /// Returns true if this group contains any visible view.
-  bool get hasVisibleView => _group.isNotEmpty && _containsVisibleView;
+  bool get hasVisibleView => _visibleCount > 0;
+
+  /// Returns the number of visible views in this overlay group.
+  int get visibleCount => _visibleCount;
 }
 
 /// Represents a Clip Chain (for a view).

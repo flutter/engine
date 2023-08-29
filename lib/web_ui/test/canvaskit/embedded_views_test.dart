@@ -337,7 +337,6 @@ void testMain() {
         _platformView,
         _overlay,
         _platformView,
-        _overlay,
         _platformView,
         _overlay,
       ]);
@@ -371,7 +370,7 @@ void testMain() {
       ]);
 
       // Frame 4:
-      //   Render: more platform views than max cache size.
+      //   Render: more platform views than max overlay count.
       //   Expect: main canvas, backup overlay, maximum overlays.
       await Future<void>.delayed(Duration.zero);
       renderTestScene(viewCount: 16);
@@ -390,23 +389,14 @@ void testMain() {
         _platformView,
         _overlay,
         _platformView,
-        _overlay,
         _platformView,
-        _overlay,
         _platformView,
-        _overlay,
         _platformView,
-        _overlay,
         _platformView,
-        _overlay,
         _platformView,
-        _overlay,
         _platformView,
-        _overlay,
         _platformView,
-        _overlay,
         _platformView,
-        _overlay,
         _platformView,
         _overlay,
       ]);
@@ -500,11 +490,8 @@ void testMain() {
         _platformView,
         _overlay,
         _platformView,
-        _overlay,
         _platformView,
-        _overlay,
         _platformView,
-        _overlay,
         _platformView,
         _overlay,
       ]);
@@ -529,11 +516,8 @@ void testMain() {
         _platformView,
         _overlay,
         _platformView,
-        _overlay,
         _platformView,
-        _overlay,
         _platformView,
-        _overlay,
         _platformView,
         _overlay,
       ]);
@@ -558,11 +542,8 @@ void testMain() {
         _platformView,
         _overlay,
         _platformView,
-        _overlay,
         _platformView,
-        _overlay,
         _platformView,
-        _overlay,
         _platformView,
         _overlay,
       ]);
@@ -587,11 +568,8 @@ void testMain() {
         _platformView,
         _overlay,
         _platformView,
-        _overlay,
         _platformView,
-        _overlay,
         _platformView,
-        _overlay,
         _platformView,
         _overlay,
       ]);
