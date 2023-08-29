@@ -1067,15 +1067,16 @@ void DlAiksCanvas::DrawTextBlob(const sk_sp<SkTextBlob>& blob,
                                 SkScalar x,
                                 SkScalar y,
                                 const flutter::DlPaint& paint) {
-  const auto text_frame = MakeTextFrameFromTextBlobSkia(blob);
+  const auto maybe_text_frame = MakeTextFrameFromTextBlobSkia(blob);
+  if (!maybe_text_frame.has_value()) {
+    return;
+  }
+  auto text_frame = maybe_text_frame.value();
   if (paint.getDrawStyle() == flutter::DlDrawStyle::kStroke) {
     auto path = skia_conversions::PathDataFromTextBlob(blob);
     auto bounds = text_frame.GetBounds();
-    if (!bounds.has_value()) {
-      return;
-    }
     canvas_.Save();
-    canvas_.Translate({x + bounds->origin.x, y + bounds->origin.y, 0.0});
+    canvas_.Translate({x + bounds.origin.x, y + bounds.origin.y, 0.0});
     canvas_.DrawPath(path, ToPaint(paint));
     canvas_.Restore();
     return;
