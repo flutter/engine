@@ -50,7 +50,9 @@ class EngineFlutterDisplay extends ui.Display {
   /// Overrides the default device pixel ratio.
   ///
   /// This is useful in tests to emulate screens of different dimensions.
-  set debugDevicePixelRatioOverride(double? value) {
+  ///
+  /// Passing `null` resets the device pixel ratio to the browser's default.
+  void debugOverrideDevicePixelRatio(double? value) {
     _debugDevicePixelRatioOverride = value;
   }
 

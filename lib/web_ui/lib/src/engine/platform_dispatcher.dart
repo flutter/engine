@@ -1267,7 +1267,7 @@ bool _handleWebTestEnd2EndMessage(MethodCodec codec, ByteData? data) {
   final double ratio = double.parse(decoded.arguments as String);
   switch (decoded.method) {
     case 'setDevicePixelRatio':
-      EngineFlutterDisplay.instance.debugDevicePixelRatioOverride = ratio;
+      EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(ratio);
       EnginePlatformDispatcher.instance.onMetricsChanged!();
       return true;
   }

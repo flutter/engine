@@ -21,10 +21,10 @@ void testMain() {
       );
 
       final double originalDevicePixelRatio = display.devicePixelRatio;
-      display.debugDevicePixelRatioOverride = 99.3;
+      display.debugOverrideDevicePixelRatio(99.3);
       expect(display.devicePixelRatio, 99.3);
 
-      display.debugDevicePixelRatioOverride = null;
+      display.debugOverrideDevicePixelRatio(null);
       expect(display.devicePixelRatio, originalDevicePixelRatio);
     });
   });

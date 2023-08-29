@@ -242,7 +242,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
       );
       return true;
     }());
-    display.debugDevicePixelRatioOverride = value;
+    display.debugOverrideDevicePixelRatio(value);
   }
 
   Stream<ui.Size?> get onResize => _dimensionsProvider.onResize;
