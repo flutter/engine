@@ -1885,7 +1885,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
       nullptr;
   if (SAFE_ACCESS(args, channel_update_callback, nullptr) != nullptr) {
     channel_update_callback = [ptr = args->channel_update_callback, user_data](
-                                  std::string name, bool listening) {
+                                  const std::string& name, bool listening) {
       FlutterChannelUpdate update{sizeof(FlutterChannelUpdate), name.c_str(),
                                   listening};
       ptr(&update, user_data);

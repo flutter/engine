@@ -1333,9 +1333,9 @@ void Shell::OnEngineChannelUpdate(std::string name, bool listening) {
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
   task_runners_.GetPlatformTaskRunner()->PostTask(
-      [view = platform_view_->GetWeakPtr(), name = name, listening] {
+      [view = platform_view_->GetWeakPtr(), name = std::move(name), listening] {
         if (view) {
-          view->SendChannelUpdate(std::move(name), listening);
+          view->SendChannelUpdate(name, listening);
         }
       });
 }
