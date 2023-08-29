@@ -62,7 +62,7 @@ iVBORw0KGgoAAAANSUhEUgAAADcAAAA3CAYAAACo29JGAAAAAXNSR0IArs4c6QAAAAlwSFlzAAALEwAA
       expect(result, 0);
 
       // Check the output.
-      expect(outSink.toString(), contains('Found 1 golden file changes:'));
+      expect(outSink.toString(), contains('Wrote 1 golden file changes:'));
       expect(outSink.toString(), contains('docs/flutter_logo.png'));
       expect(logo.readAsBytesSync().length, 4257);
     } finally {
