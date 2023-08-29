@@ -391,29 +391,27 @@ public class FlutterImageView extends View
    * FrameCallback to make sure it is drawn on screen.
    */
   private void closeImageAfterDrawing(@NonNull final Image image) {
-    Choreographer.FrameCallback secondFrameCallback = 
-      new Choreographer.FrameCallback() {
-        @Override
-        public void doFrame(long frameTimeNanos) {
-          if (acquiredImages.remove(image)) {
-            image.close();
-            if (pendingImage == image) {
-              pendingImage = null;
+    Choreographer.FrameCallback secondFrameCallback =
+        new Choreographer.FrameCallback() {
+          @Override
+          public void doFrame(long frameTimeNanos) {
+            if (acquiredImages.remove(image)) {
+              image.close();
+              if (pendingImage == image) {
+                pendingImage = null;
+              }
+            } else {
+              // The image is already closed
             }
-          } else {
-            // The image is already closed
           }
-        }
-      };
-    Choreographer.FrameCallback firstFrameCallback = 
-      new Choreographer.FrameCallback() {
-        @Override
-        public void doFrame(long frameTimeNanos) {
-          Choreographer.getInstance()
-            .postFrameCallback(secondFrameCallback);
-        }
-      };
-    Choreographer.getInstance()
-        .postFrameCallback(firstFrameCallback);
+        };
+    Choreographer.FrameCallback firstFrameCallback =
+        new Choreographer.FrameCallback() {
+          @Override
+          public void doFrame(long frameTimeNanos) {
+            Choreographer.getInstance().postFrameCallback(secondFrameCallback);
+          }
+        };
+    Choreographer.getInstance().postFrameCallback(firstFrameCallback);
   }
 }
