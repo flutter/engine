@@ -162,16 +162,22 @@ Future<void> testMain() async {
 
       final SurfacePaint paint = SurfacePaint()
         ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 5);
+      rc.save();
       rc.drawCircle(const ui.Offset(150, 150), 100,
           paint..color = const ui.Color(0xFFC8C800));
+      rc.restore();
+      rc.save();
       rc.drawCircle(const ui.Offset(150, 150), 50,
           paint..color = const ui.Color(0xFFC800C8));
+      rc.restore();
+      rc.save();
       rc.drawCircle(
           const ui.Offset(150, 150),
           20,
           paint
             ..color = const ui.Color(0xFF00C8C8)
             ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 10));
+      rc.restore();
 
       await canvasScreenshot(rc, 'multiple_mask_filter_$browser',
           region: screenRect);
