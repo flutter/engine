@@ -26,6 +26,20 @@ Run again without --dry-run to apply these changes.
 
 You're recommended to still use `git diff` to verify the changes look good.
 
+## Upgrading `git diff`
+
+By default, `git diff` is not very helpful for binary files. You can install
+[`imagemagick`](https://imagemagick.org/) and configure your local git client
+to make `git diff` show a PNG diff:
+
+```shell
+# On MacOS.
+$ brew install exiftool imagemagick
+$ git clone https://github.com/ewanmellor/git-diff-image
+$ cd git-diff-image
+$ ./install.sh
+```
+
 ## Motivation
 
 Due to <https://github.com/flutter/flutter/issues/53784>, on non-Linux OSes
