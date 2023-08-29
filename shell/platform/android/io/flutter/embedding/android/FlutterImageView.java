@@ -16,6 +16,7 @@ import android.media.Image;
 import android.media.Image.Plane;
 import android.media.ImageReader;
 import android.util.AttributeSet;
+import android.view.Choreographer;
 import android.view.Surface;
 import android.view.View;
 import androidx.annotation.NonNull;
@@ -25,10 +26,9 @@ import io.flutter.Log;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import java.nio.ByteBuffer;
-import java.util.Locale;
 import java.util.ArrayList;
 import java.util.List;
-import android.view.Choreographer;
+import java.util.Locale;
 
 /**
  * Paints a Flutter UI provided by an {@link android.media.ImageReader} onto a {@link
@@ -43,7 +43,8 @@ import android.view.Choreographer;
  * onDraw}.
  */
 @TargetApi(19)
-public class FlutterImageView extends View implements RenderSurface, ImageReader.OnImageAvailableListener {
+public class FlutterImageView extends View
+    implements RenderSurface, ImageReader.OnImageAvailableListener {
   private static final String TAG = "FlutterImageView";
 
   @NonNull private ImageReader imageReader;
@@ -52,6 +53,7 @@ public class FlutterImageView extends View implements RenderSurface, ImageReader
   @Nullable private OnNewImageListener onNewImageListener;
   /** Image pending to be draw. */
   @Nullable private Image pendingImage;
+
   private final List<Image> acquiredImages = new ArrayList<>();
 
   public ImageReader getImageReader() {
@@ -190,7 +192,7 @@ public class FlutterImageView extends View implements RenderSurface, ImageReader
       throw new IllegalStateException(
           "connectSurfaceToRenderer() should only be called when flutterRenderer and imageReader are non-null.");
     }
-    
+
     // When connecting the surface to the renderer, it's possible that the surface is currently
     // paused. For instance, when a platform view is displayed, the current FlutterSurfaceView
     // is paused, and rendering continues in a FlutterImageView buffer while the platform view
@@ -382,30 +384,27 @@ public class FlutterImageView extends View implements RenderSurface, ImageReader
     pendingImage = null;
   }
 
-  /** 
-   * Close the image after it is drawn on screen. 
-   * 
-   * The image might be drawn after the next FrameCallback.
-   * Close the image after the following FrameCallback to make sure it is drawn on screen.
+  /**
+   * Close the image after it is drawn on screen.
+   *
+   * <p>The image might be drawn after the next FrameCallback. Close the image after the following
+   * FrameCallback to make sure it is drawn on screen.
    */
   private void closeImageAfterDrawing(@NonNull final Image image) {
-    Choreographer.getInstance().postFrameCallback(new Choreographer.FrameCallback() {
-      @Override
-      public void doFrame(long frameTimeNanos) {
-        Choreographer.getInstance().postFrameCallback(new Choreographer.FrameCallback() {
-          @Override
-          public void doFrame(long frameTimeNanos) {
-            if (acquiredImages.remove(image)) {
-              image.close();
-              if (pendingImage == image) {
-                pendingImage = null;
+    Choreographer.getInstance()
+        .postFrameCallback(
+            new Choreographer.FrameCallback() {
+              @Override
+              public void doFrame(long frameTimeNanos) {
+                if (acquiredImages.remove(image)) {
+                  image.close();
+                  if (pendingImage == image) {
+                    pendingImage = null;
+                  }
+                } else {
+                  // The image is already closed
+                }
               }
-            } else {
-              // The image is already closed
-            }
-          }
-        });
-      }
-    });
+            });
   }
 }

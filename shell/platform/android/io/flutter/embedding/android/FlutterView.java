@@ -53,7 +53,6 @@ import androidx.window.layout.FoldingFeature.State;
 import androidx.window.layout.WindowInfoTracker;
 import androidx.window.layout.WindowLayoutInfo;
 import io.flutter.Log;
-import io.flutter.embedding.android.FlutterImageView.SurfaceKind;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.FlutterRenderer.DisplayFeatureState;
@@ -105,7 +104,9 @@ import java.util.Set;
  * information comparing {@link android.view.SurfaceView} and {@link android.view.TextureView}.
  */
 public class FlutterView extends FrameLayout
-    implements MouseCursorPlugin.MouseCursorViewDelegate, KeyboardManager.ViewDelegate, FlutterImageView.OnNewImageListener {
+    implements MouseCursorPlugin.MouseCursorViewDelegate,
+        KeyboardManager.ViewDelegate,
+        FlutterImageView.OnNewImageListener {
   private static final String TAG = "FlutterView";
 
   // Internal view hierarchy references.
@@ -1325,8 +1326,12 @@ public class FlutterView extends FrameLayout
   @NonNull
   public FlutterImageView createImageView() {
     return new FlutterImageView(
-        getContext(), getWidth(), getHeight(), 
-        renderMode == RenderMode.image ? FlutterImageView.SurfaceKind.main : FlutterImageView.SurfaceKind.background);
+        getContext(),
+        getWidth(),
+        getHeight(),
+        renderMode == RenderMode.image
+            ? FlutterImageView.SurfaceKind.main
+            : FlutterImageView.SurfaceKind.background);
   }
 
   @VisibleForTesting
@@ -1585,7 +1590,7 @@ public class FlutterView extends FrameLayout
   /**
    * Implementation of the FlutterImageView.OnNewImageListener callback.
    *
-   * This method is triggered only when a FlutterImageView is utilized to render Flutter UI.
+   * <p>This method is triggered only when a FlutterImageView is utilized to render Flutter UI.
    *
    * @param image The new image that is available for rendering in the FlutterImageView.
    */
@@ -1597,8 +1602,8 @@ public class FlutterView extends FrameLayout
   }
 
   /**
-   * Sets the callback listener to receive notifications about the availability of new images
-   * when using FlutterImageView.
+   * Sets the callback listener to receive notifications about the availability of new images when
+   * using FlutterImageView.
    */
   private void setFlutterImageViewListener() {
     if (flutterImageView != null) {
@@ -1607,10 +1612,11 @@ public class FlutterView extends FrameLayout
   }
 
   /**
-   * Registers a callback to be notified when a new image becomes available when using FlutterImageView.
+   * Registers a callback to be notified when a new image becomes available when using
+   * FlutterImageView.
    *
-   * This method allows you to add a listener that will be triggered whenever a new image is ready to be displayed
-   * in the FlutterImageView. Multiple listeners can be added.
+   * <p>This method allows you to add a listener that will be triggered whenever a new image is
+   * ready to be displayed in the FlutterImageView. Multiple listeners can be added.
    *
    * @param listener The listener to be added for new image notifications. Must not be null.
    */
@@ -1621,7 +1627,7 @@ public class FlutterView extends FrameLayout
   /**
    * Removes a previously added FlutterImageView.OnNewImageListener callback.
    *
-   * If the provided listener was not previously added, this operation has no effect.
+   * <p>If the provided listener was not previously added, this operation has no effect.
    *
    * @param listener The listener to be removed.
    */
