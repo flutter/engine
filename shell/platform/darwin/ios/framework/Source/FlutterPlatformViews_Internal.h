@@ -255,8 +255,6 @@ class FlutterPlatformViewsController {
 
   void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
 
-  void OnBackgroundMethodCall(FlutterMethodCall* call, FlutterResult& result);
-
   // Returns the platform view id if the platform view (or any of its descendant view) is the first
   // responder. Returns -1 if no such platform view is found.
   long FindFirstResponderPlatformViewId();
@@ -268,11 +266,12 @@ class FlutterPlatformViewsController {
   // Pushes the view id of a visted platform view to the list of visied platform views.
   void PushVisitedPlatformView(int64_t view_id) { visited_platform_views_.push_back(view_id); }
 
-  std::mutex& HitTestMutex() { return hit_test_mutex_; }
+  void BlockPlatformThread();
+  void ReleasePlatformThread();
 
  private:
   static const size_t kMaxLayerAllocations = 2;
-  std::mutex hit_test_mutex_;
+  std::mutex platform_thread_mutex_;
   std::mutex method_channel_mutex_;
 
   using LayersMap = std::map<int64_t, std::vector<std::shared_ptr<FlutterPlatformViewLayer>>>;
