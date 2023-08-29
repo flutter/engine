@@ -551,6 +551,8 @@ extension DomElementExtension on DomElement {
 
   external DomElement? get firstElementChild;
 
+  external DomElement? get nextElementSibling;
+
   @JS('clientHeight')
   external JSNumber get _clientHeight;
   double get clientHeight => _clientHeight.toDartDouble;
@@ -1127,24 +1129,8 @@ extension DomCanvasElementExtension on DomCanvasElement {
     return getContext('webgl2')! as WebGLContext;
   }
 
-  DomCanvasBitmapRendererContext get bitmapRendererContext =>
-      getContext('bitmaprenderer')! as DomCanvasBitmapRendererContext;
-}
-
-@JS()
-@staticInterop
-class DomImageBitmap {}
-
-@JS()
-@staticInterop
-class DomCanvasBitmapRendererContext {}
-
-extension DomCanvasBitmapRendererContextExtension
-    on DomCanvasBitmapRendererContext {
-  @JS('transferFromImageBitmap')
-  external void _transferFromImageBitmap(JSAny? bitmap);
-  void transferFromImageBitmap(DomImageBitmap bitmap) =>
-      _transferFromImageBitmap(bitmap.toJSAnyShallow);
+  DomCanvasRenderingContextBitmapRenderer get contextBitmapRenderer =>
+      getContext('bitmaprenderer')! as DomCanvasRenderingContextBitmapRenderer;
 }
 
 @JS()
@@ -1434,6 +1420,15 @@ extension DomCanvasRenderingContextWebGlExtension
   bool isContextLost() => _isContextLost().toDart;
 }
 
+@JS()
+@staticInterop
+class DomCanvasRenderingContextBitmapRenderer {}
+
+extension DomCanvasRenderingContextBitmapRendererExtension
+    on DomCanvasRenderingContextBitmapRenderer {
+  external void transferFromImageBitmap(DomImageBitmap bitmap);
+}
+
 @JS('ImageData')
 @staticInterop
 class DomImageData {
@@ -1447,6 +1442,16 @@ extension DomImageDataExtension on DomImageData {
   @JS('data')
   external JSUint8ClampedArray get _data;
   Uint8ClampedList get data => _data.toDart;
+}
+
+@JS('ImageBitmap')
+@staticInterop
+class DomImageBitmap {}
+
+extension DomImageBitmapExtension on DomImageBitmap {
+  external JSNumber get width;
+  external JSNumber get height;
+  external void close();
 }
 
 @JS()
@@ -2282,6 +2287,10 @@ extension DomURLExtension on DomURL {
 @staticInterop
 class DomBlob {
   external factory DomBlob(JSArray parts);
+}
+
+extension DomBlobExtension on DomBlob {
+  external JSPromise arrayBuffer();
 }
 
 DomBlob createDomBlob(List<Object?> parts) =>
