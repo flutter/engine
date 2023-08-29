@@ -230,6 +230,10 @@ ColorSource ColorSource::MakeScene(std::shared_ptr<scene::Node> scene_node,
 }
 #endif  // IMPELLER_ENABLE_3D
 
+void ColorSource::ConcatEffectTransform(const Matrix& effect_transform) {
+
+}
+
 ColorSource::Type ColorSource::GetType() const {
   return type_;
 }

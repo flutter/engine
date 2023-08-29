@@ -97,6 +97,8 @@ class ColorSource {
 
   std::shared_ptr<ColorSourceContents> GetContents(const Paint& paint) const;
 
+  void ConcatEffectTransform(const Matrix& effect_transform);
+
  private:
   Type type_ = Type::kColor;
   ColorSourceProc proc_;
