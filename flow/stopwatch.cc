@@ -45,7 +45,7 @@ const fml::TimeDelta& Stopwatch::LastLap() const {
 }
 
 const fml::TimeDelta& Stopwatch::GetLap(size_t index) const {
-  return laps_[(current_sample_ - index) % kMaxSamples];
+  return laps_[index];
 }
 
 size_t Stopwatch::GetCurrentSample() const {
