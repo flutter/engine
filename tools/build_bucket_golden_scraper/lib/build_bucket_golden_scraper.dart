@@ -129,9 +129,13 @@ final class BuildBucketGoldenScraper {
       final String line = lines[i];
       if (line.startsWith(_base64MagicString)) {
         final String relativePath = line.split(_buildBucketMagicString).last.split(':').first;
+
+        // Remove the _new suffix from the file name.
+        final String pathWithouNew = relativePath.replaceAll('_new', '');
+
         final String base64EncodedString = lines[i + 1];
         final List<int> bytes = base64Decode(base64EncodedString);
-        final io.File outFile = io.File(p.join(engine.srcDir.path, relativePath));
+        final io.File outFile = io.File(p.join(engine.srcDir.path, pathWithouNew));
         goldens.add(_Golden(outFile, bytes));
       }
     }
