@@ -86,7 +86,13 @@ class ContextVK final : public Context,
   // |Context|
   void SetSyncPresentation(bool value) override { sync_presentation_ = value; }
 
-  bool GetSyncPresentation() const { return sync_presentation_; }
+  bool GetSyncPresentation() const {
+#ifdef FML_OS_ANDROID
+    return sync_presentation_;
+#else
+    return true;
+#endif  // FML_OS_ANDROID
+  }
 
   void SetOffscreenFormat(PixelFormat pixel_format);
 
