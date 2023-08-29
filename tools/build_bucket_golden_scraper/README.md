@@ -34,10 +34,37 @@ to make `git diff` show a PNG diff:
 
 ```shell
 # On MacOS.
-$ brew install exiftool imagemagick
-$ git clone https://github.com/ewanmellor/git-diff-image
-$ cd git-diff-image
-$ ./install.sh
+$ brew install imagemagick
+
+# Create a comparison script.
+$ cat > ~/bin/git-imgdiff <<EOF
+#!/bin/sh
+echo "Comparing $2 and $5"
+
+# Find a temporary directory to store the diff.
+if [ -z "$TMPDIR" ]; then
+  TMPDIR=/tmp
+fi
+
+compare \
+  "$2" "$5" \
+  /tmp/git-imgdiff-diff.png
+
+# Display the diff.
+open /tmp/git-imgdiff-diff.png
+EOF
+
+# Setup git.
+git config --global core.attributesfile '~/.gitattributes'
+
+# Add the following to ~/.gitattributes.
+cat >> ~/.gitattributes <<EOF
+*.png diff=imgdiff
+*.jpg diff=imgdiff
+*.gif diff=imgdiff
+EOF
+
+git config --global diff.imgdiff.command '~/bin/git-imgdiff'
 ```
 
 ## Motivation
