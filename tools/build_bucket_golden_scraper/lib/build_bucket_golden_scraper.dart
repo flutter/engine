@@ -21,7 +21,7 @@ final class BuildBucketGoldenScraper {
     String? engineSrcPath,
     StringSink? outSink,
   }) :
-      engine = engineSrcPath != null ? 
+      engine = engineSrcPath != null ?
           Engine.fromSrcPath(engineSrcPath) :
           Engine.findWithin(p.dirname(p.fromUri(io.Platform.script))),
       _outSink = outSink ?? io.stdout;
