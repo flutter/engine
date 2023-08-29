@@ -237,6 +237,7 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
                       @"platform-views#on-the-platform-side-1 for more details.\n"
                       @"If you are not the author of the PlatformView, make sure to call "
                       @"`GeneratedPluginRegistrant.register`."]);
+    return;
   }
 
   id params = nil;
@@ -270,6 +271,7 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
       [[[ChildClippingView alloc] initWithFrame:CGRectZero] autorelease];
   [clipping_view addSubview:touch_interceptor];
   root_views_[viewId] = fml::scoped_nsobject<UIView>([clipping_view retain]);
+
   result(nil);
 }
 
@@ -1027,20 +1029,23 @@ void FlutterPlatformViewsController::ResetFrameState() {
     _flutterViewController =
         ((FlutterViewController*)_platformViewsController->getFlutterViewController());
 
-    // ForwardingGestureRecognizer* forwardingRecognizer = [[[ForwardingGestureRecognizer alloc]
-    //              initWithTarget:self
-    //     platformViewsController:std::move(platformViewsController)] autorelease];
+    ForwardingGestureRecognizer* forwardingRecognizer = [[[ForwardingGestureRecognizer alloc]
+                 initWithTarget:self
+        platformViewsController:std::move(platformViewsController)] autorelease];
 
-    // _delayingRecognizer.reset([[DelayingGestureRecognizer alloc]
-    //           initWithTarget:self
-    //                   action:nil
-    //     forwardingRecognizer:forwardingRecognizer]);
+    _delayingRecognizer.reset([[DelayingGestureRecognizer alloc]
+              initWithTarget:self
+                      action:nil
+        forwardingRecognizer:forwardingRecognizer]);
     _blockingPolicy = blockingPolicy;
-    // forwardingRecognizer.enabled = NO;
-    // _delayingRecognizer.get().enabled = NO;
-
-    // [self addGestureRecognizer:_delayingRecognizer.get()];
-    // [self addGestureRecognizer:forwardingRecognizer];
+    forwardingRecognizer.enabled = NO;
+    _delayingRecognizer.get().enabled = NO;
+    BOOL hitTestBlocking = [[[NSBundle mainBundle]
+        objectForInfoDictionaryKey:@"FLTPlatformViewHitTestBlocking"] boolValue];
+    if (!hitTestBlocking) {
+      [self addGestureRecognizer:_delayingRecognizer.get()];
+      [self addGestureRecognizer:forwardingRecognizer];
+    }
   }
   return self;
 }
