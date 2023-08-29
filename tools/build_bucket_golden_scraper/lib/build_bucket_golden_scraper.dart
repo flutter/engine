@@ -93,21 +93,22 @@ final class BuildBucketGoldenScraper {
 
   /// Runs the scraper.
   Future<int> run() async {
-    final io.File file;
-
     // If the path is a URL, download it and store it in a temporary file.
     final Uri? maybeUri = Uri.tryParse(pathOrUrl);
     if (maybeUri == null) {
       throw FormatException('Invalid path or URL: $pathOrUrl');
     }
-    if (maybeUri.hasScheme) {
-      file = await _downloadFile(maybeUri);
-    } else {
-      file = io.File(pathOrUrl);
-    }
 
-    // Read the file as a string.
-    final String contents = await file.readAsString();
+    final String contents;
+    if (maybeUri.hasScheme) {
+      contents = await _downloadFile(maybeUri);
+    } else {
+      final io.File readFile = io.File(pathOrUrl);
+      if (!readFile.existsSync()) {
+        throw FormatException('File does not exist: $pathOrUrl');
+      }
+      contents = readFile.readAsStringSync();
+    }
 
     // Check that it is a buildbucket log file.
     if (!contents.contains(_buildBucketMagicString)) {
@@ -168,15 +169,14 @@ final class BuildBucketGoldenScraper {
   static const String _buildBucketMagicString = '/b/s/w/ir/cache/builder/src/';
   static const String _base64MagicString = 'See also the base64 encoded $_buildBucketMagicString';
 
-  static Future<io.File> _downloadFile(Uri uri) async {
-    final io.Directory tempDir = io.Directory.systemTemp.createTempSync('build_bucket_golden_scraper');
-    final io.File file = io.File(p.join(tempDir.path, uri.pathSegments.last));
+  static Future<String> _downloadFile(Uri uri) async {
     final io.HttpClient client = io.HttpClient();
     final io.HttpClientRequest request = await client.getUrl(uri);
     final io.HttpClientResponse response = await request.close();
-    await response.pipe(file.openWrite());
+    final StringBuffer contents = StringBuffer();
+    await response.transform(utf8.decoder).forEach(contents.write);
     client.close();
-    return file;
+    return contents.toString();
   }
 }
 
