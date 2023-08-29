@@ -954,7 +954,9 @@ def gather_clang_tidy_tests(build_dir):
 
 
 def gather_build_bucket_golden_scraper_tests(build_dir):
-  test_dir = os.path.join(BUILDROOT_DIR, 'flutter', 'tools', 'build_bucket_golden_scraper')
+  test_dir = os.path.join(
+      BUILDROOT_DIR, 'flutter', 'tools', 'build_bucket_golden_scraper'
+  )
   dart_tests = glob.glob('%s/test/*_test.dart' % test_dir)
   for dart_test_file in dart_tests:
     opts = [
