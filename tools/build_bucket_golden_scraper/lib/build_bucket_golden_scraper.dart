@@ -11,7 +11,7 @@ import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
 /// "Downloads" (i.e. decodes base64 encoded strings) goldens from buildbucket.
-/// 
+///
 /// See ../README.md for motivation and usage.
 final class BuildBucketGoldenScraper {
   /// Creates a scraper with the given configuration.
@@ -20,14 +20,14 @@ final class BuildBucketGoldenScraper {
     this.dryRun = false,
     String? engineSrcPath,
     StringSink? outSink,
-  }) : 
+  }) :
       engine = engineSrcPath != null ? 
           Engine.fromSrcPath(engineSrcPath) :
           Engine.findWithin(p.dirname(p.fromUri(io.Platform.script))),
       _outSink = outSink ?? io.stdout;
 
   /// Creates a scraper from the command line arguments.
-  /// 
+  ///
   /// Throws [FormatException] if the arguments are invalid.
   factory BuildBucketGoldenScraper.fromCommandLine(
     List<String> args, {
@@ -197,7 +197,7 @@ final class _Golden implements Comparable<_Golden> {
   bool operator ==(Object other) {
     return other is _Golden && other.outFile.path == outFile.path;
   }
-  
+
   @override
   int compareTo(_Golden other) {
     return outFile.path.compareTo(other.outFile.path);
