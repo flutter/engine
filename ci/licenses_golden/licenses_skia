@@ -1,4 +1,4 @@
-Signature: 2c4e89e154faa6701e9c20f1b300d13c
+Signature: c62efc4356bd19b0d2478918cc4a7697
 
 ====================================================================================================
 LIBRARY: etc1
@@ -388,6 +388,7 @@ FILE: ../../../third_party/skia/package-lock.json
 FILE: ../../../third_party/skia/relnotes/sksl_always_on.md
 FILE: ../../../third_party/skia/relnotes/sksl_comma_array.md
 FILE: ../../../third_party/skia/relnotes/sksl_ganesh_dawn_removed.md
+FILE: ../../../third_party/skia/relnotes/vk_backend_surface.md
 FILE: ../../../third_party/skia/src/core/SkOrderedReadBuffer.h
 FILE: ../../../third_party/skia/src/gpu/gpu_workaround_list.txt
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_compute.minified.sksl
@@ -8160,8 +8161,6 @@ ORIGIN: ../../../third_party/skia/src/gpu/graphite/GlobalCache.h + ../../../thir
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/GpuWorkSubmission.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/GraphiteResourceKey.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/GraphiteResourceKey.h + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/src/gpu/graphite/ImageUtils.cpp + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/src/gpu/graphite/ImageUtils.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/KeyContext.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/KeyContext.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/KeyHelpers.cpp + ../../../third_party/skia/LICENSE
@@ -8381,8 +8380,6 @@ FILE: ../../../third_party/skia/src/gpu/graphite/GlobalCache.h
 FILE: ../../../third_party/skia/src/gpu/graphite/GpuWorkSubmission.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/GraphiteResourceKey.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/GraphiteResourceKey.h
-FILE: ../../../third_party/skia/src/gpu/graphite/ImageUtils.cpp
-FILE: ../../../third_party/skia/src/gpu/graphite/ImageUtils.h
 FILE: ../../../third_party/skia/src/gpu/graphite/KeyContext.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/KeyContext.h
 FILE: ../../../third_party/skia/src/gpu/graphite/KeyHelpers.cpp
@@ -8868,6 +8865,7 @@ ORIGIN: ../../../third_party/skia/src/core/SkMemset.h + ../../../third_party/ski
 ORIGIN: ../../../third_party/skia/src/core/SkMemset_opts.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkMemset_opts_avx.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkMipmapBuilder.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/core/SkOptsTargets.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkPixmapDraw.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkRSXform.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkReadPixelsRec.cpp + ../../../third_party/skia/LICENSE
@@ -8935,6 +8933,8 @@ ORIGIN: ../../../third_party/skia/src/gpu/ganesh/image/SkImage_RasterPinnable.h 
 ORIGIN: ../../../third_party/skia/src/gpu/ganesh/image/SkSpecialImage_Ganesh.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/ganesh/surface/SkSurface_AndroidFactories.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/ganesh/vk/AHardwareBufferVk.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkBackendSurface.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkBackendSurfacePriv.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/AtlasProvider.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/AtlasProvider.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/BackendSemaphore.cpp + ../../../third_party/skia/LICENSE
@@ -9111,6 +9111,7 @@ FILE: ../../../third_party/skia/src/core/SkMemset.h
 FILE: ../../../third_party/skia/src/core/SkMemset_opts.cpp
 FILE: ../../../third_party/skia/src/core/SkMemset_opts_avx.cpp
 FILE: ../../../third_party/skia/src/core/SkMipmapBuilder.cpp
+FILE: ../../../third_party/skia/src/core/SkOptsTargets.h
 FILE: ../../../third_party/skia/src/core/SkPixmapDraw.cpp
 FILE: ../../../third_party/skia/src/core/SkRSXform.cpp
 FILE: ../../../third_party/skia/src/core/SkReadPixelsRec.cpp
@@ -9178,6 +9179,8 @@ FILE: ../../../third_party/skia/src/gpu/ganesh/image/SkImage_RasterPinnable.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/image/SkSpecialImage_Ganesh.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/surface/SkSurface_AndroidFactories.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/vk/AHardwareBufferVk.cpp
+FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkBackendSurface.cpp
+FILE: ../../../third_party/skia/src/gpu/ganesh/vk/GrVkBackendSurfacePriv.h
 FILE: ../../../third_party/skia/src/gpu/graphite/AtlasProvider.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/AtlasProvider.h
 FILE: ../../../third_party/skia/src/gpu/graphite/BackendSemaphore.cpp
