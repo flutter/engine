@@ -45,7 +45,7 @@ class RenderCanvas {
   int _pixelWidth = -1;
   int _pixelHeight = -1;
 
-  DomCanvasBitmapRendererContext? renderContext;
+  DomCanvasRenderingContextBitmapRenderer? renderContext;
 
   ui.Size? _currentCanvasPhysicalSize;
   ui.Size? _currentRenderSize;
@@ -94,7 +94,7 @@ class RenderCanvas {
       height: _pixelHeight,
     );
     canvasElement = htmlCanvas;
-    renderContext = htmlCanvas.bitmapRendererContext;
+    renderContext = htmlCanvas.contextBitmapRenderer;
 
     // The DOM elements used to render pictures are used purely to put pixels on
     // the screen. They have no semantic information. If an assistive technology
