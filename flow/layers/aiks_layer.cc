@@ -13,11 +13,8 @@ AiksLayer::AiksLayer(const SkPoint& offset,
     : offset_(offset), picture_(picture) {
 #if IMPELLER_SUPPORTS_RENDERING
   if (picture_) {
-    auto bounds = picture_->pass->GetElementsCoverage(std::nullopt)
-                      .value_or(impeller::Rect())
-                      .Shift({offset_.x(), offset_.y()});
-    bounds_ = SkRect::MakeLTRB(bounds.GetLeft(), bounds.GetTop(),
-                               bounds.GetRight(), bounds.GetBottom());
+    FML_DCHECK(picture_->rtree);
+    bounds_ = picture_->rtree->bounds();
   }
 #endif
 }
