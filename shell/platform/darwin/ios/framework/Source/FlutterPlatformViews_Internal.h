@@ -272,7 +272,6 @@ class FlutterPlatformViewsController {
  private:
   static const size_t kMaxLayerAllocations = 2;
   std::mutex platform_thread_mutex_;
-  std::mutex method_channel_mutex_;
 
   using LayersMap = std::map<int64_t, std::vector<std::shared_ptr<FlutterPlatformViewLayer>>>;
 
