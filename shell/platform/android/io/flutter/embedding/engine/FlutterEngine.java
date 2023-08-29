@@ -655,12 +655,12 @@ public class FlutterEngine implements ViewUtils.DisplayUpdater {
   }
 
   /**
-   * Adds a {@link FlutterJNI.OnFrameTimeListener}, which receives a callback when Flutter's engine notifies
-   * Android about frame time event.
+   * Adds a {@link FlutterJNI.OnFrameTimeListener}, which receives a callback when Flutter's engine
+   * notifies Android about frame time event.
    *
-   * <p>This callback may be invoked from any thread. Implementers of {@link FlutterJNI.OnFrameTimeListener}
-   * should ensure to check and handle the current thread appropriately, especially if subsequent
-   * actions are expected to run on the main thread.
+   * <p>This callback may be invoked from any thread. Implementers of {@link
+   * FlutterJNI.OnFrameTimeListener} should ensure to check and handle the current thread
+   * appropriately, especially if subsequent actions are expected to run on the main thread.
    */
   public void addOnFrameTimeListener(@NonNull FlutterJNI.OnFrameTimeListener listener) {
     flutterJNI.addOnFrameTimeListener(listener);
