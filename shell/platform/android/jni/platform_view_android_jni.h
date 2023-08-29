@@ -226,6 +226,13 @@ class PlatformViewAndroidJNI {
 
   virtual double FlutterViewGetScaledFontSize(double unscaled_font_size,
                                               int configuration_id) const = 0;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Called when the rasterizer begins its rendering process.
+  ///
+  /// @note       May be called from any thread.
+  ///
+  virtual void OnRasterStart(const FrameTimingsRecorder& frame_timings_recorder) = 0;
 };
 
 }  // namespace flutter

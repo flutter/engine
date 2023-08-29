@@ -102,6 +102,8 @@ class PlatformViewAndroidJNIImpl final : public PlatformViewAndroidJNI {
   double FlutterViewGetScaledFontSize(double unscaled_font_size,
                                       int configuration_id) const override;
 
+  void OnRasterStart(const FrameTimingsRecorder& frame_timings_recorder) override;
+
  private:
   // Reference to FlutterJNI object.
   const fml::jni::JavaObjectWeakGlobalRef java_object_;

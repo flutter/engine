@@ -318,4 +318,9 @@ void AndroidExternalViewEmbedder::DestroySurfaces() {
   latch.Wait();
 }
 
+// |ExternalViewEmbedder|
+void AndroidExternalViewEmbedder::OnRasterStart(const FrameTimingsRecorder& frame_timings_recorder) {
+  jni_facade_->OnRasterStart(frame_timings_recorder);
+}
+
 }  // namespace flutter

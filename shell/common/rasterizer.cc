@@ -563,6 +563,10 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     return RasterStatus::kFailed;
   }
 
+  if (external_view_embedder_) {
+    external_view_embedder_->OnRasterStart(frame_timings_recorder);
+  }
+
   // If the external view embedder has specified an optional root surface, the
   // root surface transformation is set by the embedder instead of
   // having to apply it here.

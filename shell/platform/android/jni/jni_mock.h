@@ -128,6 +128,11 @@ class JNIMock final : public PlatformViewAndroidJNI {
               FlutterViewGetScaledFontSize,
               (double font_size, int configuration_id),
               (const, override));
+
+  MOCK_METHOD(void,
+              OnRasterStart,
+              (const FrameTimingsRecorder& frame_timings_recorder),
+              (override));
 };
 
 }  // namespace flutter

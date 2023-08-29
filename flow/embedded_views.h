@@ -11,6 +11,7 @@
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/display_list/skia/dl_sk_canvas.h"
 #include "flutter/flow/surface_frame.h"
+#include "flutter/flow/frame_timings.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/raster_thread_merger.h"
 #include "third_party/skia/include/core/SkMatrix.h"
@@ -470,6 +471,13 @@ class ExternalViewEmbedder {
   virtual void PushFilterToVisitedPlatformViews(
       std::shared_ptr<const DlImageFilter> filter,
       const SkRect& filter_rect) {}
+
+  // This method provides the embedder a way to do additional tasks
+  // when the rasterizer begins its rendering process.
+  // 
+  // For example, on Android, build end time and raster start time can be used
+  // for external views synchronization.
+  virtual void OnRasterStart(const FrameTimingsRecorder& frame_timings_recorder) {}
 
  private:
   bool used_this_frame_ = false;
