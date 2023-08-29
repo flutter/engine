@@ -174,14 +174,35 @@ UIViewController* FlutterPlatformViewsController::getFlutterViewController() {
 }
 
 void FlutterPlatformViewsController::OnMethodCall(FlutterMethodCall* call, FlutterResult& result) {
+  // This method is invoked on UI thread.
+  // Generally, all the method channel calls need to be dispatched to the main thread.
+  // The exceptions being gesture handling.
+  BOOL hitTestBlocking = [[[NSBundle mainBundle]
+      objectForInfoDictionaryKey:@"FLTPlatformViewHitTestBlocking"] boolValue];
   if ([[call method] isEqualToString:@"create"]) {
-    OnCreate(call, result);
+    dispatch_async(dispatch_get_main_queue(), ^{
+      OnCreate(call, result);
+    });
   } else if ([[call method] isEqualToString:@"dispose"]) {
-    OnDispose(call, result);
+    dispatch_async(dispatch_get_main_queue(), ^{
+      OnDispose(call, result);
+    });
   } else if ([[call method] isEqualToString:@"acceptGesture"]) {
-    OnAcceptGesture(call, result);
+    if (hitTestBlocking) {
+      OnHitTestResult(call, result, YES);
+    } else {
+      dispatch_async(dispatch_get_main_queue(), ^{
+        OnAcceptGesture(call, result);
+      });
+    }
   } else if ([[call method] isEqualToString:@"rejectGesture"]) {
-    OnRejectGesture(call, result);
+    if (hitTestBlocking) {
+      OnHitTestResult(call, result, NO);
+    } else {
+      dispatch_async(dispatch_get_main_queue(), ^{
+        OnRejectGesture(call, result);
+      });
+    }
   } else {
     result(FlutterMethodNotImplemented);
   }

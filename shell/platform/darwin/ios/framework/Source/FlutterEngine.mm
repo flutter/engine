@@ -105,7 +105,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (void)dispatch:(dispatch_block_t)block {
   fml::TaskRunner::RunNowOrPostTask(_taskRunner,
                                     [block_copy = Block_copy(block)]() { block_copy(); });
-  // dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), block);
 }
 @end
 
@@ -162,7 +161,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   fml::scoped_nsobject<FlutterMethodChannel> _restorationChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _platformChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _platformViewsChannel;
-  fml::scoped_nsobject<FlutterMethodChannel> _platformViewsBackgroundChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _textInputChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _undoManagerChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _scribbleChannel;
@@ -586,7 +584,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _restorationChannel.reset();
   _platformChannel.reset();
   _platformViewsChannel.reset();
-  _platformViewsBackgroundChannel.reset();
   _textInputChannel.reset();
   _undoManagerChannel.reset();
   _scribbleChannel.reset();
@@ -650,13 +647,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
   _platformViewsChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/platform_views"
-      binaryMessenger:self.binaryMessenger
-                codec:[FlutterStandardMethodCodec sharedInstance]]);
-
-  _platformViewTaskQueue =
-      [[[PlatformViewChannelTaskQueue alloc] initWithTaskRunner:[self uiTaskRunner]] retain];
-  _platformViewsBackgroundChannel.reset([[FlutterMethodChannel alloc]
-         initWithName:@"flutter/platform_views_background"
       binaryMessenger:self.binaryMessenger
                 codec:[FlutterStandardMethodCodec sharedInstance]
             taskQueue:_platformViewTaskQueue]);
@@ -761,13 +751,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
         setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
           if (!weakPlatformViewsController.expired()) {
             weakPlatformViewsController.lock()->OnMethodCall(call, result);
-          }
-        }];
-
-    [_platformViewsBackgroundChannel.get()
-        setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
-          if (!weakPlatformViewsController.expired()) {
-            weakPlatformViewsController.lock()->OnBackgroundMethodCall(call, result);
           }
         }];
 
