@@ -5,7 +5,6 @@
 import 'dart:async';
 import 'dart:js_interop';
 
-import 'package:quiver/strings.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
