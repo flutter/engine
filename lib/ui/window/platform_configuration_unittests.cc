@@ -71,8 +71,16 @@ class MockPlatformMessageHandler : public PlatformMessageHandler {
                void(int response_id));
 };
 
+// A class that can launch a RuntimeController with the specified
+// RuntimeDelegate.
+//
+// To use this class, contruct this class, call LaunchRootIsolate, and get the
+// runtime controller with Controller(). By the end of the test, destruct this
+// class in the UI thread.
 class MockRuntimeControllerContext {
  public:
+  using VoidCallback = std::function<void()>;
+
   MockRuntimeControllerContext(Settings settings,
                                TaskRunners task_runners,
                                RuntimeDelegate& client)
@@ -98,8 +106,10 @@ class MockRuntimeControllerContext {
         UIDartState::Context{task_runners});
   }
 
+  // Launch the root isolate. The post_launch callback will be executed in the
+  // same UI task, which can be used to create initial views.
   void LaunchRootIsolate(RunConfiguration& configuration,
-                         ViewportMetrics implicit_view_metrics) {
+                         VoidCallback post_launch) {
     PostSync(task_runners_.GetUITaskRunner(), [&]() {
       bool launch_success = runtime_controller_->LaunchRootIsolate(
           settings_,                                  //
@@ -109,11 +119,12 @@ class MockRuntimeControllerContext {
           configuration.GetEntrypointArgs(),          //
           configuration.TakeIsolateConfiguration());  //
       ASSERT_TRUE(launch_success);
-      runtime_controller_->AddView(kImplicitViewId, implicit_view_metrics);
+      post_launch();
     });
   }
 
-  RuntimeController& GetController() { return *runtime_controller_; }
+  // Get the runtime controller.
+  RuntimeController& Controller() { return *runtime_controller_; }
 
  private:
   Settings settings_;
@@ -456,22 +467,26 @@ TEST_F(PlatformConfigurationTest, OutOfScopeRenderCallsAreIgnored) {
   // Render should not be called.
   EXPECT_CALL(client, Render(_, _)).Times(Exactly(0));
 
-  auto context = std::make_unique<MockRuntimeControllerContext>(
-      settings, task_runners, client);
+  auto runtime_controller_context =
+      std::make_unique<MockRuntimeControllerContext>(settings, task_runners,
+                                                     client);
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("incorrectImmediateRender");
-  ViewportMetrics implicit_view_metrics(
-      /*device_pixel_ratio=*/1.0, /*width=*/20, /*height=*/20,
-      /*physical_touch_slop=*/2, /*display_id=*/0);
-  context->LaunchRootIsolate(configuration, implicit_view_metrics);
+  runtime_controller_context->LaunchRootIsolate(configuration, [&] {
+    runtime_controller_context->Controller().AddView(
+        kImplicitViewId, ViewportMetrics(
+                             /*pixel_ratio=*/1.0, /*width=*/20, /*height=*/20,
+                             /*touch_slop=*/2, /*display_id=*/0));
+  });
 
   // Wait for the Dart main function to end.
   fml::AutoResetWaitableEvent latch;
   PostSync(task_runners.GetUITaskRunner(), [&]() { latch.Signal(); });
   latch.Wait();
 
-  PostSync(task_runners.GetUITaskRunner(), [&]() { context.reset(); });
+  PostSync(task_runners.GetUITaskRunner(),
+           [&]() { runtime_controller_context.reset(); });
 }
 
 TEST_F(PlatformConfigurationTest, DuplicateRenderCallsAreIgnored) {
@@ -486,15 +501,18 @@ TEST_F(PlatformConfigurationTest, DuplicateRenderCallsAreIgnored) {
   // Render should only be called once, because the second call is ignored.
   EXPECT_CALL(client, Render(_, _)).Times(Exactly(1));
 
-  auto context = std::make_unique<MockRuntimeControllerContext>(
-      settings, task_runners, client);
+  auto runtime_controller_context =
+      std::make_unique<MockRuntimeControllerContext>(settings, task_runners,
+                                                     client);
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("incorrectDoubleRender");
-  ViewportMetrics implicit_view_metrics(
-      /*device_pixel_ratio=*/1.0, /*width=*/20, /*height=*/20,
-      /*physical_touch_slop=*/2, /*display_id=*/0);
-  context->LaunchRootIsolate(configuration, implicit_view_metrics);
+  runtime_controller_context->LaunchRootIsolate(configuration, [&] {
+    runtime_controller_context->Controller().AddView(
+        kImplicitViewId, ViewportMetrics(
+                             /*pixel_ratio=*/1.0, /*width=*/20, /*height=*/20,
+                             /*touch_slop=*/2, /*display_id=*/0));
+  });
 
   // Wait for the Dart main function to end, which means the callbacks have been
   // registered.
@@ -502,9 +520,10 @@ TEST_F(PlatformConfigurationTest, DuplicateRenderCallsAreIgnored) {
   PostSync(task_runners.GetUITaskRunner(), [&]() { latch.Signal(); });
   latch.Wait();
 
-  context->GetController().BeginFrame(fml::TimePoint::Now(), 0);
+  runtime_controller_context->Controller().BeginFrame(fml::TimePoint::Now(), 0);
 
-  PostSync(task_runners.GetUITaskRunner(), [&]() { context.reset(); });
+  PostSync(task_runners.GetUITaskRunner(),
+           [&]() { runtime_controller_context.reset(); });
 }
 
 }  // namespace testing
