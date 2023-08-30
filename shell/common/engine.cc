@@ -292,6 +292,14 @@ tonic::DartErrorHandleType Engine::GetUIIsolateLastError() {
   return runtime_controller_->GetLastError();
 }
 
+void Engine::AddView(int64_t view_id, const ViewportMetrics& view_metrics) {
+  runtime_controller_->AddView(view_id, view_metrics);
+}
+
+void Engine::RemoveView(int64_t view_id) {
+  runtime_controller_->RemoveView(view_id);
+}
+
 void Engine::SetViewportMetrics(int64_t view_id,
                                 const ViewportMetrics& metrics) {
   runtime_controller_->SetViewportMetrics(view_id, metrics);
@@ -440,14 +448,6 @@ void Engine::SetAccessibilityFeatures(int32_t flags) {
   runtime_controller_->SetAccessibilityFeatures(flags);
 }
 
-bool Engine::ImplicitViewEnabled() {
-  // TODO(loicsharma): This value should be provided by the embedder
-  // when it launches the engine. For now, assume the embedder always creates a
-  // view.
-  // See: https://github.com/flutter/flutter/issues/120306
-  return true;
-}
-
 std::string Engine::DefaultRouteName() {
   if (!initial_route_.empty()) {
     return initial_route_;
@@ -498,6 +498,11 @@ void Engine::UpdateIsolateDescription(const std::string isolate_name,
 std::unique_ptr<std::vector<std::string>> Engine::ComputePlatformResolvedLocale(
     const std::vector<std::string>& supported_locale_data) {
   return delegate_.ComputePlatformResolvedLocale(supported_locale_data);
+}
+
+double Engine::GetScaledFontSize(double unscaled_font_size,
+                                 int configuration_id) const {
+  return delegate_.GetScaledFontSize(unscaled_font_size, configuration_id);
 }
 
 void Engine::SetNeedsReportTimings(bool needs_reporting) {
@@ -563,6 +568,10 @@ void Engine::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
 std::weak_ptr<PlatformMessageHandler> Engine::GetPlatformMessageHandler()
     const {
   return delegate_.GetPlatformMessageHandler();
+}
+
+void Engine::SendChannelUpdate(std::string name, bool listening) {
+  delegate_.OnEngineChannelUpdate(std::move(name), listening);
 }
 
 void Engine::LoadDartDeferredLibrary(
