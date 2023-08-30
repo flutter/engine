@@ -303,11 +303,6 @@ class PlatformDispatcher {
     _invoke(onMetricsChanged, _onMetricsChangedZone);
   }
 
-  // TODO(loicsharma): Should we remove this?
-  // void _onSentViewConfigurations(List<int> viewIds) {
-  //   viewIds.forEach(_addView);
-  // }
-
   // Called from the engine, via hooks.dart.
   //
   // Updates the available displays.

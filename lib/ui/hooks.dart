@@ -84,12 +84,6 @@ void _updateDisplays(
   PlatformDispatcher.instance._updateDisplays(displays);
 }
 
-// TODO(loicsharma): Should we remove this?
-// @pragma('vm:entry-point')
-// void _sendViewConfigurations(List<int> viewIds) {
-//   PlatformDispatcher.instance._onSentViewConfigurations(viewIds);
-// }
-
 List<DisplayFeature> _decodeDisplayFeatures({
   required List<double> bounds,
   required List<int> type,

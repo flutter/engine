@@ -81,31 +81,7 @@ void PlatformConfiguration::DidCreateIsolate() {
                   Dart_GetField(library, tonic::ToDart("_drawFrame")));
   report_timings_.Set(tonic::DartState::Current(),
                       Dart_GetField(library, tonic::ToDart("_reportTimings")));
-
-  // TODO(loicsharma): Can we remove this?
-  // library_.Set(tonic::DartState::Current(),
-  //              Dart_LookupLibrary(tonic::ToDart("dart:ui")));
-
-  // SendViewConfigurations();
 }
-
-// TODO(loicsharma): can we remove this?
-// void PlatformConfiguration::SendViewConfigurations() {
-//   std::shared_ptr<tonic::DartState> dart_state
-//     = library_.dart_state().lock();
-//   FML_DCHECK(dart_state);
-//   tonic::DartState::Scope scope(dart_state);
-
-//   // TODO(dkwingsmt): send all of ViewportMetrics
-//   std::vector<int64_t> view_ids;
-//   for (const auto& [view_id, window] : windows_) {
-//     view_ids.push_back(view_id);
-//   }
-
-//   tonic::CheckAndHandleError(tonic::DartInvokeField(
-//       library_.value(), "_sendViewConfigurations",
-//       {tonic::ToDart(view_ids)}));
-// }
 
 void PlatformConfiguration::AddView(int64_t view_id,
                                     const ViewportMetrics& view_metrics) {
