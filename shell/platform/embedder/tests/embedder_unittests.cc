@@ -1588,7 +1588,7 @@ TEST_F(EmbedderTest, CanSuccessfullyPopulateSpecificJITSnapshotCallbacks) {
 // TODO(#107263): Inconsistent snapshot paths in the Linux Fuchsia FEMU test.
 #if defined(OS_FUCHSIA)
   GTEST_SKIP() << "Inconsistent paths in Fuchsia.";
-#endif  // OS_FUCHSIA
+#else
 
   // This test is only relevant in JIT mode.
   if (DartVM::IsRunningPrecompiledCode()) {
@@ -1631,6 +1631,7 @@ TEST_F(EmbedderTest, CanSuccessfullyPopulateSpecificJITSnapshotCallbacks) {
   ASSERT_NE(settings.isolate_snapshot_data(), nullptr);
   ASSERT_NE(settings.isolate_snapshot_instr(), nullptr);
   ASSERT_NE(settings.dart_library_sources_kernel(), nullptr);
+#endif  // OS_FUCHSIA
 }
 
 //------------------------------------------------------------------------------
@@ -1643,7 +1644,7 @@ TEST_F(EmbedderTest, JITSnapshotCallbacksFailWithInvalidLocation) {
 // TODO(#107263): Inconsistent snapshot paths in the Linux Fuchsia FEMU test.
 #if defined(OS_FUCHSIA)
   GTEST_SKIP() << "Inconsistent paths in Fuchsia.";
-#endif  // OS_FUCHSIA
+#else
 
   // This test is only relevant in JIT mode.
   if (DartVM::IsRunningPrecompiledCode()) {
@@ -1674,6 +1675,7 @@ TEST_F(EmbedderTest, JITSnapshotCallbacksFailWithInvalidLocation) {
   ASSERT_EQ(settings.vm_snapshot_instr(), nullptr);
   ASSERT_EQ(settings.isolate_snapshot_data(), nullptr);
   ASSERT_EQ(settings.isolate_snapshot_instr(), nullptr);
+#endif  // OS_FUCHSIA
 }
 
 //------------------------------------------------------------------------------
@@ -2571,6 +2573,37 @@ TEST_F(EmbedderTest, CanSendPointer) {
 
   count_latch.Wait();
   message_latch.Wait();
+}
+
+TEST_F(EmbedderTest, RegisterChannelListener) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+
+  fml::AutoResetWaitableEvent latch;
+  fml::AutoResetWaitableEvent latch2;
+  bool listening = false;
+  context.AddNativeCallback(
+      "SignalNativeTest",
+      CREATE_NATIVE_ENTRY([&](Dart_NativeArguments) { latch.Signal(); }));
+  context.SetChannelUpdateCallback([&](const FlutterChannelUpdate* update) {
+    EXPECT_STREQ(update->channel, "test/listen");
+    EXPECT_TRUE(update->listening);
+    listening = true;
+    latch2.Signal();
+  });
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+  builder.SetDartEntrypoint("channel_listener_response");
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  latch.Wait();
+  // Drain tasks posted to platform thread task runner.
+  fml::MessageLoop::GetCurrent().RunExpiredTasksNow();
+  latch2.Wait();
+
+  ASSERT_TRUE(listening);
 }
 
 }  // namespace testing

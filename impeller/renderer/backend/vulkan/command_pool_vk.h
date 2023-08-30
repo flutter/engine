@@ -42,8 +42,9 @@ class CommandPoolVK {
   std::weak_ptr<const DeviceHolder> device_holder_;
   vk::UniqueCommandPool graphics_pool_;
   Mutex buffers_to_collect_mutex_;
-  std::set<SharedHandleVK<vk::CommandBuffer>> buffers_to_collect_
+  std::vector<vk::UniqueCommandBuffer> buffers_to_collect_
       IPLR_GUARDED_BY(buffers_to_collect_mutex_);
+  std::vector<vk::UniqueCommandBuffer> recycled_buffers_;
   bool is_valid_ = false;
 
   explicit CommandPoolVK(const ContextVK* context);

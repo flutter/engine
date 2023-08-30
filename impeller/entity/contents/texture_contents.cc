@@ -13,6 +13,7 @@
 #include "impeller/entity/entity.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
+#include "impeller/entity/texture_fill_external.frag.h"
 #include "impeller/geometry/constants.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/render_pass.h"
@@ -107,40 +108,50 @@ std::optional<Snapshot> TextureContents::RenderToSnapshot(
 bool TextureContents::Render(const ContentContext& renderer,
                              const Entity& entity,
                              RenderPass& pass) const {
+  auto capture = entity.GetCapture().CreateChild("TextureContents");
+
   using VS = TextureFillVertexShader;
   using FS = TextureFillFragmentShader;
+  using FSExternal = TextureFillExternalFragmentShader;
 
   if (destination_rect_.size.IsEmpty() || source_rect_.IsEmpty() ||
       texture_ == nullptr || texture_->GetSize().IsEmpty()) {
     return true;  // Nothing to render.
   }
 
+  bool is_external_texture =
+      texture_->GetTextureDescriptor().type == TextureType::kTextureExternalOES;
+
   // Expand the source rect by half a texel, which aligns sampled texels to the
   // pixel grid if the source rect is the same size as the destination rect.
   auto texture_coords =
-      Rect::MakeSize(texture_->GetSize()).Project(source_rect_.Expand(0.5));
+      Rect::MakeSize(texture_->GetSize())
+          .Project(capture.AddRect("Source rect", source_rect_).Expand(0.5));
 
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
 
+  auto destination_rect =
+      capture.AddRect("Destination rect", destination_rect_);
   vertex_builder.AddVertices({
-      {destination_rect_.GetLeftTop(), texture_coords.GetLeftTop()},
-      {destination_rect_.GetRightTop(), texture_coords.GetRightTop()},
-      {destination_rect_.GetLeftBottom(), texture_coords.GetLeftBottom()},
-      {destination_rect_.GetRightBottom(), texture_coords.GetRightBottom()},
+      {destination_rect.GetLeftTop(), texture_coords.GetLeftTop()},
+      {destination_rect.GetRightTop(), texture_coords.GetRightTop()},
+      {destination_rect.GetLeftBottom(), texture_coords.GetLeftBottom()},
+      {destination_rect.GetRightBottom(), texture_coords.GetRightBottom()},
   });
 
   auto& host_buffer = pass.GetTransientsBuffer();
 
   VS::FrameInfo frame_info;
   frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation();
+                   capture.AddMatrix("Transform", entity.GetTransformation());
   frame_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
-  frame_info.alpha = GetOpacity();
+  frame_info.alpha = capture.AddScalar("Alpha", GetOpacity());
 
   Command cmd;
-  cmd.label = "Texture Fill";
-  if (!label_.empty()) {
-    cmd.label += ": " + label_;
+  if (label_.empty()) {
+    DEBUG_COMMAND_INFO(cmd, "Texture Fill");
+  } else {
+    DEBUG_COMMAND_INFO(cmd, "Texture Fill: " + label_);
   }
 
   auto pipeline_options = OptionsFromPassAndEntity(pass, entity);
@@ -149,13 +160,30 @@ bool TextureContents::Render(const ContentContext& renderer,
   }
   pipeline_options.primitive_type = PrimitiveType::kTriangleStrip;
 
+#ifdef IMPELLER_ENABLE_OPENGLES
+  if (is_external_texture) {
+    cmd.pipeline = renderer.GetTextureExternalPipeline(pipeline_options);
+  } else {
+    cmd.pipeline = renderer.GetTexturePipeline(pipeline_options);
+  }
+#else
   cmd.pipeline = renderer.GetTexturePipeline(pipeline_options);
+#endif  // IMPELLER_ENABLE_OPENGLES
+
   cmd.stencil_reference = entity.GetStencilDepth();
   cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
   VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
-  FS::BindTextureSampler(cmd, texture_,
-                         renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-                             sampler_descriptor_));
+  if (is_external_texture) {
+    FSExternal::BindSAMPLEREXTERNALOESTextureSampler(
+        cmd, texture_,
+        renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+            sampler_descriptor_));
+  } else {
+    FS::BindTextureSampler(
+        cmd, texture_,
+        renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+            sampler_descriptor_));
+  }
   pass.AddCommand(std::move(cmd));
 
   return true;

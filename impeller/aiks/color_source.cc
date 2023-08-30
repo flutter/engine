@@ -13,7 +13,6 @@
 #include "impeller/entity/contents/linear_gradient_contents.h"
 #include "impeller/entity/contents/radial_gradient_contents.h"
 #include "impeller/entity/contents/runtime_effect_contents.h"
-#include "impeller/entity/contents/scene_contents.h"
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/contents/sweep_gradient_contents.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
@@ -21,7 +20,11 @@
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/scalar.h"
 #include "impeller/runtime_stage/runtime_stage.h"
-#include "impeller/scene/node.h"
+
+#if IMPELLER_ENABLE_3D
+#include "impeller/entity/contents/scene_contents.h"  // nogncheck
+#include "impeller/scene/node.h"                      // nogncheck
+#endif                                                // IMPELLER_ENABLE_3D
 
 namespace impeller {
 
@@ -55,6 +58,7 @@ ColorSource ColorSource::MakeLinearGradient(Point start_point,
     contents->SetStops(stops);
     contents->SetEndPoints(start_point, end_point);
     contents->SetTileMode(tile_mode);
+    contents->SetDither(paint.dither);
     contents->SetEffectTransform(effect_transform);
 
     std::vector<Point> bounds{start_point, end_point};
@@ -87,6 +91,7 @@ ColorSource ColorSource::MakeConicalGradient(Point center,
     contents->SetStops(stops);
     contents->SetCenterAndRadius(center, radius);
     contents->SetTileMode(tile_mode);
+    contents->SetDither(paint.dither);
     contents->SetEffectTransform(effect_transform);
     contents->SetFocus(focus_center, focus_radius);
 
@@ -118,6 +123,7 @@ ColorSource ColorSource::MakeRadialGradient(Point center,
     contents->SetStops(stops);
     contents->SetCenterAndRadius(center, radius);
     contents->SetTileMode(tile_mode);
+    contents->SetDither(paint.dither);
     contents->SetEffectTransform(effect_transform);
 
     auto radius_pt = Point(radius, radius);
@@ -149,6 +155,7 @@ ColorSource ColorSource::MakeSweepGradient(Point center,
     contents->SetColors(colors);
     contents->SetStops(stops);
     contents->SetTileMode(tile_mode);
+    contents->SetDither(paint.dither);
     contents->SetEffectTransform(effect_transform);
 
     return contents;
@@ -206,6 +213,7 @@ ColorSource ColorSource::MakeRuntimeEffect(
   return result;
 }
 
+#if IMPELLER_ENABLE_3D
 ColorSource ColorSource::MakeScene(std::shared_ptr<scene::Node> scene_node,
                                    Matrix camera_transform) {
   ColorSource result;
@@ -220,6 +228,7 @@ ColorSource ColorSource::MakeScene(std::shared_ptr<scene::Node> scene_node,
   };
   return result;
 }
+#endif  // IMPELLER_ENABLE_3D
 
 ColorSource::Type ColorSource::GetType() const {
   return type_;

@@ -1447,18 +1447,6 @@ public class FlutterFragment extends Fragment
     return TransparencyMode.valueOf(transparencyModeName);
   }
 
-  @Override
-  @Nullable
-  public SplashScreen provideSplashScreen() {
-    FragmentActivity parentActivity = getActivity();
-    if (parentActivity instanceof SplashScreenProvider) {
-      SplashScreenProvider splashScreenProvider = (SplashScreenProvider) parentActivity;
-      return splashScreenProvider.provideSplashScreen();
-    }
-
-    return null;
-  }
-
   /**
    * Hook for subclasses to return a {@link io.flutter.embedding.engine.FlutterEngine} with whatever
    * configuration is desired.
@@ -1654,6 +1642,19 @@ public class FlutterFragment extends Fragment
    */
   @Override
   public boolean shouldDispatchAppLifecycleState() {
+    return true;
+  }
+
+  /**
+   * Whether to automatically attach the {@link FlutterView} to the engine.
+   *
+   * <p>Returning {@code false} means that the task of attaching the {@link FlutterView} to the
+   * engine will be taken over by the host application.
+   *
+   * <p>Defaults to {@code true}.
+   */
+  @Override
+  public boolean attachToEngineAutomatically() {
     return true;
   }
 

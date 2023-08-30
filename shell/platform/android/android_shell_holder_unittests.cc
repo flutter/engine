@@ -2,6 +2,7 @@
 #include "flutter/shell/platform/android/android_shell_holder.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "shell/platform/android/jni/platform_view_android_jni.h"
 
 namespace flutter {
 namespace testing {
@@ -30,6 +31,11 @@ class MockPlatformViewAndroidJNI : public PlatformViewAndroidJNI {
                void(JavaLocalRef surface_texture, SkMatrix& transform));
   MOCK_METHOD1(SurfaceTextureDetachFromGLContext,
                void(JavaLocalRef surface_texture));
+  MOCK_METHOD1(ImageTextureEntryAcquireLatestImage,
+               JavaLocalRef(JavaLocalRef image_texture_entry));
+  MOCK_METHOD1(ImageGetHardwareBuffer, JavaLocalRef(JavaLocalRef image));
+  MOCK_METHOD1(ImageClose, void(JavaLocalRef image));
+  MOCK_METHOD1(HardwareBufferClose, void(JavaLocalRef hardware_buffer));
   MOCK_METHOD8(FlutterViewOnDisplayPlatformView,
                void(int view_id,
                     int x,
@@ -54,6 +60,8 @@ class MockPlatformViewAndroidJNI : public PlatformViewAndroidJNI {
   MOCK_METHOD0(GetDisplayHeight, double());
   MOCK_METHOD0(GetDisplayDensity, double());
   MOCK_METHOD1(RequestDartDeferredLibrary, bool(int loading_unit_id));
+  MOCK_CONST_METHOD2(FlutterViewGetScaledFontSize,
+                     double(double font_size, int configuration_id));
 };
 
 class MockPlatformMessageResponse : public PlatformMessageResponse {

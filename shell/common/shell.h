@@ -298,10 +298,35 @@ class Shell final : public PlatformView::Delegate,
   ///
   bool IsSetup() const;
 
-  /// @brief  Add a non-implicit render surface. The implicit render surface
-  ///         is created in OnPlatformViewCreated.
-  /// @param view_id
-  void AddView(int64_t view_id);
+  /// @brief  Allocates resources for a new non-implicit view.
+  ///
+  ///         This method returns immediately and does not wait for the task on
+  ///         the UI thread to finish. This is safe because operations are
+  ///         either initiated from the UI thread (such as rendering), or are
+  ///         sent as posted tasks that are queued. In either case, it's ok for
+  ///         the engine to have views that the Dart VM doesn't.
+  ///
+  ///         The implicit view should never be added with this function.
+  ///         Instead, it is added internally on Shell initialization. Trying to
+  ///         add `kFlutterImplicitViewId` triggers an assertion.
+  ///
+  /// @param[in]  view_id           The view ID of the new view.
+  /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
+  ///
+  void AddView(int64_t view_id, const ViewportMetrics& viewport_metrics);
+
+  /// @brief  Deallocates resources for a non-implicit view.
+  ///
+  ///         This method returns immediately and does not wait for the task on
+  ///         the UI thread to finish. This means that the Dart VM might still
+  ///         send messages regarding this view ID for a short while, even
+  ///         though this view ID is already invalid.
+  ///
+  ///         The implicit view should never be removed. Trying to remove
+  ///         `kFlutterImplicitViewId` triggers an assertion.
+  ///
+  /// @param[in]  view_id     The view ID of the view to be removed.
+  ///
   void RemoveView(int64_t view_id);
 
   //----------------------------------------------------------------------------
@@ -655,6 +680,13 @@ class Shell final : public PlatformView::Delegate,
   // |Engine::Delegate|
   fml::TimePoint GetCurrentTimePoint() override;
 
+  // |Engine::Delegate|
+  void OnEngineChannelUpdate(std::string name, bool listening) override;
+
+  // |Engine::Delegate|
+  double GetScaledFontSize(double unscaled_font_size,
+                           int configuration_id) const override;
+
   // |Rasterizer::Delegate|
   void OnFrameRasterized(const FrameTiming&) override;
 
@@ -663,6 +695,10 @@ class Shell final : public PlatformView::Delegate,
 
   // |Rasterizer::Delegate|
   fml::TimePoint GetLatestFrameTargetTime() const override;
+
+  // |Rasterizer::Delegate|
+  bool ShouldDiscardLayerTree(int64_t view_id,
+                              const flutter::LayerTree& tree) override;
 
   // |ServiceProtocol::Handler|
   fml::RefPtr<fml::TaskRunner> GetServiceProtocolHandlerTaskRunner(

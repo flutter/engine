@@ -59,6 +59,23 @@ class JNIMock final : public PlatformViewAndroidJNI {
               (JavaLocalRef surface_texture, SkMatrix& transform),
               (override));
 
+  MOCK_METHOD(JavaLocalRef,
+              ImageTextureEntryAcquireLatestImage,
+              (JavaLocalRef image_texture_entry),
+              (override));
+
+  MOCK_METHOD(JavaLocalRef,
+              ImageGetHardwareBuffer,
+              (JavaLocalRef image),
+              (override));
+
+  MOCK_METHOD(void, ImageClose, (JavaLocalRef image), (override));
+
+  MOCK_METHOD(void,
+              HardwareBufferClose,
+              (JavaLocalRef hardware_buffer),
+              (override));
+
   MOCK_METHOD(void,
               SurfaceTextureDetachFromGLContext,
               (JavaLocalRef surface_texture),
@@ -106,6 +123,11 @@ class JNIMock final : public PlatformViewAndroidJNI {
               RequestDartDeferredLibrary,
               (int loading_unit_id),
               (override));
+
+  MOCK_METHOD(double,
+              FlutterViewGetScaledFontSize,
+              (double font_size, int configuration_id),
+              (const, override));
 };
 
 }  // namespace flutter

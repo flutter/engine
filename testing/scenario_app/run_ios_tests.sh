@@ -78,13 +78,37 @@ echo "Running simulator tests with Impeller"
 echo ""
 
 # Skip testFontRenderingWhenSuppliedWithBogusFont: https://github.com/flutter/flutter/issues/113250
+# Skip golden tests that use software rendering: https://github.com/flutter/flutter/issues/131888
 if set -o pipefail && xcodebuild -sdk iphonesimulator \
   -scheme Scenarios \
   -resultBundlePath "$RESULT_BUNDLE_PATH/ios_scenario.xcresult" \
   -destination 'platform=iOS Simulator,OS=16.2,name=iPhone SE (3rd generation)' \
   clean test \
   FLUTTER_ENGINE="$FLUTTER_ENGINE" \
-  -skip-testing "ScenariosUITests/BogusFontTextTest/testFontRenderingWhenSuppliedWithBogusFont" \
+  -skip-testing ScenariosUITests/MultiplePlatformViewsBackgroundForegroundTest/testPlatformView \
+  -skip-testing ScenariosUITests/MultiplePlatformViewsTest/testPlatformView \
+  -skip-testing ScenariosUITests/NonFullScreenFlutterViewPlatformViewUITests/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewMutationClipPathTests/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewMutationClipPathWithTransformTests/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewMutationClipRectAfterMovedTests/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewMutationClipRectTests/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewMutationClipRectWithTransformTests/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewMutationClipRRectTests/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewMutationClipRRectWithTransformTests/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewMutationLargeClipRRectTests/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewMutationLargeClipRRectWithTransformTests/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewMutationOpacityTests/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewMutationTransformTests/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewRotation/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewUITests/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewWithNegativeOtherBackDropFilterTests/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewWithOtherBackdropFilterTests/testPlatformView \
+  -skip-testing ScenariosUITests/RenderingSelectionTest/testSoftwareRendering \
+  -skip-testing ScenariosUITests/TwoPlatformViewClipPathTests/testPlatformView \
+  -skip-testing ScenariosUITests/TwoPlatformViewClipRectTests/testPlatformView \
+  -skip-testing ScenariosUITests/TwoPlatformViewClipRRectTests/testPlatformView \
+  -skip-testing ScenariosUITests/TwoPlatformViewsWithOtherBackDropFilterTests/testPlatformView \
+  -skip-testing ScenariosUITests/UnobstructedPlatformViewTests/testMultiplePlatformViewsWithOverlays \
   INFOPLIST_FILE="Scenarios/Info_Impeller.plist"; then # Plist with FLTEnableImpeller=YES
   echo "test success."
 else

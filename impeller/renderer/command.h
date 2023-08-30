@@ -25,6 +25,12 @@
 
 namespace impeller {
 
+#ifdef IMPELLER_DEBUG
+#define DEBUG_COMMAND_INFO(obj, arg) obj.label = arg;
+#else
+#define DEBUG_COMMAND_INFO(obj, arg)
+#endif  // IMPELLER_DEBUG
+
 template <class T>
 struct Resource {
   using ResourceType = T;
@@ -55,12 +61,24 @@ using BufferResource = Resource<BufferView>;
 using TextureResource = Resource<std::shared_ptr<const Texture>>;
 using SamplerResource = Resource<std::shared_ptr<const Sampler>>;
 
+/// @brief combines the texture, sampler and sampler slot information.
+struct TextureAndSampler {
+  SampledImageSlot slot;
+  TextureResource texture;
+  SamplerResource sampler;
+};
+
+/// @brief combines the buffer resource and its uniform slot information.
+struct BufferAndUniformSlot {
+  ShaderUniformSlot slot;
+  BufferResource view;
+};
+
 struct Bindings {
-  std::map<size_t, ShaderUniformSlot> uniforms;
-  std::map<size_t, SampledImageSlot> sampled_images;
-  std::map<size_t, BufferResource> buffers;
-  std::map<size_t, TextureResource> textures;
-  std::map<size_t, SamplerResource> samplers;
+  std::map<size_t, TextureAndSampler> sampled_images;
+  std::map<size_t, BufferAndUniformSlot> buffers;
+  // This is only valid for vertex bindings.
+  BufferAndUniformSlot vertex_buffer;
 };
 
 //------------------------------------------------------------------------------
@@ -116,10 +134,14 @@ struct Command : public ResourceBinder {
   /// packed in the index buffer.
   ///
   IndexType index_type = IndexType::kUnknown;
+
+#ifdef IMPELLER_DEBUG
   //----------------------------------------------------------------------------
   /// The debugging label to use for the command.
   ///
   std::string label;
+#endif  // IMPELLER_DEBUG
+
   //----------------------------------------------------------------------------
   /// The reference value to use in stenciling operations. Stencil configuration
   /// is part of pipeline setup and can be read from the pipelines descriptor.
@@ -178,24 +200,14 @@ struct Command : public ResourceBinder {
   bool BindResource(ShaderStage stage,
                     const SampledImageSlot& slot,
                     const ShaderMetadata& metadata,
-                    const std::shared_ptr<const Texture>& texture) override;
-
-  // |ResourceBinder|
-  bool BindResource(ShaderStage stage,
-                    const SampledImageSlot& slot,
-                    const ShaderMetadata& metadata,
-                    const std::shared_ptr<const Sampler>& sampler) override;
-
-  // |ResourceBinder|
-  bool BindResource(ShaderStage stage,
-                    const SampledImageSlot& slot,
-                    const ShaderMetadata& metadata,
                     const std::shared_ptr<const Texture>& texture,
                     const std::shared_ptr<const Sampler>& sampler) override;
 
   BufferView GetVertexBuffer() const;
 
-  constexpr operator bool() const { return pipeline && pipeline->IsValid(); }
+  constexpr explicit operator bool() const {
+    return pipeline && pipeline->IsValid();
+  }
 
  private:
   template <class T>

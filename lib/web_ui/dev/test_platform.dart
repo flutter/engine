@@ -540,18 +540,17 @@ class BrowserPlatform extends PlatformPlugin {
 
       final String testRunner = isWasm ? '/test_dart2wasm.js' : 'packages/test/dart.js';
 
-      final String canvasKitVariant = getCanvasKitVariant();
       return shelf.Response.ok('''
         <!DOCTYPE html>
         <html>
         <head>
-          <title>${htmlEscape.convert(test)} Test</title>
           <meta name="assetBase" content="/">
           <script>
-            window._flutter_canvaskit_variant_for_test_only = "$canvasKitVariant";
             window.flutterConfiguration = {
               canvasKitBaseUrl: "/canvaskit/",
-              canvasKitVariant: "$canvasKitVariant",
+              // Some of our tests rely on color emoji
+              useColorEmoji: true,
+              canvasKitVariant: "${getCanvasKitVariant()}",
             };
           </script>
           $link

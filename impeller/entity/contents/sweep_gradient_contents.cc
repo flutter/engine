@@ -42,6 +42,10 @@ void SweepGradientContents::SetTileMode(Entity::TileMode tile_mode) {
   tile_mode_ = tile_mode;
 }
 
+void SweepGradientContents::SetDither(bool dither) {
+  dither_ = dither;
+}
+
 const std::vector<Color>& SweepGradientContents::GetColors() const {
   return colors_;
 }
@@ -84,6 +88,7 @@ bool SweepGradientContents::RenderSSBO(const ContentContext& renderer,
   frag_info.tile_mode = static_cast<Scalar>(tile_mode_);
   frag_info.decal_border_color = decal_border_color_;
   frag_info.alpha = GetOpacityFactor();
+  frag_info.dither = dither_;
 
   auto& host_buffer = pass.GetTransientsBuffer();
   auto colors = CreateGradientColors(colors_, stops_);
@@ -99,7 +104,7 @@ bool SweepGradientContents::RenderSSBO(const ContentContext& renderer,
   frame_info.matrix = GetInverseEffectTransform();
 
   Command cmd;
-  cmd.label = "SweepGradientSSBOFill";
+  DEBUG_COMMAND_INFO(cmd, "SweepGradientSSBOFill");
   cmd.stencil_reference = entity.GetStencilDepth();
   auto geometry_result =
       GetGeometry()->GetPositionBuffer(renderer, entity, pass);
@@ -161,7 +166,7 @@ bool SweepGradientContents::RenderTexture(const ContentContext& renderer,
   frame_info.matrix = GetInverseEffectTransform();
 
   Command cmd;
-  cmd.label = "SweepGradientFill";
+  DEBUG_COMMAND_INFO(cmd, "SweepGradientFill");
   cmd.stencil_reference = entity.GetStencilDepth();
 
   auto options = OptionsFromPassAndEntity(pass, entity);

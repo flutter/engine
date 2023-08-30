@@ -65,11 +65,13 @@ impeller_shaders("entity_shaders") {
     "shaders/sweep_gradient_fill.frag",
     "shaders/texture_fill.frag",
     "shaders/texture_fill.vert",
+    "shaders/texture_fill_external.frag",
     "shaders/tiled_texture_fill.frag",
     "shaders/vertices.frag",
     "shaders/yuv_to_rgb_filter.frag",
     "shaders/yuv_to_rgb_filter.vert",
     "shaders/blending/porter_duff_blend.frag",
+    "shaders/blending/porter_duff_blend.vert",
   ]
 
   if (impeller_debug) {
@@ -149,8 +151,6 @@ impeller_component("entity") {
     "contents/clip_contents.h",
     "contents/color_source_contents.cc",
     "contents/color_source_contents.h",
-    "contents/color_source_text_contents.cc",
-    "contents/color_source_text_contents.h",
     "contents/conical_gradient_contents.cc",
     "contents/conical_gradient_contents.h",
     "contents/content_context.cc",
@@ -175,6 +175,8 @@ impeller_component("entity") {
     "contents/filters/inputs/filter_contents_filter_input.h",
     "contents/filters/inputs/filter_input.cc",
     "contents/filters/inputs/filter_input.h",
+    "contents/filters/inputs/placeholder_filter_input.cc",
+    "contents/filters/inputs/placeholder_filter_input.h",
     "contents/filters/inputs/texture_filter_input.cc",
     "contents/filters/inputs/texture_filter_input.h",
     "contents/filters/linear_to_srgb_filter_contents.cc",
@@ -199,8 +201,6 @@ impeller_component("entity") {
     "contents/radial_gradient_contents.h",
     "contents/runtime_effect_contents.cc",
     "contents/runtime_effect_contents.h",
-    "contents/scene_contents.cc",
-    "contents/scene_contents.h",
     "contents/solid_color_contents.cc",
     "contents/solid_color_contents.h",
     "contents/solid_rrect_blur_contents.cc",
@@ -239,6 +239,8 @@ impeller_component("entity") {
     "geometry/vertices_geometry.h",
     "inline_pass_context.cc",
     "inline_pass_context.h",
+    "render_target_cache.cc",
+    "render_target_cache.h",
   ]
 
   if (impeller_debug) {
@@ -255,9 +257,16 @@ impeller_component("entity") {
     "../archivist",
     "../image:image_skia_backend",
     "../renderer",
-    "../scene",
     "../typographer",
   ]
+
+  if (impeller_enable_3d) {
+    sources += [
+      "contents/scene_contents.cc",
+      "contents/scene_contents.h",
+    ]
+    public_deps += [ "../scene" ]
+  }
 
   deps = [ "//flutter/fml" ]
 }
@@ -277,5 +286,17 @@ impeller_component("entity_unittests") {
     ":entity",
     "../geometry:geometry_asserts",
     "../playground:playground_test",
+    "//flutter/impeller/typographer/backends/skia:typographer_skia_backend",
+  ]
+}
+
+impeller_component("render_target_cache_unittests") {
+  testonly = true
+
+  sources = [ "render_target_cache_unittests.cc" ]
+
+  deps = [
+    ":entity",
+    "//flutter/testing:testing_lib",
   ]
 }

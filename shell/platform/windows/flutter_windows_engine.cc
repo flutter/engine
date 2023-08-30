@@ -17,6 +17,7 @@
 #include "flutter/shell/platform/common/client_wrapper/binary_messenger_impl.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/standard_message_codec.h"
 #include "flutter/shell/platform/common/path_utils.h"
+#include "flutter/shell/platform/embedder/embedder_struct_macros.h"
 #include "flutter/shell/platform/windows/accessibility_bridge_windows.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/keyboard_key_channel_handler.h"
@@ -359,6 +360,15 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
     if (host->root_isolate_create_callback_) {
       host->root_isolate_create_callback_();
+    }
+  };
+  args.channel_update_callback = [](const FlutterChannelUpdate* update,
+                                    void* user_data) {
+    auto host = static_cast<FlutterWindowsEngine*>(user_data);
+    if (SAFE_ACCESS(update, channel, nullptr) != nullptr) {
+      std::string channel_name(update->channel);
+      host->OnChannelUpdate(std::move(channel_name),
+                            SAFE_ACCESS(update, listening, false));
     }
   };
 
@@ -760,10 +770,9 @@ void FlutterWindowsEngine::SetNextFrameCallback(fml::closure callback) {
 }
 
 void FlutterWindowsEngine::SetLifecycleState(flutter::AppLifecycleState state) {
-  const char* state_name = flutter::AppLifecycleStateToString(state);
-  SendPlatformMessage("flutter/lifecycle",
-                      reinterpret_cast<const uint8_t*>(state_name),
-                      strlen(state_name), nullptr, nullptr);
+  if (lifecycle_manager_) {
+    lifecycle_manager_->SetLifecycleState(state);
+  }
 }
 
 void FlutterWindowsEngine::SendSystemLocales() {
@@ -807,7 +816,7 @@ FlutterWindowsEngine::CreateKeyboardKeyHandler(
     BinaryMessenger* messenger,
     KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state,
     KeyboardKeyEmbedderHandler::MapVirtualKeyToScanCode map_vk_to_scan) {
-  auto keyboard_key_handler = std::make_unique<KeyboardKeyHandler>();
+  auto keyboard_key_handler = std::make_unique<KeyboardKeyHandler>(messenger);
   keyboard_key_handler->AddDelegate(
       std::make_unique<KeyboardKeyEmbedderHandler>(
           [this](const FlutterKeyEvent& event, FlutterKeyEventCallback callback,
@@ -817,6 +826,7 @@ FlutterWindowsEngine::CreateKeyboardKeyHandler(
           get_key_state, map_vk_to_scan));
   keyboard_key_handler->AddDelegate(
       std::make_unique<KeyboardKeyChannelHandler>(messenger));
+  keyboard_key_handler->InitKeyboardChannel();
   return keyboard_key_handler;
 }
 
@@ -979,8 +989,29 @@ void FlutterWindowsEngine::OnDwmCompositionChanged() {
   }
 }
 
-void FlutterWindowsEngine::OnApplicationLifecycleEnabled() {
-  lifecycle_manager_->BeginProcessingClose();
+void FlutterWindowsEngine::OnWindowStateEvent(HWND hwnd,
+                                              WindowStateEvent event) {
+  lifecycle_manager_->OnWindowStateEvent(hwnd, event);
+}
+
+std::optional<LRESULT> FlutterWindowsEngine::ProcessExternalWindowMessage(
+    HWND hwnd,
+    UINT message,
+    WPARAM wparam,
+    LPARAM lparam) {
+  if (lifecycle_manager_) {
+    return lifecycle_manager_->ExternalWindowMessage(hwnd, message, wparam,
+                                                     lparam);
+  }
+  return std::nullopt;
+}
+
+void FlutterWindowsEngine::OnChannelUpdate(std::string name, bool listening) {
+  if (name == "flutter/platform" && listening) {
+    lifecycle_manager_->BeginProcessingExit();
+  } else if (name == "flutter/lifecycle" && listening) {
+    lifecycle_manager_->BeginProcessingLifecycle();
+  }
 }
 
 }  // namespace flutter

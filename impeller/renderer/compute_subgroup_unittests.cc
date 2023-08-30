@@ -125,7 +125,7 @@ TEST_P(ComputeSubgroupTest, PathPlayground) {
     }
     ImGui::End();
 
-    ContentContext renderer(context);
+    ContentContext renderer(context, nullptr);
     if (!renderer.IsValid()) {
       return false;
     }
@@ -133,7 +133,7 @@ TEST_P(ComputeSubgroupTest, PathPlayground) {
     using VS = SolidFillPipeline::VertexShader;
 
     Command cmd;
-    cmd.label = "Draw Stroke";
+    DEBUG_COMMAND_INFO(cmd, "Draw Stroke");
     cmd.stencil_reference = 0;
 
     ContentContextOptions options;
@@ -329,7 +329,7 @@ TEST_P(ComputeSubgroupTest, LargePath) {
                                  ->count;
             });
 
-    ContentContext renderer(context);
+    ContentContext renderer(context, nullptr);
     if (!renderer.IsValid()) {
       return false;
     }
@@ -337,7 +337,7 @@ TEST_P(ComputeSubgroupTest, LargePath) {
     using VS = SolidFillPipeline::VertexShader;
 
     Command cmd;
-    cmd.label = "Draw Stroke";
+    DEBUG_COMMAND_INFO(cmd, "Draw Stroke");
     cmd.stencil_reference = 0;
 
     ContentContextOptions options;
@@ -413,7 +413,7 @@ TEST_P(ComputeSubgroupTest, QuadAndCubicInOnePath) {
   ASSERT_EQ(status, ComputeTessellator::Status::kOk);
 
   auto callback = [&](RenderPass& pass) -> bool {
-    ContentContext renderer(context);
+    ContentContext renderer(context, nullptr);
     if (!renderer.IsValid()) {
       return false;
     }
@@ -421,7 +421,7 @@ TEST_P(ComputeSubgroupTest, QuadAndCubicInOnePath) {
     using VS = SolidFillPipeline::VertexShader;
 
     Command cmd;
-    cmd.label = "Draw Stroke";
+    DEBUG_COMMAND_INFO(cmd, "Draw Stroke");
     cmd.stencil_reference = 0;
 
     ContentContextOptions options;

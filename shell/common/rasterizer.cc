@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "flow/frame_timings.h"
+#include "flutter/common/constants.h"
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/flow/layers/offscreen_surface.h"
 #include "flutter/fml/time/time_delta.h"
@@ -155,18 +156,7 @@ void Rasterizer::NotifyLowMemoryWarning() const {
   context->performDeferredCleanup(std::chrono::milliseconds(0));
 }
 
-void Rasterizer::AddView(int64_t view_id) {
-  bool insertion_happened =
-      view_records_
-          .try_emplace(/* map key=*/view_id, /*constructor args:*/ view_id)
-          .second;
-  if (!insertion_happened) {
-    FML_DLOG(INFO) << "Rasterizer::AddView called with an existing view ID "
-                   << view_id << ".";
-  }
-}
-
-void Rasterizer::RemoveSurface(int64_t view_id) {
+void Rasterizer::CollectView(int64_t view_id) {
   view_records_.erase(view_id);
 }
 
@@ -226,8 +216,7 @@ int Rasterizer::DrawLastLayerTree(
 }
 
 RasterStatus Rasterizer::Draw(
-    const std::shared_ptr<LayerTreePipeline>& pipeline,
-    LayerTreeDiscardCallback discard_callback) {
+    const std::shared_ptr<LayerTreePipeline>& pipeline) {
   TRACE_EVENT0("flutter", "GPURasterizer::Draw");
   if (raster_thread_merger_ &&
       !raster_thread_merger_->IsOnRasterizingThread()) {
@@ -240,8 +229,8 @@ RasterStatus Rasterizer::Draw(
 
   DoDrawResult draw_result;
   LayerTreePipeline::Consumer consumer =
-      [this, &draw_result,
-       &discard_callback](std::unique_ptr<LayerTreeItem> item) {
+      [&draw_result, this,
+       &delegate = delegate_](std::unique_ptr<LayerTreeItem> item) {
         std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =
             std::move(item->frame_timings_recorder);
 
@@ -254,7 +243,7 @@ RasterStatus Rasterizer::Draw(
         for (auto& item : item->layer_trees) {
           int64_t view_id = item.first;
           std::unique_ptr<LayerTree> layer_tree = std::move(item.second);
-          if (discard_callback(view_id, *layer_tree.get())) {
+          if (delegate.ShouldDiscardLayerTree(view_id, *layer_tree.get())) {
             draw_result.raster_status = RasterStatus::kDiscarded;
           } else {
             draw_result = DoDraw(view_id, *frame_timings_recorder.get(),
@@ -356,13 +345,11 @@ RasterStatus Rasterizer::Draw(
   switch (consume_result) {
     case PipelineConsumeResult::MoreAvailable: {
       delegate_.GetTaskRunners().GetRasterTaskRunner()->PostTask(
-          fml::MakeCopyable(
-              [weak_this = weak_factory_.GetWeakPtr(), pipeline,
-               discard_callback = std::move(discard_callback)]() mutable {
-                if (weak_this) {
-                  weak_this->Draw(pipeline, std::move(discard_callback));
-                }
-              }));
+          [weak_this = weak_factory_.GetWeakPtr(), pipeline]() {
+            if (weak_this) {
+              weak_this->Draw(pipeline);
+            }
+          });
       break;
     }
     default:
@@ -496,7 +483,8 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
     std::unique_ptr<flutter::LayerTree> layer_tree,
     float device_pixel_ratio) {
   TRACE_EVENT_WITH_FRAME_NUMBER(&frame_timings_recorder, "flutter",
-                                "Rasterizer::DoDraw");
+                                "Rasterizer::DoDraw", /*flow_id_count=*/0,
+                                /*flow_ids=*/nullptr);
   FML_DCHECK(delegate_.GetTaskRunners()
                  .GetRasterTaskRunner()
                  ->RunsTasksOnCurrentThread());

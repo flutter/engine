@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include <android/hardware_buffer_jni.h>
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/platform/android/scoped_java_ref.h"
 #include "flutter/lib/ui/window/platform_message.h"
@@ -91,6 +92,10 @@ class PlatformViewAndroid final : public PlatformView {
       int64_t texture_id,
       const fml::jni::ScopedJavaGlobalRef<jobject>& surface_texture);
 
+  void RegisterImageTexture(
+      int64_t texture_id,
+      const fml::jni::ScopedJavaGlobalRef<jobject>& image_texture_entry);
+
   // |PlatformView|
   void LoadDartDeferredLibrary(
       intptr_t loading_unit_id,
@@ -113,6 +118,12 @@ class PlatformViewAndroid final : public PlatformView {
   std::shared_ptr<PlatformMessageHandler> GetPlatformMessageHandler()
       const override {
     return platform_message_handler_;
+  }
+
+  void SetIsRenderingToImageView(bool value) {
+    if (GetImpellerContext()) {
+      GetImpellerContext()->SetSyncPresentation(value);
+    }
   }
 
  private:
@@ -169,6 +180,9 @@ class PlatformViewAndroid final : public PlatformView {
   void InstallFirstFrameCallback();
 
   void FireFirstFrameCallback();
+
+  double GetScaledFontSize(double unscaled_font_size,
+                           int configuration_id) const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewAndroid);
 };

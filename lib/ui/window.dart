@@ -96,8 +96,7 @@ class FlutterView {
   final PlatformDispatcher platformDispatcher;
 
   /// The configuration of this view.
-  // TODO(goderbauer): remove ignore when https://github.com/dart-lang/linter/issues/4562 is fixed.
-  _ViewConfiguration _viewConfiguration; // ignore: prefer_final_fields
+  _ViewConfiguration _viewConfiguration;
 
   /// The [Display] this view is drawn in.
   Display get display {
@@ -409,7 +408,11 @@ class SingletonFlutterWindow extends FlutterView {
     'This feature was deprecated after v3.7.0-32.0.pre.'
   )
   SingletonFlutterWindow._() : super._(
-    _kImplicitViewId,
+    // TODO(dkwingsmt): This crashes if the implicit view is disabled. We need
+    // to resolve this by the time embedders are allowed to disable the implicit
+    // view.
+    // https://github.com/flutter/flutter/issues/131651
+    _implicitViewId!,
     PlatformDispatcher.instance,
     const _ViewConfiguration(),
   );

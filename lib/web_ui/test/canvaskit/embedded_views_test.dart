@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:js_interop';
 
-import 'package:js/js_util.dart' as js_util;
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
@@ -644,7 +644,7 @@ void testMain() {
       sb.addPicture(ui.Offset.zero, picture);
       sb.addPlatformView(0, width: 10, height: 10);
 
-      window.webOnlyDebugPhysicalSizeOverride = const ui.Size(100, 100);
+      window.debugPhysicalSizeOverride = const ui.Size(100, 100);
       window.debugForceResize();
       CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
       _expectSceneMatches(<_EmbeddedViewMarker>[
@@ -653,7 +653,7 @@ void testMain() {
         _overlay,
       ]);
 
-      window.webOnlyDebugPhysicalSizeOverride = const ui.Size(200, 200);
+      window.debugPhysicalSizeOverride = const ui.Size(200, 200);
       window.debugForceResize();
       CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
       _expectSceneMatches(<_EmbeddedViewMarker>[
@@ -662,7 +662,7 @@ void testMain() {
         _overlay,
       ]);
 
-      window.webOnlyDebugPhysicalSizeOverride = null;
+      window.debugPhysicalSizeOverride = null;
       window.debugForceResize();
     // ImageDecoder is not supported in Safari or Firefox.
     }, skip: isSafari || isFirefox);
@@ -806,12 +806,13 @@ void testMain() {
 
     test('works correctly with max overlays == 2', () async {
       final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
-      final FlutterConfiguration config = FlutterConfiguration()
-        ..setUserConfiguration(
-          js_util.jsify(<String, Object?>{
-            'canvasKitMaximumSurfaces': 2,
-          }) as JsFlutterConfiguration);
-      debugSetConfiguration(config);
+      debugOverrideJsConfiguration(
+        <String, Object?>{
+          'canvasKitMaximumSurfaces': 2,
+        }.jsify() as JsFlutterConfiguration?
+      );
+      expect(configuration.canvasKitMaximumSurfaces, 2);
+      expect(configuration.canvasKitVariant, isNot(CanvasKitVariant.auto));
 
       SurfaceFactory.instance.debugClear();
 
@@ -854,7 +855,7 @@ void testMain() {
       ]);
 
       // Reset configuration
-      debugSetConfiguration(FlutterConfiguration());
+      debugOverrideJsConfiguration(null);
     });
 
     test(

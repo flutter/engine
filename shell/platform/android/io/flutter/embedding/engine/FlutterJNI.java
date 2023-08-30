@@ -12,7 +12,9 @@ import android.graphics.ImageDecoder;
 import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.os.Looper;
+import android.util.DisplayMetrics;
 import android.util.Size;
+import android.util.TypedValue;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import androidx.annotation.Keep;
@@ -27,12 +29,14 @@ import io.flutter.embedding.engine.deferredcomponents.DeferredComponentManager;
 import io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.SurfaceTextureWrapper;
+import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.plugin.common.StandardMessageCodec;
 import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.util.Preconditions;
 import io.flutter.view.AccessibilityBridge;
 import io.flutter.view.FlutterCallbackInformation;
+import io.flutter.view.TextureRegistry;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
@@ -736,6 +740,14 @@ public class FlutterJNI {
       int[] displayFeaturesBounds,
       int[] displayFeaturesType,
       int[] displayFeaturesState);
+
+  @UiThread
+  public void SetIsRenderingToImageView(boolean value) {
+    nativeSetIsRenderingToImageView(nativeShellHolderId, value);
+  }
+
+  private native void nativeSetIsRenderingToImageView(long nativeShellHolderId, boolean value);
+
   // ----- End Render Surface Support -----
 
   // ------ Start Touch Interaction Support ---
@@ -900,6 +912,27 @@ public class FlutterJNI {
       long nativeShellHolderId,
       long textureId,
       @NonNull WeakReference<SurfaceTextureWrapper> textureWrapper);
+
+  /**
+   * Registers a ImageTexture with the given id.
+   *
+   * <p>REQUIRED: Callers should eventually unregisterTexture with the same id.
+   */
+  @UiThread
+  public void registerImageTexture(
+      long textureId, @NonNull TextureRegistry.ImageTextureEntry imageTextureEntry) {
+    ensureRunningOnMainThread();
+    ensureAttachedToNative();
+    nativeRegisterImageTexture(
+        nativeShellHolderId,
+        textureId,
+        new WeakReference<TextureRegistry.ImageTextureEntry>(imageTextureEntry));
+  }
+
+  private native void nativeRegisterImageTexture(
+      long nativeShellHolderId,
+      long textureId,
+      @NonNull WeakReference<TextureRegistry.ImageTextureEntry> imageTextureEntry);
 
   /**
    * Call this method to inform Flutter that a texture previously registered with {@link
@@ -1282,6 +1315,20 @@ public class FlutterJNI {
   }
 
   // ----- End Localization Support ----
+  @Nullable
+  public float getScaledFontSize(float fontSize, int configurationId) {
+    final DisplayMetrics metrics = SettingsChannel.getPastDisplayMetrics(configurationId);
+    if (metrics == null) {
+      Log.e(
+          TAG,
+          "getScaledFontSize called with configurationId "
+              + String.valueOf(configurationId)
+              + ", which can't be found.");
+      return -1f;
+    }
+    return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, fontSize, metrics)
+        / metrics.density;
+  }
 
   // ----- Start Deferred Components Support ----
 

@@ -56,6 +56,10 @@ bool LinearGradientContents::IsOpaque() const {
   return true;
 }
 
+void LinearGradientContents::SetDither(bool dither) {
+  dither_ = dither;
+}
+
 bool LinearGradientContents::Render(const ContentContext& renderer,
                                     const Entity& entity,
                                     RenderPass& pass) const {
@@ -96,7 +100,7 @@ bool LinearGradientContents::RenderTexture(const ContentContext& renderer,
   frame_info.matrix = GetInverseEffectTransform();
 
   Command cmd;
-  cmd.label = "LinearGradientFill";
+  DEBUG_COMMAND_INFO(cmd, "LinearGradientFill");
   cmd.stencil_reference = entity.GetStencilDepth();
 
   auto options = OptionsFromPassAndEntity(pass, entity);
@@ -146,6 +150,7 @@ bool LinearGradientContents::RenderSSBO(const ContentContext& renderer,
   auto colors = CreateGradientColors(colors_, stops_);
 
   frag_info.colors_length = colors.size();
+  frag_info.dither = dither_;
   auto color_buffer =
       host_buffer.Emplace(colors.data(), colors.size() * sizeof(StopData),
                           DefaultUniformAlignment());
@@ -156,7 +161,7 @@ bool LinearGradientContents::RenderSSBO(const ContentContext& renderer,
   frame_info.matrix = GetInverseEffectTransform();
 
   Command cmd;
-  cmd.label = "LinearGradientSSBOFill";
+  DEBUG_COMMAND_INFO(cmd, "LinearGradientSSBOFill");
   cmd.stencil_reference = entity.GetStencilDepth();
 
   auto geometry_result =

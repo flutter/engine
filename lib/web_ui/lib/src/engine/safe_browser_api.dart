@@ -20,8 +20,8 @@ import 'dart:typed_data';
 import 'package:ui/ui.dart' as ui;
 
 import 'browser_detection.dart';
+import 'display.dart';
 import 'dom.dart';
-import 'platform_dispatcher.dart';
 import 'vector_math.dart';
 
 export 'package:js/js_util.dart' show allowInterop;
@@ -65,9 +65,6 @@ T setJsProperty<T>(Object object, String name, T value) {
 Future<T> promiseToFuture<T>(Object jsPromise) {
   return js_util.promiseToFuture<T>(jsPromise);
 }
-
-/// A function that receives a benchmark [value] labeleb by [name].
-typedef OnBenchmark = void Function(String name, double value);
 
 /// Parses a string [source] into a double.
 ///
@@ -970,8 +967,8 @@ class OffScreenCanvas {
   static bool? _supported;
 
   void _updateCanvasCssSize(DomCanvasElement element) {
-    final double cssWidth = width / EnginePlatformDispatcher.browserDevicePixelRatio;
-    final double cssHeight = height / EnginePlatformDispatcher.browserDevicePixelRatio;
+    final double cssWidth = width / EngineFlutterDisplay.instance.browserDevicePixelRatio;
+    final double cssHeight = height / EngineFlutterDisplay.instance.browserDevicePixelRatio;
     element.style
       ..position = 'absolute'
       ..width = '${cssWidth}px'

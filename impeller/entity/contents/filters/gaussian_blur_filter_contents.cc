@@ -104,11 +104,19 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
   // Limit the kernel size to 1000x1000 pixels, like Skia does.
   auto radius = std::min(Radius{blur_sigma_}.radius, 500.0f);
 
+  auto transform = entity.GetTransformation() * effect_transform.Basis();
+  auto transformed_blur_radius =
+      transform.TransformDirection(blur_direction_ * radius);
+
+  auto transformed_blur_radius_length = transformed_blur_radius.GetLength();
+
   // Input 0 snapshot.
 
   std::optional<Rect> expanded_coverage_hint;
   if (coverage_hint.has_value()) {
-    auto r = Size(radius, radius).Abs();
+    auto r =
+        Size(transformed_blur_radius_length, transformed_blur_radius_length)
+            .Abs();
     expanded_coverage_hint =
         is_first_pass ? Rect(coverage_hint.value().origin - r,
                              Size(coverage_hint.value().size + r * 2))
@@ -125,12 +133,6 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
         input_snapshot.value(), entity.GetBlendMode(),
         entity.GetStencilDepth());  // No blur to render.
   }
-
-  auto transform = entity.GetTransformation() * effect_transform.Basis();
-  auto transformed_blur_radius =
-      transform.TransformDirection(blur_direction_ * radius);
-
-  auto transformed_blur_radius_length = transformed_blur_radius.GetLength();
 
   // If the radius length is < .5, the shader will take at most 1 sample,
   // resulting in no blur.
@@ -157,16 +159,6 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
                                .TransformBounds(pass_transform);
   pass_texture_rect.origin.x -= transformed_blur_radius_length;
   pass_texture_rect.size.width += transformed_blur_radius_length * 2;
-
-  // Crop the pass texture with the rotated coverage hint if one was given.
-  if (expanded_coverage_hint.has_value()) {
-    auto maybe_pass_texture_rect = pass_texture_rect.Intersection(
-        expanded_coverage_hint->TransformBounds(texture_rotate));
-    if (!maybe_pass_texture_rect.has_value()) {
-      return std::nullopt;
-    }
-    pass_texture_rect = *maybe_pass_texture_rect;
-  }
 
   // Source override snapshot.
 
@@ -228,8 +220,8 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
         Point(input_snapshot->GetCoverage().value().size);
 
     Command cmd;
-    cmd.label = SPrintF("Gaussian Blur Filter (Radius=%.2f)",
-                        transformed_blur_radius_length);
+    DEBUG_COMMAND_INFO(cmd, SPrintF("Gaussian Blur Filter (Radius=%.2f)",
+                                    transformed_blur_radius_length));
     cmd.BindVertices(vtx_buffer);
 
     auto options = OptionsFromPass(pass);
@@ -238,7 +230,8 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
     auto source_descriptor = source_snapshot->sampler_descriptor;
     switch (tile_mode_) {
       case Entity::TileMode::kDecal:
-        if (renderer.GetDeviceCapabilities().SupportsDecalTileMode()) {
+        if (renderer.GetDeviceCapabilities()
+                .SupportsDecalSamplerAddressMode()) {
           input_descriptor.width_address_mode = SamplerAddressMode::kDecal;
           input_descriptor.height_address_mode = SamplerAddressMode::kDecal;
           source_descriptor.width_address_mode = SamplerAddressMode::kDecal;
@@ -271,7 +264,7 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
     bool has_alpha_mask = blur_style_ != BlurStyle::kNormal;
     bool has_decal_specialization =
         tile_mode_ == Entity::TileMode::kDecal &&
-        !renderer.GetDeviceCapabilities().SupportsDecalTileMode();
+        !renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode();
 
     if (has_alpha_mask && has_decal_specialization) {
       cmd.pipeline = renderer.GetGaussianBlurAlphaDecalPipeline(options);
@@ -303,7 +296,7 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
       FS::BindMaskInfo(cmd, host_buffer.EmplaceUniform(mask_info));
     }
 
-    return pass.AddCommand(cmd);
+    return pass.AddCommand(std::move(cmd));
   };
 
   Vector2 scale;
@@ -335,6 +328,8 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
   SamplerDescriptor sampler_desc;
   sampler_desc.min_filter = MinMagFilter::kLinear;
   sampler_desc.mag_filter = MinMagFilter::kLinear;
+  sampler_desc.width_address_mode = SamplerAddressMode::kClampToEdge;
+  sampler_desc.width_address_mode = SamplerAddressMode::kClampToEdge;
 
   return Entity::FromSnapshot(
       Snapshot{.texture = out_texture,

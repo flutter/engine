@@ -133,6 +133,7 @@ FLUTTER_DARWIN_EXPORT
 @property(nonatomic, strong) UITextRange* markedTextRange;
 @property(nonatomic, copy) NSDictionary* markedTextStyle;
 @property(nonatomic, weak) id<UITextInputDelegate> inputDelegate;
+@property(nonatomic, strong) NSMutableArray* pendingDeltas;
 
 // UITextInputTraits
 @property(nonatomic) UITextAutocapitalizationType autocapitalizationType;
@@ -164,4 +165,9 @@ FLUTTER_DARWIN_EXPORT
 - (instancetype)initWithOwner:(FlutterTextInputPlugin*)textInputPlugin NS_DESIGNATED_INITIALIZER;
 
 @end
+
+@interface UIView (FindFirstResponder)
+@property(nonatomic, readonly) id flutterFirstResponder;
+@end
+
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTPLUGIN_H_
