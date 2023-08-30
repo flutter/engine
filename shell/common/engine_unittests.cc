@@ -61,7 +61,6 @@ class MockResponse : public PlatformMessageResponse {
 
 class MockRuntimeDelegate : public RuntimeDelegate {
  public:
-  MOCK_METHOD(bool, ImplicitViewEnabled, (), (override));
   MOCK_METHOD(std::string, DefaultRouteName, (), (override));
   MOCK_METHOD(void, ScheduleFrame, (bool), (override));
   MOCK_METHOD(void,
