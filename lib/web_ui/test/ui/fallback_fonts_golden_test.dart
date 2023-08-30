@@ -225,16 +225,6 @@ void testMain() {
       // font tree.
       final Set<String> testedFonts = <String>{};
       final Set<int> supportedUniqueCodePoints = <int>{};
-      //final IntervalTree<NotoFont> notoTree =
-      //    renderer.fontCollection.fontFallbackManager!.notoTree;
-      //for (final NotoFont font in renderer.fontCollection.fontFallbackManager!.fallbackFonts) {
-      //  testedFonts.add(font.name);
-      //  for (final CodePointRange range in font.computeUnicodeRanges()) {
-      //    for (int codePoint = range.start; codePoint < range.end; codePoint++) {
-      //      supportedUniqueCodePoints.add(codePoint);
-      //    }
-      //  }
-      //}
       renderer.fontCollection.fontFallbackManager!.codePointToComponents
           .forEachRange((int start, int end, FallbackFontComponent component) {
         if (component.fonts.isNotEmpty) {

@@ -171,12 +171,14 @@ class FontFallbackManager {
         <FallbackFontComponent>[];
     final List<NotoFont> candidateFonts = <NotoFont>[];
 
+    // Collect the components that cover the code points.
     for (final int codePoint in codePoints) {
       final FallbackFontComponent component =
           codePointToComponents.lookup(codePoint);
       if (component.fonts.isEmpty) {
         missingCodePoints.add(codePoint);
       } else {
+        // A zero cover count means we have not yet seen this component.
         if (component.coverCount == 0) {
           requiredComponents.add(component);
         }
@@ -184,8 +186,10 @@ class FontFallbackManager {
       }
     }
 
+    // Aggregate the component cover counts to the fonts that use the component.
     for (final FallbackFontComponent component in requiredComponents) {
       for (final NotoFont font in component.fonts) {
+        // A zero cover cover count means we have not yet seen this font.
         if (font.coverCount == 0) {
           candidateFonts.add(font);
         }
@@ -199,6 +203,10 @@ class FontFallbackManager {
     while (candidateFonts.isNotEmpty) {
       final NotoFont selectedFont = _selectFont(candidateFonts);
       selectedFonts.add(selectedFont);
+
+      // All the code points in the selected font are now covered. Zero out each
+      // component that is used by the font and adjust the counts of other fonts
+      // that use the same components.
       for (final FallbackFontComponent component in <FallbackFontComponent>[
         ...selectedFont.coverComponents
       ]) {
@@ -210,6 +218,8 @@ class FontFallbackManager {
       }
       assert(selectedFont.coverCount == 0);
       assert(selectedFont.coverComponents.isEmpty);
+      // The selected font will have a zero cover count, but other fonts may
+      // too. Remove these from further consideration.
       candidateFonts.removeWhere((NotoFont font) => font.coverCount == 0);
     }
 
@@ -241,6 +251,9 @@ class FontFallbackManager {
         maxCodePointsCovered = font.coverCount;
       } else if (font.coverCount == maxCodePointsCovered) {
         bestFonts.add(font);
+        // Tie-break with the lowest index which corresponds to a font name
+        // being earlier in the list of fonts in the font fallback data
+        // generator.
         if (font.index < bestFont!.index) {
           bestFont = font;
         }
@@ -299,14 +312,14 @@ class FontFallbackManager {
     return bestFont!;
   }
 
-  late final List<FallbackFontComponent> fontSets =
-      _decodeFontSets(encodedFontSets);
+  late final List<FallbackFontComponent> fontComponents =
+      _decodeFontComponents(encodedFontSets);
 
   late final _UnicodePropertyLookup<FallbackFontComponent> codePointToComponents =
       _UnicodePropertyLookup<FallbackFontComponent>.fromPackedData(
-          encodedFontSetRanges, fontSets);
+          encodedFontSetRanges, fontComponents);
 
-  List<FallbackFontComponent> _decodeFontSets(String data) {
+  List<FallbackFontComponent> _decodeFontComponents(String data) {
     return <FallbackFontComponent>[
       for (final String componentData in data.split(','))
         FallbackFontComponent(_decodeFontSet(componentData))
@@ -395,6 +408,7 @@ class _UnicodePropertyLookup<P> {
   ///
   ///     boundaries:  [10, 51, 100, 101, 1114112]
   ///     values:      [ X,  A,   X,   B,       X]
+  ///
   final List<int> _boundaries;
   final List<P> _values;
 
@@ -417,12 +431,14 @@ class _UnicodePropertyLookup<P> {
     }
   }
 
+  /// Iterate over the ranges, calling [action] with the start and end
+  /// (inclusive) code points and value.
   void forEachRange(void Function(int start, int end, P value) action) {
     int start = 0;
     for (int i = 0; i < _boundaries.length; i++) {
       final int end = _boundaries[i];
       final P value = _values[i];
-      action(start, end, value);
+      action(start, end - 1, value);
       start = end;
     }
   }

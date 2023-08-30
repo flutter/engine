@@ -7,6 +7,11 @@ class NotoFont {
 
   final String name;
   final String url;
+
+  /// `true` if this font is to be considered as a fallback font. Almost all
+  /// fonts are enabled, but [enabled] may be `false` to exclude a font. This is
+  /// used to choose between color and monochrome emoji fonts - only one of them
+  /// is enabled.
   final bool enabled;
 
   final int index = _index++;
@@ -24,11 +29,15 @@ class NotoFont {
 }
 
 class FallbackFontComponent {
-  FallbackFontComponent(this.fonts);
-  final List<NotoFont> fonts;
+  FallbackFontComponent(this._allFonts);
+  final List<NotoFont> _allFonts;
+  late final List<NotoFont> _activeFonts = List<NotoFont>.unmodifiable(
+      _allFonts.where((NotoFont font) => font.enabled));
+
+  List<NotoFont> get fonts => _activeFonts;
 
   /// During fallback font selection this is the number of missing code points
-  /// that are covered by this component, i.e. the intersection of all [fonts].
+  /// that are covered by this component.
   int coverCount = 0;
 }
 
