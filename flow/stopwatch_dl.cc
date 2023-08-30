@@ -4,13 +4,80 @@
 
 #include "flutter/flow/stopwatch_dl.h"
 #include <memory>
+#include <vector>
 #include "display_list/dl_blend_mode.h"
 #include "display_list/dl_canvas.h"
+#include "display_list/dl_color.h"
 #include "display_list/dl_paint.h"
 #include "display_list/dl_vertices.h"
 #include "include/core/SkRect.h"
+#include "include/private/base/SkPoint_impl.h"
 
 namespace flutter {
+
+/// @brief Provides canvas-like painting methods that actually build vertices.
+///
+/// The goal is minimally invasive rendering for the performance monitor.
+///
+/// The methods in this class are intended to be used by |DlStopwatchVisualizer|
+/// only. The rationale is the creating lines, rectangles, and paths (while OK
+/// for general apps) would cause non-trivial work for the performance monitor
+/// due to tessellation per-frame.
+///
+/// @note A goal of this class was to make updating the performance monitor
+/// (and keeping it in sync with the |SkStopwatchVisualizer|) as easy as
+/// possible (i.e. not having to do triangle-math).
+class DlVertexPainter final {
+ public:
+  /// Draws a rectangle with the given color to a buffer.
+  void DrawRect(const SkRect& rect, const DlColor& color) {
+    // Draw 6 vertices representing 2 triangles.
+    auto const left = rect.x();
+    auto const top = rect.y();
+    auto const right = rect.right();
+    auto const bottom = rect.bottom();
+
+    auto const vertices = std::array<SkPoint, 6>{
+        SkPoint::Make(left, top),      // tl tr
+        SkPoint::Make(right, top),     //    br
+        SkPoint::Make(right, bottom),  //
+        SkPoint::Make(right, bottom),  // tl
+        SkPoint::Make(left, bottom),   // bl br
+        SkPoint::Make(left, top)       //
+    };
+
+    auto const colors = std::array<DlColor, 6>{
+        color,  // tl tr
+        color,  //    br
+        color,  //
+        color,  // tl
+        color,  // bl br
+        color   //
+    };
+
+    vertices_.insert(vertices_.end(), vertices.begin(), vertices.end());
+    colors_.insert(colors_.end(), colors.begin(), colors.end());
+  }
+
+  /// Converts the buffered vertices into a |DlVertices| object.
+  ///
+  /// @note This method clears the buffer.
+  std::shared_ptr<DlVertices> IntoVertices() {
+    auto const result = DlVertices::Make(
+        /*mode=*/DlVertexMode::kTriangles,
+        /*vertex_count=*/vertices_.size(),
+        /*vertices=*/vertices_.data(),
+        /*texture_coordinates=*/nullptr,
+        /*colors=*/colors_.data());
+    vertices_.clear();
+    colors_.clear();
+    return result;
+  }
+
+ private:
+  std::vector<SkPoint> vertices_;
+  std::vector<DlColor> colors_;
+};
 
 /// Returns 6 vertices representing a rectangle.
 ///
@@ -48,6 +115,7 @@ static const size_t kMaxFrameMarkers = 8;
 // to everything.
 void DlStopwatchVisualizer::Visualize(DlCanvas* canvas,
                                       const SkRect& rect) const {
+  auto painter = DlVertexPainter();
   DlPaint paint;
 
   // Establish the graph position.
@@ -71,11 +139,8 @@ void DlStopwatchVisualizer::Visualize(DlCanvas* canvas,
     horizontal_markers = 1;
   }
 
-  // Erase all pixels.
-  {
-    paint.setColor(0x99FFFFFF);
-    canvas->DrawRect(rect, paint);
-  }
+  // Provide a semi-transparent background for the graph.
+  painter.DrawRect(rect, 0x99FFFFFF);
 
   // Prepare a path for the data; we start at the height of the last point so
   // it looks like we wrap around.
@@ -89,25 +154,16 @@ void DlStopwatchVisualizer::Visualize(DlCanvas* canvas,
       auto const bar_height = height * sample_unit_height;
       auto const bar_left = x + width * sample_unit_width * i;
 
-      paint.setColor(0xAA0000FF);
-      // FIXME: We should be collecting all of our vertices into a single array
-      // and then drawing them all at once, rather than drawing each one as we
-      // go. Ideally use DlColor as well and do literally 1 DrawVertices call
-      // at the end of this function.
-      canvas->DrawVertices(FromRectLTRB(/*left=*/bar_left,
+      painter.DrawRect(SkRect::MakeLTRB(/*left=*/bar_left,
                                         /*top=*/y + bar_height,
                                         /*right=*/bar_left + bar_width,
-                                        /*bottom=*/y + height),
-                           DlBlendMode::kSrc, paint);
+                                        /*bottom=*/bottom),
+                       0xAA0000FF);
     }
   }
 
   // Draw horizontal frame markers.
   {
-    paint.setStrokeWidth(0);
-    paint.setDrawStyle(DlDrawStyle::kStroke);
-    paint.setColor(0xCC000000);
-
     if (max_interval > one_frame_ms) {
       // Paint the horizontal markers.
       auto count = static_cast<size_t>(max_interval / one_frame_ms);
@@ -122,36 +178,34 @@ void DlStopwatchVisualizer::Visualize(DlCanvas* canvas,
             height * (1.0 - (UnitFrameInterval(i + 1) * one_frame_ms) /
                                 max_unit_interval);
 
-        // Draw a skinny rectangle (i.e. line).
-        canvas->DrawVertices(FromRectLTRB(/*left=*/x,
+        // Draw a skinny rectangle (i.e. a line).
+        painter.DrawRect(SkRect::MakeLTRB(/*left=*/x,
                                           /*top=*/y + frame_height,
                                           /*right=*/width,
                                           /*bottom=*/y + frame_height + 1),
-                             DlBlendMode::kSrc, paint);
+                         0xCC000000);
       }
     }
   }
 
   // Paint the vertical marker for the current frame.
   {
-    paint.setDrawStyle(DlDrawStyle::kFill);
-    paint.setBlendMode(DlBlendMode::kSrcOver);
+    DlColor color = DlColor::kGreen();
     if (UnitFrameInterval(stopwatch_.LastLap().ToMillisecondsF()) > 1.0) {
       // budget exceeded.
-      paint.setColor(DlColor::kRed());
-    } else {
-      // within budget.
-      paint.setColor(DlColor::kGreen());
+      color = DlColor::kRed();
     }
-
     auto const l =
         x + width * (static_cast<double>(stopwatch_.GetCurrentSample()) /
                      kMaxSamples);
     auto const t = y;
     auto const r = l + width * sample_unit_width;
     auto const b = rect.bottom();
-    canvas->DrawVertices(FromRectLTRB(l, t, r, b), DlBlendMode::kSrc, paint);
+    painter.DrawRect(SkRect::MakeLTRB(l, t, r, b), color);
   }
+
+  // Actually draw.
+  canvas->DrawVertices(painter.IntoVertices(), DlBlendMode::kSrc, paint);
 }
 
 }  // namespace flutter
