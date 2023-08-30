@@ -14,32 +14,6 @@
 
 namespace flutter {
 
-/// Returns 6 vertices representing a rectangle.
-///
-/// Rather than using a path, which we'll end up tessellating per frame, we
-/// create a vertices object and add the rectangles (2x triangles) to it.
-///
-/// The goal is minimally invasive rendering for the performance monitor.
-std::shared_ptr<DlVertices> FromRectLTRB(const SkScalar left,
-                                         const SkScalar top,
-                                         const SkScalar right,
-                                         const SkScalar bottom) {
-  auto const top_left = SkPoint::Make(left, top);
-  auto const top_right = SkPoint::Make(right, top);
-  auto const bottom_right = SkPoint::Make(right, bottom);
-  auto const bottom_left = SkPoint::Make(left, bottom);
-  const SkPoint vertices[6] = {
-      top_left,      // tl tr
-      top_right,     //    br
-      bottom_right,  //
-      bottom_right,  // tl
-      bottom_left,   // bl br
-      top_left       //
-  };
-  return DlVertices::Make(DlVertexMode::kTriangles, 6, vertices, nullptr,
-                          nullptr);
-}
-
 static const size_t kMaxSamples = 120;
 static const size_t kMaxFrameMarkers = 8;
 
