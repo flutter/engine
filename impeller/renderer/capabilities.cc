@@ -57,8 +57,8 @@ class StandardCapabilities final : public Capabilities {
   }
 
   // |Capabilities|
-  bool SupportsDecalTileMode() const override {
-    return supports_decal_tile_mode_;
+  bool SupportsDecalSamplerAddressMode() const override {
+    return supports_decal_sampler_address_mode_;
   }
 
   // |Capabilities|
@@ -71,8 +71,13 @@ class StandardCapabilities final : public Capabilities {
     return default_stencil_format_;
   }
 
-  bool SupportsMemorylessTextures() const override {
-    return supports_memoryless_textures_;
+  // |Capabilities|
+  PixelFormat GetDefaultDepthStencilFormat() const override {
+    return default_depth_stencil_format_;
+  }
+
+  bool SupportsDeviceTransientTextures() const override {
+    return supports_device_transient_textures_;
   }
 
  private:
@@ -85,10 +90,11 @@ class StandardCapabilities final : public Capabilities {
                        bool supports_compute_subgroups,
                        bool supports_read_from_onscreen_texture,
                        bool supports_read_from_resolve,
-                       bool supports_decal_tile_mode,
-                       bool supports_memoryless_textures,
+                       bool supports_decal_sampler_address_mode,
+                       bool supports_device_transient_textures,
                        PixelFormat default_color_format,
-                       PixelFormat default_stencil_format)
+                       PixelFormat default_stencil_format,
+                       PixelFormat default_depth_stencil_format)
       : supports_offscreen_msaa_(supports_offscreen_msaa),
         supports_ssbo_(supports_ssbo),
         supports_buffer_to_texture_blits_(supports_buffer_to_texture_blits),
@@ -99,10 +105,12 @@ class StandardCapabilities final : public Capabilities {
         supports_read_from_onscreen_texture_(
             supports_read_from_onscreen_texture),
         supports_read_from_resolve_(supports_read_from_resolve),
-        supports_decal_tile_mode_(supports_decal_tile_mode),
-        supports_memoryless_textures_(supports_memoryless_textures),
+        supports_decal_sampler_address_mode_(
+            supports_decal_sampler_address_mode),
+        supports_device_transient_textures_(supports_device_transient_textures),
         default_color_format_(default_color_format),
-        default_stencil_format_(default_stencil_format) {}
+        default_stencil_format_(default_stencil_format),
+        default_depth_stencil_format_(default_depth_stencil_format) {}
 
   friend class CapabilitiesBuilder;
 
@@ -115,10 +123,11 @@ class StandardCapabilities final : public Capabilities {
   bool supports_compute_subgroups_ = false;
   bool supports_read_from_onscreen_texture_ = false;
   bool supports_read_from_resolve_ = false;
-  bool supports_decal_tile_mode_ = false;
-  bool supports_memoryless_textures_ = false;
+  bool supports_decal_sampler_address_mode_ = false;
+  bool supports_device_transient_textures_ = false;
   PixelFormat default_color_format_ = PixelFormat::kUnknown;
   PixelFormat default_stencil_format_ = PixelFormat::kUnknown;
+  PixelFormat default_depth_stencil_format_ = PixelFormat::kUnknown;
 
   FML_DISALLOW_COPY_AND_ASSIGN(StandardCapabilities);
 };
@@ -190,14 +199,21 @@ CapabilitiesBuilder& CapabilitiesBuilder::SetDefaultStencilFormat(
   return *this;
 }
 
-CapabilitiesBuilder& CapabilitiesBuilder::SetSupportsDecalTileMode(bool value) {
-  supports_decal_tile_mode_ = value;
+CapabilitiesBuilder& CapabilitiesBuilder::SetDefaultDepthStencilFormat(
+    PixelFormat value) {
+  default_depth_stencil_format_ = value;
   return *this;
 }
 
-CapabilitiesBuilder& CapabilitiesBuilder::SetSupportsMemorylessTextures(
+CapabilitiesBuilder& CapabilitiesBuilder::SetSupportsDecalSamplerAddressMode(
     bool value) {
-  supports_memoryless_textures_ = value;
+  supports_decal_sampler_address_mode_ = value;
+  return *this;
+}
+
+CapabilitiesBuilder& CapabilitiesBuilder::SetSupportsDeviceTransientTextures(
+    bool value) {
+  supports_device_transient_textures_ = value;
   return *this;
 }
 
@@ -212,10 +228,11 @@ std::unique_ptr<Capabilities> CapabilitiesBuilder::Build() {
       supports_compute_subgroups_,                                        //
       supports_read_from_onscreen_texture_,                               //
       supports_read_from_resolve_,                                        //
-      supports_decal_tile_mode_,                                          //
-      supports_memoryless_textures_,                                      //
+      supports_decal_sampler_address_mode_,                               //
+      supports_device_transient_textures_,                                //
       default_color_format_.value_or(PixelFormat::kUnknown),              //
-      default_stencil_format_.value_or(PixelFormat::kUnknown)             //
+      default_stencil_format_.value_or(PixelFormat::kUnknown),            //
+      default_depth_stencil_format_.value_or(PixelFormat::kUnknown)       //
       ));
 }
 
