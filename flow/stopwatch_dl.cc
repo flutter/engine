@@ -9,7 +9,6 @@
 #include "display_list/dl_paint.h"
 #include "display_list/dl_vertices.h"
 #include "include/core/SkRect.h"
-#include "include/private/base/SkPoint_impl.h"
 
 namespace flutter {
 
@@ -90,16 +89,13 @@ void DlStopwatchVisualizer::Visualize(DlCanvas* canvas,
       auto const bar_height = height * sample_unit_height;
       auto const bar_left = x + width * sample_unit_width * i;
 
-      // FIXME: This doesn't currently work, I get a reversed effect where cheap
-      // frames are shown as almost full height and expensive frames are shown
-      // as almost empty.
       paint.setColor(0xAA0000FF);
       // FIXME: We should be collecting all of our vertices into a single array
       // and then drawing them all at once, rather than drawing each one as we
       // go. Ideally use DlColor as well and do literally 1 DrawVertices call
       // at the end of this function.
       canvas->DrawVertices(FromRectLTRB(/*left=*/bar_left,
-                                        /*top=*/y + height - bar_height,
+                                        /*top=*/y + bar_height,
                                         /*right=*/bar_left + bar_width,
                                         /*bottom=*/y + height),
                            DlBlendMode::kSrc, paint);
