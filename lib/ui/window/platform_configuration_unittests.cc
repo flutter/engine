@@ -107,7 +107,7 @@ class MockRuntimeControllerContext {
 
   ~MockRuntimeControllerContext() {
     PostSync(task_runners_.GetUITaskRunner(),
-            [&]() { runtime_controller_.reset(); });
+             [&]() { runtime_controller_.reset(); });
   }
 
   // Launch the root isolate. The post_launch callback will be executed in the
