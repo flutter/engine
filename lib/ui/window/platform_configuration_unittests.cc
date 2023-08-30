@@ -74,38 +74,26 @@ class MockPlatformMessageHandler : public PlatformMessageHandler {
 // A class that can launch a RuntimeController with the specified
 // RuntimeDelegate.
 //
-// To use this class, contruct this class, call LaunchRootIsolate, and get the
-// runtime controller with Controller().
-class MockRuntimeControllerContext {
+// To use this class, contruct this class with Create, call LaunchRootIsolate,
+// and get the runtime controller with Controller().
+class RuntimeControllerContext {
  public:
   using VoidCallback = std::function<void()>;
 
-  MockRuntimeControllerContext(Settings settings,
-                               TaskRunners task_runners,
-                               RuntimeDelegate& client)
-      : settings_(settings),
-        task_runners_(task_runners),
-        vm_snapshot_(DartSnapshot::VMSnapshotFromSettings(settings)),
-        isolate_snapshot_(DartSnapshot::IsolateSnapshotFromSettings(settings)),
-        vm_(DartVMRef::Create(settings, vm_snapshot_, isolate_snapshot_)) {
-    // Always use the `vm_snapshot` and `isolate_snapshot` provided by the
-    // settings to launch the VM.  If the VM is already running, the snapshot
-    // arguments are ignored.
-    FML_CHECK(vm_) << "Must be able to initialize the VM.";
-    if (!isolate_snapshot_) {
-      isolate_snapshot_ = vm_->GetVMData()->GetIsolateSnapshot();
-    }
-    runtime_controller_ = std::make_unique<RuntimeController>(
-        client, &vm_, std::move(isolate_snapshot_),
-        settings.idle_notification_callback,  // idle notification callback
-        flutter::PlatformData(),              // platform data
-        settings.isolate_create_callback,     // isolate create callback
-        settings.isolate_shutdown_callback,   // isolate shutdown callback
-        settings.persistent_isolate_data,     // persistent isolate data
-        UIDartState::Context{task_runners});
+  [[nodiscard]] static std::unique_ptr<RuntimeControllerContext> Create(
+      Settings settings,         //
+      TaskRunners task_runners,  //
+      RuntimeDelegate& client) {
+    auto [vm, isolate_snapshot] = Shell::InferVmInitDataFromSettings(settings);
+    FML_CHECK(vm) << "Must be able to initialize the VM.";
+    // Construct the class with `new` because `make_unique` has no access to the
+    // private constructor.
+    RuntimeControllerContext* raw_pointer = new RuntimeControllerContext(
+        settings, task_runners, client, std::move(vm), isolate_snapshot);
+    return std::unique_ptr<RuntimeControllerContext>(raw_pointer);
   }
 
-  ~MockRuntimeControllerContext() {
+  ~RuntimeControllerContext() {
     PostSync(task_runners_.GetUITaskRunner(),
              [&]() { runtime_controller_.reset(); });
   }
@@ -131,9 +119,28 @@ class MockRuntimeControllerContext {
   RuntimeController& Controller() { return *runtime_controller_; }
 
  private:
+  RuntimeControllerContext(Settings settings,
+                           TaskRunners task_runners,
+                           RuntimeDelegate& client,
+                           DartVMRef vm,
+                           fml::RefPtr<const DartSnapshot> isolate_snapshot)
+      : settings_(settings),
+        task_runners_(task_runners),
+        isolate_snapshot_(isolate_snapshot),
+        vm_(vm),
+        runtime_controller_(std::make_unique<RuntimeController>(
+            client,
+            &vm_,
+            std::move(isolate_snapshot_),
+            settings.idle_notification_callback,  // idle notification callback
+            flutter::PlatformData(),              // platform data
+            settings.isolate_create_callback,     // isolate create callback
+            settings.isolate_shutdown_callback,   // isolate shutdown callback
+            settings.persistent_isolate_data,     // persistent isolate data
+            UIDartState::Context{task_runners})) {}
+
   Settings settings_;
   TaskRunners task_runners_;
-  fml::RefPtr<const DartSnapshot> vm_snapshot_;
   fml::RefPtr<const DartSnapshot> isolate_snapshot_;
   DartVMRef vm_;
   std::unique_ptr<RuntimeController> runtime_controller_;
@@ -472,8 +479,7 @@ TEST_F(PlatformConfigurationTest, OutOfScopeRenderCallsAreIgnored) {
   EXPECT_CALL(client, Render(_, _)).Times(Exactly(0));
 
   auto runtime_controller_context =
-      std::make_unique<MockRuntimeControllerContext>(settings, task_runners,
-                                                     client);
+      RuntimeControllerContext::Create(settings, task_runners, client);
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("incorrectImmediateRender");
@@ -503,8 +509,7 @@ TEST_F(PlatformConfigurationTest, DuplicateRenderCallsAreIgnored) {
   EXPECT_CALL(client, Render(_, _)).Times(Exactly(1));
 
   auto runtime_controller_context =
-      std::make_unique<MockRuntimeControllerContext>(settings, task_runners,
-                                                     client);
+      RuntimeControllerContext::Create(settings, task_runners, client);
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("incorrectDoubleRender");
