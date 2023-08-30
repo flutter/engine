@@ -219,13 +219,13 @@ extension CanvasKitExtension on CanvasKit {
   ) => _MakeImage(info, pixels.toJS, bytesPerRow.toJS);
 
   @JS('MakeLazyImageFromTextureSource')
-  external SkImage? _MakeLazyImageFromTextureSource1(
+  external SkImage? _MakeLazyImageFromTextureSource2(
     JSAny src,
     SkPartialImageInfo info,
   );
 
   @JS('MakeLazyImageFromTextureSource')
-  external SkImage? _MakeLazyImageFromTextureSource2(
+  external SkImage? _MakeLazyImageFromTextureSource3(
     JSAny src,
     JSNumber zeroSecondArgument,
     JSBoolean srcIsPremultiplied,
@@ -234,12 +234,12 @@ extension CanvasKitExtension on CanvasKit {
   SkImage? MakeLazyImageFromTextureSourceWithInfo(
     Object src,
     SkPartialImageInfo info,
-  ) => _MakeLazyImageFromTextureSource1(src.toJSAnyShallow, info);
+  ) => _MakeLazyImageFromTextureSource2(src.toJSAnyShallow, info);
 
   SkImage? MakeLazyImageFromImageBitmap(
     DomImageBitmap imageBitmap,
     bool hasPremultipliedAlpha,
-  ) => _MakeLazyImageFromTextureSource2(
+  ) => _MakeLazyImageFromTextureSource3(
     imageBitmap as JSAny,
     0.toJS,
     hasPremultipliedAlpha.toJS,

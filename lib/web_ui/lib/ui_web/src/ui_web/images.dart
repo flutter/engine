@@ -30,6 +30,7 @@ Future<ui.Codec> createImageCodecFromUrl(
 }
 
 /// Creates a [ui.Image] from an ImageBitmap object.
+///
 /// The contents of the ImageBitmap must have a premultiplied alpha.
 /// The engine will take ownership of the ImageBitmap object and consume its
 /// contents.
@@ -37,7 +38,7 @@ Future<ui.Codec> createImageCodecFromUrl(
 /// See https://developer.mozilla.org/en-US/docs/Web/API/ImageBitmap
 FutureOr<ui.Image> createImageFromImageBitmap(JSAny imageSource) {
   if (!domInstanceOfString(imageSource, 'ImageBitmap')) {
-    throw Exception('Image source $imageSource is not an ImageBitmap!');
+    throw ArgumentError('Image source $imageSource is not an ImageBitmap.', 'imageSource');
   }
   return renderer.createImageFromImageBitmap(
     imageSource as DomImageBitmap,
