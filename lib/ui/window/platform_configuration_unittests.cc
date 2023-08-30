@@ -81,8 +81,8 @@ class RuntimeControllerContext {
   using VoidCallback = std::function<void()>;
 
   [[nodiscard]] static std::unique_ptr<RuntimeControllerContext> Create(
-      Settings settings,         //
-      TaskRunners task_runners,  //
+      Settings settings,                //
+      const TaskRunners& task_runners,  //
       RuntimeDelegate& client) {
     auto [vm, isolate_snapshot] = Shell::InferVmInitDataFromSettings(settings);
     FML_CHECK(vm) << "Must be able to initialize the VM.";
@@ -120,14 +120,14 @@ class RuntimeControllerContext {
 
  private:
   RuntimeControllerContext(Settings settings,
-                           TaskRunners task_runners,
+                           const TaskRunners& task_runners,
                            RuntimeDelegate& client,
                            DartVMRef vm,
                            fml::RefPtr<const DartSnapshot> isolate_snapshot)
       : settings_(settings),
         task_runners_(task_runners),
-        isolate_snapshot_(isolate_snapshot),
-        vm_(vm),
+        isolate_snapshot_(std::move(isolate_snapshot)),
+        vm_(std::move(vm)),
         runtime_controller_(std::make_unique<RuntimeController>(
             client,
             &vm_,
