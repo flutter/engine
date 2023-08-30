@@ -242,25 +242,21 @@ Future<void> testMain() async {
     return data;
   }
 
-  // This API doesn't work in headless Firefox due to requiring WebGL
-  // See https://github.com/flutter/flutter/issues/109265
-  if (!isFirefox) {
-    emitImageTests('decodeImageFromPixels_unscaled', () {
-      final Uint8List pixels = generatePixelData(150, 150, (double x, double y) {
-        final double r = sqrt(x * x + y * y);
-        final double theta = atan2(x, y);
-        return ui.Color.fromRGBO(
-          (255 * (sin(r * 10.0) + 1.0) / 2.0).round(),
-          (255 * (sin(theta * 10.0) + 1.0) / 2.0).round(),
-          0,
-          1,
-        );
-      });
-      final Completer<ui.Image> completer = Completer<ui.Image>();
-      ui.decodeImageFromPixels(pixels, 150, 150, ui.PixelFormat.rgba8888, completer.complete);
-      return completer.future;
+  emitImageTests('decodeImageFromPixels_unscaled', () {
+    final Uint8List pixels = generatePixelData(150, 150, (double x, double y) {
+      final double r = sqrt(x * x + y * y);
+      final double theta = atan2(x, y);
+      return ui.Color.fromRGBO(
+        (255 * (sin(r * 10.0) + 1.0) / 2.0).round(),
+        (255 * (sin(theta * 10.0) + 1.0) / 2.0).round(),
+        0,
+        1,
+      );
     });
-  }
+    final Completer<ui.Image> completer = Completer<ui.Image>();
+    ui.decodeImageFromPixels(pixels, 150, 150, ui.PixelFormat.rgba8888, completer.complete);
+    return completer.future;
+  });
 
   // https://github.com/flutter/flutter/issues/126603
   if (!isHtml) {
@@ -299,29 +295,33 @@ Future<void> testMain() async {
     return info.image;
   });
 
-  emitImageTests('svg_image_bitmap', () async {
-    final DomBlob svgBlob = createDomBlob(<String>[
-'''
-<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150">
-  <path d="M25,75  A50,50 0 1,0 125 75 L75,25 Z" stroke="blue" stroke-width="10" fill="red"></path>
-</svg>
-'''
-    ], <String, String>{'type': 'image/svg+xml'});
-    final String url = domWindow.URL.createObjectURL(svgBlob);
-    final DomHTMLImageElement image = createDomHTMLImageElement();
-    final Completer<void> completer = Completer<void>();
-    late final DomEventListener loadListener;
-    loadListener = createDomEventListener((DomEvent event) {
-      completer.complete();
-      image.removeEventListener('load', loadListener);
-    });
-    image.addEventListener('load', loadListener);
-    image.src = url;
-    await completer.future;
+  // This API doesn't work in headless Firefox due to requiring WebGL
+  // See https://github.com/flutter/flutter/issues/109265
+  if (!isFirefox) {
+    emitImageTests('svg_image_bitmap', () async {
+      final DomBlob svgBlob = createDomBlob(<String>[
+  '''
+  <svg xmlns="http://www.w3.org/2000/svg" width="150" height="150">
+    <path d="M25,75  A50,50 0 1,0 125 75 L75,25 Z" stroke="blue" stroke-width="10" fill="red"></path>
+  </svg>
+  '''
+      ], <String, String>{'type': 'image/svg+xml'});
+      final String url = domWindow.URL.createObjectURL(svgBlob);
+      final DomHTMLImageElement image = createDomHTMLImageElement();
+      final Completer<void> completer = Completer<void>();
+      late final DomEventListener loadListener;
+      loadListener = createDomEventListener((DomEvent event) {
+        completer.complete();
+        image.removeEventListener('load', loadListener);
+      });
+      image.addEventListener('load', loadListener);
+      image.src = url;
+      await completer.future;
 
-    final DomImageBitmap bitmap = (await createImageBitmap(image as JSAny).toDart)! as DomImageBitmap;
-    return renderer.createImageFromImageBitmap(bitmap);
-  });
+      final DomImageBitmap bitmap = (await createImageBitmap(image as JSAny).toDart)! as DomImageBitmap;
+      return renderer.createImageFromImageBitmap(bitmap);
+    });
+  }
 
   emitImageTests('codec_list_resized', () async {
     final ByteBuffer data = await httpFetchByteBuffer('/test_images/mandrill_128.png');
