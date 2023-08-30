@@ -953,7 +953,7 @@ def gather_clang_tidy_tests(build_dir):
     )
 
 
-def gather_build_bucket_golden_scraper_tests(build_dir):
+def gather_build_bucket_golden_scraper_tests(build_dir): # pylint: invalid-name
   test_dir = os.path.join(
       BUILDROOT_DIR, 'flutter', 'tools', 'build_bucket_golden_scraper'
   )
