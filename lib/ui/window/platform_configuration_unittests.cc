@@ -79,13 +79,16 @@ class MockPlatformMessageHandler : public PlatformMessageHandler {
               HandlePlatformMessage,
               (std::unique_ptr<PlatformMessage> message),
               (override));
-  MOCK_METHOD(bool DoesHandlePlatformMessageOnPlatformThread,
+  MOCK_METHOD(bool,
+              DoesHandlePlatformMessageOnPlatformThread,
               (),
-              (const override));
-  MOCK_METHOD(void InvokePlatformMessageResponseCallback,
+              (const, override));
+  MOCK_METHOD(void,
+              InvokePlatformMessageResponseCallback,
               (int response_id, std::unique_ptr<fml::Mapping> mapping),
               (override));
-  MOCK_METHOD(void InvokePlatformMessageEmptyResponseCallback,
+  MOCK_METHOD(void,
+              InvokePlatformMessageEmptyResponseCallback,
               (int response_id),
               (override));
 };
