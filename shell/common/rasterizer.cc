@@ -488,13 +488,13 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
   FML_DCHECK(delegate_.GetTaskRunners()
                  .GetRasterTaskRunner()
                  ->RunsTasksOnCurrentThread());
-  ViewRecord* view_record = GetViewRecord(view_id);
-
-  if (!layer_tree || !view_record) {
+  if (!layer_tree) {
     return DoDrawResult{
         .raster_status = RasterStatus::kFailed,
     };
   }
+
+  ViewRecord* view_record = GetViewRecord(view_id);
 
   PersistentCache* persistent_cache = PersistentCache::GetCacheForProcess();
   persistent_cache->ResetStoredNewShaders();

@@ -546,11 +546,15 @@ class Rasterizer final : public SnapshotDelegate,
   };
 
   ViewRecord* GetViewRecord(int64_t view_id) {
-    auto found_surface = view_records_.find(view_id);
-    if (found_surface == view_records_.end()) {
-      return nullptr;
+    auto found = view_records_.find(view_id);
+    if (found == view_records_.end()) {
+      view_records_.emplace(
+          /*map key:*/ view_id,
+          /*constructor args:*/ view_id);
+      found = view_records_.find(view_id);
     }
-    return &found_surface->second;
+
+    return &found->second;
   }
 
   ViewRecord* GetFirstViewRecord() {
