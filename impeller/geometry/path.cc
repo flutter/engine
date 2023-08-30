@@ -66,23 +66,22 @@ void Path::Shift(Point shift) {
   for (const auto& component : components_) {
     switch (component.type) {
       case ComponentType::kLinear:
-        linears_[component.index].p1 = linears_[component.index].p1 + shift;
-        linears_[component.index].p2 = linears_[component.index].p2 + shift;
+        linears_[component.index].p1 += shift;
+        linears_[component.index].p2 += shift;
         break;
       case ComponentType::kQuadratic:
-        quads_[component.index].cp = quads_[component.index].cp + shift;
-        quads_[component.index].p1 = quads_[component.index].p1 + shift;
-        quads_[component.index].p2 = quads_[component.index].p2 + shift;
+        quads_[component.index].cp += shift;
+        quads_[component.index].p1 += shift;
+        quads_[component.index].p2 += shift;
         break;
       case ComponentType::kCubic:
-        cubics_[component.index].cp1 = cubics_[component.index].cp1 + shift;
-        cubics_[component.index].cp2 = cubics_[component.index].cp2 + shift;
-        cubics_[component.index].p1 = cubics_[component.index].p1 + shift;
-        cubics_[component.index].p2 = cubics_[component.index].p2 + shift;
+        cubics_[component.index].cp1 += shift;
+        cubics_[component.index].cp2 += shift;
+        cubics_[component.index].p1 += shift;
+        cubics_[component.index].p2 += shift;
         break;
       case ComponentType::kContour:
-        contours_[component.index].destination =
-            contours_[component.index].destination + shift;
+        contours_[component.index].destination += shift;
         break;
     }
     currentIndex++;
