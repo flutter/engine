@@ -70,7 +70,8 @@ static std::shared_ptr<const fml::Mapping> SearchMapping(
       const char* error = nullptr;
       leaked_elf = Dart_LoadELF(native_library_path.back().c_str(), 0, &error,
                                 &vm_snapshot_data, &vm_snapshot_instrs,
-                                &vm_isolate_data, &vm_isolate_instrs);
+                                &vm_isolate_data, &vm_isolate_instrs,
+                                /* load as read-only, not rx */ true);
       if (leaked_elf != nullptr) {
         FML_LOG(INFO) << "Loaded ELF";
       } else {
