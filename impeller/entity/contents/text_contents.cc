@@ -59,16 +59,8 @@ void TextContents::SetOffset(Vector2 offset) {
   offset_ = offset;
 }
 
-std::optional<Rect> TextContents::GetTextFrameBounds() const {
-  return frame_.GetBounds();
-}
-
 std::optional<Rect> TextContents::GetCoverage(const Entity& entity) const {
-  auto bounds = frame_.GetBounds();
-  if (!bounds.has_value()) {
-    return std::nullopt;
-  }
-  return bounds->TransformBounds(entity.GetTransformation());
+  return frame_.GetBounds().TransformBounds(entity.GetTransformation());
 }
 
 void TextContents::PopulateGlyphAtlas(
@@ -174,13 +166,17 @@ bool TextContents::Render(const ContentContext& renderer,
           const Font& font = run.GetFont();
           Scalar rounded_scale = TextFrame::RoundScaledFontSize(
               scale_, font.GetMetrics().point_size);
+          const FontGlyphAtlas* font_atlas =
+              atlas->GetFontGlyphAtlas(font, rounded_scale);
+          if (!font_atlas) {
+            VALIDATION_LOG << "Could not find font in the atlas.";
+            continue;
+          }
 
           for (const TextRun::GlyphPosition& glyph_position :
                run.GetGlyphPositions()) {
-            FontGlyphPair font_glyph_pair{font, glyph_position.glyph,
-                                          rounded_scale};
             std::optional<Rect> maybe_atlas_glyph_bounds =
-                atlas->FindFontGlyphBounds(font_glyph_pair);
+                font_atlas->FindGlyphBounds(glyph_position.glyph);
             if (!maybe_atlas_glyph_bounds.has_value()) {
               VALIDATION_LOG << "Could not find glyph position in the atlas.";
               continue;

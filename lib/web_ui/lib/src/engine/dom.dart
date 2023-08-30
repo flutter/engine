@@ -1430,6 +1430,34 @@ class DomImageBitmap {}
 extension DomImageBitmapExtension on DomImageBitmap {
   external JSNumber get width;
   external JSNumber get height;
+  external void close();
+}
+
+
+@JS('createImageBitmap')
+external JSPromise _createImageBitmap1(
+  JSAny source,
+);
+@JS('createImageBitmap')
+external JSPromise _createImageBitmap2(
+  JSAny source,
+  JSNumber x,
+  JSNumber y,
+  JSNumber width,
+  JSNumber height,
+);
+JSPromise createImageBitmap(JSAny source, [({int x, int y, int width, int height})? bounds]) {
+  if (bounds != null) {
+    return _createImageBitmap2(
+      source,
+      bounds.x.toJS,
+      bounds.y.toJS,
+      bounds.width.toJS,
+      bounds.height.toJS
+    );
+  } else {
+    return _createImageBitmap1(source);
+  }
 }
 
 @JS()
@@ -2263,10 +2291,24 @@ extension DomURLExtension on DomURL {
 @staticInterop
 class DomBlob {
   external factory DomBlob(JSArray parts);
+
+  external factory DomBlob.withOptions(JSArray parts, JSAny options);
 }
 
-DomBlob createDomBlob(List<Object?> parts) =>
-    DomBlob(parts.toJSAnyShallow as JSArray);
+extension DomBlobExtension on DomBlob {
+  external JSPromise arrayBuffer();
+}
+
+DomBlob createDomBlob(List<Object?> parts, [Map<String, dynamic>? options]) {
+  if (options == null) {
+    return DomBlob(parts.toJSAnyShallow as JSArray);
+  } else {
+    return DomBlob.withOptions(
+      parts.toJSAnyShallow as JSArray,
+      options.toJSAnyDeep
+    );
+  }
+}
 
 typedef DomMutationCallback = void Function(
     JSArray mutation, DomMutationObserver observer);
