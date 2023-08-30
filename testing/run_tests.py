@@ -515,7 +515,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         executable_filter,
         [
             '--enable_vulkan_validation', '--playground_timeout_ms=4000',
-            '--enable_playground', '--gtest_filter="*ColorWheel/Vulkan"'
+            '--enable_playground', '--gtest_filter=*ColorWheel/Vulkan'
         ],
         coverage=coverage,
         extra_env=extra_env,
