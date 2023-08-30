@@ -19,8 +19,8 @@ void DlStopwatchVisualizer::Visualize(DlCanvas* canvas,
   DlPaint paint;
 
   // Establish the graph position.
-  auto const x = 0;
-  auto const y = 0;
+  auto const x = rect.x();
+  auto const y = rect.y();
   auto const width = rect.width();
   auto const height = rect.height();
 
@@ -41,11 +41,11 @@ void DlStopwatchVisualizer::Visualize(DlCanvas* canvas,
   {
     SkPath path;
     path.setIsVolatile(true);
-    path.moveTo(x, height);
+    path.moveTo(x, rect.bottom());
     path.lineTo(
         x,
-        y + height * (1.0 - (UnitHeight(stopwatch_.GetLap(0).ToMillisecondsF(),
-                                        max_unit_interval))));
+        y + height * (1.0 - UnitHeight(stopwatch_.GetLap(0).ToMillisecondsF(),
+                                       max_unit_interval)));
 
     double unit_x;
     double next_x = 0.0;
@@ -53,20 +53,20 @@ void DlStopwatchVisualizer::Visualize(DlCanvas* canvas,
       unit_x = next_x;
       next_x = static_cast<double>(i + 1) / kMaxSamples;
 
-      auto const unit_y =
+      auto const sample_y =
           y + height * (1.0 - UnitHeight(stopwatch_.GetLap(i).ToMillisecondsF(),
                                          max_unit_interval));
-      path.lineTo(x + width * unit_x, unit_y);
-      path.lineTo(x + width * next_x, unit_y);
+      path.lineTo(x + width * unit_x, sample_y);
+      path.lineTo(x + width * next_x, sample_y);
     }
 
     path.lineTo(
-        width,
+        rect.right(),
         y + height *
                 (1.0 - UnitHeight(
                            stopwatch_.GetLap(kMaxSamples - 1).ToMillisecondsF(),
                            max_unit_interval)));
-    path.lineTo(width, height);
+    path.lineTo(rect.right(), rect.bottom());
     path.close();
 
     paint.setColor(0xAA0000FF);
@@ -92,7 +92,7 @@ void DlStopwatchVisualizer::Visualize(DlCanvas* canvas,
         auto const frame_height =
             height * (1.0 - (UnitFrameInterval(i + 1) * one_frame_ms) /
                                 max_unit_interval);
-        canvas->DrawLine(SkPoint::Make(x, frame_height),
+        canvas->DrawLine(SkPoint::Make(x, y + frame_height),
                          SkPoint::Make(width, y + frame_height), paint);
       }
     }
@@ -115,7 +115,7 @@ void DlStopwatchVisualizer::Visualize(DlCanvas* canvas,
                      kMaxSamples);
     auto const t = y;
     auto const r = l + width * sample_unit_width;
-    auto const b = height;
+    auto const b = rect.bottom();
     canvas->DrawRect(SkRect::MakeLTRB(l, t, r, b), paint);
   }
 }
