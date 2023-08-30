@@ -117,15 +117,15 @@ inline bool operator==(const FlutterSoftwareBackingStore2& a,
 }
 
 inline bool operator==(const FlutterRegion& a, const FlutterRegion& b) {
-  if (a.struct_size == b.struct_size && a.rects_count == b.rects_count) {
-    for (size_t i = 0; i < a.rects_count; i++) {
-      if (!(a.rects[i] == b.rects[i])) {
-        return false;
-      }
-    }
-    return true;
+  if (a.struct_size != b.struct_size || a.rects_count != b.rects_count) {
+    return false;
   }
-  return false;
+  for (size_t i = 0; i < a.rects_count; i++) {
+    if (!(a.rects[i] == b.rects[i])) {
+      return false;
+    }
+  }
+  return true;
 }
 
 inline bool operator==(const FlutterBackingStorePresentInfo& a,
