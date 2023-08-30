@@ -11,73 +11,8 @@
 #include "display_list/dl_paint.h"
 #include "display_list/dl_vertices.h"
 #include "include/core/SkRect.h"
-#include "include/private/base/SkPoint_impl.h"
 
 namespace flutter {
-
-/// @brief Provides canvas-like painting methods that actually build vertices.
-///
-/// The goal is minimally invasive rendering for the performance monitor.
-///
-/// The methods in this class are intended to be used by |DlStopwatchVisualizer|
-/// only. The rationale is the creating lines, rectangles, and paths (while OK
-/// for general apps) would cause non-trivial work for the performance monitor
-/// due to tessellation per-frame.
-///
-/// @note A goal of this class was to make updating the performance monitor
-/// (and keeping it in sync with the |SkStopwatchVisualizer|) as easy as
-/// possible (i.e. not having to do triangle-math).
-class DlVertexPainter final {
- public:
-  /// Draws a rectangle with the given color to a buffer.
-  void DrawRect(const SkRect& rect, const DlColor& color) {
-    // Draw 6 vertices representing 2 triangles.
-    auto const left = rect.x();
-    auto const top = rect.y();
-    auto const right = rect.right();
-    auto const bottom = rect.bottom();
-
-    auto const vertices = std::array<SkPoint, 6>{
-        SkPoint::Make(left, top),      // tl tr
-        SkPoint::Make(right, top),     //    br
-        SkPoint::Make(right, bottom),  //
-        SkPoint::Make(right, bottom),  // tl
-        SkPoint::Make(left, bottom),   // bl br
-        SkPoint::Make(left, top)       //
-    };
-
-    auto const colors = std::array<DlColor, 6>{
-        color,  // tl tr
-        color,  //    br
-        color,  //
-        color,  // tl
-        color,  // bl br
-        color   //
-    };
-
-    vertices_.insert(vertices_.end(), vertices.begin(), vertices.end());
-    colors_.insert(colors_.end(), colors.begin(), colors.end());
-  }
-
-  /// Converts the buffered vertices into a |DlVertices| object.
-  ///
-  /// @note This method clears the buffer.
-  std::shared_ptr<DlVertices> IntoVertices() {
-    auto const result = DlVertices::Make(
-        /*mode=*/DlVertexMode::kTriangles,
-        /*vertex_count=*/vertices_.size(),
-        /*vertices=*/vertices_.data(),
-        /*texture_coordinates=*/nullptr,
-        /*colors=*/colors_.data());
-    vertices_.clear();
-    colors_.clear();
-    return result;
-  }
-
- private:
-  std::vector<SkPoint> vertices_;
-  std::vector<DlColor> colors_;
-};
 
 /// Returns 6 vertices representing a rectangle.
 ///
@@ -89,8 +24,6 @@ std::shared_ptr<DlVertices> FromRectLTRB(const SkScalar left,
                                          const SkScalar top,
                                          const SkScalar right,
                                          const SkScalar bottom) {
-  // FIXME: Convert this into a helper class with AddRect and AddLine.
-  // FIXME: Move the helper class into stopwatch_dl_vertices_helper and test it.
   auto const top_left = SkPoint::Make(left, top);
   auto const top_right = SkPoint::Make(right, top);
   auto const bottom_right = SkPoint::Make(right, bottom);
@@ -206,6 +139,47 @@ void DlStopwatchVisualizer::Visualize(DlCanvas* canvas,
 
   // Actually draw.
   canvas->DrawVertices(painter.IntoVertices(), DlBlendMode::kSrc, paint);
+}
+
+void DlVertexPainter::DrawRect(const SkRect& rect, const DlColor& color) {
+  // Draw 6 vertices representing 2 triangles.
+  auto const left = rect.x();
+  auto const top = rect.y();
+  auto const right = rect.right();
+  auto const bottom = rect.bottom();
+
+  auto const vertices = std::array<SkPoint, 6>{
+      SkPoint::Make(left, top),      // tl tr
+      SkPoint::Make(right, top),     //    br
+      SkPoint::Make(right, bottom),  //
+      SkPoint::Make(right, bottom),  // tl
+      SkPoint::Make(left, bottom),   // bl br
+      SkPoint::Make(left, top)       //
+  };
+
+  auto const colors = std::array<DlColor, 6>{
+      color,  // tl tr
+      color,  //    br
+      color,  //
+      color,  // tl
+      color,  // bl br
+      color   //
+  };
+
+  vertices_.insert(vertices_.end(), vertices.begin(), vertices.end());
+  colors_.insert(colors_.end(), colors.begin(), colors.end());
+}
+
+std::shared_ptr<DlVertices> DlVertexPainter::IntoVertices() {
+  auto const result = DlVertices::Make(
+      /*mode=*/DlVertexMode::kTriangles,
+      /*vertex_count=*/vertices_.size(),
+      /*vertices=*/vertices_.data(),
+      /*texture_coordinates=*/nullptr,
+      /*colors=*/colors_.data());
+  vertices_.clear();
+  colors_.clear();
+  return result;
 }
 
 }  // namespace flutter

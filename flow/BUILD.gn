@@ -170,6 +170,7 @@ if (enable_unittests) {
       "mutators_stack_unittests.cc",
       "raster_cache_unittests.cc",
       "skia_gpu_object_unittests.cc",
+      "stopwatch_dl_unittests.cc",
       "stopwatch_unittests.cc",
       "surface_frame_unittests.cc",
       "testing/mock_layer_unittests.cc",
