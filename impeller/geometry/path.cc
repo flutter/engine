@@ -61,7 +61,7 @@ void Path::SetConvexity(Convexity value) {
   convexity_ = value;
 }
 
-void Path::ShiftPath(Point shift) {
+void Path::Shift(Point shift) {
   size_t currentIndex = 0;
   for (const auto& component : components_) {
     switch (component.type) {

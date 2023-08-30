@@ -111,7 +111,8 @@ class Path {
 
   void SetContourClosed(bool is_closed);
 
-  void ShiftPath(Point shift);
+  /// @brief Transform the path by the given offset in-place.
+  void Shift(Point shift);
 
   template <class T>
   using Applier = std::function<void(size_t index, const T& component)>;
