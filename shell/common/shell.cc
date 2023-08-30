@@ -779,8 +779,6 @@ DartVM* Shell::GetDartVM() {
   return &vm_;
 }
 
-static constexpr int64_t kFlutterDefaultViewId = 0ll;
-
 // |PlatformView::Delegate|
 void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   TRACE_EVENT0("flutter", "Shell::OnPlatformViewCreated");
