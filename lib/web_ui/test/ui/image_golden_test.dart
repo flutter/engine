@@ -242,21 +242,25 @@ Future<void> testMain() async {
     return data;
   }
 
-  emitImageTests('decodeImageFromPixels_unscaled', () {
-    final Uint8List pixels = generatePixelData(150, 150, (double x, double y) {
-      final double r = sqrt(x * x + y * y);
-      final double theta = atan2(x, y);
-      return ui.Color.fromRGBO(
-        (255 * (sin(r * 10.0) + 1.0) / 2.0).round(),
-        (255 * (sin(theta * 10.0) + 1.0) / 2.0).round(),
-        0,
-        1,
-      );
+  // This API doesn't work in headless Firefox due to requiring WebGL
+  // See https://github.com/flutter/flutter/issues/109265
+  if (!isFirefox) {
+    emitImageTests('decodeImageFromPixels_unscaled', () {
+      final Uint8List pixels = generatePixelData(150, 150, (double x, double y) {
+        final double r = sqrt(x * x + y * y);
+        final double theta = atan2(x, y);
+        return ui.Color.fromRGBO(
+          (255 * (sin(r * 10.0) + 1.0) / 2.0).round(),
+          (255 * (sin(theta * 10.0) + 1.0) / 2.0).round(),
+          0,
+          1,
+        );
+      });
+      final Completer<ui.Image> completer = Completer<ui.Image>();
+      ui.decodeImageFromPixels(pixels, 150, 150, ui.PixelFormat.rgba8888, completer.complete);
+      return completer.future;
     });
-    final Completer<ui.Image> completer = Completer<ui.Image>();
-    ui.decodeImageFromPixels(pixels, 150, 150, ui.PixelFormat.rgba8888, completer.complete);
-    return completer.future;
-  });
+  }
 
   // https://github.com/flutter/flutter/issues/126603
   if (!isHtml) {
