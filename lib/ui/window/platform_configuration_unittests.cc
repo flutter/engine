@@ -26,6 +26,16 @@ namespace {
 
 static constexpr int64_t kImplicitViewId = 0;
 
+static void PostSync(const fml::RefPtr<fml::TaskRunner>& task_runner,
+                     const fml::closure& task) {
+  fml::AutoResetWaitableEvent latch;
+  fml::TaskRunner::RunNowOrPostTask(task_runner, [&latch, &task] {
+    task();
+    latch.Signal();
+  });
+  latch.Wait();
+}
+
 class MockRuntimeDelegate : public RuntimeDelegate {
  public:
   MOCK_METHOD0(ImplicitViewEnabled, bool());
@@ -66,7 +76,9 @@ class MockRuntimeControllerContext {
   MockRuntimeControllerContext(Settings settings,
                                TaskRunners task_runners,
                                RuntimeDelegate& client)
-      : vm_snapshot_(DartSnapshot::VMSnapshotFromSettings(settings)),
+      : settings_(settings),
+        task_runners_(task_runners),
+        vm_snapshot_(DartSnapshot::VMSnapshotFromSettings(settings)),
         isolate_snapshot_(DartSnapshot::IsolateSnapshotFromSettings(settings)),
         vm_(DartVMRef::Create(settings, vm_snapshot_, isolate_snapshot_)) {
     // Always use the `vm_snapshot` and `isolate_snapshot` provided by the
@@ -86,9 +98,26 @@ class MockRuntimeControllerContext {
         UIDartState::Context{task_runners});
   }
 
+  void LaunchRootIsolate(RunConfiguration& configuration,
+                         ViewportMetrics implicit_view_metrics) {
+    PostSync(task_runners_.GetUITaskRunner(), [&]() {
+      bool launch_success = runtime_controller_->LaunchRootIsolate(
+          settings_,                                  //
+          []() {},                                    //
+          configuration.GetEntrypoint(),              //
+          configuration.GetEntrypointLibrary(),       //
+          configuration.GetEntrypointArgs(),          //
+          configuration.TakeIsolateConfiguration());  //
+      ASSERT_TRUE(launch_success);
+      runtime_controller_->AddView(kImplicitViewId, implicit_view_metrics);
+    });
+  }
+
   RuntimeController& GetController() { return *runtime_controller_; }
 
  private:
+  Settings settings_;
+  TaskRunners task_runners_;
   fml::RefPtr<const DartSnapshot> vm_snapshot_;
   fml::RefPtr<const DartSnapshot> isolate_snapshot_;
   DartVMRef vm_;
@@ -102,18 +131,7 @@ using ::testing::_;
 using ::testing::Exactly;
 using ::testing::Return;
 
-class PlatformConfigurationTest : public ShellTest {
- public:
-  void PostSync(const fml::RefPtr<fml::TaskRunner>& task_runner,
-                const fml::closure& task) {
-    fml::AutoResetWaitableEvent latch;
-    fml::TaskRunner::RunNowOrPostTask(task_runner, [&latch, &task] {
-      task();
-      latch.Signal();
-    });
-    latch.Wait();
-  }
-};
+class PlatformConfigurationTest : public ShellTest {};
 
 TEST_F(PlatformConfigurationTest, Initialization) {
   auto message_latch = std::make_shared<fml::AutoResetWaitableEvent>();
@@ -447,21 +465,10 @@ TEST_F(PlatformConfigurationTest, CallingRenderOutOfScopeIsIgnored) {
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("incorrectImmediateRender");
-
-  PostSync(task_runners.GetUITaskRunner(), [&]() {
-    bool launch_success = context->GetController().LaunchRootIsolate(
-        settings,                                   //
-        []() {},                                    //
-        configuration.GetEntrypoint(),              //
-        configuration.GetEntrypointLibrary(),       //
-        configuration.GetEntrypointArgs(),          //
-        configuration.TakeIsolateConfiguration());  //
-    ASSERT_TRUE(launch_success);
-    context->GetController().AddView(
-        kImplicitViewId,
-        ViewportMetrics(/*device_pixel_ratio=*/1.0, /*width=*/20, /*height=*/20,
-                        /*physical_touch_slop=*/2, /*display_id=*/0));
-  });
+  ViewportMetrics implicit_view_metrics(
+      /*device_pixel_ratio=*/1.0, /*width=*/20, /*height=*/20,
+      /*physical_touch_slop=*/2, /*display_id=*/0);
+  context->LaunchRootIsolate(configuration, implicit_view_metrics);
 
   latch.Wait();
 
