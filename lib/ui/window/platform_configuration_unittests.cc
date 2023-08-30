@@ -17,9 +17,6 @@
 #include "flutter/testing/testing.h"
 #include "gmock/gmock.h"
 
-///\note Deprecated MOCK_METHOD macros used until this issue is resolved:
-// https://github.com/google/googletest/issues/2490
-
 namespace flutter {
 
 namespace {
@@ -38,37 +35,59 @@ static void PostSync(const fml::RefPtr<fml::TaskRunner>& task_runner,
 
 class MockRuntimeDelegate : public RuntimeDelegate {
  public:
-  MOCK_METHOD0(ImplicitViewEnabled, bool());
-  MOCK_METHOD0(DefaultRouteName, std::string());
-  MOCK_METHOD1(ScheduleFrame, void(bool));
-  MOCK_METHOD2(Render, void(std::unique_ptr<flutter::LayerTree>, float));
-  MOCK_METHOD2(UpdateSemantics,
-               void(SemanticsNodeUpdates, CustomAccessibilityActionUpdates));
-  MOCK_METHOD1(HandlePlatformMessage, void(std::unique_ptr<PlatformMessage>));
-  MOCK_METHOD0(GetFontCollection, FontCollection&());
-  MOCK_METHOD0(GetAssetManager, std::shared_ptr<AssetManager>());
-  MOCK_METHOD0(OnRootIsolateCreated, void());
-  MOCK_METHOD2(UpdateIsolateDescription, void(const std::string, int64_t));
-  MOCK_METHOD1(SetNeedsReportTimings, void(bool));
-  MOCK_METHOD1(ComputePlatformResolvedLocale,
-               std::unique_ptr<std::vector<std::string>>(
-                   const std::vector<std::string>&));
-  MOCK_METHOD1(RequestDartDeferredLibrary, void(intptr_t));
-  MOCK_CONST_METHOD0(GetPlatformMessageHandler,
-                     std::weak_ptr<PlatformMessageHandler>());
-  MOCK_CONST_METHOD2(GetScaledFontSize,
-                     double(double font_size, int configuration_id));
+  MOCK_METHOD(std::string, DefaultRouteName, (), (override));
+  MOCK_METHOD(void, ScheduleFrame, (bool), (override));
+  MOCK_METHOD(void,
+              Render,
+              (std::unique_ptr<flutter::LayerTree>, float),
+              (override));
+  MOCK_METHOD(void,
+              UpdateSemantics,
+              (SemanticsNodeUpdates, CustomAccessibilityActionUpdates),
+              (override));
+  MOCK_METHOD(void,
+              HandlePlatformMessage,
+              (std::unique_ptr<PlatformMessage>),
+              (override));
+  MOCK_METHOD(FontCollection&, GetFontCollection, (), (override));
+  MOCK_METHOD(std::shared_ptr<AssetManager>, GetAssetManager, (), (override));
+  MOCK_METHOD(void, OnRootIsolateCreated, (), (override));
+  MOCK_METHOD(void,
+              UpdateIsolateDescription,
+              (const std::string, int64_t),
+              (override));
+  MOCK_METHOD(void, SetNeedsReportTimings, (bool), (override));
+  MOCK_METHOD(std::unique_ptr<std::vector<std::string>>,
+              ComputePlatformResolvedLocale,
+              (const std::vector<std::string>&),
+              (override));
+  MOCK_METHOD(void, RequestDartDeferredLibrary, (intptr_t), (override));
+  MOCK_METHOD(std::weak_ptr<PlatformMessageHandler>,
+              GetPlatformMessageHandler,
+              (),
+              (const, override));
+  MOCK_METHOD(void, SendChannelUpdate, (std::string, bool), (override));
+  MOCK_METHOD(double,
+              GetScaledFontSize,
+              (double font_size, int configuration_id),
+              (const, override));
 };
 
 class MockPlatformMessageHandler : public PlatformMessageHandler {
  public:
-  MOCK_METHOD1(HandlePlatformMessage,
-               void(std::unique_ptr<PlatformMessage> message));
-  MOCK_CONST_METHOD0(DoesHandlePlatformMessageOnPlatformThread, bool());
-  MOCK_METHOD2(InvokePlatformMessageResponseCallback,
-               void(int response_id, std::unique_ptr<fml::Mapping> mapping));
-  MOCK_METHOD1(InvokePlatformMessageEmptyResponseCallback,
-               void(int response_id));
+  MOCK_METHOD(void,
+              HandlePlatformMessage,
+              (std::unique_ptr<PlatformMessage> message),
+              (override));
+  MOCK_METHOD(bool DoesHandlePlatformMessageOnPlatformThread,
+              (),
+              (const override));
+  MOCK_METHOD(void InvokePlatformMessageResponseCallback,
+              (int response_id, std::unique_ptr<fml::Mapping> mapping),
+              (override));
+  MOCK_METHOD(void InvokePlatformMessageEmptyResponseCallback,
+              (int response_id),
+              (override));
 };
 
 // A class that can launch a RuntimeController with the specified
@@ -119,7 +138,7 @@ class RuntimeControllerContext {
   RuntimeController& Controller() { return *runtime_controller_; }
 
  private:
-  RuntimeControllerContext(Settings settings,
+  RuntimeControllerContext(const Settings& settings,
                            const TaskRunners& task_runners,
                            RuntimeDelegate& client,
                            DartVMRef vm,
