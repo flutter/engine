@@ -1077,12 +1077,27 @@ external void _callHook(
   Object? arg21,
 ]);
 
+Picture CreateRedBox(Size size) {
+  Paint paint = Paint()
+    ..color = Color.fromARGB(255, 255, 0, 0)
+    ..style = PaintingStyle.fill;
+  PictureRecorder baseRecorder = PictureRecorder();
+  Canvas canvas = Canvas(baseRecorder);
+  canvas.drawRect(Rect.fromLTRB(0.0, 0.0, size.width, size.height), paint);
+  return baseRecorder.endRecording();
+}
+
 @pragma('vm:entry-point')
 @pragma('vm:external-name', 'NotifyNative')
 external void notifyNative();
 
 @pragma('vm:entry-point')
-void renderRule() {
-  print('Done!!');
+void incorrectImmediateRender() {
+  SceneBuilder builder = SceneBuilder();
+  builder.pushOffset(0.0, 0.0);
+  builder.addPicture(Offset(0.0, 0.0), CreateRedBox(Size(2.0, 2.0)));
+  builder.pop();
+  PlatformDispatcher.instance.views.first.render(builder.build());
+  PlatformDispatcher.instance.scheduleFrame();
   notifyNative();
 }

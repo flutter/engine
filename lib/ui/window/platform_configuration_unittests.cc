@@ -11,11 +11,11 @@
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/lib/ui/painting/vertices.h"
-#include "gmock/gmock.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/common/shell_test.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/testing/testing.h"
+#include "gmock/gmock.h"
 
 ///\note Deprecated MOCK_METHOD macros used until this issue is resolved:
 // https://github.com/google/googletest/issues/2490
@@ -23,6 +23,8 @@
 namespace flutter {
 
 namespace {
+
+static constexpr int64_t kImplicitViewId = 0;
 
 class MockRuntimeDelegate : public RuntimeDelegate {
  public:
@@ -58,17 +60,52 @@ class MockPlatformMessageHandler : public PlatformMessageHandler {
   MOCK_METHOD1(InvokePlatformMessageEmptyResponseCallback,
                void(int response_id));
 };
-} // namespace
+
+class MockRuntimeControllerContext {
+ public:
+  MockRuntimeControllerContext(Settings settings,
+                               TaskRunners task_runners,
+                               RuntimeDelegate& client)
+      : vm_snapshot_(DartSnapshot::VMSnapshotFromSettings(settings)),
+        isolate_snapshot_(DartSnapshot::IsolateSnapshotFromSettings(settings)),
+        vm_(DartVMRef::Create(settings, vm_snapshot_, isolate_snapshot_)) {
+    // Always use the `vm_snapshot` and `isolate_snapshot` provided by the
+    // settings to launch the VM.  If the VM is already running, the snapshot
+    // arguments are ignored.
+    FML_CHECK(vm_) << "Must be able to initialize the VM.";
+    if (!isolate_snapshot_) {
+      isolate_snapshot_ = vm_->GetVMData()->GetIsolateSnapshot();
+    }
+    runtime_controller_ = std::make_unique<RuntimeController>(
+        client, &vm_, std::move(isolate_snapshot_),
+        settings.idle_notification_callback,  // idle notification callback
+        flutter::PlatformData(),              // platform data
+        settings.isolate_create_callback,     // isolate create callback
+        settings.isolate_shutdown_callback,   // isolate shutdown callback
+        settings.persistent_isolate_data,     // persistent isolate data
+        UIDartState::Context{task_runners});
+  }
+
+  RuntimeController& GetController() { return *runtime_controller_; }
+
+ private:
+  fml::RefPtr<const DartSnapshot> vm_snapshot_;
+  fml::RefPtr<const DartSnapshot> isolate_snapshot_;
+  DartVMRef vm_;
+  std::unique_ptr<RuntimeController> runtime_controller_;
+};
+}  // namespace
 
 namespace testing {
 
 using ::testing::_;
+using ::testing::Exactly;
 using ::testing::Return;
 
 class PlatformConfigurationTest : public ShellTest {
  public:
   void PostSync(const fml::RefPtr<fml::TaskRunner>& task_runner,
-                      const fml::closure& task) {
+                const fml::closure& task) {
     fml::AutoResetWaitableEvent latch;
     fml::TaskRunner::RunNowOrPostTask(task_runner, [&latch, &task] {
       task();
@@ -389,37 +426,19 @@ TEST_F(PlatformConfigurationTest, SetDartPerformanceMode) {
   DestroyShell(std::move(shell), task_runners);
 }
 
-TEST_F(PlatformConfigurationTest, RenderRules) {
+TEST_F(PlatformConfigurationTest, CallingRenderOutOfScopeIsIgnored) {
   Settings settings = CreateSettingsForFixture();
   TaskRunners task_runners = GetTaskRunnersForFixture();
-
-  // Always use the `vm_snapshot` and `isolate_snapshot` provided by the
-  // settings to launch the VM.  If the VM is already running, the snapshot
-  // arguments are ignored.
-  auto vm_snapshot = DartSnapshot::VMSnapshotFromSettings(settings);
-  auto isolate_snapshot = DartSnapshot::IsolateSnapshotFromSettings(settings);
-  auto vm = DartVMRef::Create(settings, vm_snapshot, isolate_snapshot);
-  FML_CHECK(vm) << "Must be able to initialize the VM.";
-  if (!isolate_snapshot) {
-    isolate_snapshot = vm->GetVMData()->GetIsolateSnapshot();
-  }
 
   MockRuntimeDelegate client;
   auto platform_message_handler =
       std::make_shared<MockPlatformMessageHandler>();
   EXPECT_CALL(client, GetPlatformMessageHandler())
       .WillOnce(Return(platform_message_handler));
+  EXPECT_CALL(client, Render(_, _)).Times(Exactly(0));
 
-  auto runtime_controller = std::make_unique<RuntimeController>(
-    client,
-    &vm,
-    std::move(isolate_snapshot),
-    settings.idle_notification_callback,  // idle notification callback
-    flutter::PlatformData(),                         // platform data
-    settings.isolate_create_callback,     // isolate create callback
-    settings.isolate_shutdown_callback,   // isolate shutdown callback
-    settings.persistent_isolate_data,     // persistent isolate data
-    UIDartState::Context{task_runners});
+  auto context = std::make_unique<MockRuntimeControllerContext>(
+      settings, task_runners, client);
 
   fml::AutoResetWaitableEvent latch;
   AddNativeCallback("NotifyNative", CREATE_NATIVE_ENTRY([&latch](auto args) {
@@ -427,23 +446,26 @@ TEST_F(PlatformConfigurationTest, RenderRules) {
                     }));
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
-  configuration.SetEntrypoint("renderRule");
+  configuration.SetEntrypoint("incorrectImmediateRender");
+
   PostSync(task_runners.GetUITaskRunner(), [&]() {
-    bool launch_success = runtime_controller->LaunchRootIsolate(
-            settings,                                 //
-            []() {},             //
-            configuration.GetEntrypoint(),             //
-            configuration.GetEntrypointLibrary(),      //
-            configuration.GetEntrypointArgs(),         //
-            configuration.TakeIsolateConfiguration());  //
+    bool launch_success = context->GetController().LaunchRootIsolate(
+        settings,                                   //
+        []() {},                                    //
+        configuration.GetEntrypoint(),              //
+        configuration.GetEntrypointLibrary(),       //
+        configuration.GetEntrypointArgs(),          //
+        configuration.TakeIsolateConfiguration());  //
     ASSERT_TRUE(launch_success);
+    context->GetController().AddView(
+        kImplicitViewId,
+        ViewportMetrics(/*device_pixel_ratio=*/1.0, /*width=*/20, /*height=*/20,
+                        /*physical_touch_slop=*/2, /*display_id=*/0));
   });
 
   latch.Wait();
 
-  PostSync(task_runners.GetUITaskRunner(), [&]() {
-    runtime_controller.reset();
-  });
+  PostSync(task_runners.GetUITaskRunner(), [&]() { context.reset(); });
 }
 
 }  // namespace testing
