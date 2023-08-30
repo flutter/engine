@@ -315,12 +315,6 @@ static std::ostream& operator<<(std::ostream& os, const DlFRect& r) {
             << r.right() << ", " << r.bottom();
 }
 
-static std::ostream& operator<<(std::ostream& os, const DlFRRect& r) {
-  return os << "LTRB: "                             //
-            << r.left() << ", " << r.top() << ", "  //
-            << r.right() << ", " << r.bottom();
-}
-
 static std::ostream& operator<<(std::ostream& os, const DlPath& r) {
   return os << "Valid: " << r.is_valid()
             << ", FillType: " << static_cast<int>(r.fill_type())

@@ -63,7 +63,7 @@ class ImageDecoderImpeller final : public ImageDecoder {
 
   static DecompressResult DecompressTexture(
       ImageDescriptor* descriptor,
-      SkISize target_size,
+      DlISize target_size,
       impeller::ISize max_texture_size,
       bool supports_wide_gamut,
       const std::shared_ptr<impeller::Allocator>& allocator);

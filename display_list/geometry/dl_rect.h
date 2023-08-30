@@ -27,8 +27,8 @@ namespace flutter {
 
 #define DL_ONLY_INT_FROM_FLOAT(Type) DL_ONLY_INT_FROM_FLOAT_M(FT, , Type)
 #define DL_ONLY_INT_FROM_FLOAT_M(FT, Modifiers, Type) \
-  template <typename IT = T, typename FT>                 \
-  Modifiers std::enable_if_t<                             \
+  template <typename IT = T, typename FT>             \
+  Modifiers std::enable_if_t<                         \
       std::is_integral_v<IT> && std::is_floating_point_v<FT>, Type>
 
 /// Templated struct for holding an axis-aligned rectangle.
@@ -305,7 +305,7 @@ struct DlTRect {
   /// REMIND: since MakeXYWH already clamps the dimensions to be
   /// non-zero, and since this method produces a new object to hold
   /// its result, perhaps it should be represented as a factory
-  /// method instead. It is rarely used. 
+  /// method instead. It is rarely used.
   [[nodiscard]] constexpr DlTRect Sorted() const {
     T l, r, t, b;
     DL_SORT(l, r, left_, right_);

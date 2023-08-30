@@ -332,24 +332,18 @@ void BM_DrawRRect(benchmark::State& state,
 
   const DlScalar offset = 0.5f;
   const DlScalar multiplier = length / 16.0f;
-  DlFRRect rrect;
+  BouncingRect bounce(DlFRect::MakeWH(length, length),
+                      DlFRect::MakeWH(canvas_size, canvas_size));
 
-  DlFVector set_radii[4];
   for (size_t i = 0; i < 4; i++) {
-    set_radii[i] = radii[i] * multiplier;
+    radii[i] = radii[i] * multiplier;
   }
-  rrect.SetRectRadii(DlFRect::MakeWH(length, length), set_radii);
 
   state.counters["DrawCallCount"] = kRRectsToDraw;
   for (size_t i = 0; i < kRRectsToDraw; i++) {
+    DlFRRect rrect = DlFRRect::MakeRectRadii(bounce.Rect(), radii);
     builder.DrawRRect(rrect, paint);
-    rrect.Offset(offset, offset);
-    if (rrect.rect().right() > canvas_size) {
-      rrect.Offset(-canvas_size, 0);
-    }
-    if (rrect.rect().bottom() > canvas_size) {
-      rrect.Offset(0, -canvas_size);
-    }
+    bounce.Bounce(offset, offset);
   }
   auto display_list = builder.Build();
 
@@ -413,25 +407,22 @@ void BM_DrawDRRect(benchmark::State& state,
 
   const DlScalar offset = 0.5f;
   const DlScalar multiplier = length / 16.0f;
-  DlFRRect rrect, rrect_2;
+  BouncingRect bounce(DlFRect::MakeWH(length, length),
+                      DlFRect::MakeWH(canvas_size, canvas_size));
 
-  DlFVector set_radii[4];
   for (size_t i = 0; i < 4; i++) {
-    set_radii[i] = radii[i] * multiplier;
+    radii[i] = radii[i] * multiplier;
   }
-  rrect.SetRectRadii(DlFRect::MakeWH(length, length), set_radii);
+  // Positive padding values enlarge, so inset_padding is negative
+  DlFVector inset_padding = DlFVector(-0.1f * length, -0.1f * length);
 
   state.counters["DrawCallCount"] = kDRRectsToDraw;
   for (size_t i = 0; i < kDRRectsToDraw; i++) {
-    rrect.Inset(0.1f * length, 0.1f * length, &rrect_2);
-    builder.DrawDRRect(rrect, rrect_2, paint);
-    rrect.Offset(offset, offset);
-    if (rrect.rect().right() > canvas_size) {
-      rrect.Offset(-canvas_size, 0);
-    }
-    if (rrect.rect().bottom() > canvas_size) {
-      rrect.Offset(0, -canvas_size);
-    }
+    DlFRect rect = bounce.Rect();
+    DlFRRect outer = DlFRRect::MakeRectRadii(rect, radii);
+    DlFRRect inner = outer.Padded(inset_padding);
+    builder.DrawDRRect(outer, inner, paint);
+    bounce.Bounce(offset, offset);
   }
   auto display_list = builder.Build();
 

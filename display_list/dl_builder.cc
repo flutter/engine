@@ -732,12 +732,11 @@ void DisplayListBuilder::ClipPath(const DlPath& path,
       this->clipRect(rect, clip_op, is_aa);
       return;
     }
-    DlFRRect rrect;
     if (path.is_oval(&rect)) {
-      rrect.SetOval(rect);
-      this->clipRRect(rrect, clip_op, is_aa);
+      this->clipRRect(DlFRRect::MakeOval(rect), clip_op, is_aa);
       return;
     }
+    DlFRRect rrect;
     if (path.is_rrect(&rrect)) {
       this->clipRRect(rrect, clip_op, is_aa);
       return;

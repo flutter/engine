@@ -41,9 +41,9 @@ class ShellTestPlatformViewVulkan : public ShellTestPlatformView {
     bool IsValid() override;
 
     // |Surface|
-    std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size) override;
+    std::unique_ptr<SurfaceFrame> AcquireFrame(const DlISize& size) override;
 
-    SkMatrix GetRootTransformation() const override;
+    DlTransform GetRootTransformation() const override;
 
     // |Surface|
     GrDirectContext* GetContext() override;

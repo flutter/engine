@@ -129,16 +129,6 @@ static std::ostream& operator<<(std::ostream& os, const DlFRect* rect) {
   return rect ? (os << "&" << *rect) : os << "no rect";
 }
 
-static std::ostream& operator<<(std::ostream& os, const DlFRRect& rrect) {
-  return os << "DlFRRect("
-            << rrect.rect() << ", "
-            << "ul: " << rrect.upper_left_radii() << ", "
-            << "ur: " << rrect.upper_right_radii() << ", "
-            << "lr: " << rrect.lower_right_radii() << ", "
-            << "ll: " << rrect.lower_left_radii()
-            << ")";
-}
-
 static std::ostream& operator<<(std::ostream& os, const DlPath& path) {
   return os << "DlPath("
             << "bounds: " << path.Bounds()

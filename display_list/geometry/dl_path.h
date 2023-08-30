@@ -174,8 +174,8 @@ class DlPath {
       radii[1] = sk_r_rect.radii(SkRRect::kUpperRight_Corner);
       radii[2] = sk_r_rect.radii(SkRRect::kLowerRight_Corner);
       radii[3] = sk_r_rect.radii(SkRRect::kLowerLeft_Corner);
-      r_rect->SetRectRadii(*reinterpret_cast<const DlFRect*>(&sk_r_rect.rect()),
-                           radii);
+      *r_rect = DlFRRect::MakeRectRadii(
+          *reinterpret_cast<const DlFRect*>(&sk_r_rect.rect()), radii);
     }
     return true;
   }

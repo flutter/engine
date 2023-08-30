@@ -448,7 +448,7 @@ std::vector<DisplayListInvocationGroup> CreateAllClipOps() {
             }},
            {1, 64, 1, 64,
             [](DlOpReceiver& r) {
-              r.clipRRect(kTestRRect.MakeOffset(1, 1),
+              r.clipRRect(kTestRRect.Translated(1, 1),
                           DlCanvas::ClipOp::kIntersect, true);
             }},
            {1, 64, 1, 64,
@@ -603,7 +603,7 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
        {
            {1, 56, 1, 56, [](DlOpReceiver& r) { r.drawRRect(kTestRRect); }},
            {1, 56, 1, 56,
-            [](DlOpReceiver& r) { r.drawRRect(kTestRRect.MakeOffset(5, 5)); }},
+            [](DlOpReceiver& r) { r.drawRRect(kTestRRect.Translated(5, 5)); }},
        }},
       {"DrawDRRect",
        {
@@ -611,8 +611,8 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
             [](DlOpReceiver& r) { r.drawDRRect(kTestRRect, kTestInnerRRect); }},
            {1, 112, 1, 112,
             [](DlOpReceiver& r) {
-              r.drawDRRect(kTestRRect.MakeOffset(5, 5),
-                           kTestInnerRRect.MakeOffset(4, 4));
+              r.drawDRRect(kTestRRect.Translated(5, 5),
+                           kTestInnerRRect.Translated(4, 4));
             }},
        }},
       {"DrawPath",

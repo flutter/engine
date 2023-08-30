@@ -31,7 +31,7 @@ RRect DartConverter<flutter::RRect>::FromDart(Dart_Handle value) {
                                  {buffer[8], buffer[9]},
                                  {buffer[10], buffer[11]}};
 
-  result.dl_rrect.SetRectRadii(rect, radii);
+  result.dl_rrect = flutter::DlFRRect::MakeRectRadii(rect, radii);
 
   result.is_null = false;
   return result;

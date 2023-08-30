@@ -147,7 +147,7 @@ static SkAlphaType ChooseCompatibleAlphaType(SkAlphaType type) {
 
 DecompressResult ImageDecoderImpeller::DecompressTexture(
     ImageDescriptor* descriptor,
-    SkISize target_size,
+    DlISize request_size,
     impeller::ISize max_texture_size,
     bool supports_wide_gamut,
     const std::shared_ptr<impeller::Allocator>& allocator) {
@@ -158,10 +158,11 @@ DecompressResult ImageDecoderImpeller::DecompressTexture(
     return DecompressResult{.decode_error = decode_error};
   }
 
-  target_size.set(std::min(static_cast<int32_t>(max_texture_size.width),
-                           target_size.width()),
-                  std::min(static_cast<int32_t>(max_texture_size.height),
-                           target_size.height()));
+  SkISize target_size =
+      SkISize::Make(std::min(static_cast<uint32_t>(max_texture_size.width),
+                             request_size.width()),
+                    std::min(static_cast<uint32_t>(max_texture_size.height),
+                             request_size.height()));
 
   const SkISize source_size = descriptor->image_info().dimensions();
   auto decode_size = source_size;
@@ -500,7 +501,7 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
   concurrent_task_runner_->PostTask(
       [raw_descriptor,                                            //
        context = context_.get(),                                  //
-       target_size = SkISize::Make(target_width, target_height),  //
+       target_size = DlISize(target_width, target_height),  //
        io_runner = runners_.GetIOTaskRunner(),                    //
        result,
        supports_wide_gamut = supports_wide_gamut_,  //

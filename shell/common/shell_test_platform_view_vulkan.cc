@@ -194,9 +194,11 @@ bool ShellTestPlatformViewVulkan::OffScreenSurface::IsValid() {
 
 std::unique_ptr<SurfaceFrame>
 ShellTestPlatformViewVulkan::OffScreenSurface::AcquireFrame(
-    const SkISize& size) {
-  auto image_info = SkImageInfo::Make(size, SkColorType::kRGBA_8888_SkColorType,
-                                      SkAlphaType::kOpaque_SkAlphaType);
+    const DlISize& size) {
+  auto sk_size = SkISize::Make(size.width(), size.height());
+  auto image_info =
+      SkImageInfo::Make(sk_size, SkColorType::kRGBA_8888_SkColorType,
+                        SkAlphaType::kOpaque_SkAlphaType);
   auto surface = SkSurfaces::RenderTarget(context_.get(), skgpu::Budgeted::kNo,
                                           image_info, 0, nullptr);
   SurfaceFrame::SubmitCallback callback = [](const SurfaceFrame&,
@@ -217,11 +219,10 @@ GrDirectContext* ShellTestPlatformViewVulkan::OffScreenSurface::GetContext() {
   return context_.get();
 }
 
-SkMatrix ShellTestPlatformViewVulkan::OffScreenSurface::GetRootTransformation()
+DlTransform
+    ShellTestPlatformViewVulkan::OffScreenSurface::GetRootTransformation()
     const {
-  SkMatrix matrix;
-  matrix.reset();
-  return matrix;
+  return DlTransform();
 }
 
 }  // namespace testing

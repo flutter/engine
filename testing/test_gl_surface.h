@@ -7,6 +7,7 @@
 
 #include <cstdint>
 
+#include "flutter/display_list/geometry/dl_size.h"
 #include "flutter/fml/macros.h"
 
 #include "third_party/skia/include/core/SkSurface.h"
@@ -17,11 +18,11 @@ namespace testing {
 
 class TestGLSurface {
  public:
-  explicit TestGLSurface(SkISize surface_size);
+  explicit TestGLSurface(DlISize surface_size);
 
   ~TestGLSurface();
 
-  const SkISize& GetSurfaceSize() const;
+  const DlISize& GetSurfaceSize() const;
 
   bool MakeCurrent();
 
@@ -54,7 +55,7 @@ class TestGLSurface {
   using EGLContext = void*;
   using EGLSurface = void*;
 
-  const SkISize surface_size_;
+  const DlISize surface_size_;
   EGLDisplay display_;
   EGLContext onscreen_context_;
   EGLContext offscreen_context_;

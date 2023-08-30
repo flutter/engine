@@ -39,7 +39,7 @@ TEST(DlRectTest, IRectEmptyDeclaration) {
   // ASSERT_TRUE(rect.is_finite());  // should fail to compile
 }
 
-TEST(DlRectTest, FRectDefaultDeclaration) {
+TEST(DlRectTest, FRectDefaultConstructor) {
   DlFRect rect = DlFRect();
 
   ASSERT_EQ(rect.left(), 0.0f);
@@ -54,7 +54,7 @@ TEST(DlRectTest, FRectDefaultDeclaration) {
   ASSERT_TRUE(rect.is_finite());
 }
 
-TEST(DlRectTest, IRectDefaultDeclaration) {
+TEST(DlRectTest, IRectDefaultConstructor) {
   DlIRect rect = DlIRect();
 
   ASSERT_EQ(rect.left(), 0);
@@ -179,7 +179,7 @@ TEST(DlRectTest, IRectDoesNotIntersectEmpty) {
   test(20, 120, 30, 130, "Below and Left");
   test(20, 70, 30, 80, "Left");
 
-  test(70, 80, 70, 80, "Inside");
+  test(70, 70, 80, 80, "Inside");
 
   test(40, 70, 60, 80, "Straddling Left");
   test(70, 40, 80, 60, "Straddling Top");
@@ -209,7 +209,7 @@ TEST(DlRectTest, FRectDoesNotIntersectEmpty) {
   test(20, 120, 30, 130, "Below and Left");
   test(20, 70, 30, 80, "Left");
 
-  test(70, 80, 70, 80, "Inside");
+  test(70, 70, 80, 80, "Inside");
 
   test(40, 70, 60, 80, "Straddling Left");
   test(70, 40, 80, 60, "Straddling Top");
@@ -239,7 +239,7 @@ TEST(DlRectTest, EmptyIRectDoesNotIntersect) {
   test(20, 120, 30, 130, "Below and Left");
   test(20, 70, 30, 80, "Left");
 
-  test(70, 80, 70, 80, "Inside");
+  test(70, 70, 80, 80, "Inside");
 
   test(40, 70, 60, 80, "Straddling Left");
   test(70, 40, 80, 60, "Straddling Top");
@@ -269,7 +269,7 @@ TEST(DlRectTest, EmptyFRectDoesNotIntersect) {
   test(20, 120, 30, 130, "Below and Left");
   test(20, 70, 30, 80, "Left");
 
-  test(70, 80, 70, 80, "Inside");
+  test(70, 70, 80, 80, "Inside");
 
   test(40, 70, 60, 80, "Straddling Left");
   test(70, 40, 80, 60, "Straddling Top");
