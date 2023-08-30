@@ -65,6 +65,9 @@ class HtmlViewEmbedder {
   /// The most recent composition order.
   final List<int> _activeCompositionOrder = <int>[];
 
+  /// The most recent overlay groups.
+  List<OverlayGroup> _activeOverlayGroups = <OverlayGroup>[];
+
   /// The size of the frame, in physical pixels.
   ui.Size _frameSize = ui.window.physicalSize;
 
@@ -365,6 +368,9 @@ class HtmlViewEmbedder {
             ? null
             : diffViewList(_activeCompositionOrder, _compositionOrder);
     final List<OverlayGroup>? overlayGroups = _updateOverlays(diffResult);
+    if (overlayGroups != null) {
+      _activeOverlayGroups = overlayGroups;
+    }
     assert(
       _context.pictureRecorders.length >= _overlays.length,
       'There should at least as many picture recorders '
@@ -372,20 +378,16 @@ class HtmlViewEmbedder {
     );
 
     int pictureRecorderIndex = 0;
-    if (overlayGroups != null) {
-      for (final OverlayGroup overlayGroup in overlayGroups) {
-        final RenderCanvas overlay = _overlays[overlayGroup.last]!;
-        final List<CkPicture> pictures = <CkPicture>[];
-        for (int i = 0; i < overlayGroup.visibleCount; i++) {
-          pictures.add(
-              _context.pictureRecorders[pictureRecorderIndex].endRecording());
-          pictureRecorderIndex++;
-        }
-        CanvasKitRenderer.instance.rasterizer
-            .rasterizeToCanvas(overlay, pictures);
+    for (final OverlayGroup overlayGroup in _activeOverlayGroups) {
+      final RenderCanvas overlay = _overlays[overlayGroup.last]!;
+      final List<CkPicture> pictures = <CkPicture>[];
+      for (int i = 0; i < overlayGroup.visibleCount; i++) {
+        pictures.add(
+            _context.pictureRecorders[pictureRecorderIndex].endRecording());
+        pictureRecorderIndex++;
       }
-    } else {
-      // The overlay groups are null, so it's the same as before.
+      CanvasKitRenderer.instance.rasterizer
+          .rasterizeToCanvas(overlay, pictures);
     }
     for (final CkPictureRecorder recorder
         in _context.pictureRecordersCreatedDuringPreroll) {
