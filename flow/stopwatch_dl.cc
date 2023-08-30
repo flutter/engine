@@ -17,9 +17,6 @@ namespace flutter {
 static const size_t kMaxSamples = 120;
 static const size_t kMaxFrameMarkers = 8;
 
-// FIXME: Clean up this method in general, including all the functions and
-// as-needed split into multiple methods and give better names and comments
-// to everything.
 void DlStopwatchVisualizer::Visualize(DlCanvas* canvas,
                                       const SkRect& rect) const {
   auto painter = DlVertexPainter();
