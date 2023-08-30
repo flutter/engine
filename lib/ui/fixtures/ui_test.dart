@@ -1076,3 +1076,13 @@ external void _callHook(
   Object? arg20,
   Object? arg21,
 ]);
+
+@pragma('vm:entry-point')
+@pragma('vm:external-name', 'NotifyNative')
+external void notifyNative();
+
+@pragma('vm:entry-point')
+void renderRule() {
+  print('Done!!');
+  notifyNative();
+}

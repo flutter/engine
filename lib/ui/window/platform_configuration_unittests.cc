@@ -11,15 +11,72 @@
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/lib/ui/painting/vertices.h"
+#include "gmock/gmock.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/common/shell_test.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/testing/testing.h"
 
+///\note Deprecated MOCK_METHOD macros used until this issue is resolved:
+// https://github.com/google/googletest/issues/2490
+
 namespace flutter {
+
+namespace {
+
+class MockRuntimeDelegate : public RuntimeDelegate {
+ public:
+  MOCK_METHOD0(ImplicitViewEnabled, bool());
+  MOCK_METHOD0(DefaultRouteName, std::string());
+  MOCK_METHOD1(ScheduleFrame, void(bool));
+  MOCK_METHOD2(Render, void(std::unique_ptr<flutter::LayerTree>, float));
+  MOCK_METHOD2(UpdateSemantics,
+               void(SemanticsNodeUpdates, CustomAccessibilityActionUpdates));
+  MOCK_METHOD1(HandlePlatformMessage, void(std::unique_ptr<PlatformMessage>));
+  MOCK_METHOD0(GetFontCollection, FontCollection&());
+  MOCK_METHOD0(GetAssetManager, std::shared_ptr<AssetManager>());
+  MOCK_METHOD0(OnRootIsolateCreated, void());
+  MOCK_METHOD2(UpdateIsolateDescription, void(const std::string, int64_t));
+  MOCK_METHOD1(SetNeedsReportTimings, void(bool));
+  MOCK_METHOD1(ComputePlatformResolvedLocale,
+               std::unique_ptr<std::vector<std::string>>(
+                   const std::vector<std::string>&));
+  MOCK_METHOD1(RequestDartDeferredLibrary, void(intptr_t));
+  MOCK_CONST_METHOD0(GetPlatformMessageHandler,
+                     std::weak_ptr<PlatformMessageHandler>());
+  MOCK_CONST_METHOD2(GetScaledFontSize,
+                     double(double font_size, int configuration_id));
+};
+
+class MockPlatformMessageHandler : public PlatformMessageHandler {
+ public:
+  MOCK_METHOD1(HandlePlatformMessage,
+               void(std::unique_ptr<PlatformMessage> message));
+  MOCK_CONST_METHOD0(DoesHandlePlatformMessageOnPlatformThread, bool());
+  MOCK_METHOD2(InvokePlatformMessageResponseCallback,
+               void(int response_id, std::unique_ptr<fml::Mapping> mapping));
+  MOCK_METHOD1(InvokePlatformMessageEmptyResponseCallback,
+               void(int response_id));
+};
+} // namespace
+
 namespace testing {
 
-class PlatformConfigurationTest : public ShellTest {};
+using ::testing::_;
+using ::testing::Return;
+
+class PlatformConfigurationTest : public ShellTest {
+ public:
+  void PostSync(const fml::RefPtr<fml::TaskRunner>& task_runner,
+                      const fml::closure& task) {
+    fml::AutoResetWaitableEvent latch;
+    fml::TaskRunner::RunNowOrPostTask(task_runner, [&latch, &task] {
+      task();
+      latch.Signal();
+    });
+    latch.Wait();
+  }
+};
 
 TEST_F(PlatformConfigurationTest, Initialization) {
   auto message_latch = std::make_shared<fml::AutoResetWaitableEvent>();
@@ -330,6 +387,63 @@ TEST_F(PlatformConfigurationTest, SetDartPerformanceMode) {
 
   message_latch->Wait();
   DestroyShell(std::move(shell), task_runners);
+}
+
+TEST_F(PlatformConfigurationTest, RenderRules) {
+  Settings settings = CreateSettingsForFixture();
+  TaskRunners task_runners = GetTaskRunnersForFixture();
+
+  // Always use the `vm_snapshot` and `isolate_snapshot` provided by the
+  // settings to launch the VM.  If the VM is already running, the snapshot
+  // arguments are ignored.
+  auto vm_snapshot = DartSnapshot::VMSnapshotFromSettings(settings);
+  auto isolate_snapshot = DartSnapshot::IsolateSnapshotFromSettings(settings);
+  auto vm = DartVMRef::Create(settings, vm_snapshot, isolate_snapshot);
+  FML_CHECK(vm) << "Must be able to initialize the VM.";
+  if (!isolate_snapshot) {
+    isolate_snapshot = vm->GetVMData()->GetIsolateSnapshot();
+  }
+
+  MockRuntimeDelegate client;
+  auto platform_message_handler =
+      std::make_shared<MockPlatformMessageHandler>();
+  EXPECT_CALL(client, GetPlatformMessageHandler())
+      .WillOnce(Return(platform_message_handler));
+
+  auto runtime_controller = std::make_unique<RuntimeController>(
+    client,
+    &vm,
+    std::move(isolate_snapshot),
+    settings.idle_notification_callback,  // idle notification callback
+    flutter::PlatformData(),                         // platform data
+    settings.isolate_create_callback,     // isolate create callback
+    settings.isolate_shutdown_callback,   // isolate shutdown callback
+    settings.persistent_isolate_data,     // persistent isolate data
+    UIDartState::Context{task_runners});
+
+  fml::AutoResetWaitableEvent latch;
+  AddNativeCallback("NotifyNative", CREATE_NATIVE_ENTRY([&latch](auto args) {
+                      latch.Signal();
+                    }));
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("renderRule");
+  PostSync(task_runners.GetUITaskRunner(), [&]() {
+    bool launch_success = runtime_controller->LaunchRootIsolate(
+            settings,                                 //
+            []() {},             //
+            configuration.GetEntrypoint(),             //
+            configuration.GetEntrypointLibrary(),      //
+            configuration.GetEntrypointArgs(),         //
+            configuration.TakeIsolateConfiguration());  //
+    ASSERT_TRUE(launch_success);
+  });
+
+  latch.Wait();
+
+  PostSync(task_runners.GetUITaskRunner(), [&]() {
+    runtime_controller.reset();
+  });
 }
 
 }  // namespace testing
