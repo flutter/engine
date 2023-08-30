@@ -64,14 +64,6 @@ void DlStopwatchVisualizer::Visualize(DlCanvas* canvas,
   auto const max_unit_interval = UnitFrameInterval(max_interval);
   auto const sample_unit_width = (1.0 / kMaxSamples);
 
-  // Determine how many lines to draw.
-  auto horizontal_markers = static_cast<size_t>(max_interval / one_frame_ms);
-
-  // Limit the number of markers to a reasonable amount.
-  if (horizontal_markers > kMaxFrameMarkers) {
-    horizontal_markers = 1;
-  }
-
   // Provide a semi-transparent background for the graph.
   painter.DrawRect(rect, 0x99FFFFFF);
 
