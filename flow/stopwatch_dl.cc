@@ -6,6 +6,7 @@
 #include "display_list/dl_blend_mode.h"
 #include "display_list/dl_canvas.h"
 #include "display_list/dl_paint.h"
+#include "include/core/SkPath.h"
 #include "include/core/SkRect.h"
 
 namespace flutter {
@@ -32,27 +33,44 @@ void DlStopwatchVisualizer::Visualize(DlCanvas* canvas,
   // Erase all pixels.
   {
     paint.setColor(0x99FFFFFF);
-    paint.setBlendMode(DlBlendMode::kSrc);
     canvas->DrawRect(rect, paint);
   }
 
-  // Draw blue timing bars.
-  //
-  // Unlike the Skia version, we redraw the entire graph every time, since
-  // the Impeller backend is less sensitive to overdraw.
+  // Prepare a path for the data; we start at the height of the last point so
+  // it looks like we wrap around.
   {
-    paint.setColor(0xAA0000FF);
-    paint.setBlendMode(DlBlendMode::kSrcOver);
+    SkPath path;
+    path.setIsVolatile(true);
+    path.moveTo(x, height);
+    path.lineTo(
+        x,
+        y + height * (1.0 - (UnitHeight(stopwatch_.GetLap(0).ToMillisecondsF(),
+                                        max_unit_interval))));
 
+    double unit_x;
+    double next_x = 0.0;
     for (auto i = size_t(0); i < stopwatch_.GetLapsCount(); i++) {
-      auto const l = x * width * (static_cast<double>(i) / kMaxSamples);
-      auto const t = y * height *
-                     (1.0 - (UnitHeight(stopwatch_.GetLap(i).ToMillisecondsF(),
-                                        max_unit_interval)));
-      auto const r = l + width * sample_unit_width;
-      auto const b = height;
-      canvas->DrawRect(SkRect::MakeLTRB(l, t, r, b), paint);
+      unit_x = next_x;
+      next_x = static_cast<double>(i + 1) / kMaxSamples;
+
+      auto const unit_y =
+          y + height * (1.0 - UnitHeight(stopwatch_.GetLap(i).ToMillisecondsF(),
+                                         max_unit_interval));
+      path.lineTo(x + width * unit_x, unit_y);
+      path.lineTo(x + width * next_x, unit_y);
     }
+
+    path.lineTo(
+        width,
+        y + height *
+                (1.0 - UnitHeight(
+                           stopwatch_.GetLap(kMaxSamples - 1).ToMillisecondsF(),
+                           max_unit_interval)));
+    path.lineTo(width, height);
+    path.close();
+
+    paint.setColor(0xAA0000FF);
+    canvas->DrawPath(path, paint);
   }
 
   // Draw horizontal frame markers.
