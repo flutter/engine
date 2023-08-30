@@ -21,7 +21,7 @@ static bool DeviceSupportsFramebufferFetch(id<MTLDevice> device) {
   // The iOS simulator lies about supporting framebuffer fetch.
 #if FML_OS_IOS_SIMULATOR
   return false;
-#endif  // FML_OS_IOS_SIMULATOR
+#else  // FML_OS_IOS_SIMULATOR
 
   if (@available(macOS 10.15, iOS 13, tvOS 13, *)) {
     return [device supportsFamily:MTLGPUFamilyApple2];
@@ -34,6 +34,7 @@ static bool DeviceSupportsFramebufferFetch(id<MTLDevice> device) {
 #else
   return false;
 #endif  // FML_OS_IOS
+#endif  // FML_OS_IOS_SIMULATOR
 }
 
 static bool DeviceSupportsComputeSubgroups(id<MTLDevice> device) {
@@ -51,20 +52,20 @@ static std::unique_ptr<Capabilities> InferMetalCapabilities(
     id<MTLDevice> device,
     PixelFormat color_format) {
   return CapabilitiesBuilder()
-      .SetHasThreadingRestrictions(false)
       .SetSupportsOffscreenMSAA(true)
       .SetSupportsSSBO(true)
       .SetSupportsBufferToTextureBlits(true)
       .SetSupportsTextureToTextureBlits(true)
-      .SetSupportsDecalTileMode(true)
+      .SetSupportsDecalSamplerAddressMode(true)
       .SetSupportsFramebufferFetch(DeviceSupportsFramebufferFetch(device))
       .SetDefaultColorFormat(color_format)
       .SetDefaultStencilFormat(PixelFormat::kS8UInt)
+      .SetDefaultDepthStencilFormat(PixelFormat::kD32FloatS8UInt)
       .SetSupportsCompute(true)
       .SetSupportsComputeSubgroups(DeviceSupportsComputeSubgroups(device))
       .SetSupportsReadFromResolve(true)
       .SetSupportsReadFromOnscreenTexture(true)
-      .SetSupportsMemorylessTextures(true)
+      .SetSupportsDeviceTransientTextures(true)
       .Build();
 }
 

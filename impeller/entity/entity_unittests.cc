@@ -44,12 +44,13 @@
 #include "impeller/geometry/sigma.h"
 #include "impeller/playground/playground.h"
 #include "impeller/playground/widgets.h"
+#include "impeller/renderer/command.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 #include "impeller/runtime_stage/runtime_stage.h"
 #include "impeller/tessellator/tessellator.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
-#include "impeller/typographer/backends/skia/text_render_context_skia.h"
+#include "impeller/typographer/backends/skia/typographer_context_skia.h"
 #include "include/core/SkBlendMode.h"
 #include "third_party/imgui/imgui.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
@@ -868,7 +869,7 @@ TEST_P(EntityTest, BlendingModeOptions) {
       }
 
       Command cmd;
-      cmd.label = "Blended Rectangle";
+      DEBUG_COMMAND_INFO(cmd, "Blended Rectangle");
       auto options = OptionsFromPass(pass);
       options.blend_mode = blend_mode;
       options.primitive_type = PrimitiveType::kTriangle;
@@ -2173,12 +2174,13 @@ TEST_P(EntityTest, InheritOpacityTest) {
   SkFont font;
   font.setSize(30);
   auto blob = SkTextBlob::MakeFromString("A", font);
-  auto frame = TextFrameFromTextBlob(blob);
-  auto lazy_glyph_atlas = std::make_shared<LazyGlyphAtlas>();
+  auto frame = MakeTextFrameFromTextBlobSkia(blob).value();
+  auto lazy_glyph_atlas =
+      std::make_shared<LazyGlyphAtlas>(TypographerContextSkia::Make());
   lazy_glyph_atlas->AddTextFrame(frame, 1.0f);
 
   auto text_contents = std::make_shared<TextContents>();
-  text_contents->SetTextFrame(frame);
+  text_contents->SetTextFrame(std::move(frame));
   text_contents->SetColor(Color::Blue().WithAlpha(0.5));
 
   ASSERT_TRUE(text_contents->CanInheritOpacity(entity));

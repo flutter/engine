@@ -24,6 +24,10 @@ Color SolidColorContents::GetColor() const {
   return color_.WithAlpha(color_.alpha * GetOpacityFactor());
 }
 
+bool SolidColorContents::IsSolidColor() const {
+  return true;
+}
+
 bool SolidColorContents::IsOpaque() const {
   return GetColor().IsOpaque();
 }
@@ -41,22 +45,15 @@ std::optional<Rect> SolidColorContents::GetCoverage(
   return geometry->GetCoverage(entity.GetTransformation());
 };
 
-bool SolidColorContents::ShouldRender(
-    const Entity& entity,
-    const std::optional<Rect>& stencil_coverage) const {
-  if (!stencil_coverage.has_value()) {
-    return false;
-  }
-  return Contents::ShouldRender(entity, stencil_coverage);
-}
-
 bool SolidColorContents::Render(const ContentContext& renderer,
                                 const Entity& entity,
                                 RenderPass& pass) const {
+  auto capture = entity.GetCapture().CreateChild("SolidColorContents");
+
   using VS = SolidFillPipeline::VertexShader;
 
   Command cmd;
-  cmd.label = "Solid Fill";
+  DEBUG_COMMAND_INFO(cmd, "Solid Fill");
   cmd.stencil_reference = entity.GetStencilDepth();
 
   auto geometry_result =
@@ -73,8 +70,8 @@ bool SolidColorContents::Render(const ContentContext& renderer,
   cmd.BindVertices(geometry_result.vertex_buffer);
 
   VS::FrameInfo frame_info;
-  frame_info.mvp = geometry_result.transform;
-  frame_info.color = GetColor().Premultiply();
+  frame_info.mvp = capture.AddMatrix("Transform", geometry_result.transform);
+  frame_info.color = capture.AddColor("Color", GetColor()).Premultiply();
   VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
   if (!pass.AddCommand(std::move(cmd))) {

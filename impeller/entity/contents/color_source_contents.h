@@ -90,12 +90,10 @@ class ColorSourceContents : public Contents {
   ///
   Scalar GetOpacityFactor() const;
 
-  // |Contents|
-  std::optional<Rect> GetCoverage(const Entity& entity) const override;
+  virtual bool IsSolidColor() const;
 
   // |Contents|
-  bool ShouldRender(const Entity& entity,
-                    const std::optional<Rect>& stencil_coverage) const override;
+  std::optional<Rect> GetCoverage(const Entity& entity) const override;
 
   // |Contents|
   bool CanInheritOpacity(const Entity& entity) const override;

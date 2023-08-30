@@ -155,8 +155,6 @@ source_set("ui") {
     "window/pointer_data_packet_converter.h",
     "window/viewport_metrics.cc",
     "window/viewport_metrics.h",
-    "window/window.cc",
-    "window/window.h",
   ]
 
   public_configs = [ "//flutter:config" ]
@@ -214,12 +212,6 @@ source_set("ui") {
       "painting/scene/scene_node.h",
       "painting/scene/scene_shader.cc",
       "painting/scene/scene_shader.h",
-    ]
-
-    # Experimental "Impeller Dart" API.
-    sources += [
-      "gpu/context.cc",
-      "gpu/context.h",
     ]
 
     deps += [ "//flutter/impeller/scene" ]

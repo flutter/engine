@@ -119,6 +119,7 @@ struct TexImage2DData {
         break;
       case PixelFormat::kUnknown:
       case PixelFormat::kS8UInt:
+      case PixelFormat::kD24UnormS8Uint:
       case PixelFormat::kD32FloatS8UInt:
       case PixelFormat::kR8UNormInt:
       case PixelFormat::kR8G8UNormInt:
@@ -167,6 +168,7 @@ struct TexImage2DData {
       case PixelFormat::kB8G8R8A8UNormInt:
       case PixelFormat::kB8G8R8A8UNormIntSRGB:
       case PixelFormat::kS8UInt:
+      case PixelFormat::kD24UnormS8Uint:
       case PixelFormat::kD32FloatS8UInt:
       case PixelFormat::kR8UNormInt:
       case PixelFormat::kR8G8UNormInt:
@@ -246,6 +248,10 @@ bool TextureGLES::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
       texture_type = GL_TEXTURE_CUBE_MAP;
       texture_target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + slice;
       break;
+    case TextureType::kTextureExternalOES:
+      texture_type = GL_TEXTURE_EXTERNAL_OES;
+      texture_target = GL_TEXTURE_EXTERNAL_OES;
+      break;
   }
 
   auto data = std::make_shared<TexImage2DData>(tex_descriptor.format,
@@ -310,6 +316,8 @@ static std::optional<GLenum> ToRenderBufferFormat(PixelFormat format) {
       return GL_RGBA16F;
     case PixelFormat::kS8UInt:
       return GL_STENCIL_INDEX8;
+    case PixelFormat::kD24UnormS8Uint:
+      return GL_DEPTH24_STENCIL8;
     case PixelFormat::kD32FloatS8UInt:
       return GL_DEPTH32F_STENCIL8;
     case PixelFormat::kUnknown:
@@ -440,6 +448,8 @@ bool TextureGLES::GenerateMipmap() {
       return false;
     case TextureType::kTextureCube:
       break;
+    case TextureType::kTextureExternalOES:
+      break;
   }
 
   if (!Bind()) {
@@ -506,10 +516,10 @@ bool TextureGLES::SetAsFramebufferAttachment(GLenum target,
 
 // |Texture|
 Scalar TextureGLES::GetYCoordScale() const {
-  switch (GetIntent()) {
-    case TextureIntent::kUploadFromHost:
+  switch (GetCoordinateSystem()) {
+    case TextureCoordinateSystem::kUploadFromHost:
       return 1.0;
-    case TextureIntent::kRenderToTexture:
+    case TextureCoordinateSystem::kRenderToTexture:
       return -1.0;
   }
   FML_UNREACHABLE();

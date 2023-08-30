@@ -6,7 +6,6 @@
 
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
-#include "impeller/base/validation.h"
 
 #define VK_NO_PROTOTYPES
 
@@ -64,6 +63,8 @@
 #define VULKAN_HPP_NAMESPACE impeller::vk
 #define VULKAN_HPP_ASSERT_ON_RESULT(ignored) \
   { [[maybe_unused]] auto res = (ignored); }
-#include "vulkan/vulkan.hpp"
+#define VULKAN_HPP_NO_EXCEPTIONS
+
+#include "vulkan/vulkan.hpp"  // IWYU pragma: keep.
 
 static_assert(VK_HEADER_VERSION >= 215, "Vulkan headers must not be too old.");

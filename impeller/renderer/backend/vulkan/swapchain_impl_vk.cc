@@ -10,10 +10,16 @@
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_vk.h"
 #include "impeller/renderer/backend/vulkan/swapchain_image_vk.h"
+#include "vulkan/vulkan_structs.hpp"
 
 namespace impeller {
 
 static constexpr size_t kMaxFramesInFlight = 3u;
+
+// Number of frames to poll for orientation changes. For example `1u` means
+// that the orientation will be polled every frame, while `2u` means that the
+// orientation will be polled every other frame.
+static constexpr size_t kPollFramesForOrientation = 1u;
 
 struct FrameSynchronizer {
   vk::UniqueFence acquire;
@@ -124,16 +130,17 @@ static std::optional<vk::Queue> ChoosePresentQueue(
 std::shared_ptr<SwapchainImplVK> SwapchainImplVK::Create(
     const std::shared_ptr<Context>& context,
     vk::UniqueSurfaceKHR surface,
-    bool was_rotated,
-    vk::SwapchainKHR old_swapchain) {
+    vk::SwapchainKHR old_swapchain,
+    vk::SurfaceTransformFlagBitsKHR last_transform) {
   return std::shared_ptr<SwapchainImplVK>(new SwapchainImplVK(
-      context, std::move(surface), was_rotated, old_swapchain));
+      context, std::move(surface), old_swapchain, last_transform));
 }
 
-SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
-                                 vk::UniqueSurfaceKHR surface,
-                                 bool was_rotated,
-                                 vk::SwapchainKHR old_swapchain) {
+SwapchainImplVK::SwapchainImplVK(
+    const std::shared_ptr<Context>& context,
+    vk::UniqueSurfaceKHR surface,
+    vk::SwapchainKHR old_swapchain,
+    vk::SurfaceTransformFlagBitsKHR last_transform) {
   if (!context) {
     return;
   }
@@ -278,8 +285,7 @@ SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
   synchronizers_ = std::move(synchronizers);
   current_frame_ = synchronizers_.size() - 1u;
   is_valid_ = true;
-  was_rotated_ = was_rotated;
-  is_rotated_ = was_rotated;
+  transform_if_changed_discard_swapchain_ = last_transform;
 }
 
 SwapchainImplVK::~SwapchainImplVK() {
@@ -311,6 +317,10 @@ vk::Format SwapchainImplVK::GetSurfaceFormat() const {
   return surface_format_;
 }
 
+vk::SurfaceTransformFlagBitsKHR SwapchainImplVK::GetLastTransform() const {
+  return transform_if_changed_discard_swapchain_;
+}
+
 std::shared_ptr<Context> SwapchainImplVK::GetContext() const {
   return context_.lock();
 }
@@ -319,10 +329,6 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
   auto context_strong = context_.lock();
   if (!context_strong) {
     return {};
-  }
-
-  if (was_rotated_ != is_rotated_) {
-    return AcquireResult{true /* out of date */};
   }
 
   const auto& context = ContextVK::Cast(*context_strong);
@@ -340,25 +346,41 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
   }
 
   //----------------------------------------------------------------------------
+  /// Poll to see if the orientation has changed.
+  ///
+  /// https://developer.android.com/games/optimize/vulkan-prerotation#using_polling
+  current_transform_poll_count_++;
+  if (current_transform_poll_count_ >= kPollFramesForOrientation) {
+    current_transform_poll_count_ = 0u;
+    auto [caps_result, caps] =
+        context.GetPhysicalDevice().getSurfaceCapabilitiesKHR(*surface_);
+    if (caps_result != vk::Result::eSuccess) {
+      VALIDATION_LOG << "Could not get surface capabilities: "
+                     << vk::to_string(caps_result);
+      return {};
+    }
+    if (caps.currentTransform != transform_if_changed_discard_swapchain_) {
+      transform_if_changed_discard_swapchain_ = caps.currentTransform;
+      return AcquireResult{true /* out of date */};
+    }
+  }
+
+  //----------------------------------------------------------------------------
   /// Get the next image index.
   ///
   auto [acq_result, index] = context.GetDevice().acquireNextImageKHR(
-      *swapchain_,                           // swapchain
-      std::numeric_limits<uint64_t>::max(),  // timeout (nanoseconds)
-      *sync->render_ready,                   // signal semaphore
-      nullptr                                // fence
+      *swapchain_,          // swapchain
+      1'000'000'000,        // timeout (ns) 1000ms
+      *sync->render_ready,  // signal semaphore
+      nullptr               // fence
   );
-
-  if (acq_result == vk::Result::eSuboptimalKHR) {
-    is_rotated_ = true;
-    return AcquireResult{true /* out of date */};
-  }
 
   if (acq_result == vk::Result::eErrorOutOfDateKHR) {
     return AcquireResult{true /* out of date */};
   }
 
-  if (acq_result != vk::Result::eSuccess) {
+  if (acq_result != vk::Result::eSuccess &&
+      acq_result != vk::Result::eSuboptimalKHR) {
     VALIDATION_LOG << "Could not acquire next swapchain image: "
                    << vk::to_string(acq_result);
     return {};
@@ -392,96 +414,102 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
   }
 
   const auto& context = ContextVK::Cast(*context_strong);
-  context.GetConcurrentWorkerTaskRunner()->PostTask(
-      [&, index, image, current_frame = current_frame_] {
-        auto context_strong = context_.lock();
-        if (!context_strong) {
-          return;
-        }
-        const auto& context = ContextVK::Cast(*context_strong);
-        const auto& sync = synchronizers_[current_frame];
+  const auto& sync = synchronizers_[current_frame_];
 
-        //----------------------------------------------------------------------------
-        /// Transition the image to color-attachment-optimal.
-        ///
-        sync->final_cmd_buffer = context.CreateCommandBuffer();
-        if (!sync->final_cmd_buffer) {
-          return;
-        }
+  //----------------------------------------------------------------------------
+  /// Transition the image to color-attachment-optimal.
+  ///
+  sync->final_cmd_buffer = context.CreateCommandBuffer();
+  if (!sync->final_cmd_buffer) {
+    return false;
+  }
 
-        auto vk_final_cmd_buffer =
-            CommandBufferVK::Cast(*sync->final_cmd_buffer)
-                .GetEncoder()
-                ->GetCommandBuffer();
-        {
-          BarrierVK barrier;
-          barrier.new_layout = vk::ImageLayout::ePresentSrcKHR;
-          barrier.cmd_buffer = vk_final_cmd_buffer;
-          barrier.src_access = vk::AccessFlagBits::eColorAttachmentWrite;
-          barrier.src_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-          barrier.dst_access = {};
-          barrier.dst_stage = vk::PipelineStageFlagBits::eBottomOfPipe;
+  auto vk_final_cmd_buffer = CommandBufferVK::Cast(*sync->final_cmd_buffer)
+                                 .GetEncoder()
+                                 ->GetCommandBuffer();
+  {
+    BarrierVK barrier;
+    barrier.new_layout = vk::ImageLayout::ePresentSrcKHR;
+    barrier.cmd_buffer = vk_final_cmd_buffer;
+    barrier.src_access = vk::AccessFlagBits::eColorAttachmentWrite;
+    barrier.src_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    barrier.dst_access = {};
+    barrier.dst_stage = vk::PipelineStageFlagBits::eBottomOfPipe;
 
-          if (!image->SetLayout(barrier)) {
-            return;
-          }
+    if (!image->SetLayout(barrier).ok()) {
+      return false;
+    }
 
-          if (vk_final_cmd_buffer.end() != vk::Result::eSuccess) {
-            return;
-          }
-        }
+    if (vk_final_cmd_buffer.end() != vk::Result::eSuccess) {
+      return false;
+    }
+  }
 
-        //----------------------------------------------------------------------------
-        /// Signal that the presentation semaphore is ready.
-        ///
-        {
-          vk::SubmitInfo submit_info;
-          vk::PipelineStageFlags wait_stage =
-              vk::PipelineStageFlagBits::eColorAttachmentOutput;
-          submit_info.setWaitDstStageMask(wait_stage);
-          submit_info.setWaitSemaphores(*sync->render_ready);
-          submit_info.setSignalSemaphores(*sync->present_ready);
-          submit_info.setCommandBuffers(vk_final_cmd_buffer);
-          auto result =
-              context.GetGraphicsQueue()->Submit(submit_info, *sync->acquire);
-          if (result != vk::Result::eSuccess) {
-            VALIDATION_LOG << "Could not wait on render semaphore: "
-                           << vk::to_string(result);
-            return;
-          }
-        }
+  //----------------------------------------------------------------------------
+  /// Signal that the presentation semaphore is ready.
+  ///
+  {
+    vk::SubmitInfo submit_info;
+    vk::PipelineStageFlags wait_stage =
+        vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    submit_info.setWaitDstStageMask(wait_stage);
+    submit_info.setWaitSemaphores(*sync->render_ready);
+    submit_info.setSignalSemaphores(*sync->present_ready);
+    submit_info.setCommandBuffers(vk_final_cmd_buffer);
+    auto result =
+        context.GetGraphicsQueue()->Submit(submit_info, *sync->acquire);
+    if (result != vk::Result::eSuccess) {
+      VALIDATION_LOG << "Could not wait on render semaphore: "
+                     << vk::to_string(result);
+      return false;
+    }
+  }
 
-        //----------------------------------------------------------------------------
-        /// Present the image.
-        ///
-        uint32_t indices[] = {static_cast<uint32_t>(index)};
+  auto task = [&, index, image, current_frame = current_frame_] {
+    auto context_strong = context_.lock();
+    if (!context_strong) {
+      return;
+    }
 
-        vk::PresentInfoKHR present_info;
-        present_info.setSwapchains(*swapchain_);
-        present_info.setImageIndices(indices);
-        present_info.setWaitSemaphores(*sync->present_ready);
+    const auto& sync = synchronizers_[current_frame];
 
-        switch (auto result = present_queue_.presentKHR(present_info)) {
-          case vk::Result::eErrorOutOfDateKHR:
-            // Caller will recreate the impl on acquisition, not submission.
-            [[fallthrough]];
-          case vk::Result::eErrorSurfaceLostKHR:
-            // Vulkan guarantees that the set of queue operations will still
-            // complete successfully.
-            [[fallthrough]];
-          case vk::Result::eSuccess:
-            is_rotated_ = false;
-            return;
-          case vk::Result::eSuboptimalKHR:
-            is_rotated_ = true;
-            return;
-          default:
-            VALIDATION_LOG << "Could not present queue: "
-                           << vk::to_string(result);
-            return;
-        }
-        FML_UNREACHABLE();
-      });
+    //----------------------------------------------------------------------------
+    /// Present the image.
+    ///
+    uint32_t indices[] = {static_cast<uint32_t>(index)};
+
+    vk::PresentInfoKHR present_info;
+    present_info.setSwapchains(*swapchain_);
+    present_info.setImageIndices(indices);
+    present_info.setWaitSemaphores(*sync->present_ready);
+
+    switch (auto result = present_queue_.presentKHR(present_info)) {
+      case vk::Result::eErrorOutOfDateKHR:
+        // Caller will recreate the impl on acquisition, not submission.
+        [[fallthrough]];
+      case vk::Result::eErrorSurfaceLostKHR:
+        // Vulkan guarantees that the set of queue operations will still
+        // complete successfully.
+        [[fallthrough]];
+      case vk::Result::eSuboptimalKHR:
+        // Even though we're handling rotation changes via polling, we
+        // still need to handle the case where the swapchain signals that
+        // it's suboptimal (i.e. every frame when we are rotated given we
+        // aren't doing Vulkan pre-rotation).
+        [[fallthrough]];
+      case vk::Result::eSuccess:
+        return;
+      default:
+        VALIDATION_LOG << "Could not present queue: " << vk::to_string(result);
+        return;
+    }
+    FML_UNREACHABLE();
+  };
+  if (context.GetSyncPresentation()) {
+    task();
+  } else {
+    context.GetConcurrentWorkerTaskRunner()->PostTask(task);
+  }
   return true;
 }
 

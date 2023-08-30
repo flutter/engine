@@ -24,6 +24,41 @@
 
 namespace impeller {
 
+std::optional<BlendMode> InvertPorterDuffBlend(BlendMode blend_mode) {
+  switch (blend_mode) {
+    case BlendMode::kClear:
+      return BlendMode::kClear;
+    case BlendMode::kSource:
+      return BlendMode::kDestination;
+    case BlendMode::kDestination:
+      return BlendMode::kSource;
+    case BlendMode::kSourceOver:
+      return BlendMode::kDestinationOver;
+    case BlendMode::kDestinationOver:
+      return BlendMode::kSourceOver;
+    case BlendMode::kSourceIn:
+      return BlendMode::kDestinationIn;
+    case BlendMode::kDestinationIn:
+      return BlendMode::kSourceIn;
+    case BlendMode::kSourceOut:
+      return BlendMode::kDestinationOut;
+    case BlendMode::kDestinationOut:
+      return BlendMode::kSourceOut;
+    case BlendMode::kSourceATop:
+      return BlendMode::kDestinationATop;
+    case BlendMode::kDestinationATop:
+      return BlendMode::kSourceATop;
+    case BlendMode::kXor:
+      return BlendMode::kXor;
+    case BlendMode::kPlus:
+      return BlendMode::kPlus;
+    case BlendMode::kModulate:
+      return BlendMode::kModulate;
+    default:
+      return std::nullopt;
+  }
+}
+
 BlendFilterContents::BlendFilterContents() {
   SetBlendMode(BlendMode::kSourceOver);
 }
@@ -132,8 +167,8 @@ static std::optional<Entity> AdvancedBlend(
         std::invoke(pipeline_proc, renderer, options);
 
     Command cmd;
-    cmd.label =
-        SPrintF("Advanced Blend Filter (%s)", BlendModeToString(blend_mode));
+    DEBUG_COMMAND_INFO(cmd, SPrintF("Advanced Blend Filter (%s)",
+                                    BlendModeToString(blend_mode)));
     cmd.BindVertices(vtx_buffer);
     cmd.pipeline = std::move(pipeline);
 
@@ -141,7 +176,7 @@ static std::optional<Entity> AdvancedBlend(
     typename VS::FrameInfo frame_info;
 
     auto dst_sampler_descriptor = dst_snapshot->sampler_descriptor;
-    if (renderer.GetDeviceCapabilities().SupportsDecalTileMode()) {
+    if (renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode()) {
       dst_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
       dst_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
     }
@@ -160,7 +195,7 @@ static std::optional<Entity> AdvancedBlend(
       FS::BindTextureSamplerSrc(cmd, dst_snapshot->texture, dst_sampler);
     } else {
       auto src_sampler_descriptor = src_snapshot->sampler_descriptor;
-      if (renderer.GetDeviceCapabilities().SupportsDecalTileMode()) {
+      if (renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode()) {
         src_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
         src_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
       }
@@ -180,7 +215,7 @@ static std::optional<Entity> AdvancedBlend(
 
     auto uniform_view = host_buffer.EmplaceUniform(frame_info);
     VS::BindFrameInfo(cmd, uniform_view);
-    pass.AddCommand(cmd);
+    pass.AddCommand(std::move(cmd));
 
     return true;
   };
@@ -249,8 +284,8 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
     auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
     Command cmd;
-    cmd.label = SPrintF("Foreground Advanced Blend Filter (%s)",
-                        BlendModeToString(blend_mode));
+    DEBUG_COMMAND_INFO(cmd, SPrintF("Foreground Advanced Blend Filter (%s)",
+                                    BlendModeToString(blend_mode)));
     cmd.BindVertices(vtx_buffer);
     cmd.stencil_reference = entity.GetStencilDepth();
     auto options = OptionsFromPass(pass);
@@ -309,7 +344,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
     VS::FrameInfo frame_info;
 
     auto dst_sampler_descriptor = dst_snapshot->sampler_descriptor;
-    if (renderer.GetDeviceCapabilities().SupportsDecalTileMode()) {
+    if (renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode()) {
       dst_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
       dst_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
     }
@@ -336,7 +371,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
     auto uniform_view = host_buffer.EmplaceUniform(frame_info);
     VS::BindFrameInfo(cmd, uniform_view);
 
-    return pass.AddCommand(cmd);
+    return pass.AddCommand(std::move(cmd));
   };
   CoverageProc coverage_proc =
       [coverage](const Entity& entity) -> std::optional<Rect> {
@@ -351,24 +386,6 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
 
   return sub_entity;
 }
-
-constexpr std::array<std::array<Scalar, 5>, 15> kPorterDuffCoefficients = {{
-    {0, 0, 0, 0, 0},    // Clear
-    {1, 0, 0, 0, 0},    // Source
-    {0, 0, 1, 0, 0},    // Destination
-    {1, 0, 1, -1, 0},   // SourceOver
-    {1, -1, 1, 0, 0},   // DestinationOver
-    {0, 1, 0, 0, 0},    // SourceIn
-    {0, 0, 0, 1, 0},    // DestinationIn
-    {1, -1, 0, 0, 0},   // SourceOut
-    {0, 0, 1, -1, 0},   // DestinationOut
-    {0, 1, 1, -1, 0},   // SourceATop
-    {1, -1, 0, 1, 0},   // DestinationATop
-    {1, -1, 1, -1, 0},  // Xor
-    {1, 0, 1, 0, 0},    // Plus
-    {0, 0, 0, 0, 1},    // Modulate
-    {0, 0, 1, 0, -1},   // Screen
-}};
 
 std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
     const std::shared_ptr<FilterInput>& input,
@@ -423,20 +440,23 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
 
     auto size = coverage.size;
     auto origin = coverage.origin;
+    auto color = foreground_color.Premultiply();
     VertexBufferBuilder<VS::PerVertexData> vtx_builder;
     vtx_builder.AddVertices({
-        {origin, dst_uvs[0]},
-        {Point(origin.x + size.width, origin.y), dst_uvs[1]},
-        {Point(origin.x + size.width, origin.y + size.height), dst_uvs[3]},
-        {origin, dst_uvs[0]},
-        {Point(origin.x + size.width, origin.y + size.height), dst_uvs[3]},
-        {Point(origin.x, origin.y + size.height), dst_uvs[2]},
+        {origin, dst_uvs[0], color},
+        {Point(origin.x + size.width, origin.y), dst_uvs[1], color},
+        {Point(origin.x + size.width, origin.y + size.height), dst_uvs[3],
+         color},
+        {origin, dst_uvs[0], color},
+        {Point(origin.x + size.width, origin.y + size.height), dst_uvs[3],
+         color},
+        {Point(origin.x, origin.y + size.height), dst_uvs[2], color},
     });
     auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
     Command cmd;
-    cmd.label = SPrintF("Foreground PorterDuff Blend Filter (%s)",
-                        BlendModeToString(blend_mode));
+    DEBUG_COMMAND_INFO(cmd, SPrintF("Foreground PorterDuff Blend Filter (%s)",
+                                    BlendModeToString(blend_mode)));
     cmd.BindVertices(vtx_buffer);
     cmd.stencil_reference = entity.GetStencilDepth();
     auto options = OptionsFromPass(pass);
@@ -446,7 +466,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
     VS::FrameInfo frame_info;
 
     auto dst_sampler_descriptor = dst_snapshot->sampler_descriptor;
-    if (renderer.GetDeviceCapabilities().SupportsDecalTileMode()) {
+    if (renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode()) {
       dst_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
       dst_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
     }
@@ -456,9 +476,9 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
     frame_info.texture_sampler_y_coord_scale =
         dst_snapshot->texture->GetYCoordScale();
 
-    frag_info.color = foreground_color.Premultiply();
     frag_info.input_alpha =
         absorb_opacity ? dst_snapshot->opacity * alpha.value_or(1.0) : 1.0;
+    frag_info.output_alpha = 1.0;
 
     auto blend_coefficients =
         kPorterDuffCoefficients[static_cast<int>(blend_mode)];
@@ -476,7 +496,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
     auto uniform_view = host_buffer.EmplaceUniform(frame_info);
     VS::BindFrameInfo(cmd, uniform_view);
 
-    return pass.AddCommand(cmd);
+    return pass.AddCommand(std::move(cmd));
   };
 
   CoverageProc coverage_proc =
@@ -531,8 +551,8 @@ static std::optional<Entity> PipelineBlend(
     auto& host_buffer = pass.GetTransientsBuffer();
 
     Command cmd;
-    cmd.label =
-        SPrintF("Pipeline Blend Filter (%s)", BlendModeToString(blend_mode));
+    DEBUG_COMMAND_INFO(cmd, SPrintF("Pipeline Blend Filter (%s)",
+                                    BlendModeToString(blend_mode)));
     auto options = OptionsFromPass(pass);
 
     auto add_blend_command = [&](std::optional<Snapshot> input) {
@@ -573,7 +593,7 @@ static std::optional<Entity> PipelineBlend(
       FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
       VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
 
-      pass.AddCommand(cmd);
+      pass.AddCommand(std::move(cmd));
       return true;
     };
 

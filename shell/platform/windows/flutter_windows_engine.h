@@ -271,9 +271,21 @@ class FlutterWindowsEngine {
   // Called when a WM_DWMCOMPOSITIONCHANGED message is received.
   void OnDwmCompositionChanged();
 
-  // Called in response to the framework registering a ServiceBindings.
-  // Registers the top level handler for the WM_CLOSE window message.
-  void OnApplicationLifecycleEnabled();
+  // Called when a Window receives an event that may alter the application
+  // lifecycle state.
+  void OnWindowStateEvent(HWND hwnd, WindowStateEvent event);
+
+  // Handle a message from a non-Flutter window in the same application.
+  // Returns a result when the message is consumed and should not be processed
+  // further.
+  std::optional<LRESULT> ProcessExternalWindowMessage(HWND hwnd,
+                                                      UINT message,
+                                                      WPARAM wparam,
+                                                      LPARAM lparam);
+
+  WindowsLifecycleManager* lifecycle_manager() {
+    return lifecycle_manager_.get();
+  }
 
  protected:
   // Creates the keyboard key handler.
@@ -297,6 +309,10 @@ class FlutterWindowsEngine {
   // This should reset necessary states to as if the engine has just been
   // created. This is typically caused by a hot restart (Shift-R in CLI.)
   void OnPreEngineRestart();
+
+  // Invoked by the engine when a listener is set or cleared on a platform
+  // channel.
+  virtual void OnChannelUpdate(std::string name, bool listening);
 
  private:
   // Allows swapping out embedder_api_ calls in tests.

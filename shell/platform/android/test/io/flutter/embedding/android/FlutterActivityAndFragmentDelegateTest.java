@@ -2,9 +2,11 @@ package io.flutter.embedding.android;
 
 import static android.content.ComponentCallbacks2.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNotNull;
@@ -18,8 +20,6 @@ import static org.mockito.Mockito.when;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.view.View;
 import androidx.annotation.NonNull;
@@ -66,6 +66,9 @@ public class FlutterActivityAndFragmentDelegateTest {
   private FlutterEngine mockFlutterEngine;
   private FlutterActivityAndFragmentDelegate.Host mockHost;
 
+  @SuppressWarnings("deprecation")
+  // Robolectric.setupActivity
+  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Before
   public void setup() {
     FlutterInjector.reset();
@@ -90,6 +93,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     when(mockHost.shouldHandleDeeplinking()).thenReturn(false);
     when(mockHost.shouldDestroyEngineWithHost()).thenReturn(true);
     when(mockHost.shouldDispatchAppLifecycleState()).thenReturn(true);
+    when(mockHost.attachToEngineAutomatically()).thenReturn(true);
   }
 
   @Test
@@ -401,6 +405,9 @@ public class FlutterActivityAndFragmentDelegateTest {
     verify(mockHost, times(1)).onFlutterSurfaceViewCreated(isNotNull());
   }
 
+  @SuppressWarnings("deprecation")
+  // Robolectric.setupActivity
+  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void itGivesHostAnOpportunityToConfigureFlutterTextureView() {
     // ---- Test setup ----
@@ -1228,26 +1235,6 @@ public class FlutterActivityAndFragmentDelegateTest {
   }
 
   @Test
-  public void itDoesNotDelayTheFirstDrawWhenRequestedAndWithAProvidedSplashScreen() {
-    when(mockHost.provideSplashScreen())
-        .thenReturn(new DrawableSplashScreen(new ColorDrawable(Color.GRAY)));
-
-    // ---- Test setup ----
-    // Create the real object that we're testing.
-    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
-
-    // We're testing lifecycle behaviors, which require/expect that certain methods have already
-    // been executed by the time they run. Therefore, we run those expected methods first.
-    delegate.onAttach(ctx);
-
-    // --- Execute the behavior under test ---
-    boolean shouldDelayFirstAndroidViewDraw = true;
-    delegate.onCreateView(null, null, null, 0, shouldDelayFirstAndroidViewDraw);
-
-    assertNull(delegate.activePreDrawListener);
-  }
-
-  @Test
   public void usesFlutterEngineGroup() {
     FlutterEngineGroup mockEngineGroup = mock(FlutterEngineGroup.class);
     when(mockEngineGroup.createAndRunEngine(any(FlutterEngineGroup.Options.class)))
@@ -1261,6 +1248,31 @@ public class FlutterActivityAndFragmentDelegateTest {
     delegate.onAttach(ctx);
     FlutterEngine engineUnderTest = delegate.getFlutterEngine();
     assertEquals(engineUnderTest, mockFlutterEngine);
+  }
+
+  @Test
+  public void itDoesAttachFlutterViewToEngine() {
+    // ---- Test setup ----
+    // Create the real object that we're testing.
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+    delegate.onAttach(ctx);
+    delegate.onCreateView(null, null, null, 0, true);
+
+    // --- Execute the behavior under test ---
+    assertTrue(delegate.flutterView.isAttachedToFlutterEngine());
+  }
+
+  @Test
+  public void itDoesNotAttachFlutterViewToEngine() {
+    // ---- Test setup ----
+    // Create the real object that we're testing.
+    when(mockHost.attachToEngineAutomatically()).thenReturn(false);
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+    delegate.onAttach(ctx);
+    delegate.onCreateView(null, null, null, 0, true);
+
+    // --- Execute the behavior under test ---
+    assertFalse(delegate.flutterView.isAttachedToFlutterEngine());
   }
 
   /**
@@ -1281,6 +1293,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     when(fakeMessageBuilder.setPlatformBrightness(any(SettingsChannel.PlatformBrightness.class)))
         .thenReturn(fakeMessageBuilder);
     when(fakeMessageBuilder.setTextScaleFactor(any(Float.class))).thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setDisplayMetrics(any())).thenReturn(fakeMessageBuilder);
     when(fakeMessageBuilder.setNativeSpellCheckServiceDefined(any(Boolean.class)))
         .thenReturn(fakeMessageBuilder);
     when(fakeMessageBuilder.setBrieflyShowPassword(any(Boolean.class)))

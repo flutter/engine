@@ -357,11 +357,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           // Resize the buffer only when the current buffer size is smaller than the new size.
           // This is required to prevent a situation when smooth keyboard animation
           // resizes the texture too often, such that the GPU and the platform thread don't agree on
-          // the
-          // timing of the new size.
+          // the timing of the new size.
           // Resizing the texture causes pixel stretching since the size of the GL texture used in
-          // the engine
-          // is set by the framework, but the texture buffer size is set by the platform down below.
+          // the engine is set by the framework, but the texture buffer size is set by the
+          // platform down below.
           if (physicalWidth > viewWrapper.getRenderTargetWidth()
               || physicalHeight > viewWrapper.getRenderTargetHeight()) {
             viewWrapper.resizeRenderTarget(physicalWidth, physicalHeight);
@@ -550,7 +549,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
     Log.i(TAG, "Hosting view in a virtual display for platform view: " + request.viewId);
 
-    final TextureRegistry.SurfaceTextureEntry textureEntry = textureRegistry.createSurfaceTexture();
+    final PlatformViewRenderTarget renderTarget = makePlatformViewRenderTarget(textureRegistry);
     final int physicalWidth = toPhysicalPixels(request.logicalWidth);
     final int physicalHeight = toPhysicalPixels(request.logicalHeight);
     final VirtualDisplayController vdController =
@@ -558,7 +557,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             context,
             accessibilityEventsDelegate,
             platformView,
-            textureEntry,
+            renderTarget,
             physicalWidth,
             physicalHeight,
             request.viewId,
@@ -584,7 +583,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     final View embeddedView = platformView.getView();
     contextToEmbeddedView.put(embeddedView.getContext(), embeddedView);
 
-    return textureEntry.id();
+    return renderTarget.getId();
   }
 
   // Configures the view for Texture Layer Hybrid Composition mode, returning the associated
@@ -610,10 +609,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       viewWrapper = new PlatformViewWrapper(context);
       textureId = -1;
     } else {
-      final TextureRegistry.SurfaceTextureEntry textureEntry =
-          textureRegistry.createSurfaceTexture();
-      viewWrapper = new PlatformViewWrapper(context, textureEntry);
-      textureId = textureEntry.id();
+      final PlatformViewRenderTarget renderTarget = makePlatformViewRenderTarget(textureRegistry);
+      viewWrapper = new PlatformViewWrapper(context, renderTarget);
+      textureId = renderTarget.getId();
     }
     viewWrapper.setTouchProcessor(androidTouchProcessor);
     viewWrapper.resizeRenderTarget(physicalWidth, physicalHeight);
@@ -966,6 +964,16 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     }
     textInputPlugin.unlockPlatformViewInputConnection();
     controller.onInputConnectionUnlocked();
+  }
+
+  private static PlatformViewRenderTarget makePlatformViewRenderTarget(
+      TextureRegistry textureRegistry) {
+    if (Build.VERSION.SDK_INT >= 29) {
+      final TextureRegistry.ImageTextureEntry textureEntry = textureRegistry.createImageTexture();
+      return new ImageReaderPlatformViewRenderTarget(textureEntry);
+    }
+    final TextureRegistry.SurfaceTextureEntry textureEntry = textureRegistry.createSurfaceTexture();
+    return new SurfaceTexturePlatformViewRenderTarget(textureEntry);
   }
 
   private static boolean validateDirection(int direction) {

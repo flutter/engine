@@ -52,6 +52,8 @@ class MockDelegate : public Rasterizer::Delegate {
   MOCK_CONST_METHOD0(GetIsGpuDisabledSyncSwitch,
                      std::shared_ptr<const fml::SyncSwitch>());
   MOCK_CONST_METHOD0(GetSettings, const Settings&());
+  MOCK_METHOD2(ShouldDiscardLayerTree,
+               bool(int64_t, const flutter::LayerTree&));
 };
 
 class MockSurface : public Surface {
@@ -136,11 +138,11 @@ TEST(RasterizerTest, drawEmptyPipeline) {
   EXPECT_CALL(*surface, MakeRenderContextCurrent())
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
   rasterizer->Setup(std::move(surface));
-  rasterizer->AddView(kDefaultViewId);
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-    rasterizer->Draw(pipeline, nullptr);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    rasterizer->Draw(pipeline);
     latch.Signal();
   });
   latch.Wait();
@@ -198,7 +200,6 @@ TEST(RasterizerTest,
       .Times(1);
 
   rasterizer->Setup(std::move(surface));
-  rasterizer->AddView(kDefaultViewId);
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
@@ -213,8 +214,8 @@ TEST(RasterizerTest,
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
-    auto no_discard = [](int64_t, LayerTree&) { return false; };
-    rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    rasterizer->Draw(pipeline);
     latch.Signal();
   });
   latch.Wait();
@@ -268,7 +269,6 @@ TEST(
       .Times(1);
 
   rasterizer->Setup(std::move(surface));
-  rasterizer->AddView(kDefaultViewId);
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
@@ -282,8 +282,8 @@ TEST(
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
-    auto no_discard = [](int64_t, LayerTree&) { return false; };
-    rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    rasterizer->Draw(pipeline);
     latch.Signal();
   });
   latch.Wait();
@@ -344,7 +344,6 @@ TEST(
       .Times(1);
 
   rasterizer->Setup(std::move(surface));
-  rasterizer->AddView(kDefaultViewId);
 
   auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
   auto layer_tree = std::make_unique<LayerTree>(/*config=*/LayerTree::Config(),
@@ -355,8 +354,8 @@ TEST(
   PipelineProduceResult result =
       pipeline->Produce().Complete(std::move(layer_tree_item));
   EXPECT_TRUE(result.success);
-  auto no_discard = [](int64_t, LayerTree&) { return false; };
-  rasterizer->Draw(pipeline, no_discard);
+  ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+  rasterizer->Draw(pipeline);
 }
 
 TEST(RasterizerTest,
@@ -420,7 +419,6 @@ TEST(RasterizerTest,
       .Times(2);
 
   rasterizer->Setup(std::move(surface));
-  rasterizer->AddView(kDefaultViewId);
 
   auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
   auto layer_tree = std::make_unique<LayerTree>(/*config=*/LayerTree::Config(),
@@ -431,11 +429,11 @@ TEST(RasterizerTest,
   PipelineProduceResult result =
       pipeline->Produce().Complete(std::move(layer_tree_item));
   EXPECT_TRUE(result.success);
-  auto no_discard = [](int64_t, LayerTree&) { return false; };
 
   // The Draw() will respectively call BeginFrame(), SubmitFrame() and
   // EndFrame() one time.
-  rasterizer->Draw(pipeline, no_discard);
+  ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+  rasterizer->Draw(pipeline);
 
   // The DrawLastLayerTree() will respectively call BeginFrame(), SubmitFrame()
   // and EndFrame() one more time, totally 2 times.
@@ -484,8 +482,8 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNoSurfaceIsSet) {
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
-    auto no_discard = [](int64_t, LayerTree&) { return false; };
-    rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    rasterizer->Draw(pipeline);
     latch.Signal();
   });
   latch.Wait();
@@ -516,7 +514,6 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNotUsedThisFrame) {
       std::make_shared<NiceMock<MockExternalViewEmbedder>>();
   rasterizer->SetExternalViewEmbedder(external_view_embedder);
   rasterizer->Setup(std::move(surface));
-  rasterizer->AddView(kDefaultViewId);
 
   EXPECT_CALL(*external_view_embedder,
               BeginFrame(/*frame_size=*/SkISize(), /*context=*/nullptr,
@@ -544,8 +541,8 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNotUsedThisFrame) {
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
     // Always discard the layer tree.
-    auto discard_callback = [](int64_t, LayerTree&) { return true; };
-    RasterStatus status = rasterizer->Draw(pipeline, discard_callback);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(true));
+    RasterStatus status = rasterizer->Draw(pipeline);
     EXPECT_EQ(status, RasterStatus::kDiscarded);
     latch.Signal();
   });
@@ -577,7 +574,6 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenPipelineIsEmpty) {
       std::make_shared<NiceMock<MockExternalViewEmbedder>>();
   rasterizer->SetExternalViewEmbedder(external_view_embedder);
   rasterizer->Setup(std::move(surface));
-  rasterizer->AddView(kDefaultViewId);
 
   EXPECT_CALL(
       *external_view_embedder,
@@ -589,8 +585,8 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenPipelineIsEmpty) {
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-    auto no_discard = [](int64_t, LayerTree&) { return false; };
-    RasterStatus status = rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    RasterStatus status = rasterizer->Draw(pipeline);
     EXPECT_EQ(status, RasterStatus::kFailed);
     latch.Signal();
   });
@@ -636,7 +632,6 @@ TEST(RasterizerTest,
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
 
   rasterizer->Setup(std::move(surface));
-  rasterizer->AddView(kDefaultViewId);
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
@@ -650,8 +645,8 @@ TEST(RasterizerTest,
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
-    auto no_discard = [](int64_t, LayerTree&) { return false; };
-    rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    rasterizer->Draw(pipeline);
     latch.Signal();
   });
   latch.Wait();
@@ -697,7 +692,6 @@ TEST(
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
 
   rasterizer->Setup(std::move(surface));
-  rasterizer->AddView(kDefaultViewId);
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
@@ -711,8 +705,8 @@ TEST(
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
-    auto no_discard = [](int64_t, LayerTree&) { return false; };
-    RasterStatus status = rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    RasterStatus status = rasterizer->Draw(pipeline);
     EXPECT_EQ(status, RasterStatus::kSuccess);
     latch.Signal();
   });
@@ -758,7 +752,6 @@ TEST(
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
 
   rasterizer->Setup(std::move(surface));
-  rasterizer->AddView(kDefaultViewId);
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
@@ -772,8 +765,8 @@ TEST(
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
-    auto no_discard = [](int64_t, LayerTree&) { return false; };
-    RasterStatus status = rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    RasterStatus status = rasterizer->Draw(pipeline);
     EXPECT_EQ(status, RasterStatus::kSuccess);
     latch.Signal();
   });
@@ -818,7 +811,6 @@ TEST(
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
 
   rasterizer->Setup(std::move(surface));
-  rasterizer->AddView(kDefaultViewId);
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
@@ -832,8 +824,8 @@ TEST(
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
-    auto no_discard = [](int64_t, LayerTree&) { return false; };
-    RasterStatus status = rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    RasterStatus status = rasterizer->Draw(pipeline);
     EXPECT_EQ(status, RasterStatus::kDiscarded);
     latch.Signal();
   });
@@ -877,7 +869,6 @@ TEST(
   EXPECT_CALL(*surface, MakeRenderContextCurrent())
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
   rasterizer->Setup(std::move(surface));
-  rasterizer->AddView(kDefaultViewId);
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
@@ -891,8 +882,8 @@ TEST(
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
-    auto no_discard = [](int64_t, LayerTree&) { return false; };
-    RasterStatus status = rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    RasterStatus status = rasterizer->Draw(pipeline);
     EXPECT_EQ(status, RasterStatus::kFailed);
     latch.Signal();
   });
@@ -960,7 +951,6 @@ TEST(RasterizerTest,
 
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     rasterizer->Setup(std::move(surface));
-    rasterizer->AddView(kDefaultViewId);
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     for (int i = 0; i < 2; i++) {
       auto layer_tree = std::make_unique<LayerTree>(
@@ -975,10 +965,10 @@ TEST(RasterizerTest,
       EXPECT_TRUE(result.success);
       EXPECT_EQ(result.is_first_item, i == 0);
     }
-    auto no_discard = [](int64_t, LayerTree&) { return false; };
     // Although we only call 'Rasterizer::Draw' once, it will be called twice
     // finally because there are two items in the pipeline.
-    rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    rasterizer->Draw(pipeline);
   });
   count_down_latch.Wait();
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
@@ -1017,7 +1007,6 @@ TEST(RasterizerTest, TeardownFreesResourceCache) {
   EXPECT_CALL(*surface, GetContext()).WillRepeatedly(Return(context.get()));
 
   rasterizer->Setup(std::move(surface));
-  rasterizer->AddView(kDefaultViewId);
   EXPECT_EQ(context->getResourceCacheLimit(), 0ul);
 
   rasterizer->SetResourceCacheMaxBytes(10000000, false);
@@ -1077,6 +1066,7 @@ TEST(RasterizerTest, TeardownNoSurface) {
 TEST(RasterizerTest, presentationTimeSetWhenVsyncTargetInFuture) {
   GTEST_SKIP() << "eglPresentationTime is disabled due to "
                   "https://github.com/flutter/flutter/issues/112503";
+#if false
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
@@ -1134,7 +1124,6 @@ TEST(RasterizerTest, presentationTimeSetWhenVsyncTargetInFuture) {
 
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     rasterizer->Setup(std::move(surface));
-    rasterizer->AddView(kDefaultViewId);
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     for (int i = 0; i < 2; i++) {
       auto layer_tree = std::make_unique<LayerTree>(
@@ -1149,10 +1138,10 @@ TEST(RasterizerTest, presentationTimeSetWhenVsyncTargetInFuture) {
       EXPECT_TRUE(result.success);
       EXPECT_EQ(result.is_first_item, i == 0);
     }
-    auto no_discard = [](int64_t, LayerTree&) { return false; };
     // Although we only call 'Rasterizer::Draw' once, it will be called twice
     // finally because there are two items in the pipeline.
-    rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    rasterizer->Draw(pipeline);
   });
 
   submit_latch.Wait();
@@ -1161,11 +1150,13 @@ TEST(RasterizerTest, presentationTimeSetWhenVsyncTargetInFuture) {
     latch.Signal();
   });
   latch.Wait();
+#endif  // false
 }
 
 TEST(RasterizerTest, presentationTimeNotSetWhenVsyncTargetInPast) {
   GTEST_SKIP() << "eglPresentationTime is disabled due to "
                   "https://github.com/flutter/flutter/issues/112503";
+#if false
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
@@ -1218,7 +1209,6 @@ TEST(RasterizerTest, presentationTimeNotSetWhenVsyncTargetInPast) {
 
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     rasterizer->Setup(std::move(surface));
-    rasterizer->AddView(kDefaultViewId);
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
         /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
@@ -1231,8 +1221,8 @@ TEST(RasterizerTest, presentationTimeNotSetWhenVsyncTargetInPast) {
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
     EXPECT_EQ(result.is_first_item, true);
-    auto no_discard = [](int64_t, LayerTree&) { return false; };
-    rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    rasterizer->Draw(pipeline);
   });
 
   submit_latch.Wait();
@@ -1241,6 +1231,7 @@ TEST(RasterizerTest, presentationTimeNotSetWhenVsyncTargetInPast) {
     latch.Signal();
   });
   latch.Wait();
+#endif  // false
 }
 
 }  // namespace flutter

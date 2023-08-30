@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "flutter/assets/directory_asset_bundle.h"
+#include "flutter/common/constants.h"
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/fml/base32.h"
 #include "flutter/fml/file.h"
@@ -419,6 +420,8 @@ Shell::Shell(DartVMRef vm,
       volatile_path_tracker_(std::move(volatile_path_tracker)),
       weak_factory_gpu_(nullptr),
       weak_factory_(this) {
+  FML_CHECK(!settings.enable_software_rendering || !settings.enable_impeller)
+      << "Software rendering is incompatible with Impeller.";
   FML_CHECK(vm_) << "Must have access to VM to create a shell.";
   FML_DCHECK(task_runners_.IsValid());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
@@ -713,6 +716,7 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
   weak_rasterizer_ = rasterizer_->GetWeakPtr();
   weak_platform_view_ = platform_view_->GetWeakPtr();
 
+  engine_->AddView(kFlutterImplicitViewId, ViewportMetrics{});
   // Setup the time-consuming default font manager right after engine created.
   if (!settings_.prefetched_default_font_manager) {
     fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(),
@@ -775,8 +779,6 @@ DartVM* Shell::GetDartVM() {
   return &vm_;
 }
 
-static constexpr int64_t kFlutterDefaultViewId = 0ll;
-
 // |PlatformView::Delegate|
 void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   TRACE_EVENT0("flutter", "Shell::OnPlatformViewCreated");
@@ -818,7 +820,6 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
           // embedder.
           rasterizer->EnableThreadMergerIfNeeded();
           rasterizer->Setup(std::move(surface));
-          rasterizer->AddView(kFlutterDefaultViewId);
         }
 
         waiting_for_first_frame.store(true);
@@ -1033,7 +1034,9 @@ void Shell::OnPlatformViewDispatchPlatformMessage(
 // |PlatformView::Delegate|
 void Shell::OnPlatformViewDispatchPointerDataPacket(
     std::unique_ptr<PointerDataPacket> packet) {
-  TRACE_EVENT0("flutter", "Shell::OnPlatformViewDispatchPointerDataPacket");
+  TRACE_EVENT0_WITH_FLOW_IDS(
+      "flutter", "Shell::OnPlatformViewDispatchPointerDataPacket",
+      /*flow_id_count=*/1, /*flow_ids=*/&next_pointer_flow_id_);
   TRACE_FLOW_BEGIN("flutter", "PointerEvent", next_pointer_flow_id_);
   FML_DCHECK(is_set_up_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
@@ -1215,23 +1218,15 @@ void Shell::OnAnimatorUpdateLatestFrameTargetTime(
 void Shell::OnAnimatorDraw(std::shared_ptr<LayerTreePipeline> pipeline) {
   FML_DCHECK(is_set_up_);
 
-  auto discard_callback = [this](int64_t view_id, flutter::LayerTree& tree) {
-    std::scoped_lock<std::mutex> lock(resize_mutex_);
-    auto expected_frame_size = ExpectedFrameSize(view_id);
-    return !expected_frame_size.isEmpty() &&
-           tree.frame_size() != expected_frame_size;
-  };
-
   task_runners_.GetRasterTaskRunner()->PostTask(fml::MakeCopyable(
       [&waiting_for_first_frame = waiting_for_first_frame_,
        &waiting_for_first_frame_condition = waiting_for_first_frame_condition_,
        rasterizer = rasterizer_->GetWeakPtr(),
-       weak_pipeline = std::weak_ptr<LayerTreePipeline>(pipeline),
-       discard_callback = std::move(discard_callback)]() mutable {
+       weak_pipeline = std::weak_ptr<LayerTreePipeline>(pipeline)]() mutable {
         if (rasterizer) {
           std::shared_ptr<LayerTreePipeline> pipeline = weak_pipeline.lock();
           if (pipeline) {
-            rasterizer->Draw(pipeline, std::move(discard_callback));
+            rasterizer->Draw(pipeline);
           }
 
           if (waiting_for_first_frame.load()) {
@@ -1331,6 +1326,17 @@ void Shell::OnEngineHandlePlatformMessage(
           }
         }));
   }
+}
+
+void Shell::OnEngineChannelUpdate(std::string name, bool listening) {
+  FML_DCHECK(is_set_up_);
+
+  task_runners_.GetPlatformTaskRunner()->PostTask(
+      [view = platform_view_->GetWeakPtr(), name = std::move(name), listening] {
+        if (view) {
+          view->SendChannelUpdate(name, listening);
+        }
+      });
 }
 
 void Shell::HandleEngineSkiaMessage(std::unique_ptr<PlatformMessage> message) {
@@ -1475,6 +1481,13 @@ void Shell::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
       });
 }
 
+// |Engine::Delegate|
+double Shell::GetScaledFontSize(double unscaled_font_size,
+                                int configuration_id) const {
+  return platform_view_->GetScaledFontSize(unscaled_font_size,
+                                           configuration_id);
+}
+
 void Shell::ReportTimings() {
   FML_DCHECK(is_set_up_);
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
@@ -1579,6 +1592,15 @@ fml::TimePoint Shell::GetLatestFrameTargetTime() const {
   // Covered by FML_CHECK().
   // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
   return latest_frame_target_time_.value();
+}
+
+// |Rasterizer::Delegate|
+bool Shell::ShouldDiscardLayerTree(int64_t view_id,
+                                   const flutter::LayerTree& tree) {
+  std::scoped_lock<std::mutex> lock(resize_mutex_);
+  auto expected_frame_size = ExpectedFrameSize(view_id);
+  return !expected_frame_size.isEmpty() &&
+         tree.frame_size() != expected_frame_size;
 }
 
 // |ServiceProtocol::Handler|
@@ -1973,7 +1995,7 @@ bool Shell::OnServiceProtocolRenderFrameWithRasterStats(
     response->AddMember("snapshots", snapshots, allocator);
 
     // TODO(dkwingsmt)
-    const auto& frame_size = ExpectedFrameSize(kFlutterDefaultViewId);
+    const auto& frame_size = ExpectedFrameSize(kFlutterImplicitViewId);
     response->AddMember("frame_width", frame_size.width(), allocator);
     response->AddMember("frame_height", frame_size.height(), allocator);
 
@@ -2029,51 +2051,52 @@ bool Shell::OnServiceProtocolReloadAssetFonts(
   return true;
 }
 
-void Shell::AddView(int64_t view_id) {
+void Shell::AddView(int64_t view_id, const ViewportMetrics& viewport_metrics) {
   TRACE_EVENT0("flutter", "Shell::AddView");
   FML_DCHECK(is_set_up_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
-  if (view_id == kFlutterDefaultViewId) {
-    return;
-  }
-  if (!engine_) {
-    return;
-  }
-  task_runners_.GetUITaskRunner()->PostTask([engine = engine_->GetWeakPtr(),  //
-                                             view_id                          //
-  ] { engine->AddView(view_id); });
+  FML_DCHECK(view_id != kFlutterImplicitViewId)
+      << "Unexpected request to add the implicit view #"
+      << kFlutterImplicitViewId << ". This view should never be added.";
 
-  task_runners_.GetRasterTaskRunner()->PostTask(
-      fml::MakeCopyable([rasterizer = rasterizer_->GetWeakPtr(),  //
-                         view_id                                  //
-  ]() mutable {
-        if (rasterizer) {
-          rasterizer->AddView(view_id);
-        }
-      }));
+  task_runners_.GetUITaskRunner()->PostTask([engine = engine_->GetWeakPtr(),  //
+                                             viewport_metrics,                //
+                                             view_id                          //
+  ] {
+    if (engine) {
+      engine->AddView(view_id, viewport_metrics);
+    }
+  });
 }
 
 void Shell::RemoveView(int64_t view_id) {
   TRACE_EVENT0("flutter", "Shell::RemoveView");
   FML_DCHECK(is_set_up_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+  FML_DCHECK(view_id != kFlutterImplicitViewId)
+      << "Unexpected request to remove the implicit view #"
+      << kFlutterImplicitViewId << ". This view should never be removed.";
 
-  fml::AutoResetWaitableEvent latch;
-  // platform_view_->RemoveSurface(view_id);
-  task_runners_.GetUITaskRunner()->PostTask([engine = engine_->GetWeakPtr(),  //
-                                             view_id                          //
-  ] { engine->RemoveView(view_id); });
-  task_runners_.GetRasterTaskRunner()->PostTask(
-      [&latch,                                  //
+  expected_frame_sizes_.erase(view_id);
+  task_runners_.GetUITaskRunner()->PostTask(
+      [&task_runners = task_runners_,           //
+       engine = engine_->GetWeakPtr(),          //
        rasterizer = rasterizer_->GetWeakPtr(),  //
        view_id                                  //
-  ]() mutable {
-        if (rasterizer) {
-          rasterizer->RemoveSurface(view_id);
+  ] {
+        if (engine) {
+          engine->RemoveView(view_id);
         }
-        latch.Signal();
+        // Don't wait for the raster task here, which only cleans up memory and
+        // does not affect functionality. Make sure it is done after Dart
+        // removes the view to avoid receiving another rasterization request
+        // that adds back the view record.
+        task_runners.GetRasterTaskRunner()->PostTask([rasterizer, view_id]() {
+          if (rasterizer) {
+            rasterizer->CollectView(view_id);
+          }
+        });
       });
-  latch.Wait();
 }
 
 Rasterizer::Screenshot Shell::Screenshot(

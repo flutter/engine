@@ -5,7 +5,7 @@
 #include <utility>
 
 #include "flutter/display_list/display_list.h"
-#include "flutter/display_list/dl_builder.h"
+#include "flutter/display_list/display_list_builder.h"
 #include "flutter/display_list/dl_op_flags.h"
 #include "flutter/display_list/dl_sampling_options.h"
 #include "flutter/display_list/skia/dl_sk_canvas.h"
@@ -1245,63 +1245,6 @@ class CanvasCompareTester {
               "AntiAlias == False",
               [=](SkCanvas* cv, SkPaint& p) { sk_aa_setup(cv, p, false); },
               [=](DlCanvas* cv, DlPaint& p) { dl_aa_setup(cv, p, false); }));
-    }
-
-    {
-      // The CPU renderer does not always dither for solid colors and we
-      // need to use a non-default color (default is black) on an opaque
-      // surface, so we use a shader instead of a color. Also, thin stroked
-      // primitives (mainly drawLine and drawPoints) do not show much
-      // dithering so we use a non-trivial stroke width as well.
-      RenderEnvironment dither_env = RenderEnvironment::Make565(env.provider());
-      if (!dither_env.valid()) {
-        // Currently only happens on Metal backend
-        static std::set<std::string> warnings_sent;
-        std::string name = dither_env.backend_name();
-        if (warnings_sent.find(name) == warnings_sent.end()) {
-          warnings_sent.insert(name);
-          FML_LOG(INFO) << "Skipping Dithering tests on " << name;
-        }
-      } else {
-        DlColor dither_bg = DlColor::kBlack();
-        SkSetup sk_dither_setup = [=](SkCanvas*, SkPaint& p) {
-          p.setShader(kTestSkImageColorSource);
-          p.setAlpha(0xf0);
-          p.setStrokeWidth(5.0);
-        };
-        DlSetup dl_dither_setup = [=](DlCanvas*, DlPaint& p) {
-          p.setColorSource(&kTestDlImageColorSource);
-          p.setAlpha(0xf0);
-          p.setStrokeWidth(5.0);
-        };
-        dither_env.init_ref(sk_dither_setup, testP.sk_renderer(),
-                            dl_dither_setup, testP.dl_renderer(), dither_bg);
-        quickCompareToReference(dither_env, "dither");
-        RenderWith(testP, dither_env, tolerance,
-                   CaseParameters(
-                       "Dither == True",
-                       [=](SkCanvas* cv, SkPaint& p) {
-                         sk_dither_setup(cv, p);
-                         p.setDither(true);
-                       },
-                       [=](DlCanvas* cv, DlPaint& p) {
-                         dl_dither_setup(cv, p);
-                         p.setDither(true);
-                       })
-                       .with_bg(dither_bg));
-        RenderWith(testP, dither_env, tolerance,
-                   CaseParameters(
-                       "Dither = False",
-                       [=](SkCanvas* cv, SkPaint& p) {
-                         sk_dither_setup(cv, p);
-                         p.setDither(false);
-                       },
-                       [=](DlCanvas* cv, DlPaint& p) {
-                         dl_dither_setup(cv, p);
-                         p.setDither(false);
-                       })
-                       .with_bg(dither_bg));
-      }
     }
 
     RenderWith(
@@ -3363,7 +3306,7 @@ TEST_F(DisplayListCanvas, DrawTextBlob) {
   // default.
 #if defined(OS_FUCHSIA)
   GTEST_SKIP() << "Rendering comparisons require a valid default font manager";
-#endif  // OS_FUCHSIA
+#else
   sk_sp<SkTextBlob> blob =
       CanvasCompareTester::MakeTextBlob("Testing", kRenderHeight * 0.33f);
   SkScalar render_y_1_3 = kRenderTop + kRenderHeight * 0.3;
@@ -3388,6 +3331,7 @@ TEST_F(DisplayListCanvas, DrawTextBlob) {
       // padding to the tolerance
       CanvasCompareTester::DefaultTolerance.addBoundsPadding(33, 13));
   EXPECT_TRUE(blob->unique());
+#endif  // OS_FUCHSIA
 }
 
 TEST_F(DisplayListCanvas, DrawShadow) {

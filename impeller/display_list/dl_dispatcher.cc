@@ -26,7 +26,6 @@
 #include "impeller/entity/contents/linear_gradient_contents.h"
 #include "impeller/entity/contents/radial_gradient_contents.h"
 #include "impeller/entity/contents/runtime_effect_contents.h"
-#include "impeller/entity/contents/scene_contents.h"
 #include "impeller/entity/contents/sweep_gradient_contents.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/entity/entity.h"
@@ -36,6 +35,10 @@
 #include "impeller/geometry/scalar.h"
 #include "impeller/geometry/sigma.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
+
+#if IMPELLER_ENABLE_3D
+#include "impeller/entity/contents/scene_contents.h"
+#endif  // IMPELLER_ENABLE_3D
 
 namespace impeller {
 
@@ -186,7 +189,9 @@ void DlDispatcher::setAntiAlias(bool aa) {
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::setDither(bool dither) {}
+void DlDispatcher::setDither(bool dither) {
+  paint_.dither = dither;
+}
 
 static Paint::Style ToStyle(flutter::DlDrawStyle style) {
   switch (style) {
@@ -967,7 +972,7 @@ void DlDispatcher::drawVertices(const flutter::DlVertices* vertices,
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawImage(const sk_sp<flutter::DlImage> image,
+void DlDispatcher::drawImage(const sk_sp<flutter::DlImage>& image,
                              const SkPoint point,
                              flutter::DlImageSampling sampling,
                              bool render_with_attributes) {
@@ -996,7 +1001,7 @@ void DlDispatcher::drawImage(const sk_sp<flutter::DlImage> image,
 
 // |flutter::DlOpReceiver|
 void DlDispatcher::drawImageRect(
-    const sk_sp<flutter::DlImage> image,
+    const sk_sp<flutter::DlImage>& image,
     const SkRect& src,
     const SkRect& dst,
     flutter::DlImageSampling sampling,
@@ -1012,7 +1017,7 @@ void DlDispatcher::drawImageRect(
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawImageNine(const sk_sp<flutter::DlImage> image,
+void DlDispatcher::drawImageNine(const sk_sp<flutter::DlImage>& image,
                                  const SkIRect& center,
                                  const SkRect& dst,
                                  flutter::DlFilterMode filter,
@@ -1026,7 +1031,7 @@ void DlDispatcher::drawImageNine(const sk_sp<flutter::DlImage> image,
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawAtlas(const sk_sp<flutter::DlImage> atlas,
+void DlDispatcher::drawAtlas(const sk_sp<flutter::DlImage>& atlas,
                              const SkRSXform xform[],
                              const SkRect tex[],
                              const flutter::DlColor colors[],
@@ -1045,7 +1050,7 @@ void DlDispatcher::drawAtlas(const sk_sp<flutter::DlImage> atlas,
 
 // |flutter::DlOpReceiver|
 void DlDispatcher::drawDisplayList(
-    const sk_sp<flutter::DisplayList> display_list,
+    const sk_sp<flutter::DisplayList>& display_list,
     SkScalar opacity) {
   // Save all values that must remain untouched after the operation.
   Paint saved_paint = paint_;
@@ -1074,7 +1079,9 @@ void DlDispatcher::drawDisplayList(
     canvas_.SaveLayer(save_paint);
   }
 
-  if (display_list->has_rtree()) {
+  // TODO(131445): Remove this restriction if we can correctly cull with
+  // perspective transforms.
+  if (display_list->has_rtree() && !initial_matrix_.HasPerspective()) {
     // The canvas remembers the screen-space culling bounds clipped by
     // the surface and the history of clip calls. DisplayList can cull
     // the ops based on a rectangle expressed in its "destination bounds"
@@ -1101,20 +1108,20 @@ void DlDispatcher::drawDisplayList(
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,
+void DlDispatcher::drawTextBlob(const sk_sp<SkTextBlob>& blob,
                                 SkScalar x,
                                 SkScalar y) {
-  const auto text_frame = TextFrameFromTextBlob(blob);
-  if (paint_.style == Paint::Style::kStroke) {
+  const auto maybe_text_frame = MakeTextFrameFromTextBlobSkia(blob);
+  if (!maybe_text_frame.has_value()) {
+    return;
+  }
+  const auto text_frame = maybe_text_frame.value();
+  if (paint_.style == Paint::Style::kStroke ||
+      paint_.color_source.GetType() != ColorSource::Type::kColor) {
+    auto bounds = blob->bounds();
     auto path = skia_conversions::PathDataFromTextBlob(blob);
-    auto bounds = text_frame.GetBounds();
-    if (!bounds.has_value()) {
-      return;
-    }
-    canvas_.Save();
-    canvas_.Translate({x + bounds->origin.x, y + bounds->origin.y, 0.0});
+    path.Shift(Point(x + bounds.left(), y + bounds.top()));
     canvas_.DrawPath(path, paint_);
-    canvas_.Restore();
     return;
   }
 
