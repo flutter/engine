@@ -75,8 +75,7 @@ class MockPlatformMessageHandler : public PlatformMessageHandler {
 // RuntimeDelegate.
 //
 // To use this class, contruct this class, call LaunchRootIsolate, and get the
-// runtime controller with Controller(). By the end of the test, destruct this
-// class in the UI thread.
+// runtime controller with Controller().
 class MockRuntimeControllerContext {
  public:
   using VoidCallback = std::function<void()>;
@@ -104,6 +103,11 @@ class MockRuntimeControllerContext {
         settings.isolate_shutdown_callback,   // isolate shutdown callback
         settings.persistent_isolate_data,     // persistent isolate data
         UIDartState::Context{task_runners});
+  }
+
+  ~MockRuntimeControllerContext() {
+    PostSync(task_runners_.GetUITaskRunner(),
+            [&]() { runtime_controller_.reset(); });
   }
 
   // Launch the root isolate. The post_launch callback will be executed in the
@@ -484,9 +488,6 @@ TEST_F(PlatformConfigurationTest, OutOfScopeRenderCallsAreIgnored) {
   fml::AutoResetWaitableEvent latch;
   PostSync(task_runners.GetUITaskRunner(), [&]() { latch.Signal(); });
   latch.Wait();
-
-  PostSync(task_runners.GetUITaskRunner(),
-           [&]() { runtime_controller_context.reset(); });
 }
 
 TEST_F(PlatformConfigurationTest, DuplicateRenderCallsAreIgnored) {
@@ -521,9 +522,6 @@ TEST_F(PlatformConfigurationTest, DuplicateRenderCallsAreIgnored) {
   latch.Wait();
 
   runtime_controller_context->Controller().BeginFrame(fml::TimePoint::Now(), 0);
-
-  PostSync(task_runners.GetUITaskRunner(),
-           [&]() { runtime_controller_context.reset(); });
 }
 
 }  // namespace testing
