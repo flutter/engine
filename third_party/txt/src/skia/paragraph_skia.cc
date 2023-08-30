@@ -139,8 +139,7 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
     if (dash_path_effect) {
       setPathEffect(paint, *dash_path_effect);
     }
-    canvas_->DrawLine(SkPoint::Make(x0, y0), SkPoint::Make(x1, y1),
-                      toDlPaint(decor_style));
+    canvas_->DrawLine(SkPoint::Make(x0, y0), SkPoint::Make(x1, y1), paint);
   }
 
   void clipRect(const SkRect& rect) override {
