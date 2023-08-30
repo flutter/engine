@@ -1455,32 +1455,6 @@ extension DomImageBitmapExtension on DomImageBitmap {
 }
 
 
-@JS('createImageBitmap')
-external JSPromise _createImageBitmap1(
-  JSAny source,
-);
-@JS('createImageBitmap')
-external JSPromise _createImageBitmap2(
-  JSAny source,
-  JSNumber x,
-  JSNumber y,
-  JSNumber width,
-  JSNumber height,
-);
-JSPromise createImageBitmap(JSAny source, [({int x, int y, int width, int height})? bounds]) {
-  if (bounds != null) {
-    return _createImageBitmap2(
-      source,
-      bounds.x.toJS,
-      bounds.y.toJS,
-      bounds.width.toJS,
-      bounds.height.toJS
-    );
-  } else {
-    return _createImageBitmap1(source);
-  }
-}
-
 @JS()
 @staticInterop
 class DomCanvasPattern {}
