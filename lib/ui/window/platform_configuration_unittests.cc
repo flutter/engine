@@ -444,7 +444,7 @@ TEST_F(PlatformConfigurationTest, SetDartPerformanceMode) {
   DestroyShell(std::move(shell), task_runners);
 }
 
-TEST_F(PlatformConfigurationTest, CallingRenderOutOfScopeIsIgnored) {
+TEST_F(PlatformConfigurationTest, OutOfScopeRenderCallsAreIgnored) {
   Settings settings = CreateSettingsForFixture();
   TaskRunners task_runners = GetTaskRunnersForFixture();
 
@@ -453,15 +453,11 @@ TEST_F(PlatformConfigurationTest, CallingRenderOutOfScopeIsIgnored) {
       std::make_shared<MockPlatformMessageHandler>();
   EXPECT_CALL(client, GetPlatformMessageHandler())
       .WillOnce(Return(platform_message_handler));
+  // Render should not be called.
   EXPECT_CALL(client, Render(_, _)).Times(Exactly(0));
 
   auto context = std::make_unique<MockRuntimeControllerContext>(
       settings, task_runners, client);
-
-  fml::AutoResetWaitableEvent latch;
-  AddNativeCallback("NotifyNative", CREATE_NATIVE_ENTRY([&latch](auto args) {
-                      latch.Signal();
-                    }));
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("incorrectImmediateRender");
@@ -470,7 +466,43 @@ TEST_F(PlatformConfigurationTest, CallingRenderOutOfScopeIsIgnored) {
       /*physical_touch_slop=*/2, /*display_id=*/0);
   context->LaunchRootIsolate(configuration, implicit_view_metrics);
 
+  // Wait for the Dart main function to end.
+  fml::AutoResetWaitableEvent latch;
+  PostSync(task_runners.GetUITaskRunner(), [&]() { latch.Signal(); });
   latch.Wait();
+
+  PostSync(task_runners.GetUITaskRunner(), [&]() { context.reset(); });
+}
+
+TEST_F(PlatformConfigurationTest, DuplicateRenderCallsAreIgnored) {
+  Settings settings = CreateSettingsForFixture();
+  TaskRunners task_runners = GetTaskRunnersForFixture();
+
+  MockRuntimeDelegate client;
+  auto platform_message_handler =
+      std::make_shared<MockPlatformMessageHandler>();
+  EXPECT_CALL(client, GetPlatformMessageHandler())
+      .WillOnce(Return(platform_message_handler));
+  // Render should only be called once, because the second call is ignored.
+  EXPECT_CALL(client, Render(_, _)).Times(Exactly(1));
+
+  auto context = std::make_unique<MockRuntimeControllerContext>(
+      settings, task_runners, client);
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("incorrectDoubleRender");
+  ViewportMetrics implicit_view_metrics(
+      /*device_pixel_ratio=*/1.0, /*width=*/20, /*height=*/20,
+      /*physical_touch_slop=*/2, /*display_id=*/0);
+  context->LaunchRootIsolate(configuration, implicit_view_metrics);
+
+  // Wait for the Dart main function to end, which means the callbacks have been
+  // registered.
+  fml::AutoResetWaitableEvent latch;
+  PostSync(task_runners.GetUITaskRunner(), [&]() { latch.Signal(); });
+  latch.Wait();
+
+  context->GetController().BeginFrame(fml::TimePoint::Now(), 0);
 
   PostSync(task_runners.GetUITaskRunner(), [&]() { context.reset(); });
 }
