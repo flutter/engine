@@ -101,8 +101,8 @@ void DlStopwatchVisualizer::Visualize(DlCanvas* canvas,
   }
 
   // Actually draw.
-  // Note we use kSrcOut, because some of the colors above have opacity < 1.0.
-  canvas->DrawVertices(painter.IntoVertices(), DlBlendMode::kSrcOut, paint);
+  // Note we use kSrcOver, because some of the colors above have opacity < 1.0.
+  canvas->DrawVertices(painter.IntoVertices(), DlBlendMode::kSrcOver, paint);
 }
 
 void DlVertexPainter::DrawRect(const SkRect& rect, const DlColor& color) {
