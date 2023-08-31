@@ -100,7 +100,7 @@ class MockPlatformMessageHandler : public PlatformMessageHandler {
 // and get the runtime controller with Controller().
 class RuntimeControllerContext {
  public:
-  using VoidCallback = std::function<void()>;
+  using ControllerCallback = std::function<void(RuntimeController&)>;
 
   [[nodiscard]] static std::unique_ptr<RuntimeControllerContext> Create(
       Settings settings,                //
@@ -123,7 +123,7 @@ class RuntimeControllerContext {
   // Launch the root isolate. The post_launch callback will be executed in the
   // same UI task, which can be used to create initial views.
   void LaunchRootIsolate(RunConfiguration& configuration,
-                         VoidCallback post_launch) {
+                         ControllerCallback post_launch) {
     PostSync(task_runners_.GetUITaskRunner(), [&]() {
       bool launch_success = runtime_controller_->LaunchRootIsolate(
           settings_,                                  //
@@ -133,12 +133,16 @@ class RuntimeControllerContext {
           configuration.GetEntrypointArgs(),          //
           configuration.TakeIsolateConfiguration());  //
       ASSERT_TRUE(launch_success);
-      post_launch();
+      post_launch(*runtime_controller_);
     });
   }
 
-  // Get the runtime controller.
-  RuntimeController& Controller() { return *runtime_controller_; }
+  void ControllerTaskSync(ControllerCallback task) {
+    ASSERT_TRUE(runtime_controller_);
+    ASSERT_TRUE(task);
+    PostSync(task_runners_.GetUITaskRunner(),
+             [&]() { task(*runtime_controller_); });
+  }
 
  private:
   RuntimeControllerContext(const Settings& settings,
@@ -511,12 +515,14 @@ TEST_F(PlatformConfigurationTest, OutOfScopeRenderCallsAreIgnored) {
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("incorrectImmediateRender");
-  runtime_controller_context->LaunchRootIsolate(configuration, [&] {
-    runtime_controller_context->Controller().AddView(
-        kImplicitViewId, ViewportMetrics(
-                             /*pixel_ratio=*/1.0, /*width=*/20, /*height=*/20,
-                             /*touch_slop=*/2, /*display_id=*/0));
-  });
+  runtime_controller_context->LaunchRootIsolate(
+      configuration, [](RuntimeController& runtime_controller) {
+        runtime_controller.AddView(
+            kImplicitViewId,
+            ViewportMetrics(
+                /*pixel_ratio=*/1.0, /*width=*/20, /*height=*/20,
+                /*touch_slop=*/2, /*display_id=*/0));
+      });
 
   // Wait for the Dart main function to end.
   message_latch->Wait();
@@ -545,20 +551,22 @@ TEST_F(PlatformConfigurationTest, DuplicateRenderCallsAreIgnored) {
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("incorrectDoubleRender");
-  runtime_controller_context->LaunchRootIsolate(configuration, [&] {
-    runtime_controller_context->Controller().AddView(
-        kImplicitViewId, ViewportMetrics(
-                             /*pixel_ratio=*/1.0, /*width=*/20, /*height=*/20,
-                             /*touch_slop=*/2, /*display_id=*/0));
-  });
+  runtime_controller_context->LaunchRootIsolate(
+      configuration, [](RuntimeController& runtime_controller) {
+        runtime_controller.AddView(
+            kImplicitViewId,
+            ViewportMetrics(
+                /*pixel_ratio=*/1.0, /*width=*/20, /*height=*/20,
+                /*touch_slop=*/2, /*display_id=*/0));
+      });
 
   // Wait for the Dart main function to end.
   message_latch->Wait();
 
-  PostSync(task_runners.GetUITaskRunner(), [&]() {
-    runtime_controller_context->Controller().BeginFrame(fml::TimePoint::Now(),
-                                                        0);
-  });
+  runtime_controller_context->ControllerTaskSync(
+      [](RuntimeController& runtime_controller) {
+        runtime_controller.BeginFrame(fml::TimePoint::Now(), 0);
+      });
 }
 
 }  // namespace testing
