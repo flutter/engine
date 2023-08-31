@@ -296,8 +296,10 @@ void MockCanvas::DrawImageNine(const sk_sp<DlImage>& image,
   FML_DCHECK(false);
 }
 
-void MockCanvas::DrawVertices(const DlVertices*, DlBlendMode, const DlPaint&) {
-  FML_DCHECK(false);
+void MockCanvas::DrawVertices(const DlVertices*,
+                              DlBlendMode mode,
+                              const DlPaint& paint) {
+  draw_calls_.emplace_back(DrawVerticesData{.mode = mode, .paint = paint});
 }
 
 void MockCanvas::DrawAtlas(const sk_sp<DlImage>&,
@@ -520,6 +522,16 @@ bool operator==(const MockCanvas::ClipPathData& a,
 std::ostream& operator<<(std::ostream& os,
                          const MockCanvas::ClipPathData& data) {
   return os << data.path << " " << data.clip_op << " " << data.style;
+}
+
+bool operator==(const MockCanvas::DrawVerticesData& a,
+                const MockCanvas::DrawVerticesData& b) {
+  return a.mode == b.mode && a.paint == b.paint;
+}
+
+std::ostream& operator<<(std::ostream& os,
+                         const MockCanvas::DrawVerticesData& data) {
+  return os << "DrawVertices: ";
 }
 
 std::ostream& operator<<(std::ostream& os,

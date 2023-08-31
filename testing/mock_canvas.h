@@ -130,6 +130,11 @@ class MockCanvas final : public DlCanvas {
     DlPaint paint;
   };
 
+  struct DrawVerticesData {
+    DlBlendMode mode;
+    DlPaint paint;
+  };
+
   // Discriminated union of all the different |DrawCall| types.  It is roughly
   // equivalent to the different methods in |SkCanvas|' public API.
   using DrawCallData = std::variant<SaveData,
@@ -147,7 +152,8 @@ class MockCanvas final : public DlCanvas {
                                     ClipRectData,
                                     ClipRRectData,
                                     ClipPathData,
-                                    DrawPaintData>;
+                                    DrawPaintData,
+                                    DrawVerticesData>;
 
   // A single call made against this canvas.
   struct DrawCall {
