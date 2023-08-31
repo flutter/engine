@@ -240,6 +240,7 @@ RasterStatus Rasterizer::Draw(
 
   bool should_resubmit_frame = ShouldResubmitFrame(draw_result.raster_status);
   if (should_resubmit_frame) {
+    FML_CHECK(draw_result.resubmitted_item);
     auto front_continuation = pipeline->ProduceIfEmpty();
     PipelineProduceResult pipeline_result =
         front_continuation.Complete(std::move(draw_result.resubmitted_item));
