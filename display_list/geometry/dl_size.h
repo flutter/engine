@@ -34,7 +34,7 @@ struct DlTSize {
   constexpr T height() const { return height_; }
   constexpr T area() const { return width_ * height_; }
 
-  constexpr bool is_empty() const { return !(width_ >= 0 && height_ >= 0); }
+  constexpr bool is_empty() const { return !(width_ > 0 && height_ > 0); }
   constexpr bool operator==(const DlTSize& p) const {
     return width_ == p.width_ && height_ == p.height_;
   }
@@ -46,7 +46,7 @@ using DlISize = DlTSize<DlSize>;
 
 template <typename T>
 inline std::ostream& operator<<(std::ostream& os, const DlTSize<T>& size) {
-  return os << "DlPoint(" << size.width() << ", " << size.width() << ")";
+  return os << "DlSize(" << size.width() << ", " << size.width() << ")";
 }
 
 }  // namespace flutter

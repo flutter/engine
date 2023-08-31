@@ -38,7 +38,7 @@ TEST_F(EmbedderTest, CanRenderGradientWithMetal) {
   EmbedderConfigBuilder builder(context);
 
   builder.SetDartEntrypoint("render_gradient");
-  builder.SetMetalRendererConfig(SkISize::Make(800, 600));
+  builder.SetMetalRendererConfig(DlISize(800, 600));
 
   auto rendered_scene = context.GetNextSceneImage();
 
@@ -59,7 +59,7 @@ TEST_F(EmbedderTest, CanRenderGradientWithMetal) {
 }
 
 static sk_sp<SkSurface> GetSurfaceFromTexture(const sk_sp<GrDirectContext>& skia_context,
-                                              SkISize texture_size,
+                                              DlISize texture_size,
                                               void* texture) {
   GrMtlTextureInfo info;
   info.fTexture.reset([(id<MTLTexture>)texture retain]);
@@ -75,7 +75,7 @@ TEST_F(EmbedderTest, ExternalTextureMetal) {
   EmbedderTestContextMetal& context = reinterpret_cast<EmbedderTestContextMetal&>(
       GetEmbedderContext(EmbedderTestContextType::kMetalContext));
 
-  const auto texture_size = SkISize::Make(800, 600);
+  const auto texture_size = DlISize(800, 600);
   const int64_t texture_id = 1;
 
   TestMetalContext* metal_context = context.GetTestMetalContext();
@@ -129,7 +129,7 @@ TEST_F(EmbedderTest, MetalCompositorMustBeAbleToRenderPlatformViews) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kMetalContext);
 
   EmbedderConfigBuilder builder(context);
-  builder.SetMetalRendererConfig(SkISize::Make(800, 600));
+  builder.SetMetalRendererConfig(DlISize(800, 600));
   builder.SetCompositor();
   builder.SetDartEntrypoint("can_composite_platform_views");
 
@@ -214,7 +214,7 @@ TEST_F(EmbedderTest, CanRenderSceneWithoutCustomCompositorMetal) {
   EmbedderConfigBuilder builder(context);
 
   builder.SetDartEntrypoint("can_render_scene_without_custom_compositor");
-  builder.SetMetalRendererConfig(SkISize::Make(800, 600));
+  builder.SetMetalRendererConfig(DlISize(800, 600));
 
   auto rendered_scene = context.GetNextSceneImage();
 
@@ -236,7 +236,7 @@ TEST_F(EmbedderTest, TextureDestructionCallbackCalledWithoutCustomCompositorMeta
   EmbedderTestContextMetal& context = reinterpret_cast<EmbedderTestContextMetal&>(
       GetEmbedderContext(EmbedderTestContextType::kMetalContext));
   EmbedderConfigBuilder builder(context);
-  builder.SetMetalRendererConfig(SkISize::Make(800, 600));
+  builder.SetMetalRendererConfig(DlISize(800, 600));
   builder.SetDartEntrypoint("texture_destruction_callback_called_without_custom_compositor");
 
   struct CollectContext {
@@ -286,7 +286,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderKnownSceneMetal) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kMetalContext);
 
   EmbedderConfigBuilder builder(context);
-  builder.SetMetalRendererConfig(SkISize::Make(800, 600));
+  builder.SetMetalRendererConfig(DlISize(800, 600));
   builder.SetCompositor();
   builder.SetDartEntrypoint("can_composite_platform_views_with_known_scene");
 
@@ -440,7 +440,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderKnownSceneMetal) {
 TEST_F(EmbedderTest, CreateInvalidBackingstoreMetalTexture) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kMetalContext);
   EmbedderConfigBuilder builder(context);
-  builder.SetMetalRendererConfig(SkISize::Make(800, 600));
+  builder.SetMetalRendererConfig(DlISize(800, 600));
   builder.SetCompositor();
   builder.SetRenderTargetType(EmbedderTestBackingStoreProducer::RenderTargetType::kMetalTexture);
   builder.SetDartEntrypoint("invalid_backingstore");
@@ -497,7 +497,7 @@ TEST_F(EmbedderTest, ExternalTextureMetalRefreshedTooOften) {
       GetEmbedderContext(EmbedderTestContextType::kMetalContext));
 
   TestMetalContext* metal_context = context.GetTestMetalContext();
-  auto metal_texture = metal_context->CreateMetalTexture(SkISize::Make(100, 100));
+  auto metal_texture = metal_context->CreateMetalTexture(DlISize(100, 100));
 
   std::vector<FlutterMetalTextureHandle> textures{metal_texture.texture};
 
@@ -515,7 +515,7 @@ TEST_F(EmbedderTest, ExternalTextureMetalRefreshedTooOften) {
   });
   EmbedderExternalTextureMetal texture(1, callback);
 
-  auto surface = TestMetalSurface::Create(*metal_context, SkISize::Make(100, 100));
+  auto surface = TestMetalSurface::Create(*metal_context, DlISize(100, 100));
   auto skia_surface = surface->GetSurface();
   DlSkCanvasAdapter canvas(skia_surface->getCanvas());
 

@@ -63,7 +63,7 @@ sk_sp<GrDirectContext> TestMetalContext::GetSkiaContext() const {
   return skia_context_;
 }
 
-TestMetalContext::TextureInfo TestMetalContext::CreateMetalTexture(const SkISize& size) {
+TestMetalContext::TextureInfo TestMetalContext::CreateMetalTexture(const DlISize& size) {
   std::scoped_lock lock(textures_mutex);
   auto texture_descriptor = fml::scoped_nsobject{
       [[MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatBGRA8Unorm

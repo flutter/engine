@@ -15,7 +15,7 @@ namespace flutter {
 namespace testing {
 
 EmbedderTestCompositorMetal::EmbedderTestCompositorMetal(
-    SkISize surface_size,
+    DlISize surface_size,
     sk_sp<GrDirectContext> context)
     : EmbedderTestCompositor(surface_size, std::move(context)) {}
 
@@ -26,7 +26,8 @@ bool EmbedderTestCompositorMetal::UpdateOffscrenComposition(
     size_t layers_count) {
   last_composition_ = nullptr;
 
-  const auto image_info = SkImageInfo::MakeN32Premul(surface_size_);
+  const auto image_info =
+      SkImageInfo::MakeN32Premul(surface_size_.width(), surface_size_.height());
 
   auto surface =
       SkSurfaces::RenderTarget(context_.get(),            // context

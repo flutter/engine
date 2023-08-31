@@ -649,7 +649,7 @@ TEST_F(EmbedderTest,
   auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
 
   EmbedderConfigBuilder builder(context);
-  builder.SetSoftwareRendererConfig(SkISize::Make(800, 600));
+  builder.SetSoftwareRendererConfig(DlISize(800, 600));
   builder.SetCompositor();
   builder.SetDartEntrypoint("can_composite_platform_views_with_known_scene");
 
@@ -825,7 +825,7 @@ TEST_F(EmbedderTest, NoLayerCreatedForTransparentOverlayOnTopOfPlatformLayer) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
 
   EmbedderConfigBuilder builder(context);
-  builder.SetSoftwareRendererConfig(SkISize::Make(800, 600));
+  builder.SetSoftwareRendererConfig(DlISize(800, 600));
   builder.SetCompositor();
   builder.SetDartEntrypoint("can_composite_platform_views_transparent_overlay");
 
@@ -947,7 +947,7 @@ TEST_F(EmbedderTest, NoLayerCreatedForNoOverlayOnTopOfPlatformLayer) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
 
   EmbedderConfigBuilder builder(context);
-  builder.SetSoftwareRendererConfig(SkISize::Make(800, 600));
+  builder.SetSoftwareRendererConfig(DlISize(800, 600));
   builder.SetCompositor();
   builder.SetDartEntrypoint("can_composite_platform_views_no_overlay");
 
@@ -1214,7 +1214,7 @@ TEST_F(EmbedderTest, VerifyB143464703WithSoftwareBackend) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
 
   EmbedderConfigBuilder builder(context);
-  builder.SetSoftwareRendererConfig(SkISize::Make(1024, 600));
+  builder.SetSoftwareRendererConfig(DlISize(1024, 600));
   builder.SetCompositor();
   builder.SetDartEntrypoint("verify_b143464703");
 

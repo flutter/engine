@@ -6,10 +6,10 @@
 #define FLUTTER_TESTING_TEST_VULKAN_SURFACE_IMPL_H_
 
 #include <memory>
+#include "flutter/display_list/geometry/dl_size.h"
 #include "flutter/testing/test_vulkan_context.h"
 
 #include "third_party/skia/include/core/SkRefCnt.h"
-#include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
@@ -21,7 +21,7 @@ class TestVulkanSurface {
  public:
   static std::unique_ptr<TestVulkanSurface> Create(
       const TestVulkanContext& context,
-      const SkISize& surface_size);
+      const DlISize& surface_size);
 
   bool IsValid() const;
 

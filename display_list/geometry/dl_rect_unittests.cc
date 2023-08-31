@@ -123,6 +123,123 @@ TEST(DlRectTest, FRectRoundingSimple) {
   ASSERT_EQ(rect.Rounded(), DlFRect::MakeLTRB(5.0f, 10.0f, 21.0f, 25.0f));
 }
 
+TEST(DlRectTest, FRectRoundToIRectHuge) {
+  auto test = [](int corners) {
+    ASSERT_TRUE(corners >= 0 && corners <= 0xf);
+    DlScalar l, t, r, b;
+    DlInt il, it, ir, ib;
+    l = il = 50;
+    t = it = 50;
+    r = ir = 80;
+    b = ib = 80;
+    if ((corners & (1 << 0)) != 0) {
+      l = -1E20;
+      il = std::numeric_limits<DlInt>::min();
+    }
+    if ((corners & (1 << 1)) != 0) {
+      t = -1E20;
+      it = std::numeric_limits<DlInt>::min();
+    }
+    if ((corners & (1 << 2)) != 0) {
+      r = +1E20;
+      ir = std::numeric_limits<DlInt>::max();
+    }
+    if ((corners & (1 << 3)) != 0) {
+      b = +1E20;
+      ib = std::numeric_limits<DlInt>::max();
+    }
+
+    DlFRect rect = DlFRect::MakeLTRB(l, t, r, b);
+    DlIRect irect = DlIRect::MakeRounded(rect);
+    EXPECT_EQ(irect.left(), il) << corners;
+    EXPECT_EQ(irect.top(), it) << corners;
+    EXPECT_EQ(irect.right(), ir) << corners;
+    EXPECT_EQ(irect.bottom(), ib) << corners;
+  };
+
+  for (int corners = 0; corners <= 15; corners++) {
+    test(corners);
+  }
+}
+
+TEST(DlRectTest, FRectRoundOutToIRectHuge) {
+  auto test = [](int corners) {
+    ASSERT_TRUE(corners >= 0 && corners <= 0xf);
+    DlScalar l, t, r, b;
+    DlInt il, it, ir, ib;
+    l = il = 50;
+    t = it = 50;
+    r = ir = 80;
+    b = ib = 80;
+    if ((corners & (1 << 0)) != 0) {
+      l = -1E20;
+      il = std::numeric_limits<DlInt>::min();
+    }
+    if ((corners & (1 << 1)) != 0) {
+      t = -1E20;
+      it = std::numeric_limits<DlInt>::min();
+    }
+    if ((corners & (1 << 2)) != 0) {
+      r = +1E20;
+      ir = std::numeric_limits<DlInt>::max();
+    }
+    if ((corners & (1 << 3)) != 0) {
+      b = +1E20;
+      ib = std::numeric_limits<DlInt>::max();
+    }
+
+    DlFRect rect = DlFRect::MakeLTRB(l, t, r, b);
+    DlIRect irect = DlIRect::MakeRoundedOut(rect);
+    EXPECT_EQ(irect.left(), il) << corners;
+    EXPECT_EQ(irect.top(), it) << corners;
+    EXPECT_EQ(irect.right(), ir) << corners;
+    EXPECT_EQ(irect.bottom(), ib) << corners;
+  };
+
+  for (int corners = 0; corners <= 15; corners++) {
+    test(corners);
+  }
+}
+
+TEST(DlRectTest, FRectRoundInToIRectHuge) {
+  auto test = [](int corners) {
+    ASSERT_TRUE(corners >= 0 && corners <= 0xf);
+    DlScalar l, t, r, b;
+    DlInt il, it, ir, ib;
+    l = il = 50;
+    t = it = 50;
+    r = ir = 80;
+    b = ib = 80;
+    if ((corners & (1 << 0)) != 0) {
+      l = -1E20;
+      il = std::numeric_limits<DlInt>::min();
+    }
+    if ((corners & (1 << 1)) != 0) {
+      t = -1E20;
+      it = std::numeric_limits<DlInt>::min();
+    }
+    if ((corners & (1 << 2)) != 0) {
+      r = +1E20;
+      ir = std::numeric_limits<DlInt>::max();
+    }
+    if ((corners & (1 << 3)) != 0) {
+      b = +1E20;
+      ib = std::numeric_limits<DlInt>::max();
+    }
+
+    DlFRect rect = DlFRect::MakeLTRB(l, t, r, b);
+    DlIRect irect = DlIRect::MakeRoundedIn(rect);
+    EXPECT_EQ(irect.left(), il) << corners;
+    EXPECT_EQ(irect.top(), it) << corners;
+    EXPECT_EQ(irect.right(), ir) << corners;
+    EXPECT_EQ(irect.bottom(), ib) << corners;
+  };
+
+  for (int corners = 0; corners <= 15; corners++) {
+    test(corners);
+  }
+}
+
 TEST(DlRectTest, FRectCopy) {
   // Using fractional-power-of-2 friendly values for equality tests
   DlFRect rect = DlFRect::MakeLTRB(5.125f, 10.25f, 20.625f, 25.375f);

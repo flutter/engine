@@ -92,7 +92,7 @@ FlutterEngineAOTData EmbedderTestContext::GetAOTData() const {
   return aot_data_.get();
 }
 
-void EmbedderTestContext::SetRootSurfaceTransformation(SkMatrix matrix) {
+void EmbedderTestContext::SetRootSurfaceTransformation(DlTransform matrix) {
   root_surface_transformation_ = matrix;
 }
 

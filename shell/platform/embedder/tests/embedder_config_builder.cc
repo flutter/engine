@@ -133,7 +133,7 @@ FlutterProjectArgs& EmbedderConfigBuilder::GetProjectArgs() {
   return project_args_;
 }
 
-void EmbedderConfigBuilder::SetSoftwareRendererConfig(SkISize surface_size) {
+void EmbedderConfigBuilder::SetSoftwareRendererConfig(DlISize surface_size) {
   renderer_config_.type = FlutterRendererType::kSoftware;
   renderer_config_.software = software_renderer_config_;
   context_.SetupSurface(surface_size);
@@ -171,7 +171,7 @@ void EmbedderConfigBuilder::SetOpenGLPresentCallBack() {
 }
 
 void EmbedderConfigBuilder::SetRendererConfig(EmbedderTestContextType type,
-                                              SkISize surface_size) {
+                                              DlISize surface_size) {
   switch (type) {
     case EmbedderTestContextType::kOpenGLContext:
       SetOpenGLRendererConfig(surface_size);
@@ -188,7 +188,7 @@ void EmbedderConfigBuilder::SetRendererConfig(EmbedderTestContextType type,
   }
 }
 
-void EmbedderConfigBuilder::SetOpenGLRendererConfig(SkISize surface_size) {
+void EmbedderConfigBuilder::SetOpenGLRendererConfig(DlISize surface_size) {
 #ifdef SHELL_ENABLE_GL
   renderer_config_.type = FlutterRendererType::kOpenGL;
   renderer_config_.open_gl = opengl_renderer_config_;
@@ -196,7 +196,7 @@ void EmbedderConfigBuilder::SetOpenGLRendererConfig(SkISize surface_size) {
 #endif
 }
 
-void EmbedderConfigBuilder::SetMetalRendererConfig(SkISize surface_size) {
+void EmbedderConfigBuilder::SetMetalRendererConfig(DlISize surface_size) {
 #ifdef SHELL_ENABLE_METAL
   renderer_config_.type = FlutterRendererType::kMetal;
   renderer_config_.metal = metal_renderer_config_;
@@ -204,7 +204,7 @@ void EmbedderConfigBuilder::SetMetalRendererConfig(SkISize surface_size) {
 #endif
 }
 
-void EmbedderConfigBuilder::SetVulkanRendererConfig(SkISize surface_size) {
+void EmbedderConfigBuilder::SetVulkanRendererConfig(DlISize surface_size) {
 #ifdef SHELL_ENABLE_VULKAN
   renderer_config_.type = FlutterRendererType::kVulkan;
   renderer_config_.vulkan = vulkan_renderer_config_;
@@ -525,8 +525,8 @@ void EmbedderConfigBuilder::InitializeVulkanRendererConfig() {
          const FlutterFrameInfo* frame_info) -> FlutterVulkanImage {
     VkImage image =
         reinterpret_cast<EmbedderTestContextVulkan*>(context)->GetNextImage(
-            {static_cast<int>(frame_info->size.width),
-             static_cast<int>(frame_info->size.height)});
+            DlISize(static_cast<DlInt>(frame_info->size.width),
+                    static_cast<DlInt>(frame_info->size.height)));
     return {
         .struct_size = sizeof(FlutterVulkanImage),
         .image = reinterpret_cast<uint64_t>(image),

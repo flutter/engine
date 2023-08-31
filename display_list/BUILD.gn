@@ -164,6 +164,7 @@ if (enable_unittests) {
     testonly = true
 
     sources = [
+      "dl_base_types_unittests.cc",
       "geometry/dl_angle_unittests.cc",
       "geometry/dl_rect_unittests.cc",
       "geometry/dl_region_unittests.cc",

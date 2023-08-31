@@ -5,6 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_TEST_COMPOSITOR_VULKAN_H_
 #define FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_TEST_COMPOSITOR_VULKAN_H_
 
+#include "flutter/display_list/geometry/dl_size.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/tests/embedder_test_compositor.h"
@@ -14,7 +15,7 @@ namespace testing {
 
 class EmbedderTestCompositorVulkan : public EmbedderTestCompositor {
  public:
-  EmbedderTestCompositorVulkan(SkISize surface_size,
+  EmbedderTestCompositorVulkan(DlISize surface_size,
                                sk_sp<GrDirectContext> context);
 
   ~EmbedderTestCompositorVulkan() override;

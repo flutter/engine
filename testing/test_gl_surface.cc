@@ -127,7 +127,7 @@ static EGLDisplay CreateSwangleDisplay() {
       display_config);
 }
 
-TestGLSurface::TestGLSurface(SkISize surface_size)
+TestGLSurface::TestGLSurface(DlISize surface_size)
     : surface_size_(surface_size) {
   display_ = CreateSwangleDisplay();
   FML_CHECK(display_ != EGL_NO_DISPLAY);
@@ -160,8 +160,8 @@ TestGLSurface::TestGLSurface(SkISize surface_size)
 
   {
     const EGLint onscreen_surface_attributes[] = {
-        EGL_WIDTH,  surface_size_.width(),   //
-        EGL_HEIGHT, surface_size_.height(),  //
+        EGL_WIDTH,  static_cast<int>(surface_size_.width()),   //
+        EGL_HEIGHT, static_cast<int>(surface_size_.height()),  //
         EGL_NONE,
     };
 
@@ -231,7 +231,7 @@ TestGLSurface::~TestGLSurface() {
   FML_CHECK(result == EGL_TRUE);
 }
 
-const SkISize& TestGLSurface::GetSurfaceSize() const {
+const DlISize& TestGLSurface::GetSurfaceSize() const {
   return surface_size_;
 }
 

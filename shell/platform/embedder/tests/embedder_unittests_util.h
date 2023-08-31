@@ -88,11 +88,12 @@ void FilterMutationsByType(
     const std::function<void(const FlutterPlatformViewMutation& mutation)>&
         handler);
 
-SkMatrix GetTotalMutationTransformationMatrix(
+DlTransform GetTotalMutationTransformationMatrix(
     const FlutterPlatformViewMutation** mutations,
     size_t count);
 
-SkMatrix GetTotalMutationTransformationMatrix(const FlutterPlatformView* view);
+DlTransform GetTotalMutationTransformationMatrix(
+    const FlutterPlatformView* view);
 
 //------------------------------------------------------------------------------
 /// @brief      A task runner that we expect the embedder to provide but whose

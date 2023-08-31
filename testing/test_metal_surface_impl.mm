@@ -21,7 +21,7 @@
 namespace flutter {
 
 void TestMetalSurfaceImpl::Init(const TestMetalContext::TextureInfo& texture_info,
-                                const SkISize& surface_size) {
+                                const DlISize& surface_size) {
   id<MTLTexture> texture = (__bridge id<MTLTexture>)texture_info.texture;
 
   GrMtlTextureInfo skia_texture_info;
@@ -45,7 +45,7 @@ void TestMetalSurfaceImpl::Init(const TestMetalContext::TextureInfo& texture_inf
 
 TestMetalSurfaceImpl::TestMetalSurfaceImpl(const TestMetalContext& test_metal_context,
                                            int64_t texture_id,
-                                           const SkISize& surface_size)
+                                           const DlISize& surface_size)
     : test_metal_context_(test_metal_context) {
   TestMetalContext::TextureInfo texture_info =
       const_cast<TestMetalContext&>(test_metal_context_).GetTextureInfo(texture_id);
@@ -53,9 +53,9 @@ TestMetalSurfaceImpl::TestMetalSurfaceImpl(const TestMetalContext& test_metal_co
 }
 
 TestMetalSurfaceImpl::TestMetalSurfaceImpl(const TestMetalContext& test_metal_context,
-                                           const SkISize& surface_size)
+                                           const DlISize& surface_size)
     : test_metal_context_(test_metal_context) {
-  if (surface_size.isEmpty()) {
+  if (surface_size.is_empty()) {
     FML_LOG(ERROR) << "Size of test Metal surface was empty.";
     return;
   }

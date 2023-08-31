@@ -267,7 +267,7 @@ bool EmbedderTestBackingStoreProducer::CreateMTLTexture(
 #ifdef SHELL_ENABLE_METAL
   // TODO(gw280): Use SkSurfaces::RenderTarget instead of generating our
   // own MTLTexture and wrapping it.
-  auto surface_size = SkISize::Make(config->size.width, config->size.height);
+  auto surface_size = DlISize(config->size.width, config->size.height);
   auto texture_info = test_metal_context_->CreateMetalTexture(surface_size);
 
   GrMtlTextureInfo skia_texture_info;
@@ -309,7 +309,7 @@ bool EmbedderTestBackingStoreProducer::CreateVulkanImage(
     test_vulkan_context_ = fml::MakeRefCounted<TestVulkanContext>();
   }
 
-  auto surface_size = SkISize::Make(config->size.width, config->size.height);
+  auto surface_size = DlISize(config->size.width, config->size.height);
   TestVulkanImage* test_image = new TestVulkanImage(
       std::move(test_vulkan_context_->CreateImage(surface_size).value()));
 

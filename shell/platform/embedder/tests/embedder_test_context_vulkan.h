@@ -29,17 +29,17 @@ class EmbedderTestContextVulkan : public EmbedderTestContext {
   // |EmbedderTestContext|
   void SetupCompositor() override;
 
-  VkImage GetNextImage(const SkISize& size);
+  VkImage GetNextImage(const DlISize& size);
 
   bool PresentImage(VkImage image);
 
  private:
   std::unique_ptr<TestVulkanSurface> surface_;
 
-  SkISize surface_size_ = SkISize::MakeEmpty();
+  DlISize surface_size_;
   size_t present_count_ = 0;
 
-  void SetupSurface(SkISize surface_size) override;
+  void SetupSurface(DlISize surface_size) override;
 
   friend class EmbedderConfigBuilder;
 

@@ -123,7 +123,7 @@ TestVulkanContext::~TestVulkanContext() {
 }
 
 std::optional<TestVulkanImage> TestVulkanContext::CreateImage(
-    const SkISize& size) const {
+    const DlISize& size) const {
   TestVulkanImage result;
 
   VkImageCreateInfo info = {

@@ -12,8 +12,6 @@
 #include "flutter/shell/platform/embedder/embedder_engine.h"
 #include "flutter/testing/assertions.h"
 #include "gtest/gtest.h"
-#include "third_party/skia/include/core/SkPoint.h"
-#include "third_party/skia/include/core/SkSize.h"
 
 //------------------------------------------------------------------------------
 // Equality
@@ -484,37 +482,37 @@ inline FlutterSize FlutterSizeMake(double width, double height) {
   return size;
 }
 
-inline FlutterSize FlutterSizeMake(const SkVector& vector) {
+inline FlutterSize FlutterSizeMake(const flutter::DlFVector& vector) {
   FlutterSize size = {};
   size.width = vector.x();
   size.height = vector.y();
   return size;
 }
 
-inline FlutterTransformation FlutterTransformationMake(const SkMatrix& matrix) {
+inline FlutterTransformation FlutterTransformationMake(
+    const flutter::DlTransform& matrix) {
   FlutterTransformation transformation = {};
-  transformation.scaleX = matrix[SkMatrix::kMScaleX];
-  transformation.skewX = matrix[SkMatrix::kMSkewX];
-  transformation.transX = matrix[SkMatrix::kMTransX];
-  transformation.skewY = matrix[SkMatrix::kMSkewY];
-  transformation.scaleY = matrix[SkMatrix::kMScaleY];
-  transformation.transY = matrix[SkMatrix::kMTransY];
-  transformation.pers0 = matrix[SkMatrix::kMPersp0];
-  transformation.pers1 = matrix[SkMatrix::kMPersp1];
-  transformation.pers2 = matrix[SkMatrix::kMPersp2];
+  transformation.scaleX = matrix.rc(0, 0);
+  transformation.skewX = matrix.rc(0, 1);
+  transformation.transX = matrix.rc(0, 3);
+  transformation.skewY = matrix.rc(1, 0);
+  transformation.scaleY = matrix.rc(1, 1);
+  transformation.transY = matrix.rc(1, 3);
+  transformation.pers0 = matrix.rc(3, 0);
+  transformation.pers1 = matrix.rc(3, 1);
+  transformation.pers2 = matrix.rc(3, 3);
   return transformation;
 }
 
-inline SkMatrix SkMatrixMake(const FlutterTransformation& xformation) {
-  return SkMatrix::MakeAll(xformation.scaleX,  //
-                           xformation.skewX,   //
-                           xformation.transX,  //
-                           xformation.skewY,   //
-                           xformation.scaleY,  //
-                           xformation.transY,  //
-                           xformation.pers0,   //
-                           xformation.pers1,   //
-                           xformation.pers2    //
+inline flutter::DlTransform DlTransformMake(
+    const FlutterTransformation& xformation) {
+  return flutter::DlTransform::MakeRowMajor(
+      // clang-format off
+      xformation.scaleX, xformation.skewX,  0.0f, xformation.transX,
+      xformation.skewY,  xformation.scaleY, 0.0f, xformation.transY,
+             0.0f,              0.0f,       1.0f,       0.0f,
+      xformation.pers0,  xformation.pers1,  0.0f, xformation.pers2
+      // clang-format on
   );
 }
 
@@ -522,7 +520,7 @@ inline flutter::EmbedderEngine* ToEmbedderEngine(const FlutterEngine& engine) {
   return reinterpret_cast<flutter::EmbedderEngine*>(engine);
 }
 
-inline FlutterRect FlutterRectMake(const SkRect& rect) {
+inline FlutterRect FlutterRectMake(const flutter::DlFRect& rect) {
   FlutterRect r = {};
   r.left = rect.left();
   r.top = rect.top();
@@ -540,21 +538,19 @@ inline FlutterRect FlutterRectMakeLTRB(double l, double t, double r, double b) {
   return rect;
 }
 
-inline SkRect SkRectMake(const FlutterRect& rect) {
-  return SkRect::MakeLTRB(rect.left, rect.top, rect.right, rect.bottom);
+inline flutter::DlFRect DlFRectMake(const FlutterRect& rect) {
+  return flutter::DlFRect::MakeLTRB(rect.left, rect.top,  //
+                                    rect.right, rect.bottom);
 }
 
-inline FlutterRoundedRect FlutterRoundedRectMake(const SkRRect& rect) {
+inline FlutterRoundedRect FlutterRoundedRectMake(
+    const flutter::DlFRRect& rect) {
   FlutterRoundedRect r = {};
   r.rect = FlutterRectMake(rect.rect());
-  r.upper_left_corner_radius =
-      FlutterSizeMake(rect.radii(SkRRect::Corner::kUpperLeft_Corner));
-  r.upper_right_corner_radius =
-      FlutterSizeMake(rect.radii(SkRRect::Corner::kUpperRight_Corner));
-  r.lower_right_corner_radius =
-      FlutterSizeMake(rect.radii(SkRRect::Corner::kLowerRight_Corner));
-  r.lower_left_corner_radius =
-      FlutterSizeMake(rect.radii(SkRRect::Corner::kLowerLeft_Corner));
+  r.upper_left_corner_radius = FlutterSizeMake(rect.upper_left_radii());
+  r.upper_right_corner_radius = FlutterSizeMake(rect.upper_right_radii());
+  r.lower_right_corner_radius = FlutterSizeMake(rect.lower_right_radii());
+  r.lower_left_corner_radius = FlutterSizeMake(rect.lower_left_radii());
   return r;
 }
 

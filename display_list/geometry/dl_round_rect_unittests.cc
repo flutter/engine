@@ -403,10 +403,10 @@ TEST(DlRoundRectTest, FRRectCopy) {
 TEST(DlRoundRectTest, FRRectContainsPoint) {
   DlFRect bounds = DlFRect::MakeLTRB(50, 50, 100, 100);
   DlFVector radii[4] = {
-    {0.5f, 0.75f},
-    {0.625f, 0.375f},
-    {0.875f, 0.25f},
-    {0.125f, 1.125f},
+      {0.5f, 0.75f},
+      {0.625f, 0.375f},
+      {0.875f, 0.25f},
+      {0.125f, 1.125f},
   };
   DlFRRect rrect = DlFRRect::MakeRectRadii(bounds, radii);
   ASSERT_EQ(rrect.type(), DlFRRect::Type::kComplex);
@@ -440,10 +440,10 @@ TEST(DlRoundRectTest, FRRectContainsPoint) {
 TEST(DlRoundRectTest, FRRectContainsRect) {
   DlFRect bounds = DlFRect::MakeLTRB(50, 50, 100, 100);
   DlFVector radii[4] = {
-    {0.5f, 0.75f},
-    {0.625f, 0.375f},
-    {0.875f, 0.25f},
-    {0.125f, 1.125f},
+      {0.5f, 0.75f},
+      {0.625f, 0.375f},
+      {0.875f, 0.25f},
+      {0.125f, 1.125f},
   };
   DlFRRect rrect = DlFRRect::MakeRectRadii(bounds, radii);
   ASSERT_EQ(rrect.type(), DlFRRect::Type::kComplex);
@@ -490,10 +490,10 @@ TEST(DlRoundRectTest, FRRectContainsRect) {
 TEST(DlRoundRectTest, FRRectDoesNotContainEmpty) {
   DlFRect bounds = DlFRect::MakeLTRB(50, 50, 100, 100);
   DlFVector radii[4] = {
-    {0.5f, 0.75f},
-    {0.625f, 0.375f},
-    {0.875f, 0.25f},
-    {0.125f, 1.125f},
+      {0.5f, 0.75f},
+      {0.625f, 0.375f},
+      {0.875f, 0.25f},
+      {0.125f, 1.125f},
   };
   DlFRRect rrect = DlFRRect::MakeRectRadii(bounds, radii);
   ASSERT_EQ(rrect.type(), DlFRRect::Type::kComplex);

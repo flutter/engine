@@ -21,8 +21,8 @@ EmbedderTestContextMetal::EmbedderTestContextMetal(std::string assets_path)
 
 EmbedderTestContextMetal::~EmbedderTestContextMetal() {}
 
-void EmbedderTestContextMetal::SetupSurface(SkISize surface_size) {
-  FML_CHECK(surface_size_.isEmpty());
+void EmbedderTestContextMetal::SetupSurface(DlISize surface_size) {
+  FML_CHECK(surface_size_.is_empty());
   surface_size_ = surface_size;
   metal_surface_ = TestMetalSurface::Create(*metal_context_, surface_size_);
 }

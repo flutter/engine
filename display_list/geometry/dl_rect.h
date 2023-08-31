@@ -199,10 +199,10 @@ struct DlTRect {
   DL_ONLY_INT_FROM_FLOAT_M(FT, static constexpr, DlTRect)
   MakeRoundedOut(const DlTRect<FT, FT>& r) {
     return MakeLTRB(                      //
-        static_cast<T>(floor(r.left())),  //
-        static_cast<T>(floor(r.top())),   //
-        static_cast<T>(ceil(r.right())),  //
-        static_cast<T>(ceil(r.bottom()))  //
+        DlScalar_ToInt(floor(r.left())),  //
+        DlScalar_ToInt(floor(r.top())),   //
+        DlScalar_ToInt(ceil(r.right())),  //
+        DlScalar_ToInt(ceil(r.bottom()))  //
     );
   }
 
@@ -213,10 +213,10 @@ struct DlTRect {
   DL_ONLY_INT_FROM_FLOAT_M(FT, static constexpr, DlTRect)
   MakeRoundedIn(const DlTRect<FT, FT>& r) {
     return MakeLTRB(                       //
-        static_cast<T>(ceil(r.left())),    //
-        static_cast<T>(ceil(r.top())),     //
-        static_cast<T>(floor(r.right())),  //
-        static_cast<T>(floor(r.bottom()))  //
+        DlScalar_ToInt(ceil(r.left())),    //
+        DlScalar_ToInt(ceil(r.top())),     //
+        DlScalar_ToInt(floor(r.right())),  //
+        DlScalar_ToInt(floor(r.bottom()))  //
     );
   }
 
@@ -228,10 +228,10 @@ struct DlTRect {
   DL_ONLY_INT_FROM_FLOAT_M(FT, static constexpr, DlTRect)
   MakeRounded(const DlTRect<FT, FT>& r) {
     return MakeLTRB(                       //
-        static_cast<T>(round(r.left())),   //
-        static_cast<T>(round(r.top())),    //
-        static_cast<T>(round(r.right())),  //
-        static_cast<T>(round(r.bottom()))  //
+        DlScalar_ToInt(round(r.left())),   //
+        DlScalar_ToInt(round(r.top())),    //
+        DlScalar_ToInt(round(r.right())),  //
+        DlScalar_ToInt(round(r.bottom()))  //
     );
   }
 

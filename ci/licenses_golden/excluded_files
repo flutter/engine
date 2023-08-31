@@ -31,6 +31,7 @@
 ../../../flutter/common/README.md
 ../../../flutter/display_list/benchmarking/dl_complexity_unittests.cc
 ../../../flutter/display_list/display_list_unittests.cc
+../../../flutter/display_list/dl_base_types_unittests.cc
 ../../../flutter/display_list/dl_color_unittests.cc
 ../../../flutter/display_list/dl_paint_unittests.cc
 ../../../flutter/display_list/dl_vertices_unittests.cc

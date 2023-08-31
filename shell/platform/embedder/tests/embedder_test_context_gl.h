@@ -76,7 +76,7 @@ class EmbedderTestContextGL : public EmbedderTestContext {
   GLPresentCallback gl_present_callback_;
   GLPopulateExistingDamageCallback gl_populate_existing_damage_callback_;
 
-  void SetupSurface(SkISize surface_size) override;
+  void SetupSurface(DlISize surface_size) override;
 
   bool GLMakeCurrent();
 

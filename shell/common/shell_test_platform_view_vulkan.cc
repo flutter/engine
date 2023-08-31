@@ -212,7 +212,7 @@ ShellTestPlatformViewVulkan::OffScreenSurface::AcquireFrame(
 
   return std::make_unique<SurfaceFrame>(std::move(surface), framebuffer_info,
                                         std::move(callback),
-                                        /*frame_size=*/SkISize::Make(800, 600));
+                                        /*frame_size=*/DlISize(800, 600));
 }
 
 GrDirectContext* ShellTestPlatformViewVulkan::OffScreenSurface::GetContext() {
@@ -220,8 +220,7 @@ GrDirectContext* ShellTestPlatformViewVulkan::OffScreenSurface::GetContext() {
 }
 
 DlTransform
-    ShellTestPlatformViewVulkan::OffScreenSurface::GetRootTransformation()
-    const {
+ShellTestPlatformViewVulkan::OffScreenSurface::GetRootTransformation() const {
   return DlTransform();
 }
 

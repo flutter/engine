@@ -17,7 +17,7 @@ bool TestMetalSurface::PlatformSupportsMetal() {
 
 std::unique_ptr<TestMetalSurface> TestMetalSurface::Create(
     const TestMetalContext& test_metal_context,
-    SkISize surface_size) {
+    DlISize surface_size) {
   return std::make_unique<TestMetalSurfaceImpl>(test_metal_context,
                                                 surface_size);
 }
@@ -25,7 +25,7 @@ std::unique_ptr<TestMetalSurface> TestMetalSurface::Create(
 std::unique_ptr<TestMetalSurface> TestMetalSurface::Create(
     const TestMetalContext& test_metal_context,
     int64_t texture_id,
-    SkISize surface_size) {
+    DlISize surface_size) {
   return std::make_unique<TestMetalSurfaceImpl>(test_metal_context, texture_id,
                                                 surface_size);
 }

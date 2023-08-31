@@ -40,7 +40,7 @@ EmbedderTestContextType EmbedderTestContextSoftware::GetContextType() const {
   return EmbedderTestContextType::kSoftwareContext;
 }
 
-void EmbedderTestContextSoftware::SetupSurface(SkISize surface_size) {
+void EmbedderTestContextSoftware::SetupSurface(DlISize surface_size) {
   surface_size_ = surface_size;
 }
 

@@ -288,21 +288,22 @@ void FilterMutationsByType(
                                handler);
 }
 
-SkMatrix GetTotalMutationTransformationMatrix(
+DlTransform GetTotalMutationTransformationMatrix(
     const FlutterPlatformViewMutation** mutations,
     size_t count) {
-  SkMatrix collected;
+  DlTransform collected;
 
   FilterMutationsByType(
       mutations, count, kFlutterPlatformViewMutationTypeTransformation,
       [&](const auto& mutation) {
-        collected.preConcat(SkMatrixMake(mutation.transformation));
+        collected.ConcatInner(DlTransformMake(mutation.transformation));
       });
 
   return collected;
 }
 
-SkMatrix GetTotalMutationTransformationMatrix(const FlutterPlatformView* view) {
+DlTransform GetTotalMutationTransformationMatrix(
+    const FlutterPlatformView* view) {
   return GetTotalMutationTransformationMatrix(view->mutations,
                                               view->mutations_count);
 }

@@ -367,9 +367,9 @@ DlFRect DlTransform::TransformRect(const DlFRect& rect) const {
       // interpolated towards the transformed coordinates of its 2 adjacent
       // corners and the point at which that side of the quad is clipped
       // will be included in the bounds.
-      auto ProcessCorner = [&accumulator](DlFHomogenous3D previous,
-                                          DlFHomogenous3D p,
-                                          DlFHomogenous3D next) {
+      auto ProcessCorner = [&accumulator](const DlFHomogenous3D& previous,
+                                          const DlFHomogenous3D& p,
+                                          const DlFHomogenous3D& next) {
         if (!p.is_finite()) {
           return;
         }
@@ -382,8 +382,8 @@ DlFRect DlTransform::TransformRect(const DlFRect& rect) const {
         // is only processed if it is unclipped. We linearly interpolate
         // to find the point at which the edge between them goes
         // out of bounds against the near clipping plane.
-        auto InterpolateAndProcess = [&accumulator](DlFHomogenous3D p,
-                                                    DlFHomogenous3D n) {
+        auto InterpolateAndProcess = [&accumulator](const DlFHomogenous3D& p,
+                                                    const DlFHomogenous3D& n) {
           FML_DCHECK(p.is_finite() && !p.is_unclipped());
           if (n.is_finite() && n.is_unclipped()) {
             DlScalar fract = (kMinimumHomogenous - p.w()) / (n.w() - p.w());

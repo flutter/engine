@@ -499,10 +499,10 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
   };
 
   concurrent_task_runner_->PostTask(
-      [raw_descriptor,                                            //
-       context = context_.get(),                                  //
+      [raw_descriptor,                                      //
+       context = context_.get(),                            //
        target_size = DlISize(target_width, target_height),  //
-       io_runner = runners_.GetIOTaskRunner(),                    //
+       io_runner = runners_.GetIOTaskRunner(),              //
        result,
        supports_wide_gamut = supports_wide_gamut_,  //
        gpu_disabled_switch = gpu_disabled_switch_]() {

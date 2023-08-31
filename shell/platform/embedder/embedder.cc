@@ -248,24 +248,23 @@ static void* DefaultGLProcResolver(const char* name) {
 #endif  // FML_OS_LINUX || FML_OS_WIN
 
 #ifdef SHELL_ENABLE_GL
-// Auxiliary function used to translate rectangles of type SkIRect to
+// Auxiliary function used to translate rectangles of type DlIRect to
 // FlutterRect.
-static FlutterRect SkIRectToFlutterRect(const SkIRect sk_rect) {
-  FlutterRect flutter_rect = {static_cast<double>(sk_rect.fLeft),
-                              static_cast<double>(sk_rect.fTop),
-                              static_cast<double>(sk_rect.fRight),
-                              static_cast<double>(sk_rect.fBottom)};
+static FlutterRect DlIRectToFlutterRect(const flutter::DlIRect& dl_rect) {
+  FlutterRect flutter_rect = {static_cast<double>(dl_rect.left()),
+                              static_cast<double>(dl_rect.top()),
+                              static_cast<double>(dl_rect.right()),
+                              static_cast<double>(dl_rect.bottom())};
   return flutter_rect;
 }
 
 // Auxiliary function used to translate rectangles of type FlutterRect to
-// SkIRect.
-static const SkIRect FlutterRectToSkIRect(FlutterRect flutter_rect) {
-  SkIRect rect = {static_cast<int32_t>(flutter_rect.left),
-                  static_cast<int32_t>(flutter_rect.top),
-                  static_cast<int32_t>(flutter_rect.right),
-                  static_cast<int32_t>(flutter_rect.bottom)};
-  return rect;
+// DlIRect.
+static const flutter::DlIRect FlutterRectToDlIRect(FlutterRect flutter_rect) {
+  return flutter::DlIRect::MakeLTRB(static_cast<int32_t>(flutter_rect.left),
+                                    static_cast<int32_t>(flutter_rect.top),
+                                    static_cast<int32_t>(flutter_rect.right),
+                                    static_cast<int32_t>(flutter_rect.bottom));
 }
 #endif
 
@@ -305,9 +304,9 @@ InferOpenGLPlatformViewCreationCallback(
       const size_t num_rects = 1;
 
       std::array<FlutterRect, num_rects> frame_damage_rect = {
-          SkIRectToFlutterRect(*(gl_present_info.frame_damage))};
+          DlIRectToFlutterRect(*(gl_present_info.frame_damage))};
       std::array<FlutterRect, num_rects> buffer_damage_rect = {
-          SkIRectToFlutterRect(*(gl_present_info.buffer_damage))};
+          DlIRectToFlutterRect(*(gl_present_info.buffer_damage))};
 
       FlutterDamage frame_damage{
           .struct_size = sizeof(FlutterDamage),
@@ -356,7 +355,7 @@ InferOpenGLPlatformViewCreationCallback(
       return flutter::GLFBOInfo{
           .fbo_id = static_cast<uint32_t>(id),
           .partial_repaint_enabled = false,
-          .existing_damage = SkIRect::MakeEmpty(),
+          .existing_damage = flutter::DlIRect(),
       };
     }
 
@@ -365,22 +364,20 @@ InferOpenGLPlatformViewCreationCallback(
     populate_existing_damage(user_data, id, &existing_damage);
 
     bool partial_repaint_enabled = true;
-    SkIRect existing_damage_rect;
+    flutter::DlIRect existing_damage_rect;
 
     // Verify that at least one damage rectangle was provided.
     if (existing_damage.num_rects <= 0 || existing_damage.damage == nullptr) {
       FML_LOG(INFO) << "No damage was provided. Forcing full repaint.";
-      existing_damage_rect = SkIRect::MakeEmpty();
       partial_repaint_enabled = false;
     } else if (existing_damage.num_rects > 1) {
       // Log message notifying users that multi-damage is not yet available in
       // case they try to make use of it.
       FML_LOG(INFO) << "Damage with multiple rectangles not yet supported. "
                        "Repainting the whole frame.";
-      existing_damage_rect = SkIRect::MakeEmpty();
       partial_repaint_enabled = false;
     } else {
-      existing_damage_rect = FlutterRectToSkIRect(*(existing_damage.damage));
+      existing_damage_rect = FlutterRectToDlIRect(*(existing_damage.damage));
     }
 
     // Pass the information about this FBO to the rendering backend.
@@ -400,20 +397,19 @@ InferOpenGLPlatformViewCreationCallback(
         };
   }
 
-  std::function<SkMatrix(void)> gl_surface_transformation_callback = nullptr;
+  std::function<flutter::DlTransform(void)> gl_surface_transformation_callback =
+      nullptr;
   if (SAFE_ACCESS(open_gl_config, surface_transformation, nullptr) != nullptr) {
     gl_surface_transformation_callback =
         [ptr = config->open_gl.surface_transformation, user_data]() {
           FlutterTransformation transformation = ptr(user_data);
-          return SkMatrix::MakeAll(transformation.scaleX,  //
-                                   transformation.skewX,   //
-                                   transformation.transX,  //
-                                   transformation.skewY,   //
-                                   transformation.scaleY,  //
-                                   transformation.transY,  //
-                                   transformation.pers0,   //
-                                   transformation.pers1,   //
-                                   transformation.pers2    //
+          return flutter::DlTransform::MakeRowMajor(
+              // clang-format off
+              transformation.scaleX, transformation.skewX,  0.0f, transformation.transX,
+              transformation.skewY,  transformation.scaleY, 0.0f, transformation.transY,
+                       0.0f,                  0.0f,         1.0f,         0.0f,
+              transformation.pers0,  transformation.pers1,  0.0f, transformation.pers2
+              // clang-format on
           );
         };
 
@@ -594,7 +590,7 @@ InferVulkanPlatformViewCreationCallback(
 
   auto vulkan_get_next_image =
       [ptr = config->vulkan.get_next_image_callback,
-       user_data](const SkISize& frame_size) -> FlutterVulkanImage {
+       user_data](const flutter::DlISize& frame_size) -> FlutterVulkanImage {
     FlutterFrameInfo frame_info = {
         .struct_size = sizeof(FlutterFrameInfo),
         .size = {static_cast<uint32_t>(frame_size.width()),
