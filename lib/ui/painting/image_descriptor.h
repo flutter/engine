@@ -93,6 +93,10 @@ class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
   ///         not.
   bool is_compressed() const { return !!generator_; }
 
+  /// @brief  Whether this image's generator can decode the image into a wide
+  ///         gamut color space.
+  bool is_wide_gamut_compatible() const { return wide_gamut_compatible_; }
+
   /// @brief  The orientation corrected image info for this image.
   const SkImageInfo& image_info() const { return image_info_; }
 
@@ -127,6 +131,7 @@ class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
   std::shared_ptr<ImageGenerator> generator_;
   const SkImageInfo image_info_;
   std::optional<size_t> row_bytes_;
+  const bool wide_gamut_compatible_;
 
   const SkImageInfo CreateImageInfo() const;
 

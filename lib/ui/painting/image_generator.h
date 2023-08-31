@@ -101,6 +101,10 @@ class ImageGenerator {
   /// @see        `GetPixels`
   virtual SkISize GetScaledDimensions(float scale) = 0;
 
+  /// @brief      Returns whether the generator is able to decode this image
+  ///             into a wide gamut color space.
+  virtual bool IsWideGamutCompatible() { return true; }
+
   /// @brief      Decode the image into a given buffer. This method is currently
   ///             always used for sub-pixel image decoding. For full-sized still
   ///             images, `GetImage` is always attempted first.
@@ -203,6 +207,9 @@ class BuiltinSkiaCodecImageGenerator : public ImageGenerator {
 
   // |ImageGenerator|
   SkISize GetScaledDimensions(float desired_scale) override;
+
+  // |ImageGenerator|
+  virtual bool IsWideGamutCompatible() override;
 
   // |ImageGenerator|
   bool GetPixels(

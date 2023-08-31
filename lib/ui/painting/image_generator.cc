@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "flutter/fml/logging.h"
+#include "third_party/skia/include/codec/SkEncodedImageFormat.h"
 #include "third_party/skia/include/codec/SkEncodedOrigin.h"
 #include "third_party/skia/include/codec/SkPixmapUtils.h"
 #include "third_party/skia/include/core/SkBitmap.h"
@@ -139,6 +140,12 @@ SkISize BuiltinSkiaCodecImageGenerator::GetScaledDimensions(
     std::swap(size.fWidth, size.fHeight);
   }
   return size;
+}
+
+bool BuiltinSkiaCodecImageGenerator::IsWideGamutCompatible() {
+  // Skia's PNG codec may be unable to decode some images (such as
+  // palette-based images) into a wide gamut color space.
+  return codec_->getEncodedFormat() != SkEncodedImageFormat::kPNG;
 }
 
 bool BuiltinSkiaCodecImageGenerator::GetPixels(

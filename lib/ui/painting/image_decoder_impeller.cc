@@ -176,8 +176,10 @@ DecompressResult ImageDecoderImpeller::DecompressTexture(
   ///
 
   const auto base_image_info = descriptor->image_info();
-  const bool is_wide_gamut =
-      supports_wide_gamut ? IsWideGamut(base_image_info.colorSpace()) : false;
+  const bool is_wide_gamut = supports_wide_gamut
+                                 ? IsWideGamut(base_image_info.colorSpace()) &&
+                                       descriptor->is_wide_gamut_compatible()
+                                 : false;
   SkAlphaType alpha_type =
       ChooseCompatibleAlphaType(base_image_info.alphaType());
   SkImageInfo image_info;

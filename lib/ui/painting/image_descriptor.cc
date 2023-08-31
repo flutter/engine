@@ -28,14 +28,16 @@ ImageDescriptor::ImageDescriptor(sk_sp<SkData> buffer,
     : buffer_(std::move(buffer)),
       generator_(nullptr),
       image_info_(image_info),
-      row_bytes_(row_bytes) {}
+      row_bytes_(row_bytes),
+      wide_gamut_compatible_(true) {}
 
 ImageDescriptor::ImageDescriptor(sk_sp<SkData> buffer,
                                  std::shared_ptr<ImageGenerator> generator)
     : buffer_(std::move(buffer)),
       generator_(std::move(generator)),
       image_info_(CreateImageInfo()),
-      row_bytes_(std::nullopt) {}
+      row_bytes_(std::nullopt),
+      wide_gamut_compatible_(generator_->IsWideGamutCompatible()) {}
 
 Dart_Handle ImageDescriptor::initEncoded(Dart_Handle descriptor_handle,
                                          ImmutableBuffer* immutable_buffer,
