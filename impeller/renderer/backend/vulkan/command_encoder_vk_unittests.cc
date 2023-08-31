@@ -4,8 +4,10 @@
 
 #include <thread>
 
+#include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/testing/testing.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
+#include "impeller/renderer/backend/vulkan/fence_waiter_vk.h"
 #include "impeller/renderer/backend/vulkan/test/mock_vulkan.h"
 
 namespace impeller {
@@ -22,6 +24,42 @@ TEST(CommandEncoderVKTest, DeleteEncoderAfterThreadDies) {
       encoder = factory.Create();
     });
     thread.join();
+  }
+  auto destroy_pool =
+      std::find(called_functions->begin(), called_functions->end(),
+                "vkDestroyCommandPool");
+  auto free_buffers =
+      std::find(called_functions->begin(), called_functions->end(),
+                "vkFreeCommandBuffers");
+  EXPECT_TRUE(destroy_pool != called_functions->end());
+  EXPECT_TRUE(free_buffers != called_functions->end());
+  EXPECT_TRUE(free_buffers < destroy_pool);
+}
+
+TEST(CommandEncoderVKTest, CleanupAfterSubmit) {
+  // This tests deleting the TrackedObjects where the thread is killed before
+  // the fence waiter has disposed of them.
+  std::shared_ptr<std::vector<std::string>> called_functions;
+  {
+    fml::AutoResetWaitableEvent wait_for_submit;
+    fml::AutoResetWaitableEvent wait_for_thread_join;
+    auto context = CreateMockVulkanContext();
+    std::thread thread([&] {
+      CommandEncoderFactoryVK factory(context);
+      std::shared_ptr<CommandEncoderVK> encoder = factory.Create();
+      encoder->Submit([&](bool success) {
+        ASSERT_TRUE(success);
+        wait_for_thread_join.Wait();
+        wait_for_submit.Signal();
+      });
+    });
+    thread.join();
+    wait_for_thread_join.Signal();
+    auto [fence_result, fence] = context->GetDevice().createFenceUnique({});
+    ASSERT_EQ(fence_result, vk::Result::eSuccess);
+    context->GetFenceWaiter()->AddFence(std::move(fence), [] {});
+    wait_for_submit.Wait();
+    called_functions = GetMockVulkanFunctions(context->GetDevice());
   }
   auto destroy_pool =
       std::find(called_functions->begin(), called_functions->end(),
