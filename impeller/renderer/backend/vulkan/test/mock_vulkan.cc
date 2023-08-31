@@ -346,6 +346,21 @@ void vkCmdSetViewport(VkCommandBuffer commandBuffer,
   mock_command_buffer->called_functions_->push_back("vkCmdSetViewport");
 }
 
+void vkFreeCommandBuffers(VkDevice device,
+                          VkCommandPool commandPool,
+                          uint32_t commandBufferCount,
+                          const VkCommandBuffer* pCommandBuffers) {
+  MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
+  mock_device->called_functions_->push_back("vkFreeCommandBuffers");
+}
+
+void vkDestroyCommandPool(VkDevice device,
+                          VkCommandPool commandPool,
+                          const VkAllocationCallbacks* pAllocator) {
+  MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
+  mock_device->called_functions_->push_back("vkDestroyCommandPool");
+}
+
 PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
                                             const char* pName) {
   if (strcmp("vkEnumerateInstanceExtensionProperties", pName) == 0) {
@@ -424,6 +439,10 @@ PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
     return (PFN_vkVoidFunction)vkCmdSetScissor;
   } else if (strcmp("vkCmdSetViewport", pName) == 0) {
     return (PFN_vkVoidFunction)vkCmdSetViewport;
+  } else if (strcmp("vkDestroyCommandPool", pName) == 0) {
+    return (PFN_vkVoidFunction)vkDestroyCommandPool;
+  } else if (strcmp("vkFreeCommandBuffers", pName) == 0) {
+    return (PFN_vkVoidFunction)vkFreeCommandBuffers;
   }
   return noop;
 }
