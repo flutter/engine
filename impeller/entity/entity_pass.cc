@@ -59,7 +59,7 @@ EntityPass::EntityPass() = default;
 
 EntityPass::~EntityPass() = default;
 
-void EntityPass::SetDelegate(std::unique_ptr<EntityPassDelegate> delegate) {
+void EntityPass::SetDelegate(std::shared_ptr<EntityPassDelegate> delegate) {
   if (!delegate) {
     return;
   }
@@ -1023,6 +1023,13 @@ std::unique_ptr<EntityPass> EntityPass::Clone() const {
 
   auto pass = std::make_unique<EntityPass>();
   pass->SetElements(std::move(new_elements));
+  pass->backdrop_filter_reads_from_pass_texture_ = backdrop_filter_reads_from_pass_texture_;
+  pass->advanced_blend_reads_from_pass_texture_ = advanced_blend_reads_from_pass_texture_;
+  pass->backdrop_filter_proc_ = backdrop_filter_proc_;
+  pass->blend_mode_ = blend_mode_;
+  // pass->flood_clip_ = flood_clip_;
+  // pass->bounds_limit_ = bounds_limit_;
+  pass->delegate_ = delegate_;
   return pass;
 }
 
