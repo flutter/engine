@@ -3,7 +3,7 @@
 
 #include <android/hardware_buffer_jni.h>
 #include <android/sensor.h>
-#include "shell/platform/android/ndk_helpers.h"
+#include "flutter/shell/platform/android/ndk_helpers.h"
 
 namespace flutter {
 
@@ -39,7 +39,8 @@ void HardwareBufferExternalTexture::Paint(PaintContext& context,
         flutter::DlCanvas::SrcRectConstraint::kStrict  // enforce edges
     );
   } else {
-    FML_LOG(ERROR) << "No DlImage available.";
+    FML_LOG(WARNING)
+        << "No DlImage available for HardwareBufferExternalTexture to paint.";
   }
 }
 

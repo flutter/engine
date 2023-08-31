@@ -7,12 +7,12 @@
 #include <android/hardware_buffer_jni.h>
 #include <android/sensor.h>
 #include "flutter/common/graphics/texture.h"
+#include "flutter/shell/platform/android/ndk_helpers.h"
 #include "impeller/core/formats.h"
 #include "impeller/display_list/dl_image_impeller.h"
 #include "impeller/renderer/backend/gles/texture_gles.h"
 #include "impeller/toolkit/egl/image.h"
 #include "impeller/toolkit/gles/texture.h"
-#include "shell/platform/android/ndk_helpers.h"
 
 #include "flutter/display_list/effects/dl_color_source.h"
 #include "third_party/skia/include/core/SkAlphaType.h"
@@ -153,7 +153,8 @@ void HardwareBufferExternalTextureImpellerGL::ProcessFrame(
   auto texture = std::make_shared<impeller::TextureGLES>(
       impeller_context_->GetReactor(), desc,
       impeller::TextureGLES::IsWrapped::kWrapped);
-  texture->SetIntent(impeller::TextureIntent::kUploadFromHost);
+  texture->SetCoordinateSystem(
+      impeller::TextureCoordinateSystem::kUploadFromHost);
   if (!texture->Bind()) {
     FML_LOG(ERROR) << "Could not bind texture.";
     NDKHelpers::AHardwareBuffer_release(latest_hardware_buffer);

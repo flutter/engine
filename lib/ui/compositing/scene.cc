@@ -10,7 +10,6 @@
 #include "flutter/lib/ui/painting/picture.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/platform_configuration.h"
-#include "flutter/lib/ui/window/window.h"
 #if IMPELLER_SUPPORTS_RENDERING
 #include "flutter/lib/ui/painting/display_list_deferred_image_gpu_impeller.h"
 #endif  // IMPELLER_SUPPORTS_RENDERING
@@ -89,13 +88,13 @@ static sk_sp<DlImage> CreateDeferredImage(
     bool impeller,
     std::unique_ptr<LayerTree> layer_tree,
     fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
-    fml::RefPtr<fml::TaskRunner> raster_task_runner,
+    const fml::RefPtr<fml::TaskRunner>& raster_task_runner,
     fml::RefPtr<SkiaUnrefQueue> unref_queue) {
 #if IMPELLER_SUPPORTS_RENDERING
   if (impeller) {
     return DlDeferredImageGPUImpeller::Make(std::move(layer_tree),
                                             std::move(snapshot_delegate),
-                                            std::move(raster_task_runner));
+                                            raster_task_runner);
   }
 #endif  // IMPELLER_SUPPORTS_RENDERING
 
@@ -122,8 +121,7 @@ void Scene::RasterizeToImage(uint32_t width,
   auto image = CanvasImage::Create();
   auto dl_image = CreateDeferredImage(
       dart_state->IsImpellerEnabled(), BuildLayerTree(width, height),
-      std::move(snapshot_delegate), std::move(raster_task_runner),
-      std::move(unref_queue));
+      std::move(snapshot_delegate), raster_task_runner, std::move(unref_queue));
   image->set_image(dl_image);
   image->AssociateWithDartWrapper(raw_image_handle);
 }

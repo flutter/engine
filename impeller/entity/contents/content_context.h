@@ -17,7 +17,8 @@
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/pipeline.h"
-#include "impeller/scene/scene_context.h"
+#include "impeller/renderer/render_target.h"
+#include "impeller/typographer/typographer_context.h"
 
 #ifdef IMPELLER_DEBUG
 #include "impeller/entity/checkerboard.frag.h"
@@ -44,6 +45,7 @@
 #include "impeller/entity/morphology_filter.vert.h"
 #include "impeller/entity/points.comp.h"
 #include "impeller/entity/porter_duff_blend.frag.h"
+#include "impeller/entity/porter_duff_blend.vert.h"
 #include "impeller/entity/radial_gradient_fill.frag.h"
 #include "impeller/entity/rrect_blur.frag.h"
 #include "impeller/entity/rrect_blur.vert.h"
@@ -54,7 +56,6 @@
 #include "impeller/entity/sweep_gradient_fill.frag.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
-#include "impeller/entity/texture_fill_external.frag.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
 #include "impeller/entity/uv.comp.h"
 #include "impeller/entity/vertices.frag.h"
@@ -110,6 +111,14 @@
 #include "impeller/entity/framebuffer_blend_screen.frag.h"
 #include "impeller/entity/framebuffer_blend_softlight.frag.h"
 
+#ifdef IMPELLER_ENABLE_OPENGLES
+#include "impeller/entity/texture_fill_external.frag.h"
+#endif  // IMPELLER_ENABLE_OPENGLES
+
+#if IMPELLER_ENABLE_3D
+#include "impeller/scene/scene_context.h"  // nogncheck
+#endif
+
 namespace impeller {
 
 #ifdef IMPELLER_DEBUG
@@ -145,8 +154,6 @@ using RRectBlurPipeline =
 using BlendPipeline = RenderPipelineT<BlendVertexShader, BlendFragmentShader>;
 using TexturePipeline =
     RenderPipelineT<TextureFillVertexShader, TextureFillFragmentShader>;
-using TextureExternalPipeline =
-    RenderPipelineT<TextureFillVertexShader, TextureFillExternalFragmentShader>;
 using PositionUVPipeline =
     RenderPipelineT<TextureFillVertexShader, TiledTextureFillFragmentShader>;
 using TiledTexturePipeline =
@@ -182,7 +189,7 @@ using GlyphAtlasPipeline =
 using GlyphAtlasColorPipeline =
     RenderPipelineT<GlyphAtlasVertexShader, GlyphAtlasColorFragmentShader>;
 using PorterDuffBlendPipeline =
-    RenderPipelineT<BlendVertexShader, PorterDuffBlendFragmentShader>;
+    RenderPipelineT<PorterDuffBlendVertexShader, PorterDuffBlendFragmentShader>;
 // Instead of requiring new shaders for clips, the solid fill stages are used
 // to redirect writing to the stencil instead of color attachments.
 using ClipPipeline = RenderPipelineT<ClipVertexShader, ClipFragmentShader>;
@@ -285,6 +292,11 @@ using FramebufferBlendSoftLightPipeline =
 using PointsComputeShaderPipeline = ComputePipelineBuilder<PointsComputeShader>;
 using UvComputeShaderPipeline = ComputePipelineBuilder<UvComputeShader>;
 
+#ifdef IMPELLER_ENABLE_OPENGLES
+using TextureExternalPipeline =
+    RenderPipelineT<TextureFillVertexShader, TextureFillExternalFragmentShader>;
+#endif  // IMPELLER_ENABLE_OPENGLES
+
 /// Pipeline state configuration.
 ///
 /// Each unique combination of these options requires a different pipeline state
@@ -333,16 +345,21 @@ struct ContentContextOptions {
 };
 
 class Tessellator;
+class RenderTargetCache;
 
 class ContentContext {
  public:
-  explicit ContentContext(std::shared_ptr<Context> context);
+  explicit ContentContext(
+      std::shared_ptr<Context> context,
+      std::shared_ptr<TypographerContext> typographer_context);
 
   ~ContentContext();
 
   bool IsValid() const;
 
+#if IMPELLER_ENABLE_3D
   std::shared_ptr<scene::SceneContext> GetSceneContext() const;
+#endif  // IMPELLER_ENABLE_3D
 
   std::shared_ptr<Tessellator> GetTessellator() const;
 
@@ -417,10 +434,14 @@ class ContentContext {
     return GetPipeline(texture_pipelines_, opts);
   }
 
+#ifdef IMPELLER_ENABLE_OPENGLES
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetTextureExternalPipeline(
       ContentContextOptions opts) const {
+    FML_DCHECK(GetContext()->GetBackendType() ==
+               Context::BackendType::kOpenGLES);
     return GetPipeline(texture_external_pipelines_, opts);
   }
+#endif  // IMPELLER_ENABLE_OPENGLES
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPositionUVPipeline(
       ContentContextOptions opts) const {
@@ -707,6 +728,10 @@ class ContentContext {
     return lazy_glyph_atlas_;
   }
 
+  std::shared_ptr<RenderTargetAllocator> GetRenderTargetCache() const {
+    return render_target_cache_;
+  }
+
  private:
   std::shared_ptr<Context> context_;
   std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas_;
@@ -742,7 +767,9 @@ class ContentContext {
   mutable Variants<RRectBlurPipeline> rrect_blur_pipelines_;
   mutable Variants<BlendPipeline> texture_blend_pipelines_;
   mutable Variants<TexturePipeline> texture_pipelines_;
+#ifdef IMPELLER_ENABLE_OPENGLES
   mutable Variants<TextureExternalPipeline> texture_external_pipelines_;
+#endif  // IMPELLER_ENABLE_OPENGLES
   mutable Variants<PositionUVPipeline> position_uv_pipelines_;
   mutable Variants<TiledTexturePipeline> tiled_texture_pipelines_;
   mutable Variants<GaussianBlurAlphaDecalPipeline>
@@ -863,7 +890,10 @@ class ContentContext {
 
   bool is_valid_ = false;
   std::shared_ptr<Tessellator> tessellator_;
+#if IMPELLER_ENABLE_3D
   std::shared_ptr<scene::SceneContext> scene_context_;
+#endif  // IMPELLER_ENABLE_3D
+  std::shared_ptr<RenderTargetAllocator> render_target_cache_;
   bool wireframe_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContentContext);

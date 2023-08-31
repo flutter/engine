@@ -19,7 +19,7 @@ class SwapchainVK;
 class SurfaceContextVK : public Context,
                          public BackendCast<SurfaceContextVK, Context> {
  public:
-  SurfaceContextVK(const std::shared_ptr<ContextVK>& parent);
+  explicit SurfaceContextVK(const std::shared_ptr<ContextVK>& parent);
 
   // |Context|
   ~SurfaceContextVK() override;
@@ -53,6 +53,9 @@ class SurfaceContextVK : public Context,
 
   // |Context|
   void Shutdown() override;
+
+  // |Context|
+  void SetSyncPresentation(bool value) override;
 
   [[nodiscard]] bool SetWindowSurface(vk::UniqueSurfaceKHR surface);
 

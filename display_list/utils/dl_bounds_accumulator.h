@@ -7,6 +7,7 @@
 
 #include <functional>
 
+#include "flutter/display_list/dl_canvas_to_receiver.h"
 #include "flutter/display_list/geometry/dl_rtree.h"
 #include "flutter/fml/logging.h"
 
@@ -21,13 +22,13 @@
 
 namespace flutter {
 
-enum class BoundsAccumulatorType {
-  kRect,
-  kRTree,
-};
-
 class BoundsAccumulator {
  public:
+  enum class Type {
+    kRect,
+    kRTree,
+  };
+
   /// function definition for modifying the bounds of a rectangle
   /// during a restore operation. The function is used primarily
   /// to account for the bounds impact of an ImageFilter on a
@@ -47,6 +48,8 @@ class BoundsAccumulator {
   typedef bool BoundsModifier(const SkRect& original, SkRect* dest);
 
   virtual ~BoundsAccumulator() = default;
+
+  virtual Type type() const = 0;
 
   virtual void accumulate(const SkRect& r, int index = 0) = 0;
 
@@ -84,9 +87,7 @@ class BoundsAccumulator {
 
   virtual SkRect bounds() const = 0;
 
-  virtual sk_sp<DlRTree> rtree() const = 0;
-
-  virtual BoundsAccumulatorType type() const = 0;
+  virtual std::shared_ptr<DlRTree> rtree() const = 0;
 };
 
 class RectBoundsAccumulator final : public virtual BoundsAccumulator {
@@ -108,11 +109,9 @@ class RectBoundsAccumulator final : public virtual BoundsAccumulator {
     return rect_.bounds();
   }
 
-  BoundsAccumulatorType type() const override {
-    return BoundsAccumulatorType::kRect;
-  }
+  Type type() const override { return Type::kRect; }
 
-  sk_sp<DlRTree> rtree() const override { return nullptr; }
+  std::shared_ptr<DlRTree> rtree() const override { return nullptr; }
 
  private:
   class AccumulationRect {
@@ -151,11 +150,9 @@ class RTreeBoundsAccumulator final : public virtual BoundsAccumulator {
 
   SkRect bounds() const override;
 
-  sk_sp<DlRTree> rtree() const override;
+  std::shared_ptr<DlRTree> rtree() const override;
 
-  BoundsAccumulatorType type() const override {
-    return BoundsAccumulatorType::kRTree;
-  }
+  Type type() const override { return Type::kRTree; }
 
  private:
   std::vector<SkRect> rects_;

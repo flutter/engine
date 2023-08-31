@@ -8,17 +8,18 @@
 #include <optional>
 #include <utility>
 
+#include "display_list/geometry/dl_rtree.h"
 #include "flutter/fml/logging.h"
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
-#include "impeller/entity/contents/color_source_text_contents.h"
 #include "impeller/entity/contents/solid_rrect_blur_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/contents/vertices_contents.h"
 #include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/path_builder.h"
+#include "include/core/SkRect.h"
 
 namespace impeller {
 
@@ -403,7 +404,7 @@ void Canvas::RestoreClip() {
   GetCurrentPass().AddEntity(entity);
 }
 
-void Canvas::DrawPoints(std::vector<Point> points,
+void Canvas::DrawPoints(const std::vector<Point>& points,
                         Scalar radius,
                         const Paint& paint,
                         PointStyle point_style) {
@@ -416,7 +417,7 @@ void Canvas::DrawPoints(std::vector<Point> points,
   entity.SetStencilDepth(GetStencilDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.WithFilters(paint.CreateContentsForGeometry(
-      Geometry::MakePointField(std::move(points), radius,
+      Geometry::MakePointField(points, radius,
                                /*round=*/point_style == PointStyle::kRound))));
 
   GetCurrentPass().AddEntity(entity);
@@ -427,20 +428,29 @@ void Canvas::DrawPicture(const Picture& picture) {
     return;
   }
 
-  auto save_count = GetSaveCount();
-  Save();
-
   // Clone the base pass and account for the CTM updates.
   auto pass = picture.pass->Clone();
-  pass->IterateAllEntities([&](auto& entity) -> bool {
-    entity.IncrementStencilDepth(GetStencilDepth());
-    entity.SetTransformation(GetCurrentTransformation() *
-                             entity.GetTransformation());
-    return true;
+
+  pass->IterateAllElements([&](auto& element) -> bool {
+    if (auto entity = std::get_if<Entity>(&element)) {
+      entity->IncrementStencilDepth(GetStencilDepth());
+      entity->SetTransformation(GetCurrentTransformation() *
+                                entity->GetTransformation());
+      return true;
+    }
+
+    if (auto subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
+      subpass->get()->SetStencilDepth(subpass->get()->GetStencilDepth() +
+                                      GetStencilDepth());
+      return true;
+    }
+
+    FML_UNREACHABLE();
   });
+
   GetCurrentPass().AddSubpassInline(std::move(pass));
 
-  RestoreToCount(save_count);
+  RestoreClip();
 }
 
 void Canvas::DrawImage(const std::shared_ptr<Image>& image,
@@ -483,7 +493,7 @@ void Canvas::DrawImageRect(const std::shared_ptr<Image>& image,
   Entity entity;
   entity.SetBlendMode(paint.blend_mode);
   entity.SetStencilDepth(GetStencilDepth());
-  entity.SetContents(paint.WithFilters(contents, false));
+  entity.SetContents(paint.WithFilters(contents));
   entity.SetTransformation(GetCurrentTransformation());
 
   GetCurrentPass().AddEntity(entity);
@@ -492,6 +502,19 @@ void Canvas::DrawImageRect(const std::shared_ptr<Image>& image,
 Picture Canvas::EndRecordingAsPicture() {
   Picture picture;
   picture.pass = std::move(base_pass_);
+
+  std::vector<SkRect> rects;
+  picture.pass->IterateAllEntities([&rects](const Entity& entity) {
+    auto coverage = entity.GetCoverage();
+    if (coverage.has_value()) {
+      rects.push_back(SkRect::MakeLTRB(coverage->GetLeft(), coverage->GetTop(),
+                                       coverage->GetRight(),
+                                       coverage->GetBottom()));
+    }
+    return true;
+  });
+  picture.rtree =
+      std::make_shared<flutter::DlRTree>(rects.data(), rects.size());
 
   Reset();
   Initialize(initial_cull_rect_);
@@ -533,38 +556,20 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
   entity.SetBlendMode(paint.blend_mode);
 
   auto text_contents = std::make_shared<TextContents>();
-  text_contents->SetTextFrame(text_frame);
-
-  if (paint.color_source.GetType() != ColorSource::Type::kColor) {
-    auto color_text_contents = std::make_shared<ColorSourceTextContents>();
-    entity.SetTransformation(GetCurrentTransformation());
-
-    Entity test;
-    auto maybe_cvg = text_contents->GetCoverage(test);
-    FML_CHECK(maybe_cvg.has_value());
-    // Covered by FML_CHECK.
-    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
-    auto cvg = maybe_cvg.value();
-    color_text_contents->SetTextPosition(cvg.origin + position);
-
-    text_contents->SetOffset(-cvg.origin);
-    color_text_contents->SetTextContents(std::move(text_contents));
-    color_text_contents->SetColorSourceContents(
-        paint.color_source.GetContents(paint));
-
-    entity.SetContents(
-        paint.WithFilters(std::move(color_text_contents), false));
-
-    GetCurrentPass().AddEntity(entity);
-    return;
-  }
-
+  text_contents->SetTextFrame(TextFrame(text_frame));
   text_contents->SetColor(paint.color);
 
   entity.SetTransformation(GetCurrentTransformation() *
                            Matrix::MakeTranslation(position));
 
-  entity.SetContents(paint.WithFilters(std::move(text_contents), true));
+  // TODO(bdero): This mask blur application is a hack. It will always wind up
+  //              doing a gaussian blur that affects the color source itself
+  //              instead of just the mask. The color filter text support
+  //              needs to be reworked in order to interact correctly with
+  //              mask filters.
+  //              https://github.com/flutter/flutter/issues/133297
+  entity.SetContents(
+      paint.WithFilters(paint.WithMaskBlur(std::move(text_contents), true)));
 
   GetCurrentPass().AddEntity(entity);
 }
@@ -673,7 +678,7 @@ void Canvas::DrawAtlas(const std::shared_ptr<Image>& atlas,
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetStencilDepth(GetStencilDepth());
   entity.SetBlendMode(paint.blend_mode);
-  entity.SetContents(paint.WithFilters(contents, false));
+  entity.SetContents(paint.WithFilters(contents));
 
   GetCurrentPass().AddEntity(entity);
 }

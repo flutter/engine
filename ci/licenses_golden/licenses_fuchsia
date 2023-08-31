@@ -1,4 +1,4 @@
-Signature: 50cebfae19a1f2b4c0c157386dd9a9d9
+Signature: 9a31319fc49dcb0a9eed7caba8bc94aa
 
 ====================================================================================================
 LIBRARY: fuchsia_sdk
@@ -4250,6 +4250,7 @@ ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/symlink.fidl + ../../../fuchs
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.lowpan.thread/feature.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.routes/ipv4.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.routes/ipv6.fidl + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.stackmigrationdeprecated/stackmigrationdeprecated.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.session/lifecycle.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.session/overview.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.session/restarter.fidl + ../../../fuchsia/sdk/linux/LICENSE
@@ -4284,6 +4285,7 @@ ORIGIN: ../../../fuchsia/sdk/linux/pkg/driver_testing_cpp/environment_variables.
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/driver_testing_cpp/test_environment.cc + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/driver_testing_cpp/test_node.cc + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/inspect/offer.shard.cml + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/pkg/inspect/use.shard.cml + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/sync_cpp/include/lib/sync/cpp/mutex.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/sys_service_cpp/service_handler.cc + ../../../fuchsia/sdk/linux/LICENSE
 TYPE: LicenseType.bsd
@@ -4305,6 +4307,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/symlink.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.lowpan.thread/feature.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.routes/ipv4.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.routes/ipv6.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.stackmigrationdeprecated/stackmigrationdeprecated.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.session/lifecycle.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.session/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.session/restarter.fidl
@@ -4339,6 +4342,7 @@ FILE: ../../../fuchsia/sdk/linux/pkg/driver_testing_cpp/environment_variables.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/driver_testing_cpp/test_environment.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/driver_testing_cpp/test_node.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect/offer.shard.cml
+FILE: ../../../fuchsia/sdk/linux/pkg/inspect/use.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/sync_cpp/include/lib/sync/cpp/mutex.h
 FILE: ../../../fuchsia/sdk/linux/pkg/sys_service_cpp/service_handler.cc
 ----------------------------------------------------------------------------------------------------

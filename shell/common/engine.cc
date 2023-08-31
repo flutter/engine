@@ -492,6 +492,11 @@ std::unique_ptr<std::vector<std::string>> Engine::ComputePlatformResolvedLocale(
   return delegate_.ComputePlatformResolvedLocale(supported_locale_data);
 }
 
+double Engine::GetScaledFontSize(double unscaled_font_size,
+                                 int configuration_id) const {
+  return delegate_.GetScaledFontSize(unscaled_font_size, configuration_id);
+}
+
 void Engine::SetNeedsReportTimings(bool needs_reporting) {
   delegate_.SetNeedsReportTimings(needs_reporting);
 }
@@ -555,6 +560,10 @@ void Engine::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
 std::weak_ptr<PlatformMessageHandler> Engine::GetPlatformMessageHandler()
     const {
   return delegate_.GetPlatformMessageHandler();
+}
+
+void Engine::SendChannelUpdate(std::string name, bool listening) {
+  delegate_.OnEngineChannelUpdate(std::move(name), listening);
 }
 
 void Engine::LoadDartDeferredLibrary(

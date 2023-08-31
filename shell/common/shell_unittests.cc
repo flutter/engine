@@ -4402,12 +4402,9 @@ static void RunOnPlatformTaskRunner(Shell& shell, const fml::closure& task) {
   latch.Wait();
 }
 
-// Tests that Settings.enable_implicit_view being true causes the shell
-// to begin with an implicit view.
-TEST_F(ShellTest, ShellWithImplicitViewEnabledStartsWithImplicitView) {
+TEST_F(ShellTest, ShellStartsWithImplicitView) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
-  settings.enable_implicit_view = true;
-
   auto task_runner = CreateNewThread();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
@@ -4439,48 +4436,10 @@ TEST_F(ShellTest, ShellWithImplicitViewEnabledStartsWithImplicitView) {
   DestroyShell(std::move(shell), task_runners);
 }
 
-// Tests that Settings.enable_implicit_view being false causes the shell
-// to begin without an implicit view.
-TEST_F(ShellTest, ShellWithImplicitViewDisabledStartsWithoutImplicitView) {
-  Settings settings = CreateSettingsForFixture();
-  settings.enable_implicit_view = false;
-
-  auto task_runner = CreateNewThread();
-  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
-                           task_runner);
-  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
-  ASSERT_TRUE(shell);
-
-  bool hasImplicitView;
-  std::vector<int64_t> viewIds;
-  fml::AutoResetWaitableEvent reportLatch;
-  auto nativeViewIdsCallback = [&reportLatch, &hasImplicitView,
-                                &viewIds](Dart_NativeArguments args) {
-    ParseViewIdsCallback(args, &hasImplicitView, &viewIds);
-    reportLatch.Signal();
-  };
-  AddNativeCallback("NativeReportViewIdsCallback",
-                    CREATE_NATIVE_ENTRY(nativeViewIdsCallback));
-
-  PlatformViewNotifyCreated(shell.get());
-  auto configuration = RunConfiguration::InferFromSettings(settings);
-  configuration.SetEntrypoint("testReportViewIds");
-  RunEngine(shell.get(), std::move(configuration));
-  reportLatch.Wait();
-
-  ASSERT_FALSE(hasImplicitView);
-  ASSERT_EQ(viewIds.size(), 0u);
-
-  PlatformViewNotifyDestroyed(shell.get());
-  DestroyShell(std::move(shell), task_runners);
-}
-
 // Tests that Shell::AddView and Shell::RemoveView works.
-TEST_F(ShellTest, ShellWithImplicitViewEnabledAddViewRemoveView) {
+TEST_F(ShellTest, ShellCanAddViewOrRemoveView) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
-  settings.enable_implicit_view = true;
-
   ThreadHost thread_host(ThreadHost::ThreadHostConfig(
       "io.flutter.test." + GetCurrentTestName() + ".",
       ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
@@ -4561,8 +4520,6 @@ static void ParseViewWidthsCallback(const Dart_NativeArguments& args,
 TEST_F(ShellTest, ShellFlushesPlatformStatesByMain) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
-  settings.enable_implicit_view = true;
-
   ThreadHost thread_host(ThreadHost::ThreadHostConfig(
       "io.flutter.test." + GetCurrentTestName() + ".",
       ThreadHost::Type::Platform | ThreadHost::Type::RASTER |

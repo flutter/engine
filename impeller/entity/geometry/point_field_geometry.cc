@@ -9,10 +9,10 @@
 
 namespace impeller {
 
-PointFieldGeometry::PointFieldGeometry(std::vector<Point> points,
+PointFieldGeometry::PointFieldGeometry(const std::vector<Point>& points,
                                        Scalar radius,
                                        bool round)
-    : points_(std::move(points)), radius_(radius), round_(round) {}
+    : points_(points), radius_(radius), round_(round) {}
 
 PointFieldGeometry::~PointFieldGeometry() = default;
 
@@ -167,7 +167,7 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
   {
     using PS = PointsComputeShader;
     ComputeCommand cmd;
-    cmd.label = "Points Geometry";
+    DEBUG_COMMAND_INFO(cmd, "Points Geometry");
     cmd.pipeline = renderer.GetPointComputePipeline();
 
     PS::FrameInfo frame_info;
@@ -201,7 +201,7 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
     using UV = UvComputeShader;
 
     ComputeCommand cmd;
-    cmd.label = "UV Geometry";
+    DEBUG_COMMAND_INFO(cmd, "UV Geometry");
     cmd.pipeline = renderer.GetUvComputePipeline();
 
     UV::FrameInfo frame_info;

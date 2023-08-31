@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "flutter/assets/directory_asset_bundle.h"
+#include "flutter/common/constants.h"
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/fml/base32.h"
 #include "flutter/fml/file.h"
@@ -715,9 +716,7 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
   weak_rasterizer_ = rasterizer_->GetWeakPtr();
   weak_platform_view_ = platform_view_->GetWeakPtr();
 
-  if (settings_.enable_implicit_view) {
-    engine_->AddView(kFlutterImplicitViewId, ViewportMetrics{});
-  }
+  engine_->AddView(kFlutterImplicitViewId, ViewportMetrics{});
   // Setup the time-consuming default font manager right after engine created.
   if (!settings_.prefetched_default_font_manager) {
     fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(),
@@ -1219,23 +1218,15 @@ void Shell::OnAnimatorUpdateLatestFrameTargetTime(
 void Shell::OnAnimatorDraw(std::shared_ptr<LayerTreePipeline> pipeline) {
   FML_DCHECK(is_set_up_);
 
-  auto discard_callback = [this](int64_t view_id, flutter::LayerTree& tree) {
-    std::scoped_lock<std::mutex> lock(resize_mutex_);
-    auto expected_frame_size = ExpectedFrameSize(view_id);
-    return !expected_frame_size.isEmpty() &&
-           tree.frame_size() != expected_frame_size;
-  };
-
   task_runners_.GetRasterTaskRunner()->PostTask(fml::MakeCopyable(
       [&waiting_for_first_frame = waiting_for_first_frame_,
        &waiting_for_first_frame_condition = waiting_for_first_frame_condition_,
        rasterizer = rasterizer_->GetWeakPtr(),
-       weak_pipeline = std::weak_ptr<LayerTreePipeline>(pipeline),
-       discard_callback = std::move(discard_callback)]() mutable {
+       weak_pipeline = std::weak_ptr<LayerTreePipeline>(pipeline)]() mutable {
         if (rasterizer) {
           std::shared_ptr<LayerTreePipeline> pipeline = weak_pipeline.lock();
           if (pipeline) {
-            rasterizer->Draw(pipeline, std::move(discard_callback));
+            rasterizer->Draw(pipeline);
           }
 
           if (waiting_for_first_frame.load()) {
@@ -1335,6 +1326,17 @@ void Shell::OnEngineHandlePlatformMessage(
           }
         }));
   }
+}
+
+void Shell::OnEngineChannelUpdate(std::string name, bool listening) {
+  FML_DCHECK(is_set_up_);
+
+  task_runners_.GetPlatformTaskRunner()->PostTask(
+      [view = platform_view_->GetWeakPtr(), name = std::move(name), listening] {
+        if (view) {
+          view->SendChannelUpdate(name, listening);
+        }
+      });
 }
 
 void Shell::HandleEngineSkiaMessage(std::unique_ptr<PlatformMessage> message) {
@@ -1479,6 +1481,13 @@ void Shell::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
       });
 }
 
+// |Engine::Delegate|
+double Shell::GetScaledFontSize(double unscaled_font_size,
+                                int configuration_id) const {
+  return platform_view_->GetScaledFontSize(unscaled_font_size,
+                                           configuration_id);
+}
+
 void Shell::ReportTimings() {
   FML_DCHECK(is_set_up_);
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
@@ -1583,6 +1592,15 @@ fml::TimePoint Shell::GetLatestFrameTargetTime() const {
   // Covered by FML_CHECK().
   // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
   return latest_frame_target_time_.value();
+}
+
+// |Rasterizer::Delegate|
+bool Shell::ShouldDiscardLayerTree(int64_t view_id,
+                                   const flutter::LayerTree& tree) {
+  std::scoped_lock<std::mutex> lock(resize_mutex_);
+  auto expected_frame_size = ExpectedFrameSize(view_id);
+  return !expected_frame_size.isEmpty() &&
+         tree.frame_size() != expected_frame_size;
 }
 
 // |ServiceProtocol::Handler|

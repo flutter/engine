@@ -10,8 +10,10 @@
 
 namespace flutter {
 
-// An adapter to receive DlCanvas calls and dispatch them into
-// an SkCanvas.
+// -----------------------------------------------------------------------------
+/// @brief      Backend implementation of |DlCanvas| for |SkCanvas|.
+///
+/// @see        DlCanvas
 class DlSkCanvasAdapter final : public virtual DlCanvas {
  public:
   DlSkCanvasAdapter() : delegate_(nullptr) {}
@@ -136,6 +138,9 @@ class DlSkCanvasAdapter final : public virtual DlCanvas {
                  DlImageSampling sampling,
                  const SkRect* cullRect,
                  const DlPaint* paint = nullptr) override;
+  void DrawImpellerPicture(
+      const std::shared_ptr<const impeller::Picture>& picture,
+      SkScalar opacity = SK_Scalar1) override;
   void DrawDisplayList(const sk_sp<DisplayList> display_list,
                        SkScalar opacity = SK_Scalar1) override;
   void DrawTextBlob(const sk_sp<SkTextBlob>& blob,

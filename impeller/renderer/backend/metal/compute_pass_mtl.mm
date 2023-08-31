@@ -187,22 +187,13 @@ static bool Bind(ComputePassBindingsCache& pass,
 
 static bool Bind(ComputePassBindingsCache& pass,
                  size_t bind_index,
+                 const Sampler& sampler,
                  const Texture& texture) {
-  if (!texture.IsValid()) {
+  if (!sampler.IsValid() || !texture.IsValid()) {
     return false;
   }
 
   pass.SetTexture(bind_index, TextureMTL::Cast(texture).GetMTLTexture());
-  return true;
-}
-
-static bool Bind(ComputePassBindingsCache& pass,
-                 size_t bind_index,
-                 const Sampler& sampler) {
-  if (!sampler.IsValid()) {
-    return false;
-  }
-
   pass.SetSampler(bind_index, SamplerMTL::Cast(sampler).GetMTLSamplerState());
   return true;
 }
@@ -219,12 +210,14 @@ bool ComputePassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
 
   fml::closure pop_debug_marker = [encoder]() { [encoder popDebugGroup]; };
   for (const auto& command : commands_) {
+#ifdef IMPELLER_DEBUG
     fml::ScopedCleanupClosure auto_pop_debug_marker(pop_debug_marker);
     if (!command.label.empty()) {
       [encoder pushDebugGroup:@(command.label.c_str())];
     } else {
       auto_pop_debug_marker.Release();
     }
+#endif
 
     pass_bindings.SetComputePipelineState(
         ComputePipelineMTL::Cast(*command.pipeline)
@@ -232,21 +225,18 @@ bool ComputePassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
 
     for (const auto& buffer : command.bindings.buffers) {
       if (!Bind(pass_bindings, *allocator, buffer.first,
-                buffer.second.resource)) {
+                buffer.second.view.resource)) {
         return false;
       }
     }
 
-    for (const auto& texture : command.bindings.textures) {
-      if (!Bind(pass_bindings, texture.first, *texture.second.resource)) {
+    for (const auto& data : command.bindings.sampled_images) {
+      if (!Bind(pass_bindings, data.first, *data.second.sampler.resource,
+                *data.second.texture.resource)) {
         return false;
       }
     }
-    for (const auto& sampler : command.bindings.samplers) {
-      if (!Bind(pass_bindings, sampler.first, *sampler.second.resource)) {
-        return false;
-      }
-    }
+
     // TODO(dnfield): use feature detection to support non-uniform threadgroup
     // sizes.
     // https://github.com/flutter/flutter/issues/110619
