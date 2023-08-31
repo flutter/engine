@@ -723,7 +723,7 @@ List<NotoFont> getFallbackFontData(bool useColorEmoji) => <NotoFont>[
  NotoFont('Noto Color Emoji', enabled: useColorEmoji, 'notocoloremoji/v25/Yq6P-KqIXTD0t4D9z1ESnKM3-HpFab5s79iz64w.ttf'),
  NotoFont('Noto Emoji', enabled: !useColorEmoji, 'notoemoji/v39/bMrnmSyK7YY-MEu6aWjPDs-ar6uWaGWuob-r0jwvS-FGJCMY.ttf'),
  NotoFont('Noto Sans Symbols', 'notosanssymbols/v40/rP2up3q65FkAtHfwd-eIS2brbDN6gxP34F9jRRCe4W3gfQ8gavVFRkzrbQ.ttf'),
- NotoFont('Noto Sans Symbols 2', 'notosanssymbols2/v19/I_uyMoGduATTei9eI8daxVHDyfisHr71ypPqfX71-AI.ttf'),
+ NotoFont('Noto Sans Symbols 2', 'notosanssymbols2/v21/I_uyMoGduATTei9eI8daxVHDyfisHr71ypPqfX71-AI.ttf'),
  NotoFont('Noto Sans Adlam', 'notosansadlam/v21/neIczCCpqp0s5pPusPamd81eMfjPonvqdbYxxpgufnv0TGnBZLwhuvk.ttf'),
  NotoFont('Noto Sans Anatolian Hieroglyphs', 'notosansanatolianhieroglyphs/v16/ijw9s4roRME5LLRxjsRb8A0gKPSWq4BbDmHHu6j2pEtUJzZWXybIymc5QYo.ttf'),
  NotoFont('Noto Sans Arabic', 'notosansarabic/v18/nwpxtLGrOAZMl5nJ_wfgRg3DrWFZWsnVBJ_sS6tlqHHFlhQ5l3sQWIHPqzCfyGyvu3CBFQLaig.ttf'),
@@ -760,17 +760,17 @@ List<NotoFont> getFallbackFontData(bool useColorEmoji) => <NotoFont>[
  NotoFont('Noto Sans Gujarati', 'notosansgujarati/v23/wlpWgx_HC1ti5ViekvcxnhMlCVo3f5pv17ivlzsUB14gg1TMR2Gw4VceEl7MA_ypFwPM_OdiEH0s.ttf'),
  NotoFont('Noto Sans Gunjala Gondi', 'notosansgunjalagondi/v17/bWto7e7KfBziStx7lIzKPrcSMwcEnCv6DW7n5hcVXYMTK4q1.ttf'),
  NotoFont('Noto Sans Gurmukhi', 'notosansgurmukhi/v26/w8g9H3EvQP81sInb43inmyN9zZ7hb7ATbSWo4q8dJ74a3cVrYFQ_bogT0-gPeG1OenbxZ_trdp7h.ttf'),
- NotoFont('Noto Sans HK', 'notosanshk/v21/nKKQ-GM_FYFRJvXzVXaAPe9hMnB3Eu7mOQ.otf'),
+ NotoFont('Noto Sans HK', 'notosanshk/v31/nKKF-GM_FYFRJvXzVXaAPe97P1KHynJFP716qHB--oWTiYjNvVA.ttf'),
  NotoFont('Noto Sans Hanunoo', 'notosanshanunoo/v17/f0Xs0fCv8dxkDWlZSoXOj6CphMloFsEsEpgL_ix2.ttf'),
  NotoFont('Noto Sans Hatran', 'notosanshatran/v16/A2BBn4Ne0RgnVF3Lnko-0sOBIfL_mM83r1nwzDs.ttf'),
  NotoFont('Noto Sans Hebrew', 'notosanshebrew/v43/or3HQ7v33eiDljA1IufXTtVf7V6RvEEdhQlk0LlGxCyaeNKYZC0sqk3xXGiXd4qtoiJltutR2g.ttf'),
  NotoFont('Noto Sans Imperial Aramaic', 'notosansimperialaramaic/v16/a8IMNpjwKmHXpgXbMIsbTc_kvks91LlLetBr5itQrtdml3YfPNno.ttf'),
- NotoFont('Noto Sans Indic Siyaq Numbers', 'notosansindicsiyaqnumbers/v15/6xK5dTJFKcWIu4bpRBjRZRpsIYHabOeZ8UZLubTzpXNHKx2WPOpVd5Iu.ttf'),
- NotoFont('Noto Sans Inscriptional Pahlavi', 'notosansinscriptionalpahlavi/v15/ll8UK3GaVDuxR-TEqFPIbsR79Xxz9WEKbwsjpz7VklYlC7FCVtqVOAYK0QA.ttf'),
+ NotoFont('Noto Sans Indic Siyaq Numbers', 'notosansindicsiyaqnumbers/v16/6xK5dTJFKcWIu4bpRBjRZRpsIYHabOeZ8UZLubTzpXNHKx2WPOpVd5Iu.ttf'),
+ NotoFont('Noto Sans Inscriptional Pahlavi', 'notosansinscriptionalpahlavi/v16/ll8UK3GaVDuxR-TEqFPIbsR79Xxz9WEKbwsjpz7VklYlC7FCVtqVOAYK0QA.ttf'),
  NotoFont('Noto Sans Inscriptional Parthian', 'notosansinscriptionalparthian/v16/k3k7o-IMPvpLmixcA63oYi-yStDkgXuXncL7dzfW3P4TAJ2yklBJ2jNkLlLr.ttf'),
  NotoFont('Noto Sans JP', 'notosansjp/v52/-F6jfjtqLzI2JPCgQBnw7HFyzSD-AsregP8VFBEj75vY0rw-oME.ttf'),
  NotoFont('Noto Sans Javanese', 'notosansjavanese/v21/2V01KJkDAIA6Hp4zoSScDjV0Y-eoHAHT-Z3MngEefiidxJnkFFliZYWj4O8.ttf'),
- NotoFont('Noto Sans KR', 'notosanskr/v27/PbykFmXiEBPT4ITbgNA5Cgm20HTs4JMMuA.otf'),
+ NotoFont('Noto Sans KR', 'notosanskr/v36/PbyxFmXiEBPT4ITbgNA5Cgms3VYcOA-vvnIzzuoyeLTq8H4hfeE.ttf'),
  NotoFont('Noto Sans Kaithi', 'notosanskaithi/v18/buEtppS9f8_vkXadMBJJu0tWjLwjQi0KdoZIKlo.ttf'),
  NotoFont('Noto Sans Kannada', 'notosanskannada/v26/8vIs7xs32H97qzQKnzfeXycxXZyUmySvZWItmf1fe6TVmgop9ndpS-BqHEyGrDvNzSIMLsPKrkY.ttf'),
  NotoFont('Noto Sans Kayah Li', 'notosanskayahli/v20/B50nF61OpWTRcGrhOVJJwOMXdca6Yecki3E06x2jVTX3WCc3CZH4EXLuKVM.ttf'),
@@ -793,7 +793,7 @@ List<NotoFont> getFallbackFontData(bool useColorEmoji) => <NotoFont>[
  NotoFont('Noto Sans Marchen', 'notosansmarchen/v19/aFTO7OZ_Y282EP-WyG6QTOX_C8WZMHhPk652ZaHk.ttf'),
  NotoFont('Noto Sans Masaram Gondi', 'notosansmasaramgondi/v17/6xK_dThFKcWIu4bpRBjRYRV7KZCbUq6n_1kPnuGe7RI9WSWX.ttf'),
  NotoFont('Noto Sans Math', 'notosansmath/v15/7Aump_cpkSecTWaHRlH2hyV5UHkG-V048PW0.ttf'),
- NotoFont('Noto Sans Mayan Numerals', 'notosansmayannumerals/v15/PlIuFk25O6RzLfvNNVSivR09_KqYMwvvDKYjfIiE68oo6eepYQ.ttf'),
+ NotoFont('Noto Sans Mayan Numerals', 'notosansmayannumerals/v16/PlIuFk25O6RzLfvNNVSivR09_KqYMwvvDKYjfIiE68oo6eepYQ.ttf'),
  NotoFont('Noto Sans Medefaidrin', 'notosansmedefaidrin/v22/WwkzxOq6Dk-wranENynkfeVsNbRZtbOIdLb1exeM4ZeuabBfmErWlT318e5A3rw.ttf'),
  NotoFont('Noto Sans Meetei Mayek', 'notosansmeeteimayek/v14/HTxAL3QyKieByqY9eZPFweO0be7M21uSphSdhqILnmrRfJ8t_1TJ_vTW5PgeFYVa.ttf'),
  NotoFont('Noto Sans Meroitic', 'notosansmeroitic/v17/IFS5HfRJndhE3P4b5jnZ3ITPvC6i00UDgDhTiKY9KQ.ttf'),
@@ -810,14 +810,14 @@ List<NotoFont> getFallbackFontData(bool useColorEmoji) => <NotoFont>[
  NotoFont('Noto Sans Nushu', 'notosansnushu/v19/rnCw-xRQ3B7652emAbAe_Ai1IYaFWFAMArZKqQ.ttf'),
  NotoFont('Noto Sans Ogham', 'notosansogham/v17/kmKlZqk1GBDGN0mY6k5lmEmww4hrt5laQxcoCA.ttf'),
  NotoFont('Noto Sans Ol Chiki', 'notosansolchiki/v21/N0b92TJNOPt-eHmFZCdQbrL32r-4CvhzDzRwlxOQYuVALWk267I6gVrz5gQ.ttf'),
- NotoFont('Noto Sans Old Hungarian', 'notosansoldhungarian/v15/E213_cD6hP3GwCJPEUssHEM0KqLaHJXg2PiIgRfjbg5nCYXt.ttf'),
+ NotoFont('Noto Sans Old Hungarian', 'notosansoldhungarian/v16/E213_cD6hP3GwCJPEUssHEM0KqLaHJXg2PiIgRfjbg5nCYXt.ttf'),
  NotoFont('Noto Sans Old Italic', 'notosansolditalic/v16/TuGOUUFzXI5FBtUq5a8bh68BJxxEVam7tWlRdRhtCC4d.ttf'),
  NotoFont('Noto Sans Old North Arabian', 'notosansoldnortharabian/v16/esDF30BdNv-KYGGJpKGk2tNiMt7Jar6olZDyNdr81zBQmUo_xw4ABw.ttf'),
  NotoFont('Noto Sans Old Permic', 'notosansoldpermic/v17/snf1s1q1-dF8pli1TesqcbUY4Mr-ElrwKLdXgv_dKYB5.ttf'),
  NotoFont('Noto Sans Old Persian', 'notosansoldpersian/v16/wEOjEAbNnc5caQTFG18FHrZr9Bp6-8CmIJ_tqOlQfx9CjA.ttf'),
  NotoFont('Noto Sans Old Sogdian', 'notosansoldsogdian/v16/3JnjSCH90Gmq2mrzckOBBhFhdrMst48aURt7neIqM-9uyg.ttf'),
  NotoFont('Noto Sans Old South Arabian', 'notosansoldsoutharabian/v16/3qT5oiOhnSyU8TNFIdhZTice3hB_HWKsEnF--0XCHiKx1OtDT9HwTA.ttf'),
- NotoFont('Noto Sans Old Turkic', 'notosansoldturkic/v15/yMJNMJVya43H0SUF_WmcGEQVqoEMKDKbsE2RjEw-Vyws.ttf'),
+ NotoFont('Noto Sans Old Turkic', 'notosansoldturkic/v16/yMJNMJVya43H0SUF_WmcGEQVqoEMKDKbsE2RjEw-Vyws.ttf'),
  NotoFont('Noto Sans Oriya', 'notosansoriya/v27/AYCppXfzfccDCstK_hrjDyADv5e9748vhj3CJBLHIARtgD6TJQS0dJT5Ivj0f6_c6LhHBRe-.ttf'),
  NotoFont('Noto Sans Osage', 'notosansosage/v18/oPWX_kB6kP4jCuhpgEGmw4mtAVtXRlaSxkrMCQ.ttf'),
  NotoFont('Noto Sans Osmanya', 'notosansosmanya/v18/8vIS7xs32H97qzQKnzfeWzUyUpOJmz6kR47NCV5Z.ttf'),
@@ -829,7 +829,7 @@ List<NotoFont> getFallbackFontData(bool useColorEmoji) => <NotoFont>[
  NotoFont('Noto Sans Psalter Pahlavi', 'notosanspsalterpahlavi/v16/rP2Vp3K65FkAtHfwd-eISGznYihzggmsicPfud3w1G3KsUQBct4.ttf'),
  NotoFont('Noto Sans Rejang', 'notosansrejang/v18/Ktk2AKuMeZjqPnXgyqrib7DIogqwN4O3WYZB_sU.ttf'),
  NotoFont('Noto Sans Runic', 'notosansrunic/v17/H4c_BXWPl9DZ0Xe_nHUaus7W68WWaxpvHtgIYg.ttf'),
- NotoFont('Noto Sans SC', 'notosanssc/v26/k3kXo84MPvpLmixcA63oeALhL4iJ-Q7m8w.otf'),
+ NotoFont('Noto Sans SC', 'notosanssc/v36/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaG9_FnYxNbPzS5HE.ttf'),
  NotoFont('Noto Sans Saurashtra', 'notosanssaurashtra/v19/ea8GacQ0Wfz_XKWXe6OtoA8w8zvmYwTef9ndjhPTSIx9.ttf'),
  NotoFont('Noto Sans Sharada', 'notosanssharada/v16/gok0H7rwAEdtF9N8-mdTGALG6p0kwoXLPOwr4H8a.ttf'),
  NotoFont('Noto Sans Shavian', 'notosansshavian/v17/CHy5V_HZE0jxJBQlqAeCKjJvQBNF4EFQSplv2Cwg.ttf'),
@@ -841,13 +841,13 @@ List<NotoFont> getFallbackFontData(bool useColorEmoji) => <NotoFont>[
  NotoFont('Noto Sans Sundanese', 'notosanssundanese/v24/FwZw7_84xUkosG2xJo2gm7nFwSLQkdymq2mkz3Gz1_b6ctxpNNHCizv7fQES.ttf'),
  NotoFont('Noto Sans Syloti Nagri', 'notosanssylotinagri/v20/uU9eCAQZ75uhfF9UoWDRiY3q7Sf_VFV3m4dGFVfxN87gsj0.ttf'),
  NotoFont('Noto Sans Syriac', 'notosanssyriac/v16/Ktk7AKuMeZjqPnXgyqribqzQqgW0LYiVqV7dXcP0C-VD9MaJyZfUL_FC.ttf'),
- NotoFont('Noto Sans TC', 'notosanstc/v26/-nF7OG829Oofr2wohFbTp9iFOSsLA_ZJ1g.otf'),
+ NotoFont('Noto Sans TC', 'notosanstc/v35/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz76Cy_CpOtma3uNQ.ttf'),
  NotoFont('Noto Sans Tagalog', 'notosanstagalog/v18/J7aFnoNzCnFcV9ZI-sUYuvote1R0wwEAA8jHexnL.ttf'),
  NotoFont('Noto Sans Tagbanwa', 'notosanstagbanwa/v18/Y4GWYbB8VTEp4t3MKJSMmQdIKjRtt_nZRjQEaYpGoQ.ttf'),
  NotoFont('Noto Sans Tai Le', 'notosanstaile/v17/vEFK2-VODB8RrNDvZSUmVxEATwR58tK1W77HtMo.ttf'),
  NotoFont('Noto Sans Tai Tham', 'notosanstaitham/v19/kJEbBv0U4hgtwxDUw2x9q7tbjLIfbPGHBoaVSAZ3MdLJBCUbPgquyaRGKMw.ttf'),
  NotoFont('Noto Sans Tai Viet', 'notosanstaiviet/v16/8QIUdj3HhN_lv4jf9vsE-9GMOLsaSPZr644fWsRO9w.ttf'),
- NotoFont('Noto Sans Takri', 'notosanstakri/v21/TuGJUVpzXI5FBtUq5a8bnKIOdTwQNO_W3khJXg.ttf'),
+ NotoFont('Noto Sans Takri', 'notosanstakri/v23/TuGJUVpzXI5FBtUq5a8bnKIOdTwQNO_W3khJXg.ttf'),
  NotoFont('Noto Sans Tamil', 'notosanstamil/v27/ieVc2YdFI3GCY6SyQy1KfStzYKZgzN1z4LKDbeZce-0429tBManUktuex7vGo70RqKDt_EvT.ttf'),
  NotoFont('Noto Sans Tamil Supplement', 'notosanstamilsupplement/v21/DdTz78kEtnooLS5rXF1DaruiCd_bFp_Ph4sGcn7ax_vsAeMkeq1x.ttf'),
  NotoFont('Noto Sans Telugu', 'notosanstelugu/v25/0FlxVOGZlE2Rrtr-HmgkMWJNjJ5_RyT8o8c7fHkeg-esVC5dzHkHIJQqrEntezbqQUbf-3v37w.ttf'),
@@ -864,7 +864,7 @@ List<NotoFont> getFallbackFontData(bool useColorEmoji) => <NotoFont>[
 >>>>>>> 2eac7a35f9 (checkpoint before reconsidering lex)
 ];
 
-// 315 unique sets of fonts containing 3770 font references encoded in 4399 characters
+// 313 unique sets of fonts containing 3816 font references encoded in 4439 characters
 const String encodedFontSets =
     // #0: 5 fonts: HK₄₁, JP₄₉, KR₅₁, SC₁₁₀, TC₁₂₂.
     '1phb2gl,'
@@ -908,14 +908,14 @@ const String encodedFontSets =
     'd,'
     // #20: 6 fonts: HK₄₁, JP₄₉, KR₅₁, Math₇₃, SC₁₁₀, TC₁₂₂.
     '1phbv1kl,'
-    // #21: 125 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
-    'acaaabaaaaaabaaaabaaaabaaaabaaaabaaaaacaaaaaaaaaaaaaaaabaaaaaacaaaaaaabaaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
+    // #21: 128 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Indic Siyaq Numbers₄₆, Inscriptional Pahlavi₄₇, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Mayan Numerals₇₄, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
+    'acaaabaaaaaabaaaabaaaabaaaabaaaabaaaaaaaaaaaaaaaaaaaaaaaabaaaaaabaaaaaaaabaaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
     // #22: 6 fonts: Symbols 2₄, HK₄₁, JP₄₉, KR₅₁, SC₁₁₀, TC₁₂₂.
     'e1khb2gl,'
     // #23: 3 fonts: HK₄₁, JP₄₉, TC₁₂₂.
     '1ph2u,'
-    // #24: 120 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gurmukhi₄₀, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Inscriptional Parthian₄₈, Javanese₅₀, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
-    'acaaabaaaaaabaaaabaaaabaaaabaaaabbaaacbbaaaaaaaaaaaabaaaaaacaaaaaaabaaaaaabaaaaabaaaaabaaabaaaaaaaaaabaaaaaaaaaaaaaaaaaa,'
+    // #24: 123 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gurmukhi₄₀, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Indic Siyaq Numbers₄₆, Inscriptional Pahlavi₄₇, Inscriptional Parthian₄₈, Javanese₅₀, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Mayan Numerals₇₄, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
+    'acaaabaaaaaabaaaabaaaabaaaabaaaabbaaaaaabbaaaaaaaaaaaabaaaaaabaaaaaaaabaaaaaabaaaaabaaaaabaaabaaaaaaaaaabaaaaaaaaaaaaaaaaaa,'
     // #25: 1 font: Arabic₇.
     'h,'
     // #26: 6 fonts: Symbols₃, HK₄₁, JP₄₉, KR₅₁, SC₁₁₀, TC₁₂₂.
@@ -950,8 +950,8 @@ const String encodedFontSets =
     'ay,'
     // #41: 1 font: Telugu₁₃₁.
     '5b,'
-    // #42: 126 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Math₇₃, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
-    'acaaabaaaaaabaaaabaaaabaaaabaaaabaaaaacaaaaaaaaaaaaaaaabaaaaaaabaaaaaaabaaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
+    // #42: 129 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Indic Siyaq Numbers₄₆, Inscriptional Pahlavi₄₇, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Math₇₃, Mayan Numerals₇₄, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
+    'acaaabaaaaaabaaaabaaaabaaaabaaaabaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaabaaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
     // #43: 7 fonts: Noto Color Emoji₁, Noto Emoji₂, HK₄₁, JP₄₉, KR₅₁, SC₁₁₀, TC₁₂₂.
     'ba1mhb2gl,'
     // #44: 1 font: Georgian₃₄.
@@ -960,24 +960,24 @@ const String encodedFontSets =
     '1phb2s,'
     // #46: 1 font: Hebrew₄₄.
     '1s,'
-    // #47: 127 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gunjala Gondi₃₉, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Math₇₃, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
-    'acaaabaaaaaabaaaabaaaabaaaabaaaaaaaaaaacaaaaaaaaaaaaaaaabaaaaaaabaaaaaaabaaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
+    // #47: 130 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gunjala Gondi₃₉, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Indic Siyaq Numbers₄₆, Inscriptional Pahlavi₄₇, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Math₇₃, Mayan Numerals₇₄, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
+    'acaaabaaaaaabaaaabaaaabaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaabaaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
     // #48: 7 fonts: Noto Sans₀, HK₄₁, JP₄₉, KR₅₁, Math₇₃, SC₁₁₀, TC₁₂₂.
     'a1ohbv1kl,'
     // #49: 8 fonts: Noto Color Emoji₁, Noto Emoji₂, Symbols₃, HK₄₁, JP₄₉, KR₅₁, SC₁₁₀, TC₁₂₂.
     'baa1lhb2gl,'
-    // #50: 1 font: Kharoshthi₅₅.
-    '2d,'
-    // #51: 1 font: Linear B₆₃.
-    '2l,'
-    // #52: 3 fonts: Noto Sans₀, Bengali₁₄, Devanagari₂₉.
-    'ano,'
-    // #53: 7 fonts: Symbols 2₄, HK₄₁, JP₄₉, KR₅₁, Math₇₃, SC₁₁₀, TC₁₂₂.
-    'e1khbv1kl,'
-    // #54: 1 font: Glagolitic₃₅.
-    '1j,'
-    // #55: 4 fonts: HK₄₁, JP₄₉, KR₅₁, SC₁₁₀.
+    // #50: 4 fonts: HK₄₁, JP₄₉, KR₅₁, SC₁₁₀.
     '1phb2g,'
+    // #51: 1 font: Kharoshthi₅₅.
+    '2d,'
+    // #52: 1 font: Linear B₆₃.
+    '2l,'
+    // #53: 3 fonts: Noto Sans₀, Bengali₁₄, Devanagari₂₉.
+    'ano,'
+    // #54: 7 fonts: Symbols 2₄, HK₄₁, JP₄₉, KR₅₁, Math₇₃, SC₁₁₀, TC₁₂₂.
+    'e1khbv1kl,'
+    // #55: 1 font: Glagolitic₃₅.
+    '1j,'
     // #56: 3 fonts: HK₄₁, KR₅₁, TC₁₂₂.
     '1pj2s,'
     // #57: 1 font: Malayalam₆₈.
@@ -1014,10 +1014,10 @@ const String encodedFontSets =
     '3y,'
     // #73: 1 font: Tai Tham₁₂₆.
     '4w,'
-    // #74: 128 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Arabic₇, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gunjala Gondi₃₉, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Math₇₃, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
-    'acaaaaaaaaaaabaaaabaaaabaaaabaaaaaaaaaaacaaaaaaaaaaaaaaaabaaaaaaabaaaaaaabaaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
-    // #75: 125 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Math₇₃, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
-    'acaaabaaaaaabaaaabaaaabaaaabaaaabaaaaacaaaaaaaaaaaaaaaabaaaaaaabaaaaaaabaaaaaabaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
+    // #74: 131 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Arabic₇, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gunjala Gondi₃₉, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Indic Siyaq Numbers₄₆, Inscriptional Pahlavi₄₇, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Math₇₃, Mayan Numerals₇₄, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
+    'acaaaaaaaaaaabaaaabaaaabaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaabaaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
+    // #75: 128 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Indic Siyaq Numbers₄₆, Inscriptional Pahlavi₄₇, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Math₇₃, Mayan Numerals₇₄, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
+    'acaaabaaaaaabaaaabaaaabaaaabaaaabaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaabaaaaaabaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
     // #76: 3 fonts: Noto Sans₀, Devanagari₂₉, Grantha₃₇.
     'a1ch,'
     // #77: 3 fonts: Noto Sans₀, Devanagari₂₉, Sharada₁₁₂.
@@ -1036,8 +1036,8 @@ const String encodedFontSets =
     '2e,'
     // #84: 1 font: Myanmar₈₃.
     '3f,'
-    // #85: 127 fonts: Noto Sans₀, Noto Color Emoji₁, Noto Emoji₂, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
-    'aaaaaaabaaaaaabaaaabaaaabaaaabaaaabaaaaacaaaaaaaaaaaaaaaabaaaaaacaaaaaaabaaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
+    // #85: 130 fonts: Noto Sans₀, Noto Color Emoji₁, Noto Emoji₂, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Indic Siyaq Numbers₄₆, Inscriptional Pahlavi₄₇, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Mayan Numerals₇₄, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
+    'aaaaaaabaaaaaabaaaabaaaabaaaabaaaabaaaaaaaaaaaaaaaaaaaaaaaabaaaaaabaaaaaaaabaaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
     // #86: 7 fonts: Noto Sans₀, Adlam₅, HK₄₁, JP₄₉, KR₅₁, SC₁₁₀, TC₁₂₂.
     'ae1jhb2gl,'
     // #87: 2 fonts: Noto Sans₀, Glagolitic₃₅.
@@ -1092,12 +1092,12 @@ const String encodedFontSets =
     '4u,'
     // #112: 1 font: Tifinagh₁₃₄.
     '5e,'
-    // #113: 126 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Arabic₇, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
-    'acaaaaaaaaaaabaaaabaaaabaaaabaaaabaaaaacaaaaaaaaaaaaaaaabaaaaaacaaaaaaabaaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
-    // #114: 127 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gunjala Gondi₃₉, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, Myanmar₈₃, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
-    'acaaabaaaaaabaaaabaaaabaaaabaaaaaaaaaaacaaaaaaaaaaaaaaaabaaaaaacaaaaaaaaaaaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
-    // #115: 121 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gurmukhi₄₀, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Inscriptional Parthian₄₈, Javanese₅₀, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Math₇₃, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
-    'acaaabaaaaaabaaaabaaaabaaaabaaaabbaaacbbaaaaaaaaaaaabaaaaaaabaaaaaaabaaaaaabaaaaabaaaaabaaabaaaaaaaaaabaaaaaaaaaaaaaaaaaa,'
+    // #113: 129 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Arabic₇, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Indic Siyaq Numbers₄₆, Inscriptional Pahlavi₄₇, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Mayan Numerals₇₄, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
+    'acaaaaaaaaaaabaaaabaaaabaaaabaaaabaaaaaaaaaaaaaaaaaaaaaaaabaaaaaabaaaaaaaabaaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
+    // #114: 130 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gunjala Gondi₃₉, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Indic Siyaq Numbers₄₆, Inscriptional Pahlavi₄₇, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Mayan Numerals₇₄, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, Myanmar₈₃, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
+    'acaaabaaaaaabaaaabaaaabaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaabaaaaaaaaaaaaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
+    // #115: 124 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gurmukhi₄₀, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Indic Siyaq Numbers₄₆, Inscriptional Pahlavi₄₇, Inscriptional Parthian₄₈, Javanese₅₀, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Math₇₃, Mayan Numerals₇₄, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
+    'acaaabaaaaaabaaaabaaaabaaaabaaaabbaaaaaabbaaaaaaaaaaaabaaaaaaaaaaaaaaaabaaaaaabaaaaabaaaaabaaabaaaaaaaaaabaaaaaaaaaaaaaaaaaa,'
     // #116: 2 fonts: Noto Sans₀, Adlam₅.
     'ae,'
     // #117: 3 fonts: Noto Sans₀, Adlam₅, Arabic₇.
@@ -1224,12 +1224,12 @@ const String encodedFontSets =
     'aaa,'
     // #178: 142 fonts: Noto Sans₀, Noto Color Emoji₁, Noto Emoji₂, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Arabic₇, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Bhaiksuki₁₅, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Caucasian Albanian₂₁, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Cypriot₂₇, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Elymaic₃₃, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gunjala Gondi₃₉, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Indic Siyaq Numbers₄₆, Inscriptional Pahlavi₄₇, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lycian₆₅, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Math₇₃, Mayan Numerals₇₄, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, Myanmar₈₃, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Hungarian₉₁, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Old Turkic₉₈, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phags Pa₁₀₅, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
     'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
-    // #179: 129 fonts: Noto Sans₀, Noto Color Emoji₁, Noto Emoji₂, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Arabic₇, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Math₇₃, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
-    'aaaaaaaaaaaaaaabaaaabaaaabaaaabaaaabaaaaacaaaaaaaaaaaaaaaabaaaaaaabaaaaaaabaaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
-    // #180: 129 fonts: Noto Sans₀, Noto Color Emoji₁, Noto Emoji₂, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gunjala Gondi₃₉, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Math₇₃, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
-    'aaaaaaabaaaaaabaaaabaaaabaaaabaaaaaaaaaaacaaaaaaaaaaaaaaaabaaaaaaabaaaaaaabaaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
-    // #181: 128 fonts: Noto Sans₀, Noto Color Emoji₁, Noto Emoji₂, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Math₇₃, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
-    'aaaaaaabaaaaaabaaaabaaaabaaaabaaaabaaaaacaaaaaaaaaaaaaaaabaaaaaaabaaaaaaabaaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
+    // #179: 132 fonts: Noto Sans₀, Noto Color Emoji₁, Noto Emoji₂, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Arabic₇, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Indic Siyaq Numbers₄₆, Inscriptional Pahlavi₄₇, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Math₇₃, Mayan Numerals₇₄, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
+    'aaaaaaaaaaaaaaabaaaabaaaabaaaabaaaabaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaabaaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
+    // #180: 132 fonts: Noto Sans₀, Noto Color Emoji₁, Noto Emoji₂, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gunjala Gondi₃₉, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Indic Siyaq Numbers₄₆, Inscriptional Pahlavi₄₇, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Math₇₃, Mayan Numerals₇₄, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
+    'aaaaaaabaaaaaabaaaabaaaabaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaabaaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
+    // #181: 131 fonts: Noto Sans₀, Noto Color Emoji₁, Noto Emoji₂, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Indic Siyaq Numbers₄₆, Inscriptional Pahlavi₄₇, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Math₇₃, Mayan Numerals₇₄, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
+    'aaaaaaabaaaaaabaaaabaaaabaaaabaaaabaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaabaaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
     // #182: 69 fonts: Noto Sans₀, Noto Color Emoji₁, Noto Emoji₂, Arabic₇, Avestan₉, Balinese₁₀, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Chakma₂₂, Cham₂₃, Devanagari₂₉, Egyptian Hieroglyphs₃₁, Grantha₃₇, Gujarati₃₈, Gunjala Gondi₃₉, Gurmukhi₄₀, Hanunoo₄₂, Hebrew₄₄, Javanese₅₀, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Meetei Mayek₇₆, Modi₇₉, Mongolian₈₀, Myanmar₈₃, NKo₈₄, New Tai Lue₈₆, Newa₈₇, Old Hungarian₉₁, Oriya₉₉, Pahawh Hmong₁₀₂, Phags Pa₁₀₅, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Saurashtra₁₁₁, Sharada₁₁₂, Siddham₁₁₄, Sinhala₁₁₅, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Warang Citi₁₃₉.
     'aaaebacabaadafbfaaabbfbaaaaaaaaafaaafcacabadhccbacabadaabaaaaaabaaaad,'
     // #183: 9 fonts: Noto Sans₀, Noto Color Emoji₁, Noto Emoji₂, HK₄₁, JP₄₉, KR₅₁, Mongolian₈₀, SC₁₁₀, TC₁₂₂.
@@ -1238,20 +1238,20 @@ const String encodedFontSets =
     'aaa1mhb2gl,'
     // #185: 140 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Arabic₇, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Bhaiksuki₁₅, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Caucasian Albanian₂₁, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Cypriot₂₇, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Elymaic₃₃, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gunjala Gondi₃₉, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Indic Siyaq Numbers₄₆, Inscriptional Pahlavi₄₇, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lycian₆₅, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Math₇₃, Mayan Numerals₇₄, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, Myanmar₈₃, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Hungarian₉₁, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Old Turkic₉₈, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phags Pa₁₀₅, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
     'acaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
-    // #186: 127 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Arabic₇, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gunjala Gondi₃₉, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Math₇₃, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
-    'acaaaaaaaaaaabaaaabaaaabaaaabaaaaaaaaaaacaaaaaaaaaaaaaaaabaaaaaaabaaaaaaabaaaaaabaaaaacaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
-    // #187: 126 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Caucasian Albanian₂₁, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
-    'acaaabaaaaaabaaaaaaaaaabaaaabaaaabaaaaacaaaaaaaaaaaaaaaabaaaaaacaaaaaaabaaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
-    // #188: 128 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gunjala Gondi₃₉, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Math₇₃, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, Myanmar₈₃, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
-    'acaaabaaaaaabaaaabaaaabaaaabaaaaaaaaaaacaaaaaaaaaaaaaaaabaaaaaaabaaaaaaaaaaaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
-    // #189: 128 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gunjala Gondi₃₉, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, Myanmar₈₃, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phags Pa₁₀₅, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
-    'acaaabaaaaaabaaaabaaaabaaaabaaaaaaaaaaacaaaaaaaaaaaaaaaabaaaaaacaaaaaaaaaaaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
-    // #190: 124 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
-    'acaaabaaaaaabaaaabaaaabababaaaabaaaaacaaaaaaaaaaaaaaaabaaaaaacaaaaaaabaaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
+    // #186: 130 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Arabic₇, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gunjala Gondi₃₉, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Indic Siyaq Numbers₄₆, Inscriptional Pahlavi₄₇, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Math₇₃, Mayan Numerals₇₄, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
+    'acaaaaaaaaaaabaaaabaaaabaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaabaaaaaabaaaaacaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
+    // #187: 129 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Caucasian Albanian₂₁, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Indic Siyaq Numbers₄₆, Inscriptional Pahlavi₄₇, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Mayan Numerals₇₄, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
+    'acaaabaaaaaabaaaaaaaaaabaaaabaaaabaaaaaaaaaaaaaaaaaaaaaaaabaaaaaabaaaaaaaabaaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
+    // #188: 131 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gunjala Gondi₃₉, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Indic Siyaq Numbers₄₆, Inscriptional Pahlavi₄₇, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Math₇₃, Mayan Numerals₇₄, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, Myanmar₈₃, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
+    'acaaabaaaaaabaaaabaaaabaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
+    // #189: 131 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gunjala Gondi₃₉, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Indic Siyaq Numbers₄₆, Inscriptional Pahlavi₄₇, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Mayan Numerals₇₄, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, Myanmar₈₃, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phags Pa₁₀₅, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
+    'acaaabaaaaaabaaaabaaaabaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaabaaaaaaaaaaaaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
+    // #190: 127 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Avestan₉, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Carian₂₀, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Devanagari₂₉, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Indic Siyaq Numbers₄₆, Inscriptional Pahlavi₄₇, Inscriptional Parthian₄₈, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Linear A₆₂, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Mayan Numerals₇₄, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Newa₈₇, Nushu₈₈, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Tamil Supplement₁₃₀, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀, Zanabazar Square₁₄₁.
+    'acaaabaaaaaabaaaabaaaabababaaaabaaaaaaaaaaaaaaaaaaaaaaaabaaaaaabaaaaaaaabaaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,'
     // #191: 94 fonts: Noto Sans₀, Symbols₃, Symbols 2₄, Adlam₅, Arabic₇, Armenian₈, Balinese₁₀, Bamum₁₁, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Bhaiksuki₁₅, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Caucasian Albanian₂₁, Chakma₂₂, Cham₂₃, Coptic₂₅, Devanagari₂₉, Duployan₃₀, Egyptian Hieroglyphs₃₁, Elbasan₃₂, Gothic₃₆, Grantha₃₇, Gujarati₃₈, Gunjala Gondi₃₉, Gurmukhi₄₀, HK₄₁, Hanunoo₄₂, Hebrew₄₄, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kannada₅₃, Kayah Li₅₄, Kharoshthi₅₅, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Lepcha₆₀, Limbu₆₁, Lisu₆₄, Mahajani₆₇, Malayalam₆₈, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Math₇₃, Meetei Mayek₇₆, Miao₇₈, Modi₇₉, Mongolian₈₀, Myanmar₈₃, NKo₈₄, New Tai Lue₈₆, Newa₈₇, Old Permic₉₄, Old Sogdian₉₆, Oriya₉₉, Osage₁₀₀, Pahawh Hmong₁₀₂, Phags Pa₁₀₅, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Saurashtra₁₁₁, Sharada₁₁₂, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Soyombo₁₁₈, Sundanese₁₁₉, Syloti Nagri₁₂₀, Syriac₁₂₁, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Viet₁₂₇, Takri₁₂₈, Tamil₁₂₉, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃, Tifinagh₁₃₄, Tirhuta₁₃₅, Wancho₁₃₈, Zanabazar Square₁₄₁.
     'acaababaaaaaaaaabaabdaaadaaaaaabeaaaaaaaaaaaaccaaaaaacbaacabagbcabcbaaaaabaabaaaaaaabaabaaaacc,'
-    // #192: 98 fonts: Noto Sans₀, Symbols₃, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Balinese₁₀, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Egyptian Hieroglyphs₃₁, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kayah Li₅₄, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Limbu₆₁, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Syloti Nagri₁₂₀, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Takri₁₂₈, Thaana₁₃₂, Thai₁₃₃, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀.
-    'acbabbbaabaaacaaaabccaaadaaaadaaabbaaabbababaaacaaaaaaabaacabaaaaabaaaaabaaaacaaaaabbaaaabdabaaaaa,'
+    // #192: 100 fonts: Noto Sans₀, Symbols₃, Adlam₅, Anatolian Hieroglyphs₆, Armenian₈, Balinese₁₀, Bassa Vah₁₂, Batak₁₃, Bengali₁₄, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Canadian Aboriginal₁₉, Chakma₂₂, Cham₂₃, Cherokee₂₄, Coptic₂₅, Cuneiform₂₆, Deseret₂₈, Egyptian Hieroglyphs₃₁, Georgian₃₄, Glagolitic₃₅, Gothic₃₆, Grantha₃₇, HK₄₁, Hanunoo₄₂, Hatran₄₃, Hebrew₄₄, Imperial Aramaic₄₅, Indic Siyaq Numbers₄₆, Inscriptional Pahlavi₄₇, JP₄₉, Javanese₅₀, KR₅₁, Kaithi₅₂, Kayah Li₅₄, Khmer₅₆, Khojki₅₇, Khudawadi₅₈, Lao₅₉, Limbu₆₁, Linear B₆₃, Lisu₆₄, Lydian₆₆, Mahajani₆₇, Mandaic₆₉, Manichaean₇₀, Marchen₇₁, Masaram Gondi₇₂, Mayan Numerals₇₄, Medefaidrin₇₅, Meetei Mayek₇₆, Meroitic₇₇, Miao₇₈, Modi₇₉, Mongolian₈₀, Mro₈₁, Multani₈₂, NKo₈₄, Nabataean₈₅, New Tai Lue₈₆, Ogham₈₉, Ol Chiki₉₀, Old Italic₉₂, Old North Arabian₉₃, Old Permic₉₄, Old Persian₉₅, Old Sogdian₉₆, Old South Arabian₉₇, Oriya₉₉, Osage₁₀₀, Osmanya₁₀₁, Pahawh Hmong₁₀₂, Palmyrene₁₀₃, Pau Cin Hau₁₀₄, Phoenician₁₀₆, Psalter Pahlavi₁₀₇, Rejang₁₀₈, Runic₁₀₉, SC₁₁₀, Shavian₁₁₃, Siddham₁₁₄, Sinhala₁₁₅, Sogdian₁₁₆, Sora Sompeng₁₁₇, Soyombo₁₁₈, Syloti Nagri₁₂₀, TC₁₂₂, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Thaana₁₃₂, Thai₁₃₃, Tirhuta₁₃₅, Ugaritic₁₃₆, Vai₁₃₇, Wancho₁₃₈, Warang Citi₁₃₉, Yi₁₄₀.
+    'acbabbbaabaaacaaaabccaaadaaaaaabaaabbaaabbababaaabaaaaaaaabaacabaaaaabaaaaabaaaacaaaaabbaaaafabaaaaa,'
     // #193: 4 fonts: Noto Sans₀, Adlam₅, Duployan₃₀, Syriac₁₂₁.
     'aey3m,'
     // #194: 41 fonts: Noto Sans₀, Anatolian Hieroglyphs₆, Arabic₇, Balinese₁₀, Batak₁₃, Bengali₁₄, Bhaiksuki₁₅, Brahmi₁₆, Buginese₁₇, Buhid₁₈, Devanagari₂₉, Gujarati₃₈, Gurmukhi₄₀, Hanunoo₄₂, Javanese₅₀, Kaithi₅₂, Kannada₅₃, Kharoshthi₅₅, Khmer₅₆, Lao₅₉, Lepcha₆₀, Limbu₆₁, Malayalam₆₈, Meetei Mayek₇₆, Myanmar₈₃, Oriya₉₉, Phags Pa₁₀₅, Rejang₁₀₈, Saurashtra₁₁₁, Sinhala₁₁₅, Sundanese₁₁₉, Syloti Nagri₁₂₀, Tagalog₁₂₃, Tagbanwa₁₂₄, Tai Le₁₂₅, Tai Tham₁₂₆, Tai Viet₁₂₇, Tamil₁₂₉, Telugu₁₃₁, Thaana₁₃₂, Thai₁₃₃.
@@ -1382,123 +1382,119 @@ const String encodedFontSets =
     'd4n,'
     // #257: 2 fonts: Symbols 2₄, Coptic₂₅.
     'eu,'
-    // #258: 5 fonts: Symbols 2₄, HK₄₁, KR₅₁, SC₁₁₀, TC₁₂₂.
-    'e1kj2gl,'
-    // #259: 3 fonts: Symbols 2₄, Math₇₃, Tai Tham₁₂₆.
+    // #258: 3 fonts: Symbols 2₄, Math₇₃, Tai Tham₁₂₆.
     'e2q2a,'
-    // #260: 2 fonts: Symbols 2₄, Mayan Numerals₇₄.
+    // #259: 2 fonts: Symbols 2₄, Mayan Numerals₇₄.
     'e2r,'
-    // #261: 7 fonts: Adlam₅, Arabic₇, Mandaic₆₉, Manichaean₇₀, Psalter Pahlavi₁₀₇, Sogdian₁₁₆, Syriac₁₂₁.
+    // #260: 7 fonts: Adlam₅, Arabic₇, Mandaic₆₉, Manichaean₇₀, Psalter Pahlavi₁₀₇, Sogdian₁₁₆, Syriac₁₂₁.
     'fb2ja1kie,'
-    // #262: 5 fonts: Adlam₅, Arabic₇, NKo₈₄, Syriac₁₂₁, Thaana₁₃₂.
+    // #261: 5 fonts: Adlam₅, Arabic₇, NKo₈₄, Syriac₁₂₁, Thaana₁₃₂.
     'fb2y1kk,'
-    // #263: 1 font: Anatolian Hieroglyphs₆.
+    // #262: 1 font: Anatolian Hieroglyphs₆.
     'g,'
-    // #264: 2 fonts: Arabic₇, Coptic₂₅.
+    // #263: 2 fonts: Arabic₇, Coptic₂₅.
     'hr,'
-    // #265: 4 fonts: Arabic₇, Indic Siyaq Numbers₄₆, Syriac₁₂₁, Thaana₁₃₂.
+    // #264: 4 fonts: Arabic₇, Indic Siyaq Numbers₄₆, Syriac₁₂₁, Thaana₁₃₂.
     'h1m2wk,'
-    // #266: 2 fonts: Arabic₇, NKo₈₄.
+    // #265: 2 fonts: Arabic₇, NKo₈₄.
     'h2y,'
-    // #267: 3 fonts: Arabic₇, Syriac₁₂₁, Thaana₁₃₂.
+    // #266: 3 fonts: Arabic₇, Syriac₁₂₁, Thaana₁₃₂.
     'h4jk,'
-    // #268: 2 fonts: Armenian₈, Georgian₃₄.
+    // #267: 2 fonts: Armenian₈, Georgian₃₄.
     'iz,'
-    // #269: 3 fonts: Bengali₁₄, Chakma₂₂, Syloti Nagri₁₂₀.
+    // #268: 3 fonts: Bengali₁₄, Chakma₂₂, Syloti Nagri₁₂₀.
     'oh3t,'
-    // #270: 2 fonts: Bengali₁₄, Tirhuta₁₃₅.
+    // #269: 2 fonts: Bengali₁₄, Tirhuta₁₃₅.
     'o4q,'
-    // #271: 2 fonts: Buginese₁₇, Javanese₅₀.
+    // #270: 2 fonts: Buginese₁₇, Javanese₅₀.
     'r1g,'
-    // #272: 1 font: Buhid₁₈.
+    // #271: 1 font: Buhid₁₈.
     's,'
-    // #273: 4 fonts: Buhid₁₈, Hanunoo₄₂, Tagalog₁₂₃, Tagbanwa₁₂₄.
+    // #272: 4 fonts: Buhid₁₈, Hanunoo₄₂, Tagalog₁₂₃, Tagbanwa₁₂₄.
     'sx3ca,'
-    // #274: 1 font: Carian₂₀.
+    // #273: 1 font: Carian₂₀.
     'u,'
-    // #275: 3 fonts: Chakma₂₂, Myanmar₈₃, Tai Le₁₂₅.
+    // #274: 3 fonts: Chakma₂₂, Myanmar₈₃, Tai Le₁₂₅.
     'w2i1p,'
-    // #276: 1 font: Deseret₂₈.
+    // #275: 1 font: Deseret₂₈.
     '1c,'
-    // #277: 1 font: Egyptian Hieroglyphs₃₁.
+    // #276: 1 font: Egyptian Hieroglyphs₃₁.
     '1f,'
-    // #278: 1 font: Elbasan₃₂.
+    // #277: 1 font: Elbasan₃₂.
     '1g,'
-    // #279: 1 font: Elymaic₃₃.
+    // #278: 1 font: Elymaic₃₃.
     '1h,'
-    // #280: 1 font: Gothic₃₆.
+    // #279: 1 font: Gothic₃₆.
     '1k,'
-    // #281: 2 fonts: Gujarati₃₈, Khojki₅₇.
+    // #280: 2 fonts: Gujarati₃₈, Khojki₅₇.
     '1ms,'
-    // #282: 2 fonts: Gurmukhi₄₀, Multani₈₂.
+    // #281: 2 fonts: Gurmukhi₄₀, Multani₈₂.
     '1o1p,'
-    // #283: 11 fonts: HK₄₁, JP₄₉, KR₅₁, Lisu₆₄, Mongolian₈₀, New Tai Lue₈₆, Phags Pa₁₀₅, SC₁₁₀, TC₁₂₂, Tai Le₁₂₅, Yi₁₄₀.
+    // #282: 11 fonts: HK₄₁, JP₄₉, KR₅₁, Lisu₆₄, Mongolian₈₀, New Tai Lue₈₆, Phags Pa₁₀₅, SC₁₁₀, TC₁₂₂, Tai Le₁₂₅, Yi₁₄₀.
     '1phbmpfselco,'
-    // #284: 10 fonts: HK₄₁, JP₄₉, KR₅₁, Mongolian₈₀, New Tai Lue₈₆, Phags Pa₁₀₅, SC₁₁₀, TC₁₂₂, Tai Le₁₂₅, Yi₁₄₀.
+    // #283: 10 fonts: HK₄₁, JP₄₉, KR₅₁, Mongolian₈₀, New Tai Lue₈₆, Phags Pa₁₀₅, SC₁₁₀, TC₁₂₂, Tai Le₁₂₅, Yi₁₄₀.
     '1phb1cfselco,'
-    // #285: 8 fonts: HK₄₁, JP₄₉, KR₅₁, Mongolian₈₀, Phags Pa₁₀₅, SC₁₁₀, TC₁₂₂, Yi₁₄₀.
+    // #284: 8 fonts: HK₄₁, JP₄₉, KR₅₁, Mongolian₈₀, Phags Pa₁₀₅, SC₁₁₀, TC₁₂₂, Yi₁₄₀.
     '1phb1cyelr,'
-    // #286: 9 fonts: HK₄₁, JP₄₉, KR₅₁, New Tai Lue₈₆, Phags Pa₁₀₅, SC₁₁₀, TC₁₂₂, Tai Le₁₂₅, Yi₁₄₀.
+    // #285: 9 fonts: HK₄₁, JP₄₉, KR₅₁, New Tai Lue₈₆, Phags Pa₁₀₅, SC₁₁₀, TC₁₂₂, Tai Le₁₂₅, Yi₁₄₀.
     '1phb1iselco,'
-    // #287: 6 fonts: HK₄₁, JP₄₉, KR₅₁, Phags Pa₁₀₅, SC₁₁₀, TC₁₂₂.
+    // #286: 6 fonts: HK₄₁, JP₄₉, KR₅₁, Phags Pa₁₀₅, SC₁₁₀, TC₁₂₂.
     '1phb2bel,'
-    // #288: 5 fonts: HK₄₁, KR₅₁, Math₇₃, SC₁₁₀, TC₁₂₂.
-    '1pjv1kl,'
-    // #289: 2 fonts: HK₄₁, SC₁₁₀.
+    // #287: 2 fonts: HK₄₁, SC₁₁₀.
     '1p2q,'
-    // #290: 1 font: Hanunoo₄₂.
+    // #288: 1 font: Hanunoo₄₂.
     '1q,'
-    // #291: 1 font: Indic Siyaq Numbers₄₆.
+    // #289: 1 font: Indic Siyaq Numbers₄₆.
     '1u,'
-    // #292: 1 font: Lycian₆₅.
+    // #290: 1 font: Lycian₆₅.
     '2n,'
-    // #293: 1 font: Mahajani₆₇.
+    // #291: 1 font: Mahajani₆₇.
     '2p,'
-    // #294: 2 fonts: Math₇₃, Old Permic₉₄.
+    // #292: 2 fonts: Math₇₃, Old Permic₉₄.
     '2vu,'
-    // #295: 1 font: Medefaidrin₇₅.
+    // #293: 1 font: Medefaidrin₇₅.
     '2x,'
-    // #296: 1 font: Ogham₈₉.
+    // #294: 1 font: Ogham₈₉.
     '3l,'
-    // #297: 1 font: Ol Chiki₉₀.
+    // #295: 1 font: Ol Chiki₉₀.
     '3m,'
-    // #298: 1 font: Old North Arabian₉₃.
+    // #296: 1 font: Old North Arabian₉₃.
     '3p,'
-    // #299: 1 font: Old Permic₉₄.
+    // #297: 1 font: Old Permic₉₄.
     '3q,'
-    // #300: 1 font: Old Sogdian₉₆.
+    // #298: 1 font: Old Sogdian₉₆.
     '3s,'
-    // #301: 1 font: Old South Arabian₉₇.
+    // #299: 1 font: Old South Arabian₉₇.
     '3t,'
-    // #302: 1 font: Old Turkic₉₈.
+    // #300: 1 font: Old Turkic₉₈.
     '3u,'
-    // #303: 1 font: Palmyrene₁₀₃.
+    // #301: 1 font: Palmyrene₁₀₃.
     '3z,'
-    // #304: 1 font: Pau Cin Hau₁₀₄.
+    // #302: 1 font: Pau Cin Hau₁₀₄.
     '4a,'
-    // #305: 1 font: Phags Pa₁₀₅.
+    // #303: 1 font: Phags Pa₁₀₅.
     '4b,'
-    // #306: 1 font: Runic₁₀₉.
+    // #304: 1 font: Runic₁₀₉.
     '4f,'
-    // #307: 1 font: Sharada₁₁₂.
+    // #305: 1 font: Sharada₁₁₂.
     '4i,'
-    // #308: 1 font: Shavian₁₁₃.
+    // #306: 1 font: Shavian₁₁₃.
     '4j,'
-    // #309: 1 font: Sogdian₁₁₆.
+    // #307: 1 font: Sogdian₁₁₆.
     '4m,'
-    // #310: 1 font: Soyombo₁₁₈.
+    // #308: 1 font: Soyombo₁₁₈.
     '4o,'
-    // #311: 1 font: Syloti Nagri₁₂₀.
+    // #309: 1 font: Syloti Nagri₁₂₀.
     '4q,'
-    // #312: 1 font: Thaana₁₃₂.
+    // #310: 1 font: Thaana₁₃₂.
     '5c,'
-    // #313: 1 font: Vai₁₃₇.
+    // #311: 1 font: Vai₁₃₇.
     '5h,'
-    // #314: 1 font: Zanabazar Square₁₄₁.
+    // #312: 1 font: Zanabazar Square₁₄₁.
     '5l'
     ;
 
-// 21917 ranges encoded in 31622 characters
+// 21915 ranges encoded in 31616 characters
 const String encodedFontSetRanges =
     '1eE'      // 0-1f
     '6W'       // 20           #178
@@ -1727,7 +1723,7 @@ const String encodedFontSetRanges =
     '1k2P'     // 531-556      #67
     'aE'       // 557-558
     '1u2P'     // 559-588      #67
-    '10I'      // 589          #268
+    '10H'      // 589          #267
     '2P'       // 58a          #67
     'aE'       // 58b-58c
     'b2P'      // 58d-58f      #67
@@ -1739,7 +1735,7 @@ const String encodedFontSetRanges =
     'd1U'      // 5f0-5f4      #46
     'jE'       // 5f5-5ff
     'dZ'       // 600-604      #25
-    '10E'      // 605          #264
+    '10D'      // 605          #263
     'eZ'       // 606-60b      #25
     '3N'       // 60c          #91
     'mZ'       // 60d-61a      #25
@@ -1747,19 +1743,19 @@ const String encodedFontSetRanges =
     'Z'        // 61c          #25
     'E'        // 61d
     'Z'        // 61e          #25
-    '10C'      // 61f          #262
+    '10B'      // 61f          #261
     'Z'        // 620          #25
     '3O'       // 621          #92
     'dZ'       // 622-626      #25
     '4U'       // 627          #124
     'wZ'       // 628-63f      #25
-    '10B'      // 640          #261
+    '10A'      // 640          #260
     'iZ'       // 641-64a      #25
     'j3O'      // 64b-655      #92
     'iZ'       // 656-65f      #25
-    'i10F'     // 660-669      #265
+    'i10E'     // 660-669      #264
     '3N'       // 66a          #91
-    'a10H'     // 66b-66c      #267
+    'a10G'     // 66b-66c      #266
     'bZ'       // 66d-66f      #25
     '3O'       // 670          #92
     '4vZ'      // 671-6ef      #25
@@ -1771,7 +1767,7 @@ const String encodedFontSetRanges =
     'aE'       // 74b-74c
     'b4G'      // 74d-74f      #110
     '1uZ'      // 750-77f      #25
-    '1w12A'    // 780-7b1      #312
+    '1w11Y'    // 780-7b1      #310
     'mE'       // 7b2-7bf
     '2f5V'     // 7c0-7fa      #151
     'aE'       // 7fb-7fc
@@ -1820,9 +1816,9 @@ const String encodedFontSetRanges =
     'E'        // 9de
     'd1F'      // 9df-9e3      #31
     'aE'       // 9e4-9e5
-    'i10J'     // 9e6-9ef      #269
+    'i10I'     // 9e6-9ef      #268
     'c1F'      // 9f0-9f3      #31
-    'c10K'     // 9f4-9f7      #270
+    'c10J'     // 9f4-9f7      #269
     'f1F'      // 9f8-9fe      #31
     'aE'       // 9ff-a00
     'b1H'      // a01-a03      #33
@@ -1855,7 +1851,7 @@ const String encodedFontSetRanges =
     'E'        // a5d
     '1H'       // a5e          #33
     'fE'       // a5f-a65
-    'i10W'     // a66-a6f      #282
+    'i10V'     // a66-a6f      #281
     'f1H'      // a70-a76      #33
     'iE'       // a77-a80
     'b1K'      // a81-a83      #36
@@ -1882,7 +1878,7 @@ const String encodedFontSetRanges =
     'nE'       // ad1-adf
     'c1K'      // ae0-ae3      #36
     'aE'       // ae4-ae5
-    'i10V'     // ae6-aef      #281
+    'i10U'     // ae6-aef      #280
     'a1K'      // af0-af1      #36
     'fE'       // af2-af8
     'f1K'      // af9-aff      #36
@@ -2079,7 +2075,7 @@ const String encodedFontSetRanges =
     'c1D'      // edc-edf      #29
     '11aE'     // ee0-fff
     '2k3G'     // 1000-103f    #84
-    'i10P'     // 1040-1049    #275
+    'i10O'     // 1040-1049    #274
     '3g3G'     // 104a-109f    #84
     '1k1S'     // 10a0-10c5    #44
     'E'        // 10c6
@@ -2095,17 +2091,17 @@ const String encodedFontSetRanges =
     'e3R'      // 13f8-13fd    #95
     'aE'       // 13fe-13ff
     '24o3Q'    // 1400-167f    #94
-    '1b11K'    // 1680-169c    #296
+    '1b11I'    // 1680-169c    #294
     'bE'       // 169d-169f
-    '3j11U'    // 16a0-16f8    #306
+    '3j11S'    // 16a0-16f8    #304
     'fE'       // 16f9-16ff
     'u6K'      // 1700-1715    #166
     'hE'       // 1716-171e
     '6K'       // 171f         #166
-    't11E'     // 1720-1734    #290
-    'a10N'     // 1735-1736    #273
+    't11C'     // 1720-1734    #288
+    'a10M'     // 1735-1736    #272
     'hE'       // 1737-173f
-    's10M'     // 1740-1753    #272
+    's10L'     // 1740-1753    #271
     'kE'       // 1754-175f
     'l4H'      // 1760-176c    #111
     'E'        // 176d
@@ -2184,7 +2180,7 @@ const String encodedFontSetRanges =
     'n3X'      // 1c3b-1c49    #101
     'bE'       // 1c4a-1c4c
     'b3X'      // 1c4d-1c4f    #101
-    '1u11L'    // 1c50-1c7f    #297
+    '1u11J'    // 1c50-1c7f    #295
     'hL'       // 1c80-1c88    #11
     'fE'       // 1c89-1c8f
     '1p1S'     // 1c90-1cba    #44
@@ -2197,26 +2193,26 @@ const String encodedFontSetRanges =
     '4O'       // 1cd2         #118
     '2Y'       // 1cd3         #76
     '1J'       // 1cd4         #35
-    'a2A'      // 1cd5-1cd6    #52
+    'a2B'      // 1cd5-1cd6    #53
     '2Z'       // 1cd7         #77
-    '2A'       // 1cd8         #52
+    '2B'       // 1cd8         #53
     '2Z'       // 1cd9         #77
     '8N'       // 1cda         #221
     '1J'       // 1cdb         #35
     'a2Z'      // 1cdc-1cdd    #77
     'a1J'      // 1cde-1cdf    #35
     '2Z'       // 1ce0         #77
-    '2A'       // 1ce1         #52
+    '2B'       // 1ce1         #53
     'g1J'      // 1ce2-1ce9    #35
-    '2A'       // 1cea         #52
+    '2B'       // 1cea         #53
     'a1J'      // 1ceb-1cec    #35
-    '2A'       // 1ced         #52
+    '2B'       // 1ced         #53
     'c1J'      // 1cee-1cf1    #35
     '7W'       // 1cf2         #204
     '2Y'       // 1cf3         #76
     '8I'       // 1cf4         #216
     '7Z'       // 1cf5         #207
-    '2A'       // 1cf6         #52
+    '2B'       // 1cf6         #53
     '1F'       // 1cf7         #31
     'a2Y'      // 1cf8-1cf9    #76
     'eE'       // 1cfa-1cff
@@ -2354,7 +2350,7 @@ const String encodedFontSetRanges =
     'L'        // 20bf         #11
     'oE'       // 20c0-20cf
     'jO'       // 20d0-20da    #14
-    '11I'      // 20db         #294
+    '11G'      // 20db         #292
     'O'        // 20dc         #14
     '9T'       // 20dd         #253
     '1A'       // 20de         #26
@@ -2458,7 +2454,7 @@ const String encodedFontSetRanges =
     '1W'       // 2215         #48
     'aO'       // 2216-2217    #14
     '2O'       // 2218         #66
-    '9Z'       // 2219         #259
+    '9Y'       // 2219         #258
     'U'        // 221a         #20
     'aO'       // 221b-221c    #14
     'cU'       // 221d-2220    #20
@@ -2478,9 +2474,7 @@ const String encodedFontSetRanges =
     'U'        // 2248         #20
     'bO'       // 2249-224b    #14
     'U'        // 224c         #20
-    'dO'       // 224d-2251    #14
-    '11C'      // 2252         #288
-    'lO'       // 2253-225f    #14
+    'rO'       // 224d-225f    #14
     'bU'       // 2260-2262    #20
     'O'        // 2263         #14
     'cU'       // 2264-2267    #20
@@ -2498,7 +2492,7 @@ const String encodedFontSetRanges =
     'aU'       // 228a-228b    #20
     'hO'       // 228c-2294    #14
     'cU'       // 2295-2298    #20
-    '2B'       // 2299         #53
+    '2C'       // 2299         #54
     'eO'       // 229a-229f    #14
     'U'        // 22a0         #20
     'cO'       // 22a1-22a4    #14
@@ -2580,21 +2574,21 @@ const String encodedFontSetRanges =
     '2O'       // 25af         #66
     'M'        // 25b0         #12
     'aW'       // 25b1-25b2    #22
-    '2B'       // 25b3         #53
+    '2C'       // 25b3         #54
     'aM'       // 25b4-25b5    #12
     '1I'       // 25b6         #34
-    '2B'       // 25b7         #53
+    '2C'       // 25b7         #54
     'cM'       // 25b8-25bb    #12
     'W'        // 25bc         #22
-    '2B'       // 25bd         #53
+    '2C'       // 25bd         #54
     'aM'       // 25be-25bf    #12
     '1I'       // 25c0         #34
-    '2B'       // 25c1         #53
+    '2C'       // 25c1         #54
     'cM'       // 25c2-25c5    #12
     'aW'       // 25c6-25c7    #22
-    '9Y'       // 25c8         #258
+    'M'        // 25c8         #12
     'W'        // 25c9         #22
-    '2B'       // 25ca         #53
+    '2C'       // 25ca         #54
     'W'        // 25cb         #22
     '7J'       // 25cc         #191
     'M'        // 25cd         #12
@@ -2770,7 +2764,7 @@ const String encodedFontSetRanges =
     '2vO'      // 2936-2980    #14
     '2O'       // 2981         #66
     '2hO'      // 2982-29be    #14
-    '2B'       // 29bf         #53
+    '2C'       // 29bf         #54
     '1pO'      // 29c0-29ea    #14
     '2O'       // 29eb         #66
     'mO'       // 29ec-29f9    #14
@@ -2797,9 +2791,9 @@ const String encodedFontSetRanges =
     '3xM'      // 2b97-2bfd    #12
     'O'        // 2bfe         #14
     'M'        // 2bff         #12
-    '1t2C'     // 2c00-2c2e    #54
+    '1t2D'     // 2c00-2c2e    #55
     'E'        // 2c2f
-    '1t2C'     // 2c30-2c5e    #54
+    '1t2D'     // 2c30-2c5e    #55
     'E'        // 2c5f
     '1eL'      // 2c60-2c7f    #11
     '4k3S'     // 2c80-2cf3    #96
@@ -2844,12 +2838,12 @@ const String encodedFontSetRanges =
     'kA'       // 2ff0-2ffb    #0
     'cE'       // 2ffc-2fff
     '3T'       // 3000         #97
-    'a10Y'     // 3001-3002    #284
+    'a10X'     // 3001-3002    #283
     'cA'       // 3003-3006    #0
-    '11B'      // 3007         #287
-    'a11A'     // 3008-3009    #286
-    'a10X'     // 300a-300b    #283
-    'c10Z'     // 300c-300f    #285
+    '11A'      // 3007         #286
+    'a10Z'     // 3008-3009    #285
+    'a10W'     // 300a-300b    #282
+    'c10Y'     // 300c-300f    #284
     'a5F'      // 3010-3011    #135
     'aA'       // 3012-3013    #0
     'g5F'      // 3014-301b    #135
@@ -6946,7 +6940,7 @@ const String encodedFontSetRanges =
     'F'        // 5c7d         #5
     'B'        // 5c7e         #1
     'cD'       // 5c7f-5c82    #3
-    '11D'      // 5c83         #289
+    '11B'      // 5c83         #287
     'D'        // 5c84         #3
     'aB'       // 5c85-5c86    #1
     'F'        // 5c87         #5
@@ -18486,7 +18480,7 @@ const String encodedFontSetRanges =
     '2b6U'     // a490-a4c6    #176
     'hE'       // a4c7-a4cf
     '1u5P'     // a4d0-a4ff    #145
-    '11m12B'   // a500-a62b    #313
+    '11m11Z'   // a500-a62b    #311
     'sE'       // a62c-a63f
     '1tL'      // a640-a66e    #11
     '3J'       // a66f         #87
@@ -18500,20 +18494,20 @@ const String encodedFontSetRanges =
     'hL'       // a7c2-a7ca    #11
     '1oE'      // a7cb-a7f4
     'jL'       // a7f5-a7ff    #11
-    '1r11Z'    // a800-a82c    #311
+    '1r11X'    // a800-a82c    #309
     'bE'       // a82d-a82f
     'b8J'      // a830-a832    #217
     'b8K'      // a833-a835    #218
     'c8L'      // a836-a839    #219
     'eE'       // a83a-a83f
-    '2c11T'    // a840-a877    #305
+    '2c11R'    // a840-a877    #303
     'gE'       // a878-a87f
     '2q6G'     // a880-a8c5    #162
     'gE'       // a8c6-a8cd
     'k6G'      // a8ce-a8d9    #162
     'eE'       // a8da-a8df
     'p1J'      // a8e0-a8f0    #35
-    '2A'       // a8f1         #52
+    '2B'       // a8f1         #53
     '1J'       // a8f2         #35
     '8P'       // a8f3         #223
     'k1J'      // a8f4-a8ff    #35
@@ -18527,7 +18521,7 @@ const String encodedFontSetRanges =
     'bE'       // a97d-a97f
     '2y3W'     // a980-a9cd    #100
     'E'        // a9ce
-    '10L'      // a9cf         #271
+    '10K'      // a9cf         #270
     'i3W'      // a9d0-a9d9    #100
     'cE'       // a9da-a9dd
     'a3W'      // a9de-a9df    #100
@@ -18566,7 +18560,7 @@ const String encodedFontSetRanges =
     '3E'       // f908         #82
     'aQ'       // f909-f90a    #16
     'A'        // f90b         #0
-    '2D'       // f90c         #55
+    '1Y'       // f90c         #50
     '1T'       // f90d         #45
     'fQ'       // f90e-f914    #16
     'A'        // f915         #0
@@ -18585,7 +18579,7 @@ const String encodedFontSetRanges =
     'Q'        // f930         #16
     '5J'       // f931         #139
     'aJ'       // f932-f933    #9
-    '2D'       // f934         #55
+    '1Y'       // f934         #50
     'J'        // f935         #9
     'Q'        // f936         #16
     'A'        // f937         #0
@@ -18627,7 +18621,7 @@ const String encodedFontSetRanges =
     '1T'       // f978         #45
     'A'        // f979         #0
     'J'        // f97a         #9
-    '2D'       // f97b         #55
+    '1Y'       // f97b         #50
     'aQ'       // f97c-f97d    #16
     'A'        // f97e         #0
     'J'        // f97f         #9
@@ -18665,7 +18659,7 @@ const String encodedFontSetRanges =
     'A'        // f9bb         #0
     'Q'        // f9bc         #16
     'A'        // f9bd         #0
-    '2D'       // f9be         #55
+    '1Y'       // f9be         #50
     'Q'        // f9bf         #16
     'J'        // f9c0         #9
     'cQ'       // f9c1-f9c4    #16
@@ -18673,16 +18667,16 @@ const String encodedFontSetRanges =
     'Q'        // f9c7         #16
     '1T'       // f9c8         #45
     'fQ'       // f9c9-f9cf    #16
-    '2D'       // f9d0         #55
+    '1Y'       // f9d0         #50
     'fQ'       // f9d1-f9d7    #16
     'A'        // f9d8         #0
-    '2D'       // f9d9         #55
+    '1Y'       // f9d9         #50
     'aQ'       // f9da-f9db    #16
     'bA'       // f9dc-f9de    #0
     'J'        // f9df         #9
     'A'        // f9e0         #0
     'Q'        // f9e1         #16
-    'a2D'      // f9e2-f9e3    #55
+    'a1Y'      // f9e2-f9e3    #50
     'A'        // f9e4         #0
     'aQ'       // f9e5-f9e6    #16
     'A'        // f9e7         #0
@@ -18774,7 +18768,7 @@ const String encodedFontSetRanges =
     '4iZ'      // fb50-fbc1    #25
     'pE'       // fbc2-fbd2
     '13xZ'     // fbd3-fd3d    #25
-    'a10G'     // fd3e-fd3f    #266
+    'a10F'     // fd3e-fd3f    #265
     'oE'       // fd40-fd4f
     '2kZ'      // fd50-fd8f    #25
     'aE'       // fd90-fd91
@@ -18849,25 +18843,25 @@ const String encodedFontSetRanges =
     'bM'       // fff9-fffb    #12
     'aL'       // fffc-fffd    #11
     'aE'       // fffe-ffff
-    'k1Z'      // 10000-1000b  #51
+    'k2A'      // 10000-1000b  #52
     'E'        // 1000c
-    'y1Z'      // 1000d-10026  #51
+    'y2A'      // 1000d-10026  #52
     'E'        // 10027
-    'r1Z'      // 10028-1003a  #51
+    'r2A'      // 10028-1003a  #52
     'E'        // 1003b
-    'a1Z'      // 1003c-1003d  #51
+    'a2A'      // 1003c-1003d  #52
     'E'        // 1003e
-    'n1Z'      // 1003f-1004d  #51
+    'n2A'      // 1003f-1004d  #52
     'aE'       // 1004e-1004f
-    'm1Z'      // 10050-1005d  #51
+    'm2A'      // 10050-1005d  #52
     '1gE'      // 1005e-1007f
-    '4r1Z'     // 10080-100fa  #51
+    '4r2A'     // 10080-100fa  #52
     'dE'       // 100fb-100ff
     'b5O'      // 10100-10102  #144
     'cE'       // 10103-10106
     '1r5O'     // 10107-10133  #144
     'bE'       // 10134-10136
-    'h1Z'      // 10137-1013f  #51
+    'h2A'      // 10137-1013f  #52
     '2zM'      // 10140-1018e  #12
     'E'        // 1018f
     'lM'       // 10190-1019c  #12
@@ -18876,18 +18870,18 @@ const String encodedFontSetRanges =
     '1tE'      // 101a1-101cf
     '1sM'      // 101d0-101fd  #12
     '4yE'      // 101fe-1027f
-    '1b11G'    // 10280-1029c  #292
+    '1b11E'    // 10280-1029c  #290
     'bE'       // 1029d-1029f
-    '1v10O'    // 102a0-102d0  #274
+    '1v10N'    // 102a0-102d0  #273
     'nE'       // 102d1-102df
     '1a9X'     // 102e0-102fb  #257
     'cE'       // 102fc-102ff
     '1i5Z'     // 10300-10323  #155
     'hE'       // 10324-1032c
     'b5Z'      // 1032d-1032f  #155
-    'z10U'     // 10330-1034a  #280
+    'z10T'     // 10330-1034a  #279
     'dE'       // 1034b-1034f
-    '1p11N'    // 10350-1037a  #299
+    '1p11L'    // 10350-1037a  #297
     'dE'       // 1037b-1037f
     '1c6R'     // 10380-1039d  #173
     'E'        // 1039e
@@ -18896,8 +18890,8 @@ const String encodedFontSetRanges =
     'cE'       // 103c4-103c7
     'm6A'      // 103c8-103d5  #156
     '1oE'      // 103d6-103ff
-    '3a10Q'    // 10400-1044f  #276
-    '1u11W'    // 10450-1047f  #308
+    '3a10P'    // 10400-1044f  #275
+    '1u11U'    // 10450-1047f  #306
     '1c6C'     // 10480-1049d  #158
     'aE'       // 1049e-1049f
     'i6C'      // 104a0-104a9  #158
@@ -18906,7 +18900,7 @@ const String encodedFontSetRanges =
     'cE'       // 104d4-104d7
     '1i6B'     // 104d8-104fb  #157
     'cE'       // 104fc-104ff
-    '1m10S'    // 10500-10527  #278
+    '1m10R'    // 10500-10527  #277
     'gE'       // 10528-1052f
     '1y5C'     // 10530-10563  #132
     'jE'       // 10564-1056e
@@ -18932,7 +18926,7 @@ const String encodedFontSetRanges =
     'u5G'      // 10840-10855  #136
     'E'        // 10856
     'h5G'      // 10857-1085f  #136
-    '1e11R'    // 10860-1087f  #303
+    '1e11P'    // 10860-1087f  #301
     '1d5W'     // 10880-1089e  #152
     'gE'       // 1089f-108a6
     'h5W'      // 108a7-108af  #152
@@ -18954,24 +18948,24 @@ const String encodedFontSetRanges =
     's4B'      // 109bc-109cf  #105
     'aE'       // 109d0-109d1
     '1s4B'     // 109d2-109ff  #105
-    'c1Y'      // 10a00-10a03  #50
+    'c1Z'      // 10a00-10a03  #51
     'E'        // 10a04
-    'a1Y'      // 10a05-10a06  #50
+    'a1Z'      // 10a05-10a06  #51
     'dE'       // 10a07-10a0b
-    'g1Y'      // 10a0c-10a13  #50
+    'g1Z'      // 10a0c-10a13  #51
     'E'        // 10a14
-    'b1Y'      // 10a15-10a17  #50
+    'b1Z'      // 10a15-10a17  #51
     'E'        // 10a18
-    '1b1Y'     // 10a19-10a35  #50
+    '1b1Z'     // 10a19-10a35  #51
     'aE'       // 10a36-10a37
-    'b1Y'      // 10a38-10a3a  #50
+    'b1Z'      // 10a38-10a3a  #51
     'cE'       // 10a3b-10a3e
-    'i1Y'      // 10a3f-10a48  #50
+    'i1Z'      // 10a3f-10a48  #51
     'fE'       // 10a49-10a4f
-    'h1Y'      // 10a50-10a58  #50
+    'h1Z'      // 10a50-10a58  #51
     'fE'       // 10a59-10a5f
-    '1e11P'    // 10a60-10a7f  #301
-    '1e11M'    // 10a80-10a9f  #298
+    '1e11N'    // 10a60-10a7f  #299
+    '1e11K'    // 10a80-10a9f  #296
     '1eE'      // 10aa0-10abf
     '1l5S'     // 10ac0-10ae6  #148
     'cE'       // 10ae7-10aea
@@ -18992,7 +18986,7 @@ const String encodedFontSetRanges =
     'kE'       // 10b9d-10ba8
     'f4F'      // 10ba9-10baf  #109
     '3aE'      // 10bb0-10bff
-    '2t11Q'    // 10c00-10c48  #302
+    '2t11O'    // 10c00-10c48  #300
     '2bE'      // 10c49-10c7f
     '1x4E'     // 10c80-10cb2  #108
     'lE'       // 10cb3-10cbf
@@ -19002,11 +18996,11 @@ const String encodedFontSetRanges =
     '13mE'     // 10d00-10e5f
     '1dM'      // 10e60-10e7e  #12
     '4xE'      // 10e7f-10eff
-    '1m11O'    // 10f00-10f27  #300
+    '1m11M'    // 10f00-10f27  #298
     'gE'       // 10f28-10f2f
-    '1o11X'    // 10f30-10f59  #309
+    '1o11V'    // 10f30-10f59  #307
     '5cE'      // 10f5a-10fdf
-    'v10T'     // 10fe0-10ff6  #279
+    'v10S'     // 10fe0-10ff6  #278
     'hE'       // 10ff7-10fff
     '2y3P'     // 11000-1104d  #93
     'cE'       // 1104e-11051
@@ -19025,9 +19019,9 @@ const String encodedFontSetRanges =
     'E'        // 11135
     'q5D'      // 11136-11147  #133
     'gE'       // 11148-1114f
-    '1l11H'    // 11150-11176  #293
+    '1l11F'    // 11150-11176  #291
     'hE'       // 11177-1117f
-    '3q11V'    // 11180-111df  #307
+    '3q11T'    // 11180-111df  #305
     'E'        // 111e0
     's1N'      // 111e1-111f4  #39
     'jE'       // 111f5-111ff
@@ -19101,20 +19095,20 @@ const String encodedFontSetRanges =
     'eE'       // 1165a-1165f
     'l2H'      // 11660-1166c  #59
     'rE'       // 1166d-1167f
-    '2d6N'     // 11680-116b8  #169
-    'fE'       // 116b9-116bf
+    '2e6N'     // 11680-116b9  #169
+    'eE'       // 116ba-116bf
     'i6N'      // 116c0-116c9  #169
     '18aE'     // 116ca-1189f
     '3d6T'     // 118a0-118f2  #175
     'kE'       // 118f3-118fe
     '6T'       // 118ff        #175
     '9uE'      // 11900-119ff
-    '2s12C'    // 11a00-11a47  #314
+    '2s12A'    // 11a00-11a47  #312
     'gE'       // 11a48-11a4f
-    '3d11Y'    // 11a50-11aa2  #310
+    '3d11W'    // 11a50-11aa2  #308
     'lE'       // 11aa3-11aaf
     'o3Q'      // 11ab0-11abf  #94
-    '2d11S'    // 11ac0-11af8  #304
+    '2d11Q'    // 11ac0-11af8  #302
     '10bE'     // 11af9-11bff
     'h3B'      // 11c00-11c08  #79
     'E'        // 11c09
@@ -19169,9 +19163,9 @@ const String encodedFontSetRanges =
     'jE'       // 12475-1247f
     '7m3D'     // 12480-12543  #81
     '105qE'    // 12544-12fff
-    '41d10R'   // 13000-1342e  #277
+    '41d10Q'   // 13000-1342e  #276
     '155rE'    // 1342f-143ff
-    '22j10D'   // 14400-14646  #263
+    '22j10C'   // 14400-14646  #262
     '331zE'    // 14647-167ff
     '21v4Y'    // 16800-16a38  #128
     'fE'       // 16a39-16a3f
@@ -19195,7 +19189,7 @@ const String encodedFontSetRanges =
     'dE'       // 16b78-16b7c
     'r2U'      // 16b7d-16b8f  #72
     '26kE'     // 16b90-16e3f
-    '3l11J'    // 16e40-16e9a  #295
+    '3l11H'    // 16e40-16e9a  #293
     '3vE'      // 16e9b-16eff
     '2v4C'     // 16f00-16f4a  #106
     'cE'       // 16f4b-16f4e
@@ -19219,7 +19213,7 @@ const String encodedFontSetRanges =
     '217qE'    // 1bca4-1d2bf
     'sM'       // 1d2c0-1d2d3  #12
     'kE'       // 1d2d4-1d2df
-    's10A'     // 1d2e0-1d2f3  #260
+    's9Z'      // 1d2e0-1d2f3  #259
     'kE'       // 1d2f4-1d2ff
     '3hM'      // 1d300-1d356  #12
     'hE'       // 1d357-1d35f
@@ -19267,15 +19261,15 @@ const String encodedFontSetRanges =
     'aE'       // 1d7cc-1d7cd
     '1wO'      // 1d7ce-1d7ff  #14
     '78sE'     // 1d800-1dfff
-    'f2C'      // 1e000-1e006  #54
+    'f2D'      // 1e000-1e006  #55
     'E'        // 1e007
-    'p2C'      // 1e008-1e018  #54
+    'p2D'      // 1e008-1e018  #55
     'aE'       // 1e019-1e01a
-    'f2C'      // 1e01b-1e021  #54
+    'f2D'      // 1e01b-1e021  #55
     'E'        // 1e022
-    'a2C'      // 1e023-1e024  #54
+    'a2D'      // 1e023-1e024  #55
     'E'        // 1e025
-    'd2C'      // 1e026-1e02a  #54
+    'd2D'      // 1e026-1e02a  #55
     '25jE'     // 1e02b-1e2bf
     '2e6S'     // 1e2c0-1e2f9  #174
     'dE'       // 1e2fa-1e2fe
@@ -19287,7 +19281,7 @@ const String encodedFontSetRanges =
     'cE'       // 1e95a-1e95d
     'a3M'      // 1e95e-1e95f  #90
     '30dE'     // 1e960-1ec70
-    '2o11F'    // 1ec71-1ecb4  #291
+    '2o11D'    // 1ec71-1ecb4  #289
     '12rE'     // 1ecb5-1edff
     'cO'       // 1ee00-1ee03  #14
     'E'        // 1ee04
@@ -23401,7 +23395,7 @@ const String encodedFontSetRanges =
     'R'        // 30729        #17
     '75tE'     // 3072a-30edc
     '6F'       // 30edd        #161
-    'A'        // 30ede        #0
+    '1Y'       // 30ede        #50
     '15fE'     // 30edf-3106b
     'C'        // 3106c        #2
     '27566vE'  // 3106d-e002f
