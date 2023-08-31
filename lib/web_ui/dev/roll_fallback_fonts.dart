@@ -593,7 +593,13 @@ class _TrieNode {
   final Map<_Font, _TrieNode> _children = <_Font, _TrieNode>{};
   _FontSet? fontSet;
 
-  _TrieNode insertAtRoot(Iterable<_Font> fonts) {
+  /// Inserts a string of fonts into the trie and returns the trie node
+  /// representing the string. [this] must be the root node of the trie.
+  ///
+  /// Inserting the same sequence again will traverse the same path through the
+  /// trie and return the same node, canonicalizing the sequence to its
+  /// representative node.
+  _TrieNode insertSequenceAtRoot(Iterable<_Font> fonts) {
     _TrieNode node = this;
     for (final _Font font in fonts) {
       node = node._children[font] ??= _TrieNode();
@@ -628,11 +634,12 @@ class _TrieNode {
 /// (i.e.  `delta - 1`) since a delta is never less than 1. The deltas are STMR
 /// encoded.
 ///
-/// The list of code point ranges is complete, covering every code point. There
-/// are no gaps bewteen ranges. Instead there is a range mapping the missing
-/// code points to the empty set of fonts. Each range is encoded as the size
-/// (number of code points) in the range followed by the value which the index
-/// of the corresponding set in the list of sets.
+/// A code point with no fonts is mapped to an empty set of fonts. This allows
+/// the list of code point ranges to be complete, covering every code
+/// point. There are no gaps between ranges; instead there are some ranges that
+/// map to the empty set. Each range is encoded as the size (number of code
+/// points) in the range followed by the value which is the index of the
+/// corresponding set in the list of sets.
 ///
 ///
 /// STMR (Self terminating multiple radix) encoding
@@ -685,7 +692,7 @@ String _computeEncodedFontSets(List<_Font> fonts) {
     // the fonts that overlap each intersected range.
     //
     // It is easier to work with the boundaries of the ranges rather than the
-    // ranges themselves. The bounaries of the intersected ranges is the union
+    // ranges themselves. The boundaries of the intersected ranges is the union
     // of the boundaries of the individual font ranges.  We scan the boundaries
     // in increasing order, keeping track of the current set of fonts that are
     // in the current intersected range.  Each time the boundary value changes,
@@ -703,6 +710,7 @@ String _computeEncodedFontSets(List<_Font> fonts) {
     }
     boundaries.sort(_Boundary.compare);
 
+    // The trie root represents the empty set of fonts.
     final _TrieNode trieRoot = _TrieNode();
     final Set<_Font> currentElements = <_Font>{};
 
@@ -710,7 +718,7 @@ String _computeEncodedFontSets(List<_Font> fonts) {
       // Ensure we are using the canonical font order.
       final List<_Font> fonts = List<_Font>.of(currentElements)
         ..sort(_Font.compare);
-      final _TrieNode node = trieRoot.insertAtRoot(fonts);
+      final _TrieNode node = trieRoot.insertSequenceAtRoot(fonts);
       final _FontSet fontSet = node.fontSet ??= _FontSet(fonts);
       if (fontSet.rangeCount == 0) {
         allSets.add(fontSet);
@@ -723,7 +731,9 @@ String _computeEncodedFontSets(List<_Font> fonts) {
     int start = 0;
     for (final _Boundary boundary in boundaries) {
       final int value = boundary.value;
-      if (start < value) {
+      if (value > start) {
+        // Boundary has changed, record the pending range `[start, value - 1]`,
+        // and start a new range at `value`. `value` must be > 0 to get here.
         newRange(start, value - 1);
         start = value;
       }
