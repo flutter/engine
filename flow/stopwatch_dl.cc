@@ -105,6 +105,7 @@ void DlStopwatchVisualizer::Visualize(DlCanvas* canvas,
   // The Canvas does not actually hold onto a strong reference to the DlVertices
   // object, so it needs to be cached on the painter to avoid being deleted
   // while the backend is trying to read data from it.
+  // See: https://github.com/flutter/flutter/issues/133797
   dl_vertices_ = painter.IntoVertices();
   canvas->DrawVertices(dl_vertices_, DlBlendMode::kSrcOver, paint);
 }
