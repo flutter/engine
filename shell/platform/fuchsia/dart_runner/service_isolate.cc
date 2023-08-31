@@ -186,12 +186,6 @@ Dart_Isolate CreateServiceIsolate(
                     Dart_NewBoolean(false));
   SHUTDOWN_ON_ERROR(result);
 
-  // _authCodesDisabled = false
-  result =
-      Dart_SetField(library, Dart_NewStringFromCString("_authCodesDisabled"),
-                    Dart_NewBoolean(false));
-  SHUTDOWN_ON_ERROR(result);
-
   InitBuiltinLibrariesForIsolate(std::string(uri), nullptr, fileno(stdout),
                                  fileno(stderr), zx::channel(), true);
 

@@ -805,7 +805,6 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
           settings.vm_service_port,            // server VM service port
           tonic::DartState::HandleLibraryTag,  // embedder library tag handler
           false,  //  disable websocket origin check
-          settings.disable_service_auth_codes,  // disable VM service auth codes
           settings.enable_service_port_fallback,  // enable fallback to port 0
                                                   // when bind fails.
           error                                   // error (out)
