@@ -80,6 +80,7 @@ class TrackedObjectsVK {
 
  private:
   DescriptorPoolVK desc_pool_;
+  // `shared_ptr` since command buffers have a link to the command pool.
   std::shared_ptr<CommandPoolVK> pool_;
   vk::UniqueCommandBuffer buffer_;
   std::set<std::shared_ptr<SharedObjectVK>> tracked_objects_;
