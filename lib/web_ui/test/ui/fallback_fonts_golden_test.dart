@@ -414,8 +414,6 @@ void testMain() {
               .lookup(codePoint)
               .fonts;
 
-          //final List<NotoFont> fontsForPoint = notoTree.intersections(codePoint);
-
           // All code points are extracted from the same tree, so there must
           // be at least one font supporting each code point
           expect(fontsForPoint, isNotEmpty);

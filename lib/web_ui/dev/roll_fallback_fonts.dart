@@ -175,6 +175,7 @@ class RollFallbackFontsCommand extends Command<bool>
             'Unexpected url format received from Google Fonts API: $urlString.');
       }
       final String urlSuffix = urlString.substring(expectedUrlPrefix.length);
+      sb.writeln(" // ${font.shortName}: ${charsetForFamily[family]}");
       sb.writeln(" NotoFont('$family', $enabledArgument'$urlSuffix'),");
     }
     sb.writeln('];');

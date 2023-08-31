@@ -105,7 +105,6 @@ export 'engine/html/transform.dart';
 export 'engine/html_image_codec.dart';
 export 'engine/image_decoder.dart';
 export 'engine/initialization.dart';
-export 'engine/interval_tree.dart';
 export 'engine/js_interop/js_loader.dart';
 export 'engine/js_interop/js_promise.dart';
 export 'engine/js_interop/js_typed_data.dart';

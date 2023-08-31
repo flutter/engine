@@ -28,6 +28,12 @@ class NotoFont {
   final List<FallbackFontComponent> coverComponents = <FallbackFontComponent>[];
 }
 
+/// A component is a set of code points common to some fonts. Each code point is
+/// in a single component. Each font can be represented as a disjoint union of
+/// components. We store the inverse of this relationship, the fonts that use
+/// this component. The font fallback selection algorithm does not need the code
+/// points in a component or a font, so this is not stored, but can be recovered
+/// via the map from code-point to component.
 class FallbackFontComponent {
   FallbackFontComponent(this._allFonts);
   final List<NotoFont> _allFonts;
@@ -39,30 +45,4 @@ class FallbackFontComponent {
   /// During fallback font selection this is the number of missing code points
   /// that are covered by this component.
   int coverCount = 0;
-}
-
-class CodePointRange {
-  const CodePointRange(this.start, this.end);
-
-  final int start;
-  final int end;
-
-  bool contains(int codeUnit) {
-    return start <= codeUnit && codeUnit <= end;
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (other is! CodePointRange) {
-      return false;
-    }
-    final CodePointRange range = other;
-    return range.start == start && range.end == end;
-  }
-
-  @override
-  int get hashCode => Object.hash(start, end);
-
-  @override
-  String toString() => '[$start, $end]';
 }
