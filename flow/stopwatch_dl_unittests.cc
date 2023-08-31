@@ -4,6 +4,7 @@
 
 #include "flutter/flow/stopwatch_dl.h"
 #include "gtest/gtest.h"
+#include "testing/mock_canvas.h"
 
 namespace flutter {
 namespace testing {
@@ -18,7 +19,7 @@ static SkRect MakeRectFromVertices(SkPoint vertices[6]) {
   return SkRect::MakeLTRB(left, top, right, bottom);
 }
 
-TEST(DlVertexPainter, DrawRectIntoVertices) {
+TEST(DlVertexPainterTest, DrawRectIntoVertices) {
   auto painter = DlVertexPainter();
 
   // Paint a red rectangle.
@@ -67,6 +68,19 @@ TEST(DlVertexPainter, DrawRectIntoVertices) {
   EXPECT_EQ(colors[9], DlColor::kBlue());
   EXPECT_EQ(colors[10], DlColor::kBlue());
   EXPECT_EQ(colors[11], DlColor::kBlue());
+}
+
+TEST(DlVertexPainterTest, HoldsLastPaintedVertices) {
+  auto stopwatch = std::make_shared<FixedRefreshRateStopwatch>();
+  auto visualizer = std::make_shared<DlStopwatchVisualizer>(*stopwatch.get());
+
+  EXPECT_EQ(visualizer->GetLastVertices(), nullptr);
+
+  MockCanvas mock_canvas;
+
+  visualizer->Visualize(&mock_canvas, SkRect::MakeLTRB(0, 0, 100, 100));
+
+  EXPECT_NE(visualizer->GetLastVertices(), nullptr);
 }
 
 }  // namespace testing

@@ -24,6 +24,11 @@ class DlStopwatchVisualizer : public StopwatchVisualizer {
 
   void Visualize(DlCanvas* canvas, const SkRect& rect) const override;
 
+  // Visible for testing.
+  const std::shared_ptr<DlVertices> GetLastVertices() const {
+    return dl_vertices_;
+  }
+
  private:
   mutable std::shared_ptr<DlVertices> dl_vertices_;
 };
