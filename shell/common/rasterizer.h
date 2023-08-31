@@ -7,7 +7,6 @@
 
 #include <memory>
 #include <optional>
-#include <unordered_map>
 
 #include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
