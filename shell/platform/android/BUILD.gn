@@ -490,7 +490,9 @@ action("android_jar") {
     ":pom_libflutter",
   ]
 
-  if (enable_vulkan_validation_layers) {
+  if (enable_vulkan_validation_layers ||
+      (impeller_enable_vulkan && current_cpu == "arm64" &&
+       flutter_runtime_mode == "debug")) {
     assert(impeller_enable_vulkan)
     deps += [ "//third_party/vulkan_validation_layers" ]
     args += [
