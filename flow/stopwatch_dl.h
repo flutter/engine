@@ -5,6 +5,7 @@
 #ifndef FLUTTER_FLOW_STOPWATCH_DL_H_
 #define FLUTTER_FLOW_STOPWATCH_DL_H_
 
+#include "display_list/dl_vertices.h"
 #include "flow/stopwatch.h"
 
 namespace flutter {
@@ -22,6 +23,9 @@ class DlStopwatchVisualizer : public StopwatchVisualizer {
       : StopwatchVisualizer(stopwatch) {}
 
   void Visualize(DlCanvas* canvas, const SkRect& rect) const override;
+
+ private:
+  mutable std::shared_ptr<DlVertices> dl_vertices_;
 };
 
 /// @brief Provides canvas-like painting methods that actually build vertices.
