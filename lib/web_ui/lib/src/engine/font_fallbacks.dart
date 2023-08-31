@@ -17,7 +17,7 @@ class FontFallbackManager {
   factory FontFallbackManager(FallbackFontRegistry registry) =>
     FontFallbackManager._(
       registry,
-      getFallbackFontData(configuration.useColorEmoji)
+      getFallbackFontList(configuration.useColorEmoji)
     );
 
   FontFallbackManager._(this.registry, this.fallbackFonts) :

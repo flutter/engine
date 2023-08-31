@@ -6,7 +6,7 @@
 // dev/roll_fallback_fonts.dart
 import 'noto_font.dart';
 
-List<NotoFont> getFallbackFontData(bool useColorEmoji) => <NotoFont>[
+List<NotoFont> getFallbackFontList(bool useColorEmoji) => <NotoFont>[
  NotoFont('Noto Sans', 'notosans/v30/o-0IIpQlx3QUlC5A4PNb4j5Ba_2c7A.ttf'),
  NotoFont('Noto Color Emoji', enabled: useColorEmoji, 'notocoloremoji/v25/Yq6P-KqIXTD0t4D9z1ESnKM3-HpFab5s79iz64w.ttf'),
  NotoFont('Noto Emoji', enabled: !useColorEmoji, 'notoemoji/v39/bMrnmSyK7YY-MEu6aWjPDs-ar6uWaGWuob-r0jwvS-FGJCMY.ttf'),

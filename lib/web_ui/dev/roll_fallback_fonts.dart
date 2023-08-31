@@ -158,7 +158,7 @@ class RollFallbackFontsCommand extends Command<bool>
     sb.writeln('// dev/roll_fallback_fonts.dart');
     sb.writeln("import 'noto_font.dart';");
     sb.writeln();
-    sb.writeln('List<NotoFont> getFallbackFontData(bool useColorEmoji) => <NotoFont>[');
+    sb.writeln('List<NotoFont> getFallbackFontList(bool useColorEmoji) => <NotoFont>[');
 
     for (final _Font font in fonts) {
       final String family = font.family;
@@ -645,6 +645,10 @@ class _TrieNode {
 /// STMR (Self terminating multiple radix) encoding
 /// ---
 ///
+/// This encoding is a minor adaptation of [VLQ encoding][1], using different
+/// ranges of characters to represent continuing or terminating digits instead
+/// of using a 'continuation' bit.
+///
 /// The separators between the numbers can be a significant proportion of the
 /// number of characters needed to encode a sequence of numbers as a string.
 /// Instead values are encoded with two kinds of digits: prefix digits and
@@ -662,7 +666,7 @@ class _TrieNode {
 /// There can be multiple terminating digit kinds to represent different sorts
 /// of values. For the range table, the size uses a different terminating digit,
 /// 'a'..'z'. This allows the very common size of 1 (accounting over a third of
-/// the range) sizes to be omitted. A range is encoded as either
+/// the range sizes) to be omitted. A range is encoded as either
 /// `<size><value>`, or `<value>` with an implicit size of 1.  Since the size 1
 /// can be implicit, it is always implicit, and the stored sizes are biased by
 /// -2.
@@ -681,6 +685,8 @@ class _TrieNode {
 /// STMR-encoded strings are decoded efficiently by a simple loop that updates
 /// the current value and performs some additional operation for a terminating
 /// digit, e.g. recording the optional size, or creating a range.
+///
+/// [1]: https://en.wikipedia.org/wiki/Variable-length_quantity
 
 String _computeEncodedFontSets(List<_Font> fonts) {
   final List<_Range> ranges = <_Range>[];
