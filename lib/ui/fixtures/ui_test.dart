@@ -1093,12 +1093,9 @@ Scene CreateRedBoxScene(Size size) {
 }
 
 @pragma('vm:entry-point')
-@pragma('vm:external-name', 'NotifyNative')
-external void notifyNative();
-
-@pragma('vm:entry-point')
 void incorrectImmediateRender() {
   PlatformDispatcher.instance.views.first.render(CreateRedBoxScene(Size(2, 2)));
+  _finish();
 }
 
 @pragma('vm:entry-point')
@@ -1111,4 +1108,5 @@ void incorrectDoubleRender() {
     PlatformDispatcher.instance.views.first.render(CreateRedBoxScene(Size(4, 4)));
     PlatformDispatcher.instance.views.first.render(CreateRedBoxScene(Size(5, 5)));
   };
+  _finish();
 }

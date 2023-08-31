@@ -495,10 +495,16 @@ TEST_F(PlatformConfigurationTest, OutOfScopeRenderCallsAreIgnored) {
   MockRuntimeDelegate client;
   auto platform_message_handler =
       std::make_shared<MockPlatformMessageHandler>();
-  EXPECT_CALL(client, GetPlatformMessageHandler())
+  EXPECT_CALL(client, GetPlatformMessageHandler)
       .WillOnce(Return(platform_message_handler));
   // Render should not be called.
-  EXPECT_CALL(client, Render(_, _)).Times(Exactly(0));
+  EXPECT_CALL(client, Render).Times(Exactly(0));
+
+  auto message_latch = std::make_shared<fml::AutoResetWaitableEvent>();
+  auto finish = [message_latch](Dart_NativeArguments args) {
+    message_latch->Signal();
+  };
+  AddNativeCallback("Finish", CREATE_NATIVE_ENTRY(finish));
 
   auto runtime_controller_context =
       RuntimeControllerContext::Create(settings, task_runners, client);
@@ -513,9 +519,7 @@ TEST_F(PlatformConfigurationTest, OutOfScopeRenderCallsAreIgnored) {
   });
 
   // Wait for the Dart main function to end.
-  fml::AutoResetWaitableEvent latch;
-  PostSync(task_runners.GetUITaskRunner(), [&]() { latch.Signal(); });
-  latch.Wait();
+  message_latch->Wait();
 }
 
 TEST_F(PlatformConfigurationTest, DuplicateRenderCallsAreIgnored) {
@@ -525,10 +529,16 @@ TEST_F(PlatformConfigurationTest, DuplicateRenderCallsAreIgnored) {
   MockRuntimeDelegate client;
   auto platform_message_handler =
       std::make_shared<MockPlatformMessageHandler>();
-  EXPECT_CALL(client, GetPlatformMessageHandler())
+  EXPECT_CALL(client, GetPlatformMessageHandler)
       .WillOnce(Return(platform_message_handler));
   // Render should only be called once, because the second call is ignored.
-  EXPECT_CALL(client, Render(_, _)).Times(Exactly(1));
+  EXPECT_CALL(client, Render).Times(Exactly(1));
+
+  auto message_latch = std::make_shared<fml::AutoResetWaitableEvent>();
+  auto finish = [message_latch](Dart_NativeArguments args) {
+    message_latch->Signal();
+  };
+  AddNativeCallback("Finish", CREATE_NATIVE_ENTRY(finish));
 
   auto runtime_controller_context =
       RuntimeControllerContext::Create(settings, task_runners, client);
@@ -542,13 +552,13 @@ TEST_F(PlatformConfigurationTest, DuplicateRenderCallsAreIgnored) {
                              /*touch_slop=*/2, /*display_id=*/0));
   });
 
-  // Wait for the Dart main function to end, which means the callbacks have been
-  // registered.
-  fml::AutoResetWaitableEvent latch;
-  PostSync(task_runners.GetUITaskRunner(), [&]() { latch.Signal(); });
-  latch.Wait();
+  // Wait for the Dart main function to end.
+  message_latch->Wait();
 
-  runtime_controller_context->Controller().BeginFrame(fml::TimePoint::Now(), 0);
+  PostSync(task_runners.GetUITaskRunner(), [&]() {
+    runtime_controller_context->Controller().BeginFrame(fml::TimePoint::Now(),
+                                                        0);
+  });
 }
 
 }  // namespace testing
