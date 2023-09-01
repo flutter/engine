@@ -111,7 +111,7 @@ class MockFlutterWindowsEngine : public FlutterWindowsEngine {
   MockFlutterWindowsEngine() : FlutterWindowsEngine(GetTestProject()) {}
 
   MOCK_METHOD0(Stop, bool());
-  MOCK_METHOD(PostRasterThreadTask, bool(fml::closure));
+  MOCK_METHOD(bool, PostRasterThreadTask, (fml::closure));
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(MockFlutterWindowsEngine);
