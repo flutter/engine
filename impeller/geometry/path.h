@@ -48,8 +48,8 @@ enum class Convexity {
 ///             All shapes supported by Impeller are paths either directly or
 ///             via approximation (in the case of circles).
 ///
-///             Paths are externally immutable once created, Creating paths must be
-///             done using a path builder.
+///             Paths are externally immutable once created, Creating paths must
+///             be done using a path builder.
 ///
 class Path {
  public:

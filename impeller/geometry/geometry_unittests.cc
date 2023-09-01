@@ -608,9 +608,9 @@ TEST(GeometryTest, SimplePath) {
   PathBuilder builder;
 
   auto path = builder.AddLine({0, 0}, {100, 100})
-      .AddQuadraticCurve({100, 100}, {200, 200}, {300, 300})
-      .AddCubicCurve({300, 300}, {400, 400}, {500, 500}, {600, 600})
-      .TakePath();
+                  .AddQuadraticCurve({100, 100}, {200, 200}, {300, 300})
+                  .AddCubicCurve({300, 300}, {400, 400}, {500, 500}, {600, 600})
+                  .TakePath();
 
   ASSERT_EQ(path.GetComponentCount(), 4u);
   ASSERT_EQ(path.GetComponentCount(Path::ComponentType::kLinear), 1u);
@@ -656,7 +656,9 @@ TEST(GeometryTest, SimplePath) {
 
 TEST(GeometryTest, BoundingBoxCubic) {
   PathBuilder builder;
-  auto path = builder.AddCubicCurve({120, 160}, {25, 200}, {220, 260}, {220, 40}).TakePath();
+  auto path =
+      builder.AddCubicCurve({120, 160}, {25, 200}, {220, 260}, {220, 40})
+          .TakePath();
   auto box = path.GetBoundingBox();
   Rect expected(93.9101, 40, 126.09, 158.862);
   ASSERT_TRUE(box.has_value());
