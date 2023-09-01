@@ -39,7 +39,8 @@ static std::shared_ptr<impeller::Context> CreateImpellerContext(
   settings.enable_validation = enable_vulkan_validation;
 
   if (settings.enable_validation) {
-    FML_LOG(ERROR) << "Using the Impeller rendering backend (Vulkan with Validation Layers).";
+    FML_LOG(ERROR) << "Using the Impeller rendering backend (Vulkan with "
+                      "Validation Layers).";
   } else {
     FML_LOG(ERROR) << "Using the Impeller rendering backend (Vulkan).";
   }
