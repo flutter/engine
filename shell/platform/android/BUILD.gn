@@ -490,9 +490,7 @@ action("android_jar") {
     ":pom_libflutter",
   ]
 
-  if (enable_vulkan_validation_layers ||
-      (impeller_enable_vulkan && current_cpu == "arm64" &&
-       flutter_runtime_mode == "debug")) {
+  if (enable_vulkan_validation_layers) {
     assert(impeller_enable_vulkan)
     apilevel26_toolchain = "//build/toolchain/android:clang_arm64_apilevel26"
     validation_layer_target =
