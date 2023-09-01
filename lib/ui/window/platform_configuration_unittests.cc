@@ -97,7 +97,7 @@ class MockPlatformMessageHandler : public PlatformMessageHandler {
 // RuntimeDelegate.
 //
 // To use this class, contruct this class with Create, call LaunchRootIsolate,
-// and get the runtime controller with Controller().
+// and use the controller with ControllerTaskSync().
 class RuntimeControllerContext {
  public:
   using ControllerCallback = std::function<void(RuntimeController&)>;
@@ -137,6 +137,8 @@ class RuntimeControllerContext {
     });
   }
 
+  // Run a task that operates the RuntimeController on the UI thread, and wait
+  // for the task to end.
   void ControllerTaskSync(ControllerCallback task) {
     ASSERT_TRUE(runtime_controller_);
     ASSERT_TRUE(task);
@@ -565,6 +567,8 @@ TEST_F(PlatformConfigurationTest, DuplicateRenderCallsAreIgnored) {
 
   runtime_controller_context->ControllerTaskSync(
       [](RuntimeController& runtime_controller) {
+        // This BeginFrame calls PlatformDispatcher's handleBeginFrame and
+        // handleDrawFrame synchronously. Therefore don't wait after it.
         runtime_controller.BeginFrame(fml::TimePoint::Now(), 0);
       });
 }
