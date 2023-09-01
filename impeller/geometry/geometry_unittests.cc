@@ -605,11 +605,12 @@ TEST(GeometryTest, EmptyPath) {
 }
 
 TEST(GeometryTest, SimplePath) {
-  Path path;
+  PathBuilder builder;
 
-  path.AddLinearComponent({0, 0}, {100, 100})
-      .AddQuadraticComponent({100, 100}, {200, 200}, {300, 300})
-      .AddCubicComponent({300, 300}, {400, 400}, {500, 500}, {600, 600});
+  auto path = builder.AddLine({0, 0}, {100, 100})
+      .AddQuadraticCurve({100, 100}, {200, 200}, {300, 300})
+      .AddCubicCurve({300, 300}, {400, 400}, {500, 500}, {600, 600})
+      .TakePath();
 
   ASSERT_EQ(path.GetComponentCount(), 4u);
   ASSERT_EQ(path.GetComponentCount(Path::ComponentType::kLinear), 1u);
@@ -654,8 +655,8 @@ TEST(GeometryTest, SimplePath) {
 }
 
 TEST(GeometryTest, BoundingBoxCubic) {
-  Path path;
-  path.AddCubicComponent({120, 160}, {25, 200}, {220, 260}, {220, 40});
+  PathBuilder builder;
+  auto path = builder.AddCubicCurve({120, 160}, {25, 200}, {220, 260}, {220, 40}).TakePath();
   auto box = path.GetBoundingBox();
   Rect expected(93.9101, 40, 126.09, 158.862);
   ASSERT_TRUE(box.has_value());
@@ -2007,14 +2008,14 @@ TEST(GeometryTest, CubicPathComponentPolylineDoesNotIncludePointOne) {
 }
 
 TEST(GeometryTest, PathCreatePolyLineDoesNotDuplicatePoints) {
-  Path path;
-  path.AddContourComponent({10, 10});
-  path.AddLinearComponent({10, 10}, {20, 20});
-  path.AddLinearComponent({20, 20}, {30, 30});
-  path.AddContourComponent({40, 40});
-  path.AddLinearComponent({40, 40}, {50, 50});
+  PathBuilder builder;
+  builder.MoveTo({10, 10});
+  builder.AddLine({10, 10}, {20, 20});
+  builder.AddLine({20, 20}, {30, 30});
+  builder.MoveTo({40, 40});
+  builder.AddLine({40, 40}, {50, 50});
 
-  auto polyline = path.CreatePolyline(1.0f);
+  auto polyline = builder.TakePath().CreatePolyline(1.0f);
 
   ASSERT_EQ(polyline.contours.size(), 2u);
   ASSERT_EQ(polyline.points.size(), 5u);
@@ -2381,8 +2382,8 @@ TEST(GeometryTest, PathShifting) {
           .AddCubicCurve(Point(20, 20), Point(25, 25), Point(-5, -5),
                          Point(30, 30))
           .Close()
+          .Shift(Point(1, 1))
           .TakePath();
-  path.Shift(Point(1, 1));
 
   ContourComponent contour;
   LinearPathComponent linear;

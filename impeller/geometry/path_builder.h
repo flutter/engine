@@ -75,6 +75,9 @@ class PathBuilder {
 
   PathBuilder& AddCubicCurve(Point p1, Point cp1, Point cp2, Point p2);
 
+  /// @brief Transform the path by the given offset in-place.
+  PathBuilder& Shift(Point offset);
+
   struct RoundingRadii {
     Point top_left;
     Point bottom_left;
