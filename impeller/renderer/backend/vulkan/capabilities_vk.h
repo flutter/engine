@@ -58,9 +58,6 @@ class CapabilitiesVK final : public Capabilities,
   void SetOffscreenFormat(PixelFormat pixel_format) const;
 
   // |Capabilities|
-  bool HasThreadingRestrictions() const override;
-
-  // |Capabilities|
   bool SupportsOffscreenMSAA() const override;
 
   // |Capabilities|
@@ -88,10 +85,10 @@ class CapabilitiesVK final : public Capabilities,
   bool SupportsReadFromOnscreenTexture() const override;
 
   // |Capabilities|
-  bool SupportsDecalTileMode() const override;
+  bool SupportsDecalSamplerAddressMode() const override;
 
   // |Capabilities|
-  bool SupportsMemorylessTextures() const override;
+  bool SupportsDeviceTransientTextures() const override;
 
   // |Capabilities|
   PixelFormat GetDefaultColorFormat() const override;
@@ -99,15 +96,19 @@ class CapabilitiesVK final : public Capabilities,
   // |Capabilities|
   PixelFormat GetDefaultStencilFormat() const override;
 
+  // |Capabilities|
+  PixelFormat GetDefaultDepthStencilFormat() const override;
+
  private:
   const bool enable_validations_;
   std::map<std::string, std::set<std::string>> exts_;
   std::set<OptionalDeviceExtensionVK> optional_device_extensions_;
-  mutable PixelFormat color_format_ = PixelFormat::kUnknown;
-  PixelFormat depth_stencil_format_ = PixelFormat::kUnknown;
+  mutable PixelFormat default_color_format_ = PixelFormat::kUnknown;
+  PixelFormat default_stencil_format_ = PixelFormat::kUnknown;
+  PixelFormat default_depth_stencil_format_ = PixelFormat::kUnknown;
   vk::PhysicalDeviceProperties device_properties_;
   bool supports_compute_subgroups_ = false;
-  bool supports_memoryless_textures_ = false;
+  bool supports_device_transient_textures_ = false;
   bool is_valid_ = false;
 
   bool HasExtension(const std::string& ext) const;
