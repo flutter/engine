@@ -147,8 +147,8 @@ template("_dartdevc") {
         ":web_ui_sources",
         "//flutter:dart_sdk",
         "//third_party/dart/pkg:pkg_files_stamp",
-        "//third_party/dart/utils/dartdevc:dartdevc_files_stamp",
-        "//third_party/dart/utils/dartdevc:dartdevc_sdk_patch_stamp",
+        "//third_party/dart/utils/ddc:ddc_files_stamp",
+        "//third_party/dart/utils/ddc:ddc_sdk_patch_stamp",
       ]
 
       script = "//third_party/dart/pkg/dev_compiler/bin/dartdevc.dart"
@@ -206,8 +206,8 @@ template("_kernel_worker") {
         ":web_ui_sources",
         "//flutter:dart_sdk",
         "//third_party/dart/pkg:pkg_files_stamp",
-        "//third_party/dart/utils/dartdevc:dartdevc_files_stamp",
-        "//third_party/dart/utils/dartdevc:dartdevc_sdk_patch_stamp",
+        "//third_party/dart/utils/ddc:ddc_files_stamp",
+        "//third_party/dart/utils/ddc:ddc_sdk_patch_stamp",
       ]
 
       script = "//third_party/dart/utils/bazel/kernel_worker.dart"
