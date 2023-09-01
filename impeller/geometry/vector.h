@@ -17,9 +17,9 @@ namespace impeller {
 struct Vector3 {
   union {
     struct {
-      Scalar x = 0.0;
-      Scalar y = 0.0;
-      Scalar z = 0.0;
+      Scalar x = 0.0f;
+      Scalar y = 0.0f;
+      Scalar z = 0.0f;
     };
     Scalar e[3];
   };
@@ -41,7 +41,7 @@ struct Vector3 {
    *
    *  @return the calculated length.
    */
-  Scalar Length() const { return sqrt(x * x + y * y + z * z); }
+  constexpr Scalar Length() const { return sqrt(x * x + y * y + z * z); }
 
   constexpr Vector3 Normalize() const {
     const auto len = Length();
@@ -52,12 +52,36 @@ struct Vector3 {
     return ((x * other.x) + (y * other.y) + (z * other.z));
   }
 
+  constexpr Vector3 Abs() const {
+    return {std::fabs(x), std::fabs(y), std::fabs(z)};
+  }
+
   constexpr Vector3 Cross(const Vector3& other) const {
     return {
         (y * other.z) - (z * other.y),  //
         (z * other.x) - (x * other.z),  //
         (x * other.y) - (y * other.x)   //
     };
+  }
+
+  constexpr Vector3 Min(const Vector3& p) const {
+    return {std::min(x, p.x), std::min(y, p.y), std::min(z, p.z)};
+  }
+
+  constexpr Vector3 Max(const Vector3& p) const {
+    return {std::max(x, p.x), std::max(y, p.y), std::max(z, p.z)};
+  }
+
+  constexpr Vector3 Floor() const {
+    return {std::floor(x), std::floor(y), std::floor(z)};
+  }
+
+  constexpr Vector3 Ceil() const {
+    return {std::ceil(x), std::ceil(y), std::ceil(z)};
+  }
+
+  constexpr Vector3 Round() const {
+    return {std::round(x), std::round(y), std::round(z)};
   }
 
   constexpr bool operator==(const Vector3& v) const {
@@ -68,6 +92,50 @@ struct Vector3 {
     return v.x != x || v.y != y || v.z != z;
   }
 
+  constexpr Vector3 operator+=(const Vector3& p) {
+    x += p.x;
+    y += p.y;
+    z += p.z;
+    return *this;
+  }
+
+  constexpr Vector3 operator-=(const Vector3& p) {
+    x -= p.x;
+    y -= p.y;
+    z -= p.z;
+    return *this;
+  }
+
+  constexpr Vector3 operator*=(const Vector3& p) {
+    x *= p.x;
+    y *= p.y;
+    z *= p.z;
+    return *this;
+  }
+
+  template <class U, class = std::enable_if_t<std::is_arithmetic_v<U>>>
+  constexpr Vector3 operator*=(U scale) {
+    x *= scale;
+    y *= scale;
+    z *= scale;
+    return *this;
+  }
+
+  constexpr Vector3 operator/=(const Vector3& p) {
+    x /= p.x;
+    y /= p.y;
+    z /= p.z;
+    return *this;
+  }
+
+  template <class U, class = std::enable_if_t<std::is_arithmetic_v<U>>>
+  constexpr Vector3 operator/=(U scale) {
+    x /= scale;
+    y /= scale;
+    z /= scale;
+    return *this;
+  }
+
   constexpr Vector3 operator-() const { return Vector3(-x, -y, -z); }
 
   constexpr Vector3 operator+(const Vector3& v) const {
@@ -76,6 +144,36 @@ struct Vector3 {
 
   constexpr Vector3 operator-(const Vector3& v) const {
     return Vector3(x - v.x, y - v.y, z - v.z);
+  }
+
+  constexpr Vector3 operator+(Scalar s) const {
+    return Vector3(x + s, y + s, z + s);
+  }
+
+  constexpr Vector3 operator-(Scalar s) const {
+    return Vector3(x - s, y - s, z - s);
+  }
+
+  constexpr Vector3 operator*(const Vector3& v) const {
+    return Vector3(x * v.x, y * v.y, z * v.z);
+  }
+
+  template <class U, class = std::enable_if_t<std::is_arithmetic_v<U>>>
+  constexpr Vector3 operator*(U scale) const {
+    return Vector3(x * scale, y * scale, z * scale);
+  }
+
+  constexpr Vector3 operator/(const Vector3& v) const {
+    return Vector3(x / v.x, y / v.y, z / v.z);
+  }
+
+  template <class U, class = std::enable_if_t<std::is_arithmetic_v<U>>>
+  constexpr Vector3 operator/(U scale) const {
+    return Vector3(x / scale, y / scale, z / scale);
+  }
+
+  constexpr Vector3 Lerp(const Vector3& v, Scalar t) const {
+    return *this + (v - *this) * t;
   }
 
   /**
@@ -102,13 +200,39 @@ struct Vector3 {
   std::string ToString() const;
 };
 
+// RHS algebraic operations with arithmetic types.
+
+template <class U, class = std::enable_if_t<std::is_arithmetic_v<U>>>
+constexpr Vector3 operator*(U s, const Vector3& p) {
+  return p * s;
+}
+
+template <class U, class = std::enable_if_t<std::is_arithmetic_v<U>>>
+constexpr Vector3 operator+(U s, const Vector3& p) {
+  return p + s;
+}
+
+template <class U, class = std::enable_if_t<std::is_arithmetic_v<U>>>
+constexpr Vector3 operator-(U s, const Vector3& p) {
+  return -p + s;
+}
+
+template <class U, class = std::enable_if_t<std::is_arithmetic_v<U>>>
+constexpr Vector3 operator/(U s, const Vector3& p) {
+  return {
+      static_cast<Scalar>(s) / p.x,
+      static_cast<Scalar>(s) / p.y,
+      static_cast<Scalar>(s) / p.z,
+  };
+}
+
 struct Vector4 {
   union {
     struct {
-      Scalar x = 0.0;
-      Scalar y = 0.0;
-      Scalar z = 0.0;
-      Scalar w = 1.0;
+      Scalar x = 0.0f;
+      Scalar y = 0.0f;
+      Scalar z = 0.0f;
+      Scalar w = 1.0f;
     };
     Scalar e[4];
   };
@@ -126,7 +250,7 @@ struct Vector4 {
   constexpr Vector4(const Point& p) : x(p.x), y(p.y) {}
 
   Vector4 Normalize() const {
-    const Scalar inverse = 1.0 / sqrt(x * x + y * y + z * z + w * w);
+    const Scalar inverse = 1.0f / sqrt(x * x + y * y + z * z + w * w);
     return Vector4(x * inverse, y * inverse, z * inverse, w * inverse);
   }
 
@@ -146,6 +270,40 @@ struct Vector4 {
     return Vector4(x - v.x, y - v.y, z - v.z, w - v.w);
   }
 
+  constexpr Vector4 operator*(Scalar f) const {
+    return Vector4(x * f, y * f, z * f, w * f);
+  }
+
+  constexpr Vector4 operator*(const Vector4& v) const {
+    return Vector4(x * v.x, y * v.y, z * v.z, w * v.w);
+  }
+
+  constexpr Vector4 Min(const Vector4& p) const {
+    return {std::min(x, p.x), std::min(y, p.y), std::min(z, p.z),
+            std::min(w, p.w)};
+  }
+
+  constexpr Vector4 Max(const Vector4& p) const {
+    return {std::max(x, p.x), std::max(y, p.y), std::max(z, p.z),
+            std::max(w, p.w)};
+  }
+
+  constexpr Vector4 Floor() const {
+    return {std::floor(x), std::floor(y), std::floor(z), std::floor(w)};
+  }
+
+  constexpr Vector4 Ceil() const {
+    return {std::ceil(x), std::ceil(y), std::ceil(z), std::ceil(w)};
+  }
+
+  constexpr Vector4 Round() const {
+    return {std::round(x), std::round(y), std::round(z), std::round(w)};
+  }
+
+  constexpr Vector4 Lerp(const Vector4& v, Scalar t) const {
+    return *this + (v - *this) * t;
+  }
+
   std::string ToString() const;
 };
 
@@ -153,3 +311,17 @@ static_assert(sizeof(Vector3) == 3 * sizeof(Scalar));
 static_assert(sizeof(Vector4) == 4 * sizeof(Scalar));
 
 }  // namespace impeller
+
+namespace std {
+
+inline std::ostream& operator<<(std::ostream& out, const impeller::Vector3& p) {
+  out << "(" << p.x << ", " << p.y << ", " << p.z << ")";
+  return out;
+}
+
+inline std::ostream& operator<<(std::ostream& out, const impeller::Vector4& p) {
+  out << "(" << p.x << ", " << p.y << ", " << p.z << ", " << p.w << ")";
+  return out;
+}
+
+}  // namespace std

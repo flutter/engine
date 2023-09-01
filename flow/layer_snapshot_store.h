@@ -10,12 +10,9 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/time/time_delta.h"
 
-#include "third_party/skia/include/core/SkImageEncoder.h"
-#include "third_party/skia/include/core/SkPictureRecorder.h"
-#include "third_party/skia/include/core/SkSerialProcs.h"
-#include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/include/core/SkSurfaceCharacterization.h"
-#include "third_party/skia/include/utils/SkBase64.h"
+#include "third_party/skia/include/core/SkData.h"
+#include "third_party/skia/include/core/SkRect.h"
+#include "third_party/skia/include/core/SkRefCnt.h"
 
 namespace flutter {
 
@@ -24,8 +21,9 @@ namespace flutter {
 class LayerSnapshotData {
  public:
   LayerSnapshotData(int64_t layer_unique_id,
-                    fml::TimeDelta duration,
-                    sk_sp<SkData> snapshot);
+                    const fml::TimeDelta& duration,
+                    const sk_sp<SkData>& snapshot,
+                    const SkRect& bounds);
 
   ~LayerSnapshotData() = default;
 
@@ -35,10 +33,13 @@ class LayerSnapshotData {
 
   sk_sp<SkData> GetSnapshot() const { return snapshot_; }
 
+  SkRect GetBounds() const { return bounds_; }
+
  private:
   const int64_t layer_unique_id_;
   const fml::TimeDelta duration_;
   const sk_sp<SkData> snapshot_;
+  const SkRect bounds_;
 };
 
 /// Collects snapshots of layers during frame rasterization.
@@ -55,9 +56,7 @@ class LayerSnapshotStore {
 
   /// Adds snapshots for a given layer. `duration` marks the time taken to
   /// rasterize this one layer.
-  void Add(int64_t layer_unique_id,
-           fml::TimeDelta duration,
-           sk_sp<SkData> base64_png_snapshot);
+  void Add(const LayerSnapshotData& data);
 
   // Returns the number of snapshots collected.
   size_t Size() const { return layer_snapshots_.size(); }

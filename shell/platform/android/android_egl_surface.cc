@@ -21,9 +21,7 @@ void LogLastEGLError() {
   };
 
 #define _EGL_ERROR_DESC(a) \
-  {                        \
-#a, a                  \
-  }
+  { #a, a }
 
   const EGLNameErrorPair pairs[] = {
       _EGL_ERROR_DESC(EGL_SUCCESS),
@@ -62,122 +60,25 @@ void LogLastEGLError() {
 
 class AndroidEGLSurfaceDamage {
  public:
-  void init(EGLDisplay display, EGLContext context) {
-    if (GetAPILevel() < 28) {
-      // Disable partial repaint for devices older than Android 9. There
-      // are old devices that have extensions below available but the
-      // implementation causes glitches (i.e. Xperia Z3 with Android 6).
-      partial_redraw_supported_ = false;
-      return;
-    }
-
-    const char* extensions = eglQueryString(display, EGL_EXTENSIONS);
-
-    if (HasExtension(extensions, "EGL_KHR_partial_update")) {
-      set_damage_region_ = reinterpret_cast<PFNEGLSETDAMAGEREGIONKHRPROC>(
-          eglGetProcAddress("eglSetDamageRegionKHR"));
-    }
-
-    if (HasExtension(extensions, "EGL_EXT_swap_buffers_with_damage")) {
-      swap_buffers_with_damage_ =
-          reinterpret_cast<PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC>(
-              eglGetProcAddress("eglSwapBuffersWithDamageEXT"));
-    } else if (HasExtension(extensions, "EGL_KHR_swap_buffers_with_damage")) {
-      swap_buffers_with_damage_ =
-          reinterpret_cast<PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC>(
-              eglGetProcAddress("eglSwapBuffersWithDamageKHR"));
-    }
-
-    partial_redraw_supported_ =
-        set_damage_region_ != nullptr && swap_buffers_with_damage_ != nullptr;
-  }
-
-  static int GetAPILevel() {
-    char sdk_version_string[PROP_VALUE_MAX];
-    if (__system_property_get("ro.build.version.sdk", sdk_version_string)) {
-      return atoi(sdk_version_string);
-    } else {
-      return -1;
-    }
-  }
+  void init(EGLDisplay display, EGLContext context) {}
 
   void SetDamageRegion(EGLDisplay display,
                        EGLSurface surface,
-                       const std::optional<SkIRect>& region) {
-    if (set_damage_region_ && region) {
-      auto rects = RectToInts(display, surface, *region);
-      set_damage_region_(display, surface, rects.data(), 1);
-    }
-  }
+                       const std::optional<SkIRect>& region) {}
 
-  // Maximum damage history - for triple buffering we need to store damage for
-  // last two frames; Some Android devices (Pixel 4) use quad buffering.
-  static const int kMaxHistorySize = 10;
-
-  bool SupportsPartialRepaint() const { return partial_redraw_supported_; }
+  /// This was disabled after discussion in
+  /// https://github.com/flutter/flutter/issues/123353
+  bool SupportsPartialRepaint() const { return false; }
 
   std::optional<SkIRect> InitialDamage(EGLDisplay display, EGLSurface surface) {
-    if (!partial_redraw_supported_) {
-      return std::nullopt;
-    }
-
-    EGLint age;
-    eglQuerySurface(display, surface, EGL_BUFFER_AGE_EXT, &age);
-
-    if (age == 0) {  // full repaint
-      return std::nullopt;
-    } else {
-      // join up to (age - 1) last rects from damage history
-      --age;
-      auto res = SkIRect::MakeEmpty();
-      for (auto i = damage_history_.rbegin();
-           i != damage_history_.rend() && age > 0; ++i, --age) {
-        res.join(*i);
-      }
-      return res;
-    }
+    return std::nullopt;
   }
 
   bool SwapBuffersWithDamage(EGLDisplay display,
                              EGLSurface surface,
                              const std::optional<SkIRect>& damage) {
-    if (swap_buffers_with_damage_ && damage) {
-      damage_history_.push_back(*damage);
-      if (damage_history_.size() > kMaxHistorySize) {
-        damage_history_.pop_front();
-      }
-      auto rects = RectToInts(display, surface, *damage);
-      return swap_buffers_with_damage_(display, surface, rects.data(), 1);
-    } else {
-      return eglSwapBuffers(display, surface);
-    }
+    return eglSwapBuffers(display, surface);
   }
-
- private:
-  std::array<EGLint, 4> static RectToInts(EGLDisplay display,
-                                          EGLSurface surface,
-                                          const SkIRect& rect) {
-    EGLint height;
-    eglQuerySurface(display, surface, EGL_HEIGHT, &height);
-
-    std::array<EGLint, 4> res{rect.left(), height - rect.bottom(), rect.width(),
-                              rect.height()};
-    return res;
-  }
-
-  PFNEGLSETDAMAGEREGIONKHRPROC set_damage_region_ = nullptr;
-  PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC swap_buffers_with_damage_ = nullptr;
-
-  bool partial_redraw_supported_;
-
-  bool HasExtension(const char* extensions, const char* name) {
-    const char* r = strstr(extensions, name);
-    auto len = strlen(name);
-    // check that the extension name is terminated by space or null terminator
-    return r != nullptr && (r[len] == ' ' || r[len] == 0);
-  }
-
-  std::list<SkIRect> damage_history_;
 };
 
 AndroidEGLSurface::AndroidEGLSurface(EGLSurface surface,
@@ -186,7 +87,8 @@ AndroidEGLSurface::AndroidEGLSurface(EGLSurface surface,
     : surface_(surface),
       display_(display),
       context_(context),
-      damage_(std::make_unique<AndroidEGLSurfaceDamage>()) {
+      damage_(std::make_unique<AndroidEGLSurfaceDamage>()),
+      presentation_time_proc_(nullptr) {
   damage_->init(display_, context);
 }
 
@@ -238,6 +140,16 @@ AndroidEGLSurfaceMakeCurrentStatus AndroidEGLSurface::MakeCurrent() const {
 void AndroidEGLSurface::SetDamageRegion(
     const std::optional<SkIRect>& buffer_damage) {
   damage_->SetDamageRegion(display_, surface_, buffer_damage);
+}
+
+bool AndroidEGLSurface::SetPresentationTime(
+    const fml::TimePoint& presentation_time) {
+  if (presentation_time_proc_) {
+    const auto time_ns = presentation_time.ToEpochDelta().ToNanoseconds();
+    return presentation_time_proc_(display_, surface_, time_ns);
+  } else {
+    return false;
+  }
 }
 
 bool AndroidEGLSurface::SwapBuffers(

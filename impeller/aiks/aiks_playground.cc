@@ -4,35 +4,51 @@
 
 #include "impeller/aiks/aiks_playground.h"
 
+#include <memory>
+
 #include "impeller/aiks/aiks_context.h"
+#include "impeller/typographer/backends/skia/typographer_context_skia.h"
+#include "impeller/typographer/typographer_context.h"
+#include "third_party/imgui/imgui.h"
 
 namespace impeller {
 
-AiksPlayground::AiksPlayground() = default;
+AiksPlayground::AiksPlayground()
+    : typographer_context_(TypographerContextSkia::Make()) {}
 
 AiksPlayground::~AiksPlayground() = default;
 
-bool AiksPlayground::OpenPlaygroundHere(const Picture& picture) {
-  return OpenPlaygroundHere(
-      [&picture](AiksContext& renderer, RenderTarget& render_target) -> bool {
-        return renderer.Render(picture, render_target);
-      });
+void AiksPlayground::SetTypographerContext(
+    std::shared_ptr<TypographerContext> typographer_context) {
+  typographer_context_ = std::move(typographer_context);
+}
+
+bool AiksPlayground::OpenPlaygroundHere(Picture picture) {
+  return OpenPlaygroundHere([&picture](AiksContext& renderer) -> Picture {
+    return std::move(picture);
+  });
 }
 
 bool AiksPlayground::OpenPlaygroundHere(AiksPlaygroundCallback callback) {
-  if (!Playground::is_enabled()) {
+  if (!switches_.enable_playground) {
     return true;
   }
 
-  AiksContext renderer(GetContext());
+  AiksContext renderer(GetContext(), typographer_context_);
 
   if (!renderer.IsValid()) {
     return false;
   }
 
   return Playground::OpenPlaygroundHere(
-      [&renderer, &callback](RenderTarget& render_target) -> bool {
-        return callback(renderer, render_target);
+      [this, &renderer, &callback](RenderTarget& render_target) -> bool {
+        const std::optional<Picture>& picture = inspector_.RenderInspector(
+            renderer, [&]() { return callback(renderer); });
+
+        if (!picture.has_value()) {
+          return false;
+        }
+        return renderer.Render(*picture, render_target);
       });
 }
 

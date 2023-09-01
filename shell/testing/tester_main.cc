@@ -24,8 +24,14 @@
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/gpu/gpu_surface_software.h"
+
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
 #include "third_party/dart/runtime/include/dart_api.h"
+#include "third_party/skia/include/core/SkSurface.h"
+
+#if defined(FML_OS_WIN)
+#include <combaseapi.h>
+#endif  // defined(FML_OS_WIN)
 
 #if defined(FML_OS_POSIX)
 #include <signal.h>
@@ -33,9 +39,11 @@
 
 namespace flutter {
 
+static constexpr int64_t kImplicitViewId = 0ll;
+
 class TesterExternalViewEmbedder : public ExternalViewEmbedder {
   // |ExternalViewEmbedder|
-  SkCanvas* GetRootCanvas() override { return nullptr; }
+  DlCanvas* GetRootCanvas() override { return nullptr; }
 
   // |ExternalViewEmbedder|
   void CancelFrame() override {}
@@ -49,17 +57,16 @@ class TesterExternalViewEmbedder : public ExternalViewEmbedder {
 
   // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(
-      int view_id,
+      int64_t view_id,
       std::unique_ptr<EmbeddedViewParams> params) override {}
 
   // |ExternalViewEmbedder|
-  std::vector<SkCanvas*> GetCurrentCanvases() override { return {&canvas_}; }
-
-  // |ExternalViewEmbedder|
-  SkCanvas* CompositeEmbeddedView(int view_id) override { return &canvas_; }
+  DlCanvas* CompositeEmbeddedView(int64_t view_id) override {
+    return &builder_;
+  }
 
  private:
-  SkCanvas canvas_;
+  DisplayListBuilder builder_;
 };
 
 class TesterGPUSurfaceSoftware : public GPUSurfaceSoftware {
@@ -68,17 +75,14 @@ class TesterGPUSurfaceSoftware : public GPUSurfaceSoftware {
                            bool render_to_surface)
       : GPUSurfaceSoftware(delegate, render_to_surface) {}
 
-#if SUPPORT_FRACTIONAL_TRANSLATION
-  // |Surface|
   bool EnableRasterCache() const override { return false; }
-#endif  // SUPPORT_FRACTIONAL_TRANSLATION
 };
 
 class TesterPlatformView : public PlatformView,
                            public GPUSurfaceSoftwareDelegate {
  public:
-  TesterPlatformView(Delegate& delegate, TaskRunners task_runners)
-      : PlatformView(delegate, std::move(task_runners)) {}
+  TesterPlatformView(Delegate& delegate, const TaskRunners& task_runners)
+      : PlatformView(delegate, task_runners) {}
 
   // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface() override {
@@ -99,7 +103,7 @@ class TesterPlatformView : public PlatformView,
     SkImageInfo info =
         SkImageInfo::MakeN32(size.fWidth, size.fHeight, kPremul_SkAlphaType,
                              SkColorSpace::MakeSRGB());
-    sk_surface_ = SkSurface::MakeRaster(info, nullptr);
+    sk_surface_ = SkSurfaces::Raster(info, nullptr);
 
     if (sk_surface_ == nullptr) {
       FML_LOG(ERROR)
@@ -155,9 +159,9 @@ class ScriptCompletionTaskObserver {
       return;
     }
 
-    if (!has_terminated) {
+    if (!has_terminated_) {
       // Only try to terminate the loop once.
-      has_terminated = true;
+      has_terminated_ = true;
       fml::TaskRunner::RunNowOrPostTask(main_task_runner_, []() {
         fml::MessageLoop::GetCurrent().Terminate();
       });
@@ -169,7 +173,7 @@ class ScriptCompletionTaskObserver {
   fml::RefPtr<fml::TaskRunner> main_task_runner_;
   bool run_forever_ = false;
   std::optional<DartErrorCode> last_error_;
-  bool has_terminated = false;
+  bool has_terminated_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ScriptCompletionTaskObserver);
 };
@@ -238,7 +242,8 @@ int RunTester(const flutter::Settings& settings,
       };
 
   Shell::CreateCallback<Rasterizer> on_create_rasterizer = [](Shell& shell) {
-    return std::make_unique<Rasterizer>(shell);
+    return std::make_unique<Rasterizer>(
+        shell, Rasterizer::MakeGpuImageBehavior::kBitmap);
   };
 
   auto shell = Shell::Create(flutter::PlatformData(),  //
@@ -336,11 +341,21 @@ int RunTester(const flutter::Settings& settings,
                      }
                    });
 
+  auto device_pixel_ratio = 3.0;
+  auto physical_width = 2400.0;   // 800 at 3x resolution.
+  auto physical_height = 1800.0;  // 600 at 3x resolution.
+
+  std::vector<std::unique_ptr<Display>> displays;
+  displays.push_back(std::make_unique<Display>(
+      0, 60, physical_width, physical_height, device_pixel_ratio));
+  shell->OnDisplayUpdates(std::move(displays));
+
   flutter::ViewportMetrics metrics{};
-  metrics.device_pixel_ratio = 3.0;
-  metrics.physical_width = 2400.0;   // 800 at 3x resolution.
-  metrics.physical_height = 1800.0;  // 600 at 3x resolution.
-  shell->GetPlatformView()->SetViewportMetrics(metrics);
+  metrics.device_pixel_ratio = device_pixel_ratio;
+  metrics.physical_width = physical_width;
+  metrics.physical_height = physical_height;
+  metrics.display_id = 0;
+  shell->GetPlatformView()->SetViewportMetrics(kImplicitViewId, metrics);
 
   // Run the message loop and wait for the script to do its thing.
   fml::MessageLoop::GetCurrent().Run();
@@ -365,7 +380,7 @@ int main(int argc, char* argv[]) {
   dart::bin::SetExecutableName(argv[0]);
   dart::bin::SetExecutableArguments(argc - 1, argv);
 
-  auto command_line = fml::CommandLineFromArgcArgv(argc, argv);
+  auto command_line = fml::CommandLineFromPlatformOrArgcArgv(argc, argv);
 
   if (command_line.HasOption(flutter::FlagForSwitch(flutter::Switch::Help))) {
     flutter::PrintUsage("flutter_tester");
@@ -384,6 +399,8 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
+  settings.leak_vm = false;
+
   if (settings.icu_data_path.empty()) {
     settings.icu_data_path = "icudtl.dat";
   }
@@ -399,8 +416,8 @@ int main(int argc, char* argv[]) {
     std::cout << message << std::endl;
   };
 
-  settings.task_observer_add = [](intptr_t key, fml::closure callback) {
-    fml::MessageLoop::GetCurrent().AddTaskObserver(key, std::move(callback));
+  settings.task_observer_add = [](intptr_t key, const fml::closure& callback) {
+    fml::MessageLoop::GetCurrent().AddTaskObserver(key, callback);
   };
 
   settings.task_observer_remove = [](intptr_t key) {
@@ -415,6 +432,10 @@ int main(int argc, char* argv[]) {
     ::exit(1);
     return true;
   };
+
+#if defined(FML_OS_WIN)
+  CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+#endif  // defined(FML_OS_WIN)
 
   return flutter::RunTester(settings,
                             command_line.HasOption(flutter::FlagForSwitch(

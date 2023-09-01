@@ -15,6 +15,8 @@
 #include "third_party/skia/include/core/SkRefCnt.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/GrBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 
 namespace flutter {
 
@@ -27,7 +29,7 @@ void TestMetalSurfaceImpl::Init(const TestMetalContext::TextureInfo& texture_inf
   GrBackendTexture backend_texture(surface_size.width(), surface_size.height(), GrMipmapped::kNo,
                                    skia_texture_info);
 
-  sk_sp<SkSurface> surface = SkSurface::MakeFromBackendTexture(
+  sk_sp<SkSurface> surface = SkSurfaces::WrapBackendTexture(
       test_metal_context_.GetSkiaContext().get(), backend_texture, kTopLeft_GrSurfaceOrigin, 1,
       kBGRA_8888_SkColorType, nullptr, nullptr);
 
@@ -37,7 +39,7 @@ void TestMetalSurfaceImpl::Init(const TestMetalContext::TextureInfo& texture_inf
   }
 
   surface_ = std::move(surface);
-  texture_info_ = std::move(texture_info);
+  texture_info_ = texture_info;
   is_valid_ = true;
 }
 

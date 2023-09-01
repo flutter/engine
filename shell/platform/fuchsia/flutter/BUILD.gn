@@ -6,6 +6,7 @@ assert(is_fuchsia)
 
 import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
+import("//flutter/shell/config.gni")
 import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/testing/testing.gni")
 import("//flutter/tools/fuchsia/dart.gni")
@@ -57,32 +58,24 @@ template("runner_sources") {
     sources = [
       "accessibility_bridge.cc",
       "accessibility_bridge.h",
-      "component_v1.cc",
-      "component_v1.h",
+      "canvas_spy.cc",
+      "canvas_spy.h",
       "component_v2.cc",
       "component_v2.h",
       "engine.cc",
       "engine.h",
+      "external_view_embedder.cc",
+      "external_view_embedder.h",
       "file_in_namespace_buffer.cc",
       "file_in_namespace_buffer.h",
       "flatland_connection.cc",
       "flatland_connection.h",
-      "flatland_external_view_embedder.cc",
-      "flatland_external_view_embedder.h",
-      "flatland_platform_view.cc",
-      "flatland_platform_view.h",
       "flutter_runner_product_configuration.cc",
       "flutter_runner_product_configuration.h",
       "focus_delegate.cc",
       "focus_delegate.h",
       "fuchsia_intl.cc",
       "fuchsia_intl.h",
-      "gfx_external_view_embedder.cc",
-      "gfx_external_view_embedder.h",
-      "gfx_platform_view.cc",
-      "gfx_platform_view.h",
-      "gfx_session_connection.cc",
-      "gfx_session_connection.h",
       "isolate_configurator.cc",
       "isolate_configurator.h",
       "keyboard.cc",
@@ -92,7 +85,11 @@ template("runner_sources") {
       "platform_view.h",
       "pointer_delegate.cc",
       "pointer_delegate.h",
+      "pointer_injector_delegate.cc",
+      "pointer_injector_delegate.h",
       "program_metadata.h",
+      "rtree.cc",
+      "rtree.h",
       "runner.cc",
       "runner.h",
       "software_surface.cc",
@@ -104,6 +101,8 @@ template("runner_sources") {
       "surface_producer.h",
       "task_runner_adapter.cc",
       "task_runner_adapter.h",
+      "text_delegate.cc",
+      "text_delegate.h",
       "unique_fdio_ns.h",
       "vsync_waiter.cc",
       "vsync_waiter.h",
@@ -127,18 +126,20 @@ template("runner_sources") {
       "//flutter/shell/common",
       "//flutter/shell/platform/common/client_wrapper:client_wrapper",
     ]
+
     flutter_deps = [
       ":fuchsia_gpu_configuration",
       "//flutter/assets",
       "//flutter/common",
+      "//flutter/flutter_vma:flutter_skia_vma",
       "//flutter/fml",
       "//flutter/shell/platform/common/client_wrapper:client_wrapper_library_stubs",
       "//flutter/vulkan",
+      "//flutter/vulkan/procs",
     ]
 
     public_deps = [
                     "$fuchsia_sdk_root/pkg:inspect",
-                    "$fuchsia_sdk_root/pkg:scenic_cpp",
                     "$fuchsia_sdk_root/pkg:sys_cpp",
                     "$fuchsia_sdk_root/pkg:sys_inspect_cpp",
                     "//flutter/shell/platform/fuchsia/runtime/dart/utils",
@@ -151,13 +152,16 @@ template("runner_sources") {
              "$fuchsia_sdk_root/fidl:fuchsia.images",
              "$fuchsia_sdk_root/fidl:fuchsia.intl",
              "$fuchsia_sdk_root/fidl:fuchsia.io",
+             "$fuchsia_sdk_root/fidl:fuchsia.media",
              "$fuchsia_sdk_root/fidl:fuchsia.memorypressure",
-             "$fuchsia_sdk_root/fidl:fuchsia.sys",
              "$fuchsia_sdk_root/fidl:fuchsia.ui.app",
              "$fuchsia_sdk_root/fidl:fuchsia.ui.composition",
+             "$fuchsia_sdk_root/fidl:fuchsia.ui.input",
+             "$fuchsia_sdk_root/fidl:fuchsia.ui.input3",
              "$fuchsia_sdk_root/fidl:fuchsia.ui.pointer",
+             "$fuchsia_sdk_root/fidl:fuchsia.ui.pointerinjector",
+             "$fuchsia_sdk_root/fidl:fuchsia.ui.test.input",
              "$fuchsia_sdk_root/fidl:fuchsia.ui.views",
-             "$fuchsia_sdk_root/fidl:fuchsia.ui.scenic",
              "$fuchsia_sdk_root/pkg:async-cpp",
              "$fuchsia_sdk_root/pkg:async-default",
              "$fuchsia_sdk_root/pkg:async-loop",
@@ -314,7 +318,6 @@ template("jit_runner") {
 
     binary = "flutter_jit${product_suffix}_runner"
 
-    cmx_file = rebase_path("meta/flutter_jit${product_suffix}_runner.cmx")
     cml_file = rebase_path("meta/flutter_jit${product_suffix}_runner.cml")
 
     resources = [
@@ -394,7 +397,6 @@ template("aot_runner") {
       ]
     }
 
-    cmx_file = rebase_path("meta/flutter_aot${product_suffix}_runner.cmx")
     cml_file = rebase_path("meta/flutter_aot${product_suffix}_runner.cml")
 
     binary = "flutter_aot${product_suffix}_runner"
@@ -452,6 +454,34 @@ jit_runner("flutter_jit_product_runner") {
   product = true
 }
 
+# "OOT" copy of the runner used by tests, to avoid conflicting with the runner
+# in the base fuchsia image.
+# TODO(fxbug.dev/106575): Fix this with subpackages.
+aot_runner("oot_flutter_aot_runner") {
+  product = false
+}
+
+# "OOT" copy of the runner used by tests, to avoid conflicting with the runner
+# in the base fuchsia image.
+# TODO(fxbug.dev/106575): Fix this with subpackages.
+aot_runner("oot_flutter_aot_product_runner") {
+  product = true
+}
+
+# "OOT" copy of the runner used by tests, to avoid conflicting with the runner
+# in the base fuchsia image.
+# TODO(fxbug.dev/106575): Fix this with subpackages.
+jit_runner("oot_flutter_jit_runner") {
+  product = false
+}
+
+# "OOT" copy of the runner used by tests, to avoid conflicting with the runner
+# in the base fuchsia image.
+# TODO(fxbug.dev/106575): Fix this with subpackages.
+jit_runner("oot_flutter_jit_product_runner") {
+  product = true
+}
+
 test_fixtures("flutter_runner_fixtures") {
   fixtures = []
 }
@@ -464,25 +494,24 @@ if (enable_unittests) {
 
     sources = [
       "accessibility_bridge_unittest.cc",
-      "component_v1_unittest.cc",
+      "canvas_spy_unittests.cc",
       "component_v2_unittest.cc",
       "flutter_runner_fakes.h",
       "focus_delegate_unittests.cc",
       "fuchsia_intl_unittest.cc",
       "keyboard_unittest.cc",
-      "platform_view_unittest.cc",
       "pointer_delegate_unittests.cc",
+      "pointer_injector_delegate_unittest.cc",
+      "rtree_unittests.cc",
       "tests/engine_unittests.cc",
+      "tests/external_view_embedder_unittests.cc",
       "tests/fake_flatland_unittests.cc",
-      "tests/fake_session_unittests.cc",
       "tests/flatland_connection_unittests.cc",
-      "tests/flatland_external_view_embedder_unittests.cc",
-      "tests/flatland_platform_view_unittest.cc",
       "tests/flutter_runner_product_configuration_unittests.cc",
-      "tests/gfx_external_view_embedder_unittests.cc",
-      "tests/gfx_session_connection_unittests.cc",
+      "tests/platform_view_unittest.cc",
       "tests/pointer_event_utility.cc",
       "tests/pointer_event_utility.h",
+      "text_delegate_unittests.cc",
       "vsync_waiter_unittest.cc",
     ]
 
@@ -878,7 +907,7 @@ if (enable_unittests) {
       ":testing_tests",
       ":txt_tests",
       ":ui_tests",
-      "integration_flutter_tests",
+      "tests/integration",
     ]
   }
 }

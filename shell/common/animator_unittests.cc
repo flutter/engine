@@ -28,17 +28,15 @@ class FakeAnimatorDelegate : public Animator::Delegate {
   MOCK_METHOD2(OnAnimatorBeginFrame,
                void(fml::TimePoint frame_target_time, uint64_t frame_number));
 
-  void OnAnimatorNotifyIdle(fml::TimePoint deadline) override {
+  void OnAnimatorNotifyIdle(fml::TimeDelta deadline) override {
     notify_idle_called_ = true;
   }
 
   MOCK_METHOD1(OnAnimatorUpdateLatestFrameTargetTime,
                void(fml::TimePoint frame_target_time));
 
-  MOCK_METHOD2(
-      OnAnimatorDraw,
-      void(std::shared_ptr<Pipeline<flutter::LayerTree>> pipeline,
-           std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder));
+  MOCK_METHOD1(OnAnimatorDraw,
+               void(std::shared_ptr<LayerTreePipeline> pipeline));
 
   void OnAnimatorDrawLastLayerTree(
       std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) override {}
@@ -82,9 +80,9 @@ TEST_F(ShellTest, VSyncTargetTime) {
         flutter::PlatformData(), task_runners, settings,
         [vsync_clock, &create_vsync_waiter](Shell& shell) {
           return ShellTestPlatformView::Create(
-              shell, shell.GetTaskRunners(), vsync_clock,
-              std::move(create_vsync_waiter),
-              ShellTestPlatformView::BackendType::kDefaultBackend, nullptr);
+              shell, shell.GetTaskRunners(), vsync_clock, create_vsync_waiter,
+              ShellTestPlatformView::BackendType::kDefaultBackend, nullptr,
+              shell.GetIsGpuDisabledSyncSwitch());
         },
         [](Shell& shell) { return std::make_unique<Rasterizer>(shell); });
     ASSERT_TRUE(DartVMRef::IsInstanceRunning());
@@ -106,7 +104,7 @@ TEST_F(ShellTest, VSyncTargetTime) {
   ASSERT_EQ(GetLatestFrameTargetTime(shell.get()), vsync_waiter_target_time);
 
   // teardown.
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
@@ -158,9 +156,9 @@ TEST_F(ShellTest, AnimatorDoesNotNotifyIdleBeforeRender) {
   task_runners.GetUITaskRunner()->PostDelayedTask(
       [&] {
         ASSERT_FALSE(delegate.notify_idle_called_);
-        auto layer_tree =
-            std::make_unique<LayerTree>(SkISize::Make(600, 800), 1.0);
-        animator->Render(std::move(layer_tree));
+        auto layer_tree = std::make_unique<LayerTree>(LayerTree::Config(),
+                                                      SkISize::Make(600, 800));
+        animator->Render(std::move(layer_tree), 1.0);
         task_runners.GetPlatformTaskRunner()->PostTask(flush_vsync_task);
       },
       // See kNotifyIdleTaskWaitTime in animator.cc.
@@ -241,9 +239,9 @@ TEST_F(ShellTest, AnimatorDoesNotNotifyDelegateIfPipelineIsNotEmpty) {
     begin_frame_latch.Wait();
 
     PostTaskSync(task_runners.GetUITaskRunner(), [&] {
-      auto layer_tree =
-          std::make_unique<LayerTree>(SkISize::Make(600, 800), 1.0);
-      animator->Render(std::move(layer_tree));
+      auto layer_tree = std::make_unique<LayerTree>(LayerTree::Config(),
+                                                    SkISize::Make(600, 800));
+      animator->Render(std::move(layer_tree), 1.0);
     });
   }
 

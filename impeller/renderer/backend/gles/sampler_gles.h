@@ -6,10 +6,11 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
-#include "impeller/renderer/sampler.h"
+#include "impeller/core/sampler.h"
 
 namespace impeller {
 
+class TextureGLES;
 class SamplerLibraryGLES;
 class ProcTableGLES;
 
@@ -18,7 +19,8 @@ class SamplerGLES final : public Sampler,
  public:
   ~SamplerGLES();
 
-  bool ConfigureBoundTexture(const ProcTableGLES& gl) const;
+  bool ConfigureBoundTexture(const TextureGLES& texture,
+                             const ProcTableGLES& gl) const;
 
  private:
   friend class SamplerLibraryGLES;

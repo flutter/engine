@@ -1,6 +1,6 @@
 # Unit testing Java code
 
-All Java code in the engine should now be able to be tested with Robolectric 4.7.3
+All Java code in the engine should now be able to be tested with Robolectric 4.10.3
 and JUnit 4. The test suite has been added after the bulk of the Java code was
 first written, so most of these classes do not have existing tests. Ideally code
 after this point should be tested, either with unit tests here or with
@@ -20,6 +20,11 @@ integration tests in other repos.
    run time.
 4. Write your test.
 5. Build and run with `testing/run_tests.py [--type=java] [--java-filter=<test_class_name>]`.
+
+Note that `testing/run_tests.py` does not build the engine binaries; instead they
+should be built prior to running this command and also when the source files
+change. See [Compiling the engine](https://github.com/flutter/flutter/wiki/Compiling-the-engine)
+for details on how to do so.
 
 ## Q&A
 

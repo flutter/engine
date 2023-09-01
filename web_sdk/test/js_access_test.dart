@@ -2,13 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-/// Checks that JavaScript API is accessed properly.
-///
-/// JavaScript access needs to be audited to make sure it follows security best
-/// practices. To do that, all JavaScript access is consolidated into a small
-/// number of libraries that change infrequently. These libraries are manually
-/// audited on every change. All other code accesses JavaScript through these
-/// libraries and does not require audit.
+// ignore_for_file: avoid_print
+
+// Checks that JavaScript API is accessed properly.
+//
+// JavaScript access needs to be audited to make sure it follows security best
+// practices. To do that, all JavaScript access is consolidated into a small
+// number of libraries that change infrequently. These libraries are manually
+// audited on every change. All other code accesses JavaScript through these
+// libraries and does not require audit.
 
 import 'dart:io';
 
@@ -16,7 +18,6 @@ import 'package:test/test.dart';
 
 // Libraries that allow making arbitrary calls to JavaScript.
 const List<String> _jsAccessLibraries = <String>[
-  'dart:js',
   'dart:js_util',
   'package:js',
 ];
@@ -30,13 +31,13 @@ const List<String> _auditedLibraries = <String>[
 ];
 
 Future<void> main(List<String> args) async {
-  bool areAssertionsEnabled = false;
+  bool shouldThrow = true;
   assert(() {
-    areAssertionsEnabled = true;
+    shouldThrow = false;
     return true;
   }());
 
-  if (!areAssertionsEnabled) {
+  if (shouldThrow) {
     throw ArgumentError(
       'This test must run with --enable-asserts',
     );
@@ -64,8 +65,6 @@ export 'foo.dart';
       final _CheckResult result = _checkFile(
           File('lib/web_ui/lib/src/engine/alarm_clock.dart'),
 '''
-import 'dart:html'
-  show HtmlElement;
 import 'dart:async';
 import 'package:ui/ui.dart'
   as ui;
@@ -73,8 +72,7 @@ import 'package:ui/ui.dart'
       );
       expect(result.failed, isTrue);
       expect(result.violations, <String>[
-        "on line 1: import is broken up into multiple lines: import 'dart:html'",
-        "on line 4: import is broken up into multiple lines: import 'package:ui/ui.dart'",
+        "on line 2: import is broken up into multiple lines: import 'package:ui/ui.dart'",
       ]);
     }
 

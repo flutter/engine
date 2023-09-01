@@ -8,7 +8,7 @@
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "tests/embedder_test_context.h"
 #include "third_party/skia/include/core/SkBitmap.h"
-#include "third_party/swiftshader/include/vulkan/vulkan_core.h"
+#include "third_party/skia/include/core/SkImage.h"
 
 #ifdef SHELL_ENABLE_GL
 #include "flutter/shell/platform/embedder/tests/embedder_test_compositor_gl.h"
@@ -17,7 +17,8 @@
 
 #ifdef SHELL_ENABLE_VULKAN
 #include "flutter/shell/platform/embedder/tests/embedder_test_context_vulkan.h"
-#include "flutter/vulkan/vulkan_device.h"
+#include "flutter/vulkan/vulkan_device.h"  // nogncheck
+#include "vulkan/vulkan_core.h"            // nogncheck
 #endif
 
 #ifdef SHELL_ENABLE_METAL
@@ -52,13 +53,14 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
   opengl_renderer_config_.present_with_info =
       [](void* context, const FlutterPresentInfo* present_info) -> bool {
     return reinterpret_cast<EmbedderTestContextGL*>(context)->GLPresent(
-        present_info->fbo_id);
+        *present_info);
   };
   opengl_renderer_config_.fbo_with_frame_info_callback =
       [](void* context, const FlutterFrameInfo* frame_info) -> uint32_t {
     return reinterpret_cast<EmbedderTestContextGL*>(context)->GLGetFramebuffer(
         *frame_info);
   };
+  opengl_renderer_config_.populate_existing_damage = nullptr;
   opengl_renderer_config_.make_resource_current = [](void* context) -> bool {
     return reinterpret_cast<EmbedderTestContextGL*>(context)
         ->GLMakeResourceCurrent();
@@ -99,7 +101,7 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
         }
         bitmap.setImmutable();
         return reinterpret_cast<EmbedderTestContextSoftware*>(context)->Present(
-            SkImage::MakeFromBitmap(bitmap));
+            SkImages::RasterFromBitmap(bitmap));
       };
 
   // The first argument is always the executable name. Don't make tests have to
@@ -112,7 +114,8 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
     SetSemanticsCallbackHooks();
     SetLogMessageCallbackHook();
     SetLocalizationCallbackHooks();
-    AddCommandLineArgument("--disable-observatory");
+    SetChannelUpdateCallbackHook();
+    AddCommandLineArgument("--disable-vm-service");
 
     if (preference == InitializationPreference::kSnapshotsInitialize ||
         preference == InitializationPreference::kMultiAOTInitialize) {
@@ -160,7 +163,10 @@ void EmbedderConfigBuilder::SetOpenGLPresentCallBack() {
   FML_CHECK(renderer_config_.type == FlutterRendererType::kOpenGL);
   renderer_config_.open_gl.present = [](void* context) -> bool {
     // passing a placeholder fbo_id.
-    return reinterpret_cast<EmbedderTestContextGL*>(context)->GLPresent(0);
+    return reinterpret_cast<EmbedderTestContextGL*>(context)->GLPresent(
+        FlutterPresentInfo{
+            .fbo_id = 0,
+        });
   };
 #endif
 }
@@ -243,15 +249,24 @@ void EmbedderConfigBuilder::SetIsolateCreateCallbackHook() {
 }
 
 void EmbedderConfigBuilder::SetSemanticsCallbackHooks() {
+  project_args_.update_semantics_callback2 =
+      context_.GetUpdateSemanticsCallback2Hook();
+  project_args_.update_semantics_callback =
+      context_.GetUpdateSemanticsCallbackHook();
   project_args_.update_semantics_node_callback =
-      EmbedderTestContext::GetUpdateSemanticsNodeCallbackHook();
+      context_.GetUpdateSemanticsNodeCallbackHook();
   project_args_.update_semantics_custom_action_callback =
-      EmbedderTestContext::GetUpdateSemanticsCustomActionCallbackHook();
+      context_.GetUpdateSemanticsCustomActionCallbackHook();
 }
 
 void EmbedderConfigBuilder::SetLogMessageCallbackHook() {
   project_args_.log_message_callback =
       EmbedderTestContext::GetLogMessageCallbackHook();
+}
+
+void EmbedderConfigBuilder::SetChannelUpdateCallbackHook() {
+  project_args_.channel_update_callback =
+      context_.GetChannelUpdateCallbackHook();
 }
 
 void EmbedderConfigBuilder::SetLogTag(std::string tag) {
@@ -312,6 +327,10 @@ void EmbedderConfigBuilder::SetupVsyncCallback() {
   };
 }
 
+FlutterRendererConfig& EmbedderConfigBuilder::GetRendererConfig() {
+  return renderer_config_;
+}
+
 void EmbedderConfigBuilder::SetRenderTaskRunner(
     const FlutterTaskRunnerDescription* runner) {
   if (runner == nullptr) {
@@ -366,13 +385,14 @@ FlutterCompositor& EmbedderConfigBuilder::GetCompositor() {
 }
 
 void EmbedderConfigBuilder::SetRenderTargetType(
-    EmbedderTestBackingStoreProducer::RenderTargetType type) {
+    EmbedderTestBackingStoreProducer::RenderTargetType type,
+    FlutterSoftwarePixelFormat software_pixfmt) {
   auto& compositor = context_.GetCompositor();
   // TODO(wrightgeorge): figure out a better way of plumbing through the
   // GrDirectContext
   compositor.SetBackingStoreProducer(
       std::make_unique<EmbedderTestBackingStoreProducer>(
-          compositor.GetGrContext(), type));
+          compositor.GetGrContext(), type, software_pixfmt));
 }
 
 UniqueEngine EmbedderConfigBuilder::LaunchEngine() const {
@@ -501,9 +521,10 @@ void EmbedderConfigBuilder::InitializeVulkanRendererConfig() {
   vulkan_renderer_config_.get_instance_proc_address_callback =
       [](void* context, FlutterVulkanInstanceHandle instance,
          const char* name) -> void* {
-    return reinterpret_cast<EmbedderTestContextVulkan*>(context)
-        ->vulkan_context_->vk_->GetInstanceProcAddr(
-            reinterpret_cast<VkInstance>(instance), name);
+    auto proc_addr = reinterpret_cast<EmbedderTestContextVulkan*>(context)
+                         ->vulkan_context_->vk_->GetInstanceProcAddr(
+                             reinterpret_cast<VkInstance>(instance), name);
+    return reinterpret_cast<void*>(proc_addr);
   };
   vulkan_renderer_config_.get_next_image_callback =
       [](void* context,

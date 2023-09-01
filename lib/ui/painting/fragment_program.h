@@ -5,20 +5,20 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_FRAGMENT_PROGRAM_H_
 #define FLUTTER_LIB_UI_PAINTING_FRAGMENT_PROGRAM_H_
 
+#include "flutter/display_list/effects/dl_runtime_effect.h"
 #include "flutter/lib/ui/dart_wrapper.h"
-#include "flutter/lib/ui/painting/fragment_shader.h"
-#include "third_party/skia/include/effects/SkRuntimeEffect.h"
+#include "flutter/lib/ui/painting/shader.h"
+
 #include "third_party/tonic/dart_library_natives.h"
 #include "third_party/tonic/typed_data/typed_list.h"
 
+#include <memory>
 #include <string>
 #include <vector>
 
-namespace tonic {
-class DartLibraryNatives;
-}  // namespace tonic
-
 namespace flutter {
+
+class FragmentShader;
 
 class FragmentProgram : public RefCountedDartWrappable<FragmentProgram> {
   DEFINE_WRAPPERTYPEINFO();
@@ -26,19 +26,21 @@ class FragmentProgram : public RefCountedDartWrappable<FragmentProgram> {
 
  public:
   ~FragmentProgram() override;
-  static fml::RefPtr<FragmentProgram> Create();
+  static void Create(Dart_Handle wrapper);
 
-  void init(std::string sksl, bool debugPrintSksl);
+  std::string initFromAsset(const std::string& asset_name);
 
   fml::RefPtr<FragmentShader> shader(Dart_Handle shader,
-                                     tonic::Float32List& uniforms,
+                                     Dart_Handle uniforms_handle,
                                      Dart_Handle samplers);
 
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
+  std::shared_ptr<DlColorSource> MakeDlColorSource(
+      std::shared_ptr<std::vector<uint8_t>> float_uniforms,
+      const std::vector<std::shared_ptr<DlColorSource>>& children);
 
  private:
   FragmentProgram();
-  sk_sp<SkRuntimeEffect> runtime_effect_;
+  sk_sp<DlRuntimeEffect> runtime_effect_;
 };
 
 }  // namespace flutter

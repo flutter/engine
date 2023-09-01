@@ -8,7 +8,8 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
-import 'text_scuba.dart';
+import '../../common/test_initialization.dart';
+import 'text_goldens.dart';
 
 typedef PaintTest = void Function(RecordingCanvas recordingCanvas);
 
@@ -17,12 +18,14 @@ void main() {
 }
 
 Future<void> testMain() async {
-  // Scuba doesn't give us viewport smaller than 472px wide.
-  final EngineScubaTester scuba = await EngineScubaTester.initialize(
+  final EngineGoldenTester goldenTester = await EngineGoldenTester.initialize(
     viewportSize: const Size(600, 600),
   );
 
-  setUpStableTestFonts();
+  setUpUnitTests(
+    emulateTesterEnvironment: false,
+    setUpTestViewDimensions: false,
+  );
 
   void paintTest(EngineCanvas canvas, PaintTest painter) {
     const Rect screenRect = Rect.fromLTWH(0, 0, 600, 600);
@@ -38,7 +41,7 @@ Future<void> testMain() async {
       // [DomCanvas] doesn't support clip commands.
       if (canvas is! DomCanvas) {
         paintTest(canvas, paintTextWithClipRect);
-        return scuba.diffCanvasScreenshot(
+        return goldenTester.diffCanvasScreenshot(
             canvas, 'multiline_text_clipping_rect');
       }
       return null;
@@ -51,7 +54,7 @@ Future<void> testMain() async {
       // [DomCanvas] doesn't support clip commands.
       if (canvas is! DomCanvas) {
         paintTest(canvas, paintTextWithClipRectTranslated);
-        return scuba.diffCanvasScreenshot(
+        return goldenTester.diffCanvasScreenshot(
             canvas, 'multiline_text_clipping_rect_translate');
       }
       return null;
@@ -64,7 +67,7 @@ Future<void> testMain() async {
       // [DomCanvas] doesn't support clip commands.
       if (canvas is! DomCanvas) {
         paintTest(canvas, paintTextWithClipRoundRect);
-        return scuba.diffCanvasScreenshot(
+        return goldenTester.diffCanvasScreenshot(
             canvas, 'multiline_text_clipping_roundrect');
       }
       return null;
@@ -77,7 +80,7 @@ Future<void> testMain() async {
       // [DomCanvas] doesn't support clip commands.
       if (canvas is! DomCanvas) {
         paintTest(canvas, paintTextWithClipPath);
-        return scuba.diffCanvasScreenshot(
+        return goldenTester.diffCanvasScreenshot(
             canvas, 'multiline_text_clipping_path');
       }
       return null;
@@ -89,11 +92,8 @@ Future<void> testMain() async {
     (EngineCanvas canvas) {
       // [DomCanvas] doesn't support clip commands.
       if (canvas is! DomCanvas) {
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/35086
-        // This produces the wrong result when using [BitmapCanvas] but without
-        // the new experimental canvas mode.
         paintTest(canvas, paintTextWithClipStack);
-        return scuba.diffCanvasScreenshot(
+        return goldenTester.diffCanvasScreenshot(
             canvas, 'multiline_text_clipping_stack1');
       }
       return null;
@@ -150,7 +150,6 @@ const Color deepOrange = Color(0xFFFF5722);
 
 void paintTextWithClipRoundRect(RecordingCanvas canvas) {
   final RRect roundRect = RRect.fromRectAndCorners(testBounds.inflate(-40),
-      topLeft: Radius.zero,
       topRight: const Radius.elliptical(45, 40),
       bottomLeft: const Radius.elliptical(50, 40),
       bottomRight: const Radius.circular(30));

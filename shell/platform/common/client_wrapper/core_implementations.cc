@@ -26,6 +26,11 @@ namespace flutter {
 // ========== binary_messenger_impl.h ==========
 
 namespace {
+
+using FlutterDesktopMessengerScopedLock =
+    std::unique_ptr<FlutterDesktopMessenger,
+                    decltype(&FlutterDesktopMessengerUnlock)>;
+
 // Passes |message| to |user_data|, which must be a BinaryMessageHandler, along
 // with a BinaryReply that will send a response on |message|'s response handle.
 //
@@ -36,17 +41,28 @@ void ForwardToHandler(FlutterDesktopMessengerRef messenger,
                       const FlutterDesktopMessage* message,
                       void* user_data) {
   auto* response_handle = message->response_handle;
-  BinaryReply reply_handler = [messenger, response_handle](
+  auto messenger_ptr = std::shared_ptr<FlutterDesktopMessenger>(
+      FlutterDesktopMessengerAddRef(messenger),
+      &FlutterDesktopMessengerRelease);
+  BinaryReply reply_handler = [messenger_ptr, response_handle](
                                   const uint8_t* reply,
                                   size_t reply_size) mutable {
+    // Note: This lambda can be called on any thread.
+    auto lock = FlutterDesktopMessengerScopedLock(
+        FlutterDesktopMessengerLock(messenger_ptr.get()),
+        &FlutterDesktopMessengerUnlock);
+    if (!FlutterDesktopMessengerIsAvailable(messenger_ptr.get())) {
+      // Drop reply if it comes in after the engine is destroyed.
+      return;
+    }
     if (!response_handle) {
       std::cerr << "Error: Response can be set only once. Ignoring "
                    "duplicate response."
                 << std::endl;
       return;
     }
-    FlutterDesktopMessengerSendResponse(messenger, response_handle, reply,
-                                        reply_size);
+    FlutterDesktopMessengerSendResponse(messenger_ptr.get(), response_handle,
+                                        reply, reply_size);
     // The engine frees the response handle once
     // FlutterDesktopSendMessageResponse is called.
     response_handle = nullptr;
@@ -195,9 +211,32 @@ bool TextureRegistrarImpl::MarkTextureFrameAvailable(int64_t texture_id) {
       texture_registrar_ref_, texture_id);
 }
 
+void TextureRegistrarImpl::UnregisterTexture(int64_t texture_id,
+                                             std::function<void()> callback) {
+  if (callback == nullptr) {
+    FlutterDesktopTextureRegistrarUnregisterExternalTexture(
+        texture_registrar_ref_, texture_id, nullptr, nullptr);
+    return;
+  }
+
+  struct Captures {
+    std::function<void()> callback;
+  };
+  auto captures = new Captures();
+  captures->callback = std::move(callback);
+  FlutterDesktopTextureRegistrarUnregisterExternalTexture(
+      texture_registrar_ref_, texture_id,
+      [](void* opaque) {
+        auto captures = reinterpret_cast<Captures*>(opaque);
+        captures->callback();
+        delete captures;
+      },
+      captures);
+}
+
 bool TextureRegistrarImpl::UnregisterTexture(int64_t texture_id) {
-  return FlutterDesktopTextureRegistrarUnregisterExternalTexture(
-      texture_registrar_ref_, texture_id);
+  UnregisterTexture(texture_id, nullptr);
+  return true;
 }
 
 }  // namespace flutter

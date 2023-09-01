@@ -31,12 +31,14 @@
 #include "ax_fragment_root_win.h"
 #include "ax_platform_node_delegate.h"
 #include "ax_platform_node_delegate_utils_win.h"
+#include "ax_platform_node_textprovider_win.h"
 #include "shellscalingapi.h"
 #include "uia_registrar_win.h"
 
 #include "base/logging.h"
 #include "base/win/atl_module.h"
 #include "base/win/display.h"
+#include "flutter/fml/platform/win/wstring_conversion.h"
 #include "gfx/geometry/rect_conversions.h"
 
 // From ax.constants.mojom
@@ -962,7 +964,7 @@ IFACEMETHODIMP AXPlatformNodeWin::get_accDefaultAction(VARIANT var_id,
     return S_FALSE;
   }
 
-  *def_action = ::SysAllocString(base::UTF16ToWide(action_verb).c_str());
+  *def_action = ::SysAllocString(fml::Utf16ToWideString(action_verb).c_str());
   BASE_DCHECK(def_action);
   return S_OK;
 }
@@ -1017,6 +1019,14 @@ IFACEMETHODIMP AXPlatformNodeWin::get_accName(VARIANT var_id, BSTR* name_bstr) {
 
   bool has_name = target->HasStringAttribute(ax::mojom::StringAttribute::kName);
   std::u16string name = target->GetNameAsString16();
+
+  // Simply appends the tooltip, if any, to the end of the MSAA name.
+  const std::u16string tooltip =
+      target->GetString16Attribute(ax::mojom::StringAttribute::kTooltip);
+  if (!tooltip.empty()) {
+    AppendTextToString(tooltip, &name);
+  }
+
   auto status = GetData().GetImageAnnotationStatus();
   switch (status) {
     case ax::mojom::ImageAnnotationStatus::kNone:
@@ -1045,7 +1055,7 @@ IFACEMETHODIMP AXPlatformNodeWin::get_accName(VARIANT var_id, BSTR* name_bstr) {
   if (name.empty() && !has_name)
     return S_FALSE;
 
-  *name_bstr = ::SysAllocString(base::UTF16ToWide(name).c_str());
+  *name_bstr = ::SysAllocString(fml::Utf16ToWideString(name).c_str());
   return S_OK;
 }
 
@@ -1056,7 +1066,17 @@ IFACEMETHODIMP AXPlatformNodeWin::get_accParent(IDispatch** disp_parent) {
     (*disp_parent)->AddRef();
     return S_OK;
   }
-
+  IRawElementProviderFragmentRoot* root;
+  if (SUCCEEDED(get_FragmentRoot(&root))) {
+    gfx::NativeViewAccessible parent;
+    if (SUCCEEDED(root->QueryInterface(IID_PPV_ARGS(&parent)))) {
+      if (parent && parent != GetNativeViewAccessible()) {
+        *disp_parent = parent;
+        parent->AddRef();
+        return S_OK;
+      }
+    }
+  }
   return S_FALSE;
 }
 
@@ -1730,7 +1750,7 @@ IFACEMETHODIMP AXPlatformNodeWin::SetValue(LPCWSTR value) {
 
   AXActionData data;
   data.action = ax::mojom::Action::kSetValue;
-  data.value = base::UTF16ToUTF8(base::WideToUTF16(value));
+  data.value = base::UTF16ToUTF8(fml::WideStringToUtf16(value));
   if (GetDelegate()->AccessibilityPerformAction(data))
     return S_OK;
   return E_FAIL;
@@ -2113,20 +2133,20 @@ HRESULT AXPlatformNodeWin::GetPropertyValueImpl(PROPERTYID property_id,
   switch (property_id) {
     case UIA_AriaPropertiesPropertyId:
       result->vt = VT_BSTR;
-      result->bstrVal =
-          ::SysAllocString(base::UTF16ToWide(ComputeUIAProperties()).c_str());
+      result->bstrVal = ::SysAllocString(
+          fml::Utf16ToWideString(ComputeUIAProperties()).c_str());
       break;
 
     case UIA_AriaRolePropertyId:
       result->vt = VT_BSTR;
       result->bstrVal =
-          ::SysAllocString(base::UTF16ToWide(UIAAriaRole()).c_str());
+          ::SysAllocString(fml::Utf16ToWideString(UIAAriaRole()).c_str());
       break;
 
     case UIA_AutomationIdPropertyId:
       V_VT(result) = VT_BSTR;
       V_BSTR(result) = ::SysAllocString(
-          base::UTF16ToWide(GetDelegate()->GetAuthorUniqueId()).c_str());
+          fml::Utf16ToWideString(GetDelegate()->GetAuthorUniqueId()).c_str());
       break;
 
     case UIA_ClassNamePropertyId:
@@ -2295,8 +2315,8 @@ HRESULT AXPlatformNodeWin::GetPropertyValueImpl(PROPERTYID property_id,
       std::u16string localized_control_type = GetRoleDescription();
       if (!localized_control_type.empty()) {
         result->vt = VT_BSTR;
-        result->bstrVal =
-            ::SysAllocString(base::UTF16ToWide(localized_control_type).c_str());
+        result->bstrVal = ::SysAllocString(
+            fml::Utf16ToWideString(localized_control_type).c_str());
       }
       // If a role description has not been provided, leave as VT_EMPTY.
       // UIA core handles Localized Control type for some built-in types and
@@ -2447,7 +2467,7 @@ HRESULT AXPlatformNodeWin::GetPropertyValueImpl(PROPERTYID property_id,
       if (!localized_landmark_type.empty()) {
         result->vt = VT_BSTR;
         result->bstrVal = ::SysAllocString(
-            base::UTF16ToWide(localized_landmark_type).c_str());
+            fml::Utf16ToWideString(localized_landmark_type).c_str());
       }
       break;
     }
@@ -2455,6 +2475,19 @@ HRESULT AXPlatformNodeWin::GetPropertyValueImpl(PROPERTYID property_id,
     case UIA_ExpandCollapseExpandCollapseStatePropertyId:
       result->vt = VT_I4;
       result->intVal = static_cast<int>(ComputeExpandCollapseState());
+      break;
+
+    case UIA_ToggleToggleStatePropertyId: {
+      ToggleState state;
+      get_ToggleState(&state);
+      result->vt = VT_I4;
+      result->lVal = state;
+      break;
+    }
+
+    case UIA_ValueValuePropertyId:
+      result->vt = VT_BSTR;
+      result->bstrVal = GetValueAttributeAsBstr(this);
       break;
 
     // Not currently implemented.
@@ -2493,7 +2526,7 @@ HRESULT AXPlatformNodeWin::GetPropertyValueImpl(PROPERTYID property_id,
     // convention here and when we fire events via ::NotifyWinEvent().
     result->vt = VT_BSTR;
     result->bstrVal = ::SysAllocString(
-        base::UTF16ToWide(base::NumberToString16(-GetUniqueId())).c_str());
+        fml::Utf16ToWideString(base::NumberToString16(-GetUniqueId())).c_str());
   }
 
   return S_OK;
@@ -3421,7 +3454,7 @@ int AXPlatformNodeWin::MSAARole() {
       return ROLE_SYSTEM_TITLEBAR;
 
     case ax::mojom::Role::kToggleButton:
-      return ROLE_SYSTEM_PUSHBUTTON;
+      return ROLE_SYSTEM_CHECKBUTTON;
 
     case ax::mojom::Role::kTextField:
     case ax::mojom::Role::kSearchBox:
@@ -5197,6 +5230,8 @@ std::optional<DWORD> AXPlatformNodeWin::MojoEventToMSAAEvent(
       return EVENT_OBJECT_SHOW;
     case ax::mojom::Event::kValueChanged:
       return EVENT_OBJECT_VALUECHANGE;
+    case ax::mojom::Event::kDocumentSelectionChanged:
+      return EVENT_OBJECT_TEXTSELECTIONCHANGED;
     default:
       return std::nullopt;
   }
@@ -5208,6 +5243,8 @@ std::optional<EVENTID> AXPlatformNodeWin::MojoEventToUIAEvent(
   switch (event) {
     case ax::mojom::Event::kAlert:
       return UIA_SystemAlertEventId;
+    case ax::mojom::Event::kDocumentSelectionChanged:
+      return UIA_Text_TextChangedEventId;
     case ax::mojom::Event::kFocus:
     case ax::mojom::Event::kFocusContext:
     case ax::mojom::Event::kFocusAfterMenuClose:
@@ -5229,7 +5266,6 @@ std::optional<EVENTID> AXPlatformNodeWin::MojoEventToUIAEvent(
   }
 }
 
-// static
 std::optional<PROPERTYID> AXPlatformNodeWin::MojoEventToUIAProperty(
     ax::mojom::Event event) {
   switch (event) {
@@ -5244,6 +5280,11 @@ std::optional<PROPERTYID> AXPlatformNodeWin::MojoEventToUIAProperty(
     case ax::mojom::Event::kSelectionAdd:
     case ax::mojom::Event::kSelectionRemove:
       return UIA_SelectionItemIsSelectedPropertyId;
+    case ax::mojom::Event::kValueChanged:
+      if (SupportsToggle(GetData().role)) {
+        return UIA_ToggleToggleStatePropertyId;
+      }
+      return std::nullopt;
     default:
       return std::nullopt;
   }
@@ -5278,7 +5319,7 @@ BSTR AXPlatformNodeWin::GetValueAttributeAsBstr(AXPlatformNodeWin* target) {
     value_text = base::NumberToString16(red * 100 / 255) + u"% red " +
                  base::NumberToString16(green * 100 / 255) + u"% green " +
                  base::NumberToString16(blue * 100 / 255) + u"% blue";
-    BSTR value = ::SysAllocString(base::UTF16ToWide(value_text).c_str());
+    BSTR value = ::SysAllocString(fml::Utf16ToWideString(value_text).c_str());
     BASE_DCHECK(value);
     return value;
   }
@@ -5289,7 +5330,7 @@ BSTR AXPlatformNodeWin::GetValueAttributeAsBstr(AXPlatformNodeWin* target) {
   if (target->GetData().role == ax::mojom::Role::kRootWebArea ||
       target->GetData().role == ax::mojom::Role::kWebArea) {
     result = base::UTF8ToUTF16(target->GetDelegate()->GetTreeData().url);
-    BSTR value = ::SysAllocString(base::UTF16ToWide(result).c_str());
+    BSTR value = ::SysAllocString(fml::Utf16ToWideString(result).c_str());
     BASE_DCHECK(value);
     return value;
   }
@@ -5299,7 +5340,7 @@ BSTR AXPlatformNodeWin::GetValueAttributeAsBstr(AXPlatformNodeWin* target) {
   //
   if (target->GetData().role == ax::mojom::Role::kLink) {
     result = target->GetString16Attribute(ax::mojom::StringAttribute::kUrl);
-    BSTR value = ::SysAllocString(base::UTF16ToWide(result).c_str());
+    BSTR value = ::SysAllocString(fml::Utf16ToWideString(result).c_str());
     BASE_DCHECK(value);
     return value;
   }
@@ -5314,7 +5355,7 @@ BSTR AXPlatformNodeWin::GetValueAttributeAsBstr(AXPlatformNodeWin* target) {
     if (target->GetFloatAttribute(ax::mojom::FloatAttribute::kValueForRange,
                                   &fval)) {
       result = base::NumberToString16(fval);
-      BSTR value = ::SysAllocString(base::UTF16ToWide(result).c_str());
+      BSTR value = ::SysAllocString(fml::Utf16ToWideString(result).c_str());
       BASE_DCHECK(value);
       return value;
     }
@@ -5323,7 +5364,7 @@ BSTR AXPlatformNodeWin::GetValueAttributeAsBstr(AXPlatformNodeWin* target) {
   if (result.empty() && target->IsRichTextField())
     result = target->GetInnerText();
 
-  BSTR value = ::SysAllocString(base::UTF16ToWide(result).c_str());
+  BSTR value = ::SysAllocString(fml::Utf16ToWideString(result).c_str());
   BASE_DCHECK(value);
   return value;
 }
@@ -5336,7 +5377,7 @@ HRESULT AXPlatformNodeWin::GetStringAttributeAsBstr(
   if (!GetString16Attribute(attribute, &str))
     return S_FALSE;
 
-  *value_bstr = ::SysAllocString(base::UTF16ToWide(str).c_str());
+  *value_bstr = ::SysAllocString(fml::Utf16ToWideString(str).c_str());
   BASE_DCHECK(*value_bstr);
 
   return S_OK;
@@ -5344,7 +5385,7 @@ HRESULT AXPlatformNodeWin::GetStringAttributeAsBstr(
 
 HRESULT AXPlatformNodeWin::GetNameAsBstr(BSTR* value_bstr) const {
   std::u16string str = GetNameAsString16();
-  *value_bstr = ::SysAllocString(base::UTF16ToWide(str).c_str());
+  *value_bstr = ::SysAllocString(fml::Utf16ToWideString(str).c_str());
   BASE_DCHECK(*value_bstr);
   return S_OK;
 }
@@ -5382,7 +5423,7 @@ AXPlatformNodeWin* AXPlatformNodeWin::GetTargetFromChildID(
 
   AXPlatformNodeBase* base =
       FromNativeViewAccessible(node->GetNativeViewAccessible());
-  if (base && !IsDescendant(base))
+  if (base && !base->IsDescendantOf(this))
     base = nullptr;
 
   return static_cast<AXPlatformNodeWin*>(base);
@@ -5454,14 +5495,14 @@ BSTR AXPlatformNodeWin::GetFontNameAttributeAsBSTR() const {
   const std::u16string string =
       GetInheritedString16Attribute(ax::mojom::StringAttribute::kFontFamily);
 
-  return ::SysAllocString(base::UTF16ToWide(string).c_str());
+  return ::SysAllocString(fml::Utf16ToWideString(string).c_str());
 }
 
 BSTR AXPlatformNodeWin::GetStyleNameAttributeAsBSTR() const {
   std::u16string style_name =
       GetDelegate()->GetStyleNameAttributeAsLocalizedString();
 
-  return ::SysAllocString(base::UTF16ToWide(style_name).c_str());
+  return ::SysAllocString(fml::Utf16ToWideString(style_name).c_str());
 }
 
 TextDecorationLineStyle AXPlatformNodeWin::GetUIATextDecorationStyle(
@@ -5574,6 +5615,14 @@ AXPlatformNodeWin::GetPatternProviderFactoryMethod(PATTERNID pattern_id) {
       }
       break;
 
+    case UIA_TextEditPatternId:
+    case UIA_TextPatternId:
+      if (IsText() || IsTextField() ||
+          data.role == ax::mojom::Role::kRootWebArea) {
+        return &AXPlatformNodeTextProviderWin::CreateIUnknown;
+      }
+      break;
+
     case UIA_TogglePatternId:
       if (SupportsToggle(data.role)) {
         return &PatternProvider<IToggleProvider>;
@@ -5665,6 +5714,30 @@ AXPlatformNodeWin* AXPlatformNodeWin::GetFirstTextOnlyDescendant() {
       return descendant;
   }
   return nullptr;
+}
+
+bool AXPlatformNodeWin::IsDescendantOf(AXPlatformNode* ancestor) const {
+  if (!ancestor) {
+    return false;
+  }
+
+  if (AXPlatformNodeBase::IsDescendantOf(ancestor)) {
+    return true;
+  }
+
+  // Test if the ancestor is an IRawElementProviderFragmentRoot and if it
+  // matches this node's root fragment.
+  IRawElementProviderFragmentRoot* root;
+  if (SUCCEEDED(
+          const_cast<AXPlatformNodeWin*>(this)->get_FragmentRoot(&root))) {
+    AXPlatformNodeWin* root_win;
+    if (SUCCEEDED(root->QueryInterface(__uuidof(AXPlatformNodeWin),
+                                       reinterpret_cast<void**>(&root_win)))) {
+      return ancestor == static_cast<AXPlatformNode*>(root_win);
+    }
+  }
+
+  return false;
 }
 
 }  // namespace ui

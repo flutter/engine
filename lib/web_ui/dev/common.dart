@@ -10,15 +10,15 @@ import 'browser.dart';
 import 'browser_lock.dart';
 import 'chrome.dart';
 import 'edge.dart';
+import 'environment.dart';
+import 'felt_config.dart';
 import 'firefox.dart';
-import 'safari_ios.dart';
 import 'safari_macos.dart';
 
 /// The port number for debugging.
 const int kDevtoolsPort = 12345;
 const int kMaxScreenshotWidth = 1024;
 const int kMaxScreenshotHeight = 1024;
-const double kMaxDiffRateFailure = 0.28 / 100; // 0.28%
 
 abstract class PlatformBinding {
   static PlatformBinding get instance {
@@ -32,12 +32,15 @@ abstract class PlatformBinding {
       return LinuxPlatformBinding();
     }
     if (io.Platform.isMacOS) {
-      return MacPlatformBinding();
+      if (environment.isMacosArm) {
+        return MacArmPlatformBinding();
+      }
+      return Macx64PlatformBinding();
     }
     if (io.Platform.isWindows) {
       return WindowsPlatformBinding();
     }
-    throw '${io.Platform.operatingSystem} is not supported';
+    throw UnsupportedError('${io.Platform.operatingSystem} is not supported');
   }
 
   String getChromeBuild(ChromeLock chromeLock);
@@ -63,11 +66,11 @@ class WindowsPlatformBinding implements PlatformBinding {
 
   @override
   String getChromeDownloadUrl(String version) =>
-      'https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Win%2F$version%2Fchrome-win.zip?alt=media';
+      'https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Win_x64%2F$version%2Fchrome-win.zip?alt=media';
 
   @override
   String getChromeDriverDownloadUrl(String version) =>
-      'https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Win%2F$version%2Fchromedriver_win32.zip?alt=media';
+      'https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Win_x64%2F$version%2Fchromedriver_win32.zip?alt=media';
 
   @override
   String getChromeExecutablePath(io.Directory versionDir) =>
@@ -141,19 +144,16 @@ class LinuxPlatformBinding implements PlatformBinding {
       throw UnsupportedError('Edge is not supported on Linux');
 }
 
-class MacPlatformBinding implements PlatformBinding {
-  @override
-  String getChromeBuild(ChromeLock chromeLock) {
-    return chromeLock.mac;
-  }
+abstract class MacPlatformBinding implements PlatformBinding {
+  String get chromePlatformString;
 
   @override
   String getChromeDownloadUrl(String version) =>
-      '$_kBaseDownloadUrl/Mac%2F$version%2Fchrome-mac.zip?alt=media';
+      '$_kBaseDownloadUrl/$chromePlatformString%2F$version%2Fchrome-mac.zip?alt=media';
 
   @override
   String getChromeDriverDownloadUrl(String version) =>
-      '$_kBaseDownloadUrl/Mac%2F$version%2Fchromedriver_mac64.zip?alt=media';
+      '$_kBaseDownloadUrl/$chromePlatformString%2F$version%2Fchromedriver_mac64.zip?alt=media';
 
   @override
   String getChromeExecutablePath(io.Directory versionDir) => path.join(
@@ -187,6 +187,26 @@ class MacPlatformBinding implements PlatformBinding {
   @override
   String getCommandToRunEdge() =>
       throw UnimplementedError('Tests for Edge are not implemented for MacOS.');
+}
+
+class MacArmPlatformBinding extends MacPlatformBinding {
+  @override
+  String get chromePlatformString => 'Mac_Arm';
+
+  @override
+  String getChromeBuild(ChromeLock chromeLock) {
+    return chromeLock.macArm;
+  }
+}
+
+class Macx64PlatformBinding extends MacPlatformBinding {
+  @override
+  String get chromePlatformString => 'Mac';
+
+  @override
+  String getChromeBuild(ChromeLock chromeLock) {
+    return chromeLock.mac;
+  }
 }
 
 class BrowserInstallation {
@@ -231,31 +251,30 @@ const String kChrome = 'chrome';
 const String kEdge = 'edge';
 const String kFirefox = 'firefox';
 const String kSafari = 'safari';
-const String kSafariIos = 'ios-safari';
 
 const List<String> kAllBrowserNames = <String>[
   kChrome,
   kEdge,
   kFirefox,
   kSafari,
-  kSafariIos,
 ];
 
 /// Creates an environment for a browser.
 ///
 /// The [browserName] matches the browser name passed as the `--browser` option.
-BrowserEnvironment getBrowserEnvironment(String browserName) {
+BrowserEnvironment getBrowserEnvironment(
+  BrowserName browserName, {
+  required bool enableWasmGC,
+  required bool useDwarf,
+}) {
   switch (browserName) {
-    case kChrome:
-      return ChromeEnvironment();
-    case kEdge:
+    case BrowserName.chrome:
+      return ChromeEnvironment(enableWasmGC: enableWasmGC, useDwarf: useDwarf);
+    case BrowserName.edge:
       return EdgeEnvironment();
-    case kFirefox:
+    case BrowserName.firefox:
       return FirefoxEnvironment();
-    case kSafari:
+    case BrowserName.safari:
       return SafariMacOsEnvironment();
-    case kSafariIos:
-      return SafariIosEnvironment();
   }
-  throw UnsupportedError('Browser $browserName is not supported.');
 }

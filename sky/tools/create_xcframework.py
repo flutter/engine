@@ -4,29 +4,35 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-
-
-
-
 import argparse
-import errno
 import os
 import shutil
 import subprocess
 import sys
 
+
 def main():
   parser = argparse.ArgumentParser(
-      description='Creates an XCFramework consisting of the specified universal frameworks')
+      description='Creates an XCFramework consisting of the specified universal frameworks'
+  )
 
-  parser.add_argument('--frameworks',
-    nargs='+', help='The framework paths used to create the XCFramework.', required=True)
-  parser.add_argument('--name', help='Name of the XCFramework', type=str, required=True)
-  parser.add_argument('--location', help='Output directory', type=str, required=True)
+  parser.add_argument(
+      '--frameworks',
+      nargs='+',
+      help='The framework paths used to create the XCFramework.',
+      required=True
+  )
+  parser.add_argument(
+      '--name', help='Name of the XCFramework', type=str, required=True
+  )
+  parser.add_argument(
+      '--location', help='Output directory', type=str, required=True
+  )
 
   args = parser.parse_args()
 
   create_xcframework(args.location, args.name, args.frameworks)
+
 
 def create_xcframework(location, name, frameworks):
   output_dir = os.path.abspath(location)
@@ -39,11 +45,9 @@ def create_xcframework(location, name, frameworks):
     # Remove old xcframework.
     shutil.rmtree(output_xcframework)
 
-  # xcrun xcodebuild -create-xcframework -framework foo/baz.framework -framework bar/baz.framework -output output/
-  command = ['xcrun',
-    'xcodebuild',
-    '-quiet',
-    '-create-xcframework']
+  # xcrun xcodebuild -create-xcframework -framework foo/baz.framework \
+  #                  -framework bar/baz.framework -output output/
+  command = ['xcrun', 'xcodebuild', '-quiet', '-create-xcframework']
 
   for framework in frameworks:
     command.extend(['-framework', os.path.abspath(framework)])
@@ -51,6 +55,7 @@ def create_xcframework(location, name, frameworks):
   command.extend(['-output', output_xcframework])
 
   subprocess.check_call(command, stdout=open(os.devnull, 'w'))
+
 
 if __name__ == '__main__':
   sys.exit(main())

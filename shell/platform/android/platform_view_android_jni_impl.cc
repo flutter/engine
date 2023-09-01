@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/android/platform_view_android_jni_impl.h"
 
+#include <android/hardware_buffer_jni.h>
 #include <android/native_window_jni.h>
 #include <dlfcn.h>
 #include <jni.h>
@@ -11,10 +12,12 @@
 #include <sstream>
 #include <utility>
 
+#include "flutter/shell/platform/android/ndk_helpers.h"
+#include "include/android/SkImageAndroid.h"
 #include "unicode/uchar.h"
 
 #include "flutter/assets/directory_asset_bundle.h"
-#include "flutter/common/settings.h"
+#include "flutter/common/constants.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/native_library.h"
@@ -25,12 +28,13 @@
 #include "flutter/lib/ui/plugins/callback_cache.h"
 #include "flutter/runtime/dart_service_isolate.h"
 #include "flutter/shell/common/run_configuration.h"
-#include "flutter/shell/platform/android/android_external_texture_gl.h"
 #include "flutter/shell/platform/android/android_shell_holder.h"
 #include "flutter/shell/platform/android/apk_asset_provider.h"
 #include "flutter/shell/platform/android/flutter_main.h"
+#include "flutter/shell/platform/android/hardware_buffer_external_texture_gl.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/platform_view_android.h"
+#include "flutter/shell/platform/android/surface_texture_external_texture_gl.h"
 
 #define ANDROID_SHELL_HOLDER \
   (reinterpret_cast<AndroidShellHolder*>(shell_holder))
@@ -47,7 +51,18 @@ static fml::jni::ScopedJavaGlobalRef<jclass>* g_java_weak_reference_class =
 
 static fml::jni::ScopedJavaGlobalRef<jclass>* g_texture_wrapper_class = nullptr;
 
+static fml::jni::ScopedJavaGlobalRef<jclass>* g_image_texture_entry_class =
+    nullptr;
+
+static fml::jni::ScopedJavaGlobalRef<jclass>* g_image_class = nullptr;
+
+static fml::jni::ScopedJavaGlobalRef<jclass>* g_hardware_buffer_class = nullptr;
+
 static fml::jni::ScopedJavaGlobalRef<jclass>* g_java_long_class = nullptr;
+
+static fml::jni::ScopedJavaGlobalRef<jclass>* g_bitmap_class = nullptr;
+
+static fml::jni::ScopedJavaGlobalRef<jclass>* g_bitmap_config_class = nullptr;
 
 // Called By Native
 
@@ -78,6 +93,8 @@ static jmethodID g_update_semantics_method = nullptr;
 
 static jmethodID g_update_custom_accessibility_actions_method = nullptr;
 
+static jmethodID g_get_scaled_font_size_method = nullptr;
+
 static jmethodID g_on_first_frame_method = nullptr;
 
 static jmethodID g_on_engine_restart_method = nullptr;
@@ -100,6 +117,14 @@ static jmethodID g_get_transform_matrix_method = nullptr;
 
 static jmethodID g_detach_from_gl_context_method = nullptr;
 
+static jmethodID g_acquire_latest_image_method = nullptr;
+
+static jmethodID g_image_get_hardware_buffer_method = nullptr;
+
+static jmethodID g_image_close_method = nullptr;
+
+static jmethodID g_hardware_buffer_close_method = nullptr;
+
 static jmethodID g_compute_platform_resolved_locale_method = nullptr;
 
 static jmethodID g_request_dart_deferred_library_method = nullptr;
@@ -114,6 +139,12 @@ static jmethodID g_on_display_overlay_surface_method = nullptr;
 static jmethodID g_overlay_surface_id_method = nullptr;
 
 static jmethodID g_overlay_surface_surface_method = nullptr;
+
+static jmethodID g_bitmap_create_bitmap_method = nullptr;
+
+static jmethodID g_bitmap_copy_pixels_from_buffer_method = nullptr;
+
+static jmethodID g_bitmap_config_value_of = nullptr;
 
 // Mutators
 static fml::jni::ScopedJavaGlobalRef<jclass>* g_mutators_stack_class = nullptr;
@@ -241,20 +272,17 @@ static void RunBundleAndSnapshotFromLibrary(JNIEnv* env,
                                             jstring jLibraryUrl,
                                             jobject jAssetManager,
                                             jobject jEntrypointArgs) {
-  auto asset_manager = std::make_shared<flutter::AssetManager>();
-
-  asset_manager->PushBack(std::make_unique<flutter::APKAssetProvider>(
-      env,                                             // jni environment
-      jAssetManager,                                   // asset manager
-      fml::jni::JavaStringToString(env, jBundlePath))  // apk asset dir
+  auto apk_asset_provider = std::make_unique<flutter::APKAssetProvider>(
+      env,                                            // jni environment
+      jAssetManager,                                  // asset manager
+      fml::jni::JavaStringToString(env, jBundlePath)  // apk asset dir
   );
-
   auto entrypoint = fml::jni::JavaStringToString(env, jEntrypoint);
   auto libraryUrl = fml::jni::JavaStringToString(env, jLibraryUrl);
   auto entrypoint_args = fml::jni::StringListToVector(env, jEntrypointArgs);
 
-  ANDROID_SHELL_HOLDER->Launch(asset_manager, entrypoint, libraryUrl,
-                               entrypoint_args);
+  ANDROID_SHELL_HOLDER->Launch(std::move(apk_asset_provider), entrypoint,
+                               libraryUrl, entrypoint_args);
 }
 
 static jobject LookupCallbackInformation(JNIEnv* env,
@@ -328,9 +356,17 @@ static void SetViewportMetrics(JNIEnv* env,
       displayFeaturesBounds,
       displayFeaturesType,
       displayFeaturesState,
+      0,  // Display ID
   };
 
-  ANDROID_SHELL_HOLDER->GetPlatformView()->SetViewportMetrics(metrics);
+  ANDROID_SHELL_HOLDER->GetPlatformView()->SetViewportMetrics(
+      kFlutterImplicitViewId, metrics);
+}
+
+static void UpdateDisplayMetrics(JNIEnv* env,
+                                 jobject jcaller,
+                                 jlong shell_holder) {
+  ANDROID_SHELL_HOLDER->UpdateDisplayMetrics();
 }
 
 static jobject GetBitmap(JNIEnv* env, jobject jcaller, jlong shell_holder) {
@@ -340,70 +376,31 @@ static jobject GetBitmap(JNIEnv* env, jobject jcaller, jlong shell_holder) {
     return nullptr;
   }
 
-  const SkISize& frame_size = screenshot.frame_size;
-  jsize pixels_size = frame_size.width() * frame_size.height();
-  jintArray pixels_array = env->NewIntArray(pixels_size);
-  if (pixels_array == nullptr) {
-    return nullptr;
-  }
-
-  jint* pixels = env->GetIntArrayElements(pixels_array, nullptr);
-  if (pixels == nullptr) {
-    return nullptr;
-  }
-
-  auto* pixels_src = static_cast<const int32_t*>(screenshot.data->data());
-
-  // Our configuration of Skia does not support rendering to the
-  // BitmapConfig.ARGB_8888 format expected by android.graphics.Bitmap.
-  // Convert from kRGBA_8888 to kBGRA_8888 (equivalent to ARGB_8888).
-  for (int i = 0; i < pixels_size; i++) {
-    int32_t src_pixel = pixels_src[i];
-    uint8_t* src_bytes = reinterpret_cast<uint8_t*>(&src_pixel);
-    std::swap(src_bytes[0], src_bytes[2]);
-    pixels[i] = src_pixel;
-  }
-
-  env->ReleaseIntArrayElements(pixels_array, pixels, 0);
-
-  jclass bitmap_class = env->FindClass("android/graphics/Bitmap");
-  if (bitmap_class == nullptr) {
-    return nullptr;
-  }
-
-  jmethodID create_bitmap = env->GetStaticMethodID(
-      bitmap_class, "createBitmap",
-      "([IIILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;");
-  if (create_bitmap == nullptr) {
-    return nullptr;
-  }
-
-  jclass bitmap_config_class = env->FindClass("android/graphics/Bitmap$Config");
-  if (bitmap_config_class == nullptr) {
-    return nullptr;
-  }
-
-  jmethodID bitmap_config_value_of = env->GetStaticMethodID(
-      bitmap_config_class, "valueOf",
-      "(Ljava/lang/String;)Landroid/graphics/Bitmap$Config;");
-  if (bitmap_config_value_of == nullptr) {
-    return nullptr;
-  }
-
   jstring argb = env->NewStringUTF("ARGB_8888");
   if (argb == nullptr) {
     return nullptr;
   }
 
   jobject bitmap_config = env->CallStaticObjectMethod(
-      bitmap_config_class, bitmap_config_value_of, argb);
+      g_bitmap_config_class->obj(), g_bitmap_config_value_of, argb);
   if (bitmap_config == nullptr) {
     return nullptr;
   }
 
-  return env->CallStaticObjectMethod(bitmap_class, create_bitmap, pixels_array,
-                                     frame_size.width(), frame_size.height(),
-                                     bitmap_config);
+  auto bitmap = env->CallStaticObjectMethod(
+      g_bitmap_class->obj(), g_bitmap_create_bitmap_method,
+      screenshot.frame_size.width(), screenshot.frame_size.height(),
+      bitmap_config);
+
+  fml::jni::ScopedJavaLocalRef<jobject> buffer(
+      env,
+      env->NewDirectByteBuffer(const_cast<uint8_t*>(screenshot.data->bytes()),
+                               screenshot.data->size()));
+
+  env->CallVoidMethod(bitmap, g_bitmap_copy_pixels_from_buffer_method,
+                      buffer.obj());
+
+  return bitmap;
 }
 
 static void DispatchPlatformMessage(JNIEnv* env,
@@ -497,12 +494,15 @@ static void RegisterTexture(JNIEnv* env,
   );
 }
 
-static void MarkTextureFrameAvailable(JNIEnv* env,
-                                      jobject jcaller,
-                                      jlong shell_holder,
-                                      jlong texture_id) {
-  ANDROID_SHELL_HOLDER->GetPlatformView()->MarkTextureFrameAvailable(
-      static_cast<int64_t>(texture_id));
+static void RegisterImageTexture(JNIEnv* env,
+                                 jobject jcaller,
+                                 jlong shell_holder,
+                                 jlong texture_id,
+                                 jobject image_texture_entry) {
+  ANDROID_SHELL_HOLDER->GetPlatformView()->RegisterImageTexture(
+      static_cast<int64_t>(texture_id),                                 //
+      fml::jni::ScopedJavaGlobalRef<jobject>(env, image_texture_entry)  //
+  );
 }
 
 static void UnregisterTexture(JNIEnv* env,
@@ -510,6 +510,14 @@ static void UnregisterTexture(JNIEnv* env,
                               jlong shell_holder,
                               jlong texture_id) {
   ANDROID_SHELL_HOLDER->GetPlatformView()->UnregisterTexture(
+      static_cast<int64_t>(texture_id));
+}
+
+static void MarkTextureFrameAvailable(JNIEnv* env,
+                                      jobject jcaller,
+                                      jlong shell_holder,
+                                      jlong texture_id) {
+  ANDROID_SHELL_HOLDER->GetPlatformView()->MarkTextureFrameAvailable(
       static_cast<int64_t>(texture_id));
 }
 
@@ -540,6 +548,13 @@ static void NotifyLowMemoryWarning(JNIEnv* env,
                                    jobject obj,
                                    jlong shell_holder) {
   ANDROID_SHELL_HOLDER->NotifyLowMemoryWarning();
+}
+
+static void SetIsRenderingToImageView(JNIEnv* env,
+                                      jobject jcaller,
+                                      jlong shell_holder,
+                                      bool value) {
+  ANDROID_SHELL_HOLDER->SetIsRenderingToImageView(value);
 }
 
 static jboolean FlutterTextUtilsIsEmoji(JNIEnv* env,
@@ -573,7 +588,7 @@ static jboolean FlutterTextUtilsIsRegionalIndicator(JNIEnv* env,
 }
 
 static void LoadLoadingUnitFailure(intptr_t loading_unit_id,
-                                   std::string message,
+                                   const std::string& message,
                                    bool transient) {
   // TODO(garyq): Implement
 }
@@ -701,6 +716,11 @@ bool RegisterApi(JNIEnv* env) {
           .signature = "(J)V",
           .fnPtr = reinterpret_cast<void*>(&NotifyLowMemoryWarning),
       },
+      {
+          .name = "nativeSetIsRenderingToImageView",
+          .signature = "(JZ)V",
+          .fnPtr = reinterpret_cast<void*>(&SetIsRenderingToImageView),
+      },
 
       // Start of methods from FlutterView
       {
@@ -765,6 +785,12 @@ bool RegisterApi(JNIEnv* env) {
           .fnPtr = reinterpret_cast<void*>(&RegisterTexture),
       },
       {
+          .name = "nativeRegisterImageTexture",
+          .signature = "(JJLjava/lang/ref/"
+                       "WeakReference;)V",
+          .fnPtr = reinterpret_cast<void*>(&RegisterImageTexture),
+      },
+      {
           .name = "nativeMarkTextureFrameAvailable",
           .signature = "(JJ)V",
           .fnPtr = reinterpret_cast<void*>(&MarkTextureFrameAvailable),
@@ -827,6 +853,11 @@ bool RegisterApi(JNIEnv* env) {
           .signature = "(ILjava/lang/String;Z)V",
           .fnPtr = reinterpret_cast<void*>(&DeferredComponentInstallFailure),
       },
+      {
+          .name = "nativeUpdateDisplayMetrics",
+          .signature = "(J)V",
+          .fnPtr = reinterpret_cast<void*>(&UpdateDisplayMetrics),
+      },
   };
 
   if (env->RegisterNatives(g_flutter_jni_class->obj(), flutter_jni_methods,
@@ -873,6 +904,14 @@ bool RegisterApi(JNIEnv* env) {
 
   if (g_handle_platform_message_response_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate handlePlatformMessageResponse method";
+    return false;
+  }
+
+  g_get_scaled_font_size_method = env->GetMethodID(
+      g_flutter_jni_class->obj(), "getScaledFontSize", "(FI)F");
+
+  if (g_get_scaled_font_size_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate FlutterJNI#getScaledFontSize method";
     return false;
   }
 
@@ -945,6 +984,43 @@ bool RegisterApi(JNIEnv* env) {
   if (g_overlay_surface_surface_method == nullptr) {
     FML_LOG(ERROR)
         << "Could not locate FlutterOverlaySurface#getSurface() method";
+    return false;
+  }
+
+  g_bitmap_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
+      env, env->FindClass("android/graphics/Bitmap"));
+  if (g_bitmap_class->is_null()) {
+    FML_LOG(ERROR) << "Could not locate Bitmap Class";
+    return false;
+  }
+
+  g_bitmap_create_bitmap_method = env->GetStaticMethodID(
+      g_bitmap_class->obj(), "createBitmap",
+      "(IILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;");
+  if (g_bitmap_create_bitmap_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate Bitmap.createBitmap method";
+    return false;
+  }
+
+  g_bitmap_copy_pixels_from_buffer_method = env->GetMethodID(
+      g_bitmap_class->obj(), "copyPixelsFromBuffer", "(Ljava/nio/Buffer;)V");
+  if (g_bitmap_copy_pixels_from_buffer_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate Bitmap.copyPixelsFromBuffer method";
+    return false;
+  }
+
+  g_bitmap_config_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
+      env, env->FindClass("android/graphics/Bitmap$Config"));
+  if (g_bitmap_config_class->is_null()) {
+    FML_LOG(ERROR) << "Could not locate Bitmap.Config Class";
+    return false;
+  }
+
+  g_bitmap_config_value_of = env->GetStaticMethodID(
+      g_bitmap_config_class->obj(), "valueOf",
+      "(Ljava/lang/String;)Landroid/graphics/Bitmap$Config;");
+  if (g_bitmap_config_value_of == nullptr) {
+    FML_LOG(ERROR) << "Could not locate Bitmap.Config.valueOf method";
     return false;
   }
 
@@ -1106,6 +1182,64 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     FML_LOG(ERROR) << "Could not locate detachFromGlContext method";
     return false;
   }
+  g_image_texture_entry_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
+      env, env->FindClass("io/flutter/view/TextureRegistry$ImageTextureEntry"));
+  if (g_image_texture_entry_class->is_null()) {
+    FML_LOG(ERROR) << "Could not locate ImageTextureEntry class";
+    return false;
+  }
+
+  g_acquire_latest_image_method =
+      env->GetMethodID(g_image_texture_entry_class->obj(), "acquireLatestImage",
+                       "()Landroid/media/Image;");
+  if (g_acquire_latest_image_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate acquireLatestImage on "
+                      "ImageTextureEntry class";
+    return false;
+  }
+
+  g_image_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
+      env, env->FindClass("android/media/Image"));
+  if (g_image_texture_entry_class->is_null()) {
+    FML_LOG(ERROR) << "Could not locate Image class";
+    return false;
+  }
+
+  // Ensure we don't have any pending exceptions.
+  FML_CHECK(fml::jni::CheckException(env));
+
+  g_image_get_hardware_buffer_method =
+      env->GetMethodID(g_image_class->obj(), "getHardwareBuffer",
+                       "()Landroid/hardware/HardwareBuffer;");
+
+  if (g_image_get_hardware_buffer_method == nullptr) {
+    // Continue on as this method may not exist at API <= 29.
+    fml::jni::ClearException(env, true);
+  }
+
+  g_image_close_method = env->GetMethodID(g_image_class->obj(), "close", "()V");
+
+  if (g_image_close_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate close on Image class";
+    return false;
+  }
+
+  // Ensure we don't have any pending exceptions.
+  FML_CHECK(fml::jni::CheckException(env));
+  g_hardware_buffer_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
+      env, env->FindClass("android/hardware/HardwareBuffer"));
+
+  if (!g_hardware_buffer_class->is_null()) {
+    g_hardware_buffer_close_method =
+        env->GetMethodID(g_hardware_buffer_class->obj(), "close", "()V");
+    if (g_hardware_buffer_close_method == nullptr) {
+      // Continue on as this class may not exist at API <= 26.
+      fml::jni::ClearException(env, true);
+    }
+  } else {
+    // Continue on as this class may not exist at API <= 26.
+    fml::jni::ClearException(env, true);
+  }
 
   g_compute_platform_resolved_locale_method = env->GetMethodID(
       g_flutter_jni_class->obj(), "computePlatformResolvedLocale",
@@ -1135,7 +1269,7 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
 }
 
 PlatformViewAndroidJNIImpl::PlatformViewAndroidJNIImpl(
-    fml::jni::JavaObjectWeakGlobalRef java_object)
+    const fml::jni::JavaObjectWeakGlobalRef& java_object)
     : java_object_(java_object) {}
 
 PlatformViewAndroidJNIImpl::~PlatformViewAndroidJNIImpl() = default;
@@ -1143,7 +1277,7 @@ PlatformViewAndroidJNIImpl::~PlatformViewAndroidJNIImpl() = default;
 void PlatformViewAndroidJNIImpl::FlutterViewHandlePlatformMessage(
     std::unique_ptr<flutter::PlatformMessage> message,
     int responseId) {
-  // Called from the ui thread.
+  // Called from any thread.
   JNIEnv* env = fml::jni::AttachCurrentThread();
 
   auto java_object = java_object_.get(env);
@@ -1163,7 +1297,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewHandlePlatformMessage(
     fml::MallocMapping mapping = message->releaseData();
     env->CallVoidMethod(java_object.obj(), g_handle_platform_message_method,
                         java_channel.obj(), message_array.obj(), responseId,
-                        mapping.Release());
+                        reinterpret_cast<jlong>(mapping.Release()));
   } else {
     env->CallVoidMethod(java_object.obj(), g_handle_platform_message_method,
                         java_channel.obj(), nullptr, responseId, nullptr);
@@ -1201,6 +1335,23 @@ void PlatformViewAndroidJNIImpl::FlutterViewHandlePlatformMessageResponse(
   }
 
   FML_CHECK(fml::jni::CheckException(env));
+}
+
+double PlatformViewAndroidJNIImpl::FlutterViewGetScaledFontSize(
+    double font_size,
+    int configuration_id) const {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  auto java_object = java_object_.get(env);
+  if (java_object.is_null()) {
+    return -3;
+  }
+
+  const jfloat scaledSize =
+      env->CallFloatMethod(java_object.obj(), g_get_scaled_font_size_method,
+                           (jfloat)font_size, (jint)configuration_id);
+  FML_CHECK(fml::jni::CheckException(env));
+  return (double)scaledSize;
 }
 
 void PlatformViewAndroidJNIImpl::FlutterViewUpdateSemantics(
@@ -1322,18 +1473,6 @@ void PlatformViewAndroidJNIImpl::SurfaceTextureUpdateTexImage(
   FML_CHECK(fml::jni::CheckException(env));
 }
 
-// The bounds we set for the canvas are post composition.
-// To fill the canvas we need to ensure that the transformation matrix
-// on the `SurfaceTexture` will be scaled to fill. We rescale and preseve
-// the scaled aspect ratio.
-SkSize ScaleToFill(float scaleX, float scaleY) {
-  const double epsilon = std::numeric_limits<double>::epsilon();
-  // scaleY is negative.
-  const double minScale = fmin(scaleX, fabs(scaleY));
-  const double rescale = 1.0f / (minScale + epsilon);
-  return SkSize::Make(scaleX * rescale, scaleY * rescale);
-}
-
 void PlatformViewAndroidJNIImpl::SurfaceTextureGetTransformMatrix(
     JavaLocalRef surface_texture,
     SkMatrix& transform) {
@@ -1358,12 +1497,34 @@ void PlatformViewAndroidJNIImpl::SurfaceTextureGetTransformMatrix(
   FML_CHECK(fml::jni::CheckException(env));
 
   float* m = env->GetFloatArrayElements(transformMatrix.obj(), nullptr);
-  float scaleX = m[0], scaleY = m[5];
-  const SkSize scaled = ScaleToFill(scaleX, scaleY);
+
+  // SurfaceTexture 4x4 Column Major -> Skia 3x3 Row Major
+
+  // SurfaceTexture 4x4 (Column Major):
+  // | m[0] m[4] m[ 8] m[12] |
+  // | m[1] m[5] m[ 9] m[13] |
+  // | m[2] m[6] m[10] m[14] |
+  // | m[3] m[7] m[11] m[15] |
+
+  // According to Android documentation, the 4x4 matrix returned should be used
+  // with texture coordinates in the form (s, t, 0, 1). Since the z component is
+  // always 0.0, we are free to ignore any element that multiplies with the z
+  // component. Converting this to a 3x3 matrix is easy:
+
+  // SurfaceTexture 3x3 (Column Major):
+  // | m[0] m[4] m[12] |
+  // | m[1] m[5] m[13] |
+  // | m[3] m[7] m[15] |
+
+  // Skia (Row Major):
+  // | m[0] m[1] m[2] |
+  // | m[3] m[4] m[5] |
+  // | m[6] m[7] m[8] |
+
   SkScalar matrix3[] = {
-      scaled.fWidth, m[1],           m[2],   //
-      m[4],          scaled.fHeight, m[6],   //
-      m[8],          m[9],           m[10],  //
+      m[0], m[4], m[12],  //
+      m[1], m[5], m[13],  //
+      m[3], m[7], m[15],  //
   };
   env->ReleaseFloatArrayElements(transformMatrix.obj(), m, JNI_ABORT);
   transform.set9(matrix3);
@@ -1390,6 +1551,68 @@ void PlatformViewAndroidJNIImpl::SurfaceTextureDetachFromGLContext(
   FML_CHECK(fml::jni::CheckException(env));
 }
 
+JavaLocalRef PlatformViewAndroidJNIImpl::ImageTextureEntryAcquireLatestImage(
+    JavaLocalRef image_texture_entry) {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  if (image_texture_entry.is_null()) {
+    // Return null.
+    return JavaLocalRef();
+  }
+
+  // Convert the weak reference to ImageTextureEntry into a strong local
+  // reference.
+  fml::jni::ScopedJavaLocalRef<jobject> image_texture_entry_local_ref(
+      env, env->CallObjectMethod(image_texture_entry.obj(),
+                                 g_java_weak_reference_get_method));
+
+  if (image_texture_entry_local_ref.is_null()) {
+    // Return null.
+    return JavaLocalRef();
+  }
+
+  JavaLocalRef r = JavaLocalRef(
+      env, env->CallObjectMethod(image_texture_entry_local_ref.obj(),
+                                 g_acquire_latest_image_method));
+  FML_CHECK(fml::jni::CheckException(env));
+  return r;
+}
+
+JavaLocalRef PlatformViewAndroidJNIImpl::ImageGetHardwareBuffer(
+    JavaLocalRef image) {
+  FML_CHECK(g_image_get_hardware_buffer_method != nullptr);
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+  if (image.is_null()) {
+    // Return null.
+    return JavaLocalRef();
+  }
+  JavaLocalRef r = JavaLocalRef(
+      env,
+      env->CallObjectMethod(image.obj(), g_image_get_hardware_buffer_method));
+  FML_CHECK(fml::jni::CheckException(env));
+  return r;
+}
+
+void PlatformViewAndroidJNIImpl::ImageClose(JavaLocalRef image) {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+  if (image.is_null()) {
+    return;
+  }
+  env->CallVoidMethod(image.obj(), g_image_close_method);
+  FML_CHECK(fml::jni::CheckException(env));
+}
+
+void PlatformViewAndroidJNIImpl::HardwareBufferClose(
+    JavaLocalRef hardware_buffer) {
+  FML_CHECK(g_hardware_buffer_close_method != nullptr);
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+  if (hardware_buffer.is_null()) {
+    return;
+  }
+  env->CallVoidMethod(hardware_buffer.obj(), g_hardware_buffer_close_method);
+  FML_CHECK(fml::jni::CheckException(env));
+}
+
 void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
     int view_id,
     int x,
@@ -1412,7 +1635,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
       mutators_stack.Begin();
   while (iter != mutators_stack.End()) {
     switch ((*iter)->GetType()) {
-      case transform: {
+      case kTransform: {
         const SkMatrix& matrix = (*iter)->GetMatrix();
         SkScalar matrix_array[9];
         matrix.get9(matrix_array);
@@ -1425,7 +1648,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
                             transformMatrix.obj());
         break;
       }
-      case clip_rect: {
+      case kClipRect: {
         const SkRect& rect = (*iter)->GetRect();
         env->CallVoidMethod(
             mutatorsStack, g_mutators_stack_push_cliprect_method,
@@ -1433,7 +1656,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
             static_cast<int>(rect.right()), static_cast<int>(rect.bottom()));
         break;
       }
-      case clip_rrect: {
+      case kClipRRect: {
         const SkRRect& rrect = (*iter)->GetRRect();
         const SkRect& rect = rrect.rect();
         const SkVector& upper_left = rrect.radii(SkRRect::kUpperLeft_Corner);
@@ -1449,14 +1672,16 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
         env->SetFloatArrayRegion(radiisArray.obj(), 0, 8, radiis);
         env->CallVoidMethod(
             mutatorsStack, g_mutators_stack_push_cliprrect_method,
-            (int)rect.left(), (int)rect.top(), (int)rect.right(),
-            (int)rect.bottom(), radiisArray.obj());
+            static_cast<int>(rect.left()), static_cast<int>(rect.top()),
+            static_cast<int>(rect.right()), static_cast<int>(rect.bottom()),
+            radiisArray.obj());
         break;
       }
       // TODO(cyanglaz): Implement other mutators.
       // https://github.com/flutter/flutter/issues/58426
-      case clip_path:
-      case opacity:
+      case kClipPath:
+      case kOpacity:
+      case kBackdropFilter:
         break;
     }
     ++iter;
@@ -1602,6 +1827,60 @@ double PlatformViewAndroidJNIImpl::GetDisplayRefreshRate() {
   }
 
   jfieldID fid = env->GetStaticFieldID(clazz.obj(), "refreshRateFPS", "F");
+  return static_cast<double>(env->GetStaticFloatField(clazz.obj(), fid));
+}
+
+double PlatformViewAndroidJNIImpl::GetDisplayWidth() {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  auto java_object = java_object_.get(env);
+  if (java_object.is_null()) {
+    return -1;
+  }
+
+  fml::jni::ScopedJavaLocalRef<jclass> clazz(
+      env, env->GetObjectClass(java_object.obj()));
+  if (clazz.is_null()) {
+    return -1;
+  }
+
+  jfieldID fid = env->GetStaticFieldID(clazz.obj(), "displayWidth", "F");
+  return static_cast<double>(env->GetStaticFloatField(clazz.obj(), fid));
+}
+
+double PlatformViewAndroidJNIImpl::GetDisplayHeight() {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  auto java_object = java_object_.get(env);
+  if (java_object.is_null()) {
+    return -1;
+  }
+
+  fml::jni::ScopedJavaLocalRef<jclass> clazz(
+      env, env->GetObjectClass(java_object.obj()));
+  if (clazz.is_null()) {
+    return -1;
+  }
+
+  jfieldID fid = env->GetStaticFieldID(clazz.obj(), "displayHeight", "F");
+  return static_cast<double>(env->GetStaticFloatField(clazz.obj(), fid));
+}
+
+double PlatformViewAndroidJNIImpl::GetDisplayDensity() {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  auto java_object = java_object_.get(env);
+  if (java_object.is_null()) {
+    return -1;
+  }
+
+  fml::jni::ScopedJavaLocalRef<jclass> clazz(
+      env, env->GetObjectClass(java_object.obj()));
+  if (clazz.is_null()) {
+    return -1;
+  }
+
+  jfieldID fid = env->GetStaticFieldID(clazz.obj(), "displayDensity", "F");
   return static_cast<double>(env->GetStaticFloatField(clazz.obj(), fid));
 }
 

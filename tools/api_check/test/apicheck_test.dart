@@ -8,9 +8,10 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:apicheck/apicheck.dart';
 import 'package:litetest/litetest.dart';
+import 'package:path/path.dart' as path;
 
-main(List<String> arguments) {
-  if (arguments.length < 1) {
+void main(List<String> arguments) {
+  if (arguments.isEmpty) {
     print('usage: dart bin/apicheck.dart path/to/engine/src/flutter');
     exit(1);
   }
@@ -35,34 +36,30 @@ main(List<String> arguments) {
 /// CANNOT be removed without breaking backward compatibility, which we have
 /// never done. See the note at the top of `shell/platform/embedder/embedder.h`
 /// for further details.
-checkApiConsistency(String flutterRoot) {
+void checkApiConsistency(String flutterRoot) {
   test('AccessibilityFeatures enums match', () {
     // Dart values: _kFooBarIndex = 1 << N
-    List<String> uiFields = getDartClassFields(
-      sourcePath:'$flutterRoot/lib/ui/window.dart',
-      className:'AccessibilityFeatures',
-    );
-    List<String> webuiFields = getDartClassFields(
-      sourcePath:'$flutterRoot/lib/ui/window.dart',
-      className:'AccessibilityFeatures',
+    final List<String> uiFields = getDartClassFields(
+      sourcePath: path.join(flutterRoot, 'lib', 'ui', 'window.dart'),
+      className: 'AccessibilityFeatures',
     );
     // C values: kFlutterAccessibilityFeatureFooBar = 1 << N,
-    List<String> embedderEnumValues = getCppEnumValues(
-      sourcePath: '$flutterRoot/shell/platform/embedder/embedder.h',
+    final List<String> embedderEnumValues = getCppEnumValues(
+      sourcePath: path.join(flutterRoot, 'shell', 'platform', 'embedder', 'embedder.h'),
       enumName: 'FlutterAccessibilityFeature',
     );
     // C++ values: kFooBar = 1 << N,
-    List<String> internalEnumValues = getCppEnumClassValues(
-      sourcePath: '$flutterRoot/lib/ui/window/platform_configuration.h',
+    final List<String> internalEnumValues = getCppEnumClassValues(
+      sourcePath: path.join(flutterRoot, 'lib','ui', 'window', 'platform_configuration.h'),
       enumName: 'AccessibilityFeatureFlag',
     );
     // Java values: FOO_BAR(1 << N).
-    List<String> javaEnumValues = getJavaEnumValues(
-      sourcePath: '$flutterRoot/shell/platform/android/io/flutter/view/AccessibilityBridge.java',
+    final List<String> javaEnumValues = getJavaEnumValues(
+      sourcePath: path.join(flutterRoot, 'shell', 'platform', 'android', 'io',
+          'flutter', 'view', 'AccessibilityBridge.java'),
       enumName: 'AccessibilityFeature',
     ).map(allCapsToCamelCase).toList();
 
-    expect(webuiFields, uiFields);
     expect(embedderEnumValues, uiFields);
     expect(internalEnumValues, uiFields);
     expect(javaEnumValues, uiFields);
@@ -70,27 +67,28 @@ checkApiConsistency(String flutterRoot) {
 
   test('SemanticsAction enums match', () {
     // Dart values: _kFooBarIndex = 1 << N.
-    List<String> uiFields = getDartClassFields(
-      sourcePath:'$flutterRoot/lib/ui/semantics.dart',
-      className:'SemanticsAction',
+    final List<String> uiFields = getDartClassFields(
+      sourcePath: path.join(flutterRoot, 'lib', 'ui', 'semantics.dart'),
+      className: 'SemanticsAction',
     );
-    List<String> webuiFields = getDartClassFields(
-      sourcePath:'$flutterRoot/lib/ui/semantics.dart',
-      className:'SemanticsAction',
+    final List<String> webuiFields = getDartClassFields(
+      sourcePath: path.join(flutterRoot, 'lib', 'web_ui', 'lib', 'semantics.dart'),
+      className: 'SemanticsAction',
     );
     // C values: kFlutterSemanticsActionFooBar = 1 << N.
-    List<String> embedderEnumValues = getCppEnumValues(
-      sourcePath: '$flutterRoot/shell/platform/embedder/embedder.h',
+    final List<String> embedderEnumValues = getCppEnumValues(
+      sourcePath: path.join(flutterRoot, 'shell', 'platform', 'embedder', 'embedder.h'),
       enumName: 'FlutterSemanticsAction',
     );
     // C++ values: kFooBar = 1 << N.
-    List<String> internalEnumValues = getCppEnumClassValues(
-      sourcePath: '$flutterRoot/lib/ui/semantics/semantics_node.h',
+    final List<String> internalEnumValues = getCppEnumClassValues(
+      sourcePath: path.join(flutterRoot, 'lib', 'ui', 'semantics', 'semantics_node.h'),
       enumName: 'SemanticsAction',
     );
     // Java values: FOO_BAR(1 << N).
-    List<String> javaEnumValues = getJavaEnumValues(
-      sourcePath: '$flutterRoot/shell/platform/android/io/flutter/view/AccessibilityBridge.java',
+    final List<String> javaEnumValues = getJavaEnumValues(
+      sourcePath: path.join(flutterRoot, 'shell', 'platform', 'android', 'io',
+          'flutter', 'view', 'AccessibilityBridge.java'),
       enumName: 'Action',
     ).map(allCapsToCamelCase).toList();
 
@@ -100,29 +98,57 @@ checkApiConsistency(String flutterRoot) {
     expect(javaEnumValues, uiFields);
   });
 
+  test('AppLifecycleState enums match', () {
+    // Dart values: _kFooBarIndex = 1 << N.
+    final List<String> uiFields = getDartClassFields(
+      sourcePath: path.join(flutterRoot, 'lib', 'ui', 'platform_dispatcher.dart'),
+      className: 'AppLifecycleState',
+    );
+    final List<String> webuiFields = getDartClassFields(
+      sourcePath: path.join(flutterRoot, 'lib', 'web_ui', 'lib', 'platform_dispatcher.dart'),
+      className: 'AppLifecycleState',
+    );
+    // C++ values: kFooBar = 1 << N.
+    final List<String> internalEnumValues = getCppEnumClassValues(
+      sourcePath: path.join(flutterRoot, 'shell', 'platform', 'common', 'app_lifecycle_state.h'),
+      enumName: 'AppLifecycleState',
+    );
+    // Java values: FOO_BAR(1 << N).
+    final List<String> javaEnumValues = getJavaEnumValues(
+      sourcePath: path.join(flutterRoot, 'shell', 'platform', 'android', 'io',
+          'flutter', 'embedding', 'engine', 'systemchannels', 'LifecycleChannel.java'),
+      enumName: 'AppLifecycleState',
+    ).map(allCapsToCamelCase).toList();
+
+    expect(webuiFields, uiFields);
+    expect(internalEnumValues, uiFields);
+    expect(javaEnumValues, uiFields);
+  });
+
   test('SemanticsFlag enums match', () {
     // Dart values: _kFooBarIndex = 1 << N.
-    List<String> uiFields = getDartClassFields(
-      sourcePath:'$flutterRoot/lib/ui/semantics.dart',
-      className:'SemanticsFlag',
+    final List<String> uiFields = getDartClassFields(
+      sourcePath: path.join(flutterRoot, 'lib', 'ui', 'semantics.dart'),
+      className: 'SemanticsFlag',
     );
-    List<String> webuiFields = getDartClassFields(
-      sourcePath:'$flutterRoot/lib/ui/semantics.dart',
-      className:'SemanticsFlag',
+    final List<String> webuiFields = getDartClassFields(
+      sourcePath: path.join(flutterRoot, 'lib', 'ui', 'semantics.dart'),
+      className: 'SemanticsFlag',
     );
     // C values: kFlutterSemanticsFlagFooBar = 1 << N.
-    List<String> embedderEnumValues = getCppEnumValues(
-      sourcePath: '$flutterRoot/shell/platform/embedder/embedder.h',
+    final List<String> embedderEnumValues = getCppEnumValues(
+      sourcePath: path.join(flutterRoot, 'shell', 'platform', 'embedder', 'embedder.h'),
       enumName: 'FlutterSemanticsFlag',
     );
     // C++ values: kFooBar = 1 << N.
-    List<String> internalEnumValues = getCppEnumClassValues(
-      sourcePath: '$flutterRoot/lib/ui/semantics/semantics_node.h',
+    final List<String> internalEnumValues = getCppEnumClassValues(
+      sourcePath: path.join(flutterRoot, 'lib', 'ui', 'semantics', 'semantics_node.h'),
       enumName: 'SemanticsFlags',
     );
     // Java values: FOO_BAR(1 << N).
-    List<String> javaEnumValues = getJavaEnumValues(
-      sourcePath: '$flutterRoot/shell/platform/android/io/flutter/view/AccessibilityBridge.java',
+    final List<String> javaEnumValues = getJavaEnumValues(
+      sourcePath: path.join(flutterRoot, 'shell', 'platform', 'android', 'io',
+          'flutter', 'view', 'AccessibilityBridge.java'),
       enumName: 'Flag',
     ).map(allCapsToCamelCase).toList();
 
@@ -135,8 +161,8 @@ checkApiConsistency(String flutterRoot) {
 
 /// Returns the CamelCase equivalent of an ALL_CAPS identifier.
 String allCapsToCamelCase(String identifier) {
-  StringBuffer buffer = StringBuffer();
-  for (String word in identifier.split('_')) {
+  final StringBuffer buffer = StringBuffer();
+  for (final String word in identifier.split('_')) {
     if (word.isNotEmpty) {
       buffer.write(word[0]);
     }
@@ -159,7 +185,7 @@ class NativeFunctionVisitor extends RecursiveAstVisitor<void> {
 
   @override
   void visitNativeFunctionBody(NativeFunctionBody node) {
-    MethodDeclaration? method = node.thisOrAncestorOfType<MethodDeclaration>();
+    final MethodDeclaration? method = node.thisOrAncestorOfType<MethodDeclaration>();
     if (method != null) {
       if (method.parameters != null) {
         check(method.toString(), method.parameters!);
@@ -167,9 +193,9 @@ class NativeFunctionVisitor extends RecursiveAstVisitor<void> {
       return;
     }
 
-    FunctionDeclaration? func = node.thisOrAncestorOfType<FunctionDeclaration>();
+    final FunctionDeclaration? func = node.thisOrAncestorOfType<FunctionDeclaration>();
     if (func != null) {
-      FunctionExpression funcExpr = func.functionExpression;
+      final FunctionExpression funcExpr = func.functionExpression;
       if (funcExpr.parameters != null) {
         check(func.toString(), funcExpr.parameters!);
       }
@@ -180,7 +206,7 @@ class NativeFunctionVisitor extends RecursiveAstVisitor<void> {
   }
 
   void check(String description, FormalParameterList parameters) {
-    for (FormalParameter parameter in parameters.parameters) {
+    for (final FormalParameter parameter in parameters.parameters) {
       TypeAnnotation? type;
       if (parameter is SimpleFormalParameter) {
         type = parameter.type;
@@ -188,7 +214,7 @@ class NativeFunctionVisitor extends RecursiveAstVisitor<void> {
         type = (parameter.parameter as SimpleFormalParameter).type;
       }
       if (type! is NamedType) {
-        String name = (type as NamedType).name.name;
+        final String name = (type as NamedType).name2.lexeme;
         if (type.question != null && simpleTypes.contains(name)) {
           errors.add(description);
           return;
@@ -200,7 +226,7 @@ class NativeFunctionVisitor extends RecursiveAstVisitor<void> {
 
 void checkNativeApi(String flutterRoot) {
   test('Native API does not pass nullable parameters of simple types', () {
-    NativeFunctionVisitor visitor = NativeFunctionVisitor();
+    final NativeFunctionVisitor visitor = NativeFunctionVisitor();
     visitUIUnits(flutterRoot, visitor);
     expect(visitor.errors, isEmpty);
   });

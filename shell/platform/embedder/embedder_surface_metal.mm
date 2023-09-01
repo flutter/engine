@@ -2,11 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <utility>
+
 #include "flutter/shell/platform/embedder/embedder_surface_metal.h"
 
 #include "flutter/fml/logging.h"
 #include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
-#import "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetal.h"
+#import "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
 FLUTTER_ASSERT_NOT_ARC
@@ -18,13 +20,14 @@ EmbedderSurfaceMetal::EmbedderSurfaceMetal(
     MetalDispatchTable metal_dispatch_table,
     std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder)
     : GPUSurfaceMetalDelegate(MTLRenderTargetType::kMTLTexture),
-      metal_dispatch_table_(metal_dispatch_table),
-      external_view_embedder_(external_view_embedder) {
-  main_context_ = [FlutterDarwinContextMetal createGrContext:(id<MTLDevice>)device
-                                                commandQueue:(id<MTLCommandQueue>)command_queue];
+      metal_dispatch_table_(std::move(metal_dispatch_table)),
+      external_view_embedder_(std::move(external_view_embedder)) {
+  main_context_ =
+      [FlutterDarwinContextMetalSkia createGrContext:(id<MTLDevice>)device
+                                        commandQueue:(id<MTLCommandQueue>)command_queue];
   resource_context_ =
-      [FlutterDarwinContextMetal createGrContext:(id<MTLDevice>)device
-                                    commandQueue:(id<MTLCommandQueue>)command_queue];
+      [FlutterDarwinContextMetalSkia createGrContext:(id<MTLDevice>)device
+                                        commandQueue:(id<MTLCommandQueue>)command_queue];
   valid_ = main_context_ && resource_context_;
 }
 
@@ -44,7 +47,8 @@ std::unique_ptr<Surface> EmbedderSurfaceMetal::CreateGPUSurface() API_AVAILABLE(
   }
 
   const bool render_to_surface = !external_view_embedder_;
-  auto surface = std::make_unique<GPUSurfaceMetalSkia>(this, main_context_, render_to_surface);
+  auto surface = std::make_unique<GPUSurfaceMetalSkia>(this, main_context_, MsaaSampleCount::kNone,
+                                                       render_to_surface);
 
   if (!surface->IsValid()) {
     return nullptr;

@@ -5,16 +5,18 @@
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 
 #include <memory>
+#include <utility>
 
 #include "flutter/fml/logging.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/contents_filter_input.h"
 #include "impeller/entity/contents/filters/inputs/filter_contents_filter_input.h"
+#include "impeller/entity/contents/filters/inputs/placeholder_filter_input.h"
 #include "impeller/entity/contents/filters/inputs/texture_filter_input.h"
 
 namespace impeller {
 
-FilterInput::Ref FilterInput::Make(Variant input) {
+FilterInput::Ref FilterInput::Make(Variant input, bool msaa_enabled) {
   if (auto filter = std::get_if<std::shared_ptr<FilterContents>>(&input)) {
     return std::static_pointer_cast<FilterInput>(
         std::shared_ptr<FilterContentsFilterInput>(
@@ -24,11 +26,16 @@ FilterInput::Ref FilterInput::Make(Variant input) {
   if (auto contents = std::get_if<std::shared_ptr<Contents>>(&input)) {
     return std::static_pointer_cast<FilterInput>(
         std::shared_ptr<ContentsFilterInput>(
-            new ContentsFilterInput(*contents)));
+            new ContentsFilterInput(*contents, msaa_enabled)));
   }
 
   if (auto texture = std::get_if<std::shared_ptr<Texture>>(&input)) {
     return Make(*texture, Matrix());
+  }
+
+  if (auto rect = std::get_if<Rect>(&input)) {
+    return std::shared_ptr<PlaceholderFilterInput>(
+        new PlaceholderFilterInput(*rect));
   }
 
   FML_UNREACHABLE();
@@ -37,7 +44,7 @@ FilterInput::Ref FilterInput::Make(Variant input) {
 FilterInput::Ref FilterInput::Make(std::shared_ptr<Texture> texture,
                                    Matrix local_transform) {
   return std::shared_ptr<TextureFilterInput>(
-      new TextureFilterInput(texture, local_transform));
+      new TextureFilterInput(std::move(texture), local_transform));
 }
 
 FilterInput::Vector FilterInput::Make(std::initializer_list<Variant> inputs) {
@@ -53,10 +60,26 @@ Matrix FilterInput::GetLocalTransform(const Entity& entity) const {
   return Matrix();
 }
 
+std::optional<Rect> FilterInput::GetLocalCoverage(const Entity& entity) const {
+  Entity local_entity = entity;
+  local_entity.SetTransformation(GetLocalTransform(entity));
+  return GetCoverage(local_entity);
+}
+
 Matrix FilterInput::GetTransform(const Entity& entity) const {
   return entity.GetTransformation() * GetLocalTransform(entity);
 }
 
+void FilterInput::PopulateGlyphAtlas(
+    const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
+    Scalar scale) {}
+
 FilterInput::~FilterInput() = default;
+
+bool FilterInput::IsLeaf() const {
+  return true;
+}
+
+void FilterInput::SetLeafInputs(const FilterInput::Vector& inputs) {}
 
 }  // namespace impeller

@@ -4,29 +4,29 @@
             "archives": [
                 {
                     "base_path": "out/host_debug/zip_archives/",
+                    "type": "gcs",
                     "include_paths": [
                         "out/host_debug/zip_archives/windows-x64/artifacts.zip",
                         "out/host_debug/zip_archives/windows-x64/windows-x64-embedder.zip",
-                        "out/host_debug/zip_archives/windows-x64-debug/windows-x64-flutter.zip",
-                        "out/host_debug/zip_archives/windows-x64/flutter-cpp-client-wrapper.zip",
                         "out/host_debug/zip_archives/windows-x64/font-subset.zip",
                         "out/host_debug/zip_archives/dart-sdk-windows-x64.zip",
-                        "out/host_debug/zip_archives/flutter-web-sdk-windows-x64.zip"
+                        "out/host_debug/zip_archives/windows-x64-debug/windows-x64-flutter.zip",
+                        "out/host_debug/zip_archives/windows-x64/flutter-cpp-client-wrapper.zip"
                     ],
-                    "name": "host_debug"
+                    "name": "host_debug",
+                    "realm": "production"
                 }
             ],
             "drone_dimensions": [
                 "device_type=none",
                 "os=Windows-10"
             ],
-            "gclient_custom_vars": {
+            "gclient_variables": {
                 "download_android_deps": false
             },
             "gn": [
                 "--runtime-mode",
                 "debug",
-                "--full-dart-sdk",
                 "--no-lto"
             ],
             "name": "host_debug",
@@ -39,13 +39,12 @@
                     "flutter/tools/font-subset",
                     "flutter/build/archives:dart_sdk_archive",
                     "flutter/shell/platform/windows/client_wrapper:client_wrapper_archive",
-                    "flutter/build/archives:windows_flutter",
-                    "flutter/build/archives:flutter_web_sdk"
+                    "flutter/build/archives:windows_flutter"
                 ]
             },
             "tests": [
                 {
-                    "language": "python",
+                    "language": "python3",
                     "name": "Host Tests for host_debug",
                     "parameters": [
                         "--variant",
@@ -53,8 +52,7 @@
                         "--type",
                         "engine"
                     ],
-                    "script": "flutter/testing/run_tests.py",
-                    "type": "local"
+                    "script": "flutter/testing/run_tests.py"
                 }
             ]
         },
@@ -62,17 +60,19 @@
             "archives": [
                 {
                     "base_path": "out/host_profile/zip_archives/",
+                    "type": "gcs",
                     "include_paths": [
                         "out/host_profile/zip_archives/windows-x64-profile/windows-x64-flutter.zip"
                     ],
-                    "name": "host_profile"
+                    "name": "host_profile",
+                    "realm": "production"
                 }
             ],
             "drone_dimensions": [
                 "device_type=none",
                 "os=Windows-10"
             ],
-            "gclient_custom_vars": {
+            "gclient_variables": {
                 "download_android_deps": false
             },
             "gn": [
@@ -88,24 +88,25 @@
                     "gen_snapshot",
                     "flutter/build/archives:windows_flutter"
                 ]
-            },
-            "tests": []
+            }
         },
         {
             "archives": [
                 {
                     "base_path": "out/host_release/zip_archives/",
+                    "type": "gcs",
                     "include_paths": [
                         "out/host_release/zip_archives/windows-x64-release/windows-x64-flutter.zip"
                     ],
-                    "name": "host_profile"
+                    "name": "host_release",
+                    "realm": "production"
                 }
             ],
             "drone_dimensions": [
                 "device_type=none",
                 "os=Windows-10"
             ],
-            "gclient_custom_vars": {
+            "gclient_variables": {
                 "download_android_deps": false
             },
             "generators": {},
@@ -122,8 +123,7 @@
                     "gen_snapshot",
                     "flutter/build/archives:windows_flutter"
                 ]
-            },
-            "tests": []
+            }
         }
     ]
 }

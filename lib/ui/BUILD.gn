@@ -5,9 +5,25 @@
 import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
 import("//flutter/impeller/tools/impeller.gni")
+import("//flutter/shell/config.gni")
 import("//flutter/testing/testing.gni")
 
 source_set("ui") {
+  cflags = [
+    # Dart gives us doubles. Skia and Impeller work in floats.
+    # If Dart gives us a double > FLT_MAX or < -FLT_MAX, implicit conversion
+    # will convert it to either inf/-inf or FLT_MAX/-FLT_MAX (undefined
+    # behavior). This can result in surprising and difficult to debug behavior
+    # for Flutter application developers, so it should be explicitly handled
+    # via SafeNarrow.
+    "-Wimplicit-float-conversion",
+  ]
+
+  if (is_win) {
+    # This causes build failures in third_party dependencies on Windows.
+    cflags += [ "-Wno-implicit-int-float-conversion" ]
+  }
+
   sources = [
     "compositing/scene.cc",
     "compositing/scene.h",
@@ -18,6 +34,7 @@ source_set("ui") {
     "dart_ui.cc",
     "dart_ui.h",
     "dart_wrapper.h",
+    "floating_point.h",
     "io_manager.cc",
     "io_manager.h",
     "isolate_name_server/isolate_name_server.cc",
@@ -30,6 +47,8 @@ source_set("ui") {
     "painting/codec.h",
     "painting/color_filter.cc",
     "painting/color_filter.h",
+    "painting/display_list_deferred_image_gpu_skia.cc",
+    "painting/display_list_deferred_image_gpu_skia.h",
     "painting/display_list_image_gpu.cc",
     "painting/display_list_image_gpu.h",
     "painting/engine_layer.cc",
@@ -51,10 +70,14 @@ source_set("ui") {
     "painting/image_encoding.cc",
     "painting/image_encoding.h",
     "painting/image_encoding_impl.h",
+    "painting/image_encoding_skia.cc",
+    "painting/image_encoding_skia.h",
     "painting/image_filter.cc",
     "painting/image_filter.h",
     "painting/image_generator.cc",
     "painting/image_generator.h",
+    "painting/image_generator_apng.cc",
+    "painting/image_generator_apng.h",
     "painting/image_generator_registry.cc",
     "painting/image_generator_registry.h",
     "painting/image_shader.cc",
@@ -122,6 +145,8 @@ source_set("ui") {
     "window/platform_message_response.h",
     "window/platform_message_response_dart.cc",
     "window/platform_message_response_dart.h",
+    "window/platform_message_response_dart_port.cc",
+    "window/platform_message_response_dart_port.h",
     "window/pointer_data.cc",
     "window/pointer_data.h",
     "window/pointer_data_packet.cc",
@@ -130,61 +155,81 @@ source_set("ui") {
     "window/pointer_data_packet_converter.h",
     "window/viewport_metrics.cc",
     "window/viewport_metrics.h",
-    "window/window.cc",
-    "window/window.h",
   ]
 
   public_configs = [ "//flutter:config" ]
 
   public_deps = [
     "//flutter/flow",
+    "//flutter/shell/common:display",
+    "//flutter/shell/common:platform_message_handler",
     "//flutter/third_party/txt",
   ]
 
   deps = [
     "//flutter/assets",
     "//flutter/common",
+    "//flutter/common/graphics",
     "//flutter/display_list",
     "//flutter/fml",
+    "//flutter/impeller/runtime_stage",
     "//flutter/runtime:dart_plugin_registrant",
     "//flutter/runtime:test_font",
     "//flutter/third_party/tonic",
     "//third_party/dart/runtime/bin:dart_io_api",
     "//third_party/rapidjson",
     "//third_party/skia",
+    "//third_party/zlib:zlib",
   ]
 
   if (impeller_supports_rendering) {
     sources += [
+      "painting/display_list_deferred_image_gpu_impeller.cc",
+      "painting/display_list_deferred_image_gpu_impeller.h",
       "painting/image_decoder_impeller.cc",
       "painting/image_decoder_impeller.h",
+      "painting/image_encoding_impeller.cc",
+      "painting/image_encoding_impeller.h",
     ]
 
-    deps += [ "//flutter/impeller" ]
+    deps += [
+      "//flutter/impeller",
+      "//flutter/impeller/display_list:skia_conversions",
+    ]
   }
 
   if (!defined(defines)) {
     defines = []
   }
-  if (flutter_enable_skshaper) {
-    defines += [ "FLUTTER_ENABLE_SKSHAPER" ]
-  }
-  if (flutter_always_use_skshaper) {
-    defines += [ "FLUTTER_ALWAYS_USE_SKSHAPER" ]
-  }
   if (is_win) {
     # Required for M_PI and others.
     defines += [ "_USE_MATH_DEFINES" ]
+  }
+  if (impeller_enable_3d) {
+    defines += [ "IMPELLER_ENABLE_3D" ]
+    sources += [
+      "painting/scene/scene_node.cc",
+      "painting/scene/scene_node.h",
+      "painting/scene/scene_shader.cc",
+      "painting/scene/scene_shader.h",
+    ]
+
+    deps += [ "//flutter/impeller/scene" ]
   }
 }
 
 if (enable_unittests) {
   test_fixtures("ui_unittests_fixtures") {
+    deps = [ "fixtures/shaders" ]
     dart_main = "fixtures/ui_test.dart"
     fixtures = [
       "fixtures/DashInNooglerHat.jpg",
+      "fixtures/DashInNooglerHat%20WithSpace.jpg",
+      "fixtures/DisplayP3Logo.jpg",
+      "fixtures/DisplayP3Logo.png",
       "fixtures/Horizontal.jpg",
       "fixtures/Horizontal.png",
+      "fixtures/heart_end.png",
       "fixtures/hello_loop_2.gif",
       "fixtures/hello_loop_2.webp",
       "fixtures/FontManifest.json",
@@ -220,18 +265,22 @@ if (enable_unittests) {
       "painting/image_dispose_unittests.cc",
       "painting/image_encoding_unittests.cc",
       "painting/image_generator_registry_unittests.cc",
+      "painting/paint_unittests.cc",
       "painting/path_unittests.cc",
       "painting/single_frame_codec_unittests.cc",
-      "painting/vertices_unittests.cc",
       "semantics/semantics_update_builder_unittests.cc",
       "window/platform_configuration_unittests.cc",
+      "window/platform_message_response_dart_port_unittests.cc",
+      "window/platform_message_response_dart_unittests.cc",
       "window/pointer_data_packet_converter_unittests.cc",
+      "window/pointer_data_packet_unittests.cc",
     ]
 
     deps = [
       ":ui",
       ":ui_unittests_fixtures",
       "//flutter/common",
+      "//flutter/impeller",
       "//flutter/lib/snapshot",
       "//flutter/shell/common:shell_test_fixture_sources",
       "//flutter/testing",
@@ -242,7 +291,7 @@ if (enable_unittests) {
     ]
 
     # TODO(https://github.com/flutter/flutter/issues/63837): This test is hard-coded to use a TestGLSurface so it cannot run on fuchsia.
-    if (!is_fuchsia) {
+    if (shell_enable_gl) {
       sources += [ "painting/image_decoder_unittests.cc" ]
 
       deps += [ "//flutter/testing:opengl" ]

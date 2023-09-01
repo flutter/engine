@@ -2,7 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:ffi' as ffi;
 import 'dart:io' as io;
+
 import 'package:path/path.dart' as pathlib;
 
 import 'exceptions.dart';
@@ -17,26 +19,29 @@ Environment? _environment;
 /// Contains various environment variables, such as common file paths and command-line options.
 class Environment {
   factory Environment() {
+    final bool isMacosArm = ffi.Abi.current() == ffi.Abi.macosArm64;
+    final io.File dartExecutable = io.File(io.Platform.resolvedExecutable);
     final io.File self = io.File.fromUri(io.Platform.script);
+
     final io.Directory engineSrcDir = self.parent.parent.parent.parent.parent;
     final io.Directory engineToolsDir =
         io.Directory(pathlib.join(engineSrcDir.path, 'flutter', 'tools'));
     final io.Directory outDir =
         io.Directory(pathlib.join(engineSrcDir.path, 'out'));
+    final io.Directory wasmReleaseOutDir =
+        io.Directory(pathlib.join(outDir.path, 'wasm_release'));
+    final io.Directory wasmProfileOutDir =
+        io.Directory(pathlib.join(outDir.path, 'wasm_profile'));
+    final io.Directory wasmDebugUnoptOutDir =
+        io.Directory(pathlib.join(outDir.path, 'wasm_debug_unopt'));
     final io.Directory hostDebugUnoptDir =
         io.Directory(pathlib.join(outDir.path, 'host_debug_unopt'));
-    final io.Directory canvasKitOutDir =
-        io.Directory(pathlib.join(outDir.path, 'wasm_debug'));
-    final io.Directory dartSdkDir =
-        io.Directory(pathlib.join(hostDebugUnoptDir.path, 'dart-sdk'));
+    final io.Directory dartSdkDir = dartExecutable.parent.parent;
     final io.Directory webUiRootDir = io.Directory(
         pathlib.join(engineSrcDir.path, 'flutter', 'lib', 'web_ui'));
 
     for (final io.Directory expectedDirectory in <io.Directory>[
       engineSrcDir,
-      outDir,
-      hostDebugUnoptDir,
-      dartSdkDir,
       webUiRootDir
     ]) {
       if (!expectedDirectory.existsSync()) {
@@ -44,31 +49,41 @@ class Environment {
       }
     }
 
+
     return Environment._(
       self: self,
+      isMacosArm: isMacosArm,
       webUiRootDir: webUiRootDir,
       engineSrcDir: engineSrcDir,
       engineToolsDir: engineToolsDir,
       outDir: outDir,
+      wasmReleaseOutDir: wasmReleaseOutDir,
+      wasmProfileOutDir: wasmProfileOutDir,
+      wasmDebugUnoptOutDir: wasmDebugUnoptOutDir,
       hostDebugUnoptDir: hostDebugUnoptDir,
-      canvasKitOutDir: canvasKitOutDir,
       dartSdkDir: dartSdkDir,
     );
   }
 
   Environment._({
     required this.self,
+    required this.isMacosArm,
     required this.webUiRootDir,
     required this.engineSrcDir,
     required this.engineToolsDir,
     required this.outDir,
+    required this.wasmReleaseOutDir,
+    required this.wasmProfileOutDir,
+    required this.wasmDebugUnoptOutDir,
     required this.hostDebugUnoptDir,
-    required this.canvasKitOutDir,
     required this.dartSdkDir,
   });
 
   /// The Dart script that's currently running.
   final io.File self;
+
+  /// Whether the environment is a macOS arm environment.
+  final bool isMacosArm;
 
   /// Path to the "web_ui" package sources.
   final io.Directory webUiRootDir;
@@ -84,11 +99,19 @@ class Environment {
   /// This is where you'll find the ninja output, such as the Dart SDK.
   final io.Directory outDir;
 
-  /// The "host_debug_unopt" build of the Dart SDK.
-  final io.Directory hostDebugUnoptDir;
+  /// The output directory for the wasm_release build.
+  ///
+  /// We build CanvasKit in release mode to reduce code size.
+  final io.Directory wasmReleaseOutDir;
 
-  /// The output directory for the build of CanvasKit.
-  final io.Directory canvasKitOutDir;
+  /// The output directory for the wasm_profile build.
+  final io.Directory wasmProfileOutDir;
+
+  /// The output directory for the wasm_debug build.
+  final io.Directory wasmDebugUnoptOutDir;
+
+  /// The output directory for the host_debug_unopt build.
+  final io.Directory hostDebugUnoptDir;
 
   /// The root of the Dart SDK.
   final io.Directory dartSdkDir;
@@ -96,8 +119,25 @@ class Environment {
   /// The "dart" executable file.
   String get dartExecutable => pathlib.join(dartSdkDir.path, 'bin', 'dart');
 
+  /// Path to dartaotruntime for running aot snapshots
+  String get dartAotRuntimePath => pathlib.join(dartSdkDir.path, 'bin', 'dartaotruntime');
+
   /// The "pub" executable file.
   String get pubExecutable => pathlib.join(dartSdkDir.path, 'bin', 'pub');
+
+  /// The path to dart2wasm pre-compiled snapshot
+  String get dart2wasmSnapshotPath => pathlib.join(dartSdkDir.path, 'bin', 'snapshots', 'dart2wasm_product.snapshot');
+
+  /// The path to dart2wasm.dart file
+  String get dart2wasmScriptPath => pathlib.join(
+    engineSrcDir.path,
+    'third_party',
+    'dart',
+    'pkg',
+    'dart2wasm',
+    'bin',
+    'dart2wasm.dart'
+  );
 
   /// Path to where github.com/flutter/engine is checked out inside the engine workspace.
   io.Directory get flutterDirectory =>
@@ -115,11 +155,16 @@ class Environment {
 
   /// Path to the "build" directory, generated by "package:build_runner".
   ///
-  /// This is where compiled output goes.
+  /// This is where compiled test output goes.
   io.Directory get webUiBuildDir => io.Directory(pathlib.join(
-        webUiRootDir.path,
-        'build',
+        outDir.path,
+        'web_tests',
       ));
+
+  io.Directory get webTestsArtifactsDir => io.Directory(pathlib.join(
+    webUiBuildDir.path,
+    'artifacts',
+  ));
 
   /// Path to the ".dart_tool" directory, generated by various Dart tools.
   io.Directory get webUiDartToolDir => io.Directory(pathlib.join(
@@ -167,13 +212,6 @@ class Environment {
   io.Directory get webUiTestResultsDirectory => io.Directory(pathlib.join(
         webUiDartToolDir.path,
         'test_results',
-      ));
-
-  /// Path to the screenshots taken by iOS simulator.
-  io.Directory get webUiSimulatorScreenshotsDirectory =>
-      io.Directory(pathlib.join(
-        webUiDartToolDir.path,
-        'ios_screenshots',
       ));
 
   /// Path to the script that clones the Flutter repo.

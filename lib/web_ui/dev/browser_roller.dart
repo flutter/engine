@@ -9,13 +9,13 @@ import 'package:http/http.dart';
 import 'package:path/path.dart' as path;
 
 import 'browser_lock.dart';
+import 'cipd.dart';
 import 'common.dart';
 import 'utils.dart';
 
 final ArgParser _argParser = ArgParser(allowTrailingOptions: false)
   ..addFlag(
     'dry-run',
-    defaultsTo: false,
     help: 'Whether or not to push changes to CIPD. When --dry-run is set, the '
           'script will download everything and attempt to prepare the bundle '
           'but will stop before publishing. When not set, the bundle will be '
@@ -24,7 +24,6 @@ final ArgParser _argParser = ArgParser(allowTrailingOptions: false)
   )..addFlag(
     'verbose',
     abbr: 'v',
-    defaultsTo: false,
     help: 'Enable verbose output.',
     negatable: false,
   );
@@ -84,16 +83,27 @@ void processArgs(ArgResults args) {
   verbose = args['verbose'] as bool;
 }
 
+class _Platform {
+  _Platform(this.os, this.arch, this.binding);
+
+  final String os;
+  final String arch;
+  final PlatformBinding binding;
+
+  String get name => '$os-$arch';
+}
+
 class _BrowserRoller {
   _BrowserRoller();
 
   final io.Directory _rollDir = io.Directory.systemTemp.createTempSync('browser-roll-');
 
-  final Map<String, PlatformBinding> _platformBindings = <String, PlatformBinding>{
-    'linux': LinuxPlatformBinding(),
-    'mac': MacPlatformBinding(),
-    'windows': WindowsPlatformBinding(),
-  };
+  final List<_Platform> _platforms = <_Platform>[
+    _Platform('linux', 'amd64', LinuxPlatformBinding()),
+    _Platform('mac', 'amd64', Macx64PlatformBinding()),
+    _Platform('mac', 'arm64', MacArmPlatformBinding()),
+    _Platform('windows', 'amd64', WindowsPlatformBinding()),
+  ];
 
   final BrowserLock _lock = BrowserLock();
 
@@ -106,11 +116,13 @@ class _BrowserRoller {
 
   // Roll Chromium and ChromeDriver for each of the Platforms.
   Future<void> roll() async {
-    for (final MapEntry<String, PlatformBinding> entry in _platformBindings.entries) {
-      final String platform = entry.key;
-      final PlatformBinding binding = entry.value;
-      await _rollChromium(platform, binding);
-      await _rollChromeDriver(platform, binding);
+    for (final _Platform platform in _platforms) {
+      await _rollChromium(platform);
+      await _rollChromeDriver(platform);
+      // For now, we only test Firefox on Linux.
+      if (platform.os == 'linux') {
+        await _rollFirefox(platform);
+      }
     }
     if (dryRun) {
       print('\nDry Run Done!\nNon-published roll artifacts kept here: ${_rollDir.path}\n');
@@ -122,46 +134,12 @@ class _BrowserRoller {
     }
   }
 
-  // Returns the contents for the CIPD config required to publish a new chromium package.
-  String _getCipdChromiumConfig({
-    required String package,
-    required String majorVersion,
-    required String buildId,
-    required String root,
-  }) {
-    return '''
-package: $package
-description: Chromium $majorVersion (build $buildId) used for testing
-preserve_writable: true
-root: $root
-data:
-  - dir: .
-''';
-  }
-
-  // Returns the contents for the CIPD config required to publish a new chromedriver package.
-  String _getCipdChromedriverConfig({
-    required String package,
-    required String majorVersion,
-    required String buildId,
-    required String root,
-  }) {
-    return '''
-package: $package
-description: Chromedriver for Chromium $majorVersion (build $buildId) used for testing
-preserve_writable: true
-root: $root
-data:
-  - dir: .
-''';
-  }
-
   // Download a file from the internet, and put it in a temporary location.
   Future<io.File> _downloadTemporaryFile(String url) async {
     // Use the hash of the Url to temporarily store a file under tmp
     final io.File downloadedFile = io.File(path.join(
         io.Directory.systemTemp.path,
-        'download_' + url.hashCode.toRadixString(16),
+        'download_${url.hashCode.toRadixString(16)}',
       ));
     vprint('  Downloading [$url] into [${downloadedFile.path}]');
     final StreamedResponse download = await _client.send(
@@ -186,14 +164,24 @@ data:
     await zipFile.delete();
   }
 
-  // Write String `contents` to a file in `path`.
-  //
-  // This is used to write CIPD config files to disk.
-  Future<io.File> _writeFile(String path, String contents) async {
-    vprint('  Writing file [$path]');
-    final io.File file = io.File(path, );
-    await file.writeAsString(contents);
-    return file;
+  // Uncompresses a `file` into a `destination` Directory (must exist).
+  Future<void> _uncompressAndDeleteFile(io.File tarFile, io.Directory destination) async {
+    vprint('  Uncompressing [${tarFile.path}] into [$destination]');
+    final io.ProcessResult unzipResult = await io.Process.run('tar', <String>[
+      '-x',
+      '-f',
+      tarFile.path,
+      '-C',
+      destination.path,
+    ]);
+
+    if (unzipResult.exitCode != 0) {
+      throw StateError(
+          'Failed to unzip the downloaded archive ${tarFile.path}.\n'
+          'The unzip process exited with code ${unzipResult.exitCode}.');
+    }
+    vprint('  Deleting [${tarFile.path}]');
+    await tarFile.delete();
   }
 
   // Locate the first subdirectory that contains more than one file under `root`.
@@ -218,72 +206,21 @@ data:
     return root;
   }
 
-  // Runs a CIPD command to upload a package defined by its `config` file.
-  Future<int> _uploadToCipd({
-    required io.File config,
-    required String version,
-    required String buildId,
-  }) {
-    final String cipdCommand = dryRun ? 'pkg-build' : 'create';
-    // CIPD won't fully shut up even in 'error' mode
-    final String logLevel = verbose ? 'debug' : 'warning';
-    vprint('  Running CIPD $cipdCommand');
-    return runProcess('cipd', <String>[
-      cipdCommand,
-      '--pkg-def',
-      path.basename(config.path),
-      '--json-output',
-      path.basenameWithoutExtension(config.path)+'.json',
-      '--log-level',
-      logLevel,
-      if (!dryRun) ...<String>[
-        '--tag',
-        'version:$version',
-        '--ref',
-        buildId,
-      ],
-      if (dryRun) ...<String>[
-        '--out',
-        path.basenameWithoutExtension(config.path)+'.zip',
-      ],
-    ], workingDirectory: _rollDir.path);
-  }
-
-  // Determine if a `package` tagged with version:`versionTag` already exists in CIPD.
-  Future<bool> _cipdKnowsPackageVersion({
-    required String package,
-    required String versionTag,
-  }) async {
-    // $ cipd search $package -tag version:$versionTag
-    // Instances:
-    //   $package:CIPD_PACKAGE_ID
-    // or:
-    // No matching instances.
-    final String logLevel = verbose ? 'debug' : 'warning';
-    vprint('  Searching for $package version:$versionTag in CIPD');
-    final String stdout = await evalProcess('cipd', <String>[
-      'search',
-      package,
-      '--tag',
-      'version:$versionTag',
-      '--log-level',
-      logLevel,
-    ], workingDirectory: _rollDir.path);
-
-    return stdout.contains('Instances:') && stdout.contains(package);
-  }
-
   // Downloads Chromium from the internet, packs it in the directory structure
   // that the LUCI script wants. The result of this will be then uploaded to CIPD.
-  Future<void> _rollChromium(String platform, PlatformBinding binding) async {
-    final String chromeBuild = binding.getChromeBuild(_lock.chromeLock);
+  Future<void> _rollChromium(_Platform platform) async {
+    final String chromeBuild = platform.binding.getChromeBuild(_lock.chromeLock);
     final String majorVersion = _lock.chromeLock.version;
-    final String url = binding.getChromeDownloadUrl(chromeBuild);
-    final String cipdPackageName = 'flutter_internal/browsers/chrome/$platform-amd64';
-    final io.Directory platformDir = io.Directory(path.join(_rollDir.path, platform));
-    print('\nRolling Chromium for $platform (version:$majorVersion, build $chromeBuild)');
+    final String url = platform.binding.getChromeDownloadUrl(chromeBuild);
+    final String cipdPackageName = 'flutter_internal/browsers/chrome/${platform.name}';
+    final io.Directory platformDir = io.Directory(path.join(_rollDir.path, platform.name));
+    print('\nRolling Chromium for ${platform.name} (version:$majorVersion, build $chromeBuild)');
     // Bail out if CIPD already has version:$majorVersion for this package!
-    if (!dryRun && await _cipdKnowsPackageVersion(package: cipdPackageName, versionTag: majorVersion)) {
+    if (!dryRun && await cipdKnowsPackageVersion(
+      package: cipdPackageName,
+      versionTag: majorVersion,
+      isVerbose: verbose
+    )) {
       print('  Skipping $cipdPackageName version:$majorVersion. Already uploaded to CIPD!');
       vprint('  Update  browser_lock.yaml  and use a different version value.');
       return;
@@ -298,7 +235,7 @@ data:
 
     late String relativePlatformDirPath;
     // Preserve the `chrome-mac` directory when bundling, but remove it for win and linux.
-    if (platform == 'Mac') {
+    if (platform.os == 'mac') {
       relativePlatformDirPath = path.relative(platformDir.path, from: _rollDir.path);
     } else {
       final io.Directory? actualContentRoot = await _locateContentRoot(platformDir);
@@ -306,30 +243,35 @@ data:
       relativePlatformDirPath = path.relative(actualContentRoot!.path, from: _rollDir.path);
     }
 
-    // Create the config manifest to upload to CIPD
-    final io.File cipdConfigFile = await _writeFile(
-        path.join(_rollDir.path, 'cipd.chromium.$platform.yaml'),
-        _getCipdChromiumConfig(
-            package: cipdPackageName,
-            majorVersion: majorVersion,
-            buildId: chromeBuild,
-            root: relativePlatformDirPath,
-        ));
-    // Run CIPD
-    await _uploadToCipd(config: cipdConfigFile, version: majorVersion, buildId: chromeBuild);
+    vprint('  Uploading Chromium (${platform.name}) to CIPD...');
+    await uploadDirectoryToCipd(
+      directory: _rollDir,
+      packageName: cipdPackageName,
+      configFileName: 'cipd.chromium.${platform.name}.yaml',
+      description: 'Chromium $majorVersion (build $chromeBuild) used for testing',
+      version: majorVersion,
+      buildId: chromeBuild,
+      root: relativePlatformDirPath,
+      isDryRun: dryRun,
+      isVerbose: verbose,
+    );
   }
 
   // Downloads Chromedriver from the internet, packs it in the directory structure
   // that the LUCI script wants. The result of this will be then uploaded to CIPD.
-  Future<void> _rollChromeDriver(String platform, PlatformBinding binding) async {
-    final String chromeBuild = binding.getChromeBuild(_lock.chromeLock);
+  Future<void> _rollChromeDriver(_Platform platform) async {
+    final String chromeBuild = platform.binding.getChromeBuild(_lock.chromeLock);
     final String majorVersion = _lock.chromeLock.version;
-    final String url = binding.getChromeDriverDownloadUrl(chromeBuild);
-    final String cipdPackageName = 'flutter_internal/browser-drivers/chrome/$platform-amd64';
-    final io.Directory platformDir = io.Directory(path.join(_rollDir.path, '${platform}_driver'));
-    print('\nRolling Chromedriver for $platform (version:$majorVersion, build $chromeBuild)');
+    final String url = platform.binding.getChromeDriverDownloadUrl(chromeBuild);
+    final String cipdPackageName = 'flutter_internal/browser-drivers/chrome/${platform.name}';
+    final io.Directory platformDir = io.Directory(path.join(_rollDir.path, '${platform.name}_driver'));
+    print('\nRolling Chromedriver for ${platform.os}-${platform.arch} (version:$majorVersion, build $chromeBuild)');
     // Bail out if CIPD already has version:$majorVersion for this package!
-    if (!dryRun && await _cipdKnowsPackageVersion(package: cipdPackageName, versionTag: majorVersion)) {
+    if (!dryRun && await cipdKnowsPackageVersion(
+      package: cipdPackageName,
+      versionTag: majorVersion,
+      isVerbose: verbose
+    )) {
       print('  Skipping $cipdPackageName version:$majorVersion. Already uploaded to CIPD!');
       vprint('  Update  browser_lock.yaml  and use a different version value.');
       return;
@@ -347,16 +289,62 @@ data:
     assert(actualContentRoot != null);
     final String relativePlatformDirPath = path.relative(actualContentRoot!.path, from: _rollDir.path);
 
-    // Create the config manifest to upload to CIPD
-    final io.File cipdConfigFile = await _writeFile(
-        path.join(_rollDir.path, 'cipd.chromedriver.$platform.yaml'),
-        _getCipdChromedriverConfig(
-            package: cipdPackageName,
-            majorVersion: majorVersion,
-            buildId: chromeBuild,
-            root: relativePlatformDirPath,
-        ));
-    // Run CIPD
-    await _uploadToCipd(config: cipdConfigFile, version: majorVersion, buildId: chromeBuild);
+    vprint('  Uploading Chromedriver (${platform.name}) to CIPD...');
+    await uploadDirectoryToCipd(
+      directory: _rollDir,
+      packageName: cipdPackageName,
+      configFileName: 'cipd.chromedriver.${platform.name}.yaml',
+      description: 'Chromedriver for Chromium $majorVersion (build $chromeBuild) used for testing',
+      version: majorVersion,
+      buildId: chromeBuild,
+      root: relativePlatformDirPath,
+      isDryRun: dryRun,
+      isVerbose: verbose,
+    );
+  }
+
+
+  // Downloads Firefox from the internet, packs it in the directory structure
+  // that the LUCI script wants. The result of this will be then uploaded to CIPD.
+  Future<void> _rollFirefox(_Platform platform) async {
+    final String version = _lock.firefoxLock.version;
+    final String url = platform.binding.getFirefoxDownloadUrl(version);
+    final String cipdPackageName = 'flutter_internal/browsers/firefox/${platform.name}';
+    final io.Directory platformDir = io.Directory(path.join(_rollDir.path, platform.name));
+    print('\nRolling Firefox for ${platform.name} (version:$version)');
+    // Bail out if CIPD already has version:$majorVersion for this package!
+    if (!dryRun && await cipdKnowsPackageVersion(
+      package: cipdPackageName,
+      versionTag: version,
+      isVerbose: verbose
+    )) {
+      print('  Skipping $cipdPackageName version:$version. Already uploaded to CIPD!');
+      vprint('  Update  browser_lock.yaml  and use a different version value.');
+      return;
+    }
+
+    await platformDir.create(recursive: true);
+    vprint('  Created target directory [${platformDir.path}]');
+
+    final io.File firefoxDownload = await _downloadTemporaryFile(url);
+
+    await _uncompressAndDeleteFile(firefoxDownload, platformDir);
+
+    final io.Directory? actualContentRoot = await _locateContentRoot(platformDir);
+    assert(actualContentRoot != null);
+    final String relativePlatformDirPath = path.relative(actualContentRoot!.path, from: _rollDir.path);
+
+    vprint('  Uploading Firefox (${platform.name}) to CIPD...');
+    await uploadDirectoryToCipd(
+      directory: _rollDir,
+      packageName: cipdPackageName,
+      configFileName: 'cipd.firefox.${platform.name}.yaml',
+      description: 'Firefox $version used for testing',
+      version: version,
+      buildId: version,
+      root: relativePlatformDirPath,
+      isDryRun: dryRun,
+      isVerbose: verbose,
+    );
   }
 }

@@ -14,6 +14,7 @@ namespace tonic {
 
 class DartByteData {
  public:
+  static const size_t kExternalSizeThreshold;
   static Dart_Handle Create(const void* data, size_t length);
 
   explicit DartByteData(Dart_Handle list);
@@ -42,10 +43,15 @@ class DartByteData {
 
 template <>
 struct DartConverter<DartByteData> {
+  using FfiType = Dart_Handle;
+
   static void SetReturnValue(Dart_NativeArguments args, DartByteData val);
   static DartByteData FromArguments(Dart_NativeArguments args,
                                     int index,
                                     Dart_Handle& exception);
+
+  static DartByteData FromFfi(FfiType val) { return DartByteData(val); }
+  static FfiType ToFfi(DartByteData val) { return val.dart_handle(); }
 };
 
 }  // namespace tonic

@@ -2,9 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import '../../engine.dart' show registerHotRestartListener;
+import '../dom.dart';
 import '../embedder.dart';
 
 // TODO(yjbanov): this is a hack we use to compute ideographic baseline; this
@@ -15,11 +14,11 @@ import '../embedder.dart';
 //                anything as of this writing.
 const double baselineRatioHack = 1.1662499904632568;
 
-/// Hosts ruler DOM elements in a hidden container under a `root` [html.Node].
+/// Hosts ruler DOM elements in a hidden container under a `root` [DomNode].
 ///
-/// The `root` [html.Node] is optional. Defaults to [flutterViewEmbedder.glassPaneShadow].
+/// The `root` [DomNode] is optional. Defaults to [flutterViewEmbedder.glassPaneShadow].
 class RulerHost {
-  RulerHost({html.Node? root}) {
+  RulerHost({DomNode? root}) {
     _rulerHost.style
       ..position = 'fixed'
       ..visibility = 'hidden'
@@ -29,7 +28,11 @@ class RulerHost {
       ..width = '0'
       ..height = '0';
 
-    (root ?? flutterViewEmbedder.glassPaneShadow!.node).append(_rulerHost);
+    if (root == null) {
+      flutterViewEmbedder.glassPaneShadow.appendChild(_rulerHost);
+    } else {
+      root.appendChild(_rulerHost);
+    }
     registerHotRestartListener(dispose);
   }
 
@@ -39,7 +42,7 @@ class RulerHost {
   /// rulers would be attached to the `<body>` element polluting the element
   /// tree and making it hard to navigate. It does not serve any functional
   /// purpose.
-  final html.Element _rulerHost = html.Element.tag('flt-ruler-host');
+  final DomElement _rulerHost = createDomElement('flt-ruler-host');
 
   /// Releases the resources used by this [RulerHost].
   ///
@@ -49,7 +52,7 @@ class RulerHost {
   }
 
   /// Adds an element used for measuring text as a child of [_rulerHost].
-  void addElement(html.HtmlElement element) {
+  void addElement(DomHTMLElement element) {
     _rulerHost.append(element);
   }
 }
@@ -68,9 +71,9 @@ double _lastWidth = -1;
 /// [start] (inclusive) to [end] (exclusive).
 ///
 /// This method assumes that the correct font has already been set on
-/// [_canvasContext].
+/// [canvasContext].
 double measureSubstring(
-  html.CanvasRenderingContext2D _canvasContext,
+  DomCanvasRenderingContext2D canvasContext,
   String text,
   int start,
   int end, {
@@ -84,7 +87,7 @@ double measureSubstring(
     return 0;
   }
 
-  final String cssFont = _canvasContext.font;
+  final String cssFont = canvasContext.font;
   double width;
 
   // TODO(mdebbar): Explore caching all widths in a map, not only the last one.
@@ -99,7 +102,7 @@ double measureSubstring(
   } else {
     final String sub =
       start == 0 && end == text.length ? text : text.substring(start, end);
-    width = _canvasContext.measureText(sub).width!.toDouble();
+    width = canvasContext.measureText(sub).width!;
   }
 
   _lastStart = start;

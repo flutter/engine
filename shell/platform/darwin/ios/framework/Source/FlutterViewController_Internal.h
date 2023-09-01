@@ -27,12 +27,30 @@ extern NSNotificationName const FlutterViewControllerHideHomeIndicator;
 FLUTTER_DARWIN_EXPORT
 extern NSNotificationName const FlutterViewControllerShowHomeIndicator;
 
+typedef NS_ENUM(NSInteger, FlutterKeyboardMode) {
+  FlutterKeyboardModeHidden = 0,
+  FlutterKeyboardModeDocked = 1,
+  FlutterKeyboardModeFloating = 2,
+};
+
+typedef void (^FlutterKeyboardAnimationCallback)(fml::TimePoint);
+
 @interface FlutterViewController () <FlutterViewResponder>
 
 @property(class, nonatomic, readonly) BOOL accessibilityIsOnOffSwitchLabelsEnabled;
 @property(nonatomic, readonly) BOOL isPresentingViewController;
 @property(nonatomic, readonly) BOOL isVoiceOverRunning;
 @property(nonatomic, retain) FlutterKeyboardManager* keyboardManager;
+
+/**
+ * @brief Whether the status bar is preferred hidden.
+ *
+ *        This overrides the |UIViewController:prefersStatusBarHidden|.
+ *        This is ignored when `UIViewControllerBasedStatusBarAppearance` in info.plist
+ *        of the app project is `false`.
+ */
+@property(nonatomic, assign, readwrite) BOOL prefersStatusBarHidden;
+
 - (fml::WeakPtr<FlutterViewController>)getWeakPtr;
 - (std::shared_ptr<flutter::FlutterPlatformViewsController>&)platformViewsController;
 - (FlutterRestorationPlugin*)restorationPlugin;
@@ -47,6 +65,7 @@ extern NSNotificationName const FlutterViewControllerShowHomeIndicator;
 - (void)addInternalPlugins;
 - (void)deregisterNotifications;
 - (int32_t)accessibilityFlags;
+
 @end
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERVIEWCONTROLLER_INTERNAL_H_

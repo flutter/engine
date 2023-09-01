@@ -17,23 +17,23 @@ void main() {
 void testMain() {
   List<CkColorFilter> createColorFilters() {
      return <CkColorFilter>[
-       const EngineColorFilter.mode(ui.Color(0x12345678), ui.BlendMode.srcOver) as CkColorFilter,
-       const EngineColorFilter.mode(ui.Color(0x12345678), ui.BlendMode.dstOver) as CkColorFilter,
-       const EngineColorFilter.mode(ui.Color(0x87654321), ui.BlendMode.dstOver) as CkColorFilter,
-       const EngineColorFilter.matrix(<double>[
+       createCkColorFilter(const EngineColorFilter.mode(ui.Color(0x12345678), ui.BlendMode.srcOver))!,
+       createCkColorFilter(const EngineColorFilter.mode(ui.Color(0x12345678), ui.BlendMode.dstOver))!,
+       createCkColorFilter(const EngineColorFilter.mode(ui.Color(0x87654321), ui.BlendMode.dstOver))!,
+       createCkColorFilter(const EngineColorFilter.matrix(<double>[
           1, 0, 0, 0, 0,
           0, 1, 0, 0, 0,
           0, 0, 1, 0, 0,
           0, 0, 0, 1, 0,
-       ]) as CkColorFilter,
-       EngineColorFilter.matrix(Float32List.fromList(<double>[
+       ]))!,
+       createCkColorFilter(EngineColorFilter.matrix(Float32List.fromList(<double>[
           2, 0, 0, 0, 0,
           0, 2, 0, 0, 0,
           0, 0, 2, 0, 0,
           0, 0, 0, 2, 0,
-       ])) as CkColorFilter,
-       const EngineColorFilter.linearToSrgbGamma() as CkColorFilter,
-       const EngineColorFilter.srgbToLinearGamma() as CkColorFilter,
+       ])))!,
+       createCkColorFilter(const EngineColorFilter.linearToSrgbGamma())!,
+       createCkColorFilter(const EngineColorFilter.srgbToLinearGamma())!,
     ];
   }
 
@@ -46,17 +46,17 @@ void testMain() {
     ];
   }
 
-  // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
-  if (!isIosSafari) {
-    setUpCanvasKitTest();
-  }
+  setUpCanvasKitTest();
 
   group('ImageFilters', () {
     test('can be constructed', () {
       final CkImageFilter imageFilter = CkImageFilter.blur(sigmaX: 5, sigmaY: 10, tileMode: ui.TileMode.clamp);
       expect(imageFilter, isA<CkImageFilter>());
-      expect(imageFilter.createDefault(), isNotNull);
-      expect(imageFilter.resurrect(), isNotNull);
+      SkImageFilter? skFilter;
+      imageFilter.imageFilter((SkImageFilter value) {
+        skFilter = value;
+      });
+      expect(skFilter, isNotNull);
     });
 
 
@@ -85,15 +85,80 @@ void testMain() {
       final CkPaint paint = CkPaint();
       paint.imageFilter = CkImageFilter.blur(sigmaX: 5, sigmaY: 10, tileMode: ui.TileMode.clamp);
 
-      final ManagedSkiaObject<Object> managedFilter = paint.imageFilter! as ManagedSkiaObject<Object>;
-      final Object skiaFilter = managedFilter.skiaObject;
+      final CkManagedSkImageFilterConvertible managedFilter1 = paint.imageFilter! as CkManagedSkImageFilterConvertible;
 
       paint.imageFilter = CkImageFilter.blur(sigmaX: 5, sigmaY: 10, tileMode: ui.TileMode.clamp);
-      expect((paint.imageFilter! as ManagedSkiaObject<Object>).skiaObject, same(skiaFilter));
+      final CkManagedSkImageFilterConvertible managedFilter2 = paint.imageFilter! as CkManagedSkImageFilterConvertible;
+
+      expect(managedFilter1, same(managedFilter2));
     });
 
-  // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
-  }, skip: isIosSafari);
+    test('does not throw for both sigmaX and sigmaY set to 0', () async {
+      final CkImageFilter imageFilter = CkImageFilter.blur(sigmaX: 0, sigmaY: 0, tileMode: ui.TileMode.clamp);
+      expect(imageFilter, isNotNull);
+
+      const ui.Rect region = ui.Rect.fromLTRB(0, 0, 500, 250);
+
+      final LayerSceneBuilder builder = LayerSceneBuilder();
+      builder.pushOffset(0,0);
+      final CkPictureRecorder recorder = CkPictureRecorder();
+      final CkCanvas canvas = recorder.beginRecording(region);
+
+      canvas.drawCircle(
+        const ui.Offset(75, 125),
+        50,
+        CkPaint()..color = const ui.Color.fromARGB(255, 255, 0, 0),
+      );
+      final CkPicture redCircle1 = recorder.endRecording();
+      builder.addPicture(ui.Offset.zero, redCircle1);
+
+      builder.pushImageFilter(imageFilter);
+
+      // Draw another red circle and apply it to the scene.
+      // This one should also be red with the image filter doing nothing
+      final CkPictureRecorder recorder2 = CkPictureRecorder();
+      final CkCanvas canvas2 = recorder2.beginRecording(region);
+      canvas2.drawCircle(
+        const ui.Offset(425, 125),
+        50,
+        CkPaint()..color = const ui.Color.fromARGB(255, 255, 0, 0),
+      );
+      final CkPicture redCircle2 = recorder2.endRecording();
+
+      builder.addPicture(ui.Offset.zero, redCircle2);
+
+      await matchSceneGolden('canvaskit_zero_sigma_blur.png', builder.build(), region: region);
+    });
+
+    test('using a colorFilter', () async {
+      final CkColorFilter colorFilter = createCkColorFilter(
+        const EngineColorFilter.mode(
+          ui.Color.fromARGB(255, 0, 255, 0),
+          ui.BlendMode.srcIn
+          ))!;
+
+      const ui.Rect region = ui.Rect.fromLTRB(0, 0, 500, 250);
+
+      final LayerSceneBuilder builder = LayerSceneBuilder();
+      builder.pushOffset(0,0);
+
+      builder.pushImageFilter(colorFilter);
+
+      final CkPictureRecorder recorder = CkPictureRecorder();
+      final CkCanvas canvas = recorder.beginRecording(region);
+
+      canvas.drawCircle(
+        const ui.Offset(75, 125),
+        50,
+        CkPaint()..color = const ui.Color.fromARGB(255, 255, 0, 0),
+      );
+      final CkPicture redCircle1 = recorder.endRecording();
+      builder.addPicture(ui.Offset.zero, redCircle1);
+      // The drawn red circle should actually be green with the colorFilter.
+
+      await matchSceneGolden('canvaskit_imageFilter_using_colorFilter.png', builder.build(), region: region);
+    });
+  });
 
   group('MaskFilter', () {
     test('with 0 sigma can be set on a Paint', () {
@@ -103,6 +168,5 @@ void testMain() {
       expect(() => paint.maskFilter = filter, isNot(throwsException));
     });
 
-  // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
-  }, skip: isIosSafari);
+  });
 }

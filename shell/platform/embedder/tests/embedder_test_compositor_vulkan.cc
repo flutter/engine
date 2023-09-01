@@ -4,10 +4,13 @@
 
 #include "flutter/shell/platform/embedder/tests/embedder_test_compositor_vulkan.h"
 
+#include <utility>
+
 #include "flutter/fml/logging.h"
 #include "flutter/shell/platform/embedder/tests/embedder_assertions.h"
 #include "flutter/shell/platform/embedder/tests/embedder_test_backingstore_producer.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 
 namespace flutter {
 namespace testing {
@@ -15,7 +18,7 @@ namespace testing {
 EmbedderTestCompositorVulkan::EmbedderTestCompositorVulkan(
     SkISize surface_size,
     sk_sp<GrDirectContext> context)
-    : EmbedderTestCompositor(surface_size, context) {}
+    : EmbedderTestCompositor(surface_size, std::move(context)) {}
 
 EmbedderTestCompositorVulkan::~EmbedderTestCompositorVulkan() = default;
 
@@ -27,13 +30,13 @@ bool EmbedderTestCompositorVulkan::UpdateOffscrenComposition(
   const auto image_info = SkImageInfo::MakeN32Premul(surface_size_);
 
   sk_sp<SkSurface> surface =
-      SkSurface::MakeRenderTarget(context_.get(),            // context
-                                  SkBudgeted::kNo,           // budgeted
-                                  image_info,                // image info
-                                  1,                         // sample count
-                                  kTopLeft_GrSurfaceOrigin,  // surface origin
-                                  nullptr,  // surface properties
-                                  false     // create mipmaps
+      SkSurfaces::RenderTarget(context_.get(),            // context
+                               skgpu::Budgeted::kNo,      // budgeted
+                               image_info,                // image info
+                               1,                         // sample count
+                               kTopLeft_GrSurfaceOrigin,  // surface origin
+                               nullptr,                   // surface properties
+                               false                      // create mipmaps
       );
 
   if (!surface) {

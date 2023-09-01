@@ -6,6 +6,7 @@
 
 #include <sstream>
 
+#include "impeller/base/allocation.h"
 #include "impeller/base/comparable.h"
 #include "impeller/base/validation.h"
 
@@ -31,7 +32,8 @@ const char* GLErrorToString(GLenum value) {
   return "Unknown.";
 }
 
-ProcTableGLES::Resolver WrappedResolver(ProcTableGLES::Resolver resolver) {
+ProcTableGLES::Resolver WrappedResolver(
+    const ProcTableGLES::Resolver& resolver) {
   return [resolver](const char* function_name) -> void* {
     auto resolved = resolver(function_name);
     if (resolved) {
@@ -86,6 +88,7 @@ ProcTableGLES::ProcTableGLES(Resolver resolver) {
         reinterpret_cast<decltype(proc_ivar.function)>(fn_ptr); \
     proc_ivar.error_fn = error_fn;                              \
   }
+  FOR_EACH_IMPELLER_GLES3_PROC(IMPELLER_PROC);
   FOR_EACH_IMPELLER_EXT_PROC(IMPELLER_PROC);
 
 #undef IMPELLER_PROC
@@ -108,6 +111,8 @@ ProcTableGLES::ProcTableGLES(Resolver resolver) {
     DiscardFramebufferEXT.Reset();
   }
 
+  capabilities_ = std::make_unique<CapabilitiesGLES>(*this);
+
   is_valid_ = true;
 }
 
@@ -127,6 +132,10 @@ void ProcTableGLES::ShaderSourceMapping(GLuint shader,
 
 const DescriptionGLES* ProcTableGLES::GetDescription() const {
   return description_.get();
+}
+
+const CapabilitiesGLES* ProcTableGLES::GetCapabilities() const {
+  return capabilities_.get();
 }
 
 static const char* FramebufferStatusToString(GLenum status) {
@@ -249,23 +258,50 @@ static std::optional<GLenum> ToDebugIdentifier(DebugResourceType type) {
   FML_UNREACHABLE();
 }
 
-void ProcTableGLES::SetDebugLabel(DebugResourceType type,
+static bool ResourceIsLive(const ProcTableGLES& gl,
+                           DebugResourceType type,
+                           GLint name) {
+  switch (type) {
+    case DebugResourceType::kTexture:
+      return gl.IsTexture(name);
+    case DebugResourceType::kBuffer:
+      return gl.IsBuffer(name);
+    case DebugResourceType::kProgram:
+      return gl.IsProgram(name);
+    case DebugResourceType::kShader:
+      return gl.IsShader(name);
+    case DebugResourceType::kRenderBuffer:
+      return gl.IsRenderbuffer(name);
+    case DebugResourceType::kFrameBuffer:
+      return gl.IsFramebuffer(name);
+  }
+  FML_UNREACHABLE();
+}
+
+bool ProcTableGLES::SetDebugLabel(DebugResourceType type,
                                   GLint name,
                                   const std::string& label) const {
   if (debug_label_max_length_ <= 0) {
-    return;
+    return true;
+  }
+  if (!ObjectLabelKHR.IsAvailable()) {
+    return true;
+  }
+  if (!ResourceIsLive(*this, type, name)) {
+    return false;
   }
   const auto identifier = ToDebugIdentifier(type);
   const auto label_length =
       std::min<GLsizei>(debug_label_max_length_ - 1, label.size());
   if (!identifier.has_value()) {
-    return;
+    return true;
   }
   ObjectLabelKHR(identifier.value(),  // identifier
                  name,                // name
                  label_length,        // length
                  label.data()         // label
   );
+  return true;
 }
 
 void ProcTableGLES::PushDebugGroup(const std::string& label) const {
@@ -287,6 +323,30 @@ void ProcTableGLES::PopDebugGroup() const {
     return;
   }
   PopDebugGroupKHR();
+}
+
+std::string ProcTableGLES::GetProgramInfoLogString(GLuint program) const {
+  GLint length = 0;
+  GetProgramiv(program, GL_INFO_LOG_LENGTH, &length);
+  if (length <= 0) {
+    return "";
+  }
+
+  length = std::min<GLint>(length, 1024);
+  Allocation allocation;
+  if (!allocation.Truncate(length, false)) {
+    return "";
+  }
+  GetProgramInfoLog(program,  // program
+                    length,   // max length
+                    &length,  // length written (excluding NULL terminator)
+                    reinterpret_cast<GLchar*>(allocation.GetBuffer())  // buffer
+  );
+  if (length <= 0) {
+    return "";
+  }
+  return std::string{reinterpret_cast<const char*>(allocation.GetBuffer()),
+                     static_cast<size_t>(length)};
 }
 
 }  // namespace impeller

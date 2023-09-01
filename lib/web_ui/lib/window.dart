@@ -4,29 +4,31 @@
 
 part of ui;
 
+abstract class Display {
+  int get id;
+  double get devicePixelRatio;
+  Size get size;
+  double get refreshRate;
+}
+
 abstract class FlutterView {
   PlatformDispatcher get platformDispatcher;
-  ViewConfiguration get viewConfiguration;
-  double get devicePixelRatio => viewConfiguration.devicePixelRatio;
-  Rect get physicalGeometry => viewConfiguration.geometry;
-  Size get physicalSize => viewConfiguration.geometry.size;
-  WindowPadding get viewInsets => viewConfiguration.viewInsets;
-  WindowPadding get viewPadding => viewConfiguration.viewPadding;
-  WindowPadding get systemGestureInsets => viewConfiguration.systemGestureInsets;
-  WindowPadding get padding => viewConfiguration.padding;
-  List<DisplayFeature> get displayFeatures => viewConfiguration.displayFeatures;
+  int get viewId;
+  double get devicePixelRatio;
+  Rect get physicalGeometry;
+  Size get physicalSize;
+  ViewPadding get viewInsets;
+  ViewPadding get viewPadding;
+  ViewPadding get systemGestureInsets;
+  ViewPadding get padding;
+  GestureSettings get gestureSettings;
+  List<DisplayFeature> get displayFeatures;
+  Display get display;
   void render(Scene scene) => platformDispatcher.render(scene, this);
+  void updateSemantics(SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
 }
 
-abstract class FlutterWindow extends FlutterView {
-  @override
-  PlatformDispatcher get platformDispatcher;
-
-  @override
-  ViewConfiguration get viewConfiguration;
-}
-
-abstract class SingletonFlutterWindow extends FlutterWindow {
+abstract class SingletonFlutterWindow extends FlutterView {
   VoidCallback? get onMetricsChanged => platformDispatcher.onMetricsChanged;
   set onMetricsChanged(VoidCallback? callback) {
     platformDispatcher.onMetricsChanged = callback;
@@ -112,11 +114,6 @@ abstract class SingletonFlutterWindow extends FlutterWindow {
     platformDispatcher.onSemanticsEnabledChanged = callback;
   }
 
-  SemanticsActionCallback? get onSemanticsAction => platformDispatcher.onSemanticsAction;
-  set onSemanticsAction(SemanticsActionCallback? callback) {
-    platformDispatcher.onSemanticsAction = callback;
-  }
-
   FrameData get frameData => const FrameData._();
 
   VoidCallback? get onFrameDataChanged => null;
@@ -129,8 +126,6 @@ abstract class SingletonFlutterWindow extends FlutterWindow {
   set onAccessibilityFeaturesChanged(VoidCallback? callback) {
     platformDispatcher.onAccessibilityFeaturesChanged = callback;
   }
-
-  void updateSemantics(SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
 
   void sendPlatformMessage(
     String name,
@@ -148,66 +143,14 @@ abstract class SingletonFlutterWindow extends FlutterWindow {
   void setIsolateDebugName(String name) => PlatformDispatcher.instance.setIsolateDebugName(name);
 }
 
-class AccessibilityFeatures {
-  const AccessibilityFeatures._(this._index);
-
-  static const int _kAccessibleNavigation = 1 << 0;
-  static const int _kInvertColorsIndex = 1 << 1;
-  static const int _kDisableAnimationsIndex = 1 << 2;
-  static const int _kBoldTextIndex = 1 << 3;
-  static const int _kReduceMotionIndex = 1 << 4;
-  static const int _kHighContrastIndex = 1 << 5;
-  static const int _kOnOffSwitchLabelsIndex = 1 << 6;
-
-  // A bitfield which represents each enabled feature.
-  final int _index;
-
-  bool get accessibleNavigation => _kAccessibleNavigation & _index != 0;
-  bool get invertColors => _kInvertColorsIndex & _index != 0;
-  bool get disableAnimations => _kDisableAnimationsIndex & _index != 0;
-  bool get boldText => _kBoldTextIndex & _index != 0;
-  bool get reduceMotion => _kReduceMotionIndex & _index != 0;
-  bool get highContrast => _kHighContrastIndex & _index != 0;
-  bool get onOffSwitchLabels => _kOnOffSwitchLabelsIndex & _index != 0;
-
-  @override
-  String toString() {
-    final List<String> features = <String>[];
-    if (accessibleNavigation) {
-      features.add('accessibleNavigation');
-    }
-    if (invertColors) {
-      features.add('invertColors');
-    }
-    if (disableAnimations) {
-      features.add('disableAnimations');
-    }
-    if (boldText) {
-      features.add('boldText');
-    }
-    if (reduceMotion) {
-      features.add('reduceMotion');
-    }
-    if (highContrast) {
-      features.add('highContrast');
-    }
-    if (onOffSwitchLabels) {
-      features.add('onOffSwitchLabels');
-    }
-    return 'AccessibilityFeatures$features';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType) {
-      return false;
-    }
-    return other is AccessibilityFeatures
-        && other._index == _index;
-  }
-
-  @override
-  int get hashCode => _index.hashCode;
+abstract class AccessibilityFeatures {
+  bool get accessibleNavigation;
+  bool get invertColors;
+  bool get disableAnimations;
+  bool get boldText;
+  bool get reduceMotion;
+  bool get highContrast;
+  bool get onOffSwitchLabels;
 }
 
 enum Brightness {
@@ -218,8 +161,7 @@ enum Brightness {
 // Unimplemented classes.
 // TODO(dit): see https://github.com/flutter/flutter/issues/33614.
 class CallbackHandle {
-  CallbackHandle.fromRawHandle(this._handle)
-    : assert(_handle != null, "'_handle' must not be null."); // ignore: unnecessary_null_comparison
+  CallbackHandle.fromRawHandle(this._handle);
 
   final int _handle;
 
@@ -234,11 +176,7 @@ class CallbackHandle {
 }
 
 // TODO(dit): see https://github.com/flutter/flutter/issues/33615.
-class PluginUtilities {
-  // This class is only a namespace, and should not be instantiated or
-  // extended directly.
-  factory PluginUtilities._() => throw UnsupportedError('Namespace');
-
+abstract final class PluginUtilities {
   static CallbackHandle? getCallbackHandle(Function callback) {
     throw UnimplementedError();
   }
@@ -248,11 +186,7 @@ class PluginUtilities {
   }
 }
 
-class IsolateNameServer {
-  // This class is only a namespace, and should not be instantiated or
-  // extended directly.
-  factory IsolateNameServer._() => throw UnsupportedError('Namespace');
-
+abstract final class IsolateNameServer {
   static dynamic lookupPortByName(String name) {
     throw UnimplementedError();
   }
@@ -307,7 +241,7 @@ class GestureSettings {
   }
 
   @override
-  int get hashCode => hashValues(physicalTouchSlop, physicalDoubleTapSlop);
+  int get hashCode => Object.hash(physicalTouchSlop, physicalDoubleTapSlop);
 
   @override
   String toString() => 'GestureSettings(physicalTouchSlop: $physicalTouchSlop, physicalDoubleTapSlop: $physicalDoubleTapSlop)';

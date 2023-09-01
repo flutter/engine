@@ -4,12 +4,15 @@
 
 import 'dart:typed_data';
 
+import 'package:ui/src/engine/vector_math.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../util.dart';
 import 'canvaskit_api.dart';
 import 'color_filter.dart';
-import 'skia_object_cache.dart';
+import 'native_memory.dart';
+
+typedef SkImageFilterBorrow = void Function(SkImageFilter);
 
 /// An [ImageFilter] that can create a managed skia [SkImageFilter] object.
 ///
@@ -19,14 +22,15 @@ import 'skia_object_cache.dart';
 ///
 /// Currently implemented by [CkImageFilter] and [CkColorFilter].
 abstract class CkManagedSkImageFilterConvertible implements ui.ImageFilter {
-  ManagedSkiaObject<SkImageFilter> get imageFilter;
+  void imageFilter(SkImageFilterBorrow borrow);
+
+  Matrix4 get transform;
 }
 
 /// The CanvasKit implementation of [ui.ImageFilter].
 ///
 /// Currently only supports `blur`, `matrix`, and ColorFilters.
-abstract class CkImageFilter extends ManagedSkiaObject<SkImageFilter>
-    implements CkManagedSkImageFilterConvertible {
+abstract class CkImageFilter implements CkManagedSkImageFilterConvertible {
   factory CkImageFilter.blur(
       {required double sigmaX,
       required double sigmaY,
@@ -40,29 +44,27 @@ abstract class CkImageFilter extends ManagedSkiaObject<SkImageFilter>
   CkImageFilter._();
 
   @override
-  ManagedSkiaObject<SkImageFilter> get imageFilter => this;
-
-  SkImageFilter _initSkiaObject();
-
-  @override
-  SkImageFilter createDefault() => _initSkiaObject();
-
-  @override
-  SkImageFilter resurrect() => _initSkiaObject();
-
-  @override
-  void delete() {
-    rawSkiaObject?.delete();
-  }
+  Matrix4 get transform => Matrix4.identity();
 }
 
 class CkColorFilterImageFilter extends CkImageFilter {
-  CkColorFilterImageFilter({required this.colorFilter}) : super._();
+  CkColorFilterImageFilter({required this.colorFilter}) : super._() {
+    final SkImageFilter skImageFilter = colorFilter.initRawImageFilter();
+    _ref = UniqueRef<SkImageFilter>(this, skImageFilter, 'ImageFilter.color');
+  }
 
   final CkColorFilter colorFilter;
 
+  late final UniqueRef<SkImageFilter> _ref;
+
   @override
-  SkImageFilter _initSkiaObject() => colorFilter.initRawImageFilter();
+  void imageFilter(SkImageFilterBorrow borrow) {
+    borrow(_ref.nativeObject);
+  }
+
+  void dispose() {
+    _ref.dispose();
+  }
 
   @override
   int get hashCode => colorFilter.hashCode;
@@ -83,11 +85,37 @@ class CkColorFilterImageFilter extends CkImageFilter {
 class _CkBlurImageFilter extends CkImageFilter {
   _CkBlurImageFilter(
       {required this.sigmaX, required this.sigmaY, required this.tileMode})
-      : super._();
+      : super._() {
+    /// Return the identity matrix when both sigmaX and sigmaY are 0. Replicates
+    /// effect of applying no filter
+    final SkImageFilter skImageFilter;
+    if (sigmaX == 0 && sigmaY == 0) {
+      skImageFilter = canvasKit.ImageFilter.MakeMatrixTransform(
+        toSkMatrixFromFloat32(Matrix4.identity().storage),
+        toSkFilterOptions(ui.FilterQuality.none),
+        null
+      );
+    } else {
+      skImageFilter = canvasKit.ImageFilter.MakeBlur(
+        sigmaX,
+        sigmaY,
+        toSkTileMode(tileMode),
+        null,
+      );
+    }
+    _ref = UniqueRef<SkImageFilter>(this, skImageFilter, 'ImageFilter.blur');
+  }
 
   final double sigmaX;
   final double sigmaY;
   final ui.TileMode tileMode;
+
+  late final UniqueRef<SkImageFilter> _ref;
+
+  @override
+  void imageFilter(SkImageFilterBorrow borrow) {
+    borrow(_ref.nativeObject);
+  }
 
   String get _modeString {
     switch (tileMode) {
@@ -103,16 +131,6 @@ class _CkBlurImageFilter extends CkImageFilter {
   }
 
   @override
-  SkImageFilter _initSkiaObject() {
-    return canvasKit.ImageFilter.MakeBlur(
-      sigmaX,
-      sigmaY,
-      toSkTileMode(tileMode),
-      null,
-    );
-  }
-
-  @override
   bool operator ==(Object other) {
     if (runtimeType != other.runtimeType) {
       return false;
@@ -124,7 +142,7 @@ class _CkBlurImageFilter extends CkImageFilter {
   }
 
   @override
-  int get hashCode => ui.hashValues(sigmaX, sigmaY, tileMode);
+  int get hashCode => Object.hash(sigmaX, sigmaY, tileMode);
 
   @override
   String toString() {
@@ -135,19 +153,26 @@ class _CkBlurImageFilter extends CkImageFilter {
 class _CkMatrixImageFilter extends CkImageFilter {
   _CkMatrixImageFilter(
       {required Float64List matrix, required this.filterQuality})
-      : this.matrix = Float64List.fromList(matrix), // ignore: unnecessary_this
-        super._();
-
-  final Float64List matrix;
-  final ui.FilterQuality filterQuality;
-
-  @override
-  SkImageFilter _initSkiaObject() {
-    return canvasKit.ImageFilter.MakeMatrixTransform(
+      : matrix = Float64List.fromList(matrix),
+        _transform = Matrix4.fromFloat32List(toMatrix32(matrix)),
+        super._() {
+    final SkImageFilter skImageFilter = canvasKit.ImageFilter.MakeMatrixTransform(
       toSkMatrixFromFloat64(matrix),
       toSkFilterOptions(filterQuality),
       null,
     );
+    _ref = UniqueRef<SkImageFilter>(this, skImageFilter, 'ImageFilter.matrix');
+  }
+
+  final Float64List matrix;
+  final ui.FilterQuality filterQuality;
+  final Matrix4 _transform;
+
+  late final UniqueRef<SkImageFilter> _ref;
+
+  @override
+  void imageFilter(SkImageFilterBorrow borrow) {
+    borrow(_ref.nativeObject);
   }
 
   @override
@@ -161,8 +186,11 @@ class _CkMatrixImageFilter extends CkImageFilter {
   }
 
   @override
-  int get hashCode => ui.hashValues(filterQuality, ui.hashList(matrix));
+  int get hashCode => Object.hash(filterQuality, Object.hashAll(matrix));
 
   @override
   String toString() => 'ImageFilter.matrix($matrix, $filterQuality)';
+
+  @override
+  Matrix4 get transform => _transform;
 }

@@ -388,7 +388,7 @@ public class FlutterView extends FrameLayout
     setFocusable(true);
     setFocusableInTouchMode(true);
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_YES_EXCLUDE_DESCENDANTS);
+      setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_YES);
     }
   }
 
@@ -451,6 +451,8 @@ public class FlutterView extends FrameLayout
       Log.v(TAG, "Configuration changed. Sending locales and user settings to Flutter.");
       localizationPlugin.sendLocalesToFlutter(newConfig);
       sendUserSettingsToFlutter();
+
+      ViewUtils.calculateMaximumDisplayMetrics(getContext(), flutterEngine);
     }
   }
 
@@ -874,6 +876,21 @@ public class FlutterView extends FrameLayout
   }
 
   /**
+   * Allows a {@code View} that is not currently the input connection target to invoke commands on
+   * the {@link android.view.inputmethod.InputMethodManager}, which is otherwise disallowed.
+   *
+   * <p>Returns true to allow non-input-connection-targets to invoke methods on {@code
+   * InputMethodManager}, or false to exclusively allow the input connection target to invoke such
+   * methods.
+   */
+  @Override
+  public boolean checkInputConnectionProxy(View view) {
+    return flutterEngine != null
+        ? flutterEngine.getPlatformViewsController().checkInputConnectionProxy(view)
+        : super.checkInputConnectionProxy(view);
+  }
+
+  /**
    * Invoked when a hardware key is pressed or released.
    *
    * <p>This method is typically invoked in response to the press of a physical keyboard key or a
@@ -935,7 +952,8 @@ public class FlutterView extends FrameLayout
   @Override
   public boolean onGenericMotionEvent(@NonNull MotionEvent event) {
     boolean handled =
-        isAttachedToFlutterEngine() && androidTouchProcessor.onGenericMotionEvent(event);
+        isAttachedToFlutterEngine()
+            && androidTouchProcessor.onGenericMotionEvent(event, getContext());
     return handled ? true : super.onGenericMotionEvent(event);
   }
 
@@ -1028,7 +1046,7 @@ public class FlutterView extends FrameLayout
    * @param currentView The root view.
    * @return A descendant of currentView or currentView itself.
    */
-  @SuppressLint("PrivateApi")
+  @SuppressLint("DiscouragedPrivateApi")
   private View findViewByAccessibilityIdRootedAtCurrentView(int accessibilityId, View currentView) {
     Method getAccessibilityViewIdMethod;
     try {
@@ -1195,7 +1213,6 @@ public class FlutterView extends FrameLayout
             false,
             systemSettingsObserver);
 
-    localizationPlugin.sendLocalesToFlutter(getResources().getConfiguration());
     sendViewportMetricsToFlutter();
 
     flutterEngine.getPlatformViewsController().attachToView(this);
@@ -1275,16 +1292,21 @@ public class FlutterView extends FrameLayout
     }
     renderSurface.detachFromRenderer();
 
+    releaseImageView();
+
+    previousRenderSurface = null;
+    flutterEngine = null;
+  }
+
+  private void releaseImageView() {
     if (flutterImageView != null) {
       flutterImageView.closeImageReader();
       // Remove the FlutterImageView that was previously added by {@code convertToImageView} to
       // avoid leaks when this FlutterView is reused later in the scenario where multiple
-      // FlutterActivitiy/FlutterFragment share one engine.
+      // FlutterActivity/FlutterFragment share one engine.
       removeView(flutterImageView);
       flutterImageView = null;
     }
-    previousRenderSurface = null;
-    flutterEngine = null;
   }
 
   @VisibleForTesting
@@ -1292,6 +1314,11 @@ public class FlutterView extends FrameLayout
   public FlutterImageView createImageView() {
     return new FlutterImageView(
         getContext(), getWidth(), getHeight(), FlutterImageView.SurfaceKind.background);
+  }
+
+  @VisibleForTesting
+  public FlutterImageView getCurrentImageSurface() {
+    return flutterImageView;
   }
 
   /**
@@ -1333,14 +1360,12 @@ public class FlutterView extends FrameLayout
     }
     renderSurface = previousRenderSurface;
     previousRenderSurface = null;
-    if (flutterEngine == null) {
-      flutterImageView.detachFromRenderer();
-      onDone.run();
-      return;
-    }
+
     final FlutterRenderer renderer = flutterEngine.getRenderer();
-    if (renderer == null) {
+
+    if (flutterEngine == null || renderer == null) {
       flutterImageView.detachFromRenderer();
+      releaseImageView();
       onDone.run();
       return;
     }
@@ -1356,8 +1381,9 @@ public class FlutterView extends FrameLayout
           public void onFlutterUiDisplayed() {
             renderer.removeIsDisplayingFlutterUiListener(this);
             onDone.run();
-            if (!(renderSurface instanceof FlutterImageView)) {
+            if (!(renderSurface instanceof FlutterImageView) && flutterImageView != null) {
               flutterImageView.detachFromRenderer();
+              releaseImageView();
             }
           }
 
@@ -1468,6 +1494,7 @@ public class FlutterView extends FrameLayout
         .getSettingsChannel()
         .startMessage()
         .setTextScaleFactor(getResources().getConfiguration().fontScale)
+        .setDisplayMetrics(getResources().getDisplayMetrics())
         .setNativeSpellCheckServiceDefined(isNativeSpellCheckServiceDefined)
         .setBrieflyShowPassword(
             Settings.System.getInt(
@@ -1501,6 +1528,17 @@ public class FlutterView extends FrameLayout
   @Override
   public void autofill(@NonNull SparseArray<AutofillValue> values) {
     textInputPlugin.autofill(values);
+  }
+
+  @Override
+  public void setVisibility(int visibility) {
+    super.setVisibility(visibility);
+    // For `FlutterSurfaceView`, setting visibility to the current `FlutterView` will not take
+    // effect since it is not in the view tree. So override this method and set the surfaceView.
+    // See https://github.com/flutter/flutter/issues/105203
+    if (renderSurface instanceof FlutterSurfaceView) {
+      ((FlutterSurfaceView) renderSurface).setVisibility(visibility);
+    }
   }
 
   /**

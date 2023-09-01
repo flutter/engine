@@ -6,11 +6,13 @@ package dev.flutter.scenarios;
 
 import android.content.res.AssetFileDescriptor;
 import android.graphics.Canvas;
+import android.graphics.ImageFormat;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Shader.TileMode;
 import android.graphics.SurfaceTexture;
+import android.hardware.HardwareBuffer;
 import android.media.Image;
 import android.media.ImageReader;
 import android.media.ImageWriter;
@@ -39,7 +41,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ExternalTextureFlutterActivity extends TestActivity {
   static final String TAG = "Scenarios";
@@ -91,7 +92,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
     super.waitUntilFlutterRendered();
 
     try {
-      firstFrameLatch.await();
+      firstFrameLatch.await(10, java.util.concurrent.TimeUnit.SECONDS);
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     }
@@ -123,7 +124,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
   private MediaExtractor createMediaExtractor() {
     // Sample Video generated with FFMPEG.
     // ffmpeg -loop 1 -i ~/engine/src/flutter/lib/ui/fixtures/DashInNooglerHat.jpg -c:v libx264
-    // -profile:v main -level:v 5.2 -t 1 -vf scale=192:256 -b:v 1M sample.mp4
+    // -profile:v main -level:v 5.2 -t 1 -r 1 -vf scale=192:256 -b:v 1M sample.mp4
     try {
       MediaExtractor extractor = new MediaExtractor();
       AssetFileDescriptor afd = getAssets().openFd("sample.mp4");
@@ -165,10 +166,6 @@ public class ExternalTextureFlutterActivity extends TestActivity {
 
   private interface SurfaceRenderer {
     void attach(Surface surface, CountDownLatch onFirstFrame);
-
-    default boolean canProduceFrames() {
-      return true;
-    }
 
     void repaint();
 
@@ -235,7 +232,6 @@ public class ExternalTextureFlutterActivity extends TestActivity {
     private MediaExtractor extractor;
     private MediaFormat format;
     private Thread decodeThread;
-    private final AtomicBoolean atomicCanProduceFrames = new AtomicBoolean(true);
 
     protected MediaSurfaceRenderer(Supplier<MediaExtractor> extractorSupplier, int rotation) {
       this.extractorSupplier = extractorSupplier;
@@ -258,11 +254,6 @@ public class ExternalTextureFlutterActivity extends TestActivity {
       decodeThread.start();
     }
 
-    @Override
-    public boolean canProduceFrames() {
-      return atomicCanProduceFrames.get();
-    }
-
     private void decodeThreadMain() {
       try {
         MediaCodec codec = MediaCodec.createDecoderByType(format.getString(MediaFormat.KEY_MIME));
@@ -275,6 +266,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
         MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
         boolean seenEOS = false;
         long startTimeNs = System.nanoTime();
+        int frameCount = 0;
 
         while (true) {
           // Move samples (video frames) from the extractor into the decoder, as long as we haven't
@@ -304,16 +296,16 @@ public class ExternalTextureFlutterActivity extends TestActivity {
                 onFirstFrame.countDown();
                 onFirstFrame = null;
               }
+              Log.w(TAG, "Presenting frame " + frameCount);
+              frameCount++;
 
               codec.releaseOutputBuffer(
                   outputBufferIndex, startTimeNs + (bufferInfo.presentationTimeUs * 1000));
             }
           }
 
-          // Once we present the last frame, mark this renderer as no longer producing frames and
-          // exit the loop.
+          // Exit the loop if there are no more frames available.
           if (lastBuffer) {
-            atomicCanProduceFrames.set(false);
             break;
           }
         }
@@ -368,9 +360,23 @@ public class ExternalTextureFlutterActivity extends TestActivity {
     @Override
     public void attach(Surface surface, CountDownLatch onFirstFrame) {
       this.onFirstFrame = onFirstFrame;
-      writer = ImageWriter.newInstance(surface, 3);
-      reader = ImageReader.newInstance(SURFACE_WIDTH, SURFACE_HEIGHT, writer.getFormat(), 2);
-
+      if (VERSION.SDK_INT >= VERSION_CODES.Q) {
+        // On Android Q+, use PRIVATE image format.
+        // Also let the frame producer know the images will
+        // be sampled from by the GPU.
+        writer = ImageWriter.newInstance(surface, 3, ImageFormat.PRIVATE);
+        reader =
+            ImageReader.newInstance(
+                SURFACE_WIDTH,
+                SURFACE_HEIGHT,
+                ImageFormat.PRIVATE,
+                2,
+                HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE);
+      } else {
+        // Before Android Q, this will change the format of the surface to match the images.
+        writer = ImageWriter.newInstance(surface, 3);
+        reader = ImageReader.newInstance(SURFACE_WIDTH, SURFACE_HEIGHT, writer.getFormat(), 2);
+      }
       inner.attach(reader.getSurface(), null);
 
       handlerThread = new HandlerThread("image reader/writer thread");
@@ -383,12 +389,6 @@ public class ExternalTextureFlutterActivity extends TestActivity {
 
     private void onImageAvailable(ImageReader reader) {
       Log.v(TAG, "Image available");
-
-      // If the inner SurfaceRenderer isn't producing frames, don't try to acquire an image.
-      if (!inner.canProduceFrames()) {
-        Log.i(TAG, "Inner SurfaceRenderer no longer producing frames, ignoring");
-        return;
-      }
 
       if (!canWriteImage) {
         // If the ImageWriter hasn't released the latest image, don't attempt to enqueue another
@@ -409,7 +409,8 @@ public class ExternalTextureFlutterActivity extends TestActivity {
         // If the output surface disconnects, this method will be interrupted with an
         // IllegalStateException.
         // Simply log and return.
-        Log.i(TAG, "Surface disconnected from ImageWriter");
+        Log.i(TAG, "Surface disconnected from ImageWriter", e);
+        image.close();
         return;
       }
 

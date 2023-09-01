@@ -13,9 +13,9 @@ import 'path.dart';
 import 'picture.dart';
 
 class LayerScene implements ui.Scene {
-  final LayerTree layerTree;
-
   LayerScene(RootLayer rootLayer) : layerTree = LayerTree(rootLayer);
+
+  final LayerTree layerTree;
 
   @override
   void dispose() {}
@@ -24,6 +24,12 @@ class LayerScene implements ui.Scene {
   Future<ui.Image> toImage(int width, int height) {
     final ui.Picture picture = layerTree.flatten();
     return picture.toImage(width, height);
+  }
+
+  @override
+  ui.Image toImageSync(int width, int height) {
+    final ui.Picture picture = layerTree.flatten();
+    return picture.toImageSync(width, height);
   }
 }
 
@@ -75,7 +81,6 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     ui.Offset offset = ui.Offset.zero,
     double width = 0.0,
     double height = 0.0,
-    Object? webOnlyPaintedBy,
   }) {
     currentLayer.add(PlatformViewLayer(viewId, offset, width, height));
   }
@@ -141,7 +146,6 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     ui.ColorFilter filter, {
     ui.ColorFilterEngineLayer? oldLayer,
   }) {
-    assert(filter != null); // ignore: unnecessary_null_comparison
     return pushLayer<ColorFilterEngineLayer>(ColorFilterEngineLayer(filter));
   }
 
@@ -149,9 +153,9 @@ class LayerSceneBuilder implements ui.SceneBuilder {
   ImageFilterEngineLayer pushImageFilter(
     ui.ImageFilter filter, {
     ui.ImageFilterEngineLayer? oldLayer,
+    ui.Offset offset = ui.Offset.zero,
   }) {
-    assert(filter != null); // ignore: unnecessary_null_comparison
-    return pushLayer<ImageFilterEngineLayer>(ImageFilterEngineLayer(filter));
+    return pushLayer<ImageFilterEngineLayer>(ImageFilterEngineLayer(filter, offset));
   }
 
   @override
@@ -170,24 +174,6 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     ui.Offset offset = ui.Offset.zero,
   }) {
     return pushLayer<OpacityEngineLayer>(OpacityEngineLayer(alpha, offset));
-  }
-
-  @override
-  PhysicalShapeEngineLayer pushPhysicalShape({
-    required ui.Path path,
-    required double elevation,
-    required ui.Color color,
-    ui.Color? shadowColor,
-    ui.Clip clipBehavior = ui.Clip.none,
-    ui.EngineLayer? oldLayer,
-  }) {
-    return pushLayer<PhysicalShapeEngineLayer>(PhysicalShapeEngineLayer(
-      elevation,
-      color,
-      shadowColor,
-      path as CkPath,
-      clipBehavior,
-    ));
   }
 
   @override

@@ -11,14 +11,10 @@ import 'scenario.dart';
 /// system default font.
 class BogusFontText extends Scenario {
   /// Creates the BogusFontText scenario.
-  ///
-  /// The [dispatcher] parameter must not be null.
-  BogusFontText(PlatformDispatcher dispatcher)
-      : assert(dispatcher != null),
-        super(dispatcher);
+  BogusFontText(super.view);
 
   // Semi-arbitrary.
-  double _screenWidth = 700;
+  final double _screenWidth = 700;
 
   @override
   void onBeginFrame(Duration duration) {
@@ -44,11 +40,11 @@ class BogusFontText extends Scenario {
       willChangeHint: true,
     );
     final Scene scene = builder.build();
-    window.render(scene);
+    view.render(scene);
     scene.dispose();
 
     sendJsonMessage(
-      dispatcher: dispatcher,
+      dispatcher: view.platformDispatcher,
       channel: 'display_data',
       json: <String, dynamic>{
         'data': 'ready',

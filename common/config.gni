@@ -14,17 +14,20 @@ declare_args() {
   # The runtime mode ("debug", "profile", "release", or "jit_release")
   flutter_runtime_mode = "debug"
 
-  # Whether to link the Skia text shaper module into the engine
-  flutter_enable_skshaper = false
-
-  # Whether to use the Skia text shaper module for all text rendering
-  flutter_always_use_skshaper = false
-
   # Whether to use a prebuilt Dart SDK instead of building one.
   flutter_prebuilt_dart_sdk = false
 
-  # Whether layers can be drawn at half pixel boundaries.
-  support_fractional_translation = false
+  # Whether to build host-side development artifacts.
+  flutter_build_engine_artifacts = true
+
+  # Whether to include backtrace support.
+  enable_backtrace = true
+
+  # Whether to include --fapplication-extension when build iOS framework.
+  # This is currently a test flag and does not work properly.
+  #TODO(cyanglaz): Remove above comment about test flag when the entire iOS embedder supports app extension
+  #https://github.com/flutter/flutter/issues/124289
+  darwin_extension_safe = false
 }
 
 # feature_defines_list ---------------------------------------------------------
@@ -59,15 +62,15 @@ if (flutter_runtime_mode == "debug") {
   feature_defines_list += [ "FLUTTER_RUNTIME_MODE=0" ]
 }
 
-if (support_fractional_translation) {
-  feature_defines_list += [ "SUPPORT_FRACTIONAL_TRANSLATION=1" ]
-}
-
 if (is_ios || is_mac) {
   flutter_cflags_objc = [
     "-Werror=overriding-method-mismatch",
     "-Werror=undeclared-selector",
   ]
+  if (is_mac) {
+    flutter_cflags_objc += [ "-fapplication-extension" ]
+  }
+
   flutter_cflags_objcc = flutter_cflags_objc
   flutter_cflags_objc_arc = flutter_cflags_objc + [ "-fobjc-arc" ]
   flutter_cflags_objcc_arc = flutter_cflags_objc_arc
@@ -121,7 +124,7 @@ if (flutter_prebuilt_dart_sdk) {
   # There is no prebuilt Dart SDK targeting Fuchsia, but we also don't need
   # one, so even when the build is targeting Fuchsia, use the prebuilt
   # Dart SDK for the host.
-  if (current_toolchain == host_toolchain || is_fuchsia) {
+  if (current_toolchain == host_toolchain || is_fuchsia || is_wasm) {
     prebuilt_dart_sdk = host_prebuilt_dart_sdk
     prebuilt_dart_sdk_config = _host_prebuilt_dart_sdk_config
   } else {
@@ -135,5 +138,6 @@ if (flutter_prebuilt_dart_sdk) {
 # TODO: We can't build the engine artifacts for arm (32-bit) right now;
 # see https://github.com/flutter/flutter/issues/74322
 build_engine_artifacts =
-    current_toolchain == host_toolchain ||
-    (is_linux && !is_chromeos && current_cpu != "arm") || is_mac
+    flutter_build_engine_artifacts &&
+    (current_toolchain == host_toolchain ||
+     (is_linux && !is_chromeos && current_cpu != "arm") || is_mac || is_win)

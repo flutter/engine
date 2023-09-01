@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
 import 'dart:math' as math;
 
 import 'package:test/bootstrap/browser.dart';
@@ -11,7 +10,8 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:web_engine_tester/golden_tester.dart';
 
-import '../../matchers.dart';
+import '../../common/matchers.dart';
+import '../../common/test_initialization.dart';
 
 const ui.Rect region = ui.Rect.fromLTWH(0, 0, 500, 100);
 
@@ -20,18 +20,17 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpAll(() async {
-    await ui.webOnlyInitializePlatform();
-    fontCollection.debugRegisterTestFonts();
-    await fontCollection.ensureFontsLoaded();
-  });
+  setUpUnitTests(
+    emulateTesterEnvironment: false,
+    setUpTestViewDimensions: false,
+  );
 
   setUp(() async {
     // To debug test failures uncomment the following to visualize clipping
     // layers:
     // debugShowClipLayers = true;
     SurfaceSceneBuilder.debugForgetFrameScene();
-    for (final html.Node scene in html.document.querySelectorAll('flt-scene')) {
+    for (final DomNode scene in domDocument.querySelectorAll('flt-scene')) {
       scene.remove();
     }
   });
@@ -44,7 +43,7 @@ Future<void> testMain() async {
     _drawTestPicture(builder);
     builder.pop();
 
-    html.document.body!.append(builder.build().webOnlyRootElement!);
+    domDocument.body!.append(builder.build().webOnlyRootElement!);
 
     await matchGoldenFile('compositing_shifted_clip_rect.png', region: region);
   });
@@ -64,7 +63,7 @@ Future<void> testMain() async {
     builder.pop();
     builder.pop();
 
-    html.document.body!.append(builder.build().webOnlyRootElement!);
+    domDocument.body!.append(builder.build().webOnlyRootElement!);
 
     await matchGoldenFile('compositing_clip_rect_with_offset_and_transform.png',
         region: region);
@@ -85,7 +84,7 @@ Future<void> testMain() async {
     builder.pop();
     builder.pop();
 
-    html.document.body!.append(builder.build().webOnlyRootElement!);
+    domDocument.body!.append(builder.build().webOnlyRootElement!);
 
     await matchGoldenFile('compositing_clip_rect_clipop_none.png',
         region: region);
@@ -110,7 +109,7 @@ Future<void> testMain() async {
     builder.pop();
     builder.pop();
 
-    html.document.body!.append(builder.build().webOnlyRootElement!);
+    domDocument.body!.append(builder.build().webOnlyRootElement!);
 
     await matchGoldenFile('compositing_clip_rrect_clipop_none.png',
         region: region);
@@ -124,242 +123,9 @@ Future<void> testMain() async {
     _drawTestPicture(builder);
     builder.pop();
 
-    html.document.body!.append(builder.build().webOnlyRootElement!);
+    domDocument.body!.append(builder.build().webOnlyRootElement!);
 
     await matchGoldenFile('compositing_shifted_clip_rrect.png', region: region);
-  });
-
-  test('pushPhysicalShape', () async {
-    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
-    builder.pushPhysicalShape(
-      path: ui.Path()..addRect(const ui.Rect.fromLTRB(10, 10, 60, 60)),
-      clipBehavior: ui.Clip.hardEdge,
-      color: const ui.Color.fromRGBO(0, 0, 0, 0.3),
-      elevation: 0,
-    );
-    _drawTestPicture(builder);
-    builder.pop();
-
-    builder.pushOffset(70, 0);
-    builder.pushPhysicalShape(
-      path: ui.Path()
-        ..addRRect(ui.RRect.fromLTRBR(10, 10, 60, 60, const ui.Radius.circular(5))),
-      clipBehavior: ui.Clip.hardEdge,
-      color: const ui.Color.fromRGBO(0, 0, 0, 0.3),
-      elevation: 0,
-    );
-    _drawTestPicture(builder);
-    builder.pop();
-    builder.pop();
-
-    html.document.body!.append(builder.build().webOnlyRootElement!);
-
-    await matchGoldenFile('compositing_shifted_physical_shape_clip.png',
-        region: region);
-  });
-
-  test('pushPhysicalShape clipOp.none', () async {
-    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
-    builder.pushPhysicalShape(
-      path: ui.Path()..addRect(const ui.Rect.fromLTRB(10, 10, 60, 60)),
-      clipBehavior: ui.Clip.hardEdge,
-      color: const ui.Color.fromRGBO(0, 0, 0, 0.3),
-      elevation: 0,
-    );
-    _drawTestPicture(builder);
-    builder.pop();
-
-    builder.pushOffset(70, 0);
-    builder.pushPhysicalShape(
-      path: ui.Path()
-        ..addRRect(ui.RRect.fromLTRBR(10, 10, 60, 60, const ui.Radius.circular(5))),
-      clipBehavior: ui.Clip.none,
-      color: const ui.Color.fromRGBO(0, 0, 0, 0.3),
-      elevation: 0,
-    );
-    _drawTestPicture(builder);
-    builder.pop();
-    builder.pop();
-
-    html.document.body!.append(builder.build().webOnlyRootElement!);
-
-    await matchGoldenFile('compositing_shifted_physical_shape_clipnone.png',
-        region: region);
-  });
-
-  test('pushPhysicalShape with path and elevation', () async {
-    final ui.Path cutCornersButton = ui.Path()
-      ..moveTo(15, 10)
-      ..lineTo(60, 10)
-      ..lineTo(60, 60)
-      ..lineTo(15, 60)
-      ..lineTo(10, 55)
-      ..lineTo(10, 15);
-
-    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
-    builder.pushPhysicalShape(
-      path: cutCornersButton,
-      clipBehavior: ui.Clip.hardEdge,
-      color: const ui.Color(0xFFA0FFFF),
-      elevation: 2,
-    );
-    _drawTestPicture(builder);
-    builder.pop();
-
-    builder.pushOffset(70, 0);
-    builder.pushPhysicalShape(
-      path: cutCornersButton,
-      clipBehavior: ui.Clip.hardEdge,
-      color: const ui.Color(0xFFA0FFFF),
-      elevation: 8,
-    );
-    _drawTestPicture(builder);
-    builder.pop();
-    builder.pop();
-
-    builder.pushOffset(140, 0);
-    builder.pushPhysicalShape(
-      path: ui.Path()..addOval(const ui.Rect.fromLTRB(10, 10, 60, 60)),
-      clipBehavior: ui.Clip.hardEdge,
-      color: const ui.Color(0xFFA0FFFF),
-      elevation: 4,
-    );
-    _drawTestPicture(builder);
-    builder.pop();
-    builder.pop();
-
-    builder.pushOffset(210, 0);
-    builder.pushPhysicalShape(
-      path: ui.Path()
-        ..addRRect(ui.RRect.fromRectAndRadius(
-            const ui.Rect.fromLTRB(10, 10, 60, 60), const ui.Radius.circular(10.0))),
-      clipBehavior: ui.Clip.hardEdge,
-      color: const ui.Color(0xFFA0FFFF),
-      elevation: 4,
-    );
-    _drawTestPicture(builder);
-    builder.pop();
-    builder.pop();
-
-    html.document.body!.append(builder.build().webOnlyRootElement!);
-
-    await matchGoldenFile('compositing_physical_shape_path.png',
-        region: region);
-  });
-
-  test('pushPhysicalShape should update across frames', () async {
-    final ui.Path cutCornersButton = ui.Path()
-      ..moveTo(15, 10)
-      ..lineTo(60, 10)
-      ..lineTo(60, 60)
-      ..lineTo(15, 60)
-      ..lineTo(10, 55)
-      ..lineTo(10, 15);
-
-    /// Start with shape that has elevation and red color.
-    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
-    final ui.PhysicalShapeEngineLayer oldShapeLayer = builder.pushPhysicalShape(
-      path: cutCornersButton,
-      clipBehavior: ui.Clip.hardEdge,
-      color: const ui.Color(0xFFFF0000),
-      elevation: 2,
-    );
-    _drawTestPicture(builder);
-    builder.pop();
-
-    final html.Element viewElement = builder.build().webOnlyRootElement!;
-    html.document.body!.append(viewElement);
-    await matchGoldenFile('compositing_physical_update_1.png', region: region);
-    viewElement.remove();
-
-    /// Update color to green.
-    final SurfaceSceneBuilder builder2 = SurfaceSceneBuilder();
-    final ui.PhysicalShapeEngineLayer oldShapeLayer2 = builder2.pushPhysicalShape(
-      path: cutCornersButton,
-      clipBehavior: ui.Clip.hardEdge,
-      color: const ui.Color(0xFF00FF00),
-      elevation: 2,
-      oldLayer: oldShapeLayer,
-    );
-    _drawTestPicture(builder2);
-    builder2.pop();
-
-    final html.Element viewElement2 = builder2.build().webOnlyRootElement!;
-    html.document.body!.append(viewElement2);
-    await matchGoldenFile('compositing_physical_update_2.png', region: region);
-    viewElement2.remove();
-
-    /// Update elevation.
-    final SurfaceSceneBuilder builder3 = SurfaceSceneBuilder();
-    final ui.PhysicalShapeEngineLayer oldShapeLayer3 = builder3.pushPhysicalShape(
-      path: cutCornersButton,
-      clipBehavior: ui.Clip.hardEdge,
-      color: const ui.Color(0xFF00FF00),
-      elevation: 6,
-      oldLayer: oldShapeLayer2,
-    );
-    _drawTestPicture(builder3);
-    builder3.pop();
-
-    final html.Element viewElement3 = builder3.build().webOnlyRootElement!;
-    html.document.body!.append(viewElement3);
-    await matchGoldenFile('compositing_physical_update_3.png',
-        region: region, maxDiffRatePercent: 0.8);
-    viewElement3.remove();
-
-    /// Update shape from arbitrary path to rect.
-    final SurfaceSceneBuilder builder4 = SurfaceSceneBuilder();
-    final ui.PhysicalShapeEngineLayer oldShapeLayer4 = builder4.pushPhysicalShape(
-      path: ui.Path()..addOval(const ui.Rect.fromLTRB(10, 10, 60, 60)),
-      clipBehavior: ui.Clip.hardEdge,
-      color: const ui.Color(0xFF00FF00),
-      elevation: 6,
-      oldLayer: oldShapeLayer3,
-    );
-    _drawTestPicture(builder4);
-    builder4.pop();
-
-    final html.Element viewElement4 = builder4.build().webOnlyRootElement!;
-    html.document.body!.append(viewElement4);
-    await matchGoldenFile('compositing_physical_update_4.png', region: region);
-    viewElement4.remove();
-
-    /// Update shape back to arbitrary path.
-    final SurfaceSceneBuilder builder5 = SurfaceSceneBuilder();
-    final ui.PhysicalShapeEngineLayer oldShapeLayer5 = builder5.pushPhysicalShape(
-      path: cutCornersButton,
-      clipBehavior: ui.Clip.hardEdge,
-      color: const ui.Color(0xFF00FF00),
-      elevation: 6,
-      oldLayer: oldShapeLayer4,
-    );
-    _drawTestPicture(builder5);
-    builder5.pop();
-
-    final html.Element viewElement5 = builder5.build().webOnlyRootElement!;
-    html.document.body!.append(viewElement5);
-    await matchGoldenFile('compositing_physical_update_3.png',
-        region: region,
-        maxDiffRatePercent: browserEngine == BrowserEngine.webkit ? 0.6 : 0.4);
-    viewElement5.remove();
-
-    /// Update shadow color.
-    final SurfaceSceneBuilder builder6 = SurfaceSceneBuilder();
-    builder6.pushPhysicalShape(
-      path: cutCornersButton,
-      clipBehavior: ui.Clip.hardEdge,
-      color: const ui.Color(0xFF00FF00),
-      shadowColor: const ui.Color(0xFFFF0000),
-      elevation: 6,
-      oldLayer: oldShapeLayer5,
-    );
-    _drawTestPicture(builder6);
-    builder6.pop();
-
-    final html.Element viewElement6 = builder6.build().webOnlyRootElement!;
-    html.document.body!.append(viewElement6);
-    await matchGoldenFile('compositing_physical_update_5.png', region: region);
-    viewElement6.remove();
   });
 
   test('pushImageFilter blur', () async {
@@ -370,7 +136,7 @@ Future<void> testMain() async {
     _drawTestPicture(builder);
     builder.pop();
 
-    html.document.body!.append(builder.build().webOnlyRootElement!);
+    domDocument.body!.append(builder.build().webOnlyRootElement!);
 
     await matchGoldenFile('compositing_image_filter.png', region: region);
   });
@@ -389,9 +155,44 @@ Future<void> testMain() async {
     _drawTestPicture(builder);
     builder.pop();
 
-    html.document.body!.append(builder.build().webOnlyRootElement!);
+    domDocument.body!.append(builder.build().webOnlyRootElement!);
 
     await matchGoldenFile('compositing_image_filter_matrix.png', region: region);
+  });
+
+  test('pushImageFilter using mode ColorFilter', () async {
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    // Applying the colorFilter should turn all the circles red.
+    builder.pushImageFilter(
+        const ui.ColorFilter.mode(
+          ui.Color(0xFFFF0000),
+          ui.BlendMode.srcIn,
+        ));
+    _drawTestPicture(builder);
+    builder.pop();
+
+    domDocument.body!.append(builder.build().webOnlyRootElement!);
+
+    await matchGoldenFile('compositing_image_filter_using_mode_color_filter.png', region: region);
+  });
+
+  test('pushImageFilter using matrix ColorFilter', () async {
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    // Apply a "greyscale" color filter.
+    final List<double> colorMatrix = <double>[
+      0.2126, 0.7152, 0.0722, 0, 0, //
+      0.2126, 0.7152, 0.0722, 0, 0, //
+      0.2126, 0.7152, 0.0722, 0, 0, //
+      0, 0, 0, 1, 0, //
+    ];
+
+    builder.pushImageFilter(ui.ColorFilter.matrix(colorMatrix));
+    _drawTestPicture(builder);
+    builder.pop();
+
+    domDocument.body!.append(builder.build().webOnlyRootElement!);
+
+    await matchGoldenFile('compositing_image_filter_using_matrix_color_filter.png', region: region);
   });
 
   group('Cull rect computation', () {
@@ -518,7 +319,7 @@ void _testCullRectComputation() {
 
     builder.pop(); // pushClipRect
     builder.pop(); // pushClipRect
-    html.document.body!.append(builder.build().webOnlyRootElement!);
+    domDocument.body!.append(builder.build().webOnlyRootElement!);
 
     await matchGoldenFile('compositing_cull_rect_fills_layer_clip.png',
         region: region);
@@ -547,7 +348,7 @@ void _testCullRectComputation() {
 
     builder.pop(); // pushClipRect
     builder.pop(); // pushClipRect
-    html.document.body!.append(builder.build().webOnlyRootElement!);
+    domDocument.body!.append(builder.build().webOnlyRootElement!);
 
     await matchGoldenFile(
         'compositing_cull_rect_intersects_clip_and_paint_bounds.png',
@@ -579,7 +380,7 @@ void _testCullRectComputation() {
     builder.pop(); // pushOffset
     builder.pop(); // pushClipRect
     builder.pop(); // pushClipRect
-    html.document.body!.append(builder.build().webOnlyRootElement!);
+    domDocument.body!.append(builder.build().webOnlyRootElement!);
 
     await matchGoldenFile('compositing_cull_rect_offset_inside_layer_clip.png',
         region: region);
@@ -653,7 +454,7 @@ void _testCullRectComputation() {
     builder.pop(); // pushClipRect
     builder.pop(); // pushTransform
     builder.pop(); // pushOffset
-    html.document.body!.append(builder.build().webOnlyRootElement!);
+    domDocument.body!.append(builder.build().webOnlyRootElement!);
 
     await matchGoldenFile('compositing_cull_rect_rotated.png', region: region);
 
@@ -675,7 +476,7 @@ void _testCullRectComputation() {
     _drawTestPicture(builder);
     builder.pop();
 
-    html.document.body!.append(builder.build().webOnlyRootElement!);
+    domDocument.body!.append(builder.build().webOnlyRootElement!);
 
     await matchGoldenFile('compositing_clip_path.png', region: region);
   });
@@ -686,14 +487,14 @@ void _testCullRectComputation() {
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
 
     builder.pushTransform(Matrix4.diagonal3Values(
-            EnginePlatformDispatcher.browserDevicePixelRatio,
-            EnginePlatformDispatcher.browserDevicePixelRatio,
+            EngineFlutterDisplay.instance.browserDevicePixelRatio,
+            EngineFlutterDisplay.instance.browserDevicePixelRatio,
             1.0)
         .toFloat64());
 
     // TODO(yjbanov): see the TODO below.
-    // final double screenWidth = html.window.innerWidth.toDouble();
-    // final double screenHeight = html.window.innerHeight.toDouble();
+    // final double screenWidth = domWindow.innerWidth.toDouble();
+    // final double screenHeight = domWindow.innerHeight.toDouble();
 
     final Matrix4 scaleTransform = Matrix4.identity().scaled(0.5, 0.2);
     builder.pushTransform(
@@ -785,7 +586,7 @@ void _testCullRectComputation() {
     builder.pop(); // pushOffset
     builder.pop(); // pushTransform scale
     builder.pop(); // pushTransform scale devicepixelratio
-    html.document.body!.append(builder.build().webOnlyRootElement!);
+    domDocument.body!.append(builder.build().webOnlyRootElement!);
 
     await matchGoldenFile('compositing_3d_rotate1.png', region: region);
 
@@ -871,22 +672,20 @@ void _testCullRectComputation() {
       builder.pop(); // inner clip
       builder.pop(); // outer clip
 
-      final html.Element sceneElement = builder.build().webOnlyRootElement!;
+      final DomElement sceneElement = builder.build().webOnlyRootElement!;
       expect(
         sceneElement
             .querySelectorAll('flt-paragraph')
-            .map<String>((html.Element e) => e.innerText)
+            .map<String>((DomElement e) => e.innerText)
             .toList(),
         <String>['Am I blurry?', 'Am I blurry?'],
         reason: 'Expected to render text using HTML',
       );
-      html.document.body!.append(sceneElement);
+      domDocument.body!.append(sceneElement);
 
       await matchGoldenFile(
         'compositing_draw_high_quality_text.png',
         region: canvasSize,
-        maxDiffRatePercent: 0.0,
-        pixelComparison: PixelComparison.precise,
       );
     },
     testOn: 'chrome',

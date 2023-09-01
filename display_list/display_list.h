@@ -5,9 +5,11 @@
 #ifndef FLUTTER_DISPLAY_LIST_DISPLAY_LIST_H_
 #define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_H_
 
+#include <memory>
 #include <optional>
 
-#include "flutter/display_list/types.h"
+#include "flutter/display_list/dl_sampling_options.h"
+#include "flutter/display_list/geometry/dl_rtree.h"
 #include "flutter/fml/logging.h"
 
 // The Flutter DisplayList mechanism encapsulates a persistent sequence of
@@ -15,41 +17,36 @@
 //
 // This file contains the definitions for:
 // DisplayList: the base class that holds the information about the
-//              sequence of operations and can dispatch them to a Dispatcher
-// Dispatcher: a pure virtual interface which can be implemented to field
-//             the requests for purposes such as sending them to an SkCanvas
-//             or detecting various rendering optimization scenarios
-// DisplayListBuilder: a class for constructing a DisplayList from the same
-//                     calls defined in the Dispatcher
+//              sequence of operations and can dispatch them to a DlOpReceiver
+// DlOpReceiver: a pure virtual interface which can be implemented to field
+//               the requests for purposes such as sending them to an SkCanvas
+//               or detecting various rendering optimization scenarios
+// DisplayListBuilder: a class for constructing a DisplayList from DlCanvas
+//                     method calls and which can act as a DlOpReceiver as well
 //
 // Other files include various class definitions for dealing with display
 // lists, such as:
-// display_list_canvas.h: classes to interact between SkCanvas and DisplayList
-//                        (SkCanvas->DisplayList adapter and vice versa)
+// skia/dl_sk_*.h: classes to interact between SkCanvas and DisplayList
+//                 (SkCanvas->DisplayList adapter and vice versa)
 //
 // display_list_utils.h: various utility classes to ease implementing
-//                       a Dispatcher, including NOP implementations of
+//                       a DlOpReceiver, including NOP implementations of
 //                       the attribute, clip, and transform methods,
 //                       classes to track attributes, clips, and transforms
 //                       and a class to compute the bounds of a DisplayList
-//                       Any class implementing Dispatcher can inherit from
+//                       Any class implementing DlOpReceiver can inherit from
 //                       these utility classes to simplify its creation
 //
-// The Flutter DisplayList mechanism can be used in place of the Skia
-// SkPicture mechanism. The primary means of communication into and out
-// of the DisplayList is through the Dispatcher virtual class which
-// provides a nearly 1:1 translation between the records of the DisplayList
-// to method calls.
+// The Flutter DisplayList mechanism is used in a similar manner to the Skia
+// SkPicture mechanism.
 //
-// A DisplayList can be created directly using a DisplayListBuilder and
-// the Dispatcher methods that it implements, or it can be created from
-// a sequence of SkCanvas calls using the DisplayListCanvasRecorder class.
+// A DisplayList must be created using a DisplayListBuilder using its stateless
+// methods inherited from DlCanvas.
 //
-// A DisplayList can be read back by implementing the Dispatcher virtual
+// A DisplayList can be read back by implementing the DlOpReceiver virtual
 // methods (with help from some of the classes in the utils file) and
-// passing an instance to the dispatch() method, or it can be rendered
-// to Skia using a DisplayListCanvasDispatcher or simply by passing an
-// SkCanvas pointer to its renderTo() method.
+// passing an instance to the Dispatch() method, or it can be rendered
+// to Skia using a DlSkCanvasDispatcher.
 //
 // The mechanism is inspired by the SkLiteDL class that is not directly
 // supported by Skia, but has been recommended as a basis for custom
@@ -72,34 +69,29 @@ namespace flutter {
   V(SetColor)                       \
   V(SetBlendMode)                   \
                                     \
-  V(SetBlender)                     \
-  V(ClearBlender)                   \
-                                    \
-  V(SetSkPathEffect)                \
   V(SetPodPathEffect)               \
   V(ClearPathEffect)                \
                                     \
   V(ClearColorFilter)               \
   V(SetPodColorFilter)              \
-  V(SetSkColorFilter)               \
                                     \
   V(ClearColorSource)               \
   V(SetPodColorSource)              \
-  V(SetSkColorSource)               \
   V(SetImageColorSource)            \
+  V(SetRuntimeEffectColorSource)    \
                                     \
   V(ClearImageFilter)               \
   V(SetPodImageFilter)              \
-  V(SetSkImageFilter)               \
   V(SetSharedImageFilter)           \
                                     \
   V(ClearMaskFilter)                \
   V(SetPodMaskFilter)               \
-  V(SetSkMaskFilter)                \
                                     \
   V(Save)                           \
   V(SaveLayer)                      \
   V(SaveLayerBounds)                \
+  V(SaveLayerBackdrop)              \
+  V(SaveLayerBackdropBounds)        \
   V(Restore)                        \
                                     \
   V(Translate)                      \
@@ -133,19 +125,15 @@ namespace flutter {
   V(DrawLines)                      \
   V(DrawPolygon)                    \
   V(DrawVertices)                   \
-  V(DrawSkVertices)                 \
                                     \
   V(DrawImage)                      \
   V(DrawImageWithAttr)              \
   V(DrawImageRect)                  \
   V(DrawImageNine)                  \
   V(DrawImageNineWithAttr)          \
-  V(DrawImageLattice)               \
   V(DrawAtlas)                      \
   V(DrawAtlasCulled)                \
                                     \
-  V(DrawSkPicture)                  \
-  V(DrawSkPictureMatrix)            \
   V(DrawDisplayList)                \
   V(DrawTextBlob)                   \
                                     \
@@ -153,10 +141,15 @@ namespace flutter {
   V(DrawShadowTransparentOccluder)
 
 #define DL_OP_TO_ENUM_VALUE(name) k##name,
-enum class DisplayListOpType { FOR_EACH_DISPLAY_LIST_OP(DL_OP_TO_ENUM_VALUE) };
+enum class DisplayListOpType {
+  FOR_EACH_DISPLAY_LIST_OP(DL_OP_TO_ENUM_VALUE)
+#ifdef IMPELLER_ENABLE_3D
+      DL_OP_TO_ENUM_VALUE(SetSceneColorSource)
+#endif  // IMPELLER_ENABLE_3D
+};
 #undef DL_OP_TO_ENUM_VALUE
 
-class Dispatcher;
+class DlOpReceiver;
 class DisplayListBuilder;
 
 class SaveLayerOptions {
@@ -209,33 +202,44 @@ class SaveLayerOptions {
   };
 };
 
+// Manages a buffer allocated with malloc.
+class DisplayListStorage {
+ public:
+  DisplayListStorage() = default;
+  DisplayListStorage(DisplayListStorage&&) = default;
+
+  uint8_t* get() const { return ptr_.get(); }
+
+  void realloc(size_t count) {
+    ptr_.reset(static_cast<uint8_t*>(std::realloc(ptr_.release(), count)));
+    FML_CHECK(ptr_);
+  }
+
+ private:
+  struct FreeDeleter {
+    void operator()(uint8_t* p) { std::free(p); }
+  };
+  std::unique_ptr<uint8_t, FreeDeleter> ptr_;
+};
+
+class Culler;
+
 // The base class that contains a sequence of rendering operations
-// for dispatch to a Dispatcher. These objects must be instantiated
+// for dispatch to a DlOpReceiver. These objects must be instantiated
 // through an instance of DisplayListBuilder::build().
 class DisplayList : public SkRefCnt {
  public:
-  static const SkSamplingOptions NearestSampling;
-  static const SkSamplingOptions LinearSampling;
-  static const SkSamplingOptions MipmapSampling;
-  static const SkSamplingOptions CubicSampling;
-
   DisplayList();
 
   ~DisplayList();
 
-  void Dispatch(Dispatcher& ctx) const {
-    uint8_t* ptr = storage_.get();
-    Dispatch(ctx, ptr, ptr + byte_count_);
-  }
+  void Dispatch(DlOpReceiver& ctx) const;
+  void Dispatch(DlOpReceiver& ctx, const SkRect& cull_rect) const;
+  void Dispatch(DlOpReceiver& ctx, const SkIRect& cull_rect) const;
 
-  void RenderTo(DisplayListBuilder* builder,
-                SkScalar opacity = SK_Scalar1) const;
-
-  void RenderTo(SkCanvas* canvas, SkScalar opacity = SK_Scalar1) const;
-
-  // SkPicture always includes nested bytes, but nested ops are
-  // only included if requested. The defaults used here for these
-  // accessors follow that pattern.
+  // From historical behavior, SkPicture always included nested bytes,
+  // but nested ops are only included if requested. The defaults used
+  // here for these accessors follow that pattern.
   size_t bytes(bool nested = true) const {
     return sizeof(DisplayList) + byte_count_ +
            (nested ? nested_byte_count_ : 0);
@@ -247,51 +251,69 @@ class DisplayList : public SkRefCnt {
 
   uint32_t unique_id() const { return unique_id_; }
 
-  const SkRect& bounds() {
-    if (bounds_.width() < 0.0) {
-      // ComputeBounds() will leave the variable with a
-      // non-negative width and height
-      ComputeBounds();
-    }
-    return bounds_;
-  }
+  const SkRect& bounds() const { return bounds_; }
+
+  bool has_rtree() const { return rtree_ != nullptr; }
+  sk_sp<const DlRTree> rtree() const { return rtree_; }
 
   bool Equals(const DisplayList* other) const;
   bool Equals(const DisplayList& other) const { return Equals(&other); }
-  bool Equals(sk_sp<const DisplayList> other) const {
+  bool Equals(const sk_sp<const DisplayList>& other) const {
     return Equals(other.get());
   }
 
-  bool can_apply_group_opacity() { return can_apply_group_opacity_; }
+  bool can_apply_group_opacity() const { return can_apply_group_opacity_; }
+  bool isUIThreadSafe() const { return is_ui_thread_safe_; }
 
-  static void DisposeOps(uint8_t* ptr, uint8_t* end);
+  /// @brief     Indicates if there are any rendering operations in this
+  ///            DisplayList that will modify a surface of transparent black
+  ///            pixels.
+  ///
+  /// This condition can be used to determine whether to create a cleared
+  /// surface, render a DisplayList into it, and then composite the
+  /// result into a scene. It is not uncommon for code in the engine to
+  /// come across such degenerate DisplayList objects when slicing up a
+  /// frame between platform views.
+  bool modifies_transparent_black() const {
+    return modifies_transparent_black_;
+  }
 
  private:
-  DisplayList(uint8_t* ptr,
+  DisplayList(DisplayListStorage&& ptr,
               size_t byte_count,
               unsigned int op_count,
               size_t nested_byte_count,
               unsigned int nested_op_count,
-              const SkRect& cull_rect,
-              bool can_apply_group_opacity);
+              const SkRect& bounds,
+              bool can_apply_group_opacity,
+              bool is_ui_thread_safe,
+              bool modifies_transparent_black,
+              sk_sp<const DlRTree> rtree);
 
-  std::unique_ptr<uint8_t, SkFunctionWrapper<void(void*), sk_free>> storage_;
-  size_t byte_count_;
-  unsigned int op_count_;
+  static uint32_t next_unique_id();
 
-  size_t nested_byte_count_;
-  unsigned int nested_op_count_;
+  static void DisposeOps(uint8_t* ptr, uint8_t* end);
 
-  uint32_t unique_id_;
-  SkRect bounds_;
+  const DisplayListStorage storage_;
+  const size_t byte_count_;
+  const unsigned int op_count_;
 
-  // Only used for drawPaint() and drawColor()
-  SkRect bounds_cull_;
+  const size_t nested_byte_count_;
+  const unsigned int nested_op_count_;
 
-  bool can_apply_group_opacity_;
+  const uint32_t unique_id_;
+  const SkRect bounds_;
 
-  void ComputeBounds();
-  void Dispatch(Dispatcher& ctx, uint8_t* ptr, uint8_t* end) const;
+  const bool can_apply_group_opacity_;
+  const bool is_ui_thread_safe_;
+  const bool modifies_transparent_black_;
+
+  const sk_sp<const DlRTree> rtree_;
+
+  void Dispatch(DlOpReceiver& ctx,
+                uint8_t* ptr,
+                uint8_t* end,
+                Culler& culler) const;
 
   friend class DisplayListBuilder;
 };

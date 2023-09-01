@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
+import 'dart:async';
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
+import '../dom.dart';
 import '../platform_dispatcher.dart';
 import '../text_editing/text_editing.dart';
 import 'semantics.dart';
@@ -21,12 +21,18 @@ import 'semantics.dart';
 /// This class is still responsible for hooking up the DOM element with the
 /// [HybridTextEditing] instance so that changes are communicated to Flutter.
 class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
+  /// Creates a [SemanticsTextEditingStrategy] that eagerly instantiates
+  /// [domElement] so the caller can insert it before calling
+  /// [SemanticsTextEditingStrategy.enable].
+  SemanticsTextEditingStrategy(super.owner);
+
   /// Initializes the [SemanticsTextEditingStrategy] singleton.
   ///
   /// This method must be called prior to accessing [instance].
-  static SemanticsTextEditingStrategy ensureInitialized(HybridTextEditing owner) {
-    if (_instance != null && instance.owner == owner) {
-      return instance;
+  static SemanticsTextEditingStrategy ensureInitialized(
+      HybridTextEditing owner) {
+    if (_instance != null && _instance?.owner == owner) {
+      return _instance!;
     }
     return _instance = SemanticsTextEditingStrategy(owner);
   }
@@ -34,12 +40,6 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
   /// The [SemanticsTextEditingStrategy] singleton.
   static SemanticsTextEditingStrategy get instance => _instance!;
   static SemanticsTextEditingStrategy? _instance;
-
-  /// Creates a [SemanticsTextEditingStrategy] that eagerly instantiates
-  /// [domElement] so the caller can insert it before calling
-  /// [SemanticsTextEditingStrategy.enable].
-  SemanticsTextEditingStrategy(HybridTextEditing owner)
-      : super(owner);
 
   /// The text field whose DOM element is currently used for editing.
   ///
@@ -136,9 +136,14 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
     }
 
     // Subscribe to text and selection changes.
-    subscriptions.add(activeDomElement.onInput.listen(handleChange));
-    subscriptions.add(activeDomElement.onKeyDown.listen(maybeSendAction));
-    subscriptions.add(html.document.onSelectionChange.listen(handleChange));
+    subscriptions.add(
+        DomSubscription(activeDomElement, 'input', handleChange));
+    subscriptions.add(
+        DomSubscription(activeDomElement, 'keydown',
+            maybeSendAction));
+    subscriptions.add(
+        DomSubscription(domDocument, 'selectionchange',
+            handleChange));
     preventDefaultForMouseEvents();
   }
 
@@ -201,35 +206,61 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
 /// This role is implemented via a content-editable HTML element. This role does
 /// not proactively switch modes depending on the current
 /// [EngineSemanticsOwner.gestureMode]. However, in Chrome on Android it ignores
-/// browser gestures when in pointer mode. In Safari on iOS touch events are
+/// browser gestures when in pointer mode. In Safari on iOS pointer events are
 /// used to detect text box invocation. This is because Safari issues touch
 /// events even when Voiceover is enabled.
-class TextField extends RoleManager {
-  TextField(SemanticsObject semanticsObject)
-      : super(Role.textField, semanticsObject) {
-    editableElement =
-        semanticsObject.hasFlag(ui.SemanticsFlag.isMultiline)
-            ? html.TextAreaElement()
-            : html.InputElement();
+class TextField extends PrimaryRoleManager {
+  TextField(SemanticsObject semanticsObject) : super.blank(PrimaryRole.textField, semanticsObject) {
     _setupDomElement();
   }
 
   /// The element used for editing, e.g. `<input>`, `<textarea>`.
-  late final html.HtmlElement editableElement;
+  DomHTMLElement? editableElement;
 
-  void _setupDomElement() {
+  /// Same as [editableElement] but null-checked.
+  DomHTMLElement get activeEditableElement {
+    assert(
+      editableElement != null,
+      'The textField does not have an active editable element',
+    );
+    return editableElement!;
+  }
+
+  /// Timer that times when to set the location of the input text.
+  ///
+  /// This is only used for iOS. In iOS, virtual keyboard shifts the screen.
+  /// There is no callback to know if the keyboard is up and how much the screen
+  /// has shifted. Therefore instead of listening to the shift and passing this
+  /// information to Flutter Framework, we are trying to stop the shift.
+  ///
+  /// In iOS, the virtual keyboard shifts the screen up if the focused input
+  /// element is under the keyboard or very close to the keyboard. Before the
+  /// focus is called we are positioning it offscreen. The location of the input
+  /// in iOS is set to correct place, 100ms after focus. We use this timer for
+  /// timing this delay.
+  Timer? _positionInputElementTimer;
+  static const Duration _delayBeforePlacement = Duration(milliseconds: 100);
+
+  void _initializeEditableElement() {
+    assert(editableElement == null,
+        'Editable element has already been initialized');
+
+    editableElement = semanticsObject.hasFlag(ui.SemanticsFlag.isMultiline)
+        ? createDomHTMLTextAreaElement()
+        : createDomHTMLInputElement();
+
     // On iOS, even though the semantic text field is transparent, the cursor
     // and text highlighting are still visible. The cursor and text selection
     // are made invisible by CSS in [FlutterViewEmbedder.reset].
     // But there's one more case where iOS highlights text. That's when there's
     // and autocorrect suggestion. To disable that, we have to do the following:
-    editableElement
+    activeEditableElement
       ..spellcheck = false
       ..setAttribute('autocorrect', 'off')
       ..setAttribute('autocomplete', 'off')
       ..setAttribute('data-semantics-role', 'text-field');
 
-    editableElement.style
+    activeEditableElement.style
       ..position = 'absolute'
       // `top` and `left` are intentionally set to zero here.
       //
@@ -244,20 +275,16 @@ class TextField extends RoleManager {
       ..left = '0'
       ..width = '${semanticsObject.rect!.width}px'
       ..height = '${semanticsObject.rect!.height}px';
-    semanticsObject.element.append(editableElement);
+    semanticsObject.element.append(activeEditableElement);
+  }
 
+  void _setupDomElement() {
     switch (browserEngine) {
       case BrowserEngine.blink:
-      case BrowserEngine.samsung:
-      case BrowserEngine.edge:
-      case BrowserEngine.ie11:
       case BrowserEngine.firefox:
-      case BrowserEngine.unknown:
         _initializeForBlink();
-        break;
       case BrowserEngine.webkit:
         _initializeForWebkit();
-        break;
     }
   }
 
@@ -266,43 +293,72 @@ class TextField extends RoleManager {
   /// When in browser gesture mode, the focus is forwarded to the framework as
   /// a tap to initialize editing.
   void _initializeForBlink() {
-    editableElement.addEventListener('focus', (html.Event event) {
-      if (semanticsObject.owner.gestureMode != GestureMode.browserGestures) {
-        return;
-      }
+    _initializeEditableElement();
+    activeEditableElement.addEventListener('focus',
+        createDomEventListener((DomEvent event) {
+          if (semanticsObject.owner.gestureMode != GestureMode.browserGestures) {
+            return;
+          }
 
-      EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
-          semanticsObject.id, ui.SemanticsAction.tap, null);
-    });
+          EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
+              semanticsObject.id, ui.SemanticsAction.didGainAccessibilityFocus, null);
+        }));
+    activeEditableElement.addEventListener('blur',
+        createDomEventListener((DomEvent event) {
+          if (semanticsObject.owner.gestureMode != GestureMode.browserGestures) {
+            return;
+          }
+
+          EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
+              semanticsObject.id, ui.SemanticsAction.didLoseAccessibilityFocus, null);
+        }));
   }
 
-  /// Safari on iOS reports text field activation via touch events.
+  /// Safari on iOS reports text field activation via pointer events.
   ///
-  /// This emulates a tap recognizer to detect the activation. Because touch
+  /// This emulates a tap recognizer to detect the activation. Because pointer
   /// events are present regardless of whether accessibility is enabled or not,
   /// this mode is always enabled.
+  ///
+  /// In iOS, the virtual keyboard shifts the screen up if the focused input
+  /// element is under the keyboard or very close to the keyboard. To avoid the shift,
+  /// the creation of the editable element is delayed until a tap is detected.
+  ///
+  /// In the absence of an editable DOM element, role of 'textbox' is assigned to the
+  /// semanticsObject.element to communicate to the assistive technologies that
+  /// the user can start editing by tapping on the element. Once a tap is detected,
+  /// the editable element gets created and the role of textbox is removed from
+  /// semanicsObject.element to avoid confusing VoiceOver.
   void _initializeForWebkit() {
     // Safari for desktop is also initialized as the other browsers.
     if (operatingSystem == OperatingSystem.macOs) {
       _initializeForBlink();
       return;
     }
-    num? lastTouchStartOffsetX;
-    num? lastTouchStartOffsetY;
 
-    editableElement.addEventListener('touchstart', (html.Event event) {
-      final html.TouchEvent touchEvent = event as html.TouchEvent;
-      lastTouchStartOffsetX = touchEvent.changedTouches!.last.client.x;
-      lastTouchStartOffsetY = touchEvent.changedTouches!.last.client.y;
-    }, true);
+    semanticsObject.element
+      ..setAttribute('role', 'textbox')
+      ..setAttribute('contenteditable', 'false')
+      ..setAttribute('tabindex', '0');
 
-    editableElement.addEventListener('touchend', (html.Event event) {
-      final html.TouchEvent touchEvent = event as html.TouchEvent;
+    num? lastPointerDownOffsetX;
+    num? lastPointerDownOffsetY;
 
-      if (lastTouchStartOffsetX != null) {
-        assert(lastTouchStartOffsetY != null);
-        final num offsetX = touchEvent.changedTouches!.last.client.x;
-        final num offsetY = touchEvent.changedTouches!.last.client.y;
+    semanticsObject.element.addEventListener('pointerdown',
+        createDomEventListener((DomEvent event) {
+          final DomPointerEvent pointerEvent = event as DomPointerEvent;
+          lastPointerDownOffsetX = pointerEvent.clientX;
+          lastPointerDownOffsetY = pointerEvent.clientY;
+        }), true);
+
+    semanticsObject.element.addEventListener('pointerup',
+        createDomEventListener((DomEvent event) {
+      final DomPointerEvent pointerEvent = event as DomPointerEvent;
+
+      if (lastPointerDownOffsetX != null) {
+        assert(lastPointerDownOffsetY != null);
+        final num deltaX = pointerEvent.clientX - lastPointerDownOffsetX!;
+        final num deltaY = pointerEvent.clientY - lastPointerDownOffsetY!;
 
         // This should match the similar constant defined in:
         //
@@ -311,89 +367,106 @@ class TextField extends RoleManager {
         // The value is pre-squared so we have to do less math at runtime.
         const double kTouchSlop = 18.0 * 18.0; // Logical pixels squared
 
-        if (offsetX * offsetX + offsetY * offsetY < kTouchSlop) {
+        if (deltaX * deltaX + deltaY * deltaY < kTouchSlop) {
           // Recognize it as a tap that requires a keyboard.
           EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
               semanticsObject.id, ui.SemanticsAction.tap, null);
+          _invokeIosWorkaround();
         }
       } else {
-        assert(lastTouchStartOffsetY == null);
+        assert(lastPointerDownOffsetY == null);
       }
 
-      lastTouchStartOffsetX = null;
-      lastTouchStartOffsetY = null;
-    }, true);
+      lastPointerDownOffsetX = null;
+      lastPointerDownOffsetY = null;
+    }), true);
   }
 
-  bool _hasFocused = false;
+  void _invokeIosWorkaround() {
+    if (editableElement != null) {
+      return;
+    }
+
+    _initializeEditableElement();
+    activeEditableElement.style.transform = 'translate(${offScreenOffset}px, ${offScreenOffset}px)';
+    _positionInputElementTimer?.cancel();
+    _positionInputElementTimer = Timer(_delayBeforePlacement, () {
+      editableElement?.style.transform = '';
+      _positionInputElementTimer = null;
+    });
+
+    // Can not have both activeEditableElement and semanticsObject.element
+    // represent the same text field. It will confuse VoiceOver, so `role` needs to
+    // be assigned and removed, based on whether or not editableElement exists.
+    activeEditableElement.focus();
+    semanticsObject.element.removeAttribute('role');
+
+    activeEditableElement.addEventListener('blur',
+        createDomEventListener((DomEvent event) {
+      semanticsObject.element.setAttribute('role', 'textbox');
+      activeEditableElement.remove();
+      SemanticsTextEditingStrategy._instance?.deactivate(this);
+
+      // Focus on semantics element before removing the editable element, so that
+      // the user can continue navigating the page with the assistive technology.
+      semanticsObject.element.focus();
+      editableElement = null;
+    }));
+  }
 
   @override
   void update() {
-    // The user is editing the semantic text field directly, so there's no need
-    // to do any update here.
+    super.update();
+
+    // Ignore the update if editableElement has not been created yet.
+    // On iOS Safari, when the user dismisses the keyboard using the 'done' button,
+    // we recieve a `blur` event from the browswer and a semantic update with
+    // [hasFocus] set to true from the framework. In this case, we ignore the update
+    // and wait for a tap event before invoking the iOS workaround and creating
+    // the editable element.
+    if (editableElement != null) {
+      activeEditableElement.style
+        ..width = '${semanticsObject.rect!.width}px'
+        ..height = '${semanticsObject.rect!.height}px';
+
+      if (semanticsObject.hasFocus) {
+        if (domDocument.activeElement !=
+            activeEditableElement) {
+          semanticsObject.owner.addOneTimePostUpdateCallback(() {
+            activeEditableElement.focus();
+          });
+        }
+        SemanticsTextEditingStrategy._instance?.activate(this);
+      } else if (domDocument.activeElement ==
+          activeEditableElement) {
+        if (!isIosSafari) {
+          SemanticsTextEditingStrategy._instance?.deactivate(this);
+          // Only apply text, because this node is not focused.
+        }
+        activeEditableElement.blur();
+      }
+    }
+
+    final DomElement element = editableElement ?? semanticsObject.element;
     if (semanticsObject.hasLabel) {
-      editableElement.setAttribute(
+      element.setAttribute(
         'aria-label',
         semanticsObject.label!,
       );
     } else {
-      editableElement.removeAttribute('aria-label');
-    }
-
-    editableElement.style
-      ..width = '${semanticsObject.rect!.width}px'
-      ..height = '${semanticsObject.rect!.height}px';
-
-    // Whether we should request that the browser shift focus to the editable
-    // element, so that both the framework and the browser agree on what's
-    // currently focused.
-    bool needsDomFocusRequest = false;
-    final EditingState editingState = EditingState(
-      text: semanticsObject.value,
-      baseOffset: semanticsObject.textSelectionBase,
-      extentOffset: semanticsObject.textSelectionExtent,
-    );
-    if (semanticsObject.hasFocus) {
-      if (!_hasFocused) {
-        _hasFocused = true;
-        SemanticsTextEditingStrategy.instance.activate(this);
-        needsDomFocusRequest = true;
-      }
-      if (html.document.activeElement != editableElement) {
-        needsDomFocusRequest = true;
-      }
-      // Focused elements should have full text editing state applied.
-      SemanticsTextEditingStrategy.instance.setEditingState(editingState);
-    } else if (_hasFocused) {
-      SemanticsTextEditingStrategy.instance.deactivate(this);
-
-      // Only apply text, because this node is not focused.
-      editingState.applyTextToDomElement(editableElement);
-
-      if (_hasFocused && html.document.activeElement == editableElement) {
-        // Unlike `editableElement.focus()` we don't need to schedule `blur`
-        // post-update because `document.activeElement` implies that the
-        // element is already attached to the DOM. If it's not, it can't
-        // possibly be focused and therefore there's no need to blur.
-        editableElement.blur();
-      }
-      _hasFocused = false;
-    }
-
-    if (needsDomFocusRequest) {
-      // Schedule focus post-update to make sure the element is attached to
-      // the document. Otherwise focus() has no effect.
-      semanticsObject.owner.addOneTimePostUpdateCallback(() {
-        if (html.document.activeElement != editableElement) {
-          editableElement.focus();
-        }
-      });
+      element.removeAttribute('aria-label');
     }
   }
 
   @override
   void dispose() {
-    editableElement.remove();
-    SemanticsTextEditingStrategy.instance.deactivate(this);
+    super.dispose();
+    _positionInputElementTimer?.cancel();
+    _positionInputElementTimer = null;
+    // on iOS, the `blur` event listener callback will remove the element.
+    if (!isIosSafari) {
+      editableElement?.remove();
+    }
+    SemanticsTextEditingStrategy._instance?.deactivate(this);
   }
 }

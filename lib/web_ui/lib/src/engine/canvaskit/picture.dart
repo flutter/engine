@@ -2,49 +2,55 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:typed_data';
+
 import 'package:ui/ui.dart' as ui;
 
-import '../profiler.dart';
-import '../util.dart';
+import '../scene_painting.dart';
 import 'canvas.dart';
 import 'canvaskit_api.dart';
 import 'image.dart';
-import 'skia_object_cache.dart';
+import 'native_memory.dart';
+import 'surface.dart';
+import 'surface_factory.dart';
 
 /// Implements [ui.Picture] on top of [SkPicture].
-///
-/// Unlike most other [ManagedSkiaObject] implementations, instances of this
-/// class may have their Skia counterparts deleted before finalization registry
-/// or [SkiaObjectCache] decide to delete it.
-class CkPicture extends ManagedSkiaObject<SkPicture> implements ui.Picture {
-  final ui.Rect? cullRect;
-  final CkPictureSnapshot? _snapshot;
+class CkPicture implements ScenePicture {
+  CkPicture(SkPicture skPicture) {
+    _ref = UniqueRef<SkPicture>(this, skPicture, 'Picture');
+  }
 
-  CkPicture(SkPicture picture, this.cullRect, this._snapshot) :
-    assert(
-      browserSupportsFinalizationRegistry && _snapshot == null ||
-          _snapshot != null,
-      'If the browser does not support FinalizationRegistry (WeakRef), then we must have a picture snapshot to be able to resurrect it.',
-    ), super(picture);
+  late final UniqueRef<SkPicture> _ref;
 
+  SkPicture get skiaObject => _ref.nativeObject;
 
   @override
-  int get approximateBytesUsed => 0;
+  ui.Rect get cullRect => fromSkRect(skiaObject.cullRect());
+
+  @override
+  int get approximateBytesUsed => skiaObject.approximateBytesUsed();
 
   @override
   bool get debugDisposed {
-    if (assertionsEnabled) {
-      return _isDisposed;
+    bool? result;
+    assert(() {
+      result = _isDisposed;
+      return true;
+    }());
+
+    if (result != null) {
+      return result!;
     }
-    throw StateError('Picture.debugDisposed is only available when asserts are enabled.');
+
+    throw StateError(
+        'Picture.debugDisposed is only available when asserts are enabled.');
   }
 
   /// This is set to true when [dispose] is called and is never reset back to
   /// false.
   ///
   /// This extra flag is necessary on top of [rawSkiaObject] because
-  /// [rawSkiaObject] being null does not indicate permanent deletion. See
-  /// similar flag [SkiaObjectBox.isDeletedPermanently].
+  /// [rawSkiaObject] being null does not indicate permanent deletion.
   bool _isDisposed = false;
 
   /// The stack trace taken when [dispose] was called.
@@ -79,52 +85,40 @@ class CkPicture extends ManagedSkiaObject<SkPicture> implements ui.Picture {
       _debugDisposalStackTrace = StackTrace.current;
       return true;
     }());
-    if (Instrumentation.enabled) {
-      Instrumentation.instance.incrementCounter('Picture disposed');
-    }
+    ui.Picture.onDispose?.call(this);
     _isDisposed = true;
-    _snapshot?.dispose();
-
-    // Emulate what SkiaObjectCache does.
-    rawSkiaObject?.delete();
-    rawSkiaObject = null;
+    _ref.dispose();
   }
 
   @override
   Future<ui.Image> toImage(int width, int height) async {
+    return toImageSync(width, height);
+  }
+
+  @override
+  CkImage toImageSync(int width, int height) {
     assert(debugCheckNotDisposed('Cannot convert picture to image.'));
-    final SkSurface skSurface = canvasKit.MakeSurface(width, height);
-    final SkCanvas skCanvas = skSurface.getCanvas();
-    skCanvas.drawPicture(skiaObject);
-    final SkImage skImage = skSurface.makeImageSnapshot();
-    skSurface.dispose();
-    return CkImage(skImage);
-  }
 
-  @override
-  bool get isResurrectionExpensive => true;
-
-  @override
-  SkPicture createDefault() {
-    // The default object is supplied in the constructor.
-    throw StateError('Unreachable code');
-  }
-
-  @override
-  SkPicture resurrect() {
-    // If a picture has been explicitly disposed of, it can no longer be
-    // resurrected. An attempt to resurrect after the framework told the
-    // engine to dispose of the picture likely indicates a bug in the engine.
-    assert(debugCheckNotDisposed('Cannot resurrect picture.'));
-    return _snapshot!.toPicture();
-  }
-
-  @override
-  void delete() {
-    // This method may be called after [dispose], in which case there's nothing
-    // left to do. The Skia object is deleted permanently.
-    if (!_isDisposed) {
-      rawSkiaObject?.delete();
+    final Surface surface = SurfaceFactory.instance.pictureToImageSurface;
+    final CkSurface ckSurface = surface
+        .createOrUpdateSurface(ui.Size(width.toDouble(), height.toDouble()));
+    final CkCanvas ckCanvas = ckSurface.getCanvas();
+    ckCanvas.clear(const ui.Color(0x00000000));
+    ckCanvas.drawPicture(this);
+    final SkImage skImage = ckSurface.surface.makeImageSnapshot();
+    final SkImageInfo imageInfo = SkImageInfo(
+      alphaType: canvasKit.AlphaType.Premul,
+      colorType: canvasKit.ColorType.RGBA_8888,
+      colorSpace: SkColorSpaceSRGB,
+      width: width.toDouble(),
+      height: height.toDouble(),
+    );
+    final Uint8List pixels = skImage.readPixels(0, 0, imageInfo);
+    final SkImage? rasterImage =
+        canvasKit.MakeImage(imageInfo, pixels, (4 * width).toDouble());
+    if (rasterImage == null) {
+      throw StateError('Unable to convert image pixels into SkImage.');
     }
+    return CkImage(rasterImage);
   }
 }

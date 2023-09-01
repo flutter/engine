@@ -2,18 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:async';
-import 'dart:html' as html;
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' hide window;
 
+import '../../common/test_initialization.dart';
 import 'helper.dart';
-import 'text_scuba.dart';
-
-typedef CanvasTest = FutureOr<void> Function(EngineCanvas canvas);
 
 const String _rtlWord1 = 'واحد';
 const String _rtlWord2 = 'اثنان';
@@ -23,7 +18,10 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpStableTestFonts();
+  setUpUnitTests(
+    emulateTesterEnvironment: false,
+    setUpTestViewDimensions: false,
+  );
 
   void paintBasicBidiStartingWithLtr(
     EngineCanvas canvas,
@@ -62,7 +60,7 @@ Future<void> testMain() async {
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
-        ..color = black
+        ..color = black.value
         ..style = PaintingStyle.stroke,
     );
     // LTR with different text align values:
@@ -77,7 +75,7 @@ Future<void> testMain() async {
     canvas.drawRect(
       rtlBox,
       SurfacePaintData()
-        ..color = black
+        ..color = black.value
         ..style = PaintingStyle.stroke,
     );
     // RTL with different text align values:
@@ -92,7 +90,7 @@ Future<void> testMain() async {
 
   test('basic bidi starting with ltr (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 340, 600);
-    final DomCanvas canvas = DomCanvas(html.document.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
 
     const double height = 40;
 
@@ -101,7 +99,7 @@ Future<void> testMain() async {
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
-        ..color = black
+        ..color = black.value
         ..style = PaintingStyle.stroke,
     );
     // LTR with different text align values:
@@ -116,7 +114,7 @@ Future<void> testMain() async {
     canvas.drawRect(
       rtlBox,
       SurfacePaintData()
-        ..color = black
+        ..color = black.value
         ..style = PaintingStyle.stroke,
     );
     // RTL with different text align values:
@@ -166,7 +164,7 @@ Future<void> testMain() async {
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
-        ..color = black
+        ..color = black.value
         ..style = PaintingStyle.stroke,
     );
     // LTR with different text align values:
@@ -181,7 +179,7 @@ Future<void> testMain() async {
     canvas.drawRect(
       rtlBox,
       SurfacePaintData()
-        ..color = black
+        ..color = black.value
         ..style = PaintingStyle.stroke,
     );
     // RTL with different text align values:
@@ -196,7 +194,7 @@ Future<void> testMain() async {
 
   test('basic bidi starting with rtl (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 340, 600);
-    final DomCanvas canvas = DomCanvas(html.document.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
 
     const double height = 40;
 
@@ -205,7 +203,7 @@ Future<void> testMain() async {
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
-        ..color = black
+        ..color = black.value
         ..style = PaintingStyle.stroke,
     );
     // LTR with different text align values:
@@ -220,7 +218,7 @@ Future<void> testMain() async {
     canvas.drawRect(
       rtlBox,
       SurfacePaintData()
-        ..color = black
+        ..color = black.value
         ..style = PaintingStyle.stroke,
     );
     // RTL with different text align values:
@@ -274,7 +272,7 @@ Future<void> testMain() async {
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
-        ..color = black
+        ..color = black.value
         ..style = PaintingStyle.stroke,
     );
     // LTR with different text align values:
@@ -289,7 +287,7 @@ Future<void> testMain() async {
     canvas.drawRect(
       rtlBox,
       SurfacePaintData()
-        ..color = black
+        ..color = black.value
         ..style = PaintingStyle.stroke,
     );
     // RTL with different text align values:
@@ -304,7 +302,7 @@ Future<void> testMain() async {
 
   test('multiline bidi (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 400, 500);
-    final DomCanvas canvas = DomCanvas(html.document.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
 
     const double height = 95;
 
@@ -312,7 +310,7 @@ Future<void> testMain() async {
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
-        ..color = black
+        ..color = black.value
         ..style = PaintingStyle.stroke,
     );
     // LTR with different text align values:
@@ -327,7 +325,7 @@ Future<void> testMain() async {
     canvas.drawRect(
       rtlBox,
       SurfacePaintData()
-        ..color = black
+        ..color = black.value
         ..style = PaintingStyle.stroke,
     );
     // RTL with different text align values:
@@ -388,7 +386,7 @@ Future<void> testMain() async {
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
-        ..color = black
+        ..color = black.value
         ..style = PaintingStyle.stroke,
     );
     // LTR with different text align values:
@@ -403,7 +401,7 @@ Future<void> testMain() async {
     canvas.drawRect(
       rtlBox,
       SurfacePaintData()
-        ..color = black
+        ..color = black.value
         ..style = PaintingStyle.stroke,
     );
     // RTL with different text align values:
@@ -418,7 +416,7 @@ Future<void> testMain() async {
 
   test('multi span bidi (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 400, 900);
-    final DomCanvas canvas = DomCanvas(html.document.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
 
     const double height = 95;
 
@@ -427,7 +425,7 @@ Future<void> testMain() async {
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
-        ..color = black
+        ..color = black.value
         ..style = PaintingStyle.stroke,
     );
     // LTR with different text align values:
@@ -442,7 +440,7 @@ Future<void> testMain() async {
     canvas.drawRect(
       rtlBox,
       SurfacePaintData()
-        ..color = black
+        ..color = black.value
         ..style = PaintingStyle.stroke,
     );
     // RTL with different text align values:
@@ -507,7 +505,7 @@ Future<void> testMain() async {
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
-        ..color = black
+        ..color = black.value
         ..style = PaintingStyle.stroke,
     );
     // LTR with different text align values:
@@ -522,7 +520,7 @@ Future<void> testMain() async {
     canvas.drawRect(
       rtlBox,
       SurfacePaintData()
-        ..color = black
+        ..color = black.value
         ..style = PaintingStyle.stroke,
     );
     // RTL with different text align values:
@@ -537,7 +535,7 @@ Future<void> testMain() async {
 
   test('bidi with selection (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 400, 500);
-    final DomCanvas canvas = DomCanvas(html.document.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
 
     const double height = 95;
 
@@ -546,7 +544,7 @@ Future<void> testMain() async {
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
-        ..color = black
+        ..color = black.value
         ..style = PaintingStyle.stroke,
     );
     // LTR with different text align values:
@@ -561,7 +559,7 @@ Future<void> testMain() async {
     canvas.drawRect(
       rtlBox,
       SurfacePaintData()
-        ..color = black
+        ..color = black.value
         ..style = PaintingStyle.stroke,
     );
     // RTL with different text align values:

@@ -1,5 +1,6 @@
 package io.flutter.embedding.engine.renderer;
 
+import static android.content.ComponentCallbacks2.TRIM_MEMORY_COMPLETE;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.anyFloat;
@@ -7,6 +8,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -338,5 +340,73 @@ public class FlutterRendererTest {
 
     // Verify behavior under test.
     assertEquals(1, invocationCount.get());
+  }
+
+  @Test
+  public void itAddsListenerWhenSurfaceTextureEntryCreated() {
+    // Setup the test.
+    FlutterRenderer flutterRenderer = spy(new FlutterRenderer(fakeFlutterJNI));
+
+    // Execute the behavior under test.
+    FlutterRenderer.SurfaceTextureRegistryEntry entry =
+        (FlutterRenderer.SurfaceTextureRegistryEntry) flutterRenderer.createSurfaceTexture();
+
+    // Verify behavior under test.
+    verify(flutterRenderer, times(1)).addOnTrimMemoryListener(entry);
+  }
+
+  @Test
+  public void itRemovesListenerWhenSurfaceTextureEntryReleased() {
+    // Setup the test.
+    FlutterRenderer flutterRenderer = spy(new FlutterRenderer(fakeFlutterJNI));
+    FlutterRenderer.SurfaceTextureRegistryEntry entry =
+        (FlutterRenderer.SurfaceTextureRegistryEntry) flutterRenderer.createSurfaceTexture();
+
+    // Execute the behavior under test.
+    entry.release();
+
+    // Verify behavior under test.
+    verify(flutterRenderer, times(1)).removeOnTrimMemoryListener(entry);
+  }
+
+  @Test
+  public void itNotifySurfaceTextureEntryWhenMemoryPressureWarning() {
+    // Setup the test.
+    FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
+
+    AtomicInteger invocationCount = new AtomicInteger(0);
+    final TextureRegistry.OnTrimMemoryListener listener =
+        new TextureRegistry.OnTrimMemoryListener() {
+          @Override
+          public void onTrimMemory(int level) {
+            invocationCount.incrementAndGet();
+          }
+        };
+
+    FlutterRenderer.SurfaceTextureRegistryEntry entry =
+        (FlutterRenderer.SurfaceTextureRegistryEntry) flutterRenderer.createSurfaceTexture();
+    entry.setOnTrimMemoryListener(listener);
+
+    // Execute the behavior under test.
+    flutterRenderer.onTrimMemory(TRIM_MEMORY_COMPLETE);
+
+    // Verify behavior under test.
+    assertEquals(1, invocationCount.get());
+  }
+
+  @Test
+  public void itDoesDispatchSurfaceDestructionNotificationOnlyOnce() {
+    // Setup the test.
+    FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
+
+    flutterRenderer.startRenderingToSurface(fakeSurface, /*keepCurrentSurface=*/ false);
+
+    // Execute the behavior under test.
+    // Simulate calling |FlutterRenderer#stopRenderingToSurface| twice with different code paths.
+    flutterRenderer.stopRenderingToSurface();
+    flutterRenderer.stopRenderingToSurface();
+
+    // Verify behavior under test.
+    verify(fakeFlutterJNI, times(1)).onSurfaceDestroyed();
   }
 }

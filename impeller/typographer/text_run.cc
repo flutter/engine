@@ -6,8 +6,16 @@
 
 namespace impeller {
 
-TextRun::TextRun(Font font) : font_(std::move(font)) {
-  if (!font.IsValid()) {
+TextRun::TextRun(const Font& font) : font_(font) {
+  if (!font_.IsValid()) {
+    return;
+  }
+  is_valid_ = true;
+}
+
+TextRun::TextRun(const Font& font, std::vector<GlyphPosition>& glyphs)
+    : font_(font), glyphs_(std::move(glyphs)) {
+  if (!font_.IsValid()) {
     return;
   }
   is_valid_ = true;

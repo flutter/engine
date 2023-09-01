@@ -22,7 +22,6 @@
 
 #include "font_style.h"
 #include "font_weight.h"
-#include "minikin/LineBreaker.h"
 #include "text_style.h"
 
 namespace txt {
@@ -96,12 +95,13 @@ class ParagraphStyle {
   std::u16string ellipsis;
   std::string locale;
 
-  // Default strategy is kBreakStrategy_Greedy. Sometimes,
-  // kBreakStrategy_HighQuality will produce more desirable layouts (e.g., very
-  // long words are more likely to be reasonably placed).
-  // kBreakStrategy_Balanced will balance between the two.
-  minikin::BreakStrategy break_strategy =
-      minikin::BreakStrategy::kBreakStrategy_Greedy;
+  // Temporary flag that indicates whether the Paragraph should report its
+  // metrics with rounding hacks applied.
+  //
+  // This flag currently defaults to true and will be flipped to false once the
+  // migration is complete.
+  // TODO(LongCatIsLooong): https://github.com/flutter/flutter/issues/31707
+  bool apply_rounding_hack = true;
 
   TextStyle GetTextStyle() const;
 

@@ -108,6 +108,31 @@ inline bool operator==(const FlutterSoftwareBackingStore& a,
          a.destruction_callback == b.destruction_callback;
 }
 
+inline bool operator==(const FlutterSoftwareBackingStore2& a,
+                       const FlutterSoftwareBackingStore2& b) {
+  return a.allocation == b.allocation && a.row_bytes == b.row_bytes &&
+         a.height == b.height && a.user_data == b.user_data &&
+         a.destruction_callback == b.destruction_callback &&
+         a.pixel_format == b.pixel_format;
+}
+
+inline bool operator==(const FlutterRegion& a, const FlutterRegion& b) {
+  if (a.struct_size != b.struct_size || a.rects_count != b.rects_count) {
+    return false;
+  }
+  for (size_t i = 0; i < a.rects_count; i++) {
+    if (!(a.rects[i] == b.rects[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+inline bool operator==(const FlutterBackingStorePresentInfo& a,
+                       const FlutterBackingStorePresentInfo& b) {
+  return a.struct_size == b.struct_size && *a.paint_region == *b.paint_region;
+}
+
 inline bool operator==(const FlutterBackingStore& a,
                        const FlutterBackingStore& b) {
   if (!(a.struct_size == b.struct_size && a.user_data == b.user_data &&
@@ -124,6 +149,8 @@ inline bool operator==(const FlutterBackingStore& a,
       return a.metal == b.metal;
     case kFlutterBackingStoreTypeVulkan:
       return a.vulkan == b.vulkan;
+    case kFlutterBackingStoreTypeSoftware2:
+      return a.software2 == b.software2;
   }
 
   return false;
@@ -173,7 +200,8 @@ inline bool operator==(const FlutterLayer& a, const FlutterLayer& b) {
 
   switch (a.type) {
     case kFlutterLayerContentTypeBackingStore:
-      return *a.backing_store == *b.backing_store;
+      return *a.backing_store == *b.backing_store &&
+             *a.backing_store_present_info == *b.backing_store_present_info;
     case kFlutterLayerContentTypePlatformView:
       return *a.platform_view == *b.platform_view;
   }
@@ -244,6 +272,8 @@ inline std::string FlutterBackingStoreTypeToString(
       return "kFlutterBackingStoreTypeMetal";
     case kFlutterBackingStoreTypeVulkan:
       return "kFlutterBackingStoreTypeVulkan";
+    case kFlutterBackingStoreTypeSoftware2:
+      return "kFlutterBackingStoreTypeSoftware2";
   }
   return "Unknown";
 }
@@ -340,6 +370,29 @@ inline std::string FlutterOpenGLTargetTypeToString(
   return "Unknown";
 }
 
+inline std::string FlutterSoftwarePixelFormatToString(
+    FlutterSoftwarePixelFormat pixfmt) {
+  switch (pixfmt) {
+    case kFlutterSoftwarePixelFormatGray8:
+      return "kFlutterSoftwarePixelFormatGray8";
+    case kFlutterSoftwarePixelFormatRGB565:
+      return "kFlutterSoftwarePixelFormatRGB565";
+    case kFlutterSoftwarePixelFormatRGBA4444:
+      return "kFlutterSoftwarePixelFormatRGBA4444";
+    case kFlutterSoftwarePixelFormatRGBA8888:
+      return "kFlutterSoftwarePixelFormatRGBA8888";
+    case kFlutterSoftwarePixelFormatRGBX8888:
+      return "kFlutterSoftwarePixelFormatRGBX8888";
+    case kFlutterSoftwarePixelFormatBGRA8888:
+      return "kFlutterSoftwarePixelFormatBGRA8888";
+    case kFlutterSoftwarePixelFormatNative32:
+      return "kFlutterSoftwarePixelFormatNative32";
+    default:
+      FML_LOG(ERROR) << "Invalid software rendering pixel format";
+  }
+  return "Unknown";
+}
+
 inline std::ostream& operator<<(std::ostream& out,
                                 const FlutterOpenGLBackingStore& item) {
   out << "(FlutterOpenGLBackingStore) Type: "
@@ -374,6 +427,16 @@ inline std::ostream& operator<<(std::ostream& out,
 }
 
 inline std::ostream& operator<<(std::ostream& out,
+                                const FlutterSoftwareBackingStore2& item) {
+  return out << "(FlutterSoftwareBackingStore2) Allocation: " << item.allocation
+             << " Row Bytes: " << item.row_bytes << " Height: " << item.height
+             << " User Data: " << item.user_data << " Destruction Callback: "
+             << reinterpret_cast<void*>(item.destruction_callback)
+             << " Pixel Format: "
+             << FlutterSoftwarePixelFormatToString(item.pixel_format);
+}
+
+inline std::ostream& operator<<(std::ostream& out,
                                 const FlutterBackingStore& backing_store) {
   out << "(FlutterBackingStore) Struct size: " << backing_store.struct_size
       << " User Data: " << backing_store.user_data
@@ -395,6 +458,10 @@ inline std::ostream& operator<<(std::ostream& out,
 
     case kFlutterBackingStoreTypeVulkan:
       out << backing_store.vulkan;
+      break;
+
+    case kFlutterBackingStoreTypeSoftware2:
+      out << backing_store.software2;
       break;
   }
 

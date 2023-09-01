@@ -13,8 +13,6 @@ namespace impeller {
 
 class CommandBufferMTL final : public CommandBuffer {
  public:
-  CommandBufferMTL();
-
   // |CommandBuffer|
   ~CommandBufferMTL() override;
 
@@ -23,7 +21,8 @@ class CommandBufferMTL final : public CommandBuffer {
 
   id<MTLCommandBuffer> buffer_ = nullptr;
 
-  CommandBufferMTL(id<MTLCommandQueue> queue);
+  CommandBufferMTL(const std::weak_ptr<const Context>& context,
+                   id<MTLCommandQueue> queue);
 
   // |CommandBuffer|
   void SetLabel(const std::string& label) const override;
@@ -32,11 +31,22 @@ class CommandBufferMTL final : public CommandBuffer {
   bool IsValid() const override;
 
   // |CommandBuffer|
-  bool SubmitCommands(CompletionCallback callback) override;
+  bool OnSubmitCommands(CompletionCallback callback) override;
 
   // |CommandBuffer|
-  std::shared_ptr<RenderPass> OnCreateRenderPass(
-      RenderTarget target) const override;
+  void OnWaitUntilScheduled() override;
+
+  // |CommandBuffer|
+  bool SubmitCommandsAsync(std::shared_ptr<RenderPass> render_pass) override;
+
+  // |CommandBuffer|
+  std::shared_ptr<RenderPass> OnCreateRenderPass(RenderTarget target) override;
+
+  // |CommandBuffer|
+  std::shared_ptr<BlitPass> OnCreateBlitPass() override;
+
+  // |CommandBuffer|
+  std::shared_ptr<ComputePass> OnCreateComputePass() override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(CommandBufferMTL);
 };

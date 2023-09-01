@@ -10,6 +10,7 @@
 #include <memory>
 #include <string>
 
+#include "flutter/fml/macros.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/windows/keyboard_key_handler.h"
 
@@ -70,6 +71,10 @@ class KeyboardKeyEmbedderHandler
                     bool was_down,
                     std::function<void(bool)> callback) override;
 
+  void SyncModifiersIfNeeded(int modifiers_state) override;
+
+  std::map<uint64_t, uint64_t> GetPressedState() override;
+
  private:
   struct PendingResponse {
     std::function<void(bool, uint64_t)> callback;
@@ -109,21 +114,39 @@ class KeyboardKeyEmbedderHandler
   // Assign |critical_keys_| with basic information.
   void InitCriticalKeys(MapVirtualKeyToScanCode map_virtual_key_to_scan_code);
   // Update |critical_keys_| with last seen logical and physical key.
-  void UpdateLastSeenCritialKey(int virtual_key,
-                                uint64_t physical_key,
-                                uint64_t logical_key);
+  void UpdateLastSeenCriticalKey(int virtual_key,
+                                 uint64_t physical_key,
+                                 uint64_t logical_key);
   // Check each key's state from |get_key_state_| and synthesize events
   // if their toggling states have been desynchronized.
-  void SynchronizeCritialToggledStates(int virtual_key, bool is_down);
+  void SynchronizeCriticalToggledStates(int event_virtual_key,
+                                        bool is_event_down,
+                                        bool* event_key_can_be_repeat);
   // Check each key's state from |get_key_state_| and synthesize events
   // if their pressing states have been desynchronized.
-  void SynchronizeCritialPressedStates(int virtual_key, bool was_down);
+  void SynchronizeCriticalPressedStates(int event_virtual_key,
+                                        int event_physical_key,
+                                        bool is_event_down,
+                                        bool event_key_can_be_repeat);
 
   // Wraps perform_send_event_ with state tracking. Use this instead of
   // |perform_send_event_| to send events to the framework.
   void SendEvent(const FlutterKeyEvent& event,
                  FlutterKeyEventCallback callback,
                  void* user_data);
+
+  // Send a synthesized down event and update pressing records.
+  void SendSynthesizeDownEvent(uint64_t physical, uint64_t logical);
+
+  // Send a synthesized up event and update pressing records.
+  void SendSynthesizeUpEvent(uint64_t physical, uint64_t logical);
+
+  // Send a synthesized up or down event depending on the current pressing
+  // state.
+  void SynthesizeIfNeeded(uint64_t physical_left,
+                          uint64_t physical_right,
+                          uint64_t logical_left,
+                          bool is_pressed);
 
   std::function<void(const FlutterKeyEvent&, FlutterKeyEventCallback, void*)>
       perform_send_event_;
@@ -171,6 +194,8 @@ class KeyboardKeyEmbedderHandler
 
   // The plane value for the private keys defined by the GTK embedding.
   static const uint64_t windowsPlane;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(KeyboardKeyEmbedderHandler);
 };
 
 }  // namespace flutter

@@ -285,7 +285,7 @@ struct FlutterKeyPendingResponse {
  * Only set in debug mode. Nil in release mode, or if the callback has not been
  * handled.
  */
-@property(nonatomic) NSString* debugHandleSource;
+@property(nonatomic, copy) NSString* debugHandleSource;
 @end
 
 @implementation FlutterKeyCallbackGuard {
@@ -780,6 +780,22 @@ struct FlutterKeyPendingResponse {
   [_pendingResponses removeObjectForKey:@(responseId)];
 }
 
+- (void)syncModifiersIfNeeded:(NSEventModifierFlags)modifierFlags
+                    timestamp:(NSTimeInterval)timestamp {
+  FlutterAsyncKeyCallback replyCallback = ^(BOOL handled) {
+    // Do nothing.
+  };
+  FlutterKeyCallbackGuard* guardedCallback =
+      [[FlutterKeyCallbackGuard alloc] initWithCallback:replyCallback];
+  [self synchronizeModifiers:modifierFlags
+               ignoringFlags:0
+                   timestamp:timestamp
+                       guard:guardedCallback];
+}
+
+- (nonnull NSDictionary*)getPressedState {
+  return [NSDictionary dictionaryWithDictionary:_pressingRecords];
+}
 @end
 
 namespace {

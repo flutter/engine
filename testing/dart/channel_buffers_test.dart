@@ -12,7 +12,7 @@ import 'dart:ui' as ui;
 import 'package:litetest/litetest.dart';
 
 ByteData _makeByteData(String str) {
-  final Uint8List list = utf8.encode(str) as Uint8List;
+  final Uint8List list = utf8.encode(str);
   final ByteBuffer buffer = list.buffer;
   return ByteData.view(buffer);
 }
@@ -22,6 +22,12 @@ void _resize(ui.ChannelBuffers buffers, String name, int newSize) {
 }
 
 void main() {
+  bool assertsEnabled = false;
+  assert(() {
+    assertsEnabled = true;
+    return true;
+  }());
+
   test('push drain', () async {
     const String channel = 'foo';
     final ByteData data = _makeByteData('bar');
@@ -31,11 +37,14 @@ void main() {
       called = true;
     }
     buffers.push(channel, data, callback);
+    // Ignoring the deprecated member use because we're specifically testing
+    // deprecated API.
+    // ignore: deprecated_member_use
     await buffers.drain(channel, (ByteData? drainedData, ui.PlatformMessageResponseCallback drainedCallback) async {
       expect(drainedData, equals(data));
-      assert(!called);
+      expect(called, isFalse);
       drainedCallback(drainedData);
-      assert(called);
+      expect(called, isTrue);
     });
   });
 
@@ -52,7 +61,9 @@ void main() {
 
     // Ignoring the returned future because the completion of the drain is
     // communicated using the `completer`.
-    // ignore: unawaited_futures
+    // Ignoring the deprecated member use because we're specifically testing
+    // deprecated API.
+    // ignore: deprecated_member_use
     buffers.drain(channel, (ByteData? drainedData, ui.PlatformMessageResponseCallback drainedCallback) async {
       log.add('callback');
       completer.complete();
@@ -78,6 +89,9 @@ void main() {
     _resize(buffers, channel, 0);
     buffers.push(channel, data, callback);
     bool didCall = false;
+    // Ignoring the deprecated member use because we're specifically testing
+    // deprecated API.
+    // ignore: deprecated_member_use
     await buffers.drain(channel, (ByteData? drainedData, ui.PlatformMessageResponseCallback drainedCallback) async {
       didCall = true;
     });
@@ -88,6 +102,9 @@ void main() {
     const String channel = 'foo';
     final ui.ChannelBuffers buffers = ui.ChannelBuffers();
     bool didCall = false;
+    // Ignoring the deprecated member use because we're specifically testing
+    // deprecated API.
+    // ignore: deprecated_member_use
     await buffers.drain(channel, (ByteData? drainedData, ui.PlatformMessageResponseCallback drainedCallback) async {
       didCall = true;
     });
@@ -108,17 +125,17 @@ void main() {
     buffers.push(channel, three, callback);
     buffers.push(channel, four, callback);
     int counter = 0;
+    // Ignoring the deprecated member use because we're specifically testing
+    // deprecated API.
+    // ignore: deprecated_member_use
     await buffers.drain(channel, (ByteData? drainedData, ui.PlatformMessageResponseCallback drainedCallback) async {
       switch (counter) {
         case 0:
           expect(drainedData, equals(two));
-          break;
         case 1:
           expect(drainedData, equals(three));
-          break;
         case 2:
           expect(drainedData, equals(four));
-          break;
       }
       counter += 1;
     });
@@ -136,6 +153,9 @@ void main() {
     buffers.push(channel, two, callback);
     _resize(buffers, channel, 1);
     int counter = 0;
+    // Ignoring the deprecated member use because we're specifically testing
+    // deprecated API.
+    // ignore: deprecated_member_use
     await buffers.drain(channel, (ByteData? drainedData, ui.PlatformMessageResponseCallback drainedCallback) async {
       switch (counter) {
         case 0:
@@ -213,21 +233,21 @@ void main() {
     buffers.push('a', three, (ByteData? data) { });
     log.add('top');
     buffers.setListener('a', (ByteData? data, ui.PlatformMessageResponseCallback callback) {
-      assert(data != null);
+      expect(data, isNotNull);
       log.add('a1: ${utf8.decode(data!.buffer.asUint8List())}');
     });
     log.add('-1');
     await null;
     log.add('-2');
     buffers.setListener('a', (ByteData? data, ui.PlatformMessageResponseCallback callback) {
-      assert(data != null);
+      expect(data, isNotNull);
       log.add('a2: ${utf8.decode(data!.buffer.asUint8List())}');
     });
     log.add('-3');
     await null;
     log.add('-4');
     buffers.setListener('b', (ByteData? data, ui.PlatformMessageResponseCallback callback) {
-      assert(data != null);
+      expect(data, isNotNull);
       log.add('b: ${utf8.decode(data!.buffer.asUint8List())}');
     });
     log.add('-5');
@@ -276,7 +296,7 @@ void main() {
     buffers.push('a', three, (ByteData? data) { });
     log.add('-1');
     buffers.setListener('a', (ByteData? data, ui.PlatformMessageResponseCallback callback) {
-      assert(data != null);
+      expect(data, isNotNull);
       log.add('a1: ${utf8.decode(data!.buffer.asUint8List())}');
     });
     await null; // handles one
@@ -285,7 +305,7 @@ void main() {
     await null;
     log.add('-3');
     buffers.setListener('a', (ByteData? data, ui.PlatformMessageResponseCallback callback) {
-      assert(data != null);
+      expect(data, isNotNull);
       log.add('a2: ${utf8.decode(data!.buffer.asUint8List())}');
     });
     log.add('-4');
@@ -358,6 +378,24 @@ void main() {
       'callback2: true',
     ]);
   });
+
+  test('ChannelBufferspush rejects names with nulls', () async {
+    const String channel = 'foo\u0000bar';
+    final ByteData blabla = _makeByteData('blabla');
+    final ui.ChannelBuffers buffers = ui.ChannelBuffers();
+    try {
+      buffers.push(channel, blabla, (ByteData? data) { });
+      fail('did not throw as expected');
+    } on AssertionError catch (e) {
+      expect(e.toString(), contains('U+0000 NULL'));
+    }
+    try {
+      buffers.setListener(channel, (ByteData? data, ui.PlatformMessageResponseCallback callback) { });
+      fail('did not throw as expected');
+    } on AssertionError catch (e) {
+      expect(e.toString(), contains('U+0000 NULL'));
+    }
+  }, skip: !assertsEnabled);
 }
 
 class _TestChannelBuffers extends ui.ChannelBuffers {

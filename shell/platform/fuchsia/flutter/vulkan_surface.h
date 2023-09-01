@@ -5,7 +5,6 @@
 #pragma once
 
 #include <lib/async/cpp/wait.h>
-#include <lib/ui/scenic/cpp/resources.h>
 #include <lib/zx/event.h>
 #include <lib/zx/vmo.h>
 
@@ -14,9 +13,9 @@
 #include <memory>
 
 #include "flutter/fml/macros.h"
+#include "flutter/vulkan/procs/vulkan_handle.h"
+#include "flutter/vulkan/procs/vulkan_proc_table.h"
 #include "flutter/vulkan/vulkan_command_buffer.h"
-#include "flutter/vulkan/vulkan_handle.h"
-#include "flutter/vulkan/vulkan_proc_table.h"
 #include "flutter/vulkan/vulkan_provider.h"
 #include "third_party/skia/include/core/SkColorType.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
@@ -47,9 +46,7 @@ class VulkanSurface final : public SurfaceProducerSurface {
                 fuchsia::sysmem::AllocatorSyncPtr& sysmem_allocator,
                 fuchsia::ui::composition::AllocatorPtr& flatland_allocator,
                 sk_sp<GrDirectContext> context,
-                scenic::Session* session,
-                const SkISize& size,
-                uint32_t buffer_id);
+                const SkISize& size);
 
   ~VulkanSurface() override;
 
@@ -140,8 +137,7 @@ class VulkanSurface final : public SurfaceProducerSurface {
       fuchsia::sysmem::AllocatorSyncPtr& sysmem_allocator,
       fuchsia::ui::composition::AllocatorPtr& flatland_allocator,
       sk_sp<GrDirectContext> context,
-      const SkISize& size,
-      uint32_t buffer_id);
+      const SkISize& size);
 
   bool CreateVulkanImage(vulkan::VulkanProvider& vulkan_provider,
                          const SkISize& size,
@@ -155,21 +151,17 @@ class VulkanSurface final : public SurfaceProducerSurface {
 
   bool CreateFences();
 
-  void PushSessionImageSetupOps(scenic::Session* session);
-
   void Reset();
 
   vulkan::VulkanHandle<VkSemaphore> SemaphoreFromEvent(
       const zx::event& event) const;
 
   vulkan::VulkanProvider& vulkan_provider_;
-  scenic::Session* session_;
   VulkanImage vulkan_image_;
   vulkan::VulkanHandle<VkDeviceMemory> vk_memory_;
   VkMemoryAllocateInfo vk_memory_info_;
   vulkan::VulkanHandle<VkFence> command_buffer_fence_;
   sk_sp<SkSurface> sk_surface_;
-  uint32_t buffer_id_ = 0;
   fuchsia::ui::composition::BufferCollectionImportToken import_token_;
   uint32_t image_id_ = 0;
   vulkan::VulkanHandle<VkBufferCollectionFUCHSIA> collection_;

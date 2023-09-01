@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <functional>
 #include <map>
+#include <memory>
 #include <string>
 #include <type_traits>
 
@@ -100,6 +101,14 @@ template <>
 struct hash<impeller::UniqueID> {
   constexpr std::size_t operator()(const impeller::UniqueID& id) {
     return id.id;
+  }
+};
+
+template <>
+struct less<impeller::UniqueID> {
+  constexpr bool operator()(const impeller::UniqueID& lhs,
+                            const impeller::UniqueID& rhs) const {
+    return lhs.id < rhs.id;
   }
 };
 

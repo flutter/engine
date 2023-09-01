@@ -39,19 +39,26 @@ void Close(PathBuilder* builder) {
 
 struct Vertices* Tessellate(PathBuilder* builder,
                             int fill_type,
-                            Scalar scale,
-                            Scalar angle_tolerance,
-                            Scalar cusp_limit) {
+                            Scalar tolerance) {
   auto path = builder->CopyPath(static_cast<FillType>(fill_type));
-  auto smoothing = SmoothingApproximation(scale, angle_tolerance, cusp_limit);
-  auto polyline = path.CreatePolyline(smoothing);
-
+  auto polyline = path.CreatePolyline(tolerance);
   std::vector<float> points;
-  if (Tessellator{}.Tessellate(path.GetFillType(), polyline,
-                               [&points](Point vertex) {
-                                 points.push_back(vertex.x);
-                                 points.push_back(vertex.y);
-                               }) != Tessellator::Result::kSuccess) {
+  if (Tessellator{}.Tessellate(
+          path.GetFillType(), polyline,
+          [&points](const float* vertices, size_t vertices_size,
+                    const uint16_t* indices, size_t indices_size) {
+            // Results are expected to be re-duplicated.
+            std::vector<Point> raw_points;
+            for (auto i = 0u; i < vertices_size; i += 2) {
+              raw_points.emplace_back(Point{vertices[i], vertices[i + 1]});
+            }
+            for (auto i = 0u; i < indices_size; i++) {
+              auto point = raw_points[indices[i]];
+              points.push_back(point.x);
+              points.push_back(point.y);
+            }
+            return true;
+          }) != Tessellator::Result::kSuccess) {
     return nullptr;
   }
 

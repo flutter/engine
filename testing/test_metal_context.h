@@ -9,7 +9,7 @@
 #include <mutex>
 
 #include "third_party/skia/include/gpu/GrDirectContext.h"
-#include "third_party/skia/include/gpu/mtl/GrMtlTypes.h"
+#include "third_party/skia/include/ports/SkCFObject.h"
 
 namespace flutter {
 

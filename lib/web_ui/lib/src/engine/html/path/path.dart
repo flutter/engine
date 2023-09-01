@@ -7,7 +7,6 @@ import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
-import '../../util.dart';
 import '../../validators.dart';
 import '../../vector_math.dart';
 import 'conic.dart';
@@ -35,35 +34,8 @@ import 'tangent.dart';
 ///   3. if we encounter Move without a preceding Close, and forceClose is true, goto #2
 ///   4. if we encounter Line | Quad | Cubic after Close, cons up a Move
 class SurfacePath implements ui.Path {
-  // Initial valid of last move to index so we can detect if a move to
-  // needs to be inserted after contour closure. See [close].
-  static const int kInitialLastMoveToIndexValue = 0;
-
-  PathRef pathRef;
-  ui.PathFillType _fillType = ui.PathFillType.nonZero;
-  // Skia supports inverse winding as part of path fill type.
-  // For Flutter inverse is always false.
-  bool _isInverseFillType = false;
-  // Store point index + 1 of last moveTo instruction.
-  // If contour has been closed or path is in initial state, the value is
-  // negated.
-  int fLastMoveToIndex = kInitialLastMoveToIndexValue;
-  int _convexityType = SPathConvexityType.kUnknown;
-  int _firstDirection = SPathDirection.kUnknown;
-
   SurfacePath() : pathRef = PathRef() {
     _resetFields();
-  }
-
-  void _resetFields() {
-    fLastMoveToIndex = kInitialLastMoveToIndexValue;
-    _fillType = ui.PathFillType.nonZero;
-    _resetAfterEdit();
-  }
-
-  void _resetAfterEdit() {
-    _convexityType = SPathConvexityType.kUnknown;
-    _firstDirection = SPathDirection.kUnknown;
   }
 
   /// Creates a copy of another [Path].
@@ -81,6 +53,30 @@ class SurfacePath implements ui.Path {
   SurfacePath.shallowCopy(SurfacePath source)
       : pathRef = PathRef.shallowCopy(source.pathRef) {
     _copyFields(source);
+  }
+
+  // Initial valid of last move to index so we can detect if a move to
+  // needs to be inserted after contour closure. See [close].
+  static const int kInitialLastMoveToIndexValue = 0;
+
+  PathRef pathRef;
+  ui.PathFillType _fillType = ui.PathFillType.nonZero;
+  // Store point index + 1 of last moveTo instruction.
+  // If contour has been closed or path is in initial state, the value is
+  // negated.
+  int fLastMoveToIndex = kInitialLastMoveToIndexValue;
+  int _convexityType = SPathConvexityType.kUnknown;
+  int _firstDirection = SPathDirection.kUnknown;
+
+  void _resetFields() {
+    fLastMoveToIndex = kInitialLastMoveToIndexValue;
+    _fillType = ui.PathFillType.nonZero;
+    _resetAfterEdit();
+  }
+
+  void _resetAfterEdit() {
+    _convexityType = SPathConvexityType.kUnknown;
+    _firstDirection = SPathDirection.kUnknown;
   }
 
   void _copyFields(SurfacePath source) {
@@ -661,7 +657,7 @@ class SurfacePath implements ui.Path {
   /// `clockwise` and `largeArc` in such a way that the sweep angle
   /// is always less than 360 degrees.
   ///
-  /// A simple line is appended if either either radii are zero or the last
+  /// A simple line is appended if either radii are zero or the last
   /// point in the path is `arcEnd`. The radii are scaled to fit the last path
   /// point if both are greater than zero but too small to describe an arc.
   ///
@@ -795,7 +791,7 @@ class SurfacePath implements ui.Path {
 
     // The arc may be slightly bigger than 1/4 circle, so allow up to 1/3rd.
     final int segments =
-        (thetaArc / (2.0 * math.pi / 3.0)).abs().ceil().toInt();
+        (thetaArc / (2.0 * math.pi / 3.0)).abs().ceil();
     final double thetaWidth = thetaArc / segments;
     final double t = math.tan(thetaWidth / 2.0);
     if (!t.isFinite) {
@@ -854,7 +850,7 @@ class SurfacePath implements ui.Path {
   /// path in a direction determined by `clockwise` and `largeArc`
   /// in such a way that the sweep angle is always less than 360 degrees.
   ///
-  /// A simple line is appended if either either radii are zero, or, both
+  /// A simple line is appended if either radii are zero, or, both
   /// `arcEndDelta.dx` and `arcEndDelta.dy` are zero. The radii are scaled to
   /// fit the last path point if both are greater than zero but too small to
   /// describe an arc.
@@ -1138,24 +1134,18 @@ class SurfacePath implements ui.Path {
             } else {
               moveTo(outPts[0], outPts[1]);
             }
-            break;
           case SPath.kLineVerb:
             lineTo(outPts[2], outPts[3]);
-            break;
           case SPath.kQuadVerb:
             _quadTo(outPts[2], outPts[3], outPts[4], outPts[5]);
-            break;
           case SPath.kConicVerb:
             conicTo(
                 outPts[2], outPts[3], outPts[4], outPts[5], iter.conicWeight);
-            break;
           case SPath.kCubicVerb:
             cubicTo(outPts[2], outPts[3], outPts[4], outPts[5], outPts[6],
                 outPts[7]);
-            break;
           case SPath.kCloseVerb:
             close();
-            break;
         }
         firstVerb = false;
       }
@@ -1173,10 +1163,10 @@ class SurfacePath implements ui.Path {
         points[p] += offsetX;
         points[p + 1] += offsetY;
       } else {
-        final double x = offsetX + points[p];
-        final double y = offsetY + points[p + 1];
-        points[p] = (matrix4[0] * x) + (matrix4[4] * y) + matrix4[12];
-        points[p + 1] = (matrix4[1] * x) + (matrix4[5] * y) + matrix4[13];
+        final double x = points[p];
+        final double y = points[p + 1];
+        points[p] = (matrix4[0] * x) + (matrix4[4] * y) + (matrix4[12] + offsetX);
+        points[p + 1] = (matrix4[1] * x) + (matrix4[5] * y) + (matrix4[13] + offsetY);
       }
     }
     _resetAfterEdit();
@@ -1209,9 +1199,8 @@ class SurfacePath implements ui.Path {
   @override
   bool contains(ui.Offset point) {
     assert(offsetIsValid(point));
-    final bool isInverse = _isInverseFillType;
     if (pathRef.isEmpty) {
-      return isInverse;
+      return false;
     }
     // Check bounds including right/bottom.
     final ui.Rect bounds = getBounds();
@@ -1219,7 +1208,7 @@ class SurfacePath implements ui.Path {
     final double y = point.dy;
     if (x < bounds.left || y < bounds.top || x > bounds.right ||
         y > bounds.bottom) {
-      return isInverse;
+      return false;
     }
     final PathWinding windings = PathWinding(pathRef, point.dx, point.dy);
     final bool evenOddFill = ui.PathFillType.evenOdd == _fillType;
@@ -1228,43 +1217,38 @@ class SurfacePath implements ui.Path {
       w &= 1;
     }
     if (w != 0) {
-      return !isInverse;
+      return true;
     }
     final int onCurveCount = windings.onCurveCount;
     if (onCurveCount <= 1) {
-      return (onCurveCount != 0) ^ isInverse;
+      return onCurveCount != 0;
     }
     if ((onCurveCount & 1) != 0 || evenOddFill) {
-      return (onCurveCount & 1) != 0 ^ (isInverse ? 1 : 0);
+      return (onCurveCount & 1) != 0;
     }
     // If the point touches an even number of curves, and the fill is winding,
     // check for coincidence. Count coincidence as places where the on curve
     // points have identical tangents.
     final PathIterator iter = PathIterator(pathRef, true);
-    final Float32List _buffer = Float32List(8 + 10);
+    final Float32List buffer = Float32List(8 + 10);
     final List<ui.Offset> tangents = <ui.Offset>[];
     bool done = false;
     do {
       final int oldCount = tangents.length;
-      switch (iter.next(_buffer)) {
+      switch (iter.next(buffer)) {
         case SPath.kMoveVerb:
         case SPath.kCloseVerb:
           break;
         case SPath.kLineVerb:
-          tangentLine(_buffer, x, y, tangents);
-          break;
+          tangentLine(buffer, x, y, tangents);
         case SPath.kQuadVerb:
-          tangentQuad(_buffer, x, y, tangents);
-          break;
+          tangentQuad(buffer, x, y, tangents);
         case SPath.kConicVerb:
-          tangentConic(_buffer, x, y, iter.conicWeight, tangents);
-          break;
+          tangentConic(buffer, x, y, iter.conicWeight, tangents);
         case SPath.kCubicVerb:
-          tangentCubic(_buffer, x, y, tangents);
-          break;
+          tangentCubic(buffer, x, y, tangents);
         case SPath.kDoneVerb:
           done = true;
-          break;
       }
       if (tangents.length > oldCount) {
         final int last = tangents.length - 1;
@@ -1288,7 +1272,7 @@ class SurfacePath implements ui.Path {
         }
       }
     } while (!done);
-    return tangents.isEmpty ? isInverse : !isInverse;
+    return tangents.isNotEmpty;
   }
 
   /// Returns a copy of the path with all the segments of every
@@ -1396,19 +1380,14 @@ class SurfacePath implements ui.Path {
           }
           state.setMovePt(pts[0], pts[1]);
           count = 0;
-          break;
         case SPath.kLineVerb:
           count = 1;
-          break;
         case SPath.kQuadVerb:
           count = 2;
-          break;
         case SPath.kConicVerb:
           count = 2;
-          break;
         case SPath.kCubicVerb:
           count = 3;
-          break;
         case SPath.kCloseVerb:
           if (!state.close()) {
             if (!state.isFinite) {
@@ -1417,7 +1396,6 @@ class SurfacePath implements ui.Path {
             return _setComputedConvexity(SPathConvexityType.kConcave);
           }
           count = 0;
-          break;
         default:
           return _setComputedConvexity(SPathConvexityType.kConcave);
       }
@@ -1483,11 +1461,9 @@ class SurfacePath implements ui.Path {
         case SPath.kMoveVerb:
           minX = maxX = points[pIndex];
           minY = maxY = points[pIndex + 1];
-          break;
         case SPath.kLineVerb:
           minX = maxX = points[pIndex + 2];
           minY = maxY = points[pIndex + 3];
-          break;
         case SPath.kQuadVerb:
           quadBounds ??= QuadBounds();
           quadBounds.calculateBounds(points, pIndex);
@@ -1495,7 +1471,6 @@ class SurfacePath implements ui.Path {
           minY = quadBounds.minY;
           maxX = quadBounds.maxX;
           maxY = quadBounds.maxY;
-          break;
         case SPath.kConicVerb:
           conicBounds ??= ConicBounds();
           conicBounds.calculateBounds(points, iter.conicWeight, pIndex);
@@ -1503,7 +1478,6 @@ class SurfacePath implements ui.Path {
           minY = conicBounds.minY;
           maxX = conicBounds.maxX;
           maxY = conicBounds.maxY;
-          break;
         case SPath.kCubicVerb:
           cubicBounds ??= CubicBounds();
           cubicBounds.calculateBounds(points, pIndex);
@@ -1511,7 +1485,6 @@ class SurfacePath implements ui.Path {
           minY = cubicBounds.minY;
           maxX = cubicBounds.maxX;
           maxY = cubicBounds.maxY;
-          break;
       }
       if (!ltrbInitialized) {
         left = minX;
@@ -1584,7 +1557,8 @@ class SurfacePath implements ui.Path {
 
   @override
   String toString() {
-    if (assertionsEnabled) {
+    String result = super.toString();
+    assert(() {
       final StringBuffer sb = StringBuffer();
       sb.write('Path(');
       final PathRefIterator iter = PathRefIterator(pathRef);
@@ -1595,36 +1569,30 @@ class SurfacePath implements ui.Path {
         switch (verb) {
           case SPath.kMoveVerb:
             sb.write('MoveTo(${points[pIndex]}, ${points[pIndex + 1]})');
-            break;
           case SPath.kLineVerb:
             sb.write('LineTo(${points[pIndex + 2]}, ${points[pIndex + 3]})');
-            break;
           case SPath.kQuadVerb:
             sb.write('Quad(${points[pIndex + 2]}, ${points[pIndex + 3]},'
                 ' ${points[pIndex + 3]}, ${points[pIndex + 4]})');
-            break;
           case SPath.kConicVerb:
             sb.write('Conic(${points[pIndex + 2]}, ${points[pIndex + 3]},'
                 ' ${points[pIndex + 3]}, ${points[pIndex + 4]}, w = ${iter.conicWeight})');
-            break;
           case SPath.kCubicVerb:
             sb.write('Cubic(${points[pIndex + 2]}, ${points[pIndex + 3]},'
                 ' ${points[pIndex + 3]}, ${points[pIndex + 4]}, '
                 ' ${points[pIndex + 5]}, ${points[pIndex + 6]})');
-            break;
           case SPath.kCloseVerb:
             sb.write('Close()');
-            break;
         }
         if (iter.peek() != SPath.kDoneVerb) {
           sb.write(' ');
         }
       }
       sb.write(')');
-      return sb.toString();
-    } else {
-      return super.toString();
-    }
+      result = sb.toString();
+      return true;
+    }());
+    return result;
   }
 }
 

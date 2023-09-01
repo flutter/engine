@@ -5,7 +5,6 @@
 import 'package:ui/ui.dart' as ui;
 
 import '../../browser_detection.dart';
-import '../../util.dart';
 
 /// Creates shader program for target webgl version.
 ///
@@ -28,6 +27,13 @@ import '../../util.dart';
 ///  method.addStatement('${u1.name} = vec4(1.0, 1.0, 1.0, 0.0);');
 ///  source = builder.build();
 class ShaderBuilder {
+  ShaderBuilder(this.version) : isWebGl2 = version == WebGLVersion.webgl2,
+        _isFragmentShader = false;
+
+  ShaderBuilder.fragment(this.version) :
+        isWebGl2 = version == WebGLVersion.webgl2,
+        _isFragmentShader = true;
+
   /// WebGL version.
   final int version;
   final List<ShaderDeclaration> declarations = <ShaderDeclaration>[];
@@ -58,13 +64,6 @@ class ShaderBuilder {
 
   /// Lazily allocated fragment color output.
   ShaderDeclaration? _fragmentColorDeclaration;
-
-  ShaderBuilder(this.version) : isWebGl2 = version == WebGLVersion.webgl2,
-        _isFragmentShader = false;
-
-  ShaderBuilder.fragment(this.version) :
-        isWebGl2 = version == WebGLVersion.webgl2,
-        _isFragmentShader = true;
 
   /// Returns fragment color declaration for fragment shader.
   ///
@@ -132,17 +131,13 @@ class ShaderBuilder {
     switch (variable.storage) {
       case ShaderStorageQualifier.kConst:
         _buffer.write('const ');
-        break;
       case ShaderStorageQualifier.kAttribute:
         _buffer.write(isWebGl2 ? 'in '
             : _isFragmentShader ? 'varying ' : 'attribute ');
-        break;
       case ShaderStorageQualifier.kUniform:
         _buffer.write('uniform ');
-        break;
       case ShaderStorageQualifier.kVarying:
         _buffer.write(isWebGl2 ? 'out ' : 'varying ');
-        break;
     }
     _buffer.write('${typeToString(variable.dataType)} ${variable.name}');
     if (variable.storage == ShaderStorageQualifier.kConst) {
@@ -254,11 +249,12 @@ class ShaderMethod {
   }
 
   void addStatement(String statement) {
-    if (assertionsEnabled) {
-      _statements.add('  ' * _indentLevel + statement);
-    } else {
-      _statements.add(statement);
-    }
+    String itemToAdd = statement;
+    assert(() {
+      itemToAdd = '  ' * _indentLevel + statement;
+      return true;
+    }());
+    _statements.add(itemToAdd);
   }
 
   /// Adds statements to compute tiling in 0..1 coordinate space.
@@ -277,17 +273,14 @@ class ShaderMethod {
     switch(tileMode) {
       case ui.TileMode.repeated:
         addStatement('float $destination = fract($source);');
-        break;
       case ui.TileMode.mirror:
         addStatement('float $destination = ($source - 1.0);');
         addStatement(
             '$destination = '
             'abs(($destination - 2.0 * floor($destination * 0.5)) - 1.0);');
-        break;
       case ui.TileMode.clamp:
       case ui.TileMode.decal:
         addStatement('float $destination = $source;');
-        break;
     }
   }
 
@@ -345,10 +338,6 @@ abstract class ShaderStorageQualifier {
 
 /// Shader variable and constant declaration.
 class ShaderDeclaration {
-  final String name;
-  final int dataType;
-  final int storage;
-  final String constValue;
   ShaderDeclaration(this.name, this.dataType, this.storage)
       : assert(!_isGLSLReservedWord(name)),
         constValue = '';
@@ -356,6 +345,11 @@ class ShaderDeclaration {
   /// Constructs a constant.
   ShaderDeclaration.constant(this.name, this.dataType, this.constValue)
       : storage = ShaderStorageQualifier.kConst;
+
+  final String name;
+  final int dataType;
+  final int storage;
+  final String constValue;
 }
 
 // These are used only in debug mode to assert if used as variable name.

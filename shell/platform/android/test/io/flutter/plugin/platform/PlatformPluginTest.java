@@ -6,6 +6,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -27,7 +28,6 @@ import android.view.WindowManager;
 import androidx.activity.OnBackPressedCallback;
 import androidx.fragment.app.FragmentActivity;
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel.Brightness;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel.ClipboardContentFormat;
@@ -38,10 +38,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
+import org.robolectric.shadows.ShadowLooper;
 
 @Config(manifest = Config.NONE)
-@RunWith(AndroidJUnit4.class)
+@RunWith(RobolectricTestRunner.class)
 public class PlatformPluginTest {
   private final Context ctx = ApplicationProvider.getApplicationContext();
 
@@ -91,6 +94,8 @@ public class PlatformPluginTest {
     assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
   }
 
+  @SuppressWarnings("deprecation")
+  // ClipboardManager.getText
   @Config(sdk = 28)
   @Test
   public void platformPlugin_hasStrings() {
@@ -312,6 +317,8 @@ public class PlatformPluginTest {
     }
   }
 
+  @SuppressWarnings("deprecation")
+  // SYSTEM_UI_FLAG_*, setSystemUiVisibility
   @Config(sdk = 29)
   @Test
   public void setSystemUiMode() {
@@ -368,6 +375,67 @@ public class PlatformPluginTest {
     }
   }
 
+  @SuppressWarnings("deprecation")
+  // SYSTEM_UI_FLAG_FULLSCREEN
+  @Test
+  public void setSystemUiModeListener_overlaysAreHidden() {
+    ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class);
+    controller.setup();
+    Activity fakeActivity = controller.get();
+
+    PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
+    PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
+
+    // Subscribe to system UI visibility events.
+    platformPlugin.mPlatformMessageHandler.setSystemUiChangeListener();
+
+    // Simulate system UI changed to full screen.
+    fakeActivity
+        .getWindow()
+        .getDecorView()
+        .dispatchSystemUiVisibilityChanged(View.SYSTEM_UI_FLAG_FULLSCREEN);
+
+    // No events should have been sent to the platform channel yet. They are scheduled for
+    // the next frame.
+    verify(fakePlatformChannel, never()).systemChromeChanged(anyBoolean());
+
+    // Simulate the next frame.
+    ShadowLooper.runUiThreadTasksIncludingDelayedTasks();
+
+    // Now the platform channel should receive the event.
+    verify(fakePlatformChannel).systemChromeChanged(false);
+  }
+
+  @SuppressWarnings("deprecation")
+  // dispatchSystemUiVisibilityChanged
+  @Test
+  public void setSystemUiModeListener_overlaysAreVisible() {
+    ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class);
+    controller.setup();
+    Activity fakeActivity = controller.get();
+
+    PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
+    PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
+
+    // Subscribe to system Ui visibility events.
+    platformPlugin.mPlatformMessageHandler.setSystemUiChangeListener();
+
+    // Simulate system UI changed to *not* full screen.
+    fakeActivity.getWindow().getDecorView().dispatchSystemUiVisibilityChanged(0);
+
+    // No events should have been sent to the platform channel yet. They are scheduled for
+    // the next frame.
+    verify(fakePlatformChannel, never()).systemChromeChanged(anyBoolean());
+
+    // Simulate the next frame.
+    ShadowLooper.runUiThreadTasksIncludingDelayedTasks();
+
+    // Now the platform channel should receive the event.
+    verify(fakePlatformChannel).systemChromeChanged(true);
+  }
+
+  @SuppressWarnings("deprecation")
+  // SYSTEM_UI_FLAG_*, setSystemUiVisibility
   @Config(sdk = 28)
   @Test
   public void doNotEnableEdgeToEdgeOnOlderSdk() {
@@ -388,6 +456,8 @@ public class PlatformPluginTest {
                 | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
   }
 
+  @SuppressWarnings("deprecation")
+  // FLAG_TRANSLUCENT_STATUS, FLAG_TRANSLUCENT_NAVIGATION
   @Config(sdk = 29)
   @Test
   public void verifyWindowFlagsSetToStyleOverlays() {
@@ -409,6 +479,19 @@ public class PlatformPluginTest {
         .clearFlags(
             WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
                 | WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
+  }
+
+  @Test
+  public void setFrameworkHandlesBackFlutterActivity() {
+    Activity mockActivity = mock(Activity.class);
+    PlatformChannel mockPlatformChannel = mock(PlatformChannel.class);
+    PlatformPluginDelegate mockPlatformPluginDelegate = mock(PlatformPluginDelegate.class);
+    PlatformPlugin platformPlugin =
+        new PlatformPlugin(mockActivity, mockPlatformChannel, mockPlatformPluginDelegate);
+
+    platformPlugin.mPlatformMessageHandler.setFrameworkHandlesBack(true);
+
+    verify(mockPlatformPluginDelegate, times(1)).setFrameworkHandlesBack(true);
   }
 
   @Test
@@ -442,8 +525,12 @@ public class PlatformPluginTest {
     verify(mockActivity, never()).finish();
   }
 
+  @SuppressWarnings("deprecation")
+  // Robolectric.setupActivity.
+  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void popSystemNavigatorFlutterFragment() {
+    // Migrate to ActivityScenario by following https://github.com/robolectric/robolectric/pull/4736
     FragmentActivity activity = spy(Robolectric.setupActivity(FragmentActivity.class));
     final AtomicBoolean onBackPressedCalled = new AtomicBoolean(false);
     OnBackPressedCallback backCallback =
@@ -468,6 +555,9 @@ public class PlatformPluginTest {
     assertTrue(onBackPressedCalled.get());
   }
 
+  @SuppressWarnings("deprecation")
+  // Robolectric.setupActivity.
+  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void doesNotDoAnythingByDefaultIfFragmentPopSystemNavigatorOverridden() {
     FragmentActivity activity = spy(Robolectric.setupActivity(FragmentActivity.class));

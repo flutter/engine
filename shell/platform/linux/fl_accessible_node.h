@@ -5,22 +5,26 @@
 #ifndef FLUTTER_SHELL_PLATFORM_LINUX_FL_ACCESSIBLE_NODE_H_
 #define FLUTTER_SHELL_PLATFORM_LINUX_FL_ACCESSIBLE_NODE_H_
 
-#include <gtk/gtk.h>
+#include <atk/atk.h>
+#include <gio/gio.h>
 
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
 
 G_BEGIN_DECLS
 
-// ATK doesn't have the g_autoptr macros, so add them manually.
+// ATK g_autoptr macros weren't added until 2.37. Add them manually.
 // https://gitlab.gnome.org/GNOME/atk/-/issues/10
+#if !ATK_CHECK_VERSION(2, 37, 0)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(AtkObject, g_object_unref)
+#endif
 
-G_DECLARE_FINAL_TYPE(FlAccessibleNode,
-                     fl_accessible_node,
-                     FL,
-                     ACCESSIBLE_NODE,
-                     AtkObject);
+#define FL_TYPE_ACCESSIBLE_NODE fl_accessible_node_get_type()
+G_DECLARE_DERIVABLE_TYPE(FlAccessibleNode,
+                         fl_accessible_node,
+                         FL,
+                         ACCESSIBLE_NODE,
+                         AtkObject);
 
 /**
  * FlAccessibleNode:
@@ -28,6 +32,26 @@ G_DECLARE_FINAL_TYPE(FlAccessibleNode,
  * #FlAccessibleNode is an object that exposes a Flutter accessibility node to
  * ATK.
  */
+struct _FlAccessibleNodeClass {
+  AtkObjectClass parent_class;
+
+  void (*set_name)(FlAccessibleNode* node, const gchar* name);
+  void (*set_extents)(FlAccessibleNode* node,
+                      gint x,
+                      gint y,
+                      gint width,
+                      gint height);
+  void (*set_flags)(FlAccessibleNode* node, FlutterSemanticsFlag flags);
+  void (*set_actions)(FlAccessibleNode* node, FlutterSemanticsAction actions);
+  void (*set_value)(FlAccessibleNode* node, const gchar* value);
+  void (*set_text_selection)(FlAccessibleNode* node, gint base, gint extent);
+  void (*set_text_direction)(FlAccessibleNode* node,
+                             FlutterTextDirection direction);
+
+  void (*perform_action)(FlAccessibleNode* node,
+                         FlutterSemanticsAction action,
+                         GBytes* data);
+};
 
 /**
  * fl_accessible_node_new:
@@ -42,7 +66,7 @@ G_DECLARE_FINAL_TYPE(FlAccessibleNode,
 FlAccessibleNode* fl_accessible_node_new(FlEngine* engine, int32_t id);
 
 /**
- * fl_accessible_node_new:
+ * fl_accessible_node_set_parent:
  * @node: an #FlAccessibleNode.
  * @parent: an #AtkObject.
  * @index: the index of this node in the parent.
@@ -54,7 +78,7 @@ void fl_accessible_node_set_parent(FlAccessibleNode* node,
                                    gint index);
 
 /**
- * fl_accessible_node_new:
+ * fl_accessible_node_set_children:
  * @node: an #FlAccessibleNode.
  * @children: (transfer none) (element-type AtkObject): a list of #AtkObject.
  *
@@ -107,6 +131,49 @@ void fl_accessible_node_set_flags(FlAccessibleNode* node,
  */
 void fl_accessible_node_set_actions(FlAccessibleNode* node,
                                     FlutterSemanticsAction actions);
+
+/**
+ * fl_accessible_node_set_value:
+ * @node: an #FlAccessibleNode.
+ * @value: a node value.
+ *
+ * Sets the value of this node.
+ */
+void fl_accessible_node_set_value(FlAccessibleNode* node, const gchar* value);
+
+/**
+ * fl_accessible_node_set_text_selection:
+ * @node: an #FlAccessibleNode.
+ * @base: the position at which the text selection originates.
+ * @extent: the position at which the text selection terminates.
+ *
+ * Sets the text selection of this node.
+ */
+void fl_accessible_node_set_text_selection(FlAccessibleNode* node,
+                                           gint base,
+                                           gint extent);
+
+/**
+ * fl_accessible_node_set_text_direction:
+ * @node: an #FlAccessibleNode.
+ * @direction: the direction of the text.
+ *
+ * Sets the text direction of this node.
+ */
+void fl_accessible_node_set_text_direction(FlAccessibleNode* node,
+                                           FlutterTextDirection direction);
+
+/**
+ * fl_accessible_node_dispatch_action:
+ * @node: an #FlAccessibleNode.
+ * @action: the action being dispatched.
+ * @data: (allow-none): data associated with the action.
+ *
+ * Performs a semantic action for this node.
+ */
+void fl_accessible_node_perform_action(FlAccessibleNode* node,
+                                       FlutterSemanticsAction action,
+                                       GBytes* data);
 
 G_END_DECLS
 

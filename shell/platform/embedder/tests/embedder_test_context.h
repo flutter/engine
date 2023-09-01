@@ -24,11 +24,16 @@
 namespace flutter {
 namespace testing {
 
+using SemanticsUpdateCallback2 =
+    std::function<void(const FlutterSemanticsUpdate2*)>;
+using SemanticsUpdateCallback =
+    std::function<void(const FlutterSemanticsUpdate*)>;
 using SemanticsNodeCallback = std::function<void(const FlutterSemanticsNode*)>;
 using SemanticsActionCallback =
     std::function<void(const FlutterSemanticsCustomAction*)>;
 using LogMessageCallback =
     std::function<void(const char* tag, const char* message)>;
+using ChannelUpdateCallback = std::function<void(const FlutterChannelUpdate*)>;
 
 struct AOTDataDeleter {
   void operator()(FlutterEngineAOTData aot_data) {
@@ -67,20 +72,25 @@ class EmbedderTestContext {
 
   void SetRootSurfaceTransformation(SkMatrix matrix);
 
-  void AddIsolateCreateCallback(fml::closure closure);
+  void AddIsolateCreateCallback(const fml::closure& closure);
+
+  void SetSemanticsUpdateCallback2(SemanticsUpdateCallback2 update_semantics);
+
+  void SetSemanticsUpdateCallback(SemanticsUpdateCallback update_semantics);
 
   void AddNativeCallback(const char* name, Dart_NativeFunction function);
 
-  void SetSemanticsNodeCallback(
-      const SemanticsNodeCallback& update_semantics_node);
+  void SetSemanticsNodeCallback(SemanticsNodeCallback update_semantics_node);
 
   void SetSemanticsCustomActionCallback(
-      const SemanticsActionCallback& semantics_custom_action);
+      SemanticsActionCallback semantics_custom_action);
 
   void SetPlatformMessageCallback(
       const std::function<void(const FlutterPlatformMessage*)>& callback);
 
   void SetLogMessageCallback(const LogMessageCallback& log_message_callback);
+
+  void SetChannelUpdateCallback(const ChannelUpdateCallback& callback);
 
   std::future<sk_sp<SkImage>> GetNextSceneImage();
 
@@ -121,8 +131,11 @@ class EmbedderTestContext {
   UniqueAOTData aot_data_;
   std::vector<fml::closure> isolate_create_callbacks_;
   std::shared_ptr<TestDartNativeResolver> native_resolver_;
+  SemanticsUpdateCallback2 update_semantics_callback2_;
+  SemanticsUpdateCallback update_semantics_callback_;
   SemanticsNodeCallback update_semantics_node_callback_;
   SemanticsActionCallback update_semantics_custom_action_callback_;
+  ChannelUpdateCallback channel_update_callback_;
   std::function<void(const FlutterPlatformMessage*)> platform_message_callback_;
   LogMessageCallback log_message_callback_;
   std::unique_ptr<EmbedderTestCompositor> compositor_;
@@ -132,16 +145,21 @@ class EmbedderTestContext {
 
   static VoidCallback GetIsolateCreateCallbackHook();
 
-  static FlutterUpdateSemanticsNodeCallback
-  GetUpdateSemanticsNodeCallbackHook();
+  FlutterUpdateSemanticsCallback2 GetUpdateSemanticsCallback2Hook();
 
-  static FlutterUpdateSemanticsCustomActionCallback
+  FlutterUpdateSemanticsCallback GetUpdateSemanticsCallbackHook();
+
+  FlutterUpdateSemanticsNodeCallback GetUpdateSemanticsNodeCallbackHook();
+
+  FlutterUpdateSemanticsCustomActionCallback
   GetUpdateSemanticsCustomActionCallbackHook();
 
   static FlutterLogMessageCallback GetLogMessageCallbackHook();
 
   static FlutterComputePlatformResolvedLocaleCallback
   GetComputePlatformResolvedLocaleCallbackHook();
+
+  FlutterChannelUpdateCallback GetChannelUpdateCallbackHook();
 
   void SetupAOTMappingsIfNecessary();
 

@@ -40,6 +40,8 @@ const std::string_view
 const std::string_view
     ServiceProtocol::kRenderFrameWithRasterStatsExtensionName =
         "_flutter.renderFrameWithRasterStats";
+const std::string_view ServiceProtocol::kReloadAssetFonts =
+    "_flutter.reloadAssetFonts";
 
 static constexpr std::string_view kViewIdPrefx = "_flutterView/";
 static constexpr std::string_view kListViewsExtensionName =
@@ -60,6 +62,7 @@ ServiceProtocol::ServiceProtocol()
           kGetSkSLsExtensionName,
           kEstimateRasterCacheMemoryExtensionName,
           kRenderFrameWithRasterStatsExtensionName,
+          kReloadAssetFonts,
       }),
       handlers_mutex_(fml::SharedMutex::Create()) {}
 
@@ -68,7 +71,7 @@ ServiceProtocol::~ServiceProtocol() {
 }
 
 void ServiceProtocol::AddHandler(Handler* handler,
-                                 Handler::Description description) {
+                                 const Handler::Description& description) {
   fml::UniqueLock lock(*handlers_mutex_);
   handlers_.emplace(handler, description);
 }
@@ -78,8 +81,9 @@ void ServiceProtocol::RemoveHandler(Handler* handler) {
   handlers_.erase(handler);
 }
 
-void ServiceProtocol::SetHandlerDescription(Handler* handler,
-                                            Handler::Description description) {
+void ServiceProtocol::SetHandlerDescription(
+    Handler* handler,
+    const Handler::Description& description) {
   fml::SharedLock lock(*handlers_mutex_);
   auto it = handlers_.find(handler);
   if (it != handlers_.end()) {

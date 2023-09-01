@@ -13,11 +13,25 @@ TEST(FlowTest, SurfaceFrameDoesNotSubmitInDtor) {
   SurfaceFrame::FramebufferInfo framebuffer_info;
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/nullptr, framebuffer_info,
-      /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) {
+      /*submit_callback=*/
+      [](const SurfaceFrame&, DlCanvas*) {
         EXPECT_FALSE(true);
         return true;
-      });
+      },
+      SkISize::Make(800, 600));
   surface_frame.reset();
+}
+
+TEST(FlowTest, SurfaceFrameDoesNotHaveEmptyCanvas) {
+  SurfaceFrame::FramebufferInfo framebuffer_info;
+  SurfaceFrame frame(
+      /*surface=*/nullptr, framebuffer_info,
+      /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
+      /*frame_size=*/SkISize::Make(800, 600),
+      /*context_result=*/nullptr, /*display_list_fallback=*/true);
+
+  EXPECT_FALSE(frame.Canvas()->GetLocalClipBounds().isEmpty());
+  EXPECT_FALSE(frame.Canvas()->QuickReject(SkRect::MakeLTRB(10, 10, 50, 50)));
 }
 
 }  // namespace flutter

@@ -3,11 +3,15 @@
 # This script requires depot_tools to be on path.
 
 print_usage () {
-  echo "Usage: create_cipd_united_package.sh <VERSION_TAG> [PATH_TO_SDK_DIR]"
-  echo "  where:"
-  echo "    - VERSION_TAG is the tag of the cipd packages, e.g. 28r6 or 31v1"
-  echo "    - PATH_TO_SDK_DIR is the path to the sdk folder. If omitted, this defaults to"
+  echo "Usage:"
+  echo "  ./create_cipd_packages.sh <VERSION_TAG> [PATH_TO_SDK_DIR]"
+  echo "    Downloads, packages, and uploads Android SDK packages where:"
+  echo "      - VERSION_TAG is the tag of the cipd packages, e.g. 28r6 or 31v1. Must contain"
+  echo "                    only lowercase letters and numbers."
+  echo "      - PATH_TO_SDK_DIR is the path to the sdk folder. If omitted, this defaults to"
   echo "                      your ANDROID_SDK_ROOT environment variable."
+  echo "  ./create_cipd_packages.sh list"
+  echo "    Lists the available packages for use in 'packages.txt'"
   echo ""
   echo "This script downloads the packages specified in packages.txt and uploads"
   echo "them to CIPD for linux, mac, and windows."
@@ -24,6 +28,13 @@ print_usage () {
 
 # Validate version is provided
 if [[ $1 == "" ]]; then
+  print_usage
+  exit 1
+fi
+
+#Validate version contains only lower case letters and numbers
+if ! [[ $1 =~ ^[[:lower:][:digit:]]+$ ]]; then
+  echo "Version tag can only consist of lower case letters and digits.";
   print_usage
   exit 1
 fi
@@ -69,10 +80,16 @@ while [ ! -f "$sdkmanager_path" ]; do
   ((i++))
 done
 
+# list available packages
+if [ $version_tag == "list" ]; then
+  $sdkmanager_path  --list --include_obsolete
+  exit 0
+fi
+
 # We create a new temporary SDK directory because the default working directory
 # tends to not update/re-download packages if they are being used. This guarantees
 # a clean install of Android SDK.
-temp_dir=`mktemp -d -t android_sdk`
+temp_dir=`mktemp -d -t android_sdkXXXX`
 
 for platform in "${platforms[@]}"; do
   sdk_root="$temp_dir/sdk_$platform"
@@ -99,8 +116,11 @@ for platform in "${platforms[@]}"; do
   done
 
   # Special treatment for NDK to move to expected directory.
-  mv $upload_dir/sdk/ndk-bundle $upload_dir
-  mv $upload_dir/ndk-bundle $upload_dir/ndk
+  mv $upload_dir/sdk/ndk $upload_dir/ndk-bundle
+  ndk_sub_paths=`find $upload_dir/ndk-bundle -maxdepth 1 -type d`
+  ndk_sub_paths_arr=($ndk_sub_paths)
+  mv ${ndk_sub_paths_arr[1]} $upload_dir/ndk
+  rm -rf $upload_dir/ndk-bundle
 
   # Accept all licenses to ensure they are generated and uploaded.
   yes "y" | $sdkmanager_path --licenses --sdk_root=$sdk_root

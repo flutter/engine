@@ -97,6 +97,7 @@ class PointerDataConverter {
     required int platformData,
     required double scrollDeltaX,
     required double scrollDeltaY,
+    required double scale,
   }) {
     assert(_pointers.containsKey(device));
     final _PointerState state = _pointers[device]!;
@@ -132,6 +133,7 @@ class PointerDataConverter {
       platformData: platformData,
       scrollDeltaX: scrollDeltaX,
       scrollDeltaY: scrollDeltaY,
+      scale: scale,
     );
   }
 
@@ -165,6 +167,7 @@ class PointerDataConverter {
     required int platformData,
     required double scrollDeltaX,
     required double scrollDeltaY,
+    required double scale,
   }) {
     assert(_pointers.containsKey(device));
     final _PointerState state = _pointers[device]!;
@@ -204,6 +207,7 @@ class PointerDataConverter {
       platformData: platformData,
       scrollDeltaX: scrollDeltaX,
       scrollDeltaY: scrollDeltaY,
+      scale: scale,
     );
   }
 
@@ -235,12 +239,12 @@ class PointerDataConverter {
     int platformData = 0,
     double scrollDeltaX = 0.0,
     double scrollDeltaY = 0.0,
+    double scale = 1.0,
   }) {
     if (_debugLogPointerConverter) {
       print('>> device=$device change=$change buttons=$buttons');
     }
     final bool isDown = buttons != 0;
-    assert(change != null); // ignore: unnecessary_null_comparison
     if (signalKind == null ||
       signalKind == ui.PointerSignalKind.none) {
       switch (change) {
@@ -274,9 +278,9 @@ class PointerDataConverter {
               platformData: platformData,
               scrollDeltaX: scrollDeltaX,
               scrollDeltaY: scrollDeltaY,
+              scale: scale,
             )
           );
-          break;
         case ui.PointerChange.hover:
           final bool alreadyAdded = _pointers.containsKey(device);
           _ensureStateForPointer(device, physicalX, physicalY);
@@ -308,6 +312,7 @@ class PointerDataConverter {
                 platformData: platformData,
                 scrollDeltaX: scrollDeltaX,
                 scrollDeltaY: scrollDeltaY,
+                scale: scale,
               )
             );
           }
@@ -337,10 +342,10 @@ class PointerDataConverter {
               platformData: platformData,
               scrollDeltaX: scrollDeltaX,
               scrollDeltaY: scrollDeltaY,
+              scale: scale,
             )
           );
           _activeButtons = buttons;
-          break;
         case ui.PointerChange.down:
           final bool alreadyAdded = _pointers.containsKey(device);
           final _PointerState state = _ensureStateForPointer(
@@ -374,6 +379,7 @@ class PointerDataConverter {
                 platformData: platformData,
                 scrollDeltaX: scrollDeltaX,
                 scrollDeltaY: scrollDeltaY,
+                scale: scale,
               )
             );
           }
@@ -406,6 +412,7 @@ class PointerDataConverter {
                 platformData: platformData,
                 scrollDeltaX: scrollDeltaX,
                 scrollDeltaY: scrollDeltaY,
+                scale: scale,
               )
             );
           }
@@ -435,10 +442,10 @@ class PointerDataConverter {
               platformData: platformData,
               scrollDeltaX: scrollDeltaX,
               scrollDeltaY: scrollDeltaY,
+              scale: scale,
             )
           );
           _activeButtons = buttons;
-          break;
         case ui.PointerChange.move:
           assert(_pointers.containsKey(device));
           assert(isDown);
@@ -468,10 +475,10 @@ class PointerDataConverter {
               platformData: platformData,
               scrollDeltaX: scrollDeltaX,
               scrollDeltaY: scrollDeltaY,
+              scale: scale,
             )
           );
           _activeButtons = buttons;
-          break;
         case ui.PointerChange.up:
         case ui.PointerChange.cancel:
           assert(_pointers.containsKey(device));
@@ -514,6 +521,7 @@ class PointerDataConverter {
                 platformData: platformData,
                 scrollDeltaX: scrollDeltaX,
                 scrollDeltaY: scrollDeltaY,
+                scale: scale,
               )
             );
           }
@@ -543,6 +551,7 @@ class PointerDataConverter {
               platformData: platformData,
               scrollDeltaX: scrollDeltaX,
               scrollDeltaY: scrollDeltaY,
+              scale: scale,
             )
           );
           if (kind == ui.PointerDeviceKind.touch) {
@@ -574,11 +583,11 @@ class PointerDataConverter {
                 platformData: platformData,
                 scrollDeltaX: scrollDeltaX,
                 scrollDeltaY: scrollDeltaY,
+                scale: scale,
               )
             );
             _pointers.remove(device);
           }
-          break;
         case ui.PointerChange.remove:
           assert(_pointers.containsKey(device));
           final _PointerState state = _pointers[device]!;
@@ -609,20 +618,21 @@ class PointerDataConverter {
               platformData: platformData,
               scrollDeltaX: scrollDeltaX,
               scrollDeltaY: scrollDeltaY,
+              scale: scale,
             )
           );
           _pointers.remove(device);
-          break;
         case ui.PointerChange.panZoomStart:
         case ui.PointerChange.panZoomUpdate:
         case ui.PointerChange.panZoomEnd:
           // Pointer pan/zoom events are not generated on web.
           assert(false);
-          break;
       }
     } else {
       switch (signalKind) {
         case ui.PointerSignalKind.scroll:
+        case ui.PointerSignalKind.scrollInertiaCancel:
+        case ui.PointerSignalKind.scale:
           final bool alreadyAdded = _pointers.containsKey(device);
           _ensureStateForPointer(device, physicalX, physicalY);
           if (!alreadyAdded) {
@@ -652,6 +662,7 @@ class PointerDataConverter {
                 platformData: platformData,
                 scrollDeltaX: scrollDeltaX,
                 scrollDeltaY: scrollDeltaY,
+                scale: scale,
               )
             );
           }
@@ -686,6 +697,7 @@ class PointerDataConverter {
                   platformData: platformData,
                   scrollDeltaX: scrollDeltaX,
                   scrollDeltaY: scrollDeltaY,
+                  scale: scale,
                 )
               );
             } else {
@@ -714,6 +726,7 @@ class PointerDataConverter {
                   platformData: platformData,
                   scrollDeltaX: scrollDeltaX,
                   scrollDeltaY: scrollDeltaY,
+                  scale: scale,
                 )
               );
             }
@@ -744,12 +757,11 @@ class PointerDataConverter {
               platformData: platformData,
               scrollDeltaX: scrollDeltaX,
               scrollDeltaY: scrollDeltaY,
+              scale: scale,
             )
           );
-          break;
         case ui.PointerSignalKind.none:
           assert(false); // This branch should already have 'none' filtered out.
-          break;
         case ui.PointerSignalKind.unknown:
         // Ignore unknown signals.
           break;

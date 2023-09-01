@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
 import 'dart:math' as math;
 
 import 'package:test/bootstrap/browser.dart';
@@ -10,7 +9,8 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' hide TextStyle;
 
-import 'package:web_engine_tester/golden_tester.dart';
+import '../common/test_initialization.dart';
+import 'screenshot.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -21,40 +21,9 @@ Future<void> testMain() async {
   const double screenHeight = 800.0;
   const Rect screenRect = Rect.fromLTWH(0, 0, screenWidth, screenHeight);
 
-  // Commit a recording canvas to a bitmap, and compare with the expected
-  Future<void> _checkScreenshot(RecordingCanvas rc, String fileName,
-      {Rect region = const Rect.fromLTWH(0, 0, 500, 500),
-      double? maxDiffRatePercent}) async {
-    final EngineCanvas engineCanvas = BitmapCanvas(screenRect,
-        RenderStrategy());
-    rc.endRecording();
-    rc.apply(engineCanvas, screenRect);
-
-    // Wrap in <flt-scene> so that our CSS selectors kick in.
-    final html.Element sceneElement = html.Element.tag('flt-scene');
-    if (isIosSafari) {
-      // Shrink to fit on the iPhone screen.
-      sceneElement.style.position = 'absolute';
-      sceneElement.style.transformOrigin = '0 0 0';
-      sceneElement.style.transform = 'scale(0.3)';
-    }
-    try {
-      sceneElement.append(engineCanvas.rootElement);
-      html.document.body!.append(sceneElement);
-      await matchGoldenFile('$fileName.png', region: region, maxDiffRatePercent: maxDiffRatePercent);
-    } finally {
-      // The page is reused across tests, so remove the element after taking the
-      // Scuba screenshot.
-      sceneElement.remove();
-    }
-  }
-
-  setUpAll(() async {
-    debugEmulateFlutterTesterEnvironment = true;
-    await webOnlyInitializePlatform();
-    fontCollection.debugRegisterTestFonts();
-    await fontCollection.ensureFontsLoaded();
-  });
+  setUpUnitTests(
+    setUpTestViewDimensions: false,
+  );
 
   test('Should draw transformed line.', () async {
     final RecordingCanvas rc =
@@ -79,7 +48,7 @@ Future<void> testMain() async {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.0
           ..color = const Color.fromRGBO(0, 128, 255, 1.0));
-    await _checkScreenshot(rc, 'path_transform_with_line');
+    await canvasScreenshot(rc, 'path_transform_with_line', canvasRect: screenRect);
   });
 
   test('Should draw transformed line.', () async {
@@ -104,7 +73,7 @@ Future<void> testMain() async {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.0
           ..color = const Color.fromRGBO(0, 128, 255, 1.0));
-    await _checkScreenshot(rc, 'path_transform_with_rect');
+    await canvasScreenshot(rc, 'path_transform_with_rect', canvasRect: screenRect);
   });
 
   test('Should draw transformed quadratic curve.', () async {
@@ -130,7 +99,7 @@ Future<void> testMain() async {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.0
           ..color = const Color.fromRGBO(0, 128, 255, 1.0));
-    await _checkScreenshot(rc, 'path_transform_with_quadratic_curve');
+    await canvasScreenshot(rc, 'path_transform_with_quadratic_curve', canvasRect: screenRect);
   });
 
   test('Should draw transformed conic.', () async {
@@ -167,7 +136,7 @@ Future<void> testMain() async {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.0
           ..color = const Color.fromRGBO(0, 128, 255, 1.0));
-    await _checkScreenshot(rc, 'path_transform_with_conic');
+    await canvasScreenshot(rc, 'path_transform_with_conic', canvasRect: screenRect);
   });
 
   test('Should draw transformed arc.', () async {
@@ -179,8 +148,7 @@ Future<void> testMain() async {
     path.arcToPoint(const Offset(450, 90),
         radius: const Radius.elliptical(200, 50),
         rotation: -math.pi / 6.0,
-        largeArc: true,
-        clockwise: true);
+        largeArc: true);
     path.close();
 
     rc.drawPath(
@@ -201,8 +169,7 @@ Future<void> testMain() async {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.0
           ..color = const Color.fromRGBO(0, 128, 255, 1.0));
-    await _checkScreenshot(rc, 'path_transform_with_arc',
-        maxDiffRatePercent: 1.4);
+    await canvasScreenshot(rc, 'path_transform_with_arc', canvasRect: screenRect);
   });
 
   test('Should draw transformed rrect.', () async {
@@ -230,6 +197,6 @@ Future<void> testMain() async {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.0
           ..color = const Color.fromRGBO(0, 128, 255, 1.0));
-    await _checkScreenshot(rc, 'path_transform_with_rrect');
+    await canvasScreenshot(rc, 'path_transform_with_rrect', canvasRect: screenRect);
   });
 }

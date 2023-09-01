@@ -30,6 +30,7 @@ class ServiceProtocol {
   static const std::string_view kGetSkSLsExtensionName;
   static const std::string_view kEstimateRasterCacheMemoryExtensionName;
   static const std::string_view kRenderFrameWithRasterStatsExtensionName;
+  static const std::string_view kReloadAssetFonts;
 
   class Handler {
    public:
@@ -67,12 +68,12 @@ class ServiceProtocol {
 
   void ToggleHooks(bool set);
 
-  void AddHandler(Handler* handler, Handler::Description description);
+  void AddHandler(Handler* handler, const Handler::Description& description);
 
   void RemoveHandler(Handler* handler);
 
   void SetHandlerDescription(Handler* handler,
-                             Handler::Description description);
+                             const Handler::Description& description);
 
  private:
   const std::set<std::string_view> endpoints_;

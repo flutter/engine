@@ -3,23 +3,31 @@
 // found in the LICENSE file.
 
 #include <algorithm>
+#include <utility>
 
 #include "flutter/lib/ui/painting/image_generator_registry.h"
 #include "third_party/skia/include/codec/SkCodec.h"
 #include "third_party/skia/include/core/SkImageGenerator.h"
-#include "third_party/skia/src/codec/SkCodecImageGenerator.h"
 #ifdef FML_OS_MACOSX
 #include "third_party/skia/include/ports/SkImageGeneratorCG.h"
 #elif FML_OS_WIN
 #include "third_party/skia/include/ports/SkImageGeneratorWIC.h"
 #endif
 
+#include "image_generator_apng.h"
+
 namespace flutter {
 
 ImageGeneratorRegistry::ImageGeneratorRegistry() : weak_factory_(this) {
   AddFactory(
       [](sk_sp<SkData> buffer) {
-        return BuiltinSkiaCodecImageGenerator::MakeFromData(buffer);
+        return APNGImageGenerator::MakeFromData(std::move(buffer));
+      },
+      0);
+
+  AddFactory(
+      [](sk_sp<SkData> buffer) {
+        return BuiltinSkiaCodecImageGenerator::MakeFromData(std::move(buffer));
       },
       0);
 
@@ -27,7 +35,8 @@ ImageGeneratorRegistry::ImageGeneratorRegistry() : weak_factory_(this) {
 #ifdef FML_OS_MACOSX
   AddFactory(
       [](sk_sp<SkData> buffer) {
-        auto generator = SkImageGeneratorCG::MakeFromEncodedCG(buffer);
+        auto generator =
+            SkImageGeneratorCG::MakeFromEncodedCG(std::move(buffer));
         return BuiltinSkiaImageGenerator::MakeFromGenerator(
             std::move(generator));
       },
@@ -47,11 +56,11 @@ ImageGeneratorRegistry::~ImageGeneratorRegistry() = default;
 
 void ImageGeneratorRegistry::AddFactory(ImageGeneratorFactory factory,
                                         int32_t priority) {
-  image_generator_factories_.insert({factory, priority, ++nonce_});
+  image_generator_factories_.insert({std::move(factory), priority, ++nonce_});
 }
 
 std::shared_ptr<ImageGenerator>
-ImageGeneratorRegistry::CreateCompatibleGenerator(sk_sp<SkData> buffer) {
+ImageGeneratorRegistry::CreateCompatibleGenerator(const sk_sp<SkData>& buffer) {
   if (!image_generator_factories_.size()) {
     FML_LOG(WARNING)
         << "There are currently no image decoders installed. If you're writing "

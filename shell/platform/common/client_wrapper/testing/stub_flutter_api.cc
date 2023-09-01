@@ -4,6 +4,8 @@
 
 #include "flutter/shell/platform/common/client_wrapper/testing/stub_flutter_api.h"
 
+#include <cassert>
+
 static flutter::testing::StubFlutterApi* s_stub_implementation;
 
 namespace flutter {
@@ -93,6 +95,31 @@ void FlutterDesktopMessengerSetCallback(FlutterDesktopMessengerRef messenger,
   }
 }
 
+FlutterDesktopMessengerRef FlutterDesktopMessengerAddRef(
+    FlutterDesktopMessengerRef messenger) {
+  assert(false);  // not implemented
+  return nullptr;
+}
+
+void FlutterDesktopMessengerRelease(FlutterDesktopMessengerRef messenger) {
+  assert(false);  // not implemented
+}
+
+bool FlutterDesktopMessengerIsAvailable(FlutterDesktopMessengerRef messenger) {
+  assert(false);  // not implemented
+  return false;
+}
+
+FlutterDesktopMessengerRef FlutterDesktopMessengerLock(
+    FlutterDesktopMessengerRef messenger) {
+  assert(false);  // not implemented
+  return nullptr;
+}
+
+void FlutterDesktopMessengerUnlock(FlutterDesktopMessengerRef messenger) {
+  assert(false);  // not implemented
+}
+
 FlutterDesktopTextureRegistrarRef FlutterDesktopRegistrarGetTextureRegistrar(
     FlutterDesktopPluginRegistrarRef registrar) {
   return reinterpret_cast<FlutterDesktopTextureRegistrarRef>(1);
@@ -109,15 +136,17 @@ int64_t FlutterDesktopTextureRegistrarRegisterExternalTexture(
   return result;
 }
 
-bool FlutterDesktopTextureRegistrarUnregisterExternalTexture(
+void FlutterDesktopTextureRegistrarUnregisterExternalTexture(
     FlutterDesktopTextureRegistrarRef texture_registrar,
-    int64_t texture_id) {
-  bool result = false;
+    int64_t texture_id,
+    void (*callback)(void* user_data),
+    void* user_data) {
   if (s_stub_implementation) {
-    result = s_stub_implementation->TextureRegistrarUnregisterExternalTexture(
-        texture_id);
+    s_stub_implementation->TextureRegistrarUnregisterExternalTexture(
+        texture_id, callback, user_data);
+  } else if (callback) {
+    callback(user_data);
   }
-  return result;
 }
 
 bool FlutterDesktopTextureRegistrarMarkExternalTextureFrameAvailable(

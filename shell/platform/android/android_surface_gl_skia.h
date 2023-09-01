@@ -21,8 +21,8 @@ namespace flutter {
 class AndroidSurfaceGLSkia final : public GPUSurfaceGLDelegate,
                                    public AndroidSurface {
  public:
-  AndroidSurfaceGLSkia(const std::shared_ptr<AndroidContext>& android_context,
-                       std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
+  explicit AndroidSurfaceGLSkia(
+      const std::shared_ptr<AndroidContextGLSkia>& android_context);
 
   ~AndroidSurfaceGLSkia() override;
 
@@ -64,11 +64,10 @@ class AndroidSurfaceGLSkia final : public GPUSurfaceGLDelegate,
   void GLContextSetDamageRegion(const std::optional<SkIRect>& region) override;
 
   // |GPUSurfaceGLDelegate|
-  bool GLContextPresent(uint32_t fbo_id,
-                        const std::optional<SkIRect>& damage) override;
+  bool GLContextPresent(const GLPresentInfo& present_info) override;
 
   // |GPUSurfaceGLDelegate|
-  intptr_t GLContextFBO(GLFrameInfo frame_info) const override;
+  GLFBOInfo GLContextFBO(GLFrameInfo frame_info) const override;
 
   // |GPUSurfaceGLDelegate|
   sk_sp<const GrGLInterface> GetGLInterface() const override;
@@ -82,15 +81,10 @@ class AndroidSurfaceGLSkia final : public GPUSurfaceGLDelegate,
   }
 
  private:
+  std::shared_ptr<AndroidContextGLSkia> android_context_;
   fml::RefPtr<AndroidNativeWindow> native_window_;
   std::unique_ptr<AndroidEGLSurface> onscreen_surface_;
   std::unique_ptr<AndroidEGLSurface> offscreen_surface_;
-
-  //----------------------------------------------------------------------------
-  /// @brief      Takes the super class AndroidSurface's AndroidContext and
-  ///             return a raw pointer to an AndroidContextGL.
-  ///
-  AndroidContextGLSkia* GLContextPtr() const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidSurfaceGLSkia);
 };

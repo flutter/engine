@@ -7,9 +7,11 @@
 
 #include <memory>
 
-#include "flutter/lib/ui/window/platform_message.h"
+#include "flutter/fml/mapping.h"
 
 namespace flutter {
+
+class PlatformMessage;
 
 /// An interface over the ability to handle PlatformMessages that are being sent
 /// from Flutter to the host platform.
@@ -21,6 +23,13 @@ class PlatformMessageHandler {
   /// This method is invoked on the ui thread.
   virtual void HandlePlatformMessage(
       std::unique_ptr<PlatformMessage> message) = 0;
+
+  /// Returns true if the platform message will ALWAYS be dispatched to the
+  /// platform thread.
+  ///
+  /// Platforms that support Background Platform Channels will return
+  /// false.
+  virtual bool DoesHandlePlatformMessageOnPlatformThread() const = 0;
 
   /// Performs the return procedure for an associated call to
   /// HandlePlatformMessage.

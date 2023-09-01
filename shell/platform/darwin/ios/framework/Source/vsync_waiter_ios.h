@@ -15,6 +15,13 @@
 
 @interface DisplayLinkManager : NSObject
 
+// Whether the max refresh rate on iPhone Pro-motion devices are enabled.
+// This reflects the value of `CADisableMinimumFrameDurationOnPhone` in the
+// info.plist file.
+//
+// Note on iPads that support Pro-motion, the max refresh rate is always enabled.
+@property(class, nonatomic, readonly) BOOL maxRefreshRateEnabledOnIPhone;
+
 //------------------------------------------------------------------------------
 /// @brief      The display refresh rate used for reporting purposes. The engine does not care
 ///             about this for frame scheduling. It is only used by tools for instrumentation. The
@@ -30,14 +37,28 @@
 
 @interface VSyncClient : NSObject
 
+//------------------------------------------------------------------------------
+/// @brief      Default value is YES. Vsync client will pause vsync callback after receiving
+///             a vsync signal. Setting this property to NO can avoid this and vsync client
+///             will trigger vsync callback continuously.
+///
+///
+/// @param allowPauseAfterVsync Allow vsync client to pause after receiving a vsync signal.
+///
+@property(nonatomic, assign) BOOL allowPauseAfterVsync;
+
 - (instancetype)initWithTaskRunner:(fml::RefPtr<fml::TaskRunner>)task_runner
                           callback:(flutter::VsyncWaiter::Callback)callback;
 
 - (void)await;
 
+- (void)pause;
+
 - (void)invalidate;
 
 - (double)getRefreshRate;
+
+- (void)setMaxRefreshRate:(double)refreshRate;
 
 @end
 
@@ -45,18 +66,23 @@ namespace flutter {
 
 class VsyncWaiterIOS final : public VsyncWaiter, public VariableRefreshRateReporter {
  public:
-  explicit VsyncWaiterIOS(flutter::TaskRunners task_runners);
+  explicit VsyncWaiterIOS(const flutter::TaskRunners& task_runners);
 
   ~VsyncWaiterIOS() override;
 
   // |VariableRefreshRateReporter|
   double GetRefreshRate() const override;
 
- private:
-  fml::scoped_nsobject<VSyncClient> client_;
+  // Made public for testing.
+  fml::scoped_nsobject<VSyncClient> GetVsyncClient() const;
 
   // |VsyncWaiter|
+  // Made public for testing.
   void AwaitVSync() override;
+
+ private:
+  fml::scoped_nsobject<VSyncClient> client_;
+  double max_refresh_rate_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(VsyncWaiterIOS);
 };

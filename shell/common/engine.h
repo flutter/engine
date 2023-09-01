@@ -32,7 +32,6 @@
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/common/shell_io_manager.h"
-#include "third_party/skia/include/core/SkPicture.h"
 
 namespace flutter {
 
@@ -288,6 +287,45 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     ///             This method is primarily provided to allow tests to control
     ///             Any methods that rely on advancing the clock.
     virtual fml::TimePoint GetCurrentTimePoint() = 0;
+
+    //----------------------------------------------------------------------------
+    /// @brief Returns the delegate object that handles PlatformMessage's from
+    ///        Flutter to the host platform (and its responses).
+    virtual const std::shared_ptr<PlatformMessageHandler>&
+    GetPlatformMessageHandler() const = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Invoked when a listener is registered on a platform channel.
+    ///
+    /// @param[in]  name             The name of the platform channel to which a
+    ///                              listener has been registered or cleared.
+    ///
+    /// @param[in]  listening        Whether the listener has been set (true) or
+    ///                              cleared (false).
+    ///
+    virtual void OnEngineChannelUpdate(std::string name, bool listening) = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Synchronously invokes platform-specific APIs to apply the
+    ///             system text scaling on the given unscaled font size.
+    ///
+    ///             Platforms that support this feature (currently it's only
+    ///             implemented for Android SDK level 34+) will send a valid
+    ///             configuration_id to potential callers, before this method
+    ///             can be called.
+    ///
+    /// @param[in]  unscaled_font_size  The unscaled font size specified by the
+    ///                                 app developer. The value is in logical
+    ///                                 pixels, and is guaranteed to be finite
+    ///                                 and non-negative.
+    /// @param[in]  configuration_id    The unique id of the configuration to
+    ///                                 use for computing the scaled font size.
+    ///
+    /// @return     The scaled font size in logical pixels, or -1 when the given
+    ///             configuration_id did not match a valid configuration.
+    ///
+    virtual double GetScaledFontSize(double unscaled_font_size,
+                                     int configuration_id) const = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -298,12 +336,13 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   Engine(Delegate& delegate,
          const PointerDataDispatcherMaker& dispatcher_maker,
          std::shared_ptr<fml::ConcurrentTaskRunner> image_decoder_task_runner,
-         TaskRunners task_runners,
-         Settings settings,
+         const TaskRunners& task_runners,
+         const Settings& settings,
          std::unique_ptr<Animator> animator,
          fml::WeakPtr<IOManager> io_manager,
          const std::shared_ptr<FontCollection>& font_collection,
-         std::unique_ptr<RuntimeController> runtime_controller);
+         std::unique_ptr<RuntimeController> runtime_controller,
+         const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch);
 
   //----------------------------------------------------------------------------
   /// @brief      Creates an instance of the engine. This is done by the Shell
@@ -338,7 +377,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///                                snapshot a specified scene. The engine
   ///                                cannot snapshot a scene on the UI thread
   ///                                directly because the scene (described via
-  ///                                an `SkPicture`) may reference resources on
+  ///                                a `DisplayList`) may reference resources on
   ///                                the GPU and there is no GPU context current
   ///                                on the UI thread. The delegate is a
   ///                                component that has access to all the
@@ -351,14 +390,15 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
          const PointerDataDispatcherMaker& dispatcher_maker,
          DartVM& vm,
          fml::RefPtr<const DartSnapshot> isolate_snapshot,
-         TaskRunners task_runners,
+         const TaskRunners& task_runners,
          const PlatformData& platform_data,
-         Settings settings,
+         const Settings& settings,
          std::unique_ptr<Animator> animator,
          fml::WeakPtr<IOManager> io_manager,
          fml::RefPtr<SkiaUnrefQueue> unref_queue,
-         fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-         std::shared_ptr<VolatilePathTracker> volatile_path_tracker);
+         fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
+         std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
+         const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch);
 
   //----------------------------------------------------------------------------
   /// @brief      Create a Engine that shares as many resources as
@@ -372,10 +412,12 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   std::unique_ptr<Engine> Spawn(
       Delegate& delegate,
       const PointerDataDispatcherMaker& dispatcher_maker,
-      Settings settings,
+      const Settings& settings,
       std::unique_ptr<Animator> animator,
       const std::string& initial_route,
-      fml::WeakPtr<IOManager> io_manager) const;
+      const fml::WeakPtr<IOManager>& io_manager,
+      fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
+      const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch) const;
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys the engine engine. Called by the shell on the UI task
@@ -458,7 +500,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   /// @return     If the asset manager was successfully replaced. This may fail
   ///             if the new asset manager is invalid.
   ///
-  bool UpdateAssetManager(std::shared_ptr<AssetManager> asset_manager);
+  bool UpdateAssetManager(const std::shared_ptr<AssetManager>& asset_manager);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that it is time to begin working on a new
@@ -545,7 +587,14 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///                       corresponding sweep can be performed within the
   ///                       deadline.
   ///
-  void NotifyIdle(fml::TimePoint deadline);
+  void NotifyIdle(fml::TimeDelta deadline);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Notifies the engine that the attached flutter view has been
+  ///             destroyed.
+  ///             This enables the engine to notify the Dart VM so it can do
+  ///             some cleanp activities.
+  void NotifyDestroyed();
 
   //----------------------------------------------------------------------------
   /// @brief      Dart code cannot fully measure the time it takes for a
@@ -660,16 +709,49 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   std::optional<uint32_t> GetUIIsolateReturnCode();
 
   //----------------------------------------------------------------------------
-  /// @brief      Updates the viewport metrics for the currently running Flutter
-  ///             application. The viewport metrics detail the size of the
-  ///             rendering viewport in texels as well as edge insets if
-  ///             present.
+  /// @brief      Notify the Flutter application that a new view is available.
+  ///
+  ///             A view must be added before other methods can refer to it,
+  ///             including the implicit view. Adding a view that already exists
+  ///             triggers an assertion.
+  ///
+  /// @param[in]  view_id           The ID of the new view.
+  /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
+  ///
+  void AddView(int64_t view_id, const ViewportMetrics& view_metrics);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Notify the Flutter application that a view is no
+  ///             longer available.
+  ///
+  ///             Removing a view that does not exist triggers an assertion.
+  ///
+  ///             The implicit view (kFlutterImplicitViewId) should never be
+  ///             removed. Doing so triggers an assertion.
+  ///
+  /// @param[in]  view_id  The ID of the view.
+  ///
+  void RemoveView(int64_t view_id);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Updates the viewport metrics for a view. The viewport metrics
+  ///             detail the size of the rendering viewport in texels as well as
+  ///             edge insets if present.
   ///
   /// @see        `ViewportMetrics`
   ///
-  /// @param[in]  metrics  The metrics
+  /// @param[in]  view_id  The ID for the view that `metrics` describes.
+  /// @param[in]  metrics  The metrics.
   ///
-  void SetViewportMetrics(const ViewportMetrics& metrics);
+  void SetViewportMetrics(int64_t view_id, const ViewportMetrics& metrics);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Updates the display metrics for the currently running Flutter
+  ///             application.
+  ///
+  /// @param[in]  displays  A complete list of displays
+  ///
+  void SetDisplays(const std::vector<DisplayData>& displays);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder has sent it a message.
@@ -693,7 +775,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   /// @param[in]  trace_flow_id  The trace flow identifier associated with the
   ///                            pointer data packet. The engine uses this trace
   ///                            identifier to connect trace flows in the
-  ///                            timeline from the input event event to the
+  ///                            timeline from the input event to the
   ///                            frames generated due to those input events.
   ///                            These flows are tagged as "PointerEvent" in the
   ///                            timeline and allow grouping frames and input
@@ -708,12 +790,12 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///             originates on the platform view and has been forwarded to the
   ///             engine here on the UI task runner by the shell.
   ///
-  /// @param[in]  id      The identifier of the accessibility node.
+  /// @param[in]  node_id The identifier of the accessibility node.
   /// @param[in]  action  The accessibility related action performed on the
   ///                     node of the specified ID.
   /// @param[in]  args    Optional data that applies to the specified action.
   ///
-  void DispatchSemanticsAction(int id,
+  void DispatchSemanticsAction(int node_id,
                                SemanticsAction action,
                                fml::MallocMapping args);
 
@@ -856,12 +938,12 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///                              temporary conditions such as no network.
   ///                              Transient errors allow the dart VM to
   ///                              re-request the same deferred library and
-  ///                              and loading_unit_id again. Non-transient
+  ///                              loading_unit_id again. Non-transient
   ///                              errors are permanent and attempts to
   ///                              re-request the library will instantly
   ///                              complete with an error.
   void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
-                                    const std::string error_message,
+                                    const std::string& error_message,
                                     bool transient);
 
   //--------------------------------------------------------------------------
@@ -878,7 +960,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   std::string DefaultRouteName() override;
 
   // |RuntimeDelegate|
-  void Render(std::unique_ptr<flutter::LayerTree> layer_tree) override;
+  void Render(std::unique_ptr<flutter::LayerTree> layer_tree,
+              float device_pixel_ratio) override;
 
   // |RuntimeDelegate|
   void UpdateSemantics(SemanticsNodeUpdates update,
@@ -900,6 +983,17 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
 
   // |RuntimeDelegate|
   void RequestDartDeferredLibrary(intptr_t loading_unit_id) override;
+
+  // |RuntimeDelegate|
+  std::weak_ptr<PlatformMessageHandler> GetPlatformMessageHandler()
+      const override;
+
+  // |RuntimeDelegate|
+  void SendChannelUpdate(std::string name, bool listening) override;
+
+  // |RuntimeDelegate|
+  double GetScaledFontSize(double unscaled_font_size,
+                           int configuration_id) const override;
 
   void SetNeedsReportTimings(bool value) override;
 

@@ -9,12 +9,10 @@
 
 #include "flutter/common/task_runners.h"
 #include "flutter/flow/embedded_views.h"
-#include "flutter/flow/rtree.h"
 #include "flutter/shell/platform/android/context/android_context.h"
 #include "flutter/shell/platform/android/external_view_embedder/surface_pool.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/surface/android_surface.h"
-#include "third_party/skia/include/core/SkPictureRecorder.h"
 
 namespace flutter {
 
@@ -34,21 +32,19 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
       const AndroidContext& android_context,
       std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
       std::shared_ptr<AndroidSurfaceFactory> surface_factory,
-      TaskRunners task_runners);
+      const TaskRunners& task_runners);
 
   // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(
-      int view_id,
+      int64_t view_id,
       std::unique_ptr<flutter::EmbeddedViewParams> params) override;
 
   // |ExternalViewEmbedder|
-  SkCanvas* CompositeEmbeddedView(int view_id) override;
-
-  // |ExternalViewEmbedder|
-  std::vector<SkCanvas*> GetCurrentCanvases() override;
+  DlCanvas* CompositeEmbeddedView(int64_t view_id) override;
 
   // |ExternalViewEmbedder|
   void SubmitFrame(GrDirectContext* context,
+                   const std::shared_ptr<impeller::AiksContext>& aiks_context,
                    std::unique_ptr<SurfaceFrame> frame) override;
 
   // |ExternalViewEmbedder|
@@ -56,7 +52,7 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
 
   // |ExternalViewEmbedder|
-  SkCanvas* GetRootCanvas() override;
+  DlCanvas* GetRootCanvas() override;
 
   // |ExternalViewEmbedder|
   void BeginFrame(
@@ -79,7 +75,7 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
 
   // Gets the rect based on the device pixel ratio of a platform view displayed
   // on the screen.
-  SkRect GetViewRect(int view_id) const;
+  SkRect GetViewRect(int64_t view_id) const;
 
  private:
   // The number of frames the rasterizer task runner will continue
@@ -115,18 +111,14 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
   // view.
   std::vector<int64_t> composition_order_;
 
-  // The platform view's picture recorder keyed off the platform view id, which
-  // contains any subsequent operation until the next platform view or the end
-  // of the last leaf node in the layer tree.
-  std::unordered_map<int64_t, std::unique_ptr<SkPictureRecorder>>
-      picture_recorders_;
+  // The |EmbedderViewSlice| implementation keyed off the platform view id,
+  // which contains any subsequent operations until the next platform view or
+  // the end of the last leaf node in the layer tree.
+  std::unordered_map<int64_t, std::unique_ptr<EmbedderViewSlice>> slices_;
 
   // The params for a platform view, which contains the size, position and
   // mutation stack.
   std::unordered_map<int64_t, EmbeddedViewParams> view_params_;
-
-  // The r-tree that captures the operations for the picture recorders.
-  std::unordered_map<int64_t, sk_sp<RTree>> view_rtrees_;
 
   // The number of platform views in the previous frame.
   int64_t previous_frame_view_count_;
@@ -146,7 +138,7 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
   // Finally, draws the picture on the frame's canvas.
   std::unique_ptr<SurfaceFrame> CreateSurfaceIfNeeded(GrDirectContext* context,
                                                       int64_t view_id,
-                                                      sk_sp<SkPicture> picture,
+                                                      EmbedderViewSlice* slice,
                                                       const SkRect& rect);
 };
 

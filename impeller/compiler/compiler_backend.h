@@ -9,8 +9,9 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
-#include "third_party/spirv_cross/spirv_glsl.hpp"
-#include "third_party/spirv_cross/spirv_msl.hpp"
+#include "spirv_glsl.hpp"
+#include "spirv_msl.hpp"
+#include "spirv_sksl.h"
 
 namespace impeller {
 namespace compiler {
@@ -18,16 +19,20 @@ namespace compiler {
 struct CompilerBackend {
   using MSLCompiler = std::shared_ptr<spirv_cross::CompilerMSL>;
   using GLSLCompiler = std::shared_ptr<spirv_cross::CompilerGLSL>;
-  using Compiler = std::variant<MSLCompiler, GLSLCompiler>;
+  using SkSLCompiler = std::shared_ptr<CompilerSkSL>;
+  using Compiler = std::variant<MSLCompiler, GLSLCompiler, SkSLCompiler>;
 
   enum class Type {
     kMSL,
     kGLSL,
+    kSkSL,
   };
 
-  CompilerBackend(MSLCompiler compiler);
+  explicit CompilerBackend(MSLCompiler compiler);
 
-  CompilerBackend(GLSLCompiler compiler);
+  explicit CompilerBackend(GLSLCompiler compiler);
+
+  explicit CompilerBackend(SkSLCompiler compiler);
 
   CompilerBackend(Type type, Compiler compiler);
 
@@ -38,6 +43,8 @@ struct CompilerBackend {
   Type GetType() const;
 
   const spirv_cross::Compiler* operator->() const;
+
+  spirv_cross::Compiler* GetCompiler();
 
   operator bool() const;
 
@@ -50,8 +57,6 @@ struct CompilerBackend {
 
   const spirv_cross::Compiler* GetCompiler() const;
 
-  spirv_cross::Compiler* GetCompiler();
-
  private:
   Type type_ = Type::kMSL;
   Compiler compiler_;
@@ -59,6 +64,8 @@ struct CompilerBackend {
   const spirv_cross::CompilerMSL* GetMSLCompiler() const;
 
   const spirv_cross::CompilerGLSL* GetGLSLCompiler() const;
+
+  const CompilerSkSL* GetSkSLCompiler() const;
 };
 
 }  // namespace compiler

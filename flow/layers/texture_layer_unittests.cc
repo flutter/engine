@@ -9,7 +9,7 @@
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/flow/testing/mock_texture.h"
 #include "flutter/fml/macros.h"
-#include "flutter/testing/mock_canvas.h"
+#include "flutter/testing/display_list_testing.h"
 
 namespace flutter {
 namespace testing {
@@ -19,17 +19,17 @@ using TextureLayerTest = LayerTest;
 TEST_F(TextureLayerTest, InvalidTexture) {
   const SkPoint layer_offset = SkPoint::Make(0.0f, 0.0f);
   const SkSize layer_size = SkSize::Make(8.0f, 8.0f);
-  auto layer = std::make_shared<TextureLayer>(layer_offset, layer_size, 0,
-                                              false, SkSamplingOptions());
+  auto layer = std::make_shared<TextureLayer>(
+      layer_offset, layer_size, 0, false, DlImageSampling::kNearestNeighbor);
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context());
   EXPECT_EQ(layer->paint_bounds(),
             (SkRect::MakeSize(layer_size)
                  .makeOffset(layer_offset.fX, layer_offset.fY)));
   EXPECT_TRUE(layer->needs_painting(paint_context()));
 
-  layer->Paint(paint_context());
-  EXPECT_EQ(mock_canvas().draw_calls(), std::vector<MockCanvas::DrawCall>());
+  layer->Paint(display_list_paint_context());
+  EXPECT_TRUE(display_list()->Equals(DisplayList()));
 }
 
 #ifndef NDEBUG
@@ -38,13 +38,14 @@ TEST_F(TextureLayerTest, PaintingEmptyLayerDies) {
   const SkSize layer_size = SkSize::Make(0.0f, 0.0f);
   const int64_t texture_id = 0;
   auto mock_texture = std::make_shared<MockTexture>(texture_id);
-  auto layer = std::make_shared<TextureLayer>(
-      layer_offset, layer_size, texture_id, false, SkSamplingOptions());
+  auto layer =
+      std::make_shared<TextureLayer>(layer_offset, layer_size, texture_id,
+                                     false, DlImageSampling::kNearestNeighbor);
 
   // Ensure the texture is located by the Layer.
-  preroll_context()->texture_registry.RegisterTexture(mock_texture);
+  preroll_context()->texture_registry->RegisterTexture(mock_texture);
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context());
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
   EXPECT_FALSE(layer->needs_painting(paint_context()));
 
@@ -58,11 +59,10 @@ TEST_F(TextureLayerTest, PaintBeforePrerollDies) {
   const int64_t texture_id = 0;
   auto mock_texture = std::make_shared<MockTexture>(texture_id);
   auto layer = std::make_shared<TextureLayer>(
-      layer_offset, layer_size, texture_id, false,
-      SkSamplingOptions(SkFilterMode::kLinear));
+      layer_offset, layer_size, texture_id, false, DlImageSampling::kLinear);
 
   // Ensure the texture is located by the Layer.
-  preroll_context()->texture_registry.RegisterTexture(mock_texture);
+  preroll_context()->texture_registry->RegisterTexture(mock_texture);
 
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
                             "needs_painting\\(context\\)");
@@ -72,27 +72,28 @@ TEST_F(TextureLayerTest, PaintBeforePrerollDies) {
 TEST_F(TextureLayerTest, PaintingWithLinearSampling) {
   const SkPoint layer_offset = SkPoint::Make(0.0f, 0.0f);
   const SkSize layer_size = SkSize::Make(8.0f, 8.0f);
+  const SkRect layer_bounds =
+      SkRect::MakeSize(layer_size).makeOffset(layer_offset.fX, layer_offset.fY);
   const int64_t texture_id = 0;
-  auto mock_texture = std::make_shared<MockTexture>(texture_id);
+  const auto texture_image = MockTexture::MakeTestTexture(20, 20, 5);
+  auto mock_texture = std::make_shared<MockTexture>(texture_id, texture_image);
   auto layer = std::make_shared<TextureLayer>(
-      layer_offset, layer_size, texture_id, false,
-      SkSamplingOptions(SkFilterMode::kLinear));
+      layer_offset, layer_size, texture_id, false, DlImageSampling::kLinear);
 
   // Ensure the texture is located by the Layer.
-  preroll_context()->texture_registry.RegisterTexture(mock_texture);
+  preroll_context()->texture_registry->RegisterTexture(mock_texture);
 
-  layer->Preroll(preroll_context(), SkMatrix());
-  EXPECT_EQ(layer->paint_bounds(),
-            (SkRect::MakeSize(layer_size)
-                 .makeOffset(layer_offset.fX, layer_offset.fY)));
+  layer->Preroll(preroll_context());
+  EXPECT_EQ(layer->paint_bounds(), layer_bounds);
   EXPECT_TRUE(layer->needs_painting(paint_context()));
 
-  layer->Paint(paint_context());
-  EXPECT_EQ(mock_texture->paint_calls(),
-            std::vector({MockTexture::PaintCall{
-                mock_canvas(), layer->paint_bounds(), false, nullptr,
-                SkSamplingOptions(SkFilterMode::kLinear)}}));
-  EXPECT_EQ(mock_canvas().draw_calls(), std::vector<MockCanvas::DrawCall>());
+  layer->Paint(display_list_paint_context());
+  DisplayListBuilder expected_builder;
+  /* (Texture)layer::Paint */ {
+    expected_builder.DrawImageRect(texture_image, layer_bounds,
+                                   DlImageSampling::kLinear);
+  }
+  EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_builder.Build()));
 }
 
 using TextureLayerDiffTest = DiffContextTest;
@@ -101,9 +102,9 @@ TEST_F(TextureLayerDiffTest, TextureInRetainedLayer) {
   MockLayerTree tree1;
   auto container = std::make_shared<ContainerLayer>();
   tree1.root()->Add(container);
-  auto layer = std::make_shared<TextureLayer>(
-      SkPoint::Make(0, 0), SkSize::Make(100, 100), 0, false,
-      SkSamplingOptions(SkFilterMode::kLinear));
+  auto layer = std::make_shared<TextureLayer>(SkPoint::Make(0, 0),
+                                              SkSize::Make(100, 100), 0, false,
+                                              DlImageSampling::kLinear);
   container->Add(layer);
 
   MockLayerTree tree2;
@@ -119,25 +120,50 @@ TEST_F(TextureLayerDiffTest, TextureInRetainedLayer) {
 TEST_F(TextureLayerTest, OpacityInheritance) {
   const SkPoint layer_offset = SkPoint::Make(0.0f, 0.0f);
   const SkSize layer_size = SkSize::Make(8.0f, 8.0f);
+  const SkRect layer_bounds =
+      SkRect::MakeSize(layer_size).makeOffset(layer_offset.fX, layer_offset.fY);
   const int64_t texture_id = 0;
-  auto mock_texture = std::make_shared<MockTexture>(texture_id);
-  auto layer = std::make_shared<TextureLayer>(
-      layer_offset, layer_size, texture_id, false,
-      SkSamplingOptions(SkFilterMode::kLinear));
+  const auto texture_image = MockTexture::MakeTestTexture(20, 20, 5);
+  auto mock_texture = std::make_shared<MockTexture>(texture_id, texture_image);
+  SkAlpha alpha = 0x7f;
+  auto texture_layer = std::make_shared<TextureLayer>(
+      layer_offset, layer_size, texture_id, false, DlImageSampling::kLinear);
+  auto layer = std::make_shared<OpacityLayer>(alpha, SkPoint::Make(0.0f, 0.0f));
+  layer->Add(texture_layer);
 
   // Ensure the texture is located by the Layer.
-  preroll_context()->texture_registry.RegisterTexture(mock_texture);
+  PrerollContext* context = preroll_context();
+  context->texture_registry->RegisterTexture(mock_texture);
 
   // The texture layer always reports opacity compatibility.
-  PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
-  context->texture_registry.RegisterTexture(mock_texture);
-  layer->Preroll(context, SkMatrix::I());
-  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  texture_layer->Preroll(context);
+  EXPECT_EQ(context->renderable_state_flags,
+            LayerStateStack::kCallerCanApplyOpacity);
 
-  // MockTexture has no actual textur to render into the
-  // PaintContext canvas so we have no way to verify its
-  // rendering.
+  // Reset has_texture_layer since it is not supposed to be sent as we
+  // descend a tree in Preroll, but it was set by the previous test.
+  context->has_texture_layer = false;
+  layer->Preroll(context);
+  EXPECT_EQ(context->renderable_state_flags,
+            LayerStateStack::kCallerCanApplyOpacity);
+
+  DlPaint texture_paint;
+  texture_paint.setAlpha(alpha);
+
+  layer->Paint(display_list_paint_context());
+  DisplayListBuilder expected_builder;
+  /* (Opacity)layer::Paint */ {
+    expected_builder.Save();
+    {
+      /* texture_layer::Paint */ {
+        expected_builder.DrawImageRect(texture_image, layer_bounds,
+                                       DlImageSampling::kLinear,
+                                       &texture_paint);
+      }
+    }
+    expected_builder.Restore();
+  }
+  EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_builder.Build()));
 }
 
 }  // namespace testing

@@ -31,15 +31,10 @@ namespace txt {
 
 class ParagraphBuilder {
  public:
-  static std::unique_ptr<ParagraphBuilder> CreateTxtBuilder(
-      const ParagraphStyle& style,
-      std::shared_ptr<FontCollection> font_collection);
-
-#if FLUTTER_ENABLE_SKSHAPER
   static std::unique_ptr<ParagraphBuilder> CreateSkiaBuilder(
       const ParagraphStyle& style,
-      std::shared_ptr<FontCollection> font_collection);
-#endif
+      std::shared_ptr<FontCollection> font_collection,
+      const bool impeller_enabled);
 
   virtual ~ParagraphBuilder() = default;
 

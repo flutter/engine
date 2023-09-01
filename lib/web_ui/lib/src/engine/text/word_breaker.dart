@@ -5,9 +5,9 @@
 import '../util.dart';
 import 'word_break_properties.dart';
 
-class _FindBreakDirection {
-  static const _FindBreakDirection forward = _FindBreakDirection(step: 1);
-  static const _FindBreakDirection backward = _FindBreakDirection(step: -1);
+enum _FindBreakDirection {
+  forward(step: 1),
+  backward(step: -1);
 
   const _FindBreakDirection({required this.step});
 
@@ -15,11 +15,7 @@ class _FindBreakDirection {
 }
 
 /// [WordBreaker] exposes static methods to identify word boundaries.
-abstract class WordBreaker {
-  // This class is not meant to be instantiated or extended; this constructor
-  // prevents instantiation and extension.
-  WordBreaker._();
-
+abstract final class WordBreaker {
   /// It starts from [index] and tries to find the next word boundary in [text].
   static int nextBreakIndex(String text, int index) =>
       _findBreakIndex(_FindBreakDirection.forward, text, index);
@@ -64,8 +60,9 @@ abstract class WordBreaker {
 
     // Do not break within CRLF.
     // WB3: CR × LF
-    if (immediateLeft == WordCharProperty.CR && immediateRight == WordCharProperty.LF)
+    if (immediateLeft == WordCharProperty.CR && immediateRight == WordCharProperty.LF) {
       return false;
+    }
 
     // Otherwise break before and after Newlines (including CR and LF)
     // WB3a: (Newline | CR | LF) ÷
@@ -216,12 +213,14 @@ abstract class WordBreaker {
     }
 
     // WB9: AHLetter × Numeric
-    if (_isAHLetter(immediateLeft) && immediateRight == WordCharProperty.Numeric)
+    if (_isAHLetter(immediateLeft) && immediateRight == WordCharProperty.Numeric) {
       return false;
+    }
 
     // WB10: Numeric × AHLetter
-    if (immediateLeft == WordCharProperty.Numeric && _isAHLetter(immediateRight))
+    if (immediateLeft == WordCharProperty.Numeric && _isAHLetter(immediateRight)) {
       return false;
+    }
 
     // Do not break within sequences, such as “3.2” or “3,456.789”.
     // WB11: Numeric (MidNum | MidNumLet | Single_Quote) × Numeric

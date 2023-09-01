@@ -3,21 +3,31 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:convert' show utf8, LineSplitter;
+import 'dart:convert' show LineSplitter, utf8;
 import 'dart:io' as io;
 
 import 'package:args/command_runner.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 
+import 'common.dart';
 import 'environment.dart';
 import 'exceptions.dart';
+import 'felt_config.dart';
+
+enum RuntimeMode {
+  debug,
+  profile,
+  release,
+}
 
 class FilePath {
   FilePath.fromCwd(String relativePath)
       : _absolutePath = path.absolute(relativePath);
   FilePath.fromWebUi(String relativePath)
       : _absolutePath = path.join(environment.webUiRootDir.path, relativePath);
+  FilePath.fromTestSet(TestSet testSet, String relativePath)
+      : _absolutePath = path.join(getTestSetDirectory(testSet).path, relativePath);
 
   final String _absolutePath;
 
@@ -224,8 +234,7 @@ class ProcessManager {
     return (await eval()).stderr;
   }
 
-  @alwaysThrows
-  void _throwProcessException({required String description, int? exitCode}) {
+  Never _throwProcessException({required String description, int? exitCode}) {
     throw ProcessException(
       description: description,
       executable: executable,
@@ -257,29 +266,6 @@ class ProcessOutput {
 
   /// Standard error of the process decoded as a string.
   final String stderr;
-}
-
-Future<void> runFlutter(
-  String workingDirectory,
-  List<String> arguments, {
-  bool useSystemFlutter = false,
-}) async {
-  final String executable =
-      useSystemFlutter ? 'flutter' : environment.flutterCommand.path;
-  arguments.add('--local-engine=host_debug_unopt');
-  final int exitCode = await runProcess(
-    executable,
-    arguments,
-    workingDirectory: workingDirectory,
-  );
-
-  if (exitCode != 0) {
-    throw ToolExit(
-      'ERROR: Failed to run $executable with '
-      'arguments ${arguments.toString()}. Exited with exit code $exitCode',
-      exitCode: exitCode,
-    );
-  }
 }
 
 /// An exception related to an attempt to spawn a sub-process.
@@ -326,7 +312,29 @@ mixin ArgUtils<T> on Command<T> {
 
   /// Extracts a string argument from [argResults].
   String stringArg(String name) => argResults![name] as String;
+
+  RuntimeMode get runtimeMode {
+    final bool isProfile = boolArg('profile');
+    final bool isDebug = boolArg('debug');
+    if (isProfile && isDebug) {
+      throw ToolExit('Cannot specify both --profile and --debug at the same time.');
+    }
+    if (isProfile) {
+      return RuntimeMode.profile;
+    } else if (isDebug) {
+      return RuntimeMode.debug;
+    } else {
+      return RuntimeMode.release;
+    }
+  }
 }
+
+io.Directory getBuildDirectoryForRuntimeMode(RuntimeMode runtimeMode) =>
+  switch (runtimeMode) {
+    RuntimeMode.debug => environment.wasmDebugUnoptOutDir,
+    RuntimeMode.profile => environment.wasmProfileOutDir,
+    RuntimeMode.release => environment.wasmReleaseOutDir,
+  };
 
 /// There might be proccesses started during the tests.
 ///
@@ -369,13 +377,58 @@ Future<void> cleanup() async {
   }
 }
 
-/// Scans the test/ directory for test files and returns them.
-List<FilePath> findAllTests() {
-  return environment.webUiTestDir
-      .listSync(recursive: true)
-      .whereType<io.File>()
-      .where((io.File f) => f.path.endsWith('_test.dart'))
-      .map<FilePath>((io.File f) => FilePath.fromWebUi(
-          path.relative(f.path, from: environment.webUiRootDir.path)))
-      .toList();
+io.Directory getTestSetDirectory(TestSet testSet) {
+  return io.Directory(
+    path.join(
+      environment.webUiTestDir.path,
+      testSet.directory,
+    )
+  );
+}
+
+io.Directory getBundleBuildDirectory(TestBundle bundle) {
+  return io.Directory(
+    path.join(
+      environment.webUiBuildDir.path,
+      'test_bundles',
+      bundle.name,
+    )
+  );
+}
+
+io.Directory getSkiaGoldDirectoryForSuite(TestSuite suite) {
+  return io.Directory(
+    path.join(
+      environment.webUiSkiaGoldDirectory.path,
+      suite.name,
+    )
+  );
+}
+
+extension AnsiColors on String {
+  static bool shouldEscape = () {
+    if (isLuci) {
+      // Produce clean output on LUCI.
+      return false;
+    }
+    return io.stdout.hasTerminal && io.stdout.supportsAnsiEscapes;
+  }();
+
+  static const String _noColorCode = '\u001b[39m';
+
+  String _wrapText(String prefix, String suffix) => shouldEscape
+    ? '$prefix$this$suffix' : this;
+
+  String _colorText(String colorCode) => _wrapText(colorCode, _noColorCode);
+
+  String get ansiBlack => _colorText('\u001b[30m');
+  String get ansiRed => _colorText('\u001b[31m');
+  String get ansiGreen => _colorText('\u001b[32m');
+  String get ansiYellow => _colorText('\u001b[33m');
+  String get ansiBlue => _colorText('\u001b[34m');
+  String get ansiMagenta => _colorText('\u001b[35m');
+  String get ansiCyan => _colorText('\u001b[36m');
+  String get ansiWhite => _colorText('\u001b[37m');
+
+  String get ansiBold => _wrapText('\u001b[1m', '\u001b[0m');
 }

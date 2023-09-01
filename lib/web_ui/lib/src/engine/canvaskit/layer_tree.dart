@@ -4,7 +4,7 @@
 
 import 'package:ui/ui.dart' as ui;
 
-import '../../engine.dart' show kProfilePrerollFrame, kProfileApplyFrame;
+import '../../engine.dart' show kProfileApplyFrame, kProfilePrerollFrame;
 import '../profiler.dart';
 import '../vector_math.dart';
 import 'canvas.dart';
@@ -48,13 +48,9 @@ class LayerTree {
   void paint(Frame frame, {bool ignoreRasterCache = false}) {
     final CkNWayCanvas internalNodesCanvas = CkNWayCanvas();
     internalNodesCanvas.addCanvas(frame.canvas);
-    final List<CkCanvas> overlayCanvases =
+    final Iterable<CkCanvas> overlayCanvases =
         frame.viewEmbedder!.getOverlayCanvases();
-    for (int i = 0; i < overlayCanvases.length; i++) {
-      internalNodesCanvas.addCanvas(overlayCanvases[i]);
-    }
-    // Clear the canvases before painting
-    internalNodesCanvas.clear(const ui.Color(0x00000000));
+    overlayCanvases.forEach(internalNodesCanvas.addCanvas);
     final PaintContext context = PaintContext(
       internalNodesCanvas,
       frame.canvas,
@@ -88,6 +84,8 @@ class LayerTree {
 
 /// A single frame to be rendered.
 class Frame {
+  Frame(this.canvas, this.rasterCache, this.viewEmbedder);
+
   /// The canvas to render this frame to.
   final CkCanvas canvas;
 
@@ -96,8 +94,6 @@ class Frame {
 
   /// The platform view embedder.
   final HtmlViewEmbedder? viewEmbedder;
-
-  Frame(this.canvas, this.rasterCache, this.viewEmbedder);
 
   /// Rasterize the given layer tree into this frame.
   bool raster(LayerTree layerTree, {bool ignoreRasterCache = false}) {

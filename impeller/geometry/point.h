@@ -38,6 +38,12 @@ struct TPoint {
 
   static constexpr TPoint<Type> MakeXY(Type x, Type y) { return {x, y}; }
 
+  template <class U>
+  static constexpr TPoint Round(const TPoint<U>& other) {
+    return TPoint{static_cast<Type>(std::round(other.x)),
+                  static_cast<Type>(std::round(other.y))};
+  }
+
   constexpr bool operator==(const TPoint& p) const {
     return p.x == x && p.y == y;
   }
@@ -178,6 +184,12 @@ struct TPoint {
     return {std::max<Type>(x, p.x), std::max<Type>(y, p.y)};
   }
 
+  constexpr TPoint Floor() const { return {std::floor(x), std::floor(y)}; }
+
+  constexpr TPoint Ceil() const { return {std::ceil(x), std::ceil(y)}; }
+
+  constexpr TPoint Round() const { return {std::round(x), std::round(y)}; }
+
   constexpr Type GetDistance(const TPoint& p) const {
     return sqrt(GetDistanceSquared(p));
   }
@@ -189,7 +201,7 @@ struct TPoint {
   constexpr TPoint Normalize() const {
     const auto length = GetLength();
     if (length == 0) {
-      return {};
+      return {1, 0};
     }
     return {x / length, y / length};
   }
@@ -202,6 +214,14 @@ struct TPoint {
 
   constexpr TPoint Reflect(const TPoint& axis) const {
     return *this - axis * this->Dot(axis) * 2;
+  }
+
+  constexpr Radians AngleTo(const TPoint& p) const {
+    return Radians{std::atan2(this->Cross(p), this->Dot(p))};
+  }
+
+  constexpr TPoint Lerp(const TPoint& p, Scalar t) const {
+    return *this + (p - *this) * t;
   }
 
   constexpr bool IsZero() const { return x == 0 && y == 0; }
@@ -285,6 +305,8 @@ constexpr TPoint<T> operator/(const TSize<U>& s, const TPoint<T>& p) {
 
 using Point = TPoint<Scalar>;
 using IPoint = TPoint<int64_t>;
+using IPoint32 = TPoint<int32_t>;
+using UintPoint32 = TPoint<uint32_t>;
 using Vector2 = Point;
 
 }  // namespace impeller

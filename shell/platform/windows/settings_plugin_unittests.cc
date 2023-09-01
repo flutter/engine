@@ -1,8 +1,10 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+
 #include "flutter/shell/platform/windows/settings_plugin.h"
 
+#include "flutter/fml/macros.h"
 #include "flutter/shell/platform/windows/task_runner.h"
 #include "flutter/shell/platform/windows/testing/test_binary_messenger.h"
 #include "gmock/gmock.h"
@@ -21,13 +23,18 @@ class MockSettingsPlugin : public SettingsPlugin {
 
   virtual ~MockSettingsPlugin() = default;
 
-  // |SettingsPlugin|
-  MOCK_METHOD0(StartWatching, void());
-  MOCK_METHOD0(StopWatching, void());
+  bool is_high_contrast() { return is_high_contrast_; }
 
+  // |SettingsPlugin|
   MOCK_METHOD0(GetAlwaysUse24HourFormat, bool());
   MOCK_METHOD0(GetTextScaleFactor, float());
   MOCK_METHOD0(GetPreferredBrightness, PlatformBrightness());
+
+  MOCK_METHOD0(WatchPreferredBrightnessChanged, void());
+  MOCK_METHOD0(WatchTextScaleFactorChanged, void());
+
+ private:
+  FML_DISALLOW_COPY_AND_ASSIGN(MockSettingsPlugin);
 };
 
 }  // namespace
@@ -56,6 +63,37 @@ TEST(SettingsPluginTest, SendSettingsGetsSettings) {
   EXPECT_CALL(settings_plugin, GetPreferredBrightness).Times(1);
 
   settings_plugin.SendSettings();
+}
+
+TEST(SettingsPluginTest, StartWatchingStartsWatchingChanges) {
+  TestBinaryMessenger messenger([](const std::string& channel,
+                                   const uint8_t* message, size_t message_size,
+                                   BinaryReply reply) {});
+  ::testing::NiceMock<MockSettingsPlugin> settings_plugin(&messenger, nullptr);
+
+  EXPECT_CALL(settings_plugin, WatchPreferredBrightnessChanged).Times(1);
+  EXPECT_CALL(settings_plugin, WatchTextScaleFactorChanged).Times(1);
+
+  settings_plugin.StartWatching();
+}
+
+TEST(SettingsPluginTest, HighContrastModeHonored) {
+  int times = 0;
+  TestBinaryMessenger messenger(
+      [&times](const std::string& channel, const uint8_t* message,
+               size_t message_size, BinaryReply reply) {
+        ASSERT_EQ(channel, "flutter/settings");
+        times++;
+      });
+  ::testing::NiceMock<MockSettingsPlugin> settings_plugin(&messenger, nullptr);
+
+  settings_plugin.UpdateHighContrastMode(true);
+  EXPECT_TRUE(settings_plugin.is_high_contrast());
+
+  settings_plugin.UpdateHighContrastMode(false);
+  EXPECT_FALSE(settings_plugin.is_high_contrast());
+
+  EXPECT_EQ(times, 2);
 }
 
 }  // namespace testing

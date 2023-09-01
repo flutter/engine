@@ -4,35 +4,37 @@
 
 #include "flutter/shell/platform/windows/angle_surface_manager.h"
 
-#include <iostream>
 #include <vector>
+
+#include "flutter/fml/logging.h"
 
 // Logs an EGL error to stderr. This automatically calls eglGetError()
 // and logs the error code.
 static void LogEglError(std::string message) {
   EGLint error = eglGetError();
-  std::cerr << "EGL: " << message << std::endl;
-  std::cerr << "EGL: eglGetError returned " << error << std::endl;
+  FML_LOG(ERROR) << "EGL: " << message;
+  FML_LOG(ERROR) << "EGL: eglGetError returned " << error;
 }
 
 namespace flutter {
 
 int AngleSurfaceManager::instance_count_ = 0;
 
-std::unique_ptr<AngleSurfaceManager> AngleSurfaceManager::Create() {
+std::unique_ptr<AngleSurfaceManager> AngleSurfaceManager::Create(
+    bool enable_impeller) {
   std::unique_ptr<AngleSurfaceManager> manager;
-  manager.reset(new AngleSurfaceManager());
+  manager.reset(new AngleSurfaceManager(enable_impeller));
   if (!manager->initialize_succeeded_) {
     return nullptr;
   }
   return std::move(manager);
 }
 
-AngleSurfaceManager::AngleSurfaceManager()
+AngleSurfaceManager::AngleSurfaceManager(bool enable_impeller)
     : egl_config_(nullptr),
       egl_display_(EGL_NO_DISPLAY),
       egl_context_(EGL_NO_CONTEXT) {
-  initialize_succeeded_ = Initialize();
+  initialize_succeeded_ = Initialize(enable_impeller);
   ++instance_count_;
 }
 
@@ -65,14 +67,20 @@ bool AngleSurfaceManager::InitializeEGL(
   return true;
 }
 
-bool AngleSurfaceManager::Initialize() {
-  // TODO(dnfield): Enable MSAA here, see similar code in android_context_gl.cc
-  // Will need to plumb in argument from project bundle for sampling rate.
-  // https://github.com/flutter/flutter/issues/100392
+bool AngleSurfaceManager::Initialize(bool enable_impeller) {
   const EGLint config_attributes[] = {EGL_RED_SIZE,   8, EGL_GREEN_SIZE,   8,
                                       EGL_BLUE_SIZE,  8, EGL_ALPHA_SIZE,   8,
                                       EGL_DEPTH_SIZE, 8, EGL_STENCIL_SIZE, 8,
                                       EGL_NONE};
+
+  const EGLint impeller_config_attributes[] = {
+      EGL_RED_SIZE,       8, EGL_GREEN_SIZE, 8, EGL_BLUE_SIZE,    8,
+      EGL_ALPHA_SIZE,     8, EGL_DEPTH_SIZE, 0, EGL_STENCIL_SIZE, 8,
+      EGL_SAMPLE_BUFFERS, 1, EGL_SAMPLES,    4, EGL_NONE};
+  const EGLint impeller_config_attributes_no_msaa[] = {
+      EGL_RED_SIZE,   8, EGL_GREEN_SIZE, 8, EGL_BLUE_SIZE,    8,
+      EGL_ALPHA_SIZE, 8, EGL_DEPTH_SIZE, 0, EGL_STENCIL_SIZE, 8,
+      EGL_NONE};
 
   const EGLint display_context_attributes[] = {EGL_CONTEXT_CLIENT_VERSION, 2,
                                                EGL_NONE};
@@ -146,11 +154,26 @@ bool AngleSurfaceManager::Initialize() {
   }
 
   EGLint numConfigs = 0;
-  if ((eglChooseConfig(egl_display_, config_attributes, &egl_config_, 1,
-                       &numConfigs) == EGL_FALSE) ||
-      (numConfigs == 0)) {
-    LogEglError("Failed to choose first context");
-    return false;
+  if (enable_impeller) {
+    // First try the MSAA configuration.
+    if ((eglChooseConfig(egl_display_, impeller_config_attributes, &egl_config_,
+                         1, &numConfigs) == EGL_FALSE) ||
+        (numConfigs == 0)) {
+      // Next fall back to disabled MSAA.
+      if ((eglChooseConfig(egl_display_, impeller_config_attributes_no_msaa,
+                           &egl_config_, 1, &numConfigs) == EGL_FALSE) ||
+          (numConfigs == 0)) {
+        LogEglError("Failed to choose first context");
+        return false;
+      }
+    }
+  } else {
+    if ((eglChooseConfig(egl_display_, config_attributes, &egl_config_, 1,
+                         &numConfigs) == EGL_FALSE) ||
+        (numConfigs == 0)) {
+      LogEglError("Failed to choose first context");
+      return false;
+    }
   }
 
   egl_context_ = eglCreateContext(egl_display_, egl_config_, EGL_NO_CONTEXT,
@@ -208,7 +231,8 @@ void AngleSurfaceManager::CleanUp() {
 
 bool AngleSurfaceManager::CreateSurface(WindowsRenderTarget* render_target,
                                         EGLint width,
-                                        EGLint height) {
+                                        EGLint height,
+                                        bool vsync_enabled) {
   if (!render_target || !initialize_succeeded_) {
     return false;
   }
@@ -225,17 +249,21 @@ bool AngleSurfaceManager::CreateSurface(WindowsRenderTarget* render_target,
       surfaceAttributes);
   if (surface == EGL_NO_SURFACE) {
     LogEglError("Surface creation failed.");
+    return false;
   }
 
   surface_width_ = width;
   surface_height_ = height;
   render_surface_ = surface;
+
+  SetVSyncEnabled(vsync_enabled);
   return true;
 }
 
 void AngleSurfaceManager::ResizeSurface(WindowsRenderTarget* render_target,
                                         EGLint width,
-                                        EGLint height) {
+                                        EGLint height,
+                                        bool vsync_enabled) {
   EGLint existing_width, existing_height;
   GetSurfaceDimensions(&existing_width, &existing_height);
   if (width != existing_width || height != existing_height) {
@@ -244,9 +272,9 @@ void AngleSurfaceManager::ResizeSurface(WindowsRenderTarget* render_target,
 
     ClearContext();
     DestroySurface();
-    if (!CreateSurface(render_target, width, height)) {
-      std::cerr << "AngleSurfaceManager::ResizeSurface failed to create surface"
-                << std::endl;
+    if (!CreateSurface(render_target, width, height, vsync_enabled)) {
+      FML_LOG(ERROR)
+          << "AngleSurfaceManager::ResizeSurface failed to create surface";
     }
   }
 }
@@ -299,9 +327,32 @@ EGLSurface AngleSurfaceManager::CreateSurfaceFromHandle(
                                           egl_config_, attributes);
 }
 
-bool AngleSurfaceManager::GetDevice(ID3D11Device** device) {
-  using Microsoft::WRL::ComPtr;
+void AngleSurfaceManager::SetVSyncEnabled(bool enabled) {
+  if (eglMakeCurrent(egl_display_, render_surface_, render_surface_,
+                     egl_context_) != EGL_TRUE) {
+    LogEglError("Unable to make surface current to update the swap interval");
+    return;
+  }
 
+  // OpenGL swap intervals can be used to prevent screen tearing.
+  // If enabled, the raster thread blocks until the v-blank.
+  // This is unnecessary if DWM composition is enabled.
+  // See: https://www.khronos.org/opengl/wiki/Swap_Interval
+  // See: https://learn.microsoft.com/windows/win32/dwm/composition-ovw
+  if (eglSwapInterval(egl_display_, enabled ? 1 : 0) != EGL_TRUE) {
+    LogEglError("Unable to update the swap interval");
+    return;
+  }
+
+  if (eglMakeCurrent(egl_display_, EGL_NO_SURFACE, EGL_NO_SURFACE,
+                     EGL_NO_CONTEXT) != EGL_TRUE) {
+    LogEglError(
+        "Unable to release the context after updating the swap interval");
+    return;
+  }
+}
+
+bool AngleSurfaceManager::GetDevice(ID3D11Device** device) {
   if (!resolved_device_) {
     PFNEGLQUERYDISPLAYATTRIBEXTPROC egl_query_display_attrib_EXT =
         reinterpret_cast<PFNEGLQUERYDISPLAYATTRIBEXTPROC>(

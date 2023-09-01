@@ -8,12 +8,14 @@
 #include <vector>
 
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "flutter/shell/platform/embedder/test_utils/key_codes.h"
+#include "flutter/shell/platform/embedder/test_utils/key_codes.g.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
+#include "flutter/shell/platform/windows/keyboard_utils.h"
 #include "flutter/shell/platform/windows/testing/engine_modifier.h"
 #include "gtest/gtest.h"
 
 namespace flutter {
+namespace testing {
 
 namespace {
 
@@ -71,11 +73,6 @@ UINT DefaultMapVkToScan(UINT virtual_key, bool extended) {
                        extended ? MAPVK_VK_TO_VSC_EX : MAPVK_VK_TO_VSC);
 }
 
-}  // namespace
-
-namespace testing {
-
-namespace {
 constexpr uint64_t kScanCodeKeyA = 0x1e;
 constexpr uint64_t kScanCodeAltLeft = 0x38;
 constexpr uint64_t kScanCodeNumpad1 = 0x4f;
@@ -86,8 +83,9 @@ constexpr uint64_t kScanCodeShiftRight = 0x36;
 
 constexpr uint64_t kVirtualKeyA = 0x41;
 
-using namespace ::flutter::testing::keycodes;
 }  // namespace
+
+using namespace ::flutter::testing::keycodes;
 
 TEST(KeyboardKeyEmbedderHandlerTest, ConvertChar32ToUtf8) {
   std::string result;
@@ -514,6 +512,205 @@ TEST(KeyboardKeyEmbedderHandlerTest, ModifierKeysByVirtualKey) {
   event->callback(true, event->user_data);
   EXPECT_EQ(last_handled, true);
   results.clear();
+}
+
+// Test if modifiers left key down events are synthesized when left or right
+// keys are not pressed.
+TEST(KeyboardKeyEmbedderHandlerTest,
+     SynthesizeModifierLeftKeyDownWhenNotPressed) {
+  TestKeystate key_state;
+  std::vector<TestFlutterKeyEvent> results;
+  TestFlutterKeyEvent* event;
+  bool last_handled = false;
+
+  std::unique_ptr<KeyboardKeyEmbedderHandler> handler =
+      std::make_unique<KeyboardKeyEmbedderHandler>(
+          [&results](const FlutterKeyEvent& event,
+                     FlutterKeyEventCallback callback, void* user_data) {
+            results.emplace_back(event, callback, user_data);
+          },
+          key_state.Getter(), DefaultMapVkToScan);
+
+  // Should synthesize shift left key down event.
+  handler->SyncModifiersIfNeeded(kShift);
+  EXPECT_EQ(results.size(), 1);
+  event = &results[0];
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(event->physical, kPhysicalShiftLeft);
+  EXPECT_EQ(event->logical, kLogicalShiftLeft);
+  EXPECT_STREQ(event->character, "");
+  EXPECT_EQ(event->synthesized, true);
+  results.clear();
+
+  // Clear the pressing state.
+  handler->SyncModifiersIfNeeded(0);
+  results.clear();
+
+  // Should synthesize control left key down event.
+  handler->SyncModifiersIfNeeded(kControl);
+  EXPECT_EQ(results.size(), 1);
+  event = &results[0];
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(event->physical, kPhysicalControlLeft);
+  EXPECT_EQ(event->logical, kLogicalControlLeft);
+  EXPECT_STREQ(event->character, "");
+  EXPECT_EQ(event->synthesized, true);
+}
+
+// Test if modifiers left key down events are not synthesized when left or right
+// keys are pressed.
+TEST(KeyboardKeyEmbedderHandlerTest, DoNotSynthesizeModifierDownWhenPressed) {
+  TestKeystate key_state;
+  std::vector<TestFlutterKeyEvent> results;
+  TestFlutterKeyEvent* event;
+  bool last_handled = false;
+
+  std::unique_ptr<KeyboardKeyEmbedderHandler> handler =
+      std::make_unique<KeyboardKeyEmbedderHandler>(
+          [&results](const FlutterKeyEvent& event,
+                     FlutterKeyEventCallback callback, void* user_data) {
+            results.emplace_back(event, callback, user_data);
+          },
+          key_state.Getter(), DefaultMapVkToScan);
+
+  // Should not synthesize shift left key down event when shift left key
+  // is already pressed.
+  handler->KeyboardHook(
+      VK_LSHIFT, kScanCodeShiftLeft, WM_KEYDOWN, 0, false, true,
+      [&last_handled](bool handled) { last_handled = handled; });
+  results.clear();
+  handler->SyncModifiersIfNeeded(kShift);
+  EXPECT_EQ(results.size(), 0);
+
+  // Should not synthesize shift left key down event when shift right key
+  // is already pressed.
+  handler->KeyboardHook(
+      VK_RSHIFT, kScanCodeShiftRight, WM_KEYDOWN, 0, false, true,
+      [&last_handled](bool handled) { last_handled = handled; });
+  results.clear();
+  handler->SyncModifiersIfNeeded(kShift);
+  EXPECT_EQ(results.size(), 0);
+
+  // Should not synthesize control left key down event when control left key
+  // is already pressed.
+  handler->KeyboardHook(
+      VK_LCONTROL, kScanCodeControlLeft, WM_KEYDOWN, 0, false, true,
+      [&last_handled](bool handled) { last_handled = handled; });
+  results.clear();
+  handler->SyncModifiersIfNeeded(kControl);
+  EXPECT_EQ(results.size(), 0);
+
+  // Should not synthesize control left key down event when control right key
+  // is already pressed .
+  handler->KeyboardHook(
+      VK_RCONTROL, kScanCodeControlRight, WM_KEYDOWN, 0, true, true,
+      [&last_handled](bool handled) { last_handled = handled; });
+  results.clear();
+  handler->SyncModifiersIfNeeded(kControl);
+  EXPECT_EQ(results.size(), 0);
+}
+
+// Test if modifiers keys up events are synthesized when left or right keys
+// are pressed.
+TEST(KeyboardKeyEmbedderHandlerTest, SynthesizeModifierUpWhenPressed) {
+  TestKeystate key_state;
+  std::vector<TestFlutterKeyEvent> results;
+  TestFlutterKeyEvent* event;
+  bool last_handled = false;
+
+  std::unique_ptr<KeyboardKeyEmbedderHandler> handler =
+      std::make_unique<KeyboardKeyEmbedderHandler>(
+          [&results](const FlutterKeyEvent& event,
+                     FlutterKeyEventCallback callback, void* user_data) {
+            results.emplace_back(event, callback, user_data);
+          },
+          key_state.Getter(), DefaultMapVkToScan);
+
+  // Should synthesize shift left key up event when shift left key is
+  // already pressed and modifiers state is zero.
+  handler->KeyboardHook(
+      VK_LSHIFT, kScanCodeShiftLeft, WM_KEYDOWN, 0, false, true,
+      [&last_handled](bool handled) { last_handled = handled; });
+  results.clear();
+  handler->SyncModifiersIfNeeded(0);
+  EXPECT_EQ(results.size(), 1);
+  event = &results[0];
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(event->physical, kPhysicalShiftLeft);
+  EXPECT_EQ(event->logical, kLogicalShiftLeft);
+  EXPECT_STREQ(event->character, "");
+  EXPECT_EQ(event->synthesized, true);
+  results.clear();
+
+  // Should synthesize shift right key up event when shift right key is
+  // already pressed and modifiers state is zero.
+  handler->KeyboardHook(
+      VK_RSHIFT, kScanCodeShiftRight, WM_KEYDOWN, 0, false, true,
+      [&last_handled](bool handled) { last_handled = handled; });
+  results.clear();
+  handler->SyncModifiersIfNeeded(0);
+  EXPECT_EQ(results.size(), 1);
+  event = &results[0];
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(event->physical, kPhysicalShiftRight);
+  EXPECT_EQ(event->logical, kLogicalShiftRight);
+  EXPECT_STREQ(event->character, "");
+  EXPECT_EQ(event->synthesized, true);
+  results.clear();
+
+  // Should synthesize control left key up event when control left key is
+  // already pressed and modifiers state is zero.
+  handler->KeyboardHook(
+      VK_LCONTROL, kScanCodeControlLeft, WM_KEYDOWN, 0, false, true,
+      [&last_handled](bool handled) { last_handled = handled; });
+  results.clear();
+  handler->SyncModifiersIfNeeded(0);
+  EXPECT_EQ(results.size(), 1);
+  event = &results[0];
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(event->physical, kPhysicalControlLeft);
+  EXPECT_EQ(event->logical, kLogicalControlLeft);
+  EXPECT_STREQ(event->character, "");
+  EXPECT_EQ(event->synthesized, true);
+  results.clear();
+
+  // Should synthesize control right key up event when control right key is
+  // already pressed and modifiers state is zero.
+  handler->KeyboardHook(
+      VK_RCONTROL, kScanCodeControlRight, WM_KEYDOWN, 0, true, true,
+      [&last_handled](bool handled) { last_handled = handled; });
+  results.clear();
+  handler->SyncModifiersIfNeeded(0);
+  EXPECT_EQ(results.size(), 1);
+  event = &results[0];
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(event->physical, kPhysicalControlRight);
+  EXPECT_EQ(event->logical, kLogicalControlRight);
+  EXPECT_STREQ(event->character, "");
+  EXPECT_EQ(event->synthesized, true);
+  results.clear();
+}
+
+// Test if modifiers key up events are not synthesized when left or right
+// keys are not pressed.
+TEST(KeyboardKeyEmbedderHandlerTest, DoNotSynthesizeModifierUpWhenNotPressed) {
+  TestKeystate key_state;
+  std::vector<TestFlutterKeyEvent> results;
+  TestFlutterKeyEvent* event;
+  bool last_handled = false;
+
+  std::unique_ptr<KeyboardKeyEmbedderHandler> handler =
+      std::make_unique<KeyboardKeyEmbedderHandler>(
+          [&results](const FlutterKeyEvent& event,
+                     FlutterKeyEventCallback callback, void* user_data) {
+            results.emplace_back(event, callback, user_data);
+          },
+          key_state.Getter(), DefaultMapVkToScan);
+
+  // Should not synthesize up events when no modifier key is pressed
+  // in pressing state and modifiers state is zero.
+  handler->SyncModifiersIfNeeded(0);
+  EXPECT_EQ(results.size(), 0);
 }
 
 TEST(KeyboardKeyEmbedderHandlerTest, RepeatedDownIsIgnored) {
@@ -945,7 +1142,10 @@ TEST(KeyboardKeyEmbedderHandlerTest,
       VK_NUMLOCK, kScanCodeNumLock, WM_KEYDOWN, 0, true, false,
       [&last_handled](bool handled) { last_handled = handled; });
   EXPECT_EQ(last_handled, false);
-  EXPECT_EQ(results.size(), 3);
+  // 4 total events should be fired:
+  // Pre-synchronization toggle, pre-sync press,
+  // main event, and post-sync press.
+  EXPECT_EQ(results.size(), 4);
   event = &results[0];
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, kPhysicalNumLock);

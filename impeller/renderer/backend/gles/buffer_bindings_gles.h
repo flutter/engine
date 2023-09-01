@@ -25,8 +25,10 @@ class BufferBindingsGLES {
 
   ~BufferBindingsGLES();
 
-  bool RegisterVertexStageInput(const ProcTableGLES& gl,
-                                const std::vector<ShaderStageIOSlot>& inputs);
+  bool RegisterVertexStageInput(
+      const ProcTableGLES& gl,
+      const std::vector<ShaderStageIOSlot>& inputs,
+      const std::vector<ShaderStageBufferLayout>& layouts);
 
   bool ReadUniformsBindings(const ProcTableGLES& gl, GLuint program);
 
@@ -59,7 +61,9 @@ class BufferBindingsGLES {
                          Allocator& transients_allocator,
                          const BufferResource& buffer) const;
 
-  bool BindTextures(const ProcTableGLES& gl, const Bindings& bindings) const;
+  bool BindTextures(const ProcTableGLES& gl,
+                    const Bindings& bindings,
+                    ShaderStage stage) const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(BufferBindingsGLES);
 };

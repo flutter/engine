@@ -12,8 +12,6 @@
 #include <lib/fdio/directory.h>
 #include <lib/fdio/io.h>
 #include <lib/fdio/namespace.h>
-#include <lib/ui/scenic/cpp/view_ref_pair.h>
-#include <lib/ui/scenic/cpp/view_token_pair.h>
 #include <lib/vfs/cpp/composed_service_dir.h>
 #include <lib/vfs/cpp/remote_dir.h>
 #include <lib/vfs/cpp/service.h>
@@ -182,14 +180,13 @@ ComponentV2::ComponentV2(
     return;
   }
 
-  // Setup /tmp to be mapped to the process-local memfs.
-  dart_utils::RunnerTemp::SetupComponent(fdio_ns_.get());
+  dart_utils::BindTemp(fdio_ns_.get());
 
   // ComponentStartInfo::ns (optional)
   if (start_info.has_ns()) {
     for (auto& entry : *start_info.mutable_ns()) {
-      // /tmp/ is mapped separately to the process-level memfs, so we ignore it
-      // here.
+      // /tmp/ is mapped separately to to a process-local virtual filesystem,
+      // so we ignore it here.
       const auto& path = entry.path();
       if (path == kTmpPath) {
         continue;
@@ -267,8 +264,7 @@ ComponentV2::ComponentV2(
 
   // Clone and check if client is servicing the directory.
   directory_ptr_->Clone(fuchsia::io::OpenFlags::DESCRIBE |
-                            fuchsia::io::OpenFlags::RIGHT_READABLE |
-                            fuchsia::io::OpenFlags::RIGHT_WRITABLE,
+                            fuchsia::io::OpenFlags::CLONE_SAME_RIGHTS,
                         cloned_directory_ptr_.NewRequest());
 
   // Collect our standard set of directories along with directories that are
@@ -278,10 +274,8 @@ ComponentV2::ComponentV2(
     other_dirs.push_back(dir);
   }
 
-  cloned_directory_ptr_.events()
-      .OnOpen = [this, other_dirs](
-                    zx_status_t status,
-                    std::unique_ptr<fuchsia::io::NodeInfo> info) {
+  cloned_directory_ptr_.events().OnOpen = [this, other_dirs](zx_status_t status,
+                                                             auto unused) {
     cloned_directory_ptr_.Unbind();
     if (status != ZX_OK) {
       FML_LOG(ERROR) << "could not bind out directory for flutter component("
@@ -293,8 +287,11 @@ ComponentV2::ComponentV2(
     for (auto& dir_str : other_dirs) {
       fuchsia::io::DirectoryHandle dir;
       auto request = dir.NewRequest().TakeChannel();
-      auto status = fdio_service_connect_at(directory_ptr_.channel().get(),
-                                            dir_str.c_str(), request.release());
+      auto status = fdio_open_at(
+          directory_ptr_.channel().get(), dir_str.c_str(),
+          static_cast<uint32_t>(fuchsia::io::OpenFlags::DIRECTORY |
+                                fuchsia::io::OpenFlags::RIGHT_READABLE),
+          request.release());
       if (status == ZX_OK) {
         outgoing_dir_->AddEntry(
             dir_str.c_str(),
@@ -428,12 +425,12 @@ ComponentV2::ComponentV2(
   }
 
 #if defined(DART_PRODUCT)
-  settings_.enable_observatory = false;
+  settings_.enable_vm_service = false;
 #else
-  settings_.enable_observatory = true;
+  settings_.enable_vm_service = true;
 
   // TODO(cbracken): pass this in as a param to allow 0.0.0.0, ::1, etc.
-  settings_.observatory_host = "127.0.0.1";
+  settings_.vm_service_host = "127.0.0.1";
 #endif
 
   // Controls whether category "skia" trace events are enabled.
@@ -488,7 +485,11 @@ ComponentV2::ComponentV2(
     std::cout << message << std::endl;
   };
 
-  settings_.dart_flags = {"--lazy_async_stacks"};
+  settings_.dart_flags = {};
+
+  // Run in unsound null safety mode as some packages used in Integration
+  // testing have not been migrated yet.
+  settings_.dart_flags.push_back("--no-sound-null-safety");
 
   // Don't collect CPU samples from Dart VM C++ code.
   settings_.dart_flags.push_back("--no_profile_vm");
@@ -624,46 +625,6 @@ void ComponentV2::OnEngineTerminate(const Engine* shell_holder) {
   }
 }
 
-void ComponentV2::CreateView(
-    zx::eventpair token,
-    fidl::InterfaceRequest<fuchsia::sys::ServiceProvider> /*incoming_services*/,
-    fidl::InterfaceHandle<
-        fuchsia::sys::ServiceProvider> /*outgoing_services*/) {
-  auto view_ref_pair = scenic::ViewRefPair::New();
-  CreateViewWithViewRef(std::move(token), std::move(view_ref_pair.control_ref),
-                        std::move(view_ref_pair.view_ref));
-}
-
-void ComponentV2::CreateViewWithViewRef(
-    zx::eventpair view_token,
-    fuchsia::ui::views::ViewRefControl control_ref,
-    fuchsia::ui::views::ViewRef view_ref) {
-  if (!svc_) {
-    FML_LOG(ERROR)
-        << "Component incoming services was invalid when attempting to "
-           "create a shell for a view provider request.";
-    return;
-  }
-
-  shell_holders_.emplace(std::make_unique<Engine>(
-      *this,                      // delegate
-      debug_label_,               // thread label
-      svc_,                       // Component incoming services
-      runner_incoming_services_,  // Runner incoming services
-      settings_,                  // settings
-      scenic::ToViewToken(std::move(view_token)),  // view token
-      scenic::ViewRefPair{
-          .control_ref = std::move(control_ref),
-          .view_ref = std::move(view_ref),
-      },
-      std::move(fdio_ns_),            // FDIO namespace
-      std::move(directory_request_),  // outgoing request
-      product_config_,                // product configuration
-      std::vector<std::string>(),     // dart entrypoint args
-      false                           // not a v1 component
-      ));
-}
-
 void ComponentV2::CreateView2(fuchsia::ui::app::CreateView2Args view_args) {
   if (!svc_) {
     FML_LOG(ERROR)
@@ -671,6 +632,18 @@ void ComponentV2::CreateView2(fuchsia::ui::app::CreateView2Args view_args) {
            "create a shell for a view provider request.";
     return;
   }
+
+  fuchsia::ui::views::ViewRefControl view_ref_control;
+  fuchsia::ui::views::ViewRef view_ref;
+  auto status = zx::eventpair::create(
+      /*options*/ 0u, &view_ref_control.reference, &view_ref.reference);
+  ZX_ASSERT(status == ZX_OK);
+  view_ref_control.reference.replace(
+      ZX_DEFAULT_EVENTPAIR_RIGHTS & (~ZX_RIGHT_DUPLICATE),
+      &view_ref_control.reference);
+  view_ref.reference.replace(ZX_RIGHTS_BASIC, &view_ref.reference);
+  auto view_ref_pair =
+      std::make_pair(std::move(view_ref_control), std::move(view_ref));
 
   shell_holders_.emplace(std::make_unique<Engine>(
       *this,                      // delegate
@@ -680,12 +653,11 @@ void ComponentV2::CreateView2(fuchsia::ui::app::CreateView2Args view_args) {
       settings_,                  // settings
       std::move(
           *view_args.mutable_view_creation_token()),  // view creation token
-      scenic::ViewRefPair::New(),                     // view ref pair
+      std::move(view_ref_pair),                       // view ref pair
       std::move(fdio_ns_),                            // FDIO namespace
       std::move(directory_request_),                  // outgoing request
       product_config_,                                // product configuration
-      std::vector<std::string>(),                     // dart entrypoint args
-      false                                           // not a v1 component
+      std::vector<std::string>()                      // dart entrypoint args
       ));
 }
 

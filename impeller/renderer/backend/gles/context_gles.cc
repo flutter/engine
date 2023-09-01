@@ -9,16 +9,16 @@
 
 namespace impeller {
 
-std::shared_ptr<Context> ContextGLES::Create(
+std::shared_ptr<ContextGLES> ContextGLES::Create(
     std::unique_ptr<ProcTableGLES> gl,
-    std::vector<std::shared_ptr<fml::Mapping>> shader_libraries) {
-  return std::shared_ptr<Context>(
-      new ContextGLES(std::move(gl), std::move(shader_libraries)));
+    const std::vector<std::shared_ptr<fml::Mapping>>& shader_libraries) {
+  return std::shared_ptr<ContextGLES>(
+      new ContextGLES(std::move(gl), shader_libraries));
 }
 
-ContextGLES::ContextGLES(
-    std::unique_ptr<ProcTableGLES> gl,
-    std::vector<std::shared_ptr<fml::Mapping>> shader_libraries_mappings) {
+ContextGLES::ContextGLES(std::unique_ptr<ProcTableGLES> gl,
+                         const std::vector<std::shared_ptr<fml::Mapping>>&
+                             shader_libraries_mappings) {
   reactor_ = std::make_shared<ReactorGLES>(std::move(gl));
   if (!reactor_->IsValid()) {
     VALIDATION_LOG << "Could not create valid reactor.";
@@ -28,7 +28,7 @@ ContextGLES::ContextGLES(
   // Create the shader library.
   {
     auto library = std::shared_ptr<ShaderLibraryGLES>(
-        new ShaderLibraryGLES(std::move(shader_libraries_mappings)));
+        new ShaderLibraryGLES(shader_libraries_mappings));
     if (!library->IsValid()) {
       VALIDATION_LOG << "Could not create valid shader library.";
       return;
@@ -42,27 +42,42 @@ ContextGLES::ContextGLES(
         std::shared_ptr<PipelineLibraryGLES>(new PipelineLibraryGLES(reactor_));
   }
 
-  // Create all allocators.
+  // Create allocators.
   {
-    permanents_allocator_ =
+    resource_allocator_ =
         std::shared_ptr<AllocatorGLES>(new AllocatorGLES(reactor_));
-    if (!permanents_allocator_->IsValid()) {
-      VALIDATION_LOG << "Could not create permanents allocator.";
-      return;
-    }
-
-    transients_allocator_ =
-        std::shared_ptr<AllocatorGLES>(new AllocatorGLES(reactor_));
-    if (!transients_allocator_->IsValid()) {
-      VALIDATION_LOG << "Could not create transients allocator.";
+    if (!resource_allocator_->IsValid()) {
+      VALIDATION_LOG << "Could not create a resource allocator.";
       return;
     }
   }
 
-  // Create the sampler library
+  // Create the sampler library.
   {
     sampler_library_ =
         std::shared_ptr<SamplerLibraryGLES>(new SamplerLibraryGLES());
+  }
+
+  // Create the device capabilities.
+  {
+    device_capabilities_ =
+        CapabilitiesBuilder()
+            .SetSupportsOffscreenMSAA(false)
+            .SetSupportsSSBO(false)
+            .SetSupportsBufferToTextureBlits(false)
+            .SetSupportsTextureToTextureBlits(
+                reactor_->GetProcTable().BlitFramebuffer.IsAvailable())
+            .SetSupportsFramebufferFetch(false)
+            .SetDefaultColorFormat(PixelFormat::kR8G8B8A8UNormInt)
+            .SetDefaultStencilFormat(PixelFormat::kS8UInt)
+            .SetDefaultDepthStencilFormat(PixelFormat::kD24UnormS8Uint)
+            .SetSupportsCompute(false)
+            .SetSupportsComputeSubgroups(false)
+            .SetSupportsReadFromResolve(false)
+            .SetSupportsReadFromOnscreenTexture(false)
+            .SetSupportsDecalSamplerAddressMode(false)
+            .SetSupportsDeviceTransientTextures(false)
+            .Build();
   }
 
   is_valid_ = true;
@@ -70,42 +85,70 @@ ContextGLES::ContextGLES(
 
 ContextGLES::~ContextGLES() = default;
 
-const ReactorGLES::Ref ContextGLES::GetReactor() const {
+Context::BackendType ContextGLES::GetBackendType() const {
+  return Context::BackendType::kOpenGLES;
+}
+
+const ReactorGLES::Ref& ContextGLES::GetReactor() const {
   return reactor_;
+}
+
+std::optional<ReactorGLES::WorkerID> ContextGLES::AddReactorWorker(
+    const std::shared_ptr<ReactorGLES::Worker>& worker) {
+  if (!IsValid()) {
+    return std::nullopt;
+  }
+  return reactor_->AddWorker(worker);
+}
+
+bool ContextGLES::RemoveReactorWorker(ReactorGLES::WorkerID id) {
+  if (!IsValid()) {
+    return false;
+  }
+  return reactor_->RemoveWorker(id);
 }
 
 bool ContextGLES::IsValid() const {
   return is_valid_;
 }
 
-std::shared_ptr<Allocator> ContextGLES::GetPermanentsAllocator() const {
-  return permanents_allocator_;
+void ContextGLES::Shutdown() {}
+
+// |Context|
+std::string ContextGLES::DescribeGpuModel() const {
+  return reactor_->GetProcTable().GetDescription()->GetString();
 }
 
-std::shared_ptr<Allocator> ContextGLES::GetTransientsAllocator() const {
-  return transients_allocator_;
+// |Context|
+std::shared_ptr<Allocator> ContextGLES::GetResourceAllocator() const {
+  return resource_allocator_;
 }
 
+// |Context|
 std::shared_ptr<ShaderLibrary> ContextGLES::GetShaderLibrary() const {
   return shader_library_;
 }
 
+// |Context|
 std::shared_ptr<SamplerLibrary> ContextGLES::GetSamplerLibrary() const {
   return sampler_library_;
 }
 
+// |Context|
 std::shared_ptr<PipelineLibrary> ContextGLES::GetPipelineLibrary() const {
   return pipeline_library_;
 }
 
-std::shared_ptr<CommandBuffer> ContextGLES::CreateRenderCommandBuffer() const {
-  return std::shared_ptr<CommandBufferGLES>(new CommandBufferGLES(reactor_));
+// |Context|
+std::shared_ptr<CommandBuffer> ContextGLES::CreateCommandBuffer() const {
+  return std::shared_ptr<CommandBufferGLES>(
+      new CommandBufferGLES(weak_from_this(), reactor_));
 }
 
-std::shared_ptr<CommandBuffer> ContextGLES::CreateTransferCommandBuffer()
+// |Context|
+const std::shared_ptr<const Capabilities>& ContextGLES::GetCapabilities()
     const {
-  // There is no such concept. Just use a render command buffer.
-  return CreateRenderCommandBuffer();
+  return device_capabilities_;
 }
 
 }  // namespace impeller

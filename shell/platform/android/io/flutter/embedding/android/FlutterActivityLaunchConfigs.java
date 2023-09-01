@@ -13,17 +13,17 @@ public class FlutterActivityLaunchConfigs {
   /* package */ static final String DART_ENTRYPOINT_META_DATA_KEY = "io.flutter.Entrypoint";
   /* package */ static final String DART_ENTRYPOINT_URI_META_DATA_KEY = "io.flutter.EntrypointUri";
   /* package */ static final String INITIAL_ROUTE_META_DATA_KEY = "io.flutter.InitialRoute";
-  /* package */ static final String SPLASH_SCREEN_META_DATA_KEY =
-      "io.flutter.embedding.android.SplashScreenDrawable";
   /* package */ static final String NORMAL_THEME_META_DATA_KEY =
       "io.flutter.embedding.android.NormalTheme";
   /* package */ static final String HANDLE_DEEPLINKING_META_DATA_KEY =
       "flutter_deeplinking_enabled";
   // Intent extra arguments.
+  /* package */ static final String EXTRA_DART_ENTRYPOINT = "dart_entrypoint";
   /* package */ static final String EXTRA_INITIAL_ROUTE = "route";
   /* package */ static final String EXTRA_BACKGROUND_MODE = "background_mode";
   /* package */ static final String EXTRA_CACHED_ENGINE_ID = "cached_engine_id";
   /* package */ static final String EXTRA_DART_ENTRYPOINT_ARGS = "dart_entrypoint_args";
+  /* package */ static final String EXTRA_CACHED_ENGINE_GROUP_ID = "cached_engine_group_id";
   /* package */ static final String EXTRA_DESTROY_ENGINE_WITH_ACTIVITY =
       "destroy_engine_with_activity";
   /* package */ static final String EXTRA_ENABLE_STATE_RESTORATION = "enable_state_restoration";

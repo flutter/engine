@@ -8,8 +8,8 @@
 #include "flutter/fml/macros.h"
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/formats.h"
 #include "impeller/renderer/context.h"
-#include "impeller/renderer/formats.h"
 #include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/shader_library.h"
 #include "impeller/renderer/vertex_descriptor.h"
@@ -52,16 +52,15 @@ struct PipelineBuilder {
     PipelineDescriptor desc;
     if (InitializePipelineDescriptorDefaults(context, desc)) {
       return {std::move(desc)};
-    } else {
-      return std::nullopt;
     }
+    return std::nullopt;
   }
 
   [[nodiscard]] static bool InitializePipelineDescriptorDefaults(
       const Context& context,
       PipelineDescriptor& desc) {
     // Setup debug instrumentation.
-    desc.SetLabel(SPrintF("%s Pipeline", VertexShader::kLabel.data()));
+    desc.SetLabel(SPrintF("%s Pipeline", FragmentShader::kLabel.data()));
 
     // Resolve pipeline entrypoints.
     {
@@ -86,13 +85,12 @@ struct PipelineBuilder {
     // Setup the vertex descriptor from reflected information.
     {
       auto vertex_descriptor = std::make_shared<VertexDescriptor>();
-      if (!vertex_descriptor->SetStageInputs(
-              VertexShader::kAllShaderStageInputs)) {
-        VALIDATION_LOG
-            << "Could not configure vertex descriptor for pipeline named '"
-            << VertexShader::kLabel << "'.";
-        return false;
-      }
+      vertex_descriptor->SetStageInputs(VertexShader::kAllShaderStageInputs,
+                                        VertexShader::kInterleavedBufferLayout);
+      vertex_descriptor->RegisterDescriptorSetLayouts(
+          VertexShader::kDescriptorSetLayouts);
+      vertex_descriptor->RegisterDescriptorSetLayouts(
+          FragmentShader::kDescriptorSetLayouts);
       desc.SetVertexDescriptor(std::move(vertex_descriptor));
     }
 
@@ -101,9 +99,9 @@ struct PipelineBuilder {
       // Configure the sole color attachments pixel format. This is by
       // convention.
       ColorAttachmentDescriptor color0;
-      color0.format = PixelFormat::kDefaultColor;
+      color0.format = context.GetCapabilities()->GetDefaultColorFormat();
       color0.blending_enabled = true;
-      desc.SetColorAttachmentDescriptor(0u, std::move(color0));
+      desc.SetColorAttachmentDescriptor(0u, color0);
     }
 
     // Setup default stencil buffer descriptions.
@@ -111,7 +109,8 @@ struct PipelineBuilder {
       StencilAttachmentDescriptor stencil0;
       stencil0.stencil_compare = CompareFunction::kEqual;
       desc.SetStencilAttachmentDescriptors(stencil0);
-      desc.SetStencilPixelFormat(PixelFormat::kDefaultStencil);
+      desc.SetStencilPixelFormat(
+          context.GetCapabilities()->GetDefaultStencilFormat());
     }
 
     return true;

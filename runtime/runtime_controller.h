@@ -42,6 +42,11 @@ class Window;
 /// used by the engine to copy the currently accumulated window state so it can
 /// be referenced by the new runtime controller.
 ///
+/// When `RuntimeController` is created, it takes some time before the root
+/// isolate becomes ready. Operation during this gap is stored by
+/// `RuntimeController` and flushed to the Dart VM when the isolate becomes
+/// ready before the entrypoint function. See `PlatformData`.
+///
 class RuntimeController : public PlatformConfigurationClient {
  public:
   //----------------------------------------------------------------------------
@@ -103,10 +108,11 @@ class RuntimeController : public PlatformConfigurationClient {
       const std::function<void(int64_t)>& idle_notification_callback,
       const fml::closure& isolate_create_callback,
       const fml::closure& isolate_shutdown_callback,
-      std::shared_ptr<const fml::Mapping> persistent_isolate_data,
+      const std::shared_ptr<const fml::Mapping>& persistent_isolate_data,
       fml::WeakPtr<IOManager> io_manager,
       fml::WeakPtr<ImageDecoder> image_decoder,
-      fml::WeakPtr<ImageGeneratorRegistry> image_generator_registry) const;
+      fml::WeakPtr<ImageGeneratorRegistry> image_generator_registry,
+      fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate) const;
 
   // |PlatformConfigurationClient|
   ~RuntimeController() override;
@@ -145,7 +151,7 @@ class RuntimeController : public PlatformConfigurationClient {
   ///
   [[nodiscard]] bool LaunchRootIsolate(
       const Settings& settings,
-      fml::closure root_isolate_create_callback,
+      const fml::closure& root_isolate_create_callback,
       std::optional<std::string> dart_entrypoint,
       std::optional<std::string> dart_entrypoint_library,
       const std::vector<std::string>& dart_entrypoint_args,
@@ -163,15 +169,48 @@ class RuntimeController : public PlatformConfigurationClient {
   std::unique_ptr<RuntimeController> Clone() const;
 
   //----------------------------------------------------------------------------
+  /// @brief      Notify the isolate that a new view is available.
+  ///
+  ///             A view must be added before other methods can refer to it,
+  ///             including the implicit view. Adding a view that already exists
+  ///             triggers an assertion.
+  ///
+  /// @param[in]  view_id           The ID of the new view.
+  /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
+  ///
+  bool AddView(int64_t view_id, const ViewportMetrics& view_metrics);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Notify the isolate that a view is no longer available.
+  ///
+  ///             Removing a view that does not exist triggers an assertion.
+  ///
+  ///             The implicit view (kFlutterImplicitViewId) should never be
+  ///             removed. Doing so triggers an assertion.
+  ///
+  /// @param[in]  view_id  The ID of the view.
+  ///
+  bool RemoveView(int64_t view_id);
+
+  //----------------------------------------------------------------------------
   /// @brief      Forward the specified viewport metrics to the running isolate.
   ///             If the isolate is not running, these metrics will be saved and
   ///             flushed to the isolate when it starts.
   ///
+  /// @param[in]  view_id  The ID for the view that `metrics` describes.
   /// @param[in]  metrics  The window's viewport metrics.
   ///
   /// @return     If the window metrics were forwarded to the running isolate.
   ///
-  bool SetViewportMetrics(const ViewportMetrics& metrics);
+  bool SetViewportMetrics(int64_t view_id, const ViewportMetrics& metrics);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Forward the specified display metrics to the running isolate.
+  ///             If the isolate is not running, these metrics will be saved and
+  ///             flushed to the isolate when it starts.
+  ///
+  /// @param[in]  displays  The available displays.
+  bool SetDisplays(const std::vector<DisplayData>& displays);
 
   //----------------------------------------------------------------------------
   /// @brief      Forward the specified locale data to the running isolate. If
@@ -204,9 +243,11 @@ class RuntimeController : public PlatformConfigurationClient {
   bool SetUserSettingsData(const std::string& data);
 
   //----------------------------------------------------------------------------
-  /// @brief      Forward the lifecycle state data to the running isolate. If
-  ///             the isolate is not running, this data will be saved and
-  ///             flushed to the isolate when it starts running.
+  /// @brief      Forward the initial lifecycle state data to the running
+  ///             isolate. If the isolate is not running, this data will be
+  ///             saved and flushed to the isolate when it starts running.
+  ///             After the isolate starts running, the current lifecycle
+  ///             state is pushed to it via the "flutter/lifecycle" channel.
   ///
   /// @deprecated The persistent isolate data must be used for this purpose
   ///             instead.
@@ -216,7 +257,7 @@ class RuntimeController : public PlatformConfigurationClient {
   /// @return     If the lifecycle state data was forwarded to the running
   ///             isolate.
   ///
-  bool SetLifecycleState(const std::string& data);
+  bool SetInitialLifecycleState(const std::string& data);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the running isolate about whether the semantics tree
@@ -357,7 +398,18 @@ class RuntimeController : public PlatformConfigurationClient {
   ///
   /// @return     If the idle notification was forwarded to the running isolate.
   ///
-  virtual bool NotifyIdle(fml::TimePoint deadline);
+  virtual bool NotifyIdle(fml::TimeDelta deadline);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Notify the Dart VM that the attached flutter view has been
+  ///             destroyed. This gives the Dart VM to perform some cleanup
+  ///             activities e.g: perform garbage collection to free up any
+  ///             unused memory.
+  ///
+  /// NotifyDestroyed is advisory. The VM may or may not perform any clean up
+  /// activities.
+  ///
+  virtual bool NotifyDestroyed();
 
   //----------------------------------------------------------------------------
   /// @brief      Returns if the root isolate is running. The isolate must be
@@ -395,7 +447,7 @@ class RuntimeController : public PlatformConfigurationClient {
   /// @brief      Dispatch the semantics action to the specified accessibility
   ///             node.
   ///
-  /// @param[in]  id      The identified of the accessibility node.
+  /// @param[in]  node_id The identified of the accessibility node.
   /// @param[in]  action  The semantics action to perform on the specified
   ///                     accessibility node.
   /// @param[in]  args    Optional data that applies to the specified action.
@@ -403,7 +455,7 @@ class RuntimeController : public PlatformConfigurationClient {
   /// @return     If the semantics action was dispatched. This may fail if an
   ///             isolate is not running.
   ///
-  bool DispatchSemanticsAction(int32_t id,
+  bool DispatchSemanticsAction(int32_t node_id,
                                SemanticsAction action,
                                fml::MallocMapping args);
 
@@ -465,7 +517,7 @@ class RuntimeController : public PlatformConfigurationClient {
   /// @brief      Get an identifier that represents the Dart isolate group the
   ///             root isolate is in.
   ///
-  /// @return     The root isolate isolate group identifier, zero if one can't
+  /// @return     The root isolate group identifier, zero if one can't
   ///             be established.
   uint64_t GetRootIsolateGroup() const;
 
@@ -523,7 +575,7 @@ class RuntimeController : public PlatformConfigurationClient {
   ///                              temporary conditions such as no network.
   ///                              Transient errors allow the dart VM to
   ///                              re-request the same deferred library and
-  ///                              and loading_unit_id again. Non-transient
+  ///                              loading_unit_id again. Non-transient
   ///                              errors are permanent and attempts to
   ///                              re-request the library will instantly
   ///                              complete with an error.
@@ -553,7 +605,8 @@ class RuntimeController : public PlatformConfigurationClient {
     return context_.unref_queue;
   }
 
-  const fml::WeakPtr<SnapshotDelegate>& GetSnapshotDelegate() const {
+  const fml::TaskRunnerAffineWeakPtr<SnapshotDelegate>& GetSnapshotDelegate()
+      const {
     return context_.snapshot_delegate;
   }
 
@@ -563,7 +616,7 @@ class RuntimeController : public PlatformConfigurationClient {
 
  protected:
   /// Constructor for Mocks.
-  RuntimeController(RuntimeDelegate& p_client, TaskRunners task_runners);
+  RuntimeController(RuntimeDelegate& p_client, const TaskRunners& task_runners);
 
  private:
   struct Locale {
@@ -592,6 +645,7 @@ class RuntimeController : public PlatformConfigurationClient {
   const fml::closure isolate_shutdown_callback_;
   std::shared_ptr<const fml::Mapping> persistent_isolate_data_;
   UIDartState::Context context_;
+  bool has_flushed_runtime_state_ = false;
 
   PlatformConfiguration* GetPlatformConfigurationIfAvailable();
 
@@ -628,6 +682,13 @@ class RuntimeController : public PlatformConfigurationClient {
   // |PlatformConfigurationClient|
   std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocale(
       const std::vector<std::string>& supported_locale_data) override;
+
+  // |PlatformConfigurationClient|
+  void SendChannelUpdate(std::string name, bool listening) override;
+
+  // |PlatformConfigurationClient|
+  double GetScaledFontSize(double unscaled_font_size,
+                           int configuration_id) const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RuntimeController);
 };

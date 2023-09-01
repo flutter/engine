@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
-// @dart = 2.12
 part of dart.ui;
 
 /// How the pointer has changed since the last report.
@@ -38,21 +36,50 @@ enum PointerChange {
   up,
 
   /// A pan/zoom has started on this pointer.
+  ///
+  /// This type of event will always have kind [PointerDeviceKind.trackpad].
   panZoomStart,
 
   /// The pan/zoom on this pointer has updated.
+  ///
+  /// This type of event will always have kind [PointerDeviceKind.trackpad].
   panZoomUpdate,
 
   /// The pan/zoom on this pointer has ended.
+  ///
+  /// This type of event will always have kind [PointerDeviceKind.trackpad].
   panZoomEnd,
 }
 
 /// The kind of pointer device.
 enum PointerDeviceKind {
   /// A touch-based pointer device.
+  ///
+  /// The most common case is a touch screen.
+  ///
+  /// When the user is operating with a trackpad on iOS, clicking will also
+  /// dispatch events with kind [touch] if
+  /// `UIApplicationSupportsIndirectInputEvents` is not present in `Info.plist`
+  /// or returns NO.
+  ///
+  /// See also:
+  ///
+  ///  * [UIApplicationSupportsIndirectInputEvents](https://developer.apple.com/documentation/bundleresources/information_property_list/uiapplicationsupportsindirectinputevents?language=objc).
   touch,
 
   /// A mouse-based pointer device.
+  ///
+  /// The most common case is a mouse on the desktop or Web.
+  ///
+  /// When the user is operating with a trackpad on iOS, moving the pointing
+  /// cursor will also dispatch events with kind [mouse], and clicking will
+  /// dispatch events with kind [mouse] if
+  /// `UIApplicationSupportsIndirectInputEvents` is not present in `Info.plist`
+  /// or returns NO.
+  ///
+  /// See also:
+  ///
+  ///  * [UIApplicationSupportsIndirectInputEvents](https://developer.apple.com/documentation/bundleresources/information_property_list/uiapplicationsupportsindirectinputevents?language=objc).
   mouse,
 
   /// A pointer device with a stylus.
@@ -61,7 +88,31 @@ enum PointerDeviceKind {
   /// A pointer device with a stylus that has been inverted.
   invertedStylus,
 
-  /// A touch-based pointer device with an indirect surface.
+  /// Gestures from a trackpad.
+  ///
+  /// A trackpad here is defined as a touch-based pointer device with an
+  /// indirect surface (the user operates the screen by touching something that
+  /// is not the screen).
+  ///
+  /// When the user makes zoom, pan, scroll or rotate gestures with a physical
+  /// trackpad, supporting platforms dispatch events with kind [trackpad].
+  ///
+  /// Events with kind [trackpad] can only have a [PointerChange] of `add`,
+  /// `remove`, and pan-zoom related values.
+  ///
+  /// Some platforms don't support (or don't fully support) trackpad
+  /// gestures, and might convert trackpad gestures into fake pointer events
+  /// that simulate dragging. These events typically have kind [touch] or
+  /// [mouse] instead of [trackpad]. This includes (but is not limited to) Web,
+  /// and iOS when `UIApplicationSupportsIndirectInputEvents` isn't present in
+  /// `Info.plist` or returns NO.
+  ///
+  /// Moving the pointing cursor or clicking with a trackpad typically triggers
+  /// [touch] or [mouse] events, but never triggers [trackpad] events.
+  ///
+  /// See also:
+  ///
+  ///  * [UIApplicationSupportsIndirectInputEvents](https://developer.apple.com/documentation/bundleresources/information_property_list/uiapplicationsupportsindirectinputevents?language=objc).
   trackpad,
 
   /// An unknown pointer device.
@@ -76,6 +127,12 @@ enum PointerSignalKind {
   /// A pointer-generated scroll (e.g., mouse wheel or trackpad scroll).
   scroll,
 
+  /// A pointer-generated scroll-inertia cancel.
+  scrollInertiaCancel,
+
+  /// A pointer-generated scale event (e.g. trackpad pinch).
+  scale,
+
   /// An unknown pointer signal kind.
   unknown
 }
@@ -84,6 +141,7 @@ enum PointerSignalKind {
 class PointerData {
   /// Creates an object that represents the state of a pointer.
   const PointerData({
+    this.viewId = 0,
     this.embedderId = 0,
     this.timeStamp = Duration.zero,
     this.change = PointerChange.cancel,
@@ -121,11 +179,16 @@ class PointerData {
     this.rotation = 0.0,
   });
 
-  /// Unique identifier that ties the [PointerEvent] to embedder event created it.
+  /// The ID of the [FlutterView] this [PointerEvent] originated from.
+  final int viewId;
+
+  /// Unique identifier that ties the [PointerEvent] to the embedder
+  /// event that created it.
+  /// it.
   ///
-  /// No two pointer events can have the same [embedderId]. This is different from
-  /// [pointerIdentifier] - used for hit-testing, whereas [embedderId] is used to
-  /// identify the platform event.
+  /// No two pointer events can have the same [embedderId]. This is different
+  /// from [pointerIdentifier] - used for hit-testing, whereas [embedderId] is
+  /// used to identify the platform event.
   final int embedderId;
 
   /// Time of event dispatch, relative to an arbitrary timeline.
@@ -364,7 +427,7 @@ class PointerData {
 /// A sequence of reports about the state of pointers.
 class PointerDataPacket {
   /// Creates a packet of pointer data reports.
-  const PointerDataPacket({ this.data = const <PointerData>[] }) : assert(data != null);
+  const PointerDataPacket({ this.data = const <PointerData>[] });
 
   /// Data about the individual pointers in this packet.
   ///

@@ -7,16 +7,17 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
-import '../html/paragraph/text_scuba.dart';
-import '../mock_engine_canvas.dart';
+import '../common/mock_engine_canvas.dart';
+import '../common/test_initialization.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 void testMain() {
-  debugEmulateFlutterTesterEnvironment = true;
-  setUpStableTestFonts();
+  setUpUnitTests(
+    setUpTestViewDimensions: false,
+  );
 
   late RecordingCanvas underTest;
   late MockEngineCanvas mockCanvas;
@@ -28,7 +29,7 @@ void testMain() {
   });
 
   group('paragraph bounds', () {
-    Paragraph _paragraphForBoundsTest(TextAlign alignment) {
+    Paragraph paragraphForBoundsTest(TextAlign alignment) {
       final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
         fontFamily: 'Ahem',
         fontSize: 20,
@@ -39,14 +40,14 @@ void testMain() {
     }
 
     test('not laid out', () {
-      final Paragraph paragraph = _paragraphForBoundsTest(TextAlign.start);
+      final Paragraph paragraph = paragraphForBoundsTest(TextAlign.start);
       underTest.drawParagraph(paragraph, Offset.zero);
       underTest.endRecording();
       expect(underTest.pictureBounds, Rect.zero);
     });
 
     test('finite width', () {
-      final Paragraph paragraph = _paragraphForBoundsTest(TextAlign.start);
+      final Paragraph paragraph = paragraphForBoundsTest(TextAlign.start);
       paragraph.layout(const ParagraphConstraints(width: 110));
       underTest.drawParagraph(paragraph, Offset.zero);
       underTest.endRecording();
@@ -56,7 +57,7 @@ void testMain() {
     });
 
     test('finite width center-aligned', () {
-      final Paragraph paragraph = _paragraphForBoundsTest(TextAlign.center);
+      final Paragraph paragraph = paragraphForBoundsTest(TextAlign.center);
       paragraph.layout(const ParagraphConstraints(width: 110));
       underTest.drawParagraph(paragraph, Offset.zero);
       underTest.endRecording();
@@ -66,7 +67,7 @@ void testMain() {
     });
 
     test('infinite width', () {
-      final Paragraph paragraph = _paragraphForBoundsTest(TextAlign.start);
+      final Paragraph paragraph = paragraphForBoundsTest(TextAlign.start);
       paragraph.layout(const ParagraphConstraints(width: double.infinity));
       underTest.drawParagraph(paragraph, Offset.zero);
       underTest.endRecording();
@@ -88,7 +89,28 @@ void testMain() {
 
       _expectDrawDRRectCall(mockCanvas, <String, dynamic>{
         'path':
-            'Path(MoveTo(10, 47) LineTo(10, 13) Conic(10, 10, 10, 13, w = 0.7071067690849304) LineTo(47, 10) Conic(50, 10, 10, 50, w = 0.7071067690849304) LineTo(50, 47) Conic(50, 50, 50, 47, w = 0.7071067690849304) LineTo(13, 50) Conic(10, 50, 50, 10, w = 0.7071067690849304) Close() MoveTo(11, 47) LineTo(11, 13) Conic(11, 11, 11, 13, w = 0.7071067690849304) LineTo(47, 11) Conic(49, 11, 11, 49, w = 0.7071067690849304) LineTo(49, 47) Conic(49, 49, 49, 47, w = 0.7071067690849304) LineTo(13, 49) Conic(11, 49, 49, 11, w = 0.7071067690849304) Close())',
+          'Path('
+            'MoveTo(${10.0}, ${47.0}) '
+            'LineTo(${10.0}, ${13.0}) '
+            'Conic(${10.0}, ${10.0}, ${10.0}, ${13.0}, w = ${0.7071067690849304}) '
+            'LineTo(${47.0}, ${10.0}) '
+            'Conic(${50.0}, ${10.0}, ${10.0}, ${50.0}, w = ${0.7071067690849304}) '
+            'LineTo(${50.0}, ${47.0}) '
+            'Conic(${50.0}, ${50.0}, ${50.0}, ${47.0}, w = ${0.7071067690849304}) '
+            'LineTo(${13.0}, ${50.0}) '
+            'Conic(${10.0}, ${50.0}, ${50.0}, ${10.0}, w = ${0.7071067690849304}) '
+            'Close() '
+            'MoveTo(${11.0}, ${47.0}) '
+            'LineTo(${11.0}, ${13.0}) '
+            'Conic(${11.0}, ${11.0}, ${11.0}, ${13.0}, w = ${0.7071067690849304}) '
+            'LineTo(${47.0}, ${11.0}) '
+            'Conic(${49.0}, ${11.0}, ${11.0}, ${49.0}, w = ${0.7071067690849304}) '
+            'LineTo(${49.0}, ${47.0}) '
+            'Conic(${49.0}, ${49.0}, ${49.0}, ${47.0}, w = ${0.7071067690849304}) '
+            'LineTo(${13.0}, ${49.0}) '
+            'Conic(${11.0}, ${49.0}, ${49.0}, ${11.0}, w = ${0.7071067690849304}) '
+            'Close()'
+          ')',
         'paint': somePaint.paintData,
       });
     });
@@ -121,7 +143,7 @@ void testMain() {
       expect(mockCanvas.methodCallLog.single.methodName, 'endOfPaint');
     });
 
-    test('negative corners in inner RRect get passed through to draw', () {
+    test('deflated corners in inner RRect get passed through to draw', () {
       // This comes from github issue #40728
       final RRect outer = RRect.fromRectAndCorners(
           const Rect.fromLTWH(0, 0, 88, 48),
@@ -129,9 +151,8 @@ void testMain() {
           bottomLeft: const Radius.circular(6));
       final RRect inner = outer.deflate(1);
 
-      // If these assertions fail, check [_measureBorderRadius] in recording_canvas.dart
-      expect(inner.brRadius, equals(const Radius.circular(-1)));
-      expect(inner.trRadius, equals(const Radius.circular(-1)));
+      expect(inner.brRadius, equals(Radius.zero));
+      expect(inner.trRadius, equals(Radius.zero));
 
       underTest.drawDRRect(outer, inner, somePaint);
       underTest.endRecording();
@@ -140,12 +161,33 @@ void testMain() {
       // Expect to draw, even when inner has negative radii (which get ignored by canvas)
       _expectDrawDRRectCall(mockCanvas, <String, dynamic>{
         'path':
-            'Path(MoveTo(0, 42) LineTo(0, 6) Conic(0, 0, 0, 6, w = 0.7071067690849304) LineTo(88, 0) Conic(88, 0, 0, 88, w = 0.7071067690849304) LineTo(88, 48) Conic(88, 48, 48, 88, w = 0.7071067690849304) LineTo(6, 48) Conic(0, 48, 48, 0, w = 0.7071067690849304) Close() MoveTo(1, 42) LineTo(1, 6) Conic(1, 1, 1, 6, w = 0.7071067690849304) LineTo(87, 1) Conic(87, 1, 1, 87, w = 0.7071067690849304) LineTo(87, 47) Conic(87, 47, 47, 87, w = 0.7071067690849304) LineTo(6, 47) Conic(1, 47, 47, 1, w = 0.7071067690849304) Close())',
+          'Path('
+            'MoveTo(${0.0}, ${42.0}) '
+            'LineTo(${0.0}, ${6.0}) '
+            'Conic(${0.0}, ${0.0}, ${0.0}, ${6.0}, w = ${0.7071067690849304}) '
+            'LineTo(${88.0}, ${0.0}) '
+            'Conic(${88.0}, ${0.0}, ${0.0}, ${88.0}, w = ${0.7071067690849304}) '
+            'LineTo(${88.0}, ${48.0}) '
+            'Conic(${88.0}, ${48.0}, ${48.0}, ${88.0}, w = ${0.7071067690849304}) '
+            'LineTo(${6.0}, ${48.0}) '
+            'Conic(${0.0}, ${48.0}, ${48.0}, ${0.0}, w = ${0.7071067690849304}) '
+            'Close() '
+            'MoveTo(${1.0}, ${42.0}) '
+            'LineTo(${1.0}, ${6.0}) '
+            'Conic(${1.0}, ${1.0}, ${1.0}, ${6.0}, w = ${0.7071067690849304}) '
+            'LineTo(${87.0}, ${1.0}) '
+            'Conic(${87.0}, ${1.0}, ${1.0}, ${87.0}, w = ${0.7071067690849304}) '
+            'LineTo(${87.0}, ${47.0}) '
+            'Conic(${87.0}, ${47.0}, ${47.0}, ${87.0}, w = ${0.7071067690849304}) '
+            'LineTo(${6.0}, ${47.0}) '
+            'Conic(${1.0}, ${47.0}, ${47.0}, ${1.0}, w = ${0.7071067690849304}) '
+            'Close()'
+          ')',
         'paint': somePaint.paintData,
       });
     });
 
-    test('preserve old scuba test behavior', () {
+    test('preserve old golden test behavior', () {
       final RRect outer =
           RRect.fromRectAndCorners(const Rect.fromLTRB(10, 20, 30, 40));
       final RRect inner =
@@ -157,7 +199,18 @@ void testMain() {
 
       _expectDrawDRRectCall(mockCanvas, <String, dynamic>{
         'path':
-            'Path(MoveTo(10, 20) LineTo(30, 20) LineTo(30, 40) LineTo(10, 40) Close() MoveTo(12, 22) LineTo(28, 22) LineTo(28, 38) LineTo(12, 38) Close())',
+          'Path('
+            'MoveTo(${10.0}, ${20.0}) '
+            'LineTo(${30.0}, ${20.0}) '
+            'LineTo(${30.0}, ${40.0}) '
+            'LineTo(${10.0}, ${40.0}) '
+            'Close() '
+            'MoveTo(${12.0}, ${22.0}) '
+            'LineTo(${28.0}, ${22.0}) '
+            'LineTo(${28.0}, ${38.0}) '
+            'LineTo(${12.0}, ${38.0}) '
+            'Close()'
+          ')',
         'paint': somePaint.paintData,
       });
     });

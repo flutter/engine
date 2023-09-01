@@ -9,8 +9,11 @@
 #error "Only <flutter_linux/flutter_linux.h> can be included directly."
 #endif
 
+#include "fl_value.h"
+
 #include <gio/gio.h>
 #include <glib-object.h>
+#include <gmodule.h>
 
 G_BEGIN_DECLS
 
@@ -29,12 +32,14 @@ typedef enum {
 
 GQuark fl_binary_messenger_codec_error_quark(void) G_GNUC_CONST;
 
+G_MODULE_EXPORT
 G_DECLARE_INTERFACE(FlBinaryMessenger,
                     fl_binary_messenger,
                     FL,
                     BINARY_MESSENGER,
                     GObject)
 
+G_MODULE_EXPORT
 G_DECLARE_DERIVABLE_TYPE(FlBinaryMessengerResponseHandle,
                          fl_binary_messenger_response_handle,
                          FL,
@@ -88,6 +93,14 @@ struct _FlBinaryMessengerInterface {
   GBytes* (*send_on_channel_finish)(FlBinaryMessenger* messenger,
                                     GAsyncResult* result,
                                     GError** error);
+
+  void (*resize_channel)(FlBinaryMessenger* messenger,
+                         const gchar* channel,
+                         int64_t new_size);
+
+  void (*set_allow_channel_overflow)(FlBinaryMessenger* messenger,
+                                     const gchar* channel,
+                                     bool allowed);
 };
 
 struct _FlBinaryMessengerResponseHandleClass {
@@ -140,7 +153,7 @@ void fl_binary_messenger_set_message_handler_on_channel(
  * @error: (allow-none): #GError location to store the error occurring, or %NULL
  * to ignore.
  *
- * Responds to a platform message.
+ * Responds to a platform message. This function is thread-safe.
  *
  * Returns: %TRUE on success.
  */
@@ -171,7 +184,7 @@ void fl_binary_messenger_send_on_channel(FlBinaryMessenger* messenger,
 
 /**
  * fl_binary_messenger_send_on_channel_finish:
- * @binary_messenger: an #FlBinaryMessenger.
+ * @messenger: an #FlBinaryMessenger.
  * @result: a #GAsyncResult.
  * @error: (allow-none): #GError location to store the error occurring, or %NULL
  * to ignore.
@@ -183,6 +196,33 @@ void fl_binary_messenger_send_on_channel(FlBinaryMessenger* messenger,
 GBytes* fl_binary_messenger_send_on_channel_finish(FlBinaryMessenger* messenger,
                                                    GAsyncResult* result,
                                                    GError** error);
+
+/**
+ * fl_binary_messenger_resize_channel:
+ * @binary_messenger: an #FlBinaryMessenger.
+ * @channel: channel to be resize.
+ * @new_size: the new size for the channel buffer.
+ *
+ * Sends a message to the control channel asking to resize a channel buffer.
+ */
+void fl_binary_messenger_resize_channel(FlBinaryMessenger* messenger,
+                                        const gchar* channel,
+                                        int64_t new_size);
+
+/**
+ * fl_binary_messenger_set_allow_channel_overflow:
+ * @messenger: an #FlBinaryMessenger.
+ * @channel: channel to be allowed to overflow silently.
+ * @allowed: when true the channel is expected to overflow and warning messages
+ * will not be shown.
+ *
+ * Sends a message to the control channel asking to allow or disallow a channel
+ * to overflow silently.
+ */
+void fl_binary_messenger_set_allow_channel_overflow(
+    FlBinaryMessenger* messenger,
+    const gchar* channel,
+    bool allowed);
 
 G_END_DECLS
 

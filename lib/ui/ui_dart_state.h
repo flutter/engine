@@ -11,7 +11,6 @@
 
 #include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
-#include "flutter/flow/skia_gpu_object.h"
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/synchronization/waitable_event.h"
@@ -20,6 +19,7 @@
 #include "flutter/lib/ui/painting/image_decoder.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/lib/ui/volatile_path_tracker.h"
+#include "flutter/shell/common/platform_message_handler.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/tonic/dart_microtask_queue.h"
@@ -30,6 +30,7 @@ namespace flutter {
 class FontSelector;
 class ImageGeneratorRegistry;
 class PlatformConfiguration;
+class PlatformMessage;
 
 class UIDartState : public tonic::DartState {
  public:
@@ -44,14 +45,16 @@ class UIDartState : public tonic::DartState {
     explicit Context(const TaskRunners& task_runners);
 
     Context(const TaskRunners& task_runners,
-            fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+            fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
             fml::WeakPtr<IOManager> io_manager,
             fml::RefPtr<SkiaUnrefQueue> unref_queue,
             fml::WeakPtr<ImageDecoder> image_decoder,
             fml::WeakPtr<ImageGeneratorRegistry> image_generator_registry,
             std::string advisory_script_uri,
             std::string advisory_script_entrypoint,
-            std::shared_ptr<VolatilePathTracker> volatile_path_tracker);
+            std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
+            std::shared_ptr<fml::ConcurrentTaskRunner> concurrent_task_runner,
+            bool enable_impeller);
 
     /// The task runners used by the shell hosting this runtime controller. This
     /// may be used by the isolate to scheduled asynchronous texture uploads or
@@ -61,7 +64,7 @@ class UIDartState : public tonic::DartState {
     /// The snapshot delegate used by the
     /// isolate to gather raster snapshots
     /// of Flutter view hierarchies.
-    fml::WeakPtr<SnapshotDelegate> snapshot_delegate;
+    fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate;
 
     /// The IO manager used by the isolate for asynchronous texture uploads.
     fml::WeakPtr<IOManager> io_manager;
@@ -89,6 +92,13 @@ class UIDartState : public tonic::DartState {
 
     /// Cache for tracking path volatility.
     std::shared_ptr<VolatilePathTracker> volatile_path_tracker;
+
+    /// The task runner whose tasks may be executed concurrently on a pool
+    /// of shared worker threads.
+    std::shared_ptr<fml::ConcurrentTaskRunner> concurrent_task_runner;
+
+    /// Whether Impeller is enabled or not.
+    bool enable_impeller = false;
   };
 
   Dart_Port main_port() const { return main_port_; }
@@ -96,7 +106,7 @@ class UIDartState : public tonic::DartState {
   bool IsRootIsolate() const { return is_root_isolate_; }
   static void ThrowIfUIOperationsProhibited();
 
-  void SetDebugName(const std::string name);
+  void SetDebugName(const std::string& name);
 
   const std::string& debug_name() const { return debug_name_; }
 
@@ -105,6 +115,10 @@ class UIDartState : public tonic::DartState {
   PlatformConfiguration* platform_configuration() const {
     return platform_configuration_.get();
   }
+
+  void SetPlatformMessageHandler(std::weak_ptr<PlatformMessageHandler> handler);
+
+  Dart_Handle HandlePlatformMessage(std::unique_ptr<PlatformMessage> message);
 
   const TaskRunners& GetTaskRunners() const;
 
@@ -118,7 +132,9 @@ class UIDartState : public tonic::DartState {
 
   std::shared_ptr<VolatilePathTracker> GetVolatilePathTracker() const;
 
-  fml::WeakPtr<SnapshotDelegate> GetSnapshotDelegate() const;
+  std::shared_ptr<fml::ConcurrentTaskRunner> GetConcurrentTaskRunner() const;
+
+  fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> GetSnapshotDelegate() const;
 
   fml::WeakPtr<ImageDecoder> GetImageDecoder() const;
 
@@ -136,24 +152,16 @@ class UIDartState : public tonic::DartState {
   // @param[in]  message  The message to be logged.
   void LogMessage(const std::string& tag, const std::string& message) const;
 
-  bool enable_skparagraph() const;
-
-  bool enable_display_list() const;
-
-  template <class T>
-  static flutter::SkiaGPUObject<T> CreateGPUObject(sk_sp<T> object) {
-    if (!object) {
-      return {};
-    }
-    auto* state = UIDartState::Current();
-    FML_DCHECK(state);
-    auto queue = state->GetSkiaUnrefQueue();
-    return {std::move(object), std::move(queue)};
-  };
-
   UnhandledExceptionCallback unhandled_exception_callback() const {
     return unhandled_exception_callback_;
   }
+
+  /// Returns a enumeration that uniquely represents this root isolate.
+  /// Returns `0` if called from a non-root isolate.
+  int64_t GetRootIsolateToken() const;
+
+  /// Whether Impeller is enabled for this application.
+  bool IsImpellerEnabled() const;
 
  protected:
   UIDartState(TaskObserverAdd add_callback,
@@ -163,8 +171,6 @@ class UIDartState : public tonic::DartState {
               LogMessageCallback log_message_callback,
               std::shared_ptr<IsolateNameServer> isolate_name_server,
               bool is_root_isolate_,
-              bool enable_skparagraph,
-              bool enable_display_list,
               const UIDartState::Context& context);
 
   ~UIDartState() override;
@@ -184,12 +190,11 @@ class UIDartState : public tonic::DartState {
   const bool is_root_isolate_;
   std::string debug_name_;
   std::unique_ptr<PlatformConfiguration> platform_configuration_;
+  std::weak_ptr<PlatformMessageHandler> platform_message_handler_;
   tonic::DartMicrotaskQueue microtask_queue_;
   UnhandledExceptionCallback unhandled_exception_callback_;
   LogMessageCallback log_message_callback_;
   const std::shared_ptr<IsolateNameServer> isolate_name_server_;
-  const bool enable_skparagraph_;
-  const bool enable_display_list_;
   UIDartState::Context context_;
 
   void AddOrRemoveTaskObserver(bool add);

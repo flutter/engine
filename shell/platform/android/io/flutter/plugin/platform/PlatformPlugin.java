@@ -4,6 +4,7 @@
 
 package io.flutter.plugin.platform;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.ActivityManager.TaskDescription;
 import android.content.ClipData;
@@ -55,6 +56,15 @@ public class PlatformPlugin {
      *     androidx.activity.OnBackPressedDispatcher} will be executed.
      */
     boolean popSystemNavigator();
+
+    /**
+     * The Flutter application would or would not like to handle navigation pop events itself.
+     *
+     * <p>Relevant for registering and unregistering the app's OnBackInvokedCallback for the
+     * Predictive Back feature, for example as in {@link
+     * io.flutter.embedding.android.FlutterActivity}.
+     */
+    default void setFrameworkHandlesBack(boolean frameworkHandlesBack) {}
   }
 
   @VisibleForTesting
@@ -106,6 +116,11 @@ public class PlatformPlugin {
         public void setSystemUiOverlayStyle(
             @NonNull PlatformChannel.SystemChromeStyle systemUiOverlayStyle) {
           setSystemChromeSystemUIOverlayStyle(systemUiOverlayStyle);
+        }
+
+        @Override
+        public void setFrameworkHandlesBack(boolean frameworkHandlesBack) {
+          PlatformPlugin.this.setFrameworkHandlesBack(frameworkHandlesBack);
         }
 
         @Override
@@ -223,19 +238,29 @@ public class PlatformPlugin {
         new View.OnSystemUiVisibilityChangeListener() {
           @Override
           public void onSystemUiVisibilityChange(int visibility) {
-            if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0) {
-              // The system bars are visible. Make any desired adjustments to
-              // your UI, such as showing the action bar or other navigational
-              // controls. Another common action is to set a timer to dismiss
-              // the system bars and restore the fullscreen mode that was
-              // previously enabled.
-              platformChannel.systemChromeChanged(false);
-            } else {
-              // The system bars are NOT visible. Make any desired adjustments
-              // to your UI, such as hiding the action bar or other
-              // navigational controls.
-              platformChannel.systemChromeChanged(true);
-            }
+            // `platformChannel.systemChromeChanged` may trigger a callback that eventually results
+            // in a call to `setSystemUiVisibility`.
+            // `setSystemUiVisibility` must not be called in the same frame as when
+            // `onSystemUiVisibilityChange` is received though.
+            //
+            // As such, post `platformChannel.systemChromeChanged` to the view handler to ensure
+            // that downstream callbacks are trigged on the next frame.
+            decorView.post(
+                () -> {
+                  if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0) {
+                    // The system bars are visible. Make any desired adjustments to
+                    // your UI, such as showing the action bar or other navigational
+                    // controls. Another common action is to set a timer to dismiss
+                    // the system bars and restore the fullscreen mode that was
+                    // previously enabled.
+                    platformChannel.systemChromeChanged(true);
+                  } else {
+                    // The system bars are NOT visible. Make any desired adjustments
+                    // to your UI, such as hiding the action bar or other
+                    // navigational controls.
+                    platformChannel.systemChromeChanged(false);
+                  }
+                });
           }
         });
   }
@@ -243,8 +268,7 @@ public class PlatformPlugin {
   private void setSystemChromeEnabledSystemUIMode(PlatformChannel.SystemUiMode systemUiMode) {
     int enabledOverlays;
 
-    if (systemUiMode == PlatformChannel.SystemUiMode.LEAN_BACK
-        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+    if (systemUiMode == PlatformChannel.SystemUiMode.LEAN_BACK) {
       // LEAN BACK
       // Available starting at SDK 16
       // Should not show overlays, tap to reveal overlays, needs onChange callback
@@ -364,6 +388,7 @@ public class PlatformPlugin {
   }
 
   @SuppressWarnings("deprecation")
+  @TargetApi(21)
   private void setSystemChromeSystemUIOverlayStyle(
       PlatformChannel.SystemChromeStyle systemChromeStyle) {
     Window window = activity.getWindow();
@@ -462,6 +487,10 @@ public class PlatformPlugin {
     }
 
     currentTheme = systemChromeStyle;
+  }
+
+  private void setFrameworkHandlesBack(boolean frameworkHandlesBack) {
+    platformPluginDelegate.setFrameworkHandlesBack(frameworkHandlesBack);
   }
 
   private void popSystemNavigator() {

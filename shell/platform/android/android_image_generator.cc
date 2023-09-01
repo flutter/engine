@@ -4,10 +4,15 @@
 
 #include "flutter/shell/platform/android/android_image_generator.h"
 
+#include <memory>
+#include <utility>
+
 #include <android/bitmap.h>
 #include <android/hardware_buffer.h>
 
 #include "flutter/fml/platform/android/jni_util.h"
+
+#include "third_party/skia/include/codec/SkCodecAnimation.h"
 
 namespace flutter {
 
@@ -17,7 +22,7 @@ static jmethodID g_decode_image_method = nullptr;
 AndroidImageGenerator::~AndroidImageGenerator() = default;
 
 AndroidImageGenerator::AndroidImageGenerator(sk_sp<SkData> data)
-    : data_(data), image_info_(SkImageInfo::MakeUnknown(-1, -1)) {}
+    : data_(std::move(data)), image_info_(SkImageInfo::MakeUnknown(-1, -1)) {}
 
 const SkImageInfo& AndroidImageGenerator::GetInfo() {
   header_decoded_latch_.Wait();
@@ -33,7 +38,7 @@ unsigned int AndroidImageGenerator::GetPlayCount() const {
 }
 
 const ImageGenerator::FrameInfo AndroidImageGenerator::GetFrameInfo(
-    unsigned int frame_index) const {
+    unsigned int frame_index) {
   return {.required_frame = std::nullopt,
           .duration = 0,
           .disposal_method = SkCodecAnimation::DisposalMethod::kKeep};
@@ -49,6 +54,10 @@ bool AndroidImageGenerator::GetPixels(const SkImageInfo& info,
                                       unsigned int frame_index,
                                       std::optional<unsigned int> prior_frame) {
   fully_decoded_latch_.Wait();
+
+  if (!software_decoded_data_) {
+    return false;
+  }
 
   if (kRGBA_8888_SkColorType != info.colorType()) {
     return false;
@@ -90,15 +99,17 @@ void AndroidImageGenerator::DoDecodeImage() {
 
   JNIEnv* env = fml::jni::AttachCurrentThread();
 
-  fml::jni::ScopedJavaLocalRef<jobject> direct_buffer(
-      env, env->NewDirectByteBuffer(const_cast<void*>(data_->data()),
-                                    data_->size()));
+  // This task is run on the IO thread.  Create a frame to ensure that all
+  // local JNI references used here are freed.
+  fml::jni::ScopedJavaLocalFrame scoped_local_reference_frame(env);
 
-  fml::jni::ScopedJavaGlobalRef<jobject>* bitmap =
-      new fml::jni::ScopedJavaGlobalRef(
-          env, env->CallStaticObjectMethod(
-                   g_flutter_jni_class->obj(), g_decode_image_method,
-                   direct_buffer.obj(), reinterpret_cast<long>(this)));
+  jobject direct_buffer =
+      env->NewDirectByteBuffer(const_cast<void*>(data_->data()), data_->size());
+
+  auto bitmap = std::make_unique<fml::jni::ScopedJavaGlobalRef<jobject>>(
+      env, env->CallStaticObjectMethod(g_flutter_jni_class->obj(),
+                                       g_decode_image_method, direct_buffer,
+                                       reinterpret_cast<jlong>(this)));
   FML_CHECK(fml::jni::CheckException(env));
 
   if (bitmap->is_null()) {
@@ -127,11 +138,12 @@ void AndroidImageGenerator::DoDecodeImage() {
         reinterpret_cast<fml::jni::ScopedJavaGlobalRef<jobject>*>(context);
     auto env = fml::jni::AttachCurrentThread();
     AndroidBitmap_unlockPixels(env, bitmap->obj());
+    delete bitmap;
   };
 
   software_decoded_data_ = SkData::MakeWithProc(
       pixel_lock, info.width * info.height * sizeof(uint32_t), on_release,
-      bitmap);
+      bitmap.release());
 }
 
 bool AndroidImageGenerator::Register(JNIEnv* env) {
@@ -162,7 +174,7 @@ bool AndroidImageGenerator::Register(JNIEnv* env) {
 
 std::shared_ptr<ImageGenerator> AndroidImageGenerator::MakeFromData(
     sk_sp<SkData> data,
-    fml::RefPtr<fml::TaskRunner> task_runner) {
+    const fml::RefPtr<fml::TaskRunner>& task_runner) {
   std::shared_ptr<AndroidImageGenerator> generator(
       new AndroidImageGenerator(std::move(data)));
 

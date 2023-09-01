@@ -2,13 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import 'package:ui/ui.dart' as ui;
 
 import 'browser_detection.dart';
+import 'dom.dart';
 import 'services.dart';
-import 'util.dart';
 
 /// Handles clipboard related platform messages.
 class ClipboardMessageHandler {
@@ -67,6 +65,31 @@ class ClipboardMessageHandler {
     });
   }
 
+  /// Handles the platform message which asks if the clipboard contains
+  /// pasteable strings.
+  void hasStringsMethodCall(ui.PlatformMessageResponseCallback? callback) {
+    const MethodCodec codec = JSONMethodCodec();
+    _pasteFromClipboardStrategy.getData().then((String data) {
+      final Map<String, dynamic> map = <String, dynamic>{'value': data.isNotEmpty};
+      callback!(codec.encodeSuccessEnvelope(map));
+    }).catchError((dynamic error) {
+      if (error is UnimplementedError) {
+        // Clipboard.hasStrings not supported.
+        // Passing [null] to [callback] indicates that the platform message isn't
+        // implemented. Look at [MethodChannel.invokeMethod] to see how [null] is
+        // handled.
+        Future<void>.delayed(Duration.zero).then((_) {
+          if (callback != null) {
+            callback(null);
+          }
+        });
+        return;
+      }
+      final Map<String, dynamic> map = <String, dynamic>{'value': false};
+      callback!(codec.encodeSuccessEnvelope(map));
+    });
+  }
+
   void _reportGetDataFailure(ui.PlatformMessageResponseCallback? callback,
       MethodCodec codec, dynamic error) {
     print('Could not get text from clipboard: $error');
@@ -90,7 +113,7 @@ class ClipboardMessageHandler {
 /// APIs and the browser.
 abstract class CopyToClipboardStrategy {
   factory CopyToClipboardStrategy() {
-    return !unsafeIsNull(html.window.navigator.clipboard)
+    return domWindow.navigator.clipboard != null
         ? ClipboardAPICopyStrategy()
         : ExecCommandCopyStrategy();
   }
@@ -110,7 +133,7 @@ abstract class CopyToClipboardStrategy {
 abstract class PasteFromClipboardStrategy {
   factory PasteFromClipboardStrategy() {
     return (browserEngine == BrowserEngine.firefox ||
-            unsafeIsNull(html.window.navigator.clipboard))
+            domWindow.navigator.clipboard == null)
         ? ExecCommandPasteStrategy()
         : ClipboardAPIPasteStrategy();
   }
@@ -127,7 +150,7 @@ class ClipboardAPICopyStrategy implements CopyToClipboardStrategy {
   @override
   Future<bool> setData(String? text) async {
     try {
-      await html.window.navigator.clipboard!.writeText(text!);
+      await domWindow.navigator.clipboard!.writeText(text!);
     } catch (error) {
       print('copy is not successful $error');
       return Future<bool>.value(false);
@@ -145,7 +168,7 @@ class ClipboardAPICopyStrategy implements CopyToClipboardStrategy {
 class ClipboardAPIPasteStrategy implements PasteFromClipboardStrategy {
   @override
   Future<String> getData() async {
-    return html.window.navigator.clipboard!.readText();
+    return domWindow.navigator.clipboard!.readText();
   }
 }
 
@@ -159,13 +182,13 @@ class ExecCommandCopyStrategy implements CopyToClipboardStrategy {
   bool _setDataSync(String? text) {
     // Copy content to clipboard with execCommand.
     // See: https://developers.google.com/web/updates/2015/04/cut-and-copy-commands
-    final html.TextAreaElement tempTextArea = _appendTemporaryTextArea();
+    final DomHTMLTextAreaElement tempTextArea = _appendTemporaryTextArea();
     tempTextArea.value = text;
     tempTextArea.focus();
     tempTextArea.select();
     bool result = false;
     try {
-      result = html.document.execCommand('copy');
+      result = domDocument.execCommand('copy');
       if (!result) {
         print('copy is not successful');
       }
@@ -177,9 +200,9 @@ class ExecCommandCopyStrategy implements CopyToClipboardStrategy {
     return result;
   }
 
-  html.TextAreaElement _appendTemporaryTextArea() {
-    final html.TextAreaElement tempElement = html.TextAreaElement();
-    final html.CssStyleDeclaration elementStyle = tempElement.style;
+  DomHTMLTextAreaElement _appendTemporaryTextArea() {
+    final DomHTMLTextAreaElement tempElement = createDomHTMLTextAreaElement();
+    final DomCSSStyleDeclaration elementStyle = tempElement.style;
     elementStyle
       ..position = 'absolute'
       ..top = '-99999px'
@@ -189,12 +212,12 @@ class ExecCommandCopyStrategy implements CopyToClipboardStrategy {
       ..backgroundColor = 'transparent'
       ..background = 'transparent';
 
-    html.document.body!.append(tempElement);
+    domDocument.body!.append(tempElement);
 
     return tempElement;
   }
 
-  void _removeTemporaryTextArea(html.HtmlElement element) {
+  void _removeTemporaryTextArea(DomHTMLElement element) {
     element.remove();
   }
 }

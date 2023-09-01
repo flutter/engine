@@ -19,6 +19,7 @@
 #include "ax/ax_tree_id.h"
 #include "ax/ax_tree_update.h"
 #include "ax/test_ax_tree_manager.h"
+#include "flutter/fml/platform/win/wstring_conversion.h"
 #include "gtest/gtest.h"
 
 namespace ui {
@@ -27,10 +28,6 @@ using TestPositionType = std::unique_ptr<AXPosition<AXNodePosition, AXNode>>;
 using TestPositionRange = AXRange<AXPosition<AXNodePosition, AXNode>>;
 
 namespace {
-
-std::u16string WideToUTF16(const std::wstring wide) {
-  return std::u16string(wide.begin(), wide.end());
-}
 
 constexpr AXNode::AXID ROOT_ID = 1;
 constexpr AXNode::AXID BUTTON_ID = 2;
@@ -43,20 +40,20 @@ constexpr AXNode::AXID STATIC_TEXT2_ID = 8;
 constexpr AXNode::AXID INLINE_BOX2_ID = 9;
 
 // A group of basic and extended characters.
-constexpr const wchar_t* kGraphemeClusters[] = {
+constexpr const char16_t* kGraphemeClusters[] = {
     // The English word "hey" consisting of four ASCII characters.
-    L"h",
-    L"e",
-    L"y",
+    u"h",
+    u"e",
+    u"y",
     // A Hindi word (which means "Hindi") consisting of two Devanagari
     // grapheme clusters.
-    L"\x0939\x093F",
-    L"\x0928\x094D\x0926\x0940",
+    u"\x0939\x093F",
+    u"\x0928\x094D\x0926\x0940",
     // A Thai word (which means "feel") consisting of three Thai grapheme
     // clusters.
-    L"\x0E23\x0E39\x0E49",
-    L"\x0E2A\x0E36",
-    L"\x0E01",
+    u"\x0E23\x0E39\x0E49",
+    u"\x0E2A\x0E36",
+    u"\x0E01",
 };
 
 class AXPositionTest : public testing::Test, public TestAXTreeManager {
@@ -297,6 +294,7 @@ void AXPositionTest::SetUp() {
                                true);
   text_field_.AddState(ax::mojom::State::kEditable);
   text_field_.SetValue(TEXT_VALUE);
+  text_field_.SetName(TEXT_VALUE);
   text_field_.AddIntListAttribute(
       ax::mojom::IntListAttribute::kCachedLineStarts,
       std::vector<int32_t>{0, 7});
@@ -418,7 +416,7 @@ std::unique_ptr<AXTree> AXPositionTest::CreateMultilingualDocument(
 
   std::u16string english_text;
   for (int i = 0; i < 3; ++i) {
-    std::u16string grapheme = WideToUTF16(kGraphemeClusters[i]);
+    std::u16string grapheme = kGraphemeClusters[i];
     EXPECT_EQ(1u, grapheme.length())
         << "All English characters should be one UTF16 code unit in length.";
     text_offsets->push_back(text_offsets->back() +
@@ -428,7 +426,7 @@ std::unique_ptr<AXTree> AXPositionTest::CreateMultilingualDocument(
 
   std::u16string hindi_text;
   for (int i = 3; i < 5; ++i) {
-    std::u16string grapheme = WideToUTF16(kGraphemeClusters[i]);
+    std::u16string grapheme = kGraphemeClusters[i];
     EXPECT_LE(2u, grapheme.length()) << "All Hindi characters should be two "
                                         "or more UTF16 code units in length.";
     text_offsets->push_back(text_offsets->back() +
@@ -438,7 +436,7 @@ std::unique_ptr<AXTree> AXPositionTest::CreateMultilingualDocument(
 
   std::u16string thai_text;
   for (int i = 5; i < 8; ++i) {
-    std::u16string grapheme = WideToUTF16(kGraphemeClusters[i]);
+    std::u16string grapheme = kGraphemeClusters[i];
     EXPECT_LT(0u, grapheme.length())
         << "One of the Thai characters should be one UTF16 code unit, "
            "whilst others should be two or more.";
@@ -617,7 +615,7 @@ TEST_F(AXPositionTest, ToString) {
   AXNodeData static_text_data_2;
   static_text_data_2.id = 3;
   static_text_data_2.role = ax::mojom::Role::kStaticText;
-  static_text_data_2.SetName(WideToUTF16(L"\xfffc"));
+  static_text_data_2.SetName(u"\xfffc");
 
   AXNodeData static_text_data_3;
   static_text_data_3.id = 4;
@@ -875,7 +873,7 @@ TEST_F(AXPositionTest, GetTextFromNullPosition) {
   TestPositionType text_position = AXNodePosition::CreateNullPosition();
   ASSERT_NE(nullptr, text_position);
   ASSERT_TRUE(text_position->IsNullPosition());
-  ASSERT_EQ(WideToUTF16(L""), text_position->GetText());
+  ASSERT_EQ(u"", text_position->GetText());
 }
 
 TEST_F(AXPositionTest, GetTextFromRoot) {
@@ -884,7 +882,7 @@ TEST_F(AXPositionTest, GetTextFromRoot) {
       ax::mojom::TextAffinity::kUpstream);
   ASSERT_NE(nullptr, text_position);
   ASSERT_TRUE(text_position->IsTextPosition());
-  ASSERT_EQ(WideToUTF16(L"Line 1\nLine 2"), text_position->GetText());
+  ASSERT_EQ(u"Line 1\nLine 2", text_position->GetText());
 }
 
 TEST_F(AXPositionTest, GetTextFromButton) {
@@ -893,7 +891,7 @@ TEST_F(AXPositionTest, GetTextFromButton) {
       ax::mojom::TextAffinity::kUpstream);
   ASSERT_NE(nullptr, text_position);
   ASSERT_TRUE(text_position->IsTextPosition());
-  ASSERT_EQ(WideToUTF16(L""), text_position->GetText());
+  ASSERT_EQ(u"", text_position->GetText());
 }
 
 TEST_F(AXPositionTest, GetTextFromCheckbox) {
@@ -902,7 +900,7 @@ TEST_F(AXPositionTest, GetTextFromCheckbox) {
       ax::mojom::TextAffinity::kUpstream);
   ASSERT_NE(nullptr, text_position);
   ASSERT_TRUE(text_position->IsTextPosition());
-  ASSERT_EQ(WideToUTF16(L""), text_position->GetText());
+  ASSERT_EQ(u"", text_position->GetText());
 }
 
 TEST_F(AXPositionTest, GetTextFromTextField) {
@@ -911,7 +909,7 @@ TEST_F(AXPositionTest, GetTextFromTextField) {
       ax::mojom::TextAffinity::kUpstream);
   ASSERT_NE(nullptr, text_position);
   ASSERT_TRUE(text_position->IsTextPosition());
-  ASSERT_EQ(WideToUTF16(L"Line 1\nLine 2"), text_position->GetText());
+  ASSERT_EQ(u"Line 1\nLine 2", text_position->GetText());
 }
 
 TEST_F(AXPositionTest, GetTextFromStaticText) {
@@ -920,7 +918,7 @@ TEST_F(AXPositionTest, GetTextFromStaticText) {
       ax::mojom::TextAffinity::kUpstream);
   ASSERT_NE(nullptr, text_position);
   ASSERT_TRUE(text_position->IsTextPosition());
-  ASSERT_EQ(WideToUTF16(L"Line 1"), text_position->GetText());
+  ASSERT_EQ(u"Line 1", text_position->GetText());
 }
 
 TEST_F(AXPositionTest, GetTextFromInlineTextBox) {
@@ -929,7 +927,7 @@ TEST_F(AXPositionTest, GetTextFromInlineTextBox) {
       ax::mojom::TextAffinity::kUpstream);
   ASSERT_NE(nullptr, text_position);
   ASSERT_TRUE(text_position->IsTextPosition());
-  ASSERT_EQ(WideToUTF16(L"Line 1"), text_position->GetText());
+  ASSERT_EQ(u"Line 1", text_position->GetText());
 }
 
 TEST_F(AXPositionTest, GetTextFromLineBreak) {
@@ -938,7 +936,7 @@ TEST_F(AXPositionTest, GetTextFromLineBreak) {
       ax::mojom::TextAffinity::kUpstream);
   ASSERT_NE(nullptr, text_position);
   ASSERT_TRUE(text_position->IsTextPosition());
-  ASSERT_EQ(WideToUTF16(L"\n"), text_position->GetText());
+  ASSERT_EQ(u"\n", text_position->GetText());
 }
 
 TEST_F(AXPositionTest, GetMaxTextOffsetFromNullPosition) {
@@ -1078,7 +1076,7 @@ TEST_F(AXPositionTest, GetMaxTextOffsetAndGetTextWithGeneratedContent) {
   root_1.role = ax::mojom::Role::kRootWebArea;
   root_1.child_ids = {text_field_2.id};
 
-  text_field_2.role = ax::mojom::Role::kTextField;
+  text_field_2.role = ax::mojom::Role::kGroup;
   text_field_2.SetValue("3.14");
   text_field_2.child_ids = {static_text_3.id, static_text_5.id};
 
@@ -1105,7 +1103,7 @@ TEST_F(AXPositionTest, GetMaxTextOffsetAndGetTextWithGeneratedContent) {
   ASSERT_NE(nullptr, text_position);
   EXPECT_TRUE(text_position->IsTextPosition());
   EXPECT_EQ(38, text_position->MaxTextOffset());
-  EXPECT_EQ(WideToUTF16(L"Placeholder from generated content3.14"),
+  EXPECT_EQ(u"Placeholder from generated content3.14",
             text_position->GetText());
 }
 
@@ -1573,7 +1571,7 @@ TEST_F(AXPositionTest, AtStartAndEndOfLineInsideTextField) {
 
   AXNodeData text_field_data_1;
   text_field_data_1.id = 2;
-  text_field_data_1.role = ax::mojom::Role::kTextField;
+  text_field_data_1.role = ax::mojom::Role::kGroup;
   // "kIsLineBreakingObject" and the "kEditable" state are not strictly
   // necessary but are added for completeness.
   text_field_data_1.AddBoolAttribute(
@@ -1613,7 +1611,7 @@ TEST_F(AXPositionTest, AtStartAndEndOfLineInsideTextField) {
 
   AXNodeData text_field_data_2;
   text_field_data_2.id = 7;
-  text_field_data_2.role = ax::mojom::Role::kTextField;
+  text_field_data_2.role = ax::mojom::Role::kGroup;
   // "kIsLineBreakingObject" and the "kEditable" state are not strictly
   // necessary but are added for completeness.
   text_field_data_2.AddBoolAttribute(
@@ -5569,8 +5567,10 @@ TEST_F(AXPositionTest,
 
 TEST_F(AXPositionTest,
        AsLeafTextPositionBeforeAndAfterCharacterAtInvalidGraphemeBoundary) {
+#if true
   GTEST_SKIP()
       << "Skipping, current accessibility library cannot handle grapheme";
+#else
   std::vector<int> text_offsets;
   SetTree(CreateMultilingualDocument(&text_offsets));
 
@@ -5610,6 +5610,7 @@ TEST_F(AXPositionTest,
   // should have been reset in order to provide consistent output from the
   // method regardless of input affinity.
   EXPECT_EQ(ax::mojom::TextAffinity::kDownstream, test_position->affinity());
+#endif  // true
 }
 
 TEST_F(AXPositionTest, AsLeafTextPositionBeforeCharacterNoAdjustment) {
@@ -6398,8 +6399,10 @@ TEST_F(AXPositionTest, CreatePreviousCharacterPosition) {
 }
 
 TEST_F(AXPositionTest, CreateNextCharacterPositionAtGraphemeBoundary) {
+#if true
   GTEST_SKIP()
       << "Skipping, current accessibility library cannot handle grapheme";
+#else
   std::vector<int> text_offsets;
   SetTree(CreateMultilingualDocument(&text_offsets));
 
@@ -6471,11 +6474,14 @@ TEST_F(AXPositionTest, CreateNextCharacterPositionAtGraphemeBoundary) {
   EXPECT_EQ(12, test_position->text_offset());
   // Affinity should have been reset to downstream because there was a move.
   EXPECT_EQ(ax::mojom::TextAffinity::kDownstream, test_position->affinity());
+#endif  // true
 }
 
 TEST_F(AXPositionTest, CreatePreviousCharacterPositionAtGraphemeBoundary) {
+#if true
   GTEST_SKIP()
       << "Skipping, current accessibility library cannot handle grapheme";
+#else
   std::vector<int> text_offsets;
   SetTree(CreateMultilingualDocument(&text_offsets));
 
@@ -6548,6 +6554,7 @@ TEST_F(AXPositionTest, CreatePreviousCharacterPositionAtGraphemeBoundary) {
   EXPECT_EQ(9, test_position->text_offset());
   // Affinity should have been reset to downstream because there was a move.
   EXPECT_EQ(ax::mojom::TextAffinity::kDownstream, test_position->affinity());
+#endif  // true
 }
 
 TEST_F(AXPositionTest, ReciprocalCreateNextAndPreviousCharacterPosition) {
@@ -7567,7 +7574,7 @@ TEST_F(AXPositionTest, EmptyObjectReplacedByCharacterTextNavigation) {
   inline_box_3.AddIntListAttribute(ax::mojom::IntListAttribute::kWordEnds,
                                    std::vector<int32_t>{6});
 
-  text_field_4.role = ax::mojom::Role::kTextField;
+  text_field_4.role = ax::mojom::Role::kGroup;
   text_field_4.child_ids = {generic_container_5.id};
 
   generic_container_5.role = ax::mojom::Role::kGenericContainer;
@@ -7711,10 +7718,10 @@ TEST_F(AXPositionTest, EmptyObjectReplacedByCharacterTextNavigation) {
       GetTreeID(), root_1.id, 0 /* text_offset */,
       ax::mojom::TextAffinity::kDownstream);
 
-  expected_text = WideToUTF16(L"Hello ") + AXNodePosition::kEmbeddedCharacter +
-                  WideToUTF16(L" world3.14") +
-                  AXNodePosition::kEmbeddedCharacter + WideToUTF16(L"hey") +
-                  AXNodePosition::kEmbeddedCharacter;
+  expected_text =
+      std::u16string(u"Hello ") + AXNodePosition::kEmbeddedCharacter +
+      std::u16string(u" world3.14") + AXNodePosition::kEmbeddedCharacter +
+      std::u16string(u"hey") + AXNodePosition::kEmbeddedCharacter;
   ASSERT_EQ(expected_text, position->GetText());
 
   // MaxTextOffset() with an embedded object replacement character.

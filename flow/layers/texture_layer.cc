@@ -12,7 +12,7 @@ TextureLayer::TextureLayer(const SkPoint& offset,
                            const SkSize& size,
                            int64_t texture_id,
                            bool freeze,
-                           const SkSamplingOptions& sampling)
+                           DlImageSampling sampling)
     : offset_(offset),
       size_(size),
       texture_id_(texture_id),
@@ -40,28 +40,32 @@ void TextureLayer::Diff(DiffContext* context, const Layer* old_layer) {
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
 
-void TextureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
-  TRACE_EVENT0("flutter", "TextureLayer::Preroll");
-
+void TextureLayer::Preroll(PrerollContext* context) {
   set_paint_bounds(SkRect::MakeXYWH(offset_.x(), offset_.y(), size_.width(),
                                     size_.height()));
   context->has_texture_layer = true;
-  context->subtree_can_inherit_opacity = true;
+  context->renderable_state_flags = LayerStateStack::kCallerCanApplyOpacity;
 }
 
 void TextureLayer::Paint(PaintContext& context) const {
-  TRACE_EVENT0("flutter", "TextureLayer::Paint");
   FML_DCHECK(needs_painting(context));
 
   std::shared_ptr<Texture> texture =
-      context.texture_registry.GetTexture(texture_id_);
+      context.texture_registry
+          ? context.texture_registry->GetTexture(texture_id_)
+          : nullptr;
   if (!texture) {
     TRACE_EVENT_INSTANT0("flutter", "null texture");
     return;
   }
-  AutoCachePaint cache_paint(context);
-  texture->Paint(*context.leaf_nodes_canvas, paint_bounds(), freeze_,
-                 context.gr_context, sampling_, cache_paint.paint());
+  DlPaint paint;
+  Texture::PaintContext ctx{
+      .canvas = context.canvas,
+      .gr_context = context.gr_context,
+      .aiks_context = context.aiks_context,
+      .paint = context.state_stack.fill(paint),
+  };
+  texture->Paint(ctx, paint_bounds(), freeze_, sampling_);
 }
 
 }  // namespace flutter

@@ -5,6 +5,7 @@
 import("//flutter/tools/executable_action.gni")
 import("//flutter/tools/fuchsia/fidl/fidl.gni")
 import("//flutter/tools/fuchsia/fidl/toolchain.gni")
+import("//flutter/tools/fuchsia/gn-sdk/config/config.gni")
 
 # Generates some representation of a FIDL library that's consumable by Language
 # bindings generators.
@@ -20,6 +21,9 @@ template("fidl_library") {
       "This template can only be used in the FIDL toolchain $fidl_toolchain.")
 
   assert(defined(invoker.sources), "A FIDL library requires some sources.")
+
+  assert(fuchsia_target_api_level != -1,
+         "Must set a target api level when using FIDL libraries")
 
   library_name = target_name
   if (defined(invoker.name)) {
@@ -84,6 +88,8 @@ template("fidl_library") {
              rebase_path(coding_tables, root_build_dir),
              "--name",
              library_name,
+             "--available",
+             "fuchsia:${fuchsia_target_api_level}",
              "--sources",
            ] + rebase_path(sources, root_build_dir)
 
@@ -107,7 +113,7 @@ template("fidl_library") {
 
     visibility = [ ":*" ]
 
-    tool = "${fuchsia_sdk_path}/tools/fidlc"
+    tool = "$fuchsia_tool_dir/fidlc"
 
     inputs = [ response_file ]
 

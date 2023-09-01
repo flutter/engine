@@ -2,13 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <thread>
 #include "flutter/flow/frame_timings.h"
 #include "flutter/flow/testing/layer_test.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/flow/testing/mock_raster_cache.h"
-#include "third_party/skia/include/core/SkPictureRecorder.h"
-
-#include <thread>
 
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/time/time_point.h"
@@ -16,7 +14,8 @@
 #include "gtest/gtest.h"
 
 namespace flutter {
-namespace testing {
+
+using testing::MockRasterCache;
 
 TEST(FrameTimingsRecorderTest, RecordVsync) {
   auto recorder = std::make_unique<FrameTimingsRecorder>();
@@ -91,7 +90,7 @@ TEST(FrameTimingsRecorderTest, RecordRasterTimesWithCache) {
   using namespace std::chrono_literals;
 
   MockRasterCache cache(1, 10);
-  cache.PrepareNewFrame();
+  cache.BeginFrame();
 
   const auto raster_start = fml::TimePoint::Now();
   recorder->RecordRasterStart(raster_start);
@@ -102,8 +101,9 @@ TEST(FrameTimingsRecorderTest, RecordRasterTimesWithCache) {
   cache.AddMockPicture(100, 100);
   size_t picture_bytes = cache.EstimatePictureCacheByteSize();
   EXPECT_GT(picture_bytes, 0u);
+  cache.EvictUnusedCacheEntries();
 
-  cache.CleanupAfterFrame();
+  cache.EndFrame();
 
   const auto before_raster_end_wall_time = fml::TimePoint::CurrentWallTime();
   std::this_thread::sleep_for(1ms);
@@ -129,9 +129,9 @@ TEST(FrameTimingsRecorderTest, ThrowWhenRecordBuildBeforeVsync) {
   auto recorder = std::make_unique<FrameTimingsRecorder>();
 
   const auto build_start = fml::TimePoint::Now();
-  EXPECT_EXIT(recorder->RecordBuildStart(build_start),
-              ::testing::KilledBySignal(SIGABRT),
-              "Check failed: state_ == State::kVsync.");
+  fml::Status status = recorder->RecordBuildStartImpl(build_start);
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.message(), "Check failed: state_ == State::kVsync.");
 }
 
 TEST(FrameTimingsRecorderTest, ThrowWhenRecordRasterBeforeBuildEnd) {
@@ -142,9 +142,9 @@ TEST(FrameTimingsRecorderTest, ThrowWhenRecordRasterBeforeBuildEnd) {
   recorder->RecordVsync(st, en);
 
   const auto raster_start = fml::TimePoint::Now();
-  EXPECT_EXIT(recorder->RecordRasterStart(raster_start),
-              ::testing::KilledBySignal(SIGABRT),
-              "Check failed: state_ == State::kBuildEnd.");
+  fml::Status status = recorder->RecordRasterStartImpl(raster_start);
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.message(), "Check failed: state_ == State::kBuildEnd.");
 }
 
 #endif
@@ -252,7 +252,7 @@ TEST(FrameTimingsRecorderTest, ClonedHasSameRasterEnd) {
 TEST(FrameTimingsRecorderTest, ClonedHasSameRasterEndWithCache) {
   auto recorder = std::make_unique<FrameTimingsRecorder>();
   MockRasterCache cache(1, 10);
-  cache.PrepareNewFrame();
+  cache.BeginFrame();
 
   const auto now = fml::TimePoint::Now();
   recorder->RecordVsync(now, now + fml::TimeDelta::FromMilliseconds(16));
@@ -266,8 +266,8 @@ TEST(FrameTimingsRecorderTest, ClonedHasSameRasterEndWithCache) {
   cache.AddMockPicture(100, 100);
   size_t picture_bytes = cache.EstimatePictureCacheByteSize();
   EXPECT_GT(picture_bytes, 0u);
-
-  cache.CleanupAfterFrame();
+  cache.EvictUnusedCacheEntries();
+  cache.EndFrame();
   recorder->RecordRasterEnd(&cache);
 
   auto cloned = recorder->CloneUntil(FrameTimingsRecorder::State::kRasterEnd);
@@ -296,5 +296,4 @@ TEST(FrameTimingsRecorderTest, FrameNumberTraceArgIsValid) {
   ASSERT_EQ(actual_arg, expected_arg);
 }
 
-}  // namespace testing
 }  // namespace flutter

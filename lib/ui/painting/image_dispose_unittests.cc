@@ -32,7 +32,6 @@ class ImageDisposeTest : public ShellTest {
   // Used to wait on Dart callbacks or Shell task runner flushing
   fml::AutoResetWaitableEvent message_latch_;
 
-  sk_sp<SkPicture> current_picture_;
   sk_sp<DisplayList> current_display_list_;
   sk_sp<DlImage> current_image_;
 };
@@ -48,13 +47,8 @@ TEST_F(ImageDisposeTest, ImageReleasedAfterFrameAndDisposePictureAndLayer) {
     CanvasImage* image = GetNativePeer<CanvasImage>(native_image_handle);
     Picture* picture = GetNativePeer<Picture>(Dart_GetNativeArgument(args, 1));
     ASSERT_FALSE(image->image()->unique());
-    if (picture->display_list()) {
-      ASSERT_FALSE(picture->display_list()->unique());
-      current_display_list_ = picture->display_list();
-    } else {
-      ASSERT_FALSE(picture->picture()->unique());
-      current_picture_ = picture->picture();
-    }
+    ASSERT_FALSE(picture->display_list()->unique());
+    current_display_list_ = picture->display_list();
     current_image_ = image->image();
   };
 
@@ -75,7 +69,7 @@ TEST_F(ImageDisposeTest, ImageReleasedAfterFrameAndDisposePictureAndLayer) {
                     CREATE_NATIVE_ENTRY(native_capture_image_and_picture));
   AddNativeCallback("Finish", CREATE_NATIVE_ENTRY(native_finish));
 
-  std::unique_ptr<Shell> shell = CreateShell(std::move(settings), task_runners);
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(shell->IsSetup());
 
@@ -92,7 +86,7 @@ TEST_F(ImageDisposeTest, ImageReleasedAfterFrameAndDisposePictureAndLayer) {
 
   message_latch_.Wait();
 
-  ASSERT_TRUE(current_display_list_ || current_picture_);
+  ASSERT_TRUE(current_display_list_);
   ASSERT_TRUE(current_image_);
 
   // Force a drain the SkiaUnrefQueue. The engine does this normally as frames
@@ -107,16 +101,13 @@ TEST_F(ImageDisposeTest, ImageReleasedAfterFrameAndDisposePictureAndLayer) {
   if (current_display_list_) {
     EXPECT_TRUE(current_display_list_->unique());
     current_display_list_.reset();
-  } else {
-    EXPECT_TRUE(current_picture_->unique());
-    current_picture_.reset();
   }
 
   EXPECT_TRUE(current_image_->unique());
   current_image_.reset();
 
   shell->GetPlatformView()->NotifyDestroyed();
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
 }
 
 }  // namespace testing

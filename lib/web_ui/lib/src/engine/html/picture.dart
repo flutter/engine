@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -55,8 +54,7 @@ class PaintRequest {
   PaintRequest({
     required this.canvasSize,
     required this.paintCallback,
-  })  : assert(canvasSize != null), // ignore: unnecessary_null_comparison
-        assert(paintCallback != null); // ignore: unnecessary_null_comparison
+  });
 
   final ui.Size canvasSize;
   final ui.VoidCallback paintCallback;
@@ -118,8 +116,8 @@ class PersistedPicture extends PersistedLeafSurface {
   bool _requiresRepaint = false;
 
   /// Cache for reusing elements such as images across picture updates.
-  CrossFrameCache<html.HtmlElement>? _elementCache =
-      CrossFrameCache<html.HtmlElement>();
+  CrossFrameCache<DomHTMLElement>? _elementCache =
+      CrossFrameCache<DomHTMLElement>();
 
   @override
   DomElement createElement() {
@@ -207,10 +205,10 @@ class PersistedPicture extends PersistedLeafSurface {
         final ui.Rect? localClipBounds = parentSurface.localClipBounds;
         if (localClipBounds != null) {
           if (bounds == null) {
-            bounds = transformRect(clipTransform, localClipBounds);
+            bounds = clipTransform.transformRect(localClipBounds);
           } else {
             bounds =
-                bounds.intersect(transformRect(clipTransform, localClipBounds));
+                bounds.intersect(clipTransform.transformRect(localClipBounds));
           }
         }
         final Matrix4? localInverse = parentSurface.localTransformInverse;
@@ -238,7 +236,7 @@ class PersistedPicture extends PersistedLeafSurface {
       _exactGlobalCullRect = ui.Rect.zero;
     } else {
       assert(() {
-        _exactGlobalCullRect = transformRect(transform!, _exactLocalCullRect!);
+        _exactGlobalCullRect = transform!.transformRect(_exactLocalCullRect!);
         return true;
       }());
     }
@@ -645,7 +643,7 @@ class PersistedPicture extends PersistedLeafSurface {
   void debugPrintChildren(StringBuffer buffer, int indent) {
     super.debugPrintChildren(buffer, indent);
     if (rootElement != null && rootElement!.firstChild != null) {
-      final html.Element firstChild = rootElement!.firstChild! as html.Element;
+      final DomElement firstChild = rootElement!.firstChild! as DomElement;
       final String canvasTag = firstChild.tagName.toLowerCase();
       final int canvasHash = firstChild.hashCode;
       buffer.writeln('${'  ' * (indent + 1)}<$canvasTag @$canvasHash />');

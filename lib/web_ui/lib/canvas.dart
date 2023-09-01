@@ -21,89 +21,64 @@ enum VertexMode {
   triangleFan,
 }
 
-class Vertices {
+abstract class Vertices {
   factory Vertices(
     VertexMode mode,
     List<Offset> positions, {
-    List<Offset>? textureCoordinates,
     List<Color>? colors,
+    List<Offset>? textureCoordinates,
     List<int>? indices,
   }) {
-    if (engine.useCanvasKit) {
-      return engine.CkVertices(
-        mode,
-        positions,
-        textureCoordinates: textureCoordinates,
-        colors: colors,
-        indices: indices,
-      );
-    }
-    return engine.SurfaceVertices(
-      mode,
+    return engine.renderer.createVertices(mode,
       positions,
+      textureCoordinates: textureCoordinates,
       colors: colors,
-      indices: indices,
-    );
+      indices: indices);
   }
   factory Vertices.raw(
     VertexMode mode,
     Float32List positions, {
-    Float32List? textureCoordinates,
     Int32List? colors,
+    Float32List? textureCoordinates,
     Uint16List? indices,
   }) {
-    if (engine.useCanvasKit) {
-      return engine.CkVertices.raw(
-        mode,
-        positions,
-        textureCoordinates: textureCoordinates,
-        colors: colors,
-        indices: indices,
-      );
-    }
-    return engine.SurfaceVertices.raw(
-      mode,
+    return engine.renderer.createVerticesRaw(mode,
       positions,
+      textureCoordinates: textureCoordinates,
       colors: colors,
-      indices: indices,
-    );
+      indices: indices);
   }
+
+  void dispose();
+  bool get debugDisposed;
 }
 
 abstract class PictureRecorder {
-  factory PictureRecorder() {
-    if (engine.useCanvasKit) {
-      return engine.CkPictureRecorder();
-    } else {
-      return engine.EnginePictureRecorder();
-    }
-  }
+  factory PictureRecorder() => engine.renderer.createPictureRecorder();
   bool get isRecording;
   Picture endRecording();
 }
 
 abstract class Canvas {
-  factory Canvas(PictureRecorder recorder, [Rect? cullRect]) {
-    if (engine.useCanvasKit) {
-      return engine.CanvasKitCanvas(recorder, cullRect);
-    } else {
-      return engine.SurfaceCanvas(
-          recorder as engine.EnginePictureRecorder, cullRect);
-    }
-  }
+  factory Canvas(PictureRecorder recorder, [Rect? cullRect]) =>
+    engine.renderer.createCanvas(recorder, cullRect);
   void save();
   void saveLayer(Rect? bounds, Paint paint);
   void restore();
   int getSaveCount();
+  void restoreToCount(int count);
   void translate(double dx, double dy);
   void scale(double sx, [double? sy]);
   void rotate(double radians);
   void skew(double sx, double sy);
   void transform(Float64List matrix4);
+  Float64List getTransform();
   void clipRect(Rect rect,
       {ClipOp clipOp = ClipOp.intersect, bool doAntiAlias = true});
   void clipRRect(RRect rrect, {bool doAntiAlias = true});
   void clipPath(Path path, {bool doAntiAlias = true});
+  Rect getLocalClipBounds();
+  Rect getDestinationClipBounds();
   void drawColor(Color color, BlendMode blendMode);
   void drawLine(Offset p1, Offset p2, Paint paint);
   void drawPaint(Paint paint);
@@ -150,8 +125,13 @@ abstract class Canvas {
   );
 }
 
+typedef PictureEventCallback = void Function(Picture picture);
+
 abstract class Picture {
+  static PictureEventCallback? onCreate;
+  static PictureEventCallback? onDispose;
   Future<Image> toImage(int width, int height);
+  Image toImageSync(int width, int height);
   void dispose();
   bool get debugDisposed;
   int get approximateBytesUsed;
@@ -169,4 +149,9 @@ enum PathOperation {
   union,
   xor,
   reverseDifference,
+}
+
+abstract class PictureRasterizationException implements Exception {
+  String get message;
+  StackTrace? stack;
 }

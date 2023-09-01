@@ -6,11 +6,22 @@
 
 namespace impeller {
 
-RenderPass::RenderPass(RenderTarget target)
-    : render_target_(std::move(target)),
-      transients_buffer_(HostBuffer::Create()) {}
+RenderPass::RenderPass(std::weak_ptr<const Context> context,
+                       const RenderTarget& target)
+    : context_(std::move(context)),
+      render_target_(target),
+      transients_buffer_() {
+  auto strong_context = context_.lock();
+  FML_DCHECK(strong_context);
+  transients_buffer_ = strong_context->GetHostBufferPool().Grab();
+}
 
-RenderPass::~RenderPass() = default;
+RenderPass::~RenderPass() {
+  auto strong_context = context_.lock();
+  if (strong_context) {
+    strong_context->GetHostBufferPool().Recycle(transients_buffer_);
+  }
+}
 
 const RenderTarget& RenderPass::GetRenderTarget() const {
   return render_target_;
@@ -32,7 +43,7 @@ void RenderPass::SetLabel(std::string label) {
   OnSetLabel(std::move(label));
 }
 
-bool RenderPass::AddCommand(Command command) {
+bool RenderPass::AddCommand(Command&& command) {
   if (!command) {
     VALIDATION_LOG << "Attempted to add an invalid command to the render pass.";
     return false;
@@ -47,7 +58,7 @@ bool RenderPass::AddCommand(Command command) {
     }
   }
 
-  if (command.index_count == 0u) {
+  if (command.vertex_count == 0u) {
     // Essentially a no-op. Don't record the command but this is not necessary
     // an error either.
     return true;
@@ -61,6 +72,19 @@ bool RenderPass::AddCommand(Command command) {
 
   commands_.emplace_back(std::move(command));
   return true;
+}
+
+bool RenderPass::EncodeCommands() const {
+  auto context = context_.lock();
+  // The context could have been collected in the meantime.
+  if (!context) {
+    return false;
+  }
+  return OnEncodeCommands(*context);
+}
+
+const std::weak_ptr<const Context>& RenderPass::GetContext() const {
+  return context_;
 }
 
 }  // namespace impeller

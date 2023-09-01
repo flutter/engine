@@ -9,100 +9,123 @@ import errno
 import os
 import subprocess
 
-def MakeDirectories(path):
-    try:
-        os.makedirs(path)
-    except OSError as exc:
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
-            pass
-        else:
-            raise
 
-def Main():
+def make_directories(path):
+  try:
+    os.makedirs(path)
+  except OSError as exc:
+    if exc.errno == errno.EEXIST and os.path.isdir(path):
+      pass
+    else:
+      raise
+
+
+def main():
   parser = argparse.ArgumentParser()
-  parser.add_argument("--output",
-                    type=str, required=True,
-                    help="The location to generate the Metal library to.")
-  parser.add_argument("--depfile",
-                    type=str, required=True,
-                    help="The location of the depfile.")
-  parser.add_argument("--source",
-                    type=str, action="append", required=True,
-                    help="The source file to compile. Can be specified multiple times.")
-  parser.add_argument("--optimize", action="store_true", default=False,
-                    help="If available optimizations must be applied to the compiled Metal sources.")
-  parser.add_argument("--platform", required=True, choices=["mac", "ios"],
-                    help="Select the platform.")
+  parser.add_argument(
+      '--output',
+      type=str,
+      required=True,
+      help='The location to generate the Metal library to.'
+  )
+  parser.add_argument(
+      '--depfile', type=str, required=True, help='The location of the depfile.'
+  )
+  parser.add_argument(
+      '--source',
+      type=str,
+      action='append',
+      required=True,
+      help='The source file to compile. Can be specified multiple times.'
+  )
+  parser.add_argument(
+      '--platform',
+      required=True,
+      choices=['mac', 'ios', 'ios-simulator'],
+      help='Select the platform.'
+  )
+  parser.add_argument(
+      '--metal-version',
+      required=True,
+      help='The language standard version to compile for.'
+  )
 
   args = parser.parse_args()
 
-  MakeDirectories(os.path.dirname(args.depfile))
+  make_directories(os.path.dirname(args.depfile))
 
   command = [
-    "xcrun",
+      'xcrun',
   ]
 
-  if args.platform == "mac":
+  # Select the SDK.
+  command += ['-sdk']
+  if args.platform == 'mac':
     command += [
-      "-sdk",
-      "macosx",
+        'macosx',
     ]
-  elif args.platform == "ios":
+  elif args.platform == 'ios':
     command += [
-      "-sdk",
-      "iphoneos",
+        'iphoneos',
     ]
-
-  command += [
-    "metal",
-    # These warnings are from generated code and would make no sense to the GLSL
-    # author.
-    "-Wno-unused-variable",
-    # Both user and system header will be tracked.
-    "-MMD",
-    "-MF",
-    args.depfile,
-    "-o",
-    args.output,
-  ]
-
-  # The Metal standard must match the specification in impellerc.
-  if args.platform == "mac":
+  elif args.platform == 'ios-simulator':
     command += [
-      "--std=macos-metal1.2",
-    ]
-  elif args.platform == "ios":
-    command += [
-      "--std=ios-metal1.2",
-      "-mios-version-min=10.0",
-    ]
-
-  if args.optimize:
-    command += [
-      # Like -Os (and thus -O2), but reduces code size further.
-      "-Oz",
-      # Allow aggressive, lossy floating-point optimizations.
-      "-ffast-math",
+        'iphonesimulator',
     ]
   else:
+    raise 'Unknown target platform'
+
+  command += [
+      'metal',
+      # These warnings are from generated code and would make no sense to the
+      # GLSL author.
+      '-Wno-unused-variable',
+      # Both user and system header will be tracked.
+      '-MMD',
+      # Like -Os (and thus -O2), but reduces code size further.
+      '-Oz',
+      # Allow aggressive, lossy floating-point optimizations.
+      '-ffast-math',
+      # Record symbols in a separate *.metallibsym file.
+      '-frecord-sources=flat',
+      '-MF',
+      args.depfile,
+      '-o',
+      args.output,
+  ]
+
+  # Select the Metal standard and the minimum supported OS versions.
+  # The Metal standard must match the specification in impellerc.
+  if args.platform == 'mac':
     command += [
-      # Embeds both sources and driver options in the output. This aids in
-      # debugging but should be removed from release builds.
-      # TODO(chinmaygarde): Use -frecord-sources when CI upgrades to
-      # Xcode 13.
-      "-MO",
-      # Assist the sampling profiler.
-      "-gline-tables-only",
-      "-g",
-      # Optimize for debuggability.
-      "-Og",
+        '--std=macos-metal%s' % args.metal_version,
+        '-mmacos-version-min=10.14',
     ]
+  elif args.platform == 'ios':
+    command += [
+        '--std=ios-metal%s' % args.metal_version,
+        '-mios-version-min=11.0',
+    ]
+  elif args.platform == 'ios-simulator':
+    command += [
+        '--std=ios-metal%s' % args.metal_version,
+        '-miphonesimulator-version-min=11.0',
+    ]
+  else:
+    raise 'Unknown target platform'
 
   command += args.source
 
-  subprocess.check_call(command)
+  try:
+    subprocess.check_output(command, stderr=subprocess.STDOUT, text=True)
+  except subprocess.CalledProcessError as cpe:
+    print(cpe.output)
+    return cpe.returncode
+
+  return 0
+
 
 if __name__ == '__main__':
   if sys.platform != 'darwin':
-    raise Exception("This script only runs on Mac")
-  Main()
+    raise Exception('This script only runs on Mac')
+  sys.exit(main())

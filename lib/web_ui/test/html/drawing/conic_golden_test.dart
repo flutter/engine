@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
@@ -16,9 +14,9 @@ void main() {
 }
 
 Future<void> testMain() async {
-  const Rect region = Rect.fromLTWH(8, 8, 600, 800); // Compensate for old scuba tester padding
+  const Rect region = Rect.fromLTWH(8, 8, 600, 800); // Compensate for old golden tester padding
 
-  Future<void> testPath(Path path, String scubaFileName) async {
+  Future<void> testPath(Path path, String goldenFileName) async {
     const Rect canvasBounds = Rect.fromLTWH(0, 0, 600, 800);
     final BitmapCanvas bitmapCanvas = BitmapCanvas(canvasBounds,
         RenderStrategy());
@@ -38,9 +36,9 @@ Future<void> testMain() async {
     canvas.drawPath(path, paint);
     canvas.endRecording();
 
-    html.document.body!.append(bitmapCanvas.rootElement);
+    domDocument.body!.append(bitmapCanvas.rootElement);
     canvas.apply(bitmapCanvas, canvasBounds);
-    await matchGoldenFile('$scubaFileName.png', region: region);
+    await matchGoldenFile('$goldenFileName.png', region: region);
     bitmapCanvas.rootElement.remove();
   }
 

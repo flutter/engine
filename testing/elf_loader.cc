@@ -4,6 +4,8 @@
 
 #include "flutter/testing/elf_loader.h"
 
+#include <utility>
+
 #include "flutter/fml/file.h"
 #include "flutter/fml/paths.h"
 #include "flutter/runtime/dart_vm.h"
@@ -18,7 +20,7 @@ ELFAOTSymbols LoadELFSymbolFromFixturesIfNeccessary(std::string elf_filename) {
   }
 
   const auto elf_path =
-      fml::paths::JoinPaths({GetFixturesPath(), elf_filename});
+      fml::paths::JoinPaths({GetFixturesPath(), std::move(elf_filename)});
 
   if (!fml::IsFile(elf_path)) {
     FML_LOG(ERROR) << "App AOT file does not exist for this fixture. Attempts "
@@ -28,14 +30,15 @@ ELFAOTSymbols LoadELFSymbolFromFixturesIfNeccessary(std::string elf_filename) {
 
   ELFAOTSymbols symbols;
 
-  // Must not be freed.
-  const char* error = nullptr;
-
 #if OS_FUCHSIA
   // TODO(gw280): https://github.com/flutter/flutter/issues/50285
   // Dart doesn't implement Dart_LoadELF on Fuchsia
-  auto loaded_elf = nullptr;
+  FML_LOG(ERROR) << "Dart doesn't implement Dart_LoadELF on Fuchsia";
+  return {};
 #else
+  // Must not be freed.
+  const char* error = nullptr;
+
   auto loaded_elf =
       Dart_LoadELF(elf_path.c_str(),             // file path
                    0,                            // file offset
@@ -45,7 +48,6 @@ ELFAOTSymbols LoadELFSymbolFromFixturesIfNeccessary(std::string elf_filename) {
                    &symbols.vm_isolate_data,     // vm isolate data (out)
                    &symbols.vm_isolate_instrs    // vm isolate instr (out)
       );
-#endif
 
   if (loaded_elf == nullptr) {
     FML_LOG(ERROR)
@@ -58,6 +60,7 @@ ELFAOTSymbols LoadELFSymbolFromFixturesIfNeccessary(std::string elf_filename) {
   symbols.loaded_elf.reset(loaded_elf);
 
   return symbols;
+#endif  // OS_FUCHSIA
 }
 
 ELFAOTSymbols LoadELFSplitSymbolFromFixturesIfNeccessary(
@@ -67,7 +70,7 @@ ELFAOTSymbols LoadELFSplitSymbolFromFixturesIfNeccessary(
   }
 
   const auto elf_path =
-      fml::paths::JoinPaths({GetFixturesPath(), elf_split_filename});
+      fml::paths::JoinPaths({GetFixturesPath(), std::move(elf_split_filename)});
 
   if (!fml::IsFile(elf_path)) {
     // We do not log here, as there is no expectation for a split library to
@@ -77,14 +80,15 @@ ELFAOTSymbols LoadELFSplitSymbolFromFixturesIfNeccessary(
 
   ELFAOTSymbols symbols;
 
-  // Must not be freed.
-  const char* error = nullptr;
-
 #if OS_FUCHSIA
   // TODO(gw280): https://github.com/flutter/flutter/issues/50285
   // Dart doesn't implement Dart_LoadELF on Fuchsia
-  auto loaded_elf = nullptr;
+  FML_LOG(ERROR) << "Dart doesn't implement Dart_LoadELF on Fuchsia";
+  return {};
 #else
+  // Must not be freed.
+  const char* error = nullptr;
+
   auto loaded_elf =
       Dart_LoadELF(elf_path.c_str(),             // file path
                    0,                            // file offset
@@ -94,7 +98,6 @@ ELFAOTSymbols LoadELFSplitSymbolFromFixturesIfNeccessary(
                    &symbols.vm_isolate_data,     // vm isolate data (out)
                    &symbols.vm_isolate_instrs    // vm isolate instr (out)
       );
-#endif
 
   if (loaded_elf == nullptr) {
     FML_LOG(ERROR)
@@ -107,6 +110,7 @@ ELFAOTSymbols LoadELFSplitSymbolFromFixturesIfNeccessary(
   symbols.loaded_elf.reset(loaded_elf);
 
   return symbols;
+#endif
 }
 
 bool PrepareSettingsForAOTWithSymbols(Settings& settings,

@@ -8,6 +8,7 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/playground/playground.h"
+#include "impeller/playground/switches.h"
 #include "impeller/renderer/context.h"
 #include "impeller/renderer/surface.h"
 
@@ -15,21 +16,26 @@ namespace impeller {
 
 class PlaygroundImpl {
  public:
-  static std::unique_ptr<PlaygroundImpl> Create(PlaygroundBackend backend);
+  static std::unique_ptr<PlaygroundImpl> Create(PlaygroundBackend backend,
+                                                PlaygroundSwitches switches);
 
   virtual ~PlaygroundImpl();
 
   using WindowHandle = void*;
 
-  virtual WindowHandle GetWindowHandle() = 0;
+  virtual WindowHandle GetWindowHandle() const = 0;
 
   virtual std::shared_ptr<Context> GetContext() const = 0;
 
   virtual std::unique_ptr<Surface> AcquireSurfaceFrame(
       std::shared_ptr<Context> context) = 0;
 
+  Vector2 GetContentScale() const;
+
  protected:
-  PlaygroundImpl();
+  const PlaygroundSwitches switches_;
+
+  explicit PlaygroundImpl(PlaygroundSwitches switches);
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(PlaygroundImpl);

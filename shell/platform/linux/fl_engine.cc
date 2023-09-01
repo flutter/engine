@@ -7,7 +7,11 @@
 #include <gmodule.h>
 
 #include <cstring>
+#include <string>
+#include <vector>
 
+#include "flutter/shell/platform/common/app_lifecycle_state.h"
+#include "flutter/shell/platform/common/engine_switches.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/linux/fl_binary_messenger_private.h"
 #include "flutter/shell/platform/linux/fl_dart_project_private.h"
@@ -20,9 +24,17 @@
 #include "flutter/shell/platform/linux/fl_texture_gl_private.h"
 #include "flutter/shell/platform/linux/fl_texture_registrar_private.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_string_codec.h"
 
 // Unique number associated with platform tasks.
 static constexpr size_t kPlatformTaskRunnerIdentifier = 1;
+
+// Use different device ID for mouse and pan/zoom events, since we can't
+// differentiate the actual device (mouse v.s. trackpad)
+static constexpr int32_t kMousePointerDeviceId = 0;
+static constexpr int32_t kPointerPanZoomDeviceId = 1;
+
+static constexpr const char* kFlutterLifecycleChannel = "flutter/lifecycle";
 
 struct _FlEngine {
   GObject parent_instance;
@@ -68,6 +80,8 @@ G_DEFINE_TYPE_WITH_CODE(
     G_IMPLEMENT_INTERFACE(fl_plugin_registry_get_type(),
                           fl_engine_plugin_registry_iface_init))
 
+enum { kProp0, kPropBinaryMessenger, kPropLast };
+
 // Parse a locale into its components.
 static void parse_locale(const gchar* locale,
                          gchar** language,
@@ -79,29 +93,56 @@ static void parse_locale(const gchar* locale,
   // Locales are in the form "language[_territory][.codeset][@modifier]"
   gchar* match = strrchr(l, '@');
   if (match != nullptr) {
-    *modifier = g_strdup(match + 1);
+    if (modifier != nullptr) {
+      *modifier = g_strdup(match + 1);
+    }
     *match = '\0';
-  } else {
+  } else if (modifier != nullptr) {
     *modifier = nullptr;
   }
 
   match = strrchr(l, '.');
   if (match != nullptr) {
-    *codeset = g_strdup(match + 1);
+    if (codeset != nullptr) {
+      *codeset = g_strdup(match + 1);
+    }
     *match = '\0';
-  } else {
+  } else if (codeset != nullptr) {
     *codeset = nullptr;
   }
 
   match = strrchr(l, '_');
   if (match != nullptr) {
-    *territory = g_strdup(match + 1);
+    if (territory != nullptr) {
+      *territory = g_strdup(match + 1);
+    }
     *match = '\0';
-  } else {
+  } else if (territory != nullptr) {
     *territory = nullptr;
   }
 
-  *language = l;
+  if (language != nullptr) {
+    *language = l;
+  }
+}
+
+static void set_app_lifecycle_state(FlEngine* self,
+                                    const flutter::AppLifecycleState state) {
+  FlBinaryMessenger* binary_messenger = fl_engine_get_binary_messenger(self);
+
+  g_autoptr(FlValue) value =
+      fl_value_new_string(flutter::AppLifecycleStateToString(state));
+  g_autoptr(FlStringCodec) codec = fl_string_codec_new();
+  g_autoptr(GBytes) message =
+      fl_message_codec_encode_message(FL_MESSAGE_CODEC(codec), value, nullptr);
+
+  if (message == nullptr) {
+    return;
+  }
+
+  fl_binary_messenger_send_on_channel(binary_messenger,
+                                      kFlutterLifecycleChannel, message,
+                                      nullptr, nullptr, nullptr);
 }
 
 // Passes locale information to the Flutter engine.
@@ -111,19 +152,13 @@ static void setup_locales(FlEngine* self) {
   // Helper array to take ownership of the strings passed to Flutter.
   g_autoptr(GPtrArray) locale_strings = g_ptr_array_new_with_free_func(g_free);
   for (int i = 0; languages[i] != nullptr; i++) {
-    gchar *language, *territory, *codeset, *modifier;
-    parse_locale(languages[i], &language, &territory, &codeset, &modifier);
+    gchar *language, *territory;
+    parse_locale(languages[i], &language, &territory, nullptr, nullptr);
     if (language != nullptr) {
       g_ptr_array_add(locale_strings, language);
     }
     if (territory != nullptr) {
       g_ptr_array_add(locale_strings, territory);
-    }
-    if (codeset != nullptr) {
-      g_ptr_array_add(locale_strings, codeset);
-    }
-    if (modifier != nullptr) {
-      g_ptr_array_add(locale_strings, modifier);
     }
 
     FlutterLocale* locale =
@@ -132,8 +167,8 @@ static void setup_locales(FlEngine* self) {
     locale->struct_size = sizeof(FlutterLocale);
     locale->language_code = language;
     locale->country_code = territory;
-    locale->script_code = codeset;
-    locale->variant_code = modifier;
+    locale->script_code = nullptr;
+    locale->variant_code = nullptr;
   }
   FlutterLocale** locales =
       reinterpret_cast<FlutterLocale**>(locales_array->pdata);
@@ -346,6 +381,22 @@ static void fl_engine_plugin_registry_iface_init(
   iface->get_registrar_for_plugin = fl_engine_get_registrar_for_plugin;
 }
 
+static void fl_engine_set_property(GObject* object,
+                                   guint prop_id,
+                                   const GValue* value,
+                                   GParamSpec* pspec) {
+  FlEngine* self = FL_ENGINE(object);
+  switch (prop_id) {
+    case kPropBinaryMessenger:
+      g_set_object(&self->binary_messenger,
+                   FL_BINARY_MESSENGER(g_value_get_object(value)));
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+      break;
+  }
+}
+
 static void fl_engine_dispose(GObject* object) {
   FlEngine* self = FL_ENGINE(object);
 
@@ -392,6 +443,15 @@ static void fl_engine_dispose(GObject* object) {
 
 static void fl_engine_class_init(FlEngineClass* klass) {
   G_OBJECT_CLASS(klass)->dispose = fl_engine_dispose;
+  G_OBJECT_CLASS(klass)->set_property = fl_engine_set_property;
+
+  g_object_class_install_property(
+      G_OBJECT_CLASS(klass), kPropBinaryMessenger,
+      g_param_spec_object(
+          "binary-messenger", "messenger", "Binary messenger",
+          fl_binary_messenger_get_type(),
+          static_cast<GParamFlags>(G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
+                                   G_PARAM_STATIC_STRINGS)));
 }
 
 static void fl_engine_init(FlEngine* self) {
@@ -401,7 +461,6 @@ static void fl_engine_init(FlEngine* self) {
   FlutterEngineGetProcAddresses(&self->embedder_api);
 
   self->texture_registrar = fl_texture_registrar_new(self);
-  self->binary_messenger = fl_binary_messenger_new(self);
 }
 
 FlEngine* fl_engine_new(FlDartProject* project, FlRenderer* renderer) {
@@ -411,6 +470,7 @@ FlEngine* fl_engine_new(FlDartProject* project, FlRenderer* renderer) {
   FlEngine* self = FL_ENGINE(g_object_new(fl_engine_get_type(), nullptr));
   self->project = FL_DART_PROJECT(g_object_ref(project));
   self->renderer = FL_RENDERER(g_object_ref(renderer));
+  self->binary_messenger = fl_binary_messenger_new(self);
   return self;
 }
 
@@ -449,8 +509,7 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   custom_task_runners.platform_task_runner = &platform_task_runner;
   custom_task_runners.render_task_runner = &platform_task_runner;
 
-  g_autoptr(GPtrArray) command_line_args =
-      fl_dart_project_get_switches(self->project);
+  g_autoptr(GPtrArray) command_line_args = fl_engine_get_switches(self);
   // FlutterProjectArgs expects a full argv, so when processing it for flags
   // the first item is treated as the executable and ignored. Add a dummy value
   // so that all switches are used.
@@ -517,7 +576,7 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   setup_locales(self);
 
   g_autoptr(FlSettings) settings = fl_settings_new();
-  self->settings_plugin = fl_settings_plugin_new(self->binary_messenger);
+  self->settings_plugin = fl_settings_plugin_new(self);
   fl_settings_plugin_start(self->settings_plugin, settings);
 
   result = self->embedder_api.UpdateSemanticsEnabled(self->engine, TRUE);
@@ -584,6 +643,7 @@ void fl_engine_set_on_pre_engine_restart_handler(
   self->on_pre_engine_restart_handler_destroy_notify = destroy_notify;
 }
 
+// Note: This function can be called from any thread.
 gboolean fl_engine_send_platform_message_response(
     FlEngine* self,
     const FlutterPlatformMessageResponseHandle* handle,
@@ -684,6 +744,18 @@ GBytes* fl_engine_send_platform_message_finish(FlEngine* self,
   return static_cast<GBytes*>(g_task_propagate_pointer(G_TASK(result), error));
 }
 
+void fl_engine_send_window_state_event(FlEngine* self,
+                                       gboolean visible,
+                                       gboolean focused) {
+  if (visible && focused) {
+    set_app_lifecycle_state(self, flutter::AppLifecycleState::kResumed);
+  } else if (visible) {
+    set_app_lifecycle_state(self, flutter::AppLifecycleState::kInactive);
+  } else {
+    set_app_lifecycle_state(self, flutter::AppLifecycleState::kHidden);
+  }
+}
+
 void fl_engine_send_window_metrics_event(FlEngine* self,
                                          size_t width,
                                          size_t height,
@@ -729,6 +801,37 @@ void fl_engine_send_mouse_pointer_event(FlEngine* self,
   fl_event.scroll_delta_y = scroll_delta_y;
   fl_event.device_kind = kFlutterPointerDeviceKindMouse;
   fl_event.buttons = buttons;
+  fl_event.device = kMousePointerDeviceId;
+  self->embedder_api.SendPointerEvent(self->engine, &fl_event, 1);
+}
+
+void fl_engine_send_pointer_pan_zoom_event(FlEngine* self,
+                                           size_t timestamp,
+                                           double x,
+                                           double y,
+                                           FlutterPointerPhase phase,
+                                           double pan_x,
+                                           double pan_y,
+                                           double scale,
+                                           double rotation) {
+  g_return_if_fail(FL_IS_ENGINE(self));
+
+  if (self->engine == nullptr) {
+    return;
+  }
+
+  FlutterPointerEvent fl_event = {};
+  fl_event.struct_size = sizeof(fl_event);
+  fl_event.timestamp = timestamp;
+  fl_event.x = x;
+  fl_event.y = y;
+  fl_event.phase = phase;
+  fl_event.pan_x = pan_x;
+  fl_event.pan_y = pan_y;
+  fl_event.scale = scale;
+  fl_event.rotation = rotation;
+  fl_event.device = kPointerPanZoomDeviceId;
+  fl_event.device_kind = kFlutterPointerDeviceKindTrackpad;
   self->embedder_api.SendPointerEvent(self->engine, &fl_event, 1);
 }
 
@@ -807,4 +910,23 @@ G_MODULE_EXPORT FlTextureRegistrar* fl_engine_get_texture_registrar(
     FlEngine* self) {
   g_return_val_if_fail(FL_IS_ENGINE(self), nullptr);
   return self->texture_registrar;
+}
+
+void fl_engine_update_accessibility_features(FlEngine* self, int32_t flags) {
+  g_return_if_fail(FL_IS_ENGINE(self));
+
+  if (self->engine == nullptr) {
+    return;
+  }
+
+  self->embedder_api.UpdateAccessibilityFeatures(
+      self->engine, static_cast<FlutterAccessibilityFeature>(flags));
+}
+
+GPtrArray* fl_engine_get_switches(FlEngine* self) {
+  GPtrArray* switches = g_ptr_array_new_with_free_func(g_free);
+  for (const auto& env_switch : flutter::GetSwitchesFromEnvironment()) {
+    g_ptr_array_add(switches, g_strdup(env_switch.c_str()));
+  }
+  return switches;
 }

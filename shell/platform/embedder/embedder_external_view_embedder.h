@@ -6,6 +6,7 @@
 #define FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_EXTERNAL_VIEW_EMBEDDER_H_
 
 #include <map>
+#include <memory>
 #include <unordered_map>
 
 #include "flutter/flow/embedded_views.h"
@@ -31,6 +32,7 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
   using CreateRenderTargetCallback =
       std::function<std::unique_ptr<EmbedderRenderTarget>(
           GrDirectContext* context,
+          const std::shared_ptr<impeller::AiksContext>& aiks_context,
           const FlutterBackingStoreConfig& config)>;
   using PresentCallback =
       std::function<bool(const std::vector<const FlutterLayer*>& layers)>;
@@ -40,7 +42,7 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
   /// @brief      Creates an external view embedder used by the generic embedder
   ///             API.
   ///
-  /// @param[in] avoid_backing_store_cache If set, create_render_target callback
+  /// @param[in] avoid_backing_store_cache If set, create_render_target_callback
   ///                                      will beinvoked every frame for every
   ///                                      engine composited layer. The result
   ///                                      will not cached.
@@ -87,21 +89,19 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
 
   // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(
-      int view_id,
+      int64_t view_id,
       std::unique_ptr<EmbeddedViewParams> params) override;
 
   // |ExternalViewEmbedder|
-  std::vector<SkCanvas*> GetCurrentCanvases() override;
-
-  // |ExternalViewEmbedder|
-  SkCanvas* CompositeEmbeddedView(int view_id) override;
+  DlCanvas* CompositeEmbeddedView(int64_t view_id) override;
 
   // |ExternalViewEmbedder|
   void SubmitFrame(GrDirectContext* context,
+                   const std::shared_ptr<impeller::AiksContext>& aiks_context,
                    std::unique_ptr<SurfaceFrame> frame) override;
 
   // |ExternalViewEmbedder|
-  SkCanvas* GetRootCanvas() override;
+  DlCanvas* GetRootCanvas() override;
 
  private:
   const bool avoid_backing_store_cache_;

@@ -5,13 +5,19 @@
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_binary_messenger.h"
 #include "flutter/shell/platform/linux/fl_binary_messenger_private.h"
 
+#include "flutter/fml/logging.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
+#include "flutter/shell/platform/linux/fl_method_codec_private.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_method_channel.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_method_codec.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_standard_method_codec.h"
 
 #include <gmodule.h>
 
-// Added here to stop the compiler from optimizing this function away.
-G_MODULE_EXPORT GType fl_binary_messenger_get_type();
+static constexpr char kControlChannelName[] = "dev.flutter/channel-buffers";
+static constexpr char kResizeMethod[] = "resize";
+static constexpr char kOverflowMethod[] = "overflow";
 
 G_DEFINE_QUARK(fl_binary_messenger_codec_error_quark,
                fl_binary_messenger_codec_error)
@@ -33,7 +39,7 @@ G_DEFINE_INTERFACE(FlBinaryMessenger, fl_binary_messenger, G_TYPE_OBJECT)
 struct _FlBinaryMessengerImpl {
   GObject parent_instance;
 
-  FlEngine* engine;
+  GWeakRef engine;
 
   // PlatformMessageHandler keyed by channel name.
   GHashTable* platform_message_handlers;
@@ -81,7 +87,9 @@ static void fl_binary_messenger_response_handle_impl_dispose(GObject* object) {
   FlBinaryMessengerResponseHandleImpl* self =
       FL_BINARY_MESSENGER_RESPONSE_HANDLE_IMPL(object);
 
-  if (self->response_handle != nullptr && self->messenger->engine != nullptr) {
+  g_autoptr(FlEngine) engine =
+      FL_ENGINE(g_weak_ref_get(&self->messenger->engine));
+  if (self->response_handle != nullptr && engine != nullptr) {
     g_critical("FlBinaryMessengerResponseHandle was not responded to");
   }
 
@@ -144,7 +152,6 @@ static void platform_message_handler_free(gpointer data) {
 static void engine_weak_notify_cb(gpointer user_data,
                                   GObject* where_the_object_was) {
   FlBinaryMessengerImpl* self = FL_BINARY_MESSENGER_IMPL(user_data);
-  self->engine = nullptr;
 
   // Disconnect any handlers.
   // Take the reference in case a handler tries to modify this table.
@@ -180,10 +187,14 @@ static gboolean fl_binary_messenger_platform_message_cb(
 static void fl_binary_messenger_impl_dispose(GObject* object) {
   FlBinaryMessengerImpl* self = FL_BINARY_MESSENGER_IMPL(object);
 
-  if (self->engine != nullptr) {
-    g_object_weak_unref(G_OBJECT(self->engine), engine_weak_notify_cb, self);
-    self->engine = nullptr;
+  {
+    g_autoptr(FlEngine) engine = FL_ENGINE(g_weak_ref_get(&self->engine));
+    if (engine) {
+      g_object_weak_unref(G_OBJECT(engine), engine_weak_notify_cb, self);
+    }
   }
+
+  g_weak_ref_clear(&self->engine);
 
   g_clear_pointer(&self->platform_message_handlers, g_hash_table_unref);
 
@@ -199,7 +210,8 @@ static void set_message_handler_on_channel(
   FlBinaryMessengerImpl* self = FL_BINARY_MESSENGER_IMPL(messenger);
 
   // Don't set handlers if engine already gone.
-  if (self->engine == nullptr) {
+  g_autoptr(FlEngine) engine = FL_ENGINE(g_weak_ref_get(&self->engine));
+  if (engine == nullptr) {
     if (handler != nullptr) {
       g_warning(
           "Attempted to set message handler on an FlBinaryMessenger without an "
@@ -220,6 +232,12 @@ static void set_message_handler_on_channel(
   }
 }
 
+static gboolean do_unref(gpointer value) {
+  g_object_unref(value);
+  return G_SOURCE_REMOVE;
+}
+
+// Note: This function can be called from any thread.
 static gboolean send_response(FlBinaryMessenger* messenger,
                               FlBinaryMessengerResponseHandle* response_handle_,
                               GBytes* response,
@@ -233,21 +251,27 @@ static gboolean send_response(FlBinaryMessenger* messenger,
   g_return_val_if_fail(response_handle->messenger == self, FALSE);
   g_return_val_if_fail(response_handle->response_handle != nullptr, FALSE);
 
-  if (self->engine == nullptr) {
+  FlEngine* engine = FL_ENGINE(g_weak_ref_get(&self->engine));
+  if (engine == nullptr) {
     return TRUE;
   }
 
+  gboolean result = false;
   if (response_handle->response_handle == nullptr) {
     g_set_error(
         error, FL_BINARY_MESSENGER_ERROR,
         FL_BINARY_MESSENGER_ERROR_ALREADY_RESPONDED,
         "Attempted to respond to a message that is already responded to");
-    return FALSE;
+    result = FALSE;
+  } else {
+    result = fl_engine_send_platform_message_response(
+        engine, response_handle->response_handle, response, error);
+    response_handle->response_handle = nullptr;
   }
 
-  gboolean result = fl_engine_send_platform_message_response(
-      self->engine, response_handle->response_handle, response, error);
-  response_handle->response_handle = nullptr;
+  // This guarantees that the dispose method for the engine is executed
+  // on the platform thread in the rare chance this is the last ref.
+  g_idle_add(do_unref, engine);
 
   return result;
 }
@@ -267,12 +291,13 @@ static void send_on_channel(FlBinaryMessenger* messenger,
                             gpointer user_data) {
   FlBinaryMessengerImpl* self = FL_BINARY_MESSENGER_IMPL(messenger);
 
-  if (self->engine == nullptr) {
+  g_autoptr(FlEngine) engine = FL_ENGINE(g_weak_ref_get(&self->engine));
+  if (engine == nullptr) {
     return;
   }
 
   fl_engine_send_platform_message(
-      self->engine, channel, message, cancellable,
+      engine, channel, message, cancellable,
       callback != nullptr ? platform_message_ready_cb : nullptr,
       callback != nullptr ? g_task_new(self, cancellable, callback, user_data)
                           : nullptr);
@@ -287,11 +312,75 @@ static GBytes* send_on_channel_finish(FlBinaryMessenger* messenger,
   g_autoptr(GTask) task = G_TASK(result);
   GAsyncResult* r = G_ASYNC_RESULT(g_task_propagate_pointer(task, nullptr));
 
-  if (self->engine == nullptr) {
+  g_autoptr(FlEngine) engine = FL_ENGINE(g_weak_ref_get(&self->engine));
+  if (engine == nullptr) {
     return nullptr;
   }
 
-  return fl_engine_send_platform_message_finish(self->engine, r, error);
+  return fl_engine_send_platform_message_finish(engine, r, error);
+}
+
+// Completes method call and returns TRUE if the call was successful.
+static gboolean finish_method(GObject* object,
+                              GAsyncResult* result,
+                              GError** error) {
+  g_autoptr(GBytes) response = fl_binary_messenger_send_on_channel_finish(
+      FL_BINARY_MESSENGER(object), result, error);
+  if (response == nullptr) {
+    return FALSE;
+  }
+  g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
+  return fl_method_codec_decode_response(FL_METHOD_CODEC(codec), response,
+                                         error) != nullptr;
+}
+
+// Called when a response is received for the resize channel message.
+static void resize_channel_response_cb(GObject* object,
+                                       GAsyncResult* result,
+                                       gpointer user_data) {
+  g_autoptr(GError) error = nullptr;
+  if (!finish_method(object, result, &error)) {
+    g_warning("Failed to resize channel: %s", error->message);
+  }
+}
+
+static void resize_channel(FlBinaryMessenger* messenger,
+                           const gchar* channel,
+                           int64_t new_size) {
+  FML_DCHECK(new_size >= 0);
+  g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
+  g_autoptr(FlValue) args = fl_value_new_list();
+  fl_value_append_take(args, fl_value_new_string(channel));
+  fl_value_append_take(args, fl_value_new_int(new_size));
+  g_autoptr(GBytes) message = fl_method_codec_encode_method_call(
+      FL_METHOD_CODEC(codec), kResizeMethod, args, nullptr);
+  fl_binary_messenger_send_on_channel(messenger, kControlChannelName, message,
+                                      nullptr, resize_channel_response_cb,
+                                      nullptr);
+}
+
+// Called when a response is received for the allow channel overflow message.
+static void set_allow_channel_overflowl_response_cb(GObject* object,
+                                                    GAsyncResult* result,
+                                                    gpointer user_data) {
+  g_autoptr(GError) error = nullptr;
+  if (!finish_method(object, result, &error)) {
+    g_warning("Failed to set allow channel overflow: %s", error->message);
+  }
+}
+
+static void set_allow_channel_overflow(FlBinaryMessenger* messenger,
+                                       const gchar* channel,
+                                       bool allowed) {
+  g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
+  g_autoptr(FlValue) args = fl_value_new_list();
+  fl_value_append_take(args, fl_value_new_string(channel));
+  fl_value_append_take(args, fl_value_new_bool(allowed));
+  g_autoptr(GBytes) message = fl_method_codec_encode_method_call(
+      FL_METHOD_CODEC(codec), kOverflowMethod, args, nullptr);
+  fl_binary_messenger_send_on_channel(
+      messenger, kControlChannelName, message, nullptr,
+      set_allow_channel_overflowl_response_cb, nullptr);
 }
 
 static void fl_binary_messenger_impl_class_init(
@@ -305,6 +394,8 @@ static void fl_binary_messenger_impl_iface_init(
   iface->send_response = send_response;
   iface->send_on_channel = send_on_channel;
   iface->send_on_channel_finish = send_on_channel_finish;
+  iface->resize_channel = resize_channel;
+  iface->set_allow_channel_overflow = set_allow_channel_overflow;
 }
 
 static void fl_binary_messenger_impl_init(FlBinaryMessengerImpl* self) {
@@ -321,7 +412,7 @@ FlBinaryMessenger* fl_binary_messenger_new(FlEngine* engine) {
   // Added to stop compiler complaining about an unused function.
   FL_IS_BINARY_MESSENGER_IMPL(self);
 
-  self->engine = engine;
+  g_weak_ref_init(&self->engine, G_OBJECT(engine));
   g_object_weak_ref(G_OBJECT(engine), engine_weak_notify_cb, self);
 
   fl_engine_set_platform_message_handler(
@@ -343,6 +434,7 @@ G_MODULE_EXPORT void fl_binary_messenger_set_message_handler_on_channel(
       self, channel, handler, user_data, destroy_notify);
 }
 
+// Note: This function can be called from any thread.
 G_MODULE_EXPORT gboolean fl_binary_messenger_send_response(
     FlBinaryMessenger* self,
     FlBinaryMessengerResponseHandle* response_handle,
@@ -378,4 +470,23 @@ G_MODULE_EXPORT GBytes* fl_binary_messenger_send_on_channel_finish(
 
   return FL_BINARY_MESSENGER_GET_IFACE(self)->send_on_channel_finish(
       self, result, error);
+}
+
+G_MODULE_EXPORT void fl_binary_messenger_resize_channel(FlBinaryMessenger* self,
+                                                        const gchar* channel,
+                                                        int64_t new_size) {
+  g_return_if_fail(FL_IS_BINARY_MESSENGER(self));
+
+  return FL_BINARY_MESSENGER_GET_IFACE(self)->resize_channel(self, channel,
+                                                             new_size);
+}
+
+G_MODULE_EXPORT void fl_binary_messenger_set_allow_channel_overflow(
+    FlBinaryMessenger* self,
+    const gchar* channel,
+    bool allowed) {
+  g_return_if_fail(FL_IS_BINARY_MESSENGER(self));
+
+  return FL_BINARY_MESSENGER_GET_IFACE(self)->set_allow_channel_overflow(
+      self, channel, allowed);
 }

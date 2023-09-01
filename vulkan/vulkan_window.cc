@@ -9,12 +9,16 @@
 #include <memory>
 #include <string>
 
-#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "flutter/flutter_vma/flutter_skia_vma.h"
+#include "flutter/vulkan/vulkan_skia_proc_table.h"
 #include "vulkan_application.h"
 #include "vulkan_device.h"
 #include "vulkan_native_surface.h"
 #include "vulkan_surface.h"
 #include "vulkan_swapchain.h"
+
+#include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace vulkan {
 
@@ -80,6 +84,12 @@ VulkanWindow::VulkanWindow(const sk_sp<GrDirectContext>& context,
     return;
   }
 
+  // Needs to happen before GrDirectContext is created.
+  memory_allocator_ = flutter::FlutterSkiaVulkanMemoryAllocator::Make(
+      application_->GetAPIVersion(), application_->GetInstance(),
+      logical_device_->GetPhysicalDeviceHandle(), logical_device_->GetHandle(),
+      vk, true);
+
   // Create the Skia GrDirectContext.
 
   if (!skia_gr_context_ && !CreateSkiaGrContext()) {
@@ -131,7 +141,7 @@ bool VulkanWindow::CreateSkiaGrContext() {
 }
 
 bool VulkanWindow::CreateSkiaBackendContext(GrVkBackendContext* context) {
-  auto getProc = vk->CreateSkiaGetProc();
+  auto getProc = CreateSkiaGetProc(vk);
 
   if (getProc == nullptr) {
     return false;
@@ -154,6 +164,7 @@ bool VulkanWindow::CreateSkiaBackendContext(GrVkBackendContext* context) {
   context->fFeatures = skia_features;
   context->fGetProc = std::move(getProc);
   context->fOwnsInstanceAndDevice = false;
+  context->fMemoryAllocator = memory_allocator_;
   return true;
 }
 

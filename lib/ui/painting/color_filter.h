@@ -5,15 +5,11 @@
 #ifndef FLUTTER_LIB_UI_COLOR_FILTER_H_
 #define FLUTTER_LIB_UI_COLOR_FILTER_H_
 
-#include "flutter/display_list/display_list_color_filter.h"
+#include "flutter/display_list/effects/dl_color_filter.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "third_party/tonic/typed_data/typed_list.h"
 
 using tonic::DartPersistentValue;
-
-namespace tonic {
-class DartLibraryNatives;
-}  // namespace tonic
 
 namespace flutter {
 
@@ -25,7 +21,7 @@ class ColorFilter : public RefCountedDartWrappable<ColorFilter> {
   FML_FRIEND_MAKE_REF_COUNTED(ColorFilter);
 
  public:
-  static fml::RefPtr<ColorFilter> Create();
+  static void Create(Dart_Handle wrapper);
 
   void initMode(int color, int blend_mode);
   void initMatrix(const tonic::Float32List& color_matrix);
@@ -35,11 +31,6 @@ class ColorFilter : public RefCountedDartWrappable<ColorFilter> {
   ~ColorFilter() override;
 
   const std::shared_ptr<const DlColorFilter> filter() const { return filter_; }
-  const DlColorFilter* dl_filter() const {
-    return (filter_ && filter_->skia_object()) ? filter_.get() : nullptr;
-  }
-
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
   std::shared_ptr<const DlColorFilter> filter_;

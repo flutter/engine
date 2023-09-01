@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// This is testing some of the named constants.
+// ignore_for_file: use_named_constants
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -16,7 +19,7 @@ Future<Uint8List> readFile(String fileName) async {
   return file.readAsBytes();
 }
 
-void testFontWeightLerp() {
+void testFontWeight() {
   test('FontWeight.lerp works with non-null values', () {
     expect(FontWeight.lerp(FontWeight.w400, FontWeight.w600, .5), equals(FontWeight.w500));
   });
@@ -32,6 +35,18 @@ void testFontWeightLerp() {
   test('FontWeight.lerp returns FontWeight.w400 if b is null', () {
     expect(FontWeight.lerp(FontWeight.w400, null, 1), equals(FontWeight.w400));
   });
+
+  test('FontWeights have the correct value', () {
+    expect(FontWeight.w100.value, 100);
+    expect(FontWeight.w200.value, 200);
+    expect(FontWeight.w300.value, 300);
+    expect(FontWeight.w400.value, 400);
+    expect(FontWeight.w500.value, 500);
+    expect(FontWeight.w600.value, 600);
+    expect(FontWeight.w700.value, 700);
+    expect(FontWeight.w800.value, 800);
+    expect(FontWeight.w900.value, 900);
+  });
 }
 
 void testParagraphStyle() {
@@ -41,10 +56,10 @@ void testParagraphStyle() {
   final ParagraphStyle ps3 = ParagraphStyle(fontWeight: FontWeight.w700, fontSize: 12.0, height: 123.0);
 
   test('ParagraphStyle toString works', () {
-    expect(ps0.toString(), equals('ParagraphStyle(textAlign: unspecified, textDirection: TextDirection.ltr, fontWeight: unspecified, fontStyle: unspecified, maxLines: unspecified, textHeightBehavior: unspecified, fontFamily: unspecified, fontSize: 14.0, height: unspecified, ellipsis: unspecified, locale: unspecified)'));
-    expect(ps1.toString(), equals('ParagraphStyle(textAlign: unspecified, textDirection: TextDirection.rtl, fontWeight: unspecified, fontStyle: unspecified, maxLines: unspecified, textHeightBehavior: unspecified, fontFamily: unspecified, fontSize: 14.0, height: unspecified, ellipsis: unspecified, locale: unspecified)'));
-    expect(ps2.toString(), equals('ParagraphStyle(textAlign: TextAlign.center, textDirection: unspecified, fontWeight: FontWeight.w800, fontStyle: unspecified, maxLines: unspecified, textHeightBehavior: unspecified, fontFamily: unspecified, fontSize: 10.0, height: 100.0x, ellipsis: unspecified, locale: unspecified)'));
-    expect(ps3.toString(), equals('ParagraphStyle(textAlign: unspecified, textDirection: unspecified, fontWeight: FontWeight.w700, fontStyle: unspecified, maxLines: unspecified, textHeightBehavior: unspecified, fontFamily: unspecified, fontSize: 12.0, height: 123.0x, ellipsis: unspecified, locale: unspecified)'));
+    expect(ps0.toString(), equals('ParagraphStyle(textAlign: unspecified, textDirection: TextDirection.ltr, fontWeight: unspecified, fontStyle: unspecified, maxLines: unspecified, textHeightBehavior: unspecified, fontFamily: unspecified, fontSize: 14.0, height: unspecified, strutStyle: unspecified, ellipsis: unspecified, locale: unspecified)'));
+    expect(ps1.toString(), equals('ParagraphStyle(textAlign: unspecified, textDirection: TextDirection.rtl, fontWeight: unspecified, fontStyle: unspecified, maxLines: unspecified, textHeightBehavior: unspecified, fontFamily: unspecified, fontSize: 14.0, height: unspecified, strutStyle: unspecified, ellipsis: unspecified, locale: unspecified)'));
+    expect(ps2.toString(), equals('ParagraphStyle(textAlign: TextAlign.center, textDirection: unspecified, fontWeight: FontWeight.w800, fontStyle: unspecified, maxLines: unspecified, textHeightBehavior: unspecified, fontFamily: unspecified, fontSize: 10.0, height: 100.0x, strutStyle: unspecified, ellipsis: unspecified, locale: unspecified)'));
+    expect(ps3.toString(), equals('ParagraphStyle(textAlign: unspecified, textDirection: unspecified, fontWeight: FontWeight.w700, fontStyle: unspecified, maxLines: unspecified, textHeightBehavior: unspecified, fontFamily: unspecified, fontSize: 12.0, height: 123.0x, strutStyle: unspecified, ellipsis: unspecified, locale: unspecified)'));
   });
 }
 
@@ -180,60 +195,59 @@ void testTextRange() {
 
 void testLoadFontFromList() {
   test('loadFontFromList will send platform message after font is loaded', () async {
-    final PlatformMessageCallback? oldHandler = window.onPlatformMessage;
-    late String actualName;
     late String message;
-    window.onPlatformMessage = (String name, ByteData? data, PlatformMessageResponseCallback? callback) {
-      assert(data != null);
-      actualName = name;
-      final Uint8List list = data!.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
-      message = utf8.decode(list);
-    };
+    channelBuffers.setListener(
+      'flutter/system',
+      (ByteData? data, PlatformMessageResponseCallback? callback) {
+        assert(data != null);
+        final Uint8List list = data!.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+        message = utf8.decode(list);
+      },
+    );
     final Uint8List fontData = Uint8List(0);
     await loadFontFromList(fontData, fontFamily: 'fake');
-    window.onPlatformMessage = oldHandler;
-    expect(actualName, 'flutter/system');
     expect(message, '{"type":"fontsChange"}');
+    channelBuffers.clearListener('flutter/system');
   });
 }
 
 void testFontFeatureClass() {
   test('FontFeature class', () {
-    expect(const FontFeature.alternative(1), const FontFeature('aalt', 1));
+    expect(const FontFeature.alternative(1), const FontFeature('aalt'));
     expect(const FontFeature.alternative(5), const FontFeature('aalt', 5));
-    expect(const FontFeature.alternativeFractions(), const FontFeature('afrc', 1));
-    expect(const FontFeature.contextualAlternates(), const FontFeature('calt', 1));
-    expect(const FontFeature.caseSensitiveForms(), const FontFeature('case', 1));
-    expect(      FontFeature.characterVariant(1), const FontFeature('cv01', 1));
-    expect(      FontFeature.characterVariant(18), const FontFeature('cv18', 1));
-    expect(      FontFeature.characterVariant(99), const FontFeature('cv99', 1));
-    expect(const FontFeature.denominator(), const FontFeature('dnom', 1));
-    expect(const FontFeature.fractions(), const FontFeature('frac', 1));
-    expect(const FontFeature.historicalForms(), const FontFeature('hist', 1));
-    expect(const FontFeature.historicalLigatures(), const FontFeature('hlig', 1));
-    expect(const FontFeature.liningFigures(), const FontFeature('lnum', 1));
-    expect(const FontFeature.localeAware(), const FontFeature('locl', 1));
-    expect(const FontFeature.localeAware(enable: true), const FontFeature('locl', 1));
+    expect(const FontFeature.alternativeFractions(), const FontFeature('afrc'));
+    expect(const FontFeature.contextualAlternates(), const FontFeature('calt'));
+    expect(const FontFeature.caseSensitiveForms(), const FontFeature('case'));
+    expect(      FontFeature.characterVariant(1), const FontFeature('cv01'));
+    expect(      FontFeature.characterVariant(18), const FontFeature('cv18'));
+    expect(      FontFeature.characterVariant(99), const FontFeature('cv99'));
+    expect(const FontFeature.denominator(), const FontFeature('dnom'));
+    expect(const FontFeature.fractions(), const FontFeature('frac'));
+    expect(const FontFeature.historicalForms(), const FontFeature('hist'));
+    expect(const FontFeature.historicalLigatures(), const FontFeature('hlig'));
+    expect(const FontFeature.liningFigures(), const FontFeature('lnum'));
+    expect(const FontFeature.localeAware(), const FontFeature('locl'));
+    expect(const FontFeature.localeAware(), const FontFeature('locl'));
     expect(const FontFeature.localeAware(enable: false), const FontFeature('locl', 0));
-    expect(const FontFeature.notationalForms(), const FontFeature('nalt', 1));
+    expect(const FontFeature.notationalForms(), const FontFeature('nalt'));
     expect(const FontFeature.notationalForms(5), const FontFeature('nalt', 5));
-    expect(const FontFeature.numerators(), const FontFeature('numr', 1));
-    expect(const FontFeature.oldstyleFigures(), const FontFeature('onum', 1));
-    expect(const FontFeature.ordinalForms(), const FontFeature('ordn', 1));
-    expect(const FontFeature.proportionalFigures(), const FontFeature('pnum', 1));
-    expect(const FontFeature.randomize(), const FontFeature('rand', 1));
-    expect(const FontFeature.stylisticAlternates(), const FontFeature('salt', 1));
-    expect(const FontFeature.scientificInferiors(), const FontFeature('sinf', 1));
-    expect(      FontFeature.stylisticSet(1), const FontFeature('ss01', 1));
-    expect(      FontFeature.stylisticSet(18), const FontFeature('ss18', 1));
-    expect(const FontFeature.subscripts(), const FontFeature('subs', 1));
-    expect(const FontFeature.superscripts(), const FontFeature('sups', 1));
-    expect(const FontFeature.swash(), const FontFeature('swsh', 1));
+    expect(const FontFeature.numerators(), const FontFeature('numr'));
+    expect(const FontFeature.oldstyleFigures(), const FontFeature('onum'));
+    expect(const FontFeature.ordinalForms(), const FontFeature('ordn'));
+    expect(const FontFeature.proportionalFigures(), const FontFeature('pnum'));
+    expect(const FontFeature.randomize(), const FontFeature('rand'));
+    expect(const FontFeature.stylisticAlternates(), const FontFeature('salt'));
+    expect(const FontFeature.scientificInferiors(), const FontFeature('sinf'));
+    expect(      FontFeature.stylisticSet(1), const FontFeature('ss01'));
+    expect(      FontFeature.stylisticSet(18), const FontFeature('ss18'));
+    expect(const FontFeature.subscripts(), const FontFeature('subs'));
+    expect(const FontFeature.superscripts(), const FontFeature('sups'));
+    expect(const FontFeature.swash(), const FontFeature('swsh'));
     expect(const FontFeature.swash(0), const FontFeature('swsh', 0));
     expect(const FontFeature.swash(5), const FontFeature('swsh', 5));
-    expect(const FontFeature.tabularFigures(), const FontFeature('tnum', 1));
-    expect(const FontFeature.slashedZero(), const FontFeature('zero', 1));
-    expect(const FontFeature.enable('TEST'), const FontFeature('TEST', 1));
+    expect(const FontFeature.tabularFigures(), const FontFeature('tnum'));
+    expect(const FontFeature.slashedZero(), const FontFeature('zero'));
+    expect(const FontFeature.enable('TEST'), const FontFeature('TEST'));
     expect(const FontFeature.disable('TEST'), const FontFeature('TEST', 0));
     expect(const FontFeature('FEAT', 1000).feature, 'FEAT');
     expect(const FontFeature('FEAT', 1000).value, 1000);
@@ -252,7 +266,7 @@ void testFontVariation() {
     ));
     baseBuilder.addText('Hello');
     final Paragraph baseParagraph = baseBuilder.build();
-    baseParagraph.layout(ParagraphConstraints(width: double.infinity));
+    baseParagraph.layout(const ParagraphConstraints(width: double.infinity));
     final double baseWidth = baseParagraph.minIntrinsicWidth;
 
     final ParagraphBuilder wideBuilder = ParagraphBuilder(ParagraphStyle(
@@ -262,19 +276,62 @@ void testFontVariation() {
     wideBuilder.pushStyle(TextStyle(
       fontFamily: 'RobotoSerif',
       fontSize: 40.0,
-      fontVariations: <FontVariation>[FontVariation('wght', 900.0)]
+      fontVariations: <FontVariation>[const FontVariation('wght', 900.0)],
     ));
     wideBuilder.addText('Hello');
     final Paragraph wideParagraph = wideBuilder.build();
-    wideParagraph.layout(ParagraphConstraints(width: double.infinity));
+    wideParagraph.layout(const ParagraphConstraints(width: double.infinity));
     final double wideWidth = wideParagraph.minIntrinsicWidth;
 
     expect(wideWidth, greaterThan(baseWidth));
   });
+
+  test('FontVariation constructors', () async {
+    expect(const FontVariation.weight(123.0).axis, 'wght');
+    expect(const FontVariation.weight(123.0).value, 123.0);
+    expect(const FontVariation.width(123.0).axis, 'wdth');
+    expect(const FontVariation.width(123.0).value, 123.0);
+    expect(const FontVariation.slant(45.0).axis, 'slnt');
+    expect(const FontVariation.slant(45.0).value, 45.0);
+    expect(const FontVariation.opticalSize(67.0).axis, 'opsz');
+    expect(const FontVariation.opticalSize(67.0).value, 67.0);
+    expect(const FontVariation.italic(0.8).axis, 'ital');
+    expect(const FontVariation.italic(0.8).value, 0.8);
+  });
+
+  test('FontVariation.lerp', () async {
+    expect(FontVariation.lerp(const FontVariation.weight(100.0), const FontVariation.weight(300.0), 0.5), const FontVariation.weight(200.0));
+    expect(FontVariation.lerp(const FontVariation.slant(0.0), const FontVariation.slant(-80.0), 0.25), const FontVariation.slant(-20.0));
+    expect(FontVariation.lerp(const FontVariation.width(90.0), const FontVariation.italic(0.2), 0.1), const FontVariation.width(90.0));
+    expect(FontVariation.lerp(const FontVariation.width(90.0), const FontVariation.italic(0.2), 0.9), const FontVariation.italic(0.2));
+  });
+}
+
+void testGetWordBoundary() {
+  test('GetWordBoundary', () async {
+    final Uint8List fontData = await readFile('RobotoSlab-VariableFont_wght.ttf');
+    await loadFontFromList(fontData, fontFamily: 'RobotoSerif');
+
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontFamily: 'RobotoSerif',
+      fontSize: 40.0,
+    ));
+    builder.addText('Hello team');
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: double.infinity));
+
+    TextRange range = paragraph.getWordBoundary(const TextPosition(offset: 5, affinity: TextAffinity.upstream));
+    expect(range.start, 0);
+    expect(range.end, 5);
+
+    range = paragraph.getWordBoundary(const TextPosition(offset: 5));
+    expect(range.start, 5);
+    expect(range.end, 6);
+  });
 }
 
 void main() {
-  testFontWeightLerp();
+  testFontWeight();
   testParagraphStyle();
   testTextStyle();
   testTextHeightBehavior();
@@ -282,4 +339,5 @@ void main() {
   testLoadFontFromList();
   testFontFeatureClass();
   testFontVariation();
+  testGetWordBoundary();
 }

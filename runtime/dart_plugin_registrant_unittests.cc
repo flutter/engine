@@ -19,12 +19,12 @@
 namespace flutter {
 namespace testing {
 
-const std::string kernel_file_name = "plugin_registrant_kernel_blob.bin";
-const std::string elf_file_name = "plugin_registrant_app_elf_snapshot.so";
+const std::string kKernelFileName = "plugin_registrant_kernel_blob.bin";
+const std::string kElfFileName = "plugin_registrant_app_elf_snapshot.so";
 
 class DartIsolateTest : public FixtureTest {
  public:
-  DartIsolateTest() : FixtureTest(kernel_file_name, elf_file_name, "") {}
+  DartIsolateTest() : FixtureTest(kKernelFileName, kElfFileName, "") {}
 
   void OverrideDartPluginRegistrant(const std::string& override_value) {
     dart_plugin_registrant_library_ = override_value;
@@ -84,7 +84,7 @@ TEST_F(DartIsolateTest, DartPluginRegistrantIsPresent) {
   );
 
   auto kernel_path =
-      fml::paths::JoinPaths({GetFixturesPath(), kernel_file_name});
+      fml::paths::JoinPaths({GetFixturesPath(), kKernelFileName});
   auto isolate =
       RunDartCodeInIsolate(vm_ref, settings, task_runners,
                            "mainForPluginRegistrantTest", {}, kernel_path);
@@ -131,7 +131,7 @@ TEST_F(DartIsolateTest, DartPluginRegistrantFromBackgroundIsolate) {
   );
 
   auto kernel_path =
-      fml::paths::JoinPaths({GetFixturesPath(), kernel_file_name});
+      fml::paths::JoinPaths({GetFixturesPath(), kKernelFileName});
   auto isolate = RunDartCodeInIsolate(
       vm_ref, settings, task_runners,
       "callDartPluginRegistrantFromBackgroundIsolate", {}, kernel_path);
@@ -179,7 +179,7 @@ TEST_F(DartIsolateTest, DartPluginRegistrantNotFromBackgroundIsolate) {
   );
 
   auto kernel_path =
-      fml::paths::JoinPaths({GetFixturesPath(), kernel_file_name});
+      fml::paths::JoinPaths({GetFixturesPath(), kKernelFileName});
   auto isolate = RunDartCodeInIsolate(
       vm_ref, settings, task_runners,
       "dontCallDartPluginRegistrantFromBackgroundIsolate", {}, kernel_path);
@@ -193,6 +193,54 @@ TEST_F(DartIsolateTest, DartPluginRegistrantNotFromBackgroundIsolate) {
   ASSERT_EQ(
       messages[0],
       "_PluginRegistrant.register() was not called on background isolate");
+}
+
+TEST_F(DartIsolateTest, DartPluginRegistrantWhenRegisteringBackgroundIsolate) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+
+  std::vector<std::string> messages;
+  fml::AutoResetWaitableEvent latch;
+
+  AddNativeCallback(
+      "PassMessage",
+      CREATE_NATIVE_ENTRY(([&latch, &messages](Dart_NativeArguments args) {
+        auto message = tonic::DartConverter<std::string>::FromDart(
+            Dart_GetNativeArgument(args, 0));
+        messages.push_back(message);
+        latch.Signal();
+      })));
+
+  auto settings = CreateSettingsForFixture();
+  auto did_throw_exception = false;
+  settings.unhandled_exception_callback = [&](const std::string& error,
+                                              const std::string& stack_trace) {
+    did_throw_exception = true;
+    return true;
+  };
+
+  auto vm_ref = DartVMRef::Create(settings);
+  auto thread = CreateNewThread();
+  TaskRunners task_runners(GetCurrentTestName(),  //
+                           thread,                //
+                           thread,                //
+                           thread,                //
+                           thread                 //
+  );
+
+  auto kernel_path =
+      fml::paths::JoinPaths({GetFixturesPath(), kKernelFileName});
+  auto isolate = RunDartCodeInIsolate(
+      vm_ref, settings, task_runners,
+      "registerBackgroundIsolateCallsDartPluginRegistrant", {}, kernel_path);
+
+  ASSERT_TRUE(isolate);
+  ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
+
+  latch.Wait();
+
+  ASSERT_EQ(messages.size(), 1u);
+  ASSERT_EQ(messages[0],
+            "_PluginRegistrant.register() was called on background isolate");
 }
 
 }  // namespace testing

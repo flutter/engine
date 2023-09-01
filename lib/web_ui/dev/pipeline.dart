@@ -8,6 +8,7 @@ import 'dart:io' as io;
 import 'package:path/path.dart' as path;
 import 'package:watcher/watcher.dart';
 
+import 'exceptions.dart';
 import 'utils.dart';
 
 /// Describes what [Pipeline] is currently doing.
@@ -87,6 +88,13 @@ abstract class ProcessStep implements PipelineStep {
   }
 }
 
+class _PipelineStepFailure {
+  _PipelineStepFailure(this.step, this.error);
+
+  final PipelineStep step;
+  final Object error;
+}
+
 /// Executes a sequence of asynchronous tasks, typically as part of a build/test
 /// process.
 ///
@@ -112,27 +120,34 @@ class Pipeline {
   ///
   /// Returns a future that resolves after all steps have been performed.
   ///
-  /// The future resolves to an error as soon as any of the steps fails.
+  /// If any steps fail, the pipeline attempts to continue to subsequent steps,
+  /// but will fail at the end.
   ///
   /// The pipeline may be interrupted by calling [stop] before the future
   /// resolves.
   Future<void> run() async {
     _status = PipelineStatus.started;
-    try {
-      for (final PipelineStep step in steps) {
-        if (status != PipelineStatus.started) {
-          break;
-        }
-        _currentStep = step;
-        _currentStepFuture = step.run();
+    final List<_PipelineStepFailure> failures = <_PipelineStepFailure>[];
+    for (final PipelineStep step in steps) {
+      _currentStep = step;
+      _currentStepFuture = step.run();
+      try {
         await _currentStepFuture;
+      } catch (e) {
+        failures.add(_PipelineStepFailure(step, e));
+      } finally {
+        _currentStep = null;
       }
+    }
+    if (failures.isEmpty) {
       _status = PipelineStatus.done;
-    } catch (_) {
+    } else {
       _status = PipelineStatus.error;
-      rethrow;
-    } finally {
-      _currentStep = null;
+      print('Pipeline experienced the following failures:');
+      for (final _PipelineStepFailure failure in failures) {
+        print('  "${failure.step.description}": ${failure.error}');
+      }
+      throw ToolExit('Test pipeline failed.');
     }
   }
 
@@ -193,13 +208,19 @@ class PipelineWatcher {
     watcher.events.listen(_onEvent);
 
     // Listen to the `q` key stroke to stop the pipeline.
-    print('Press \'q\' to exit felt');
+    print("Press 'q' to exit felt");
 
     // Key strokes should be reported immediately and one at a time rather than
     // wait for the user to hit ENTER and report the whole line. To achieve
     // that, echo mode and line mode must be disabled.
     io.stdin.echoMode = false;
     io.stdin.lineMode = false;
+
+    // Reset these settings when the felt command is done.
+    cleanupCallbacks.add(() async {
+      io.stdin.echoMode = true;
+      io.stdin.lineMode = true;
+    });
 
     await io.stdin.firstWhere((List<int> event) {
       const int qKeyCode = 113;
@@ -214,7 +235,7 @@ class PipelineWatcher {
   Timer? _scheduledPipeline;
 
   void _onEvent(WatchEvent event) {
-    if (ignore?.call(event) == true) {
+    if (ignore?.call(event) ?? false) {
       return;
     }
 
@@ -255,7 +276,7 @@ class PipelineWatcher {
   void _pipelineSucceeded(int pipelineRunCount) {
     if (pipelineRunCount == _pipelineRunCount) {
       print('*** Done! ***');
-      print('Press \'q\' to exit felt');
+      print("Press 'q' to exit felt");
     }
   }
 

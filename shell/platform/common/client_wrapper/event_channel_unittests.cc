@@ -33,7 +33,9 @@ class TestBinaryMessenger : public BinaryMessenger {
     return last_message_handler_channel_;
   }
 
-  BinaryMessageHandler last_message_handler() { return last_message_handler_; }
+  const BinaryMessageHandler& last_message_handler() {
+    return last_message_handler_;
+  }
 
  private:
   std::string last_message_handler_channel_;
@@ -64,7 +66,7 @@ TEST(EventChannelTest, Registration) {
   EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
   EXPECT_NE(messenger.last_message_handler(), nullptr);
 
-  // Send dummy listen message.
+  // Send test listen message.
   MethodCall<> call("listen", nullptr);
   auto message = codec.EncodeMethodCall(call);
   messenger.last_message_handler()(
@@ -121,7 +123,7 @@ TEST(EventChannelTest, Cancel) {
   EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
   EXPECT_NE(messenger.last_message_handler(), nullptr);
 
-  // Send dummy listen message.
+  // Send test listen message.
   MethodCall<> call_listen("listen", nullptr);
   auto message = codec.EncodeMethodCall(call_listen);
   messenger.last_message_handler()(
@@ -129,7 +131,7 @@ TEST(EventChannelTest, Cancel) {
       [](const uint8_t* reply, const size_t reply_size) {});
   EXPECT_EQ(on_listen_called, true);
 
-  // Send dummy cancel message.
+  // Send test cancel message.
   MethodCall<> call_cancel("cancel", nullptr);
   message = codec.EncodeMethodCall(call_cancel);
   messenger.last_message_handler()(
@@ -165,7 +167,7 @@ TEST(EventChannelTest, ListenNotCancel) {
   EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
   EXPECT_NE(messenger.last_message_handler(), nullptr);
 
-  // Send dummy listen message.
+  // Send test listen message.
   MethodCall<> call_listen("listen", nullptr);
   auto message = codec.EncodeMethodCall(call_listen);
   messenger.last_message_handler()(
@@ -205,7 +207,7 @@ TEST(EventChannelTest, ReRegistration) {
   EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
   EXPECT_NE(messenger.last_message_handler(), nullptr);
 
-  // Send dummy listen message.
+  // Send test listen message.
   MethodCall<> call("listen", nullptr);
   auto message = codec.EncodeMethodCall(call);
   messenger.last_message_handler()(
@@ -213,7 +215,7 @@ TEST(EventChannelTest, ReRegistration) {
       [](const uint8_t* reply, const size_t reply_size) {});
   EXPECT_EQ(on_listen_called, true);
 
-  // Send second dummy message to test StreamHandler's OnCancel
+  // Send second test message to test StreamHandler's OnCancel
   // method is called before OnListen method is called.
   on_listen_called = false;
   message = codec.EncodeMethodCall(call);
@@ -224,6 +226,78 @@ TEST(EventChannelTest, ReRegistration) {
   // Check results.
   EXPECT_EQ(on_cancel_called, true);
   EXPECT_EQ(on_listen_called, true);
+}
+
+// Test that the handler is called even if the event channel is destroyed.
+TEST(EventChannelTest, HandlerOutlivesEventChannel) {
+  TestBinaryMessenger messenger;
+  const std::string channel_name("some_channel");
+  const StandardMethodCodec& codec = StandardMethodCodec::GetInstance();
+
+  bool on_listen_called = false;
+  bool on_cancel_called = false;
+  {
+    EventChannel channel(&messenger, channel_name, &codec);
+    auto handler = std::make_unique<StreamHandlerFunctions<>>(
+        [&on_listen_called](const EncodableValue* arguments,
+                            std::unique_ptr<EventSink<>>&& events)
+            -> std::unique_ptr<StreamHandlerError<>> {
+          on_listen_called = true;
+          return nullptr;
+        },
+        [&on_cancel_called](const EncodableValue* arguments)
+            -> std::unique_ptr<StreamHandlerError<>> {
+          on_cancel_called = true;
+          return nullptr;
+        });
+    channel.SetStreamHandler(std::move(handler));
+  }
+
+  // The event channel was destroyed but the handler should still be alive.
+  EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
+  EXPECT_NE(messenger.last_message_handler(), nullptr);
+
+  // Send test listen message.
+  MethodCall<> call_listen("listen", nullptr);
+  auto message = codec.EncodeMethodCall(call_listen);
+  messenger.last_message_handler()(
+      message->data(), message->size(),
+      [](const uint8_t* reply, const size_t reply_size) {});
+  EXPECT_EQ(on_listen_called, true);
+
+  // Send test cancel message.
+  MethodCall<> call_cancel("cancel", nullptr);
+  message = codec.EncodeMethodCall(call_cancel);
+  messenger.last_message_handler()(
+      message->data(), message->size(),
+      [](const uint8_t* reply, const size_t reply_size) {});
+  EXPECT_EQ(on_cancel_called, true);
+}
+
+TEST(EventChannelTest, StreamHandlerErrorPassByValue) {
+  std::unique_ptr<StreamHandlerError<>> error = nullptr;
+
+  {
+    std::string code = "Code";
+    std::string msg = "Message";
+    std::unique_ptr<EncodableValue> details =
+        std::make_unique<EncodableValue>("Details");
+    error =
+        std::make_unique<StreamHandlerError<>>(code, msg, std::move(details));
+  }
+
+  ASSERT_NE(error.get(), nullptr);
+  EXPECT_EQ(error->error_code, "Code");
+  EXPECT_EQ(error->error_message, "Message");
+  EXPECT_EQ(std::get<std::string>(*error->error_details), "Details");
+}
+
+TEST(EventChannelTest, StreamHandlerErrorNullptr) {
+  std::unique_ptr<StreamHandlerError<>> error =
+      std::make_unique<StreamHandlerError<>>("Code", "Message", nullptr);
+
+  ASSERT_NE(error.get(), nullptr);
+  EXPECT_FALSE(error->error_details);
 }
 
 }  // namespace flutter

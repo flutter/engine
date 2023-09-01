@@ -57,7 +57,7 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
 /**
  * The text input plugin set by initialization.
  */
-@property(nonatomic) id<FlutterKeyboardViewDelegate> viewDelegate;
+@property(nonatomic, weak) id<FlutterKeyboardViewDelegate> viewDelegate;
 
 /**
  * The primary responders added by addPrimaryResponder.
@@ -69,6 +69,8 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
 @property(nonatomic) BOOL processingEvent;
 
 @property(nonatomic) NSMutableDictionary<NSNumber*, NSNumber*>* layoutMap;
+
+@property(nonatomic, nullable) NSEvent* eventBeingDispatched;
 
 /**
  * Add a primary responder, which asynchronously decides whether to handle an
@@ -117,6 +119,13 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
     _processingEvent = FALSE;
     _viewDelegate = viewDelegate;
 
+    FlutterMethodChannel* keyboardChannel =
+        [FlutterMethodChannel methodChannelWithName:@"flutter/keyboard"
+                                    binaryMessenger:[_viewDelegate getBinaryMessenger]
+                                              codec:[FlutterStandardMethodCodec sharedInstance]];
+    [keyboardChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+      [self handleKeyboardMethodCall:call result:result];
+    }];
     _primaryResponders = [[NSMutableArray alloc] init];
     [self addPrimaryResponder:[[FlutterEmbedderKeyResponder alloc]
                                   initWithSendEvent:^(const FlutterKeyEvent& event,
@@ -149,6 +158,14 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
   return self;
 }
 
+- (void)handleKeyboardMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
+  if ([[call method] isEqualToString:@"getKeyboardState"]) {
+    result([self getPressedState]);
+  } else {
+    result(FlutterMethodNotImplemented);
+  }
+}
+
 - (void)addPrimaryResponder:(nonnull id<FlutterKeyPrimaryResponder>)responder {
   [_primaryResponders addObject:responder];
 }
@@ -166,6 +183,10 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
 
   [_pendingEvents addObject:event];
   [self processNextEvent];
+}
+
+- (BOOL)isDispatchingKeyEvent:(NSEvent*)event {
+  return _eventBeingDispatched == event;
 }
 
 #pragma mark - Private
@@ -190,12 +211,6 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
 }
 
 - (void)performProcessEvent:(NSEvent*)event onFinish:(VoidBlock)onFinish {
-  if (_viewDelegate.isComposing) {
-    [self dispatchTextEvent:event];
-    onFinish();
-    return;
-  }
-
   // Having no primary responders require extra logic, but Flutter hard-codes
   // all primary responders, so this is a situation that Flutter will never
   // encounter.
@@ -230,6 +245,8 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
   if (nextResponder == nil) {
     return;
   }
+  NSAssert(_eventBeingDispatched == nil, @"An event is already being dispached.");
+  _eventBeingDispatched = event;
   switch (event.type) {
     case NSEventTypeKeyDown:
       if ([nextResponder respondsToSelector:@selector(keyDown:)]) {
@@ -249,6 +266,8 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
     default:
       NSAssert(false, @"Unexpected key event type (got %lu).", event.type);
   }
+  NSAssert(_eventBeingDispatched != nil, @"_eventBeingDispatched was cleared unexpectedly.");
+  _eventBeingDispatched = nil;
 }
 
 - (void)buildLayout {
@@ -265,9 +284,9 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
   }
 
   // Derive key mapping for each key code based on their layout clues.
-  // Max key code is 127 for ADB keyboards.
-  // https://developer.apple.com/documentation/coreservices/1390584-uckeytranslate?language=objc#parameters
-  const uint16_t kMaxKeyCode = 127;
+  // Key code 0x00 - 0x32 are typewriter keys (letters, digits, and symbols.)
+  // See keyCodeToPhysicalKey.
+  const uint16_t kMaxKeyCode = 0x32;
 #ifdef DEBUG_PRINT_LAYOUT
   NSString* debugLayoutData = @"";
 #endif
@@ -299,8 +318,10 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
     }
     bool hasAnyEascii = isEascii(thisKeyClues[0]) || isEascii(thisKeyClues[1]);
     // See if any produced char meets the requirement as a logical key.
-    if (_layoutMap[@(keyCode)] == nil && !hasAnyEascii) {
-      _layoutMap[@(keyCode)] = @(usLayoutGoalsByKeyCode[keyCode].keyChar);
+    auto foundUsLayoutGoal = usLayoutGoalsByKeyCode.find(keyCode);
+    if (foundUsLayoutGoal != usLayoutGoalsByKeyCode.end() && _layoutMap[@(keyCode)] == nil &&
+        !hasAnyEascii) {
+      _layoutMap[@(keyCode)] = @(foundUsLayoutGoal->second.keyChar);
     }
   }
 #ifdef DEBUG_PRINT_LAYOUT
@@ -312,6 +333,27 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
     const LayoutGoal& goal = mandatoryGoalIter.second;
     _layoutMap[@(goal.keyCode)] = @(goal.keyChar);
   }
+}
+
+- (void)syncModifiersIfNeeded:(NSEventModifierFlags)modifierFlags
+                    timestamp:(NSTimeInterval)timestamp {
+  // The embedder responder is the first element in _primaryResponders.
+  FlutterEmbedderKeyResponder* embedderResponder =
+      (FlutterEmbedderKeyResponder*)_primaryResponders[0];
+  [embedderResponder syncModifiersIfNeeded:modifierFlags timestamp:timestamp];
+}
+
+/**
+ * Returns the keyboard pressed state.
+ *
+ * Returns the keyboard pressed state. The dictionary contains one entry per
+ * pressed keys, mapping from the logical key to the physical key.
+ */
+- (nonnull NSDictionary*)getPressedState {
+  // The embedder responder is the first element in _primaryResponders.
+  FlutterEmbedderKeyResponder* embedderResponder =
+      (FlutterEmbedderKeyResponder*)_primaryResponders[0];
+  return [embedderResponder getPressedState];
 }
 
 @end

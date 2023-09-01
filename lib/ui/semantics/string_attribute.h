@@ -20,6 +20,7 @@ using StringAttributes = std::vector<StringAttributePtr>;
 //  * engine/src/flutter/lib/ui/semantics.dart
 //  * engine/src/flutter/lib/web_ui/lib/semantics.dart
 //  * engine/src/flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java
+//  * engine/src/flutter/shell/platform/embedder/embedder.h
 //  * engine/src/flutter/lib/web_ui/test/engine/semantics/semantics_api_test.dart
 //  * engine/src/flutter/testing/dart/semantics_test.dart
 
@@ -76,8 +77,6 @@ class NativeStringAttribute
   //----------------------------------------------------------------------------
   /// Returns the c++ representataion of StringAttribute.
   const StringAttributePtr GetAttribute() const;
-
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
   NativeStringAttribute();

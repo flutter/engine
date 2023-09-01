@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-library util;
 
 import 'dart:async';
-import 'dart:html' as html;
+import 'dart:collection';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 
 import 'browser_detection.dart';
@@ -52,10 +52,10 @@ Future<T> futurize<T>(Callbacker<T> callbacker) {
   // If the callback synchronously throws an error, then synchronously
   // rethrow that error instead of adding it to the completer. This
   // prevents the Zone from receiving an uncaught exception.
-  bool sync = true;
+  bool isSync = true;
   final String? error = callbacker((T? t) {
     if (t == null) {
-      if (sync) {
+      if (isSync) {
         throw Exception('operation failed');
       } else {
         completer.completeError(Exception('operation failed'));
@@ -64,7 +64,7 @@ Future<T> futurize<T>(Callbacker<T> callbacker) {
       completer.complete(t);
     }
   });
-  sync = false;
+  isSync = false;
   if (error != null) {
     throw Exception(error);
   }
@@ -79,7 +79,7 @@ String matrix4ToCssTransform(Matrix4 matrix) {
 /// Applies a transform to the [element].
 ///
 /// See [float64ListToCssTransform] for details on how the CSS value is chosen.
-void setElementTransform(html.Element element, Float32List matrix4) {
+void setElementTransform(DomElement element, Float32List matrix4) {
   element.style
     ..transformOrigin = '0 0 0'
     ..transform = float64ListToCssTransform(matrix4);
@@ -217,12 +217,6 @@ String float64ListToCssTransform3d(List<double> matrix) {
   }
 }
 
-bool get assertionsEnabled {
-  bool k = false;
-  assert(k = true);
-  return k;
-}
-
 final Float32List _tempRectData = Float32List(4);
 
 /// Transforms a [ui.Rect] given the effective [transform].
@@ -230,7 +224,7 @@ final Float32List _tempRectData = Float32List(4);
 /// The resulting rect is aligned to the pixel grid, i.e. two of
 /// its sides are vertical and two are horizontal. In the presence of rotations
 /// the rectangle is inflated such that it fits the rotated rectangle.
-ui.Rect transformRect(Matrix4 transform, ui.Rect rect) {
+ui.Rect transformRectWithMatrix(Matrix4 transform, ui.Rect rect) {
   _tempRectData[0] = rect.left;
   _tempRectData[1] = rect.top;
   _tempRectData[2] = rect.right;
@@ -339,12 +333,18 @@ bool rectContainsOther(ui.Rect rect, ui.Rect other) {
       rect.bottom >= other.bottom;
 }
 
-/// Converts color to a css compatible attribute value.
-String? colorToCssString(ui.Color? color) {
-  if (color == null) {
-    return null;
+extension CssColor on ui.Color {
+  /// Converts color to a css compatible attribute value.
+  String toCssString() {
+    return colorValueToCssString(value);
   }
-  final int value = color.value;
+}
+
+// Converts a color value (as an int) into a CSS-compatible value.
+String colorValueToCssString(int value) {
+  if (value == 0xFF000000) {
+    return '#000000';
+  }
   if ((0xff000000 & value) == 0xff000000) {
     final String hexValue = (value & 0xFFFFFF).toRadixString(16);
     final int hexValueLength = hexValue.length;
@@ -494,7 +494,7 @@ Float32List offsetListToFloat32List(List<ui.Offset> offsetList) {
 ///
 /// * Use 3D transform instead of 2D: this does not work because it causes text
 ///   blurriness: https://github.com/flutter/flutter/issues/32274
-void applyWebkitClipFix(html.Element? containerElement) {
+void applyWebkitClipFix(DomElement? containerElement) {
   if (browserEngine == BrowserEngine.webkit) {
     containerElement!.style.zIndex = '0';
   }
@@ -524,7 +524,7 @@ int clampInt(int value, int min, int max) {
 ///
 /// This function can be overridden in tests. This could be useful, for example,
 /// to verify that warnings are printed under certain circumstances.
-void Function(String) printWarning = html.window.console.warn;
+void Function(String) printWarning = domWindow.console.warn;
 
 /// Determines if lists [a] and [b] are deep equivalent.
 ///
@@ -551,17 +551,6 @@ bool listEquals<T>(List<T>? a, List<T>? b) {
 // average the two radii together for a single compromise value.
 String blurSigmasToCssString(double sigmaX, double sigmaY) {
   return 'blur(${(sigmaX + sigmaY) * 0.5}px)';
-}
-
-/// Checks if the dynamic [object] is equal to null.
-bool unsafeIsNull(dynamic object) {
-  return object == null;
-}
-
-/// A typed variant of [html.Window.fetch].
-Future<DomResponse> httpFetch(String url) async {
-  final Object? result = await html.window.fetch(url);
-  return result! as DomResponse;
 }
 
 /// Extensions to [Map] that make it easier to treat it as a JSON object. The
@@ -622,19 +611,19 @@ extension JsonExtensions on Map<dynamic, dynamic> {
   }
 
   int readInt(String propertyName) {
-    return this[propertyName] as int;
+    return (this[propertyName] as num).toInt();
   }
 
   int? tryInt(String propertyName) {
-    return this[propertyName] as int?;
+    return (this[propertyName] as num?)?.toInt();
   }
 
   double readDouble(String propertyName) {
-    return this[propertyName] as double;
+    return (this[propertyName] as num).toDouble();
   }
 
   double? tryDouble(String propertyName) {
-    return this[propertyName] as double?;
+    return (this[propertyName] as num?)?.toDouble();
   }
 }
 
@@ -648,7 +637,7 @@ extension JsonExtensions on Map<dynamic, dynamic> {
 ///     Input: [0, 1, 2, 3]
 ///     Output: 0x00 0x01 0x02 0x03
 String bytesToHexString(List<int> data) {
-  return data.map((int byte) => '0x' + byte.toRadixString(16).padLeft(2, '0')).join(' ');
+  return data.map((int byte) => '0x${byte.toRadixString(16).padLeft(2, '0')}').join(' ');
 }
 
 /// Sets a style property on [element].
@@ -664,7 +653,7 @@ void setElementStyle(
   }
 }
 
-void setClipPath(html.Element element, String? value) {
+void setClipPath(DomElement element, String? value) {
   if (browserEngine == BrowserEngine.webkit) {
     if (value == null) {
       element.style.removeProperty('-webkit-clip-path');
@@ -679,23 +668,28 @@ void setClipPath(html.Element element, String? value) {
   }
 }
 
-void setThemeColor(ui.Color color) {
-  html.MetaElement? theme =
-      html.document.querySelector('#flutterweb-theme') as html.MetaElement?;
-  if (theme == null) {
-    theme = html.MetaElement()
-      ..id = 'flutterweb-theme'
-      ..name = 'theme-color';
-    html.document.head!.append(theme);
+void setThemeColor(ui.Color? color) {
+  DomHTMLMetaElement? theme =
+      domDocument.querySelector('#flutterweb-theme') as DomHTMLMetaElement?;
+
+  if (color != null) {
+    if (theme == null) {
+      theme = createDomHTMLMetaElement()
+        ..id = 'flutterweb-theme'
+        ..name = 'theme-color';
+      domDocument.head!.append(theme);
+    }
+    theme.content = color.toCssString();
+  } else {
+    theme?.remove();
   }
-  theme.content = colorToCssString(color)!;
 }
 
 bool? _ellipseFeatureDetected;
 
 /// Draws CanvasElement ellipse with fallback.
 void drawEllipse(
-    html.CanvasRenderingContext2D context,
+    DomCanvasRenderingContext2D context,
     double centerX,
     double centerY,
     double radiusX,
@@ -719,7 +713,7 @@ void drawEllipse(
 }
 
 /// Removes all children of a DOM node.
-void removeAllChildren(html.Node node) {
+void removeAllChildren(DomNode node) {
   while (node.lastChild != null) {
     node.lastChild!.remove();
   }
@@ -737,5 +731,104 @@ extension FirstWhereOrNull<T> on Iterable<T> {
       }
     }
     return null;
+  }
+}
+
+typedef _LruCacheEntry<K extends Object, V extends Object> = ({K key, V value});
+
+/// Caches up to a [maximumSize] key-value pairs.
+///
+/// Call [cache] to cache a key-value pair.
+class LruCache<K extends Object, V extends Object> {
+  LruCache(this.maximumSize);
+
+  /// The maximum number of key/value pairs this cache can contain.
+  ///
+  /// To avoid exceeding this limit the cache remove least recently used items.
+  final int maximumSize;
+
+  /// A doubly linked list of the objects in the cache.
+  ///
+  /// This makes it fast to move a recently used object to the front.
+  final DoubleLinkedQueue<_LruCacheEntry<K, V>> _itemQueue = DoubleLinkedQueue<_LruCacheEntry<K, V>>();
+
+  @visibleForTesting
+  DoubleLinkedQueue<_LruCacheEntry<K, V>> get debugItemQueue => _itemQueue;
+
+  /// A map of objects to their associated node in the [_itemQueue].
+  ///
+  /// This makes it fast to find the node in the queue when we need to
+  /// move the object to the front of the queue.
+  final Map<K, DoubleLinkedQueueEntry<_LruCacheEntry<K, V>>> _itemMap = <K, DoubleLinkedQueueEntry<_LruCacheEntry<K, V>>>{};
+
+  @visibleForTesting
+  Map<K, DoubleLinkedQueueEntry<_LruCacheEntry<K, V>>> get itemMap => _itemMap;
+
+  /// The number of objects in the cache.
+  int get length => _itemQueue.length;
+
+  /// Whether or not [object] is in the cache.
+  ///
+  /// This is only for testing.
+  @visibleForTesting
+  bool debugContainsValue(V object) {
+    return _itemMap.containsValue(object);
+  }
+
+  @visibleForTesting
+  bool debugContainsKey(K key) {
+    return _itemMap.containsKey(key);
+  }
+
+  /// Returns the cached value associated with the [key].
+  ///
+  /// If the value is not in the cache, returns null.
+  V? operator[](K key) {
+    return _itemMap[key]?.element.value;
+  }
+
+  /// Caches the given [key]/[value] pair in this cache.
+  ///
+  /// If the pair is not already in the cache, adds it to the cache as the most
+  /// recently used pair.
+  ///
+  /// If the [key] is already in the cache, moves it to the most recently used
+  /// position. If the [value] corresponding to the [key] is different from
+  /// what's in the cache, updates the value.
+  void cache(K key, V value) {
+    final DoubleLinkedQueueEntry<_LruCacheEntry<K, V>>? item = _itemMap[key];
+    if (item == null) {
+      // New key-value pair, just add.
+      _add(key, value);
+    } else if (item.element.value != value) {
+      // Key already in the cache, but value is new. Re-add.
+      item.remove();
+      _add(key, value);
+    } else {
+      // Key-value pair already in the cache, move to most recently used.
+      item.remove();
+      _itemQueue.addFirst(item.element);
+      _itemMap[key] = _itemQueue.firstEntry()!;
+    }
+  }
+
+  void clear() {
+    _itemQueue.clear();
+    _itemMap.clear();
+  }
+
+  void _add(K key, V value) {
+    _itemQueue.addFirst((key: key, value: value));
+    _itemMap[key] = _itemQueue.firstEntry()!;
+
+    if (_itemQueue.length > maximumSize) {
+      _removeLeastRecentlyUsedValue();
+    }
+  }
+
+  void _removeLeastRecentlyUsedValue() {
+    final bool didRemove = _itemMap.remove(_itemQueue.last.key) != null;
+    assert(didRemove);
+    _itemQueue.removeLast();
   }
 }

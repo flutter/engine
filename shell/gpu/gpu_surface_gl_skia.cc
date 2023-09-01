@@ -10,6 +10,7 @@
 #include "flutter/fml/size.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/context_options.h"
+#include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 #include "third_party/skia/include/core/SkAlphaType.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
@@ -17,9 +18,12 @@
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrContextOptions.h"
+#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
+#include "third_party/skia/include/gpu/ganesh/gl/GrGLBackendSurface.h"
+#include "third_party/skia/include/gpu/gl/GrGLTypes.h"
 
 // These are common defines present on all OpenGL headers. However, we don't
-// want to perform GL header reasolution on each platform we support. So just
+// want to perform GL header resolution on each platform we support. So just
 // define these upfront. It is unlikely we will need more. But, if we do, we can
 // add the same here.
 #define GPU_GL_RGBA8 0x8058
@@ -67,12 +71,12 @@ GPUSurfaceGLSkia::GPUSurfaceGLSkia(GPUSurfaceGLDelegate* delegate,
   context_owner_ = true;
 }
 
-GPUSurfaceGLSkia::GPUSurfaceGLSkia(sk_sp<GrDirectContext> gr_context,
+GPUSurfaceGLSkia::GPUSurfaceGLSkia(const sk_sp<GrDirectContext>& gr_context,
                                    GPUSurfaceGLDelegate* delegate,
                                    bool render_to_surface)
     : delegate_(delegate),
       context_(gr_context),
-      context_owner_(false),
+
       render_to_surface_(render_to_surface),
       weak_factory_(this) {
   auto context_switch = delegate_->GLContextMakeCurrent();
@@ -136,17 +140,18 @@ static sk_sp<SkSurface> WrapOnscreenSurface(GrDirectContext* context,
   framebuffer_info.fFBOID = static_cast<GrGLuint>(fbo);
   framebuffer_info.fFormat = format;
 
-  GrBackendRenderTarget render_target(size.width(),     // width
-                                      size.height(),    // height
-                                      0,                // sample count
-                                      0,                // stencil bits
-                                      framebuffer_info  // framebuffer info
-  );
+  auto render_target =
+      GrBackendRenderTargets::MakeGL(size.width(),     // width
+                                     size.height(),    // height
+                                     0,                // sample count
+                                     0,                // stencil bits
+                                     framebuffer_info  // framebuffer info
+      );
 
   sk_sp<SkColorSpace> colorspace = SkColorSpace::MakeSRGB();
   SkSurfaceProps surface_props(0, kUnknown_SkPixelGeometry);
 
-  return SkSurface::MakeFromBackendRenderTarget(
+  return SkSurfaces::WrapBackendRenderTarget(
       context,                                       // Gr context
       render_target,                                 // render target
       GrSurfaceOrigin::kBottomLeft_GrSurfaceOrigin,  // origin
@@ -180,10 +185,10 @@ bool GPUSurfaceGLSkia::CreateOrUpdateSurfaces(const SkISize& size) {
 
   GLFrameInfo frame_info = {static_cast<uint32_t>(size.width()),
                             static_cast<uint32_t>(size.height())};
-  const uint32_t fbo_id = delegate_->GLContextFBO(frame_info);
+  const GLFBOInfo fbo_info = delegate_->GLContextFBO(frame_info);
   onscreen_surface = WrapOnscreenSurface(context_.get(),  // GL context
                                          size,            // root surface size
-                                         fbo_id           // window FBO ID
+                                         fbo_info.fbo_id  // window FBO ID
   );
 
   if (onscreen_surface == nullptr) {
@@ -194,7 +199,8 @@ bool GPUSurfaceGLSkia::CreateOrUpdateSurfaces(const SkISize& size) {
   }
 
   onscreen_surface_ = std::move(onscreen_surface);
-  fbo_id_ = fbo_id;
+  fbo_id_ = fbo_info.fbo_id;
+  existing_damage_ = fbo_info.existing_damage;
 
   return true;
 }
@@ -224,10 +230,11 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLSkia::AcquireFrame(
   if (!render_to_surface_) {
     framebuffer_info.supports_readback = true;
     return std::make_unique<SurfaceFrame>(
-        nullptr, std::move(framebuffer_info),
-        [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
+        nullptr, framebuffer_info,
+        [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
           return true;
-        });
+        },
+        size);
   }
 
   const auto root_surface_transformation = GetRootTransformation();
@@ -242,18 +249,21 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLSkia::AcquireFrame(
   surface->getCanvas()->setMatrix(root_surface_transformation);
   SurfaceFrame::SubmitCallback submit_callback =
       [weak = weak_factory_.GetWeakPtr()](const SurfaceFrame& surface_frame,
-                                          SkCanvas* canvas) {
+                                          DlCanvas* canvas) {
         return weak ? weak->PresentSurface(surface_frame, canvas) : false;
       };
 
   framebuffer_info = delegate_->GLContextFramebufferInfo();
-  return std::make_unique<SurfaceFrame>(surface, std::move(framebuffer_info),
-                                        submit_callback,
+  if (!framebuffer_info.existing_damage.has_value()) {
+    framebuffer_info.existing_damage = existing_damage_;
+  }
+  return std::make_unique<SurfaceFrame>(surface, framebuffer_info,
+                                        submit_callback, size,
                                         std::move(context_switch));
 }
 
 bool GPUSurfaceGLSkia::PresentSurface(const SurfaceFrame& frame,
-                                      SkCanvas* canvas) {
+                                      DlCanvas* canvas) {
   if (delegate_ == nullptr || canvas == nullptr || context_ == nullptr) {
     return false;
   }
@@ -261,11 +271,17 @@ bool GPUSurfaceGLSkia::PresentSurface(const SurfaceFrame& frame,
   delegate_->GLContextSetDamageRegion(frame.submit_info().buffer_damage);
 
   {
-    TRACE_EVENT0("flutter", "SkCanvas::Flush");
-    onscreen_surface_->getCanvas()->flush();
+    TRACE_EVENT0("flutter", "GrDirectContext::flushAndSubmit");
+    context_->flushAndSubmit();
   }
 
-  if (!delegate_->GLContextPresent(fbo_id_, frame.submit_info().frame_damage)) {
+  GLPresentInfo present_info = {
+      .fbo_id = fbo_id_,
+      .frame_damage = frame.submit_info().frame_damage,
+      .presentation_time = frame.submit_info().presentation_time,
+      .buffer_damage = frame.submit_info().buffer_damage,
+  };
+  if (!delegate_->GLContextPresent(present_info)) {
     return false;
   }
 
@@ -278,11 +294,11 @@ bool GPUSurfaceGLSkia::PresentSurface(const SurfaceFrame& frame,
 
     // The FBO has changed, ask the delegate for the new FBO and do a surface
     // re-wrap.
-    const uint32_t fbo_id = delegate_->GLContextFBO(frame_info);
+    const GLFBOInfo fbo_info = delegate_->GLContextFBO(frame_info);
     auto new_onscreen_surface =
         WrapOnscreenSurface(context_.get(),  // GL context
                             current_size,    // root surface size
-                            fbo_id           // window FBO ID
+                            fbo_info.fbo_id  // window FBO ID
         );
 
     if (!new_onscreen_surface) {
@@ -290,7 +306,8 @@ bool GPUSurfaceGLSkia::PresentSurface(const SurfaceFrame& frame,
     }
 
     onscreen_surface_ = std::move(new_onscreen_surface);
-    fbo_id_ = fbo_id;
+    fbo_id_ = fbo_info.fbo_id;
+    existing_damage_ = fbo_info.existing_damage;
   }
 
   return true;

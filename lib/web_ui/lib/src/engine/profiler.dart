@@ -3,12 +3,21 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:html' as html;
+import 'dart:js_interop';
 
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
+import 'dom.dart';
 import 'platform_dispatcher.dart';
-import 'safe_browser_api.dart';
+import 'util.dart';
+
+// TODO(mdebbar): Deprecate this and remove it.
+// https://github.com/flutter/flutter/issues/127395
+@JS('window._flutter_internal_on_benchmark')
+external JSExportedDartFunction? get jsBenchmarkValueCallback;
+
+ui_web.BenchmarkValueCallback? engineBenchmarkValueCallback;
 
 /// A function that computes a value of type [R].
 ///
@@ -65,7 +74,6 @@ class Profiler {
 
   static bool isBenchmarkMode = const bool.fromEnvironment(
     'FLUTTER_WEB_ENABLE_PROFILING',
-    defaultValue: false,
   );
 
   static Profiler ensureInitialized() {
@@ -102,16 +110,20 @@ class Profiler {
   void benchmark(String name, double value) {
     _checkBenchmarkMode();
 
-    // First get the value as `Object?` then use `as` cast to check the type.
-    // This is because the type cast in `getJsProperty<Object?>` is optimized
-    // out at certain optimization levels in dart2js, leading to obscure errors
-    // later on.
-    final Object? onBenchmark = getJsProperty<Object?>(
-      html.window,
-      '_flutter_internal_on_benchmark',
-    );
-    onBenchmark as OnBenchmark?;
-    onBenchmark?.call(name, value);
+    final ui_web.BenchmarkValueCallback? callback =
+        jsBenchmarkValueCallback?.toDart as ui_web.BenchmarkValueCallback?;
+    if (callback != null) {
+      printWarning(
+        'The JavaScript benchmarking API (i.e. `window._flutter_internal_on_benchmark`) '
+        'is deprecated and will be removed in a future release. Please use '
+        '`benchmarkValueCallback` from `dart:ui_web` instead.',
+      );
+      callback(name, value);
+    }
+
+    if (engineBenchmarkValueCallback != null) {
+      engineBenchmarkValueCallback!(name, value);
+    }
   }
 }
 
@@ -224,7 +236,7 @@ void frameTimingsOnRasterFinish() {
 ///   particularly notes about Firefox rounding to 1ms for security reasons,
 ///   which can be bypassed in tests by setting certain browser options.
 int _nowMicros() {
-  return (html.window.performance.now() * 1000).toInt();
+  return (domWindow.performance.now() * 1000).toInt();
 }
 
 /// Counts various events that take place while the app is running.
@@ -254,7 +266,6 @@ class Instrumentation {
   }
   static bool _enabled = const bool.fromEnvironment(
     'FLUTTER_WEB_ENABLE_INSTRUMENTATION',
-    defaultValue: false,
   );
 
   /// Returns the singleton that provides instrumentation API.
@@ -263,7 +274,7 @@ class Instrumentation {
     return _instance;
   }
 
-  static late final Instrumentation _instance = Instrumentation._();
+  static final Instrumentation _instance = Instrumentation._();
 
   static void _checkInstrumentationEnabled() {
     if (!enabled) {

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/testing/testing.h"
+#include "impeller/base/strings.h"
 #include "impeller/base/thread.h"
 
 namespace impeller {
@@ -44,7 +45,7 @@ TEST(ThreadTest, CanCreateRWMutex) {
   f.mtx.UnlockWriter();
   // int b = f.a; <--- Static analysis error.
   f.mtx.LockReader();
-  int b = f.a;
+  int b = f.a;  // NOLINT(clang-analyzer-deadcode.DeadStores)
   FML_ALLOW_UNUSED_LOCAL(b);
   f.mtx.UnlockReader();
 }
@@ -61,11 +62,18 @@ TEST(ThreadTest, CanCreateRWMutexLock) {
   // int b = f.a; <--- Static analysis error.
   {
     auto read_lock = ReaderLock(f.mtx);
-    int b = f.a;
+    int b = f.a;  // NOLINT(clang-analyzer-deadcode.DeadStores)
     FML_ALLOW_UNUSED_LOCAL(b);
   }
 
   // f.mtx.UnlockReader(); <--- Static analysis error.
+}
+
+TEST(StringsTest, CanSPrintF) {
+  ASSERT_EQ(SPrintF("%sx%d", "Hello", 12), "Hellox12");
+  ASSERT_EQ(SPrintF(""), "");
+  ASSERT_EQ(SPrintF("Hello"), "Hello");
+  ASSERT_EQ(SPrintF("%sx%.2f", "Hello", 12.122222), "Hellox12.12");
 }
 
 }  // namespace testing

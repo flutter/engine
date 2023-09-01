@@ -9,9 +9,9 @@
 #include <vector>
 
 #include "flutter/fml/macros.h"
+#include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/geometry/path.h"
-#include "impeller/renderer/sampler_descriptor.h"
 
 namespace impeller {
 
@@ -23,7 +23,14 @@ class TextureContents final : public Contents {
 
   ~TextureContents() override;
 
-  void SetPath(Path path);
+  /// @brief  A common case factory that marks the texture contents as having a
+  ///         destination rectangle. In this situation, a subpass can be avoided
+  ///         when image filters are applied.
+  static std::shared_ptr<TextureContents> MakeRect(Rect destination);
+
+  void SetLabel(std::string label);
+
+  void SetDestinationRect(Rect rect);
 
   void SetTexture(std::shared_ptr<Texture> texture);
 
@@ -39,21 +46,47 @@ class TextureContents final : public Contents {
 
   void SetOpacity(Scalar opacity);
 
+  Scalar GetOpacity() const;
+
+  void SetStencilEnabled(bool enabled);
+
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
+
+  // |Contents|
+  std::optional<Snapshot> RenderToSnapshot(
+      const ContentContext& renderer,
+      const Entity& entity,
+      std::optional<Rect> coverage_limit = std::nullopt,
+      const std::optional<SamplerDescriptor>& sampler_descriptor = std::nullopt,
+      bool msaa_enabled = true,
+      const std::string& label = "Texture Snapshot") const override;
 
   // |Contents|
   bool Render(const ContentContext& renderer,
               const Entity& entity,
               RenderPass& pass) const override;
 
- public:
-  Path path_;
+  // |Contents|
+  bool CanInheritOpacity(const Entity& entity) const override;
+
+  // |Contents|
+  void SetInheritedOpacity(Scalar opacity) override;
+
+  void SetDeferApplyingOpacity(bool defer_applying_opacity);
+
+ private:
+  std::string label_;
+
+  Rect destination_rect_;
+  bool stencil_enabled_ = true;
 
   std::shared_ptr<Texture> texture_;
   SamplerDescriptor sampler_descriptor_ = {};
   Rect source_rect_;
   Scalar opacity_ = 1.0f;
+  Scalar inherited_opacity_ = 1.0f;
+  bool defer_applying_opacity_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(TextureContents);
 };

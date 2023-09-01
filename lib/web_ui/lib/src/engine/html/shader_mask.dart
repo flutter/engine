@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
@@ -28,19 +26,19 @@ import 'surface.dart';
 class PersistedShaderMask extends PersistedContainerSurface
     implements ui.ShaderMaskEngineLayer {
   PersistedShaderMask(
-    PersistedShaderMask? oldLayer,
+    PersistedShaderMask? super.oldLayer,
     this.shader,
     this.maskRect,
     this.blendMode,
     this.filterQuality,
-  ) : super(oldLayer);
+  );
 
   DomElement? _childContainer;
   final ui.Shader shader;
   final ui.Rect maskRect;
   final ui.BlendMode blendMode;
   final ui.FilterQuality filterQuality;
-  html.Element? _shaderElement;
+  DomElement? _shaderElement;
   final bool isWebKit = browserEngine == BrowserEngine.webkit;
 
   @override
@@ -53,12 +51,13 @@ class PersistedShaderMask extends PersistedContainerSurface
   }
 
   @override
-  html.Element? get childContainer => _childContainer as html.Element?;
+  DomElement? get childContainer => _childContainer;
 
   @override
   void discard() {
     super.discard();
     flutterViewEmbedder.removeResource(_shaderElement);
+    _shaderElement = null;
     // Do not detach the child container from the root. It is permanently
     // attached. The elements are reused together and are detached from the DOM
     // together.
@@ -133,7 +132,6 @@ class PersistedShaderMask extends PersistedContainerSurface
           // Since we don't have a size, we can't use background color.
           // Use svg filter srcIn instead.
           blendModeTemp = ui.BlendMode.srcIn;
-          break;
         case ui.BlendMode.src:
         case ui.BlendMode.dstOver:
         case ui.BlendMode.srcIn:
@@ -189,25 +187,19 @@ SvgFilter svgMaskFilterFromImageAndBlendMode(
   switch (blendMode) {
     case ui.BlendMode.src:
       svgFilter = _srcImageToSvg(imageUrl, width, height);
-      break;
     case ui.BlendMode.srcIn:
     case ui.BlendMode.srcATop:
       svgFilter = _srcInImageToSvg(imageUrl, width, height);
-      break;
     case ui.BlendMode.srcOut:
       svgFilter = _srcOutImageToSvg(imageUrl, width, height);
-      break;
     case ui.BlendMode.xor:
       svgFilter = _xorImageToSvg(imageUrl, width, height);
-      break;
     case ui.BlendMode.plus:
       // Porter duff source + destination.
       svgFilter = _compositeImageToSvg(imageUrl, 0, 1, 1, 0, width, height);
-      break;
     case ui.BlendMode.modulate:
       // Porter duff source * destination but preserves alpha.
       svgFilter = _modulateImageToSvg(imageUrl, width, height);
-      break;
     case ui.BlendMode.overlay:
       // Since overlay is the same as hard-light by swapping layers,
       // pass hard-light blend function.
@@ -218,7 +210,6 @@ SvgFilter svgMaskFilterFromImageAndBlendMode(
         height,
         swapLayers: true,
       );
-      break;
     // Several of the filters below (although supported) do not render the
     // same (close but not exact) as native flutter when used as blend mode
     // for a background-image with a background color. They only look
@@ -246,7 +237,6 @@ SvgFilter svgMaskFilterFromImageAndBlendMode(
     case ui.BlendMode.exclusion:
       svgFilter = _blendImageToSvg(
           imageUrl, blendModeToSvgEnum(blendMode)!, width, height);
-      break;
     case ui.BlendMode.dst:
     case ui.BlendMode.dstATop:
     case ui.BlendMode.dstIn:

@@ -7,8 +7,13 @@
 
 #include <optional>
 #include "flutter/fml/macros.h"
+#include "third_party/skia/include/codec/SkCodec.h"
+#include "third_party/skia/include/codec/SkCodecAnimation.h"
+#include "third_party/skia/include/core/SkData.h"
+#include "third_party/skia/include/core/SkImage.h"
+#include "third_party/skia/include/core/SkImageGenerator.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
-#include "third_party/skia/src/codec/SkCodecImageGenerator.h"
+#include "third_party/skia/include/core/SkSize.h"
 
 namespace flutter {
 
@@ -32,11 +37,18 @@ class ImageGenerator {
     /// blended with.
     std::optional<unsigned int> required_frame;
 
-    /// Number of milliseconds to show this frame.
+    /// Number of milliseconds to show this frame. 0 means only show it for one
+    /// frame.
     unsigned int duration;
 
     /// How this frame should be modified before decoding the next one.
     SkCodecAnimation::DisposalMethod disposal_method;
+
+    /// The region of the frame that is affected by the disposal method.
+    std::optional<SkIRect> disposal_rect;
+
+    /// How this frame should be blended with the previous frame.
+    SkCodecAnimation::Blend blend_mode;
   };
 
   virtual ~ImageGenerator();
@@ -75,7 +87,7 @@ class ImageGenerator {
   /// @return     Information about the given frame. If the image is
   ///             single-frame, a default result is returned.
   /// @see        `GetFrameCount`
-  virtual const FrameInfo GetFrameInfo(unsigned int frame_index) const = 0;
+  virtual const FrameInfo GetFrameInfo(unsigned int frame_index) = 0;
 
   /// @brief      Given a scale value, find the closest image size that can be
   ///             used for efficiently decoding the image. If subpixel image
@@ -147,7 +159,7 @@ class BuiltinSkiaImageGenerator : public ImageGenerator {
 
   // |ImageGenerator|
   const ImageGenerator::FrameInfo GetFrameInfo(
-      unsigned int frame_index) const override;
+      unsigned int frame_index) override;
 
   // |ImageGenerator|
   SkISize GetScaledDimensions(float desired_scale) override;
@@ -187,7 +199,7 @@ class BuiltinSkiaCodecImageGenerator : public ImageGenerator {
 
   // |ImageGenerator|
   const ImageGenerator::FrameInfo GetFrameInfo(
-      unsigned int frame_index) const override;
+      unsigned int frame_index) override;
 
   // |ImageGenerator|
   SkISize GetScaledDimensions(float desired_scale) override;
@@ -204,7 +216,8 @@ class BuiltinSkiaCodecImageGenerator : public ImageGenerator {
 
  private:
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(BuiltinSkiaCodecImageGenerator);
-  std::unique_ptr<SkCodecImageGenerator> codec_generator_;
+  std::unique_ptr<SkCodec> codec_;
+  SkImageInfo image_info_;
 };
 
 }  // namespace flutter

@@ -9,6 +9,8 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_ptr_internal.h"
 #include "flutter/shell/platform/embedder/embedder.h"
+
+#include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
 #ifdef SHELL_ENABLE_METAL
@@ -16,7 +18,7 @@
 #endif
 
 #ifdef SHELL_ENABLE_VULKAN
-#include "flutter/testing/test_vulkan_context.h"
+#include "flutter/testing/test_vulkan_context.h"  // nogncheck
 #endif
 
 namespace flutter {
@@ -31,6 +33,7 @@ class EmbedderTestBackingStoreProducer {
 
   enum class RenderTargetType {
     kSoftwareBuffer,
+    kSoftwareBuffer2,
     kOpenGLFramebuffer,
     kOpenGLTexture,
     kMetalTexture,
@@ -38,7 +41,9 @@ class EmbedderTestBackingStoreProducer {
   };
 
   EmbedderTestBackingStoreProducer(sk_sp<GrDirectContext> context,
-                                   RenderTargetType type);
+                                   RenderTargetType type,
+                                   FlutterSoftwarePixelFormat software_pixfmt =
+                                       kFlutterSoftwarePixelFormatNative32);
   ~EmbedderTestBackingStoreProducer();
 
   bool Create(const FlutterBackingStoreConfig* config,
@@ -54,6 +59,9 @@ class EmbedderTestBackingStoreProducer {
   bool CreateSoftware(const FlutterBackingStoreConfig* config,
                       FlutterBackingStore* backing_store_out);
 
+  bool CreateSoftware2(const FlutterBackingStoreConfig* config,
+                       FlutterBackingStore* backing_store_out);
+
   bool CreateMTLTexture(const FlutterBackingStoreConfig* config,
                         FlutterBackingStore* renderer_out);
 
@@ -62,6 +70,7 @@ class EmbedderTestBackingStoreProducer {
 
   sk_sp<GrDirectContext> context_;
   RenderTargetType type_;
+  FlutterSoftwarePixelFormat software_pixfmt_;
 
 #ifdef SHELL_ENABLE_METAL
   std::unique_ptr<TestMetalContext> test_metal_context_;

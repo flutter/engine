@@ -22,7 +22,8 @@ class CommandBufferGLES final : public CommandBuffer {
   ReactorGLES::Ref reactor_;
   bool is_valid_ = false;
 
-  CommandBufferGLES(ReactorGLES::Ref reactor);
+  CommandBufferGLES(std::weak_ptr<const Context> context,
+                    ReactorGLES::Ref reactor);
 
   // |CommandBuffer|
   void SetLabel(const std::string& label) const override;
@@ -31,11 +32,19 @@ class CommandBufferGLES final : public CommandBuffer {
   bool IsValid() const override;
 
   // |CommandBuffer|
-  bool SubmitCommands(CompletionCallback callback) override;
+  bool OnSubmitCommands(CompletionCallback callback) override;
 
   // |CommandBuffer|
-  std::shared_ptr<RenderPass> OnCreateRenderPass(
-      RenderTarget target) const override;
+  void OnWaitUntilScheduled() override;
+
+  // |CommandBuffer|
+  std::shared_ptr<RenderPass> OnCreateRenderPass(RenderTarget target) override;
+
+  // |CommandBuffer|
+  std::shared_ptr<BlitPass> OnCreateBlitPass() override;
+
+  // |CommandBuffer|
+  std::shared_ptr<ComputePass> OnCreateComputePass() override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(CommandBufferGLES);
 };

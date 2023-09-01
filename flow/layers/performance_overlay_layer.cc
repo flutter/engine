@@ -6,15 +6,20 @@
 
 #include <iomanip>
 #include <iostream>
+#include <memory>
 #include <string>
 
+#include "flow/stopwatch.h"
+#include "flow/stopwatch_dl.h"
+#include "flow/stopwatch_sk.h"
 #include "third_party/skia/include/core/SkFont.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 
 namespace flutter {
 namespace {
 
-void VisualizeStopWatch(SkCanvas* canvas,
+void VisualizeStopWatch(DlCanvas* canvas,
+                        const bool impeller_enabled,
                         const Stopwatch& stopwatch,
                         SkScalar x,
                         SkScalar y,
@@ -29,15 +34,23 @@ void VisualizeStopWatch(SkCanvas* canvas,
 
   if (show_graph) {
     SkRect visualization_rect = SkRect::MakeXYWH(x, y, width, height);
-    stopwatch.Visualize(canvas, visualization_rect);
+    std::unique_ptr<StopwatchVisualizer> visualizer;
+
+    if (impeller_enabled) {
+      visualizer = std::make_unique<DlStopwatchVisualizer>(stopwatch);
+    } else {
+      visualizer = std::make_unique<SkStopwatchVisualizer>(stopwatch);
+    }
+
+    visualizer->Visualize(canvas, visualization_rect);
   }
 
   if (show_labels) {
     auto text = PerformanceOverlayLayer::MakeStatisticsText(
         stopwatch, label_prefix, font_path);
-    SkPaint paint;
-    paint.setColor(SK_ColorGRAY);
-    canvas->drawTextBlob(text, x + label_x, y + height + label_y, paint);
+    // Historically SK_ColorGRAY (== 0xFF888888) was used here
+    DlPaint paint(0xFF888888);
+    canvas->DrawTextBlob(text, x + label_x, y + height + label_y, paint);
   }
 }
 
@@ -93,20 +106,19 @@ void PerformanceOverlayLayer::Paint(PaintContext& context) const {
     return;
   }
 
-  TRACE_EVENT0("flutter", "PerformanceOverlayLayer::Paint");
   SkScalar x = paint_bounds().x() + padding;
   SkScalar y = paint_bounds().y() + padding;
   SkScalar width = paint_bounds().width() - (padding * 2);
   SkScalar height = paint_bounds().height() / 2;
-  SkAutoCanvasRestore save(context.leaf_nodes_canvas, true);
+  auto mutator = context.state_stack.save();
 
   VisualizeStopWatch(
-      context.leaf_nodes_canvas, context.raster_time, x, y, width,
-      height - padding, options_ & kVisualizeRasterizerStatistics,
+      context.canvas, context.impeller_enabled, context.raster_time, x, y,
+      width, height - padding, options_ & kVisualizeRasterizerStatistics,
       options_ & kDisplayRasterizerStatistics, "Raster", font_path_);
 
-  VisualizeStopWatch(context.leaf_nodes_canvas, context.ui_time, x, y + height,
-                     width, height - padding,
+  VisualizeStopWatch(context.canvas, context.impeller_enabled, context.ui_time,
+                     x, y + height, width, height - padding,
                      options_ & kVisualizeEngineStatistics,
                      options_ & kDisplayEngineStatistics, "UI", font_path_);
 }

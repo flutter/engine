@@ -3,12 +3,14 @@
 # found in the LICENSE file.
 
 import("//flutter/common/config.gni")
+import("//flutter/shell/config.gni")
 import("//flutter/testing/testing.gni")
 
 source_set("graphics") {
   sources = [
     "gl_context_switch.cc",
     "gl_context_switch.h",
+    "msaa_sample_count.h",
     "persistent_cache.cc",
     "persistent_cache.h",
     "texture.cc",
@@ -20,6 +22,7 @@ source_set("graphics") {
   # additions here could result in added app sizes across embeddings.
   deps = [
     "//flutter/assets",
+    "//flutter/display_list",
     "//flutter/fml",
     "//flutter/shell/version:version",
     "//third_party/boringssl",
@@ -27,8 +30,9 @@ source_set("graphics") {
     "//third_party/skia",
   ]
 
-  public_configs = [
-    "//flutter:config",
-    "//flutter/vulkan:vulkan_config",
-  ]
+  public_configs = [ "//flutter:config" ]
+  if (shell_enable_vulkan) {
+    public_deps =
+        [ "//third_party/vulkan-deps/vulkan-headers/src:vulkan_headers" ]
+  }
 }

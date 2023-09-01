@@ -4,6 +4,9 @@
 
 #include "impeller/renderer/backend/gles/allocator_gles.h"
 
+#include <memory>
+
+#include "impeller/base/allocation.h"
 #include "impeller/base/config.h"
 #include "impeller/renderer/backend/gles/device_buffer_gles.h"
 #include "impeller/renderer/backend/gles/texture_gles.h"
@@ -22,16 +25,27 @@ bool AllocatorGLES::IsValid() const {
 }
 
 // |Allocator|
-std::shared_ptr<DeviceBuffer> AllocatorGLES::CreateBuffer(StorageMode mode,
-                                                          size_t length) {
-  return std::make_shared<DeviceBufferGLES>(reactor_, length, mode);
+std::shared_ptr<DeviceBuffer> AllocatorGLES::OnCreateBuffer(
+    const DeviceBufferDescriptor& desc) {
+  auto backing_store = std::make_shared<Allocation>();
+  if (!backing_store->Truncate(desc.size)) {
+    return nullptr;
+  }
+  return std::make_shared<DeviceBufferGLES>(desc,                     //
+                                            reactor_,                 //
+                                            std::move(backing_store)  //
+  );
 }
 
 // |Allocator|
-std::shared_ptr<Texture> AllocatorGLES::CreateTexture(
-    StorageMode mode,
+std::shared_ptr<Texture> AllocatorGLES::OnCreateTexture(
     const TextureDescriptor& desc) {
-  return std::make_shared<TextureGLES>(reactor_, std::move(desc));
+  return std::make_shared<TextureGLES>(reactor_, desc);
+}
+
+// |Allocator|
+ISize AllocatorGLES::GetMaxTextureSizeSupported() const {
+  return reactor_->GetProcTable().GetCapabilities()->max_texture_size;
 }
 
 }  // namespace impeller

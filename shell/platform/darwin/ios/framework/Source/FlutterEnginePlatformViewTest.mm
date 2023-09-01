@@ -19,11 +19,12 @@ namespace flutter {
 namespace {
 
 class FakeDelegate : public PlatformView::Delegate {
+ public:
   void OnPlatformViewCreated(std::unique_ptr<Surface> surface) override {}
   void OnPlatformViewDestroyed() override {}
   void OnPlatformViewScheduleFrame() override {}
   void OnPlatformViewSetNextFrameCallback(const fml::closure& closure) override {}
-  void OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) override {}
+  void OnPlatformViewSetViewportMetrics(int64_t view_id, const ViewportMetrics& metrics) override {}
   const flutter::Settings& OnPlatformViewGetSettings() const override { return settings_; }
   void OnPlatformViewDispatchPlatformMessage(std::unique_ptr<PlatformMessage> message) override {}
   void OnPlatformViewDispatchPointerDataPacket(std::unique_ptr<PointerDataPacket> packet) override {
@@ -47,7 +48,6 @@ class FakeDelegate : public PlatformView::Delegate {
   void UpdateAssetResolverByType(std::unique_ptr<AssetResolver> updated_asset_resolver,
                                  AssetResolver::AssetResolverType type) override {}
 
- private:
   flutter::Settings settings_;
 };
 
@@ -74,7 +74,9 @@ flutter::FakeDelegate fake_delegate;
       /*delegate=*/fake_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/nil,
-      /*task_runners=*/runners);
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
   weak_factory = std::make_unique<fml::WeakPtrFactory<flutter::PlatformView>>(platform_view.get());
 }
 
@@ -87,9 +89,34 @@ flutter::FakeDelegate fake_delegate;
   return weak_factory->GetWeakPtr();
 }
 
+- (void)testMsaaSampleCount {
+  // Default should be 1.
+  XCTAssertEqual(platform_view->GetIosContext()->GetMsaaSampleCount(), MsaaSampleCount::kNone);
+
+  // Verify the platform view creates a new context with updated msaa_samples.
+  // Need to use Metal, since this is ignored for Software/GL.
+  fake_delegate.settings_.msaa_samples = 4;
+
+  auto thread_task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
+  flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
+                               /*platform=*/thread_task_runner,
+                               /*raster=*/thread_task_runner,
+                               /*ui=*/thread_task_runner,
+                               /*io=*/thread_task_runner);
+  auto msaa_4x_platform_view = std::make_unique<flutter::PlatformViewIOS>(
+      /*delegate=*/fake_delegate,
+      /*rendering_api=*/flutter::IOSRenderingAPI::kMetal,
+      /*platform_views_controller=*/nil,
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
+
+  XCTAssertEqual(msaa_4x_platform_view->GetIosContext()->GetMsaaSampleCount(),
+                 MsaaSampleCount::kFour);
+}
+
 - (void)testCallsNotifyLowMemory {
-  id project = OCMClassMock([FlutterDartProject class]);
-  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"tester" project:project];
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"tester"];
   XCTAssertNotNil(engine);
   id mockEngine = OCMPartialMock(engine);
   OCMStub([mockEngine notifyLowMemory]);

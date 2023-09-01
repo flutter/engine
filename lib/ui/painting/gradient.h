@@ -5,19 +5,12 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_GRADIENT_H_
 #define FLUTTER_LIB_UI_PAINTING_GRADIENT_H_
 
-#include "flutter/display_list/display_list_color_source.h"
+#include "flutter/display_list/effects/dl_color_source.h"
 #include "flutter/lib/ui/painting/matrix.h"
 #include "flutter/lib/ui/painting/shader.h"
 #include "third_party/tonic/typed_data/typed_list.h"
 
-namespace tonic {
-class DartLibraryNatives;
-}  // namespace tonic
-
 namespace flutter {
-
-// TODO: update this if/when Skia adds Decal mode skbug.com/7638
-static_assert(kSkTileModeCount >= 3, "Need to update tile mode enum");
 
 class CanvasGradient : public Shader {
   DEFINE_WRAPPERTYPEINFO();
@@ -25,12 +18,12 @@ class CanvasGradient : public Shader {
 
  public:
   ~CanvasGradient() override;
-  static fml::RefPtr<CanvasGradient> Create();
+  static void Create(Dart_Handle wrapper);
 
   void initLinear(const tonic::Float32List& end_points,
                   const tonic::Int32List& colors,
                   const tonic::Float32List& color_stops,
-                  SkTileMode tile_mode,
+                  DlTileMode tile_mode,
                   const tonic::Float64List& matrix4);
 
   void initRadial(double center_x,
@@ -38,14 +31,14 @@ class CanvasGradient : public Shader {
                   double radius,
                   const tonic::Int32List& colors,
                   const tonic::Float32List& color_stops,
-                  SkTileMode tile_mode,
+                  DlTileMode tile_mode,
                   const tonic::Float64List& matrix4);
 
   void initSweep(double center_x,
                  double center_y,
                  const tonic::Int32List& colors,
                  const tonic::Float32List& color_stops,
-                 SkTileMode tile_mode,
+                 DlTileMode tile_mode,
                  double start_angle,
                  double end_angle,
                  const tonic::Float64List& matrix4);
@@ -58,14 +51,13 @@ class CanvasGradient : public Shader {
                            double end_radius,
                            const tonic::Int32List& colors,
                            const tonic::Float32List& color_stops,
-                           SkTileMode tile_mode,
+                           DlTileMode tile_mode,
                            const tonic::Float64List& matrix4);
 
-  std::shared_ptr<DlColorSource> shader(SkSamplingOptions& sampling) override {
-    return dl_shader_->with_sampling(sampling);
+  std::shared_ptr<DlColorSource> shader(DlImageSampling sampling) override {
+    // Gradient color sources do not have image sampling variants...
+    return dl_shader_;
   }
-
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
   CanvasGradient();

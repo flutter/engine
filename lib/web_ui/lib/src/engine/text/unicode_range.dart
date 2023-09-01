@@ -3,12 +3,14 @@
 // found in the LICENSE file.
 
 const int kChar_0 = 48;
-const int kChar_9 = 57;
+const int kChar_9 = kChar_0 + 9;
 const int kChar_A = 65;
 const int kChar_Z = 90;
 const int kChar_a = 97;
 const int kChar_z = 122;
 const int kCharBang = 33;
+const int kMashriqi_0 = 0x660;
+const int kMashriqi_9 = kMashriqi_0 + 9;
 
 enum _ComparisonResult {
   inside,
@@ -168,10 +170,8 @@ class UnicodePropertyLookup<P> {
       switch (range.compare(value)) {
         case _ComparisonResult.higher:
           min = mid + 1;
-          break;
         case _ComparisonResult.lower:
           max = mid;
-          break;
         case _ComparisonResult.inside:
           return mid;
       }
@@ -251,16 +251,16 @@ int _consumeInt(String packedData, int index) {
   //
   // But using substring is slow when called too many times. This custom
   // implementation makes the unpacking 25%-45% faster than using substring.
-  final int digit0 = _getIntFromCharCode(packedData.codeUnitAt(index + 3));
-  final int digit1 = _getIntFromCharCode(packedData.codeUnitAt(index + 2));
-  final int digit2 = _getIntFromCharCode(packedData.codeUnitAt(index + 1));
-  final int digit3 = _getIntFromCharCode(packedData.codeUnitAt(index));
+  final int digit0 = getIntFromCharCode(packedData.codeUnitAt(index + 3));
+  final int digit1 = getIntFromCharCode(packedData.codeUnitAt(index + 2));
+  final int digit2 = getIntFromCharCode(packedData.codeUnitAt(index + 1));
+  final int digit3 = getIntFromCharCode(packedData.codeUnitAt(index));
   return digit0 + (digit1 * 36) + (digit2 * 36 * 36) + (digit3 * 36 * 36 * 36);
 }
 
 /// Does the same thing as [int.parse(str, 36)] but takes only a single
 /// character as a [charCode] integer.
-int _getIntFromCharCode(int charCode) {
+int getIntFromCharCode(int charCode) {
   assert((charCode >= kChar_0 && charCode <= kChar_9) ||
       (charCode >= kChar_a && charCode <= kChar_z));
 

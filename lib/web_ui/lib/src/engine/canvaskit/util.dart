@@ -7,7 +7,6 @@ import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
-import '../util.dart';
 import '../vector_math.dart';
 import 'canvaskit_api.dart';
 import 'path.dart';
@@ -35,9 +34,9 @@ Float32List makeFreshSkColor(ui.Color color) {
 
 ui.TextPosition fromPositionWithAffinity(SkTextPosition positionWithAffinity) {
   final ui.TextAffinity affinity =
-      ui.TextAffinity.values[positionWithAffinity.affinity.value];
+      ui.TextAffinity.values[positionWithAffinity.affinity.value.toInt()];
   return ui.TextPosition(
-    offset: positionWithAffinity.pos,
+    offset: positionWithAffinity.pos.toInt(),
     affinity: affinity,
   );
 }
@@ -109,7 +108,7 @@ ui.Rect computeSkShadowBounds(
   // one matrix inverse.
   final bool isComplex = !matrix.isIdentityOrTranslation();
   if (isComplex) {
-    pathBounds = transformRect(matrix, pathBounds);
+    pathBounds = matrix.transformRect(pathBounds);
   }
 
   double left = pathBounds.left;
@@ -135,7 +134,7 @@ ui.Rect computeSkShadowBounds(
     final Matrix4 inverse = Matrix4.zero();
     // The inverse only makes sense if the determinat is non-zero.
     if (inverse.copyInverse(matrix) != 0.0) {
-      return transformRect(inverse, shadowBounds);
+      return inverse.transformRect(shadowBounds);
     } else {
       return shadowBounds;
     }
@@ -187,6 +186,6 @@ void drawSkShadow(
     devicePixelRatio * ckShadowLightRadius,
     tonalColors.ambient,
     tonalColors.spot,
-    flags,
+    flags.toDouble(),
   );
 }

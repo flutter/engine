@@ -10,67 +10,79 @@ import 'package:path/path.dart' as path;
 final ArgParser argParser = ArgParser()
   ..addOption('output-dir')
   ..addOption('input-dir')
-  ..addFlag('ui', defaultsTo: false)
-  ..addFlag('engine', defaultsTo: false)
-  ..addMultiOption('input')
+  ..addFlag('ui')
+  ..addFlag('public')
+  ..addOption('library-name')
+  ..addOption('api-file')
+  ..addMultiOption('source-file')
   ..addOption('stamp');
 
 final List<Replacer> uiPatterns = <Replacer>[
   AllReplacer(RegExp(r'library\s+ui;'), 'library dart.ui;'),
   AllReplacer(RegExp(r'part\s+of\s+ui;'), 'part of dart.ui;'),
+
+  // import 'src/engine.dart' as engine;
   AllReplacer(RegExp(r'''
 import\s*'src/engine.dart'\s*as\s+engine;
 '''), r'''
 import 'dart:_engine' as engine;
 '''),
-  AllReplacer(RegExp(
-    r'''
-export\s*'src/engine.dart'
+
+  // import 'ui_web/src/ui_web.dart' as ui_web;
+  AllReplacer(RegExp(r'''
+import\s*'ui_web/src/ui_web.dart'\s*as\s+ui_web;
+'''), r'''
+import 'dart:ui_web' as ui_web;
 '''),
-    r'''
-export 'dart:_engine'
-''',
-  ),
 ];
 
-final List<Replacer> engineLibraryPatterns = <Replacer>[
-  AllReplacer(RegExp(r'library\s+engine;'), '''
+List<Replacer> generateApiFilePatterns(String libraryName, bool isPublic, List<String> extraImports) {
+  final String libraryPrefix = isPublic ? '' : '_';
+  return <Replacer>[
+    AllReplacer(RegExp('library\\s+$libraryName;'), '''
 @JS()
-library dart._engine;
+library dart.$libraryPrefix$libraryName;
 
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert' hide Codec;
 import 'dart:developer' as developer;
-import 'dart:html' as html;
-import 'dart:js' as js;
 import 'dart:js_util' as js_util;
 import 'dart:_js_annotations';
+import 'dart:js_interop' hide JS;
+import 'dart:js_interop_unsafe';
 import 'dart:math' as math;
-import 'dart:svg' as svg;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
-'''),
-  // Replace exports of engine files with "part" directives.
-  MappedReplacer(RegExp(r'''
-export\s*'engine/(.*)';
+${extraImports.join('\n')}
+'''
+    ),
+    // Replace exports of engine files with "part" directives.
+    MappedReplacer(RegExp('''
+export\\s*'$libraryName/(.*)';
 '''), (Match match) => '''
-part 'engine/${match.group(1)}';
-'''),
-];
+part '$libraryName/${match.group(1)}';
+'''
+    ),
+  ];
+}
 
-final List<Replacer> enginePartsPatterns = <Replacer>[
-  AllReplacer(RegExp(r'part\s+of\s+engine;'), 'part of dart._engine;'),
-  // Remove library-level JS annotations.
-  AllReplacer(RegExp(r'\n@JS(.*)\nlibrary .+;'), ''),
-  // Remove library directives.
-  AllReplacer(RegExp(r'\nlibrary .+;'), ''),
-  // Remove imports/exports from all engine parts.
-  AllReplacer(RegExp(r'\nimport\s*.*'), ''),
-  AllReplacer(RegExp(r'\nexport\s*.*'), ''),
-];
+List<Replacer> generatePartsPatterns(String libraryName, bool isPublic) {
+  final String libraryPrefix = isPublic ? '' : '_';
+  return <Replacer>[
+    AllReplacer(RegExp('part\\s+of\\s+$libraryName;'), 'part of dart.$libraryPrefix$libraryName;'),
+    // Remove library-level JS annotations.
+    AllReplacer(RegExp(r'\n@JS(.*)\nlibrary .+;'), ''),
+    // Remove library directives.
+    AllReplacer(RegExp(r'\nlibrary .+;'), ''),
+    // Remove imports/exports from all part files.
+    AllReplacer(RegExp(r'\nimport\s*.*'), ''),
+    AllReplacer(RegExp(r'\nexport\s*.*'), ''),
+    AllReplacer(RegExp(r'\n@DefaultAsset(.*)'), ''),
+  ];
+}
 
-final List<Replacer> sharedPatterns = <Replacer>[
+final List<Replacer> stripMetaPatterns = <Replacer>[
   AllReplacer(RegExp(r"import\s*'package:meta/meta.dart';"), ''),
   AllReplacer('@required', ''),
   AllReplacer('@protected', ''),
@@ -79,44 +91,112 @@ final List<Replacer> sharedPatterns = <Replacer>[
   AllReplacer('@visibleForTesting', ''),
 ];
 
+const Set<String> rootLibraryNames = <String>{
+  'ui_web',
+  'engine',
+  'skwasm_stub',
+  'skwasm_impl',
+};
+
+final Map<Pattern, String> extraImportsMap = <Pattern, String>{
+  RegExp('skwasm_(stub|impl)'): "import 'dart:_skwasm_stub' if (dart.library.ffi) 'dart:_skwasm_impl';",
+  'ui_web': "import 'dart:ui_web' as ui_web;",
+  'engine': "import 'dart:_engine';",
+  'web_unicode': "import 'dart:_web_unicode';",
+  'web_test_fonts': "import 'dart:_web_test_fonts';",
+  'web_locale_keymap': "import 'dart:_web_locale_keymap' as locale_keymap;",
+};
+
 // Rewrites the "package"-style web ui library into a dart:ui implementation.
 // So far this only requires a replace of the library declarations.
 void main(List<String> arguments) {
   final ArgResults results = argParser.parse(arguments);
   final Directory directory = Directory(results['output-dir'] as String);
   final String inputDirectoryPath = results['input-dir'] as String;
-  for (final String inputFilePath in results['input'] as Iterable<String>) {
-    final File inputFile = File(inputFilePath);
-    final File outputFile = File(path.join(
-        directory.path, inputFile.path.substring(inputDirectoryPath.length)))
-      ..createSync(recursive: true);
-    final String source = inputFile.readAsStringSync();
-    final String rewrittenContent = rewriteFile(
-      source,
-      filePath: inputFilePath,
-      isUi: results['ui'] as bool,
-      isEngine: results['engine'] as bool,
-    );
-    outputFile.writeAsStringSync(rewrittenContent);
-    if (results['stamp'] != null) {
-      File(results['stamp'] as String).writeAsStringSync('stamp');
+
+  String Function(String source)? preprocessor;
+  List<Replacer> replacementPatterns;
+  String? libraryName;
+
+  final bool isPublic = results['public'] as bool;
+
+  if (results['ui'] as bool) {
+    replacementPatterns = uiPatterns;
+  } else {
+    libraryName = results['library-name'] as String?;
+    if (libraryName == null) {
+      throw Exception('library-name must be specified if not rewriting ui');
     }
+    preprocessor = (String source) => preprocessPartFile(source, libraryName!);
+    replacementPatterns = generatePartsPatterns(libraryName, isPublic);
+  }
+  for (final String inputFilePath in results['source-file'] as Iterable<String>) {
+    String pathSuffix = inputFilePath.substring(inputDirectoryPath.length);
+    if (libraryName != null) {
+      pathSuffix = path.join(libraryName, pathSuffix);
+    }
+    final String outputFilePath = path.join(directory.path, pathSuffix);
+    processFile(inputFilePath, outputFilePath, preprocessor, replacementPatterns);
+  }
+
+  if (results['api-file'] != null) {
+    if (libraryName == null) {
+      throw Exception('library-name must be specified if api-file is specified');
+    }
+
+    final String inputFilePath = results['api-file'] as String;
+    final String outputFilePath = path.join(
+        directory.path, path.basename(inputFilePath));
+
+    final List<String> extraImports = getExtraImportsForLibrary(libraryName);
+    replacementPatterns = generateApiFilePatterns(libraryName, isPublic, extraImports);
+
+    processFile(
+      inputFilePath,
+      outputFilePath,
+      (String source) => validateApiFile(inputFilePath, source, libraryName!),
+      replacementPatterns
+    );
+  }
+
+
+  if (results['stamp'] != null) {
+    File(results['stamp'] as String).writeAsStringSync('stamp');
   }
 }
 
-String rewriteFile(String source, {required String filePath, required bool isUi, required bool isEngine}) {
-  final List<Replacer> replacementPatterns = <Replacer>[];
-  replacementPatterns.addAll(sharedPatterns);
-  if (isUi) {
-    replacementPatterns.addAll(uiPatterns);
-  } else if (isEngine) {
-    if (filePath.endsWith('lib/src/engine.dart')) {
-      _validateEngineSource(filePath, source);
-      replacementPatterns.addAll(engineLibraryPatterns);
-    } else {
-      source = _preprocessEnginePartFile(source);
-      replacementPatterns.addAll(enginePartsPatterns);
+List<String> getExtraImportsForLibrary(String libraryName) {
+  // Only our root libraries should have extra imports.
+  if (!rootLibraryNames.contains(libraryName)) {
+    return <String>[];
+  }
+
+  final List<String> extraImports = <String>[];
+  for (final MapEntry<Pattern, String> entry in extraImportsMap.entries) {
+    // A library shouldn't import itself.
+    if (entry.key.matchAsPrefix(libraryName) == null) {
+      extraImports.add(entry.value);
     }
+  }
+  return extraImports;
+}
+
+void processFile(String inputFilePath, String outputFilePath, String Function(String source)? preprocessor, List<Replacer> replacementPatterns) {
+  final File inputFile = File(inputFilePath);
+  final File outputFile = File(outputFilePath)
+    ..createSync(recursive: true);
+  outputFile.writeAsStringSync(processSource(
+    inputFile.readAsStringSync(),
+    preprocessor,
+    replacementPatterns));
+}
+
+String processSource(String source, String Function(String source)? preprocessor, List<Replacer> replacementPatterns) {
+  if (preprocessor != null) {
+    source = preprocessor(source);
+  }
+  for (final Replacer replacer in stripMetaPatterns) {
+    source = replacer.perform(source);
   }
   for (final Replacer replacer in replacementPatterns) {
     source = replacer.perform(source);
@@ -124,17 +204,17 @@ String rewriteFile(String source, {required String filePath, required bool isUi,
   return source;
 }
 
-// Enforces a particular structure in engine.dart source code.
+// Enforces a particular structure in top level api files for sublibraries.
 //
-// Code in `engine.dart` must only be made of the library directive, exports,
+// Code in api files must only be made of the library directive, exports,
 // and code comments. Imports are disallowed. Instead, the required imports are
 // added by this script during the rewrite.
-void _validateEngineSource(String engineDartPath, String engineDartCode) {
-  const List<String> expectedLines = <String>[
-    'library engine;',
+String validateApiFile(String apiFilePath, String apiFileCode, String libraryName) {
+  final List<String> expectedLines = <String>[
+    'library $libraryName;',
   ];
 
-  final List<String> lines = engineDartCode.split('\n');
+  final List<String> lines = apiFileCode.split('\n');
   for (int i = 0; i < lines.length; i += 1) {
     final int lineNumber = i + 1;
     final String line = lines[i].trim();
@@ -159,23 +239,28 @@ void _validateEngineSource(String engineDartPath, String engineDartCode) {
       continue;
     }
 
+    if (line.startsWith('@DefaultAsset')) {
+      // Default asset annotations are OK
+      continue;
+    }
+
+    if (line.startsWith("import 'dart:ffi';")) {
+      // dart:ffi import is an exception to the import rule, since the
+      // @DefaultAsset annotation comes from dart:ffi.
+      continue;
+    }
+
     throw Exception(
-      'on line $lineNumber: unexpected code in $engineDartPath. This file '
+      'on line $lineNumber: unexpected code in $apiFilePath. This file '
       'may only contain comments and exports. Found:\n'
       '$line'
     );
   }
+  return apiFileCode;
 }
 
-String _preprocessEnginePartFile(String source) {
-  if (source.startsWith('part of engine;') || source.contains('\npart of engine;')) {
-    // The file hasn't been migrated yet.
-    // Do nothing.
-  } else {
-    // Insert the part directive at the beginning of the file.
-    source = 'part of engine;\n' + source;
-  }
-  return source;
+String preprocessPartFile(String source, String libraryName) {
+  return 'part of $libraryName;\n$source';
 }
 
 /// Responsible for performing string replacements.

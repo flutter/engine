@@ -3,9 +3,11 @@
 // found in the LICENSE file.
 
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui';
 
-void signalNativeTest() native 'SignalNativeTest';
+@pragma('vm:external-name', 'SignalNativeTest')
+external void signalNativeTest();
 
 void main() {
 }
@@ -14,7 +16,8 @@ void main() {
 ///
 /// This is used to notify the native side of the test of a string value from
 /// the Dart fixture under test.
-void notifyStringValue(String s) native 'NotifyStringValue';
+@pragma('vm:external-name', 'NotifyStringValue')
+external void notifyStringValue(String s);
 
 @pragma('vm:entry-point')
 void executableNameNotNull() {
@@ -54,4 +57,15 @@ Picture _createSimplePicture() {
 @pragma('vm:entry-point')
 void nativeCallback() {
   signalNativeTest();
+}
+
+@pragma('vm:entry-point')
+void backgroundTest() {
+  PlatformDispatcher.instance.views.first.render(SceneBuilder().build());
+  signalNativeTest(); // should look black
+}
+
+@pragma('vm:entry-point')
+void sendFooMessage() {
+  PlatformDispatcher.instance.sendPlatformMessage('foo', null, (ByteData? result) {});
 }

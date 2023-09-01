@@ -2,12 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import 'package:ui/ui.dart' as ui;
 
 import '../dom.dart';
 import '../vector_math.dart';
+import '../window.dart';
 import 'surface.dart';
 
 class SurfaceScene implements ui.Scene {
@@ -17,13 +16,18 @@ class SurfaceScene implements ui.Scene {
   /// To create a Scene object, use a [SceneBuilder].
   SurfaceScene(this.webOnlyRootElement);
 
-  final html.Element? webOnlyRootElement;
+  final DomElement? webOnlyRootElement;
 
   /// Creates a raster image representation of the current state of the scene.
   /// This is a slow operation that is performed on a background thread.
   @override
   Future<ui.Image> toImage(int width, int height) {
     throw UnsupportedError('toImage is not supported on the Web');
+  }
+
+  @override
+  ui.Image toImageSync(int width, int height) {
+    throw UnsupportedError('toImageSync is not supported on the Web');
   }
 
   /// Releases the resources used by this scene.
@@ -35,19 +39,15 @@ class SurfaceScene implements ui.Scene {
 
 /// A surface that creates a DOM element for whole app.
 class PersistedScene extends PersistedContainerSurface {
-  PersistedScene(PersistedScene? oldLayer) : super(oldLayer) {
+  PersistedScene(PersistedScene? super.oldLayer) {
     transform = Matrix4.identity();
   }
 
   @override
   void recomputeTransformAndClip() {
     // The scene clip is the size of the entire window.
-    // TODO(yjbanov): in the add2app scenario where we might be hosted inside
-    //                a custom element, this will be different. We will need to
-    //                update this code when we add add2app support.
-    final double screenWidth = html.window.innerWidth!.toDouble();
-    final double screenHeight = html.window.innerHeight!.toDouble();
-    localClipBounds = ui.Rect.fromLTRB(0, 0, screenWidth, screenHeight);
+    final ui.Size screen = window.physicalSize;
+    localClipBounds = ui.Rect.fromLTRB(0, 0, screen.width, screen.height);
     projectedClip = null;
   }
 

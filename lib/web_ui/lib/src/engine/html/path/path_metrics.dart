@@ -34,7 +34,7 @@ class SurfacePathMetrics extends IterableBase<ui.PathMetric>
     implements ui.PathMetrics {
   SurfacePathMetrics(PathRef path, bool forceClosed)
       : _iterator =
-            SurfacePathMetricIterator._(_SurfacePathMeasure(path, forceClosed));
+            SurfacePathMetricIterator._(_SurfacePathMeasure(PathRef.shallowCopy(path), forceClosed));
 
   final SurfacePathMetricIterator _iterator;
 
@@ -52,7 +52,7 @@ class _SurfacePathMeasure {
         _pathIterator = PathIterator(_path, forceClosed);
 
   final PathRef _path;
-  PathIterator _pathIterator;
+  final PathIterator _pathIterator;
   final List<_PathContourMeasure> _contours = <_PathContourMeasure>[];
 
   // If the contour ends with a call to [Path.close] (which may
@@ -258,16 +258,13 @@ class _PathContourMeasure {
         final double toX = (points[2] * stopT) + (points[0] * (1.0 - stopT));
         final double toY = (points[3] * stopT) + (points[1] * (1.0 - stopT));
         path.lineTo(toX, toY);
-        break;
       case SPath.kCubicVerb:
         chopCubicBetweenT(points, startT, stopT, _buffer);
         path.cubicTo(_buffer[2], _buffer[3], _buffer[4], _buffer[5], _buffer[6],
             _buffer[7]);
-        break;
       case SPath.kQuadVerb:
         _chopQuadBetweenT(points, startT, stopT, _buffer);
         path.quadraticBezierTo(_buffer[2], _buffer[3], _buffer[4], _buffer[5]);
-        break;
       case SPath.kConicVerb:
         // Implement this once we start writing out conic segments.
         throw UnimplementedError();
@@ -309,11 +306,9 @@ class _PathContourMeasure {
       switch (verb) {
         case SPath.kMoveVerb:
           haveSeenMoveTo = true;
-          break;
         case SPath.kLineVerb:
           assert(haveSeenMoveTo);
           lineToHandler(points[0], points[1], points[2], points[3]);
-          break;
         case SPath.kCubicVerb:
           assert(haveSeenMoveTo);
           // Compute cubic curve distance.
@@ -330,7 +325,6 @@ class _PathContourMeasure {
               0,
               _kMaxTValue,
               _segments);
-          break;
         case SPath.kConicVerb:
           assert(haveSeenMoveTo);
           final double w = iter.conicWeight;
@@ -350,13 +344,11 @@ class _PathContourMeasure {
             startX = p2x;
             startY = p2y;
           }
-          break;
         case SPath.kQuadVerb:
           assert(haveSeenMoveTo);
           // Compute quad curve distance.
           distance = _computeQuadSegments(points[0], points[1], points[2],
               points[3], points[4], points[5], distance, 0, _kMaxTValue);
-          break;
         case SPath.kCloseVerb:
           _contourLength = distance;
           return iter.pathVerbIndex;
@@ -494,10 +486,18 @@ class SurfacePathMetricIterator implements Iterator<ui.PathMetric> {
   SurfacePathMetricIterator._(this._pathMeasure);
 
   SurfacePathMetric? _pathMetric;
-  _SurfacePathMeasure _pathMeasure;
+  final _SurfacePathMeasure _pathMeasure;
 
   @override
-  SurfacePathMetric get current => _pathMetric!;
+  SurfacePathMetric get current {
+    if (_pathMetric == null) {
+      throw RangeError(
+          'PathMetricIterator is not pointing to a PathMetric. This can happen in two situations:\n'
+          '- The iteration has not started yet. If so, call "moveNext" to start iteration.\n'
+          '- The iterator ran out of elements. If so, check that "moveNext" returns true prior to calling "current".');
+    }
+    return _pathMetric!;
+  }
 
   @override
   bool moveNext() {
@@ -601,13 +601,12 @@ class SurfacePathMetric implements ui.PathMetric {
 ui.Offset _normalizeSlope(double dx, double dy) {
   final double length = math.sqrt(dx * dx + dy * dy);
   return length < kEpsilon
-      ? const ui.Offset(0.0, 0.0)
+      ? ui.Offset.zero
       : ui.Offset(dx / length, dy / length);
 }
 
 class _SurfaceTangent extends ui.Tangent {
-  const _SurfaceTangent(ui.Offset position, ui.Offset vector, this.t)
-      : super(position, vector);
+  const _SurfaceTangent(super.position, super.vector, this.t);
 
   // Normalized distance of tangent point from start of a contour.
   final double t;
@@ -642,9 +641,9 @@ class _PathSegment {
   _SurfaceTangent tangentForQuadAt(double t, double x0, double y0, double x1,
       double y1, double x2, double y2) {
     assert(t >= 0 && t <= 1);
-    final SkQuadCoefficients _quadEval =
+    final SkQuadCoefficients quadEval =
         SkQuadCoefficients(x0, y0, x1, y1, x2, y2);
-    final ui.Offset pos = ui.Offset(_quadEval.evalX(t), _quadEval.evalY(t));
+    final ui.Offset pos = ui.Offset(quadEval.evalX(t), quadEval.evalY(t));
     // Derivative of quad curve is 2(b - a + (a - 2b + c)t).
     // If control point is at start or end point, this yields 0 for t = 0 and
     // t = 1. In that case use the quad end points to compute tangent instead
@@ -660,9 +659,9 @@ class _PathSegment {
   _SurfaceTangent tangentForCubicAt(double t, double x0, double y0, double x1,
       double y1, double x2, double y2, double x3, double y3) {
     assert(t >= 0 && t <= 1);
-    final _SkCubicCoefficients _cubicEval =
+    final _SkCubicCoefficients cubicEval =
         _SkCubicCoefficients(x0, y0, x1, y1, x2, y2, x3, y3);
-    final ui.Offset pos = ui.Offset(_cubicEval.evalX(t), _cubicEval.evalY(t));
+    final ui.Offset pos = ui.Offset(cubicEval.evalX(t), cubicEval.evalY(t));
     // Derivative of cubic is zero when t = 0 or 1 and adjacent control point
     // is on the start or end point of curve. Use the other control point
     // to compute the tangent or if both control points are on end points
@@ -694,7 +693,6 @@ class _PathSegment {
 
 // Evaluates A * t^3 + B * t^2 + Ct + D = 0 for cubic curve.
 class _SkCubicCoefficients {
-  final double ax, ay, bx, by, cx, cy, dx, dy;
   _SkCubicCoefficients(double x0, double y0, double x1, double y1, double x2,
       double y2, double x3, double y3)
       : ax = x3 + (3 * (x1 - x2)) - x0,
@@ -705,6 +703,8 @@ class _SkCubicCoefficients {
         cy = 3 * (y1 - y0),
         dx = x0,
         dy = y0;
+
+  final double ax, ay, bx, by, cx, cy, dx, dy;
 
   double evalX(double t) => (((ax * t + bx) * t) + cx) * t + dx;
 

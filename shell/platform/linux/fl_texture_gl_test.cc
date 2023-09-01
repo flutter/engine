@@ -12,10 +12,10 @@
 
 #include <epoxy/gl.h>
 
-static constexpr uint32_t BUFFER_WIDTH = 4u;
-static constexpr uint32_t BUFFER_HEIGHT = 4u;
-static constexpr uint32_t REAL_BUFFER_WIDTH = 2u;
-static constexpr uint32_t REAL_BUFFER_HEIGHT = 2u;
+static constexpr uint32_t kBufferWidth = 4u;
+static constexpr uint32_t kBufferHeight = 4u;
+static constexpr uint32_t kRealBufferWidth = 2u;
+static constexpr uint32_t kRealBufferHeight = 2u;
 
 G_DECLARE_FINAL_TYPE(FlTestTexture,
                      fl_test_texture,
@@ -38,12 +38,12 @@ static gboolean fl_test_texture_populate(FlTextureGL* texture,
                                          GError** error) {
   EXPECT_TRUE(FL_IS_TEST_TEXTURE(texture));
 
-  EXPECT_EQ(*width, BUFFER_WIDTH);
-  EXPECT_EQ(*height, BUFFER_HEIGHT);
+  EXPECT_EQ(*width, kBufferWidth);
+  EXPECT_EQ(*height, kBufferHeight);
   *target = GL_TEXTURE_2D;
   *name = 1;
-  *width = REAL_BUFFER_WIDTH;
-  *height = REAL_BUFFER_HEIGHT;
+  *width = kRealBufferWidth;
+  *height = kRealBufferHeight;
 
   return TRUE;
 }
@@ -59,21 +59,20 @@ static FlTestTexture* fl_test_texture_new() {
 }
 
 // Test that getting the texture ID works.
-TEST(FlTextureTest, TextureID) {
-  // Texture ID is not assigned until the testure is populated.
+TEST(FlTextureGLTest, TextureID) {
   g_autoptr(FlTexture) texture = FL_TEXTURE(fl_test_texture_new());
-  EXPECT_EQ(fl_texture_get_texture_id(texture),
-            reinterpret_cast<int64_t>(texture));
+  fl_texture_set_id(texture, 42);
+  EXPECT_EQ(fl_texture_get_id(texture), static_cast<int64_t>(42));
 }
 
 // Test that populating an OpenGL texture works.
-TEST(FlTextureTest, PopulateTexture) {
+TEST(FlTextureGLTest, PopulateTexture) {
   g_autoptr(FlTextureGL) texture = FL_TEXTURE_GL(fl_test_texture_new());
   FlutterOpenGLTexture opengl_texture = {0};
   g_autoptr(GError) error = nullptr;
-  EXPECT_TRUE(fl_texture_gl_populate(texture, BUFFER_WIDTH, BUFFER_HEIGHT,
+  EXPECT_TRUE(fl_texture_gl_populate(texture, kBufferWidth, kBufferHeight,
                                      &opengl_texture, &error));
   EXPECT_EQ(error, nullptr);
-  EXPECT_EQ(opengl_texture.width, REAL_BUFFER_WIDTH);
-  EXPECT_EQ(opengl_texture.height, REAL_BUFFER_HEIGHT);
+  EXPECT_EQ(opengl_texture.width, kRealBufferWidth);
+  EXPECT_EQ(opengl_texture.height, kRealBufferHeight);
 }

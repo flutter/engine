@@ -7,14 +7,13 @@
 #include <lib/async/cpp/time.h>
 #include <lib/async/default.h>
 #include <lib/syslog/global.h>
-#include <lib/ui/scenic/cpp/resources.h>
-#include <lib/ui/scenic/cpp/session.h>
 
+#include "flutter/flutter_vma/flutter_skia_vma.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/vulkan/procs/vulkan_proc_table.h"
 #include "flutter/vulkan/vulkan_application.h"
 #include "flutter/vulkan/vulkan_device.h"
-#include "flutter/vulkan/vulkan_proc_table.h"
 #include "flutter/vulkan/vulkan_provider.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
@@ -27,7 +26,7 @@ namespace flutter_runner {
 class VulkanSurfaceProducer final : public SurfaceProducer,
                                     public vulkan::VulkanProvider {
  public:
-  explicit VulkanSurfaceProducer(scenic::Session* scenic_session);
+  explicit VulkanSurfaceProducer();
   ~VulkanSurfaceProducer() override;
 
   bool IsValid() const { return valid_; }
@@ -54,7 +53,7 @@ class VulkanSurfaceProducer final : public SurfaceProducer,
     return logical_device_->GetHandle();
   }
 
-  bool Initialize(scenic::Session* scenic_session);
+  bool Initialize();
 
   void SubmitSurface(std::unique_ptr<SurfaceProducerSurface> surface);
   bool TransitionSurfacesToExternal(
@@ -76,6 +75,7 @@ class VulkanSurfaceProducer final : public SurfaceProducer,
   std::unique_ptr<vulkan::VulkanDevice> logical_device_;
   sk_sp<GrDirectContext> context_;
   std::unique_ptr<VulkanSurfacePool> surface_pool_;
+  sk_sp<skgpu::VulkanMemoryAllocator> memory_allocator_;
   bool valid_ = false;
 
   // WeakPtrFactory must be the last member.

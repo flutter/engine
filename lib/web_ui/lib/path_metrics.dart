@@ -26,9 +26,7 @@ abstract class PathMetric {
 }
 
 class Tangent {
-  const Tangent(this.position, this.vector)
-      : assert(position != null), // ignore: unnecessary_null_comparison
-        assert(vector != null); // ignore: unnecessary_null_comparison
+  const Tangent(this.position, this.vector);
   factory Tangent.fromAngle(Offset position, double angle) {
     return Tangent(position, Offset(math.cos(angle), math.sin(angle)));
   }

@@ -32,8 +32,14 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
   // the external view embedder.
   int GetSubmittedFrameCount();
 
-  // Returns the size of last submitted frame surface
+  // Returns the size of last submitted frame surface.
   SkISize GetLastSubmittedFrameSize();
+
+  // Returns the mutators stack for the given platform view.
+  MutatorsStack GetStack(int64_t);
+
+  // Returns the list of visited platform views.
+  std::vector<int64_t> GetVisitedPlatformViews();
 
  private:
   // |ExternalViewEmbedder|
@@ -48,7 +54,7 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
 
   // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(
-      int view_id,
+      int64_t view_id,
       std::unique_ptr<EmbeddedViewParams> params) override;
 
   // |ExternalViewEmbedder|
@@ -56,13 +62,19 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
 
   // |ExternalViewEmbedder|
-  std::vector<SkCanvas*> GetCurrentCanvases() override;
+  DlCanvas* CompositeEmbeddedView(int64_t view_id) override;
 
   // |ExternalViewEmbedder|
-  SkCanvas* CompositeEmbeddedView(int view_id) override;
+  void PushVisitedPlatformView(int64_t view_id) override;
+
+  // |ExternalViewEmbedder|
+  void PushFilterToVisitedPlatformViews(
+      std::shared_ptr<const DlImageFilter> filter,
+      const SkRect& filter_rect) override;
 
   // |ExternalViewEmbedder|
   void SubmitFrame(GrDirectContext* context,
+                   const std::shared_ptr<impeller::AiksContext>& aiks_context,
                    std::unique_ptr<SurfaceFrame> frame) override;
 
   // |ExternalViewEmbedder|
@@ -71,7 +83,7 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
 
   // |ExternalViewEmbedder|
-  SkCanvas* GetRootCanvas() override;
+  DlCanvas* GetRootCanvas() override;
 
   // |ExternalViewEmbedder|
   bool SupportsDynamicThreadMerging() override;
@@ -81,7 +93,11 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
   PostPrerollResult post_preroll_result_;
 
   bool support_thread_merging_;
-
+  SkISize frame_size_;
+  std::map<int64_t, std::unique_ptr<EmbedderViewSlice>> slices_;
+  std::map<int64_t, MutatorsStack> mutators_stacks_;
+  std::map<int64_t, EmbeddedViewParams> current_composition_params_;
+  std::vector<int64_t> visited_platform_views_;
   std::atomic<int> submitted_frame_count_;
   std::atomic<SkISize> last_submitted_frame_size_;
 

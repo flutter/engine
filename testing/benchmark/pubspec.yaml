@@ -5,7 +5,7 @@
 name: flutter_engine_benchmark
 publish_to: none
 environment:
-  sdk: '>=2.12.0-0 <3.0.0'
+  sdk: '>=3.0.0-0 <4.0.0'
 
 # Do not add any dependencies that require more than what is provided in
 # //third_party/pkg, //third_party/dart/pkg, or
@@ -33,8 +33,6 @@ dependency_overrides:
     path: ../../../third_party/dart/pkg/async_helper
   async:
     path: ../../../third_party/dart/third_party/pkg/async
-  charcode:
-    path: ../../../third_party/dart/third_party/pkg/charcode
   collection:
     path: ../../../third_party/dart/third_party/pkg/collection
   convert:
@@ -52,9 +50,11 @@ dependency_overrides:
   googleapis_auth:
     path: ../../../third_party/pkg/googleapis/googleapis_auth
   http:
-    path: ../../../third_party/dart/third_party/pkg/http
+    path: ../../../third_party/dart/third_party/pkg/http/pkgs/http
   http_parser:
     path: ../../../third_party/dart/third_party/pkg/http_parser
+  js:
+    path: ../../../third_party/dart/pkg/js
   litetest:
     path: ../litetest
   meta:

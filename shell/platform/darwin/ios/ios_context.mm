@@ -5,7 +5,6 @@
 #import "flutter/shell/platform/darwin/ios/ios_context.h"
 
 #include "flutter/fml/logging.h"
-#import "flutter/shell/platform/darwin/ios/ios_context_gl.h"
 #import "flutter/shell/platform/darwin/ios/ios_context_software.h"
 
 #if SHELL_ENABLE_METAL
@@ -15,23 +14,25 @@
 
 namespace flutter {
 
-IOSContext::IOSContext() = default;
+IOSContext::IOSContext(MsaaSampleCount msaa_samples) : msaa_samples_(msaa_samples) {}
 
 IOSContext::~IOSContext() = default;
 
-std::unique_ptr<IOSContext> IOSContext::Create(IOSRenderingAPI api, IOSRenderingBackend backend) {
+std::unique_ptr<IOSContext> IOSContext::Create(
+    IOSRenderingAPI api,
+    IOSRenderingBackend backend,
+    MsaaSampleCount msaa_samples,
+    std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch) {
   switch (api) {
-    case IOSRenderingAPI::kOpenGLES:
-      return std::make_unique<IOSContextGL>();
     case IOSRenderingAPI::kSoftware:
       return std::make_unique<IOSContextSoftware>();
 #if SHELL_ENABLE_METAL
     case IOSRenderingAPI::kMetal:
       switch (backend) {
         case IOSRenderingBackend::kSkia:
-          return std::make_unique<IOSContextMetalSkia>();
+          return std::make_unique<IOSContextMetalSkia>(msaa_samples);
         case IOSRenderingBackend::kImpeller:
-          return std::make_unique<IOSContextMetalImpeller>();
+          return std::make_unique<IOSContextMetalImpeller>(std::move(is_gpu_disabled_sync_switch));
       }
 #endif  // SHELL_ENABLE_METAL
     default:

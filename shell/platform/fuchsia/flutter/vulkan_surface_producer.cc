@@ -12,8 +12,14 @@
 #include <vector>
 
 #include "flutter/fml/trace_event.h"
+#include "flutter/vulkan/vulkan_skia_proc_table.h"
+#include "flutter_vma/flutter_skia_vma.h"
+
+#include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrBackendSemaphore.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
+#include "third_party/skia/include/gpu/ganesh/vk/GrVkBackendSurface.h"
 #include "third_party/skia/include/gpu/vk/GrVkBackendContext.h"
 #include "third_party/skia/include/gpu/vk/GrVkExtensions.h"
 #include "third_party/skia/include/gpu/vk/GrVkTypes.h"
@@ -35,8 +41,8 @@ constexpr size_t kGrCacheMaxByteSize = 1024 * 600 * 12 * 4;
 
 }  // namespace
 
-VulkanSurfaceProducer::VulkanSurfaceProducer(scenic::Session* scenic_session) {
-  valid_ = Initialize(scenic_session);
+VulkanSurfaceProducer::VulkanSurfaceProducer() {
+  valid_ = Initialize();
 
   if (!valid_) {
     FML_LOG(FATAL) << "VulkanSurfaceProducer: Initialization failed";
@@ -52,7 +58,7 @@ VulkanSurfaceProducer::~VulkanSurfaceProducer() {
   }
 };
 
-bool VulkanSurfaceProducer::Initialize(scenic::Session* scenic_session) {
+bool VulkanSurfaceProducer::Initialize() {
   vk_ = fml::MakeRefCounted<vulkan::VulkanProcTable>();
 
   std::vector<std::string> extensions = {
@@ -98,7 +104,7 @@ bool VulkanSurfaceProducer::Initialize(scenic::Session* scenic_session) {
     return false;
   }
 
-  auto getProc = vk_->CreateSkiaGetProc();
+  auto getProc = CreateSkiaGetProc(vk_);
 
   if (getProc == nullptr) {
     FML_LOG(ERROR) << "VulkanSurfaceProducer: Failed to create skia getProc.";
@@ -113,6 +119,11 @@ bool VulkanSurfaceProducer::Initialize(scenic::Session* scenic_session) {
     return false;
   }
 
+  memory_allocator_ = flutter::FlutterSkiaVulkanMemoryAllocator::Make(
+      application_->GetAPIVersion(), application_->GetInstance(),
+      logical_device_->GetPhysicalDeviceHandle(), logical_device_->GetHandle(),
+      vk_, true);
+
   GrVkBackendContext backend_context;
   backend_context.fInstance = application_->GetInstance();
   backend_context.fPhysicalDevice = logical_device_->GetPhysicalDeviceHandle();
@@ -125,6 +136,8 @@ bool VulkanSurfaceProducer::Initialize(scenic::Session* scenic_session) {
   backend_context.fFeatures = skia_features;
   backend_context.fGetProc = std::move(getProc);
   backend_context.fOwnsInstanceAndDevice = false;
+  backend_context.fMemoryAllocator = memory_allocator_;
+
   // The memory_requirements_2 extension is required on Fuchsia as the AMD
   // memory allocator used by Skia benefit from it.
   const char* device_extensions[] = {
@@ -151,8 +164,7 @@ bool VulkanSurfaceProducer::Initialize(scenic::Session* scenic_session) {
   // Use local limits specified in this file above instead of flutter defaults.
   context_->setResourceCacheLimit(kGrCacheMaxByteSize);
 
-  surface_pool_ =
-      std::make_unique<VulkanSurfacePool>(*this, context_, scenic_session);
+  surface_pool_ = std::make_unique<VulkanSurfacePool>(*this, context_);
 
   return true;
 }
@@ -210,14 +222,14 @@ bool VulkanSurfaceProducer::TransitionSurfacesToExternal(
     if (!command_buffer->Begin())
       return false;
 
-    GrBackendRenderTarget backendRT =
-        vk_surface->GetSkiaSurface()->getBackendRenderTarget(
-            SkSurface::kFlushRead_BackendHandleAccess);
+    GrBackendRenderTarget backendRT = SkSurfaces::GetBackendRenderTarget(
+        vk_surface->GetSkiaSurface().get(),
+        SkSurfaces::BackendHandleAccess::kFlushRead);
     if (!backendRT.isValid()) {
       return false;
     }
     GrVkImageInfo imageInfo;
-    if (!backendRT.getVkImageInfo(&imageInfo)) {
+    if (!GrBackendRenderTargets::GetVkImageInfo(backendRT, &imageInfo)) {
       return false;
     }
 
@@ -248,7 +260,8 @@ bool VulkanSurfaceProducer::TransitionSurfacesToExternal(
             1, &image_barrier))
       return false;
 
-    backendRT.setVkImageLayout(image_barrier.newLayout);
+    GrBackendRenderTargets::SetVkImageLayout(&backendRT,
+                                             image_barrier.newLayout);
 
     if (!command_buffer->End())
       return false;

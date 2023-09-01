@@ -16,15 +16,15 @@ constexpr std::string_view kReflectionHeaderTemplate =
 {# Note: The nogncheck decorations are only to make GN not mad at the template#}
 {# this file is generated from. There are no GN rule violations in the generated#}
 {# file itself and the no-check declarations will be stripped in generated files.#}
-#include "impeller/renderer/buffer_view.h"  {# // nogncheck #}
+#include "impeller/core/buffer_view.h"                {# // nogncheck #}
 
-#include "impeller/renderer/command.h"      {# // nogncheck #}
+#include "impeller/core/sampler.h"                    {# // nogncheck #}
 
-#include "impeller/renderer/sampler.h"      {# // nogncheck #}
+#include "impeller/core/shader_types.h"               {# // nogncheck #}
 
-#include "impeller/renderer/shader_types.h" {# // nogncheck #}
+#include "impeller/core/resource_binder.h"            {# // nogncheck #}
 
-#include "impeller/renderer/texture.h"      {# // nogncheck #}
+#include "impeller/core/texture.h"                    {# // nogncheck #}
 
 
 namespace impeller {
@@ -44,9 +44,13 @@ struct {{camel_case(shader_name)}}{{camel_case(shader_stage)}}Shader {
   // Struct Definitions ========================================================
   // ===========================================================================
 {% for def in struct_definitions %}
+
+{% if last(def.members).array_elements == 0 %}
+  template <size_t FlexCount>
+{% endif %}
   struct {{def.name}} {
 {% for member in def.members %}
-    {{member.type}} {{member.name}}; // (offset {{member.offset}}, size {{member.byte_length}})
+{{"    "}}{% if member.element_padding > 0 %}Padded<{{member.type}}, {{member.element_padding}}>{% else %}{{member.type}}{% endif %}{{" " + member.name}}{% if member.array_elements != "std::nullopt" %}[{% if member.array_elements == 0 %}FlexCount{% else %}{{member.array_elements}}{% endif %}]{% endif %}; // (offset {{member.offset}}, size {{member.byte_length}})
 {% endfor %}
   }; // struct {{def.name}} (size {{def.byte_length}})
 {% endfor %}
@@ -60,7 +64,9 @@ struct {{camel_case(shader_name)}}{{camel_case(shader_stage)}}Shader {
 
   static constexpr auto kResource{{camel_case(buffer.name)}} = ShaderUniformSlot { // {{buffer.name}}
     "{{buffer.name}}",     // name
-    {{buffer.ext_res_0}}u, // binding
+    {{buffer.ext_res_0}}u, // ext_res_0
+    {{buffer.set}}u,       // set
+    {{buffer.binding}}u,   // binding
   };
   static ShaderMetadata kMetadata{{camel_case(buffer.name)}};
 {% endfor %}
@@ -80,7 +86,8 @@ struct {{camel_case(shader_name)}}{{camel_case(shader_stage)}}Shader {
     {{stage_input.type.type_name}},     // type
     {{stage_input.type.bit_width}}u,    // bit width of type
     {{stage_input.type.vec_size}}u,     // vec size
-    {{stage_input.type.columns}}u       // number of columns
+    {{stage_input.type.columns}}u,      // number of columns
+    {{stage_input.offset}}u,            // offset for interleaved layout
   };
 {% endfor %}
 {% endif %}
@@ -90,6 +97,20 @@ struct {{camel_case(shader_name)}}{{camel_case(shader_stage)}}Shader {
     &kInput{{camel_case(stage_input.name)}}, // {{stage_input.name}}
 {% endfor %}
   };
+
+{% if shader_stage == "vertex" %}
+  static constexpr auto kInterleavedLayout = ShaderStageBufferLayout {
+{% if length(stage_inputs) > 0 %}
+    sizeof(PerVertexData),                 // stride for interleaved layout
+{% else %}
+    0u,
+{% endif %}
+    0u,                                    // attribute binding
+  };
+  static constexpr std::array<const ShaderStageBufferLayout*, 1> kInterleavedBufferLayout = {
+    &kInterleavedLayout
+  };
+{% endif %}
 
 {% if length(sampled_images) > 0 %}
   // ===========================================================================
@@ -101,6 +122,8 @@ struct {{camel_case(shader_name)}}{{camel_case(shader_stage)}}Shader {
     "{{sampled_image.name}}",      // name
     {{sampled_image.ext_res_0}}u,  // texture
     {{sampled_image.ext_res_1}}u,  // sampler
+    {{sampled_image.binding}}u,    // binding
+    {{sampled_image.set}}u,        // set
   };
   static ShaderMetadata kMetadata{{camel_case(sampled_image.name)}};
 {% endfor %}
@@ -147,6 +170,26 @@ std::move({{ arg.argument_name }}){% if not loop.is_last %}, {% endif %}
 
 {% endfor %}
 
+  // ===========================================================================
+  // Metadata for Vulkan =======================================================
+  // ===========================================================================
+  static constexpr std::array<DescriptorSetLayout,{{length(buffers)+length(sampled_images)}}> kDescriptorSetLayouts{
+{% for buffer in buffers %}
+    DescriptorSetLayout{
+      {{buffer.binding}}, // binding = {{buffer.binding}}
+      {{buffer.descriptor_type}}, // descriptor_type = {{buffer.descriptor_type}}
+      {{to_shader_stage(shader_stage)}}, // shader_stage = {{to_shader_stage(shader_stage)}}
+    },
+{% endfor %}
+{% for sampled_image in sampled_images %}
+    DescriptorSetLayout{
+      {{sampled_image.binding}}, // binding = {{sampled_image.binding}}
+      {{sampled_image.descriptor_type}}, // descriptor_type = {{sampled_image.descriptor_type}}
+      {{to_shader_stage(shader_stage)}}, // shader_stage = {{to_shader_stage(shader_stage)}}
+    },
+{% endfor %}
+  };
+
 };  // struct {{camel_case(shader_name)}}{{camel_case(shader_stage)}}Shader
 
 }  // namespace impeller
@@ -166,11 +209,18 @@ using Shader = {{camel_case(shader_name)}}{{camel_case(shader_stage)}}Shader;
 
 {% for def in struct_definitions %}
 // Sanity checks for {{def.name}}
+{% if last(def.members).array_elements == 0 %}
+static_assert(std::is_standard_layout_v<Shader::{{def.name}}<0>>);
+{% for member in def.members %}
+static_assert(offsetof(Shader::{{def.name}}<0>, {{member.name}}) == {{member.offset}});
+{% endfor %}
+{% else %}
 static_assert(std::is_standard_layout_v<Shader::{{def.name}}>);
 static_assert(sizeof(Shader::{{def.name}}) == {{def.byte_length}});
 {% for member in def.members %}
 static_assert(offsetof(Shader::{{def.name}}, {{member.name}}) == {{member.offset}});
 {% endfor %}
+{% endif %}
 {% endfor %}
 
 {% for buffer in buffers %}
@@ -179,10 +229,12 @@ ShaderMetadata Shader::kMetadata{{camel_case(buffer.name)}} = {
   std::vector<ShaderStructMemberMetadata> {
     {% for member in buffer.type.members %}
       ShaderStructMemberMetadata {
-        {{ member.base_type }}, // type
-        "{{ member.name }}",    // name
-        {{ member.offset }},    // offset
-        {{ member.size }},      // size
+        {{ member.base_type }},      // type
+        "{{ member.name }}",         // name
+        {{ member.offset }},         // offset
+        {{ member.size }},           // size
+        {{ member.byte_length }},    // byte_length
+        {{ member.array_elements }}, // array_elements
       },
     {% endfor %}
   } // members

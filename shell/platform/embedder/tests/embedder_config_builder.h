@@ -80,6 +80,8 @@ class EmbedderConfigBuilder {
   // Used to set a custom log message handler.
   void SetLogMessageCallbackHook();
 
+  void SetChannelUpdateCallbackHook();
+
   // Used to set a custom log tag.
   void SetLogTag(std::string tag);
 
@@ -104,8 +106,12 @@ class EmbedderConfigBuilder {
 
   FlutterCompositor& GetCompositor();
 
+  FlutterRendererConfig& GetRendererConfig();
+
   void SetRenderTargetType(
-      EmbedderTestBackingStoreProducer::RenderTargetType type);
+      EmbedderTestBackingStoreProducer::RenderTargetType type,
+      FlutterSoftwarePixelFormat software_pixfmt =
+          kFlutterSoftwarePixelFormatNative32);
 
   UniqueEngine LaunchEngine() const;
 

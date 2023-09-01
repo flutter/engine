@@ -58,25 +58,38 @@ static std::string SLFileName(const char* fixture_name,
   return stream.str();
 }
 
-bool CompilerTest::CanCompileAndReflect(const char* fixture_name) const {
-  auto fixture = flutter::testing::OpenFixtureAsMapping(fixture_name);
-  if (!fixture->GetMapping()) {
+std::unique_ptr<fml::FileMapping> CompilerTest::GetReflectionJson(
+    const char* fixture_name) const {
+  auto filename = ReflectionJSONName(fixture_name);
+  auto fd = fml::OpenFileReadOnly(intermediates_directory_, filename.c_str());
+  return fml::FileMapping::CreateReadOnly(fd);
+}
+
+bool CompilerTest::CanCompileAndReflect(const char* fixture_name,
+                                        SourceType source_type,
+                                        SourceLanguage source_language,
+                                        const char* entry_point_name) const {
+  std::shared_ptr<fml::Mapping> fixture =
+      flutter::testing::OpenFixtureAsMapping(fixture_name);
+  if (!fixture || !fixture->GetMapping()) {
     VALIDATION_LOG << "Could not find shader in fixtures: " << fixture_name;
     return false;
   }
 
-  SourceOptions source_options(fixture_name);
+  SourceOptions source_options(fixture_name, source_type);
   source_options.target_platform = GetParam();
+  source_options.source_language = source_language;
   source_options.working_directory = std::make_shared<fml::UniqueFD>(
       flutter::testing::OpenFixturesDirectory());
   source_options.entry_point_name = EntryPointFunctionNameFromSourceName(
-      fixture_name, SourceTypeFromFileName(fixture_name));
+      fixture_name, SourceTypeFromFileName(fixture_name), source_language,
+      entry_point_name);
 
   Reflector::Options reflector_options;
   reflector_options.header_file_name = ReflectionHeaderName(fixture_name);
   reflector_options.shader_name = "shader_name";
 
-  Compiler compiler(*fixture.get(), source_options, reflector_options);
+  Compiler compiler(fixture, source_options, reflector_options);
   if (!compiler.IsValid()) {
     VALIDATION_LOG << "Compilation failed: " << compiler.GetErrorMessages();
     return false;
@@ -95,19 +108,17 @@ bool CompilerTest::CanCompileAndReflect(const char* fixture_name) const {
     return false;
   }
 
-  if (TargetPlatformNeedsSL(GetParam())) {
-    auto sl_source = compiler.GetSLShaderSource();
-    if (!sl_source) {
-      VALIDATION_LOG << "No SL source was generated.";
-      return false;
-    }
+  auto sl_source = compiler.GetSLShaderSource();
+  if (!sl_source) {
+    VALIDATION_LOG << "No SL source was generated.";
+    return false;
+  }
 
-    if (!fml::WriteAtomically(intermediates_directory_,
-                              SLFileName(fixture_name, GetParam()).c_str(),
-                              *sl_source)) {
-      VALIDATION_LOG << "Could not write SL intermediates.";
-      return false;
-    }
+  if (!fml::WriteAtomically(intermediates_directory_,
+                            SLFileName(fixture_name, GetParam()).c_str(),
+                            *sl_source)) {
+    VALIDATION_LOG << "Could not write SL intermediates.";
+    return false;
   }
 
   if (TargetPlatformNeedsReflection(GetParam())) {
@@ -146,19 +157,18 @@ bool CompilerTest::CanCompileAndReflect(const char* fixture_name) const {
 
     if (!fml::WriteAtomically(intermediates_directory_,
                               ReflectionCCName(fixture_name).c_str(),
-                              *reflection_header)) {
+                              *reflection_source)) {
       VALIDATION_LOG << "Could not write reflection CC intermediates.";
       return false;
     }
 
     if (!fml::WriteAtomically(intermediates_directory_,
                               ReflectionJSONName(fixture_name).c_str(),
-                              *reflection_header)) {
+                              *reflection_json)) {
       VALIDATION_LOG << "Could not write reflection json intermediates.";
       return false;
     }
   }
-
   return true;
 }
 

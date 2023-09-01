@@ -97,7 +97,8 @@ import java.util.Set;
   FlutterEngineConnectionRegistry(
       @NonNull Context appContext,
       @NonNull FlutterEngine flutterEngine,
-      @NonNull FlutterLoader flutterLoader) {
+      @NonNull FlutterLoader flutterLoader,
+      @Nullable FlutterEngineGroup group) {
     this.flutterEngine = flutterEngine;
     pluginBinding =
         new FlutterPlugin.FlutterPluginBinding(
@@ -106,7 +107,8 @@ import java.util.Set;
             flutterEngine.getDartExecutor(),
             flutterEngine.getRenderer(),
             flutterEngine.getPlatformViewsController().getRegistry(),
-            new DefaultFlutterAssets(flutterLoader));
+            new DefaultFlutterAssets(flutterLoader),
+            group);
   }
 
   public void destroy() {
@@ -331,9 +333,11 @@ import java.util.Set;
     this.activityPluginBinding = new FlutterEngineActivityPluginBinding(activity, lifecycle);
 
     final boolean useSoftwareRendering =
-        activity
-            .getIntent()
-            .getBooleanExtra(FlutterShellArgs.ARG_KEY_ENABLE_SOFTWARE_RENDERING, false);
+        activity.getIntent() != null
+            ? activity
+                .getIntent()
+                .getBooleanExtra(FlutterShellArgs.ARG_KEY_ENABLE_SOFTWARE_RENDERING, false)
+            : false;
     flutterEngine.getPlatformViewsController().setSoftwareRendering(useSoftwareRendering);
 
     // Activate the PlatformViewsController. This must happen before any plugins attempt
@@ -729,6 +733,10 @@ import java.util.Set;
         onUserLeaveHintListeners = new HashSet<>();
 
     @NonNull
+    private final Set<io.flutter.plugin.common.PluginRegistry.WindowFocusChangedListener>
+        onWindowFocusChangedListeners = new HashSet<>();
+
+    @NonNull
     private final Set<OnSaveInstanceStateListener> onSaveInstanceStateListeners = new HashSet<>();
 
     public FlutterEngineActivityPluginBinding(
@@ -841,6 +849,25 @@ import java.util.Set;
     public void removeOnUserLeaveHintListener(
         @NonNull io.flutter.plugin.common.PluginRegistry.UserLeaveHintListener listener) {
       onUserLeaveHintListeners.remove(listener);
+    }
+
+    @Override
+    public void addOnWindowFocusChangedListener(
+        @NonNull io.flutter.plugin.common.PluginRegistry.WindowFocusChangedListener listener) {
+      onWindowFocusChangedListeners.add(listener);
+    }
+
+    @Override
+    public void removeOnWindowFocusChangedListener(
+        @NonNull io.flutter.plugin.common.PluginRegistry.WindowFocusChangedListener listener) {
+      onWindowFocusChangedListeners.remove(listener);
+    }
+
+    void onWindowFocusChanged(boolean hasFocus) {
+      for (io.flutter.plugin.common.PluginRegistry.WindowFocusChangedListener listener :
+          onWindowFocusChangedListeners) {
+        listener.onWindowFocusChanged(hasFocus);
+      }
     }
 
     @Override

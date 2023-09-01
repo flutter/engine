@@ -22,15 +22,13 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Protocol for listener of events from the UIApplication, typically a FlutterPlugin.
  */
-@protocol FlutterApplicationLifeCycleDelegate
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_10_0
-    <UNUserNotificationCenterDelegate>
-#endif
+@protocol FlutterApplicationLifeCycleDelegate <UNUserNotificationCenterDelegate>
+
 @optional
 /**
  * Called if this has been registered for `UIApplicationDelegate` callbacks.
  *
- * @return `NO` if this vetoes application launch.
+ * @return `NO` if this vetos application launch.
  */
 - (BOOL)application:(UIApplication*)application
     didFinishLaunchingWithOptions:(NSDictionary*)launchOptions;
@@ -38,7 +36,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Called if this has been registered for `UIApplicationDelegate` callbacks.
  *
- * @return `NO` if this vetoes application launch.
+ * @return `NO` if this vetos application launch.
  */
 - (BOOL)application:(UIApplication*)application
     willFinishLaunchingWithOptions:(NSDictionary*)launchOptions;
@@ -355,7 +353,8 @@ typedef enum {
  *
  * @param delegate The receiving object, such as the plugin's main class.
  */
-- (void)addApplicationDelegate:(NSObject<FlutterPlugin>*)delegate;
+- (void)addApplicationDelegate:(NSObject<FlutterPlugin>*)delegate
+    NS_EXTENSION_UNAVAILABLE_IOS("Disallowed in plugins used in app extensions");
 
 /**
  * Returns the file name for the given asset.
@@ -432,10 +431,7 @@ typedef enum {
  * For plugins to receive events from `UNUserNotificationCenter`, register this as the
  * `UNUserNotificationCenterDelegate`.
  */
-@protocol FlutterAppLifeCycleProvider
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_10_0
-    <UNUserNotificationCenterDelegate>
-#endif
+@protocol FlutterAppLifeCycleProvider <UNUserNotificationCenterDelegate>
 
 /**
  * Called when registering a new `FlutterApplicaitonLifeCycleDelegate`.

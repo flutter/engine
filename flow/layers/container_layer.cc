@@ -107,11 +107,9 @@ void ContainerLayer::Add(std::shared_ptr<Layer> layer) {
   layers_.emplace_back(std::move(layer));
 }
 
-void ContainerLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
-  TRACE_EVENT0("flutter", "ContainerLayer::Preroll");
-
+void ContainerLayer::Preroll(PrerollContext* context) {
   SkRect child_paint_bounds = SkRect::MakeEmpty();
-  PrerollChildren(context, matrix, &child_paint_bounds);
+  PrerollChildren(context, &child_paint_bounds);
   set_paint_bounds(child_paint_bounds);
 }
 
@@ -129,34 +127,35 @@ static bool safe_intersection_test(const SkRect* rect1, const SkRect& rect2) {
 }
 
 void ContainerLayer::PrerollChildren(PrerollContext* context,
-                                     const SkMatrix& child_matrix,
                                      SkRect* child_paint_bounds) {
   // Platform views have no children, so context->has_platform_view should
   // always be false.
   FML_DCHECK(!context->has_platform_view);
+  FML_DCHECK(!context->has_texture_layer);
+
   bool child_has_platform_view = false;
   bool child_has_texture_layer = false;
-  bool subtree_can_inherit_opacity = context->subtree_can_inherit_opacity;
+  bool all_renderable_state_flags = LayerStateStack::kCallerCanApplyAnything;
 
   for (auto& layer : layers_) {
-    // Reset context->has_platform_view to false so that layers aren't treated
-    // as if they have a platform view based on one being previously found in a
-    // sibling tree.
+    // Reset context->has_platform_view and context->has_texture_layer to false
+    // so that layers aren't treated as if they have a platform view or texture
+    // layer based on one being previously found in a sibling tree.
     context->has_platform_view = false;
-    // Initialize the "inherit opacity" flag to false and allow the layer to
-    // override the answer during its |Preroll|
-    context->subtree_can_inherit_opacity = false;
+    context->has_texture_layer = false;
 
-    layer->Preroll(context, child_matrix);
+    // Initialize the renderable state flags to false to force the layer to
+    // opt-in to applying state attributes during its |Preroll|
+    context->renderable_state_flags = 0;
 
-    subtree_can_inherit_opacity =
-        subtree_can_inherit_opacity && context->subtree_can_inherit_opacity;
-    if (subtree_can_inherit_opacity &&
-        safe_intersection_test(child_paint_bounds, layer->paint_bounds())) {
+    layer->Preroll(context);
+
+    all_renderable_state_flags &= context->renderable_state_flags;
+    if (safe_intersection_test(child_paint_bounds, layer->paint_bounds())) {
       // This will allow inheritance by a linear sequence of non-overlapping
       // children, but will fail with a grid or other arbitrary 2D layout.
       // See https://github.com/flutter/flutter/issues/93899
-      subtree_can_inherit_opacity = false;
+      all_renderable_state_flags = 0;
     }
     child_paint_bounds->join(layer->paint_bounds());
 
@@ -168,9 +167,10 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
 
   context->has_platform_view = child_has_platform_view;
   context->has_texture_layer = child_has_texture_layer;
-  context->subtree_can_inherit_opacity = subtree_can_inherit_opacity;
+  context->renderable_state_flags = all_renderable_state_flags;
   set_subtree_has_platform_view(child_has_platform_view);
-  child_paint_bounds_ = *child_paint_bounds;
+  set_children_renderable_state_flags(all_renderable_state_flags);
+  set_child_paint_bounds(*child_paint_bounds);
 }
 
 void ContainerLayer::PaintChildren(PaintContext& context) const {
@@ -180,27 +180,17 @@ void ContainerLayer::PaintChildren(PaintContext& context) const {
   // layer calls PaintChildren(), though, it may have modified the
   // PaintContext so the test doesn't work in this "context".
 
+  // Apply any outstanding state that the children cannot individually
+  // and collectively handle.
+  auto restore = context.state_stack.applyState(
+      child_paint_bounds(), children_renderable_state_flags());
+
   // Intentionally not tracing here as there should be no self-time
   // and the trace event on this common function has a small overhead.
   for (auto& layer : layers_) {
     if (layer->needs_painting(context)) {
       layer->Paint(context);
     }
-  }
-}
-
-void ContainerLayer::TryToPrepareRasterCache(
-    PrerollContext* context,
-    Layer* layer,
-    const SkMatrix& matrix,
-    RasterCacheLayerStrategy strategy) {
-  if (!context->has_platform_view && !context->has_texture_layer &&
-      context->raster_cache &&
-      SkRect::Intersects(context->cull_rect, layer->paint_bounds())) {
-    context->raster_cache->Prepare(context, layer, matrix, strategy);
-  } else if (context->raster_cache) {
-    // Don't evict raster cache entry during partial repaint
-    context->raster_cache->Touch(layer, matrix, strategy);
   }
 }
 

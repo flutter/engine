@@ -4,12 +4,11 @@
 
 #include "solid_color_contents.h"
 
+#include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/path.h"
-#include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/tessellator/tessellator.h"
 
 namespace impeller {
 
@@ -21,84 +20,93 @@ void SolidColorContents::SetColor(Color color) {
   color_ = color;
 }
 
-const Color& SolidColorContents::GetColor() const {
-  return color_;
+Color SolidColorContents::GetColor() const {
+  return color_.WithAlpha(color_.alpha * GetOpacityFactor());
 }
 
-void SolidColorContents::SetPath(Path path) {
-  path_ = std::move(path);
+bool SolidColorContents::IsSolidColor() const {
+  return true;
 }
 
-void SolidColorContents::SetCover(bool cover) {
-  cover_ = cover;
+bool SolidColorContents::IsOpaque() const {
+  return GetColor().IsOpaque();
 }
 
 std::optional<Rect> SolidColorContents::GetCoverage(
     const Entity& entity) const {
-  return path_.GetTransformedBoundingBox(entity.GetTransformation());
-};
-
-VertexBuffer SolidColorContents::CreateSolidFillVertices(const Path& path,
-                                                         HostBuffer& buffer) {
-  using VS = SolidFillPipeline::VertexShader;
-
-  VertexBufferBuilder<VS::PerVertexData> vtx_builder;
-
-  auto tesselation_result = Tessellator{}.Tessellate(
-      path.GetFillType(), path.CreatePolyline(), [&vtx_builder](auto point) {
-        VS::PerVertexData vtx;
-        vtx.vertices = point;
-        vtx_builder.AppendVertex(vtx);
-      });
-  if (tesselation_result != Tessellator::Result::kSuccess) {
-    return {};
+  if (GetColor().IsTransparent()) {
+    return std::nullopt;
   }
 
-  return vtx_builder.CreateVertexBuffer(buffer);
-}
+  auto geometry = GetGeometry();
+  if (geometry == nullptr) {
+    return std::nullopt;
+  }
+  return geometry->GetCoverage(entity.GetTransformation());
+};
 
 bool SolidColorContents::Render(const ContentContext& renderer,
                                 const Entity& entity,
                                 RenderPass& pass) const {
-  if (color_.IsTransparent()) {
-    return true;
-  }
+  auto capture = entity.GetCapture().CreateChild("SolidColorContents");
 
   using VS = SolidFillPipeline::VertexShader;
 
   Command cmd;
-  cmd.label = "Solid Fill";
-  cmd.pipeline =
-      renderer.GetSolidFillPipeline(OptionsFromPassAndEntity(pass, entity));
+  DEBUG_COMMAND_INFO(cmd, "Solid Fill");
   cmd.stencil_reference = entity.GetStencilDepth();
 
-  cmd.BindVertices(CreateSolidFillVertices(
-      cover_
-          ? PathBuilder{}.AddRect(Size(pass.GetRenderTargetSize())).TakePath()
-          : path_,
-      pass.GetTransientsBuffer()));
+  auto geometry_result =
+      GetGeometry()->GetPositionBuffer(renderer, entity, pass);
+
+  auto options = OptionsFromPassAndEntity(pass, entity);
+  if (geometry_result.prevent_overdraw) {
+    options.stencil_compare = CompareFunction::kEqual;
+    options.stencil_operation = StencilOperation::kIncrementClamp;
+  }
+
+  options.primitive_type = geometry_result.type;
+  cmd.pipeline = renderer.GetSolidFillPipeline(options);
+  cmd.BindVertices(geometry_result.vertex_buffer);
 
   VS::FrameInfo frame_info;
-  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation();
-  frame_info.color = color_.Premultiply();
+  frame_info.mvp = capture.AddMatrix("Transform", geometry_result.transform);
+  frame_info.color = capture.AddColor("Color", GetColor()).Premultiply();
   VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
-
-  cmd.primitive_type = PrimitiveType::kTriangle;
 
   if (!pass.AddCommand(std::move(cmd))) {
     return false;
   }
 
+  if (geometry_result.prevent_overdraw) {
+    auto restore = ClipRestoreContents();
+    restore.SetRestoreCoverage(GetCoverage(entity));
+    return restore.Render(renderer, entity, pass);
+  }
   return true;
 }
 
-std::unique_ptr<SolidColorContents> SolidColorContents::Make(Path path,
+std::unique_ptr<SolidColorContents> SolidColorContents::Make(const Path& path,
                                                              Color color) {
   auto contents = std::make_unique<SolidColorContents>();
-  contents->SetPath(std::move(path));
+  contents->SetGeometry(Geometry::MakeFillPath(path));
   contents->SetColor(color);
   return contents;
+}
+
+std::optional<Color> SolidColorContents::AsBackgroundColor(
+    const Entity& entity,
+    ISize target_size) const {
+  Rect target_rect = Rect::MakeSize(target_size);
+  return GetGeometry()->CoversArea(entity.GetTransformation(), target_rect)
+             ? GetColor()
+             : std::optional<Color>();
+}
+
+bool SolidColorContents::ApplyColorFilter(
+    const ColorFilterProc& color_filter_proc) {
+  color_ = color_filter_proc(color_);
+  return true;
 }
 
 }  // namespace impeller

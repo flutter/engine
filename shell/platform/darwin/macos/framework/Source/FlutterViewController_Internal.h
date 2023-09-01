@@ -4,41 +4,84 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h"
 
+#include <memory>
+
+#import "flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMac.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardViewDelegate.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 
 @interface FlutterViewController () <FlutterKeyboardViewDelegate>
 
+/**
+ * The identifier for this view controller.
+ *
+ * The ID is assigned by FlutterEngine when the view controller is attached.
+ *
+ * If the view controller is unattached (see FlutterViewController#attached),
+ * reading this property throws an assertion.
+ */
+@property(nonatomic, readonly) FlutterViewId viewId;
+
 // The FlutterView for this view controller.
 @property(nonatomic, readonly, nullable) FlutterView* flutterView;
-
-/**
- * This just returns the NSPasteboard so that it can be mocked in the tests.
- */
-@property(nonatomic, readonly, nonnull) NSPasteboard* pasteboard;
 
 /**
  * The text input plugin that handles text editing state for text fields.
  */
 @property(nonatomic, readonly, nonnull) FlutterTextInputPlugin* textInputPlugin;
 
+@property(nonatomic, readonly) std::weak_ptr<flutter::AccessibilityBridgeMac> accessibilityBridge;
+
 /**
- * Initializes this FlutterViewController with the specified `FlutterEngine`.
- *
- * The initialized viewcontroller will attach itself to the engine as part of this process.
- *
- * @param engine The `FlutterEngine` instance to attach to. Cannot be nil.
- * @param nibName The NIB name to initialize this controller with.
- * @param nibBundle The NIB bundle.
+ * Returns YES if provided event is being currently redispatched by keyboard manager.
  */
-- (nonnull instancetype)initWithEngine:(nonnull FlutterEngine*)engine
-                               nibName:(nullable NSString*)nibName
-                                bundle:(nullable NSBundle*)nibBundle NS_DESIGNATED_INITIALIZER;
+- (BOOL)isDispatchingKeyEvent:(nonnull NSEvent*)event;
+
+/**
+ * Set up the controller with `engine` and `id`, and other engine-level classes.
+ *
+ * This method is called by FlutterEngine. A view controller must be set up
+ * before being used, and must be set up only once until detachFromEngine:.
+ */
+- (void)setUpWithEngine:(nonnull FlutterEngine*)engine
+                 viewId:(FlutterViewId)viewId
+     threadSynchronizer:(nonnull FlutterThreadSynchronizer*)threadSynchronizer;
+
+/**
+ * Reset the `engine` and `id` of this controller.
+ *
+ * This method is called by FlutterEngine.
+ */
+- (void)detachFromEngine;
+
+/**
+ * Called by the associated FlutterEngine when FlutterEngine#semanticsEnabled
+ * has changed.
+ */
+- (void)notifySemanticsEnabledChanged;
+
+/**
+ * Notify from the framework that the semantics for this view needs to be
+ * updated.
+ */
+- (void)updateSemantics:(nonnull const FlutterSemanticsUpdate2*)update;
 
 @end
 
 // Private methods made visible for testing
 @interface FlutterViewController (TestMethods)
-- (void)onAccessibilityStatusChanged:(nonnull NSNotification*)notification;
+- (void)onAccessibilityStatusChanged:(BOOL)enabled;
+
+/* Creates an accessibility bridge with the provided parameters.
+ *
+ * By default this method calls AccessibilityBridgeMac's initializer. Exposing
+ * this method allows unit tests to override.
+ */
+- (std::shared_ptr<flutter::AccessibilityBridgeMac>)createAccessibilityBridgeWithEngine:
+    (nonnull FlutterEngine*)engine;
+
+- (nonnull FlutterView*)createFlutterViewWithMTLDevice:(nonnull id<MTLDevice>)device
+                                          commandQueue:(nonnull id<MTLCommandQueue>)commandQueue;
+
 @end

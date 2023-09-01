@@ -110,7 +110,7 @@ void main() {
     expect(p.getBounds(),
         equals(const Rect.fromLTRB(0.0, 0.0, 20 + (10 * 2.5), 20 + (10 * .5))));
 
-    p.extendWithPath(p2, const Offset(0.0, 0.0));
+    p.extendWithPath(p2, Offset.zero);
     expect(p.getBounds(), equals(const Rect.fromLTRB(0.0, 0.0, 45.0, 25.0)));
 
     p.extendWithPath(p2, const Offset(45.0, 25.0), matrix4: scaleMatrix);
@@ -224,5 +224,20 @@ void main() {
     expect(newFirstMetric.isClosed, true);
     expect(newFirstMetric.getTangentForOffset(4.0)!.vector, const Offset(0.0, 1.0));
     expect(newFirstMetric.extractPath(4.0, 10.0).computeMetrics().first.length, 6.0);
+  });
+
+  test('PathMetrics on a mutated path', () {
+    final Path path = Path()
+      ..lineTo(0, 30)
+      ..lineTo(40, 30)
+      ..moveTo(100, 0)
+      ..lineTo(100, 30)
+      ..lineTo(140, 30)
+      ..close();
+    final PathMetrics metrics = path.computeMetrics();
+    expect(metrics.toString(),
+      '(PathMetric(length: 70.0, isClosed: false, contourIndex: 0), '
+       'PathMetric(length: 120.0, isClosed: true, contourIndex: 1))',
+    );
   });
 }

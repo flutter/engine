@@ -6,7 +6,6 @@
 
 #include <fuchsia/sysmem/cpp/fidl.h>
 #include <lib/async/default.h>
-#include <lib/ui/scenic/cpp/commands.h>
 
 #include <algorithm>
 
@@ -18,6 +17,8 @@
 #include "third_party/skia/include/gpu/GrBackendSemaphore.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
+#include "third_party/skia/include/gpu/ganesh/vk/GrVkBackendSurface.h"
 #include "vulkan/vulkan_core.h"
 #include "vulkan/vulkan_fuchsia.h"
 
@@ -147,15 +148,13 @@ VulkanSurface::VulkanSurface(
     fuchsia::sysmem::AllocatorSyncPtr& sysmem_allocator,
     fuchsia::ui::composition::AllocatorPtr& flatland_allocator,
     sk_sp<GrDirectContext> context,
-    scenic::Session* session,
-    const SkISize& size,
-    uint32_t buffer_id)
-    : vulkan_provider_(vulkan_provider), session_(session), wait_(this) {
-  FML_CHECK(session_ || flatland_allocator.is_bound());
+    const SkISize& size)
+    : vulkan_provider_(vulkan_provider), wait_(this) {
+  FML_CHECK(flatland_allocator.is_bound());
   FML_CHECK(context != nullptr);
 
   if (!AllocateDeviceMemory(sysmem_allocator, flatland_allocator,
-                            std::move(context), size, buffer_id)) {
+                            std::move(context), size)) {
     FML_LOG(ERROR) << "VulkanSurface: Could not allocate device memory.";
     return;
   }
@@ -164,8 +163,6 @@ VulkanSurface::VulkanSurface(
     FML_LOG(ERROR) << "VulkanSurface: Could not create signal fences.";
     return;
   }
-
-  PushSessionImageSetupOps(session);
 
   std::fill(size_history_.begin(), size_history_.end(), SkISize::MakeEmpty());
 
@@ -177,14 +174,7 @@ VulkanSurface::VulkanSurface(
 }
 
 VulkanSurface::~VulkanSurface() {
-  if (session_) {
-    if (image_id_) {
-      session_->Enqueue(scenic::NewReleaseResourceCmd(image_id_));
-    }
-    if (buffer_id_) {
-      session_->DeregisterBufferCollection(buffer_id_);
-    }
-  } else {
+  if (release_image_callback_) {
     release_image_callback_();
   }
   wait_.Cancel();
@@ -274,8 +264,7 @@ bool VulkanSurface::AllocateDeviceMemory(
     fuchsia::sysmem::AllocatorSyncPtr& sysmem_allocator,
     fuchsia::ui::composition::AllocatorPtr& flatland_allocator,
     sk_sp<GrDirectContext> context,
-    const SkISize& size,
-    uint32_t buffer_id) {
+    const SkISize& size) {
   if (size.isEmpty()) {
     FML_LOG(ERROR)
         << "VulkanSurface: Failed to allocate surface, size is empty";
@@ -296,29 +285,23 @@ bool VulkanSurface::AllocateDeviceMemory(
   LOG_AND_RETURN(status != ZX_OK,
                  "VulkanSurface: Failed to sync collection token");
 
-  if (session_) {
-    session_->RegisterBufferCollection(buffer_id, std::move(scenic_token));
-    buffer_id_ = buffer_id;
-  } else {
-    fuchsia::ui::composition::BufferCollectionExportToken export_token;
-    status =
-        zx::eventpair::create(0, &export_token.value, &import_token_.value);
+  fuchsia::ui::composition::BufferCollectionExportToken export_token;
+  status = zx::eventpair::create(0, &export_token.value, &import_token_.value);
 
-    fuchsia::ui::composition::RegisterBufferCollectionArgs args;
-    args.set_export_token(std::move(export_token));
-    args.set_buffer_collection_token(std::move(scenic_token));
-    args.set_usage(
-        fuchsia::ui::composition::RegisterBufferCollectionUsage::DEFAULT);
-    flatland_allocator->RegisterBufferCollection(
-        std::move(args),
-        [](fuchsia::ui::composition::Allocator_RegisterBufferCollection_Result
-               result) {
-          if (result.is_err()) {
-            FML_LOG(ERROR)
-                << "RegisterBufferCollection call to Scenic Allocator failed";
-          }
-        });
-  }
+  fuchsia::ui::composition::RegisterBufferCollectionArgs args;
+  args.set_export_token(std::move(export_token));
+  args.set_buffer_collection_token(std::move(scenic_token));
+  args.set_usage(
+      fuchsia::ui::composition::RegisterBufferCollectionUsage::DEFAULT);
+  flatland_allocator->RegisterBufferCollection(
+      std::move(args),
+      [](fuchsia::ui::composition::Allocator_RegisterBufferCollection_Result
+             result) {
+        if (result.is_err()) {
+          FML_LOG(ERROR)
+              << "RegisterBufferCollection call to Scenic Allocator failed";
+        }
+      });
 
   VkBufferCollectionCreateInfoFUCHSIA import_info{
       .sType = VK_STRUCTURE_TYPE_BUFFER_COLLECTION_CREATE_INFO_FUCHSIA,
@@ -426,23 +409,23 @@ bool VulkanSurface::SetupSkiaSurface(sk_sp<GrDirectContext> context,
   image_info.fSampleCount = 1;
   image_info.fLevelCount = image_create_info.mipLevels;
 
-  GrBackendRenderTarget sk_render_target(size.width(), size.height(), 0,
-                                         image_info);
+  auto sk_render_target =
+      GrBackendRenderTargets::MakeVk(size.width(), size.height(), image_info);
 
   SkSurfaceProps sk_surface_props(0, kUnknown_SkPixelGeometry);
 
   auto sk_surface =
-      SkSurface::MakeFromBackendRenderTarget(context.get(),             //
-                                             sk_render_target,          //
-                                             kTopLeft_GrSurfaceOrigin,  //
-                                             color_type,                //
-                                             SkColorSpace::MakeSRGB(),  //
-                                             &sk_surface_props          //
+      SkSurfaces::WrapBackendRenderTarget(context.get(),             //
+                                          sk_render_target,          //
+                                          kTopLeft_GrSurfaceOrigin,  //
+                                          color_type,                //
+                                          SkColorSpace::MakeSRGB(),  //
+                                          &sk_surface_props          //
       );
 
   if (!sk_surface || sk_surface->getCanvas() == nullptr) {
     FML_LOG(ERROR)
-        << "VulkanSurface: SkSurface::MakeFromBackendRenderTarget failed";
+        << "VulkanSurface: SkSurfaces::WrapBackendRenderTarget failed";
     return false;
   }
   sk_surface_ = std::move(sk_surface);
@@ -450,18 +433,8 @@ bool VulkanSurface::SetupSkiaSurface(sk_sp<GrDirectContext> context,
   return true;
 }
 
-void VulkanSurface::PushSessionImageSetupOps(scenic::Session* session) {
-  if (session) {
-    if (image_id_ == 0)
-      image_id_ = session->AllocResourceId();
-    session->Enqueue(scenic::NewCreateImage2Cmd(
-        image_id_, sk_surface_->width(), sk_surface_->height(), buffer_id_, 0));
-  }
-}
-
 void VulkanSurface::SetImageId(uint32_t image_id) {
   FML_CHECK(image_id_ == 0);
-  FML_CHECK(!session_);
   image_id_ = image_id;
 }
 
@@ -475,28 +448,24 @@ sk_sp<SkSurface> VulkanSurface::GetSkiaSurface() const {
 
 fuchsia::ui::composition::BufferCollectionImportToken
 VulkanSurface::GetBufferCollectionImportToken() {
-  FML_CHECK(!session_);
   fuchsia::ui::composition::BufferCollectionImportToken import_dup;
   import_token_.value.duplicate(ZX_RIGHT_SAME_RIGHTS, &import_dup.value);
   return import_dup;
 }
 
 zx::event VulkanSurface::GetAcquireFence() {
-  FML_CHECK(!session_);
   zx::event fence;
   acquire_event_.duplicate(ZX_RIGHT_SAME_RIGHTS, &fence);
   return fence;
 }
 
 zx::event VulkanSurface::GetReleaseFence() {
-  FML_CHECK(!session_);
   zx::event fence;
   release_event_.duplicate(ZX_RIGHT_SAME_RIGHTS, &fence);
   return fence;
 }
 void VulkanSurface::SetReleaseImageCallback(
     ReleaseImageCallback release_image_callback) {
-  FML_CHECK(!session_);
   release_image_callback_ = release_image_callback;
 }
 
@@ -508,16 +477,6 @@ size_t VulkanSurface::AdvanceAndGetAge() {
 }
 
 bool VulkanSurface::FlushSessionAcquireAndReleaseEvents() {
-  if (session_) {
-    zx::event acquire, release;
-    if (acquire_event_.duplicate(ZX_RIGHT_SAME_RIGHTS, &acquire) != ZX_OK ||
-        release_event_.duplicate(ZX_RIGHT_SAME_RIGHTS, &release) != ZX_OK) {
-      return false;
-    }
-    session_->EnqueueAcquireFence(std::move(acquire));
-    session_->EnqueueReleaseFence(std::move(release));
-  }
-
   age_ = 0;
   return true;
 }

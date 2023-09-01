@@ -4,13 +4,17 @@
 
 #pragma once
 
+#include <memory>
+
 #include "flutter/fml/macros.h"
 #include "flutter/impeller/renderer/backend/gles/reactor_gles.h"
 #include "flutter/impeller/renderer/render_pass.h"
 
 namespace impeller {
 
-class RenderPassGLES final : public RenderPass {
+class RenderPassGLES final
+    : public RenderPass,
+      public std::enable_shared_from_this<RenderPassGLES> {
  public:
   // |RenderPass|
   ~RenderPassGLES() override;
@@ -22,7 +26,9 @@ class RenderPassGLES final : public RenderPass {
   std::string label_;
   bool is_valid_ = false;
 
-  RenderPassGLES(RenderTarget target, ReactorGLES::Ref reactor);
+  RenderPassGLES(std::weak_ptr<const Context> context,
+                 const RenderTarget& target,
+                 ReactorGLES::Ref reactor);
 
   // |RenderPass|
   bool IsValid() const override;
@@ -31,8 +37,7 @@ class RenderPassGLES final : public RenderPass {
   void OnSetLabel(std::string label) override;
 
   // |RenderPass|
-  bool EncodeCommands(
-      const std::shared_ptr<Allocator>& transients_allocator) const override;
+  bool OnEncodeCommands(const Context& context) const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RenderPassGLES);
 };

@@ -4,6 +4,8 @@
 
 #include "flutter/shell/profiling/sampling_profiler.h"
 
+#include <utility>
+
 namespace flutter {
 
 SamplingProfiler::SamplingProfiler(
@@ -12,7 +14,7 @@ SamplingProfiler::SamplingProfiler(
     Sampler sampler,
     int num_samples_per_sec)
     : thread_label_(thread_label),
-      profiler_task_runner_(profiler_task_runner),
+      profiler_task_runner_(std::move(profiler_task_runner)),
       sampler_(std::move(sampler)),
       num_samples_per_sec_(num_samples_per_sec) {}
 
@@ -31,7 +33,7 @@ void SamplingProfiler::Start() {
       << num_samples_per_sec_;
   double delay_between_samples = 1.0 / num_samples_per_sec_;
   auto task_delay = fml::TimeDelta::FromSecondsF(delay_between_samples);
-  UpdateObservatoryThreadName();
+  UpdateDartVMServiceThreadName();
   is_running_ = true;
   SampleRepeatedly(task_delay);
 }
@@ -86,7 +88,7 @@ void SamplingProfiler::SampleRepeatedly(fml::TimeDelta task_delay) const {
       task_delay);
 }
 
-void SamplingProfiler::UpdateObservatoryThreadName() const {
+void SamplingProfiler::UpdateDartVMServiceThreadName() const {
   FML_CHECK(profiler_task_runner_);
 
   profiler_task_runner_->PostTask(

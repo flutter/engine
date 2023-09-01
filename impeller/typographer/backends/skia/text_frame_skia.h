@@ -10,6 +10,7 @@
 
 namespace impeller {
 
-TextFrame TextFrameFromTextBlob(sk_sp<SkTextBlob> blob, Scalar scale = 1.0f);
+std::optional<TextFrame> MakeTextFrameFromTextBlobSkia(
+    const sk_sp<SkTextBlob>& blob);
 
 }  // namespace impeller

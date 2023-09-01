@@ -31,7 +31,9 @@ class TextRun {
   ///
   /// @param[in]  font  The font
   ///
-  TextRun(Font font);
+  explicit TextRun(const Font& font);
+
+  TextRun(const Font& font, std::vector<GlyphPosition>& glyphs);
 
   ~TextRun();
 

@@ -5,12 +5,15 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui';
+import 'dart:isolate';
+import 'dart:ffi' hide Size;
 
 void main() {}
 
 /// Mutiple tests use this to signal to the C++ side that they are ready for
 /// validation.
-void _finish() native 'Finish';
+@pragma('vm:external-name', 'Finish')
+external void _finish();
 
 @pragma('vm:entry-point')
 void customOnErrorTrue() {
@@ -40,6 +43,12 @@ void customOnErrorThrow() {
 }
 
 @pragma('vm:entry-point')
+void setLatencyPerformanceMode() {
+  PlatformDispatcher.instance.requestDartPerformanceMode(DartPerformanceMode.latency);
+  _finish();
+}
+
+@pragma('vm:entry-point')
 void validateSceneBuilderAndScene() {
   final SceneBuilder builder = SceneBuilder();
   builder.pushOffset(10, 10);
@@ -50,10 +59,15 @@ void validateSceneBuilderAndScene() {
   scene.dispose();
   _validateSceneHasNoLayers();
 }
-_validateBuilderHasLayers(SceneBuilder builder) native 'ValidateBuilderHasLayers';
-_validateBuilderHasNoLayers() native 'ValidateBuilderHasNoLayers';
-_captureScene(Scene scene) native 'CaptureScene';
-_validateSceneHasNoLayers() native 'ValidateSceneHasNoLayers';
+
+@pragma('vm:external-name', 'ValidateBuilderHasLayers')
+external _validateBuilderHasLayers(SceneBuilder builder);
+@pragma('vm:external-name', 'ValidateBuilderHasNoLayers')
+external _validateBuilderHasNoLayers();
+@pragma('vm:external-name', 'CaptureScene')
+external _captureScene(Scene scene);
+@pragma('vm:external-name', 'ValidateSceneHasNoLayers')
+external _validateSceneHasNoLayers();
 
 @pragma('vm:entry-point')
 void validateEngineLayerDispose() {
@@ -66,9 +80,13 @@ void validateEngineLayerDispose() {
   layer.dispose();
   _validateEngineLayerDispose();
 }
-_captureRootLayer(SceneBuilder sceneBuilder) native 'CaptureRootLayer';
-_validateLayerTreeCounts() native 'ValidateLayerTreeCounts';
-_validateEngineLayerDispose() native 'ValidateEngineLayerDispose';
+
+@pragma('vm:external-name', 'CaptureRootLayer')
+external _captureRootLayer(SceneBuilder sceneBuilder);
+@pragma('vm:external-name', 'ValidateLayerTreeCounts')
+external _validateLayerTreeCounts();
+@pragma('vm:external-name', 'ValidateEngineLayerDispose')
+external _validateEngineLayerDispose();
 
 @pragma('vm:entry-point')
 Future<void> createSingleFrameCodec() async {
@@ -90,7 +108,9 @@ Future<void> createSingleFrameCodec() async {
   assert(buffer.debugDisposed);
   _finish();
 }
-void _validateCodec(Codec codec) native 'ValidateCodec';
+
+@pragma('vm:external-name', 'ValidateCodec')
+external void _validateCodec(Codec codec);
 
 @pragma('vm:entry-point')
 void createVertices() {
@@ -118,7 +138,9 @@ void createVertices() {
   );
   _validateVertices(vertices);
 }
-void _validateVertices(Vertices vertices) native 'ValidateVertices';
+
+@pragma('vm:external-name', 'ValidateVertices')
+external void _validateVertices(Vertices vertices);
 
 @pragma('vm:entry-point')
 void sendSemanticsUpdate() {
@@ -204,12 +226,12 @@ void sendSemanticsUpdate() {
     transform: transform,
     childrenInTraversalOrder: childrenInTraversalOrder,
     childrenInHitTestOrder: childrenInHitTestOrder,
-    additionalActions: additionalActions
-  );
+    additionalActions: additionalActions);
   _semanticsUpdate(builder.build());
 }
 
-void _semanticsUpdate(SemanticsUpdate update) native 'SemanticsUpdate';
+@pragma('vm:external-name', 'SemanticsUpdate')
+external void _semanticsUpdate(SemanticsUpdate update);
 
 @pragma('vm:entry-point')
 void createPath() {
@@ -221,19 +243,58 @@ void createPath() {
     path.lineTo(100, 100);
   });
 }
-void _validatePath(Path path) native 'ValidatePath';
+
+@pragma('vm:external-name', 'ValidatePath')
+external void _validatePath(Path path);
 
 @pragma('vm:entry-point')
-void frameCallback(_Image, int) {
-  print('called back');
+void frameCallback(Object? image, int durationMilliseconds, String decodeError) {
+  validateFrameCallback(image, durationMilliseconds, decodeError);
 }
+
+@pragma('vm:external-name', 'ValidateFrameCallback')
+external void validateFrameCallback(Object? image, int durationMilliseconds, String decodeError);
+
+@pragma('vm:entry-point')
+void platformMessagePortResponseTest() async {
+  ReceivePort receivePort = ReceivePort();
+  _callPlatformMessageResponseDartPort(receivePort.sendPort.nativePort);
+  List<dynamic> resultList = await receivePort.first;
+  int identifier = resultList[0] as int;
+  Uint8List? bytes = resultList[1] as Uint8List?;
+  ByteData result = ByteData.sublistView(bytes!);
+  if (result.lengthInBytes == 100) {
+    _finishCallResponse(true);
+  } else {
+    _finishCallResponse(false);
+  }
+}
+
+@pragma('vm:entry-point')
+void platformMessageResponseTest() {
+  _callPlatformMessageResponseDart((ByteData? result) {
+    if (result is UnmodifiableByteDataView &&
+        result.lengthInBytes == 100) {
+      _finishCallResponse(true);
+    } else {
+      _finishCallResponse(false);
+    }
+  });
+}
+
+@pragma('vm:external-name', 'CallPlatformMessageResponseDartPort')
+external void _callPlatformMessageResponseDartPort(int port);
+@pragma('vm:external-name', 'CallPlatformMessageResponseDart')
+external void _callPlatformMessageResponseDart(void Function(ByteData? result) callback);
+@pragma('vm:external-name', 'FinishCallResponse')
+external void _finishCallResponse(bool didPass);
 
 @pragma('vm:entry-point')
 void messageCallback(dynamic data) {}
 
 @pragma('vm:entry-point')
-void validateConfiguration() native 'ValidateConfiguration';
-
+@pragma('vm:external-name', 'ValidateConfiguration')
+external void validateConfiguration();
 
 // Draw a circle on a Canvas that has a PictureRecorder. Take the image from
 // the PictureRecorder, and encode it as png. Check that the png data is
@@ -256,9 +317,11 @@ Future<void> encodeImageProducesExternalUint8List() async {
     _validateExternal(result);
   });
 }
-void _encodeImage(Image i, int format, void Function(Uint8List result))
-  native 'EncodeImage';
-void _validateExternal(Uint8List result) native 'ValidateExternal';
+
+@pragma('vm:external-name', 'EncodeImage')
+external void _encodeImage(Image i, int format, void Function(Uint8List result));
+@pragma('vm:external-name', 'ValidateExternal')
+external void _validateExternal(Uint8List result);
 
 @pragma('vm:entry-point')
 Future<void> pumpImage() async {
@@ -319,13 +382,28 @@ Future<void> pumpImage() async {
   window.onBeginFrame = renderImage;
   window.scheduleFrame();
 }
-void _captureImageAndPicture(Image image, Picture picture) native 'CaptureImageAndPicture';
+
+@pragma('vm:external-name', 'CaptureImageAndPicture')
+external void _captureImageAndPicture(Image image, Picture picture);
 
 @pragma('vm:entry-point')
-void hooksTests() {
-  void test(String name, VoidCallback testFunction) {
+void convertPaintToDlPaint() {
+  Paint paint = Paint();
+  paint.blendMode = BlendMode.modulate;
+  paint.color = Color.fromARGB(0x11, 0x22, 0x33, 0x44);
+  paint.colorFilter = ColorFilter.mode(Color.fromARGB(0x55, 0x66, 0x77, 0x88), BlendMode.xor);
+  paint.maskFilter = MaskFilter.blur(BlurStyle.inner, .75);
+  paint.style = PaintingStyle.stroke;
+  _convertPaintToDlPaint(paint);
+}
+@pragma('vm:external-name',  'ConvertPaintToDlPaint')
+external void _convertPaintToDlPaint(Paint paint);
+
+@pragma('vm:entry-point')
+void hooksTests() async {
+  Future<void> test(String name, FutureOr<void> Function() testFunction) async {
     try {
-      testFunction();
+      await testFunction();
     } catch (e) {
       print('Test "$name" failed!');
       rethrow;
@@ -350,7 +428,7 @@ void hooksTests() {
     }
   }
 
-  test('onMetricsChanged preserves callback zone', () {
+  await test('onMetricsChanged preserves callback zone', () {
     late Zone originalZone;
     late Zone callbackZone;
     late double devicePixelRatio;
@@ -366,7 +444,7 @@ void hooksTests() {
     window.onMetricsChanged!();
     _callHook(
       '_updateWindowMetrics',
-      20,
+      21,
       0, // window Id
       0.1234, // device pixel ratio
       0.0,    // width
@@ -387,6 +465,7 @@ void hooksTests() {
       <double>[],  // display features bounds
       <int>[],     // display features types
       <int>[],     // display features states
+      0, // Display ID
     );
 
     expectIdentical(originalZone, callbackZone);
@@ -395,7 +474,7 @@ void hooksTests() {
     }
   });
 
-  test('onError preserves the callback zone', () {
+  await test('onError preserves the callback zone', () {
     late Zone originalZone;
     late Zone callbackZone;
     final Object error = Exception('foo');
@@ -412,14 +491,15 @@ void hooksTests() {
     });
 
     _callHook('_onError', 2, error, StackTrace.current);
+    PlatformDispatcher.instance.onError = null;
     expectIdentical(originalZone, callbackZone);
   });
 
-  test('updateUserSettings can handle an empty object', () {
+  await test('updateUserSettings can handle an empty object', () {
     _callHook('_updateUserSettingsData', 1, '{}');
   });
 
-  test('PlatformDispatcher.locale returns unknown locale when locales is set to empty list', () {
+  await test('PlatformDispatcher.locale returns unknown locale when locales is set to empty list', () {
     late Locale locale;
     int callCount = 0;
     runZoned(() {
@@ -450,7 +530,7 @@ void hooksTests() {
     }
   });
 
-  test('deprecated region equals', () {
+  await test('deprecated region equals', () {
     // These are equal because ZR is deprecated and was mapped to CD.
     const Locale x = Locale('en', 'ZR');
     const Locale y = Locale('en', 'CD');
@@ -458,10 +538,15 @@ void hooksTests() {
     expectEquals(x.countryCode, y.countryCode);
   });
 
-  test('Window padding/insets/viewPadding/systemGestureInsets', () {
+  await test('PlatformDispatcher.view getter returns view with provided ID', () {
+    const int viewId = 0;
+    expectEquals(PlatformDispatcher.instance.view(id: viewId)?.viewId, viewId);
+  });
+
+  await test('View padding/insets/viewPadding/systemGestureInsets', () {
     _callHook(
       '_updateWindowMetrics',
-      20,
+      21,
       0, // window Id
       1.0, // devicePixelRatio
       800.0, // width
@@ -482,6 +567,7 @@ void hooksTests() {
       <double>[],  // display features bounds
       <int>[],     // display features types
       <int>[],     // display features states
+      0, // Display ID
     );
 
     expectEquals(window.viewInsets.bottom, 0.0);
@@ -491,7 +577,7 @@ void hooksTests() {
 
     _callHook(
       '_updateWindowMetrics',
-      20,
+      21,
       0, // window Id
       1.0, // devicePixelRatio
       800.0, // width
@@ -512,6 +598,7 @@ void hooksTests() {
       <double>[],  // display features bounds
       <int>[],     // display features types
       <int>[],     // display features states
+      0, // Display ID
     );
 
     expectEquals(window.viewInsets.bottom, 400.0);
@@ -520,10 +607,10 @@ void hooksTests() {
     expectEquals(window.systemGestureInsets.bottom, 44.0);
   });
 
-   test('Window physical touch slop', () {
+  await test('Window physical touch slop', () {
     _callHook(
       '_updateWindowMetrics',
-      20,
+      21,
       0, // window Id
       1.0, // devicePixelRatio
       800.0, // width
@@ -544,14 +631,15 @@ void hooksTests() {
       <double>[],  // display features bounds
       <int>[],     // display features types
       <int>[],     // display features states
+      0, // Display ID
     );
 
-    expectEquals(window.viewConfiguration.gestureSettings,
+    expectEquals(window.gestureSettings,
       GestureSettings(physicalTouchSlop: 11.0));
 
     _callHook(
       '_updateWindowMetrics',
-      20,
+      21,
       0, // window Id
       1.0, // devicePixelRatio
       800.0, // width
@@ -572,14 +660,15 @@ void hooksTests() {
       <double>[],  // display features bounds
       <int>[],     // display features types
       <int>[],     // display features states
+      0, // Display ID
     );
 
-    expectEquals(window.viewConfiguration.gestureSettings,
+    expectEquals(window.gestureSettings,
       GestureSettings(physicalTouchSlop: null));
 
     _callHook(
       '_updateWindowMetrics',
-      20,
+      21,
       0, // window Id
       1.0, // devicePixelRatio
       800.0, // width
@@ -600,13 +689,14 @@ void hooksTests() {
       <double>[],  // display features bounds
       <int>[],     // display features types
       <int>[],     // display features states
+      0, // Display ID
     );
 
-    expectEquals(window.viewConfiguration.gestureSettings,
+    expectEquals(window.gestureSettings,
       GestureSettings(physicalTouchSlop: 22.0));
   });
 
-  test('onLocaleChanged preserves callback zone', () {
+  await test('onLocaleChanged preserves callback zone', () {
     late Zone innerZone;
     late Zone runZone;
     Locale? locale;
@@ -624,7 +714,7 @@ void hooksTests() {
     expectEquals(locale, const Locale('en', 'US'));
   });
 
-  test('onBeginFrame preserves callback zone', () {
+  await test('onBeginFrame preserves callback zone', () {
     late Zone innerZone;
     late Zone runZone;
     late Duration start;
@@ -642,7 +732,7 @@ void hooksTests() {
     expectEquals(start, const Duration(microseconds: 1234));
   });
 
-  test('onDrawFrame preserves callback zone', () {
+  await test('onDrawFrame preserves callback zone', () {
     late Zone innerZone;
     late Zone runZone;
 
@@ -657,7 +747,7 @@ void hooksTests() {
     expectIdentical(runZone, innerZone);
   });
 
-  test('onReportTimings preserves callback zone', () {
+  await test('onReportTimings preserves callback zone', () {
     late Zone innerZone;
     late Zone runZone;
 
@@ -672,7 +762,7 @@ void hooksTests() {
     expectIdentical(runZone, innerZone);
   });
 
-  test('onPointerDataPacket preserves callback zone', () {
+  await test('onPointerDataPacket preserves callback zone', () {
     late Zone innerZone;
     late Zone runZone;
     late PointerDataPacket data;
@@ -691,7 +781,7 @@ void hooksTests() {
     expectEquals(data.data.length, 0);
   });
 
-  test('onSemanticsEnabledChanged preserves callback zone', () {
+  await test('onSemanticsEnabledChanged preserves callback zone', () {
     late Zone innerZone;
     late Zone runZone;
     late bool enabled;
@@ -710,28 +800,26 @@ void hooksTests() {
     expectEquals(enabled, newValue);
   });
 
-  test('onSemanticsAction preserves callback zone', () {
+  await test('onSemanticsActionEvent preserves callback zone', () {
     late Zone innerZone;
     late Zone runZone;
-    late int id;
-    late int action;
+    late SemanticsActionEvent action;
 
     runZoned(() {
       innerZone = Zone.current;
-      window.onSemanticsAction = (int i, SemanticsAction a, ByteData? _) {
+      PlatformDispatcher.instance.onSemanticsActionEvent = (SemanticsActionEvent actionEvent) {
         runZone = Zone.current;
-        action = a.index;
-        id = i;
+        action = actionEvent;
       };
     });
 
     _callHook('_dispatchSemanticsAction', 3, 1234, 4, null);
     expectIdentical(runZone, innerZone);
-    expectEquals(id, 1234);
-    expectEquals(action, 4);
+    expectEquals(action.nodeId, 1234);
+    expectEquals(action.type.index, 4);
   });
 
-  test('onPlatformMessage preserves callback zone', () {
+  await test('onPlatformMessage preserves callback zone', () {
     late Zone innerZone;
     late Zone runZone;
     late String name;
@@ -749,7 +837,7 @@ void hooksTests() {
     expectEquals(name, 'testName');
   });
 
-  test('onTextScaleFactorChanged preserves callback zone', () {
+  await test('onTextScaleFactorChanged preserves callback zone', () {
     late Zone innerZone;
     late Zone runZoneTextScaleFactor;
     late Zone runZonePlatformBrightness;
@@ -783,7 +871,7 @@ void hooksTests() {
     expectEquals(platformBrightness, Brightness.dark);
   });
 
-  test('onFrameDataChanged preserves callback zone', () {
+  await test('onFrameDataChanged preserves callback zone', () {
     late Zone innerZone;
     late Zone runZone;
     late int frameNumber;
@@ -802,7 +890,29 @@ void hooksTests() {
     expectEquals(frameNumber, 2);
   });
 
-  test('_futureize handles callbacker sync error', () async {
+  await test('_updateDisplays preserves callback zone', () {
+    late Zone innerZone;
+    late Zone runZone;
+    late Display display;
+
+    runZoned(() {
+      innerZone = Zone.current;
+      window.onMetricsChanged = () {
+        runZone = Zone.current;
+        display = PlatformDispatcher.instance.displays.first;
+      };
+    });
+
+    _callHook('_updateDisplays', 5, <int>[0], <double>[800], <double>[600], <double>[1.5], <double>[65]);
+    expectNotEquals(runZone, null);
+    expectIdentical(runZone, innerZone);
+    expectEquals(display.id, 0);
+    expectEquals(display.size, const Size(800, 600));
+    expectEquals(display.devicePixelRatio, 1.5);
+    expectEquals(display.refreshRate, 65);
+  });
+
+  await test('_futureize handles callbacker sync error', () async {
     String? callbacker(void Function(Object? arg) cb) {
       return 'failure';
     }
@@ -815,7 +925,7 @@ void hooksTests() {
     expectNotEquals(error, null);
   });
 
-  test('_futureize does not leak sync uncaught exceptions into the zone', () async {
+  await test('_futureize does not leak sync uncaught exceptions into the zone', () async {
     String? callbacker(void Function(Object? arg) cb) {
       cb(null); // indicates failure
     }
@@ -828,7 +938,7 @@ void hooksTests() {
     expectNotEquals(error, null);
   });
 
-  test('_futureize does not leak async uncaught exceptions into the zone', () async {
+  await test('_futureize does not leak async uncaught exceptions into the zone', () async {
     String? callbacker(void Function(Object? arg) cb) {
       Timer.run(() {
         cb(null); // indicates failure
@@ -843,7 +953,7 @@ void hooksTests() {
     expectNotEquals(error, null);
   });
 
-  test('_futureize successfully returns a value sync', () async {
+  await test('_futureize successfully returns a value sync', () async {
     String? callbacker(void Function(Object? arg) cb) {
       cb(true);
     }
@@ -852,7 +962,7 @@ void hooksTests() {
     expectEquals(result, true);
   });
 
-  test('_futureize successfully returns a value async', () async {
+  await test('_futureize successfully returns a value async', () async {
     String? callbacker(void Function(Object? arg) cb) {
       Timer.run(() {
         cb(true);
@@ -863,7 +973,53 @@ void hooksTests() {
     expectEquals(result, true);
   });
 
+  await test('root isolate token', () async {
+    if (RootIsolateToken.instance == null) {
+      throw Exception('We should have a token on a root isolate.');
+    }
+    ReceivePort receivePort = ReceivePort();
+    Isolate.spawn(_backgroundRootIsolateTestMain, receivePort.sendPort);
+    bool didPass = await receivePort.first as bool;
+    if (!didPass) {
+      throw Exception('Background isolate found a root isolate id.');
+    }
+  });
+
+  await test('send port message without registering', () async {
+    ReceivePort receivePort = ReceivePort();
+    Isolate.spawn(_backgroundIsolateSendWithoutRegistering, receivePort.sendPort);
+    bool didError = await receivePort.first as bool;
+    if (!didError) {
+      throw Exception('Expected an error when not registering a root isolate and sending port messages.');
+    }
+  });
+
   _finish();
+}
+
+/// Sends `true` on [port] if the isolate executing the function is not a root
+/// isolate.
+void _backgroundRootIsolateTestMain(SendPort port) {
+  port.send(RootIsolateToken.instance == null);
+}
+
+/// Sends `true` on [port] if [PlatformDispatcher.sendPortPlatformMessage]
+/// throws an exception without calling
+/// [PlatformDispatcher.registerBackgroundIsolate].
+void _backgroundIsolateSendWithoutRegistering(SendPort port) {
+  bool didError = false;
+  ReceivePort messagePort = ReceivePort();
+  try {
+    PlatformDispatcher.instance.sendPortPlatformMessage(
+      'foo',
+      null,
+      1,
+      messagePort.sendPort,
+    );
+  } catch (_) {
+    didError = true;
+  }
+  port.send(didError);
 }
 
 typedef _Callback<T> = void Function(T result);
@@ -894,7 +1050,8 @@ Future<T> _futurize<T>(_Callbacker<T> callbacker) {
   return completer.future;
 }
 
-void _callHook(
+@pragma('vm:external-name', 'CallHook')
+external void _callHook(
   String name, [
   int argCount = 0,
   Object? arg0,
@@ -917,4 +1074,5 @@ void _callHook(
   Object? arg18,
   Object? arg19,
   Object? arg20,
-]) native 'CallHook';
+  Object? arg21,
+]);

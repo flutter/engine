@@ -11,8 +11,6 @@ import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.StandardMethodCodec;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
@@ -38,10 +36,7 @@ public class PlatformViewsChannel {
   }
 
   private static String detailedExceptionString(Exception exception) {
-    StringWriter stringWriter = new StringWriter();
-    PrintWriter printWriter = new PrintWriter(stringWriter);
-    exception.printStackTrace(printWriter);
-    return stringWriter.toString();
+    return Log.getStackTraceString(exception);
   }
 
   private final MethodChannel.MethodCallHandler parsingHandler =
@@ -105,10 +100,20 @@ public class PlatformViewsChannel {
                       0,
                       0,
                       (int) createArgs.get("direction"),
+                      PlatformViewCreationRequest.RequestedDisplayMode.HYBRID_ONLY,
                       additionalParams);
               handler.createForPlatformViewLayer(request);
               result.success(null);
             } else {
+              final boolean hybridFallback =
+                  createArgs.containsKey("hybridFallback")
+                      && (boolean) createArgs.get("hybridFallback");
+              final PlatformViewCreationRequest.RequestedDisplayMode displayMode =
+                  hybridFallback
+                      ? PlatformViewCreationRequest.RequestedDisplayMode
+                          .TEXTURE_WITH_HYBRID_FALLBACK
+                      : PlatformViewCreationRequest.RequestedDisplayMode
+                          .TEXTURE_WITH_VIRTUAL_FALLBACK;
               final PlatformViewCreationRequest request =
                   new PlatformViewCreationRequest(
                       (int) createArgs.get("id"),
@@ -118,9 +123,19 @@ public class PlatformViewsChannel {
                       (double) createArgs.get("width"),
                       (double) createArgs.get("height"),
                       (int) createArgs.get("direction"),
+                      displayMode,
                       additionalParams);
               long textureId = handler.createForTextureLayer(request);
-              result.success(textureId);
+              if (textureId == PlatformViewsHandler.NON_TEXTURE_FALLBACK) {
+                if (!hybridFallback) {
+                  throw new AssertionError(
+                      "Platform view attempted to fall back to hybrid mode when not requested.");
+                }
+                // A fallback to hybrid mode is indicated with a null texture ID.
+                result.success(null);
+              } else {
+                result.success(textureId);
+              }
             }
           } catch (IllegalStateException exception) {
             result.error("error", detailedExceptionString(exception), null);
@@ -147,15 +162,18 @@ public class PlatformViewsChannel {
                   (double) resizeArgs.get("width"),
                   (double) resizeArgs.get("height"));
           try {
-            final PlatformViewBufferSize sz = handler.resize(resizeRequest);
-            if (sz == null) {
-              result.error("error", "Failed to resize the platform view", null);
-            } else {
-              final Map<String, Object> response = new HashMap<>();
-              response.put("width", (double) sz.width);
-              response.put("height", (double) sz.height);
-              result.success(response);
-            }
+            handler.resize(
+                resizeRequest,
+                (PlatformViewBufferSize bufferSize) -> {
+                  if (bufferSize == null) {
+                    result.error("error", "Failed to resize the platform view", null);
+                  } else {
+                    final Map<String, Object> response = new HashMap<>();
+                    response.put("width", (double) bufferSize.width);
+                    response.put("height", (double) bufferSize.height);
+                    result.success(response);
+                  }
+                });
           } catch (IllegalStateException exception) {
             result.error("error", detailedExceptionString(exception), null);
           }
@@ -268,6 +286,15 @@ public class PlatformViewsChannel {
    * PlatformViewsChannel#setPlatformViewsHandler(PlatformViewsHandler)}.
    */
   public interface PlatformViewsHandler {
+    /*
+     * The ID returned by {@code createForTextureLayer} to indicate that the requested texture mode
+     * was not available and the view creation fell back to {@code PlatformViewLayer} mode.
+     *
+     * This can only be returned if the {@link PlatformViewCreationRequest} sets
+     * {@code TEXTURE_WITH_HYBRID_FALLBACK} as the requested display mode.
+     */
+    static final long NON_TEXTURE_FALLBACK = -2;
+
     /**
      * The Flutter application would like to display a new Android {@code View}, i.e., platform
      * view.
@@ -298,9 +325,11 @@ public class PlatformViewsChannel {
      * The Flutter application would like to resize an existing Android {@code View}.
      *
      * @param request The request to resize the platform view.
-     * @return The buffer size where the platform view pixels are written to.
+     * @param onComplete Once the resize is completed, this is the handler to notify the size of the
+     *     platform view buffer.
      */
-    PlatformViewBufferSize resize(@NonNull PlatformViewResizeRequest request);
+    void resize(
+        @NonNull PlatformViewResizeRequest request, @NonNull PlatformViewBufferResized onComplete);
 
     /**
      * The Flutter application would like to change the offset of an existing Android {@code View}.
@@ -336,6 +365,16 @@ public class PlatformViewsChannel {
 
   /** Request sent from Flutter to create a new platform view. */
   public static class PlatformViewCreationRequest {
+    /** Platform view display modes that can be requested at creation time. */
+    public enum RequestedDisplayMode {
+      /** Use Texture Layer if possible, falling back to Virtual Display if not. */
+      TEXTURE_WITH_VIRTUAL_FALLBACK,
+      /** Use Texture Layer if possible, falling back to Hybrid Composition if not. */
+      TEXTURE_WITH_HYBRID_FALLBACK,
+      /** Use Hybrid Composition in all cases. */
+      HYBRID_ONLY,
+    }
+
     /** The ID of the platform view as seen by the Flutter side. */
     public final int viewId;
 
@@ -362,6 +401,8 @@ public class PlatformViewsChannel {
      */
     public final int direction;
 
+    public final RequestedDisplayMode displayMode;
+
     /** Custom parameters that are unique to the desired platform view. */
     @Nullable public final ByteBuffer params;
 
@@ -375,6 +416,29 @@ public class PlatformViewsChannel {
         double logicalHeight,
         int direction,
         @Nullable ByteBuffer params) {
+      this(
+          viewId,
+          viewType,
+          logicalTop,
+          logicalLeft,
+          logicalWidth,
+          logicalHeight,
+          direction,
+          RequestedDisplayMode.TEXTURE_WITH_VIRTUAL_FALLBACK,
+          params);
+    }
+
+    /** Creates a request to construct a platform view with the given display mode. */
+    public PlatformViewCreationRequest(
+        int viewId,
+        @NonNull String viewType,
+        double logicalTop,
+        double logicalLeft,
+        double logicalWidth,
+        double logicalHeight,
+        int direction,
+        RequestedDisplayMode displayMode,
+        @Nullable ByteBuffer params) {
       this.viewId = viewId;
       this.viewType = viewType;
       this.logicalTop = logicalTop;
@@ -382,6 +446,7 @@ public class PlatformViewsChannel {
       this.logicalWidth = logicalWidth;
       this.logicalHeight = logicalHeight;
       this.direction = direction;
+      this.displayMode = displayMode;
       this.params = params;
     }
   }
@@ -416,6 +481,11 @@ public class PlatformViewsChannel {
       this.width = width;
       this.height = height;
     }
+  }
+
+  /** Allows to notify when a platform view buffer has been resized. */
+  public interface PlatformViewBufferResized {
+    void run(@Nullable PlatformViewBufferSize bufferSize);
   }
 
   /** The state of a touch event in Flutter within a platform view. */

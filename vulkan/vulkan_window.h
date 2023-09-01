@@ -12,12 +12,12 @@
 
 #include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/macros.h"
+#include "flutter/vulkan/procs/vulkan_proc_table.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/vk/GrVkBackendContext.h"
-#include "vulkan_proc_table.h"
 
 namespace vulkan {
 
@@ -63,6 +63,7 @@ class VulkanWindow {
   std::unique_ptr<VulkanDevice> logical_device_;
   std::unique_ptr<VulkanSurface> surface_;
   std::unique_ptr<VulkanSwapchain> swapchain_;
+  sk_sp<skgpu::VulkanMemoryAllocator> memory_allocator_;
   sk_sp<GrDirectContext> skia_gr_context_;
 
   bool CreateSkiaGrContext();

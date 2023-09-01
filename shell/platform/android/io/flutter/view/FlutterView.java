@@ -26,6 +26,7 @@ import android.view.PointerIcon;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewStructure;
 import android.view.WindowInsets;
@@ -422,6 +423,14 @@ public class FlutterView extends SurfaceView
   }
 
   @Override
+  public boolean checkInputConnectionProxy(View view) {
+    return mNativeView
+        .getPluginRegistry()
+        .getPlatformViewsController()
+        .checkInputConnectionProxy(view);
+  }
+
+  @Override
   public void onProvideAutofillVirtualStructure(ViewStructure structure, int flags) {
     super.onProvideAutofillVirtualStructure(structure, flags);
     mTextInputPlugin.onProvideAutofillVirtualStructure(structure, flags);
@@ -473,7 +482,8 @@ public class FlutterView extends SurfaceView
    */
   @Override
   public boolean onGenericMotionEvent(MotionEvent event) {
-    boolean handled = isAttached() && androidTouchProcessor.onGenericMotionEvent(event);
+    boolean handled =
+        isAttached() && androidTouchProcessor.onGenericMotionEvent(event, getContext());
     return handled ? true : super.onGenericMotionEvent(event);
   }
 
@@ -887,6 +897,12 @@ public class FlutterView extends SurfaceView
   public TextureRegistry.SurfaceTextureEntry createSurfaceTexture() {
     final SurfaceTexture surfaceTexture = new SurfaceTexture(0);
     return registerSurfaceTexture(surfaceTexture);
+  }
+
+  @Override
+  @NonNull
+  public ImageTextureEntry createImageTexture() {
+    throw new UnsupportedOperationException("Image textures are not supported in this mode.");
   }
 
   @Override

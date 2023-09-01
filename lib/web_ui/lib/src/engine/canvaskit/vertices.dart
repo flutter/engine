@@ -7,9 +7,9 @@ import 'dart:typed_data';
 import 'package:ui/ui.dart' as ui;
 
 import 'canvaskit_api.dart';
-import 'skia_object_cache.dart';
+import 'native_memory.dart';
 
-class CkVertices extends ManagedSkiaObject<SkVertices> implements ui.Vertices {
+class CkVertices implements ui.Vertices {
   factory CkVertices(
     ui.VertexMode mode,
     List<ui.Offset> positions, {
@@ -17,18 +17,19 @@ class CkVertices extends ManagedSkiaObject<SkVertices> implements ui.Vertices {
     List<ui.Color>? colors,
     List<int>? indices,
   }) {
-    assert(mode != null); // ignore: unnecessary_null_comparison
-    assert(positions != null); // ignore: unnecessary_null_comparison
     if (textureCoordinates != null &&
-        textureCoordinates.length != positions.length)
+        textureCoordinates.length != positions.length) {
       throw ArgumentError(
           '"positions" and "textureCoordinates" lengths must match.');
-    if (colors != null && colors.length != positions.length)
+    }
+    if (colors != null && colors.length != positions.length) {
       throw ArgumentError('"positions" and "colors" lengths must match.');
+    }
     if (indices != null &&
-        indices.any((int i) => i < 0 || i >= positions.length))
+        indices.any((int i) => i < 0 || i >= positions.length)) {
       throw ArgumentError(
           '"indices" values must be valid indices in the positions list.');
+    }
 
     return CkVertices._(
       toSkVertexMode(mode),
@@ -46,24 +47,30 @@ class CkVertices extends ManagedSkiaObject<SkVertices> implements ui.Vertices {
     Int32List? colors,
     Uint16List? indices,
   }) {
-    assert(mode != null); // ignore: unnecessary_null_comparison
-    assert(positions != null); // ignore: unnecessary_null_comparison
     if (textureCoordinates != null &&
-        textureCoordinates.length != positions.length)
+        textureCoordinates.length != positions.length) {
       throw ArgumentError(
           '"positions" and "textureCoordinates" lengths must match.');
-    if (colors != null && colors.length * 2 != positions.length)
+    }
+    if (colors != null && colors.length * 2 != positions.length) {
       throw ArgumentError('"positions" and "colors" lengths must match.');
+    }
     if (indices != null &&
-        indices.any((int i) => i < 0 || i >= positions.length))
+        indices.any((int i) => i < 0 || i >= positions.length)) {
       throw ArgumentError(
           '"indices" values must be valid indices in the positions list.');
+    }
+
+    Uint32List? unsignedColors;
+    if (colors != null) {
+      unsignedColors = colors.buffer.asUint32List(colors.offsetInBytes, colors.length);
+    }
 
     return CkVertices._(
       toSkVertexMode(mode),
       positions,
       textureCoordinates,
-      colors?.buffer.asUint32List(),
+      unsignedColors,
       indices,
     );
   }
@@ -74,32 +81,31 @@ class CkVertices extends ManagedSkiaObject<SkVertices> implements ui.Vertices {
     this._textureCoordinates,
     this._colors,
     this._indices,
-  );
-
-  final SkVertexMode _mode;
-  final Float32List _positions;
-  final Float32List? _textureCoordinates;
-  final Uint32List? _colors;
-  final Uint16List? _indices;
-
-  @override
-  SkVertices createDefault() {
-    return canvasKit.MakeVertices(
+  ) {
+    final SkVertices skVertices = canvasKit.MakeVertices(
       _mode,
       _positions,
       _textureCoordinates,
       _colors,
       _indices,
     );
+    _ref = UniqueRef<SkVertices>(this, skVertices, 'Vertices');
+  }
+
+  final SkVertexMode _mode;
+  final Float32List _positions;
+  final Float32List? _textureCoordinates;
+  final Uint32List? _colors;
+  final Uint16List? _indices;
+  late final UniqueRef<SkVertices> _ref;
+
+  SkVertices get skiaObject => _ref.nativeObject;
+
+  @override
+  void dispose() {
+    _ref.dispose();
   }
 
   @override
-  SkVertices resurrect() {
-    return createDefault();
-  }
-
-  @override
-  void delete() {
-    rawSkiaObject?.delete();
-  }
+  bool get debugDisposed => _ref.isDisposed;
 }

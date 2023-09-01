@@ -6,16 +6,9 @@
 
 #include <gmodule.h>
 
-#include <string>
-#include <vector>
-
-#include "flutter/shell/platform/common/engine_switches.h"
-#include "flutter/shell/platform/linux/fl_dart_project_private.h"
-
 struct _FlDartProject {
   GObject parent_instance;
 
-  gboolean enable_mirrors;
   gchar* aot_library_path;
   gchar* assets_path;
   gchar* icu_data_path;
@@ -69,17 +62,11 @@ G_MODULE_EXPORT FlDartProject* fl_dart_project_new() {
   return self;
 }
 
-G_MODULE_EXPORT void fl_dart_project_set_enable_mirrors(
-    FlDartProject* self,
-    gboolean enable_mirrors) {
+G_MODULE_EXPORT void fl_dart_project_set_aot_library_path(FlDartProject* self,
+                                                          const gchar* path) {
   g_return_if_fail(FL_IS_DART_PROJECT(self));
-  self->enable_mirrors = enable_mirrors;
-}
-
-G_MODULE_EXPORT gboolean
-fl_dart_project_get_enable_mirrors(FlDartProject* self) {
-  g_return_val_if_fail(FL_IS_DART_PROJECT(self), FALSE);
-  return self->enable_mirrors;
+  g_clear_pointer(&self->aot_library_path, g_free);
+  self->aot_library_path = g_strdup(path);
 }
 
 G_MODULE_EXPORT const gchar* fl_dart_project_get_aot_library_path(
@@ -88,10 +75,24 @@ G_MODULE_EXPORT const gchar* fl_dart_project_get_aot_library_path(
   return self->aot_library_path;
 }
 
+G_MODULE_EXPORT void fl_dart_project_set_assets_path(FlDartProject* self,
+                                                     gchar* path) {
+  g_return_if_fail(FL_IS_DART_PROJECT(self));
+  g_clear_pointer(&self->assets_path, g_free);
+  self->assets_path = g_strdup(path);
+}
+
 G_MODULE_EXPORT const gchar* fl_dart_project_get_assets_path(
     FlDartProject* self) {
   g_return_val_if_fail(FL_IS_DART_PROJECT(self), nullptr);
   return self->assets_path;
+}
+
+G_MODULE_EXPORT void fl_dart_project_set_icu_data_path(FlDartProject* self,
+                                                       gchar* path) {
+  g_return_if_fail(FL_IS_DART_PROJECT(self));
+  g_clear_pointer(&self->icu_data_path, g_free);
+  self->icu_data_path = g_strdup(path);
 }
 
 G_MODULE_EXPORT const gchar* fl_dart_project_get_icu_data_path(
@@ -112,16 +113,4 @@ G_MODULE_EXPORT void fl_dart_project_set_dart_entrypoint_arguments(
   g_return_if_fail(FL_IS_DART_PROJECT(self));
   g_clear_pointer(&self->dart_entrypoint_args, g_strfreev);
   self->dart_entrypoint_args = g_strdupv(argv);
-}
-
-GPtrArray* fl_dart_project_get_switches(FlDartProject* self) {
-  GPtrArray* switches = g_ptr_array_new_with_free_func(g_free);
-  std::vector<std::string> env_switches = flutter::GetSwitchesFromEnvironment();
-  for (const auto& env_switch : env_switches) {
-    g_ptr_array_add(switches, g_strdup(env_switch.c_str()));
-  }
-  if (self->enable_mirrors) {
-    g_ptr_array_add(switches, g_strdup("--dart-flags=--enable_mirrors=true"));
-  }
-  return switches;
 }

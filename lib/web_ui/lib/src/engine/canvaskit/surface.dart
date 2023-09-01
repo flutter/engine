@@ -2,38 +2,36 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:js_interop';
+
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
 import '../configuration.dart';
 import '../dom.dart';
 import '../platform_dispatcher.dart';
-import '../safe_browser_api.dart';
 import '../util.dart';
 import '../window.dart';
 import 'canvas.dart';
 import 'canvaskit_api.dart';
-import 'initialization.dart';
+import 'renderer.dart';
 import 'surface_factory.dart';
 import 'util.dart';
 
 // Only supported in profile/release mode. Allows Flutter to use MSAA but
 // removes the ability for disabling AA on Paint objects.
-const bool _kUsingMSAA =
-    bool.fromEnvironment('flutter.canvaskit.msaa', defaultValue: false);
+const bool _kUsingMSAA = bool.fromEnvironment('flutter.canvaskit.msaa');
 
 typedef SubmitCallback = bool Function(SurfaceFrame, CkCanvas);
 
 /// A frame which contains a canvas to be drawn into.
 class SurfaceFrame {
+  SurfaceFrame(this.skiaSurface, this.submitCallback)
+      : _submitted = false;
+
   final CkSurface skiaSurface;
   final SubmitCallback submitCallback;
-  bool _submitted;
-
-  SurfaceFrame(this.skiaSurface, this.submitCallback)
-      : _submitted = false,
-        assert(skiaSurface != null), // ignore: unnecessary_null_comparison
-        assert(submitCallback != null); // ignore: unnecessary_null_comparison
+  final bool _submitted;
 
   /// Submit this frame to be drawn.
   bool submit() {
@@ -70,7 +68,7 @@ class Surface {
   /// We must cache this function because each time we access the tear-off it
   /// creates a new object, meaning we won't be able to remove this listener
   /// later.
-  void Function(DomEvent)? _cachedContextLostListener;
+  DomEventListener? _cachedContextLostListener;
 
   /// A cached copy of the most recently created `webglcontextrestored`
   /// listener.
@@ -78,7 +76,7 @@ class Surface {
   /// We must cache this function because each time we access the tear-off it
   /// creates a new object, meaning we won't be able to remove this listener
   /// later.
-  void Function(DomEvent)? _cachedContextRestoredListener;
+  DomEventListener? _cachedContextRestoredListener;
 
   SkGrContext? _grContext;
   int? _glContext;
@@ -99,6 +97,8 @@ class Surface {
   DomCanvasElement? htmlCanvas;
   int _pixelWidth = -1;
   int _pixelHeight = -1;
+  int _sampleCount = -1;
+  int _stencilBits = -1;
 
   /// Specify the GPU resource cache limits.
   void setSkiaResourceCacheMaxBytes(int bytes) {
@@ -108,7 +108,7 @@ class Surface {
 
   void _syncCacheBytes() {
     if (_skiaCacheBytes != null) {
-      _grContext?.setResourceCacheLimitBytes(_skiaCacheBytes!);
+      _grContext?.setResourceCacheLimitBytes(_skiaCacheBytes!.toDouble());
     }
   }
 
@@ -131,7 +131,7 @@ class Surface {
 
   void addToScene() {
     if (!_addedToScene) {
-      skiaSceneHost!.prepend(htmlElement);
+      CanvasKitRenderer.instance.sceneHost!.prepend(htmlElement);
     }
     _addedToScene = true;
   }
@@ -140,43 +140,82 @@ class Surface {
   ui.Size? _currentSurfaceSize;
   double _currentDevicePixelRatio = -1;
 
+  /// This is only valid after the first frame or if [ensureSurface] has been
+  /// called
+  bool get usingSoftwareBackend => _glContext == null ||
+      _grContext == null || webGLVersion == -1 || configuration.canvasKitForceCpuOnly;
+
+  /// Ensure that the initial surface exists and has a size of at least [size].
+  ///
+  /// If not provided, [size] defaults to 1x1.
+  ///
+  /// This also ensures that the gl/grcontext have been populated so
+  /// that software rendering can be detected.
+  void ensureSurface([ui.Size size = const ui.Size(1, 1)]) {
+    // If the GrContext hasn't been setup yet then we need to force initialization
+    // of the canvas and initial surface.
+    if (_surface != null) {
+      return;
+    }
+    // TODO(jonahwilliams): this is somewhat wasteful. We should probably
+    // eagerly setup this surface instead of delaying until the first frame?
+    // Or at least cache the estimated window size.
+    createOrUpdateSurface(size);
+  }
+
+  /// This method is not supported if software rendering is used.
+  CkSurface createRenderTargetSurface(ui.Size size) {
+    assert(!usingSoftwareBackend);
+
+    final SkSurface skSurface = canvasKit.MakeRenderTarget(
+      _grContext!,
+      size.width.ceil(),
+      size.height.ceil(),
+    )!;
+    return CkSurface(skSurface, _glContext);
+  }
+
   /// Creates a <canvas> and SkSurface for the given [size].
   CkSurface createOrUpdateSurface(ui.Size size) {
-    if (useH5vccCanvasKit) {
-      _surface ??= CkSurface(canvasKit.getH5vccSkSurface(), null);
-      return _surface!;
-    }
-
     if (size.isEmpty) {
       throw CanvasKitError('Cannot create surfaces of empty size.');
     }
 
-    // Check if the window is the same size as before, and if so, don't allocate
-    // a new canvas as the previous canvas is big enough to fit everything.
-    final ui.Size? previousSurfaceSize = _currentSurfaceSize;
-    if (!_forceNewContext &&
-        previousSurfaceSize != null &&
-        size.width == previousSurfaceSize.width &&
-        size.height == previousSurfaceSize.height) {
-      // The existing surface is still reusable.
-      if (window.devicePixelRatio != _currentDevicePixelRatio) {
-        _updateLogicalHtmlCanvasSize();
+    if (!_forceNewContext) {
+      // Check if the window is the same size as before, and if so, don't allocate
+      // a new canvas as the previous canvas is big enough to fit everything.
+      final ui.Size? previousSurfaceSize = _currentSurfaceSize;
+      if (previousSurfaceSize != null &&
+          size.width == previousSurfaceSize.width &&
+          size.height == previousSurfaceSize.height) {
+        // The existing surface is still reusable.
+        if (window.devicePixelRatio != _currentDevicePixelRatio) {
+          _updateLogicalHtmlCanvasSize();
+          _translateCanvas();
+        }
+        return _surface!;
       }
-      return _surface!;
-    }
 
-    // If the current canvas size is smaller than the requested size then create
-    // a new, larger, canvas. Then update the GR context so we can create a new
-    // SkSurface.
-    final ui.Size? previousCanvasSize = _currentCanvasPhysicalSize;
-    if (_forceNewContext ||
-        previousCanvasSize == null ||
-        size.width > previousCanvasSize.width ||
-        size.height > previousCanvasSize.height) {
+      final ui.Size? previousCanvasSize = _currentCanvasPhysicalSize;
       // Initialize a new, larger, canvas. If the size is growing, then make the
       // new canvas larger than required to avoid many canvas creations.
-      final ui.Size newSize = previousCanvasSize == null ? size : size * 1.4;
+      if (previousCanvasSize != null &&
+          (size.width > previousCanvasSize.width ||
+              size.height > previousCanvasSize.height)) {
+        final ui.Size newSize = size * 1.4;
+        _surface?.dispose();
+        _surface = null;
+        htmlCanvas!.width = newSize.width;
+        htmlCanvas!.height = newSize.height;
+        _currentCanvasPhysicalSize = newSize;
+        _pixelWidth = newSize.width.ceil();
+        _pixelHeight = newSize.height.ceil();
+        _updateLogicalHtmlCanvasSize();
+      }
+    }
 
+    // Either a new context is being forced or we've never had one.
+    if (_forceNewContext || _currentCanvasPhysicalSize == null) {
       _surface?.dispose();
       _surface = null;
       _addedToScene = false;
@@ -184,8 +223,8 @@ class Surface {
       _grContext?.delete();
       _grContext = null;
 
-      _createNewCanvas(newSize);
-      _currentCanvasPhysicalSize = newSize;
+      _createNewCanvas(size);
+      _currentCanvasPhysicalSize = size;
     } else if (window.devicePixelRatio != _currentDevicePixelRatio) {
       _updateLogicalHtmlCanvasSize();
     }
@@ -193,7 +232,9 @@ class Surface {
     _currentDevicePixelRatio = window.devicePixelRatio;
     _currentSurfaceSize = size;
     _translateCanvas();
-    return _surface = _createNewSurface(size);
+    _surface?.dispose();
+    _surface = _createNewSurface(size);
+    return _surface!;
   }
 
   /// Sets the CSS size of the canvas so that canvas pixels are 1:1 with device
@@ -228,7 +269,7 @@ class Surface {
     htmlCanvas!.style.transform = 'translate(0, -${offset}px)';
   }
 
-  void _contextRestoredListener(DomEvent event) {
+  JSVoid _contextRestoredListener(DomEvent event) {
     assert(
         _contextLost,
         'Received "webglcontextrestored" event but never received '
@@ -240,7 +281,7 @@ class Surface {
     event.preventDefault();
   }
 
-  void _contextLostListener(DomEvent event) {
+  JSVoid _contextLostListener(DomEvent event) {
     assert(event.target == htmlCanvas,
         'Received a context lost event for a disposed canvas');
     final SurfaceFactory factory = SurfaceFactory.instance;
@@ -304,8 +345,8 @@ class Surface {
     // notification. When we receive this notification we force a new context.
     //
     // See also: https://www.khronos.org/webgl/wiki/HandlingContextLost
-    _cachedContextRestoredListener = allowInterop(_contextRestoredListener);
-    _cachedContextLostListener = allowInterop(_contextLostListener);
+    _cachedContextRestoredListener = createDomEventListener(_contextRestoredListener);
+    _cachedContextLostListener = createDomEventListener(_contextLostListener);
     htmlCanvas.addEventListener(
       'webglcontextlost',
       _cachedContextLostListener,
@@ -326,17 +367,20 @@ class Surface {
           // Default to no anti-aliasing. Paint commands can be explicitly
           // anti-aliased by setting their `Paint` object's `antialias` property.
           antialias: _kUsingMSAA ? 1 : 0,
-          majorVersion: webGLVersion,
+          majorVersion: webGLVersion.toDouble(),
         ),
-      );
+      ).toInt();
 
       _glContext = glContext;
 
       if (_glContext != 0) {
-        _grContext = canvasKit.MakeGrContext(glContext);
+        _grContext = canvasKit.MakeGrContext(glContext.toDouble());
         if (_grContext == null) {
           throw CanvasKitError('Failed to initialize CanvasKit. '
               'CanvasKit.MakeGrContext returned null.');
+        }
+        if (_sampleCount == -1 || _stencilBits == -1) {
+          _initWebglParams();
         }
         // Set the cache byte limit for this grContext, if not specified it will
         // use CanvasKit's default.
@@ -345,6 +389,12 @@ class Surface {
     }
 
     htmlElement.append(htmlCanvas);
+  }
+
+  void _initWebglParams() {
+    final WebGLContext gl = htmlCanvas!.getGlContext(webGLVersion);
+    _sampleCount = gl.getParameter(gl.samples);
+    _stencilBits = gl.getParameter(gl.stencilBits);
   }
 
   CkSurface _createNewSurface(ui.Size size) {
@@ -361,9 +411,11 @@ class Surface {
     } else {
       final SkSurface? skSurface = canvasKit.MakeOnScreenGLSurface(
         _grContext!,
-        size.width.ceil(),
-        size.height.ceil(),
+        size.width.roundToDouble(),
+        size.height.roundToDouble(),
         SkColorSpaceSRGB,
+        _sampleCount,
+        _stencilBits
       );
 
       if (skSurface == null) {
@@ -430,8 +482,8 @@ class CkSurface {
 
   int? get context => _glContext;
 
-  int width() => surface.width();
-  int height() => surface.height();
+  int width() => surface.width().round();
+  int height() => surface.height().round();
 
   void dispose() {
     if (_isDisposed) {

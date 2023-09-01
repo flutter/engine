@@ -2,30 +2,29 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/src/engine.dart' hide ClipRectEngineLayer, BackdropFilterEngineLayer;
+import 'package:ui/src/engine.dart' hide BackdropFilterEngineLayer, ClipRectEngineLayer;
 import 'package:ui/ui.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
+
+import '../../common/test_initialization.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 Future<void> testMain() async {
-  setUpAll(() async {
-    await webOnlyInitializePlatform();
-    fontCollection.debugRegisterTestFonts();
-    await fontCollection.ensureFontsLoaded();
-  });
+  setUpUnitTests(
+    emulateTesterEnvironment: false,
+    setUpTestViewDimensions: false,
+  );
 
   setUp(() async {
     debugShowClipLayers = true;
     SurfaceSceneBuilder.debugForgetFrameScene();
-    for (final html.Node scene in html.document.querySelectorAll('flt-scene')) {
+    for (final DomNode scene in domDocument.querySelectorAll('flt-scene')) {
       scene.remove();
     }
   });
@@ -49,15 +48,14 @@ Future<void> testMain() async {
     builder.pushClipRect(
       const Rect.fromLTRB(60, 10, 180, 120),
     );
-    builder.pushBackdropFilter(ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-      oldLayer: null);
+    builder.pushBackdropFilter(ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0));
     final Picture circles2 = _drawTestPictureWithCircles(region, 90, 30);
     builder.addPicture(Offset.zero, circles2);
     builder.pop();
     builder.pop();
     builder.pop();
 
-    html.document.body!.append(builder
+    domDocument.body!.append(builder
         .build()
         .webOnlyRootElement!);
 
@@ -79,8 +77,7 @@ Future<void> testMain() async {
       const Rect.fromLTRB(60, 10, 180, 120),
     );
     final BackdropFilterEngineLayer oldBackdropFilterLayer =
-        builder.pushBackdropFilter(ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-        oldLayer: null);
+        builder.pushBackdropFilter(ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0));
     final Picture circles2 = _drawTestPictureWithCircles(region, 90, 30);
     builder.addPicture(Offset.zero, circles2);
     builder.pop();
@@ -107,7 +104,7 @@ Future<void> testMain() async {
     builder2.pop();
     builder2.pop();
 
-    html.document.body!.append(builder2
+    domDocument.body!.append(builder2
         .build()
         .webOnlyRootElement!);
 
@@ -132,18 +129,45 @@ Future<void> testMain() async {
     builder.pushClipRect(
       const Rect.fromLTRB(60, 10, 180, 120),
     );
-    builder.pushBackdropFilter(ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-        oldLayer: null);
+    builder.pushBackdropFilter(ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0));
     builder.pop();
     builder.pop();
     builder.pop();
 
-    html.document.body!.append(builder
+    domDocument.body!.append(builder
         .build()
         .webOnlyRootElement!);
 
     await matchGoldenFile('backdrop_filter_no_child_rendering.png',
         region: region);
+  });
+  test('colorFilter as imageFilter', () async {
+    const Rect region = Rect.fromLTWH(0, 0, 190, 130);
+
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    final Picture backgroundPicture = _drawBackground(region);
+    builder.addPicture(Offset.zero, backgroundPicture);
+
+    builder.pushClipRect(
+      const Rect.fromLTRB(10, 10, 180, 120),
+    );
+    final Picture circles1 = _drawTestPictureWithCircles(region, 30, 30);
+
+    // current background color is light green, apply a light yellow colorFilter
+    const ColorFilter colorFilter = ColorFilter.mode(
+      Color(0xFFFFFFB1),
+      BlendMode.modulate
+    );
+    builder.pushBackdropFilter(colorFilter);
+    builder.addPicture(Offset.zero, circles1);
+    builder.pop();
+
+    domDocument.body!.append(builder
+        .build()
+        .webOnlyRootElement!);
+
+   await matchGoldenFile('backdrop_filter_colorFilter_as_imageFilter.png',
+       region: region);
   });
 }
 

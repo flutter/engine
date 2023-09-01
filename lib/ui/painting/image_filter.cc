@@ -4,6 +4,7 @@
 
 #include "flutter/lib/ui/painting/image_filter.h"
 
+#include "flutter/lib/ui/floating_point.h"
 #include "flutter/lib/ui/painting/matrix.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "third_party/tonic/converter/dart_converter.h"
@@ -13,56 +14,37 @@
 
 namespace flutter {
 
-static void ImageFilter_constructor(Dart_NativeArguments args) {
-  UIDartState::ThrowIfUIOperationsProhibited();
-  DartCallConstructor(&ImageFilter::Create, args);
-}
-
 IMPLEMENT_WRAPPERTYPEINFO(ui, ImageFilter);
 
-#define FOR_EACH_BINDING(V)       \
-  V(ImageFilter, initBlur)        \
-  V(ImageFilter, initDilate)      \
-  V(ImageFilter, initErode)       \
-  V(ImageFilter, initMatrix)      \
-  V(ImageFilter, initColorFilter) \
-  V(ImageFilter, initComposeFilter)
-
-FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
-
-void ImageFilter::RegisterNatives(tonic::DartLibraryNatives* natives) {
-  natives->Register(
-      {{"ImageFilter_constructor", ImageFilter_constructor, 1, true},
-       FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
+void ImageFilter::Create(Dart_Handle wrapper) {
+  UIDartState::ThrowIfUIOperationsProhibited();
+  auto res = fml::MakeRefCounted<ImageFilter>();
+  res->AssociateWithDartWrapper(wrapper);
 }
 
-fml::RefPtr<ImageFilter> ImageFilter::Create() {
-  return fml::MakeRefCounted<ImageFilter>();
-}
-
-static const std::array<SkSamplingOptions, 4> filter_qualities = {
-    SkSamplingOptions(SkFilterMode::kNearest, SkMipmapMode::kNone),
-    SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kNone),
-    SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear),
-    SkSamplingOptions(SkCubicResampler{1 / 3.0f, 1 / 3.0f}),
+static const std::array<DlImageSampling, 4> kFilterQualities = {
+    DlImageSampling::kNearestNeighbor,
+    DlImageSampling::kLinear,
+    DlImageSampling::kMipmapLinear,
+    DlImageSampling::kCubic,
 };
 
-SkSamplingOptions ImageFilter::SamplingFromIndex(int filterQualityIndex) {
+DlImageSampling ImageFilter::SamplingFromIndex(int filterQualityIndex) {
   if (filterQualityIndex < 0) {
-    return filter_qualities.front();
+    return kFilterQualities.front();
   } else if (static_cast<size_t>(filterQualityIndex) >=
-             filter_qualities.size()) {
-    return filter_qualities.back();
+             kFilterQualities.size()) {
+    return kFilterQualities.back();
   } else {
-    return filter_qualities[filterQualityIndex];
+    return kFilterQualities[filterQualityIndex];
   }
 }
 
-SkFilterMode ImageFilter::FilterModeFromIndex(int filterQualityIndex) {
+DlFilterMode ImageFilter::FilterModeFromIndex(int filterQualityIndex) {
   if (filterQualityIndex <= 0) {
-    return SkFilterMode::kNearest;
+    return DlFilterMode::kNearest;
   }
-  return SkFilterMode::kLinear;
+  return DlFilterMode::kLinear;
 }
 
 ImageFilter::ImageFilter() {}
@@ -71,35 +53,35 @@ ImageFilter::~ImageFilter() {}
 
 void ImageFilter::initBlur(double sigma_x,
                            double sigma_y,
-                           SkTileMode tile_mode) {
-  filter_ =
-      std::make_shared<DlBlurImageFilter>(sigma_x, sigma_y, ToDl(tile_mode));
+                           DlTileMode tile_mode) {
+  filter_ = DlBlurImageFilter::Make(SafeNarrow(sigma_x), SafeNarrow(sigma_y),
+                                    tile_mode);
 }
 
 void ImageFilter::initDilate(double radius_x, double radius_y) {
-  filter_ = std::make_shared<DlDilateImageFilter>(radius_x, radius_y);
+  filter_ =
+      DlDilateImageFilter::Make(SafeNarrow(radius_x), SafeNarrow(radius_y));
 }
 
 void ImageFilter::initErode(double radius_x, double radius_y) {
-  filter_ = std::make_shared<DlErodeImageFilter>(radius_x, radius_y);
+  filter_ =
+      DlErodeImageFilter::Make(SafeNarrow(radius_x), SafeNarrow(radius_y));
 }
 
 void ImageFilter::initMatrix(const tonic::Float64List& matrix4,
                              int filterQualityIndex) {
   auto sampling = ImageFilter::SamplingFromIndex(filterQualityIndex);
-  filter_ =
-      std::make_shared<DlMatrixImageFilter>(ToSkMatrix(matrix4), sampling);
+  filter_ = DlMatrixImageFilter::Make(ToSkMatrix(matrix4), sampling);
 }
 
 void ImageFilter::initColorFilter(ColorFilter* colorFilter) {
-  filter_ = std::make_shared<DlColorFilterImageFilter>(
-      colorFilter ? colorFilter->dl_filter() : nullptr);
+  FML_DCHECK(colorFilter);
+  filter_ = DlColorFilterImageFilter::Make(colorFilter->filter());
 }
 
 void ImageFilter::initComposeFilter(ImageFilter* outer, ImageFilter* inner) {
-  filter_ = std::make_shared<DlComposeImageFilter>(
-      outer ? outer->dl_filter() : nullptr,
-      inner ? inner->dl_filter() : nullptr);
+  FML_DCHECK(outer && inner);
+  filter_ = DlComposeImageFilter::Make(outer->filter(), inner->filter());
 }
 
 }  // namespace flutter

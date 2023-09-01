@@ -4,7 +4,7 @@
 
 #include "impeller/renderer/pipeline_descriptor.h"
 
-#include "impeller/renderer/formats.h"
+#include "impeller/core/formats.h"
 #include "impeller/renderer/shader_function.h"
 #include "impeller/renderer/shader_library.h"
 #include "impeller/renderer/vertex_descriptor.h"
@@ -38,6 +38,10 @@ std::size_t PipelineDescriptor::GetHash() const {
   fml::HashCombineSeed(seed, depth_attachment_descriptor_);
   fml::HashCombineSeed(seed, front_stencil_attachment_descriptor_);
   fml::HashCombineSeed(seed, back_stencil_attachment_descriptor_);
+  fml::HashCombineSeed(seed, winding_order_);
+  fml::HashCombineSeed(seed, cull_mode_);
+  fml::HashCombineSeed(seed, primitive_type_);
+  fml::HashCombineSeed(seed, polygon_mode_);
   return seed;
 }
 
@@ -53,7 +57,11 @@ bool PipelineDescriptor::IsEqual(const PipelineDescriptor& other) const {
          front_stencil_attachment_descriptor_ ==
              other.front_stencil_attachment_descriptor_ &&
          back_stencil_attachment_descriptor_ ==
-             other.back_stencil_attachment_descriptor_;
+             other.back_stencil_attachment_descriptor_ &&
+         winding_order_ == other.winding_order_ &&
+         cull_mode_ == other.cull_mode_ &&
+         primitive_type_ == other.primitive_type_ &&
+         polygon_mode_ == other.polygon_mode_;
 }
 
 PipelineDescriptor& PipelineDescriptor::SetLabel(std::string label) {
@@ -87,10 +95,18 @@ PipelineDescriptor& PipelineDescriptor::SetVertexDescriptor(
   return *this;
 }
 
+size_t PipelineDescriptor::GetMaxColorAttacmentBindIndex() const {
+  size_t max = 0;
+  for (const auto& color : color_attachment_descriptors_) {
+    max = std::max(color.first, max);
+  }
+  return max;
+}
+
 PipelineDescriptor& PipelineDescriptor::SetColorAttachmentDescriptor(
     size_t index,
     ColorAttachmentDescriptor desc) {
-  color_attachment_descriptors_[index] = std::move(desc);
+  color_attachment_descriptors_[index] = desc;
   return *this;
 }
 
@@ -129,22 +145,42 @@ PipelineDescriptor& PipelineDescriptor::SetStencilPixelFormat(
 }
 
 PipelineDescriptor& PipelineDescriptor::SetDepthStencilAttachmentDescriptor(
-    DepthAttachmentDescriptor desc) {
+    std::optional<DepthAttachmentDescriptor> desc) {
   depth_attachment_descriptor_ = desc;
   return *this;
 }
 
 PipelineDescriptor& PipelineDescriptor::SetStencilAttachmentDescriptors(
-    StencilAttachmentDescriptor front_and_back) {
+    std::optional<StencilAttachmentDescriptor> front_and_back) {
   return SetStencilAttachmentDescriptors(front_and_back, front_and_back);
 }
 
 PipelineDescriptor& PipelineDescriptor::SetStencilAttachmentDescriptors(
-    StencilAttachmentDescriptor front,
-    StencilAttachmentDescriptor back) {
+    std::optional<StencilAttachmentDescriptor> front,
+    std::optional<StencilAttachmentDescriptor> back) {
   front_stencil_attachment_descriptor_ = front;
   back_stencil_attachment_descriptor_ = back;
   return *this;
+}
+
+void PipelineDescriptor::ClearStencilAttachments() {
+  back_stencil_attachment_descriptor_.reset();
+  front_stencil_attachment_descriptor_.reset();
+  SetStencilPixelFormat(impeller::PixelFormat::kUnknown);
+}
+
+void PipelineDescriptor::ClearDepthAttachment() {
+  depth_attachment_descriptor_.reset();
+  SetDepthPixelFormat(impeller::PixelFormat::kUnknown);
+}
+
+void PipelineDescriptor::ClearColorAttachment(size_t index) {
+  if (color_attachment_descriptors_.find(index) ==
+      color_attachment_descriptors_.end()) {
+    return;
+  }
+
+  color_attachment_descriptors_.erase(index);
 }
 
 void PipelineDescriptor::ResetAttachments() {
@@ -207,6 +243,38 @@ PipelineDescriptor::GetBackStencilAttachmentDescriptor() const {
 bool PipelineDescriptor::HasStencilAttachmentDescriptors() const {
   return front_stencil_attachment_descriptor_.has_value() ||
          back_stencil_attachment_descriptor_.has_value();
+}
+
+void PipelineDescriptor::SetCullMode(CullMode mode) {
+  cull_mode_ = mode;
+}
+
+CullMode PipelineDescriptor::GetCullMode() const {
+  return cull_mode_;
+}
+
+void PipelineDescriptor::SetWindingOrder(WindingOrder order) {
+  winding_order_ = order;
+}
+
+WindingOrder PipelineDescriptor::GetWindingOrder() const {
+  return winding_order_;
+}
+
+void PipelineDescriptor::SetPrimitiveType(PrimitiveType type) {
+  primitive_type_ = type;
+}
+
+PrimitiveType PipelineDescriptor::GetPrimitiveType() const {
+  return primitive_type_;
+}
+
+void PipelineDescriptor::SetPolygonMode(PolygonMode mode) {
+  polygon_mode_ = mode;
+}
+
+PolygonMode PipelineDescriptor::GetPolygonMode() const {
+  return polygon_mode_;
 }
 
 }  // namespace impeller

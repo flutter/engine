@@ -35,8 +35,7 @@ TEST_F(HooksTest, HooksUnitTests) {
 
   auto message_latch = std::make_shared<fml::AutoResetWaitableEvent>();
 
-  std::unique_ptr<Shell> shell =
-      CreateShell(std::move(settings), std::move(task_runners));
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
   ASSERT_TRUE(shell->IsSetup());
 
   auto call_hook = [](Dart_NativeArguments args) {
@@ -80,7 +79,7 @@ TEST_F(HooksTest, HooksUnitTests) {
   });
 
   message_latch->Wait();
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
 }
 
 }  // namespace testing

@@ -14,6 +14,18 @@
 
 namespace impeller {
 
+enum class Cap {
+  kButt,
+  kRound,
+  kSquare,
+};
+
+enum class Join {
+  kMiter,
+  kRound,
+  kBevel,
+};
+
 enum class FillType {
   kNonZero,  // The default winding order.
   kOdd,
@@ -22,10 +34,15 @@ enum class FillType {
   kAbsGeqTwo,
 };
 
+enum class Convexity {
+  kUnknown,
+  kConvex,
+};
+
 //------------------------------------------------------------------------------
 /// @brief      Paths are lightweight objects that describe a collection of
 ///             linear, quadratic, or cubic segments. These segments may be
-///             be broken up by move commands, which are effectively linear
+///             broken up by move commands, which are effectively linear
 ///             commands that pick up the pen rather than continuing to draw.
 ///
 ///             All shapes supported by Impeller are paths either directly or
@@ -49,6 +66,11 @@ class Path {
     /// Denotes whether the last point of this contour is connected to the first
     /// point of this contour or not.
     bool is_closed;
+
+    /// The direction of the contour's start cap.
+    Vector2 start_direction;
+    /// The direction of the contour's end cap.
+    Vector2 end_direction;
   };
 
   /// One or more contours represented as a series of points and indices in
@@ -71,11 +93,13 @@ class Path {
 
   ~Path();
 
-  size_t GetComponentCount() const;
+  size_t GetComponentCount(std::optional<ComponentType> type = {}) const;
 
   void SetFillType(FillType fill);
 
   FillType GetFillType() const;
+
+  bool IsConvex() const;
 
   Path& AddLinearComponent(Point p1, Point p2);
 
@@ -87,12 +111,16 @@ class Path {
 
   void SetContourClosed(bool is_closed);
 
+  /// @brief Transform the path by the given offset in-place.
+  void Shift(Point shift);
+
   template <class T>
   using Applier = std::function<void(size_t index, const T& component)>;
-  void EnumerateComponents(Applier<LinearPathComponent> linear_applier,
-                           Applier<QuadraticPathComponent> quad_applier,
-                           Applier<CubicPathComponent> cubic_applier,
-                           Applier<ContourComponent> contour_applier) const;
+  void EnumerateComponents(
+      const Applier<LinearPathComponent>& linear_applier,
+      const Applier<QuadraticPathComponent>& quad_applier,
+      const Applier<CubicPathComponent>& cubic_applier,
+      const Applier<ContourComponent>& contour_applier) const;
 
   bool GetLinearComponentAtIndex(size_t index,
                                  LinearPathComponent& linear) const;
@@ -116,8 +144,12 @@ class Path {
   bool UpdateContourComponentAtIndex(size_t index,
                                      const ContourComponent& contour);
 
-  Polyline CreatePolyline(
-      const SmoothingApproximation& approximation = {}) const;
+  /// Callers must provide the scale factor for how this path will be
+  /// transformed.
+  ///
+  /// It is suitable to use the max basis length of the matrix used to transform
+  /// the path. If the provided scale is 0, curves will revert to lines.
+  Polyline CreatePolyline(Scalar scale) const;
 
   std::optional<Rect> GetBoundingBox() const;
 
@@ -126,6 +158,10 @@ class Path {
   std::optional<std::pair<Point, Point>> GetMinMaxCoveragePoints() const;
 
  private:
+  friend class PathBuilder;
+
+  void SetConvexity(Convexity value);
+
   struct ComponentIndexPair {
     ComponentType type = ComponentType::kLinear;
     size_t index = 0;
@@ -137,6 +173,7 @@ class Path {
   };
 
   FillType fill_ = FillType::kNonZero;
+  Convexity convexity_ = Convexity::kUnknown;
   std::vector<ComponentIndexPair> components_;
   std::vector<LinearPathComponent> linears_;
   std::vector<QuadraticPathComponent> quads_;

@@ -14,11 +14,11 @@ static IOSContextMetalSkia* CastToMetalContext(const std::shared_ptr<IOSContext>
   return reinterpret_cast<IOSContextMetalSkia*>(context.get());
 }
 
-IOSSurfaceMetalSkia::IOSSurfaceMetalSkia(fml::scoped_nsobject<CAMetalLayer> layer,
+IOSSurfaceMetalSkia::IOSSurfaceMetalSkia(const fml::scoped_nsobject<CAMetalLayer>& layer,
                                          std::shared_ptr<IOSContext> context)
     : IOSSurface(std::move(context)),
       GPUSurfaceMetalDelegate(MTLRenderTargetType::kCAMetalLayer),
-      layer_(std::move(layer)) {
+      layer_(layer) {
   is_valid_ = layer_;
   auto metal_context = CastToMetalContext(GetContext());
   auto darwin_context = metal_context->GetDarwinContext().get();
@@ -42,8 +42,9 @@ void IOSSurfaceMetalSkia::UpdateStorageSizeIfNecessary() {
 // |IOSSurface|
 std::unique_ptr<Surface> IOSSurfaceMetalSkia::CreateGPUSurface(GrDirectContext* context) {
   FML_DCHECK(context);
-  return std::make_unique<GPUSurfaceMetalSkia>(this,               // layer
-                                               sk_ref_sp(context)  // context
+  return std::make_unique<GPUSurfaceMetalSkia>(this,                               // delegate
+                                               sk_ref_sp(context),                 // context
+                                               GetContext()->GetMsaaSampleCount()  // sample count
   );
 }
 
@@ -54,7 +55,7 @@ GPUCAMetalLayerHandle IOSSurfaceMetalSkia::GetCAMetalLayer(const SkISize& frame_
 
   layer.pixelFormat = MTLPixelFormatBGRA8Unorm;
   // Flutter needs to read from the color attachment in cases where there are effects such as
-  // backdrop filters.
+  // backdrop filters. Flutter plugins that create platform views may also read from the layer.
   layer.framebufferOnly = NO;
 
   const auto drawable_size = CGSizeMake(frame_info.width(), frame_info.height());

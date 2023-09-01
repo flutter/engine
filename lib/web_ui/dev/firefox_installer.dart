@@ -11,6 +11,8 @@ import 'common.dart';
 import 'environment.dart';
 import 'exceptions.dart';
 
+const String _firefoxExecutableVar = 'FIREFOX_EXECUTABLE';
+
 /// Returns the installation of Firefox, installing it if necessary.
 ///
 /// If [requestedVersion] is null, uses the version specified on the
@@ -35,6 +37,18 @@ Future<BrowserInstallation> getOrInstallFirefox(
   }
 
   infoLog ??= io.stdout;
+
+  // When running on LUCI, if we specify the "firefox" dependency, then the
+  // bot will download Firefox from CIPD and place it in a cache and set the
+  // environment variable FIREFOX_EXECUTABLE.
+  if (io.Platform.environment.containsKey(_firefoxExecutableVar)) {
+    infoLog.writeln('Using Firefox from $_firefoxExecutableVar variable: '
+      '${io.Platform.environment[_firefoxExecutableVar]}');
+    return BrowserInstallation(
+      version: 'cipd',
+      executable: io.Platform.environment[_firefoxExecutableVar]!,
+    );
+  }
 
   if (requestedVersion == 'system') {
     return BrowserInstallation(
@@ -91,18 +105,18 @@ class FirefoxInstaller {
     );
   }
 
+  FirefoxInstaller._({
+    required this.version,
+    required this.firefoxInstallationDir,
+    required this.versionDir,
+  });
+
   static Future<FirefoxInstaller> latest() async {
     final String latestVersion = io.Platform.isLinux
         ? await fetchLatestFirefoxVersionLinux()
         : await fetchLatestFirefoxVersionMacOS();
     return FirefoxInstaller(version: latestVersion);
   }
-
-  FirefoxInstaller._({
-    required this.version,
-    required this.firefoxInstallationDir,
-    required this.versionDir,
-  });
 
   /// Firefox version managed by this installer.
   final String version;

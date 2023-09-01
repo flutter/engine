@@ -12,7 +12,7 @@ void main() {
   test('window.sendPlatformMessage preserves callback zone', () {
     runZoned(() {
       final Zone innerZone = Zone.current;
-      window.sendPlatformMessage('test', ByteData.view(Uint8List(0).buffer), expectAsync1((ByteData? data) {
+      PlatformDispatcher.instance.sendPlatformMessage('test', ByteData.view(Uint8List(0).buffer), expectAsync1((ByteData? data) {
         final Zone runZone = Zone.current;
         expect(runZone, isNotNull);
         expect(runZone, same(innerZone));
@@ -76,7 +76,31 @@ void main() {
       const Locale.fromSubtags(languageCode: 'en'),
     ];
     // The default implementation returns null due to lack of a real platform.
-    final Locale? result = window.computePlatformResolvedLocale(supportedLocales);
+    final Locale? result = PlatformDispatcher.instance.computePlatformResolvedLocale(supportedLocales);
     expect(result, null);
+  });
+
+  test('Display is configured for the implicitView', () {
+    final FlutterView implicitView = PlatformDispatcher.instance.implicitView!;
+    final Display display = implicitView.display;
+
+    expect(display.id, 0);
+    expect(display.devicePixelRatio, implicitView.devicePixelRatio);
+    expect(display.refreshRate, 60);
+    expect(display.size, implicitView.physicalSize);
+  });
+
+  test('FlutterView.toString contains the viewId', () {
+    final FlutterView flutterView = PlatformDispatcher.instance.implicitView!;
+    expect(flutterView.viewId, 0);
+    expect(flutterView.toString(), 'FlutterView(id: 0)');
+  });
+
+  test('scaleFontSize is the identity function by default when textScaleFactor = 1', () {
+    expect(PlatformDispatcher.instance.scaleFontSize(0), 0.0);
+    expect(PlatformDispatcher.instance.scaleFontSize(1), 1.0);
+    expect(PlatformDispatcher.instance.scaleFontSize(2), 2.0);
+    expect(PlatformDispatcher.instance.scaleFontSize(3), 3.0);
+    expect(PlatformDispatcher.instance.scaleFontSize(3.4), 3.4);
   });
 }

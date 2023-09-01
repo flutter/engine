@@ -14,7 +14,7 @@ publish_to: none
 # relative to this directory into //third_party/dart
 
 environment:
-  sdk: '>=2.12.0 <3.0.0'
+  sdk: '>=3.0.0-0 <4.0.0'
 
 # Do not add any dependencies that require more than what is provided in
 # //third_party/pkg, //third_party/dart/pkg, or
@@ -28,11 +28,13 @@ environment:
 dependencies:
   analyzer: any
   _fe_analyzer_shared: any
+  pub_semver: any
 
 dev_dependencies:
   async_helper: any
   expect: any
   litetest: any
+  path: any
   smith: any
 
 dependency_overrides:
@@ -44,14 +46,14 @@ dependency_overrides:
     path: ../../../third_party/dart/third_party/pkg/async
   async_helper:
     path: ../../../third_party/dart/pkg/async_helper
-  charcode:
-    path: ../../../third_party/dart/third_party/pkg/charcode
   collection:
     path: ../../../third_party/dart/third_party/pkg/collection
   convert:
     path: ../../../third_party/dart/third_party/pkg/convert
   crypto:
     path: ../../../third_party/dart/third_party/pkg/crypto
+  dart_internal:
+    path: ../../../third_party/dart/pkg/dart_internal
   expect:
     path: ../../../third_party/dart/pkg/expect
   file:
@@ -63,7 +65,7 @@ dependency_overrides:
   meta:
     path: ../../../third_party/dart/pkg/meta
   package_config:
-    path: ../../../third_party/dart/third_party/pkg_tested/package_config
+    path: ../../../third_party/dart/third_party/pkg/package_config
   path:
     path: ../../../third_party/dart/third_party/pkg/path
   pub_semver:

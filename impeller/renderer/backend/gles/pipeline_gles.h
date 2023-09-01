@@ -15,8 +15,9 @@ namespace impeller {
 
 class PipelineLibraryGLES;
 
-class PipelineGLES final : public Pipeline,
-                           public BackendCast<PipelineGLES, Pipeline> {
+class PipelineGLES final
+    : public Pipeline<PipelineDescriptor>,
+      public BackendCast<PipelineGLES, Pipeline<PipelineDescriptor>> {
  public:
   // |Pipeline|
   ~PipelineGLES() override;
@@ -45,7 +46,7 @@ class PipelineGLES final : public Pipeline,
 
   PipelineGLES(ReactorGLES::Ref reactor,
                std::weak_ptr<PipelineLibrary> library,
-               PipelineDescriptor desc);
+               const PipelineDescriptor& desc);
 
   FML_DISALLOW_COPY_AND_ASSIGN(PipelineGLES);
 };

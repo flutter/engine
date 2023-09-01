@@ -7,8 +7,8 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/impeller/renderer/context.h"
-#include "flutter/impeller/toolkit/egl/display.h"
 #include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
+#include "flutter/shell/platform/android/android_context_gl_impeller.h"
 #include "flutter/shell/platform/android/surface/android_native_window.h"
 #include "flutter/shell/platform/android/surface/android_surface.h"
 
@@ -17,9 +17,8 @@ namespace flutter {
 class AndroidSurfaceGLImpeller final : public GPUSurfaceGLDelegate,
                                        public AndroidSurface {
  public:
-  AndroidSurfaceGLImpeller(
-      const std::shared_ptr<AndroidContext>& android_context,
-      std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
+  explicit AndroidSurfaceGLImpeller(
+      const std::shared_ptr<AndroidContextGLImpeller>& android_context);
 
   // |AndroidSurface|
   ~AndroidSurfaceGLImpeller() override;
@@ -49,6 +48,9 @@ class AndroidSurfaceGLImpeller final : public GPUSurfaceGLDelegate,
   // |AndroidSurface|
   std::unique_ptr<Surface> CreateSnapshotSurface() override;
 
+  // |AndroidSurface|
+  std::shared_ptr<impeller::Context> GetImpellerContext() override;
+
   // |GPUSurfaceGLDelegate|
   std::unique_ptr<GLContextResult> GLContextMakeCurrent() override;
 
@@ -62,24 +64,18 @@ class AndroidSurfaceGLImpeller final : public GPUSurfaceGLDelegate,
   void GLContextSetDamageRegion(const std::optional<SkIRect>& region) override;
 
   // |GPUSurfaceGLDelegate|
-  bool GLContextPresent(uint32_t fbo_id,
-                        const std::optional<SkIRect>& damage) override;
+  bool GLContextPresent(const GLPresentInfo& present_info) override;
 
   // |GPUSurfaceGLDelegate|
-  intptr_t GLContextFBO(GLFrameInfo frame_info) const override;
+  GLFBOInfo GLContextFBO(GLFrameInfo frame_info) const override;
 
   // |GPUSurfaceGLDelegate|
   sk_sp<const GrGLInterface> GetGLInterface() const override;
 
  private:
-  std::unique_ptr<impeller::egl::Display> display_;
-  std::unique_ptr<impeller::egl::Config> onscreen_config_;
-  std::unique_ptr<impeller::egl::Config> offscreen_config_;
+  std::shared_ptr<AndroidContextGLImpeller> android_context_;
   std::unique_ptr<impeller::egl::Surface> onscreen_surface_;
   std::unique_ptr<impeller::egl::Surface> offscreen_surface_;
-  std::unique_ptr<impeller::egl::Context> onscreen_context_;
-  std::unique_ptr<impeller::egl::Context> offscreen_context_;
-  std::shared_ptr<impeller::Context> impeller_context_;
   fml::RefPtr<AndroidNativeWindow> native_window_;
 
   bool is_valid_ = false;

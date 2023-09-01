@@ -8,6 +8,7 @@
 
 #include <memory>
 
+#include "flutter/common/constants.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/platform/darwin/platform_version.h"
 #include "flutter/fml/trace_event.h"
@@ -19,15 +20,18 @@
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/common/variable_refresh_rate_display.h"
 #import "flutter/shell/platform/darwin/common/command_line.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelay.h"
+#import "flutter/shell/platform/darwin/common/framework/Source/FlutterBinaryMessengerRelay.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartVMServicePublisher.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterIndirectScribbleDelegate.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterObservatoryPublisher.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterSpellCheckPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextureRegistryRelay.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/UIViewController+FlutterScreenAndSceneIfLoaded.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/connection_collection.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/profiler_metrics_ios.h"
@@ -67,10 +71,15 @@ static void IOSPlatformThreadConfigSetter(const fml::Thread::ThreadConfig& confi
   }
 }
 
+#pragma mark - Public exported constants
+
 NSString* const FlutterDefaultDartEntrypoint = nil;
 NSString* const FlutterDefaultInitialRoute = nil;
-NSString* const FlutterEngineWillDealloc = @"FlutterEngineWillDealloc";
-NSString* const FlutterKeyDataChannel = @"flutter/keydata";
+
+#pragma mark - Internal constants
+
+NSString* const kFlutterEngineWillDealloc = @"FlutterEngineWillDealloc";
+NSString* const kFlutterKeyDataChannel = @"flutter/keydata";
 static constexpr int kNumProfilerSamplesPerSec = 5;
 
 @interface FlutterEngineRegistrar : NSObject <FlutterPluginRegistrar>
@@ -81,7 +90,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @interface FlutterEngine () <FlutterIndirectScribbleDelegate,
                              FlutterUndoManagerDelegate,
                              FlutterTextInputDelegate,
-                             FlutterBinaryMessenger>
+                             FlutterBinaryMessenger,
+                             FlutterTextureRegistry>
 // Maintains a dictionary of plugin names that have registered with the engine.  Used by
 // FlutterEngineRegistrar to implement a FlutterPluginRegistrar.
 @property(nonatomic, readonly) NSMutableDictionary* pluginPublications;
@@ -90,6 +100,12 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @property(nonatomic, readwrite, copy) NSString* isolateId;
 @property(nonatomic, copy) NSString* initialRoute;
 @property(nonatomic, retain) id<NSObject> flutterViewControllerWillDeallocObserver;
+
+#pragma mark - Embedder API properties
+
+@property(nonatomic, assign) BOOL enableEmbedderAPI;
+// Function pointers for interacting with the embedder.h API.
+@property(nonatomic) FlutterEngineProcTable& embedderAPI;
 @end
 
 @implementation FlutterEngine {
@@ -100,7 +116,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory;
 
   fml::WeakPtr<FlutterViewController> _viewController;
-  fml::scoped_nsobject<FlutterObservatoryPublisher> _publisher;
+  fml::scoped_nsobject<FlutterDartVMServicePublisher> _publisher;
 
   std::shared_ptr<flutter::FlutterPlatformViewsController> _platformViewsController;
   flutter::IOSRenderingAPI _renderingApi;
@@ -111,6 +127,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   fml::scoped_nsobject<FlutterPlatformPlugin> _platformPlugin;
   fml::scoped_nsobject<FlutterTextInputPlugin> _textInputPlugin;
   fml::scoped_nsobject<FlutterUndoManagerPlugin> _undoManagerPlugin;
+  fml::scoped_nsobject<FlutterSpellCheckPlugin> _spellCheckPlugin;
   fml::scoped_nsobject<FlutterRestorationPlugin> _restorationPlugin;
   fml::scoped_nsobject<FlutterMethodChannel> _localizationChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _navigationChannel;
@@ -119,16 +136,20 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   fml::scoped_nsobject<FlutterMethodChannel> _platformViewsChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _textInputChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _undoManagerChannel;
+  fml::scoped_nsobject<FlutterMethodChannel> _scribbleChannel;
+  fml::scoped_nsobject<FlutterMethodChannel> _spellCheckChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _lifecycleChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _systemChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _settingsChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _keyEventChannel;
+  fml::scoped_nsobject<FlutterMethodChannel> _screenshotChannel;
 
   int64_t _nextTextureId;
 
   BOOL _allowHeadlessExecution;
   BOOL _restorationEnabled;
   FlutterBinaryMessengerRelay* _binaryMessenger;
+  FlutterTextureRegistryRelay* _textureRegistry;
   std::unique_ptr<flutter::ConnectionCollection> _connections;
 }
 
@@ -173,6 +194,13 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     _dartProject.reset([project retain]);
   }
 
+  _enableEmbedderAPI = _dartProject.get().settings.enable_embedder_api;
+  if (_enableEmbedderAPI) {
+    NSLog(@"============== iOS: enable_embedder_api is on ==============");
+    _embedderAPI.struct_size = sizeof(FlutterEngineProcTable);
+    FlutterEngineGetProcAddresses(&_embedderAPI);
+  }
+
   if (!EnableTracingIfNecessary([_dartProject.get() settings])) {
     NSLog(
         @"Cannot create a FlutterEngine instance in debug mode without Flutter tooling or "
@@ -188,6 +216,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   [self recreatePlatformViewController];
 
   _binaryMessenger = [[FlutterBinaryMessengerRelay alloc] initWithParent:self];
+  _textureRegistry = [[FlutterTextureRegistryRelay alloc] initWithParent:self];
   _connections.reset(new flutter::ConnectionCollection());
 
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
@@ -196,15 +225,15 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                  name:UIApplicationDidReceiveMemoryWarningNotification
                object:nil];
 
-  [center addObserver:self
-             selector:@selector(applicationWillEnterForeground:)
-                 name:UIApplicationWillEnterForegroundNotification
-               object:nil];
-
-  [center addObserver:self
-             selector:@selector(applicationDidEnterBackground:)
-                 name:UIApplicationDidEnterBackgroundNotification
-               object:nil];
+#if APPLICATION_EXTENSION_API_ONLY
+  if (@available(iOS 13.0, *)) {
+    [self setUpSceneLifecycleNotifications:center];
+  } else {
+    [self setUpApplicationLifecycleNotifications:center];
+  }
+#else
+  [self setUpApplicationLifecycleNotifications:center];
+#endif
 
   [center addObserver:self
              selector:@selector(onLocaleUpdated:)
@@ -212,6 +241,28 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                object:nil];
 
   return self;
+}
+
+- (void)setUpSceneLifecycleNotifications:(NSNotificationCenter*)center API_AVAILABLE(ios(13.0)) {
+  [center addObserver:self
+             selector:@selector(sceneWillEnterForeground:)
+                 name:UISceneWillEnterForegroundNotification
+               object:nil];
+  [center addObserver:self
+             selector:@selector(sceneDidEnterBackground:)
+                 name:UISceneDidEnterBackgroundNotification
+               object:nil];
+}
+
+- (void)setUpApplicationLifecycleNotifications:(NSNotificationCenter*)center {
+  [center addObserver:self
+             selector:@selector(applicationWillEnterForeground:)
+                 name:UIApplicationWillEnterForegroundNotification
+               object:nil];
+  [center addObserver:self
+             selector:@selector(applicationDidEnterBackground:)
+                 name:UIApplicationDidEnterBackgroundNotification
+               object:nil];
 }
 
 - (void)recreatePlatformViewController {
@@ -233,7 +284,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     }
   }];
 
-  [[NSNotificationCenter defaultCenter] postNotificationName:FlutterEngineWillDealloc
+  [[NSNotificationCenter defaultCenter] postNotificationName:kFlutterEngineWillDealloc
                                                       object:self
                                                     userInfo:nil];
 
@@ -252,7 +303,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   [_pluginPublications release];
   [_registrars release];
   _binaryMessenger.parent = nil;
+  _textureRegistry.parent = nil;
   [_binaryMessenger release];
+  [_textureRegistry release];
+  _textureRegistry = nil;
   [_isolateId release];
 
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
@@ -278,7 +332,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   if (!self.platformView) {
     return;
   }
-  self.platformView->SetViewportMetrics(std::move(viewportMetrics));
+  self.platformView->SetViewportMetrics(flutter::kFlutterImplicitViewId, viewportMetrics);
 }
 
 - (void)dispatchPointerDataPacket:(std::unique_ptr<flutter::PointerDataPacket>)packet {
@@ -303,7 +357,12 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   return _shell->GetTaskRunners().GetPlatformTaskRunner();
 }
 
-- (fml::RefPtr<fml::TaskRunner>)RasterTaskRunner {
+- (fml::RefPtr<fml::TaskRunner>)uiTaskRunner {
+  FML_DCHECK(_shell);
+  return _shell->GetTaskRunners().GetUITaskRunner();
+}
+
+- (fml::RefPtr<fml::TaskRunner>)rasterTaskRunner {
   FML_DCHECK(_shell);
   return _shell->GetTaskRunners().GetRasterTaskRunner();
 }
@@ -352,7 +411,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     callback(handled, userData);
   };
 
-  [self sendOnChannel:FlutterKeyDataChannel message:message binaryReply:response];
+  [self sendOnChannel:kFlutterKeyDataChannel message:message binaryReply:response];
 }
 
 - (void)ensureSemanticsEnabled {
@@ -365,6 +424,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       viewController ? [viewController getWeakPtr] : fml::WeakPtr<FlutterViewController>();
   self.iosPlatformView->SetOwnerViewController(_viewController);
   [self maybeSetupPlatformViewChannels];
+  [self updateDisplays];
   _textInputPlugin.get().viewController = viewController;
   _undoManagerPlugin.get().viewController = viewController;
 
@@ -385,7 +445,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (void)attachView {
   self.iosPlatformView->attachView();
-  [_textInputPlugin.get() setupIndirectScribbleInteraction:self.viewController];
 }
 
 - (void)setFlutterViewControllerWillDeallocObserver:(id<NSObject>)observer {
@@ -405,7 +464,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _undoManagerPlugin.get().viewController = nil;
   if (!_allowHeadlessExecution) {
     [self destroyContext];
-  } else {
+  } else if (_shell) {
     flutter::PlatformViewIOS* platform_view = [self iosPlatformView];
     if (platform_view) {
       platform_view->SetOwnerViewController({});
@@ -464,6 +523,12 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (FlutterMethodChannel*)undoManagerChannel {
   return _undoManagerChannel.get();
 }
+- (FlutterMethodChannel*)scribbleChannel {
+  return _scribbleChannel.get();
+}
+- (FlutterMethodChannel*)spellCheckChannel {
+  return _spellCheckChannel.get();
+}
 - (FlutterBasicMessageChannel*)lifecycleChannel {
   return _lifecycleChannel.get();
 }
@@ -481,6 +546,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   return [_publisher.get() url];
 }
 
+- (NSURL*)vmServiceUrl {
+  return [_publisher.get() url];
+}
+
 - (void)resetChannels {
   _localizationChannel.reset();
   _navigationChannel.reset();
@@ -489,10 +558,12 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _platformViewsChannel.reset();
   _textInputChannel.reset();
   _undoManagerChannel.reset();
+  _scribbleChannel.reset();
   _lifecycleChannel.reset();
   _systemChannel.reset();
   _settingsChannel.reset();
   _keyEventChannel.reset();
+  _spellCheckChannel.reset();
 }
 
 - (void)startProfiler {
@@ -507,7 +578,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 // If you add a channel, be sure to also update `resetChannels`.
 // Channels get a reference to the engine, and therefore need manual
 // cleanup for proper collection.
-- (void)setupChannels {
+- (void)setUpChannels {
   // This will be invoked once the shell is done setting up and the isolate ID
   // for the UI isolate is available.
   fml::WeakPtr<FlutterEngine> weakSelf = [self getWeakPtr];
@@ -561,6 +632,16 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       binaryMessenger:self.binaryMessenger
                 codec:[FlutterJSONMethodCodec sharedInstance]]);
 
+  _scribbleChannel.reset([[FlutterMethodChannel alloc]
+         initWithName:@"flutter/scribble"
+      binaryMessenger:self.binaryMessenger
+                codec:[FlutterJSONMethodCodec sharedInstance]]);
+
+  _spellCheckChannel.reset([[FlutterMethodChannel alloc]
+         initWithName:@"flutter/spellcheck"
+      binaryMessenger:self.binaryMessenger
+                codec:[FlutterStandardMethodCodec sharedInstance]]);
+
   _lifecycleChannel.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/lifecycle"
       binaryMessenger:self.binaryMessenger
@@ -584,7 +665,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   FlutterTextInputPlugin* textInputPlugin = [[FlutterTextInputPlugin alloc] initWithDelegate:self];
   _textInputPlugin.reset(textInputPlugin);
   textInputPlugin.indirectScribbleDelegate = self;
-  [textInputPlugin setupIndirectScribbleInteraction:self.viewController];
+  [textInputPlugin setUpIndirectScribbleInteraction:self.viewController];
 
   FlutterUndoManagerPlugin* undoManagerPlugin =
       [[FlutterUndoManagerPlugin alloc] initWithDelegate:self];
@@ -595,6 +676,37 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _restorationPlugin.reset([[FlutterRestorationPlugin alloc]
          initWithChannel:_restorationChannel.get()
       restorationEnabled:_restorationEnabled]);
+  _spellCheckPlugin.reset([[FlutterSpellCheckPlugin alloc] init]);
+
+  _screenshotChannel.reset([[FlutterMethodChannel alloc]
+         initWithName:@"flutter/screenshot"
+      binaryMessenger:self.binaryMessenger
+                codec:[FlutterStandardMethodCodec sharedInstance]]);
+
+  [_screenshotChannel.get()
+      setMethodCallHandler:^(FlutterMethodCall* _Nonnull call, FlutterResult _Nonnull result) {
+        if (!(weakSelf.get() && weakSelf.get()->_shell && weakSelf.get()->_shell->IsSetup())) {
+          return result([FlutterError
+              errorWithCode:@"invalid_state"
+                    message:@"Requesting screenshot while engine is not running."
+                    details:nil]);
+        }
+        flutter::Rasterizer::Screenshot screenshot =
+            [weakSelf.get() screenshot:flutter::Rasterizer::ScreenshotType::SurfaceData
+                          base64Encode:NO];
+        if (!screenshot.data) {
+          return result([FlutterError errorWithCode:@"failure"
+                                            message:@"Unable to get screenshot."
+                                            details:nil]);
+        }
+        // TODO(gaaclarke): Find way to eliminate this data copy.
+        NSData* data = [NSData dataWithBytes:screenshot.data->writable_data()
+                                      length:screenshot.data->size()];
+        NSString* format = [NSString stringWithUTF8String:screenshot.format.c_str()];
+        NSNumber* width = @(screenshot.frame_size.fWidth);
+        NSNumber* height = @(screenshot.frame_size.fHeight);
+        return result(@[ width, height, format ?: [NSNull null], data ]);
+      }];
 }
 
 - (void)maybeSetupPlatformViewChannels {
@@ -622,6 +734,12 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
         setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
           [undoManagerPlugin handleMethodCall:call result:result];
         }];
+
+    FlutterSpellCheckPlugin* spellCheckPlugin = _spellCheckPlugin.get();
+    [_spellCheckChannel.get()
+        setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+          [spellCheckPlugin handleMethodCall:call result:result];
+        }];
   }
 }
 
@@ -639,14 +757,14 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                                                           entrypointArgs:entrypointArgs]);
 }
 
-- (void)setupShell:(std::unique_ptr<flutter::Shell>)shell
-    withObservatoryPublication:(BOOL)doesObservatoryPublication {
+- (void)setUpShell:(std::unique_ptr<flutter::Shell>)shell
+    withVMServicePublication:(BOOL)doesVMServicePublication {
   _shell = std::move(shell);
-  [self setupChannels];
+  [self setUpChannels];
   [self onLocaleUpdated:nil];
-  [self initializeDisplays];
-  _publisher.reset([[FlutterObservatoryPublisher alloc]
-      initWithEnableObservatoryPublication:doesObservatoryPublication]);
+  [self updateDisplays];
+  _publisher.reset([[FlutterDartVMServicePublisher alloc]
+      initWithEnableVMServicePublication:doesVMServicePublication]);
   [self maybeSetupPlatformViewChannels];
   _shell->SetGpuAvailability(_isGpuDisabled ? flutter::GpuAvailability::kUnavailable
                                             : flutter::GpuAvailability::kAvailable);
@@ -694,7 +812,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   host_config.io_config =
       fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
                                     flutter::ThreadHost::Type::IO, threadLabel.UTF8String),
-                                fml::Thread::ThreadPriority::BACKGROUND);
+                                fml::Thread::ThreadPriority::NORMAL);
 
   return (flutter::ThreadHost){host_config};
 }
@@ -727,8 +845,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   if (initialRoute != nil) {
     self.initialRoute = initialRoute;
   } else if (settings.route.empty() == false) {
-    self.initialRoute = [NSString stringWithCString:settings.route.c_str()
-                                           encoding:NSUTF8StringEncoding];
+    self.initialRoute = [NSString stringWithUTF8String:settings.route.c_str()];
   }
 
   FlutterView.forceSoftwareRendering = settings.enable_software_rendering;
@@ -747,7 +864,8 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
       [self](flutter::Shell& shell) {
         [self recreatePlatformViewController];
         return std::make_unique<flutter::PlatformViewIOS>(
-            shell, self->_renderingApi, self->_platformViewsController, shell.GetTaskRunners());
+            shell, self->_renderingApi, self->_platformViewsController, shell.GetTaskRunners(),
+            shell.GetConcurrentWorkerTaskRunner(), shell.GetIsGpuDisabledSyncSwitch());
       };
 
   flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
@@ -760,13 +878,25 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                                     _threadHost->io_thread->GetTaskRunner()          // io
   );
 
+#if APPLICATION_EXTENSION_API_ONLY
+  if (@available(iOS 13.0, *)) {
+    _isGpuDisabled = self.viewController.flutterWindowSceneIfViewLoaded.activationState ==
+                     UISceneActivationStateBackground;
+  } else {
+    // [UIApplication sharedApplication API is not available for app extension.
+    // We intialize the shell assuming the GPU is required.
+    _isGpuDisabled = NO;
+  }
+#else
   _isGpuDisabled =
       [UIApplication sharedApplication].applicationState == UIApplicationStateBackground;
+#endif
+
   // Create the shell. This is a blocking operation.
   std::unique_ptr<flutter::Shell> shell = flutter::Shell::Create(
-      /*platform_data=*/std::move(platformData),
-      /*task_runners=*/std::move(task_runners),
-      /*settings=*/std::move(settings),
+      /*platform_data=*/platformData,
+      /*task_runners=*/task_runners,
+      /*settings=*/settings,
       /*on_create_platform_view=*/on_create_platform_view,
       /*on_create_rasterizer=*/on_create_rasterizer,
       /*is_gpu_disabled=*/_isGpuDisabled);
@@ -775,8 +905,10 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
     FML_LOG(ERROR) << "Could not start a shell FlutterEngine with entrypoint: "
                    << entrypoint.UTF8String;
   } else {
-    [self setupShell:std::move(shell)
-        withObservatoryPublication:settings.enable_observatory_publication];
+    // TODO(vashworth): Remove once done debugging https://github.com/flutter/flutter/issues/129836
+    FML_LOG(INFO) << "Enabled VM Service Publication: " << settings.enable_vm_service_publication;
+    [self setUpShell:std::move(shell)
+        withVMServicePublication:settings.enable_vm_service_publication];
     if ([FlutterEngine isProfilerEnabled]) {
       [self startProfiler];
     }
@@ -785,12 +917,19 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   return _shell != nullptr;
 }
 
-- (void)initializeDisplays {
-  auto vsync_waiter = std::shared_ptr<flutter::VsyncWaiter>(_shell->GetVsyncWaiter().lock());
+- (void)updateDisplays {
+  if (!_shell) {
+    // Tests may do this.
+    return;
+  }
+  auto vsync_waiter = _shell->GetVsyncWaiter().lock();
   auto vsync_waiter_ios = std::static_pointer_cast<flutter::VsyncWaiterIOS>(vsync_waiter);
   std::vector<std::unique_ptr<flutter::Display>> displays;
-  displays.push_back(std::make_unique<flutter::VariableRefreshRateDisplay>(vsync_waiter_ios));
-  _shell->OnDisplayUpdates(flutter::DisplayUpdateType::kStartup, std::move(displays));
+  auto screen_size = UIScreen.mainScreen.nativeBounds.size;
+  auto scale = UIScreen.mainScreen.scale;
+  displays.push_back(std::make_unique<flutter::VariableRefreshRateDisplay>(
+      0, vsync_waiter_ios, screen_size.width, screen_size.height, scale));
+  _shell->OnDisplayUpdates(std::move(displays));
 }
 
 - (BOOL)run {
@@ -912,7 +1051,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
       actionString = @"TextInputAction.next";
       break;
     case FlutterTextInputActionContinue:
-      actionString = @"TextInputAction.continue";
+      actionString = @"TextInputAction.continueAction";
       break;
     case FlutterTextInputActionJoin:
       actionString = @"TextInputAction.join";
@@ -942,6 +1081,9 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 #pragma mark - FlutterViewEngineDelegate
 
 - (void)flutterTextInputView:(FlutterTextInputView*)textInputView showToolbar:(int)client {
+  // TODO(justinmc): Switch from the TextInputClient to Scribble channel when
+  // the framework has finished transitioning to the Scribble channel.
+  // https://github.com/flutter/flutter/pull/115296
   [_textInputChannel.get() invokeMethod:@"TextInputClient.showToolbar" arguments:@[ @(client) ]];
 }
 
@@ -949,6 +1091,9 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                   focusElement:(UIScribbleElementIdentifier)elementIdentifier
                        atPoint:(CGPoint)referencePoint
                         result:(FlutterResult)callback {
+  // TODO(justinmc): Switch from the TextInputClient to Scribble channel when
+  // the framework has finished transitioning to the Scribble channel.
+  // https://github.com/flutter/flutter/pull/115296
   [_textInputChannel.get()
       invokeMethod:@"TextInputClient.focusElement"
          arguments:@[ elementIdentifier, @(referencePoint.x), @(referencePoint.y) ]
@@ -958,6 +1103,9 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 - (void)flutterTextInputPlugin:(FlutterTextInputPlugin*)textInputPlugin
          requestElementsInRect:(CGRect)rect
                         result:(FlutterResult)callback {
+  // TODO(justinmc): Switch from the TextInputClient to Scribble channel when
+  // the framework has finished transitioning to the Scribble channel.
+  // https://github.com/flutter/flutter/pull/115296
   [_textInputChannel.get()
       invokeMethod:@"TextInputClient.requestElementsInRect"
          arguments:@[ @(rect.origin.x), @(rect.origin.y), @(rect.size.width), @(rect.size.height) ]
@@ -965,10 +1113,16 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 }
 
 - (void)flutterTextInputViewScribbleInteractionBegan:(FlutterTextInputView*)textInputView {
+  // TODO(justinmc): Switch from the TextInputClient to Scribble channel when
+  // the framework has finished transitioning to the Scribble channel.
+  // https://github.com/flutter/flutter/pull/115296
   [_textInputChannel.get() invokeMethod:@"TextInputClient.scribbleInteractionBegan" arguments:nil];
 }
 
 - (void)flutterTextInputViewScribbleInteractionFinished:(FlutterTextInputView*)textInputView {
+  // TODO(justinmc): Switch from the TextInputClient to Scribble channel when
+  // the framework has finished transitioning to the Scribble channel.
+  // https://github.com/flutter/flutter/pull/115296
   [_textInputChannel.get() invokeMethod:@"TextInputClient.scribbleInteractionFinished"
                               arguments:nil];
 }
@@ -976,14 +1130,57 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 - (void)flutterTextInputView:(FlutterTextInputView*)textInputView
     insertTextPlaceholderWithSize:(CGSize)size
                        withClient:(int)client {
+  // TODO(justinmc): Switch from the TextInputClient to Scribble channel when
+  // the framework has finished transitioning to the Scribble channel.
+  // https://github.com/flutter/flutter/pull/115296
   [_textInputChannel.get() invokeMethod:@"TextInputClient.insertTextPlaceholder"
                               arguments:@[ @(client), @(size.width), @(size.height) ]];
 }
 
 - (void)flutterTextInputView:(FlutterTextInputView*)textInputView
        removeTextPlaceholder:(int)client {
+  // TODO(justinmc): Switch from the TextInputClient to Scribble channel when
+  // the framework has finished transitioning to the Scribble channel.
+  // https://github.com/flutter/flutter/pull/115296
   [_textInputChannel.get() invokeMethod:@"TextInputClient.removeTextPlaceholder"
                               arguments:@[ @(client) ]];
+}
+
+- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+    didResignFirstResponderWithTextInputClient:(int)client {
+  // When flutter text input view resign first responder, send a message to
+  // framework to ensure the focus state is correct. This is useful when close
+  // keyboard from platform side.
+  [_textInputChannel.get() invokeMethod:@"TextInputClient.onConnectionClosed"
+                              arguments:@[ @(client) ]];
+
+  // Platform view's first responder detection logic:
+  //
+  // All text input widgets (e.g. EditableText) are backed by a dummy UITextInput view
+  // in the TextInputPlugin. When this dummy UITextInput view resigns first responder,
+  // check if any platform view becomes first responder. If any platform view becomes
+  // first responder, send a "viewFocused" channel message to inform the framework to un-focus
+  // the previously focused text input.
+  //
+  // Caveat:
+  // 1. This detection logic does not cover the scenario when a platform view becomes
+  // first responder without any flutter text input resigning its first responder status
+  // (e.g. user tapping on platform view first). For now it works fine because the TextInputPlugin
+  // does not track the focused platform view id (which is different from Android implementation).
+  //
+  // 2. This detection logic assumes that all text input widgets are backed by a dummy
+  // UITextInput view in the TextInputPlugin, which may not hold true in the future.
+
+  // Have to check in the next run loop, because iOS requests the previous first responder to
+  // resign before requesting the next view to become first responder.
+  dispatch_async(dispatch_get_main_queue(), ^(void) {
+    long platform_view_id = self.platformViewsController->FindFirstResponderPlatformViewId();
+    if (platform_view_id == -1) {
+      return;
+    }
+
+    [_platformViewsChannel.get() invokeMethod:@"viewFocused" arguments:@(platform_view_id)];
+  });
 }
 
 #pragma mark - Undo Manager Delegate
@@ -1012,13 +1209,19 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   return _binaryMessenger;
 }
 
+- (NSObject<FlutterTextureRegistry>*)textureRegistry {
+  return _textureRegistry;
+}
+
 // For test only. Ideally we should create a dependency injector for all dependencies and
 // remove this.
 - (void)setBinaryMessenger:(FlutterBinaryMessengerRelay*)binaryMessenger {
   // Discard the previous messenger and keep the new one.
-  _binaryMessenger.parent = nil;
-  [_binaryMessenger release];
-  _binaryMessenger = [binaryMessenger retain];
+  if (binaryMessenger != _binaryMessenger) {
+    _binaryMessenger.parent = nil;
+    [_binaryMessenger release];
+    _binaryMessenger = [binaryMessenger retain];
+  }
 }
 
 #pragma mark - FlutterBinaryMessenger
@@ -1135,11 +1338,29 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
 #pragma mark - Notifications
 
+#if APPLICATION_EXTENSION_API_ONLY
+- (void)sceneWillEnterForeground:(NSNotification*)notification API_AVAILABLE(ios(13.0)) {
+  [self flutterWillEnterForeground:notification];
+}
+
+- (void)sceneDidEnterBackground:(NSNotification*)notification API_AVAILABLE(ios(13.0)) {
+  [self flutterDidEnterBackground:notification];
+}
+#else
 - (void)applicationWillEnterForeground:(NSNotification*)notification {
-  [self setIsGpuDisabled:NO];
+  [self flutterWillEnterForeground:notification];
 }
 
 - (void)applicationDidEnterBackground:(NSNotification*)notification {
+  [self flutterDidEnterBackground:notification];
+}
+#endif
+
+- (void)flutterWillEnterForeground:(NSNotification*)notification {
+  [self setIsGpuDisabled:NO];
+}
+
+- (void)flutterDidEnterBackground:(NSNotification*)notification {
   [self setIsGpuDisabled:YES];
   [self notifyLowMemory];
 }
@@ -1240,12 +1461,20 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   result->_profiler = _profiler;
   result->_profiler_metrics = _profiler_metrics;
   result->_isGpuDisabled = _isGpuDisabled;
-  [result setupShell:std::move(shell) withObservatoryPublication:NO];
+  [result setUpShell:std::move(shell) withVMServicePublication:NO];
   return [result autorelease];
 }
 
 - (const flutter::ThreadHost&)threadHost {
   return *_threadHost;
+}
+
+- (FlutterDartProject*)project {
+  return _dartProject.get();
+}
+
+- (BOOL)isUsingImpeller {
+  return self.project.isImpellerEnabled;
 }
 
 @end
@@ -1272,7 +1501,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 }
 
 - (NSObject<FlutterTextureRegistry>*)textures {
-  return _flutterEngine;
+  return _flutterEngine.textureRegistry;
 }
 
 - (void)publish:(NSObject*)value {
@@ -1286,7 +1515,8 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   }];
 }
 
-- (void)addApplicationDelegate:(NSObject<FlutterPlugin>*)delegate {
+- (void)addApplicationDelegate:(NSObject<FlutterPlugin>*)delegate
+    NS_EXTENSION_UNAVAILABLE_IOS("Disallowed in plugins used in app extensions") {
   id<UIApplicationDelegate> appDelegate = [[UIApplication sharedApplication] delegate];
   if ([appDelegate conformsToProtocol:@protocol(FlutterAppLifeCycleProvider)]) {
     id<FlutterAppLifeCycleProvider> lifeCycleProvider =

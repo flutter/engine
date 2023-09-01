@@ -12,31 +12,59 @@
 
 namespace impeller {
 
+class EntityPass;
+
 class PaintPassDelegate final : public EntityPassDelegate {
  public:
-  PaintPassDelegate(Paint paint, std::optional<Rect> coverage);
+  explicit PaintPassDelegate(Paint paint);
 
   // |EntityPassDelgate|
   ~PaintPassDelegate() override;
-
-  // |EntityPassDelegate|
-  std::optional<Rect> GetCoverageRect() override;
 
   // |EntityPassDelgate|
   bool CanElide() override;
 
   // |EntityPassDelgate|
-  bool CanCollapseIntoParentPass() override;
+  bool CanCollapseIntoParentPass(EntityPass* entity_pass) override;
 
   // |EntityPassDelgate|
   std::shared_ptr<Contents> CreateContentsForSubpassTarget(
-      std::shared_ptr<Texture> target) override;
+      std::shared_ptr<Texture> target,
+      const Matrix& effect_transform) override;
 
  private:
   const Paint paint_;
-  const std::optional<Rect> coverage_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PaintPassDelegate);
+};
+
+/// A delegate that attempts to forward opacity from a save layer to
+/// child contents.
+///
+/// Currently this has a hardcoded limit of 3 entities in a pass, and
+/// cannot forward to child subpass delegates.
+class OpacityPeepholePassDelegate final : public EntityPassDelegate {
+ public:
+  explicit OpacityPeepholePassDelegate(Paint paint);
+
+  // |EntityPassDelgate|
+  ~OpacityPeepholePassDelegate() override;
+
+  // |EntityPassDelgate|
+  bool CanElide() override;
+
+  // |EntityPassDelgate|
+  bool CanCollapseIntoParentPass(EntityPass* entity_pass) override;
+
+  // |EntityPassDelgate|
+  std::shared_ptr<Contents> CreateContentsForSubpassTarget(
+      std::shared_ptr<Texture> target,
+      const Matrix& effect_transform) override;
+
+ private:
+  const Paint paint_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(OpacityPeepholePassDelegate);
 };
 
 }  // namespace impeller

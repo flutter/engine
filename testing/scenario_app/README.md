@@ -30,7 +30,7 @@ Build the `ios_debug_sim_unopt` engine variant, and run
 in your shell.
 
 To run or debug in Xcode, open the xcodeproj file located in
-`<engine_out_dir>/ios_debug_sim_unopt/scenario_app/Scenarios/Scenaios.xcodeproj`.
+`<engine_out_dir>/ios_debug_sim_unopt/scenario_app/Scenarios/Scenarios.xcodeproj`.
 
 ### iOS Platform View Tests
 
@@ -56,11 +56,20 @@ compared against golden reside.
 
 ## Running for Android
 
-The only test that is currently run is the Firebase TestLab test, which is a
-smoke test to make sure an application can be built and run on a real Android
-device.
+### Integration tests
 
-To run it, build the `android_profile_arm64` variant of the engine, and run
+For emulators running on a x64 host, build `android_debug_unopt_x64` using
+`./tools/gn --android --unoptimized --goma --android-cpu=x64`.
+
+Then, launch the emulator, and run `./testing/scenario_app/run_android_tests.sh android_debug_unopt_x64`.
+
+If you wish to build a different engine variant, make sure to pass that variant to the script `run_android_tests.sh`.
+
+If you make a change to the source code, you would need to rebuild the same engine variant.
+
+### Smoke test on FTL
+
+To run the smoke test on Firebase TestLab test, build `android_profile_arm64`, and run
 `./flutter/ci/firebase_testlab.py`. If you wish to test a different variant, e.g.
 debug arm64, pass `--variant android_debug_arm64`.
 
@@ -71,6 +80,6 @@ If a Gradle dependency is updated, lockfiles must be regenerated.
 To generate new lockfiles, run:
 
 ```bash
-cd android
-../../../../gradle/bin/gradle generateLockfiles
+cd android/app
+../../../../../third_party/gradle/bin/gradle generateLockfiles
 ```

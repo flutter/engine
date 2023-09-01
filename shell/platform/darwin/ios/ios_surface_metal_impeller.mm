@@ -4,15 +4,17 @@
 
 #import "flutter/shell/platform/darwin/ios/ios_surface_metal_impeller.h"
 
+#include "flutter/impeller/renderer/backend/metal/formats_mtl.h"
+#include "flutter/impeller/renderer/context.h"
 #include "flutter/shell/gpu/gpu_surface_metal_impeller.h"
 
 namespace flutter {
 
-IOSSurfaceMetalImpeller::IOSSurfaceMetalImpeller(fml::scoped_nsobject<CAMetalLayer> layer,
-                                                 std::shared_ptr<IOSContext> context)
+IOSSurfaceMetalImpeller::IOSSurfaceMetalImpeller(const fml::scoped_nsobject<CAMetalLayer>& layer,
+                                                 const std::shared_ptr<IOSContext>& context)
     : IOSSurface(context),
       GPUSurfaceMetalDelegate(MTLRenderTargetType::kCAMetalLayer),
-      layer_(std::move(layer)),
+      layer_(layer),
       impeller_context_(context ? context->GetImpellerContext() : nullptr) {
   if (!impeller_context_) {
     return;
@@ -35,9 +37,10 @@ void IOSSurfaceMetalImpeller::UpdateStorageSizeIfNecessary() {
 
 // |IOSSurface|
 std::unique_ptr<Surface> IOSSurfaceMetalImpeller::CreateGPUSurface(GrDirectContext*) {
+  impeller_context_->UpdateOffscreenLayerPixelFormat(
+      impeller::FromMTLPixelFormat(layer_.get().pixelFormat));
   return std::make_unique<GPUSurfaceMetalImpeller>(this,              //
                                                    impeller_context_  //
-
   );
 }
 
@@ -48,6 +51,19 @@ GPUCAMetalLayerHandle IOSSurfaceMetalImpeller::GetCAMetalLayer(const SkISize& fr
   if (!CGSizeEqualToSize(drawable_size, layer.drawableSize)) {
     layer.drawableSize = drawable_size;
   }
+
+  // Flutter needs to read from the color attachment in cases where there are effects such as
+  // backdrop filters. Flutter plugins that create platform views may also read from the layer.
+  layer.framebufferOnly = NO;
+
+  // When there are platform views in the scene, the drawable needs to be presented in the same
+  // transaction as the one created for platform views. When the drawable are being presented from
+  // the raster thread, we may not be able to use a transaction as it will dirty the UIViews being
+  // presented. If there is a non-Flutter UIView active, such as in add2app or a
+  // presentViewController page transition, then this will cause CoreAnimation assertion errors and
+  // exit the app.
+  layer.presentsWithTransaction = [[NSThread currentThread] isMainThread];
+
   return layer;
 }
 

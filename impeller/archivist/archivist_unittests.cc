@@ -11,6 +11,9 @@
 #include "impeller/archivist/archive_location.h"
 #include "impeller/archivist/archivist_fixture.h"
 
+// TODO(zanderso): https://github.com/flutter/flutter/issues/127701
+// NOLINTBEGIN(bugprone-unchecked-optional-access)
+
 namespace impeller {
 namespace testing {
 
@@ -18,7 +21,7 @@ static int64_t LastSample = 0;
 
 class Sample : public Archivable {
  public:
-  Sample(uint64_t count = 42) : some_data_(count) {}
+  explicit Sample(uint64_t count = 42) : some_data_(count) {}
 
   Sample(Sample&&) = default;
 
@@ -198,3 +201,5 @@ TEST_F(ArchiveTest, CanReadWriteVectorOfArchivables) {
 
 }  // namespace testing
 }  // namespace impeller
+
+// NOLINTEND(bugprone-unchecked-optional-access)

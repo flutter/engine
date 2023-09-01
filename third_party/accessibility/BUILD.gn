@@ -75,9 +75,24 @@ if (enable_unittests) {
         "ax/platform/test_ax_node_wrapper.h",
       ]
 
+      if (is_mac) {
+        sources += [ "ax/platform/ax_platform_node_mac_unittest.mm" ]
+        frameworks = [
+          "AppKit.framework",
+          "CoreFoundation.framework",
+          "CoreGraphics.framework",
+          "CoreText.framework",
+          "IOSurface.framework",
+        ]
+
+        cflags_objcc = flutter_cflags_objcc
+        ldflags = [ "-ObjC" ]
+      }
       if (is_win) {
         sources += [
           "ax/platform/ax_fragment_root_win_unittest.cc",
+          "ax/platform/ax_platform_node_textprovider_win_unittest.cc",
+          "ax/platform/ax_platform_node_textrangeprovider_win_unittest.cc",
           "ax/platform/ax_platform_node_win_unittest.cc",
           "base/win/dispatch_stub.cc",
           "base/win/dispatch_stub.h",

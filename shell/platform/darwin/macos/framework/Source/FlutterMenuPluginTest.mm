@@ -25,6 +25,11 @@
 @implementation FlutterMenuPluginTestObjc
 
 - (bool)testSetMenu {
+  // Workaround to deflake the test.
+  // See: https://github.com/flutter/flutter/issues/104748#issuecomment-1159336728
+  NSView* view = [[NSView alloc] initWithFrame:NSZeroRect];
+  view.wantsLayer = YES;
+
   // Build a simulation of the default main menu.
   NSMenu* mainMenu = [[NSMenu alloc] init];
   NSMenuItem* appNameMenu = [[NSMenuItem alloc] initWithTitle:@"APP_NAME"

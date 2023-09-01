@@ -6,13 +6,13 @@ import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/testing/testing.gni")
 
 impeller_component("playground") {
-  testonly = true
-
   sources = [
     "playground.cc",
     "playground.h",
     "playground_impl.cc",
     "playground_impl.h",
+    "switches.cc",
+    "switches.h",
     "widgets.cc",
     "widgets.h",
   ]
@@ -33,17 +33,31 @@ impeller_component("playground") {
     ]
   }
 
+  if (impeller_enable_vulkan) {
+    sources += [
+      "backend/vulkan/playground_impl_vk.cc",
+      "backend/vulkan/playground_impl_vk.h",
+    ]
+  }
+
   public_deps = [
-    "../entity:entity_shaders",
     "../fixtures:shader_fixtures",
+    "../image:image_skia_backend",
     "../renderer",
+    "../scene/shaders",
     "imgui:imgui_impeller_backend",
-    "//flutter/testing",
+    "//flutter/fml",
     "//third_party/glfw",
     "//third_party/imgui:imgui_glfw",
   ]
 
-  public_configs = [ ":playground_config" ]
+  if (impeller_supports_rendering) {
+    public_deps += [
+      "../entity:entity_shaders",
+      "../entity:framebuffer_blend_entity_shaders",
+      "../entity:modern_entity_shaders",
+    ]
+  }
 
   if (is_mac) {
     frameworks = [
@@ -53,8 +67,18 @@ impeller_component("playground") {
   }
 }
 
-config("playground_config") {
-  if (impeller_enable_playground) {
-    defines = [ "IMPELLER_ENABLE_PLAYGROUND" ]
-  }
+impeller_component("playground_test") {
+  testonly = true
+
+  sources = [
+    "compute_playground_test.cc",
+    "compute_playground_test.h",
+    "playground_test.cc",
+    "playground_test.h",
+  ]
+
+  public_deps = [
+    ":playground",
+    "//flutter/testing:testing_lib",
+  ]
 }

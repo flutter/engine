@@ -14,10 +14,12 @@ import shutil
 import subprocess
 import sys
 
-USE_LINKS = sys.platform != "win32"
+USE_LINKS = sys.platform != 'win32'
 
-DART_ANALYZE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                            "dart_analyze.py")
+DART_ANALYZE = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), 'dart_analyze.py'
+)
+
 
 def dart_filter(path):
   if os.path.isdir(path):
@@ -36,7 +38,7 @@ def ensure_dir_exists(path):
 def has_pubspec_yaml(paths):
   for path in paths:
     _, filename = os.path.split(path)
-    if 'pubspec.yaml' == filename:
+    if filename == 'pubspec.yaml':
       return True
   return False
 
@@ -45,14 +47,14 @@ def link(from_root, to_root):
   ensure_dir_exists(os.path.dirname(to_root))
   try:
     os.unlink(to_root)
-  except OSError as e:
-    if e.errno == errno.ENOENT:
+  except OSError as err:
+    if err.errno == errno.ENOENT:
       pass
 
   try:
     os.symlink(from_root, to_root)
-  except OSError as e:
-    if e.errno == errno.EEXIST:
+  except OSError as err:
+    if err.errno == errno.EEXIST:
       pass
 
 
@@ -70,7 +72,7 @@ def copy(from_root, to_root, filter_func=None):
     # filter_func expects paths not names, so wrap it to make them absolute.
     wrapped_filter = None
     if filter_func:
-      wrapped_filter = lambda name: filter_func(os.path.join(root, name))
+      wrapped_filter = lambda name, rt=root: filter_func(os.path.join(rt, name))
 
     for name in filter(wrapped_filter, files):
       from_path = os.path.join(root, name)
@@ -99,8 +101,8 @@ def link_if_possible(from_root, to_root):
 def remove_if_exists(path):
   try:
     os.remove(path)
-  except OSError as e:
-    if e.errno != errno.ENOENT:
+  except OSError as err:
+    if err.errno != errno.ENOENT:
       raise
 
 
@@ -110,7 +112,7 @@ def list_files(from_root, filter_func=None):
     # filter_func expects paths not names, so wrap it to make them absolute.
     wrapped_filter = None
     if filter_func:
-      wrapped_filter = lambda name: filter_func(os.path.join(root, name))
+      wrapped_filter = lambda name, rt=root: filter_func(os.path.join(rt, name))
     for name in filter(wrapped_filter, files):
       path = os.path.join(root, name)
       file_list.append(path)
@@ -123,9 +125,9 @@ def remove_broken_symlink(path):
     return
   try:
     link_path = os.readlink(path)
-  except OSError as e:
+  except OSError as err:
     # Path was not a symlink.
-    if e.errno == errno.EINVAL:
+    if err.errno == errno.EINVAL:
       pass
   else:
     if not os.path.exists(link_path):
@@ -142,79 +144,103 @@ def remove_broken_symlinks(root_dir):
 
 
 def analyze_entrypoints(dart_sdk, package_root, entrypoints):
-  cmd = [ "python", DART_ANALYZE ]
-  cmd.append("--dart-sdk")
+  cmd = ['python', DART_ANALYZE]
+  cmd.append('--dart-sdk')
   cmd.append(dart_sdk)
-  cmd.append("--entrypoints")
+  cmd.append('--entrypoints')
   cmd.extend(entrypoints)
-  cmd.append("--package-root")
+  cmd.append('--package-root')
   cmd.append(package_root)
-  cmd.append("--no-hints")
+  cmd.append('--no-hints')
   try:
     subprocess.check_output(cmd, stderr=subprocess.STDOUT)
-  except subprocess.CalledProcessError as e:
+  except subprocess.CalledProcessError as err:
     print('Failed analyzing %s' % entrypoints)
-    print(e.output)
-    return e.returncode
+    print(err.output)
+    return err.returncode
   return 0
 
 
 def main():
   parser = argparse.ArgumentParser(description='Generate a dart-pkg')
-  parser.add_argument('--dart-sdk',
-                      action='store',
-                      metavar='dart_sdk',
-                      help='Path to the Dart SDK.')
-  parser.add_argument('--package-name',
-                      action='store',
-                      metavar='package_name',
-                      help='Name of package',
-                      required=True)
-  parser.add_argument('--pkg-directory',
-                      metavar='pkg_directory',
-                      help='Directory where dart_pkg should go',
-                      required=True)
-  parser.add_argument('--package-root',
-                      metavar='package_root',
-                      help='packages/ directory',
-                      required=True)
-  parser.add_argument('--stamp-file',
-                      metavar='stamp_file',
-                      help='timestamp file',
-                      required=True)
-  parser.add_argument('--entries-file',
-                      metavar='entries_file',
-                      help='script entries file',
-                      required=True)
-  parser.add_argument('--package-sources',
-                      metavar='package_sources',
-                      help='Package sources',
-                      nargs='+')
-  parser.add_argument('--package-entrypoints',
-                      metavar='package_entrypoints',
-                      help='Package entry points for analyzer',
-                      nargs='*',
-                      default=[])
-  parser.add_argument('--sdk-ext-directories',
-                      metavar='sdk_ext_directories',
-                      help='Directory containing .dart sources',
-                      nargs='*',
-                      default=[])
-  parser.add_argument('--sdk-ext-files',
-                      metavar='sdk_ext_files',
-                      help='List of .dart files that are part of sdk_ext.',
-                      nargs='*',
-                      default=[])
-  parser.add_argument('--sdk-ext-mappings',
-                      metavar='sdk_ext_mappings',
-                      help='Mappings for SDK extension libraries.',
-                      nargs='*',
-                      default=[])
-  parser.add_argument('--read_only',
-                      action='store_true',
-                      dest='read_only',
-                      help='Package is a read only package.',
-                      default=False)
+  parser.add_argument(
+      '--dart-sdk',
+      action='store',
+      metavar='dart_sdk',
+      help='Path to the Dart SDK.'
+  )
+  parser.add_argument(
+      '--package-name',
+      action='store',
+      metavar='package_name',
+      help='Name of package',
+      required=True
+  )
+  parser.add_argument(
+      '--pkg-directory',
+      metavar='pkg_directory',
+      help='Directory where dart_pkg should go',
+      required=True
+  )
+  parser.add_argument(
+      '--package-root',
+      metavar='package_root',
+      help='packages/ directory',
+      required=True
+  )
+  parser.add_argument(
+      '--stamp-file',
+      metavar='stamp_file',
+      help='timestamp file',
+      required=True
+  )
+  parser.add_argument(
+      '--entries-file',
+      metavar='entries_file',
+      help='script entries file',
+      required=True
+  )
+  parser.add_argument(
+      '--package-sources',
+      metavar='package_sources',
+      help='Package sources',
+      nargs='+'
+  )
+  parser.add_argument(
+      '--package-entrypoints',
+      metavar='package_entrypoints',
+      help='Package entry points for analyzer',
+      nargs='*',
+      default=[]
+  )
+  parser.add_argument(
+      '--sdk-ext-directories',
+      metavar='sdk_ext_directories',
+      help='Directory containing .dart sources',
+      nargs='*',
+      default=[]
+  )
+  parser.add_argument(
+      '--sdk-ext-files',
+      metavar='sdk_ext_files',
+      help='List of .dart files that are part of sdk_ext.',
+      nargs='*',
+      default=[]
+  )
+  parser.add_argument(
+      '--sdk-ext-mappings',
+      metavar='sdk_ext_mappings',
+      help='Mappings for SDK extension libraries.',
+      nargs='*',
+      default=[]
+  )
+  parser.add_argument(
+      '--read_only',
+      action='store_true',
+      dest='read_only',
+      help='Package is a read only package.',
+      default=False
+  )
   args = parser.parse_args()
 
   # We must have a pubspec.yaml.
@@ -222,7 +248,7 @@ def main():
 
   target_dir = os.path.join(args.pkg_directory, args.package_name)
   target_packages_dir = os.path.join(target_dir, 'packages')
-  lib_path = os.path.join(target_dir, "lib")
+  lib_path = os.path.join(target_dir, 'lib')
   ensure_dir_exists(lib_path)
 
   mappings = {}
@@ -233,14 +259,16 @@ def main():
   sdkext_path = os.path.join(lib_path, '_sdkext')
   if mappings:
     with open(sdkext_path, 'w') as stream:
-      json.dump(mappings, stream, sort_keys=True,
-                indent=2, separators=(',', ': '))
+      json.dump(
+          mappings, stream, sort_keys=True, indent=2, separators=(',', ': ')
+      )
   else:
     remove_if_exists(sdkext_path)
 
   # Copy or symlink package sources into pkg directory.
-  common_source_prefix = os.path.dirname(os.path.commonprefix(
-      args.package_sources))
+  common_source_prefix = os.path.dirname(
+      os.path.commonprefix(args.package_sources)
+  )
   for source in args.package_sources:
     relative_source = os.path.relpath(source, common_source_prefix)
     target = os.path.join(target_dir, relative_source)
@@ -263,8 +291,9 @@ def main():
       target = os.path.join(sdk_ext_dir, relative_source)
       copy_or_link(source, target)
 
-  common_source_prefix = os.path.dirname(os.path.commonprefix(
-      args.sdk_ext_files))
+  common_source_prefix = os.path.dirname(
+      os.path.commonprefix(args.sdk_ext_files)
+  )
   for source in args.sdk_ext_files:
     relative_source = os.path.relpath(source, common_source_prefix)
     target = os.path.join(sdk_ext_dir, relative_source)
@@ -283,15 +312,16 @@ def main():
 
   # If any entrypoints are defined, write them to disk so that the analyzer
   # test can find them.
-  with open(args.entries_file, 'w') as f:
+  with open(args.entries_file, 'w') as file:
     for entrypoint in entrypoint_targets:
-      f.write(entrypoint + '\n')
+      file.write(entrypoint + '\n')
 
   # Write stamp file.
   with open(args.stamp_file, 'w'):
     pass
 
   return 0
+
 
 if __name__ == '__main__':
   sys.exit(main())

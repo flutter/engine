@@ -12,8 +12,12 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.Window;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.loader.FlutterLoader;
@@ -35,6 +39,8 @@ public abstract class TestActivity extends TestableFlutterActivity {
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    hideSystemBars(getWindow());
+
     final Intent launchIntent = getIntent();
     if ("com.google.intent.action.TEST_LOOP".equals(launchIntent.getAction())) {
       if (Build.VERSION.SDK_INT > 22) {
@@ -78,6 +84,10 @@ public abstract class TestActivity extends TestableFlutterActivity {
       test.put("name", "animated_color_square");
     }
     test.put("use_android_view", launchIntent.getBooleanExtra("use_android_view", false));
+    test.put(
+        "expect_android_view_fallback",
+        launchIntent.getBooleanExtra("expect_android_view_fallback", false));
+    test.put("view_type", launchIntent.getStringExtra("view_type"));
     getScenarioParams(test);
     channel.invokeMethod("set_scenario", test);
   }
@@ -157,5 +167,13 @@ public abstract class TestActivity extends TestableFlutterActivity {
             }
           }
         });
+  }
+
+  private static void hideSystemBars(Window window) {
+    final WindowInsetsControllerCompat insetController =
+        WindowCompat.getInsetsController(window, window.getDecorView());
+    insetController.setSystemBarsBehavior(
+        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+    insetController.hide(WindowInsetsCompat.Type.systemBars());
   }
 }

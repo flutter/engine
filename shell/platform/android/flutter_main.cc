@@ -58,8 +58,8 @@ fml::jni::ScopedJavaGlobalRef<jclass>* g_flutter_jni_class = nullptr;
 
 }  // anonymous namespace
 
-FlutterMain::FlutterMain(flutter::Settings settings)
-    : settings_(std::move(settings)), observatory_uri_callback_() {}
+FlutterMain::FlutterMain(const flutter::Settings& settings)
+    : settings_(settings), vm_service_uri_callback_() {}
 
 FlutterMain::~FlutterMain() = default;
 
@@ -100,8 +100,8 @@ void FlutterMain::Init(JNIEnv* env,
       __android_log_print(
           ANDROID_LOG_INFO, "Flutter",
           "ATrace was enabled at startup. Flutter and Dart "
-          "tracing will be forwarded to systrace and will not show up in the "
-          "Observatory timeline or Dart DevTools.");
+          "tracing will be forwarded to systrace and will not show up in "
+          "Dart DevTools.");
     }
   }
 
@@ -110,10 +110,6 @@ void FlutterMain::Init(JNIEnv* env,
   // On Android, enable it in release mode only when using systrace.
   settings.enable_timeline_event_handler = settings.trace_systrace;
 #endif  // FLUTTER_RELEASE
-
-  int64_t init_time_micros = initTimeMillis * 1000;
-  settings.engine_start_timestamp =
-      std::chrono::microseconds(Dart_TimelineGetMicros() - init_time_micros);
 
   // Restore the callback cache.
   // TODO(chinmaygarde): Route all cache file access through FML and remove this
@@ -137,8 +133,8 @@ void FlutterMain::Init(JNIEnv* env,
     }
   }
 
-  settings.task_observer_add = [](intptr_t key, fml::closure callback) {
-    fml::MessageLoop::GetCurrent().AddTaskObserver(key, std::move(callback));
+  settings.task_observer_add = [](intptr_t key, const fml::closure& callback) {
+    fml::MessageLoop::GetCurrent().AddTaskObserver(key, callback);
   };
 
   settings.task_observer_remove = [](intptr_t key) {
@@ -148,7 +144,7 @@ void FlutterMain::Init(JNIEnv* env,
   settings.log_message_callback = [](const std::string& tag,
                                      const std::string& message) {
     __android_log_print(ANDROID_LOG_INFO, tag.c_str(), "%.*s",
-                        (int)message.size(), message.c_str());
+                        static_cast<int>(message.size()), message.c_str());
   };
 
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
@@ -166,24 +162,24 @@ void FlutterMain::Init(JNIEnv* env,
 
   // Not thread safe. Will be removed when FlutterMain is refactored to no
   // longer be a singleton.
-  g_flutter_main.reset(new FlutterMain(std::move(settings)));
+  g_flutter_main.reset(new FlutterMain(settings));
 
-  g_flutter_main->SetupObservatoryUriCallback(env);
+  g_flutter_main->SetupDartVMServiceUriCallback(env);
 }
 
-void FlutterMain::SetupObservatoryUriCallback(JNIEnv* env) {
+void FlutterMain::SetupDartVMServiceUriCallback(JNIEnv* env) {
   g_flutter_jni_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
       env, env->FindClass("io/flutter/embedding/engine/FlutterJNI"));
   if (g_flutter_jni_class->is_null()) {
     return;
   }
   jfieldID uri_field = env->GetStaticFieldID(
-      g_flutter_jni_class->obj(), "observatoryUri", "Ljava/lang/String;");
+      g_flutter_jni_class->obj(), "vmServiceUri", "Ljava/lang/String;");
   if (uri_field == nullptr) {
     return;
   }
 
-  auto set_uri = [env, uri_field](std::string uri) {
+  auto set_uri = [env, uri_field](const std::string& uri) {
     fml::jni::ScopedJavaLocalRef<jstring> java_uri =
         fml::jni::StringToJavaString(env, uri);
     env->SetStaticObjectField(g_flutter_jni_class->obj(), uri_field,
@@ -194,8 +190,8 @@ void FlutterMain::SetupObservatoryUriCallback(JNIEnv* env) {
   fml::RefPtr<fml::TaskRunner> platform_runner =
       fml::MessageLoop::GetCurrent().GetTaskRunner();
 
-  observatory_uri_callback_ = DartServiceIsolate::AddServerStatusCallback(
-      [platform_runner, set_uri](std::string uri) {
+  vm_service_uri_callback_ = DartServiceIsolate::AddServerStatusCallback(
+      [platform_runner, set_uri](const std::string& uri) {
         platform_runner->PostTask([uri, set_uri] { set_uri(uri); });
       });
 }

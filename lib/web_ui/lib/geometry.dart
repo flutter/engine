@@ -4,13 +4,14 @@
 
 // See https://github.com/flutter/engine/blob/main/lib/ui/geometry.dart for
 // documentation of APIs.
-// ignore_for_file: public_member_api_docs
 part of ui;
 
+double toDegrees(double radians) {
+  return radians * 180 / math.pi;
+}
+
 abstract class OffsetBase {
-  const OffsetBase(this._dx, this._dy)
-      : assert(_dx != null), // ignore: unnecessary_null_comparison
-        assert(_dy != null); // ignore: unnecessary_null_comparison
+  const OffsetBase(this._dx, this._dy);
 
   final double _dx;
   final double _dy;
@@ -28,14 +29,14 @@ abstract class OffsetBase {
   }
 
   @override
-  int get hashCode => hashValues(_dx, _dy);
+  int get hashCode => Object.hash(_dx, _dy);
 
   @override
   String toString() => 'OffsetBase(${_dx.toStringAsFixed(1)}, ${_dy.toStringAsFixed(1)})';
 }
 
 class Offset extends OffsetBase {
-  const Offset(double dx, double dy) : super(dx, dy);
+  const Offset(super.dx, super.dy);
   factory Offset.fromDirection(double direction, [ double distance = 1.0 ]) {
     return Offset(distance * math.cos(direction), distance * math.sin(direction));
   }
@@ -58,7 +59,6 @@ class Offset extends OffsetBase {
   Offset operator %(double operand) => Offset(dx % operand, dy % operand);
   Rect operator &(Size other) => Rect.fromLTWH(dx, dy, other.width, other.height);
   static Offset? lerp(Offset? a, Offset? b, double t) {
-    assert(t != null); // ignore: unnecessary_null_comparison
     if (b == null) {
       if (a == null) {
         return null;
@@ -82,29 +82,32 @@ class Offset extends OffsetBase {
   }
 
   @override
-  int get hashCode => hashValues(dx, dy);
+  int get hashCode => Object.hash(dx, dy);
 
   @override
   String toString() => 'Offset(${dx.toStringAsFixed(1)}, ${dy.toStringAsFixed(1)})';
 }
 
 class Size extends OffsetBase {
-  const Size(double width, double height) : super(width, height);
+  const Size(super.width, super.height);
   // Used by the rendering library's _DebugSize hack.
   Size.copy(Size source) : super(source.width, source.height);
-  const Size.square(double dimension) : super(dimension, dimension);
+  const Size.square(double dimension) : super(dimension, dimension); // ignore: use_super_parameters
   const Size.fromWidth(double width) : super(width, double.infinity);
   const Size.fromHeight(double height) : super(double.infinity, height);
   const Size.fromRadius(double radius) : super(radius * 2.0, radius * 2.0);
   double get width => _dx;
   double get height => _dy;
   double get aspectRatio {
-    if (height != 0.0)
+    if (height != 0.0) {
       return width / height;
-    if (width > 0.0)
+    }
+    if (width > 0.0) {
       return double.infinity;
-    if (width < 0.0)
+    }
+    if (width < 0.0) {
       return double.negativeInfinity;
+    }
     return 0.0;
   }
 
@@ -112,10 +115,12 @@ class Size extends OffsetBase {
   static const Size infinite = Size(double.infinity, double.infinity);
   bool get isEmpty => width <= 0.0 || height <= 0.0;
   OffsetBase operator -(OffsetBase other) {
-    if (other is Size)
+    if (other is Size) {
       return Offset(width - other.width, height - other.height);
-    if (other is Offset)
+    }
+    if (other is Offset) {
       return Size(width - other.dx, height - other.dy);
+    }
     throw ArgumentError(other);
   }
 
@@ -144,7 +149,6 @@ class Size extends OffsetBase {
 
   Size get flipped => Size(height, width);
   static Size? lerp(Size? a, Size? b, double t) {
-    assert(t != null); // ignore: unnecessary_null_comparison
     if (b == null) {
       if (a == null) {
         return null;
@@ -169,18 +173,14 @@ class Size extends OffsetBase {
   }
 
   @override
-  int get hashCode => hashValues(_dx, _dy);
+  int get hashCode => Object.hash(_dx, _dy);
 
   @override
   String toString() => 'Size(${width.toStringAsFixed(1)}, ${height.toStringAsFixed(1)})';
 }
 
 class Rect {
-  const Rect.fromLTRB(this.left, this.top, this.right, this.bottom)
-      : assert(left != null), // ignore: unnecessary_null_comparison
-        assert(top != null), // ignore: unnecessary_null_comparison
-        assert(right != null), // ignore: unnecessary_null_comparison
-        assert(bottom != null); // ignore: unnecessary_null_comparison
+  const Rect.fromLTRB(this.left, this.top, this.right, this.bottom);
 
   const Rect.fromLTWH(double left, double top, double width, double height)
       : this.fromLTRB(left, top, left + width, top + height);
@@ -262,10 +262,12 @@ class Rect {
   }
 
   bool overlaps(Rect other) {
-    if (right <= other.left || other.right <= left)
+    if (right <= other.left || other.right <= left) {
       return false;
-    if (bottom <= other.top || other.bottom <= top)
+    }
+    if (bottom <= other.top || other.bottom <= top) {
       return false;
+    }
     return true;
   }
 
@@ -285,7 +287,6 @@ class Rect {
   }
 
   static Rect? lerp(Rect? a, Rect? b, double t) {
-    assert(t != null); // ignore: unnecessary_null_comparison
     if (b == null) {
       if (a == null) {
         return null;
@@ -309,10 +310,12 @@ class Rect {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
+    if (identical(this, other)) {
       return true;
-    if (runtimeType != other.runtimeType)
+    }
+    if (runtimeType != other.runtimeType) {
       return false;
+    }
     return other is Rect
         && other.left   == left
         && other.top    == top
@@ -321,7 +324,7 @@ class Rect {
   }
 
   @override
-  int get hashCode => hashValues(left, top, right, bottom);
+  int get hashCode => Object.hash(left, top, right, bottom);
 
   @override
   String toString() => 'Rect.fromLTRB(${left.toStringAsFixed(1)}, ${top.toStringAsFixed(1)}, ${right.toStringAsFixed(1)}, ${bottom.toStringAsFixed(1)})';
@@ -333,6 +336,25 @@ class Radius {
   final double x;
   final double y;
   static const Radius zero = Radius.circular(0.0);
+  Radius clamp({Radius? minimum, Radius? maximum}) {
+    minimum ??= const Radius.circular(-double.infinity);
+    maximum ??= const Radius.circular(double.infinity);
+    return Radius.elliptical(
+      clampDouble(x, minimum.x, maximum.x),
+      clampDouble(y, minimum.y, maximum.y),
+    );
+  }
+  Radius clampValues({
+    double? minimumX,
+    double? minimumY,
+    double? maximumX,
+    double? maximumY,
+  }) {
+    return Radius.elliptical(
+      clampDouble(x, minimumX ?? -double.infinity, maximumX ?? double.infinity),
+      clampDouble(y, minimumY ?? -double.infinity, maximumY ?? double.infinity),
+    );
+  }
   Radius operator -() => Radius.elliptical(-x, -y);
   Radius operator -(Radius other) => Radius.elliptical(x - other.x, y - other.y);
   Radius operator +(Radius other) => Radius.elliptical(x + other.x, y + other.y);
@@ -341,7 +363,6 @@ class Radius {
   Radius operator ~/(double operand) => Radius.elliptical((x ~/ operand).toDouble(), (y ~/ operand).toDouble());
   Radius operator %(double operand) => Radius.elliptical(x % operand, y % operand);
   static Radius? lerp(Radius? a, Radius? b, double t) {
-    assert(t != null); // ignore: unnecessary_null_comparison
     if (b == null) {
       if (a == null) {
         return null;
@@ -363,10 +384,12 @@ class Radius {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
+    if (identical(this, other)) {
       return true;
-    if (runtimeType != other.runtimeType)
+    }
+    if (runtimeType != other.runtimeType) {
       return false;
+    }
 
     return other is Radius
         && other.x == x
@@ -374,7 +397,7 @@ class Radius {
   }
 
   @override
-  int get hashCode => hashValues(x, y);
+  int get hashCode => Object.hash(x, y);
 
   @override
   String toString() {
@@ -537,18 +560,14 @@ class RRect {
     this.blRadiusX = 0.0,
     this.blRadiusY = 0.0,
     bool uniformRadii = false,
-  })  : assert(left != null), // ignore: unnecessary_null_comparison
-        assert(top != null), // ignore: unnecessary_null_comparison
-        assert(right != null), // ignore: unnecessary_null_comparison
-        assert(bottom != null), // ignore: unnecessary_null_comparison
-        assert(tlRadiusX != null), // ignore: unnecessary_null_comparison
-        assert(tlRadiusY != null), // ignore: unnecessary_null_comparison
-        assert(trRadiusX != null), // ignore: unnecessary_null_comparison
-        assert(trRadiusY != null), // ignore: unnecessary_null_comparison
-        assert(brRadiusX != null), // ignore: unnecessary_null_comparison
-        assert(brRadiusY != null), // ignore: unnecessary_null_comparison
-        assert(blRadiusX != null), // ignore: unnecessary_null_comparison
-        assert(blRadiusY != null), // ignore: unnecessary_null_comparison
+  })  : assert(tlRadiusX >= 0),
+        assert(tlRadiusY >= 0),
+        assert(trRadiusX >= 0),
+        assert(trRadiusY >= 0),
+        assert(brRadiusX >= 0),
+        assert(brRadiusY >= 0),
+        assert(blRadiusX >= 0),
+        assert(blRadiusY >= 0),
         webOnlyUniformRadii = uniformRadii;
 
   final double left;
@@ -594,14 +613,14 @@ class RRect {
       top: top - delta,
       right: right + delta,
       bottom: bottom + delta,
-      tlRadiusX: tlRadiusX + delta,
-      tlRadiusY: tlRadiusY + delta,
-      trRadiusX: trRadiusX + delta,
-      trRadiusY: trRadiusY + delta,
-      blRadiusX: blRadiusX + delta,
-      blRadiusY: blRadiusY + delta,
-      brRadiusX: brRadiusX + delta,
-      brRadiusY: brRadiusY + delta,
+      tlRadiusX: math.max(0, tlRadiusX + delta),
+      tlRadiusY: math.max(0, tlRadiusY + delta),
+      trRadiusX: math.max(0, trRadiusX + delta),
+      trRadiusY: math.max(0, trRadiusY + delta),
+      blRadiusX: math.max(0, blRadiusX + delta),
+      blRadiusY: math.max(0, blRadiusY + delta),
+      brRadiusX: math.max(0, brRadiusX + delta),
+      brRadiusY: math.max(0, brRadiusY + delta),
     );
   }
 
@@ -696,8 +715,9 @@ class RRect {
   // should be scaled with in order not to exceed the limit.
   double _getMin(double min, double radius1, double radius2, double limit) {
     final double sum = radius1 + radius2;
-    if (sum > limit && sum != 0.0)
+    if (sum > limit && sum != 0.0) {
       return math.min(min, limit / sum);
+    }
     return min;
   }
 
@@ -744,8 +764,9 @@ class RRect {
   }
 
   bool contains(Offset point) {
-    if (point.dx < left || point.dx >= right || point.dy < top || point.dy >= bottom)
-      return false; // outside bounding box
+    if (point.dx < left || point.dx >= right || point.dy < top || point.dy >= bottom) {
+      return false;
+    } // outside bounding box
 
     final RRect scaled = scaleRadii();
 
@@ -786,13 +807,13 @@ class RRect {
     x = x / radiusX;
     y = y / radiusY;
     // check if the point is outside the unit circle
-    if (x * x + y * y > 1.0)
+    if (x * x + y * y > 1.0) {
       return false;
+    }
     return true;
   }
 
   static RRect? lerp(RRect? a, RRect? b, double t) {
-    assert(t != null); // ignore: unnecessary_null_comparison
     if (b == null) {
       if (a == null) {
         return null;
@@ -803,14 +824,14 @@ class RRect {
           top: a.top * k,
           right: a.right * k,
           bottom: a.bottom * k,
-          tlRadiusX: a.tlRadiusX * k,
-          tlRadiusY: a.tlRadiusY * k,
-          trRadiusX: a.trRadiusX * k,
-          trRadiusY: a.trRadiusY * k,
-          brRadiusX: a.brRadiusX * k,
-          brRadiusY: a.brRadiusY * k,
-          blRadiusX: a.blRadiusX * k,
-          blRadiusY: a.blRadiusY * k,
+          tlRadiusX: math.max(0, a.tlRadiusX * k),
+          tlRadiusY: math.max(0, a.tlRadiusY * k),
+          trRadiusX: math.max(0, a.trRadiusX * k),
+          trRadiusY: math.max(0, a.trRadiusY * k),
+          brRadiusX: math.max(0, a.brRadiusX * k),
+          brRadiusY: math.max(0, a.brRadiusY * k),
+          blRadiusX: math.max(0, a.blRadiusX * k),
+          blRadiusY: math.max(0, a.blRadiusY * k),
         );
       }
     } else {
@@ -820,14 +841,14 @@ class RRect {
           top: b.top * t,
           right: b.right * t,
           bottom: b.bottom * t,
-          tlRadiusX: b.tlRadiusX * t,
-          tlRadiusY: b.tlRadiusY * t,
-          trRadiusX: b.trRadiusX * t,
-          trRadiusY: b.trRadiusY * t,
-          brRadiusX: b.brRadiusX * t,
-          brRadiusY: b.brRadiusY * t,
-          blRadiusX: b.blRadiusX * t,
-          blRadiusY: b.blRadiusY * t,
+          tlRadiusX: math.max(0, b.tlRadiusX * t),
+          tlRadiusY: math.max(0, b.tlRadiusY * t),
+          trRadiusX: math.max(0, b.trRadiusX * t),
+          trRadiusY: math.max(0, b.trRadiusY * t),
+          brRadiusX: math.max(0, b.brRadiusX * t),
+          brRadiusY: math.max(0, b.brRadiusY * t),
+          blRadiusX: math.max(0, b.blRadiusX * t),
+          blRadiusY: math.max(0, b.blRadiusY * t),
         );
       } else {
         return RRect._raw(
@@ -835,14 +856,14 @@ class RRect {
           top: _lerpDouble(a.top, b.top, t),
           right: _lerpDouble(a.right, b.right, t),
           bottom: _lerpDouble(a.bottom, b.bottom, t),
-          tlRadiusX: _lerpDouble(a.tlRadiusX, b.tlRadiusX, t),
-          tlRadiusY: _lerpDouble(a.tlRadiusY, b.tlRadiusY, t),
-          trRadiusX: _lerpDouble(a.trRadiusX, b.trRadiusX, t),
-          trRadiusY: _lerpDouble(a.trRadiusY, b.trRadiusY, t),
-          brRadiusX: _lerpDouble(a.brRadiusX, b.brRadiusX, t),
-          brRadiusY: _lerpDouble(a.brRadiusY, b.brRadiusY, t),
-          blRadiusX: _lerpDouble(a.blRadiusX, b.blRadiusX, t),
-          blRadiusY: _lerpDouble(a.blRadiusY, b.blRadiusY, t),
+          tlRadiusX: math.max(0, _lerpDouble(a.tlRadiusX, b.tlRadiusX, t)),
+          tlRadiusY: math.max(0, _lerpDouble(a.tlRadiusY, b.tlRadiusY, t)),
+          trRadiusX: math.max(0, _lerpDouble(a.trRadiusX, b.trRadiusX, t)),
+          trRadiusY: math.max(0, _lerpDouble(a.trRadiusY, b.trRadiusY, t)),
+          brRadiusX: math.max(0, _lerpDouble(a.brRadiusX, b.brRadiusX, t)),
+          brRadiusY: math.max(0, _lerpDouble(a.brRadiusY, b.brRadiusY, t)),
+          blRadiusX: math.max(0, _lerpDouble(a.blRadiusX, b.blRadiusX, t)),
+          blRadiusY: math.max(0, _lerpDouble(a.blRadiusY, b.blRadiusY, t)),
         );
       }
     }
@@ -850,10 +871,12 @@ class RRect {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
+    if (identical(this, other)) {
       return true;
-    if (runtimeType != other.runtimeType)
+    }
+    if (runtimeType != other.runtimeType) {
       return false;
+    }
     return other is RRect
         && other.left      == left
         && other.top       == top
@@ -870,7 +893,7 @@ class RRect {
   }
 
   @override
-  int get hashCode => hashValues(left, top, right, bottom,
+  int get hashCode => Object.hash(left, top, right, bottom,
     tlRadiusX, tlRadiusY, trRadiusX, trRadiusY,
     blRadiusX, blRadiusY, brRadiusX, brRadiusY);
 
@@ -883,8 +906,9 @@ class RRect {
     if (tlRadius == trRadius &&
         trRadius == brRadius &&
         brRadius == blRadius) {
-      if (tlRadius.x == tlRadius.y)
+      if (tlRadius.x == tlRadius.y) {
         return 'RRect.fromLTRBR($rect, ${tlRadius.x.toStringAsFixed(1)})';
+      }
       return 'RRect.fromLTRBXY($rect, ${tlRadius.x.toStringAsFixed(1)}, ${tlRadius.y.toStringAsFixed(1)})';
     }
     return 'RRect.fromLTRBAndCorners('

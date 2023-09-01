@@ -4,12 +4,16 @@
 
 #include "flutter/shell/platform/embedder/embedder_surface_vulkan.h"
 
+#include <utility>
+
+#include "flutter/flutter_vma/flutter_skia_vma.h"
 #include "flutter/shell/common/shell_io_manager.h"
+#include "flutter/shell/gpu/gpu_surface_vulkan.h"
+#include "flutter/shell/gpu/gpu_surface_vulkan_delegate.h"
+#include "flutter/vulkan/vulkan_skia_proc_table.h"
 #include "include/gpu/GrDirectContext.h"
 #include "include/gpu/vk/GrVkBackendContext.h"
 #include "include/gpu/vk/GrVkExtensions.h"
-#include "shell/gpu/gpu_surface_vulkan.h"
-#include "shell/gpu/gpu_surface_vulkan_delegate.h"
 
 namespace flutter {
 
@@ -24,7 +28,7 @@ EmbedderSurfaceVulkan::EmbedderSurfaceVulkan(
     VkDevice device,
     uint32_t queue_family_index,
     VkQueue queue,
-    VulkanDispatchTable vulkan_dispatch_table,
+    const VulkanDispatchTable& vulkan_dispatch_table,
     std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder)
     : vk_(fml::MakeRefCounted<vulkan::VulkanProcTable>(
           vulkan_dispatch_table.get_instance_proc_address)),
@@ -34,7 +38,7 @@ EmbedderSurfaceVulkan::EmbedderSurfaceVulkan(
               queue_family_index,
               vulkan::VulkanHandle<VkQueue>{queue}),
       vulkan_dispatch_table_(vulkan_dispatch_table),
-      external_view_embedder_(external_view_embedder) {
+      external_view_embedder_(std::move(external_view_embedder)) {
   // Make sure all required members of the dispatch table are checked.
   if (!vulkan_dispatch_table_.get_instance_proc_address ||
       !vulkan_dispatch_table_.get_next_image ||
@@ -42,8 +46,18 @@ EmbedderSurfaceVulkan::EmbedderSurfaceVulkan(
     return;
   }
 
-  vk_->SetupInstanceProcAddresses(vulkan::VulkanHandle<VkInstance>{instance});
-  vk_->SetupDeviceProcAddresses(vulkan::VulkanHandle<VkDevice>{device});
+  bool success = vk_->SetupInstanceProcAddresses(
+      vulkan::VulkanHandle<VkInstance>{instance});
+  if (!success) {
+    FML_LOG(ERROR) << "Could not setup instance proc addresses.";
+    return;
+  }
+  success =
+      vk_->SetupDeviceProcAddresses(vulkan::VulkanHandle<VkDevice>{device});
+  if (!success) {
+    FML_LOG(ERROR) << "Could not setup device proc addresses.";
+    return;
+  }
   if (!vk_->IsValid()) {
     FML_LOG(ERROR) << "VulkanProcTable invalid.";
     return;
@@ -120,7 +134,7 @@ sk_sp<GrDirectContext> EmbedderSurfaceVulkan::CreateGrContext(
     return nullptr;
   }
 
-  auto get_proc = vk_->CreateSkiaGetProc();
+  auto get_proc = CreateSkiaGetProc(vk_);
   if (get_proc == nullptr) {
     FML_LOG(ERROR) << "Failed to create Vulkan getProc for Skia.";
     return nullptr;
@@ -140,6 +154,14 @@ sk_sp<GrDirectContext> EmbedderSurfaceVulkan::CreateGrContext(
   backend_context.fVkExtensions = &extensions;
   backend_context.fGetProc = get_proc;
   backend_context.fOwnsInstanceAndDevice = false;
+
+  uint32_t vulkan_api_version = version;
+  sk_sp<skgpu::VulkanMemoryAllocator> allocator =
+      flutter::FlutterSkiaVulkanMemoryAllocator::Make(
+          vulkan_api_version, instance, device_.GetPhysicalDeviceHandle(),
+          device_.GetHandle(), vk_, true);
+
+  backend_context.fMemoryAllocator = allocator;
 
   extensions.init(backend_context.fGetProc, backend_context.fInstance,
                   backend_context.fPhysicalDevice, instance_extension_count,

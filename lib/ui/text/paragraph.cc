@@ -13,43 +13,14 @@
 #include "third_party/tonic/dart_binding_macros.h"
 #include "third_party/tonic/dart_library_natives.h"
 
-using tonic::ToDart;
-
 namespace flutter {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, Paragraph);
-
-#define FOR_EACH_BINDING(V)             \
-  V(Paragraph, width)                   \
-  V(Paragraph, height)                  \
-  V(Paragraph, longestLine)             \
-  V(Paragraph, minIntrinsicWidth)       \
-  V(Paragraph, maxIntrinsicWidth)       \
-  V(Paragraph, alphabeticBaseline)      \
-  V(Paragraph, ideographicBaseline)     \
-  V(Paragraph, didExceedMaxLines)       \
-  V(Paragraph, layout)                  \
-  V(Paragraph, paint)                   \
-  V(Paragraph, getWordBoundary)         \
-  V(Paragraph, getLineBoundary)         \
-  V(Paragraph, getRectsForRange)        \
-  V(Paragraph, getRectsForPlaceholders) \
-  V(Paragraph, getPositionForOffset)    \
-  V(Paragraph, computeLineMetrics)
-
-DART_BIND_ALL(Paragraph, FOR_EACH_BINDING)
 
 Paragraph::Paragraph(std::unique_ptr<txt::Paragraph> paragraph)
     : m_paragraph(std::move(paragraph)) {}
 
 Paragraph::~Paragraph() = default;
-
-size_t Paragraph::GetAllocationSize() const {
-  // We don't have an accurate accounting of the paragraph's memory consumption,
-  // so return a fixed size to indicate that its impact is more than the size
-  // of the Paragraph class.
-  return 2000;
-}
 
 double Paragraph::width() {
   return m_paragraph->GetMaxWidth();
@@ -88,11 +59,15 @@ void Paragraph::layout(double width) {
 }
 
 void Paragraph::paint(Canvas* canvas, double x, double y) {
-  SkCanvas* sk_canvas = canvas->canvas();
-  if (!sk_canvas) {
+  if (!m_paragraph || !canvas) {
+    // disposed.
     return;
   }
-  m_paragraph->Paint(sk_canvas, x, y);
+
+  DisplayListBuilder* builder = canvas->builder();
+  if (builder) {
+    m_paragraph->Paint(builder, x, y);
+  }
 }
 
 static tonic::Float32List EncodeTextBoxes(
@@ -188,6 +163,11 @@ tonic::Float64List Paragraph::computeLineMetrics() {
   }
 
   return result;
+}
+
+void Paragraph::dispose() {
+  m_paragraph.reset();
+  ClearDartWrapper();
 }
 
 }  // namespace flutter

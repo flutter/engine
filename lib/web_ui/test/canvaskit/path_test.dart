@@ -19,7 +19,7 @@ void testMain() {
     setUpCanvasKitTest();
 
     test('Using CanvasKit', () {
-      expect(useCanvasKit, isTrue);
+      expect(renderer is CanvasKitRenderer, isTrue);
     });
 
     test(CkPathMetrics, () {
@@ -44,12 +44,6 @@ void testMain() {
 
       path.addOval(const ui.Rect.fromLTRB(10, 10, 100, 100));
       expect(path.computeMetrics().length, 2);
-
-      // Path metrics can be iterated over multiple times.
-      final ui.PathMetrics metrics = path.computeMetrics();
-      expect(metrics.toList().length, 2);
-      expect(metrics.toList().length, 2);
-      expect(metrics.toList().length, 2);
 
       // Can simultaneously iterate over multiple metrics from the same path.
       final ui.PathMetrics metrics1 = path.computeMetrics();
@@ -100,18 +94,7 @@ void testMain() {
       expect(path.getBounds(), testRect);
     });
 
-    test('CkPath resurrection', () {
-      const ui.Rect rect = ui.Rect.fromLTRB(0, 0, 10, 10);
-      final CkPath path = CkPath();
-      path.addRect(rect);
-      path.delete();
-
-      final SkPath resurrectedCopy = path.resurrect();
-      expect(fromSkRect(resurrectedCopy.getBounds()), rect);
-    });
-
-    test('Resurrect CkContourMeasure in the middle of iteration', () {
-      browserSupportsFinalizationRegistry = false;
+    test('CkContourMeasure iteration', () {
       final ui.Path path = ui.Path();
       expect(path, isA<CkPath>());
       path.addRect(const ui.Rect.fromLTRB(0, 0, 10, 10));
@@ -125,19 +108,9 @@ void testMain() {
       expect(iterator.current.contourIndex, 0);
       expect(iterator.moveNext(), isTrue);
       expect(iterator.current.contourIndex, 1);
-
-      // Delete iterator in the middle of iteration
-      iterator.delete();
-      iterator.rawSkiaObject = null;
-
-      // Check that the iterator can continue from the last position.
-      expect(iterator.moveNext(), isTrue);
-      expect(iterator.current.contourIndex, 2);
-      expect(iterator.moveNext(), isFalse);
     });
 
-    test('Resurrect CkContourMeasure', () {
-      browserSupportsFinalizationRegistry = false;
+    test('CkContourMeasure index', () {
       final ui.Path path = ui.Path();
       expect(path, isA<CkPath>());
       path.addRect(const ui.Rect.fromLTRB(0, 0, 10, 10));
@@ -154,20 +127,6 @@ void testMain() {
 
       expect(iterator.moveNext(), isTrue);
       final CkContourMeasure measure1 = iterator.current as CkContourMeasure;
-      expect(measure1.contourIndex, 1);
-      expect(measure1.extractPath(0, 15).getBounds(), const ui.Rect.fromLTRB(20, 20, 30, 25));
-
-      // Delete iterator and the measure in the middle of iteration
-      iterator.delete();
-      iterator.rawSkiaObject = null;
-      measure0.delete();
-      measure0.rawSkiaObject = null;
-      measure1.delete();
-      measure1.rawSkiaObject = null;
-
-      // Check that the measure is still value after resurrection.
-      expect(measure0.contourIndex, 0);
-      expect(measure0.extractPath(0, 15).getBounds(), const ui.Rect.fromLTRB(0, 0, 10, 5));
       expect(measure1.contourIndex, 1);
       expect(measure1.extractPath(0, 15).getBounds(), const ui.Rect.fromLTRB(20, 20, 30, 25));
     });
@@ -190,7 +149,5 @@ void testMain() {
       expect(original.getBounds(), rect1);
       expect(copy.getBounds(), rect1.expandToInclude(rect2));
     });
-  },
-      skip:
-          isIosSafari); // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
+  });
 }

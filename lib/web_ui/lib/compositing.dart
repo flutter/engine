@@ -6,6 +6,7 @@ part of ui;
 
 abstract class Scene {
   Future<Image> toImage(int width, int height);
+  Image toImageSync(int width, int height);
   void dispose();
 }
 
@@ -29,16 +30,10 @@ abstract class BackdropFilterEngineLayer implements EngineLayer {}
 
 abstract class ShaderMaskEngineLayer implements EngineLayer {}
 
-abstract class PhysicalShapeEngineLayer implements EngineLayer {}
-
 abstract class SceneBuilder {
-  factory SceneBuilder() {
-    if (engine.useCanvasKit) {
-      return engine.LayerSceneBuilder();
-    } else {
-      return engine.SurfaceSceneBuilder();
-    }
-  }
+  factory SceneBuilder() =>
+    engine.renderer.createSceneBuilder();
+
   OffsetEngineLayer pushOffset(
     double dx,
     double dy, {
@@ -74,6 +69,7 @@ abstract class SceneBuilder {
   });
   ImageFilterEngineLayer pushImageFilter(
     ImageFilter filter, {
+    Offset offset = Offset.zero,
     ImageFilterEngineLayer? oldLayer,
   });
   BackdropFilterEngineLayer pushBackdropFilter(
@@ -87,14 +83,6 @@ abstract class SceneBuilder {
     BlendMode blendMode, {
     ShaderMaskEngineLayer? oldLayer,
     FilterQuality filterQuality = FilterQuality.low,
-  });
-  PhysicalShapeEngineLayer pushPhysicalShape({
-    required Path path,
-    required double elevation,
-    required Color color,
-    Color? shadowColor,
-    Clip clipBehavior = Clip.none,
-    PhysicalShapeEngineLayer? oldLayer,
   });
   void addRetained(EngineLayer retainedLayer);
   void pop();

@@ -9,17 +9,25 @@
 #include <iostream>
 #include <vector>
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMacDelegate.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterGLCompositor.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositor.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderingBackend.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
+#include "flutter/shell/platform/common/app_lifecycle_state.h"
+#include "flutter/shell/platform/common/engine_switches.h"
 #include "flutter/shell/platform/embedder/embedder.h"
+
+#import "flutter/shell/platform/darwin/common/framework/Source/FlutterBinaryMessengerRelay.h"
+#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewEngineProvider.h"
+
+NSString* const kFlutterPlatformChannel = @"flutter/platform";
+NSString* const kFlutterSettingsChannel = @"flutter/settings";
+NSString* const kFlutterLifecycleChannel = @"flutter/lifecycle";
 
 /**
  * Constructs and returns a FlutterLocale struct corresponding to |locale|, which must outlive
@@ -34,6 +42,14 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
   flutterLocale.variant_code = [[locale objectForKey:NSLocaleVariantCode] UTF8String];
   return flutterLocale;
 }
+
+/// The private notification for voice over.
+static NSString* const kEnhancedUserInterfaceNotification =
+    @"NSApplicationDidChangeAccessibilityEnhancedUserInterfaceNotification";
+static NSString* const kEnhancedUserInterfaceKey = @"AXEnhancedUserInterface";
+
+/// Clipboard plain text format.
+constexpr char kTextPlainFormat[] = "text/plain";
 
 #pragma mark -
 
@@ -66,6 +82,43 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
  * Private interface declaration for FlutterEngine.
  */
 @interface FlutterEngine () <FlutterBinaryMessenger>
+
+/**
+ * A mutable array that holds one bool value that determines if responses to platform messages are
+ * clear to execute. This value should be read or written only inside of a synchronized block and
+ * will return `NO` after the FlutterEngine has been dealloc'd.
+ */
+@property(nonatomic, strong) NSMutableArray<NSNumber*>* isResponseValid;
+
+/**
+ * All delegates added via plugin calls to addApplicationDelegate.
+ */
+@property(nonatomic, strong) NSPointerArray* pluginAppDelegates;
+
+- (nullable FlutterViewController*)viewControllerForId:(FlutterViewId)viewId;
+
+/**
+ * An internal method that adds the view controller with the given ID.
+ *
+ * This method assigns the controller with the ID, puts the controller into the
+ * map, and does assertions related to the implicit view ID.
+ */
+- (void)registerViewController:(FlutterViewController*)controller forId:(FlutterViewId)viewId;
+
+/**
+ * An internal method that removes the view controller with the given ID.
+ *
+ * This method clears the ID of the controller, removes the controller from the
+ * map. This is an no-op if the view ID is not associated with any view
+ * controllers.
+ */
+- (void)deregisterViewControllerForId:(FlutterViewId)viewId;
+
+/**
+ * Shuts down the engine if view requirement is not met, and headless execution
+ * is not allowed.
+ */
+- (void)shutDownIfNeeded;
 
 /**
  * Sends the list of user-preferred locales to the Flutter engine.
@@ -102,6 +155,114 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
  */
 - (void)setUpPlatformViewChannel;
 
+/**
+ * Creates an accessibility channel and sets up the message handler.
+ */
+- (void)setUpAccessibilityChannel;
+
+/**
+ * Handles messages received from the Flutter engine on the _*Channel channels.
+ */
+- (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
+
+@end
+
+#pragma mark -
+
+@implementation FlutterEngineTerminationHandler {
+  __weak FlutterEngine* _engine;
+  FlutterTerminationCallback _terminator;
+}
+
+- (instancetype)initWithEngine:(FlutterEngine*)engine
+                    terminator:(FlutterTerminationCallback)terminator {
+  self = [super init];
+  _acceptingRequests = NO;
+  _engine = engine;
+  _terminator = terminator ? terminator : ^(id sender) {
+    // Default to actually terminating the application. The terminator exists to
+    // allow tests to override it so that an actual exit doesn't occur.
+    [[NSApplication sharedApplication] terminate:sender];
+  };
+  id<NSApplicationDelegate> appDelegate = [[NSApplication sharedApplication] delegate];
+  if ([appDelegate respondsToSelector:@selector(setTerminationHandler:)]) {
+    FlutterAppDelegate* flutterAppDelegate = reinterpret_cast<FlutterAppDelegate*>(appDelegate);
+    flutterAppDelegate.terminationHandler = self;
+  }
+  return self;
+}
+
+// This is called by the method call handler in the engine when the application
+// requests termination itself.
+- (void)handleRequestAppExitMethodCall:(NSDictionary<NSString*, id>*)arguments
+                                result:(FlutterResult)result {
+  NSString* type = arguments[@"type"];
+  // Ignore the "exitCode" value in the arguments because AppKit doesn't have
+  // any good way to set the process exit code other than calling exit(), and
+  // that bypasses all of the native applicationShouldExit shutdown events,
+  // etc., which we don't want to skip.
+
+  FlutterAppExitType exitType =
+      [type isEqualTo:@"cancelable"] ? kFlutterAppExitTypeCancelable : kFlutterAppExitTypeRequired;
+
+  [self requestApplicationTermination:[NSApplication sharedApplication]
+                             exitType:exitType
+                               result:result];
+}
+
+// This is called by the FlutterAppDelegate whenever any termination request is
+// received.
+- (void)requestApplicationTermination:(id)sender
+                             exitType:(FlutterAppExitType)type
+                               result:(nullable FlutterResult)result {
+  _shouldTerminate = YES;
+  if (![self acceptingRequests]) {
+    // Until the Dart application has signaled that it is ready to handle
+    // termination requests, the app will just terminate when asked.
+    type = kFlutterAppExitTypeRequired;
+  }
+  switch (type) {
+    case kFlutterAppExitTypeCancelable: {
+      FlutterJSONMethodCodec* codec = [FlutterJSONMethodCodec sharedInstance];
+      FlutterMethodCall* methodCall =
+          [FlutterMethodCall methodCallWithMethodName:@"System.requestAppExit" arguments:nil];
+      [_engine sendOnChannel:kFlutterPlatformChannel
+                     message:[codec encodeMethodCall:methodCall]
+                 binaryReply:^(NSData* _Nullable reply) {
+                   NSAssert(_terminator, @"terminator shouldn't be nil");
+                   id decoded_reply = [codec decodeEnvelope:reply];
+                   if ([decoded_reply isKindOfClass:[FlutterError class]]) {
+                     FlutterError* error = (FlutterError*)decoded_reply;
+                     NSLog(@"Method call returned error[%@]: %@ %@", [error code], [error message],
+                           [error details]);
+                     _terminator(sender);
+                     return;
+                   }
+                   if (![decoded_reply isKindOfClass:[NSDictionary class]]) {
+                     NSLog(@"Call to System.requestAppExit returned an unexpected object: %@",
+                           decoded_reply);
+                     _terminator(sender);
+                     return;
+                   }
+                   NSDictionary* replyArgs = (NSDictionary*)decoded_reply;
+                   if ([replyArgs[@"response"] isEqual:@"exit"]) {
+                     _terminator(sender);
+                   } else if ([replyArgs[@"response"] isEqual:@"cancel"]) {
+                     _shouldTerminate = NO;
+                   }
+                   if (result != nil) {
+                     result(replyArgs);
+                   }
+                 }];
+      break;
+    }
+    case kFlutterAppExitTypeRequired:
+      NSAssert(_terminator, @"terminator shouldn't be nil");
+      _terminator(sender);
+      break;
+  }
+}
+
 @end
 
 #pragma mark -
@@ -112,12 +273,16 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
 @interface FlutterEngineRegistrar : NSObject <FlutterPluginRegistrar>
 - (instancetype)initWithPlugin:(nonnull NSString*)pluginKey
                  flutterEngine:(nonnull FlutterEngine*)flutterEngine;
+
+- (NSView*)viewForId:(FlutterViewId)viewId;
 @end
 
 @implementation FlutterEngineRegistrar {
   NSString* _pluginKey;
   FlutterEngine* _flutterEngine;
 }
+
+@dynamic view;
 
 - (instancetype)initWithPlugin:(NSString*)pluginKey flutterEngine:(FlutterEngine*)flutterEngine {
   self = [super init];
@@ -139,10 +304,18 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
 }
 
 - (NSView*)view {
-  if (!_flutterEngine.viewController.viewLoaded) {
-    [_flutterEngine.viewController loadView];
+  return [self viewForId:kFlutterImplicitViewId];
+}
+
+- (NSView*)viewForId:(FlutterViewId)viewId {
+  FlutterViewController* controller = [_flutterEngine viewControllerForId:viewId];
+  if (controller == nil) {
+    return nil;
   }
-  return _flutterEngine.viewController.flutterView;
+  if (!controller.viewLoaded) {
+    [controller loadView];
+  }
+  return controller.flutterView;
 }
 
 - (void)addMethodCallDelegate:(nonnull id<FlutterPlugin>)delegate
@@ -152,9 +325,27 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
   }];
 }
 
+- (void)addApplicationDelegate:(NSObject<FlutterAppLifecycleDelegate>*)delegate {
+  id<NSApplicationDelegate> appDelegate = [[NSApplication sharedApplication] delegate];
+  if ([appDelegate conformsToProtocol:@protocol(FlutterAppLifecycleProvider)]) {
+    id<FlutterAppLifecycleProvider> lifeCycleProvider =
+        static_cast<id<FlutterAppLifecycleProvider>>(appDelegate);
+    [lifeCycleProvider addApplicationLifecycleDelegate:delegate];
+    [_flutterEngine.pluginAppDelegates addPointer:(__bridge void*)delegate];
+  }
+}
+
 - (void)registerViewFactory:(nonnull NSObject<FlutterPlatformViewFactory>*)factory
                      withId:(nonnull NSString*)factoryId {
   [[_flutterEngine platformViewController] registerViewFactory:factory withId:factoryId];
+}
+
+- (NSString*)lookupKeyForAsset:(NSString*)asset {
+  return [FlutterDartProject lookupKeyForAsset:asset];
+}
+
+- (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package {
+  return [FlutterDartProject lookupKeyForAsset:asset fromPackage:package];
 }
 
 @end
@@ -172,9 +363,6 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // The embedding-API-level engine object.
   FLUTTER_API_SYMBOL(FlutterEngine) _engine;
 
-  // The private member for accessibility.
-  std::shared_ptr<flutter::AccessibilityBridge> _bridge;
-
   // The project being run by this engine.
   FlutterDartProject* _project;
 
@@ -191,10 +379,14 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // Pointer to the Dart AOT snapshot and instruction data.
   _FlutterEngineAOTData* _aotData;
 
-  // _macOSCompositor is created when the engine is created and
-  // its destruction is handled by ARC when the engine is destroyed.
-  // This is either a FlutterGLCompositor or a FlutterMetalCompositor instance.
+  // _macOSCompositor is created when the engine is created and its destruction is handled by ARC
+  // when the engine is destroyed.
   std::unique_ptr<flutter::FlutterCompositor> _macOSCompositor;
+
+  // The information of all views attached to this engine mapped from IDs.
+  //
+  // It can't use NSDictionary, because the values need to be weak references.
+  NSMapTable* _viewControllers;
 
   // FlutterCompositor is copied and used in embedder.cc.
   FlutterCompositor _compositor;
@@ -206,6 +398,29 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // Used to support creation and deletion of platform views and registering platform view
   // factories. Lifecycle is tied to the engine.
   FlutterPlatformViewController* _platformViewController;
+
+  // A message channel for sending user settings to the flutter engine.
+  FlutterBasicMessageChannel* _settingsChannel;
+
+  // A message channel for accessibility.
+  FlutterBasicMessageChannel* _accessibilityChannel;
+
+  // A method channel for miscellaneous platform functionality.
+  FlutterMethodChannel* _platformChannel;
+
+  FlutterThreadSynchronizer* _threadSynchronizer;
+
+  // The next available view ID.
+  int _nextViewId;
+
+  // Whether the application is currently the active application.
+  BOOL _active;
+
+  // Whether any portion of the application is currently visible.
+  BOOL _visible;
+
+  // Proxy to allow plugins, channels to hold a weak reference to the binary messenger (self).
+  FlutterBinaryMessengerRelay* _binaryMessenger;
 }
 
 - (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)project {
@@ -217,21 +432,26 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
       allowHeadlessExecution:(BOOL)allowHeadlessExecution {
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
-
+  _active = NO;
+  _visible = NO;
   _project = project ?: [[FlutterDartProject alloc] init];
   _messengerHandlers = [[NSMutableDictionary alloc] init];
+  _binaryMessenger = [[FlutterBinaryMessengerRelay alloc] initWithParent:self];
+  _pluginAppDelegates = [NSPointerArray weakObjectsPointerArray];
   _currentMessengerConnection = 1;
   _allowHeadlessExecution = allowHeadlessExecution;
   _semanticsEnabled = NO;
+  _binaryMessenger = [[FlutterBinaryMessengerRelay alloc] initWithParent:self];
+  _isResponseValid = [[NSMutableArray alloc] initWithCapacity:1];
+  [_isResponseValid addObject:@YES];
+  // kFlutterImplicitViewId is reserved for the implicit view.
+  _nextViewId = kFlutterImplicitViewId + 1;
 
   _embedderAPI.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&_embedderAPI);
 
-  if ([FlutterRenderingBackend renderUsingMetal]) {
-    _renderer = [[FlutterMetalRenderer alloc] initWithFlutterEngine:self];
-  } else {
-    _renderer = [[FlutterOpenGLRenderer alloc] initWithFlutterEngine:self];
-  }
+  _viewControllers = [NSMapTable weakToWeakObjectsMapTable];
+  _renderer = [[FlutterRenderer alloc] initWithFlutterEngine:self];
 
   NSNotificationCenter* notificationCenter = [NSNotificationCenter defaultCenter];
   [notificationCenter addObserver:self
@@ -240,12 +460,44 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
                            object:nil];
 
   _platformViewController = [[FlutterPlatformViewController alloc] init];
+  _threadSynchronizer = [[FlutterThreadSynchronizer alloc] init];
   [self setUpPlatformViewChannel];
+  [self setUpAccessibilityChannel];
+  [self setUpNotificationCenterListeners];
+  id<NSApplicationDelegate> appDelegate = [[NSApplication sharedApplication] delegate];
+  if ([appDelegate conformsToProtocol:@protocol(FlutterAppLifecycleProvider)]) {
+    _terminationHandler = [[FlutterEngineTerminationHandler alloc] initWithEngine:self
+                                                                       terminator:nil];
+    id<FlutterAppLifecycleProvider> lifecycleProvider =
+        static_cast<id<FlutterAppLifecycleProvider>>(appDelegate);
+    [lifecycleProvider addApplicationLifecycleDelegate:self];
+  } else {
+    _terminationHandler = nil;
+  }
 
   return self;
 }
 
 - (void)dealloc {
+  id<NSApplicationDelegate> appDelegate = [[NSApplication sharedApplication] delegate];
+  if ([appDelegate conformsToProtocol:@protocol(FlutterAppLifecycleProvider)]) {
+    id<FlutterAppLifecycleProvider> lifecycleProvider =
+        static_cast<id<FlutterAppLifecycleProvider>>(appDelegate);
+    [lifecycleProvider removeApplicationLifecycleDelegate:self];
+
+    // Unregister any plugins that registered as app delegates, since they are not guaranteed to
+    // live after the engine is destroyed, and their delegation registration is intended to be bound
+    // to the engine and its lifetime.
+    for (id<FlutterAppLifecycleDelegate> delegate in _pluginAppDelegates) {
+      if (delegate) {
+        [lifecycleProvider removeApplicationLifecycleDelegate:delegate];
+      }
+    }
+  }
+  @synchronized(_isResponseValid) {
+    [_isResponseValid removeAllObjects];
+    [_isResponseValid addObject:@NO];
+  }
   [self shutDownEngine];
   if (_aotData) {
     _embedderAPI.CollectAOTData(_aotData);
@@ -257,16 +509,23 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     return NO;
   }
 
-  if (!_allowHeadlessExecution && !_viewController) {
+  if (!_allowHeadlessExecution && [_viewControllers count] == 0) {
     NSLog(@"Attempted to run an engine with no view controller without headless mode enabled.");
     return NO;
   }
 
-  // TODO(stuartmorgan): Move internal channel registration from FlutterViewController to here.
+  [self addInternalPlugins];
 
   // The first argument of argv is required to be the executable name.
   std::vector<const char*> argv = {[self.executableName UTF8String]};
-  std::vector<std::string> switches = _project.switches;
+  std::vector<std::string> switches = self.switches;
+
+  // Enable Impeller only if specifically asked for from the project or cmdline arguments.
+  if (_project.enableImpeller ||
+      std::find(switches.begin(), switches.end(), "--enable-impeller=true") != switches.end()) {
+    switches.push_back("--enable-impeller=true");
+  }
+
   std::transform(switches.begin(), switches.end(), std::back_inserter(argv),
                  [](const std::string& arg) -> const char* { return arg.c_str(); });
 
@@ -282,16 +541,14 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   flutterArguments.command_line_argc = static_cast<int>(argv.size());
   flutterArguments.command_line_argv = argv.empty() ? nullptr : argv.data();
   flutterArguments.platform_message_callback = (FlutterPlatformMessageCallback)OnPlatformMessage;
-  flutterArguments.update_semantics_node_callback = [](const FlutterSemanticsNode* node,
-                                                       void* user_data) {
+  flutterArguments.update_semantics_callback2 = [](const FlutterSemanticsUpdate2* update,
+                                                   void* user_data) {
+    // TODO(dkwingsmt): This callback only supports single-view, therefore it
+    // only operates on the implicit view. To support multi-view, we need a
+    // way to pass in the ID (probably through FlutterSemanticsUpdate).
     FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
-    [engine updateSemanticsNode:node];
+    [[engine viewControllerForId:kFlutterImplicitViewId] updateSemantics:update];
   };
-  flutterArguments.update_semantics_custom_action_callback =
-      [](const FlutterSemanticsCustomAction* action, void* user_data) {
-        FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
-        [engine updateSemanticsCustomActions:action];
-      };
   flutterArguments.custom_dart_entrypoint = entrypoint.UTF8String;
   flutterArguments.shutdown_dart_vm_when_done = true;
   flutterArguments.dart_entrypoint_argc = dartEntrypointArgs.size();
@@ -352,8 +609,18 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   }
 
   [self sendUserLocales];
-  [self updateWindowMetrics];
+
+  // Update window metric for all view controllers.
+  NSEnumerator* viewControllerEnumerator = [_viewControllers objectEnumerator];
+  FlutterViewController* nextViewController;
+  while ((nextViewController = [viewControllerEnumerator nextObject])) {
+    [self updateWindowMetricsForViewController:nextViewController];
+  }
+
   [self updateDisplayConfig];
+  // Send the initial user settings such as brightness and text scale factor
+  // to the engine.
+  [self sendInitialSettings];
   return YES;
 }
 
@@ -383,61 +650,77 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   }
 }
 
-- (void)setViewController:(FlutterViewController*)controller {
-  if (_viewController != controller) {
-    _viewController = controller;
-    [_renderer setFlutterView:controller.flutterView];
+- (void)registerViewController:(FlutterViewController*)controller forId:(FlutterViewId)viewId {
+  NSAssert(controller != nil, @"The controller must not be nil.");
+  NSAssert(![controller attached],
+           @"The incoming view controller is already attached to an engine.");
+  NSAssert([_viewControllers objectForKey:@(viewId)] == nil, @"The requested view ID is occupied.");
+  [controller setUpWithEngine:self viewId:viewId threadSynchronizer:_threadSynchronizer];
+  NSAssert(controller.viewId == viewId, @"Failed to assign view ID.");
+  [_viewControllers setObject:controller forKey:@(viewId)];
+}
 
-    if (_semanticsEnabled && _bridge) {
-      _bridge->UpdateDelegate(
-          std::make_unique<flutter::AccessibilityBridgeMacDelegate>(self, _viewController));
-    }
-
-    if (!controller && !_allowHeadlessExecution) {
-      [self shutDownEngine];
-    }
+- (void)deregisterViewControllerForId:(FlutterViewId)viewId {
+  FlutterViewController* oldController = [self viewControllerForId:viewId];
+  if (oldController != nil) {
+    [oldController detachFromEngine];
+    [_viewControllers removeObjectForKey:@(viewId)];
   }
 }
 
-- (FlutterCompositor*)createFlutterCompositor {
-  // TODO(richardjcai): Add support for creating a FlutterCompositor
-  // with a nil _viewController for headless engines.
-  // https://github.com/flutter/flutter/issues/71606
-  if (!_viewController) {
-    return nil;
+- (void)shutDownIfNeeded {
+  if ([_viewControllers count] == 0 && !_allowHeadlessExecution) {
+    [self shutDownEngine];
   }
+}
 
-  __weak FlutterEngine* weakSelf = self;
+- (FlutterViewController*)viewControllerForId:(FlutterViewId)viewId {
+  FlutterViewController* controller = [_viewControllers objectForKey:@(viewId)];
+  NSAssert(controller == nil || controller.viewId == viewId,
+           @"The stored controller has unexpected view ID.");
+  return controller;
+}
 
-  if ([FlutterRenderingBackend renderUsingMetal]) {
-    FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(_renderer);
-    _macOSCompositor = std::make_unique<flutter::FlutterMetalCompositor>(
-        _viewController, _platformViewController, metalRenderer.device);
-    _macOSCompositor->SetPresentCallback([weakSelf](bool has_flutter_content) {
-      if (has_flutter_content) {
-        FlutterMetalRenderer* metalRenderer =
-            reinterpret_cast<FlutterMetalRenderer*>(weakSelf.renderer);
-        return [metalRenderer present:0 /*=textureID*/] == YES;
-      } else {
-        return true;
-      }
-    });
+- (void)setViewController:(FlutterViewController*)controller {
+  FlutterViewController* currentController =
+      [_viewControllers objectForKey:@(kFlutterImplicitViewId)];
+  if (currentController == controller) {
+    // From nil to nil, or from non-nil to the same controller.
+    return;
+  }
+  if (currentController == nil && controller != nil) {
+    // From nil to non-nil.
+    NSAssert(controller.engine == nil,
+             @"Failed to set view controller to the engine: "
+             @"The given FlutterViewController is already attached to an engine %@. "
+             @"If you wanted to create an FlutterViewController and set it to an existing engine, "
+             @"you should use FlutterViewController#init(engine:, nibName, bundle:) instead.",
+             controller.engine);
+    [self registerViewController:controller forId:kFlutterImplicitViewId];
+  } else if (currentController != nil && controller == nil) {
+    NSAssert(currentController.viewId == kFlutterImplicitViewId,
+             @"The default controller has an unexpected ID %llu", currentController.viewId);
+    // From non-nil to nil.
+    [self deregisterViewControllerForId:kFlutterImplicitViewId];
+    [self shutDownIfNeeded];
   } else {
-    FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(_renderer);
-    [openGLRenderer.openGLContext makeCurrentContext];
-    _macOSCompositor = std::make_unique<flutter::FlutterGLCompositor>(_viewController,
-                                                                      openGLRenderer.openGLContext);
-
-    _macOSCompositor->SetPresentCallback([weakSelf](bool has_flutter_content) {
-      if (has_flutter_content) {
-        FlutterOpenGLRenderer* openGLRenderer =
-            reinterpret_cast<FlutterOpenGLRenderer*>(weakSelf.renderer);
-        return [openGLRenderer glPresent] == YES;
-      } else {
-        return true;
-      }
-    });
+    // From non-nil to a different non-nil view controller.
+    NSAssert(NO,
+             @"Failed to set view controller to the engine: "
+             @"The engine already has an implicit view controller %@. "
+             @"If you wanted to make the implicit view render in a different window, "
+             @"you should attach the current view controller to the window instead.",
+             [_viewControllers objectForKey:@(kFlutterImplicitViewId)]);
   }
+}
+
+- (FlutterViewController*)viewController {
+  return [self viewControllerForId:kFlutterImplicitViewId];
+}
+
+- (FlutterCompositor*)createFlutterCompositor {
+  _macOSCompositor = std::make_unique<flutter::FlutterCompositor>(
+      [[FlutterViewEngineProvider alloc] initWithEngine:self], _platformViewController);
 
   _compositor = {};
   _compositor.struct_size = sizeof(FlutterCompositor);
@@ -453,16 +736,17 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   _compositor.collect_backing_store_callback = [](const FlutterBackingStore* backing_store,  //
                                                   void* user_data                            //
-                                               ) {
-    return reinterpret_cast<flutter::FlutterCompositor*>(user_data)->CollectBackingStore(
-        backing_store);
-  };
+                                               ) { return true; };
 
   _compositor.present_layers_callback = [](const FlutterLayer** layers,  //
                                            size_t layers_count,          //
                                            void* user_data               //
                                         ) {
-    return reinterpret_cast<flutter::FlutterCompositor*>(user_data)->Present(layers, layers_count);
+    // TODO(dkwingsmt): This callback only supports single-view, therefore it
+    // only operates on the implicit view. To support multi-view, we need a new
+    // callback that also receives a view ID.
+    return reinterpret_cast<flutter::FlutterCompositor*>(user_data)->Present(kFlutterImplicitViewId,
+                                                                             layers, layers_count);
   };
 
   _compositor.avoid_backing_store_cache = true;
@@ -471,15 +755,28 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (id<FlutterBinaryMessenger>)binaryMessenger {
-  // TODO(stuartmorgan): Switch to FlutterBinaryMessengerRelay to avoid plugins
-  // keeping the engine alive.
-  return self;
+  return _binaryMessenger;
 }
 
 #pragma mark - Framework-internal methods
 
+- (void)addViewController:(FlutterViewController*)controller {
+  [self registerViewController:controller forId:kFlutterImplicitViewId];
+}
+
+- (void)removeViewController:(nonnull FlutterViewController*)viewController {
+  NSAssert([viewController attached] && viewController.engine == self,
+           @"The given view controller is not associated with this engine.");
+  [self deregisterViewControllerForId:viewController.viewId];
+  [self shutDownIfNeeded];
+}
+
 - (BOOL)running {
   return _engine != nullptr;
+}
+
+- (void)updateDisplayConfig:(NSNotification*)notification {
+  [self updateDisplayConfig];
 }
 
 - (void)updateDisplayConfig {
@@ -487,47 +784,86 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     return;
   }
 
-  CVDisplayLinkRef displayLinkRef;
-  CGDirectDisplayID mainDisplayID = CGMainDisplayID();
-  CVDisplayLinkCreateWithCGDisplay(mainDisplayID, &displayLinkRef);
-  CVTime nominal = CVDisplayLinkGetNominalOutputVideoRefreshPeriod(displayLinkRef);
-  if (!(nominal.flags & kCVTimeIsIndefinite)) {
-    double refreshRate = static_cast<double>(nominal.timeScale) / nominal.timeValue;
+  std::vector<FlutterEngineDisplay> displays;
+  for (NSScreen* screen : [NSScreen screens]) {
+    CGDirectDisplayID displayID =
+        static_cast<CGDirectDisplayID>([screen.deviceDescription[@"NSScreenNumber"] integerValue]);
 
     FlutterEngineDisplay display;
     display.struct_size = sizeof(display);
-    display.display_id = mainDisplayID;
-    display.refresh_rate = round(refreshRate);
+    display.display_id = displayID;
+    display.single_display = false;
+    display.width = static_cast<size_t>(screen.frame.size.width);
+    display.height = static_cast<size_t>(screen.frame.size.height);
+    display.device_pixel_ratio = screen.backingScaleFactor;
 
-    std::vector<FlutterEngineDisplay> displays = {display};
-    _embedderAPI.NotifyDisplayUpdate(_engine, kFlutterEngineDisplaysUpdateTypeStartup,
-                                     displays.data(), displays.size());
+    CVDisplayLinkRef displayLinkRef = nil;
+    CVReturn error = CVDisplayLinkCreateWithCGDisplay(displayID, &displayLinkRef);
+
+    if (error == 0) {
+      CVTime nominal = CVDisplayLinkGetNominalOutputVideoRefreshPeriod(displayLinkRef);
+      if (!(nominal.flags & kCVTimeIsIndefinite)) {
+        double refreshRate = static_cast<double>(nominal.timeScale) / nominal.timeValue;
+        display.refresh_rate = round(refreshRate);
+      }
+      CVDisplayLinkRelease(displayLinkRef);
+    } else {
+      display.refresh_rate = 0;
+    }
+
+    displays.push_back(display);
   }
+  _embedderAPI.NotifyDisplayUpdate(_engine, kFlutterEngineDisplaysUpdateTypeStartup,
+                                   displays.data(), displays.size());
+}
 
-  CVDisplayLinkRelease(displayLinkRef);
+- (void)onSettingsChanged:(NSNotification*)notification {
+  // TODO(jonahwilliams): https://github.com/flutter/flutter/issues/32015.
+  NSString* brightness =
+      [[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"];
+  [_settingsChannel sendMessage:@{
+    @"platformBrightness" : [brightness isEqualToString:@"Dark"] ? @"dark" : @"light",
+    // TODO(jonahwilliams): https://github.com/flutter/flutter/issues/32006.
+    @"textScaleFactor" : @1.0,
+    @"alwaysUse24HourFormat" : @false
+  }];
+}
+
+- (void)sendInitialSettings {
+  // TODO(jonahwilliams): https://github.com/flutter/flutter/issues/32015.
+  [[NSDistributedNotificationCenter defaultCenter]
+      addObserver:self
+         selector:@selector(onSettingsChanged:)
+             name:@"AppleInterfaceThemeChangedNotification"
+           object:nil];
+  [self onSettingsChanged:nil];
 }
 
 - (FlutterEngineProcTable&)embedderAPI {
   return _embedderAPI;
 }
 
-- (std::weak_ptr<flutter::AccessibilityBridge>)accessibilityBridge {
-  return _bridge;
-}
-
 - (nonnull NSString*)executableName {
   return [[[NSProcessInfo processInfo] arguments] firstObject] ?: @"Flutter";
 }
 
-- (void)updateWindowMetrics {
-  if (!_engine || !_viewController.viewLoaded) {
+- (void)updateWindowMetricsForViewController:(FlutterViewController*)viewController {
+  if (viewController.viewId != kFlutterImplicitViewId) {
+    // TODO(dkwingsmt): The embedder API only supports single-view for now. As
+    // embedder APIs are converted to multi-view, this method should support any
+    // views.
     return;
   }
-  NSView* view = _viewController.flutterView;
+  if (!_engine || !viewController || !viewController.viewLoaded) {
+    return;
+  }
+  NSAssert([self viewControllerForId:viewController.viewId] == viewController,
+           @"The provided view controller is not attached to this engine.");
+  NSView* view = viewController.flutterView;
   CGRect scaledBounds = [view convertRectToBacking:view.bounds];
   CGSize scaledSize = scaledBounds.size;
   double pixelRatio = view.bounds.size.width == 0 ? 1 : scaledSize.width / view.bounds.size.width;
-
+  auto displayId = [view.window.screen.deviceDescription[@"NSScreenNumber"] integerValue];
   const FlutterWindowMetricsEvent windowMetricsEvent = {
       .struct_size = sizeof(windowMetricsEvent),
       .width = static_cast<size_t>(scaledSize.width),
@@ -535,6 +871,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
       .pixel_ratio = pixelRatio,
       .left = static_cast<size_t>(scaledBounds.origin.x),
       .top = static_cast<size_t>(scaledBounds.origin.y),
+      .display_id = static_cast<uint64_t>(displayId),
   };
   _embedderAPI.SendWindowMetricsEvent(_engine, &windowMetricsEvent);
 }
@@ -554,16 +891,14 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     return;
   }
   _semanticsEnabled = enabled;
-  // Remove the accessibility children from flutter view before reseting the bridge.
-  if (!_semanticsEnabled && self.viewController.viewLoaded) {
-    self.viewController.flutterView.accessibilityChildren = nil;
+
+  // Update all view controllers' bridges.
+  NSEnumerator* viewControllerEnumerator = [_viewControllers objectEnumerator];
+  FlutterViewController* nextViewController;
+  while ((nextViewController = [viewControllerEnumerator nextObject])) {
+    [nextViewController notifySemanticsEnabledChanged];
   }
-  if (!_semanticsEnabled && _bridge) {
-    _bridge.reset();
-  } else if (_semanticsEnabled && !_bridge) {
-    _bridge = std::make_shared<flutter::AccessibilityBridge>(
-        std::make_unique<flutter::AccessibilityBridgeMacDelegate>(self, self.viewController));
-  }
+
   _embedderAPI.UpdateSemanticsEnabled(_engine, _semanticsEnabled);
 }
 
@@ -596,9 +931,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // Convert to a list of pointers, and send to the engine.
   std::vector<const FlutterLocale*> flutterLocaleList;
   flutterLocaleList.reserve(flutterLocales.size());
-  std::transform(
-      flutterLocales.begin(), flutterLocales.end(), std::back_inserter(flutterLocaleList),
-      [](const auto& arg) -> const auto* { return &arg; });
+  std::transform(flutterLocales.begin(), flutterLocales.end(),
+                 std::back_inserter(flutterLocaleList),
+                 [](const auto& arg) -> const auto* { return &arg; });
   _embedderAPI.UpdateLocales(_engine, flutterLocaleList.data(), flutterLocaleList.size());
 }
 
@@ -611,17 +946,25 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   }
   NSString* channel = @(message->channel);
   __block const FlutterPlatformMessageResponseHandle* responseHandle = message->response_handle;
-
+  __block FlutterEngine* weakSelf = self;
+  NSMutableArray* isResponseValid = self.isResponseValid;
+  FlutterEngineSendPlatformMessageResponseFnPtr sendPlatformMessageResponse =
+      _embedderAPI.SendPlatformMessageResponse;
   FlutterBinaryReply binaryResponseHandler = ^(NSData* response) {
-    if (responseHandle) {
-      _embedderAPI.SendPlatformMessageResponse(self->_engine, responseHandle,
-                                               static_cast<const uint8_t*>(response.bytes),
-                                               response.length);
-      responseHandle = NULL;
-    } else {
-      NSLog(@"Error: Message responses can be sent only once. Ignoring duplicate response "
-             "on channel '%@'.",
-            channel);
+    @synchronized(isResponseValid) {
+      if (![isResponseValid[0] boolValue]) {
+        // Ignore, engine was killed.
+        return;
+      }
+      if (responseHandle) {
+        sendPlatformMessageResponse(weakSelf->_engine, responseHandle,
+                                    static_cast<const uint8_t*>(response.bytes), response.length);
+        responseHandle = NULL;
+      } else {
+        NSLog(@"Error: Message responses can be sent only once. Ignoring duplicate response "
+               "on channel '%@'.",
+              channel);
+      }
     }
   };
 
@@ -634,8 +977,10 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (void)engineCallbackOnPreEngineRestart {
-  if (_viewController) {
-    [_viewController onPreEngineRestart];
+  NSEnumerator* viewControllerEnumerator = [_viewControllers objectEnumerator];
+  FlutterViewController* nextViewController;
+  while ((nextViewController = [viewControllerEnumerator nextObject])) {
+    [nextViewController onPreEngineRestart];
   }
 }
 
@@ -647,9 +992,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     return;
   }
 
-  if (_viewController && _viewController.flutterView) {
-    [_viewController.flutterView shutdown];
-  }
+  [_threadSynchronizer shutdown];
+  _threadSynchronizer = nil;
 
   FlutterEngineResult result = _embedderAPI.Deinitialize(_engine);
   if (result != kSuccess) {
@@ -676,6 +1020,231 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   [_platformViewsChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
     [[weakSelf platformViewController] handleMethodCall:call result:result];
   }];
+}
+
+- (void)setUpAccessibilityChannel {
+  _accessibilityChannel = [FlutterBasicMessageChannel
+      messageChannelWithName:@"flutter/accessibility"
+             binaryMessenger:self.binaryMessenger
+                       codec:[FlutterStandardMessageCodec sharedInstance]];
+  __weak FlutterEngine* weakSelf = self;
+  [_accessibilityChannel setMessageHandler:^(id message, FlutterReply reply) {
+    [weakSelf handleAccessibilityEvent:message];
+  }];
+}
+- (void)setUpNotificationCenterListeners {
+  NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
+  // macOS fires this private message when VoiceOver turns on or off.
+  [center addObserver:self
+             selector:@selector(onAccessibilityStatusChanged:)
+                 name:kEnhancedUserInterfaceNotification
+               object:nil];
+  [center addObserver:self
+             selector:@selector(applicationWillTerminate:)
+                 name:NSApplicationWillTerminateNotification
+               object:nil];
+  [center addObserver:self
+             selector:@selector(windowDidChangeScreen:)
+                 name:NSWindowDidChangeScreenNotification
+               object:nil];
+  [center addObserver:self
+             selector:@selector(updateDisplayConfig:)
+                 name:NSApplicationDidChangeScreenParametersNotification
+               object:nil];
+}
+
+- (void)addInternalPlugins {
+  __weak FlutterEngine* weakSelf = self;
+  [FlutterMouseCursorPlugin registerWithRegistrar:[self registrarForPlugin:@"mousecursor"]];
+  [FlutterMenuPlugin registerWithRegistrar:[self registrarForPlugin:@"menu"]];
+  _settingsChannel =
+      [FlutterBasicMessageChannel messageChannelWithName:kFlutterSettingsChannel
+                                         binaryMessenger:self.binaryMessenger
+                                                   codec:[FlutterJSONMessageCodec sharedInstance]];
+  _platformChannel =
+      [FlutterMethodChannel methodChannelWithName:kFlutterPlatformChannel
+                                  binaryMessenger:self.binaryMessenger
+                                            codec:[FlutterJSONMethodCodec sharedInstance]];
+  [_platformChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+    [weakSelf handleMethodCall:call result:result];
+  }];
+}
+
+- (void)applicationWillTerminate:(NSNotification*)notification {
+  [self shutDownEngine];
+}
+
+- (void)windowDidChangeScreen:(NSNotification*)notification {
+  // Update window metric for all view controllers since the display_id has
+  // changed.
+  NSEnumerator* viewControllerEnumerator = [_viewControllers objectEnumerator];
+  FlutterViewController* nextViewController;
+  while ((nextViewController = [viewControllerEnumerator nextObject])) {
+    [self updateWindowMetricsForViewController:nextViewController];
+  }
+}
+
+- (void)onAccessibilityStatusChanged:(NSNotification*)notification {
+  BOOL enabled = [notification.userInfo[kEnhancedUserInterfaceKey] boolValue];
+  NSEnumerator* viewControllerEnumerator = [_viewControllers objectEnumerator];
+  FlutterViewController* nextViewController;
+  while ((nextViewController = [viewControllerEnumerator nextObject])) {
+    [nextViewController onAccessibilityStatusChanged:enabled];
+  }
+
+  self.semanticsEnabled = enabled;
+}
+- (void)handleAccessibilityEvent:(NSDictionary<NSString*, id>*)annotatedEvent {
+  NSString* type = annotatedEvent[@"type"];
+  if ([type isEqualToString:@"announce"]) {
+    NSString* message = annotatedEvent[@"data"][@"message"];
+    NSNumber* assertiveness = annotatedEvent[@"data"][@"assertiveness"];
+    if (message == nil) {
+      return;
+    }
+
+    NSAccessibilityPriorityLevel priority = [assertiveness isEqualToNumber:@1]
+                                                ? NSAccessibilityPriorityHigh
+                                                : NSAccessibilityPriorityMedium;
+
+    [self announceAccessibilityMessage:message withPriority:priority];
+  }
+}
+
+- (void)announceAccessibilityMessage:(NSString*)message
+                        withPriority:(NSAccessibilityPriorityLevel)priority {
+  NSAccessibilityPostNotificationWithUserInfo(
+      [self viewControllerForId:kFlutterImplicitViewId].flutterView,
+      NSAccessibilityAnnouncementRequestedNotification,
+      @{NSAccessibilityAnnouncementKey : message, NSAccessibilityPriorityKey : @(priority)});
+}
+- (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
+  if ([call.method isEqualToString:@"SystemNavigator.pop"]) {
+    [[NSApplication sharedApplication] terminate:self];
+    result(nil);
+  } else if ([call.method isEqualToString:@"SystemSound.play"]) {
+    [self playSystemSound:call.arguments];
+    result(nil);
+  } else if ([call.method isEqualToString:@"Clipboard.getData"]) {
+    result([self getClipboardData:call.arguments]);
+  } else if ([call.method isEqualToString:@"Clipboard.setData"]) {
+    [self setClipboardData:call.arguments];
+    result(nil);
+  } else if ([call.method isEqualToString:@"Clipboard.hasStrings"]) {
+    result(@{@"value" : @([self clipboardHasStrings])});
+  } else if ([call.method isEqualToString:@"System.exitApplication"]) {
+    if ([self terminationHandler] == nil) {
+      // If the termination handler isn't set, then either we haven't
+      // initialized it yet, or (more likely) the NSApp delegate isn't a
+      // FlutterAppDelegate, so it can't cancel requests to exit. So, in that
+      // case, just terminate when requested.
+      [NSApp terminate:self];
+      result(nil);
+    } else {
+      [[self terminationHandler] handleRequestAppExitMethodCall:call.arguments result:result];
+    }
+  } else if ([call.method isEqualToString:@"System.initializationComplete"]) {
+    if ([self terminationHandler] != nil) {
+      [self terminationHandler].acceptingRequests = YES;
+    }
+    result(nil);
+  } else {
+    result(FlutterMethodNotImplemented);
+  }
+}
+
+- (void)playSystemSound:(NSString*)soundType {
+  if ([soundType isEqualToString:@"SystemSoundType.alert"]) {
+    NSBeep();
+  }
+}
+
+- (NSDictionary*)getClipboardData:(NSString*)format {
+  NSPasteboard* pasteboard = self.pasteboard;
+  if ([format isEqualToString:@(kTextPlainFormat)]) {
+    NSString* stringInPasteboard = [pasteboard stringForType:NSPasteboardTypeString];
+    return stringInPasteboard == nil ? nil : @{@"text" : stringInPasteboard};
+  }
+  return nil;
+}
+
+- (void)setClipboardData:(NSDictionary*)data {
+  NSPasteboard* pasteboard = self.pasteboard;
+  NSString* text = data[@"text"];
+  [pasteboard clearContents];
+  if (text && ![text isEqual:[NSNull null]]) {
+    [pasteboard setString:text forType:NSPasteboardTypeString];
+  }
+}
+
+- (BOOL)clipboardHasStrings {
+  return [self.pasteboard stringForType:NSPasteboardTypeString].length > 0;
+}
+
+- (NSPasteboard*)pasteboard {
+  return [NSPasteboard generalPasteboard];
+}
+
+- (std::vector<std::string>)switches {
+  return flutter::GetSwitchesFromEnvironment();
+}
+
+- (FlutterThreadSynchronizer*)testThreadSynchronizer {
+  return _threadSynchronizer;
+}
+
+#pragma mark - FlutterAppLifecycleDelegate
+
+- (void)setApplicationState:(flutter::AppLifecycleState)state {
+  NSString* nextState =
+      [[NSString alloc] initWithCString:flutter::AppLifecycleStateToString(state)];
+  [self sendOnChannel:kFlutterLifecycleChannel
+              message:[nextState dataUsingEncoding:NSUTF8StringEncoding]];
+}
+
+/**
+ * Called when the |FlutterAppDelegate| gets the applicationWillBecomeActive
+ * notification.
+ */
+- (void)handleWillBecomeActive:(NSNotification*)notification {
+  _active = YES;
+  if (!_visible) {
+    [self setApplicationState:flutter::AppLifecycleState::kHidden];
+  } else {
+    [self setApplicationState:flutter::AppLifecycleState::kResumed];
+  }
+}
+
+/**
+ * Called when the |FlutterAppDelegate| gets the applicationWillResignActive
+ * notification.
+ */
+- (void)handleWillResignActive:(NSNotification*)notification {
+  _active = NO;
+  if (!_visible) {
+    [self setApplicationState:flutter::AppLifecycleState::kHidden];
+  } else {
+    [self setApplicationState:flutter::AppLifecycleState::kInactive];
+  }
+}
+
+/**
+ * Called when the |FlutterAppDelegate| gets the applicationDidUnhide
+ * notification.
+ */
+- (void)handleDidChangeOcclusionState:(NSNotification*)notification {
+  NSApplicationOcclusionState occlusionState = [[NSApplication sharedApplication] occlusionState];
+  if (occlusionState & NSApplicationOcclusionStateVisible) {
+    _visible = YES;
+    if (_active) {
+      [self setApplicationState:flutter::AppLifecycleState::kResumed];
+    } else {
+      [self setApplicationState:flutter::AppLifecycleState::kInactive];
+    }
+  } else {
+    _visible = NO;
+    [self setApplicationState:flutter::AppLifecycleState::kHidden];
+  }
 }
 
 #pragma mark - FlutterBinaryMessenger
@@ -792,39 +1361,6 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 - (BOOL)unregisterTextureWithID:(int64_t)textureID {
   return _embedderAPI.UnregisterExternalTexture(_engine, textureID) == kSuccess;
-}
-
-- (void)updateSemanticsNode:(const FlutterSemanticsNode*)node {
-  NSAssert(_bridge, @"The accessibility bridge must be initialized.");
-  if (node->id == kFlutterSemanticsNodeIdBatchEnd) {
-    return;
-  }
-  _bridge->AddFlutterSemanticsNodeUpdate(node);
-}
-
-- (void)updateSemanticsCustomActions:(const FlutterSemanticsCustomAction*)action {
-  NSAssert(_bridge, @"The accessibility bridge must be initialized.");
-  if (action->id == kFlutterSemanticsNodeIdBatchEnd) {
-    // Custom action with id = kFlutterSemanticsNodeIdBatchEnd indicates this is
-    // the end of the update batch.
-    _bridge->CommitUpdates();
-    // Accessibility tree can only be used when the view is loaded.
-    if (!self.viewController.viewLoaded) {
-      return;
-    }
-    // Attaches the accessibility root to the flutter view.
-    auto root = _bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
-    if (root) {
-      if ([self.viewController.flutterView.accessibilityChildren count] == 0) {
-        NSAccessibilityElement* native_root = root->GetNativeViewAccessible();
-        self.viewController.flutterView.accessibilityChildren = @[ native_root ];
-      }
-    } else {
-      self.viewController.flutterView.accessibilityChildren = nil;
-    }
-    return;
-  }
-  _bridge->AddFlutterSemanticsCustomActionUpdate(action);
 }
 
 #pragma mark - Task runner integration

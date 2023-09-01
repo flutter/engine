@@ -15,20 +15,22 @@ namespace testing {
 class ShellTestPlatformView : public PlatformView {
  public:
   enum class BackendType {
+    kDefaultBackend = 0,
     kGLBackend,
     kVulkanBackend,
     kMetalBackend,
-    kDefaultBackend,
   };
 
   static std::unique_ptr<ShellTestPlatformView> Create(
       PlatformView::Delegate& delegate,
-      TaskRunners task_runners,
-      std::shared_ptr<ShellTestVsyncClock> vsync_clock,
-      CreateVsyncWaiter create_vsync_waiter,
+      const TaskRunners& task_runners,
+      const std::shared_ptr<ShellTestVsyncClock>& vsync_clock,
+      const CreateVsyncWaiter& create_vsync_waiter,
       BackendType backend,
-      std::shared_ptr<ShellTestExternalViewEmbedder>
-          shell_test_external_view_embedder);
+      const std::shared_ptr<ShellTestExternalViewEmbedder>&
+          shell_test_external_view_embedder,
+      const std::shared_ptr<const fml::SyncSwitch>&
+          is_gpu_disabled_sync_switch);
 
   virtual void SimulateVSync() = 0;
 
@@ -38,6 +40,27 @@ class ShellTestPlatformView : public PlatformView {
       : PlatformView(delegate, task_runners) {}
 
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTestPlatformView);
+};
+
+// Create a ShellTestPlatformView from configuration struct.
+class ShellTestPlatformViewBuilder {
+ public:
+  struct Config {
+    bool simulate_vsync = false;
+    std::shared_ptr<ShellTestExternalViewEmbedder>
+        shell_test_external_view_embedder = nullptr;
+    ShellTestPlatformView::BackendType rendering_backend =
+        ShellTestPlatformView::BackendType::kDefaultBackend;
+  };
+
+  ShellTestPlatformViewBuilder(Config config);
+  ~ShellTestPlatformViewBuilder() = default;
+
+  // Override operator () to make this class assignable to std::function.
+  std::unique_ptr<PlatformView> operator()(Shell& shell);
+
+ private:
+  Config config_;
 };
 
 }  // namespace testing

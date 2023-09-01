@@ -85,11 +85,11 @@ static DWORD GetDesiredAccessFlags(FilePermission permission) {
 static DWORD GetShareFlags(FilePermission permission) {
   switch (permission) {
     case FilePermission::kRead:
-      return FILE_SHARE_READ;
+      return FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
     case FilePermission::kWrite:
-      return FILE_SHARE_WRITE;
+      return 0;
     case FilePermission::kReadWrite:
-      return FILE_SHARE_READ | FILE_SHARE_WRITE;
+      return 0;
   }
   return FILE_SHARE_READ;
 }
@@ -362,7 +362,8 @@ bool WriteAtomically(const fml::UniqueFD& base_directory,
       OpenFile(file_path.c_str(), true, FilePermission::kReadWrite);
 
   if (!temp_file.is_valid()) {
-    FML_DLOG(ERROR) << "Could not create temporary file.";
+    FML_DLOG(ERROR) << "Could not create file: " << file_path.c_str() << " "
+                    << GetLastError() << " " << GetLastErrorMessage();
     return false;
   }
 

@@ -16,9 +16,12 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.content.ClipDescription;
 import android.content.ClipboardManager;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.res.AssetManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.InputType;
@@ -31,7 +34,9 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.ExtractedText;
 import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.InputConnection;
+import android.view.inputmethod.InputContentInfo;
 import android.view.inputmethod.InputMethodManager;
+import androidx.core.view.inputmethod.InputConnectionCompat;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.ibm.icu.lang.UCharacter;
@@ -43,7 +48,9 @@ import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.util.FakeKeyEvent;
+import java.io.ByteArrayInputStream;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.junit.Before;
@@ -52,10 +59,12 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.robolectric.Shadows;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
 import org.robolectric.shadow.api.Shadow;
+import org.robolectric.shadows.ShadowContentResolver;
 import org.robolectric.shadows.ShadowInputMethodManager;
 
 @Config(
@@ -64,6 +73,9 @@ import org.robolectric.shadows.ShadowInputMethodManager;
 @RunWith(AndroidJUnit4.class)
 public class InputConnectionAdaptorTest {
   private final Context ctx = ApplicationProvider.getApplicationContext();
+  private ContentResolver contentResolver;
+  private ShadowContentResolver shadowContentResolver;
+
   @Mock KeyboardManager mockKeyboardManager;
   // Verifies the method and arguments for a captured method call.
   private void verifyMethodCall(ByteBuffer buffer, String methodName, String[] expectedArgs)
@@ -83,6 +95,8 @@ public class InputConnectionAdaptorTest {
   @Before
   public void setUp() {
     MockitoAnnotations.openMocks(this);
+    contentResolver = ctx.getContentResolver();
+    shadowContentResolver = Shadows.shadowOf(contentResolver);
   }
 
   @Test
@@ -103,7 +117,7 @@ public class InputConnectionAdaptorTest {
             testView, inputTargetId, textInputChannel, mockKeyboardManager, spyEditable, outAttrs);
 
     // Send an enter key and make sure the Editable received it.
-    FakeKeyEvent keyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER);
+    FakeKeyEvent keyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER, '\n');
     inputConnectionAdaptor.handleKeyEvent(keyEvent);
     verify(spyEditable, times(1)).insert(eq(0), anyString());
   }
@@ -121,6 +135,8 @@ public class InputConnectionAdaptorTest {
     assertEquals(editable.length(), Selection.getSelectionEnd(editable));
   }
 
+  @SuppressWarnings("deprecation")
+  // ClipboardManager.hasText is deprecated.
   @Test
   public void testPerformContextMenuAction_cut() {
     ClipboardManager clipboardManager = ctx.getSystemService(ClipboardManager.class);
@@ -138,6 +154,8 @@ public class InputConnectionAdaptorTest {
     assertFalse(editable.toString().contains(textToBeCut));
   }
 
+  @SuppressWarnings("deprecation")
+  // ClipboardManager.hasText is deprecated.
   @Test
   public void testPerformContextMenuAction_copy() {
     ClipboardManager clipboardManager = ctx.getSystemService(ClipboardManager.class);
@@ -157,6 +175,8 @@ public class InputConnectionAdaptorTest {
         clipboardManager.getPrimaryClip().getItemAt(0).getText());
   }
 
+  @SuppressWarnings("deprecation")
+  // ClipboardManager.setText is deprecated.
   @Test
   public void testPerformContextMenuAction_paste() {
     ClipboardManager clipboardManager = ctx.getSystemService(ClipboardManager.class);
@@ -171,6 +191,69 @@ public class InputConnectionAdaptorTest {
     assertTrue(editable.toString().startsWith(textToBePasted));
   }
 
+  @SuppressWarnings("deprecation")
+  // DartExecutor.send is deprecated.
+  @Test
+  public void testCommitContent() throws JSONException {
+    View testView = new View(ctx);
+    int client = 0;
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
+    ListenableEditingState editable = sampleEditable(0, 0);
+    InputConnectionAdaptor adaptor =
+        new InputConnectionAdaptor(
+            testView,
+            client,
+            textInputChannel,
+            mockKeyboardManager,
+            editable,
+            null,
+            mockFlutterJNI);
+
+    String uri = "content://mock/uri/test/commitContent";
+    Charset charset = Charset.forName("UTF-8");
+    String fakeImageData = "fake image data";
+    byte[] fakeImageDataBytes = fakeImageData.getBytes(charset);
+    shadowContentResolver.registerInputStream(
+        Uri.parse(uri), new ByteArrayInputStream(fakeImageDataBytes));
+
+    boolean commitContentSuccess =
+        adaptor.commitContent(
+            new InputContentInfo(
+                Uri.parse(uri),
+                new ClipDescription("commitContent test", new String[] {"image/png"})),
+            InputConnectionCompat.INPUT_CONTENT_GRANT_READ_URI_PERMISSION,
+            null);
+    assertTrue(commitContentSuccess);
+
+    ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
+    verify(dartExecutor, times(1)).send(channelCaptor.capture(), bufferCaptor.capture(), isNull());
+    assertEquals("flutter/textinput", channelCaptor.getValue());
+
+    String fakeImageDataIntString = "";
+    for (int i = 0; i < fakeImageDataBytes.length; i++) {
+      int byteAsInt = fakeImageDataBytes[i];
+      fakeImageDataIntString += byteAsInt;
+      if (i < (fakeImageDataBytes.length - 1)) {
+        fakeImageDataIntString += ",";
+      }
+    }
+    verifyMethodCall(
+        bufferCaptor.getValue(),
+        "TextInputClient.performAction",
+        new String[] {
+          "0",
+          "TextInputAction.commitContent",
+          "{\"data\":["
+              + fakeImageDataIntString
+              + "],\"mimeType\":\"image\\/png\",\"uri\":\"content:\\/\\/mock\\/uri\\/test\\/commitContent\"}"
+        });
+  }
+
+  @SuppressWarnings("deprecation")
+  // DartExecutor.send is deprecated.
   @Test
   public void testPerformPrivateCommand_dataIsNull() throws JSONException {
     View testView = new View(ctx);
@@ -200,6 +283,8 @@ public class InputConnectionAdaptorTest {
         new String[] {"0", "{\"action\":\"actionCommand\"}"});
   }
 
+  @SuppressWarnings("deprecation")
+  // DartExecutor.send is deprecated.
   @Test
   public void testPerformPrivateCommand_dataIsByteArray() throws JSONException {
     View testView = new View(ctx);
@@ -235,6 +320,8 @@ public class InputConnectionAdaptorTest {
         });
   }
 
+  @SuppressWarnings("deprecation")
+  // DartExecutor.send is deprecated.
   @Test
   public void testPerformPrivateCommand_dataIsByte() throws JSONException {
     View testView = new View(ctx);
@@ -268,6 +355,8 @@ public class InputConnectionAdaptorTest {
         new String[] {"0", "{\"data\":{\"keyboard_layout\":3},\"action\":\"actionCommand\"}"});
   }
 
+  @SuppressWarnings("deprecation")
+  // DartExecutor.send is deprecated.
   @Test
   public void testPerformPrivateCommand_dataIsCharArray() throws JSONException {
     View testView = new View(ctx);
@@ -304,6 +393,8 @@ public class InputConnectionAdaptorTest {
         });
   }
 
+  @SuppressWarnings("deprecation")
+  // DartExecutor.send is deprecated.
   @Test
   public void testPerformPrivateCommand_dataIsChar() throws JSONException {
     View testView = new View(ctx);
@@ -337,6 +428,8 @@ public class InputConnectionAdaptorTest {
         new String[] {"0", "{\"data\":{\"keyboard_layout\":\"a\"},\"action\":\"actionCommand\"}"});
   }
 
+  @SuppressWarnings("deprecation")
+  // DartExecutor.send is deprecated.
   @Test
   public void testPerformPrivateCommand_dataIsCharSequenceArray() throws JSONException {
     View testView = new View(ctx);
@@ -374,6 +467,8 @@ public class InputConnectionAdaptorTest {
         });
   }
 
+  @SuppressWarnings("deprecation")
+  // DartExecutor.send is deprecated.
   @Test
   public void testPerformPrivateCommand_dataIsCharSequence() throws JSONException {
     View testView = new View(ctx);
@@ -409,6 +504,8 @@ public class InputConnectionAdaptorTest {
         });
   }
 
+  @SuppressWarnings("deprecation")
+  // DartExecutor.send is deprecated.
   @Test
   public void testPerformPrivateCommand_dataIsFloat() throws JSONException {
     View testView = new View(ctx);
@@ -442,6 +539,8 @@ public class InputConnectionAdaptorTest {
         new String[] {"0", "{\"data\":{\"keyboard_layout\":0.5},\"action\":\"actionCommand\"}"});
   }
 
+  @SuppressWarnings("deprecation")
+  // DartExecutor.send is deprecated.
   @Test
   public void testPerformPrivateCommand_dataIsFloatArray() throws JSONException {
     View testView = new View(ctx);
@@ -478,7 +577,8 @@ public class InputConnectionAdaptorTest {
   }
 
   @Test
-  public void testSendKeyEvent_shiftKeyUpCancelsSelection() {
+  public void testSendKeyEvent_shiftKeyUpDoesNotCancelSelection() {
+    // Regression test for https://github.com/flutter/flutter/issues/101569.
     int selStart = 5;
     int selEnd = 10;
     ListenableEditingState editable = sampleEditable(selStart, selEnd);
@@ -487,8 +587,8 @@ public class InputConnectionAdaptorTest {
     KeyEvent shiftKeyUp = new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_SHIFT_LEFT);
     boolean didConsume = adaptor.handleKeyEvent(shiftKeyUp);
 
-    assertTrue(didConsume);
-    assertEquals(selEnd, Selection.getSelectionStart(editable));
+    assertFalse(didConsume);
+    assertEquals(selStart, Selection.getSelectionStart(editable));
     assertEquals(selEnd, Selection.getSelectionEnd(editable));
   }
 
@@ -1115,7 +1215,7 @@ public class InputConnectionAdaptorTest {
     ListenableEditingState editable = sampleEditable(0, 0);
     InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
 
-    FakeKeyEvent keyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK);
+    FakeKeyEvent keyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK, '\b');
     boolean didConsume = adaptor.handleKeyEvent(keyEvent);
 
     assertFalse(didConsume);

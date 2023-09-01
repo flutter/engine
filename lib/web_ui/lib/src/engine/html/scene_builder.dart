@@ -5,8 +5,10 @@
 import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import '../../engine.dart' show kProfileApplyFrame, kProfilePrerollFrame;
+import '../dom.dart';
 import '../picture.dart';
 import '../profiler.dart';
 import '../util.dart';
@@ -18,13 +20,11 @@ import 'color_filter.dart';
 import 'image_filter.dart';
 import 'offset.dart';
 import 'opacity.dart';
-import 'path/path.dart';
 import 'path_to_svg_clip.dart';
 import 'picture.dart';
 import 'platform_view.dart';
 import 'scene.dart';
 import 'shader_mask.dart';
-import 'shaders/shader.dart';
 import 'surface.dart';
 import 'transform.dart';
 
@@ -64,9 +64,10 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   ///
   /// This is used by tests.
   void debugAddSurface(PersistedSurface surface) {
-    if (assertionsEnabled) {
+    assert(() {
       _addSurface(surface);
-    }
+      return true;
+    }());
   }
 
   void _addSurface(PersistedSurface surface) {
@@ -106,13 +107,12 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
       throw ArgumentError('"matrix4" must have 16 entries.');
     }
 
-    // TODO(yjbanov): make this final after NNBD ships definite assignment.
-    /*final*/ Float32List? matrix;
+    final Float32List matrix;
     if (_surfaceStack.length == 1) {
       // Top level transform contains view configuration to scale
       // scene to devicepixelratio. Use identity instead since CSS uses
       // logical device pixels.
-      if (!ui.debugEmulateFlutterTesterEnvironment) {
+      if (!ui_web.debugEmulateFlutterTesterEnvironment) {
         assert(matrix4[0] == window.devicePixelRatio &&
             matrix4[5] == window.devicePixelRatio);
       }
@@ -136,7 +136,6 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.Clip clipBehavior = ui.Clip.antiAlias,
     ui.ClipRectEngineLayer? oldLayer,
   }) {
-    assert(clipBehavior != null); // ignore: unnecessary_null_comparison
     return _pushSurface<PersistedClipRect>(
         PersistedClipRect(oldLayer as PersistedClipRect?, rect, clipBehavior));
   }
@@ -167,7 +166,6 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.Clip clipBehavior = ui.Clip.antiAlias,
     ui.ClipPathEngineLayer? oldLayer,
   }) {
-    assert(clipBehavior != null); // ignore: unnecessary_null_comparison
     return _pushSurface<PersistedClipPath>(
         PersistedClipPath(oldLayer as PersistedClipPath?, path, clipBehavior));
   }
@@ -205,7 +203,6 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.ColorFilter filter, {
     ui.ColorFilterEngineLayer? oldLayer,
   }) {
-    assert(filter != null); // ignore: unnecessary_null_comparison
     return _pushSurface<PersistedColorFilter>(
         PersistedColorFilter(oldLayer as PersistedColorFilter?, filter));
   }
@@ -223,11 +220,11 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   @override
   ui.ImageFilterEngineLayer pushImageFilter(
     ui.ImageFilter filter, {
+    ui.Offset offset = ui.Offset.zero,
     ui.ImageFilterEngineLayer? oldLayer,
   }) {
-    assert(filter != null); // ignore: unnecessary_null_comparison
     return _pushSurface<PersistedImageFilter>(
-        PersistedImageFilter(oldLayer as PersistedImageFilter?, filter));
+        PersistedImageFilter(oldLayer as PersistedImageFilter?, filter, offset));
   }
 
   /// Pushes a backdrop filter operation onto the operation stack.
@@ -246,7 +243,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.BackdropFilterEngineLayer? oldLayer,
   }) {
     return _pushSurface<PersistedBackdropFilter>(PersistedBackdropFilter(
-        oldLayer as PersistedBackdropFilter?, filter as EngineImageFilter));
+        oldLayer as PersistedBackdropFilter?, filter));
   }
 
   /// Pushes a shader mask operation onto the operation stack.
@@ -263,41 +260,9 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.ShaderMaskEngineLayer? oldLayer,
     ui.FilterQuality filterQuality = ui.FilterQuality.low,
   }) {
-    assert(blendMode != null); // ignore: unnecessary_null_comparison
     return _pushSurface<PersistedShaderMask>(PersistedShaderMask(
         oldLayer as PersistedShaderMask?,
         shader, maskRect, blendMode, filterQuality));
-  }
-
-  /// Pushes a physical layer operation for an arbitrary shape onto the
-  /// operation stack.
-  ///
-  /// By default, the layer's content will not be clipped (clip = [Clip.none]).
-  /// If clip equals [Clip.hardEdge], [Clip.antiAlias], or [Clip.antiAliasWithSaveLayer],
-  /// then the content is clipped to the given shape defined by [path].
-  ///
-  /// If [elevation] is greater than 0.0, then a shadow is drawn around the layer.
-  /// [shadowColor] defines the color of the shadow if present and [color] defines the
-  /// color of the layer background.
-  ///
-  /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
-  @override
-  ui.PhysicalShapeEngineLayer pushPhysicalShape({
-    required ui.Path path,
-    required double elevation,
-    required ui.Color color,
-    ui.Color? shadowColor,
-    ui.Clip clipBehavior = ui.Clip.none,
-    ui.PhysicalShapeEngineLayer? oldLayer,
-  }) {
-    return _pushSurface<PersistedPhysicalShape>(PersistedPhysicalShape(
-      oldLayer as PersistedPhysicalShape?,
-      path as SurfacePath,
-      elevation,
-      color.value,
-      shadowColor?.value ?? 0xFF000000,
-      clipBehavior,
-    ));
   }
 
   /// Add a retained engine layer subtree from previous frames.
@@ -312,10 +277,10 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   void addRetained(ui.EngineLayer retainedLayer) {
     final PersistedContainerSurface retainedSurface =
         retainedLayer as PersistedContainerSurface;
-    if (assertionsEnabled) {
-      assert(debugAssertSurfaceState(retainedSurface,
-          PersistedSurfaceState.active, PersistedSurfaceState.released));
-    }
+    assert(debugAssertSurfaceState(retainedSurface,
+      PersistedSurfaceState.active,
+      PersistedSurfaceState.released,
+    ));
     retainedSurface.tryRetain();
     _adoptSurface(retainedSurface);
   }
@@ -364,7 +329,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   /// overlay or not.
   ///
   /// We use this to avoid spamming the console with redundant warning messages.
-  static bool _webOnlyDidWarnAboutPerformanceOverlay = false;
+  static bool _didWarnAboutPerformanceOverlay = false;
 
   void _addPerformanceOverlay(
     int enabledOptions,
@@ -373,9 +338,9 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     double top,
     double bottom,
   ) {
-    if (!_webOnlyDidWarnAboutPerformanceOverlay) {
-      _webOnlyDidWarnAboutPerformanceOverlay = true;
-      printWarning('The performance overlay isn\'t supported on the web');
+    if (!_didWarnAboutPerformanceOverlay) {
+      _didWarnAboutPerformanceOverlay = true;
+      printWarning("The performance overlay isn't supported on the web");
     }
   }
 
@@ -419,7 +384,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   void _addTexture(double dx, double dy, double width, double height,
       int textureId, ui.FilterQuality filterQuality) {
     // In test mode, allow this to be a no-op.
-    if (!ui.debugEmulateFlutterTesterEnvironment) {
+    if (!ui_web.debugEmulateFlutterTesterEnvironment) {
       throw UnimplementedError('Textures are not supported in Flutter Web');
     }
   }

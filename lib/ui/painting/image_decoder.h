@@ -9,7 +9,7 @@
 
 #include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
-#include "flutter/display_list/display_list_image.h"
+#include "flutter/display_list/image/dl_image.h"
 #include "flutter/fml/concurrent_message_loop.h"
 #include "flutter/lib/ui/io_manager.h"
 #include "flutter/lib/ui/painting/image_descriptor.h"
@@ -25,13 +25,14 @@ class ImageDecoder {
  public:
   static std::unique_ptr<ImageDecoder> Make(
       const Settings& settings,
-      TaskRunners runners,
+      const TaskRunners& runners,
       std::shared_ptr<fml::ConcurrentTaskRunner> concurrent_task_runner,
-      fml::WeakPtr<IOManager> io_manager);
+      fml::WeakPtr<IOManager> io_manager,
+      const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch);
 
   virtual ~ImageDecoder();
 
-  using ImageResult = std::function<void(sk_sp<DlImage>)>;
+  using ImageResult = std::function<void(sk_sp<DlImage>, std::string)>;
 
   // Takes an image descriptor and returns a handle to a texture resident on the
   // GPU. All image decompression and resizes are done on a worker thread
@@ -51,7 +52,7 @@ class ImageDecoder {
   fml::WeakPtr<IOManager> io_manager_;
 
   ImageDecoder(
-      TaskRunners runners,
+      const TaskRunners& runners,
       std::shared_ptr<fml::ConcurrentTaskRunner> concurrent_task_runner,
       fml::WeakPtr<IOManager> io_manager);
 

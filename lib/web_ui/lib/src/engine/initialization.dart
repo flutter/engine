@@ -4,31 +4,20 @@
 
 import 'dart:async';
 import 'dart:developer' as developer;
-import 'dart:html' as html;
+import 'dart:js_interop';
 
-import 'package:ui/src/engine/assets.dart';
-import 'package:ui/src/engine/browser_detection.dart';
-import 'package:ui/src/engine/canvaskit/initialization.dart';
-import 'package:ui/src/engine/embedder.dart';
-import 'package:ui/src/engine/keyboard.dart';
-import 'package:ui/src/engine/mouse_cursor.dart';
-import 'package:ui/src/engine/navigation.dart';
-import 'package:ui/src/engine/platform_dispatcher.dart';
-import 'package:ui/src/engine/platform_views/content_manager.dart';
-import 'package:ui/src/engine/profiler.dart';
-import 'package:ui/src/engine/safe_browser_api.dart';
-import 'package:ui/src/engine/text/font_collection.dart';
-import 'package:ui/src/engine/text/line_break_properties.dart';
-import 'package:ui/src/engine/window.dart';
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
+import 'package:web_test_fonts/web_test_fonts.dart';
 
 /// The mode the app is running in.
 /// Keep these in sync with the same constants on the framework-side under foundation/constants.dart.
 const bool kReleaseMode =
-    bool.fromEnvironment('dart.vm.product', defaultValue: false);
+    bool.fromEnvironment('dart.vm.product');
 /// A constant that is true if the application was compiled in profile mode.
 const bool kProfileMode =
-    bool.fromEnvironment('dart.vm.profile', defaultValue: false);
+    bool.fromEnvironment('dart.vm.profile');
 /// A constant that is true if the application was compiled in debug mode.
 const bool kDebugMode = !kReleaseMode && !kProfileMode;
 /// Returns mode of the app is running in as a string.
@@ -68,7 +57,7 @@ void debugEmulateHotRestart() {
 
 /// Fully initializes the engine, including services and UI.
 Future<void> initializeEngine({
-  AssetManager? assetManager,
+  ui_web.AssetManager? assetManager,
 }) async {
   await initializeEngineServices(assetManager: assetManager);
   await initializeEngineUi();
@@ -126,7 +115,8 @@ void debugResetEngineInitializationState() {
 ///  * [initializeEngineUi], which is typically called after this function, and
 ///    puts UI elements on the page.
 Future<void> initializeEngineServices({
-  AssetManager? assetManager,
+  ui_web.AssetManager? assetManager,
+  JsFlutterConfiguration? jsConfiguration
 }) async {
   if (_initializationState != DebugEngineInitializationState.uninitialized) {
     assert(() {
@@ -140,18 +130,8 @@ Future<void> initializeEngineServices({
   }
   _initializationState = DebugEngineInitializationState.initializingServices;
 
-  if (!useCanvasKit) {
-    scheduleMicrotask(() {
-      // Access [lineLookup] to force the lazy unpacking of line break data
-      // now. Removing this line won't break anything. It's just an optimization
-      // to make the unpacking happen while we are waiting for network requests.
-      lineLookup;
-    });
-  }
-
-  // Setup the hook that allows users to customize URL strategy before running
-  // the app.
-  _addUrlStrategyListener();
+  // Store `jsConfiguration` so user settings are available to the engine.
+  configuration.setUserConfiguration(jsConfiguration);
 
   // Called by the Web runtime just before hot restarting the app.
   //
@@ -178,7 +158,7 @@ Future<void> initializeEngineServices({
     // fires.
     if (!waitingForAnimation) {
       waitingForAnimation = true;
-      html.window.requestAnimationFrame((num highResTime) {
+      domWindow.requestAnimationFrame((JSNumber highResTime) {
         frameTimingsOnVsync();
 
         // Reset immediately, because `frameHandler` can schedule more frames.
@@ -189,7 +169,8 @@ Future<void> initializeEngineServices({
         // milliseconds as a double value, with sub-millisecond information
         // hidden in the fraction. So we first multiply it by 1000 to uncover
         // microsecond precision, and only then convert to `int`.
-        final int highResTimeMicroseconds = (1000 * highResTime).toInt();
+        final int highResTimeMicroseconds =
+            (1000 * highResTime.toDartDouble).toInt();
 
         // In Flutter terminology "building a frame" consists of "beginning
         // frame" and "drawing frame".
@@ -214,19 +195,11 @@ Future<void> initializeEngineServices({
     }
   };
 
-  // This needs to be after `initializeEngine` because that is where the
-  // canvaskit script is added to the page.
-  if (useCanvasKit) {
-    await initializeCanvasKit();
-  }
+  assetManager ??= ui_web.AssetManager(assetBase: configuration.assetBase);
+  _setAssetManager(assetManager);
 
-  assetManager ??= const AssetManager();
-  await _setAssetManager(assetManager);
-  if (useCanvasKit) {
-    await skiaFontCollection.ensureFontsLoaded();
-  } else {
-    await _fontCollection!.ensureFontsLoaded();
-  }
+  Future<void> initializeRendererCallback () async => renderer.initialize();
+  await Future.wait<void>(<Future<void>>[initializeRendererCallback(), _downloadAssetFonts()]);
   _initializationState = DebugEngineInitializationState.initializedServices;
 }
 
@@ -252,60 +225,52 @@ Future<void> initializeEngineUi() async {
   }
   _initializationState = DebugEngineInitializationState.initializingUi;
 
-  Keyboard.initialize(onMacOs: operatingSystem == OperatingSystem.macOs);
+  RawKeyboard.initialize(onMacOs: operatingSystem == OperatingSystem.macOs);
   MouseCursor.initialize();
   ensureFlutterViewEmbedderInitialized();
   _initializationState = DebugEngineInitializationState.initialized;
 }
 
-AssetManager get assetManager => _assetManager!;
-AssetManager? _assetManager;
+ui_web.AssetManager get engineAssetManager => _assetManager!;
+ui_web.AssetManager? _assetManager;
 
-FontCollection get fontCollection => _fontCollection!;
-FontCollection? _fontCollection;
-
-Future<void> _setAssetManager(AssetManager assetManager) async {
-  // ignore: unnecessary_null_comparison
-  assert(assetManager != null, 'Cannot set assetManager to null');
+void _setAssetManager(ui_web.AssetManager assetManager) {
   if (assetManager == _assetManager) {
     return;
   }
 
   _assetManager = assetManager;
+}
 
-  if (useCanvasKit) {
-    ensureSkiaFontCollectionInitialized();
-  } else {
-    _fontCollection ??= FontCollection();
-    _fontCollection!.clear();
+Future<void> _downloadAssetFonts() async {
+  renderer.fontCollection.clear();
+
+  if (ui_web.debugEmulateFlutterTesterEnvironment) {
+    // Load the embedded test font before loading fonts from the assets so that
+    // the embedded test font is the default (first) font.
+    await renderer.fontCollection.loadFontFromList(
+      EmbeddedTestFont.flutterTest.data,
+      fontFamily: EmbeddedTestFont.flutterTest.fontFamily
+    );
   }
 
   if (_assetManager != null) {
-    if (useCanvasKit) {
-      await skiaFontCollection.registerFonts(_assetManager!);
-    } else {
-      await _fontCollection!.registerFonts(_assetManager!);
-    }
-  }
-
-  if (ui.debugEmulateFlutterTesterEnvironment) {
-    if (useCanvasKit) {
-      skiaFontCollection.debugRegisterTestFonts();
-    } else {
-      _fontCollection!.debugRegisterTestFonts();
-    }
+    await renderer.fontCollection.loadAssetFonts(await fetchFontManifest(ui_web.assetManager));
   }
 }
 
-void _addUrlStrategyListener() {
-  jsSetUrlStrategy = allowInterop((JsUrlStrategy? jsStrategy) {
-    customUrlStrategy =
-        jsStrategy == null ? null : CustomUrlStrategy.fromJs(jsStrategy);
-  });
-  registerHotRestartListener(() {
-    jsSetUrlStrategy = null;
-  });
+/// Whether to disable the font fallback system.
+///
+/// We need to disable font fallbacks for some framework tests because
+/// Flutter error messages may contain an arrow symbol which is not
+/// covered by ASCII fonts. This causes us to try to download the
+/// Noto Sans Symbols font, which kicks off a `Timer` which doesn't
+/// complete before the Widget tree is disposed (this is by design).
+bool get debugDisableFontFallbacks => _debugDisableFontFallbacks;
+set debugDisableFontFallbacks(bool value) {
+  _debugDisableFontFallbacks = value;
 }
+bool _debugDisableFontFallbacks = false;
 
 /// The shared instance of PlatformViewManager shared across the engine to handle
 /// rendering of PlatformViews into the web app.

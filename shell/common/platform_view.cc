@@ -13,10 +13,8 @@
 
 namespace flutter {
 
-PlatformView::PlatformView(Delegate& delegate, TaskRunners task_runners)
-    : delegate_(delegate),
-      task_runners_(std::move(task_runners)),
-      weak_factory_(this) {}
+PlatformView::PlatformView(Delegate& delegate, const TaskRunners& task_runners)
+    : delegate_(delegate), task_runners_(task_runners), weak_factory_(this) {}
 
 PlatformView::~PlatformView() = default;
 
@@ -38,10 +36,11 @@ void PlatformView::DispatchPointerDataPacket(
       pointer_data_packet_converter_.Convert(std::move(packet)));
 }
 
-void PlatformView::DispatchSemanticsAction(int32_t id,
+void PlatformView::DispatchSemanticsAction(int32_t node_id,
                                            SemanticsAction action,
                                            fml::MallocMapping args) {
-  delegate_.OnPlatformViewDispatchSemanticsAction(id, action, std::move(args));
+  delegate_.OnPlatformViewDispatchSemanticsAction(node_id, action,
+                                                  std::move(args));
 }
 
 void PlatformView::SetSemanticsEnabled(bool enabled) {
@@ -52,8 +51,9 @@ void PlatformView::SetAccessibilityFeatures(int32_t flags) {
   delegate_.OnPlatformViewSetAccessibilityFeatures(flags);
 }
 
-void PlatformView::SetViewportMetrics(const ViewportMetrics& metrics) {
-  delegate_.OnPlatformViewSetViewportMetrics(metrics);
+void PlatformView::SetViewportMetrics(int64_t view_id,
+                                      const ViewportMetrics& metrics) {
+  delegate_.OnPlatformViewSetViewportMetrics(view_id, metrics);
 }
 
 void PlatformView::NotifyCreated() {
@@ -109,8 +109,12 @@ fml::WeakPtr<PlatformView> PlatformView::GetWeakPtr() const {
   return weak_factory_.GetWeakPtr();
 }
 
-void PlatformView::UpdateSemantics(SemanticsNodeUpdates update,
-                                   CustomAccessibilityActionUpdates actions) {}
+void PlatformView::UpdateSemantics(
+    SemanticsNodeUpdates update,  // NOLINT(performance-unnecessary-value-param)
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
+    CustomAccessibilityActionUpdates actions) {}
+
+void PlatformView::SendChannelUpdate(const std::string& name, bool listening) {}
 
 void PlatformView::HandlePlatformMessage(
     std::unique_ptr<PlatformMessage> message) {
@@ -171,9 +175,11 @@ void PlatformView::LoadDartDeferredLibrary(
     std::unique_ptr<const fml::Mapping> snapshot_data,
     std::unique_ptr<const fml::Mapping> snapshot_instructions) {}
 
-void PlatformView::LoadDartDeferredLibraryError(intptr_t loading_unit_id,
-                                                const std::string error_message,
-                                                bool transient) {}
+void PlatformView::LoadDartDeferredLibraryError(
+    intptr_t loading_unit_id,
+    const std::string
+        error_message,  // NOLINT(performance-unnecessary-value-param)
+    bool transient) {}
 
 void PlatformView::UpdateAssetResolverByType(
     std::unique_ptr<AssetResolver> updated_asset_resolver,
@@ -193,6 +199,14 @@ PlatformView::GetPlatformMessageHandler() const {
 
 const Settings& PlatformView::GetSettings() const {
   return delegate_.OnPlatformViewGetSettings();
+}
+
+double PlatformView::GetScaledFontSize(double unscaled_font_size,
+                                       int configuration_id) const {
+  // Unreachable by default, as most platforms do not support nonlinear scaling
+  // and the Flutter application never invokes this method.
+  FML_UNREACHABLE();
+  return -1;
 }
 
 }  // namespace flutter

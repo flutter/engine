@@ -5,6 +5,7 @@
 #include "flutter/shell/platform/embedder/embedder_external_view_embedder.h"
 
 #include <algorithm>
+#include <utility>
 
 #include "flutter/shell/platform/embedder/embedder_layers.h"
 #include "flutter/shell/platform/embedder/embedder_render_target.h"
@@ -27,7 +28,7 @@ EmbedderExternalViewEmbedder::~EmbedderExternalViewEmbedder() = default;
 
 void EmbedderExternalViewEmbedder::SetSurfaceTransformationCallback(
     SurfaceTransformationCallback surface_transformation_callback) {
-  surface_transformation_callback_ = surface_transformation_callback;
+  surface_transformation_callback_ = std::move(surface_transformation_callback);
 }
 
 SkMatrix EmbedderExternalViewEmbedder::GetSurfaceTransformation() const {
@@ -70,7 +71,7 @@ void EmbedderExternalViewEmbedder::BeginFrame(
 
 // |ExternalViewEmbedder|
 void EmbedderExternalViewEmbedder::PrerollCompositeEmbeddedView(
-    int view_id,
+    int64_t view_id,
     std::unique_ptr<EmbeddedViewParams> params) {
   auto vid = EmbedderExternalView::ViewIdentifier(view_id);
   FML_DCHECK(pending_views_.count(vid) == 0);
@@ -85,7 +86,7 @@ void EmbedderExternalViewEmbedder::PrerollCompositeEmbeddedView(
 }
 
 // |ExternalViewEmbedder|
-SkCanvas* EmbedderExternalViewEmbedder::GetRootCanvas() {
+DlCanvas* EmbedderExternalViewEmbedder::GetRootCanvas() {
   auto found = pending_views_.find(EmbedderExternalView::ViewIdentifier{});
   if (found == pending_views_.end()) {
     FML_DLOG(WARNING)
@@ -98,20 +99,7 @@ SkCanvas* EmbedderExternalViewEmbedder::GetRootCanvas() {
 }
 
 // |ExternalViewEmbedder|
-std::vector<SkCanvas*> EmbedderExternalViewEmbedder::GetCurrentCanvases() {
-  std::vector<SkCanvas*> canvases;
-  for (const auto& view : pending_views_) {
-    const auto& external_view = view.second;
-    // This method (for legacy reasons) expects non-root current canvases.
-    if (!external_view->IsRootView()) {
-      canvases.push_back(external_view->GetCanvas());
-    }
-  }
-  return canvases;
-}
-
-// |ExternalViewEmbedder|
-SkCanvas* EmbedderExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
+DlCanvas* EmbedderExternalViewEmbedder::CompositeEmbeddedView(int64_t view_id) {
   auto vid = EmbedderExternalView::ViewIdentifier(view_id);
   auto found = pending_views_.find(vid);
   if (found == pending_views_.end()) {
@@ -137,6 +125,7 @@ static FlutterBackingStoreConfig MakeBackingStoreConfig(
 // |ExternalViewEmbedder|
 void EmbedderExternalViewEmbedder::SubmitFrame(
     GrDirectContext* context,
+    const std::shared_ptr<impeller::AiksContext>& aiks_context,
     std::unique_ptr<SurfaceFrame> frame) {
   auto [matched_render_targets, pending_keys] =
       render_target_cache_.GetExistingTargetsInCache(pending_views_);
@@ -184,8 +173,8 @@ void EmbedderExternalViewEmbedder::SubmitFrame(
     // the context must be reset.
     //
     // @warning: Embedder may trample on our OpenGL context here.
-    auto render_target =
-        create_render_target_callback_(context, backing_store_config);
+    auto render_target = create_render_target_callback_(context, aiks_context,
+                                                        backing_store_config);
 
     if (!render_target) {
       FML_LOG(ERROR) << "Embedder did not return a valid render target.";
@@ -236,6 +225,8 @@ void EmbedderExternalViewEmbedder::SubmitFrame(
       const auto& external_view = pending_views_.at(view_id);
       if (external_view->HasPlatformView()) {
         presented_layers.PushPlatformViewLayer(
+            // Covered by HasPlatformView().
+            // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
             external_view->GetViewIdentifier()
                 .platform_view_id.value(),           // view id
             *external_view->GetEmbeddedViewParams()  // view params
@@ -247,8 +238,17 @@ void EmbedderExternalViewEmbedder::SubmitFrame(
       // platform view.
       if (external_view->HasEngineRenderedContents()) {
         const auto& exteral_render_target = matched_render_targets.at(view_id);
+        const auto& external_view = pending_views_.at(view_id);
+        auto rect_list =
+            external_view->GetEngineRenderedContentsRegion(SkRect::MakeIWH(
+                pending_frame_size_.width(), pending_frame_size_.height()));
+        std::vector<SkIRect> rects;
+        rects.reserve(rect_list.size());
+        for (const auto& rect : rect_list) {
+          rects.push_back(rect.roundOut());
+        }
         presented_layers.PushBackingStoreLayer(
-            exteral_render_target->GetBackingStore());
+            exteral_render_target->GetBackingStore(), rects);
       }
     }
 

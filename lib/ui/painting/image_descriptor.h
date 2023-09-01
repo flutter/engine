@@ -13,10 +13,11 @@
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/image_generator_registry.h"
 #include "flutter/lib/ui/painting/immutable_buffer.h"
-#include "third_party/skia/include/codec/SkCodec.h"
-#include "third_party/skia/include/core/SkImageGenerator.h"
+#include "third_party/skia/include/core/SkData.h"
+#include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
-#include "third_party/skia/src/codec/SkCodecImageGenerator.h"
+#include "third_party/skia/include/core/SkPixmap.h"
+#include "third_party/skia/include/core/SkSize.h"
 #include "third_party/tonic/dart_library_natives.h"
 
 namespace flutter {
@@ -36,20 +37,23 @@ class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
   enum PixelFormat {
     kRGBA8888,
     kBGRA8888,
+    kRGBAFloat32,
   };
 
-  /// @brief  Asynchronously initlializes an ImageDescriptor for an encoded
+  /// @brief  Asynchronously initializes an ImageDescriptor for an encoded
   ///         image, as long as the format is recognized by an encoder installed
   ///         in the `ImageGeneratorRegistry`. Calling this method will create
   ///         an `ImageGenerator` and read EXIF corrected dimensions from the
   ///         image data.
   /// @see    `ImageGeneratorRegistry`
-  static void initEncoded(Dart_NativeArguments args);
+  static Dart_Handle initEncoded(Dart_Handle descriptor_handle,
+                                 ImmutableBuffer* immutable_buffer,
+                                 Dart_Handle callback_handle);
 
   /// @brief  Synchronously initializes an `ImageDescriptor` for decompressed
   ///         image data as specified by the `PixelFormat`.
   static void initRaw(Dart_Handle descriptor_handle,
-                      fml::RefPtr<ImmutableBuffer> data,
+                      const fml::RefPtr<ImmutableBuffer>& data,
                       int width,
                       int height,
                       int row_bytes,
@@ -111,12 +115,6 @@ class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
     generator_.reset();
     ClearDartWrapper();
   }
-
-  size_t GetAllocationSize() const override {
-    return sizeof(ImageDescriptor) + sizeof(SkImageInfo) + buffer_->size();
-  }
-
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
   ImageDescriptor(sk_sp<SkData> buffer,

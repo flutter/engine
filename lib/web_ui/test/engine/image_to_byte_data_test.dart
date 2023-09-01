@@ -9,16 +9,14 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
+import '../common/test_initialization.dart';
+
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 Future<void> testMain() async {
-  setUpAll(() async {
-    await webOnlyInitializePlatform();
-    fontCollection.debugRegisterTestFonts();
-    await fontCollection.ensureFontsLoaded();
-  });
+  setUpUnitTests();
 
   Future<Image> createTestImageByColor(Color color) async {
     final EnginePictureRecorder recorder = EnginePictureRecorder();
@@ -34,7 +32,7 @@ Future<void> testMain() async {
     final Image testImage = await createTestImageByColor(const Color(0xFFCCDD00));
 
     final ByteData bytes =
-        (await testImage.toByteData(format: ImageByteFormat.rawRgba))!;
+        (await testImage.toByteData())!;
     expect(
       bytes.buffer.asUint32List(),
       <int>[0xFF00DDCC, 0xFF00DDCC, 0xFF00DDCC, 0xFF00DDCC],

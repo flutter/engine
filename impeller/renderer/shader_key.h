@@ -10,7 +10,7 @@
 
 #include "flutter/fml/hash_combine.h"
 #include "flutter/fml/macros.h"
-#include "impeller/renderer/shader_types.h"
+#include "impeller/core/shader_types.h"
 
 namespace impeller {
 
@@ -18,7 +18,7 @@ struct ShaderKey {
   std::string name;
   ShaderStage stage = ShaderStage::kUnknown;
 
-  ShaderKey(const std::string_view& p_name, ShaderStage p_stage)
+  ShaderKey(std::string_view p_name, ShaderStage p_stage)
       : name({p_name.data(), p_name.size()}), stage(p_stage) {}
 
   struct Hash {

@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-
 import 'dart:async';
 import 'dart:collection';
 import 'dart:io' show stdout;
@@ -88,7 +86,7 @@ abstract class Lifecycle {
 
 class _DefaultLifecycle implements Lifecycle {
   final ReceivePort _suitePort = ReceivePort('Suite port');
-  Queue<Test>? _tests;
+  late Queue<Test> _tests;
 
   @override
   void onStart() {
@@ -106,7 +104,7 @@ class _DefaultLifecycle implements Lifecycle {
 
   void _processResults() {
     bool testsSucceeded = true;
-    for (final Test t in _tests!) {
+    for (final Test t in _tests) {
       testsSucceeded = testsSucceeded && (t.state == TestState.succeeded);
     }
     if (!testsSucceeded) {

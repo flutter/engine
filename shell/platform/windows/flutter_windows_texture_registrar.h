@@ -9,6 +9,8 @@
 #include <mutex>
 #include <unordered_map>
 
+#include "flutter/fml/closure.h"
+#include "flutter/fml/macros.h"
 #include "flutter/shell/platform/common/public/flutter_texture_registrar.h"
 #include "flutter/shell/platform/windows/external_texture.h"
 
@@ -28,8 +30,7 @@ class FlutterWindowsTextureRegistrar {
   int64_t RegisterTexture(const FlutterDesktopTextureInfo* texture_info);
 
   // Attempts to unregister the texture identified by |texture_id|.
-  // Returns true if the texture was successfully unregistered.
-  bool UnregisterTexture(int64_t texture_id);
+  void UnregisterTexture(int64_t texture_id, fml::closure callback = nullptr);
 
   // Notifies the engine about a new frame being available.
   // Returns true on success.
@@ -56,6 +57,8 @@ class FlutterWindowsTextureRegistrar {
   std::mutex map_mutex_;
 
   int64_t EmplaceTexture(std::unique_ptr<ExternalTexture> texture);
+
+  FML_DISALLOW_COPY_AND_ASSIGN(FlutterWindowsTextureRegistrar);
 };
 
 };  // namespace flutter

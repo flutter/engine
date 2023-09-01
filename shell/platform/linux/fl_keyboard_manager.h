@@ -44,6 +44,7 @@ G_DECLARE_FINAL_TYPE(FlKeyboardManager,
  * Returns: a new #FlKeyboardManager.
  */
 FlKeyboardManager* fl_keyboard_manager_new(
+    FlBinaryMessenger* messenger,
     FlKeyboardViewDelegate* view_delegate);
 
 /**
@@ -69,6 +70,28 @@ gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* manager,
  * Returns: true if the manager's various states are cleared.
  */
 gboolean fl_keyboard_manager_is_state_clear(FlKeyboardManager* manager);
+
+/**
+ * fl_keyboard_manager_sync_modifier_if_needed:
+ * @manager: the #FlKeyboardManager self.
+ * @state: the state of the modifiers mask.
+ * @event_time: the time attribute of the incoming GDK event.
+ *
+ * If needed, synthesize modifier keys up and down event by comparing their
+ * current pressing states with the given modifiers mask.
+ */
+void fl_keyboard_manager_sync_modifier_if_needed(FlKeyboardManager* manager,
+                                                 guint state,
+                                                 double event_time);
+
+/**
+ * fl_keyboard_manager_get_pressed_state:
+ * @manager: the #FlKeyboardManager self.
+ *
+ * Returns the keyboard pressed state. The hash table contains one entry per
+ * pressed keys, mapping from the logical key to the physical key.*
+ */
+GHashTable* fl_keyboard_manager_get_pressed_state(FlKeyboardManager* manager);
 
 G_END_DECLS
 

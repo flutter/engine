@@ -4,18 +4,16 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderingBackend.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterResizeSynchronizer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/MacOSGLContextSwitch.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterThreadSynchronizer.h"
 
-#import <OpenGL/gl.h>
 #import <QuartzCore/QuartzCore.h>
 
-@interface FlutterView () {
+@interface FlutterView () <FlutterSurfaceManagerDelegate> {
+  int64_t _viewId;
   __weak id<FlutterViewReshapeListener> _reshapeListener;
-  FlutterResizeSynchronizer* _resizeSynchronizer;
-  id<FlutterResizableBackingStoreProvider> _resizableBackingStoreProvider;
+  FlutterThreadSynchronizer* _threadSynchronizer;
+  FlutterSurfaceManager* _surfaceManager;
 }
 
 @end
@@ -24,60 +22,44 @@
 
 - (instancetype)initWithMTLDevice:(id<MTLDevice>)device
                      commandQueue:(id<MTLCommandQueue>)commandQueue
-                  reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener {
+                  reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener
+               threadSynchronizer:(FlutterThreadSynchronizer*)threadSynchronizer
+                           viewId:(int64_t)viewId {
   self = [super initWithFrame:NSZeroRect];
   if (self) {
     [self setWantsLayer:YES];
+    [self setBackgroundColor:[NSColor blackColor]];
     [self setLayerContentsRedrawPolicy:NSViewLayerContentsRedrawDuringViewResize];
+    _viewId = viewId;
     _reshapeListener = reshapeListener;
-    _resizableBackingStoreProvider =
-        [[FlutterMetalResizableBackingStoreProvider alloc] initWithDevice:device
-                                                             commandQueue:commandQueue
-                                                                    layer:self.layer];
-    _resizeSynchronizer =
-        [[FlutterResizeSynchronizer alloc] initWithDelegate:_resizableBackingStoreProvider];
+    _threadSynchronizer = threadSynchronizer;
+    _surfaceManager = [[FlutterSurfaceManager alloc] initWithDevice:device
+                                                       commandQueue:commandQueue
+                                                              layer:self.layer
+                                                           delegate:self];
   }
   return self;
 }
 
-- (instancetype)initWithMainContext:(NSOpenGLContext*)mainContext
-                    reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener {
-  return [self initWithFrame:NSZeroRect mainContext:mainContext reshapeListener:reshapeListener];
+- (void)onPresent:(CGSize)frameSize withBlock:(dispatch_block_t)block {
+  [_threadSynchronizer performCommitForView:_viewId size:frameSize notify:block];
 }
 
-- (instancetype)initWithFrame:(NSRect)frame
-                  mainContext:(NSOpenGLContext*)mainContext
-              reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener {
-  self = [super initWithFrame:frame];
-  if (self) {
-    [self setWantsLayer:YES];
-    _reshapeListener = reshapeListener;
-    _resizableBackingStoreProvider =
-        [[FlutterOpenGLResizableBackingStoreProvider alloc] initWithMainContext:mainContext
-                                                                          layer:self.layer];
-    _resizeSynchronizer =
-        [[FlutterResizeSynchronizer alloc] initWithDelegate:_resizableBackingStoreProvider];
-  }
-  return self;
-}
-
-- (FlutterRenderBackingStore*)backingStoreForSize:(CGSize)size {
-  if ([_resizeSynchronizer shouldEnsureSurfaceForSize:size]) {
-    [_resizableBackingStoreProvider onBackingStoreResized:size];
-  }
-  return [_resizableBackingStoreProvider backingStore];
-}
-
-- (void)present {
-  [_resizeSynchronizer requestCommit];
+- (FlutterSurfaceManager*)surfaceManager {
+  return _surfaceManager;
 }
 
 - (void)reshaped {
   CGSize scaledSize = [self convertSizeToBacking:self.bounds.size];
-  [_resizeSynchronizer beginResize:scaledSize
-                            notify:^{
-                              [_reshapeListener viewDidReshape:self];
-                            }];
+  [_threadSynchronizer beginResizeForView:_viewId
+                                     size:scaledSize
+                                   notify:^{
+                                     [_reshapeListener viewDidReshape:self];
+                                   }];
+}
+
+- (void)setBackgroundColor:(NSColor*)color {
+  self.layer.backgroundColor = color.CGColor;
 }
 
 #pragma mark - NSView overrides
@@ -98,8 +80,25 @@
   return YES;
 }
 
+/**
+ * Declares that the initial mouse-down when the view is not in focus will send an event to the
+ * view.
+ */
+- (BOOL)acceptsFirstMouse:(NSEvent*)event {
+  return YES;
+}
+
 - (BOOL)acceptsFirstResponder {
   return YES;
+}
+
+- (void)cursorUpdate:(NSEvent*)event {
+  // When adding/removing views AppKit will schedule call to current hit-test view
+  // cursorUpdate: at the end of frame to determine possible cursor change. If
+  // the view doesn't implement cursorUpdate: AppKit will set the default (arrow) cursor
+  // instead. This would replace the cursor set by FlutterMouseCursorPlugin.
+  // Empty cursorUpdate: implementation prevents this behavior.
+  // https://github.com/flutter/flutter/issues/111425
 }
 
 - (void)viewDidChangeBackingProperties {
@@ -108,9 +107,12 @@
   [_reshapeListener viewDidReshape:self];
 }
 
-- (void)shutdown {
-  [_resizeSynchronizer shutdown];
+- (BOOL)layer:(CALayer*)layer
+    shouldInheritContentsScale:(CGFloat)newScale
+                    fromWindow:(NSWindow*)window {
+  return YES;
 }
+
 #pragma mark - NSAccessibility overrides
 
 - (BOOL)isAccessibilityElement {

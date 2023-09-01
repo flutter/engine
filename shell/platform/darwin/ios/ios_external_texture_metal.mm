@@ -3,28 +3,25 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/ios/ios_external_texture_metal.h"
+#include "flow/layers/layer.h"
 
 namespace flutter {
 
 IOSExternalTextureMetal::IOSExternalTextureMetal(
-    fml::scoped_nsobject<FlutterDarwinExternalTextureMetal> darwin_external_texture_metal)
+    const fml::scoped_nsobject<FlutterDarwinExternalTextureMetal>& darwin_external_texture_metal)
     : Texture([darwin_external_texture_metal textureID]),
       darwin_external_texture_metal_(darwin_external_texture_metal) {}
 
 IOSExternalTextureMetal::~IOSExternalTextureMetal() = default;
 
-void IOSExternalTextureMetal::Paint(SkCanvas& canvas,
+void IOSExternalTextureMetal::Paint(PaintContext& context,
                                     const SkRect& bounds,
                                     bool freeze,
-                                    GrDirectContext* context,
-                                    const SkSamplingOptions& sampling,
-                                    const SkPaint* paint) {
-  [darwin_external_texture_metal_ canvas:canvas
-                                  bounds:bounds
-                                  freeze:freeze
-                               grContext:context
-                                sampling:sampling
-                                   paint:paint];
+                                    const DlImageSampling sampling) {
+  [darwin_external_texture_metal_ paintContext:context
+                                        bounds:bounds
+                                        freeze:freeze
+                                      sampling:sampling];
 }
 
 void IOSExternalTextureMetal::OnGrContextCreated() {

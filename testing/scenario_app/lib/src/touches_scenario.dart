@@ -9,17 +9,17 @@ import 'scenario.dart';
 
 /// A scenario that sends back messages when touches are received.
 class TouchesScenario extends Scenario {
+  /// Constructor for `TouchesScenario`.
+  TouchesScenario(super.view);
+
   final Map<int, int> _knownDevices = <int, int>{};
   int _sequenceNo = 0;
-
-  /// Constructor for `TouchesScenario`.
-  TouchesScenario(PlatformDispatcher dispatcher) : super(dispatcher);
 
   @override
   void onBeginFrame(Duration duration) {
     // It is necessary to render frames for touch events to work properly on iOS
     final Scene scene = SceneBuilder().build();
-    window.render(scene);
+    view.render(scene);
     scene.dispose();
   }
 
@@ -29,16 +29,10 @@ class TouchesScenario extends Scenario {
       final int deviceId =
           _knownDevices.putIfAbsent(datum.device, () => _knownDevices.length);
       sendJsonMessage(
-        dispatcher: dispatcher,
+        dispatcher: view.platformDispatcher,
         channel: 'display_data',
         json: <String, dynamic>{
-          'data': _sequenceNo.toString() +
-              ',' +
-              datum.change.toString() +
-              ',device=' +
-              deviceId.toString() +
-              ',buttons=' +
-              datum.buttons.toString(),
+          'data': '$_sequenceNo,${datum.change},device=$deviceId,buttons=${datum.buttons},signalKind=${datum.signalKind}',
         },
       );
       _sequenceNo++;

@@ -10,6 +10,7 @@
 
 #include <optional>
 #include <utility>
+#include <vector>
 
 #include "flutter/flow/testing/mock_raster_cache.h"
 #include "flutter/fml/macros.h"
@@ -43,70 +44,66 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
 
  public:
   LayerTestBase()
-      : preroll_context_{
+      : texture_registry_(std::make_shared<TextureRegistry>()),
+        preroll_context_{
             // clang-format off
             .raster_cache                  = nullptr,
             .gr_context                    = nullptr,
             .view_embedder                 = nullptr,
-            .mutators_stack                = mutators_stack_,
+            .state_stack                   = preroll_state_stack_,
             .dst_color_space               = TestT::mock_color_space(),
-            .cull_rect                     = kGiantRect,
             .surface_needs_readback        = false,
             .raster_time                   = raster_time_,
             .ui_time                       = ui_time_,
             .texture_registry              = texture_registry_,
-            .checkerboard_offscreen_layers = false,
-            .frame_device_pixel_ratio      = 1.0f,
             .has_platform_view             = false,
+            .raster_cached_entries         = &cacheable_items_,
             // clang-format on
         },
         paint_context_{
             // clang-format off
-            .internal_nodes_canvas         = TestT::mock_internal_canvas(),
-            .leaf_nodes_canvas             = &TestT::mock_canvas(),
+            .state_stack                   = paint_state_stack_,
+            .canvas                        = &TestT::mock_canvas(),
             .gr_context                    = nullptr,
             .view_embedder                 = nullptr,
             .raster_time                   = raster_time_,
             .ui_time                       = ui_time_,
             .texture_registry              = texture_registry_,
             .raster_cache                  = nullptr,
-            .checkerboard_offscreen_layers = false,
-            .frame_device_pixel_ratio      = 1.0f,
             // clang-format on
         },
-        display_list_recorder_(kDlBounds),
-        internal_display_list_canvas_(kDlBounds.width(), kDlBounds.height()),
+        display_list_builder_(kDlBounds),
         display_list_paint_context_{
             // clang-format off
-            .internal_nodes_canvas         = &internal_display_list_canvas_,
-            .leaf_nodes_canvas             = &display_list_recorder_,
+            .state_stack                   = display_list_state_stack_,
+            .canvas                        = &display_list_builder_,
             .gr_context                    = nullptr,
             .view_embedder                 = nullptr,
             .raster_time                   = raster_time_,
             .ui_time                       = ui_time_,
             .texture_registry              = texture_registry_,
             .raster_cache                  = nullptr,
-            .checkerboard_offscreen_layers = false,
-            .frame_device_pixel_ratio      = 1.0f,
-            .leaf_nodes_builder            = display_list_recorder_.builder().get(),
             // clang-format on
         },
-        check_board_context_{
+        checkerboard_context_{
             // clang-format off
-            .internal_nodes_canvas         = TestT::mock_internal_canvas(),
-            .leaf_nodes_canvas             = &TestT::mock_canvas(),
+            .state_stack                   = checkerboard_state_stack_,
+            .canvas                        = &display_list_builder_,
             .gr_context                    = nullptr,
             .view_embedder                 = nullptr,
             .raster_time                   = raster_time_,
             .ui_time                       = ui_time_,
             .texture_registry              = texture_registry_,
             .raster_cache                  = nullptr,
-            .checkerboard_offscreen_layers = true,
-            .frame_device_pixel_ratio      = 1.0f,
             // clang-format on
         } {
-    internal_display_list_canvas_.addCanvas(&display_list_recorder_);
     use_null_raster_cache();
+    preroll_state_stack_.set_preroll_delegate(kGiantRect, SkMatrix::I());
+    paint_state_stack_.set_delegate(&TestT::mock_canvas());
+    display_list_state_stack_.set_delegate(&display_list_builder_);
+    checkerboard_state_stack_.set_delegate(&display_list_builder_);
+    checkerboard_state_stack_.set_checkerboard_func(draw_checkerboard);
+    checkerboard_paint_.setColor(checkerboard_color_);
   }
 
   /**
@@ -158,26 +155,34 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
     set_raster_cache_(std::make_unique<RasterCache>());
   }
 
-  TextureRegistry& texture_regitry() { return texture_registry_; }
+  std::vector<RasterCacheItem*>& cacheable_items() { return cacheable_items_; }
+
+  std::shared_ptr<TextureRegistry> texture_registry() {
+    return texture_registry_;
+  }
   RasterCache* raster_cache() { return raster_cache_.get(); }
   PrerollContext* preroll_context() { return &preroll_context_; }
-  Layer::PaintContext& paint_context() { return paint_context_; }
-  Layer::PaintContext& display_list_paint_context() {
+  PaintContext& paint_context() { return paint_context_; }
+  PaintContext& display_list_paint_context() {
     return display_list_paint_context_;
   }
-  Layer::PaintContext& check_board_context() { return check_board_context_; }
+  const DlPaint& checkerboard_paint() { return checkerboard_paint_; }
+  PaintContext& checkerboard_context() { return checkerboard_context_; }
   LayerSnapshotStore& layer_snapshot_store() { return snapshot_store_; }
 
   sk_sp<DisplayList> display_list() {
     if (display_list_ == nullptr) {
-      display_list_ = display_list_recorder_.Build();
-      // null out the canvas and recorder fields of the PaintContext
-      // to prevent future use.
-      display_list_paint_context_.leaf_nodes_canvas = nullptr;
-      display_list_paint_context_.internal_nodes_canvas = nullptr;
-      display_list_paint_context_.leaf_nodes_builder = nullptr;
+      display_list_ = display_list_builder_.Build();
     }
     return display_list_;
+  }
+
+  void reset_display_list() {
+    display_list_ = nullptr;
+    // Build() will leave the builder in a state to start recording a new DL
+    display_list_builder_.Build();
+    // Make sure we are starting from a fresh state stack
+    FML_DCHECK(display_list_state_stack_.is_empty());
   }
 
   void enable_leaf_layer_tracing() {
@@ -190,6 +195,12 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
     paint_context_.layer_snapshot_store = nullptr;
   }
 
+  void enable_impeller() {
+    preroll_context_.impeller_enabled = true;
+    paint_context_.impeller_enabled = true;
+    display_list_paint_context_.impeller_enabled = true;
+  }
+
  private:
   void set_raster_cache_(std::unique_ptr<RasterCache> raster_cache) {
     raster_cache_ = std::move(raster_cache);
@@ -198,20 +209,35 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
     display_list_paint_context_.raster_cache = raster_cache_.get();
   }
 
+  static constexpr SkColor checkerboard_color_ = 0x42424242;
+
+  static void draw_checkerboard(DlCanvas* canvas, const SkRect& rect) {
+    if (canvas) {
+      DlPaint paint;
+      paint.setColor(checkerboard_color_);
+      canvas->DrawRect(rect, paint);
+    }
+  }
+
+  LayerStateStack preroll_state_stack_;
+  LayerStateStack paint_state_stack_;
+  LayerStateStack checkerboard_state_stack_;
   FixedRefreshRateStopwatch raster_time_;
   FixedRefreshRateStopwatch ui_time_;
-  MutatorsStack mutators_stack_;
-  TextureRegistry texture_registry_;
+  std::shared_ptr<TextureRegistry> texture_registry_;
 
   std::unique_ptr<RasterCache> raster_cache_;
   PrerollContext preroll_context_;
-  Layer::PaintContext paint_context_;
-  DisplayListCanvasRecorder display_list_recorder_;
+  PaintContext paint_context_;
+  DisplayListBuilder display_list_builder_;
+  LayerStateStack display_list_state_stack_;
   sk_sp<DisplayList> display_list_;
-  SkNWayCanvas internal_display_list_canvas_;
-  Layer::PaintContext display_list_paint_context_;
-  Layer::PaintContext check_board_context_;
+  PaintContext display_list_paint_context_;
+  DlPaint checkerboard_paint_;
+  PaintContext checkerboard_context_;
   LayerSnapshotStore snapshot_store_;
+
+  std::vector<RasterCacheItem*> cacheable_items_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(LayerTestBase);
 };

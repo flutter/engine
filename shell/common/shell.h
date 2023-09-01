@@ -125,8 +125,9 @@ class Shell final : public PlatformView::Delegate,
       std::unique_ptr<Animator> animator,
       fml::WeakPtr<IOManager> io_manager,
       fml::RefPtr<SkiaUnrefQueue> unref_queue,
-      fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-      std::shared_ptr<VolatilePathTracker> volatile_path_tracker)>
+      fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
+      std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
+      const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch)>
       EngineCreateCallback;
 
   //----------------------------------------------------------------------------
@@ -162,7 +163,7 @@ class Shell final : public PlatformView::Delegate,
   ///
   static std::unique_ptr<Shell> Create(
       const PlatformData& platform_data,
-      TaskRunners task_runners,
+      const TaskRunners& task_runners,
       Settings settings,
       const CreateCallback<PlatformView>& on_create_platform_view,
       const CreateCallback<Rasterizer>& on_create_rasterizer,
@@ -216,7 +217,7 @@ class Shell final : public PlatformView::Delegate,
   //------------------------------------------------------------------------------
   /// @return     The settings used to launch this shell.
   ///
-  const Settings& GetSettings() const;
+  const Settings& GetSettings() const override;
 
   //------------------------------------------------------------------------------
   /// @brief      If callers wish to interact directly with any shell
@@ -297,6 +298,37 @@ class Shell final : public PlatformView::Delegate,
   ///
   bool IsSetup() const;
 
+  /// @brief  Allocates resources for a new non-implicit view.
+  ///
+  ///         This method returns immediately and does not wait for the task on
+  ///         the UI thread to finish. This is safe because operations are
+  ///         either initiated from the UI thread (such as rendering), or are
+  ///         sent as posted tasks that are queued. In either case, it's ok for
+  ///         the engine to have views that the Dart VM doesn't.
+  ///
+  ///         The implicit view should never be added with this function.
+  ///         Instead, it is added internally on Shell initialization. Trying to
+  ///         add `kFlutterImplicitViewId` triggers an assertion.
+  ///
+  /// @param[in]  view_id           The view ID of the new view.
+  /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
+  ///
+  void AddView(int64_t view_id, const ViewportMetrics& viewport_metrics);
+
+  /// @brief  Deallocates resources for a non-implicit view.
+  ///
+  ///         This method returns immediately and does not wait for the task on
+  ///         the UI thread to finish. This means that the Dart VM might still
+  ///         send messages regarding this view ID for a short while, even
+  ///         though this view ID is already invalid.
+  ///
+  ///         The implicit view should never be removed. Trying to remove
+  ///         `kFlutterImplicitViewId` triggers an assertion.
+  ///
+  /// @param[in]  view_id     The view ID of the view to be removed.
+  ///
+  void RemoveView(int64_t view_id);
+
   //----------------------------------------------------------------------------
   /// @brief      Captures a screenshot and optionally Base64 encodes the data
   ///             of the last layer tree rendered by the rasterizer in this
@@ -356,6 +388,7 @@ class Shell final : public PlatformView::Delegate,
 
   //----------------------------------------------------------------------------
   /// @brief     Accessor for the disable GPU SyncSwitch.
+  // |Rasterizer::Delegate|
   std::shared_ptr<const fml::SyncSwitch> GetIsGpuDisabledSyncSwitch()
       const override;
 
@@ -374,8 +407,7 @@ class Shell final : public PlatformView::Delegate,
   //----------------------------------------------------------------------------
   /// @brief      Notifies the display manager of the updates.
   ///
-  void OnDisplayUpdates(DisplayUpdateType update_type,
-                        std::vector<std::unique_ptr<Display>> displays);
+  void OnDisplayUpdates(std::vector<std::unique_ptr<Display>> displays);
 
   //----------------------------------------------------------------------------
   /// @brief Queries the `DisplayManager` for the main display refresh rate.
@@ -397,19 +429,26 @@ class Shell final : public PlatformView::Delegate,
   /// @see        `CreateCompatibleGenerator`
   void RegisterImageDecoder(ImageGeneratorFactory factory, int32_t priority);
 
-  //----------------------------------------------------------------------------
-  /// @brief Returns the delegate object that handles PlatformMessage's from
-  ///        Flutter to the host platform (and its responses).
+  // |Engine::Delegate|
   const std::shared_ptr<PlatformMessageHandler>& GetPlatformMessageHandler()
-      const;
+      const override;
 
   const std::weak_ptr<VsyncWaiter> GetVsyncWaiter() const;
+
+  const std::shared_ptr<fml::ConcurrentTaskRunner>
+  GetConcurrentWorkerTaskRunner() const;
 
  private:
   using ServiceProtocolHandler =
       std::function<bool(const ServiceProtocol::Handler::ServiceProtocolMap&,
                          rapidjson::Document*)>;
 
+  /// A collection of message channels (by name) that have sent at least one
+  /// message from a non-platform thread. Used to prevent printing the error log
+  /// more than once per channel, as a badly behaving plugin may send multiple
+  /// messages per second indefinitely.
+  std::mutex misbehaving_message_channels_mutex_;
+  std::set<std::string> misbehaving_message_channels_;
   const TaskRunners task_runners_;
   const fml::RefPtr<fml::RasterThreadMerger> parent_raster_thread_merger_;
   std::shared_ptr<ResourceCacheLimitCalculator>
@@ -440,7 +479,7 @@ class Shell final : public PlatformView::Delegate,
                                                         // pair
                      >
       service_protocol_handlers_;
-  bool is_setup_ = false;
+  bool is_set_up_ = false;
   bool is_added_to_service_protocol_ = false;
   uint64_t next_pointer_flow_id_ = 0;
 
@@ -454,7 +493,7 @@ class Shell final : public PlatformView::Delegate,
   std::atomic<bool> needs_report_timings_{false};
 
   // Whether there's a task scheduled to report the timings to Dart through
-  // ui.Window.onReportTimings.
+  // ui.PlatformDispatcher.onReportTimings.
   bool frame_timings_report_scheduled_ = false;
 
   // Vector of FrameTiming::kCount * n timestamps for n frames whose timings
@@ -471,17 +510,20 @@ class Shell final : public PlatformView::Delegate,
   std::mutex resize_mutex_;
 
   // used to discard wrong size layer tree produced during interactive resizing
-  SkISize expected_frame_size_ = SkISize::MakeEmpty();
+  std::unordered_map<int64_t, SkISize> expected_frame_sizes_;
+
+  // Used to communicate the right frame bounds via service protocol.
+  double device_pixel_ratio_ = 0.0;
 
   // How many frames have been timed since last report.
   size_t UnreportedFramesCount() const;
 
   Shell(DartVMRef vm,
-        TaskRunners task_runners,
+        const TaskRunners& task_runners,
         fml::RefPtr<fml::RasterThreadMerger> parent_merger,
         const std::shared_ptr<ResourceCacheLimitCalculator>&
             resource_cache_limit_calculator,
-        Settings settings,
+        const Settings& settings,
         std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
         bool is_gpu_disabled);
 
@@ -491,9 +533,9 @@ class Shell final : public PlatformView::Delegate,
       std::shared_ptr<ShellIOManager> parent_io_manager,
       const std::shared_ptr<ResourceCacheLimitCalculator>&
           resource_cache_limit_calculator,
-      TaskRunners task_runners,
+      const TaskRunners& task_runners,
       const PlatformData& platform_data,
-      Settings settings,
+      const Settings& settings,
       fml::RefPtr<const DartSnapshot> isolate_snapshot,
       const Shell::CreateCallback<PlatformView>& on_create_platform_view,
       const Shell::CreateCallback<Rasterizer>& on_create_rasterizer,
@@ -502,9 +544,9 @@ class Shell final : public PlatformView::Delegate,
 
   static std::unique_ptr<Shell> CreateWithSnapshot(
       const PlatformData& platform_data,
-      TaskRunners task_runners,
-      fml::RefPtr<fml::RasterThreadMerger> parent_thread_merger,
-      std::shared_ptr<ShellIOManager> parent_io_manager,
+      const TaskRunners& task_runners,
+      const fml::RefPtr<fml::RasterThreadMerger>& parent_thread_merger,
+      const std::shared_ptr<ShellIOManager>& parent_io_manager,
       const std::shared_ptr<ResourceCacheLimitCalculator>&
           resource_cache_limit_calculator,
       Settings settings,
@@ -518,7 +560,7 @@ class Shell final : public PlatformView::Delegate,
   bool Setup(std::unique_ptr<PlatformView> platform_view,
              std::unique_ptr<Engine> engine,
              std::unique_ptr<Rasterizer> rasterizer,
-             std::shared_ptr<ShellIOManager> io_manager);
+             const std::shared_ptr<ShellIOManager>& io_manager);
 
   void ReportTimings();
 
@@ -533,6 +575,7 @@ class Shell final : public PlatformView::Delegate,
 
   // |PlatformView::Delegate|
   void OnPlatformViewSetViewportMetrics(
+      int64_t view_id,
       const ViewportMetrics& metrics) override;
 
   // |PlatformView::Delegate|
@@ -544,7 +587,7 @@ class Shell final : public PlatformView::Delegate,
       std::unique_ptr<PointerDataPacket> packet) override;
 
   // |PlatformView::Delegate|
-  void OnPlatformViewDispatchSemanticsAction(int32_t id,
+  void OnPlatformViewDispatchSemanticsAction(int32_t node_id,
                                              SemanticsAction action,
                                              fml::MallocMapping args) override;
 
@@ -590,16 +633,14 @@ class Shell final : public PlatformView::Delegate,
                             uint64_t frame_number) override;
 
   // |Animator::Delegate|
-  void OnAnimatorNotifyIdle(fml::TimePoint deadline) override;
+  void OnAnimatorNotifyIdle(fml::TimeDelta deadline) override;
 
   // |Animator::Delegate|
   void OnAnimatorUpdateLatestFrameTargetTime(
       fml::TimePoint frame_target_time) override;
 
   // |Animator::Delegate|
-  void OnAnimatorDraw(
-      std::shared_ptr<Pipeline<flutter::LayerTree>> pipeline,
-      std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) override;
+  void OnAnimatorDraw(std::shared_ptr<LayerTreePipeline> pipeline) override;
 
   // |Animator::Delegate|
   void OnAnimatorDrawLastLayerTree(
@@ -639,6 +680,13 @@ class Shell final : public PlatformView::Delegate,
   // |Engine::Delegate|
   fml::TimePoint GetCurrentTimePoint() override;
 
+  // |Engine::Delegate|
+  void OnEngineChannelUpdate(std::string name, bool listening) override;
+
+  // |Engine::Delegate|
+  double GetScaledFontSize(double unscaled_font_size,
+                           int configuration_id) const override;
+
   // |Rasterizer::Delegate|
   void OnFrameRasterized(const FrameTiming&) override;
 
@@ -647,6 +695,10 @@ class Shell final : public PlatformView::Delegate,
 
   // |Rasterizer::Delegate|
   fml::TimePoint GetLatestFrameTargetTime() const override;
+
+  // |Rasterizer::Delegate|
+  bool ShouldDiscardLayerTree(int64_t view_id,
+                              const flutter::LayerTree& tree) override;
 
   // |ServiceProtocol::Handler|
   fml::RefPtr<fml::TaskRunner> GetServiceProtocolHandlerTaskRunner(
@@ -713,12 +765,25 @@ class Shell final : public PlatformView::Delegate,
       const ServiceProtocol::Handler::ServiceProtocolMap& params,
       rapidjson::Document* response);
 
+  // Service protocol handler
+  //
+  // Forces the FontCollection to reload the font manifest. Used to support hot
+  // reload for fonts.
+  bool OnServiceProtocolReloadAssetFonts(
+      const ServiceProtocol::Handler::ServiceProtocolMap& params,
+      rapidjson::Document* response);
+
+  // Send a system font change notification.
+  void SendFontChangeNotification();
+
   // |ResourceCacheLimitItem|
   size_t GetResourceCacheLimit() override { return resource_cache_limit_; };
 
   // Creates an asset bundle from the original settings asset path or
   // directory.
   std::unique_ptr<DirectoryAssetBundle> RestoreOriginalAssetResolver();
+
+  SkISize ExpectedFrameSize(int64_t view_id);
 
   // For accessing the Shell via the raster thread, necessary for various
   // rasterizer callbacks.

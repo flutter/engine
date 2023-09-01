@@ -10,11 +10,11 @@ library ui;
 import 'dart:async';
 import 'dart:collection' as collection;
 import 'dart:convert';
-import 'dart:html' as html;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'src/engine.dart' as engine;
+import 'ui_web/src/ui_web.dart' as ui_web;
 
 part 'annotations.dart';
 part 'canvas.dart';
@@ -25,6 +25,7 @@ part 'hash_codes.dart';
 part 'initialization.dart';
 part 'key.dart';
 part 'lerp.dart';
+part 'math.dart';
 part 'natives.dart';
 part 'painting.dart';
 part 'path.dart';

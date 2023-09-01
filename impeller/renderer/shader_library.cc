@@ -10,4 +10,16 @@ ShaderLibrary::ShaderLibrary() = default;
 
 ShaderLibrary::~ShaderLibrary() = default;
 
+void ShaderLibrary::RegisterFunction(
+    std::string name,  // NOLINT(performance-unnecessary-value-param)
+    ShaderStage stage,
+    std::shared_ptr<fml::Mapping>
+        code,  // NOLINT(performance-unnecessary-value-param)
+    RegistrationCallback
+        callback) {  // NOLINT(performance-unnecessary-value-param)
+  if (callback) {
+    callback(false);
+  }
+}
+
 }  // namespace impeller

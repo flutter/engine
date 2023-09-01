@@ -4,6 +4,9 @@
 
 #include "flutter/lib/ui/semantics/semantics_update_builder.h"
 
+#include <utility>
+
+#include "flutter/lib/ui/floating_point.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "third_party/skia/include/core/SkScalar.h"
 #include "third_party/tonic/converter/dart_converter.h"
@@ -21,26 +24,7 @@ void pushStringAttributes(
   }
 }
 
-static void SemanticsUpdateBuilder_constructor(Dart_NativeArguments args) {
-  UIDartState::ThrowIfUIOperationsProhibited();
-  DartCallConstructor(&SemanticsUpdateBuilder::create, args);
-}
-
 IMPLEMENT_WRAPPERTYPEINFO(ui, SemanticsUpdateBuilder);
-
-#define FOR_EACH_BINDING(V)                     \
-  V(SemanticsUpdateBuilder, updateNode)         \
-  V(SemanticsUpdateBuilder, updateCustomAction) \
-  V(SemanticsUpdateBuilder, build)
-
-FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
-
-void SemanticsUpdateBuilder::RegisterNatives(
-    tonic::DartLibraryNatives* natives) {
-  natives->Register({{"SemanticsUpdateBuilder_constructor",
-                      SemanticsUpdateBuilder_constructor, 1, true},
-                     FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
-}
 
 SemanticsUpdateBuilder::SemanticsUpdateBuilder() = default;
 
@@ -67,23 +51,21 @@ void SemanticsUpdateBuilder::updateNode(
     double elevation,
     double thickness,
     std::string label,
-    std::vector<NativeStringAttribute*> labelAttributes,
+    const std::vector<NativeStringAttribute*>& labelAttributes,
     std::string value,
-    std::vector<NativeStringAttribute*> valueAttributes,
+    const std::vector<NativeStringAttribute*>& valueAttributes,
     std::string increasedValue,
-    std::vector<NativeStringAttribute*> increasedValueAttributes,
+    const std::vector<NativeStringAttribute*>& increasedValueAttributes,
     std::string decreasedValue,
-    std::vector<NativeStringAttribute*> decreasedValueAttributes,
+    const std::vector<NativeStringAttribute*>& decreasedValueAttributes,
     std::string hint,
-    std::vector<NativeStringAttribute*> hintAttributes,
+    const std::vector<NativeStringAttribute*>& hintAttributes,
     std::string tooltip,
     int textDirection,
     const tonic::Float64List& transform,
     const tonic::Int32List& childrenInTraversalOrder,
     const tonic::Int32List& childrenInHitTestOrder,
     const tonic::Int32List& localContextActions) {
-  FML_CHECK(transform.data() && SkScalarsAreFinite(*transform.data(), 9))
-      << "Semantics update transform was not set or not finite.";
   FML_CHECK(scrollChildren == 0 ||
             (scrollChildren > 0 && childrenInHitTestOrder.data()))
       << "Semantics update contained scrollChildren but did not have "
@@ -102,24 +84,25 @@ void SemanticsUpdateBuilder::updateNode(
   node.scrollPosition = scrollPosition;
   node.scrollExtentMax = scrollExtentMax;
   node.scrollExtentMin = scrollExtentMin;
-  node.rect = SkRect::MakeLTRB(left, top, right, bottom);
+  node.rect = SkRect::MakeLTRB(SafeNarrow(left), SafeNarrow(top),
+                               SafeNarrow(right), SafeNarrow(bottom));
   node.elevation = elevation;
   node.thickness = thickness;
-  node.label = label;
+  node.label = std::move(label);
   pushStringAttributes(node.labelAttributes, labelAttributes);
-  node.value = value;
+  node.value = std::move(value);
   pushStringAttributes(node.valueAttributes, valueAttributes);
-  node.increasedValue = increasedValue;
+  node.increasedValue = std::move(increasedValue);
   pushStringAttributes(node.increasedValueAttributes, increasedValueAttributes);
-  node.decreasedValue = decreasedValue;
+  node.decreasedValue = std::move(decreasedValue);
   pushStringAttributes(node.decreasedValueAttributes, decreasedValueAttributes);
-  node.hint = hint;
+  node.hint = std::move(hint);
   pushStringAttributes(node.hintAttributes, hintAttributes);
-  node.tooltip = tooltip;
+  node.tooltip = std::move(tooltip);
   node.textDirection = textDirection;
   SkScalar scalarTransform[16];
   for (int i = 0; i < 16; ++i) {
-    scalarTransform[i] = transform.data()[i];
+    scalarTransform[i] = SafeNarrow(transform.data()[i]);
   }
   node.transform = SkM44::ColMajor(scalarTransform);
   node.childrenInTraversalOrder =
@@ -142,14 +125,15 @@ void SemanticsUpdateBuilder::updateCustomAction(int id,
   CustomAccessibilityAction action;
   action.id = id;
   action.overrideId = overrideId;
-  action.label = label;
-  action.hint = hint;
+  action.label = std::move(label);
+  action.hint = std::move(hint);
   actions_[id] = action;
 }
 
 void SemanticsUpdateBuilder::build(Dart_Handle semantics_update_handle) {
   SemanticsUpdate::create(semantics_update_handle, std::move(nodes_),
                           std::move(actions_));
+  ClearDartWrapper();
 }
 
 }  // namespace flutter

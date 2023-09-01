@@ -5,45 +5,72 @@
 #include "impeller/typographer/lazy_glyph_atlas.h"
 
 #include "impeller/base/validation.h"
-#include "impeller/typographer/text_render_context.h"
+#include "impeller/typographer/typographer_context.h"
+
+#include <utility>
 
 namespace impeller {
 
-LazyGlyphAtlas::LazyGlyphAtlas() = default;
+LazyGlyphAtlas::LazyGlyphAtlas(
+    std::shared_ptr<TypographerContext> typographer_context)
+    : typographer_context_(std::move(typographer_context)),
+      alpha_context_(typographer_context_
+                         ? typographer_context_->CreateGlyphAtlasContext()
+                         : nullptr),
+      color_context_(typographer_context_
+                         ? typographer_context_->CreateGlyphAtlasContext()
+                         : nullptr) {}
 
 LazyGlyphAtlas::~LazyGlyphAtlas() = default;
 
-void LazyGlyphAtlas::AddTextFrame(TextFrame frame) {
-  FML_DCHECK(!atlas_);
-  frames_.emplace_back(std::move(frame));
+void LazyGlyphAtlas::AddTextFrame(const TextFrame& frame, Scalar scale) {
+  FML_DCHECK(atlas_map_.empty());
+  if (frame.GetAtlasType() == GlyphAtlas::Type::kAlphaBitmap) {
+    frame.CollectUniqueFontGlyphPairs(alpha_glyph_map_, scale);
+  } else {
+    frame.CollectUniqueFontGlyphPairs(color_glyph_map_, scale);
+  }
+}
+
+void LazyGlyphAtlas::ResetTextFrames() {
+  alpha_glyph_map_.clear();
+  color_glyph_map_.clear();
+  atlas_map_.clear();
 }
 
 std::shared_ptr<GlyphAtlas> LazyGlyphAtlas::CreateOrGetGlyphAtlas(
-    std::shared_ptr<Context> context) const {
-  if (atlas_) {
-    return atlas_;
+    Context& context,
+    GlyphAtlas::Type type) const {
+  {
+    auto atlas_it = atlas_map_.find(type);
+    if (atlas_it != atlas_map_.end()) {
+      return atlas_it->second;
+    }
   }
 
-  auto text_context = TextRenderContext::Create(std::move(context));
-  if (!text_context || !text_context->IsValid()) {
+  if (!typographer_context_) {
+    VALIDATION_LOG << "Unable to render text because a TypographerContext has "
+                      "not been set.";
     return nullptr;
   }
-  size_t i = 0;
-  TextRenderContext::FrameIterator iterator = [&]() -> const TextFrame* {
-    if (i >= frames_.size()) {
-      return nullptr;
-    }
-    const auto& result = frames_[i];
-    i++;
-    return &result;
-  };
-  auto atlas = text_context->CreateGlyphAtlas(iterator);
+  if (!typographer_context_->IsValid()) {
+    VALIDATION_LOG
+        << "Unable to render text because the TypographerContext is invalid.";
+    return nullptr;
+  }
+
+  auto& glyph_map = type == GlyphAtlas::Type::kAlphaBitmap ? alpha_glyph_map_
+                                                           : color_glyph_map_;
+  auto atlas_context =
+      type == GlyphAtlas::Type::kAlphaBitmap ? alpha_context_ : color_context_;
+  auto atlas = typographer_context_->CreateGlyphAtlas(context, type,
+                                                      atlas_context, glyph_map);
   if (!atlas || !atlas->IsValid()) {
     VALIDATION_LOG << "Could not create valid atlas.";
     return nullptr;
   }
-  atlas_ = std::move(atlas);
-  return atlas_;
+  atlas_map_[type] = atlas;
+  return atlas;
 }
 
 }  // namespace impeller

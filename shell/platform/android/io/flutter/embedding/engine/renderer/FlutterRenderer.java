@@ -8,17 +8,26 @@ import android.annotation.TargetApi;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
+import android.media.Image;
 import android.os.Build;
 import android.os.Handler;
 import android.view.Surface;
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
+import io.flutter.embedding.engine.renderer.FlutterRenderer.ImageTextureRegistryEntry;
 import io.flutter.view.TextureRegistry;
+import io.flutter.view.TextureRegistry.ImageTextureEntry;
+import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -34,7 +43,6 @@ import java.util.concurrent.atomic.AtomicLong;
  * <p>{@link io.flutter.embedding.android.FlutterSurfaceView} and {@link
  * io.flutter.embedding.android.FlutterTextureView} are implementations of {@link RenderSurface}.
  */
-@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 public class FlutterRenderer implements TextureRegistry {
   private static final String TAG = "FlutterRenderer";
 
@@ -42,7 +50,12 @@ public class FlutterRenderer implements TextureRegistry {
   @NonNull private final AtomicLong nextTextureId = new AtomicLong(0L);
   @Nullable private Surface surface;
   private boolean isDisplayingFlutterUi = false;
+  private int isRenderingToImageViewCount = 0;
   private Handler handler = new Handler();
+
+  @NonNull
+  private final Set<WeakReference<TextureRegistry.OnTrimMemoryListener>> onTrimMemoryListeners =
+      new HashSet<>();
 
   @NonNull
   private final FlutterUiDisplayListener flutterUiDisplayListener =
@@ -72,6 +85,19 @@ public class FlutterRenderer implements TextureRegistry {
   }
 
   /**
+   * Informs the renderer whether the surface it is rendering to is backend by a {@code
+   * FlutterImageView}, which requires additional synchonization in the Vulkan backend.
+   */
+  public void SetRenderingToImageView(boolean value) {
+    if (value) {
+      isRenderingToImageViewCount++;
+    } else {
+      isRenderingToImageViewCount--;
+    }
+    flutterJNI.SetIsRenderingToImageView(isRenderingToImageViewCount > 0);
+  }
+
+  /**
    * Adds a listener that is invoked whenever this {@code FlutterRenderer} starts and stops painting
    * pixels to an Android {@code View} hierarchy.
    */
@@ -89,6 +115,39 @@ public class FlutterRenderer implements TextureRegistry {
    */
   public void removeIsDisplayingFlutterUiListener(@NonNull FlutterUiDisplayListener listener) {
     flutterJNI.removeIsDisplayingFlutterUiListener(listener);
+  }
+
+  private void clearDeadListeners() {
+    final Iterator<WeakReference<OnTrimMemoryListener>> iterator = onTrimMemoryListeners.iterator();
+    while (iterator.hasNext()) {
+      WeakReference<OnTrimMemoryListener> listenerRef = iterator.next();
+      final OnTrimMemoryListener listener = listenerRef.get();
+      if (listener == null) {
+        iterator.remove();
+      }
+    }
+  }
+
+  /** Adds a listener that is invoked when a memory pressure warning was forward. */
+  @VisibleForTesting
+  /* package */ void addOnTrimMemoryListener(@NonNull OnTrimMemoryListener listener) {
+    // Purge dead listener to avoid accumulating.
+    clearDeadListeners();
+    onTrimMemoryListeners.add(new WeakReference<>(listener));
+  }
+
+  /**
+   * Removes a {@link OnTrimMemoryListener} that was added with {@link
+   * #addOnTrimMemoryListener(OnTrimMemoryListener)}.
+   */
+  @VisibleForTesting
+  /* package */ void removeOnTrimMemoryListener(@NonNull OnTrimMemoryListener listener) {
+    for (WeakReference<OnTrimMemoryListener> listenerRef : onTrimMemoryListeners) {
+      if (listenerRef.get() == listener) {
+        onTrimMemoryListeners.remove(listenerRef);
+        break;
+      }
+    }
   }
 
   // ------ START TextureRegistry IMPLEMENTATION -----
@@ -114,20 +173,47 @@ public class FlutterRenderer implements TextureRegistry {
         new SurfaceTextureRegistryEntry(nextTextureId.getAndIncrement(), surfaceTexture);
     Log.v(TAG, "New SurfaceTexture ID: " + entry.id());
     registerTexture(entry.id(), entry.textureWrapper());
+    addOnTrimMemoryListener(entry);
     return entry;
   }
 
-  final class SurfaceTextureRegistryEntry implements TextureRegistry.SurfaceTextureEntry {
+  @Override
+  public ImageTextureEntry createImageTexture() {
+    final ImageTextureRegistryEntry entry =
+        new ImageTextureRegistryEntry(nextTextureId.getAndIncrement());
+    Log.v(TAG, "New ImageTextureEntry ID: " + entry.id());
+    registerImageTexture(entry.id(), entry);
+    return entry;
+  }
+
+  @Override
+  public void onTrimMemory(int level) {
+    final Iterator<WeakReference<OnTrimMemoryListener>> iterator = onTrimMemoryListeners.iterator();
+    while (iterator.hasNext()) {
+      WeakReference<OnTrimMemoryListener> listenerRef = iterator.next();
+      final OnTrimMemoryListener listener = listenerRef.get();
+      if (listener != null) {
+        listener.onTrimMemory(level);
+      } else {
+        // Purge cleared refs to avoid accumulating a lot of dead listener
+        iterator.remove();
+      }
+    }
+  }
+
+  final class SurfaceTextureRegistryEntry
+      implements TextureRegistry.SurfaceTextureEntry, TextureRegistry.OnTrimMemoryListener {
     private final long id;
     @NonNull private final SurfaceTextureWrapper textureWrapper;
     private boolean released;
-    @Nullable private OnFrameConsumedListener listener;
+    @Nullable private OnTrimMemoryListener trimMemoryListener;
+    @Nullable private OnFrameConsumedListener frameConsumedListener;
     private final Runnable onFrameConsumed =
         new Runnable() {
           @Override
           public void run() {
-            if (listener != null) {
-              listener.onFrameConsumed();
+            if (frameConsumedListener != null) {
+              frameConsumedListener.onFrameConsumed();
             }
           }
         };
@@ -151,6 +237,13 @@ public class FlutterRenderer implements TextureRegistry {
       }
     }
 
+    @Override
+    public void onTrimMemory(int level) {
+      if (trimMemoryListener != null) {
+        trimMemoryListener.onTrimMemory(level);
+      }
+    }
+
     private SurfaceTexture.OnFrameAvailableListener onFrameListener =
         new SurfaceTexture.OnFrameAvailableListener() {
           @Override
@@ -165,6 +258,10 @@ public class FlutterRenderer implements TextureRegistry {
             markTextureFrameAvailable(id);
           }
         };
+
+    private void removeListener() {
+      removeOnTrimMemoryListener(this);
+    }
 
     @NonNull
     public SurfaceTextureWrapper textureWrapper() {
@@ -190,6 +287,7 @@ public class FlutterRenderer implements TextureRegistry {
       Log.v(TAG, "Releasing a SurfaceTexture (" + id + ").");
       textureWrapper.release();
       unregisterTexture(id);
+      removeListener();
       released = true;
     }
 
@@ -200,7 +298,7 @@ public class FlutterRenderer implements TextureRegistry {
           return;
         }
 
-        handler.post(new SurfaceTextureFinalizerRunnable(id, flutterJNI));
+        handler.post(new TextureFinalizerRunnable(id, flutterJNI));
       } finally {
         super.finalize();
       }
@@ -208,15 +306,20 @@ public class FlutterRenderer implements TextureRegistry {
 
     @Override
     public void setOnFrameConsumedListener(@Nullable OnFrameConsumedListener listener) {
-      this.listener = listener;
+      frameConsumedListener = listener;
+    }
+
+    @Override
+    public void setOnTrimMemoryListener(@Nullable OnTrimMemoryListener listener) {
+      trimMemoryListener = listener;
     }
   }
 
-  static final class SurfaceTextureFinalizerRunnable implements Runnable {
+  static final class TextureFinalizerRunnable implements Runnable {
     private final long id;
     private final FlutterJNI flutterJNI;
 
-    SurfaceTextureFinalizerRunnable(long id, @NonNull FlutterJNI flutterJNI) {
+    TextureFinalizerRunnable(long id, @NonNull FlutterJNI flutterJNI) {
       this.id = id;
       this.flutterJNI = flutterJNI;
     }
@@ -226,8 +329,75 @@ public class FlutterRenderer implements TextureRegistry {
       if (!flutterJNI.isAttached()) {
         return;
       }
-      Log.v(TAG, "Releasing a SurfaceTexture (" + id + ").");
+      Log.v(TAG, "Releasing a Texture (" + id + ").");
       flutterJNI.unregisterTexture(id);
+    }
+  }
+
+  @Keep
+  final class ImageTextureRegistryEntry implements TextureRegistry.ImageTextureEntry {
+    private static final String TAG = "ImageTextureRegistryEntry";
+    private final long id;
+    private boolean released;
+    private Image image;
+
+    ImageTextureRegistryEntry(long id) {
+      this.id = id;
+    }
+
+    @Override
+    public long id() {
+      return id;
+    }
+
+    @Override
+    public void release() {
+      if (released) {
+        return;
+      }
+      released = true;
+      unregisterTexture(id);
+    }
+
+    @Override
+    @TargetApi(19)
+    public void pushImage(Image image) {
+      Image toClose;
+      synchronized (this) {
+        toClose = this.image;
+        this.image = image;
+      }
+      // Close the previously pushed buffer.
+      if (toClose != null) {
+        toClose.close();
+      }
+      if (image != null) {
+        // Mark that we have a new frame available.
+        markTextureFrameAvailable(id);
+      }
+    }
+
+    @Override
+    public Image acquireLatestImage() {
+      Image r;
+      synchronized (this) {
+        r = this.image;
+        this.image = null;
+      }
+      return r;
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+      try {
+        if (released) {
+          return;
+        }
+
+        handler.post(new TextureFinalizerRunnable(id, flutterJNI));
+      } finally {
+        super.finalize();
+      }
     }
   }
   // ------ END TextureRegistry IMPLEMENTATION ----
@@ -295,19 +465,20 @@ public class FlutterRenderer implements TextureRegistry {
    * android.view.TextureView.SurfaceTextureListener}
    */
   public void stopRenderingToSurface() {
-    flutterJNI.onSurfaceDestroyed();
+    if (surface != null) {
+      flutterJNI.onSurfaceDestroyed();
 
-    surface = null;
+      // TODO(mattcarroll): the source of truth for this call should be FlutterJNI, which is where
+      // the call to onFlutterUiDisplayed() comes from. However, no such native callback exists yet,
+      // so until the engine and FlutterJNI are configured to call us back when rendering stops,
+      // we will manually monitor that change here.
+      if (isDisplayingFlutterUi) {
+        flutterUiDisplayListener.onFlutterUiNoLongerDisplayed();
+      }
 
-    // TODO(mattcarroll): the source of truth for this call should be FlutterJNI, which is where
-    // the call to onFlutterUiDisplayed() comes from. However, no such native callback exists yet,
-    // so until the engine and FlutterJNI are configured to call us back when rendering stops,
-    // we will manually monitor that change here.
-    if (isDisplayingFlutterUi) {
-      flutterUiDisplayListener.onFlutterUiNoLongerDisplayed();
+      isDisplayingFlutterUi = false;
+      surface = null;
     }
-
-    isDisplayingFlutterUi = false;
   }
 
   /**
@@ -413,6 +584,11 @@ public class FlutterRenderer implements TextureRegistry {
     flutterJNI.registerTexture(textureId, textureWrapper);
   }
 
+  private void registerImageTexture(
+      long textureId, @NonNull TextureRegistry.ImageTextureEntry textureEntry) {
+    flutterJNI.registerImageTexture(textureId, textureEntry);
+  }
+
   // TODO(mattcarroll): describe the native behavior that this invokes
   private void markTextureFrameAvailable(long textureId) {
     flutterJNI.markTextureFrameAvailable(textureId);
@@ -440,8 +616,8 @@ public class FlutterRenderer implements TextureRegistry {
 
   // TODO(mattcarroll): describe the native behavior that this invokes
   public void dispatchSemanticsAction(
-      int id, int action, @Nullable ByteBuffer args, int argsPosition) {
-    flutterJNI.dispatchSemanticsAction(id, action, args, argsPosition);
+      int nodeId, int action, @Nullable ByteBuffer args, int argsPosition) {
+    flutterJNI.dispatchSemanticsAction(nodeId, action, args, argsPosition);
   }
 
   /**

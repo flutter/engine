@@ -6,6 +6,7 @@
 #define FLUTTER_LIB_UI_PAINTING_FRAGMENT_SHADER_H_
 
 #include "flutter/lib/ui/dart_wrapper.h"
+#include "flutter/lib/ui/painting/fragment_program.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/image_shader.h"
 #include "flutter/lib/ui/painting/shader.h"
@@ -17,29 +18,40 @@
 #include <string>
 #include <vector>
 
-namespace tonic {
-class DartLibraryNatives;
-}  // namespace tonic
-
 namespace flutter {
 
-class FragmentShader : public Shader {
+class FragmentProgram;
+
+class ReusableFragmentShader : public Shader {
   DEFINE_WRAPPERTYPEINFO();
-  FML_FRIEND_MAKE_REF_COUNTED(FragmentShader);
+  FML_FRIEND_MAKE_REF_COUNTED(ReusableFragmentShader);
 
  public:
-  ~FragmentShader() override;
-  static fml::RefPtr<FragmentShader> Create(Dart_Handle dart_handle,
-                                            sk_sp<SkShader> shader);
+  ~ReusableFragmentShader() override;
 
-  std::shared_ptr<DlColorSource> shader(SkSamplingOptions&) override;
+  static Dart_Handle Create(Dart_Handle wrapper,
+                            Dart_Handle program,
+                            Dart_Handle float_count,
+                            Dart_Handle sampler_count);
 
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
+  void SetImageSampler(Dart_Handle index, Dart_Handle image);
+
+  bool ValidateSamplers();
+
+  void Dispose();
+
+  // |Shader|
+  std::shared_ptr<DlColorSource> shader(DlImageSampling) override;
 
  private:
-  explicit FragmentShader(sk_sp<SkShader> shader);
+  ReusableFragmentShader(fml::RefPtr<FragmentProgram> program,
+                         uint64_t float_count,
+                         uint64_t sampler_count);
 
-  std::shared_ptr<DlColorSource> source_;
+  fml::RefPtr<FragmentProgram> program_;
+  sk_sp<SkData> uniform_data_;
+  std::vector<std::shared_ptr<DlColorSource>> samplers_;
+  size_t float_count_;
 };
 
 }  // namespace flutter

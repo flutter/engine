@@ -28,18 +28,8 @@ function follow_links() (
 )
 
 SCRIPT_DIR=$(follow_links "$(dirname -- "${BASH_SOURCE[0]}")")
-SRC_DIR="$(cd "$SCRIPT_DIR/../.."; pwd -P)"
-DART_BIN="${SRC_DIR}/third_party/dart/tools/sdks/dart-sdk/bin"
-DART="${DART_BIN}/dart"
+PYLINT="${SCRIPT_DIR}/pylint.sh"
+CLANG_TIDY="${SCRIPT_DIR}/clang_tidy.sh"
 
-COMPILE_COMMANDS="$SRC_DIR/out/host_debug/compile_commands.json"
-if [ ! -f "$COMPILE_COMMANDS" ]; then
-  (cd "$SRC_DIR"; ./flutter/tools/gn)
-fi
-
-cd "$SCRIPT_DIR"
-"$DART" \
-  --disable-dart-dev \
-  "$SRC_DIR/flutter/tools/clang_tidy/bin/main.dart" \
-  --src-dir="$SRC_DIR" \
-  "$@"
+"${PYLINT}" "$@"
+"${CLANG_TIDY}" "$@"

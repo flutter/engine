@@ -40,11 +40,13 @@ class FuchsiaShellTest : public ShellTest {
   }
 
   ~FuchsiaShellTest() {
-    // Restore the time zone that matche that of the test harness.  This is
+    // Restore the time zone that matches that of the test harness.  This is
     // the default.
-    const std::string local_timezone = GetLocalTimezone();
-    SetTimezone(local_timezone);
-    AssertTimezone(local_timezone, GetSettings());
+    // TODO(https://fxbug.dev/110019): This crashes right now.
+
+    // const std::string local_timezone = GetLocalTimezone();
+    // SetTimezone(local_timezone);
+    // AssertTimezone(local_timezone, GetSettings());
   }
 
   // Gets the international settings from this Fuchsia realm.
@@ -98,6 +100,8 @@ class FuchsiaShellTest : public ShellTest {
   fuchsia::settings::IntlSettings save_settings_;
 };
 
+// These functions are used by tests that are currently disabled.
+#if false
 static bool ValidateShell(Shell* shell) {
   if (!shell) {
     return false;
@@ -143,6 +147,7 @@ static void RunCoroutineWithRetry(int retries,
     sleep(1);
   }
 }
+#endif  // false
 
 // Verifies that changing the Fuchsia settings timezone through the FIDL
 // settings interface results in a change of the reported local time in the
@@ -160,6 +165,11 @@ static void RunCoroutineWithRetry(int retries,
 //   timestamp rounded down to whole hour should match the timestamp we got
 //   in the initial step.
 TEST_F(FuchsiaShellTest, LocaltimesVaryOnTimezoneChanges) {
+#if defined(OS_FUCHSIA)
+  GTEST_SKIP()
+      << "This test fails after the CF V2 migration. https://fxbug.dev/110019 ";
+#else
+
   // See fixtures/shell_test.dart, the callback NotifyLocalTime is declared
   // there.
   fml::AutoResetWaitableEvent latch;
@@ -251,6 +261,7 @@ TEST_F(FuchsiaShellTest, LocaltimesVaryOnTimezoneChanges) {
   continue_fixture = false;
   fixture_latch.Signal();
   DestroyShell(std::move(shell));
+#endif  // OS_FUCHSIA
 }
 
 }  // namespace testing

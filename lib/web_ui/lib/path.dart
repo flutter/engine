@@ -5,23 +5,10 @@
 part of ui;
 
 // For documentation see https://github.com/flutter/engine/blob/main/lib/ui/painting.dart
-// ignore_for_file: public_member_api_docs
 
 abstract class Path {
-  factory Path() {
-    if (engine.useCanvasKit) {
-      return engine.CkPath();
-    } else {
-      return engine.SurfacePath();
-    }
-  }
-  factory Path.from(Path source) {
-    if (engine.useCanvasKit) {
-      return engine.CkPath.from(source as engine.CkPath);
-    } else {
-      return engine.SurfacePath.from(source as engine.SurfacePath);
-    }
-  }
+  factory Path() => engine.renderer.createPath();
+  factory Path.from(Path source) => engine.renderer.copyPath(source);
   PathFillType get fillType;
   set fillType(PathFillType value);
   void moveTo(double x, double y);
@@ -63,14 +50,8 @@ abstract class Path {
   Path transform(Float64List matrix4);
   // see https://skia.org/user/api/SkPath_Reference#SkPath_getBounds
   Rect getBounds();
-  static Path combine(PathOperation operation, Path path1, Path path2) {
-    assert(path1 != null); // ignore: unnecessary_null_comparison
-    assert(path2 != null); // ignore: unnecessary_null_comparison
-    if (engine.useCanvasKit) {
-      return engine.CkPath.combine(operation, path1, path2);
-    }
-    throw UnimplementedError();
-  }
+  static Path combine(PathOperation operation, Path path1, Path path2) =>
+    engine.renderer.combinePaths(operation, path1, path2);
 
   PathMetrics computeMetrics({bool forceClosed = false});
 }

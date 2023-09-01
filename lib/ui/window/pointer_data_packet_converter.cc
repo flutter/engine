@@ -17,17 +17,11 @@ PointerDataPacketConverter::~PointerDataPacketConverter() = default;
 
 std::unique_ptr<PointerDataPacket> PointerDataPacketConverter::Convert(
     std::unique_ptr<PointerDataPacket> packet) {
-  size_t kBytesPerPointerData = kPointerDataFieldCount * kBytesPerField;
-  auto buffer = packet->data();
-  size_t buffer_length = buffer.size();
-
   std::vector<PointerData> converted_pointers;
   // Converts each pointer data in the buffer and stores it in the
   // converted_pointers.
-  for (size_t i = 0; i < buffer_length / kBytesPerPointerData; i++) {
-    PointerData pointer_data;
-    memcpy(&pointer_data, &buffer[i * kBytesPerPointerData],
-           sizeof(PointerData));
+  for (size_t i = 0; i < packet->GetLength(); i++) {
+    PointerData pointer_data = packet->GetPointerData(i);
     ConvertPointerData(pointer_data, converted_pointers);
   }
 
@@ -297,12 +291,26 @@ void PointerDataPacketConverter::ConvertPointerData(
     }
   } else {
     switch (pointer_data.signal_kind) {
-      case PointerData::SignalKind::kScroll: {
+      case PointerData::SignalKind::kScroll:
+      case PointerData::SignalKind::kScrollInertiaCancel:
+      case PointerData::SignalKind::kScale: {
         // Makes sure we have an existing pointer
         auto iter = states_.find(pointer_data.device);
-        FML_DCHECK(iter != states_.end());
+        PointerState state;
 
-        PointerState state = iter->second;
+        if (iter == states_.end()) {
+          // Synthesizes a add event if the pointer is not previously added.
+          PointerData synthesized_add_event = pointer_data;
+          synthesized_add_event.signal_kind = PointerData::SignalKind::kNone;
+          synthesized_add_event.change = PointerData::Change::kAdd;
+          synthesized_add_event.synthesized = 1;
+          synthesized_add_event.buttons = 0;
+          state = EnsurePointerState(synthesized_add_event);
+          converted_pointers.push_back(synthesized_add_event);
+        } else {
+          state = iter->second;
+        }
+
         if (LocationNeedsUpdate(pointer_data, state)) {
           if (state.is_down) {
             // Synthesizes a move event if the pointer is down.

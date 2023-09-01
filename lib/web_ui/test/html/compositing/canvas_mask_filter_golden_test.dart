@@ -10,6 +10,7 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
+import '../../common/test_initialization.dart';
 import '../screenshot.dart';
 
 void main() {
@@ -17,12 +18,9 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpAll(() async {
-    ui.debugEmulateFlutterTesterEnvironment = true;
-    await ui.webOnlyInitializePlatform();
-    fontCollection.debugRegisterTestFonts();
-    await fontCollection.ensureFontsLoaded();
-  });
+  setUpUnitTests(
+    setUpTestViewDimensions: false,
+  );
 
   tearDown(() {
     ContextStateHandle.debugEmulateWebKitMaskFilter = false;
@@ -154,7 +152,7 @@ Future<void> testMain() async {
     });
   }
 
-  testMaskFilterBlur(isWebkit: false);
+  testMaskFilterBlur();
   testMaskFilterBlur(isWebkit: true);
 
   for (final int testDpr in <int>[1, 2, 4]) {

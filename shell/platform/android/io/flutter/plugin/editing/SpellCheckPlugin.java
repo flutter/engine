@@ -15,7 +15,7 @@ import io.flutter.embedding.engine.systemchannels.SpellCheckChannel;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.localization.LocalizationPlugin;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Locale;
 
 /**
@@ -35,8 +35,11 @@ public class SpellCheckPlugin
   private final TextServicesManager mTextServicesManager;
   private SpellCheckerSession mSpellCheckerSession;
 
+  public static final String START_INDEX_KEY = "startIndex";
+  public static final String END_INDEX_KEY = "endIndex";
+  public static final String SUGGESTIONS_KEY = "suggestions";
+
   @VisibleForTesting MethodChannel.Result pendingResult;
-  @VisibleForTesting String pendingResultText;
 
   // The maximum number of suggestions that the Android spell check service is allowed to provide
   // per word. Same number that is used by default for Android's TextViews.
@@ -80,14 +83,12 @@ public class SpellCheckPlugin
     }
 
     pendingResult = result;
-    pendingResultText = text;
 
     performSpellCheck(locale, text);
   }
 
   /** Calls on the Android spell check API to spell check specified text. */
   public void performSpellCheck(@NonNull String locale, @NonNull String text) {
-    String[] localeCodes = locale.split("-");
     Locale localeFromString = LocalizationPlugin.localeFromString(locale);
 
     if (mSpellCheckerSession == null) {
@@ -108,20 +109,34 @@ public class SpellCheckPlugin
    * Callback for Android spell check API that decomposes results and send results through the
    * {@link SpellCheckChannel}.
    *
-   * <p>Spell check results will be encoded as a string representing the span of that result, with
-   * the format "start_index.end_index.suggestion_1/nsuggestion_2/nsuggestion_3", where there may be
-   * up to 5 suggestions.
+   * <p>Spell check results are encoded as dictionaries with a format that looks like
+   *
+   * <pre>{@code
+   * {
+   *   startIndex: 0,
+   *   endIndex: 5,
+   *   suggestions: [hello, ...]
+   * }
+   * }</pre>
+   *
+   * where there may be up to 5 suggestions.
    */
   @Override
   public void onGetSentenceSuggestions(SentenceSuggestionsInfo[] results) {
     if (results.length == 0) {
-      pendingResult.success(new ArrayList<>(Arrays.asList(pendingResultText, "")));
+      pendingResult.success(new ArrayList<HashMap<String, Object>>());
       pendingResult = null;
       return;
     }
 
-    ArrayList<String> spellCheckerSuggestionSpans = new ArrayList<String>();
+    ArrayList<HashMap<String, Object>> spellCheckerSuggestionSpans =
+        new ArrayList<HashMap<String, Object>>();
     SentenceSuggestionsInfo spellCheckResults = results[0];
+    if (spellCheckResults == null) {
+      pendingResult.success(new ArrayList<HashMap<String, Object>>());
+      pendingResult = null;
+      return;
+    }
 
     for (int i = 0; i < spellCheckResults.getSuggestionsCount(); i++) {
       SuggestionsInfo suggestionsInfo = spellCheckResults.getSuggestionsInfoAt(i);
@@ -131,22 +146,32 @@ public class SpellCheckPlugin
         continue;
       }
 
-      String spellCheckerSuggestionSpan = "";
+      HashMap<String, Object> spellCheckerSuggestionSpan = new HashMap<String, Object>();
       int start = spellCheckResults.getOffsetAt(i);
-      int end = start + spellCheckResults.getLengthAt(i) - 1;
+      int end = start + spellCheckResults.getLengthAt(i);
 
-      spellCheckerSuggestionSpan += String.valueOf(start) + ".";
-      spellCheckerSuggestionSpan += String.valueOf(end) + ".";
+      spellCheckerSuggestionSpan.put(START_INDEX_KEY, start);
+      spellCheckerSuggestionSpan.put(END_INDEX_KEY, end);
 
+      ArrayList<String> suggestions = new ArrayList<String>();
+      boolean validSuggestionsFound = false;
       for (int j = 0; j < suggestionsCount; j++) {
-        spellCheckerSuggestionSpan += suggestionsInfo.getSuggestionAt(j) + "\n";
+        String suggestion = suggestionsInfo.getSuggestionAt(j);
+        // TODO(camsim99): Support spell check on Samsung by retrieving accurate spell check
+        // results, then remove this check: https://github.com/flutter/flutter/issues/120608.
+        if (!suggestion.equals("")) {
+          validSuggestionsFound = true;
+          suggestions.add(suggestion);
+        }
       }
 
-      spellCheckerSuggestionSpans.add(
-          spellCheckerSuggestionSpan.substring(0, spellCheckerSuggestionSpan.length() - 1));
+      if (!validSuggestionsFound) {
+        continue;
+      }
+      spellCheckerSuggestionSpan.put(SUGGESTIONS_KEY, suggestions);
+      spellCheckerSuggestionSpans.add(spellCheckerSuggestionSpan);
     }
 
-    spellCheckerSuggestionSpans.add(0, pendingResultText);
     pendingResult.success(spellCheckerSuggestionSpans);
     pendingResult = null;
   }

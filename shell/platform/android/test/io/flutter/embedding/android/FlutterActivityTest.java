@@ -14,13 +14,11 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.robolectric.Shadows.shadowOf;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -86,6 +84,42 @@ public class FlutterActivityTest {
     activity.onCreate(null);
     assertNotNull(activity.findViewById(FlutterActivity.FLUTTER_VIEW_ID));
     assertTrue(activity.findViewById(FlutterActivity.FLUTTER_VIEW_ID) instanceof FlutterView);
+  }
+
+  // TODO(garyq): Robolectric does not yet support android api 33 yet. Switch to a robolectric
+  // test that directly exercises the OnBackInvoked APIs when API 33 is supported.
+  @Test
+  @TargetApi(33)
+  public void itRegistersOnBackInvokedCallbackOnChangingFrameworkHandlesBack() {
+    Intent intent = FlutterActivityWithReportFullyDrawn.createDefaultIntent(ctx);
+    ActivityController<FlutterActivityWithReportFullyDrawn> activityController =
+        Robolectric.buildActivity(FlutterActivityWithReportFullyDrawn.class, intent);
+    FlutterActivityWithReportFullyDrawn activity = spy(activityController.get());
+
+    activity.onCreate(null);
+
+    verify(activity, times(0)).registerOnBackInvokedCallback();
+
+    activity.setFrameworkHandlesBack(false);
+    verify(activity, times(0)).registerOnBackInvokedCallback();
+
+    activity.setFrameworkHandlesBack(true);
+    verify(activity, times(1)).registerOnBackInvokedCallback();
+  }
+
+  // TODO(garyq): Robolectric does not yet support android api 33 yet. Switch to a robolectric
+  // test that directly exercises the OnBackInvoked APIs when API 33 is supported.
+  @Test
+  @TargetApi(33)
+  public void itUnregistersOnBackInvokedCallbackOnRelease() {
+    Intent intent = FlutterActivityWithReportFullyDrawn.createDefaultIntent(ctx);
+    ActivityController<FlutterActivityWithReportFullyDrawn> activityController =
+        Robolectric.buildActivity(FlutterActivityWithReportFullyDrawn.class, intent);
+    FlutterActivityWithReportFullyDrawn activity = spy(activityController.get());
+
+    activity.release();
+
+    verify(activity, times(1)).unregisterOnBackInvokedCallback();
   }
 
   @Test
@@ -157,6 +191,31 @@ public class FlutterActivityTest {
     assertTrue(flutterActivity.shouldAttachEngineToActivity());
     assertNull(flutterActivity.getCachedEngineId());
     assertTrue(flutterActivity.shouldDestroyEngineWithHost());
+    assertEquals(BackgroundMode.transparent, flutterActivity.getBackgroundMode());
+    assertEquals(RenderMode.texture, flutterActivity.getRenderMode());
+    assertEquals(TransparencyMode.transparent, flutterActivity.getTransparencyMode());
+  }
+
+  @Test
+  public void itCreatesNewEngineInGroupIntentWithRequestedSettings() {
+    Intent intent =
+        FlutterActivity.withNewEngineInGroup("my_cached_engine_group")
+            .dartEntrypoint("custom_entrypoint")
+            .initialRoute("/custom/route")
+            .backgroundMode(BackgroundMode.transparent)
+            .build(ctx);
+    ActivityController<FlutterActivity> activityController =
+        Robolectric.buildActivity(FlutterActivity.class, intent);
+    FlutterActivity flutterActivity = activityController.get();
+    flutterActivity.setDelegate(new FlutterActivityAndFragmentDelegate(flutterActivity));
+
+    assertEquals("my_cached_engine_group", flutterActivity.getCachedEngineGroupId());
+    assertEquals("custom_entrypoint", flutterActivity.getDartEntrypointFunctionName());
+    assertEquals("/custom/route", flutterActivity.getInitialRoute());
+    assertArrayEquals(new String[] {}, flutterActivity.getFlutterShellArgs().toArray());
+    assertTrue(flutterActivity.shouldAttachEngineToActivity());
+    assertTrue(flutterActivity.shouldDestroyEngineWithHost());
+    assertNull(flutterActivity.getCachedEngineId());
     assertEquals(BackgroundMode.transparent, flutterActivity.getBackgroundMode());
     assertEquals(RenderMode.texture, flutterActivity.getRenderMode());
     assertEquals(TransparencyMode.transparent, flutterActivity.getTransparencyMode());
@@ -372,19 +431,6 @@ public class FlutterActivityTest {
   }
 
   @Test
-  public void itDoesNotCrashWhenSplashScreenMetadataIsNotDefined() {
-    Intent intent = FlutterActivity.createDefaultIntent(ctx);
-    ActivityController<FlutterActivity> activityController =
-        Robolectric.buildActivity(FlutterActivity.class, intent);
-    FlutterActivity flutterActivity = activityController.get();
-
-    // We never supplied the metadata to the robolectric activity info so it doesn't exist.
-    SplashScreen splashScreen = flutterActivity.provideSplashScreen();
-    // It should quietly return a null and not crash.
-    assertNull(splashScreen);
-  }
-
-  @Test
   public void itDoesNotReleaseEnginewhenDetachFromFlutterEngine() {
     FlutterActivityAndFragmentDelegate mockDelegate =
         mock(FlutterActivityAndFragmentDelegate.class);
@@ -439,80 +485,6 @@ public class FlutterActivityTest {
   }
 
   @Test
-  @Config(
-      sdk = Build.VERSION_CODES.KITKAT,
-      shadows = {SplashShadowResources.class})
-  public void itLoadsSplashScreenDrawable() throws PackageManager.NameNotFoundException {
-    Intent intent = FlutterActivity.createDefaultIntent(ctx);
-    ActivityController<FlutterActivity> activityController =
-        Robolectric.buildActivity(FlutterActivity.class, intent);
-    FlutterActivity flutterActivity = activityController.get();
-
-    // Inject splash screen drawable resource id in the metadata.
-    PackageManager pm = ctx.getPackageManager();
-    ActivityInfo activityInfo =
-        pm.getActivityInfo(flutterActivity.getComponentName(), PackageManager.GET_META_DATA);
-    activityInfo.metaData = new Bundle();
-    activityInfo.metaData.putInt(
-        FlutterActivityLaunchConfigs.SPLASH_SCREEN_META_DATA_KEY,
-        SplashShadowResources.SPLASH_DRAWABLE_ID);
-    shadowOf(ctx.getPackageManager()).addOrUpdateActivity(activityInfo);
-
-    // It should load the drawable.
-    SplashScreen splashScreen = flutterActivity.provideSplashScreen();
-    assertNotNull(splashScreen);
-  }
-
-  @Test
-  @Config(
-      sdk = Build.VERSION_CODES.LOLLIPOP,
-      shadows = {SplashShadowResources.class})
-  @TargetApi(21) // Theme references in drawables requires API 21+
-  public void itLoadsThemedSplashScreenDrawable() throws PackageManager.NameNotFoundException {
-    // A drawable with theme references can be parsed only if the app theme is supplied
-    // in getDrawable methods. This test verifies it by fetching a (fake) themed drawable.
-    // On failure, a Resource.NotFoundException will ocurr.
-    Intent intent = FlutterActivity.createDefaultIntent(ctx);
-    ActivityController<FlutterActivity> activityController =
-        Robolectric.buildActivity(FlutterActivity.class, intent);
-    FlutterActivity flutterActivity = activityController.get();
-
-    // Inject themed splash screen drawable resource id in the metadata.
-    PackageManager pm = ctx.getPackageManager();
-    ActivityInfo activityInfo =
-        pm.getActivityInfo(flutterActivity.getComponentName(), PackageManager.GET_META_DATA);
-    activityInfo.metaData = new Bundle();
-    activityInfo.metaData.putInt(
-        FlutterActivityLaunchConfigs.SPLASH_SCREEN_META_DATA_KEY,
-        SplashShadowResources.THEMED_SPLASH_DRAWABLE_ID);
-    shadowOf(ctx.getPackageManager()).addOrUpdateActivity(activityInfo);
-
-    // It should load the drawable.
-    SplashScreen splashScreen = flutterActivity.provideSplashScreen();
-    assertNotNull(splashScreen);
-  }
-
-  @Test
-  public void itWithMetadataWithoutSplashScreenResourceKeyDoesNotProvideSplashScreen()
-      throws PackageManager.NameNotFoundException {
-    Intent intent = FlutterActivity.createDefaultIntent(ctx);
-    ActivityController<FlutterActivity> activityController =
-        Robolectric.buildActivity(FlutterActivity.class, intent);
-    FlutterActivity flutterActivity = activityController.get();
-
-    // Setup an empty metadata file.
-    PackageManager pm = ctx.getPackageManager();
-    ActivityInfo activityInfo =
-        pm.getActivityInfo(flutterActivity.getComponentName(), PackageManager.GET_META_DATA);
-    activityInfo.metaData = new Bundle();
-    shadowOf(ctx.getPackageManager()).addOrUpdateActivity(activityInfo);
-
-    // It should not load the drawable.
-    SplashScreen splashScreen = flutterActivity.provideSplashScreen();
-    assertNull(splashScreen);
-  }
-
-  @Test
   @Config(minSdk = Build.VERSION_CODES.JELLY_BEAN, maxSdk = Build.VERSION_CODES.P)
   public void fullyDrawn_beforeAndroidQ() {
     Intent intent = FlutterActivityWithReportFullyDrawn.createDefaultIntent(ctx);
@@ -544,7 +516,7 @@ public class FlutterActivityTest {
     @SuppressLint("MissingSuperCall")
     protected void onCreate(@Nullable Bundle savedInstanceState) {
       super.delegate = new FlutterActivityAndFragmentDelegate(this);
-      super.delegate.setupFlutterEngine();
+      super.delegate.setUpFlutterEngine();
     }
 
     @Nullable
@@ -594,6 +566,14 @@ public class FlutterActivityTest {
     public void resetFullyDrawn() {
       fullyDrawn = false;
     }
+  }
+
+  private class FlutterActivityWithMockBackInvokedHandling extends FlutterActivity {
+    @Override
+    public void registerOnBackInvokedCallback() {}
+
+    @Override
+    public void unregisterOnBackInvokedCallback() {}
   }
 
   private static final class FakeFlutterPlugin

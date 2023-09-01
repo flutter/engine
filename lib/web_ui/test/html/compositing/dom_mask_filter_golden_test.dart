@@ -6,6 +6,7 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' hide TextStyle;
+import '../../common/test_initialization.dart';
 import '../screenshot.dart';
 
 void main() {
@@ -13,16 +14,9 @@ void main() {
 }
 
 Future<void> testMain() async {
-  const double screenWidth = 500.0;
-  const double screenHeight = 500.0;
-  const Rect screenRect = Rect.fromLTWH(0, 0, screenWidth, screenHeight);
-
-  setUp(() async {
-    debugEmulateFlutterTesterEnvironment = true;
-    await webOnlyInitializePlatform();
-    fontCollection.debugRegisterTestFonts();
-    await fontCollection.ensureFontsLoaded();
-  });
+  setUpUnitTests(
+    setUpTestViewDimensions: false,
+  );
 
   test('Should blur rectangles based on sigma.', () async {
     final RecordingCanvas rc =
@@ -33,8 +27,6 @@ Future<void> testMain() async {
         ..maskFilter = MaskFilter.blur(BlurStyle.normal, blurSigma.toDouble());
       rc.drawRect(Rect.fromLTWH(15.0, 15.0 + blurSigma * 40, 200, 20), paint);
     }
-    await canvasScreenshot(rc, 'dom_mask_filter_blur',
-        region: screenRect,
-        maxDiffRatePercent: 0.01);
+    await canvasScreenshot(rc, 'dom_mask_filter_blur');
   });
 }

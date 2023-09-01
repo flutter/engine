@@ -15,7 +15,7 @@ namespace flutter {
 class IOSExternalTextureMetal final : public Texture {
  public:
   explicit IOSExternalTextureMetal(
-      fml::scoped_nsobject<FlutterDarwinExternalTextureMetal>
+      const fml::scoped_nsobject<FlutterDarwinExternalTextureMetal>&
           darwin_external_texture_metal);
 
   // |Texture|
@@ -26,12 +26,10 @@ class IOSExternalTextureMetal final : public Texture {
       darwin_external_texture_metal_;
 
   // |Texture|
-  void Paint(SkCanvas& canvas,
+  void Paint(PaintContext& context,
              const SkRect& bounds,
              bool freeze,
-             GrDirectContext* context,
-             const SkSamplingOptions& sampling,
-             const SkPaint* paint) override;
+             const DlImageSampling sampling) override;
 
   // |Texture|
   void OnGrContextCreated() override;

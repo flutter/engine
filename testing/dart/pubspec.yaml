@@ -14,7 +14,7 @@ publish_to: none
 # relative to this directory into //third_party/dart
 
 environment:
-  sdk: '>=2.12.0 <3.0.0'
+  sdk: '>=3.0.0-0 <4.0.0'
 
 dependencies:
   litetest: any
@@ -22,25 +22,32 @@ dependencies:
   sky_engine: any
   vector_math: any
   vm_service: any
+  vm_service_protos: any
 
 dependency_overrides:
   async_helper:
     path: ../../../third_party/dart/pkg/async_helper
+  collection:
+    path: ../../../third_party/dart/third_party/pkg/collection
   expect:
     path: ../../../third_party/dart/pkg/expect
+  fixnum:
+    path: ../../../third_party/dart/third_party/pkg/fixnum
   litetest:
     path: ../litetest
   meta:
     path: ../../../third_party/dart/pkg/meta
   path:
     path: ../../../third_party/dart/third_party/pkg/path
+  protobuf:
+    path: ../../../third_party/dart/third_party/pkg/protobuf/protobuf
   smith:
     path: ../../../third_party/dart/pkg/smith
-  spirv:
-    path: ../../lib/spirv
   sky_engine:
     path: ../../sky/packages/sky_engine
   vector_math:
     path: ../../../third_party/pkg/vector_math
   vm_service:
     path: ../../../third_party/dart/pkg/vm_service
+  vm_service_protos:
+    path: ../../../third_party/dart/pkg/vm_service_protos

@@ -6,45 +6,176 @@
 
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <sstream>
+#include <string>
+#include <utility>
 
 #include "flutter/fml/paths.h"
+#include "impeller/base/allocation.h"
 #include "impeller/compiler/compiler_backend.h"
+#include "impeller/compiler/constants.h"
 #include "impeller/compiler/includer.h"
 #include "impeller/compiler/logger.h"
+#include "impeller/compiler/spirv_compiler.h"
+#include "impeller/compiler/uniform_sorter.h"
+#include "impeller/compiler/utilities.h"
 
 namespace impeller {
 namespace compiler {
 
-static CompilerBackend CreateMSLCompiler(const spirv_cross::ParsedIR& ir,
-                                         const SourceOptions& source_options) {
+static uint32_t ParseMSLVersion(const std::string& msl_version) {
+  std::stringstream sstream(msl_version);
+  std::string version_part;
+  uint32_t major = 1;
+  uint32_t minor = 2;
+  uint32_t patch = 0;
+  if (std::getline(sstream, version_part, '.')) {
+    major = std::stoi(version_part);
+    if (std::getline(sstream, version_part, '.')) {
+      minor = std::stoi(version_part);
+      if (std::getline(sstream, version_part, '.')) {
+        patch = std::stoi(version_part);
+      }
+    }
+  }
+  if (major < 1 || (major == 1 && minor < 2)) {
+    std::cerr << "--metal-version version must be at least 1.2. Have "
+              << msl_version << std::endl;
+  }
+  return spirv_cross::CompilerMSL::Options::make_msl_version(major, minor,
+                                                             patch);
+}
+
+static CompilerBackend CreateMSLCompiler(
+    const spirv_cross::ParsedIR& ir,
+    const SourceOptions& source_options,
+    std::optional<uint32_t> msl_version_override = {}) {
   auto sl_compiler = std::make_shared<spirv_cross::CompilerMSL>(ir);
   spirv_cross::CompilerMSL::Options sl_options;
   sl_options.platform =
       TargetPlatformToMSLPlatform(source_options.target_platform);
-  // If this version specification changes, the GN rules that process the
-  // Metal to AIR must be updated as well.
-  sl_options.msl_version =
-      spirv_cross::CompilerMSL::Options::make_msl_version(1, 2);
+  sl_options.msl_version = msl_version_override.value_or(
+      ParseMSLVersion(source_options.metal_version));
+  sl_options.ios_use_simdgroup_functions =
+      sl_options.is_ios() &&
+      sl_options.msl_version >=
+          spirv_cross::CompilerMSL::Options::make_msl_version(2, 4, 0);
+  sl_options.use_framebuffer_fetch_subpasses = true;
   sl_compiler->set_msl_options(sl_options);
-  return sl_compiler;
+
+  // Sort the float and sampler uniforms according to their declared/decorated
+  // order. For user authored fragment shaders, the API for setting uniform
+  // values uses the index of the uniform in the declared order. By default, the
+  // metal backend of spirv-cross will order uniforms according to usage. To fix
+  // this, we use the sorted order and the add_msl_resource_binding API to force
+  // the ordering to match the declared order. Note that while this code runs
+  // for all compiled shaders, it will only affect fragment shaders due to the
+  // specified stage.
+  auto floats =
+      SortUniforms(&ir, sl_compiler.get(), spirv_cross::SPIRType::Float);
+  auto images =
+      SortUniforms(&ir, sl_compiler.get(), spirv_cross::SPIRType::SampledImage);
+
+  uint32_t buffer_offset = 0;
+  uint32_t sampler_offset = 0;
+  for (auto& float_id : floats) {
+    sl_compiler->add_msl_resource_binding(
+        {.stage = spv::ExecutionModel::ExecutionModelFragment,
+         .basetype = spirv_cross::SPIRType::BaseType::Float,
+         .desc_set = sl_compiler->get_decoration(float_id,
+                                                 spv::DecorationDescriptorSet),
+         .binding =
+             sl_compiler->get_decoration(float_id, spv::DecorationBinding),
+         .count = 1u,
+         .msl_buffer = buffer_offset});
+    buffer_offset++;
+  }
+  for (auto& image_id : images) {
+    sl_compiler->add_msl_resource_binding({
+        .stage = spv::ExecutionModel::ExecutionModelFragment,
+        .basetype = spirv_cross::SPIRType::BaseType::SampledImage,
+        .desc_set =
+            sl_compiler->get_decoration(image_id, spv::DecorationDescriptorSet),
+        .binding =
+            sl_compiler->get_decoration(image_id, spv::DecorationBinding),
+        .count = 1u,
+        // A sampled image is both an image and a sampler, so both
+        // offsets need to be set or depending on the partiular shader
+        // the bindings may be incorrect.
+        .msl_texture = sampler_offset,
+        .msl_sampler = sampler_offset,
+    });
+    sampler_offset++;
+  }
+
+  return CompilerBackend(sl_compiler);
+}
+
+static CompilerBackend CreateVulkanCompiler(
+    const spirv_cross::ParsedIR& ir,
+    const SourceOptions& source_options) {
+  // TODO(dnfield): It seems like what we'd want is a CompilerGLSL with
+  // vulkan_semantics set to true, but that has regressed some things on GLES
+  // somehow. In the mean time, go back to using CompilerMSL, but set the Metal
+  // Language version to something really high so that we don't get weird
+  // complaints about using Metal features while trying to build Vulkan shaders.
+  // https://github.com/flutter/flutter/issues/123795
+  return CreateMSLCompiler(
+      ir, source_options,
+      spirv_cross::CompilerMSL::Options::make_msl_version(3, 0, 0));
 }
 
 static CompilerBackend CreateGLSLCompiler(const spirv_cross::ParsedIR& ir,
                                           const SourceOptions& source_options) {
   auto gl_compiler = std::make_shared<spirv_cross::CompilerGLSL>(ir);
+
+  // Walk the variables and insert the external image extension if any of them
+  // begins with the external texture prefix. Unfortunately, we can't walk
+  // `gl_compiler->get_shader_resources().separate_samplers` until the compiler
+  // is further along.
+  //
+  // Unfortunately, we can't just let the shader author add this extension and
+  // use `samplerExternalOES` directly because compiling to spirv requires the
+  // source language profile to be at least 310 ES, but this extension is
+  // incompatible with ES 310+.
+  for (auto& id : ir.ids_for_constant_or_variable) {
+    if (StringStartsWith(ir.get_name(id), kExternalTexturePrefix)) {
+      gl_compiler->require_extension("GL_OES_EGL_image_external");
+      break;
+    }
+  }
+
   spirv_cross::CompilerGLSL::Options sl_options;
   sl_options.force_zero_initialized_variables = true;
   sl_options.vertex.fixup_clipspace = true;
-  if (source_options.target_platform == TargetPlatform::kOpenGLES) {
-    sl_options.version = 100;
+  if (source_options.target_platform == TargetPlatform::kOpenGLES ||
+      source_options.target_platform == TargetPlatform::kRuntimeStageGLES) {
+    sl_options.version = source_options.gles_language_version > 0
+                             ? source_options.gles_language_version
+                             : 100;
     sl_options.es = true;
+    gl_compiler->set_variable_type_remap_callback(
+        [&](const spirv_cross::SPIRType& type, const std::string& var_name,
+            std::string& name_of_type) {
+          if (StringStartsWith(var_name, kExternalTexturePrefix)) {
+            name_of_type = "samplerExternalOES";
+          }
+        });
   } else {
-    sl_options.version = 120;
+    sl_options.version = source_options.gles_language_version > 0
+                             ? source_options.gles_language_version
+                             : 120;
     sl_options.es = false;
   }
   gl_compiler->set_common_options(sl_options);
-  return gl_compiler;
+  return CompilerBackend(gl_compiler);
+}
+
+static CompilerBackend CreateSkSLCompiler(const spirv_cross::ParsedIR& ir,
+                                          const SourceOptions& source_options) {
+  auto sksl_compiler = std::make_shared<CompilerSkSL>(ir);
+  return CompilerBackend(sksl_compiler);
 }
 
 static bool EntryPointMustBeNamedMain(TargetPlatform platform) {
@@ -53,10 +184,14 @@ static bool EntryPointMustBeNamedMain(TargetPlatform platform) {
       FML_UNREACHABLE();
     case TargetPlatform::kMetalDesktop:
     case TargetPlatform::kMetalIOS:
+    case TargetPlatform::kVulkan:
+    case TargetPlatform::kRuntimeStageMetal:
+    case TargetPlatform::kRuntimeStageVulkan:
       return false;
-    case TargetPlatform::kFlutterSPIRV:
+    case TargetPlatform::kSkSL:
     case TargetPlatform::kOpenGLES:
     case TargetPlatform::kOpenGLDesktop:
+    case TargetPlatform::kRuntimeStageGLES:
       return true;
   }
   FML_UNREACHABLE();
@@ -68,145 +203,166 @@ static CompilerBackend CreateCompiler(const spirv_cross::ParsedIR& ir,
   switch (source_options.target_platform) {
     case TargetPlatform::kMetalDesktop:
     case TargetPlatform::kMetalIOS:
+    case TargetPlatform::kRuntimeStageMetal:
       compiler = CreateMSLCompiler(ir, source_options);
       break;
+    case TargetPlatform::kVulkan:
+    case TargetPlatform::kRuntimeStageVulkan:
+      compiler = CreateVulkanCompiler(ir, source_options);
+      break;
     case TargetPlatform::kUnknown:
-    case TargetPlatform::kFlutterSPIRV:
     case TargetPlatform::kOpenGLES:
     case TargetPlatform::kOpenGLDesktop:
+    case TargetPlatform::kRuntimeStageGLES:
       compiler = CreateGLSLCompiler(ir, source_options);
       break;
+    case TargetPlatform::kSkSL:
+      compiler = CreateSkSLCompiler(ir, source_options);
   }
   if (!compiler) {
     return {};
   }
   auto* backend = compiler.GetCompiler();
-  if (!EntryPointMustBeNamedMain(source_options.target_platform)) {
+  if (!EntryPointMustBeNamedMain(source_options.target_platform) &&
+      source_options.source_language == SourceLanguage::kGLSL) {
     backend->rename_entry_point("main", source_options.entry_point_name,
                                 ToExecutionModel(source_options.type));
   }
-
   return compiler;
 }
 
-Compiler::Compiler(const fml::Mapping& source_mapping,
-                   SourceOptions source_options,
+Compiler::Compiler(const std::shared_ptr<const fml::Mapping>& source_mapping,
+                   const SourceOptions& source_options,
                    Reflector::Options reflector_options)
     : options_(source_options) {
-  if (source_mapping.GetMapping() == nullptr) {
-    COMPILER_ERROR
+  if (!source_mapping || source_mapping->GetMapping() == nullptr) {
+    COMPILER_ERROR(error_stream_)
         << "Could not read shader source or shader source was empty.";
     return;
   }
 
   if (source_options.target_platform == TargetPlatform::kUnknown) {
-    COMPILER_ERROR << "Target platform not specified.";
+    COMPILER_ERROR(error_stream_) << "Target platform not specified.";
     return;
   }
 
-  auto shader_kind = ToShaderCShaderKind(source_options.type);
-
-  if (shader_kind == shaderc_shader_kind::shaderc_glsl_infer_from_source) {
-    COMPILER_ERROR << "Could not figure out shader stage.";
-    return;
-  }
-
-  shaderc::CompileOptions spirv_options;
+  SPIRVCompilerOptions spirv_options;
 
   // Make sure reflection is as effective as possible. The generated shaders
-  // will be processed later by backend specific compilers. So optimizations
-  // here are irrelevant and get in the way of generating reflection code.
-  spirv_options.SetGenerateDebugInfo();
+  // will be processed later by backend specific compilers.
+  spirv_options.generate_debug_info = true;
 
-  // Expects GLSL 4.60 (Core Profile).
-  // https://www.khronos.org/registry/OpenGL/specs/gl/GLSLangSpec.4.60.pdf
-  spirv_options.SetSourceLanguage(
-      shaderc_source_language::shaderc_source_language_glsl);
-  spirv_options.SetForcedVersionProfile(460,
-                                        shaderc_profile::shaderc_profile_core);
+  switch (options_.source_language) {
+    case SourceLanguage::kGLSL:
+      // Expects GLSL 4.60 (Core Profile).
+      // https://www.khronos.org/registry/OpenGL/specs/gl/GLSLangSpec.4.60.pdf
+      spirv_options.source_langauge =
+          shaderc_source_language::shaderc_source_language_glsl;
+      spirv_options.source_profile = SPIRVCompilerSourceProfile{
+          shaderc_profile::shaderc_profile_core,  //
+          460,                                    //
+      };
+      break;
+    case SourceLanguage::kHLSL:
+      spirv_options.source_langauge =
+          shaderc_source_language::shaderc_source_language_hlsl;
+      break;
+    case SourceLanguage::kUnknown:
+      COMPILER_ERROR(error_stream_) << "Source language invalid.";
+      return;
+  }
+
   switch (source_options.target_platform) {
     case TargetPlatform::kMetalDesktop:
-    case TargetPlatform::kMetalIOS:
+    case TargetPlatform::kMetalIOS: {
+      SPIRVCompilerTargetEnv target;
+
+      if (source_options.use_half_textures) {
+        target.env = shaderc_target_env::shaderc_target_env_opengl;
+        target.version = shaderc_env_version::shaderc_env_version_opengl_4_5;
+        target.spirv_version = shaderc_spirv_version::shaderc_spirv_version_1_0;
+      } else {
+        target.env = shaderc_target_env::shaderc_target_env_vulkan;
+        target.version = shaderc_env_version::shaderc_env_version_vulkan_1_1;
+        target.spirv_version = shaderc_spirv_version::shaderc_spirv_version_1_3;
+      }
+
+      spirv_options.target = target;
+    } break;
     case TargetPlatform::kOpenGLES:
     case TargetPlatform::kOpenGLDesktop:
-      spirv_options.SetOptimizationLevel(
-          shaderc_optimization_level::shaderc_optimization_level_zero);
-      spirv_options.SetTargetEnvironment(
-          shaderc_target_env::shaderc_target_env_vulkan,
-          shaderc_env_version::shaderc_env_version_vulkan_1_1);
-      spirv_options.SetTargetSpirv(
-          shaderc_spirv_version::shaderc_spirv_version_1_3);
-      break;
-    case TargetPlatform::kFlutterSPIRV:
-      spirv_options.SetOptimizationLevel(
-          shaderc_optimization_level::shaderc_optimization_level_size);
-      spirv_options.SetTargetEnvironment(
-          shaderc_target_env::shaderc_target_env_opengl,
-          shaderc_env_version::shaderc_env_version_opengl_4_5);
-      spirv_options.SetTargetSpirv(
-          shaderc_spirv_version::shaderc_spirv_version_1_0);
-      break;
+    case TargetPlatform::kVulkan: {
+      SPIRVCompilerTargetEnv target;
+
+      target.env = shaderc_target_env::shaderc_target_env_vulkan;
+      target.version = shaderc_env_version::shaderc_env_version_vulkan_1_1;
+      target.spirv_version = shaderc_spirv_version::shaderc_spirv_version_1_3;
+
+      spirv_options.target = target;
+    } break;
+    case TargetPlatform::kRuntimeStageMetal:
+    case TargetPlatform::kRuntimeStageGLES:
+    case TargetPlatform::kRuntimeStageVulkan: {
+      SPIRVCompilerTargetEnv target;
+
+      target.env = shaderc_target_env::shaderc_target_env_opengl;
+      target.version = shaderc_env_version::shaderc_env_version_opengl_4_5;
+      target.spirv_version = shaderc_spirv_version::shaderc_spirv_version_1_0;
+
+      spirv_options.target = target;
+      spirv_options.macro_definitions.push_back("IMPELLER_GRAPHICS_BACKEND");
+    } break;
+    case TargetPlatform::kSkSL: {
+      SPIRVCompilerTargetEnv target;
+
+      target.env = shaderc_target_env::shaderc_target_env_opengl;
+      target.version = shaderc_env_version::shaderc_env_version_opengl_4_5;
+      target.spirv_version = shaderc_spirv_version::shaderc_spirv_version_1_0;
+
+      // When any optimization level above 'zero' is enabled, the phi merges at
+      // loop continue blocks are rendered using syntax that is supported in
+      // GLSL, but not in SkSL.
+      // https://bugs.chromium.org/p/skia/issues/detail?id=13518.
+      spirv_options.optimization_level =
+          shaderc_optimization_level::shaderc_optimization_level_zero;
+      spirv_options.target = target;
+      spirv_options.macro_definitions.push_back("SKIA_GRAPHICS_BACKEND");
+    } break;
     case TargetPlatform::kUnknown:
-      COMPILER_ERROR << "Target platform invalid.";
+      COMPILER_ERROR(error_stream_) << "Target platform invalid.";
       return;
   }
 
   // Implicit definition that indicates that this compilation is for the device
   // (instead of the host).
-  spirv_options.AddMacroDefinition("IMPELLER_DEVICE");
+  spirv_options.macro_definitions.push_back("IMPELLER_DEVICE");
   for (const auto& define : source_options.defines) {
-    spirv_options.AddMacroDefinition(define);
+    spirv_options.macro_definitions.push_back(define);
   }
 
-  spirv_options.SetAutoBindUniforms(true);
-  spirv_options.SetAutoMapLocations(true);
-
   std::vector<std::string> included_file_names;
-  spirv_options.SetIncluder(std::make_unique<Includer>(
+  spirv_options.includer = std::make_shared<Includer>(
       options_.working_directory, options_.include_dirs,
       [&included_file_names](auto included_name) {
         included_file_names.emplace_back(std::move(included_name));
-      }));
-
-  shaderc::Compiler spv_compiler;
-  if (!spv_compiler.IsValid()) {
-    COMPILER_ERROR << "Could not initialize the GLSL to SPIRV compiler.";
-    return;
-  }
+      });
 
   // SPIRV Generation.
-  spv_result_ = std::make_shared<shaderc::SpvCompilationResult>(
-      spv_compiler.CompileGlslToSpv(
-          reinterpret_cast<const char*>(
-              source_mapping.GetMapping()),         // source_text
-          source_mapping.GetSize(),                 // source_text_size
-          shader_kind,                              // shader_kind
-          source_options.file_name.c_str(),         // input_file_name
-          source_options.entry_point_name.c_str(),  // entry_point_name
-          spirv_options                             // options
-          ));
-  if (spv_result_->GetCompilationStatus() !=
-      shaderc_compilation_status::shaderc_compilation_status_success) {
-    COMPILER_ERROR << "GLSL to SPIRV failed; "
-                   << ShaderCErrorToString(spv_result_->GetCompilationStatus())
-                   << ". " << spv_result_->GetNumErrors() << " error(s) and "
-                   << spv_result_->GetNumWarnings() << " warning(s).";
-    if (spv_result_->GetNumErrors() > 0 || spv_result_->GetNumWarnings() > 0) {
-      COMPILER_ERROR_NO_PREFIX << spv_result_->GetErrorMessage();
-    }
+  SPIRVCompiler spv_compiler(source_options, source_mapping);
+
+  spirv_assembly_ = spv_compiler.CompileToSPV(
+      error_stream_, spirv_options.BuildShadercOptions());
+
+  if (!spirv_assembly_) {
     return;
   } else {
     included_file_names_ = std::move(included_file_names);
   }
 
-  if (!TargetPlatformNeedsSL(source_options.target_platform)) {
-    is_valid_ = true;
-    return;
-  }
-
-  // MSL Generation.
-  spirv_cross::Parser parser(spv_result_->cbegin(),
-                             spv_result_->cend() - spv_result_->cbegin());
+  // SL Generation.
+  spirv_cross::Parser parser(
+      reinterpret_cast<const uint32_t*>(spirv_assembly_->GetMapping()),
+      spirv_assembly_->GetSize() / sizeof(uint32_t));
   // The parser and compiler must be run separately because the parser contains
   // meta information (like type member names) that are useful for reflection.
   parser.parse();
@@ -217,25 +373,43 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
   auto sl_compiler = CreateCompiler(*parsed_ir, options_);
 
   if (!sl_compiler) {
-    COMPILER_ERROR << "Could not create compiler for target platform.";
+    COMPILER_ERROR(error_stream_)
+        << "Could not create compiler for target platform.";
     return;
   }
 
-  sl_string_ =
-      std::make_shared<std::string>(sl_compiler.GetCompiler()->compile());
+  // We need to invoke the compiler even if we don't use the SL mapping later
+  // for Vulkan. The reflector needs information that is only valid after a
+  // successful compilation call.
+  auto sl_compilation_result =
+      CreateMappingWithString(sl_compiler.GetCompiler()->compile());
 
-  if (!sl_string_) {
-    COMPILER_ERROR << "Could not generate MSL from SPIRV";
+  // If the target is Vulkan, our shading language is SPIRV which we already
+  // have. We just need to strip it of debug information. If it isn't, we need
+  // to invoke the appropriate compiler to compile the SPIRV to the target SL.
+  if (source_options.target_platform == TargetPlatform::kVulkan) {
+    auto stripped_spirv_options = spirv_options;
+    stripped_spirv_options.generate_debug_info = false;
+    sl_mapping_ = spv_compiler.CompileToSPV(
+        error_stream_, stripped_spirv_options.BuildShadercOptions());
+  } else {
+    sl_mapping_ = sl_compilation_result;
+  }
+
+  if (!sl_mapping_) {
+    COMPILER_ERROR(error_stream_) << "Could not generate SL from SPIRV";
     return;
   }
 
   reflector_ = std::make_unique<Reflector>(std::move(reflector_options),  //
                                            parsed_ir,                     //
+                                           GetSLShaderSource(),           //
                                            sl_compiler                    //
   );
 
   if (!reflector_->IsValid()) {
-    COMPILER_ERROR << "Could not complete reflection on generated shader.";
+    COMPILER_ERROR(error_stream_)
+        << "Could not complete reflection on generated shader.";
     return;
   }
 
@@ -244,28 +418,12 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
 
 Compiler::~Compiler() = default;
 
-std::unique_ptr<fml::Mapping> Compiler::GetSPIRVAssembly() const {
-  if (!spv_result_) {
-    return nullptr;
-  }
-  const auto data_length =
-      (spv_result_->cend() - spv_result_->cbegin()) *
-      sizeof(decltype(spv_result_)::element_type::element_type);
-
-  return std::make_unique<fml::NonOwnedMapping>(
-      reinterpret_cast<const uint8_t*>(spv_result_->cbegin()), data_length,
-      [result = spv_result_](auto, auto) mutable { result.reset(); });
+std::shared_ptr<fml::Mapping> Compiler::GetSPIRVAssembly() const {
+  return spirv_assembly_;
 }
 
-std::unique_ptr<fml::Mapping> Compiler::GetSLShaderSource() const {
-  if (!sl_string_) {
-    return nullptr;
-  }
-
-  return std::make_unique<fml::NonOwnedMapping>(
-      reinterpret_cast<const uint8_t*>(sl_string_->c_str()),
-      sl_string_->length(),
-      [string = sl_string_](auto, auto) mutable { string.reset(); });
+std::shared_ptr<fml::Mapping> Compiler::GetSLShaderSource() const {
+  return sl_mapping_;
 }
 
 bool Compiler::IsValid() const {
@@ -287,7 +445,7 @@ const std::vector<std::string>& Compiler::GetIncludedFileNames() const {
 }
 
 static std::string JoinStrings(std::vector<std::string> items,
-                               std::string separator) {
+                               const std::string& separator) {
   std::stringstream stream;
   for (size_t i = 0, count = items.size(); i < count; i++) {
     const auto is_last = (i == count - 1);
@@ -300,7 +458,7 @@ static std::string JoinStrings(std::vector<std::string> items,
   return stream.str();
 }
 
-std::string Compiler::GetDependencyNames(std::string separator) const {
+std::string Compiler::GetDependencyNames(const std::string& separator) const {
   std::vector<std::string> dependencies = included_file_names_;
   dependencies.push_back(options_.file_name);
   return JoinStrings(dependencies, separator);
@@ -308,6 +466,7 @@ std::string Compiler::GetDependencyNames(std::string separator) const {
 
 std::unique_ptr<fml::Mapping> Compiler::CreateDepfileContents(
     std::initializer_list<std::string> targets_names) const {
+  // https://github.com/ninja-build/ninja/blob/master/src/depfile_parser.cc#L28
   const auto targets = JoinStrings(targets_names, " ");
   const auto dependencies = GetDependencyNames(" ");
 

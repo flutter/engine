@@ -11,6 +11,7 @@ config("desktop_library_implementation") {
 
 _public_headers = [
   "public/flutter_export.h",
+  "public/flutter_macros.h",
   "public/flutter_messenger.h",
   "public/flutter_plugin_registrar.h",
   "public/flutter_texture_registrar.h",
@@ -57,7 +58,10 @@ source_set("common_cpp_input") {
 }
 
 source_set("common_cpp_enums") {
-  public = [ "platform_provided_menu.h" ]
+  public = [
+    "app_lifecycle_state.h",
+    "platform_provided_menu.h",
+  ]
 
   public_configs = [
     "//flutter:config",
@@ -79,11 +83,13 @@ source_set("common_cpp_switches") {
 source_set("common_cpp_accessibility") {
   public = [
     "accessibility_bridge.h",
+    "alert_platform_node_delegate.h",
     "flutter_platform_node_delegate.h",
   ]
 
   sources = [
     "accessibility_bridge.cc",
+    "alert_platform_node_delegate.cc",
     "flutter_platform_node_delegate.cc",
   ]
 
@@ -173,6 +179,7 @@ if (enable_unittests) {
     sources = [
       "engine_switches_unittests.cc",
       "geometry_unittests.cc",
+      "incoming_message_dispatcher_unittests.cc",
       "json_message_codec_unittests.cc",
       "json_method_codec_unittests.cc",
       "text_editing_delta_unittests.cc",

@@ -22,75 +22,100 @@ To tell `felt` to do anything you call `felt SUBCOMMAND`, where `SUBCOMMAND` is
 one of the available subcommands, which can be listed by running `felt help`. To
 get help for a specific subcommand, run `felt help SUBCOMMAND`.
 
-The most useful subcommands are:
+#### `felt build`
+The `build` subcommand builds web engine gn/ninja targets. Targets can be
+individually specified in the command line invocation, or if none are specified,
+all web engine targets are built. Common targets are as follows:
+  * `sdk` - The flutter_web_sdk itself.
+  * `canvaskit` - Flutter's version of canvakit.
+  * `canvaskit_chromium` - A version of canvaskit optimized for use with
+    chromium-based browsers.
+  * `skwasm` - Builds experimental skia wasm module renderer.
+The output of these steps is used in unit tests, and can be used with the flutter
+command via the `--local-web-sdk=wasm_release` command.
 
-- `felt build` - builds a local Flutter Web engine ready to be used by the
-  Flutter framework. To use the local engine build, pass
-  `--local-engine=host_debug_unopt` to the `flutter` command, or to
-  `dev/bots/test.dart` when running a web shard, such as `web_tests`.
-- `felt test` - runs web engine tests. By default, this runs all tests using
-  Chromium. Passing one or more paths to specific tests would run just the
-  specified tests. Run `felt help test` for more options.
+The `build` command also accepts either the `--profile` or `--debug` flags, which
+can be used to change the build profile of the artifacts.
 
-`build` and `test` take the `--watch` option, which automatically reruns the
-subcommand when a source file changes. This is handy when you are iterating
-quickly.
-
-#### Examples
-
-Builds the web engine, the runs a Flutter app using it:
-
+##### Examples
+Builds all web engine targets, then runs a Flutter app using it:
 ```
 felt build
 cd path/to/some/app
-flutter --local-engine=host_debug_unopt run -d chrome
+flutter --local-web-sdk=wasm_release run -d chrome
 ```
 
-Runs all tests in Chromium:
+Builds only the `sdk` and the `canvaskit` targets:
+```
+felt build sdk canvaskit
+```
 
+#### `felt test`
+The `test` subcommand will compile and/or run web engine unit test suites. For
+information on how test suites are structured, see the test configuration
+[readme][2].
+
+By default, `felt test` compiles and runs all suites that are compatible with the
+host system. Some useful flags supported by this command:
+  * Action flags which say what parts of the test pipeline to perform. More of one
+    of these can be specified to run multiple actions. If none are specified, then
+    *all* of these actions are performed
+    * `--compile` performs compilation of the test bundles.
+    * `--run` runs the unit tests
+    * `--copy-artifacts` will copy build artifacts needed for the tests to run.
+      * The `--profile` or `--debug` flags can be specified to copy over artifacts
+        from the profile or debug build folders instead of release.
+  * `--list` will list all the test suites and test bundles and exit without
+    compiling or running anything.
+  * `--verbose` will output some extra information that may be useful for debugging.
+  * `--start-paused` will open a browser window and pause the tests before starting
+    so that breakpoints can be set before starting the test suites.
+
+Several other flags can be passed that filter which test suites should be run:
+  * `--browser` runs only the test suites that test on the browsers passed. Valid
+    values for this are `chrome`, `firefox`, `safari`, or `edge`.
+  * `--compiler` runs only the test suites that use a particular compiler. Valid
+    values for this are `dart2js` or `dart2wasm`
+  * `--renderer` runs only the test suites that use a particular renderer. Valid
+    values for this are `html`, `canvakit`, or `skwasm`
+  * `--suite` runs a suite by name.
+  * `--bundle` runs suites that target a particular test bundle.
+
+Filters of different types are logically ANDed together, but multiple filter flags
+of the same type are logically ORed together.
+
+The `test` command will also accept a list of paths to specific test files to be
+compiled and run. If none of these paths are specified, all tests are run, otherwise
+only the tests that are specified will run.
+
+##### Examples
+Runs all test suites in all compatible browsers:
 ```
 felt test
 ```
-
-Runs a specific test:
-
+Runs a specific test on all compatible browsers:
 ```
 felt test test/engine/util_test.dart
 ```
-
-Runs multiple specific tests:
-
+Runs multiple specific tests on all compatible browsers:
 ```
-felt test test/engine/util_test.dart test/alarm_clock_test.dart
+felt test test/engine/util_test.dart test/engine/alarm_clock_test.dart
 ```
-
-Enable watch mode so that the test re-runs every time a source file changes:
-
+Runs only test suites that compile via dart2wasm:
 ```
-felt test --watch test/engine/util_test.dart
+felt test --compiler dart2wasm
 ```
-
-Runs tests in Firefox (requires a Linux computer):
-
+Runs only test suites that run in Chrome and Safari:
 ```
-felt test --browser=firefox
-```
-
-Chromium and Firefox support debugging tests using the browser's developer
-tools. To run tests in debug mode add `--debug` to the `test` command, e.g.:
-
-```
-felt test --debug --browser=firefox test/alarm_clock_test.dart
+felt test --browser chrome --browser safari
 ```
 
 ### Optimizing local builds
 
 Concurrency of various build steps can be configured via environment variables:
 
-- `FELT_DART2JS_CONCURRENCY` specifies the number of concurrent `dart2js`
+- `FELT_COMPILE_CONCURRENCY` specifies the number of concurrent compiler
   processes used to compile tests. Default value is 8.
-- `FELT_TEST_CONCURRENCY` specifies the number of tests run concurrently.
-  Default value is 10.
 
 If you are a Google employee, you can use an internal instance of Goma (go/ma)
 to parallelize your ninja builds. Because Goma compiles code on remote servers,
@@ -99,7 +124,7 @@ this option is particularly effective for building on low-powered laptops.
 ### Test browsers
 
 Chromium, Firefox, and Safari for iOS are version-locked using the
-[browser_lock.yaml][2] configuration file. Safari for macOS is supplied by the
+[browser_lock.yaml][3] configuration file. Safari for macOS is supplied by the
 computer's operating system. Tests can be run in Edge locally, but Edge is not
 enabled on LUCI. Chromium is used as a proxy for Chrome, Edge, and other
 Chromium-based browsers.
@@ -108,27 +133,6 @@ Changing parameters in the browser lock is effective immediately when running
 tests locally. To make changes effective on LUCI follow instructions in
 [Rolling Browsers][#rolling-browsers].
 
-#### Local testing in Safari using the iOS Simulator
-
-1. If you haven't already, install Xcode.
-2. The iOS version and device type used by web engine tests are specified in
-   the [browser_lock.yaml][2] file. Install the iOS Simulator version using:
-   Xcode > Preferences > Components
-3. Run `xcrun simctl list devices`. If the simulator you want is not installed
-   use step 4.
-4. Use felt to create a simulator:
-
-```
-felt create_simulator
-```
-
-To run tests on ios-safari use the one of the following commands:
-
-```
-felt test --browser=ios-safari
-felt test --browser=ios-safari test/alarm_clock_test.dart
-```
-
 ### Rolling browsers
 
 When running tests on LUCI using Chromium, LUCI uses the version of Chromium
@@ -136,6 +140,31 @@ fetched from CIPD.
 
 Since the engine code and infra recipes do not live in the same repository
 there are few steps to follow in order to upgrade a browser's version.
+
+### Rolling fallback fonts
+
+To generate new fallback font data and push the fallback fonts into a CIPD
+package for engine unit tests to consume, run the following felt command:
+
+```
+cipd auth-login
+felt roll-fallback-fonts --key=<Google Fonts API key>
+```
+
+You can obtain a GoogleFonts API key from here: https://developers.google.com/fonts/docs/developer_api#APIKey
+
+This will take the following steps:
+* Fetch a list of fonts from the Google Fonts API
+* Download each font we use for fallbacks and calculate its unicode ranges
+* Generate the `font_fallback_data.dart` file that is used in the engine
+* Push the fonts up to a CIPD package called `flutter/flutter_font_fallbacks`
+* Update the `DEPS` file in the engine to use the new version of the package
+
+To perform all these steps except actually uploading the package to CIPD, pass
+the `--dry-run` flag to the felt command.
+
+NOTE: Because this script uses `fc-config`, this roll step only actually works
+on Linux, not on macOS or Windows.
 
 #### Chromium
 
@@ -167,6 +196,26 @@ is needed, follow these steps to roll the new version:
 If you have questions, contact the Flutter Web team on Flutter Discord on the
 \#hackers-web-🌍 channel.
 
+#### Firefox
+
+We test with Firefox on LUCI in the Linux Web Engine builder. The process for
+rolling Firefox is even easier than Chromium. Simply update `browser_lock.yaml`
+with the latest version of Firefox, and run `browser_roller.dart`.
+
+#### .ci.yaml
+
+After rolling Chrome and/or Firefox, also update the CI dependencies in
+`.ci.yaml` to make use of the new versions. The lines look like
+
+```yaml
+      dependencies: >-
+        [
+          {"dependency": "chrome_and_driver", "version": "version:107.0"},
+          {"dependency": "firefox", "version": "version:83.0"},
+          {"dependency": "goldctl", "version": "git_revision:3a77d0b12c697a840ca0c7705208e8622dc94603"}
+        ]
+```
+
 ##### **browser_roller.dart**
 
 The script has the following command-line options:
@@ -184,7 +233,7 @@ The script has the following command-line options:
 
 In general, the manual process goes like this:
 
-1. Dowload the binaries for the new browser/driver for each operaing system
+1. Dowload the binaries for the new browser/driver for each operating system
    (macOS, linux, windows).
 2. Create CIPD packages for these packages (more documentation is available for
    Googlers at go/cipd-flutter-web)
@@ -198,31 +247,6 @@ Resources:
 2. LUCI web [recipe][5]
 3. More general reading on CIPD packages [link][6]
 
-### Rolling CanvasKit
-
-CanvasKit is versioned separately from Skia and rolled manually. Flutter
-consumes a pre-built CanvasKit provided by the Skia team, currently hosted on
-unpkg.com. When a new version of CanvasKit is available (check
-https://www.npmjs.com/package/canvaskit-wasm or consult the Skia team
-directly), follow these steps to roll to the new version:
-
-- Make sure you have `depot_tools` installed (if you are regularly hacking on
-  the engine code, you probably do).
-- If not already authenticated with CIPD, run `cipd auth-login` and follow
-  instructions (this step requires sufficient privileges; contact
-  #hackers-infra-🌡 on Flutter's Discord server).
-- Edit `dev/canvaskit_lock.yaml` and update the value of `canvaskit_version`
-  to the new version.
-- Run `dart dev/canvaskit_roller.dart` and make sure it completes successfully.
-  The script uploads the new version of CanvasKit to the
-  `flutter/web/canvaskit_bundle` CIPD package, and writes the CIPD package
-  instance ID to the DEPS file.
-- Send a pull request containing the above file changes. If the new version
-  contains breaking changes, the PR must also contain corresponding fixes.
-
-If you have questions, contact the Flutter Web team on Flutter Discord on the
-#hackers-web-🌍 channel.
-
 ### Configuration files
 
 `browser_lock.yaml` contains the version of browsers we use to test Flutter for
@@ -231,39 +255,6 @@ Instead, we update this file manually once in a while.
 
 `canvaskit_lock.yaml` locks the version of CanvasKit for tests and production
 use.
-
-## Troubleshooting
-
-### Can't load Kernel binary: Invalid kernel binary format version.
-
-Sometimes `.dart_tool` cache invalidation fails, and you'll end up with a
-cached version of `felt` that is not compatible with the Dart SDK that you're
-using.
-
-In that case, any invocation to `felt` will fail with:
-
-```
-Can't load Kernel binary: Invalid kernel binary format version.
-```
-
-The solution is to delete the cached `felt.snapshot` files under `lib/web_ui`:
-
-```
-rm .dart_tool/felt.snapshot*
-```
-
-## Hacking on the `felt` tool itself
-
-If you are making changes in the `felt` tool itself, you need to be aware of
-Dart snapshots. We create a Dart snapshot of the `felt` tool to make the startup
-faster.
-
-To run `felt` from sources, disable the snapshot using the `FELT_USE_SNAPSHOT`
-environment variable:
-
-```
-FELT_USE_SNAPSHOT=false felt <command>
-```
 
 ## Building CanvasKit
 
@@ -319,7 +310,12 @@ Once you know the version for the Emscripten SDK, change the line in
 
 
 [1]: https://github.com/flutter/flutter/wiki/Setting-up-the-Engine-development-environment
-[2]: https://github.com/flutter/engine/blob/main/lib/web_ui/dev/browser_lock.yaml
+[2]: https://github.com/flutter/flutter/blob/main/lib/web_ui/test/README
+[3]: https://github.com/flutter/engine/blob/main/lib/web_ui/dev/browser_lock.yaml
 [4]: https://chrome-infra-packages.appspot.com/p/flutter_internal
 [5]: https://cs.opensource.google/flutter/recipes/+/master:recipes/engine/web_engine.py
 [6]: https://chromium.googlesource.com/chromium/src.git/+/main/docs/cipd_and_3pp.md#What-is-CIPD
+
+## Unicode properties
+
+We pull the unicode properties we need from `third_party/web_unicode`. See `third_party/web_unicode/README.md` for more details on how we generate Dart code from unicode properties.

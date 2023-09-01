@@ -9,7 +9,7 @@
 
 static constexpr char kPortalName[] = "org.freedesktop.portal.Desktop";
 static constexpr char kPortalPath[] = "/org/freedesktop/portal/desktop";
-static constexpr char pPortalSettings[] = "org.freedesktop.portal.Settings";
+static constexpr char kPortalSettings[] = "org.freedesktop.portal.Settings";
 
 struct FlSetting {
   const gchar* ns;
@@ -24,11 +24,24 @@ static const FlSetting kColorScheme = {
     G_VARIANT_TYPE_UINT32,
 };
 
+static constexpr char kGnomeA11yInterface[] =
+    "org.gnome.desktop.a11y.interface";
+static const FlSetting kHighContrast = {
+    kGnomeA11yInterface,
+    "high-contrast",
+    G_VARIANT_TYPE_BOOLEAN,
+};
+
 static constexpr char kGnomeDesktopInterface[] = "org.gnome.desktop.interface";
 static const FlSetting kClockFormat = {
     kGnomeDesktopInterface,
     "clock-format",
     G_VARIANT_TYPE_STRING,
+};
+static const FlSetting kEnableAnimations = {
+    kGnomeDesktopInterface,
+    "enable-animations",
+    G_VARIANT_TYPE_BOOLEAN,
 };
 static const FlSetting kGtkTheme = {
     kGnomeDesktopInterface,
@@ -41,17 +54,15 @@ static const FlSetting kTextScalingFactor = {
     G_VARIANT_TYPE_DOUBLE,
 };
 
-static const FlSetting all_settings[] = {
-    kClockFormat,
-    kColorScheme,
-    kGtkTheme,
-    kTextScalingFactor,
+static const FlSetting kAllSettings[] = {
+    kClockFormat, kColorScheme,  kEnableAnimations,
+    kGtkTheme,    kHighContrast, kTextScalingFactor,
 };
 
 static constexpr char kClockFormat12Hour[] = "12h";
 static constexpr char kGtkThemeDarkSuffix[] = "-dark";
 
-typedef enum { DEFAULT, PREFER_DARK, PREFER_LIGHT } ColorScheme;
+typedef enum { kDefault, kPreferDark, kPreferLight } ColorScheme;
 
 struct _FlSettingsPortal {
   GObject parent_instance;
@@ -172,7 +183,7 @@ static FlColorScheme fl_settings_portal_get_color_scheme(FlSettings* settings) {
 
   g_autoptr(GVariant) value = nullptr;
   if (get_value(self, &kColorScheme, &value)) {
-    if (g_variant_get_uint32(value) == PREFER_DARK) {
+    if (g_variant_get_uint32(value) == kPreferDark) {
       color_scheme = FL_COLOR_SCHEME_DARK;
     }
   } else if (get_value(self, &kGtkTheme, &value)) {
@@ -183,6 +194,32 @@ static FlColorScheme fl_settings_portal_get_color_scheme(FlSettings* settings) {
   }
 
   return color_scheme;
+}
+
+static gboolean fl_settings_portal_get_enable_animations(FlSettings* settings) {
+  FlSettingsPortal* self = FL_SETTINGS_PORTAL(settings);
+
+  gboolean enable_animations = true;
+
+  g_autoptr(GVariant) value = nullptr;
+  if (get_value(self, &kEnableAnimations, &value)) {
+    enable_animations = g_variant_get_boolean(value);
+  }
+
+  return enable_animations;
+}
+
+static gboolean fl_settings_portal_get_high_contrast(FlSettings* settings) {
+  FlSettingsPortal* self = FL_SETTINGS_PORTAL(settings);
+
+  gboolean high_contrast = false;
+
+  g_autoptr(GVariant) value = nullptr;
+  if (get_value(self, &kHighContrast, &value)) {
+    high_contrast = g_variant_get_boolean(value);
+  }
+
+  return high_contrast;
 }
 
 static gdouble fl_settings_portal_get_text_scaling_factor(
@@ -216,6 +253,8 @@ static void fl_settings_portal_class_init(FlSettingsPortalClass* klass) {
 static void fl_settings_portal_iface_init(FlSettingsInterface* iface) {
   iface->get_clock_format = fl_settings_portal_get_clock_format;
   iface->get_color_scheme = fl_settings_portal_get_color_scheme;
+  iface->get_enable_animations = fl_settings_portal_get_enable_animations;
+  iface->get_high_contrast = fl_settings_portal_get_high_contrast;
   iface->get_text_scaling_factor = fl_settings_portal_get_text_scaling_factor;
 }
 
@@ -240,13 +279,13 @@ gboolean fl_settings_portal_start(FlSettingsPortal* self, GError** error) {
 
   self->dbus_proxy = g_dbus_proxy_new_for_bus_sync(
       G_BUS_TYPE_SESSION, G_DBUS_PROXY_FLAGS_NONE, nullptr, kPortalName,
-      kPortalPath, pPortalSettings, nullptr, error);
+      kPortalPath, kPortalSettings, nullptr, error);
 
   if (self->dbus_proxy == nullptr) {
     return false;
   }
 
-  for (const FlSetting setting : all_settings) {
+  for (const FlSetting setting : kAllSettings) {
     g_autoptr(GVariant) value = nullptr;
     if (settings_portal_read(self->dbus_proxy, setting.ns, setting.key,
                              &value)) {
@@ -256,7 +295,7 @@ gboolean fl_settings_portal_start(FlSettingsPortal* self, GError** error) {
 
   g_signal_connect_object(self->dbus_proxy, "g-signal",
                           G_CALLBACK(settings_portal_changed_cb), self,
-                          GConnectFlags(0));
+                          static_cast<GConnectFlags>(0));
 
   return true;
 }

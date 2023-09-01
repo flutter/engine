@@ -6,10 +6,9 @@
 
 #include <windows.h>
 
-#include <iostream>
-
+#include "flutter/fml/logging.h"
 #include "flutter/shell/platform/common/json_message_codec.h"
-#include "flutter/shell/platform/windows/keyboard_win32_common.h"
+#include "flutter/shell/platform/windows/keyboard_utils.h"
 
 namespace flutter {
 
@@ -110,6 +109,18 @@ KeyboardKeyChannelHandler::KeyboardKeyChannelHandler(
 
 KeyboardKeyChannelHandler::~KeyboardKeyChannelHandler() = default;
 
+void KeyboardKeyChannelHandler::SyncModifiersIfNeeded(int modifiers_state) {
+  // Do nothing.
+}
+
+std::map<uint64_t, uint64_t> KeyboardKeyChannelHandler::GetPressedState() {
+  // Returns an empty state because it will never be called.
+  // KeyboardKeyEmbedderHandler is the only KeyboardKeyHandlerDelegate to handle
+  // GetPressedState() calls.
+  std::map<uint64_t, uint64_t> empty_state;
+  return empty_state;
+}
+
 void KeyboardKeyChannelHandler::KeyboardHook(
     int key,
     int scancode,
@@ -139,7 +150,7 @@ void KeyboardKeyChannelHandler::KeyboardHook(
       event.AddMember(kTypeKey, kKeyUp, allocator);
       break;
     default:
-      std::cerr << "Unknown key event action: " << action << std::endl;
+      FML_LOG(WARNING) << "Unknown key event action: " << action;
       callback(false);
       return;
   }

@@ -46,6 +46,39 @@ std::ostream& operator<<(std::ostream& os,
   return os;
 }
 
+std::ostream& operator<<(std::ostream& os, const DlPaint& paint) {
+  os << "DlPaint("
+     << "isaa: " << paint.isAntiAlias() << ", "
+     << paint.getColor() << ", "
+     << paint.getBlendMode() << ", "
+     << paint.getDrawStyle();
+  if (paint.getDrawStyle() != DlDrawStyle::kFill) {
+    os << ", width: " << paint.getStrokeWidth()
+       << ", miter: " << paint.getStrokeMiter()
+       << ", " << paint.getStrokeCap()
+       << ", " << paint.getStrokeJoin();
+  }
+  if (paint.getColorSource()) {
+    os << ", " << paint.getColorSource();
+  }
+  if (paint.getColorFilter()) {
+    os << ", " << paint.getColorFilter();
+  }
+  if (paint.getImageFilter()) {
+    os << ", " << paint.getImageFilter();
+  }
+  if (paint.getMaskFilter()) {
+    os << ", " << paint.getMaskFilter();
+  }
+  if (paint.isDither()) {
+    os << ", dither: " << paint.isDither();
+  }
+  if (paint.isInvertColors()) {
+    os << ", invertColors: " << paint.isInvertColors();
+  }
+  return os << ")";
+}
+
 std::ostream& operator<<(std::ostream& os, const DlBlendMode& mode) {
   switch (mode) {
     case DlBlendMode::kClear:      return os << "BlendMode::kClear";
@@ -115,7 +148,7 @@ static std::ostream& operator<<(std::ostream& os, const SkRect& rect) {
 }
 
 static std::ostream& operator<<(std::ostream& os, const SkRect* rect) {
-  return rect ? os << *rect : os << "no rect";
+  return rect ? (os << "&" << *rect) : os << "no rect";
 }
 
 static std::ostream& operator<<(std::ostream& os, const SkRRect& rrect) {
@@ -148,7 +181,7 @@ static std::ostream& operator<<(std::ostream& os, const SkMatrix& matrix) {
 }
 
 static std::ostream& operator<<(std::ostream& os, const SkMatrix* matrix) {
-  if (matrix) return os << *matrix;
+  if (matrix) return os << "&" << *matrix;
   return os << "no matrix";
 }
 
@@ -160,105 +193,101 @@ static std::ostream& operator<<(std::ostream& os, const SkRSXform& xform) {
             << "ty: " << xform.fTy << ")";
 }
 
-static std::ostream& operator<<(std::ostream& os, const SkClipOp& op) {
+std::ostream& operator<<(std::ostream& os, const DlCanvas::ClipOp& op) {
   switch (op) {
-    case SkClipOp::kDifference: return os << "ClipOp::kDifference";
-    case SkClipOp::kIntersect:  return os << "ClipOp::kIntersect";
-
-    default: return os << "ClipOp::????";
+    case DlCanvas::ClipOp::kDifference: return os << "ClipOp::kDifference";
+    case DlCanvas::ClipOp::kIntersect:  return os << "ClipOp::kIntersect";
   }
 }
 
-static std::ostream& operator<<(std::ostream& os, const DlStrokeCap& cap) {
+std::ostream& operator<<(std::ostream& os, const DlCanvas::SrcRectConstraint& constraint) {
+  switch (constraint) {
+    case DlCanvas::SrcRectConstraint::kFast:
+      return os << "SrcRectConstraint::kFast";
+    case DlCanvas::SrcRectConstraint::kStrict:
+      return os << "SrcRectConstraint::kStrict";
+  }
+}
+
+std::ostream& operator<<(std::ostream& os, const DlStrokeCap& cap) {
   switch (cap) {
     case DlStrokeCap::kButt:   return os << "Cap::kButt";
     case DlStrokeCap::kRound:  return os << "Cap::kRound";
     case DlStrokeCap::kSquare: return os << "Cap::kSquare";
-
-    default: return os << "Cap::????";
   }
 }
 
-static std::ostream& operator<<(std::ostream& os, const DlStrokeJoin& join) {
+std::ostream& operator<<(std::ostream& os, const DlStrokeJoin& join) {
   switch (join) {
     case DlStrokeJoin::kMiter: return os << "Join::kMiter";
     case DlStrokeJoin::kRound: return os << "Join::kRound";
     case DlStrokeJoin::kBevel: return os << "Join::kBevel";
-
-    default: return os << "Join::????";
   }
 }
 
-static std::ostream& operator<<(std::ostream& os, const DlDrawStyle& style) {
+std::ostream& operator<<(std::ostream& os, const DlDrawStyle& style) {
   switch (style) {
     case DlDrawStyle::kFill:          return os << "Style::kFill";
     case DlDrawStyle::kStroke:        return os << "Style::kStroke";
     case DlDrawStyle::kStrokeAndFill: return os << "Style::kStrokeAnFill";
-
-    default: return os << "Style::????";
   }
 }
 
-static std::ostream& operator<<(std::ostream& os, const SkBlurStyle& style) {
+std::ostream& operator<<(std::ostream& os, const DlBlurStyle& style) {
   switch (style) {
-    case kNormal_SkBlurStyle: return os << "BlurStyle::kNormal";
-    case kSolid_SkBlurStyle:  return os << "BlurStyle::kSolid";
-    case kOuter_SkBlurStyle:  return os << "BlurStyle::kOuter";
-    case kInner_SkBlurStyle:  return os << "BlurStyle::kInner";
-
-    default: return os << "Style::????";
+    case DlBlurStyle::kNormal: return os << "BlurStyle::kNormal";
+    case DlBlurStyle::kSolid:  return os << "BlurStyle::kSolid";
+    case DlBlurStyle::kOuter:  return os << "BlurStyle::kOuter";
+    case DlBlurStyle::kInner:  return os << "BlurStyle::kInner";
   }
 }
 
-static std::ostream& operator<<(std::ostream& os,
-                                const SkCanvas::PointMode& mode) {
+std::ostream& operator<<(std::ostream& os, const DlCanvas::PointMode& mode) {
   switch (mode) {
-    case SkCanvas::kPoints_PointMode:  return os << "PointMode::kPoints";
-    case SkCanvas::kLines_PointMode:   return os << "PointMode::kLines";
-    case SkCanvas::kPolygon_PointMode: return os << "PointMode::kPolygon";
-
-    default: return os << "PointMode::????";
+    case DlCanvas::PointMode::kPoints:  return os << "PointMode::kPoints";
+    case DlCanvas::PointMode::kLines:   return os << "PointMode::kLines";
+    case DlCanvas::PointMode::kPolygon: return os << "PointMode::kPolygon";
   }
 }
 
-static std::ostream& operator<<(std::ostream& os, const SkFilterMode& mode) {
+std::ostream& operator<<(std::ostream& os, const DlFilterMode& mode) {
   switch (mode) {
-    case SkFilterMode::kNearest: return os << "FilterMode::kNearest";
-    case SkFilterMode::kLinear:  return os << "FilterMode::kLinear";
+    case DlFilterMode::kNearest: return os << "FilterMode::kNearest";
+    case DlFilterMode::kLinear:  return os << "FilterMode::kLinear";
 
     default: return os << "FilterMode::????";
   }
 }
 
-static std::ostream& operator<<(std::ostream& os, const DlColor& color) {
+std::ostream& operator<<(std::ostream& os, const DlColor& color) {
   return os << "DlColor(" << std::hex << color.argb << std::dec << ")";
 }
 
-static std::ostream& operator<<(std::ostream& os,
-                                const SkSamplingOptions sampling) {
-  if (sampling == DisplayList::NearestSampling) {
-    return os << "NearestSampling";
+std::ostream& operator<<(std::ostream& os, DlImageSampling sampling) {
+  switch (sampling) {
+    case DlImageSampling::kNearestNeighbor: {
+      return os << "NearestSampling";
+    }
+    case DlImageSampling::kLinear: {
+      return os << "LinearSampling";
+    }
+    case DlImageSampling::kMipmapLinear: {
+      return os << "MipmapSampling";
+    }
+    case DlImageSampling::kCubic: {
+      return os << "CubicSampling";
+    }
   }
-  if (sampling == DisplayList::LinearSampling) {
-    return os << "LinearSampling";
-  }
-  if (sampling == DisplayList::MipmapSampling) {
-    return os << "MipmapSampling";
-  }
-  if (sampling == DisplayList::CubicSampling) {
-    return os << "CubicSampling";
-  }
-  return os << "UnkownSampling";
 }
 
 static std::ostream& operator<<(std::ostream& os, const SkTextBlob* blob) {
   if (blob == nullptr) {
     return os << "no text";
   }
-  return os << "SkTextBlob(ID: " << blob->uniqueID() << ", " << blob->bounds() << ")";
+  return os << "&SkTextBlob(ID: " << blob->uniqueID() << ", " << blob->bounds() << ")";
 }
 
-static std::ostream& operator<<(std::ostream& os, const DlVertexMode& mode) {
+std::ostream& operator<<(std::ostream& os, const DlVertexMode& mode) {
   switch (mode) {
     case DlVertexMode::kTriangles:     return os << "VertexMode::kTriangles";
     case DlVertexMode::kTriangleStrip: return os << "VertexMode::kTriangleStrip";
@@ -268,7 +297,7 @@ static std::ostream& operator<<(std::ostream& os, const DlVertexMode& mode) {
   }
 }
 
-static std::ostream& operator<<(std::ostream& os, const DlTileMode& mode) {
+std::ostream& operator<<(std::ostream& os, const DlTileMode& mode) {
   switch (mode) {
     case DlTileMode::kClamp: return os << "TileMode::kClamp";
     case DlTileMode::kRepeat: return os << "TileMode::kRepeat";
@@ -279,11 +308,11 @@ static std::ostream& operator<<(std::ostream& os, const DlTileMode& mode) {
   }
 }
 
-static std::ostream& operator<<(std::ostream& os, const DlImage* image) {
+std::ostream& operator<<(std::ostream& os, const DlImage* image) {
   if (image == nullptr) {
     return os << "null image";
   }
-  os << "DlImage(" << image->width() << " x " << image->height() << ", ";
+  os << "&DlImage(" << image->width() << " x " << image->height() << ", ";
   if (image->skia_image()) {
     os << "skia(" << image->skia_image().get() << "), ";
   }
@@ -301,7 +330,7 @@ std::ostream& DisplayListStreamDispatcher::startl() {
 }
 
 template <class T>
-std::ostream& DisplayListStreamDispatcher::out_array(std::string name,
+std::ostream& DisplayListStreamDispatcher::out_array(std::string name,  // NOLINT(performance-unnecessary-value-param)
                                                      int count,
                                                      const T array[]) {
   if (array == nullptr || count < 0) {
@@ -325,7 +354,7 @@ void DisplayListStreamDispatcher::setAntiAlias(bool aa) {
 void DisplayListStreamDispatcher::setDither(bool dither) {
   startl() << "setDither(" << dither << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::setStyle(DlDrawStyle style) {
+void DisplayListStreamDispatcher::setDrawStyle(DlDrawStyle style) {
   startl() << "setStyle(" << style << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::setColor(DlColor color) {
@@ -359,7 +388,7 @@ void DisplayListStreamDispatcher::setColorSource(const DlColorSource* source) {
     case DlColorSourceType::kImage: {
       const DlImageColorSource* image_src = source->asImage();
       FML_DCHECK(image_src);
-      os_ << "DlImageColorSource(" << image_src->image()
+      os_ << "DlImageColorSource(image: " << image_src->image()
                            << ", hMode: " << image_src->horizontal_tile_mode()
                            << ", vMode: " << image_src->vertical_tile_mode()
                            << ", " << image_src->sampling()
@@ -415,22 +444,22 @@ void DisplayListStreamDispatcher::setColorSource(const DlColorSource* source) {
       break;
     }
     default:
-      os_ << "DlUnknownColorSource(" << source->skia_object().get() << ")";
+      os_ << "?DlUnknownColorSource?()";
       break;
   }
   os_ << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::out(const DlColorFilter* filter) {
-  switch (filter->type()) {
+void DisplayListStreamDispatcher::out(const DlColorFilter& filter) {
+  switch (filter.type()) {
     case DlColorFilterType::kBlend: {
-      const DlBlendColorFilter* blend = filter->asBlend();
+      const DlBlendColorFilter* blend = filter.asBlend();
       FML_DCHECK(blend);
       os_ << "DlBlendColorFilter(" << blend->color() << ", "
                                    << static_cast<int>(blend->mode()) << ")";
       break;
     }
     case DlColorFilterType::kMatrix: {
-      const DlMatrixColorFilter* matrix = filter->asMatrix();
+      const DlMatrixColorFilter* matrix = filter.asMatrix();
       FML_DCHECK(matrix);
       float values[20];
       matrix->get_matrix(values);
@@ -444,8 +473,8 @@ void DisplayListStreamDispatcher::out(const DlColorFilter* filter) {
                  << values[i+4] << ","
                  << std::endl;
       }
-      startl() << "]";
       outdent();
+      startl() << "]";
       break;
     }
     case DlColorFilterType::kSrgbToLinearGamma: {
@@ -457,15 +486,19 @@ void DisplayListStreamDispatcher::out(const DlColorFilter* filter) {
       break;
     }
     default:
-      os_ << "DlUnknownColorFilter(" << filter->skia_object().get() << ")";
+      os_ << "?DlUnknownColorFilter?()";
       break;
   }
 }
-void DisplayListStreamDispatcher::setColorFilter(const DlColorFilter* filter) {
+void DisplayListStreamDispatcher::out(const DlColorFilter* filter) {
   if (filter == nullptr) {
-    startl() << "setColorFilter(no ColorFilter);" << std::endl;
-    return;
+    os_ << "no ColorFilter";
+  } else {
+    os_ << "&";
+    out(*filter);
   }
+}
+void DisplayListStreamDispatcher::setColorFilter(const DlColorFilter* filter) {
   startl() << "setColorFilter(";
   out(filter);
   os_ << ");" << std::endl;
@@ -475,9 +508,6 @@ void DisplayListStreamDispatcher::setInvertColors(bool invert) {
 }
 void DisplayListStreamDispatcher::setBlendMode(DlBlendMode mode) {
   startl() << "setBlendMode(" << mode << ");" << std::endl;
-}
-void DisplayListStreamDispatcher::setBlender(sk_sp<SkBlender> blender) {
-  startl() << "setBlender(" << blender << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::setPathEffect(const DlPathEffect* effect) {
   startl() << "setPathEffect(" << effect << ");" << std::endl;
@@ -496,20 +526,15 @@ void DisplayListStreamDispatcher::setMaskFilter(const DlMaskFilter* filter) {
       break;
     }
     default:
-      os_ << "DlUnknownMaskFilter(" << filter->skia_object().get() << ")";
+      os_ << "?DlUnknownMaskFilter?()";
       break;
   }
   os_ << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::setImageFilter(const DlImageFilter* filter) {
-  if (filter == nullptr) {
-    startl() << "setImageFilter(no ImageFilter);" << std::endl;
-    return;
-  }
-  startl() << "setImageFilter(";
-  switch (filter->type()) {
+void DisplayListStreamDispatcher::out(const DlImageFilter& filter) {
+  switch (filter.type()) {
     case DlImageFilterType::kBlur: {
-      const DlBlurImageFilter* blur = filter->asBlur();
+      const DlBlurImageFilter* blur = filter.asBlur();
       FML_DCHECK(blur);
       os_ << "DlBlurImageFilter(" << blur->sigma_x() << ", "
                                   << blur->sigma_y() << ", "
@@ -517,44 +542,80 @@ void DisplayListStreamDispatcher::setImageFilter(const DlImageFilter* filter) {
       break;
     }
     case DlImageFilterType::kDilate: {
-      const DlDilateImageFilter* dilate = filter->asDilate();
+      const DlDilateImageFilter* dilate = filter.asDilate();
       FML_DCHECK(dilate);
       os_ << "DlDilateImageFilter(" << dilate->radius_x() << ", " << dilate->radius_y() << ")";
       break;
     }
     case DlImageFilterType::kErode: {
-      const DlErodeImageFilter* erode = filter->asErode();
+      const DlErodeImageFilter* erode = filter.asErode();
       FML_DCHECK(erode);
       os_ << "DlDilateImageFilter(" << erode->radius_x() << ", " << erode->radius_y() << ")";
       break;
     }
     case DlImageFilterType::kMatrix: {
-      const DlMatrixImageFilter* matrix = filter->asMatrix();
+      const DlMatrixImageFilter* matrix = filter.asMatrix();
       FML_DCHECK(matrix);
       os_ << "DlMatrixImageFilter(" << matrix->matrix() << ", " << matrix->sampling() << ")";
       break;
     }
-    case DlImageFilterType::kComposeFilter: {
-      const DlComposeImageFilter* compose = filter->asCompose();
+    case DlImageFilterType::kCompose: {
+      const DlComposeImageFilter* compose = filter.asCompose();
       FML_DCHECK(compose);
       os_ << "DlComposeImageFilter(" << std::endl;
       indent();
-      startl() << "outer: " << compose->outer() << "," << std::endl;
-      startl() << "inner: " << compose->inner() << "," << std::endl;
+      startl() << "outer: ";
+      indent(7);
+      out(compose->outer().get());
+      os_ << "," << std::endl;
+      outdent(7);
+      startl() << "inner: ";
+      indent(7);
+      out(compose->inner().get());
+      os_ << std::endl;
+      outdent(7);
       outdent();
       startl() << ")";
       break;
     }
     case DlImageFilterType::kColorFilter: {
-      const DlColorFilterImageFilter* color_filter = filter->asColorFilter();
+      const DlColorFilterImageFilter* color_filter = filter.asColorFilter();
       FML_DCHECK(color_filter);
-      out(color_filter->color_filter().get());
+      os_ << "DlColorFilterImageFilter(";
+      out(*color_filter->color_filter());
+      os_ << ")";
       break;
     }
-    default:
-      os_ << "DlUnknownImageFilter(" << filter->skia_object().get() << ")";
+    case DlImageFilterType::kLocalMatrix: {
+      const DlLocalMatrixImageFilter* local_matrix = filter.asLocalMatrix();
+      FML_DCHECK(local_matrix);
+      os_ << "DlLocalMatrixImageFilter(" << local_matrix->matrix();
+      os_ << "," << std::endl;
+      indent(25);
+      startl() << "filter: ";
+      out(local_matrix->image_filter().get());
+      os_ << std::endl;
+      outdent(25);
+      startl() << ")";
       break;
+    }
   }
+}
+void DisplayListStreamDispatcher::out(const DlImageFilter* filter) {
+  if (filter == nullptr) {
+    os_ << "no ImageFilter";
+  } else {
+    os_ << "&";
+    indent(1);
+    out(*filter);
+    outdent(1);
+  }
+}
+void DisplayListStreamDispatcher::setImageFilter(const DlImageFilter* filter) {
+  startl() << "setImageFilter(";
+  indent(15);
+  out(filter);
+  outdent(15);
   os_ << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::save() {
@@ -563,8 +624,19 @@ void DisplayListStreamDispatcher::save() {
   indent();
 }
 void DisplayListStreamDispatcher::saveLayer(const SkRect* bounds,
-                                            const SaveLayerOptions options) {
-  startl() << "saveLayer(" << bounds << ", " << options << ");" << std::endl;
+                                            const SaveLayerOptions options,
+                                            const DlImageFilter* backdrop) {
+  startl() << "saveLayer(" << bounds << ", " << options;
+  if (backdrop) {
+    os_ << "," << std::endl;
+    indent(10);
+    startl() << "backdrop: ";
+    out(backdrop);
+    outdent(10);
+  } else {
+    os_ << ", no backdrop";
+  }
+  os_ << ");" << std::endl;
   startl() << "{" << std::endl;
   indent();
 }
@@ -630,7 +702,7 @@ void DisplayListStreamDispatcher::transformReset() {
   startl() << "transformReset();" << std::endl;
 }
 
-void DisplayListStreamDispatcher::clipRect(const SkRect& rect, SkClipOp clip_op,
+void DisplayListStreamDispatcher::clipRect(const SkRect& rect, ClipOp clip_op,
                                            bool is_aa) {
   startl() << "clipRect("
            << rect << ", "
@@ -639,7 +711,7 @@ void DisplayListStreamDispatcher::clipRect(const SkRect& rect, SkClipOp clip_op,
            << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::clipRRect(const SkRRect& rrect,
-                         SkClipOp clip_op,
+                         ClipOp clip_op,
                          bool is_aa) {
   startl() << "clipRRect("
            << rrect << ", "
@@ -647,7 +719,7 @@ void DisplayListStreamDispatcher::clipRRect(const SkRRect& rrect,
            << "isaa: " << is_aa
            << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::clipPath(const SkPath& path, SkClipOp clip_op,
+void DisplayListStreamDispatcher::clipPath(const SkPath& path, ClipOp clip_op,
                                            bool is_aa) {
   startl() << "clipPath("
            << path << ", "
@@ -701,16 +773,12 @@ void DisplayListStreamDispatcher::drawArc(const SkRect& oval_bounds,
            << "use_center: " << use_center
            << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::drawPoints(SkCanvas::PointMode mode,
+void DisplayListStreamDispatcher::drawPoints(PointMode mode,
                                              uint32_t count,
                                              const SkPoint points[]) {
   startl() << "drawPoints(" << mode << ", ";
                           out_array("points", count, points)
            << ");" << std::endl;
-}
-void DisplayListStreamDispatcher::drawSkVertices(const sk_sp<SkVertices> vertices,
-                                                 SkBlendMode mode) {
-  startl() << "drawSkVertices(" << vertices << ", " << static_cast<int>(mode) << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::drawVertices(const DlVertices* vertices,
                                                DlBlendMode mode) {
@@ -725,7 +793,7 @@ void DisplayListStreamDispatcher::drawVertices(const DlVertices* vertices,
 }
 void DisplayListStreamDispatcher::drawImage(const sk_sp<DlImage> image,
                                             const SkPoint point,
-                                            const SkSamplingOptions& sampling,
+                                            DlImageSampling sampling,
                                             bool render_with_attributes) {
   startl() << "drawImage(" << image.get() << "," << std::endl;
   startl() << "          " << point << ", "
@@ -736,9 +804,9 @@ void DisplayListStreamDispatcher::drawImage(const sk_sp<DlImage> image,
 void DisplayListStreamDispatcher::drawImageRect(const sk_sp<DlImage> image,
                                                 const SkRect& src,
                                                 const SkRect& dst,
-                                                const SkSamplingOptions& sampling,
+                                                DlImageSampling sampling,
                                                 bool render_with_attributes,
-                                                SkCanvas::SrcRectConstraint constraint) {
+                                                SrcRectConstraint constraint) {
   startl() << "drawImageRect(" << image.get() << "," << std::endl;
   startl() << "              src: " << src << "," << std::endl;
   startl() << "              dst: " << dst << "," << std::endl;
@@ -750,7 +818,7 @@ void DisplayListStreamDispatcher::drawImageRect(const sk_sp<DlImage> image,
 void DisplayListStreamDispatcher::drawImageNine(const sk_sp<DlImage> image,
                                                 const SkIRect& center,
                                                 const SkRect& dst,
-                                                SkFilterMode filter,
+                                                DlFilterMode filter,
                                                 bool render_with_attributes) {
   startl() << "drawImageNine(" << image.get() << "," << std::endl;
   startl() << "              center: " << center << "," << std::endl;
@@ -759,20 +827,13 @@ void DisplayListStreamDispatcher::drawImageNine(const sk_sp<DlImage> image,
                                << "with attributes: " << render_with_attributes
            << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::drawImageLattice(const sk_sp<DlImage> image,
-                                                   const SkCanvas::Lattice& lattice,
-                                                   const SkRect& dst,
-                                                   SkFilterMode filter,
-                                                   bool render_with_attributes) {
-  startl() << "drawImageLattice(blah blah);" << std::endl;
-}
 void DisplayListStreamDispatcher::drawAtlas(const sk_sp<DlImage> atlas,
                                             const SkRSXform xform[],
                                             const SkRect tex[],
                                             const DlColor colors[],
                                             int count,
                                             DlBlendMode mode,
-                                            const SkSamplingOptions& sampling,
+                                            DlImageSampling sampling,
                                             const SkRect* cull_rect,
                                             bool render_with_attributes) {
   startl() << "drawAtlas(" << atlas.get() << ", ";
@@ -783,18 +844,13 @@ void DisplayListStreamDispatcher::drawAtlas(const sk_sp<DlImage> atlas,
                    << "with attributes: " << render_with_attributes
            << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::drawPicture(const sk_sp<SkPicture> picture,
-                                              const SkMatrix* matrix,
-                                              bool render_with_attributes) {
-  startl() << "drawPicture("
-           << "SkPicture(ID: " << picture->uniqueID() << ", bounds: " << picture->cullRect() << ", @" << picture << "), "
-           << matrix << ", "
-           << render_with_attributes
-           << ");" << std::endl;
-}
 void DisplayListStreamDispatcher::drawDisplayList(
-    const sk_sp<DisplayList> display_list) {
-  startl() << "drawDisplayList(ID: " << display_list->unique_id() << ", bounds: " << display_list->bounds() << ");" << std::endl;
+    const sk_sp<DisplayList> display_list, SkScalar opacity) {
+  startl() << "drawDisplayList("
+           << "ID: " << display_list->unique_id() << ", "
+           << "bounds: " << display_list->bounds() << ", "
+           << "opacity: " << opacity
+           << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                                SkScalar x,

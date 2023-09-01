@@ -6,6 +6,7 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import 'common.dart';
 
@@ -16,18 +17,18 @@ void main() {
 const ui.Rect kDefaultRegion = ui.Rect.fromLTRB(0, 0, 500, 250);
 
 void testMain() {
-  ui.debugEmulateFlutterTesterEnvironment = true;
+  ui_web.debugEmulateFlutterTesterEnvironment = true;
 
   group('flutter_tester emulation', () {
     setUpCanvasKitTest();
 
-    test('defaults to Ahem font family',
+    test('defaults to FlutterTest font family',
         () async {
       final CkPictureRecorder recorder = CkPictureRecorder();
       final CkCanvas canvas = recorder.beginRecording(kDefaultRegion);
       canvas.translate(10, 10);
 
-      void _drawTextWithOutline(String text, {
+      void drawTextWithOutline(String text, {
         String? paragraphFontFamily,
         String? textFontFamily,
         List<String>? textFontFallbacks,
@@ -82,25 +83,25 @@ void testMain() {
         );
       }
 
-      _drawTextWithOutline('default');
-      _drawTextWithOutline(
+      drawTextWithOutline('default');
+      drawTextWithOutline(
         'roboto paragraph',
         paragraphFontFamily: 'Roboto',
       );
-      _drawTextWithOutline(
+      drawTextWithOutline(
         'roboto text',
         textFontFamily: 'Roboto',
       );
-      _drawTextWithOutline(
+      drawTextWithOutline(
         'roboto text fallback',
         textFontFallbacks: <String>['Roboto'],
       );
-      _drawTextWithOutline(
+      drawTextWithOutline(
         'roboto strut style',
         strutStyleFontFamily: 'Roboto',
         strutStyleFontSize: 40,
       );
-      _drawTextWithOutline(
+      drawTextWithOutline(
         'roboto strut style fallback',
         strutStyleFontFallbacks: <String>['Roboto'],
         strutStyleFontSize: 40,
@@ -112,7 +113,6 @@ void testMain() {
         region: kDefaultRegion,
       );
     });
-    // TODO(yjbanov): https://github.com/flutter/flutter/issues/60040
     // TODO(yjbanov): https://github.com/flutter/flutter/issues/71520
-  }, skip: isIosSafari || isFirefox);
+  }, skip: isSafari || isFirefox);
 }

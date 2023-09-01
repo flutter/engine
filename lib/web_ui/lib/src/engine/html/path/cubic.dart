@@ -5,7 +5,6 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import '../../util.dart';
 import 'path_utils.dart';
 
 /// Chops cubic at Y extrema points and writes result to [dest].
@@ -16,8 +15,8 @@ int chopCubicAtYExtrema(Float32List points, Float32List dest) {
   final double y1 = points[3];
   final double y2 = points[5];
   final double y3 = points[7];
-  final QuadRoots _quadRoots = _findCubicExtrema(y0, y1, y2, y3);
-  final List<double> roots = _quadRoots.roots;
+  final QuadRoots quadRoots = _findCubicExtrema(y0, y1, y2, y3);
+  final List<double> roots = quadRoots.roots;
   if (roots.isEmpty) {
     // No roots, just use input cubic.
     return 0;
@@ -45,7 +44,7 @@ QuadRoots _findCubicExtrema(double a, double b, double c, double d) {
 /// Subdivides cubic curve for a list of t values.
 void _chopCubicAt(
     List<double> tValues, Float32List points, Float32List outPts) {
-  if (assertionsEnabled) {
+  assert(() {
     for (int i = 0; i < tValues.length - 1; i++) {
       final double tValue = tValues[i];
       assert(tValue > 0 && tValue < 1,
@@ -57,7 +56,8 @@ void _chopCubicAt(
       assert(
           nextTValue > tValue, 'Expecting t value to monotonically increase');
     }
-  }
+    return true;
+  }());
   final int rootCount = tValues.length;
   if (0 == rootCount) {
     for (int i = 0; i < 8; i++) {
@@ -138,12 +138,12 @@ void _chopCubicAtT(Float32List points, int bufferPos, Float32List outPts,
 //
 // Options are Newton Raphson (quadratic convergence with typically
 // 3 iterations or bisection with 16 iterations.
-double? chopMonoAtY(Float32List _buffer, int bufferStartPos, double y) {
+double? chopMonoAtY(Float32List buffer, int bufferStartPos, double y) {
   // Translate curve points relative to y.
-  final double ycrv0 = _buffer[1 + bufferStartPos] - y;
-  final double ycrv1 = _buffer[3 + bufferStartPos] - y;
-  final double ycrv2 = _buffer[5 + bufferStartPos] - y;
-  final double ycrv3 = _buffer[7 + bufferStartPos] - y;
+  final double ycrv0 = buffer[1 + bufferStartPos] - y;
+  final double ycrv1 = buffer[3 + bufferStartPos] - y;
+  final double ycrv2 = buffer[5 + bufferStartPos] - y;
+  final double ycrv3 = buffer[7 + bufferStartPos] - y;
   // Positive and negative function parameters.
   double tNeg, tPos;
   // Set initial t points to converge from.

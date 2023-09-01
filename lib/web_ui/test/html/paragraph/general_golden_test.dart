@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:html' as html;
 import 'dart:math' as math;
 
 import 'package:test/bootstrap/browser.dart';
@@ -11,10 +10,8 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' hide window;
 
+import '../../common/test_initialization.dart';
 import 'helper.dart';
-import 'text_scuba.dart';
-
-typedef CanvasTest = FutureOr<void> Function(EngineCanvas canvas);
 
 const Rect bounds = Rect.fromLTWH(0, 0, 800, 600);
 
@@ -23,7 +20,10 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpStableTestFonts();
+  setUpUnitTests(
+    emulateTesterEnvironment: false,
+    setUpTestViewDimensions: false,
+  );
 
   test('paints spans and lines correctly', () {
     final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
@@ -114,7 +114,7 @@ Future<void> testMain() async {
   });
 
   test('respects alignment in DOM mode', () {
-    final DomCanvas canvas = DomCanvas(html.document.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
 
     Offset offset = Offset.zero;
     CanvasParagraph paragraph;
@@ -151,7 +151,7 @@ Future<void> testMain() async {
     canvas.drawParagraph(paragraph, offset);
     offset = offset.translate(0, paragraph.height + 10);
 
-    return takeScreenshot(canvas, bounds, 'canvas_paragraph_align_dom', maxDiffRatePercent: 0.3);
+    return takeScreenshot(canvas, bounds, 'canvas_paragraph_align_dom');
   });
 
   void testAlignAndTransform(EngineCanvas canvas) {
@@ -175,7 +175,7 @@ Future<void> testMain() async {
       canvas.translate(offset.dx, offset.dy);
       canvas.rotate(math.pi / 4);
       final Rect rect = Rect.fromLTRB(0.0, 0.0, 150.0, paragraph.height);
-      canvas.drawRect(rect, SurfacePaintData()..color = black);
+      canvas.drawRect(rect, SurfacePaintData()..color = black.value);
       canvas.drawParagraph(paragraph, Offset.zero);
       canvas.restore();
     }
@@ -192,7 +192,7 @@ Future<void> testMain() async {
   });
 
   test('alignment and transform (DOM)', () {
-    final DomCanvas canvas = DomCanvas(html.document.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
     testAlignAndTransform(canvas);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_align_transform_dom');
   });
@@ -208,7 +208,7 @@ Future<void> testMain() async {
       },
     )..layout(constrain(double.infinity));
     final Rect rect = Rect.fromLTRB(0.0, 0.0, paragraph.maxIntrinsicWidth, paragraph.height);
-    canvas.drawRect(rect, SurfacePaintData()..color = black);
+    canvas.drawRect(rect, SurfacePaintData()..color = black.value);
     canvas.drawParagraph(paragraph, Offset.zero);
   }
 
@@ -221,7 +221,7 @@ Future<void> testMain() async {
 
   test('giant paragraph style (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 300, 200);
-    final DomCanvas canvas = DomCanvas(html.document.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
     testGiantParagraphStyles(canvas);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_giant_paragraph_style_dom');
   });
@@ -230,10 +230,10 @@ Future<void> testMain() async {
     const Rect bounds = Rect.fromLTWH(0, 0, 600, 200);
 
     // Store the old font size value on the body, and set a gaint font size.
-    final String oldBodyFontSize = html.document.body!.style.fontSize;
-    html.document.body!.style.fontSize = '100px';
+    final String oldBodyFontSize = domDocument.body!.style.fontSize;
+    domDocument.body!.style.fontSize = '100px';
 
-    final DomCanvas canvas = DomCanvas(html.document.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
     Offset offset = const Offset(10.0, 10.0);
 
     final CanvasParagraph paragraph = rich(
@@ -246,7 +246,7 @@ Future<void> testMain() async {
       },
     )..layout(constrain(double.infinity));
     final Rect rect = Rect.fromLTWH(offset.dx, offset.dy, paragraph.maxIntrinsicWidth, paragraph.height);
-    canvas.drawRect(rect, SurfacePaintData()..color = black);
+    canvas.drawRect(rect, SurfacePaintData()..color = black.value);
     canvas.drawParagraph(paragraph, offset);
     offset = offset.translate(paragraph.maxIntrinsicWidth, 0.0);
 
@@ -265,7 +265,7 @@ Future<void> testMain() async {
       },
     )..layout(constrain(double.infinity));
     final Rect rect2 = Rect.fromLTWH(offset.dx, offset.dy, paragraph2.maxIntrinsicWidth, paragraph2.height);
-    canvas.drawRect(rect2, SurfacePaintData()..color = black);
+    canvas.drawRect(rect2, SurfacePaintData()..color = black.value);
     canvas.drawParagraph(paragraph2, offset);
     // Draw a rect in the placeholder.
     // Leave some padding around the placeholder to make the black paragraph
@@ -274,13 +274,13 @@ Future<void> testMain() async {
     final TextBox placeholderBox = paragraph2.getBoxesForPlaceholders().single;
     canvas.drawRect(
       placeholderBox.toRect().shift(offset).deflate(padding),
-      SurfacePaintData()..color = red,
+      SurfacePaintData()..color = red.value,
     );
 
     await takeScreenshot(canvas, bounds, 'canvas_paragraph_giant_body_font_size_dom');
 
     // Restore the old font size value.
-    html.document.body!.style.fontSize = oldBodyFontSize;
+    domDocument.body!.style.fontSize = oldBodyFontSize;
   });
 
   test('paints spans with varying heights/baselines', () {
@@ -462,7 +462,7 @@ Future<void> testMain() async {
 
   test('font features (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 600, 500);
-    final DomCanvas canvas = DomCanvas(html.document.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
     testFontFeatures(canvas);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_font_features_dom');
   });
@@ -505,7 +505,7 @@ Future<void> testMain() async {
 
   test('font variations (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 600, 500);
-    final DomCanvas canvas = DomCanvas(html.document.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
     testFontVariations(canvas);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_font_variations_dom');
   });
@@ -541,7 +541,7 @@ Future<void> testMain() async {
 
   test('background style (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 300, 200);
-    final DomCanvas canvas = DomCanvas(html.document.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
     testBackgroundStyle(canvas);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_background_style_dom');
   });
@@ -579,7 +579,7 @@ Future<void> testMain() async {
 
   test('foreground style (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 300, 200);
-    final DomCanvas canvas = DomCanvas(html.document.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
     testForegroundStyle(canvas);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_foreground_style_dom');
   });
@@ -633,7 +633,7 @@ Future<void> testMain() async {
     canvas.drawRect(
       paragraph.paintBounds,
       SurfacePaintData()
-        ..color = const Color(0xFF00FF00)
+        ..color = 0xFF00FF00
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1,
     );

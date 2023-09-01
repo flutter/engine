@@ -6,33 +6,38 @@
 
 #include "flutter/fml/closure.h"
 #include "flutter/fml/logging.h"
+#include "flutter/fml/make_copyable.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/backend_cast.h"
+#include "impeller/core/formats.h"
+#include "impeller/core/host_buffer.h"
+#include "impeller/core/shader_types.h"
+#include "impeller/renderer/backend/metal/context_mtl.h"
 #include "impeller/renderer/backend/metal/device_buffer_mtl.h"
 #include "impeller/renderer/backend/metal/formats_mtl.h"
 #include "impeller/renderer/backend/metal/pipeline_mtl.h"
 #include "impeller/renderer/backend/metal/sampler_mtl.h"
 #include "impeller/renderer/backend/metal/texture_mtl.h"
-#include "impeller/renderer/formats.h"
-#include "impeller/renderer/host_buffer.h"
-#include "impeller/renderer/shader_types.h"
+#include "impeller/renderer/vertex_descriptor.h"
 
 namespace impeller {
 
 static bool ConfigureResolveTextureAttachment(
     const Attachment& desc,
     MTLRenderPassAttachmentDescriptor* attachment) {
-  if (desc.store_action == StoreAction::kMultisampleResolve &&
-      !desc.resolve_texture) {
+  bool needs_resolve =
+      desc.store_action == StoreAction::kMultisampleResolve ||
+      desc.store_action == StoreAction::kStoreAndMultisampleResolve;
+
+  if (needs_resolve && !desc.resolve_texture) {
     VALIDATION_LOG << "Resolve store action specified on attachment but no "
                       "resolve texture was specified.";
     return false;
   }
 
-  if (desc.resolve_texture &&
-      desc.store_action != StoreAction::kMultisampleResolve) {
-    VALIDATION_LOG << "Resolve store action specified but there was no "
-                      "resolve attachment.";
+  if (desc.resolve_texture && !needs_resolve) {
+    VALIDATION_LOG << "A resolve texture was specified even though the store "
+                      "action doesn't require it.";
     return false;
   }
 
@@ -128,8 +133,10 @@ static MTLRenderPassDescriptor* ToMTLRenderPassDescriptor(
   return result;
 }
 
-RenderPassMTL::RenderPassMTL(id<MTLCommandBuffer> buffer, RenderTarget target)
-    : RenderPass(std::move(target)),
+RenderPassMTL::RenderPassMTL(std::weak_ptr<const Context> context,
+                             const RenderTarget& target,
+                             id<MTLCommandBuffer> buffer)
+    : RenderPass(std::move(context), target),
       buffer_(buffer),
       desc_(ToMTLRenderPassDescriptor(GetRenderTarget())) {
   if (!buffer_ || !desc_ || !render_target_.IsValid()) {
@@ -151,8 +158,7 @@ void RenderPassMTL::OnSetLabel(std::string label) {
   label_ = std::move(label);
 }
 
-bool RenderPassMTL::EncodeCommands(
-    const std::shared_ptr<Allocator>& transients_allocator) const {
+bool RenderPassMTL::OnEncodeCommands(const Context& context) const {
   TRACE_EVENT0("impeller", "RenderPassMTL::EncodeCommands");
   if (!IsValid()) {
     return false;
@@ -173,7 +179,7 @@ bool RenderPassMTL::EncodeCommands(
   fml::ScopedCleanupClosure auto_end(
       [render_command_encoder]() { [render_command_encoder endEncoding]; });
 
-  return EncodeCommands(transients_allocator, render_command_encoder);
+  return EncodeCommands(context.GetResourceAllocator(), render_command_encoder);
 }
 
 //-----------------------------------------------------------------------------
@@ -186,7 +192,8 @@ bool RenderPassMTL::EncodeCommands(
 ///             absent.
 ///
 struct PassBindingsCache {
-  PassBindingsCache(id<MTLRenderCommandEncoder> encoder) : encoder_(encoder) {}
+  explicit PassBindingsCache(id<MTLRenderCommandEncoder> encoder)
+      : encoder_(encoder) {}
 
   PassBindingsCache(const PassBindingsCache&) = delete;
 
@@ -298,6 +305,36 @@ struct PassBindingsCache {
     return false;
   }
 
+  void SetViewport(const Viewport& viewport) {
+    if (viewport_.has_value() && viewport_.value() == viewport) {
+      return;
+    }
+    [encoder_ setViewport:MTLViewport{
+                              .originX = viewport.rect.origin.x,
+                              .originY = viewport.rect.origin.y,
+                              .width = viewport.rect.size.width,
+                              .height = viewport.rect.size.height,
+                              .znear = viewport.depth_range.z_near,
+                              .zfar = viewport.depth_range.z_far,
+                          }];
+    viewport_ = viewport;
+  }
+
+  void SetScissor(const IRect& scissor) {
+    if (scissor_.has_value() && scissor_.value() == scissor) {
+      return;
+    }
+    [encoder_
+        setScissorRect:MTLScissorRect{
+                           .x = static_cast<NSUInteger>(scissor.origin.x),
+                           .y = static_cast<NSUInteger>(scissor.origin.y),
+                           .width = static_cast<NSUInteger>(scissor.size.width),
+                           .height =
+                               static_cast<NSUInteger>(scissor.size.height),
+                       }];
+    scissor_ = scissor;
+  }
+
  private:
   struct BufferOffsetPair {
     id<MTLBuffer> buffer = nullptr;
@@ -313,6 +350,8 @@ struct PassBindingsCache {
   std::map<ShaderStage, BufferMap> buffers_;
   std::map<ShaderStage, TextureMap> textures_;
   std::map<ShaderStage, SamplerMap> samplers_;
+  std::optional<Viewport> viewport_;
+  std::optional<IRect> scissor_;
 };
 
 static bool Bind(PassBindingsCache& pass,
@@ -341,24 +380,25 @@ static bool Bind(PassBindingsCache& pass,
 static bool Bind(PassBindingsCache& pass,
                  ShaderStage stage,
                  size_t bind_index,
+                 const Sampler& sampler,
                  const Texture& texture) {
-  if (!texture.IsValid()) {
+  if (!sampler.IsValid() || !texture.IsValid()) {
     return false;
+  }
+
+  if (texture.NeedsMipmapGeneration()) {
+    // TODO(127697): generate mips when the GPU is available on iOS.
+#if !FML_OS_IOS
+    VALIDATION_LOG
+        << "Texture at binding index " << bind_index
+        << " has a mip count > 1, but the mipmap has not been generated.";
+    return false;
+#endif  // !FML_OS_IOS
   }
 
   return pass.SetTexture(stage, bind_index,
-                         TextureMTL::Cast(texture).GetMTLTexture());
-}
-
-static bool Bind(PassBindingsCache& pass,
-                 ShaderStage stage,
-                 size_t bind_index,
-                 const Sampler& sampler) {
-  if (!sampler.IsValid()) {
-    return false;
-  }
-
-  return pass.SetSampler(stage, bind_index,
+                         TextureMTL::Cast(texture).GetMTLTexture()) &&
+         pass.SetSampler(stage, bind_index,
                          SamplerMTL::Cast(sampler).GetMTLSamplerState());
 }
 
@@ -368,21 +408,22 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
   auto bind_stage_resources = [&allocator, &pass_bindings](
                                   const Bindings& bindings,
                                   ShaderStage stage) -> bool {
+    if (stage == ShaderStage::kVertex) {
+      if (!Bind(pass_bindings, *allocator, stage,
+                VertexDescriptor::kReservedVertexBufferIndex,
+                bindings.vertex_buffer.view.resource)) {
+        return false;
+      }
+    }
     for (const auto& buffer : bindings.buffers) {
       if (!Bind(pass_bindings, *allocator, stage, buffer.first,
-                buffer.second.resource)) {
+                buffer.second.view.resource)) {
         return false;
       }
     }
-    for (const auto& texture : bindings.textures) {
-      if (!Bind(pass_bindings, stage, texture.first,
-                *texture.second.resource)) {
-        return false;
-      }
-    }
-    for (const auto& sampler : bindings.samplers) {
-      if (!Bind(pass_bindings, stage, sampler.first,
-                *sampler.second.resource)) {
+    for (const auto& data : bindings.sampled_images) {
+      if (!Bind(pass_bindings, stage, data.first, *data.second.sampler.resource,
+                *data.second.texture.resource)) {
         return false;
       }
     }
@@ -393,28 +434,29 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
 
   fml::closure pop_debug_marker = [encoder]() { [encoder popDebugGroup]; };
   for (const auto& command : commands_) {
-    if (command.index_count == 0u) {
+    if (command.vertex_count == 0u) {
       continue;
     }
     if (command.instance_count == 0u) {
       continue;
     }
 
+#ifdef IMPELLER_DEBUG
     fml::ScopedCleanupClosure auto_pop_debug_marker(pop_debug_marker);
     if (!command.label.empty()) {
       [encoder pushDebugGroup:@(command.label.c_str())];
     } else {
       auto_pop_debug_marker.Release();
     }
+#endif  // IMPELLER_DEBUG
 
-    if (target_sample_count !=
-        command.pipeline->GetDescriptor().GetSampleCount()) {
+    const auto& pipeline_desc = command.pipeline->GetDescriptor();
+    if (target_sample_count != pipeline_desc.GetSampleCount()) {
       VALIDATION_LOG << "Pipeline for command and the render target disagree "
                         "on sample counts (target was "
                      << static_cast<uint64_t>(target_sample_count)
                      << " but pipeline wanted "
-                     << static_cast<uint64_t>(
-                            command.pipeline->GetDescriptor().GetSampleCount())
+                     << static_cast<uint64_t>(pipeline_desc.GetSampleCount())
                      << ").";
       return false;
     }
@@ -423,33 +465,20 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
         PipelineMTL::Cast(*command.pipeline).GetMTLRenderPipelineState());
     pass_bindings.SetDepthStencilState(
         PipelineMTL::Cast(*command.pipeline).GetMTLDepthStencilState());
-    [encoder setFrontFacingWinding:command.winding == WindingOrder::kClockwise
+    pass_bindings.SetViewport(command.viewport.value_or<Viewport>(
+        {.rect = Rect::MakeSize(GetRenderTargetSize())}));
+    pass_bindings.SetScissor(
+        command.scissor.value_or(IRect::MakeSize(GetRenderTargetSize())));
+
+    [encoder setFrontFacingWinding:pipeline_desc.GetWindingOrder() ==
+                                           WindingOrder::kClockwise
                                        ? MTLWindingClockwise
                                        : MTLWindingCounterClockwise];
-    [encoder setCullMode:ToMTLCullMode(command.cull_mode)];
+    [encoder setCullMode:ToMTLCullMode(pipeline_desc.GetCullMode())];
+    [encoder setTriangleFillMode:ToMTLTriangleFillMode(
+                                     pipeline_desc.GetPolygonMode())];
     [encoder setStencilReferenceValue:command.stencil_reference];
-    if (command.viewport.has_value()) {
-      auto v = command.viewport.value();
-      MTLViewport viewport = {
-          .originX = v.rect.origin.x,
-          .originY = v.rect.origin.y,
-          .width = v.rect.size.width,
-          .height = v.rect.size.height,
-          .znear = v.depth_range.z_near,
-          .zfar = v.depth_range.z_far,
-      };
-      [encoder setViewport:viewport];
-    }
-    if (command.scissor.has_value()) {
-      auto s = command.scissor.value();
-      MTLScissorRect scissor = {
-          .x = static_cast<NSUInteger>(s.origin.x),
-          .y = static_cast<NSUInteger>(s.origin.y),
-          .width = static_cast<NSUInteger>(s.size.width),
-          .height = static_cast<NSUInteger>(s.size.height),
-      };
-      [encoder setScissorRect:scissor];
-    }
+
     if (!bind_stage_resources(command.vertex_bindings, ShaderStage::kVertex)) {
       return false;
     }
@@ -457,6 +486,28 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
                               ShaderStage::kFragment)) {
       return false;
     }
+
+    const PrimitiveType primitive_type = pipeline_desc.GetPrimitiveType();
+    if (command.index_type == IndexType::kNone) {
+      if (command.instance_count != 1u) {
+#if TARGET_OS_SIMULATOR
+        VALIDATION_LOG << "iOS Simulator does not support instanced rendering.";
+        return false;
+#else   // TARGET_OS_SIMULATOR
+        [encoder drawPrimitives:ToMTLPrimitiveType(primitive_type)
+                    vertexStart:command.base_vertex
+                    vertexCount:command.vertex_count
+                  instanceCount:command.instance_count
+                   baseInstance:0u];
+#endif  // TARGET_OS_SIMULATOR
+      } else {
+        [encoder drawPrimitives:ToMTLPrimitiveType(primitive_type)
+                    vertexStart:command.base_vertex
+                    vertexCount:command.vertex_count];
+      }
+      continue;
+    }
+
     if (command.index_type == IndexType::kUnknown) {
       return false;
     }
@@ -473,18 +524,32 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
     if (!mtl_index_buffer) {
       return false;
     }
-    FML_DCHECK(command.index_count *
+
+    FML_DCHECK(command.vertex_count *
                    (command.index_type == IndexType::k16bit ? 2 : 4) ==
                command.index_buffer.range.length);
-    // Returns void. All error checking must be done by this point.
-    [encoder drawIndexedPrimitives:ToMTLPrimitiveType(command.primitive_type)
-                        indexCount:command.index_count
-                         indexType:ToMTLIndexType(command.index_type)
-                       indexBuffer:mtl_index_buffer
-                 indexBufferOffset:command.index_buffer.range.offset
-                     instanceCount:command.instance_count
-                        baseVertex:command.base_vertex
-                      baseInstance:0u];
+
+    if (command.instance_count != 1u) {
+#if TARGET_OS_SIMULATOR
+      VALIDATION_LOG << "iOS Simulator does not support instanced rendering.";
+      return false;
+#else   // TARGET_OS_SIMULATOR
+      [encoder drawIndexedPrimitives:ToMTLPrimitiveType(primitive_type)
+                          indexCount:command.vertex_count
+                           indexType:ToMTLIndexType(command.index_type)
+                         indexBuffer:mtl_index_buffer
+                   indexBufferOffset:command.index_buffer.range.offset
+                       instanceCount:command.instance_count
+                          baseVertex:command.base_vertex
+                        baseInstance:0u];
+#endif  // TARGET_OS_SIMULATOR
+    } else {
+      [encoder drawIndexedPrimitives:ToMTLPrimitiveType(primitive_type)
+                          indexCount:command.vertex_count
+                           indexType:ToMTLIndexType(command.index_type)
+                         indexBuffer:mtl_index_buffer
+                   indexBufferOffset:command.index_buffer.range.offset];
+    }
   }
   return true;
 }

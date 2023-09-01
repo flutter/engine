@@ -4,6 +4,8 @@
 
 #include "flutter/shell/common/shell_io_manager.h"
 
+#include <utility>
+
 #include "flutter/fml/message_loop.h"
 #include "flutter/shell/common/context_options.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
@@ -12,21 +14,21 @@ namespace flutter {
 
 sk_sp<GrDirectContext> ShellIOManager::CreateCompatibleResourceLoadingContext(
     GrBackend backend,
-    sk_sp<const GrGLInterface> gl_interface) {
+    const sk_sp<const GrGLInterface>& gl_interface) {
+#if SK_GL
   if (backend != GrBackend::kOpenGL_GrBackend) {
     return nullptr;
   }
 
   const auto options = MakeDefaultContextOptions(ContextType::kResource);
 
-#if !OS_FUCHSIA
   if (auto context = GrDirectContext::MakeGL(gl_interface, options)) {
     // Do not cache textures created by the image decoder.  These textures
     // should be deleted when they are no longer referenced by an SkImage.
     context->setResourceCacheLimit(0);
     return context;
   }
-#endif
+#endif  // SK_GL
 
   return nullptr;
 }
@@ -46,8 +48,9 @@ ShellIOManager::ShellIOManager(
       unref_queue_(fml::MakeRefCounted<flutter::SkiaUnrefQueue>(
           std::move(unref_queue_task_runner),
           unref_queue_drain_delay,
-          resource_context_)),
-      is_gpu_disabled_sync_switch_(is_gpu_disabled_sync_switch),
+          resource_context_,
+          /*drain_immediate=*/!!impeller_context)),
+      is_gpu_disabled_sync_switch_(std::move(is_gpu_disabled_sync_switch)),
       impeller_context_(std::move(impeller_context)),
       weak_factory_(this) {
   if (!resource_context_) {

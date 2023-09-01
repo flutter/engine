@@ -2,14 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-uniform sampler2D texture_sampler;
+precision mediump float;
 
-in vec2 v_texture_coords;
-in float v_alpha;
+#include <impeller/constants.glsl>
+#include <impeller/types.glsl>
 
-out vec4 frag_color;
+uniform f16sampler2D texture_sampler;
+
+in highp vec2 v_texture_coords;
+IMPELLER_MAYBE_FLAT in float16_t v_alpha;
+
+out f16vec4 frag_color;
 
 void main() {
-  vec4 sampled = texture(texture_sampler, v_texture_coords);
+  f16vec4 sampled =
+      texture(texture_sampler, v_texture_coords, kDefaultMipBiasHalf);
   frag_color = sampled * v_alpha;
 }

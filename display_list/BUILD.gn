@@ -4,62 +4,95 @@
 
 import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
+import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/testing/testing.gni")
+
+config("display_list_config") {
+  defines = []
+
+  if (impeller_enable_3d) {
+    defines += [ "IMPELLER_ENABLE_3D" ]
+  }
+}
 
 source_set("display_list") {
   sources = [
+    "benchmarking/dl_complexity.cc",
+    "benchmarking/dl_complexity.h",
+    "benchmarking/dl_complexity_gl.cc",
+    "benchmarking/dl_complexity_gl.h",
+    "benchmarking/dl_complexity_metal.cc",
+    "benchmarking/dl_complexity_metal.h",
     "display_list.cc",
     "display_list.h",
-    "display_list_attributes.h",
-    "display_list_blend_mode.cc",
-    "display_list_blend_mode.h",
-    "display_list_builder.cc",
-    "display_list_builder.h",
-    "display_list_canvas_dispatcher.cc",
-    "display_list_canvas_dispatcher.h",
-    "display_list_canvas_recorder.cc",
-    "display_list_canvas_recorder.h",
-    "display_list_color.h",
-    "display_list_color_filter.cc",
-    "display_list_color_filter.h",
-    "display_list_color_source.cc",
-    "display_list_color_source.h",
-    "display_list_complexity.cc",
-    "display_list_complexity.h",
-    "display_list_complexity_gl.cc",
-    "display_list_complexity_gl.h",
-    "display_list_complexity_metal.cc",
-    "display_list_complexity_metal.h",
-    "display_list_dispatcher.cc",
-    "display_list_dispatcher.h",
-    "display_list_flags.cc",
-    "display_list_flags.h",
-    "display_list_image.cc",
-    "display_list_image.h",
-    "display_list_image_filter.cc",
-    "display_list_image_filter.h",
-    "display_list_image_skia.cc",
-    "display_list_image_skia.h",
-    "display_list_mask_filter.cc",
-    "display_list_mask_filter.h",
-    "display_list_ops.cc",
-    "display_list_ops.h",
-    "display_list_paint.cc",
-    "display_list_paint.h",
-    "display_list_path_effect.cc",
-    "display_list_path_effect.h",
-    "display_list_tile_mode.h",
-    "display_list_utils.cc",
-    "display_list_utils.h",
-    "display_list_vertices.cc",
-    "display_list_vertices.h",
-    "types.h",
+    "dl_attributes.h",
+    "dl_blend_mode.cc",
+    "dl_blend_mode.h",
+    "dl_builder.cc",
+    "dl_builder.h",
+    "dl_canvas.cc",
+    "dl_canvas.h",
+    "dl_color.h",
+    "dl_op_flags.cc",
+    "dl_op_flags.h",
+    "dl_op_receiver.cc",
+    "dl_op_receiver.h",
+    "dl_op_records.cc",
+    "dl_op_records.h",
+    "dl_paint.cc",
+    "dl_paint.h",
+    "dl_sampling_options.h",
+    "dl_tile_mode.h",
+    "dl_vertices.cc",
+    "dl_vertices.h",
+    "effects/dl_color_filter.cc",
+    "effects/dl_color_filter.h",
+    "effects/dl_color_source.cc",
+    "effects/dl_color_source.h",
+    "effects/dl_image_filter.cc",
+    "effects/dl_image_filter.h",
+    "effects/dl_mask_filter.cc",
+    "effects/dl_mask_filter.h",
+    "effects/dl_path_effect.cc",
+    "effects/dl_path_effect.h",
+    "effects/dl_runtime_effect.cc",
+    "effects/dl_runtime_effect.h",
+    "geometry/dl_region.cc",
+    "geometry/dl_region.h",
+    "geometry/dl_rtree.cc",
+    "geometry/dl_rtree.h",
+    "image/dl_image.cc",
+    "image/dl_image.h",
+    "image/dl_image_skia.cc",
+    "image/dl_image_skia.h",
+    "skia/dl_sk_canvas.cc",
+    "skia/dl_sk_canvas.h",
+    "skia/dl_sk_conversions.cc",
+    "skia/dl_sk_conversions.h",
+    "skia/dl_sk_dispatcher.cc",
+    "skia/dl_sk_dispatcher.h",
+    "skia/dl_sk_paint_dispatcher.cc",
+    "skia/dl_sk_paint_dispatcher.h",
+    "skia/dl_sk_types.h",
+    "utils/dl_bounds_accumulator.cc",
+    "utils/dl_bounds_accumulator.h",
+    "utils/dl_matrix_clip_tracker.cc",
+    "utils/dl_matrix_clip_tracker.h",
+    "utils/dl_receiver_utils.cc",
+    "utils/dl_receiver_utils.h",
   ]
+
+  public_configs = [ ":display_list_config" ]
 
   public_deps = [
     "//flutter/fml",
+    "//flutter/impeller/runtime_stage",
     "//third_party/skia",
   ]
+
+  if (!defined(defines)) {
+    defines = []
+  }
 }
 
 if (enable_unittests) {
@@ -67,44 +100,31 @@ if (enable_unittests) {
     fixtures = []
   }
 
-  source_set("display_list_testing") {
-    testonly = true
-
-    sources = [
-      "display_list_attributes_testing.h",
-      "display_list_test_utils.cc",
-      "display_list_test_utils.h",
-    ]
-
-    deps = [
-      "//flutter/testing:testing_lib",
-      "//third_party/skia",
-    ]
-
-    public_deps = [ ":display_list" ]
-  }
-
   executable("display_list_unittests") {
     testonly = true
 
     sources = [
-      "display_list_color_filter_unittests.cc",
-      "display_list_color_source_unittests.cc",
-      "display_list_color_unittests.cc",
-      "display_list_complexity_unittests.cc",
-      "display_list_enum_unittests.cc",
-      "display_list_image_filter_unittests.cc",
-      "display_list_mask_filter_unittests.cc",
-      "display_list_paint_unittests.cc",
-      "display_list_path_effect_unittests.cc",
+      "benchmarking/dl_complexity_unittests.cc",
       "display_list_unittests.cc",
-      "display_list_vertices_unittests.cc",
+      "dl_color_unittests.cc",
+      "dl_paint_unittests.cc",
+      "dl_vertices_unittests.cc",
+      "effects/dl_color_filter_unittests.cc",
+      "effects/dl_color_source_unittests.cc",
+      "effects/dl_image_filter_unittests.cc",
+      "effects/dl_mask_filter_unittests.cc",
+      "effects/dl_path_effect_unittests.cc",
+      "geometry/dl_region_unittests.cc",
+      "geometry/dl_rtree_unittests.cc",
+      "skia/dl_sk_conversions_unittests.cc",
+      "skia/dl_sk_paint_dispatcher_unittests.cc",
+      "utils/dl_matrix_clip_tracker_unittests.cc",
     ]
 
     deps = [
       ":display_list",
       ":display_list_fixtures",
-      ":display_list_testing",
+      "//flutter/display_list/testing:display_list_testing",
       "//flutter/testing",
     ]
 
@@ -126,12 +146,14 @@ if (enable_unittests) {
   executable("display_list_rendertests") {
     testonly = true
 
-    sources = [ "display_list_canvas_unittests.cc" ]
+    sources = [ "testing/dl_rendering_unittests.cc" ]
 
     deps = [
       ":display_list",
       ":display_list_fixtures",
-      ":display_list_testing",
+      "//flutter/common/graphics",
+      "//flutter/display_list/testing:display_list_surface_provider",
+      "//flutter/display_list/testing:display_list_testing",
       "//flutter/testing",
     ]
 
@@ -149,6 +171,32 @@ if (enable_unittests) {
           [ "${fuchsia_sdk_path}/arch/${target_cpu}/sysroot/lib/libzircon.so" ]
     }
   }
+
+  executable("display_list_builder_benchmarks") {
+    testonly = true
+
+    sources = [ "benchmarking/dl_builder_benchmarks.cc" ]
+
+    deps = [
+      ":display_list",
+      ":display_list_fixtures",
+      "//flutter/benchmarking",
+      "//flutter/display_list/testing:display_list_testing",
+      "//flutter/testing:testing_lib",
+    ]
+  }
+
+  executable("display_list_region_benchmarks") {
+    testonly = true
+
+    sources = [ "benchmarking/dl_region_benchmarks.cc" ]
+
+    deps = [
+      ":display_list_fixtures",
+      "//flutter/benchmarking",
+      "//flutter/testing:testing_lib",
+    ]
+  }
 }
 
 fixtures_location("display_list_benchmarks_fixtures") {
@@ -159,8 +207,8 @@ source_set("display_list_benchmarks_source") {
   testonly = true
 
   sources = [
-    "display_list_benchmarks.cc",
-    "display_list_benchmarks.h",
+    "benchmarking/dl_benchmarks.cc",
+    "benchmarking/dl_benchmarks.h",
   ]
 
   deps = [
@@ -168,55 +216,13 @@ source_set("display_list_benchmarks_source") {
     ":display_list_benchmarks_fixtures",
     "//flutter/benchmarking",
     "//flutter/common/graphics",
+    "//flutter/display_list/testing:display_list_surface_provider",
     "//flutter/fml",
     "//flutter/testing:skia",
     "//flutter/testing:testing_lib",
     "//third_party/dart/runtime:libdart_jit",  # for tracing
     "//third_party/skia",
   ]
-
-  defines = []
-
-  if (is_android) {
-    libs = [
-      "android",
-      "EGL",
-      "GLESv2",
-    ]
-  }
-
-  # We only do software benchmarks on non-mobile platforms
-  if (!is_android && !is_ios) {
-    sources += [
-      "display_list_benchmarks_software.cc",
-      "display_list_benchmarks_software.h",
-    ]
-    defines += [ "ENABLE_SOFTWARE_BENCHMARKS" ]
-  }
-
-  # iOS and Fuchsia don't support OpenGL
-  if (!is_fuchsia && !is_ios) {
-    defines += [ "ENABLE_OPENGL_BENCHMARKS" ]
-    sources += [
-      "display_list_benchmarks_gl.cc",
-      "display_list_benchmarks_gl.h",
-    ]
-    deps += [ "//flutter/testing:opengl" ]
-  }
-
-  if (is_mac || is_ios) {
-    defines += [ "ENABLE_METAL_BENCHMARKS" ]
-    sources += [
-      "display_list_benchmarks_metal.cc",
-      "display_list_benchmarks_metal.h",
-    ]
-    deps += [ "//flutter/testing:metal" ]
-  }
-
-  # Don't snapshot test results on mobile platforms
-  if (is_android || is_ios) {
-    defines += [ "BENCHMARKS_NO_SNAPSHOT" ]
-  }
 }
 
 executable("display_list_benchmarks") {

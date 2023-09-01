@@ -141,9 +141,9 @@ std::unique_ptr<Config> Display::ChooseConfig(ConfigDescriptor config) const {
     if (sample_count > 1) {
       attributes.push_back(EGL_SAMPLE_BUFFERS);
       attributes.push_back(1);
+      attributes.push_back(EGL_SAMPLES);
+      attributes.push_back(sample_count);
     }
-    attributes.push_back(EGL_SAMPLES);
-    attributes.push_back(sample_count);
   }
 
   // termination sentinel must be present.
@@ -166,7 +166,7 @@ std::unique_ptr<Config> Display::ChooseConfig(ConfigDescriptor config) const {
     return nullptr;
   }
 
-  return std::make_unique<Config>(std::move(config), config_out);
+  return std::make_unique<Config>(config, config_out);
 }
 
 std::unique_ptr<Surface> Display::CreateWindowSurface(

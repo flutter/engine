@@ -5,6 +5,7 @@
 #include "flutter/lib/ui/painting/image_shader.h"
 #include "flutter/lib/ui/painting/image_filter.h"
 
+#include "flutter/lib/ui/painting/display_list_image_gpu.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
@@ -15,74 +16,56 @@ using tonic::ToDart;
 
 namespace flutter {
 
-static void ImageShader_constructor(Dart_NativeArguments args) {
-  DartCallConstructor(&ImageShader::Create, args);
-}
-
 IMPLEMENT_WRAPPERTYPEINFO(ui, ImageShader);
 
-#define FOR_EACH_BINDING(V) V(ImageShader, initWithImage)
-
-FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
-
-void ImageShader::RegisterNatives(tonic::DartLibraryNatives* natives) {
-  natives->Register(
-      {{"ImageShader_constructor", ImageShader_constructor, 1, true},
-       FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
+void ImageShader::Create(Dart_Handle wrapper) {
+  auto res = fml::MakeRefCounted<ImageShader>();
+  res->AssociateWithDartWrapper(wrapper);
 }
 
-fml::RefPtr<ImageShader> ImageShader::Create() {
-  return fml::MakeRefCounted<ImageShader>();
-}
+Dart_Handle ImageShader::initWithImage(CanvasImage* image,
+                                       DlTileMode tmx,
+                                       DlTileMode tmy,
+                                       int filter_quality_index,
+                                       Dart_Handle matrix_handle) {
+  // CanvasImage should have already checked for a UI thread safe image.
+  if (!image || !image->image()->isUIThreadSafe()) {
+    return ToDart("ImageShader constructor called with non-genuine Image.");
+  }
 
-void ImageShader::initWithImage(CanvasImage* image,
-                                SkTileMode tmx,
-                                SkTileMode tmy,
-                                int filter_quality_index,
-                                const tonic::Float64List& matrix4) {
-  if (!image) {
-    Dart_ThrowException(
-        ToDart("ImageShader constructor called with non-genuine Image."));
-    return;
-  }
-  auto raw_sk_image = image->image()->skia_image();
-  if (!raw_sk_image) {
-    Dart_ThrowException(
-        ToDart("ImageShader constructor with Impeller is not supported."));
-    return;
-  }
-  sk_image_ = UIDartState::CreateGPUObject(std::move(raw_sk_image));
+  image_ = image->image();
+  tonic::Float64List matrix4(matrix_handle);
   SkMatrix local_matrix = ToSkMatrix(matrix4);
+  matrix4.Release();
   sampling_is_locked_ = filter_quality_index >= 0;
-  SkSamplingOptions sampling =
+  DlImageSampling sampling =
       sampling_is_locked_ ? ImageFilter::SamplingFromIndex(filter_quality_index)
-                          : DisplayList::LinearSampling;
-  cached_shader_ = UIDartState::CreateGPUObject(sk_make_sp<DlImageColorSource>(
-      sk_image_.skia_object(), ToDl(tmx), ToDl(tmy), sampling, &local_matrix));
+                          : DlImageSampling::kLinear;
+  cached_shader_ = std::make_shared<DlImageColorSource>(
+      image_, tmx, tmy, sampling, &local_matrix);
+  FML_DCHECK(cached_shader_->isUIThreadSafe());
+  return Dart_Null();
 }
 
-std::shared_ptr<DlColorSource> ImageShader::shader(
-    SkSamplingOptions& sampling) {
-  if (sampling_is_locked_) {
-    sampling = cached_shader_.skia_object()->sampling();
+std::shared_ptr<DlColorSource> ImageShader::shader(DlImageSampling sampling) {
+  if (sampling_is_locked_ || sampling == cached_shader_->sampling()) {
+    return cached_shader_;
   }
-  // It might seem that if the sampling is locked we can just return the
-  // cached version, but since we need to hold the cached shader in a
-  // Skia GPU wrapper, and that wrapper requires an sk_sp<>, we are holding
-  // an sk_sp<> version of the shared object and we need a shared_ptr version.
-  // So, either way, we need the with_sampling() method to shared_ptr'ify
-  // our copy.
-  // If we can get rid of the need for the GPU unref queue, then this can all
-  // be simplified down to just a shared_ptr.
-  return cached_shader_.skia_object()->with_sampling(sampling);
+  return cached_shader_->with_sampling(sampling);
 }
 
 int ImageShader::width() {
-  return sk_image_.skia_object()->width();
+  return image_->width();
 }
 
 int ImageShader::height() {
-  return sk_image_.skia_object()->height();
+  return image_->height();
+}
+
+void ImageShader::dispose() {
+  cached_shader_.reset();
+  image_.reset();
+  ClearDartWrapper();
 }
 
 ImageShader::ImageShader() = default;

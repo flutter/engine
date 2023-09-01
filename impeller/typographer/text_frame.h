@@ -5,6 +5,7 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
+#include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/text_run.h"
 
 namespace impeller {
@@ -19,15 +20,21 @@ class TextFrame {
  public:
   TextFrame();
 
+  TextFrame(std::vector<TextRun>& runs, Rect bounds, bool has_color);
+
   ~TextFrame();
+
+  void CollectUniqueFontGlyphPairs(FontGlyphMap& glyph_map, Scalar scale) const;
+
+  static Scalar RoundScaledFontSize(Scalar scale, Scalar point_size);
 
   //----------------------------------------------------------------------------
   /// @brief      The conservative bounding box for this text frame.
   ///
   /// @return     The bounds rectangle. If there are no glyphs in this text
-  ///             frame, std::nullopt is returned.
+  ///             frame and empty Rectangle is returned instead.
   ///
-  std::optional<Rect> GetBounds() const;
+  Rect GetBounds() const;
 
   //----------------------------------------------------------------------------
   /// @brief      The number of runs in this text frame.
@@ -37,23 +44,34 @@ class TextFrame {
   size_t GetRunCount() const;
 
   //----------------------------------------------------------------------------
-  /// @brief      Adds a new text run to the text frame.
-  ///
-  /// @param[in]  run   The run
-  ///
-  /// @return     If the text run could be added to this frame.
-  ///
-  bool AddTextRun(TextRun run);
-
-  //----------------------------------------------------------------------------
   /// @brief      Returns a reference to all the text runs in this frame.
   ///
   /// @return     The runs in this frame.
   ///
   const std::vector<TextRun>& GetRuns() const;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Whether any of the glyphs of this run are potentially
+  /// overlapping
+  ///
+  ///             It is always safe to return true from this method. Generally,
+  ///             any large blobs of text should return true to avoid
+  ///             computationally complex calculations. This information is used
+  ///             to apply opacity peephole optimizations to text blobs.
+  bool MaybeHasOverlapping() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      The type of atlas this run should be emplaced in.
+  GlyphAtlas::Type GetAtlasType() const;
+
+  TextFrame& operator=(TextFrame&& other) = default;
+
+  TextFrame(const TextFrame& other) = default;
+
  private:
   std::vector<TextRun> runs_;
+  Rect bounds_;
+  bool has_color_ = false;
 };
 
 }  // namespace impeller

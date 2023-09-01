@@ -39,11 +39,7 @@ static MTLVertexFormat ReadStageInputFormat(const ShaderStageIOSlot& input) {
       if (input.bit_width == 8 * sizeof(float) / 2) {
         switch (input.vec_size) {
           case 1:
-            if (@available(macOS 10.13, iOS 11.0, *)) {
-              return MTLVertexFormatHalf;
-            } else {
-              return MTLVertexFormatInvalid;
-            }
+            return MTLVertexFormatHalf;
           case 2:
             return MTLVertexFormatHalf2;
           case 3:
@@ -60,11 +56,7 @@ static MTLVertexFormat ReadStageInputFormat(const ShaderStageIOSlot& input) {
     }
     case ShaderType::kBoolean: {
       if (input.bit_width == 8 * sizeof(bool) && input.vec_size == 1) {
-        if (@available(macOS 10.13, iOS 11.0, *)) {
-          return MTLVertexFormatChar;
-        } else {
-          return MTLVertexFormatInvalid;
-        }
+        return MTLVertexFormatChar;
       }
       return MTLVertexFormatInvalid;
     }
@@ -72,11 +64,7 @@ static MTLVertexFormat ReadStageInputFormat(const ShaderStageIOSlot& input) {
       if (input.bit_width == 8 * sizeof(char)) {
         switch (input.vec_size) {
           case 1:
-            if (@available(macOS 10.13, iOS 11.0, *)) {
-              return MTLVertexFormatChar;
-            } else {
-              return MTLVertexFormatInvalid;
-            }
+            return MTLVertexFormatChar;
           case 2:
             return MTLVertexFormatChar2;
           case 3:
@@ -91,11 +79,7 @@ static MTLVertexFormat ReadStageInputFormat(const ShaderStageIOSlot& input) {
       if (input.bit_width == 8 * sizeof(char)) {
         switch (input.vec_size) {
           case 1:
-            if (@available(macOS 10.13, iOS 11.0, *)) {
-              return MTLVertexFormatUChar;
-            } else {
-              return MTLVertexFormatInvalid;
-            }
+            return MTLVertexFormatUChar;
           case 2:
             return MTLVertexFormatUChar2;
           case 3:
@@ -110,11 +94,7 @@ static MTLVertexFormat ReadStageInputFormat(const ShaderStageIOSlot& input) {
       if (input.bit_width == 8 * sizeof(short)) {
         switch (input.vec_size) {
           case 1:
-            if (@available(macOS 10.13, iOS 11.0, *)) {
-              return MTLVertexFormatShort;
-            } else {
-              return MTLVertexFormatInvalid;
-            }
+            return MTLVertexFormatShort;
           case 2:
             return MTLVertexFormatShort2;
           case 3:
@@ -129,11 +109,7 @@ static MTLVertexFormat ReadStageInputFormat(const ShaderStageIOSlot& input) {
       if (input.bit_width == 8 * sizeof(ushort)) {
         switch (input.vec_size) {
           case 1:
-            if (@available(macOS 10.13, iOS 11.0, *)) {
-              return MTLVertexFormatUShort;
-            } else {
-              return MTLVertexFormatInvalid;
-            }
+            return MTLVertexFormatUShort;
           case 2:
             return MTLVertexFormatUShort2;
           case 3:
@@ -193,10 +169,14 @@ static MTLVertexFormat ReadStageInputFormat(const ShaderStageIOSlot& input) {
   }
 }
 
-bool VertexDescriptorMTL::SetStageInputs(
-    const std::vector<ShaderStageIOSlot>& inputs) {
-  stage_inputs_.clear();
+bool VertexDescriptorMTL::SetStageInputsAndLayout(
+    const std::vector<ShaderStageIOSlot>& inputs,
+    const std::vector<ShaderStageBufferLayout>& layouts) {
+  auto descriptor = descriptor_ = [MTLVertexDescriptor vertexDescriptor];
 
+  // TODO(jonahwilliams): its odd that we offset buffers from the max index on
+  // metal but not on GLES or Vulkan. We should probably consistently start
+  // these at zero?
   for (size_t i = 0; i < inputs.size(); i++) {
     const auto& input = inputs[i];
     auto vertex_format = ReadStageInputFormat(input);
@@ -204,38 +184,27 @@ bool VertexDescriptorMTL::SetStageInputs(
       VALIDATION_LOG << "Format for input " << input.name << " not supported.";
       return false;
     }
-
-    stage_inputs_.insert(StageInput{input.location, vertex_format,
-                                    (input.bit_width * input.vec_size) / 8});
+    auto attrib = descriptor.attributes[input.location];
+    attrib.format = vertex_format;
+    attrib.offset = input.offset;
+    attrib.bufferIndex =
+        VertexDescriptor::kReservedVertexBufferIndex - input.binding;
   }
 
+  for (size_t i = 0; i < layouts.size(); i++) {
+    const auto& layout = layouts[i];
+    auto vertex_layout =
+        descriptor.layouts[VertexDescriptor::kReservedVertexBufferIndex -
+                           layout.binding];
+    vertex_layout.stride = layout.stride;
+    vertex_layout.stepRate = 1u;
+    vertex_layout.stepFunction = MTLVertexStepFunctionPerVertex;
+  }
   return true;
 }
 
 MTLVertexDescriptor* VertexDescriptorMTL::GetMTLVertexDescriptor() const {
-  auto descriptor = [MTLVertexDescriptor vertexDescriptor];
-
-  const size_t vertex_buffer_index =
-      VertexDescriptor::kReservedVertexBufferIndex;
-
-  size_t offset = 0u;
-  for (const auto& input : stage_inputs_) {
-    auto attrib = descriptor.attributes[input.location];
-    attrib.format = input.format;
-    attrib.offset = offset;
-    // All vertex inputs are interleaved and tightly packed in one buffer at a
-    // reserved index.
-    attrib.bufferIndex = vertex_buffer_index;
-    offset += input.length;
-  }
-
-  // Since it's all in one buffer, indicate its layout.
-  auto vertex_layout = descriptor.layouts[vertex_buffer_index];
-  vertex_layout.stride = offset;
-  vertex_layout.stepRate = 1u;
-  vertex_layout.stepFunction = MTLVertexStepFunctionPerVertex;
-
-  return descriptor;
+  return descriptor_;
 }
 
 }  // namespace impeller

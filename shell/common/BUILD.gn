@@ -4,6 +4,7 @@
 
 import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
+import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/testing/testing.gni")
 
@@ -58,23 +59,38 @@ template("dart_embedder_resources") {
   }
 }
 
+source_set("platform_message_handler") {
+  sources = [ "platform_message_handler.h" ]
+  public_configs = [ "//flutter:config" ]
+  deps = [ "//flutter/fml:fml" ]
+}
+
+source_set("display") {
+  sources = [
+    "display.cc",
+    "display.h",
+    "variable_refresh_rate_display.cc",
+    "variable_refresh_rate_display.h",
+    "variable_refresh_rate_reporter.h",
+  ]
+  public_configs = [ "//flutter:config" ]
+  deps = [ "//flutter/fml:fml" ]
+}
+
 source_set("common") {
   sources = [
     "animator.cc",
     "animator.h",
-    "canvas_spy.cc",
-    "canvas_spy.h",
     "context_options.cc",
     "context_options.h",
-    "display.cc",
-    "display.h",
     "display_manager.cc",
     "display_manager.h",
+    "dl_op_spy.cc",
+    "dl_op_spy.h",
     "engine.cc",
     "engine.h",
     "pipeline.cc",
     "pipeline.h",
-    "platform_message_handler.h",
     "platform_view.cc",
     "platform_view.h",
     "pointer_data_dispatcher.cc",
@@ -93,14 +109,15 @@ source_set("common") {
     "shell_io_manager.h",
     "skia_event_tracer_impl.cc",
     "skia_event_tracer_impl.h",
+    "snapshot_controller.cc",
+    "snapshot_controller.h",
+    "snapshot_controller_skia.cc",
+    "snapshot_controller_skia.h",
     "snapshot_surface_producer.h",
     "switches.cc",
     "switches.h",
     "thread_host.cc",
     "thread_host.h",
-    "variable_refresh_rate_display.cc",
-    "variable_refresh_rate_display.h",
-    "variable_refresh_rate_reporter.h",
     "vsync_waiter.cc",
     "vsync_waiter.h",
     "vsync_waiter_fallback.cc",
@@ -110,6 +127,8 @@ source_set("common") {
   public_configs = [ "//flutter:config" ]
 
   public_deps = [
+    ":display",
+    ":platform_message_handler",
     "//flutter/shell/version",
     "//flutter/third_party/tonic",
     "//flutter/third_party/txt",
@@ -128,6 +147,15 @@ source_set("common") {
     "//third_party/dart/runtime:dart_api",
     "//third_party/skia",
   ]
+
+  if (impeller_supports_rendering) {
+    sources += [
+      "snapshot_controller_impeller.cc",
+      "snapshot_controller_impeller.h",
+    ]
+
+    deps += [ "//flutter/impeller" ]
+  }
 }
 
 template("shell_host_executable") {
@@ -229,16 +257,13 @@ if (enable_unittests) {
       ":shell_unittests_gpu_configuration_config",
     ]
 
-    # SwiftShader only supports x86/x86_64
-    if (target_cpu == "x86" || target_cpu == "x64") {
-      if (test_enable_gl) {
-        sources += [
-          "shell_test_platform_view_gl.cc",
-          "shell_test_platform_view_gl.h",
-        ]
+    if (test_enable_gl) {
+      sources += [
+        "shell_test_platform_view_gl.cc",
+        "shell_test_platform_view_gl.h",
+      ]
 
-        public_deps += [ "//flutter/testing:opengl" ]
-      }
+      public_deps += [ "//flutter/testing:opengl" ]
     }
 
     if (test_enable_vulkan) {
@@ -247,7 +272,10 @@ if (enable_unittests) {
         "shell_test_platform_view_vulkan.h",
       ]
 
-      public_deps += [ "//flutter/vulkan" ]
+      public_deps += [
+        "//flutter/flutter_vma:flutter_skia_vma",
+        "//flutter/vulkan",
+      ]
     }
 
     if (test_enable_metal) {
@@ -265,8 +293,8 @@ if (enable_unittests) {
 
     sources = [
       "animator_unittests.cc",
-      "canvas_spy_unittests.cc",
       "context_options_unittests.cc",
+      "dl_op_spy_unittests.cc",
       "engine_unittests.cc",
       "input_events_unittests.cc",
       "persistent_cache_unittests.cc",
@@ -274,9 +302,9 @@ if (enable_unittests) {
       "rasterizer_unittests.cc",
       "resource_cache_limit_calculator_unittests.cc",
       "shell_unittests.cc",
-      "skp_shader_warmup_unittests.cc",
       "switches_unittests.cc",
       "variable_refresh_rate_display_unittests.cc",
+      "vsync_waiter_unittests.cc",
     ]
 
     deps = [
@@ -299,9 +327,19 @@ if (enable_unittests) {
         "$fuchsia_sdk_root/pkg:fidl_cpp",
         "$fuchsia_sdk_root/pkg:sys_cpp",
       ]
-    } else {
-      # TODO(63837): This test is hard-coded to use a TestGLSurface so it cannot run on fuchsia.
+    } else if (shell_enable_gl) {
+      # TODO(63837): This test is hard-coded to use a TestGLSurface so it cannot
+      # run on fuchsia or when GL is not enabled.
       sources += [ "shell_io_manager_unittests.cc" ]
+      deps += [ "//third_party/swiftshader" ]
+    }
+
+    if (shell_enable_gl) {
+      deps += [
+        "//third_party/angle:libEGL_static",
+        "//third_party/angle:libGLESv2_static",
+        "//third_party/swiftshader",
+      ]
     }
   }
 }

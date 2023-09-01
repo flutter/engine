@@ -10,6 +10,7 @@
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterSemanticsScrollView.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
@@ -76,7 +77,7 @@ class MockDelegate : public PlatformView::Delegate {
   void OnPlatformViewDestroyed() override {}
   void OnPlatformViewScheduleFrame() override {}
   void OnPlatformViewSetNextFrameCallback(const fml::closure& closure) override {}
-  void OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) override {}
+  void OnPlatformViewSetViewportMetrics(int64_t view_id, const ViewportMetrics& metrics) override {}
   const flutter::Settings& OnPlatformViewGetSettings() const override { return settings_; }
   void OnPlatformViewDispatchPlatformMessage(std::unique_ptr<PlatformMessage> message) override {}
   void OnPlatformViewDispatchPointerDataPacket(std::unique_ptr<PointerDataPacket> packet) override {
@@ -148,7 +149,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/nil,
-      /*task_runners=*/runners);
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
   auto bridge =
       std::make_unique<flutter::AccessibilityBridge>(/*view=*/nil,
                                                      /*platform_view=*/platform_view.get(),
@@ -168,10 +171,12 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/nil,
-      /*task_runners=*/runners);
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
   id mockFlutterView = OCMClassMock([FlutterView class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
-  OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
+  OCMStub([mockFlutterViewController viewIfLoaded]).andReturn(mockFlutterView);
   OCMExpect([mockFlutterView setAccessibilityElements:[OCMArg isNil]]);
   auto bridge =
       std::make_unique<flutter::AccessibilityBridge>(/*view_controller=*/mockFlutterViewController,
@@ -195,7 +200,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/nil,
-      /*task_runners=*/runners);
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
   id mockFlutterView = OCMClassMock([FlutterView class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
@@ -240,7 +247,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/nil,
-      /*task_runners=*/runners);
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
   id mockFlutterView = OCMClassMock([FlutterView class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
@@ -270,7 +279,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
         /*delegate=*/mock_delegate,
         /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
         /*platform_views_controller=*/flutterPlatformViewsController,
-        /*task_runners=*/runners);
+        /*task_runners=*/runners,
+        /*worker_task_runner=*/nil,
+        /*is_gpu_disabled_sync_switch=*/nil);
     id mockFlutterView = OCMClassMock([FlutterView class]);
     id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
     OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
@@ -308,6 +319,56 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   XCTAssertNil(gMockPlatformView);
 }
 
+- (void)testSemanticsDeallocatedWithoutLoadingView {
+  id engine = OCMClassMock([FlutterEngine class]);
+  FlutterViewController* flutterViewController =
+      [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
+  @autoreleasepool {
+    flutter::MockDelegate mock_delegate;
+    auto thread_task_runner = CreateNewThread("AccessibilityBridgeTest");
+    flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
+                                 /*platform=*/thread_task_runner,
+                                 /*raster=*/thread_task_runner,
+                                 /*ui=*/thread_task_runner,
+                                 /*io=*/thread_task_runner);
+
+    auto flutterPlatformViewsController =
+        std::make_shared<flutter::FlutterPlatformViewsController>();
+    auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
+        /*delegate=*/mock_delegate,
+        /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+        /*platform_views_controller=*/flutterPlatformViewsController,
+        /*task_runners=*/runners,
+        /*worker_task_runner=*/nil,
+        /*is_gpu_disabled_sync_switch=*/nil);
+
+    MockFlutterPlatformFactory* factory = [[MockFlutterPlatformFactory new] autorelease];
+    flutterPlatformViewsController->RegisterViewFactory(
+        factory, @"MockFlutterPlatformView",
+        FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
+    FlutterResult result = ^(id result) {
+    };
+    flutterPlatformViewsController->OnMethodCall(
+        [FlutterMethodCall
+            methodCallWithMethodName:@"create"
+                           arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
+        result);
+
+    auto bridge = std::make_unique<flutter::AccessibilityBridge>(
+        /*view_controller=*/flutterViewController,
+        /*platform_view=*/platform_view.get(),
+        /*platform_views_controller=*/flutterPlatformViewsController);
+
+    XCTAssertNotNil(gMockPlatformView);
+    flutterPlatformViewsController->Reset();
+    platform_view->NotifyDestroyed();
+  }
+  XCTAssertNil(gMockPlatformView);
+  XCTAssertNil(flutterViewController.viewIfLoaded);
+  [flutterViewController deregisterNotifications];
+  [flutterViewController release];
+}
+
 - (void)testReplacedSemanticsDoesNotCleanupChildren {
   flutter::MockDelegate mock_delegate;
   auto thread_task_runner = CreateNewThread("AccessibilityBridgeTest");
@@ -322,10 +383,14 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/flutterPlatformViewsController,
-      /*task_runners=*/runners);
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
   id engine = OCMClassMock([FlutterEngine class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
-  FlutterView* flutterView = [[FlutterView alloc] initWithDelegate:engine opaque:YES];
+  FlutterView* flutterView = [[FlutterView alloc] initWithDelegate:engine
+                                                            opaque:YES
+                                                   enableWideGamut:NO];
   OCMStub([mockFlutterViewController view]).andReturn(flutterView);
   std::string label = "some label";
   auto bridge = std::make_unique<flutter::AccessibilityBridge>(
@@ -350,6 +415,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     node.scrollExtentMax = 100.0;
     node.scrollPosition = 0.0;
     parent.childrenInTraversalOrder.push_back(1);
+    parent.childrenInHitTestOrder.push_back(1);
 
     flutter::SemanticsNode child;
     child.id = 2;
@@ -358,6 +424,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     child.value = "value";
     child.hint = "hint";
     node.childrenInTraversalOrder.push_back(2);
+    node.childrenInHitTestOrder.push_back(2);
 
     nodes[0] = parent;
     nodes[1] = node;
@@ -378,6 +445,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     new_node.scrollExtentMax = 100.0;
     new_node.scrollPosition = 0.0;
     new_node.childrenInTraversalOrder.push_back(2);
+    new_node.childrenInHitTestOrder.push_back(2);
 
     new_nodes[1] = new_node;
     bridge->UpdateSemantics(/*nodes=*/new_nodes, /*actions=*/actions);
@@ -409,10 +477,14 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/flutterPlatformViewsController,
-      /*task_runners=*/runners);
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
   id engine = OCMClassMock([FlutterEngine class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
-  FlutterView* flutterView = [[FlutterView alloc] initWithDelegate:engine opaque:YES];
+  FlutterView* flutterView = [[FlutterView alloc] initWithDelegate:engine
+                                                            opaque:YES
+                                                   enableWideGamut:NO];
   OCMStub([mockFlutterViewController view]).andReturn(flutterView);
   std::string label = "some label";
   @autoreleasepool {
@@ -440,6 +512,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     node.scrollExtentMax = 100.0;
     node.scrollPosition = 0.0;
     parent.childrenInTraversalOrder.push_back(1);
+    parent.childrenInHitTestOrder.push_back(1);
     nodes[0] = parent;
     nodes[1] = node;
     flutter::CustomAccessibilityActionUpdates actions;
@@ -476,10 +549,14 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/flutterPlatformViewsController,
-      /*task_runners=*/runners);
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
   id engine = OCMClassMock([FlutterEngine class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
-  FlutterView* flutterView = [[FlutterView alloc] initWithDelegate:engine opaque:YES];
+  FlutterView* flutterView = [[FlutterView alloc] initWithDelegate:engine
+                                                            opaque:YES
+                                                   enableWideGamut:NO];
   OCMStub([mockFlutterViewController view]).andReturn(flutterView);
   std::string label = "some label";
   @autoreleasepool {
@@ -507,6 +584,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     node.scrollExtentMax = 100.0;
     node.scrollPosition = 0.0;
     parent.childrenInTraversalOrder.push_back(1);
+    parent.childrenInHitTestOrder.push_back(1);
     nodes[0] = parent;
     nodes[1] = node;
     flutter::CustomAccessibilityActionUpdates actions;
@@ -543,7 +621,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/nil,
-      /*task_runners=*/runners);
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
   id mockFlutterView = OCMClassMock([FlutterView class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
@@ -597,6 +677,53 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
                  UIAccessibilityScreenChangedNotification);
 }
 
+- (void)testRadioButtonIsNotSwitchButton {
+  flutter::MockDelegate mock_delegate;
+  auto thread_task_runner = CreateNewThread("AccessibilityBridgeTest");
+  flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
+                               /*platform=*/thread_task_runner,
+                               /*raster=*/thread_task_runner,
+                               /*ui=*/thread_task_runner,
+                               /*io=*/thread_task_runner);
+  auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
+      /*delegate=*/mock_delegate,
+      /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+      /*platform_views_controller=*/nil,
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
+  id engine = OCMClassMock([FlutterEngine class]);
+  id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
+  FlutterView* flutterView = [[FlutterView alloc] initWithDelegate:engine
+                                                            opaque:YES
+                                                   enableWideGamut:NO];
+  OCMStub([mockFlutterViewController view]).andReturn(flutterView);
+  auto ios_delegate = std::make_unique<flutter::MockIosDelegate>();
+  __block auto bridge =
+      std::make_unique<flutter::AccessibilityBridge>(/*view_controller=*/mockFlutterViewController,
+                                                     /*platform_view=*/platform_view.get(),
+                                                     /*platform_views_controller=*/nil,
+                                                     /*ios_delegate=*/std::move(ios_delegate));
+
+  flutter::CustomAccessibilityActionUpdates actions;
+  flutter::SemanticsNodeUpdates nodes;
+
+  flutter::SemanticsNode root_node;
+  root_node.id = kRootNodeId;
+  root_node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kIsInMutuallyExclusiveGroup) |
+                    static_cast<int32_t>(flutter::SemanticsFlags::kIsEnabled) |
+                    static_cast<int32_t>(flutter::SemanticsFlags::kHasCheckedState) |
+                    static_cast<int32_t>(flutter::SemanticsFlags::kHasEnabledState);
+  nodes[root_node.id] = root_node;
+  bridge->UpdateSemantics(/*nodes=*/nodes, /*actions=*/actions);
+
+  SemanticsObjectContainer* rootContainer = flutterView.accessibilityElements[0];
+  FlutterSemanticsObject* rootNode = [rootContainer accessibilityElementAtIndex:0];
+
+  XCTAssertTrue((rootNode.accessibilityTraits & UIAccessibilityTraitButton) > 0);
+  XCTAssertNil(rootNode.accessibilityValue);
+}
+
 - (void)testLayoutChangeWithNonAccessibilityElement {
   flutter::MockDelegate mock_delegate;
   auto thread_task_runner = CreateNewThread("AccessibilityBridgeTest");
@@ -609,7 +736,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/nil,
-      /*task_runners=*/runners);
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
   id mockFlutterView = OCMClassMock([FlutterView class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
@@ -691,7 +820,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/nil,
-      /*task_runners=*/runners);
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
   id mockFlutterView = OCMClassMock([FlutterView class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
@@ -743,10 +874,85 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   bridge->UpdateSemantics(/*nodes=*/new_nodes, /*actions=*/new_actions);
 
   XCTAssertEqual([accessibility_notifications count], 1ul);
-  SemanticsObject* focusObject = accessibility_notifications[0][@"argument"];
-  // Make sure refocus event is sent with the nativeAccessibility of root node
-  // which is a FlutterSemanticsScrollView.
-  XCTAssertTrue([focusObject isKindOfClass:[FlutterSemanticsScrollView class]]);
+  id focusObject = accessibility_notifications[0][@"argument"];
+
+  // Make sure the focused item is not specificed when it stays the same.
+  // See: https://github.com/flutter/flutter/issues/104176
+  XCTAssertEqualObjects(focusObject, [NSNull null]);
+  XCTAssertEqual([accessibility_notifications[0][@"notification"] unsignedIntValue],
+                 UIAccessibilityLayoutChangedNotification);
+}
+
+- (void)testLayoutChangeDoesCallNativeAccessibilityWhenFocusChanged {
+  flutter::MockDelegate mock_delegate;
+  auto thread_task_runner = CreateNewThread("AccessibilityBridgeTest");
+  flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
+                               /*platform=*/thread_task_runner,
+                               /*raster=*/thread_task_runner,
+                               /*ui=*/thread_task_runner,
+                               /*io=*/thread_task_runner);
+  auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
+      /*delegate=*/mock_delegate,
+      /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+      /*platform_views_controller=*/nil,
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
+  id mockFlutterView = OCMClassMock([FlutterView class]);
+  id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
+  OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
+
+  NSMutableArray<NSDictionary<NSString*, id>*>* accessibility_notifications =
+      [[[NSMutableArray alloc] init] autorelease];
+  auto ios_delegate = std::make_unique<flutter::MockIosDelegate>();
+  ios_delegate->on_PostAccessibilityNotification_ =
+      [accessibility_notifications](UIAccessibilityNotifications notification, id argument) {
+        [accessibility_notifications addObject:@{
+          @"notification" : @(notification),
+          @"argument" : argument ? argument : [NSNull null],
+        }];
+      };
+  __block auto bridge =
+      std::make_unique<flutter::AccessibilityBridge>(/*view_controller=*/mockFlutterViewController,
+                                                     /*platform_view=*/platform_view.get(),
+                                                     /*platform_views_controller=*/nil,
+                                                     /*ios_delegate=*/std::move(ios_delegate));
+
+  flutter::CustomAccessibilityActionUpdates actions;
+  flutter::SemanticsNodeUpdates nodes;
+
+  flutter::SemanticsNode node1;
+  node1.id = 1;
+  node1.label = "node1";
+  nodes[node1.id] = node1;
+  flutter::SemanticsNode root_node;
+  root_node.id = kRootNodeId;
+  root_node.label = "root";
+  root_node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kHasImplicitScrolling);
+  root_node.childrenInTraversalOrder = {1};
+  root_node.childrenInHitTestOrder = {1};
+  nodes[root_node.id] = root_node;
+  bridge->UpdateSemantics(/*nodes=*/nodes, /*actions=*/actions);
+
+  // Simulates the focusing on the node 1.
+  bridge->AccessibilityObjectDidBecomeFocused(1);
+
+  // Remove node 1 to trigger a layout change notification, and focus should be one root
+  flutter::CustomAccessibilityActionUpdates new_actions;
+  flutter::SemanticsNodeUpdates new_nodes;
+
+  flutter::SemanticsNode new_root_node;
+  new_root_node.id = kRootNodeId;
+  new_root_node.label = "root";
+  new_root_node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kHasImplicitScrolling);
+  new_nodes[new_root_node.id] = new_root_node;
+  bridge->UpdateSemantics(/*nodes=*/new_nodes, /*actions=*/new_actions);
+
+  XCTAssertEqual([accessibility_notifications count], 1ul);
+  SemanticsObject* focusObject2 = accessibility_notifications[0][@"argument"];
+
+  // Bridge should ask accessibility to focus on root because node 1 is moved from screen.
+  XCTAssertTrue([focusObject2 isKindOfClass:[FlutterSemanticsScrollView class]]);
   XCTAssertEqual([accessibility_notifications[0][@"notification"] unsignedIntValue],
                  UIAccessibilityLayoutChangedNotification);
 }
@@ -763,7 +969,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/nil,
-      /*task_runners=*/runners);
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
   id mockFlutterView = OCMClassMock([FlutterView class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
@@ -818,7 +1026,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/nil,
-      /*task_runners=*/runners);
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
   id mockFlutterView = OCMClassMock([FlutterView class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
@@ -896,7 +1106,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   XCTAssertEqual([accessibility_notifications[1][@"notification"] unsignedIntValue],
                  UIAccessibilityScreenChangedNotification);
   SemanticsObject* focusObject = accessibility_notifications[2][@"argument"];
-  // It should still focus the root.
   XCTAssertEqual([focusObject uid], 0);
   XCTAssertEqual([accessibility_notifications[2][@"notification"] unsignedIntValue],
                  UIAccessibilityLayoutChangedNotification);
@@ -914,7 +1123,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/nil,
-      /*task_runners=*/runners);
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
   id mockFlutterView = OCMClassMock([FlutterView class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
@@ -998,7 +1209,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/nil,
-      /*task_runners=*/runners);
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
   id mockFlutterView = OCMClassMock([FlutterView class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
@@ -1076,6 +1289,50 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
                  UIAccessibilityScreenChangedNotification);
 }
 
+- (void)testHandleEvent {
+  flutter::MockDelegate mock_delegate;
+  auto thread_task_runner = CreateNewThread("AccessibilityBridgeTest");
+  flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
+                               /*platform=*/thread_task_runner,
+                               /*raster=*/thread_task_runner,
+                               /*ui=*/thread_task_runner,
+                               /*io=*/thread_task_runner);
+  auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
+      /*delegate=*/mock_delegate,
+      /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+      /*platform_views_controller=*/nil,
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
+  id mockFlutterView = OCMClassMock([FlutterView class]);
+  id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
+  OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
+
+  NSMutableArray<NSDictionary<NSString*, id>*>* accessibility_notifications =
+      [[[NSMutableArray alloc] init] autorelease];
+  auto ios_delegate = std::make_unique<flutter::MockIosDelegate>();
+  ios_delegate->on_PostAccessibilityNotification_ =
+      [accessibility_notifications](UIAccessibilityNotifications notification, id argument) {
+        [accessibility_notifications addObject:@{
+          @"notification" : @(notification),
+          @"argument" : argument ? argument : [NSNull null],
+        }];
+      };
+  __block auto bridge =
+      std::make_unique<flutter::AccessibilityBridge>(/*view_controller=*/mockFlutterViewController,
+                                                     /*platform_view=*/platform_view.get(),
+                                                     /*platform_views_controller=*/nil,
+                                                     /*ios_delegate=*/std::move(ios_delegate));
+
+  NSDictionary<NSString*, id>* annotatedEvent = @{@"type" : @"focus", @"nodeId" : @123};
+
+  bridge->HandleEvent(annotatedEvent);
+
+  XCTAssertEqual([accessibility_notifications count], 1ul);
+  XCTAssertEqual([accessibility_notifications[0][@"notification"] unsignedIntValue],
+                 UIAccessibilityLayoutChangedNotification);
+}
+
 - (void)testAnnouncesRouteChangesWhenNoNamesRoute {
   flutter::MockDelegate mock_delegate;
   auto thread_task_runner = CreateNewThread("AccessibilityBridgeTest");
@@ -1088,7 +1345,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/nil,
-      /*task_runners=*/runners);
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
   id mockFlutterView = OCMClassMock([FlutterView class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
@@ -1156,7 +1415,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/nil,
-      /*task_runners=*/runners);
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
   id mockFlutterView = OCMClassMock([FlutterView class]);
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
@@ -1211,7 +1472,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
                  UIAccessibilityLayoutChangedNotification);
 }
 
-- (void)testAnnouncesLayoutChangeWithLastFocused {
+- (void)testAnnouncesLayoutChangeWithTheSameItemFocused {
   flutter::MockDelegate mock_delegate;
   auto thread_task_runner = CreateNewThread("AccessibilityBridgeTest");
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
@@ -1223,7 +1484,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/nil,
-      /*task_runners=*/runners);
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
   id mockFlutterView = OCMClassMock([FlutterView class]);
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
@@ -1276,10 +1539,10 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   new_root_node.childrenInHitTestOrder = {1};
   second_update[root_node.id] = new_root_node;
   bridge->UpdateSemantics(/*nodes=*/second_update, /*actions=*/actions);
-  SemanticsObject* focusObject = accessibility_notifications[0][@"argument"];
-  // Since we have focused on the node 1 right before the layout changed, the bridge should refocus
-  // the node 1.
-  XCTAssertEqual([focusObject uid], 1);
+  id focusObject = accessibility_notifications[0][@"argument"];
+  // Since we have focused on the node 1 right before the layout changed, the bridge should not ask
+  // to refocus again on the same node.
+  XCTAssertEqualObjects(focusObject, [NSNull null]);
   XCTAssertEqual([accessibility_notifications[0][@"notification"] unsignedIntValue],
                  UIAccessibilityLayoutChangedNotification);
 }
@@ -1296,7 +1559,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/nil,
-      /*task_runners=*/runners);
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
   id mockFlutterView = OCMClassMock([FlutterView class]);
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
@@ -1371,7 +1636,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/nil,
-      /*task_runners=*/runners);
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
   id mockFlutterView = OCMClassMock([FlutterView class]);
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
@@ -1442,7 +1709,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/nil,
-      /*task_runners=*/runners);
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
   id mockFlutterView = OCMClassMock([FlutterView class]);
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
@@ -1515,7 +1784,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/nil,
-      /*task_runners=*/runners);
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
   id mockFlutterView = OCMClassMock([FlutterView class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
@@ -1570,7 +1841,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/nil,
-      /*task_runners=*/runners);
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
   id mockFlutterView = OCMClassMock([FlutterView class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
@@ -1630,7 +1903,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/nil,
-      /*task_runners=*/runners);
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
   id mockFlutterView = OCMClassMock([FlutterView class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
@@ -1698,7 +1973,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/nil,
-      /*task_runners=*/runners);
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
   fml::AutoResetWaitableEvent latch;
   thread_task_runner->PostTask([&] {
     auto weakFactory =
@@ -1731,7 +2008,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/nil,
-      /*task_runners=*/runners);
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/nil);
   id mockFlutterView = OCMClassMock([FlutterView class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
@@ -1779,7 +2058,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
         /*delegate=*/test_delegate,
         /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
         /*platform_views_controller=*/nil,
-        /*task_runners=*/runners);
+        /*task_runners=*/runners,
+        /*worker_task_runner=*/nil,
+        /*is_gpu_disabled_sync_switch=*/nil);
 
     id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
     auto flutterPlatformViewsController =

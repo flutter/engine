@@ -6,6 +6,7 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformNodeDelegateMac.h"
 
+#include "flutter/fml/macros.h"
 #include "flutter/third_party/accessibility/ax/platform/ax_platform_node_base.h"
 
 @class FlutterTextField;
@@ -56,6 +57,8 @@ class FlutterTextPlatformNode : public ui::AXPlatformNodeBase {
   /// @brief Detaches the FlutterTextField from the FlutterView if it is not
   ///        already detached.
   void EnsureDetachedFromView();
+
+  FML_DISALLOW_COPY_AND_ASSIGN(FlutterTextPlatformNode);
 };
 
 }  // namespace flutter
@@ -88,5 +91,11 @@ class FlutterTextPlatformNode : public ui::AXPlatformNodeBase {
  * changes.
  */
 - (void)updateString:(NSString*)string withSelection:(NSRange)selection;
+
+/**
+ * Makes the field editor (plugin) current editor for this TextField, meaning
+ * that the text field will start getting editing events.
+ */
+- (void)startEditing;
 
 @end

@@ -13,6 +13,7 @@
 #include "flutter/fml/task_runner.h"
 #include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
+#include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
@@ -25,8 +26,24 @@ class UnrefQueue : public fml::RefCountedThreadSafe<UnrefQueue<T>> {
   using ResourceContext = T;
 
   void Unref(SkRefCnt* object) {
+    if (drain_immediate_) {
+      object->unref();
+      return;
+    }
     std::scoped_lock lock(mutex_);
     objects_.push_back(object);
+    if (!drain_pending_) {
+      drain_pending_ = true;
+      task_runner_->PostDelayedTask(
+          [strong = fml::Ref(this)]() { strong->Drain(); }, drain_delay_);
+    }
+  }
+
+  void DeleteTexture(GrBackendTexture texture) {
+    // drain_immediate_ should only be used on Impeller.
+    FML_DCHECK(!drain_immediate_);
+    std::scoped_lock lock(mutex_);
+    textures_.push_back(texture);
     if (!drain_pending_) {
       drain_pending_ = true;
       task_runner_->PostDelayedTask(
@@ -42,12 +59,14 @@ class UnrefQueue : public fml::RefCountedThreadSafe<UnrefQueue<T>> {
   void Drain() {
     TRACE_EVENT0("flutter", "SkiaUnrefQueue::Drain");
     std::deque<SkRefCnt*> skia_objects;
+    std::deque<GrBackendTexture> textures;
     {
       std::scoped_lock lock(mutex_);
       objects_.swap(skia_objects);
+      textures_.swap(textures);
       drain_pending_ = false;
     }
-    DoDrain(skia_objects, context_);
+    DoDrain(skia_objects, textures, context_);
   }
 
   void UpdateResourceContext(sk_sp<ResourceContext> context) {
@@ -59,38 +78,58 @@ class UnrefQueue : public fml::RefCountedThreadSafe<UnrefQueue<T>> {
   const fml::TimeDelta drain_delay_;
   std::mutex mutex_;
   std::deque<SkRefCnt*> objects_;
+  std::deque<GrBackendTexture> textures_;
   bool drain_pending_;
   sk_sp<ResourceContext> context_;
+  // Enabled when there is an impeller context, which removes the usage of
+  // the queue altogether.
+  bool drain_immediate_;
 
   // The `GrDirectContext* context` is only used for signaling Skia to
   // performDeferredCleanup. It can be nullptr when such signaling is not needed
   // (e.g., in unit tests).
   UnrefQueue(fml::RefPtr<fml::TaskRunner> task_runner,
              fml::TimeDelta delay,
-             sk_sp<ResourceContext> context = nullptr)
+             sk_sp<ResourceContext> context = nullptr,
+             bool drain_immediate = false)
       : task_runner_(std::move(task_runner)),
         drain_delay_(delay),
         drain_pending_(false),
-        context_(context) {}
+        context_(context),
+        drain_immediate_(drain_immediate) {}
 
   ~UnrefQueue() {
+    // The ResourceContext must be deleted on the task runner thread.
+    // Transfer ownership of the UnrefQueue's ResourceContext reference
+    // into a task queued to that thread.
+    ResourceContext* raw_context = context_.release();
     fml::TaskRunner::RunNowOrPostTask(
         task_runner_, [objects = std::move(objects_),
-                       context = std::move(context_)]() mutable {
-          DoDrain(objects, context);
+                       textures = std::move(textures_), raw_context]() mutable {
+          sk_sp<ResourceContext> context(raw_context);
+          DoDrain(objects, textures, context);
           context.reset();
         });
   }
 
   // static
   static void DoDrain(const std::deque<SkRefCnt*>& skia_objects,
+                      const std::deque<GrBackendTexture>& textures,
                       sk_sp<ResourceContext> context) {
     for (SkRefCnt* skia_object : skia_objects) {
       skia_object->unref();
     }
 
-    if (context && !skia_objects.empty()) {
-      context->performDeferredCleanup(std::chrono::milliseconds(0));
+    if (context) {
+      for (GrBackendTexture texture : textures) {
+        context->deleteBackendTexture(texture);
+      }
+
+      if (!skia_objects.empty()) {
+        context->performDeferredCleanup(std::chrono::milliseconds(0));
+      }
+
+      context->flushAndSubmit(true);
     }
   }
 

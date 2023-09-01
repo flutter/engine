@@ -3,13 +3,11 @@
 // found in the LICENSE file.
 
 #include "flutter/fml/logging.h"
-#include "include/core/SkColorSpace.h"
-#include "include/core/SkImage.h"
-#include "include/core/SkImageInfo.h"
-#include "include/core/SkPicture.h"
-#include "include/core/SkSerialProcs.h"
-#include "include/core/SkStream.h"
-#include "include/core/SkTypeface.h"
+#include "third_party/skia/include/core/SkColorSpace.h"
+#include "third_party/skia/include/core/SkImage.h"
+#include "third_party/skia/include/core/SkImageInfo.h"
+#include "third_party/skia/include/core/SkStream.h"
+#include "third_party/skia/include/core/SkTypeface.h"
 
 namespace flutter {
 
@@ -75,7 +73,7 @@ sk_sp<SkImage> DeserializeImageWithoutData(const void* data,
       SkData::MakeUninitialized(image_size.width() * image_size.height() * 4);
   memset(image_data->writable_data(), 0x0f, image_data->size());
   sk_sp<SkImage> image =
-      SkImage::MakeRasterData(info, image_data, image_size.width() * 4);
+      SkImages::RasterFromData(info, image_data, image_size.width() * 4);
 
   return image;
 };

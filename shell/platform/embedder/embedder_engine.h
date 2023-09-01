@@ -22,14 +22,15 @@ struct ShellArgs;
 // instance of the Flutter engine.
 class EmbedderEngine {
  public:
-  EmbedderEngine(std::unique_ptr<EmbedderThreadHost> thread_host,
-                 TaskRunners task_runners,
-                 Settings settings,
-                 RunConfiguration run_configuration,
-                 Shell::CreateCallback<PlatformView> on_create_platform_view,
-                 Shell::CreateCallback<Rasterizer> on_create_rasterizer,
-                 std::unique_ptr<EmbedderExternalTextureResolver>
-                     external_texture_resolver);
+  EmbedderEngine(
+      std::unique_ptr<EmbedderThreadHost> thread_host,
+      const TaskRunners& task_runners,
+      const Settings& settings,
+      RunConfiguration run_configuration,
+      const Shell::CreateCallback<PlatformView>& on_create_platform_view,
+      const Shell::CreateCallback<Rasterizer>& on_create_rasterizer,
+      std::unique_ptr<EmbedderExternalTextureResolver>
+          external_texture_resolver);
 
   ~EmbedderEngine();
 
@@ -47,7 +48,8 @@ class EmbedderEngine {
 
   bool IsValid() const;
 
-  bool SetViewportMetrics(flutter::ViewportMetrics metrics);
+  bool SetViewportMetrics(int64_t view_id,
+                          const flutter::ViewportMetrics& metrics);
 
   bool DispatchPointerDataPacket(
       std::unique_ptr<flutter::PointerDataPacket> packet);
@@ -64,7 +66,7 @@ class EmbedderEngine {
 
   bool SetAccessibilityFeatures(int32_t flags);
 
-  bool DispatchSemanticsAction(int id,
+  bool DispatchSemanticsAction(int node_id,
                                flutter::SemanticsAction action,
                                fml::MallocMapping args);
 
@@ -79,7 +81,7 @@ class EmbedderEngine {
   bool RunTask(const FlutterTask* task);
 
   bool PostTaskOnEngineManagedNativeThreads(
-      std::function<void(FlutterNativeThreadType)> closure) const;
+      const std::function<void(FlutterNativeThreadType)>& closure) const;
 
   bool ScheduleFrame();
 

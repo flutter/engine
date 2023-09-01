@@ -11,12 +11,6 @@
 
 namespace fml {
 
-std::shared_ptr<ConcurrentMessageLoop> ConcurrentMessageLoop::Create(
-    size_t worker_count) {
-  return std::shared_ptr<ConcurrentMessageLoop>{
-      new ConcurrentMessageLoop(worker_count)};
-}
-
 ConcurrentMessageLoop::ConcurrentMessageLoop(size_t worker_count)
     : worker_count_(std::max<size_t>(worker_count, 1ul)) {
   for (size_t i = 0; i < worker_count_; ++i) {
@@ -35,6 +29,7 @@ ConcurrentMessageLoop::ConcurrentMessageLoop(size_t worker_count)
 ConcurrentMessageLoop::~ConcurrentMessageLoop() {
   Terminate();
   for (auto& worker : workers_) {
+    FML_DCHECK(worker.joinable());
     worker.join();
   }
 }
@@ -60,7 +55,7 @@ void ConcurrentMessageLoop::PostTask(const fml::closure& task) {
         << "Tried to post a task to shutdown concurrent message "
            "loop. The task will be executed on the callers thread.";
     lock.unlock();
-    task();
+    ExecuteTask(task);
     return;
   }
 
@@ -103,12 +98,12 @@ void ConcurrentMessageLoop::WorkerMain() {
     TRACE_EVENT0("flutter", "ConcurrentWorkerWake");
     // Execute the primary task we woke up for.
     if (task) {
-      task();
+      ExecuteTask(task);
     }
 
     // Execute any thread tasks.
     for (const auto& thread_task : thread_tasks) {
-      thread_task();
+      ExecuteTask(thread_task);
     }
 
     if (shutdown_now) {
@@ -117,13 +112,17 @@ void ConcurrentMessageLoop::WorkerMain() {
   }
 }
 
+void ConcurrentMessageLoop::ExecuteTask(const fml::closure& task) {
+  task();
+}
+
 void ConcurrentMessageLoop::Terminate() {
   std::scoped_lock lock(tasks_mutex_);
   shutdown_ = true;
   tasks_condition_.notify_all();
 }
 
-void ConcurrentMessageLoop::PostTaskToAllWorkers(fml::closure task) {
+void ConcurrentMessageLoop::PostTaskToAllWorkers(const fml::closure& task) {
   if (!task) {
     return;
   }
@@ -168,6 +167,16 @@ void ConcurrentTaskRunner::PostTask(const fml::closure& task) {
       << "Tried to post to a concurrent message loop that has already died. "
          "Executing the task on the callers thread.";
   task();
+}
+
+bool ConcurrentMessageLoop::RunsTasksOnCurrentThread() {
+  std::scoped_lock lock(tasks_mutex_);
+  for (const auto& worker_thread_id : worker_thread_ids_) {
+    if (worker_thread_id == std::this_thread::get_id()) {
+      return true;
+    }
+  }
+  return false;
 }
 
 }  // namespace fml

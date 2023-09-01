@@ -39,4 +39,30 @@
  */
 - (void)handleEvent:(nonnull NSEvent*)event;
 
+/**
+ * Returns yes if is event currently being redispatched.
+ *
+ * In some instances (i.e. emoji shortcut) the event may be redelivered by cocoa
+ * as key equivalent to FlutterTextInput, in which case it shouldn't be
+ * processed again.
+ */
+- (BOOL)isDispatchingKeyEvent:(nonnull NSEvent*)event;
+
+/**
+ * Synthesize modifier keys events.
+ *
+ * If needed, synthesize modifier keys up and down events by comparing their
+ * current pressing states with the given modifier flags.
+ */
+- (void)syncModifiersIfNeeded:(NSEventModifierFlags)modifierFlags
+                    timestamp:(NSTimeInterval)timestamp;
+
+/**
+ * Returns the keyboard pressed state.
+ *
+ * Returns the keyboard pressed state. The dictionary contains one entry per
+ * pressed keys, mapping from the logical key to the physical key.
+ */
+- (nonnull NSDictionary*)getPressedState;
+
 @end

@@ -17,7 +17,7 @@ namespace testing {
 // the headers in platform/common/public/.
 
 // Linking this class into a test binary will provide dummy forwarding
-// implementantions of that C API, so that the wrapper can be tested separately
+// implementations of that C API, so that the wrapper can be tested separately
 // from the actual library.
 class StubFlutterApi {
  public:
@@ -29,7 +29,7 @@ class StubFlutterApi {
   // will be forwarded.
   static void SetTestStub(StubFlutterApi* stub);
 
-  // Returns the current stub, as last set by SetTestFluttterStub.
+  // Returns the current stub, as last set by SetTestFlutterStub.
   static StubFlutterApi* GetTestStub();
 
   virtual ~StubFlutterApi() {}
@@ -65,18 +65,19 @@ class StubFlutterApi {
                                     FlutterDesktopMessageCallback callback,
                                     void* user_data) {}
 
-  // Called for FlutterDesktopRegisterExternalTexture.
+  // Called for FlutterDesktopTextureRegistrarRegisterExternalTexture.
   virtual int64_t TextureRegistrarRegisterExternalTexture(
       const FlutterDesktopTextureInfo* info) {
     return -1;
   }
 
-  // Called for FlutterDesktopUnregisterExternalTexture.
-  virtual bool TextureRegistrarUnregisterExternalTexture(int64_t texture_id) {
-    return false;
-  }
+  // Called for FlutterDesktopTextureRegistrarUnregisterExternalTexture.
+  virtual void TextureRegistrarUnregisterExternalTexture(
+      int64_t texture_id,
+      void (*callback)(void* user_data),
+      void* user_data) {}
 
-  // Called for FlutterDesktopMarkExternalTextureFrameAvailable.
+  // Called for FlutterDesktopTextureRegistrarMarkExternalTextureFrameAvailable.
   virtual bool TextureRegistrarMarkTextureFrameAvailable(int64_t texture_id) {
     return false;
   }

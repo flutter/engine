@@ -9,6 +9,8 @@
 #import "flutter/common/task_runners.h"
 #import "flutter/fml/message_loop.h"
 #import "flutter/fml/thread.h"
+#import "flutter/lib/ui/window/platform_message.h"
+#import "flutter/lib/ui/window/platform_message_response.h"
 #import "flutter/shell/common/thread_host.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 
@@ -42,9 +44,9 @@ class MockPlatformMessageResponse : public PlatformMessageResponse {
 
 @implementation PlatformMessageHandlerIosTest
 - (void)testCreate {
-  flutter::TaskRunners task_runners("test", GetCurrentTaskRunner(), CreateNewThread("raster"),
-                                    CreateNewThread("ui"), CreateNewThread("io"));
-  auto handler = std::make_unique<PlatformMessageHandlerIos>(task_runners);
+  TaskRunners task_runners("test", GetCurrentTaskRunner(), CreateNewThread("raster"),
+                           CreateNewThread("ui"), CreateNewThread("io"));
+  auto handler = std::make_unique<PlatformMessageHandlerIos>(task_runners.GetPlatformTaskRunner());
   XCTAssertTrue(handler);
 }
 
@@ -55,7 +57,7 @@ class MockPlatformMessageResponse : public PlatformMessageResponse {
       "test", GetCurrentTaskRunner(), thread_host.raster_thread->GetTaskRunner(),
       thread_host.ui_thread->GetTaskRunner(), thread_host.io_thread->GetTaskRunner());
 
-  auto handler = std::make_unique<PlatformMessageHandlerIos>(task_runners);
+  auto handler = std::make_unique<PlatformMessageHandlerIos>(task_runners.GetPlatformTaskRunner());
   std::string channel = "foo";
   XCTestExpectation* didCallReply = [self expectationWithDescription:@"didCallReply"];
   handler->SetMessageHandler(
@@ -81,7 +83,7 @@ class MockPlatformMessageResponse : public PlatformMessageResponse {
       "test", GetCurrentTaskRunner(), thread_host.raster_thread->GetTaskRunner(),
       thread_host.ui_thread->GetTaskRunner(), thread_host.io_thread->GetTaskRunner());
 
-  auto handler = std::make_unique<PlatformMessageHandlerIos>(task_runners);
+  auto handler = std::make_unique<PlatformMessageHandlerIos>(task_runners.GetPlatformTaskRunner());
   std::string channel = "foo";
   XCTestExpectation* didCallMessage = [self expectationWithDescription:@"didCallMessage"];
   handler->SetMessageHandler(
@@ -109,7 +111,7 @@ class MockPlatformMessageResponse : public PlatformMessageResponse {
       "test", GetCurrentTaskRunner(), thread_host.raster_thread->GetTaskRunner(),
       thread_host.ui_thread->GetTaskRunner(), thread_host.io_thread->GetTaskRunner());
 
-  auto handler = std::make_unique<PlatformMessageHandlerIos>(task_runners);
+  auto handler = std::make_unique<PlatformMessageHandlerIos>(task_runners.GetPlatformTaskRunner());
   std::string channel = "foo";
   XCTestExpectation* didCallReply = [self expectationWithDescription:@"didCallReply"];
   NSObject<FlutterTaskQueue>* taskQueue = PlatformMessageHandlerIos::MakeBackgroundTaskQueue();

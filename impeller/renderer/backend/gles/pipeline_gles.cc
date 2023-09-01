@@ -8,8 +8,8 @@ namespace impeller {
 
 PipelineGLES::PipelineGLES(ReactorGLES::Ref reactor,
                            std::weak_ptr<PipelineLibrary> library,
-                           PipelineDescriptor desc)
-    : Pipeline(std::move(library), std::move(desc)),
+                           const PipelineDescriptor& desc)
+    : Pipeline(std::move(library), desc),
       reactor_(std::move(reactor)),
       handle_(reactor_ ? reactor_->CreateHandle(HandleType::kProgram)
                        : HandleGLES::DeadHandle()),
@@ -22,7 +22,7 @@ PipelineGLES::PipelineGLES(ReactorGLES::Ref reactor,
 // |Pipeline|
 PipelineGLES::~PipelineGLES() {
   if (!handle_.IsDead()) {
-    reactor_->CollectHandle(std::move(handle_));
+    reactor_->CollectHandle(handle_);
   }
 }
 
@@ -46,7 +46,8 @@ bool PipelineGLES::BuildVertexDescriptor(const ProcTableGLES& gl,
   }
   auto vtx_desc = std::make_unique<BufferBindingsGLES>();
   if (!vtx_desc->RegisterVertexStageInput(
-          gl, GetDescriptor().GetVertexDescriptor()->GetStageInputs())) {
+          gl, GetDescriptor().GetVertexDescriptor()->GetStageInputs(),
+          GetDescriptor().GetVertexDescriptor()->GetStageLayouts())) {
     return false;
   }
   if (!vtx_desc->ReadUniformsBindings(gl, program)) {

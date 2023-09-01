@@ -4,7 +4,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-set -e
+# Do not exit when a non-zero return value is encountered to output all errors.
+# See: https://github.com/flutter/flutter/issues/131680
+# set -e
 shopt -s nullglob
 
 # Needed because if it is set, cd may print the path it changed to.
@@ -35,14 +37,18 @@ PATH="$DART_BIN:$PATH"
 
 # Use:
 #   env VERBOSE=1 ./ci/licenses.sh
-# to turn on verbose progress report printing.
+# to turn on verbose progress report printing. Set it to 2 to also output
+# information about which patterns are taking the most time.
 QUIET="--quiet"
 if [[ "${VERBOSE}" == "1" ]]; then
   QUIET=""
 fi
+if [[ "${VERBOSE}" == "2" ]]; then
+  QUIET="--verbose"
+fi
 
 echo "Verifying license script is still happy..."
-echo "Using pub from $(command -v pub), dart from $(command -v dart)"
+echo "Using dart from: $(command -v dart)"
 
 untracked_files="$(cd "$SRC_DIR/flutter"; git status --ignored --short | grep -E "^!" | awk "{print\$2}")"
 untracked_count="$(echo "$untracked_files" | wc -l)"
@@ -58,14 +64,25 @@ fi
 
 dart --version
 
+# Runs the tests for the license script.
+function run_tests() (
+  cd "$SRC_DIR/flutter/tools/licenses"
+  find . -name "*_test.dart" | xargs -n 1 dart --enable-asserts
+)
+
 # Collects the license information from the repo.
 # Runs in a subshell.
 function collect_licenses() (
   cd "$SRC_DIR/flutter/tools/licenses"
-  dart --enable-asserts lib/main.dart         \
-    --src ../../..                            \
-    --out ../../../out/license_script_output  \
-    --golden ../../ci/licenses_golden \
+  # `--interpret_irregexp`` tells dart to use interpreter mode for running
+  # the regexp matching, rather than generating machine code for it.
+  # For very large RegExps that are currently used in license script using
+  # interpreter is faster than using unoptimized machine code, which has
+  # no chance of being optimized(due to its size).
+  dart --enable-asserts --interpret_irregexp lib/main.dart \
+    --src ../../..                                         \
+    --out ../../../out/license_script_output               \
+    --golden ../../ci/licenses_golden                      \
     "${QUIET}"
 )
 
@@ -76,7 +93,7 @@ function verify_licenses() (
   cd "$SRC_DIR"
 
   # These files trip up the script on Mac OS X.
-  find . -name ".DS_Store" -exec rm {} \;
+  find . -name ".DS_Store" -exec rm -f {} \;
 
   collect_licenses
 
@@ -117,11 +134,29 @@ function verify_licenses() (
       exitStatus=1
   fi
 
+  echo "Verifying excluded files list..."
+  if ! cmp -s "flutter/ci/licenses_golden/excluded_files" "out/license_script_output/excluded_files"; then
+      echo "============================= ERROR ============================="
+      echo "The license is excluding a different number of files than previously."
+      echo "This is only expected when new non-source files have been introduced."
+      echo "Verify that all the newly ignored files are definitely not shipped with"
+      echo "any binaries that we compile (including impellerc and Wasm)."
+      echo "If the changes look correct, update this file:"
+      echo "  ci/licenses_golden/excluded_files"
+      echo "For more information, see the script in:"
+      echo "  https://github.com/flutter/engine/tree/main/tools/licenses"
+      echo ""
+      diff -U 6 "flutter/ci/licenses_golden/excluded_files" "out/license_script_output/excluded_files"
+      echo "================================================================="
+      echo ""
+      exitStatus=1
+  fi
+
   echo "Checking license count in licenses_flutter..."
 
   local actualLicenseCount
   actualLicenseCount="$(tail -n 1 flutter/ci/licenses_golden/licenses_flutter | tr -dc '0-9')"
-  local expectedLicenseCount=16 # When changing this number: Update the error message below as well describing all expected license types.
+  local expectedLicenseCount=20 # When changing this number: Update the error message below as well describing the newly expected license types.
 
   if [[ $actualLicenseCount -ne $expectedLicenseCount ]]; then
       echo "=============================== ERROR ==============================="
@@ -145,4 +180,5 @@ function verify_licenses() (
   return $exitStatus
 )
 
+run_tests
 verify_licenses

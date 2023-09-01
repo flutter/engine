@@ -8,24 +8,43 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:image/image.dart';
-import 'package:pedantic/pedantic.dart';
+import 'package:path/path.dart' as path;
 import 'package:test_api/src/backend/runtime.dart';
 import 'package:webkit_inspection_protocol/webkit_inspection_protocol.dart'
     as wip;
 
 import 'browser.dart';
 import 'browser_lock.dart';
+import 'browser_process.dart';
 import 'chrome_installer.dart';
 import 'common.dart';
 import 'environment.dart';
 
 /// Provides an environment for desktop Chrome.
 class ChromeEnvironment implements BrowserEnvironment {
+  ChromeEnvironment({
+    required bool enableWasmGC,
+    required bool useDwarf,
+  }) : _enableWasmGC = enableWasmGC,
+       _useDwarf = useDwarf;
+
   late final BrowserInstallation _installation;
 
+  final bool _enableWasmGC;
+  final bool _useDwarf;
+
   @override
-  Browser launchBrowserInstance(Uri url, {bool debug = false}) {
-    return Chrome(url, _installation, debug: debug);
+  Future<Browser> launchBrowserInstance(
+    Uri url, {
+    bool debug = false,
+  }) async {
+    return Chrome(
+      url,
+      _installation,
+      debug: debug,
+      enableWasmGC: _enableWasmGC,
+      useDwarf: _useDwarf
+    );
   }
 
   @override
@@ -36,22 +55,18 @@ class ChromeEnvironment implements BrowserEnvironment {
     final String version = browserLock.chromeLock.versionForCurrentPlatform;
     _installation = await getOrInstallChrome(
       version,
-      infoLog: isCirrus ? stdout : DevNull(),
+      infoLog: isCi ? stdout : DevNull(),
     );
   }
 
   @override
-  ScreenshotManager? getScreenshotManager() {
-    // Always compare screenshots when running tests locally. On CI only compare
-    // on Linux.
-    if (Platform.isLinux || !isLuci) {
-      return ChromeScreenshotManager();
-    }
-    return null;
-  }
+  Future<void> cleanup() async {}
 
   @override
   String get packageTestConfigurationYamlFile => 'dart_test_chrome.yaml';
+
+  @override
+  final String name = 'Chrome';
 }
 
 /// Runs desktop Chrome.
@@ -62,17 +77,17 @@ class ChromeEnvironment implements BrowserEnvironment {
 ///
 /// Any errors starting or running the process are reported through [onExit].
 class Chrome extends Browser {
-  @override
-  final String name = 'Chrome';
-
-  @override
-  final Future<Uri> remoteDebuggerUrl;
-
   /// Starts a new instance of Chrome open to the given [url], which may be a
   /// [Uri] or a [String].
-  factory Chrome(Uri url, BrowserInstallation installation, {bool debug = false}) {
+  factory Chrome(
+    Uri url,
+    BrowserInstallation installation, {
+    required bool debug,
+    required bool enableWasmGC,
+    required bool useDwarf,
+  }) {
     final Completer<Uri> remoteDebuggerCompleter = Completer<Uri>.sync();
-    return Chrome._(() async {
+    return Chrome._(BrowserProcess(() async {
       // A good source of various Chrome CLI options:
       // https://peter.sh/experiments/chromium-command-line-switches/
       //
@@ -85,8 +100,14 @@ class Chrome extends Browser {
       // --disable-font-subpixel-positioning
       final bool isChromeNoSandbox =
           Platform.environment['CHROME_NO_SANDBOX'] == 'true';
-      final String dir = environment.webUiDartToolDir.createTempSync('test_chrome_user_data_').resolveSymbolicLinksSync();
+      final String dir = await generateUserDirectory(installation, useDwarf);
+      final String jsFlags = enableWasmGC ? <String>[
+        '--experimental-wasm-gc',
+        '--experimental-wasm-stack-switching',
+        '--experimental-wasm-type-reflection',
+      ].join(' ') : '';
       final List<String> args = <String>[
+        if (jsFlags.isNotEmpty) '--js-flags=$jsFlags',
         '--user-data-dir=$dir',
         url.toString(),
         if (!debug)
@@ -101,7 +122,13 @@ class Chrome extends Browser {
           '--start-maximized',
         if (debug)
           '--auto-open-devtools-for-tabs',
-        '--disable-extensions',
+        if (useDwarf)
+          '--devtools-flags=enabledExperiments=wasmDWARFDebugging',
+        // Always run unit tests at a 1x scale factor
+        '--force-device-scale-factor=1',
+        if (!useDwarf)
+          // DWARF debugging requires a Chrome extension.
+          '--disable-extensions',
         '--disable-popup-blocking',
         // Indicates that the browser is in "browse without sign-in" (Guest session) mode.
         '--bwsi',
@@ -110,6 +137,14 @@ class Chrome extends Browser {
         '--disable-default-apps',
         '--disable-translate',
         '--remote-debugging-port=$kDevtoolsPort',
+
+        // SwiftShader support on ARM macs is disabled until they upgrade to a newer
+        // version of LLVM, see https://issuetracker.google.com/issues/165000222. In
+        // headless Chrome, the default is to use SwiftShader as a software renderer
+        // for WebGL contexts. In order to work around this limitation, we can force
+        // GPU rendering with this flag.
+        if (environment.isMacosArm)
+          '--use-angle=metal',
       ];
 
       final Process process =
@@ -122,11 +157,142 @@ class Chrome extends Browser {
           .then((_) => Directory(dir).deleteSync(recursive: true)));
 
       return process;
-    }, remoteDebuggerCompleter.future);
+    }), remoteDebuggerCompleter.future);
   }
 
-  Chrome._(Future<Process> Function() startBrowser, this.remoteDebuggerUrl)
-      : super(startBrowser);
+  Chrome._(this._process, this.remoteDebuggerUrl);
+
+  static Future<String> generateUserDirectory(
+    BrowserInstallation installation,
+    bool useDwarf
+  ) async {
+    final String userDirectoryPath = environment
+        .webUiDartToolDir
+        .createTempSync('test_chrome_user_data_')
+        .resolveSymbolicLinksSync();
+    if (!useDwarf) {
+      return userDirectoryPath;
+    }
+
+    // Using DWARF debugging info requires installation of a Chrome extension.
+    // We can prompt for this, but in order to avoid prompting on every single
+    // browser launch, we cache the user directory after it has been installed.
+    final Directory baselineUserDirectory = Directory(path.join(
+      environment.webUiDartToolDir.path,
+      'chrome_user_data_base',
+    ));
+    final Directory dwarfExtensionInstallDirectory = Directory(path.join(
+      baselineUserDirectory.path,
+      'Default',
+      'Extensions',
+      // This is the ID of the dwarf debugging extension.
+      'pdcpmagijalfljmkmjngeonclgbbannb',
+    ));
+    if (!baselineUserDirectory.existsSync()) {
+      baselineUserDirectory.createSync(recursive: true);
+    }
+    if (!dwarfExtensionInstallDirectory.existsSync()) {
+      print('DWARF debugging requested. Launching Chrome. Please install the '
+            'extension and then exit Chrome when the installation is complete...');
+      final Process addExtension = await Process.start(
+        installation.executable,
+        <String>[
+          '--user-data-dir=${baselineUserDirectory.path}',
+          'https://goo.gle/wasm-debugging-extension',
+          '--bwsi',
+          '--no-first-run',
+          '--no-default-browser-check',
+          '--disable-default-apps',
+          '--disable-translate',
+        ]
+      );
+      await addExtension.exitCode;
+    }
+    for (final FileSystemEntity input in baselineUserDirectory.listSync(recursive: true)) {
+      final String relative = path.relative(input.path, from: baselineUserDirectory.path);
+      final String outputPath = path.join(userDirectoryPath, relative);
+      if (input is Directory) {
+        await Directory(outputPath).create(recursive: true);
+      } else if (input is File) {
+        await input.copy(outputPath);
+      }
+    }
+    return userDirectoryPath;
+  }
+
+  final BrowserProcess _process;
+
+  @override
+  final Future<Uri> remoteDebuggerUrl;
+
+  @override
+  Future<void> get onExit => _process.onExit;
+
+  @override
+  Future<void> close() => _process.close();
+
+  // Always compare screenshots when running tests locally. On CI only compare
+  // on Linux.
+  @override
+  bool get supportsScreenshots => Platform.isLinux || !isLuci;
+
+  /// Capture a screenshot of the web content.
+  ///
+  /// Uses Webkit Inspection Protocol server's `captureScreenshot` API.
+  ///
+  /// [region] is used to decide which part of the web content will be used in
+  /// test image. It includes starting coordinate x,y as well as height and
+  /// width of the area to capture.
+  ///
+  /// This method can be used for both macOS and Linux.
+  // TODO(yjbanov): extends tests to Window, https://github.com/flutter/flutter/issues/65673
+  @override
+  Future<Image> captureScreenshot(math.Rectangle<num>? region) async {
+    final wip.ChromeConnection chromeConnection =
+        wip.ChromeConnection('localhost', kDevtoolsPort);
+    final wip.ChromeTab? chromeTab = await chromeConnection.getTab(
+        (wip.ChromeTab chromeTab) => chromeTab.url.contains('localhost'));
+    if (chromeTab == null) {
+      throw StateError(
+        'Failed locate Chrome tab with the test page',
+      );
+    }
+    final wip.WipConnection wipConnection = await chromeTab.connect();
+
+    Map<String, dynamic>? captureScreenshotParameters;
+    if (region != null) {
+      captureScreenshotParameters = <String, dynamic>{
+        'format': 'png',
+        'clip': <String, dynamic>{
+          'x': region.left,
+          'y': region.top,
+          'width': region.width,
+          'height': region.height,
+          'scale':
+              // This is NOT the DPI of the page, instead it's the "zoom level".
+              1,
+        },
+      };
+    }
+
+    // Setting hardware-independent screen parameters:
+    // https://chromedevtools.github.io/devtools-protocol/tot/Emulation
+    await wipConnection
+        .sendCommand('Emulation.setDeviceMetricsOverride', <String, dynamic>{
+      'width': kMaxScreenshotWidth,
+      'height': kMaxScreenshotHeight,
+      'deviceScaleFactor': 1,
+      'mobile': false,
+    });
+    final wip.WipResponse response = await wipConnection.sendCommand(
+        'Page.captureScreenshot', captureScreenshotParameters);
+
+    final Image screenshot =
+        decodePng(base64.decode(response.result!['data'] as String))!;
+
+    return screenshot;
+  }
+
 }
 
 /// Used by [Chrome] to detect a glibc bug and retry launching the
@@ -216,73 +382,10 @@ Future<Uri> getRemoteDebuggerUrl(Uri base) async {
     final HttpClientResponse response = await request.close();
     final List<dynamic>? jsonObject =
         await json.fuse(utf8).decoder.bind(response).single as List<dynamic>?;
-    return base.resolve(jsonObject!.first['devtoolsFrontendUrl'] as String);
+    return base.resolve((jsonObject!.first as Map<dynamic, dynamic>)['devtoolsFrontendUrl'] as String);
   } catch (_) {
     // If we fail to talk to the remote debugger protocol, give up and return
     // the raw URL rather than crashing.
     return base;
-  }
-}
-
-/// [ScreenshotManager] implementation for Chrome.
-///
-/// This manager can be used for both macOS and Linux.
-// TODO(yjbanov): extends tests to Window, https://github.com/flutter/flutter/issues/65673
-class ChromeScreenshotManager extends ScreenshotManager {
-  @override
-  String get filenameSuffix => '';
-
-  /// Capture a screenshot of the web content.
-  ///
-  /// Uses Webkit Inspection Protocol server's `captureScreenshot` API.
-  ///
-  /// [region] is used to decide which part of the web content will be used in
-  /// test image. It includes starting coordinate x,y as well as height and
-  /// width of the area to capture.
-  @override
-  Future<Image> capture(math.Rectangle<num>? region) async {
-    final wip.ChromeConnection chromeConnection =
-        wip.ChromeConnection('localhost', kDevtoolsPort);
-    final wip.ChromeTab? chromeTab = await chromeConnection.getTab(
-        (wip.ChromeTab chromeTab) => chromeTab.url.contains('localhost'));
-    if (chromeTab == null) {
-      throw StateError(
-        'Failed locate Chrome tab with the test page',
-      );
-    }
-    final wip.WipConnection wipConnection = await chromeTab.connect();
-
-    Map<String, dynamic>? captureScreenshotParameters;
-    if (region != null) {
-      captureScreenshotParameters = <String, dynamic>{
-        'format': 'png',
-        'clip': <String, dynamic>{
-          'x': region.left,
-          'y': region.top,
-          'width': region.width,
-          'height': region.height,
-          'scale':
-              // This is NOT the DPI of the page, instead it's the "zoom level".
-              1,
-        },
-      };
-    }
-
-    // Setting hardware-independent screen parameters:
-    // https://chromedevtools.github.io/devtools-protocol/tot/Emulation
-    await wipConnection
-        .sendCommand('Emulation.setDeviceMetricsOverride', <String, dynamic>{
-      'width': kMaxScreenshotWidth,
-      'height': kMaxScreenshotHeight,
-      'deviceScaleFactor': 1,
-      'mobile': false,
-    });
-    final wip.WipResponse response = await wipConnection.sendCommand(
-        'Page.captureScreenshot', captureScreenshotParameters);
-
-    final Image screenshot =
-        decodePng(base64.decode(response.result!['data'] as String))!;
-
-    return screenshot;
   }
 }

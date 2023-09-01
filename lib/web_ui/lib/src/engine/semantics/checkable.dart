@@ -11,10 +11,9 @@
 //                framework. Currently the framework does not report the
 //                grouping of radio buttons.
 
-import 'dart:html' as html;
-
 import 'package:ui/ui.dart' as ui;
 
+import '../dom.dart';
 import 'semantics.dart';
 
 /// The specific type of checkable control.
@@ -50,26 +49,25 @@ _CheckableKind _checkableKindFromSemanticsFlag(
 /// See also [ui.SemanticsFlag.hasCheckedState], [ui.SemanticsFlag.isChecked],
 /// [ui.SemanticsFlag.isInMutuallyExclusiveGroup], [ui.SemanticsFlag.isToggled],
 /// [ui.SemanticsFlag.hasToggledState]
-class Checkable extends RoleManager {
-  final _CheckableKind _kind;
-
+class Checkable extends PrimaryRoleManager {
   Checkable(SemanticsObject semanticsObject)
       : _kind = _checkableKindFromSemanticsFlag(semanticsObject),
-        super(Role.checkable, semanticsObject);
+        super.withBasics(PrimaryRole.checkable, semanticsObject);
+
+  final _CheckableKind _kind;
 
   @override
   void update() {
+    super.update();
+
     if (semanticsObject.isFlagsDirty) {
       switch (_kind) {
         case _CheckableKind.checkbox:
-          semanticsObject.setAriaRole('checkbox', true);
-          break;
+          semanticsObject.setAriaRole('checkbox');
         case _CheckableKind.radio:
-          semanticsObject.setAriaRole('radio', true);
-          break;
+          semanticsObject.setAriaRole('radio');
         case _CheckableKind.toggle:
-          semanticsObject.setAriaRole('switch', true);
-          break;
+          semanticsObject.setAriaRole('switch');
       }
 
       /// Adding disabled and aria-disabled attribute to notify the assistive
@@ -88,23 +86,13 @@ class Checkable extends RoleManager {
 
   @override
   void dispose() {
-    switch (_kind) {
-      case _CheckableKind.checkbox:
-        semanticsObject.setAriaRole('checkbox', false);
-        break;
-      case _CheckableKind.radio:
-        semanticsObject.setAriaRole('radio', false);
-        break;
-      case _CheckableKind.toggle:
-        semanticsObject.setAriaRole('switch', false);
-        break;
-    }
+    super.dispose();
     _removeDisabledAttribute();
   }
 
   void _updateDisabledAttribute() {
     if (semanticsObject.enabledState() == EnabledState.disabled) {
-      final html.Element element = semanticsObject.element;
+      final DomElement element = semanticsObject.element;
       element
         ..setAttribute('aria-disabled', 'true')
         ..setAttribute('disabled', 'true');
@@ -114,7 +102,7 @@ class Checkable extends RoleManager {
   }
 
   void _removeDisabledAttribute() {
-    final html.Element element = semanticsObject.element;
+    final DomElement element = semanticsObject.element;
     element..removeAttribute('aria-disabled')..removeAttribute('disabled');
   }
 }

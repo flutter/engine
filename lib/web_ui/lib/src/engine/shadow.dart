@@ -2,21 +2,22 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
 import 'dart:math' as math;
 
 import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 
+import 'dom.dart';
+
 /// How far is the light source from the surface of the UI.
 ///
-/// Must be kept in sync with `flow/layers/physical_shape_layer.cc`.
+/// Originally based on the constant in `flow/layers/physical_shape_layer.cc`.
 const double kLightHeight = 600.0;
 
 /// The radius of the light source. The positive radius creates a penumbra in
 /// the shadow, which we express using a blur effect.
 ///
-/// Must be kept in sync with `flow/layers/physical_shape_layer.cc`.
+/// Originally based on the constant in  `flow/layers/physical_shape_layer.cc`.
 const double kLightRadius = 800.0;
 
 /// The X offset of the list source relative to the center of the shape.
@@ -72,12 +73,19 @@ ui.Rect computePenumbraBounds(ui.Rect shape, double elevation) {
   final double dx = elevation * tx;
   final double dy = elevation * ty;
   final ui.Offset offset = computeShadowOffset(elevation);
-  return ui.Rect.fromLTRB(
+  final ui.Rect bounds = ui.Rect.fromLTRB(
     shape.left - dx,
     shape.top - dy,
     shape.right + dx,
     shape.bottom + dy,
   ).shift(offset);
+
+  // Expand the bounds rectangle to compensate for inaccuracy in the shadow
+  // calculation.  This is similar to a workaround that had previously been
+  // used in the Flutter framework to adjust the bounds for shadows drawn
+  // by Skia.
+  // (See https://github.com/flutter/flutter/pull/127052)
+  return bounds.inflate(20);
 }
 
 /// Information needed to render a shadow using CSS or canvas.
@@ -131,7 +139,7 @@ SurfaceShadowData? computeShadow(ui.Rect shape, double elevation) {
 
 /// Applies a CSS shadow to the [shape].
 void applyCssShadow(
-    html.Element? element, ui.Rect shape, double elevation, ui.Color color) {
+    DomElement? element, ui.Rect shape, double elevation, ui.Color color) {
   final SurfaceShadowData? shadow = computeShadow(shape, elevation);
   if (shadow == null) {
     element!.style.boxShadow = 'none';

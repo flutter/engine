@@ -5,22 +5,25 @@
 import("../../../tools/impeller.gni")
 
 config("gles_config") {
-  include_dirs = []
-  if (!is_android) {
-    # Generic GL/GLES/EGL/Vulkan headers. Any will do. We just pick one from Angle
-    # because they are there.
-    include_dirs = [ "//third_party/angle/include" ]
-  }
+  # Generic GL/GLES/EGL/Vulkan headers. Any will do. We just pick one from Angle
+  # because they are there.
+  include_dirs = [ "//third_party/angle/include" ]
 }
 
 impeller_component("gles") {
-  public_configs = [ ":gles_config" ]
+  public_configs = []
 
   sources = [
     "allocator_gles.cc",
     "allocator_gles.h",
+    "blit_command_gles.cc",
+    "blit_command_gles.h",
+    "blit_pass_gles.cc",
+    "blit_pass_gles.h",
     "buffer_bindings_gles.cc",
     "buffer_bindings_gles.h",
+    "capabilities_gles.cc",
+    "capabilities_gles.h",
     "command_buffer_gles.cc",
     "command_buffer_gles.h",
     "context_gles.cc",
@@ -57,6 +60,17 @@ impeller_component("gles") {
     "texture_gles.cc",
     "texture_gles.h",
   ]
+
+  if (!is_android && !is_fuchsia) {
+    public_configs = [ ":gles_config" ]
+    sources += [
+      "//third_party/angle/include/GLES2/gl2ext.h",
+
+      # The GLES3 API is a superset of GLES2. Although we target GLES2, we use
+      # some GLES3 features if the driver supports them.
+      "//third_party/angle/include/GLES3/gl3.h",
+    ]
+  }
 
   public_deps = [
     "../../:renderer",

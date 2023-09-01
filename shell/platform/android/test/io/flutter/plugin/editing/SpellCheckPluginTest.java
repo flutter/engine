@@ -21,12 +21,13 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.SpellCheckChannel;
 import io.flutter.plugin.common.BinaryMessenger;
-import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
+import io.flutter.plugin.common.StandardMethodCodec;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Locale;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,11 +39,13 @@ public class SpellCheckPluginTest {
   private static void sendToBinaryMessageHandler(
       BinaryMessenger.BinaryMessageHandler binaryMessageHandler, String method, Object args) {
     MethodCall methodCall = new MethodCall(method, args);
-    ByteBuffer encodedMethodCall = JSONMethodCodec.INSTANCE.encodeMethodCall(methodCall);
+    ByteBuffer encodedMethodCall = StandardMethodCodec.INSTANCE.encodeMethodCall(methodCall);
     binaryMessageHandler.onMessage(
         (ByteBuffer) encodedMethodCall.flip(), mock(BinaryMessenger.BinaryReply.class));
   }
 
+  @SuppressWarnings("deprecation")
+  // setMessageHandler is deprecated.
   @Test
   public void respondsToSpellCheckChannelMessage() {
     ArgumentCaptor<BinaryMessenger.BinaryMessageHandler> binaryMessageHandlerCaptor =
@@ -182,11 +185,10 @@ public class SpellCheckPluginTest {
         spy(new SpellCheckPlugin(fakeTextServicesManager, fakeSpellCheckChannel));
     MethodChannel.Result mockResult = mock(MethodChannel.Result.class);
     spellCheckPlugin.pendingResult = mockResult;
-    spellCheckPlugin.pendingResultText = "Hello, world!";
 
     spellCheckPlugin.onGetSentenceSuggestions(new SentenceSuggestionsInfo[] {});
 
-    verify(mockResult).success(new ArrayList<String>(Arrays.asList("Hello, world!", "")));
+    verify(mockResult).success(new ArrayList<HashMap<String, Object>>());
   }
 
   @Test
@@ -197,7 +199,6 @@ public class SpellCheckPluginTest {
         spy(new SpellCheckPlugin(fakeTextServicesManager, fakeSpellCheckChannel));
     MethodChannel.Result mockResult = mock(MethodChannel.Result.class);
     spellCheckPlugin.pendingResult = mockResult;
-    spellCheckPlugin.pendingResultText = "Hello, wrold!";
 
     spellCheckPlugin.onGetSentenceSuggestions(
         new SentenceSuggestionsInfo[] {
@@ -211,7 +212,59 @@ public class SpellCheckPluginTest {
               new int[] {5})
         });
 
-    verify(mockResult)
-        .success(new ArrayList<String>(Arrays.asList("Hello, wrold!", "7.11.world\nword\nold")));
+    ArrayList<HashMap<String, Object>> expectedResults = new ArrayList<HashMap<String, Object>>();
+    HashMap<String, Object> expectedResult = new HashMap<String, Object>();
+
+    expectedResult.put(SpellCheckPlugin.START_INDEX_KEY, 7);
+    expectedResult.put(SpellCheckPlugin.END_INDEX_KEY, 12);
+    expectedResult.put(
+        SpellCheckPlugin.SUGGESTIONS_KEY,
+        new ArrayList<String>(Arrays.asList("world", "word", "old")));
+    expectedResults.add(expectedResult);
+
+    verify(mockResult).success(expectedResults);
+  }
+
+  @Test
+  public void onGetSentenceSuggestionsResultsWithSuccessAndNoResultsWhenSuggestionsAreInvalid() {
+    TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
+    SpellCheckChannel fakeSpellCheckChannel = mock(SpellCheckChannel.class);
+    SpellCheckPlugin spellCheckPlugin =
+        spy(new SpellCheckPlugin(fakeTextServicesManager, fakeSpellCheckChannel));
+    MethodChannel.Result mockResult = mock(MethodChannel.Result.class);
+    spellCheckPlugin.pendingResult = mockResult;
+
+    spellCheckPlugin.onGetSentenceSuggestions(
+        new SentenceSuggestionsInfo[] {
+          new SentenceSuggestionsInfo(
+              (new SuggestionsInfo[] {
+                new SuggestionsInfo(
+                    SuggestionsInfo.RESULT_ATTR_LOOKS_LIKE_TYPO,
+                    // This is the suggestion that may be provided by the Samsung spell checker:
+                    new String[] {""})
+              }),
+              new int[] {7},
+              new int[] {5})
+        });
+
+    verify(mockResult).success(new ArrayList<HashMap<String, Object>>());
+  }
+
+  @Test
+  public void onGetSentenceSuggestionsResultsWithSuccessAndNoResultsWhenSuggestionsAreInvalid2() {
+    TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
+    SpellCheckChannel fakeSpellCheckChannel = mock(SpellCheckChannel.class);
+    SpellCheckPlugin spellCheckPlugin =
+        spy(new SpellCheckPlugin(fakeTextServicesManager, fakeSpellCheckChannel));
+    MethodChannel.Result mockResult = mock(MethodChannel.Result.class);
+    spellCheckPlugin.pendingResult = mockResult;
+
+    spellCheckPlugin.onGetSentenceSuggestions(
+        new SentenceSuggestionsInfo[] {
+          // This "suggestion" may be provided by the Samsung spell checker:
+          null
+        });
+
+    verify(mockResult).success(new ArrayList<HashMap<String, Object>>());
   }
 }

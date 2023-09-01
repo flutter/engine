@@ -7,13 +7,15 @@ import("//flutter/testing/dart/compile_test.gni")
 tests = [
   "skp_test.dart",
   "tracing_test.dart",
+  "shader_reload_test.dart",
+  "vmservice_methods_test.dart",
 ]
 
 foreach(test, tests) {
   compile_flutter_dart_test("compile_$test") {
     dart_file = test
     dart_kernel = "$root_gen_dir/$test.dill"
-    packages = "../.packages"
+    packages = "../.dart_tool/package_config.json"
   }
 }
 

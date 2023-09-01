@@ -12,11 +12,11 @@
 #include "flutter/fml/macros.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/geometry/color.h"
+#include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/text_frame.h"
 
 namespace impeller {
 
-class GlyphAtlas;
 class LazyGlyphAtlas;
 class Context;
 
@@ -26,16 +26,29 @@ class TextContents final : public Contents {
 
   ~TextContents();
 
-  void SetTextFrame(TextFrame frame);
-
-  void SetGlyphAtlas(std::shared_ptr<GlyphAtlas> atlas);
-
-  void SetGlyphAtlas(std::shared_ptr<LazyGlyphAtlas> atlas);
+  void SetTextFrame(TextFrame&& frame);
 
   void SetColor(Color color);
 
+  Color GetColor() const;
+
+  // |Contents|
+  bool CanInheritOpacity(const Entity& entity) const override;
+
+  // |Contents|
+  void SetInheritedOpacity(Scalar opacity) override;
+
+  void SetOffset(Vector2 offset);
+
+  std::optional<Rect> GetTextFrameBounds() const;
+
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
+
+  // |Contents|
+  void PopulateGlyphAtlas(
+      const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
+      Scalar scale) override;
 
   // |Contents|
   bool Render(const ContentContext& renderer,
@@ -44,13 +57,15 @@ class TextContents final : public Contents {
 
  private:
   TextFrame frame_;
+  Scalar scale_ = 1.0;
   Color color_;
-  mutable std::variant<std::shared_ptr<GlyphAtlas>,
-                       std::shared_ptr<LazyGlyphAtlas>>
-      atlas_;
+  Scalar inherited_opacity_ = 1.0;
+  Vector2 offset_;
 
   std::shared_ptr<GlyphAtlas> ResolveAtlas(
-      std::shared_ptr<Context> context) const;
+      Context& context,
+      GlyphAtlas::Type type,
+      const std::shared_ptr<LazyGlyphAtlas>& lazy_atlas) const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(TextContents);
 };

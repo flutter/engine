@@ -4,13 +4,28 @@
 
 #include "impeller/renderer/render_target.h"
 
+#include <sstream>
+
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
-#include "impeller/renderer/allocator.h"
+#include "impeller/core/allocator.h"
+#include "impeller/core/texture.h"
 #include "impeller/renderer/context.h"
-#include "impeller/renderer/texture.h"
 
 namespace impeller {
+
+RenderTargetAllocator::RenderTargetAllocator(
+    std::shared_ptr<Allocator> allocator)
+    : allocator_(std::move(allocator)) {}
+
+void RenderTargetAllocator::Start() {}
+
+void RenderTargetAllocator::End() {}
+
+std::shared_ptr<Texture> RenderTargetAllocator::CreateTexture(
+    const TextureDescriptor& desc) {
+  return allocator_->CreateTexture(desc);
+}
 
 RenderTarget::RenderTarget() = default;
 
@@ -59,12 +74,20 @@ bool RenderTarget::IsValid() const {
 
       if (texture_type != attachment.texture->GetTextureDescriptor().type) {
         passes_type_validation = false;
+        VALIDATION_LOG << "Render target has incompatible texture types: "
+                       << TextureTypeToString(texture_type.value()) << " != "
+                       << TextureTypeToString(
+                              attachment.texture->GetTextureDescriptor().type)
+                       << " on target " << ToString();
         return false;
       }
 
       if (sample_count !=
           attachment.texture->GetTextureDescriptor().sample_count) {
         passes_type_validation = false;
+        VALIDATION_LOG << "Render target (" << ToString()
+                       << ") has incompatible sample counts.";
+
         return false;
       }
 
@@ -72,8 +95,6 @@ bool RenderTarget::IsValid() const {
     };
     IterateAllAttachments(iterator);
     if (!passes_type_validation) {
-      VALIDATION_LOG << "Render target texture types are not of the same type "
-                        "and sample count.";
       return false;
     }
   }
@@ -82,7 +103,7 @@ bool RenderTarget::IsValid() const {
 }
 
 void RenderTarget::IterateAllAttachments(
-    std::function<bool(const Attachment& attachment)> iterator) const {
+    const std::function<bool(const Attachment& attachment)>& iterator) const {
   for (const auto& color : colors_) {
     if (!iterator(color.second)) {
       return;
@@ -136,26 +157,50 @@ std::shared_ptr<Texture> RenderTarget::GetRenderTargetTexture() const {
   if (found == colors_.end()) {
     return nullptr;
   }
-  return found->second.texture;
+  return found->second.resolve_texture ? found->second.resolve_texture
+                                       : found->second.texture;
 }
 
-RenderTarget& RenderTarget::SetColorAttachment(ColorAttachment attachment,
-                                               size_t index) {
-  if (attachment) {
+PixelFormat RenderTarget::GetRenderTargetPixelFormat() const {
+  if (auto texture = GetRenderTargetTexture(); texture != nullptr) {
+    return texture->GetTextureDescriptor().format;
+  }
+
+  return PixelFormat::kUnknown;
+}
+
+size_t RenderTarget::GetMaxColorAttacmentBindIndex() const {
+  size_t max = 0;
+  for (const auto& color : colors_) {
+    max = std::max(color.first, max);
+  }
+  return max;
+}
+
+RenderTarget& RenderTarget::SetColorAttachment(
+    const ColorAttachment& attachment,
+    size_t index) {
+  if (attachment.IsValid()) {
     colors_[index] = attachment;
   }
   return *this;
 }
 
-RenderTarget& RenderTarget::SetDepthAttachment(DepthAttachment attachment) {
-  if (attachment) {
+RenderTarget& RenderTarget::SetDepthAttachment(
+    std::optional<DepthAttachment> attachment) {
+  if (!attachment.has_value()) {
+    depth_ = std::nullopt;
+  } else if (attachment->IsValid()) {
     depth_ = std::move(attachment);
   }
   return *this;
 }
 
-RenderTarget& RenderTarget::SetStencilAttachment(StencilAttachment attachment) {
-  if (attachment) {
+RenderTarget& RenderTarget::SetStencilAttachment(
+    std::optional<StencilAttachment> attachment) {
+  if (!attachment.has_value()) {
+    stencil_ = std::nullopt;
+  } else if (attachment->IsValid()) {
     stencil_ = std::move(attachment);
   }
   return *this;
@@ -175,62 +220,200 @@ const std::optional<StencilAttachment>& RenderTarget::GetStencilAttachment()
   return stencil_;
 }
 
-RenderTarget RenderTarget::CreateOffscreen(const Context& context,
-                                           ISize size,
-                                           std::string label,
-                                           StorageMode color_storage_mode,
-                                           LoadAction color_load_action,
-                                           StoreAction color_store_action,
-                                           StorageMode stencil_storage_mode,
-                                           LoadAction stencil_load_action,
-                                           StoreAction stencil_store_action) {
+RenderTarget RenderTarget::CreateOffscreen(
+    const Context& context,
+    RenderTargetAllocator& allocator,
+    ISize size,
+    const std::string& label,
+    AttachmentConfig color_attachment_config,
+    std::optional<AttachmentConfig> stencil_attachment_config) {
   if (size.IsEmpty()) {
     return {};
   }
 
+// Dont force additional PSO variants on Vulkan.
+#ifdef FML_OS_ANDROID
+  FML_DCHECK(stencil_attachment_config.has_value());
+#endif  // FML_OS_ANDROID
+
+  RenderTarget target;
+  PixelFormat pixel_format = context.GetCapabilities()->GetDefaultColorFormat();
   TextureDescriptor color_tex0;
-  color_tex0.format = PixelFormat::kDefaultColor;
+  color_tex0.storage_mode = color_attachment_config.storage_mode;
+  color_tex0.format = pixel_format;
   color_tex0.size = size;
   color_tex0.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget) |
                      static_cast<uint64_t>(TextureUsage::kShaderRead);
 
-  TextureDescriptor stencil_tex0;
-  stencil_tex0.format = PixelFormat::kDefaultStencil;
-  stencil_tex0.size = size;
-  stencil_tex0.usage =
-      static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
-
   ColorAttachment color0;
-  color0.clear_color = Color::BlackTransparent();
-  color0.load_action = color_load_action;
-  color0.store_action = color_store_action;
-  color0.texture = context.GetPermanentsAllocator()->CreateTexture(
-      color_storage_mode, color_tex0);
+  color0.clear_color = color_attachment_config.clear_color;
+  color0.load_action = color_attachment_config.load_action;
+  color0.store_action = color_attachment_config.store_action;
+  color0.texture = allocator.CreateTexture(color_tex0);
 
   if (!color0.texture) {
     return {};
   }
+  color0.texture->SetLabel(SPrintF("%s Color Texture", label.c_str()));
+  target.SetColorAttachment(color0, 0u);
 
-  color0.texture->SetLabel(SPrintF("%sColorTexture", label.c_str()));
+  if (stencil_attachment_config.has_value()) {
+    target.SetupStencilAttachment(context, allocator, size, false, label,
+                                  stencil_attachment_config.value());
+  } else {
+    target.SetStencilAttachment(std::nullopt);
+  }
 
-  StencilAttachment stencil0;
-  stencil0.load_action = stencil_load_action;
-  stencil0.store_action = stencil_store_action;
-  stencil0.clear_stencil = 0u;
-  stencil0.texture = context.GetPermanentsAllocator()->CreateTexture(
-      stencil_storage_mode, stencil_tex0);
+  return target;
+}
 
-  if (!stencil0.texture) {
+RenderTarget RenderTarget::CreateOffscreenMSAA(
+    const Context& context,
+    RenderTargetAllocator& allocator,
+    ISize size,
+    const std::string& label,
+    AttachmentConfigMSAA color_attachment_config,
+    std::optional<AttachmentConfig> stencil_attachment_config) {
+  if (size.IsEmpty()) {
     return {};
   }
 
-  stencil0.texture->SetLabel(SPrintF("%sStencilTexture", label.c_str()));
+// Dont force additional PSO variants on Vulkan.
+#ifdef FML_OS_ANDROID
+  FML_DCHECK(stencil_attachment_config.has_value());
+#endif  // FML_OS_ANDROID
 
   RenderTarget target;
-  target.SetColorAttachment(std::move(color0), 0u);
-  target.SetStencilAttachment(std::move(stencil0));
+  PixelFormat pixel_format = context.GetCapabilities()->GetDefaultColorFormat();
+
+  // Create MSAA color texture.
+
+  TextureDescriptor color0_tex_desc;
+  color0_tex_desc.storage_mode = color_attachment_config.storage_mode;
+  color0_tex_desc.type = TextureType::kTexture2DMultisample;
+  color0_tex_desc.sample_count = SampleCount::kCount4;
+  color0_tex_desc.format = pixel_format;
+  color0_tex_desc.size = size;
+  color0_tex_desc.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget);
+
+  auto color0_msaa_tex = allocator.CreateTexture(color0_tex_desc);
+  if (!color0_msaa_tex) {
+    VALIDATION_LOG << "Could not create multisample color texture.";
+    return {};
+  }
+  color0_msaa_tex->SetLabel(
+      SPrintF("%s Color Texture (Multisample)", label.c_str()));
+
+  // Create color resolve texture.
+
+  TextureDescriptor color0_resolve_tex_desc;
+  color0_resolve_tex_desc.storage_mode =
+      color_attachment_config.resolve_storage_mode;
+  color0_resolve_tex_desc.format = pixel_format;
+  color0_resolve_tex_desc.size = size;
+  color0_resolve_tex_desc.compression_type = CompressionType::kLossy;
+  color0_resolve_tex_desc.usage =
+      static_cast<uint64_t>(TextureUsage::kRenderTarget) |
+      static_cast<uint64_t>(TextureUsage::kShaderRead);
+
+  auto color0_resolve_tex = allocator.CreateTexture(color0_resolve_tex_desc);
+  if (!color0_resolve_tex) {
+    VALIDATION_LOG << "Could not create color texture.";
+    return {};
+  }
+  color0_resolve_tex->SetLabel(SPrintF("%s Color Texture", label.c_str()));
+
+  // Color attachment.
+
+  ColorAttachment color0;
+  color0.clear_color = color_attachment_config.clear_color;
+  color0.load_action = color_attachment_config.load_action;
+  color0.store_action = color_attachment_config.store_action;
+  color0.texture = color0_msaa_tex;
+  color0.resolve_texture = color0_resolve_tex;
+
+  target.SetColorAttachment(color0, 0u);
+
+  // Create MSAA stencil texture.
+
+  if (stencil_attachment_config.has_value()) {
+    target.SetupStencilAttachment(context, allocator, size, true, label,
+                                  stencil_attachment_config.value());
+  } else {
+    target.SetStencilAttachment(std::nullopt);
+  }
 
   return target;
+}
+
+void RenderTarget::SetupStencilAttachment(
+    const Context& context,
+    RenderTargetAllocator& allocator,
+    ISize size,
+    bool msaa,
+    const std::string& label,
+    AttachmentConfig stencil_attachment_config) {
+  TextureDescriptor stencil_tex0;
+  stencil_tex0.storage_mode = stencil_attachment_config.storage_mode;
+  if (msaa) {
+    stencil_tex0.type = TextureType::kTexture2DMultisample;
+    stencil_tex0.sample_count = SampleCount::kCount4;
+  }
+  stencil_tex0.format = context.GetCapabilities()->GetDefaultStencilFormat();
+  stencil_tex0.size = size;
+  stencil_tex0.usage =
+      static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
+
+  StencilAttachment stencil0;
+  stencil0.load_action = stencil_attachment_config.load_action;
+  stencil0.store_action = stencil_attachment_config.store_action;
+  stencil0.clear_stencil = 0u;
+  stencil0.texture = allocator.CreateTexture(stencil_tex0);
+
+  if (!stencil0.texture) {
+    return;  // Error messages are handled by `Allocator::CreateTexture`.
+  }
+  stencil0.texture->SetLabel(SPrintF("%s Stencil Texture", label.c_str()));
+  SetStencilAttachment(std::move(stencil0));
+}
+
+size_t RenderTarget::GetTotalAttachmentCount() const {
+  size_t count = 0u;
+  for (const auto& [_, color] : colors_) {
+    if (color.texture) {
+      count++;
+    }
+    if (color.resolve_texture) {
+      count++;
+    }
+  }
+  if (depth_.has_value()) {
+    count++;
+  }
+  if (stencil_.has_value()) {
+    count++;
+  }
+  return count;
+}
+
+std::string RenderTarget::ToString() const {
+  std::stringstream stream;
+
+  for (const auto& [index, color] : colors_) {
+    stream << SPrintF("Color[%zu]=(%s)", index,
+                      ColorAttachmentToString(color).c_str());
+  }
+  if (depth_) {
+    stream << ",";
+    stream << SPrintF("Depth=(%s)",
+                      DepthAttachmentToString(depth_.value()).c_str());
+  }
+  if (stencil_) {
+    stream << ",";
+    stream << SPrintF("Stencil=(%s)",
+                      StencilAttachmentToString(stencil_.value()).c_str());
+  }
+  return stream.str();
 }
 
 }  // namespace impeller
