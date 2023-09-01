@@ -17,8 +17,6 @@ namespace testing {
 class MockDeviceBuffer : public DeviceBuffer {
  public:
   MockDeviceBuffer(const DeviceBufferDescriptor& desc) : DeviceBuffer(desc) {}
-  // MOCK_METHOD(bool, CopyHostBuffer, (const uint8_t* source, Range
-  // source_range, size_t offset), (override));
 
   MOCK_METHOD(bool, SetLabel, (const std::string& label), (override));
 
@@ -154,9 +152,6 @@ class MockTexture : public Texture {
  public:
   MockTexture(const TextureDescriptor& desc) : Texture(desc) {}
   MOCK_METHOD(void, SetLabel, (std::string_view label), (override));
-  // MOCK_METHOD(bool, SetContents, (const uint8_t* contents, size_t length,
-  // size_t slice), (override)); MOCK_METHOD(bool, SetContents,
-  // (std::shared_ptr<const fml::Mapping> mapping, size_t slice), (override));
   MOCK_METHOD(bool, IsValid, (), (const, override));
   MOCK_METHOD(ISize, GetSize, (), (const, override));
   MOCK_METHOD(bool,
