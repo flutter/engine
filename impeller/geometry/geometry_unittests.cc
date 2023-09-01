@@ -612,11 +612,11 @@ TEST(GeometryTest, SimplePath) {
                   .AddCubicCurve({300, 300}, {400, 400}, {500, 500}, {600, 600})
                   .TakePath();
 
-  ASSERT_EQ(path.GetComponentCount(), 4u);
+  ASSERT_EQ(path.GetComponentCount(), 6u);
   ASSERT_EQ(path.GetComponentCount(Path::ComponentType::kLinear), 1u);
   ASSERT_EQ(path.GetComponentCount(Path::ComponentType::kQuadratic), 1u);
   ASSERT_EQ(path.GetComponentCount(Path::ComponentType::kCubic), 1u);
-  ASSERT_EQ(path.GetComponentCount(Path::ComponentType::kContour), 1u);
+  ASSERT_EQ(path.GetComponentCount(Path::ComponentType::kContour), 3u);
 
   path.EnumerateComponents(
       [](size_t index, const LinearPathComponent& linear) {
@@ -630,7 +630,7 @@ TEST(GeometryTest, SimplePath) {
         Point p1(100, 100);
         Point cp(200, 200);
         Point p2(300, 300);
-        ASSERT_EQ(index, 2u);
+        ASSERT_EQ(index, 3u);
         ASSERT_EQ(quad.p1, p1);
         ASSERT_EQ(quad.cp, cp);
         ASSERT_EQ(quad.p2, p2);
@@ -640,16 +640,26 @@ TEST(GeometryTest, SimplePath) {
         Point cp1(400, 400);
         Point cp2(500, 500);
         Point p2(600, 600);
-        ASSERT_EQ(index, 3u);
+        ASSERT_EQ(index, 5u);
         ASSERT_EQ(cubic.p1, p1);
         ASSERT_EQ(cubic.cp1, cp1);
         ASSERT_EQ(cubic.cp2, cp2);
         ASSERT_EQ(cubic.p2, p2);
       },
       [](size_t index, const ContourComponent& contour) {
-        Point p1(0, 0);
-        ASSERT_EQ(index, 0u);
-        ASSERT_EQ(contour.destination, p1);
+        // There is an initial countour added for each curve.
+        if (index == 0u) {
+          Point p1(0, 0);
+          ASSERT_EQ(contour.destination, p1);
+        } else if (index == 2u) {
+          Point p1(100, 100);
+          ASSERT_EQ(contour.destination, p1);
+        } else if (index == 4u) {
+          Point p1(300, 300);
+          ASSERT_EQ(contour.destination, p1);
+        } else {
+          ASSERT_FALSE(true);
+        }
         ASSERT_FALSE(contour.is_closed);
       });
 }
