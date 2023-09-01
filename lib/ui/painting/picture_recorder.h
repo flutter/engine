@@ -7,7 +7,7 @@
 
 #include <variant>
 
-#include "flutter/display_list/display_list_builder.h"
+#include "flutter/display_list/dl_builder.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 
 #if IMPELLER_SUPPORTS_RENDERING
