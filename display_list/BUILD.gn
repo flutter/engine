@@ -148,10 +148,6 @@ if (enable_unittests) {
     if (!defined(defines)) {
       defines = []
     }
-    if (is_win) {
-      # Required for M_PI and others.
-      defines += [ "_USE_MATH_DEFINES" ]
-    }
 
     # This is needed for //third_party/googletest for linking zircon symbols.
     if (is_fuchsia) {
@@ -183,10 +179,6 @@ if (enable_unittests) {
     if (!defined(defines)) {
       defines = []
     }
-    if (is_win) {
-      # Required for M_PI and others.
-      defines += [ "_USE_MATH_DEFINES" ]
-    }
 
     # This is needed for //third_party/googletest for linking zircon symbols.
     if (is_fuchsia) {
@@ -211,10 +203,6 @@ if (enable_unittests) {
 
     if (!defined(defines)) {
       defines = []
-    }
-    if (is_win) {
-      # Required for M_PI and others.
-      defines += [ "_USE_MATH_DEFINES" ]
     }
 
     # This is needed for //third_party/googletest for linking zircon symbols.

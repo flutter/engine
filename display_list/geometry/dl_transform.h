@@ -249,26 +249,26 @@ class DlTransform {
   }
 
   void SetIdentity() {
-    memcpy(m_, identity_values, sizeof(m_));
+    InitIdentity();
     complexity_ = Complexity::kIdentity;
   }
 
   void SetTranslate(DlScalar tx, DlScalar ty) {
-    memcpy(m_, identity_values, sizeof(m_));
+    InitIdentity();
     m_[kXT] = tx;
     m_[kYT] = ty;
     complexity_ = Complexity::kTranslate2D;
   }
 
   void SetScale(DlScalar sx, DlScalar sy) {
-    memcpy(m_, identity_values, sizeof(m_));
+    InitIdentity();
     m_[kXX] = sx;
     m_[kYY] = sy;
     complexity_ = Complexity::kScaleTranslate2D;
   }
 
   void SetAnchoredScale(DlScalar sx, DlScalar sy, DlScalar tx, DlScalar ty) {
-    memcpy(m_, identity_values, sizeof(m_));
+    InitIdentity();
     m_[kXX] = sx;
     m_[kYY] = sy;
     m_[kXT] = tx - sx * tx;
@@ -277,7 +277,7 @@ class DlTransform {
   }
 
   void SetCosSin(DlFVector cos_sin) {
-    memcpy(m_, identity_values, sizeof(m_));
+    InitIdentity();
     m_[kXX] = +cos_sin.x();
     m_[kXY] = -cos_sin.y();
     m_[kYX] = +cos_sin.y();
@@ -358,7 +358,7 @@ class DlTransform {
 
   bool operator!=(const DlTransform& other) const { return !(*this == other); }
 
-  bool is_identity() const { return complexity() == Complexity::kIdentity; }
+  bool is_identity() const { return complexity() <= Complexity::kIdentity; }
   bool is_translate() const { return complexity() <= Complexity::kTranslate2D; }
   bool is_scale_translate() const {
     return complexity() <= Complexity::kScaleTranslate2D;
@@ -473,8 +473,6 @@ class DlTransform {
   static constexpr int kWT = 15;
 
   enum class Complexity {
-    kUnknown,
-
     // Matrix is identity
     kIdentity,
 
@@ -511,7 +509,11 @@ class DlTransform {
     // in a non-unity W result.
     kPerspectiveAll,
 
-    kLast = kPerspectiveAll,
+    // Safe value that causes the complexity to be reevaluated the next
+    // time it is needed.
+    kUnknown,
+
+    kLast = kUnknown,
   };
 
   static constexpr DlScalar identity_values[16] = {
@@ -522,6 +524,7 @@ class DlTransform {
       0.0f, 0.0f, 0.0f, 1.0f,
       // clang-format on
   };
+  void InitIdentity() { memcpy(m_, identity_values, sizeof(m_)); }
 
   static constexpr Complexity complexity_values[16] = {
       // clang-format off
@@ -581,6 +584,8 @@ class DlTransform {
 
   DlScalar m_[16];
   mutable Complexity complexity_;
+  static_assert(sizeof(m_) == sizeof(identity_values));
+  static_assert(sizeof(m_) == sizeof(DlScalar) * 16);
 };
 
 extern std::ostream& operator<<(std::ostream& os, const DlTransform& t);

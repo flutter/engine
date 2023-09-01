@@ -537,22 +537,24 @@ TEST(DlTransformTest, CompareToSkia) {
           []() { return DlTransform::MakeRotate(DlDegrees(20)); },
           []() { return SkMatrix::RotateDeg(20); },
           []() {
-            return SkM44::Rotate({0, 0, 1}, 20 * M_PI / 180);
+            return SkM44::Rotate({0, 0, 1}, 20 * SK_ScalarPI / 180);
           },
           [](DlTransform& transform) { transform.SetRotate(DlDegrees(20)); },
           [](SkMatrix& transform) { transform.setRotate(20); },
           [](SkM44& transform) {
-            transform.setRotate({0, 0, 1}, 20 * M_PI / 180);
+            transform.setRotate({0, 0, 1}, 20 * SK_ScalarPI / 180);
           },
           [](DlTransform& transform) { transform.RotateInner(DlDegrees(20)); },
           [](SkMatrix& transform) { transform.preRotate(20); },
           [](SkM44& transform) {
-            transform.preConcat(SkM44::Rotate({0, 0, 1}, 20 * M_PI / 180));
+            transform.preConcat(
+                SkM44::Rotate({0, 0, 1}, 20 * SK_ScalarPI / 180));
           },
           [](DlTransform& transform) { transform.RotateOuter(DlDegrees(20)); },
           [](SkMatrix& transform) { transform.postRotate(20); },
           [](SkM44& transform) {
-            transform.postConcat(SkM44::Rotate({0, 0, 1}, 20 * M_PI / 180));
+            transform.postConcat(
+                SkM44::Rotate({0, 0, 1}, 20 * SK_ScalarPI / 180));
           },
       },
       {
@@ -562,28 +564,30 @@ TEST(DlTransformTest, CompareToSkia) {
           []() { return DlTransform::MakeRotate(kDlAxis_Z, DlDegrees(20)); },
           []() { return SkMatrix::RotateDeg(20); },
           []() {
-            return SkM44::Rotate({0, 0, 1}, 20 * M_PI / 180);
+            return SkM44::Rotate({0, 0, 1}, 20 * SK_ScalarPI / 180);
           },
           [](DlTransform& transform) {
             transform.SetRotate(kDlAxis_Z, DlDegrees(20));
           },
           [](SkMatrix& transform) { transform.setRotate(20); },
           [](SkM44& transform) {
-            transform.setRotate({0, 0, 1}, 20 * M_PI / 180);
+            transform.setRotate({0, 0, 1}, 20 * SK_ScalarPI / 180);
           },
           [](DlTransform& transform) {
             transform.RotateInner(kDlAxis_Z, DlDegrees(20));
           },
           [](SkMatrix& transform) { transform.preRotate(20); },
           [](SkM44& transform) {
-            transform.preConcat(SkM44::Rotate({0, 0, 1}, 20 * M_PI / 180));
+            transform.preConcat(
+                SkM44::Rotate({0, 0, 1}, 20 * SK_ScalarPI / 180));
           },
           [](DlTransform& transform) {
             transform.RotateOuter(kDlAxis_Z, DlDegrees(20));
           },
           [](SkMatrix& transform) { transform.postRotate(20); },
           [](SkM44& transform) {
-            transform.postConcat(SkM44::Rotate({0, 0, 1}, 20 * M_PI / 180));
+            transform.postConcat(
+                SkM44::Rotate({0, 0, 1}, 20 * SK_ScalarPI / 180));
           },
       },
       {
@@ -592,28 +596,30 @@ TEST(DlTransformTest, CompareToSkia) {
           []() { return DlTransform::MakeRotate(kDlAxis_X, DlDegrees(20)); },
           []() { return SkMatrix(); },  // Not executed
           []() {
-            return SkM44::Rotate({1, 0, 0}, 20 * M_PI / 180);
+            return SkM44::Rotate({1, 0, 0}, 20 * SK_ScalarPI / 180);
           },
           [](DlTransform& transform) {
             transform.SetRotate(kDlAxis_X, DlDegrees(20));
           },
           [](SkMatrix& transform) {},  // Not executed
           [](SkM44& transform) {
-            transform.setRotate({1, 0, 0}, 20 * M_PI / 180);
+            transform.setRotate({1, 0, 0}, 20 * SK_ScalarPI / 180);
           },
           [](DlTransform& transform) {
             transform.RotateInner(kDlAxis_X, DlDegrees(20));
           },
           [](SkMatrix& transform) {},  // Not executed
           [](SkM44& transform) {
-            transform.preConcat(SkM44::Rotate({1, 0, 0}, 20 * M_PI / 180));
+            transform.preConcat(
+                SkM44::Rotate({1, 0, 0}, 20 * SK_ScalarPI / 180));
           },
           [](DlTransform& transform) {
             transform.RotateOuter(kDlAxis_X, DlDegrees(20));
           },
           [](SkMatrix& transform) {},  // Not executed
           [](SkM44& transform) {
-            transform.postConcat(SkM44::Rotate({1, 0, 0}, 20 * M_PI / 180));
+            transform.postConcat(
+                SkM44::Rotate({1, 0, 0}, 20 * SK_ScalarPI / 180));
           },
       },
       {
@@ -622,28 +628,30 @@ TEST(DlTransformTest, CompareToSkia) {
           []() { return DlTransform::MakeRotate(kDlAxis_Y, DlDegrees(20)); },
           []() { return SkMatrix(); },  // Not executed
           []() {
-            return SkM44::Rotate({0, 1, 0}, 20 * M_PI / 180);
+            return SkM44::Rotate({0, 1, 0}, 20 * SK_ScalarPI / 180);
           },
           [](DlTransform& transform) {
             transform.SetRotate(kDlAxis_Y, DlDegrees(20));
           },
           [](SkMatrix& transform) {},  // Not executed
           [](SkM44& transform) {
-            transform.setRotate({0, 1, 0}, 20 * M_PI / 180);
+            transform.setRotate({0, 1, 0}, 20 * SK_ScalarPI / 180);
           },
           [](DlTransform& transform) {
             transform.RotateInner(kDlAxis_Y, DlDegrees(20));
           },
           [](SkMatrix& transform) {},  // Not executed
           [](SkM44& transform) {
-            transform.preConcat(SkM44::Rotate({0, 1, 0}, 20 * M_PI / 180));
+            transform.preConcat(
+                SkM44::Rotate({0, 1, 0}, 20 * SK_ScalarPI / 180));
           },
           [](DlTransform& transform) {
             transform.RotateOuter(kDlAxis_Y, DlDegrees(20));
           },
           [](SkMatrix& transform) {},  // Not executed
           [](SkM44& transform) {
-            transform.postConcat(SkM44::Rotate({0, 1, 0}, 20 * M_PI / 180));
+            transform.postConcat(
+                SkM44::Rotate({0, 1, 0}, 20 * SK_ScalarPI / 180));
           },
       },
       {
@@ -652,22 +660,24 @@ TEST(DlTransformTest, CompareToSkia) {
           []() { return DlTransform::MakeRotate(DlDegrees(200)); },
           []() { return SkMatrix::RotateDeg(200); },
           []() {
-            return SkM44::Rotate({0, 0, 1}, 200 * M_PI / 180);
+            return SkM44::Rotate({0, 0, 1}, 200 * SK_ScalarPI / 180);
           },
           [](DlTransform& transform) { transform.SetRotate(DlDegrees(200)); },
           [](SkMatrix& transform) { transform.setRotate(200); },
           [](SkM44& transform) {
-            transform.setRotate({0, 0, 1}, 200 * M_PI / 180);
+            transform.setRotate({0, 0, 1}, 200 * SK_ScalarPI / 180);
           },
           [](DlTransform& transform) { transform.RotateInner(DlDegrees(200)); },
           [](SkMatrix& transform) { transform.preRotate(200); },
           [](SkM44& transform) {
-            transform.preConcat(SkM44::Rotate({0, 0, 1}, 200 * M_PI / 180));
+            transform.preConcat(
+                SkM44::Rotate({0, 0, 1}, 200 * SK_ScalarPI / 180));
           },
           [](DlTransform& transform) { transform.RotateOuter(DlDegrees(200)); },
           [](SkMatrix& transform) { transform.postRotate(200); },
           [](SkM44& transform) {
-            transform.postConcat(SkM44::Rotate({0, 0, 1}, 200 * M_PI / 180));
+            transform.postConcat(
+                SkM44::Rotate({0, 0, 1}, 200 * SK_ScalarPI / 180));
           },
       },
   };

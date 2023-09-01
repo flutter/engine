@@ -29,7 +29,7 @@ class DlDegrees : public DlAngle {
   constexpr DlDegrees(const DlAngle& angle) : degrees_(angle.degrees()) {}
 
   DlScalar radians() const override {
-    return static_cast<DlScalar>(degrees_ * M_PI / 180.0);
+    return static_cast<DlScalar>(degrees_ * kDlScalar_Pi / 180.0);
   }
   DlScalar degrees() const override { return degrees_; }
 
@@ -45,7 +45,7 @@ class DlRadians : public DlAngle {
 
   DlScalar radians() const override { return radians_; }
   DlScalar degrees() const override {
-    return static_cast<DlScalar>(radians_ * 180.0 / M_PI);
+    return static_cast<DlScalar>(radians_ * 180.0 / kDlScalar_Pi);
   }
 
  private:

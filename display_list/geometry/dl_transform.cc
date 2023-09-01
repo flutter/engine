@@ -11,14 +11,22 @@ namespace flutter {
 
 DlTransform DlTransform::MakeConcat(const DlTransform& outer,
                                     const DlTransform& inner) {
+  if (outer.complexity() <= Complexity::kIdentity) {
+    return inner;
+  }
+  if (inner.complexity() <= Complexity::kIdentity) {
+    return outer;
+  }
   DlScalar new_m[16];
   for (int r = 0; r < 4; r++) {
     for (int c = 0; c < 4; c++) {
-      DlScalar v = 0.0f;
+      double v = 0.0f;
       for (int i = 0; i < 4; i++) {
-        v += inner.m_[r * 4 + i] * outer.m_[i * 4 + c];
+        double iv = inner.m_[r * 4 + i];
+        double ov = outer.m_[i * 4 + c];
+        v += iv * ov;
       }
-      new_m[r * 4 + c] = v;
+      new_m[r * 4 + c] = static_cast<DlScalar>(v);
     }
   }
   return DlTransform::MakeColMajor(new_m);
@@ -61,7 +69,7 @@ bool DlTransform::rect_stays_rect() const {
 }
 
 DlTransform& DlTransform::TranslateInner(DlScalar tx, DlScalar ty) {
-  if (!DlScalars_AreFinite(tx, ty)) {
+  if (!DlScalars_AreFinite(tx, ty) || (tx == 0.0f && ty == 0.0f)) {
     return *this;
   }
   switch (complexity()) {
@@ -107,7 +115,7 @@ DlTransform& DlTransform::TranslateInner(DlScalar tx, DlScalar ty) {
 }
 
 DlTransform& DlTransform::TranslateOuter(DlScalar tx, DlScalar ty) {
-  if (!DlScalars_AreFinite(tx, ty)) {
+  if (!DlScalars_AreFinite(tx, ty) || (tx == 0.0f && ty == 0.0f)) {
     return *this;
   }
   m_[kXT] += tx;
@@ -629,8 +637,23 @@ std::optional<DlFVector> DlTransform::ComputeTransformedExpansion(
 }
 
 DlTransform DlTransform::WithIntegerTranslation() const {
-  if (!is_finite() || complexity() > Complexity::kAffine2D) {
+  if (!is_finite()) {
     return *this;
+  }
+  switch (complexity()) {
+    case Complexity::kUnknown:
+      FML_DCHECK(complexity_ != Complexity::kUnknown);
+
+    case Complexity::kIdentity:
+    case Complexity::kAffine3D:
+    case Complexity::kPerspectiveOnlyZ:
+    case Complexity::kPerspectiveAll:
+      return *this;
+
+    case Complexity::kTranslate2D:
+    case Complexity::kScaleTranslate2D:
+    case Complexity::kAffine2D:
+      break;
   }
   DlScalar xt_rounded = round(m_[kXT]);
   DlScalar yt_rounded = round(m_[kYT]);

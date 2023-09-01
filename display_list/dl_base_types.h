@@ -18,7 +18,7 @@ typedef uint32_t DlSize;
 [[maybe_unused]] constexpr DlScalar kDlScalar_NearlyZero = 1.0f / (1 << 14);
 [[maybe_unused]] constexpr DlScalar kDlScalar_Zero = 0.0f;
 [[maybe_unused]] constexpr DlScalar kDlScalar_One = 1.0f;
-[[maybe_unused]] constexpr DlScalar kDlScalar_Pi = ((DlScalar)M_PI);
+[[maybe_unused]] constexpr DlScalar kDlScalar_Pi = 3.14159265358979323846f;
 
 static inline bool DlScalar_IsFinite(DlScalar v) {
   return std::isfinite(v);

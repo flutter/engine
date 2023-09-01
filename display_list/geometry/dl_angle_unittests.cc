@@ -21,7 +21,7 @@ TEST(DlAngleTest, DegreesEmptyConstructor) {
 }
 
 TEST(DlAngleTest, RadiansSimpleConstructor) {
-  DlRadians radians(M_PI);
+  DlRadians radians(kDlScalar_Pi);
   EXPECT_EQ(radians.radians(), kDlScalar_Pi);
   EXPECT_EQ(radians.degrees(), 180.0);
 }
@@ -33,7 +33,7 @@ TEST(DlAngleTest, DegreesSimpleConstructor) {
 }
 
 TEST(DlAngleTest, RadiansToDegreesConversion) {
-  DlRadians radians(M_PI);
+  DlRadians radians(kDlScalar_Pi);
   EXPECT_EQ(radians.radians(), kDlScalar_Pi);
   EXPECT_EQ(radians.degrees(), 180.0);
   DlDegrees degrees = radians;
@@ -51,7 +51,7 @@ TEST(DlAngleTest, DegreesToRadiansConversion) {
 }
 
 TEST(DlAngleTest, RadiansToDegreesArgumentConversion) {
-  DlRadians radians(M_PI);
+  DlRadians radians(kDlScalar_Pi);
   EXPECT_EQ(radians.radians(), kDlScalar_Pi);
   EXPECT_EQ(radians.degrees(), 180.0);
   auto test = [](const DlDegrees& degrees) {
@@ -84,7 +84,7 @@ TEST(DlAngleTest, DegreesToRadiansArgumentConversion) {
 
 TEST(DlAngleTest, DegreesCosSin) {
   for (int i = -360; i <= 720; i++) {
-    DlScalar radians = i * M_PI / 180.0;
+    DlScalar radians = i * kDlScalar_Pi / 180.0;
     {
       DlFVector cos_sin = DlDegrees(i).CosSin();
       EXPECT_TRUE(DlScalar_IsNearlyZero(cos_sin.x() - cosf(radians)));
