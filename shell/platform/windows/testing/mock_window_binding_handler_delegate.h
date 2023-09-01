@@ -68,7 +68,6 @@ class MockWindowBindingHandlerDelegate : public WindowBindingHandlerDelegate {
       (double, double, double, double, int, FlutterPointerDeviceKind, int32_t),
       (override));
   MOCK_METHOD(void, OnScrollInertiaCancel, (int32_t), (override));
-  MOCK_METHOD(void, OnPlatformBrightnessChanged, (), (override));
   MOCK_METHOD(void, UpdateHighContrastEnabled, (bool enabled), (override));
 
   MOCK_METHOD(ui::AXFragmentRootDelegateWin*,
