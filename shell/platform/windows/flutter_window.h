@@ -21,7 +21,7 @@ namespace flutter {
 // the future, there will likely be a CoreWindow-based FlutterWindow as well.
 // At the point may make sense to dependency inject the native window rather
 // than inherit.
-class FlutterWindow : public Window, public WindowBindingHandler {
+class FlutterWindow : public KeyboardManager::WindowDelegate, public WindowBindingHandler {
  public:
   // Create flutter Window for use as child window
   FlutterWindow(int width, int height);
@@ -52,43 +52,43 @@ class FlutterWindow : public Window, public WindowBindingHandler {
                                     LPARAM lParam) override;
 
   // |Window|
-  void OnDpiScale(unsigned int dpi) override;
+  void OnDpiScale(unsigned int dpi);
 
   // |Window|
-  void OnResize(unsigned int width, unsigned int height) override;
+  void OnResize(unsigned int width, unsigned int height);
 
   // |Window|
-  void OnPaint() override;
+  void OnPaint();
 
   // |Window|
   void OnPointerMove(double x,
                      double y,
                      FlutterPointerDeviceKind device_kind,
                      int32_t device_id,
-                     int modifiers_state) override;
+                     int modifiers_state);
 
   // |Window|
   void OnPointerDown(double x,
                      double y,
                      FlutterPointerDeviceKind device_kind,
                      int32_t device_id,
-                     UINT button) override;
+                     UINT button);
 
   // |Window|
   void OnPointerUp(double x,
                    double y,
                    FlutterPointerDeviceKind device_kind,
                    int32_t device_id,
-                   UINT button) override;
+                   UINT button);
 
   // |Window|
   void OnPointerLeave(double x,
                       double y,
                       FlutterPointerDeviceKind device_kind,
-                      int32_t device_id) override;
+                      int32_t device_id);
 
   // |Window|
-  void OnSetCursor() override;
+  void OnSetCursor();
 
   // |Window|
   void OnText(const std::u16string& text) override;
@@ -103,16 +103,16 @@ class FlutterWindow : public Window, public WindowBindingHandler {
              KeyEventCallback callback) override;
 
   // |Window|
-  void OnComposeBegin() override;
+  void OnComposeBegin();
 
   // |Window|
-  void OnComposeCommit() override;
+  void OnComposeCommit();
 
   // |Window|
-  void OnComposeEnd() override;
+  void OnComposeEnd();
 
   // |Window|
-  void OnComposeChange(const std::u16string& text, int cursor_pos) override;
+  void OnComposeChange(const std::u16string& text, int cursor_pos);
 
   // |FlutterWindowBindingHandler|
   void OnCursorRectUpdated(const Rect& rect) override;
@@ -121,16 +121,16 @@ class FlutterWindow : public Window, public WindowBindingHandler {
   void OnResetImeComposing() override;
 
   // |Window|
-  void OnUpdateSemanticsEnabled(bool enabled) override;
+  void OnUpdateSemanticsEnabled(bool enabled);
 
   // |Window|
   void OnScroll(double delta_x,
                 double delta_y,
                 FlutterPointerDeviceKind device_kind,
-                int32_t device_id) override;
+                int32_t device_id);
 
   // |Window|
-  gfx::NativeViewAccessible GetNativeViewAccessible() override;
+  gfx::NativeViewAccessible GetNativeViewAccessible();
 
   // |FlutterWindowBindingHandler|
   void SetView(WindowBindingHandlerDelegate* view) override;
@@ -168,7 +168,7 @@ class FlutterWindow : public Window, public WindowBindingHandler {
   PointerLocation GetPrimaryPointerLocation() override;
 
   // |Window|
-  void OnThemeChange() override;
+  void OnThemeChange();
 
   // |WindowBindingHandler|
   void SendInitialAccessibilityFeatures() override;
@@ -183,10 +183,10 @@ class FlutterWindow : public Window, public WindowBindingHandler {
   bool NeedsVSync() override;
 
   // |Window|
-  ui::AXFragmentRootDelegateWin* GetAxFragmentRootDelegate() override;
+  ui::AXFragmentRootDelegateWin* GetAxFragmentRootDelegate();
 
   // |Window|
-  virtual void OnWindowStateEvent(WindowStateEvent event) override;
+  virtual void OnWindowStateEvent(WindowStateEvent event);
 
  protected:
   // Converts a c string to a wide unicode string.
