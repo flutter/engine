@@ -4,6 +4,8 @@
 
 #include "flutter/lib/ui/painting/image_decoder_impeller.h"
 
+#include <cstdint>
+#include <cstring>
 #include <memory>
 
 #include "flutter/fml/closure.h"
@@ -97,12 +99,43 @@ float CalculateArea(SkPoint abc[3]) {
 // Note: This was calculated from SkColorSpace::MakeSRGB().
 static constexpr float kSrgbGamutArea = 0.0982f;
 
+bool IsPngWithPLTE(const uint8_t* bytes, size_t size) {
+  if (size < 8) {
+    return false;
+  }
+
+  if (memcmp(bytes, "\x89PNG\x0d\x0a\x1a\x0a", 8) != 0) {
+    return false;
+  }
+
+  const uint8_t* end = bytes + size;
+  const uint8_t* loc = bytes + 8;
+  while (loc + 8 <= end) {
+    uint32_t chunk_length =
+        (loc[0] << 24) | (loc[1] << 16) | (loc[2] << 8) | loc[3];
+
+    if (memcmp(loc + 4, "PLTE", 4) == 0) {
+      return true;
+    }
+
+    loc += /*length*/ 4 + /*type*/ 4 + chunk_length + /*crc*/ 4;
+  }
+
+  return false;
+}
+
 // Source:
 // https://source.chromium.org/chromium/_/skia/skia.git/+/393fb1ec80f41d8ad7d104921b6920e69749fda1:src/codec/SkAndroidCodec.cpp;l=67;drc=46572b4d445f41943059d0e377afc6d6748cd5ca;bpv=1;bpt=0
-bool IsWideGamut(const SkColorSpace* color_space) {
+bool IsWideGamut(const sk_sp<SkData> data, const SkColorSpace* color_space) {
   if (!color_space) {
     return false;
   }
+
+  if (IsPngWithPLTE(data->bytes(), data->size())) {
+    // https://github.com/flutter/flutter/issues/133013
+    return false;
+  }
+
   skcms_Matrix3x3 xyzd50;
   color_space->toXYZD50(&xyzd50);
   SkPoint rgb[3];
@@ -177,7 +210,9 @@ DecompressResult ImageDecoderImpeller::DecompressTexture(
 
   const auto base_image_info = descriptor->image_info();
   const bool is_wide_gamut =
-      supports_wide_gamut ? IsWideGamut(base_image_info.colorSpace()) : false;
+      supports_wide_gamut
+          ? IsWideGamut(descriptor->data(), base_image_info.colorSpace())
+          : false;
   SkAlphaType alpha_type =
       ChooseCompatibleAlphaType(base_image_info.alphaType());
   SkImageInfo image_info;

@@ -491,57 +491,6 @@ TEST_F(ImageDecoderFixtureTest, ImpellerNullColorspace) {
 #endif  // IMPELLER_SUPPORTS_RENDERING
 }
 
-TEST_F(ImageDecoderFixtureTest, ImpellerWideGamutDisplayP3) {
-  auto data = OpenFixtureAsSkData("DisplayP3Logo.png");
-  auto image = SkImages::DeferredFromEncodedData(data);
-  ASSERT_TRUE(image != nullptr);
-  ASSERT_EQ(SkISize::Make(100, 100), image->dimensions());
-
-  ImageGeneratorRegistry registry;
-  std::shared_ptr<ImageGenerator> generator =
-      registry.CreateCompatibleGenerator(data);
-  ASSERT_TRUE(generator);
-
-  auto descriptor = fml::MakeRefCounted<ImageDescriptor>(std::move(data),
-                                                         std::move(generator));
-
-#if IMPELLER_SUPPORTS_RENDERING
-  std::shared_ptr<impeller::Allocator> allocator =
-      std::make_shared<impeller::TestImpellerAllocator>();
-  std::optional<DecompressResult> wide_result =
-      ImageDecoderImpeller::DecompressTexture(
-          descriptor.get(), SkISize::Make(100, 100), {100, 100},
-          /*supports_wide_gamut=*/true, allocator);
-  ASSERT_TRUE(wide_result.has_value());
-  ASSERT_EQ(wide_result->image_info.colorType(), kRGBA_F16_SkColorType);
-  ASSERT_TRUE(wide_result->image_info.colorSpace()->isSRGB());
-
-  const SkPixmap& wide_pixmap = wide_result->sk_bitmap->pixmap();
-  const uint16_t* half_ptr = static_cast<const uint16_t*>(wide_pixmap.addr());
-  bool found_deep_red = false;
-  for (int i = 0; i < wide_pixmap.width() * wide_pixmap.height(); ++i) {
-    float red = HalfToFloat(*half_ptr++);
-    float green = HalfToFloat(*half_ptr++);
-    float blue = HalfToFloat(*half_ptr++);
-    half_ptr++;  // alpha
-    if (fabsf(red - 1.0931f) < 0.01f && fabsf(green - -0.2268f) < 0.01f &&
-        fabsf(blue - -0.1501f) < 0.01f) {
-      found_deep_red = true;
-      break;
-    }
-  }
-
-  ASSERT_TRUE(found_deep_red);
-  std::optional<DecompressResult> narrow_result =
-      ImageDecoderImpeller::DecompressTexture(
-          descriptor.get(), SkISize::Make(100, 100), {100, 100},
-          /*supports_wide_gamut=*/false, allocator);
-
-  ASSERT_TRUE(narrow_result.has_value());
-  ASSERT_EQ(narrow_result->image_info.colorType(), kRGBA_8888_SkColorType);
-#endif  // IMPELLER_SUPPORTS_RENDERING
-}
-
 TEST_F(ImageDecoderFixtureTest, ImpellerPixelConversion32F) {
   auto info = SkImageInfo::Make(10, 10, SkColorType::kRGBA_F32_SkColorType,
                                 SkAlphaType::kUnpremul_SkAlphaType);
