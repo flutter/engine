@@ -189,6 +189,10 @@ struct Settings {
   // target indicating the URL at which the VM service can be accessed.
   uint32_t vm_service_port = 0;
 
+  // Determines whether an authentication code is required to communicate with
+  // the VM service.
+  bool disable_service_auth_codes = true;
+
   // Determine whether the vmservice should fallback to automatic port selection
   // after failing to bind to a specified port.
   bool enable_service_port_fallback = false;

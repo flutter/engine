@@ -293,6 +293,11 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   command_line.GetOptionValue(FlagForSwitch(Switch::DomainNetworkPolicy),
                               &settings.domain_network_policy);
 
+  // Disable need for authentication codes for VM service communication, if
+  // specified.
+  settings.disable_service_auth_codes =
+      command_line.HasOption(FlagForSwitch(Switch::DisableServiceAuthCodes));
+
   // Allow fallback to automatic port selection if binding to a specified port
   // fails.
   settings.enable_service_port_fallback =

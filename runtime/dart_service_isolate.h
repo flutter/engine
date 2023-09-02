@@ -47,6 +47,8 @@ class DartServiceIsolate {
   /// @param[in]  embedder_tag_handler          The library tag handler.
   /// @param[in]  disable_origin_check          If websocket origin checks must
   ///                                           be enabled.
+  /// @param[in]  disable_service_auth_codes    If service auth codes must be
+  ///                                           enabled.
   /// @param[in]  enable_service_port_fallback  If fallback to port 0 must be
   ///                                           enabled when the bind fails.
   /// @param      error                         The error when this method
@@ -61,6 +63,7 @@ class DartServiceIsolate {
                       intptr_t server_port,
                       Dart_LibraryTagHandler embedder_tag_handler,
                       bool disable_origin_check,
+                      bool disable_service_auth_codes,
                       bool enable_service_port_fallback,
                       char** error);
 

@@ -48,6 +48,7 @@ class ShellLauncher {
     '--vm-service-port=0',
     '--non-interactive',
     '--run-forever',
+    '--disable-service-auth-codes',
   ];
   final String shellExecutablePath;
   final String mainDartPath;
