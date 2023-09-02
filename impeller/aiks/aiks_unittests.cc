@@ -3127,7 +3127,8 @@ TEST_P(AiksTest, CanCanvasDrawPictureWithAdvancedBlend) {
   auto picture = subcanvas.EndRecordingAsPicture();
 
   Canvas canvas;
-  canvas.Translate({200, 200});
+  canvas.DrawPaint({.color = Color::Black()});
+  canvas.DrawCircle(Point::MakeXY(150, 150), 25, {.color = Color::Red()});
   canvas.DrawPicture(picture);
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
