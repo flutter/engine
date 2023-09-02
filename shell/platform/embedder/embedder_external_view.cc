@@ -4,7 +4,7 @@
 
 #include "flutter/shell/platform/embedder/embedder_external_view.h"
 
-#include "flutter/display_list/display_list_builder.h"
+#include "flutter/display_list/dl_builder.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/dl_op_spy.h"
 
@@ -60,6 +60,11 @@ bool EmbedderExternalView::IsRootView() const {
 
 bool EmbedderExternalView::HasPlatformView() const {
   return view_identifier_.platform_view_id.has_value();
+}
+
+std::list<SkRect> EmbedderExternalView::GetEngineRenderedContentsRegion(
+    const SkRect& query) const {
+  return slice_->searchNonOverlappingDrawnRects(query);
 }
 
 bool EmbedderExternalView::HasEngineRenderedContents() {
