@@ -375,7 +375,7 @@ import java.util.List;
 
       // Create the FlutterView that owns the FlutterSurfaceView.
       flutterView = new FlutterView(host.getContext(), flutterSurfaceView);
-    } else if (host.getRenderMode() == RenderMode.texture) {
+    } else {
       FlutterTextureView flutterTextureView = new FlutterTextureView(host.getContext());
 
       flutterTextureView.setOpaque(host.getTransparencyMode() == TransparencyMode.opaque);
@@ -385,15 +385,6 @@ import java.util.List;
 
       // Create the FlutterView that owns the FlutterTextureView.
       flutterView = new FlutterView(host.getContext(), flutterTextureView);
-    } else {
-      FlutterImageView flutterImageView =
-          new FlutterImageView(host.getContext(), 1, 1, FlutterImageView.SurfaceKind.main);
-
-      // Allow our host to customize FlutterImageView, if desired.
-      host.onFlutterImageViewCreated(flutterImageView);
-
-      // Create the FlutterView that owns the FlutterImageView.
-      flutterView = new FlutterView(host.getContext(), flutterImageView);
     }
 
     // Add listener to be notified when Flutter renders its first frame.
@@ -1128,20 +1119,6 @@ import java.util.List;
      * or make assumptions about relationships with other {@code View}s.
      */
     void onFlutterTextureViewCreated(@NonNull FlutterTextureView flutterTextureView);
-
-    /**
-     * Invoked by this delegate when the {@link FlutterImageView} that renders the Flutter UI is
-     * initially instantiated.
-     *
-     * <p>This method is only invoked if the {@link
-     * io.flutter.embedding.android.FlutterView.RenderMode} is set to {@link
-     * io.flutter.embedding.android.FlutterView.RenderMode#image}.
-     *
-     * <p>This method is invoked before the given {@link FlutterImageView} is attached to the {@code
-     * View} hierarchy. Implementers should not attempt to climb the {@code View} hierarchy or make
-     * assumptions about relationships with other {@code View}s.
-     */
-    void onFlutterImageViewCreated(@NonNull FlutterImageView flutterImageView);
 
     /** Invoked by this delegate when its {@link FlutterView} starts painting pixels. */
     void onFlutterUiDisplayed();
