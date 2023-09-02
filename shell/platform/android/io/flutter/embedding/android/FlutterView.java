@@ -12,7 +12,6 @@ import android.content.res.Configuration;
 import android.database.ContentObserver;
 import android.graphics.Insets;
 import android.graphics.Rect;
-import android.media.Image;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -104,9 +103,7 @@ import java.util.Set;
  * information comparing {@link android.view.SurfaceView} and {@link android.view.TextureView}.
  */
 public class FlutterView extends FrameLayout
-    implements MouseCursorPlugin.MouseCursorViewDelegate,
-        KeyboardManager.ViewDelegate,
-        FlutterImageView.OnNewImageListener {
+    implements MouseCursorPlugin.MouseCursorViewDelegate, KeyboardManager.ViewDelegate {
   private static final String TAG = "FlutterView";
 
   // Internal view hierarchy references.
@@ -116,8 +113,6 @@ public class FlutterView extends FrameLayout
   @Nullable @VisibleForTesting /* package */ RenderSurface renderSurface;
   @Nullable private RenderSurface previousRenderSurface;
   private final Set<FlutterUiDisplayListener> flutterUiDisplayListeners = new HashSet<>();
-  private final Set<FlutterImageView.OnNewImageListener> newImageListeners = new HashSet<>();
-  @NonNull private RenderMode renderMode;
   private boolean isFlutterUiDisplayed;
 
   // Connections to a Flutter execution context.
@@ -229,17 +224,13 @@ public class FlutterView extends FrameLayout
   @Deprecated
   public FlutterView(@NonNull Context context, @NonNull RenderMode renderMode) {
     super(context, null);
-    this.renderMode = renderMode;
+
     if (renderMode == RenderMode.surface) {
       flutterSurfaceView = new FlutterSurfaceView(context);
       renderSurface = flutterSurfaceView;
     } else if (renderMode == RenderMode.texture) {
       flutterTextureView = new FlutterTextureView(context);
       renderSurface = flutterTextureView;
-    } else if (renderMode == RenderMode.image) {
-      flutterImageView = createImageView();
-      renderSurface = flutterImageView;
-      setFlutterImageViewListener();
     } else {
       throw new IllegalArgumentException(
           String.format("RenderMode not supported with this constructor: %s", renderMode));
@@ -326,7 +317,7 @@ public class FlutterView extends FrameLayout
       @NonNull RenderMode renderMode,
       @NonNull TransparencyMode transparencyMode) {
     super(context, null);
-    this.renderMode = renderMode;
+
     if (renderMode == RenderMode.surface) {
       flutterSurfaceView =
           new FlutterSurfaceView(context, transparencyMode == TransparencyMode.transparent);
@@ -334,10 +325,6 @@ public class FlutterView extends FrameLayout
     } else if (renderMode == RenderMode.texture) {
       flutterTextureView = new FlutterTextureView(context);
       renderSurface = flutterTextureView;
-    } else if (renderMode == RenderMode.image) {
-      flutterImageView = createImageView();
-      renderSurface = flutterImageView;
-      setFlutterImageViewListener();
     } else {
       throw new IllegalArgumentException(
           String.format("RenderMode not supported with this constructor: %s", renderMode));
@@ -351,7 +338,7 @@ public class FlutterView extends FrameLayout
       @Nullable AttributeSet attrs,
       @NonNull FlutterSurfaceView flutterSurfaceView) {
     super(context, attrs);
-    this.renderMode = RenderMode.surface;
+
     this.flutterSurfaceView = flutterSurfaceView;
     this.renderSurface = flutterSurfaceView;
 
@@ -363,7 +350,7 @@ public class FlutterView extends FrameLayout
       @Nullable AttributeSet attrs,
       @NonNull FlutterTextureView flutterTextureView) {
     super(context, attrs);
-    this.renderMode = RenderMode.texture;
+
     this.flutterTextureView = flutterTextureView;
     this.renderSurface = flutterTextureView;
 
@@ -376,10 +363,10 @@ public class FlutterView extends FrameLayout
       @Nullable AttributeSet attrs,
       @NonNull FlutterImageView flutterImageView) {
     super(context, attrs);
-    this.renderMode = RenderMode.image;
+
     this.flutterImageView = flutterImageView;
     this.renderSurface = flutterImageView;
-    setFlutterImageViewListener();
+
     init();
   }
 
@@ -1326,12 +1313,7 @@ public class FlutterView extends FrameLayout
   @NonNull
   public FlutterImageView createImageView() {
     return new FlutterImageView(
-        getContext(),
-        getWidth(),
-        getHeight(),
-        renderMode == RenderMode.image
-            ? FlutterImageView.SurfaceKind.main
-            : FlutterImageView.SurfaceKind.background);
+        getContext(), getWidth(), getHeight(), FlutterImageView.SurfaceKind.background);
   }
 
   @VisibleForTesting
@@ -1344,15 +1326,13 @@ public class FlutterView extends FrameLayout
    * Otherwise, it resizes the {@link FlutterImageView} based on the current view size.
    */
   public void convertToImageView() {
-    if (renderMode == RenderMode.image) {
-      // Always use FlutterImageView for RenderMode.image
+    if (renderSurface == flutterImageView) {
       return;
     }
     renderSurface.pause();
 
     if (flutterImageView == null) {
       flutterImageView = createImageView();
-      setFlutterImageViewListener();
       addView(flutterImageView);
     } else {
       flutterImageView.resizeIfNeeded(getWidth(), getHeight());
@@ -1373,17 +1353,15 @@ public class FlutterView extends FrameLayout
    *     callback to perform cleanups. For example, destroy overlay surfaces.
    */
   public void revertImageView(@NonNull Runnable onDone) {
-    if (renderMode == RenderMode.image) {
-      // Always use FlutterImageView for RenderMode.image
-      onDone.run();
-      return;
-    }
     if (flutterImageView == null) {
       Log.v(TAG, "Tried to revert the image view, but no image view is used.");
       return;
     }
     if (previousRenderSurface == null) {
       Log.v(TAG, "Tried to revert the image view, but no previous surface was used.");
+      return;
+    }
+    if (previousRenderSurface == flutterImageView) {
       return;
     }
     renderSurface = previousRenderSurface;
@@ -1584,56 +1562,4 @@ public class FlutterView extends FrameLayout
      */
     void onFlutterEngineDetachedFromFlutterView();
   }
-
-  // -------- Start: FlutterImageView. -------
-
-  /**
-   * Implementation of the FlutterImageView.OnNewImageListener callback.
-   *
-   * <p>This method is triggered only when a FlutterImageView is utilized to render Flutter UI.
-   *
-   * @param image The new image that is available for rendering in the FlutterImageView.
-   */
-  @Override
-  public void onNewImage(Image image) {
-    for (FlutterImageView.OnNewImageListener listener : newImageListeners) {
-      listener.onNewImage(image);
-    }
-  }
-
-  /**
-   * Sets the callback listener to receive notifications about the availability of new images when
-   * using FlutterImageView.
-   */
-  private void setFlutterImageViewListener() {
-    if (flutterImageView != null) {
-      flutterImageView.setOnNewImageListener(this);
-    }
-  }
-
-  /**
-   * Registers a callback to be notified when a new image becomes available when using
-   * FlutterImageView.
-   *
-   * <p>This method allows you to add a listener that will be triggered whenever a new image is
-   * ready to be displayed in the FlutterImageView. Multiple listeners can be added.
-   *
-   * @param listener The listener to be added for new image notifications. Must not be null.
-   */
-  public void addOnNewImageListener(@NonNull FlutterImageView.OnNewImageListener listener) {
-    newImageListeners.add(listener);
-  }
-
-  /**
-   * Removes a previously added FlutterImageView.OnNewImageListener callback.
-   *
-   * <p>If the provided listener was not previously added, this operation has no effect.
-   *
-   * @param listener The listener to be removed.
-   */
-  public void removeOnNewImageListener(@NonNull FlutterImageView.OnNewImageListener listener) {
-    newImageListeners.remove(listener);
-  }
-
-  // -------- End: FlutterImageView. -------
 }
