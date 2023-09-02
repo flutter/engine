@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include <cmath>
+#include <limits>
 
 namespace flutter {
 

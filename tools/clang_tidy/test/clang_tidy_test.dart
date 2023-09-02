@@ -250,7 +250,7 @@ Future<int> main(List<String> args) async {
       errSink: errBuffer,
     );
     final List<io.File> fileList = await clangTidy.computeFilesOfInterest();
-    expect(fileList.length, lessThan(300));
+    expect(fileList.length, lessThan(600));
   });
 
   test('Sharding', () async {

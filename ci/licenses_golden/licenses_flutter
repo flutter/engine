@@ -718,6 +718,8 @@ ORIGIN: ../../../flutter/display_list/benchmarking/dl_region_benchmarks.cc + ../
 ORIGIN: ../../../flutter/display_list/display_list.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_attributes.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/dl_base_types.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/dl_base_types.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_blend_mode.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_blend_mode.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_builder.cc + ../../../flutter/LICENSE
@@ -749,10 +751,27 @@ ORIGIN: ../../../flutter/display_list/effects/dl_path_effect.cc + ../../../flutt
 ORIGIN: ../../../flutter/display_list/effects/dl_path_effect.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/effects/dl_runtime_effect.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/effects/dl_runtime_effect.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/geometry/dl_angle.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/geometry/dl_angle.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/geometry/dl_homogenous.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/geometry/dl_homogenous.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/geometry/dl_path.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/geometry/dl_path.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/geometry/dl_point.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/geometry/dl_point.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/geometry/dl_rect.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/geometry/dl_rect.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/geometry/dl_region.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/geometry/dl_region.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/geometry/dl_round_rect.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/geometry/dl_round_rect.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/geometry/dl_rstransform.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/geometry/dl_rstransform.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/geometry/dl_rtree.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/geometry/dl_rtree.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/geometry/dl_size.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/geometry/dl_transform.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/geometry/dl_transform.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/image/dl_image.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/image/dl_image.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/image/dl_image_skia.cc + ../../../flutter/LICENSE
@@ -3412,6 +3431,8 @@ FILE: ../../../flutter/display_list/benchmarking/dl_region_benchmarks.cc
 FILE: ../../../flutter/display_list/display_list.cc
 FILE: ../../../flutter/display_list/display_list.h
 FILE: ../../../flutter/display_list/dl_attributes.h
+FILE: ../../../flutter/display_list/dl_base_types.cc
+FILE: ../../../flutter/display_list/dl_base_types.h
 FILE: ../../../flutter/display_list/dl_blend_mode.cc
 FILE: ../../../flutter/display_list/dl_blend_mode.h
 FILE: ../../../flutter/display_list/dl_builder.cc
@@ -3443,10 +3464,27 @@ FILE: ../../../flutter/display_list/effects/dl_path_effect.cc
 FILE: ../../../flutter/display_list/effects/dl_path_effect.h
 FILE: ../../../flutter/display_list/effects/dl_runtime_effect.cc
 FILE: ../../../flutter/display_list/effects/dl_runtime_effect.h
+FILE: ../../../flutter/display_list/geometry/dl_angle.cc
+FILE: ../../../flutter/display_list/geometry/dl_angle.h
+FILE: ../../../flutter/display_list/geometry/dl_homogenous.cc
+FILE: ../../../flutter/display_list/geometry/dl_homogenous.h
+FILE: ../../../flutter/display_list/geometry/dl_path.cc
+FILE: ../../../flutter/display_list/geometry/dl_path.h
+FILE: ../../../flutter/display_list/geometry/dl_point.cc
+FILE: ../../../flutter/display_list/geometry/dl_point.h
+FILE: ../../../flutter/display_list/geometry/dl_rect.cc
+FILE: ../../../flutter/display_list/geometry/dl_rect.h
 FILE: ../../../flutter/display_list/geometry/dl_region.cc
 FILE: ../../../flutter/display_list/geometry/dl_region.h
+FILE: ../../../flutter/display_list/geometry/dl_round_rect.cc
+FILE: ../../../flutter/display_list/geometry/dl_round_rect.h
+FILE: ../../../flutter/display_list/geometry/dl_rstransform.cc
+FILE: ../../../flutter/display_list/geometry/dl_rstransform.h
 FILE: ../../../flutter/display_list/geometry/dl_rtree.cc
 FILE: ../../../flutter/display_list/geometry/dl_rtree.h
+FILE: ../../../flutter/display_list/geometry/dl_size.h
+FILE: ../../../flutter/display_list/geometry/dl_transform.cc
+FILE: ../../../flutter/display_list/geometry/dl_transform.h
 FILE: ../../../flutter/display_list/image/dl_image.cc
 FILE: ../../../flutter/display_list/image/dl_image.h
 FILE: ../../../flutter/display_list/image/dl_image_skia.cc
