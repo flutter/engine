@@ -1077,7 +1077,7 @@ external void _callHook(
   Object? arg21,
 ]);
 
-Scene CreateRedBoxScene(Size size) {
+Scene _createRedBoxScene(Size size) {
   final SceneBuilder builder = SceneBuilder();
   builder.pushOffset(0.0, 0.0);
   final Paint paint = Paint()
@@ -1093,22 +1093,28 @@ Scene CreateRedBoxScene(Size size) {
 }
 
 @pragma('vm:entry-point')
-@pragma('vm:external-name', 'NotifyNative')
-external void notifyNative();
-
-@pragma('vm:entry-point')
 void incorrectImmediateRender() {
-  PlatformDispatcher.instance.views.first.render(CreateRedBoxScene(Size(2, 2)));
+  PlatformDispatcher.instance.views.first.render(_createRedBoxScene(Size(2, 2)));
+  _finish();
+  // Don't schedule a frame here. This test only checks if the
+  // [FlutterView.render] call is propagated to PlatformConfiguration.render
+  // and thus doesn't need anything from `Animator` or `Engine`, which,
+  // besides, are not even created in the native side at all.
 }
 
 @pragma('vm:entry-point')
 void incorrectDoubleRender() {
   PlatformDispatcher.instance.onBeginFrame = (Duration value) {
-    PlatformDispatcher.instance.views.first.render(CreateRedBoxScene(Size(2, 2)));
-    PlatformDispatcher.instance.views.first.render(CreateRedBoxScene(Size(3, 3)));
+    PlatformDispatcher.instance.views.first.render(_createRedBoxScene(Size(2, 2)));
+    PlatformDispatcher.instance.views.first.render(_createRedBoxScene(Size(3, 3)));
   };
   PlatformDispatcher.instance.onDrawFrame = () {
-    PlatformDispatcher.instance.views.first.render(CreateRedBoxScene(Size(4, 4)));
-    PlatformDispatcher.instance.views.first.render(CreateRedBoxScene(Size(5, 5)));
+    PlatformDispatcher.instance.views.first.render(_createRedBoxScene(Size(4, 4)));
+    PlatformDispatcher.instance.views.first.render(_createRedBoxScene(Size(5, 5)));
   };
+  _finish();
+  // Don't schedule a frame here. This test only checks if the
+  // [FlutterView.render] call is propagated to PlatformConfiguration.render
+  // and thus doesn't need anything from `Animator` or `Engine`, which,
+  // besides, are not even created in the native side at all.
 }

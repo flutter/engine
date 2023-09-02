@@ -97,10 +97,10 @@ class MockPlatformMessageHandler : public PlatformMessageHandler {
 // RuntimeDelegate.
 //
 // To use this class, contruct this class with Create, call LaunchRootIsolate,
-// and get the runtime controller with Controller().
+// and use the controller with ControllerTaskSync().
 class RuntimeControllerContext {
  public:
-  using VoidCallback = std::function<void()>;
+  using ControllerCallback = std::function<void(RuntimeController&)>;
 
   [[nodiscard]] static std::unique_ptr<RuntimeControllerContext> Create(
       Settings settings,                //
@@ -123,7 +123,7 @@ class RuntimeControllerContext {
   // Launch the root isolate. The post_launch callback will be executed in the
   // same UI task, which can be used to create initial views.
   void LaunchRootIsolate(RunConfiguration& configuration,
-                         VoidCallback post_launch) {
+                         ControllerCallback post_launch) {
     PostSync(task_runners_.GetUITaskRunner(), [&]() {
       bool launch_success = runtime_controller_->LaunchRootIsolate(
           settings_,                                  //
@@ -133,12 +133,18 @@ class RuntimeControllerContext {
           configuration.GetEntrypointArgs(),          //
           configuration.TakeIsolateConfiguration());  //
       ASSERT_TRUE(launch_success);
-      post_launch();
+      post_launch(*runtime_controller_);
     });
   }
 
-  // Get the runtime controller.
-  RuntimeController& Controller() { return *runtime_controller_; }
+  // Run a task that operates the RuntimeController on the UI thread, and wait
+  // for the task to end.
+  void ControllerTaskSync(ControllerCallback task) {
+    ASSERT_TRUE(runtime_controller_);
+    ASSERT_TRUE(task);
+    PostSync(task_runners_.GetUITaskRunner(),
+             [&]() { task(*runtime_controller_); });
+  }
 
  private:
   RuntimeControllerContext(const Settings& settings,
@@ -494,27 +500,33 @@ TEST_F(PlatformConfigurationTest, OutOfScopeRenderCallsAreIgnored) {
   MockRuntimeDelegate client;
   auto platform_message_handler =
       std::make_shared<MockPlatformMessageHandler>();
-  EXPECT_CALL(client, GetPlatformMessageHandler())
+  EXPECT_CALL(client, GetPlatformMessageHandler)
       .WillOnce(Return(platform_message_handler));
   // Render should not be called.
-  EXPECT_CALL(client, Render(_, _)).Times(0);
+  EXPECT_CALL(client, Render).Times(0);
+
+  auto message_latch = std::make_shared<fml::AutoResetWaitableEvent>();
+  auto finish = [message_latch](Dart_NativeArguments args) {
+    message_latch->Signal();
+  };
+  AddNativeCallback("Finish", CREATE_NATIVE_ENTRY(finish));
 
   auto runtime_controller_context =
       RuntimeControllerContext::Create(settings, task_runners, client);
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("incorrectImmediateRender");
-  runtime_controller_context->LaunchRootIsolate(configuration, [&] {
-    runtime_controller_context->Controller().AddView(
-        kImplicitViewId, ViewportMetrics(
-                             /*pixel_ratio=*/1.0, /*width=*/20, /*height=*/20,
-                             /*touch_slop=*/2, /*display_id=*/0));
-  });
+  runtime_controller_context->LaunchRootIsolate(
+      configuration, [](RuntimeController& runtime_controller) {
+        runtime_controller.AddView(
+            kImplicitViewId,
+            ViewportMetrics(
+                /*pixel_ratio=*/1.0, /*width=*/20, /*height=*/20,
+                /*touch_slop=*/2, /*display_id=*/0));
+      });
 
   // Wait for the Dart main function to end.
-  fml::AutoResetWaitableEvent latch;
-  PostSync(task_runners.GetUITaskRunner(), [&]() { latch.Signal(); });
-  latch.Wait();
+  message_latch->Wait();
 }
 
 TEST_F(PlatformConfigurationTest, DuplicateRenderCallsAreIgnored) {
@@ -524,30 +536,40 @@ TEST_F(PlatformConfigurationTest, DuplicateRenderCallsAreIgnored) {
   MockRuntimeDelegate client;
   auto platform_message_handler =
       std::make_shared<MockPlatformMessageHandler>();
-  EXPECT_CALL(client, GetPlatformMessageHandler())
+  EXPECT_CALL(client, GetPlatformMessageHandler)
       .WillOnce(Return(platform_message_handler));
   // Render should only be called once, because the second call is ignored.
-  EXPECT_CALL(client, Render(_, _)).Times(1);
+  EXPECT_CALL(client, Render).Times(1);
+
+  auto message_latch = std::make_shared<fml::AutoResetWaitableEvent>();
+  auto finish = [message_latch](Dart_NativeArguments args) {
+    message_latch->Signal();
+  };
+  AddNativeCallback("Finish", CREATE_NATIVE_ENTRY(finish));
 
   auto runtime_controller_context =
       RuntimeControllerContext::Create(settings, task_runners, client);
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("incorrectDoubleRender");
-  runtime_controller_context->LaunchRootIsolate(configuration, [&] {
-    runtime_controller_context->Controller().AddView(
-        kImplicitViewId, ViewportMetrics(
-                             /*pixel_ratio=*/1.0, /*width=*/20, /*height=*/20,
-                             /*touch_slop=*/2, /*display_id=*/0));
-  });
+  runtime_controller_context->LaunchRootIsolate(
+      configuration, [](RuntimeController& runtime_controller) {
+        runtime_controller.AddView(
+            kImplicitViewId,
+            ViewportMetrics(
+                /*pixel_ratio=*/1.0, /*width=*/20, /*height=*/20,
+                /*touch_slop=*/2, /*display_id=*/0));
+      });
 
-  // Wait for the Dart main function to end, which means the callbacks have been
-  // registered.
-  fml::AutoResetWaitableEvent latch;
-  PostSync(task_runners.GetUITaskRunner(), [&]() { latch.Signal(); });
-  latch.Wait();
+  // Wait for the Dart main function to end.
+  message_latch->Wait();
 
-  runtime_controller_context->Controller().BeginFrame(fml::TimePoint::Now(), 0);
+  runtime_controller_context->ControllerTaskSync(
+      [](RuntimeController& runtime_controller) {
+        // This BeginFrame calls PlatformDispatcher's handleBeginFrame and
+        // handleDrawFrame synchronously. Therefore don't wait after it.
+        runtime_controller.BeginFrame(fml::TimePoint::Now(), 0);
+      });
 }
 
 }  // namespace testing
