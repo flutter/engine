@@ -29,6 +29,8 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.HashSet;
 
 /**
  * Paints a Flutter UI provided by an {@link android.media.ImageReader} onto a {@link
@@ -50,11 +52,10 @@ public class FlutterImageView extends View
   @NonNull private ImageReader imageReader;
   @Nullable private Bitmap currentBitmap;
   @Nullable private FlutterRenderer flutterRenderer;
-  @Nullable private OnNewImageListener onNewImageListener;
+  @NonNull private final Set<Runnable> onImageAvailableListeners = new HashSet<>();
+  @NonNull private final List<Image> acquiredImages = new ArrayList<>();
   /** Image pending to be draw. */
   @Nullable private Image pendingImage;
-
-  private final List<Image> acquiredImages = new ArrayList<>();
 
   public ImageReader getImageReader() {
     return imageReader;
@@ -66,14 +67,6 @@ public class FlutterImageView extends View
 
     /** Displays the overlay surface canvas. */
     overlay,
-
-    /** Displays the main Flutter UI. */
-    main,
-  }
-
-  /** Callback interface for being notified that a new image is available */
-  public interface OnNewImageListener {
-    public void onNewImage(@NonNull Image image);
   }
 
   /** The kind of surface. */
@@ -125,7 +118,9 @@ public class FlutterImageView extends View
   /** OnImageAvailableListener callback. */
   @Override
   public void onImageAvailable(ImageReader reader) {
-    acquireLatestImage();
+    for (Runnable listener : onImageAvailableListeners) {
+      listener.run();
+    }
   }
 
   @TargetApi(19)
@@ -169,8 +164,6 @@ public class FlutterImageView extends View
    */
   @Override
   public void attachToRenderer(@NonNull FlutterRenderer flutterRenderer) {
-    this.flutterRenderer = flutterRenderer;
-    isAttachedToFlutterRenderer = true;
     switch (kind) {
       case background:
         flutterRenderer.swapSurface(imageReader.getSurface());
@@ -180,26 +173,10 @@ public class FlutterImageView extends View
         // Do nothing since the attachment is done by the handler of
         // `FlutterJNI#createOverlaySurface()` in the native side.
         break;
-      case main:
-        connectSurfaceToRenderer();
-        break;
     }
     setAlpha(1.0f);
-  }
-
-  private void connectSurfaceToRenderer() {
-    if (flutterRenderer == null || imageReader == null) {
-      throw new IllegalStateException(
-          "connectSurfaceToRenderer() should only be called when flutterRenderer and imageReader are non-null.");
-    }
-
-    // When connecting the surface to the renderer, it's possible that the surface is currently
-    // paused. For instance, when a platform view is displayed, the current FlutterSurfaceView
-    // is paused, and rendering continues in a FlutterImageView buffer while the platform view
-    // is displayed.
-    //
-    // startRenderingToSurface stops rendering to an active surface if it isn't paused.
-    flutterRenderer.startRenderingToSurface(imageReader.getSurface(), false);
+    this.flutterRenderer = flutterRenderer;
+    isAttachedToFlutterRenderer = true;
   }
 
   /**
@@ -253,13 +230,18 @@ public class FlutterImageView extends View
     if (newImage != null) {
       acquiredImages.add(newImage);
       pendingImage = newImage;
-      if (onNewImageListener != null) {
-        onNewImageListener.onNewImage(newImage);
-      }
       invalidate();
       closeImageAfterDrawing(newImage);
     }
-    return newImage != null;
+    return newImage != null || pendingImage != null;
+  }
+
+  public @Nullable Image getPendingImage() {
+    return pendingImage;
+  }
+
+  public boolean getIsAttachedToRenderer() {
+    return isAttachedToFlutterRenderer;
   }
 
   /** Creates a new image reader with the provided size. */
@@ -302,6 +284,14 @@ public class FlutterImageView extends View
     }
   }
 
+  private void closeAllImages() {
+    for (Image image : acquiredImages) {
+      image.close();
+    }
+    acquiredImages.clear();
+    pendingImage = null;
+  }
+
   @TargetApi(29)
   private void updateCurrentBitmap(@NonNull final Image currentImage) {
     if (android.os.Build.VERSION.SDK_INT >= 29) {
@@ -336,25 +326,15 @@ public class FlutterImageView extends View
     if (width == imageReader.getWidth() && height == imageReader.getHeight()) {
       return;
     }
-    if (isAttachedToFlutterRenderer) {
-      // `SurfaceKind.overlay` isn't resized. Instead, the `FlutterImageView` instance
-      // is destroyed. As a result, an instance with the new size is created by the surface
-      // pool in the native side.
-      if (kind == SurfaceKind.background) {
-        resizeIfNeeded(width, height);
-        // Bind native window to the new surface, and create a new onscreen surface
-        // with the new size in the native side.
-        flutterRenderer.swapSurface(imageReader.getSurface());
-      } else if (kind == SurfaceKind.main) {
-        resizeIfNeeded(width, height);
-        connectSurfaceToRenderer();
-      }
+    // `SurfaceKind.overlay` isn't resized. Instead, the `FlutterImageView` instance
+    // is destroyed. As a result, an instance with the new size is created by the surface
+    // pool in the native side.
+    if (kind == SurfaceKind.background && isAttachedToFlutterRenderer) {
+      resizeIfNeeded(width, height);
+      // Bind native window to the new surface, and create a new onscreen surface
+      // with the new size in the native side.
+      flutterRenderer.swapSurface(imageReader.getSurface());
     }
-  }
-
-  /** Set a callback to be called when a new image arrives. */
-  public void setOnNewImageListener(@Nullable OnNewImageListener listener) {
-    onNewImageListener = listener;
   }
 
   /** Close the first image if exceeding the maximum number of images. */
@@ -374,14 +354,6 @@ public class FlutterImageView extends View
         }
       }
     }
-  }
-
-  private void closeAllImages() {
-    for (Image image : acquiredImages) {
-      image.close();
-    }
-    acquiredImages.clear();
-    pendingImage = null;
   }
 
   /**
@@ -413,5 +385,23 @@ public class FlutterImageView extends View
           }
         };
     Choreographer.getInstance().postFrameCallback(firstFrameCallback);
+  }
+
+  /**
+   * Registers a callback to be notified when a new image becomes available.
+   *
+   * @param listener The listener to be added for new image notifications. Must not be null.
+   */
+  public void addOnImageAvailableListener(@NonNull Runnable listener) {
+    onImageAvailableListeners.add(listener);
+  }
+
+  /**
+   * Removes a callback previously added by {@code addOnImageAvailableListener}.
+   *
+   * @param listener The listener to be removed.
+   */
+  public void removeOnImageAvailableListener(@NonNull Runnable listener) {
+    onImageAvailableListeners.remove(listener);
   }
 }
