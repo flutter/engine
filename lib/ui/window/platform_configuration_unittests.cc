@@ -172,7 +172,6 @@ class RuntimeControllerContext {
 namespace testing {
 
 using ::testing::_;
-using ::testing::Exactly;
 using ::testing::Return;
 
 class PlatformConfigurationTest : public ShellTest {};
@@ -498,7 +497,7 @@ TEST_F(PlatformConfigurationTest, OutOfScopeRenderCallsAreIgnored) {
   EXPECT_CALL(client, GetPlatformMessageHandler())
       .WillOnce(Return(platform_message_handler));
   // Render should not be called.
-  EXPECT_CALL(client, Render(_, _)).Times(Exactly(0));
+  EXPECT_CALL(client, Render(_, _)).Times(0);
 
   auto runtime_controller_context =
       RuntimeControllerContext::Create(settings, task_runners, client);
@@ -528,7 +527,7 @@ TEST_F(PlatformConfigurationTest, DuplicateRenderCallsAreIgnored) {
   EXPECT_CALL(client, GetPlatformMessageHandler())
       .WillOnce(Return(platform_message_handler));
   // Render should only be called once, because the second call is ignored.
-  EXPECT_CALL(client, Render(_, _)).Times(Exactly(1));
+  EXPECT_CALL(client, Render(_, _)).Times(1);
 
   auto runtime_controller_context =
       RuntimeControllerContext::Create(settings, task_runners, client);
