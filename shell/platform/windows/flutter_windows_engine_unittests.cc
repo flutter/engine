@@ -610,7 +610,7 @@ class MockFlutterWindowsView : public FlutterWindowsView {
               NotifyWinEventWrapper,
               (ui::AXPlatformNodeWin*, ax::mojom::Event),
               (override));
-  MOCK_METHOD(PlatformWindow, GetPlatformWindow, (), (override));
+  MOCK_METHOD(PlatformWindow, GetPlatformWindow, (), (const, override));
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(MockFlutterWindowsView);
