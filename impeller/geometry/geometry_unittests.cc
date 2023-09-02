@@ -2022,10 +2022,10 @@ TEST(GeometryTest, CubicPathComponentPolylineDoesNotIncludePointOne) {
 TEST(GeometryTest, PathCreatePolyLineDoesNotDuplicatePoints) {
   PathBuilder builder;
   builder.MoveTo({10, 10});
-  builder.AddLine({10, 10}, {20, 20});
-  builder.AddLine({20, 20}, {30, 30});
+  builder.LineTo({20, 20});
+  builder.LineTo({30, 30});
   builder.MoveTo({40, 40});
-  builder.AddLine({40, 40}, {50, 50});
+  builder.LineTo({50, 50});
 
   auto polyline = builder.TakePath().CreatePolyline(1.0f);
 
