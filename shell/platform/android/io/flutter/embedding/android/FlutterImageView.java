@@ -27,10 +27,10 @@ import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.HashSet;
 
 /**
  * Paints a Flutter UI provided by an {@link android.media.ImageReader} onto a {@link
