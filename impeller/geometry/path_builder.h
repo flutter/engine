@@ -49,7 +49,8 @@ class PathBuilder {
   /// @brief Insert a quadradic curve from the current position to `point` using
   /// the control point `controlPoint`.
   ///
-  /// If `relative` is true the `point` and `controlPoint` are relative to current location.
+  /// If `relative` is true the `point` and `controlPoint` are relative to
+  /// current location.
   PathBuilder& QuadraticCurveTo(Point controlPoint,
                                 Point point,
                                 bool relative = false);
@@ -59,7 +60,8 @@ class PathBuilder {
   /// @brief Insert a cubic curve from the curren position to `point` using the
   /// control points `controlPoint1` and `controlPoint2`.
   ///
-  /// If `relative` is true the `point`, `controlPoint1`, and `controlPoint2` are relative to current location.
+  /// If `relative` is true the `point`, `controlPoint1`, and `controlPoint2`
+  /// are relative to current location.
   PathBuilder& CubicCurveTo(Point controlPoint1,
                             Point controlPoint2,
                             Point point,
