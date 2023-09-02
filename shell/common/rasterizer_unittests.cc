@@ -208,7 +208,7 @@ TEST(RasterizerTest,
                                     /*frame_size=*/SkISize());
     auto layer_tree_item = std::make_unique<FrameItem>(
         SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
-                           kDevicePixelRatio),
+                            kDevicePixelRatio),
         CreateFinishedBuildRecorder());
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
@@ -275,7 +275,7 @@ TEST(
         /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
     auto layer_tree_item = std::make_unique<FrameItem>(
         SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
-                           kDevicePixelRatio),
+                            kDevicePixelRatio),
         CreateFinishedBuildRecorder());
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
@@ -348,7 +348,7 @@ TEST(
                                                 /*frame_size=*/SkISize());
   auto layer_tree_item = std::make_unique<FrameItem>(
       SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
-                         kDevicePixelRatio),
+                          kDevicePixelRatio),
       CreateFinishedBuildRecorder());
   PipelineProduceResult result =
       pipeline->Produce().Complete(std::move(layer_tree_item));
@@ -424,7 +424,7 @@ TEST(RasterizerTest,
                                                 /*frame_size=*/SkISize());
   auto layer_tree_item = std::make_unique<FrameItem>(
       SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
-                         kDevicePixelRatio),
+                          kDevicePixelRatio),
       CreateFinishedBuildRecorder());
   PipelineProduceResult result =
       pipeline->Produce().Complete(std::move(layer_tree_item));
@@ -475,7 +475,7 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNoSurfaceIsSet) {
         /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
     auto layer_tree_item = std::make_unique<FrameItem>(
         SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
-                           kDevicePixelRatio),
+                            kDevicePixelRatio),
         CreateFinishedBuildRecorder());
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
@@ -532,7 +532,7 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNotUsedThisFrame) {
         /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
     auto layer_tree_item = std::make_unique<FrameItem>(
         SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
-                           kDevicePixelRatio),
+                            kDevicePixelRatio),
         CreateFinishedBuildRecorder());
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
@@ -636,7 +636,7 @@ TEST(RasterizerTest,
         /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
     auto layer_tree_item = std::make_unique<FrameItem>(
         SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
-                           kDevicePixelRatio),
+                            kDevicePixelRatio),
         CreateFinishedBuildRecorder());
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
@@ -695,7 +695,7 @@ TEST(
         /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
     auto layer_tree_item = std::make_unique<FrameItem>(
         SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
-                           kDevicePixelRatio),
+                            kDevicePixelRatio),
         CreateFinishedBuildRecorder());
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
@@ -754,7 +754,7 @@ TEST(
         /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
     auto layer_tree_item = std::make_unique<FrameItem>(
         SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
-                           kDevicePixelRatio),
+                            kDevicePixelRatio),
         CreateFinishedBuildRecorder());
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
@@ -812,7 +812,7 @@ TEST(
         /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
     auto layer_tree_item = std::make_unique<FrameItem>(
         SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
-                           kDevicePixelRatio),
+                            kDevicePixelRatio),
         CreateFinishedBuildRecorder());
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
@@ -869,7 +869,7 @@ TEST(
         /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
     auto layer_tree_item = std::make_unique<FrameItem>(
         SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
-                           kDevicePixelRatio),
+                            kDevicePixelRatio),
         CreateFinishedBuildRecorder());
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
@@ -949,7 +949,7 @@ TEST(RasterizerTest,
           /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
       auto layer_tree_item = std::make_unique<FrameItem>(
           SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
-                             kDevicePixelRatio),
+                              kDevicePixelRatio),
           CreateFinishedBuildRecorder(timestamps[i]));
       PipelineProduceResult result =
           pipeline->Produce().Complete(std::move(layer_tree_item));
