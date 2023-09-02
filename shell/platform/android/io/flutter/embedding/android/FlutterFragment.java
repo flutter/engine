@@ -1576,11 +1576,6 @@ public class FlutterFragment extends Fragment
     // Hook for subclasses.
   }
 
-  @Override
-  public void onFlutterImageViewCreated(@NonNull FlutterImageView flutterImageView) {
-    // Hook for subclasses.
-  }
-
   /**
    * Invoked after the {@link io.flutter.embedding.android.FlutterView} within this {@code
    * FlutterFragment} starts rendering pixels to the screen.
