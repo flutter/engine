@@ -205,8 +205,9 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
   bool ShouldRenderAsPath(const DlPaint& paint) const {
     // Text with non-trivial color sources or stroke paint mode should be
     // rendered as a path when running on Impeller.
-    return impeller_enabled_ && (!paint.getColorSource()->asColor() ||
-                                 paint.getDrawStyle() == DlDrawStyle::kStroke);
+    return impeller_enabled_ &&
+           ((paint.getColorSource() && !paint.getColorSource()->asColor()) ||
+            paint.getDrawStyle() == DlDrawStyle::kStroke);
   }
 
   DlPaint toDlPaint(const DecorationStyle& decor_style,
