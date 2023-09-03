@@ -25,11 +25,11 @@ class DlOpRecorder final : public virtual DlOpReceiver,
                            private IgnoreDrawDispatchHelper,
                            private IgnoreTransformDispatchHelper {
  public:
-  size_t lineCount() const { return lines_.size(); }
-  size_t rectCount() const { return rects_.size(); }
-  size_t pathCount() const { return paths_.size(); }
-  size_t textFrameCount() const { return text_frames_.size(); }
-  size_t blobCount() const { return blobs_.size(); }
+  int lineCount() const { return lines_.size(); }
+  int rectCount() const { return rects_.size(); }
+  int pathCount() const { return paths_.size(); }
+  int textFrameCount() const { return text_frames_.size(); }
+  int blobCount() const { return blobs_.size(); }
   bool hasPathEffect() const { return path_effect_ != nullptr; }
 
  private:
