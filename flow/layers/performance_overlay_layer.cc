@@ -15,7 +15,7 @@
 #include "third_party/skia/include/core/SkFont.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 #ifdef IMPELLER_SUPPORTS_RENDERING
-#include "impeller/typographer/backends/skia/text_frame_skia.h" // nogncheck
+#include "impeller/typographer/backends/skia/text_frame_skia.h"  // nogncheck
 #endif  // IMPELLER_SUPPORTS_RENDERING
 
 namespace flutter {
