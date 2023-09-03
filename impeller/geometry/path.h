@@ -138,6 +138,8 @@ class Path {
 
   void SetFillType(FillType fill);
 
+  void SetBounds(Rect rect);
+
   Path& AddLinearComponent(Point p1, Point p2);
 
   Path& AddQuadraticComponent(Point p1, Point cp, Point p2);
@@ -178,6 +180,8 @@ class Path {
   std::vector<QuadraticPathComponent> quads_;
   std::vector<CubicPathComponent> cubics_;
   std::vector<ContourComponent> contours_;
+
+  mutable std::optional<Rect> computed_bounds_;
 };
 
 }  // namespace impeller

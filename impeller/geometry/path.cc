@@ -397,6 +397,9 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
 }
 
 std::optional<Rect> Path::GetBoundingBox() const {
+  if (computed_bounds_.has_value()) {
+    return computed_bounds_;
+  }
   auto min_max = GetMinMaxCoveragePoints();
   if (!min_max.has_value()) {
     return std::nullopt;
@@ -404,7 +407,7 @@ std::optional<Rect> Path::GetBoundingBox() const {
   auto min = min_max->first;
   auto max = min_max->second;
   const auto difference = max - min;
-  return Rect{min.x, min.y, difference.x, difference.y};
+  return computed_bounds_ = Rect{min.x, min.y, difference.x, difference.y};
 }
 
 std::optional<Rect> Path::GetTransformedBoundingBox(
@@ -459,6 +462,10 @@ std::optional<std::pair<Point, Point>> Path::GetMinMaxCoveragePoints() const {
   }
 
   return std::make_pair(min.value(), max.value());
+}
+
+void Path::SetBounds(Rect rect) {
+  computed_bounds_ = rect;
 }
 
 }  // namespace impeller

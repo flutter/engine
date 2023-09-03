@@ -458,4 +458,9 @@ PathBuilder& PathBuilder::Shift(Point offset) {
   return *this;
 }
 
+PathBuilder& PathBuilder::SetBounds(Rect bounds) {
+  prototype_.SetBounds(bounds);
+  return *this;
+}
+
 }  // namespace impeller
