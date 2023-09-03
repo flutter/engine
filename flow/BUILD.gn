@@ -101,7 +101,7 @@ source_set("flow") {
   if (impeller_supports_rendering) {
     deps += [
       "//flutter/impeller",
-      "//flutter/impeller/typographer/backends/skia",
+      "//flutter/impeller/typographer/backends/skia:typographer_skia_backend",
     ]
   }
 }
