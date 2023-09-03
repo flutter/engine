@@ -18,8 +18,10 @@
 
 #include <algorithm>
 #include <numeric>
+#include "display_list/dl_paint.h"
 #include "fml/logging.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
+#include "include/core/SkMatrix.h"
 
 namespace txt {
 
@@ -80,6 +82,14 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
     }
     size_t paint_id = std::get<PaintID>(paint);
     FML_DCHECK(paint_id < dl_paints_.size());
+
+    if (ShouldRenderAsPath(dl_paints_[paint_id])) {
+      auto path = skia::textlayout::Paragraph::GetPath(blob.get());
+      auto transformed = path.makeTransform(SkMatrix::Translate(
+          x + blob->bounds().left(), y + blob->bounds().top()));
+      builder_->DrawPath(transformed, dl_paints_[paint_id]);
+      return;
+    }
 
     if (impeller_enabled_) {
       builder_->DrawTextFrame(impeller::MakeTextFrameFromTextBlobSkia(blob), x,
@@ -190,6 +200,13 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
 
     path.close();
     return path;
+  }
+
+  bool ShouldRenderAsPath(const DlPaint& paint) const {
+    // Text with non-trivial color sources or stroke paint mode should be
+    // rendered as a path when running on Impeller.
+    return impeller_enabled_ && (!paint.getColorSource()->asColor() ||
+                                 paint.getDrawStyle() == DlDrawStyle::kStroke);
   }
 
   DlPaint toDlPaint(const DecorationStyle& decor_style,
