@@ -8,11 +8,7 @@
 
 #include "flutter/fml/logging.h"
 #include "impeller/typographer/backends/skia/typeface_skia.h"
-#include "include/core/SkFontTypes.h"
-#include "include/core/SkRect.h"
-#include "third_party/skia/include/core/SkFont.h"
 #include "third_party/skia/include/core/SkFontMetrics.h"
-#include "third_party/skia/src/core/SkStrikeSpec.h"    // nogncheck
 #include "third_party/skia/src/core/SkTextBlobPriv.h"  // nogncheck
 
 namespace impeller {
@@ -39,22 +35,12 @@ static Rect ToRect(const SkRect& rect) {
 
 static constexpr Scalar kScaleSize = 100000.0f;
 
-std::optional<TextFrame> MakeTextFrameFromTextBlobSkia(
-    const sk_sp<SkTextBlob>& blob) {
-  // Handling nullptr text blobs feels overly defensive here, as I don't
-  // actually know if this happens.
-  if (!blob) {
-    return {};
-  }
-
+std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
+    const sk_sp<SkTextBlob>& blob,
+    bool has_color) {
+  const auto type = has_color ? Glyph::Type::kBitmap : Glyph::Type::kPath;
   std::vector<TextRun> runs;
-  bool has_color = false;
   for (SkTextBlobRunIterator run(blob.get()); !run.done(); run.next()) {
-    // TODO(jonahwilliams): ask Skia for a public API to look this up.
-    // https://github.com/flutter/flutter/issues/112005
-    SkStrikeSpec strikeSpec = SkStrikeSpec::MakeWithNoDevice(run.font());
-    SkBulkGlyphMetricsAndPaths paths{strikeSpec};
-
     const auto glyph_count = run.glyphCount();
     const auto* glyphs = run.glyphs();
     switch (run.positioning()) {
@@ -76,10 +62,6 @@ std::optional<TextFrame> MakeTextFrameFromTextBlobSkia(
           // kFull_Positioning has two scalars per glyph.
           const SkPoint* glyph_points = run.points();
           const auto* point = glyph_points + i;
-          Glyph::Type type = paths.glyph(glyphs[i])->isColor()
-                                 ? Glyph::Type::kBitmap
-                                 : Glyph::Type::kPath;
-          has_color |= type == Glyph::Type::kBitmap;
 
           positions.emplace_back(TextRun::GlyphPosition{
               Glyph{glyphs[i], type,
@@ -95,7 +77,7 @@ std::optional<TextFrame> MakeTextFrameFromTextBlobSkia(
         continue;
     }
   }
-  return TextFrame(runs, ToRect(blob->bounds()), has_color);
+  return std::make_shared<TextFrame>(runs, ToRect(blob->bounds()), has_color);
 }
 
 }  // namespace impeller
