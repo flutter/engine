@@ -12,6 +12,7 @@
 #include "flow/stopwatch.h"
 #include "flow/stopwatch_dl.h"
 #include "flow/stopwatch_sk.h"
+#include "impeller/typographer/backends/skia/text_frame_skia.h"
 #include "third_party/skia/include/core/SkFont.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 
@@ -50,7 +51,12 @@ void VisualizeStopWatch(DlCanvas* canvas,
         stopwatch, label_prefix, font_path);
     // Historically SK_ColorGRAY (== 0xFF888888) was used here
     DlPaint paint(0xFF888888);
-    canvas->DrawTextBlob(text, x + label_x, y + height + label_y, paint);
+    if (impeller_enabled) {
+      canvas->DrawTextFrame(impeller::MakeTextFrameFromTextBlobSkia(text),
+                            x + label_x, y + height + label_y, paint);
+    } else {
+      canvas->DrawTextBlob(text, x + label_x, y + height + label_y, paint);
+    }
   }
 }
 
