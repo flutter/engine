@@ -1109,6 +1109,8 @@ void DlDispatcher::drawDisplayList(
 void DlDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                 SkScalar x,
                                 SkScalar y) {
+  // When running with Impeller enabled Skia text blobs are converted to
+  // Impeller text frames in paragraph_skia.cc
   UNIMPLEMENTED;
 }
 
