@@ -10,7 +10,6 @@
 namespace impeller {
 
 std::shared_ptr<impeller::TextFrame> MakeTextFrameFromTextBlobSkia(
-    const sk_sp<SkTextBlob>& blob,
-    bool has_color);
+    const sk_sp<SkTextBlob>& blob);
 
 }  // namespace impeller
