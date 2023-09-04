@@ -232,8 +232,7 @@ DrawStatus Rasterizer::Draw(
   // if the raster status is to resubmit the frame, we push the frame to the
   // front of the queue and also change the consume status to more available.
 
-  bool should_resubmit_frame =
-      draw_result.status == DoDrawStatus::kRetry;
+  bool should_resubmit_frame = draw_result.status == DoDrawStatus::kRetry;
   if (should_resubmit_frame) {
     auto front_continuation = pipeline->ProduceIfEmpty();
     PipelineProduceResult pipeline_result = front_continuation.Complete(
