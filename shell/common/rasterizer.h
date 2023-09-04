@@ -547,7 +547,7 @@ class Rasterizer final : public SnapshotDelegate,
     kFailed,
   };
 
-  // The result status of DoDraw.
+  // The result status of DoDraw and DrawToSurface.
   enum class DoDrawStatus {
     // Frame has been successfully rasterized.
     kSuccess,
@@ -581,7 +581,7 @@ class Rasterizer final : public SnapshotDelegate,
   // configuration, in which case the resubmitted task will be inserted to the
   // front of the pipeline.
   struct DoDrawResult {
-    DoDrawStatus raster_status = DoDrawStatus::kSuccess;
+    DoDrawStatus status = DoDrawStatus::kSuccess;
 
     std::unique_ptr<LayerTreeItem> resubmitted_layer_tree_item;
   };
