@@ -261,13 +261,15 @@ public class FlutterJNITest {
   public void callOnRasterStart() {
     FlutterJNI flutterJNI = new FlutterJNI();
     final long[] times = {-1, -1, -1};
-    FlutterJNI.OnFrameTimeListener listener = new FlutterJNI.OnFrameTimeListener() {
-      public void onRasterStart(long buildStartTime, long buildEndTime, long rasterStartTime, long currentNanoTime) {
-        times[0] = buildStartTime;
-        times[1] = buildEndTime;
-        times[2] = rasterStartTime;
-      }
-    };
+    FlutterJNI.OnFrameTimeListener listener =
+        new FlutterJNI.OnFrameTimeListener() {
+          public void onRasterStart(
+              long buildStartTime, long buildEndTime, long rasterStartTime, long currentNanoTime) {
+            times[0] = buildStartTime;
+            times[1] = buildEndTime;
+            times[2] = rasterStartTime;
+          }
+        };
 
     // --- Execute Test ---
     flutterJNI.addOnFrameTimeListener(listener);
