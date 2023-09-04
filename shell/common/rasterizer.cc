@@ -182,13 +182,12 @@ void Rasterizer::DrawLastLayerTree(
   if (!last_layer_tree_ || !surface_) {
     return;
   }
-  DrawSurfaceStatus draw_surface_status = DrawToSurface(
+  DoDrawStatus status = DrawToSurface(
       *frame_timings_recorder, *last_layer_tree_, last_device_pixel_ratio_);
 
   // EndFrame should perform cleanups for the external_view_embedder.
   if (external_view_embedder_ && external_view_embedder_->GetUsedThisFrame()) {
-    bool should_resubmit_frame =
-        draw_surface_status == DrawSurfaceStatus::kRetry;
+    bool should_resubmit_frame = status == DoDrawStatus::kRetry;
     external_view_embedder_->SetUsedThisFrame(false);
     external_view_embedder_->EndFrame(should_resubmit_frame,
                                       raster_thread_merger_);
@@ -209,21 +208,23 @@ DrawStatus Rasterizer::Draw(
 
   DoDrawResult draw_result;
   LayerTreePipeline::Consumer consumer =
-      [&draw_result, this](std::unique_ptr<LayerTreeItem> item) {
-        std::unique_ptr<LayerTree> layer_tree = std::move(item->layer_tree);
-        std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =
-            std::move(item->frame_timings_recorder);
+      [&draw_result, this,
+       &delegate = delegate_](std::unique_ptr<LayerTreeItem> item) {
         // TODO(dkwingsmt): Use a proper view ID when Rasterizer supports
         // multi-view.
         int64_t view_id = kFlutterImplicitViewId;
-        if (delegate_.ShouldDiscardLayerTree(view_id, *layer_tree)) {
+        std::unique_ptr<LayerTree> layer_tree = std::move(item->layer_tree);
+        std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =
+            std::move(item->frame_timings_recorder);
+        float device_pixel_ratio = item->device_pixel_ratio;
+        if (delegate.ShouldDiscardLayerTree(view_id, *layer_tree)) {
           draw_result = DoDrawResult{
               .raster_status = DoDrawStatus::kDiscarded,
           };
+        } else {
+          draw_result = DoDraw(std::move(frame_timings_recorder),
+                               std::move(layer_tree), device_pixel_ratio);
         }
-        float device_pixel_ratio = item->device_pixel_ratio;
-        draw_result = DoDraw(std::move(frame_timings_recorder),
-                             std::move(layer_tree), device_pixel_ratio);
       };
 
   PipelineConsumeResult consume_result = pipeline->Consume(consumer);
@@ -272,8 +273,8 @@ DrawStatus Rasterizer::Draw(
   return ToDrawStatus(draw_result.raster_status);
 }
 
-DrawStatus Rasterizer::ToDrawStatus(DoDrawStatus do_draw_status) {
-  switch (do_draw_status) {
+DrawStatus Rasterizer::ToDrawStatus(DoDrawStatus status) {
+  switch (status) {
     case DoDrawStatus::kGpuUnavailable:
       return DrawStatus::kGpuUnavailable;
     case DoDrawStatus::kDiscarded:
@@ -418,9 +419,12 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
   PersistentCache* persistent_cache = PersistentCache::GetCacheForProcess();
   persistent_cache->ResetStoredNewShaders();
 
-  DrawSurfaceStatus draw_surface_status =
+  DoDrawStatus status =
       DrawToSurface(*frame_timings_recorder, *layer_tree, device_pixel_ratio);
-  if (draw_surface_status == DrawSurfaceStatus::kRetry) {
+  if (status == DoDrawStatus::kSuccess) {
+    last_layer_tree_ = std::move(layer_tree);
+    last_device_pixel_ratio_ = device_pixel_ratio;
+  } else if (status == DoDrawStatus::kRetry) {
     return DoDrawResult{
         .raster_status = DoDrawStatus::kRetry,
         .resubmitted_layer_tree_item = std::make_unique<LayerTreeItem>(
@@ -429,17 +433,13 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
                 FrameTimingsRecorder::State::kBuildEnd),
             device_pixel_ratio),
     };
-  } else if (draw_surface_status == DrawSurfaceStatus::kGpuUnavailable) {
+  } else if (status == DoDrawStatus::kGpuUnavailable) {
     return DoDrawResult{
         .raster_status = DoDrawStatus::kGpuUnavailable,
     };
   }
-  FML_DCHECK(draw_surface_status == DrawSurfaceStatus::kSuccess ||
-             draw_surface_status == DrawSurfaceStatus::kFailed);
-  if (draw_surface_status == DrawSurfaceStatus::kSuccess) {
-    last_layer_tree_ = std::move(layer_tree);
-    last_device_pixel_ratio_ = device_pixel_ratio;
-  }
+  FML_DCHECK(status == DoDrawStatus::kSuccess ||
+             status == DoDrawStatus::kFailed);
 
   if (persistent_cache->IsDumpingSkp() &&
       persistent_cache->StoredNewShaders()) {
@@ -512,41 +512,46 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
     }
   }
 
-  if (draw_surface_status == DrawSurfaceStatus::kSuccess) {
-    return DoDrawResult{
-        .raster_status = DoDrawStatus::kSuccess,
-    };
-  } else {
-    return DoDrawResult{
-        .raster_status = DoDrawStatus::kFailed,
-    };
-  }
+  return DoDrawResult{
+      .raster_status = status,
+  };
 }
 
-Rasterizer::DrawSurfaceStatus Rasterizer::DrawToSurface(
+Rasterizer::DoDrawStatus Rasterizer::DrawToSurface(
     FrameTimingsRecorder& frame_timings_recorder,
     flutter::LayerTree& layer_tree,
     float device_pixel_ratio) {
   TRACE_EVENT0("flutter", "Rasterizer::DrawToSurface");
   FML_DCHECK(surface_);
 
-  DrawSurfaceStatus draw_surface_status;
+  DoDrawStatus status;
   if (surface_->AllowsDrawingWhenGpuDisabled()) {
-    draw_surface_status = DrawToSurfaceUnsafe(frame_timings_recorder,
-                                              layer_tree, device_pixel_ratio);
+    status = ToDoDrawStatus(DrawToSurfaceUnsafe(
+        frame_timings_recorder, layer_tree, device_pixel_ratio));
   } else {
     delegate_.GetIsGpuDisabledSyncSwitch()->Execute(
         fml::SyncSwitch::Handlers()
-            .SetIfTrue([&] {
-              draw_surface_status = DrawSurfaceStatus::kGpuUnavailable;
-            })
+            .SetIfTrue([&] { status = DoDrawStatus::kGpuUnavailable; })
             .SetIfFalse([&] {
-              draw_surface_status = DrawToSurfaceUnsafe(
-                  frame_timings_recorder, layer_tree, device_pixel_ratio);
+              status = ToDoDrawStatus(DrawToSurfaceUnsafe(
+                  frame_timings_recorder, layer_tree, device_pixel_ratio));
             }));
   }
 
-  return draw_surface_status;
+  return status;
+}
+
+Rasterizer::DoDrawStatus Rasterizer::ToDoDrawStatus(DrawSurfaceStatus status) {
+  switch (status) {
+    case DrawSurfaceStatus::kRetry:
+      return DoDrawStatus::kRetry;
+    case DrawSurfaceStatus::kFailed:
+      return DoDrawStatus::kFailed;
+    case DrawSurfaceStatus::kSuccess:
+      return DoDrawStatus::kSuccess;
+    default:
+      FML_CHECK(false);
+  }
 }
 
 /// Unsafe because it assumes we have access to the GPU which isn't the case

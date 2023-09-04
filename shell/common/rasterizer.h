@@ -529,7 +529,7 @@ class Rasterizer final : public SnapshotDelegate,
   void DisableThreadMergerIfNeeded();
 
  private:
-  // The result status of DrawToSurface and DrawToSurfaceUnsafe.
+  // The result status of DrawToSurfaceUnsafe.
   enum class DrawSurfaceStatus {
     // Frame has been successfully rasterized.
     kSuccess,
@@ -545,8 +545,6 @@ class Rasterizer final : public SnapshotDelegate,
     kRetry,
     // Failed to rasterize the frame.
     kFailed,
-    // Layer tree was discarded due to inability to access the GPU.
-    kGpuUnavailable,
   };
 
   // The result status of DoDraw.
@@ -648,9 +646,9 @@ class Rasterizer final : public SnapshotDelegate,
       std::unique_ptr<flutter::LayerTree> layer_tree,
       float device_pixel_ratio);
 
-  DrawSurfaceStatus DrawToSurface(FrameTimingsRecorder& frame_timings_recorder,
-                                  flutter::LayerTree& layer_tree,
-                                  float device_pixel_ratio);
+  DoDrawStatus DrawToSurface(FrameTimingsRecorder& frame_timings_recorder,
+                             flutter::LayerTree& layer_tree,
+                             float device_pixel_ratio);
 
   DrawSurfaceStatus DrawToSurfaceUnsafe(
       FrameTimingsRecorder& frame_timings_recorder,
@@ -659,7 +657,8 @@ class Rasterizer final : public SnapshotDelegate,
 
   void FireNextFrameCallbackIfPresent();
 
-  static DrawStatus ToDrawStatus(DoDrawStatus do_draw_status);
+  static DoDrawStatus ToDoDrawStatus(DrawSurfaceStatus status);
+  static DrawStatus ToDrawStatus(DoDrawStatus status);
 
   Delegate& delegate_;
   MakeGpuImageBehavior gpu_image_behavior_;
