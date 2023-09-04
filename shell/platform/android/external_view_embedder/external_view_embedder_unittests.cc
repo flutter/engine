@@ -1049,16 +1049,10 @@ TEST(AndroidExternalViewEmbedder, CallOnRasterStart) {
       std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
   auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
       *android_context, jni_mock, nullptr, GetTaskRunnersForFixture());
-  auto recorder = std::make_unique<FrameTimingsRecorder>();
-  // Record build time
-  const auto now = fml::TimePoint::Now();
-  recorder->RecordBuildStart(now);
-  recorder->RecordBuildEnd(now);
-  recorder->RecordRasterStart(now);
+  FrameTimingsRecorder recorder;
 
-  embedder.OnRasterStart(recorder);
-  EXPECT_CALL(*jni_mock, OnRasterStart(recorder)).Times(1);
-  embedder->Teardown();
+  EXPECT_CALL(*jni_mock, OnRasterStart(::testing::_)).Times(1);
+  embedder->OnRasterStart(recorder);
 }
 
 }  // namespace testing
