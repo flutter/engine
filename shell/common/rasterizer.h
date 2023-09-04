@@ -545,8 +545,6 @@ class Rasterizer final : public SnapshotDelegate,
     kRetry,
     // Failed to rasterize the frame.
     kFailed,
-    // Layer tree was discarded due to LayerTreeDiscardCallback.
-    kDiscarded,
     // Layer tree was discarded due to inability to access the GPU.
     kGpuUnavailable,
   };
@@ -660,6 +658,8 @@ class Rasterizer final : public SnapshotDelegate,
       float device_pixel_ratio);
 
   void FireNextFrameCallbackIfPresent();
+
+  static DrawStatus ToDrawStatus(DoDrawStatus do_draw_status);
 
   Delegate& delegate_;
   MakeGpuImageBehavior gpu_image_behavior_;

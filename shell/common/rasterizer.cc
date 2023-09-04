@@ -213,6 +213,14 @@ DrawStatus Rasterizer::Draw(
         std::unique_ptr<LayerTree> layer_tree = std::move(item->layer_tree);
         std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =
             std::move(item->frame_timings_recorder);
+        // TODO(dkwingsmt): Use a proper view ID when Rasterizer supports
+        // multi-view.
+        int64_t view_id = kFlutterImplicitViewId;
+        if (delegate_.ShouldDiscardLayerTree(view_id, *layer_tree)) {
+          draw_result = DoDrawResult{
+              .raster_status = DoDrawStatus::kDiscarded,
+          };
+        }
         float device_pixel_ratio = item->device_pixel_ratio;
         draw_result = DoDraw(std::move(frame_timings_recorder),
                              std::move(layer_tree), device_pixel_ratio);
@@ -261,7 +269,11 @@ DrawStatus Rasterizer::Draw(
       break;
   }
 
-  switch (draw_result.raster_status) {
+  return ToDrawStatus(draw_result.raster_status);
+}
+
+DrawStatus Rasterizer::ToDrawStatus(DoDrawStatus do_draw_status) {
+  switch (do_draw_status) {
     case DoDrawStatus::kGpuUnavailable:
       return DrawStatus::kGpuUnavailable;
     case DoDrawStatus::kDiscarded:
@@ -408,10 +420,7 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
 
   DrawSurfaceStatus draw_surface_status =
       DrawToSurface(*frame_timings_recorder, *layer_tree, device_pixel_ratio);
-  if (draw_surface_status == DrawSurfaceStatus::kSuccess) {
-    last_layer_tree_ = std::move(layer_tree);
-    last_device_pixel_ratio_ = device_pixel_ratio;
-  } else if (draw_surface_status == DrawSurfaceStatus::kRetry) {
+  if (draw_surface_status == DrawSurfaceStatus::kRetry) {
     return DoDrawResult{
         .raster_status = DoDrawStatus::kRetry,
         .resubmitted_layer_tree_item = std::make_unique<LayerTreeItem>(
@@ -424,13 +433,13 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
     return DoDrawResult{
         .raster_status = DoDrawStatus::kGpuUnavailable,
     };
-  } else if (draw_surface_status == DrawSurfaceStatus::kDiscarded) {
-    return DoDrawResult{
-        .raster_status = DoDrawStatus::kDiscarded,
-    };
   }
   FML_DCHECK(draw_surface_status == DrawSurfaceStatus::kSuccess ||
              draw_surface_status == DrawSurfaceStatus::kFailed);
+  if (draw_surface_status == DrawSurfaceStatus::kSuccess) {
+    last_layer_tree_ = std::move(layer_tree);
+    last_device_pixel_ratio_ = device_pixel_ratio;
+  }
 
   if (persistent_cache->IsDumpingSkp() &&
       persistent_cache->StoredNewShaders()) {
@@ -520,13 +529,6 @@ Rasterizer::DrawSurfaceStatus Rasterizer::DrawToSurface(
     float device_pixel_ratio) {
   TRACE_EVENT0("flutter", "Rasterizer::DrawToSurface");
   FML_DCHECK(surface_);
-
-  // TODO(dkwingsmt): Use a proper view ID when Rasterizer supports
-  // multi-view.
-  int64_t view_id = kFlutterImplicitViewId;
-  if (delegate_.ShouldDiscardLayerTree(view_id, layer_tree)) {
-    return DrawSurfaceStatus::kDiscarded;
-  }
 
   DrawSurfaceStatus draw_surface_status;
   if (surface_->AllowsDrawingWhenGpuDisabled()) {
