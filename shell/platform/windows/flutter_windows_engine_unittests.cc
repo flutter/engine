@@ -606,11 +606,9 @@ class MockFlutterWindowsView : public FlutterWindowsView {
       : FlutterWindowsView(std::move(wbh)) {}
   ~MockFlutterWindowsView() {}
 
-  MOCK_METHOD(void,
-              NotifyWinEventWrapper,
-              (ui::AXPlatformNodeWin*, ax::mojom::Event),
-              (override));
-  MOCK_METHOD(PlatformWindow, GetPlatformWindow, (), (const, override));
+  MOCK_METHOD2(NotifyWinEventWrapper,
+               void(ui::AXPlatformNodeWin*, ax::mojom::Event));
+  MOCK_METHOD0(GetPlatformWindow, HWND());
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(MockFlutterWindowsView);
@@ -664,14 +662,14 @@ class MockWindowsLifecycleManager : public WindowsLifecycleManager {
       : WindowsLifecycleManager(engine) {}
   virtual ~MockWindowsLifecycleManager() {}
 
-  MOCK_METHOD(
-      void,
-      Quit,
-      (std::optional<HWND>, std::optional<WPARAM>, std::optional<LPARAM>, UINT),
-      (override));
-  MOCK_METHOD(void, DispatchMessage, (HWND, UINT, WPARAM, LPARAM), (override));
-  MOCK_METHOD(bool, IsLastWindowOfProcess, (), (override));
-  MOCK_METHOD(void, SetLifecycleState, (AppLifecycleState), (override));
+  MOCK_METHOD4(Quit,
+               void(std::optional<HWND>,
+                    std::optional<WPARAM>,
+                    std::optional<LPARAM>,
+                    UINT));
+  MOCK_METHOD4(DispatchMessage, void(HWND, UINT, WPARAM, LPARAM));
+  MOCK_METHOD0(IsLastWindowOfProcess, bool(void));
+  MOCK_METHOD1(SetLifecycleState, void(AppLifecycleState));
 
   void BeginProcessingLifecycle() override {
     WindowsLifecycleManager::BeginProcessingLifecycle();

@@ -18,11 +18,8 @@ using ::impeller::egl::ConfigDescriptor;
 namespace {
 class MockDisplay : public impeller::egl::Display {
  public:
-  MOCK_METHOD(bool, IsValid, (), (const, override));
-  MOCK_METHOD(std::unique_ptr<Config>,
-              ChooseConfig,
-              (ConfigDescriptor),
-              (const, override));
+  MOCK_CONST_METHOD0(IsValid, bool());
+  MOCK_CONST_METHOD1(ChooseConfig, std::unique_ptr<Config>(ConfigDescriptor));
 };
 }  // namespace
 

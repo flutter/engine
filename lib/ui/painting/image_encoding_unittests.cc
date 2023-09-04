@@ -31,16 +31,13 @@ fml::AutoResetWaitableEvent message_latch;
 
 class MockDlImage : public DlImage {
  public:
-  MOCK_METHOD(sk_sp<SkImage>, skia_image, (), (const, override));
-  MOCK_METHOD(std::shared_ptr<impeller::Texture>,
-              impeller_texture,
-              (),
-              (const, override));
-  MOCK_METHOD(bool, isOpaque, (), (const, override));
-  MOCK_METHOD(bool, isTextureBacked, (), (const, override));
-  MOCK_METHOD(bool, isUIThreadSafe, (), (const, override));
-  MOCK_METHOD(SkISize, dimensions, (), (const, override));
-  MOCK_METHOD(size_t, GetApproximateByteSize, (), (const, override));
+  MOCK_CONST_METHOD0(skia_image, sk_sp<SkImage>());
+  MOCK_CONST_METHOD0(impeller_texture, std::shared_ptr<impeller::Texture>());
+  MOCK_CONST_METHOD0(isOpaque, bool());
+  MOCK_CONST_METHOD0(isTextureBacked, bool());
+  MOCK_CONST_METHOD0(isUIThreadSafe, bool());
+  MOCK_CONST_METHOD0(dimensions, SkISize());
+  MOCK_CONST_METHOD0(GetApproximateByteSize, size_t());
 };
 
 }  // namespace
@@ -60,8 +57,8 @@ class MockSyncSwitch {
     std::function<void()> false_handler = [] {};
   };
 
-  MOCK_METHOD(void, Execute, (const Handlers& handlers), (const));
-  MOCK_METHOD(void, SetSwitch, (bool value));
+  MOCK_CONST_METHOD1(Execute, void(const Handlers& handlers));
+  MOCK_METHOD1(SetSwitch, void(bool value));
 };
 
 TEST_F(ShellTest, EncodeImageGivesExternalTypedData) {
