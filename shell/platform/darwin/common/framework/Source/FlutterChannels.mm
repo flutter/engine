@@ -15,7 +15,8 @@ static NSString* const kOverflowMethod = @"overflow";
 static void ResizeChannelBuffer(NSObject<FlutterBinaryMessenger>* binaryMessenger,
                                 NSString* channel,
                                 NSInteger newSize) {
-  NSArray* args = @[ channel, [NSNumber numberWithInt:newSize] ];
+  NSCAssert(newSize >= 0, @"Channel buffer size must be non-negative");
+  NSArray* args = @[ channel, @(newSize) ];
   FlutterMethodCall* resizeMethodCall = [FlutterMethodCall methodCallWithMethodName:kResizeMethod
                                                                           arguments:args];
   NSObject<FlutterMethodCodec>* codec = [FlutterStandardMethodCodec sharedInstance];
@@ -23,10 +24,19 @@ static void ResizeChannelBuffer(NSObject<FlutterBinaryMessenger>* binaryMessenge
   [binaryMessenger sendOnChannel:kFlutterChannelBuffersChannel message:message];
 }
 
-static void SetAllowChannelOverflow(NSObject<FlutterBinaryMessenger>* binaryMessenger,
-                                    NSString* channel,
-                                    BOOL allowed) {
-  NSArray* args = @[ channel, [NSNumber numberWithBool:allowed] ];
+/**
+ * Defines whether a channel should show warning messages when discarding messages
+ * due to overflow.
+ *
+ * @param binaryMessenger The binary messenger.
+ * @param channel The channel name.
+ * @param allowed When true, the channel is expected to overflow and warning messages
+ *                will not be shown.
+ */
+static void SetWarnsOnOverflow(NSObject<FlutterBinaryMessenger>* binaryMessenger,
+                               NSString* channel,
+                               BOOL allowed) {
+  NSArray* args = @[ channel, @(allowed) ];
   FlutterMethodCall* overflowMethodCall =
       [FlutterMethodCall methodCallWithMethodName:kOverflowMethod arguments:args];
   NSObject<FlutterMethodCodec>* codec = [FlutterStandardMethodCodec sharedInstance];
@@ -132,7 +142,7 @@ static FlutterBinaryMessengerConnection SetMessageHandler(
 
 + (void)resizeChannelWithName:(NSString*)name
               binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
-                      newSize:(NSInteger)newSize {
+                         size:(NSInteger)newSize {
   ResizeChannelBuffer(messenger, name, newSize);
 }
 
@@ -140,14 +150,14 @@ static FlutterBinaryMessengerConnection SetMessageHandler(
   ResizeChannelBuffer(_messenger, _name, newSize);
 }
 
-+ (void)setAllowOverflowChannelWithName:(NSString*)name
-                        binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
-                                allowed:(BOOL)allowed {
-  SetAllowChannelOverflow(messenger, name, allowed);
++ (void)setWarnsOnOverflow:(BOOL)allowed
+        forChannelWithName:(NSString*)name
+           binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger {
+  SetWarnsOnOverflow(messenger, name, allowed);
 }
 
-- (void)setAllowOverflow:(BOOL)allowed {
-  SetAllowChannelOverflow(_messenger, _name, allowed);
+- (void)setWarnsOnOverflow:(BOOL)allowed {
+  SetWarnsOnOverflow(_messenger, _name, allowed);
 }
 
 @end

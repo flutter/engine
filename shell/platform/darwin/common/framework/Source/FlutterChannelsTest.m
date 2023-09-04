@@ -170,7 +170,7 @@ FLUTTER_ASSERT_ARC
   [binaryMessenger stopMocking];
 }
 
-- (bool)testetAllowChannelOverflow {
+- (bool)testSetWarnsOnOverflow {
   NSString* channelName = @"flutter/test";
   id binaryMessenger = OCMStrictProtocolMock(@protocol(FlutterBinaryMessenger));
   id codec = OCMProtocolMock(@protocol(FlutterMethodCodec));
@@ -188,7 +188,7 @@ FLUTTER_ASSERT_ARC
   NSData* expectedMessage = [NSData dataWithBytes:bytes length:sizeof(bytes)];
 
   OCMExpect([binaryMessenger sendOnChannel:@"dev.flutter/channel-buffers" message:expectedMessage]);
-  [channel setAllowOverflow:YES];
+  [channel setWarnsOnOverflow:YES];
   OCMVerifyAll(binaryMessenger);
   [binaryMessenger stopMocking];
 }
