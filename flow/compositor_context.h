@@ -11,9 +11,9 @@
 #include "flutter/common/graphics/texture.h"
 #include "flutter/flow/diff_context.h"
 #include "flutter/flow/embedded_views.h"
-#include "flutter/flow/instrumentation.h"
 #include "flutter/flow/layer_snapshot_store.h"
 #include "flutter/flow/raster_cache.h"
+#include "flutter/flow/stopwatch.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/raster_thread_merger.h"
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -41,9 +41,9 @@ enum class RasterStatus {
   // This is currently used to wait for the thread merger to merge
   // the raster and platform threads.
   //
-  // Since the thread merger may be disabled,
-  // TODO(dkwingsmt): The original doc ended like this. I have no idea what
-  // the original author wanted to say.
+  // Since the thread merger may be disabled, the system will proceed
+  // with separate threads for rasterization and platform tasks,
+  // potentially leading to different performance characteristics.
   kSkipAndRetry,
 };
 

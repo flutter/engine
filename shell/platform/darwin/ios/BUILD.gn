@@ -227,6 +227,12 @@ source_set("ios_test_flutter_mrc") {
     "-F$platform_frameworks_path",
     "-mios-simulator-version-min=$ios_testing_deployment_target",
   ]
+
+  # XCode 15 beta has a bug where iOS 17 API usage is not guarded.
+  # This bug results engine build failure since the engine treats warnings as errors.
+  # The `-Wno-unguarded-availability-new` can be removed when the XCode bug is fixed.
+  # See details in https://github.com/flutter/flutter/issues/128958.
+  cflags_objcc = [ "-Wno-unguarded-availability-new" ]
   sources = [
     "framework/Source/FlutterEnginePlatformViewTest.mm",
     "framework/Source/FlutterEngineTest_mrc.mm",
@@ -271,6 +277,12 @@ shared_library("ios_test_flutter") {
     "-fobjc-arc",
     "-mios-simulator-version-min=$ios_testing_deployment_target",
   ]
+
+  # XCode 15 beta has a bug where iOS 17 API usage is not guarded.
+  # This bug results engine build failure since the engine treats warnings as errors.
+  # The `-Wno-unguarded-availability-new` can be removed when the XCode bug is fixed.
+  # See details in https://github.com/flutter/flutter/issues/128958.
+  cflags_objcc = [ "-Wno-unguarded-availability-new" ]
   ldflags = [
     "-F$platform_frameworks_path",
     "-Wl,-install_name,@rpath/Frameworks/libios_test_flutter.dylib",
@@ -335,6 +347,10 @@ shared_library("create_flutter_framework_dylib") {
   output_name = "Flutter"
 
   ldflags = [ "-Wl,-install_name,@rpath/Flutter.framework/Flutter" ]
+
+  if (darwin_extension_safe) {
+    ldflags += [ "-fapplication-extension" ]
+  }
 
   public = _flutter_framework_headers
 
@@ -426,7 +442,10 @@ copy("copy_license") {
 shared_library("copy_and_verify_framework_module") {
   framework_search_path = rebase_path("$root_out_dir")
   visibility = [ ":*" ]
-  cflags_objc = [ "-F$framework_search_path" ]
+  cflags_objc = [
+    "-F$framework_search_path",
+    "-fapplication-extension",
+  ]
 
   sources = [ "framework/Source/FlutterUmbrellaImport.m" ]
   deps = [
@@ -434,6 +453,17 @@ shared_library("copy_and_verify_framework_module") {
     ":copy_framework_info_plist",
     ":copy_framework_module_map",
   ]
+
+  if (darwin_extension_safe) {
+    ldflags = [
+      "-F$framework_search_path",
+      "-fapplication-extension",
+      "-Xlinker",
+      "-fatal_warnings",
+    ]
+    deps += [ ":copy_dylib" ]
+    frameworks = [ "Flutter.framework" ]
+  }
 }
 
 group("universal_flutter_framework") {

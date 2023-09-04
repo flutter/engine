@@ -1,8 +1,8 @@
-# These checks are run by the CI presubmit script, but are not run by the
-# githooks presubmit script. The githooks presubmit script runs a subset of
-# these checks.
-#
-# See "./tools/clang_tidy/lib/src/hooks_exclude.dart".
+# A YAML format of https://clang.llvm.org/extra/clang-tidy/.
+
+# Prefix check with "-" to ignore.
+# Note: Some of the checks here are used as errors selectively, see
+# //ci/lint.sh
 Checks: >-
   bugprone-use-after-move,
   bugprone-unchecked-optional-access,
@@ -27,17 +27,17 @@ Checks: >-
   performance-unnecessary-value-param
 
 CheckOptions:
-  - key:    modernize-use-default-member-init.UseAssignment
-    value:  true
-  - key:    readability-identifier-naming.EnumConstantCase
-    value:  'CamelCase'
-  - key:    readability-identifier-naming.EnumConstantPrefix
-    value:  'k'
-  - key:    readability-identifier-naming.GlobalConstantCase
-    value:  'CamelCase'
-  - key:    readability-identifier-naming.GlobalConstantPrefix
-    value:  'k'
-  - key:    readability-identifier-naming.PrivateMemberCase
-    value:  'lower_case'
-  - key:    readability-identifier-naming.PrivateMemberSuffix
-    value:  '_'
+  - key: modernize-use-default-member-init.UseAssignment
+    value: true
+  - key: readability-identifier-naming.EnumConstantCase
+    value: "CamelCase"
+  - key: readability-identifier-naming.EnumConstantPrefix
+    value: "k"
+  - key: readability-identifier-naming.GlobalConstantCase
+    value: "CamelCase"
+  - key: readability-identifier-naming.GlobalConstantPrefix
+    value: "k"
+  - key: readability-identifier-naming.PrivateMemberCase
+    value: "lower_case"
+  - key: readability-identifier-naming.PrivateMemberSuffix
+    value: "_"

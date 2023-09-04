@@ -26,7 +26,6 @@
 #include "impeller/entity/contents/linear_gradient_contents.h"
 #include "impeller/entity/contents/radial_gradient_contents.h"
 #include "impeller/entity/contents/runtime_effect_contents.h"
-#include "impeller/entity/contents/scene_contents.h"
 #include "impeller/entity/contents/sweep_gradient_contents.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/entity/entity.h"
@@ -36,6 +35,10 @@
 #include "impeller/geometry/scalar.h"
 #include "impeller/geometry/sigma.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
+
+#if IMPELLER_ENABLE_3D
+#include "impeller/entity/contents/scene_contents.h"
+#endif  // IMPELLER_ENABLE_3D
 
 namespace impeller {
 
@@ -964,8 +967,7 @@ void DlDispatcher::drawPoints(PointMode mode,
 // |flutter::DlOpReceiver|
 void DlDispatcher::drawVertices(const flutter::DlVertices* vertices,
                                 flutter::DlBlendMode dl_mode) {
-  canvas_.DrawVertices(DlVerticesGeometry::MakeVertices(vertices),
-                       ToBlendMode(dl_mode), paint_);
+  canvas_.DrawVertices(MakeVertices(vertices), ToBlendMode(dl_mode), paint_);
 }
 
 // |flutter::DlOpReceiver|
@@ -1108,17 +1110,17 @@ void DlDispatcher::drawDisplayList(
 void DlDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                 SkScalar x,
                                 SkScalar y) {
-  const auto text_frame = TextFrameFromTextBlob(blob);
-  if (paint_.style == Paint::Style::kStroke) {
-    auto path = skia_conversions::PathDataFromTextBlob(blob);
-    auto bounds = text_frame.GetBounds();
-    if (!bounds.has_value()) {
-      return;
-    }
-    canvas_.Save();
-    canvas_.Translate({x + bounds->origin.x, y + bounds->origin.y, 0.0});
+  const auto maybe_text_frame = MakeTextFrameFromTextBlobSkia(blob);
+  if (!maybe_text_frame.has_value()) {
+    return;
+  }
+  const auto text_frame = maybe_text_frame.value();
+  if (paint_.style == Paint::Style::kStroke ||
+      paint_.color_source.GetType() != ColorSource::Type::kColor) {
+    auto bounds = blob->bounds();
+    auto path = skia_conversions::PathDataFromTextBlob(
+        blob, Point(x + bounds.left(), y + bounds.top()));
     canvas_.DrawPath(path, paint_);
-    canvas_.Restore();
     return;
   }
 

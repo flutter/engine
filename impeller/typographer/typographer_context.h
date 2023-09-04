@@ -20,11 +20,14 @@ namespace impeller {
 ///             rendering text on the GPU.
 ///
 ///
-class TextRenderContext {
+class TypographerContext {
  public:
-  virtual ~TextRenderContext();
+  virtual ~TypographerContext();
 
   virtual bool IsValid() const;
+
+  virtual std::shared_ptr<GlyphAtlasContext> CreateGlyphAtlasContext()
+      const = 0;
 
   // TODO(dnfield): Callers should not need to know which type of atlas to
   // create. https://github.com/flutter/flutter/issues/111640
@@ -33,19 +36,19 @@ class TextRenderContext {
       Context& context,
       GlyphAtlas::Type type,
       std::shared_ptr<GlyphAtlasContext> atlas_context,
-      const FontGlyphPair::Set& font_glyph_pairs) const = 0;
+      const FontGlyphMap& font_glyph_map) const = 0;
 
  protected:
   //----------------------------------------------------------------------------
   /// @brief      Create a new context to render text that talks to an
   ///             underlying graphics context.
   ///
-  TextRenderContext();
+  TypographerContext();
 
  private:
   bool is_valid_ = false;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(TextRenderContext);
+  FML_DISALLOW_COPY_AND_ASSIGN(TypographerContext);
 };
 
 }  // namespace impeller
