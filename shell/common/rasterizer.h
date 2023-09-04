@@ -48,7 +48,7 @@ class AiksContext;
 
 namespace flutter {
 
-// The result status of Rasterizer::DoDraw. This is only used for unit tests.
+// The result status of Rasterizer::Draw. This is only used for unit tests.
 enum class DrawStatus {
   // Frame has been successfully rasterized.
   kSuccess,

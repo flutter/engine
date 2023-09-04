@@ -218,9 +218,7 @@ DrawStatus Rasterizer::Draw(
             std::move(item->frame_timings_recorder);
         float device_pixel_ratio = item->device_pixel_ratio;
         if (delegate.ShouldDiscardLayerTree(view_id, *layer_tree)) {
-          draw_result = DoDrawResult{
-              .raster_status = DoDrawStatus::kDiscarded,
-          };
+          draw_result.raster_status = DoDrawStatus::kDiscarded;
         } else {
           draw_result = DoDraw(std::move(frame_timings_recorder),
                                std::move(layer_tree), device_pixel_ratio);
@@ -282,6 +280,7 @@ DrawStatus Rasterizer::ToDrawStatus(DoDrawStatus status) {
     case DoDrawStatus::kFailed:
       return DrawStatus::kFailed;
     default:
+      FML_CHECK(status == DoDrawStatus::kSuccess);
       return DrawStatus::kSuccess;
   }
 }
@@ -547,10 +546,9 @@ Rasterizer::DoDrawStatus Rasterizer::ToDoDrawStatus(DrawSurfaceStatus status) {
       return DoDrawStatus::kRetry;
     case DrawSurfaceStatus::kFailed:
       return DoDrawStatus::kFailed;
-    case DrawSurfaceStatus::kSuccess:
-      return DoDrawStatus::kSuccess;
     default:
-      FML_CHECK(false);
+      FML_CHECK(status == DrawSurfaceStatus::kSuccess);
+      return DoDrawStatus::kSuccess;
   }
 }
 
@@ -692,6 +690,7 @@ Rasterizer::DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
     if (frame_status == RasterStatus::kResubmit) {
       return DrawSurfaceStatus::kRetry;
     } else {
+      FML_CHECK(frame_status == RasterStatus::kSuccess);
       return DrawSurfaceStatus::kSuccess;
     }
   }
