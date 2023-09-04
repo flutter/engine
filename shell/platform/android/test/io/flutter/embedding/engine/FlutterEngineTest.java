@@ -374,4 +374,25 @@ public class FlutterEngineTest {
     assertNotNull(pluginBindingCaptor.getValue());
     assertEquals(mockGroup, pluginBindingCaptor.getValue().getEngineGroup());
   }
+
+  @Test
+  public void addAndRemoveOnFrameTimeListener() {
+    FlutterLoader mockFlutterLoader = mock(FlutterLoader.class);
+    when(mockFlutterLoader.automaticallyRegisterPlugins()).thenReturn(true);
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    when(mockFlutterJNI.isAttached()).thenReturn(true);
+    FlutterEngine flutterEngine = new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJNI);
+    FlutterJNI.OnFrameTimeListener listener = new FlutterJNI.OnFrameTimeListener() {
+      public void onRasterStart(long buildStart, long buildEnd, long rasterStart, long currentNano) {
+      }
+    };
+
+    flutterEngine.addOnFrameTimeListener(listener);
+    verify(mockFlutterJNI, times(1))
+      .addOnFrameTimeListener(listener);
+
+    flutterEngine.removeOnFrameTimeListener(listener);
+    verify(mockFlutterJNI, times(1))
+      .removeOnFrameTimeListener(listener);
+  }
 }

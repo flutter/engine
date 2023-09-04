@@ -1,6 +1,7 @@
 package io.flutter.embedding.engine;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -254,5 +255,28 @@ public class FlutterJNITest {
     flutterJNI.setRefreshRateFPS(120.0f);
     // --- Verify Results ---
     verify(flutterJNI, times(1)).updateRefreshRate();
+  }
+
+  @Test
+  public void callOnRasterStart() {
+    FlutterJNI flutterJNI = new FlutterJNI();
+    final long[] times = {-1, -1, -1};
+    FlutterJNI.OnFrameTimeListener listener = new FlutterJNI.OnFrameTimeListener() {
+      public void onRasterStart(long buildStartTime, long buildEndTime, long rasterStartTime, long currentNanoTime) {
+        times[0] = buildStartTime;
+        times[1] = buildEndTime;
+        times[2] = rasterStartTime;
+      }
+    };
+
+    // --- Execute Test ---
+    flutterJNI.addOnFrameTimeListener(listener);
+    flutterJNI.onRasterStart(1L, 2L, 3L);
+    assertTrue(times[0] == 1L && times[1] == 2L && times[2] == 3L);
+    flutterJNI.removeOnFrameTimeListener(listener);
+    flutterJNI.onRasterStart(4L, 5L, 6L);
+
+    // --- Verify Results ---
+    assertTrue(times[0] == 1L && times[1] == 2L && times[2] == 3L);
   }
 }
