@@ -37,9 +37,14 @@ class ResourceManagerVK
     : public std::enable_shared_from_this<ResourceManagerVK> {
  public:
   //----------------------------------------------------------------------------
-  /// @brief      Create a shared resource manager. This creates a dedicated
-  ///             thread for resource management. Only one is created per Vulkan
-  ///             context.
+  /// @brief      Creates a shared resource manager (a dedicated thread).
+  ///
+  /// Upon creation, a thread is spawned which will collect resources as they
+  /// are reclaimed (passed to `Reclaim`). The thread will exit when the
+  /// resource manager is destroyed.
+  ///
+  /// @note       Only one |ResourceManagerVK| should be created per Vulkan
+  ///             context, but that contract is not enforced by this method.
   ///
   /// @return     A resource manager if one could be created.
   ///
