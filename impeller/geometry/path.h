@@ -148,6 +148,12 @@ class Path {
 
   Path& AddContourComponent(Point destination, bool is_closed = false);
 
+  /// @brief Called by `PathBuilder` to compute the bounds for certain paths.
+  ///
+  /// `PathBuilder` may set the bounds directly, in case they come from a source
+  /// with already computed bounds, such as an SkPath.
+  void ComputeBounds();
+
   void SetContourClosed(bool is_closed);
 
   void Shift(Point shift);
@@ -181,7 +187,7 @@ class Path {
   std::vector<CubicPathComponent> cubics_;
   std::vector<ContourComponent> contours_;
 
-  mutable std::optional<Rect> computed_bounds_;
+  std::optional<Rect> computed_bounds_;
 };
 
 }  // namespace impeller

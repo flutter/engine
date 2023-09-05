@@ -141,6 +141,7 @@ class PathBuilder {
   Point current_;
   Path prototype_;
   Convexity convexity_;
+  bool did_compute_bounds_ = false;
 
   PathBuilder& AddRoundedRectTopLeft(Rect rect, RoundingRadii radii);
 

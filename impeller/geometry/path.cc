@@ -397,17 +397,19 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
 }
 
 std::optional<Rect> Path::GetBoundingBox() const {
-  if (computed_bounds_.has_value()) {
-    return computed_bounds_;
-  }
+  return computed_bounds_;
+}
+
+void Path::ComputeBounds() {
   auto min_max = GetMinMaxCoveragePoints();
   if (!min_max.has_value()) {
-    return std::nullopt;
+    computed_bounds_ = std::nullopt;
+    return;
   }
   auto min = min_max->first;
   auto max = min_max->second;
   const auto difference = max - min;
-  return computed_bounds_ = Rect{min.x, min.y, difference.x, difference.y};
+  computed_bounds_ = Rect{min.x, min.y, difference.x, difference.y};
 }
 
 std::optional<Rect> Path::GetTransformedBoundingBox(
