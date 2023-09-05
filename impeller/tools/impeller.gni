@@ -11,14 +11,19 @@ declare_args() {
   impeller_debug =
       flutter_runtime_mode == "debug" || flutter_runtime_mode == "profile"
 
+  # Whether the runtime capture/playback system is enabled.
+  impeller_capture = flutter_runtime_mode == "debug"
+
   # Whether the Metal backend is enabled.
-  impeller_enable_metal = is_mac || is_ios
+  impeller_enable_metal = (is_mac || is_ios) && target_os != "fuchsia"
 
   # Whether the OpenGLES backend is enabled.
-  impeller_enable_opengles = is_linux || is_win || is_android
+  impeller_enable_opengles =
+      (is_linux || is_win || is_android) && target_os != "fuchsia"
 
   # Whether the Vulkan backend is enabled.
-  impeller_enable_vulkan = is_linux || is_win || is_android
+  impeller_enable_vulkan =
+      (is_linux || is_win || is_android) && target_os != "fuchsia"
 
   # Whether to use a prebuilt impellerc.
   # If this is the empty string, impellerc will be built.

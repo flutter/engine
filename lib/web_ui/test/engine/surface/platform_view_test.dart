@@ -13,14 +13,14 @@ import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 import '../../common/matchers.dart';
 
 const MethodCodec codec = StandardMethodCodec();
-final EngineSingletonFlutterWindow window = EngineSingletonFlutterWindow(0, EnginePlatformDispatcher.instance);
+final EngineFlutterWindow window = EngineFlutterWindow(0, EnginePlatformDispatcher.instance);
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 Future<void> testMain() async {
-  await ui.webOnlyInitializePlatform();
+  await ui_web.bootstrapEngine();
 
   late PersistedPlatformView view;
 

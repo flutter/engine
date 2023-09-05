@@ -4,12 +4,15 @@
 
 #include <dlfcn.h>
 #include <filesystem>
+#include <memory>
 
 #include "flutter/impeller/golden_tests/golden_playground_test.h"
 
 #include "flutter/impeller/aiks/picture.h"
 #include "flutter/impeller/golden_tests/golden_digest.h"
 #include "flutter/impeller/golden_tests/metal_screenshoter.h"
+#include "impeller/typographer/backends/skia/typographer_context_skia.h"
+#include "impeller/typographer/typographer_context.h"
 
 namespace impeller {
 
@@ -27,6 +30,9 @@ static const std::vector<std::string> kSkipTests = {
     "impeller_Play_AiksTest_CanRenderRadialGradientManyColors_Vulkan",
     "impeller_Play_AiksTest_CanRenderBackdropBlurInteractive_Metal",
     "impeller_Play_AiksTest_CanRenderBackdropBlurInteractive_Vulkan",
+    "impeller_Play_AiksTest_ClippedBlurFilterRendersCorrectlyInteractive_Metal",
+    "impeller_Play_AiksTest_ClippedBlurFilterRendersCorrectlyInteractive_"
+    "Vulkan",
     "impeller_Play_AiksTest_TextFrameSubpixelAlignment_Metal",
     "impeller_Play_AiksTest_TextFrameSubpixelAlignment_Vulkan",
     "impeller_Play_AiksTest_ColorWheel_Metal",
@@ -85,7 +91,15 @@ struct GoldenPlaygroundTest::GoldenPlaygroundTestImpl {
 };
 
 GoldenPlaygroundTest::GoldenPlaygroundTest()
-    : pimpl_(new GoldenPlaygroundTest::GoldenPlaygroundTestImpl()) {}
+    : typographer_context_(TypographerContextSkia::Make()),
+      pimpl_(new GoldenPlaygroundTest::GoldenPlaygroundTestImpl()) {}
+
+GoldenPlaygroundTest::~GoldenPlaygroundTest() = default;
+
+void GoldenPlaygroundTest::SetTypographerContext(
+    std::shared_ptr<TypographerContext> typographer_context) {
+  typographer_context_ = std::move(typographer_context);
+};
 
 void GoldenPlaygroundTest::TearDown() {
   ASSERT_FALSE(dlopen("/usr/local/lib/libMoltenVK.dylib", RTLD_NOLOAD));
@@ -123,14 +137,17 @@ PlaygroundBackend GoldenPlaygroundTest::GetBackend() const {
   return GetParam();
 }
 
-bool GoldenPlaygroundTest::OpenPlaygroundHere(const Picture& picture) {
-  auto screenshot =
-      pimpl_->screenshoter->MakeScreenshot(picture, pimpl_->window_size);
+bool GoldenPlaygroundTest::OpenPlaygroundHere(Picture picture) {
+  AiksContext renderer(GetContext(), typographer_context_);
+
+  auto screenshot = pimpl_->screenshoter->MakeScreenshot(renderer, picture,
+                                                         pimpl_->window_size);
   return SaveScreenshot(std::move(screenshot));
 }
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(
-    const AiksPlaygroundCallback& callback) {
+    AiksPlaygroundCallback
+        callback) {  // NOLINT(performance-unnecessary-value-param)
   return false;
 }
 
@@ -161,7 +178,7 @@ std::shared_ptr<RuntimeStage> GoldenPlaygroundTest::OpenAssetAsRuntimeStage(
 }
 
 std::shared_ptr<Context> GoldenPlaygroundTest::GetContext() const {
-  return pimpl_->screenshoter->GetContext().GetContext();
+  return pimpl_->screenshoter->GetPlayground().GetContext();
 }
 
 Point GoldenPlaygroundTest::GetContentScale() const {

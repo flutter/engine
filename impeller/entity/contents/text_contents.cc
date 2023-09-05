@@ -12,10 +12,8 @@
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
-#include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
-#include "impeller/tessellator/tessellator.h"
 #include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/lazy_glyph_atlas.h"
 
@@ -25,17 +23,17 @@ TextContents::TextContents() = default;
 
 TextContents::~TextContents() = default;
 
-void TextContents::SetTextFrame(const TextFrame& frame) {
-  frame_ = frame;
+void TextContents::SetTextFrame(TextFrame&& frame) {
+  frame_ = std::move(frame);
 }
 
 std::shared_ptr<GlyphAtlas> TextContents::ResolveAtlas(
+    Context& context,
     GlyphAtlas::Type type,
-    const std::shared_ptr<LazyGlyphAtlas>& lazy_atlas,
-    std::shared_ptr<Context> context) const {
+    const std::shared_ptr<LazyGlyphAtlas>& lazy_atlas) const {
   FML_DCHECK(lazy_atlas);
   if (lazy_atlas) {
-    return lazy_atlas->CreateOrGetGlyphAtlas(type, std::move(context));
+    return lazy_atlas->CreateOrGetGlyphAtlas(context, type);
   }
 
   return nullptr;
@@ -61,16 +59,8 @@ void TextContents::SetOffset(Vector2 offset) {
   offset_ = offset;
 }
 
-std::optional<Rect> TextContents::GetTextFrameBounds() const {
-  return frame_.GetBounds();
-}
-
 std::optional<Rect> TextContents::GetCoverage(const Entity& entity) const {
-  auto bounds = frame_.GetBounds();
-  if (!bounds.has_value()) {
-    return std::nullopt;
-  }
-  return bounds->TransformBounds(entity.GetTransformation());
+  return frame_.GetBounds().TransformBounds(entity.GetTransformation());
 }
 
 void TextContents::PopulateGlyphAtlas(
@@ -90,7 +80,7 @@ bool TextContents::Render(const ContentContext& renderer,
 
   auto type = frame_.GetAtlasType();
   auto atlas =
-      ResolveAtlas(type, renderer.GetLazyGlyphAtlas(), renderer.GetContext());
+      ResolveAtlas(*renderer.GetContext(), type, renderer.GetLazyGlyphAtlas());
 
   if (!atlas || !atlas->IsValid()) {
     VALIDATION_LOG << "Cannot render glyphs without prepared atlas.";
@@ -170,22 +160,28 @@ bool TextContents::Render(const ContentContext& renderer,
       vertex_count * sizeof(VS::PerVertexData), alignof(VS::PerVertexData),
       [&](uint8_t* contents) {
         VS::PerVertexData vtx;
-        size_t vertex_offset = 0;
-        for (const auto& run : frame_.GetRuns()) {
+        VS::PerVertexData* vtx_contents =
+            reinterpret_cast<VS::PerVertexData*>(contents);
+        for (const TextRun& run : frame_.GetRuns()) {
           const Font& font = run.GetFont();
-          auto rounded_scale = TextFrame::RoundScaledFontSize(
+          Scalar rounded_scale = TextFrame::RoundScaledFontSize(
               scale_, font.GetMetrics().point_size);
+          const FontGlyphAtlas* font_atlas =
+              atlas->GetFontGlyphAtlas(font, rounded_scale);
+          if (!font_atlas) {
+            VALIDATION_LOG << "Could not find font in the atlas.";
+            continue;
+          }
 
-          for (const auto& glyph_position : run.GetGlyphPositions()) {
-            FontGlyphPair font_glyph_pair{font, glyph_position.glyph,
-                                          rounded_scale};
-            auto maybe_atlas_glyph_bounds =
-                atlas->FindFontGlyphBounds(font_glyph_pair);
+          for (const TextRun::GlyphPosition& glyph_position :
+               run.GetGlyphPositions()) {
+            std::optional<Rect> maybe_atlas_glyph_bounds =
+                font_atlas->FindGlyphBounds(glyph_position.glyph);
             if (!maybe_atlas_glyph_bounds.has_value()) {
               VALIDATION_LOG << "Could not find glyph position in the atlas.";
               continue;
             }
-            auto atlas_glyph_bounds = maybe_atlas_glyph_bounds.value();
+            const Rect& atlas_glyph_bounds = maybe_atlas_glyph_bounds.value();
             vtx.atlas_glyph_bounds = Vector4(
                 atlas_glyph_bounds.origin.x, atlas_glyph_bounds.origin.y,
                 atlas_glyph_bounds.size.width, atlas_glyph_bounds.size.height);
@@ -195,11 +191,9 @@ bool TextContents::Render(const ContentContext& renderer,
                                        glyph_position.glyph.bounds.size.height);
             vtx.glyph_position = glyph_position.position;
 
-            for (const auto& point : unit_points) {
+            for (const Point& point : unit_points) {
               vtx.unit_position = point;
-              ::memcpy(contents + vertex_offset, &vtx,
-                       sizeof(VS::PerVertexData));
-              vertex_offset += sizeof(VS::PerVertexData);
+              ::memcpy(vtx_contents++, &vtx, sizeof(VS::PerVertexData));
             }
           }
         }

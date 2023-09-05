@@ -8,7 +8,7 @@
 
 #include <memory>
 
-#include "flutter/common/settings.h"
+#include "flutter/common/constants.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/platform/darwin/platform_version.h"
 #include "flutter/fml/trace_event.h"
@@ -267,7 +267,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (void)recreatePlatformViewController {
   _renderingApi = flutter::GetRenderingAPIForProcess(FlutterView.forceSoftwareRendering);
-  _platformViewsController.reset(new flutter::FlutterPlatformViewsController());
+  _platformViewsController.reset(new flutter::FlutterPlatformViewsController(self.isUsingImpeller));
 }
 
 - (flutter::IOSRenderingAPI)platformViewsRenderingAPI {

@@ -6,12 +6,13 @@
 
 #include <cstring>
 
+#include "flutter/common/constants.h"
 #include "flutter/lib/ui/compositing/scene.h"
 #include "flutter/lib/ui/ui_dart_state.h"
+#include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/lib/ui/window/platform_message_response_dart.h"
 #include "flutter/lib/ui/window/platform_message_response_dart_port.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
-#include "flutter/lib/ui/window/window.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_library_natives.h"
@@ -41,8 +42,13 @@ void PlatformConfiguration::DidCreateIsolate() {
 
   on_error_.Set(tonic::DartState::Current(),
                 Dart_GetField(library, tonic::ToDart("_onError")));
+  add_view_.Set(tonic::DartState::Current(),
+                Dart_GetField(library, tonic::ToDart("_addView")));
   remove_view_.Set(tonic::DartState::Current(),
                    Dart_GetField(library, tonic::ToDart("_removeView")));
+  update_window_metrics_.Set(
+      tonic::DartState::Current(),
+      Dart_GetField(library, tonic::ToDart("_updateWindowMetrics")));
   update_displays_.Set(
       tonic::DartState::Current(),
       Dart_GetField(library, tonic::ToDart("_updateDisplays")));
@@ -75,25 +81,56 @@ void PlatformConfiguration::DidCreateIsolate() {
                   Dart_GetField(library, tonic::ToDart("_drawFrame")));
   report_timings_.Set(tonic::DartState::Current(),
                       Dart_GetField(library, tonic::ToDart("_reportTimings")));
-
-  library_.Set(tonic::DartState::Current(), library);
 }
 
 void PlatformConfiguration::AddView(int64_t view_id,
                                     const ViewportMetrics& view_metrics) {
-  auto [window_iterator, insertion_happened] = windows_.emplace(
-      view_id, std::make_unique<Window>(library_, view_id, view_metrics));
+  auto [view_iterator, insertion_happened] =
+      metrics_.emplace(view_id, view_metrics);
   FML_DCHECK(insertion_happened);
-  // Make the new window send an AddView message to Dart.
-  window_iterator->second->AddView();
+
+  std::shared_ptr<tonic::DartState> dart_state = add_view_.dart_state().lock();
+  if (!dart_state) {
+    return;
+  }
+  tonic::DartState::Scope scope(dart_state);
+  tonic::CheckAndHandleError(tonic::DartInvoke(
+      add_view_.Get(),
+      {
+          tonic::ToDart(view_id),
+          tonic::ToDart(view_metrics.device_pixel_ratio),
+          tonic::ToDart(view_metrics.physical_width),
+          tonic::ToDart(view_metrics.physical_height),
+          tonic::ToDart(view_metrics.physical_padding_top),
+          tonic::ToDart(view_metrics.physical_padding_right),
+          tonic::ToDart(view_metrics.physical_padding_bottom),
+          tonic::ToDart(view_metrics.physical_padding_left),
+          tonic::ToDart(view_metrics.physical_view_inset_top),
+          tonic::ToDart(view_metrics.physical_view_inset_right),
+          tonic::ToDart(view_metrics.physical_view_inset_bottom),
+          tonic::ToDart(view_metrics.physical_view_inset_left),
+          tonic::ToDart(view_metrics.physical_system_gesture_inset_top),
+          tonic::ToDart(view_metrics.physical_system_gesture_inset_right),
+          tonic::ToDart(view_metrics.physical_system_gesture_inset_bottom),
+          tonic::ToDart(view_metrics.physical_system_gesture_inset_left),
+          tonic::ToDart(view_metrics.physical_touch_slop),
+          tonic::ToDart(view_metrics.physical_display_features_bounds),
+          tonic::ToDart(view_metrics.physical_display_features_type),
+          tonic::ToDart(view_metrics.physical_display_features_state),
+          tonic::ToDart(view_metrics.display_id),
+      }));
 }
 
 void PlatformConfiguration::RemoveView(int64_t view_id) {
-  FML_DCHECK(view_id != kFlutterImplicitViewId)
-      << "The implicit view #" << view_id << " should never be removed.";
-  size_t erased_elements = windows_.erase(view_id);
+  if (view_id == kFlutterImplicitViewId) {
+    FML_LOG(ERROR) << "The implicit view #" << view_id << " cannot be removed.";
+    FML_DCHECK(false);
+    return;
+  }
+  size_t erased_elements = metrics_.erase(view_id);
   FML_DCHECK(erased_elements != 0) << "View #" << view_id << " doesn't exist.";
-  (void)erased_elements;
+  (void)erased_elements;  // Suppress unused variable warning
+
   std::shared_ptr<tonic::DartState> dart_state =
       remove_view_.dart_state().lock();
   if (!dart_state) {
@@ -104,6 +141,50 @@ void PlatformConfiguration::RemoveView(int64_t view_id) {
       tonic::DartInvoke(remove_view_.Get(), {
                                                 tonic::ToDart(view_id),
                                             }));
+}
+
+bool PlatformConfiguration::UpdateViewMetrics(
+    int64_t view_id,
+    const ViewportMetrics& view_metrics) {
+  auto found_iter = metrics_.find(view_id);
+  if (found_iter == metrics_.end()) {
+    return false;
+  }
+
+  found_iter->second = view_metrics;
+
+  std::shared_ptr<tonic::DartState> dart_state =
+      update_window_metrics_.dart_state().lock();
+  if (!dart_state) {
+    return false;
+  }
+  tonic::DartState::Scope scope(dart_state);
+  tonic::CheckAndHandleError(tonic::DartInvoke(
+      update_window_metrics_.Get(),
+      {
+          tonic::ToDart(view_id),
+          tonic::ToDart(view_metrics.device_pixel_ratio),
+          tonic::ToDart(view_metrics.physical_width),
+          tonic::ToDart(view_metrics.physical_height),
+          tonic::ToDart(view_metrics.physical_padding_top),
+          tonic::ToDart(view_metrics.physical_padding_right),
+          tonic::ToDart(view_metrics.physical_padding_bottom),
+          tonic::ToDart(view_metrics.physical_padding_left),
+          tonic::ToDart(view_metrics.physical_view_inset_top),
+          tonic::ToDart(view_metrics.physical_view_inset_right),
+          tonic::ToDart(view_metrics.physical_view_inset_bottom),
+          tonic::ToDart(view_metrics.physical_view_inset_left),
+          tonic::ToDart(view_metrics.physical_system_gesture_inset_top),
+          tonic::ToDart(view_metrics.physical_system_gesture_inset_right),
+          tonic::ToDart(view_metrics.physical_system_gesture_inset_bottom),
+          tonic::ToDart(view_metrics.physical_system_gesture_inset_left),
+          tonic::ToDart(view_metrics.physical_touch_slop),
+          tonic::ToDart(view_metrics.physical_display_features_bounds),
+          tonic::ToDart(view_metrics.physical_display_features_type),
+          tonic::ToDart(view_metrics.physical_display_features_state),
+          tonic::ToDart(view_metrics.display_id),
+      }));
+  return true;
 }
 
 void PlatformConfiguration::UpdateDisplays(
@@ -330,10 +411,10 @@ void PlatformConfiguration::ReportTimings(std::vector<int64_t> timings) {
                                                }));
 }
 
-Window* PlatformConfiguration::get_window(int window_id) {
-  auto found = windows_.find(window_id);
-  if (found != windows_.end()) {
-    return found->second.get();
+const ViewportMetrics* PlatformConfiguration::GetMetrics(int view_id) {
+  auto found = metrics_.find(view_id);
+  if (found != metrics_.end()) {
+    return &found->second;
   } else {
     return nullptr;
   }
@@ -551,4 +632,19 @@ void PlatformConfigurationNativeApi::RegisterBackgroundIsolate(
   dart_state->SetPlatformMessageHandler(weak_platform_message_handler);
 }
 
+void PlatformConfigurationNativeApi::SendChannelUpdate(const std::string& name,
+                                                       bool listening) {
+  UIDartState::Current()->platform_configuration()->client()->SendChannelUpdate(
+      name, listening);
+}
+
+double PlatformConfigurationNativeApi::GetScaledFontSize(
+    double unscaled_font_size,
+    int configuration_id) {
+  UIDartState::ThrowIfUIOperationsProhibited();
+  return UIDartState::Current()
+      ->platform_configuration()
+      ->client()
+      ->GetScaledFontSize(unscaled_font_size, configuration_id);
+}
 }  // namespace flutter

@@ -7,6 +7,7 @@
 #include <mutex>
 #include <string_view>
 
+#include "flutter/common/constants.h"
 #include "flutter/common/settings.h"
 #include "flutter/fml/build_config.h"
 #include "flutter/lib/ui/compositing/scene.h"
@@ -109,6 +110,8 @@ typedef CanvasPath Path;
   V(PlatformConfigurationNativeApi::GetRootIsolateToken, 0)           \
   V(PlatformConfigurationNativeApi::RegisterBackgroundIsolate, 1)     \
   V(PlatformConfigurationNativeApi::SendPortPlatformMessage, 4)       \
+  V(PlatformConfigurationNativeApi::SendChannelUpdate, 2)             \
+  V(PlatformConfigurationNativeApi::GetScaledFontSize, 2)             \
   V(DartRuntimeHooks::Logger_PrintDebugString, 1)                     \
   V(DartRuntimeHooks::Logger_PrintString, 1)                          \
   V(DartRuntimeHooks::ScheduleMicrotask, 1)                           \
@@ -373,12 +376,10 @@ void DartUI::InitForIsolate(const Settings& settings) {
     }
   }
 
-  if (settings.enable_implicit_view) {
-    result = Dart_SetField(dart_ui, ToDart("_implicitViewId"),
-                           Dart_NewInteger(kFlutterImplicitViewId));
-    if (Dart_IsError(result)) {
-      Dart_PropagateError(result);
-    }
+  result = Dart_SetField(dart_ui, ToDart("_implicitViewId"),
+                         Dart_NewInteger(kFlutterImplicitViewId));
+  if (Dart_IsError(result)) {
+    Dart_PropagateError(result);
   }
 }
 

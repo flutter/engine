@@ -265,6 +265,9 @@ public class FlutterAndroidComponentTest {
       return ApplicationProvider.getApplicationContext();
     }
 
+    @SuppressWarnings("deprecation")
+    // Robolectric.setupActivity
+    // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
     @Nullable
     @Override
     public Activity getActivity() {
@@ -386,6 +389,11 @@ public class FlutterAndroidComponentTest {
 
     @Override
     public boolean shouldDispatchAppLifecycleState() {
+      return true;
+    }
+
+    @Override
+    public boolean attachToEngineAutomatically() {
       return true;
     }
 

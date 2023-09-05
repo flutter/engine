@@ -102,7 +102,6 @@ class Animator final {
 
   std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder_;
   std::list<LayerTreeTask> layer_trees_tasks_;
-  float device_pixel_ratio_;
   uint64_t frame_request_number_ = 1;
   fml::TimeDelta dart_frame_deadline_;
   std::shared_ptr<LayerTreePipeline> layer_tree_pipeline_;

@@ -18,7 +18,7 @@
                                       flow_id_count, flow_ids)              \
   TRACE_EVENT1_WITH_FLOW_IDS(category_group, name, flow_id_count, flow_ids, \
                              "frame_number",                                \
-                             (recorder)->GetFrameNumberTraceArg())
+                             recorder->GetFrameNumberTraceArg())
 
 namespace flutter {
 

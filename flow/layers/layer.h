@@ -14,10 +14,10 @@
 #include "flutter/display_list/dl_canvas.h"
 #include "flutter/flow/diff_context.h"
 #include "flutter/flow/embedded_views.h"
-#include "flutter/flow/instrumentation.h"
 #include "flutter/flow/layer_snapshot_store.h"
 #include "flutter/flow/layers/layer_state_stack.h"
 #include "flutter/flow/raster_cache.h"
+#include "flutter/flow/stopwatch.h"
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/logging.h"
@@ -41,6 +41,7 @@ class MockLayer;
 }  // namespace testing
 
 class ContainerLayer;
+class AiksLayer;
 class DisplayListLayer;
 class PerformanceOverlayLayer;
 class TextureLayer;
@@ -255,6 +256,7 @@ class Layer {
     return RasterCacheKeyID(unique_id_, RasterCacheKeyType::kLayer);
   }
   virtual const ContainerLayer* as_container_layer() const { return nullptr; }
+  virtual const AiksLayer* as_aiks_layer() const { return nullptr; }
   virtual const DisplayListLayer* as_display_list_layer() const {
     return nullptr;
   }

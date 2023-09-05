@@ -8,6 +8,7 @@
 #include <string>
 
 #include "flutter/fml/macros.h"
+#include "impeller/core/capture.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/host_buffer.h"
 #include "impeller/renderer/capabilities.h"
@@ -161,8 +162,19 @@ class Context {
   virtual void Shutdown() = 0;
 
   //----------------------------------------------------------------------------
+  /// @brief      Force the Vulkan presentation (submitKHR) to be performed on
+  ///             the raster task runner.
+  ///
+  ///             This is required for correct rendering on Android when using
+  ///             the hybrid composition mode. This has no effect on other
+  ///             backends.
+  virtual void SetSyncPresentation(bool value) {}
+
+  //----------------------------------------------------------------------------
   /// @brief Accessor for a pool of HostBuffers.
   Pool<HostBuffer>& GetHostBufferPool() const { return host_buffer_pool_; }
+
+  CaptureContext capture;
 
  protected:
   Context();

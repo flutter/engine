@@ -32,6 +32,7 @@
 ../../../flutter/display_list/benchmarking/dl_complexity_unittests.cc
 ../../../flutter/display_list/display_list_unittests.cc
 ../../../flutter/display_list/dl_color_unittests.cc
+../../../flutter/display_list/dl_op_spy_unittests.cc
 ../../../flutter/display_list/dl_paint_unittests.cc
 ../../../flutter/display_list/dl_vertices_unittests.cc
 ../../../flutter/display_list/effects/dl_color_filter_unittests.cc
@@ -53,7 +54,7 @@
 ../../../flutter/flow/flow_run_all_unittests.cc
 ../../../flutter/flow/frame_timings_recorder_unittests.cc
 ../../../flutter/flow/gl_context_switch_unittests.cc
-../../../flutter/flow/instrumentation_unittests.cc
+../../../flutter/flow/layers/aiks_layer_unittests.cc
 ../../../flutter/flow/layers/backdrop_filter_layer_unittests.cc
 ../../../flutter/flow/layers/checkerboard_layertree_unittests.cc
 ../../../flutter/flow/layers/clip_path_layer_unittests.cc
@@ -75,6 +76,8 @@
 ../../../flutter/flow/mutators_stack_unittests.cc
 ../../../flutter/flow/raster_cache_unittests.cc
 ../../../flutter/flow/skia_gpu_object_unittests.cc
+../../../flutter/flow/stopwatch_dl_unittests.cc
+../../../flutter/flow/stopwatch_unittests.cc
 ../../../flutter/flow/surface_frame_unittests.cc
 ../../../flutter/flow/testing
 ../../../flutter/flow/texture_unittests.cc
@@ -128,12 +131,14 @@
 ../../../flutter/impeller/compiler/README.md
 ../../../flutter/impeller/compiler/compiler_unittests.cc
 ../../../flutter/impeller/compiler/switches_unittests.cc
+../../../flutter/impeller/core/allocator_unittests.cc
 ../../../flutter/impeller/display_list/dl_unittests.cc
 ../../../flutter/impeller/display_list/skia_conversions_unittests.cc
 ../../../flutter/impeller/docs
 ../../../flutter/impeller/entity/contents/filters/inputs/filter_input_unittests.cc
 ../../../flutter/impeller/entity/entity_unittests.cc
 ../../../flutter/impeller/entity/geometry/geometry_unittests.cc
+../../../flutter/impeller/entity/render_target_cache_unittests.cc
 ../../../flutter/impeller/fixtures
 ../../../flutter/impeller/geometry/README.md
 ../../../flutter/impeller/geometry/geometry_unittests.cc
@@ -165,6 +170,8 @@
 ../../../flutter/impeller/scene/README.md
 ../../../flutter/impeller/scene/importer/importer_unittests.cc
 ../../../flutter/impeller/scene/scene_unittests.cc
+../../../flutter/impeller/tessellator/dart/.dart_tool
+../../../flutter/impeller/tessellator/dart/pubspec.lock
 ../../../flutter/impeller/tessellator/dart/pubspec.yaml
 ../../../flutter/impeller/tessellator/tessellator_unittests.cc
 ../../../flutter/impeller/tools/build_metal_library.py
@@ -217,7 +224,6 @@
 ../../../flutter/runtime/type_conversions_unittests.cc
 ../../../flutter/shell/common/animator_unittests.cc
 ../../../flutter/shell/common/context_options_unittests.cc
-../../../flutter/shell/common/dl_op_spy_unittests.cc
 ../../../flutter/shell/common/engine_unittests.cc
 ../../../flutter/shell/common/fixtures
 ../../../flutter/shell/common/input_events_unittests.cc
@@ -2664,10 +2670,10 @@
 ../../../third_party/skia/include/encode/BUILD.bazel
 ../../../third_party/skia/include/gpu/BUILD.bazel
 ../../../third_party/skia/include/gpu/d3d/BUILD.bazel
-../../../third_party/skia/include/gpu/dawn/BUILD.bazel
 ../../../third_party/skia/include/gpu/ganesh/BUILD.bazel
 ../../../third_party/skia/include/gpu/ganesh/gl/BUILD.bazel
 ../../../third_party/skia/include/gpu/ganesh/mtl/BUILD.bazel
+../../../third_party/skia/include/gpu/ganesh/vk/BUILD.bazel
 ../../../third_party/skia/include/gpu/gl/BUILD.bazel
 ../../../third_party/skia/include/gpu/gl/egl/BUILD.bazel
 ../../../third_party/skia/include/gpu/gl/glx/BUILD.bazel
@@ -2804,7 +2810,6 @@
 ../../../third_party/skia/src/gpu/dawn/BUILD.bazel
 ../../../third_party/skia/src/gpu/ganesh/BUILD.bazel
 ../../../third_party/skia/src/gpu/ganesh/d3d/BUILD.bazel
-../../../third_party/skia/src/gpu/ganesh/dawn/BUILD.bazel
 ../../../third_party/skia/src/gpu/ganesh/effects/BUILD.bazel
 ../../../third_party/skia/src/gpu/ganesh/geometry/BUILD.bazel
 ../../../third_party/skia/src/gpu/ganesh/gl/BUILD.bazel
@@ -2888,6 +2893,7 @@
 ../../../third_party/sqlite/Makefile
 ../../../third_party/sqlite/README.md
 ../../../third_party/sqlite/VERSION
+../../../third_party/stb
 ../../../third_party/swiftshader
 ../../../third_party/tinygltf
 ../../../third_party/vulkan-deps/.git

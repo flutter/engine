@@ -1310,7 +1310,7 @@ InferExternalViewEmbedderFromArgs(const FlutterCompositor* compositor,
 
   return {std::make_unique<flutter::EmbedderExternalViewEmbedder>(
               avoid_backing_store_cache, create_render_target_callback,
-              present_callback),
+              present_callback, enable_impeller),
           false};
 }
 
@@ -1733,9 +1733,6 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
   settings.assets_path = args->assets_path;
   settings.leak_vm = !SAFE_ACCESS(args, shutdown_dart_vm_when_done, false);
   settings.old_gen_heap_size = SAFE_ACCESS(args, dart_old_gen_heap_size, -1);
-  // TODO(dkwingsmt): Add a switch for this to FlutterProjectArgs so that
-  // platforms can configure whether to use the implicit view.
-  settings.enable_implicit_view = true;
 
   if (!flutter::DartVM::IsRunningPrecompiledCode()) {
     // Verify the assets path contains Dart 2 kernel assets.
@@ -1884,6 +1881,17 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
                                       user_data]() { return ptr(user_data); };
   }
 
+  flutter::PlatformViewEmbedder::ChanneUpdateCallback channel_update_callback =
+      nullptr;
+  if (SAFE_ACCESS(args, channel_update_callback, nullptr) != nullptr) {
+    channel_update_callback = [ptr = args->channel_update_callback, user_data](
+                                  const std::string& name, bool listening) {
+      FlutterChannelUpdate update{sizeof(FlutterChannelUpdate), name.c_str(),
+                                  listening};
+      ptr(&update, user_data);
+    };
+  }
+
   auto external_view_embedder_result = InferExternalViewEmbedderFromArgs(
       SAFE_ACCESS(args, compositor, nullptr), settings.enable_impeller);
   if (external_view_embedder_result.second) {
@@ -1898,6 +1906,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
           vsync_callback,                             //
           compute_platform_resolved_locale_callback,  //
           on_pre_engine_restart_callback,             //
+          channel_update_callback,                    //
       };
 
   auto on_create_platform_view = InferPlatformViewCreationCallback(

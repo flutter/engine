@@ -22,6 +22,8 @@ impeller_component("skia_conversions") {
 
 impeller_component("display_list") {
   sources = [
+    "dl_aiks_canvas.cc",
+    "dl_aiks_canvas.h",
     "dl_dispatcher.cc",
     "dl_dispatcher.h",
     "dl_image_impeller.cc",
@@ -37,6 +39,7 @@ impeller_component("display_list") {
     "../aiks",
     "//flutter/display_list",
     "//flutter/fml",
+    "//flutter/impeller/typographer/backends/skia:typographer_skia_backend",
     "//third_party/skia",
   ]
 
@@ -60,6 +63,8 @@ impeller_component("display_list_unittests") {
   deps = [
     ":display_list",
     "../playground:playground_test",
+    "//flutter/impeller/scene",
+    "//flutter/impeller/typographer/backends/stb:typographer_stb_backend",
   ]
 
   if (!defined(defines)) {

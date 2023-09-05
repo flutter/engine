@@ -14,6 +14,10 @@ config("impeller_public_config") {
     defines += [ "IMPELLER_DEBUG=1" ]
   }
 
+  if (impeller_capture) {
+    defines += [ "IMPELLER_ENABLE_CAPTURE=1" ]
+  }
+
   if (impeller_supports_rendering) {
     defines += [ "IMPELLER_SUPPORTS_RENDERING=1" ]
   }
@@ -44,6 +48,10 @@ config("impeller_public_config") {
       "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING",
     ]
   }
+
+  if (impeller_enable_3d) {
+    defines += [ "IMPELLER_ENABLE_3D" ]
+  }
 }
 
 group("impeller") {
@@ -62,7 +70,7 @@ group("impeller") {
       "image:image_skia_backend",
       "renderer",
       "renderer/backend",
-      "typographer",
+      "typographer/backends/skia:typographer_skia_backend",
     ]
   }
 }
@@ -77,6 +85,7 @@ impeller_component("impeller_unittests") {
     "base:base_unittests",
     "blobcat:blobcat_unittests",
     "compiler:compiler_unittests",
+    "core:allocator_unittests",
     "display_list:skia_conversions_unittests",
     "geometry:geometry_unittests",
     "runtime_stage:runtime_stage_unittests",
@@ -89,6 +98,7 @@ impeller_component("impeller_unittests") {
       "aiks:aiks_unittests",
       "display_list:display_list_unittests",
       "entity:entity_unittests",
+      "entity:render_target_cache_unittests",
       "fixtures",
       "geometry:geometry_unittests",
       "image:image_unittests",

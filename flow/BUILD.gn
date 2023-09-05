@@ -18,10 +18,10 @@ source_set("flow") {
     "embedded_views.h",
     "frame_timings.cc",
     "frame_timings.h",
-    "instrumentation.cc",
-    "instrumentation.h",
     "layer_snapshot_store.cc",
     "layer_snapshot_store.h",
+    "layers/aiks_layer.cc",
+    "layers/aiks_layer.h",
     "layers/backdrop_filter_layer.cc",
     "layers/backdrop_filter_layer.h",
     "layers/cacheable_layer.cc",
@@ -77,6 +77,12 @@ source_set("flow") {
     "raster_cache_util.cc",
     "raster_cache_util.h",
     "skia_gpu_object.h",
+    "stopwatch.cc",
+    "stopwatch.h",
+    "stopwatch_dl.cc",
+    "stopwatch_dl.h",
+    "stopwatch_sk.cc",
+    "stopwatch_sk.h",
     "surface.cc",
     "surface.h",
     "surface_frame.cc",
@@ -145,7 +151,6 @@ if (enable_unittests) {
       "flow_test_utils.h",
       "frame_timings_recorder_unittests.cc",
       "gl_context_switch_unittests.cc",
-      "instrumentation_unittests.cc",
       "layers/backdrop_filter_layer_unittests.cc",
       "layers/checkerboard_layertree_unittests.cc",
       "layers/clip_path_layer_unittests.cc",
@@ -167,6 +172,8 @@ if (enable_unittests) {
       "mutators_stack_unittests.cc",
       "raster_cache_unittests.cc",
       "skia_gpu_object_unittests.cc",
+      "stopwatch_dl_unittests.cc",
+      "stopwatch_unittests.cc",
       "surface_frame_unittests.cc",
       "testing/mock_layer_unittests.cc",
       "testing/mock_texture_unittests.cc",
@@ -186,6 +193,11 @@ if (enable_unittests) {
       "//third_party/googletest:gtest",
       "//third_party/skia",
     ]
+
+    if (impeller_supports_rendering) {
+      sources += [ "layers/aiks_layer_unittests.cc" ]
+      deps += [ "//flutter/impeller" ]
+    }
 
     if (!defined(defines)) {
       defines = []

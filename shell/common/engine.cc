@@ -462,6 +462,15 @@ void Engine::ScheduleFrame(bool regenerate_layer_tree) {
 void Engine::Render(int64_t view_id,
                     std::unique_ptr<flutter::LayerTree> layer_tree,
                     float device_pixel_ratio) {
+  if (!layer_tree) {
+    return;
+  }
+
+  // Ensure frame dimensions are sane.
+  if (layer_tree->frame_size().isEmpty() || device_pixel_ratio <= 0.0f) {
+    return;
+  }
+
   animator_->Render(view_id, std::move(layer_tree), device_pixel_ratio);
 }
 
@@ -490,6 +499,11 @@ void Engine::UpdateIsolateDescription(const std::string isolate_name,
 std::unique_ptr<std::vector<std::string>> Engine::ComputePlatformResolvedLocale(
     const std::vector<std::string>& supported_locale_data) {
   return delegate_.ComputePlatformResolvedLocale(supported_locale_data);
+}
+
+double Engine::GetScaledFontSize(double unscaled_font_size,
+                                 int configuration_id) const {
+  return delegate_.GetScaledFontSize(unscaled_font_size, configuration_id);
 }
 
 void Engine::SetNeedsReportTimings(bool needs_reporting) {
@@ -555,6 +569,10 @@ void Engine::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
 std::weak_ptr<PlatformMessageHandler> Engine::GetPlatformMessageHandler()
     const {
   return delegate_.GetPlatformMessageHandler();
+}
+
+void Engine::SendChannelUpdate(std::string name, bool listening) {
+  delegate_.OnEngineChannelUpdate(std::move(name), listening);
 }
 
 void Engine::LoadDartDeferredLibrary(

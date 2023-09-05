@@ -28,54 +28,8 @@ function follow_links() (
 )
 
 SCRIPT_DIR=$(follow_links "$(dirname -- "${BASH_SOURCE[0]}")")
-SRC_DIR="$(cd "$SCRIPT_DIR/../.."; pwd -P)"
-FLUTTER_DIR="$(cd "$SCRIPT_DIR/.."; pwd -P)"
-DART_BIN="${SRC_DIR}/third_party/dart/tools/sdks/dart-sdk/bin"
-DART="${DART_BIN}/dart"
+PYLINT="${SCRIPT_DIR}/pylint.sh"
+CLANG_TIDY="${SCRIPT_DIR}/clang_tidy.sh"
 
-# FLUTTER_LINT_PRINT_FIX will make it so that fix is executed and the generated
-# diff is printed to stdout if clang-tidy fails. This is helpful for enabling
-# new lints.
-if [[ -z "${FLUTTER_LINT_PRINT_FIX}" ]]; then
-  fix_flag=""
-else
-  fix_flag="--fix"
-fi
-
-COMPILE_COMMANDS="$SRC_DIR/out/host_debug/compile_commands.json"
-if [ ! -f "$COMPILE_COMMANDS" ]; then
-  (cd "$SRC_DIR"; ./flutter/tools/gn)
-fi
-
-echo "$(date +%T) Running clang_tidy"
-
-cd "$SCRIPT_DIR"
-"$DART" \
-  --disable-dart-dev \
-  "$SRC_DIR/flutter/tools/clang_tidy/bin/main.dart" \
-  --src-dir="$SRC_DIR" \
-  $fix_flag \
-  "$@" && true # errors ignored
-clang_tidy_return=$?
-if [ $clang_tidy_return -ne 0 ]; then
-  if [ -n "$fix_flag" ]; then
-    echo "###################################################"
-    echo "# Attempted to fix issues with the following patch:"
-    echo "###################################################"
-    git --no-pager diff
-  fi
-  exit $clang_tidy_return
-fi
-
-echo "$(date +%T) Running pylint"
-
-cd "$FLUTTER_DIR"
-pylint-2.7 --rcfile=.pylintrc \
-  "build/" \
-  "ci/" \
-  "impeller/" \
-  "sky/" \
-  "tools/gn" \
-  "testing/"
-
-echo "$(date +%T) Linting complete"
+"${PYLINT}" "$@"
+"${CLANG_TIDY}" "$@"

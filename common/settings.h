@@ -22,11 +22,6 @@
 
 namespace flutter {
 
-// The ID for the implicit view if the implicit view is enabled.
-//
-// See Settings::enable_implicit_view for introduction.
-constexpr int64_t kFlutterImplicitViewId = 0;
-
 class FrameTiming {
  public:
   enum Phase {
@@ -228,36 +223,6 @@ struct Settings {
   // Enable Vulkan validation on backends that support it. The validation layers
   // must be available to the application.
   bool enable_vulkan_validation = false;
-
-  // Enable the implicit view.
-  //
-  // The implicit view mode is a compatibility mode to help the transition from
-  // the older single-view APIs to the newer multi-view APIs. The two sets of
-  // APIs use different models for view management. By enabling the implicit
-  // view, single-view APIs can operate a special view as if other views don't
-  // exist.
-  //
-  // In the regular multi-view model where the implicit view is disabled, all
-  // views should be created by Shell::AddView before being used, and removed by
-  // Shell::RemoveView to signify that they are gone. If a view is added or
-  // removed, the framework (PlatformDispatcher) will be notified. New view IDs
-  // are always unique, never reused. Operating a non-existing view is an error.
-  //
-  // If the implicit view is enabled, in addition to the "regular views" as
-  // above, the shell will start up with a special view with a fixed view ID of
-  // kFlutterImplicitViewId. This view, called the implicit view, is available
-  // throughout the lifetime of the shell. Shell::AddView or RemoveView must not
-  // be called for this view. Even when the window that shows the view is
-  // closed, the framework is unaware and might continue render into or operate
-  // this view.
-  //
-  // The single-view APIs, which are APIs that do not specify view IDs, operate
-  // the implicit view. The multi-view APIs can operate all views, including the
-  // implicit view with the correct ID (kFlutterImplicitViewId), unless
-  // specified otherwise.
-  //
-  // The enable_implicit_view defaults to true.
-  bool enable_implicit_view = true;
 
   // Data set by platform-specific embedders for use in font initialization.
   uint32_t font_initialization_data = 0;

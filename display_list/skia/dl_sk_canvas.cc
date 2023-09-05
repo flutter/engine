@@ -14,47 +14,6 @@
 
 namespace flutter {
 
-// clang-format off
-constexpr float kInvertColorMatrix[20] = {
-  -1.0,    0,    0, 1.0, 0,
-     0, -1.0,    0, 1.0, 0,
-     0,    0, -1.0, 1.0, 0,
-   1.0,  1.0,  1.0, 1.0, 0
-};
-// clang-format on
-
-static SkPaint ToSk(const DlPaint& paint, bool force_stroke = false) {
-  SkPaint sk_paint;
-
-  sk_paint.setAntiAlias(paint.isAntiAlias());
-  sk_paint.setDither(paint.isDither());
-
-  sk_paint.setColor(paint.getColor());
-  sk_paint.setBlendMode(ToSk(paint.getBlendMode()));
-  sk_paint.setStyle(force_stroke ? SkPaint::kStroke_Style
-                                 : ToSk(paint.getDrawStyle()));
-  sk_paint.setStrokeWidth(paint.getStrokeWidth());
-  sk_paint.setStrokeMiter(paint.getStrokeMiter());
-  sk_paint.setStrokeCap(ToSk(paint.getStrokeCap()));
-  sk_paint.setStrokeJoin(ToSk(paint.getStrokeJoin()));
-
-  sk_paint.setShader(ToSk(paint.getColorSourcePtr()));
-  sk_paint.setImageFilter(ToSk(paint.getImageFilterPtr()));
-  auto color_filter = ToSk(paint.getColorFilterPtr());
-  if (paint.isInvertColors()) {
-    auto invert_filter = SkColorFilters::Matrix(kInvertColorMatrix);
-    if (color_filter) {
-      invert_filter = invert_filter->makeComposed(color_filter);
-    }
-    color_filter = invert_filter;
-  }
-  sk_paint.setColorFilter(color_filter);
-  sk_paint.setMaskFilter(ToSk(paint.getMaskFilterPtr()));
-  sk_paint.setPathEffect(ToSk(paint.getPathEffectPtr()));
-
-  return sk_paint;
-}
-
 class SkOptionalPaint {
  public:
   explicit SkOptionalPaint(const DlPaint* dl_paint) {
@@ -333,6 +292,13 @@ void DlSkCanvasAdapter::DrawAtlas(const sk_sp<DlImage>& atlas,
   const SkColor* sk_colors = reinterpret_cast<const SkColor*>(colors);
   delegate_->drawAtlas(sk_image.get(), xform, tex, sk_colors, count, ToSk(mode),
                        ToSk(sampling), cullRect, sk_paint());
+}
+
+void DlSkCanvasAdapter::DrawImpellerPicture(
+    const std::shared_ptr<const impeller::Picture>& picture,
+    SkScalar opacity) {
+  FML_LOG(ERROR) << "Cannot draw Impeller Picture in to a Skia canvas.";
+  FML_DCHECK(false);
 }
 
 void DlSkCanvasAdapter::DrawDisplayList(const sk_sp<DisplayList> display_list,
