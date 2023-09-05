@@ -267,7 +267,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (void)recreatePlatformViewController {
   _renderingApi = flutter::GetRenderingAPIForProcess(FlutterView.forceSoftwareRendering);
-  _platformViewsController.reset(new flutter::FlutterPlatformViewsController(self.isUsingImpeller));
+  _platformViewsController.reset(new flutter::FlutterPlatformViewsController());
 }
 
 - (flutter::IOSRenderingAPI)platformViewsRenderingAPI {
@@ -1515,7 +1515,8 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   }];
 }
 
-- (void)addApplicationDelegate:(NSObject<FlutterPlugin>*)delegate {
+- (void)addApplicationDelegate:(NSObject<FlutterPlugin>*)delegate
+    NS_EXTENSION_UNAVAILABLE_IOS("Disallowed in plugins used in app extensions") {
   id<UIApplicationDelegate> appDelegate = [[UIApplication sharedApplication] delegate];
   if ([appDelegate conformsToProtocol:@protocol(FlutterAppLifeCycleProvider)]) {
     id<FlutterAppLifeCycleProvider> lifeCycleProvider =

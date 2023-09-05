@@ -967,12 +967,11 @@ void DlDispatcher::drawPoints(PointMode mode,
 // |flutter::DlOpReceiver|
 void DlDispatcher::drawVertices(const flutter::DlVertices* vertices,
                                 flutter::DlBlendMode dl_mode) {
-  canvas_.DrawVertices(DlVerticesGeometry::MakeVertices(vertices),
-                       ToBlendMode(dl_mode), paint_);
+  canvas_.DrawVertices(MakeVertices(vertices), ToBlendMode(dl_mode), paint_);
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawImage(const sk_sp<flutter::DlImage>& image,
+void DlDispatcher::drawImage(const sk_sp<flutter::DlImage> image,
                              const SkPoint point,
                              flutter::DlImageSampling sampling,
                              bool render_with_attributes) {
@@ -1001,7 +1000,7 @@ void DlDispatcher::drawImage(const sk_sp<flutter::DlImage>& image,
 
 // |flutter::DlOpReceiver|
 void DlDispatcher::drawImageRect(
-    const sk_sp<flutter::DlImage>& image,
+    const sk_sp<flutter::DlImage> image,
     const SkRect& src,
     const SkRect& dst,
     flutter::DlImageSampling sampling,
@@ -1017,7 +1016,7 @@ void DlDispatcher::drawImageRect(
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawImageNine(const sk_sp<flutter::DlImage>& image,
+void DlDispatcher::drawImageNine(const sk_sp<flutter::DlImage> image,
                                  const SkIRect& center,
                                  const SkRect& dst,
                                  flutter::DlFilterMode filter,
@@ -1031,7 +1030,7 @@ void DlDispatcher::drawImageNine(const sk_sp<flutter::DlImage>& image,
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawAtlas(const sk_sp<flutter::DlImage>& atlas,
+void DlDispatcher::drawAtlas(const sk_sp<flutter::DlImage> atlas,
                              const SkRSXform xform[],
                              const SkRect tex[],
                              const flutter::DlColor colors[],
@@ -1050,7 +1049,7 @@ void DlDispatcher::drawAtlas(const sk_sp<flutter::DlImage>& atlas,
 
 // |flutter::DlOpReceiver|
 void DlDispatcher::drawDisplayList(
-    const sk_sp<flutter::DisplayList>& display_list,
+    const sk_sp<flutter::DisplayList> display_list,
     SkScalar opacity) {
   // Save all values that must remain untouched after the operation.
   Paint saved_paint = paint_;
@@ -1108,7 +1107,7 @@ void DlDispatcher::drawDisplayList(
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::drawTextBlob(const sk_sp<SkTextBlob>& blob,
+void DlDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                 SkScalar x,
                                 SkScalar y) {
   const auto maybe_text_frame = MakeTextFrameFromTextBlobSkia(blob);
@@ -1119,8 +1118,8 @@ void DlDispatcher::drawTextBlob(const sk_sp<SkTextBlob>& blob,
   if (paint_.style == Paint::Style::kStroke ||
       paint_.color_source.GetType() != ColorSource::Type::kColor) {
     auto bounds = blob->bounds();
-    auto path = skia_conversions::PathDataFromTextBlob(blob);
-    path.Shift(Point(x + bounds.left(), y + bounds.top()));
+    auto path = skia_conversions::PathDataFromTextBlob(
+        blob, Point(x + bounds.left(), y + bounds.top()));
     canvas_.DrawPath(path, paint_);
     return;
   }
