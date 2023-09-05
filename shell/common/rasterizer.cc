@@ -278,8 +278,11 @@ DrawStatus Rasterizer::ToDrawStatus(DoDrawStatus status) {
       return DrawStatus::kDiscarded;
     case DoDrawStatus::kFailed:
       return DrawStatus::kFailed;
+    case DoDrawStatus::kRetry:
+      return DrawStatus::kSuccess;
     default:
-      FML_CHECK(status == DoDrawStatus::kSuccess);
+      FML_CHECK(status == DoDrawStatus::kSuccess)
+          << "Unrecognized status " << (int)status;
       return DrawStatus::kSuccess;
   }
 }
