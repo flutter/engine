@@ -11,6 +11,7 @@
 #include "flutter/impeller/renderer/context.h"
 #include "flutter/lib/ui/painting/image_decoder.h"
 #include "flutter/lib/ui/painting/image_decoder_impeller.h"
+#include "flutter/lib/ui/painting/image_decoder_no_gl_unittests.h"
 #include "flutter/lib/ui/painting/image_decoder_skia.h"
 #include "flutter/lib/ui/painting/multi_frame_codec.h"
 #include "flutter/runtime/dart_vm.h"
@@ -33,81 +34,6 @@
 // NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
 
 namespace impeller {
-
-class TestImpellerTexture : public Texture {
- public:
-  explicit TestImpellerTexture(TextureDescriptor desc) : Texture(desc) {}
-
-  void SetLabel(std::string_view label) override {}
-  bool IsValid() const override { return true; }
-  ISize GetSize() const { return GetTextureDescriptor().size; }
-
-  bool OnSetContents(const uint8_t* contents, size_t length, size_t slice) {
-    return true;
-  }
-  bool OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
-                     size_t slice) {
-    return true;
-  }
-};
-
-class TestImpellerDeviceBuffer : public DeviceBuffer {
- public:
-  explicit TestImpellerDeviceBuffer(DeviceBufferDescriptor desc)
-      : DeviceBuffer(desc) {
-    bytes_ = static_cast<uint8_t*>(malloc(desc.size));
-  }
-
-  ~TestImpellerDeviceBuffer() { free(bytes_); }
-
- private:
-  std::shared_ptr<Texture> AsTexture(Allocator& allocator,
-                                     const TextureDescriptor& descriptor,
-                                     uint16_t row_bytes) const override {
-    return nullptr;
-  }
-
-  bool SetLabel(const std::string& label) override { return true; }
-
-  bool SetLabel(const std::string& label, Range range) override { return true; }
-
-  uint8_t* OnGetContents() const override { return bytes_; }
-
-  bool OnCopyHostBuffer(const uint8_t* source,
-                        Range source_range,
-                        size_t offset) override {
-    for (auto i = source_range.offset; i < source_range.length; i++, offset++) {
-      bytes_[offset] = source[i];
-    }
-    return true;
-  }
-
-  uint8_t* bytes_;
-};
-
-class TestImpellerAllocator : public impeller::Allocator {
- public:
-  TestImpellerAllocator() {}
-
-  ~TestImpellerAllocator() = default;
-
- private:
-  uint16_t MinimumBytesPerRow(PixelFormat format) const override { return 0; }
-
-  ISize GetMaxTextureSizeSupported() const override {
-    return ISize{2048, 2048};
-  }
-
-  std::shared_ptr<DeviceBuffer> OnCreateBuffer(
-      const DeviceBufferDescriptor& desc) override {
-    return std::make_shared<TestImpellerDeviceBuffer>(desc);
-  }
-
-  std::shared_ptr<Texture> OnCreateTexture(
-      const TextureDescriptor& desc) override {
-    return std::make_shared<TestImpellerTexture>(desc);
-  }
-};
 
 class TestImpellerContext : public impeller::Context {
  public:
@@ -416,24 +342,6 @@ TEST_F(ImageDecoderFixtureTest, ValidImageResultsInSuccess) {
   runners.GetIOTaskRunner()->PostTask(set_up_io_manager_and_decode);
   latch.Wait();
 }
-
-namespace {
-float HalfToFloat(uint16_t half) {
-  switch (half) {
-    case 0x7c00:
-      return std::numeric_limits<float>::infinity();
-    case 0xfc00:
-      return -std::numeric_limits<float>::infinity();
-  }
-  bool negative = half >> 15;
-  uint16_t exponent = (half >> 10) & 0x1f;
-  uint16_t fraction = half & 0x3ff;
-  float fExponent = exponent - 15.0f;
-  float fFraction = static_cast<float>(fraction) / 1024.f;
-  float pow_value = powf(2.0f, fExponent);
-  return (negative ? -1.f : 1.f) * pow_value * (1.0f + fFraction);
-}
-}  // namespace
 
 TEST_F(ImageDecoderFixtureTest, ImpellerUploadToSharedNoGpu) {
 #if !IMPELLER_SUPPORTS_RENDERING
