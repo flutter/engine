@@ -8,7 +8,6 @@
 #include <memory>
 #include <mutex>
 #include <thread>
-#include <type_traits>
 #include <vector>
 
 #include "flutter/fml/macros.h"
