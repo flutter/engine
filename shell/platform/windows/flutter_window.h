@@ -52,49 +52,49 @@ class FlutterWindow : public KeyboardManager::WindowDelegate, public WindowBindi
                                     LPARAM lParam) override;
 
   // |Window|
-  void OnDpiScale(unsigned int dpi);
+  virtual void OnDpiScale(unsigned int dpi);
 
   // |Window|
-  void OnResize(unsigned int width, unsigned int height);
+  virtual void OnResize(unsigned int width, unsigned int height);
 
   // |Window|
-  void OnPaint();
+  virtual void OnPaint();
 
   // |Window|
-  void OnPointerMove(double x,
+  virtual void OnPointerMove(double x,
                      double y,
                      FlutterPointerDeviceKind device_kind,
                      int32_t device_id,
                      int modifiers_state);
 
   // |Window|
-  void OnPointerDown(double x,
+  virtual void OnPointerDown(double x,
                      double y,
                      FlutterPointerDeviceKind device_kind,
                      int32_t device_id,
                      UINT button);
 
   // |Window|
-  void OnPointerUp(double x,
+  virtual void OnPointerUp(double x,
                    double y,
                    FlutterPointerDeviceKind device_kind,
                    int32_t device_id,
                    UINT button);
 
   // |Window|
-  void OnPointerLeave(double x,
+  virtual void OnPointerLeave(double x,
                       double y,
                       FlutterPointerDeviceKind device_kind,
                       int32_t device_id);
 
   // |Window|
-  void OnSetCursor();
+  virtual void OnSetCursor();
 
   // |Window|
-  void OnText(const std::u16string& text) override;
+  virtual void OnText(const std::u16string& text) override;
 
   // |Window|
-  void OnKey(int key,
+  virtual void OnKey(int key,
              int scancode,
              int action,
              char32_t character,
@@ -103,87 +103,87 @@ class FlutterWindow : public KeyboardManager::WindowDelegate, public WindowBindi
              KeyEventCallback callback) override;
 
   // |Window|
-  void OnComposeBegin();
+  virtual void OnComposeBegin();
 
   // |Window|
-  void OnComposeCommit();
+  virtual void OnComposeCommit();
 
   // |Window|
-  void OnComposeEnd();
+  virtual void OnComposeEnd();
 
   // |Window|
-  void OnComposeChange(const std::u16string& text, int cursor_pos);
+  virtual void OnComposeChange(const std::u16string& text, int cursor_pos);
 
   // |FlutterWindowBindingHandler|
-  void OnCursorRectUpdated(const Rect& rect) override;
+  virtual void OnCursorRectUpdated(const Rect& rect) override;
 
   // |FlutterWindowBindingHandler|
-  void OnResetImeComposing() override;
+  virtual void OnResetImeComposing() override;
 
   // |Window|
-  void OnUpdateSemanticsEnabled(bool enabled);
+  virtual void OnUpdateSemanticsEnabled(bool enabled);
 
   // |Window|
-  void OnScroll(double delta_x,
+  virtual void OnScroll(double delta_x,
                 double delta_y,
                 FlutterPointerDeviceKind device_kind,
                 int32_t device_id);
 
   // |Window|
-  gfx::NativeViewAccessible GetNativeViewAccessible();
+  virtual gfx::NativeViewAccessible GetNativeViewAccessible();
 
   // |FlutterWindowBindingHandler|
-  void SetView(WindowBindingHandlerDelegate* view) override;
+  virtual void SetView(WindowBindingHandlerDelegate* view) override;
 
   // |FlutterWindowBindingHandler|
-  WindowsRenderTarget GetRenderTarget() override;
+  virtual WindowsRenderTarget GetRenderTarget() override;
 
   // |FlutterWindowBindingHandler|
-  PlatformWindow GetPlatformWindow() override;
+  virtual PlatformWindow GetPlatformWindow() override;
 
   // |FlutterWindowBindingHandler|
-  float GetDpiScale() override;
+  virtual float GetDpiScale() override;
 
   // |FlutterWindowBindingHandler|
-  bool IsVisible() override;
+  virtual bool IsVisible() override;
 
   // |FlutterWindowBindingHandler|
-  PhysicalWindowBounds GetPhysicalWindowBounds() override;
+  virtual PhysicalWindowBounds GetPhysicalWindowBounds() override;
 
   // |FlutterWindowBindingHandler|
-  void UpdateFlutterCursor(const std::string& cursor_name) override;
+  virtual void UpdateFlutterCursor(const std::string& cursor_name) override;
 
   // |FlutterWindowBindingHandler|
-  void SetFlutterCursor(HCURSOR cursor) override;
+  virtual void SetFlutterCursor(HCURSOR cursor) override;
 
   // |FlutterWindowBindingHandler|
-  void OnWindowResized() override;
+  virtual void OnWindowResized() override;
 
   // |FlutterWindowBindingHandler|
-  bool OnBitmapSurfaceUpdated(const void* allocation,
+  virtual bool OnBitmapSurfaceUpdated(const void* allocation,
                               size_t row_bytes,
                               size_t height) override;
 
   // |FlutterWindowBindingHandler|
-  PointerLocation GetPrimaryPointerLocation() override;
+  virtual PointerLocation GetPrimaryPointerLocation() override;
 
   // |Window|
-  void OnThemeChange();
+  virtual void OnThemeChange();
 
   // |WindowBindingHandler|
-  void SendInitialAccessibilityFeatures() override;
+  virtual void SendInitialAccessibilityFeatures() override;
 
   // |WindowBindingHandler|
-  AlertPlatformNodeDelegate* GetAlertDelegate() override;
+  virtual AlertPlatformNodeDelegate* GetAlertDelegate() override;
 
   // |WindowBindingHandler|
-  ui::AXPlatformNodeWin* GetAlert() override;
+  virtual ui::AXPlatformNodeWin* GetAlert() override;
 
   // |WindowBindingHandler|
-  bool NeedsVSync() override;
+  virtual bool NeedsVSync() override;
 
   // |Window|
-  ui::AXFragmentRootDelegateWin* GetAxFragmentRootDelegate();
+  virtual ui::AXFragmentRootDelegateWin* GetAxFragmentRootDelegate();
 
   // |Window|
   virtual void OnWindowStateEvent(WindowStateEvent event);
