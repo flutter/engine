@@ -16,13 +16,20 @@
 namespace impeller {
 
 //------------------------------------------------------------------------------
-/// @brief      A resource that will be reclaimed by the resource manager. Do
-///             not subclass this yourself. Instead, use the `UniqueResourceVKT`
-///             template
+/// @brief      A resource that may be reclaimed by a |ResourceManagerVK|.
 ///
+/// To create a resource, use `UniqueResourceVKT` to create a unique handle:
+///
+///     auto resource = UniqueResourceVKT<SomeResource>(resource_manager);
+///
+/// @see        |ResourceManagerVK::Reclaim|.
 class ResourceVK {
  public:
   virtual ~ResourceVK() = default;
+
+ private:
+  // Prevents subclassing, use `UniqueResourceVKT`.
+  ResourceVK() = default;
 };
 
 //------------------------------------------------------------------------------
@@ -87,17 +94,32 @@ class ResourceManagerVK
   FML_DISALLOW_COPY_AND_ASSIGN(ResourceManagerVK);
 };
 
+//------------------------------------------------------------------------------
+/// @brief      An internal type that is used to move a resource reference.
+///
+///             Do not use directly, use `UniqueResourceVKT` instead.
+///
+/// @tparam     ResourceType_  The type of the resource.
+///
+/// @see        |UniqueResourceVKT|.
 template <class ResourceType_>
 class ResourceVKT : public ResourceVK {
  public:
   using ResourceType = ResourceType_;
 
+  /// @brief      Construct a resource from a move-constructible resource.
+  ///
+  /// @param[in]  resource  The resource to move.
   explicit ResourceVKT(ResourceType&& resource)
       : resource_(std::move(resource)) {}
 
+  /// @brief      Returns a pointer to the resource.
   const ResourceType* Get() const { return &resource_; }
 
  private:
+  // Prevents subclassing, use `UniqueResourceVKT`.
+  ResourceVKT() = default;
+
   ResourceType resource_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ResourceVKT);
@@ -110,13 +132,25 @@ class ResourceVKT : public ResourceVK {
 /// @tparam     ResourceType_  A move-constructible resource type.
 ///
 template <class ResourceType_>
-class UniqueResourceVKT {
+class UniqueResourceVKT final {
  public:
   using ResourceType = ResourceType_;
 
+  /// @brief      Construct a unique resource handle belonging to a manager.
+  ///
+  /// Initially the handle is empty, and can be populated by calling `Replace`.
+  ///
+  /// @param[in]  resource_manager  The resource manager.
   explicit UniqueResourceVKT(std::weak_ptr<ResourceManagerVK> resource_manager)
       : resource_manager_(std::move(resource_manager)) {}
 
+  /// @brief      Construct a unique resource handle belonging to a manager.
+  ///
+  /// Initially the handle is populated with the specified resource, but can
+  /// be replaced (reclaiming the old resource) by calling `Replace`.
+  ///
+  /// @param[in]  resource_manager  The resource manager.
+  /// @param[in]  resource          The resource to move.
   explicit UniqueResourceVKT(std::weak_ptr<ResourceManagerVK> resource_manager,
                              ResourceType&& resource)
       : resource_manager_(std::move(resource_manager)),
@@ -125,19 +159,25 @@ class UniqueResourceVKT {
 
   ~UniqueResourceVKT() { Reset(); }
 
+  /// @brief      Returns a pointer to the resource.
   const ResourceType* operator->() const { return resource_.get()->Get(); }
 
-  void Reset(ResourceType&& other) {
-    Reset();
+  /// @brief      Reclaims the existing resource, if any, and replaces it.
+  ///
+  /// @param[in]  other   The (new) resource to move.
+  void Replace(ResourceType&& other) {
+    Replace();
     resource_ = std::make_unique<ResourceVKT<ResourceType>>(std::move(other));
   }
 
+  /// @brief      Reclaims the existing resource, if any.
   void Reset() {
     if (!resource_) {
       return;
     }
     // If there is a manager, ask it to reclaim the resource. If there isn't a
-    // manager, just drop it on the floor here.
+    // manager (because the manager has been destroyed), just drop it on the
+    // floor here.
     if (auto manager = resource_manager_.lock()) {
       manager->Reclaim(std::move(resource_));
     }
