@@ -144,6 +144,19 @@ TEST_F(PainterTest, DrawsSolidLineSkia) {
   EXPECT_FALSE(recorder.hasPathEffect());
 }
 
+TEST_F(PainterTest, DrawDashedLineSkia) {
+  PretendImpellerIsEnabled(false);
+
+  auto recorder = DlOpRecorder();
+  draw(makeDecoratedStyle(txt::TextDecorationStyle::kDashed))
+      ->Dispatch(recorder);
+
+  // Skia draws a dashed underline as a filled rectangle with a path effect.
+  EXPECT_EQ(recorder.lineCount(), 1);
+  EXPECT_TRUE(recorder.hasPathEffect());
+}
+
+#ifdef IMPELLER_SUPPORTS_RENDERING
 TEST_F(PainterTest, DrawsSolidLineImpeller) {
   PretendImpellerIsEnabled(true);
 
@@ -155,18 +168,6 @@ TEST_F(PainterTest, DrawsSolidLineImpeller) {
   // https://skia.googlesource.com/skia/+/refs/heads/main/modules/skparagraph/src/Decorations.cpp#91
   EXPECT_EQ(recorder.rectCount(), 1);
   EXPECT_FALSE(recorder.hasPathEffect());
-}
-
-TEST_F(PainterTest, DrawDashedLineSkia) {
-  PretendImpellerIsEnabled(false);
-
-  auto recorder = DlOpRecorder();
-  draw(makeDecoratedStyle(txt::TextDecorationStyle::kDashed))
-      ->Dispatch(recorder);
-
-  // Skia draws a dashed underline as a filled rectangle with a path effect.
-  EXPECT_EQ(recorder.lineCount(), 1);
-  EXPECT_TRUE(recorder.hasPathEffect());
 }
 
 TEST_F(PainterTest, DrawDashedLineImpeller) {
@@ -238,6 +239,7 @@ TEST_F(PainterTest, DrawTextBlobNoImpeller) {
   EXPECT_EQ(recorder.textFrameCount(), 0);
   EXPECT_EQ(recorder.blobCount(), 1);
 }
+#endif  // IMPELLER_SUPPORTS_RENDERING
 
 }  // namespace testing
 }  // namespace flutter
