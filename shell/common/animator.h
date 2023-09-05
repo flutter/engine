@@ -107,7 +107,6 @@ class Animator final {
   LayerTreePipeline::ProducerContinuation producer_continuation_;
   bool regenerate_layer_tree_ = false;
   bool frame_scheduled_ = false;
-  SkISize last_layer_tree_size_ = {0, 0};
   std::deque<uint64_t> trace_flow_ids_;
   bool has_rendered_ = false;
 

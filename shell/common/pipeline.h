@@ -253,19 +253,16 @@ class Pipeline {
   FML_DISALLOW_COPY_AND_ASSIGN(Pipeline);
 };
 
-struct LayerTreeItem {
-  LayerTreeItem(std::unique_ptr<LayerTree> layer_tree,
-                std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
-                float device_pixel_ratio)
-      : layer_tree(std::move(layer_tree)),
-        frame_timings_recorder(std::move(frame_timings_recorder)),
-        device_pixel_ratio(device_pixel_ratio) {}
-  std::unique_ptr<LayerTree> layer_tree;
+struct FrameItem {
+  FrameItem(std::list<LayerTreeTask> tasks,
+            std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder)
+      : tasks(std::move(tasks)),
+        frame_timings_recorder(std::move(frame_timings_recorder)) {}
+  std::list<LayerTreeTask> tasks;
   std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder;
-  float device_pixel_ratio;
 };
 
-using LayerTreePipeline = Pipeline<LayerTreeItem>;
+using LayerTreePipeline = Pipeline<FrameItem>;
 
 }  // namespace flutter
 

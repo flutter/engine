@@ -583,7 +583,7 @@ class Rasterizer final : public SnapshotDelegate,
   struct DoDrawResult {
     DoDrawStatus status = DoDrawStatus::kSuccess;
 
-    std::unique_ptr<LayerTreeItem> resubmitted_layer_tree_item;
+    std::unique_ptr<FrameItem> resubmitted_item;
   };
 
   // |SnapshotDelegate|

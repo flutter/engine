@@ -4,6 +4,7 @@
 
 #include "flutter/shell/common/animator.h"
 
+#include "flutter/common/constants.h"
 #include "flutter/flow/frame_timings.h"
 #include "flutter/fml/time/time_point.h"
 #include "flutter/fml/trace_event.h"
@@ -140,7 +141,6 @@ void Animator::BeginFrame(
 void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree,
                       float device_pixel_ratio) {
   has_rendered_ = true;
-  last_layer_tree_size_ = layer_tree->frame_size();
 
   if (!frame_timings_recorder_) {
     // Framework can directly call render with a built scene.
@@ -158,12 +158,15 @@ void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree,
   delegate_.OnAnimatorUpdateLatestFrameTargetTime(
       frame_timings_recorder_->GetVsyncTargetTime());
 
-  auto layer_tree_item = std::make_unique<LayerTreeItem>(
-      std::move(layer_tree), std::move(frame_timings_recorder_),
-      device_pixel_ratio);
+  // TODO(dkwingsmt): Currently only supports a single window.
+  int64_t view_id = kFlutterImplicitViewId;
+  std::list<LayerTreeTask> layer_trees_tasks;
+  layer_trees_tasks.emplace_back(view_id, std::move(layer_tree),
+                                 device_pixel_ratio);
   // Commit the pending continuation.
   PipelineProduceResult result =
-      producer_continuation_.Complete(std::move(layer_tree_item));
+      producer_continuation_.Complete(std::make_unique<FrameItem>(
+          std::move(layer_trees_tasks), std::move(frame_timings_recorder_)));
 
   if (!result.success) {
     FML_DLOG(INFO) << "No pending continuation to commit";

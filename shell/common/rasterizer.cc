@@ -209,15 +209,21 @@ DrawStatus Rasterizer::Draw(
   DoDrawResult draw_result;
   LayerTreePipeline::Consumer consumer =
       [&draw_result, this,
-       &delegate = delegate_](std::unique_ptr<LayerTreeItem> item) {
-        // TODO(dkwingsmt): Use a proper view ID when Rasterizer supports
-        // multi-view.
-        int64_t view_id = kFlutterImplicitViewId;
-        std::unique_ptr<LayerTree> layer_tree = std::move(item->layer_tree);
+       &delegate = delegate_](std::unique_ptr<FrameItem> item) {
+        // TODO(dkwingsmt): The rasterizer only supports rendering a single view
+        // and that view must be the implicit view. Properly support multi-view
+        // in the future.
+        FML_DCHECK(item->tasks.size() <= 1u);
+        if (item->tasks.empty()) {
+          return;
+        }
+        auto& task = item->tasks.front();
+        FML_DCHECK(task.view_id == kFlutterImplicitViewId);
+        std::unique_ptr<LayerTree> layer_tree = std::move(task.layer_tree);
         std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =
             std::move(item->frame_timings_recorder);
-        float device_pixel_ratio = item->device_pixel_ratio;
-        if (delegate.ShouldDiscardLayerTree(view_id, *layer_tree)) {
+        float device_pixel_ratio = task.device_pixel_ratio;
+        if (delegate.ShouldDiscardLayerTree(task.view_id, *layer_tree)) {
           draw_result.status = DoDrawStatus::kDiscarded;
         } else {
           draw_result = DoDraw(std::move(frame_timings_recorder),
@@ -234,9 +240,10 @@ DrawStatus Rasterizer::Draw(
 
   bool should_resubmit_frame = draw_result.status == DoDrawStatus::kRetry;
   if (should_resubmit_frame) {
+    FML_CHECK(draw_result.resubmitted_item);
     auto front_continuation = pipeline->ProduceIfEmpty();
-    PipelineProduceResult pipeline_result = front_continuation.Complete(
-        std::move(draw_result.resubmitted_layer_tree_item));
+    PipelineProduceResult pipeline_result =
+        front_continuation.Complete(std::move(draw_result.resubmitted_item));
     if (pipeline_result.success) {
       consume_result = PipelineConsumeResult::MoreAvailable;
     }
@@ -423,13 +430,15 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
     last_layer_tree_ = std::move(layer_tree);
     last_device_pixel_ratio_ = device_pixel_ratio;
   } else if (status == DoDrawStatus::kRetry) {
+    std::list<LayerTreeTask> resubmitted_tasks;
+    resubmitted_tasks.emplace_back(kFlutterImplicitViewId,
+                                   std::move(layer_tree), device_pixel_ratio);
     return DoDrawResult{
         .status = DoDrawStatus::kRetry,
-        .resubmitted_layer_tree_item = std::make_unique<LayerTreeItem>(
-            std::move(layer_tree),
+        .resubmitted_item = std::make_unique<FrameItem>(
+            std::move(resubmitted_tasks),
             frame_timings_recorder->CloneUntil(
-                FrameTimingsRecorder::State::kBuildEnd),
-            device_pixel_ratio),
+                FrameTimingsRecorder::State::kBuildEnd)),
     };
   } else if (status == DoDrawStatus::kGpuUnavailable) {
     return DoDrawResult{
