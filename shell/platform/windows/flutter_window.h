@@ -24,7 +24,7 @@ namespace flutter {
 class FlutterWindow : public KeyboardManager::WindowDelegate, public WindowBindingHandler {
  public:
   // Create flutter Window for use as child window
-  FlutterWindow(int width, int height);
+  FlutterWindow(int width, int height, std::unique_ptr<WindowsProcTable> windows_proc_table = nullptr, std::unique_ptr<TextInputManager> text_input_manager = nullptr);
 
   virtual ~FlutterWindow();
 
@@ -189,6 +189,17 @@ class FlutterWindow : public KeyboardManager::WindowDelegate, public WindowBindi
   virtual void OnWindowStateEvent(WindowStateEvent event);
 
  protected:
+  // Win32's DefWindowProc.
+  //
+  // Used as the fallback behavior of HandleMessage. Exposed for dependency
+  // injection.
+  virtual LRESULT Win32DefWindowProc(HWND hWnd,
+                                     UINT Msg,
+                                     WPARAM wParam,
+                                     LPARAM lParam);
+  // Release OS resources associated with the window.
+  void Destroy();
+
   // Converts a c string to a wide unicode string.
   std::wstring NarrowToWide(const char* source);
 

@@ -114,7 +114,7 @@ void Window::InitializeChild(const char* title,
   // runs every 16 ms, which will allow for 60 Hz trackpad gesture events, which
   // is the maximal frequency supported by SetTimer.
   SetTimer(result, kDirectManipulationTimer, 14, nullptr);
-  direct_manipulation_owner_ = std::make_unique<DirectManipulationOwner>(this);
+  // direct_manipulation_owner_ = std::make_unique<DirectManipulationOwner>(this);
   direct_manipulation_owner_->Init(width, height);
 }
 
@@ -504,7 +504,7 @@ Window::HandleMessage(UINT const message,
       break;
     }
     case WM_TIMER:
-      if (wparam == kDirectManipulationTimer) {
+      if (wparam == kDirectManipulationTimer && direct_manipulation_owner_) {
         direct_manipulation_owner_->Update();
         return 0;
       }

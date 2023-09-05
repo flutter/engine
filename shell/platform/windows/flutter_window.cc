@@ -95,11 +95,11 @@ static const int kMaxTouchDeviceId = 128;
 
 static const int kLinesPerScrollWindowsDefault = 3;
 
-FlutterWindow::FlutterWindow(int width, int height)
+FlutterWindow::FlutterWindow(int width, int height, std::unique_ptr<WindowsProcTable> windows_proc_table, std::unique_ptr<TextInputManager> text_input_manager)
     : binding_handler_delegate_(nullptr),
       touch_id_generator_(kMinTouchDeviceId, kMaxTouchDeviceId),
-      windows_proc_table_(nullptr),
-      text_input_manager_(nullptr),
+      windows_proc_table_(std::move(windows_proc_table)),
+      text_input_manager_(std::move(text_input_manager)),
       ax_fragment_root_(nullptr)  {
   // Get the DPI of the primary monitor as the initial DPI. If Per-Monitor V2 is
   // supported, |current_dpi_| should be updated in the
@@ -954,6 +954,37 @@ bool FlutterWindow::GetHighContrastEnabled() {
                   << "support only for Windows 8 + ";
     return false;
   }
+}
+
+LRESULT FlutterWindow::Win32DefWindowProc(HWND hWnd,
+                                   UINT Msg,
+                                   WPARAM wParam,
+                                   LPARAM lParam) {
+  return ::DefWindowProc(hWnd, Msg, wParam, lParam);
+}
+
+void FlutterWindow::Destroy() {
+  if (window_handle_) {
+    text_input_manager_->SetWindowHandle(nullptr);
+    DestroyWindow(window_handle_);
+    window_handle_ = nullptr;
+  }
+
+  UnregisterClass(window_class_name_.c_str(), nullptr);
+}
+
+void FlutterWindow::CreateAxFragmentRoot() {
+  if (ax_fragment_root_) {
+    return;
+  }
+  ax_fragment_root_ = std::make_unique<ui::AXFragmentRootWin>(
+      window_handle_, GetAxFragmentRootDelegate());
+  alert_delegate_ =
+      std::make_unique<AlertPlatformNodeDelegate>(*ax_fragment_root_);
+  ui::AXPlatformNode* alert_node =
+      ui::AXPlatformNodeWin::Create(alert_delegate_.get());
+  alert_node_.reset(static_cast<ui::AXPlatformNodeWin*>(alert_node));
+  ax_fragment_root_->SetAlertNode(alert_node_.get());
 }
 
 }  // namespace flutter

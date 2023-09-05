@@ -7,14 +7,14 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/shell/platform/windows/testing/test_keyboard.h"
-#include "flutter/shell/platform/windows/window.h"
+#include "flutter/shell/platform/windows/flutter_window.h"
 #include "gmock/gmock.h"
 
 namespace flutter {
 namespace testing {
 
 /// Mock for the |Window| base class.
-class MockWindow : public Window {
+class MockWindow : public FlutterWindow {
  public:
   MockWindow();
   MockWindow(std::unique_ptr<WindowsProcTable> windows_proc_table,
