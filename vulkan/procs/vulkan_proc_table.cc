@@ -19,6 +19,16 @@
     return false;                                     \
   }
 
+#if defined(__ANDROID__) && defined(__ARM_ARCH) && __ARM_ARCH >= 7 && \
+    defined(__ARM_32BIT_STATE)
+// 32bit Android appears to use different calling conventions.
+// See:
+// https://android.googlesource.com/platform/external/vulkan-headers/+/refs/heads/master/include/vulkan/vk_platform.h#46
+#define VKAPI_ATTR __attribute__((pcs("aapcs-vfp")))
+#else
+#define VKAPI_ATTR
+#endif
+
 namespace vulkan {
 
 VulkanProcTable::VulkanProcTable() : VulkanProcTable("libvulkan.so"){};
@@ -155,7 +165,9 @@ bool VulkanProcTable::SetupDeviceProcAddresses(
   ACQUIRE_PROC(FreeMemory, handle);
   ACQUIRE_PROC(GetDeviceQueue, handle);
   ACQUIRE_PROC(GetImageMemoryRequirements, handle);
-  ACQUIRE_PROC(QueueSubmit, handle);
+  if (!(QueueSubmit = AcquireThreadsafeSubmitQueue(handle))) {
+    return false;
+  };
   ACQUIRE_PROC(QueueWaitIdle, handle);
   ACQUIRE_PROC(ResetCommandBuffer, handle);
   ACQUIRE_PROC(ResetFences, handle);
@@ -227,6 +239,36 @@ PFN_vkVoidFunction VulkanProcTable::AcquireProc(
   // A VK_NULL_HANDLE as the instance is an acceptable parameter.
   return reinterpret_cast<PFN_vkVoidFunction>(
       GetInstanceProcAddr(instance, proc_name));
+}
+
+namespace {
+std::atomic<void (*)(VkDevice, uint32_t, uint32_t, VkQueue*)>
+    g_non_threadsafe_vkQueueSubmit;
+// Note: This is a violation of the C++ standard, but there is no way to store
+// this without hacking VkQueue to store the mutex with the queue.
+std::mutex g_threadsafe_vkQueueSubmit_mutex;
+
+VKAPI_ATTR void vkQueueSubmitThreadsafe(VkDevice device,
+                                        uint32_t queueFamilyIndex,
+                                        uint32_t queueIndex,
+                                        VkQueue* pQueue) {
+  std::scoped_lock lock(g_threadsafe_vkQueueSubmit_mutex);
+  g_non_threadsafe_vkQueueSubmit.load()(device, queueFamilyIndex, queueIndex,
+                                        pQueue);
+}
+}  // namespace
+
+PFN_vkVoidFunction VulkanProcTable::AcquireThreadsafeSubmitQueue(
+    const VulkanHandle<VkDevice>& device) const {
+  if (!device || !GetInstanceProcAddr) {
+    return nullptr;
+  }
+
+  g_non_threadsafe_vkQueueSubmit =
+      reinterpret_cast<void (*)(VkDevice, uint32_t, uint32_t, VkQueue*)>(
+          GetDeviceProcAddr(device, "vkSubmitQueue"));
+
+  return reinterpret_cast<PFN_vkVoidFunction>(vkQueueSubmitThreadsafe);
 }
 
 PFN_vkVoidFunction VulkanProcTable::AcquireProc(
