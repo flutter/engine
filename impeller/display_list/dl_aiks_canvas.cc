@@ -963,8 +963,8 @@ void DlAiksCanvas::DrawPoints(PointMode mode,
 void DlAiksCanvas::DrawVertices(const flutter::DlVertices* vertices,
                                 flutter::DlBlendMode dl_mode,
                                 const flutter::DlPaint& paint) {
-  canvas_.DrawVertices(DlVerticesGeometry::MakeVertices(vertices),
-                       ToBlendMode(dl_mode), ToPaint(paint));
+  canvas_.DrawVertices(MakeVertices(vertices), ToBlendMode(dl_mode),
+                       ToPaint(paint));
 }
 
 // |flutter::DlCanvas|
