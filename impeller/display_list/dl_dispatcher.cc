@@ -815,7 +815,7 @@ void DlDispatcher::clipRect(const flutter::DlFRect& rect,
 void DlDispatcher::clipRRect(const flutter::DlFRRect& rrect,
                              ClipOp clip_op,
                              bool is_aa) {
-  if (rrect.is_simple()) {
+  if (rrect.has_circular_corners()) {
     canvas_.ClipRRect(skia_conversions::ToRect(rrect.rect()),
                       rrect.upper_left_radii().x(), ToClipOperation(clip_op));
   } else {
@@ -884,7 +884,7 @@ void DlDispatcher::drawCircle(const flutter::DlFPoint& center,
 
 // |flutter::DlOpReceiver|
 void DlDispatcher::drawRRect(const flutter::DlFRRect& rrect) {
-  if (rrect.is_simple()) {
+  if (rrect.has_circular_corners()) {
     canvas_.DrawRRect(skia_conversions::ToRect(rrect.rect()),
                       rrect.upper_left_radii().x(), paint_);
   } else {
@@ -908,7 +908,7 @@ void DlDispatcher::drawPath(const flutter::DlPath& path) {
   flutter::DlFRect oval;
   if (path.is_rect(&rect)) {
     canvas_.DrawRect(skia_conversions::ToRect(rect), paint_);
-  } else if (path.is_rrect(&rrect) && rrect.is_simple()) {
+  } else if (path.is_rrect(&rrect) && rrect.has_circular_corners()) {
     canvas_.DrawRRect(skia_conversions::ToRect(rrect.rect()),
                       rrect.upper_left_radii().x(), paint_);
   } else if (path.is_oval(&oval) && oval.width() == oval.height()) {
@@ -1195,7 +1195,7 @@ void DlDispatcher::drawShadow(const flutter::DlPath& path,
   flutter::DlFRect oval;
   if (path.is_rect(&rect)) {
     canvas_.DrawRect(skia_conversions::ToRect(rect), paint);
-  } else if (path.is_rrect(&rrect) && rrect.is_simple()) {
+  } else if (path.is_rrect(&rrect) && rrect.has_circular_corners()) {
     canvas_.DrawRRect(skia_conversions::ToRect(rrect.rect()),
                       rrect.upper_left_radii().x(), paint);
   } else if (path.is_oval(&oval) && oval.width() == oval.height()) {

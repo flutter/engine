@@ -245,7 +245,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawRRect(
   // Expensive: All filled style, symmetric w/AA.
   bool expensive =
       (DrawStyle() == DlDrawStyle::kFill) ||
-      ((rrect.type() == DlFRRect::Type::kSimple) && IsAntiAliased());
+      ((rrect.type() == DlFRRect::Type::kCircularCorners) && IsAntiAliased());
 
   unsigned int complexity;
 

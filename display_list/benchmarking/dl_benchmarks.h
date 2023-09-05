@@ -260,7 +260,7 @@ void BM_SaveLayer(benchmark::State& state,
   BENCHMARK_CAPTURE(BM_DrawRRect, Symmetric/BACKEND,                    \
                     BackendType::k##BACKEND##_Backend,                  \
                     ATTRIBUTES,                                         \
-                    DlFRRect::Type::kSimple)                            \
+                    DlFRRect::Type::kCircularCorners)                   \
       ->RangeMultiplier(2)                                              \
       ->Range(16, 256)                                                  \
       ->UseRealTime()                                                   \
@@ -289,7 +289,7 @@ void BM_SaveLayer(benchmark::State& state,
   BENCHMARK_CAPTURE(BM_DrawDRRect, Symmetric/BACKEND,                   \
                     BackendType::k##BACKEND##_Backend,                  \
                     ATTRIBUTES,                                         \
-                    DlFRRect::Type::kSimple)                            \
+                    DlFRRect::Type::kCircularCorners)                   \
       ->RangeMultiplier(2)                                              \
       ->Range(16, 256)                                                  \
       ->UseRealTime()                                                   \

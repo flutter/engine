@@ -18,11 +18,46 @@ namespace flutter {
 class DlFRRect {
  public:
   enum class Type {
+    /// The bounds of the round rect are empty so all other attributes of its
+    /// geometry are irrelevant.
     kEmpty,
+
+    /// The round rect is a non-empty rectangle with no rounded corners at all.
     kRect,
+
+    /// The round rect is a perfect non-empty oval (or circle) where the
+    /// rounded corners come together and meet on the sides leaving no flat
+    /// areas on the edges.
     kOval,
-    kSimple,
+
+    /// The round rect is non-empty and has flat areas on at least 2 of its
+    /// sides with all four corners having the same circular profile. All 8
+    /// radii of the round rect will be identical and smaller than either the
+    /// width or the height or both.
+    kCircularCorners,
+
+    /// The round rect is non-empty and has flat areas on at least 2 of its
+    /// sides with all four corners having the same oval (but not circular)
+    /// profile - i.e. with different vertical and horizontal radii. Each
+    /// corner is a mirror reflection to the corner above/below or left/right
+    /// of it.
+    kOvalCorners,
+
+    /// The round rect is non-empty and has flat areas on at least 2 of its
+    /// sides with each radius being a mirror copy of the same radius to
+    /// its left/right or above/below. The 8 individual horizontal and vertical
+    /// radii will match in the following 4 pairings:
+    /// - UL vertical radius == UR vertical radius
+    /// - UR horizontal radius == LR horizontal radius
+    /// - LR vertical radius == LL vertical radius
+    /// - LL horizontal radius == UL horizontal radius
+    /// Note that ever corner appears twice in those pairings, but its vertical
+    /// and horizontal radii will each match different adjacent corners.
     kNinePatch,
+
+    /// The round rect is non-empty and has 8 radii on its 4 different corners
+    /// that may or may not match individually, but which do not follow any of
+    /// the previously identified patterns.
     kComplex,
   };
 
@@ -32,6 +67,9 @@ class DlFRRect {
 
   constexpr DlFRRect(const DlFRRect& r) = default;
   constexpr DlFRRect(DlFRRect&& r) = default;
+
+  DlFRRect& operator=(const DlFRRect& r) = default;
+  DlFRRect& operator=(DlFRRect&& r) = default;
 
   static DlFRRect MakeRectRadii(const DlFRect& rect, const DlFVector radii[4]);
 
@@ -68,6 +106,35 @@ class DlFRRect {
   inline const DlFVector& lower_right_radii() const { return radii_[2]; }
   inline const DlFVector& lower_left_radii() const { return radii_[3]; }
 
+  /// The round rect matches the criteria given for |Type::kEmpty| above.
+  bool is_empty() const { return type_ == Type::kEmpty; }
+
+  /// The round rect matches the criteria given for |Type::kRect| above.
+  bool is_rect() const { return type_ == Type::kRect; }
+
+  /// The round rect matches the criteria given for |Type::kOval| above.
+  bool is_oval() const { return type_ == Type::kOval; }
+
+  /// The round rect matches the criteria given for |Type::CircularCorners|
+  /// above.
+  bool has_circular_corners() const { return type_ == Type::kCircularCorners; }
+
+  /// The round rect matches the criteria given for either of the
+  /// |Type::kCircularCorners| or |Type::kOvalCorners| types above.
+  /// The circular corner case will match this property as well since
+  /// a circle is a degenerate oval, while the |type()| property will
+  /// return the exact type, distinguishing circular from oval corners.
+  bool has_oval_corners() const {
+    return type_ == Type::kCircularCorners ||  //
+           type_ == Type::kOvalCorners;
+  }
+
+  // The round rect matches the criteria given for |Type::kNinePatch| above.
+  bool is_nine_patch() const { return type_ == Type::kNinePatch; }
+
+  // The round rect matches the criteria given for |Type::kComplex| above.
+  bool is_complex() const { return type_ == Type::kComplex; }
+
   // Fills the supplied array with the corner-specific radii in clockwise
   // order upper left [0], upper right [1], lower right [2], lower left [3].
   inline void GetRadii(DlFPoint radii[4]) const {
@@ -101,9 +168,6 @@ class DlFRRect {
   bool Contains(const DlFPoint& p) const;
   bool Contains(const DlFRect& r) const;
 
-  DlFRRect& operator=(const DlFRRect& r) = default;
-  DlFRRect& operator=(DlFRRect&& r) = default;
-
   bool operator==(const DlFRRect& r) const {
     if (type_ != r.type_ || rect_ != r.rect_) {
       return false;
@@ -115,7 +179,11 @@ class DlFRRect {
       case Type::kOval:
         return true;
 
-      case Type::kSimple:
+      case Type::kCircularCorners:
+        count = 1;
+        break;
+
+      case Type::kOvalCorners:
         count = 2;
         break;
 
@@ -133,13 +201,6 @@ class DlFRRect {
   }
   bool operator!=(const DlFRRect& r) const { return !(*this == r); }
 
-  bool is_empty() const { return type_ == Type::kEmpty; }
-  bool is_rect() const { return type_ == Type::kRect; }
-  bool is_oval() const { return type_ == Type::kOval; }
-  bool is_simple() const { return type_ == Type::kSimple; }
-  bool is_nine_patch() const { return type_ == Type::kNinePatch; }
-  bool is_complex() const { return type_ == Type::kComplex; }
-
   bool is_finite() const {
     if (!rect_.is_finite()) {
       return false;
@@ -151,7 +212,11 @@ class DlFRRect {
       case Type::kOval:
         return true;
 
-      case Type::kSimple:
+      case Type::kCircularCorners:
+        count = 1;
+        break;
+
+      case Type::kOvalCorners:
         count = 2;
         break;
 

@@ -98,5 +98,15 @@ TEST(DlAngleTest, DegreesCosSin) {
   }
 }
 
+TEST(DlAngleTest, NaNInfinityCosSin) {
+  DlScalar nan = std::numeric_limits<DlScalar>::quiet_NaN();
+  DlScalar pos_inf = std::numeric_limits<DlScalar>::infinity();
+  DlScalar neg_inf = -std::numeric_limits<DlScalar>::infinity();
+
+  ASSERT_EQ(DlDegrees(nan).CosSin(), DlFVector(1.0f, 0.0f));
+  ASSERT_EQ(DlDegrees(pos_inf).CosSin(), DlFVector(1.0f, 0.0f));
+  ASSERT_EQ(DlDegrees(neg_inf).CosSin(), DlFVector(1.0f, 0.0f));
+}
+
 }  // namespace testing
 }  // namespace flutter

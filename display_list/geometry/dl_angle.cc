@@ -18,6 +18,9 @@ namespace flutter {
 // in a limited-precision floating point world.
 DlFVector DlAngle::CosSin() const {
   DlScalar r = radians();
+  if (!DlScalar_IsFinite(r)) {
+    return {1.0f, 0.0f};
+  }
   DlScalar c = cosf(r);
   DlScalar s;
   if (c == -1.0f || c == 1.0f) {

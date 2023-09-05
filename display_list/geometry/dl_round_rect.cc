@@ -66,8 +66,12 @@ DlFRRect DlFRRect::MakeRectRadii(const DlFRect& in_rect,
     }
   }
   Type type;
-  if (all_same && radii[0].x() == radii[0].y()) {
-    type = Type::kSimple;
+  if (all_same) {
+    if (radii[0].x() == radii[0].y()) {
+      type = Type::kCircularCorners;
+    } else {
+      type = Type::kOvalCorners;
+    }
   } else {
     if (radii[0].y() == radii[1].y() &&  //
         radii[1].x() == radii[2].x() &&  //
@@ -118,8 +122,10 @@ DlFRRect DlFRRect::MakeRectXY(const DlFRect& in_rect,
     dx = sorted.width() * 0.5f;
     dy = sorted.height() * 0.5f;
     type = Type::kOval;
+  } else if (dx == dy) {
+    type = Type::kCircularCorners;
   } else {
-    type = Type::kSimple;
+    type = Type::kOvalCorners;
   }
   DlFVector radii[4] = {
       {dx, dy},
@@ -202,8 +208,11 @@ std::ostream& operator<<(std::ostream& os, const DlFRRect& rrect) {
       return os << "DlFRRect(rect: " << rrect.rect() << ")";
     case DlFRRect::Type::kOval:
       return os << "DlFRRect(oval: " << rrect.rect() << ")";
-    case DlFRRect::Type::kSimple:
-      return os << "DlFRRect(simple: " << rrect.rect() << ", "
+    case DlFRRect::Type::kCircularCorners:
+      return os << "DlFRRect(circular: " << rrect.rect() << ", "
+                << rrect.upper_left_radii().x() << ")";
+    case DlFRRect::Type::kOvalCorners:
+      return os << "DlFRRect(elliptical: " << rrect.rect() << ", "
                 << rrect.upper_left_radii() << ")";
     case DlFRRect::Type::kNinePatch:
       return os << "DlFRRect(nine patch: " << rrect.rect() << ", {"

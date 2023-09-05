@@ -247,7 +247,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawRRect(
   // approximately matching the measured data, normalising the data so that
   // 0.0005ms resulted in a score of 100 then simplifying down the formula.
   if (DrawStyle() == DlDrawStyle::kFill ||
-      ((rrect.type() == DlFRRect::Type::kSimple) && IsAntiAliased())) {
+      ((rrect.type() == DlFRRect::Type::kCircularCorners) && IsAntiAliased())) {
     unsigned int area = rrect.width() * rrect.height();
     // m = 1/3200
     // c = 0.5

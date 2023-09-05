@@ -333,7 +333,8 @@ static BOOL _preparedOnce = NO;
       return;
     }
     case flutter::DlFRRect::Type::kOval:
-    case flutter::DlFRRect::Type::kSimple: {
+    case flutter::DlFRRect::Type::kCircularCorners:
+    case flutter::DlFRRect::Type::kOvalCorners: {
       CGRect clipRect = flutter::GetCGRectFromDlFRect(clipDlFRRect.rect());
       pathRef = CGPathCreateWithRoundedRect(clipRect, clipDlFRRect.upper_left_radii().x(),
                                             clipDlFRRect.upper_left_radii().y(), nil);

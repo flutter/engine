@@ -308,7 +308,7 @@ void BM_DrawRRect(benchmark::State& state,
 
   DlFVector radii[4] = {};
   switch (type) {
-    case DlFRRect::Type::kSimple:
+    case DlFRRect::Type::kCircularCorners:
       radii[0] = DlFVector(5.0f, 5.0f);
       radii[1] = DlFVector(5.0f, 5.0f);
       radii[2] = DlFVector(5.0f, 5.0f);
@@ -383,7 +383,7 @@ void BM_DrawDRRect(benchmark::State& state,
 
   DlFVector radii[4] = {};
   switch (type) {
-    case DlFRRect::Type::kSimple:
+    case DlFRRect::Type::kCircularCorners:
       radii[0] = DlFVector(5.0f, 5.0f);
       radii[1] = DlFVector(5.0f, 5.0f);
       radii[2] = DlFVector(5.0f, 5.0f);
