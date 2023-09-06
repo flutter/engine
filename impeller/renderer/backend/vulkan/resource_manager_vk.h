@@ -53,18 +53,23 @@ class ResourceManagerVK final
   static std::shared_ptr<ResourceManagerVK> Create();
 
   //----------------------------------------------------------------------------
-  /// @brief      Destroy the resource manager and join all thread. An
-  ///             unreclaimed resources will be destroyed now.
+  /// @brief      Mark a resource as being reclaimable.
   ///
-  ~ResourceManagerVK();
-
-  //----------------------------------------------------------------------------
-  /// @brief      Mark a resource as being reclaimable by giving ownership of
-  ///             the resource to the resource manager.
+  /// The resource will be reset at some point in the future.
   ///
   /// @param[in]  resource  The resource to reclaim.
   ///
+  /// @note       Despite being a public API, this method cannot be invoked
+  ///             directly. Instead, use `UniqueResourceVKT` to create a unique
+  ///             handle to a resource, which will call this method.
   void Reclaim(std::unique_ptr<ResourceVK> resource);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Destroys the resource manager.
+  ///
+  /// The resource manager will stop collecting resources and will be destroyed
+  /// when all references to it are dropped.
+  ~ResourceManagerVK();
 
  private:
   using Reclaimables = std::vector<std::unique_ptr<ResourceVK>>;
@@ -159,7 +164,12 @@ class UniqueResourceVKT final {
   ~UniqueResourceVKT() { Reset(); }
 
   /// @brief      Returns a pointer to the resource.
-  const ResourceType* operator->() const { return resource_.get()->Get(); }
+  const ResourceType* operator->() const {
+    // If this would segfault, fail with a nicer error message.
+    FML_CHECK(resource_) << "UniqueResourceVKT was reclaimed.";
+
+    return resource_.get()->Get();
+  }
 
   /// @brief      Reclaims the existing resource, if any, and replaces it.
   ///
