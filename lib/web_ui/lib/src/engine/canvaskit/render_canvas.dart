@@ -8,8 +8,6 @@ import 'package:ui/ui.dart' as ui;
 
 import '../dom.dart';
 import '../window.dart';
-import 'renderer.dart';
-import 'util.dart';
 
 /// A visible (on-screen) canvas that can display bitmaps produced by CanvasKit
 /// in the (off-screen) SkSurface which is backed by an OffscreenCanvas.
