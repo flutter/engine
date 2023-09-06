@@ -9,11 +9,22 @@
 #include <vector>
 
 #include "flutter/fml/macros.h"
+#include "flutter/shell/platform/common/alert_platform_node_delegate.h"
 #include "flutter/shell/platform/common/geometry.h"
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/windows/direct_manipulation.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
-#include "flutter/shell/platform/windows/window.h"
+#include "flutter/shell/platform/windows/keyboard_manager.h"
+#include "flutter/shell/platform/windows/sequential_id_generator.h"
+#include "flutter/shell/platform/windows/text_input_manager.h"
 #include "flutter/shell/platform/windows/window_binding_handler.h"
+#include "flutter/shell/platform/windows/windows_lifecycle_manager.h"
+#include "flutter/shell/platform/windows/windows_proc_table.h"
+#include "flutter/shell/platform/windows/windowsx_shim.h"
+#include "flutter/third_party/accessibility/ax/platform/ax_fragment_root_delegate_win.h"
+#include "flutter/third_party/accessibility/ax/platform/ax_fragment_root_win.h"
+#include "flutter/third_party/accessibility/ax/platform/ax_platform_node_win.h"
+#include "flutter/third_party/accessibility/gfx/native_widget_types.h"
 
 namespace flutter {
 
@@ -51,49 +62,53 @@ class FlutterWindow : public KeyboardManager::WindowDelegate, public WindowBindi
                                     WPARAM wParam,
                                     LPARAM lParam) override;
 
-  // |Window|
+  // Called when the DPI changes either when a
+  // user drags the window between monitors of differing DPI or when the user
+  // manually changes the scale factor.
   virtual void OnDpiScale(unsigned int dpi);
 
-  // |Window|
+  // Called when a resize occurs.
   virtual void OnResize(unsigned int width, unsigned int height);
 
-  // |Window|
+  // Called when a paint is requested.
   virtual void OnPaint();
 
-  // |Window|
+  // Called when the pointer moves within the
+  // window bounds.
   virtual void OnPointerMove(double x,
                      double y,
                      FlutterPointerDeviceKind device_kind,
                      int32_t device_id,
                      int modifiers_state);
 
-  // |Window|
+  // Called when the a mouse button, determined by |button|, goes down.
   virtual void OnPointerDown(double x,
                      double y,
                      FlutterPointerDeviceKind device_kind,
                      int32_t device_id,
                      UINT button);
 
-  // |Window|
+  // Called when the a mouse button, determined by |button|, goes from
+  // down to up
   virtual void OnPointerUp(double x,
                    double y,
                    FlutterPointerDeviceKind device_kind,
                    int32_t device_id,
                    UINT button);
 
-  // |Window|
+  // Called when the mouse leaves the window.
   virtual void OnPointerLeave(double x,
                       double y,
                       FlutterPointerDeviceKind device_kind,
                       int32_t device_id);
 
-  // |Window|
+  // Called when the cursor should be set for the client area.
   virtual void OnSetCursor();
 
-  // |Window|
+  // |WindowBindingHandlerDelegate|
   virtual void OnText(const std::u16string& text) override;
 
-  // |Window|
+  // |WindowBindingHandlerDelegate|
   virtual void OnKey(int key,
              int scancode,
              int action,
@@ -102,16 +117,16 @@ class FlutterWindow : public KeyboardManager::WindowDelegate, public WindowBindi
              bool was_down,
              KeyEventCallback callback) override;
 
-  // |Window|
+  // Called when IME composing begins.
   virtual void OnComposeBegin();
 
-  // |Window|
+  // Called when IME composing text is committed.
   virtual void OnComposeCommit();
 
-  // |Window|
+  // Called when IME composing ends.
   virtual void OnComposeEnd();
 
-  // |Window|
+  // Called when IME composing text or cursor position changes.
   virtual void OnComposeChange(const std::u16string& text, int cursor_pos);
 
   // |FlutterWindowBindingHandler|
@@ -120,16 +135,16 @@ class FlutterWindow : public KeyboardManager::WindowDelegate, public WindowBindi
   // |FlutterWindowBindingHandler|
   virtual void OnResetImeComposing() override;
 
-  // |Window|
+  // Called when accessibility support is enabled or disabled.
   virtual void OnUpdateSemanticsEnabled(bool enabled);
 
-  // |Window|
+  // Called when mouse scrollwheel input occurs.
   virtual void OnScroll(double delta_x,
                 double delta_y,
                 FlutterPointerDeviceKind device_kind,
                 int32_t device_id);
 
-  // |Window|
+  // Returns the root view accessibility node, or nullptr if none.
   virtual gfx::NativeViewAccessible GetNativeViewAccessible();
 
   // |FlutterWindowBindingHandler|
@@ -167,7 +182,7 @@ class FlutterWindow : public KeyboardManager::WindowDelegate, public WindowBindi
   // |FlutterWindowBindingHandler|
   virtual PointerLocation GetPrimaryPointerLocation() override;
 
-  // |Window|
+  // Called when a theme change message is issued.
   virtual void OnThemeChange();
 
   // |WindowBindingHandler|
@@ -182,10 +197,10 @@ class FlutterWindow : public KeyboardManager::WindowDelegate, public WindowBindi
   // |WindowBindingHandler|
   virtual bool NeedsVSync() override;
 
-  // |Window|
+  // Called to obtain a pointer to the fragment root delegate.
   virtual ui::AXFragmentRootDelegateWin* GetAxFragmentRootDelegate();
 
-  // |Window|
+  // Called on a resize or focus event.
   virtual void OnWindowStateEvent(WindowStateEvent event);
 
  protected:
