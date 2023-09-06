@@ -23,7 +23,7 @@ void testMain() {
     // Regression test for https://github.com/flutter/flutter/issues/75286
     test('updates canvas logical size when device-pixel ratio changes', () {
       final RenderCanvas canvas = RenderCanvas();
-      canvas.ensureSize(const ui.Size(10, 16));
+      canvas._ensureSize(const ui.Size(10, 16));
 
       expect(canvas.canvasElement!.width, 10);
       expect(canvas.canvasElement!.height, 16);
@@ -33,7 +33,7 @@ void testMain() {
       // Increase device-pixel ratio: this makes CSS pixels bigger, so we need
       // fewer of them to cover the browser window.
       window.debugOverrideDevicePixelRatio(2.0);
-      canvas.ensureSize(const ui.Size(10, 16));
+      canvas._ensureSize(const ui.Size(10, 16));
       expect(canvas.canvasElement!.width, 10);
       expect(canvas.canvasElement!.height, 16);
       expect(canvas.canvasElement!.style.width, '5px');
@@ -42,7 +42,7 @@ void testMain() {
       // Decrease device-pixel ratio: this makes CSS pixels smaller, so we need
       // more of them to cover the browser window.
       window.debugOverrideDevicePixelRatio(0.5);
-      canvas.ensureSize(const ui.Size(10, 16));
+      canvas._ensureSize(const ui.Size(10, 16));
       expect(canvas.canvasElement!.width, 10);
       expect(canvas.canvasElement!.height, 16);
       expect(canvas.canvasElement!.style.width, '20px');
@@ -50,7 +50,7 @@ void testMain() {
 
       // See https://github.com/flutter/flutter/issues/77084#issuecomment-1120151172
       window.debugOverrideDevicePixelRatio(2.0);
-      canvas.ensureSize(const ui.Size(9.9, 15.9));
+      canvas._ensureSize(const ui.Size(9.9, 15.9));
       expect(canvas.canvasElement!.width, 10);
       expect(canvas.canvasElement!.height, 16);
       expect(canvas.canvasElement!.style.width, '5px');

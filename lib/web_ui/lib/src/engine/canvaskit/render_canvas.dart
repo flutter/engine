@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:js_interop';
+
 import 'package:ui/ui.dart' as ui;
 
 import '../dom.dart';
@@ -27,7 +29,12 @@ import 'util.dart';
 /// a single OffscreenCanvas and multiple RenderCanvases allows us to only
 /// create a single WebGL context.
 class RenderCanvas {
-  RenderCanvas();
+  RenderCanvas() {
+    canvasElement.setAttribute('aria-hidden', 'true');
+    canvasElement.style.position = 'absolute';
+    _updateLogicalHtmlCanvasSize();
+    htmlElement.append(canvasElement);
+  }
 
   /// The root HTML element for this canvas.
   ///
@@ -41,23 +48,14 @@ class RenderCanvas {
   final DomElement htmlElement = createDomElement('flt-canvas-container');
 
   /// The underlying `<canvas>` element used to display the pixels.
-  DomCanvasElement? canvasElement;
-  int _pixelWidth = -1;
-  int _pixelHeight = -1;
+  final DomCanvasElement canvasElement = createDomCanvasElement();
+  int _pixelWidth = 0;
+  int _pixelHeight = 0;
 
-  DomCanvasRenderingContextBitmapRenderer? renderContext;
+  late final DomCanvasRenderingContextBitmapRenderer renderContext =
+      canvasElement.contextBitmapRenderer;
 
-  ui.Size? _currentCanvasPhysicalSize;
-  ui.Size? _currentRenderSize;
   double _currentDevicePixelRatio = -1;
-
-  bool _addedToScene = false;
-  void addToScene() {
-    if (!_addedToScene) {
-      CanvasKitRenderer.instance.sceneHost!.prepend(htmlElement);
-    }
-    _addedToScene = true;
-  }
 
   /// Sets the CSS size of the canvas so that canvas pixels are 1:1 with device
   /// pixels.
@@ -71,92 +69,44 @@ class RenderCanvas {
   void _updateLogicalHtmlCanvasSize() {
     final double logicalWidth = _pixelWidth / window.devicePixelRatio;
     final double logicalHeight = _pixelHeight / window.devicePixelRatio;
-    final DomCSSStyleDeclaration style = canvasElement!.style;
+    final DomCSSStyleDeclaration style = canvasElement.style;
     style.width = '${logicalWidth}px';
     style.height = '${logicalHeight}px';
+    _currentDevicePixelRatio = window.devicePixelRatio;
   }
 
-  /// This function is expensive.
+  /// Render the given [bitmap] with this [RenderCanvas].
   ///
-  /// It's better to reuse canvas if possible.
-  void _createNewCanvas(ui.Size physicalSize) {
-    // Clear the container, if it's not empty. We're going to create a new <canvas>.
-    if (canvasElement != null) {
-      canvasElement!.remove();
-    }
-
-    // If `physicalSize` is not precise, use a slightly bigger canvas. This way
-    // we ensure that the rendred picture covers the entire browser window.
-    _pixelWidth = physicalSize.width.ceil();
-    _pixelHeight = physicalSize.height.ceil();
-    final DomCanvasElement htmlCanvas = createDomCanvasElement(
-      width: _pixelWidth,
-      height: _pixelHeight,
-    );
-    canvasElement = htmlCanvas;
-    renderContext = htmlCanvas.contextBitmapRenderer;
-
-    // The DOM elements used to render pictures are used purely to put pixels on
-    // the screen. They have no semantic information. If an assistive technology
-    // attempts to scan picture content it will look like garbage and confuse
-    // users. UI semantics are exported as a separate DOM tree rendered parallel
-    // to pictures.
-    //
-    // Why are layer and scene elements not hidden from ARIA? Because those
-    // elements may contain platform views, and platform views must be
-    // accessible.
-    htmlCanvas.setAttribute('aria-hidden', 'true');
-
-    htmlCanvas.style.position = 'absolute';
-    _updateLogicalHtmlCanvasSize();
-    htmlElement.append(htmlCanvas);
+  /// The canvas will be resized to accomodate the bitmap immediately before
+  /// rendering it.
+  void render(DomImageBitmap bitmap) {
+    _ensureSize(ui.Size(bitmap.width.toDartDouble, bitmap.height.toDartDouble));
+    renderContext.transferFromImageBitmap(bitmap);
   }
 
   /// Ensures that this canvas can draw a frame of the given [size].
-  void ensureSize(ui.Size size) {
-    if (size.isEmpty) {
-      throw CanvasKitError('Cannot create canvases of empty size.');
-    }
-
+  void _ensureSize(ui.Size size) {
     // Check if the frame is the same size as before, and if so, we don't need
     // to resize the canvas.
-    final ui.Size? previousRenderSize = _currentRenderSize;
-    if (previousRenderSize != null &&
-        size.width == previousRenderSize.width &&
-        size.height == previousRenderSize.height) {
-      // The existing canvas doesn't need to be resized.
+    if (size.width.ceil() == _pixelWidth &&
+        size.height.ceil() == _pixelHeight) {
+      // The existing canvas doesn't need to be resized (unless the device pixel
+      // ratio changed).
       if (window.devicePixelRatio != _currentDevicePixelRatio) {
         _updateLogicalHtmlCanvasSize();
       }
       return;
     }
 
-    final ui.Size? previousCanvasSize = _currentCanvasPhysicalSize;
     // If the canvas is too large or too small, resize it to the exact size of
     // the frame. We cannot allow the canvas to be larger than the screen
     // because then when we call `transferFromImageBitmap()` the bitmap will
     // be scaled to cover the entire canvas.
-    if (previousCanvasSize != null) {
-      canvasElement!.width = size.width.ceilToDouble();
-      canvasElement!.height = size.height.ceilToDouble();
-      _currentCanvasPhysicalSize = size;
-      _pixelWidth = size.width.ceil();
-      _pixelHeight = size.height.ceil();
-      _updateLogicalHtmlCanvasSize();
-    }
-
-    // This is the first frame we have rendered with this canvas.
-    if (_currentCanvasPhysicalSize == null) {
-      _addedToScene = false;
-
-      _createNewCanvas(size);
-      _currentCanvasPhysicalSize = size;
-    } else if (window.devicePixelRatio != _currentDevicePixelRatio) {
-      _updateLogicalHtmlCanvasSize();
-    }
-
-    _currentDevicePixelRatio = window.devicePixelRatio;
-    _currentRenderSize = size;
+    _pixelWidth = size.width.ceil();
+    _pixelHeight = size.height.ceil();
+    canvasElement.width = _pixelWidth.toDouble();
+    canvasElement.height = _pixelHeight.toDouble();
+    _updateLogicalHtmlCanvasSize();
   }
 
   void dispose() {

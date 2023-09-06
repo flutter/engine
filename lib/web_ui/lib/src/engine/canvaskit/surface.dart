@@ -110,8 +110,6 @@ class Surface {
 
   Future<void> rasterizeToCanvas(
       ui.Size frameSize, RenderCanvas canvas, List<CkPicture> pictures) async {
-    canvas.ensureSize(frameSize);
-
     final CkCanvas skCanvas = _surface!.getCanvas();
     skCanvas.clear(const ui.Color(0x00000000));
     pictures.forEach(skCanvas.drawPicture);
@@ -135,7 +133,7 @@ class Surface {
         frameSize.height.toInt(),
       ))!;
     }
-    canvas.renderContext!.transferFromImageBitmap(bitmap);
+    canvas.render(bitmap);
   }
 
   /// Acquire a frame of the given [size] containing a drawable canvas.

@@ -373,7 +373,7 @@ class HtmlViewEmbedder {
     }
     assert(
       _context.pictureRecorders.length >= _overlays.length,
-      'There should at least as many picture recorders '
+      'There should be at least as many picture recorders '
       '(${_context.pictureRecorders.length}) as overlays (${_overlays.length}).',
     );
 
@@ -639,7 +639,6 @@ class HtmlViewEmbedder {
 
     // Try reusing a cached overlay created for another platform view.
     final RenderCanvas overlay = RenderCanvasFactory.instance.getCanvas();
-    overlay.ensureSize(_frameSize);
     _overlays[viewId] = overlay;
   }
 

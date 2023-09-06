@@ -72,16 +72,16 @@ void testMain() {
       expect(RenderCanvasFactory.debugUninitializedInstance, isNotNull);
 
       // Cause the surface and its canvas to be attached to the page
-      originalFactory.baseCanvas.ensureSize(const ui.Size(10, 10));
-      originalFactory.baseCanvas.addToScene();
+      CanvasKitRenderer.instance.sceneHost!
+          .prepend(originalFactory.baseCanvas.htmlElement);
       expect(originalFactory.baseCanvas.canvasElement!.isConnected, isTrue);
 
       // Create a few overlay canvases
       final List<RenderCanvas> overlays = <RenderCanvas>[];
       for (int i = 0; i < 3; i++) {
-        overlays.add(originalFactory.getCanvas()
-          ..ensureSize(const ui.Size(10, 10))
-          ..addToScene());
+        final RenderCanvas canvas = originalFactory.getCanvas();
+        CanvasKitRenderer.instance.sceneHost!.prepend(canvas.htmlElement);
+        overlays.add(canvas);
       }
       expect(originalFactory.debugSurfaceCount, 4);
 

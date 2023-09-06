@@ -38,7 +38,6 @@ class Rasterizer {
 
       _currentFrameSize = layerTree.frameSize;
       _offscreenSurface.acquireFrame(_currentFrameSize);
-      RenderCanvasFactory.instance.baseCanvas.ensureSize(_currentFrameSize);
       HtmlViewEmbedder.instance.frameSize = _currentFrameSize;
       final CkPictureRecorder pictureRecorder = CkPictureRecorder();
       pictureRecorder.beginRecording(ui.Offset.zero & _currentFrameSize);
@@ -48,7 +47,8 @@ class Rasterizer {
 
       compositorFrame.raster(layerTree, ignoreRasterCache: true);
 
-      RenderCanvasFactory.instance.baseCanvas.addToScene();
+      CanvasKitRenderer.instance.sceneHost!
+          .prepend(RenderCanvasFactory.instance.baseCanvas.htmlElement);
       rasterizeToCanvas(RenderCanvasFactory.instance.baseCanvas,
           <CkPicture>[pictureRecorder.endRecording()]);
 
