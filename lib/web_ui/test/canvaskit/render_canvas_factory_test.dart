@@ -5,7 +5,6 @@
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
-import 'package:ui/ui.dart' as ui;
 
 import 'common.dart';
 
@@ -65,7 +64,7 @@ void testMain() {
 
     test('hot restart', () {
       void expectDisposed(RenderCanvas canvas) {
-        expect(canvas.canvasElement!.isConnected, isFalse);
+        expect(canvas.canvasElement.isConnected, isFalse);
       }
 
       final RenderCanvasFactory originalFactory = RenderCanvasFactory.instance;
@@ -74,7 +73,7 @@ void testMain() {
       // Cause the surface and its canvas to be attached to the page
       CanvasKitRenderer.instance.sceneHost!
           .prepend(originalFactory.baseCanvas.htmlElement);
-      expect(originalFactory.baseCanvas.canvasElement!.isConnected, isTrue);
+      expect(originalFactory.baseCanvas.canvasElement.isConnected, isTrue);
 
       // Create a few overlay canvases
       final List<RenderCanvas> overlays = <RenderCanvas>[];

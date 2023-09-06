@@ -199,9 +199,9 @@ external DomIntl get domIntl;
 external DomSymbol get domSymbol;
 
 @JS('createImageBitmap')
-external JSPromise _createImageBitmap(DomCanvasElement canvas);
-Future<DomImageBitmap?> createImageBitmap(DomCanvasElement canvas) =>
-    js_util.promiseToFuture<DomImageBitmap?>(_createImageBitmap(canvas));
+external JSPromise _createImageBitmap(JSAny source);
+Future<DomImageBitmap?> createImageBitmap(JSAny source) =>
+    js_util.promiseToFuture<DomImageBitmap?>(_createImageBitmap(source));
 
 @JS('createImageBitmap')
 external JSPromise _createSizedImageBitmap(DomCanvasElement canvas, JSNumber sx,
@@ -210,6 +210,15 @@ Future<DomImageBitmap?> createSizedImageBitmap(
         DomCanvasElement canvas, int sx, int sy, int sw, int sh) =>
     js_util.promiseToFuture<DomImageBitmap?>(
         _createSizedImageBitmap(canvas, sx.toJS, sy.toJS, sw.toJS, sh.toJS));
+
+@JS('createImageBitmap')
+external JSPromise _createSizedImageBitmapFromImageData(
+    DomImageData imageData, JSNumber sx, JSNumber sy, JSNumber sw, JSNumber sh);
+Future<DomImageBitmap?> createSizedImageBitmapFromImageData(
+        DomImageData imageData, int sx, int sy, int sw, int sh) =>
+    js_util.promiseToFuture<DomImageBitmap?>(
+        _createSizedImageBitmapFromImageData(
+            imageData, sx.toJS, sy.toJS, sw.toJS, sh.toJS));
 
 @JS('createImageBitmap')
 external JSPromise _createSizedOffscreenImageBitmap(DomOffscreenCanvas canvas,
@@ -1433,10 +1442,13 @@ extension DomCanvasRenderingContextBitmapRendererExtension
 @staticInterop
 class DomImageData {
   external factory DomImageData._(JSAny? data, JSNumber sw, JSNumber sh);
+  external factory DomImageData._empty(JSNumber sw, JSNumber sh);
 }
 
-DomImageData createDomImageData(Object? data, int sw, int sh) =>
-    DomImageData._(data?.toJSAnyShallow, sw.toJS, sh.toJS);
+DomImageData createDomImageData(Object data, int sw, int sh) =>
+    DomImageData._(data.toJSAnyShallow, sw.toJS, sh.toJS);
+DomImageData createBlankDomImageData(int sw, int sh) =>
+    DomImageData._empty(sw.toJS, sh.toJS);
 
 extension DomImageDataExtension on DomImageData {
   @JS('data')
@@ -1453,7 +1465,6 @@ extension DomImageBitmapExtension on DomImageBitmap {
   external JSNumber get height;
   external void close();
 }
-
 
 @JS()
 @staticInterop
@@ -2301,9 +2312,7 @@ DomBlob createDomBlob(List<Object?> parts, [Map<String, dynamic>? options]) {
     return DomBlob(parts.toJSAnyShallow as JSArray);
   } else {
     return DomBlob.withOptions(
-      parts.toJSAnyShallow as JSArray,
-      options.toJSAnyDeep
-    );
+        parts.toJSAnyShallow as JSArray, options.toJSAnyDeep);
   }
 }
 
