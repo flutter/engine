@@ -12,6 +12,12 @@ FLUTTER_ASSERT_ARC
 
 const CGRect kScreenSize = CGRectMake(0, 0, 600, 800);
 
+// copied from clang document: https://clang-analyzer.llvm.org/faq.html#unlocalized_string
+__attribute__((annotate("returns_localized_nsstring"))) static inline NSString*
+LocalizationNotNeeded(NSString* s) {
+  return s;
+}
+
 namespace flutter {
 namespace {
 
@@ -660,9 +666,9 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
   [scrollable accessibilityBridgeDidFinishUpdate];
   UIScrollView* scrollView = [scrollable nativeAccessibility];
   XCTAssertTrue(scrollView.isAccessibilityElement);
-  XCTAssertTrue([scrollView.accessibilityLabel isEqualToString:@"label"]);
-  XCTAssertTrue([scrollView.accessibilityValue isEqualToString:@"value"]);
-  XCTAssertTrue([scrollView.accessibilityHint isEqualToString:@"hint"]);
+  XCTAssertTrue([scrollView.accessibilityLabel isEqualToString:LocalizationNotNeeded(@"label")]);
+  XCTAssertTrue([scrollView.accessibilityValue isEqualToString:LocalizationNotNeeded(@"value")]);
+  XCTAssertTrue([scrollView.accessibilityHint isEqualToString:LocalizationNotNeeded(@"hint")]);
 }
 
 - (void)testFlutterSemanticsObjectMergeTooltipToLabel {
@@ -788,7 +794,7 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
   FlutterSemanticsObject* object = [[FlutterSemanticsObject alloc] initWithBridge:bridge uid:0];
   [object setSemanticsNode:&node];
   NSMutableAttributedString* expectedAttributedLabel =
-      [[NSMutableAttributedString alloc] initWithString:@"label"];
+      [[NSMutableAttributedString alloc] initWithString:LocalizationNotNeeded(@"label")];
   NSDictionary* attributeDict = @{
     UIAccessibilitySpeechAttributeSpellOut : @YES,
   };
@@ -797,7 +803,7 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
       [object.accessibilityAttributedLabel isEqualToAttributedString:expectedAttributedLabel]);
 
   NSMutableAttributedString* expectedAttributedValue =
-      [[NSMutableAttributedString alloc] initWithString:@"value"];
+      [[NSMutableAttributedString alloc] initWithString:LocalizationNotNeeded(@"value")];
   attributeDict = @{
     UIAccessibilitySpeechAttributeSpellOut : @YES,
   };
@@ -806,7 +812,7 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
       [object.accessibilityAttributedValue isEqualToAttributedString:expectedAttributedValue]);
 
   NSMutableAttributedString* expectedAttributedHint =
-      [[NSMutableAttributedString alloc] initWithString:@"hint"];
+      [[NSMutableAttributedString alloc] initWithString:LocalizationNotNeeded(@"hint")];
   attributeDict = @{
     UIAccessibilitySpeechAttributeLanguage : @"en-MX",
   };
@@ -935,7 +941,7 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
   nativeSwitch.on = YES;
 
   XCTAssertEqual(object.accessibilityTraits, nativeSwitch.accessibilityTraits);
-  XCTAssertEqual(object.accessibilityValue, nativeSwitch.accessibilityValue);
+  XCTAssertEqualObjects(object.accessibilityValue, nativeSwitch.accessibilityValue);
 
   // Set the toggled to false;
   flutter::SemanticsNode update;
@@ -947,7 +953,7 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
   nativeSwitch.on = NO;
 
   XCTAssertEqual(object.accessibilityTraits, nativeSwitch.accessibilityTraits);
-  XCTAssertEqual(object.accessibilityValue, nativeSwitch.accessibilityValue);
+  XCTAssertEqualObjects(object.accessibilityValue, nativeSwitch.accessibilityValue);
 }
 
 - (void)testFlutterSemanticsObjectOfRadioButton {
@@ -987,7 +993,7 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
   nativeSwitch.enabled = NO;
 
   XCTAssertEqual(object.accessibilityTraits, nativeSwitch.accessibilityTraits);
-  XCTAssertEqual(object.accessibilityValue, nativeSwitch.accessibilityValue);
+  XCTAssertEqualObjects(object.accessibilityValue, nativeSwitch.accessibilityValue);
 }
 
 - (void)testSemanticsObjectDeallocated {

@@ -18,8 +18,11 @@ FLUTTER_ASSERT_ARC;
 
 namespace {
 API_AVAILABLE(ios(13.4))
+// NOLINTNEXTLINE(readability-identifier-naming)
 constexpr UIKeyboardHIDUsage keyACode = (UIKeyboardHIDUsage)0x4;  // KeyA iOS scan code.
 }  // namespace
+
+using namespace flutter::testing;
 
 API_AVAILABLE(ios(13.4))
 @interface FlutterChannelKeyResponderTest : XCTestCase

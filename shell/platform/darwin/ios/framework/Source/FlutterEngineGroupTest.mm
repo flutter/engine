@@ -130,6 +130,7 @@ FLUTTER_ASSERT_ARC
   __weak FlutterDartProject* weakProject;
   @autoreleasepool {
     FlutterDartProject* mockProject = OCMClassMock([FlutterDartProject class]);
+    // NOLINTNEXTLINE(clang-analyzer-deadcode.DeadStores)
     FlutterEngineGroup* group = [[FlutterEngineGroup alloc] initWithName:@"foo"
                                                                  project:mockProject];
     weakProject = mockProject;
