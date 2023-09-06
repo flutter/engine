@@ -427,16 +427,6 @@ TEST_F(ImageDecoderFixtureTest, ImpellerPixelConversion32F) {
 #endif  // IMPELLER_SUPPORTS_RENDERING
 }
 
-namespace {
-float DecodeBGR10(uint32_t x) {
-  const float max = 1.25098f;
-  const float min = -0.752941f;
-  const float intercept = min;
-  const float slope = (max - min) / 1024.0f;
-  return (x * slope) + intercept;
-}
-}  // namespace
-
 TEST_F(ImageDecoderFixtureTest, ImpellerWideGamutDisplayP3Opaque) {
   auto data = OpenFixtureAsSkData("DisplayP3Logo.jpg");
   auto image = SkImages::DeferredFromEncodedData(data);

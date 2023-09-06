@@ -82,6 +82,14 @@ float HalfToFloat(uint16_t half) {
   return (negative ? -1.f : 1.f) * pow_value * (1.0f + fFraction);
 }
 
+float DecodeBGR10(uint32_t x) {
+  const float max = 1.25098f;
+  const float min = -0.752941f;
+  const float intercept = min;
+  const float slope = (max - min) / 1024.0f;
+  return (x * slope) + intercept;
+}
+
 TEST(ImageDecoderNoGLTest, ImpellerWideGamutDisplayP3) {
   auto data = OpenFixtureAsSkData("DisplayP3Logo.png");
   auto image = SkImages::DeferredFromEncodedData(data);
@@ -160,17 +168,17 @@ TEST(ImageDecoderNoGLTest, ImpellerWideGamutIndexedPng) {
       ImageDecoderImpeller::DecompressTexture(
           descriptor.get(), SkISize::Make(100, 100), {100, 100},
           /*supports_wide_gamut=*/true, allocator);
-  ASSERT_EQ(wide_result->image_info.colorType(), kRGBA_F16_SkColorType);
+  ASSERT_EQ(wide_result->image_info.colorType(), kBGR_101010x_XR_SkColorType);
   ASSERT_TRUE(wide_result->image_info.colorSpace()->isSRGB());
 
   const SkPixmap& wide_pixmap = wide_result->sk_bitmap->pixmap();
-  const uint16_t* half_ptr = static_cast<const uint16_t*>(wide_pixmap.addr());
+  const uint32_t* pixel_ptr = static_cast<const uint32_t*>(wide_pixmap.addr());
   bool found_deep_red = false;
   for (int i = 0; i < wide_pixmap.width() * wide_pixmap.height(); ++i) {
-    float red = HalfToFloat(*half_ptr++);
-    float green = HalfToFloat(*half_ptr++);
-    float blue = HalfToFloat(*half_ptr++);
-    half_ptr++;  // alpha
+    uint32_t pixel = *pixel_ptr++;
+    float blue = DecodeBGR10((pixel >> 0) & 0x3ff);
+    float green = DecodeBGR10((pixel >> 10) & 0x3ff);
+    float red = DecodeBGR10((pixel >> 20) & 0x3ff);
     if (fabsf(red - 1.0931f) < 0.01f && fabsf(green - -0.2268f) < 0.01f &&
         fabsf(blue - -0.1501f) < 0.01f) {
       found_deep_red = true;

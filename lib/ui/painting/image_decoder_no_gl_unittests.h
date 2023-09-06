@@ -95,6 +95,7 @@ namespace flutter {
 namespace testing {
 
 float HalfToFloat(uint16_t half);
+float DecodeBGR10(uint32_t x);
 
 }  // namespace testing
 }  // namespace flutter
