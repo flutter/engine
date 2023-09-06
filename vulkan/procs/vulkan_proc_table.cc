@@ -4,6 +4,7 @@
 
 #include "flutter/vulkan/procs/vulkan_proc_table.h"
 
+#include <mutex>
 #include <utility>
 
 #include "flutter/fml/logging.h"
@@ -244,15 +245,18 @@ PFN_vkVoidFunction VulkanProcTable::AcquireProc(
 namespace {
 std::atomic<void (*)(VkDevice, uint32_t, uint32_t, VkQueue*)>
     g_non_threadsafe_vkQueueSubmit;
-// Note: This is a violation of the C++ standard, but there is no way to store
-// this without hacking VkQueue to store the mutex with the queue.
-std::mutex g_threadsafe_vkQueueSubmit_mutex;
+
+std::mutex& GetThreadsafeVkQueueSubmitMutex() {
+  // Initialization of function static variables are threadsafe in C++11.
+  static std::mutex* mtx_ptr = new std::mutex();
+  return *mtx_ptr;
+}
 
 VKAPI_ATTR void vkQueueSubmitThreadsafe(VkDevice device,
                                         uint32_t queueFamilyIndex,
                                         uint32_t queueIndex,
                                         VkQueue* pQueue) {
-  std::scoped_lock lock(g_threadsafe_vkQueueSubmit_mutex);
+  std::scoped_lock lock(GetThreadsafeVkQueueSubmitMutex());
   g_non_threadsafe_vkQueueSubmit.load()(device, queueFamilyIndex, queueIndex,
                                         pQueue);
 }
