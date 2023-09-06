@@ -25,10 +25,6 @@ namespace impeller {
 class ResourceVK {
  public:
   virtual ~ResourceVK() = default;
-
- private:
-  // Prevents subclassing, use `UniqueResourceVKT`.
-  ResourceVK() = default;
 };
 
 //------------------------------------------------------------------------------
@@ -39,7 +35,7 @@ class ResourceVK {
 ///             thread. In the future, the resource manager may allow resource
 ///             pooling/reuse, delaying reclamation past frame workloads, etc...
 ///
-class ResourceManagerVK
+class ResourceManagerVK final
     : public std::enable_shared_from_this<ResourceManagerVK> {
  public:
   //----------------------------------------------------------------------------
@@ -70,17 +66,10 @@ class ResourceManagerVK
   ///
   void Reclaim(std::unique_ptr<ResourceVK> resource);
 
-  //----------------------------------------------------------------------------
-  /// @brief      Terminate the resource manager. Any resources given to the
-  ///             resource manager post termination will be collected when the
-  ///             resource manager is collected.
-  ///
-  void Terminate();
-
  private:
-  ResourceManagerVK();
-
   using Reclaimables = std::vector<std::unique_ptr<ResourceVK>>;
+
+  ResourceManagerVK();
 
   std::thread waiter_;
   std::mutex reclaimables_mutex_;
@@ -88,7 +77,18 @@ class ResourceManagerVK
   Reclaimables reclaimables_;
   bool should_exit_ = false;
 
-  void Main();
+  //----------------------------------------------------------------------------
+  /// @brief      Starts the resource manager thread.
+  ///
+  /// This method is called implicitly by `Create`.
+  void Start();
+
+  //----------------------------------------------------------------------------
+  /// @brief      Terminates the resource manager thread.
+  ///
+  /// Any resources given to the resource manager post termination will be
+  /// collected when the resource manager is collected.
+  void Terminate();
 
   FML_DISALLOW_COPY_AND_ASSIGN(ResourceManagerVK);
 };
@@ -137,7 +137,7 @@ class UniqueResourceVKT final {
 
   /// @brief      Construct a unique resource handle belonging to a manager.
   ///
-  /// Initially the handle is empty, and can be populated by calling `Replace`.
+  /// Initially the handle is empty, and can be populated by calling `Swap`.
   ///
   /// @param[in]  resource_manager  The resource manager.
   explicit UniqueResourceVKT(std::weak_ptr<ResourceManagerVK> resource_manager)
@@ -146,7 +146,7 @@ class UniqueResourceVKT final {
   /// @brief      Construct a unique resource handle belonging to a manager.
   ///
   /// Initially the handle is populated with the specified resource, but can
-  /// be replaced (reclaiming the old resource) by calling `Replace`.
+  /// be replaced (reclaiming the old resource) by calling `Swap`.
   ///
   /// @param[in]  resource_manager  The resource manager.
   /// @param[in]  resource          The resource to move.
@@ -164,8 +164,8 @@ class UniqueResourceVKT final {
   /// @brief      Reclaims the existing resource, if any, and replaces it.
   ///
   /// @param[in]  other   The (new) resource to move.
-  void Replace(ResourceType&& other) {
-    Replace();
+  void Swap(ResourceType&& other) {
+    Reset();
     resource_ = std::make_unique<ResourceVKT<ResourceType>>(std::move(other));
   }
 
