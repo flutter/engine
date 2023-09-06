@@ -1,4 +1,4 @@
-Signature: c91abc77e50dc3e4d6183c7dd1874c02
+Signature: a51674792bc7073cd2a0ededa441cf37
 
 ====================================================================================================
 LIBRARY: etc1
@@ -385,7 +385,14 @@ FILE: ../../../third_party/skia/modules/pathkit/perf/pathops.bench.js
 FILE: ../../../third_party/skia/modules/pathkit/perf/perfReporter.js
 FILE: ../../../third_party/skia/modules/skparagraph/test.html
 FILE: ../../../third_party/skia/package-lock.json
-FILE: ../../../third_party/skia/relnotes/directcontext_submit.md
+FILE: ../../../third_party/skia/relnotes/grdirectctx.md
+FILE: ../../../third_party/skia/relnotes/makewithfilter.md
+FILE: ../../../third_party/skia/relnotes/skpicture_png.md
+FILE: ../../../third_party/skia/relnotes/sksl_always_on.md
+FILE: ../../../third_party/skia/relnotes/sksl_comma_array.md
+FILE: ../../../third_party/skia/relnotes/sksl_ganesh_dawn_removed.md
+FILE: ../../../third_party/skia/relnotes/sktime.md
+FILE: ../../../third_party/skia/relnotes/vk_backend_surface.md
 FILE: ../../../third_party/skia/src/core/SkOrderedReadBuffer.h
 FILE: ../../../third_party/skia/src/gpu/gpu_workaround_list.txt
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_compute.minified.sksl
