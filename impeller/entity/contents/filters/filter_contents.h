@@ -139,6 +139,11 @@ class FilterContents : public Contents {
   void SetLeafInputs(const FilterInput::Vector& inputs);
 
   /// @brief  Marks this filter chain as applying in a subpass scenario.
+  ///
+  ///         Subpasses render in screenspace, and this setting informs filters
+  ///         that the current transformation matrix of the entity is not stored
+  ///         in the Entity transformation matrix. Instead, the effect transform
+  ///         is used in this case.
   virtual void SetIsForSubpass(bool is_subpass);
 
  private:

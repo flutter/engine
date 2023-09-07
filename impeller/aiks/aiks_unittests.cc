@@ -3172,9 +3172,9 @@ TEST_P(AiksTest, MatrixSaveLayerFilter) {
     // the circle.
     canvas.SaveLayer({.image_filter = ImageFilter::MakeMatrix(
                           Matrix::MakeTranslation(Vector2(1, 1) *
-                                                  (100 + 100 * k1OverSqrt2)) *
+                                                  (200 + 100 * k1OverSqrt2)) *
                               Matrix::MakeScale(Vector2(1, 1) * 0.2) *
-                              Matrix::MakeTranslation(Vector2(-100, -100)),
+                              Matrix::MakeTranslation(Vector2(-200, -200)),
                           SamplerDescriptor{})},
                      std::nullopt);
     canvas.DrawCircle(Point(200, 200), 100,
@@ -3284,14 +3284,14 @@ TEST_P(AiksTest, PipelineBlendSingleParameter) {
     canvas.Translate(Point(100, 100));
     canvas.DrawCircle(Point(200, 200), 200, {.color = Color::Blue()});
     canvas.ClipRect(Rect(100, 100, 200, 200));
-    canvas.DrawCircle(
-        Point(200, 200), 200,
-        {
-            .color = Color::Green(),
-            .blend_mode = BlendMode::kSourceOver,
-            .image_filter = ImageFilter::MakeFromColorFilter(
-                *ColorFilter::MakeBlend(BlendMode::kSource, Color::White())),
-        });
+    canvas.DrawCircle(Point(200, 200), 200,
+                      {
+                          .color = Color::Green(),
+                          .blend_mode = BlendMode::kSourceOver,
+                          .image_filter = ImageFilter::MakeFromColorFilter(
+                              *ColorFilter::MakeBlend(BlendMode::kDestination,
+                                                      Color::White())),
+                      });
     canvas.Restore();
   }
 
