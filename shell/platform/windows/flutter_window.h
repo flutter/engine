@@ -318,10 +318,10 @@ class FlutterWindow : public KeyboardManager::WindowDelegate,
  private:
   // WM_DPICHANGED_BEFOREPARENT defined in more recent Windows
   // SDK
-  const static long kWmDpiChangedBeforeParent = 0x02E2;
+  static const long kWmDpiChangedBeforeParent = 0x02E2;
 
   // Timer identifier for DirectManipulation gesture polling.
-  const static int kDirectManipulationTimer = 1;
+  static const int kDirectManipulationTimer = 1;
 
   // Retrieves a class instance pointer for |window|
   static FlutterWindow* GetThisFromHandle(HWND const window) noexcept;
