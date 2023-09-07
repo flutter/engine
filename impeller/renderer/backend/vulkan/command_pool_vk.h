@@ -104,7 +104,7 @@ class CommandPoolVK final {
   /// then they are reset and made available to future calls to
   /// |CreateGraphicsCommandBuffer|.
   ///
-  /// @note       This method is a NOP if a different thread created the pool.
+  /// @note       This method is a noop if a different thread created the pool.
   void GarbageCollectBuffersIfAble() IPLR_REQUIRES(buffers_to_collect_mutex_);
 
   FML_DISALLOW_COPY_AND_ASSIGN(CommandPoolVK);
