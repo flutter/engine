@@ -208,6 +208,16 @@ class FlutterWindow : public KeyboardManager::WindowDelegate,
   virtual void OnWindowStateEvent(WindowStateEvent event);
 
  protected:
+  // OS callback called by message pump.  Handles the WM_NCCREATE message which
+  // is passed when the non-client area is being created and enables automatic
+  // non-client DPI scaling so that the non-client area automatically
+  // responsponds to changes in DPI.  All other messages are handled by
+  // MessageHandler.
+  static LRESULT CALLBACK WndProc(HWND const window,
+                                  UINT const message,
+                                  WPARAM const wparam,
+                                  LPARAM const lparam) noexcept;
+
   // Win32's DefWindowProc.
   //
   // Used as the fallback behavior of HandleMessage. Exposed for dependency
@@ -225,16 +235,6 @@ class FlutterWindow : public KeyboardManager::WindowDelegate,
   // Registers a window class with default style attributes, cursor and
   // icon.
   WNDCLASS RegisterWindowClass(std::wstring& title);
-
-  // OS callback called by message pump.  Handles the WM_NCCREATE message which
-  // is passed when the non-client area is being created and enables automatic
-  // non-client DPI scaling so that the non-client area automatically
-  // responsponds to changes in DPI.  All other messages are handled by
-  // MessageHandler.
-  static LRESULT CALLBACK WndProc(HWND const window,
-                                  UINT const message,
-                                  WPARAM const wparam,
-                                  LPARAM const lparam) noexcept;
 
   // Processes and route salient window messages for mouse handling,
   // size change and DPI.  Delegates handling of these to member overloads that
@@ -316,6 +316,25 @@ class FlutterWindow : public KeyboardManager::WindowDelegate,
   std::unique_ptr<DirectManipulationOwner> direct_manipulation_owner_;
 
  private:
+  // WM_DPICHANGED_BEFOREPARENT defined in more recent Windows
+  // SDK
+  const static long kWmDpiChangedBeforeParent = 0x02E2;
+
+  // Timer identifier for DirectManipulation gesture polling.
+  const static int kDirectManipulationTimer = 1;
+
+  // Retrieves a class instance pointer for |window|
+  static FlutterWindow* GetThisFromHandle(HWND const window) noexcept;
+
+  // Activates tracking for a "mouse leave" event.
+  void TrackMouseLeaveEvent(HWND hwnd);
+
+  // Stores new width and height and calls |OnResize| to notify inheritors
+  void HandleResize(UINT width, UINT height);
+
+  // Updates the cached scroll_offset_multiplier_ value based off OS settings.
+  void UpdateScrollOffsetMultiplier();
+
   // A pointer to a FlutterWindowsView that can be used to update engine
   // windowing and input state.
   WindowBindingHandlerDelegate* binding_handler_delegate_;
@@ -331,17 +350,6 @@ class FlutterWindow : public KeyboardManager::WindowDelegate,
   // proper application lifecycle state can be updated once the view is set.
   bool restored_ = false;
   bool focused_ = false;
-  // Activates tracking for a "mouse leave" event.
-  void TrackMouseLeaveEvent(HWND hwnd);
-
-  // Stores new width and height and calls |OnResize| to notify inheritors
-  void HandleResize(UINT width, UINT height);
-
-  // Retrieves a class instance pointer for |window|
-  static FlutterWindow* GetThisFromHandle(HWND const window) noexcept;
-
-  // Updates the cached scroll_offset_multiplier_ value based off OS settings.
-  void UpdateScrollOffsetMultiplier();
 
   int current_dpi_ = 0;
   int current_width_ = 0;
@@ -349,10 +357,6 @@ class FlutterWindow : public KeyboardManager::WindowDelegate,
 
   // Holds the conversion factor from lines scrolled to pixels scrolled.
   float scroll_offset_multiplier_;
-
-  // WM_DPICHANGED_BEFOREPARENT defined in more recent Windows
-  // SDK
-  const static long kWmDpiChangedBeforeParent = 0x02E2;
 
   // Member variable to hold window handle.
   HWND window_handle_ = nullptr;
@@ -371,6 +375,9 @@ class FlutterWindow : public KeyboardManager::WindowDelegate,
   double mouse_x_ = 0;
   double mouse_y_ = 0;
 
+  // Generates touch point IDs for touch events.
+  SequentialIdGenerator touch_id_generator_;
+
   // Abstracts Windows APIs that may not be available on all supported versions
   // of Windows.
   std::unique_ptr<WindowsProcTable> windows_proc_table_;
@@ -383,12 +390,6 @@ class FlutterWindow : public KeyboardManager::WindowDelegate,
 
   // Used for temporarily storing the WM_TOUCH-provided touch points.
   std::vector<TOUCHINPUT> touch_points_;
-
-  // Generates touch point IDs for touch events.
-  SequentialIdGenerator touch_id_generator_;
-
-  // Timer identifier for DirectManipulation gesture polling.
-  const static int kDirectManipulationTimer = 1;
 
   // Implements IRawElementProviderFragmentRoot when UIA is enabled.
   std::unique_ptr<ui::AXFragmentRootWin> ax_fragment_root_;

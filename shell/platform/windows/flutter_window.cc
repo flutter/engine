@@ -25,6 +25,11 @@ namespace {
 // constant for machines running at 100% scaling.
 constexpr int base_dpi = 96;
 
+static const int kMinTouchDeviceId = 0;
+static const int kMaxTouchDeviceId = 128;
+
+static const int kLinesPerScrollWindowsDefault = 3;
+
 // Maps a Flutter cursor name to an HCURSOR.
 //
 // Returns the arrow cursor for unknown constants.
@@ -88,12 +93,28 @@ static FlutterPointerDeviceKind GetFlutterPointerDeviceKind() {
   return kFlutterPointerDeviceKindMouse;
 }
 
+// Translates button codes from Win32 API to FlutterPointerMouseButtons.
+static uint64_t ConvertWinButtonToFlutterButton(UINT button) {
+  switch (button) {
+    case WM_LBUTTONDOWN:
+    case WM_LBUTTONUP:
+      return kFlutterPointerButtonMousePrimary;
+    case WM_RBUTTONDOWN:
+    case WM_RBUTTONUP:
+      return kFlutterPointerButtonMouseSecondary;
+    case WM_MBUTTONDOWN:
+    case WM_MBUTTONUP:
+      return kFlutterPointerButtonMouseMiddle;
+    case XBUTTON1:
+      return kFlutterPointerButtonMouseBack;
+    case XBUTTON2:
+      return kFlutterPointerButtonMouseForward;
+  }
+  FML_LOG(WARNING) << "Mouse button not recognized: " << button;
+  return 0;
+}
+
 }  // namespace
-
-static const int kMinTouchDeviceId = 0;
-static const int kMaxTouchDeviceId = 128;
-
-static const int kLinesPerScrollWindowsDefault = 3;
 
 FlutterWindow::FlutterWindow(
     int width,
@@ -176,27 +197,6 @@ void FlutterWindow::OnWindowResized() {
   // Blocking the raster thread until DWM flushes alleviates glitches where
   // previous size surface is stretched over current size view.
   DwmFlush();
-}
-
-// Translates button codes from Win32 API to FlutterPointerMouseButtons.
-static uint64_t ConvertWinButtonToFlutterButton(UINT button) {
-  switch (button) {
-    case WM_LBUTTONDOWN:
-    case WM_LBUTTONUP:
-      return kFlutterPointerButtonMousePrimary;
-    case WM_RBUTTONDOWN:
-    case WM_RBUTTONUP:
-      return kFlutterPointerButtonMouseSecondary;
-    case WM_MBUTTONDOWN:
-    case WM_MBUTTONUP:
-      return kFlutterPointerButtonMouseMiddle;
-    case XBUTTON1:
-      return kFlutterPointerButtonMouseBack;
-    case XBUTTON2:
-      return kFlutterPointerButtonMouseForward;
-  }
-  FML_LOG(WARNING) << "Mouse button not recognized: " << button;
-  return 0;
 }
 
 void FlutterWindow::OnDpiScale(unsigned int dpi){};
