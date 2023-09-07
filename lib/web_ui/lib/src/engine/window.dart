@@ -17,7 +17,7 @@ import '../engine.dart' show DimensionsProvider, registerHotRestartListener, ren
 import 'display.dart';
 import 'dom.dart';
 import 'embedder.dart';
-import 'mouse_cursor.dart';
+import 'mouse/cursor.dart';
 import 'navigation/history.dart';
 import 'platform_dispatcher.dart';
 import 'services.dart';
