@@ -14,6 +14,8 @@ namespace impeller {
 namespace testing {
 
 TEST(CommandEncoderVKTest, DeleteEncoderAfterThreadDies) {
+  // Tests that when a CommandEncoderVK is deleted that it will clean up its
+  // command buffers before it cleans up its command pool.
   std::shared_ptr<std::vector<std::string>> called_functions;
   {
     auto context = CreateMockVulkanContext();
@@ -38,7 +40,8 @@ TEST(CommandEncoderVKTest, DeleteEncoderAfterThreadDies) {
 
 TEST(CommandEncoderVKTest, CleanupAfterSubmit) {
   // This tests deleting the TrackedObjects where the thread is killed before
-  // the fence waiter has disposed of them.
+  // the fence waiter has disposed of them, making sure the command buffer and
+  // its pools are deleted in that order.
   std::shared_ptr<std::vector<std::string>> called_functions;
   {
     fml::AutoResetWaitableEvent wait_for_submit;
@@ -55,9 +58,6 @@ TEST(CommandEncoderVKTest, CleanupAfterSubmit) {
     });
     thread.join();
     wait_for_thread_join.Signal();
-    auto [fence_result, fence] = context->GetDevice().createFenceUnique({});
-    ASSERT_EQ(fence_result, vk::Result::eSuccess);
-    context->GetFenceWaiter()->AddFence(std::move(fence), [] {});
     wait_for_submit.Wait();
     called_functions = GetMockVulkanFunctions(context->GetDevice());
   }
