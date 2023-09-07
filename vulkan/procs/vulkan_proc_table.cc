@@ -4,6 +4,7 @@
 
 #include "flutter/vulkan/procs/vulkan_proc_table.h"
 
+#include <cstring>
 #include <mutex>
 #include <utility>
 
@@ -166,9 +167,7 @@ bool VulkanProcTable::SetupDeviceProcAddresses(
   ACQUIRE_PROC(FreeMemory, handle);
   ACQUIRE_PROC(GetDeviceQueue, handle);
   ACQUIRE_PROC(GetImageMemoryRequirements, handle);
-  if (!(QueueSubmit = AcquireThreadsafeSubmitQueue(handle))) {
-    return false;
-  };
+  ACQUIRE_PROC(QueueSubmit, handle);
   ACQUIRE_PROC(QueueWaitIdle, handle);
   ACQUIRE_PROC(ResetCommandBuffer, handle);
   ACQUIRE_PROC(ResetFences, handle);
@@ -270,7 +269,7 @@ PFN_vkVoidFunction VulkanProcTable::AcquireThreadsafeSubmitQueue(
 
   g_non_threadsafe_vkQueueSubmit =
       reinterpret_cast<void (*)(VkDevice, uint32_t, uint32_t, VkQueue*)>(
-          GetDeviceProcAddr(device, "vkSubmitQueue"));
+          GetDeviceProcAddr(device, "vkQueueSubmit"));
 
   return reinterpret_cast<PFN_vkVoidFunction>(vkQueueSubmitThreadsafe);
 }
@@ -280,6 +279,10 @@ PFN_vkVoidFunction VulkanProcTable::AcquireProc(
     const VulkanHandle<VkDevice>& device) const {
   if (proc_name == nullptr || !device || !GetDeviceProcAddr) {
     return nullptr;
+  }
+
+  if (strcmp(proc_name, "vkQueueSubmit") == 0) {
+    return AcquireThreadsafeSubmitQueue(device);
   }
 
   return GetDeviceProcAddr(device, proc_name);
