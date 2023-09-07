@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dom.dart';
-import 'window.dart';
+import '../dom.dart';
+import '../window.dart';
 
 /// Controls the mouse cursor in the given [view].
 class MouseCursor {
