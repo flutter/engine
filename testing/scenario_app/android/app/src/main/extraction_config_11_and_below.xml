@@ -1,0 +1,5 @@
+<!-- Exclude all files from backup -->
+<full-backup-content>
+    <include domain=["file"] path="./non-existent-file.txt"/>
+    <exclude domain=["root"] path="./" />
+</full-backup-content>

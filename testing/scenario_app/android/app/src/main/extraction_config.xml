@@ -1,0 +1,11 @@
+<!-- Exclude all files from backup -->
+<data-extraction-rules>
+  <cloud-backup [disableIfNoEncryptionCapabilities="true"]>
+    <include domain=["file"] path="./non-existent-file.txt"/>
+    <exclude domain=["root"] path="./" />
+  </cloud-backup>
+  <device-transfer>
+    <include domain=["file"] path="./non-existent-file.txt"/>
+    <exclude domain=["root"] path="./" />
+  </device-transfer>
+</data-extraction-rules>
