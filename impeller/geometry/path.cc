@@ -367,24 +367,24 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
     switch (component.type) {
       case ComponentType::kLinear:
         sections.push_back({
-          .section_start_index = polyline.points.size(),
-          .is_curve = false,
+            .section_start_index = polyline.points.size(),
+            .is_curve = false,
         });
         collect_points(linears_[component.index].CreatePolyline());
         previous_path_component_index = component_i;
         break;
       case ComponentType::kQuadratic:
         sections.push_back({
-          .section_start_index = polyline.points.size(),
-          .is_curve = true,
+            .section_start_index = polyline.points.size(),
+            .is_curve = true,
         });
         collect_points(quads_[component.index].CreatePolyline(scale));
         previous_path_component_index = component_i;
         break;
       case ComponentType::kCubic:
         sections.push_back({
-          .section_start_index = polyline.points.size(),
-          .is_curve = true,
+            .section_start_index = polyline.points.size(),
+            .is_curve = true,
         });
         collect_points(cubics_[component.index].CreatePolyline(scale));
         previous_path_component_index = component_i;

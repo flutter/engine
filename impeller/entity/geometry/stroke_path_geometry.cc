@@ -309,7 +309,9 @@ StrokePathGeometry::CreateSolidStrokeVertices(
     // Generate contour geometry.
     for (size_t point_i = contour_start_point_i + 1;
          point_i < contour_end_point_i; point_i++) {
-      if ((contour_section + 1 >= contour.sections.size()) && contour.sections[contour_section + 1].section_start_index <= point_i) {
+      if ((contour_section + 1 >= contour.sections.size()) &&
+          contour.sections[contour_section + 1].section_start_index <=
+              point_i) {
         // The point_i has entered the next section in this contour.
         contour_section += 1;
       }
@@ -322,8 +324,8 @@ StrokePathGeometry::CreateSolidStrokeVertices(
       // Curve sections don't require the two end points of the rect assuming
       // the angles between of a continous two points are close enough.
       //
-      // This also prevents overdraw the line rect if the contour ends at a sharp
-      // curve with thick stroke width.
+      // This also prevents overdraw the line rect if the contour ends at a
+      // sharp curve with thick stroke width.
       if (!contour.sections[contour_section].is_curve) {
         vtx.position = polyline.points[point_i] + offset;
         vtx_builder.AppendVertex(vtx);

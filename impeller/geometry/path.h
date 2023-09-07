@@ -65,10 +65,9 @@ class Path {
       size_t section_start_index;
       /// Denotes whether this section is a curve.
       ///
-      /// This is set to true when this section is generated from QuadraticComponent
-      /// or CubicPathComponent.
+      /// This is set to true when this section is generated from
+      /// QuadraticComponent or CubicPathComponent.
       bool is_curve;
-
     };
     /// Index that denotes the first point of this contour.
     size_t start_index;
