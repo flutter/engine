@@ -13,7 +13,7 @@ namespace testing {
 
 class MockRefreshRateUpdater : public Stopwatch::RefreshRateUpdater {
  public:
-  MOCK_CONST_METHOD0(GetFrameBudget, fml::Milliseconds());
+  MOCK_METHOD(fml::Milliseconds, GetFrameBudget, (), (const, override));
 };
 
 TEST(Instrumentation, GetDefaultFrameBudgetTest) {
@@ -55,6 +55,13 @@ TEST(Instrumentation, GetCurrentSampleTest) {
   stopwatch.Start();
   stopwatch.Stop();
   EXPECT_EQ(stopwatch.GetCurrentSample(), size_t(1));
+}
+
+TEST(Instrumentation, GetLapsCount) {
+  fml::Milliseconds frame_budget_90fps = fml::RefreshRateToFrameBudget(90);
+  FixedRefreshRateStopwatch stopwatch(frame_budget_90fps);
+  stopwatch.SetLapTime(fml::TimeDelta::FromMilliseconds(10));
+  EXPECT_EQ(stopwatch.GetLapsCount(), size_t(120));
 }
 
 }  // namespace testing

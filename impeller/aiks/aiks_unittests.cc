@@ -5,7 +5,6 @@
 #include <array>
 #include <cmath>
 #include <cstdlib>
-#include <iostream>
 #include <memory>
 #include <tuple>
 #include <utility>
@@ -1278,11 +1277,7 @@ bool RenderTextInCanvasSkia(const std::shared_ptr<Context>& context,
   }
 
   // Create the Impeller text frame and draw it at the designated baseline.
-  auto maybe_frame = MakeTextFrameFromTextBlobSkia(blob);
-  if (!maybe_frame.has_value()) {
-    return false;
-  }
-  auto frame = maybe_frame.value();
+  auto frame = MakeTextFrameFromTextBlobSkia(blob);
 
   Paint text_paint;
   text_paint.color = Color::Yellow().WithAlpha(options.alpha);
@@ -1471,7 +1466,7 @@ TEST_P(AiksTest, CanRenderTextOutsideBoundaries) {
     {
       auto blob = SkTextBlob::MakeFromString(t.text, sk_font);
       ASSERT_NE(blob, nullptr);
-      auto frame = MakeTextFrameFromTextBlobSkia(blob).value();
+      auto frame = MakeTextFrameFromTextBlobSkia(blob);
       canvas.DrawTextFrame(frame, Point(), text_paint);
     }
     canvas.Restore();
@@ -2911,6 +2906,36 @@ TEST_P(AiksTest, CanRenderClippedRuntimeEffects) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, DrawPaintTransformsBounds) {
+  if (GetParam() != PlaygroundBackend::kMetal) {
+    GTEST_SKIP_("This backend doesn't support runtime effects.");
+  }
+
+  auto runtime_stage = OpenAssetAsRuntimeStage("gradient.frag.iplr");
+  ASSERT_TRUE(runtime_stage->IsDirty());
+
+  struct FragUniforms {
+    Size size;
+  } frag_uniforms = {.size = Size::MakeWH(400, 400)};
+  auto uniform_data = std::make_shared<std::vector<uint8_t>>();
+  uniform_data->resize(sizeof(FragUniforms));
+  memcpy(uniform_data->data(), &frag_uniforms, sizeof(FragUniforms));
+
+  std::vector<RuntimeEffectContents::TextureInput> texture_inputs;
+
+  Paint paint;
+  paint.color_source = ColorSource::MakeRuntimeEffect(
+      runtime_stage, uniform_data, texture_inputs);
+
+  Canvas canvas;
+  canvas.Save();
+  canvas.Scale(GetContentScale());
+  canvas.DrawPaint(paint);
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, CanDrawPoints) {
   std::vector<Point> points = {
       {0, 0},      //
@@ -3064,12 +3089,7 @@ TEST_P(AiksTest, TextForegroundShaderWithTransform) {
 
   auto blob = SkTextBlob::MakeFromString("Hello", sk_font);
   ASSERT_NE(blob, nullptr);
-  auto maybe_frame = MakeTextFrameFromTextBlobSkia(blob);
-  ASSERT_TRUE(maybe_frame.has_value());
-  if (!maybe_frame.has_value()) {
-    return;
-  }
-  auto frame = maybe_frame.value();
+  auto frame = MakeTextFrameFromTextBlobSkia(blob);
   canvas.DrawTextFrame(frame, Point(), text_paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
@@ -3084,6 +3104,44 @@ TEST_P(AiksTest, CanCanvasDrawPicture) {
   Canvas canvas;
   canvas.Translate({200, 200});
   canvas.Rotate(Radians(kPi / 4));
+  canvas.DrawPicture(picture);
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanCanvasDrawPictureWithAdvancedBlend) {
+  Canvas subcanvas;
+  subcanvas.DrawRect(
+      Rect::MakeLTRB(-100, -50, 100, 50),
+      {.color = Color::CornflowerBlue(), .blend_mode = BlendMode::kColorDodge});
+  auto picture = subcanvas.EndRecordingAsPicture();
+
+  Canvas canvas;
+  canvas.DrawPaint({.color = Color::Black()});
+  canvas.DrawCircle(Point::MakeXY(150, 150), 25, {.color = Color::Red()});
+  canvas.DrawPicture(picture);
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanCanvasDrawPictureWithBackdropFilter) {
+  Canvas subcanvas;
+  subcanvas.SaveLayer({}, {},
+                      [](const FilterInput::Ref& input,
+                         const Matrix& effect_transform, bool is_subpass) {
+                        return FilterContents::MakeGaussianBlur(
+                            input, Sigma(20.0), Sigma(20.0));
+                      });
+  auto image = std::make_shared<Image>(CreateTextureForFixture("kalimba.jpg"));
+  Paint paint;
+  paint.color = Color::Red().WithAlpha(0.5);
+  subcanvas.DrawImage(image, Point::MakeXY(100.0, 100.0), paint);
+
+  auto picture = subcanvas.EndRecordingAsPicture();
+
+  Canvas canvas;
+  canvas.DrawPaint({.color = Color::Black()});
+  canvas.DrawCircle(Point::MakeXY(150, 150), 25, {.color = Color::Red()});
   canvas.DrawPicture(picture);
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
