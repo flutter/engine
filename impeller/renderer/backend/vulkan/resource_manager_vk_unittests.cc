@@ -6,6 +6,7 @@
 #include <functional>
 #include <memory>
 #include <utility>
+#include "fml/synchronization/waitable_event.h"
 #include "gtest/gtest.h"
 #include "impeller/renderer/backend/vulkan/resource_manager_vk.h"
 
@@ -18,6 +19,8 @@ TEST(ResourceManagerVKTest, CreatesANewInstance) {
   auto const b = ResourceManagerVK::Create();
   EXPECT_NE(a, b);
 }
+
+namespace {
 
 // Invokes the provided callback when the destructor is called.
 //
@@ -36,32 +39,26 @@ class DeathRattle final {
   std::function<void()> callback_;
 };
 
+}  // namespace
+
 TEST(ResourceManagerVKTest, ReclaimMovesAResourceAndDestroysIt) {
   auto const manager = ResourceManagerVK::Create();
 
+  auto waiter = fml::AutoResetWaitableEvent();
   auto dead = false;
-  auto rattle = DeathRattle([&dead]() { dead = true; });
+  auto rattle = DeathRattle([&waiter]() { waiter.Signal(); });
 
   // Not killed immediately.
-  EXPECT_FALSE(dead);
+  EXPECT_FALSE(waiter.IsSignaledForTest());
 
   {
     auto resource = UniqueResourceVKT<DeathRattle>(manager, std::move(rattle));
 
     // Not killed on moving.
-    EXPECT_FALSE(dead);
+    EXPECT_FALSE(waiter.IsSignaledForTest());
   }
 
-  // Not killed synchronously.
-  EXPECT_FALSE(dead);
-
-  // A background thread reclaims; give it a chance to finish killing.
-  while (!dead) {
-    std::this_thread::yield();
-  }
-
-  // The resource should be dead now.
-  EXPECT_TRUE(dead);
+  waiter.Wait();
 }
 
 }  // namespace testing
