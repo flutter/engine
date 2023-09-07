@@ -76,7 +76,7 @@ class CommandPoolVK final {
   ///
   /// @param[in]  buffer  The |vk::CommandBuffer| to collect.
   ///
-  /// @note       This method is a NOP if a different thread created the pool.
+  /// @note       This method is a noop if a different thread created the pool.
   ///
   /// @see        |GarbageCollectBuffersIfAble|
   void CollectGraphicsCommandBuffer(vk::UniqueCommandBuffer buffer);
