@@ -1966,7 +1966,8 @@ bool Shell::OnServiceProtocolRenderFrameWithRasterStats(
   // TODO(dkwingsmt): This method only handles view #0, including the snapshot
   // and the frame size. We need to adapt this method to multi-view.
   // https://github.com/flutter/flutter/issues/131892
-  if (auto last_layer_tree = rasterizer_->GetLastLayerTree()) {
+  int64_t view_id = kFlutterImplicitViewId;
+  if (auto last_layer_tree = rasterizer_->GetLastLayerTree(view_id)) {
     auto& allocator = response->GetAllocator();
     response->SetObject();
     response->AddMember("type", "RenderFrameWithRasterStats", allocator);
@@ -1997,7 +1998,7 @@ bool Shell::OnServiceProtocolRenderFrameWithRasterStats(
 
     response->AddMember("snapshots", snapshots, allocator);
 
-    const auto& frame_size = ExpectedFrameSize(kFlutterImplicitViewId);
+    const auto& frame_size = ExpectedFrameSize(view_id);
     response->AddMember("frame_width", frame_size.width(), allocator);
     response->AddMember("frame_height", frame_size.height(), allocator);
 

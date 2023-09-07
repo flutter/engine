@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <optional>
+#include <unordered_map>
 
 #include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
@@ -197,6 +198,7 @@ class Rasterizer final : public SnapshotDelegate,
   ///             collects associated resources. No more rendering may occur
   ///             till the next call to `Rasterizer::Setup` with a new render
   ///             surface. Calling a teardown without a setup is user error.
+  ///             Calling this method for multiple times is safe.
   ///
   void Teardown();
 
@@ -251,7 +253,7 @@ class Rasterizer final : public SnapshotDelegate,
   /// @return     A pointer to the last layer or `nullptr` if this rasterizer
   ///             has never rendered a frame.
   ///
-  flutter::LayerTree* GetLastLayerTree();
+  flutter::LayerTree* GetLastLayerTree(int64_t view_id);
 
   //----------------------------------------------------------------------------
   /// @brief      Draws a last layer tree to the render surface. This may seem
@@ -528,6 +530,13 @@ class Rasterizer final : public SnapshotDelegate,
   ///
   void DisableThreadMergerIfNeeded();
 
+  //----------------------------------------------------------------------------
+  /// @brief      Returns whether TearDown has been called.
+  ///
+  ///             This method is only used only in unit tests.
+  ///
+  bool IsTornDown();
+
  private:
   // The result status of DrawToSurfaceUnsafe.
   enum class DrawSurfaceStatus {
@@ -551,16 +560,6 @@ class Rasterizer final : public SnapshotDelegate,
   enum class DoDrawStatus {
     // Frame has been successfully rasterized.
     kSuccess,
-    // Frame should be submitted again.
-    //
-    // This can occur on Android when switching the background surface to
-    // FlutterImageView.  On Android, the first frame doesn't make the image
-    // available to the ImageReader right away. The second frame does.
-    // TODO(egarciad): https://github.com/flutter/flutter/issues/65652
-    //
-    // This can also occur when the frame is dropped to wait for the thread
-    // merger to merge the raster and platform threads.
-    kRetry,
     // Frame has been successfully rasterized, but there are additional items
     // in the pipeline waiting to be consumed. This is currently only used when
     // thread configuration change occurs.
@@ -643,13 +642,13 @@ class Rasterizer final : public SnapshotDelegate,
 
   DoDrawResult DoDraw(
       std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
-      std::unique_ptr<flutter::LayerTree> layer_tree,
-      float device_pixel_ratio);
+      std::list<LayerTreeTask> tasks);
 
-  DoDrawStatus DrawToSurface(FrameTimingsRecorder& frame_timings_recorder,
-                             flutter::LayerTree& layer_tree,
-                             float device_pixel_ratio);
+  // After this method, the frame timing recorder is at raster end.
+  DoDrawResult DrawToSurface(FrameTimingsRecorder& frame_timings_recorder,
+                             std::list<LayerTreeTask> tasks);
 
+  // After this method, the frame timing recorder is at raster end.
   DrawSurfaceStatus DrawToSurfaceUnsafe(
       FrameTimingsRecorder& frame_timings_recorder,
       flutter::LayerTree& layer_tree,
@@ -657,18 +656,18 @@ class Rasterizer final : public SnapshotDelegate,
 
   void FireNextFrameCallbackIfPresent();
 
+  static bool ShouldResubmitFrame(const DoDrawResult& result);
   static DoDrawStatus ToDoDrawStatus(DrawSurfaceStatus status);
   static DrawStatus ToDrawStatus(DoDrawStatus status);
 
+  bool is_torn_down_;
   Delegate& delegate_;
   MakeGpuImageBehavior gpu_image_behavior_;
   std::weak_ptr<impeller::Context> impeller_context_;
   std::unique_ptr<Surface> surface_;
   std::unique_ptr<SnapshotSurfaceProducer> snapshot_surface_producer_;
   std::unique_ptr<flutter::CompositorContext> compositor_context_;
-  // This is the last successfully rasterized layer tree.
-  std::unique_ptr<flutter::LayerTree> last_layer_tree_;
-  float last_device_pixel_ratio_;
+  std::unordered_map<int64_t, LayerTreeTask> last_successful_tasks_;
   fml::closure next_frame_callback_;
   bool user_override_resource_cache_bytes_;
   std::optional<size_t> max_cache_bytes_;
