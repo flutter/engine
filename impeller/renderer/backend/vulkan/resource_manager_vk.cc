@@ -11,7 +11,7 @@
 namespace impeller {
 
 std::shared_ptr<ResourceManagerVK> ResourceManagerVK::Create() {
-  auto manager = std::make_shared<ResourceManagerVK>();
+  auto manager = std::shared_ptr<ResourceManagerVK>(new ResourceManagerVK());
   manager->waiter_ = std::thread([manager]() { manager->Start(); });
   manager->waiter_.detach();
   return manager;
