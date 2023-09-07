@@ -3,8 +3,10 @@
 // found in the LICENSE file.
 
 #include <sys/types.h>
+#include <functional>
 #include <memory>
-#include "flutter/testing/testing.h"
+#include <utility>
+#include "gtest/gtest.h"
 #include "impeller/renderer/backend/vulkan/resource_manager_vk.h"
 
 namespace impeller {
@@ -17,7 +19,50 @@ TEST(ResourceManagerVKTest, CreatesANewInstance) {
   EXPECT_NE(a, b);
 }
 
-// TODO: See what Aaron and Chinmay think can be tested here, and how.
+// Invokes the provided callback when the destructor is called.
+//
+// Can be moved, but not copied.
+class DeathRattle final {
+ public:
+  explicit DeathRattle(std::function<void()> callback)
+      : callback_(std::move(callback)) {}
+
+  DeathRattle(DeathRattle&&) = default;
+  DeathRattle& operator=(DeathRattle&&) = default;
+
+  ~DeathRattle() { callback_(); }
+
+ private:
+  std::function<void()> callback_;
+};
+
+TEST(ResourceManagerVKTest, ReclaimMovesAResourceAndDestroysIt) {
+  auto const manager = ResourceManagerVK::Create();
+
+  auto dead = false;
+  auto rattle = DeathRattle([&dead]() { dead = true; });
+
+  // Not killed immediately.
+  EXPECT_FALSE(dead);
+
+  {
+    auto resource = UniqueResourceVKT<DeathRattle>(manager, std::move(rattle));
+
+    // Not killed on moving.
+    EXPECT_FALSE(dead);
+  }
+
+  // Not killed synchronously.
+  EXPECT_FALSE(dead);
+
+  // A background thread reclaims; give it a chance to finish killing.
+  while (!dead) {
+    std::this_thread::yield();
+  }
+
+  // The resource should be dead now.
+  EXPECT_TRUE(dead);
+}
 
 }  // namespace testing
 }  // namespace impeller
