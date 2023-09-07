@@ -321,10 +321,10 @@ StrokePathGeometry::CreateSolidStrokeVertices(
       vtx.position = polyline.points[point_i - 1] - offset;
       vtx_builder.AppendVertex(vtx);
 
-      // Curve sections don't require the two end points of the rect assuming
-      // the angles between of a continous two points are close enough.
+      // Curve sections don't require the two end points of the line rects
+      // assuming the angles between of a continous two points are close enough.
       //
-      // This also prevents overdraw the line rect if the contour ends at a
+      // This also prevents overdrawing the line rect if the contour ends at a
       // sharp curve with thick stroke width.
       if (!contour.sections[contour_section].is_curve) {
         vtx.position = polyline.points[point_i] + offset;
