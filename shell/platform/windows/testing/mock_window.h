@@ -6,8 +6,8 @@
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_WIN32_WINDOW_H_
 
 #include "flutter/fml/macros.h"
-#include "flutter/shell/platform/windows/testing/test_keyboard.h"
 #include "flutter/shell/platform/windows/flutter_window.h"
+#include "flutter/shell/platform/windows/testing/test_keyboard.h"
 #include "gmock/gmock.h"
 
 namespace flutter {

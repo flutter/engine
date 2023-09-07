@@ -32,10 +32,14 @@ namespace flutter {
 // the future, there will likely be a CoreWindow-based FlutterWindow as well.
 // At the point may make sense to dependency inject the native window rather
 // than inherit.
-class FlutterWindow : public KeyboardManager::WindowDelegate, public WindowBindingHandler {
+class FlutterWindow : public KeyboardManager::WindowDelegate,
+                      public WindowBindingHandler {
  public:
   // Create flutter Window for use as child window
-  FlutterWindow(int width, int height, std::unique_ptr<WindowsProcTable> windows_proc_table = nullptr, std::unique_ptr<TextInputManager> text_input_manager = nullptr);
+  FlutterWindow(int width,
+                int height,
+                std::unique_ptr<WindowsProcTable> windows_proc_table = nullptr,
+                std::unique_ptr<TextInputManager> text_input_manager = nullptr);
 
   virtual ~FlutterWindow();
 
@@ -76,31 +80,31 @@ class FlutterWindow : public KeyboardManager::WindowDelegate, public WindowBindi
   // Called when the pointer moves within the
   // window bounds.
   virtual void OnPointerMove(double x,
-                     double y,
-                     FlutterPointerDeviceKind device_kind,
-                     int32_t device_id,
-                     int modifiers_state);
+                             double y,
+                             FlutterPointerDeviceKind device_kind,
+                             int32_t device_id,
+                             int modifiers_state);
 
   // Called when the a mouse button, determined by |button|, goes down.
   virtual void OnPointerDown(double x,
-                     double y,
-                     FlutterPointerDeviceKind device_kind,
-                     int32_t device_id,
-                     UINT button);
+                             double y,
+                             FlutterPointerDeviceKind device_kind,
+                             int32_t device_id,
+                             UINT button);
 
   // Called when the a mouse button, determined by |button|, goes from
   // down to up
   virtual void OnPointerUp(double x,
-                   double y,
-                   FlutterPointerDeviceKind device_kind,
-                   int32_t device_id,
-                   UINT button);
+                           double y,
+                           FlutterPointerDeviceKind device_kind,
+                           int32_t device_id,
+                           UINT button);
 
   // Called when the mouse leaves the window.
   virtual void OnPointerLeave(double x,
-                      double y,
-                      FlutterPointerDeviceKind device_kind,
-                      int32_t device_id);
+                              double y,
+                              FlutterPointerDeviceKind device_kind,
+                              int32_t device_id);
 
   // Called when the cursor should be set for the client area.
   virtual void OnSetCursor();
@@ -110,12 +114,12 @@ class FlutterWindow : public KeyboardManager::WindowDelegate, public WindowBindi
 
   // |WindowBindingHandlerDelegate|
   virtual void OnKey(int key,
-             int scancode,
-             int action,
-             char32_t character,
-             bool extended,
-             bool was_down,
-             KeyEventCallback callback) override;
+                     int scancode,
+                     int action,
+                     char32_t character,
+                     bool extended,
+                     bool was_down,
+                     KeyEventCallback callback) override;
 
   // Called when IME composing begins.
   virtual void OnComposeBegin();
@@ -140,9 +144,9 @@ class FlutterWindow : public KeyboardManager::WindowDelegate, public WindowBindi
 
   // Called when mouse scrollwheel input occurs.
   virtual void OnScroll(double delta_x,
-                double delta_y,
-                FlutterPointerDeviceKind device_kind,
-                int32_t device_id);
+                        double delta_y,
+                        FlutterPointerDeviceKind device_kind,
+                        int32_t device_id);
 
   // Returns the root view accessibility node, or nullptr if none.
   virtual gfx::NativeViewAccessible GetNativeViewAccessible();
@@ -176,8 +180,8 @@ class FlutterWindow : public KeyboardManager::WindowDelegate, public WindowBindi
 
   // |FlutterWindowBindingHandler|
   virtual bool OnBitmapSurfaceUpdated(const void* allocation,
-                              size_t row_bytes,
-                              size_t height) override;
+                                      size_t row_bytes,
+                                      size_t height) override;
 
   // |FlutterWindowBindingHandler|
   virtual PointerLocation GetPrimaryPointerLocation() override;

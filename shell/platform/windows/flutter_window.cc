@@ -95,12 +95,16 @@ static const int kMaxTouchDeviceId = 128;
 
 static const int kLinesPerScrollWindowsDefault = 3;
 
-FlutterWindow::FlutterWindow(int width, int height, std::unique_ptr<WindowsProcTable> windows_proc_table, std::unique_ptr<TextInputManager> text_input_manager)
+FlutterWindow::FlutterWindow(
+    int width,
+    int height,
+    std::unique_ptr<WindowsProcTable> windows_proc_table,
+    std::unique_ptr<TextInputManager> text_input_manager)
     : binding_handler_delegate_(nullptr),
       touch_id_generator_(kMinTouchDeviceId, kMaxTouchDeviceId),
       windows_proc_table_(std::move(windows_proc_table)),
       text_input_manager_(std::move(text_input_manager)),
-      ax_fragment_root_(nullptr)  {
+      ax_fragment_root_(nullptr) {
   // Get the DPI of the primary monitor as the initial DPI. If Per-Monitor V2 is
   // supported, |current_dpi_| should be updated in the
   // kWmDpiChangedBeforeParent message.
@@ -429,7 +433,8 @@ void FlutterWindow::HandleResize(UINT width, UINT height) {
 }
 
 FlutterWindow* FlutterWindow::GetThisFromHandle(HWND const window) noexcept {
-  return reinterpret_cast<FlutterWindow*>(GetWindowLongPtr(window, GWLP_USERDATA));
+  return reinterpret_cast<FlutterWindow*>(
+      GetWindowLongPtr(window, GWLP_USERDATA));
 }
 
 void FlutterWindow::UpdateScrollOffsetMultiplier() {
@@ -445,8 +450,8 @@ void FlutterWindow::UpdateScrollOffsetMultiplier() {
 }
 
 void FlutterWindow::InitializeChild(const char* title,
-                             unsigned int width,
-                             unsigned int height) {
+                                    unsigned int width,
+                                    unsigned int height) {
   Destroy();
   std::wstring converted_title = NarrowToWide(title);
 
@@ -484,9 +489,9 @@ HWND FlutterWindow::GetWindowHandle() {
 }
 
 BOOL FlutterWindow::Win32PeekMessage(LPMSG lpMsg,
-                              UINT wMsgFilterMin,
-                              UINT wMsgFilterMax,
-                              UINT wRemoveMsg) {
+                                     UINT wMsgFilterMin,
+                                     UINT wMsgFilterMax,
+                                     UINT wRemoveMsg) {
   return ::PeekMessage(lpMsg, window_handle_, wMsgFilterMin, wMsgFilterMax,
                        wRemoveMsg);
 }
@@ -495,7 +500,9 @@ uint32_t FlutterWindow::Win32MapVkToChar(uint32_t virtual_key) {
   return ::MapVirtualKey(virtual_key, MAPVK_VK_TO_CHAR);
 }
 
-UINT FlutterWindow::Win32DispatchMessage(UINT Msg, WPARAM wParam, LPARAM lParam) {
+UINT FlutterWindow::Win32DispatchMessage(UINT Msg,
+                                         WPARAM wParam,
+                                         LPARAM lParam) {
   return ::SendMessage(window_handle_, Msg, wParam, lParam);
 }
 
@@ -526,9 +533,9 @@ WNDCLASS FlutterWindow::RegisterWindowClass(std::wstring& title) {
 }
 
 LRESULT CALLBACK FlutterWindow::WndProc(HWND const window,
-                                 UINT const message,
-                                 WPARAM const wparam,
-                                 LPARAM const lparam) noexcept {
+                                        UINT const message,
+                                        WPARAM const wparam,
+                                        LPARAM const lparam) noexcept {
   if (message == WM_NCCREATE) {
     auto cs = reinterpret_cast<CREATESTRUCT*>(lparam);
     SetWindowLongPtr(window, GWLP_USERDATA,
@@ -547,8 +554,8 @@ LRESULT CALLBACK FlutterWindow::WndProc(HWND const window,
 
 LRESULT
 FlutterWindow::HandleMessage(UINT const message,
-                      WPARAM const wparam,
-                      LPARAM const lparam) noexcept {
+                             WPARAM const wparam,
+                             LPARAM const lparam) noexcept {
   LPARAM result_lparam = lparam;
   int xPos = 0, yPos = 0;
   UINT width = 0, height = 0;
@@ -799,8 +806,8 @@ FlutterWindow::HandleMessage(UINT const message,
 }
 
 LRESULT FlutterWindow::OnGetObject(UINT const message,
-                            WPARAM const wparam,
-                            LPARAM const lparam) {
+                                   WPARAM const wparam,
+                                   LPARAM const lparam) {
   LRESULT reference_result = static_cast<LRESULT>(0L);
 
   // Only the lower 32 bits of lparam are valid when checking the object id
@@ -855,23 +862,23 @@ LRESULT FlutterWindow::OnGetObject(UINT const message,
 }
 
 void FlutterWindow::OnImeSetContext(UINT const message,
-                             WPARAM const wparam,
-                             LPARAM const lparam) {
+                                    WPARAM const wparam,
+                                    LPARAM const lparam) {
   if (wparam != 0) {
     text_input_manager_->CreateImeWindow();
   }
 }
 
 void FlutterWindow::OnImeStartComposition(UINT const message,
-                                   WPARAM const wparam,
-                                   LPARAM const lparam) {
+                                          WPARAM const wparam,
+                                          LPARAM const lparam) {
   text_input_manager_->CreateImeWindow();
   OnComposeBegin();
 }
 
 void FlutterWindow::OnImeComposition(UINT const message,
-                              WPARAM const wparam,
-                              LPARAM const lparam) {
+                                     WPARAM const wparam,
+                                     LPARAM const lparam) {
   // Update the IME window position.
   text_input_manager_->UpdateImeWindow();
 
@@ -905,15 +912,15 @@ void FlutterWindow::OnImeComposition(UINT const message,
 }
 
 void FlutterWindow::OnImeEndComposition(UINT const message,
-                                 WPARAM const wparam,
-                                 LPARAM const lparam) {
+                                        WPARAM const wparam,
+                                        LPARAM const lparam) {
   text_input_manager_->DestroyImeWindow();
   OnComposeEnd();
 }
 
 void FlutterWindow::OnImeRequest(UINT const message,
-                          WPARAM const wparam,
-                          LPARAM const lparam) {
+                                 WPARAM const wparam,
+                                 LPARAM const lparam) {
   // TODO(cbracken): Handle IMR_RECONVERTSTRING, IMR_DOCUMENTFEED,
   // and IMR_QUERYCHARPOSITION messages.
   // https://github.com/flutter/flutter/issues/74547
@@ -957,9 +964,9 @@ bool FlutterWindow::GetHighContrastEnabled() {
 }
 
 LRESULT FlutterWindow::Win32DefWindowProc(HWND hWnd,
-                                   UINT Msg,
-                                   WPARAM wParam,
-                                   LPARAM lParam) {
+                                          UINT Msg,
+                                          WPARAM wParam,
+                                          LPARAM lParam) {
   return ::DefWindowProc(hWnd, Msg, wParam, lParam);
 }
 
