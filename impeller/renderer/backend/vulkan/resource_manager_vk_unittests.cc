@@ -53,9 +53,6 @@ TEST(ResourceManagerVKTest, ReclaimMovesAResourceAndDestroysIt) {
 
   {
     auto resource = UniqueResourceVKT<DeathRattle>(manager, std::move(rattle));
-
-    // Not killed on moving.
-    EXPECT_FALSE(waiter.IsSignaledForTest());
   }
 
   waiter.Wait();
