@@ -253,6 +253,7 @@ StrokePathGeometry::CreateSolidStrokeVertices(
   for (size_t contour_i = 0; contour_i < polyline.contours.size();
        contour_i++) {
     auto contour = polyline.contours[contour_i];
+    size_t contour_section = 0;
     size_t contour_start_point_i, contour_end_point_i;
     std::tie(contour_start_point_i, contour_end_point_i) =
         polyline.GetContourPointBounds(contour_i);
@@ -308,15 +309,27 @@ StrokePathGeometry::CreateSolidStrokeVertices(
     // Generate contour geometry.
     for (size_t point_i = contour_start_point_i + 1;
          point_i < contour_end_point_i; point_i++) {
+      if ((contour_section + 1 >= contour.sections.size()) && contour.sections[contour_section + 1].section_start_index <= point_i) {
+        // The point_i has entered the next section in this contour.
+        contour_section += 1;
+      }
       // Generate line rect.
       vtx.position = polyline.points[point_i - 1] + offset;
       vtx_builder.AppendVertex(vtx);
       vtx.position = polyline.points[point_i - 1] - offset;
       vtx_builder.AppendVertex(vtx);
-      vtx.position = polyline.points[point_i] + offset;
-      vtx_builder.AppendVertex(vtx);
-      vtx.position = polyline.points[point_i] - offset;
-      vtx_builder.AppendVertex(vtx);
+
+      // Curve sections don't require the two end points of the rect assuming
+      // the angles between of a continous two points are close enough.
+      //
+      // This also prevents overdraw the line rect if the contour ends at a sharp
+      // curve with thick stroke width.
+      if (!contour.sections[contour_section].is_curve) {
+        vtx.position = polyline.points[point_i] + offset;
+        vtx_builder.AppendVertex(vtx);
+        vtx.position = polyline.points[point_i] - offset;
+        vtx_builder.AppendVertex(vtx);
+      }
 
       if (point_i < contour_end_point_i - 1) {
         compute_offset(point_i + 1);
