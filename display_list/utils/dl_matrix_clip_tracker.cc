@@ -14,7 +14,7 @@ DisplayListMatrixClipTracker::DisplayListMatrixClipTracker(
     const DlTransform& matrix)
     : original_cull_rect_(cull_rect) {
   // isEmpty protects us against NaN as we normalize any empty cull rects
-  DlFRect cull = cull_rect.is_empty() ? DlFRect() : cull_rect;
+  DlFRect cull = cull_rect.IsEmpty() ? DlFRect() : cull_rect;
   saved_.emplace_back(std::make_unique<Data>(matrix, cull));
   current_ = saved_.back().get();
   save();  // saved_[0] will always be the initial settings
@@ -76,7 +76,7 @@ void DisplayListMatrixClipTracker::clipRRect(const DlFRRect& rrect,
     case ClipOp::kIntersect:
       break;
     case ClipOp::kDifference:
-      if (!rrect.is_rect()) {
+      if (!rrect.IsRect()) {
         return;
       }
       break;
@@ -115,13 +115,13 @@ void DisplayListMatrixClipTracker::clipPath(const DlPath& path,
 
 bool DisplayListMatrixClipTracker::Data::content_culled(
     const DlFRect& content_bounds) const {
-  if (cull_rect_.is_empty() || content_bounds.is_empty()) {
+  if (cull_rect_.IsEmpty() || content_bounds.IsEmpty()) {
     return true;
   }
   if (!canBeInverted()) {
     return true;
   }
-  if (matrix_.has_perspective()) {
+  if (matrix_.HasPerspective()) {
     return false;
   }
   DlFRect mapped;
@@ -130,10 +130,10 @@ bool DisplayListMatrixClipTracker::Data::content_culled(
 }
 
 void DisplayListMatrixClipTracker::Data::resetBounds(const DlFRect& cull_rect) {
-  if (!cull_rect.is_empty()) {
+  if (!cull_rect.IsEmpty()) {
     DlFRect rect;
     mapRect(cull_rect, &rect);
-    if (!rect.is_empty()) {
+    if (!rect.IsEmpty()) {
       cull_rect_ = rect;
       return;
     }
@@ -144,17 +144,17 @@ void DisplayListMatrixClipTracker::Data::resetBounds(const DlFRect& cull_rect) {
 void DisplayListMatrixClipTracker::Data::clipBounds(const DlFRect& clip,
                                                     ClipOp op,
                                                     bool is_aa) {
-  if (cull_rect_.is_empty()) {
+  if (cull_rect_.IsEmpty()) {
     // No point in intersecting further.
     return;
   }
-  if (matrix_.has_perspective()) {
+  if (matrix_.HasPerspective()) {
     // We can conservatively ignore this clip.
     return;
   }
   switch (op) {
     case ClipOp::kIntersect: {
-      if (clip.is_empty()) {
+      if (clip.IsEmpty()) {
         cull_rect_ = kEmptyRect;
         break;
       }
@@ -167,7 +167,7 @@ void DisplayListMatrixClipTracker::Data::clipBounds(const DlFRect& clip,
       break;
     }
     case ClipOp::kDifference: {
-      if (clip.is_empty()) {
+      if (clip.IsEmpty()) {
         break;
       }
       DlFRect rect;
@@ -175,7 +175,7 @@ void DisplayListMatrixClipTracker::Data::clipBounds(const DlFRect& clip,
         // This technique only works if the transform is rect -> rect
         if (is_aa) {
           rect = rect.RoundedIn();
-          if (rect.is_empty()) {
+          if (rect.IsEmpty()) {
             break;
           }
         }
@@ -187,14 +187,14 @@ void DisplayListMatrixClipTracker::Data::clipBounds(const DlFRect& clip,
 }
 
 DlFRect DisplayListMatrixClipTracker::Data::local_cull_rect() const {
-  if (cull_rect_.is_empty()) {
+  if (cull_rect_.IsEmpty()) {
     return cull_rect_;
   }
   auto inverse = matrix_.Inverse();
   if (!inverse.has_value()) {
     return DlFRect();
   }
-  if (matrix_.has_perspective()) {
+  if (matrix_.HasPerspective()) {
     // We could do a 4-point long-form conversion, but since this is
     // only used for culling, let's just return a non-constricting
     // cull rect.

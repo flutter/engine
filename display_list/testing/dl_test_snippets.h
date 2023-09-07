@@ -186,7 +186,7 @@ constexpr DlFRect kTestBounds = DlFRect::MakeLTRB(10, 10, 50, 60);
 static const DlFRRect kTestRRect = DlFRRect::MakeRectXY(kTestBounds, 5, 5);
 static const DlFRRect kTestRRectRect = DlFRRect::MakeRect(kTestBounds);
 static const DlFRRect kTestInnerRRect =
-    DlFRRect::MakeRectXY(kTestBounds.Padded(-5, -5), 2, 2);
+    DlFRRect::MakeRectXY(kTestBounds.Expand(-5, -5), 2, 2);
 static const DlPath kTestPathRect = DlPath::MakeRect(kTestBounds);
 static const DlPath kTestPathOval = DlPath::MakeOval(kTestBounds);
 static const DlPath kTestPath1 =

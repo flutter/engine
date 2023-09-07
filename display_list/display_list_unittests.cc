@@ -169,14 +169,14 @@ class DisplayListTestBase : public BaseT {
 
     ASSERT_TRUE(rect.left() < rect.right());
     ASSERT_TRUE(rect.top() < rect.bottom());
-    ASSERT_FALSE(rect.is_empty());
+    ASSERT_FALSE(rect.IsEmpty());
     ASSERT_TRUE(invertedLR.left() > invertedLR.right());
-    ASSERT_TRUE(invertedLR.is_empty());
+    ASSERT_TRUE(invertedLR.IsEmpty());
     ASSERT_TRUE(invertedTB.top() > invertedTB.bottom());
-    ASSERT_TRUE(invertedTB.is_empty());
+    ASSERT_TRUE(invertedTB.IsEmpty());
     ASSERT_TRUE(invertedLTRB.left() > invertedLTRB.right());
     ASSERT_TRUE(invertedLTRB.top() > invertedLTRB.bottom());
-    ASSERT_TRUE(invertedLTRB.is_empty());
+    ASSERT_TRUE(invertedLTRB.IsEmpty());
 
     DlPaint ref_paint = DlPaint();
     DlFRect ref_bounds = rect;
@@ -196,7 +196,7 @@ class DisplayListTestBase : public BaseT {
                                .setDrawStyle(DlDrawStyle::kStroke)   //
                                .setStrokeJoin(DlStrokeJoin::kRound)  //
                                .setStrokeWidth(2.0f);
-    DlFRect stroke_bounds = rect.Padded(1.0f, 1.0f);
+    DlFRect stroke_bounds = rect.Expand(1.0f, 1.0f);
     verify_inverted_bounds(empty_setup, renderer, stroke_paint, invertedLR,
                            stroke_bounds, desc + " LR swapped, sw 2");
     verify_inverted_bounds(empty_setup, renderer, stroke_paint, invertedTB,
@@ -207,7 +207,7 @@ class DisplayListTestBase : public BaseT {
     DlBlurMaskFilter mask_filter(DlBlurStyle::kNormal, 2.0f);
     DlPaint maskblur_paint = DlPaint()  //
                                  .setMaskFilter(&mask_filter);
-    DlFRect maskblur_bounds = rect.Padded(6.0f, 6.0f);
+    DlFRect maskblur_bounds = rect.Expand(6.0f, 6.0f);
     verify_inverted_bounds(empty_setup, renderer, maskblur_paint, invertedLR,
                            maskblur_bounds, desc + " LR swapped, mask 2");
     verify_inverted_bounds(empty_setup, renderer, maskblur_paint, invertedTB,
@@ -218,7 +218,7 @@ class DisplayListTestBase : public BaseT {
     DlErodeImageFilter erode_filter(2.0f, 2.0f);
     DlPaint erode_paint = DlPaint()  //
                               .setImageFilter(&erode_filter);
-    DlFRect erode_bounds = rect.Padded(-2.0f, -2.0f);
+    DlFRect erode_bounds = rect.Expand(-2.0f, -2.0f);
     verify_inverted_bounds(empty_setup, renderer, erode_paint, invertedLR,
                            erode_bounds, desc + " LR swapped, erode 2");
     verify_inverted_bounds(empty_setup, renderer, erode_paint, invertedTB,
@@ -455,7 +455,7 @@ TEST_F(DisplayListTest, BuilderBoundsTransformComparedToSkia) {
   SkCanvas* canvas = recorder.beginRecording(frame_rect);
   ASSERT_EQ(builder.GetDestinationClipBounds(),
             DlFRect::MakeBounds(canvas->getDeviceClipBounds()));
-  ASSERT_EQ(builder.GetLocalClipBounds().Padded(1, 1),
+  ASSERT_EQ(builder.GetLocalClipBounds().Expand(1, 1),
             DlFRect::MakeBounds(canvas->getLocalClipBounds()));
   auto sk_m44 = canvas->getLocalToDevice();
   auto dl_sk_m44 = DlTransform::MakeRowMajor(
@@ -542,7 +542,7 @@ TEST_F(DisplayListTest, UnclippedSaveLayerContentAccountsForFilter) {
 
   ASSERT_EQ(display_list->op_count(), 6u);
 
-  auto result_rect = draw_rect.Padded(30.0f, 30.0f).Intersection(clip_rect);
+  auto result_rect = draw_rect.Expand(30.0f, 30.0f).Intersection(clip_rect);
   ENFORCE_TRUE(result_rect.has_value());
   ASSERT_EQ(result_rect.value(),
             DlFRect::MakeLTRB(100.0f, 110.0f, 131.0f, 190.0f));
@@ -575,7 +575,7 @@ TEST_F(DisplayListTest, ClippedSaveLayerContentAccountsForFilter) {
 
   ASSERT_EQ(display_list->op_count(), 6u);
 
-  auto result_rect = draw_rect.Padded(30.0f, 30.0f).Intersection(clip_rect);
+  auto result_rect = draw_rect.Expand(30.0f, 30.0f).Intersection(clip_rect);
   ENFORCE_TRUE(result_rect.has_value());
   ASSERT_EQ(result_rect.value(),
             DlFRect::MakeLTRB(100.0f, 110.0f, 129.0f, 190.0f));
@@ -1571,7 +1571,7 @@ TEST_F(DisplayListTest, FlutterSvgIssue661BoundsWereEmpty) {
   }
   sk_sp<DisplayList> display_list = builder.Build();
   // Prior to the fix, the bounds were empty.
-  EXPECT_FALSE(display_list->bounds().is_empty());
+  EXPECT_FALSE(display_list->bounds().IsEmpty());
   // These are just inside and outside of the expected bounds, but
   // testing float values can be flaky wrt minor changes in the bounds
   // calculations. If these lines have to be revised too often as the DL
@@ -1770,7 +1770,7 @@ TEST_F(DisplayListTest, ClipRectAffectsClipBoundsWithMatrix) {
   receiver.clipRect(clip_bounds_1, ClipOp::kIntersect, false);
   receiver.translate(10, 0);
   receiver.clipRect(clip_bounds_1, ClipOp::kIntersect, false);
-  ASSERT_TRUE(builder.GetDestinationClipBounds().is_empty());
+  ASSERT_TRUE(builder.GetDestinationClipBounds().IsEmpty());
   receiver.restore();
 
   receiver.save();
@@ -1874,7 +1874,7 @@ TEST_F(DisplayListTest, ClipRRectAffectsClipBoundsWithMatrix) {
   receiver.clipRRect(clip1, ClipOp::kIntersect, false);
   receiver.translate(10, 0);
   receiver.clipRRect(clip1, ClipOp::kIntersect, false);
-  ASSERT_TRUE(builder.GetDestinationClipBounds().is_empty());
+  ASSERT_TRUE(builder.GetDestinationClipBounds().IsEmpty());
   receiver.restore();
 
   receiver.save();
@@ -1976,7 +1976,7 @@ TEST_F(DisplayListTest, ClipPathAffectsClipBoundsWithMatrix) {
   receiver.clipPath(clip1, ClipOp::kIntersect, false);
   receiver.translate(10, 0);
   receiver.clipPath(clip1, ClipOp::kIntersect, false);
-  ASSERT_TRUE(builder.GetDestinationClipBounds().is_empty());
+  ASSERT_TRUE(builder.GetDestinationClipBounds().IsEmpty());
   receiver.restore();
 
   receiver.save();
@@ -3101,7 +3101,7 @@ TEST_F(DisplayListTest, NopOperationsOmittedFromRecords) {
             FML_LOG(ERROR) << *list;
           }
           ASSERT_EQ(list->op_count(), expected_op_count) << name;
-          ASSERT_TRUE(list->bounds().is_empty()) << name;
+          ASSERT_TRUE(list->bounds().IsEmpty()) << name;
         };
     run_one_test(
         name + " DrawColor",

@@ -74,7 +74,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
     accumulator.accumulate(point);
   }
   flutter::DlFRect rect = accumulator.bounds();
-  NSCAssert(rect.is_finite(), @"Transformed points can't form a rect");
+  NSCAssert(rect.IsFinite(), @"Transformed points can't form a rect");
 
   // `rect` is in the physical pixel coordinate system. iOS expects the accessibility frame in
   // the logical pixel coordinate system. Therefore, we divide by the `scale` (pixel ratio) to

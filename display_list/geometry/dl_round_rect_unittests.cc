@@ -21,14 +21,14 @@ TEST(DlRoundRectTest, FRRectEmptyDeclaration) {
   ASSERT_EQ(rrect.y(), 0.0f);
   ASSERT_EQ(rrect.width(), 0.0f);
   ASSERT_EQ(rrect.height(), 0.0f);
-  ASSERT_TRUE(rrect.is_finite());
-  ASSERT_TRUE(rrect.is_empty());
-  ASSERT_FALSE(rrect.is_rect());
-  ASSERT_FALSE(rrect.is_oval());
-  ASSERT_FALSE(rrect.has_circular_corners());
-  ASSERT_FALSE(rrect.has_oval_corners());
-  ASSERT_FALSE(rrect.is_nine_patch());
-  ASSERT_FALSE(rrect.is_complex());
+  ASSERT_TRUE(rrect.IsFinite());
+  ASSERT_TRUE(rrect.IsEmpty());
+  ASSERT_FALSE(rrect.IsRect());
+  ASSERT_FALSE(rrect.IsOval());
+  ASSERT_FALSE(rrect.HasCircularCorners());
+  ASSERT_FALSE(rrect.HasOvalCorners());
+  ASSERT_FALSE(rrect.IsNinePatch());
+  ASSERT_FALSE(rrect.IsComplex());
   ASSERT_EQ(rrect.type(), DlFRRect::Type::kEmpty);
   ASSERT_EQ(rrect.upper_left_radii(), DlFVector());
   ASSERT_EQ(rrect.upper_right_radii(), DlFVector());
@@ -47,14 +47,14 @@ TEST(DlRoundRectTest, FRectDefaultConstructor) {
   ASSERT_EQ(rrect.y(), 0.0f);
   ASSERT_EQ(rrect.width(), 0.0f);
   ASSERT_EQ(rrect.height(), 0.0f);
-  ASSERT_TRUE(rrect.is_finite());
-  ASSERT_TRUE(rrect.is_empty());
-  ASSERT_FALSE(rrect.is_rect());
-  ASSERT_FALSE(rrect.is_oval());
-  ASSERT_FALSE(rrect.has_circular_corners());
-  ASSERT_FALSE(rrect.has_oval_corners());
-  ASSERT_FALSE(rrect.is_nine_patch());
-  ASSERT_FALSE(rrect.is_complex());
+  ASSERT_TRUE(rrect.IsFinite());
+  ASSERT_TRUE(rrect.IsEmpty());
+  ASSERT_FALSE(rrect.IsRect());
+  ASSERT_FALSE(rrect.IsOval());
+  ASSERT_FALSE(rrect.HasCircularCorners());
+  ASSERT_FALSE(rrect.HasOvalCorners());
+  ASSERT_FALSE(rrect.IsNinePatch());
+  ASSERT_FALSE(rrect.IsComplex());
   ASSERT_EQ(rrect.type(), DlFRRect::Type::kEmpty);
   ASSERT_EQ(rrect.upper_left_radii(), DlFVector());
   ASSERT_EQ(rrect.upper_right_radii(), DlFVector());
@@ -75,14 +75,14 @@ TEST(DlRoundRectTest, FRRectMakeRect) {
   ASSERT_EQ(rrect.y(), 10.25f);
   ASSERT_EQ(rrect.width(), 15.5f);
   ASSERT_EQ(rrect.height(), 15.125f);
-  ASSERT_TRUE(rrect.is_finite());
-  ASSERT_FALSE(rrect.is_empty());
-  ASSERT_TRUE(rrect.is_rect());
-  ASSERT_FALSE(rrect.is_oval());
-  ASSERT_FALSE(rrect.has_circular_corners());
-  ASSERT_FALSE(rrect.has_oval_corners());
-  ASSERT_FALSE(rrect.is_nine_patch());
-  ASSERT_FALSE(rrect.is_complex());
+  ASSERT_TRUE(rrect.IsFinite());
+  ASSERT_FALSE(rrect.IsEmpty());
+  ASSERT_TRUE(rrect.IsRect());
+  ASSERT_FALSE(rrect.IsOval());
+  ASSERT_FALSE(rrect.HasCircularCorners());
+  ASSERT_FALSE(rrect.HasOvalCorners());
+  ASSERT_FALSE(rrect.IsNinePatch());
+  ASSERT_FALSE(rrect.IsComplex());
   ASSERT_EQ(rrect.type(), DlFRRect::Type::kRect);
   ASSERT_EQ(rrect.upper_left_radii(), DlFVector());
   ASSERT_EQ(rrect.upper_right_radii(), DlFVector());
@@ -103,14 +103,14 @@ TEST(DlRoundRectTest, FRRectMakeOval) {
   ASSERT_EQ(rrect.y(), 10.25f);
   ASSERT_EQ(rrect.width(), 15.5f);
   ASSERT_EQ(rrect.height(), 15.125f);
-  ASSERT_TRUE(rrect.is_finite());
-  ASSERT_FALSE(rrect.is_empty());
-  ASSERT_FALSE(rrect.is_rect());
-  ASSERT_TRUE(rrect.is_oval());
-  ASSERT_FALSE(rrect.has_circular_corners());
-  ASSERT_FALSE(rrect.has_oval_corners());
-  ASSERT_FALSE(rrect.is_nine_patch());
-  ASSERT_FALSE(rrect.is_complex());
+  ASSERT_TRUE(rrect.IsFinite());
+  ASSERT_FALSE(rrect.IsEmpty());
+  ASSERT_FALSE(rrect.IsRect());
+  ASSERT_TRUE(rrect.IsOval());
+  ASSERT_FALSE(rrect.HasCircularCorners());
+  ASSERT_FALSE(rrect.HasOvalCorners());
+  ASSERT_FALSE(rrect.IsNinePatch());
+  ASSERT_FALSE(rrect.IsComplex());
   ASSERT_EQ(rrect.type(), DlFRRect::Type::kOval);
   ASSERT_EQ(rrect.upper_left_radii(), DlFVector(7.75f, 7.5625f));
   ASSERT_EQ(rrect.upper_right_radii(), DlFVector(7.75f, 7.5625f));
@@ -126,26 +126,26 @@ TEST(DlRoundRectTest, FRRectMakeXYRect) {
   DlScalar dy = 2.0625f;
 
   auto check_rect = [](const DlFRRect& rrect) {
-    ASSERT_TRUE(rrect.is_finite());
-    ASSERT_FALSE(rrect.is_empty());
-    ASSERT_TRUE(rrect.is_rect());
-    ASSERT_FALSE(rrect.is_oval());
-    ASSERT_FALSE(rrect.has_circular_corners());
-    ASSERT_FALSE(rrect.has_oval_corners());
-    ASSERT_FALSE(rrect.is_nine_patch());
-    ASSERT_FALSE(rrect.is_complex());
+    ASSERT_TRUE(rrect.IsFinite());
+    ASSERT_FALSE(rrect.IsEmpty());
+    ASSERT_TRUE(rrect.IsRect());
+    ASSERT_FALSE(rrect.IsOval());
+    ASSERT_FALSE(rrect.HasCircularCorners());
+    ASSERT_FALSE(rrect.HasOvalCorners());
+    ASSERT_FALSE(rrect.IsNinePatch());
+    ASSERT_FALSE(rrect.IsComplex());
     ASSERT_EQ(rrect.type(), DlFRRect::Type::kRect);
   };
 
   auto check_oval_corners = [](const DlFRRect& rrect) {
-    ASSERT_TRUE(rrect.is_finite());
-    ASSERT_FALSE(rrect.is_empty());
-    ASSERT_FALSE(rrect.is_rect());
-    ASSERT_FALSE(rrect.is_oval());
-    ASSERT_FALSE(rrect.has_circular_corners());
-    ASSERT_TRUE(rrect.has_oval_corners());
-    ASSERT_FALSE(rrect.is_nine_patch());
-    ASSERT_FALSE(rrect.is_complex());
+    ASSERT_TRUE(rrect.IsFinite());
+    ASSERT_FALSE(rrect.IsEmpty());
+    ASSERT_FALSE(rrect.IsRect());
+    ASSERT_FALSE(rrect.IsOval());
+    ASSERT_FALSE(rrect.HasCircularCorners());
+    ASSERT_TRUE(rrect.HasOvalCorners());
+    ASSERT_FALSE(rrect.IsNinePatch());
+    ASSERT_FALSE(rrect.IsComplex());
     ASSERT_EQ(rrect.type(), DlFRRect::Type::kOvalCorners);
   };
 
@@ -173,26 +173,26 @@ TEST(DlRoundRectTest, FRRectMakeXYOval) {
   DlScalar hh = h * 0.5f;
 
   auto check_oval = [](const DlFRRect& rrect) {
-    ASSERT_TRUE(rrect.is_finite());
-    ASSERT_FALSE(rrect.is_empty());
-    ASSERT_FALSE(rrect.is_rect());
-    ASSERT_TRUE(rrect.is_oval());
-    ASSERT_FALSE(rrect.has_circular_corners());
-    ASSERT_FALSE(rrect.has_oval_corners());
-    ASSERT_FALSE(rrect.is_nine_patch());
-    ASSERT_FALSE(rrect.is_complex());
+    ASSERT_TRUE(rrect.IsFinite());
+    ASSERT_FALSE(rrect.IsEmpty());
+    ASSERT_FALSE(rrect.IsRect());
+    ASSERT_TRUE(rrect.IsOval());
+    ASSERT_FALSE(rrect.HasCircularCorners());
+    ASSERT_FALSE(rrect.HasOvalCorners());
+    ASSERT_FALSE(rrect.IsNinePatch());
+    ASSERT_FALSE(rrect.IsComplex());
     ASSERT_EQ(rrect.type(), DlFRRect::Type::kOval);
   };
 
   auto check_oval_corners = [](const DlFRRect& rrect) {
-    ASSERT_TRUE(rrect.is_finite());
-    ASSERT_FALSE(rrect.is_empty());
-    ASSERT_FALSE(rrect.is_rect());
-    ASSERT_FALSE(rrect.is_oval());
-    ASSERT_FALSE(rrect.has_circular_corners());
-    ASSERT_TRUE(rrect.has_oval_corners());
-    ASSERT_FALSE(rrect.is_nine_patch());
-    ASSERT_FALSE(rrect.is_complex());
+    ASSERT_TRUE(rrect.IsFinite());
+    ASSERT_FALSE(rrect.IsEmpty());
+    ASSERT_FALSE(rrect.IsRect());
+    ASSERT_FALSE(rrect.IsOval());
+    ASSERT_FALSE(rrect.HasCircularCorners());
+    ASSERT_TRUE(rrect.HasOvalCorners());
+    ASSERT_FALSE(rrect.IsNinePatch());
+    ASSERT_FALSE(rrect.IsComplex());
     ASSERT_EQ(rrect.type(), DlFRRect::Type::kOvalCorners);
   };
 
@@ -201,7 +201,8 @@ TEST(DlRoundRectTest, FRRectMakeXYOval) {
   DlScalar scale_up = 65.0f / 64.0f;
   // To be classified as oval, the radii provided must be larger than half
   // the size of the rectangle evenly scaled compared to its w/h
-  check_oval_corners(DlFRRect::MakeRectXY(rect, hw * scale_down, hh * scale_down));
+  check_oval_corners(
+      DlFRRect::MakeRectXY(rect, hw * scale_down, hh * scale_down));
   check_oval(DlFRRect::MakeRectXY(rect, hw, hh));
   check_oval(DlFRRect::MakeRectXY(rect, hw * scale_up, hh * scale_up));
   check_oval_corners(DlFRRect::MakeRectXY(rect, hw, h));
@@ -222,14 +223,14 @@ TEST(DlRoundRectTest, FRRectMakeXYCircularCorners) {
   ASSERT_EQ(rrect.y(), 10.25f);
   ASSERT_EQ(rrect.width(), 15.5f);
   ASSERT_EQ(rrect.height(), 15.125f);
-  ASSERT_TRUE(rrect.is_finite());
-  ASSERT_FALSE(rrect.is_empty());
-  ASSERT_FALSE(rrect.is_rect());
-  ASSERT_FALSE(rrect.is_oval());
-  ASSERT_TRUE(rrect.has_circular_corners());
-  ASSERT_TRUE(rrect.has_oval_corners());
-  ASSERT_FALSE(rrect.is_nine_patch());
-  ASSERT_FALSE(rrect.is_complex());
+  ASSERT_TRUE(rrect.IsFinite());
+  ASSERT_FALSE(rrect.IsEmpty());
+  ASSERT_FALSE(rrect.IsRect());
+  ASSERT_FALSE(rrect.IsOval());
+  ASSERT_TRUE(rrect.HasCircularCorners());
+  ASSERT_TRUE(rrect.HasOvalCorners());
+  ASSERT_FALSE(rrect.IsNinePatch());
+  ASSERT_FALSE(rrect.IsComplex());
   ASSERT_EQ(rrect.type(), DlFRRect::Type::kCircularCorners);
   ASSERT_EQ(rrect.upper_left_radii(), DlFVector(1.125f, 1.125f));
   ASSERT_EQ(rrect.upper_right_radii(), DlFVector(1.125f, 1.125f));
@@ -250,14 +251,14 @@ TEST(DlRoundRectTest, FRRectMakeXYOvalCorners) {
   ASSERT_EQ(rrect.y(), 10.25f);
   ASSERT_EQ(rrect.width(), 15.5f);
   ASSERT_EQ(rrect.height(), 15.125f);
-  ASSERT_TRUE(rrect.is_finite());
-  ASSERT_FALSE(rrect.is_empty());
-  ASSERT_FALSE(rrect.is_rect());
-  ASSERT_FALSE(rrect.is_oval());
-  ASSERT_FALSE(rrect.has_circular_corners());
-  ASSERT_TRUE(rrect.has_oval_corners());
-  ASSERT_FALSE(rrect.is_nine_patch());
-  ASSERT_FALSE(rrect.is_complex());
+  ASSERT_TRUE(rrect.IsFinite());
+  ASSERT_FALSE(rrect.IsEmpty());
+  ASSERT_FALSE(rrect.IsRect());
+  ASSERT_FALSE(rrect.IsOval());
+  ASSERT_FALSE(rrect.HasCircularCorners());
+  ASSERT_TRUE(rrect.HasOvalCorners());
+  ASSERT_FALSE(rrect.IsNinePatch());
+  ASSERT_FALSE(rrect.IsComplex());
   ASSERT_EQ(rrect.type(), DlFRRect::Type::kOvalCorners);
   ASSERT_EQ(rrect.upper_left_radii(), DlFVector(1.125f, 2.0625f));
   ASSERT_EQ(rrect.upper_right_radii(), DlFVector(1.125f, 2.0625f));
@@ -276,14 +277,14 @@ TEST(DlRoundRectTest, FRRectMakeRectRadiiEmpty) {
   };
   DlFRRect rrect = DlFRRect::MakeRectRadii(rect, radii);
 
-  ASSERT_TRUE(rrect.is_finite());
-  ASSERT_TRUE(rrect.is_empty());
-  ASSERT_FALSE(rrect.is_rect());
-  ASSERT_FALSE(rrect.is_oval());
-  ASSERT_FALSE(rrect.has_circular_corners());
-  ASSERT_FALSE(rrect.has_oval_corners());
-  ASSERT_FALSE(rrect.is_nine_patch());
-  ASSERT_FALSE(rrect.is_complex());
+  ASSERT_TRUE(rrect.IsFinite());
+  ASSERT_TRUE(rrect.IsEmpty());
+  ASSERT_FALSE(rrect.IsRect());
+  ASSERT_FALSE(rrect.IsOval());
+  ASSERT_FALSE(rrect.HasCircularCorners());
+  ASSERT_FALSE(rrect.HasOvalCorners());
+  ASSERT_FALSE(rrect.IsNinePatch());
+  ASSERT_FALSE(rrect.IsComplex());
   ASSERT_EQ(rrect.type(), DlFRRect::Type::kEmpty);
 }
 
@@ -298,14 +299,14 @@ TEST(DlRoundRectTest, FRRectMakeRectRadiiRect) {
   };
   DlFRRect rrect = DlFRRect::MakeRectRadii(rect, radii);
 
-  ASSERT_TRUE(rrect.is_finite());
-  ASSERT_FALSE(rrect.is_empty());
-  ASSERT_TRUE(rrect.is_rect());
-  ASSERT_FALSE(rrect.is_oval());
-  ASSERT_FALSE(rrect.has_circular_corners());
-  ASSERT_FALSE(rrect.has_oval_corners());
-  ASSERT_FALSE(rrect.is_nine_patch());
-  ASSERT_FALSE(rrect.is_complex());
+  ASSERT_TRUE(rrect.IsFinite());
+  ASSERT_FALSE(rrect.IsEmpty());
+  ASSERT_TRUE(rrect.IsRect());
+  ASSERT_FALSE(rrect.IsOval());
+  ASSERT_FALSE(rrect.HasCircularCorners());
+  ASSERT_FALSE(rrect.HasOvalCorners());
+  ASSERT_FALSE(rrect.IsNinePatch());
+  ASSERT_FALSE(rrect.IsComplex());
   ASSERT_EQ(rrect.type(), DlFRRect::Type::kRect);
 }
 
@@ -320,14 +321,14 @@ TEST(DlRoundRectTest, FRRectMakeRectRadiiOval) {
   };
   DlFRRect rrect = DlFRRect::MakeRectRadii(rect, radii);
 
-  ASSERT_TRUE(rrect.is_finite());
-  ASSERT_FALSE(rrect.is_empty());
-  ASSERT_FALSE(rrect.is_rect());
-  ASSERT_TRUE(rrect.is_oval());
-  ASSERT_FALSE(rrect.has_circular_corners());
-  ASSERT_FALSE(rrect.has_oval_corners());
-  ASSERT_FALSE(rrect.is_nine_patch());
-  ASSERT_FALSE(rrect.is_complex());
+  ASSERT_TRUE(rrect.IsFinite());
+  ASSERT_FALSE(rrect.IsEmpty());
+  ASSERT_FALSE(rrect.IsRect());
+  ASSERT_TRUE(rrect.IsOval());
+  ASSERT_FALSE(rrect.HasCircularCorners());
+  ASSERT_FALSE(rrect.HasOvalCorners());
+  ASSERT_FALSE(rrect.IsNinePatch());
+  ASSERT_FALSE(rrect.IsComplex());
   ASSERT_EQ(rrect.type(), DlFRRect::Type::kOval);
 }
 
@@ -342,14 +343,14 @@ TEST(DlRoundRectTest, FRRectMakeRectRadiiCircularCorners) {
   };
   DlFRRect rrect = DlFRRect::MakeRectRadii(rect, radii);
 
-  ASSERT_TRUE(rrect.is_finite());
-  ASSERT_FALSE(rrect.is_empty());
-  ASSERT_FALSE(rrect.is_rect());
-  ASSERT_FALSE(rrect.is_oval());
-  ASSERT_TRUE(rrect.has_circular_corners());
-  ASSERT_TRUE(rrect.has_oval_corners());
-  ASSERT_FALSE(rrect.is_nine_patch());
-  ASSERT_FALSE(rrect.is_complex());
+  ASSERT_TRUE(rrect.IsFinite());
+  ASSERT_FALSE(rrect.IsEmpty());
+  ASSERT_FALSE(rrect.IsRect());
+  ASSERT_FALSE(rrect.IsOval());
+  ASSERT_TRUE(rrect.HasCircularCorners());
+  ASSERT_TRUE(rrect.HasOvalCorners());
+  ASSERT_FALSE(rrect.IsNinePatch());
+  ASSERT_FALSE(rrect.IsComplex());
   ASSERT_EQ(rrect.type(), DlFRRect::Type::kCircularCorners);
 }
 
@@ -364,14 +365,14 @@ TEST(DlRoundRectTest, FRRectMakeRectRadiiOvalCorners) {
   };
   DlFRRect rrect = DlFRRect::MakeRectRadii(rect, radii);
 
-  ASSERT_TRUE(rrect.is_finite());
-  ASSERT_FALSE(rrect.is_empty());
-  ASSERT_FALSE(rrect.is_rect());
-  ASSERT_FALSE(rrect.is_oval());
-  ASSERT_FALSE(rrect.has_circular_corners());
-  ASSERT_TRUE(rrect.has_oval_corners());
-  ASSERT_FALSE(rrect.is_nine_patch());
-  ASSERT_FALSE(rrect.is_complex());
+  ASSERT_TRUE(rrect.IsFinite());
+  ASSERT_FALSE(rrect.IsEmpty());
+  ASSERT_FALSE(rrect.IsRect());
+  ASSERT_FALSE(rrect.IsOval());
+  ASSERT_FALSE(rrect.HasCircularCorners());
+  ASSERT_TRUE(rrect.HasOvalCorners());
+  ASSERT_FALSE(rrect.IsNinePatch());
+  ASSERT_FALSE(rrect.IsComplex());
   ASSERT_EQ(rrect.type(), DlFRRect::Type::kOvalCorners);
 }
 
@@ -386,14 +387,14 @@ TEST(DlRoundRectTest, FRRectMakeRectRadiiNinePatch) {
   };
   DlFRRect rrect = DlFRRect::MakeRectRadii(rect, radii);
 
-  ASSERT_TRUE(rrect.is_finite());
-  ASSERT_FALSE(rrect.is_empty());
-  ASSERT_FALSE(rrect.is_rect());
-  ASSERT_FALSE(rrect.is_oval());
-  ASSERT_FALSE(rrect.has_circular_corners());
-  ASSERT_FALSE(rrect.has_oval_corners());
-  ASSERT_TRUE(rrect.is_nine_patch());
-  ASSERT_FALSE(rrect.is_complex());
+  ASSERT_TRUE(rrect.IsFinite());
+  ASSERT_FALSE(rrect.IsEmpty());
+  ASSERT_FALSE(rrect.IsRect());
+  ASSERT_FALSE(rrect.IsOval());
+  ASSERT_FALSE(rrect.HasCircularCorners());
+  ASSERT_FALSE(rrect.HasOvalCorners());
+  ASSERT_TRUE(rrect.IsNinePatch());
+  ASSERT_FALSE(rrect.IsComplex());
   ASSERT_EQ(rrect.type(), DlFRRect::Type::kNinePatch);
 }
 
@@ -416,14 +417,14 @@ TEST(DlRoundRectTest, FRRectMakeRectRadiiComplex) {
   ASSERT_EQ(rrect.y(), 10.25f);
   ASSERT_EQ(rrect.width(), 15.5f);
   ASSERT_EQ(rrect.height(), 15.125f);
-  ASSERT_TRUE(rrect.is_finite());
-  ASSERT_FALSE(rrect.is_empty());
-  ASSERT_FALSE(rrect.is_rect());
-  ASSERT_FALSE(rrect.is_oval());
-  ASSERT_FALSE(rrect.has_circular_corners());
-  ASSERT_FALSE(rrect.has_oval_corners());
-  ASSERT_FALSE(rrect.is_nine_patch());
-  ASSERT_TRUE(rrect.is_complex());
+  ASSERT_TRUE(rrect.IsFinite());
+  ASSERT_FALSE(rrect.IsEmpty());
+  ASSERT_FALSE(rrect.IsRect());
+  ASSERT_FALSE(rrect.IsOval());
+  ASSERT_FALSE(rrect.HasCircularCorners());
+  ASSERT_FALSE(rrect.HasOvalCorners());
+  ASSERT_FALSE(rrect.IsNinePatch());
+  ASSERT_TRUE(rrect.IsComplex());
   ASSERT_EQ(rrect.type(), DlFRRect::Type::kComplex);
   ASSERT_EQ(rrect.upper_left_radii(), DlFVector(1.125f, 1.25f));
   ASSERT_EQ(rrect.upper_right_radii(), DlFVector(1.375f, 1.5f));
@@ -451,14 +452,14 @@ TEST(DlRoundRectTest, FRRectCopy) {
   ASSERT_EQ(rrect.y(), 10.25f);
   ASSERT_EQ(rrect.width(), 15.5f);
   ASSERT_EQ(rrect.height(), 15.125f);
-  ASSERT_TRUE(rrect.is_finite());
-  ASSERT_FALSE(rrect.is_empty());
-  ASSERT_FALSE(rrect.is_rect());
-  ASSERT_FALSE(rrect.is_oval());
-  ASSERT_FALSE(rrect.has_circular_corners());
-  ASSERT_FALSE(rrect.has_oval_corners());
-  ASSERT_FALSE(rrect.is_nine_patch());
-  ASSERT_TRUE(rrect.is_complex());
+  ASSERT_TRUE(rrect.IsFinite());
+  ASSERT_FALSE(rrect.IsEmpty());
+  ASSERT_FALSE(rrect.IsRect());
+  ASSERT_FALSE(rrect.IsOval());
+  ASSERT_FALSE(rrect.HasCircularCorners());
+  ASSERT_FALSE(rrect.HasOvalCorners());
+  ASSERT_FALSE(rrect.IsNinePatch());
+  ASSERT_TRUE(rrect.IsComplex());
   ASSERT_EQ(rrect.type(), DlFRRect::Type::kComplex);
   ASSERT_EQ(rrect.upper_left_radii(), DlFVector(1.125f, 1.25f));
   ASSERT_EQ(rrect.upper_right_radii(), DlFVector(1.375f, 1.5f));
@@ -610,7 +611,7 @@ TEST(DlRoundRectTest, EmptyFRectDoesNotContain) {
   // Since DlFRRect is self-sorting, the only truly empty configuration
   // is having zero dimensions
   DlFRRect rrect;
-  ASSERT_TRUE(rrect.is_empty());
+  ASSERT_TRUE(rrect.IsEmpty());
   ASSERT_EQ(rrect.type(), DlFRRect::Type::kEmpty);
 
   auto test = [&rrect](DlScalar l, DlScalar t, DlScalar r, DlScalar b,

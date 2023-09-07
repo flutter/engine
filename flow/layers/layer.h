@@ -217,7 +217,7 @@ class Layer {
   }
 
   // Determines if the layer has any content.
-  bool is_empty() const { return paint_bounds_.is_empty(); }
+  bool is_empty() const { return paint_bounds_.IsEmpty(); }
 
   // Determines if the Paint() method is necessary based on the properties
   // of the indicated PaintContext object.

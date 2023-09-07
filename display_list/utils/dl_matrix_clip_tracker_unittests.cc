@@ -221,7 +221,7 @@ TEST(DisplayListMatrixClipTracker, ClipDifference) {
   auto reducing = [&cull_rect](const DlFRect& diff_rect,
                                const DlFRect& result_rect,
                                const std::string& label) {
-    ASSERT_TRUE(result_rect.is_empty() || cull_rect.Contains(result_rect));
+    ASSERT_TRUE(result_rect.IsEmpty() || cull_rect.Contains(result_rect));
     {
       DisplayListMatrixClipTracker tracker(cull_rect, DlTransform());
       tracker.clipRect(diff_rect, DlCanvas::ClipOp::kDifference, false);

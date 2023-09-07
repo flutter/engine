@@ -424,7 +424,7 @@ std::vector<DisplayListInvocationGroup> CreateAllClipOps() {
             }},
            {1, 24, 1, 24,
             [](DlOpReceiver& r) {
-              r.clipRect(kTestBounds.Translated(1, 1),
+              r.clipRect(kTestBounds.Translate(1, 1),
                          DlCanvas::ClipOp::kIntersect, true);
             }},
            {1, 24, 1, 24,
@@ -448,7 +448,7 @@ std::vector<DisplayListInvocationGroup> CreateAllClipOps() {
             }},
            {1, 64, 1, 64,
             [](DlOpReceiver& r) {
-              r.clipRRect(kTestRRect.Translated(1, 1),
+              r.clipRRect(kTestRRect.Translate(1, 1),
                           DlCanvas::ClipOp::kIntersect, true);
             }},
            {1, 64, 1, 64,
@@ -603,7 +603,7 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
        {
            {1, 56, 1, 56, [](DlOpReceiver& r) { r.drawRRect(kTestRRect); }},
            {1, 56, 1, 56,
-            [](DlOpReceiver& r) { r.drawRRect(kTestRRect.Translated(5, 5)); }},
+            [](DlOpReceiver& r) { r.drawRRect(kTestRRect.Translate(5, 5)); }},
        }},
       {"DrawDRRect",
        {
@@ -611,8 +611,8 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
             [](DlOpReceiver& r) { r.drawDRRect(kTestRRect, kTestInnerRRect); }},
            {1, 112, 1, 112,
             [](DlOpReceiver& r) {
-              r.drawDRRect(kTestRRect.Translated(5, 5),
-                           kTestInnerRRect.Translated(4, 4));
+              r.drawDRRect(kTestRRect.Translate(5, 5),
+                           kTestInnerRRect.Translate(4, 4));
             }},
        }},
       {"DrawPath",
@@ -629,7 +629,7 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
             [](DlOpReceiver& r) { r.drawArc(kTestBounds, 45, 270, false); }},
            {1, 32, 1, 32,
             [](DlOpReceiver& r) {
-              r.drawArc(kTestBounds.Translated(1, 1), 45, 270, false);
+              r.drawArc(kTestBounds.Translate(1, 1), 45, 270, false);
             }},
            {1, 32, 1, 32,
             [](DlOpReceiver& r) { r.drawArc(kTestBounds, 30, 270, false); }},

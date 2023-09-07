@@ -150,7 +150,7 @@ TEST_F(ClipRRectLayerTest, FullyContainedChild) {
   const DlFRect child_bounds = DlFRect::MakeXYWH(1.0, 2.0, 2.0, 2.0);
   const DlFRect layer_bounds = DlFRect::MakeXYWH(0.5, 1.0, 5.0, 6.0);
   const DlPath child_path =
-      DlPath::MakeRect(child_bounds).AddOval(child_bounds.Padded(-0.1, -0.1));
+      DlPath::MakeRect(child_bounds).AddOval(child_bounds.Expand(-0.1, -0.1));
   const DlFRRect layer_rrect = DlFRRect::MakeRectXY(layer_bounds, 0.1, 0.1);
   const DlPaint child_paint = DlPaint(DlColor::kYellow());
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
@@ -196,7 +196,7 @@ TEST_F(ClipRRectLayerTest, PartiallyContainedChild) {
   const DlFRect child_bounds = DlFRect::MakeXYWH(2.5, 5.0, 4.5, 4.0);
   const DlFRect clip_bounds = DlFRect::MakeXYWH(0.5, 1.0, 5.0, 6.0);
   const DlPath child_path =
-      DlPath::MakeRect(child_bounds).AddOval(child_bounds.Padded(-0.1, -0.1));
+      DlPath::MakeRect(child_bounds).AddOval(child_bounds.Expand(-0.1, -0.1));
   const DlFRRect clip_rrect = DlFRRect::MakeRectXY(clip_bounds, 0.1, 0.1);
   const DlPaint child_paint = DlPaint(DlColor::kYellow());
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);

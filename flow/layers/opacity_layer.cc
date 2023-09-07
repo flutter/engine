@@ -56,7 +56,7 @@ void OpacityLayer::Preroll(PrerollContext* context) {
   // regardless of what our children are capable of
   context->renderable_state_flags |= LayerStateStack::kCallerCanApplyOpacity;
 
-  set_paint_bounds(paint_bounds().Translated(offset_));
+  set_paint_bounds(paint_bounds().Translate(offset_));
 
   if (children_can_accept_opacity()) {
     // For opacity layer, we can use raster_cache children only when the

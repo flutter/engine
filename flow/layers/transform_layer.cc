@@ -19,8 +19,8 @@ TransformLayer::TransformLayer(const DlTransform& transform)
   //
   // We have to write this flaky test because there is no reliable way to test
   // whether a variable is initialized or not in C++.
-  FML_DCHECK(transform_.is_finite());
-  if (!transform_.is_finite()) {
+  FML_DCHECK(transform_.IsFinite());
+  if (!transform_.IsFinite()) {
     FML_LOG(ERROR) << "TransformLayer is constructed with an invalid matrix.";
     transform_.SetIdentity();
   }

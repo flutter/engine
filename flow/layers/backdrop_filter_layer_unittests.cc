@@ -200,7 +200,7 @@ TEST_F(BackdropFilterLayerTest, MultipleChildren) {
   const DlFRect child_bounds = DlFRect::MakeLTRB(5.0f, 6.0f, 2.5f, 3.5f);
   const DlPath child_path1 = DlPath().AddRect(child_bounds);
   const DlPath child_path2 =
-      DlPath().AddRect(child_bounds.Translated(3.0f, 0.0f));
+      DlPath().AddRect(child_bounds.Translate(3.0f, 0.0f));
   const DlPaint child_paint1 = DlPaint(DlColor::kYellow());
   const DlPaint child_paint2 = DlPaint(DlColor::kCyan());
   DlFRect children_bounds = child_path1.Bounds().Union(child_path2.Bounds());
@@ -263,7 +263,7 @@ TEST_F(BackdropFilterLayerTest, Nested) {
   const DlFRect child_bounds = DlFRect::MakeLTRB(5.0f, 6.0f, 2.5f, 3.5f);
   const DlPath child_path1 = DlPath().AddRect(child_bounds);
   const DlPath child_path2 =
-      DlPath().AddRect(child_bounds.Translated(3.0f, 0.0f));
+      DlPath().AddRect(child_bounds.Translate(3.0f, 0.0f));
   const DlPaint child_paint1 = DlPaint(DlColor::kYellow());
   const DlPaint child_paint2 = DlPaint(DlColor::kCyan());
   DlFRect children_bounds = child_path1.Bounds().Union(child_path2.Bounds());
@@ -494,9 +494,14 @@ TEST_F(BackdropLayerDiffTest, BackdropLayerInvalidTransform) {
   }
 
   MockLayerTree l1(DlISize(100, 100));
-  DlTransform transform;
-  transform.SetPerspectiveX(0.1);
-  transform.SetPerspectiveY(0.1);
+  DlTransform transform = DlTransform::MakeRowMajor(
+      // clang-format off
+      1.0f, 0.0f, 0.0f, 0.0f,
+      0.0f, 1.0f, 0.0f, 0.0f,
+      0.0f, 0.0f, 1.0f, 0.0f,
+      0.1f, 0.1f, 0.0f, 1.0f
+      // clang-format on
+  );
 
   auto transform_layer = std::make_shared<TransformLayer>(transform);
   l1.root()->Add(transform_layer);

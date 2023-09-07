@@ -74,6 +74,20 @@ namespace flutter {
 /// - DlFRect.RoundedOut() returns a DlFRect (same as its object)
 /// - but DlIRect::MakeRoundedOut(DlFRect) returns a DlIRect
 ///
+/// NaN and Infinity values
+///
+/// Constructing an LTRB rectangle using Infinity values should work as
+/// expected with either 0 or +Infinity returned as the size depending on
+/// which side the Infinity values are on and the sign.
+///
+/// Constructing an XYWH rectangle using Infinity values will usually
+/// not work if the math requires the object to compute a right or bottom
+/// edge from ([xy] -Infinity + [wh] +Infinity). Other combinations might
+/// work.
+///
+/// Any rectangle that is constructed with, or computed to have a NaN value
+/// will be considered the same as any empty rectangle.
+///
 /// ---------------
 /// Special notes on problems using the XYWH form of specifying rectangles:
 ///
@@ -262,14 +276,14 @@ struct DlTRect {
 #undef DL_RECT_DIM
 
   /// Returns true if the rectangle contains no area or contains NaN values.
-  constexpr inline bool is_empty() const {
+  constexpr inline bool IsEmpty() const {
     return !(right_ > left_ && bottom_ > top_);
   }
 
   DL_ONLY_ON_FLOAT(bool)
   /// For rectanles with floating point coordinates, indicates if all of
   /// its values are finite (and non-NaN).
-  constexpr is_finite() const { return DlScalars_AreAllFinite(&left_, 4); }
+  constexpr IsFinite() const { return DlScalars_AreAllFinite(&left_, 4); }
 
   /// Returns the 4 corners of the rectangle in the clockwise order:
   /// [UL, UR, LR, LL]
@@ -376,7 +390,7 @@ struct DlTRect {
   /// Returns a rectangle padded out by the indicated margin values with
   /// positive values expanding the rectangle and negative values
   /// contracting it.
-  [[nodiscard]] DlTRect Padded(T marginX, T marginY) const {
+  [[nodiscard]] DlTRect Expand(T marginX, T marginY) const {
     return {
         left_ - marginX,
         top_ - marginY,
@@ -384,12 +398,12 @@ struct DlTRect {
         bottom_ + marginY,
     };
   }
-  [[nodiscard]] DlTRect Padded(DlTPoint<T> v) const {
-    return Padded(v.x(), v.y());
+  [[nodiscard]] DlTRect Expand(DlTPoint<T> v) const {
+    return Expand(v.x(), v.y());
   }
 
   /// Returns a rectangle translated by the indicated offset values.
-  [[nodiscard]] DlTRect Translated(T dx, T dy) const {
+  [[nodiscard]] DlTRect Translate(T dx, T dy) const {
     return {
         left_ + dx,
         top_ + dy,
@@ -397,17 +411,17 @@ struct DlTRect {
         bottom_ + dy,
     };
   }
-  [[nodiscard]] DlTRect Translated(DlTPoint<T> v) const {
-    return Translated(v.x(), v.y());
+  [[nodiscard]] DlTRect Translate(DlTPoint<T> v) const {
+    return Translate(v.x(), v.y());
   }
 
   /// Returns the geometric union of this rectangle and the specified
   /// rectangle.
   DlTRect Union(const DlTRect& r) const {
-    if (r.is_empty()) {
+    if (r.IsEmpty()) {
       return *this;
     }
-    if (is_empty()) {
+    if (IsEmpty()) {
       return r;
     }
     return MakeLTRB(                  //
@@ -518,8 +532,8 @@ struct DlTRect {
   /// if this rectangle are considered inside it (if it is not empty) and
   /// points along the right and bottom edges are considered outside.
   bool Contains(T x, T y) const {
-    return !this->is_empty() && DlScalars_AreFinite(x, y) &&  //
-           x >= left_ && x < right_ &&                        //
+    return !this->IsEmpty() && DlScalars_AreFinite(x, y) &&  //
+           x >= left_ && x < right_ &&                       //
            y >= top_ && y < bottom_;
   }
   bool Contains(DlTPoint<T> p) const { return Contains(p.x(), p.y()); }
@@ -528,7 +542,7 @@ struct DlTRect {
   /// indicated rectangle and also considered inside this rectangle, as
   /// determined by the |Contains(x, y)| method.
   bool Intersects(const DlTRect& r) const {
-    return !this->is_empty() && !r.is_empty() &&  //
+    return !this->IsEmpty() && !r.IsEmpty() &&  //
            this->left_ < r.right_ && r.left_ < this->right_ &&
            this->top_ < r.bottom_ && r.top_ < this->bottom_;
   }
@@ -537,7 +551,7 @@ struct DlTRect {
   /// rectangle is also considered inside this rectangle, as determined
   /// by the |Contains(x, y)| method.
   bool Contains(const DlTRect& r) const {
-    return !this->is_empty() && !r.is_empty() &&  //
+    return !this->IsEmpty() && !r.IsEmpty() &&  //
            this->left_ <= r.left_ && this->right_ >= r.right_ &&
            this->top_ <= r.top_ && this->bottom_ >= r.bottom_;
   }

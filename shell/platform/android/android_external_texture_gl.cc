@@ -73,7 +73,7 @@ void AndroidExternalTextureGL::Paint(PaintContext& context,
     context.canvas->Scale(bounds.width(), -bounds.height());
 
     auto dl_image = DlImage::Make(image);
-    if (!transform.is_identity()) {
+    if (!transform.IsIdentity()) {
       DlImageColorSource source(dl_image, DlTileMode::kRepeat,
                                 DlTileMode::kRepeat, sampling, &transform);
 

@@ -35,12 +35,12 @@ struct RasterCacheUtil {
   static constexpr int kMinimumRendersBeforeCachingFilterLayer = 3;
 
   static bool CanRasterizeRect(const DlFRect& cull_rect) {
-    if (cull_rect.is_empty()) {
+    if (cull_rect.IsEmpty()) {
       // No point in ever rasterizing an empty display list.
       return false;
     }
 
-    if (!cull_rect.is_finite()) {
+    if (!cull_rect.IsFinite()) {
       // Cannot attempt to rasterize into an infinitely large surface.
       FML_LOG(INFO) << "Attempted to raster cache non-finite display list";
       return false;

@@ -26,7 +26,7 @@ DlRTree::DlRTree(const DlFRect rects[],
   // ID is not filtered by the predicate.
   int leaf_count = 0;
   for (int i = 0; i < N; i++) {
-    if (!rects[i].is_empty()) {
+    if (!rects[i].IsEmpty()) {
       if (ids == nullptr || p(ids[i])) {
         leaf_count++;
       }
@@ -51,7 +51,7 @@ DlRTree::DlRTree(const DlFRect rects[],
   int leaf_index = 0;
   int id = invalid_id;
   for (int i = 0; i < N; i++) {
-    if (!rects[i].is_empty()) {
+    if (!rects[i].IsEmpty()) {
       if (ids == nullptr || p(id = ids[i])) {
         Node& node = nodes_[leaf_index++];
         node.bounds = rects[i];
@@ -141,7 +141,7 @@ DlRTree::DlRTree(const DlFRect rects[],
 
 void DlRTree::search(const DlFRect& query, std::vector<int>* results) const {
   FML_DCHECK(results != nullptr);
-  if (query.is_empty()) {
+  if (query.IsEmpty()) {
     return;
   }
   if (nodes_.size() <= 0) {

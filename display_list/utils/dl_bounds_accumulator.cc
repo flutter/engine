@@ -91,7 +91,7 @@ DlFRect RectBoundsAccumulator::AccumulationRect::bounds() const {
 }
 
 void RTreeBoundsAccumulator::accumulate(const DlFRect& r, int index) {
-  if (!r.is_empty()) {
+  if (!r.IsEmpty()) {
     rects_.push_back(r);
     rect_indices_.push_back(index);
   }

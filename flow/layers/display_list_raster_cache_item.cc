@@ -85,7 +85,7 @@ void DisplayListRasterCacheItem::PrerollSetup(PrerollContext* context,
   transformation_matrix_ = matrix;
   transformation_matrix_.TranslateOuter(offset_.x(), offset_.y());
 
-  if (!transformation_matrix_.is_invertible()) {
+  if (!transformation_matrix_.IsInvertible()) {
     // The matrix was singular. No point in going further.
     return;
   }
@@ -104,7 +104,7 @@ void DisplayListRasterCacheItem::PrerollFinalize(PrerollContext* context,
     return;
   }
   auto* raster_cache = context->raster_cache;
-  DlFRect bounds = display_list_->bounds().Translated(offset_.x(), offset_.y());
+  DlFRect bounds = display_list_->bounds().Translate(offset_.x(), offset_.y());
   bool visible = !context->state_stack.content_culled(bounds);
   RasterCache::CacheInfo cache_info =
       raster_cache->MarkSeen(key_id_, matrix, visible);
@@ -156,7 +156,7 @@ bool DisplayListRasterCacheItem::TryToPrepareRasterCache(
       !context.raster_cache->GenerateNewCacheInThisFrame() || !id.has_value()) {
     return false;
   }
-  DlFRect bounds = display_list_->bounds().Translated(offset_.x(), offset_.y());
+  DlFRect bounds = display_list_->bounds().Translate(offset_.x(), offset_.y());
   RasterCache::Context r_context = {
       // clang-format off
       .gr_context         = context.gr_context,

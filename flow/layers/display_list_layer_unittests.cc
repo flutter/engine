@@ -79,7 +79,7 @@ TEST_F(DisplayListLayerTest, SimpleDisplayList) {
                                                   false, false);
 
   layer->Preroll(preroll_context());
-  EXPECT_EQ(layer->paint_bounds(), picture_bounds.Translated(layer_offset));
+  EXPECT_EQ(layer->paint_bounds(), picture_bounds.Translate(layer_offset));
   EXPECT_EQ(layer->display_list(), display_list.get());
   EXPECT_TRUE(layer->needs_painting(paint_context()));
 
@@ -194,7 +194,7 @@ TEST_F(DisplayListLayerTest, IncompatibleDisplayListOpacityInheritance) {
 
   auto display_list_bounds = picture1_bounds.Union(picture2_bounds);
   DlFRect save_layer_bounds =
-      display_list_bounds.Translated(layer_offset.x(), layer_offset.y());
+      display_list_bounds.Translate(layer_offset.x(), layer_offset.y());
   DisplayListBuilder expected_builder;
   /* opacity_layer::Paint() */ {
     expected_builder.Save();
@@ -361,7 +361,7 @@ TEST_F(DisplayListLayerDiffTest, SimpleDisplayList) {
   tree2.root()->Add(CreateDisplayListLayer(display_list));
 
   damage = DiffLayerTree(tree2, tree1);
-  EXPECT_TRUE(damage.frame_damage.is_empty());
+  EXPECT_TRUE(damage.frame_damage.IsEmpty());
 
   MockLayerTree tree3;
   damage = DiffLayerTree(tree3, tree2);

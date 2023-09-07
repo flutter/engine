@@ -20,8 +20,8 @@ TEST(DlRectTest, FRectEmptyDeclaration) {
   ASSERT_EQ(rect.y(), 0.0f);
   ASSERT_EQ(rect.width(), 0.0f);
   ASSERT_EQ(rect.height(), 0.0f);
-  ASSERT_TRUE(rect.is_empty());
-  ASSERT_TRUE(rect.is_finite());
+  ASSERT_TRUE(rect.IsEmpty());
+  ASSERT_TRUE(rect.IsFinite());
 }
 
 TEST(DlRectTest, IRectEmptyDeclaration) {
@@ -35,8 +35,8 @@ TEST(DlRectTest, IRectEmptyDeclaration) {
   ASSERT_EQ(rect.y(), 0);
   ASSERT_EQ(rect.width(), 0u);
   ASSERT_EQ(rect.height(), 0u);
-  ASSERT_TRUE(rect.is_empty());
-  // ASSERT_TRUE(rect.is_finite());  // should fail to compile
+  ASSERT_TRUE(rect.IsEmpty());
+  // ASSERT_TRUE(rect.IsFinite());  // should fail to compile
 }
 
 TEST(DlRectTest, FRectDefaultConstructor) {
@@ -50,8 +50,8 @@ TEST(DlRectTest, FRectDefaultConstructor) {
   ASSERT_EQ(rect.y(), 0.0f);
   ASSERT_EQ(rect.width(), 0.0f);
   ASSERT_EQ(rect.height(), 0.0f);
-  ASSERT_TRUE(rect.is_empty());
-  ASSERT_TRUE(rect.is_finite());
+  ASSERT_TRUE(rect.IsEmpty());
+  ASSERT_TRUE(rect.IsFinite());
 }
 
 TEST(DlRectTest, IRectDefaultConstructor) {
@@ -65,7 +65,7 @@ TEST(DlRectTest, IRectDefaultConstructor) {
   ASSERT_EQ(rect.y(), 0);
   ASSERT_EQ(rect.width(), 0u);
   ASSERT_EQ(rect.height(), 0u);
-  ASSERT_TRUE(rect.is_empty());
+  ASSERT_TRUE(rect.IsEmpty());
 }
 
 TEST(DlRectTest, FRectSimple) {
@@ -80,8 +80,8 @@ TEST(DlRectTest, FRectSimple) {
   ASSERT_EQ(rect.y(), 10.25f);
   ASSERT_EQ(rect.width(), 15.5f);
   ASSERT_EQ(rect.height(), 15.125f);
-  ASSERT_FALSE(rect.is_empty());
-  ASSERT_TRUE(rect.is_finite());
+  ASSERT_FALSE(rect.IsEmpty());
+  ASSERT_TRUE(rect.IsFinite());
 }
 
 TEST(DlRectTest, IRectSimple) {
@@ -95,7 +95,7 @@ TEST(DlRectTest, IRectSimple) {
   ASSERT_EQ(rect.y(), 10);
   ASSERT_EQ(rect.width(), 15u);
   ASSERT_EQ(rect.height(), 15u);
-  ASSERT_FALSE(rect.is_empty());
+  ASSERT_FALSE(rect.IsEmpty());
 }
 
 TEST(DlRectTest, FRectRoundingEmpty) {
@@ -254,8 +254,8 @@ TEST(DlRectTest, FRectCopy) {
   ASSERT_EQ(copy.y(), 10.25f);
   ASSERT_EQ(copy.width(), 15.5f);
   ASSERT_EQ(copy.height(), 15.125f);
-  ASSERT_FALSE(copy.is_empty());
-  ASSERT_TRUE(copy.is_finite());
+  ASSERT_FALSE(copy.IsEmpty());
+  ASSERT_TRUE(copy.IsFinite());
 }
 
 TEST(DlRectTest, IRectCopy) {
@@ -271,7 +271,7 @@ TEST(DlRectTest, IRectCopy) {
   ASSERT_EQ(copy.y(), 10);
   ASSERT_EQ(copy.width(), 15u);
   ASSERT_EQ(copy.height(), 15u);
-  ASSERT_FALSE(copy.is_empty());
+  ASSERT_FALSE(copy.IsEmpty());
 }
 
 TEST(DlRectTest, IRectDoesNotIntersectEmpty) {
@@ -415,8 +415,8 @@ TEST(DlRectTest, IRectCutOut) {
 
   auto check_empty_flips = [&cull_rect, &empty_rect](const DlIRect& diff_rect,
                                                      const std::string& label) {
-    ASSERT_FALSE(diff_rect.is_empty());
-    ASSERT_FALSE(cull_rect.is_empty());
+    ASSERT_FALSE(diff_rect.IsEmpty());
+    ASSERT_FALSE(cull_rect.IsEmpty());
 
     // unflipped cull_rect vs flipped(empty) diff_rect
     // == cull_rect
@@ -456,7 +456,7 @@ TEST(DlRectTest, IRectCutOut) {
   auto reducing = [&cull_rect, &check_empty_flips](const DlIRect& diff_rect,
                                                    const DlIRect& result_rect,
                                                    const std::string& label) {
-    ASSERT_TRUE(!result_rect.is_empty());
+    ASSERT_TRUE(!result_rect.IsEmpty());
     ASSERT_EQ(cull_rect.CutOut(diff_rect), result_rect) << label;
     check_empty_flips(diff_rect, label);
   };
@@ -538,8 +538,8 @@ TEST(DlRectTest, FRectCutOut) {
 
   auto check_nans = [&cull_rect, &empty_rect](const DlFRect& diff_rect,
                                               const std::string& label) {
-    ASSERT_TRUE(cull_rect.is_finite()) << label;
-    ASSERT_TRUE(diff_rect.is_finite()) << label;
+    ASSERT_TRUE(cull_rect.IsFinite()) << label;
+    ASSERT_TRUE(diff_rect.IsFinite()) << label;
 
     for (int i = 0; i < 4; i++) {
       // NaN in cull_rect produces empty
@@ -568,8 +568,8 @@ TEST(DlRectTest, FRectCutOut) {
 
   auto check_empty_flips = [&cull_rect, &empty_rect](const DlFRect& diff_rect,
                                                      const std::string& label) {
-    ASSERT_FALSE(cull_rect.is_empty()) << label;
-    ASSERT_FALSE(diff_rect.is_empty()) << label;
+    ASSERT_FALSE(cull_rect.IsEmpty()) << label;
+    ASSERT_FALSE(diff_rect.IsEmpty()) << label;
 
     // unflipped cull_rect vs flipped(empty) diff_rect
     // == cull_rect
@@ -617,7 +617,7 @@ TEST(DlRectTest, FRectCutOut) {
   auto reducing = [&cull_rect, &check_empty_flips, &check_nans](
                       const DlFRect& diff_rect, const DlFRect& result_rect,
                       const std::string& label) {
-    ASSERT_TRUE(!result_rect.is_empty());
+    ASSERT_TRUE(!result_rect.IsEmpty());
     ASSERT_EQ(cull_rect.CutOut(diff_rect), result_rect) << label;
     check_empty_flips(diff_rect, label);
     check_nans(diff_rect, label);

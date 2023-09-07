@@ -42,7 +42,7 @@ TEST(MockTextureTest, PaintCalls) {
   texture->Paint(context, paint_bounds2, true, sampling);
 
   DlFRect src1 = DlFRect::MakeBounds(texture_image->bounds());
-  DlFRect src2 = src1.Padded(-1.0, -1.0f);
+  DlFRect src2 = src1.Expand(-1.0, -1.0f);
 
   DisplayListBuilder expected_builder;
   expected_builder.DrawImageRect(texture_image, src1, paint_bounds1, sampling);
@@ -66,7 +66,7 @@ TEST(MockTextureTest, PaintCallsWithLinearSampling) {
   texture->Paint(context, paint_bounds2, true, sampling);
 
   DlFRect src1 = DlFRect::MakeBounds(texture_image->bounds());
-  DlFRect src2 = src1.Padded(-1.0, -1.0f);
+  DlFRect src2 = src1.Expand(-1.0, -1.0f);
 
   DisplayListBuilder expected_builder;
   expected_builder.DrawImageRect(texture_image, src1, paint_bounds1, sampling);

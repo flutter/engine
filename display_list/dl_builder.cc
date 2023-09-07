@@ -683,7 +683,7 @@ void DisplayListBuilder::Transform(const DlTransform& transform) {
 void DisplayListBuilder::ClipRect(const DlFRect& rect,
                                   ClipOp clip_op,
                                   bool is_aa) {
-  if (!rect.is_finite()) {
+  if (!rect.IsFinite()) {
     return;
   }
   tracker_.clipRect(rect, clip_op, is_aa);
@@ -704,7 +704,7 @@ void DisplayListBuilder::ClipRect(const DlFRect& rect,
 void DisplayListBuilder::ClipRRect(const DlFRRect& rrect,
                                    ClipOp clip_op,
                                    bool is_aa) {
-  if (rrect.is_rect()) {
+  if (rrect.IsRect()) {
     clipRect(rrect.Bounds(), clip_op, is_aa);
   } else {
     tracker_.clipRRect(rrect, clip_op, is_aa);
@@ -849,9 +849,9 @@ void DisplayListBuilder::DrawCircle(const DlFPoint& center,
   drawCircle(center, radius);
 }
 void DisplayListBuilder::drawRRect(const DlFRRect& rrect) {
-  if (rrect.is_rect()) {
+  if (rrect.IsRect()) {
     drawRect(rrect.Bounds());
-  } else if (rrect.is_oval()) {
+  } else if (rrect.IsOval()) {
     drawOval(rrect.Bounds());
   } else {
     DisplayListAttributeFlags flags = kDrawRRectFlags;
@@ -1211,7 +1211,7 @@ void DisplayListBuilder::DrawDisplayList(const sk_sp<DisplayList> display_list,
                                          DlScalar opacity) {
   const DlFRect bounds = display_list->bounds();
   if (!DlScalar_IsFinite(opacity) || opacity <= kDlScalar_NearlyZero ||
-      display_list->op_count() == 0 || bounds.is_empty() ||
+      display_list->op_count() == 0 || bounds.IsEmpty() ||
       current_layer_->is_nop_) {
     return;
   }
@@ -1275,7 +1275,7 @@ void DisplayListBuilder::drawTextBlob(const sk_sp<SkTextBlob> blob,
   if (result == OpResult::kNoEffect) {
     return;
   }
-  DlFRect bounds = DlFRect::MakeBounds(blob->bounds()).Translated(x, y);
+  DlFRect bounds = DlFRect::MakeBounds(blob->bounds()).Translate(x, y);
   bool unclipped = AccumulateOpBounds(bounds, flags);
   // TODO(https://github.com/flutter/flutter/issues/82202): Remove once the
   // unit tests can use Fuchsia's font manager instead of the empty default.
@@ -1365,7 +1365,7 @@ bool DisplayListBuilder::AdjustBoundsForPaint(DlFRect& bounds,
       }
       DlScalar min_stroke_width = 0.01;
       pad *= std::max(current_.getStrokeWidth() * 0.5f, min_stroke_width);
-      bounds = bounds.Padded(pad, pad);
+      bounds = bounds.Expand(pad, pad);
     }
   }
 
@@ -1376,7 +1376,7 @@ bool DisplayListBuilder::AdjustBoundsForPaint(DlFRect& bounds,
         case DlMaskFilterType::kBlur: {
           FML_DCHECK(filter->asBlur());
           DlScalar mask_sigma_pad = filter->asBlur()->sigma() * 3.0;
-          bounds = bounds.Padded(mask_sigma_pad, mask_sigma_pad);
+          bounds = bounds.Expand(mask_sigma_pad, mask_sigma_pad);
         }
       }
     }
@@ -1391,7 +1391,7 @@ bool DisplayListBuilder::AdjustBoundsForPaint(DlFRect& bounds,
 
 bool DisplayListBuilder::AccumulateUnbounded() {
   DlFRect clip = tracker_.device_cull_rect();
-  if (clip.is_empty()) {
+  if (clip.IsEmpty()) {
     return false;
   }
   accumulator()->accumulate(clip, op_index_);
@@ -1407,7 +1407,7 @@ bool DisplayListBuilder::AccumulateOpBounds(DlFRect& bounds,
   }
 }
 bool DisplayListBuilder::AccumulateBounds(DlFRect& bounds) {
-  if (!bounds.is_empty()) {
+  if (!bounds.IsEmpty()) {
     tracker_.mapRect(&bounds);
     auto clipped = bounds.Intersection(tracker_.device_cull_rect());
     if (clipped.has_value()) {

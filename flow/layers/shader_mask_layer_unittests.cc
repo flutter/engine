@@ -158,7 +158,7 @@ TEST_F(ShaderMaskLayerTest, MultipleChildren) {
   const DlFRect layer_bounds = DlFRect::MakeLTRB(2.0f, 4.0f, 6.5f, 6.5f);
   const DlPath child_path1 = DlPath::MakeRect(child_bounds);
   const DlPath child_path2 =
-      DlPath::MakeRect(child_bounds.Translated(3.0f, 0.0f));
+      DlPath::MakeRect(child_bounds.Translate(3.0f, 0.0f));
   const DlPaint child_paint1 = DlPaint(DlColor::kYellow());
   const DlPaint child_paint2 = DlPaint(DlColor::kCyan());
   auto dl_filter = MakeFilter(DlColor::kBlue());
@@ -217,7 +217,7 @@ TEST_F(ShaderMaskLayerTest, Nested) {
   const DlFRect layer_bounds = DlFRect::MakeLTRB(2.0f, 4.0f, 20.5f, 20.5f);
   const DlPath child_path1 = DlPath::MakeRect(child_bounds);
   const DlPath child_path2 =
-      DlPath::MakeRect(child_bounds.Translated(3.0f, 0.0f));
+      DlPath::MakeRect(child_bounds.Translate(3.0f, 0.0f));
   const DlPaint child_paint1 = DlPaint(DlColor::kYellow());
   const DlPaint child_paint2 = DlPaint(DlColor::kCyan());
   auto dl_filter1 = MakeFilter(DlColor::kGreen());

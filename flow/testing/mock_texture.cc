@@ -42,7 +42,7 @@ void MockTexture::Paint(PaintContext& context,
   DlFRect src = DlFRect::MakeBounds(texture_->bounds());
   if (freeze) {
     FML_DCHECK(src.width() > 2.0f && src.height() > 2.0f);
-    src = src.Padded(-1.0f, -1.0f);
+    src = src.Expand(-1.0f, -1.0f);
   }
   context.canvas->DrawImageRect(texture_, src, bounds, sampling, context.paint);
 }

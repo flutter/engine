@@ -92,41 +92,41 @@ TEST(LayerStateStack, OldDelegateIsRolledBack) {
   DisplayListBuilder builder2;
   DlCanvas& canvas = builder2;
 
-  ASSERT_TRUE(builder.GetTransform().is_identity());
-  ASSERT_TRUE(canvas.GetTransform().is_identity());
+  ASSERT_TRUE(builder.GetTransform().IsIdentity());
+  ASSERT_TRUE(canvas.GetTransform().IsIdentity());
 
   state_stack.set_delegate(&builder);
 
-  ASSERT_TRUE(builder.GetTransform().is_identity());
-  ASSERT_TRUE(canvas.GetTransform().is_identity());
+  ASSERT_TRUE(builder.GetTransform().IsIdentity());
+  ASSERT_TRUE(canvas.GetTransform().IsIdentity());
 
   auto mutator = state_stack.save();
   mutator.translate({10, 10});
 
   ASSERT_EQ(builder.GetTransform(), DlTransform::MakeTranslate(10, 10));
-  ASSERT_TRUE(canvas.GetTransform().is_identity());
+  ASSERT_TRUE(canvas.GetTransform().IsIdentity());
 
   state_stack.set_delegate(&canvas);
 
-  ASSERT_TRUE(builder.GetTransform().is_identity());
+  ASSERT_TRUE(builder.GetTransform().IsIdentity());
   ASSERT_EQ(canvas.GetTransform(), DlTransform::MakeTranslate(10, 10));
 
   state_stack.set_preroll_delegate(DlFRect::MakeWH(100, 100));
 
-  ASSERT_TRUE(builder.GetTransform().is_identity());
-  ASSERT_TRUE(canvas.GetTransform().is_identity());
+  ASSERT_TRUE(builder.GetTransform().IsIdentity());
+  ASSERT_TRUE(canvas.GetTransform().IsIdentity());
 
   state_stack.set_delegate(&builder);
   state_stack.clear_delegate();
 
-  ASSERT_TRUE(builder.GetTransform().is_identity());
-  ASSERT_TRUE(canvas.GetTransform().is_identity());
+  ASSERT_TRUE(builder.GetTransform().IsIdentity());
+  ASSERT_TRUE(canvas.GetTransform().IsIdentity());
 
   state_stack.set_delegate(&canvas);
   state_stack.clear_delegate();
 
-  ASSERT_TRUE(builder.GetTransform().is_identity());
-  ASSERT_TRUE(canvas.GetTransform().is_identity());
+  ASSERT_TRUE(builder.GetTransform().IsIdentity());
+  ASSERT_TRUE(canvas.GetTransform().IsIdentity());
 }
 
 TEST(LayerStateStack, Opacity) {

@@ -149,7 +149,7 @@ void DisplayList::Dispatch(DlOpReceiver& receiver,
 
 void DisplayList::Dispatch(DlOpReceiver& receiver,
                            const DlFRect& cull_rect) const {
-  if (cull_rect.is_empty()) {
+  if (cull_rect.IsEmpty()) {
     return;
   }
   if (cull_rect.Contains(bounds())) {

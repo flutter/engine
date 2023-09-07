@@ -10,11 +10,11 @@ namespace flutter {
 
 DlFRRect DlFRRect::MakeRectRadii(const DlFRect& in_rect,
                                  const DlFVector in_radii[4]) {
-  if (!in_rect.is_finite()) {
+  if (!in_rect.IsFinite()) {
     return DlFRRect();
   }
   DlFRect sorted = in_rect.Sorted();
-  if (sorted.is_empty()) {
+  if (sorted.IsEmpty()) {
     return DlFRRect();
   }
   bool all_zero = true;
@@ -88,11 +88,11 @@ DlFRRect DlFRRect::MakeRectRadii(const DlFRect& in_rect,
 DlFRRect DlFRRect::MakeRectXY(const DlFRect& in_rect,
                               DlScalar dx,
                               DlScalar dy) {
-  if (!in_rect.is_finite()) {
+  if (!in_rect.IsFinite()) {
     return DlFRRect();
   }
   DlFRect sorted = in_rect.Sorted();
-  if (sorted.is_empty()) {
+  if (sorted.IsEmpty()) {
     return DlFRRect();
   }
   if (!DlScalars_AreFinite(dx, dy) ||  //
@@ -134,6 +134,20 @@ DlFRRect DlFRRect::MakeRectXY(const DlFRect& in_rect,
       {dx, dy},
   };
   return DlFRRect(sorted, radii, type);
+}
+
+DlFRRect DlFRRect::Expand(DlScalar dx, DlScalar dy) const {
+  DlScalar left = rect_.left() - dx;
+  DlScalar right = rect_.right() + dy;
+  if (!(left < right)) {
+    return DlFRRect();
+  }
+  DlScalar top = rect_.top() - dx;
+  DlScalar bottom = rect_.bottom() + dy;
+  if (!(top < bottom)) {
+    return DlFRRect();
+  }
+  return MakeRectRadii(DlFRect::MakeLTRB(left, top, right, bottom), radii_);
 }
 
 // For coordinate (rel_x, rel_y) relative to a given corner, is the point
@@ -198,6 +212,69 @@ bool DlFRRect::Contains(const DlFRect& r) const {
          CornerContains(px_rel_right, py_rel_top, radii_[1]) &&
          CornerContains(px_rel_right, py_rel_bottom, radii_[2]) &&
          CornerContains(px_rel_left, py_rel_bottom, radii_[3]);
+}
+
+bool DlFRRect::operator==(const DlFRRect& r) const {
+  if (type_ != r.type_ || rect_ != r.rect_) {
+    return false;
+  }
+  int count;
+  switch (type_) {
+    case Type::kEmpty:
+    case Type::kRect:
+    case Type::kOval:
+      return true;
+
+    case Type::kCircularCorners:
+      count = 1;
+      break;
+
+    case Type::kOvalCorners:
+      count = 2;
+      break;
+
+    case Type::kNinePatch:
+      count = 6;
+      break;
+
+    case Type::kComplex:
+      count = 8;
+      break;
+  }
+  return DlScalars_AreAllEqual(reinterpret_cast<const DlScalar*>(radii_),
+                               reinterpret_cast<const DlScalar*>(r.radii_),
+                               count);
+}
+
+bool DlFRRect::IsFinite() const {
+  if (!rect_.IsFinite()) {
+    return false;
+  }
+  int count;
+  switch (type_) {
+    case Type::kEmpty:
+    case Type::kRect:
+    case Type::kOval:
+      return true;
+
+    case Type::kCircularCorners:
+      count = 1;
+      break;
+
+    case Type::kOvalCorners:
+      count = 2;
+      break;
+
+    case Type::kNinePatch:
+      count = 6;
+      break;
+
+    case Type::kComplex:
+      count = 8;
+      break;
+  }
+  return DlScalars_AreAllFinite(reinterpret_cast<const DlScalar*>(radii_),
+                                count);
 }
 
 std::ostream& operator<<(std::ostream& os, const DlFRRect& rrect) {

@@ -105,7 +105,7 @@ class DisplayListMatrixClipTracker {
     DlFRect device_cull_rect() const { return cull_rect_; }
     DlFRect local_cull_rect() const;
     bool content_culled(const DlFRect& content_bounds) const;
-    bool is_cull_rect_empty() const { return cull_rect_.is_empty(); }
+    bool is_cull_rect_empty() const { return cull_rect_.IsEmpty(); }
 
     void translate(DlScalar tx, DlScalar ty) { matrix_.TranslateInner(tx, ty); }
     void scale(DlScalar sx, DlScalar sy) { matrix_.ScaleInner(sx, sy); }
@@ -116,9 +116,9 @@ class DisplayListMatrixClipTracker {
     void setIdentity() { matrix_.SetIdentity(); }
     bool mapRect(const DlFRect& rect, DlFRect* mapped) const {
       *mapped = matrix_.TransformRect(rect);
-      return matrix_.rect_stays_rect();
+      return matrix_.RectStaysRect();
     }
-    bool canBeInverted() const { return matrix_.is_invertible(); }
+    bool canBeInverted() const { return matrix_.IsInvertible(); }
 
     void clipBounds(const DlFRect& clip, ClipOp op, bool is_aa);
 

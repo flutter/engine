@@ -317,7 +317,7 @@ TEST_F(OpacityLayerTest, HalfTransparent) {
             std::vector({Mutator(layer_transform), Mutator(alpha_half)}));
 
   DlFRect opacity_bounds =
-      expected_layer_bounds.Translated(-layer_offset).RoundedOut();
+      expected_layer_bounds.Translate(-layer_offset).RoundedOut();
   DlPaint save_paint = DlPaint().setAlpha(alpha_half);
   DlPaint child_dl_paint = DlPaint(DlColor::kGreen());
 
@@ -403,8 +403,8 @@ TEST_F(OpacityLayerTest, Nested) {
   EXPECT_EQ(mock_layer3->parent_mutators(),
             std::vector({Mutator(layer1_transform), Mutator(alpha1)}));
 
-  DlFRect opacity1_bounds = expected_layer1_bounds.Translated(-layer1_offset);
-  DlFRect opacity2_bounds = expected_layer2_bounds.Translated(-layer2_offset);
+  DlFRect opacity1_bounds = expected_layer1_bounds.Translate(-layer1_offset);
+  DlFRect opacity2_bounds = expected_layer2_bounds.Translate(-layer2_offset);
   DlPaint opacity1_paint = DlPaint().setAlpha(alpha1);
   DlPaint opacity2_paint = DlPaint().setAlpha(alpha2);
 

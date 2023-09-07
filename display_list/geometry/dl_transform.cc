@@ -32,23 +32,20 @@ DlTransform DlTransform::MakeConcat(const DlTransform& outer,
   return DlTransform::MakeColMajor(new_m);
 }
 
-DlTransform::Complexity DlTransform::complexity() const {
-  if (complexity_ != Complexity::kUnknown) {
-    return complexity_;
-  }
+DlTransform::Complexity DlTransform::ComputeComplexity(const DlScalar m[16]) {
   Complexity ret = Complexity::kIdentity;
   for (int i = 0; i < 16; i++) {
-    if (m_[i] != identity_values[i]) {
+    if (m[i] != identity_values[i]) {
       ret = std::max(ret, complexity_values[i]);
       if (ret >= Complexity::kLast) {
         break;
       }
     }
   }
-  return (complexity_ = ret);
+  return ret;
 }
 
-bool DlTransform::rect_stays_rect() const {
+bool DlTransform::RectStaysRect() const {
   switch (complexity()) {
     case Complexity::kIdentity:
     case Complexity::kTranslate2D:
@@ -105,10 +102,10 @@ DlTransform& DlTransform::TranslateInner(DlScalar tx, DlScalar ty) {
     case Complexity::kPerspectiveOnlyZ:
     case Complexity::kPerspectiveAll:
       DlFHomogenous3D transformed_tx = TransformHomogenous(tx, ty);
-      DlFPoint normalized_tx = transformed_tx.normalizedToPoint();
+      DlFPoint normalized_tx = transformed_tx.NormalizeToPoint();
       m_[kXT] += normalized_tx.x();
       m_[kYT] += normalized_tx.y();
-      // Whether or not translation goes away, we will still be Affine
+      // Whether or not translation goes away, we will still be Perspective
       break;
   }
   return *this;
@@ -187,7 +184,7 @@ DlFPoint DlTransform::TransformPoint(DlScalar x, DlScalar y) const {
       FML_DCHECK(complexity_ != Complexity::kUnknown);
     case Complexity::kPerspectiveAll: {
       DlScalar w = x * m_[kWX] + y * m_[kWY] + m_[kWT];
-      if (w < kMinimumHomogenous) {
+      if (w < kDlMinimumHomogenous) {
         return DlFPoint();
       }
       w = 1.0 / w;
@@ -210,7 +207,7 @@ void DlTransform::TransformPoints(DlFPoint dst[],
       DlScalar ty = m_[kYT];
       for (int i = 0; i < count; i++) {
         DlFPoint p = src[i];
-        dst[i].Set(p.x() + tx, p.y() + ty);
+        dst[i] = DlFPoint(p.x() + tx, p.y() + ty);
       }
       break;
     }
@@ -222,7 +219,7 @@ void DlTransform::TransformPoints(DlFPoint dst[],
       DlScalar ty = m_[kYT];
       for (int i = 0; i < count; i++) {
         DlFPoint p = src[i];
-        dst[i].Set(mXX * p.x() + tx, mYY * p.y() + ty);
+        dst[i] = DlFPoint(mXX * p.x() + tx, mYY * p.y() + ty);
       }
       break;
     }
@@ -240,8 +237,8 @@ void DlTransform::TransformPoints(DlFPoint dst[],
         DlFPoint p = src[i];
         DlScalar x = p.x();
         DlScalar y = p.y();
-        dst[i].Set(mXX * x + mXY * y + tx,  //
-                   mYX * x + mYY * y + ty);
+        dst[i] = DlFPoint(mXX * x + mXY * y + tx,  //
+                          mYX * x + mYY * y + ty);
       }
       break;
     }
@@ -263,12 +260,12 @@ void DlTransform::TransformPoints(DlFPoint dst[],
         DlScalar x = p.x();
         DlScalar y = p.y();
         DlScalar w = mWX * x + mWY * y + tw;
-        if (w < kMinimumHomogenous) {
-          dst[i].Set(0, 0);
+        if (w < kDlMinimumHomogenous) {
+          dst[i] = DlFPoint(0, 0);
         } else {
           w = 1.0 / w;
-          dst[i].Set(w * (mXX * x + mXY * y + tx),
-                     w * (mYX * x + mYY * y + ty));
+          dst[i] = DlFPoint(w * (mXX * x + mXY * y + tx),
+                            w * (mYX * x + mYY * y + ty));
         }
       }
       break;
@@ -319,7 +316,7 @@ DlFHomogenous3D DlTransform::TransformHomogenous(DlScalar x,
 }
 
 DlFRect DlTransform::TransformRect(const DlFRect& rect) const {
-  if (rect.is_empty() || !rect.is_finite()) {
+  if (rect.IsEmpty() || !rect.IsEmpty()) {
     return {};
   }
   switch (complexity()) {
@@ -371,18 +368,18 @@ DlFRect DlTransform::TransformRect(const DlFRect& rect) const {
       // Process the homogenous coordinate of the corner of the transformed
       // rectangle. If the transformed point is unclipped, it is added to the
       // accumulator directly. If it is clipped by the near clipping plane
-      // as determined by |kMinimumHomogenous| then it will be linearly
+      // as determined by |kDlMinimumHomogenous| then it will be linearly
       // interpolated towards the transformed coordinates of its 2 adjacent
       // corners and the point at which that side of the quad is clipped
       // will be included in the bounds.
       auto ProcessCorner = [&accumulator](const DlFHomogenous3D& previous,
                                           const DlFHomogenous3D& p,
                                           const DlFHomogenous3D& next) {
-        if (!p.is_finite()) {
+        if (!p.IsFinite()) {
           return;
         }
-        if (p.is_unclipped()) {
-          accumulator.accumulate(p.normalizedToPoint());
+        if (p.IsUnclipped()) {
+          accumulator.accumulate(p.NormalizeToPoint());
           return;
         }
         // Process a single corner against a single neighbor. The
@@ -392,13 +389,13 @@ DlFRect DlTransform::TransformRect(const DlFRect& rect) const {
         // out of bounds against the near clipping plane.
         auto InterpolateAndProcess = [&accumulator](const DlFHomogenous3D& p,
                                                     const DlFHomogenous3D& n) {
-          FML_DCHECK(p.is_finite() && !p.is_unclipped());
-          if (n.is_finite() && n.is_unclipped()) {
-            DlScalar fract = (kMinimumHomogenous - p.w()) / (n.w() - p.w());
+          FML_DCHECK(p.IsFinite() && !p.IsUnclipped());
+          if (n.IsFinite() && n.IsUnclipped()) {
+            DlScalar fract = (kDlMinimumHomogenous - p.w()) / (n.w() - p.w());
             DlScalar x = n.x() * fract + p.x() * (1.0f - fract);
             DlScalar y = n.y() * fract + p.y() * (1.0f - fract);
-            accumulator.accumulate(x / kMinimumHomogenous,
-                                   y / kMinimumHomogenous);
+            accumulator.accumulate(x / kDlMinimumHomogenous,
+                                   y / kDlMinimumHomogenous);
           }
         };
         // Either, both, or neither of these interpolations may lead to a
@@ -423,7 +420,7 @@ DlFRect DlTransform::TransformRect(const DlFRect& rect) const {
   }
 }
 
-DlScalar DlTransform::determinant() const {
+DlScalar DlTransform::Determinant() const {
   switch (complexity()) {
     case Complexity::kIdentity:
     case Complexity::kTranslate2D:
@@ -602,7 +599,7 @@ std::optional<DlFVector> DlTransform::ComputeTransformedExpansion(
   if (!DlScalars_AreFinite(dx, dy) || dx < 0 || dy < 0) {
     return {};
   }
-  if (!is_finite() || complexity() >= Complexity::kPerspectiveAll) {
+  if (!IsFinite() || complexity() >= Complexity::kPerspectiveAll) {
     return {};
   }
 
@@ -637,7 +634,7 @@ std::optional<DlFVector> DlTransform::ComputeTransformedExpansion(
 }
 
 DlTransform DlTransform::WithIntegerTranslation() const {
-  if (!is_finite()) {
+  if (!IsFinite()) {
     return *this;
   }
   switch (complexity()) {
@@ -680,7 +677,7 @@ DlTransform DlTransform::AsDeltaTransform() const {
 
 std::ostream& operator<<(std::ostream& os, const DlTransform& t) {
   // clang-format off
-  if (t.is_2D()) {
+  if (t.Is2D()) {
     return os << "DlAffine2D("
               << "[" << t.rc(0, 0) << ", " << t.rc(0, 1) << ", " << t.rc(0, 3) << "], "
               << "[" << t.rc(1, 0) << ", " << t.rc(1, 1) << ", " << t.rc(1, 3) << "]"

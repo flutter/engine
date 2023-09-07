@@ -735,7 +735,7 @@ TEST_F(ContainerLayerDiffTest, ReplaceLayer) {
   t2.root()->Add(c3);
 
   damage = DiffLayerTree(t2, t1);
-  EXPECT_TRUE(damage.frame_damage.is_empty());
+  EXPECT_TRUE(damage.frame_damage.IsEmpty());
 
   MockLayerTree t3;
   t3.root()->Add(CreateContainerLayer({std::make_shared<MockLayer>(path1a)}));

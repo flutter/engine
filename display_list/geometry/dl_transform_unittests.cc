@@ -174,15 +174,15 @@ static bool IsClose(const DlTransform& result,
 TEST(DlTransformTest, ImplicitConstructor) {
   DlTransform transform;
 
-  EXPECT_TRUE(transform.is_identity());
-  EXPECT_TRUE(transform.is_finite());
-  EXPECT_TRUE(transform.is_2D());
-  EXPECT_TRUE(transform.is_translate());
-  EXPECT_TRUE(transform.is_invertible());
-  EXPECT_TRUE(transform.is_scale_translate());
-  EXPECT_TRUE(transform.rect_stays_rect());
-  EXPECT_FALSE(transform.has_perspective());
-  EXPECT_EQ(transform.determinant(), kDlScalar_One);
+  EXPECT_TRUE(transform.IsIdentity());
+  EXPECT_TRUE(transform.IsFinite());
+  EXPECT_TRUE(transform.Is2D());
+  EXPECT_TRUE(transform.IsTranslate());
+  EXPECT_TRUE(transform.IsInvertible());
+  EXPECT_TRUE(transform.IsScaleTranslate());
+  EXPECT_TRUE(transform.RectStaysRect());
+  EXPECT_FALSE(transform.HasPerspective());
+  EXPECT_EQ(transform.Determinant(), kDlScalar_One);
   EXPECT_TRUE(CompareRowMajor(transform, kIdentityMatrix));
   EXPECT_EQ(transform.TransformPoint(12.0f, 17.0f), DlFPoint(12.0f, 17.0f));
   EXPECT_EQ(
@@ -193,15 +193,15 @@ TEST(DlTransformTest, ImplicitConstructor) {
 TEST(DlTransformTest, DefaultConstructor) {
   DlTransform transform = DlTransform();
 
-  EXPECT_TRUE(transform.is_identity());
-  EXPECT_TRUE(transform.is_finite());
-  EXPECT_TRUE(transform.is_2D());
-  EXPECT_TRUE(transform.is_translate());
-  EXPECT_TRUE(transform.is_invertible());
-  EXPECT_TRUE(transform.is_scale_translate());
-  EXPECT_TRUE(transform.rect_stays_rect());
-  EXPECT_FALSE(transform.has_perspective());
-  EXPECT_EQ(transform.determinant(), kDlScalar_One);
+  EXPECT_TRUE(transform.IsIdentity());
+  EXPECT_TRUE(transform.IsFinite());
+  EXPECT_TRUE(transform.Is2D());
+  EXPECT_TRUE(transform.IsTranslate());
+  EXPECT_TRUE(transform.IsInvertible());
+  EXPECT_TRUE(transform.IsScaleTranslate());
+  EXPECT_TRUE(transform.RectStaysRect());
+  EXPECT_FALSE(transform.HasPerspective());
+  EXPECT_EQ(transform.Determinant(), kDlScalar_One);
   EXPECT_TRUE(CompareRowMajor(transform, kIdentityMatrix));
   EXPECT_EQ(transform.TransformPoint(12.0f, 17.0f), DlFPoint(12.0f, 17.0f));
   EXPECT_EQ(
@@ -212,15 +212,15 @@ TEST(DlTransformTest, DefaultConstructor) {
 TEST(DlTransformTest, TranslateConstructor) {
   DlTransform transform = DlTransform::MakeTranslate(5.0f, 6.0f);
 
-  EXPECT_FALSE(transform.is_identity());
-  EXPECT_TRUE(transform.is_finite());
-  EXPECT_TRUE(transform.is_2D());
-  EXPECT_TRUE(transform.is_translate());
-  EXPECT_TRUE(transform.is_invertible());
-  EXPECT_TRUE(transform.is_scale_translate());
-  EXPECT_TRUE(transform.rect_stays_rect());
-  EXPECT_FALSE(transform.has_perspective());
-  EXPECT_EQ(transform.determinant(), kDlScalar_One);
+  EXPECT_FALSE(transform.IsIdentity());
+  EXPECT_TRUE(transform.IsFinite());
+  EXPECT_TRUE(transform.Is2D());
+  EXPECT_TRUE(transform.IsTranslate());
+  EXPECT_TRUE(transform.IsInvertible());
+  EXPECT_TRUE(transform.IsScaleTranslate());
+  EXPECT_TRUE(transform.RectStaysRect());
+  EXPECT_FALSE(transform.HasPerspective());
+  EXPECT_EQ(transform.Determinant(), kDlScalar_One);
   const DlScalar matrix[16] = {
       // clang-format off
       1.0f, 0.0f, 0.0f, 5.0f,
@@ -239,15 +239,15 @@ TEST(DlTransformTest, TranslateConstructor) {
 TEST(DlTransformTest, ScaleConstructor) {
   DlTransform transform = DlTransform::MakeScale(5.0f, 6.0f);
 
-  EXPECT_FALSE(transform.is_identity());
-  EXPECT_TRUE(transform.is_finite());
-  EXPECT_TRUE(transform.is_2D());
-  EXPECT_FALSE(transform.is_translate());
-  EXPECT_TRUE(transform.is_invertible());
-  EXPECT_TRUE(transform.is_scale_translate());
-  EXPECT_TRUE(transform.rect_stays_rect());
-  EXPECT_FALSE(transform.has_perspective());
-  EXPECT_EQ(transform.determinant(), 30.0f);
+  EXPECT_FALSE(transform.IsIdentity());
+  EXPECT_TRUE(transform.IsFinite());
+  EXPECT_TRUE(transform.Is2D());
+  EXPECT_FALSE(transform.IsTranslate());
+  EXPECT_TRUE(transform.IsInvertible());
+  EXPECT_TRUE(transform.IsScaleTranslate());
+  EXPECT_TRUE(transform.RectStaysRect());
+  EXPECT_FALSE(transform.HasPerspective());
+  EXPECT_EQ(transform.Determinant(), 30.0f);
   const DlScalar matrix[16] = {
       // clang-format off
       5.0f, 0.0f, 0.0f, 0.0f,
@@ -335,10 +335,22 @@ TEST(DlTransformTest, ConcatOrder) {
 }
 
 TEST(DlTransformTest, Concat) {
-  auto perspX = DlTransform();
-  perspX.SetPerspectiveX(0.001);
-  auto perspY = DlTransform();
-  perspY.SetPerspectiveY(0.001);
+  auto perspX = DlTransform::MakeRowMajor(
+      // clang-format off
+      1.0f,   0.0f, 0.0f, 0.0f,
+      0.0f,   1.0f, 0.0f, 0.0f,
+      0.0f,   0.0f, 1.0f, 0.0f,
+      0.001f, 0.0f, 0.0f, 1.0f
+      // clang-format on
+  );
+  auto perspY = DlTransform::MakeRowMajor(
+      // clang-format off
+      1.0f, 0.0f,   0.0f, 0.0f,
+      0.0f, 1.0f,   0.0f, 0.0f,
+      0.0f, 0.0f,   1.0f, 0.0f,
+      0.0f, 0.001f, 0.0f, 1.0f
+      // clang-format on
+  );
   std::vector<DlTransform> transforms = {
       DlTransform(),
       DlTransform::MakeTranslate(8.0f, 11.0f),
@@ -378,10 +390,22 @@ TEST(DlTransformTest, Concat) {
 }
 
 TEST(DlTransformTest, Inverse) {
-  auto perspX = DlTransform();
-  perspX.SetPerspectiveX(0.001);
-  auto perspY = DlTransform();
-  perspY.SetPerspectiveY(0.001);
+  auto perspX = DlTransform::MakeRowMajor(
+      // clang-format off
+      1.0f,   0.0f, 0.0f, 0.0f,
+      0.0f,   1.0f, 0.0f, 0.0f,
+      0.0f,   0.0f, 1.0f, 0.0f,
+      0.001f, 0.0f, 0.0f, 1.0f
+      // clang-format on
+  );
+  auto perspY = DlTransform::MakeRowMajor(
+      // clang-format off
+      1.0f, 0.0f,   0.0f, 0.0f,
+      0.0f, 1.0f,   0.0f, 0.0f,
+      0.0f, 0.0f,   1.0f, 0.0f,
+      0.0f, 0.001f, 0.0f, 1.0f
+      // clang-format on
+  );
   std::vector<DlTransform> transforms = {
       DlTransform(),
       DlTransform::MakeTranslate(8.0f, 11.0f),
@@ -459,7 +483,7 @@ static void TestChain(const std::vector<TransformSetup*>& setup_chain,
     for (auto& setup : setup_chain) {
       dl_expected = setup->DlCreate().TransformHomogenous(dl_expected);
     }
-    EXPECT_TRUE(IsClose(dl_result, dl_expected.normalizedToPoint()))
+    EXPECT_TRUE(IsClose(dl_result, dl_expected.NormalizeToPoint()))
         << desc << " (DL)";
 
     if (can_test & kCanTestSkMatrix) {

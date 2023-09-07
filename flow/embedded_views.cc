@@ -36,7 +36,7 @@ void DisplayListEmbedderViewSlice::dispatch(DlOpReceiver& receiver) {
 }
 
 bool DisplayListEmbedderViewSlice::is_empty() {
-  return display_list_->bounds().is_empty();
+  return display_list_->bounds().IsEmpty();
 }
 
 bool DisplayListEmbedderViewSlice::recording_ended() {

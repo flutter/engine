@@ -116,7 +116,7 @@ void AndroidExternalViewEmbedder::SubmitFrame(
       // above the current `slice`
       full_joined_rect = full_joined_rect.Union(overlap);
     }
-    if (!full_joined_rect.is_empty()) {
+    if (!full_joined_rect.IsEmpty()) {
       // Subpixels in the platform may not align with the canvas subpixels.
       //
       // To workaround it, round the floating point bounds and make the rect

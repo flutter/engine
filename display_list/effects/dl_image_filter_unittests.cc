@@ -130,12 +130,12 @@ static void TestBounds(const DlImageFilter& filter,
         // matrix.SetScale(scale, scale);
         // matrix.SkewOuter(skew / 8.0, skew / 8.0);
         // matrix.RotateOuter(DlDegrees(degrees));
-        ASSERT_TRUE(matrix.is_invertible());
+        ASSERT_TRUE(matrix.IsInvertible());
         TestBoundsWithMatrix(filter, matrix, sourceBounds,
                              expectedLocalOutputQuad);
         // matrix.SetPerspectiveX(0.001);
         // matrix.SetPerspectiveY(0.001);
-        // ASSERT_TRUE(matrix.is_invertible());
+        // ASSERT_TRUE(matrix.IsInvertible());
         // TestBoundsWithMatrix(filter, matrix, sourceBounds,
         //                      expectedLocalOutputQuad);
       }
@@ -207,7 +207,7 @@ TEST(DisplayListImageFilter, BlurNotEquals) {
 TEST(DisplayListImageFilter, BlurBounds) {
   DlBlurImageFilter filter = DlBlurImageFilter(5, 10, DlTileMode::kDecal);
   DlFRect input_bounds = DlFRect::MakeLTRB(20, 20, 80, 80);
-  DlFRect expected_output_bounds = input_bounds.Padded(15, 30);
+  DlFRect expected_output_bounds = input_bounds.Expand(15, 30);
   TestBounds(filter, input_bounds, expected_output_bounds);
 }
 
@@ -281,7 +281,7 @@ TEST(DisplayListImageFilter, DilateNotEquals) {
 TEST(DisplayListImageFilter, DilateBounds) {
   DlDilateImageFilter filter = DlDilateImageFilter(5, 10);
   DlFRect input_bounds = DlFRect::MakeLTRB(20, 20, 80, 80);
-  DlFRect expected_output_bounds = input_bounds.Padded(5, 10);
+  DlFRect expected_output_bounds = input_bounds.Expand(5, 10);
   TestBounds(filter, input_bounds, expected_output_bounds);
 }
 
@@ -338,7 +338,7 @@ TEST(DisplayListImageFilter, ErodeNotEquals) {
 TEST(DisplayListImageFilter, ErodeBounds) {
   DlErodeImageFilter filter = DlErodeImageFilter(5, 10);
   DlFRect input_bounds = DlFRect::MakeLTRB(20, 20, 80, 80);
-  DlFRect expected_output_bounds = input_bounds.Padded(-5, -10);
+  DlFRect expected_output_bounds = input_bounds.Expand(-5, -10);
   TestBounds(filter, input_bounds, expected_output_bounds);
 }
 
@@ -411,7 +411,7 @@ TEST(DisplayListImageFilter, MatrixNotEquals) {
 TEST(DisplayListImageFilter, MatrixBounds) {
   DlTransform matrix = DlTransform::MakeAffine2D(2.0, 0.0, 10,  //
                                                  0.5, 3.0, 7);
-  ASSERT_TRUE(matrix.is_invertible());
+  ASSERT_TRUE(matrix.IsInvertible());
   DlMatrixImageFilter filter(matrix, DlImageSampling::kLinear);
   DlFRect input_bounds = DlFRect::MakeLTRB(20, 20, 80, 80);
   DlFPoint expectedOutputQuad[4] = {
@@ -522,7 +522,7 @@ TEST(DisplayListImageFilter, ComposeBounds) {
   DlBlurImageFilter inner = DlBlurImageFilter(12, 5, DlTileMode::kDecal);
   DlComposeImageFilter filter = DlComposeImageFilter(outer, inner);
   DlFRect input_bounds = DlFRect::MakeLTRB(20, 20, 80, 80);
-  DlFRect expected_output_bounds = input_bounds.Padded(36, 15).Padded(5, 10);
+  DlFRect expected_output_bounds = input_bounds.Expand(36, 15).Expand(5, 10);
   TestBounds(filter, input_bounds, expected_output_bounds);
 }
 
@@ -710,8 +710,14 @@ TEST(DisplayListImageFilter, LocalImageFilterBounds) {
           std::make_shared<DlColorFilterImageFilter>(
               dl_color_filter.shared()))};
 
-  auto persp = DlTransform();
-  persp.SetPerspectiveY(0.001);
+  DlTransform persp = DlTransform::MakeRowMajor(
+      // clang-format off
+      1.0f, 0.0f,   0.0f, 0.0f,
+      0.0f, 1.0f,   0.0f, 0.0f,
+      0.0f, 0.0f,   1.0f, 0.0f,
+      0.0f, 0.001f, 0.0f, 1.0f
+      // clang-format on
+  );
   std::vector<DlTransform> matrices = {
       DlTransform::MakeTranslate(10.0, 10.0),
       DlTransform::MakeScale(2.0, 2.0).TranslateInner(10.0, 10.0),

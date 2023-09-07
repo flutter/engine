@@ -318,15 +318,6 @@ class DlTransform {
     complexity_ = Complexity::kUnknown;
   }
 
-  void SetPerspectiveX(DlScalar px) {
-    m_[kWX] = px;
-    complexity_ = Complexity::kPerspectiveAll;
-  }
-  void SetPerspectiveY(DlScalar py) {
-    m_[kWY] = py;
-    complexity_ = Complexity::kPerspectiveAll;
-  }
-
   DlTransform& TranslateInner(DlScalar tx, DlScalar ty);
   DlTransform& TranslateOuter(DlScalar tx, DlScalar ty);
   DlTransform& TranslateInner(DlFPoint p) {
@@ -358,15 +349,15 @@ class DlTransform {
 
   bool operator!=(const DlTransform& other) const { return !(*this == other); }
 
-  bool is_identity() const { return complexity() <= Complexity::kIdentity; }
-  bool is_translate() const { return complexity() <= Complexity::kTranslate2D; }
-  bool is_scale_translate() const {
+  bool IsIdentity() const { return complexity() <= Complexity::kIdentity; }
+  bool IsTranslate() const { return complexity() <= Complexity::kTranslate2D; }
+  bool IsScaleTranslate() const {
     return complexity() <= Complexity::kScaleTranslate2D;
   }
-  bool is_2D() const { return complexity() <= Complexity::kAffine2D; }
-  bool has_perspective() const { return complexity() > Complexity::kAffine3D; }
-  bool is_finite() const { return DlScalars_AreAllFinite(m_, 16); }
-  bool rect_stays_rect() const;
+  bool Is2D() const { return complexity() <= Complexity::kAffine2D; }
+  bool HasPerspective() const { return complexity() > Complexity::kAffine3D; }
+  bool IsFinite() const { return DlScalars_AreAllFinite(m_, 16); }
+  bool RectStaysRect() const;
 
   DlFPoint TransformPoint(DlScalar x, DlScalar y) const;
   DlFPoint TransformPoint(const DlFPoint& point) const {
@@ -405,9 +396,9 @@ class DlTransform {
   std::optional<DlFVector> ComputeTransformedExpansion(DlScalar dx,
                                                        DlScalar dy) const;
 
-  DlScalar determinant() const;
-  bool is_invertible() const {
-    DlScalar d = determinant();
+  DlScalar Determinant() const;
+  bool IsInvertible() const {
+    DlScalar d = Determinant();
     return DlScalar_IsFinite(d) && d != 0.0;
   }
 
@@ -550,7 +541,14 @@ class DlTransform {
       // clang-format on
   };
 
-  Complexity complexity() const;
+  static Complexity ComputeComplexity(const DlScalar matrix[16]);
+  inline Complexity complexity() const {
+    if (complexity_ == Complexity::kUnknown) {
+      complexity_ = ComputeComplexity(m_);
+    }
+    return complexity_;
+  }
+
   static DlScalar Invert4x4Matrix(const DlScalar inMatrix[16],
                                   DlScalar outMatrix[16]);
 

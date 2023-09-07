@@ -29,7 +29,7 @@ TEST_F(PlatformViewLayerTest, NullViewEmbedderDoesntPrerollCompositeOrPaint) {
   layer->Preroll(preroll_context());
   EXPECT_FALSE(preroll_context()->has_platform_view);
   EXPECT_EQ(layer->paint_bounds(),
-            DlFRect::MakeSize(layer_size).Translated(layer_offset));
+            DlFRect::MakeSize(layer_size).Translate(layer_offset));
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_FALSE(layer->subtree_has_platform_view());
 
@@ -59,7 +59,7 @@ TEST_F(PlatformViewLayerTest, ClippedPlatformViewPrerollsAndPaintsNothing) {
   parent_clip_layer->Preroll(preroll_context());
   EXPECT_TRUE(preroll_context()->has_platform_view);
   EXPECT_EQ(layer->paint_bounds(),
-            DlFRect::MakeSize(layer_size).Translated(layer_offset));
+            DlFRect::MakeSize(layer_size).Translate(layer_offset));
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_TRUE(child_clip_layer->needs_painting(paint_context()));
   EXPECT_TRUE(parent_clip_layer->needs_painting(paint_context()));

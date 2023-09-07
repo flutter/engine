@@ -8,20 +8,20 @@ namespace flutter {
 
 std::shared_ptr<DlImageFilter> DlImageFilter::makeWithLocalMatrix(
     const DlTransform& matrix) const {
-  if (matrix.is_identity()) {
+  if (matrix.IsIdentity()) {
     return shared();
   }
   // Matrix
   switch (this->matrix_capability()) {
     case MatrixCapability::kTranslate: {
-      if (!matrix.is_translate()) {
+      if (!matrix.IsTranslate()) {
         // Nothing we can do at this point
         return nullptr;
       }
       break;
     }
     case MatrixCapability::kScaleTranslate: {
-      if (!matrix.is_scale_translate()) {
+      if (!matrix.IsScaleTranslate()) {
         // Nothing we can do at this point
         return nullptr;
       }

@@ -944,7 +944,7 @@ TEST_P(DisplayListTest, CanDrawZeroWidthLine) {
       builder.DrawRect(DlFRect::MakeLTRB(95, 45, 105, 55), outline_paint);
     }
     builder.DrawPath(path, paint);
-    builder.DrawRect(path.Bounds().Padded(5, 5), outline_paint);
+    builder.DrawRect(path.Bounds().Expand(5, 5), outline_paint);
     builder.Translate(0, 150);
   }
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));

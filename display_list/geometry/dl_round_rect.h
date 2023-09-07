@@ -80,7 +80,7 @@ class DlFRRect {
   }
 
   static constexpr DlFRRect MakeRect(const DlFRect& rect) {
-    if (rect.is_empty()) {
+    if (rect.IsEmpty()) {
       return DlFRRect();
     }
     return DlFRRect(rect);
@@ -107,33 +107,33 @@ class DlFRRect {
   inline const DlFVector& lower_left_radii() const { return radii_[3]; }
 
   /// The round rect matches the criteria given for |Type::kEmpty| above.
-  bool is_empty() const { return type_ == Type::kEmpty; }
+  bool IsEmpty() const { return type_ == Type::kEmpty; }
 
   /// The round rect matches the criteria given for |Type::kRect| above.
-  bool is_rect() const { return type_ == Type::kRect; }
+  bool IsRect() const { return type_ == Type::kRect; }
 
   /// The round rect matches the criteria given for |Type::kOval| above.
-  bool is_oval() const { return type_ == Type::kOval; }
+  bool IsOval() const { return type_ == Type::kOval; }
 
   /// The round rect matches the criteria given for |Type::CircularCorners|
   /// above.
-  bool has_circular_corners() const { return type_ == Type::kCircularCorners; }
+  bool HasCircularCorners() const { return type_ == Type::kCircularCorners; }
 
   /// The round rect matches the criteria given for either of the
   /// |Type::kCircularCorners| or |Type::kOvalCorners| types above.
   /// The circular corner case will match this property as well since
   /// a circle is a degenerate oval, while the |type()| property will
   /// return the exact type, distinguishing circular from oval corners.
-  bool has_oval_corners() const {
+  bool HasOvalCorners() const {
     return type_ == Type::kCircularCorners ||  //
            type_ == Type::kOvalCorners;
   }
 
   // The round rect matches the criteria given for |Type::kNinePatch| above.
-  bool is_nine_patch() const { return type_ == Type::kNinePatch; }
+  bool IsNinePatch() const { return type_ == Type::kNinePatch; }
 
   // The round rect matches the criteria given for |Type::kComplex| above.
-  bool is_complex() const { return type_ == Type::kComplex; }
+  bool IsComplex() const { return type_ == Type::kComplex; }
 
   // Fills the supplied array with the corner-specific radii in clockwise
   // order upper left [0], upper right [1], lower right [2], lower left [3].
@@ -141,96 +141,25 @@ class DlFRRect {
     memcpy(radii, radii_, sizeof(radii_));
   }
 
-  [[nodiscard]] DlFRRect Translated(DlScalar dx, DlScalar dy) const {
-    return MakeRectRadii(rect_.Translated(dx, dy), radii_);
+  [[nodiscard]] DlFRRect Translate(DlScalar dx, DlScalar dy) const {
+    return MakeRectRadii(rect_.Translate(dx, dy), radii_);
   }
-  [[nodiscard]] DlFRRect Translated(const DlFVector& v) const {
-    return Translated(v.x(), v.y());
+  [[nodiscard]] DlFRRect Translate(const DlFVector& v) const {
+    return Translate(v.x(), v.y());
   }
 
-  [[nodiscard]] DlFRRect Padded(DlScalar dx, DlScalar dy) const {
-    DlScalar left = rect_.left() - dx;
-    DlScalar right = rect_.right() + dy;
-    if (!(left < right)) {
-      return DlFRRect();
-    }
-    DlScalar top = rect_.top() - dx;
-    DlScalar bottom = rect_.bottom() + dy;
-    if (!(top < bottom)) {
-      return DlFRRect();
-    }
-    return MakeRectRadii(DlFRect::MakeLTRB(left, top, right, bottom), radii_);
-  }
-  [[nodiscard]] DlFRRect Padded(DlFVector inset) const {
-    return Padded(inset.x(), inset.y());
+  [[nodiscard]] DlFRRect Expand(DlScalar dx, DlScalar dy) const;
+  [[nodiscard]] DlFRRect Expand(DlFVector inset) const {
+    return Expand(inset.x(), inset.y());
   }
 
   bool Contains(const DlFPoint& p) const;
   bool Contains(const DlFRect& r) const;
 
-  bool operator==(const DlFRRect& r) const {
-    if (type_ != r.type_ || rect_ != r.rect_) {
-      return false;
-    }
-    int count;
-    switch (type_) {
-      case Type::kEmpty:
-      case Type::kRect:
-      case Type::kOval:
-        return true;
-
-      case Type::kCircularCorners:
-        count = 1;
-        break;
-
-      case Type::kOvalCorners:
-        count = 2;
-        break;
-
-      case Type::kNinePatch:
-        count = 6;
-        break;
-
-      case Type::kComplex:
-        count = 8;
-        break;
-    }
-    return DlScalars_AreAllEqual(reinterpret_cast<const DlScalar*>(radii_),
-                                 reinterpret_cast<const DlScalar*>(r.radii_),
-                                 count);
-  }
+  bool operator==(const DlFRRect& r) const;
   bool operator!=(const DlFRRect& r) const { return !(*this == r); }
 
-  bool is_finite() const {
-    if (!rect_.is_finite()) {
-      return false;
-    }
-    int count;
-    switch (type_) {
-      case Type::kEmpty:
-      case Type::kRect:
-      case Type::kOval:
-        return true;
-
-      case Type::kCircularCorners:
-        count = 1;
-        break;
-
-      case Type::kOvalCorners:
-        count = 2;
-        break;
-
-      case Type::kNinePatch:
-        count = 6;
-        break;
-
-      case Type::kComplex:
-        count = 8;
-        break;
-    }
-    return DlScalars_AreAllFinite(reinterpret_cast<const DlScalar*>(radii_),
-                                  count);
-  }
+  bool IsFinite() const;
 
   inline const DlFRect& Bounds() const { return rect_; }
 

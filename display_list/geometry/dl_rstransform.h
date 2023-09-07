@@ -51,14 +51,14 @@ struct DlRSTransform {
     return !(*this == other);
   }
 
-  bool is_identity() const {
+  bool IsIdentity() const {
     return trig_.x() == 1.0f &&    //
            trig_.y() == 0.0f &&    //
            origin_.x() == 0.0f &&  //
            origin_.y() == 0.0f;
   }
 
-  bool is_finite() const { return trig_.is_finite() && origin_.is_finite(); }
+  bool IsFinite() const { return trig_.IsFinite() && origin_.IsFinite(); }
 
   // Returns the 4 corners of the parallelogram transformed from Rect(0,0,w,h)
   // in the order defined by going clockwise around the untransformed rect.

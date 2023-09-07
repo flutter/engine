@@ -30,7 +30,7 @@ TEST(FlowTest, SurfaceFrameDoesNotHaveEmptyCanvas) {
       /*frame_size=*/DlISize(800, 600),
       /*context_result=*/nullptr, /*display_list_fallback=*/true);
 
-  EXPECT_FALSE(frame.Canvas()->GetLocalClipBounds().is_empty());
+  EXPECT_FALSE(frame.Canvas()->GetLocalClipBounds().IsEmpty());
   EXPECT_FALSE(frame.Canvas()->QuickReject(DlFRect::MakeLTRB(10, 10, 50, 50)));
 }
 

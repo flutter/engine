@@ -140,16 +140,16 @@ class DlImageFilter : public DlAttribute<DlImageFilter, DlImageFilterType> {
                                       DlScalar radius_y,
                                       const DlTransform& ctm,
                                       DlIRect& output_bounds) {
-    if (ctm.is_finite()) {
+    if (ctm.IsFinite()) {
       auto expansion = ctm.ComputeTransformedExpansion(radius_x, radius_y);
       if (expansion.has_value()) {
-        output_bounds = input_bounds.Padded(-Floor(*expansion));
+        output_bounds = input_bounds.Expand(-Floor(*expansion));
         return &output_bounds;
       }
       auto inverse = ctm.Inverse();
       if (inverse.has_value()) {
         DlFRect local_bounds =
-            inverse->TransformRect(input_bounds).Padded(-radius_x, -radius_y);
+            inverse->TransformRect(input_bounds).Expand(-radius_x, -radius_y);
         output_bounds =
             DlIRect::MakeRoundedOut(ctm.TransformRect(local_bounds));
         return &output_bounds;
@@ -164,16 +164,16 @@ class DlImageFilter : public DlAttribute<DlImageFilter, DlImageFilterType> {
                                        DlScalar radius_y,
                                        const DlTransform& ctm,
                                        DlIRect& output_bounds) {
-    if (ctm.is_finite()) {
+    if (ctm.IsFinite()) {
       auto expansion = ctm.ComputeTransformedExpansion(radius_x, radius_y);
       if (expansion.has_value()) {
-        output_bounds = input_bounds.Padded(Ceil(*expansion));
+        output_bounds = input_bounds.Expand(Ceil(*expansion));
         return &output_bounds;
       }
       auto inverse = ctm.Inverse();
       if (inverse.has_value()) {
         DlFRect local_bounds = inverse->TransformRect(input_bounds);
-        local_bounds = local_bounds.Padded(radius_x, radius_y);
+        local_bounds = local_bounds.Expand(radius_x, radius_y);
         output_bounds =
             DlIRect::MakeRoundedOut(ctm.TransformRect(local_bounds));
         return &output_bounds;
@@ -222,7 +222,7 @@ class DlBlurImageFilter final : public DlImageFilter {
 
   DlFRect* map_local_bounds(const DlFRect& input_bounds,
                             DlFRect& output_bounds) const override {
-    output_bounds = input_bounds.Padded(sigma_x_ * 3.0f, sigma_y_ * 3.0f);
+    output_bounds = input_bounds.Expand(sigma_x_ * 3.0f, sigma_y_ * 3.0f);
     return &output_bounds;
   }
 
@@ -290,7 +290,7 @@ class DlDilateImageFilter final : public DlImageFilter {
 
   DlFRect* map_local_bounds(const DlFRect& input_bounds,
                             DlFRect& output_bounds) const override {
-    output_bounds = input_bounds.Padded(radius_x_, radius_y_);
+    output_bounds = input_bounds.Expand(radius_x_, radius_y_);
     return &output_bounds;
   }
 
@@ -355,7 +355,7 @@ class DlErodeImageFilter final : public DlImageFilter {
 
   DlFRect* map_local_bounds(const DlFRect& input_bounds,
                             DlFRect& output_bounds) const override {
-    output_bounds = input_bounds.Padded(-radius_x_, -radius_y_);
+    output_bounds = input_bounds.Expand(-radius_x_, -radius_y_);
     return &output_bounds;
   }
 
@@ -399,7 +399,7 @@ class DlMatrixImageFilter final : public DlImageFilter {
 
   static std::shared_ptr<DlImageFilter> Make(const DlTransform& matrix,
                                              DlImageSampling sampling) {
-    if (matrix.is_finite() && !matrix.is_identity()) {
+    if (matrix.IsFinite() && !matrix.IsIdentity()) {
       return std::make_shared<DlMatrixImageFilter>(matrix, sampling);
     }
     return nullptr;

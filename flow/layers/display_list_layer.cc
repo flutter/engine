@@ -21,7 +21,7 @@ DisplayListLayer::DisplayListLayer(const DlFPoint& offset,
                                    bool will_change)
     : offset_(offset), display_list_(std::move(display_list)) {
   if (display_list_) {
-    bounds_ = display_list_->bounds().Translated(offset_.x(), offset_.y());
+    bounds_ = display_list_->bounds().Translate(offset_.x(), offset_.y());
     display_list_raster_cache_item_ = DisplayListRasterCacheItem::Make(
         display_list_, offset_, is_complex, will_change);
   }

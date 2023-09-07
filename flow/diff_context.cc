@@ -146,7 +146,7 @@ DlFRect DiffContext::MapRect(const DlFRect& rect) {
 
 bool DiffContext::PushCullRect(const DlFRect& clip) {
   clip_tracker_.clipRect(clip, DlCanvas::ClipOp::kIntersect, false);
-  return !clip_tracker_.device_cull_rect().is_empty();
+  return !clip_tracker_.device_cull_rect().IsEmpty();
 }
 
 DlTransform DiffContext::GetTransform() const {

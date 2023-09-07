@@ -134,7 +134,7 @@ void EmbedderLayers::PushPlatformViewLayer(
         } break;
         case MutatorType::kTransform: {
           const auto& matrix = mutator->GetMatrix();
-          if (!matrix.is_identity()) {
+          if (!matrix.IsIdentity()) {
             mutations_array.push_back(
                 mutations_referenced_.emplace_back(ConvertMutation(matrix))
                     .get());
@@ -157,7 +157,7 @@ void EmbedderLayers::PushPlatformViewLayer(
     if (!mutations_array.empty()) {
       // If there are going to be any mutations, they must first take into
       // account the root surface transformation.
-      if (!root_surface_transformation_.is_identity()) {
+      if (!root_surface_transformation_.IsIdentity()) {
         mutations_array.push_back(
             mutations_referenced_
                 .emplace_back(ConvertMutation(root_surface_transformation_))

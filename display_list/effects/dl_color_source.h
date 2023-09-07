@@ -204,7 +204,7 @@ class DlMatrixColorSourceBase : public DlColorSource {
  public:
   const DlTransform& matrix() const { return matrix_; }
   const DlTransform* matrix_ptr() const {
-    return matrix_.is_identity() ? nullptr : &matrix_;
+    return matrix_.IsIdentity() ? nullptr : &matrix_;
   }
 
  protected:

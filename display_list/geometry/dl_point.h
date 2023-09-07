@@ -35,20 +35,8 @@ struct DlTPoint {
 
   constexpr inline T x() const { return x_; }
   constexpr inline T y() const { return y_; }
-  constexpr inline T length() const { return std::sqrt(x_ * x_ + y_ * y_); }
 
-  inline void SetX(T x) { x_ = x; }
-  inline void SetY(T y) { y_ = y; }
-
-  inline void Set(T x, T y) {
-    x_ = x;
-    y_ = y;
-  }
-
-  void Offset(T dx, T dy) {
-    x_ += dx;
-    y_ += dy;
-  }
+  constexpr inline T Length() const { return std::sqrt(x_ * x_ + y_ * y_); }
 
   template <typename U>
   void operator=(const U& p) {
@@ -57,13 +45,21 @@ struct DlTPoint {
   }
 
   DlTPoint operator+(const DlTPoint& p) const { return {x_ + p.x_, y_ + p.y_}; }
+  DlTPoint& operator+=(const DlTPoint& p) {
+    *this = *this + p;
+    return *this;
+  }
   DlTPoint operator-(const DlTPoint& p) const { return {x_ - p.x_, y_ - p.y_}; }
+  DlTPoint& operator-=(const DlTPoint& p) {
+    *this = *this - p;
+    return *this;
+  }
   DlTPoint operator-() const { return {-x_, -y_}; }
 
   bool operator==(const DlTPoint& p) const { return x_ == p.x_ && y_ == p.y_; }
   bool operator!=(const DlTPoint& p) const { return !(*this == p); }
 
-  bool is_finite() const { return DlScalars_AreFinite(x_, y_); }
+  bool IsFinite() const { return DlScalars_AreFinite(x_, y_); }
 };
 
 using DlFPoint = DlTPoint<DlScalar>;
@@ -72,23 +68,25 @@ using DlFVector = DlFPoint;
 using DlIVector = DlIPoint;
 
 static inline DlIVector Floor(const DlFVector& vector) {
-  return DlIPoint(floor(vector.x()), floor(vector.y()));
+  return DlIPoint(DlScalar_ToInt(floor(vector.x())),
+                  DlScalar_ToInt(floor(vector.y())));
 }
 
 static inline DlIVector Ceil(const DlFVector& vector) {
-  return DlIPoint(ceil(vector.x()), ceil(vector.y()));
+  return DlIPoint(DlScalar_ToInt(ceil(vector.x())),
+                  DlScalar_ToInt(ceil(vector.y())));
 }
 
 template <typename T>
-inline DlTPoint<T> operator*(const DlTPoint<T> p, T v) {
+inline DlTPoint<T> operator*(const DlTPoint<T>& p, T v) {
   return {p.x() * v, p.y() * v};
 }
 template <typename T>
-inline DlTPoint<T> operator*(T v, const DlTPoint<T> p) {
+inline DlTPoint<T> operator*(T v, const DlTPoint<T>& p) {
   return p * v;
 }
 template <typename T>
-inline DlTPoint<T> operator/(const DlTPoint<T> p, T v) {
+inline DlTPoint<T> operator/(const DlTPoint<T>& p, T v) {
   return p * (1.0f / v);
 }
 
@@ -118,20 +116,6 @@ struct DlFVector3 : public DlTPoint<DlScalar> {
     return std::sqrt(x_ * x_ + y_ * y_ + z_ * z_);
   }
 
-  inline void SetZ(DlScalar z) { z_ = z; }
-
-  inline void Set(DlScalar x, DlScalar y, DlScalar z) {
-    x_ = x;
-    y_ = y;
-    z_ = z;
-  }
-
-  void Offset(DlScalar dx, DlScalar dy, DlScalar dz) {
-    x_ += dx;
-    y_ += dy;
-    z_ += dz;
-  }
-
   constexpr inline DlScalar operator[](int i) const {
     return static_cast<const DlScalar*>(&x_)[i];
   }
@@ -146,8 +130,16 @@ struct DlFVector3 : public DlTPoint<DlScalar> {
   DlFVector3 operator+(const DlFVector3& p) const {
     return {x_ + p.x_, y_ + p.y_, z_ + p.z_};
   }
+  DlFVector3& operator+=(const DlFVector3& p) {
+    *this = *this + p;
+    return *this;
+  }
   DlFVector3 operator-(const DlFVector3& p) const {
     return {x_ - p.x_, y_ - p.y_, z_ - p.z_};
+  }
+  DlFVector3& operator-=(const DlFVector3& p) {
+    *this = *this - p;
+    return *this;
   }
   DlFVector3 operator-() const { return {-x_, -y_, -z_}; }
 
@@ -156,8 +148,8 @@ struct DlFVector3 : public DlTPoint<DlScalar> {
   }
   bool operator!=(const DlFVector3& p) const { return !(*this == p); }
 
-  bool is_finite() const {
-    return DlTPoint<DlScalar>::is_finite() && DlScalar_IsFinite(z_);
+  bool IsFinite() const {
+    return DlTPoint<DlScalar>::IsFinite() && DlScalar_IsFinite(z_);
   }
 };
 
@@ -203,22 +195,6 @@ struct DlFVector4 : public DlFVector3 {
     return std::sqrt(x_ * x_ + y_ * y_ + z_ * z_) / w_;
   }
 
-  inline void SetW(DlScalar w) { w_ = w; }
-
-  inline void Set(DlScalar x, DlScalar y, DlScalar z, DlScalar w) {
-    x_ = x;
-    y_ = y;
-    z_ = z;
-    w_ = w;
-  }
-
-  void Offset(DlScalar dx, DlScalar dy, DlScalar dz, DlScalar dw) {
-    x_ += dx;
-    y_ += dy;
-    z_ += dz;
-    w_ += dw;
-  }
-
   constexpr inline DlScalar operator[](int i) const {
     return static_cast<const DlScalar*>(&x_)[i];
   }
@@ -236,8 +212,8 @@ struct DlFVector4 : public DlFVector3 {
   }
   bool operator!=(const DlFVector4& p) const { return !(*this == p); }
 
-  bool is_finite() const {
-    return DlFVector3::is_finite() && DlScalar_IsFinite(w_);
+  bool IsFinite() const {
+    return DlFVector3::IsFinite() && DlScalar_IsFinite(w_);
   }
 };
 

@@ -536,9 +536,9 @@ void MutatorContext::translate(DlScalar tx, DlScalar ty) {
 }
 
 void MutatorContext::transform(const DlTransform& matrix) {
-  if (matrix.is_translate()) {
+  if (matrix.IsTranslate()) {
     translate(matrix.rc(0, 3), matrix.rc(1, 3));
-  } else if (!matrix.is_identity()) {
+  } else if (!matrix.IsIdentity()) {
     layer_state_stack_->maybe_save_layer_for_transform(save_needed_);
     save_needed_ = false;
     layer_state_stack_->push_transform(matrix);

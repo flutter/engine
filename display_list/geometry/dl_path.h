@@ -45,7 +45,7 @@ class DlPath {
   // oval might intercept those 2 coordinates.  ArcSize and Direction
   // combine to allow the caller to choose from one of the four parts
   // of the oval which might match the given coordinate constraints.
-  enum ArcSize {
+  enum class ArcSize {
     kSmall_ArcSize,  // smaller of the matching arc pairs
     kLarge_ArcSize,  // larger of the matching arc pairs
   };
