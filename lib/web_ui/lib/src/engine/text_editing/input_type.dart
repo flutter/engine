@@ -92,6 +92,9 @@ class NoTextInputType extends EngineInputType {
 
   @override
   String get inputmodeAttribute => 'none';
+
+  @override
+  DomHTMLElement createDomElement() => createDomHTMLTextAreaElement();
 }
 
 /// Single-line text input type.
