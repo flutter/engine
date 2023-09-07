@@ -626,7 +626,8 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
                                      // view or textInputPlugin.
                                      NSResponder* firstResponder = [[event window] firstResponder];
                                      if (weakSelf.viewLoaded && weakSelf.flutterView &&
-                                         (firstResponder == weakSelf.flutterView ||
+                                         (firstResponder == weakSelf.view ||
+                                          firstResponder == weakSelf.flutterView ||
                                           firstResponder == weakSelf.textInputPlugin) &&
                                          ([event modifierFlags] & NSEventModifierFlagCommand) &&
                                          ([event type] == NSEventTypeKeyUp)) {
