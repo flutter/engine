@@ -527,13 +527,13 @@ void Canvas::SaveLayer(const Paint& paint,
   // Only apply opacity peephole on default blending.
   if (paint.blend_mode == BlendMode::kSourceOver) {
     new_layer_pass.SetDelegate(
-        std::make_unique<OpacityPeepholePassDelegate>(paint));
+        std::make_shared<OpacityPeepholePassDelegate>(paint));
   } else {
-    new_layer_pass.SetDelegate(std::make_unique<PaintPassDelegate>(paint));
+    new_layer_pass.SetDelegate(std::make_shared<PaintPassDelegate>(paint));
   }
 }
 
-void Canvas::DrawTextFrame(const TextFrame& text_frame,
+void Canvas::DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
                            Point position,
                            const Paint& paint) {
   Entity entity;
@@ -541,7 +541,7 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
   entity.SetBlendMode(paint.blend_mode);
 
   auto text_contents = std::make_shared<TextContents>();
-  text_contents->SetTextFrame(TextFrame(text_frame));
+  text_contents->SetTextFrame(text_frame);
   text_contents->SetColor(paint.color);
 
   entity.SetTransformation(GetCurrentTransformation() *
