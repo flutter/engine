@@ -316,7 +316,7 @@ DlFHomogenous3D DlTransform::TransformHomogenous(DlScalar x,
 }
 
 DlFRect DlTransform::TransformRect(const DlFRect& rect) const {
-  if (rect.IsEmpty() || !rect.IsEmpty()) {
+  if (rect.IsEmpty() || !rect.IsFinite()) {
     return {};
   }
   switch (complexity()) {

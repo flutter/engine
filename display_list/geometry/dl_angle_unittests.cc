@@ -106,6 +106,16 @@ TEST(DlAngleTest, NaNInfinityCosSin) {
   ASSERT_EQ(DlDegrees(nan).CosSin(), DlFVector(1.0f, 0.0f));
   ASSERT_EQ(DlDegrees(pos_inf).CosSin(), DlFVector(1.0f, 0.0f));
   ASSERT_EQ(DlDegrees(neg_inf).CosSin(), DlFVector(1.0f, 0.0f));
+  ASSERT_EQ(DlRadians(nan).CosSin(), DlFVector(1.0f, 0.0f));
+  ASSERT_EQ(DlRadians(pos_inf).CosSin(), DlFVector(1.0f, 0.0f));
+  ASSERT_EQ(DlRadians(neg_inf).CosSin(), DlFVector(1.0f, 0.0f));
+
+  ASSERT_EQ(DlDegrees(nan).CosSin(), DlDegrees(0).CosSin());
+  ASSERT_EQ(DlDegrees(pos_inf).CosSin(), DlDegrees(0).CosSin());
+  ASSERT_EQ(DlDegrees(neg_inf).CosSin(), DlDegrees(0).CosSin());
+  ASSERT_EQ(DlRadians(nan).CosSin(), DlRadians(0).CosSin());
+  ASSERT_EQ(DlRadians(pos_inf).CosSin(), DlRadians(0).CosSin());
+  ASSERT_EQ(DlRadians(neg_inf).CosSin(), DlRadians(0).CosSin());
 }
 
 }  // namespace testing
