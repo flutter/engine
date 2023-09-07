@@ -162,6 +162,7 @@ if (enable_unittests) {
     sources = [
       "dl_base_types_unittests.cc",
       "geometry/dl_angle_unittests.cc",
+      "geometry/dl_homogenous_unittests.cc",
       "geometry/dl_rect_unittests.cc",
       "geometry/dl_region_unittests.cc",
       "geometry/dl_round_rect_unittests.cc",

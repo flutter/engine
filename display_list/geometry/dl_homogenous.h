@@ -54,8 +54,13 @@ static constexpr DlScalar kDlMinimumHomogenous = 1.0 / (1 << 14);
 /// Transforms that do not affect perspective will leave the homogenous
 /// weight property of all points as "1.0" and so tracking the homogenous
 /// weight can be inefficient unless a transform will involve perspective,
-/// but is otherwise safe as the default weight of "1.0" safely produces a
-/// normalized absolute coordinate that matches the homogenous coordinates.
+/// but is otherwise safe as the default weight of "1.0" safely produces
+/// normalized absolute coordinates that match the homogenous coordinates.
+///
+/// NaN and Infinity handling
+///
+/// The structure will happily store NaN and Infinity values, but will
+/// normalize to a zero vector if any are present in the source vector.
 struct DlFHomogenous3D {
  private:
   DlScalar x_;
@@ -83,11 +88,17 @@ struct DlFHomogenous3D {
   inline DlScalar w() const { return w_; }
 
   [[nodiscard]] DlTPoint<DlScalar> NormalizeToPoint() const {
+    if (!IsFinite()) {
+      return {};
+    }
     DlScalar inv_w = DlScalar_IsNearlyZero(w_) ? 1.0f : 1.0f / w_;
     return {x_ * inv_w, y_ * inv_w};
   }
 
   [[nodiscard]] DlFHomogenous3D Normalize() const {
+    if (!IsFinite()) {
+      return {};
+    }
     DlScalar inv_w = DlScalar_IsNearlyZero(w_) ? 1.0f : 1.0f / w_;
     return {x_ * inv_w, y_ * inv_w, z_ * inv_w};
   }

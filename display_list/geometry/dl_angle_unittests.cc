@@ -10,81 +10,81 @@ namespace testing {
 
 TEST(DlAngleTest, RadiansEmptyConstructor) {
   DlRadians radians;
-  EXPECT_EQ(radians.radians(), 0.0);
-  EXPECT_EQ(radians.degrees(), 0.0);
+  EXPECT_EQ(radians.radians(), 0.0f);
+  EXPECT_EQ(radians.degrees(), 0.0f);
 }
 
 TEST(DlAngleTest, DegreesEmptyConstructor) {
   DlDegrees degrees;
-  EXPECT_EQ(degrees.radians(), 0.0);
-  EXPECT_EQ(degrees.degrees(), 0.0);
+  EXPECT_EQ(degrees.radians(), 0.0f);
+  EXPECT_EQ(degrees.degrees(), 0.0f);
 }
 
 TEST(DlAngleTest, RadiansSimpleConstructor) {
   DlRadians radians(kDlScalar_Pi);
   EXPECT_EQ(radians.radians(), kDlScalar_Pi);
-  EXPECT_EQ(radians.degrees(), 180.0);
+  EXPECT_EQ(radians.degrees(), 180.0f);
 }
 
 TEST(DlAngleTest, DegreesSimpleConstructor) {
-  DlDegrees degrees(180.0);
+  DlDegrees degrees(180.0f);
   EXPECT_EQ(degrees.radians(), kDlScalar_Pi);
-  EXPECT_EQ(degrees.degrees(), 180.0);
+  EXPECT_EQ(degrees.degrees(), 180.0f);
 }
 
 TEST(DlAngleTest, RadiansToDegreesConversion) {
   DlRadians radians(kDlScalar_Pi);
   EXPECT_EQ(radians.radians(), kDlScalar_Pi);
-  EXPECT_EQ(radians.degrees(), 180.0);
+  EXPECT_EQ(radians.degrees(), 180.0f);
   DlDegrees degrees = radians;
   EXPECT_EQ(degrees.radians(), kDlScalar_Pi);
-  EXPECT_EQ(degrees.degrees(), 180.0);
+  EXPECT_EQ(degrees.degrees(), 180.0f);
 }
 
 TEST(DlAngleTest, DegreesToRadiansConversion) {
-  DlDegrees degrees(180.0);
+  DlDegrees degrees(180.0f);
   EXPECT_EQ(degrees.radians(), kDlScalar_Pi);
-  EXPECT_EQ(degrees.degrees(), 180.0);
+  EXPECT_EQ(degrees.degrees(), 180.0f);
   DlRadians radians = degrees;
   EXPECT_EQ(radians.radians(), kDlScalar_Pi);
-  EXPECT_EQ(radians.degrees(), 180.0);
+  EXPECT_EQ(radians.degrees(), 180.0f);
 }
 
 TEST(DlAngleTest, RadiansToDegreesArgumentConversion) {
   DlRadians radians(kDlScalar_Pi);
   EXPECT_EQ(radians.radians(), kDlScalar_Pi);
-  EXPECT_EQ(radians.degrees(), 180.0);
+  EXPECT_EQ(radians.degrees(), 180.0f);
   auto test = [](const DlDegrees& degrees) {
     EXPECT_EQ(degrees.radians(), kDlScalar_Pi);
-    EXPECT_EQ(degrees.degrees(), 180.0);
+    EXPECT_EQ(degrees.degrees(), 180.0f);
   };
   test(radians);
   auto test2 = [](const DlDegrees& degrees) {
     EXPECT_EQ(degrees.radians(), kDlScalar_Pi);
-    EXPECT_EQ(degrees.degrees(), 180.0);
+    EXPECT_EQ(degrees.degrees(), 180.0f);
   };
   test2(radians);
 }
 
 TEST(DlAngleTest, DegreesToRadiansArgumentConversion) {
-  DlDegrees degrees(180.0);
+  DlDegrees degrees(180.0f);
   EXPECT_EQ(degrees.radians(), kDlScalar_Pi);
-  EXPECT_EQ(degrees.degrees(), 180.0);
+  EXPECT_EQ(degrees.degrees(), 180.0f);
   auto test = [](const DlRadians& radians) {
     EXPECT_EQ(radians.radians(), kDlScalar_Pi);
-    EXPECT_EQ(radians.degrees(), 180.0);
+    EXPECT_EQ(radians.degrees(), 180.0f);
   };
   test(degrees);
   auto test2 = [](const DlRadians& radians) {
     EXPECT_EQ(radians.radians(), kDlScalar_Pi);
-    EXPECT_EQ(radians.degrees(), 180.0);
+    EXPECT_EQ(radians.degrees(), 180.0f);
   };
   test2(degrees);
 }
 
 TEST(DlAngleTest, DegreesCosSin) {
   for (int i = -360; i <= 720; i++) {
-    DlScalar radians = i * kDlScalar_Pi / 180.0;
+    DlScalar radians = i * kDlScalar_Pi / 180.0f;
     {
       DlFVector cos_sin = DlDegrees(i).CosSin();
       EXPECT_TRUE(DlScalar_IsNearlyZero(cos_sin.x() - cosf(radians)));
