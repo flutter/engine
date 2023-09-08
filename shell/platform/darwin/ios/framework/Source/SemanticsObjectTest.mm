@@ -12,12 +12,6 @@ FLUTTER_ASSERT_ARC
 
 const CGRect kScreenSize = CGRectMake(0, 0, 600, 800);
 
-// copied from clang document: https://clang-analyzer.llvm.org/faq.html#unlocalized_string
-__attribute__((annotate("returns_localized_nsstring"))) static inline NSString*
-LocalizationNotNeeded(NSString* s) {
-  return s;
-}
-
 namespace flutter {
 namespace {
 
@@ -666,9 +660,11 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
   [scrollable accessibilityBridgeDidFinishUpdate];
   UIScrollView* scrollView = [scrollable nativeAccessibility];
   XCTAssertTrue(scrollView.isAccessibilityElement);
-  XCTAssertTrue([scrollView.accessibilityLabel isEqualToString:LocalizationNotNeeded(@"label")]);
-  XCTAssertTrue([scrollView.accessibilityValue isEqualToString:LocalizationNotNeeded(@"value")]);
-  XCTAssertTrue([scrollView.accessibilityHint isEqualToString:LocalizationNotNeeded(@"hint")]);
+  XCTAssertTrue(
+      [scrollView.accessibilityLabel isEqualToString:NSLocalizedString(@"label", @"test")]);
+  XCTAssertTrue(
+      [scrollView.accessibilityValue isEqualToString:NSLocalizedString(@"value", @"test")]);
+  XCTAssertTrue([scrollView.accessibilityHint isEqualToString:NSLocalizedString(@"hint", @"test")]);
 }
 
 - (void)testFlutterSemanticsObjectMergeTooltipToLabel {
@@ -794,7 +790,7 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
   FlutterSemanticsObject* object = [[FlutterSemanticsObject alloc] initWithBridge:bridge uid:0];
   [object setSemanticsNode:&node];
   NSMutableAttributedString* expectedAttributedLabel =
-      [[NSMutableAttributedString alloc] initWithString:LocalizationNotNeeded(@"label")];
+      [[NSMutableAttributedString alloc] initWithString:NSLocalizedString(@"label", @"test")];
   NSDictionary* attributeDict = @{
     UIAccessibilitySpeechAttributeSpellOut : @YES,
   };
@@ -803,7 +799,7 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
       [object.accessibilityAttributedLabel isEqualToAttributedString:expectedAttributedLabel]);
 
   NSMutableAttributedString* expectedAttributedValue =
-      [[NSMutableAttributedString alloc] initWithString:LocalizationNotNeeded(@"value")];
+      [[NSMutableAttributedString alloc] initWithString:NSLocalizedString(@"value", @"test")];
   attributeDict = @{
     UIAccessibilitySpeechAttributeSpellOut : @YES,
   };
@@ -812,7 +808,7 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
       [object.accessibilityAttributedValue isEqualToAttributedString:expectedAttributedValue]);
 
   NSMutableAttributedString* expectedAttributedHint =
-      [[NSMutableAttributedString alloc] initWithString:LocalizationNotNeeded(@"hint")];
+      [[NSMutableAttributedString alloc] initWithString:NSLocalizedString(@"hint", @"test")];
   attributeDict = @{
     UIAccessibilitySpeechAttributeLanguage : @"en-MX",
   };

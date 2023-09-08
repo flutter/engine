@@ -2645,8 +2645,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
   // Unmerge threads before the end of the test
   // TaskRunners are required to be unmerged before destruction.
-  while (raster_thread_merger->DecrementLease() != fml::RasterThreadStatus::kUnmergedNow)
-    ;
+  while (raster_thread_merger->DecrementLease() != fml::RasterThreadStatus::kUnmergedNow) {
+  }
 }
 
 - (int)alphaOfPoint:(CGPoint)point onView:(UIView*)view {

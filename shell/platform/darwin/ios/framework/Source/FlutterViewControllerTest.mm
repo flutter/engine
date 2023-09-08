@@ -1585,6 +1585,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
                                                   usingBlock:^(NSNotification* _Nonnull note) {
                                                     [expectation fulfill];
                                                   }];
+    XCTAssertNotNil(realVC);
     realVC = nil;
   }
   [self waitForExpectations:@[ expectation ] timeout:1.0];
