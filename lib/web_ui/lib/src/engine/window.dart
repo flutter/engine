@@ -20,6 +20,7 @@ import 'embedder.dart';
 import 'mouse/cursor.dart';
 import 'navigation/history.dart';
 import 'platform_dispatcher.dart';
+import 'platform_views/message_handler.dart';
 import 'services.dart';
 import 'util.dart';
 
@@ -36,8 +37,10 @@ const int kImplicitViewId = 0;
 /// In addition to everything defined in [ui.FlutterView], this class adds
 /// a few web-specific properties.
 abstract interface class EngineFlutterView extends ui.FlutterView {
-  MouseCursor get mouseCursor;
   DomElement get rootElement;
+
+  MouseCursor get mouseCursor;
+  PlatformViewMessageHandler get platformViewMessageHandler;
 }
 
 /// The Web implementation of [ui.SingletonFlutterWindow].
@@ -69,6 +72,10 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow implements EngineFlu
 
   @override
   DomElement get rootElement => flutterViewEmbedder.flutterViewElement;
+
+  @override
+  late final PlatformViewMessageHandler platformViewMessageHandler =
+      PlatformViewMessageHandler(platformViewsContainer: flutterViewEmbedder.glassPaneElement);
 
   /// Handles the browser history integration to allow users to use the back
   /// button, etc.
