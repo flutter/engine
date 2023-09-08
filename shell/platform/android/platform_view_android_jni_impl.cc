@@ -1913,7 +1913,7 @@ bool PlatformViewAndroidJNIImpl::RequestDartDeferredLibrary(
 void PlatformViewAndroidJNIImpl::OnRasterStart(
     const FrameTimingsRecorder& frame_timings_recorder) {
   fml::TimePoint now = fml::TimePoint::Now();
-  fml::TimePoint wal_time = fml::TimePoint::CurrentWallTime();
+  fml::TimePoint wall_time = fml::TimePoint::CurrentWallTime();
 
   JNIEnv* env = fml::jni::AttachCurrentThread();
   auto java_object = java_object_.get(env);
@@ -1921,23 +1921,23 @@ void PlatformViewAndroidJNIImpl::OnRasterStart(
     return;
   }
 
-  fml::TimePoint build_start_wal_time =
-      wal_time - (now - frame_timings_recorder.GetBuildStartTime());
+  fml::TimePoint build_start_wall_time =
+      wall_time - (now - frame_timings_recorder.GetBuildStartTime());
 
-  fml::TimePoint build_end_wal_time =
-      wal_time - (now - frame_timings_recorder.GetBuildEndTime());
+  fml::TimePoint build_end_wall_time =
+      wall_time - (now - frame_timings_recorder.GetBuildEndTime());
 
-  fml::TimePoint raster_start_wal_time =
-      wal_time - (now - frame_timings_recorder.GetRasterStartTime());
+  fml::TimePoint raster_start_wall_time =
+      wall_time - (now - frame_timings_recorder.GetRasterStartTime());
 
   env->CallVoidMethod(
       java_object.obj(), g_on_raster_start_method,
       reinterpret_cast<jlong>(
-          build_start_wal_time.ToEpochDelta().ToNanoseconds()),
+          build_start_wall_time.ToEpochDelta().ToNanoseconds()),
       reinterpret_cast<jlong>(
-          build_end_wal_time.ToEpochDelta().ToNanoseconds()),
+          build_end_wall_time.ToEpochDelta().ToNanoseconds()),
       reinterpret_cast<jlong>(
-          raster_start_wal_time.ToEpochDelta().ToNanoseconds()));
+          raster_start_wall_time.ToEpochDelta().ToNanoseconds()));
   FML_CHECK(fml::jni::CheckException(env));
 }
 
