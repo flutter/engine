@@ -116,6 +116,6 @@ dependency_overrides:
   vm_snapshot_analysis:
     path: ../../third_party/dart/pkg/vm_snapshot_analysis
   wasm_builder:
-    path: ../../pkg/wasm_builder
+    path: ../../third_party/dart/pkg/wasm_builder
   yaml:
     path: ../../third_party/dart/third_party/pkg/yaml
