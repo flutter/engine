@@ -732,8 +732,8 @@ void DlDispatcher::scale(flutter::DlScalar sx, flutter::DlScalar sy) {
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::rotate(flutter::DlScalar degrees) {
-  canvas_.Rotate(Degrees{degrees});
+void DlDispatcher::rotate(flutter::DlAngle angle) {
+  canvas_.Rotate(Radians{angle.radians()});
 }
 
 // |flutter::DlOpReceiver|

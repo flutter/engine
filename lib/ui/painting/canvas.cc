@@ -122,7 +122,7 @@ void Canvas::scale(double sx, double sy) {
 
 void Canvas::rotate(double radians) {
   if (display_list_builder_) {
-    builder()->Rotate(SafeNarrow(radians) * 180.0f / static_cast<float>(M_PI));
+    builder()->Rotate(DlAngle::Radians(SafeNarrow(radians)));
   }
 }
 

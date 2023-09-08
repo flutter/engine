@@ -38,7 +38,7 @@ class DlSkCanvasDispatcher : public virtual DlOpReceiver,
 
   void translate(DlScalar tx, DlScalar ty) override;
   void scale(DlScalar sx, DlScalar sy) override;
-  void rotate(DlScalar degrees) override;
+  void rotate(DlAngle angle) override;
   void skew(DlScalar sx, DlScalar sy) override;
   // clang-format off
   // 2x3 2D affine subset of a 4x4 transform in row major order

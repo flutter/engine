@@ -31,7 +31,7 @@ struct DlRSTransform {
   }
 
   static DlRSTransform MakeScaleAngleXY(DlScalar scale,
-                                        const DlAngle& angle,
+                                        DlAngle angle,
                                         DlScalar tx,
                                         DlScalar ty) {
     DlFVector scos_ssin = angle.CosSin() * scale;
@@ -42,6 +42,9 @@ struct DlRSTransform {
   inline DlScalar scaled_sin() const { return trig_.y(); }
   inline DlScalar translate_x() const { return origin_.x(); }
   inline DlScalar translate_y() const { return origin_.y(); }
+
+  DlScalar ExtractScale() const { return trig_.Length(); }
+  DlAngle ExtractAngle() const;
 
   bool operator==(const DlRSTransform& other) const {
     return trig_ == other.trig_ && origin_ == other.origin_;

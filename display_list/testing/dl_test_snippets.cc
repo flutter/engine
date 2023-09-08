@@ -369,10 +369,13 @@ std::vector<DisplayListInvocationGroup> CreateAllTransformOps() {
       {"Rotate",
        {
            // cv.rotate(0) is ignored, otherwise expressed as concat(rotmatrix)
-           {1, 8, 1, 32, [](DlOpReceiver& r) { r.rotate(30); }},
-           {1, 8, 1, 32, [](DlOpReceiver& r) { r.rotate(45); }},
-           {0, 0, 0, 0, [](DlOpReceiver& r) { r.rotate(0); }},
-           {0, 0, 0, 0, [](DlOpReceiver& r) { r.rotate(360); }},
+           {1, 8, 1, 32,
+            [](DlOpReceiver& r) { r.rotate(DlAngle::Degrees(30)); }},
+           {1, 8, 1, 32,
+            [](DlOpReceiver& r) { r.rotate(DlAngle::Degrees(45)); }},
+           {0, 0, 0, 0, [](DlOpReceiver& r) { r.rotate(DlAngle::Degrees(0)); }},
+           {0, 0, 0, 0,
+            [](DlOpReceiver& r) { r.rotate(DlAngle::Degrees(360)); }},
        }},
       {"Skew",
        {

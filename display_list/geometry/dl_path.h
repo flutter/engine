@@ -280,8 +280,8 @@ class DlPath {
   }
 
   void ArcTo(DlFRect oval,
-             const DlAngle& startAngle,
-             const DlAngle& sweepAngle,
+             DlAngle startAngle,
+             DlAngle sweepAngle,
              bool forceMoveTo) {
     path_.arcTo(*reinterpret_cast<const SkRect*>(&oval),  //
                 startAngle.degrees(), sweepAngle.degrees(), forceMoveTo);
@@ -289,7 +289,7 @@ class DlPath {
 
   void ArcToPoint(DlScalar radius_x,
                   DlScalar radius_y,
-                  const DlAngle& x_axis_rotation,
+                  DlAngle x_axis_rotation,
                   ArcSize arc_size,
                   Direction dir,
                   DlScalar arc_end_x,
@@ -301,7 +301,7 @@ class DlPath {
 
   void RelativeArcToPoint(DlScalar radius_x,
                           DlScalar radius_y,
-                          const DlAngle& x_axis_rotation,
+                          DlAngle x_axis_rotation,
                           ArcSize arc_size,
                           Direction dir,
                           DlScalar arc_end_x,
@@ -383,9 +383,7 @@ class DlPath {
     return *this;
   }
 
-  DlPath& AddArc(const DlFRect& rect,
-                 const DlAngle& startAngle,
-                 const DlAngle& sweepAngle) {
+  DlPath& AddArc(const DlFRect& rect, DlAngle startAngle, DlAngle sweepAngle) {
     path_.addArc(*reinterpret_cast<const SkRect*>(&rect),  //
                  startAngle.degrees(), sweepAngle.degrees());
     return *this;

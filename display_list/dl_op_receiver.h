@@ -90,7 +90,7 @@ class DlOpReceiver {
 
   virtual void translate(DlScalar tx, DlScalar ty) = 0;
   virtual void scale(DlScalar sx, DlScalar sy) = 0;
-  virtual void rotate(DlScalar degrees) = 0;
+  virtual void rotate(DlAngle angle) = 0;
   virtual void skew(DlScalar sx, DlScalar sy) = 0;
 
   // The transform methods all assume the following math for transforming

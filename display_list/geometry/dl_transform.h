@@ -100,7 +100,7 @@ class DlTransform {
   static DlTransform MakeCosSin(const DlFVector& cos_sin) {
     return MakeCosSin(cos_sin.x(), cos_sin.y());
   }
-  static DlTransform MakeRotate(const DlAngle& angle) {
+  static DlTransform MakeRotate(DlAngle angle) {
     return MakeCosSin(angle.CosSin());
   }
   static DlTransform MakeCosSin(DlFVector3 axis, DlScalar cos, DlScalar sin) {
@@ -136,7 +136,7 @@ class DlTransform {
   static DlTransform MakeCosSin(DlFVector3 axis, DlFVector cos_sin) {
     return MakeCosSin(axis, cos_sin.x(), cos_sin.y());
   }
-  static DlTransform MakeRotate(DlFVector3 axis, const DlAngle& angle) {
+  static DlTransform MakeRotate(DlFVector3 axis, DlAngle angle) {
     return MakeCosSin(axis, angle.CosSin());
   }
 
@@ -284,8 +284,8 @@ class DlTransform {
     m_[kYY] = +cos_sin.x();
     complexity_ = Complexity::kAffine2D;
   }
-  void SetRotate(const DlAngle& angle) { SetCosSin(angle.CosSin()); }
-  void SetRotate(const DlFVector3& axis, const DlAngle& angle) {
+  void SetRotate(DlAngle angle) { SetCosSin(angle.CosSin()); }
+  void SetRotate(const DlFVector3& axis, DlAngle angle) {
     // Copied from Skia, which in turn:
     // Taken from "Essential Mathematics for Games and Interactive Applications"
     //             James M. Van Verth and Lars M. Bishop -- third edition
@@ -333,11 +333,11 @@ class DlTransform {
   DlTransform& SkewInner(DlScalar sx, DlScalar sy);
   DlTransform& SkewOuter(DlScalar sx, DlScalar sy);
 
-  DlTransform& RotateInner(const DlAngle& angle);
-  DlTransform& RotateOuter(const DlAngle& angle);
+  DlTransform& RotateInner(DlAngle angle);
+  DlTransform& RotateOuter(DlAngle angle);
 
-  DlTransform& RotateInner(DlFVector3 axis, const DlAngle& angle);
-  DlTransform& RotateOuter(DlFVector3 axis, const DlAngle& angle);
+  DlTransform& RotateInner(DlFVector3 axis, DlAngle angle);
+  DlTransform& RotateOuter(DlFVector3 axis, DlAngle angle);
 
   DlTransform& ConcatInner(const DlTransform& inner);
   DlTransform& ConcatOuter(const DlTransform& outer);

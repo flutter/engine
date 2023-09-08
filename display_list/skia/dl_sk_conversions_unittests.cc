@@ -20,7 +20,7 @@ TEST(DisplayListImageFilter, LocalImageSkiaNull) {
   auto blur_filter =
       std::make_shared<DlBlurImageFilter>(0, 0, DlTileMode::kClamp);
   DlLocalMatrixImageFilter dl_local_matrix_filter(
-      DlTransform::MakeRotate(DlDegrees(45)), blur_filter);
+      DlTransform::MakeRotate(DlAngle::Degrees(45)), blur_filter);
   // With sigmas set to zero on the blur filter, Skia will return a null filter.
   // The local matrix filter should return nullptr instead of crashing.
   ASSERT_EQ(ToSk(&dl_local_matrix_filter), nullptr);

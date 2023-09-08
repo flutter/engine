@@ -34,7 +34,7 @@ class DlSkCanvasAdapter final : public virtual DlCanvas {
 
   void Translate(DlScalar tx, DlScalar ty) override;
   void Scale(DlScalar sx, DlScalar sy) override;
-  void Rotate(DlScalar degrees) override;
+  void Rotate(DlAngle angle) override;
   void Skew(DlScalar sx, DlScalar sy) override;
 
   // clang-format off

@@ -129,7 +129,7 @@ static void TestBounds(const DlImageFilter& filter,
         DlTransform matrix;
         // matrix.SetScale(scale, scale);
         // matrix.SkewOuter(skew / 8.0, skew / 8.0);
-        // matrix.RotateOuter(DlDegrees(degrees));
+        // matrix.RotateOuter(DlAngle::Degrees(degrees));
         ASSERT_TRUE(matrix.IsInvertible());
         TestBoundsWithMatrix(filter, matrix, sourceBounds,
                              expectedLocalOutputQuad);
@@ -721,7 +721,7 @@ TEST(DisplayListImageFilter, LocalImageFilterBounds) {
   std::vector<DlTransform> matrices = {
       DlTransform::MakeTranslate(10.0, 10.0),
       DlTransform::MakeScale(2.0, 2.0).TranslateInner(10.0, 10.0),
-      DlTransform::MakeRotate(DlDegrees(45)).TranslateInner(5.0, 5.0),
+      DlTransform::MakeRotate(DlAngle::Degrees(45)).TranslateInner(5.0, 5.0),
       persp,
   };
   std::vector<DlTransform> bounds_matrices{

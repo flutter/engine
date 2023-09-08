@@ -50,7 +50,7 @@ TEST(EmbeddedViewParams, GetBoundingRectAfterMutationsWithTranslate) {
 TEST(EmbeddedViewParams, GetBoundingRectAfterMutationsWithRotation90) {
   MutatorsStack stack;
   DlTransform matrix;
-  matrix.SetRotate(DlDegrees(90));
+  matrix.SetRotate(DlAngle::Degrees(90));
   stack.PushTransform(matrix);
 
   EmbeddedViewParams params(matrix, DlFSize(1, 1), stack);
@@ -65,7 +65,7 @@ TEST(EmbeddedViewParams, GetBoundingRectAfterMutationsWithRotation90) {
 TEST(EmbeddedViewParams, GetBoundingRectAfterMutationsWithRotation45) {
   MutatorsStack stack;
   DlTransform matrix;
-  matrix.SetRotate(DlDegrees(45));
+  matrix.SetRotate(DlAngle::Degrees(45));
   stack.PushTransform(matrix);
 
   EmbeddedViewParams params(matrix, DlFSize(1, 1), stack);
@@ -80,7 +80,7 @@ TEST(EmbeddedViewParams,
      GetBoundingRectAfterMutationsWithTranslateScaleAndRotation) {
   DlTransform matrix = DlTransform::MakeTranslate(2, 2);
   matrix.ScaleInner(3, 3);
-  matrix.RotateInner(DlDegrees(90));
+  matrix.RotateInner(DlAngle::Degrees(90));
 
   MutatorsStack stack;
   stack.PushTransform(matrix);

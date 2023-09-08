@@ -356,7 +356,7 @@ TEST(DlTransformTest, Concat) {
       DlTransform::MakeTranslate(8.0f, 11.0f),
       DlTransform::MakeScale(2.0f, 4.0f),
       DlTransform::MakeSkew(0.125f, 0.25f),
-      DlTransform::MakeRotate(DlDegrees(30)),
+      DlTransform::MakeRotate(DlAngle::Degrees(30)),
       perspX,
       perspY,
   };
@@ -411,7 +411,7 @@ TEST(DlTransformTest, Inverse) {
       DlTransform::MakeTranslate(8.0f, 11.0f),
       DlTransform::MakeScale(2.0f, 4.0f),
       DlTransform::MakeSkew(0.125f, 0.25f),
-      DlTransform::MakeRotate(DlDegrees(45)),
+      DlTransform::MakeRotate(DlAngle::Degrees(45)),
       perspX,
       perspY,
   };
@@ -558,23 +558,29 @@ TEST(DlTransformTest, CompareToSkia) {
           // Default rotate methods on DlTransform which assume Z axis
           "Rotate(20 degrees)",
           kCanTestSkMatrix | kCanTestSkM44,
-          []() { return DlTransform::MakeRotate(DlDegrees(20)); },
+          []() { return DlTransform::MakeRotate(DlAngle::Degrees(20)); },
           []() { return SkMatrix::RotateDeg(20); },
           []() {
             return SkM44::Rotate({0, 0, 1}, 20 * SK_ScalarPI / 180);
           },
-          [](DlTransform& transform) { transform.SetRotate(DlDegrees(20)); },
+          [](DlTransform& transform) {
+            transform.SetRotate(DlAngle::Degrees(20));
+          },
           [](SkMatrix& transform) { transform.setRotate(20); },
           [](SkM44& transform) {
             transform.setRotate({0, 0, 1}, 20 * SK_ScalarPI / 180);
           },
-          [](DlTransform& transform) { transform.RotateInner(DlDegrees(20)); },
+          [](DlTransform& transform) {
+            transform.RotateInner(DlAngle::Degrees(20));
+          },
           [](SkMatrix& transform) { transform.preRotate(20); },
           [](SkM44& transform) {
             transform.preConcat(
                 SkM44::Rotate({0, 0, 1}, 20 * SK_ScalarPI / 180));
           },
-          [](DlTransform& transform) { transform.RotateOuter(DlDegrees(20)); },
+          [](DlTransform& transform) {
+            transform.RotateOuter(DlAngle::Degrees(20));
+          },
           [](SkMatrix& transform) { transform.postRotate(20); },
           [](SkM44& transform) {
             transform.postConcat(
@@ -585,20 +591,22 @@ TEST(DlTransformTest, CompareToSkia) {
           // Rotate methods on DlTransform which explicitly specify Z axis
           "RotateZ(20 degrees)",
           kCanTestSkMatrix | kCanTestSkM44,
-          []() { return DlTransform::MakeRotate(kDlAxis_Z, DlDegrees(20)); },
+          []() {
+            return DlTransform::MakeRotate(kDlAxis_Z, DlAngle::Degrees(20));
+          },
           []() { return SkMatrix::RotateDeg(20); },
           []() {
             return SkM44::Rotate({0, 0, 1}, 20 * SK_ScalarPI / 180);
           },
           [](DlTransform& transform) {
-            transform.SetRotate(kDlAxis_Z, DlDegrees(20));
+            transform.SetRotate(kDlAxis_Z, DlAngle::Degrees(20));
           },
           [](SkMatrix& transform) { transform.setRotate(20); },
           [](SkM44& transform) {
             transform.setRotate({0, 0, 1}, 20 * SK_ScalarPI / 180);
           },
           [](DlTransform& transform) {
-            transform.RotateInner(kDlAxis_Z, DlDegrees(20));
+            transform.RotateInner(kDlAxis_Z, DlAngle::Degrees(20));
           },
           [](SkMatrix& transform) { transform.preRotate(20); },
           [](SkM44& transform) {
@@ -606,7 +614,7 @@ TEST(DlTransformTest, CompareToSkia) {
                 SkM44::Rotate({0, 0, 1}, 20 * SK_ScalarPI / 180));
           },
           [](DlTransform& transform) {
-            transform.RotateOuter(kDlAxis_Z, DlDegrees(20));
+            transform.RotateOuter(kDlAxis_Z, DlAngle::Degrees(20));
           },
           [](SkMatrix& transform) { transform.postRotate(20); },
           [](SkM44& transform) {
@@ -617,20 +625,22 @@ TEST(DlTransformTest, CompareToSkia) {
       {
           "RotateX(20 degrees)",
           kCanTestSkM44,
-          []() { return DlTransform::MakeRotate(kDlAxis_X, DlDegrees(20)); },
+          []() {
+            return DlTransform::MakeRotate(kDlAxis_X, DlAngle::Degrees(20));
+          },
           []() { return SkMatrix(); },  // Not executed
           []() {
             return SkM44::Rotate({1, 0, 0}, 20 * SK_ScalarPI / 180);
           },
           [](DlTransform& transform) {
-            transform.SetRotate(kDlAxis_X, DlDegrees(20));
+            transform.SetRotate(kDlAxis_X, DlAngle::Degrees(20));
           },
           [](SkMatrix& transform) {},  // Not executed
           [](SkM44& transform) {
             transform.setRotate({1, 0, 0}, 20 * SK_ScalarPI / 180);
           },
           [](DlTransform& transform) {
-            transform.RotateInner(kDlAxis_X, DlDegrees(20));
+            transform.RotateInner(kDlAxis_X, DlAngle::Degrees(20));
           },
           [](SkMatrix& transform) {},  // Not executed
           [](SkM44& transform) {
@@ -638,7 +648,7 @@ TEST(DlTransformTest, CompareToSkia) {
                 SkM44::Rotate({1, 0, 0}, 20 * SK_ScalarPI / 180));
           },
           [](DlTransform& transform) {
-            transform.RotateOuter(kDlAxis_X, DlDegrees(20));
+            transform.RotateOuter(kDlAxis_X, DlAngle::Degrees(20));
           },
           [](SkMatrix& transform) {},  // Not executed
           [](SkM44& transform) {
@@ -649,20 +659,22 @@ TEST(DlTransformTest, CompareToSkia) {
       {
           "RotateY(20 degrees)",
           kCanTestSkM44,
-          []() { return DlTransform::MakeRotate(kDlAxis_Y, DlDegrees(20)); },
+          []() {
+            return DlTransform::MakeRotate(kDlAxis_Y, DlAngle::Degrees(20));
+          },
           []() { return SkMatrix(); },  // Not executed
           []() {
             return SkM44::Rotate({0, 1, 0}, 20 * SK_ScalarPI / 180);
           },
           [](DlTransform& transform) {
-            transform.SetRotate(kDlAxis_Y, DlDegrees(20));
+            transform.SetRotate(kDlAxis_Y, DlAngle::Degrees(20));
           },
           [](SkMatrix& transform) {},  // Not executed
           [](SkM44& transform) {
             transform.setRotate({0, 1, 0}, 20 * SK_ScalarPI / 180);
           },
           [](DlTransform& transform) {
-            transform.RotateInner(kDlAxis_Y, DlDegrees(20));
+            transform.RotateInner(kDlAxis_Y, DlAngle::Degrees(20));
           },
           [](SkMatrix& transform) {},  // Not executed
           [](SkM44& transform) {
@@ -670,7 +682,7 @@ TEST(DlTransformTest, CompareToSkia) {
                 SkM44::Rotate({0, 1, 0}, 20 * SK_ScalarPI / 180));
           },
           [](DlTransform& transform) {
-            transform.RotateOuter(kDlAxis_Y, DlDegrees(20));
+            transform.RotateOuter(kDlAxis_Y, DlAngle::Degrees(20));
           },
           [](SkMatrix& transform) {},  // Not executed
           [](SkM44& transform) {
@@ -681,23 +693,29 @@ TEST(DlTransformTest, CompareToSkia) {
       {
           "RotateZ(200 degrees)",
           kCanTestSkMatrix | kCanTestSkM44,
-          []() { return DlTransform::MakeRotate(DlDegrees(200)); },
+          []() { return DlTransform::MakeRotate(DlAngle::Degrees(200)); },
           []() { return SkMatrix::RotateDeg(200); },
           []() {
             return SkM44::Rotate({0, 0, 1}, 200 * SK_ScalarPI / 180);
           },
-          [](DlTransform& transform) { transform.SetRotate(DlDegrees(200)); },
+          [](DlTransform& transform) {
+            transform.SetRotate(DlAngle::Degrees(200));
+          },
           [](SkMatrix& transform) { transform.setRotate(200); },
           [](SkM44& transform) {
             transform.setRotate({0, 0, 1}, 200 * SK_ScalarPI / 180);
           },
-          [](DlTransform& transform) { transform.RotateInner(DlDegrees(200)); },
+          [](DlTransform& transform) {
+            transform.RotateInner(DlAngle::Degrees(200));
+          },
           [](SkMatrix& transform) { transform.preRotate(200); },
           [](SkM44& transform) {
             transform.preConcat(
                 SkM44::Rotate({0, 0, 1}, 200 * SK_ScalarPI / 180));
           },
-          [](DlTransform& transform) { transform.RotateOuter(DlDegrees(200)); },
+          [](DlTransform& transform) {
+            transform.RotateOuter(DlAngle::Degrees(200));
+          },
           [](SkMatrix& transform) { transform.postRotate(200); },
           [](SkM44& transform) {
             transform.postConcat(

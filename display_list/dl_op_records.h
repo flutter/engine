@@ -475,13 +475,13 @@ struct ScaleOp final : TransformClipOpBase {
 struct RotateOp final : TransformClipOpBase {
   static const auto kType = DisplayListOpType::kRotate;
 
-  explicit RotateOp(DlScalar degrees) : degrees(degrees) {}
+  explicit RotateOp(DlAngle angle) : angle(angle) {}
 
-  const DlScalar degrees;
+  const DlAngle angle;
 
   void dispatch(DispatchContext& ctx) const {
     if (op_needed(ctx)) {
-      ctx.receiver.rotate(degrees);
+      ctx.receiver.rotate(angle);
     }
   }
 };

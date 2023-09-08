@@ -8,92 +8,86 @@
 namespace flutter {
 namespace testing {
 
+TEST(DlAngleTest, DefaultConstructor) {
+  DlAngle angle;
+  EXPECT_EQ(angle.radians(), 0.0f);
+  EXPECT_EQ(angle.degrees(), 0.0f);
+}
+
 TEST(DlAngleTest, RadiansEmptyConstructor) {
-  DlRadians radians;
-  EXPECT_EQ(radians.radians(), 0.0f);
-  EXPECT_EQ(radians.degrees(), 0.0f);
+  DlAngle angle = DlAngle::Radians();
+  EXPECT_EQ(angle.radians(), 0.0f);
+  EXPECT_EQ(angle.degrees(), 0.0f);
 }
 
 TEST(DlAngleTest, DegreesEmptyConstructor) {
-  DlDegrees degrees;
-  EXPECT_EQ(degrees.radians(), 0.0f);
-  EXPECT_EQ(degrees.degrees(), 0.0f);
+  DlAngle angle = DlAngle::Degrees();
+  EXPECT_EQ(angle.radians(), 0.0f);
+  EXPECT_EQ(angle.degrees(), 0.0f);
 }
 
 TEST(DlAngleTest, RadiansSimpleConstructor) {
-  DlRadians radians(kDlScalar_Pi);
-  EXPECT_EQ(radians.radians(), kDlScalar_Pi);
-  EXPECT_EQ(radians.degrees(), 180.0f);
+  DlAngle angle = DlAngle::Radians(kDlScalar_Pi);
+  EXPECT_EQ(angle.radians(), kDlScalar_Pi);
+  EXPECT_EQ(angle.degrees(), 180.0f);
 }
 
 TEST(DlAngleTest, DegreesSimpleConstructor) {
-  DlDegrees degrees(180.0f);
-  EXPECT_EQ(degrees.radians(), kDlScalar_Pi);
-  EXPECT_EQ(degrees.degrees(), 180.0f);
+  DlAngle angle = DlAngle::Degrees(180.0f);
+  EXPECT_EQ(angle.radians(), kDlScalar_Pi);
+  EXPECT_EQ(angle.degrees(), 180.0f);
 }
 
-TEST(DlAngleTest, RadiansToDegreesConversion) {
-  DlRadians radians(kDlScalar_Pi);
-  EXPECT_EQ(radians.radians(), kDlScalar_Pi);
-  EXPECT_EQ(radians.degrees(), 180.0f);
-  DlDegrees degrees = radians;
-  EXPECT_EQ(degrees.radians(), kDlScalar_Pi);
-  EXPECT_EQ(degrees.degrees(), 180.0f);
+TEST(DlAngleTest, AssignmentFromRadians) {
+  DlAngle angle = DlAngle::Radians(kDlScalar_Pi);
+  EXPECT_EQ(angle.radians(), kDlScalar_Pi);
+  EXPECT_EQ(angle.degrees(), 180.0f);
+  DlAngle copy = angle;
+  EXPECT_EQ(copy.radians(), kDlScalar_Pi);
+  EXPECT_EQ(copy.degrees(), 180.0f);
 }
 
-TEST(DlAngleTest, DegreesToRadiansConversion) {
-  DlDegrees degrees(180.0f);
-  EXPECT_EQ(degrees.radians(), kDlScalar_Pi);
-  EXPECT_EQ(degrees.degrees(), 180.0f);
-  DlRadians radians = degrees;
-  EXPECT_EQ(radians.radians(), kDlScalar_Pi);
-  EXPECT_EQ(radians.degrees(), 180.0f);
+TEST(DlAngleTest, AssignmentFromDegrees) {
+  DlAngle angle = DlAngle::Degrees(180.0f);
+  EXPECT_EQ(angle.radians(), kDlScalar_Pi);
+  EXPECT_EQ(angle.degrees(), 180.0f);
+  DlAngle copy = angle;
+  EXPECT_EQ(copy.radians(), kDlScalar_Pi);
+  EXPECT_EQ(copy.degrees(), 180.0f);
 }
 
-TEST(DlAngleTest, RadiansToDegreesArgumentConversion) {
-  DlRadians radians(kDlScalar_Pi);
-  EXPECT_EQ(radians.radians(), kDlScalar_Pi);
-  EXPECT_EQ(radians.degrees(), 180.0f);
-  auto test = [](const DlDegrees& degrees) {
-    EXPECT_EQ(degrees.radians(), kDlScalar_Pi);
-    EXPECT_EQ(degrees.degrees(), 180.0f);
-  };
-  test(radians);
-  auto test2 = [](const DlDegrees& degrees) {
-    EXPECT_EQ(degrees.radians(), kDlScalar_Pi);
-    EXPECT_EQ(degrees.degrees(), 180.0f);
-  };
-  test2(radians);
-}
-
-TEST(DlAngleTest, DegreesToRadiansArgumentConversion) {
-  DlDegrees degrees(180.0f);
-  EXPECT_EQ(degrees.radians(), kDlScalar_Pi);
-  EXPECT_EQ(degrees.degrees(), 180.0f);
-  auto test = [](const DlRadians& radians) {
-    EXPECT_EQ(radians.radians(), kDlScalar_Pi);
-    EXPECT_EQ(radians.degrees(), 180.0f);
-  };
-  test(degrees);
-  auto test2 = [](const DlRadians& radians) {
-    EXPECT_EQ(radians.radians(), kDlScalar_Pi);
-    EXPECT_EQ(radians.degrees(), 180.0f);
-  };
-  test2(degrees);
-}
-
-TEST(DlAngleTest, DegreesCosSin) {
+TEST(DlAngleTest, CosSin) {
   for (int i = -360; i <= 720; i++) {
     DlScalar radians = i * kDlScalar_Pi / 180.0f;
     {
-      DlFVector cos_sin = DlDegrees(i).CosSin();
+      DlFVector cos_sin = DlAngle::Degrees(i).CosSin();
       EXPECT_TRUE(DlScalar_IsNearlyZero(cos_sin.x() - cosf(radians)));
       EXPECT_TRUE(DlScalar_IsNearlyZero(cos_sin.y() - sinf(radians)));
     }
     {
-      DlFVector cos_sin = DlRadians(radians).CosSin();
+      DlFVector cos_sin = DlAngle::Radians(radians).CosSin();
       EXPECT_TRUE(DlScalar_IsNearlyZero(cos_sin.x() - cosf(radians)));
       EXPECT_TRUE(DlScalar_IsNearlyZero(cos_sin.y() - sinf(radians)));
+    }
+  }
+}
+
+TEST(DlAngleTest, FullCircle) {
+  for (int i = -360 * 100; i <= 360 * 100; i += 360) {
+    DlScalar radians = i * kDlScalar_Pi / 180.0f;
+    {
+      DlAngle angle = DlAngle::Degrees(i);
+      EXPECT_TRUE(angle.IsFullCircle());
+      DlFVector cos_sin = angle.CosSin();
+      EXPECT_EQ(cos_sin.x(), 1.0f);
+      EXPECT_EQ(cos_sin.y(), 0.0f);
+    }
+    {
+      DlAngle angle = DlAngle::Radians(radians);
+      EXPECT_TRUE(angle.IsFullCircle());
+      DlFVector cos_sin = angle.CosSin();
+      EXPECT_EQ(cos_sin.x(), 1.0f);
+      EXPECT_EQ(cos_sin.y(), 0.0f);
     }
   }
 }
@@ -103,19 +97,19 @@ TEST(DlAngleTest, NaNInfinityCosSin) {
   DlScalar pos_inf = std::numeric_limits<DlScalar>::infinity();
   DlScalar neg_inf = -std::numeric_limits<DlScalar>::infinity();
 
-  ASSERT_EQ(DlDegrees(nan).CosSin(), DlFVector(1.0f, 0.0f));
-  ASSERT_EQ(DlDegrees(pos_inf).CosSin(), DlFVector(1.0f, 0.0f));
-  ASSERT_EQ(DlDegrees(neg_inf).CosSin(), DlFVector(1.0f, 0.0f));
-  ASSERT_EQ(DlRadians(nan).CosSin(), DlFVector(1.0f, 0.0f));
-  ASSERT_EQ(DlRadians(pos_inf).CosSin(), DlFVector(1.0f, 0.0f));
-  ASSERT_EQ(DlRadians(neg_inf).CosSin(), DlFVector(1.0f, 0.0f));
+  ASSERT_EQ(DlAngle::Degrees(nan).CosSin(), DlFVector(1.0f, 0.0f));
+  ASSERT_EQ(DlAngle::Degrees(pos_inf).CosSin(), DlFVector(1.0f, 0.0f));
+  ASSERT_EQ(DlAngle::Degrees(neg_inf).CosSin(), DlFVector(1.0f, 0.0f));
+  ASSERT_EQ(DlAngle::Radians(nan).CosSin(), DlFVector(1.0f, 0.0f));
+  ASSERT_EQ(DlAngle::Radians(pos_inf).CosSin(), DlFVector(1.0f, 0.0f));
+  ASSERT_EQ(DlAngle::Radians(neg_inf).CosSin(), DlFVector(1.0f, 0.0f));
 
-  ASSERT_EQ(DlDegrees(nan).CosSin(), DlDegrees(0).CosSin());
-  ASSERT_EQ(DlDegrees(pos_inf).CosSin(), DlDegrees(0).CosSin());
-  ASSERT_EQ(DlDegrees(neg_inf).CosSin(), DlDegrees(0).CosSin());
-  ASSERT_EQ(DlRadians(nan).CosSin(), DlRadians(0).CosSin());
-  ASSERT_EQ(DlRadians(pos_inf).CosSin(), DlRadians(0).CosSin());
-  ASSERT_EQ(DlRadians(neg_inf).CosSin(), DlRadians(0).CosSin());
+  ASSERT_EQ(DlAngle::Degrees(nan).CosSin(), DlAngle::Degrees(0).CosSin());
+  ASSERT_EQ(DlAngle::Degrees(pos_inf).CosSin(), DlAngle::Degrees(0).CosSin());
+  ASSERT_EQ(DlAngle::Degrees(neg_inf).CosSin(), DlAngle::Degrees(0).CosSin());
+  ASSERT_EQ(DlAngle::Radians(nan).CosSin(), DlAngle::Radians(0).CosSin());
+  ASSERT_EQ(DlAngle::Radians(pos_inf).CosSin(), DlAngle::Radians(0).CosSin());
+  ASSERT_EQ(DlAngle::Radians(neg_inf).CosSin(), DlAngle::Radians(0).CosSin());
 }
 
 }  // namespace testing

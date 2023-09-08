@@ -109,8 +109,8 @@ void MockCanvas::Scale(DlScalar x, DlScalar y) {
   this->Transform(DlTransform::MakeScale(x, y));
 }
 
-void MockCanvas::Rotate(DlScalar degrees) {
-  this->Transform(DlTransform::MakeRotate(DlDegrees(degrees)));
+void MockCanvas::Rotate(DlAngle angle) {
+  this->Transform(DlTransform::MakeRotate(angle));
 }
 
 void MockCanvas::Skew(DlScalar sx, DlScalar sy) {

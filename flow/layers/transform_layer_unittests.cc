@@ -158,9 +158,9 @@ TEST_F(TransformLayerTest, Complex) {
   DlFRect device_cull_rect = initial_transform.TransformRect(local_cull_rect);
   DlTransform layer_transform = DlTransform::MakeTranslate(2.5f, 2.5f);
   // 20 degrees around the X axis
-  layer_transform.RotateInner(kDlAxis_X, DlDegrees(20.0f));
+  layer_transform.RotateInner(kDlAxis_X, DlAngle::Degrees(20.0f));
   // 10 degrees around the Y axis
-  layer_transform.RotateInner(kDlAxis_Y, DlDegrees(10.0f));
+  layer_transform.RotateInner(kDlAxis_Y, DlAngle::Degrees(10.0f));
   auto inverse_layer_transform = layer_transform.Inverse();
   ENFORCE_TRUE(inverse_layer_transform.has_value());
 

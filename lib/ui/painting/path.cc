@@ -133,8 +133,8 @@ void CanvasPath::arcTo(double left,
                        bool forceMoveTo) {
   mutable_path().ArcTo(DlFRect::MakeLTRB(SafeNarrow(left), SafeNarrow(top),  //
                                          SafeNarrow(right), SafeNarrow(bottom)),
-                       DlRadians(SafeNarrow(startAngle)),
-                       DlRadians(SafeNarrow(sweepAngle)), forceMoveTo);
+                       DlAngle::Radians(SafeNarrow(startAngle)),
+                       DlAngle::Radians(SafeNarrow(sweepAngle)), forceMoveTo);
   resetVolatility();
 }
 
@@ -151,8 +151,8 @@ void CanvasPath::arcToPoint(double arcEndX,
       isClockwiseDirection ? DlPath::Direction::kCW : DlPath::Direction::kCCW;
 
   mutable_path().ArcToPoint(SafeNarrow(radiusX), SafeNarrow(radiusY),
-                            DlDegrees(SafeNarrow(xAxisRotation)), arcSize,
-                            direction, SafeNarrow(arcEndX),
+                            DlAngle::Degrees(SafeNarrow(xAxisRotation)),
+                            arcSize, direction, SafeNarrow(arcEndX),
                             SafeNarrow(arcEndY));
   resetVolatility();
 }
@@ -170,7 +170,7 @@ void CanvasPath::relativeArcToPoint(double arcEndDeltaX,
       isClockwiseDirection ? DlPath::Direction::kCW : DlPath::Direction::kCCW;
   mutable_path().RelativeArcToPoint(
       SafeNarrow(radiusX), SafeNarrow(radiusY),
-      DlDegrees(SafeNarrow(xAxisRotation)), arcSize, direction,
+      DlAngle::Degrees(SafeNarrow(xAxisRotation)), arcSize, direction,
       SafeNarrow(arcEndDeltaX), SafeNarrow(arcEndDeltaY));
   resetVolatility();
 }
@@ -198,7 +198,8 @@ void CanvasPath::addArc(double left,
   mutable_path().AddArc(
       DlFRect::MakeLTRB(SafeNarrow(left), SafeNarrow(top), SafeNarrow(right),
                         SafeNarrow(bottom)),
-      DlRadians(SafeNarrow(startAngle)), DlRadians(SafeNarrow(sweepAngle)));
+      DlAngle::Radians(SafeNarrow(startAngle)),
+      DlAngle::Radians(SafeNarrow(sweepAngle)));
   resetVolatility();
 }
 

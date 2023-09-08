@@ -120,8 +120,8 @@ void DlSkCanvasAdapter::Scale(DlScalar sx, DlScalar sy) {
   delegate_->scale(sx, sy);
 }
 
-void DlSkCanvasAdapter::Rotate(DlScalar degrees) {
-  delegate_->rotate(degrees);
+void DlSkCanvasAdapter::Rotate(DlAngle angle) {
+  delegate_->rotate(angle.degrees());
 }
 
 void DlSkCanvasAdapter::Skew(DlScalar sx, DlScalar sy) {

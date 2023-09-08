@@ -1020,7 +1020,7 @@ TEST_F(EmbedderTest,
   // |CanRenderGradientWithoutCompositorWithXform| test to ensure that
   // transforms are consistent respected.
   const auto root_surface_transformation =
-      DlTransform().TranslateInner(0, 800).RotateInner(DlDegrees(-90));
+      DlTransform().TranslateInner(0, 800).RotateInner(DlAngle::Degrees(-90));
 
   context.SetRootSurfaceTransformation(root_surface_transformation);
 
@@ -1209,7 +1209,7 @@ TEST_F(EmbedderTest, CanRenderSceneWithoutCustomCompositorWithTransformation) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   const auto root_surface_transformation =
-      DlTransform().TranslateInner(0, 800).RotateInner(DlDegrees(-90));
+      DlTransform().TranslateInner(0, 800).RotateInner(DlAngle::Degrees(-90));
 
   context.SetRootSurfaceTransformation(root_surface_transformation);
 
@@ -1269,7 +1269,7 @@ TEST_F(EmbedderTest, CanRenderGradientWithoutCompositorWithXform) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   const auto root_surface_transformation =
-      DlTransform().TranslateInner(0, 800).RotateInner(DlDegrees(-90));
+      DlTransform().TranslateInner(0, 800).RotateInner(DlAngle::Degrees(-90));
 
   context.SetRootSurfaceTransformation(root_surface_transformation);
 
@@ -1334,7 +1334,7 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositorWithXform) {
   // |CanRenderGradientWithoutCompositorWithXform| test to ensure that
   // transforms are consistent respected.
   const auto root_surface_transformation =
-      DlTransform().TranslateInner(0, 800).RotateInner(DlDegrees(-90));
+      DlTransform().TranslateInner(0, 800).RotateInner(DlAngle::Degrees(-90));
 
   context.SetRootSurfaceTransformation(root_surface_transformation);
 
@@ -1476,7 +1476,7 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositorOnNonRootLayerWithXform) {
   // |CanRenderGradientWithoutCompositorWithXform| test to ensure that
   // transforms are consistent respected.
   const auto root_surface_transformation =
-      DlTransform().TranslateInner(0, 800).RotateInner(DlDegrees(-90));
+      DlTransform().TranslateInner(0, 800).RotateInner(DlAngle::Degrees(-90));
 
   context.SetRootSurfaceTransformation(root_surface_transformation);
 
@@ -1591,7 +1591,7 @@ TEST_F(EmbedderTest, VerifyB141980393) {
   // The Flutter application is 800 x 600 but rendering on a surface that is 600
   // x 800 achieved using a root surface transformation.
   const auto root_surface_transformation =
-      DlTransform().TranslateInner(0, 800).RotateInner(DlDegrees(-90));
+      DlTransform().TranslateInner(0, 800).RotateInner(DlAngle::Degrees(-90));
   const auto flutter_application_rect = DlFRect::MakeWH(800, 600);
   const auto root_surface_rect =
       root_surface_transformation.TransformRect(flutter_application_rect);
@@ -1920,7 +1920,7 @@ TEST_F(
       EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLTexture);
 
   const auto root_surface_transformation =
-      DlTransform().TranslateInner(0, 800).RotateInner(DlDegrees(-90));
+      DlTransform().TranslateInner(0, 800).RotateInner(DlAngle::Degrees(-90));
 
   context.SetRootSurfaceTransformation(root_surface_transformation);
 
@@ -2014,7 +2014,7 @@ TEST_F(EmbedderTest,
       EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLTexture);
 
   const auto root_surface_transformation =
-      DlTransform().TranslateInner(0, 1024).RotateInner(DlDegrees(-90));
+      DlTransform().TranslateInner(0, 1024).RotateInner(DlAngle::Degrees(-90));
 
   context.SetRootSurfaceTransformation(root_surface_transformation);
 
@@ -2054,7 +2054,7 @@ TEST_F(EmbedderTest,
   builder.SetDartEntrypoint("push_frames_over_and_over");
 
   const auto root_surface_transformation =
-      DlTransform().TranslateInner(0, 1024).RotateInner(DlDegrees(-90));
+      DlTransform().TranslateInner(0, 1024).RotateInner(DlAngle::Degrees(-90));
 
   context.SetRootSurfaceTransformation(root_surface_transformation);
 
@@ -2289,7 +2289,7 @@ TEST_F(EmbedderTest,
       EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLTexture);
 
   static const auto root_surface_transformation =
-      DlTransform().TranslateInner(0, 800).RotateInner(DlDegrees(-90));
+      DlTransform().TranslateInner(0, 800).RotateInner(DlAngle::Degrees(-90));
 
   context.SetRootSurfaceTransformation(root_surface_transformation);
 
@@ -2445,10 +2445,11 @@ TEST_F(EmbedderTest, ArcEndCapsAreDrawnCorrectly) {
   builder.SetRenderTargetType(
       EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLFramebuffer);
 
-  const auto root_surface_transformation = DlTransform()
-                                               .ScaleInner(1.0, -1.0)
-                                               .TranslateInner(1024.0, -800.0)
-                                               .RotateInner(DlDegrees(90.0));
+  const auto root_surface_transformation =
+      DlTransform()
+          .ScaleInner(1.0, -1.0)
+          .TranslateInner(1024.0, -800.0)
+          .RotateInner(DlAngle::Degrees(90.0));
 
   context.SetRootSurfaceTransformation(root_surface_transformation);
 
@@ -2480,7 +2481,7 @@ TEST_F(EmbedderTest, ClipsAreCorrectlyCalculated) {
       EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLFramebuffer);
 
   const auto root_surface_transformation =
-      DlTransform().TranslateInner(0, 400).RotateInner(DlDegrees(-90));
+      DlTransform().TranslateInner(0, 400).RotateInner(DlAngle::Degrees(-90));
 
   context.SetRootSurfaceTransformation(root_surface_transformation);
 
@@ -2559,7 +2560,7 @@ TEST_F(EmbedderTest, ComplexClipsAreCorrectlyCalculated) {
       EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLFramebuffer);
 
   const auto root_surface_transformation =
-      DlTransform().TranslateInner(0, 1024).RotateInner(DlDegrees(-90));
+      DlTransform().TranslateInner(0, 1024).RotateInner(DlAngle::Degrees(-90));
 
   context.SetRootSurfaceTransformation(root_surface_transformation);
 
@@ -3049,7 +3050,7 @@ TEST_F(EmbedderTest, FrameInfoContainsValidWidthAndHeight) {
   builder.SetDartEntrypoint("push_frames_over_and_over");
 
   const auto root_surface_transformation =
-      DlTransform().TranslateInner(0, 1024).RotateInner(DlDegrees(-90));
+      DlTransform().TranslateInner(0, 1024).RotateInner(DlAngle::Degrees(-90));
 
   context.SetRootSurfaceTransformation(root_surface_transformation);
 
@@ -3180,7 +3181,7 @@ TEST_F(EmbedderTest, PresentInfoContainsValidFBOId) {
   builder.SetDartEntrypoint("push_frames_over_and_over");
 
   const auto root_surface_transformation =
-      DlTransform().TranslateInner(0, 1024).RotateInner(DlDegrees(-90));
+      DlTransform().TranslateInner(0, 1024).RotateInner(DlAngle::Degrees(-90));
 
   context.SetRootSurfaceTransformation(root_surface_transformation);
 

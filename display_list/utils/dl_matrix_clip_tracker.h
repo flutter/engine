@@ -62,7 +62,7 @@ class DisplayListMatrixClipTracker {
   void translate(DlScalar tx, DlScalar ty) { current_->translate(tx, ty); }
   void scale(DlScalar sx, DlScalar sy) { current_->scale(sx, sy); }
   void skew(DlScalar skx, DlScalar sky) { current_->skew(skx, sky); }
-  void rotate(DlScalar degrees) { current_->rotate(DlDegrees(degrees)); }
+  void rotate(DlAngle angle) { current_->rotate(angle); }
   void transform(const DlTransform& matrix) { current_->transform(matrix); }
   // clang-format off
   void transform2DAffine(
@@ -110,7 +110,7 @@ class DisplayListMatrixClipTracker {
     void translate(DlScalar tx, DlScalar ty) { matrix_.TranslateInner(tx, ty); }
     void scale(DlScalar sx, DlScalar sy) { matrix_.ScaleInner(sx, sy); }
     void skew(DlScalar skx, DlScalar sky) { matrix_.SkewInner(skx, sky); }
-    void rotate(const DlAngle& angle) { matrix_.RotateInner(angle); }
+    void rotate(DlAngle angle) { matrix_.RotateInner(angle); }
     void transform(const DlTransform& matrix) { matrix_.ConcatInner(matrix); }
     void setTransform(const DlTransform& matrix) { matrix_ = matrix; }
     void setIdentity() { matrix_.SetIdentity(); }

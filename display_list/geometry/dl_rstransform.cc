@@ -25,4 +25,9 @@ void DlRSTransform::ToQuad(DlScalar width,
   quad[3] = quad[0] + v;
 }
 
+DlAngle DlRSTransform::ExtractAngle() const {
+  DlFVector cos_sin = trig_ / trig_.Length();
+  return DlAngle::Radians(atan2f(cos_sin.y(), cos_sin.x()));
+}
+
 }  // namespace flutter

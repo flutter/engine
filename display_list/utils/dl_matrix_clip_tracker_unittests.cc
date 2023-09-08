@@ -122,11 +122,11 @@ TEST(DisplayListMatrixClipTracker, Rotate) {
   const DlFRect cull_rect = DlFRect::MakeLTRB(20, 20, 60, 60);
   const DlTransform transform = DlTransform::MakeScale(4, 4);
   const DlTransform rotated_transform = DlTransform::MakeConcat(
-      transform, DlTransform::MakeRotate(DlDegrees(90)));
+      transform, DlTransform::MakeRotate(DlAngle::Degrees(90)));
   const DlFRect local_cull_rect = DlFRect::MakeLTRB(5, -15, 15, -5);
 
   DisplayListMatrixClipTracker tracker1(cull_rect, transform);
-  tracker1.rotate(90);
+  tracker1.rotate(DlAngle::Degrees(90));
 
   ASSERT_EQ(tracker1.device_cull_rect(), cull_rect);
   ASSERT_EQ(tracker1.local_cull_rect(), local_cull_rect);

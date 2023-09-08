@@ -6,6 +6,7 @@
 #define FLUTTER_DISPLAY_LIST_GEOMETRY_DL_ANGLE_H_
 
 #include <algorithm>
+#include <cmath>
 #include <limits>
 #include <ostream>
 
@@ -22,13 +23,6 @@ namespace flutter {
 /// aspect of the API, providing format conversions on the fly only when
 /// necessary.
 ///
-/// APIs that take an angle as a parameter should use |DlAngle| to specify
-/// their arguments.
-///
-/// Developers specifying an angle to an API need only construct a
-/// |DlDegrees| or |DlRadians| object as their code finds most convenient
-/// without regard to how the angle will eventually be used.
-///
 /// A method |CosSin| is provided to compute both sine and cosine of an
 /// angle at the same time and attempts to avoid tricky practical cases
 /// where the 2 values produce a vector longer than 1.0 due to differences
@@ -40,54 +34,65 @@ namespace flutter {
 /// 0 degrees/radians if the value being stored is a NaN or +/-Infinity.
 class DlAngle {
  public:
+  constexpr DlAngle() : radians_(0.0f) {}
+  static constexpr DlAngle Radians(DlScalar radians = 0.0f) {
+    return DlAngle(radians);
+  }
+  static constexpr DlAngle Degrees(DlScalar degrees = 0.0f) {
+    return DlAngle(degrees * kDlScalar_Pi / 180.0f);
+  }
+
   /// Returns the angle measured in radians, converting if needed.
-  virtual DlScalar radians() const = 0;
+  constexpr DlScalar radians() const { return radians_; }
 
   /// Returns the angle measured in degrees, converting if needed.
-  virtual DlScalar degrees() const = 0;
+  constexpr DlScalar degrees() const {
+    return radians_ * 180.0f / kDlScalar_Pi;
+  }
 
   /// Returns a vector containing the cosine of the angle in the
   /// x value and the sine of the angle in the y value. The method
   /// will attempt to adjust for some common practical cases where
   /// some angles produce values such that |cos^2 + sin^2 > 1.0|
   DlFVector CosSin() const;
-};
 
-/// An angle constructed from a value in degrees which can be handed to
-/// any API that takes a |DlAngle|. The value will automatically be
-/// converted to radians if the API being called requires them.
-class DlDegrees : public DlAngle {
- public:
-  constexpr DlDegrees() : DlDegrees(0.0) {}
-  constexpr explicit DlDegrees(DlScalar degrees) : degrees_(degrees) {}
-  constexpr DlDegrees(const DlAngle& angle) : degrees_(angle.degrees()) {}
-
-  DlScalar radians() const override {
-    return static_cast<DlScalar>(degrees_ * kDlScalar_Pi / 180.0);
+  constexpr bool IsFullCircle() const {
+    DlScalar r = (remainder(radians_, kDlScalar_Pi * 2.0f));
+    return !(fabs(r) > kDlScalar_NearlyZero);
   }
-  DlScalar degrees() const override { return degrees_; }
 
- private:
-  DlScalar degrees_;
-};
+  constexpr DlAngle operator+(DlAngle other) {
+    return DlAngle(this->radians_ + other.radians_);
+  }
 
-/// An angle constructed from a value in degrees which can be handed to
-/// any API that takes a |DlAngle|. The value will automatically be
-/// converted to radians if the API being called requires them.
-class DlRadians : public DlAngle {
- public:
-  constexpr DlRadians() : DlRadians(0.0) {}
-  constexpr explicit DlRadians(DlScalar radians) : radians_(radians) {}
-  constexpr DlRadians(const DlAngle& angle) : radians_(angle.radians()) {}
+  constexpr DlAngle operator-(DlAngle other) {
+    return DlAngle(this->radians_ - other.radians_);
+  }
 
-  DlScalar radians() const override { return radians_; }
-  DlScalar degrees() const override {
-    return static_cast<DlScalar>(radians_ * 180.0 / kDlScalar_Pi);
+  constexpr DlAngle operator*(DlScalar s) {
+    return DlAngle(this->radians_ * s);
+  }
+
+  constexpr DlAngle operator/(DlScalar s) {
+    return DlAngle(this->radians_ / s);
   }
 
  private:
-  DlScalar radians_;
+  constexpr explicit DlAngle(DlScalar radians)
+      : radians_(DlScalar_IsFinite(radians) ? radians : 0.0f) {}
+
+  const DlScalar radians_;
+
+  friend DlAngle operator*(DlAngle a, DlScalar s);
+  friend DlAngle operator*(DlScalar s, DlAngle a);
+  friend DlAngle operator/(DlAngle a, DlScalar s);
 };
+
+inline std::ostream& operator<<(std::ostream& os, const DlAngle& angle) {
+  return os << "DlAngle("                //
+            << angle.radians() << "r, "  //
+            << angle.degrees() << "d)";
+}
 
 }  // namespace flutter
 

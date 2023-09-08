@@ -1853,11 +1853,12 @@ class CanvasCompareTester {
                    "Scale +5%",  //
                    [=](SkCanvas* c, SkPaint&) { c->scale(1.05, 1.05); },
                    [=](DlCanvas* c, DlPaint&) { c->Scale(1.05, 1.05); }));
-    RenderWith(testP, env, skewed_tolerance,
-               CaseParameters(
-                   "Rotate 5 degrees",  //
-                   [=](SkCanvas* c, SkPaint&) { c->rotate(5); },
-                   [=](DlCanvas* c, DlPaint&) { c->Rotate(5); }));
+    RenderWith(
+        testP, env, skewed_tolerance,
+        CaseParameters(
+            "Rotate 5 degrees",  //
+            [=](SkCanvas* c, SkPaint&) { c->rotate(5); },
+            [=](DlCanvas* c, DlPaint&) { c->Rotate(DlAngle::Degrees(5)); }));
     RenderWith(testP, env, skewed_tolerance,
                CaseParameters(
                    "Skew 5%",  //
@@ -3825,14 +3826,14 @@ TEST_F(DisplayListCanvas, MatrixColorFilterModifyTransparencyCheck) {
 
     DisplayListBuilder builder1;
     builder1.Translate(kDlTestCenter);
-    builder1.Rotate(45);
+    builder1.Rotate(DlAngle::Degrees(45));
     builder1.Translate(-kDlTestCenter);
     builder1.DrawRect(kDlRenderBounds, paint);
     auto display_list1 = builder1.Build();
 
     DisplayListBuilder builder2;
     builder2.Translate(kDlTestCenter);
-    builder2.Rotate(45);
+    builder2.Rotate(DlAngle::Degrees(45));
     builder2.Translate(-kDlTestCenter);
     builder2.SaveLayer(&kDlTestBounds, &filter_save_paint);
     builder2.DrawRect(kDlRenderBounds, paint);
@@ -4009,14 +4010,14 @@ TEST_F(DisplayListCanvas, BlendColorFilterModifyTransparencyCheck) {
 
     DisplayListBuilder builder1;
     builder1.Translate(kDlTestCenter);
-    builder1.Rotate(45);
+    builder1.Rotate(DlAngle::Degrees(45));
     builder1.Translate(-kDlTestCenter);
     builder1.DrawRect(kDlRenderBounds, paint);
     auto display_list1 = builder1.Build();
 
     DisplayListBuilder builder2;
     builder2.Translate(kDlTestCenter);
-    builder2.Rotate(45);
+    builder2.Rotate(DlAngle::Degrees(45));
     builder2.Translate(-kDlTestCenter);
     builder2.SaveLayer(&kDlTestBounds, &filter_save_paint);
     builder2.DrawRect(kDlRenderBounds, paint);

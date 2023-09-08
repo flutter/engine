@@ -138,17 +138,17 @@ DlTransform& DlTransform::SkewOuter(DlScalar sx, DlScalar sy) {
   return ConcatOuter(MakeSkew(sx, sy));
 }
 
-DlTransform& DlTransform::RotateInner(const DlAngle& angle) {
+DlTransform& DlTransform::RotateInner(DlAngle angle) {
   return ConcatInner(MakeRotate(angle));
 }
-DlTransform& DlTransform::RotateOuter(const DlAngle& angle) {
+DlTransform& DlTransform::RotateOuter(DlAngle angle) {
   return ConcatOuter(MakeRotate(angle));
 }
 
-DlTransform& DlTransform::RotateInner(DlFVector3 axis, const DlAngle& angle) {
+DlTransform& DlTransform::RotateInner(DlFVector3 axis, DlAngle angle) {
   return ConcatInner(MakeRotate(axis, angle));
 }
-DlTransform& DlTransform::RotateOuter(DlFVector3 axis, const DlAngle& angle) {
+DlTransform& DlTransform::RotateOuter(DlFVector3 axis, DlAngle angle) {
   return ConcatOuter(MakeRotate(axis, angle));
 }
 

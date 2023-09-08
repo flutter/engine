@@ -596,11 +596,11 @@ void DisplayListBuilder::Scale(DlScalar sx, DlScalar sy) {
     tracker_.scale(sx, sy);
   }
 }
-void DisplayListBuilder::Rotate(DlScalar degrees) {
-  if (SkScalarMod(degrees, 360.0) != 0.0) {
+void DisplayListBuilder::Rotate(DlAngle angle) {
+  if (!angle.IsFullCircle()) {
     checkForDeferredSave();
-    Push<RotateOp>(0, 1, degrees);
-    tracker_.rotate(degrees);
+    Push<RotateOp>(0, 1, angle);
+    tracker_.rotate(angle);
   }
 }
 void DisplayListBuilder::Skew(DlScalar sx, DlScalar sy) {

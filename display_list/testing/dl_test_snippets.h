@@ -152,13 +152,13 @@ static const DlErodeImageFilter kTestErodeImageFilter1(4.0, 4.0);
 static const DlErodeImageFilter kTestErodeImageFilter2(4.0, 3.0);
 static const DlErodeImageFilter kTestErodeImageFilter3(3.0, 4.0);
 static const DlMatrixImageFilter kTestMatrixImageFilter1(
-    DlTransform::MakeRotate(DlDegrees(45)),
+    DlTransform::MakeRotate(DlAngle::Degrees(45)),
     kNearestSampling);
 static const DlMatrixImageFilter kTestMatrixImageFilter2(
-    DlTransform::MakeRotate(DlDegrees(85)),
+    DlTransform::MakeRotate(DlAngle::Degrees(85)),
     kNearestSampling);
 static const DlMatrixImageFilter kTestMatrixImageFilter3(
-    DlTransform::MakeRotate(DlDegrees(45)),
+    DlTransform::MakeRotate(DlAngle::Degrees(45)),
     kLinearSampling);
 static const DlComposeImageFilter kTestComposeImageFilter1(
     kTestBlurImageFilter1,
@@ -196,7 +196,8 @@ static const DlPath kTestPath2 =
 static const DlPath kTestPath3 =
     DlPath::MakePolygon({{0, 0}, {10, 10}, {10, 0}, {0, 10}}, false);
 static const DlTransform kTestMatrix1 = DlTransform::MakeScale(2, 2);
-static const DlTransform kTestMatrix2 = DlTransform::MakeRotate(DlDegrees(45));
+static const DlTransform kTestMatrix2 =
+    DlTransform::MakeRotate(DlAngle::Degrees(45));
 
 static std::shared_ptr<const DlVertices> TestVertices1 =
     DlVertices::Make(DlVertexMode::kTriangles,  //

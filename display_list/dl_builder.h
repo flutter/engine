@@ -62,7 +62,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
   // |DlCanvas|
   void Scale(DlScalar sx, DlScalar sy) override;
   // |DlCanvas|
-  void Rotate(DlScalar degrees) override;
+  void Rotate(DlAngle angle) override;
   // |DlCanvas|
   void Skew(DlScalar sx, DlScalar sy) override;
 
@@ -345,7 +345,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
   // |DlOpReceiver|
   void scale(DlScalar sx, DlScalar sy) override { Scale(sx, sy); }
   // |DlOpReceiver|
-  void rotate(DlScalar degrees) override { Rotate(degrees); }
+  void rotate(DlAngle angle) override { Rotate(angle); }
   // |DlOpReceiver|
   void skew(DlScalar sx, DlScalar sy) override { Skew(sx, sy); }
 

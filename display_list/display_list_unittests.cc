@@ -282,7 +282,7 @@ TEST_F(DisplayListTest, SaveRestoreRestoresTransform) {
   check_defaults(builder, cull_rect);
 
   builder.Save();
-  builder.Rotate(45.0f);
+  builder.Rotate(DlAngle::Degrees(45.0f));
   builder.Restore();
   check_defaults(builder, cull_rect);
 
@@ -322,7 +322,7 @@ TEST_F(DisplayListTest, BuildRestoresTransform) {
   builder.Build();
   check_defaults(builder, cull_rect);
 
-  builder.Rotate(45.0f);
+  builder.Rotate(DlAngle::Degrees(45.0f));
   builder.Build();
   check_defaults(builder, cull_rect);
 
@@ -698,11 +698,11 @@ TEST_F(DisplayListTest, SingleOpDisplayListsAreEqualWithOrWithoutRtree) {
 TEST_F(DisplayListTest, FullRotationsAreNop) {
   DisplayListBuilder builder;
   DlOpReceiver& receiver = ToReceiver(builder);
-  receiver.rotate(0);
-  receiver.rotate(360);
-  receiver.rotate(720);
-  receiver.rotate(1080);
-  receiver.rotate(1440);
+  receiver.rotate(DlAngle::Degrees(0));
+  receiver.rotate(DlAngle::Degrees(360));
+  receiver.rotate(DlAngle::Degrees(720));
+  receiver.rotate(DlAngle::Degrees(1080));
+  receiver.rotate(DlAngle::Degrees(1440));
   sk_sp<DisplayList> dl = builder.Build();
   ASSERT_EQ(dl->bytes(false), sizeof(DisplayList));
   ASSERT_EQ(dl->bytes(true), sizeof(DisplayList));
@@ -1621,8 +1621,8 @@ TEST_F(DisplayListTest, ScaleAffectsCurrentTransform) {
 TEST_F(DisplayListTest, RotateAffectsCurrentTransform) {
   DisplayListBuilder builder;
   DlOpReceiver& receiver = ToReceiver(builder);
-  receiver.rotate(12.3);
-  DlTransform matrix = DlTransform::MakeRotate(DlDegrees(12.3));
+  receiver.rotate(DlAngle::Degrees(12.3));
+  DlTransform matrix = DlTransform::MakeRotate(DlAngle::Degrees(12.3));
   DlTransform cur_matrix = builder.GetTransform();
   ASSERT_EQ(cur_matrix, matrix);
   receiver.translate(10, 10);
@@ -2731,7 +2731,7 @@ TEST_F(DisplayListTest, NOPRotationDoesNotTriggerDeferredSave) {
   DlOpReceiver& receiver1 = ToReceiver(builder1);
   receiver1.save();
   receiver1.save();
-  receiver1.rotate(360);
+  receiver1.rotate(DlAngle::Degrees(360));
   receiver1.drawRect(DlFRect::MakeWH(100, 100));
   receiver1.restore();
   receiver1.drawRect(DlFRect::MakeWH(100, 100));

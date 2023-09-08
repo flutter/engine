@@ -81,7 +81,7 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
 
   void translate(DlScalar tx, DlScalar ty) override;
   void scale(DlScalar sx, DlScalar sy) override;
-  void rotate(DlScalar degrees) override;
+  void rotate(DlAngle angle) override;
   void skew(DlScalar sx, DlScalar sy) override;
   // clang-format off
   void transform2DAffine(DlScalar mxx, DlScalar mxy, DlScalar mxt,

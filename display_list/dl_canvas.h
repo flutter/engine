@@ -64,7 +64,7 @@ class DlCanvas {
   virtual void Translate(DlScalar tx, DlScalar ty) = 0;
   void Translate(DlFPoint p) { Translate(p.x(), p.y()); }
   virtual void Scale(DlScalar sx, DlScalar sy) = 0;
-  virtual void Rotate(DlScalar degrees) = 0;
+  virtual void Rotate(DlAngle angle) = 0;
   virtual void Skew(DlScalar sx, DlScalar sy) = 0;
 
   // clang-format off

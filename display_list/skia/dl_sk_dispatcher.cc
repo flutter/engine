@@ -79,8 +79,8 @@ void DlSkCanvasDispatcher::translate(DlScalar tx, DlScalar ty) {
 void DlSkCanvasDispatcher::scale(DlScalar sx, DlScalar sy) {
   canvas_->scale(sx, sy);
 }
-void DlSkCanvasDispatcher::rotate(DlScalar degrees) {
-  canvas_->rotate(degrees);
+void DlSkCanvasDispatcher::rotate(DlAngle angle) {
+  canvas_->rotate(angle.degrees());
 }
 void DlSkCanvasDispatcher::skew(DlScalar sx, DlScalar sy) {
   canvas_->skew(sx, sy);

@@ -17,16 +17,15 @@ namespace flutter {
 // angles when trying to represent those angles as irrational numbers
 // in a limited-precision floating point world.
 DlFVector DlAngle::CosSin() const {
-  DlScalar r = radians();
-  if (!DlScalar_IsFinite(r)) {
+  if (!DlScalar_IsFinite(radians_)) {
     return {1.0f, 0.0f};
   }
-  DlScalar c = cosf(r);
+  DlScalar c = cosf(radians_);
   DlScalar s;
   if (c == -1.0f || c == 1.0f) {
     s = 0.0f;
   } else {
-    s = sinf(r);
+    s = sinf(radians_);
     if (s == -1.0f || s == 1.0f) {
       c = 0.0f;
     }

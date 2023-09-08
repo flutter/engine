@@ -87,7 +87,7 @@ class DlDispatcher final : public flutter::DlOpReceiver {
   void scale(flutter::DlScalar sx, flutter::DlScalar sy) override;
 
   // |flutter::DlOpReceiver|
-  void rotate(flutter::DlScalar degrees) override;
+  void rotate(flutter::DlAngle angle) override;
 
   // |flutter::DlOpReceiver|
   void skew(flutter::DlScalar sx, flutter::DlScalar sy) override;

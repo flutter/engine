@@ -609,8 +609,8 @@ void DisplayListStreamDispatcher::translate(DlScalar tx, DlScalar ty) {
 void DisplayListStreamDispatcher::scale(DlScalar sx, DlScalar sy) {
   startl() << "scale(" << sx << ", " << sy << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::rotate(DlScalar degrees) {
-  startl() << "rotate(" << degrees << ");" << std::endl;
+void DisplayListStreamDispatcher::rotate(DlAngle angle) {
+  startl() << "rotate(" << angle << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::skew(DlScalar sx, DlScalar sy) {
   startl() << "skew(" << sx << ", " << sy << ");" << std::endl;
