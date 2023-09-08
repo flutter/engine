@@ -242,6 +242,8 @@ PFN_vkVoidFunction VulkanProcTable::AcquireProc(
 }
 
 namespace {
+// These are atomic since 2 threads could simultaneously call the
+// AcquireThreadsafe* functions.
 std::atomic<decltype(vkQueueSubmit)*> g_non_threadsafe_vkQueueSubmit;
 std::atomic<decltype(vkQueueWaitIdle)*> g_non_threadsafe_vkQueueWaitIdle;
 
