@@ -245,6 +245,8 @@ namespace {
 std::atomic<VkResult (*)(VkQueue, uint32_t, const VkSubmitInfo*, VkFence)>
     g_non_threadsafe_vkQueueSubmit;
 
+std::atomic<decltype(vkQueueWaitIdle)*> g_non_threadsafe_vkQueueWaitIdle;
+
 std::mutex& GetThreadsafeVkQueueSubmitMutex() {
   // Initialization of function static variables are threadsafe in C++11.
   static std::mutex* mtx_ptr = new std::mutex();
@@ -260,6 +262,11 @@ VKAPI_ATTR VkResult vkQueueSubmitThreadsafe(VkQueue queue,
                                                fence);
 }
 
+VKAPI_ATTR VkResult vkQueueWaitIdleThreadsafe(VkQueue queue) {
+  std::scoped_lock lock(GetThreadsafeVkQueueSubmitMutex());
+  return g_non_threadsafe_vkQueueWaitIdle.load()(queue);
+}
+
 template <typename T, typename U>
 struct check_same_signature : std::false_type {};
 
@@ -268,6 +275,8 @@ struct check_same_signature<Ret(Args...), Ret(Args...)> : std::true_type {};
 
 static_assert(check_same_signature<decltype(vkQueueSubmit),
                                    decltype(vkQueueSubmitThreadsafe)>::value);
+static_assert(check_same_signature<decltype(vkQueueWaitIdle),
+                                   decltype(vkQueueWaitIdleThreadsafe)>::value);
 
 }  // namespace
 
@@ -288,6 +297,23 @@ PFN_vkVoidFunction VulkanProcTable::AcquireThreadsafeSubmitQueue(
   return reinterpret_cast<PFN_vkVoidFunction>(vkQueueSubmitThreadsafe);
 }
 
+PFN_vkVoidFunction VulkanProcTable::AcquireThreadsafeQueueWaitIdle(
+    const VulkanHandle<VkDevice>& device) const {
+  if (!device || !GetInstanceProcAddr) {
+    return nullptr;
+  }
+
+  auto non_threadsafe_vkQueueWaitIdle =
+      reinterpret_cast<decltype(vkQueueWaitIdle)*>(
+          GetDeviceProcAddr(device, "vkQueueWaitIdle"));
+  FML_DCHECK(g_non_threadsafe_vkQueueWaitIdle.load() == nullptr ||
+             g_non_threadsafe_vkQueueWaitIdle.load() ==
+                 non_threadsafe_vkQueueWaitIdle);
+  g_non_threadsafe_vkQueueWaitIdle.store(non_threadsafe_vkQueueWaitIdle);
+
+  return reinterpret_cast<PFN_vkVoidFunction>(vkQueueWaitIdleThreadsafe);
+}
+
 PFN_vkVoidFunction VulkanProcTable::AcquireProc(
     const char* proc_name,
     const VulkanHandle<VkDevice>& device) const {
@@ -297,6 +323,8 @@ PFN_vkVoidFunction VulkanProcTable::AcquireProc(
 
   if (strcmp(proc_name, "vkQueueSubmit") == 0) {
     return AcquireThreadsafeSubmitQueue(device);
+  } else if (strcmp(proc_name, "vkQueueWaitIdle") == 0) {
+    return AcquireThreadsafeQueueWaitIdle(device);
   }
 
   return GetDeviceProcAddr(device, proc_name);
