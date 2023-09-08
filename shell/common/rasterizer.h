@@ -653,11 +653,13 @@ class Rasterizer final : public SnapshotDelegate,
       FrameTimingsRecorder& frame_timings_recorder,
       std::list<LayerTreeTask> tasks);
 
-  // This method pushes the frame timing recorder from build end to raster end.
+  // This method is not affiliated with the frame timing recorder, but should be
+  // included within the raster phase.
   DrawSurfaceStatus DrawToSurfaceUnsafe(
-      FrameTimingsRecorder& frame_timings_recorder,
+      int64_t view_id,
       flutter::LayerTree& layer_tree,
-      float device_pixel_ratio);
+      float device_pixel_ratio,
+      std::optional<fml::TimePoint> presentation_time);
 
   void FireNextFrameCallbackIfPresent();
 

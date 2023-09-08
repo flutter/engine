@@ -528,7 +528,11 @@ Rasterizer::DoDrawResult Rasterizer::DrawToSurfaces(
   } else {
     delegate_.GetIsGpuDisabledSyncSwitch()->Execute(
         fml::SyncSwitch::Handlers()
-            .SetIfTrue([&] { gpu_unavailable = true; })
+            .SetIfTrue([&] {
+              gpu_unavailable = true;
+              frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
+              frame_timings_recorder.RecordRasterEnd();
+            })
             .SetIfFalse([&] {
               result = DrawToSurfacesUnsafe(frame_timings_recorder,
                                             std::move(tasks));
@@ -536,8 +540,6 @@ Rasterizer::DoDrawResult Rasterizer::DrawToSurfaces(
   }
 
   if (gpu_unavailable) {
-    frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
-    frame_timings_recorder.RecordRasterEnd();
     return DoDrawResult{
         .status = DoDrawStatus::kGpuUnavailable,
     };
@@ -554,11 +556,27 @@ Rasterizer::DoDrawResult Rasterizer::DrawToSurfacesUnsafe(
   FML_CHECK(tasks.size() == 1u);
   auto& task = tasks.front();
   FML_DCHECK(task.view_id == kFlutterImplicitViewId);
+
+  std::optional<fml::TimePoint> presentation_time = std::nullopt;
+  // TODO (https://github.com/flutter/flutter/issues/105596): this can be in
+  // the past and might need to get snapped to future as this frame could
+  // have been resubmitted. `presentation_time` on SubmitInfo is not set
+  // in this case.
+  {
+    const auto vsync_target_time = frame_timings_recorder.GetVsyncTargetTime();
+    if (vsync_target_time > fml::TimePoint::Now()) {
+      presentation_time = vsync_target_time;
+    }
+  }
+
+  compositor_context_->ui_time().SetLapTime(
+      frame_timings_recorder.GetBuildDuration());
+  frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
+
   int64_t view_id = kFlutterImplicitViewId;
   std::unique_ptr<LayerTree> layer_tree = std::move(task.layer_tree);
   float device_pixel_ratio = task.device_pixel_ratio;
   if (delegate_.ShouldDiscardLayerTree(task.view_id, *layer_tree)) {
-    frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
     frame_timings_recorder.RecordRasterEnd();
     return DoDrawResult{
         .status = DoDrawStatus::kDiscarded,
@@ -566,7 +584,7 @@ Rasterizer::DoDrawResult Rasterizer::DrawToSurfacesUnsafe(
   }
 
   DrawSurfaceStatus status = DrawToSurfaceUnsafe(
-      frame_timings_recorder, *layer_tree, device_pixel_ratio);
+      view_id, *layer_tree, device_pixel_ratio, presentation_time);
 
   std::unique_ptr<FrameItem> resubmitted_item;
   if (status == DrawSurfaceStatus::kSuccess) {
@@ -582,6 +600,14 @@ Rasterizer::DoDrawResult Rasterizer::DrawToSurfacesUnsafe(
         frame_timings_recorder.CloneUntil(
             FrameTimingsRecorder::State::kBuildEnd));
   }
+
+  frame_timings_recorder.RecordRasterEnd(&compositor_context_->raster_cache());
+  FireNextFrameCallbackIfPresent();
+
+  if (surface_->GetContext()) {
+    surface_->GetContext()->performDeferredCleanup(kSkiaCleanupExpiration);
+  }
+
   return DoDrawResult{
       .status = ToDoDrawStatus(status),
       .resubmitted_item = std::move(resubmitted_item),
@@ -604,13 +630,11 @@ Rasterizer::DoDrawStatus Rasterizer::ToDoDrawStatus(DrawSurfaceStatus status) {
 /// when iOS is backgrounded, for example.
 /// \see Rasterizer::DrawToSurfaces
 Rasterizer::DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
-    FrameTimingsRecorder& frame_timings_recorder,
+    int64_t view_id,
     flutter::LayerTree& layer_tree,
-    float device_pixel_ratio) {
+    float device_pixel_ratio,
+    std::optional<fml::TimePoint> presentation_time) {
   FML_DCHECK(surface_);
-
-  compositor_context_->ui_time().SetLapTime(
-      frame_timings_recorder.GetBuildDuration());
 
   DlCanvas* embedder_root_canvas = nullptr;
   if (external_view_embedder_) {
@@ -622,16 +646,12 @@ Rasterizer::DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
     embedder_root_canvas = external_view_embedder_->GetRootCanvas();
   }
 
-  frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
-
   // On Android, the external view embedder deletes surfaces in `BeginFrame`.
   //
   // Deleting a surface also clears the GL context. Therefore, acquire the
   // frame after calling `BeginFrame` as this operation resets the GL context.
   auto frame = surface_->AcquireFrame(layer_tree.frame_size());
   if (frame == nullptr) {
-    frame_timings_recorder.RecordRasterEnd(
-        &compositor_context_->raster_cache());
     return DrawSurfaceStatus::kFailed;
   }
 
@@ -673,8 +693,6 @@ Rasterizer::DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
       damage = std::make_unique<FrameDamage>();
       auto existing_damage = frame->framebuffer_info().existing_damage;
       if (existing_damage.has_value() && !force_full_repaint) {
-        // TODO(dkwingsmt): Use a correct view ID here.
-        int64_t view_id = kFlutterImplicitViewId;
         damage->SetPreviousLayerTree(GetLastLayerTree(view_id));
         damage->AddAdditionalDamage(existing_damage.value());
         damage->SetClipAlignment(
@@ -695,20 +713,11 @@ Rasterizer::DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
                                  damage.get()          // frame damage
         );
     if (frame_status == RasterStatus::kSkipAndRetry) {
-      frame_timings_recorder.RecordRasterEnd(
-          &compositor_context_->raster_cache());
       return DrawSurfaceStatus::kRetry;
     }
 
     SurfaceFrame::SubmitInfo submit_info;
-    // TODO (https://github.com/flutter/flutter/issues/105596): this can be in
-    // the past and might need to get snapped to future as this frame could
-    // have been resubmitted. `presentation_time` on `submit_info` is not set
-    // in this case.
-    const auto presentation_time = frame_timings_recorder.GetVsyncTargetTime();
-    if (presentation_time > fml::TimePoint::Now()) {
-      submit_info.presentation_time = presentation_time;
-    }
+    submit_info.presentation_time = presentation_time;
     if (damage) {
       submit_info.frame_damage = damage->GetFrameDamage();
       submit_info.buffer_damage = damage->GetBufferDamage();
@@ -731,14 +740,6 @@ Rasterizer::DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
       compositor_context_->raster_cache().EndFrame();
     }
 
-    frame_timings_recorder.RecordRasterEnd(
-        &compositor_context_->raster_cache());
-    FireNextFrameCallbackIfPresent();
-
-    if (surface_->GetContext()) {
-      surface_->GetContext()->performDeferredCleanup(kSkiaCleanupExpiration);
-    }
-
     if (frame_status == RasterStatus::kResubmit) {
       return DrawSurfaceStatus::kRetry;
     } else {
@@ -747,7 +748,6 @@ Rasterizer::DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
     }
   }
 
-  frame_timings_recorder.RecordRasterEnd(&compositor_context_->raster_cache());
   return DrawSurfaceStatus::kFailed;
 }
 
