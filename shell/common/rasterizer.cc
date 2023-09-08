@@ -560,13 +560,13 @@ Rasterizer::DoDrawResult Rasterizer::DrawToSurface(
   }
   std::unique_ptr<FrameItem> resubmitted_item;
   if (status == DrawSurfaceStatus::kSuccess) {
-    last_successful_tasks_.try_emplace(
-        /*key=*/view_id,
-        /*value ctor=*/view_id, std::move(layer_tree), device_pixel_ratio);
+    last_successful_tasks_.insert_or_assign(
+        view_id,
+        LayerTreeTask(view_id, std::move(layer_tree), device_pixel_ratio));
   } else if (status == DrawSurfaceStatus::kRetry) {
     std::list<LayerTreeTask> resubmitted_tasks;
-    resubmitted_tasks.emplace_back(kFlutterImplicitViewId,
-                                   std::move(layer_tree), device_pixel_ratio);
+    resubmitted_tasks.emplace_back(view_id, std::move(layer_tree),
+                                   device_pixel_ratio);
     resubmitted_item = std::make_unique<FrameItem>(
         std::move(resubmitted_tasks),
         frame_timings_recorder.CloneUntil(
