@@ -242,7 +242,7 @@ PFN_vkVoidFunction VulkanProcTable::AcquireProc(
 }
 
 namespace {
-std::atomic<void (*)(VkDevice, uint32_t, uint32_t, VkQueue*)>
+std::atomic<VkResult (*)(VkQueue, uint32_t, const VkSubmitInfo*, VkFence)>
     g_non_threadsafe_vkQueueSubmit;
 
 std::mutex& GetThreadsafeVkQueueSubmitMutex() {
@@ -251,14 +251,24 @@ std::mutex& GetThreadsafeVkQueueSubmitMutex() {
   return *mtx_ptr;
 }
 
-VKAPI_ATTR void vkQueueSubmitThreadsafe(VkDevice device,
-                                        uint32_t queueFamilyIndex,
-                                        uint32_t queueIndex,
-                                        VkQueue* pQueue) {
+VKAPI_ATTR VkResult vkQueueSubmitThreadsafe(VkQueue queue,
+                                            uint32_t submitCount,
+                                            const VkSubmitInfo* pSubmits,
+                                            VkFence fence) {
   std::scoped_lock lock(GetThreadsafeVkQueueSubmitMutex());
-  g_non_threadsafe_vkQueueSubmit.load()(device, queueFamilyIndex, queueIndex,
-                                        pQueue);
+  return g_non_threadsafe_vkQueueSubmit.load()(queue, submitCount, pSubmits,
+                                               fence);
 }
+
+template <typename T, typename U>
+struct check_same_signature : std::false_type {};
+
+template <typename Ret, typename... Args>
+struct check_same_signature<Ret(Args...), Ret(Args...)> : std::true_type {};
+
+static_assert(check_same_signature<decltype(vkQueueSubmit),
+                                   decltype(vkQueueSubmitThreadsafe)>::value);
+
 }  // namespace
 
 PFN_vkVoidFunction VulkanProcTable::AcquireThreadsafeSubmitQueue(
@@ -267,9 +277,9 @@ PFN_vkVoidFunction VulkanProcTable::AcquireThreadsafeSubmitQueue(
     return nullptr;
   }
 
-  auto non_threadsafe_vkQueueSubmit =
-      reinterpret_cast<void (*)(VkDevice, uint32_t, uint32_t, VkQueue*)>(
-          GetDeviceProcAddr(device, "vkQueueSubmit"));
+  auto non_threadsafe_vkQueueSubmit = reinterpret_cast<VkResult (*)(
+      VkQueue, uint32_t, const VkSubmitInfo*, VkFence)>(
+      GetDeviceProcAddr(device, "vkQueueSubmit"));
   FML_DCHECK(g_non_threadsafe_vkQueueSubmit.load() == nullptr ||
              g_non_threadsafe_vkQueueSubmit.load() ==
                  non_threadsafe_vkQueueSubmit);
