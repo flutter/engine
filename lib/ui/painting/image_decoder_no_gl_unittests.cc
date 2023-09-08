@@ -7,6 +7,11 @@
 namespace flutter {
 namespace testing {
 
+// Tests are disabled for fuchsia.
+#if defined(OS_FUCHSIA)
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+
 namespace {
 
 bool IsPngWithPLTE(const uint8_t* bytes, size_t size) {
@@ -91,6 +96,9 @@ float DecodeBGR10(uint32_t x) {
 }
 
 TEST(ImageDecoderNoGLTest, ImpellerWideGamutDisplayP3) {
+#if defined(OS_FUCHSIA)
+  GTEST_SKIP() << "Fuchsia can't load the test fixtures.";
+#endif
   auto data = OpenFixtureAsSkData("DisplayP3Logo.png");
   auto image = SkImages::DeferredFromEncodedData(data);
   ASSERT_TRUE(image != nullptr);
@@ -145,6 +153,9 @@ TEST(ImageDecoderNoGLTest, ImpellerWideGamutDisplayP3) {
 }
 
 TEST(ImageDecoderNoGLTest, ImpellerWideGamutIndexedPng) {
+#if defined(OS_FUCHSIA)
+  GTEST_SKIP() << "Fuchsia can't load the test fixtures.";
+#endif
   auto data = OpenFixtureAsSkData("WideGamutIndexed.png");
   auto image = SkImages::DeferredFromEncodedData(data);
   ASSERT_TRUE(image != nullptr);
