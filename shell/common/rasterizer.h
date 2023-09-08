@@ -556,7 +556,7 @@ class Rasterizer final : public SnapshotDelegate,
     kFailed,
   };
 
-  // The result status of DoDraw and DrawToSurface.
+  // The result status of DoDraw, DrawToSurfaces, and DrawToSurfacesUnsafe.
   enum class DoDrawStatus {
     // Frame has been successfully rasterized.
     kSuccess,
@@ -644,11 +644,16 @@ class Rasterizer final : public SnapshotDelegate,
       std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
       std::list<LayerTreeTask> tasks);
 
-  // After this method, the frame timing recorder is at raster end.
-  DoDrawResult DrawToSurface(FrameTimingsRecorder& frame_timings_recorder,
-                             std::list<LayerTreeTask> tasks);
+  // This method pushes the frame timing recorder from build end to raster end.
+  DoDrawResult DrawToSurfaces(FrameTimingsRecorder& frame_timings_recorder,
+                              std::list<LayerTreeTask> tasks);
 
-  // After this method, the frame timing recorder is at raster end.
+  // This method pushes the frame timing recorder from build end to raster end.
+  DoDrawResult DrawToSurfacesUnsafe(
+      FrameTimingsRecorder& frame_timings_recorder,
+      std::list<LayerTreeTask> tasks);
+
+  // This method pushes the frame timing recorder from build end to raster end.
   DrawSurfaceStatus DrawToSurfaceUnsafe(
       FrameTimingsRecorder& frame_timings_recorder,
       flutter::LayerTree& layer_tree,

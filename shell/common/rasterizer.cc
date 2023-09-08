@@ -195,7 +195,7 @@ void Rasterizer::DrawLastLayerTree(
   last_successful_tasks_.clear();
 
   DoDrawResult result =
-      DrawToSurface(*frame_timings_recorder, std::move(tasks));
+      DrawToSurfaces(*frame_timings_recorder, std::move(tasks));
 
   // EndFrame should perform cleanups for the external_view_embedder.
   if (external_view_embedder_ && external_view_embedder_->GetUsedThisFrame()) {
@@ -432,7 +432,7 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
   persistent_cache->ResetStoredNewShaders();
 
   DoDrawResult result =
-      DrawToSurface(*frame_timings_recorder, std::move(tasks));
+      DrawToSurfaces(*frame_timings_recorder, std::move(tasks));
   FML_DCHECK(result.status != DoDrawStatus::kEnqueuePipeline);
   if (result.status == DoDrawStatus::kGpuUnavailable) {
     return DoDrawResult{
@@ -515,12 +515,39 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
   return result;
 }
 
-Rasterizer::DoDrawResult Rasterizer::DrawToSurface(
+Rasterizer::DoDrawResult Rasterizer::DrawToSurfaces(
     FrameTimingsRecorder& frame_timings_recorder,
     std::list<LayerTreeTask> tasks) {
-  TRACE_EVENT0("flutter", "Rasterizer::DrawToSurface");
+  TRACE_EVENT0("flutter", "Rasterizer::DrawToSurfaces");
   FML_DCHECK(surface_);
 
+  bool gpu_unavailable = false;
+  DoDrawResult result;
+  if (surface_->AllowsDrawingWhenGpuDisabled()) {
+    result = DrawToSurfacesUnsafe(frame_timings_recorder, std::move(tasks));
+  } else {
+    delegate_.GetIsGpuDisabledSyncSwitch()->Execute(
+        fml::SyncSwitch::Handlers()
+            .SetIfTrue([&] { gpu_unavailable = true; })
+            .SetIfFalse([&] {
+              result = DrawToSurfacesUnsafe(frame_timings_recorder,
+                                            std::move(tasks));
+            }));
+  }
+
+  if (gpu_unavailable) {
+    frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
+    frame_timings_recorder.RecordRasterEnd();
+    return DoDrawResult{
+        .status = DoDrawStatus::kGpuUnavailable,
+    };
+  }
+  return result;
+}
+
+Rasterizer::DoDrawResult Rasterizer::DrawToSurfacesUnsafe(
+    FrameTimingsRecorder& frame_timings_recorder,
+    std::list<LayerTreeTask> tasks) {
   // TODO(dkwingsmt): The rasterizer only supports rendering a single view
   // and that view must be the implicit view. Properly support multi-view
   // in the future.
@@ -538,28 +565,9 @@ Rasterizer::DoDrawResult Rasterizer::DrawToSurface(
     };
   }
 
-  bool gpu_unavailable = false;
-  DrawSurfaceStatus status;
-  if (surface_->AllowsDrawingWhenGpuDisabled()) {
-    status = DrawToSurfaceUnsafe(frame_timings_recorder, *layer_tree,
-                                 device_pixel_ratio);
-  } else {
-    delegate_.GetIsGpuDisabledSyncSwitch()->Execute(
-        fml::SyncSwitch::Handlers()
-            .SetIfTrue([&] { gpu_unavailable = true; })
-            .SetIfFalse([&] {
-              status = DrawToSurfaceUnsafe(frame_timings_recorder, *layer_tree,
-                                           device_pixel_ratio);
-            }));
-  }
+  DrawSurfaceStatus status = DrawToSurfaceUnsafe(
+      frame_timings_recorder, *layer_tree, device_pixel_ratio);
 
-  if (gpu_unavailable) {
-    frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
-    frame_timings_recorder.RecordRasterEnd();
-    return DoDrawResult{
-        .status = DoDrawStatus::kGpuUnavailable,
-    };
-  }
   std::unique_ptr<FrameItem> resubmitted_item;
   if (status == DrawSurfaceStatus::kSuccess) {
     last_successful_tasks_.insert_or_assign(
@@ -594,7 +602,7 @@ Rasterizer::DoDrawStatus Rasterizer::ToDoDrawStatus(DrawSurfaceStatus status) {
 
 /// Unsafe because it assumes we have access to the GPU which isn't the case
 /// when iOS is backgrounded, for example.
-/// \see Rasterizer::DrawToSurface
+/// \see Rasterizer::DrawToSurfaces
 Rasterizer::DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
     FrameTimingsRecorder& frame_timings_recorder,
     flutter::LayerTree& layer_tree,
