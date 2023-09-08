@@ -4,7 +4,6 @@
 
 #include "flutter/vulkan/procs/vulkan_proc_table.h"
 
-#include <cstring>
 #include <mutex>
 #include <utility>
 
@@ -319,12 +318,6 @@ PFN_vkVoidFunction VulkanProcTable::AcquireProc(
     const VulkanHandle<VkDevice>& device) const {
   if (proc_name == nullptr || !device || !GetDeviceProcAddr) {
     return nullptr;
-  }
-
-  if (strcmp(proc_name, "vkQueueSubmit") == 0) {
-    return AcquireThreadsafeSubmitQueue(device);
-  } else if (strcmp(proc_name, "vkQueueWaitIdle") == 0) {
-    return AcquireThreadsafeQueueWaitIdle(device);
   }
 
   return GetDeviceProcAddr(device, proc_name);
