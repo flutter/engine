@@ -32,6 +32,7 @@ using closure = std::function<void()>;
 class ScopedCleanupClosure {
  public:
   ScopedCleanupClosure() = default;
+  ScopedCleanupClosure(ScopedCleanupClosure&&) = default;
 
   explicit ScopedCleanupClosure(const fml::closure& closure)
       : closure_(closure) {}

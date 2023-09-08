@@ -13,11 +13,9 @@
 #include <map>
 #include <memory>
 #include <optional>
-#include <set>
 #include <string>
 #include <vector>
 
-#include "flutter/fml/build_config.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/allocator_vk.h"

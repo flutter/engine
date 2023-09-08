@@ -39,6 +39,8 @@ impeller_component("vulkan") {
     "command_buffer_vk.h",
     "command_encoder_vk.cc",
     "command_encoder_vk.h",
+    "command_pool_recycler_vk.cc",
+    "command_pool_recycler_vk.h",
     "command_pool_vk.cc",
     "command_pool_vk.h",
     "compute_pass_vk.cc",

@@ -9,6 +9,7 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/base/thread.h"
+#include "impeller/renderer/backend/vulkan/command_pool_recycler_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/device_holder.h"
 
@@ -24,6 +25,8 @@ namespace impeller {
 /// @see
 /// https://arm-software.github.io/vulkan_best_practice_for_mobile_developers/samples/performance/command_buffer_usage/command_buffer_usage_tutorial.html#resetting-the-command-pool
 class CommandPoolVK final {
+  friend class CommandPoolRecyclerVK;
+
  public:
   /// @brief      Gets the |CommandPoolVK| for the current thread.
   ///
@@ -91,12 +94,12 @@ class CommandPoolVK final {
   std::vector<vk::UniqueCommandBuffer> recycled_buffers_;
   bool is_valid_ = false;
 
+  explicit CommandPoolVK(const ContextVK* context);
+
   /// @brief      Resets, releasing all |vk::CommandBuffer|s.
   ///
   /// @note       "All" includes active and recycled buffers.
   void Reset();
-
-  explicit CommandPoolVK(const ContextVK* context);
 
   /// @brief      Collects buffers for recycling if able.
   ///
