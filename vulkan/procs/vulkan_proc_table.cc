@@ -267,9 +267,13 @@ PFN_vkVoidFunction VulkanProcTable::AcquireThreadsafeSubmitQueue(
     return nullptr;
   }
 
-  g_non_threadsafe_vkQueueSubmit =
+  auto non_threadsafe_vkQueueSubmit =
       reinterpret_cast<void (*)(VkDevice, uint32_t, uint32_t, VkQueue*)>(
           GetDeviceProcAddr(device, "vkQueueSubmit"));
+  FML_DCHECK(g_non_threadsafe_vkQueueSubmit.load() == nullptr ||
+             g_non_threadsafe_vkQueueSubmit.load() ==
+                 non_threadsafe_vkQueueSubmit);
+  g_non_threadsafe_vkQueueSubmit.store(non_threadsafe_vkQueueSubmit);
 
   return reinterpret_cast<PFN_vkVoidFunction>(vkQueueSubmitThreadsafe);
 }
