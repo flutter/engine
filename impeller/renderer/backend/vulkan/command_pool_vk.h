@@ -6,13 +6,46 @@
 
 #include <memory>
 #include <thread>
+#include <utility>
+#include <vector>
 
 #include "flutter/fml/macros.h"
+#include "flutter/fml/trace_event.h"
 #include "impeller/base/thread.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/device_holder.h"
 
 namespace impeller {
+
+class CommandPoolVK;
+
+class ManagedCommandPoolVK {
+ public:
+  ManagedCommandPoolVK(vk::UniqueCommandPool pool,
+                       std::weak_ptr<const ContextVK> context)
+      : pool_(std::move(pool)), context_(std::move(context)) {}
+
+  ManagedCommandPoolVK(ManagedCommandPoolVK&&) = default;
+
+  ~ManagedCommandPoolVK() {
+    TRACE_EVENT0("flutter", "ResetCommandPool");
+    auto strong_context = context_.lock();
+    if (!strong_context) {
+      return;
+    }
+    auto device = strong_context->GetDevice();
+    device.resetCommandPool(pool_.get());
+    strong_context->RecycleCommandPool(std::move(pool_));
+  }
+
+ private:
+  friend class CommandPoolVK;
+
+  vk::UniqueCommandPool pool_;
+  std::weak_ptr<const ContextVK> context_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(ManagedCommandPoolVK);
+};
 
 //------------------------------------------------------------------------------
 /// @brief      An opaque object that provides |vk::CommandBuffer| objects.
@@ -41,6 +74,8 @@ class CommandPoolVK final {
   static std::shared_ptr<CommandPoolVK> GetThreadLocal(
       const ContextVK* context);
 
+  static std::shared_ptr<CommandPoolVK> FromContext(const ContextVK* context);
+
   /// @brief      Clears all |CommandPoolVK|s for the given |ContextVK|.
   ///
   /// @param[in]  context  The |ContextVK| to clear.
@@ -51,9 +86,10 @@ class CommandPoolVK final {
   /// @note       Should only be called when the |ContextVK| is being destroyed.
   static void ClearAllPools(const ContextVK* context);
 
-  /// @brief      Releases references to thread-local command pools.
-  static void ReleaseThreadLocalPool(const ContextVK* context);
+  /// @brief      Releases all command pools.
+  static void ReleaseAllPools(const ContextVK* context);
 
+  CommandPoolVK(CommandPoolVK&&) = default;
   ~CommandPoolVK();
 
   /// @brief      Whether or not this |CommandPoolVK| is valid.
@@ -88,11 +124,12 @@ class CommandPoolVK final {
   friend class ContextVK;
 
   const std::thread::id owner_id_;
-  std::weak_ptr<const DeviceHolder> device_holder_;
-  vk::UniqueCommandPool graphics_pool_;
-  Mutex buffers_to_collect_mutex_;
-  std::vector<vk::UniqueCommandBuffer> buffers_to_collect_
-      IPLR_GUARDED_BY(buffers_to_collect_mutex_);
+  std::weak_ptr<const ContextVK> context_;
+  ManagedCommandPoolVK graphics_pool_;
+  size_t buffer_count_ = 0;
+  // Mutex buffers_to_collect_mutex_;
+  // std::vector<vk::UniqueCommandBuffer> buffers_to_collect_
+  //     IPLR_GUARDED_BY(buffers_to_collect_mutex_);
   std::vector<vk::UniqueCommandBuffer> recycled_buffers_;
   bool is_valid_ = false;
 
@@ -101,16 +138,9 @@ class CommandPoolVK final {
   /// @note       "All" includes active and recycled buffers.
   void Reset();
 
-  explicit CommandPoolVK(const ContextVK* context);
-
-  explicit CommandPoolVK(const std::thread::id& owner_id,
-                         std::weak_ptr<const DeviceHolder> device_holder,
-                         vk::UniqueCommandPool graphics_pool,
-                         bool is_valid)
-      : owner_id_(owner_id),
-        device_holder_(std::move(device_holder)),
-        graphics_pool_(std::move(graphics_pool)),
-        is_valid_(is_valid) {}
+  explicit CommandPoolVK(std::thread::id thread_id,
+                         std::weak_ptr<const ContextVK> context,
+                         ManagedCommandPoolVK graphics_pool);
 
   /// @brief      Collects buffers for recycling if able.
   ///
@@ -119,7 +149,8 @@ class CommandPoolVK final {
   /// |CreateGraphicsCommandBuffer|.
   ///
   /// @note       This method is a noop if a different thread created the pool.
-  void GarbageCollectBuffersIfAble() IPLR_REQUIRES(buffers_to_collect_mutex_);
+  // void GarbageCollectBuffersIfAble()
+  // IPLR_REQUIRES(buffers_to_collect_mutex_);
 
   FML_DISALLOW_COPY_AND_ASSIGN(CommandPoolVK);
 };

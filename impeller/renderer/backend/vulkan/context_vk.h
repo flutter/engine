@@ -32,6 +32,7 @@ class DebugReportVK;
 class FenceWaiterVK;
 class ResourceManagerVK;
 class SurfaceContextVK;
+class ManagedCommandPoolVK;
 
 class ContextVK final : public Context,
                         public BackendCast<ContextVK, Context>,
@@ -150,7 +151,9 @@ class ContextVK final : public Context,
   ///
   /// When all references to the returned |vk::UniqueCommandPool| are released,
   /// the pool will automatically be sent to a background thread for recycling.
-  std::optional<vk::UniqueCommandPool> GetCommandPool();
+  std::optional<ManagedCommandPoolVK> GetCommandPool() const;
+
+  void RecycleCommandPool(vk::UniqueCommandPool pool) const;
 
  private:
   struct DeviceHolderImpl : public DeviceHolder {
@@ -181,11 +184,10 @@ class ContextVK final : public Context,
   bool sync_presentation_ = false;
   const uint64_t hash_;
 
-  std::vector<vk::UniqueCommandPool> recycled_command_pools_;
-  Mutex recycled_command_pools_mutex_;
-  std::optional<vk::UniqueCommandPool> CreateCommandPool();
-  void RecycleCommandPool(vk::UniqueCommandPool pool);
-  std::optional<vk::UniqueCommandPool> ReuseCommandPool();
+  mutable std::vector<vk::UniqueCommandPool> recycled_command_pools_;
+  mutable Mutex recycled_command_pools_mutex_;
+  std::optional<vk::UniqueCommandPool> CreateCommandPool() const;
+  std::optional<vk::UniqueCommandPool> ReuseCommandPool() const;
 
   bool is_valid_ = false;
 

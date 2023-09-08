@@ -516,12 +516,11 @@ ContextVK::CreateGraphicsCommandEncoderFactory() const {
   return std::make_unique<CommandEncoderFactoryVK>(weak_from_this());
 }
 
-std::optional<vk::UniqueCommandPool> ContextVK::CreateCommandPool() {
+std::optional<vk::UniqueCommandPool> ContextVK::CreateCommandPool() const {
   vk::CommandPoolCreateInfo pool_info;
 
   pool_info.queueFamilyIndex = GetGraphicsQueue()->GetIndex().family;
-  pool_info.flags = vk::CommandPoolCreateFlagBits::eTransient |
-                    vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
+  pool_info.flags = vk::CommandPoolCreateFlagBits::eTransient;
   auto pool = GetDevice().createCommandPoolUnique(pool_info);
 
   if (pool.result != vk::Result::eSuccess) {
@@ -531,12 +530,12 @@ std::optional<vk::UniqueCommandPool> ContextVK::CreateCommandPool() {
   return std::move(pool.value);
 }
 
-void ContextVK::RecycleCommandPool(vk::UniqueCommandPool pool) {
+void ContextVK::RecycleCommandPool(vk::UniqueCommandPool pool) const {
   Lock lock(recycled_command_pools_mutex_);
   recycled_command_pools_.push_back(std::move(pool));
 }
 
-std::optional<vk::UniqueCommandPool> ContextVK::ReuseCommandPool() {
+std::optional<vk::UniqueCommandPool> ContextVK::ReuseCommandPool() const {
   Lock lock(recycled_command_pools_mutex_);
   if (recycled_command_pools_.empty()) {
     return std::nullopt;
@@ -546,25 +545,18 @@ std::optional<vk::UniqueCommandPool> ContextVK::ReuseCommandPool() {
   return std::move(pool);
 }
 
-std::optional<vk::UniqueCommandPool> ContextVK::GetCommandPool() {
-  vk::UniqueCommandPool pool;
-
+std::optional<ManagedCommandPoolVK> ContextVK::GetCommandPool() const {
   // First try reusing, then try creating.
   if (auto reuse_pool = ReuseCommandPool()) {
-    pool = std::move(reuse_pool.value());
+    return ManagedCommandPoolVK(std::move(reuse_pool.value()),
+                                weak_from_this());
+
   } else if (auto create_pool = CreateCommandPool()) {
-    pool = std::move(create_pool.value());
+    return ManagedCommandPoolVK(std::move(create_pool.value()),
+                                weak_from_this());
   } else {
     return std::nullopt;
   }
-
-  // FIXME: Resource handling:
-  // 1. Wrap pool in a class that has a reference to this ContextVK.
-  //    (Q: A refrence to the pool? Ptr? Not sure yet)
-  // 2. In the destructor of that resource class, call:
-  //    context_->RecycleCommandPool(std::move(pool)); (or similar)
-
-  return std::move(pool);
 }
 
 }  // namespace impeller
