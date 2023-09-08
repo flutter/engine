@@ -56,7 +56,7 @@ std::shared_ptr<CommandPoolVK> CommandPoolRecyclerVK::CreateOrReusePool() {
   }
 
   // Otherwise, create a new pool.
-  return std::make_shared<CommandPoolVK>(context_);
+  return std::shared_ptr<CommandPoolVK>(new CommandPoolVK(context_.get()));
 }
 
 }  // namespace impeller
