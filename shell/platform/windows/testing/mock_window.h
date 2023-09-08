@@ -13,7 +13,7 @@
 namespace flutter {
 namespace testing {
 
-/// Mock for the |Window| base class.
+/// Mock for the |FlutterWindow| base class.
 class MockWindow : public FlutterWindow {
  public:
   MockWindow();
