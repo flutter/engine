@@ -1062,14 +1062,15 @@ static void SwizzledNoop(id self, SEL _cmd) {}
   // Attaches FlutterTextInputPlugin to the view;
   [dummyView addSubview:viewController.textInputPlugin];
 
+  // Command + 1
   NSEvent* key1Up = [NSEvent keyEventWithType:NSEventTypeKeyUp
                                      location:NSZeroPoint
                                 modifierFlags:0x00100000
                                     timestamp:0
                                  windowNumber:0
                                       context:nil
-                                   characters:@"a"
-                  charactersIgnoringModifiers:@"a"
+                                   characters:@"1"
+                  charactersIgnoringModifiers:@"1"
                                     isARepeat:FALSE
                                       keyCode:0];
   [key1Up setValue:window forKey:@"_window"];
