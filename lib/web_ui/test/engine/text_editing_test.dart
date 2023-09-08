@@ -1829,7 +1829,8 @@ Future<void> testMain() async {
       spy.messages.clear();
 
       hideKeyboard();
-    });
+      // TODO(Renzo-Olivares): https://github.com/flutter/flutter/issues/134271
+    }, skip: isSafari);
 
     test('Supports new line at inverted selection', () async {
       final MethodCall setClient = MethodCall(
@@ -1903,7 +1904,8 @@ Future<void> testMain() async {
       spy.messages.clear();
 
       hideKeyboard();
-    });
+      // TODO(Renzo-Olivares): https://github.com/flutter/flutter/issues/134271
+    }, skip: isSafari);
 
     test('multiTextField Autofill sync updates back to Flutter', () async {
       // Create a configuration with an AutofillGroup of four text fields.
