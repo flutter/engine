@@ -8,6 +8,7 @@ import("//flutter/common/config.gni")
 import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/shell/platform/embedder/embedder.gni")
+import("//flutter/testing/run_tests.gni")
 import("//flutter/testing/testing.gni")
 
 declare_args() {
@@ -363,6 +364,13 @@ if (enable_unittests) {
     }
   }
 
+  run_tests_py("run_embedder_unittests") {
+    testonly = true
+    deps = [ ":embedder_unittests" ]
+    name = "embedder_unittests"
+    type = "engine"
+  }
+
   executable("embedder_a11y_unittests") {
     testonly = true
 
@@ -376,6 +384,13 @@ if (enable_unittests) {
     sources = [ "tests/embedder_a11y_unittests.cc" ]
 
     deps = [ ":embedder_unittests_library" ]
+  }
+
+  run_tests_py("run_embedder_a11y_unittests") {
+    testonly = true
+    deps = [ ":embedder_a11y_unittests" ]
+    name = "embedder_a11y_unittests"
+    type = "engine"
   }
 
   # Tests that build in FLUTTER_ENGINE_NO_PROTOTYPES mode.
@@ -407,6 +422,13 @@ if (enable_unittests) {
       #"//third_party/dart/runtime/bin:elf_loader",
       #"//third_party/skia",
     ]
+  }
+
+  run_tests_py("run_embedder_proctable_unittests") {
+    testonly = true
+    deps = [ ":embedder_proctable_unittests" ]
+    name = "embedder_proctable_unittests"
+    type = "engine"
   }
 }
 

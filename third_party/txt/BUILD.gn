@@ -14,6 +14,7 @@
 
 import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
+import("//flutter/testing/run_tests.gni")
 import("//flutter/testing/testing.gni")
 
 declare_args() {
@@ -167,5 +168,12 @@ if (enable_unittests) {
       libs =
           [ "${fuchsia_sdk_path}/arch/${target_cpu}/sysroot/lib/libzircon.so" ]
     }
+  }
+
+  run_tests_py("run_txt_unittests") {
+    testonly = true
+    deps = [ ":txt_unittests" ]
+    name = "txt_unittests"
+    type = "engine"
   }
 }

@@ -245,6 +245,35 @@ group("unittests") {
   }
 }
 
+group("run_unittests") {
+  testonly = true
+  public_deps = []
+  if (enable_unittests) {
+    public_deps = [
+      "//flutter/display_list:run_display_list_rendertests",
+      "//flutter/display_list:run_display_list_unittests",
+      "//flutter/flow:run_flow_unittests",
+      "//flutter/fml:run_fml_unittests",
+      "//flutter/lib/ui:run_ui_unittests",
+      "//flutter/runtime:dart_plugin_registrant_unittests",
+      "//flutter/runtime:no_dart_plugin_registrant_unittests",
+      "//flutter/runtime:runtime_unittests",
+      "//flutter/shell/common:run_shell_unittests",
+      "//flutter/shell/platform/embedder:embedder_a11y_unittests",
+      "//flutter/shell/platform/embedder:embedder_proctable_unittests",
+      "//flutter/shell/platform/embedder:embedder_unittests",
+      "//flutter/testing:run_testing_unittests",
+
+      # TODO(zanderso): Deconflate unit tests that run in Dart CLI from
+      # unit tests that run in flutter_tester.
+      # "//flutter/testing/dart",
+      # "//flutter/testing/smoke_test_failure",
+      "//flutter/third_party/tonic/tests:run_tonic_unittests",
+      "//flutter/third_party/txt:run_txt_unittests",
+    ]
+  }
+}
+
 if (build_engine_artifacts) {
   group("archives") {
     testonly = true

@@ -5,6 +5,7 @@
 import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
 import("//flutter/impeller/tools/impeller.gni")
+import("//flutter/testing/run_tests.gni")
 import("//flutter/testing/testing.gni")
 
 config("display_list_config") {
@@ -144,6 +145,13 @@ if (enable_unittests) {
     }
   }
 
+  run_tests_py("run_display_list_unittests") {
+    testonly = true
+    deps = [ ":display_list_unittests" ]
+    name = "display_list_unittests"
+    type = "engine"
+  }
+
   executable("display_list_rendertests") {
     testonly = true
 
@@ -171,6 +179,13 @@ if (enable_unittests) {
       libs =
           [ "${fuchsia_sdk_path}/arch/${target_cpu}/sysroot/lib/libzircon.so" ]
     }
+  }
+
+  run_tests_py("run_display_list_rendertests") {
+    testonly = true
+    deps = [ ":display_list_rendertests" ]
+    name = "display_list_rendertests"
+    type = "engine"
   }
 
   executable("display_list_builder_benchmarks") {

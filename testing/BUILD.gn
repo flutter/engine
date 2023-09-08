@@ -4,6 +4,7 @@
 
 import("//flutter/common/config.gni")
 import("//flutter/shell/config.gni")
+import("run_tests.gni")
 import("testing.gni")
 
 config("dynamic_symbols") {
@@ -183,6 +184,13 @@ if (enable_unittests) {
     if (shell_enable_vulkan) {
       deps += [ "//flutter/vulkan" ]
     }
+  }
+
+  run_tests_py("run_testing_unittests") {
+    testonly = true
+    deps = [ ":testing_unittests" ]
+    name = "testing_unittests"
+    type = "engine"
   }
 }
 

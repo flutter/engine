@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//flutter/testing/run_tests.gni")
 import("//flutter/testing/testing.gni")
 
 test_fixtures("tonic_fixtures") {
@@ -33,4 +34,11 @@ executable("tonic_unittests") {
   ]
 
   deps = [ "../:tonic" ]
+}
+
+run_tests_py("run_tonic_unittests") {
+  testonly = true
+  deps = [ ":tonic_unittests" ]
+  name = "tonic_unittests"
+  type = "engine"
 }

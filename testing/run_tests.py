@@ -375,6 +375,9 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
       extra_env = {}
     return (name, flags, extra_env)
 
+  icu_flags = [
+      '--icu-data-file-path=%s' % os.path.join(build_dir, 'icudtl.dat')
+  ]
   unittests = [
       make_test('client_wrapper_glfw_unittests'),
       make_test('client_wrapper_unittests'),
@@ -393,6 +396,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
       make_test('tonic_unittests'),
       # The image release unit test can take a while on slow machines.
       make_test('ui_unittests', flags=repeat_flags + ['--timeout=90']),
+      make_test('txt_unittests', flags=repeat_flags + ['--'] + icu_flags),
   ]
 
   if not is_windows():
@@ -427,17 +431,12 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         '--golden-dir=%s' % GOLDEN_DIR,
         '--font-file=%s' % ROBOTO_FONT_PATH,
     ]
-    icu_flags = [
-        '--icu-data-file-path=%s' % os.path.join(build_dir, 'icudtl.dat')
-    ]
     unittests += [
         make_test('flow_unittests', flags=repeat_flags + ['--'] + flow_flags),
         make_test('flutter_glfw_unittests'),
         make_test(
             'flutter_linux_unittests', extra_env={'G_DEBUG': 'fatal-criticals'}
         ),
-        # https://github.com/flutter/flutter/issues/36296
-        make_test('txt_unittests', flags=repeat_flags + ['--'] + icu_flags),
     ]
   else:
     flow_flags = ['--gtest_filter=-PerformanceOverlayLayer.Gold']
@@ -1123,6 +1122,12 @@ def run_impeller_golden_tests(build_dir: str):
       run_cmd(['dart', 'run', str(bin_path), temp_dir])
 
 
+# TODO(zanderso):
+# - Add a --quiet flag. Emits output only on an error, and only for the test
+#   that fails.
+# - Check that everything can be guarded by a filter
+
+
 def main():
   parser = argparse.ArgumentParser(
       description="""
@@ -1230,6 +1235,13 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
       default=None,
       help='Provide the path of adb used for android tests. By default it looks on $PATH.'
   )
+  parser.add_argument(
+      '--output',
+      dest='output',
+      type=str,
+      default=None,
+      help='A stamp file written when a test finishes successfully.'
+  )
 
   args = parser.parse_args()
 
@@ -1325,12 +1337,17 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
     run_engine_benchmarks(build_dir, engine_filter)
 
   variants_to_skip = ['host_release', 'host_profile']
-  if ('engine' in types or
-      'font-subset' in types) and args.variant not in variants_to_skip:
+  # TODO(zanderso): Migrate build configs that say 'engine' to also
+  # say 'font-subset'.
+  if 'font-subset' in types and args.variant not in variants_to_skip:
     run_cmd(['python3', 'test.py'], cwd=FONT_SUBSET_DIR)
 
   if 'impeller-golden' in types:
     run_impeller_golden_tests(build_dir)
+
+  if args.output:
+    with open(args.output, 'w') as output_file:
+      output_file.write('Done\n')
 
 
 if __name__ == '__main__':
