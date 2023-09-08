@@ -242,15 +242,13 @@ PFN_vkVoidFunction VulkanProcTable::AcquireProc(
 }
 
 namespace {
-std::atomic<VkResult (*)(VkQueue, uint32_t, const VkSubmitInfo*, VkFence)>
-    g_non_threadsafe_vkQueueSubmit;
-
+std::atomic<decltype(vkQueueSubmit)*> g_non_threadsafe_vkQueueSubmit;
 std::atomic<decltype(vkQueueWaitIdle)*> g_non_threadsafe_vkQueueWaitIdle;
 
 std::mutex& GetThreadsafeVkQueueSubmitMutex() {
   // Initialization of function static variables are threadsafe in C++11.
-  static std::mutex* mtx_ptr = new std::mutex();
-  return *mtx_ptr;
+  static std::mutex* mutex_ptr = new std::mutex();
+  return *mutex_ptr;
 }
 
 VKAPI_ATTR VkResult vkQueueSubmitThreadsafe(VkQueue queue,
@@ -268,15 +266,15 @@ VKAPI_ATTR VkResult vkQueueWaitIdleThreadsafe(VkQueue queue) {
 }
 
 template <typename T, typename U>
-struct check_same_signature : std::false_type {};
+struct CheckSameSignature : std::false_type {};
 
 template <typename Ret, typename... Args>
-struct check_same_signature<Ret(Args...), Ret(Args...)> : std::true_type {};
+struct CheckSameSignature<Ret(Args...), Ret(Args...)> : std::true_type {};
 
-static_assert(check_same_signature<decltype(vkQueueSubmit),
-                                   decltype(vkQueueSubmitThreadsafe)>::value);
-static_assert(check_same_signature<decltype(vkQueueWaitIdle),
-                                   decltype(vkQueueWaitIdleThreadsafe)>::value);
+static_assert(CheckSameSignature<decltype(vkQueueSubmit),
+                                 decltype(vkQueueSubmitThreadsafe)>::value);
+static_assert(CheckSameSignature<decltype(vkQueueWaitIdle),
+                                 decltype(vkQueueWaitIdleThreadsafe)>::value);
 
 }  // namespace
 
@@ -286,9 +284,9 @@ PFN_vkVoidFunction VulkanProcTable::AcquireThreadsafeSubmitQueue(
     return nullptr;
   }
 
-  auto non_threadsafe_vkQueueSubmit = reinterpret_cast<VkResult (*)(
-      VkQueue, uint32_t, const VkSubmitInfo*, VkFence)>(
-      GetDeviceProcAddr(device, "vkQueueSubmit"));
+  auto non_threadsafe_vkQueueSubmit =
+      reinterpret_cast<decltype(vkQueueSubmit)*>(
+          GetDeviceProcAddr(device, "vkQueueSubmit"));
   FML_DCHECK(g_non_threadsafe_vkQueueSubmit.load() == nullptr ||
              g_non_threadsafe_vkQueueSubmit.load() ==
                  non_threadsafe_vkQueueSubmit);
