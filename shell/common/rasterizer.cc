@@ -284,6 +284,8 @@ bool Rasterizer::ShouldResubmitFrame(const DoDrawResult& result) {
 
 DrawStatus Rasterizer::ToDrawStatus(DoDrawStatus status) {
   switch (status) {
+    case DoDrawStatus::kEnqueuePipeline:
+      return DrawStatus::kSuccess;
     case DoDrawStatus::kGpuUnavailable:
       return DrawStatus::kGpuUnavailable;
     case DoDrawStatus::kDiscarded:
