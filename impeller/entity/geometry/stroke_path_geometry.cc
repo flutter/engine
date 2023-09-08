@@ -335,8 +335,8 @@ StrokePathGeometry::CreateSolidStrokeVertices(
         // If this is a curve and is the end of the contour, two end points
         // need to be drawn with the contour end_direction.
         auto end_offset =
-          Vector2(-contour.end_direction.y, contour.end_direction.x) *
-          stroke_width * 0.5;
+            Vector2(-contour.end_direction.y, contour.end_direction.x) *
+            stroke_width * 0.5;
         vtx.position = polyline.points[contour_end_point_i - 1] + end_offset;
         vtx_builder.AppendVertex(vtx);
         vtx.position = polyline.points[contour_end_point_i - 1] - end_offset;
@@ -355,8 +355,8 @@ StrokePathGeometry::CreateSolidStrokeVertices(
     // Generate end cap or join.
     if (!contour.is_closed) {
       auto cap_offset =
-        Vector2(-contour.end_direction.y, contour.end_direction.x) *
-        stroke_width * 0.5;
+          Vector2(-contour.end_direction.y, contour.end_direction.x) *
+          stroke_width * 0.5;
       cap_proc(vtx_builder, polyline.points[contour_end_point_i - 1],
                cap_offset, scale, false);
     } else {
