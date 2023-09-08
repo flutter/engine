@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:js/js_util.dart' show allowInterop;
+import 'dart:js_interop';
 
 import 'configuration.dart';
 import 'js_interop/js_loader.dart';
@@ -40,33 +40,26 @@ class AppBootstrap {
       // This is a convenience method that lets the programmer call "autoStart"
       // from JavaScript immediately after the main.dart.js has loaded.
       // Returns a promise that resolves to the Flutter app that was started.
-      autoStart: allowInterop(() => futureToPromise(() async {
+      autoStart: (() => futureToPromise(() async {
         await autoStart();
         // Return the App that was just started
-        return _prepareFlutterApp();
-      }())),
+        return _prepareFlutterApp() as JSAny;
+      }())).toJS,
       // Calls [_initEngine], and returns a JS Promise that resolves to an
       // app runner object.
-      initializeEngine: allowInterop(([JsFlutterConfiguration? configuration]) => futureToPromise(() async {
+      initializeEngine: (([JsFlutterConfiguration? configuration]) => futureToPromise(() async {
         await _initializeEngine(configuration);
-        return _prepareAppRunner();
-      }()))
+        return _prepareAppRunner() as JSAny;
+      }())).toJS
     );
   }
 
   /// Creates an appRunner that runs our encapsulated runApp function.
   FlutterAppRunner _prepareAppRunner() {
-    return FlutterAppRunner(runApp: allowInterop(([RunAppFnParameters? params]) {
-      // `params` coming from JS may be used to configure the run app method.
-      return Promise<FlutterApp>(allowInterop((
-        PromiseResolver<FlutterApp> resolve,
-        PromiseRejecter _,
-      ) async {
-        await _runApp();
-        // Return the App that was just started
-        resolve.resolve(_prepareFlutterApp());
-      }));
-    }));
+    return FlutterAppRunner(runApp: (([RunAppFnParameters? params]) => futureToPromise(() async {
+      await _runApp();
+      return _prepareFlutterApp() as JSAny;
+    }())).toJS);
   }
 
   /// Represents the App that was just started, and its JS API.

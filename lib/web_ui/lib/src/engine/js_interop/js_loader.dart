@@ -9,9 +9,6 @@ import 'dart:js_interop';
 
 import 'package:js/js_util.dart' as js_util;
 
-import '../configuration.dart';
-import 'js_promise.dart';
-
 @JS()
 @staticInterop
 class FlutterJS {}
@@ -45,21 +42,10 @@ extension FlutterLoaderExtension on FlutterLoader {
 @staticInterop
 abstract class FlutterEngineInitializer{
   external factory FlutterEngineInitializer({
-    required InitializeEngineFn initializeEngine,
-    required ImmediateRunAppFn autoStart,
+    required JSFunction initializeEngine,
+    required JSFunction autoStart,
   });
 }
-
-/// Typedef for the function that initializes the flutter engine.
-///
-/// [JsFlutterConfiguration] comes from `../configuration.dart`. It is the same
-/// object that can be used to configure flutter "inline", through the
-/// (to be deprecated) `window.flutterConfiguration` object.
-typedef InitializeEngineFn = Promise<FlutterAppRunner> Function([JsFlutterConfiguration?]);
-
-/// Typedef for the `autoStart` function that can be called straight from an engine initializer instance.
-/// (Similar to [RunAppFn], but taking no specific "runApp" parameters).
-typedef ImmediateRunAppFn = Promise<FlutterApp> Function();
 
 // FlutterAppRunner
 
@@ -71,7 +57,7 @@ typedef ImmediateRunAppFn = Promise<FlutterApp> Function();
 abstract class FlutterAppRunner {
   /// Runs a flutter app
   external factory FlutterAppRunner({
-    required RunAppFn runApp, // Returns an App
+    required JSFunction runApp, // Returns an App
   });
 }
 
@@ -82,9 +68,6 @@ abstract class FlutterAppRunner {
 @staticInterop
 abstract class RunAppFnParameters {
 }
-
-/// Typedef for the function that runs the flutter app main entrypoint.
-typedef RunAppFn = Promise<FlutterApp> Function([RunAppFnParameters?]);
 
 // FlutterApp
 
