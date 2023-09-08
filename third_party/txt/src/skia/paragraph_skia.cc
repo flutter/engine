@@ -334,7 +334,8 @@ void ParagraphSkia::Layout(double width) {
 }
 
 bool ParagraphSkia::Paint(DisplayListBuilder* builder, double x, double y) {
-  DisplayListParagraphPainter painter(builder, paragraph_, dl_paints_, impeller_enabled_);
+  DisplayListParagraphPainter painter(builder, paragraph_, dl_paints_,
+                                      impeller_enabled_);
   paragraph_->paint(&painter, x, y);
   return true;
 }

@@ -17,8 +17,8 @@ std::shared_ptr<impeller::TextFrame> MakeTextFrameFromTextBlobSkia(
     const sk_sp<SkTextBlob>& blob,
     bool has_color_font);
 
-/// @brief Testonly version of `MakeTextFrameFromTextBlobSkia` that looks up whether
-/// or not the font has bitmap glyphs at runtime.
+/// @brief Testonly version of `MakeTextFrameFromTextBlobSkia` that looks up
+/// whether or not the font has bitmap glyphs at runtime.
 std::shared_ptr<impeller::TextFrame> MakeTextFrameFromTextBlobSkiaTestOnly(
     const sk_sp<SkTextBlob>& blob);
 

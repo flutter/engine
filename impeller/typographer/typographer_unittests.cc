@@ -295,8 +295,8 @@ TEST_P(TypographerTest, MaybeHasOverlapping) {
       font_mgr->matchFamilyStyle("Arial", SkFontStyle::Normal());
   SkFont sk_font(typeface, 0.5f);
 
-  auto frame =
-      MakeTextFrameFromTextBlobSkiaTestOnly(SkTextBlob::MakeFromString("1", sk_font));
+  auto frame = MakeTextFrameFromTextBlobSkiaTestOnly(
+      SkTextBlob::MakeFromString("1", sk_font));
   // Single character has no overlapping
   ASSERT_FALSE(frame->MaybeHasOverlapping());
 
