@@ -3,14 +3,13 @@
 # found in the LICENSE file.
 
 import("//flutter/build/dart/rules.gni")
+import("//flutter/testing/run_tests.gni")
 
 tests = [ "fail_test.dart" ]
 
 foreach(test, tests) {
-  flutter_frontend_server("compile_$test") {
-    main_dart = test
-    kernel_output = "$root_gen_dir/$test.dill"
-    package_config = ".dart_tool/package_config.json"
+  flutter_dart_test(test) {
+    test_name = test
   }
 }
 
@@ -19,5 +18,13 @@ group("smoke_test_failure") {
   deps = []
   foreach(test, tests) {
     deps += [ ":compile_$test" ]
+  }
+}
+
+group("_run_tests_py_smoke_test_failure") {
+  testonly = true
+  deps = []
+  foreach(test, tests) {
+    deps += [ ":_run_tests_py_${test}" ]
   }
 }

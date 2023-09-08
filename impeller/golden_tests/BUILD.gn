@@ -4,6 +4,7 @@
 
 import("//flutter/common/config.gni")
 import("//flutter/impeller/tools/impeller.gni")
+import("//flutter/testing/run_tests.gni")
 
 impeller_component("golden_playground_test") {
   testonly = true
@@ -88,5 +89,12 @@ if (is_mac) {
       "//flutter/third_party/googletest:gtest",
       "//flutter/third_party/swiftshader",
     ]
+  }
+
+  run_tests_py("impeller_golden_tests") {
+    testonly = true
+    deps = [ ":impeller_golden_tests" ]
+    name = "impeller_golden_tests"
+    type = "engine"
   }
 }

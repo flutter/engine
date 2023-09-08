@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//flutter/common/config.gni")
+import("//flutter/testing/run_tests.gni")
 import("//flutter/testing/testing.gni")
 
 config("accessibility_config") {
@@ -45,7 +46,7 @@ if (enable_unittests) {
     fixtures = []
   }
 
-  executable("accessibility_unittests") {
+  engine_native_unittests("accessibility_unittests") {
     testonly = true
 
     public_configs = [ ":accessibility_config" ]

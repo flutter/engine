@@ -5,6 +5,7 @@
 assert(is_mac || is_ios)
 
 import("//flutter/common/config.gni")
+import("//flutter/testing/run_tests.gni")
 import("//flutter/testing/testing.gni")
 import("framework_common.gni")
 
@@ -54,7 +55,7 @@ test_fixtures("availability_version_check_fixtures") {
   fixtures = []
 }
 
-executable("availability_version_check_unittests") {
+engine_native_unittests("availability_version_check_unittests") {
   testonly = true
 
   sources = [ "availability_version_check_unittests.cc" ]
@@ -111,7 +112,7 @@ test_fixtures("framework_common_fixtures") {
 }
 
 # Unit tests for channels.
-executable("framework_common_unittests") {
+engine_native_unittests("framework_common_unittests") {
   testonly = true
 
   sources = [

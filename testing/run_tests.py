@@ -404,6 +404,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
       extra_env = {}
     return (name, flags, extra_env)
 
+  icu_flags = ['--icu-data-file-path=%s' % os.path.join(build_dir, 'icudtl.dat')]
   unittests = [
       make_test('client_wrapper_glfw_unittests'),
       make_test('client_wrapper_unittests'),
@@ -423,6 +424,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
       make_test('tonic_unittests'),
       # The image release unit test can take a while on slow machines.
       make_test('ui_unittests', flags=repeat_flags + ['--timeout=90']),
+      make_test('txt_unittests', flags=repeat_flags + ['--'] + icu_flags),
   ]
 
   if not is_windows():
@@ -459,7 +461,6 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         '--golden-dir=%s' % GOLDEN_DIR,
         '--font-file=%s' % ROBOTO_FONT_PATH,
     ]
-    icu_flags = ['--icu-data-file-path=%s' % os.path.join(build_dir, 'icudtl.dat')]
     unittests += [
         make_test('flow_unittests', flags=repeat_flags + ['--'] + flow_flags),
         make_test('flutter_glfw_unittests'),
@@ -1098,24 +1099,26 @@ def run_impeller_golden_tests(build_dir: str):
       run_cmd([dart_bin, '--disable-dart-dev', str(bin_path), temp_dir])
 
 
-def main():
+ALL_TYPES = [
+    'engine',
+    'dart',
+    'dart-host',
+    'benchmarks',
+    'java',
+    'android',
+    'objc',
+    'font-subset',
+    'impeller-golden',
+]
+
+
+def parse_args():
   parser = argparse.ArgumentParser(
       description="""
 In order to learn the details of running tests in the engine, please consult the
 Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testing-the-engine
 """
   )
-  all_types = [
-      'engine',
-      'dart',
-      'dart-host',
-      'benchmarks',
-      'java',
-      'android',
-      'objc',
-      'font-subset',
-      'impeller-golden',
-  ]
 
   parser.add_argument(
       '--variant',
@@ -1128,7 +1131,7 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
       '--type',
       type=str,
       default='all',
-      help='A list of test types, default is "all" (equivalent to "%s")' % (','.join(all_types))
+      help='A list of test types, default is "all" (equivalent to "%s")' % (','.join(ALL_TYPES))
   )
   parser.add_argument(
       '--engine-filter', type=str, default='', help='A list of engine test executables to run.'
@@ -1221,9 +1224,18 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
       type=str,
       help='The directory that verbose logs will be copied to in --quiet mode.',
   )
+  parser.add_argument(
+      '--output',
+      dest='output',
+      type=str,
+      default=None,
+      help='A stamp file written when a test finishes successfully.'
+  )
+  return parser.parse_args()
 
-  args = parser.parse_args()
 
+def main():
+  args = parse_args()
   logger.addHandler(console_logger_handler)
   logger.addHandler(file_logger_handler)
   logger.setLevel(logging.INFO)
@@ -1234,7 +1246,7 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
     console_logger_handler.setLevel(logging.INFO)
 
   if args.type == 'all':
-    types = all_types
+    types = ALL_TYPES
   else:
     types = args.type.split(',')
 
@@ -1264,20 +1276,18 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
 
   # Use this type to exclusively run impeller tests.
   if 'impeller' in types:
-    build_name = args.variant
     try:
-      xvfb.start_virtual_x(build_name, build_dir)
-      extra_env = vulkan_validation_env(build_dir)
+      xvfb.start_virtual_x(args.variant, build_dir)
       run_engine_executable(
           build_dir,
           'impeller_unittests',
           engine_filter,
           shuffle_flags,
           coverage=args.coverage,
-          extra_env=extra_env
+          extra_env=vulkan_validation_env(build_dir)
       )
     finally:
-      xvfb.stop_virtual_x(build_name)
+      xvfb.stop_virtual_x(args.variant)
 
   if 'dart' in types:
     dart_filter = args.dart_filter.split(',') if args.dart_filter else None
@@ -1331,7 +1341,7 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
     matches = [variant for variant in variants_to_skip if variant in args.variant]
     return len(matches) > 0
 
-  if ('engine' in types or 'font-subset' in types) and not should_skip(args.variant):
+  if 'font-subset' in types and not should_skip(args.variant):
     cmd = ['python3', 'test.py', '--variant', args.variant]
     if 'arm64' in args.variant:
       cmd += ['--target-cpu', 'arm64']
@@ -1342,6 +1352,10 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
 
   if args.quiet and args.logs_dir:
     shutil.copy(LOG_FILE, os.path.join(args.logs_dir, 'run_tests.log'))
+
+  if args.output:
+    with open(args.output, 'w') as output_file:
+      output_file.write('Done\n')
 
   return 0 if success else 1
 

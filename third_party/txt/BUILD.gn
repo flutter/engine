@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import("//flutter/common/config.gni")
+import("//flutter/testing/run_tests.gni")
 import("//flutter/testing/testing.gni")
 
 if (is_fuchsia) {
@@ -145,7 +146,7 @@ if (enable_unittests) {
     ]
   }
 
-  executable("txt_unittests") {
+  engine_native_unittests("txt_unittests") {
     testonly = true
 
     sources = [
@@ -161,7 +162,7 @@ if (enable_unittests) {
 
     public_configs = [ ":txt_config" ]
 
-    configs += [ ":allow_posix_names" ]
+    configs = [ ":allow_posix_names" ]
 
     deps = [
       ":txt",

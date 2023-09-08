@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//flutter/build/dart/rules.gni")
+import("//flutter/testing/run_tests.gni")
 
 tests = [
   "assets_test.dart",
@@ -19,6 +20,7 @@ tests = [
   "gesture_settings_test.dart",
   "gpu_test.dart",
   "gradient_test.dart",
+
   "http_allow_http_connections_test.dart",
   "http_disallow_http_connections_test.dart",
   "image_descriptor_test.dart",
@@ -57,17 +59,15 @@ foreach(test, tests) {
   flutter_build_dir = rebase_path("$root_gen_dir")
   flutter_src_dir = rebase_path("//flutter")
   skia_gold_work_dir = rebase_path("$root_gen_dir/skia_gold_$test")
-  flutter_frontend_server("compile_$test") {
-    main_dart = test
-    kernel_output = "$root_gen_dir/$test.dill"
-    extra_args = [
+  flutter_dart_test(test) {
+    test_name = test
+    extra_build_args = [
       "-DkFlutterSrcDirectory=$flutter_src_dir",
       "-DkFlutterBuildDirectory=$flutter_build_dir",
       "-DkSkiaGoldWorkDirectory=$skia_gold_work_dir",
     ]
-    package_config = ".dart_tool/package_config.json"
     deps = [ "//flutter/third_party/txt:txt_fixtures" ]
-    testonly = true
+    runtime_deps = [ "//flutter/lib/ui:ui_unittests_fixtures" ]
   }
 }
 
@@ -76,5 +76,13 @@ group("dart") {
   deps = [ "//flutter/testing/dart/observatory" ]
   foreach(test, tests) {
     deps += [ ":compile_$test" ]
+  }
+}
+
+group("_run_tests_py_dart") {
+  testonly = true
+  deps = []
+  foreach(test, tests) {
+    deps += [ ":_run_tests_py_${test}" ]
   }
 }

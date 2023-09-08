@@ -1,0 +1,16 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//flutter/build/dart/rules.gni")
+import("//flutter/testing/run_tests.gni")
+
+host_dart_test("litetest_test") {
+  test_name = "flutter/testing/litetest"
+  main_dart = "test/litetest_test.dart"
+  runtime_inputs = [
+    "//.clang-format",
+    "//flutter/.clang-format",
+    "//flutter/.style.yapf",
+  ]
+}

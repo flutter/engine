@@ -157,118 +157,132 @@ group("flutter") {
   }
 }
 
-group("unittests") {
-  testonly = true
-
-  public_deps = []
-  if (is_android) {
-    public_deps += [
-      "//flutter/impeller/toolkit/android:apk_unittests",
-      "//flutter/impeller/toolkit/android:unittests",
-      "//flutter/shell/platform/android:flutter_shell_native_unittests",
+_unittest_targets = []
+_runable_tests = []
+_common_targets = []
+if (is_android) {
+  _unittest_targets += [
+    "//flutter/impeller/toolkit/android:apk_unittests",
+    "//flutter/impeller/toolkit/android:unittests",
+    "//flutter/shell/platform/android:flutter_shell_native_unittests",
+  ]
+}
+if (is_ios) {
+  _unittest_targets +=
+      [ "//flutter/shell/platform/darwin/ios:ios_test_flutter" ]
+}
+if (enable_unittests) {
+  _common_targets += [
+    "//flutter/display_list:display_list_rendertests",
+    "//flutter/display_list:display_list_unittests",
+    "//flutter/flow:flow_unittests",
+    "//flutter/fml:fml_arc_unittests",
+    "//flutter/fml:fml_unittests",
+    "//flutter/lib/ui:ui_unittests",
+    "//flutter/runtime:dart_plugin_registrant_unittests",
+    "//flutter/runtime:no_dart_plugin_registrant_unittests",
+    "//flutter/runtime:runtime_unittests",
+    "//flutter/shell/common:shell_unittests",
+    "//flutter/shell/platform/embedder:embedder_a11y_unittests",
+    "//flutter/shell/platform/embedder:embedder_proctable_unittests",
+    "//flutter/shell/platform/embedder:embedder_unittests",
+    "//flutter/testing:testing_unittests",
+    "//flutter/testing/dart:dart",
+    "//flutter/testing/smoke_test_failure:smoke_test_failure",
+    "//flutter/third_party/tonic/tests:tonic_unittests",
+    "//flutter/third_party/txt:txt_unittests",
+  ]
+  if (is_mac || is_win) {
+    _common_targets +=
+        [ "//flutter/third_party/accessibility:accessibility_unittests" ]
+  }
+  if (is_fuchsia) {
+    _unittest_targets += [ "//flutter/shell/platform/fuchsia:tests" ]
+  }
+  if (is_mac || is_linux || is_win) {
+    _common_targets += [
+      "//flutter/impeller:impeller_dart_unittests",
+      "//flutter/impeller:impeller_unittests",
+    ]
+  }
+  if (is_mac) {
+    _common_targets += [
+      "//flutter/impeller/golden_tests:impeller_golden_tests",
+      "//flutter/shell/gpu:gpu_surface_metal_unittests",
+      "//flutter/shell/platform/darwin/common:framework_common_unittests",
+      "//flutter/third_party/spring_animation:spring_animation_unittests",
+    ]
+  }
+  if (!is_win && !is_fuchsia) {
+    _common_targets += [
+      "//flutter/shell/platform/android/external_view_embedder:android_external_view_embedder_unittests",
+      "//flutter/shell/platform/android/jni:jni_unittests",
+      "//flutter/shell/platform/android/platform_view_android_delegate:platform_view_android_delegate_unittests",
     ]
   }
 
-  if (is_ios) {
-    public_deps += [ "//flutter/shell/platform/darwin/ios:ios_test_flutter" ]
-  }
-
-  # Compile all unittests targets if enabled.
-  if (enable_unittests) {
-    public_deps += [
-      "//flutter/display_list:display_list_rendertests",
-      "//flutter/display_list:display_list_unittests",
-      "//flutter/flow:flow_unittests",
-      "//flutter/fml:fml_arc_unittests",
-      "//flutter/fml:fml_unittests",
-      "//flutter/lib/ui:ui_unittests",
-      "//flutter/runtime:dart_plugin_registrant_unittests",
-      "//flutter/runtime:no_dart_plugin_registrant_unittests",
-      "//flutter/runtime:runtime_unittests",
-      "//flutter/shell/common:shell_unittests",
-      "//flutter/shell/platform/embedder:embedder_a11y_unittests",
-      "//flutter/shell/platform/embedder:embedder_proctable_unittests",
-      "//flutter/shell/platform/embedder:embedder_unittests",
-      "//flutter/testing:testing_unittests",
-      "//flutter/testing/dart",
-      "//flutter/testing/smoke_test_failure",
-      "//flutter/third_party/tonic/tests:tonic_unittests",
-      "//flutter/third_party/txt:txt_unittests",
+  # Unit tests for desktop embeddings should only be built if the desktop
+  # embeddings are being built.
+  if (enable_desktop_embeddings) {
+    _common_targets += [
+      "//flutter/shell/platform/common:common_cpp_core_unittests",
+      "//flutter/shell/platform/common/client_wrapper:client_wrapper_unittests",
     ]
 
-    # The accessibility library only supports Mac and Windows at the moment.
-    if (is_mac || is_win) {
-      public_deps +=
-          [ "//flutter/third_party/accessibility:accessibility_unittests" ]
+    if (!is_fuchsia) {
+      # These tests require the embedder and thus cannot run on Fuchsia.
+      _common_targets +=
+          [ "//flutter/shell/platform/common:common_cpp_unittests" ]
+
+      # These tests require GLFW and thus cannot run on fuchsia.
+      _common_targets += [ "//flutter/shell/platform/glfw/client_wrapper:client_wrapper_glfw_unittests" ]
     }
 
-    if (is_fuchsia) {
-      public_deps += [ "//flutter/shell/platform/fuchsia:tests" ]
-    }
-
-    if (is_mac || is_linux || is_win) {
-      public_deps += [
-        "//flutter/impeller:impeller_dart_unittests",
-        "//flutter/impeller:impeller_unittests",
-      ]
+    if (is_linux) {
+      _unittest_targets +=
+          [ "//flutter/shell/platform/linux:flutter_linux_unittests" ]
+      if (build_glfw_shell) {
+        _unittest_targets +=
+            [ "//flutter/shell/platform/glfw:flutter_glfw_unittests" ]
+      }
     }
 
     if (is_mac) {
-      public_deps += [
+      _common_targets += [
         "//flutter/impeller/golden_tests:impeller_golden_tests",
         "//flutter/shell/gpu:gpu_surface_metal_unittests",
         "//flutter/shell/platform/darwin/common:availability_version_check_unittests",
         "//flutter/shell/platform/darwin/common:framework_common_unittests",
+        "//flutter/shell/platform/darwin/macos:flutter_desktop_darwin_unittests",
         "//flutter/third_party/spring_animation:spring_animation_unittests",
       ]
     }
 
-    if (!is_win && !is_fuchsia) {
-      public_deps += [
-        "//flutter/shell/platform/android/external_view_embedder:android_external_view_embedder_unittests",
-        "//flutter/shell/platform/android/jni:jni_unittests",
-        "//flutter/shell/platform/android/platform_view_android_delegate:platform_view_android_delegate_unittests",
+    if (is_win) {
+      _unittest_targets += [
+        "//flutter/shell/platform/windows:flutter_windows_unittests",
+        "//flutter/shell/platform/windows/client_wrapper:client_wrapper_windows_unittests",
       ]
     }
+  }
+}
+_unittest_targets += _common_targets
+_runable_tests += _common_targets
 
-    # Unit tests for desktop embeddings should only be built if the desktop
-    # embeddings are being built.
-    if (enable_desktop_embeddings) {
-      public_deps += [
-        "//flutter/shell/platform/common:common_cpp_core_unittests",
-        "//flutter/shell/platform/common/client_wrapper:client_wrapper_unittests",
-      ]
+group("unittests") {
+  testonly = true
 
-      if (!is_fuchsia) {
-        # These tests require the embedder and thus cannot run on fuchsia.
-        # TODO(): Enable when embedder works on fuchsia.
-        public_deps +=
-            [ "//flutter/shell/platform/common:common_cpp_unittests" ]
+  public_deps = _unittest_targets
+}
 
-        # These tests require GLFW and thus cannot run on fuchsia.
-        public_deps += [ "//flutter/shell/platform/glfw/client_wrapper:client_wrapper_glfw_unittests" ]
-      }
-
-      if (is_linux) {
-        public_deps +=
-            [ "//flutter/shell/platform/linux:flutter_linux_unittests" ]
-        if (build_glfw_shell) {
-          public_deps +=
-              [ "//flutter/shell/platform/glfw:flutter_glfw_unittests" ]
-        }
-      }
-
-      if (is_mac) {
-        public_deps += [ "//flutter/shell/platform/darwin/macos:flutter_desktop_darwin_unittests" ]
-      }
-
-      if (is_win) {
-        public_deps += [
-          "//flutter/shell/platform/windows:flutter_windows_unittests",
-          "//flutter/shell/platform/windows/client_wrapper:client_wrapper_windows_unittests",
-        ]
-      }
-    }
+group("run_tests") {
+  testonly = true
+  public_deps = []
+  foreach(test_target, _runable_tests) {
+    test_target_name = get_label_info(test_target, "name")
+    test_target_dir = get_label_info(test_target, "dir")
+    run_target = "$test_target_dir:_run_tests_py_$test_target_name"
+    public_deps += [ run_target ]
   }
 }
 

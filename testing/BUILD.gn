@@ -4,7 +4,19 @@
 
 import("//flutter/common/config.gni")
 import("//flutter/shell/config.gni")
+import("run_tests.gni")
 import("testing.gni")
+
+declare_args() {
+  # Maximum number of test processes to run in parallel.
+  #
+  # To avoid out-of-memory errors we explicitly reduce the number of jobs.
+  flutter_concurrent_test_jobs = 1
+}
+
+pool("run_tests_pool") {
+  depth = flutter_concurrent_test_jobs
+}
 
 config("dynamic_symbols") {
   if (is_clang && is_linux) {
@@ -183,7 +195,7 @@ if (enable_unittests) {
 
   # The //flutter/testing library provides utility methods to other test targets.
   # This test target tests the testing utilities.
-  executable("testing_unittests") {
+  engine_native_unittests("testing_unittests") {
     testonly = true
 
     sources = [ "mock_canvas_unittests.cc" ]

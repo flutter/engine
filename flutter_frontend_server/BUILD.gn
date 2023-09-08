@@ -3,7 +3,9 @@
 # found in the LICENSE file.
 
 import("//flutter/build/dart/dart.gni")
+import("//flutter/build/dart/rules.gni")
 import("//flutter/common/config.gni")
+import("//flutter/testing/run_tests.gni")
 
 copy("frontend_server") {
   if (flutter_prebuilt_dart_sdk) {
@@ -15,4 +17,12 @@ copy("frontend_server") {
 
   sources = [ snapshot ]
   outputs = [ "$root_gen_dir/frontend_server_aot.dart.snapshot" ]
+}
+
+if (build_engine_artifacts) {
+  host_dart_test("to_string_test") {
+    test_name = "flutter/flutter_frontend_server"
+    main_dart = "test/to_string_test.dart"
+    runtime_deps = [ ":frontend_server" ]
+  }
 }

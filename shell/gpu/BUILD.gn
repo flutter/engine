@@ -5,6 +5,7 @@
 import("//flutter/common/config.gni")
 import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/shell/config.gni")
+import("//flutter/testing/run_tests.gni")
 
 gpu_common_deps = [
   "//flutter/common",
@@ -109,5 +110,12 @@ if (is_mac) {
              "//flutter/runtime:libdart",
              "//flutter/testing",
            ] + gpu_common_deps
+  }
+
+  run_tests_py("gpu_surface_metal_unittests") {
+    testonly = true
+    deps = [ ":gpu_surface_metal_unittests" ]
+    name = "gpu_surface_metal_unittests"
+    type = "engine"
   }
 }

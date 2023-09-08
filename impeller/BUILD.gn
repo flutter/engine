@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//flutter/testing/run_tests.gni")
 import("//flutter/third_party/glfw/glfw_args.gni")
 import("tools/impeller.gni")
 
@@ -123,6 +124,13 @@ impeller_component("impeller_unittests") {
   }
 }
 
+run_tests_py("impeller_unittests") {
+  testonly = true
+  deps = [ ":impeller_unittests" ]
+  name = "impeller_unittests"
+  type = "engine"
+}
+
 if (impeller_supports_rendering) {
   impeller_component("impeller_dart_unittests") {
     target_type = "executable"
@@ -130,5 +138,12 @@ if (impeller_supports_rendering) {
     testonly = true
 
     deps = [ "renderer:renderer_dart_unittests" ]
+  }
+
+  run_tests_py("impeller_dart_unittests") {
+    testonly = true
+    deps = [ ":impeller_dart_unittests" ]
+    name = "impeller_dart_unittests"
+    type = "engine"
   }
 }

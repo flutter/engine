@@ -9,6 +9,7 @@ import("//flutter/build/zip_bundle.gni")
 import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/shell/platform/darwin/common/framework_common.gni")
 import("//flutter/shell/platform/glfw/config.gni")
+import("//flutter/testing/run_tests.gni")
 import("//flutter/testing/testing.gni")
 
 shell_gpu_configuration("macos_gpu_configuration") {
@@ -171,7 +172,7 @@ test_fixtures("flutter_desktop_darwin_fixtures") {
   fixtures = [ "//flutter/third_party/icu/common/icudtl.dat" ]
 }
 
-executable("flutter_desktop_darwin_unittests") {
+engine_native_unittests("flutter_desktop_darwin_unittests") {
   testonly = true
 
   sources = [

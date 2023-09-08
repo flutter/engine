@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//flutter/testing/run_tests.gni")
 import("//flutter/testing/testing.gni")
 
 test_fixtures("tonic_fixtures") {
@@ -9,7 +10,7 @@ test_fixtures("tonic_fixtures") {
   fixtures = []
 }
 
-executable("tonic_unittests") {
+engine_native_unittests("tonic_unittests") {
   testonly = true
 
   public_configs = [ "//flutter:export_dynamic_symbols" ]

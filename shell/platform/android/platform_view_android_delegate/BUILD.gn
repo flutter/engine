@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//flutter/common/config.gni")
+import("//flutter/testing/run_tests.gni")
 import("//flutter/testing/testing.gni")
 
 source_set("platform_view_android_delegate") {
@@ -27,7 +28,7 @@ test_fixtures("platform_view_android_delegate_fixtures") {
   fixtures = []
 }
 
-executable("platform_view_android_delegate_unittests") {
+engine_native_unittests("platform_view_android_delegate_unittests") {
   testonly = true
 
   sources = [ "platform_view_android_delegate_unittests.cc" ]

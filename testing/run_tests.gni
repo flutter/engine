@@ -1,0 +1,212 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//flutter/build/dart/rules.gni")
+
+# TODO(zra): Add real docs
+
+_test_script_template =
+    read_file("//flutter/testing/single_test.py.tmpl", "string")
+
+template("_write_test_runner_script") {
+  generated_file("_script_for_$target_name") {
+    assert(defined(invoker.name), "The test name must be specified.")
+    assert(defined(invoker.type), "The test type must be specified.")
+    assert(
+        invoker.type == "dart" || invoker.type == "dart-host" ||
+            invoker.type == "engine" || invoker.type == "java" ||
+            invoker.type == "objc",
+        "The test type must be one of: 'dart', 'dart-host', 'engine', 'java', or 'objc'")
+    forward_variables_from(invoker,
+                           [
+                             "visibility",
+                             "testonly",
+                             "deps",
+                           ])
+
+    stamp_file = "$target_out_dir/${target_name}.tested"
+    output = "$target_out_dir/${target_name}.py"
+    outputs = [ output ]
+
+    variant = get_path_info(root_out_dir, "name")
+
+    variant_flag = "--variant"
+    if (invoker.type == "java") {
+      variant_flag = "--android-variant"
+    } else if (invoker.type == "objc") {
+      variant_flag = "--ios-variant"
+    }
+
+    filter = invoker.name
+
+    filter_flag = "--engine-filter"
+    if (invoker.type == "dart") {
+      filter_flag = "--dart-filter"
+    } else if (invoker.type == "dart-host") {
+      filter_flag = "--dart-host-filter"
+    } else if (invoker.type == "java") {
+      filter_flag = "--java-filter"
+    } else if (invoker.type == "objc") {
+      filter_flag = "--objc-filter"
+    }
+
+    command = string_join(" ",
+                          [
+                            "python3",
+                            rebase_path("//flutter/testing/run_tests.py"),
+                            "--quiet",
+                            "--type",
+                            invoker.type,
+                            variant_flag,
+                            variant,
+                            filter_flag,
+                            filter,
+                            "--engine-capture-core-dump",
+                            "--output",
+                            rebase_path(stamp_file),
+                          ])
+
+    contents = string_replace(_test_script_template,
+                              "{{run_tests_py_command}}",
+                              command)
+  }
+}
+
+# Supported types:
+# 'engine',
+# 'dart',
+# 'dart-host',
+# 'java',
+# 'objc',
+template("run_tests_py") {
+  _write_test_runner_script(target_name) {
+    name = invoker.name
+    type = invoker.type
+    forward_variables_from(invoker,
+                           [
+                             "visibility",
+                             "testonly",
+                             "deps",
+                           ])
+  }
+
+  script_target = "_script_for_$target_name"
+
+  action("_run_tests_py_$target_name") {
+    forward_variables_from(invoker,
+                           [
+                             "visibility",
+                             "testonly",
+                           ])
+
+    if (defined(invoker.deps)) {
+      deps = invoker.deps + [ ":$script_target" ]
+    } else {
+      deps = [ ":$script_target" ]
+    }
+    test_runner_script_outputs = get_target_outputs(":$script_target")
+    test_runner_script = test_runner_script_outputs[0]
+    script = test_runner_script
+    output = "$target_out_dir/${target_name}.tested"
+    outputs = [ output ]
+  }
+}
+
+template("engine_native_unittests") {
+  _test_name = target_name
+  executable(_test_name) {
+    forward_variables_from(invoker,
+                           "*",
+                           [
+                             "test_name",
+                             "test_type",
+                             "runtime_deps",
+                             "testonly",
+                             "configs",
+                           ])
+    if (defined(invoker.configs)) {
+      configs += invoker.configs
+    }
+    testonly = true
+  }
+
+  run_tests_py(_test_name) {
+    forward_variables_from(invoker, [ "visibility" ])
+    testonly = true
+    deps = [ ":$_test_name" ]
+    if (defined(invoker.runtime_deps)) {
+      deps += invoker.runtime_deps
+    }
+    name = _test_name
+    if (defined(invoker.test_name)) {
+      name = invoker.test_name
+    }
+    type = "engine"
+  }
+}
+
+# Declares targets for building and running a test that runs in the
+# command-line Dart VM.
+#
+# Required parameters:
+# main_dart
+# test_name
+# runtime_deps
+# runtime_inputs
+#
+template("host_dart_test") {
+  _test_name = target_name
+  application_snapshot(_test_name) {
+    snapshot_kind = "kernel"
+    main_dart = invoker.main_dart
+    package_config = ".dart_tool/package_config.json"
+    training_args = []
+  }
+
+  run_tests_py(_test_name) {
+    testonly = true
+    deps = [
+      ":$_test_name",
+      "//flutter/build/dart:dart_sdk",
+    ]
+    if (defined(invoker.runtime_deps)) {
+      deps += invoker.runtime_deps
+    }
+    if (defined(invoker.runtime_inputs)) {
+      inputs += invoker.runtime_inputs
+    }
+    name = invoker.test_name
+    type = "dart-host"
+  }
+}
+
+template("flutter_dart_test") {
+  _test_name = target_name
+  flutter_frontend_server("compile_$_test_name") {
+    forward_variables_from(invoker, [ "deps" ])
+    testonly = true
+    main_dart = invoker.test_name
+    kernel_output = "$root_gen_dir/${invoker.test_name}.dill"
+    package_config = ".dart_tool/package_config.json"
+    if (defined(invoker.extra_build_args)) {
+      extra_args = invoker.extra_build_args
+    }
+  }
+
+  run_tests_py(_test_name) {
+    testonly = true
+    deps = [ ":compile_$_test_name" ]
+    if (build_engine_artifacts) {
+      deps += [
+        "//flutter/build/dart:dart_sdk",
+        "//flutter/shell/testing:testing",
+      ]
+    }
+    if (defined(invoker.runtime_deps)) {
+      deps += invoker.runtime_deps
+    }
+    name = invoker.test_name
+    type = "dart"
+  }
+}

@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//flutter/common/config.gni")
+import("//flutter/testing/run_tests.gni")
 import("//flutter/testing/testing.gni")
 
 if (is_fuchsia) {
@@ -333,7 +334,7 @@ if (enable_unittests) {
     ]
   }
 
-  executable("fml_unittests") {
+  engine_native_unittests("fml_unittests") {
     testonly = true
 
     sources = [
@@ -418,7 +419,7 @@ if (enable_unittests) {
     }
   }
 
-  executable("fml_arc_unittests") {
+  engine_native_unittests("fml_arc_unittests") {
     testonly = true
     if (is_mac || is_ios) {
       cflags_objcc = flutter_cflags_objc_arc

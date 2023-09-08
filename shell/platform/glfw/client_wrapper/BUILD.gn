@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//flutter/shell/platform/common/client_wrapper/publish.gni")
+import("//flutter/testing/run_tests.gni")
 import("//flutter/testing/testing.gni")
 
 _wrapper_includes = [
@@ -69,7 +70,7 @@ test_fixtures("client_wrapper_glfw_fixtures") {
   fixtures = []
 }
 
-executable("client_wrapper_glfw_unittests") {
+engine_native_unittests("client_wrapper_glfw_unittests") {
   testonly = true
 
   sources = [

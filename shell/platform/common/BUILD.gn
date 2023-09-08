@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//flutter/common/config.gni")
+import("//flutter/testing/run_tests.gni")
 import("//flutter/testing/testing.gni")
 
 config("desktop_library_implementation") {
@@ -154,7 +155,7 @@ if (enable_unittests) {
     fixtures = []
   }
 
-  executable("common_cpp_core_unittests") {
+  engine_native_unittests("common_cpp_core_unittests") {
     testonly = true
 
     sources = [ "path_utils_unittests.cc" ]
@@ -173,7 +174,7 @@ if (enable_unittests) {
     fixtures = []
   }
 
-  executable("common_cpp_unittests") {
+  engine_native_unittests("common_cpp_unittests") {
     testonly = true
 
     sources = [
@@ -198,7 +199,7 @@ if (enable_unittests) {
       "//flutter/testing",
     ]
 
-    # The accessibility bridge only supports MacOS for now.
+    # The accessibility bridge only supports macOS for now.
     if (is_mac || is_win) {
       sources += [
         "accessibility_bridge_unittests.cc",
