@@ -67,6 +67,12 @@ void CommandPoolVK::ClearAllPools(const ContextVK* context) {
   }
 }
 
+void CommandPoolVK::ReleaseThreadLocalPool(const ContextVK* context) {
+  if (tls_command_pool.get()) {
+    tls_command_pool.get()->erase(context->GetHash());
+  }
+}
+
 CommandPoolVK::CommandPoolVK(const ContextVK* context)
     : owner_id_(std::this_thread::get_id()) {
   vk::CommandPoolCreateInfo pool_info;

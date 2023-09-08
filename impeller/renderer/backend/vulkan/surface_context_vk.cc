@@ -5,6 +5,7 @@
 #include "impeller/renderer/backend/vulkan/surface_context_vk.h"
 
 #include "flutter/fml/trace_event.h"
+#include "impeller/renderer/backend/vulkan/command_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/swapchain_vk.h"
 
@@ -78,6 +79,7 @@ std::unique_ptr<Surface> SurfaceContextVK::AcquireNextSurface() {
   if (allocator) {
     allocator->DidAcquireSurfaceFrame();
   }
+  CommandPoolVK::ReleaseThreadLocalPool(parent_.get());
   return surface;
 }
 

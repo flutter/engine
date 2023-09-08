@@ -51,6 +51,9 @@ class CommandPoolVK final {
   /// @note       Should only be called when the |ContextVK| is being destroyed.
   static void ClearAllPools(const ContextVK* context);
 
+  /// @brief      Releases references to thread-local command pools.
+  static void ReleaseThreadLocalPool(const ContextVK* context);
+
   ~CommandPoolVK();
 
   /// @brief      Whether or not this |CommandPoolVK| is valid.
@@ -82,6 +85,8 @@ class CommandPoolVK final {
   void CollectGraphicsCommandBuffer(vk::UniqueCommandBuffer buffer);
 
  private:
+  friend class ContextVK;
+
   const std::thread::id owner_id_;
   std::weak_ptr<const DeviceHolder> device_holder_;
   vk::UniqueCommandPool graphics_pool_;
@@ -97,6 +102,15 @@ class CommandPoolVK final {
   void Reset();
 
   explicit CommandPoolVK(const ContextVK* context);
+
+  explicit CommandPoolVK(const std::thread::id& owner_id,
+                         std::weak_ptr<const DeviceHolder> device_holder,
+                         vk::UniqueCommandPool graphics_pool,
+                         bool is_valid)
+      : owner_id_(owner_id),
+        device_holder_(std::move(device_holder)),
+        graphics_pool_(std::move(graphics_pool)),
+        is_valid_(is_valid) {}
 
   /// @brief      Collects buffers for recycling if able.
   ///

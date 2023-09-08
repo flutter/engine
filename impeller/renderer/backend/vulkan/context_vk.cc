@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/vulkan/context_vk.h"
+#include "fml/macros.h"
 
 #ifdef FML_OS_ANDROID
 #include <pthread.h>
@@ -513,6 +514,57 @@ std::shared_ptr<ResourceManagerVK> ContextVK::GetResourceManager() const {
 std::unique_ptr<CommandEncoderFactoryVK>
 ContextVK::CreateGraphicsCommandEncoderFactory() const {
   return std::make_unique<CommandEncoderFactoryVK>(weak_from_this());
+}
+
+std::optional<vk::UniqueCommandPool> ContextVK::CreateCommandPool() {
+  vk::CommandPoolCreateInfo pool_info;
+
+  pool_info.queueFamilyIndex = GetGraphicsQueue()->GetIndex().family;
+  pool_info.flags = vk::CommandPoolCreateFlagBits::eTransient |
+                    vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
+  auto pool = GetDevice().createCommandPoolUnique(pool_info);
+
+  if (pool.result != vk::Result::eSuccess) {
+    return std::nullopt;
+  }
+
+  return std::move(pool.value);
+}
+
+void ContextVK::RecycleCommandPool(vk::UniqueCommandPool pool) {
+  Lock lock(recycled_command_pools_mutex_);
+  recycled_command_pools_.push_back(std::move(pool));
+}
+
+std::optional<vk::UniqueCommandPool> ContextVK::ReuseCommandPool() {
+  Lock lock(recycled_command_pools_mutex_);
+  if (recycled_command_pools_.empty()) {
+    return std::nullopt;
+  }
+  auto pool = std::move(recycled_command_pools_.back());
+  recycled_command_pools_.pop_back();
+  return std::move(pool);
+}
+
+std::optional<vk::UniqueCommandPool> ContextVK::GetCommandPool() {
+  vk::UniqueCommandPool pool;
+
+  // First try reusing, then try creating.
+  if (auto reuse_pool = ReuseCommandPool()) {
+    pool = std::move(reuse_pool.value());
+  } else if (auto create_pool = CreateCommandPool()) {
+    pool = std::move(create_pool.value());
+  } else {
+    return std::nullopt;
+  }
+
+  // FIXME: Resource handling:
+  // 1. Wrap pool in a class that has a reference to this ContextVK.
+  //    (Q: A refrence to the pool? Ptr? Not sure yet)
+  // 2. In the destructor of that resource class, call:
+  //    context_->RecycleCommandPool(std::move(pool)); (or similar)
+
+  return std::move(pool);
 }
 
 }  // namespace impeller

@@ -5,11 +5,13 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 
 #include "flutter/fml/concurrent_message_loop.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/unique_fd.h"
+#include "fml/status.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/device_holder.h"
@@ -140,6 +142,16 @@ class ContextVK final : public Context,
 
   std::shared_ptr<ResourceManagerVK> GetResourceManager() const;
 
+  /// @brief      Returns a |vk::UniqueCommandPool|, or |std::nullopt| if the
+  ///             pool could not be created.
+  ///
+  /// If able, this method will reuse any |vk::CommandBuffer|s that have reset,
+  /// otherwise a new pool will be created.
+  ///
+  /// When all references to the returned |vk::UniqueCommandPool| are released,
+  /// the pool will automatically be sent to a background thread for recycling.
+  std::optional<vk::UniqueCommandPool> GetCommandPool();
+
  private:
   struct DeviceHolderImpl : public DeviceHolder {
     // |DeviceHolder|
@@ -168,6 +180,12 @@ class ContextVK final : public Context,
   std::shared_ptr<fml::ConcurrentMessageLoop> raster_message_loop_;
   bool sync_presentation_ = false;
   const uint64_t hash_;
+
+  std::vector<vk::UniqueCommandPool> recycled_command_pools_;
+  Mutex recycled_command_pools_mutex_;
+  std::optional<vk::UniqueCommandPool> CreateCommandPool();
+  void RecycleCommandPool(vk::UniqueCommandPool pool);
+  std::optional<vk::UniqueCommandPool> ReuseCommandPool();
 
   bool is_valid_ = false;
 
