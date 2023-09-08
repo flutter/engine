@@ -84,4 +84,6 @@
 - (nonnull FlutterView*)createFlutterViewWithMTLDevice:(nonnull id<MTLDevice>)device
                                           commandQueue:(nonnull id<MTLCommandQueue>)commandQueue;
 
+- (nullable NSEvent*)handleKeyUpEvent:(nonnull NSEvent*)event;
+
 @end

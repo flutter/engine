@@ -70,6 +70,7 @@
 - (bool)testLookupKeyAssets;
 - (bool)testLookupKeyAssetsWithPackage;
 - (bool)testViewControllerIsReleased;
+- (bool)testListenForMetaModifiedKeyUpEvents;
 
 + (void)respondFalseForSendEvent:(const FlutterKeyEvent&)event
                         callback:(nullable FlutterKeyEventCallback)callback
@@ -254,6 +255,10 @@ TEST(FlutterViewControllerTest, testLookupKeyAssetsWithPackage) {
 
 TEST(FlutterViewControllerTest, testViewControllerIsReleased) {
   ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testViewControllerIsReleased]);
+}
+
+TEST(FlutterViewControllerTest, testListenForMetaModifiedKeyUpEvents) {
+  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testListenForMetaModifiedKeyUpEvents]);
 }
 
 }  // namespace flutter::testing
@@ -1037,6 +1042,65 @@ static void SwizzledNoop(id self, SEL _cmd) {}
   }
 
   EXPECT_EQ(weakController, nil);
+
+  return true;
+}
+
+- (bool)testListenForMetaModifiedKeyUpEvents {
+  FlutterViewController* viewController = flutter::testing::CreateMockViewController();
+  OCMStub([viewController keyUp:[OCMArg any]]).andDo(nil);
+  [viewController loadView];
+
+  // Creates a NSWindow so that sub view can be first responder.
+  NSWindow* window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600)
+                                                 styleMask:NSBorderlessWindowMask
+                                                   backing:NSBackingStoreBuffered
+                                                     defer:NO];
+  window.contentView = viewController.view;
+  NSView* dummyView = [[NSView alloc] initWithFrame:CGRectZero];
+  [viewController.view addSubview:dummyView];
+  // Attaches FlutterTextInputPlugin to the view;
+  [dummyView addSubview:viewController.textInputPlugin];
+
+  NSEvent* key1Up = [NSEvent keyEventWithType:NSEventTypeKeyUp
+                                     location:NSZeroPoint
+                                modifierFlags:0x00100000
+                                    timestamp:0
+                                 windowNumber:0
+                                      context:nil
+                                   characters:@"a"
+                  charactersIgnoringModifiers:@"a"
+                                    isARepeat:FALSE
+                                      keyCode:0];
+  [key1Up setValue:window forKey:@"_window"];
+
+  // Should not call keyup evnet by NSView.
+  EXPECT_TRUE([window makeFirstResponder:dummyView]);
+  [viewController handleKeyUpEvent:key1Up];
+
+  @try {
+    OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
+        never(), [viewController keyUp:[OCMArg any]]);
+  } @catch (...) {
+    return false;
+  }
+
+  // Should call keyup evnet.
+  EXPECT_TRUE([window makeFirstResponder:viewController.textInputPlugin]);
+  [viewController handleKeyUpEvent:key1Up];
+
+  EXPECT_TRUE([window makeFirstResponder:viewController.view]);
+  [viewController handleKeyUpEvent:key1Up];
+
+  EXPECT_TRUE([window makeFirstResponder:viewController.flutterView]);
+  [viewController handleKeyUpEvent:key1Up];
+
+  @try {
+    OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
+        times(3), [viewController keyUp:[OCMArg any]]);
+  } @catch (...) {
+    return false;
+  }
 
   return true;
 }
