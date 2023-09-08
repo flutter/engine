@@ -72,7 +72,7 @@ class ParagraphSkia : public Paragraph {
  private:
   TextStyle SkiaToTxt(const skia::textlayout::TextStyle& skia);
 
-  std::unique_ptr<skia::textlayout::Paragraph> paragraph_;
+  std::shared_ptr<skia::textlayout::Paragraph> paragraph_;
   std::vector<flutter::DlPaint> dl_paints_;
   std::optional<std::vector<LineMetrics>> line_metrics_;
   std::vector<TextStyle> line_metrics_styles_;

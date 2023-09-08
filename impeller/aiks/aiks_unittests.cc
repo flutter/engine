@@ -1277,7 +1277,7 @@ bool RenderTextInCanvasSkia(const std::shared_ptr<Context>& context,
   }
 
   // Create the Impeller text frame and draw it at the designated baseline.
-  auto frame = MakeTextFrameFromTextBlobSkia(blob);
+  auto frame = MakeTextFrameFromTextBlobSkiaTestOnly(blob);
 
   Paint text_paint;
   text_paint.color = Color::Yellow().WithAlpha(options.alpha);
@@ -1466,7 +1466,7 @@ TEST_P(AiksTest, CanRenderTextOutsideBoundaries) {
     {
       auto blob = SkTextBlob::MakeFromString(t.text, sk_font);
       ASSERT_NE(blob, nullptr);
-      auto frame = MakeTextFrameFromTextBlobSkia(blob);
+      auto frame = MakeTextFrameFromTextBlobSkiaTestOnly(blob);
       canvas.DrawTextFrame(frame, Point(), text_paint);
     }
     canvas.Restore();
@@ -3089,7 +3089,7 @@ TEST_P(AiksTest, TextForegroundShaderWithTransform) {
 
   auto blob = SkTextBlob::MakeFromString("Hello", sk_font);
   ASSERT_NE(blob, nullptr);
-  auto frame = MakeTextFrameFromTextBlobSkia(blob);
+  auto frame = MakeTextFrameFromTextBlobSkiaTestOnly(blob);
   canvas.DrawTextFrame(frame, Point(), text_paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));

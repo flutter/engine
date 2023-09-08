@@ -9,7 +9,17 @@
 
 namespace impeller {
 
+/// @brief Create an Impeller text frame from a Skia text blob.
+///
+///  has_color_font controls whether or not the glyphs can be cached in the
+///  alpha atlas or the full color atlas.
 std::shared_ptr<impeller::TextFrame> MakeTextFrameFromTextBlobSkia(
+    const sk_sp<SkTextBlob>& blob,
+    bool has_color_font);
+
+/// @brief Testonly version of `MakeTextFrameFromTextBlobSkia` that looks up whether
+/// or not the font has bitmap glyphs at runtime.
+std::shared_ptr<impeller::TextFrame> MakeTextFrameFromTextBlobSkiaTestOnly(
     const sk_sp<SkTextBlob>& blob);
 
 }  // namespace impeller

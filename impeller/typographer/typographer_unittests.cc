@@ -40,7 +40,7 @@ TEST_P(TypographerTest, CanConvertTextBlob) {
   auto blob = SkTextBlob::MakeFromString(
       "the quick brown fox jumped over the lazy dog.", font);
   ASSERT_TRUE(blob);
-  auto frame = MakeTextFrameFromTextBlobSkia(blob);
+  auto frame = MakeTextFrameFromTextBlobSkiaTestOnly(blob);
   ASSERT_EQ(frame->GetRunCount(), 1u);
   for (const auto& run : frame->GetRuns()) {
     ASSERT_TRUE(run.IsValid());
@@ -62,7 +62,7 @@ TEST_P(TypographerTest, CanCreateGlyphAtlas) {
   ASSERT_TRUE(blob);
   auto atlas = CreateGlyphAtlas(
       *GetContext(), context.get(), GlyphAtlas::Type::kAlphaBitmap, 1.0f,
-      atlas_context, *MakeTextFrameFromTextBlobSkia(blob));
+      atlas_context, *MakeTextFrameFromTextBlobSkiaTestOnly(blob));
   ASSERT_NE(atlas, nullptr);
   ASSERT_NE(atlas->GetTexture(), nullptr);
   ASSERT_EQ(atlas->GetType(), GlyphAtlas::Type::kAlphaBitmap);
@@ -113,7 +113,7 @@ TEST_P(TypographerTest, LazyAtlasTracksColor) {
 
   auto blob = SkTextBlob::MakeFromString("hello", sk_font);
   ASSERT_TRUE(blob);
-  auto frame = MakeTextFrameFromTextBlobSkia(blob);
+  auto frame = MakeTextFrameFromTextBlobSkiaTestOnly(blob);
 
   ASSERT_FALSE(frame->GetAtlasType() == GlyphAtlas::Type::kColorBitmap);
 
@@ -121,7 +121,7 @@ TEST_P(TypographerTest, LazyAtlasTracksColor) {
 
   lazy_atlas.AddTextFrame(*frame, 1.0f);
 
-  frame = MakeTextFrameFromTextBlobSkia(
+  frame = MakeTextFrameFromTextBlobSkiaTestOnly(
       SkTextBlob::MakeFromString("😀 ", emoji_font));
 
   ASSERT_TRUE(frame->GetAtlasType() == GlyphAtlas::Type::kColorBitmap);
@@ -147,7 +147,7 @@ TEST_P(TypographerTest, GlyphAtlasWithOddUniqueGlyphSize) {
   ASSERT_TRUE(blob);
   auto atlas = CreateGlyphAtlas(
       *GetContext(), context.get(), GlyphAtlas::Type::kAlphaBitmap, 1.0f,
-      atlas_context, *MakeTextFrameFromTextBlobSkia(blob));
+      atlas_context, *MakeTextFrameFromTextBlobSkiaTestOnly(blob));
   ASSERT_NE(atlas, nullptr);
   ASSERT_NE(atlas->GetTexture(), nullptr);
 
@@ -164,7 +164,7 @@ TEST_P(TypographerTest, GlyphAtlasIsRecycledIfUnchanged) {
   ASSERT_TRUE(blob);
   auto atlas = CreateGlyphAtlas(
       *GetContext(), context.get(), GlyphAtlas::Type::kAlphaBitmap, 1.0f,
-      atlas_context, *MakeTextFrameFromTextBlobSkia(blob));
+      atlas_context, *MakeTextFrameFromTextBlobSkiaTestOnly(blob));
   ASSERT_NE(atlas, nullptr);
   ASSERT_NE(atlas->GetTexture(), nullptr);
   ASSERT_EQ(atlas, atlas_context->GetGlyphAtlas());
@@ -173,7 +173,7 @@ TEST_P(TypographerTest, GlyphAtlasIsRecycledIfUnchanged) {
 
   auto next_atlas = CreateGlyphAtlas(
       *GetContext(), context.get(), GlyphAtlas::Type::kAlphaBitmap, 1.0f,
-      atlas_context, *MakeTextFrameFromTextBlobSkia(blob));
+      atlas_context, *MakeTextFrameFromTextBlobSkiaTestOnly(blob));
   ASSERT_EQ(atlas, next_atlas);
   ASSERT_EQ(atlas_context->GetGlyphAtlas(), atlas);
 }
@@ -196,7 +196,7 @@ TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {
   FontGlyphMap font_glyph_map;
   size_t size_count = 8;
   for (size_t index = 0; index < size_count; index += 1) {
-    MakeTextFrameFromTextBlobSkia(blob)->CollectUniqueFontGlyphPairs(
+    MakeTextFrameFromTextBlobSkiaTestOnly(blob)->CollectUniqueFontGlyphPairs(
         font_glyph_map, 0.6 * index);
   };
   auto atlas =
@@ -231,7 +231,7 @@ TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledIfUnchanged) {
   ASSERT_TRUE(blob);
   auto atlas = CreateGlyphAtlas(
       *GetContext(), context.get(), GlyphAtlas::Type::kAlphaBitmap, 1.0f,
-      atlas_context, *MakeTextFrameFromTextBlobSkia(blob));
+      atlas_context, *MakeTextFrameFromTextBlobSkiaTestOnly(blob));
   auto old_packer = atlas_context->GetRectPacker();
 
   ASSERT_NE(atlas, nullptr);
@@ -245,7 +245,7 @@ TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledIfUnchanged) {
   auto blob2 = SkTextBlob::MakeFromString("spooky 2", sk_font);
   auto next_atlas = CreateGlyphAtlas(
       *GetContext(), context.get(), GlyphAtlas::Type::kAlphaBitmap, 1.0f,
-      atlas_context, *MakeTextFrameFromTextBlobSkia(blob2));
+      atlas_context, *MakeTextFrameFromTextBlobSkiaTestOnly(blob2));
   ASSERT_EQ(atlas, next_atlas);
   auto* second_texture = next_atlas->GetTexture().get();
 
@@ -264,7 +264,7 @@ TEST_P(TypographerTest, GlyphAtlasTextureIsRecreatedIfTypeChanges) {
   ASSERT_TRUE(blob);
   auto atlas = CreateGlyphAtlas(
       *GetContext(), context.get(), GlyphAtlas::Type::kAlphaBitmap, 1.0f,
-      atlas_context, *MakeTextFrameFromTextBlobSkia(blob));
+      atlas_context, *MakeTextFrameFromTextBlobSkiaTestOnly(blob));
   auto old_packer = atlas_context->GetRectPacker();
 
   ASSERT_NE(atlas, nullptr);
@@ -279,7 +279,7 @@ TEST_P(TypographerTest, GlyphAtlasTextureIsRecreatedIfTypeChanges) {
   auto blob2 = SkTextBlob::MakeFromString("spooky 1", sk_font);
   auto next_atlas = CreateGlyphAtlas(
       *GetContext(), context.get(), GlyphAtlas::Type::kColorBitmap, 1.0f,
-      atlas_context, *MakeTextFrameFromTextBlobSkia(blob2));
+      atlas_context, *MakeTextFrameFromTextBlobSkiaTestOnly(blob2));
   ASSERT_NE(atlas, next_atlas);
   auto* second_texture = next_atlas->GetTexture().get();
 
@@ -296,11 +296,11 @@ TEST_P(TypographerTest, MaybeHasOverlapping) {
   SkFont sk_font(typeface, 0.5f);
 
   auto frame =
-      MakeTextFrameFromTextBlobSkia(SkTextBlob::MakeFromString("1", sk_font));
+      MakeTextFrameFromTextBlobSkiaTestOnly(SkTextBlob::MakeFromString("1", sk_font));
   // Single character has no overlapping
   ASSERT_FALSE(frame->MaybeHasOverlapping());
 
-  auto frame_2 = MakeTextFrameFromTextBlobSkia(
+  auto frame_2 = MakeTextFrameFromTextBlobSkiaTestOnly(
       SkTextBlob::MakeFromString("123456789", sk_font));
   ASSERT_FALSE(frame_2->MaybeHasOverlapping());
 }

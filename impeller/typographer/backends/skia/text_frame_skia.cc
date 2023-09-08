@@ -38,16 +38,34 @@ static Rect ToRect(const SkRect& rect) {
 
 static constexpr Scalar kScaleSize = 100000.0f;
 
-std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
-    const sk_sp<SkTextBlob>& blob) {
-  bool has_color = false;
-  std::vector<TextRun> runs;
+// Check if the first glyph of the text blob has color. This is used for testing
+// only. This currently uses private Skia APIs.
+static bool BlobHasColor(const sk_sp<SkTextBlob>& blob) {
   for (SkTextBlobRunIterator run(blob.get()); !run.done(); run.next()) {
-    // TODO(jonahwilliams): ask Skia for a public API to look this up.
-    // https://github.com/flutter/flutter/issues/112005
     SkStrikeSpec strikeSpec = SkStrikeSpec::MakeWithNoDevice(run.font());
     SkBulkGlyphMetricsAndPaths paths{strikeSpec};
+    if (run.glyphCount() > 0) {
+      if (paths.glyph(run.glyphs()[0])->isColor()) {
+        return true;
+      }
+      return false;
+    }
+  }
+  return false;
+}
 
+std::shared_ptr<impeller::TextFrame> MakeTextFrameFromTextBlobSkiaTestOnly(
+    const sk_sp<SkTextBlob>& blob) {
+  return MakeTextFrameFromTextBlobSkia(blob, BlobHasColor(blob));
+}
+
+std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
+    const sk_sp<SkTextBlob>& blob,
+    bool has_color_font) {
+  Glyph::Type type = has_color_font ? Glyph::Type::kBitmap : Glyph::Type::kPath;
+
+  std::vector<TextRun> runs;
+  for (SkTextBlobRunIterator run(blob.get()); !run.done(); run.next()) {
     const auto glyph_count = run.glyphCount();
     const auto* glyphs = run.glyphs();
     switch (run.positioning()) {
@@ -69,11 +87,6 @@ std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
           // kFull_Positioning has two scalars per glyph.
           const SkPoint* glyph_points = run.points();
           const auto* point = glyph_points + i;
-          Glyph::Type type = paths.glyph(glyphs[i])->isColor()
-                                 ? Glyph::Type::kBitmap
-                                 : Glyph::Type::kPath;
-          has_color |= type == Glyph::Type::kBitmap;
-
           positions.emplace_back(TextRun::GlyphPosition{
               Glyph{glyphs[i], type,
                     ToRect(glyph_bounds[i]).Scale(font_size / kScaleSize)},
@@ -88,7 +101,8 @@ std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
         continue;
     }
   }
-  return std::make_shared<TextFrame>(runs, ToRect(blob->bounds()), has_color);
+  return std::make_shared<TextFrame>(runs, ToRect(blob->bounds()),
+                                     has_color_font);
 }
 
 }  // namespace impeller

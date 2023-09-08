@@ -67,9 +67,11 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
   ///             probably makes sense to eventually make this a compile-time
   ///             decision (i.e. with `#ifdef`) instead of a runtime option.
   DisplayListParagraphPainter(DisplayListBuilder* builder,
+                              const std::shared_ptr<skt::Paragraph>& paragraph,
                               const std::vector<DlPaint>& dl_paints,
                               bool impeller_enabled)
       : builder_(builder),
+        paragraph_(paragraph),
         dl_paints_(dl_paints),
         impeller_enabled_(impeller_enabled) {}
 
@@ -92,9 +94,10 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
         builder_->DrawPath(transformed, dl_paints_[paint_id]);
         return;
       }
-
-      builder_->DrawTextFrame(impeller::MakeTextFrameFromTextBlobSkia(blob), x,
-                              y, dl_paints_[paint_id]);
+      auto has_color_font = paragraph_->containsColorFontOrBitmap(blob.get());
+      builder_->DrawTextFrame(
+          impeller::MakeTextFrameFromTextBlobSkia(blob, has_color_font), x, y,
+          dl_paints_[paint_id]);
       return;
     }
 #endif  // IMPELLER_SUPPORTS_RENDERING
@@ -116,8 +119,10 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
       paint.setMaskFilter(&filter);
     }
     if (impeller_enabled_) {
-      builder_->DrawTextFrame(impeller::MakeTextFrameFromTextBlobSkia(blob), x,
-                              y, paint);
+      auto has_color_font = paragraph_->containsColorFontOrBitmap(blob.get());
+      builder_->DrawTextFrame(
+          impeller::MakeTextFrameFromTextBlobSkia(blob, has_color_font), x, y,
+          paint);
       return;
     }
     builder_->DrawTextBlob(blob, x, y, paint);
@@ -237,6 +242,7 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
   }
 
   DisplayListBuilder* builder_;
+  const std::shared_ptr<skt::Paragraph> paragraph_;
   const std::vector<DlPaint>& dl_paints_;
   const bool impeller_enabled_;
 };
@@ -328,7 +334,7 @@ void ParagraphSkia::Layout(double width) {
 }
 
 bool ParagraphSkia::Paint(DisplayListBuilder* builder, double x, double y) {
-  DisplayListParagraphPainter painter(builder, dl_paints_, impeller_enabled_);
+  DisplayListParagraphPainter painter(builder, paragraph_, dl_paints_, impeller_enabled_);
   paragraph_->paint(&painter, x, y);
   return true;
 }
