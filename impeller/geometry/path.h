@@ -81,7 +81,7 @@ class Path {
     /// The direction of the contour's end cap.
     Vector2 end_direction;
 
-    /// Distinct sections in thie contour.
+    /// Distinct sections in this contour.
     ///
     /// If this contour is generated from multiple path components, each
     /// component forms a section.
