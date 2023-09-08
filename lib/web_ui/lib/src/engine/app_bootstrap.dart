@@ -2,11 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:js_interop';
-
 import 'configuration.dart';
 import 'js_interop/js_loader.dart';
-import 'js_interop/js_promise.dart';
 
 /// The type of a function that initializes an engine (in Dart).
 typedef InitEngineFn = Future<void> Function([JsFlutterConfiguration? params]);
@@ -40,26 +37,26 @@ class AppBootstrap {
       // This is a convenience method that lets the programmer call "autoStart"
       // from JavaScript immediately after the main.dart.js has loaded.
       // Returns a promise that resolves to the Flutter app that was started.
-      autoStart: (() => futureToPromise(() async {
+      autoStart: () async {
         await autoStart();
         // Return the App that was just started
-        return _prepareFlutterApp() as JSAny;
-      }())).toJS,
+        return _prepareFlutterApp();
+      },
       // Calls [_initEngine], and returns a JS Promise that resolves to an
       // app runner object.
-      initializeEngine: (([JsFlutterConfiguration? configuration]) => futureToPromise(() async {
+      initializeEngine: ([JsFlutterConfiguration? configuration]) async {
         await _initializeEngine(configuration);
-        return _prepareAppRunner() as JSAny;
-      }())).toJS
+        return _prepareAppRunner();
+      }
     );
   }
 
   /// Creates an appRunner that runs our encapsulated runApp function.
   FlutterAppRunner _prepareAppRunner() {
-    return FlutterAppRunner(runApp: (([RunAppFnParameters? params]) => futureToPromise(() async {
+    return FlutterAppRunner(runApp: ([RunAppFnParameters? params]) async {
       await _runApp();
-      return _prepareFlutterApp() as JSAny;
-    }())).toJS);
+      return _prepareFlutterApp();
+    });
   }
 
   /// Represents the App that was just started, and its JS API.
