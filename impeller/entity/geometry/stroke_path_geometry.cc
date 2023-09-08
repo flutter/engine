@@ -356,7 +356,7 @@ StrokePathGeometry::CreateSolidStrokeVertices(
     if (!contour.is_closed) {
       auto cap_offset =
           Vector2(-contour.end_direction.y, contour.end_direction.x) *
-          stroke_width * 0.5; // Clockwise normal
+          stroke_width * 0.5;  // Clockwise normal
       cap_proc(vtx_builder, polyline.points[contour_end_point_i - 1],
                cap_offset, scale, false);
     } else {
