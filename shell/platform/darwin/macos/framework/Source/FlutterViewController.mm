@@ -619,11 +619,10 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
     return;
   }
   FlutterViewController* __weak weakSelf = self;
-  _keyUpMonitor = [NSEvent
-      addLocalMonitorForEventsMatchingMask:NSEventMaskKeyUp
-                                   handler:^NSEvent*(NSEvent* event) {
-                                     return [weakSelf handleKeyUpEvent: event];
-                                   }];
+  _keyUpMonitor = [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskKeyUp
+                                                        handler:^NSEvent*(NSEvent* event) {
+                                                          return [weakSelf handleKeyUpEvent:event];
+                                                        }];
 }
 
 - (NSEvent*)handleKeyUpEvent:(NSEvent*)event {
@@ -631,16 +630,13 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
   // view or textInputPlugin.
   NSResponder* firstResponder = [[event window] firstResponder];
   if (self.viewLoaded && self.flutterView &&
-      (firstResponder == self.view ||
-      firstResponder == self.flutterView ||
-      firstResponder == self.textInputPlugin) &&
-      ([event modifierFlags] & NSEventModifierFlagCommand) &&
-      ([event type] == NSEventTypeKeyUp)) {
+      (firstResponder == self.view || firstResponder == self.flutterView ||
+       firstResponder == self.textInputPlugin) &&
+      ([event modifierFlags] & NSEventModifierFlagCommand) && ([event type] == NSEventTypeKeyUp)) {
     [self keyUp:event];
   }
   return event;
 }
-
 
 - (void)configureTrackingArea {
   if (!self.viewLoaded) {
