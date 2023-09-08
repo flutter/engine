@@ -272,11 +272,14 @@ struct CheckSameSignature : std::false_type {};
 template <typename Ret, typename... Args>
 struct CheckSameSignature<Ret(Args...), Ret(Args...)> : std::true_type {};
 
+// These static asserts don't work in platforms where the functions have calling
+// convention attributes, like on Android.  See |VKAPI_ATTR|.
+#if defined(FML_OS_MACOSX) || defined(FML_OS_LINUX)
 static_assert(CheckSameSignature<decltype(vkQueueSubmit),
                                  decltype(vkQueueSubmitThreadsafe)>::value);
 static_assert(CheckSameSignature<decltype(vkQueueWaitIdle),
                                  decltype(vkQueueWaitIdleThreadsafe)>::value);
-
+#endif
 }  // namespace
 
 PFN_vkVoidFunction VulkanProcTable::AcquireThreadsafeSubmitQueue(
