@@ -14,17 +14,15 @@
 
 namespace impeller {
 
+// Holds the command pool in a background thread, recyling it when not in use.
 class BackgroundCommandPoolVK {
  public:
   BackgroundCommandPoolVK(BackgroundCommandPoolVK&&) = default;
 
   explicit BackgroundCommandPoolVK(
       vk::UniqueCommandPool&& pool,
-      std::vector<vk::UniqueCommandBuffer>&& buffers,
       std::weak_ptr<CommandPoolRecyclerVK> recycler)
-      : pool_(std::move(pool)),
-        buffers_(std::move(buffers)),
-        recycler_(std::move(recycler)) {}
+      : pool_(std::move(pool)), recycler_(std::move(recycler)) {}
 
   ~BackgroundCommandPoolVK() {
     auto const recycler = recycler_.lock();
@@ -38,11 +36,10 @@ class BackgroundCommandPoolVK {
   FML_DISALLOW_COPY_AND_ASSIGN(BackgroundCommandPoolVK);
 
   vk::UniqueCommandPool pool_;
-  std::vector<vk::UniqueCommandBuffer> buffers_;
   std::weak_ptr<CommandPoolRecyclerVK> recycler_;
 };
 
-CommandPoolResourceVK::~CommandPoolResourceVK() {
+CommandPoolVK::~CommandPoolVK() {
   auto const context = context_.lock();
   if (!context) {
     return;
@@ -53,12 +50,11 @@ CommandPoolResourceVK::~CommandPoolResourceVK() {
   }
   UniqueResourceVKT<BackgroundCommandPoolVK> pool(
       context->GetResourceManager(),
-      BackgroundCommandPoolVK(std::move(pool_), std::move(collected_buffers_),
-                              recycler));
+      BackgroundCommandPoolVK(std::move(pool_), recycler));
 }
 
 // TODO(matanlurey): Return a status_or<> instead of {} when we have one.
-vk::UniqueCommandBuffer CommandPoolResourceVK::CreateBuffer() {
+vk::UniqueCommandBuffer CommandPoolVK::CreateBuffer() {
   auto const context = context_.lock();
   if (!context) {
     return {};
@@ -73,23 +69,27 @@ vk::UniqueCommandBuffer CommandPoolResourceVK::CreateBuffer() {
   if (result != vk::Result::eSuccess) {
     return {};
   }
-
+  FML_LOG(ERROR) << "CommandPoolResourceVK::CreateBuffer()";
   return std::move(buffers[0]);
 }
 
-void CommandPoolResourceVK::CollectBuffer(vk::UniqueCommandBuffer&& buffer) {
+void CommandPoolVK::CollectBuffer(vk::UniqueCommandBuffer&& buffer) {
+  FML_LOG(ERROR) << "CommandPoolResourceVK::CollectBuffer()";
   collected_buffers_.push_back(std::move(buffer));
 }
 
 // Associates a resource with a thread and context.
 using CommandPoolMap =
-    std::unordered_map<uint64_t, std::shared_ptr<CommandPoolResourceVK>>;
+    std::unordered_map<uint64_t, std::shared_ptr<CommandPoolVK>>;
 FML_THREAD_LOCAL fml::ThreadLocalUniquePtr<CommandPoolMap> resources_;
 
 // TODO(matanlurey): Return a status_or<> instead of nullptr when we have one.
-std::shared_ptr<CommandPoolResourceVK> CommandPoolRecyclerVK::Get() {
+std::shared_ptr<CommandPoolVK> CommandPoolRecyclerVK::Get() {
+  FML_LOG(ERROR) << "CommandPoolRecyclerVK::Get() Enter";
+
   auto const strong_context = context_.lock();
   if (!strong_context) {
+    FML_LOG(ERROR) << "CommandPoolRecyclerVK::Get() failed due to context.";
     return nullptr;
   }
 
@@ -109,12 +109,14 @@ std::shared_ptr<CommandPoolResourceVK> CommandPoolRecyclerVK::Get() {
   // Otherwise, create a new resource and return it.
   auto pool = Create();
   if (!pool) {
+    FML_LOG(ERROR) << "CommandPoolRecyclerVK::Get() failed due to pool create.";
     return nullptr;
   }
 
   auto const resource =
-      std::make_shared<CommandPoolResourceVK>(std::move(*pool), context_);
+      std::make_shared<CommandPoolVK>(std::move(*pool), context_);
   map[hash] = resource;
+  FML_LOG(ERROR) << "CommandPoolRecyclerVK::Get()";
   return resource;
 }
 
@@ -126,7 +128,20 @@ std::optional<vk::UniqueCommandPool> CommandPoolRecyclerVK::Create() {
   }
 
   // Otherwise, create a new one.
-  return std::nullopt;
+  auto context = context_.lock();
+  if (!context) {
+    return std::nullopt;
+  }
+  vk::CommandPoolCreateInfo info;
+  info.setQueueFamilyIndex(context->GetGraphicsQueue()->GetIndex().family);
+  info.setFlags(vk::CommandPoolCreateFlagBits::eTransient);
+
+  auto device = context->GetDevice();
+  auto [result, pool] = device.createCommandPoolUnique(info);
+  if (result != vk::Result::eSuccess) {
+    return std::nullopt;
+  }
+  return std::move(pool);
 }
 
 std::optional<vk::UniqueCommandPool> CommandPoolRecyclerVK::Reuse() {
@@ -143,6 +158,7 @@ std::optional<vk::UniqueCommandPool> CommandPoolRecyclerVK::Reuse() {
 }
 
 void CommandPoolRecyclerVK::Reclaim(vk::UniqueCommandPool&& pool) {
+  FML_LOG(INFO) << "CommandPoolRecyclerVK::Reclaim";
   TRACE_EVENT0("impeller", "ReclaimCommandPool");
   // FIXME: Assert that this is called on a background thread.
 

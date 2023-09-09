@@ -528,18 +528,4 @@ ContextVK::CreateGraphicsCommandEncoderFactory() const {
   return std::make_unique<CommandEncoderFactoryVK>(weak_from_this());
 }
 
-std::optional<vk::UniqueCommandPool> ContextVK::CreateCommandPool() const {
-  vk::CommandPoolCreateInfo pool_info;
-
-  pool_info.queueFamilyIndex = GetGraphicsQueue()->GetIndex().family;
-  pool_info.flags = vk::CommandPoolCreateFlagBits::eTransient;
-  auto pool = GetDevice().createCommandPoolUnique(pool_info);
-
-  if (pool.result != vk::Result::eSuccess) {
-    return std::nullopt;
-  }
-
-  return std::move(pool.value);
-}
-
 }  // namespace impeller

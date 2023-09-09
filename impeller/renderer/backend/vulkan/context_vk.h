@@ -5,7 +5,6 @@
 #pragma once
 
 #include <memory>
-#include <optional>
 
 #include "flutter/fml/concurrent_message_loop.h"
 #include "flutter/fml/macros.h"
@@ -174,11 +173,6 @@ class ContextVK final : public Context,
   std::shared_ptr<fml::ConcurrentMessageLoop> raster_message_loop_;
   bool sync_presentation_ = false;
   const uint64_t hash_;
-
-  mutable std::vector<vk::UniqueCommandPool> recycled_command_pools_;
-  mutable Mutex recycled_command_pools_mutex_;
-  std::optional<vk::UniqueCommandPool> CreateCommandPool() const;
-  std::optional<vk::UniqueCommandPool> ReuseCommandPool() const;
 
   bool is_valid_ = false;
 

@@ -27,21 +27,18 @@ class CommandPoolRecyclerVK;
 /// @warning    This class is not thread-safe.
 ///
 /// @see        |CommandPoolRecyclerVK|
-class CommandPoolResourceVK final {
+class CommandPoolVK final {
  public:
-  CommandPoolResourceVK(CommandPoolResourceVK&&) = default;
-  ~CommandPoolResourceVK();
+  CommandPoolVK(CommandPoolVK&&) = default;
+  ~CommandPoolVK();
 
   /// @brief      Creates a resource that manages the life of a command pool.
   ///
   /// @param[in]  pool      The command pool to manage.
   /// @param[in]  recycler  The context that will be notified on destruction.
-  explicit CommandPoolResourceVK(vk::UniqueCommandPool pool,
-                                 std::weak_ptr<ContextVK>& context)
+  explicit CommandPoolVK(vk::UniqueCommandPool pool,
+                         std::weak_ptr<ContextVK>& context)
       : pool_(std::move(pool)), context_(context) {}
-
-  /// @brief      Returns a reference to the underlying |vk::CommandPool|.
-  const vk::CommandPool& Get() const { return *pool_; }
 
   /// @brief      Creates and returns a new |vk::CommandBuffer|.
   ///
@@ -58,7 +55,7 @@ class CommandPoolResourceVK final {
   void CollectBuffer(vk::UniqueCommandBuffer&& buffer);
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(CommandPoolResourceVK);
+  FML_DISALLOW_COPY_AND_ASSIGN(CommandPoolVK);
 
   vk::UniqueCommandPool pool_;
   std::weak_ptr<ContextVK>& context_;
@@ -101,7 +98,7 @@ class CommandPoolRecyclerVK final
   /// @brief      Gets a command pool for the current thread.
   ///
   /// @warning    Returns a |nullptr| if a pool could not be created.
-  std::shared_ptr<CommandPoolResourceVK> Get();
+  std::shared_ptr<CommandPoolVK> Get();
 
   /// @brief      Returns a command pool to be reset on a background thread.
   ///
