@@ -37,12 +37,14 @@ final Set<String> skippedPaths = <String>{
   r'flutter/web_sdk', // this code is not linked into Flutter apps; it's only used by engine tests and tools
   r'fuchsia/sdk/linux/docs',
   r'fuchsia/sdk/linux/meta',
+  r'fuchsia/sdk/linux/NOTICE.fuchsia', // covers things that contribute to the Fuchsia SDK; see fxb/94240
   r'fuchsia/sdk/linux/tools',
   r'fuchsia/sdk/mac/docs',
   r'fuchsia/sdk/mac/meta',
+  r'fuchsia/sdk/mac/NOTICE.fuchsia',
   r'fuchsia/sdk/mac/tools',
   r'out', // output of build
-  r'third_party/android_embedding_dependencies', // testing framework for android
+  r'third_party/android_embedding_dependencies', // Not shipped. Used only for the build-time classpath, and for the in-tree testing framework for Android
   r'third_party/android_tools', // excluded on advice
   r'third_party/angle/android',
   r'third_party/angle/doc',
@@ -58,6 +60,7 @@ final Set<String> skippedPaths = <String>{
   r'third_party/benchmark', // only used by tests
   r'third_party/boringssl/src/crypto/err/err_data_generate.go',
   r'third_party/boringssl/src/fuzz', // testing tools, not shipped
+  r'third_party/boringssl/src/rust', // rust-related code is not shipped
   r'third_party/boringssl/src/util', // code generators, not shipped
   r'third_party/colorama/src/demos',
   r'third_party/colorama/src/screenshots',
@@ -90,6 +93,7 @@ final Set<String> skippedPaths = <String>{
   r'third_party/flatbuffers/python',
   r'third_party/flatbuffers/rust',
   r'third_party/flatbuffers/ts',
+  r'third_party/google_fonts_for_unit_tests', // only used in web unit tests
   r'third_party/fontconfig', // not used in standard configurations
   r'third_party/freetype2/builds',
   r'third_party/freetype2/src/tools',
@@ -180,6 +184,7 @@ final Set<String> skippedPaths = <String>{
   r'third_party/skia/third_party/lua', // not linked in
   r'third_party/skia/third_party/vello', // not linked in
   r'third_party/skia/tools', // contains nothing that ends up in the binary executable
+  r'third_party/stb',
   r'third_party/swiftshader', // only used on hosts for tests
   r'third_party/tinygltf',
   r'third_party/vulkan-deps/glslang/LICENSE', // excluded to make sure we don't accidentally apply it as a default license

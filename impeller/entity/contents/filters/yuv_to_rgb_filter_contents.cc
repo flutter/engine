@@ -42,7 +42,8 @@ std::optional<Entity> YUVToRGBFilterContents::RenderFilter(
     const ContentContext& renderer,
     const Entity& entity,
     const Matrix& effect_transform,
-    const Rect& coverage) const {
+    const Rect& coverage,
+    const std::optional<Rect>& coverage_hint) const {
   if (inputs.size() < 2) {
     return std::nullopt;
   }
@@ -73,7 +74,7 @@ std::optional<Entity> YUVToRGBFilterContents::RenderFilter(
                                const ContentContext& renderer,
                                const Entity& entity, RenderPass& pass) -> bool {
     Command cmd;
-    cmd.label = "YUV to RGB Filter";
+    DEBUG_COMMAND_INFO(cmd, "YUV to RGB Filter");
     cmd.stencil_reference = entity.GetStencilDepth();
 
     auto options = OptionsFromPassAndEntity(pass, entity);

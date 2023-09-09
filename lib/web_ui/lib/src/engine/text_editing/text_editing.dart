@@ -101,8 +101,12 @@ void _setStaticStyleAttributes(DomHTMLElement domElement) {
 /// element.
 ///
 /// They are assigned once during the creation of the DOM element.
-void _hideAutofillElements(DomHTMLElement domElement,
-    {bool isOffScreen = false}) {
+void _styleAutofillElements(
+  DomHTMLElement domElement, {
+  bool isOffScreen = false,
+  bool shouldHideElement = true,
+  bool shouldDisablePointerEvents = false,
+}) {
   final DomCSSStyleDeclaration elementStyle = domElement.style;
   elementStyle
     ..whiteSpace = 'pre-wrap'
@@ -115,8 +119,6 @@ void _hideAutofillElements(DomHTMLElement domElement,
     ..outline = 'none'
     ..border = 'none'
     ..resize = 'none'
-    ..width = '0'
-    ..height = '0'
     ..textShadow = 'transparent'
     ..transformOrigin = '0 0 0';
 
@@ -124,6 +126,16 @@ void _hideAutofillElements(DomHTMLElement domElement,
     elementStyle
       ..top = '${offScreenOffset}px'
       ..left = '${offScreenOffset}px';
+  }
+
+  if (shouldHideElement) {
+    elementStyle
+      ..width = '0'
+      ..height = '0';
+  }
+
+  if (shouldDisablePointerEvents) {
+    elementStyle.pointerEvents = 'none';
   }
 
   if (browserHasAutofillOverlay()) {
@@ -145,6 +157,7 @@ class EngineAutofillForm {
     this.elements,
     this.items,
     this.formIdentifier = '',
+    this.insertionReferenceNode,
   });
 
   final DomHTMLFormElement formElement;
@@ -153,6 +166,7 @@ class EngineAutofillForm {
 
   final Map<String, AutofillInfo>? items;
 
+  final DomHTMLElement? insertionReferenceNode;
   /// Identifier for the form.
   ///
   /// It is constructed by concatenating unique ids of input elements on the
@@ -189,6 +203,8 @@ class EngineAutofillForm {
     final Map<String, DomHTMLElement> elements = <String, DomHTMLElement>{};
     final Map<String, AutofillInfo> items = <String, AutofillInfo>{};
     final DomHTMLFormElement formElement = createDomHTMLFormElement();
+    final bool isSafariDesktopStrategy = textEditing.strategy is SafariDesktopTextEditingStrategy;
+    DomHTMLElement? insertionReferenceNode;
 
     // Validation is in the framework side.
     formElement.noValidate = true;
@@ -198,7 +214,10 @@ class EngineAutofillForm {
       e.preventDefault();
     }));
 
-    _hideAutofillElements(formElement);
+    // We need to explicitly disable pointer events on the form in Safari Desktop,
+    // so that we don't have pointer event collisions if users hover over or click
+    // into the invisible autofill elements within the form.
+    _styleAutofillElements(formElement, shouldDisablePointerEvents: isSafariDesktopStrategy);
 
     // We keep the ids in a list then sort them later, in case the text fields'
     // locations are re-ordered on the framework side.
@@ -209,6 +228,7 @@ class EngineAutofillForm {
         AutofillInfo.fromFrameworkMessage(focusedElementAutofill);
 
     if (fields != null) {
+      bool fieldIsFocusedElement = false;
       for (final Map<String, dynamic> field in
           fields.cast<Map<String, dynamic>>()) {
         final Map<String, dynamic> autofillInfo = field.readJson('autofill');
@@ -229,11 +249,31 @@ class EngineAutofillForm {
           final DomHTMLElement htmlElement = engineInputType.createDomElement();
           autofill.editingState.applyToDomElement(htmlElement);
           autofill.applyToDomElement(htmlElement);
-          _hideAutofillElements(htmlElement);
+
+          // Safari Desktop does not respect elements that are invisible (or
+          // have no size) and that leads to issues with autofill only partially
+          // working (ref: https://github.com/flutter/flutter/issues/71275).
+          // Thus, we have to make sure that the elements remain invisible to users,
+          // but not to Safari for autofill to work. Since these elements are
+          // sized and placed on the DOM, we also have to disable pointer events.
+          _styleAutofillElements(htmlElement,
+              shouldHideElement: !isSafariDesktopStrategy,
+              shouldDisablePointerEvents: isSafariDesktopStrategy);
 
           items[autofill.uniqueIdentifier] = autofill;
           elements[autofill.uniqueIdentifier] = htmlElement;
           formElement.append(htmlElement);
+
+          // We want to track the node in the position directly after our focused
+          // element, so we can later insert that element in the correct position
+          // right before this node.
+          if(fieldIsFocusedElement){
+            insertionReferenceNode = htmlElement;
+            fieldIsFocusedElement = false;
+          }
+        } else {
+          // current field is the focused element that we create elsewhere
+          fieldIsFocusedElement = true;
         }
       }
     } else {
@@ -262,28 +302,33 @@ class EngineAutofillForm {
     // In order to submit the form when Framework sends a `TextInput.commit`
     // message, we add a submit button to the form.
     final DomHTMLInputElement submitButton = createDomHTMLInputElement();
-    _hideAutofillElements(submitButton, isOffScreen: true);
+    _styleAutofillElements(submitButton, isOffScreen: true);
     submitButton.className = 'submitBtn';
     submitButton.type = 'submit';
 
     formElement.append(submitButton);
+
+    // If the focused node is at the end of the form, we'll default to inserting
+    // it before the submit field.
+    insertionReferenceNode ??= submitButton;
 
     return EngineAutofillForm(
       formElement: formElement,
       elements: elements,
       items: items,
       formIdentifier: formIdentifier,
+      insertionReferenceNode: insertionReferenceNode
     );
   }
 
   void placeForm(DomHTMLElement mainTextEditingElement) {
-    formElement.append(mainTextEditingElement);
+    formElement.insertBefore(mainTextEditingElement, insertionReferenceNode);
     defaultTextEditingRoot.append(formElement);
   }
 
   void storeForm() {
     formsOnTheDom[formIdentifier] = formElement;
-    _hideAutofillElements(formElement, isOffScreen: true);
+    _styleAutofillElements(formElement, isOffScreen: true);
   }
 
   /// Listens to `onInput` event on the form fields.
@@ -813,9 +858,12 @@ class EditingState {
 
   @override
   String toString() {
-    return assertionsEnabled
-        ? 'EditingState("$text", base:$baseOffset, extent:$extentOffset, composingBase:$composingBaseOffset, composingExtent:$composingExtentOffset)'
-        : super.toString();
+    String result = super.toString();
+    assert(() {
+      result = 'EditingState("$text", base:$baseOffset, extent:$extentOffset, composingBase:$composingBaseOffset, composingExtent:$composingExtentOffset)';
+      return true;
+    }());
+    return result;
   }
 
   /// Sets the selection values of a DOM element using this [EditingState].
@@ -1054,24 +1102,35 @@ class SafariDesktopTextEditingStrategy extends DefaultTextEditingStrategy {
   void placeElement() {
     geometry?.applyToDomElement(activeDomElement);
     if (hasAutofillGroup) {
-      placeForm();
-      // On Safari Desktop, when a form is focused, it opens an autofill menu
-      // immediately.
-      // Flutter framework sends `setEditableSizeAndTransform` for informing
-      // the engine about the location of the text field. This call may arrive
-      // after the first `show` call, depending on the text input widget's
-      // implementation. Therefore form is placed, when
-      // `setEditableSizeAndTransform` method is called and focus called on the
-      // form only after placing it to the correct position and only once after
-      // that. Calling focus multiple times causes flickering.
-      focusedFormElement!.focus();
+      // We listen to pointerdown events on the Flutter View element and programatically
+      // focus our inputs. However, these inputs are focused before the pointerdown
+      // events conclude. Thus, the browser triggers a blur event immediately after
+      // focusing these inputs. This causes issues with Safari Desktop's autofill
+      // dialog (ref: https://github.com/flutter/flutter/issues/127960).
+      // In order to guarantee that we only focus after the pointerdown event concludes,
+      // we wrap the form autofill placement and focus logic in a zero-duration Timer.
+      // This ensures that our input doesn't have instantaneous focus/blur events
+      // occur on it and fixes the autofill dialog bug as a result.
+      Timer(Duration.zero, () {
+        placeForm();
+        // On Safari Desktop, when a form is focused, it opens an autofill menu
+        // immediately.
+        // Flutter framework sends `setEditableSizeAndTransform` for informing
+        // the engine about the location of the text field. This call may arrive
+        // after the first `show` call, depending on the text input widget's
+        // implementation. Therefore form is placed, when
+        // `setEditableSizeAndTransform` method is called and focus called on the
+        // form only after placing it to the correct position and only once after
+        // that. Calling focus multiple times causes flickering.
+        focusedFormElement!.focus();
 
-      // Set the last editing state if it exists, this is critical for a
-      // users ongoing work to continue uninterrupted when there is an update to
-      // the transform.
-      // If domElement is not focused cursor location will not be correct.
-      activeDomElement.focus();
-      lastEditingState?.applyToDomElement(activeDomElement);
+        // Set the last editing state if it exists, this is critical for a
+        // users ongoing work to continue uninterrupted when there is an update to
+        // the transform.
+        // If domElement is not focused cursor location will not be correct.
+        activeDomElement.focus();
+        lastEditingState?.applyToDomElement(activeDomElement);
+      });
     }
   }
 
@@ -1291,7 +1350,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
         inputConfiguration.autofillGroup?.formElement != null) {
       // Subscriptions are removed, listeners won't be triggered.
       activeDomElement.blur();
-      _hideAutofillElements(activeDomElement, isOffScreen: true);
+      _styleAutofillElements(activeDomElement, isOffScreen: true);
       inputConfiguration.autofillGroup?.storeForm();
     } else {
       activeDomElement.remove();
@@ -1334,9 +1393,9 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
       lastEditingState = newEditingState;
       _editingDeltaState = newTextEditingDeltaState;
       onChange!(lastEditingState, _editingDeltaState);
-      // Flush delta after it has been sent to framework.
-      _editingDeltaState = null;
     }
+    // Flush delta state.
+    _editingDeltaState = null;
   }
 
   void handleBeforeInput(DomEvent event) {
@@ -1415,9 +1474,12 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
 
   /// Prevent default behavior for mouse down, up and move.
   ///
-  /// When normal mouse events are not prevented, in desktop browsers, mouse
-  /// selection conflicts with selection sent from the framework, which creates
+  /// When normal mouse events are not prevented, mouse selection
+  /// conflicts with selection sent from the framework, which creates
   /// flickering during selection by mouse.
+  ///
+  /// On mobile browsers, mouse events are sent after a touch event,
+  /// see: https://bugs.chromium.org/p/chromium/issues/detail?id=119216#c11.
   void preventDefaultForMouseEvents() {
     subscriptions.add(
         DomSubscription(activeDomElement, 'mousedown', (_) {
@@ -1704,6 +1766,8 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
                 owner.sendTextConnectionClosedToFrameworkIfAny();
               }
             }));
+
+    preventDefaultForMouseEvents();
   }
 
   @override

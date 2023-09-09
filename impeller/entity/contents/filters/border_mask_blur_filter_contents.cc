@@ -53,7 +53,8 @@ std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
     const ContentContext& renderer,
     const Entity& entity,
     const Matrix& effect_transform,
-    const Rect& coverage) const {
+    const Rect& coverage,
+    const std::optional<Rect>& coverage_hint) const {
   using VS = BorderMaskBlurPipeline::VertexShader;
   using FS = BorderMaskBlurPipeline::FragmentShader;
 
@@ -108,7 +109,7 @@ std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
     auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
     Command cmd;
-    cmd.label = "Border Mask Blur Filter";
+    DEBUG_COMMAND_INFO(cmd, "Border Mask Blur Filter");
     auto options = OptionsFromPassAndEntity(pass, entity);
 
     cmd.pipeline = renderer.GetBorderMaskBlurPipeline(options);

@@ -86,9 +86,12 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
     const ContentContext& renderer,
     const Entity& entity,
     const Matrix& effect_transform,
-    const Rect& coverage) const {
+    const Rect& coverage,
+    const std::optional<Rect>& coverage_hint) const {
   using VS = GaussianBlurAlphaDecalPipeline::VertexShader;
   using FS = GaussianBlurAlphaDecalPipeline::FragmentShader;
+
+  bool is_first_pass = !source_override_;
 
   //----------------------------------------------------------------------------
   /// Handle inputs.
@@ -98,10 +101,29 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
     return std::nullopt;
   }
 
+  // Limit the kernel size to 1000x1000 pixels, like Skia does.
+  auto radius = std::min(Radius{blur_sigma_}.radius, 500.0f);
+
+  auto transform = entity.GetTransformation() * effect_transform.Basis();
+  auto transformed_blur_radius =
+      transform.TransformDirection(blur_direction_ * radius);
+
+  auto transformed_blur_radius_length = transformed_blur_radius.GetLength();
+
   // Input 0 snapshot.
 
-  auto input_snapshot =
-      inputs[0]->GetSnapshot("GaussianBlur", renderer, entity);
+  std::optional<Rect> expanded_coverage_hint;
+  if (coverage_hint.has_value()) {
+    auto r =
+        Size(transformed_blur_radius_length, transformed_blur_radius_length)
+            .Abs();
+    expanded_coverage_hint =
+        is_first_pass ? Rect(coverage_hint.value().origin - r,
+                             Size(coverage_hint.value().size + r * 2))
+                      : coverage_hint;
+  }
+  auto input_snapshot = inputs[0]->GetSnapshot("GaussianBlur", renderer, entity,
+                                               expanded_coverage_hint);
   if (!input_snapshot.has_value()) {
     return std::nullopt;
   }
@@ -111,14 +133,6 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
         input_snapshot.value(), entity.GetBlendMode(),
         entity.GetStencilDepth());  // No blur to render.
   }
-
-  auto radius = Radius{blur_sigma_}.radius;
-
-  auto transform = entity.GetTransformation() * effect_transform.Basis();
-  auto transformed_blur_radius =
-      transform.TransformDirection(blur_direction_ * radius);
-
-  auto transformed_blur_radius_length = transformed_blur_radius.GetLength();
 
   // If the radius length is < .5, the shader will take at most 1 sample,
   // resulting in no blur.
@@ -149,8 +163,8 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
   // Source override snapshot.
 
   auto source = source_override_ ? source_override_ : inputs[0];
-  auto source_snapshot =
-      source->GetSnapshot("GaussianBlur(Override)", renderer, entity);
+  auto source_snapshot = source->GetSnapshot("GaussianBlur(Override)", renderer,
+                                             entity, GetCoverageHint());
   if (!source_snapshot.has_value()) {
     return std::nullopt;
   }
@@ -172,8 +186,9 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
   /// Render to texture.
   ///
 
-  ContentContext::SubpassCallback callback = [&](const ContentContext& renderer,
-                                                 RenderPass& pass) {
+  ContentContext::SubpassCallback subpass_callback = [&](const ContentContext&
+                                                             renderer,
+                                                         RenderPass& pass) {
     auto& host_buffer = pass.GetTransientsBuffer();
 
     VertexBufferBuilder<VS::PerVertexData> vtx_builder;
@@ -205,8 +220,8 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
         Point(input_snapshot->GetCoverage().value().size);
 
     Command cmd;
-    cmd.label = SPrintF("Gaussian Blur Filter (Radius=%.2f)",
-                        transformed_blur_radius_length);
+    DEBUG_COMMAND_INFO(cmd, SPrintF("Gaussian Blur Filter (Radius=%.2f)",
+                                    transformed_blur_radius_length));
     cmd.BindVertices(vtx_buffer);
 
     auto options = OptionsFromPass(pass);
@@ -280,7 +295,7 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
       FS::BindMaskInfo(cmd, host_buffer.EmplaceUniform(mask_info));
     }
 
-    return pass.AddCommand(cmd);
+    return pass.AddCommand(std::move(cmd));
   };
 
   Vector2 scale;
@@ -294,8 +309,8 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
   {
     scale.x = scale_curve(transformed_blur_radius_length);
 
-    Scalar y_radius = std::abs(pass_transform.GetDirectionScale(Vector2(
-        0, source_override_ ? Radius{secondary_blur_sigma_}.radius : 1)));
+    Scalar y_radius = std::abs(pass_transform.GetDirectionScale(
+        Vector2(0, !is_first_pass ? Radius{secondary_blur_sigma_}.radius : 1)));
     scale.y = scale_curve(y_radius);
   }
 
@@ -303,7 +318,7 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
   ISize floored_size = ISize(scaled_size.x, scaled_size.y);
 
   auto out_texture = renderer.MakeSubpass("Directional Gaussian Blur Filter",
-                                          floored_size, callback);
+                                          floored_size, subpass_callback);
 
   if (!out_texture) {
     return std::nullopt;
@@ -312,6 +327,8 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
   SamplerDescriptor sampler_desc;
   sampler_desc.min_filter = MinMagFilter::kLinear;
   sampler_desc.mag_filter = MinMagFilter::kLinear;
+  sampler_desc.width_address_mode = SamplerAddressMode::kClampToEdge;
+  sampler_desc.width_address_mode = SamplerAddressMode::kClampToEdge;
 
   return Entity::FromSnapshot(
       Snapshot{.texture = out_texture,
@@ -339,7 +356,7 @@ std::optional<Rect> DirectionalGaussianBlurFilterContents::GetFilterCoverage(
 
   auto transform = inputs[0]->GetTransform(entity) * effect_transform.Basis();
   auto transformed_blur_vector =
-      transform.TransformDirection(blur_direction_* Radius{blur_sigma_}.radius)
+      transform.TransformDirection(blur_direction_ * Radius{blur_sigma_}.radius)
           .Abs();
   auto extent = coverage->size + transformed_blur_vector * 2;
   return Rect(coverage->origin - transformed_blur_vector,

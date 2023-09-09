@@ -22,11 +22,11 @@ const std::shared_ptr<Geometry>& ColorSourceContents::GetGeometry() const {
   return geometry_;
 }
 
-void ColorSourceContents::SetOpacity(Scalar alpha) {
+void ColorSourceContents::SetOpacityFactor(Scalar alpha) {
   opacity_ = alpha;
 }
 
-Scalar ColorSourceContents::GetOpacity() const {
+Scalar ColorSourceContents::GetOpacityFactor() const {
   return opacity_ * inherited_opacity_;
 }
 
@@ -34,8 +34,12 @@ void ColorSourceContents::SetEffectTransform(Matrix matrix) {
   inverse_matrix_ = matrix.Invert();
 }
 
-const Matrix& ColorSourceContents::GetInverseMatrix() const {
+const Matrix& ColorSourceContents::GetInverseEffectTransform() const {
   return inverse_matrix_;
+}
+
+bool ColorSourceContents::IsSolidColor() const {
+  return false;
 }
 
 std::optional<Rect> ColorSourceContents::GetCoverage(
@@ -49,15 +53,6 @@ bool ColorSourceContents::CanInheritOpacity(const Entity& entity) const {
 
 void ColorSourceContents::SetInheritedOpacity(Scalar opacity) {
   inherited_opacity_ = opacity;
-}
-
-bool ColorSourceContents::ShouldRender(
-    const Entity& entity,
-    const std::optional<Rect>& stencil_coverage) const {
-  if (!stencil_coverage.has_value()) {
-    return false;
-  }
-  return Contents::ShouldRender(entity, stencil_coverage);
 }
 
 }  // namespace impeller

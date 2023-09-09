@@ -5,7 +5,8 @@
 #include "diff_context_test.h"
 
 #include <utility>
-#include "flutter/display_list/dl_builder.h"
+
+#include "flutter/display_list/display_list_builder.h"
 
 namespace flutter {
 namespace testing {
@@ -17,11 +18,13 @@ Damage DiffContextTest::DiffLayerTree(MockLayerTree& layer_tree,
                                       const SkIRect& additional_damage,
                                       int horizontal_clip_alignment,
                                       int vertical_clip_alignment,
-                                      bool use_raster_cache) {
+                                      bool use_raster_cache,
+                                      bool impeller_enabled) {
   FML_CHECK(layer_tree.size() == old_layer_tree.size());
 
-  DiffContext dc(layer_tree.size(), 1, layer_tree.paint_region_map(),
-                 old_layer_tree.paint_region_map(), use_raster_cache);
+  DiffContext dc(layer_tree.size(), layer_tree.paint_region_map(),
+                 old_layer_tree.paint_region_map(), use_raster_cache,
+                 impeller_enabled);
   dc.PushCullRect(
       SkRect::MakeIWH(layer_tree.size().width(), layer_tree.size().height()));
   layer_tree.root()->Diff(&dc, old_layer_tree.root());
@@ -30,7 +33,7 @@ Damage DiffContextTest::DiffLayerTree(MockLayerTree& layer_tree,
 }
 
 sk_sp<DisplayList> DiffContextTest::CreateDisplayList(const SkRect& bounds,
-                                                      SkColor color) {
+                                                      DlColor color) {
   DisplayListBuilder builder;
   builder.DrawRect(bounds, DlPaint().setColor(color));
   return builder.Build();

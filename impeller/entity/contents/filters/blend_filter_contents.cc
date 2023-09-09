@@ -8,6 +8,7 @@
 #include <memory>
 #include <optional>
 
+#include "impeller/base/strings.h"
 #include "impeller/core/formats.h"
 #include "impeller/entity/contents/anonymous_contents.h"
 #include "impeller/entity/contents/content_context.h"
@@ -15,12 +16,48 @@
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/entity.h"
+#include "impeller/geometry/color.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/snapshot.h"
 
 namespace impeller {
+
+std::optional<BlendMode> InvertPorterDuffBlend(BlendMode blend_mode) {
+  switch (blend_mode) {
+    case BlendMode::kClear:
+      return BlendMode::kClear;
+    case BlendMode::kSource:
+      return BlendMode::kDestination;
+    case BlendMode::kDestination:
+      return BlendMode::kSource;
+    case BlendMode::kSourceOver:
+      return BlendMode::kDestinationOver;
+    case BlendMode::kDestinationOver:
+      return BlendMode::kSourceOver;
+    case BlendMode::kSourceIn:
+      return BlendMode::kDestinationIn;
+    case BlendMode::kDestinationIn:
+      return BlendMode::kSourceIn;
+    case BlendMode::kSourceOut:
+      return BlendMode::kDestinationOut;
+    case BlendMode::kDestinationOut:
+      return BlendMode::kSourceOut;
+    case BlendMode::kSourceATop:
+      return BlendMode::kDestinationATop;
+    case BlendMode::kDestinationATop:
+      return BlendMode::kSourceATop;
+    case BlendMode::kXor:
+      return BlendMode::kXor;
+    case BlendMode::kPlus:
+      return BlendMode::kPlus;
+    case BlendMode::kModulate:
+      return BlendMode::kModulate;
+    default:
+      return std::nullopt;
+  }
+}
 
 BlendFilterContents::BlendFilterContents() {
   SetBlendMode(BlendMode::kSourceOver);
@@ -37,6 +74,7 @@ static std::optional<Entity> AdvancedBlend(
     const ContentContext& renderer,
     const Entity& entity,
     const Rect& coverage,
+    BlendMode blend_mode,
     std::optional<Color> foreground_color,
     bool absorb_opacity,
     PipelineProc pipeline_proc,
@@ -88,6 +126,21 @@ static std::optional<Entity> AdvancedBlend(
     src_uvs = maybe_src_uvs.value();
   }
 
+  Rect subpass_coverage = coverage;
+  if (entity.GetContents()) {
+    auto coverage_hint = entity.GetContents()->GetCoverageHint();
+
+    if (coverage_hint.has_value()) {
+      auto maybe_subpass_coverage =
+          subpass_coverage.Intersection(*coverage_hint);
+      if (!maybe_subpass_coverage.has_value()) {
+        return std::nullopt;  // Nothing to render.
+      }
+
+      subpass_coverage = *maybe_subpass_coverage;
+    }
+  }
+
   //----------------------------------------------------------------------------
   /// Render to texture.
   ///
@@ -114,7 +167,8 @@ static std::optional<Entity> AdvancedBlend(
         std::invoke(pipeline_proc, renderer, options);
 
     Command cmd;
-    cmd.label = "Advanced Blend Filter";
+    DEBUG_COMMAND_INFO(cmd, SPrintF("Advanced Blend Filter (%s)",
+                                    BlendModeToString(blend_mode)));
     cmd.BindVertices(vtx_buffer);
     cmd.pipeline = std::move(pipeline);
 
@@ -148,30 +202,33 @@ static std::optional<Entity> AdvancedBlend(
       auto src_sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler(
           src_sampler_descriptor);
       blend_info.color_factor = 0;
+      blend_info.src_input_alpha = src_snapshot->opacity;
       FS::BindTextureSamplerSrc(cmd, src_snapshot->texture, src_sampler);
       frame_info.src_y_coord_scale = src_snapshot->texture->GetYCoordScale();
     }
     auto blend_uniform = host_buffer.EmplaceUniform(blend_info);
     FS::BindBlendInfo(cmd, blend_uniform);
 
-    frame_info.mvp = Matrix::MakeOrthographic(size);
+    frame_info.mvp =
+        Matrix::MakeOrthographic(size) *
+        Matrix::MakeTranslation(coverage.origin - subpass_coverage.origin);
 
     auto uniform_view = host_buffer.EmplaceUniform(frame_info);
     VS::BindFrameInfo(cmd, uniform_view);
-    pass.AddCommand(cmd);
+    pass.AddCommand(std::move(cmd));
 
     return true;
   };
 
-  auto out_texture = renderer.MakeSubpass("Advanced Blend Filter",
-                                          ISize(coverage.size), callback);
+  auto out_texture = renderer.MakeSubpass(
+      "Advanced Blend Filter", ISize(subpass_coverage.size), callback);
   if (!out_texture) {
     return std::nullopt;
   }
 
   return Entity::FromSnapshot(
       Snapshot{.texture = out_texture,
-               .transform = Matrix::MakeTranslation(coverage.origin),
+               .transform = Matrix::MakeTranslation(subpass_coverage.origin),
                // Since we absorbed the transform of the inputs and used the
                // respective snapshot sampling modes when blending, pass on
                // the default NN clamp sampler.
@@ -227,7 +284,8 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
     auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
     Command cmd;
-    cmd.label = "Foreground Advanced Blend Filter";
+    DEBUG_COMMAND_INFO(cmd, SPrintF("Foreground Advanced Blend Filter (%s)",
+                                    BlendModeToString(blend_mode)));
     cmd.BindVertices(vtx_buffer);
     cmd.stencil_reference = entity.GetStencilDepth();
     auto options = OptionsFromPass(pass);
@@ -313,7 +371,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
     auto uniform_view = host_buffer.EmplaceUniform(frame_info);
     VS::BindFrameInfo(cmd, uniform_view);
 
-    return pass.AddCommand(cmd);
+    return pass.AddCommand(std::move(cmd));
   };
   CoverageProc coverage_proc =
       [coverage](const Entity& entity) -> std::optional<Rect> {
@@ -329,24 +387,6 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
   return sub_entity;
 }
 
-constexpr std::array<std::array<Scalar, 5>, 15> kPorterDuffCoefficients = {{
-    {0, 0, 0, 0, 0},    // Clear
-    {1, 0, 0, 0, 0},    // Source
-    {0, 0, 1, 0, 0},    // Destination
-    {1, 0, 1, -1, 0},   // SourceOver
-    {1, -1, 1, 0, 0},   // DestinationOver
-    {0, 1, 0, 0, 0},    // SourceIn
-    {0, 0, 0, 1, 0},    // DestinationIn
-    {1, -1, 0, 0, 0},   // SourceOut
-    {0, 0, 1, -1, 0},   // DestinationOut
-    {0, 1, 1, -1, 0},   // SourceATop
-    {1, -1, 0, 1, 0},   // DestinationATop
-    {1, -1, 1, -1, 0},  // Xor
-    {1, 0, 1, 0, 0},    // Plus
-    {0, 0, 0, 0, 1},    // Modulate
-    {0, 0, 1, 0, -1},   // Screen
-}};
-
 std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
     const std::shared_ptr<FilterInput>& input,
     const ContentContext& renderer,
@@ -356,19 +396,8 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
     BlendMode blend_mode,
     std::optional<Scalar> alpha,
     bool absorb_opacity) const {
-  auto dst_snapshot =
-      input->GetSnapshot("ForegroundPorterDuffBlend", renderer, entity);
-  if (!dst_snapshot.has_value()) {
-    return std::nullopt;
-  }
-
   if (blend_mode == BlendMode::kClear) {
     return std::nullopt;
-  }
-
-  if (blend_mode == BlendMode::kDestination) {
-    return Entity::FromSnapshot(dst_snapshot, entity.GetBlendMode(),
-                                entity.GetStencilDepth());
   }
 
   if (blend_mode == BlendMode::kSource) {
@@ -381,6 +410,17 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
     foreground_entity.SetStencilDepth(entity.GetStencilDepth());
     foreground_entity.SetContents(std::move(contents));
     return foreground_entity;
+  }
+
+  auto dst_snapshot =
+      input->GetSnapshot("ForegroundPorterDuffBlend", renderer, entity);
+  if (!dst_snapshot.has_value()) {
+    return std::nullopt;
+  }
+
+  if (blend_mode == BlendMode::kDestination) {
+    return Entity::FromSnapshot(dst_snapshot, entity.GetBlendMode(),
+                                entity.GetStencilDepth());
   }
 
   RenderProc render_proc = [foreground_color, coverage, dst_snapshot,
@@ -400,19 +440,23 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
 
     auto size = coverage.size;
     auto origin = coverage.origin;
+    auto color = foreground_color.Premultiply();
     VertexBufferBuilder<VS::PerVertexData> vtx_builder;
     vtx_builder.AddVertices({
-        {origin, dst_uvs[0]},
-        {Point(origin.x + size.width, origin.y), dst_uvs[1]},
-        {Point(origin.x + size.width, origin.y + size.height), dst_uvs[3]},
-        {origin, dst_uvs[0]},
-        {Point(origin.x + size.width, origin.y + size.height), dst_uvs[3]},
-        {Point(origin.x, origin.y + size.height), dst_uvs[2]},
+        {origin, dst_uvs[0], color},
+        {Point(origin.x + size.width, origin.y), dst_uvs[1], color},
+        {Point(origin.x + size.width, origin.y + size.height), dst_uvs[3],
+         color},
+        {origin, dst_uvs[0], color},
+        {Point(origin.x + size.width, origin.y + size.height), dst_uvs[3],
+         color},
+        {Point(origin.x, origin.y + size.height), dst_uvs[2], color},
     });
     auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
     Command cmd;
-    cmd.label = "Foreground PorterDuff Blend Filter";
+    DEBUG_COMMAND_INFO(cmd, SPrintF("Foreground PorterDuff Blend Filter (%s)",
+                                    BlendModeToString(blend_mode)));
     cmd.BindVertices(vtx_buffer);
     cmd.stencil_reference = entity.GetStencilDepth();
     auto options = OptionsFromPass(pass);
@@ -432,9 +476,9 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
     frame_info.texture_sampler_y_coord_scale =
         dst_snapshot->texture->GetYCoordScale();
 
-    frag_info.color = foreground_color.Premultiply();
     frag_info.input_alpha =
         absorb_opacity ? dst_snapshot->opacity * alpha.value_or(1.0) : 1.0;
+    frag_info.output_alpha = 1.0;
 
     auto blend_coefficients =
         kPorterDuffCoefficients[static_cast<int>(blend_mode)];
@@ -452,7 +496,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
     auto uniform_view = host_buffer.EmplaceUniform(frame_info);
     VS::BindFrameInfo(cmd, uniform_view);
 
-    return pass.AddCommand(cmd);
+    return pass.AddCommand(std::move(cmd));
   };
 
   CoverageProc coverage_proc =
@@ -474,7 +518,7 @@ static std::optional<Entity> PipelineBlend(
     const ContentContext& renderer,
     const Entity& entity,
     const Rect& coverage,
-    BlendMode pipeline_blend,
+    BlendMode blend_mode,
     std::optional<Color> foreground_color,
     bool absorb_opacity,
     std::optional<Scalar> alpha) {
@@ -483,13 +527,32 @@ static std::optional<Entity> PipelineBlend(
 
   auto dst_snapshot =
       inputs[0]->GetSnapshot("PipelineBlend(Dst)", renderer, entity);
+  if (!dst_snapshot.has_value()) {
+    return std::nullopt;  // Nothing to render.
+  }
+
+  Rect subpass_coverage = coverage;
+  if (entity.GetContents()) {
+    auto coverage_hint = entity.GetContents()->GetCoverageHint();
+
+    if (coverage_hint.has_value()) {
+      auto maybe_subpass_coverage =
+          subpass_coverage.Intersection(*coverage_hint);
+      if (!maybe_subpass_coverage.has_value()) {
+        return std::nullopt;  // Nothing to render.
+      }
+
+      subpass_coverage = *maybe_subpass_coverage;
+    }
+  }
 
   ContentContext::SubpassCallback callback = [&](const ContentContext& renderer,
                                                  RenderPass& pass) {
     auto& host_buffer = pass.GetTransientsBuffer();
 
     Command cmd;
-    cmd.label = "Pipeline Blend Filter";
+    DEBUG_COMMAND_INFO(cmd, SPrintF("Pipeline Blend Filter (%s)",
+                                    BlendModeToString(blend_mode)));
     auto options = OptionsFromPass(pass);
 
     auto add_blend_command = [&](std::optional<Snapshot> input) {
@@ -520,7 +583,7 @@ static std::optional<Entity> PipelineBlend(
 
       VS::FrameInfo frame_info;
       frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                       Matrix::MakeTranslation(-coverage.origin) *
+                       Matrix::MakeTranslation(-subpass_coverage.origin) *
                        input->transform;
       frame_info.texture_sampler_y_coord_scale =
           input->texture->GetYCoordScale();
@@ -530,7 +593,7 @@ static std::optional<Entity> PipelineBlend(
       FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
       VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
 
-      pass.AddCommand(cmd);
+      pass.AddCommand(std::move(cmd));
       return true;
     };
 
@@ -544,7 +607,7 @@ static std::optional<Entity> PipelineBlend(
     // Write subsequent textures using the selected blend mode.
 
     if (inputs.size() >= 2) {
-      options.blend_mode = pipeline_blend;
+      options.blend_mode = blend_mode;
       cmd.pipeline = renderer.GetBlendPipeline(options);
 
       for (auto texture_i = inputs.begin() + 1; texture_i < inputs.end();
@@ -566,7 +629,7 @@ static std::optional<Entity> PipelineBlend(
       contents->SetColor(foreground_color.value());
 
       Entity foreground_entity;
-      foreground_entity.SetBlendMode(pipeline_blend);
+      foreground_entity.SetBlendMode(blend_mode);
       foreground_entity.SetContents(contents);
       if (!foreground_entity.Render(renderer, pass)) {
         return false;
@@ -576,15 +639,16 @@ static std::optional<Entity> PipelineBlend(
     return true;
   };
 
-  auto out_texture = renderer.MakeSubpass("Pipeline Blend Filter",
-                                          ISize(coverage.size), callback);
+  auto out_texture = renderer.MakeSubpass(
+      "Pipeline Blend Filter", ISize(subpass_coverage.size), callback);
+
   if (!out_texture) {
     return std::nullopt;
   }
 
   return Entity::FromSnapshot(
       Snapshot{.texture = out_texture,
-               .transform = Matrix::MakeTranslation(coverage.origin),
+               .transform = Matrix::MakeTranslation(subpass_coverage.origin),
                // Since we absorbed the transform of the inputs and used the
                // respective snapshot sampling modes when blending, pass on
                // the default NN clamp sampler.
@@ -594,19 +658,18 @@ static std::optional<Entity> PipelineBlend(
       entity.GetBlendMode(), entity.GetStencilDepth());
 }
 
-#define BLEND_CASE(mode)                                                     \
-  case BlendMode::k##mode:                                                   \
-    advanced_blend_proc_ = [](const FilterInput::Vector& inputs,             \
-                              const ContentContext& renderer,                \
-                              const Entity& entity, const Rect& coverage,    \
-                              std::optional<Color> fg_color,                 \
-                              bool absorb_opacity,                           \
-                              std::optional<Scalar> alpha) {                 \
-      PipelineProc p = &ContentContext::GetBlend##mode##Pipeline;            \
-      return AdvancedBlend<Blend##mode##Pipeline>(inputs, renderer, entity,  \
-                                                  coverage, fg_color,        \
-                                                  absorb_opacity, p, alpha); \
-    };                                                                       \
+#define BLEND_CASE(mode)                                                      \
+  case BlendMode::k##mode:                                                    \
+    advanced_blend_proc_ =                                                    \
+        [](const FilterInput::Vector& inputs, const ContentContext& renderer, \
+           const Entity& entity, const Rect& coverage, BlendMode blend_mode,  \
+           std::optional<Color> fg_color, bool absorb_opacity,                \
+           std::optional<Scalar> alpha) {                                     \
+          PipelineProc p = &ContentContext::GetBlend##mode##Pipeline;         \
+          return AdvancedBlend<Blend##mode##Pipeline>(                        \
+              inputs, renderer, entity, coverage, blend_mode, fg_color,       \
+              absorb_opacity, p, alpha);                                      \
+        };                                                                    \
     break;
 
 void BlendFilterContents::SetBlendMode(BlendMode blend_mode) {
@@ -649,7 +712,8 @@ std::optional<Entity> BlendFilterContents::RenderFilter(
     const ContentContext& renderer,
     const Entity& entity,
     const Matrix& effect_transform,
-    const Rect& coverage) const {
+    const Rect& coverage,
+    const std::optional<Rect>& coverage_hint) const {
   if (inputs.empty()) {
     return std::nullopt;
   }
@@ -678,7 +742,7 @@ std::optional<Entity> BlendFilterContents::RenderFilter(
           inputs[0], renderer, entity, coverage, foreground_color_.value(),
           blend_mode_, GetAlpha(), GetAbsorbOpacity());
     }
-    return advanced_blend_proc_(inputs, renderer, entity, coverage,
+    return advanced_blend_proc_(inputs, renderer, entity, coverage, blend_mode_,
                                 foreground_color_, GetAbsorbOpacity(),
                                 GetAlpha());
   }

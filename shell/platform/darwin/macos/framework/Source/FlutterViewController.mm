@@ -292,7 +292,7 @@ void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
 
 @implementation FlutterViewWrapper {
   FlutterView* _flutterView;
-  FlutterViewController* _controller;
+  __weak FlutterViewController* _controller;
 }
 
 - (instancetype)initWithFlutterView:(FlutterView*)view
@@ -370,6 +370,12 @@ void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
   FlutterDartProject* _project;
 
   std::shared_ptr<flutter::AccessibilityBridgeMac> _bridge;
+
+  FlutterViewId _id;
+
+  // FlutterViewController does not actually uses the synchronizer, but only
+  // passes it to FlutterView.
+  FlutterThreadSynchronizer* _threadSynchronizer;
 }
 
 @synthesize viewId = _viewId;
@@ -510,8 +516,8 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
   [_flutterView setBackgroundColor:_backgroundColor];
 }
 
-- (uint64_t)viewId {
-  NSAssert([self attached], @"This view controller is not attched.");
+- (FlutterViewId)viewId {
+  NSAssert([self attached], @"This view controller is not attached.");
   return _viewId;
 }
 
@@ -539,14 +545,20 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
   return _bridge;
 }
 
-- (void)attachToEngine:(nonnull FlutterEngine*)engine withId:(uint64_t)viewId {
+- (void)setUpWithEngine:(FlutterEngine*)engine
+                 viewId:(FlutterViewId)viewId
+     threadSynchronizer:(FlutterThreadSynchronizer*)threadSynchronizer {
   NSAssert(_engine == nil, @"Already attached to an engine %@.", _engine);
   _engine = engine;
   _viewId = viewId;
+  _threadSynchronizer = threadSynchronizer;
+  [_threadSynchronizer registerView:_viewId];
 }
 
 - (void)detachFromEngine {
   NSAssert(_engine != nil, @"Not attached to any engine.");
+  [_threadSynchronizer deregisterView:_viewId];
+  _threadSynchronizer = nil;
   _engine = nil;
 }
 
@@ -856,7 +868,9 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
                                           commandQueue:(id<MTLCommandQueue>)commandQueue {
   return [[FlutterView alloc] initWithMTLDevice:device
                                    commandQueue:commandQueue
-                                reshapeListener:self];
+                                reshapeListener:self
+                             threadSynchronizer:_threadSynchronizer
+                                         viewId:_viewId];
 }
 
 - (void)onKeyboardLayoutChanged {
@@ -864,6 +878,14 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
   if (_keyboardLayoutNotifier != nil) {
     _keyboardLayoutNotifier();
   }
+}
+
+- (NSString*)lookupKeyForAsset:(NSString*)asset {
+  return [FlutterDartProject lookupKeyForAsset:asset];
+}
+
+- (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package {
+  return [FlutterDartProject lookupKeyForAsset:asset fromPackage:package];
 }
 
 #pragma mark - FlutterViewReshapeListener
@@ -931,6 +953,10 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
     return LayoutClue{resultChar, isDeadKey};
   }
   return LayoutClue{0, false};
+}
+
+- (nonnull NSDictionary*)getPressedState {
+  return [_keyboardManager getPressedState];
 }
 
 #pragma mark - NSResponder

@@ -10,6 +10,7 @@
 #include "flutter/shell/common/snapshot_controller.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 
 namespace flutter {
 
@@ -22,7 +23,10 @@ sk_sp<SkImage> DrawSnapshot(
   }
 
   draw_callback(surface->getCanvas());
-  surface->getCanvas()->flush();
+  auto dContext = GrAsDirectContext(surface->recordingContext());
+  if (dContext) {
+    dContext->flushAndSubmit();
+  }
 
   sk_sp<SkImage> device_snapshot;
   {
@@ -69,13 +73,13 @@ sk_sp<DlImage> SnapshotControllerSkia::DoMakeRasterSnapshot(
   if (!snapshot_surface) {
     // Raster surface is fine if there is no on screen surface. This might
     // happen in case of software rendering.
-    sk_sp<SkSurface> sk_surface = SkSurface::MakeRaster(image_info);
+    sk_sp<SkSurface> sk_surface = SkSurfaces::Raster(image_info);
     result = DrawSnapshot(sk_surface, draw_callback);
   } else {
     delegate.GetIsGpuDisabledSyncSwitch()->Execute(
         fml::SyncSwitch::Handlers()
             .SetIfTrue([&] {
-              sk_sp<SkSurface> surface = SkSurface::MakeRaster(image_info);
+              sk_sp<SkSurface> surface = SkSurfaces::Raster(image_info);
               result = DrawSnapshot(surface, draw_callback);
             })
             .SetIfFalse([&] {
@@ -105,9 +109,9 @@ sk_sp<DlImage> SnapshotControllerSkia::DoMakeRasterSnapshot(
               // When there is an on screen surface, we need a render target
               // SkSurface because we want to access texture backed images.
               sk_sp<SkSurface> sk_surface =
-                  SkSurface::MakeRenderTarget(context,               // context
-                                              skgpu::Budgeted::kNo,  // budgeted
-                                              image_info  // image info
+                  SkSurfaces::RenderTarget(context,               // context
+                                           skgpu::Budgeted::kNo,  // budgeted
+                                           image_info             // image info
                   );
               if (!sk_surface) {
                 FML_LOG(ERROR)

@@ -5,6 +5,7 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
+#include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/text_run.h"
 
 namespace impeller {
@@ -20,6 +21,10 @@ class TextFrame {
   TextFrame();
 
   ~TextFrame();
+
+  void CollectUniqueFontGlyphPairs(FontGlyphPair::Set& set, Scalar scale) const;
+
+  static Scalar RoundScaledFontSize(Scalar scale, Scalar point_size);
 
   //----------------------------------------------------------------------------
   /// @brief      The conservative bounding box for this text frame.
@@ -43,7 +48,7 @@ class TextFrame {
   ///
   /// @return     If the text run could be added to this frame.
   ///
-  bool AddTextRun(const TextRun& run);
+  bool AddTextRun(TextRun&& run);
 
   //----------------------------------------------------------------------------
   /// @brief      Returns a reference to all the text runs in this frame.
@@ -63,8 +68,12 @@ class TextFrame {
   bool MaybeHasOverlapping() const;
 
   //----------------------------------------------------------------------------
-  /// @brief      Whether any run in this frame has color.
-  bool HasColor() const;
+  /// @brief      The type of atlas this run should be emplaced in.
+  GlyphAtlas::Type GetAtlasType() const;
+
+  TextFrame& operator=(TextFrame&& other) = default;
+
+  TextFrame(const TextFrame& other) = default;
 
  private:
   std::vector<TextRun> runs_;

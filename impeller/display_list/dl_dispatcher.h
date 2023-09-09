@@ -15,6 +15,10 @@ class DlDispatcher final : public flutter::DlOpReceiver {
  public:
   DlDispatcher();
 
+  explicit DlDispatcher(Rect cull_rect);
+
+  explicit DlDispatcher(IRect cull_rect);
+
   ~DlDispatcher();
 
   Picture EndRecordingAsPicture();
@@ -26,7 +30,7 @@ class DlDispatcher final : public flutter::DlOpReceiver {
   void setDither(bool dither) override;
 
   // |flutter::DlOpReceiver|
-  void setStyle(flutter::DlDrawStyle style) override;
+  void setDrawStyle(flutter::DlDrawStyle style) override;
 
   // |flutter::DlOpReceiver|
   void setColor(flutter::DlColor color) override;
@@ -168,13 +172,13 @@ class DlDispatcher final : public flutter::DlOpReceiver {
                     flutter::DlBlendMode dl_mode) override;
 
   // |flutter::DlOpReceiver|
-  void drawImage(const sk_sp<flutter::DlImage> image,
+  void drawImage(const sk_sp<flutter::DlImage>& image,
                  const SkPoint point,
                  flutter::DlImageSampling sampling,
                  bool render_with_attributes) override;
 
   // |flutter::DlOpReceiver|
-  void drawImageRect(const sk_sp<flutter::DlImage> image,
+  void drawImageRect(const sk_sp<flutter::DlImage>& image,
                      const SkRect& src,
                      const SkRect& dst,
                      flutter::DlImageSampling sampling,
@@ -182,14 +186,14 @@ class DlDispatcher final : public flutter::DlOpReceiver {
                      SrcRectConstraint constraint) override;
 
   // |flutter::DlOpReceiver|
-  void drawImageNine(const sk_sp<flutter::DlImage> image,
+  void drawImageNine(const sk_sp<flutter::DlImage>& image,
                      const SkIRect& center,
                      const SkRect& dst,
                      flutter::DlFilterMode filter,
                      bool render_with_attributes) override;
 
   // |flutter::DlOpReceiver|
-  void drawAtlas(const sk_sp<flutter::DlImage> atlas,
+  void drawAtlas(const sk_sp<flutter::DlImage>& atlas,
                  const SkRSXform xform[],
                  const SkRect tex[],
                  const flutter::DlColor colors[],
@@ -200,11 +204,11 @@ class DlDispatcher final : public flutter::DlOpReceiver {
                  bool render_with_attributes) override;
 
   // |flutter::DlOpReceiver|
-  void drawDisplayList(const sk_sp<flutter::DisplayList> display_list,
+  void drawDisplayList(const sk_sp<flutter::DisplayList>& display_list,
                        SkScalar opacity) override;
 
   // |flutter::DlOpReceiver|
-  void drawTextBlob(const sk_sp<SkTextBlob> blob,
+  void drawTextBlob(const sk_sp<SkTextBlob>& blob,
                     SkScalar x,
                     SkScalar y) override;
 

@@ -5,18 +5,6 @@
 // For documentation see https://github.com/flutter/engine/blob/main/lib/ui/painting.dart
 part of ui;
 
-// ignore: unused_element, Used in Shader assert.
-bool _offsetIsValid(Offset offset) {
-  assert(!offset.dx.isNaN && !offset.dy.isNaN, 'Offset argument contained a NaN value.');
-  return true;
-}
-
-// ignore: unused_element, Used in Shader assert.
-bool _matrix4IsValid(Float32List matrix4) {
-  assert(matrix4.length == 16, 'Matrix4 must have 16 entries.');
-  return true;
-}
-
 void _validateColorStops(List<Color> colors, List<double>? colorStops) {
   if (colorStops == null) {
     if (colors.length != 2) {
@@ -398,6 +386,7 @@ class MaskFilter {
   String toString() => 'MaskFilter.blur($_style, ${_sigma.toStringAsFixed(1)})';
 }
 
+// This needs to be kept in sync with the "_FilterQuality" enum in skwasm's canvas.cpp
 enum FilterQuality {
   none,
   low,
@@ -438,6 +427,7 @@ enum ColorSpace {
   extendedSRGB,
 }
 
+// This must be kept in sync with the `ImageByteFormat` enum in Skwasm's surface.cpp.
 enum ImageByteFormat {
   rawRgba,
   rawStraightRgba,
@@ -445,9 +435,11 @@ enum ImageByteFormat {
   png,
 }
 
+// This must be kept in sync with the `PixelFormat` enum in Skwasm's image.cpp.
 enum PixelFormat {
   rgba8888,
   bgra8888,
+  rgbaFloat32,
 }
 
 typedef ImageDecoderCallback = void Function(Image result);
@@ -529,9 +521,22 @@ class TargetImageSize {
   final int? height;
 }
 
-Future<Codec> webOnlyInstantiateImageCodecFromUrl(Uri uri,
-  {engine.WebOnlyImageCodecChunkCallback? chunkCallback}) =>
-  engine.renderer.instantiateImageCodecFromUrl(uri, chunkCallback: chunkCallback);
+// TODO(mdebbar): Deprecate this and remove it.
+// https://github.com/flutter/flutter/issues/127395
+Future<Codec> webOnlyInstantiateImageCodecFromUrl(
+  Uri uri, {
+  ui_web.ImageCodecChunkCallback? chunkCallback,
+}) {
+  assert(() {
+    engine.printWarning(
+      'The webOnlyInstantiateImageCodecFromUrl API is deprecated and will be '
+      'removed in a future release. Please use `createImageCodecFromUrl` from '
+      '`dart:ui_web` instead.',
+    );
+    return true;
+  }());
+  return ui_web.createImageCodecFromUrl(uri, chunkCallback: chunkCallback);
+}
 
 void decodeImageFromList(Uint8List list, ImageDecoderCallback callback) {
   _decodeImageFromListAsync(list, callback);
@@ -561,6 +566,8 @@ Future<Codec> createBmp(
       swapRedBlue = true;
     case PixelFormat.rgba8888:
       swapRedBlue = false;
+    case PixelFormat.rgbaFloat32:
+      throw UnimplementedError('RGB conversion from rgbaFloat32 data is not implemented');
   }
 
   // See https://en.wikipedia.org/wiki/BMP_file_format for format examples.
@@ -737,9 +744,19 @@ class Shadow {
 }
 
 abstract class ImageShader implements Shader {
-  factory ImageShader(Image image, TileMode tmx, TileMode tmy, Float64List matrix4, {
+  factory ImageShader(
+    Image image,
+    TileMode tmx,
+    TileMode tmy,
+    Float64List matrix4, {
     FilterQuality? filterQuality,
-  }) => engine.renderer.createImageShader(image, tmx, tmy, matrix4, filterQuality);
+  }) => engine.renderer.createImageShader(
+    image,
+    tmx,
+    tmy,
+    matrix4,
+    filterQuality
+  );
 
   @override
   void dispose();

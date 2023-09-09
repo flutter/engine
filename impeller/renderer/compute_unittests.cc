@@ -18,11 +18,19 @@
 #include "impeller/renderer/compute_command.h"
 #include "impeller/renderer/compute_pipeline_builder.h"
 #include "impeller/renderer/pipeline_library.h"
+#include "impeller/renderer/prefix_sum_test.comp.h"
+#include "impeller/renderer/threadgroup_sizing_test.comp.h"
 
 namespace impeller {
 namespace testing {
 using ComputeTest = ComputePlaygroundTest;
 INSTANTIATE_COMPUTE_SUITE(ComputeTest);
+
+TEST_P(ComputeTest, CapabilitiesReportSupport) {
+  auto context = GetContext();
+  ASSERT_TRUE(context);
+  ASSERT_TRUE(context->GetCapabilities()->SupportsCompute());
+}
 
 TEST_P(ComputeTest, CanCreateComputePass) {
   using CS = SampleComputeShader;
@@ -48,7 +56,6 @@ TEST_P(ComputeTest, CanCreateComputePass) {
   pass->SetThreadGroupSize(ISize(kCount, 1));
 
   ComputeCommand cmd;
-  cmd.label = "Compute";
   cmd.pipeline = compute_pipeline;
 
   CS::Info info{.count = kCount};
@@ -101,6 +108,167 @@ TEST_P(ComputeTest, CanCreateComputePass) {
       }));
 
   latch.Wait();
+}
+
+TEST_P(ComputeTest, CanComputePrefixSum) {
+  using CS = PrefixSumTestComputeShader;
+  auto context = GetContext();
+  ASSERT_TRUE(context);
+  ASSERT_TRUE(context->GetCapabilities()->SupportsCompute());
+
+  using SamplePipelineBuilder = ComputePipelineBuilder<CS>;
+  auto pipeline_desc =
+      SamplePipelineBuilder::MakeDefaultPipelineDescriptor(*context);
+  ASSERT_TRUE(pipeline_desc.has_value());
+  auto compute_pipeline =
+      context->GetPipelineLibrary()->GetPipeline(pipeline_desc).Get();
+  ASSERT_TRUE(compute_pipeline);
+
+  auto cmd_buffer = context->CreateCommandBuffer();
+  auto pass = cmd_buffer->CreateComputePass();
+  ASSERT_TRUE(pass && pass->IsValid());
+
+  static constexpr size_t kCount = 5;
+
+  pass->SetGridSize(ISize(kCount, 1));
+  pass->SetThreadGroupSize(ISize(kCount, 1));
+
+  ComputeCommand cmd;
+  cmd.pipeline = compute_pipeline;
+
+  CS::InputData<kCount> input_data;
+  input_data.count = kCount;
+  for (size_t i = 0; i < kCount; i++) {
+    input_data.data[i] = 1 + i;
+  }
+
+  auto output_buffer = CreateHostVisibleDeviceBuffer<CS::OutputData<kCount>>(
+      context, "Output Buffer");
+
+  CS::BindInputData(
+      cmd, pass->GetTransientsBuffer().EmplaceStorageBuffer(input_data));
+  CS::BindOutputData(cmd, output_buffer->AsBufferView());
+
+  ASSERT_TRUE(pass->AddCommand(std::move(cmd)));
+  ASSERT_TRUE(pass->EncodeCommands());
+
+  fml::AutoResetWaitableEvent latch;
+  ASSERT_TRUE(cmd_buffer->SubmitCommands(
+      [&latch, output_buffer](CommandBuffer::Status status) {
+        EXPECT_EQ(status, CommandBuffer::Status::kCompleted);
+
+        auto view = output_buffer->AsBufferView();
+        EXPECT_EQ(view.range.length, sizeof(CS::OutputData<kCount>));
+
+        CS::OutputData<kCount>* output =
+            reinterpret_cast<CS::OutputData<kCount>*>(view.contents);
+        EXPECT_TRUE(output);
+
+        constexpr uint32_t expected[kCount] = {1, 3, 6, 10, 15};
+        for (size_t i = 0; i < kCount; i++) {
+          auto computed_sum = output->data[i];
+          EXPECT_EQ(computed_sum, expected[i]);
+        }
+        latch.Signal();
+      }));
+
+  latch.Wait();
+}
+
+TEST_P(ComputeTest, 1DThreadgroupSizingIsCorrect) {
+  using CS = ThreadgroupSizingTestComputeShader;
+  auto context = GetContext();
+  ASSERT_TRUE(context);
+  ASSERT_TRUE(context->GetCapabilities()->SupportsCompute());
+
+  using SamplePipelineBuilder = ComputePipelineBuilder<CS>;
+  auto pipeline_desc =
+      SamplePipelineBuilder::MakeDefaultPipelineDescriptor(*context);
+  ASSERT_TRUE(pipeline_desc.has_value());
+  auto compute_pipeline =
+      context->GetPipelineLibrary()->GetPipeline(pipeline_desc).Get();
+  ASSERT_TRUE(compute_pipeline);
+
+  auto cmd_buffer = context->CreateCommandBuffer();
+  auto pass = cmd_buffer->CreateComputePass();
+  ASSERT_TRUE(pass && pass->IsValid());
+
+  static constexpr size_t kCount = 2048;
+
+  pass->SetGridSize(ISize(kCount, 1));
+  pass->SetThreadGroupSize(ISize(kCount, 1));
+
+  ComputeCommand cmd;
+  cmd.pipeline = compute_pipeline;
+
+  auto output_buffer = CreateHostVisibleDeviceBuffer<CS::OutputData<kCount>>(
+      context, "Output Buffer");
+
+  CS::BindOutputData(cmd, output_buffer->AsBufferView());
+
+  ASSERT_TRUE(pass->AddCommand(std::move(cmd)));
+  ASSERT_TRUE(pass->EncodeCommands());
+
+  fml::AutoResetWaitableEvent latch;
+  ASSERT_TRUE(cmd_buffer->SubmitCommands(
+      [&latch, output_buffer](CommandBuffer::Status status) {
+        EXPECT_EQ(status, CommandBuffer::Status::kCompleted);
+
+        auto view = output_buffer->AsBufferView();
+        EXPECT_EQ(view.range.length, sizeof(CS::OutputData<kCount>));
+
+        CS::OutputData<kCount>* output =
+            reinterpret_cast<CS::OutputData<kCount>*>(view.contents);
+        EXPECT_TRUE(output);
+        EXPECT_EQ(output->data[kCount - 1], kCount - 1);
+        latch.Signal();
+      }));
+
+  latch.Wait();
+}
+
+TEST_P(ComputeTest, CanComputePrefixSumLargeInteractive) {
+  using CS = PrefixSumTestComputeShader;
+
+  auto context = GetContext();
+  ASSERT_TRUE(context);
+  ASSERT_TRUE(context->GetCapabilities()->SupportsCompute());
+
+  auto callback = [&](RenderPass& render_pass) -> bool {
+    using SamplePipelineBuilder = ComputePipelineBuilder<CS>;
+    auto pipeline_desc =
+        SamplePipelineBuilder::MakeDefaultPipelineDescriptor(*context);
+    auto compute_pipeline =
+        context->GetPipelineLibrary()->GetPipeline(pipeline_desc).Get();
+
+    auto cmd_buffer = context->CreateCommandBuffer();
+    auto pass = cmd_buffer->CreateComputePass();
+
+    static constexpr size_t kCount = 1023;
+
+    pass->SetGridSize(ISize(kCount, 1));
+
+    ComputeCommand cmd;
+    cmd.pipeline = compute_pipeline;
+
+    CS::InputData<kCount> input_data;
+    input_data.count = kCount;
+    for (size_t i = 0; i < kCount; i++) {
+      input_data.data[i] = 1 + i;
+    }
+
+    auto output_buffer = CreateHostVisibleDeviceBuffer<CS::OutputData<kCount>>(
+        context, "Output Buffer");
+
+    CS::BindInputData(
+        cmd, pass->GetTransientsBuffer().EmplaceStorageBuffer(input_data));
+    CS::BindOutputData(cmd, output_buffer->AsBufferView());
+
+    pass->AddCommand(std::move(cmd));
+    pass->EncodeCommands();
+    return cmd_buffer->SubmitCommands();
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
 TEST_P(ComputeTest, MultiStageInputAndOutput) {
@@ -156,7 +324,6 @@ TEST_P(ComputeTest, MultiStageInputAndOutput) {
 
   {
     ComputeCommand cmd;
-    cmd.label = "Compute1";
     cmd.pipeline = compute_pipeline_1;
 
     CS1::BindInput(cmd,
@@ -168,7 +335,6 @@ TEST_P(ComputeTest, MultiStageInputAndOutput) {
 
   {
     ComputeCommand cmd;
-    cmd.label = "Compute2";
     cmd.pipeline = compute_pipeline_2;
 
     CS1::BindInput(cmd, output_buffer_1->AsBufferView());
@@ -204,7 +370,7 @@ TEST_P(ComputeTest, MultiStageInputAndOutput) {
   latch.Wait();
 }
 
-TEST_P(ComputeTest, CanCorrectlyDownScaleLargeGridSize) {
+TEST_P(ComputeTest, CanCompute1DimensionalData) {
   using CS = SampleComputeShader;
   auto context = GetContext();
   ASSERT_TRUE(context);
@@ -224,13 +390,9 @@ TEST_P(ComputeTest, CanCorrectlyDownScaleLargeGridSize) {
 
   static constexpr size_t kCount = 5;
 
-  // Intentionally making the grid size obscenely large. No GPU will tolerate
-  // this.
-  pass->SetGridSize(ISize(std::numeric_limits<int64_t>::max(), 1));
-  pass->SetThreadGroupSize(ISize(std::numeric_limits<int64_t>::max(), 1));
+  pass->SetGridSize(ISize(kCount, 1));
 
   ComputeCommand cmd;
-  cmd.label = "Compute";
   cmd.pipeline = compute_pipeline;
 
   CS::Info info{.count = kCount};
@@ -305,13 +467,12 @@ TEST_P(ComputeTest, ReturnsEarlyWhenAnyGridDimensionIsZero) {
 
   static constexpr size_t kCount = 5;
 
-  // Intentionally making the grid size obscenely large. No GPU will tolerate
-  // this.
+  // Intentionally making the grid size zero in one dimension. No GPU will
+  // tolerate this.
   pass->SetGridSize(ISize(0, 1));
   pass->SetThreadGroupSize(ISize(0, 1));
 
   ComputeCommand cmd;
-  cmd.label = "Compute";
   cmd.pipeline = compute_pipeline;
 
   CS::Info info{.count = kCount};

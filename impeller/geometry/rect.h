@@ -94,10 +94,7 @@ struct TRect {
                  {size.width - r.size.width, size.height - r.size.height});
   }
 
-  constexpr TRect operator*(Type scale) const {
-    return TRect({origin.x * scale, origin.y * scale},
-                 {size.width * scale, size.height * scale});
-  }
+  constexpr TRect operator*(Type scale) const { return Scale(scale); }
 
   constexpr TRect operator*(const TRect& r) const {
     return TRect({origin.x * r.origin.x, origin.y * r.origin.y},
@@ -106,6 +103,20 @@ struct TRect {
 
   constexpr bool operator==(const TRect& r) const {
     return origin == r.origin && size == r.size;
+  }
+
+  constexpr TRect Scale(Type scale) const {
+    return TRect({origin.x * scale, origin.y * scale},
+                 {size.width * scale, size.height * scale});
+  }
+
+  constexpr TRect Scale(TPoint<T> scale) const {
+    return TRect({origin.x * scale.x, origin.y * scale.y},
+                 {size.width * scale.x, size.height * scale.y});
+  }
+
+  constexpr TRect Scale(TSize<T> scale) const {
+    return Scale(TPoint<T>(scale));
   }
 
   constexpr bool Contains(const TPoint<Type>& p) const {
@@ -149,6 +160,16 @@ struct TRect {
       return std::numeric_limits<Type>::infinity();
     }
     return std::max(origin.y, origin.y + size.height);
+  }
+
+  constexpr TPoint<T> GetLeftTop() const { return {GetLeft(), GetTop()}; }
+
+  constexpr TPoint<T> GetRightTop() const { return {GetRight(), GetTop()}; }
+
+  constexpr TPoint<T> GetLeftBottom() const { return {GetLeft(), GetBottom()}; }
+
+  constexpr TPoint<T> GetRightBottom() const {
+    return {GetRight(), GetBottom()};
   }
 
   constexpr std::array<T, 4> GetLTRB() const {
@@ -224,21 +245,21 @@ struct TRect {
         // Full cutout.
         return std::nullopt;
       }
-      if (b_top <= a_top) {
+      if (b_top <= a_top && b_bottom > a_top) {
         // Cuts off the top.
         return TRect::MakeLTRB(a_left, b_bottom, a_right, a_bottom);
       }
-      if (b_bottom >= b_bottom) {
+      if (b_bottom >= a_bottom && b_top < a_bottom) {
         // Cuts out the bottom.
         return TRect::MakeLTRB(a_left, a_top, a_right, b_top);
       }
     }
     if (b_top <= a_top && b_bottom >= a_bottom) {
-      if (b_left <= a_left) {
+      if (b_left <= a_left && b_right > a_left) {
         // Cuts out the left.
         return TRect::MakeLTRB(b_right, a_top, a_right, a_bottom);
       }
-      if (b_right >= a_right) {
+      if (b_right >= a_right && b_left < a_right) {
         // Cuts out the right.
         return TRect::MakeLTRB(a_left, a_top, b_left, a_bottom);
       }
@@ -251,6 +272,34 @@ struct TRect {
   constexpr TRect<T> Shift(TPoint<T> offset) const {
     return TRect(origin.x + offset.x, origin.y + offset.y, size.width,
                  size.height);
+  }
+
+  /// @brief  Returns a rectangle with expanded edges. Negative expansion
+  ///         results in shrinking.
+  constexpr TRect<T> Expand(T left, T top, T right, T bottom) const {
+    return TRect(origin.x - left,            //
+                 origin.y - top,             //
+                 size.width + left + right,  //
+                 size.height + top + bottom);
+  }
+
+  /// @brief  Returns a rectangle with expanded edges in all directions.
+  ///         Negative expansion results in shrinking.
+  constexpr TRect<T> Expand(T amount) const {
+    return TRect(origin.x - amount,        //
+                 origin.y - amount,        //
+                 size.width + amount * 2,  //
+                 size.height + amount * 2);
+  }
+
+  /// @brief  Returns a new rectangle that represents the projection of the
+  ///         source rectangle onto this rectangle. In other words, the source
+  ///         rectangle is redefined in terms of the corrdinate space of this
+  ///         rectangle.
+  constexpr TRect<T> Project(TRect<T> source) const {
+    return source.Shift(-origin).Scale(
+        TSize<T>(1.0 / static_cast<Scalar>(size.width),
+                 1.0 / static_cast<Scalar>(size.height)));
   }
 };
 

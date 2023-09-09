@@ -2,12 +2,15 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//flutter/vulkan/config.gni")
 import("../../../tools/impeller.gni")
 
 impeller_component("vulkan_unittests") {
   testonly = true
   sources = [
     "blit_command_vk_unittests.cc",
+    "context_vk_unittests.cc",
+    "pass_bindings_cache_unittests.cc",
     "test/mock_vulkan.cc",
     "test/mock_vulkan.h",
   ]
@@ -21,6 +24,10 @@ impeller_component("vulkan") {
   sources = [
     "allocator_vk.cc",
     "allocator_vk.h",
+    "android_hardware_buffer_texture_source_vk.cc",
+    "android_hardware_buffer_texture_source_vk.h",
+    "barrier_vk.cc",
+    "barrier_vk.h",
     "blit_command_vk.cc",
     "blit_command_vk.h",
     "blit_pass_vk.cc",
@@ -33,6 +40,10 @@ impeller_component("vulkan") {
     "command_encoder_vk.h",
     "command_pool_vk.cc",
     "command_pool_vk.h",
+    "compute_pass_vk.cc",
+    "compute_pass_vk.h",
+    "compute_pipeline_vk.cc",
+    "compute_pipeline_vk.h",
     "context_vk.cc",
     "context_vk.h",
     "debug_report_vk.cc",
@@ -45,6 +56,9 @@ impeller_component("vulkan") {
     "fence_waiter_vk.h",
     "formats_vk.cc",
     "formats_vk.h",
+    "limits_vk.h",
+    "pass_bindings_cache.cc",
+    "pass_bindings_cache.h",
     "pipeline_cache_vk.cc",
     "pipeline_cache_vk.h",
     "pipeline_library_vk.cc",
@@ -55,6 +69,8 @@ impeller_component("vulkan") {
     "queue_vk.h",
     "render_pass_vk.cc",
     "render_pass_vk.h",
+    "resource_manager_vk.cc",
+    "resource_manager_vk.h",
     "sampler_library_vk.cc",
     "sampler_library_vk.h",
     "sampler_vk.cc",
@@ -65,6 +81,8 @@ impeller_component("vulkan") {
     "shader_library_vk.h",
     "shared_object_vk.cc",
     "shared_object_vk.h",
+    "surface_context_vk.cc",
+    "surface_context_vk.h",
     "surface_vk.cc",
     "surface_vk.h",
     "swapchain_image_vk.cc",
@@ -80,6 +98,8 @@ impeller_component("vulkan") {
     "vertex_descriptor_vk.cc",
     "vertex_descriptor_vk.h",
     "vk.h",
+    "vma.cc",
+    "vma.h",
   ]
 
   public_deps = [
@@ -91,4 +111,8 @@ impeller_component("vulkan") {
     "//third_party/vulkan-deps/vulkan-headers/src:vulkan_headers",
     "//third_party/vulkan_memory_allocator",
   ]
+
+  if (enable_vulkan_validation_layers) {
+    defines = [ "IMPELLER_ENABLE_VULKAN_VALIDATION_LAYERS" ]
+  }
 }

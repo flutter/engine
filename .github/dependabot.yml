@@ -7,5 +7,11 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+      time: "22:00" # 10 PM MTV
+      timezone: "America/Los_Angeles"
     labels:
       - "autosubmit"
+    ignore:
+      # ignore patch versions, just rely on minor in order to update fewer times
+      - dependency-name: "github/codeql-action"
+        update-types: ["version-update:semver-minor"]

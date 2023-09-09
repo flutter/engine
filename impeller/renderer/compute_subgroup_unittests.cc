@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <future>
 #include <numeric>
 
 #include "compute_tessellator.h"
@@ -38,6 +39,12 @@ namespace testing {
 using ComputeSubgroupTest = ComputePlaygroundTest;
 INSTANTIATE_COMPUTE_SUITE(ComputeSubgroupTest);
 
+TEST_P(ComputeSubgroupTest, CapabilitiesSuportSubgroups) {
+  auto context = GetContext();
+  ASSERT_TRUE(context);
+  ASSERT_TRUE(context->GetCapabilities()->SupportsComputeSubgroups());
+}
+
 TEST_P(ComputeSubgroupTest, PathPlayground) {
   // Renders stroked SVG paths in an interactive playground.
   using SS = StrokeComputeShader;
@@ -45,7 +52,14 @@ TEST_P(ComputeSubgroupTest, PathPlayground) {
   auto context = GetContext();
   ASSERT_TRUE(context);
   ASSERT_TRUE(context->GetCapabilities()->SupportsComputeSubgroups());
-  char svg_path_data[16384] = "M0 0 L20 20";
+  char svg_path_data[16384] =
+      "M140 20 "
+      "C73 20 20 74 20 140 "
+      "c0 135 136 170 228 303 "
+      "88-132 229-173 229-303 "
+      "0-66-54-120-120-120 "
+      "-48 0-90 28-109 69 "
+      "-19-41-60-69-108-69z";
   size_t vertex_count = 0;
   Scalar stroke_width = 1.0;
 
@@ -70,6 +84,9 @@ TEST_P(ComputeSubgroupTest, PathPlayground) {
 
     SkPath sk_path;
     if (SkParsePath::FromSVGString(svg_path_data, &sk_path)) {
+      std::promise<bool> promise;
+      auto future = promise.get_future();
+
       auto path = skia_conversions::ToPath(sk_path);
       auto status =
           ComputeTessellator{}
@@ -77,16 +94,15 @@ TEST_P(ComputeSubgroupTest, PathPlayground) {
               .Tessellate(
                   path, context, vertex_buffer->AsBufferView(),
                   vertex_buffer_count->AsBufferView(),
-                  [vertex_buffer_count,
-                   &vertex_count](CommandBuffer::Status status) {
+                  [vertex_buffer_count, &vertex_count,
+                   &promise](CommandBuffer::Status status) {
                     vertex_count =
                         reinterpret_cast<SS::VertexBufferCount*>(
                             vertex_buffer_count->AsBufferView().contents)
                             ->count;
+                    promise.set_value(status ==
+                                      CommandBuffer::Status::kCompleted);
                   });
-      if (vertex_count > 0) {
-        ImGui::Text("Vertex count: %zu", vertex_count);
-      }
       switch (status) {
         case ComputeTessellator::Status::kCommandInvalid:
           ImGui::Text("Failed to submit compute job (invalid command)");
@@ -97,21 +113,27 @@ TEST_P(ComputeSubgroupTest, PathPlayground) {
         case ComputeTessellator::Status::kOk:
           break;
       }
+      if (!future.get()) {
+        ImGui::Text("Failed to submit compute job.");
+        return false;
+      }
+      if (vertex_count > 0) {
+        ImGui::Text("Vertex count: %zu", vertex_count);
+      }
     } else {
       ImGui::Text("Failed to parse path data");
     }
     ImGui::End();
 
-    ContentContext renderer(context);
+    ContentContext renderer(context, nullptr);
     if (!renderer.IsValid()) {
       return false;
     }
 
     using VS = SolidFillPipeline::VertexShader;
-    using FS = SolidFillPipeline::FragmentShader;
 
     Command cmd;
-    cmd.label = "Draw Stroke";
+    DEBUG_COMMAND_INFO(cmd, "Draw Stroke");
     cmd.stencil_reference = 0;
 
     ContentContextOptions options;
@@ -130,28 +152,20 @@ TEST_P(ComputeSubgroupTest, PathPlayground) {
     auto count = reinterpret_cast<SS::VertexBufferCount*>(
                      vertex_buffer_count->AsBufferView().contents)
                      ->count;
-    auto& host_buffer = pass.GetTransientsBuffer();
-    std::vector<uint16_t> indices(count);
-    std::iota(std::begin(indices), std::end(indices), 0);
 
     VertexBuffer render_vertex_buffer{
         .vertex_buffer = vertex_buffer->AsBufferView(),
-        .index_buffer = host_buffer.Emplace(
-            indices.data(), count * sizeof(uint16_t), alignof(uint16_t)),
-        .index_count = count,
-        .index_type = IndexType::k16bit};
+        .vertex_count = count,
+        .index_type = IndexType::kNone};
     cmd.BindVertices(render_vertex_buffer);
 
     VS::FrameInfo frame_info;
     auto world_matrix = Matrix::MakeScale(GetContentScale());
     frame_info.mvp =
         Matrix::MakeOrthographic(pass.GetRenderTargetSize()) * world_matrix;
+    frame_info.color = Color::Red().Premultiply();
     VS::BindFrameInfo(cmd,
                       pass.GetTransientsBuffer().EmplaceUniform(frame_info));
-
-    FS::FragInfo frag_info;
-    frag_info.color = Color::Red().Premultiply();
-    FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
     if (!pass.AddCommand(std::move(cmd))) {
       return false;
@@ -315,16 +329,15 @@ TEST_P(ComputeSubgroupTest, LargePath) {
                                  ->count;
             });
 
-    ContentContext renderer(context);
+    ContentContext renderer(context, nullptr);
     if (!renderer.IsValid()) {
       return false;
     }
 
     using VS = SolidFillPipeline::VertexShader;
-    using FS = SolidFillPipeline::FragmentShader;
 
     Command cmd;
-    cmd.label = "Draw Stroke";
+    DEBUG_COMMAND_INFO(cmd, "Draw Stroke");
     cmd.stencil_reference = 0;
 
     ContentContextOptions options;
@@ -343,28 +356,20 @@ TEST_P(ComputeSubgroupTest, LargePath) {
     auto count = reinterpret_cast<SS::VertexBufferCount*>(
                      vertex_buffer_count->AsBufferView().contents)
                      ->count;
-    auto& host_buffer = pass.GetTransientsBuffer();
-    std::vector<uint16_t> indices(count);
-    std::iota(std::begin(indices), std::end(indices), 0);
 
     VertexBuffer render_vertex_buffer{
         .vertex_buffer = vertex_buffer->AsBufferView(),
-        .index_buffer = host_buffer.Emplace(
-            indices.data(), count * sizeof(uint16_t), alignof(uint16_t)),
-        .index_count = count,
-        .index_type = IndexType::k16bit};
+        .vertex_count = count,
+        .index_type = IndexType::kNone};
     cmd.BindVertices(render_vertex_buffer);
 
     VS::FrameInfo frame_info;
     auto world_matrix = Matrix::MakeScale(GetContentScale());
     frame_info.mvp =
         Matrix::MakeOrthographic(pass.GetRenderTargetSize()) * world_matrix;
+    frame_info.color = Color::Red().Premultiply();
     VS::BindFrameInfo(cmd,
                       pass.GetTransientsBuffer().EmplaceUniform(frame_info));
-
-    FS::FragInfo frag_info;
-    frag_info.color = Color::Red().Premultiply();
-    FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
     if (!pass.AddCommand(std::move(cmd))) {
       return false;
@@ -408,16 +413,15 @@ TEST_P(ComputeSubgroupTest, QuadAndCubicInOnePath) {
   ASSERT_EQ(status, ComputeTessellator::Status::kOk);
 
   auto callback = [&](RenderPass& pass) -> bool {
-    ContentContext renderer(context);
+    ContentContext renderer(context, nullptr);
     if (!renderer.IsValid()) {
       return false;
     }
 
     using VS = SolidFillPipeline::VertexShader;
-    using FS = SolidFillPipeline::FragmentShader;
 
     Command cmd;
-    cmd.label = "Draw Stroke";
+    DEBUG_COMMAND_INFO(cmd, "Draw Stroke");
     cmd.stencil_reference = 0;
 
     ContentContextOptions options;
@@ -436,28 +440,20 @@ TEST_P(ComputeSubgroupTest, QuadAndCubicInOnePath) {
     auto count = reinterpret_cast<SS::VertexBufferCount*>(
                      vertex_buffer_count->AsBufferView().contents)
                      ->count;
-    auto& host_buffer = pass.GetTransientsBuffer();
-    std::vector<uint16_t> indices(count);
-    std::iota(std::begin(indices), std::end(indices), 0);
 
     VertexBuffer render_vertex_buffer{
         .vertex_buffer = vertex_buffer->AsBufferView(),
-        .index_buffer = host_buffer.Emplace(
-            indices.data(), count * sizeof(uint16_t), alignof(uint16_t)),
-        .index_count = count,
-        .index_type = IndexType::k16bit};
+        .vertex_count = count,
+        .index_type = IndexType::kNone};
     cmd.BindVertices(render_vertex_buffer);
 
     VS::FrameInfo frame_info;
     auto world_matrix = Matrix::MakeScale(GetContentScale());
     frame_info.mvp =
         Matrix::MakeOrthographic(pass.GetRenderTargetSize()) * world_matrix;
+    frame_info.color = Color::Red().Premultiply();
     VS::BindFrameInfo(cmd,
                       pass.GetTransientsBuffer().EmplaceUniform(frame_info));
-
-    FS::FragInfo frag_info;
-    frag_info.color = Color::Red().Premultiply();
-    FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
     if (!pass.AddCommand(std::move(cmd))) {
       return false;

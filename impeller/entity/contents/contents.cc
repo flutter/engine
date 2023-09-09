@@ -59,12 +59,26 @@ Contents::StencilCoverage Contents::GetStencilCoverage(
 std::optional<Snapshot> Contents::RenderToSnapshot(
     const ContentContext& renderer,
     const Entity& entity,
+    std::optional<Rect> coverage_limit,
     const std::optional<SamplerDescriptor>& sampler_descriptor,
     bool msaa_enabled,
     const std::string& label) const {
   auto coverage = GetCoverage(entity);
   if (!coverage.has_value()) {
     return std::nullopt;
+  }
+
+  // Pad Contents snapshots with 1 pixel borders to ensure correct sampling
+  // behavior. Not doing so results in a coverage leak for filters that support
+  // customizing the input sampling mode. Snapshots of contents should be
+  // theoretically treated as infinite size just like layers.
+  coverage = coverage->Expand(1);
+
+  if (coverage_limit.has_value()) {
+    coverage = coverage->Intersection(*coverage_limit);
+    if (!coverage.has_value()) {
+      return std::nullopt;
+    }
   }
 
   auto texture = renderer.MakeSubpass(
@@ -104,6 +118,16 @@ void Contents::SetInheritedOpacity(Scalar opacity) {
                     "Contents::CanAcceptOpacity returns false.";
 }
 
+std::optional<Color> Contents::AsBackgroundColor(const Entity& entity,
+                                                 ISize target_size) const {
+  return {};
+}
+
+bool Contents::ApplyColorFilter(
+    const Contents::ColorFilterProc& color_filter_proc) {
+  return false;
+}
+
 bool Contents::ShouldRender(const Entity& entity,
                             const std::optional<Rect>& stencil_coverage) const {
   if (!stencil_coverage.has_value()) {
@@ -118,6 +142,14 @@ bool Contents::ShouldRender(const Entity& entity,
     return true;
   }
   return stencil_coverage->IntersectsWithRect(coverage.value());
+}
+
+void Contents::SetCoverageHint(std::optional<Rect> coverage_hint) {
+  coverage_hint_ = coverage_hint;
+}
+
+const std::optional<Rect>& Contents::GetCoverageHint() const {
+  return coverage_hint_;
 }
 
 std::optional<Size> Contents::GetColorSourceSize() const {

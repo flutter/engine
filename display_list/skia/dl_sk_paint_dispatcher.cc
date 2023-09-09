@@ -12,6 +12,8 @@
 #include "flutter/display_list/skia/dl_sk_conversions.h"
 #include "flutter/fml/logging.h"
 
+#include "third_party/skia/include/core/SkColorFilter.h"
+
 namespace flutter {
 
 // clang-format off
@@ -39,7 +41,7 @@ void DlSkPaintDispatchHelper::setAntiAlias(bool aa) {
   paint_.setAntiAlias(aa);
 }
 void DlSkPaintDispatchHelper::setDither(bool dither) {
-  paint_.setDither(dither);
+  dither_ = dither;
 }
 void DlSkPaintDispatchHelper::setInvertColors(bool invert) {
   invert_colors_ = invert;
@@ -51,7 +53,7 @@ void DlSkPaintDispatchHelper::setStrokeCap(DlStrokeCap cap) {
 void DlSkPaintDispatchHelper::setStrokeJoin(DlStrokeJoin join) {
   paint_.setStrokeJoin(ToSk(join));
 }
-void DlSkPaintDispatchHelper::setStyle(DlDrawStyle style) {
+void DlSkPaintDispatchHelper::setDrawStyle(DlDrawStyle style) {
   paint_.setStyle(ToSk(style));
 }
 void DlSkPaintDispatchHelper::setStrokeWidth(SkScalar width) {
@@ -71,6 +73,7 @@ void DlSkPaintDispatchHelper::setBlendMode(DlBlendMode mode) {
   paint_.setBlendMode(ToSk(mode));
 }
 void DlSkPaintDispatchHelper::setColorSource(const DlColorSource* source) {
+  color_source_gradient_ = source && source->isGradient();
   paint_.setShader(ToSk(source));
 }
 void DlSkPaintDispatchHelper::setImageFilter(const DlImageFilter* filter) {

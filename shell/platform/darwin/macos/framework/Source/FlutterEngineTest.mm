@@ -4,25 +4,34 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
-#include "gtest/gtest.h"
 
+#include <objc/objc.h>
+
+#include <algorithm>
 #include <functional>
 #include <thread>
+#include <vector>
 
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/shell/platform/common/accessibility_bridge.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
+#import "flutter/shell/platform/darwin/common/framework/Source/FlutterBinaryMessengerRelay.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
+#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppLifecycleDelegate.h"
+#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterPluginMacOS.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngineTestUtils.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewControllerTestUtils.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/embedder_engine.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/testing/test_dart_native_resolver.h"
+#include "gtest/gtest.h"
 
 // CREATE_NATIVE_ENTRY and MOCK_ENGINE_PROC are leaky by design
 // NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
+
+constexpr int64_t kImplicitViewId = 0ll;
 
 @interface FlutterEngine (Test)
 /**
@@ -31,6 +40,7 @@
  * May be nil if the compositor has not been initialized yet.
  */
 @property(nonatomic, readonly, nullable) flutter::FlutterCompositor* macOSCompositor;
+
 @end
 
 @interface TestPlatformViewFactory : NSObject <FlutterPlatformViewFactory>
@@ -42,6 +52,70 @@
 }
 
 @end
+
+@interface PlainAppDelegate : NSObject <NSApplicationDelegate>
+@end
+
+@implementation PlainAppDelegate
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication* _Nonnull)sender {
+  // Always cancel, so that the test doesn't exit.
+  return NSTerminateCancel;
+}
+@end
+
+#pragma mark -
+
+@interface FakeLifecycleProvider : NSObject <FlutterAppLifecycleProvider, NSApplicationDelegate>
+
+@property(nonatomic, strong, readonly) NSPointerArray* registeredDelegates;
+
+// True if the given delegate is currently registered.
+- (BOOL)hasDelegate:(nonnull NSObject<FlutterAppLifecycleDelegate>*)delegate;
+@end
+
+@implementation FakeLifecycleProvider {
+  /**
+   * All currently registered delegates.
+   *
+   * This does not use NSPointerArray or any other weak-pointer
+   * system, because a weak pointer will be nil'd out at the start of dealloc, which will break
+   * queries. E.g., if a delegate is dealloc'd without being unregistered, a weak pointer array
+   * would no longer contain that pointer even though removeApplicationLifecycleDelegate: was never
+   * called, causing tests to pass incorrectly.
+   */
+  std::vector<void*> _delegates;
+}
+
+- (void)addApplicationLifecycleDelegate:(nonnull NSObject<FlutterAppLifecycleDelegate>*)delegate {
+  _delegates.push_back((__bridge void*)delegate);
+}
+
+- (void)removeApplicationLifecycleDelegate:
+    (nonnull NSObject<FlutterAppLifecycleDelegate>*)delegate {
+  auto delegateIndex = std::find(_delegates.begin(), _delegates.end(), (__bridge void*)delegate);
+  NSAssert(delegateIndex != _delegates.end(),
+           @"Attempting to unregister a delegate that was not registered.");
+  _delegates.erase(delegateIndex);
+}
+
+- (BOOL)hasDelegate:(nonnull NSObject<FlutterAppLifecycleDelegate>*)delegate {
+  return std::find(_delegates.begin(), _delegates.end(), (__bridge void*)delegate) !=
+         _delegates.end();
+}
+
+@end
+
+#pragma mark -
+
+@interface FakeAppDelegatePlugin : NSObject <FlutterPlugin>
+@end
+
+@implementation FakeAppDelegatePlugin
++ (void)registerWithRegistrar:(id<FlutterPluginRegistrar>)registrar {
+}
+@end
+
+#pragma mark -
 
 namespace flutter::testing {
 
@@ -134,7 +208,8 @@ TEST_F(FlutterEngineTest, CanLogToStdout) {
   EXPECT_TRUE(logs.find("Hello logging") != std::string::npos);
 }
 
-TEST_F(FlutterEngineTest, BackgroundIsBlack) {
+// TODO(cbracken): Needs deflaking. https://github.com/flutter/flutter/issues/124677
+TEST_F(FlutterEngineTest, DISABLED_BackgroundIsBlack) {
   FlutterEngine* engine = GetFlutterEngine();
 
   // Latch to ensure the entire layer tree has been generated and presented.
@@ -163,7 +238,8 @@ TEST_F(FlutterEngineTest, BackgroundIsBlack) {
   latch.Wait();
 }
 
-TEST_F(FlutterEngineTest, CanOverrideBackgroundColor) {
+// TODO(cbracken): Needs deflaking. https://github.com/flutter/flutter/issues/124677
+TEST_F(FlutterEngineTest, DISABLED_CanOverrideBackgroundColor) {
   FlutterEngine* engine = GetFlutterEngine();
 
   // Latch to ensure the entire layer tree has been generated and presented.
@@ -348,7 +424,7 @@ TEST_F(FlutterEngineTest, CanToggleAccessibilityWhenHeadless) {
   FlutterSemanticsNode2* nodes[] = {&root, &child1};
   update.nodes = nodes;
   update.custom_action_count = 0;
-  // This call updates semantics for the default view, which does not exist,
+  // This call updates semantics for the implicit view, which does not exist,
   // and therefore this call is invalid. But the engine should not crash.
   update_semantics_callback(&update, (__bridge void*)engine);
 
@@ -435,7 +511,7 @@ TEST_F(FlutterEngineTest, Compositor) {
                 result:^(id result){
                 }];
 
-  [viewController.flutterView.threadSynchronizer blockUntilFrameAvailable];
+  [engine.testThreadSynchronizer blockUntilFrameAvailable];
 
   CALayer* rootLayer = viewController.flutterView.layer;
 
@@ -478,6 +554,58 @@ TEST_F(FlutterEngineTest, DartEntrypointArguments) {
 
   EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
   EXPECT_TRUE(called);
+}
+
+// Verify that the engine is not retained indirectly via the binary messenger held by channels and
+// plugins. Previously, FlutterEngine.binaryMessenger returned the engine itself, and thus plugins
+// could cause a retain cycle, preventing the engine from being deallocated.
+// FlutterEngine.binaryMessenger now returns a FlutterBinaryMessengerRelay whose weak pointer back
+// to the engine is cleared when the engine is deallocated.
+// Issue: https://github.com/flutter/flutter/issues/116445
+TEST_F(FlutterEngineTest, FlutterBinaryMessengerDoesNotRetainEngine) {
+  __weak FlutterEngine* weakEngine;
+  id<FlutterBinaryMessenger> binaryMessenger = nil;
+  @autoreleasepool {
+    // Create a test engine.
+    NSString* fixtures = @(flutter::testing::GetFixturesPath());
+    FlutterDartProject* project = [[FlutterDartProject alloc]
+        initWithAssetsPath:fixtures
+               ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
+    FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test"
+                                                        project:project
+                                         allowHeadlessExecution:YES];
+    weakEngine = engine;
+    binaryMessenger = engine.binaryMessenger;
+  }
+
+  // Once the engine has been deallocated, verify the weak engine pointer is nil, and thus not
+  // retained by the relay.
+  EXPECT_NE(binaryMessenger, nil);
+  EXPECT_EQ(weakEngine, nil);
+}
+
+// Verify that the engine is not retained indirectly via the texture registry held by plugins.
+// Issue: https://github.com/flutter/flutter/issues/116445
+TEST_F(FlutterEngineTest, FlutterTextureRegistryDoesNotReturnEngine) {
+  __weak FlutterEngine* weakEngine;
+  id<FlutterTextureRegistry> textureRegistry;
+  @autoreleasepool {
+    // Create a test engine.
+    NSString* fixtures = @(flutter::testing::GetFixturesPath());
+    FlutterDartProject* project = [[FlutterDartProject alloc]
+        initWithAssetsPath:fixtures
+               ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
+    FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test"
+                                                        project:project
+                                         allowHeadlessExecution:YES];
+    id<FlutterPluginRegistrar> registrar = [engine registrarForPlugin:@"MyPlugin"];
+    textureRegistry = registrar.textures;
+  }
+
+  // Once the engine has been deallocated, verify the weak engine pointer is nil, and thus not
+  // retained via the texture registry.
+  EXPECT_NE(textureRegistry, nil);
+  EXPECT_EQ(weakEngine, nil);
 }
 
 // If a channel overrides a previous channel with the same name, cleaning
@@ -626,9 +754,10 @@ TEST_F(FlutterEngineTest, ThreadSynchronizerNotBlockingRasterThreadAfterShutdown
   [threadSynchronizer shutdown];
 
   std::thread rasterThread([&threadSynchronizer] {
-    [threadSynchronizer performCommit:CGSizeMake(100, 100)
-                               notify:^{
-                               }];
+    [threadSynchronizer performCommitForView:kImplicitViewId
+                                        size:CGSizeMake(100, 100)
+                                      notify:^{
+                                      }];
   });
 
   rasterThread.join();
@@ -646,7 +775,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByController) {
   @autoreleasepool {
     // Create FVC1.
     viewController1 = [[FlutterViewController alloc] initWithProject:project];
-    EXPECT_EQ(viewController1.viewId, 0ull);
+    EXPECT_EQ(viewController1.viewId, 0ll);
 
     engine = viewController1.engine;
     engine.viewController = nil;
@@ -663,7 +792,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByController) {
 
   engine.viewController = viewController1;
   EXPECT_EQ(engine.viewController, viewController1);
-  EXPECT_EQ(viewController1.viewId, 0ull);
+  EXPECT_EQ(viewController1.viewId, 0ll);
 }
 
 TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
@@ -677,7 +806,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
 
   @autoreleasepool {
     viewController1 = [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
-    EXPECT_EQ(viewController1.viewId, 0ull);
+    EXPECT_EQ(viewController1.viewId, 0ll);
     EXPECT_EQ(engine.viewController, viewController1);
 
     engine.viewController = nil;
@@ -685,7 +814,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
     FlutterViewController* viewController2 = [[FlutterViewController alloc] initWithEngine:engine
                                                                                    nibName:nil
                                                                                     bundle:nil];
-    EXPECT_EQ(viewController2.viewId, 0ull);
+    EXPECT_EQ(viewController2.viewId, 0ll);
     EXPECT_EQ(engine.viewController, viewController2);
   }
   // FVC2 is deallocated but FVC1 is retained.
@@ -694,13 +823,13 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
 
   engine.viewController = viewController1;
   EXPECT_EQ(engine.viewController, viewController1);
-  EXPECT_EQ(viewController1.viewId, 0ull);
+  EXPECT_EQ(viewController1.viewId, 0ll);
 }
 
 TEST_F(FlutterEngineTest, HandlesTerminationRequest) {
   id engineMock = CreateMockFlutterEngine(nil);
   __block NSString* nextResponse = @"exit";
-  __block BOOL triedToTerminate = FALSE;
+  __block BOOL triedToTerminate = NO;
   FlutterEngineTerminationHandler* terminationHandler =
       [[FlutterEngineTerminationHandler alloc] initWithEngine:engineMock
                                                    terminator:^(id sender) {
@@ -742,14 +871,24 @@ TEST_F(FlutterEngineTest, HandlesTerminationRequest) {
       [FlutterMethodCall methodCallWithMethodName:@"System.exitApplication"
                                         arguments:@{@"type" : @"cancelable"}];
 
-  triedToTerminate = FALSE;
+  // Always terminate when the binding isn't ready (which is the default).
+  triedToTerminate = NO;
+  calledAfterTerminate = @"";
+  nextResponse = @"cancel";
+  [engineMock handleMethodCall:methodExitApplication result:appExitResult];
+  EXPECT_STREQ([calledAfterTerminate UTF8String], "");
+  EXPECT_TRUE(triedToTerminate);
+
+  // Once the binding is ready, handle the request.
+  terminationHandler.acceptingRequests = YES;
+  triedToTerminate = NO;
   calledAfterTerminate = @"";
   nextResponse = @"exit";
   [engineMock handleMethodCall:methodExitApplication result:appExitResult];
   EXPECT_STREQ([calledAfterTerminate UTF8String], "exit");
   EXPECT_TRUE(triedToTerminate);
 
-  triedToTerminate = FALSE;
+  triedToTerminate = NO;
   calledAfterTerminate = @"";
   nextResponse = @"cancel";
   [engineMock handleMethodCall:methodExitApplication result:appExitResult];
@@ -757,7 +896,7 @@ TEST_F(FlutterEngineTest, HandlesTerminationRequest) {
   EXPECT_FALSE(triedToTerminate);
 
   // Check that it doesn't crash on error.
-  triedToTerminate = FALSE;
+  triedToTerminate = NO;
   calledAfterTerminate = @"";
   nextResponse = @"error";
   [engineMock handleMethodCall:methodExitApplication result:appExitResult];
@@ -765,8 +904,24 @@ TEST_F(FlutterEngineTest, HandlesTerminationRequest) {
   EXPECT_TRUE(triedToTerminate);
 }
 
+TEST_F(FlutterEngineTest, IgnoresTerminationRequestIfNotFlutterAppDelegate) {
+  id<NSApplicationDelegate> previousDelegate = [[NSApplication sharedApplication] delegate];
+  id<NSApplicationDelegate> plainDelegate = [[PlainAppDelegate alloc] init];
+  [NSApplication sharedApplication].delegate = plainDelegate;
+
+  // Creating the engine shouldn't fail here, even though the delegate isn't a
+  // FlutterAppDelegate.
+  CreateMockFlutterEngine(nil);
+
+  // Asking to terminate the app should cancel.
+  EXPECT_EQ([[[NSApplication sharedApplication] delegate] applicationShouldTerminate:NSApp],
+            NSTerminateCancel);
+
+  [NSApplication sharedApplication].delegate = previousDelegate;
+}
+
 TEST_F(FlutterEngineTest, HandleAccessibilityEvent) {
-  __block BOOL announced = FALSE;
+  __block BOOL announced = NO;
   id engineMock = CreateMockFlutterEngine(nil);
 
   OCMStub([engineMock announceAccessibilityMessage:[OCMArg any]
@@ -786,6 +941,113 @@ TEST_F(FlutterEngineTest, HandleAccessibilityEvent) {
   [engineMock handleAccessibilityEvent:annotatedEvent];
 
   EXPECT_TRUE(announced);
+}
+
+TEST_F(FlutterEngineTest, HandleLifecycleStates) API_AVAILABLE(macos(10.9)) {
+  __block flutter::AppLifecycleState sentState;
+  id engineMock = CreateMockFlutterEngine(nil);
+
+  // Have to enumerate all the values because OCMStub can't capture
+  // non-Objective-C object arguments.
+  OCMStub([engineMock setApplicationState:flutter::AppLifecycleState::kDetached])
+      .andDo((^(NSInvocation* invocation) {
+        sentState = flutter::AppLifecycleState::kDetached;
+      }));
+  OCMStub([engineMock setApplicationState:flutter::AppLifecycleState::kResumed])
+      .andDo((^(NSInvocation* invocation) {
+        sentState = flutter::AppLifecycleState::kResumed;
+      }));
+  OCMStub([engineMock setApplicationState:flutter::AppLifecycleState::kInactive])
+      .andDo((^(NSInvocation* invocation) {
+        sentState = flutter::AppLifecycleState::kInactive;
+      }));
+  OCMStub([engineMock setApplicationState:flutter::AppLifecycleState::kHidden])
+      .andDo((^(NSInvocation* invocation) {
+        sentState = flutter::AppLifecycleState::kHidden;
+      }));
+  OCMStub([engineMock setApplicationState:flutter::AppLifecycleState::kPaused])
+      .andDo((^(NSInvocation* invocation) {
+        sentState = flutter::AppLifecycleState::kPaused;
+      }));
+
+  __block NSApplicationOcclusionState visibility = NSApplicationOcclusionStateVisible;
+  id mockApplication = OCMPartialMock([NSApplication sharedApplication]);
+  OCMStub((NSApplicationOcclusionState)[mockApplication occlusionState])
+      .andDo(^(NSInvocation* invocation) {
+        [invocation setReturnValue:&visibility];
+      });
+
+  NSNotification* willBecomeActive =
+      [[NSNotification alloc] initWithName:NSApplicationWillBecomeActiveNotification
+                                    object:nil
+                                  userInfo:nil];
+  NSNotification* willResignActive =
+      [[NSNotification alloc] initWithName:NSApplicationWillResignActiveNotification
+                                    object:nil
+                                  userInfo:nil];
+
+  NSNotification* didChangeOcclusionState;
+  didChangeOcclusionState =
+      [[NSNotification alloc] initWithName:NSApplicationDidChangeOcclusionStateNotification
+                                    object:nil
+                                  userInfo:nil];
+
+  [engineMock handleDidChangeOcclusionState:didChangeOcclusionState];
+  EXPECT_EQ(sentState, flutter::AppLifecycleState::kInactive);
+
+  [engineMock handleWillBecomeActive:willBecomeActive];
+  EXPECT_EQ(sentState, flutter::AppLifecycleState::kResumed);
+
+  [engineMock handleWillResignActive:willResignActive];
+  EXPECT_EQ(sentState, flutter::AppLifecycleState::kInactive);
+
+  visibility = 0;
+  [engineMock handleDidChangeOcclusionState:didChangeOcclusionState];
+  EXPECT_EQ(sentState, flutter::AppLifecycleState::kHidden);
+
+  [engineMock handleWillBecomeActive:willBecomeActive];
+  EXPECT_EQ(sentState, flutter::AppLifecycleState::kHidden);
+
+  [engineMock handleWillResignActive:willResignActive];
+  EXPECT_EQ(sentState, flutter::AppLifecycleState::kHidden);
+
+  [mockApplication stopMocking];
+}
+
+TEST_F(FlutterEngineTest, ForwardsPluginDelegateRegistration) {
+  id<NSApplicationDelegate> previousDelegate = [[NSApplication sharedApplication] delegate];
+  FakeLifecycleProvider* fakeAppDelegate = [[FakeLifecycleProvider alloc] init];
+  [NSApplication sharedApplication].delegate = fakeAppDelegate;
+
+  FakeAppDelegatePlugin* plugin = [[FakeAppDelegatePlugin alloc] init];
+  FlutterEngine* engine = CreateMockFlutterEngine(nil);
+
+  [[engine registrarForPlugin:@"TestPlugin"] addApplicationDelegate:plugin];
+
+  EXPECT_TRUE([fakeAppDelegate hasDelegate:plugin]);
+
+  [NSApplication sharedApplication].delegate = previousDelegate;
+}
+
+TEST_F(FlutterEngineTest, UnregistersPluginsOnEngineDestruction) {
+  id<NSApplicationDelegate> previousDelegate = [[NSApplication sharedApplication] delegate];
+  FakeLifecycleProvider* fakeAppDelegate = [[FakeLifecycleProvider alloc] init];
+  [NSApplication sharedApplication].delegate = fakeAppDelegate;
+
+  FakeAppDelegatePlugin* plugin = [[FakeAppDelegatePlugin alloc] init];
+
+  @autoreleasepool {
+    FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test" project:nil];
+
+    [[engine registrarForPlugin:@"TestPlugin"] addApplicationDelegate:plugin];
+    EXPECT_TRUE([fakeAppDelegate hasDelegate:plugin]);
+  }
+
+  // When the engine is released, it should unregister any plugins it had
+  // registered on its behalf.
+  EXPECT_FALSE([fakeAppDelegate hasDelegate:plugin]);
+
+  [NSApplication sharedApplication].delegate = previousDelegate;
 }
 
 }  // namespace flutter::testing

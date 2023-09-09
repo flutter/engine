@@ -302,7 +302,7 @@ class SemanticsTester {
       currentValueLength: currentValueLength ?? 0,
       textSelectionBase: textSelectionBase ?? 0,
       textSelectionExtent: textSelectionExtent ?? 0,
-      platformViewId: platformViewId ?? 0,
+      platformViewId: platformViewId ?? -1,
       scrollChildren: scrollChildren ?? 0,
       scrollIndex: scrollIndex ?? 0,
       scrollPosition: scrollPosition ?? 0,
@@ -346,14 +346,9 @@ class SemanticsTester {
     return owner.debugSemanticsTree![id]!;
   }
 
-  /// Locates the role manager of the semantics object with the give [id].
-  RoleManager? getRoleManager(int id, Role role) {
-    return getSemanticsObject(id).debugRoleManagerFor(role);
-  }
-
   /// Locates the [TextField] role manager of the semantics object with the give [id].
   TextField getTextField(int id) {
-    return getRoleManager(id, Role.textField)! as TextField;
+    return getSemanticsObject(id).primaryRole! as TextField;
   }
 }
 
@@ -390,12 +385,12 @@ class SemanticsActionLogger {
     // fired.
     final Zone testZone = Zone.current;
 
-    ui.window.onSemanticsAction =
-        (int id, ui.SemanticsAction action, ByteData? args) {
-      _idLogController.add(id);
-      _actionLogController.add(action);
+    ui.PlatformDispatcher.instance.onSemanticsActionEvent =
+        (ui.SemanticsActionEvent event) {
+      _idLogController.add(event.nodeId);
+      _actionLogController.add(event.type);
       testZone.run(() {
-        expect(args, null);
+        expect(event.arguments, null);
       });
     };
   }

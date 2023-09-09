@@ -89,8 +89,12 @@ class ClangTidy {
   final StringSink _outSink;
   final StringSink _errSink;
 
+  late final DateTime _startTime;
+
   /// Runs clang-tidy on the repo as specified by the [Options].
   Future<int> run() async {
+    _startTime = DateTime.now();
+
     if (options.help) {
       options.printUsage();
       return 0;
@@ -237,13 +241,13 @@ class ClangTidy {
     final List<Command> totalCommands = <Command>[];
     if (sharedBuildCommandsData.isNotEmpty) {
       final List<Command> buildCommands = <Command>[
-        for (Object? data in buildCommandsData)
+        for (final Object? data in buildCommandsData)
           Command.fromMap((data as Map<String, Object?>?)!)
       ];
       final List<Set<String>> shardFilePaths = <Set<String>>[
-        for (List<Object?> list in sharedBuildCommandsData)
+        for (final List<Object?> list in sharedBuildCommandsData)
           <String>{
-            for (Object? data in list)
+            for (final Object? data in list)
               Command.fromMap((data as Map<String, Object?>?)!).filePath
           }
       ];
@@ -255,7 +259,7 @@ class ClangTidy {
         }
       }
       final List<Command> intersection = <Command>[
-        for (_SetStatusCommand result in intersectionResults)
+        for (final _SetStatusCommand result in intersectionResults)
           if (result.setStatus == _SetStatus.Intersection) result.command
       ];
       // Make sure to sort results so the sharding scheme is guaranteed to work
@@ -266,7 +270,7 @@ class ClangTidy {
           _takeShard(intersection, shardId!, 1 + sharedBuildCommandsData.length));
     } else {
       totalCommands.addAll(<Command>[
-        for (Object? data in buildCommandsData)
+        for (final Object? data in buildCommandsData)
           Command.fromMap((data as Map<String, Object?>?)!)
       ]);
     }
@@ -340,9 +344,27 @@ class ClangTidy {
 
   Future<int> _runJobs(List<WorkerJob> jobs) async {
     int result = 0;
-    final ProcessPool pool = ProcessPool();
+    final Set<String> pendingJobs = <String>{for (final WorkerJob job in jobs) job.name};
+
+    void reporter(int totalJobs, int completed, int inProgress, int pending, int failed) {
+      return _logWithTimestamp(ProcessPool.defaultReportToString(
+        totalJobs, completed, inProgress, pending, failed));
+    }
+
+    final ProcessPool pool = ProcessPool(printReport: reporter);
     await for (final WorkerJob job in pool.startWorkers(jobs)) {
+      pendingJobs.remove(job.name);
+      if (pendingJobs.isNotEmpty && pendingJobs.length <= 3) {
+        final List<String> sortedJobs = pendingJobs.toList()..sort();
+        _logWithTimestamp('Still running: $sortedJobs');
+      }
       if (job.result.exitCode == 0) {
+        if (options.enableCheckProfile) {
+          // stderr is lazily evaluated, so force it to be evaluated here.
+          final String stderr = job.result.stderr;
+          _errSink.writeln('Results of --enable-check-profile for ${job.name}:');
+          _errSink.writeln(stderr);
+        }
         continue;
       }
       _errSink.writeln('❌ Failures for ${job.name}:');
@@ -357,5 +379,11 @@ class ClangTidy {
       result = 1;
     }
     return result;
+  }
+
+  void _logWithTimestamp(String message) {
+    final Duration elapsedTime = DateTime.now().difference(_startTime);
+    final String seconds = (elapsedTime.inSeconds % 60).toString().padLeft(2, '0');
+    _outSink.writeln('[${elapsedTime.inMinutes}:$seconds] $message');
   }
 }

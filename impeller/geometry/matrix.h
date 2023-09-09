@@ -290,6 +290,8 @@ struct Matrix {
 
   Scalar GetMaxBasisLength() const;
 
+  Scalar GetMaxBasisLengthXY() const;
+
   constexpr Vector3 GetBasisX() const { return Vector3(m[0], m[1], m[2]); }
 
   constexpr Vector3 GetBasisY() const { return Vector3(m[4], m[5], m[6]); }
@@ -309,6 +311,10 @@ struct Matrix {
   constexpr bool IsAffine() const {
     return (m[2] == 0 && m[3] == 0 && m[6] == 0 && m[7] == 0 && m[8] == 0 &&
             m[9] == 0 && m[10] == 1 && m[11] == 0 && m[14] == 0 && m[15] == 1);
+  }
+
+  constexpr bool HasPerspective() const {
+    return m[3] != 0 || m[7] != 0 || m[11] != 0 || m[15] != 1;
   }
 
   constexpr bool IsAligned(Scalar tolerance = 0) const {

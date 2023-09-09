@@ -4,7 +4,7 @@
 
 #include "flutter/display_list/utils/dl_matrix_clip_tracker.h"
 
-#include "flutter/display_list/dl_builder.h"
+#include "flutter/display_list/display_list_builder.h"
 #include "flutter/fml/logging.h"
 
 namespace flutter {
@@ -92,7 +92,7 @@ class Data3x3 : public DisplayListMatrixClipTracker::Data {
   SkMatrix matrix_;
 };
 
-static bool is_3x3(const SkM44& m) {
+bool DisplayListMatrixClipTracker::is_3x3(const SkM44& m) {
   // clang-format off
   return (                                      m.rc(0, 2) == 0 &&
                                                 m.rc(1, 2) == 0 &&
@@ -103,16 +103,19 @@ static bool is_3x3(const SkM44& m) {
 
 DisplayListMatrixClipTracker::DisplayListMatrixClipTracker(
     const SkRect& cull_rect,
-    const SkMatrix& matrix) {
+    const SkMatrix& matrix)
+    : original_cull_rect_(cull_rect) {
   // isEmpty protects us against NaN as we normalize any empty cull rects
   SkRect cull = cull_rect.isEmpty() ? SkRect::MakeEmpty() : cull_rect;
   saved_.emplace_back(std::make_unique<Data3x3>(matrix, cull));
   current_ = saved_.back().get();
+  save();  // saved_[0] will always be the initial settings
 }
 
 DisplayListMatrixClipTracker::DisplayListMatrixClipTracker(
     const SkRect& cull_rect,
-    const SkM44& m44) {
+    const SkM44& m44)
+    : original_cull_rect_(cull_rect) {
   // isEmpty protects us against NaN as we normalize any empty cull rects
   SkRect cull = cull_rect.isEmpty() ? SkRect::MakeEmpty() : cull_rect;
   if (is_3x3(m44)) {
@@ -121,6 +124,7 @@ DisplayListMatrixClipTracker::DisplayListMatrixClipTracker(
     saved_.emplace_back(std::make_unique<Data4x4>(m44, cull));
   }
   current_ = saved_.back().get();
+  save();  // saved_[0] will always be the initial settings
 }
 
 // clang-format off
@@ -172,8 +176,18 @@ void DisplayListMatrixClipTracker::save() {
 }
 
 void DisplayListMatrixClipTracker::restore() {
-  saved_.pop_back();
-  current_ = saved_.back().get();
+  if (saved_.size() > 2) {
+    saved_.pop_back();
+    current_ = saved_.back().get();
+  }
+}
+
+void DisplayListMatrixClipTracker::reset() {
+  while (saved_.size() > 1) {
+    saved_.pop_back();
+    current_ = saved_.back().get();
+  }
+  save();  // saved_[0] will always be the initial settings
 }
 
 void DisplayListMatrixClipTracker::restoreToCount(int restore_count) {
@@ -270,6 +284,18 @@ bool DisplayListMatrixClipTracker::Data::content_culled(
   return !mapped.intersects(cull_rect_);
 }
 
+void DisplayListMatrixClipTracker::Data::resetBounds(const SkRect& cull_rect) {
+  if (!cull_rect.isEmpty()) {
+    SkRect rect;
+    mapRect(cull_rect, &rect);
+    if (!rect.isEmpty()) {
+      cull_rect_ = rect;
+      return;
+    }
+  }
+  cull_rect_.setEmpty();
+}
+
 void DisplayListMatrixClipTracker::Data::clipBounds(const SkRect& clip,
                                                     ClipOp op,
                                                     bool is_aa) {
@@ -298,12 +324,12 @@ void DisplayListMatrixClipTracker::Data::clipBounds(const SkRect& clip,
       break;
     }
     case ClipOp::kDifference: {
-      if (clip.isEmpty() || !clip.intersects(cull_rect_)) {
+      if (clip.isEmpty()) {
         break;
       }
       SkRect rect;
       if (mapRect(clip, &rect)) {
-        // This technique only works if it is rect -> rect
+        // This technique only works if the transform is rect -> rect
         if (is_aa) {
           SkIRect rounded;
           rect.round(&rounded);
@@ -312,13 +338,22 @@ void DisplayListMatrixClipTracker::Data::clipBounds(const SkRect& clip,
           }
           rect.set(rounded);
         }
+        if (!rect.intersects(cull_rect_)) {
+          break;
+        }
         if (rect.fLeft <= cull_rect_.fLeft &&
             rect.fRight >= cull_rect_.fRight) {
           // bounds spans entire width of cull_rect_
           // therefore we can slice off a top or bottom
           // edge of the cull_rect_.
-          SkScalar top = std::max(rect.fBottom, cull_rect_.fTop);
-          SkScalar btm = std::min(rect.fTop, cull_rect_.fBottom);
+          SkScalar top = cull_rect_.fTop;
+          SkScalar btm = cull_rect_.fBottom;
+          if (rect.fTop <= top) {
+            top = rect.fBottom;
+          }
+          if (rect.fBottom >= btm) {
+            btm = rect.fTop;
+          }
           if (top < btm) {
             cull_rect_.fTop = top;
             cull_rect_.fBottom = btm;
@@ -330,8 +365,14 @@ void DisplayListMatrixClipTracker::Data::clipBounds(const SkRect& clip,
           // bounds spans entire height of cull_rect_
           // therefore we can slice off a left or right
           // edge of the cull_rect_.
-          SkScalar lft = std::max(rect.fRight, cull_rect_.fLeft);
-          SkScalar rgt = std::min(rect.fLeft, cull_rect_.fRight);
+          SkScalar lft = cull_rect_.fLeft;
+          SkScalar rgt = cull_rect_.fRight;
+          if (rect.fLeft <= lft) {
+            lft = rect.fRight;
+          }
+          if (rect.fRight >= rgt) {
+            rgt = rect.fLeft;
+          }
           if (lft < rgt) {
             cull_rect_.fLeft = lft;
             cull_rect_.fRight = rgt;

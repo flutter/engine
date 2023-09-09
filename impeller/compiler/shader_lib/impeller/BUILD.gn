@@ -8,6 +8,8 @@ copy("impeller") {
     "branching.glsl",
     "color.glsl",
     "constants.glsl",
+    "conversions.glsl",
+    "dithering.glsl",
     "gaussian.glsl",
     "gradient.glsl",
     "path.glsl",

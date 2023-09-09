@@ -29,11 +29,6 @@ class FilterContents : public Contents {
     kInner,
   };
 
-  // Domain is kRGBA, we may decide to support more color modes later.
-  struct ColorMatrix {
-    float array[20];
-  };
-
   enum class MorphType { kDilate, kErode };
 
   static std::shared_ptr<FilterContents> MakeDirectionalGaussianBlur(
@@ -102,16 +97,15 @@ class FilterContents : public Contents {
   ///         particular filter's implementation.
   void SetInputs(FilterInput::Vector inputs);
 
-  /// @brief  Screen space bounds to use for cropping the filter output.
-  void SetCoverageCrop(std::optional<Rect> coverage_crop);
-
   /// @brief  Sets the transform which gets appended to the effect of this
   ///         filter. Note that this is in addition to the entity's transform.
   void SetEffectTransform(Matrix effect_transform);
 
   /// @brief  Create an Entity that renders this filter's output.
-  std::optional<Entity> GetEntity(const ContentContext& renderer,
-                                  const Entity& entity) const;
+  std::optional<Entity> GetEntity(
+      const ContentContext& renderer,
+      const Entity& entity,
+      const std::optional<Rect>& coverage_hint) const;
 
   // |Contents|
   bool Render(const ContentContext& renderer,
@@ -122,9 +116,15 @@ class FilterContents : public Contents {
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
 
   // |Contents|
+  void PopulateGlyphAtlas(
+      const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
+      Scalar scale) override;
+
+  // |Contents|
   std::optional<Snapshot> RenderToSnapshot(
       const ContentContext& renderer,
       const Entity& entity,
+      std::optional<Rect> coverage_limit = std::nullopt,
       const std::optional<SamplerDescriptor>& sampler_descriptor = std::nullopt,
       bool msaa_enabled = true,
       const std::string& label = "Filter Snapshot") const override;
@@ -133,6 +133,15 @@ class FilterContents : public Contents {
 
   Matrix GetTransform(const Matrix& parent_transform) const;
 
+  /// @brief  Returns `true` if this filter does not have any `FilterInput`
+  ///         children.
+  bool IsLeaf() const;
+
+  /// @brief  Replaces the leaf of all leaf `FilterContents` with a new set
+  ///         of `inputs`.
+  /// @see    `FilterContents::IsLeaf`
+  void SetLeafInputs(const FilterInput::Vector& inputs);
+
  private:
   virtual std::optional<Rect> GetFilterCoverage(
       const FilterInput::Vector& inputs,
@@ -140,16 +149,17 @@ class FilterContents : public Contents {
       const Matrix& effect_transform) const;
 
   /// @brief  Converts zero or more filter inputs into a render instruction.
-  virtual std::optional<Entity> RenderFilter(const FilterInput::Vector& inputs,
-                                             const ContentContext& renderer,
-                                             const Entity& entity,
-                                             const Matrix& effect_transform,
-                                             const Rect& coverage) const = 0;
+  virtual std::optional<Entity> RenderFilter(
+      const FilterInput::Vector& inputs,
+      const ContentContext& renderer,
+      const Entity& entity,
+      const Matrix& effect_transform,
+      const Rect& coverage,
+      const std::optional<Rect>& coverage_hint) const = 0;
 
   std::optional<Rect> GetLocalCoverage(const Entity& local_entity) const;
 
   FilterInput::Vector inputs_;
-  std::optional<Rect> coverage_crop_;
   Matrix effect_transform_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FilterContents);

@@ -8,15 +8,16 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
 import '../common/mock_engine_canvas.dart';
-import '../html/screenshot.dart';
+import '../common/test_initialization.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 void testMain() {
-  debugEmulateFlutterTesterEnvironment = true;
-  setUpStableTestFonts();
+  setUpUnitTests(
+    setUpTestViewDimensions: false,
+  );
 
   late RecordingCanvas underTest;
   late MockEngineCanvas mockCanvas;
@@ -186,7 +187,7 @@ void testMain() {
       });
     });
 
-    test('preserve old scuba test behavior', () {
+    test('preserve old golden test behavior', () {
       final RRect outer =
           RRect.fromRectAndCorners(const Rect.fromLTRB(10, 20, 30, 40));
       final RRect inner =

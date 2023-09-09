@@ -85,29 +85,6 @@ Future<developer.ServiceExtensionResponse> _getImpellerEnabled(
 
 const bool _kReleaseMode = bool.fromEnvironment('dart.vm.product');
 
-/// Returns runtime Dart compilation trace as a UTF-8 encoded memory buffer.
-///
-/// The buffer contains a list of symbols compiled by the Dart JIT at runtime up
-/// to the point when this function was called. This list can be saved to a text
-/// file and passed to tools such as `flutter build` or Dart `gen_snapshot` in
-/// order to pre-compile this code offline.
-///
-/// The list has one symbol per line of the following format:
-/// `<namespace>,<class>,<symbol>\n`.
-///
-/// Here are some examples:
-///
-/// ```csv
-/// dart:core,Duration,get:inMilliseconds
-/// package:flutter/src/widgets/binding.dart,::,runApp
-/// file:///.../my_app.dart,::,main
-/// ```
-///
-/// This function is only effective in debug and dynamic modes, and will throw in AOT mode.
-List<int> saveCompilationTrace() {
-  throw UnimplementedError();
-}
-
 @Native<Void Function(Handle)>(symbol: 'DartRuntimeHooks::ScheduleMicrotask')
 external void _scheduleMicrotask(void Function() callback);
 
@@ -135,3 +112,12 @@ _ScheduleImmediateClosure _getScheduleMicrotaskClosure() => _scheduleMicrotask;
 // rendering.
 @pragma('vm:entry-point')
 bool _impellerEnabled = false;
+
+// Used internally to indicate whether the embedder enables the implicit view,
+// and the implicit view's ID if so.
+//
+// The exact value of this variable is an implementation detail that may change
+// at any time. Apps should always use PlatformDispatcher.implicitView to
+// determine the current implicit view, if any.
+@pragma('vm:entry-point')
+int? _implicitViewId;

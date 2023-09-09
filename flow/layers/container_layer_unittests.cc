@@ -10,10 +10,11 @@
 #include "flutter/flow/testing/layer_test.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/fml/macros.h"
-#include "flutter/testing/mock_canvas.h"
 #include "gtest/gtest.h"
-#include "include/core/SkCanvas.h"
 #include "include/core/SkMatrix.h"
+
+// TODO(zanderso): https://github.com/flutter/flutter/issues/127701
+// NOLINTBEGIN(bugprone-unchecked-optional-access)
 
 namespace flutter {
 namespace testing {
@@ -111,10 +112,14 @@ TEST_F(ContainerLayerTest, Simple) {
   EXPECT_EQ(mock_layer->parent_matrix(), initial_transform);
   EXPECT_EQ(mock_layer->parent_cull_rect(), kGiantRect);
 
-  layer->Paint(paint_context());
-  EXPECT_EQ(mock_canvas().draw_calls(),
-            std::vector({MockCanvas::DrawCall{
-                0, MockCanvas::DrawPathData{child_path, child_paint}}}));
+  layer->Paint(display_list_paint_context());
+  DisplayListBuilder expected_builder;
+  /* (Container)layer::Paint */ {
+    /* mock_layer::Paint */ {
+      expected_builder.DrawPath(child_path, child_paint);
+    }
+  }
+  EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_builder.Build()));
 }
 
 TEST_F(ContainerLayerTest, Multiple) {
@@ -151,13 +156,17 @@ TEST_F(ContainerLayerTest, Multiple) {
   EXPECT_EQ(mock_layer2->parent_cull_rect(),
             kGiantRect);  // Siblings are independent
 
-  layer->Paint(paint_context());
-  EXPECT_EQ(
-      mock_canvas().draw_calls(),
-      std::vector({MockCanvas::DrawCall{
-                       0, MockCanvas::DrawPathData{child_path1, child_paint1}},
-                   MockCanvas::DrawCall{0, MockCanvas::DrawPathData{
-                                               child_path2, child_paint2}}}));
+  layer->Paint(display_list_paint_context());
+  DisplayListBuilder expected_builder;
+  /* (Container)layer::Paint */ {
+    /* mock_layer1::Paint */ {
+      expected_builder.DrawPath(child_path1, child_paint1);
+    }
+    /* mock_layer2::Paint */ {
+      expected_builder.DrawPath(child_path2, child_paint2);
+    }
+  }
+  EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_builder.Build()));
 }
 
 TEST_F(ContainerLayerTest, MultipleWithEmpty) {
@@ -188,10 +197,15 @@ TEST_F(ContainerLayerTest, MultipleWithEmpty) {
   EXPECT_EQ(mock_layer1->parent_cull_rect(), kGiantRect);
   EXPECT_EQ(mock_layer2->parent_cull_rect(), kGiantRect);
 
-  layer->Paint(paint_context());
-  EXPECT_EQ(mock_canvas().draw_calls(),
-            std::vector({MockCanvas::DrawCall{
-                0, MockCanvas::DrawPathData{child_path1, child_paint1}}}));
+  layer->Paint(display_list_paint_context());
+  DisplayListBuilder expected_builder;
+  /* (Container)layer::Paint */ {
+    /* mock_layer1::Paint */ {
+      expected_builder.DrawPath(child_path1, child_paint1);
+    }
+    // mock_layer2 not drawn due to needs_painting() returning false
+  }
+  EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_builder.Build()));
 }
 
 TEST_F(ContainerLayerTest, NeedsSystemComposite) {
@@ -227,13 +241,17 @@ TEST_F(ContainerLayerTest, NeedsSystemComposite) {
   EXPECT_EQ(mock_layer1->parent_cull_rect(), kGiantRect);
   EXPECT_EQ(mock_layer2->parent_cull_rect(), kGiantRect);
 
-  layer->Paint(paint_context());
-  EXPECT_EQ(
-      mock_canvas().draw_calls(),
-      std::vector({MockCanvas::DrawCall{
-                       0, MockCanvas::DrawPathData{child_path1, child_paint1}},
-                   MockCanvas::DrawCall{0, MockCanvas::DrawPathData{
-                                               child_path2, child_paint2}}}));
+  layer->Paint(display_list_paint_context());
+  DisplayListBuilder expected_builder;
+  /* (Container)layer::Paint */ {
+    /* mock_layer1::Paint */ {
+      expected_builder.DrawPath(child_path1, child_paint1);
+    }
+    /* mock_layer2::Paint */ {
+      expected_builder.DrawPath(child_path2, child_paint2);
+    }
+  }
+  EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_builder.Build()));
 }
 
 TEST_F(ContainerLayerTest, RasterCacheTest) {
@@ -546,9 +564,9 @@ using ContainerLayerDiffTest = DiffContextTest;
 
 // Insert PictureLayer amongst container layers
 TEST_F(ContainerLayerDiffTest, PictureLayerInsertion) {
-  auto pic1 = CreateDisplayList(SkRect::MakeLTRB(0, 0, 50, 50), 1);
-  auto pic2 = CreateDisplayList(SkRect::MakeLTRB(100, 0, 150, 50), 1);
-  auto pic3 = CreateDisplayList(SkRect::MakeLTRB(200, 0, 250, 50), 1);
+  auto pic1 = CreateDisplayList(SkRect::MakeLTRB(0, 0, 50, 50));
+  auto pic2 = CreateDisplayList(SkRect::MakeLTRB(100, 0, 150, 50));
+  auto pic3 = CreateDisplayList(SkRect::MakeLTRB(200, 0, 250, 50));
 
   MockLayerTree t1;
 
@@ -598,9 +616,9 @@ TEST_F(ContainerLayerDiffTest, PictureLayerInsertion) {
 
 // Insert picture layer amongst other picture layers
 TEST_F(ContainerLayerDiffTest, PictureInsertion) {
-  auto pic1 = CreateDisplayList(SkRect::MakeLTRB(0, 0, 50, 50), 1);
-  auto pic2 = CreateDisplayList(SkRect::MakeLTRB(100, 0, 150, 50), 1);
-  auto pic3 = CreateDisplayList(SkRect::MakeLTRB(200, 0, 250, 50), 1);
+  auto pic1 = CreateDisplayList(SkRect::MakeLTRB(0, 0, 50, 50));
+  auto pic2 = CreateDisplayList(SkRect::MakeLTRB(100, 0, 150, 50));
+  auto pic3 = CreateDisplayList(SkRect::MakeLTRB(200, 0, 250, 50));
 
   MockLayerTree t1;
   t1.root()->Add(CreateDisplayListLayer(pic1));
@@ -747,3 +765,5 @@ TEST_F(ContainerLayerDiffTest, ReplaceLayer) {
 
 }  // namespace testing
 }  // namespace flutter
+
+// NOLINTEND(bugprone-unchecked-optional-access)

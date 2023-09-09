@@ -25,10 +25,10 @@ import io.flutter.util.FakeKeyEvent;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import junit.framework.Assert;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -488,25 +488,25 @@ public class KeyboardManagerTest {
   @Test
   public void basicCombingCharactersTest() {
     final KeyboardManager.CharacterCombiner combiner = new KeyboardManager.CharacterCombiner();
-    Assert.assertEquals(0, (int) combiner.applyCombiningCharacterToBaseCharacter(0));
-    Assert.assertEquals('A', (int) combiner.applyCombiningCharacterToBaseCharacter('A'));
-    Assert.assertEquals('B', (int) combiner.applyCombiningCharacterToBaseCharacter('B'));
-    Assert.assertEquals('B', (int) combiner.applyCombiningCharacterToBaseCharacter('B'));
-    Assert.assertEquals(0, (int) combiner.applyCombiningCharacterToBaseCharacter(0));
-    Assert.assertEquals(0, (int) combiner.applyCombiningCharacterToBaseCharacter(0));
+    assertEquals(0, (int) combiner.applyCombiningCharacterToBaseCharacter(0));
+    assertEquals('B', (int) combiner.applyCombiningCharacterToBaseCharacter('B'));
+    assertEquals('B', (int) combiner.applyCombiningCharacterToBaseCharacter('B'));
+    assertEquals('A', (int) combiner.applyCombiningCharacterToBaseCharacter('A'));
+    assertEquals(0, (int) combiner.applyCombiningCharacterToBaseCharacter(0));
+    assertEquals(0, (int) combiner.applyCombiningCharacterToBaseCharacter(0));
 
-    Assert.assertEquals('`', (int) combiner.applyCombiningCharacterToBaseCharacter(DEAD_KEY));
-    Assert.assertEquals('`', (int) combiner.applyCombiningCharacterToBaseCharacter(DEAD_KEY));
-    Assert.assertEquals('À', (int) combiner.applyCombiningCharacterToBaseCharacter('A'));
+    assertEquals('`', (int) combiner.applyCombiningCharacterToBaseCharacter(DEAD_KEY));
+    assertEquals('`', (int) combiner.applyCombiningCharacterToBaseCharacter(DEAD_KEY));
+    assertEquals('À', (int) combiner.applyCombiningCharacterToBaseCharacter('A'));
 
-    Assert.assertEquals('`', (int) combiner.applyCombiningCharacterToBaseCharacter(DEAD_KEY));
-    Assert.assertEquals(0, (int) combiner.applyCombiningCharacterToBaseCharacter(0));
+    assertEquals('`', (int) combiner.applyCombiningCharacterToBaseCharacter(DEAD_KEY));
+    assertEquals(0, (int) combiner.applyCombiningCharacterToBaseCharacter(0));
     // The 0 input should remove the combining state.
-    Assert.assertEquals('A', (int) combiner.applyCombiningCharacterToBaseCharacter('A'));
+    assertEquals('A', (int) combiner.applyCombiningCharacterToBaseCharacter('A'));
 
-    Assert.assertEquals(0, (int) combiner.applyCombiningCharacterToBaseCharacter(0));
-    Assert.assertEquals('`', (int) combiner.applyCombiningCharacterToBaseCharacter(DEAD_KEY));
-    Assert.assertEquals('À', (int) combiner.applyCombiningCharacterToBaseCharacter('A'));
+    assertEquals(0, (int) combiner.applyCombiningCharacterToBaseCharacter(0));
+    assertEquals('`', (int) combiner.applyCombiningCharacterToBaseCharacter(DEAD_KEY));
+    assertEquals('À', (int) combiner.applyCombiningCharacterToBaseCharacter('A'));
   }
 
   @Test
@@ -1563,5 +1563,23 @@ public class KeyboardManagerTest {
     assertEmbedderEventEquals(
         calls.get(0).keyData, Type.kUp, PHYSICAL_CAPS_LOCK, LOGICAL_CAPS_LOCK, null, false);
     calls.clear();
+  }
+
+  @Test
+  public void getKeyboardState() {
+    final KeyboardTester tester = new KeyboardTester();
+
+    tester.respondToTextInputWith(true); // Suppress redispatching.
+
+    // Initial pressed state is empty.
+    assertEquals(tester.keyboardManager.getKeyboardState(), Map.of());
+
+    tester.keyboardManager.handleEvent(
+        new FakeKeyEvent(ACTION_DOWN, SCAN_KEY_A, KEYCODE_A, 1, 'a', 0));
+    assertEquals(tester.keyboardManager.getKeyboardState(), Map.of(PHYSICAL_KEY_A, LOGICAL_KEY_A));
+
+    tester.keyboardManager.handleEvent(
+        new FakeKeyEvent(ACTION_UP, SCAN_KEY_A, KEYCODE_A, 0, 'a', 0));
+    assertEquals(tester.keyboardManager.getKeyboardState(), Map.of());
   }
 }

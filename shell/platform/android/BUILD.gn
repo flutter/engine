@@ -6,9 +6,11 @@ import("//build/config/android/config.gni")
 import("//build/toolchain/clang.gni")
 import("//flutter/build/zip_bundle.gni")
 import("//flutter/common/config.gni")
+import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/shell/config.gni")
 import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/shell/version/version.gni")
+import("//flutter/vulkan/config.gni")
 
 shell_gpu_configuration("android_gpu_configuration") {
   enable_software = true
@@ -39,9 +41,9 @@ executable("flutter_shell_native_unittests") {
   visibility = [ "*" ]
   testonly = true
   sources = [
+    "android_context_gl_impeller_unittests.cc",
     "android_context_gl_unittests.cc",
     "android_shell_holder_unittests.cc",
-    "android_surface_gl_impeller_unittests.cc",
     "apk_asset_provider_unittests.cc",
     "flutter_shell_native_unittests.cc",
   ]
@@ -72,14 +74,14 @@ source_set("flutter_shell_native_src") {
     "android_context_gl_impeller.h",
     "android_context_gl_skia.cc",
     "android_context_gl_skia.h",
+    "android_context_vulkan_impeller.cc",
+    "android_context_vulkan_impeller.h",
     "android_display.cc",
     "android_display.h",
     "android_egl_surface.cc",
     "android_egl_surface.h",
     "android_environment_gl.cc",
     "android_environment_gl.h",
-    "android_external_texture_gl.cc",
-    "android_external_texture_gl.h",
     "android_shell_holder.cc",
     "android_shell_holder.h",
     "android_surface_gl_impeller.cc",
@@ -94,7 +96,15 @@ source_set("flutter_shell_native_src") {
     "apk_asset_provider.h",
     "flutter_main.cc",
     "flutter_main.h",
+    "hardware_buffer_external_texture.cc",
+    "hardware_buffer_external_texture.h",
+    "hardware_buffer_external_texture_gl.cc",
+    "hardware_buffer_external_texture_gl.h",
+    "hardware_buffer_external_texture_vk.cc",
+    "hardware_buffer_external_texture_vk.h",
     "library_loader.cc",
+    "ndk_helpers.cc",
+    "ndk_helpers.h",
     "platform_message_handler_android.cc",
     "platform_message_handler_android.h",
     "platform_message_response_android.cc",
@@ -103,6 +113,10 @@ source_set("flutter_shell_native_src") {
     "platform_view_android.h",
     "platform_view_android_jni_impl.cc",
     "platform_view_android_jni_impl.h",
+    "surface_texture_external_texture.cc",
+    "surface_texture_external_texture.h",
+    "surface_texture_external_texture_gl.cc",
+    "surface_texture_external_texture_gl.h",
     "vsync_waiter_android.cc",
     "vsync_waiter_android.h",
   ]
@@ -118,6 +132,7 @@ source_set("flutter_shell_native_src") {
     "//flutter/fml",
     "//flutter/impeller",
     "//flutter/impeller/toolkit/egl",
+    "//flutter/impeller/toolkit/gles",
     "//flutter/lib/ui",
     "//flutter/runtime",
     "//flutter/runtime:libdart",
@@ -176,7 +191,6 @@ android_java_sources = [
   "io/flutter/app/FlutterPlayStoreSplitApplication.java",
   "io/flutter/app/FlutterPluginRegistry.java",
   "io/flutter/embedding/android/AndroidTouchProcessor.java",
-  "io/flutter/embedding/android/DrawableSplashScreen.java",
   "io/flutter/embedding/android/ExclusiveAppComponent.java",
   "io/flutter/embedding/android/FlutterActivity.java",
   "io/flutter/embedding/android/FlutterActivityAndFragmentDelegate.java",
@@ -187,7 +201,6 @@ android_java_sources = [
   "io/flutter/embedding/android/FlutterFragmentActivity.java",
   "io/flutter/embedding/android/FlutterImageView.java",
   "io/flutter/embedding/android/FlutterPlayStoreSplitApplication.java",
-  "io/flutter/embedding/android/FlutterSplashView.java",
   "io/flutter/embedding/android/FlutterSurfaceView.java",
   "io/flutter/embedding/android/FlutterTextureView.java",
   "io/flutter/embedding/android/FlutterView.java",
@@ -198,8 +211,6 @@ android_java_sources = [
   "io/flutter/embedding/android/KeyboardMap.java",
   "io/flutter/embedding/android/MotionEventTracker.java",
   "io/flutter/embedding/android/RenderMode.java",
-  "io/flutter/embedding/android/SplashScreen.java",
-  "io/flutter/embedding/android/SplashScreenProvider.java",
   "io/flutter/embedding/android/TransparencyMode.java",
   "io/flutter/embedding/android/WindowInfoRepositoryCallbackAdapterWrapper.java",
   "io/flutter/embedding/engine/FlutterEngine.java",
@@ -247,6 +258,7 @@ android_java_sources = [
   "io/flutter/embedding/engine/systemchannels/AccessibilityChannel.java",
   "io/flutter/embedding/engine/systemchannels/DeferredComponentChannel.java",
   "io/flutter/embedding/engine/systemchannels/KeyEventChannel.java",
+  "io/flutter/embedding/engine/systemchannels/KeyboardChannel.java",
   "io/flutter/embedding/engine/systemchannels/LifecycleChannel.java",
   "io/flutter/embedding/engine/systemchannels/LocalizationChannel.java",
   "io/flutter/embedding/engine/systemchannels/MouseCursorChannel.java",
@@ -286,16 +298,19 @@ android_java_sources = [
   "io/flutter/plugin/localization/LocalizationPlugin.java",
   "io/flutter/plugin/mouse/MouseCursorPlugin.java",
   "io/flutter/plugin/platform/AccessibilityEventsDelegate.java",
+  "io/flutter/plugin/platform/ImageReaderPlatformViewRenderTarget.java",
   "io/flutter/plugin/platform/PlatformOverlayView.java",
   "io/flutter/plugin/platform/PlatformPlugin.java",
   "io/flutter/plugin/platform/PlatformView.java",
   "io/flutter/plugin/platform/PlatformViewFactory.java",
   "io/flutter/plugin/platform/PlatformViewRegistry.java",
   "io/flutter/plugin/platform/PlatformViewRegistryImpl.java",
+  "io/flutter/plugin/platform/PlatformViewRenderTarget.java",
   "io/flutter/plugin/platform/PlatformViewWrapper.java",
   "io/flutter/plugin/platform/PlatformViewsAccessibilityDelegate.java",
   "io/flutter/plugin/platform/PlatformViewsController.java",
   "io/flutter/plugin/platform/SingleViewPresentation.java",
+  "io/flutter/plugin/platform/SurfaceTexturePlatformViewRenderTarget.java",
   "io/flutter/plugin/platform/VirtualDisplayController.java",
   "io/flutter/util/HandlerCompat.java",
   "io/flutter/util/PathUtils.java",
@@ -474,6 +489,26 @@ action("android_jar") {
     ":pom_embedding",
     ":pom_libflutter",
   ]
+
+  if (enable_vulkan_validation_layers) {
+    assert(impeller_enable_vulkan)
+    deps += [ "//third_party/vulkan_validation_layers" ]
+    args += [
+      "--native_lib",
+      rebase_path("libVkLayer_khronos_validation.so",
+                  root_build_dir,
+                  root_build_dir),
+    ]
+    if (current_cpu == "arm64") {
+      args += [
+        "--native_lib",
+        rebase_path("$android_libcpp_root/libs/arm64-v8a/libc++_shared.so",
+                    root_build_dir),
+      ]
+    } else {
+      assert(false, "Validation layers not supported for arch.")
+    }
+  }
 
   if (flutter_runtime_mode == "profile") {
     deps += [ "//flutter/shell/vmservice:vmservice_snapshot" ]

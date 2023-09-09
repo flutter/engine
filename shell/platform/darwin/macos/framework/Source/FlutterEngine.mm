@@ -9,9 +9,11 @@
 #include <iostream>
 #include <vector>
 
+#include "flutter/shell/platform/common/app_lifecycle_state.h"
 #include "flutter/shell/platform/common/engine_switches.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
+#import "flutter/shell/platform/darwin/common/framework/Source/FlutterBinaryMessengerRelay.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.h"
@@ -23,9 +25,9 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewEngineProvider.h"
 
-const uint64_t kFlutterDefaultViewId = 0;
-
 NSString* const kFlutterPlatformChannel = @"flutter/platform";
+NSString* const kFlutterSettingsChannel = @"flutter/settings";
+NSString* const kFlutterLifecycleChannel = @"flutter/lifecycle";
 
 /**
  * Constructs and returns a FlutterLocale struct corresponding to |locale|, which must outlive
@@ -88,15 +90,20 @@ constexpr char kTextPlainFormat[] = "text/plain";
  */
 @property(nonatomic, strong) NSMutableArray<NSNumber*>* isResponseValid;
 
-- (nullable FlutterViewController*)viewControllerForId:(uint64_t)viewId;
+/**
+ * All delegates added via plugin calls to addApplicationDelegate.
+ */
+@property(nonatomic, strong) NSPointerArray* pluginAppDelegates;
+
+- (nullable FlutterViewController*)viewControllerForId:(FlutterViewId)viewId;
 
 /**
  * An internal method that adds the view controller with the given ID.
  *
  * This method assigns the controller with the ID, puts the controller into the
- * map, and does assertions related to the default view ID.
+ * map, and does assertions related to the implicit view ID.
  */
-- (void)registerViewController:(FlutterViewController*)controller forId:(uint64_t)viewId;
+- (void)registerViewController:(FlutterViewController*)controller forId:(FlutterViewId)viewId;
 
 /**
  * An internal method that removes the view controller with the given ID.
@@ -105,7 +112,7 @@ constexpr char kTextPlainFormat[] = "text/plain";
  * map. This is an no-op if the view ID is not associated with any view
  * controllers.
  */
-- (void)deregisterViewControllerForId:(uint64_t)viewId;
+- (void)deregisterViewControllerForId:(FlutterViewId)viewId;
 
 /**
  * Shuts down the engine if view requirement is not met, and headless execution
@@ -163,23 +170,25 @@ constexpr char kTextPlainFormat[] = "text/plain";
 #pragma mark -
 
 @implementation FlutterEngineTerminationHandler {
-  FlutterEngine* _engine;
+  __weak FlutterEngine* _engine;
   FlutterTerminationCallback _terminator;
 }
 
 - (instancetype)initWithEngine:(FlutterEngine*)engine
                     terminator:(FlutterTerminationCallback)terminator {
   self = [super init];
+  _acceptingRequests = NO;
   _engine = engine;
   _terminator = terminator ? terminator : ^(id sender) {
     // Default to actually terminating the application. The terminator exists to
     // allow tests to override it so that an actual exit doesn't occur.
-    NSApplication* flutterApp = [NSApplication sharedApplication];
-    [flutterApp terminate:sender];
+    [[NSApplication sharedApplication] terminate:sender];
   };
-  FlutterAppDelegate* appDelegate =
-      (FlutterAppDelegate*)[[NSApplication sharedApplication] delegate];
-  appDelegate.terminationHandler = self;
+  id<NSApplicationDelegate> appDelegate = [[NSApplication sharedApplication] delegate];
+  if ([appDelegate respondsToSelector:@selector(setTerminationHandler:)]) {
+    FlutterAppDelegate* flutterAppDelegate = reinterpret_cast<FlutterAppDelegate*>(appDelegate);
+    flutterAppDelegate.terminationHandler = self;
+  }
   return self;
 }
 
@@ -207,6 +216,11 @@ constexpr char kTextPlainFormat[] = "text/plain";
                              exitType:(FlutterAppExitType)type
                                result:(nullable FlutterResult)result {
   _shouldTerminate = YES;
+  if (![self acceptingRequests]) {
+    // Until the Dart application has signaled that it is ready to handle
+    // termination requests, the app will just terminate when asked.
+    type = kFlutterAppExitTypeRequired;
+  }
   switch (type) {
     case kFlutterAppExitTypeCancelable: {
       FlutterJSONMethodCodec* codec = [FlutterJSONMethodCodec sharedInstance];
@@ -259,6 +273,8 @@ constexpr char kTextPlainFormat[] = "text/plain";
 @interface FlutterEngineRegistrar : NSObject <FlutterPluginRegistrar>
 - (instancetype)initWithPlugin:(nonnull NSString*)pluginKey
                  flutterEngine:(nonnull FlutterEngine*)flutterEngine;
+
+- (NSView*)viewForId:(FlutterViewId)viewId;
 @end
 
 @implementation FlutterEngineRegistrar {
@@ -288,10 +304,10 @@ constexpr char kTextPlainFormat[] = "text/plain";
 }
 
 - (NSView*)view {
-  return [self viewForId:kFlutterDefaultViewId];
+  return [self viewForId:kFlutterImplicitViewId];
 }
 
-- (NSView*)viewForId:(uint64_t)viewId {
+- (NSView*)viewForId:(FlutterViewId)viewId {
   FlutterViewController* controller = [_flutterEngine viewControllerForId:viewId];
   if (controller == nil) {
     return nil;
@@ -309,9 +325,27 @@ constexpr char kTextPlainFormat[] = "text/plain";
   }];
 }
 
+- (void)addApplicationDelegate:(NSObject<FlutterAppLifecycleDelegate>*)delegate {
+  id<NSApplicationDelegate> appDelegate = [[NSApplication sharedApplication] delegate];
+  if ([appDelegate conformsToProtocol:@protocol(FlutterAppLifecycleProvider)]) {
+    id<FlutterAppLifecycleProvider> lifeCycleProvider =
+        static_cast<id<FlutterAppLifecycleProvider>>(appDelegate);
+    [lifeCycleProvider addApplicationLifecycleDelegate:delegate];
+    [_flutterEngine.pluginAppDelegates addPointer:(__bridge void*)delegate];
+  }
+}
+
 - (void)registerViewFactory:(nonnull NSObject<FlutterPlatformViewFactory>*)factory
                      withId:(nonnull NSString*)factoryId {
   [[_flutterEngine platformViewController] registerViewFactory:factory withId:factoryId];
+}
+
+- (NSString*)lookupKeyForAsset:(NSString*)asset {
+  return [FlutterDartProject lookupKeyForAsset:asset];
+}
+
+- (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package {
+  return [FlutterDartProject lookupKeyForAsset:asset fromPackage:package];
 }
 
 @end
@@ -374,7 +408,19 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // A method channel for miscellaneous platform functionality.
   FlutterMethodChannel* _platformChannel;
 
+  FlutterThreadSynchronizer* _threadSynchronizer;
+
+  // The next available view ID.
   int _nextViewId;
+
+  // Whether the application is currently the active application.
+  BOOL _active;
+
+  // Whether any portion of the application is currently visible.
+  BOOL _visible;
+
+  // Proxy to allow plugins, channels to hold a weak reference to the binary messenger (self).
+  FlutterBinaryMessengerRelay* _binaryMessenger;
 }
 
 - (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)project {
@@ -386,19 +432,20 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
       allowHeadlessExecution:(BOOL)allowHeadlessExecution {
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
-
+  _active = NO;
+  _visible = NO;
   _project = project ?: [[FlutterDartProject alloc] init];
   _messengerHandlers = [[NSMutableDictionary alloc] init];
+  _binaryMessenger = [[FlutterBinaryMessengerRelay alloc] initWithParent:self];
+  _pluginAppDelegates = [NSPointerArray weakObjectsPointerArray];
   _currentMessengerConnection = 1;
   _allowHeadlessExecution = allowHeadlessExecution;
   _semanticsEnabled = NO;
+  _binaryMessenger = [[FlutterBinaryMessengerRelay alloc] initWithParent:self];
   _isResponseValid = [[NSMutableArray alloc] initWithCapacity:1];
   [_isResponseValid addObject:@YES];
-  _terminationHandler = [[FlutterEngineTerminationHandler alloc] initWithEngine:self
-                                                                     terminator:nil];
-  // kFlutterDefaultViewId is reserved for the default view.
-  // All IDs above it are for regular views.
-  _nextViewId = kFlutterDefaultViewId + 1;
+  // kFlutterImplicitViewId is reserved for the implicit view.
+  _nextViewId = kFlutterImplicitViewId + 1;
 
   _embedderAPI.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&_embedderAPI);
@@ -413,14 +460,40 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
                            object:nil];
 
   _platformViewController = [[FlutterPlatformViewController alloc] init];
+  _threadSynchronizer = [[FlutterThreadSynchronizer alloc] init];
   [self setUpPlatformViewChannel];
   [self setUpAccessibilityChannel];
   [self setUpNotificationCenterListeners];
+  id<NSApplicationDelegate> appDelegate = [[NSApplication sharedApplication] delegate];
+  if ([appDelegate conformsToProtocol:@protocol(FlutterAppLifecycleProvider)]) {
+    _terminationHandler = [[FlutterEngineTerminationHandler alloc] initWithEngine:self
+                                                                       terminator:nil];
+    id<FlutterAppLifecycleProvider> lifecycleProvider =
+        static_cast<id<FlutterAppLifecycleProvider>>(appDelegate);
+    [lifecycleProvider addApplicationLifecycleDelegate:self];
+  } else {
+    _terminationHandler = nil;
+  }
 
   return self;
 }
 
 - (void)dealloc {
+  id<NSApplicationDelegate> appDelegate = [[NSApplication sharedApplication] delegate];
+  if ([appDelegate conformsToProtocol:@protocol(FlutterAppLifecycleProvider)]) {
+    id<FlutterAppLifecycleProvider> lifecycleProvider =
+        static_cast<id<FlutterAppLifecycleProvider>>(appDelegate);
+    [lifecycleProvider removeApplicationLifecycleDelegate:self];
+
+    // Unregister any plugins that registered as app delegates, since they are not guaranteed to
+    // live after the engine is destroyed, and their delegation registration is intended to be bound
+    // to the engine and its lifetime.
+    for (id<FlutterAppLifecycleDelegate> delegate in _pluginAppDelegates) {
+      if (delegate) {
+        [lifecycleProvider removeApplicationLifecycleDelegate:delegate];
+      }
+    }
+  }
   @synchronized(_isResponseValid) {
     [_isResponseValid removeAllObjects];
     [_isResponseValid addObject:@NO];
@@ -446,6 +519,13 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // The first argument of argv is required to be the executable name.
   std::vector<const char*> argv = {[self.executableName UTF8String]};
   std::vector<std::string> switches = self.switches;
+
+  // Enable Impeller only if specifically asked for from the project or cmdline arguments.
+  if (_project.enableImpeller ||
+      std::find(switches.begin(), switches.end(), "--enable-impeller=true") != switches.end()) {
+    switches.push_back("--enable-impeller=true");
+  }
+
   std::transform(switches.begin(), switches.end(), std::back_inserter(argv),
                  [](const std::string& arg) -> const char* { return arg.c_str(); });
 
@@ -464,10 +544,10 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   flutterArguments.update_semantics_callback2 = [](const FlutterSemanticsUpdate2* update,
                                                    void* user_data) {
     // TODO(dkwingsmt): This callback only supports single-view, therefore it
-    // only operates on the default view. To support multi-view, we need a
+    // only operates on the implicit view. To support multi-view, we need a
     // way to pass in the ID (probably through FlutterSemanticsUpdate).
     FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
-    [[engine viewControllerForId:kFlutterDefaultViewId] updateSemantics:update];
+    [[engine viewControllerForId:kFlutterImplicitViewId] updateSemantics:update];
   };
   flutterArguments.custom_dart_entrypoint = entrypoint.UTF8String;
   flutterArguments.shutdown_dart_vm_when_done = true;
@@ -570,17 +650,17 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   }
 }
 
-- (void)registerViewController:(FlutterViewController*)controller forId:(uint64_t)viewId {
+- (void)registerViewController:(FlutterViewController*)controller forId:(FlutterViewId)viewId {
   NSAssert(controller != nil, @"The controller must not be nil.");
   NSAssert(![controller attached],
            @"The incoming view controller is already attached to an engine.");
   NSAssert([_viewControllers objectForKey:@(viewId)] == nil, @"The requested view ID is occupied.");
-  [controller attachToEngine:self withId:viewId];
+  [controller setUpWithEngine:self viewId:viewId threadSynchronizer:_threadSynchronizer];
   NSAssert(controller.viewId == viewId, @"Failed to assign view ID.");
   [_viewControllers setObject:controller forKey:@(viewId)];
 }
 
-- (void)deregisterViewControllerForId:(uint64_t)viewId {
+- (void)deregisterViewControllerForId:(FlutterViewId)viewId {
   FlutterViewController* oldController = [self viewControllerForId:viewId];
   if (oldController != nil) {
     [oldController detachFromEngine];
@@ -594,7 +674,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   }
 }
 
-- (FlutterViewController*)viewControllerForId:(uint64_t)viewId {
+- (FlutterViewController*)viewControllerForId:(FlutterViewId)viewId {
   FlutterViewController* controller = [_viewControllers objectForKey:@(viewId)];
   NSAssert(controller == nil || controller.viewId == viewId,
            @"The stored controller has unexpected view ID.");
@@ -603,7 +683,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 - (void)setViewController:(FlutterViewController*)controller {
   FlutterViewController* currentController =
-      [_viewControllers objectForKey:@(kFlutterDefaultViewId)];
+      [_viewControllers objectForKey:@(kFlutterImplicitViewId)];
   if (currentController == controller) {
     // From nil to nil, or from non-nil to the same controller.
     return;
@@ -616,26 +696,26 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
              @"If you wanted to create an FlutterViewController and set it to an existing engine, "
              @"you should use FlutterViewController#init(engine:, nibName, bundle:) instead.",
              controller.engine);
-    [self registerViewController:controller forId:kFlutterDefaultViewId];
+    [self registerViewController:controller forId:kFlutterImplicitViewId];
   } else if (currentController != nil && controller == nil) {
-    NSAssert(currentController.viewId == kFlutterDefaultViewId,
+    NSAssert(currentController.viewId == kFlutterImplicitViewId,
              @"The default controller has an unexpected ID %llu", currentController.viewId);
     // From non-nil to nil.
-    [self deregisterViewControllerForId:kFlutterDefaultViewId];
+    [self deregisterViewControllerForId:kFlutterImplicitViewId];
     [self shutDownIfNeeded];
   } else {
     // From non-nil to a different non-nil view controller.
     NSAssert(NO,
              @"Failed to set view controller to the engine: "
-             @"The engine already has a default view controller %@. "
-             @"If you wanted to make the default view render in a different window, "
+             @"The engine already has an implicit view controller %@. "
+             @"If you wanted to make the implicit view render in a different window, "
              @"you should attach the current view controller to the window instead.",
-             [_viewControllers objectForKey:@(kFlutterDefaultViewId)]);
+             [_viewControllers objectForKey:@(kFlutterImplicitViewId)]);
   }
 }
 
 - (FlutterViewController*)viewController {
-  return [self viewControllerForId:kFlutterDefaultViewId];
+  return [self viewControllerForId:kFlutterImplicitViewId];
 }
 
 - (FlutterCompositor*)createFlutterCompositor {
@@ -663,9 +743,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
                                            void* user_data               //
                                         ) {
     // TODO(dkwingsmt): This callback only supports single-view, therefore it
-    // only operates on the default view. To support multi-view, we need a new
+    // only operates on the implicit view. To support multi-view, we need a new
     // callback that also receives a view ID.
-    return reinterpret_cast<flutter::FlutterCompositor*>(user_data)->Present(kFlutterDefaultViewId,
+    return reinterpret_cast<flutter::FlutterCompositor*>(user_data)->Present(kFlutterImplicitViewId,
                                                                              layers, layers_count);
   };
 
@@ -675,15 +755,13 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (id<FlutterBinaryMessenger>)binaryMessenger {
-  // TODO(stuartmorgan): Switch to FlutterBinaryMessengerRelay to avoid plugins
-  // keeping the engine alive.
-  return self;
+  return _binaryMessenger;
 }
 
 #pragma mark - Framework-internal methods
 
 - (void)addViewController:(FlutterViewController*)controller {
-  [self registerViewController:controller forId:kFlutterDefaultViewId];
+  [self registerViewController:controller forId:kFlutterImplicitViewId];
 }
 
 - (void)removeViewController:(nonnull FlutterViewController*)viewController {
@@ -697,29 +775,46 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   return _engine != nullptr;
 }
 
+- (void)updateDisplayConfig:(NSNotification*)notification {
+  [self updateDisplayConfig];
+}
+
 - (void)updateDisplayConfig {
   if (!_engine) {
     return;
   }
 
-  CVDisplayLinkRef displayLinkRef;
-  CGDirectDisplayID mainDisplayID = CGMainDisplayID();
-  CVDisplayLinkCreateWithCGDisplay(mainDisplayID, &displayLinkRef);
-  CVTime nominal = CVDisplayLinkGetNominalOutputVideoRefreshPeriod(displayLinkRef);
-  if (!(nominal.flags & kCVTimeIsIndefinite)) {
-    double refreshRate = static_cast<double>(nominal.timeScale) / nominal.timeValue;
+  std::vector<FlutterEngineDisplay> displays;
+  for (NSScreen* screen : [NSScreen screens]) {
+    CGDirectDisplayID displayID =
+        static_cast<CGDirectDisplayID>([screen.deviceDescription[@"NSScreenNumber"] integerValue]);
 
     FlutterEngineDisplay display;
     display.struct_size = sizeof(display);
-    display.display_id = mainDisplayID;
-    display.refresh_rate = round(refreshRate);
+    display.display_id = displayID;
+    display.single_display = false;
+    display.width = static_cast<size_t>(screen.frame.size.width);
+    display.height = static_cast<size_t>(screen.frame.size.height);
+    display.device_pixel_ratio = screen.backingScaleFactor;
 
-    std::vector<FlutterEngineDisplay> displays = {display};
-    _embedderAPI.NotifyDisplayUpdate(_engine, kFlutterEngineDisplaysUpdateTypeStartup,
-                                     displays.data(), displays.size());
+    CVDisplayLinkRef displayLinkRef = nil;
+    CVReturn error = CVDisplayLinkCreateWithCGDisplay(displayID, &displayLinkRef);
+
+    if (error == 0) {
+      CVTime nominal = CVDisplayLinkGetNominalOutputVideoRefreshPeriod(displayLinkRef);
+      if (!(nominal.flags & kCVTimeIsIndefinite)) {
+        double refreshRate = static_cast<double>(nominal.timeScale) / nominal.timeValue;
+        display.refresh_rate = round(refreshRate);
+      }
+      CVDisplayLinkRelease(displayLinkRef);
+    } else {
+      display.refresh_rate = 0;
+    }
+
+    displays.push_back(display);
   }
-
-  CVDisplayLinkRelease(displayLinkRef);
+  _embedderAPI.NotifyDisplayUpdate(_engine, kFlutterEngineDisplaysUpdateTypeStartup,
+                                   displays.data(), displays.size());
 }
 
 - (void)onSettingsChanged:(NSNotification*)notification {
@@ -753,7 +848,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (void)updateWindowMetricsForViewController:(FlutterViewController*)viewController {
-  if (viewController.viewId != kFlutterDefaultViewId) {
+  if (viewController.viewId != kFlutterImplicitViewId) {
     // TODO(dkwingsmt): The embedder API only supports single-view for now. As
     // embedder APIs are converted to multi-view, this method should support any
     // views.
@@ -768,7 +863,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   CGRect scaledBounds = [view convertRectToBacking:view.bounds];
   CGSize scaledSize = scaledBounds.size;
   double pixelRatio = view.bounds.size.width == 0 ? 1 : scaledSize.width / view.bounds.size.width;
-
+  auto displayId = [view.window.screen.deviceDescription[@"NSScreenNumber"] integerValue];
   const FlutterWindowMetricsEvent windowMetricsEvent = {
       .struct_size = sizeof(windowMetricsEvent),
       .width = static_cast<size_t>(scaledSize.width),
@@ -776,6 +871,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
       .pixel_ratio = pixelRatio,
       .left = static_cast<size_t>(scaledBounds.origin.x),
       .top = static_cast<size_t>(scaledBounds.origin.y),
+      .display_id = static_cast<uint64_t>(displayId),
   };
   _embedderAPI.SendWindowMetricsEvent(_engine, &windowMetricsEvent);
 }
@@ -896,11 +992,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     return;
   }
 
-  NSEnumerator* viewControllerEnumerator = [_viewControllers objectEnumerator];
-  FlutterViewController* nextViewController;
-  while ((nextViewController = [viewControllerEnumerator nextObject])) {
-    [nextViewController.flutterView shutdown];
-  }
+  [_threadSynchronizer shutdown];
+  _threadSynchronizer = nil;
 
   FlutterEngineResult result = _embedderAPI.Deinitialize(_engine);
   if (result != kSuccess) {
@@ -950,6 +1043,14 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
              selector:@selector(applicationWillTerminate:)
                  name:NSApplicationWillTerminateNotification
                object:nil];
+  [center addObserver:self
+             selector:@selector(windowDidChangeScreen:)
+                 name:NSWindowDidChangeScreenNotification
+               object:nil];
+  [center addObserver:self
+             selector:@selector(updateDisplayConfig:)
+                 name:NSApplicationDidChangeScreenParametersNotification
+               object:nil];
 }
 
 - (void)addInternalPlugins {
@@ -957,11 +1058,11 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   [FlutterMouseCursorPlugin registerWithRegistrar:[self registrarForPlugin:@"mousecursor"]];
   [FlutterMenuPlugin registerWithRegistrar:[self registrarForPlugin:@"menu"]];
   _settingsChannel =
-      [FlutterBasicMessageChannel messageChannelWithName:@"flutter/settings"
+      [FlutterBasicMessageChannel messageChannelWithName:kFlutterSettingsChannel
                                          binaryMessenger:self.binaryMessenger
                                                    codec:[FlutterJSONMessageCodec sharedInstance]];
   _platformChannel =
-      [FlutterMethodChannel methodChannelWithName:@"flutter/platform"
+      [FlutterMethodChannel methodChannelWithName:kFlutterPlatformChannel
                                   binaryMessenger:self.binaryMessenger
                                             codec:[FlutterJSONMethodCodec sharedInstance]];
   [_platformChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
@@ -971,6 +1072,16 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 - (void)applicationWillTerminate:(NSNotification*)notification {
   [self shutDownEngine];
+}
+
+- (void)windowDidChangeScreen:(NSNotification*)notification {
+  // Update window metric for all view controllers since the display_id has
+  // changed.
+  NSEnumerator* viewControllerEnumerator = [_viewControllers objectEnumerator];
+  FlutterViewController* nextViewController;
+  while ((nextViewController = [viewControllerEnumerator nextObject])) {
+    [self updateWindowMetricsForViewController:nextViewController];
+  }
 }
 
 - (void)onAccessibilityStatusChanged:(NSNotification*)notification {
@@ -1003,13 +1114,13 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 - (void)announceAccessibilityMessage:(NSString*)message
                         withPriority:(NSAccessibilityPriorityLevel)priority {
   NSAccessibilityPostNotificationWithUserInfo(
-      [self viewControllerForId:kFlutterDefaultViewId].flutterView,
+      [self viewControllerForId:kFlutterImplicitViewId].flutterView,
       NSAccessibilityAnnouncementRequestedNotification,
       @{NSAccessibilityAnnouncementKey : message, NSAccessibilityPriorityKey : @(priority)});
 }
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([call.method isEqualToString:@"SystemNavigator.pop"]) {
-    [NSApp terminate:self];
+    [[NSApplication sharedApplication] terminate:self];
     result(nil);
   } else if ([call.method isEqualToString:@"SystemSound.play"]) {
     [self playSystemSound:call.arguments];
@@ -1022,7 +1133,21 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   } else if ([call.method isEqualToString:@"Clipboard.hasStrings"]) {
     result(@{@"value" : @([self clipboardHasStrings])});
   } else if ([call.method isEqualToString:@"System.exitApplication"]) {
-    [[self terminationHandler] handleRequestAppExitMethodCall:call.arguments result:result];
+    if ([self terminationHandler] == nil) {
+      // If the termination handler isn't set, then either we haven't
+      // initialized it yet, or (more likely) the NSApp delegate isn't a
+      // FlutterAppDelegate, so it can't cancel requests to exit. So, in that
+      // case, just terminate when requested.
+      [NSApp terminate:self];
+      result(nil);
+    } else {
+      [[self terminationHandler] handleRequestAppExitMethodCall:call.arguments result:result];
+    }
+  } else if ([call.method isEqualToString:@"System.initializationComplete"]) {
+    if ([self terminationHandler] != nil) {
+      [self terminationHandler].acceptingRequests = YES;
+    }
+    result(nil);
   } else {
     result(FlutterMethodNotImplemented);
   }
@@ -1062,6 +1187,64 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 - (std::vector<std::string>)switches {
   return flutter::GetSwitchesFromEnvironment();
+}
+
+- (FlutterThreadSynchronizer*)testThreadSynchronizer {
+  return _threadSynchronizer;
+}
+
+#pragma mark - FlutterAppLifecycleDelegate
+
+- (void)setApplicationState:(flutter::AppLifecycleState)state {
+  NSString* nextState =
+      [[NSString alloc] initWithCString:flutter::AppLifecycleStateToString(state)];
+  [self sendOnChannel:kFlutterLifecycleChannel
+              message:[nextState dataUsingEncoding:NSUTF8StringEncoding]];
+}
+
+/**
+ * Called when the |FlutterAppDelegate| gets the applicationWillBecomeActive
+ * notification.
+ */
+- (void)handleWillBecomeActive:(NSNotification*)notification {
+  _active = YES;
+  if (!_visible) {
+    [self setApplicationState:flutter::AppLifecycleState::kHidden];
+  } else {
+    [self setApplicationState:flutter::AppLifecycleState::kResumed];
+  }
+}
+
+/**
+ * Called when the |FlutterAppDelegate| gets the applicationWillResignActive
+ * notification.
+ */
+- (void)handleWillResignActive:(NSNotification*)notification {
+  _active = NO;
+  if (!_visible) {
+    [self setApplicationState:flutter::AppLifecycleState::kHidden];
+  } else {
+    [self setApplicationState:flutter::AppLifecycleState::kInactive];
+  }
+}
+
+/**
+ * Called when the |FlutterAppDelegate| gets the applicationDidUnhide
+ * notification.
+ */
+- (void)handleDidChangeOcclusionState:(NSNotification*)notification {
+  NSApplicationOcclusionState occlusionState = [[NSApplication sharedApplication] occlusionState];
+  if (occlusionState & NSApplicationOcclusionStateVisible) {
+    _visible = YES;
+    if (_active) {
+      [self setApplicationState:flutter::AppLifecycleState::kResumed];
+    } else {
+      [self setApplicationState:flutter::AppLifecycleState::kInactive];
+    }
+  } else {
+    _visible = NO;
+    [self setApplicationState:flutter::AppLifecycleState::kHidden];
+  }
 }
 
 #pragma mark - FlutterBinaryMessenger

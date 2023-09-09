@@ -149,18 +149,6 @@ AccessibilityBridge::GetPendingEvents() const {
   return result;
 }
 
-void AccessibilityBridge::RecreateNodeDelegates() {
-  for (const auto& [node_id, old_platform_node_delegate] : id_wrapper_map_) {
-    std::shared_ptr<FlutterPlatformNodeDelegate> platform_node_delegate =
-        CreateFlutterPlatformNodeDelegate();
-    platform_node_delegate->Init(
-        std::static_pointer_cast<FlutterPlatformNodeDelegate::OwnerBridge>(
-            shared_from_this()),
-        old_platform_node_delegate->GetAXNode());
-    id_wrapper_map_[node_id] = platform_node_delegate;
-  }
-}
-
 void AccessibilityBridge::OnNodeWillBeDeleted(ui::AXTree* tree,
                                               ui::AXNode* node) {}
 
@@ -365,6 +353,13 @@ void AccessibilityBridge::SetStateFromFlutterUpdate(ui::AXNodeData& node_data,
                                                     const SemanticsNode& node) {
   FlutterSemanticsFlag flags = node.flags;
   FlutterSemanticsAction actions = node.actions;
+  if (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagHasExpandedState &&
+      flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsExpanded) {
+    node_data.AddState(ax::mojom::State::kExpanded);
+  } else if (flags &
+             FlutterSemanticsFlag::kFlutterSemanticsFlagHasExpandedState) {
+    node_data.AddState(ax::mojom::State::kCollapsed);
+  }
   if (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField &&
       (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsReadOnly) == 0) {
     node_data.AddState(ax::mojom::State::kEditable);

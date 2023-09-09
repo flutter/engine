@@ -6,11 +6,13 @@
 
 #include "flutter/flow/layers/display_list_layer.h"
 
-#include "flutter/display_list/dl_builder.h"
+#include "flutter/display_list/display_list_builder.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/testing/diff_context_test.h"
 #include "flutter/fml/macros.h"
-#include "flutter/testing/mock_canvas.h"
+
+// TODO(zanderso): https://github.com/flutter/flutter/issues/127701
+// NOLINTBEGIN(bugprone-unchecked-optional-access)
 
 namespace flutter {
 namespace testing {
@@ -69,8 +71,6 @@ TEST_F(DisplayListLayerTest, InvalidDisplayListDies) {
 
 TEST_F(DisplayListLayerTest, SimpleDisplayList) {
   const SkPoint layer_offset = SkPoint::Make(1.5f, -0.5f);
-  const SkMatrix layer_offset_matrix =
-      SkMatrix::Translate(layer_offset.fX, layer_offset.fY);
   const SkRect picture_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   DisplayListBuilder builder;
   builder.DrawRect(picture_bounds, DlPaint());
@@ -84,15 +84,18 @@ TEST_F(DisplayListLayerTest, SimpleDisplayList) {
   EXPECT_EQ(layer->display_list(), display_list.get());
   EXPECT_TRUE(layer->needs_painting(paint_context()));
 
-  layer->Paint(paint_context());
-  auto expected_draw_calls = std::vector(
-      {MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
-       MockCanvas::DrawCall{
-           1, MockCanvas::ConcatMatrixData{SkM44(layer_offset_matrix)}},
-       MockCanvas::DrawCall{1,
-                            MockCanvas::DrawDisplayListData{display_list, 1}},
-       MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}});
-  EXPECT_EQ(mock_canvas().draw_calls(), expected_draw_calls);
+  layer->Paint(display_list_paint_context());
+  DisplayListBuilder expected_builder;
+  /* (DisplayList)layer::Paint */ {
+    expected_builder.Save();
+    {
+      expected_builder.Translate(layer_offset.fX, layer_offset.fY);
+      expected_builder.DrawDisplayList(display_list);
+    }
+    expected_builder.Restore();
+  }
+  EXPECT_TRUE(
+      DisplayListsEQ_Verbose(this->display_list(), expected_builder.Build()));
 }
 
 TEST_F(DisplayListLayerTest, CachingDoesNotChangeCullRect) {
@@ -291,10 +294,68 @@ TEST_F(DisplayListLayerTest, CachedIncompatibleDisplayListOpacityInheritance) {
   EXPECT_TRUE(DisplayListsEQ_Verbose(expected.Build(), this->display_list()));
 }
 
+TEST_F(DisplayListLayerTest, RasterCachePreservesRTree) {
+  const SkRect picture1_bounds = SkRect::MakeXYWH(10, 10, 10, 10);
+  const SkRect picture2_bounds = SkRect::MakeXYWH(15, 15, 10, 10);
+  DisplayListBuilder builder(true);
+  builder.DrawRect(picture1_bounds, DlPaint());
+  builder.DrawRect(picture2_bounds, DlPaint());
+  auto display_list = builder.Build();
+  auto display_list_layer = std::make_shared<DisplayListLayer>(
+      SkPoint::Make(3, 3), display_list, true, false);
+
+  use_skia_raster_cache();
+
+  auto context = preroll_context();
+  {
+    auto mutator = context->state_stack.save();
+    mutator.transform(SkMatrix::Scale(2.0, 2.0));
+    display_list_layer->Preroll(preroll_context());
+    EXPECT_EQ(context->renderable_state_flags, 0);
+
+    // Pump the DisplayListLayer until it is ready to cache its DL
+    display_list_layer->Preroll(preroll_context());
+    display_list_layer->Preroll(preroll_context());
+    display_list_layer->Preroll(preroll_context());
+    LayerTree::TryToRasterCache(*preroll_context()->raster_cached_entries,
+                                &paint_context(), false);
+  }
+
+  DisplayListBuilder expected_root_canvas(true);
+  expected_root_canvas.Scale(2.0, 2.0);
+  ASSERT_TRUE(context->raster_cache->Draw(display_list_layer->caching_key_id(),
+                                          expected_root_canvas, nullptr,
+                                          false));
+  auto root_canvas_dl = expected_root_canvas.Build();
+  const auto root_canvas_rects =
+      root_canvas_dl->rtree()->searchAndConsolidateRects(kGiantRect, true);
+  std::list<SkRect> root_canvas_rects_expected = {
+      SkRect::MakeLTRB(26, 26, 56, 56),
+  };
+  EXPECT_EQ(root_canvas_rects_expected, root_canvas_rects);
+
+  DisplayListBuilder expected_overlay_canvas(true);
+  expected_overlay_canvas.Scale(2.0, 2.0);
+  ASSERT_TRUE(context->raster_cache->Draw(display_list_layer->caching_key_id(),
+                                          expected_overlay_canvas, nullptr,
+                                          true));
+  auto overlay_canvas_dl = expected_overlay_canvas.Build();
+  const auto overlay_canvas_rects =
+      overlay_canvas_dl->rtree()->searchAndConsolidateRects(kGiantRect, true);
+
+  // Same bounds as root canvas, but preserves individual rects.
+  std::list<SkRect> overlay_canvas_rects_expected = {
+      SkRect::MakeLTRB(26, 26, 46, 36),
+      SkRect::MakeLTRB(26, 36, 56, 46),
+      SkRect::MakeLTRB(36, 46, 56, 56),
+  };
+  EXPECT_EQ(overlay_canvas_rects_expected, overlay_canvas_rects);
+};
+
 using DisplayListLayerDiffTest = DiffContextTest;
 
 TEST_F(DisplayListLayerDiffTest, SimpleDisplayList) {
-  auto display_list = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), 1);
+  auto display_list = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60));
 
   MockLayerTree tree1;
   tree1.root()->Add(CreateDisplayListLayer(display_list));
@@ -314,7 +375,7 @@ TEST_F(DisplayListLayerDiffTest, SimpleDisplayList) {
 }
 
 TEST_F(DisplayListLayerDiffTest, FractionalTranslation) {
-  auto display_list = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), 1);
+  auto display_list = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60));
 
   MockLayerTree tree1;
   tree1.root()->Add(
@@ -327,7 +388,7 @@ TEST_F(DisplayListLayerDiffTest, FractionalTranslation) {
 }
 
 TEST_F(DisplayListLayerDiffTest, FractionalTranslationWithRasterCache) {
-  auto display_list = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), 1);
+  auto display_list = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60));
 
   MockLayerTree tree1;
   tree1.root()->Add(
@@ -341,21 +402,25 @@ TEST_F(DisplayListLayerDiffTest, FractionalTranslationWithRasterCache) {
 
 TEST_F(DisplayListLayerDiffTest, DisplayListCompare) {
   MockLayerTree tree1;
-  auto display_list1 = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), 1);
+  auto display_list1 =
+      CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), DlColor::kGreen());
   tree1.root()->Add(CreateDisplayListLayer(display_list1));
 
   auto damage = DiffLayerTree(tree1, MockLayerTree());
   EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(10, 10, 60, 60));
 
   MockLayerTree tree2;
-  auto display_list2 = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), 1);
+  // same DL, same offset
+  auto display_list2 =
+      CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), DlColor::kGreen());
   tree2.root()->Add(CreateDisplayListLayer(display_list2));
 
   damage = DiffLayerTree(tree2, tree1);
   EXPECT_EQ(damage.frame_damage, SkIRect::MakeEmpty());
 
   MockLayerTree tree3;
-  auto display_list3 = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), 1);
+  auto display_list3 =
+      CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), DlColor::kGreen());
   // add offset
   tree3.root()->Add(
       CreateDisplayListLayer(display_list3, SkPoint::Make(10, 10)));
@@ -365,7 +430,8 @@ TEST_F(DisplayListLayerDiffTest, DisplayListCompare) {
 
   MockLayerTree tree4;
   // different color
-  auto display_list4 = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), 2);
+  auto display_list4 =
+      CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), DlColor::kRed());
   tree4.root()->Add(
       CreateDisplayListLayer(display_list4, SkPoint::Make(10, 10)));
 
@@ -570,3 +636,5 @@ TEST_F(DisplayListLayerTest, OverflowCachedDisplayListOpacityInheritance) {
 
 }  // namespace testing
 }  // namespace flutter
+
+// NOLINTEND(bugprone-unchecked-optional-access)

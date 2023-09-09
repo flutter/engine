@@ -54,23 +54,35 @@ std::shared_ptr<Texture> Picture::RenderToTexture(
   // This texture isn't host visible, but we might want to add host visible
   // features to Image someday.
   auto impeller_context = context.GetContext();
+  // Do not use the render target cache as the lifecycle of this texture
+  // will outlive a particular frame.
+  RenderTargetAllocator render_target_allocator =
+      RenderTargetAllocator(impeller_context->GetResourceAllocator());
   RenderTarget target;
   if (impeller_context->GetCapabilities()->SupportsOffscreenMSAA()) {
     target = RenderTarget::CreateOffscreenMSAA(
         *impeller_context,        // context
+        render_target_allocator,  // allocator
         size,                     // size
         "Picture Snapshot MSAA",  // label
         RenderTarget::
-            kDefaultColorAttachmentConfigMSAA,  // color_attachment_config
-        std::nullopt                            // stencil_attachment_config
+            kDefaultColorAttachmentConfigMSAA  // color_attachment_config
+#ifndef FML_OS_ANDROID  // Reduce PSO variants for Vulkan.
+        ,
+        std::nullopt  // stencil_attachment_config
+#endif                // FML_OS_ANDROID
     );
   } else {
     target = RenderTarget::CreateOffscreen(
-        *impeller_context,                            // context
-        size,                                         // size
-        "Picture Snapshot",                           // label
-        RenderTarget::kDefaultColorAttachmentConfig,  // color_attachment_config
+        *impeller_context,                           // context
+        render_target_allocator,                     // allocator
+        size,                                        // size
+        "Picture Snapshot",                          // label
+        RenderTarget::kDefaultColorAttachmentConfig  // color_attachment_config
+#ifndef FML_OS_ANDROID  // Reduce PSO variants for Vulkan.
+        ,
         std::nullopt  // stencil_attachment_config
+#endif                // FML_OS_ANDROID
     );
   }
   if (!target.IsValid()) {

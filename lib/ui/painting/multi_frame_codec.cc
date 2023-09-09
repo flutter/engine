@@ -39,6 +39,7 @@ MultiFrameCodec::State::State(std::shared_ptr<ImageGenerator> generator)
 static void InvokeNextFrameCallback(
     const fml::RefPtr<CanvasImage>& image,
     int duration,
+    const std::string& decode_error,
     std::unique_ptr<DartPersistentValue> callback,
     size_t trace_id) {
   std::shared_ptr<tonic::DartState> dart_state = callback->dart_state().lock();
@@ -49,43 +50,12 @@ static void InvokeNextFrameCallback(
   }
   tonic::DartState::Scope scope(dart_state);
   tonic::DartInvoke(callback->value(),
-                    {tonic::ToDart(image), tonic::ToDart(duration)});
+                    {tonic::ToDart(image), tonic::ToDart(duration),
+                     tonic::ToDart(decode_error)});
 }
 
-// Copied the source bitmap to the destination. If this cannot occur due to
-// running out of memory or the image info not being compatible, returns false.
-static bool CopyToBitmap(SkBitmap* dst,
-                         SkColorType dstColorType,
-                         const SkBitmap& src) {
-  SkPixmap srcPM;
-  if (!src.peekPixels(&srcPM)) {
-    return false;
-  }
-
-  SkBitmap tmpDst;
-  SkImageInfo dstInfo = srcPM.info().makeColorType(dstColorType);
-  if (!tmpDst.setInfo(dstInfo)) {
-    return false;
-  }
-
-  if (!tmpDst.tryAllocPixels()) {
-    return false;
-  }
-
-  SkPixmap dstPM;
-  if (!tmpDst.peekPixels(&dstPM)) {
-    return false;
-  }
-
-  if (!srcPM.readPixels(dstPM)) {
-    return false;
-  }
-
-  dst->swap(tmpDst);
-  return true;
-}
-
-sk_sp<DlImage> MultiFrameCodec::State::GetNextFrameImage(
+std::pair<sk_sp<DlImage>, std::string>
+MultiFrameCodec::State::GetNextFrameImage(
     fml::WeakPtr<GrDirectContext> resourceContext,
     const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch,
     const std::shared_ptr<impeller::Context>& impeller_context,
@@ -97,9 +67,12 @@ sk_sp<DlImage> MultiFrameCodec::State::GetNextFrameImage(
     info = updated;
   }
   if (!bitmap.tryAllocPixels(info)) {
-    FML_LOG(ERROR) << "Failed to allocate memory for bitmap of size "
-                   << info.computeMinByteSize() << "B";
-    return nullptr;
+    std::ostringstream ostr;
+    ostr << "Failed to allocate memory for bitmap of size "
+         << info.computeMinByteSize() << "B";
+    std::string decode_error = ostr.str();
+    FML_LOG(ERROR) << decode_error;
+    return std::make_pair(nullptr, decode_error);
   }
 
   ImageGenerator::FrameInfo frameInfo =
@@ -107,13 +80,12 @@ sk_sp<DlImage> MultiFrameCodec::State::GetNextFrameImage(
 
   const int requiredFrameIndex =
       frameInfo.required_frame.value_or(SkCodec::kNoFrame);
-  std::optional<unsigned int> prior_frame_index = std::nullopt;
 
   if (requiredFrameIndex != SkCodec::kNoFrame) {
-    // We currently assume that frames can only ever depend on the immediately
-    // previous frame, if any. This means that
-    // `DisposalMethod::kRestorePrevious` is not supported.
-    if (lastRequiredFrame_ == nullptr) {
+    // We are here when the frame said |disposal_method| is
+    // `DisposalMethod::kKeep` or `DisposalMethod::kRestorePrevious` and
+    // |requiredFrameIndex| is set to ex-frame or ex-ex-frame.
+    if (!lastRequiredFrame_.has_value()) {
       FML_DLOG(INFO)
           << "Frame " << nextFrameIndex_ << " depends on frame "
           << requiredFrameIndex
@@ -121,10 +93,9 @@ sk_sp<DlImage> MultiFrameCodec::State::GetNextFrameImage(
     } else {
       // Copy the previous frame's output buffer into the current frame as the
       // starting point.
-      if (lastRequiredFrame_->getPixels() &&
-          CopyToBitmap(&bitmap, lastRequiredFrame_->colorType(),
-                       *lastRequiredFrame_)) {
-        prior_frame_index = requiredFrameIndex;
+      bitmap.writePixels(lastRequiredFrame_->pixmap());
+      if (restoreBGColorRect_.has_value()) {
+        bitmap.erase(SK_ColorTRANSPARENT, restoreBGColorRect_.value());
       }
     }
   }
@@ -133,23 +104,53 @@ sk_sp<DlImage> MultiFrameCodec::State::GetNextFrameImage(
   // are already set in accordance with the previous frame's disposal policy.
   if (!generator_->GetPixels(info, bitmap.getPixels(), bitmap.rowBytes(),
                              nextFrameIndex_, requiredFrameIndex)) {
-    FML_LOG(ERROR) << "Could not getPixels for frame " << nextFrameIndex_;
-    return nullptr;
+    std::ostringstream ostr;
+    ostr << "Could not getPixels for frame " << nextFrameIndex_;
+    std::string decode_error = ostr.str();
+    FML_LOG(ERROR) << decode_error;
+    return std::make_pair(nullptr, decode_error);
   }
 
-  // Hold onto this if we need it to decode future frames.
-  if (frameInfo.disposal_method == SkCodecAnimation::DisposalMethod::kKeep ||
-      lastRequiredFrame_) {
-    lastRequiredFrame_ = std::make_unique<SkBitmap>(bitmap);
+  const bool keep_current_frame =
+      frameInfo.disposal_method == SkCodecAnimation::DisposalMethod::kKeep;
+  const bool restore_previous_frame =
+      frameInfo.disposal_method ==
+      SkCodecAnimation::DisposalMethod::kRestorePrevious;
+  const bool previous_frame_available = lastRequiredFrame_.has_value();
+
+  // Store the current frame in `lastRequiredFrame_` if the frame's disposal
+  // method indicates we should do so.
+  // * When the disposal method is "Keep", the stored frame should always be
+  //   overwritten with the new frame we just crafted.
+  // * When the disposal method is "RestorePrevious", the previously stored
+  //   frame should be retained and used as the backdrop for the next frame
+  //   again. If there isn't already a stored frame, that means we haven't
+  //   rendered any frames yet! When this happens, we just fall back to "Keep"
+  //   behavior and store the current frame as the backdrop of the next frame.
+
+  if (keep_current_frame ||
+      (previous_frame_available && !restore_previous_frame)) {
+    // Replace the stored frame. The `lastRequiredFrame_` will get used as the
+    // starting backdrop for the next frame.
+    lastRequiredFrame_ = bitmap;
     lastRequiredFrameIndex_ = nextFrameIndex_;
+  }
+
+  if (frameInfo.disposal_method ==
+      SkCodecAnimation::DisposalMethod::kRestoreBGColor) {
+    restoreBGColorRect_ = frameInfo.disposal_rect;
+  } else {
+    restoreBGColorRect_.reset();
   }
 
 #if IMPELLER_SUPPORTS_RENDERING
   if (is_impeller_enabled_) {
     // This is safe regardless of whether the GPU is available or not because
     // without mipmap creation there is no command buffer encoding done.
-    return ImageDecoderImpeller::UploadTextureToShared(
+    return ImageDecoderImpeller::UploadTextureToStorage(
         impeller_context, std::make_shared<SkBitmap>(bitmap),
+        std::make_shared<fml::SyncSwitch>(),
+        impeller::StorageMode::kHostVisible,
         /*create_mips=*/false);
   }
 #endif  // IMPELLER_SUPPORTS_RENDERING
@@ -177,7 +178,8 @@ sk_sp<DlImage> MultiFrameCodec::State::GetNextFrameImage(
             }
           }));
 
-  return DlImageGPU::Make({skImage, std::move(unref_queue)});
+  return std::make_pair(DlImageGPU::Make({skImage, std::move(unref_queue)}),
+                        std::string());
 }
 
 void MultiFrameCodec::State::GetNextFrameAndInvokeCallback(
@@ -190,7 +192,9 @@ void MultiFrameCodec::State::GetNextFrameAndInvokeCallback(
     const std::shared_ptr<impeller::Context>& impeller_context) {
   fml::RefPtr<CanvasImage> image = nullptr;
   int duration = 0;
-  sk_sp<DlImage> dlImage =
+  sk_sp<DlImage> dlImage;
+  std::string decode_error;
+  std::tie(dlImage, decode_error) =
       GetNextFrameImage(std::move(resourceContext), gpu_disable_sync_switch,
                         impeller_context, std::move(unref_queue));
   if (dlImage) {
@@ -204,11 +208,12 @@ void MultiFrameCodec::State::GetNextFrameAndInvokeCallback(
 
   // The static leak checker gets confused by the use of fml::MakeCopyable.
   // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
-  ui_task_runner->PostTask(fml::MakeCopyable([callback = std::move(callback),
-                                              image = std::move(image),
-                                              duration, trace_id]() mutable {
-    InvokeNextFrameCallback(image, duration, std::move(callback), trace_id);
-  }));
+  ui_task_runner->PostTask(fml::MakeCopyable(
+      [callback = std::move(callback), image = std::move(image),
+       decode_error = std::move(decode_error), duration, trace_id]() mutable {
+        InvokeNextFrameCallback(image, duration, decode_error,
+                                std::move(callback), trace_id);
+      }));
 }
 
 Dart_Handle MultiFrameCodec::getNextFrame(Dart_Handle callback_handle) {
@@ -224,12 +229,14 @@ Dart_Handle MultiFrameCodec::getNextFrame(Dart_Handle callback_handle) {
   const auto& task_runners = dart_state->GetTaskRunners();
 
   if (state_->frameCount_ == 0) {
-    FML_LOG(ERROR) << "Could not provide any frame.";
+    std::string decode_error("Could not provide any frame.");
+    FML_LOG(ERROR) << decode_error;
     task_runners.GetUITaskRunner()->PostTask(fml::MakeCopyable(
-        [trace_id,
+        [trace_id, decode_error = std::move(decode_error),
          callback = std::make_unique<DartPersistentValue>(
              tonic::DartState::Current(), callback_handle)]() mutable {
-          InvokeNextFrameCallback(nullptr, 0, std::move(callback), trace_id);
+          InvokeNextFrameCallback(nullptr, 0, decode_error, std::move(callback),
+                                  trace_id);
         }));
     return Dart_Null();
   }

@@ -24,11 +24,16 @@ FilterInput::Variant FilterContentsFilterInput::GetInput() const {
 std::optional<Snapshot> FilterContentsFilterInput::GetSnapshot(
     const std::string& label,
     const ContentContext& renderer,
-    const Entity& entity) const {
+    const Entity& entity,
+    std::optional<Rect> coverage_limit) const {
   if (!snapshot_.has_value()) {
     snapshot_ = filter_->RenderToSnapshot(
-        renderer, entity, std::nullopt, true,
-        SPrintF("Filter to %s Filter Snapshot", label.c_str()));
+        renderer,        // renderer
+        entity,          // entity
+        coverage_limit,  // coverage_limit
+        std::nullopt,    // sampler_descriptor
+        true,            // msaa_enabled
+        SPrintF("Filter to %s Filter Snapshot", label.c_str()));  // label
   }
   return snapshot_;
 }
@@ -45,6 +50,21 @@ Matrix FilterContentsFilterInput::GetLocalTransform(
 
 Matrix FilterContentsFilterInput::GetTransform(const Entity& entity) const {
   return filter_->GetTransform(entity.GetTransformation());
+}
+
+void FilterContentsFilterInput::PopulateGlyphAtlas(
+    const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
+    Scalar scale) {
+  filter_->PopulateGlyphAtlas(lazy_glyph_atlas, scale);
+}
+
+bool FilterContentsFilterInput::IsLeaf() const {
+  return false;
+}
+
+void FilterContentsFilterInput::SetLeafInputs(
+    const FilterInput::Vector& inputs) {
+  filter_->SetLeafInputs(inputs);
 }
 
 }  // namespace impeller

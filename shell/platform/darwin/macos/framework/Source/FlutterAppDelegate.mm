@@ -8,6 +8,8 @@
 #import <AppKit/AppKit.h>
 
 #include "flutter/fml/logging.h"
+#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppLifecycleDelegate.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterAppLifecycleDelegate_Internal.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
 @interface FlutterAppDelegate ()
@@ -17,17 +19,15 @@
  */
 - (NSString*)applicationName;
 
+@property(nonatomic) FlutterAppLifecycleRegistrar* lifecycleRegistrar;
 @end
 
 @implementation FlutterAppDelegate
 
-// TODO(gspencergoog): Implement application lifecycle forwarding to plugins here, as is done
-// on iOS. Currently macOS plugins don't have access to lifecycle messages.
-// https://github.com/flutter/flutter/issues/30735
-
 - (instancetype)init {
   if (self = [super init]) {
     _terminationHandler = nil;
+    _lifecycleRegistrar = [[FlutterAppLifecycleRegistrar alloc] init];
   }
   return self;
 }
@@ -42,6 +42,16 @@
   }
 }
 
+#pragma mark - Delegate handling
+
+- (void)addApplicationLifecycleDelegate:(NSObject<FlutterAppLifecycleDelegate>*)delegate {
+  [self.lifecycleRegistrar addDelegate:delegate];
+}
+
+- (void)removeApplicationLifecycleDelegate:(NSObject<FlutterAppLifecycleDelegate>*)delegate {
+  [self.lifecycleRegistrar removeDelegate:delegate];
+}
+
 #pragma mark Private Methods
 
 - (NSString*)applicationName {
@@ -53,9 +63,20 @@
   return applicationName;
 }
 
+#pragma mark NSApplicationDelegate
+
+- (void)application:(NSApplication*)application openURLs:(NSArray<NSURL*>*)urls {
+  for (NSObject<FlutterAppLifecycleDelegate>* delegate in self.lifecycleRegistrar.delegates) {
+    if ([delegate respondsToSelector:@selector(handleOpenURLs:)] &&
+        [delegate handleOpenURLs:urls]) {
+      return;
+    }
+  }
+}
+
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication* _Nonnull)sender {
   // If the framework has already told us to terminate, terminate immediately.
-  if ([[self terminationHandler] shouldTerminate]) {
+  if ([self terminationHandler] == nil || [[self terminationHandler] shouldTerminate]) {
     return NSTerminateNow;
   }
 

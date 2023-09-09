@@ -41,9 +41,13 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
 
   auto& host_buffer = pass.GetTransientsBuffer();
 
-  auto src_snapshot =
-      child_contents_->RenderToSnapshot(renderer, entity, std::nullopt, true,
-                                        "FramebufferBlendContents Snapshot");
+  auto src_snapshot = child_contents_->RenderToSnapshot(
+      renderer,                                    // renderer
+      entity,                                      // entity
+      Rect::MakeSize(pass.GetRenderTargetSize()),  // coverage_limit
+      std::nullopt,                                // sampler_descriptor
+      true,                                        // msaa_enabled
+      "FramebufferBlendContents Snapshot");        // label
   if (!src_snapshot.has_value()) {
     return true;
   }
@@ -74,7 +78,7 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
   options.blend_mode = BlendMode::kSource;
 
   Command cmd;
-  cmd.label = "Framebuffer Advanced Blend Filter";
+  DEBUG_COMMAND_INFO(cmd, "Framebuffer Advanced Blend Filter");
   cmd.BindVertices(vtx_buffer);
   cmd.stencil_reference = entity.GetStencilDepth();
 
@@ -129,6 +133,7 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
   }
 
   VS::FrameInfo frame_info;
+  FS::FragInfo frag_info;
 
   auto src_sampler_descriptor = src_snapshot->sampler_descriptor;
   if (!renderer.GetDeviceCapabilities().SupportsDecalTileMode()) {
@@ -144,11 +149,12 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
   frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    src_snapshot->transform;
   frame_info.src_y_coord_scale = src_snapshot->texture->GetYCoordScale();
+  VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
 
-  auto uniform_view = host_buffer.EmplaceUniform(frame_info);
-  VS::BindFrameInfo(cmd, uniform_view);
+  frag_info.src_input_alpha = src_snapshot->opacity;
+  FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
 
-  return pass.AddCommand(cmd);
+  return pass.AddCommand(std::move(cmd));
 }
 
 }  // namespace impeller

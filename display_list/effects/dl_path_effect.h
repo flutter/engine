@@ -9,7 +9,7 @@
 
 #include "flutter/display_list/dl_attributes.h"
 #include "flutter/fml/logging.h"
-#include "include/core/SkRect.h"
+#include "third_party/skia/include/core/SkRect.h"
 
 namespace flutter {
 
@@ -114,7 +114,7 @@ class DlDashPathEffect final : public DlPathEffect {
   int count_;
   SkScalar phase_;
 
-  friend class DisplayListBuilder;
+  friend class DlOpRecorder;
   friend class DlPathEffect;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(DlDashPathEffect);

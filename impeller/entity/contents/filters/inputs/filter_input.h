@@ -10,12 +10,12 @@
 #include <vector>
 
 #include "impeller/entity/contents/contents.h"
+#include "impeller/entity/entity.h"
 #include "impeller/geometry/rect.h"
 
 namespace impeller {
 
 class ContentContext;
-class Entity;
 class FilterContents;
 
 /// `FilterInput` is a lazy/single eval `Snapshot` which may be shared across
@@ -32,7 +32,8 @@ class FilterInput {
   using Vector = std::vector<FilterInput::Ref>;
   using Variant = std::variant<std::shared_ptr<FilterContents>,
                                std::shared_ptr<Contents>,
-                               std::shared_ptr<Texture>>;
+                               std::shared_ptr<Texture>,
+                               Rect>;
 
   virtual ~FilterInput();
 
@@ -45,9 +46,11 @@ class FilterInput {
 
   virtual Variant GetInput() const = 0;
 
-  virtual std::optional<Snapshot> GetSnapshot(const std::string& label,
-                                              const ContentContext& renderer,
-                                              const Entity& entity) const = 0;
+  virtual std::optional<Snapshot> GetSnapshot(
+      const std::string& label,
+      const ContentContext& renderer,
+      const Entity& entity,
+      std::optional<Rect> coverage_limit = std::nullopt) const = 0;
 
   std::optional<Rect> GetLocalCoverage(const Entity& entity) const;
 
@@ -60,6 +63,20 @@ class FilterInput {
   /// @brief  Get the transform of this `FilterInput`. This is equivalent to
   ///         calling `entity.GetTransformation() * GetLocalTransform()`.
   virtual Matrix GetTransform(const Entity& entity) const;
+
+  /// @see    `Contents::PopulateGlyphAtlas`
+  virtual void PopulateGlyphAtlas(
+      const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
+      Scalar scale);
+
+  /// @brief  Returns `true` unless this input is a `FilterInput`, which may
+  ///         take other inputs.
+  virtual bool IsLeaf() const;
+
+  /// @brief  Replaces the inputs of all leaf `FilterContents` with a new set
+  ///         of `inputs`.
+  /// @see    `FilterInput::IsLeaf`
+  virtual void SetLeafInputs(const FilterInput::Vector& inputs);
 };
 
 }  // namespace impeller

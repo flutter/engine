@@ -11,6 +11,8 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:web_engine_tester/golden_tester.dart';
 
+import '../common/fake_asset_manager.dart';
+import '../common/test_initialization.dart';
 import 'utils.dart';
 
 void main() {
@@ -40,15 +42,26 @@ const String kVoronoiShaderSksl = r'''
 ''';
 
 Future<void> testMain() async {
-  setUpUiTest();
+  setUpUnitTests(
+    setUpTestViewDimensions: false,
+  );
 
   const ui.Rect region = ui.Rect.fromLTWH(0, 0, 300, 300);
 
-  test('fragment shader', () async {
-    fakeAssetManager.setAsset(
+  late FakeAssetScope assetScope;
+  setUp(() {
+    assetScope = fakeAssetManager.pushAssetScope();
+    assetScope.setAsset(
       'voronoi_shader',
-      Uint8List.fromList(utf8.encode(kVoronoiShaderSksl)).buffer.asByteData()
+      ByteData.sublistView(utf8.encode(kVoronoiShaderSksl))
     );
+  });
+
+  tearDown(() {
+    fakeAssetManager.popAssetScope(assetScope);
+  });
+
+  test('fragment shader', () async {
     final ui.FragmentProgram program = await renderer.createFragmentProgram('voronoi_shader');
     final ui.FragmentShader shader = program.fragmentShader();
 

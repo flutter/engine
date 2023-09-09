@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "flutter/common/constants.h"
+#include "flutter/display_list/skia/dl_sk_dispatcher.h"
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/paint_utils.h"
@@ -17,18 +18,24 @@
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkImage.h"
-#include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 
 namespace flutter {
 
 RasterCacheResult::RasterCacheResult(sk_sp<DlImage> image,
                                      const SkRect& logical_rect,
-                                     const char* type)
-    : image_(std::move(image)), logical_rect_(logical_rect), flow_(type) {}
+                                     const char* type,
+                                     sk_sp<const DlRTree> rtree)
+    : image_(std::move(image)),
+      logical_rect_(logical_rect),
+      flow_(type),
+      rtree_(std::move(rtree)) {}
 
-void RasterCacheResult::draw(DlCanvas& canvas, const DlPaint* paint) const {
+void RasterCacheResult::draw(DlCanvas& canvas,
+                             const DlPaint* paint,
+                             bool preserve_rtree) const {
   DlAutoCanvasRestore auto_restore(&canvas, true);
 
   auto matrix = RasterCacheUtil::GetIntegralTransCTM(canvas.GetTransform());
@@ -38,8 +45,27 @@ void RasterCacheResult::draw(DlCanvas& canvas, const DlPaint* paint) const {
              std::abs(bounds.height() - image_->dimensions().height()) <= 1);
   canvas.TransformReset();
   flow_.Step();
-  canvas.DrawImage(image_, {bounds.fLeft, bounds.fTop},
-                   DlImageSampling::kNearestNeighbor, paint);
+  if (!preserve_rtree || !rtree_) {
+    canvas.DrawImage(image_, {bounds.fLeft, bounds.fTop},
+                     DlImageSampling::kNearestNeighbor, paint);
+  } else {
+    // On some platforms RTree from overlay layers is used for unobstructed
+    // platform views and hit testing. To preserve the RTree raster cache must
+    // paint individual rects instead of the whole image.
+    auto rects = rtree_->region().getRects(true);
+
+    canvas.Translate(bounds.fLeft, bounds.fTop);
+
+    SkRect rtree_bounds =
+        RasterCacheUtil::GetRoundedOutDeviceBounds(rtree_->bounds(), matrix);
+    for (auto rect : rects) {
+      SkRect device_rect = RasterCacheUtil::GetRoundedOutDeviceBounds(
+          SkRect::Make(rect), matrix);
+      device_rect.offset(-rtree_bounds.fLeft, -rtree_bounds.fTop);
+      canvas.DrawImageRect(image_, device_rect, device_rect,
+                           DlImageSampling::kNearestNeighbor, paint);
+    }
+  }
 }
 
 RasterCache::RasterCache(size_t access_threshold,
@@ -51,6 +77,7 @@ RasterCache::RasterCache(size_t access_threshold,
 /// @note Procedure doesn't copy all closures.
 std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
     const RasterCache::Context& context,
+    sk_sp<const DlRTree> rtree,
     const std::function<void(DlCanvas*)>& draw_function,
     const std::function<void(DlCanvas*, const SkRect& rect)>& draw_checkerboard)
     const {
@@ -64,9 +91,9 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
 
   sk_sp<SkSurface> surface =
       context.gr_context
-          ? SkSurface::MakeRenderTarget(context.gr_context,
-                                        skgpu::Budgeted::kYes, image_info)
-          : SkSurface::MakeRaster(image_info);
+          ? SkSurfaces::RenderTarget(context.gr_context, skgpu::Budgeted::kYes,
+                                     image_info)
+          : SkSurfaces::Raster(image_info);
 
   if (!surface) {
     return nullptr;
@@ -74,6 +101,7 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
 
   DlSkCanvasAdapter canvas(surface->getCanvas());
   canvas.Clear(DlColor::kTransparent());
+
   canvas.Translate(-dest_rect.left(), -dest_rect.top());
   canvas.Transform(matrix);
   draw_function(&canvas);
@@ -83,19 +111,21 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
   }
 
   auto image = DlImage::Make(surface->makeImageSnapshot());
-  return std::make_unique<RasterCacheResult>(image, context.logical_rect,
-                                             context.flow_type);
+  return std::make_unique<RasterCacheResult>(
+      image, context.logical_rect, context.flow_type, std::move(rtree));
 }
 
 bool RasterCache::UpdateCacheEntry(
     const RasterCacheKeyID& id,
     const Context& raster_cache_context,
-    const std::function<void(DlCanvas*)>& render_function) const {
+    const std::function<void(DlCanvas*)>& render_function,
+    sk_sp<const DlRTree> rtree) const {
   RasterCacheKey key = RasterCacheKey(id, raster_cache_context.matrix);
   Entry& entry = cache_[key];
   if (!entry.image) {
     void (*func)(DlCanvas*, const SkRect& rect) = DrawCheckerboard;
-    entry.image = Rasterize(raster_cache_context, render_function, func);
+    entry.image = Rasterize(raster_cache_context, std::move(rtree),
+                            render_function, func);
     if (entry.image != nullptr) {
       switch (id.type()) {
         case RasterCacheKeyType::kDisplayList: {
@@ -145,7 +175,8 @@ bool RasterCache::HasEntry(const RasterCacheKeyID& id,
 
 bool RasterCache::Draw(const RasterCacheKeyID& id,
                        DlCanvas& canvas,
-                       const DlPaint* paint) const {
+                       const DlPaint* paint,
+                       bool preserve_rtree) const {
   auto it = cache_.find(RasterCacheKey(id, canvas.GetTransform()));
   if (it == cache_.end()) {
     return false;
@@ -154,7 +185,7 @@ bool RasterCache::Draw(const RasterCacheKeyID& id,
   Entry& entry = it->second;
 
   if (entry.image) {
-    entry.image->draw(canvas, paint);
+    entry.image->draw(canvas, paint, preserve_rtree);
     return true;
   }
 

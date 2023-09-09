@@ -105,19 +105,12 @@ Future<void> get accessibilityFeaturesChanged {
   return featuresChanged.future;
 }
 
-class SemanticsActionData {
-  const SemanticsActionData(this.id, this.action, this.args);
-  final int id;
-  final SemanticsAction action;
-  final ByteData? args;
-}
-
-Future<SemanticsActionData> get semanticsAction {
-  final Completer<SemanticsActionData> actionReceived =
-      Completer<SemanticsActionData>();
-  PlatformDispatcher.instance.onSemanticsAction =
-      (int id, SemanticsAction action, ByteData? args) {
-    actionReceived.complete(SemanticsActionData(id, action, args));
+Future<SemanticsActionEvent> get semanticsActionEvent {
+  final Completer<SemanticsActionEvent> actionReceived =
+      Completer<SemanticsActionEvent>();
+  PlatformDispatcher.instance.onSemanticsActionEvent =
+      (SemanticsActionEvent action) {
+    actionReceived.complete(action);
   };
   return actionReceived.future;
 }
@@ -289,16 +282,92 @@ void a11y_main() async {
   signalNativeTest();
 
   // 6: Await semantics action from embedder.
-  final SemanticsActionData data = await semanticsAction;
+  final SemanticsActionEvent data = await semanticsActionEvent;
   final List<int> actionArgs = <int>[
-    data.args!.getInt8(0),
-    data.args!.getInt8(1)
+    (data.arguments! as ByteData).getInt8(0),
+    (data.arguments! as ByteData).getInt8(1)
   ];
-  notifySemanticsAction(data.id, data.action.index, actionArgs);
+  notifySemanticsAction(data.nodeId, data.type.index, actionArgs);
 
   // 7: Await semantics disabled from embedder.
   await semanticsChanged;
   notifySemanticsEnabled(PlatformDispatcher.instance.semanticsEnabled);
+}
+
+@pragma('vm:entry-point')
+void a11y_string_attributes() async {
+  // 1: Wait until semantics are enabled.
+  if (!PlatformDispatcher.instance.semanticsEnabled) {
+    await semanticsChanged;
+  }
+
+  // 2: Update semantics with string attributes.
+  final SemanticsUpdateBuilder builder = SemanticsUpdateBuilder()
+    ..updateNode(
+      id: 42,
+      label: 'What is the meaning of life?',
+      labelAttributes: <StringAttribute>[
+        LocaleStringAttribute(
+          range: TextRange(start: 0, end: 'What is the meaning of life?'.length),
+          locale: Locale('en'),
+        ),
+        SpellOutStringAttribute(
+          range: TextRange(start: 0, end: 1),
+        ),
+      ],
+      rect: Rect.fromLTRB(0.0, 0.0, 10.0, 10.0),
+      transform: kTestTransform,
+      childrenInTraversalOrder: Int32List.fromList(<int>[84, 96]),
+      childrenInHitTestOrder: Int32List.fromList(<int>[96, 84]),
+      actions: 0,
+      flags: 0,
+      maxValueLength: 0,
+      currentValueLength: 0,
+      textSelectionBase: 0,
+      textSelectionExtent: 0,
+      platformViewId: 0,
+      scrollChildren: 0,
+      scrollIndex: 0,
+      scrollPosition: 0.0,
+      scrollExtentMax: 0.0,
+      scrollExtentMin: 0.0,
+      elevation: 0.0,
+      thickness: 0.0,
+      hint: "It's a number",
+      hintAttributes: <StringAttribute>[
+        LocaleStringAttribute(
+          range: TextRange(start: 0, end: 1),
+          locale: Locale('en'),
+        ),
+        LocaleStringAttribute(
+          range: TextRange(start: 2, end: 3),
+          locale: Locale('fr'),
+        ),
+      ],
+      value: '42',
+      valueAttributes: <StringAttribute>[
+        LocaleStringAttribute(
+          range: TextRange(start: 0, end: '42'.length),
+          locale: Locale('en', 'US'),
+        ),
+      ],
+      increasedValue: '43',
+      increasedValueAttributes: <StringAttribute>[
+        SpellOutStringAttribute(
+          range: TextRange(start: 0, end: 1),
+        ),
+        SpellOutStringAttribute(
+          range: TextRange(start: 1, end: 2),
+        ),
+      ],
+      decreasedValue: '41',
+      decreasedValueAttributes: <StringAttribute>[],
+      tooltip: 'tooltip',
+      additionalActions: Int32List(0),
+    );
+
+  PlatformDispatcher.instance.views.first.updateSemantics(builder.build());
+  signalNativeTest();
 }
 
 @pragma('vm:entry-point')

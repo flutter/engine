@@ -107,8 +107,6 @@ source_set("flutter_windows_source") {
     "windows_lifecycle_manager.h",
     "windows_proc_table.cc",
     "windows_proc_table.h",
-    "windows_registry.cc",
-    "windows_registry.h",
     "windowsx_shim.h",
   ]
 
@@ -129,6 +127,7 @@ source_set("flutter_windows_source") {
   public_deps = [
     "//flutter/fml:string_conversion",
     "//flutter/shell/platform/common:common_cpp_accessibility",
+    "//flutter/shell/platform/common:common_cpp_enums",
   ]
 
   deps = [
@@ -222,6 +221,7 @@ executable("flutter_windows_unittests") {
     "text_input_plugin_unittest.cc",
     "window_proc_delegate_manager_unittests.cc",
     "window_unittests.cc",
+    "windows_lifecycle_manager_unittests.cc",
   ]
 
   configs +=

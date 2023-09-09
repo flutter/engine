@@ -32,50 +32,6 @@ extern const intptr_t kPlatformStrongDillSize;
 
 static const char* kApplicationKernelSnapshotFileName = "kernel_blob.bin";
 
-// Finds a bundle with the named `bundleID` within `searchURL`.
-//
-// Returns `nil` if the bundle cannot be found or if errors are encountered.
-NSBundle* FLTFrameworkBundleInternal(NSString* bundleID, NSURL* searchURL) {
-  NSDirectoryEnumerator<NSURL*>* frameworkEnumerator = [NSFileManager.defaultManager
-                 enumeratorAtURL:searchURL
-      includingPropertiesForKeys:nil
-                         options:NSDirectoryEnumerationSkipsSubdirectoryDescendants |
-                                 NSDirectoryEnumerationSkipsHiddenFiles
-                    // Skip directories where errors are encountered.
-                    errorHandler:nil];
-
-  for (NSURL* candidate in frameworkEnumerator) {
-    NSBundle* bundle = [NSBundle bundleWithURL:candidate];
-    if ([bundle.bundleIdentifier isEqualToString:bundleID]) {
-      return bundle;
-    }
-  }
-  return nil;
-}
-
-// Finds a bundle with the named `bundleID`.
-//
-// `+[NSBundle bundleWithIdentifier:]` is slow, and can take in the order of
-// tens of milliseconds in a minimal flutter app, and closer to 100 milliseconds
-// in a medium sized Flutter app on an iPhone 13. It is likely that the slowness
-// comes from having to traverse and load all bundles known to the process.
-// Using `+[NSBundle allframeworks]` and filtering also suffers from the same
-// problem.
-//
-// This implementation is an optimization to first limit the search space to
-// `+[NSBundle privateFrameworksURL]` of the main bundle, which is usually where
-// frameworks used by this file are placed. If the desired bundle cannot be
-// found here, the implementation falls back to
-// `+[NSBundle bundleWithIdentifier:]`.
-NS_INLINE NSBundle* FLTFrameworkBundleWithIdentifier(NSString* bundleID) {
-  NSBundle* bundle = FLTFrameworkBundleInternal(bundleID, NSBundle.mainBundle.privateFrameworksURL);
-  if (bundle != nil) {
-    return bundle;
-  }
-  // Fallback to slow implementation.
-  return [NSBundle bundleWithIdentifier:bundleID];
-}
-
 flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* processInfoOrNil) {
   auto command_line = flutter::CommandLineFromNSProcessInfo(processInfoOrNil);
 
@@ -85,15 +41,12 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
   // 3. Settings from the NSBundle with the default bundle ID.
   // 4. Settings from the main NSBundle and default values.
 
-  NSBundle* mainBundle = [NSBundle mainBundle];
+  NSBundle* mainBundle = FLTGetApplicationBundle();
   NSBundle* engineBundle = [NSBundle bundleForClass:[FlutterViewController class]];
 
   bool hasExplicitBundle = bundle != nil;
   if (bundle == nil) {
     bundle = FLTFrameworkBundleWithIdentifier([FlutterDartProject defaultBundleIdentifier]);
-  }
-  if (bundle == nil) {
-    bundle = mainBundle;
   }
 
   auto settings = flutter::SettingsFromCommandLine(command_line);
@@ -166,29 +119,24 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
 
   // Checks to see if the flutter assets directory is already present.
   if (settings.assets_path.empty()) {
-    NSString* assetsName = [FlutterDartProject flutterAssetsName:bundle];
-    NSString* assetsPath = [bundle pathForResource:assetsName ofType:@""];
+    NSURL* assetsURL = FLTAssetsURLFromBundle(bundle);
 
-    if (assetsPath.length == 0) {
-      assetsPath = [mainBundle pathForResource:assetsName ofType:@""];
-    }
-
-    if (assetsPath.length == 0) {
-      NSLog(@"Failed to find assets path for \"%@\"", assetsName);
+    if (!assetsURL) {
+      NSLog(@"Failed to find assets path for 1\"%@\"", bundle);
     } else {
-      settings.assets_path = assetsPath.UTF8String;
+      settings.assets_path = assetsURL.path.UTF8String;
 
       // Check if there is an application kernel snapshot in the assets directory we could
       // potentially use.  Looking for the snapshot makes sense only if we have a VM that can use
       // it.
       if (!flutter::DartVM::IsRunningPrecompiledCode()) {
         NSURL* applicationKernelSnapshotURL =
-            [NSURL URLWithString:@(kApplicationKernelSnapshotFileName)
-                   relativeToURL:[NSURL fileURLWithPath:assetsPath]];
-        if ([[NSFileManager defaultManager] fileExistsAtPath:applicationKernelSnapshotURL.path]) {
+            [assetsURL URLByAppendingPathComponent:@(kApplicationKernelSnapshotFileName)];
+        NSError* error;
+        if ([applicationKernelSnapshotURL checkResourceIsReachableAndReturnError:&error]) {
           settings.application_kernel_asset = applicationKernelSnapshotURL.path.UTF8String;
         } else {
-          NSLog(@"Failed to find snapshot: %@", applicationKernelSnapshotURL.path);
+          NSLog(@"Failed to find snapshot at %@: %@", applicationKernelSnapshotURL.path, error);
         }
       }
     }
@@ -200,11 +148,16 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
   settings.may_insecurely_connect_to_all_domains = true;
   settings.domain_network_policy = "";
 
-  // Whether to enable Impeller.
+  // Whether to enable wide gamut colors.
+#if TARGET_OS_SIMULATOR
+  // As of Xcode 14.1, the wide gamut surface pixel formats are not supported by
+  // the simulator.
+  settings.enable_wide_gamut = false;
+#else
   NSNumber* nsEnableWideGamut = [mainBundle objectForInfoDictionaryKey:@"FLTEnableWideGamut"];
-  // TODO(gaaclarke): Make this value `on` by default (pending memory audit).
-  BOOL enableWideGamut = nsEnableWideGamut ? nsEnableWideGamut.boolValue : NO;
+  BOOL enableWideGamut = nsEnableWideGamut ? nsEnableWideGamut.boolValue : YES;
   settings.enable_wide_gamut = enableWideGamut;
+#endif
 
   // TODO(dnfield): We should reverse the order for all these settings so that command line options
   // are preferred to plist settings. https://github.com/flutter/flutter/issues/124049
@@ -285,6 +238,11 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
 @implementation FlutterDartProject {
   flutter::Settings _settings;
 }
+
+// This property is marked unavailable on iOS in the common header.
+// That doesn't seem to be enough to prevent this property from being synthesized.
+// Mark dynamic to avoid warnings.
+@dynamic dartEntrypointArguments;
 
 #pragma mark - Override base class designated initializers
 
@@ -373,9 +331,7 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
   if (bundle == nil) {
     bundle = FLTFrameworkBundleWithIdentifier([FlutterDartProject defaultBundleIdentifier]);
   }
-  if (bundle == nil) {
-    bundle = [NSBundle mainBundle];
-  }
+
   NSString* flutterAssetsName = [bundle objectForInfoDictionaryKey:@"FLTAssetsPath"];
   if (flutterAssetsName == nil) {
     flutterAssetsName = @"Frameworks/App.framework/flutter_assets";

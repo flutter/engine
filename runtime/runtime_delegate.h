@@ -21,13 +21,12 @@ namespace flutter {
 
 class RuntimeDelegate {
  public:
-  virtual bool ImplicitViewEnabled() = 0;
-
   virtual std::string DefaultRouteName() = 0;
 
   virtual void ScheduleFrame(bool regenerate_layer_tree = true) = 0;
 
-  virtual void Render(std::shared_ptr<flutter::LayerTree> layer_tree) = 0;
+  virtual void Render(std::unique_ptr<flutter::LayerTree> layer_tree,
+                      float device_pixel_ratio) = 0;
 
   virtual void UpdateSemantics(SemanticsNodeUpdates update,
                                CustomAccessibilityActionUpdates actions) = 0;
@@ -54,6 +53,9 @@ class RuntimeDelegate {
 
   virtual std::weak_ptr<PlatformMessageHandler> GetPlatformMessageHandler()
       const = 0;
+
+  virtual double GetScaledFontSize(double unscaled_font_size,
+                                   int configuration_id) const = 0;
 
  protected:
   virtual ~RuntimeDelegate();

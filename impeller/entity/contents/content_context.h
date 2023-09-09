@@ -8,6 +8,7 @@
 #include <optional>
 #include <unordered_map>
 
+#include "flutter/fml/build_config.h"
 #include "flutter/fml/hash_combine.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
@@ -16,7 +17,8 @@
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/pipeline.h"
-#include "impeller/scene/scene_context.h"
+#include "impeller/renderer/render_target.h"
+#include "impeller/typographer/typographer_context.h"
 
 #ifdef IMPELLER_DEBUG
 #include "impeller/entity/checkerboard.frag.h"
@@ -27,20 +29,23 @@
 #include "impeller/entity/blend.vert.h"
 #include "impeller/entity/border_mask_blur.frag.h"
 #include "impeller/entity/border_mask_blur.vert.h"
+#include "impeller/entity/clip.frag.h"
+#include "impeller/entity/clip.vert.h"
 #include "impeller/entity/color_matrix_color_filter.frag.h"
 #include "impeller/entity/color_matrix_color_filter.vert.h"
 #include "impeller/entity/conical_gradient_fill.frag.h"
 #include "impeller/entity/glyph_atlas.frag.h"
 #include "impeller/entity/glyph_atlas.vert.h"
-#include "impeller/entity/glyph_atlas_sdf.frag.h"
-#include "impeller/entity/glyph_atlas_sdf.vert.h"
+#include "impeller/entity/glyph_atlas_color.frag.h"
 #include "impeller/entity/gradient_fill.vert.h"
 #include "impeller/entity/linear_gradient_fill.frag.h"
 #include "impeller/entity/linear_to_srgb_filter.frag.h"
 #include "impeller/entity/linear_to_srgb_filter.vert.h"
 #include "impeller/entity/morphology_filter.frag.h"
 #include "impeller/entity/morphology_filter.vert.h"
+#include "impeller/entity/points.comp.h"
 #include "impeller/entity/porter_duff_blend.frag.h"
+#include "impeller/entity/porter_duff_blend.vert.h"
 #include "impeller/entity/radial_gradient_fill.frag.h"
 #include "impeller/entity/rrect_blur.frag.h"
 #include "impeller/entity/rrect_blur.vert.h"
@@ -52,7 +57,7 @@
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
-#include "impeller/entity/tiled_texture_fill.vert.h"
+#include "impeller/entity/uv.comp.h"
 #include "impeller/entity/vertices.frag.h"
 #include "impeller/entity/yuv_to_rgb_filter.frag.h"
 #include "impeller/entity/yuv_to_rgb_filter.vert.h"
@@ -106,6 +111,14 @@
 #include "impeller/entity/framebuffer_blend_screen.frag.h"
 #include "impeller/entity/framebuffer_blend_softlight.frag.h"
 
+#ifdef IMPELLER_ENABLE_OPENGLES
+#include "impeller/entity/texture_fill_external.frag.h"
+#endif  // IMPELLER_ENABLE_OPENGLES
+
+#if IMPELLER_ENABLE_3D
+#include "impeller/scene/scene_context.h"  // nogncheck
+#endif
+
 namespace impeller {
 
 #ifdef IMPELLER_DEBUG
@@ -143,8 +156,8 @@ using TexturePipeline =
     RenderPipelineT<TextureFillVertexShader, TextureFillFragmentShader>;
 using PositionUVPipeline =
     RenderPipelineT<TextureFillVertexShader, TiledTextureFillFragmentShader>;
-using TiledTexturePipeline = RenderPipelineT<TiledTextureFillVertexShader,
-                                             TiledTextureFillFragmentShader>;
+using TiledTexturePipeline =
+    RenderPipelineT<TextureFillVertexShader, TiledTextureFillFragmentShader>;
 using GaussianBlurAlphaDecalPipeline =
     RenderPipelineT<GaussianBlurVertexShader,
                     GaussianBlurAlphaDecalFragmentShader>;
@@ -173,14 +186,13 @@ using SrgbToLinearFilterPipeline =
                     SrgbToLinearFilterFragmentShader>;
 using GlyphAtlasPipeline =
     RenderPipelineT<GlyphAtlasVertexShader, GlyphAtlasFragmentShader>;
-using GlyphAtlasSdfPipeline =
-    RenderPipelineT<GlyphAtlasSdfVertexShader, GlyphAtlasSdfFragmentShader>;
+using GlyphAtlasColorPipeline =
+    RenderPipelineT<GlyphAtlasVertexShader, GlyphAtlasColorFragmentShader>;
 using PorterDuffBlendPipeline =
-    RenderPipelineT<BlendVertexShader, PorterDuffBlendFragmentShader>;
+    RenderPipelineT<PorterDuffBlendVertexShader, PorterDuffBlendFragmentShader>;
 // Instead of requiring new shaders for clips, the solid fill stages are used
 // to redirect writing to the stencil instead of color attachments.
-using ClipPipeline =
-    RenderPipelineT<SolidFillVertexShader, SolidFillFragmentShader>;
+using ClipPipeline = RenderPipelineT<ClipVertexShader, ClipFragmentShader>;
 
 using GeometryColorPipeline =
     RenderPipelineT<PositionColorVertexShader, VerticesFragmentShader>;
@@ -276,6 +288,15 @@ using FramebufferBlendSoftLightPipeline =
     RenderPipelineT<FramebufferBlendVertexShader,
                     FramebufferBlendSoftlightFragmentShader>;
 
+/// Geometry Pipelines
+using PointsComputeShaderPipeline = ComputePipelineBuilder<PointsComputeShader>;
+using UvComputeShaderPipeline = ComputePipelineBuilder<UvComputeShader>;
+
+#ifdef IMPELLER_ENABLE_OPENGLES
+using TextureExternalPipeline =
+    RenderPipelineT<TextureFillVertexShader, TextureFillExternalFragmentShader>;
+#endif  // IMPELLER_ENABLE_OPENGLES
+
 /// Pipeline state configuration.
 ///
 /// Each unique combination of these options requires a different pipeline state
@@ -292,7 +313,7 @@ struct ContentContextOptions {
   CompareFunction stencil_compare = CompareFunction::kEqual;
   StencilOperation stencil_operation = StencilOperation::kKeep;
   PrimitiveType primitive_type = PrimitiveType::kTriangle;
-  std::optional<PixelFormat> color_attachment_pixel_format;
+  PixelFormat color_attachment_pixel_format = PixelFormat::kUnknown;
   bool has_stencil_attachment = true;
   bool wireframe = false;
 
@@ -324,16 +345,21 @@ struct ContentContextOptions {
 };
 
 class Tessellator;
+class RenderTargetCache;
 
 class ContentContext {
  public:
-  explicit ContentContext(std::shared_ptr<Context> context);
+  explicit ContentContext(
+      std::shared_ptr<Context> context,
+      std::shared_ptr<TypographerContext> typographer_context);
 
   ~ContentContext();
 
   bool IsValid() const;
 
+#if IMPELLER_ENABLE_3D
   std::shared_ptr<scene::SceneContext> GetSceneContext() const;
+#endif  // IMPELLER_ENABLE_3D
 
   std::shared_ptr<Tessellator> GetTessellator() const;
 
@@ -408,6 +434,15 @@ class ContentContext {
     return GetPipeline(texture_pipelines_, opts);
   }
 
+#ifdef IMPELLER_ENABLE_OPENGLES
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetTextureExternalPipeline(
+      ContentContextOptions opts) const {
+    FML_DCHECK(GetContext()->GetBackendType() ==
+               Context::BackendType::kOpenGLES);
+    return GetPipeline(texture_external_pipelines_, opts);
+  }
+#endif  // IMPELLER_ENABLE_OPENGLES
+
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPositionUVPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(position_uv_pipelines_, opts);
@@ -473,9 +508,9 @@ class ContentContext {
     return GetPipeline(glyph_atlas_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGlyphAtlasSdfPipeline(
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGlyphAtlasColorPipeline(
       ContentContextOptions opts) const {
-    return GetPipeline(glyph_atlas_sdf_pipelines_, opts);
+    return GetPipeline(glyph_atlas_color_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetGeometryColorPipeline(
@@ -661,9 +696,19 @@ class ContentContext {
     return GetPipeline(framebuffer_blend_softlight_pipelines_, opts);
   }
 
-  std::shared_ptr<Context> GetContext() const;
+  std::shared_ptr<Pipeline<ComputePipelineDescriptor>> GetPointComputePipeline()
+      const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsCompute());
+    return point_field_compute_pipelines_;
+  }
 
-  std::shared_ptr<GlyphAtlasContext> GetGlyphAtlasContext() const;
+  std::shared_ptr<Pipeline<ComputePipelineDescriptor>> GetUvComputePipeline()
+      const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsCompute());
+    return uv_compute_pipelines_;
+  }
+
+  std::shared_ptr<Context> GetContext() const;
 
   const Capabilities& GetDeviceCapabilities() const;
 
@@ -679,8 +724,17 @@ class ContentContext {
                                        const SubpassCallback& subpass_callback,
                                        bool msaa_enabled = true) const;
 
+  std::shared_ptr<LazyGlyphAtlas> GetLazyGlyphAtlas() const {
+    return lazy_glyph_atlas_;
+  }
+
+  std::shared_ptr<RenderTargetAllocator> GetRenderTargetCache() const {
+    return render_target_cache_;
+  }
+
  private:
   std::shared_ptr<Context> context_;
+  std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas_;
 
   template <class T>
   using Variants = std::unordered_map<ContentContextOptions,
@@ -713,6 +767,9 @@ class ContentContext {
   mutable Variants<RRectBlurPipeline> rrect_blur_pipelines_;
   mutable Variants<BlendPipeline> texture_blend_pipelines_;
   mutable Variants<TexturePipeline> texture_pipelines_;
+#ifdef IMPELLER_ENABLE_OPENGLES
+  mutable Variants<TextureExternalPipeline> texture_external_pipelines_;
+#endif  // IMPELLER_ENABLE_OPENGLES
   mutable Variants<PositionUVPipeline> position_uv_pipelines_;
   mutable Variants<TiledTexturePipeline> tiled_texture_pipelines_;
   mutable Variants<GaussianBlurAlphaDecalPipeline>
@@ -731,7 +788,7 @@ class ContentContext {
   mutable Variants<SrgbToLinearFilterPipeline> srgb_to_linear_filter_pipelines_;
   mutable Variants<ClipPipeline> clip_pipelines_;
   mutable Variants<GlyphAtlasPipeline> glyph_atlas_pipelines_;
-  mutable Variants<GlyphAtlasSdfPipeline> glyph_atlas_sdf_pipelines_;
+  mutable Variants<GlyphAtlasColorPipeline> glyph_atlas_color_pipelines_;
   mutable Variants<GeometryColorPipeline> geometry_color_pipelines_;
   mutable Variants<YUVToRGBFilterPipeline> yuv_to_rgb_filter_pipelines_;
   mutable Variants<PorterDuffBlendPipeline> porter_duff_blend_pipelines_;
@@ -782,6 +839,16 @@ class ContentContext {
       framebuffer_blend_screen_pipelines_;
   mutable Variants<FramebufferBlendSoftLightPipeline>
       framebuffer_blend_softlight_pipelines_;
+  mutable std::shared_ptr<Pipeline<ComputePipelineDescriptor>>
+      point_field_compute_pipelines_;
+  mutable std::shared_ptr<Pipeline<ComputePipelineDescriptor>>
+      uv_compute_pipelines_;
+  // The values for the default context options must be cached on
+  // initial creation. In the presence of wide gamut and platform views,
+  // it is possible that secondary surfaces will have a different default
+  // pixel format, which would cause the prototype check in GetPipeline
+  // below to fail.
+  ContentContextOptions default_options_;
 
   template <class TypedPipeline>
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(
@@ -799,7 +866,7 @@ class ContentContext {
       return found->second->WaitAndGet();
     }
 
-    auto prototype = container.find({});
+    auto prototype = container.find(default_options_);
 
     // The prototype must always be initialized in the constructor.
     FML_CHECK(prototype != container.end());
@@ -823,8 +890,10 @@ class ContentContext {
 
   bool is_valid_ = false;
   std::shared_ptr<Tessellator> tessellator_;
-  std::shared_ptr<GlyphAtlasContext> glyph_atlas_context_;
+#if IMPELLER_ENABLE_3D
   std::shared_ptr<scene::SceneContext> scene_context_;
+#endif  // IMPELLER_ENABLE_3D
+  std::shared_ptr<RenderTargetAllocator> render_target_cache_;
   bool wireframe_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContentContext);

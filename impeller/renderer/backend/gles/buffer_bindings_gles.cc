@@ -23,17 +23,12 @@ BufferBindingsGLES::~BufferBindingsGLES() = default;
 
 bool BufferBindingsGLES::RegisterVertexStageInput(
     const ProcTableGLES& gl,
-    const std::vector<ShaderStageIOSlot>& p_inputs) {
-  // Attrib locations have to be iterated over in order of location because we
-  // will be calculating offsets later.
-  auto inputs = p_inputs;
-  std::sort(inputs.begin(), inputs.end(), [](const auto& lhs, const auto& rhs) {
-    return lhs.location < rhs.location;
-  });
-
+    const std::vector<ShaderStageIOSlot>& p_inputs,
+    const std::vector<ShaderStageBufferLayout>& layouts) {
   std::vector<VertexAttribPointer> vertex_attrib_arrays;
-  size_t offset = 0u;
-  for (const auto& input : inputs) {
+  for (auto i = 0u; i < p_inputs.size(); i++) {
+    const auto& input = p_inputs[i];
+    const auto& layout = layouts[input.binding];
     VertexAttribPointer attrib;
     attrib.index = input.location;
     // Component counts must be 1, 2, 3 or 4. Do that validation now.
@@ -47,12 +42,9 @@ bool BufferBindingsGLES::RegisterVertexStageInput(
     }
     attrib.type = type.value();
     attrib.normalized = GL_FALSE;
-    attrib.offset = offset;
-    offset += (input.bit_width * input.vec_size) / 8;
+    attrib.offset = input.offset;
+    attrib.stride = layout.stride;
     vertex_attrib_arrays.emplace_back(attrib);
-  }
-  for (auto& array : vertex_attrib_arrays) {
-    array.stride = offset;
   }
   vertex_attrib_arrays_ = std::move(vertex_attrib_arrays);
   return true;
@@ -153,12 +145,12 @@ bool BufferBindingsGLES::BindUniformData(
     const Bindings& vertex_bindings,
     const Bindings& fragment_bindings) const {
   for (const auto& buffer : vertex_bindings.buffers) {
-    if (!BindUniformBuffer(gl, transients_allocator, buffer.second)) {
+    if (!BindUniformBuffer(gl, transients_allocator, buffer.second.view)) {
       return false;
     }
   }
   for (const auto& buffer : fragment_bindings.buffers) {
-    if (!BindUniformBuffer(gl, transients_allocator, buffer.second)) {
+    if (!BindUniformBuffer(gl, transients_allocator, buffer.second.view)) {
       return false;
     }
   }
@@ -185,12 +177,6 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
                                            Allocator& transients_allocator,
                                            const BufferResource& buffer) const {
   const auto* metadata = buffer.GetMetadata();
-  if (metadata == nullptr) {
-    // Vertex buffer bindings don't have metadata as those definitions are
-    // already handled by vertex attrib pointers. Keep going.
-    return true;
-  }
-
   auto device_buffer =
       buffer.resource.buffer->GetDeviceBuffer(transients_allocator);
   if (!device_buffer) {
@@ -313,15 +299,15 @@ bool BufferBindingsGLES::BindTextures(const ProcTableGLES& gl,
                                       const Bindings& bindings,
                                       ShaderStage stage) const {
   size_t active_index = 0;
-  for (const auto& texture : bindings.textures) {
-    const auto& texture_gles = TextureGLES::Cast(*texture.second.resource);
-    if (texture.second.GetMetadata() == nullptr) {
+  for (const auto& data : bindings.sampled_images) {
+    const auto& texture_gles = TextureGLES::Cast(*data.second.texture.resource);
+    if (data.second.texture.GetMetadata() == nullptr) {
       VALIDATION_LOG << "No metadata found for texture binding.";
       return false;
     }
 
     const auto uniform_key =
-        CreateUniformMemberKey(texture.second.GetMetadata()->name);
+        CreateUniformMemberKey(data.second.texture.GetMetadata()->name);
     auto uniform = uniform_locations_.find(uniform_key);
     if (uniform == uniform_locations_.end()) {
       VALIDATION_LOG << "Could not find uniform for key: " << uniform_key;
@@ -349,12 +335,9 @@ bool BufferBindingsGLES::BindTextures(const ProcTableGLES& gl,
     /// If there is a sampler for the texture at the same index, configure the
     /// bound texture using that sampler.
     ///
-    auto sampler = bindings.samplers.find(texture.first);
-    if (sampler != bindings.samplers.end()) {
-      const auto& sampler_gles = SamplerGLES::Cast(*sampler->second.resource);
-      if (!sampler_gles.ConfigureBoundTexture(texture_gles, gl)) {
-        return false;
-      }
+    const auto& sampler_gles = SamplerGLES::Cast(*data.second.sampler.resource);
+    if (!sampler_gles.ConfigureBoundTexture(texture_gles, gl)) {
+      return false;
     }
 
     //--------------------------------------------------------------------------

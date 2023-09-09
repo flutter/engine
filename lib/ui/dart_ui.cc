@@ -7,6 +7,7 @@
 #include <mutex>
 #include <string_view>
 
+#include "flutter/common/constants.h"
 #include "flutter/common/settings.h"
 #include "flutter/fml/build_config.h"
 #include "flutter/lib/ui/compositing/scene.h"
@@ -77,7 +78,7 @@ typedef CanvasPath Path;
   V(Gradient::Create, 1)                                              \
   V(ImageFilter::Create, 1)                                           \
   V(ImageShader::Create, 1)                                           \
-  V(ParagraphBuilder::Create, 9)                                      \
+  V(ParagraphBuilder::Create, 10)                                     \
   V(PathMeasure::Create, 3)                                           \
   V(Path::Create, 1)                                                  \
   V(PictureRecorder::Create, 1)                                       \
@@ -95,7 +96,6 @@ typedef CanvasPath Path;
   V(IsolateNameServerNatives::RemovePortNameMapping, 1)               \
   V(NativeStringAttribute::initLocaleStringAttribute, 4)              \
   V(NativeStringAttribute::initSpellOutStringAttribute, 3)            \
-  V(PlatformConfigurationNativeApi::ImplicitViewEnabled, 0)           \
   V(PlatformConfigurationNativeApi::DefaultRouteName, 0)              \
   V(PlatformConfigurationNativeApi::ScheduleFrame, 0)                 \
   V(PlatformConfigurationNativeApi::Render, 1)                        \
@@ -110,6 +110,7 @@ typedef CanvasPath Path;
   V(PlatformConfigurationNativeApi::GetRootIsolateToken, 0)           \
   V(PlatformConfigurationNativeApi::RegisterBackgroundIsolate, 1)     \
   V(PlatformConfigurationNativeApi::SendPortPlatformMessage, 4)       \
+  V(PlatformConfigurationNativeApi::GetScaledFontSize, 2)             \
   V(DartRuntimeHooks::Logger_PrintDebugString, 1)                     \
   V(DartRuntimeHooks::Logger_PrintString, 1)                          \
   V(DartRuntimeHooks::ScheduleMicrotask, 1)                           \
@@ -286,7 +287,6 @@ typedef CanvasPath Path;
   V(SceneBuilder, pushImageFilter, 4)                  \
   V(SceneBuilder, pushOffset, 5)                       \
   V(SceneBuilder, pushOpacity, 6)                      \
-  V(SceneBuilder, pushPhysicalShape, 8)                \
   V(SceneBuilder, pushShaderMask, 10)                  \
   V(SceneBuilder, pushTransformHandle, 4)              \
   V(SceneBuilder, setCheckerboardOffscreenLayers, 2)   \
@@ -344,6 +344,7 @@ void* ResolveFfiNativeFunction(const char* name, uintptr_t args) {
 void InitDispatcherMap() {
   FFI_FUNCTION_LIST(FFI_FUNCTION_INSERT)
   FFI_METHOD_LIST(FFI_METHOD_INSERT)
+
 #ifdef IMPELLER_ENABLE_3D
   FFI_FUNCTION_LIST_3D(FFI_FUNCTION_INSERT)
   FFI_METHOD_LIST_3D(FFI_METHOD_INSERT)
@@ -372,6 +373,12 @@ void DartUI::InitForIsolate(const Settings& settings) {
     if (Dart_IsError(result)) {
       Dart_PropagateError(result);
     }
+  }
+
+  result = Dart_SetField(dart_ui, ToDart("_implicitViewId"),
+                         Dart_NewInteger(kFlutterImplicitViewId));
+  if (Dart_IsError(result)) {
+    Dart_PropagateError(result);
   }
 }
 

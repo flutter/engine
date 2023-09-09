@@ -8,13 +8,26 @@ wasm_lib("skwasm") {
   sources = [
     "canvas.cpp",
     "contour_measure.cpp",
+    "data.cpp",
     "export.h",
+    "filters.cpp",
+    "fonts.cpp",
     "helpers.h",
+    "image.cpp",
     "paint.cpp",
     "path.cpp",
     "picture.cpp",
     "shaders.cpp",
+    "skwasm_support.h",
+    "string.cpp",
     "surface.cpp",
+    "text/line_metrics.cpp",
+    "text/paragraph.cpp",
+    "text/paragraph_builder.cpp",
+    "text/paragraph_style.cpp",
+    "text/strut_style.cpp",
+    "text/text_style.cpp",
+    "vertices.cpp",
     "wrappers.h",
   ]
 
@@ -30,8 +43,13 @@ wasm_lib("skwasm") {
     "-sUSE_PTHREADS=1",
     "-lexports.js",
     "-sEXPORTED_FUNCTIONS=[stackAlloc]",
-    "-sEXPORTED_RUNTIME_METHODS=[addFunction,removeFunction]",
+    "-sEXPORTED_RUNTIME_METHODS=[addFunction,removeFunction,skwasm_registerObject,skwasm_unregisterObject,skwasm_getObject,skwasm_transferObjectToThread]",
+    "-Wno-pthreads-mem-growth",
+    "--js-library",
+    rebase_path("library_skwasm_support.js"),
   ]
+
+  inputs = [ rebase_path("library_skwasm_support.js") ]
 
   if (is_debug) {
     ldflags += [
@@ -39,12 +57,10 @@ wasm_lib("skwasm") {
       "-sASSERTIONS=1",
       "-sGL_ASSERTIONS=1",
     ]
-  } else {
-    ldflags += [
-      "-Oz",
-      "--closure=1",
-    ]
   }
 
-  deps = [ "//third_party/skia" ]
+  deps = [
+    "//third_party/skia",
+    "//third_party/skia/modules/skparagraph",
+  ]
 }

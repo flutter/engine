@@ -2,28 +2,24 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:io';
 import 'dart:ui';
+import 'dart:zircon';
 
 import 'package:args/args.dart';
-import 'package:fidl_fuchsia_ui_app/fidl_async.dart';
-import 'package:fidl_fuchsia_ui_views/fidl_async.dart';
-import 'package:fidl_fuchsia_ui_test_input/fidl_async.dart' as test_touch;
-import 'package:fuchsia_services/services.dart';
 import 'package:vector_math/vector_math_64.dart' as vector_math_64;
-import 'package:zircon/zircon.dart';
 
 final _argsCsvFilePath = '/config/data/args.csv';
 
-void main(List<String> args) {
+void main(List<String> args) async {
   print('Launching embedding-flutter-view');
 
   args = args + _GetArgsFromConfigFile();
   final parser = ArgParser()
     ..addFlag('showOverlay', defaultsTo: false)
-    ..addFlag('hitTestable', defaultsTo: true)
     ..addFlag('focusable', defaultsTo: true);
 
   final arguments = parser.parse(args);
@@ -31,11 +27,9 @@ void main(List<String> args) {
     print('embedding-flutter-view args: $option: ${arguments[option]}');
   }
 
-  // TODO(fxbug.dev/125514): Support Flatland Child View.
   TestApp app = TestApp(
-    ChildView.gfx(_launchGfxChildView()),
+    ChildView(await _launchChildView()),
     showOverlay: arguments['showOverlay'],
-    hitTestable: arguments['hitTestable'],
     focusable: arguments['focusable'],
   );
 
@@ -48,21 +42,18 @@ class TestApp {
 
   final ChildView childView;
   final bool showOverlay;
-  final bool hitTestable;
   final bool focusable;
-  final _responseListener = test_touch.TouchInputListenerProxy();
 
   Color _backgroundColor = _blue;
 
   TestApp(
     this.childView,
     {this.showOverlay = false,
-    this.hitTestable = true,
     this.focusable = true}) {
   }
 
   void run() {
-    childView.create(hitTestable, focusable, (ByteData reply) {
+    childView.create(focusable, (ByteData reply) {
         // Set up window callbacks.
         window.onPointerDataPacket = (PointerDataPacket packet) {
           this.pointerDataPacket(packet);
@@ -159,43 +150,36 @@ class TestApp {
       }
 
       if (data.change == PointerChange.down || data.change == PointerChange.move) {
-        Incoming.fromSvcPath()
-          ..connectToService(_responseListener)
-          ..close();
-
-        _respond(test_touch.TouchInputListenerReportTouchInputRequest(
+        _reportTouchInput(
           localX: data.physicalX,
           localY: data.physicalY,
           timeReceived: nowNanos,
-          componentName: 'embedding-flutter-view',
-        ));
+        );
       }
     }
 
     window.scheduleFrame();
   }
 
-  void _respond(test_touch.TouchInputListenerReportTouchInputRequest request) async {
+  void _reportTouchInput({double localX, double localY, int timeReceived}) {
     print('embedding-flutter-view reporting touch input to TouchInputListener');
-    await _responseListener.reportTouchInput(request);
+    final message = utf8.encode(json.encode({
+      'method': 'TouchInputListener.ReportTouchInput',
+      'local_x': localX,
+      'local_y': localY,
+      'time_received': timeReceived,
+      'component_name': 'embedding-flutter-view',
+    })).buffer.asByteData();
+    PlatformDispatcher.instance.sendPlatformMessage('fuchsia/input_test', message, null);
   }
 }
 
 class ChildView {
-  final ViewHolderToken viewHolderToken;
-  final ViewportCreationToken viewportCreationToken;
   final int viewId;
 
-  ChildView(this.viewportCreationToken) : viewHolderToken = null, viewId = viewportCreationToken.value.handle.handle {
-    assert(viewId != null);
-  }
-
-  ChildView.gfx(this.viewHolderToken) : viewportCreationToken = null, viewId = viewHolderToken.value.handle.handle {
-    assert(viewId != null);
-  }
+  ChildView(this.viewId);
 
   void create(
-    bool hitTestable,
     bool focusable,
     PlatformMessageResponseCallback callback) {
     // Construct the dart:ui platform message to create the view, and when the
@@ -204,7 +188,8 @@ class ChildView {
     final viewOcclusionHint = Rect.zero;
     final Map<String, dynamic> args = <String, dynamic>{
       'viewId': viewId,
-      'hitTestable': hitTestable,
+      // Flatland doesn't support disabling hit testing.
+      'hitTestable': true,
       'focusable': focusable,
       'viewOcclusionHintLTRB': <double>[
         viewOcclusionHint.left,
@@ -214,7 +199,7 @@ class ChildView {
       ],
     };
 
-    final ByteData createViewMessage = utf8.encoder.convert(
+    final ByteData createViewMessage = utf8.encode(
       json.encode(<String, Object>{
         'method': 'View.create',
         'args': args,
@@ -230,26 +215,18 @@ class ChildView {
   }
 }
 
-ViewHolderToken _launchGfxChildView() {
-  ViewProviderProxy viewProvider = ViewProviderProxy();
-  Incoming.fromSvcPath()
-    ..connectToService(viewProvider)
-    ..close();
+Future<int> _launchChildView() async {
+  final message = Int8List.fromList([0x31]);
+  final completer = new Completer<ByteData>();
+  PlatformDispatcher.instance.sendPlatformMessage(
+      'fuchsia/child_view', ByteData.sublistView(message), (ByteData reply) {
+    completer.complete(reply);
+  });
 
-  final viewTokens = EventPairPair();
-  assert(viewTokens.status == ZX.OK);
-  final viewHolderToken = ViewHolderToken(value: viewTokens.first);
-
-  final viewRefs = EventPairPair();
-  assert(viewRefs.status == ZX.OK);
-  final viewRefControl = ViewRefControl(reference: viewRefs.first.duplicate(ZX.DEFAULT_EVENTPAIR_RIGHTS & ~ZX.RIGHT_DUPLICATE));
-  final viewRef = ViewRef(reference: viewRefs.second.duplicate(ZX.RIGHTS_BASIC));
-
-  viewProvider.createViewWithViewRef(viewTokens.second, viewRefControl, viewRef);
-  viewProvider.ctrl.close();
-
-  return viewHolderToken;
+  return int.parse(
+      ascii.decode(((await completer.future).buffer.asUint8List())));
 }
+
 
 List<String> _GetArgsFromConfigFile() {
   List<String> args;

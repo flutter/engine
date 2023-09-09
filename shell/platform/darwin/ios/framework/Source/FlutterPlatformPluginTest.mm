@@ -8,6 +8,7 @@
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
@@ -16,9 +17,145 @@
 
 @interface FlutterPlatformPlugin ()
 - (BOOL)isLiveTextInputAvailable;
+- (void)searchWeb:(NSString*)searchTerm;
+- (void)showLookUpViewController:(NSString*)term;
+- (void)showShareViewController:(NSString*)content;
+@end
+
+@interface UIViewController ()
+- (void)presentViewController:(UIViewController*)viewControllerToPresent
+                     animated:(BOOL)flag
+                   completion:(void (^)(void))completion;
 @end
 
 @implementation FlutterPlatformPluginTest
+- (void)testSearchWebInvokedWithEscapedTerm {
+  id mockApplication = OCMClassMock([UIApplication class]);
+  OCMStub([mockApplication sharedApplication]).andReturn(mockApplication);
+
+  FlutterEngine* engine = [[[FlutterEngine alloc] initWithName:@"test" project:nil] autorelease];
+  std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
+      std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
+  [engine runWithEntrypoint:nil];
+
+  XCTestExpectation* invokeExpectation =
+      [self expectationWithDescription:@"Web search launched with escaped search term"];
+
+  FlutterPlatformPlugin* plugin =
+      [[[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakPtr()] autorelease];
+  FlutterPlatformPlugin* mockPlugin = OCMPartialMock(plugin);
+
+  FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"SearchWeb.invoke"
+                                                                    arguments:@"Testing Word!"];
+
+  FlutterResult result = ^(id result) {
+    OCMVerify([mockPlugin searchWeb:@"Testing Word!"]);
+#if not APPLICATION_EXTENSION_API_ONLY
+    OCMVerify([mockApplication openURL:[NSURL URLWithString:@"x-web-search://?Testing%20Word!"]
+                               options:@{}
+                     completionHandler:nil]);
+#endif
+    [invokeExpectation fulfill];
+  };
+
+  [mockPlugin handleMethodCall:methodCall result:result];
+  [self waitForExpectationsWithTimeout:1 handler:nil];
+  [mockApplication stopMocking];
+}
+
+- (void)testSearchWebInvokedWithNonEscapedTerm {
+  id mockApplication = OCMClassMock([UIApplication class]);
+  OCMStub([mockApplication sharedApplication]).andReturn(mockApplication);
+
+  FlutterEngine* engine = [[[FlutterEngine alloc] initWithName:@"test" project:nil] autorelease];
+  std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
+      std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
+  [engine runWithEntrypoint:nil];
+
+  XCTestExpectation* invokeExpectation =
+      [self expectationWithDescription:@"Web search launched with non escaped search term"];
+
+  FlutterPlatformPlugin* plugin =
+      [[[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakPtr()] autorelease];
+  FlutterPlatformPlugin* mockPlugin = OCMPartialMock(plugin);
+
+  FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"SearchWeb.invoke"
+                                                                    arguments:@"Test"];
+
+  FlutterResult result = ^(id result) {
+    OCMVerify([mockPlugin searchWeb:@"Test"]);
+#if not APPLICATION_EXTENSION_API_ONLY
+    OCMVerify([mockApplication openURL:[NSURL URLWithString:@"x-web-search://?Test"]
+                               options:@{}
+                     completionHandler:nil]);
+#endif
+    [invokeExpectation fulfill];
+  };
+
+  [mockPlugin handleMethodCall:methodCall result:result];
+  [self waitForExpectationsWithTimeout:1 handler:nil];
+  [mockApplication stopMocking];
+}
+
+- (void)testLookUpCallInitiated {
+  FlutterEngine* engine = [[[FlutterEngine alloc] initWithName:@"test" project:nil] autorelease];
+  [engine runWithEntrypoint:nil];
+  std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
+      std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
+
+  XCTestExpectation* presentExpectation =
+      [self expectationWithDescription:@"Look Up view controller presented"];
+
+  FlutterViewController* engineViewController =
+      [[[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil] autorelease];
+  FlutterViewController* mockEngineViewController = OCMPartialMock(engineViewController);
+
+  FlutterPlatformPlugin* plugin =
+      [[[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakPtr()] autorelease];
+  FlutterPlatformPlugin* mockPlugin = OCMPartialMock(plugin);
+
+  FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"LookUp.invoke"
+                                                                    arguments:@"Test"];
+  FlutterResult result = ^(id result) {
+    OCMVerify([mockEngineViewController
+        presentViewController:[OCMArg isKindOfClass:[UIReferenceLibraryViewController class]]
+                     animated:YES
+                   completion:nil]);
+    [presentExpectation fulfill];
+  };
+  [mockPlugin handleMethodCall:methodCall result:result];
+  [self waitForExpectationsWithTimeout:2 handler:nil];
+}
+
+- (void)testShareScreenInvoked {
+  FlutterEngine* engine = [[[FlutterEngine alloc] initWithName:@"test" project:nil] autorelease];
+  [engine runWithEntrypoint:nil];
+  std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
+      std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
+
+  XCTestExpectation* presentExpectation =
+      [self expectationWithDescription:@"Share view controller presented"];
+
+  FlutterViewController* engineViewController =
+      [[[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil] autorelease];
+  FlutterViewController* mockEngineViewController = OCMPartialMock(engineViewController);
+
+  FlutterPlatformPlugin* plugin =
+      [[[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakPtr()] autorelease];
+  FlutterPlatformPlugin* mockPlugin = OCMPartialMock(plugin);
+
+  FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"Share.invoke"
+                                                                    arguments:@"Test"];
+  FlutterResult result = ^(id result) {
+    OCMVerify([mockEngineViewController
+        presentViewController:[OCMArg isKindOfClass:[UIActivityViewController class]]
+                     animated:YES
+                   completion:nil]);
+    [presentExpectation fulfill];
+  };
+  [mockPlugin handleMethodCall:methodCall result:result];
+  [self waitForExpectationsWithTimeout:1 handler:nil];
+}
 
 - (void)testClipboardHasCorrectStrings {
   [UIPasteboard generalPasteboard].string = nil;
@@ -136,6 +273,95 @@
   };
   [mockPlugin handleMethodCall:methodCall result:result];
   [self waitForExpectationsWithTimeout:1 handler:nil];
+}
+
+- (void)testViewControllerBasedStatusBarHiddenUpdate {
+  id bundleMock = OCMPartialMock([NSBundle mainBundle]);
+  OCMStub([bundleMock objectForInfoDictionaryKey:@"UIViewControllerBasedStatusBarAppearance"])
+      .andReturn(@YES);
+  {
+    // Enabling system UI overlays to update status bar.
+    FlutterEngine* engine = [[[FlutterEngine alloc] initWithName:@"test" project:nil] autorelease];
+    [engine runWithEntrypoint:nil];
+    FlutterViewController* flutterViewController =
+        [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
+    std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
+        std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
+    XCTAssertFalse(flutterViewController.prefersStatusBarHidden);
+
+    // Update to hidden.
+    FlutterPlatformPlugin* plugin = [engine platformPlugin];
+
+    XCTestExpectation* enableSystemUIOverlaysCalled =
+        [self expectationWithDescription:@"setEnabledSystemUIOverlays"];
+    FlutterResult resultSet = ^(id result) {
+      [enableSystemUIOverlaysCalled fulfill];
+    };
+    FlutterMethodCall* methodCallSet =
+        [FlutterMethodCall methodCallWithMethodName:@"SystemChrome.setEnabledSystemUIOverlays"
+                                          arguments:@[ @"SystemUiOverlay.bottom" ]];
+    [plugin handleMethodCall:methodCallSet result:resultSet];
+    [self waitForExpectationsWithTimeout:1 handler:nil];
+    XCTAssertTrue(flutterViewController.prefersStatusBarHidden);
+
+    // Update to shown.
+    XCTestExpectation* enableSystemUIOverlaysCalled2 =
+        [self expectationWithDescription:@"setEnabledSystemUIOverlays"];
+    FlutterResult resultSet2 = ^(id result) {
+      [enableSystemUIOverlaysCalled2 fulfill];
+    };
+    FlutterMethodCall* methodCallSet2 =
+        [FlutterMethodCall methodCallWithMethodName:@"SystemChrome.setEnabledSystemUIOverlays"
+                                          arguments:@[ @"SystemUiOverlay.top" ]];
+    [plugin handleMethodCall:methodCallSet2 result:resultSet2];
+    [self waitForExpectationsWithTimeout:1 handler:nil];
+    XCTAssertFalse(flutterViewController.prefersStatusBarHidden);
+
+    [flutterViewController deregisterNotifications];
+    [flutterViewController release];
+  }
+  {
+    // Enable system UI mode to update status bar.
+    FlutterEngine* engine = [[[FlutterEngine alloc] initWithName:@"test" project:nil] autorelease];
+    [engine runWithEntrypoint:nil];
+    FlutterViewController* flutterViewController =
+        [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
+    std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
+        std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
+    XCTAssertFalse(flutterViewController.prefersStatusBarHidden);
+
+    // Update to hidden.
+    FlutterPlatformPlugin* plugin = [engine platformPlugin];
+
+    XCTestExpectation* enableSystemUIModeCalled =
+        [self expectationWithDescription:@"setEnabledSystemUIMode"];
+    FlutterResult resultSet = ^(id result) {
+      [enableSystemUIModeCalled fulfill];
+    };
+    FlutterMethodCall* methodCallSet =
+        [FlutterMethodCall methodCallWithMethodName:@"SystemChrome.setEnabledSystemUIMode"
+                                          arguments:@"SystemUiMode.immersive"];
+    [plugin handleMethodCall:methodCallSet result:resultSet];
+    [self waitForExpectationsWithTimeout:1 handler:nil];
+    XCTAssertTrue(flutterViewController.prefersStatusBarHidden);
+
+    // Update to shown.
+    XCTestExpectation* enableSystemUIModeCalled2 =
+        [self expectationWithDescription:@"setEnabledSystemUIMode"];
+    FlutterResult resultSet2 = ^(id result) {
+      [enableSystemUIModeCalled2 fulfill];
+    };
+    FlutterMethodCall* methodCallSet2 =
+        [FlutterMethodCall methodCallWithMethodName:@"SystemChrome.setEnabledSystemUIMode"
+                                          arguments:@"SystemUiMode.edgeToEdge"];
+    [plugin handleMethodCall:methodCallSet2 result:resultSet2];
+    [self waitForExpectationsWithTimeout:1 handler:nil];
+    XCTAssertFalse(flutterViewController.prefersStatusBarHidden);
+
+    [flutterViewController deregisterNotifications];
+    [flutterViewController release];
+  }
+  [bundleMock stopMocking];
 }
 
 @end

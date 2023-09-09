@@ -9,7 +9,7 @@ typedef FrameCallback = void Function(Duration duration);
 typedef TimingsCallback = void Function(List<FrameTiming> timings);
 typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
 typedef KeyDataCallback = bool Function(KeyData data);
-typedef SemanticsActionCallback = void Function(int nodeId, SemanticsAction action, ByteData? args);
+typedef SemanticsActionEventCallback = void Function(SemanticsActionEvent action);
 typedef PlatformMessageResponseCallback = void Function(ByteData? data);
 typedef PlatformMessageCallback = void Function(
     String name, ByteData? data, PlatformMessageResponseCallback? callback);
@@ -29,7 +29,11 @@ abstract class PlatformDispatcher {
   VoidCallback? get onPlatformConfigurationChanged;
   set onPlatformConfigurationChanged(VoidCallback? callback);
 
+  Iterable<Display> get displays;
+
   Iterable<FlutterView> get views;
+
+  FlutterView? view({required int id});
 
   FlutterView? get implicitView;
 
@@ -102,7 +106,7 @@ abstract class PlatformDispatcher {
   VoidCallback? get onLocaleChanged;
   set onLocaleChanged(VoidCallback? callback);
 
-  String get initialLifecycleState => 'AppLifecycleState.resumed';
+  String get initialLifecycleState => '';
 
   bool get alwaysUse24HourFormat;
 
@@ -130,8 +134,8 @@ abstract class PlatformDispatcher {
   VoidCallback? get onSemanticsEnabledChanged;
   set onSemanticsEnabledChanged(VoidCallback? callback);
 
-  SemanticsActionCallback? get onSemanticsAction;
-  set onSemanticsAction(SemanticsActionCallback? callback);
+  SemanticsActionEventCallback? get onSemanticsActionEvent;
+  set onSemanticsActionEvent(SemanticsActionEventCallback? callback);
 
   ErrorCallback? get onError;
   set onError(ErrorCallback? callback);
@@ -142,6 +146,8 @@ abstract class PlatformDispatcher {
 
   VoidCallback? get onFrameDataChanged => null;
   set onFrameDataChanged(VoidCallback? callback) {}
+
+  double scaleFontSize(double unscaledFontSize);
 }
 
 enum FramePhase {
@@ -245,10 +251,11 @@ class FrameTiming {
 }
 
 enum AppLifecycleState {
+  detached,
   resumed,
   inactive,
+  hidden,
   paused,
-  detached,
 }
 
 enum AppExitResponse {
@@ -489,4 +496,34 @@ enum DartPerformanceMode {
   latency,
   throughput,
   memory,
+}
+
+class SemanticsActionEvent {
+  const SemanticsActionEvent({
+    required this.type,
+    required this.viewId,
+    required this.nodeId,
+    this.arguments,
+  });
+
+  final SemanticsAction type;
+  final int viewId;
+  final int nodeId;
+  final Object? arguments;
+
+  static const Object _noArgumentPlaceholder = Object();
+
+  SemanticsActionEvent copyWith({
+    SemanticsAction? type,
+    int? viewId,
+    int? nodeId,
+    Object? arguments = _noArgumentPlaceholder,
+  }) {
+    return SemanticsActionEvent(
+      type: type ?? this.type,
+      viewId: viewId ?? this.viewId,
+      nodeId: nodeId ?? this.nodeId,
+      arguments: arguments == _noArgumentPlaceholder ? this.arguments : arguments,
+    );
+  }
 }

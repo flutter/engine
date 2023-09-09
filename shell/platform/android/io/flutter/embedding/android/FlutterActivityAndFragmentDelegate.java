@@ -30,7 +30,6 @@ import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.plugin.platform.PlatformPlugin;
-import io.flutter.util.ViewUtils;
 import java.util.Arrays;
 import java.util.List;
 
@@ -186,7 +185,7 @@ import java.util.List;
     // When "retain instance" is true, the FlutterEngine will survive configuration
     // changes. Therefore, we create a new one only if one does not already exist.
     if (flutterEngine == null) {
-      setupFlutterEngine();
+      setUpFlutterEngine();
     }
 
     if (host.shouldAttachEngineToActivity()) {
@@ -268,7 +267,7 @@ import java.util.List;
    * then a new {@link FlutterEngine} is instantiated.
    */
   @VisibleForTesting
-  /* package */ void setupFlutterEngine() {
+  /* package */ void setUpFlutterEngine() {
     Log.v(TAG, "Setting up FlutterEngine.");
 
     // First, check if the host wants to use a cached FlutterEngine.
@@ -344,9 +343,7 @@ import java.util.List;
    * with Android tools, such as "Displayed" timing printed with `am start`.
    *
    * <p>Note that it should only be set to true when {@code Host#getRenderMode()} is {@code
-   * RenderMode.surface}. This parameter is also ignored, disabling the delay should the legacy
-   * {@code Host#provideSplashScreen()} be non-null. See <a
-   * href="https://flutter.dev/go/android-splash-migration">Android Splash Migration</a>.
+   * RenderMode.surface}.
    *
    * <p>This method:
    *
@@ -393,23 +390,11 @@ import java.util.List;
     // Add listener to be notified when Flutter renders its first frame.
     flutterView.addOnFirstFrameRenderedListener(flutterUiDisplayListener);
 
-    Log.v(TAG, "Attaching FlutterEngine to FlutterView.");
-    flutterView.attachToFlutterEngine(flutterEngine);
-    flutterView.setId(flutterViewId);
-
-    SplashScreen splashScreen = host.provideSplashScreen();
-
-    if (splashScreen != null) {
-      Log.w(
-          TAG,
-          "A splash screen was provided to Flutter, but this is deprecated. See"
-              + " flutter.dev/go/android-splash-migration for migration steps.");
-      FlutterSplashView flutterSplashView = new FlutterSplashView(host.getContext());
-      flutterSplashView.setId(ViewUtils.generateViewId(FLUTTER_SPLASH_VIEW_FALLBACK_ID));
-      flutterSplashView.displayFlutterViewWithSplash(flutterView, splashScreen);
-
-      return flutterSplashView;
+    if (host.attachToEngineAutomatically()) {
+      Log.v(TAG, "Attaching FlutterEngine to FlutterView.");
+      flutterView.attachToFlutterEngine(flutterEngine);
     }
+    flutterView.setId(flutterViewId);
 
     if (shouldDelayFirstAndroidViewDraw) {
       delayFirstAndroidViewDraw(flutterView);
@@ -525,16 +510,7 @@ import java.util.List;
     if (host.shouldHandleDeeplinking()) {
       Uri data = intent.getData();
       if (data != null) {
-        String fullRoute = data.getPath();
-        if (fullRoute != null && !fullRoute.isEmpty()) {
-          if (data.getQuery() != null && !data.getQuery().isEmpty()) {
-            fullRoute += "?" + data.getQuery();
-          }
-          if (data.getFragment() != null && !data.getFragment().isEmpty()) {
-            fullRoute += "#" + data.getFragment();
-          }
-          return fullRoute;
-        }
+        return data.toString();
       }
     }
     return null;
@@ -961,8 +937,7 @@ import java.util.List;
    * FlutterActivityAndFragmentDelegate}.
    */
   /* package */ interface Host
-      extends SplashScreenProvider,
-          FlutterEngineProvider,
+      extends FlutterEngineProvider,
           FlutterEngineConfigurator,
           PlatformPlugin.PlatformPluginDelegate {
     /**
@@ -1078,9 +1053,6 @@ import java.util.List;
      * FlutterActivity} or {@link FlutterFragment} can access it.
      */
     ExclusiveAppComponent<Activity> getExclusiveAppComponent();
-
-    @Nullable
-    SplashScreen provideSplashScreen();
 
     /**
      * Returns the {@link io.flutter.embedding.engine.FlutterEngine} that should be rendered to a
@@ -1201,5 +1173,17 @@ import java.util.List;
      * while return {@code true} means the engine dispatches these events.
      */
     boolean shouldDispatchAppLifecycleState();
+
+    /**
+     * Whether to automatically attach the {@link FlutterView} to the engine.
+     *
+     * <p>In the add-to-app scenario where multiple {@link FlutterView} share the same {@link
+     * FlutterEngine}, the host application desires to determine the timing of attaching the {@link
+     * FlutterView} to the engine, for example, during the {@code onResume} instead of the {@code
+     * onCreateView}.
+     *
+     * <p>Defaults to {@code true}.
+     */
+    boolean attachToEngineAutomatically();
   }
 }

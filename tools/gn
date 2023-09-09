@@ -67,6 +67,9 @@ def get_out_dir(args):
   if args.target_dir != '':
     target_dir = [args.target_dir]
 
+  if args.darwin_extension_safe:
+    target_dir.append('extension_safe')
+
   return os.path.join(args.out_dir, 'out', '_'.join(target_dir))
 
 
@@ -80,6 +83,8 @@ def to_command_line(gn_args):
   def merge(key, value):
     if isinstance(value, bool):
       return '%s=%s' % (key, 'true' if value else 'false')
+    if isinstance(value, int):
+      return '%s=%d' % (key, value)
     return '%s="%s"' % (key, value)
 
   return [merge(x, y) for x, y in gn_args.items()]
@@ -212,6 +217,13 @@ def buildtools_dir():
 def setup_goma(args):
   goma_gn_args = {}
 
+  # args.goma has three states, True (--goma), False (--no-goma), and
+  # None (default). In True mode, we force GOMA to be used (and fail
+  # if we cannot enable it) unless the selected target definitely does
+  # not support it (in which case we print a warning). In False mode,
+  # we disable GOMA regardless. In None mode, we enable it if we can
+  # autodetect a configuration, and otherwise disable it.
+
   # When running in CI, the recipes use their own goma install, and take
   # care of starting and stopping the compiler proxy.
   running_on_luci = os.environ.get('LUCI_CONTEXT') is not None
@@ -233,14 +245,16 @@ def setup_goma(args):
   if args.target_os == 'wasm' or args.web:
     goma_gn_args['use_goma'] = False
     goma_gn_args['goma_dir'] = None
-    print('Disabling GOMA for wasm builds, it is not supported yet.')
-  elif args.goma and not running_on_luci and os.path.exists(cipd_goma_dir):
+    if args.goma:
+      print('Disabling GOMA for wasm builds, it is not supported yet.')
+  elif args.goma is not False and not running_on_luci and os.path.exists(
+      cipd_goma_dir):
     goma_gn_args['use_goma'] = True
     goma_gn_args['goma_dir'] = cipd_goma_dir
-  elif args.goma and goma_dir and os.path.exists(goma_dir):
+  elif args.goma is not False and goma_dir and os.path.exists(goma_dir):
     goma_gn_args['use_goma'] = True
     goma_gn_args['goma_dir'] = goma_dir
-  elif args.goma and os.path.exists(goma_home_dir):
+  elif args.goma is not False and os.path.exists(goma_home_dir):
     goma_gn_args['use_goma'] = True
     goma_gn_args['goma_dir'] = goma_home_dir
   elif args.goma:
@@ -285,6 +299,17 @@ def to_gn_args(args):
   gn_args['full_dart_sdk'] = args.full_dart_sdk
 
   if args.enable_unittests:
+    # Ensure that Android and iOS are *not* used with --enable-unittests.
+    # https://github.com/flutter/flutter/issues/132611
+    if args.target_os == 'android' or args.target_os == 'ios':
+      raise Exception(
+          'Cannot use --enable-unittests with --target-os=android or ios. If ' +
+          'you are trying to create an output directory to use for clangd ' +
+          '(i.e. for VSCode integration), use a host build instead.\n\n' +
+          'See https://github.com/flutter/flutter/wiki/' +
+          'Setting-up-the-Engine-development-environment' +
+          '#vscode-with-cc-intellisense-cc'
+      )
     gn_args['enable_unittests'] = True
   if args.no_enable_unittests:
     gn_args['enable_unittests'] = False
@@ -298,10 +323,8 @@ def to_gn_args(args):
   gn_args['skia_use_x11'
          ] = False  # Never add the X11 dependency (only takes effect on Linux).
   gn_args['skia_use_wuffs'] = True
-  gn_args['skia_use_expat'] = args.target_os == 'android'
+  gn_args['skia_use_expat'] = True
   gn_args['skia_use_fontconfig'] = args.enable_fontconfig
-  gn_args['skia_use_legacy_layer_bounds'
-         ] = True  # Temporary: See skbug.com/12083, skbug.com/12303.
   gn_args['skia_use_icu'] = True
   gn_args['is_official_build'] = True  # Disable Skia test utilities.
   gn_args['android_full_debug'
@@ -389,6 +412,11 @@ def to_gn_args(args):
   if args.full_dart_debug:
     gn_args['dart_debug'] = True
     gn_args['dart_debug_optimization_level'] = '0'
+
+  if args.dart_optimization_level:
+    gn_args['dart_default_optimization_level'] = args.dart_optimization_level
+  elif gn_args['target_os'] in ['android', 'ios']:
+    gn_args['dart_default_optimization_level'] = '2'
 
   gn_args['flutter_use_fontconfig'] = args.enable_fontconfig
   gn_args['dart_component_kind'
@@ -549,13 +577,16 @@ def to_gn_args(args):
   if args.fstack_protector:
     gn_args['use_fstack_protector'] = True
 
-  if args.enable_vulkan_validation_layers:
-    if args.target_os != 'fuchsia':
-      print(
-          'Vulkan validation layers are currently only supported on Fuchsia targets.'
-      )
-      sys.exit(1)
+  enable_vulkan_validation = args.enable_vulkan_validation_layers
+
+  # Enable Vulkan validation layer automatically on debug builds for arm64.
+  if args.unoptimized and args.target_os == 'android' and args.android_cpu == 'arm64':
+    enable_vulkan_validation = True
+
+  if enable_vulkan_validation:
     gn_args['enable_vulkan_validation_layers'] = True
+    if args.target_os == 'android':
+      gn_args['android_api_level'] = 26
 
   # Enable pointer compression on 64-bit mobile targets. iOS is excluded due to
   # its inability to allocate address space without allocating memory.
@@ -595,6 +626,10 @@ def to_gn_args(args):
     if malioc_path:
       gn_args['impeller_malioc_path'] = malioc_path
 
+  if args.use_glfw_swiftshader:
+    if get_host_os() == 'mac':
+      gn_args['glfw_vulkan_library'] = r'\"libvulkan.dylib\"'
+
   # ANGLE is exclusively used for:
   #  - Windows at runtime
   #  - Non-fuchsia host unit tests (is_host_build evaluates to false).
@@ -630,6 +665,9 @@ def to_gn_args(args):
            ] = '//third_party/vulkan-deps/vulkan-loader/src'
     gn_args['angle_vulkan_tools_dir'
            ] = '//third_party/vulkan-deps/vulkan-tools/src'
+
+  if args.darwin_extension_safe:
+    gn_args['darwin_extension_safe'] = True
 
   return gn_args
 
@@ -775,6 +813,12 @@ def parse_args(args):
   )
 
   parser.add_argument(
+      '--dart-optimization-level',
+      type=str,
+      help='The default optimization level for the Dart VM runtime.',
+  )
+
+  parser.add_argument(
       '--target-os',
       type=str,
       choices=['android', 'ios', 'mac', 'linux', 'fuchsia', 'wasm', 'win']
@@ -869,7 +913,7 @@ def parse_args(args):
       help='Do not build the host-side development artifacts.'
   )
 
-  parser.add_argument('--goma', default=True, action='store_true')
+  parser.add_argument('--goma', default=None, action='store_true')
   parser.add_argument('--no-goma', dest='goma', action='store_false')
   parser.add_argument(
       '--xcode-symlinks',
@@ -1115,8 +1159,30 @@ def parse_args(args):
       'format in the build directory.'
   )
 
+  parser.add_argument(
+      '--darwin-extension-safe',
+      default=False,
+      action='store_true',
+      help='Whether the produced Flutter.framework is app extension safe. Only for iOS.'
+  )
+
   # Verbose output.
   parser.add_argument('--verbose', default=False, action='store_true')
+
+  parser.add_argument(
+      '--gn-args',
+      action='append',
+      help='Additional gn args to be passed to gn. If you '
+      'need to use this, it should probably be another switch '
+      'in //flutter/tools/gn.',
+  )
+
+  parser.add_argument(
+      '--use-glfw-swiftshader',
+      default=False,
+      action='store_true',
+      help='Forces glfw to use swiftshader.',
+  )
 
   return parser.parse_args(args)
 
@@ -1173,6 +1239,7 @@ def main(argv):
   command.append('--export-compile-commands=default')
 
   gn_args = to_command_line(to_gn_args(args))
+  gn_args.extend(args.gn_args or [])
   out_dir = get_out_dir(args)
   command.append(out_dir)
   command.append('--args=%s' % ' '.join(gn_args))

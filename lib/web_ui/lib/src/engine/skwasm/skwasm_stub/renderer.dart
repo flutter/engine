@@ -8,6 +8,7 @@ import 'dart:typed_data';
 
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 class SkwasmRenderer implements Renderer {
   @override
@@ -144,7 +145,7 @@ class SkwasmRenderer implements Renderer {
   }
 
   @override
-  Future<ui.Codec> instantiateImageCodecFromUrl(Uri uri, {WebOnlyImageCodecChunkCallback? chunkCallback}) {
+  Future<ui.Codec> instantiateImageCodecFromUrl(Uri uri, {ui_web.ImageCodecChunkCallback? chunkCallback}) {
     throw UnimplementedError('Skwasm not implemented on this platform.');
   }
 
@@ -171,8 +172,21 @@ class SkwasmRenderer implements Renderer {
     if (_programs.containsKey(assetKey)) {
       return _programs[assetKey]!;
     }
-    return _programs[assetKey] = assetManager.load(assetKey).then((ByteData data) {
+    return _programs[assetKey] = ui_web.assetManager.load(assetKey).then((ByteData data) {
       return CkFragmentProgram.fromBytes(assetKey, data.buffer.asUint8List());
     });
   }
+
+  @override
+  ui.LineMetrics createLineMetrics({
+    required bool hardBreak,
+    required double ascent,
+    required double descent,
+    required double unscaledAscent,
+    required double height,
+    required double width,
+    required double left,
+    required double baseline,
+    required int lineNumber
+  }) => throw UnimplementedError('Skwasm not implemented on this platform.');
 }

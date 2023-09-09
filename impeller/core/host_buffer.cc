@@ -56,6 +56,22 @@ BufferView HostBuffer::Emplace(const void* buffer, size_t length) {
   return BufferView{shared_from_this(), GetBuffer(), Range{old_length, length}};
 }
 
+BufferView HostBuffer::Emplace(size_t length,
+                               size_t align,
+                               const EmplaceProc& cb) {
+  if (!cb) {
+    return {};
+  }
+  auto old_length = GetLength();
+  if (!Truncate(old_length + length)) {
+    return {};
+  }
+  generation_++;
+  cb(GetBuffer() + old_length);
+
+  return BufferView{shared_from_this(), GetBuffer(), Range{old_length, length}};
+}
+
 std::shared_ptr<const DeviceBuffer> HostBuffer::GetDeviceBuffer(
     Allocator& allocator) const {
   if (generation_ == device_buffer_generation_) {
@@ -69,6 +85,17 @@ std::shared_ptr<const DeviceBuffer> HostBuffer::GetDeviceBuffer(
   device_buffer_generation_ = generation_;
   device_buffer_ = std::move(new_buffer);
   return device_buffer_;
+}
+
+void HostBuffer::Reset() {
+  generation_ += 1;
+  device_buffer_ = nullptr;
+  bool did_truncate = Truncate(0);
+  FML_CHECK(did_truncate);
+}
+
+size_t HostBuffer::GetSize() const {
+  return GetReservedLength();
 }
 
 }  // namespace impeller

@@ -8,6 +8,7 @@ import 'dart:typed_data';
 
 import 'package:ui/src/engine/skwasm/skwasm_stub.dart' if (dart.library.ffi) 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import 'browser_detection.dart';
 import 'canvaskit/renderer.dart';
@@ -15,7 +16,6 @@ import 'configuration.dart';
 import 'embedder.dart';
 import 'fonts.dart';
 import 'html/renderer.dart';
-import 'html_image_codec.dart';
 
 final Renderer _renderer = Renderer._internal();
 Renderer get renderer => _renderer;
@@ -29,21 +29,22 @@ abstract class Renderer {
   factory Renderer._internal() {
     if (FlutterConfiguration.flutterWebUseSkwasm) {
       return SkwasmRenderer();
-    }
-    bool useCanvasKit;
-    if (FlutterConfiguration.flutterWebAutoDetect) {
-      if (configuration.requestedRendererType != null) {
-        useCanvasKit = configuration.requestedRendererType == 'canvaskit';
-      } else {
-        // If requestedRendererType is not specified, use CanvasKit for desktop and
-        // html for mobile.
-        useCanvasKit = isDesktop;
-      }
     } else {
-      useCanvasKit = FlutterConfiguration.useSkia;
-    }
+      bool useCanvasKit;
+      if (FlutterConfiguration.flutterWebAutoDetect) {
+        if (configuration.requestedRendererType != null) {
+          useCanvasKit = configuration.requestedRendererType == 'canvaskit';
+        } else {
+          // If requestedRendererType is not specified, use CanvasKit for desktop and
+          // html for mobile.
+          useCanvasKit = isDesktop;
+        }
+      } else {
+        useCanvasKit = FlutterConfiguration.useSkia;
+      }
 
-    return useCanvasKit ? CanvasKitRenderer() : HtmlRenderer();
+      return useCanvasKit ? CanvasKitRenderer() : HtmlRenderer();
+    }
   }
 
   String get rendererTag;
@@ -130,7 +131,7 @@ abstract class Renderer {
 
   Future<ui.Codec> instantiateImageCodecFromUrl(
     Uri uri, {
-    WebOnlyImageCodecChunkCallback? chunkCallback,
+    ui_web.ImageCodecChunkCallback? chunkCallback,
   });
 
   void decodeImageFromPixels(
@@ -159,6 +160,18 @@ abstract class Renderer {
   ui.Path createPath();
   ui.Path copyPath(ui.Path src);
   ui.Path combinePaths(ui.PathOperation op, ui.Path path1, ui.Path path2);
+
+  ui.LineMetrics createLineMetrics({
+    required bool hardBreak,
+    required double ascent,
+    required double descent,
+    required double unscaledAscent,
+    required double height,
+    required double width,
+    required double left,
+    required double baseline,
+    required int lineNumber,
+  });
 
   ui.TextStyle createTextStyle({
     required ui.Color? color,

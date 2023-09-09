@@ -161,7 +161,8 @@ void AccessibilityBridge::UpdateSemantics(
 
   if (root) {
     if (!view_controller_.view.accessibilityElements) {
-      view_controller_.view.accessibilityElements = @[ [root accessibilityContainer] ];
+      view_controller_.view.accessibilityElements =
+          @[ [root accessibilityContainer] ?: [NSNull null] ];
     }
     NSMutableArray<SemanticsObject*>* newRoutes = [[[NSMutableArray alloc] init] autorelease];
     [root collectRoutes:newRoutes];
@@ -361,6 +362,10 @@ void AccessibilityBridge::HandleEvent(NSDictionary<NSString*, id>* annotatedEven
   if ([type isEqualToString:@"announce"]) {
     NSString* message = annotatedEvent[@"data"][@"message"];
     ios_delegate_->PostAccessibilityNotification(UIAccessibilityAnnouncementNotification, message);
+  }
+  if ([type isEqualToString:@"focus"]) {
+    SemanticsObject* node = objects_.get()[annotatedEvent[@"nodeId"]];
+    ios_delegate_->PostAccessibilityNotification(UIAccessibilityLayoutChangedNotification, node);
   }
 }
 

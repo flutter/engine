@@ -470,6 +470,7 @@ class BrowserPlatform extends PlatformPlugin {
     '.json': 'application/json',
     '.map': 'application/json',
     '.ttf': 'font/ttf',
+    '.otf': 'font/otf',
     '.woff': 'font/woff',
     '.woff2': 'font/woff2',
   };
@@ -539,16 +540,16 @@ class BrowserPlatform extends PlatformPlugin {
 
       final String testRunner = isWasm ? '/test_dart2wasm.js' : 'packages/test/dart.js';
 
-
       return shelf.Response.ok('''
         <!DOCTYPE html>
         <html>
         <head>
-          <title>${htmlEscape.convert(test)} Test</title>
           <meta name="assetBase" content="/">
           <script>
             window.flutterConfiguration = {
               canvasKitBaseUrl: "/canvaskit/",
+              // Some of our tests rely on color emoji
+              useColorEmoji: true,
               canvasKitVariant: "${getCanvasKitVariant()}",
             };
           </script>
@@ -1009,7 +1010,8 @@ class BrowserManager {
           );
 
           final Map<String, Uri> packageMap = <String, Uri>{
-            for (Package p in packageConfig.packages) p.name: p.packageUriRoot
+            for (final Package p in packageConfig.packages)
+              p.name: p.packageUriRoot
           };
           final JSStackTraceMapper mapper = JSStackTraceMapper(
             await File(mapPath).readAsString(),

@@ -393,6 +393,8 @@ TaskSource::TopTask MessageLoopTaskQueues::PeekNextTaskUnlocked(
   // At least one task at the top because PeekNextTaskUnlocked() is called after
   // HasPendingTasksUnlocked()
   FML_CHECK(top_task.has_value());
+  // Covered by FML_CHECK.
+  // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
   return top_task.value();
 }
 

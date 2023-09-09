@@ -34,6 +34,8 @@ impeller_shaders("entity_shaders") {
     "shaders/blending/blend.vert",
     "shaders/border_mask_blur.frag",
     "shaders/border_mask_blur.vert",
+    "shaders/clip.frag",
+    "shaders/clip.vert",
     "shaders/color_matrix_color_filter.frag",
     "shaders/color_matrix_color_filter.vert",
     "shaders/conical_gradient_fill.frag",
@@ -43,9 +45,8 @@ impeller_shaders("entity_shaders") {
     "shaders/gaussian_blur/gaussian_blur_noalpha_decal.frag",
     "shaders/gaussian_blur/gaussian_blur_noalpha_nodecal.frag",
     "shaders/glyph_atlas.frag",
+    "shaders/glyph_atlas_color.frag",
     "shaders/glyph_atlas.vert",
-    "shaders/glyph_atlas_sdf.frag",
-    "shaders/glyph_atlas_sdf.vert",
     "shaders/gradient_fill.vert",
     "shaders/linear_to_srgb_filter.frag",
     "shaders/linear_to_srgb_filter.vert",
@@ -53,7 +54,6 @@ impeller_shaders("entity_shaders") {
     "shaders/morphology_filter.frag",
     "shaders/morphology_filter.vert",
     "shaders/position_color.vert",
-    "shaders/position_uv.vert",
     "shaders/radial_gradient_fill.frag",
     "shaders/rrect_blur.vert",
     "shaders/rrect_blur.frag",
@@ -65,12 +65,13 @@ impeller_shaders("entity_shaders") {
     "shaders/sweep_gradient_fill.frag",
     "shaders/texture_fill.frag",
     "shaders/texture_fill.vert",
+    "shaders/texture_fill_external.frag",
     "shaders/tiled_texture_fill.frag",
-    "shaders/tiled_texture_fill.vert",
     "shaders/vertices.frag",
     "shaders/yuv_to_rgb_filter.frag",
     "shaders/yuv_to_rgb_filter.vert",
     "shaders/blending/porter_duff_blend.frag",
+    "shaders/blending/porter_duff_blend.vert",
   ]
 
   if (impeller_debug) {
@@ -97,6 +98,8 @@ impeller_shaders("modern_entity_shaders") {
     "shaders/linear_gradient_ssbo_fill.frag",
     "shaders/radial_gradient_ssbo_fill.frag",
     "shaders/sweep_gradient_ssbo_fill.frag",
+    "shaders/geometry/points.comp",
+    "shaders/geometry/uv.comp",
   ]
 }
 
@@ -174,6 +177,8 @@ impeller_component("entity") {
     "contents/filters/inputs/filter_contents_filter_input.h",
     "contents/filters/inputs/filter_input.cc",
     "contents/filters/inputs/filter_input.h",
+    "contents/filters/inputs/placeholder_filter_input.cc",
+    "contents/filters/inputs/placeholder_filter_input.h",
     "contents/filters/inputs/texture_filter_input.cc",
     "contents/filters/inputs/texture_filter_input.h",
     "contents/filters/linear_to_srgb_filter_contents.cc",
@@ -196,14 +201,12 @@ impeller_component("entity") {
     "contents/linear_gradient_contents.h",
     "contents/radial_gradient_contents.cc",
     "contents/radial_gradient_contents.h",
-    "contents/rrect_shadow_contents.cc",
-    "contents/rrect_shadow_contents.h",
     "contents/runtime_effect_contents.cc",
     "contents/runtime_effect_contents.h",
-    "contents/scene_contents.cc",
-    "contents/scene_contents.h",
     "contents/solid_color_contents.cc",
     "contents/solid_color_contents.h",
+    "contents/solid_rrect_blur_contents.cc",
+    "contents/solid_rrect_blur_contents.h",
     "contents/sweep_gradient_contents.cc",
     "contents/sweep_gradient_contents.h",
     "contents/text_contents.cc",
@@ -222,10 +225,24 @@ impeller_component("entity") {
     "entity_pass_delegate.h",
     "entity_pass_target.cc",
     "entity_pass_target.h",
-    "geometry.cc",
-    "geometry.h",
+    "geometry/cover_geometry.cc",
+    "geometry/cover_geometry.h",
+    "geometry/fill_path_geometry.cc",
+    "geometry/fill_path_geometry.h",
+    "geometry/geometry.cc",
+    "geometry/geometry.h",
+    "geometry/point_field_geometry.cc",
+    "geometry/point_field_geometry.h",
+    "geometry/rect_geometry.cc",
+    "geometry/rect_geometry.h",
+    "geometry/stroke_path_geometry.cc",
+    "geometry/stroke_path_geometry.h",
+    "geometry/vertices_geometry.cc",
+    "geometry/vertices_geometry.h",
     "inline_pass_context.cc",
     "inline_pass_context.h",
+    "render_target_cache.cc",
+    "render_target_cache.h",
   ]
 
   if (impeller_debug) {
@@ -242,9 +259,16 @@ impeller_component("entity") {
     "../archivist",
     "../image:image_skia_backend",
     "../renderer",
-    "../scene",
     "../typographer",
   ]
+
+  if (impeller_enable_3d) {
+    sources += [
+      "contents/scene_contents.cc",
+      "contents/scene_contents.h",
+    ]
+    public_deps += [ "../scene" ]
+  }
 
   deps = [ "//flutter/fml" ]
 }
@@ -257,11 +281,24 @@ impeller_component("entity_unittests") {
     "entity_playground.cc",
     "entity_playground.h",
     "entity_unittests.cc",
+    "geometry/geometry_unittests.cc",
   ]
 
   deps = [
     ":entity",
     "../geometry:geometry_asserts",
     "../playground:playground_test",
+    "//flutter/impeller/typographer/backends/skia:typographer_skia_backend",
+  ]
+}
+
+impeller_component("render_target_cache_unittests") {
+  testonly = true
+
+  sources = [ "render_target_cache_unittests.cc" ]
+
+  deps = [
+    ":entity",
+    "//flutter/testing:testing_lib",
   ]
 }

@@ -4,7 +4,7 @@
 
 #include "flutter/display_list/benchmarking/dl_complexity.h"
 #include "flutter/display_list/display_list.h"
-#include "flutter/display_list/dl_builder.h"
+#include "flutter/display_list/display_list_builder.h"
 #include "flutter/display_list/testing/dl_test_snippets.h"
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/layers/display_list_layer.h"
@@ -17,12 +17,11 @@
 #include "flutter/flow/testing/mock_raster_cache.h"
 #include "flutter/testing/assertions_skia.h"
 #include "gtest/gtest.h"
-#include "include/core/SkMatrix.h"
-#include "include/core/SkPoint.h"
-#include "third_party/skia/include/core/SkCanvas.h"
-#include "third_party/skia/include/core/SkPaint.h"
-#include "third_party/skia/include/core/SkPicture.h"
-#include "third_party/skia/include/core/SkPictureRecorder.h"
+#include "third_party/skia/include/core/SkMatrix.h"
+#include "third_party/skia/include/core/SkPoint.h"
+
+// TODO(zanderso): https://github.com/flutter/flutter/issues/127701
+// NOLINTBEGIN(bugprone-unchecked-optional-access)
 
 namespace flutter {
 namespace testing {
@@ -175,45 +174,12 @@ TEST(RasterCache, SetCheckboardCacheImages) {
   };
 
   cache.SetCheckboardCacheImages(false);
-  cache.Rasterize(r_context, dummy_draw_function, draw_checkerboard);
+  cache.Rasterize(r_context, nullptr, dummy_draw_function, draw_checkerboard);
   ASSERT_FALSE(did_draw_checkerboard);
 
   cache.SetCheckboardCacheImages(true);
-  cache.Rasterize(r_context, dummy_draw_function, draw_checkerboard);
+  cache.Rasterize(r_context, nullptr, dummy_draw_function, draw_checkerboard);
   ASSERT_TRUE(did_draw_checkerboard);
-}
-
-TEST(RasterCache, AccessThresholdOfZeroDisablesCachingForSkPicture) {
-  size_t threshold = 0;
-  flutter::RasterCache cache(threshold);
-
-  SkMatrix matrix = SkMatrix::I();
-
-  auto display_list = GetSampleDisplayList();
-
-  MockCanvas dummy_canvas(1000, 1000);
-  DlPaint paint;
-
-  LayerStateStack preroll_state_stack;
-  preroll_state_stack.set_preroll_delegate(kGiantRect, matrix);
-  LayerStateStack paint_state_stack;
-  preroll_state_stack.set_delegate(&dummy_canvas);
-
-  FixedRefreshRateStopwatch raster_time;
-  FixedRefreshRateStopwatch ui_time;
-  PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder(
-      preroll_state_stack, &cache, &raster_time, &ui_time);
-  PaintContextHolder paint_context_holder = GetSamplePaintContextHolder(
-      paint_state_stack, &cache, &raster_time, &ui_time);
-  auto& preroll_context = preroll_context_holder.preroll_context;
-  auto& paint_context = paint_context_holder.paint_context;
-
-  cache.BeginFrame();
-  DisplayListRasterCacheItem display_list_item(display_list, SkPoint(), true,
-                                               false);
-  ASSERT_FALSE(RasterCacheItemPrerollAndTryToRasterCache(
-      display_list_item, preroll_context, paint_context, matrix));
-  ASSERT_FALSE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
 }
 
 TEST(RasterCache, AccessThresholdOfZeroDisablesCachingForDisplayList) {
@@ -245,46 +211,6 @@ TEST(RasterCache, AccessThresholdOfZeroDisablesCachingForDisplayList) {
 
   DisplayListRasterCacheItem display_list_item(display_list, SkPoint(), true,
                                                false);
-  ASSERT_FALSE(RasterCacheItemPrerollAndTryToRasterCache(
-      display_list_item, preroll_context, paint_context, matrix));
-  ASSERT_FALSE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
-}
-
-TEST(RasterCache, PictureCacheLimitPerFrameIsRespectedWhenZeroForSkPicture) {
-  size_t picture_cache_limit_per_frame = 0;
-  flutter::RasterCache cache(3, picture_cache_limit_per_frame);
-
-  SkMatrix matrix = SkMatrix::I();
-
-  auto display_list = GetSampleDisplayList();
-
-  MockCanvas dummy_canvas(1000, 1000);
-  DlPaint paint;
-
-  LayerStateStack preroll_state_stack;
-  preroll_state_stack.set_preroll_delegate(kGiantRect, matrix);
-  LayerStateStack paint_state_stack;
-  preroll_state_stack.set_delegate(&dummy_canvas);
-
-  FixedRefreshRateStopwatch raster_time;
-  FixedRefreshRateStopwatch ui_time;
-  PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder(
-      preroll_state_stack, &cache, &raster_time, &ui_time);
-  PaintContextHolder paint_context_holder = GetSamplePaintContextHolder(
-      paint_state_stack, &cache, &raster_time, &ui_time);
-  auto& preroll_context = preroll_context_holder.preroll_context;
-  auto& paint_context = paint_context_holder.paint_context;
-
-  cache.BeginFrame();
-
-  DisplayListRasterCacheItem display_list_item(display_list, SkPoint(), true,
-                                               false);
-  ASSERT_FALSE(RasterCacheItemPrerollAndTryToRasterCache(
-      display_list_item, preroll_context, paint_context, matrix));
-  ASSERT_FALSE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
-  ASSERT_FALSE(RasterCacheItemPrerollAndTryToRasterCache(
-      display_list_item, preroll_context, paint_context, matrix));
-  ASSERT_FALSE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
   ASSERT_FALSE(RasterCacheItemPrerollAndTryToRasterCache(
       display_list_item, preroll_context, paint_context, matrix));
   ASSERT_FALSE(display_list_item.Draw(paint_context, &dummy_canvas, &paint));
@@ -885,3 +811,5 @@ TEST_F(RasterCacheTest, RasterCacheKeyIDLayerChildrenIds) {
 
 }  // namespace testing
 }  // namespace flutter
+
+// NOLINTEND(bugprone-unchecked-optional-access)

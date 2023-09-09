@@ -9,7 +9,7 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/gradient_generator.h"
 #include "impeller/entity/entity.h"
-#include "impeller/entity/geometry.h"
+#include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/gradient.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
@@ -29,6 +29,10 @@ void RadialGradientContents::SetTileMode(Entity::TileMode tile_mode) {
   tile_mode_ = tile_mode;
 }
 
+void RadialGradientContents::SetDither(bool dither) {
+  dither_ = dither;
+}
+
 void RadialGradientContents::SetColors(std::vector<Color> colors) {
   colors_ = std::move(colors);
 }
@@ -46,7 +50,7 @@ const std::vector<Scalar>& RadialGradientContents::GetStops() const {
 }
 
 bool RadialGradientContents::IsOpaque() const {
-  if (GetOpacity() < 1) {
+  if (GetOpacityFactor() < 1 || tile_mode_ == Entity::TileMode::kDecal) {
     return false;
   }
   for (auto color : colors_) {
@@ -76,7 +80,9 @@ bool RadialGradientContents::RenderSSBO(const ContentContext& renderer,
   frag_info.center = center_;
   frag_info.radius = radius_;
   frag_info.tile_mode = static_cast<Scalar>(tile_mode_);
-  frag_info.alpha = GetOpacity();
+  frag_info.decal_border_color = decal_border_color_;
+  frag_info.alpha = GetOpacityFactor();
+  frag_info.dither = dither_;
 
   auto& host_buffer = pass.GetTransientsBuffer();
   auto colors = CreateGradientColors(colors_, stops_);
@@ -89,10 +95,10 @@ bool RadialGradientContents::RenderSSBO(const ContentContext& renderer,
   VS::FrameInfo frame_info;
   frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransformation();
-  frame_info.matrix = GetInverseMatrix();
+  frame_info.matrix = GetInverseEffectTransform();
 
   Command cmd;
-  cmd.label = "RadialGradientSSBOFill";
+  DEBUG_COMMAND_INFO(cmd, "RadialGradientSSBOFill");
   cmd.stencil_reference = entity.GetStencilDepth();
 
   auto geometry_result =
@@ -139,8 +145,9 @@ bool RadialGradientContents::RenderTexture(const ContentContext& renderer,
   frag_info.center = center_;
   frag_info.radius = radius_;
   frag_info.tile_mode = static_cast<Scalar>(tile_mode_);
+  frag_info.decal_border_color = decal_border_color_;
   frag_info.texture_sampler_y_coord_scale = gradient_texture->GetYCoordScale();
-  frag_info.alpha = GetOpacity();
+  frag_info.alpha = GetOpacityFactor();
   frag_info.half_texel = Vector2(0.5 / gradient_texture->GetSize().width,
                                  0.5 / gradient_texture->GetSize().height);
 
@@ -149,10 +156,10 @@ bool RadialGradientContents::RenderTexture(const ContentContext& renderer,
 
   VS::FrameInfo frame_info;
   frame_info.mvp = geometry_result.transform;
-  frame_info.matrix = GetInverseMatrix();
+  frame_info.matrix = GetInverseEffectTransform();
 
   Command cmd;
-  cmd.label = "RadialGradientFill";
+  DEBUG_COMMAND_INFO(cmd, "RadialGradientFill");
   cmd.stencil_reference = entity.GetStencilDepth();
 
   auto options = OptionsFromPassAndEntity(pass, entity);
@@ -182,6 +189,15 @@ bool RadialGradientContents::RenderTexture(const ContentContext& renderer,
     restore.SetRestoreCoverage(GetCoverage(entity));
     return restore.Render(renderer, entity, pass);
   }
+  return true;
+}
+
+bool RadialGradientContents::ApplyColorFilter(
+    const ColorFilterProc& color_filter_proc) {
+  for (Color& color : colors_) {
+    color = color_filter_proc(color);
+  }
+  decal_border_color_ = color_filter_proc(decal_border_color_);
   return true;
 }
 

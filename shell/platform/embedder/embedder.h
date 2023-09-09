@@ -25,9 +25,9 @@
 // - Function signatures (names, argument counts, argument order, and argument
 //   type) cannot change.
 // - The core behavior of existing functions cannot change.
-// - Instead of nesting structures by value within another structure, prefer
-//   nesting by pointer. This ensures that adding members to the nested struct
-//   does not break the ABI of the parent struct.
+// - Instead of nesting structures by value within another structure/union,
+//   prefer nesting by pointer. This ensures that adding members to the nested
+//   struct does not break the ABI of the parent struct/union.
 // - Instead of array of structures, prefer array of pointers to structures.
 //   This ensures that array indexing does not break if members are added
 //   to the structure.
@@ -236,6 +236,11 @@ typedef enum {
   kFlutterSemanticsFlagIsKeyboardKey = 1 << 24,
   /// Whether the semantics node represents a tristate checkbox in mixed state.
   kFlutterSemanticsFlagIsCheckStateMixed = 1 << 25,
+  /// The semantics node has the quality of either being "expanded" or
+  /// "collapsed".
+  kFlutterSemanticsFlagHasExpandedState = 1 << 26,
+  /// Whether a semantic node that hasExpandedState is currently expanded.
+  kFlutterSemanticsFlagIsExpanded = 1 << 27,
 } FlutterSemanticsFlag;
 
 typedef enum {
@@ -676,9 +681,13 @@ typedef struct {
   FlutterMetalCommandQueueHandle present_command_queue;
   /// The callback that gets invoked when the engine requests the embedder for a
   /// texture to render to.
+  ///
+  /// Not used if a FlutterCompositor is supplied in FlutterProjectArgs.
   FlutterMetalTextureCallback get_next_drawable_callback;
   /// The callback presented to the embedder to present a fully populated metal
   /// texture to the user.
+  ///
+  /// Not used if a FlutterCompositor is supplied in FlutterProjectArgs.
   FlutterMetalPresentCallback present_drawable_callback;
   /// When the embedder specifies that a texture has a frame available, the
   /// engine will call this method (on an internal engine managed thread) so
@@ -805,6 +814,11 @@ typedef struct {
   };
 } FlutterRendererConfig;
 
+/// Display refers to a graphics hardware system consisting of a framebuffer,
+/// typically a monitor or a screen. This ID is unique per display and is
+/// stable until the Flutter application restarts.
+typedef uint64_t FlutterEngineDisplayId;
+
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterWindowMetricsEvent).
   size_t struct_size;
@@ -826,6 +840,8 @@ typedef struct {
   double physical_view_inset_bottom;
   /// Left inset of window.
   double physical_view_inset_left;
+  /// The identifier of the display the view is rendering on.
+  FlutterEngineDisplayId display_id;
 } FlutterWindowMetricsEvent;
 
 /// The phase of the pointer event.
@@ -1048,6 +1064,57 @@ typedef int64_t FlutterPlatformViewIdentifier;
 FLUTTER_EXPORT
 extern const int32_t kFlutterSemanticsNodeIdBatchEnd;
 
+// The enumeration of possible string attributes that affect how assistive
+// technologies announce a string.
+//
+// See dart:ui's implementers of the StringAttribute abstract class.
+typedef enum {
+  // Indicates the string should be announced character by character.
+  kSpellOut,
+  // Indicates the string should be announced using the specified locale.
+  kLocale,
+} FlutterStringAttributeType;
+
+// Indicates the assistive technology should announce out the string character
+// by character.
+//
+// See dart:ui's SpellOutStringAttribute.
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterSpellOutStringAttribute).
+  size_t struct_size;
+} FlutterSpellOutStringAttribute;
+
+// Indicates the assistive technology should announce the string using the
+// specified locale.
+//
+// See dart:ui's LocaleStringAttribute.
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterLocaleStringAttribute).
+  size_t struct_size;
+  // The locale of this attribute.
+  const char* locale;
+} FlutterLocaleStringAttribute;
+
+// Indicates how the assistive technology should treat the string.
+//
+// See dart:ui's StringAttribute.
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterStringAttribute).
+  size_t struct_size;
+  // The position this attribute starts.
+  size_t start;
+  // The next position after the attribute ends.
+  size_t end;
+  /// The type of the attribute described by the subsequent union.
+  FlutterStringAttributeType type;
+  union {
+    // Indicates the string should be announced character by character.
+    const FlutterSpellOutStringAttribute* spell_out;
+    // Indicates the string should be announced using the specified locale.
+    const FlutterLocaleStringAttribute* locale;
+  };
+} FlutterStringAttribute;
+
 /// A node that represents some semantic data.
 ///
 /// The semantics tree is maintained during the semantics phase of the pipeline
@@ -1199,6 +1266,31 @@ typedef struct {
   FlutterPlatformViewIdentifier platform_view_id;
   /// A textual tooltip attached to the node.
   const char* tooltip;
+  // The number of string attributes associated with the `label`.
+  size_t label_attribute_count;
+  // Array of string attributes associated with the `label`.
+  // Has length `label_attribute_count`.
+  const FlutterStringAttribute** label_attributes;
+  // The number of string attributes associated with the `hint`.
+  size_t hint_attribute_count;
+  // Array of string attributes associated with the `hint`.
+  // Has length `hint_attribute_count`.
+  const FlutterStringAttribute** hint_attributes;
+  // The number of string attributes associated with the `value`.
+  size_t value_attribute_count;
+  // Array of string attributes associated with the `value`.
+  // Has length `value_attribute_count`.
+  const FlutterStringAttribute** value_attributes;
+  // The number of string attributes associated with the `increased_value`.
+  size_t increased_value_attribute_count;
+  // Array of string attributes associated with the `increased_value`.
+  // Has length `increased_value_attribute_count`.
+  const FlutterStringAttribute** increased_value_attributes;
+  // The number of string attributes associated with the `decreased_value`.
+  size_t decreased_value_attribute_count;
+  // Array of string attributes associated with the `decreased_value`.
+  // Has length `decreased_value_attribute_count`.
+  const FlutterStringAttribute** decreased_value_attributes;
 } FlutterSemanticsNode2;
 
 /// `FlutterSemanticsCustomAction` ID used as a sentinel to signal the end of a
@@ -1653,11 +1745,6 @@ typedef const FlutterLocale* (*FlutterComputePlatformResolvedLocaleCallback)(
     const FlutterLocale** /* supported_locales*/,
     size_t /* Number of locales*/);
 
-/// Display refers to a graphics hardware system consisting of a framebuffer,
-/// typically a monitor or a screen. This ID is unique per display and is
-/// stable until the Flutter application restarts.
-typedef uint64_t FlutterEngineDisplayId;
-
 typedef struct {
   /// This size of this struct. Must be sizeof(FlutterDisplay).
   size_t struct_size;
@@ -1673,6 +1760,16 @@ typedef struct {
   /// This represents the refresh period in frames per second. This value may be
   /// zero if the device is not running or unavailable or unknown.
   double refresh_rate;
+
+  /// The width of the display, in physical pixels.
+  size_t width;
+
+  /// The height of the display, in physical pixels.
+  size_t height;
+
+  /// The pixel ratio of the display, which is used to convert physical pixels
+  /// to logical pixels.
+  double device_pixel_ratio;
 } FlutterEngineDisplay;
 
 /// The update type parameter that is passed to

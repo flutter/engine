@@ -11,6 +11,7 @@
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/blit_pass_vk.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
+#include "impeller/renderer/backend/vulkan/compute_pass_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/render_pass_vk.h"
@@ -19,40 +20,45 @@
 
 namespace impeller {
 
-CommandBufferVK::CommandBufferVK(std::weak_ptr<const Context> context,
-                                 std::shared_ptr<CommandEncoderVK> encoder)
-    : CommandBuffer(std::move(context)), encoder_(std::move(encoder)) {
-  if (!encoder_ || !encoder_->IsValid()) {
-    return;
-  }
-  is_valid_ = true;
-}
+CommandBufferVK::CommandBufferVK(
+    std::weak_ptr<const Context> context,
+    std::shared_ptr<CommandEncoderFactoryVK> encoder_factory)
+    : CommandBuffer(std::move(context)),
+      encoder_factory_(std::move(encoder_factory)) {}
 
 CommandBufferVK::~CommandBufferVK() = default;
 
 void CommandBufferVK::SetLabel(const std::string& label) const {
-  auto context = context_.lock();
-  if (!context || !encoder_) {
-    return;
+  if (!encoder_) {
+    encoder_factory_->SetLabel(label);
+  } else {
+    auto context = context_.lock();
+    if (!context || !encoder_) {
+      return;
+    }
+    ContextVK::Cast(*context).SetDebugName(encoder_->GetCommandBuffer(), label);
   }
-  ContextVK::Cast(*context).SetDebugName(encoder_->GetCommandBuffer(), label);
 }
 
 bool CommandBufferVK::IsValid() const {
-  return is_valid_;
+  return true;
 }
 
-const std::shared_ptr<CommandEncoderVK>& CommandBufferVK::GetEncoder() const {
+const std::shared_ptr<CommandEncoderVK>& CommandBufferVK::GetEncoder() {
+  if (!encoder_) {
+    encoder_ = encoder_factory_->Create();
+  }
   return encoder_;
 }
 
 bool CommandBufferVK::OnSubmitCommands(CompletionCallback callback) {
-  const auto submit = encoder_->Submit();
-  if (callback) {
-    callback(submit ? CommandBuffer::Status::kCompleted
-                    : CommandBuffer::Status::kError);
+  if (!callback) {
+    return encoder_->Submit();
   }
-  return submit;
+  return encoder_->Submit([callback](bool submitted) {
+    callback(submitted ? CommandBuffer::Status::kCompleted
+                       : CommandBuffer::Status::kError);
+  });
 }
 
 void CommandBufferVK::OnWaitUntilScheduled() {}
@@ -63,31 +69,44 @@ std::shared_ptr<RenderPass> CommandBufferVK::OnCreateRenderPass(
   if (!context) {
     return nullptr;
   }
-  auto pass = std::shared_ptr<RenderPassVK>(new RenderPassVK(context,  //
-                                                             target,   //
-                                                             encoder_  //)
-                                                             ));
+  auto pass =
+      std::shared_ptr<RenderPassVK>(new RenderPassVK(context,          //
+                                                     target,           //
+                                                     weak_from_this()  //
+                                                     ));
   if (!pass->IsValid()) {
     return nullptr;
   }
   return pass;
 }
 
-std::shared_ptr<BlitPass> CommandBufferVK::OnCreateBlitPass() const {
+std::shared_ptr<BlitPass> CommandBufferVK::OnCreateBlitPass() {
   if (!IsValid()) {
     return nullptr;
   }
-  auto pass = std::shared_ptr<BlitPassVK>(new BlitPassVK(encoder_));
+  auto pass = std::shared_ptr<BlitPassVK>(new BlitPassVK(weak_from_this()));
   if (!pass->IsValid()) {
     return nullptr;
   }
   return pass;
 }
 
-std::shared_ptr<ComputePass> CommandBufferVK::OnCreateComputePass() const {
-  // TODO(110622): Wire up compute passes in Vulkan.
-  IMPELLER_UNIMPLEMENTED;
-  return nullptr;
+std::shared_ptr<ComputePass> CommandBufferVK::OnCreateComputePass() {
+  if (!IsValid()) {
+    return nullptr;
+  }
+  auto context = context_.lock();
+  if (!context) {
+    return nullptr;
+  }
+  auto pass =
+      std::shared_ptr<ComputePassVK>(new ComputePassVK(context,          //
+                                                       weak_from_this()  //
+                                                       ));
+  if (!pass->IsValid()) {
+    return nullptr;
+  }
+  return pass;
 }
 
 }  // namespace impeller

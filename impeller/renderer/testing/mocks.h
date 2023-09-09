@@ -76,19 +76,23 @@ class MockCommandBuffer : public CommandBuffer {
       : CommandBuffer(context) {}
   MOCK_CONST_METHOD0(IsValid, bool());
   MOCK_CONST_METHOD1(SetLabel, void(const std::string& label));
-  MOCK_CONST_METHOD0(OnCreateBlitPass, std::shared_ptr<BlitPass>());
+  MOCK_METHOD0(OnCreateBlitPass, std::shared_ptr<BlitPass>());
   MOCK_METHOD1(OnSubmitCommands, bool(CompletionCallback callback));
   MOCK_METHOD0(OnWaitUntilScheduled, void());
-  MOCK_CONST_METHOD0(OnCreateComputePass, std::shared_ptr<ComputePass>());
+  MOCK_METHOD0(OnCreateComputePass, std::shared_ptr<ComputePass>());
   MOCK_METHOD1(OnCreateRenderPass,
                std::shared_ptr<RenderPass>(RenderTarget render_target));
 };
 
 class MockImpellerContext : public Context {
  public:
+  MOCK_CONST_METHOD0(GetBackendType, Context::BackendType());
+
   MOCK_CONST_METHOD0(DescribeGpuModel, std::string());
 
   MOCK_CONST_METHOD0(IsValid, bool());
+
+  MOCK_METHOD0(Shutdown, void());
 
   MOCK_CONST_METHOD0(GetResourceAllocator, std::shared_ptr<Allocator>());
 

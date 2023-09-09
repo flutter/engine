@@ -38,27 +38,27 @@ void RenderPassGLES::OnSetLabel(std::string label) {
 
 void ConfigureBlending(const ProcTableGLES& gl,
                        const ColorAttachmentDescriptor* color) {
-  if (!color->blending_enabled) {
+  if (color->blending_enabled) {
+    gl.Enable(GL_BLEND);
+    gl.BlendFuncSeparate(
+        ToBlendFactor(color->src_color_blend_factor),  // src color
+        ToBlendFactor(color->dst_color_blend_factor),  // dst color
+        ToBlendFactor(color->src_alpha_blend_factor),  // src alpha
+        ToBlendFactor(color->dst_alpha_blend_factor)   // dst alpha
+    );
+    gl.BlendEquationSeparate(
+        ToBlendOperation(color->color_blend_op),  // mode color
+        ToBlendOperation(color->alpha_blend_op)   // mode alpha
+    );
+  } else {
     gl.Disable(GL_BLEND);
-    return;
   }
 
-  gl.Enable(GL_BLEND);
-  gl.BlendFuncSeparate(
-      ToBlendFactor(color->src_color_blend_factor),  // src color
-      ToBlendFactor(color->dst_color_blend_factor),  // dst color
-      ToBlendFactor(color->src_alpha_blend_factor),  // src alpha
-      ToBlendFactor(color->dst_alpha_blend_factor)   // dst alpha
-  );
-  gl.BlendEquationSeparate(
-      ToBlendOperation(color->color_blend_op),  // mode color
-      ToBlendOperation(color->alpha_blend_op)   // mode alpha
-  );
   {
     const auto is_set = [](std::underlying_type_t<ColorWriteMask> mask,
                            ColorWriteMask check) -> GLboolean {
       using RawType = decltype(mask);
-      return (static_cast<RawType>(mask) & static_cast<RawType>(mask))
+      return (static_cast<RawType>(mask) & static_cast<RawType>(check))
                  ? GL_TRUE
                  : GL_FALSE;
     };
@@ -100,14 +100,16 @@ void ConfigureStencil(const ProcTableGLES& gl,
   gl.Enable(GL_STENCIL_TEST);
   const auto& front = pipeline.GetFrontStencilAttachmentDescriptor();
   const auto& back = pipeline.GetBackStencilAttachmentDescriptor();
-  if (front == back) {
+
+  if (front.has_value() && back.has_value() && front == back) {
     ConfigureStencil(GL_FRONT_AND_BACK, gl, *front, stencil_reference);
-  } else if (front.has_value()) {
+    return;
+  }
+  if (front.has_value()) {
     ConfigureStencil(GL_FRONT, gl, *front, stencil_reference);
-  } else if (back.has_value()) {
+  }
+  if (back.has_value()) {
     ConfigureStencil(GL_BACK, gl, *back, stencil_reference);
-  } else {
-    FML_UNREACHABLE();
   }
 }
 
@@ -142,7 +144,7 @@ struct RenderPassData {
     const std::shared_ptr<Allocator>& transients_allocator,
     const ReactorGLES& reactor,
     const std::vector<Command>& commands) {
-  TRACE_EVENT0("impeller", __FUNCTION__);
+  TRACE_EVENT0("impeller", "RenderPassGLES::EncodeCommandsInReactor");
 
   if (commands.empty()) {
     return true;
@@ -242,6 +244,7 @@ struct RenderPassData {
       return false;
     }
 
+#ifdef IMPELLER_DEBUG
     fml::ScopedCleanupClosure pop_cmd_debug_marker(
         [&gl]() { gl.PopDebugGroup(); });
     if (!command.label.empty()) {
@@ -249,6 +252,7 @@ struct RenderPassData {
     } else {
       pop_cmd_debug_marker.Release();
     }
+#endif  // IMPELLER_DEBUG
 
     const auto& pipeline = PipelineGLES::Cast(*command.pipeline);
 
@@ -356,29 +360,21 @@ struct RenderPassData {
     /// Bind vertex and index buffers.
     ///
     auto vertex_buffer_view = command.GetVertexBuffer();
-    auto index_buffer_view = command.index_buffer;
 
-    if (!vertex_buffer_view || !index_buffer_view) {
+    if (!vertex_buffer_view) {
       return false;
     }
 
     auto vertex_buffer =
         vertex_buffer_view.buffer->GetDeviceBuffer(*transients_allocator);
-    auto index_buffer =
-        index_buffer_view.buffer->GetDeviceBuffer(*transients_allocator);
 
-    if (!vertex_buffer || !index_buffer) {
+    if (!vertex_buffer) {
       return false;
     }
 
     const auto& vertex_buffer_gles = DeviceBufferGLES::Cast(*vertex_buffer);
     if (!vertex_buffer_gles.BindAndUploadDataIfNecessary(
             DeviceBufferGLES::BindingType::kArrayBuffer)) {
-      return false;
-    }
-    const auto& index_buffer_gles = DeviceBufferGLES::Cast(*index_buffer);
-    if (!index_buffer_gles.BindAndUploadDataIfNecessary(
-            DeviceBufferGLES::BindingType::kElementArrayBuffer)) {
       return false;
     }
 
@@ -423,12 +419,25 @@ struct RenderPassData {
     //--------------------------------------------------------------------------
     /// Finally! Invoke the draw call.
     ///
-    gl.DrawElements(mode,                             // mode
-                    command.index_count,              // count
-                    ToIndexType(command.index_type),  // type
-                    reinterpret_cast<const GLvoid*>(static_cast<GLsizei>(
-                        index_buffer_view.range.offset))  // indices
-    );
+    if (command.index_type == IndexType::kNone) {
+      gl.DrawArrays(mode, command.base_vertex, command.vertex_count);
+    } else {
+      // Bind the index buffer if necessary.
+      auto index_buffer_view = command.index_buffer;
+      auto index_buffer =
+          index_buffer_view.buffer->GetDeviceBuffer(*transients_allocator);
+      const auto& index_buffer_gles = DeviceBufferGLES::Cast(*index_buffer);
+      if (!index_buffer_gles.BindAndUploadDataIfNecessary(
+              DeviceBufferGLES::BindingType::kElementArrayBuffer)) {
+        return false;
+      }
+      gl.DrawElements(mode,                             // mode
+                      command.vertex_count,             // count
+                      ToIndexType(command.index_type),  // type
+                      reinterpret_cast<const GLvoid*>(static_cast<GLsizei>(
+                          index_buffer_view.range.offset))  // indices
+      );
+    }
 
     //--------------------------------------------------------------------------
     /// Unbind vertex attribs.
@@ -447,6 +456,7 @@ struct RenderPassData {
 
   if (gl.DiscardFramebufferEXT.IsAvailable()) {
     std::vector<GLenum> attachments;
+
     if (pass_data.discard_color_attachment) {
       attachments.push_back(is_default_fbo ? GL_COLOR_EXT
                                            : GL_COLOR_ATTACHMENT0);
@@ -455,7 +465,15 @@ struct RenderPassData {
       attachments.push_back(is_default_fbo ? GL_DEPTH_EXT
                                            : GL_DEPTH_ATTACHMENT);
     }
+
+// TODO(jonahwilliams): discarding the stencil on the default fbo when running
+// on Windows causes Angle to discard the entire render target. Until we know
+// the reason, default to storing.
+#ifdef FML_OS_WIN
+    if (pass_data.discard_stencil_attachment && !is_default_fbo) {
+#else
     if (pass_data.discard_stencil_attachment) {
+#endif
       attachments.push_back(is_default_fbo ? GL_STENCIL_EXT
                                            : GL_STENCIL_ATTACHMENT);
     }

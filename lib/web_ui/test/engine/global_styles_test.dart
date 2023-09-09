@@ -16,16 +16,23 @@ void testMain() {
   late DomHTMLStyleElement styleElement;
 
   setUp(() {
-    styleElement = createDomHTMLStyleElement();
+    styleElement = createDomHTMLStyleElement(null);
     domDocument.body!.append(styleElement);
     applyGlobalCssRulesToSheet(
       styleElement,
-      hasAutofillOverlay: browserHasAutofillOverlay(),
       defaultCssFont: _kDefaultCssFont,
     );
   });
+
   tearDown(() {
     styleElement.remove();
+  });
+
+  test('createDomHTMLStyleElement sets a nonce value, when passed', () {
+    expect(styleElement.nonce, isEmpty);
+
+    final DomHTMLStyleElement style = createDomHTMLStyleElement('a-nonce-value');
+    expect(style.nonce, 'a-nonce-value');
   });
 
   test('(Self-test) hasCssRule can extract rules', () {
@@ -37,28 +44,6 @@ void testMain() {
 
     expect(hasRule, isTrue);
     expect(hasFakeRule, isFalse);
-  });
-
-  test('Attaches outrageous text styles to flt-scene-host', () {
-    final bool hasColorRed = hasCssRule(styleElement,
-        selector: 'flt-scene-host', declaration: 'color: red');
-
-    bool hasFont = false;
-    if (isSafari) {
-      // Safari expands the shorthand rules, so we check for all we've set (separately).
-      hasFont = hasCssRule(styleElement,
-              selector: 'flt-scene-host',
-              declaration: 'font-family: monospace') &&
-          hasCssRule(styleElement,
-              selector: 'flt-scene-host', declaration: 'font-size: 14px');
-    } else {
-      hasFont = hasCssRule(styleElement,
-          selector: 'flt-scene-host', declaration: 'font: $_kDefaultCssFont');
-    }
-
-    expect(hasColorRed, isTrue,
-        reason: 'Should make foreground color red within scene host.');
-    expect(hasFont, isTrue, reason: 'Should pass default css font.');
   });
 
   test('Attaches styling to remove password reveal icons on Edge', () {

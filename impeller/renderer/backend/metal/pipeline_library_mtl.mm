@@ -41,8 +41,9 @@ static MTLRenderPipelineDescriptor* GetMTLRenderPipelineDescriptor(
 
   if (const auto& vertex_descriptor = desc.GetVertexDescriptor()) {
     VertexDescriptorMTL vertex_descriptor_mtl;
-    if (vertex_descriptor_mtl.SetStageInputs(
-            vertex_descriptor->GetStageInputs())) {
+    if (vertex_descriptor_mtl.SetStageInputsAndLayout(
+            vertex_descriptor->GetStageInputs(),
+            vertex_descriptor->GetStageLayouts())) {
       descriptor.vertexDescriptor =
           vertex_descriptor_mtl.GetMTLVertexDescriptor();
     }
@@ -111,7 +112,8 @@ PipelineFuture<PipelineDescriptor> PipelineLibraryMTL::GetPipeline(
       ^(id<MTLRenderPipelineState> _Nullable render_pipeline_state,
         NSError* _Nullable error) {
         if (error != nil) {
-          VALIDATION_LOG << "Could not create render pipeline: "
+          VALIDATION_LOG << "Could not create render pipeline for "
+                         << descriptor.GetLabel() << " :"
                          << error.localizedDescription.UTF8String;
           promise->set_value(nullptr);
           return;

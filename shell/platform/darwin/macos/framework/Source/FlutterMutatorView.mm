@@ -3,14 +3,17 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMutatorView.h"
-#include "flutter/fml/logging.h"
 
 #include <QuartzCore/QuartzCore.h>
+
 #include <vector>
 
+#include "flutter/fml/logging.h"
+#include "flutter/shell/platform/embedder/embedder.h"
+
 @interface FlutterMutatorView () {
-  /// Each of these views clips to a CGPathRef. These views, if present,
-  /// are nested (first is child of FlutterMutatorView and last is parent of
+  // Each of these views clips to a CGPathRef. These views, if present,
+  // are nested (first is child of FlutterMutatorView and last is parent of
   // _platformView).
   NSMutableArray* _pathClipViews;
 
@@ -19,6 +22,21 @@
   NSView* _platformViewContainer;
 
   NSView* _platformView;
+}
+
+@end
+
+/// Superview container for platform views, to which sublayer transforms are applied.
+@interface FlutterPlatformViewContainer : NSView
+@end
+
+@implementation FlutterPlatformViewContainer
+
+- (BOOL)isFlipped {
+  // Flutter transforms assume a coordinate system with an upper-left corner origin, with y
+  // coordinate values increasing downwards. This affects the view, view transforms, and
+  // sublayerTransforms.
+  return YES;
 }
 
 @end
@@ -40,6 +58,9 @@
 }
 
 - (BOOL)isFlipped {
+  // Flutter transforms assume a coordinate system with an upper-left corner origin, with y
+  // coordinate values increasing downwards. This affects the view, view transforms, and
+  // sublayerTransforms.
   return YES;
 }
 
@@ -69,6 +90,14 @@ CATransform3D ToCATransform3D(const FlutterTransformation& t) {
   transform.m42 = t.transY;
   transform.m24 = t.pers1;
   return transform;
+}
+
+bool AffineTransformIsOnlyScaleOrTranslate(const CGAffineTransform& transform) {
+  return transform.b == 0 && transform.c == 0;
+}
+
+bool IsZeroSize(const FlutterSize size) {
+  return size.width == 0 && size.height == 0;
 }
 
 CGRect FromFlutterRect(const FlutterRect& rect) {
@@ -161,6 +190,13 @@ bool RoundRectCornerIntersects(const FlutterRoundedRect& roundRect, const Flutte
 }
 
 CGPathRef PathFromRoundedRect(const FlutterRoundedRect& roundedRect) {
+  if (IsZeroSize(roundedRect.lower_left_corner_radius) &&
+      IsZeroSize(roundedRect.lower_right_corner_radius) &&
+      IsZeroSize(roundedRect.upper_left_corner_radius) &&
+      IsZeroSize(roundedRect.upper_right_corner_radius)) {
+    return CGPathCreateWithRect(FromFlutterRect(roundedRect.rect), nullptr);
+  }
+
   CGMutablePathRef path = CGPathCreateMutable();
 
   const auto& rect = roundedRect.rect;
@@ -185,6 +221,158 @@ CGPathRef PathFromRoundedRect(const FlutterRoundedRect& roundedRect) {
                         rect.left + topLeft.width, rect.top);
   CGPathCloseSubpath(path);
   return path;
+}
+
+using MutationVector = std::vector<FlutterPlatformViewMutation>;
+
+/// Returns a vector of FlutterPlatformViewMutation object pointers associated with a platform view.
+/// The transforms sent from the engine include a transform from logical to physical coordinates.
+/// Since Cocoa deals only in logical points, this function prepends a scale transform that scales
+/// back from physical to logical coordinates to compensate.
+MutationVector MutationsForPlatformView(const FlutterPlatformView* view, float scale) {
+  MutationVector mutations;
+  mutations.reserve(view->mutations_count + 1);
+  mutations.push_back({
+      .type = kFlutterPlatformViewMutationTypeTransformation,
+      .transformation{
+          .scaleX = 1.0 / scale,
+          .scaleY = 1.0 / scale,
+      },
+  });
+  for (size_t i = 0; i < view->mutations_count; ++i) {
+    mutations.push_back(*view->mutations[i]);
+  }
+  return mutations;
+}
+
+/// Returns the composition of all transformation mutations in the mutations vector.
+CATransform3D CATransformFromMutations(const MutationVector& mutations) {
+  CATransform3D transform = CATransform3DIdentity;
+  for (auto mutation : mutations) {
+    switch (mutation.type) {
+      case kFlutterPlatformViewMutationTypeTransformation: {
+        CATransform3D mutationTransform = ToCATransform3D(mutation.transformation);
+        transform = CATransform3DConcat(mutationTransform, transform);
+        break;
+      }
+      case kFlutterPlatformViewMutationTypeClipRect:
+      case kFlutterPlatformViewMutationTypeClipRoundedRect:
+      case kFlutterPlatformViewMutationTypeOpacity:
+        break;
+    }
+  }
+  return transform;
+}
+
+/// Returns the opacity for all opacity mutations in the mutations vector.
+float OpacityFromMutations(const MutationVector& mutations) {
+  float opacity = 1.0;
+  for (auto mutation : mutations) {
+    switch (mutation.type) {
+      case kFlutterPlatformViewMutationTypeOpacity:
+        opacity *= mutation.opacity;
+        break;
+      case kFlutterPlatformViewMutationTypeClipRect:
+      case kFlutterPlatformViewMutationTypeClipRoundedRect:
+      case kFlutterPlatformViewMutationTypeTransformation:
+        break;
+    }
+  }
+  return opacity;
+}
+
+/// Returns the clip rect generated by the intersection of clips in the mutations vector.
+CGRect MasterClipFromMutations(CGRect bounds, const MutationVector& mutations) {
+  // Master clip in global logical coordinates. This is intersection of all clip rectangles
+  // present in mutators.
+  CGRect master_clip = bounds;
+
+  // Create the initial transform.
+  CATransform3D transform = CATransform3DIdentity;
+  for (auto mutation : mutations) {
+    switch (mutation.type) {
+      case kFlutterPlatformViewMutationTypeClipRect: {
+        CGRect rect = CGRectApplyAffineTransform(FromFlutterRect(mutation.clip_rect),
+                                                 CATransform3DGetAffineTransform(transform));
+        master_clip = CGRectIntersection(rect, master_clip);
+        break;
+      }
+      case kFlutterPlatformViewMutationTypeClipRoundedRect: {
+        CGAffineTransform affineTransform = CATransform3DGetAffineTransform(transform);
+        CGRect rect = CGRectApplyAffineTransform(FromFlutterRect(mutation.clip_rounded_rect.rect),
+                                                 affineTransform);
+        master_clip = CGRectIntersection(rect, master_clip);
+        break;
+      }
+      case kFlutterPlatformViewMutationTypeTransformation:
+        transform = CATransform3DConcat(ToCATransform3D(mutation.transformation), transform);
+        break;
+      case kFlutterPlatformViewMutationTypeOpacity:
+        break;
+    }
+  }
+  return master_clip;
+}
+
+/// A rounded rectangle and transform associated with it.
+typedef struct {
+  FlutterRoundedRect rrect;
+  CGAffineTransform transform;
+} ClipRoundedRect;
+
+/// Returns the set of all rounded rect paths generated by clips in the mutations vector.
+NSMutableArray* ClipPathFromMutations(CGRect master_clip, const MutationVector& mutations) {
+  std::vector<ClipRoundedRect> rounded_rects;
+
+  CATransform3D transform = CATransform3DIdentity;
+  for (auto mutation : mutations) {
+    switch (mutation.type) {
+      case kFlutterPlatformViewMutationTypeClipRoundedRect: {
+        CGAffineTransform affineTransform = CATransform3DGetAffineTransform(transform);
+        rounded_rects.push_back({mutation.clip_rounded_rect, affineTransform});
+        break;
+      }
+      case kFlutterPlatformViewMutationTypeTransformation:
+        transform = CATransform3DConcat(ToCATransform3D(mutation.transformation), transform);
+        break;
+      case kFlutterPlatformViewMutationTypeClipRect: {
+        CGAffineTransform affineTransform = CATransform3DGetAffineTransform(transform);
+        // Shearing or rotation requires path clipping.
+        if (!AffineTransformIsOnlyScaleOrTranslate(affineTransform)) {
+          rounded_rects.push_back(
+              {FlutterRoundedRect{mutation.clip_rect, FlutterSize{0, 0}, FlutterSize{0, 0},
+                                  FlutterSize{0, 0}, FlutterSize{0, 0}},
+               affineTransform});
+        }
+        break;
+      }
+      case kFlutterPlatformViewMutationTypeOpacity:
+        break;
+    }
+  }
+
+  NSMutableArray* paths = [NSMutableArray array];
+  for (const auto& r : rounded_rects) {
+    bool requiresPath = !AffineTransformIsOnlyScaleOrTranslate(r.transform);
+    if (!requiresPath) {
+      CGAffineTransform inverse = CGAffineTransformInvert(r.transform);
+      // Transform master clip to clip rect coordinates and check if this view intersects one of the
+      // corners, which means we need to use path clipping.
+      CGRect localMasterClip = CGRectApplyAffineTransform(master_clip, inverse);
+      requiresPath = RoundRectCornerIntersects(r.rrect, ToFlutterRect(localMasterClip));
+    }
+
+    // Only clip to rounded rectangle path if the view intersects some of the round corners. If
+    // not, clipping to masterClip is enough.
+    if (requiresPath) {
+      CGPathRef path = PathFromRoundedRect(r.rrect);
+      CGPathRef transformedPath = CGPathCreateCopyByTransformingPath(path, &r.transform);
+      [paths addObject:(__bridge id)transformedPath];
+      CGPathRelease(transformedPath);
+      CGPathRelease(path);
+    }
+  }
+  return paths;
 }
 }  // namespace
 
@@ -219,143 +407,117 @@ CGPathRef PathFromRoundedRect(const FlutterRoundedRect& roundedRect) {
   return YES;
 }
 
-/// Whenever possible view will be clipped using layer bounds.
-/// If clipping to path is needed, CAShapeLayer(s) will be used as mask.
-/// Clipping to round rect only clips to path if round corners are intersected.
-- (void)applyFlutterLayer:(const FlutterLayer*)layer {
-  CGFloat scale = self.superview != nil ? self.superview.layer.contentsScale : 1.0;
+/// Returns the scale factor to translate logical pixels to physical pixels for this view.
+- (CGFloat)contentsScale {
+  return self.superview != nil ? self.superview.layer.contentsScale : 1.0;
+}
 
-  // Initial transform to compensate for scale factor. This is needed because all
-  // cocoa coordinates are logical but Flutter will send the physical to logical
-  // transform in mutations.
-  CATransform3D transform = CATransform3DMakeScale(1.0 / scale, 1.0 / scale, 1);
-
-  // Platform view transform after applying all transformation mutations.
-  CATransform3D finalTransform = transform;
-  for (size_t i = 0; i < layer->platform_view->mutations_count; ++i) {
-    auto mutation = layer->platform_view->mutations[i];
-    if (mutation->type == kFlutterPlatformViewMutationTypeTransformation) {
-      finalTransform =
-          CATransform3DConcat(ToCATransform3D(mutation->transformation), finalTransform);
-    }
-  }
-
-  CGRect untransformedBoundingRect =
-      CGRectMake(0, 0, layer->size.width / scale, layer->size.height / scale);
-
-  CGRect finalBoundingRect = CGRectApplyAffineTransform(
-      untransformedBoundingRect, CATransform3DGetAffineTransform(finalTransform));
-
-  self.frame = finalBoundingRect;
-
-  // Master clip in global logical coordinates. This is intersection of all clip rectangles
-  // present in mutators.
-  CGRect masterClip = finalBoundingRect;
-
-  self.layer.opacity = 1.0;
-
-  // Gathered pairs of rounded rect in local coordinates + appropriate transform.
-  std::vector<std::pair<FlutterRoundedRect, CGAffineTransform>> roundedRects;
-
-  for (size_t i = 0; i < layer->platform_view->mutations_count; ++i) {
-    auto mutation = layer->platform_view->mutations[i];
-    if (mutation->type == kFlutterPlatformViewMutationTypeTransformation) {
-      transform = CATransform3DConcat(ToCATransform3D(mutation->transformation), transform);
-    } else if (mutation->type == kFlutterPlatformViewMutationTypeClipRect) {
-      CGRect rect = CGRectApplyAffineTransform(FromFlutterRect(mutation->clip_rect),
-                                               CATransform3DGetAffineTransform(transform));
-      masterClip = CGRectIntersection(rect, masterClip);
-    } else if (mutation->type == kFlutterPlatformViewMutationTypeClipRoundedRect) {
-      CGAffineTransform affineTransform = CATransform3DGetAffineTransform(transform);
-      roundedRects.push_back(std::make_pair(mutation->clip_rounded_rect, affineTransform));
-      CGRect rect = CGRectApplyAffineTransform(FromFlutterRect(mutation->clip_rounded_rect.rect),
-                                               affineTransform);
-      masterClip = CGRectIntersection(rect, masterClip);
-    } else if (mutation->type == kFlutterPlatformViewMutationTypeOpacity) {
-      self.layer.opacity *= mutation->opacity;
-    }
-  }
-
-  if (CGRectIsNull(masterClip)) {
-    self.hidden = YES;
-    return;
-  }
-
-  self.hidden = NO;
-
-  /// Paths in global logical coordinates that need to be clipped to.
-  NSMutableArray* paths = [NSMutableArray array];
-
-  for (const auto& r : roundedRects) {
-    CGAffineTransform inverse = CGAffineTransformInvert(r.second);
-    // Transform master clip to clip rect coordinates and check if this view intersects one of the
-    // corners, which means we need to use path clipping.
-    CGRect localMasterClip = CGRectApplyAffineTransform(masterClip, inverse);
-
-    // Only clip to rounded rectangle path if the view intersects some of the round corners. If
-    // not, clipping to masterClip is enough.
-    if (RoundRectCornerIntersects(r.first, ToFlutterRect(localMasterClip))) {
-      CGPathRef path = PathFromRoundedRect(r.first);
-      CGPathRef transformedPath = CGPathCreateCopyByTransformingPath(path, &r.second);
-      [paths addObject:(__bridge id)transformedPath];
-      CGPathRelease(transformedPath);
-      CGPathRelease(path);
-    }
-  }
-
-  // Add / remove path clip views depending on the number of paths.
-
+/// Updates the nested stack of clip views that host the platform view.
+- (void)updatePathClipViewsWithPaths:(NSArray*)paths {
+  // Remove path clip views depending on the number of paths.
   while (_pathClipViews.count > paths.count) {
     NSView* view = _pathClipViews.lastObject;
     [view removeFromSuperview];
     [_pathClipViews removeLastObject];
   }
-
-  NSView* lastView = self;
-
-  for (size_t i = 0; i < paths.count; ++i) {
-    FlutterPathClipView* pathClipView = nil;
-    if (i < _pathClipViews.count) {
-      pathClipView = _pathClipViews[i];
-    } else {
-      pathClipView = [[FlutterPathClipView alloc] initWithFrame:self.bounds];
-      [_pathClipViews addObject:pathClipView];
-      [lastView addSubview:pathClipView];
-    }
+  // Otherwise, add path clip views to the end.
+  for (size_t i = _pathClipViews.count; i < paths.count; ++i) {
+    NSView* superView = _pathClipViews.count == 0 ? self : _pathClipViews.lastObject;
+    FlutterPathClipView* pathClipView = [[FlutterPathClipView alloc] initWithFrame:self.bounds];
+    [_pathClipViews addObject:pathClipView];
+    [superView addSubview:pathClipView];
+  }
+  // Update bounds and apply clip paths.
+  for (size_t i = 0; i < _pathClipViews.count; ++i) {
+    FlutterPathClipView* pathClipView = _pathClipViews[i];
     pathClipView.frame = self.bounds;
     [pathClipView maskToPath:(__bridge CGPathRef)[paths objectAtIndex:i]
-                  withOrigin:finalBoundingRect.origin];
-    lastView = pathClipView;
+                  withOrigin:self.frame.origin];
   }
+}
 
-  // Used to apply sublayer transform.
+/// Updates the PlatformView and PlatformView container views.
+///
+/// Re-nests _platformViewContainer in the innermost clip view, applies transforms to the underlying
+/// CALayer, adds the platform view as a subview of the container, and sets the axis-aligned clip
+/// rect around the tranformed view.
+- (void)updatePlatformViewWithBounds:(CGRect)untransformedBounds
+                   transformedBounds:(CGRect)transformedBounds
+                           transform:(CATransform3D)transform
+                            clipRect:(CGRect)clipRect {
+  // Create the PlatformViewContainer view if necessary.
   if (_platformViewContainer == nil) {
-    _platformViewContainer = [[NSView alloc] initWithFrame:self.bounds];
+    _platformViewContainer = [[FlutterPlatformViewContainer alloc] initWithFrame:self.bounds];
     _platformViewContainer.wantsLayer = YES;
   }
 
-  [lastView addSubview:_platformViewContainer];
+  // Nest the PlatformViewContainer view in the innermost path clip view.
+  NSView* containerSuperview = _pathClipViews.count == 0 ? self : _pathClipViews.lastObject;
+  [containerSuperview addSubview:_platformViewContainer];
   _platformViewContainer.frame = self.bounds;
 
+  // Nest the platform view in the PlatformViewContainer.
   [_platformViewContainer addSubview:_platformView];
-  _platformView.frame = untransformedBoundingRect;
+  _platformView.frame = untransformedBounds;
 
   // Transform for the platform view is finalTransform adjusted for bounding rect origin.
-  _platformViewContainer.layer.sublayerTransform = CATransform3DTranslate(
-      finalTransform, -finalBoundingRect.origin.x / finalTransform.m11 /* scaleX */,
-      -finalBoundingRect.origin.y / finalTransform.m22 /* scaleY */, 0);
+  CATransform3D translation =
+      CATransform3DMakeTranslation(-transformedBounds.origin.x, -transformedBounds.origin.y, 0);
+  transform = CATransform3DConcat(transform, translation);
+  _platformViewContainer.layer.sublayerTransform = transform;
 
   // By default NSView clips children to frame. If masterClip is tighter than mutator view frame,
   // the frame is set to masterClip and child offset adjusted to compensate for the difference.
-  if (!CGRectEqualToRect(masterClip, finalBoundingRect)) {
+  if (!CGRectEqualToRect(clipRect, transformedBounds)) {
     FML_DCHECK(self.subviews.count == 1);
     auto subview = self.subviews.firstObject;
     FML_DCHECK(subview.frame.origin.x == 0 && subview.frame.origin.y == 0);
-    subview.frame = CGRectMake(finalBoundingRect.origin.x - masterClip.origin.x,
-                               finalBoundingRect.origin.y - masterClip.origin.y,
+    subview.frame = CGRectMake(transformedBounds.origin.x - clipRect.origin.x,
+                               transformedBounds.origin.y - clipRect.origin.y,
                                subview.frame.size.width, subview.frame.size.height);
-    self.frame = masterClip;
+    self.frame = clipRect;
   }
+}
+
+/// Whenever possible view will be clipped using layer bounds.
+/// If clipping to path is needed, CAShapeLayer(s) will be used as mask.
+/// Clipping to round rect only clips to path if round corners are intersected.
+- (void)applyFlutterLayer:(const FlutterLayer*)layer {
+  // Compute the untransformed bounding rect for the platform view in logical pixels.
+  // FlutterLayer.size is in physical pixels but Cocoa uses logical points.
+  CGFloat scale = [self contentsScale];
+  MutationVector mutations = MutationsForPlatformView(layer->platform_view, scale);
+
+  CATransform3D finalTransform = CATransformFromMutations(mutations);
+
+  // Compute the untransformed bounding rect for the platform view in logical pixels.
+  // FlutterLayer.size is in physical pixels but Cocoa uses logical points.
+  CGRect untransformedBoundingRect =
+      CGRectMake(0, 0, layer->size.width / scale, layer->size.height / scale);
+  CGRect finalBoundingRect = CGRectApplyAffineTransform(
+      untransformedBoundingRect, CATransform3DGetAffineTransform(finalTransform));
+  self.frame = finalBoundingRect;
+
+  // Compute the layer opacity.
+  self.layer.opacity = OpacityFromMutations(mutations);
+
+  // Compute the master clip in global logical coordinates.
+  CGRect masterClip = MasterClipFromMutations(finalBoundingRect, mutations);
+  if (CGRectIsNull(masterClip)) {
+    self.hidden = YES;
+    return;
+  }
+  self.hidden = NO;
+
+  /// Paths in global logical coordinates that need to be clipped to.
+  NSMutableArray* paths = ClipPathFromMutations(masterClip, mutations);
+  [self updatePathClipViewsWithPaths:paths];
+
+  /// Update PlatformViewContainer, PlatformView, and apply transforms and axis-aligned clip rect.
+  [self updatePlatformViewWithBounds:untransformedBoundingRect
+                   transformedBounds:finalBoundingRect
+                           transform:finalTransform
+                            clipRect:masterClip];
 }
 
 @end

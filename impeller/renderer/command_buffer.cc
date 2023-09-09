@@ -36,6 +36,21 @@ void CommandBuffer::WaitUntilScheduled() {
   return OnWaitUntilScheduled();
 }
 
+bool CommandBuffer::SubmitCommandsAsync(
+    std::shared_ptr<RenderPass>
+        render_pass  // NOLINT(performance-unnecessary-value-param)
+) {
+  TRACE_EVENT0("impeller", "CommandBuffer::SubmitCommandsAsync");
+  if (!render_pass->IsValid() || !IsValid()) {
+    return false;
+  }
+  if (!render_pass->EncodeCommands()) {
+    return false;
+  }
+
+  return SubmitCommands(nullptr);
+}
+
 std::shared_ptr<RenderPass> CommandBuffer::CreateRenderPass(
     const RenderTarget& render_target) {
   auto pass = OnCreateRenderPass(render_target);
@@ -46,7 +61,7 @@ std::shared_ptr<RenderPass> CommandBuffer::CreateRenderPass(
   return nullptr;
 }
 
-std::shared_ptr<BlitPass> CommandBuffer::CreateBlitPass() const {
+std::shared_ptr<BlitPass> CommandBuffer::CreateBlitPass() {
   auto pass = OnCreateBlitPass();
   if (pass && pass->IsValid()) {
     pass->SetLabel("BlitPass");
@@ -55,7 +70,7 @@ std::shared_ptr<BlitPass> CommandBuffer::CreateBlitPass() const {
   return nullptr;
 }
 
-std::shared_ptr<ComputePass> CommandBuffer::CreateComputePass() const {
+std::shared_ptr<ComputePass> CommandBuffer::CreateComputePass() {
   if (!IsValid()) {
     return nullptr;
   }

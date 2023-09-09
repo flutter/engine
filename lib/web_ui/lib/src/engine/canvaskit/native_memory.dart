@@ -4,27 +4,37 @@
 
 import 'dart:js_interop';
 import 'package:meta/meta.dart';
-
-import '../../engine.dart' show Instrumentation;
-import '../util.dart';
-import 'canvaskit_api.dart';
+import 'package:ui/src/engine.dart';
 
 /// Collects native objects that weren't explicitly disposed of using
 /// [UniqueRef.dispose] or [CountedRef.unref].
-SkObjectFinalizationRegistry _finalizationRegistry = createSkObjectFinalizationRegistry(
-  (UniqueRef<Object> uniq) {
+///
+/// We use this to delete Skia objects when their "Ck" wrapper is garbage
+/// collected.
+///
+/// Example sequence of events:
+///
+/// 1. A (CkPaint, SkPaint) pair created.
+/// 2. The paint is used to paint some picture.
+/// 3. CkPaint is dropped by the app.
+/// 4. GC decides to perform a GC cycle and collects CkPaint.
+/// 5. The finalizer function is called with the SkPaint as the sole argument.
+/// 6. We call `delete` on SkPaint.
+DomFinalizationRegistry _finalizationRegistry = createDomFinalizationRegistry(
+  (JSBoxedDartObject boxedUniq) {
+    final UniqueRef<Object> uniq = boxedUniq.toDart as UniqueRef<Object>;
     uniq.collect();
   }.toJS
 );
 
 NativeMemoryFinalizationRegistry nativeMemoryFinalizationRegistry = NativeMemoryFinalizationRegistry();
 
-/// An indirection to [SkObjectFinalizationRegistry] to enable tests provide a
+/// An indirection to [DomFinalizationRegistry] to enable tests provide a
 /// mock implementation of a finalization registry.
 class NativeMemoryFinalizationRegistry {
   void register(Object owner, UniqueRef<Object> ref) {
     if (browserSupportsFinalizationRegistry) {
-      _finalizationRegistry.register(owner, ref);
+      _finalizationRegistry.register(owner, ref.toJSBox);
     }
   }
 }
@@ -130,9 +140,10 @@ class CountedRef<R extends StackTraceDebugger, T extends Object> {
   /// Creates a counted reference.
   CountedRef(T nativeObject, R debugReferrer, String debugLabel) {
     _ref = UniqueRef<T>(this, nativeObject, debugLabel);
-    if (assertionsEnabled) {
+    assert(() {
       debugReferrers.add(debugReferrer);
-    }
+      return true;
+    }());
     assert(refCount == debugReferrers.length);
   }
 
@@ -170,11 +181,18 @@ class CountedRef<R extends StackTraceDebugger, T extends Object> {
   /// If asserts are enabled, the [StackTrace]s representing when a reference
   /// was created.
   List<StackTrace> debugGetStackTraces() {
-    if (assertionsEnabled) {
-      return debugReferrers
+    List<StackTrace>? result;
+    assert(() {
+      result = debugReferrers
           .map<StackTrace>((R referrer) => referrer.debugStackTrace)
           .toList();
+      return true;
+    }());
+
+    if (result != null) {
+      return result!;
     }
+
     throw UnsupportedError('');
   }
 

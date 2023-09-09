@@ -94,6 +94,8 @@ public class PlatformPluginTest {
     assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
   }
 
+  @SuppressWarnings("deprecation")
+  // ClipboardManager.getText
   @Config(sdk = 28)
   @Test
   public void platformPlugin_hasStrings() {
@@ -315,6 +317,8 @@ public class PlatformPluginTest {
     }
   }
 
+  @SuppressWarnings("deprecation")
+  // SYSTEM_UI_FLAG_*, setSystemUiVisibility
   @Config(sdk = 29)
   @Test
   public void setSystemUiMode() {
@@ -371,6 +375,8 @@ public class PlatformPluginTest {
     }
   }
 
+  @SuppressWarnings("deprecation")
+  // SYSTEM_UI_FLAG_FULLSCREEN
   @Test
   public void setSystemUiModeListener_overlaysAreHidden() {
     ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class);
@@ -400,6 +406,8 @@ public class PlatformPluginTest {
     verify(fakePlatformChannel).systemChromeChanged(false);
   }
 
+  @SuppressWarnings("deprecation")
+  // dispatchSystemUiVisibilityChanged
   @Test
   public void setSystemUiModeListener_overlaysAreVisible() {
     ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class);
@@ -426,6 +434,8 @@ public class PlatformPluginTest {
     verify(fakePlatformChannel).systemChromeChanged(true);
   }
 
+  @SuppressWarnings("deprecation")
+  // SYSTEM_UI_FLAG_*, setSystemUiVisibility
   @Config(sdk = 28)
   @Test
   public void doNotEnableEdgeToEdgeOnOlderSdk() {
@@ -446,6 +456,8 @@ public class PlatformPluginTest {
                 | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
   }
 
+  @SuppressWarnings("deprecation")
+  // FLAG_TRANSLUCENT_STATUS, FLAG_TRANSLUCENT_NAVIGATION
   @Config(sdk = 29)
   @Test
   public void verifyWindowFlagsSetToStyleOverlays() {
@@ -467,6 +479,19 @@ public class PlatformPluginTest {
         .clearFlags(
             WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
                 | WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
+  }
+
+  @Test
+  public void setFrameworkHandlesBackFlutterActivity() {
+    Activity mockActivity = mock(Activity.class);
+    PlatformChannel mockPlatformChannel = mock(PlatformChannel.class);
+    PlatformPluginDelegate mockPlatformPluginDelegate = mock(PlatformPluginDelegate.class);
+    PlatformPlugin platformPlugin =
+        new PlatformPlugin(mockActivity, mockPlatformChannel, mockPlatformPluginDelegate);
+
+    platformPlugin.mPlatformMessageHandler.setFrameworkHandlesBack(true);
+
+    verify(mockPlatformPluginDelegate, times(1)).setFrameworkHandlesBack(true);
   }
 
   @Test
@@ -500,8 +525,12 @@ public class PlatformPluginTest {
     verify(mockActivity, never()).finish();
   }
 
+  @SuppressWarnings("deprecation")
+  // Robolectric.setupActivity.
+  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void popSystemNavigatorFlutterFragment() {
+    // Migrate to ActivityScenario by following https://github.com/robolectric/robolectric/pull/4736
     FragmentActivity activity = spy(Robolectric.setupActivity(FragmentActivity.class));
     final AtomicBoolean onBackPressedCalled = new AtomicBoolean(false);
     OnBackPressedCallback backCallback =
@@ -526,6 +555,9 @@ public class PlatformPluginTest {
     assertTrue(onBackPressedCalled.get());
   }
 
+  @SuppressWarnings("deprecation")
+  // Robolectric.setupActivity.
+  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void doesNotDoAnythingByDefaultIfFragmentPopSystemNavigatorOverridden() {
     FragmentActivity activity = spy(Robolectric.setupActivity(FragmentActivity.class));

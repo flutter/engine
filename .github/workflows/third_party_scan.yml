@@ -4,6 +4,8 @@ on:
   branch_protection_rule:
   push:
     branches: [ main ]
+  pull_request:
+    types: [ labeled ]
 
 # Declare default permissions as read only.
 permissions: read-all
@@ -12,15 +14,37 @@ jobs:
   vuln-scan:
     name: Vulnerability scanning
     runs-on: ubuntu-20.04
-    if: ${{ github.repository == 'flutter/engine' }}
+    # run on flutter/engine push to main or PRs with 'vulnerability patch' label 
+    if: ${{  github.repository == 'flutter/engine' && (github.event_name == 'push' || github.event.label.name == 'vulnerability scan') }}
+    permissions:
+      # Needed to upload the SARIF results to code-scanning dashboard.
+      security-events: write
+      actions: read
+      contents: read
+      # Needed to access OIDC token.
+      id-token: write
     steps:
       - name: "Checkout code"
-        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9
         with:
           persist-credentials: false
       - name: "setup python"
-        uses: actions/setup-python@57ded4d7d5e986d7296eab16560982c6dd7c923b
+        uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1
         with:
           python-version: '3.7.7' # install the python version needed
-      - name: "execute py script"
+      - name: "extract and flatten deps"
         run: python ci/deps_parser.py
+      - name: "scan deps for vulnerabilities"
+        run: python ci/scan_flattened_deps.py
+      # Upload the results as artifacts.
+      - name: "Upload artifact"
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce
+        with:
+          name: SARIF file
+          path: osvReport.sarif
+          retention-days: 5
+      # Upload the results to GitHub's code scanning dashboard.
+      - name: "Upload to security tab"
+        uses: github/codeql-action/upload-sarif@cdcdbb579706841c47f7063dda365e292e5cad7a
+        with:
+          sarif_file: osvReport.sarif

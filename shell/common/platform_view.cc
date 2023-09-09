@@ -51,8 +51,9 @@ void PlatformView::SetAccessibilityFeatures(int32_t flags) {
   delegate_.OnPlatformViewSetAccessibilityFeatures(flags);
 }
 
-void PlatformView::SetViewportMetrics(const ViewportMetrics& metrics) {
-  delegate_.OnPlatformViewSetViewportMetrics(metrics);
+void PlatformView::SetViewportMetrics(int64_t view_id,
+                                      const ViewportMetrics& metrics) {
+  delegate_.OnPlatformViewSetViewportMetrics(view_id, metrics);
 }
 
 void PlatformView::NotifyCreated() {
@@ -196,6 +197,14 @@ PlatformView::GetPlatformMessageHandler() const {
 
 const Settings& PlatformView::GetSettings() const {
   return delegate_.OnPlatformViewGetSettings();
+}
+
+double PlatformView::GetScaledFontSize(double unscaled_font_size,
+                                       int configuration_id) const {
+  // Unreachable by default, as most platforms do not support nonlinear scaling
+  // and the Flutter application never invokes this method.
+  FML_UNREACHABLE();
+  return -1;
 }
 
 }  // namespace flutter

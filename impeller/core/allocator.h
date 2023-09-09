@@ -9,7 +9,9 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "impeller/core/device_buffer_descriptor.h"
+#include "impeller/core/texture.h"
 #include "impeller/core/texture_descriptor.h"
+#include "impeller/geometry/size.h"
 
 namespace impeller {
 
@@ -44,6 +46,10 @@ class Allocator {
       const fml::Mapping& mapping);
 
   virtual ISize GetMaxTextureSizeSupported() const = 0;
+
+  /// @brief Increment an internal frame used to cycle through a ring buffer of
+  /// allocation pools.
+  virtual void DidAcquireSurfaceFrame();
 
  protected:
   Allocator();

@@ -6,27 +6,9 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
-
-import '../dom.dart';
-import '../embedder.dart';
-import '../html_image_codec.dart';
-import '../initialization.dart';
-import '../profiler.dart';
-import '../renderer.dart';
-import 'canvaskit_api.dart';
-import 'canvaskit_canvas.dart';
-import 'fonts.dart';
-import 'image.dart';
-import 'image_filter.dart';
-import 'layer_scene_builder.dart';
-import 'painting.dart';
-import 'path.dart';
-import 'picture_recorder.dart';
-import 'rasterizer.dart';
-import 'shader.dart';
-import 'text.dart';
-import 'vertices.dart';
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 enum CanvasKitVariant {
   /// The appropriate variant is chosen based on the browser.
@@ -48,6 +30,8 @@ class CanvasKitRenderer implements Renderer {
   static CanvasKitRenderer get instance => _instance;
   static late CanvasKitRenderer _instance;
 
+  Future<void>? _initialized;
+
   @override
   String get rendererTag => 'canvaskit';
 
@@ -66,14 +50,16 @@ class CanvasKitRenderer implements Renderer {
 
   @override
   Future<void> initialize() async {
-    if (windowFlutterCanvasKit != null) {
-      canvasKit = windowFlutterCanvasKit!;
-    } else {
-      canvasKit = await downloadCanvasKit();
-      windowFlutterCanvasKit = canvasKit;
-    }
-
-    _instance = this;
+    _initialized ??= () async {
+      if (windowFlutterCanvasKit != null) {
+        canvasKit = windowFlutterCanvasKit!;
+      } else {
+        canvasKit = await downloadCanvasKit();
+        windowFlutterCanvasKit = canvasKit;
+      }
+      _instance = this;
+    }();
+    return _initialized;
   }
 
   @override
@@ -217,12 +203,13 @@ class CanvasKitRenderer implements Renderer {
   }) async => skiaInstantiateImageCodec(
     list,
     targetWidth,
-    targetHeight);
+    targetHeight
+  );
 
   @override
   Future<ui.Codec> instantiateImageCodecFromUrl(
     Uri uri, {
-    WebOnlyImageCodecChunkCallback? chunkCallback
+    ui_web.ImageCodecChunkCallback? chunkCallback
   }) => skiaInstantiateWebImageCodec(uri.toString(), chunkCallback);
 
   @override
@@ -341,6 +328,7 @@ class CanvasKitRenderer implements Renderer {
     strutStyle: strutStyle,
     ellipsis: ellipsis,
     locale: locale,
+    applyRoundingHack: !ui.ParagraphBuilder.shouldDisableRoundingHack,
   );
 
   @override
@@ -398,8 +386,31 @@ class CanvasKitRenderer implements Renderer {
     if (_programs.containsKey(assetKey)) {
       return _programs[assetKey]!;
     }
-    return _programs[assetKey] = assetManager.load(assetKey).then((ByteData data) {
+    return _programs[assetKey] = ui_web.assetManager.load(assetKey).then((ByteData data) {
       return CkFragmentProgram.fromBytes(assetKey, data.buffer.asUint8List());
     });
   }
+
+  @override
+  ui.LineMetrics createLineMetrics({
+    required bool hardBreak,
+    required double ascent,
+    required double descent,
+    required double unscaledAscent,
+    required double height,
+    required double width,
+    required double left,
+    required double baseline,
+    required int lineNumber
+  }) => EngineLineMetrics(
+    hardBreak: hardBreak,
+    ascent: ascent,
+    descent: descent,
+    unscaledAscent: unscaledAscent,
+    height: height,
+    width: width,
+    left: left,
+    baseline: baseline,
+    lineNumber: lineNumber
+  );
 }

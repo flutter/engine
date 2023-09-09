@@ -52,10 +52,10 @@ Future<T> futurize<T>(Callbacker<T> callbacker) {
   // If the callback synchronously throws an error, then synchronously
   // rethrow that error instead of adding it to the completer. This
   // prevents the Zone from receiving an uncaught exception.
-  bool sync = true;
+  bool isSync = true;
   final String? error = callbacker((T? t) {
     if (t == null) {
-      if (sync) {
+      if (isSync) {
         throw Exception('operation failed');
       } else {
         completer.completeError(Exception('operation failed'));
@@ -64,7 +64,7 @@ Future<T> futurize<T>(Callbacker<T> callbacker) {
       completer.complete(t);
     }
   });
-  sync = false;
+  isSync = false;
   if (error != null) {
     throw Exception(error);
   }
@@ -217,12 +217,6 @@ String float64ListToCssTransform3d(List<double> matrix) {
   }
 }
 
-bool get assertionsEnabled {
-  bool k = false;
-  assert(k = true);
-  return k;
-}
-
 final Float32List _tempRectData = Float32List(4);
 
 /// Transforms a [ui.Rect] given the effective [transform].
@@ -339,20 +333,15 @@ bool rectContainsOther(ui.Rect rect, ui.Rect other) {
       rect.bottom >= other.bottom;
 }
 
-/// Converts color to a css compatible attribute value.
-String? colorToCssString(ui.Color? color) {
-  if (color == null) {
-    return null;
+extension CssColor on ui.Color {
+  /// Converts color to a css compatible attribute value.
+  String toCssString() {
+    return colorValueToCssString(value);
   }
-  final int value = color.value;
-  return colorValueToCssString(value);
 }
 
 // Converts a color value (as an int) into a CSS-compatible value.
-String? colorValueToCssString(int? value) {
-  if (value == null) {
-    return null;
-  }
+String colorValueToCssString(int value) {
   if (value == 0xFF000000) {
     return '#000000';
   }
@@ -690,7 +679,7 @@ void setThemeColor(ui.Color? color) {
         ..name = 'theme-color';
       domDocument.head!.append(theme);
     }
-    theme.content = colorToCssString(color)!;
+    theme.content = color.toCssString();
   } else {
     theme?.remove();
   }

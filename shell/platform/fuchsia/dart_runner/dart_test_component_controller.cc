@@ -195,7 +195,7 @@ bool DartTestComponentController::CreateAndBindNamespace() {
             zx_status_get_string(ns_create_status));
   }
 
-  dart_utils::RunnerTemp::SetupComponent(namespace_);
+  dart_utils::BindTemp(namespace_);
 
   // Bind each directory in start_info's namespace to the controller's namespace
   // instance.
@@ -207,7 +207,7 @@ bool DartTestComponentController::CreateAndBindNamespace() {
     }
 
     if (ns_entry.path() == kTmpPath) {
-      // /tmp is covered by the local memfs.
+      // /tmp is covered by a locally served virtual filesystem.
       continue;
     }
 
@@ -523,9 +523,9 @@ fpromise::promise<> DartTestComponentController::RunDartMain() {
 
   fidl::InterfaceRequest<fuchsia::io::Directory> outgoing_dir =
       std::move(*start_info_.mutable_outgoing_dir());
-  InitBuiltinLibrariesForIsolate(
-      url_, namespace_, stdout_fd_, stderr_fd_, nullptr /* environment */,
-      outgoing_dir.TakeChannel(), false /* service_isolate */);
+  InitBuiltinLibrariesForIsolate(url_, namespace_, stdout_fd_, stderr_fd_,
+                                 outgoing_dir.TakeChannel(),
+                                 false /* service_isolate */);
 
   Dart_ExitScope();
   Dart_ExitIsolate();

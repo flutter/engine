@@ -47,9 +47,10 @@ std::unique_ptr<Surface> SwapchainVK::AcquireNextDrawable() {
   auto context = impl_->GetContext();
   auto [surface, old_swapchain] = impl_->DestroySwapchain();
 
-  auto new_impl = SwapchainImplVK::Create(context,             //
-                                          std::move(surface),  //
-                                          *old_swapchain       //
+  auto new_impl = SwapchainImplVK::Create(context,                   //
+                                          std::move(surface),        //
+                                          *old_swapchain,            //
+                                          impl_->GetLastTransform()  //
   );
   if (!new_impl || !new_impl->IsValid()) {
     VALIDATION_LOG << "Could not update swapchain.";

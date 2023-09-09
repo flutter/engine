@@ -3,6 +3,8 @@
 // found in the LICENSE file.
 
 #include "impeller/display_list/skia_conversions.h"
+#include "display_list/dl_color.h"
+#include "third_party/skia/modules/skparagraph/include/Paragraph.h"
 
 namespace impeller {
 namespace skia_conversions {
@@ -21,7 +23,15 @@ std::optional<Rect> ToRect(const SkRect* rect) {
 std::vector<Rect> ToRects(const SkRect tex[], int count) {
   auto result = std::vector<Rect>();
   for (int i = 0; i < count; i++) {
-    result.push_back(ToRect(&tex[i]).value());
+    result.push_back(ToRect(tex[i]));
+  }
+  return result;
+}
+
+std::vector<Point> ToPoints(const SkPoint points[], int count) {
+  std::vector<Point> result(count);
+  for (auto i = 0; i < count; i++) {
+    result[i] = ToPoint(points[i]);
   }
   return result;
 }
@@ -109,12 +119,15 @@ Path ToPath(const SkPath& path) {
       fill_type = FillType::kNonZero;
       break;
   }
+  builder.SetConvexity(path.isConvex() ? Convexity::kConvex
+                                       : Convexity::kUnknown);
   return builder.TakePath(fill_type);
 }
 
 Path ToPath(const SkRRect& rrect) {
   return PathBuilder{}
       .AddRoundedRect(ToRect(rrect.getBounds()), ToRoundingRadii(rrect))
+      .SetConvexity(Convexity::kConvex)
       .TakePath();
 }
 
@@ -122,12 +135,12 @@ Point ToPoint(const SkPoint& point) {
   return Point::MakeXY(point.fX, point.fY);
 }
 
-Color ToColor(const SkColor& color) {
+Color ToColor(const flutter::DlColor& color) {
   return {
-      static_cast<Scalar>(SkColorGetR(color) / 255.0),  //
-      static_cast<Scalar>(SkColorGetG(color) / 255.0),  //
-      static_cast<Scalar>(SkColorGetB(color) / 255.0),  //
-      static_cast<Scalar>(SkColorGetA(color) / 255.0)   //
+      static_cast<Scalar>(color.getRedF()),    //
+      static_cast<Scalar>(color.getGreenF()),  //
+      static_cast<Scalar>(color.getBlueF()),   //
+      static_cast<Scalar>(color.getAlphaF())   //
   };
 }
 
@@ -146,6 +159,14 @@ std::vector<Matrix> ToRSXForms(const SkRSXform xform[], int count) {
     result.push_back(matrix);
   }
   return result;
+}
+
+Path PathDataFromTextBlob(const sk_sp<SkTextBlob>& blob) {
+  if (!blob) {
+    return {};
+  }
+
+  return ToPath(skia::textlayout::Paragraph::GetPath(blob.get()));
 }
 
 std::optional<impeller::PixelFormat> ToPixelFormat(SkColorType type) {

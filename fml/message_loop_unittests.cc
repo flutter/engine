@@ -159,7 +159,7 @@ TEST(MessageLoop, TIMESENSITIVE(SingleDelayedTaskByDelta)) {
 #if defined(OS_FUCHSIA)
   GTEST_SKIP()
       << "This test does not work on Fuchsia. https://fxbug.dev/110020 ";
-#endif  // OS_FUCHSIA
+#else
 
   bool checked = false;
   std::thread thread([&checked]() {
@@ -180,13 +180,14 @@ TEST(MessageLoop, TIMESENSITIVE(SingleDelayedTaskByDelta)) {
   });
   thread.join();
   ASSERT_TRUE(checked);
+#endif  // OS_FUCHSIA
 }
 
 TEST(MessageLoop, TIMESENSITIVE(SingleDelayedTaskForTime)) {
 #if defined(OS_FUCHSIA)
   GTEST_SKIP()
       << "This test does not work on Fuchsia. https://fxbug.dev/110020 ";
-#endif  // OS_FUCHSIA
+#else
 
   bool checked = false;
   std::thread thread([&checked]() {
@@ -207,13 +208,14 @@ TEST(MessageLoop, TIMESENSITIVE(SingleDelayedTaskForTime)) {
   });
   thread.join();
   ASSERT_TRUE(checked);
+#endif  // OS_FUCHSIA
 }
 
 TEST(MessageLoop, TIMESENSITIVE(MultipleDelayedTasksWithIncreasingDeltas)) {
 #if defined(OS_FUCHSIA)
   GTEST_SKIP()
       << "This test does not work on Fuchsia. https://fxbug.dev/110020 ";
-#endif  // OS_FUCHSIA
+#else
 
   const auto count = 10;
   int checked = false;
@@ -239,13 +241,14 @@ TEST(MessageLoop, TIMESENSITIVE(MultipleDelayedTasksWithIncreasingDeltas)) {
   });
   thread.join();
   ASSERT_EQ(checked, count);
+#endif  // OS_FUCHSIA
 }
 
 TEST(MessageLoop, TIMESENSITIVE(MultipleDelayedTasksWithDecreasingDeltas)) {
 #if defined(OS_FUCHSIA)
   GTEST_SKIP()
       << "This test does not work on Fuchsia. https://fxbug.dev/110020 ";
-#endif  // OS_FUCHSIA
+#else
 
   const auto count = 10;
   int checked = false;
@@ -271,6 +274,7 @@ TEST(MessageLoop, TIMESENSITIVE(MultipleDelayedTasksWithDecreasingDeltas)) {
   });
   thread.join();
   ASSERT_EQ(checked, count);
+#endif  // OS_FUCHSIA
 }
 
 TEST(MessageLoop, TaskObserverFire) {
@@ -331,8 +335,10 @@ TEST(MessageLoop, CanCreateConcurrentMessageLoop) {
     task_runner->PostTask([&]() {
       std::this_thread::sleep_for(std::chrono::seconds(1));
       std::cout << "Ran on thread: " << std::this_thread::get_id() << std::endl;
-      std::scoped_lock lock(thread_ids_mutex);
-      thread_ids.insert(std::this_thread::get_id());
+      {
+        std::scoped_lock lock(thread_ids_mutex);
+        thread_ids.insert(std::this_thread::get_id());
+      }
       latch.CountDown();
     });
   }

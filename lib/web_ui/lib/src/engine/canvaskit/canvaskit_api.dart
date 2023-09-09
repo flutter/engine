@@ -130,19 +130,19 @@ extension CanvasKitExtension on CanvasKit {
   // Text decoration enum is embedded in the CanvasKit object itself.
   @JS('NoDecoration')
   external JSNumber get _NoDecoration;
-  double get NoDecoration => _NoDecoration.toDart;
+  double get NoDecoration => _NoDecoration.toDartDouble;
 
   @JS('UnderlineDecoration')
   external JSNumber get _UnderlineDecoration;
-  double get UnderlineDecoration => _UnderlineDecoration.toDart;
+  double get UnderlineDecoration => _UnderlineDecoration.toDartDouble;
 
   @JS('OverlineDecoration')
   external JSNumber get _OverlineDecoration;
-  double get OverlineDecoration => _OverlineDecoration.toDart;
+  double get OverlineDecoration => _OverlineDecoration.toDartDouble;
 
   @JS('LineThroughDecoration')
   external JSNumber get _LineThroughDecoration;
-  double get LineThroughDecoration => _LineThroughDecoration.toDart;
+  double get LineThroughDecoration => _LineThroughDecoration.toDartDouble;
   // End of text decoration enum.
 
   external SkTextDecorationStyleEnum get DecorationStyle;
@@ -159,7 +159,7 @@ extension CanvasKitExtension on CanvasKit {
       DomCanvasElement canvas, SkWebGLContextOptions options);
   double GetWebGLContext(
       DomCanvasElement canvas, SkWebGLContextOptions options) =>
-        _GetWebGLContext(canvas, options).toDart;
+        _GetWebGLContext(canvas, options).toDartDouble;
 
   @JS('MakeGrContext')
   external SkGrContext _MakeGrContext(JSNumber glContext);
@@ -286,11 +286,11 @@ extension SkSurfaceExtension on SkSurface {
 
   @JS('width')
   external JSNumber _width();
-  double width() => _width().toDart;
+  double width() => _width().toDartDouble;
 
   @JS('height')
   external JSNumber _height();
-  double height() => _height().toDart;
+  double height() => _height().toDartDouble;
 
   external JSVoid dispose();
   external SkImage makeImageSnapshot();
@@ -327,7 +327,7 @@ class SkFontSlant {}
 extension SkFontSlantExtension on SkFontSlant {
   @JS('value')
   external JSNumber get _value;
-  double get value => _value.toDart;
+  double get value => _value.toDartDouble;
 }
 
 final List<SkFontSlant> _skFontSlants = <SkFontSlant>[
@@ -363,7 +363,7 @@ class SkFontWeight {}
 extension SkFontWeightExtension on SkFontWeight {
   @JS('value')
   external JSNumber get _value;
-  double get value => _value.toDart;
+  double get value => _value.toDartDouble;
 }
 
 final List<SkFontWeight> _skFontWeights = <SkFontWeight>[
@@ -398,7 +398,7 @@ class SkAffinity {}
 extension SkAffinityExtension on SkAffinity {
   @JS('value')
   external JSNumber get _value;
-  double get value => _value.toDart;
+  double get value => _value.toDartDouble;
 }
 
 final List<SkAffinity> _skAffinitys = <SkAffinity>[
@@ -426,7 +426,7 @@ class SkTextDirection {}
 extension SkTextDirectionExtension on SkTextDirection {
   @JS('value')
   external JSNumber get _value;
-  double get value => _value.toDart;
+  double get value => _value.toDartDouble;
 }
 
 // Flutter enumerates text directions as RTL, LTR, while CanvasKit
@@ -460,7 +460,7 @@ class SkTextAlign {}
 extension SkTextAlignExtension on SkTextAlign {
   @JS('value')
   external JSNumber get _value;
-  double get value => _value.toDart;
+  double get value => _value.toDartDouble;
 }
 
 final List<SkTextAlign> _skTextAligns = <SkTextAlign>[
@@ -494,7 +494,7 @@ class SkTextHeightBehavior {}
 extension SkTextHeightBehaviorExtension on SkTextHeightBehavior {
   @JS('value')
   external JSNumber get _value;
-  double get value => _value.toDart;
+  double get value => _value.toDartDouble;
 }
 
 final List<SkTextHeightBehavior> _skTextHeightBehaviors =
@@ -531,7 +531,7 @@ class SkRectHeightStyle {}
 extension SkRectHeightStyleExtension on SkRectHeightStyle {
   @JS('value')
   external JSNumber get _value;
-  double get value => _value.toDart;
+  double get value => _value.toDartDouble;
 }
 
 final List<SkRectHeightStyle> _skRectHeightStyles = <SkRectHeightStyle>[
@@ -563,7 +563,7 @@ class SkRectWidthStyle {}
 extension SkRectWidthStyleExtension on SkRectWidthStyle {
   @JS('value')
   external JSNumber get _value;
-  double get value => _value.toDart;
+  double get value => _value.toDartDouble;
 }
 
 final List<SkRectWidthStyle> _skRectWidthStyles = <SkRectWidthStyle>[
@@ -593,7 +593,7 @@ class SkVertexMode {}
 extension SkVertexModeExtension on SkVertexMode {
   @JS('value')
   external JSNumber get _value;
-  double get value => _value.toDart;
+  double get value => _value.toDartDouble;
 }
 
 final List<SkVertexMode> _skVertexModes = <SkVertexMode>[
@@ -623,7 +623,7 @@ class SkPointMode {}
 extension SkPointModeExtension on SkPointMode {
   @JS('value')
   external JSNumber get _value;
-  double get value => _value.toDart;
+  double get value => _value.toDartDouble;
 }
 
 final List<SkPointMode> _skPointModes = <SkPointMode>[
@@ -652,7 +652,7 @@ class SkClipOp {}
 extension SkClipOpExtension on SkClipOp {
   @JS('value')
   external JSNumber get _value;
-  double get value => _value.toDart;
+  double get value => _value.toDartDouble;
 }
 
 final List<SkClipOp> _skClipOps = <SkClipOp>[
@@ -680,7 +680,7 @@ class SkFillType {}
 extension SkFillTypeExtension on SkFillType {
   @JS('value')
   external JSNumber get _value;
-  double get value => _value.toDart;
+  double get value => _value.toDartDouble;
 }
 
 final List<SkFillType> _skFillTypes = <SkFillType>[
@@ -711,7 +711,7 @@ class SkPathOp {}
 extension SkPathOpExtension on SkPathOp {
   @JS('value')
   external JSNumber get _value;
-  double get value => _value.toDart;
+  double get value => _value.toDartDouble;
 }
 
 final List<SkPathOp> _skPathOps = <SkPathOp>[
@@ -744,7 +744,7 @@ class SkBlurStyle {}
 extension SkBlurStyleExtension on SkBlurStyle {
   @JS('value')
   external JSNumber get _value;
-  double get value => _value.toDart;
+  double get value => _value.toDartDouble;
 }
 
 final List<SkBlurStyle> _skBlurStyles = <SkBlurStyle>[
@@ -775,7 +775,7 @@ class SkStrokeCap {}
 extension SkStrokeCapExtension on SkStrokeCap {
   @JS('value')
   external JSNumber get _value;
-  double get value => _value.toDart;
+  double get value => _value.toDartDouble;
 }
 
 final List<SkStrokeCap> _skStrokeCaps = <SkStrokeCap>[
@@ -804,7 +804,7 @@ class SkPaintStyle {}
 extension SkPaintStyleExtension on SkPaintStyle {
   @JS('value')
   external JSNumber get _value;
-  double get value => _value.toDart;
+  double get value => _value.toDartDouble;
 }
 
 final List<SkPaintStyle> _skPaintStyles = <SkPaintStyle>[
@@ -859,7 +859,7 @@ class SkBlendMode {}
 extension SkBlendModeExtension on SkBlendMode {
   @JS('value')
   external JSNumber get _value;
-  double get value => _value.toDart;
+  double get value => _value.toDartDouble;
 }
 
 final List<SkBlendMode> _skBlendModes = <SkBlendMode>[
@@ -915,7 +915,7 @@ class SkStrokeJoin {}
 extension SkStrokeJoinExtension on SkStrokeJoin {
   @JS('value')
   external JSNumber get _value;
-  double get value => _value.toDart;
+  double get value => _value.toDartDouble;
 }
 
 final List<SkStrokeJoin> _skStrokeJoins = <SkStrokeJoin>[
@@ -946,7 +946,7 @@ class SkTileMode {}
 extension SkTileModeExtension on SkTileMode {
   @JS('value')
   external JSNumber get _value;
-  double get value => _value.toDart;
+  double get value => _value.toDartDouble;
 }
 
 final List<SkTileMode> _skTileModes = <SkTileMode>[
@@ -976,7 +976,7 @@ class SkFilterMode {}
 extension SkFilterModeExtension on SkFilterMode {
   @JS('value')
   external JSNumber get _value;
-  double get value => _value.toDart;
+  double get value => _value.toDartDouble;
 }
 
 SkFilterMode toSkFilterMode(ui.FilterQuality filterQuality) {
@@ -1002,7 +1002,7 @@ class SkMipmapMode {}
 extension SkMipmapModeExtension on SkMipmapMode {
   @JS('value')
   external JSNumber get _value;
-  double get value => _value.toDart;
+  double get value => _value.toDartDouble;
 }
 
 SkMipmapMode toSkMipmapMode(ui.FilterQuality filterQuality) {
@@ -1028,7 +1028,7 @@ class SkAlphaType {}
 extension SkAlphaTypeExtension on SkAlphaType {
   @JS('value')
   external JSNumber get _value;
-  double get value => _value.toDart;
+  double get value => _value.toDartDouble;
 }
 
 @JS()
@@ -1056,7 +1056,7 @@ class SkColorType {}
 extension SkColorTypeExtension on SkColorType {
   @JS('value')
   external JSNumber get _value;
-  double get value => _value.toDart;
+  double get value => _value.toDartDouble;
 }
 
 @JS()
@@ -1067,31 +1067,31 @@ class SkAnimatedImage {}
 extension SkAnimatedImageExtension on SkAnimatedImage {
   @JS('getFrameCount')
   external JSNumber _getFrameCount();
-  double getFrameCount() => _getFrameCount().toDart;
+  double getFrameCount() => _getFrameCount().toDartDouble;
 
   @JS('getRepetitionCount')
   external JSNumber _getRepetitionCount();
-  double getRepetitionCount() => _getRepetitionCount().toDart;
+  double getRepetitionCount() => _getRepetitionCount().toDartDouble;
 
   /// Returns duration in milliseconds.
   @JS('currentFrameDuration')
   external JSNumber _currentFrameDuration();
-  double currentFrameDuration() => _currentFrameDuration().toDart;
+  double currentFrameDuration() => _currentFrameDuration().toDartDouble;
 
   /// Advances to the next frame and returns its duration in milliseconds.
   @JS('decodeNextFrame')
   external JSNumber _decodeNextFrame();
-  double decodeNextFrame() => _decodeNextFrame().toDart;
+  double decodeNextFrame() => _decodeNextFrame().toDartDouble;
 
   external SkImage makeImageAtCurrentFrame();
 
   @JS('width')
   external JSNumber _width();
-  double width() => _width().toDart;
+  double width() => _width().toDartDouble;
 
   @JS('height')
   external JSNumber _height();
-  double height() => _height().toDart;
+  double height() => _height().toDartDouble;
 
   /// Deletes the C++ object.
   ///
@@ -1113,11 +1113,11 @@ extension SkImageExtension on SkImage {
 
   @JS('width')
   external JSNumber _width();
-  double width() => _width().toDart;
+  double width() => _width().toDartDouble;
 
   @JS('height')
   external JSNumber _height();
-  double height() => _height().toDart;
+  double height() => _height().toDartDouble;
 
   @JS('makeShaderCubic')
   external SkShader _makeShaderCubic(
@@ -1472,6 +1472,12 @@ class SkImageFilter {}
 
 extension SkImageFilterExtension on SkImageFilter {
   external JSVoid delete();
+
+
+  @JS('getOutputBounds')
+  external JSInt32Array _getOutputBounds(JSFloat32Array bounds);
+  Int32List getOutputBounds(Float32List bounds) =>
+      _getOutputBounds(bounds.toJS).toDart;
 }
 
 @JS()
@@ -1624,7 +1630,7 @@ extension SkFloat32ListExtension on SkFloat32List {
   /// The number of objects this pointer refers to.
   @JS('length')
   external JSNumber get _length;
-  double get length => _length.toDart;
+  double get length => _length.toDartDouble;
 
   @JS('length')
   external set _length(JSNumber length);
@@ -1655,7 +1661,7 @@ extension SkUint32ListExtension on SkUint32List {
   /// The number of objects this pointer refers to.
   @JS('length')
   external JSNumber get _length;
-  double get length => _length.toDart;
+  double get length => _length.toDartDouble;
 
   @JS('length')
   external set _length(JSNumber length);
@@ -2084,7 +2090,7 @@ extension SkContourMeasureExtension on SkContourMeasure {
 
   @JS('length')
   external JSNumber _length();
-  double length() => _length().toDart;
+  double length() => _length().toDartDouble;
 
   external JSVoid delete();
 }
@@ -2195,8 +2201,10 @@ class SkPictureRecorder {
 
 extension SkPictureRecorderExtension on SkPictureRecorder {
   @JS('beginRecording')
-  external SkCanvas _beginRecording(JSFloat32Array bounds);
-  SkCanvas beginRecording(Float32List bounds) => _beginRecording(bounds.toJS);
+  external SkCanvas _beginRecording(
+      JSFloat32Array bounds, JSBoolean computeBounds);
+  SkCanvas beginRecording(Float32List bounds) =>
+      _beginRecording(bounds.toJS, true.toJS);
 
   external SkPicture finishRecordingAsPicture();
   external JSVoid delete();
@@ -2513,11 +2521,11 @@ extension SkCanvasExtension on SkCanvas {
 
   @JS('save')
   external JSNumber _save();
-  double save() => _save().toDart;
+  double save() => _save().toDartDouble;
 
   @JS('getSaveCount')
   external JSNumber _getSaveCount();
-  double getSaveCount() => _getSaveCount().toDart;
+  double getSaveCount() => _getSaveCount().toDartDouble;
 
   @JS('saveLayer')
   external JSVoid _saveLayer(
@@ -2594,6 +2602,14 @@ class SkPicture {}
 
 extension SkPictureExtension on SkPicture {
   external JSVoid delete();
+
+  @JS('cullRect')
+  external JSFloat32Array _cullRect();
+  Float32List cullRect() => _cullRect().toDart;
+
+  @JS('approximateBytesUsed')
+  external JSNumber _approximateBytesUsed();
+  int approximateBytesUsed() => _approximateBytesUsed().toDartInt;
 }
 
 @JS()
@@ -2722,6 +2738,8 @@ extension SkParagraphStylePropertiesExtension on SkParagraphStyleProperties {
   @JS('replaceTabCharacters')
   external set _replaceTabCharacters(JSBoolean? bool);
   set replaceTabCharacters(bool? bool) => _replaceTabCharacters = bool?.toJS;
+
+  external set applyRoundingHack(bool applyRoundingHack);
 }
 
 @JS()
@@ -2747,7 +2765,7 @@ class SkTextDecorationStyle {}
 extension SkTextDecorationStyleExtension on SkTextDecorationStyle {
   @JS('value')
   external JSNumber get _value;
-  double get value => _value.toDart;
+  double get value => _value.toDartDouble;
 }
 
 final List<SkTextDecorationStyle> _skTextDecorationStyles =
@@ -2779,7 +2797,7 @@ class SkTextBaseline {}
 extension SkTextBaselineExtension on SkTextBaseline {
   @JS('value')
   external JSNumber get _value;
-  double get value => _value.toDart;
+  double get value => _value.toDartDouble;
 }
 
 final List<SkTextBaseline> _skTextBaselines = <SkTextBaseline>[
@@ -2811,7 +2829,7 @@ class SkPlaceholderAlignment {}
 extension SkPlaceholderAlignmentExtension on SkPlaceholderAlignment {
   @JS('value')
   external JSNumber get _value;
-  double get value => _value.toDart;
+  double get value => _value.toDartDouble;
 }
 
 final List<SkPlaceholderAlignment> _skPlaceholderAlignments =
@@ -3101,19 +3119,19 @@ class SkLineMetrics {}
 extension SkLineMetricsExtension on SkLineMetrics {
   @JS('startIndex')
   external JSNumber get _startIndex;
-  double get startIndex => _startIndex.toDart;
+  double get startIndex => _startIndex.toDartDouble;
 
   @JS('endIndex')
   external JSNumber get _endIndex;
-  double get endIndex => _endIndex.toDart;
+  double get endIndex => _endIndex.toDartDouble;
 
   @JS('endExcludingWhitespaces')
   external JSNumber get _endExcludingWhitespaces;
-  double get endExcludingWhitespaces => _endExcludingWhitespaces.toDart;
+  double get endExcludingWhitespaces => _endExcludingWhitespaces.toDartDouble;
 
   @JS('endIncludingNewline')
   external JSNumber get _endIncludingNewline;
-  double get endIncludingNewline => _endIncludingNewline.toDart;
+  double get endIncludingNewline => _endIncludingNewline.toDartDouble;
 
   @JS('isHardBreak')
   external JSBoolean get _isHardBreak;
@@ -3121,31 +3139,31 @@ extension SkLineMetricsExtension on SkLineMetrics {
 
   @JS('ascent')
   external JSNumber get _ascent;
-  double get ascent => _ascent.toDart;
+  double get ascent => _ascent.toDartDouble;
 
   @JS('descent')
   external JSNumber get _descent;
-  double get descent => _descent.toDart;
+  double get descent => _descent.toDartDouble;
 
   @JS('height')
   external JSNumber get _height;
-  double get height => _height.toDart;
+  double get height => _height.toDartDouble;
 
   @JS('width')
   external JSNumber get _width;
-  double get width => _width.toDart;
+  double get width => _width.toDartDouble;
 
   @JS('left')
   external JSNumber get _left;
-  double get left => _left.toDart;
+  double get left => _left.toDartDouble;
 
   @JS('baseline')
   external JSNumber get _baseline;
-  double get baseline => _baseline.toDart;
+  double get baseline => _baseline.toDartDouble;
 
   @JS('lineNumber')
   external JSNumber get _lineNumber;
-  double get lineNumber => _lineNumber.toDart;
+  double get lineNumber => _lineNumber.toDartDouble;
 }
 
 @JS()
@@ -3173,7 +3191,7 @@ class SkParagraph {}
 extension SkParagraphExtension on SkParagraph {
   @JS('getAlphabeticBaseline')
   external JSNumber _getAlphabeticBaseline();
-  double getAlphabeticBaseline() => _getAlphabeticBaseline().toDart;
+  double getAlphabeticBaseline() => _getAlphabeticBaseline().toDartDouble;
 
   @JS('didExceedMaxLines')
   external JSBoolean _didExceedMaxLines();
@@ -3181,11 +3199,11 @@ extension SkParagraphExtension on SkParagraph {
 
   @JS('getHeight')
   external JSNumber _getHeight();
-  double getHeight() => _getHeight().toDart;
+  double getHeight() => _getHeight().toDartDouble;
 
   @JS('getIdeographicBaseline')
   external JSNumber _getIdeographicBaseline();
-  double getIdeographicBaseline() => _getIdeographicBaseline().toDart;
+  double getIdeographicBaseline() => _getIdeographicBaseline().toDartDouble;
 
   @JS('getLineMetrics')
   external JSArray _getLineMetrics();
@@ -3194,19 +3212,19 @@ extension SkParagraphExtension on SkParagraph {
 
   @JS('getLongestLine')
   external JSNumber _getLongestLine();
-  double getLongestLine() => _getLongestLine().toDart;
+  double getLongestLine() => _getLongestLine().toDartDouble;
 
   @JS('getMaxIntrinsicWidth')
   external JSNumber _getMaxIntrinsicWidth();
-  double getMaxIntrinsicWidth() => _getMaxIntrinsicWidth().toDart;
+  double getMaxIntrinsicWidth() => _getMaxIntrinsicWidth().toDartDouble;
 
   @JS('getMinIntrinsicWidth')
   external JSNumber _getMinIntrinsicWidth();
-  double getMinIntrinsicWidth() => _getMinIntrinsicWidth().toDart;
+  double getMinIntrinsicWidth() => _getMinIntrinsicWidth().toDartDouble;
 
   @JS('getMaxWidth')
   external JSNumber _getMaxWidth();
-  double getMaxWidth() => _getMaxWidth().toDart;
+  double getMaxWidth() => _getMaxWidth().toDartDouble;
 
   @JS('getRectsForRange')
   external JSArray _getRectsForRange(
@@ -3259,7 +3277,7 @@ extension SkTextPositionExtnsion on SkTextPosition {
 
   @JS('pos')
   external JSNumber get _pos;
-  double get pos => _pos.toDart;
+  double get pos => _pos.toDartDouble;
 }
 
 @JS()
@@ -3269,11 +3287,11 @@ class SkTextRange {}
 extension SkTextRangeExtension on SkTextRange {
   @JS('start')
   external JSNumber get _start;
-  double get start => _start.toDart;
+  double get start => _start.toDartDouble;
 
   @JS('end')
   external JSNumber get _end;
-  double get end => _end.toDart;
+  double get end => _end.toDartDouble;
 }
 
 @JS()
@@ -3384,45 +3402,6 @@ extension JsConstructorExtension on JsConstructor {
   String get name => _name.toDart;
 }
 
-/// Attaches a weakly referenced object to another object and calls a finalizer
-/// with the latter when weakly referenced object is garbage collected.
-///
-/// We use this to delete Skia objects when their "Ck" wrapper is garbage
-/// collected.
-///
-/// Example sequence of events:
-///
-/// 1. A (CkPaint, SkPaint) pair created.
-/// 2. The paint is used to paint some picture.
-/// 3. CkPaint is dropped by the app.
-/// 4. GC decides to perform a GC cycle and collects CkPaint.
-/// 5. The finalizer function is called with the SkPaint as the sole argument.
-/// 6. We call `delete` on SkPaint.
-@JS('window.FinalizationRegistry')
-@staticInterop
-class SkObjectFinalizationRegistry {}
-
-SkObjectFinalizationRegistry createSkObjectFinalizationRegistry(JSFunction cleanup) {
-  return js_util.callConstructor(
-    _finalizationRegistryConstructor!.toObjectShallow,
-    <Object>[cleanup],
-  );
-}
-
-extension SkObjectFinalizationRegistryExtension on SkObjectFinalizationRegistry {
-  @JS('register')
-  external JSVoid _register(JSAny ckObject, JSAny skObject);
-  void register(Object ckObject, Object skObject) =>
-      _register(ckObject.toJSAnyShallow, skObject.toJSAnyShallow);
-}
-
-@JS('window.FinalizationRegistry')
-external JSAny? get _finalizationRegistryConstructor;
-
-/// Whether the current browser supports `FinalizationRegistry`.
-bool browserSupportsFinalizationRegistry =
-    _finalizationRegistryConstructor != null;
-
 @JS()
 @staticInterop
 class SkData {}
@@ -3430,7 +3409,7 @@ class SkData {}
 extension SkDataExtension on SkData {
   @JS('size')
   external JSNumber _size();
-  double size() => _size().toDart;
+  double size() => _size().toDartDouble;
 
   @JS('isEmpty')
   external JSBoolean _isEmpty();
@@ -3474,7 +3453,7 @@ extension SkImageInfoExtension on SkImageInfo {
 
   @JS('height')
   external JSNumber get _height;
-  double get height => _height.toDart;
+  double get height => _height.toDartDouble;
 
   @JS('isEmpty')
   external JSBoolean get _isEmpty;
@@ -3490,7 +3469,7 @@ extension SkImageInfoExtension on SkImageInfo {
 
   @JS('width')
   external JSNumber get _width;
-  double get width => _width.toDart;
+  double get width => _width.toDartDouble;
 
   external SkImageInfo makeAlphaType(SkAlphaType alphaType);
   external SkImageInfo makeColorSpace(ColorSpace colorSpace);
@@ -3533,45 +3512,12 @@ extension SkPartialImageInfoExtension on SkPartialImageInfo {
 
   @JS('height')
   external JSNumber get _height;
-  double get height => _height.toDart;
+  double get height => _height.toDartDouble;
 
   @JS('width')
   external JSNumber get _width;
-  double get width => _width.toDart;
+  double get width => _width.toDartDouble;
 }
-
-/// Helper interop methods for [patchCanvasKitModule].
-@JS()
-external set __flutterWebCachedModule(JSAny? module);
-set _flutterWebCachedModule(Object? module) =>
-    __flutterWebCachedModule = module?.toJSAnyShallow;
-
-@JS()
-external JSAny? get __flutterWebCachedModule;
-Object? get _flutterWebCachedModule =>
-    __flutterWebCachedModule?.toObjectShallow;
-
-@JS()
-external set __flutterWebCachedExports(JSAny? exports);
-set _flutterWebCachedExports(Object? exports) =>
-    __flutterWebCachedExports = exports?.toJSAnyShallow;
-
-@JS()
-external JSAny? get __flutterWebCachedExports;
-Object? get _flutterWebCachedExports =>
-    __flutterWebCachedExports?.toObjectShallow;
-
-@JS('Object')
-external JSAny get _objectConstructor;
-Object get objectConstructor => _objectConstructor.toObjectShallow;
-
-@JS('exports')
-external JSAny? get _exports;
-Object? get exports => _exports?.toObjectShallow;
-
-@JS('module')
-external JSAny? get _module;
-Object? get module => _module?.toObjectShallow;
 
 @JS('window.flutterCanvasKit.RuntimeEffect')
 @anonymous
@@ -3595,65 +3541,6 @@ extension SkSkRuntimeEffectExtension on SkRuntimeEffect {
       List<Object> uniforms, List<Object?> children) =>
           _makeShaderWithChildren(uniforms.toJSAnyShallow,
               children.toJSAnyShallow);
-}
-
-/// Monkey-patch the top-level `module` and `exports` objects so that
-/// CanvasKit doesn't attempt to register itself as an anonymous module.
-///
-/// The idea behind making these fake `exports` and `module` objects is
-/// that `canvaskit.js` contains the following lines of code:
-///
-///     if (typeof exports === 'object' && typeof module === 'object')
-///       module.exports = CanvasKitInit;
-///     else if (typeof define === 'function' && define['amd'])
-///       define([], function() { return CanvasKitInit; });
-///
-/// We need to avoid hitting the case where CanvasKit defines an anonymous
-/// module, since this breaks RequireJS, which DDC and some plugins use.
-/// Temporarily removing the `define` function won't work because RequireJS
-/// could load in between this code running and the CanvasKit code running.
-/// Also, we cannot monkey-patch the `define` function because it is
-/// non-configurable (it is a top-level 'var').
-// TODO(hterkelsen): Rather than this monkey-patch hack, we should
-// build CanvasKit ourselves. See:
-// https://github.com/flutter/flutter/issues/52588
-void patchCanvasKitModule(DomHTMLScriptElement canvasKitScript) {
-  // First check if `exports` and `module` are already defined. If so, then
-  // CommonJS is being used, and we shouldn't have any problems.
-  if (exports == null) {
-    final Object? exportsAccessor = js_util.jsify(<String, dynamic>{
-      'get': js_util.allowInterop(() {
-        if (domDocument.currentScript == canvasKitScript) {
-          return js_util.callConstructor(objectConstructor, <Object>[]);
-        } else {
-          return _flutterWebCachedExports;
-        }
-      }),
-      'set': js_util.allowInterop((dynamic value) {
-        _flutterWebCachedExports = value;
-      }),
-      'configurable': true,
-    });
-    js_util.callMethod(objectConstructor,
-        'defineProperty', <dynamic>[domWindow, 'exports', exportsAccessor]);
-  }
-  if (module == null) {
-    final Object? moduleAccessor = js_util.jsify(<String, dynamic>{
-      'get': js_util.allowInterop(() {
-        if (domDocument.currentScript == canvasKitScript) {
-          return js_util.callConstructor(objectConstructor, <Object>[]);
-        } else {
-          return _flutterWebCachedModule;
-        }
-      }),
-      'set': js_util.allowInterop((dynamic value) {
-        _flutterWebCachedModule = value;
-      }),
-      'configurable': true,
-    });
-    js_util.callMethod(objectConstructor,
-        'defineProperty', <dynamic>[domWindow, 'module', moduleAccessor]);
-  }
 }
 
 const String _kFullCanvasKitJsFileName = 'canvaskit.js';
@@ -3727,7 +3614,8 @@ Future<void> _downloadOneOf(Iterable<String> urls) async {
 /// Returns a [Future] that completes with `true` if the CanvasKit JavaScript
 /// file was successfully downloaded, or `false` if it failed.
 Future<bool> _downloadCanvasKitJs(String url) {
-  final DomHTMLScriptElement canvasKitScript = createDomHTMLScriptElement();
+  final DomHTMLScriptElement canvasKitScript =
+      createDomHTMLScriptElement(configuration.nonce);
   canvasKitScript.src = createTrustedScriptUrl(url);
 
   final Completer<bool> canvasKitLoadCompleter = Completer<bool>();
@@ -3750,7 +3638,6 @@ Future<bool> _downloadCanvasKitJs(String url) {
   canvasKitScript.addEventListener('load', loadCallback);
   canvasKitScript.addEventListener('error', errorCallback);
 
-  patchCanvasKitModule(canvasKitScript);
   domDocument.head!.appendChild(canvasKitScript);
 
   return canvasKitLoadCompleter.future;

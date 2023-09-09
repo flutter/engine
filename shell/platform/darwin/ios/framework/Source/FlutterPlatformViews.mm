@@ -10,15 +10,12 @@
 #include <string>
 
 #include "flutter/common/graphics/persistent_cache.h"
-#include "flutter/flow/rtree.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterOverlayView.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
-
-static const NSUInteger kFlutterClippingMaskViewPoolCapacity = 5;
 
 @implementation UIView (FirstResponder)
 - (BOOL)flt_hasFirstResponderInViewHierarchySubtree {
@@ -447,6 +444,8 @@ void FlutterPlatformViewsController::ClipViewSetMaskView(UIView* clipView) {
   clipView.maskView = [mask_view_pool_.get() getMaskViewWithFrame:frame];
 }
 
+// This method is only called when the `embedded_view` needs to be re-composited at the current
+// frame. See: `CompositeWithParams` for details.
 void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators_stack,
                                                    UIView* embedded_view,
                                                    const SkRect& bounding_rect) {
@@ -461,12 +460,10 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   NSMutableArray* blurFilters = [[[NSMutableArray alloc] init] autorelease];
   FML_DCHECK(!clipView.maskView ||
              [clipView.maskView isKindOfClass:[FlutterClippingMaskView class]]);
-  if (mask_view_pool_.get() == nil) {
-    mask_view_pool_.reset([[FlutterClippingMaskViewPool alloc]
-        initWithCapacity:kFlutterClippingMaskViewPoolCapacity]);
+  if (clipView.maskView) {
+    [mask_view_pool_.get() insertViewToPoolIfNeeded:(FlutterClippingMaskView*)(clipView.maskView)];
+    clipView.maskView = nil;
   }
-  [mask_view_pool_.get() recycleMaskViews];
-  clipView.maskView = nil;
   CGFloat screenScale = [UIScreen mainScreen].scale;
   auto iter = mutators_stack.Begin();
   while (iter != mutators_stack.End()) {
@@ -570,6 +567,14 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   embedded_view.layer.transform = flutter::GetCATransform3DFromSkMatrix(transformMatrix);
 }
 
+// Composite the PlatformView with `view_id`.
+//
+// Every frame, during the paint traversal of the layer tree, this method is called for all
+// the PlatformViews in `views_to_recomposite_`.
+//
+// Note that `views_to_recomposite_` does not represent all the views in the view hierarchy,
+// if a PlatformView does not change its composition parameter from last frame, it is not
+// included in the `views_to_recomposite_`.
 void FlutterPlatformViewsController::CompositeWithParams(int64_t view_id,
                                                          const EmbeddedViewParams& params) {
   CGRect frame = CGRectMake(0, 0, params.sizePoints().width(), params.sizePoints().height());
@@ -622,8 +627,8 @@ DlCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(int64_t view_id)
 }
 
 void FlutterPlatformViewsController::Reset() {
-  UIView* flutter_view = flutter_view_.get();
-  for (UIView* sub_view in [flutter_view subviews]) {
+  for (int64_t view_id : active_composition_order_) {
+    UIView* sub_view = root_views_[view_id].get();
     [sub_view removeFromSuperview];
   }
   root_views_.clear();
@@ -703,7 +708,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
       // TODO(egarciad): Consider making this configurable.
       // https://github.com/flutter/flutter/issues/52510
       if (allocation_size > kMaxLayerAllocations) {
-        SkRect joined_rect;
+        SkRect joined_rect = SkRect::MakeEmpty();
         for (const SkRect& rect : intersection_rects) {
           joined_rect.join(rect);
         }

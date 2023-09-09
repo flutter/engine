@@ -81,7 +81,6 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     ui.Offset offset = ui.Offset.zero,
     double width = 0.0,
     double height = 0.0,
-    Object? webOnlyPaintedBy,
   }) {
     currentLayer.add(PlatformViewLayer(viewId, offset, width, height));
   }
@@ -175,24 +174,6 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     ui.Offset offset = ui.Offset.zero,
   }) {
     return pushLayer<OpacityEngineLayer>(OpacityEngineLayer(alpha, offset));
-  }
-
-  @override
-  PhysicalShapeEngineLayer pushPhysicalShape({
-    required ui.Path path,
-    required double elevation,
-    required ui.Color color,
-    ui.Color? shadowColor,
-    ui.Clip clipBehavior = ui.Clip.none,
-    ui.EngineLayer? oldLayer,
-  }) {
-    return pushLayer<PhysicalShapeEngineLayer>(PhysicalShapeEngineLayer(
-      elevation,
-      color,
-      shadowColor,
-      path as CkPath,
-      clipBehavior,
-    ));
   }
 
   @override

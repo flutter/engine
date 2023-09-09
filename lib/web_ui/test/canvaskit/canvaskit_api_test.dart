@@ -51,6 +51,7 @@ void testMain() {
     _matrix4x4CompositionTests();
     _toSkRectTests();
     _skVerticesTests();
+    _pictureTests();
     group('SkParagraph', () {
       _paragraphTests();
     });
@@ -754,8 +755,8 @@ void _matrix4x4CompositionTests() {
       paint(canvas, (ui.Canvas canvas) {
         final Matrix4 matrix = Matrix4.identity();
         matrix.setEntry(3, 2, 0.001);
-        matrix.rotate(Vector3(1, 0, 0), rotateAroundX);
-        matrix.rotate(Vector3(0, 1, 0), rotateAroundY);
+        matrix.rotate(kUnitX, rotateAroundX);
+        matrix.rotate(kUnitY, rotateAroundY);
         canvas.transform(matrix.toFloat64());
       });
     }, width, height);
@@ -1046,6 +1047,26 @@ SkVertices _testVertices() {
 void _skVerticesTests() {
   test('SkVertices', () {
     expect(_testVertices(), isNotNull);
+  });
+}
+
+void _pictureTests() {
+  late SkPicture picture;
+
+  setUp(() {
+    final SkPictureRecorder recorder = SkPictureRecorder();
+    final SkCanvas canvas = recorder.beginRecording(toSkRect(ui.Rect.largest));
+    canvas.drawRect(toSkRect(const ui.Rect.fromLTRB(20, 30, 40, 50)),
+        SkPaint()..setColorInt(0xffff00ff));
+    picture = recorder.finishRecordingAsPicture();
+  });
+  test('cullRect', () {
+    expect(
+        fromSkRect(picture.cullRect()), const ui.Rect.fromLTRB(20, 30, 40, 50));
+  });
+
+  test('approximateBytesUsed', () {
+    expect(picture.approximateBytesUsed() > 0, isTrue);
   });
 }
 
@@ -1445,7 +1466,7 @@ void _canvasTests() {
       SkPaint()..setColorInt(0xAAFFFFFF),
     );
     final CkPicture picture =
-        CkPicture(otherRecorder.finishRecordingAsPicture(), null);
+        CkPicture(otherRecorder.finishRecordingAsPicture());
     final CkImage image = await picture.toImage(1, 1) as CkImage;
     final ByteData rawData =
         await image.toByteData();
@@ -1527,11 +1548,6 @@ void _textStyleTests() {
 }
 
 void _paragraphTests() {
-  setUpAll(() async {
-    await CanvasKitRenderer.instance.fontCollection.debugDownloadTestFonts();
-    CanvasKitRenderer.instance.fontCollection.registerDownloadedFonts();
-  });
-
   // This test is just a kitchen sink that blasts CanvasKit with all paragraph
   // properties all at once, making sure CanvasKit doesn't choke on anything.
   // In particular, this tests that our JS bindings are correct, such as that
@@ -1831,17 +1847,22 @@ void _paragraphTests() {
   }, skip: isFirefox); // Intended: Headless firefox has no webgl support https://github.com/flutter/flutter/issues/109265
 
   group('getCanvasKitJsFileNames', () {
-    late dynamic oldV8BreakIterator = v8BreakIterator;
+    dynamic oldV8BreakIterator = v8BreakIterator;
+    dynamic oldIntlSegmenter = intlSegmenter;
+
     setUp(() {
       oldV8BreakIterator = v8BreakIterator;
+      oldIntlSegmenter = intlSegmenter;
     });
     tearDown(() {
       v8BreakIterator = oldV8BreakIterator;
+      intlSegmenter = oldIntlSegmenter;
       debugResetBrowserSupportsImageDecoder();
     });
 
     test('in Chromium-based browsers', () {
       v8BreakIterator = Object(); // Any non-null value.
+      intlSegmenter = Object(); // Any non-null value.
       browserSupportsImageDecoder = true;
 
       expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
@@ -1852,7 +1873,19 @@ void _paragraphTests() {
       ]);
     });
 
+    test('in older versions of Chromium-based browsers', () {
+      v8BreakIterator = Object(); // Any non-null value.
+      intlSegmenter = null; // Older versions of Chromium didn't have the Intl.Segmenter API.
+      browserSupportsImageDecoder = true;
+
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium), <String>['chromium/canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>['canvaskit.js']);
+    });
+
     test('in other browsers', () {
+      intlSegmenter = Object(); // Any non-null value.
+
       v8BreakIterator = null;
       browserSupportsImageDecoder = true;
       expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
@@ -1895,7 +1928,7 @@ void _paragraphTests() {
     // FinalizationRegistry because it depends on GC, which cannot be controlled,
     // So the test simply tests that a FinalizationRegistry can be constructed
     // and its `register` method can be called.
-    final SkObjectFinalizationRegistry registry = createSkObjectFinalizationRegistry((String arg) {}.toJS);
+    final DomFinalizationRegistry registry = createDomFinalizationRegistry((String arg) {}.toJS);
     registry.register(Object(), Object());
   });
 }
@@ -1906,3 +1939,9 @@ external dynamic get v8BreakIterator;
 
 @JS('window.Intl.v8BreakIterator')
 external set v8BreakIterator(dynamic x);
+
+@JS('window.Intl.Segmenter')
+external dynamic get intlSegmenter;
+
+@JS('window.Intl.Segmenter')
+external set intlSegmenter(dynamic x);

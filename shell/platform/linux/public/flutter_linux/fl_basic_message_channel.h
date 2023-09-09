@@ -11,18 +11,21 @@
 
 #include <gio/gio.h>
 #include <glib-object.h>
+#include <gmodule.h>
 
 #include "fl_binary_messenger.h"
 #include "fl_message_codec.h"
 
 G_BEGIN_DECLS
 
+G_MODULE_EXPORT
 G_DECLARE_FINAL_TYPE(FlBasicMessageChannel,
                      fl_basic_message_channel,
                      FL,
                      BASIC_MESSAGE_CHANNEL,
                      GObject)
 
+G_MODULE_EXPORT
 G_DECLARE_FINAL_TYPE(FlBasicMessageChannelResponseHandle,
                      fl_basic_message_channel_response_handle,
                      FL,
@@ -171,7 +174,8 @@ gboolean fl_basic_message_channel_respond(
 /**
  * fl_basic_message_channel_send:
  * @channel: an #FlBasicMessageChannel.
- * @message: message to send, must match what the #FlMessageCodec supports.
+ * @message: (allow-none): message to send, must match what the #FlMessageCodec
+ * supports.
  * @cancellable: (allow-none): a #GCancellable or %NULL.
  * @callback: (scope async): (allow-none): a #GAsyncReadyCallback to call when
  * the request is satisfied or %NULL to ignore the response.

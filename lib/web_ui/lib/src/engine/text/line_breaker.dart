@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:js_interop';
+
 import '../dom.dart';
 import 'fragmenter.dart';
 import 'line_break_properties.dart';
@@ -71,19 +73,17 @@ class V8LineBreakFragmenter extends TextFragmenter implements LineBreakFragmente
 
   @override
   List<LineBreakFragment> fragment() {
-    return breakLinesUsingV8BreakIterator(text, _v8BreakIterator);
+    return breakLinesUsingV8BreakIterator(text, text.toJS, _v8BreakIterator);
   }
 }
 
-List<LineBreakFragment> breakLinesUsingV8BreakIterator(String text, DomV8BreakIterator iterator) {
+List<LineBreakFragment> breakLinesUsingV8BreakIterator(String text, JSString jsText, DomV8BreakIterator iterator) {
   final List<LineBreakFragment> breaks = <LineBreakFragment>[];
   int fragmentStart = 0;
 
-  iterator.adoptText(text);
+  iterator.adoptText(jsText);
   iterator.first();
   while (iterator.next() != -1) {
-    final LineBreakType type = _getV8BreakType(text, iterator);
-
     final int fragmentEnd = iterator.current().toInt();
     int trailingNewlines = 0;
     int trailingSpaces = 0;
@@ -113,6 +113,15 @@ List<LineBreakFragment> breakLinesUsingV8BreakIterator(String text, DomV8BreakIt
       }
     }
 
+    final LineBreakType type;
+    if (trailingNewlines > 0) {
+      type = LineBreakType.mandatory;
+    } else if (fragmentEnd == text.length) {
+      type = LineBreakType.endOfText;
+    } else {
+      type = LineBreakType.opportunity;
+    }
+
     breaks.add(LineBreakFragment(
       fragmentStart,
       fragmentEnd,
@@ -128,20 +137,6 @@ List<LineBreakFragment> breakLinesUsingV8BreakIterator(String text, DomV8BreakIt
   }
 
   return breaks;
-}
-
-/// Gets break type from v8BreakIterator.
-LineBreakType _getV8BreakType(String text, DomV8BreakIterator iterator) {
-  final int fragmentEnd = iterator.current().toInt();
-
-  // I don't know why v8BreakIterator uses the type "none" to mean "soft break".
-  if (iterator.breakType() != 'none') {
-    return LineBreakType.mandatory;
-  }
-  if (fragmentEnd == text.length) {
-    return LineBreakType.endOfText;
-  }
-  return LineBreakType.opportunity;
 }
 
 class LineBreakFragment extends TextFragment {

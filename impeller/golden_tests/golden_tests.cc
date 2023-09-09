@@ -6,6 +6,8 @@
 
 #include <sstream>
 
+#include "flutter/fml/platform/darwin/scoped_nsautorelease_pool.h"
+#include "impeller/aiks/aiks_context.h"
 #include "impeller/aiks/canvas.h"
 #include "impeller/entity/contents/conical_gradient_contents.h"
 #include "impeller/geometry/path_builder.h"
@@ -55,10 +57,14 @@ class GoldenTests : public ::testing::Test {
   void SetUp() override {
     testing::GoldenDigest::Instance()->AddDimension(
         "gpu_string",
-        Screenshoter().GetContext().GetContext()->DescribeGpuModel());
+        Screenshoter().GetPlayground().GetContext()->DescribeGpuModel());
   }
 
  private:
+  // This must be placed before any other members that may use the
+  // autorelease pool.
+  fml::ScopedNSAutoreleasePool autorelease_pool_;
+
   std::unique_ptr<MetalScreenshoter> screenshoter_;
 };
 
@@ -74,7 +80,10 @@ TEST_F(GoldenTests, ConicalGradient) {
   paint.style = Paint::Style::kFill;
   canvas.DrawRect(Rect(10, 10, 250, 250), paint);
   Picture picture = canvas.EndRecordingAsPicture();
-  auto screenshot = Screenshoter().MakeScreenshot(picture);
+
+  auto aiks_context =
+      AiksContext(Screenshoter().GetPlayground().GetContext(), nullptr);
+  auto screenshot = Screenshoter().MakeScreenshot(aiks_context, picture);
   ASSERT_TRUE(SaveScreenshot(std::move(screenshot)));
 }
 }  // namespace testing

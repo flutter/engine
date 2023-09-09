@@ -23,9 +23,9 @@
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
 #include "impeller/entity/contents/radial_gradient_contents.h"
-#include "impeller/entity/contents/rrect_shadow_contents.h"
 #include "impeller/entity/contents/runtime_effect_contents.h"
 #include "impeller/entity/contents/solid_color_contents.h"
+#include "impeller/entity/contents/solid_rrect_blur_contents.h"
 #include "impeller/entity/contents/sweep_gradient_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
@@ -35,22 +35,28 @@
 #include "impeller/entity/entity_pass.h"
 #include "impeller/entity/entity_pass_delegate.h"
 #include "impeller/entity/entity_playground.h"
-#include "impeller/entity/geometry.h"
+#include "impeller/entity/geometry/geometry.h"
+#include "impeller/entity/geometry/point_field_geometry.h"
+#include "impeller/entity/geometry/stroke_path_geometry.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/geometry_asserts.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/sigma.h"
 #include "impeller/playground/playground.h"
 #include "impeller/playground/widgets.h"
+#include "impeller/renderer/command.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 #include "impeller/runtime_stage/runtime_stage.h"
 #include "impeller/tessellator/tessellator.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
-#include "impeller/typographer/backends/skia/text_render_context_skia.h"
+#include "impeller/typographer/backends/skia/typographer_context_skia.h"
 #include "include/core/SkBlendMode.h"
 #include "third_party/imgui/imgui.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
+
+// TODO(zanderso): https://github.com/flutter/flutter/issues/127701
+// NOLINTBEGIN(bugprone-unchecked-optional-access)
 
 namespace impeller {
 namespace testing {
@@ -65,14 +71,10 @@ TEST_P(EntityTest, CanCreateEntity) {
 
 class TestPassDelegate final : public EntityPassDelegate {
  public:
-  explicit TestPassDelegate(std::optional<Rect> coverage, bool collapse = false)
-      : coverage_(coverage), collapse_(collapse) {}
+  explicit TestPassDelegate(bool collapse = false) : collapse_(collapse) {}
 
   // |EntityPassDelegate|
   ~TestPassDelegate() override = default;
-
-  // |EntityPassDelegate|
-  std::optional<Rect> GetCoverageRect() override { return coverage_; }
 
   // |EntityPassDelgate|
   bool CanElide() override { return false; }
@@ -102,12 +104,12 @@ auto CreatePassWithRectPath(Rect rect,
   entity.SetContents(SolidColorContents::Make(
       PathBuilder{}.AddRect(rect).TakePath(), Color::Red()));
   subpass->AddEntity(entity);
-  subpass->SetDelegate(
-      std::make_unique<TestPassDelegate>(bounds_hint, collapse));
+  subpass->SetDelegate(std::make_unique<TestPassDelegate>(collapse));
+  subpass->SetBoundsLimit(bounds_hint);
   return subpass;
 }
 
-TEST_P(EntityTest, EntityPassCoverageRespectsDelegateBoundsHint) {
+TEST_P(EntityTest, EntityPassRespectsSubpassBoundsLimit) {
   EntityPass pass;
 
   auto subpass0 = CreatePassWithRectPath(Rect::MakeLTRB(0, 0, 100, 100),
@@ -202,7 +204,7 @@ TEST_P(EntityTest, FilterCoverageRespectsCropRect) {
   // With the crop rect.
   {
     auto expected = Rect::MakeLTRB(50, 50, 100, 100);
-    filter->SetCoverageCrop(expected);
+    filter->SetCoverageHint(expected);
     auto actual = filter->GetCoverage({});
 
     ASSERT_TRUE(actual.has_value());
@@ -224,7 +226,11 @@ TEST_P(EntityTest, CanDrawRect) {
 
 TEST_P(EntityTest, CanDrawRRect) {
   auto contents = std::make_shared<SolidColorContents>();
-  contents->SetGeometry(Geometry::MakeRRect({100, 100, 100, 100}, 10.0));
+  auto path = PathBuilder{}
+                  .SetConvexity(Convexity::kConvex)
+                  .AddRoundedRect({100, 100, 100, 100}, 10.0)
+                  .TakePath();
+  contents->SetGeometry(Geometry::MakeFillPath(path));
   contents->SetColor(Color::Red());
 
   Entity entity;
@@ -848,7 +854,6 @@ TEST_P(EntityTest, BlendingModeOptions) {
     auto draw_rect = [&context, &pass, &world_matrix](
                          Rect rect, Color color, BlendMode blend_mode) -> bool {
       using VS = SolidFillPipeline::VertexShader;
-      using FS = SolidFillPipeline::FragmentShader;
 
       VertexBufferBuilder<VS::PerVertexData> vtx_builder;
       {
@@ -864,7 +869,7 @@ TEST_P(EntityTest, BlendingModeOptions) {
       }
 
       Command cmd;
-      cmd.label = "Blended Rectangle";
+      DEBUG_COMMAND_INFO(cmd, "Blended Rectangle");
       auto options = OptionsFromPass(pass);
       options.blend_mode = blend_mode;
       options.primitive_type = PrimitiveType::kTriangle;
@@ -875,13 +880,9 @@ TEST_P(EntityTest, BlendingModeOptions) {
       VS::FrameInfo frame_info;
       frame_info.mvp =
           Matrix::MakeOrthographic(pass.GetRenderTargetSize()) * world_matrix;
+      frame_info.color = color.Premultiply();
       VS::BindFrameInfo(cmd,
                         pass.GetTransientsBuffer().EmplaceUniform(frame_info));
-
-      FS::FragInfo frag_info;
-      frag_info.color = color.Premultiply();
-      FS::BindFragInfo(cmd,
-                       pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
       return pass.AddCommand(std::move(cmd));
     };
@@ -1000,7 +1001,8 @@ TEST_P(EntityTest, GaussianBlurFilter) {
     static Color input_color = Color::Black();
     static int selected_blur_type = 0;
     static int selected_pass_variation = 0;
-    static float blur_amount[2] = {10, 10};
+    static float blur_amount_coarse[2] = {0, 0};
+    static float blur_amount_fine[2] = {10, 10};
     static int selected_blur_style = 0;
     static int selected_tile_mode = 3;
     static Color cover_color(1, 0, 0, 0.2);
@@ -1030,7 +1032,8 @@ TEST_P(EntityTest, GaussianBlurFilter) {
                      pass_variation_names,
                      sizeof(pass_variation_names) / sizeof(char*));
       }
-      ImGui::SliderFloat2("Sigma", blur_amount, 0, 10);
+      ImGui::SliderFloat2("Sigma (coarse)", blur_amount_coarse, 0, 1000);
+      ImGui::SliderFloat2("Sigma (fine)", blur_amount_fine, 0, 10);
       ImGui::Combo("Blur style", &selected_blur_style, blur_style_names,
                    sizeof(blur_style_names) / sizeof(char*));
       ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,
@@ -1047,6 +1050,9 @@ TEST_P(EntityTest, GaussianBlurFilter) {
     }
     ImGui::End();
 
+    auto blur_sigma_x = Sigma{blur_amount_coarse[0] + blur_amount_fine[0]};
+    auto blur_sigma_y = Sigma{blur_amount_coarse[1] + blur_amount_fine[1]};
+
     std::shared_ptr<Contents> input;
     Size input_size;
 
@@ -1055,7 +1061,7 @@ TEST_P(EntityTest, GaussianBlurFilter) {
     if (selected_input_type == 0) {
       auto texture = std::make_shared<TextureContents>();
       texture->SetSourceRect(Rect::MakeSize(boston->GetSize()));
-      texture->SetRect(input_rect);
+      texture->SetDestinationRect(input_rect);
       texture->SetTexture(boston);
       texture->SetOpacity(input_color.alpha);
 
@@ -1074,18 +1080,17 @@ TEST_P(EntityTest, GaussianBlurFilter) {
     std::shared_ptr<FilterContents> blur;
     if (selected_pass_variation == 0) {
       blur = FilterContents::MakeGaussianBlur(
-          FilterInput::Make(input), Sigma{blur_amount[0]},
-          Sigma{blur_amount[1]}, blur_styles[selected_blur_style],
-          tile_modes[selected_tile_mode]);
+          FilterInput::Make(input), blur_sigma_x, blur_sigma_y,
+          blur_styles[selected_blur_style], tile_modes[selected_tile_mode]);
     } else {
-      Vector2 blur_vector(blur_amount[0], blur_amount[1]);
+      Vector2 blur_vector(blur_sigma_x.sigma, blur_sigma_y.sigma);
       blur = FilterContents::MakeDirectionalGaussianBlur(
           FilterInput::Make(input), Sigma{blur_vector.GetLength()},
           blur_vector.Normalize());
     }
 
     auto mask_blur = FilterContents::MakeBorderMaskBlur(
-        FilterInput::Make(input), Sigma{blur_amount[0]}, Sigma{blur_amount[1]},
+        FilterInput::Make(input), blur_sigma_x, blur_sigma_y,
         blur_styles[selected_blur_style]);
 
     auto ctm = Matrix::MakeScale(GetContentScale()) *
@@ -1179,7 +1184,7 @@ TEST_P(EntityTest, MorphologyFilter) {
         Rect::MakeXYWH(path_rect[0], path_rect[1], path_rect[2], path_rect[3]);
     auto texture = std::make_shared<TextureContents>();
     texture->SetSourceRect(Rect::MakeSize(boston->GetSize()));
-    texture->SetRect(input_rect);
+    texture->SetDestinationRect(input_rect);
     texture->SetTexture(boston);
     texture->SetOpacity(input_color.alpha);
 
@@ -1355,8 +1360,7 @@ TEST_P(EntityTest, DrawAtlasNoColor) {
 }
 
 TEST_P(EntityTest, DrawAtlasWithColorAdvanced) {
-  // Draws the image as four squares stiched together. Because blend modes
-  // aren't implented this ends up as four solid color blocks.
+  // Draws the image as four squares stiched together.
   auto atlas = CreateTextureForFixture("bay_bridge.jpg");
   auto size = atlas->GetSize();
   // Divide image into four quadrants.
@@ -1702,7 +1706,7 @@ TEST_P(EntityTest, RRectShadowTest) {
     auto rect =
         Rect::MakeLTRB(top_left.x, top_left.y, bottom_right.x, bottom_right.y);
 
-    auto contents = std::make_unique<RRectShadowContents>();
+    auto contents = std::make_unique<SolidRRectBlurContents>();
     contents->SetRRect(rect, corner_radius);
     contents->SetColor(color);
     contents->SetSigma(Radius(blur_radius));
@@ -1736,7 +1740,7 @@ TEST_P(EntityTest, ColorMatrixFilterCoverageIsCorrect) {
   fill->SetColor(Color::Coral());
 
   // Set the color matrix filter.
-  FilterContents::ColorMatrix matrix = {
+  ColorMatrix matrix = {
       1, 1, 1, 1, 1,  //
       1, 1, 1, 1, 1,  //
       1, 1, 1, 1, 1,  //
@@ -1763,7 +1767,7 @@ TEST_P(EntityTest, ColorMatrixFilterEditable) {
 
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
     // UI state.
-    static FilterContents::ColorMatrix color_matrix = {
+    static ColorMatrix color_matrix = {
         1, 0, 0, 0, 0,  //
         0, 3, 0, 0, 0,  //
         0, 0, 1, 0, 0,  //
@@ -1916,266 +1920,6 @@ TEST_P(EntityTest, SrgbToLinearFilter) {
            entity_right.Render(context, pass);
   };
 
-  ASSERT_TRUE(OpenPlaygroundHere(callback));
-}
-
-TEST_P(EntityTest, TTTBlendColor) {
-  {
-    Color src = {1, 0, 0, 0.5};
-    Color dst = {1, 0, 1, 1};
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kClear),
-              Color(0, 0, 0, 0));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSource),
-              Color(1, 0, 0, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestination),
-              Color(1, 0, 1, 1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOver),
-              Color(1.5, 0, 0.5, 1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOver),
-              Color(1, 0, 1, 1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceIn),
-              Color(1, 0, 0, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationIn),
-              Color(0.5, 0, 0.5, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOut),
-              Color(0, 0, 0, 0));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOut),
-              Color(0.5, 0, 0.5, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceATop),
-              Color(1.5, 0, 0.5, 1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationATop),
-              Color(0.5, 0, 0.5, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kXor),
-              Color(0.5, 0, 0.5, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kPlus), Color(1, 0, 1, 1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kModulate),
-              Color(1, 0, 0, 0.5));
-  }
-
-  {
-    Color src = {1, 1, 0, 1};
-    Color dst = {1, 0, 1, 1};
-
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kClear),
-              Color(0, 0, 0, 0));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSource),
-              Color(1, 1, 0, 1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestination),
-              Color(1, 0, 1, 1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOver),
-              Color(1, 1, 0, 1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOver),
-              Color(1, 0, 1, 1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceIn),
-              Color(1, 1, 0, 1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationIn),
-              Color(1, 0, 1, 1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOut),
-              Color(0, 0, 0, 0));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOut),
-              Color(0, 0, 0, 0));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceATop),
-              Color(1, 1, 0, 1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationATop),
-              Color(1, 0, 1, 1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kXor), Color(0, 0, 0, 0));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kPlus), Color(1, 1, 1, 1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kModulate),
-              Color(1, 0, 0, 1));
-  }
-
-  {
-    Color src = {1, 1, 0, 0.2};
-    Color dst = {1, 1, 1, 0.5};
-
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kClear),
-              Color(0, 0, 0, 0));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSource),
-              Color(1, 1, 0, 0.2));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestination),
-              Color(1, 1, 1, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOver),
-              Color(1.8, 1.8, 0.8, 0.6));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOver),
-              Color(1.5, 1.5, 1, 0.6));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceIn),
-              Color(0.5, 0.5, 0, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationIn),
-              Color(0.2, 0.2, 0.2, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOut),
-              Color(0.5, 0.5, 0, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOut),
-              Color(0.8, 0.8, 0.8, 0.4));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceATop),
-              Color(1.3, 1.3, 0.8, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationATop),
-              Color(0.7, 0.7, 0.2, 0.2));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kXor),
-              Color(1.3, 1.3, 0.8, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kPlus),
-              Color(1, 1, 1, 0.7));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kModulate),
-              Color(1, 1, 0, 0.1));
-  }
-
-  {
-    Color src = {1, 0.5, 0, 0.2};
-    Color dst = {1, 1, 0.5, 0.5};
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kClear),
-              Color(0, 0, 0, 0));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSource),
-              Color(1, 0.5, 0, 0.2));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestination),
-              Color(1, 1, 0.5, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOver),
-              Color(1.8, 1.3, 0.4, 0.6));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOver),
-              Color(1.5, 1.25, 0.5, 0.6));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceIn),
-              Color(0.5, 0.25, 0, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationIn),
-              Color(0.2, 0.2, 0.1, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOut),
-              Color(0.5, 0.25, 0, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOut),
-              Color(0.8, 0.8, 0.4, 0.4));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceATop),
-              Color(1.3, 1.05, 0.4, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationATop),
-              Color(0.7, 0.45, 0.1, 0.2));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kXor),
-              Color(1.3, 1.05, 0.4, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kPlus),
-              Color(1, 1, 0.5, 0.7));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kModulate),
-              Color(1, 0.5, 0, 0.1));
-  }
-
-  {
-    Color src = {0.5, 0.5, 0, 0.2};
-    Color dst = {0, 1, 0.5, 0.5};
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kClear),
-              Color(0, 0, 0, 0));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSource),
-              Color(0.5, 0.5, 0, 0.2));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestination),
-              Color(0, 1, 0.5, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOver),
-              Color(0.5, 1.3, 0.4, 0.6));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOver),
-              Color(0.25, 1.25, 0.5, 0.6));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceIn),
-              Color(0.25, 0.25, 0, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationIn),
-              Color(0, 0.2, 0.1, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOut),
-              Color(0.25, 0.25, 0, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOut),
-              Color(0, 0.8, 0.4, 0.4));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceATop),
-              Color(0.25, 1.05, 0.4, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationATop),
-              Color(0.25, 0.45, 0.1, 0.2));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kXor),
-              Color(0.25, 1.05, 0.4, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kPlus),
-              Color(0.5, 1, 0.5, 0.7));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kModulate),
-              Color(0, 0.5, 0, 0.1));
-  }
-
-  {
-    Color src = {0.5, 0.5, 0.2, 0.2};
-    Color dst = {0.2, 1, 0.5, 0.5};
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kClear),
-              Color(0, 0, 0, 0));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSource),
-              Color(0.5, 0.5, 0.2, 0.2));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestination),
-              Color(0.2, 1, 0.5, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOver),
-              Color(0.66, 1.3, 0.6, 0.6));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOver),
-              Color(0.45, 1.25, 0.6, 0.6));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceIn),
-              Color(0.25, 0.25, 0.1, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationIn),
-              Color(0.04, 0.2, 0.1, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOut),
-              Color(0.25, 0.25, 0.1, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOut),
-              Color(0.16, 0.8, 0.4, 0.4));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceATop),
-              Color(0.41, 1.05, 0.5, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationATop),
-              Color(0.29, 0.45, 0.2, 0.2));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kXor),
-              Color(0.41, 1.05, 0.5, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kPlus),
-              Color(0.7, 1, 0.7, 0.7));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kModulate),
-              Color(0.1, 0.5, 0.1, 0.1));
-  }
-
-  {
-    Color src = {0.5, 0.5, 0.2, 0.2};
-    Color dst = {0.2, 0.2, 0.5, 0.5};
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kClear),
-              Color(0, 0, 0, 0));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSource),
-              Color(0.5, 0.5, 0.2, 0.2));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestination),
-              Color(0.2, 0.2, 0.5, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOver),
-              Color(0.66, 0.66, 0.6, 0.6));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOver),
-              Color(0.45, 0.45, 0.6, 0.6));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceIn),
-              Color(0.25, 0.25, 0.1, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationIn),
-              Color(0.04, 0.04, 0.1, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceOut),
-              Color(0.25, 0.25, 0.1, 0.1));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationOut),
-              Color(0.16, 0.16, 0.4, 0.4));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kSourceATop),
-              Color(0.41, 0.41, 0.5, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kDestinationATop),
-              Color(0.29, 0.29, 0.2, 0.2));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kXor),
-              Color(0.41, 0.41, 0.5, 0.5));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kPlus),
-              Color(0.7, 0.7, 0.7, 0.7));
-    ASSERT_EQ(Color::BlendColor(src, dst, BlendMode::kModulate),
-              Color(0.1, 0.1, 0.1, 0.1));
-  }
-}
-
-TEST_P(EntityTest, SdfText) {
-  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
-    SkFont font;
-    font.setSize(30);
-    auto blob = SkTextBlob::MakeFromString(
-        "the quick brown fox jumped over the lazy dog (but with sdf).", font);
-    auto frame = TextFrameFromTextBlob(blob);
-    auto lazy_glyph_atlas = std::make_shared<LazyGlyphAtlas>();
-    lazy_glyph_atlas->AddTextFrame(frame);
-
-    EXPECT_FALSE(lazy_glyph_atlas->HasColor());
-
-    auto text_contents = std::make_shared<TextContents>();
-    text_contents->SetTextFrame(frame);
-    text_contents->SetGlyphAtlas(std::move(lazy_glyph_atlas));
-    text_contents->SetColor(Color(1.0, 0.0, 0.0, 1.0));
-    Entity entity;
-    entity.SetTransformation(
-        Matrix::MakeTranslation(Vector3{200.0, 200.0, 0.0}) *
-        Matrix::MakeScale(GetContentScale()));
-    entity.SetContents(text_contents);
-
-    // Force SDF rendering.
-    return text_contents->RenderSdf(context, entity, pass);
-  };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
@@ -2416,26 +2160,27 @@ TEST_P(EntityTest, InheritOpacityTest) {
   auto tiled_texture = std::make_shared<TiledTextureContents>();
   tiled_texture->SetGeometry(
       Geometry::MakeRect(Rect::MakeLTRB(100, 100, 200, 200)));
-  tiled_texture->SetOpacity(0.5);
+  tiled_texture->SetOpacityFactor(0.5);
 
   ASSERT_TRUE(tiled_texture->CanInheritOpacity(entity));
 
   tiled_texture->SetInheritedOpacity(0.5);
-  ASSERT_EQ(tiled_texture->GetOpacity(), 0.25);
+  ASSERT_EQ(tiled_texture->GetOpacityFactor(), 0.25);
   tiled_texture->SetInheritedOpacity(0.5);
-  ASSERT_EQ(tiled_texture->GetOpacity(), 0.25);
+  ASSERT_EQ(tiled_texture->GetOpacityFactor(), 0.25);
 
   // Text contents can accept opacity if the text frames do not
   // overlap
   SkFont font;
   font.setSize(30);
   auto blob = SkTextBlob::MakeFromString("A", font);
-  auto frame = TextFrameFromTextBlob(blob);
-  auto lazy_glyph_atlas = std::make_shared<LazyGlyphAtlas>();
-  lazy_glyph_atlas->AddTextFrame(frame);
+  auto frame = MakeTextFrameFromTextBlobSkia(blob);
+  auto lazy_glyph_atlas =
+      std::make_shared<LazyGlyphAtlas>(TypographerContextSkia::Make());
+  lazy_glyph_atlas->AddTextFrame(frame, 1.0f);
 
   auto text_contents = std::make_shared<TextContents>();
-  text_contents->SetTextFrame(frame);
+  text_contents->SetTextFrame(std::move(frame));
   text_contents->SetColor(Color::Blue().WithAlpha(0.5));
 
   ASSERT_TRUE(text_contents->CanInheritOpacity(entity));
@@ -2561,7 +2306,7 @@ TEST_P(EntityTest, SolidColorContentsIsOpaque) {
 TEST_P(EntityTest, ConicalGradientContentsIsOpaque) {
   ConicalGradientContents contents;
   contents.SetColors({Color::CornflowerBlue()});
-  ASSERT_TRUE(contents.IsOpaque());
+  ASSERT_FALSE(contents.IsOpaque());
   contents.SetColors({Color::CornflowerBlue().WithAlpha(0.5)});
   ASSERT_FALSE(contents.IsOpaque());
 }
@@ -2572,6 +2317,9 @@ TEST_P(EntityTest, LinearGradientContentsIsOpaque) {
   ASSERT_TRUE(contents.IsOpaque());
   contents.SetColors({Color::CornflowerBlue().WithAlpha(0.5)});
   ASSERT_FALSE(contents.IsOpaque());
+  contents.SetColors({Color::CornflowerBlue()});
+  contents.SetTileMode(Entity::TileMode::kDecal);
+  ASSERT_FALSE(contents.IsOpaque());
 }
 
 TEST_P(EntityTest, RadialGradientContentsIsOpaque) {
@@ -2580,6 +2328,9 @@ TEST_P(EntityTest, RadialGradientContentsIsOpaque) {
   ASSERT_TRUE(contents.IsOpaque());
   contents.SetColors({Color::CornflowerBlue().WithAlpha(0.5)});
   ASSERT_FALSE(contents.IsOpaque());
+  contents.SetColors({Color::CornflowerBlue()});
+  contents.SetTileMode(Entity::TileMode::kDecal);
+  ASSERT_FALSE(contents.IsOpaque());
 }
 
 TEST_P(EntityTest, SweepGradientContentsIsOpaque) {
@@ -2587,6 +2338,9 @@ TEST_P(EntityTest, SweepGradientContentsIsOpaque) {
   contents.SetColors({Color::CornflowerBlue()});
   ASSERT_TRUE(contents.IsOpaque());
   contents.SetColors({Color::CornflowerBlue().WithAlpha(0.5)});
+  ASSERT_FALSE(contents.IsOpaque());
+  contents.SetColors({Color::CornflowerBlue()});
+  contents.SetTileMode(Entity::TileMode::kDecal);
   ASSERT_FALSE(contents.IsOpaque());
 }
 
@@ -2600,5 +2354,88 @@ TEST_P(EntityTest, TiledTextureContentsIsOpaque) {
   ASSERT_FALSE(contents.IsOpaque());
 }
 
+TEST_P(EntityTest, TessellateConvex) {
+  {
+    // Sanity check simple rectangle.
+    auto [pts, indices] =
+        TessellateConvex(PathBuilder{}
+                             .AddRect(Rect::MakeLTRB(0, 0, 10, 10))
+                             .TakePath()
+                             .CreatePolyline(1.0));
+
+    std::vector<Point> expected = {
+        {0, 0}, {10, 0}, {10, 10}, {0, 10},  //
+    };
+    std::vector<uint16_t> expected_indices = {0, 1, 2, 0, 2, 3};
+    ASSERT_EQ(pts, expected);
+    ASSERT_EQ(indices, expected_indices);
+  }
+
+  {
+    auto [pts, indices] =
+        TessellateConvex(PathBuilder{}
+                             .AddRect(Rect::MakeLTRB(0, 0, 10, 10))
+                             .AddRect(Rect::MakeLTRB(20, 20, 30, 30))
+                             .TakePath()
+                             .CreatePolyline(1.0));
+
+    std::vector<Point> expected = {
+        {0, 0},   {10, 0},  {10, 10}, {0, 10},  //
+        {20, 20}, {30, 20}, {30, 30}, {20, 30}  //
+    };
+    std::vector<uint16_t> expected_indices = {0, 1, 2, 0, 2, 3,
+                                              0, 6, 7, 0, 7, 8};
+    ASSERT_EQ(pts, expected);
+    ASSERT_EQ(indices, expected_indices);
+  }
+}
+
+TEST_P(EntityTest, PointFieldGeometryDivisions) {
+  // Square always gives 4 divisions.
+  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(24.0, false), 4u);
+  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(2.0, false), 4u);
+  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(200.0, false), 4u);
+
+  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(0.5, true), 4u);
+  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(1.5, true), 8u);
+  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(5.5, true), 24u);
+  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(12.5, true), 34u);
+  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(22.3, true), 22u);
+  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(40.5, true), 40u);
+  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(100.0, true), 100u);
+  // Caps at 140.
+  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(1000.0, true), 140u);
+  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(20000.0, true), 140u);
+}
+
+TEST_P(EntityTest, ColorFilterContentsWithLargeGeometry) {
+  Entity entity;
+  entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  auto src_contents = std::make_shared<SolidColorContents>();
+  src_contents->SetGeometry(
+      Geometry::MakeRect(Rect::MakeLTRB(-300, -500, 30000, 50000)));
+  src_contents->SetColor(Color::Red());
+
+  auto dst_contents = std::make_shared<SolidColorContents>();
+  dst_contents->SetGeometry(
+      Geometry::MakeRect(Rect::MakeLTRB(300, 500, 20000, 30000)));
+  dst_contents->SetColor(Color::Blue());
+
+  auto contents = ColorFilterContents::MakeBlend(
+      BlendMode::kSourceOver, {FilterInput::Make(dst_contents, false),
+                               FilterInput::Make(src_contents, false)});
+  entity.SetContents(std::move(contents));
+  ASSERT_TRUE(OpenPlaygroundHere(entity));
+}
+
+TEST_P(EntityTest, TextContentsCeilsGlyphScaleToDecimal) {
+  ASSERT_EQ(TextFrame::RoundScaledFontSize(0.4321111f, 12), 0.43f);
+  ASSERT_EQ(TextFrame::RoundScaledFontSize(0.5321111f, 12), 0.53f);
+  ASSERT_EQ(TextFrame::RoundScaledFontSize(2.1f, 12), 2.1f);
+  ASSERT_EQ(TextFrame::RoundScaledFontSize(0.0f, 12), 0.0f);
+}
+
 }  // namespace testing
 }  // namespace impeller
+
+// NOLINTEND(bugprone-unchecked-optional-access)

@@ -31,8 +31,7 @@
 #include "third_party/imgui/imgui.h"
 
 #if FML_OS_MACOSX
-#include <objc/message.h>
-#include <objc/runtime.h>
+#include "fml/platform/darwin/scoped_nsautorelease_pool.h"
 #endif
 
 namespace impeller {
@@ -117,6 +116,7 @@ void Playground::SetupContext(PlaygroundBackend backend) {
 
   impl_ = PlaygroundImpl::Create(backend, switches_);
   if (!impl_) {
+    FML_LOG(WARNING) << "PlaygroundImpl::Create failed.";
     return;
   }
 
@@ -125,8 +125,8 @@ void Playground::SetupContext(PlaygroundBackend backend) {
 
 void Playground::SetupWindow() {
   if (!context_) {
-    FML_LOG(WARNING)
-        << "Asked to setup a window with no context (call SetupContext first).";
+    FML_LOG(WARNING) << "Asked to set up a window with no context (call "
+                        "SetupContext first).";
     return;
   }
   auto renderer = std::make_unique<Renderer>(context_);
@@ -139,6 +139,9 @@ void Playground::SetupWindow() {
 }
 
 void Playground::TeardownWindow() {
+  if (context_) {
+    context_->Shutdown();
+  }
   context_.reset();
   renderer_.reset();
   impl_.reset();
@@ -182,23 +185,6 @@ Scalar Playground::GetSecondsElapsed() const {
 void Playground::SetCursorPosition(Point pos) {
   cursor_position_ = pos;
 }
-
-#if FML_OS_MACOSX
-class AutoReleasePool {
- public:
-  AutoReleasePool() {
-    pool_ = reinterpret_cast<msg_send>(objc_msgSend)(
-        objc_getClass("NSAutoreleasePool"), sel_getUid("new"));
-  }
-  ~AutoReleasePool() {
-    reinterpret_cast<msg_send>(objc_msgSend)(pool_, sel_getUid("drain"));
-  }
-
- private:
-  typedef id (*msg_send)(void*, SEL);
-  id pool_;
-};
-#endif
 
 bool Playground::OpenPlaygroundHere(
     const Renderer::RenderCallback& render_callback) {
@@ -262,7 +248,7 @@ bool Playground::OpenPlaygroundHere(
 
   while (true) {
 #if FML_OS_MACOSX
-    AutoReleasePool pool;
+    fml::ScopedNSAutoreleasePool pool;
 #endif
     ::glfwPollEvents();
 
@@ -400,7 +386,7 @@ static std::shared_ptr<Texture> CreateTextureForDecompressedImage(
     DecompressedImage& decompressed_image,
     bool enable_mipmapping) {
   // TODO(https://github.com/flutter/flutter/issues/123468): copying buffers to
-  // textures is not implemented for GLES/Vulkan.
+  // textures is not implemented for GLES.
   if (context->GetCapabilities()->SupportsBufferToTextureBlits()) {
     impeller::TextureDescriptor texture_descriptor;
     texture_descriptor.storage_mode = impeller::StorageMode::kDevicePrivate;

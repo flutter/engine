@@ -65,7 +65,11 @@ FlutterDesktopViewRef FlutterDesktopViewControllerGetView(
 }
 
 void FlutterDesktopViewControllerForceRedraw(
-    FlutterDesktopViewControllerRef controller) {}
+    FlutterDesktopViewControllerRef controller) {
+  if (s_stub_implementation) {
+    s_stub_implementation->ViewControllerForceRedraw();
+  }
+}
 
 bool FlutterDesktopViewControllerHandleTopLevelWindowProc(
     FlutterDesktopViewControllerRef controller,
@@ -156,6 +160,20 @@ IDXGIAdapter* FlutterDesktopViewGetGraphicsAdapter(FlutterDesktopViewRef view) {
     return s_stub_implementation->ViewGetGraphicsAdapter();
   }
   return nullptr;
+}
+
+bool FlutterDesktopEngineProcessExternalWindowMessage(
+    FlutterDesktopEngineRef engine,
+    HWND hwnd,
+    UINT message,
+    WPARAM wparam,
+    LPARAM lparam,
+    LRESULT* result) {
+  if (s_stub_implementation) {
+    return s_stub_implementation->EngineProcessExternalWindowMessage(
+        engine, hwnd, message, wparam, lparam, result);
+  }
+  return false;
 }
 
 FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(

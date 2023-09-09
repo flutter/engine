@@ -153,10 +153,6 @@ void FilterContents::SetInputs(FilterInput::Vector inputs) {
   inputs_ = std::move(inputs);
 }
 
-void FilterContents::SetCoverageCrop(std::optional<Rect> coverage_crop) {
-  coverage_crop_ = coverage_crop;
-}
-
 void FilterContents::SetEffectTransform(Matrix effect_transform) {
   effect_transform_ = effect_transform;
 }
@@ -171,7 +167,7 @@ bool FilterContents::Render(const ContentContext& renderer,
 
   // Run the filter.
 
-  auto maybe_entity = GetEntity(renderer, entity);
+  auto maybe_entity = GetEntity(renderer, entity, GetCoverageHint());
   if (!maybe_entity.has_value()) {
     return true;
   }
@@ -181,8 +177,9 @@ bool FilterContents::Render(const ContentContext& renderer,
 std::optional<Rect> FilterContents::GetLocalCoverage(
     const Entity& local_entity) const {
   auto coverage = GetFilterCoverage(inputs_, local_entity, effect_transform_);
-  if (coverage_crop_.has_value() && coverage.has_value()) {
-    coverage = coverage->Intersection(coverage_crop_.value());
+  auto coverage_hint = GetCoverageHint();
+  if (coverage_hint.has_value() && coverage.has_value()) {
+    coverage = coverage->Intersection(coverage_hint.value());
   }
 
   return coverage;
@@ -194,6 +191,14 @@ std::optional<Rect> FilterContents::GetCoverage(const Entity& entity) const {
       GetTransform(entity.GetTransformation()));
 
   return GetLocalCoverage(entity_with_local_transform);
+}
+
+void FilterContents::PopulateGlyphAtlas(
+    const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
+    Scalar scale) {
+  for (auto& input : inputs_) {
+    input->PopulateGlyphAtlas(lazy_glyph_atlas, scale);
+  }
 }
 
 std::optional<Rect> FilterContents::GetFilterCoverage(
@@ -223,8 +228,10 @@ std::optional<Rect> FilterContents::GetFilterCoverage(
   return result;
 }
 
-std::optional<Entity> FilterContents::GetEntity(const ContentContext& renderer,
-                                                const Entity& entity) const {
+std::optional<Entity> FilterContents::GetEntity(
+    const ContentContext& renderer,
+    const Entity& entity,
+    const std::optional<Rect>& coverage_hint) const {
   Entity entity_with_local_transform = entity;
   entity_with_local_transform.SetTransformation(
       GetTransform(entity.GetTransformation()));
@@ -235,21 +242,28 @@ std::optional<Entity> FilterContents::GetEntity(const ContentContext& renderer,
   }
 
   return RenderFilter(inputs_, renderer, entity_with_local_transform,
-                      effect_transform_, coverage.value());
+                      effect_transform_, coverage.value(), coverage_hint);
 }
 
 std::optional<Snapshot> FilterContents::RenderToSnapshot(
     const ContentContext& renderer,
     const Entity& entity,
+    std::optional<Rect> coverage_limit,
     const std::optional<SamplerDescriptor>& sampler_descriptor,
     bool msaa_enabled,
     const std::string& label) const {
   // Resolve the render instruction (entity) from the filter and render it to a
   // snapshot.
-  if (std::optional<Entity> result = GetEntity(renderer, entity);
+  if (std::optional<Entity> result =
+          GetEntity(renderer, entity, coverage_limit);
       result.has_value()) {
-    return result->GetContents()->RenderToSnapshot(renderer, result.value(),
-                                                   std::nullopt, true, label);
+    return result->GetContents()->RenderToSnapshot(
+        renderer,        // renderer
+        result.value(),  // entity
+        coverage_limit,  // coverage_limit
+        std::nullopt,    // sampler_descriptor
+        true,            // msaa_enabled
+        label);          // label
   }
 
   return std::nullopt;
@@ -261,6 +275,25 @@ Matrix FilterContents::GetLocalTransform(const Matrix& parent_transform) const {
 
 Matrix FilterContents::GetTransform(const Matrix& parent_transform) const {
   return parent_transform * GetLocalTransform(parent_transform);
+}
+
+bool FilterContents::IsLeaf() const {
+  for (auto& input : inputs_) {
+    if (!input->IsLeaf()) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void FilterContents::SetLeafInputs(const FilterInput::Vector& inputs) {
+  if (IsLeaf()) {
+    inputs_ = inputs;
+    return;
+  }
+  for (auto& input : inputs_) {
+    input->SetLeafInputs(inputs);
+  }
 }
 
 }  // namespace impeller

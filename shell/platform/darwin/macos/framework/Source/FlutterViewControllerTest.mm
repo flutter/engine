@@ -67,6 +67,9 @@
 - (bool)testModifierKeysAreSynthesizedOnMouseMove;
 - (bool)testViewWillAppearCalledMultipleTimes;
 - (bool)testFlutterViewIsConfigured;
+- (bool)testLookupKeyAssets;
+- (bool)testLookupKeyAssetsWithPackage;
+- (bool)testViewControllerIsReleased;
 
 + (void)respondFalseForSendEvent:(const FlutterKeyEvent&)event
                         callback:(nullable FlutterKeyEventCallback)callback
@@ -239,6 +242,18 @@ TEST(FlutterViewControllerTest, testViewWillAppearCalledMultipleTimes) {
 
 TEST(FlutterViewControllerTest, testFlutterViewIsConfigured) {
   ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testFlutterViewIsConfigured]);
+}
+
+TEST(FlutterViewControllerTest, testLookupKeyAssets) {
+  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testLookupKeyAssets]);
+}
+
+TEST(FlutterViewControllerTest, testLookupKeyAssetsWithPackage) {
+  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testLookupKeyAssetsWithPackage]);
+}
+
+TEST(FlutterViewControllerTest, testViewControllerIsReleased) {
+  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testViewControllerIsReleased]);
 }
 
 }  // namespace flutter::testing
@@ -876,6 +891,24 @@ TEST(FlutterViewControllerTest, testFlutterViewIsConfigured) {
   return true;
 }
 
+- (bool)testLookupKeyAssets {
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:nil];
+  NSString* key = [viewController lookupKeyForAsset:@"test.png"];
+  EXPECT_TRUE(
+      [key isEqualToString:@"Contents/Frameworks/App.framework/Resources/flutter_assets/test.png"]);
+  return true;
+}
+
+- (bool)testLookupKeyAssetsWithPackage {
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:nil];
+
+  NSString* packageKey = [viewController lookupKeyForAsset:@"test.png" fromPackage:@"test"];
+  EXPECT_TRUE([packageKey
+      isEqualToString:
+          @"Contents/Frameworks/App.framework/Resources/flutter_assets/packages/test/test.png"]);
+  return true;
+}
+
 static void SwizzledNoop(id self, SEL _cmd) {}
 
 // Verify workaround an AppKit bug where mouseDown/mouseUp are not called on the view controller if
@@ -918,6 +951,7 @@ static void SwizzledNoop(id self, SEL _cmd) {}
   // Restore the original NSResponder mouseDown/mouseUp implementations.
   method_setImplementation(mouseDown, origMouseDown);
   method_setImplementation(mouseUp, origMouseUp);
+
   return true;
 }
 
@@ -983,6 +1017,26 @@ static void SwizzledNoop(id self, SEL _cmd) {}
 
     [events removeAllObjects];
   };
+
+  return true;
+}
+
+- (bool)testViewControllerIsReleased {
+  __weak FlutterViewController* weakController;
+  @autoreleasepool {
+    id engineMock = flutter::testing::CreateMockFlutterEngine(@"");
+
+    FlutterRenderer* renderer_ = [[FlutterRenderer alloc] initWithFlutterEngine:engineMock];
+    OCMStub([engineMock renderer]).andReturn(renderer_);
+
+    FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
+                                                                                  nibName:@""
+                                                                                   bundle:nil];
+    [viewController loadView];
+    weakController = viewController;
+  }
+
+  EXPECT_EQ(weakController, nil);
 
   return true;
 }

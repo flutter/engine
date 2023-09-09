@@ -56,6 +56,15 @@ public class PlatformPlugin {
      *     androidx.activity.OnBackPressedDispatcher} will be executed.
      */
     boolean popSystemNavigator();
+
+    /**
+     * The Flutter application would or would not like to handle navigation pop events itself.
+     *
+     * <p>Relevant for registering and unregistering the app's OnBackInvokedCallback for the
+     * Predictive Back feature, for example as in {@link
+     * io.flutter.embedding.android.FlutterActivity}.
+     */
+    default void setFrameworkHandlesBack(boolean frameworkHandlesBack) {}
   }
 
   @VisibleForTesting
@@ -107,6 +116,11 @@ public class PlatformPlugin {
         public void setSystemUiOverlayStyle(
             @NonNull PlatformChannel.SystemChromeStyle systemUiOverlayStyle) {
           setSystemChromeSystemUIOverlayStyle(systemUiOverlayStyle);
+        }
+
+        @Override
+        public void setFrameworkHandlesBack(boolean frameworkHandlesBack) {
+          PlatformPlugin.this.setFrameworkHandlesBack(frameworkHandlesBack);
         }
 
         @Override
@@ -473,6 +487,10 @@ public class PlatformPlugin {
     }
 
     currentTheme = systemChromeStyle;
+  }
+
+  private void setFrameworkHandlesBack(boolean frameworkHandlesBack) {
+    platformPluginDelegate.setFrameworkHandlesBack(frameworkHandlesBack);
   }
 
   private void popSystemNavigator() {

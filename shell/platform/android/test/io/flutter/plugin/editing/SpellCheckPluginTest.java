@@ -44,6 +44,8 @@ public class SpellCheckPluginTest {
         (ByteBuffer) encodedMethodCall.flip(), mock(BinaryMessenger.BinaryReply.class));
   }
 
+  @SuppressWarnings("deprecation")
+  // setMessageHandler is deprecated.
   @Test
   public void respondsToSpellCheckChannelMessage() {
     ArgumentCaptor<BinaryMessenger.BinaryMessageHandler> binaryMessageHandlerCaptor =
@@ -243,6 +245,24 @@ public class SpellCheckPluginTest {
               }),
               new int[] {7},
               new int[] {5})
+        });
+
+    verify(mockResult).success(new ArrayList<HashMap<String, Object>>());
+  }
+
+  @Test
+  public void onGetSentenceSuggestionsResultsWithSuccessAndNoResultsWhenSuggestionsAreInvalid2() {
+    TextServicesManager fakeTextServicesManager = mock(TextServicesManager.class);
+    SpellCheckChannel fakeSpellCheckChannel = mock(SpellCheckChannel.class);
+    SpellCheckPlugin spellCheckPlugin =
+        spy(new SpellCheckPlugin(fakeTextServicesManager, fakeSpellCheckChannel));
+    MethodChannel.Result mockResult = mock(MethodChannel.Result.class);
+    spellCheckPlugin.pendingResult = mockResult;
+
+    spellCheckPlugin.onGetSentenceSuggestions(
+        new SentenceSuggestionsInfo[] {
+          // This "suggestion" may be provided by the Samsung spell checker:
+          null
         });
 
     verify(mockResult).success(new ArrayList<HashMap<String, Object>>());

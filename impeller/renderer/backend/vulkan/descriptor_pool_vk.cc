@@ -6,10 +6,15 @@
 
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/allocation.h"
+#include "impeller/base/validation.h"
 
 namespace impeller {
 
-DescriptorPoolVK::DescriptorPoolVK(vk::Device device) : device_(device) {}
+DescriptorPoolVK::DescriptorPoolVK(
+    const std::weak_ptr<const DeviceHolder>& device_holder)
+    : device_holder_(device_holder) {
+  FML_DCHECK(device_holder.lock());
+}
 
 DescriptorPoolVK::~DescriptorPoolVK() = default;
 
@@ -19,10 +24,7 @@ static vk::UniqueDescriptorPool CreatePool(const vk::Device& device,
   std::vector<vk::DescriptorPoolSize> pools = {
       {vk::DescriptorType::eCombinedImageSampler, pool_count},
       {vk::DescriptorType::eUniformBuffer, pool_count},
-      {vk::DescriptorType::eStorageBuffer, pool_count},
-      {vk::DescriptorType::eSampledImage, pool_count},
-      {vk::DescriptorType::eSampler, pool_count},
-  };
+      {vk::DescriptorType::eStorageBuffer, pool_count}};
 
   vk::DescriptorPoolCreateInfo pool_info;
   pool_info.setMaxSets(pools.size() * pool_count);
@@ -36,6 +38,15 @@ static vk::UniqueDescriptorPool CreatePool(const vk::Device& device,
 }
 
 std::optional<vk::DescriptorSet> DescriptorPoolVK::AllocateDescriptorSet(
+    const vk::DescriptorSetLayout& layout,
+    size_t command_count) {
+  if (pools_.empty()) {
+    pool_size_ = command_count;
+  }
+  return AllocateDescriptorSet(layout);
+}
+
+std::optional<vk::DescriptorSet> DescriptorPoolVK::AllocateDescriptorSet(
     const vk::DescriptorSetLayout& layout) {
   auto pool = GetDescriptorPool();
   if (!pool) {
@@ -44,7 +55,12 @@ std::optional<vk::DescriptorSet> DescriptorPoolVK::AllocateDescriptorSet(
   vk::DescriptorSetAllocateInfo set_info;
   set_info.setDescriptorPool(pool.value());
   set_info.setSetLayouts(layout);
-  auto [result, sets] = device_.allocateDescriptorSets(set_info);
+  std::shared_ptr<const DeviceHolder> strong_device = device_holder_.lock();
+  if (!strong_device) {
+    return std::nullopt;
+  }
+  auto [result, sets] =
+      strong_device->GetDevice().allocateDescriptorSets(set_info);
   if (result == vk::Result::eErrorOutOfPoolMemory) {
     return GrowPool() ? AllocateDescriptorSet(layout) : std::nullopt;
   }
@@ -65,7 +81,11 @@ std::optional<vk::DescriptorPool> DescriptorPoolVK::GetDescriptorPool() {
 
 bool DescriptorPoolVK::GrowPool() {
   const auto new_pool_size = Allocation::NextPowerOfTwoSize(pool_size_ + 1u);
-  auto new_pool = CreatePool(device_, new_pool_size);
+  std::shared_ptr<const DeviceHolder> strong_device = device_holder_.lock();
+  if (!strong_device) {
+    return false;
+  }
+  auto new_pool = CreatePool(strong_device->GetDevice(), new_pool_size);
   if (!new_pool) {
     return false;
   }

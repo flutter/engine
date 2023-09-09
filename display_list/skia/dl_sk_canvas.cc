@@ -8,48 +8,11 @@
 #include "flutter/display_list/skia/dl_sk_dispatcher.h"
 #include "flutter/fml/trace_event.h"
 
+#include "third_party/skia/include/core/SkColorFilter.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/GrRecordingContext.h"
+
 namespace flutter {
-
-// clang-format off
-constexpr float kInvertColorMatrix[20] = {
-  -1.0,    0,    0, 1.0, 0,
-     0, -1.0,    0, 1.0, 0,
-     0,    0, -1.0, 1.0, 0,
-   1.0,  1.0,  1.0, 1.0, 0
-};
-// clang-format on
-
-static SkPaint ToSk(const DlPaint& paint, bool force_stroke = false) {
-  SkPaint sk_paint;
-
-  sk_paint.setAntiAlias(paint.isAntiAlias());
-  sk_paint.setDither(paint.isDither());
-
-  sk_paint.setColor(paint.getColor());
-  sk_paint.setBlendMode(ToSk(paint.getBlendMode()));
-  sk_paint.setStyle(force_stroke ? SkPaint::kStroke_Style
-                                 : ToSk(paint.getDrawStyle()));
-  sk_paint.setStrokeWidth(paint.getStrokeWidth());
-  sk_paint.setStrokeMiter(paint.getStrokeMiter());
-  sk_paint.setStrokeCap(ToSk(paint.getStrokeCap()));
-  sk_paint.setStrokeJoin(ToSk(paint.getStrokeJoin()));
-
-  sk_paint.setShader(ToSk(paint.getColorSourcePtr()));
-  sk_paint.setImageFilter(ToSk(paint.getImageFilterPtr()));
-  auto color_filter = ToSk(paint.getColorFilterPtr());
-  if (paint.isInvertColors()) {
-    auto invert_filter = SkColorFilters::Matrix(kInvertColorMatrix);
-    if (color_filter) {
-      invert_filter = invert_filter->makeComposed(color_filter);
-    }
-    color_filter = invert_filter;
-  }
-  sk_paint.setColorFilter(color_filter);
-  sk_paint.setMaskFilter(ToSk(paint.getMaskFilterPtr()));
-  sk_paint.setPathEffect(ToSk(paint.getPathEffectPtr()));
-
-  return sk_paint;
-}
 
 class SkOptionalPaint {
  public:
@@ -372,7 +335,11 @@ void DlSkCanvasAdapter::DrawShadow(const SkPath& path,
 }
 
 void DlSkCanvasAdapter::Flush() {
-  delegate_->flush();
+  auto dContext = GrAsDirectContext(delegate_->recordingContext());
+
+  if (dContext) {
+    dContext->flushAndSubmit();
+  }
 }
 
 }  // namespace flutter

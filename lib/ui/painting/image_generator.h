@@ -11,9 +11,9 @@
 #include "third_party/skia/include/codec/SkCodecAnimation.h"
 #include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkImage.h"
+#include "third_party/skia/include/core/SkImageGenerator.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkSize.h"
-#include "third_party/skia/src/codec/SkCodecImageGenerator.h"  // nogncheck
 
 namespace flutter {
 
@@ -43,6 +43,9 @@ class ImageGenerator {
 
     /// How this frame should be modified before decoding the next one.
     SkCodecAnimation::DisposalMethod disposal_method;
+
+    /// The region of the frame that is affected by the disposal method.
+    std::optional<SkIRect> disposal_rect;
 
     /// How this frame should be blended with the previous frame.
     SkCodecAnimation::Blend blend_mode;
@@ -213,7 +216,8 @@ class BuiltinSkiaCodecImageGenerator : public ImageGenerator {
 
  private:
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(BuiltinSkiaCodecImageGenerator);
-  std::unique_ptr<SkCodecImageGenerator> codec_generator_;
+  std::unique_ptr<SkCodec> codec_;
+  SkImageInfo image_info_;
 };
 
 }  // namespace flutter

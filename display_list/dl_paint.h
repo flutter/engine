@@ -83,6 +83,7 @@ class DlPaint {
     color_.argb = alpha << 24 | (color_.argb & 0x00FFFFFF);
     return *this;
   }
+  SkScalar getOpacity() const { return color_.getAlphaF(); }
   DlPaint& setOpacity(SkScalar opacity) {
     setAlpha(SkScalarRoundToInt(opacity * 0xff));
     return *this;
@@ -175,7 +176,7 @@ class DlPaint {
     return maskFilter_;
   }
   const DlMaskFilter* getMaskFilterPtr() const { return maskFilter_.get(); }
-  DlPaint& setMaskFilter(std::shared_ptr<DlMaskFilter> filter) {
+  DlPaint& setMaskFilter(std::shared_ptr<const DlMaskFilter> filter) {
     maskFilter_ = filter;
     return *this;
   }
@@ -188,7 +189,7 @@ class DlPaint {
     return pathEffect_;
   }
   const DlPathEffect* getPathEffectPtr() const { return pathEffect_.get(); }
-  DlPaint& setPathEffect(std::shared_ptr<DlPathEffect> pathEffect) {
+  DlPaint& setPathEffect(std::shared_ptr<const DlPathEffect> pathEffect) {
     pathEffect_ = pathEffect;
     return *this;
   }

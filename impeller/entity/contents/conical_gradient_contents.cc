@@ -9,7 +9,7 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/gradient_generator.h"
 #include "impeller/entity/entity.h"
-#include "impeller/entity/geometry.h"
+#include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/gradient.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
@@ -27,6 +27,10 @@ void ConicalGradientContents::SetCenterAndRadius(Point center, Scalar radius) {
 
 void ConicalGradientContents::SetTileMode(Entity::TileMode tile_mode) {
   tile_mode_ = tile_mode;
+}
+
+void ConicalGradientContents::SetDither(bool dither) {
+  dither_ = dither;
 }
 
 void ConicalGradientContents::SetColors(std::vector<Color> colors) {
@@ -51,18 +55,6 @@ void ConicalGradientContents::SetFocus(std::optional<Point> focus,
   focus_radius_ = radius;
 }
 
-bool ConicalGradientContents::IsOpaque() const {
-  if (GetOpacity() < 1) {
-    return false;
-  }
-  for (auto color : colors_) {
-    if (!color.IsOpaque()) {
-      return false;
-    }
-  }
-  return true;
-}
-
 bool ConicalGradientContents::Render(const ContentContext& renderer,
                                      const Entity& entity,
                                      RenderPass& pass) const {
@@ -82,7 +74,9 @@ bool ConicalGradientContents::RenderSSBO(const ContentContext& renderer,
   frag_info.center = center_;
   frag_info.radius = radius_;
   frag_info.tile_mode = static_cast<Scalar>(tile_mode_);
-  frag_info.alpha = GetOpacity();
+  frag_info.decal_border_color = decal_border_color_;
+  frag_info.alpha = GetOpacityFactor();
+  frag_info.dither = dither_;
   if (focus_) {
     frag_info.focus = focus_.value();
     frag_info.focus_radius = focus_radius_;
@@ -102,10 +96,10 @@ bool ConicalGradientContents::RenderSSBO(const ContentContext& renderer,
   VS::FrameInfo frame_info;
   frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransformation();
-  frame_info.matrix = GetInverseMatrix();
+  frame_info.matrix = GetInverseEffectTransform();
 
   Command cmd;
-  cmd.label = "ConicalGradientSSBOFill";
+  DEBUG_COMMAND_INFO(cmd, "ConicalGradientSSBOFill");
   cmd.stencil_reference = entity.GetStencilDepth();
 
   auto geometry_result =
@@ -152,8 +146,9 @@ bool ConicalGradientContents::RenderTexture(const ContentContext& renderer,
   frag_info.center = center_;
   frag_info.radius = radius_;
   frag_info.tile_mode = static_cast<Scalar>(tile_mode_);
+  frag_info.decal_border_color = decal_border_color_;
   frag_info.texture_sampler_y_coord_scale = gradient_texture->GetYCoordScale();
-  frag_info.alpha = GetOpacity();
+  frag_info.alpha = GetOpacityFactor();
   frag_info.half_texel = Vector2(0.5 / gradient_texture->GetSize().width,
                                  0.5 / gradient_texture->GetSize().height);
   if (focus_) {
@@ -169,10 +164,10 @@ bool ConicalGradientContents::RenderTexture(const ContentContext& renderer,
 
   VS::FrameInfo frame_info;
   frame_info.mvp = geometry_result.transform;
-  frame_info.matrix = GetInverseMatrix();
+  frame_info.matrix = GetInverseEffectTransform();
 
   Command cmd;
-  cmd.label = "ConicalGradientFill";
+  DEBUG_COMMAND_INFO(cmd, "ConicalGradientFill");
   cmd.stencil_reference = entity.GetStencilDepth();
 
   auto options = OptionsFromPassAndEntity(pass, entity);
@@ -202,6 +197,15 @@ bool ConicalGradientContents::RenderTexture(const ContentContext& renderer,
     restore.SetRestoreCoverage(GetCoverage(entity));
     return restore.Render(renderer, entity, pass);
   }
+  return true;
+}
+
+bool ConicalGradientContents::ApplyColorFilter(
+    const ColorFilterProc& color_filter_proc) {
+  for (Color& color : colors_) {
+    color = color_filter_proc(color);
+  }
+  decal_border_color_ = color_filter_proc(decal_border_color_);
   return true;
 }
 

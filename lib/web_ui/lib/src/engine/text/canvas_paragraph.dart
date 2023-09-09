@@ -8,14 +8,11 @@ import '../dom.dart';
 import '../embedder.dart';
 import '../html/bitmap_canvas.dart';
 import '../profiler.dart';
-import '../util.dart';
 import 'layout_fragmenter.dart';
 import 'layout_service.dart';
 import 'paint_service.dart';
 import 'paragraph.dart';
 import 'word_breaker.dart';
-
-const ui.Color _defaultTextColor = ui.Color(0xFFFF0000);
 
 final String placeholderChar = String.fromCharCode(0xFFFC);
 
@@ -97,9 +94,9 @@ class CanvasParagraph implements ui.Paragraph {
     // `30.5` then the TextPainter in the framework will ceil the `30.5` width
     // which will result in a width of `40.0` that's higher than the constraint
     // width.
-    constraints = ui.ParagraphConstraints(
-      width: constraints.width.floorToDouble(),
-    );
+    if (!ui.ParagraphBuilder.shouldDisableRoundingHack) {
+      constraints = ui.ParagraphConstraints(width: constraints.width.floorToDouble());
+    }
 
     if (constraints == _lastUsedConstraints) {
       return;
@@ -255,9 +252,16 @@ class CanvasParagraph implements ui.Paragraph {
 
   @override
   bool get debugDisposed {
-    if (assertionsEnabled) {
-      return _disposed;
+    bool? result;
+    assert(() {
+      result = _disposed;
+      return true;
+    }());
+
+    if (result != null) {
+      return result!;
     }
+
     throw StateError('Paragraph.debugDisposed is only avialalbe when asserts are enabled.');
   }
 }
@@ -491,7 +495,7 @@ class RootStyleNode extends StyleNode {
   final EngineParagraphStyle paragraphStyle;
 
   @override
-  final ui.Color _color = _defaultTextColor;
+  ui.Color? get _color => null;
 
   @override
   ui.TextDecoration? get _decoration => null;

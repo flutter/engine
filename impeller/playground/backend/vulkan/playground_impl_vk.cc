@@ -18,8 +18,10 @@
 #include "impeller/playground/imgui/vk/imgui_shaders_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
+#include "impeller/renderer/backend/vulkan/surface_context_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
+#include "impeller/renderer/vk/compute_shaders_vk.h"
 #include "impeller/scene/shaders/vk/scene_shaders_vk.h"
 
 namespace impeller {
@@ -38,6 +40,8 @@ ShaderLibraryMappingsForPlayground() {
                                              impeller_imgui_shaders_vk_length),
       std::make_shared<fml::NonOwnedMapping>(impeller_scene_shaders_vk_data,
                                              impeller_scene_shaders_vk_length),
+      std::make_shared<fml::NonOwnedMapping>(
+          impeller_compute_shaders_vk_data, impeller_compute_shaders_vk_length),
   };
 }
 
@@ -49,9 +53,7 @@ void PlaygroundImplVK::DestroyWindowHandle(WindowHandle handle) {
 }
 
 PlaygroundImplVK::PlaygroundImplVK(PlaygroundSwitches switches)
-    : PlaygroundImpl(switches),
-      concurrent_loop_(fml::ConcurrentMessageLoop::Create()),
-      handle_(nullptr, &DestroyWindowHandle) {
+    : PlaygroundImpl(switches), handle_(nullptr, &DestroyWindowHandle) {
   if (!::glfwVulkanSupported()) {
 #ifdef TARGET_OS_MAC
     VALIDATION_LOG << "Attempted to initialize a Vulkan playground on macOS "
@@ -83,32 +85,31 @@ PlaygroundImplVK::PlaygroundImplVK(PlaygroundSwitches switches)
           &::glfwGetInstanceProcAddress);
   context_settings.shader_libraries_data = ShaderLibraryMappingsForPlayground();
   context_settings.cache_directory = fml::paths::GetCachesDirectory();
-  context_settings.worker_task_runner = concurrent_loop_->GetTaskRunner();
   context_settings.enable_validation = switches_.enable_vulkan_validation;
 
-  auto context = ContextVK::Create(std::move(context_settings));
-
-  if (!context || !context->IsValid()) {
+  auto context_vk = ContextVK::Create(std::move(context_settings));
+  if (!context_vk || !context_vk->IsValid()) {
     VALIDATION_LOG << "Could not create Vulkan context in the playground.";
     return;
   }
 
   VkSurfaceKHR vk_surface;
-  auto res =
-      vk::Result{::glfwCreateWindowSurface(context->GetInstance(),  // instance
-                                           window,                  // window
-                                           nullptr,                 // allocator
-                                           &vk_surface              // surface
-                                           )};
+  auto res = vk::Result{::glfwCreateWindowSurface(
+      context_vk->GetInstance(),  // instance
+      window,                     // window
+      nullptr,                    // allocator
+      &vk_surface                 // surface
+      )};
   if (res != vk::Result::eSuccess) {
     VALIDATION_LOG << "Could not create surface for GLFW window: "
                    << vk::to_string(res);
     return;
   }
 
-  vk::UniqueSurfaceKHR surface{vk_surface, context->GetInstance()};
+  vk::UniqueSurfaceKHR surface{vk_surface, context_vk->GetInstance()};
+  auto context = context_vk->CreateSurfaceContext();
   if (!context->SetWindowSurface(std::move(surface))) {
-    VALIDATION_LOG << "Could not setup surface for context.";
+    VALIDATION_LOG << "Could not set up surface for context.";
     return;
   }
 
@@ -130,8 +131,9 @@ PlaygroundImpl::WindowHandle PlaygroundImplVK::GetWindowHandle() const {
 // |PlaygroundImpl|
 std::unique_ptr<Surface> PlaygroundImplVK::AcquireSurfaceFrame(
     std::shared_ptr<Context> context) {
-  ContextVK* context_vk = reinterpret_cast<ContextVK*>(context_.get());
-  return context_vk->AcquireNextSurface();
+  SurfaceContextVK* surface_context_vk =
+      reinterpret_cast<SurfaceContextVK*>(context_.get());
+  return surface_context_vk->AcquireNextSurface();
 }
 
 }  // namespace impeller

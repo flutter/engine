@@ -3,22 +3,12 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:js_interop';
 import 'dart:typed_data';
 
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
-
-import '../dom.dart';
-import '../html_image_codec.dart';
-import '../safe_browser_api.dart';
-import '../util.dart';
-import 'canvas.dart';
-import 'canvaskit_api.dart';
-import 'image_wasm_codecs.dart';
-import 'image_web_codecs.dart';
-import 'native_memory.dart';
-import 'painting.dart';
-import 'picture.dart';
-import 'picture_recorder.dart';
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 /// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia.
 FutureOr<ui.Codec> skiaInstantiateImageCodec(Uint8List list,
@@ -73,9 +63,7 @@ void skiaDecodeImageFromPixels(
     }
 
     if (targetWidth != null || targetHeight != null) {
-      if (!validUpscale(allowUpscaling, targetWidth, targetHeight, width, height)) {
-        domWindow.console.warn('Cannot apply targetWidth/targetHeight when allowUpscaling is false.');
-      } else {
+      if (validUpscale(allowUpscaling, targetWidth, targetHeight, width, height)) {
         return callback(scaleImage(skImage, targetWidth, targetHeight));
       }
     }
@@ -172,7 +160,7 @@ const String _kNetworkImageMessage = 'Failed to load network image.';
 /// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia after
 /// requesting from URI.
 Future<ui.Codec> skiaInstantiateWebImageCodec(
-    String url, WebOnlyImageCodecChunkCallback? chunkCallback) async {
+    String url, ui_web.ImageCodecChunkCallback? chunkCallback) async {
   final Uint8List list = await fetchImage(url, chunkCallback);
   if (browserSupportsImageDecoder) {
     return CkBrowserImageDecoder.create(data: list, debugSource: url);
@@ -182,7 +170,7 @@ Future<ui.Codec> skiaInstantiateWebImageCodec(
 }
 
 /// Sends a request to fetch image data.
-Future<Uint8List> fetchImage(String url, WebOnlyImageCodecChunkCallback? chunkCallback) async {
+Future<Uint8List> fetchImage(String url, ui_web.ImageCodecChunkCallback? chunkCallback) async {
   try {
     final HttpFetchResponse response = await httpFetch(url);
     final int? contentLength = response.contentLength;
@@ -213,17 +201,17 @@ Future<Uint8List> fetchImage(String url, WebOnlyImageCodecChunkCallback? chunkCa
 /// Reads the [payload] in chunks using the browser's Streams API
 ///
 /// See: https://developer.mozilla.org/en-US/docs/Web/API/Streams_API
-Future<Uint8List> readChunked(HttpFetchPayload payload, int contentLength, WebOnlyImageCodecChunkCallback chunkCallback) async {
-  final Uint8List result = Uint8List(contentLength);
+Future<Uint8List> readChunked(HttpFetchPayload payload, int contentLength, ui_web.ImageCodecChunkCallback chunkCallback) async {
+  final JSUint8Array result = createUint8ArrayFromLength(contentLength);
   int position = 0;
   int cumulativeBytesLoaded = 0;
-  await payload.read<Uint8List>((Uint8List chunk) {
-    cumulativeBytesLoaded += chunk.lengthInBytes;
+  await payload.read<JSUint8Array>((JSUint8Array chunk) {
+    cumulativeBytesLoaded += chunk.length.toDartInt;
     chunkCallback(cumulativeBytesLoaded, contentLength);
-    result.setAll(position, chunk);
-    position += chunk.lengthInBytes;
+    result.set(chunk, position.toJS);
+    position += chunk.length.toDartInt;
   });
-  return result;
+  return result.toDart;
 }
 
 /// A [ui.Image] backed by an `SkImage` from Skia.
@@ -239,9 +227,10 @@ class CkImage implements ui.Image, StackTraceDebugger {
   }
 
   void _init() {
-    if (assertionsEnabled) {
+    assert(() {
       _debugStackTrace = StackTrace.current;
-    }
+      return true;
+    }());
     ui.Image.onCreate?.call(this);
   }
 
@@ -287,9 +276,16 @@ class CkImage implements ui.Image, StackTraceDebugger {
 
   @override
   bool get debugDisposed {
-    if (assertionsEnabled) {
-      return _disposed;
+    bool? result;
+    assert(() {
+      result = _disposed;
+      return true;
+    }());
+
+    if (result != null) {
+      return result!;
     }
+
     throw StateError(
         'Image.debugDisposed is only available when asserts are enabled.');
   }
@@ -385,18 +381,4 @@ class CkImage implements ui.Image, StackTraceDebugger {
     assert(_debugCheckIsNotDisposed());
     return '[$width\u00D7$height]';
   }
-}
-
-/// Data for a single frame of an animated image.
-class AnimatedImageFrameInfo implements ui.FrameInfo {
-  AnimatedImageFrameInfo(this._duration, this._image);
-
-  final Duration _duration;
-  final CkImage _image;
-
-  @override
-  Duration get duration => _duration;
-
-  @override
-  ui.Image get image => _image;
 }

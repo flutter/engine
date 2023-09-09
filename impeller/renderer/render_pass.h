@@ -7,6 +7,7 @@
 #include <string>
 
 #include "impeller/renderer/command.h"
+#include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/render_target.h"
 
 namespace impeller {
@@ -46,7 +47,7 @@ class RenderPass {
   ///
   /// @return     If the command was valid for subsequent commitment.
   ///
-  bool AddCommand(Command command);
+  bool AddCommand(Command&& command);
 
   //----------------------------------------------------------------------------
   /// @brief      Encode the recorded commands to the underlying command buffer.
@@ -55,6 +56,13 @@ class RenderPass {
   ///             buffer.
   ///
   bool EncodeCommands() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Accessor for the current Commands.
+  ///
+  /// @details    Visible for testing.
+  ///
+  const std::vector<Command>& GetCommands() const { return commands_; }
 
  protected:
   const std::weak_ptr<const Context> context_;

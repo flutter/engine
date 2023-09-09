@@ -7,17 +7,21 @@
 #include <memory>
 #include <utility>
 
+#include "flutter/common/graphics/texture.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/shell/common/shell_io_manager.h"
 #include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 #include "flutter/shell/platform/android/android_context_gl_impeller.h"
 #include "flutter/shell/platform/android/android_context_gl_skia.h"
-#include "flutter/shell/platform/android/android_external_texture_gl.h"
+#include "flutter/shell/platform/android/android_context_vulkan_impeller.h"
 #include "flutter/shell/platform/android/android_surface_gl_impeller.h"
 #include "flutter/shell/platform/android/android_surface_gl_skia.h"
 #include "flutter/shell/platform/android/android_surface_software.h"
+#include "flutter/shell/platform/android/hardware_buffer_external_texture_gl.h"
+#include "flutter/shell/platform/android/surface_texture_external_texture_gl.h"
 #if IMPELLER_ENABLE_VULKAN  // b/258506856 for why this is behind an if
 #include "flutter/shell/platform/android/android_surface_vulkan_impeller.h"
+#include "flutter/shell/platform/android/hardware_buffer_external_texture_vk.h"
 #endif
 #include "flutter/shell/platform/android/context/android_context.h"
 #include "flutter/shell/platform/android/external_view_embedder/external_view_embedder.h"
@@ -31,37 +35,29 @@ namespace flutter {
 
 AndroidSurfaceFactoryImpl::AndroidSurfaceFactoryImpl(
     const std::shared_ptr<AndroidContext>& context,
-    std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-    bool enable_impeller,
-    bool enable_vulkan_validation)
-    : android_context_(context),
-      jni_facade_(std::move(jni_facade)),
-      enable_impeller_(enable_impeller),
-      enable_vulkan_validation_(enable_vulkan_validation) {}
+    bool enable_impeller)
+    : android_context_(context), enable_impeller_(enable_impeller) {}
 
 AndroidSurfaceFactoryImpl::~AndroidSurfaceFactoryImpl() = default;
 
 std::unique_ptr<AndroidSurface> AndroidSurfaceFactoryImpl::CreateSurface() {
   switch (android_context_->RenderingApi()) {
     case AndroidRenderingAPI::kSoftware:
-      return std::make_unique<AndroidSurfaceSoftware>(android_context_,
-                                                      jni_facade_);
+      return std::make_unique<AndroidSurfaceSoftware>();
     case AndroidRenderingAPI::kOpenGLES:
       if (enable_impeller_) {
-// TODO(kaushikiska@): Enable this after wiring a preference for Vulkan backend.
-#if false
-        return std::make_unique<AndroidSurfaceVulkanImpeller>(
-            android_context_, jni_facade_, enable_vulkan_validation_);
-
-#else
         return std::make_unique<AndroidSurfaceGLImpeller>(
-            android_context_, jni_facade_,
-            std::make_unique<impeller::egl::Display>());
-#endif
+            std::static_pointer_cast<AndroidContextGLImpeller>(
+                android_context_));
       } else {
-        return std::make_unique<AndroidSurfaceGLSkia>(android_context_,
-                                                      jni_facade_);
+        return std::make_unique<AndroidSurfaceGLSkia>(
+            std::static_pointer_cast<AndroidContextGLSkia>(android_context_));
       }
+    case AndroidRenderingAPI::kVulkan:
+      FML_DCHECK(enable_impeller_);
+      return std::make_unique<AndroidSurfaceVulkanImpeller>(
+          std::static_pointer_cast<AndroidContextVulkanImpeller>(
+              android_context_));
     default:
       FML_DCHECK(false);
       return nullptr;
@@ -72,12 +68,44 @@ static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
     bool use_software_rendering,
     const flutter::TaskRunners& task_runners,
     uint8_t msaa_samples,
-    bool enable_impeller) {
+    bool enable_impeller,
+    const std::optional<std::string>& impeller_backend,
+    bool enable_vulkan_validation) {
   if (use_software_rendering) {
     return std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
   }
   if (enable_impeller) {
-    return std::make_unique<AndroidContextGLImpeller>();
+    // Default value is Vulkan with GLES fallback.
+    AndroidRenderingAPI backend = AndroidRenderingAPI::kAutoselect;
+    if (impeller_backend.has_value()) {
+      if (impeller_backend.value() == "opengles") {
+        backend = AndroidRenderingAPI::kOpenGLES;
+      } else if (impeller_backend.value() == "vulkan") {
+        backend = AndroidRenderingAPI::kVulkan;
+      } else {
+        FML_CHECK(impeller_backend.value() == "vulkan" ||
+                  impeller_backend.value() == "opengles");
+      }
+    }
+    switch (backend) {
+      case AndroidRenderingAPI::kOpenGLES:
+        return std::make_unique<AndroidContextGLImpeller>(
+            std::make_unique<impeller::egl::Display>());
+      case AndroidRenderingAPI::kVulkan:
+        return std::make_unique<AndroidContextVulkanImpeller>(
+            enable_vulkan_validation);
+      case AndroidRenderingAPI::kAutoselect: {
+        auto vulkan_backend = std::make_unique<AndroidContextVulkanImpeller>(
+            enable_vulkan_validation);
+        if (!vulkan_backend->IsValid()) {
+          return std::make_unique<AndroidContextGLImpeller>(
+              std::make_unique<impeller::egl::Display>());
+        }
+        return vulkan_backend;
+      }
+      default:
+        FML_UNREACHABLE();
+    }
   }
   return std::make_unique<AndroidContextGLSkia>(
       AndroidRenderingAPI::kOpenGLES,               //
@@ -101,7 +129,9 @@ PlatformViewAndroid::PlatformViewAndroid(
               use_software_rendering,
               task_runners,
               msaa_samples,
-              delegate.OnPlatformViewGetSettings().enable_impeller)) {}
+              delegate.OnPlatformViewGetSettings().enable_impeller,
+              delegate.OnPlatformViewGetSettings().impeller_backend,
+              delegate.OnPlatformViewGetSettings().enable_vulkan_validation)) {}
 
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
@@ -117,10 +147,8 @@ PlatformViewAndroid::PlatformViewAndroid(
     FML_CHECK(android_context_->IsValid())
         << "Could not create surface from invalid Android context.";
     surface_factory_ = std::make_shared<AndroidSurfaceFactoryImpl>(
-        android_context_,                                              //
-        jni_facade_,                                                   //
-        delegate.OnPlatformViewGetSettings().enable_impeller,          //
-        delegate.OnPlatformViewGetSettings().enable_vulkan_validation  //
+        android_context_,                                     //
+        delegate.OnPlatformViewGetSettings().enable_impeller  //
     );
     android_surface_ = surface_factory_->CreateSurface();
     FML_CHECK(android_surface_ && android_surface_->IsValid())
@@ -273,10 +301,47 @@ void PlatformViewAndroid::RegisterExternalTexture(
     int64_t texture_id,
     const fml::jni::ScopedJavaGlobalRef<jobject>& surface_texture) {
   if (android_context_->RenderingApi() == AndroidRenderingAPI::kOpenGLES) {
-    RegisterTexture(std::make_shared<AndroidExternalTextureGL>(
-        texture_id, surface_texture, jni_facade_));
+    if (android_context_->GetImpellerContext()) {
+      // Impeller GLES.
+      RegisterTexture(std::make_shared<SurfaceTextureExternalTextureImpellerGL>(
+          std::static_pointer_cast<impeller::ContextGLES>(
+              android_context_->GetImpellerContext()),
+          texture_id, surface_texture, jni_facade_));
+    } else {
+      // Legacy GL.
+      RegisterTexture(std::make_shared<SurfaceTextureExternalTextureGL>(
+          texture_id, surface_texture, jni_facade_));
+    }
   } else {
-    FML_LOG(INFO) << "Attempted to use a GL texture in a non GL context.";
+    FML_LOG(INFO) << "Attempted to use a SurfaceTextureExternalTexture with an "
+                     "unsupported rendering API.";
+  }
+}
+
+void PlatformViewAndroid::RegisterImageTexture(
+    int64_t texture_id,
+    const fml::jni::ScopedJavaGlobalRef<jobject>& image_texture_entry) {
+  if (android_context_->RenderingApi() == AndroidRenderingAPI::kOpenGLES) {
+    if (android_context_->GetImpellerContext()) {
+      // Impeller GLES.
+      RegisterTexture(std::make_shared<HardwareBufferExternalTextureImpellerGL>(
+          std::static_pointer_cast<impeller::ContextGLES>(
+              android_context_->GetImpellerContext()),
+          texture_id, image_texture_entry, jni_facade_));
+    } else {
+      // Legacy GL.
+      RegisterTexture(std::make_shared<HardwareBufferExternalTextureGL>(
+          std::static_pointer_cast<AndroidContextGLSkia>(android_context_),
+          texture_id, image_texture_entry, jni_facade_));
+    }
+  } else if (android_context_->RenderingApi() == AndroidRenderingAPI::kVulkan) {
+    RegisterTexture(std::make_shared<HardwareBufferExternalTextureVK>(
+        std::static_pointer_cast<impeller::ContextVK>(
+            android_context_->GetImpellerContext()),
+        texture_id, image_texture_entry, jni_facade_));
+  } else {
+    FML_LOG(INFO) << "Attempted to use a HardwareBuffer texture with an "
+                     "unsupported rendering API.";
   }
 }
 
@@ -407,4 +472,9 @@ void PlatformViewAndroid::FireFirstFrameCallback() {
   jni_facade_->FlutterViewOnFirstFrame();
 }
 
+double PlatformViewAndroid::GetScaledFontSize(double unscaled_font_size,
+                                              int configuration_id) const {
+  return jni_facade_->FlutterViewGetScaledFontSize(unscaled_font_size,
+                                                   configuration_id);
+}
 }  // namespace flutter

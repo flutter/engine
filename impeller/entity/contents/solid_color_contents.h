@@ -11,7 +11,7 @@
 #include "flutter/fml/macros.h"
 #include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/contents/contents.h"
-#include "impeller/entity/geometry.h"
+#include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
 
@@ -34,6 +34,9 @@ class SolidColorContents final : public ColorSourceContents {
 
   Color GetColor() const;
 
+  // |ColorSourceContents|
+  bool IsSolidColor() const override;
+
   // |Contents|
   bool IsOpaque() const override;
 
@@ -41,13 +44,16 @@ class SolidColorContents final : public ColorSourceContents {
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
 
   // |Contents|
-  bool ShouldRender(const Entity& entity,
-                    const std::optional<Rect>& stencil_coverage) const override;
-
-  // |Contents|
   bool Render(const ContentContext& renderer,
               const Entity& entity,
               RenderPass& pass) const override;
+
+  std::optional<Color> AsBackgroundColor(const Entity& entity,
+                                         ISize target_size) const override;
+
+  // |Contents|
+  [[nodiscard]] bool ApplyColorFilter(
+      const ColorFilterProc& color_filter_proc) override;
 
  private:
   Color color_;

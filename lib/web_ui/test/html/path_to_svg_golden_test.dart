@@ -22,9 +22,9 @@ enum PaintMode {
 
 Future<void> testMain() async {
   const Rect region =
-      Rect.fromLTWH(8, 8, 600, 400); // Compensate for old scuba tester padding
+      Rect.fromLTWH(8, 8, 600, 400); // Compensate for old golden tester padding
 
-  Future<void> testPath(Path path, String scubaFileName,
+  Future<void> testPath(Path path, String goldenFileName,
       {SurfacePaint? paint,
       PaintMode mode = PaintMode.kStrokeAndFill}) async {
     const Rect canvasBounds = Rect.fromLTWH(0, 0, 600, 400);
@@ -72,7 +72,7 @@ Future<void> testMain() async {
     sceneElement.append(bitmapCanvas.rootElement);
     sceneElement.append(svgElement);
 
-    await matchGoldenFile('$scubaFileName.png',
+    await matchGoldenFile('$goldenFileName.png',
         region: region);
 
     bitmapCanvas.rootElement.remove();
@@ -194,14 +194,14 @@ DomElement pathToSvgElement(Path path, Paint paint, bool enableFill) {
   root.append(pathElement);
   if (paint.style == PaintingStyle.stroke ||
       paint.strokeWidth != 0.0) {
-    pathElement.setAttribute('stroke', colorToCssString(paint.color)!);
+    pathElement.setAttribute('stroke', paint.color.toCssString());
     pathElement.setAttribute('stroke-width', paint.strokeWidth);
     if (!enableFill) {
       pathElement.setAttribute('fill', 'none');
     }
   }
   if (paint.style == PaintingStyle.fill) {
-    pathElement.setAttribute('fill', colorToCssString(paint.color)!);
+    pathElement.setAttribute('fill', paint.color.toCssString());
   }
   pathElement.setAttribute('d', pathToSvg((path as SurfacePath).pathRef)); // This is what we're testing!
   return root;

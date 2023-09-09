@@ -2,9 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <emscripten.h>
 #include "export.h"
 #include "helpers.h"
+#include "third_party/skia/include/core/SkBBHFactory.h"
+#include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 #include "wrappers.h"
 
@@ -20,10 +21,10 @@ SKWASM_EXPORT void pictureRecorder_dispose(SkPictureRecorder* recorder) {
   delete recorder;
 }
 
-SKWASM_EXPORT CanvasWrapper* pictureRecorder_beginRecording(
+SKWASM_EXPORT SkCanvas* pictureRecorder_beginRecording(
     SkPictureRecorder* recorder,
     const SkRect* cullRect) {
-  return new CanvasWrapper{0, recorder->beginRecording(*cullRect, &bbhFactory)};
+  return recorder->beginRecording(*cullRect, &bbhFactory);
 }
 
 SKWASM_EXPORT SkPicture* pictureRecorder_endRecording(

@@ -119,6 +119,16 @@ class DlColorSource : public DlAttribute<DlColorSource, DlColorSourceType> {
   ///
   virtual bool isUIThreadSafe() const = 0;
 
+  //----------------------------------------------------------------------------
+  /// @brief      If the underlying platform data represents a gradient.
+  ///
+  ///             TODO(matanl): Remove this flag when the Skia backend is
+  ///             removed, https://github.com/flutter/flutter/issues/112498.
+  ///
+  /// @return     True if the class represents the output of a gradient.
+  ///
+  virtual bool isGradient() const { return false; }
+
   // Return a DlColorColorSource pointer to this object iff it is an Color
   // type of ColorSource, otherwise return nullptr.
   virtual const DlColorColorSource* asColor() const { return nullptr; }
@@ -287,6 +297,8 @@ class DlGradientColorSourceBase : public DlMatrixColorSourceBase {
     return true;
   }
 
+  bool isGradient() const override { return true; }
+
   DlTileMode tile_mode() const { return mode_; }
   int stop_count() const { return stop_count_; }
   const DlColor* colors() const {
@@ -406,7 +418,7 @@ class DlLinearGradientColorSource final : public DlGradientColorSourceBase {
   SkPoint end_point_;
 
   friend class DlColorSource;
-  friend class DisplayListBuilder;
+  friend class DlOpRecorder;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(DlLinearGradientColorSource);
 };
@@ -469,7 +481,7 @@ class DlRadialGradientColorSource final : public DlGradientColorSourceBase {
   SkScalar radius_;
 
   friend class DlColorSource;
-  friend class DisplayListBuilder;
+  friend class DlOpRecorder;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(DlRadialGradientColorSource);
 };
@@ -545,7 +557,7 @@ class DlConicalGradientColorSource final : public DlGradientColorSourceBase {
   SkScalar end_radius_;
 
   friend class DlColorSource;
-  friend class DisplayListBuilder;
+  friend class DlOpRecorder;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(DlConicalGradientColorSource);
 };
@@ -613,7 +625,7 @@ class DlSweepGradientColorSource final : public DlGradientColorSourceBase {
   SkScalar end_;
 
   friend class DlColorSource;
-  friend class DisplayListBuilder;
+  friend class DlOpRecorder;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(DlSweepGradientColorSource);
 };

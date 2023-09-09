@@ -12,7 +12,9 @@ import android.graphics.ImageDecoder;
 import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.os.Looper;
+import android.util.DisplayMetrics;
 import android.util.Size;
+import android.util.TypedValue;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import androidx.annotation.Keep;
@@ -27,12 +29,14 @@ import io.flutter.embedding.engine.deferredcomponents.DeferredComponentManager;
 import io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.SurfaceTextureWrapper;
+import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.plugin.common.StandardMessageCodec;
 import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.util.Preconditions;
 import io.flutter.view.AccessibilityBridge;
 import io.flutter.view.FlutterCallbackInformation;
+import io.flutter.view.TextureRegistry;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
@@ -214,6 +218,10 @@ public class FlutterJNI {
    */
   private static float refreshRateFPS = 60.0f;
 
+  private static float displayWidth = -1.0f;
+  private static float displayHeight = -1.0f;
+  private static float displayDensity = -1.0f;
+
   // This is set from native code via JNI.
   @Nullable private static String vmServiceUri;
 
@@ -273,6 +281,18 @@ public class FlutterJNI {
     FlutterJNI.refreshRateFPS = refreshRateFPS;
     updateRefreshRate();
   }
+
+  public void updateDisplayMetrics(int displayId, float width, float height, float density) {
+    FlutterJNI.displayWidth = width;
+    FlutterJNI.displayHeight = height;
+    FlutterJNI.displayDensity = density;
+    if (!FlutterJNI.loadLibraryCalled) {
+      return;
+    }
+    nativeUpdateDisplayMetrics(nativeShellHolderId);
+  }
+
+  private native void nativeUpdateDisplayMetrics(long nativeShellHolderId);
 
   public void updateRefreshRate() {
     if (!FlutterJNI.loadLibraryCalled) {
@@ -886,6 +906,27 @@ public class FlutterJNI {
       @NonNull WeakReference<SurfaceTextureWrapper> textureWrapper);
 
   /**
+   * Registers a ImageTexture with the given id.
+   *
+   * <p>REQUIRED: Callers should eventually unregisterTexture with the same id.
+   */
+  @UiThread
+  public void registerImageTexture(
+      long textureId, @NonNull TextureRegistry.ImageTextureEntry imageTextureEntry) {
+    ensureRunningOnMainThread();
+    ensureAttachedToNative();
+    nativeRegisterImageTexture(
+        nativeShellHolderId,
+        textureId,
+        new WeakReference<TextureRegistry.ImageTextureEntry>(imageTextureEntry));
+  }
+
+  private native void nativeRegisterImageTexture(
+      long nativeShellHolderId,
+      long textureId,
+      @NonNull WeakReference<TextureRegistry.ImageTextureEntry> imageTextureEntry);
+
+  /**
    * Call this method to inform Flutter that a texture previously registered with {@link
    * #registerTexture(long, SurfaceTextureWrapper)} has a new frame available.
    *
@@ -1266,6 +1307,20 @@ public class FlutterJNI {
   }
 
   // ----- End Localization Support ----
+  @Nullable
+  public float getScaledFontSize(float fontSize, int configurationId) {
+    final DisplayMetrics metrics = SettingsChannel.getPastDisplayMetrics(configurationId);
+    if (metrics == null) {
+      Log.e(
+          TAG,
+          "getScaledFontSize called with configurationId "
+              + String.valueOf(configurationId)
+              + ", which can't be found.");
+      return -1f;
+    }
+    return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, fontSize, metrics)
+        / metrics.density;
+  }
 
   // ----- Start Deferred Components Support ----
 

@@ -80,25 +80,20 @@ bool ClipContents::Render(const ContentContext& renderer,
                           const Entity& entity,
                           RenderPass& pass) const {
   using VS = ClipPipeline::VertexShader;
-  using FS = ClipPipeline::FragmentShader;
 
   VS::FrameInfo info;
 
   Command cmd;
 
-  FS::FragInfo frag_info;
-  // The color really doesn't matter.
-  frag_info.color = Color::SkyBlue();
-  FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
-
-  auto options = OptionsFromPassAndEntity(pass, entity);
+  auto options = OptionsFromPass(pass);
+  options.blend_mode = BlendMode::kDestination;
   cmd.stencil_reference = entity.GetStencilDepth();
   options.stencil_compare = CompareFunction::kEqual;
   options.stencil_operation = StencilOperation::kIncrementClamp;
 
   if (clip_op_ == Entity::ClipOperation::kDifference) {
     {
-      cmd.label = "Difference Clip (Increment)";
+      DEBUG_COMMAND_INFO(cmd, "Difference Clip (Increment)");
 
       auto points = Rect(Size(pass.GetRenderTargetSize())).GetPoints();
       auto vertices =
@@ -112,18 +107,18 @@ bool ClipContents::Render(const ContentContext& renderer,
 
       options.primitive_type = PrimitiveType::kTriangleStrip;
       cmd.pipeline = renderer.GetClipPipeline(options);
-      pass.AddCommand(cmd);
+      pass.AddCommand(Command(cmd));
     }
 
     {
-      cmd.label = "Difference Clip (Punch)";
+      DEBUG_COMMAND_INFO(cmd, "Difference Clip (Punch)");
 
       cmd.stencil_reference = entity.GetStencilDepth() + 1;
       options.stencil_compare = CompareFunction::kEqual;
       options.stencil_operation = StencilOperation::kDecrementClamp;
     }
   } else {
-    cmd.label = "Intersect Clip";
+    DEBUG_COMMAND_INFO(cmd, "Intersect Clip");
     options.stencil_compare = CompareFunction::kEqual;
     options.stencil_operation = StencilOperation::kIncrementClamp;
   }
@@ -182,11 +177,11 @@ bool ClipRestoreContents::Render(const ContentContext& renderer,
                                  const Entity& entity,
                                  RenderPass& pass) const {
   using VS = ClipPipeline::VertexShader;
-  using FS = ClipPipeline::FragmentShader;
 
   Command cmd;
-  cmd.label = "Restore Clip";
-  auto options = OptionsFromPassAndEntity(pass, entity);
+  DEBUG_COMMAND_INFO(cmd, "Restore Clip");
+  auto options = OptionsFromPass(pass);
+  options.blend_mode = BlendMode::kDestination;
   options.stencil_compare = CompareFunction::kLess;
   options.stencil_operation = StencilOperation::kSetToReferenceValue;
   options.primitive_type = PrimitiveType::kTriangleStrip;
@@ -209,11 +204,6 @@ bool ClipRestoreContents::Render(const ContentContext& renderer,
   VS::FrameInfo info;
   info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
   VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(info));
-
-  FS::FragInfo frag_info;
-  // The color really doesn't matter.
-  frag_info.color = Color::SkyBlue();
-  FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
   pass.AddCommand(std::move(cmd));
   return true;

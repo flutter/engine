@@ -66,9 +66,6 @@ Future<T> promiseToFuture<T>(Object jsPromise) {
   return js_util.promiseToFuture<T>(jsPromise);
 }
 
-/// A function that receives a benchmark [value] labeleb by [name].
-typedef OnBenchmark = void Function(String name, double value);
-
 /// Parses a string [source] into a double.
 ///
 /// Uses the JavaScript `parseFloat` function instead of Dart's [double.parse]
@@ -246,7 +243,7 @@ extension ImageDecoderExtension on ImageDecoder {
 class ImageDecoderOptions {
   external factory ImageDecoderOptions({
     required JSString type,
-    required JSUint8Array data,
+    required JSAny data,
     required JSString premultiplyAlpha,
     JSNumber? desiredWidth,
     JSNumber? desiredHeight,
@@ -302,7 +299,7 @@ class VideoFrame implements DomCanvasImageSource {}
 extension VideoFrameExtension on VideoFrame {
   @JS('allocationSize')
   external JSNumber _allocationSize();
-  double allocationSize() => _allocationSize().toDart;
+  double allocationSize() => _allocationSize().toDartDouble;
 
   @JS('copyTo')
   external JsPromise _copyTo(JSAny destination);
@@ -314,23 +311,23 @@ extension VideoFrameExtension on VideoFrame {
 
   @JS('codedWidth')
   external JSNumber get _codedWidth;
-  double get codedWidth => _codedWidth.toDart;
+  double get codedWidth => _codedWidth.toDartDouble;
 
   @JS('codedHeight')
   external JSNumber get _codedHeight;
-  double get codedHeight => _codedHeight.toDart;
+  double get codedHeight => _codedHeight.toDartDouble;
 
   @JS('displayWidth')
   external JSNumber get _displayWidth;
-  double get displayWidth => _displayWidth.toDart;
+  double get displayWidth => _displayWidth.toDartDouble;
 
   @JS('displayHeight')
   external JSNumber get _displayHeight;
-  double get displayHeight => _displayHeight.toDart;
+  double get displayHeight => _displayHeight.toDartDouble;
 
   @JS('duration')
   external JSNumber? get _duration;
-  double? get duration => _duration?.toDart;
+  double? get duration => _duration?.toDartDouble;
 
   external VideoFrame clone();
   external JSVoid close();
@@ -364,11 +361,11 @@ class ImageTrack {}
 extension ImageTrackExtension on ImageTrack {
   @JS('repetitionCount')
   external JSNumber get _repetitionCount;
-  double get repetitionCount => _repetitionCount.toDart;
+  double get repetitionCount => _repetitionCount.toDartDouble;
 
   @JS('frameCount')
   external JSNumber get _frameCount;
-  double get frameCount => _frameCount.toDart;
+  double get frameCount => _frameCount.toDartDouble;
 }
 
 void scaleCanvas2D(Object context2d, num x, num y) {

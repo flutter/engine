@@ -116,6 +116,7 @@ struct GLProc {
   PROC(DetachShader);                        \
   PROC(Disable);                             \
   PROC(DisableVertexAttribArray);            \
+  PROC(DrawArrays);                          \
   PROC(DrawElements);                        \
   PROC(Enable);                              \
   PROC(EnableVertexAttribArray);             \
@@ -138,6 +139,7 @@ struct GLProc {
   PROC(GetShaderInfoLog);                    \
   PROC(GetShaderiv);                         \
   PROC(GetString);                           \
+  PROC(GetStringi);                          \
   PROC(GetUniformLocation);                  \
   PROC(IsBuffer);                            \
   PROC(IsFramebuffer);                       \

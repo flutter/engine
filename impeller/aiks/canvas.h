@@ -16,7 +16,8 @@
 #include "impeller/aiks/picture.h"
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/entity_pass.h"
-#include "impeller/entity/geometry.h"
+#include "impeller/entity/geometry/geometry.h"
+#include "impeller/entity/geometry/vertices_geometry.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
@@ -27,6 +28,23 @@
 namespace impeller {
 
 class Entity;
+
+struct CanvasStackEntry {
+  Matrix xformation;
+  // |cull_rect| is conservative screen-space bounds of the clipped output area
+  std::optional<Rect> cull_rect;
+  size_t stencil_depth = 0u;
+  bool is_subpass = false;
+  bool contains_clips = false;
+};
+
+enum class PointStyle {
+  /// @brief Points are drawn as squares.
+  kRound,
+
+  /// @brief Points are drawn as circles.
+  kSquare,
+};
 
 class Canvas {
  public:
@@ -40,14 +58,17 @@ class Canvas {
 
   Canvas();
 
+  explicit Canvas(Rect cull_rect);
+
+  explicit Canvas(IRect cull_rect);
+
   ~Canvas();
 
   void Save();
 
   void SaveLayer(const Paint& paint,
                  std::optional<Rect> bounds = std::nullopt,
-                 const std::optional<Paint::ImageFilterProc>& backdrop_filter =
-                     std::nullopt);
+                 const Paint::ImageFilterProc& backdrop_filter = nullptr);
 
   bool Restore();
 
@@ -56,6 +77,8 @@ class Canvas {
   void RestoreToCount(size_t count);
 
   const Matrix& GetCurrentTransformation() const;
+
+  const std::optional<Rect> GetCurrentLocalCullingBounds() const;
 
   void ResetTransform();
 
@@ -85,6 +108,11 @@ class Canvas {
 
   void DrawCircle(Point center, Scalar radius, const Paint& paint);
 
+  void DrawPoints(std::vector<Point>,
+                  Scalar radius,
+                  const Paint& paint,
+                  PointStyle point_style);
+
   void DrawImage(const std::shared_ptr<Image>& image,
                  Point offset,
                  const Paint& paint,
@@ -109,7 +137,7 @@ class Canvas {
       Scalar corner_radius,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
 
-  void DrawPicture(Picture picture);
+  void DrawPicture(const Picture& picture);
 
   void DrawTextFrame(const TextFrame& text_frame,
                      Point position,
@@ -134,9 +162,9 @@ class Canvas {
   std::unique_ptr<EntityPass> base_pass_;
   EntityPass* current_pass_ = nullptr;
   std::deque<CanvasStackEntry> xformation_stack_;
-  std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas_;
+  std::optional<Rect> initial_cull_rect_;
 
-  void Initialize();
+  void Initialize(std::optional<Rect> cull_rect);
 
   void Reset();
 
@@ -147,10 +175,12 @@ class Canvas {
   void ClipGeometry(std::unique_ptr<Geometry> geometry,
                     Entity::ClipOperation clip_op);
 
+  void IntersectCulling(Rect clip_bounds);
+  void SubtractCulling(Rect clip_bounds);
+
   void Save(bool create_subpass,
             BlendMode = BlendMode::kSourceOver,
-            std::optional<EntityPass::BackdropFilterProc> backdrop_filter =
-                std::nullopt);
+            EntityPass::BackdropFilterProc backdrop_filter = nullptr);
 
   void RestoreClip();
 

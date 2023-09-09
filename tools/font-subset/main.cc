@@ -13,15 +13,22 @@
 
 #include "hb_wrappers.h"
 
-hb_codepoint_t ParseCodepoint(const std::string& arg) {
+hb_codepoint_t ParseCodepoint(std::string_view arg, bool& optional) {
+  constexpr std::string_view kOptionalPrefix = "optional:";
+  if (arg.substr(0, kOptionalPrefix.length()) == kOptionalPrefix) {
+    optional = true;
+    arg = arg.substr(kOptionalPrefix.length());
+  } else {
+    optional = false;
+  }
   uint64_t value = 0;
   // Check for \u123, u123, otherwise let strtoul work it out.
   if (arg[0] == 'u') {
-    value = strtoul(arg.c_str() + 1, nullptr, 16);
+    value = strtoul(arg.data() + 1, nullptr, 16);
   } else if (arg[0] == '\\' && arg[1] == 'u') {
-    value = strtoul(arg.c_str() + 2, nullptr, 16);
+    value = strtoul(arg.data() + 2, nullptr, 16);
   } else {
-    value = strtoul(arg.c_str(), nullptr, 0);
+    value = strtoul(arg.data(), nullptr, 0);
   }
   if (value == 0 || value > std::numeric_limits<hb_codepoint_t>::max()) {
     std::cerr << "The value '" << arg << "' (" << value
@@ -43,6 +50,10 @@ void Usage() {
                "and must be input as decimal numbers (123), hexadecimal "
                "numbers (0x7B), or unicode hexadecimal characters (\\u7B)."
             << std::endl;
+  std::cout << "Codepoints can be prefixed by the string \"optional:\" to "
+               "specify that the codepoint can be omitted if it isn't found "
+               "in the input font file."
+            << std::endl;
   std::cout << "Input terminates with a newline." << std::endl;
   std::cout
       << "This program will de-duplicate codepoints if the same codepoint is "
@@ -59,14 +70,20 @@ struct HarfBuzzSubset {
     // The prior version of harfbuzz automatically dropped layout tables,
     // but in the new version they are kept by default. So re-add them to the
     // drop list to retain the same behaviour.
-
-    hb_set_add(hb_subset_input_set(input, HB_SUBSET_SETS_DROP_TABLE_TAG),
-               HB_TAG('G', 'S', 'U', 'B'));
-    hb_set_add(hb_subset_input_set(input, HB_SUBSET_SETS_DROP_TABLE_TAG),
-               HB_TAG('G', 'P', 'O', 'S'));
-    hb_set_add(hb_subset_input_set(input, HB_SUBSET_SETS_DROP_TABLE_TAG),
-               HB_TAG('G', 'D', 'E', 'F'));
-
+    if (!hb_ot_var_has_data(face) || hb_ot_var_get_axis_count(face) == 0) {
+      // we can only drop GSUB/GPOS/GDEF for non variable fonts, they may be
+      // needed for variable fonts (guessing we need to keep all of these, but
+      // in Material Symbols Icon variable fonts if we drop the GSUB table (they
+      // do not have GPOS/DEF) then the Fill=1,Weight=100 variation is rendered
+      // incorrect. (and other variations are probably less noticibly
+      // incorrect))
+      hb_set_add(hb_subset_input_set(input, HB_SUBSET_SETS_DROP_TABLE_TAG),
+                 HB_TAG('G', 'S', 'U', 'B'));
+      hb_set_add(hb_subset_input_set(input, HB_SUBSET_SETS_DROP_TABLE_TAG),
+                 HB_TAG('G', 'P', 'O', 'S'));
+      hb_set_add(hb_subset_input_set(input, HB_SUBSET_SETS_DROP_TABLE_TAG),
+                 HB_TAG('G', 'D', 'E', 'F'));
+    }
     return HarfbuzzWrappers::HbFacePtr(hb_subset_or_fail(face, input));
   }
 };
@@ -107,13 +124,21 @@ int main(int argc, char** argv) {
     hb_face_collect_unicodes(font_face.get(), actual_codepoints.get());
     std::string raw_codepoint;
     while (std::cin >> raw_codepoint) {
-      auto codepoint = ParseCodepoint(raw_codepoint);
+      bool optional = false;
+      auto codepoint =
+          ParseCodepoint(std::string_view(raw_codepoint), optional);
       if (!codepoint) {
         std::cerr << "Invalid codepoint for " << raw_codepoint << "; exiting."
                   << std::endl;
         return -1;
       }
+
       if (!hb_set_has(actual_codepoints.get(), codepoint)) {
+        if (optional) {
+          // Code point is optional, so omit it.
+          continue;
+        }
+
         std::cerr << "Codepoint " << raw_codepoint
                   << " not found in font, aborting." << std::endl;
         return -1;

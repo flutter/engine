@@ -44,12 +44,6 @@
 }
 
 - (BOOL)isWideGamutSupported {
-#if TARGET_OS_SIMULATOR
-  // As of Xcode 14.1, the wide gamut surface pixel formats are not supported by
-  // the simulator.
-  return NO;
-#endif
-
   if (![_delegate isUsingImpeller]) {
     return NO;
   }
@@ -74,7 +68,7 @@
   if (self) {
     _delegate = delegate;
     _isWideGamutEnabled = isWideGamutEnabled;
-    if (_isWideGamutEnabled && self.isWideGamutSupported) {
+    if (_isWideGamutEnabled && !self.isWideGamutSupported) {
       FML_DLOG(WARNING) << "Rendering wide gamut colors is turned on but isn't "
                            "supported, downgrading the color gamut to sRGB.";
     }
@@ -107,7 +101,11 @@
       CGColorSpaceRef srgb = CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB);
       layer.colorspace = srgb;
       CFRelease(srgb);
-      layer.pixelFormat = MTLPixelFormatBGRA10_XR;
+      // MTLPixelFormatRGBA16Float was chosen since it is compatible with
+      // impeller's offscreen buffers which need to have transparency.  Also,
+      // F16 was chosen over BGRA10_XR since Skia does not support decoding
+      // BGRA10_XR.
+      layer.pixelFormat = MTLPixelFormatRGBA16Float;
     }
   }
 
@@ -158,12 +156,13 @@ static BOOL _forceSoftwareRendering;
       32,                                 // size_t bitsPerPixel,
       4 * screenshot.frame_size.width(),  // size_t bytesPerRow
       colorspace,                         // CGColorSpaceRef space
-      static_cast<CGBitmapInfo>(kCGImageAlphaPremultipliedLast |
-                                kCGBitmapByteOrder32Big),  // CGBitmapInfo bitmapInfo
-      image_data_provider,                                 // CGDataProviderRef provider
-      nullptr,                                             // const CGFloat* decode
-      false,                                               // bool shouldInterpolate
-      kCGRenderingIntentDefault                            // CGColorRenderingIntent intent
+      static_cast<CGBitmapInfo>(
+          static_cast<uint32_t>(kCGImageAlphaPremultipliedLast) |
+          static_cast<uint32_t>(kCGBitmapByteOrder32Big)),  // CGBitmapInfo bitmapInfo
+      image_data_provider,                                  // CGDataProviderRef provider
+      nullptr,                                              // const CGFloat* decode
+      false,                                                // bool shouldInterpolate
+      kCGRenderingIntentDefault                             // CGColorRenderingIntent intent
       ));
 
   const CGRect frame_rect =

@@ -9,12 +9,14 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 
+import '../common/test_initialization.dart';
+
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 Future<void> testMain() async {
-  await initializeTestFlutterViewEmbedder();
+  setUpUnitTests();
   group('message handler', () {
     const String testText = 'test text';
 
@@ -85,6 +87,48 @@ Future<void> testMain() async {
       final Map<String, dynamic> result = await completer.future;
       expect(result['text'], testText);
     });
+
+    test('has strings true', () async {
+      clipboardAPIPasteStrategy.testResult = testText;
+      const MethodCodec codec = JSONMethodCodec();
+      final Completer<Map<String, dynamic>> completer = Completer<Map<String, dynamic>>();
+      void callback(ByteData? data) {
+        completer.complete(codec.decodeEnvelope(data!) as Map<String, dynamic>);
+      }
+
+      clipboardMessageHandler.hasStringsMethodCall(callback);
+
+      final Map<String, dynamic> result = await completer.future;
+      expect(result['value'], isTrue);
+    });
+
+    test('has strings false', () async {
+      clipboardAPIPasteStrategy.testResult = '';
+      const MethodCodec codec = JSONMethodCodec();
+      final Completer<Map<String, dynamic>> completer = Completer<Map<String, dynamic>>();
+      void callback(ByteData? data) {
+        completer.complete(codec.decodeEnvelope(data!) as Map<String, dynamic>);
+      }
+
+      clipboardMessageHandler.hasStringsMethodCall(callback);
+
+      final Map<String, dynamic> result = await completer.future;
+      expect(result['value'], isFalse);
+    });
+
+    test('has strings error', () async {
+      clipboardAPIPasteStrategy.errors = true;
+      const MethodCodec codec = JSONMethodCodec();
+      final Completer<Map<String, dynamic>> completer = Completer<Map<String, dynamic>>();
+      void callback(ByteData? data) {
+        completer.complete(codec.decodeEnvelope(data!) as Map<String, dynamic>);
+      }
+
+      clipboardMessageHandler.hasStringsMethodCall(callback);
+
+      final Map<String, dynamic> result = await completer.future;
+      expect(result['value'], isFalse);
+    });
   });
 }
 
@@ -100,8 +144,14 @@ class MockClipboardAPICopyStrategy implements ClipboardAPICopyStrategy {
 class MockClipboardAPIPasteStrategy implements ClipboardAPIPasteStrategy {
   String testResult = '';
 
+  // Whether getData's Future will resolve with an error.
+  bool errors = false;
+
   @override
   Future<String> getData() {
+    if (errors) {
+      return Future<String>.error(Error());
+    }
     return Future<String>.value(testResult);
   }
 }

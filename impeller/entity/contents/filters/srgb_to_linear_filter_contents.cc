@@ -23,7 +23,8 @@ std::optional<Entity> SrgbToLinearFilterContents::RenderFilter(
     const ContentContext& renderer,
     const Entity& entity,
     const Matrix& effect_transform,
-    const Rect& coverage) const {
+    const Rect& coverage,
+    const std::optional<Rect>& coverage_hint) const {
   if (inputs.empty()) {
     return std::nullopt;
   }
@@ -45,7 +46,7 @@ std::optional<Entity> SrgbToLinearFilterContents::RenderFilter(
                                const ContentContext& renderer,
                                const Entity& entity, RenderPass& pass) -> bool {
     Command cmd;
-    cmd.label = "sRGB to Linear Filter";
+    DEBUG_COMMAND_INFO(cmd, "sRGB to Linear Filter");
     cmd.stencil_reference = entity.GetStencilDepth();
 
     auto options = OptionsFromPassAndEntity(pass, entity);

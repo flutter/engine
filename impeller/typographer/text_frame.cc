@@ -25,12 +25,12 @@ std::optional<Rect> TextFrame::GetBounds() const {
   return result;
 }
 
-bool TextFrame::AddTextRun(const TextRun& run) {
+bool TextFrame::AddTextRun(TextRun&& run) {
   if (!run.IsValid()) {
     return false;
   }
   has_color_ |= run.HasColor();
-  runs_.emplace_back(run);
+  runs_.emplace_back(std::move(run));
   return true;
 }
 
@@ -42,8 +42,9 @@ const std::vector<TextRun>& TextFrame::GetRuns() const {
   return runs_;
 }
 
-bool TextFrame::HasColor() const {
-  return has_color_;
+GlyphAtlas::Type TextFrame::GetAtlasType() const {
+  return has_color_ ? GlyphAtlas::Type::kColorBitmap
+                    : GlyphAtlas::Type::kAlphaBitmap;
 }
 
 bool TextFrame::MaybeHasOverlapping() const {
@@ -76,6 +77,31 @@ bool TextFrame::MaybeHasOverlapping() const {
     overlapping_rect = overlapping_rect.Union(glyph_rect);
   }
   return false;
+}
+
+// static
+Scalar TextFrame::RoundScaledFontSize(Scalar scale, Scalar point_size) {
+  return std::round(scale * 100) / 100;
+}
+
+void TextFrame::CollectUniqueFontGlyphPairs(FontGlyphPair::Set& set,
+                                            Scalar scale) const {
+  for (const TextRun& run : GetRuns()) {
+    const Font& font = run.GetFont();
+    auto rounded_scale =
+        RoundScaledFontSize(scale, font.GetMetrics().point_size);
+    for (const TextRun::GlyphPosition& glyph_position :
+         run.GetGlyphPositions()) {
+#if false
+// Glyph size error due to RoundScaledFontSize usage above.
+if (rounded_scale != scale) {
+  auto delta = std::abs(rounded_scale - scale);
+  FML_LOG(ERROR) << glyph_position.glyph.bounds.size * delta;
+}
+#endif
+      set.insert({font, glyph_position.glyph, rounded_scale});
+    }
+  }
 }
 
 }  // namespace impeller

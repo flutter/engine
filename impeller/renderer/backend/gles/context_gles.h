@@ -18,7 +18,8 @@
 namespace impeller {
 
 class ContextGLES final : public Context,
-                          public BackendCast<ContextGLES, Context> {
+                          public BackendCast<ContextGLES, Context>,
+                          public std::enable_shared_from_this<ContextGLES> {
  public:
   static std::shared_ptr<ContextGLES> Create(
       std::unique_ptr<ProcTableGLES> gl,
@@ -26,6 +27,9 @@ class ContextGLES final : public Context,
 
   // |Context|
   ~ContextGLES() override;
+
+  // |Context|
+  BackendType GetBackendType() const override;
 
   const ReactorGLES::Ref& GetReactor() const;
 
@@ -70,6 +74,9 @@ class ContextGLES final : public Context,
 
   // |Context|
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
+
+  // |Context|
+  void Shutdown() override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContextGLES);
 };

@@ -253,7 +253,11 @@ void FlutterWindowsView::OnUpdateSemanticsEnabled(bool enabled) {
 }
 
 gfx::NativeViewAccessible FlutterWindowsView::GetNativeViewAccessible() {
-  return engine_->GetNativeViewAccessible();
+  if (!accessibility_bridge_) {
+    return nullptr;
+  }
+
+  return accessibility_bridge_->GetChildOfAXFragmentRoot();
 }
 
 void FlutterWindowsView::OnCursorRectUpdated(const Rect& rect) {
@@ -639,7 +643,7 @@ void FlutterWindowsView::NotifyWinEventWrapper(ui::AXPlatformNodeWin* node,
 }
 
 ui::AXFragmentRootDelegateWin* FlutterWindowsView::GetAxFragmentRootDelegate() {
-  return engine_->accessibility_bridge().lock().get();
+  return accessibility_bridge_.get();
 }
 
 ui::AXPlatformNodeWin* FlutterWindowsView::AlertNode() const {
@@ -666,6 +670,12 @@ void FlutterWindowsView::UpdateSemanticsEnabled(bool enabled) {
 void FlutterWindowsView::OnDwmCompositionChanged() {
   if (engine_->surface_manager()) {
     engine_->surface_manager()->SetVSyncEnabled(binding_handler_->NeedsVSync());
+  }
+}
+
+void FlutterWindowsView::OnWindowStateEvent(HWND hwnd, WindowStateEvent event) {
+  if (engine_) {
+    engine_->OnWindowStateEvent(hwnd, event);
   }
 }
 
