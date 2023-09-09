@@ -14,11 +14,11 @@
 
 namespace impeller {
 
-class RecyclingCommandPoolVK {
+class BackgroundCommandPoolVK {
  public:
-  RecyclingCommandPoolVK(RecyclingCommandPoolVK&&) = default;
+  BackgroundCommandPoolVK(BackgroundCommandPoolVK&&) = default;
 
-  explicit RecyclingCommandPoolVK(
+  explicit BackgroundCommandPoolVK(
       vk::UniqueCommandPool&& pool,
       std::vector<vk::UniqueCommandBuffer>&& buffers,
       std::weak_ptr<CommandPoolRecyclerVK> recycler)
@@ -26,7 +26,7 @@ class RecyclingCommandPoolVK {
         buffers_(std::move(buffers)),
         recycler_(std::move(recycler)) {}
 
-  ~RecyclingCommandPoolVK() {
+  ~BackgroundCommandPoolVK() {
     auto const recycler = recycler_.lock();
     if (!recycler) {
       return;
@@ -35,7 +35,7 @@ class RecyclingCommandPoolVK {
   }
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(RecyclingCommandPoolVK);
+  FML_DISALLOW_COPY_AND_ASSIGN(BackgroundCommandPoolVK);
 
   vk::UniqueCommandPool pool_;
   std::vector<vk::UniqueCommandBuffer> buffers_;
@@ -51,10 +51,10 @@ CommandPoolResourceVK::~CommandPoolResourceVK() {
   if (!recycler) {
     return;
   }
-  UniqueResourceVKT<RecyclingCommandPoolVK> pool(
+  UniqueResourceVKT<BackgroundCommandPoolVK> pool(
       context->GetResourceManager(),
-      RecyclingCommandPoolVK(std::move(pool_), std::move(collected_buffers_),
-                             recycler));
+      BackgroundCommandPoolVK(std::move(pool_), std::move(collected_buffers_),
+                              recycler));
 }
 
 // TODO(matanlurey): Return a status_or<> instead of {} when we have one.
