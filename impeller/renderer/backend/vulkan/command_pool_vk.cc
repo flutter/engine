@@ -21,8 +21,11 @@ class BackgroundCommandPoolVK {
 
   explicit BackgroundCommandPoolVK(
       vk::UniqueCommandPool&& pool,
+      std::vector<vk::UniqueCommandBuffer>&& buffers,
       std::weak_ptr<CommandPoolRecyclerVK> recycler)
-      : pool_(std::move(pool)), recycler_(std::move(recycler)) {}
+      : pool_(std::move(pool)),
+        buffers_(std::move(buffers)),
+        recycler_(std::move(recycler)) {}
 
   ~BackgroundCommandPoolVK() {
     auto const recycler = recycler_.lock();
@@ -36,6 +39,11 @@ class BackgroundCommandPoolVK {
   FML_DISALLOW_COPY_AND_ASSIGN(BackgroundCommandPoolVK);
 
   vk::UniqueCommandPool pool_;
+
+  // These are retained otherwise it is a Vulkan thread-safety violation
+  // because the buffers and the originating pool do not belong to the same
+  // thread.
+  std::vector<vk::UniqueCommandBuffer> buffers_;
   std::weak_ptr<CommandPoolRecyclerVK> recycler_;
 };
 
@@ -50,7 +58,8 @@ CommandPoolVK::~CommandPoolVK() {
   }
   UniqueResourceVKT<BackgroundCommandPoolVK> pool(
       context->GetResourceManager(),
-      BackgroundCommandPoolVK(std::move(pool_), recycler));
+      BackgroundCommandPoolVK(std::move(pool_), std::move(collected_buffers_),
+                              recycler));
 }
 
 // TODO(matanlurey): Return a status_or<> instead of {} when we have one.
