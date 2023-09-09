@@ -141,14 +141,6 @@ static std::ostream& operator<<(std::ostream& os, const DlTransform* matrix) {
   return os << "no matrix";
 }
 
-static std::ostream& operator<<(std::ostream& os, const DlRSTransform& xform) {
-  return os << "DlRSTransform("
-            << "scos: " << xform.scaled_cos() << ", "
-            << "ssin: " << xform.scaled_sin() << ", "
-            << "tx: " << xform.translate_x() << ", "
-            << "ty: " << xform.translate_y() << ")";
-}
-
 std::ostream& operator<<(std::ostream& os, const DlCanvas::ClipOp& op) {
   switch (op) {
     case DlCanvas::ClipOp::kDifference: return os << "ClipOp::kDifference";

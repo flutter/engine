@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/display_list/geometry/dl_angle.h"
+#include "fml/logging.h"
 #include "gtest/gtest.h"
 
 namespace flutter {
@@ -72,23 +73,57 @@ TEST(DlAngleTest, CosSin) {
   }
 }
 
+TEST(DlAngleTest, Quadrants) {
+  auto test_quadrant = [](DlAngle angle, int quadrant) {
+    DlFVector expect_cos_sin;
+    switch (quadrant & 0x3) {
+      case 0:
+        EXPECT_TRUE(angle.IsFullCircle()) << angle << ", " << quadrant;
+        expect_cos_sin = DlFVector(1.0f, 0.0f);
+        break;
+
+      case 1:
+        EXPECT_FALSE(angle.IsFullCircle()) << angle << ", " << quadrant;
+        expect_cos_sin = DlFVector(0.0f, 1.0f);
+        break;
+
+      case 2:
+        EXPECT_FALSE(angle.IsFullCircle()) << angle << ", " << quadrant;
+        expect_cos_sin = DlFVector(-1.0f, 0.0f);
+        break;
+
+      case 3:
+        EXPECT_FALSE(angle.IsFullCircle()) << angle << ", " << quadrant;
+        expect_cos_sin = DlFVector(0.0f, -1.0f);
+        break;
+
+      default:
+        FML_DCHECK((quadrant & 3) >= 0 && (quadrant & 3) < 4);
+    }
+    EXPECT_EQ(angle.CosSin(), expect_cos_sin) << angle << ", " << quadrant;
+  };
+
+  // After about 150 full loops the math starts becoming imprecise enough
+  // to affect the tests and the trig values.
+  for (int quadrant = -600; quadrant <= 600; quadrant++) {
+    test_quadrant(DlAngle::Degrees(quadrant * 90), quadrant);
+    test_quadrant(DlAngle::Radians(quadrant * kDlScalar_Pi * 0.5f), quadrant);
+  }
+}
+
 TEST(DlAngleTest, FullCircle) {
-  for (int i = -360 * 100; i <= 360 * 100; i += 360) {
-    DlScalar radians = i * kDlScalar_Pi / 180.0f;
-    {
-      DlAngle angle = DlAngle::Degrees(i);
-      EXPECT_TRUE(angle.IsFullCircle());
-      DlFVector cos_sin = angle.CosSin();
-      EXPECT_EQ(cos_sin.x(), 1.0f);
-      EXPECT_EQ(cos_sin.y(), 0.0f);
-    }
-    {
-      DlAngle angle = DlAngle::Radians(radians);
-      EXPECT_TRUE(angle.IsFullCircle());
-      DlFVector cos_sin = angle.CosSin();
-      EXPECT_EQ(cos_sin.x(), 1.0f);
-      EXPECT_EQ(cos_sin.y(), 0.0f);
-    }
+  auto test_full_circle = [](DlAngle angle) {
+    EXPECT_TRUE(angle.IsFullCircle()) << angle;
+    DlFVector cos_sin = angle.CosSin();
+    EXPECT_EQ(cos_sin.x(), 1.0f) << angle;
+    EXPECT_EQ(cos_sin.y(), 0.0f) << angle;
+  };
+
+  // After about 150 full loops the math starts becoming imprecise enough
+  // to affect the tests and the trig values.
+  for (int loops = -150; loops <= 150; loops++) {
+    test_full_circle(DlAngle::Degrees(loops * 360));
+    test_full_circle(DlAngle::Radians(loops * kDlScalar_Pi * 2.0f));
   }
 }
 

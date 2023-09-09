@@ -102,28 +102,28 @@ TEST(DlHomogenousTest, NaNInfinityCoordinates) {
     DlScalar z = (mask & (1 << 2)) ? non_finite : hpt.z();
     DlScalar w = (mask & (1 << 3)) ? non_finite : hpt.w();
 
-    DlFHomogenous3D hpt_nan = DlFHomogenous3D(x, y, z, w);
+    DlFHomogenous3D hpt_nonf = DlFHomogenous3D(x, y, z, w);
     if (mask == 0) {
-      ASSERT_TRUE(hpt_nan.IsFinite()) << label;
-      ASSERT_EQ(hpt, hpt_nan) << label;
+      ASSERT_TRUE(hpt_nonf.IsFinite()) << label;
+      ASSERT_EQ(hpt, hpt_nonf) << label;
     } else {
-      ASSERT_FALSE(hpt_nan.IsFinite()) << label;
+      ASSERT_FALSE(hpt_nonf.IsFinite()) << label;
     }
 
-    DlFHomogenous3D hpt_nan_norm = hpt_nan.Normalize();
-    DlFPoint hpt_nan_pt = hpt_nan.NormalizeToPoint();
-    // Whether or not hpt_nan has a NaN value in it, the normalized
+    DlFHomogenous3D hpt_nonf_norm = hpt_nonf.Normalize();
+    DlFPoint hpt_nonf_pt = hpt_nonf.NormalizeToPoint();
+    // Whether or not hpt_nan has a non-finite value in it, the normalized
     // results will be finite.
-    ASSERT_TRUE(hpt_nan_norm.IsFinite()) << label;
-    ASSERT_TRUE(hpt_nan_pt.IsFinite()) << label;
-    ASSERT_EQ(hpt_nan_norm.w(), 1.0f) << label;
+    ASSERT_TRUE(hpt_nonf_norm.IsFinite()) << label;
+    ASSERT_TRUE(hpt_nonf_pt.IsFinite()) << label;
+    ASSERT_EQ(hpt_nonf_norm.w(), 1.0f) << label;
     if (mask == 0) {
-      ASSERT_EQ(hpt_nan_norm, DlFHomogenous3D(0.25f, 0.5f, 0.75f, 1.0f))
+      ASSERT_EQ(hpt_nonf_norm, DlFHomogenous3D(0.25f, 0.5f, 0.75f, 1.0f))
           << label;
-      ASSERT_EQ(hpt_nan_pt, DlFPoint(0.25f, 0.5f)) << label;
+      ASSERT_EQ(hpt_nonf_pt, DlFPoint(0.25f, 0.5f)) << label;
     } else {
-      ASSERT_EQ(hpt_nan_norm, DlFHomogenous3D()) << label;
-      ASSERT_EQ(hpt_nan_pt, DlFPoint()) << label;
+      ASSERT_EQ(hpt_nonf_norm, DlFHomogenous3D()) << label;
+      ASSERT_EQ(hpt_nonf_pt, DlFPoint()) << label;
     }
   };
 

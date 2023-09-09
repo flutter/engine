@@ -30,4 +30,12 @@ DlAngle DlRSTransform::ExtractAngle() const {
   return DlAngle::Radians(atan2f(cos_sin.y(), cos_sin.x()));
 }
 
+std::ostream& operator<<(std::ostream& os, const DlRSTransform& rst) {
+  return os << "DlRSTransform("             //
+            << rst.ExtractAngle() << " * "  //
+            << rst.ExtractScale() << " @ "  //
+            << rst.translate_x() << ", "    //
+            << rst.translate_y() << ")";
+}
+
 }  // namespace flutter

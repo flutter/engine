@@ -45,6 +45,7 @@
 ../../../flutter/display_list/geometry/dl_rect_unittests.cc
 ../../../flutter/display_list/geometry/dl_region_unittests.cc
 ../../../flutter/display_list/geometry/dl_round_rect_unittests.cc
+../../../flutter/display_list/geometry/dl_rstransform_unittests.cc
 ../../../flutter/display_list/geometry/dl_rtree_unittests.cc
 ../../../flutter/display_list/geometry/dl_transform_unittests.cc
 ../../../flutter/display_list/skia/dl_sk_conversions_unittests.cc

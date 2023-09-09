@@ -166,6 +166,7 @@ if (enable_unittests) {
       "geometry/dl_rect_unittests.cc",
       "geometry/dl_region_unittests.cc",
       "geometry/dl_round_rect_unittests.cc",
+      "geometry/dl_rstransform_unittests.cc",
       "geometry/dl_rtree_unittests.cc",
       "geometry/dl_transform_unittests.cc",
     ]

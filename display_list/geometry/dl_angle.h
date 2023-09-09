@@ -30,17 +30,22 @@ namespace flutter {
 ///
 /// NaN and Infinity handling
 ///
-/// The |CosSin| method will return the vector {1, 0} as if the angle was
-/// 0 degrees/radians if the value being stored is a NaN or +/-Infinity.
+/// The factories will map all NaN and Infinity values to 0.0.
 class DlAngle {
  public:
   constexpr DlAngle() : radians_(0.0f) {}
+  constexpr DlAngle(const DlAngle& angle) = default;
+  constexpr DlAngle(DlAngle&& angle) = default;
+
   static constexpr DlAngle Radians(DlScalar radians = 0.0f) {
     return DlAngle(radians);
   }
   static constexpr DlAngle Degrees(DlScalar degrees = 0.0f) {
     return DlAngle(degrees * kDlScalar_Pi / 180.0f);
   }
+
+  constexpr DlAngle& operator=(const DlAngle& angle) = default;
+  constexpr DlAngle& operator=(DlAngle&& angle) = default;
 
   /// Returns the angle measured in radians, converting if needed.
   constexpr DlScalar radians() const { return radians_; }
@@ -61,12 +66,19 @@ class DlAngle {
     return !(fabs(r) > kDlScalar_NearlyZero);
   }
 
-  constexpr DlAngle operator+(DlAngle other) {
-    return DlAngle(this->radians_ + other.radians_);
+  constexpr bool operator==(const DlAngle& angle) const {
+    return this->radians_ == angle.radians_;
+  }
+  constexpr bool operator!=(const DlAngle& angle) const {
+    return !(*this == angle);
   }
 
-  constexpr DlAngle operator-(DlAngle other) {
-    return DlAngle(this->radians_ - other.radians_);
+  constexpr DlAngle operator+(DlAngle angle) {
+    return DlAngle(this->radians_ + angle.radians_);
+  }
+
+  constexpr DlAngle operator-(DlAngle angle) {
+    return DlAngle(this->radians_ - angle.radians_);
   }
 
   constexpr DlAngle operator*(DlScalar s) {
@@ -77,15 +89,15 @@ class DlAngle {
     return DlAngle(this->radians_ / s);
   }
 
+  constexpr bool operator==(DlAngle angle) {
+    return this->radians_ == angle.radians_;
+  }
+
  private:
   constexpr explicit DlAngle(DlScalar radians)
       : radians_(DlScalar_IsFinite(radians) ? radians : 0.0f) {}
 
-  const DlScalar radians_;
-
-  friend DlAngle operator*(DlAngle a, DlScalar s);
-  friend DlAngle operator*(DlScalar s, DlAngle a);
-  friend DlAngle operator/(DlAngle a, DlScalar s);
+  DlScalar radians_;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const DlAngle& angle) {
