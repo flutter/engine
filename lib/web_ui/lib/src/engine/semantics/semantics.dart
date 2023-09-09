@@ -353,7 +353,7 @@ enum PrimaryRole {
   /// A control that has a checked state, such as a check box or a radio button.
   checkable,
 
-  /// Adds the "heading" ARIA role to the node. The attribute "aria-level" is 
+  /// Adds the "heading" ARIA role to the node. The attribute "aria-level" is
   /// also assigned.
   heading,
 
@@ -1498,7 +1498,7 @@ class SemanticsObject {
     if (isPlatformView) {
       return PrimaryRole.platformView;
     } else if (isHeading) {
-      return PrimaryRole.heading;  
+      return PrimaryRole.heading;
     } else if (isTextField) {
       return PrimaryRole.textField;
     } else if (isIncrementable) {

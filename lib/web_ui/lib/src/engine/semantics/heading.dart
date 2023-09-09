@@ -7,7 +7,7 @@ import 'package:ui/ui.dart' as ui;
 import '../dom.dart';
 import 'semantics.dart';
 
-/// Renders semantics objects as headings with the corresponding 
+/// Renders semantics objects as headings with the corresponding
 /// level (h1 ... h6).
 class Heading extends PrimaryRoleManager {
   Heading(SemanticsObject semanticsObject)
@@ -22,5 +22,4 @@ class Heading extends PrimaryRoleManager {
         semanticsObject.element.setAttribute('aria-level', semanticsObject.headingLevel);
       }
   }
-
 }
