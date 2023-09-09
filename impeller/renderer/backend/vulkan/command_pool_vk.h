@@ -5,154 +5,129 @@
 #pragma once
 
 #include <memory>
-#include <thread>
+#include <optional>
 #include <utility>
-#include <vector>
-
-#include "flutter/fml/macros.h"
-#include "flutter/fml/trace_event.h"
+#include "fml/macros.h"
 #include "impeller/base/thread.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
-#include "impeller/renderer/backend/vulkan/device_holder.h"
+#include "impeller/renderer/backend/vulkan/vk.h"  // IWYU pragma: keep.
 
 namespace impeller {
 
-class CommandPoolVK;
-
-class ManagedCommandPoolVK {
- public:
-  ManagedCommandPoolVK(vk::UniqueCommandPool pool,
-                       std::weak_ptr<const ContextVK> context)
-      : pool_(std::move(pool)), context_(std::move(context)) {}
-
-  ManagedCommandPoolVK(ManagedCommandPoolVK&&) = default;
-
-  ~ManagedCommandPoolVK() {
-    TRACE_EVENT0("flutter", "ResetCommandPool");
-    auto strong_context = context_.lock();
-    if (!strong_context) {
-      return;
-    }
-    auto device = strong_context->GetDevice();
-    device.resetCommandPool(pool_.get());
-    strong_context->RecycleCommandPool(std::move(pool_));
-  }
-
- private:
-  friend class CommandPoolVK;
-
-  vk::UniqueCommandPool pool_;
-  std::weak_ptr<const ContextVK> context_;
-
-  FML_DISALLOW_COPY_AND_ASSIGN(ManagedCommandPoolVK);
-};
+class ContextVK;
+class CommandPoolRecyclerVK;
 
 //------------------------------------------------------------------------------
-/// @brief      An opaque object that provides |vk::CommandBuffer| objects.
+/// @brief      Manages the lifecycle of a single |vk::CommandPool|.
 ///
-/// A best practice is to create a |CommandPoolVK| for each thread that will
-/// submit commands to the GPU, and to recycle (reuse) |vk::CommandBuffer|s by
-/// resetting them in a background thread.
+/// A |vk::CommandPool| is expensive to create and reset. This class manages
+/// the lifecycle of a single |vk::CommandPool| by returning to the origin
+/// (|CommandPoolRecyclerVK|) when it is destroyed to be reused.
 ///
-/// @see
-/// https://arm-software.github.io/vulkan_best_practice_for_mobile_developers/samples/performance/command_buffer_usage/command_buffer_usage_tutorial.html#resetting-the-command-pool
-class CommandPoolVK final {
+/// @warning    This class is not thread-safe.
+///
+/// @see        |CommandPoolRecyclerVK|
+class CommandPoolResourceVK final {
  public:
-  /// @brief      Gets the |CommandPoolVK| for the current thread.
-  ///
-  /// @param[in]  context  The |ContextVK| to use.
-  ///
-  /// If the current thread does not have a |CommandPoolVK|, one will be created
-  /// and returned. If the current thread already has a |CommandPoolVK|, it will
-  /// be returned.
-  ///
-  /// @return     The |CommandPoolVK| for the current thread, or |nullptr| if
-  ///             either the |ContextVK| is invalid, or a pool could not be
-  ///             created for any reason.
-  ///
-  ///             In other words an invalid command pool will never be returned.
-  static std::shared_ptr<CommandPoolVK> GetThreadLocal(
-      const ContextVK* context);
+  CommandPoolResourceVK(CommandPoolResourceVK&&) = default;
+  ~CommandPoolResourceVK();
 
-  static std::shared_ptr<CommandPoolVK> FromContext(const ContextVK* context);
-
-  /// @brief      Clears all |CommandPoolVK|s for the given |ContextVK|.
+  /// @brief      Creates a resource that manages the life of a command pool.
   ///
-  /// @param[in]  context  The |ContextVK| to clear.
-  ///
-  /// Every |CommandPoolVK| that was created for every thread that has ever
-  /// called |GetThreadLocal| with the given |ContextVK| will be cleared.
-  ///
-  /// @note       Should only be called when the |ContextVK| is being destroyed.
-  static void ClearAllPools(const ContextVK* context);
+  /// @param[in]  pool      The command pool to manage.
+  /// @param[in]  recycler  The context that will be notified on destruction.
+  explicit CommandPoolResourceVK(vk::UniqueCommandPool pool,
+                                 std::weak_ptr<ContextVK>& context)
+      : pool_(std::move(pool)), context_(context) {}
 
-  /// @brief      Releases all command pools.
-  static void ReleaseAllPools(const ContextVK* context);
-
-  CommandPoolVK(CommandPoolVK&&) = default;
-  ~CommandPoolVK();
-
-  /// @brief      Whether or not this |CommandPoolVK| is valid.
-  ///
-  /// A command pool is no longer when valid once it's been |Reset|.
-  bool IsValid() const;
+  /// @brief      Returns a reference to the underlying |vk::CommandPool|.
+  const vk::CommandPool& Get() const { return *pool_; }
 
   /// @brief      Creates and returns a new |vk::CommandBuffer|.
-  ///
-  /// An attempt is made to reuse existing buffers (instead of creating new
-  /// ones) by recycling buffers that have been collected by
-  /// |CollectGraphicsCommandBuffer|.
   ///
   /// @return     Always returns a new |vk::CommandBuffer|, but if for any
   ///             reason a valid command buffer could not be created, it will be
   ///             a `{}` default instance (i.e. while being torn down).
-  vk::UniqueCommandBuffer CreateGraphicsCommandBuffer();
+  vk::UniqueCommandBuffer CreateBuffer();
 
-  /// @brief      Collects the given |vk::CommandBuffer| for recycling.
-  ///
-  /// The given |vk::CommandBuffer| will be recycled (reused) in the future when
-  /// |CreateGraphicsCommandBuffer| is called.
+  /// @brief      Collects the given |vk::CommandBuffer| to be retained.
   ///
   /// @param[in]  buffer  The |vk::CommandBuffer| to collect.
   ///
-  /// @note       This method is a noop if a different thread created the pool.
-  ///
   /// @see        |GarbageCollectBuffersIfAble|
-  void CollectGraphicsCommandBuffer(vk::UniqueCommandBuffer buffer);
+  void CollectBuffer(vk::UniqueCommandBuffer&& buffer);
 
  private:
-  friend class ContextVK;
+  FML_DISALLOW_COPY_AND_ASSIGN(CommandPoolResourceVK);
 
-  const std::thread::id owner_id_;
-  std::weak_ptr<const ContextVK> context_;
-  ManagedCommandPoolVK graphics_pool_;
-  size_t buffer_count_ = 0;
-  // Mutex buffers_to_collect_mutex_;
-  // std::vector<vk::UniqueCommandBuffer> buffers_to_collect_
-  //     IPLR_GUARDED_BY(buffers_to_collect_mutex_);
-  std::vector<vk::UniqueCommandBuffer> recycled_buffers_;
-  bool is_valid_ = false;
+  vk::UniqueCommandPool pool_;
+  std::weak_ptr<ContextVK>& context_;
 
-  /// @brief      Resets, releasing all |vk::CommandBuffer|s.
+  // Used to retain a reference on these until the pool is reset.
+  std::vector<vk::UniqueCommandBuffer> collected_buffers_;
+};
+
+//------------------------------------------------------------------------------
+/// @brief      Creates and manages the lifecycle of |vk::CommandPool| objects.
+///
+/// A |vk::CommandPool| is expensive to create and reset. This class manages
+/// the lifecycle of |vk::CommandPool| objects by creating and recycling them;
+/// or in other words, a pool for command pools.
+///
+/// A single instance should be created per |ContextVK|.
+///
+/// Every "frame", a single |CommandPoolResourceVk| is made available for each
+/// thread that calls |Get|. After calling |Recycle|, the current thread's pool
+/// is moved to a background thread, reset, and made available for the next time
+/// |Get| is called and needs to create a command pool.
+///
+/// @note       This class is thread-safe.
+///
+/// @see        |vk::CommandPoolResourceVk|
+/// @see        |ContextVK|
+/// @see
+/// https://arm-software.github.io/vulkan_best_practice_for_mobile_developers/samples/performance/command_buffer_usage/command_buffer_usage_tutorial.html
+class CommandPoolRecyclerVK final
+    : public std::enable_shared_from_this<CommandPoolRecyclerVK> {
+ public:
+  ~CommandPoolRecyclerVK();
+
+  /// @brief      Creates a recycler for the given |ContextVK|.
   ///
-  /// @note       "All" includes active and recycled buffers.
-  void Reset();
+  /// @param[in]  context The context to create the recycler for.
+  explicit CommandPoolRecyclerVK(std::weak_ptr<ContextVK> context)
+      : context_(std::move(context)) {}
 
-  explicit CommandPoolVK(std::thread::id thread_id,
-                         std::weak_ptr<const ContextVK> context,
-                         ManagedCommandPoolVK graphics_pool);
-
-  /// @brief      Collects buffers for recycling if able.
+  /// @brief      Gets a command pool for the current thread.
   ///
-  /// If any buffers have been returned through |CollectGraphicsCommandBuffer|,
-  /// then they are reset and made available to future calls to
-  /// |CreateGraphicsCommandBuffer|.
-  ///
-  /// @note       This method is a noop if a different thread created the pool.
-  // void GarbageCollectBuffersIfAble()
-  // IPLR_REQUIRES(buffers_to_collect_mutex_);
+  /// @warning    Returns a |nullptr| if a pool could not be created.
+  std::shared_ptr<CommandPoolResourceVK> Get();
 
-  FML_DISALLOW_COPY_AND_ASSIGN(CommandPoolVK);
+  /// @brief      Returns a command pool to be reset on a background thread.
+  ///
+  /// @param[in]  pool The pool to recycle.
+  void Reclaim(vk::UniqueCommandPool&& pool);
+
+  /// @brief      Clears all recycled command pools to let them be reclaimed.
+  void Recycle();
+
+ private:
+  FML_DISALLOW_COPY_AND_ASSIGN(CommandPoolRecyclerVK);
+
+  /// @brief      Creates a new |vk::CommandPool|.
+  ///
+  /// @returns    Returns a |std::nullopt| if a pool could not be created.
+  std::optional<vk::UniqueCommandPool> Create();
+
+  /// @brief      Reuses a recycled |vk::CommandPool|, if available.
+  ///
+  /// @returns    Returns a |std::nullopt| if a pool was not available.
+  std::optional<vk::UniqueCommandPool> Reuse();
+
+  std::weak_ptr<ContextVK> context_;
+
+  Mutex recycled_mutex_;
+  std::vector<vk::UniqueCommandPool> recycled_ IPLR_GUARDED_BY(recycled_mutex_);
 };
 
 }  // namespace impeller

@@ -3,202 +3,173 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
-
-#include <map>
+#include <memory>
 #include <optional>
-#include <unordered_map>
-#include <vector>
-
-#include "flutter/fml/thread_local.h"
-#include "impeller/base/thread.h"
-#include "impeller/renderer/backend/vulkan/context_vk.h"
+#include <utility>
+#include "fml/macros.h"
+#include "fml/thread_local.h"
+#include "fml/trace_event.h"
 #include "impeller/renderer/backend/vulkan/resource_manager_vk.h"
+#include "vulkan/vulkan_structs.hpp"
 
 namespace impeller {
 
-using CommandPoolMap = std::map<uint64_t, std::shared_ptr<CommandPoolVK>>;
-// NOTE: How TF do we reset multiple threads?
-FML_THREAD_LOCAL fml::ThreadLocalUniquePtr<CommandPoolMap> tls_command_pool;
+class RecyclingCommandPoolVK {
+ public:
+  RecyclingCommandPoolVK(RecyclingCommandPoolVK&&) = default;
 
-// static Mutex g_all_pools_mutex;
-// static std::unordered_map<const ContextVK*,
-//                           std::vector<std::weak_ptr<CommandPoolVK>>>
-//     g_all_pools IPLR_GUARDED_BY(g_all_pools_mutex);
+  explicit RecyclingCommandPoolVK(
+      vk::UniqueCommandPool&& pool,
+      std::vector<vk::UniqueCommandBuffer>&& buffers,
+      std::weak_ptr<CommandPoolRecyclerVK> recycler)
+      : pool_(std::move(pool)),
+        buffers_(std::move(buffers)),
+        recycler_(std::move(recycler)) {}
 
-void CommandPoolVK::ReleaseAllPools(const ContextVK* context) {
-  if (tls_command_pool.get() == nullptr) {
+  ~RecyclingCommandPoolVK() {
+    auto const recycler = recycler_.lock();
+    if (!recycler) {
+      return;
+    }
+    recycler->Reclaim(std::move(pool_));
+  }
+
+ private:
+  FML_DISALLOW_COPY_AND_ASSIGN(RecyclingCommandPoolVK);
+
+  vk::UniqueCommandPool pool_;
+  std::vector<vk::UniqueCommandBuffer> buffers_;
+  std::weak_ptr<CommandPoolRecyclerVK> recycler_;
+};
+
+CommandPoolResourceVK::~CommandPoolResourceVK() {
+  auto const context = context_.lock();
+  if (!context) {
     return;
   }
-  CommandPoolMap& pool_map = *tls_command_pool.get();
-  pool_map.clear();
+  auto const recycler = context->GetCommandPoolRecycler();
+  if (!recycler) {
+    return;
+  }
+  UniqueResourceVKT<RecyclingCommandPoolVK> pool(
+      context->GetResourceManager(),
+      RecyclingCommandPoolVK(std::move(pool_), std::move(collected_buffers_),
+                             recycler));
 }
 
-std::shared_ptr<CommandPoolVK> CommandPoolVK::GetThreadLocal(
-    const ContextVK* context) {
+// TODO(matanlurey): Return a status_or<> instead of {} when we have one.
+vk::UniqueCommandBuffer CommandPoolResourceVK::CreateBuffer() {
+  auto const context = context_.lock();
   if (!context) {
-    return nullptr;
+    return {};
   }
-  if (tls_command_pool.get() == nullptr) {
-    tls_command_pool.reset(new CommandPoolMap());
+
+  auto const device = context->GetDevice();
+  vk::CommandBufferAllocateInfo info;
+  info.setCommandPool(pool_.get());
+  info.setCommandBufferCount(1u);
+  info.setLevel(vk::CommandBufferLevel::ePrimary);
+  auto [result, buffers] = device.allocateCommandBuffersUnique(info);
+  if (result != vk::Result::eSuccess) {
+    return {};
   }
-  CommandPoolMap& pool_map = *tls_command_pool.get();
-  auto found = pool_map.find(context->GetHash());
-  if (found != pool_map.end() && found->second->IsValid()) {
-    return found->second;
-  }
-  auto pool = CommandPoolVK::FromContext(context);
-  if (!pool || !pool->IsValid()) {
-    return nullptr;
-  }
-  pool_map[context->GetHash()] = pool;
-  // {
-  //   Lock pool_lock(g_all_pools_mutex);
-  //   g_all_pools[context].push_back(pool);
-  // }
-  return pool;
+
+  return std::move(buffers[0]);
 }
 
-void CommandPoolVK::ClearAllPools(const ContextVK* context) {
-  // if (tls_command_pool.get()) {
-  //   tls_command_pool.get()->erase(context->GetHash());
-  // }
-  // Lock pool_lock(g_all_pools_mutex);
-  // if (auto found = g_all_pools.find(context); found != g_all_pools.end()) {
-  //   for (auto& weak_pool : found->second) {
-  //     auto pool = weak_pool.lock();
-  //     if (!pool) {
-  //       // The pool has already died because the thread died.
-  //       continue;
-  //     }
-  //     // The pool is reset but its reference in the TLS map remains till the
-  //     // thread dies.
-  //     pool->Reset();
-  //   }
-  //   g_all_pools.erase(found);
-  // }
+void CommandPoolResourceVK::CollectBuffer(vk::UniqueCommandBuffer&& buffer) {
+  collected_buffers_.push_back(std::move(buffer));
 }
 
-std::shared_ptr<CommandPoolVK> CommandPoolVK::FromContext(
-    const ContextVK* context) {
-  auto pool = context->GetCommandPool();
+// Associates a resource with a thread and context.
+using CommandPoolMap =
+    std::unordered_map<uint64_t, std::shared_ptr<CommandPoolResourceVK>>;
+FML_THREAD_LOCAL fml::ThreadLocalUniquePtr<CommandPoolMap> resources_;
+
+// TODO(matanlurey): Return a status_or<> instead of nullptr when we have one.
+std::shared_ptr<CommandPoolResourceVK> CommandPoolRecyclerVK::Get() {
+  auto const strong_context = context_.lock();
+  if (!strong_context) {
+    return nullptr;
+  }
+
+  // If there is a resource in used for this thread and context, return it.
+  auto resources = resources_.get();
+  if (!resources) {
+    resources = new CommandPoolMap();
+    resources_.reset(resources);
+  }
+  auto map = *resources;
+  auto const hash = strong_context->GetHash();
+  auto const it = map.find(hash);
+  if (it != map.end()) {
+    return it->second;
+  }
+
+  // Otherwise, create a new resource and return it.
+  auto pool = Create();
   if (!pool) {
     return nullptr;
   }
 
-  return std::make_shared<CommandPoolVK>(CommandPoolVK(
-      std::this_thread::get_id(), context->weak_from_this(), std::move(*pool)));
+  auto const resource =
+      std::make_shared<CommandPoolResourceVK>(std::move(*pool), context_);
+  map[hash] = resource;
+  return resource;
 }
 
-CommandPoolVK::CommandPoolVK(std::thread::id thread_id,
-                             std::weak_ptr<const ContextVK> context,
-                             ManagedCommandPoolVK graphics_pool)
-    : owner_id_(thread_id),
-      context_(std::move(context)),
-      graphics_pool_(std::move(graphics_pool)) {
-  // FIXME: Not always true.
-  is_valid_ = true;
+// TODO(matanlurey): Return a status_or<> instead of nullopt when we have one.
+std::optional<vk::UniqueCommandPool> CommandPoolRecyclerVK::Create() {
+  // If we can reuse a command pool, do so.
+  if (auto pool = Reuse()) {
+    return pool;
+  }
+
+  // Otherwise, create a new one.
+  return std::nullopt;
 }
 
-struct JustFuckingCompile {
-  ManagedCommandPoolVK pool;
-  std::vector<vk::UniqueCommandBuffer> buffers;
-};
+std::optional<vk::UniqueCommandPool> CommandPoolRecyclerVK::Reuse() {
+  // If there are no recycled pools, return nullopt.
+  Lock _(recycled_mutex_);
+  if (recycled_.empty()) {
+    return std::nullopt;
+  }
 
-CommandPoolVK::~CommandPoolVK() {
+  // Otherwise, remove and return a recycled pool.
+  auto pool = std::move(recycled_.back());
+  recycled_.pop_back();
+  return std::move(pool);
+}
+
+void CommandPoolRecyclerVK::Reclaim(vk::UniqueCommandPool&& pool) {
+  TRACE_EVENT0("impeller", "ReclaimCommandPool");
+  // FIXME: Assert that this is called on a background thread.
+
+  // Reset the pool on a background thread.
   auto strong_context = context_.lock();
   if (!strong_context) {
     return;
   }
-  auto pool = std::move(graphics_pool_);
-  UniqueResourceVKT<JustFuckingCompile>(
-      strong_context->GetResourceManager(),
-      JustFuckingCompile{.pool = std::move(pool),
-                         .buffers = std::move(recycled_buffers_)});
+  auto device = strong_context->GetDevice();
+  device.resetCommandPool(pool.get());
+
+  // Move the pool to the recycled list.
+  Lock _(recycled_mutex_);
+  recycled_.push_back(std::move(pool));
 }
 
-bool CommandPoolVK::IsValid() const {
-  return is_valid_;
+CommandPoolRecyclerVK::~CommandPoolRecyclerVK() {
+  // Ensure all recycled pools are reclaimed before this is destroyed.
+  Recycle();
 }
 
-void CommandPoolVK::Reset() {
-  // {
-  //   Lock lock(buffers_to_collect_mutex_);
-  //   graphics_pool_.reset();
-
-  //   // When the command pool is destroyed, all of its command buffers are
-  //   freed.
-  //   // Handles allocated from that pool are now invalid and must be
-  //   discarded. for (vk::UniqueCommandBuffer& buffer : buffers_to_collect_)
-  //   {
-  //     buffer.release();
-  //   }
-  //   buffers_to_collect_.clear();
-  // }
-
-  // for (vk::UniqueCommandBuffer& buffer : recycled_buffers_) {
-  //   buffer.release();
-  // }
-  // recycled_buffers_.clear();
-
-  // is_valid_ = false;
-}
-
-vk::UniqueCommandBuffer CommandPoolVK::CreateGraphicsCommandBuffer() {
-  auto strong_context = context_.lock();
-  if (!strong_context) {
-    return {};
+void CommandPoolRecyclerVK::Recycle() {
+  auto const resources = resources_.get();
+  if (!resources) {
+    return;
   }
-  FML_DCHECK(std::this_thread::get_id() == owner_id_);
-  // {
-  //   Lock lock(buffers_to_collect_mutex_);
-  //   GarbageCollectBuffersIfAble();
-  // }
-
-  // if (!recycled_buffers_.empty()) {
-  //   vk::UniqueCommandBuffer result = std::move(recycled_buffers_.back());
-  //   recycled_buffers_.pop_back();
-  //   return result;
-  // }
-
-  vk::CommandBufferAllocateInfo alloc_info;
-  alloc_info.commandPool = graphics_pool_.pool_.get();
-  alloc_info.commandBufferCount = 1u;
-  alloc_info.level = vk::CommandBufferLevel::ePrimary;
-  auto [result, buffers] =
-      strong_context->GetDevice().allocateCommandBuffersUnique(alloc_info);
-  if (result != vk::Result::eSuccess) {
-    return {};
-  }
-  buffer_count_++;
-  return std::move(buffers[0]);
+  resources->clear();
 }
-
-void CommandPoolVK::CollectGraphicsCommandBuffer(
-    vk::UniqueCommandBuffer buffer) {
-  buffer_count_--;
-  recycled_buffers_.push_back(std::move(buffer));
-  // Lock lock(buffers_to_collect_mutex_);
-  // if (!graphics_pool_) {
-  //   // If the command pool has already been destroyed, then its command
-  //   buffers
-  //   // have been freed and are now invalid.
-  //   buffer.release();
-  // }
-  // buffers_to_collect_.emplace_back(std::move(buffer));
-  // GarbageCollectBuffersIfAble();
-}
-
-// void CommandPoolVK::GarbageCollectBuffersIfAble() {
-//   // if (std::this_thread::get_id() != owner_id_) {
-//   //   return;
-//   // }
-
-//   // for (auto& buffer : buffers_to_collect_) {
-//   //   buffer->reset();
-//   //   recycled_buffers_.emplace_back(std::move(buffer));
-//   // }
-
-//   // buffers_to_collect_.clear();
-// }
 
 }  // namespace impeller

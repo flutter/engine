@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/vulkan/context_vk.h"
-#include "fml/macros.h"
 
 #ifdef FML_OS_ANDROID
 #include <pthread.h>
@@ -14,11 +13,9 @@
 #include <map>
 #include <memory>
 #include <optional>
-#include <set>
 #include <string>
 #include <vector>
 
-#include "flutter/fml/build_config.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/allocator_vk.h"
@@ -115,7 +112,9 @@ ContextVK::~ContextVK() {
   if (device_holder_ && device_holder_->device) {
     [[maybe_unused]] auto result = device_holder_->device->waitIdle();
   }
-  CommandPoolVK::ClearAllPools(this);
+  if (command_pool_recycler_) {
+    command_pool_recycler_.get()->Recycle();
+  }
 }
 
 Context::BackendType ContextVK::GetBackendType() const {
@@ -386,11 +385,18 @@ void ContextVK::Setup(Settings settings) {
   }
 
   //----------------------------------------------------------------------------
-  /// Create the resource manager.
+  /// Create the resource manager and command pool recycler.
   ///
   auto resource_manager = ResourceManagerVK::Create();
   if (!resource_manager) {
     VALIDATION_LOG << "Could not create resource manager.";
+    return;
+  }
+
+  auto command_pool_recycler =
+      std::make_shared<CommandPoolRecyclerVK>(weak_from_this());
+  if (!command_pool_recycler) {
+    VALIDATION_LOG << "Could not create command pool recycler.";
     return;
   }
 
@@ -424,6 +430,7 @@ void ContextVK::Setup(Settings settings) {
   device_capabilities_ = std::move(caps);
   fence_waiter_ = std::move(fence_waiter);
   resource_manager_ = std::move(resource_manager);
+  command_pool_recycler_ = std::move(command_pool_recycler);
   device_name_ = std::string(physical_device_properties.deviceName);
   is_valid_ = true;
 
@@ -511,6 +518,11 @@ std::shared_ptr<ResourceManagerVK> ContextVK::GetResourceManager() const {
   return resource_manager_;
 }
 
+std::shared_ptr<CommandPoolRecyclerVK> ContextVK::GetCommandPoolRecycler()
+    const {
+  return command_pool_recycler_;
+}
+
 std::unique_ptr<CommandEncoderFactoryVK>
 ContextVK::CreateGraphicsCommandEncoderFactory() const {
   return std::make_unique<CommandEncoderFactoryVK>(weak_from_this());
@@ -528,35 +540,6 @@ std::optional<vk::UniqueCommandPool> ContextVK::CreateCommandPool() const {
   }
 
   return std::move(pool.value);
-}
-
-void ContextVK::RecycleCommandPool(vk::UniqueCommandPool pool) const {
-  Lock lock(recycled_command_pools_mutex_);
-  recycled_command_pools_.push_back(std::move(pool));
-}
-
-std::optional<vk::UniqueCommandPool> ContextVK::ReuseCommandPool() const {
-  Lock lock(recycled_command_pools_mutex_);
-  if (recycled_command_pools_.empty()) {
-    return std::nullopt;
-  }
-  auto pool = std::move(recycled_command_pools_.back());
-  recycled_command_pools_.pop_back();
-  return std::move(pool);
-}
-
-std::optional<ManagedCommandPoolVK> ContextVK::GetCommandPool() const {
-  // First try reusing, then try creating.
-  if (auto reuse_pool = ReuseCommandPool()) {
-    return ManagedCommandPoolVK(std::move(reuse_pool.value()),
-                                weak_from_this());
-
-  } else if (auto create_pool = CreateCommandPool()) {
-    return ManagedCommandPoolVK(std::move(create_pool.value()),
-                                weak_from_this());
-  } else {
-    return std::nullopt;
-  }
 }
 
 }  // namespace impeller

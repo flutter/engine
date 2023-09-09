@@ -79,7 +79,7 @@ std::unique_ptr<Surface> SurfaceContextVK::AcquireNextSurface() {
   if (allocator) {
     allocator->DidAcquireSurfaceFrame();
   }
-  CommandPoolVK::ReleaseAllPools(parent_.get());
+  parent_->GetCommandPoolRecycler()->Recycle();
   return surface;
 }
 
