@@ -163,7 +163,8 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
   staging_buffer_pool_.reset(CreateBufferPool(allocator));
   created_buffer_pool_ &= staging_buffer_pool_.is_valid();
   allocator_.reset(allocator);
-  supports_memoryless_textures_ = capabilities.SupportsMemorylessTextures();
+  supports_memoryless_textures_ =
+      capabilities.SupportsDeviceTransientTextures();
   is_valid_ = true;
 }
 
@@ -364,8 +365,8 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
                      << vk::to_string(result);
       return;
     }
-    resource_.Reset(ImageResource(ImageVMA{allocator, allocation, image},
-                                  std::move(image_view)));
+    resource_.Swap(ImageResource(ImageVMA{allocator, allocation, image},
+                                 std::move(image_view)));
     is_valid_ = true;
   }
 

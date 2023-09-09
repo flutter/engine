@@ -122,7 +122,7 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
     NSURL* assetsURL = FLTAssetsURLFromBundle(bundle);
 
     if (!assetsURL) {
-      NSLog(@"Failed to find assets path for 1\"%@\"", bundle);
+      NSLog(@"Failed to find assets path for \"%@\"", bundle);
     } else {
       settings.assets_path = assetsURL.path.UTF8String;
 
@@ -331,12 +331,7 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
   if (bundle == nil) {
     bundle = FLTFrameworkBundleWithIdentifier([FlutterDartProject defaultBundleIdentifier]);
   }
-
-  NSString* flutterAssetsName = [bundle objectForInfoDictionaryKey:@"FLTAssetsPath"];
-  if (flutterAssetsName == nil) {
-    flutterAssetsName = @"Frameworks/App.framework/flutter_assets";
-  }
-  return flutterAssetsName;
+  return FLTAssetPath(bundle);
 }
 
 + (NSString*)domainNetworkPolicy:(NSDictionary*)appTransportSecurity {

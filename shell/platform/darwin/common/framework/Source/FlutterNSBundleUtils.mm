@@ -8,6 +8,8 @@
 
 FLUTTER_ASSERT_ARC
 
+const NSString* kDefaultAssetPath = @"Frameworks/App.framework/flutter_assets";
+
 NSBundle* FLTFrameworkBundleInternal(NSString* flutterFrameworkBundleID, NSURL* searchURL) {
   NSDirectoryEnumerator<NSURL*>* frameworkEnumerator = [NSFileManager.defaultManager
                  enumeratorAtURL:searchURL
@@ -51,13 +53,16 @@ NSBundle* FLTFrameworkBundleWithIdentifier(NSString* flutterFrameworkBundleID) {
   return flutterFrameworkBundle;
 }
 
+NSString* FLTAssetPath(NSBundle* bundle) {
+  return [bundle objectForInfoDictionaryKey:@"FLTAssetsPath"] ?: kDefaultAssetPath;
+}
+
 NSURL* FLTAssetsURLFromBundle(NSBundle* bundle) {
-  NSString* assetsPathFromInfoPlist = [bundle objectForInfoDictionaryKey:@"FLTAssetsPath"];
-  NSString* flutterAssetsPath = assetsPathFromInfoPlist ?: @"flutter_assets";
+  NSString* flutterAssetsPath = FLTAssetPath(bundle);
   NSURL* assets = [bundle URLForResource:flutterAssetsPath withExtension:nil];
 
-  if ([assets checkResourceIsReachableAndReturnError:NULL]) {
-    return assets;
+  if (!assets) {
+    assets = [[NSBundle mainBundle] URLForResource:flutterAssetsPath withExtension:nil];
   }
-  return nil;
+  return assets;
 }
