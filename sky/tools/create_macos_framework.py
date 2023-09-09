@@ -84,7 +84,7 @@ def main():
   # Set fat_framework file attributes to read and execute for all.
   subprocess.check_call([
       'chmod', '-R', '755',
-      os.path.join(fat_framework_binary, 'Versions')
+      os.path.join(fat_framework, 'Versions')
   ])
 
   regenerate_symlinks(fat_framework)
