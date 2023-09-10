@@ -18,7 +18,7 @@ vars = {
   'llvm_git': 'https://llvm.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
-  'skia_revision': '2b9fc6a2c250b16ce4b3a12e04dbf8b41ce8022f',
+  'skia_revision': '947f91dcacf510113815a136153bc3a4843fe877',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -39,7 +39,7 @@ vars = {
   # The list of revisions for these tools comes from Fuchsia, here:
   # https://fuchsia.googlesource.com/integration/+/HEAD/toolchain
   # If there are problems with the toolchain, contact fuchsia-toolchain@.
-  'clang_version': 'git_revision:020d2fb7711d70e296f19d83565f8d93d2cfda71',
+  'clang_version': 'git_revision:576b184d6e3b633f51b908b61ebd281d2ecbf66f',
 
   # The goma version and the clang version can be tightly coupled. If goma
   # stops working on a clang roll, this may need to be updated using the value
@@ -261,7 +261,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'b615dd6af4c2e95a388060151c7fd1e429e34d61',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '9bbdc3ffac00cab766dd381c3272fea195f51c7c',
 
    # Fuchsia compatibility
    #
@@ -631,7 +631,7 @@ deps = {
    Var('swiftshader_git') + '/SwiftShader.git' + '@' + '5f9ed9b16931c7155171d31f75004f73f0a3abc8',
 
    'src/third_party/angle':
-   Var('chromium_git') + '/angle/angle.git' + '@' + '0ff71d5ecd25d96f357b6ec153074d93438c8d1d',
+   Var('chromium_git') + '/angle/angle.git' + '@' + '48e2c605adcd5bcc1622b18f357c7a73ebfb3543',
 
    'src/third_party/vulkan_memory_allocator':
    Var('chromium_git') + '/external/github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator' + '@' + '7de5cc00de50e71a3aab22dea52fbb7ff4efceb6',
@@ -914,7 +914,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/mac-amd64',
-        'version': 'bHw1LzoikQJthLkTEoO1kzf4AM2dzLpCWtz35OS5eKUC'
+        'version': '6PrTSjMiSCsSb0muF_aumVDnNeyj4kDruWyGDGmjgCYC'
        }
      ],
      'condition': 'host_os == "mac" and not download_fuchsia_sdk',
@@ -924,7 +924,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/linux-amd64',
-        'version': 'z9uQ0mXwjKFQF05XlBv-X8Em1QvkefyGcIJWrSZEm-sC'
+        'version': 'a024p4HJVVgmCW5JoT7TXrMrB319HQQOAhRYtitFPhAC'
        }
      ],
      'condition': 'host_os == "linux" and not download_fuchsia_sdk',
@@ -932,7 +932,7 @@ deps = {
    },
 
   'src/third_party/impeller-cmake-example': {
-     'url': Var('github_git') + '/bdero/impeller-cmake-example.git' + '@' + '142507046e11f593b54d94af328998bbe45a88ef',
+     'url': Var('github_git') + '/bdero/impeller-cmake-example.git' + '@' + '1f606c40651029fd944236e5be64710a6ddb75de',
      'condition': 'download_impeller_cmake_example',
   },
 

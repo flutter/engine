@@ -1191,12 +1191,11 @@ TEST_P(EntityTest, MorphologyFilter) {
     input = texture;
     input_size = input_rect.size;
 
-    auto effect_transform = Matrix::MakeScale(
-        Vector2{effect_transform_scale, effect_transform_scale});
-
     auto contents = FilterContents::MakeMorphology(
         FilterInput::Make(input), Radius{radius[0]}, Radius{radius[1]},
-        morphology_types[selected_morphology_type], effect_transform);
+        morphology_types[selected_morphology_type]);
+    contents->SetEffectTransform(Matrix::MakeScale(
+        Vector2{effect_transform_scale, effect_transform_scale}));
 
     auto ctm = Matrix::MakeScale(GetContentScale()) *
                Matrix::MakeTranslation(Vector3(offset[0], offset[1])) *
@@ -2174,13 +2173,13 @@ TEST_P(EntityTest, InheritOpacityTest) {
   SkFont font;
   font.setSize(30);
   auto blob = SkTextBlob::MakeFromString("A", font);
-  auto frame = MakeTextFrameFromTextBlobSkia(blob).value();
+  auto frame = MakeTextFrameFromTextBlobSkia(blob);
   auto lazy_glyph_atlas =
       std::make_shared<LazyGlyphAtlas>(TypographerContextSkia::Make());
-  lazy_glyph_atlas->AddTextFrame(frame, 1.0f);
+  lazy_glyph_atlas->AddTextFrame(*frame, 1.0f);
 
   auto text_contents = std::make_shared<TextContents>();
-  text_contents->SetTextFrame(std::move(frame));
+  text_contents->SetTextFrame(frame);
   text_contents->SetColor(Color::Blue().WithAlpha(0.5));
 
   ASSERT_TRUE(text_contents->CanInheritOpacity(entity));
