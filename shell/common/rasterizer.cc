@@ -26,6 +26,7 @@
 #include "third_party/skia/include/core/SkSerialProcs.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/encode/SkPngEncoder.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
@@ -132,6 +133,11 @@ bool Rasterizer::IsTornDown() {
   return is_torn_down_;
 }
 
+std::optional<DrawSurfaceStatus> Rasterizer::GetLastDrawStatus(
+    int64_t view_id) {
+  return last_draw_status_;
+}
+
 void Rasterizer::EnableThreadMergerIfNeeded() {
   if (raster_thread_merger_) {
     raster_thread_merger_->Enable();
@@ -222,7 +228,7 @@ DrawStatus Rasterizer::Draw(
   LayerTreePipeline::Consumer consumer = [&draw_result, this](
                                              std::unique_ptr<FrameItem> item) {
     if (item->tasks.empty()) {
-      draw_result.status = DoDrawStatus::kSuccess;
+      draw_result.status = DoDrawStatus::kDone;
       return;
     }
     draw_result =
@@ -285,17 +291,15 @@ bool Rasterizer::ShouldResubmitFrame(const DoDrawResult& result) {
 DrawStatus Rasterizer::ToDrawStatus(DoDrawStatus status) {
   switch (status) {
     case DoDrawStatus::kEnqueuePipeline:
-      return DrawStatus::kSuccess;
+      return DrawStatus::kDone;
     case DoDrawStatus::kGpuUnavailable:
       return DrawStatus::kGpuUnavailable;
-    case DoDrawStatus::kDiscarded:
-      return DrawStatus::kDiscarded;
-    case DoDrawStatus::kFailed:
-      return DrawStatus::kFailed;
+    case DoDrawStatus::kNotSetUp:
+      return DrawStatus::kNotSetUp;
     default:
-      FML_CHECK(status == DoDrawStatus::kSuccess)
+      FML_CHECK(status == DoDrawStatus::kDone)
           << "Unrecognized status " << (int)status;
-      return DrawStatus::kSuccess;
+      return DrawStatus::kDone;
   }
 }
 
@@ -424,7 +428,7 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
 
   if (!surface_) {
     return DoDrawResult{
-        .status = DoDrawStatus::kFailed,
+        .status = DoDrawStatus::kNotSetUp,
     };
   }
 
@@ -521,33 +525,30 @@ Rasterizer::DoDrawResult Rasterizer::DrawToSurfaces(
   TRACE_EVENT0("flutter", "Rasterizer::DrawToSurfaces");
   FML_DCHECK(surface_);
 
-  bool gpu_unavailable = false;
-  DoDrawResult result;
+  DoDrawResult result{
+      .status = DoDrawStatus::kDone,
+  };
   if (surface_->AllowsDrawingWhenGpuDisabled()) {
-    result = DrawToSurfacesUnsafe(frame_timings_recorder, std::move(tasks));
+    result.resubmitted_item =
+        DrawToSurfacesUnsafe(frame_timings_recorder, std::move(tasks));
   } else {
     delegate_.GetIsGpuDisabledSyncSwitch()->Execute(
         fml::SyncSwitch::Handlers()
             .SetIfTrue([&] {
-              gpu_unavailable = true;
+              result.status = DoDrawStatus::kGpuUnavailable;
               frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
               frame_timings_recorder.RecordRasterEnd();
             })
             .SetIfFalse([&] {
-              result = DrawToSurfacesUnsafe(frame_timings_recorder,
-                                            std::move(tasks));
+              result.resubmitted_item = DrawToSurfacesUnsafe(
+                  frame_timings_recorder, std::move(tasks));
             }));
   }
 
-  if (gpu_unavailable) {
-    return DoDrawResult{
-        .status = DoDrawStatus::kGpuUnavailable,
-    };
-  }
   return result;
 }
 
-Rasterizer::DoDrawResult Rasterizer::DrawToSurfacesUnsafe(
+std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
     FrameTimingsRecorder& frame_timings_recorder,
     std::list<LayerTreeTask> tasks) {
   // TODO(dkwingsmt): The rasterizer only supports rendering a single view
@@ -556,6 +557,15 @@ Rasterizer::DoDrawResult Rasterizer::DrawToSurfacesUnsafe(
   FML_CHECK(tasks.size() == 1u);
   auto& task = tasks.front();
   FML_DCHECK(task.view_id == kFlutterImplicitViewId);
+
+  if (external_view_embedder_) {
+    FML_DCHECK(!external_view_embedder_->GetUsedThisFrame());
+    external_view_embedder_->SetUsedThisFrame(true);
+    external_view_embedder_->BeginFrame(
+        // TODO(dkwingsmt): Add the frame size and DPR for all layer trees.
+        task.layer_tree->frame_size(), surface_->GetContext(),
+        task.device_pixel_ratio, raster_thread_merger_);
+  }
 
   std::optional<fml::TimePoint> presentation_time = std::nullopt;
   // TODO (https://github.com/flutter/flutter/issues/105596): this can be in
@@ -576,15 +586,11 @@ Rasterizer::DoDrawResult Rasterizer::DrawToSurfacesUnsafe(
   int64_t view_id = kFlutterImplicitViewId;
   std::unique_ptr<LayerTree> layer_tree = std::move(task.layer_tree);
   float device_pixel_ratio = task.device_pixel_ratio;
-  if (delegate_.ShouldDiscardLayerTree(task.view_id, *layer_tree)) {
-    frame_timings_recorder.RecordRasterEnd();
-    return DoDrawResult{
-        .status = DoDrawStatus::kDiscarded,
-    };
-  }
 
   DrawSurfaceStatus status = DrawToSurfaceUnsafe(
       view_id, *layer_tree, device_pixel_ratio, presentation_time);
+
+  last_draw_status_ = status;
 
   std::unique_ptr<FrameItem> resubmitted_item;
   if (status == DrawSurfaceStatus::kSuccess) {
@@ -608,41 +614,24 @@ Rasterizer::DoDrawResult Rasterizer::DrawToSurfacesUnsafe(
     surface_->GetContext()->performDeferredCleanup(kSkiaCleanupExpiration);
   }
 
-  return DoDrawResult{
-      .status = ToDoDrawStatus(status),
-      .resubmitted_item = std::move(resubmitted_item),
-  };
+  return resubmitted_item;
 }
 
-Rasterizer::DoDrawStatus Rasterizer::ToDoDrawStatus(DrawSurfaceStatus status) {
-  switch (status) {
-    case DrawSurfaceStatus::kRetry:
-      return DoDrawStatus::kSuccess;
-    case DrawSurfaceStatus::kFailed:
-      return DoDrawStatus::kFailed;
-    default:
-      FML_CHECK(status == DrawSurfaceStatus::kSuccess);
-      return DoDrawStatus::kSuccess;
-  }
-}
-
-/// Unsafe because it assumes we have access to the GPU which isn't the case
-/// when iOS is backgrounded, for example.
 /// \see Rasterizer::DrawToSurfaces
-Rasterizer::DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
+DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
     int64_t view_id,
     flutter::LayerTree& layer_tree,
     float device_pixel_ratio,
     std::optional<fml::TimePoint> presentation_time) {
   FML_DCHECK(surface_);
 
+  if (delegate_.ShouldDiscardLayerTree(view_id, layer_tree)) {
+    return DrawSurfaceStatus::kDiscarded;
+  }
+
   DlCanvas* embedder_root_canvas = nullptr;
   if (external_view_embedder_) {
-    FML_DCHECK(!external_view_embedder_->GetUsedThisFrame());
-    external_view_embedder_->SetUsedThisFrame(true);
-    external_view_embedder_->BeginFrame(
-        layer_tree.frame_size(), surface_->GetContext(), device_pixel_ratio,
-        raster_thread_merger_);
+    FML_DCHECK(external_view_embedder_->GetUsedThisFrame());
     embedder_root_canvas = external_view_embedder_->GetRootCanvas();
   }
 
@@ -777,6 +766,9 @@ static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
 #else
   SkSerialProcs procs = {0};
   procs.fTypefaceProc = SerializeTypefaceWithData;
+  procs.fImageProc = [](SkImage* img, void*) -> sk_sp<SkData> {
+    return SkPngEncoder::Encode(nullptr, img, SkPngEncoder::Options{});
+  };
 #endif
 
   return recorder.finishRecordingAsPicture()->serialize(&procs);

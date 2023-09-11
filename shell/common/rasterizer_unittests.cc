@@ -565,7 +565,9 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNotUsedThisFrame) {
     // Always discard the layer tree.
     ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(true));
     DrawStatus status = rasterizer->Draw(pipeline);
-    EXPECT_EQ(status, DrawStatus::kDiscarded);
+    EXPECT_EQ(status, DrawStatus::kDone);
+    EXPECT_EQ(rasterizer->GetLastDrawStatus(kImplicitViewId),
+              DrawSurfaceStatus::kDiscarded);
     latch.Signal();
   });
   latch.Wait();
@@ -727,7 +729,7 @@ TEST(
     EXPECT_TRUE(result.success);
     ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
     DrawStatus status = rasterizer->Draw(pipeline);
-    EXPECT_EQ(status, DrawStatus::kSuccess);
+    EXPECT_EQ(status, DrawStatus::kDone);
     latch.Signal();
   });
   latch.Wait();
@@ -786,7 +788,7 @@ TEST(
     EXPECT_TRUE(result.success);
     ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
     DrawStatus status = rasterizer->Draw(pipeline);
-    EXPECT_EQ(status, DrawStatus::kSuccess);
+    EXPECT_EQ(status, DrawStatus::kDone);
     latch.Signal();
   });
   latch.Wait();
@@ -901,7 +903,9 @@ TEST(
     EXPECT_TRUE(result.success);
     ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
     DrawStatus status = rasterizer->Draw(pipeline);
-    EXPECT_EQ(status, DrawStatus::kFailed);
+    EXPECT_EQ(status, DrawStatus::kDone);
+    EXPECT_EQ(rasterizer->GetLastDrawStatus(kImplicitViewId),
+              DrawSurfaceStatus::kFailed);
     latch.Signal();
   });
   latch.Wait();
