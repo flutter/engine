@@ -29,9 +29,15 @@ class BackgroundCommandPoolVK {
 
   ~BackgroundCommandPoolVK() {
     auto const recycler = recycler_.lock();
+
+    // Not only does this prevent recycling when the context is being destroyed,
+    // but it also prevents the destructor from effectively being called twice;
+    // once for the original BackgroundCommandPoolVK() and once for the moved
+    // BackgroundCommandPoolVK().
     if (!recycler) {
       return;
     }
+
     recycler->Reclaim(std::move(pool_));
   }
 
@@ -56,6 +62,7 @@ CommandPoolVK::~CommandPoolVK() {
   if (!recycler) {
     return;
   }
+
   UniqueResourceVKT<BackgroundCommandPoolVK> pool(
       context->GetResourceManager(),
       BackgroundCommandPoolVK(std::move(pool_), std::move(collected_buffers_),
@@ -103,10 +110,9 @@ std::shared_ptr<CommandPoolVK> CommandPoolRecyclerVK::Get() {
     resources = new CommandPoolMap();
     resources_.reset(resources);
   }
-  auto map = *resources;
   auto const hash = strong_context->GetHash();
-  auto const it = map.find(hash);
-  if (it != map.end()) {
+  auto const it = resources->find(hash);
+  if (it != resources->end()) {
     return it->second;
   }
 
@@ -118,7 +124,7 @@ std::shared_ptr<CommandPoolVK> CommandPoolRecyclerVK::Get() {
 
   auto const resource =
       std::make_shared<CommandPoolVK>(std::move(*pool), context_);
-  map[hash] = resource;
+  resources->emplace(hash, resource);
   return resource;
 }
 
@@ -161,7 +167,6 @@ std::optional<vk::UniqueCommandPool> CommandPoolRecyclerVK::Reuse() {
 
 void CommandPoolRecyclerVK::Reclaim(vk::UniqueCommandPool&& pool) {
   TRACE_EVENT0("impeller", "ReclaimCommandPool");
-  // FIXME: Assert that this is called on a background thread.
 
   // Reset the pool on a background thread.
   auto strong_context = context_.lock();

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/vulkan/test/mock_vulkan.h"
+#include "vulkan/vulkan_core.h"
 
 namespace impeller {
 namespace testing {
@@ -15,6 +16,8 @@ struct MockCommandBuffer {
       : called_functions_(std::move(called_functions)) {}
   std::shared_ptr<std::vector<std::string>> called_functions_;
 };
+
+struct MockCommandPool {};
 
 struct MockDevice {
   MockDevice() : called_functions_(new std::vector<std::string>()) {}
@@ -156,7 +159,15 @@ VkResult vkCreateCommandPool(VkDevice device,
                              const VkCommandPoolCreateInfo* pCreateInfo,
                              const VkAllocationCallbacks* pAllocator,
                              VkCommandPool* pCommandPool) {
+  MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
+  mock_device->called_functions_->push_back("vkCreateCommandPool");
   *pCommandPool = reinterpret_cast<VkCommandPool>(0xc0de0001);
+  return VK_SUCCESS;
+}
+
+VkResult vkResetCommandPool(VkDevice device,
+                            VkCommandPool commandPool,
+                            VkCommandPoolResetFlags flags) {
   return VK_SUCCESS;
 }
 
@@ -418,6 +429,8 @@ PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
     return (PFN_vkVoidFunction)vkCreatePipelineCache;
   } else if (strcmp("vkCreateCommandPool", pName) == 0) {
     return (PFN_vkVoidFunction)vkCreateCommandPool;
+  } else if (strcmp("vkResetCommandPool", pName) == 0) {
+    return (PFN_vkVoidFunction)vkResetCommandPool;
   } else if (strcmp("vkAllocateCommandBuffers", pName) == 0) {
     return (PFN_vkVoidFunction)vkAllocateCommandBuffers;
   } else if (strcmp("vkBeginCommandBuffer", pName) == 0) {
