@@ -81,11 +81,6 @@ def main():
 
   shutil.rmtree(fat_framework, True)
   shutil.copytree(arm64_framework, fat_framework, symlinks=True)
-  # Set fat_framework file attributes to read and execute for all.
-  subprocess.check_call([
-      'chmod', '-R', '755',
-      os.path.join(fat_framework, 'Versions')
-  ])
 
   regenerate_symlinks(fat_framework)
 
@@ -98,6 +93,16 @@ def main():
       'lipo', arm64_dylib, x64_dylib, '-create', '-output', fat_framework_binary
   ])
   process_framework(dst, args, fat_framework, fat_framework_binary)
+
+  # Set fat_framework file attributes to read and execute for all.
+  subprocess.check_call([
+      'chmod', '-R', '644',
+      os.path.join(fat_framework, 'Versions')
+  ])
+  subprocess.check_call([
+      'chmod', '-R', '755',
+      os.path.join(fat_framework, 'Versions', 'A', 'FlutterMacOS')
+  ])
 
   return 0
 
