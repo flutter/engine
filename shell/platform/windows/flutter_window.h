@@ -208,16 +208,6 @@ class FlutterWindow : public KeyboardManager::WindowDelegate,
   virtual void OnWindowStateEvent(WindowStateEvent event);
 
  protected:
-  // OS callback called by message pump.  Handles the WM_NCCREATE message which
-  // is passed when the non-client area is being created and enables automatic
-  // non-client DPI scaling so that the non-client area automatically
-  // responsponds to changes in DPI.  All other messages are handled by
-  // MessageHandler.
-  static LRESULT CALLBACK WndProc(HWND const window,
-                                  UINT const message,
-                                  WPARAM const wparam,
-                                  LPARAM const lparam) noexcept;
-
   // Win32's DefWindowProc.
   //
   // Used as the fallback behavior of HandleMessage. Exposed for dependency
@@ -226,15 +216,9 @@ class FlutterWindow : public KeyboardManager::WindowDelegate,
                                      UINT Msg,
                                      WPARAM wParam,
                                      LPARAM lParam);
-  // Release OS resources associated with the window.
-  void Destroy();
 
   // Converts a c string to a wide unicode string.
   std::wstring NarrowToWide(const char* source);
-
-  // Registers a window class with default style attributes, cursor and
-  // icon.
-  WNDCLASS RegisterWindowClass(std::wstring& title);
 
   // Processes and route salient window messages for mouse handling,
   // size change and DPI.  Delegates handling of these to member overloads that
@@ -300,11 +284,6 @@ class FlutterWindow : public KeyboardManager::WindowDelegate,
   // Check if the high contrast feature is enabled on the OS
   virtual bool GetHighContrastEnabled();
 
-  // Creates the ax_fragment_root_, alert_delegate_ and alert_node_ if they do
-  // not yet exist.
-  // Once set, they are not reset to nullptr.
-  void CreateAxFragmentRoot();
-
   // Delegate to a alert_node_ used to set the announcement text.
   std::unique_ptr<AlertPlatformNodeDelegate> alert_delegate_;
 
@@ -316,12 +295,29 @@ class FlutterWindow : public KeyboardManager::WindowDelegate,
   std::unique_ptr<DirectManipulationOwner> direct_manipulation_owner_;
 
  private:
+  // OS callback called by message pump.  Handles the WM_NCCREATE message which
+  // is passed when the non-client area is being created and enables automatic
+  // non-client DPI scaling so that the non-client area automatically
+  // responsponds to changes in DPI.  All other messages are handled by
+  // MessageHandler.
+  static LRESULT CALLBACK WndProc(HWND const window,
+                                  UINT const message,
+                                  WPARAM const wparam,
+                                  LPARAM const lparam) noexcept;
+
   // WM_DPICHANGED_BEFOREPARENT defined in more recent Windows
   // SDK
   static const long kWmDpiChangedBeforeParent = 0x02E2;
 
   // Timer identifier for DirectManipulation gesture polling.
   static const int kDirectManipulationTimer = 1;
+
+  // Release OS resources associated with the window.
+  void Destroy();
+
+  // Registers a window class with default style attributes, cursor and
+  // icon.
+  WNDCLASS RegisterWindowClass(std::wstring& title);
 
   // Retrieves a class instance pointer for |window|
   static FlutterWindow* GetThisFromHandle(HWND const window) noexcept;
@@ -334,6 +330,11 @@ class FlutterWindow : public KeyboardManager::WindowDelegate,
 
   // Updates the cached scroll_offset_multiplier_ value based off OS settings.
   void UpdateScrollOffsetMultiplier();
+
+  // Creates the ax_fragment_root_, alert_delegate_ and alert_node_ if they do
+  // not yet exist.
+  // Once set, they are not reset to nullptr.
+  void CreateAxFragmentRoot();
 
   // A pointer to a FlutterWindowsView that can be used to update engine
   // windowing and input state.
