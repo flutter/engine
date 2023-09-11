@@ -40,9 +40,9 @@ class BackgroundCommandPoolVK {
 
   vk::UniqueCommandPool pool_;
 
-  // These are retained otherwise it is a Vulkan thread-safety violation
-  // because the buffers and the originating pool do not belong to the same
-  // thread.
+  // These are retained because the destructor of the C++ UniqueCommandBuffer
+  // wrapper type will attempt to reset the cmd buffer, and doing so may be a
+  // thread safety violation as this may happen on the fence waiter thread.
   std::vector<vk::UniqueCommandBuffer> buffers_;
   std::weak_ptr<CommandPoolRecyclerVK> recycler_;
 };

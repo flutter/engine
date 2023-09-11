@@ -491,6 +491,14 @@ ContextVK::GetConcurrentWorkerTaskRunner() const {
 }
 
 void ContextVK::Shutdown() {
+  // There are multiple objects, for example |CommandPoolVK|, that in their
+  // destructors make a strong reference to |ContextVK|. Resetting these shared
+  // pointers ensures that cleanup happens in a correct order.
+  //
+  // tl;dr: Without it, we get thread::join failures on shutdown.
+  resource_manager_.reset();
+  fence_waiter_.reset();
+
   raster_message_loop_->Terminate();
 }
 
