@@ -51,10 +51,10 @@ namespace flutter {
 
 // The result status of Rasterizer::Draw. This is only used for unit tests.
 enum class DrawStatus {
-  // Frame has been successfully rasterized.
-  kSuccess,
-  // Failed to rasterize the frame because the rendering context is unavailable.
-  kContextUnavailable,
+  // The drawing was done without any specified status.
+  kDone,
+  // Failed to rasterize the frame because the Rasterizer is not set up.
+  kNotSetUp,
   // Nothing was done, because the call was not on the raster thread. Yielded to
   // let this frame be serviced on the right thread.
   kYielded,
@@ -64,11 +64,11 @@ enum class DrawStatus {
   kGpuUnavailable,
 };
 
-// The result status of DrawToSurfaceUnsafe.
+// The result status of drawing to a view. This is only used for unit tests.
 enum class DrawSurfaceStatus {
-  // Frame has been successfully rasterized.
+  // The layer tree was successfully rasterized.
   kSuccess,
-  // Frame should be submitted again.
+  // The layer tree should be submitted again.
   //
   // This can occur on Android when switching the background surface to
   // FlutterImageView.  On Android, the first frame doesn't make the image
@@ -80,7 +80,8 @@ enum class DrawSurfaceStatus {
   kRetry,
   // Failed to rasterize the frame.
   kFailed,
-  // Layer tree was discarded due to LayerTreeDiscardCallback.
+  // Layer tree was discarded because its size does not match the view size.
+  // This typically occurs during resizing.
   kDiscarded,
 };
 
@@ -565,16 +566,15 @@ class Rasterizer final : public SnapshotDelegate,
  private:
   // The result status of DoDraw, DrawToSurfaces, and DrawToSurfacesUnsafe.
   enum class DoDrawStatus {
-    // Frame has been successfully rasterized.
-    kSuccess,
+    // The drawing was done without any specified status.
+    kDone,
     // Frame has been successfully rasterized, but there are additional items
     // in the pipeline waiting to be consumed. This is currently only used when
     // thread configuration change occurs.
     kEnqueuePipeline,
-    // Failed to rasterize the frame because the rendering context is
-    // unavailable.
-    kContextUnavailable,
-    // Layer tree was discarded due to inability to access the GPU.
+    // Failed to rasterize the frame because the Rasterizer is not set up.
+    kNotSetUp,
+    // Nothing was done, because GPU was unavailable.
     kGpuUnavailable,
   };
 
@@ -586,7 +586,7 @@ class Rasterizer final : public SnapshotDelegate,
   // configuration, in which case the resubmitted task will be inserted to the
   // front of the pipeline.
   struct DoDrawResult {
-    DoDrawStatus status = DoDrawStatus::kSuccess;
+    DoDrawStatus status = DoDrawStatus::kDone;
 
     std::unique_ptr<FrameItem> resubmitted_item;
   };
@@ -654,15 +654,23 @@ class Rasterizer final : public SnapshotDelegate,
   DoDrawResult DrawToSurfaces(FrameTimingsRecorder& frame_timings_recorder,
                               std::list<LayerTreeTask> tasks);
 
+  // Draws the specified layer trees to views, assuming we have access to the
+  // GPU.
+  //
+  // If any layer trees need resubmitting, this method returns the frame item to
+  // be resubmitted. Otherwise, it returns nullptr.
+  //
   // Unsafe because it assumes we have access to the GPU which isn't the case
   // when iOS is backgrounded, for example.
-  // \see Rasterizer::DrawToSurfaces
   //
   // This method pushes the frame timing recorder from build end to raster end.
   std::unique_ptr<FrameItem> DrawToSurfacesUnsafe(
       FrameTimingsRecorder& frame_timings_recorder,
       std::list<LayerTreeTask> tasks);
 
+  // Draws the layer tree to the specified view, assuming we have access to the
+  // GPU.
+  //
   // This method pushes the frame timing recorder from build end to raster end.
   DrawSurfaceStatus DrawToSurfaceUnsafe(
       FrameTimingsRecorder& frame_timings_recorder,

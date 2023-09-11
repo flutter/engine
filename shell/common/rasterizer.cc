@@ -228,7 +228,7 @@ DrawStatus Rasterizer::Draw(
   LayerTreePipeline::Consumer consumer = [&draw_result, this](
                                              std::unique_ptr<FrameItem> item) {
     if (item->tasks.empty()) {
-      draw_result.status = DoDrawStatus::kSuccess;
+      draw_result.status = DoDrawStatus::kDone;
       return;
     }
     draw_result =
@@ -291,15 +291,15 @@ bool Rasterizer::ShouldResubmitFrame(const DoDrawResult& result) {
 DrawStatus Rasterizer::ToDrawStatus(DoDrawStatus status) {
   switch (status) {
     case DoDrawStatus::kEnqueuePipeline:
-      return DrawStatus::kSuccess;
+      return DrawStatus::kDone;
     case DoDrawStatus::kGpuUnavailable:
       return DrawStatus::kGpuUnavailable;
-    case DoDrawStatus::kContextUnavailable:
-      return DrawStatus::kContextUnavailable;
+    case DoDrawStatus::kNotSetUp:
+      return DrawStatus::kNotSetUp;
     default:
-      FML_CHECK(status == DoDrawStatus::kSuccess)
+      FML_CHECK(status == DoDrawStatus::kDone)
           << "Unrecognized status " << (int)status;
-      return DrawStatus::kSuccess;
+      return DrawStatus::kDone;
   }
 }
 
@@ -428,7 +428,7 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
 
   if (!surface_) {
     return DoDrawResult{
-        .status = DoDrawStatus::kContextUnavailable,
+        .status = DoDrawStatus::kNotSetUp,
     };
   }
 
@@ -526,7 +526,7 @@ Rasterizer::DoDrawResult Rasterizer::DrawToSurfaces(
   FML_DCHECK(surface_);
 
   DoDrawResult result{
-      .status = DoDrawStatus::kSuccess,
+      .status = DoDrawStatus::kDone,
   };
   if (surface_->AllowsDrawingWhenGpuDisabled()) {
     result.resubmitted_item =
