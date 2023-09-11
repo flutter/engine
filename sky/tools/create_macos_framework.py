@@ -94,15 +94,21 @@ def main():
   ])
   process_framework(dst, args, fat_framework, fat_framework_binary)
 
-  # Set fat_framework file attributes to read and execute for all.
+  # Add group and other readability to all files.
   subprocess.check_call([
-      'chmod', '-R', '644',
+      'chmod', '-R', 'og+r',
       os.path.join(fat_framework, 'Versions')
   ])
-  subprocess.check_call([
-      'chmod', '-R', '755',
-      os.path.join(fat_framework, 'Versions', 'A', 'FlutterMacOS')
-  ])
+  # Find all the files below the target dir with owner execute permission
+  find_subprocess = subprocess.Popen([
+      "find", fat_framework, "-perm", "-100", "-print0"
+  ],
+                                     stdout=subprocess.PIPE)
+  # Add execute permission for other and group for all files that had it for owner.
+  xargs_subprocess = subprocess.Popen(["xargs", "-0", "chmod", "og+x"],
+                                      stdin=find_subprocess.stdout)
+  find_subprocess.wait()
+  xargs_subprocess.wait()
 
   return 0
 
