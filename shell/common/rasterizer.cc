@@ -557,9 +557,18 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
   FML_CHECK(tasks.size() == 1u);
   auto& task = tasks.front();
   FML_DCHECK(task.view_id == kFlutterImplicitViewId);
+
   int64_t view_id = kFlutterImplicitViewId;
   std::unique_ptr<LayerTree> layer_tree = std::move(task.layer_tree);
   float device_pixel_ratio = task.device_pixel_ratio;
+
+  if (external_view_embedder_) {
+    FML_DCHECK(!external_view_embedder_->GetUsedThisFrame());
+    external_view_embedder_->SetUsedThisFrame(true);
+    external_view_embedder_->BeginFrame(
+        layer_tree->frame_size(), surface_->GetContext(), device_pixel_ratio,
+        raster_thread_merger_);
+  }
 
   DrawSurfaceStatus status = DrawToSurfaceUnsafe(
       frame_timings_recorder, view_id, *layer_tree, device_pixel_ratio);
@@ -601,11 +610,7 @@ DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
 
   DlCanvas* embedder_root_canvas = nullptr;
   if (external_view_embedder_) {
-    FML_DCHECK(!external_view_embedder_->GetUsedThisFrame());
-    external_view_embedder_->SetUsedThisFrame(true);
-    external_view_embedder_->BeginFrame(
-        layer_tree.frame_size(), surface_->GetContext(), device_pixel_ratio,
-        raster_thread_merger_);
+    FML_DCHECK(external_view_embedder_->GetUsedThisFrame());
     embedder_root_canvas = external_view_embedder_->GetRootCanvas();
   }
 
