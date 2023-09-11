@@ -97,7 +97,7 @@ void testMain() {
     final Object maybeApp = await promiseToFuture<Object>(callMethod<Object>(
       appInitializer,
       'runApp',
-      <Object?>[RunAppFnParameters()]
+      <Object?>[]
     ));
     expect(maybeApp, isA<FlutterApp>());
     expect(initCalled, 1, reason: 'initEngine should have been called.');
