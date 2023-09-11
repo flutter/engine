@@ -104,18 +104,15 @@ std::shared_ptr<CommandEncoderVK> CommandEncoderFactoryVK::Create() {
     return nullptr;
   }
   auto& context_vk = ContextVK::Cast(*context);
-  FML_LOG(ERROR) << "CommandEncoderFactoryVK::Create() #1";
   auto recycler = context_vk.GetCommandPoolRecycler();
   if (!recycler) {
     return nullptr;
   }
-  FML_LOG(ERROR) << "CommandEncoderFactoryVK::Create() #2";
   auto tls_pool = recycler->Get();
   if (!tls_pool) {
     return nullptr;
   }
 
-  FML_LOG(ERROR) << "CommandEncoderFactoryVK::Create() #3";
   auto tracked_objects = std::make_shared<TrackedObjectsVK>(
       context_vk.GetDeviceHolder(), tls_pool);
   auto queue = context_vk.GetGraphicsQueue();
