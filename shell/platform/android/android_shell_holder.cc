@@ -12,16 +12,11 @@
 #include <memory>
 #include <optional>
 
-#include <sstream>
 #include <string>
 #include <utility>
 
 #include "flutter/fml/logging.h"
-#include "flutter/fml/make_copyable.h"
 #include "flutter/fml/message_loop.h"
-#include "flutter/fml/native_library.h"
-#include "flutter/fml/platform/android/jni_util.h"
-#include "flutter/lib/ui/painting/image_generator_registry.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/common/thread_host.h"
@@ -41,14 +36,43 @@ static void AndroidPlatformThreadConfigSetter(
   // set thread priority
   switch (config.priority) {
     case fml::Thread::ThreadPriority::BACKGROUND: {
+      cpu_set_t set;
+      auto count = 8;
+      CPU_ZERO(&set);
+
+      // Assume the first half of the CPUs are slower.
+      for (auto i = 0; i < 4; i++) {
+        CPU_SET(i, &set);
+      }
+      if (sched_setaffinity(gettid(), sizeof(set), &set) != 0) {
+        FML_LOG(ERROR) << "Failed to set affinity";
+      }
       if (::setpriority(PRIO_PROCESS, 0, 10) != 0) {
         FML_LOG(ERROR) << "Failed to set IO task runner priority";
       }
       break;
     }
     case fml::Thread::ThreadPriority::DISPLAY: {
-      if (::setpriority(PRIO_PROCESS, 0, -1) != 0) {
-        FML_LOG(ERROR) << "Failed to set UI task runner priority";
+      // Android describes -8 as "most important display threads, for
+      // compositing the screen and retrieving input events". Conservatively
+      // set the raster thread to slightly lower priority than it.
+      cpu_set_t set;
+      CPU_ZERO(&set);
+
+      // Assume the last two CPUs are the fastest...
+      auto count = 8;
+      CPU_SET(count - 2, &set);
+      CPU_SET(count - 1, &set);
+      if (sched_setaffinity(gettid(), sizeof(set), &set) != 0) {
+        FML_LOG(ERROR) << "Failed to set affinity";
+      }
+      if (::setpriority(PRIO_PROCESS, 0, -10) != 0) {
+        FML_LOG(ERROR) << "Failed to set priority to -8";
+        // Defensive fallback. Depending on the OEM, it may not be possible
+        // to set priority to -5.
+        if (::setpriority(PRIO_PROCESS, 0, -2) != 0) {
+          FML_LOG(ERROR) << "Failed to set raster task runner priority";
+        }
       }
       break;
     }
@@ -56,7 +80,18 @@ static void AndroidPlatformThreadConfigSetter(
       // Android describes -8 as "most important display threads, for
       // compositing the screen and retrieving input events". Conservatively
       // set the raster thread to slightly lower priority than it.
-      if (::setpriority(PRIO_PROCESS, 0, -5) != 0) {
+      cpu_set_t set;
+      auto count = 8;
+      CPU_ZERO(&set);
+
+      // Assume the last two CPUs are the fastest...
+      CPU_SET(count - 2, &set);
+      CPU_SET(count - 1, &set);
+      if (sched_setaffinity(gettid(), sizeof(set), &set) != 0) {
+        FML_LOG(ERROR) << "Failed to set affinity";
+      }
+      if (::setpriority(PRIO_PROCESS, 0, -10) != 0) {
+        FML_LOG(ERROR) << "Failed to set priority to -8";
         // Defensive fallback. Depending on the OEM, it may not be possible
         // to set priority to -5.
         if (::setpriority(PRIO_PROCESS, 0, -2) != 0) {
@@ -66,6 +101,23 @@ static void AndroidPlatformThreadConfigSetter(
       break;
     }
     default:
+      cpu_set_t set;
+      sched_getaffinity(gettid(), sizeof(set), &set);
+      auto count = 8;
+      // Remove whatever affinities we set the engine and ui threads to.
+      CPU_ZERO(&set);
+      // Assume the first half of the CPUs are slower.
+      for (auto i = 0; i < 4; i++) {
+        CPU_SET(i, &set);
+      }
+      if (sched_setaffinity(gettid(), sizeof(set), &set) != 0) {
+        FML_LOG(ERROR) << "Failed to set affinity";
+      }
+
+      if (sched_setaffinity(0, sizeof(set), &set) != 0) {
+        FML_LOG(ERROR) << "Failed to set affinity";
+      }
+
       if (::setpriority(PRIO_PROCESS, 0, 0) != 0) {
         FML_LOG(ERROR) << "Failed to set priority";
       }
