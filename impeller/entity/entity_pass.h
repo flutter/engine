@@ -31,6 +31,7 @@ class EntityPass {
   /// When the element is a child `EntityPass`, it may be rendered to an
   /// offscreen texture and converted into an `Entity` that draws the texture
   /// into the current pass, or its children may be collapsed into the current
+  ///
   /// `EntityPass`. Elements are converted to Entities in
   /// `GetEntityForElement()`.
   using Element = std::variant<Entity, std::unique_ptr<EntityPass>>;
@@ -53,7 +54,7 @@ class EntityPass {
 
   ~EntityPass();
 
-  void SetDelegate(std::unique_ptr<EntityPassDelegate> delgate);
+  void SetDelegate(std::shared_ptr<EntityPassDelegate> delgate);
 
   /// @brief  Set the bounds limit, which is provided by the user when creating
   ///         a SaveLayer. This is a hint that allows the user to communicate
@@ -278,7 +279,7 @@ class EntityPass {
 
   BackdropFilterProc backdrop_filter_proc_ = nullptr;
 
-  std::unique_ptr<EntityPassDelegate> delegate_ =
+  std::shared_ptr<EntityPassDelegate> delegate_ =
       EntityPassDelegate::MakeDefault();
 
   FML_DISALLOW_COPY_AND_ASSIGN(EntityPass);

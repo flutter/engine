@@ -59,7 +59,7 @@ EntityPass::EntityPass() = default;
 
 EntityPass::~EntityPass() = default;
 
-void EntityPass::SetDelegate(std::unique_ptr<EntityPassDelegate> delegate) {
+void EntityPass::SetDelegate(std::shared_ptr<EntityPassDelegate> delegate) {
   if (!delegate) {
     return;
   }
@@ -126,9 +126,6 @@ std::optional<Rect> EntityPass::GetElementsCoverage(
     }
     if (!coverage.has_value()) {
       continue;
-    }
-    if (coverage->IsMaximum()) {
-      return coverage;
     }
     result = result->Union(coverage.value());
   }
@@ -607,13 +604,15 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       // right thing.
       return EntityPass::EntityResult::Failure();
     }
-
-    element_entity.SetCapture(capture.CreateChild("Entity (Subpass texture)"));
+    Capture subpass_texture_capture =
+        capture.CreateChild("Entity (Subpass texture)");
+    element_entity.SetCapture(subpass_texture_capture);
     element_entity.SetContents(std::move(offscreen_texture_contents));
     element_entity.SetStencilDepth(subpass->stencil_depth_);
     element_entity.SetBlendMode(subpass->blend_mode_);
-    element_entity.SetTransformation(Matrix::MakeTranslation(
-        Vector3(subpass_coverage->origin - global_pass_position)));
+    element_entity.SetTransformation(subpass_texture_capture.AddMatrix(
+        "Transform", Matrix::MakeTranslation(Vector3(subpass_coverage->origin -
+                                                     global_pass_position))));
   } else {
     FML_UNREACHABLE();
   }
@@ -1023,6 +1022,16 @@ std::unique_ptr<EntityPass> EntityPass::Clone() const {
 
   auto pass = std::make_unique<EntityPass>();
   pass->SetElements(std::move(new_elements));
+  pass->backdrop_filter_reads_from_pass_texture_ =
+      backdrop_filter_reads_from_pass_texture_;
+  pass->advanced_blend_reads_from_pass_texture_ =
+      advanced_blend_reads_from_pass_texture_;
+  pass->backdrop_filter_proc_ = backdrop_filter_proc_;
+  pass->blend_mode_ = blend_mode_;
+  pass->delegate_ = delegate_;
+  // Note: I tried also adding flood clip and bounds limit but one of the
+  // two caused rendering in wonderous to break. It's 10:51 PM, and I'm
+  // ready to move on.
   return pass;
 }
 

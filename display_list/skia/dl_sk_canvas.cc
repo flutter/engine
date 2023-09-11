@@ -294,13 +294,6 @@ void DlSkCanvasAdapter::DrawAtlas(const sk_sp<DlImage>& atlas,
                        ToSk(sampling), cullRect, sk_paint());
 }
 
-void DlSkCanvasAdapter::DrawImpellerPicture(
-    const std::shared_ptr<const impeller::Picture>& picture,
-    SkScalar opacity) {
-  FML_LOG(ERROR) << "Cannot draw Impeller Picture in to a Skia canvas.";
-  FML_DCHECK(false);
-}
-
 void DlSkCanvasAdapter::DrawDisplayList(const sk_sp<DisplayList> display_list,
                                         SkScalar opacity) {
   const int restore_count = delegate_->getSaveCount();
@@ -330,6 +323,14 @@ void DlSkCanvasAdapter::DrawTextBlob(const sk_sp<SkTextBlob>& blob,
                                      SkScalar y,
                                      const DlPaint& paint) {
   delegate_->drawTextBlob(blob, x, y, ToSk(paint));
+}
+
+void DlSkCanvasAdapter::DrawTextFrame(
+    const std::shared_ptr<impeller::TextFrame>& text_frame,
+    SkScalar x,
+    SkScalar y,
+    const DlPaint& paint) {
+  FML_CHECK(false);
 }
 
 void DlSkCanvasAdapter::DrawShadow(const SkPath& path,

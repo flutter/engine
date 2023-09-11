@@ -27,7 +27,7 @@
 namespace flutter {
 namespace testing {
 
-[[maybe_unused]] static constexpr SkRect kEmptyRect = SkRect::MakeEmpty();
+static constexpr SkRect kEmptyRect = SkRect::MakeEmpty();
 
 // Mock |SkCanvas|, useful for writing tests that use Skia but do not interact
 // with the GPU.
@@ -95,11 +95,6 @@ class MockCanvas final : public DlCanvas {
     DlPaint paint;
   };
 
-  struct DrawImpellerPictureData {
-    std::shared_ptr<const impeller::Picture> picture;
-    SkScalar opacity;
-  };
-
   struct DrawDisplayListData {
     sk_sp<DisplayList> display_list;
     SkScalar opacity;
@@ -147,7 +142,6 @@ class MockCanvas final : public DlCanvas {
                                     DrawTextData,
                                     DrawImageDataNoPaint,
                                     DrawImageData,
-                                    DrawImpellerPictureData,
                                     DrawDisplayListData,
                                     DrawShadowData,
                                     ClipRectData,
@@ -272,15 +266,17 @@ class MockCanvas final : public DlCanvas {
                  DlImageSampling sampling,
                  const SkRect* cullRect,
                  const DlPaint* paint = nullptr) override;
-  void DrawImpellerPicture(
-      const std::shared_ptr<const impeller::Picture>& picture,
-      SkScalar opacity = SK_Scalar1) override;
+
   void DrawDisplayList(const sk_sp<DisplayList> display_list,
                        SkScalar opacity) override;
   void DrawTextBlob(const sk_sp<SkTextBlob>& blob,
                     SkScalar x,
                     SkScalar y,
                     const DlPaint& paint) override;
+  void DrawTextFrame(const std::shared_ptr<impeller::TextFrame>& text_frame,
+                     SkScalar x,
+                     SkScalar y,
+                     const DlPaint& paint) override;
   void DrawShadow(const SkPath& path,
                   const DlColor color,
                   const SkScalar elevation,
@@ -335,11 +331,6 @@ extern bool operator==(const MockCanvas::DrawImageDataNoPaint& a,
                        const MockCanvas::DrawImageDataNoPaint& b);
 extern std::ostream& operator<<(std::ostream& os,
                                 const MockCanvas::DrawImageDataNoPaint& data);
-extern std::ostream& operator<<(
-    std::ostream& os,
-    const MockCanvas::DrawImpellerPictureData& data);
-extern bool operator==(const MockCanvas::DrawImpellerPictureData& a,
-                       const MockCanvas::DrawImpellerPictureData& b);
 extern bool operator==(const MockCanvas::DrawDisplayListData& a,
                        const MockCanvas::DrawDisplayListData& b);
 extern std::ostream& operator<<(std::ostream& os,

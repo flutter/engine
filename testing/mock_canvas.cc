@@ -160,6 +160,14 @@ void MockCanvas::DrawTextBlob(const sk_sp<SkTextBlob>& text,
                                    paint, SkPoint::Make(x, y)}});
 }
 
+void MockCanvas::DrawTextFrame(
+    const std::shared_ptr<impeller::TextFrame>& text_frame,
+    SkScalar x,
+    SkScalar y,
+    const DlPaint& paint) {
+  FML_DCHECK(false);
+}
+
 void MockCanvas::DrawRect(const SkRect& rect, const DlPaint& paint) {
   draw_calls_.emplace_back(DrawCall{current_layer_, DrawRectData{rect, paint}});
 }
@@ -191,14 +199,6 @@ void MockCanvas::DrawImage(const sk_sp<DlImage>& image,
         DrawCall{current_layer_,
                  DrawImageDataNoPaint{image, point.fX, point.fY, options}});
   }
-}
-
-void MockCanvas::DrawImpellerPicture(
-    const std::shared_ptr<const impeller::Picture>& picture,
-    SkScalar opacity) {
-  draw_calls_.emplace_back(
-      DrawCall{.layer = current_layer_,
-               .data = DrawImpellerPictureData{picture, opacity}});
 }
 
 void MockCanvas::DrawDisplayList(const sk_sp<DisplayList> display_list,
@@ -468,16 +468,6 @@ std::ostream& operator<<(std::ostream& os,
                          const MockCanvas::DrawImageDataNoPaint& data) {
   return os << data.image << " " << data.x << " " << data.y << " "
             << data.options;
-}
-
-bool operator==(const MockCanvas::DrawImpellerPictureData& a,
-                const MockCanvas::DrawImpellerPictureData& b) {
-  return a.picture == b.picture && a.opacity == b.opacity;
-}
-
-std::ostream& operator<<(std::ostream& os,
-                         const MockCanvas::DrawImpellerPictureData& data) {
-  return os << "[Impeller picture] " << data.opacity;
 }
 
 bool operator==(const MockCanvas::DrawDisplayListData& a,

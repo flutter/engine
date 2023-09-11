@@ -18,7 +18,10 @@
 
 #include <algorithm>
 #include <numeric>
+#include "display_list/dl_paint.h"
 #include "fml/logging.h"
+#include "impeller/typographer/backends/skia/text_frame_skia.h"
+#include "include/core/SkMatrix.h"
 
 namespace txt {
 
@@ -63,12 +66,12 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
   ///             See https://github.com/flutter/flutter/issues/126673. It
   ///             probably makes sense to eventually make this a compile-time
   ///             decision (i.e. with `#ifdef`) instead of a runtime option.
-  DisplayListParagraphPainter(DlCanvas* canvas,
+  DisplayListParagraphPainter(DisplayListBuilder* builder,
                               const std::vector<DlPaint>& dl_paints,
-                              bool draw_path_effect)
-      : canvas_(canvas),
+                              bool impeller_enabled)
+      : builder_(builder),
         dl_paints_(dl_paints),
-        draw_path_effect_(draw_path_effect) {}
+        impeller_enabled_(impeller_enabled) {}
 
   void drawTextBlob(const sk_sp<SkTextBlob>& blob,
                     SkScalar x,
@@ -79,7 +82,23 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
     }
     size_t paint_id = std::get<PaintID>(paint);
     FML_DCHECK(paint_id < dl_paints_.size());
-    canvas_->DrawTextBlob(blob, x, y, dl_paints_[paint_id]);
+
+#ifdef IMPELLER_SUPPORTS_RENDERING
+    if (impeller_enabled_) {
+      if (ShouldRenderAsPath(dl_paints_[paint_id])) {
+        auto path = skia::textlayout::Paragraph::GetPath(blob.get());
+        auto transformed = path.makeTransform(SkMatrix::Translate(
+            x + blob->bounds().left(), y + blob->bounds().top()));
+        builder_->DrawPath(transformed, dl_paints_[paint_id]);
+        return;
+      }
+
+      builder_->DrawTextFrame(impeller::MakeTextFrameFromTextBlobSkia(blob), x,
+                              y, dl_paints_[paint_id]);
+      return;
+    }
+#endif  // IMPELLER_SUPPORTS_RENDERING
+    builder_->DrawTextBlob(blob, x, y, dl_paints_[paint_id]);
   }
 
   void drawTextShadow(const sk_sp<SkTextBlob>& blob,
@@ -96,24 +115,29 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
       DlBlurMaskFilter filter(DlBlurStyle::kNormal, blur_sigma, false);
       paint.setMaskFilter(&filter);
     }
-    canvas_->DrawTextBlob(blob, x, y, paint);
+    if (impeller_enabled_) {
+      builder_->DrawTextFrame(impeller::MakeTextFrameFromTextBlobSkia(blob), x,
+                              y, paint);
+      return;
+    }
+    builder_->DrawTextBlob(blob, x, y, paint);
   }
 
   void drawRect(const SkRect& rect, const SkPaintOrID& paint) override {
     size_t paint_id = std::get<PaintID>(paint);
     FML_DCHECK(paint_id < dl_paints_.size());
-    canvas_->DrawRect(rect, dl_paints_[paint_id]);
+    builder_->DrawRect(rect, dl_paints_[paint_id]);
   }
 
   void drawFilledRect(const SkRect& rect,
                       const DecorationStyle& decor_style) override {
     DlPaint paint = toDlPaint(decor_style, DlDrawStyle::kFill);
-    canvas_->DrawRect(rect, paint);
+    builder_->DrawRect(rect, paint);
   }
 
   void drawPath(const SkPath& path,
                 const DecorationStyle& decor_style) override {
-    canvas_->DrawPath(path, toDlPaint(decor_style));
+    builder_->DrawPath(path, toDlPaint(decor_style));
   }
 
   void drawLine(SkScalar x0,
@@ -124,35 +148,37 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
     // We only support horizontal lines.
     FML_DCHECK(y0 == y1);
 
-    // This function is called for both solid and dashed lines. If we're
-    // drawing a dashed line, and we're using the Impeller backend, then we
-    // need to draw the line directly using the `drawLine` API instead of
-    // using a path effect (because Impeller does not support path effects).
+    // This function is called for both solid and dashed lines. If we're drawing
+    // a dashed line, and we're using the Impeller backend, then we need to draw
+    // the line directly using the `drawLine` API instead of using a path effect
+    // (because Impeller does not support path effects).
     auto dash_path_effect = decor_style.getDashPathEffect();
-    if (draw_path_effect_ && dash_path_effect) {
+#ifdef IMPELLER_SUPPORTS_RENDERING
+    if (impeller_enabled_ && dash_path_effect) {
       auto path = dashedLine(x0, x1, y0, *dash_path_effect);
-      canvas_->DrawPath(path, toDlPaint(decor_style));
+      builder_->DrawPath(path, toDlPaint(decor_style));
       return;
     }
+#endif  // IMPELLER_SUPPORTS_RENDERING
 
     auto paint = toDlPaint(decor_style);
     if (dash_path_effect) {
       setPathEffect(paint, *dash_path_effect);
     }
-    canvas_->DrawLine(SkPoint::Make(x0, y0), SkPoint::Make(x1, y1), paint);
+    builder_->DrawLine(SkPoint::Make(x0, y0), SkPoint::Make(x1, y1), paint);
   }
 
   void clipRect(const SkRect& rect) override {
-    canvas_->ClipRect(rect, DlCanvas::ClipOp::kIntersect, false);
+    builder_->ClipRect(rect, DlCanvas::ClipOp::kIntersect, false);
   }
 
   void translate(SkScalar dx, SkScalar dy) override {
-    canvas_->Translate(dx, dy);
+    builder_->Translate(dx, dy);
   }
 
-  void save() override { canvas_->Save(); }
+  void save() override { builder_->Save(); }
 
-  void restore() override { canvas_->Restore(); }
+  void restore() override { builder_->Restore(); }
 
  private:
   SkPath dashedLine(SkScalar x0,
@@ -180,6 +206,16 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
     return path;
   }
 
+  bool ShouldRenderAsPath(const DlPaint& paint) const {
+    FML_DCHECK(impeller_enabled_);
+    // Text with non-trivial color sources or stroke paint mode should be
+    // rendered as a path when running on Impeller for correctness. These
+    // filters rely on having the glyph coverage, whereas regular text is
+    // drawn as rectangular texture samples.
+    return ((paint.getColorSource() && !paint.getColorSource()->asColor()) ||
+            paint.getDrawStyle() == DlDrawStyle::kStroke);
+  }
+
   DlPaint toDlPaint(const DecorationStyle& decor_style,
                     DlDrawStyle draw_style = DlDrawStyle::kStroke) {
     DlPaint paint;
@@ -192,7 +228,7 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
 
   void setPathEffect(DlPaint& paint, const DashPathEffect& dash_path_effect) {
     // Impeller does not support path effects, so we should never be setting.
-    FML_DCHECK(!draw_path_effect_);
+    FML_DCHECK(!impeller_enabled_);
 
     std::array<SkScalar, 2> intervals{dash_path_effect.fOnLength,
                                       dash_path_effect.fOffLength};
@@ -200,9 +236,9 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
     paint.setPathEffect(effect);
   }
 
-  DlCanvas* canvas_;
+  DisplayListBuilder* builder_;
   const std::vector<DlPaint>& dl_paints_;
-  bool draw_path_effect_;
+  const bool impeller_enabled_;
 };
 
 }  // anonymous namespace
@@ -291,7 +327,7 @@ void ParagraphSkia::Layout(double width) {
   paragraph_->layout(width);
 }
 
-bool ParagraphSkia::Paint(DlCanvas* builder, double x, double y) {
+bool ParagraphSkia::Paint(DisplayListBuilder* builder, double x, double y) {
   DisplayListParagraphPainter painter(builder, dl_paints_, impeller_enabled_);
   paragraph_->paint(&painter, x, y);
   return true;

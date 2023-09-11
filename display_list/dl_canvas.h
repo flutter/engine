@@ -18,9 +18,7 @@
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 
-namespace impeller {
-struct Picture;
-}  // namespace impeller
+#include "impeller/typographer/text_frame.h"
 
 namespace flutter {
 
@@ -65,12 +63,7 @@ class DlCanvas {
                          const DlImageFilter* backdrop = nullptr) = 0;
   virtual void Restore() = 0;
   virtual int GetSaveCount() const = 0;
-  virtual void RestoreToCount(int restore_count) {
-    FML_DCHECK(restore_count <= GetSaveCount());
-    while (restore_count < GetSaveCount() && GetSaveCount() > 1) {
-      Restore();
-    }
-  }
+  virtual void RestoreToCount(int restore_count) = 0;
 
   virtual void Translate(SkScalar tx, SkScalar ty) = 0;
   virtual void Scale(SkScalar sx, SkScalar sy) = 0;
@@ -161,7 +154,7 @@ class DlCanvas {
   virtual void DrawVertices(const DlVertices* vertices,
                             DlBlendMode mode,
                             const DlPaint& paint) = 0;
-  void DrawVertices(const std::shared_ptr<const DlVertices> vertices,
+  void DrawVertices(const std::shared_ptr<const DlVertices>& vertices,
                     DlBlendMode mode,
                     const DlPaint& paint) {
     DrawVertices(vertices.get(), mode, paint);
@@ -210,9 +203,13 @@ class DlCanvas {
                          const DlPaint* paint = nullptr) = 0;
   virtual void DrawDisplayList(const sk_sp<DisplayList> display_list,
                                SkScalar opacity = SK_Scalar1) = 0;
-  virtual void DrawImpellerPicture(
-      const std::shared_ptr<const impeller::Picture>& picture,
-      SkScalar opacity = SK_Scalar1) = 0;
+
+  virtual void DrawTextFrame(
+      const std::shared_ptr<impeller::TextFrame>& text_frame,
+      SkScalar x,
+      SkScalar y,
+      const DlPaint& paint) = 0;
+
   virtual void DrawTextBlob(const sk_sp<SkTextBlob>& blob,
                             SkScalar x,
                             SkScalar y,

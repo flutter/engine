@@ -12,6 +12,7 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/aiks/image.h"
+#include "impeller/aiks/image_filter.h"
 #include "impeller/aiks/paint.h"
 #include "impeller/aiks/picture.h"
 #include "impeller/core/sampler_descriptor.h"
@@ -64,13 +65,11 @@ class Canvas {
 
   ~Canvas();
 
-  std::optional<Rect> BaseCullRect() const { return initial_cull_rect_; }
-
   void Save();
 
   void SaveLayer(const Paint& paint,
                  std::optional<Rect> bounds = std::nullopt,
-                 const Paint::ImageFilterProc& backdrop_filter = nullptr);
+                 const std::shared_ptr<ImageFilter>& backdrop_filter = nullptr);
 
   bool Restore();
 
@@ -110,7 +109,7 @@ class Canvas {
 
   void DrawCircle(Point center, Scalar radius, const Paint& paint);
 
-  void DrawPoints(const std::vector<Point>&,
+  void DrawPoints(std::vector<Point>,
                   Scalar radius,
                   const Paint& paint,
                   PointStyle point_style);
@@ -141,7 +140,7 @@ class Canvas {
 
   void DrawPicture(const Picture& picture);
 
-  void DrawTextFrame(const TextFrame& text_frame,
+  void DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
                      Point position,
                      const Paint& paint);
 
@@ -182,7 +181,7 @@ class Canvas {
 
   void Save(bool create_subpass,
             BlendMode = BlendMode::kSourceOver,
-            EntityPass::BackdropFilterProc backdrop_filter = nullptr);
+            const std::shared_ptr<ImageFilter>& backdrop_filter = nullptr);
 
   void RestoreClip();
 
