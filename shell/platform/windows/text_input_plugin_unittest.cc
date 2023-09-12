@@ -368,6 +368,7 @@ TEST(TextInputPluginTest, TextEditingWorksWithDeltaModel) {
   // Passes if it did not crash
 }
 
+// Regression test for https://github.com/flutter/flutter/issues/123749
 TEST(TextInputPluginTest, CompositionCursorPos) {
   int selection_base = -1;
   TestBinaryMessenger messenger([&](const std::string& channel,
@@ -379,9 +380,13 @@ TEST(TextInputPluginTest, CompositionCursorPos) {
       const auto& args = *method->arguments();
       const auto& editing_state = args[1];
       auto base = editing_state.FindMember(kSelectionBaseKey);
+      auto extent = editing_state.FindMember(kSelectionExtentKey);
       ASSERT_NE(base, editing_state.MemberEnd());
       ASSERT_TRUE(base->value.IsInt());
+      ASSERT_NE(extent, editing_state.MemberEnd());
+      ASSERT_TRUE(extent->value.IsInt());
       selection_base = base->value.GetInt();
+      EXPECT_EQ(selection_extent, 0);
     }
   });
   MockTextInputPluginDelegate delegate;
