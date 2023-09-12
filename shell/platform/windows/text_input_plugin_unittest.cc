@@ -386,7 +386,7 @@ TEST(TextInputPluginTest, CompositionCursorPos) {
       ASSERT_NE(extent, editing_state.MemberEnd());
       ASSERT_TRUE(extent->value.IsInt());
       selection_base = base->value.GetInt();
-      EXPECT_EQ(selection_extent, 0);
+      EXPECT_EQ(extent->value.GetInt(), selection_base);
     }
   });
   MockTextInputPluginDelegate delegate;
