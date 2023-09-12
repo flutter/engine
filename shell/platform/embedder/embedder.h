@@ -760,6 +760,8 @@ typedef struct {
   /// The queue should not be used without protection from a mutex to make sure
   /// it is not used simultaneously with other threads. That mutex should match
   /// the one injected via the |get_instance_proc_address_callback|.
+  /// There is a proposal to remove the need for the mutex at
+  /// https://github.com/flutter/flutter/issues/134573.
   FlutterVulkanQueueHandle queue;
   /// The number of instance extensions available for enumerating in the next
   /// field.
