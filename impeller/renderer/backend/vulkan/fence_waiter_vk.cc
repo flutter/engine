@@ -106,13 +106,17 @@ void FenceWaiterVK::Main() {
 
     lock.unlock();
 
+    if (terminate) {
+      break;
+    }
+
     // Check if the context had died in the meantime.
     auto device_holder = device_holder_.lock();
     if (!device_holder) {
       break;
     }
 
-    auto const device = device_holder->GetDevice();
+    const auto& device = device_holder->GetDevice();
 
     // Wait for one or more fences to be signaled. Any additional fences added
     // to the waiter will be serviced in the next pass. If a fence that is going
@@ -132,10 +136,6 @@ void FenceWaiterVK::Main() {
     if (!(result == vk::Result::eSuccess || result == vk::Result::eTimeout)) {
       VALIDATION_LOG << "Fence waiter encountered an unexpected error. Tearing "
                         "down the waiter thread.";
-      break;
-    }
-
-    if (terminate) {
       break;
     }
 
