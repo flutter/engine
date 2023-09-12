@@ -240,15 +240,13 @@ Future<int> main(List<String> args) async {
   });
 
   test('lintAll=true checks all files', () async {
-    final StringBuffer outBuffer = StringBuffer();
-    final StringBuffer errBuffer = StringBuffer();
-    final ClangTidy clangTidy = ClangTidy(
-      buildCommandsPath: io.File(buildCommands),
-      lintAll: true,
-      outSink: outBuffer,
-      errSink: errBuffer,
+    final Fixture fixture = Fixture.fromOptions(
+      Options(
+        buildCommandsPath: io.File(buildCommands),
+        lintAll: true,
+      ),
     );
-    final List<io.File> fileList = await clangTidy.computeFilesOfInterest();
+    final List<io.File> fileList = await fixture.tool.computeFilesOfInterest();
     expect(fileList.length, greaterThan(1000));
   });
 
