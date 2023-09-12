@@ -74,9 +74,13 @@ class CommandPoolVK final {
 /// A single instance should be created per |ContextVK|.
 ///
 /// Every "frame", a single |CommandPoolResourceVk| is made available for each
-/// thread that calls |Get|. After calling |Recycle|, the current thread's pool
+/// thread that calls |Get|. After calling |Dispose|, the current thread's pool
 /// is moved to a background thread, reset, and made available for the next time
 /// |Get| is called and needs to create a command pool.
+///
+/// Commands in the command pool are not necessarily done executing when the
+/// pool is recycled, when all references are dropped to the pool, they are
+/// reset and returned to the pool of available pools.
 ///
 /// @note       This class is thread-safe.
 ///
@@ -102,11 +106,11 @@ class CommandPoolRecyclerVK final
 
   /// @brief      Returns a command pool to be reset on a background thread.
   ///
-  /// @param[in]  pool The pool to recycle.
+  /// @param[in]  pool The pool to recycler.
   void Reclaim(vk::UniqueCommandPool&& pool);
 
   /// @brief      Clears all recycled command pools to let them be reclaimed.
-  void Recycle();
+  void Dispose();
 
  private:
   std::weak_ptr<ContextVK> context_;

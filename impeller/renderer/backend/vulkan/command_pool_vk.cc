@@ -157,7 +157,7 @@ std::optional<vk::UniqueCommandPool> CommandPoolRecyclerVK::Create() {
 
 std::optional<vk::UniqueCommandPool> CommandPoolRecyclerVK::Reuse() {
   // If there are no recycled pools, return nullopt.
-  Lock _(recycled_mutex_);
+  Lock recycled_lock(recycled_mutex_);
   if (recycled_.empty()) {
     return std::nullopt;
   }
@@ -180,16 +180,16 @@ void CommandPoolRecyclerVK::Reclaim(vk::UniqueCommandPool&& pool) {
   device.resetCommandPool(pool.get());
 
   // Move the pool to the recycled list.
-  Lock _(recycled_mutex_);
+  Lock recycled_lock(recycled_mutex_);
   recycled_.push_back(std::move(pool));
 }
 
 CommandPoolRecyclerVK::~CommandPoolRecyclerVK() {
   // Ensure all recycled pools are reclaimed before this is destroyed.
-  Recycle();
+  Dispose();
 }
 
-void CommandPoolRecyclerVK::Recycle() {
+void CommandPoolRecyclerVK::Dispose() {
   auto const resources = resources_.get();
   if (!resources) {
     return;

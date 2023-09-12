@@ -63,6 +63,7 @@ bool FenceWaiterVK::IsValid() const {
 
 bool FenceWaiterVK::AddFence(vk::UniqueFence fence,
                              const fml::closure& callback) {
+  FML_DCHECK(!terminate_);
   TRACE_EVENT0("flutter", "FenceWaiterVK::AddFence");
   if (!IsValid() || !fence || !callback) {
     return false;
@@ -101,8 +102,6 @@ void FenceWaiterVK::Main() {
     // critical section. Copy the array of entries and immediately unlock the
     // mutex.
     WaitSet wait_set = wait_set_;
-
-    const auto terminate = terminate_;
 
     lock.unlock();
 
@@ -168,6 +167,7 @@ void FenceWaiterVK::Main() {
     }
 
     // This is the last check because we want to wait for/clear fences first.
+    const auto terminate = terminate_;
     if (terminate) {
       break;
     }

@@ -113,7 +113,7 @@ ContextVK::~ContextVK() {
     [[maybe_unused]] auto result = device_holder_->device->waitIdle();
   }
   if (command_pool_recycler_) {
-    command_pool_recycler_.get()->Recycle();
+    command_pool_recycler_.get()->Dispose();
   }
 }
 

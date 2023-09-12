@@ -79,7 +79,7 @@ TEST(CommandPoolRecyclerVKTest, ReclaimMakesCommandPoolAvailable) {
     auto const pool = recycler->Get();
 
     // This normally is called at the end of a frame.
-    recycler->Recycle();
+    recycler->Dispose();
   }
 
   // Add something to the resource manager and have it notify us when it's
