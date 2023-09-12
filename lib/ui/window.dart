@@ -353,14 +353,7 @@ class FlutterView {
   ///   scheduling of frames.
   /// * [RendererBinding], the Flutter framework class which manages layout and
   ///   painting.
-  void render(Scene scene) {
-    if (platformDispatcher._renderedViews?.add(this) != true) {
-      // Duplicated calls or calls outside of onBeginFrame/onDrawFrame
-      // (indicated by _renderedViews being null) are ignored, as documented.
-      return;
-    }
-    _render(scene as _NativeScene);
-  }
+  void render(Scene scene) => _render(scene as _NativeScene);
 
   @Native<Void Function(Pointer<Void>)>(symbol: 'PlatformConfigurationNativeApi::Render')
   external static void _render(_NativeScene scene);
@@ -744,8 +737,8 @@ class SingletonFlutterWindow extends FlutterView {
   ///
   /// ## iOS
   ///
-  /// On iOS, the initial route can be set on the `initialRoute`
-  /// parameter of the [FlutterViewController](/objcdoc/Classes/FlutterViewController.html)'s
+  /// On iOS, the initial route can be set with the
+  /// [`FlutterViewController.setInitialRoute`](/ios-embedder/interface_flutter_view_controller.html#a7f269c2da73312f856d42611cc12a33f)
   /// initializer.
   ///
   /// On a standalone engine, see https://flutter.dev/docs/development/add-to-app/ios/add-flutter-screen#route.
