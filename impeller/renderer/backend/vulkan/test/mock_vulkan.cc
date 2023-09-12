@@ -5,6 +5,7 @@
 #include "impeller/renderer/backend/vulkan/test/mock_vulkan.h"
 #include <vector>
 #include "fml/macros.h"
+#include "impeller/base/thread_safety.h"
 
 namespace impeller {
 namespace testing {
@@ -43,10 +44,12 @@ class MockDevice final {
   FML_DISALLOW_COPY_AND_ASSIGN(MockDevice);
 
   Mutex called_functions_mutex_;
-  std::shared_ptr<std::vector<std::string>> called_functions_;
+  std::shared_ptr<std::vector<std::string>> called_functions_
+      IPLR_GUARDED_BY(called_functions_mutex_);
 
   Mutex command_buffers_mutex_;
-  std::vector<std::unique_ptr<MockCommandBuffer>> command_buffers_;
+  std::vector<std::unique_ptr<MockCommandBuffer>> command_buffers_
+      IPLR_GUARDED_BY(command_buffers_mutex_);
 };
 
 void noop() {}
