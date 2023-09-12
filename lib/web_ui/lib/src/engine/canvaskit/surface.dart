@@ -11,7 +11,6 @@ import '../configuration.dart';
 import '../dom.dart';
 import '../platform_dispatcher.dart';
 import '../util.dart';
-import '../window.dart';
 import 'canvas.dart';
 import 'canvaskit_api.dart';
 import 'picture.dart';
