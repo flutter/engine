@@ -77,3 +77,41 @@ final class FakeProcessManager implements ProcessManager {
     return _onStart(command.map((Object o) => '$o').toList());
   }
 }
+
+/// An incomplete fake of [io.Process] that allows control for testing.
+final class FakeProcess implements io.Process {
+  /// Creates a fake process that returns the given [exitCode] and out/err.
+  FakeProcess({
+    int exitCode = 0,
+    String stdout = '',
+    String stderr = '',
+  })  : _exitCode = exitCode,
+        _stdout = stdout,
+        _stderr = stderr;
+
+  final int _exitCode;
+  final String _stdout;
+  final String _stderr;
+
+  @override
+  Future<int> get exitCode async => _exitCode;
+
+  @override
+  bool kill([io.ProcessSignal signal = io.ProcessSignal.sigterm]) => true;
+
+  @override
+  int get pid => 0;
+
+  @override
+  Stream<List<int>> get stderr {
+    return Stream<List<int>>.fromIterable(<List<int>>[io.systemEncoding.encoder.convert(_stderr)]);
+  }
+
+  @override
+  io.IOSink get stdin => throw UnimplementedError();
+
+  @override
+  Stream<List<int>> get stdout {
+    return Stream<List<int>>.fromIterable(<List<int>>[io.systemEncoding.encoder.convert(_stdout)]);
+  }
+}

@@ -251,41 +251,62 @@ Future<int> main(List<String> args) async {
   });
 
   test('lintAll=false does not check all files', () async {
-    final StringBuffer outBuffer = StringBuffer();
-    final StringBuffer errBuffer = StringBuffer();
-    final ClangTidy clangTidy = ClangTidy(
-      buildCommandsPath: io.File(buildCommands),
-      outSink: outBuffer,
-      errSink: errBuffer,
+    final Fixture fixture = Fixture.fromOptions(
+      Options(
+        buildCommandsPath: io.File(buildCommands),
+        // Intentional:
+        // ignore: avoid_redundant_argument_values
+        lintAll: false,
+      ),
+      processManager: FakeProcessManager(
+        onStart: (List<String> command) {
+          if (command.first == 'git') {
+            // This just allows git to not actually be called.
+            return FakeProcess();
+          }
+          return FakeProcessManager.unhandledStart(command);
+        },
+      ),
     );
-    final List<io.File> fileList = await clangTidy.computeFilesOfInterest();
+    final List<io.File> fileList = await fixture.tool.computeFilesOfInterest();
     expect(fileList.length, lessThan(300));
   });
 
   test('Sharding', () async {
-    final StringBuffer outBuffer = StringBuffer();
-    final StringBuffer errBuffer = StringBuffer();
-    final ClangTidy clangTidy = ClangTidy(
-      buildCommandsPath: io.File(buildCommands),
-      lintAll: true,
-      outSink: outBuffer,
-      errSink: errBuffer,
+    final Fixture fixture = Fixture.fromOptions(
+      Options(
+        buildCommandsPath: io.File(buildCommands),
+        lintAll: true,
+      ),
+      processManager: FakeProcessManager(
+        onStart: (List<String> command) {
+          if (command.first == 'git') {
+            // This just allows git to not actually be called.
+            return FakeProcess();
+          }
+          return FakeProcessManager.unhandledStart(command);
+        },
+      ),
     );
-    Map<String, dynamic> makeBuildCommandEntry(String filePath) => <String, dynamic>{
-          'directory': '/unused',
-          'command': '../../buildtools/mac-x64/clang/bin/clang $filePath',
-          'file': filePath,
-        };
+
+    Map<String, String> makeBuildCommandEntry(String filePath) {
+      return <String, String>{
+        'directory': '/unused',
+        'command': '../../buildtools/mac-x64/clang/bin/clang $filePath',
+        'file': filePath,
+      };
+    }
+
     final List<String> filePaths = <String>[
       for (int i = 0; i < 10; ++i) '/path/to/a/source_file_$i.cc'
     ];
-    final List<dynamic> buildCommandsData =
+    final List<Map<String, String>> buildCommandsData =
         filePaths.map((String e) => makeBuildCommandEntry(e)).toList();
-    final List<dynamic> shardBuildCommandsData =
+    final List<Map<String, String>> shardBuildCommandsData =
       filePaths.sublist(6).map((String e) => makeBuildCommandEntry(e)).toList();
 
     {
-      final List<Command> commands = await clangTidy.getLintCommandsForFiles(
+      final List<Command> commands = await fixture.tool.getLintCommandsForFiles(
         buildCommandsData,
         filePaths.map((String e) => io.File(e)).toList(),
         <List<dynamic>>[shardBuildCommandsData],
@@ -305,10 +326,10 @@ Future<int> main(List<String> args) async {
       expect(commandFilePaths.contains('/path/to/a/source_file_9.cc'), false);
     }
     {
-      final List<Command> commands = await clangTidy.getLintCommandsForFiles(
+      final List<Command> commands = await fixture.tool.getLintCommandsForFiles(
         buildCommandsData,
         filePaths.map((String e) => io.File(e)).toList(),
-        <List<dynamic>>[shardBuildCommandsData],
+        <List<Map<String, String>>>[shardBuildCommandsData],
         1,
       );
 
@@ -328,14 +349,13 @@ Future<int> main(List<String> args) async {
   });
 
   test('No Commands are produced when no files changed', () async {
-    final StringBuffer outBuffer = StringBuffer();
-    final StringBuffer errBuffer = StringBuffer();
-    final ClangTidy clangTidy = ClangTidy(
-      buildCommandsPath: io.File(buildCommands),
-      lintAll: true,
-      outSink: outBuffer,
-      errSink: errBuffer,
+    final Fixture fixture = Fixture.fromOptions(
+      Options(
+        buildCommandsPath: io.File(buildCommands),
+        lintAll: true,
+      ),
     );
+
     const String filePath = '/path/to/a/source_file.cc';
     final List<dynamic> buildCommandsData = <Map<String, dynamic>>[
       <String, dynamic>{
@@ -344,7 +364,7 @@ Future<int> main(List<String> args) async {
         'file': filePath,
       },
     ];
-    final List<Command> commands = await clangTidy.getLintCommandsForFiles(
+    final List<Command> commands = await fixture.tool.getLintCommandsForFiles(
       buildCommandsData,
       <io.File>[],
       <List<dynamic>>[],
@@ -355,13 +375,11 @@ Future<int> main(List<String> args) async {
   });
 
   test('A Command is produced when a file is changed', () async {
-    final StringBuffer outBuffer = StringBuffer();
-    final StringBuffer errBuffer = StringBuffer();
-    final ClangTidy clangTidy = ClangTidy(
-      buildCommandsPath: io.File(buildCommands),
-      lintAll: true,
-      outSink: outBuffer,
-      errSink: errBuffer,
+    final Fixture fixture = Fixture.fromOptions(
+      Options(
+        buildCommandsPath: io.File(buildCommands),
+        lintAll: true,
+      ),
     );
 
     // This file needs to exist, and be UTF8 line-parsable.
@@ -373,7 +391,7 @@ Future<int> main(List<String> args) async {
         'file': filePath,
       },
     ];
-    final List<Command> commands = await clangTidy.getLintCommandsForFiles(
+    final List<Command> commands = await fixture.tool.getLintCommandsForFiles(
       buildCommandsData,
       <io.File>[io.File(filePath)],
       <List<dynamic>>[],
