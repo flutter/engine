@@ -321,34 +321,39 @@ StrokePathGeometry::CreateSolidStrokeVertices(
       vtx.position = polyline.points[point_i - 1] - offset;
       vtx_builder.AppendVertex(vtx);
 
-      // Curve sections don't require the two end points of the line rects
-      // assuming the angles between of a continous two points are close enough.
-      //
-      // This also prevents overdrawing the line rect if the contour ends at a
-      // sharp curve with thick stroke width.
+      auto is_end_of_contour = point_i == contour_end_point_i - 1;
+
       if (!contour.sections[contour_section].is_curve) {
+        /// Add two end points of the line rect to draw a solid
+        /// straight line.
         vtx.position = polyline.points[point_i] + offset;
         vtx_builder.AppendVertex(vtx);
         vtx.position = polyline.points[point_i] - offset;
         vtx_builder.AppendVertex(vtx);
-      } else if (point_i == contour_end_point_i - 1) {
-        // If this is a curve and is the end of the contour, two end points
-        // need to be drawn with the contour end_direction.
-        auto end_offset =
-            Vector2(-contour.end_direction.y, contour.end_direction.x) *
-            stroke_width * 0.5;
-        vtx.position = polyline.points[contour_end_point_i - 1] + end_offset;
-        vtx_builder.AppendVertex(vtx);
-        vtx.position = polyline.points[contour_end_point_i - 1] - end_offset;
-        vtx_builder.AppendVertex(vtx);
-      }
 
-      if (point_i < contour_end_point_i - 1) {
-        compute_offset(point_i + 1);
-
-        // Generate join from the current line to the next line.
-        join_proc(vtx_builder, polyline.points[point_i], previous_offset,
-                  offset, scaled_miter_limit, scale);
+        if (!is_end_of_contour) {
+          compute_offset(point_i + 1);
+          // Generate join from the current line to the next line.
+          join_proc(vtx_builder, polyline.points[point_i], previous_offset,
+                    offset, scaled_miter_limit, scale);
+        }
+      } else {
+        // Curve sections don't require the two end points of the line rects
+        // assuming the angles between of a continous two points are close
+        // enough.
+        if (!is_end_of_contour) {
+          compute_offset(point_i + 1);
+        } else {
+          // If this is a curve and is the end of the contour, two end points
+          // need to be drawn with the contour end_direction.
+          auto end_offset =
+              Vector2(-contour.end_direction.y, contour.end_direction.x) *
+              stroke_width * 0.5;
+          vtx.position = polyline.points[contour_end_point_i - 1] + end_offset;
+          vtx_builder.AppendVertex(vtx);
+          vtx.position = polyline.points[contour_end_point_i - 1] - end_offset;
+          vtx_builder.AppendVertex(vtx);
+        }
       }
     }
 
