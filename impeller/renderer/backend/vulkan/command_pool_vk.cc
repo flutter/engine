@@ -3,13 +3,16 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
+
 #include <memory>
 #include <optional>
 #include <utility>
+
 #include "fml/macros.h"
 #include "fml/thread_local.h"
 #include "fml/trace_event.h"
 #include "impeller/renderer/backend/vulkan/resource_manager_vk.h"
+#include "impeller/renderer/backend/vulkan/vk.h"  // IWYU pragma: keep.
 #include "vulkan/vulkan_structs.hpp"
 
 namespace impeller {
@@ -70,7 +73,7 @@ CommandPoolVK::~CommandPoolVK() {
 }
 
 // TODO(matanlurey): Return a status_or<> instead of {} when we have one.
-vk::UniqueCommandBuffer CommandPoolVK::CreateBuffer() {
+vk::UniqueCommandBuffer CommandPoolVK::CreateCommandBuffer() {
   auto const context = context_.lock();
   if (!context) {
     return {};
@@ -88,7 +91,7 @@ vk::UniqueCommandBuffer CommandPoolVK::CreateBuffer() {
   return std::move(buffers[0]);
 }
 
-void CommandPoolVK::CollectBuffer(vk::UniqueCommandBuffer&& buffer) {
+void CommandPoolVK::CollectCommandBuffer(vk::UniqueCommandBuffer&& buffer) {
   collected_buffers_.push_back(std::move(buffer));
 }
 

@@ -6,6 +6,7 @@
 #include <vector>
 #include "fml/macros.h"
 #include "impeller/base/thread_safety.h"
+#include "impeller/renderer/backend/vulkan/vk.h"  // IWYU pragma: keep.
 
 namespace impeller {
 namespace testing {

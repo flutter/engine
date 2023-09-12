@@ -45,14 +45,14 @@ class CommandPoolVK final {
   /// @return     Always returns a new |vk::CommandBuffer|, but if for any
   ///             reason a valid command buffer could not be created, it will be
   ///             a `{}` default instance (i.e. while being torn down).
-  vk::UniqueCommandBuffer CreateBuffer();
+  vk::UniqueCommandBuffer CreateCommandBuffer();
 
   /// @brief      Collects the given |vk::CommandBuffer| to be retained.
   ///
   /// @param[in]  buffer  The |vk::CommandBuffer| to collect.
   ///
   /// @see        |GarbageCollectBuffersIfAble|
-  void CollectBuffer(vk::UniqueCommandBuffer&& buffer);
+  void CollectCommandBuffer(vk::UniqueCommandBuffer&& buffer);
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(CommandPoolVK);
@@ -109,7 +109,10 @@ class CommandPoolRecyclerVK final
   void Recycle();
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(CommandPoolRecyclerVK);
+  std::weak_ptr<ContextVK> context_;
+
+  Mutex recycled_mutex_;
+  std::vector<vk::UniqueCommandPool> recycled_ IPLR_GUARDED_BY(recycled_mutex_);
 
   /// @brief      Creates a new |vk::CommandPool|.
   ///
@@ -121,10 +124,7 @@ class CommandPoolRecyclerVK final
   /// @returns    Returns a |std::nullopt| if a pool was not available.
   std::optional<vk::UniqueCommandPool> Reuse();
 
-  std::weak_ptr<ContextVK> context_;
-
-  Mutex recycled_mutex_;
-  std::vector<vk::UniqueCommandPool> recycled_ IPLR_GUARDED_BY(recycled_mutex_);
+  FML_DISALLOW_COPY_AND_ASSIGN(CommandPoolRecyclerVK);
 };
 
 }  // namespace impeller

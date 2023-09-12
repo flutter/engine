@@ -5,6 +5,7 @@
 #include <thread>
 
 #include "flutter/testing/testing.h"  // IWYU pragma: keep
+#include "fml/synchronization/waitable_event.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/test/mock_vulkan.h"
 
