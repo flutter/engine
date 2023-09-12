@@ -324,10 +324,10 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
         return Vector2(0, -1);
       };
 
-  std::vector<PolylineContour::Section> sections;
+  std::vector<PolylineContour::Component> components;
   std::optional<size_t> previous_path_component_index;
   auto end_contour = [&polyline, &previous_path_component_index,
-                      &get_path_component, &sections]() {
+                      &get_path_component, &components]() {
     // Whenever a contour has ended, extract the exact end direction from the
     // last component.
     if (polyline.contours.empty()) {
@@ -340,8 +340,8 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
 
     auto& contour = polyline.contours.back();
     contour.end_direction = Vector2(0, 1);
-    contour.sections = sections;
-    sections.clear();
+    contour.components = components;
+    components.clear();
 
     size_t previous_index = previous_path_component_index.value();
     while (!std::holds_alternative<std::monostate>(
@@ -366,24 +366,24 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
     const auto& component = components_[component_i];
     switch (component.type) {
       case ComponentType::kLinear:
-        sections.push_back({
-            .section_start_index = polyline.points.size(),
+        components.push_back({
+            .component_start_index = polyline.points.size(),
             .is_curve = false,
         });
         collect_points(linears_[component.index].CreatePolyline());
         previous_path_component_index = component_i;
         break;
       case ComponentType::kQuadratic:
-        sections.push_back({
-            .section_start_index = polyline.points.size(),
+        components.push_back({
+            .component_start_index = polyline.points.size(),
             .is_curve = true,
         });
         collect_points(quads_[component.index].CreatePolyline(scale));
         previous_path_component_index = component_i;
         break;
       case ComponentType::kCubic:
-        sections.push_back({
-            .section_start_index = polyline.points.size(),
+        components.push_back({
+            .component_start_index = polyline.points.size(),
             .is_curve = true,
         });
         collect_points(cubics_[component.index].CreatePolyline(scale));
@@ -402,7 +402,7 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
         polyline.contours.push_back({.start_index = polyline.points.size(),
                                      .is_closed = contour.is_closed,
                                      .start_direction = start_direction,
-                                     .sections = sections});
+                                     .components = components});
         previous_contour_point = std::nullopt;
         collect_points({contour.destination});
         break;

@@ -253,7 +253,7 @@ StrokePathGeometry::CreateSolidStrokeVertices(
   for (size_t contour_i = 0; contour_i < polyline.contours.size();
        contour_i++) {
     auto contour = polyline.contours[contour_i];
-    size_t contour_section = 0;
+    size_t contour_component_i = 0;
     size_t contour_start_point_i, contour_end_point_i;
     std::tie(contour_start_point_i, contour_end_point_i) =
         polyline.GetContourPointBounds(contour_i);
@@ -309,11 +309,11 @@ StrokePathGeometry::CreateSolidStrokeVertices(
     // Generate contour geometry.
     for (size_t point_i = contour_start_point_i + 1;
          point_i < contour_end_point_i; point_i++) {
-      if ((contour_section + 1 >= contour.sections.size()) &&
-          contour.sections[contour_section + 1].section_start_index <=
+      if ((contour_component_i + 1 >= contour.components.size()) &&
+          contour.components[contour_component_i + 1].component_start_index <=
               point_i) {
-        // The point_i has entered the next section in this contour.
-        contour_section += 1;
+        // The point_i has entered the next component in this contour.
+        contour_component_i += 1;
       }
       // Generate line rect.
       vtx.position = polyline.points[point_i - 1] + offset;
@@ -323,9 +323,9 @@ StrokePathGeometry::CreateSolidStrokeVertices(
 
       auto is_end_of_contour = point_i == contour_end_point_i - 1;
 
-      if (!contour.sections[contour_section].is_curve) {
-        /// Add two end points of the line rect to draw a solid
-        /// straight line.
+      if (!contour.components[contour_component_i].is_curve) {
+        // For line components, two additional points need to be appended prior
+        // to appending a join connecting the next component.
         vtx.position = polyline.points[point_i] + offset;
         vtx_builder.AppendVertex(vtx);
         vtx.position = polyline.points[point_i] - offset;
@@ -338,9 +338,8 @@ StrokePathGeometry::CreateSolidStrokeVertices(
                     offset, scaled_miter_limit, scale);
         }
       } else {
-        // Curve sections don't require the two end points of the line rects
-        // assuming the angles between of a continous two points are close
-        // enough.
+        // For curve components, the polyline is detailed enough such that
+        // it can avoid worrying about joins altogether.
         if (!is_end_of_contour) {
           compute_offset(point_i + 1);
         } else {

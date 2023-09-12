@@ -351,7 +351,7 @@ enum class PrimitiveType {
   /// [ABC].
   kLineStrip,
 
-  /// Draws a point at each input vertices.
+  /// Draws a point at each input vertex.
   kPoint,
   // Triangle fans are implementation dependent and need extra extensions
   // checks. Hence, they are not supported here.
