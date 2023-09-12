@@ -124,8 +124,12 @@ public abstract class TestActivity extends TestableFlutterActivity {
           } catch (IOException ex) {
             Log.e(TAG, "Could not write timeline file", ex);
           } finally {
-            if (afd != null) {
-              afd.close();
+            try {
+              if (afd != null) {
+                afd.close();
+              }
+            } catch (IOException e) {
+              Log.w(TAG, "Could not close", e);
             }
           }
           finish();
