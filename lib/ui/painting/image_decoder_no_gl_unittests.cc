@@ -12,31 +12,70 @@ namespace testing {
 #pragma GCC diagnostic ignored "-Wunreachable-code"
 #endif
 
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#define FML_IS_LITTLE_ENDIAN true
+#else
+#define FML_IS_LITTLE_ENDIAN false
+#endif
+
 namespace {
 
 bool IsPngWithPLTE(const uint8_t* bytes, size_t size) {
-  if (size < 8) {
+  constexpr std::string_view kPngMagic = "\x89PNG\x0d\x0a\x1a\x0a";
+  constexpr std::string_view kPngPlte = "PLTE";
+  constexpr uint32_t kLengthBytes = 4;
+  constexpr uint32_t kTypeBytes = 4;
+  constexpr uint32_t kCrcBytes = 4;
+
+  if (size < kPngMagic.size()) {
     return false;
   }
 
-  if (memcmp(bytes, "\x89PNG\x0d\x0a\x1a\x0a", 8) != 0) {
+  if (memcmp(bytes, kPngMagic.data(), kPngMagic.size()) != 0) {
     return false;
   }
 
   const uint8_t* end = bytes + size;
-  const uint8_t* loc = bytes + 8;
+  const uint8_t* loc = bytes + kPngMagic.size();
   while (loc + 8 <= end) {
     uint32_t chunk_length =
         (loc[0] << 24) | (loc[1] << 16) | (loc[2] << 8) | loc[3];
+    static_assert(FML_IS_LITTLE_ENDIAN, "target isn't little endian");
 
-    if (memcmp(loc + 4, "PLTE", 4) == 0) {
+    if (memcmp(loc + kLengthBytes, kPngPlte.data(), kPngPlte.size()) == 0) {
       return true;
     }
 
-    loc += /*length*/ 4 + /*type*/ 4 + chunk_length + /*crc*/ 4;
+    loc += kLengthBytes + kTypeBytes + chunk_length + kCrcBytes;
   }
 
   return false;
+}
+
+}  // namespace
+
+float HalfToFloat(uint16_t half) {
+  switch (half) {
+    case 0x7c00:
+      return std::numeric_limits<float>::infinity();
+    case 0xfc00:
+      return -std::numeric_limits<float>::infinity();
+  }
+  bool negative = half >> 15;
+  uint16_t exponent = (half >> 10) & 0x1f;
+  uint16_t fraction = half & 0x3ff;
+  float fExponent = exponent - 15.0f;
+  float fFraction = static_cast<float>(fraction) / 1024.f;
+  float pow_value = powf(2.0f, fExponent);
+  return (negative ? -1.f : 1.f) * pow_value * (1.0f + fFraction);
+}
+
+float DecodeBGR10(uint32_t x) {
+  const float max = 1.25098f;
+  const float min = -0.752941f;
+  const float intercept = min;
+  const float slope = (max - min) / 1024.0f;
+  return (x * slope) + intercept;
 }
 
 sk_sp<SkData> OpenFixtureAsSkData(const char* name) {
@@ -67,32 +106,6 @@ sk_sp<SkData> OpenFixtureAsSkData(const char* name) {
   // The data is now owned by Skia.
   fixture_mapping.release();
   return data;
-}
-
-}  // namespace
-
-float HalfToFloat(uint16_t half) {
-  switch (half) {
-    case 0x7c00:
-      return std::numeric_limits<float>::infinity();
-    case 0xfc00:
-      return -std::numeric_limits<float>::infinity();
-  }
-  bool negative = half >> 15;
-  uint16_t exponent = (half >> 10) & 0x1f;
-  uint16_t fraction = half & 0x3ff;
-  float fExponent = exponent - 15.0f;
-  float fFraction = static_cast<float>(fraction) / 1024.f;
-  float pow_value = powf(2.0f, fExponent);
-  return (negative ? -1.f : 1.f) * pow_value * (1.0f + fFraction);
-}
-
-float DecodeBGR10(uint32_t x) {
-  const float max = 1.25098f;
-  const float min = -0.752941f;
-  const float intercept = min;
-  const float slope = (max - min) / 1024.0f;
-  return (x * slope) + intercept;
 }
 
 TEST(ImageDecoderNoGLTest, ImpellerWideGamutDisplayP3) {
