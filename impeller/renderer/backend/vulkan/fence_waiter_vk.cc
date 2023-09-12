@@ -63,7 +63,6 @@ bool FenceWaiterVK::IsValid() const {
 
 bool FenceWaiterVK::AddFence(vk::UniqueFence fence,
                              const fml::closure& callback) {
-  FML_DCHECK(!terminate_);
   TRACE_EVENT0("flutter", "FenceWaiterVK::AddFence");
   if (!IsValid() || !fence || !callback) {
     return false;
@@ -103,6 +102,8 @@ void FenceWaiterVK::Main() {
     // mutex.
     WaitSet wait_set = wait_set_;
 
+    const auto terminate = terminate_;
+
     lock.unlock();
 
     // Check if the context had died in the meantime.
@@ -111,7 +112,7 @@ void FenceWaiterVK::Main() {
       break;
     }
 
-    const auto& device = device_holder->GetDevice();
+    auto const device = device_holder->GetDevice();
 
     // Wait for one or more fences to be signaled. Any additional fences added
     // to the waiter will be serviced in the next pass. If a fence that is going
@@ -131,6 +132,10 @@ void FenceWaiterVK::Main() {
     if (!(result == vk::Result::eSuccess || result == vk::Result::eTimeout)) {
       VALIDATION_LOG << "Fence waiter encountered an unexpected error. Tearing "
                         "down the waiter thread.";
+      break;
+    }
+
+    if (terminate) {
       break;
     }
 
@@ -164,12 +169,6 @@ void FenceWaiterVK::Main() {
       TRACE_EVENT0("impeller", "ClearSignaledFences");
       // Erase the erased entries which will invoke callbacks.
       erased_entries.clear();  // Bit redundant because of scope but hey.
-    }
-
-    // This is the last check because we want to wait for/clear fences first.
-    const auto terminate = terminate_;
-    if (terminate) {
-      break;
     }
   }
 }
