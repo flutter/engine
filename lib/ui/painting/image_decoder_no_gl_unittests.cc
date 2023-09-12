@@ -4,18 +4,14 @@
 
 #include "flutter/lib/ui/painting/image_decoder_no_gl_unittests.h"
 
+#include "flutter/fml/endianness.h"
+
 namespace flutter {
 namespace testing {
 
 // Tests are disabled for fuchsia.
 #if defined(OS_FUCHSIA)
 #pragma GCC diagnostic ignored "-Wunreachable-code"
-#endif
-
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-#define FML_IS_LITTLE_ENDIAN true
-#else
-#define FML_IS_LITTLE_ENDIAN false
 #endif
 
 namespace {
@@ -39,8 +35,7 @@ bool IsPngWithPLTE(const uint8_t* bytes, size_t size) {
   const uint8_t* loc = bytes + kPngMagic.size();
   while (loc + 8 <= end) {
     uint32_t chunk_length =
-        (loc[0] << 24) | (loc[1] << 16) | (loc[2] << 8) | loc[3];
-    static_assert(FML_IS_LITTLE_ENDIAN, "target isn't little endian");
+        fml::BigEndianToArch(*reinterpret_cast<const uint32_t*>(loc));
 
     if (memcmp(loc + kLengthBytes, kPngPlte.data(), kPngPlte.size()) == 0) {
       return true;
