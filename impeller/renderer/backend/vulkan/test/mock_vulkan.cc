@@ -170,7 +170,7 @@ VkResult vkCreatePipelineCache(VkDevice device,
                                const VkAllocationCallbacks* pAllocator,
                                VkPipelineCache* pPipelineCache) {
   MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
-  mock_device->was_called("vkCreatePipelineCache");
+  mock_device->AddCalledFunction("vkCreatePipelineCache");
   *pPipelineCache = reinterpret_cast<VkPipelineCache>(0xb000dead);
   return VK_SUCCESS;
 }
@@ -293,14 +293,14 @@ VkResult vkCreateGraphicsPipelines(
     const VkAllocationCallbacks* pAllocator,
     VkPipeline* pPipelines) {
   MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
-  mock_device->was_called("vkCreateGraphicsPipelines");
+  mock_device->AddCalledFunction("vkCreateGraphicsPipelines");
   *pPipelines = reinterpret_cast<VkPipeline>(0x99999999);
   return VK_SUCCESS;
 }
 
 void vkDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator) {
   MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
-  mock_device->was_called("vkDestroyDevice");
+  mock_device->AddCalledFunction("vkDestroyDevice");
   delete reinterpret_cast<MockDevice*>(device);
 }
 
@@ -308,7 +308,7 @@ void vkDestroyPipeline(VkDevice device,
                        VkPipeline pipeline,
                        const VkAllocationCallbacks* pAllocator) {
   MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
-  mock_device->was_called("vkDestroyPipeline");
+  mock_device->AddCalledFunction("vkDestroyPipeline");
 }
 
 VkResult vkCreateShaderModule(VkDevice device,
@@ -316,7 +316,7 @@ VkResult vkCreateShaderModule(VkDevice device,
                               const VkAllocationCallbacks* pAllocator,
                               VkShaderModule* pShaderModule) {
   MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
-  mock_device->was_called("vkCreateShaderModule");
+  mock_device->AddCalledFunction("vkCreateShaderModule");
   *pShaderModule = reinterpret_cast<VkShaderModule>(0x11111111);
   return VK_SUCCESS;
 }
@@ -325,14 +325,14 @@ void vkDestroyShaderModule(VkDevice device,
                            VkShaderModule shaderModule,
                            const VkAllocationCallbacks* pAllocator) {
   MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
-  mock_device->was_called("vkDestroyShaderModule");
+  mock_device->AddCalledFunction("vkDestroyShaderModule");
 }
 
 void vkDestroyPipelineCache(VkDevice device,
                             VkPipelineCache pipelineCache,
                             const VkAllocationCallbacks* pAllocator) {
   MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
-  mock_device->was_called("vkDestroyPipelineCache");
+  mock_device->AddCalledFunction("vkDestroyPipelineCache");
 }
 
 void vkCmdBindPipeline(VkCommandBuffer commandBuffer,
@@ -374,14 +374,14 @@ void vkFreeCommandBuffers(VkDevice device,
                           uint32_t commandBufferCount,
                           const VkCommandBuffer* pCommandBuffers) {
   MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
-  mock_device->was_called("vkFreeCommandBuffers");
+  mock_device->AddCalledFunction("vkFreeCommandBuffers");
 }
 
 void vkDestroyCommandPool(VkDevice device,
                           VkCommandPool commandPool,
                           const VkAllocationCallbacks* pAllocator) {
   MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
-  mock_device->was_called("vkDestroyCommandPool");
+  mock_device->AddCalledFunction("vkDestroyCommandPool");
 }
 
 VkResult vkEndCommandBuffer(VkCommandBuffer commandBuffer) {
