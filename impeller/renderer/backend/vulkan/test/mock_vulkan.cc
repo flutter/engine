@@ -31,7 +31,7 @@ class MockDevice final {
     return result;
   }
 
-  std::shared_ptr<const std::vector<std::string>>& GetCalledFunctions() {
+  const std::shared_ptr<std::vector<std::string>>& GetCalledFunctions() {
     return called_functions_;
   }
 
