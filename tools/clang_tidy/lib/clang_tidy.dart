@@ -99,11 +99,12 @@ class ClangTidy {
     List<String> args, {
     StringSink? outSink,
     StringSink? errSink,
+    ProcessManager processManager = const LocalProcessManager(),
   }) :
     options = Options.fromCommandLine(args, errSink: errSink),
     _outSink = outSink ?? io.stdout,
     _errSink = errSink ?? io.stderr,
-    _processManager = const LocalProcessManager();
+    _processManager = processManager;
 
   /// The [Options] that specify how this [ClangTidy] operates.
   final Options options;
