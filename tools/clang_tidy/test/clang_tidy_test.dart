@@ -115,21 +115,12 @@ Future<int> main(List<String> args) async {
   final String buildCommands = args[0];
 
   test('--help gives help', () async {
-    final StringBuffer outBuffer = StringBuffer();
-    final StringBuffer errBuffer = StringBuffer();
-    final ClangTidy clangTidy = ClangTidy.fromCommandLine(
-      <String>[
-      '--help',
-      ],
-      outSink: outBuffer,
-      errSink: errBuffer,
-    );
+    final Fixture fixture = Fixture.fromCommandLine(<String>['--help']);
+    final int result = await fixture.tool.run();
 
-    final int result = await clangTidy.run();
-
-    expect(clangTidy.options.help, isTrue);
+    expect(fixture.tool.options.help, isTrue);
     expect(result, equals(0));
-    expect(errBuffer.toString(), contains('Usage: '));
+    expect(fixture.errBuffer.toString(), contains('Usage: '));
   });
 
   test('trimmed clang-tidy output', () {
@@ -137,47 +128,36 @@ Future<int> main(List<String> args) async {
   });
 
   test('Error when --compile-commands and --target-variant are used together', () async {
-    final StringBuffer outBuffer = StringBuffer();
-    final StringBuffer errBuffer = StringBuffer();
-    final ClangTidy clangTidy = ClangTidy.fromCommandLine(
+    final Fixture fixture = Fixture.fromCommandLine(
       <String>[
         '--compile-commands',
         '/unused',
         '--target-variant',
         'unused'
       ],
-      outSink: outBuffer,
-      errSink: errBuffer,
     );
 
-    final int result = await clangTidy.run();
+    final int result = await fixture.tool.run();
 
-    expect(clangTidy.options.help, isFalse);
     expect(result, equals(1));
-    expect(errBuffer.toString(), contains(
+    expect(fixture.errBuffer.toString(), contains(
       'ERROR: --compile-commands option cannot be used with --target-variant.',
     ));
   });
 
   test('Error when --compile-commands and --src-dir are used together', () async {
-    final StringBuffer outBuffer = StringBuffer();
-    final StringBuffer errBuffer = StringBuffer();
-    final ClangTidy clangTidy = ClangTidy.fromCommandLine(
+    final Fixture fixture = Fixture.fromCommandLine(
       <String>[
         '--compile-commands',
         '/unused',
         '--src-dir',
         '/unused',
       ],
-      outSink: outBuffer,
-      errSink: errBuffer,
     );
+    final int result = await fixture.tool.run();
 
-    final int result = await clangTidy.run();
-
-    expect(clangTidy.options.help, isFalse);
     expect(result, equals(1));
-    expect(errBuffer.toString(), contains(
+    expect(fixture.errBuffer.toString(), contains(
       'ERROR: --compile-commands option cannot be used with --src-dir.',
     ));
   });
@@ -204,55 +184,38 @@ Future<int> main(List<String> args) async {
       ], errSink: errBuffer);
       expect(options.errorMessage, isNotNull);
       expect(options.shardId, isNull);
-      print('foo ${options.errorMessage}');
-      expect(
-          options.errorMessage,
-          contains(
-            'Invalid shard-id value',
-          ));
+      expect(options.errorMessage, contains('Invalid shard-id value'));
     });
   });
 
   test('Error when --compile-commands path does not exist', () async {
-    final StringBuffer outBuffer = StringBuffer();
-    final StringBuffer errBuffer = StringBuffer();
-    final ClangTidy clangTidy = ClangTidy.fromCommandLine(
+    final Fixture fixture = Fixture.fromCommandLine(
       <String>[
         '--compile-commands',
         '/does/not/exist',
       ],
-      outSink: outBuffer,
-      errSink: errBuffer,
     );
+    final int result = await fixture.tool.run();
 
-    final int result = await clangTidy.run();
-
-    expect(clangTidy.options.help, isFalse);
     expect(result, equals(1));
-    expect(errBuffer.toString().split('\n')[0], hasMatch(
+    expect(fixture.errBuffer.toString().split('\n')[0], hasMatch(
       r"ERROR: Build commands path .*/does/not/exist doesn't exist.",
     ));
   });
 
   test('Error when --src-dir path does not exist, uses target variant in path', () async {
-    final StringBuffer outBuffer = StringBuffer();
-    final StringBuffer errBuffer = StringBuffer();
-    final ClangTidy clangTidy = ClangTidy.fromCommandLine(
+    final Fixture fixture = Fixture.fromCommandLine(
       <String>[
         '--src-dir',
         '/does/not/exist',
         '--target-variant',
         'ios_debug_unopt',
       ],
-      outSink: outBuffer,
-      errSink: errBuffer,
     );
+    final int result = await fixture.tool.run();
 
-    final int result = await clangTidy.run();
-
-    expect(clangTidy.options.help, isFalse);
     expect(result, equals(1));
-    expect(errBuffer.toString().split('\n')[0], hasMatch(
+    expect(fixture.errBuffer.toString().split('\n')[0], hasMatch(
       r'ERROR: Build commands path .*/does/not/exist'
       r'[/\\]out[/\\]ios_debug_unopt[/\\]compile_commands.json'
       r" doesn't exist.",
@@ -260,24 +223,18 @@ Future<int> main(List<String> args) async {
   });
 
   test('Error when --lint-all and --lint-head are used together', () async {
-    final StringBuffer outBuffer = StringBuffer();
-    final StringBuffer errBuffer = StringBuffer();
-    final ClangTidy clangTidy = ClangTidy.fromCommandLine(
+    final Fixture fixture = Fixture.fromCommandLine(
       <String>[
         '--compile-commands',
         '/unused',
         '--lint-all',
         '--lint-head',
       ],
-      outSink: outBuffer,
-      errSink: errBuffer,
     );
+    final int result = await fixture.tool.run();
 
-    final int result = await clangTidy.run();
-
-    expect(clangTidy.options.help, isFalse);
     expect(result, equals(1));
-    expect(errBuffer.toString(), contains(
+    expect(fixture.errBuffer.toString(), contains(
       'ERROR: At most one of --lint-all and --lint-head can be passed.',
     ));
   });
