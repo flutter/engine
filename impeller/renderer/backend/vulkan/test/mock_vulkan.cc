@@ -34,7 +34,7 @@ class MockDevice final {
     return called_functions_;
   }
 
-  void was_called(const std::string& function) {
+  void AddCalledFunction(const std::string& function) {
     Lock lock(called_functions_mutex_);
     called_functions_->push_back(function);
   }
