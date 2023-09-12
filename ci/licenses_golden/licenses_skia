@@ -1,4 +1,4 @@
-Signature: b481d59a49f33c097c0c4e9f20d4504a
+Signature: c2a3731ab07a577865c46c961581df4d
 
 ====================================================================================================
 LIBRARY: etc1
@@ -387,6 +387,7 @@ FILE: ../../../third_party/skia/modules/skparagraph/test.html
 FILE: ../../../third_party/skia/package-lock.json
 FILE: ../../../third_party/skia/relnotes/directcontext_submit.md
 FILE: ../../../third_party/skia/relnotes/shadowflags.md
+FILE: ../../../third_party/skia/relnotes/skpicture_png.md
 FILE: ../../../third_party/skia/src/gpu/gpu_workaround_list.txt
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_compute.minified.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_compute.unoptimized.sksl

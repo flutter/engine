@@ -18,7 +18,7 @@ vars = {
   'llvm_git': 'https://llvm.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
-  'skia_revision': '0b8d2203ab35a7a5cae72b5b763011f518d37a0e',
+  'skia_revision': '438ec87ea2bea0598f2969ae7e43225b7619c603',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -261,7 +261,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '9bbdc3ffac00cab766dd381c3272fea195f51c7c',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '9780f253156165c515962f5f0c56235d34617689',
 
    # Fuchsia compatibility
    #
@@ -598,7 +598,7 @@ deps = {
    Var('flutter_git') + '/third_party/libpng' + '@' + '9187b6e12756317f6d44fc669ac11dfc262bd192',
 
   'src/third_party/libwebp':
-   Var('chromium_git') + '/webm/libwebp.git' + '@' + '7dfde712a477e420968732161539011e0fd446cf', # 1.2.0
+   Var('chromium_git') + '/webm/libwebp.git' + '@' + '2af26267cdfcb63a88e5c74a85927a12d6ca1d76', # 1.3.1
 
   'src/third_party/wuffs':
    Var('skia_git') + '/external/github.com/google/wuffs-mirror-release-c.git' + '@' + '600cd96cf47788ee3a74b40a6028b035c9fd6a61',
@@ -914,7 +914,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/mac-amd64',
-        'version': 'fSmVaZwp41ZGp5hKnDIGj56IAdgVpbpMTPwN21pR_DYC'
+        'version': 'QgAHx3BtJfN3TmodSqY480Oyo-FI8WHUnMIAuYsoSukC'
        }
      ],
      'condition': 'host_os == "mac" and not download_fuchsia_sdk',
@@ -924,7 +924,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/linux-amd64',
-        'version': 'cUKimo52R-2EIfHh5zsJZBokuNVytOkTEle-leUr-oQC'
+        'version': 'vGleXqh2SRUNJM7JNwpEoinm9VFaEF4eIgBF0M_-V9sC'
        }
      ],
      'condition': 'host_os == "linux" and not download_fuchsia_sdk',
