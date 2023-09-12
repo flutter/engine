@@ -11,6 +11,57 @@ import 'package:litetest/litetest.dart';
 import 'package:path/path.dart' as path;
 import 'package:process_runner/process_runner.dart';
 
+/// A test fixture for the `clang-tidy` tool.
+final class Fixture {
+  /// Simulates running the tool with the given [args].
+  factory Fixture.fromCommandLine(List<String> args) {
+    final StringBuffer outBuffer = StringBuffer();
+    final StringBuffer errBuffer = StringBuffer();
+    return Fixture._(ClangTidy.fromCommandLine(
+      args,
+      outSink: outBuffer,
+      errSink: errBuffer,
+    ), errBuffer, outBuffer);
+  }
+
+  /// Simulates running the tool with the given [options].
+  factory Fixture.fromOptions(Options options) {
+    final StringBuffer outBuffer = StringBuffer();
+    final StringBuffer errBuffer = StringBuffer();
+    return Fixture._(ClangTidy(
+      buildCommandsPath: options.buildCommandsPath,
+      lintAll: options.lintAll,
+      lintHead: options.lintHead,
+      fix: options.fix,
+      outSink: outBuffer,
+      errSink: errBuffer,
+    ), errBuffer, outBuffer);
+  }
+
+  Fixture._(
+    this._tool,
+    this.errBuffer,
+    this.outBuffer,
+  );
+
+  /// The `clang-tidy` tool.
+  final ClangTidy _tool;
+
+  /// Captured `stdout` from the tool.
+  final StringBuffer outBuffer;
+
+  /// Captured `stderr` from the tool.
+  final StringBuffer errBuffer;
+
+  /// Runs the tool and returns the exit code.
+  Future<int> run() async {
+    return _tool.run();
+  }
+
+  /// Returns the parsed options.
+  Options get options => _tool.options;
+}
+
 // Recorded locally from clang-tidy.
 const String _tidyOutput = '''
 /runtime.dart_isolate.o" in /Users/aaclarke/dev/engine/src/out/host_debug exited with code 1
