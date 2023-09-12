@@ -33,6 +33,8 @@ TEST(CommandPoolRecyclerVKTest, GetsACommandPoolPerThread) {
 
   // The two command pools should be different.
   EXPECT_NE(pool1, pool2);
+
+  context->Shutdown();
 }
 
 TEST(CommandPoolRecyclerVKTest, GetsTheSameCommandPoolOnSameThread) {
@@ -43,6 +45,8 @@ TEST(CommandPoolRecyclerVKTest, GetsTheSameCommandPoolOnSameThread) {
 
   // The two command pools should be the same.
   EXPECT_EQ(pool1.get(), pool2.get());
+
+  context->Shutdown();
 }
 
 namespace {
@@ -101,6 +105,8 @@ TEST(CommandPoolRecyclerVKTest, ReclaimMakesCommandPoolAvailable) {
   auto const called = GetMockVulkanFunctions(context->GetDevice());
   EXPECT_EQ(std::count(called->begin(), called->end(), "vkCreateCommandPool"),
             1u);
+
+  context->Shutdown();
 }
 
 }  // namespace testing
