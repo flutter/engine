@@ -57,7 +57,7 @@ abstract class FlutterEngineInitializer{
     required InitializeEngineFn initializeEngine,
     required ImmediateRunAppFn autoStart,
   }) => FlutterEngineInitializer._(
-      initializeEngine: (() => futureToPromise(initializeEngine())).toJS,
+      initializeEngine: (([JsFlutterConfiguration? config]) => futureToPromise(initializeEngine(config))).toJS,
       autoStart: (() => futureToPromise(autoStart())).toJS,
     );
   external factory FlutterEngineInitializer._({
