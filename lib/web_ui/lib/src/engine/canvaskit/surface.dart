@@ -153,7 +153,6 @@ class Surface {
 
   ui.Size? _currentCanvasPhysicalSize;
   ui.Size? _currentSurfaceSize;
-  double _currentDevicePixelRatio = -1;
 
   /// This is only valid after the first frame or if [ensureSurface] has been
   /// called
@@ -231,7 +230,6 @@ class Surface {
       _currentCanvasPhysicalSize = size;
     }
 
-    _currentDevicePixelRatio = window.devicePixelRatio;
     _currentSurfaceSize = size;
     _surface?.dispose();
     _surface = _createNewSurface(size);
