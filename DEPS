@@ -257,7 +257,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '3d9ce3f1306efea7c7514b3e0ad4ff203c65e76d',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '9780f253156165c515962f5f0c56235d34617689',
 
    # Fuchsia compatibility
    #
@@ -597,7 +597,7 @@ deps = {
    Var('flutter_git') + '/third_party/libpng' + '@' + '9187b6e12756317f6d44fc669ac11dfc262bd192',
 
   'src/third_party/libwebp':
-   Var('chromium_git') + '/webm/libwebp.git' + '@' + '7dfde712a477e420968732161539011e0fd446cf', # 1.2.0
+   Var('chromium_git') + '/webm/libwebp.git' + '@' + '2af26267cdfcb63a88e5c74a85927a12d6ca1d76', # 1.3.1
 
   'src/third_party/wuffs':
    Var('skia_git') + '/external/github.com/google/wuffs-mirror-release-c.git' + '@' + '600cd96cf47788ee3a74b40a6028b035c9fd6a61',
