@@ -106,10 +106,6 @@ void FenceWaiterVK::Main() {
 
     lock.unlock();
 
-    if (terminate) {
-      break;
-    }
-
     // Check if the context had died in the meantime.
     auto device_holder = device_holder_.lock();
     if (!device_holder) {
@@ -169,6 +165,11 @@ void FenceWaiterVK::Main() {
       TRACE_EVENT0("impeller", "ClearSignaledFences");
       // Erase the erased entries which will invoke callbacks.
       erased_entries.clear();  // Bit redundant because of scope but hey.
+    }
+
+    // This is the last check because we want to wait for/clear fences first.
+    if (terminate) {
+      break;
     }
   }
 }
