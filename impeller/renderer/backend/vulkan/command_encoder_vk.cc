@@ -20,7 +20,7 @@ class TrackedObjectsVK {
     if (!pool) {
       return;
     }
-    auto buffer = pool->CreateBuffer();
+    auto buffer = pool->CreateCommandBuffer();
     if (!buffer) {
       return;
     }
@@ -33,7 +33,7 @@ class TrackedObjectsVK {
     if (!buffer_) {
       return;
     }
-    pool_->CollectBuffer(std::move(buffer_));
+    pool_->CollectCommandBuffer(std::move(buffer_));
   }
 
   bool IsValid() const { return is_valid_; }
