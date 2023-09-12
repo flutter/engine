@@ -54,9 +54,14 @@ VkResult QueueSubmit(VkQueue queue,
                                                    fence);
 }
 
+template <size_t N>
+int StrcmpFixed(const char* str1, const char (&str2)[N]) {
+  return strncmp(str1, str2, N - 1);
+}
+
 PFN_vkVoidFunction GetDeviceProcAddr(VkDevice device, const char* pName) {
   FML_DCHECK(g_vulkan_proc_info.get_device_proc_addr != nullptr);
-  if (strcmp(pName, "vkQueueSubmit") == 0) {
+  if (StrcmpFixed(pName, "vkQueueSubmit") == 0) {
     g_vulkan_proc_info.queue_submit_proc_addr =
         reinterpret_cast<decltype(vkQueueSubmit)*>(
             g_vulkan_proc_info.get_device_proc_addr(device, pName));
@@ -67,7 +72,7 @@ PFN_vkVoidFunction GetDeviceProcAddr(VkDevice device, const char* pName) {
 
 PFN_vkVoidFunction GetInstanceProcAddr(VkInstance instance, const char* pName) {
   FML_DCHECK(g_vulkan_proc_info.get_instance_proc_addr != nullptr);
-  if (strcmp(pName, "vkGetDeviceProcAddr") == 0) {
+  if (StrcmpFixed(pName, "vkGetDeviceProcAddr") == 0) {
     g_vulkan_proc_info.get_device_proc_addr =
         reinterpret_cast<decltype(vkGetDeviceProcAddr)*>(
             g_vulkan_proc_info.get_instance_proc_addr(instance, pName));
@@ -99,7 +104,7 @@ TEST_F(EmbedderTest, CanSwapOutVulkanCalls) {
       SkISize::Make(1024, 1024),
       [](void* user_data, FlutterVulkanInstanceHandle instance,
          const char* name) -> void* {
-        if (strcmp(name, "vkGetInstanceProcAddr") == 0) {
+        if (StrcmpFixed(name, "vkGetInstanceProcAddr") == 0) {
           g_vulkan_proc_info.get_instance_proc_addr =
               reinterpret_cast<decltype(vkGetInstanceProcAddr)*>(
                   EmbedderTestContextVulkan::InstanceProcAddr(user_data,
