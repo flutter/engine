@@ -78,7 +78,7 @@ class ResourceManagerVK final
   std::mutex reclaimables_mutex_;
   std::condition_variable reclaimables_cv_;
   Reclaimables reclaimables_;
-  bool should_exit_ = false;
+  bool should_exit_;
   // This should be initialized last since it references the other instance
   // variables.
   std::thread waiter_;
