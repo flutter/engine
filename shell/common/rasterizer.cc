@@ -26,8 +26,10 @@
 #include "third_party/skia/include/core/SkSerialProcs.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/encode/SkPngEncoder.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/GrTypes.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 #include "third_party/skia/include/utils/SkBase64.h"
 
@@ -110,7 +112,7 @@ void Rasterizer::Teardown() {
     if (context_switch->GetResult()) {
       compositor_context_->OnGrContextDestroyed();
       if (auto* context = surface_->GetContext()) {
-        context->purgeUnlockedResources(/*scratchResourcesOnly=*/false);
+        context->purgeUnlockedResources(GrPurgeResourceOptions::kAllResources);
       }
     }
     surface_.reset();
@@ -206,9 +208,9 @@ RasterStatus Rasterizer::Draw(
                  .GetRasterTaskRunner()
                  ->RunsTasksOnCurrentThread());
 
-  RasterStatus raster_status = RasterStatus::kFailed;
+  DoDrawResult draw_result;
   LayerTreePipeline::Consumer consumer =
-      [&raster_status, this,
+      [&draw_result, this,
        &delegate = delegate_](std::unique_ptr<LayerTreeItem> item) {
         // TODO(dkwingsmt): Use a proper view ID when Rasterizer supports
         // multi-view.
@@ -218,10 +220,10 @@ RasterStatus Rasterizer::Draw(
             std::move(item->frame_timings_recorder);
         float device_pixel_ratio = item->device_pixel_ratio;
         if (delegate.ShouldDiscardLayerTree(view_id, *layer_tree.get())) {
-          raster_status = RasterStatus::kDiscarded;
+          draw_result.raster_status = RasterStatus::kDiscarded;
         } else {
-          raster_status = DoDraw(std::move(frame_timings_recorder),
-                                 std::move(layer_tree), device_pixel_ratio);
+          draw_result = DoDraw(std::move(frame_timings_recorder),
+                               std::move(layer_tree), device_pixel_ratio);
         }
       };
 
@@ -232,18 +234,15 @@ RasterStatus Rasterizer::Draw(
   // if the raster status is to resubmit the frame, we push the frame to the
   // front of the queue and also change the consume status to more available.
 
-  bool should_resubmit_frame = ShouldResubmitFrame(raster_status);
+  bool should_resubmit_frame = ShouldResubmitFrame(draw_result.raster_status);
   if (should_resubmit_frame) {
-    auto resubmitted_layer_tree_item = std::make_unique<LayerTreeItem>(
-        std::move(resubmitted_layer_tree_), std::move(resubmitted_recorder_),
-        resubmitted_pixel_ratio_);
     auto front_continuation = pipeline->ProduceIfEmpty();
-    PipelineProduceResult result =
-        front_continuation.Complete(std::move(resubmitted_layer_tree_item));
-    if (result.success) {
+    PipelineProduceResult pipeline_result = front_continuation.Complete(
+        std::move(draw_result.resubmitted_layer_tree_item));
+    if (pipeline_result.success) {
       consume_result = PipelineConsumeResult::MoreAvailable;
     }
-  } else if (raster_status == RasterStatus::kEnqueuePipeline) {
+  } else if (draw_result.raster_status == RasterStatus::kEnqueuePipeline) {
     consume_result = PipelineConsumeResult::MoreAvailable;
   }
 
@@ -270,7 +269,7 @@ RasterStatus Rasterizer::Draw(
       break;
   }
 
-  return raster_status;
+  return draw_result.raster_status;
 }
 
 bool Rasterizer::ShouldResubmitFrame(const RasterStatus& raster_status) {
@@ -391,7 +390,7 @@ fml::Milliseconds Rasterizer::GetFrameBudget() const {
   return delegate_.GetFrameBudget();
 };
 
-RasterStatus Rasterizer::DoDraw(
+Rasterizer::DoDrawResult Rasterizer::DoDraw(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
     std::unique_ptr<flutter::LayerTree> layer_tree,
     float device_pixel_ratio) {
@@ -403,7 +402,9 @@ RasterStatus Rasterizer::DoDraw(
                  ->RunsTasksOnCurrentThread());
 
   if (!layer_tree || !surface_) {
-    return RasterStatus::kFailed;
+    return DoDrawResult{
+        .raster_status = RasterStatus::kFailed,
+    };
   }
 
   PersistentCache* persistent_cache = PersistentCache::GetCacheForProcess();
@@ -415,13 +416,18 @@ RasterStatus Rasterizer::DoDraw(
     last_layer_tree_ = std::move(layer_tree);
     last_device_pixel_ratio_ = device_pixel_ratio;
   } else if (ShouldResubmitFrame(raster_status)) {
-    resubmitted_pixel_ratio_ = device_pixel_ratio;
-    resubmitted_layer_tree_ = std::move(layer_tree);
-    resubmitted_recorder_ = frame_timings_recorder->CloneUntil(
-        FrameTimingsRecorder::State::kBuildEnd);
-    return raster_status;
+    return DoDrawResult{
+        .raster_status = raster_status,
+        .resubmitted_layer_tree_item = std::make_unique<LayerTreeItem>(
+            std::move(layer_tree),
+            frame_timings_recorder->CloneUntil(
+                FrameTimingsRecorder::State::kBuildEnd),
+            device_pixel_ratio),
+    };
   } else if (raster_status == RasterStatus::kDiscarded) {
-    return raster_status;
+    return DoDrawResult{
+        .raster_status = raster_status,
+    };
   }
 
   if (persistent_cache->IsDumpingSkp() &&
@@ -489,11 +495,15 @@ RasterStatus Rasterizer::DoDraw(
   if (raster_thread_merger_) {
     if (raster_thread_merger_->DecrementLease() ==
         fml::RasterThreadStatus::kUnmergedNow) {
-      return RasterStatus::kEnqueuePipeline;
+      return DoDrawResult{
+          .raster_status = RasterStatus::kEnqueuePipeline,
+      };
     }
   }
 
-  return raster_status;
+  return DoDrawResult{
+      .raster_status = raster_status,
+  };
 }
 
 RasterStatus Rasterizer::DrawToSurface(
@@ -688,6 +698,9 @@ static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
 #else
   SkSerialProcs procs = {0};
   procs.fTypefaceProc = SerializeTypefaceWithData;
+  procs.fImageProc = [](SkImage* img, void*) -> sk_sp<SkData> {
+    return SkPngEncoder::Encode(nullptr, img, SkPngEncoder::Options{});
+  };
 #endif
 
   return recorder.finishRecordingAsPicture()->serialize(&procs);

@@ -161,6 +161,14 @@ CaptureContext CaptureContext::MakeAllowlist(
   return CaptureContext(allowlist);
 }
 
+bool CaptureContext::IsActive() const {
+#ifdef IMPELLER_ENABLE_CAPTURE
+  return active_;
+#else
+  return false;
+#endif
+}
+
 void CaptureContext::Rewind() {
 #ifdef IMPELLER_ENABLE_CAPTURE
   for (auto& [name, capture] : documents_) {

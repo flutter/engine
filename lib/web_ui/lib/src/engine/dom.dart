@@ -198,6 +198,36 @@ external DomIntl get domIntl;
 @JS('Symbol')
 external DomSymbol get domSymbol;
 
+@JS('createImageBitmap')
+external JSPromise _createImageBitmap(JSAny source);
+Future<DomImageBitmap?> createImageBitmap(JSAny source) =>
+    js_util.promiseToFuture<DomImageBitmap?>(_createImageBitmap(source));
+
+@JS('createImageBitmap')
+external JSPromise _createSizedImageBitmap(DomCanvasElement canvas, JSNumber sx,
+    JSNumber sy, JSNumber sw, JSNumber sh);
+Future<DomImageBitmap?> createSizedImageBitmap(
+        DomCanvasElement canvas, int sx, int sy, int sw, int sh) =>
+    js_util.promiseToFuture<DomImageBitmap?>(
+        _createSizedImageBitmap(canvas, sx.toJS, sy.toJS, sw.toJS, sh.toJS));
+
+@JS('createImageBitmap')
+external JSPromise _createSizedImageBitmapFromImageData(
+    DomImageData imageData, JSNumber sx, JSNumber sy, JSNumber sw, JSNumber sh);
+Future<DomImageBitmap?> createSizedImageBitmapFromImageData(
+        DomImageData imageData, int sx, int sy, int sw, int sh) =>
+    js_util.promiseToFuture<DomImageBitmap?>(
+        _createSizedImageBitmapFromImageData(
+            imageData, sx.toJS, sy.toJS, sw.toJS, sh.toJS));
+
+@JS('createImageBitmap')
+external JSPromise _createSizedOffscreenImageBitmap(DomOffscreenCanvas canvas,
+    JSNumber sx, JSNumber sy, JSNumber sw, JSNumber sh);
+Future<DomImageBitmap?> createSizedOffscreenImageBitmap(
+        DomOffscreenCanvas canvas, int sx, int sy, int sw, int sh) =>
+    js_util.promiseToFuture<DomImageBitmap?>(_createSizedOffscreenImageBitmap(
+        canvas, sx.toJS, sy.toJS, sw.toJS, sh.toJS));
+
 @JS()
 @staticInterop
 class DomNavigator {}
@@ -529,6 +559,8 @@ extension DomElementExtension on DomElement {
       createDomListWrapper<DomElement>(_children);
 
   external DomElement? get firstElementChild;
+
+  external DomElement? get nextElementSibling;
 
   @JS('clientHeight')
   external JSNumber get _clientHeight;
@@ -1105,6 +1137,9 @@ extension DomCanvasElementExtension on DomCanvasElement {
     }
     return getContext('webgl2')! as WebGLContext;
   }
+
+  DomCanvasRenderingContextBitmapRenderer get contextBitmapRenderer =>
+      getContext('bitmaprenderer')! as DomCanvasRenderingContextBitmapRenderer;
 }
 
 @JS()
@@ -1394,19 +1429,41 @@ extension DomCanvasRenderingContextWebGlExtension
   bool isContextLost() => _isContextLost().toDart;
 }
 
+@JS()
+@staticInterop
+class DomCanvasRenderingContextBitmapRenderer {}
+
+extension DomCanvasRenderingContextBitmapRendererExtension
+    on DomCanvasRenderingContextBitmapRenderer {
+  external void transferFromImageBitmap(DomImageBitmap bitmap);
+}
+
 @JS('ImageData')
 @staticInterop
 class DomImageData {
   external factory DomImageData._(JSAny? data, JSNumber sw, JSNumber sh);
+  external factory DomImageData._empty(JSNumber sw, JSNumber sh);
 }
 
-DomImageData createDomImageData(Object? data, int sw, int sh) =>
-    DomImageData._(data?.toJSAnyShallow, sw.toJS, sh.toJS);
+DomImageData createDomImageData(Object data, int sw, int sh) =>
+    DomImageData._(data.toJSAnyShallow, sw.toJS, sh.toJS);
+DomImageData createBlankDomImageData(int sw, int sh) =>
+    DomImageData._empty(sw.toJS, sh.toJS);
 
 extension DomImageDataExtension on DomImageData {
   @JS('data')
   external JSUint8ClampedArray get _data;
   Uint8ClampedList get data => _data.toDart;
+}
+
+@JS('ImageBitmap')
+@staticInterop
+class DomImageBitmap {}
+
+extension DomImageBitmapExtension on DomImageBitmap {
+  external JSNumber get width;
+  external JSNumber get height;
+  external void close();
 }
 
 @JS()
@@ -1451,7 +1508,8 @@ MockHttpFetchResponseFactory? mockHttpFetchResponseFactory;
 /// [httpFetchText] instead.
 Future<HttpFetchResponse> httpFetch(String url) async {
   if (mockHttpFetchResponseFactory != null) {
-    final MockHttpFetchResponse? response = await mockHttpFetchResponseFactory!(url);
+    final MockHttpFetchResponse? response =
+        await mockHttpFetchResponseFactory!(url);
     if (response != null) {
       return response;
     }
@@ -1708,8 +1766,7 @@ class MockHttpFetchPayload implements HttpFetchPayload {
     while (currentIndex < totalLength) {
       final int chunkSize = math.min(_chunkSize, totalLength - currentIndex);
       final Uint8List chunk = Uint8List.sublistView(
-        _byteBuffer.asByteData(), currentIndex, currentIndex + chunkSize
-      );
+          _byteBuffer.asByteData(), currentIndex, currentIndex + chunkSize);
       callback(chunk.toJS as T);
       currentIndex += chunkSize;
     }
@@ -1719,10 +1776,12 @@ class MockHttpFetchPayload implements HttpFetchPayload {
   Future<ByteBuffer> asByteBuffer() async => _byteBuffer;
 
   @override
-  Future<dynamic> json() async => throw AssertionError('json not supported by mock');
+  Future<dynamic> json() async =>
+      throw AssertionError('json not supported by mock');
 
   @override
-  Future<String> text() async => throw AssertionError('text not supported by mock');
+  Future<String> text() async =>
+      throw AssertionError('text not supported by mock');
 }
 
 /// Indicates a missing HTTP payload when one was expected, such as when
@@ -2017,6 +2076,10 @@ extension DomHTMLTextAreaElementExtension on DomHTMLTextAreaElement {
   external set _name(JSString value);
   set name(String value) => _name = value.toJS;
 
+  @JS('selectionDirection')
+  external JSString? get _selectionDirection;
+  String? get selectionDirection => _selectionDirection?.toDart;
+
   @JS('selectionStart')
   external JSNumber? get _selectionStart;
   double? get selectionStart => _selectionStart?.toDartDouble;
@@ -2240,10 +2303,22 @@ extension DomURLExtension on DomURL {
 @staticInterop
 class DomBlob {
   external factory DomBlob(JSArray parts);
+
+  external factory DomBlob.withOptions(JSArray parts, JSAny options);
 }
 
-DomBlob createDomBlob(List<Object?> parts) =>
-    DomBlob(parts.toJSAnyShallow as JSArray);
+extension DomBlobExtension on DomBlob {
+  external JSPromise arrayBuffer();
+}
+
+DomBlob createDomBlob(List<Object?> parts, [Map<String, dynamic>? options]) {
+  if (options == null) {
+    return DomBlob(parts.toJSAnyShallow as JSArray);
+  } else {
+    return DomBlob.withOptions(
+        parts.toJSAnyShallow as JSArray, options.toJSAnyDeep);
+  }
+}
 
 typedef DomMutationCallback = void Function(
     JSArray mutation, DomMutationObserver observer);
@@ -2355,6 +2430,13 @@ class DomMouseEvent extends DomUIEvent {
   external factory DomMouseEvent.arg2(JSString type, JSAny initDict);
 }
 
+@JS('InputEvent')
+@staticInterop
+class DomInputEvent extends DomUIEvent {
+  external factory DomInputEvent.arg1(JSString type);
+  external factory DomInputEvent.arg2(JSString type, JSAny initDict);
+}
+
 extension DomMouseEventExtension on DomMouseEvent {
   @JS('clientX')
   external JSNumber get _clientX;
@@ -2405,6 +2487,14 @@ DomMouseEvent createDomMouseEvent(String type, [Map<dynamic, dynamic>? init]) {
     return DomMouseEvent.arg1(type.toJS);
   } else {
     return DomMouseEvent.arg2(type.toJS, init.toJSAnyDeep);
+  }
+}
+
+DomInputEvent createDomInputEvent(String type, [Map<dynamic, dynamic>? init]) {
+  if (init == null) {
+    return DomInputEvent.arg1(type.toJS);
+  } else {
+    return DomInputEvent.arg2(type.toJS, init.toJSAnyDeep);
   }
 }
 
@@ -2624,6 +2714,10 @@ extension DomHTMLInputElementExtension on DomHTMLInputElement {
   external set _autocomplete(JSString value);
   set autocomplete(String value) => _autocomplete = value.toJS;
 
+  @JS('selectionDirection')
+  external JSString? get _selectionDirection;
+  String? get selectionDirection => _selectionDirection?.toDart;
+
   @JS('selectionStart')
   external JSNumber? get _selectionStart;
   double? get selectionStart => _selectionStart?.toDartDouble;
@@ -2754,6 +2848,13 @@ extension DomOffscreenCanvasExtension on DomOffscreenCanvas {
     }
   }
 
+  WebGLContext getGlContext(int majorVersion) {
+    if (majorVersion == 1) {
+      return getContext('webgl')! as WebGLContext;
+    }
+    return getContext('webgl2')! as WebGLContext;
+  }
+
   @JS('convertToBlob')
   external JSPromise _convertToBlob1();
   @JS('convertToBlob')
@@ -2767,6 +2868,11 @@ extension DomOffscreenCanvasExtension on DomOffscreenCanvas {
     }
     return js_util.promiseToFuture(blob);
   }
+
+  @JS('transferToImageBitmap')
+  external JSAny? _transferToImageBitmap();
+  DomImageBitmap transferToImageBitmap() =>
+      _transferToImageBitmap()! as DomImageBitmap;
 }
 
 DomOffscreenCanvas createDomOffscreenCanvas(int width, int height) =>
@@ -3335,8 +3441,8 @@ class DomSegments {}
 
 extension DomSegmentsExtension on DomSegments {
   DomIteratorWrapper<DomSegment> iterator() {
-    final DomIterator segmentIterator =
-        js_util.callMethod(this, domSymbol.iterator, const <Object?>[]) as DomIterator;
+    final DomIterator segmentIterator = js_util
+        .callMethod(this, domSymbol.iterator, const <Object?>[]) as DomIterator;
     return DomIteratorWrapper<DomSegment>(segmentIterator);
   }
 }
@@ -3473,10 +3579,8 @@ external JSAny? get _finalizationRegistryConstructor;
 // dart2js that causes a crash in the Google3 build if we do use a factory
 // constructor. See b/284478971
 DomFinalizationRegistry createDomFinalizationRegistry(JSFunction cleanup) =>
-  js_util.callConstructor(
-    _finalizationRegistryConstructor!.toObjectShallow,
-    <Object>[cleanup]
-  );
+    js_util.callConstructor(
+        _finalizationRegistryConstructor!.toObjectShallow, <Object>[cleanup]);
 
 extension DomFinalizationRegistryExtension on DomFinalizationRegistry {
   @JS('register')
@@ -3485,11 +3589,12 @@ extension DomFinalizationRegistryExtension on DomFinalizationRegistry {
   @JS('register')
   external JSVoid _register2(JSAny target, JSAny value, JSAny token);
   void register(Object target, Object value, [Object? token]) {
-      if (token != null) {
-        _register2(target.toJSAnyShallow, value.toJSAnyShallow, token.toJSAnyShallow);
-      } else {
-        _register1(target.toJSAnyShallow, value.toJSAnyShallow);
-      }
+    if (token != null) {
+      _register2(
+          target.toJSAnyShallow, value.toJSAnyShallow, token.toJSAnyShallow);
+    } else {
+      _register1(target.toJSAnyShallow, value.toJSAnyShallow);
+    }
   }
 
   @JS('unregister')
@@ -3500,3 +3605,8 @@ extension DomFinalizationRegistryExtension on DomFinalizationRegistry {
 /// Whether the current browser supports `FinalizationRegistry`.
 bool browserSupportsFinalizationRegistry =
     _finalizationRegistryConstructor != null;
+
+@JS('window.OffscreenCanvas')
+external JSAny? get _offscreenCanvasConstructor;
+
+bool browserSupportsOffscreenCanvas = _offscreenCanvasConstructor != null;

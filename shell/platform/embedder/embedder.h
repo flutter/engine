@@ -1402,6 +1402,20 @@ typedef void (*FlutterUpdateSemanticsCallback2)(
     const FlutterSemanticsUpdate2* /* semantics update */,
     void* /* user data*/);
 
+/// An update to whether a message channel has a listener set or not.
+typedef struct {
+  // The size of the struct. Must be sizeof(FlutterChannelUpdate).
+  size_t struct_size;
+  /// The name of the channel.
+  const char* channel;
+  /// True if a listener has been set, false if one has been cleared.
+  bool listening;
+} FlutterChannelUpdate;
+
+typedef void (*FlutterChannelUpdateCallback)(
+    const FlutterChannelUpdate* /* channel update */,
+    void* /* user data */);
+
 typedef struct _FlutterTaskRunner* FlutterTaskRunner;
 
 typedef struct {
@@ -1649,6 +1663,27 @@ typedef enum {
   kFlutterLayerContentTypePlatformView,
 } FlutterLayerContentType;
 
+/// A region represented by a collection of non-overlapping rectangles.
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterRegion).
+  size_t struct_size;
+  /// Number of rectangles in the region.
+  size_t rects_count;
+  /// The rectangles that make up the region.
+  FlutterRect* rects;
+} FlutterRegion;
+
+/// Contains additional information about the backing store provided
+/// during presentation to the embedder.
+typedef struct {
+  size_t struct_size;
+
+  /// The area of the backing store that contains Flutter contents. Pixels
+  /// outside of this area are transparent and the embedder may choose not
+  /// to render them. Coordinates are in physical pixels.
+  FlutterRegion* paint_region;
+} FlutterBackingStorePresentInfo;
+
 typedef struct {
   /// This size of this struct. Must be sizeof(FlutterLayer).
   size_t struct_size;
@@ -1668,6 +1703,10 @@ typedef struct {
   FlutterPoint offset;
   /// The size of the layer (in physical pixels).
   FlutterSize size;
+
+  /// Extra information for the backing store that the embedder may
+  /// use during presentation.
+  FlutterBackingStorePresentInfo* backing_store_present_info;
 } FlutterLayer;
 
 typedef bool (*FlutterBackingStoreCreateCallback)(
@@ -2194,6 +2233,11 @@ typedef struct {
   /// and `update_semantics_callback2` may be provided; the others must be set
   /// to null.
   FlutterUpdateSemanticsCallback2 update_semantics_callback2;
+
+  /// The callback invoked by the engine in response to a channel listener
+  /// being registered on the framework side. The callback is invoked from
+  /// a task posted to the platform thread.
+  FlutterChannelUpdateCallback channel_update_callback;
 } FlutterProjectArgs;
 
 #ifndef FLUTTER_ENGINE_NO_PROTOTYPES

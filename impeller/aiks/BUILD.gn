@@ -16,6 +16,8 @@ impeller_component("aiks") {
     "color_source.h",
     "image.cc",
     "image.h",
+    "image_filter.cc",
+    "image_filter.h",
     "paint.cc",
     "paint.h",
     "paint_pass_delegate.cc",
@@ -69,6 +71,7 @@ impeller_component("aiks_unittests") {
     "//flutter/impeller/geometry:geometry_asserts",
     "//flutter/impeller/golden_tests:golden_playground_test",
     "//flutter/impeller/playground:playground_test",
+    "//flutter/impeller/scene",
     "//flutter/impeller/typographer/backends/stb:typographer_stb_backend",
     "//flutter/testing:testing_lib",
   ]
@@ -94,6 +97,7 @@ impeller_component("aiks_unittests_golden") {
     "//flutter/impeller/geometry:geometry_asserts",
     "//flutter/impeller/golden_tests:golden_playground_test",
     "//flutter/impeller/playground:playground_test",
+    "//flutter/impeller/scene",
     "//flutter/impeller/typographer/backends/stb:typographer_stb_backend",
     "//flutter/testing:testing_lib",
   ]

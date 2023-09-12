@@ -7,11 +7,14 @@
 
 #include "flutter/display_list/dl_canvas.h"
 #include "flutter/display_list/skia/dl_sk_types.h"
+#include "impeller/typographer/text_frame.h"
 
 namespace flutter {
 
-// An adapter to receive DlCanvas calls and dispatch them into
-// an SkCanvas.
+// -----------------------------------------------------------------------------
+/// @brief      Backend implementation of |DlCanvas| for |SkCanvas|.
+///
+/// @see        DlCanvas
 class DlSkCanvasAdapter final : public virtual DlCanvas {
  public:
   DlSkCanvasAdapter() : delegate_(nullptr) {}
@@ -142,6 +145,10 @@ class DlSkCanvasAdapter final : public virtual DlCanvas {
                     SkScalar x,
                     SkScalar y,
                     const DlPaint& paint) override;
+  void DrawTextFrame(const std::shared_ptr<impeller::TextFrame>& text_frame,
+                     SkScalar x,
+                     SkScalar y,
+                     const DlPaint& paint) override;
   void DrawShadow(const SkPath& path,
                   const DlColor color,
                   const SkScalar elevation,
