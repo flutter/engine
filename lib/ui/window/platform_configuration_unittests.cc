@@ -505,9 +505,9 @@ TEST_F(PlatformConfigurationTest, OutOfScopeRenderCallsAreIgnored) {
   // Render should not be called.
   EXPECT_CALL(client, Render).Times(0);
 
-  auto message_latch = std::make_shared<fml::AutoResetWaitableEvent>();
-  auto finish = [message_latch](Dart_NativeArguments args) {
-    message_latch->Signal();
+  auto finish_latch = std::make_shared<fml::AutoResetWaitableEvent>();
+  auto finish = [finish_latch](Dart_NativeArguments args) {
+    finish_latch->Signal();
   };
   AddNativeCallback("Finish", CREATE_NATIVE_ENTRY(finish));
 
@@ -526,7 +526,7 @@ TEST_F(PlatformConfigurationTest, OutOfScopeRenderCallsAreIgnored) {
       });
 
   // Wait for the Dart main function to end.
-  message_latch->Wait();
+  finish_latch->Wait();
 }
 
 TEST_F(PlatformConfigurationTest, DuplicateRenderCallsAreIgnored) {
@@ -541,9 +541,9 @@ TEST_F(PlatformConfigurationTest, DuplicateRenderCallsAreIgnored) {
   // Render should only be called once, because the second call is ignored.
   EXPECT_CALL(client, Render).Times(1);
 
-  auto message_latch = std::make_shared<fml::AutoResetWaitableEvent>();
-  auto finish = [message_latch](Dart_NativeArguments args) {
-    message_latch->Signal();
+  auto finish_latch = std::make_shared<fml::AutoResetWaitableEvent>();
+  auto finish = [finish_latch](Dart_NativeArguments args) {
+    finish_latch->Signal();
   };
   AddNativeCallback("Finish", CREATE_NATIVE_ENTRY(finish));
 
@@ -562,12 +562,12 @@ TEST_F(PlatformConfigurationTest, DuplicateRenderCallsAreIgnored) {
       });
 
   // Wait for the Dart main function to end.
-  message_latch->Wait();
+  finish_latch->Wait();
 
+  // This call synchronously calls PlatformDispatcher's handleBeginFrame and
+  // handleDrawFrame. Therefore it doesn't have to wait for latches.
   runtime_controller_context->ControllerTaskSync(
       [](RuntimeController& runtime_controller) {
-        // This BeginFrame calls PlatformDispatcher's handleBeginFrame and
-        // handleDrawFrame synchronously. Therefore don't wait after it.
         runtime_controller.BeginFrame(fml::TimePoint::Now(), 0);
       });
 }
