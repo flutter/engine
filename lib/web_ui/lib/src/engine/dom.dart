@@ -1433,6 +1433,33 @@ extension DomImageBitmapExtension on DomImageBitmap {
   external void close();
 }
 
+
+@JS('createImageBitmap')
+external JSPromise _createImageBitmap1(
+  JSAny source,
+);
+@JS('createImageBitmap')
+external JSPromise _createImageBitmap2(
+  JSAny source,
+  JSNumber x,
+  JSNumber y,
+  JSNumber width,
+  JSNumber height,
+);
+JSPromise createImageBitmap(JSAny source, [({int x, int y, int width, int height})? bounds]) {
+  if (bounds != null) {
+    return _createImageBitmap2(
+      source,
+      bounds.x.toJS,
+      bounds.y.toJS,
+      bounds.width.toJS,
+      bounds.height.toJS
+    );
+  } else {
+    return _createImageBitmap1(source);
+  }
+}
+
 @JS()
 @staticInterop
 class DomCanvasPattern {}
@@ -2041,6 +2068,10 @@ extension DomHTMLTextAreaElementExtension on DomHTMLTextAreaElement {
   external set _name(JSString value);
   set name(String value) => _name = value.toJS;
 
+  @JS('selectionDirection')
+  external JSString? get _selectionDirection;
+  String? get selectionDirection => _selectionDirection?.toDart;
+
   @JS('selectionStart')
   external JSNumber? get _selectionStart;
   double? get selectionStart => _selectionStart?.toDartDouble;
@@ -2264,14 +2295,24 @@ extension DomURLExtension on DomURL {
 @staticInterop
 class DomBlob {
   external factory DomBlob(JSArray parts);
+
+  external factory DomBlob.withOptions(JSArray parts, JSAny options);
 }
 
 extension DomBlobExtension on DomBlob {
   external JSPromise arrayBuffer();
 }
 
-DomBlob createDomBlob(List<Object?> parts) =>
-    DomBlob(parts.toJSAnyShallow as JSArray);
+DomBlob createDomBlob(List<Object?> parts, [Map<String, dynamic>? options]) {
+  if (options == null) {
+    return DomBlob(parts.toJSAnyShallow as JSArray);
+  } else {
+    return DomBlob.withOptions(
+      parts.toJSAnyShallow as JSArray,
+      options.toJSAnyDeep
+    );
+  }
+}
 
 typedef DomMutationCallback = void Function(
     JSArray mutation, DomMutationObserver observer);
@@ -2383,6 +2424,13 @@ class DomMouseEvent extends DomUIEvent {
   external factory DomMouseEvent.arg2(JSString type, JSAny initDict);
 }
 
+@JS('InputEvent')
+@staticInterop
+class DomInputEvent extends DomUIEvent {
+  external factory DomInputEvent.arg1(JSString type);
+  external factory DomInputEvent.arg2(JSString type, JSAny initDict);
+}
+
 extension DomMouseEventExtension on DomMouseEvent {
   @JS('clientX')
   external JSNumber get _clientX;
@@ -2433,6 +2481,14 @@ DomMouseEvent createDomMouseEvent(String type, [Map<dynamic, dynamic>? init]) {
     return DomMouseEvent.arg1(type.toJS);
   } else {
     return DomMouseEvent.arg2(type.toJS, init.toJSAnyDeep);
+  }
+}
+
+DomInputEvent createDomInputEvent(String type, [Map<dynamic, dynamic>? init]) {
+  if (init == null) {
+    return DomInputEvent.arg1(type.toJS);
+  } else {
+    return DomInputEvent.arg2(type.toJS, init.toJSAnyDeep);
   }
 }
 
@@ -2651,6 +2707,10 @@ extension DomHTMLInputElementExtension on DomHTMLInputElement {
   @JS('autocomplete')
   external set _autocomplete(JSString value);
   set autocomplete(String value) => _autocomplete = value.toJS;
+
+  @JS('selectionDirection')
+  external JSString? get _selectionDirection;
+  String? get selectionDirection => _selectionDirection?.toDart;
 
   @JS('selectionStart')
   external JSNumber? get _selectionStart;

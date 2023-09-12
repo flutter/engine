@@ -90,10 +90,6 @@ static const char* kDartStartPausedArgs[]{
     "--pause_isolates_on_start",
 };
 
-static const char* kDartDisableServiceAuthCodesArgs[]{
-    "--disable-service-auth-codes",
-};
-
 static const char* kDartEndlessTraceBufferArgs[]{
     "--timeline_recorder=endless",
 };
@@ -102,6 +98,12 @@ static const char* kDartEndlessTraceBufferArgs[]{
 static const char* kDartSystraceTraceBufferArgs[] = {
     "--systrace_timeline",
 };
+
+static std::string DartFileRecorderArgs(const std::string& path) {
+  std::ostringstream oss;
+  oss << "--timeline_recorder=perfettofile:" << path;
+  return oss.str();
+}
 
 FML_ALLOW_UNUSED_TYPE
 static const char* kDartDefaultTraceStreamsArgs[]{
@@ -380,11 +382,6 @@ DartVM::DartVM(const std::shared_ptr<const DartVMData>& vm_data,
     PushBackAll(&args, kDartStartPausedArgs, fml::size(kDartStartPausedArgs));
   }
 
-  if (settings_.disable_service_auth_codes) {
-    PushBackAll(&args, kDartDisableServiceAuthCodesArgs,
-                fml::size(kDartDisableServiceAuthCodesArgs));
-  }
-
   if (settings_.endless_trace_buffer || settings_.trace_startup) {
     // If we are tracing startup, make sure the trace buffer is endless so we
     // don't lose early traces.
@@ -395,6 +392,14 @@ DartVM::DartVM(const std::shared_ptr<const DartVMData>& vm_data,
   if (settings_.trace_systrace) {
     PushBackAll(&args, kDartSystraceTraceBufferArgs,
                 fml::size(kDartSystraceTraceBufferArgs));
+    PushBackAll(&args, kDartSystraceTraceStreamsArgs,
+                fml::size(kDartSystraceTraceStreamsArgs));
+  }
+
+  std::string file_recorder_args;
+  if (!settings_.trace_to_file.empty()) {
+    file_recorder_args = DartFileRecorderArgs(settings_.trace_to_file);
+    args.push_back(file_recorder_args.c_str());
     PushBackAll(&args, kDartSystraceTraceStreamsArgs,
                 fml::size(kDartSystraceTraceStreamsArgs));
   }

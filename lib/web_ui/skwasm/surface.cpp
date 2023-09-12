@@ -60,10 +60,10 @@ uint32_t Surface::rasterizeImage(SkImage* image, ImageByteFormat format) {
   return callbackId;
 }
 
-std::unique_ptr<VideoFrameWrapper> Surface::createVideoFrameWrapper(
-    SkwasmObject videoFrame) {
-  return std::unique_ptr<VideoFrameWrapper>(
-      new VideoFrameWrapper(_thread, videoFrame));
+std::unique_ptr<TextureSourceWrapper> Surface::createTextureSourceWrapper(
+    SkwasmObject textureSource) {
+  return std::unique_ptr<TextureSourceWrapper>(
+      new TextureSourceWrapper(_thread, textureSource));
 }
 
 // Main thread only
@@ -148,7 +148,7 @@ void Surface::_renderPicture(const SkPicture* picture, uint32_t callbackId) {
   auto canvas = _surface->getCanvas();
   canvas->drawColor(SK_ColorTRANSPARENT, SkBlendMode::kSrc);
   canvas->drawPicture(sk_ref_sp<SkPicture>(picture), &matrix, nullptr);
-  _grContext->flush(_surface);
+  _grContext->flush(_surface.get());
   skwasm_captureImageBitmap(this, _glContext, callbackId,
                             roundedOutRect.width(), roundedOutRect.height());
 }
