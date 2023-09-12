@@ -229,7 +229,7 @@ class Surface {
 
       _createNewCanvas(size);
       _currentCanvasPhysicalSize = size;
-    } else if (window.devicePixelRatio != _currentDevicePixelRatio) {}
+    }
 
     _currentDevicePixelRatio = window.devicePixelRatio;
     _currentSurfaceSize = size;
