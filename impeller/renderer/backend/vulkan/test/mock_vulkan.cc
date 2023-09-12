@@ -30,10 +30,8 @@ class MockDevice final {
     return result;
   }
 
-  std::shared_ptr<std::vector<std::string>> GetCalledFunctions() {
-    // Return a copy of the called functions.
-    Lock lock(called_functions_mutex_);
-    return std::make_shared<std::vector<std::string>>(*called_functions_);
+  std::shared_ptr<std::vector<std::string>>& GetCalledFunctions() {
+    return called_functions_;
   }
 
   void was_called(const std::string& function) {
