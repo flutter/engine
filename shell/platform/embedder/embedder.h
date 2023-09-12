@@ -757,6 +757,19 @@ typedef struct {
   /// The queue family index of the VkQueue supplied in the next field.
   uint32_t queue_family_index;
   /// VkQueue handle.
+  ///
+  /// @warning  There is a synchronization bug where Flutter will submit
+  ///           to this queue on both the raster and IO threads. This is
+  ///           invalid behavior and may result in crashes! As a temporary
+  ///           workaround, we strongly recommand wrapping `vkQueueSubmit` and
+  ///           `vkQueueWaitIdle` with a mutex lock.
+  ///
+  ///           This can be done by intercepting `vkGetDeviceProcAddr` in the
+  ///           supplied `get_instance_proc_address_callback` with a version
+  ///           that intercepts `vkQueueSubmit` and `vkQueueWaitIdle` with
+  ///           locking versions of the procs.
+  ///
+  ///           See also: https://github.com/flutter/flutter/issues/134573
   FlutterVulkanQueueHandle queue;
   /// The number of instance extensions available for enumerating in the next
   /// field.
