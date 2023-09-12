@@ -558,15 +558,6 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
   auto& task = tasks.front();
   FML_DCHECK(task.view_id == kFlutterImplicitViewId);
 
-  if (external_view_embedder_) {
-    FML_DCHECK(!external_view_embedder_->GetUsedThisFrame());
-    external_view_embedder_->SetUsedThisFrame(true);
-    external_view_embedder_->BeginFrame(
-        // TODO(dkwingsmt): Add the frame size and DPR for all layer trees.
-        task.layer_tree->frame_size(), surface_->GetContext(),
-        task.device_pixel_ratio, raster_thread_merger_);
-  }
-
   std::optional<fml::TimePoint> presentation_time = std::nullopt;
   // TODO (https://github.com/flutter/flutter/issues/105596): this can be in
   // the past and might need to get snapped to future as this frame could
@@ -631,7 +622,13 @@ DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
 
   DlCanvas* embedder_root_canvas = nullptr;
   if (external_view_embedder_) {
+    external_view_embedder_->SetUsedThisFrame(true);
+    external_view_embedder_->BeginFrame(
+        // TODO(dkwingsmt): Add view ID here.
+        layer_tree.frame_size(), surface_->GetContext(), device_pixel_ratio,
+        raster_thread_merger_);
     FML_DCHECK(external_view_embedder_->GetUsedThisFrame());
+    // TODO(dkwingsmt): Add view ID here.
     embedder_root_canvas = external_view_embedder_->GetRootCanvas();
   }
 
