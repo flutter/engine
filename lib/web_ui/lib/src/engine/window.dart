@@ -35,7 +35,7 @@ const int kImplicitViewId = 0;
 ///
 /// In addition to everything defined in [ui.FlutterView], this class adds
 /// a few web-specific properties.
-abstract class EngineFlutterView extends ui.FlutterView {
+abstract interface class EngineFlutterView extends ui.FlutterView {
   MouseCursor get mouseCursor;
   DomElement get rootElement;
 }
