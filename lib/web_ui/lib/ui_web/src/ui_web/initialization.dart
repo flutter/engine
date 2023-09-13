@@ -55,3 +55,22 @@ Future<void> bootstrapEngine({
     loader.didCreateEngineInitializer(bootstrap.prepareEngineInitializer());
   }
 }
+
+/// Loads manifest fonts.
+///
+/// By default manifest fonts are loaded automatically as part of engine
+/// initialization. However, that may delay the invocation of the app's `main`
+/// function. If the app needs to start doing useful work before the fonts are
+/// fully loaded, such as render UI without text (e.g. a loading indicator), or
+/// perform non-UI work (e.g. make early HTTP calls), then the configuration
+/// option `loadManifestFontsBeforeAppMain` can be set to `false`. This will
+/// make the engine skip font loading. Instead, the app can call this function
+/// directly when appropriate.
+///
+/// Beware that attempting to render text before fonts are loaded may lead to
+/// improper text rendering. It is expected that the developer has enough
+/// control over the app's code to ensure the correct loading sequence.
+Future<void> loadManifestFonts() async {
+  await downloadAssetFonts();
+  sendFontChangeMessage();
+}

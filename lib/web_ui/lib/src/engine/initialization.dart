@@ -199,7 +199,11 @@ Future<void> initializeEngineServices({
   _setAssetManager(assetManager);
 
   Future<void> initializeRendererCallback () async => renderer.initialize();
-  await Future.wait<void>(<Future<void>>[initializeRendererCallback(), _downloadAssetFonts()]);
+  await Future.wait<void>(<Future<void>>[
+    initializeRendererCallback(),
+    if (configuration.loadManifestFontsBeforeAppMain)
+      downloadAssetFonts(),
+  ]);
   _initializationState = DebugEngineInitializationState.initializedServices;
 }
 
@@ -242,7 +246,7 @@ void _setAssetManager(ui_web.AssetManager assetManager) {
   _assetManager = assetManager;
 }
 
-Future<void> _downloadAssetFonts() async {
+Future<void> downloadAssetFonts() async {
   renderer.fontCollection.clear();
 
   if (ui_web.debugEmulateFlutterTesterEnvironment) {

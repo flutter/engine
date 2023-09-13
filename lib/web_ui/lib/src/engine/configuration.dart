@@ -312,6 +312,19 @@ class FlutterConfiguration {
   /// The font used to render color emojis is large (~24MB). This configuration
   /// gives developers the ability to decide for their app.
   bool get useColorEmoji => _configuration?.useColorEmoji ?? false;
+
+  /// Whether to load fonts from the font manifest prior to calling the app's
+  /// `main` function.
+  ///
+  /// If set to true, manifest fonts will load as part of engine initialization,
+  /// delaying the invocation of `main`, if necessary.
+  ///
+  /// If set to false, engine initialization does not include manifest fonts.
+  /// Instead, the developer can load manifest fonts using the
+  /// `loadManifestFonts` function from `dart:ui_web`.
+  ///
+  /// Defaults to true.
+  bool get loadManifestFontsBeforeAppMain => _configuration?.loadManifestFontsBeforeAppMain ?? true;
 }
 
 @JS('window.flutterConfiguration')
@@ -320,7 +333,22 @@ external JsFlutterConfiguration? get _jsConfiguration;
 /// The JS bindings for the object that's set as `window.flutterConfiguration`.
 @JS()
 @staticInterop
-class JsFlutterConfiguration {}
+@anonymous
+class JsFlutterConfiguration {
+  external factory JsFlutterConfiguration({
+    JSString? assetBase,
+    JSString? canvasKitBaseUrl,
+    JSString? canvasKitVariant,
+    JSBoolean? canvasKitForceCpuOnly,
+    JSNumber? canvasKitMaximumSurfaces,
+    JSBoolean? debugShowSemanticsNodes,
+    DomElement? hostElement,
+    JSString? nonce,
+    JSString? renderer,
+    JSBoolean? useColorEmoji,
+    JSBoolean? loadManifestFontsBeforeAppMain,
+  });
+}
 
 extension JsFlutterConfigurationExtension on JsFlutterConfiguration {
   @JS('assetBase')
@@ -360,6 +388,10 @@ extension JsFlutterConfigurationExtension on JsFlutterConfiguration {
   @JS('useColorEmoji')
   external JSBoolean? get _useColorEmoji;
   bool? get useColorEmoji => _useColorEmoji?.toDart;
+
+  @JS('loadManifestFontsBeforeAppMain')
+  external JSBoolean? get _loadManifestFontsBeforeAppMain;
+  bool? get loadManifestFontsBeforeAppMain => _loadManifestFontsBeforeAppMain?.toDart;
 }
 
 /// A JavaScript entrypoint that allows developer to set rendering backend
