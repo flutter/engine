@@ -19,6 +19,11 @@ void MatrixFilterContents::SetIsForSubpass(bool is_subpass) {
   FilterContents::SetIsForSubpass(is_subpass);
 }
 
+bool MatrixFilterContents::HasBasisTransformations() const {
+  return !matrix_.Basis().IsIdentity() ||
+         FilterContents::HasBasisTransformations();
+}
+
 void MatrixFilterContents::SetSamplerDescriptor(SamplerDescriptor desc) {
   sampler_descriptor_ = std::move(desc);
 }

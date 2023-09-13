@@ -58,6 +58,10 @@ void FilterContentsFilterInput::PopulateGlyphAtlas(
   filter_->PopulateGlyphAtlas(lazy_glyph_atlas, scale);
 }
 
+bool FilterContentsFilterInput::HasBasisTransformations() const {
+  return filter_->HasBasisTransformations();
+}
+
 bool FilterContentsFilterInput::IsLeaf() const {
   return false;
 }

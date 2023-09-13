@@ -76,6 +76,10 @@ void FilterInput::PopulateGlyphAtlas(
 
 FilterInput::~FilterInput() = default;
 
+bool FilterInput::HasBasisTransformations() const {
+  return false;
+}
+
 bool FilterInput::IsLeaf() const {
   return true;
 }
