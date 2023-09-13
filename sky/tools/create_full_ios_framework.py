@@ -122,12 +122,8 @@ def create_extension_safe_framework( # pylint: disable=too-many-arguments
     args, dst, arm64_out_dir, simulator_x64_out_dir, simulator_arm64_out_dir
 ):
   framework = os.path.join(dst, 'Flutter.framework')
-  simulator_framework = os.path.join(
-      dst, 'sim', 'Flutter.framework'
-  )
-  arm64_framework = os.path.join(
-      arm64_out_dir, 'Flutter.framework'
-  )
+  simulator_framework = os.path.join(dst, 'sim', 'Flutter.framework')
+  arm64_framework = os.path.join(arm64_out_dir, 'Flutter.framework')
   simulator_x64_framework = os.path.join(
       simulator_x64_out_dir, 'Flutter.framework'
   )
@@ -137,8 +133,7 @@ def create_extension_safe_framework( # pylint: disable=too-many-arguments
 
   if not os.path.isdir(arm64_framework):
     print(
-        'Cannot find extension safe iOS arm64 Framework at %s' %
-        arm64_framework
+        'Cannot find extension safe iOS arm64 Framework at %s' % arm64_framework
     )
     return 1
 
@@ -150,10 +145,8 @@ def create_extension_safe_framework( # pylint: disable=too-many-arguments
     return 1
 
   create_framework(
-      args, dst, framework, arm64_framework,
-      simulator_framework,
-      simulator_x64_framework,
-      simulator_arm64_framework
+      args, dst, framework, arm64_framework, simulator_framework,
+      simulator_x64_framework, simulator_arm64_framework
   )
   return 0
 
