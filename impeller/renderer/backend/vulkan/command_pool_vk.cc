@@ -18,7 +18,7 @@
 namespace impeller {
 
 // Holds the command pool in a background thread, recyling it when not in use.
-class BackgroundCommandPoolVK {
+class BackgroundCommandPoolVK final {
  public:
   BackgroundCommandPoolVK(BackgroundCommandPoolVK&&) = default;
 
@@ -92,6 +92,10 @@ vk::UniqueCommandBuffer CommandPoolVK::CreateCommandBuffer() {
 }
 
 void CommandPoolVK::CollectCommandBuffer(vk::UniqueCommandBuffer&& buffer) {
+  if (!pool_) {
+    // If the command pool has already been destroyed, just free the buffer.
+    return;
+  }
   collected_buffers_.push_back(std::move(buffer));
 }
 
