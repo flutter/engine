@@ -107,22 +107,32 @@ def main():
       simulator_x64_framework, simulator_arm64_framework
   )
 
-  # build extension safe frameworks
   extension_safe_dst = os.path.join(dst, 'extension_safe')
-  extension_safe_framework = os.path.join(
-      extension_safe_dst, 'Flutter.framework'
+  create_extension_safe_framework(
+      args, extension_safe_dst, '%s_extension_safe' % arm64_out_dir,
+      '%s_extension_safe' % simulator_x64_out_dir,
+      '%s_extension_safe' % simulator_arm64_out_dir
   )
+
+  generate_gen_snapshot(args, dst, x64_out_dir, arm64_out_dir)
+  zip_archive(dst)
+  return 0
+
+def create_extension_safe_framework( # pylint: disable=too-many-arguments
+    args, dst, arm64_out_dir, simulator_x64_out_dir, simulator_arm64_out_dir
+):
+  extension_safe_framework = os.path.join(dst, 'Flutter.framework')
   extension_safe_simulator_framework = os.path.join(
-      extension_safe_dst, 'sim', 'Flutter.framework'
+      dst, 'sim', 'Flutter.framework'
   )
   extension_safe_arm64_framework = os.path.join(
-      arm64_out_dir + '_extension_safe', 'Flutter.framework'
+      arm64_out_dir, 'Flutter.framework'
   )
   extension_safe_simulator_x64_framework = os.path.join(
-      simulator_x64_out_dir + '_extension_safe', 'Flutter.framework'
+      simulator_x64_out_dir, 'Flutter.framework'
   )
   extension_safe_simulator_arm64_framework = os.path.join(
-      simulator_arm64_out_dir + '_extension_safe', 'Flutter.framework'
+      simulator_arm64_out_dir, 'Flutter.framework'
   )
 
   if not os.path.isdir(extension_safe_arm64_framework):
@@ -140,16 +150,12 @@ def main():
     return 1
 
   create_framework(
-      args, extension_safe_dst, extension_safe_framework,
-      extension_safe_arm64_framework, extension_safe_simulator_framework,
+      args, dst, extension_safe_framework, extension_safe_arm64_framework,
+      extension_safe_simulator_framework,
       extension_safe_simulator_x64_framework,
       extension_safe_simulator_arm64_framework
   )
-
-  generate_gen_snapshot(args, dst, x64_out_dir, arm64_out_dir)
-  zip_archive(dst)
   return 0
-
 
 def create_framework(  # pylint: disable=too-many-arguments
     args, dst, framework, arm64_framework, simulator_framework,
