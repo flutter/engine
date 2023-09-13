@@ -114,7 +114,7 @@ std::optional<Rect> EntityPass::GetElementsCoverage(
       // as opposed to empty coverage.
       if (coverage.has_value() && coverage_limit.has_value()) {
         const auto* filter = entity->GetContents()->AsFilter();
-        if (!filter || !filter->HasBasisTransformations()) {
+        if (!filter || filter->IsTranslationOnly()) {
           coverage = coverage->Intersection(coverage_limit.value());
         }
       }
@@ -140,7 +140,7 @@ std::optional<Rect> EntityPass::GetElementsCoverage(
       }
 
       if (coverage.has_value() && coverage_limit.has_value() &&
-          (!image_filter || !image_filter->HasBasisTransformations())) {
+          (!image_filter || image_filter->IsTranslationOnly())) {
         coverage = coverage->Intersection(coverage_limit.value());
       }
     } else {
@@ -168,9 +168,9 @@ std::optional<Rect> EntityPass::GetSubpassCoverage(
   // If the filter graph transforms the basis of the subpass, then its space
   // has deviated too much from the parent pass to safely intersect with the
   // pass coverage limit.
-  coverage_limit = (image_filter && image_filter->HasBasisTransformations()
-                        ? std::nullopt
-                        : coverage_limit);
+  coverage_limit =
+      (image_filter && image_filter->IsTranslationOnly() ? std::nullopt
+                                                         : coverage_limit);
 
   auto entities_coverage = subpass.GetElementsCoverage(coverage_limit);
   // The entities don't cover anything. There is nothing to do.

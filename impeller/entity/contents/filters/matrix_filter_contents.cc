@@ -19,9 +19,8 @@ void MatrixFilterContents::SetIsForSubpass(bool is_subpass) {
   FilterContents::SetIsForSubpass(is_subpass);
 }
 
-bool MatrixFilterContents::HasBasisTransformations() const {
-  return !matrix_.Basis().IsIdentity() ||
-         FilterContents::HasBasisTransformations();
+bool MatrixFilterContents::IsTranslationOnly() const {
+  return matrix_.Basis().IsIdentity() && FilterContents::IsTranslationOnly();
 }
 
 void MatrixFilterContents::SetSamplerDescriptor(SamplerDescriptor desc) {

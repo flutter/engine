@@ -21,7 +21,7 @@ class MatrixFilterContents final : public FilterContents {
   void SetIsForSubpass(bool is_for_subpass) override;
 
   // |FilterContents|
-  bool HasBasisTransformations() const override;
+  bool IsTranslationOnly() const override;
 
   void SetSamplerDescriptor(SamplerDescriptor desc);
 

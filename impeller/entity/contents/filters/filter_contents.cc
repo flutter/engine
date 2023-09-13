@@ -270,9 +270,9 @@ Matrix FilterContents::GetLocalTransform(const Matrix& parent_transform) const {
 Matrix FilterContents::GetTransform(const Matrix& parent_transform) const {
   return parent_transform * GetLocalTransform(parent_transform);
 }
-bool FilterContents::HasBasisTransformations() const {
+bool FilterContents::IsTranslationOnly() const {
   for (auto& input : inputs_) {
-    if (!input->HasBasisTransformations()) {
+    if (!input->IsTranslationOnly()) {
       return false;
     }
   }

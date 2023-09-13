@@ -70,7 +70,7 @@ class FilterInput {
       Scalar scale);
 
   /// @see  `FilterContents::HasBasisTransformations`
-  virtual bool HasBasisTransformations() const;
+  virtual bool IsTranslationOnly() const;
 
   /// @brief  Returns `true` unless this input is a `FilterInput`, which may
   ///         take other inputs.
