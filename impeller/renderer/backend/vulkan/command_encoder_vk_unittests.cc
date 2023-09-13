@@ -62,6 +62,7 @@ TEST(CommandEncoderVKTest, CleanupAfterSubmit) {
     called_functions = GetMockVulkanFunctions(context->GetDevice());
     context->Shutdown();
   }
+
   auto destroy_pool =
       std::find(called_functions->begin(), called_functions->end(),
                 "vkDestroyCommandPool");
