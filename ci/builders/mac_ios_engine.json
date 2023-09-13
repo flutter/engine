@@ -332,8 +332,8 @@
             "realm": "production"
         },
         {
-            "source": "out/release/extension_safe/Flutter.dSYM.zip",
-            "destination": "ios-release/extension_safe/Flutter.dSYM.zip",
+            "source": "out/release/extension_safe_Flutter.dSYM.zip",
+            "destination": "ios-release/extension_safe_Flutter.dSYM.zip",
             "realm": "production"
         }
     ]

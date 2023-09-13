@@ -233,11 +233,17 @@ def zip_archive(dst):
       'Flutter.xcframework',
       'entitlements.txt',
       'without_entitlements.txt',
-      'extension_safe',
+      'extension_safe/Flutter.framework',
+      'extension_safe/Flutter.xcframework',
+      'extension_safe/sim',
   ],
                         cwd=dst)
   if os.path.exists(os.path.join(dst, 'Flutter.dSYM')):
     subprocess.check_call(['zip', '-r', 'Flutter.dSYM.zip', 'Flutter.dSYM'],
+                          cwd=dst)
+
+  if os.path.exists(os.path.join(dst, 'extension_safe', 'Flutter.dSYM')):
+    subprocess.check_call(['zip', '-r', 'extension_safe_Flutter.dSYM.zip', 'Flutter.dSYM'],
                           cwd=dst)
 
 
