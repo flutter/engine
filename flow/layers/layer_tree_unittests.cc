@@ -36,6 +36,8 @@ class LayerTreeTest : public CanvasTest {
     return std::make_unique<LayerTree>(config, SkISize::Make(64, 64));
   }
 
+  CompositorContext& compositor_context() { return compositor_context_; }
+
  private:
   CompositorContext compositor_context_;
   SkMatrix root_transform_;
@@ -94,6 +96,37 @@ TEST_F(LayerTreeTest, Simple) {
   EXPECT_EQ(mock_layer->parent_matrix(), root_transform());
 
   layer_tree->Paint(frame());
+  EXPECT_EQ(mock_canvas().draw_calls(),
+            std::vector({MockCanvas::DrawCall{
+                0, MockCanvas::DrawPathData{child_path, child_paint}}}));
+}
+
+TEST_F(LayerTreeTest, NoGrContextNoAiksContext) {
+  const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
+  const SkPath child_path = SkPath().addRect(child_bounds);
+  const DlPaint child_paint = DlPaint(DlColor::kCyan());
+  auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
+  auto layer = std::make_shared<ContainerLayer>();
+  layer->Add(mock_layer);
+
+  // The default |frame()| object contains these same values, but those
+  // defaults could change in the future so we manually construct our
+  // own frame that ensures that both gr_context and aiks_context are null.
+  auto frame = compositor_context().AcquireFrame(nullptr, &mock_canvas(),
+                                                 nullptr, root_transform(),
+                                                 false, true, nullptr, nullptr);
+
+  auto layer_tree = BuildLayerTree(LayerTree::Config{
+      .root_layer = layer,
+  });
+  layer_tree->Preroll(*frame.get());
+  EXPECT_EQ(mock_layer->paint_bounds(), child_bounds);
+  EXPECT_EQ(layer->paint_bounds(), mock_layer->paint_bounds());
+  EXPECT_FALSE(mock_layer->is_empty());
+  EXPECT_FALSE(layer->is_empty());
+  EXPECT_EQ(mock_layer->parent_matrix(), root_transform());
+
+  layer_tree->Paint(*frame.get());
   EXPECT_EQ(mock_canvas().draw_calls(),
             std::vector({MockCanvas::DrawCall{
                 0, MockCanvas::DrawPathData{child_path, child_paint}}}));

@@ -113,6 +113,7 @@ class MockLayer : public Layer {
   SkPath fake_paint_path_;
   DlPaint fake_paint_;
   std::optional<SkMatrix> expected_paint_matrix_;
+  bool preroll_context_had_impeller_enabled_;
 
   static constexpr int kParentHasPlatformView = 1 << 0;
   static constexpr int kParentHasTextureLayer = 1 << 1;

@@ -31,6 +31,7 @@ void MockLayer::Diff(DiffContext* context, const Layer* old_layer) {
 }
 
 void MockLayer::Preroll(PrerollContext* context) {
+  preroll_context_had_impeller_enabled_ = context->impeller_enabled;
   context->state_stack.fill(&parent_mutators_);
   parent_matrix_ = context->state_stack.transform_3x3();
   parent_cull_rect_ = context->state_stack.local_cull_rect();
@@ -51,6 +52,7 @@ void MockLayer::Preroll(PrerollContext* context) {
 
 void MockLayer::Paint(PaintContext& context) const {
   FML_DCHECK(needs_painting(context));
+  ASSERT_EQ(context.impeller_enabled, preroll_context_had_impeller_enabled_);
 
   if (expected_paint_matrix_.has_value()) {
     SkMatrix matrix = context.canvas->GetTransform();
