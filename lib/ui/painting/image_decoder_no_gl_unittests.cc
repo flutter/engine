@@ -33,7 +33,7 @@ bool IsPngWithPLTE(const uint8_t* bytes, size_t size) {
 
   const uint8_t* end = bytes + size;
   const uint8_t* loc = bytes + kPngMagic.size();
-  while (loc + 8 <= end) {
+  while (loc + kLengthBytes + kTypeBytes <= end) {
     uint32_t chunk_length =
         fml::BigEndianToArch(*reinterpret_cast<const uint32_t*>(loc));
 
