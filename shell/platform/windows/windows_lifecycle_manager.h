@@ -99,6 +99,8 @@ class WindowsLifecycleManager {
                                LPARAM lparam);
 
  private:
+  bool HandleCloseMessage(HWND hwnd, WPARAM wparam, LPARAM lparam);
+
   FlutterWindowsEngine* engine_;
 
   std::map<std::tuple<HWND, WPARAM, LPARAM>, int> sent_close_messages_;
