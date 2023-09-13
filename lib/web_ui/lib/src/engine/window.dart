@@ -65,7 +65,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow implements EngineFlu
   final EnginePlatformDispatcher platformDispatcher;
 
   @override
-  late final MouseCursor mouseCursor = MouseCursor(this);
+  late final MouseCursor mouseCursor = MouseCursor(rootElement);
 
   @override
   DomElement get rootElement => flutterViewEmbedder.flutterViewElement;

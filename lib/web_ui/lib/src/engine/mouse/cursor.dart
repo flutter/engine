@@ -3,13 +3,12 @@
 // found in the LICENSE file.
 
 import '../dom.dart';
-import '../window.dart';
 
-/// Controls the mouse cursor in the given [view].
+/// Controls the mouse cursor in the given [element].
 class MouseCursor {
-  MouseCursor(this.view);
+  MouseCursor(this.element);
 
-  final EngineFlutterView view;
+  final DomElement element;
 
   // Map from Flutter's kind values to CSS's cursor values.
   //
@@ -58,6 +57,6 @@ class MouseCursor {
   }
 
   void activateSystemCursor(String? kind) {
-    view.rootElement.style.cursor = _mapKindToCssValue(kind);
+    element.style.cursor = _mapKindToCssValue(kind);
   }
 }
