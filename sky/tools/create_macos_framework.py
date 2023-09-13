@@ -95,13 +95,11 @@ def main():
   process_framework(dst, args, fat_framework, fat_framework_binary)
 
   # Add group and other readability to all files.
-  subprocess.check_call([
-      'chmod', '-R', 'og+r',
-      os.path.join(fat_framework, 'Versions')
-  ])
+  versions_path = os.path.join(fat_framework, 'Versions')
+  subprocess.check_call(['chmod', '-R', 'og+r', versions_path])
   # Find all the files below the target dir with owner execute permission
   find_subprocess = subprocess.Popen([
-      "find", fat_framework, "-perm", "-100", "-print0"
+      "find", versions_path, "-perm", "-100", "-print0"
   ],
                                      stdout=subprocess.PIPE)
   # Add execute permission for other and group for all files that had it for owner.
