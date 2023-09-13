@@ -288,6 +288,11 @@ std::optional<LRESULT> WindowsLifecycleManager::ExternalWindowMessage(
     case WM_DESTROY:
       event = flutter::WindowStateEvent::kHide;
       break;
+    case WM_CLOSE:
+      if (HandleCloseMessage(hwnd, wparam, lparam)) {
+        return NULL;
+      }
+      break;
   }
 
   if (event.has_value()) {
