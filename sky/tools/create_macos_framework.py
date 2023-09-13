@@ -99,11 +99,11 @@ def main():
   subprocess.check_call(['chmod', '-R', 'og+r', versions_path])
   # Find all the files below the target dir with owner execute permission
   find_subprocess = subprocess.Popen([
-      "find", versions_path, "-perm", "-100", "-print0"
+      'find', versions_path, '-perm', '-100', '-print0'
   ],
                                      stdout=subprocess.PIPE)
   # Add execute permission for other and group for all files that had it for owner.
-  xargs_subprocess = subprocess.Popen(["xargs", "-0", "chmod", "og+x"],
+  xargs_subprocess = subprocess.Popen(['xargs', '-0', 'chmod', 'og+x'],
                                       stdin=find_subprocess.stdout)
   find_subprocess.wait()
   xargs_subprocess.wait()
