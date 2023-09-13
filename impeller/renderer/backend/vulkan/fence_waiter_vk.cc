@@ -107,6 +107,33 @@ void FenceWaiterVK::Main() {
     lock.unlock();
 
     if (terminate) {
+      // This code is copied because checking for the terminate flag after the
+      // fence waiting appears insufficient. It's possible to refactor this into
+      // a method and re-use it, but it's not clear if that might have other
+      // unintended consequences.
+      auto fences = GetFencesForWaitSet(wait_set);
+      if (fences.empty()) {
+        break;
+      }
+
+      // If there are fences to wait on, wait for them to be signaled.
+      auto device_holder = device_holder_.lock();
+      if (!device_holder) {
+        break;
+      }
+
+      const auto& device = device_holder->GetDevice();
+      auto result = device.waitForFences(
+          fences.size(),                           // fences count
+          fences.data(),                           // fences
+          false,                                   // wait for all
+          std::chrono::nanoseconds{100ms}.count()  // timeout (ns)
+      );
+      if (!(result == vk::Result::eSuccess || result == vk::Result::eTimeout)) {
+        VALIDATION_LOG << "Fence waiter encountered an unexpected error "
+                       << "while terminating.";
+      }
+
       break;
     }
 
