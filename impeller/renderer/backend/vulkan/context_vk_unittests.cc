@@ -92,6 +92,9 @@ TEST(ContextVKTest, CanCreateContextInAbsenceOfValidationLayers) {
                      })
                      .Build();
   ASSERT_NE(context, nullptr);
+  const CapabilitiesVK* capabilites_vk =
+      reinterpret_cast<const CapabilitiesVK*>(context->GetCapabilities().get());
+  ASSERT_FALSE(capabilites_vk->AreValidationsEnabled());
 }
 
 TEST(ContextVKTest, CanCreateContextWithValidationLayers) {
@@ -104,6 +107,9 @@ TEST(ContextVKTest, CanCreateContextWithValidationLayers) {
           .SetInstanceLayers({"VK_LAYER_KHRONOS_validation"})
           .Build();
   ASSERT_NE(context, nullptr);
+  const CapabilitiesVK* capabilites_vk =
+      reinterpret_cast<const CapabilitiesVK*>(context->GetCapabilities().get());
+  ASSERT_TRUE(capabilites_vk->AreValidationsEnabled());
 }
 
 }  // namespace testing
