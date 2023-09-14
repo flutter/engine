@@ -13,6 +13,7 @@
 #include "flutter/fml/concurrent_message_loop.h"
 #include "flutter/lib/ui/io_manager.h"
 #include "flutter/lib/ui/painting/image_descriptor.h"
+#include "flutter/lib/ui/painting/multi_frame_codec.h"
 
 namespace flutter {
 
@@ -43,6 +44,13 @@ class ImageDecoder {
                       uint32_t target_width,
                       uint32_t target_height,
                       const ImageResult& result) = 0;
+
+  using MultiFrameImageResult =
+      std::function<void(std::optional<SkBitmap>, std::string)>;
+
+  void DecodeAnimatedImageFrame(
+      std::weak_ptr<MultiFrameCodec::State> weak_state,
+      MultiFrameImageResult result);
 
   fml::WeakPtr<ImageDecoder> GetWeakPtr() const;
 

@@ -7,6 +7,8 @@
 #include <utility>
 
 #include "flutter/runtime/isolate_configuration.h"
+#include "fml/memory/weak_ptr.h"
+#include "lib/ui/painting/image_decoder.h"
 
 namespace flutter {
 namespace testing {
@@ -72,7 +74,8 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolateOnUITaskRunner(
     const std::vector<std::string>& args,
     const std::string& kernel_file_path,
     fml::WeakPtr<IOManager> io_manager,
-    const std::shared_ptr<VolatilePathTracker>& volatile_path_tracker) {
+    const std::shared_ptr<VolatilePathTracker>& volatile_path_tracker,
+    fml::WeakPtr<ImageDecoder> decoder) {
   FML_CHECK(task_runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
   if (!vm_ref) {
@@ -124,6 +127,7 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolateOnUITaskRunner(
   context.advisory_script_uri = "main.dart";
   context.advisory_script_entrypoint = entrypoint.c_str();
   context.enable_impeller = p_settings.enable_impeller;
+  context.image_decoder = std::move(decoder);
 
   auto isolate =
       DartIsolate::CreateRunningRootIsolate(
@@ -159,14 +163,15 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolate(
     const std::vector<std::string>& args,
     const std::string& kernel_file_path,
     fml::WeakPtr<IOManager> io_manager,
-    std::shared_ptr<VolatilePathTracker> volatile_path_tracker) {
+    std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
+    fml::WeakPtr<ImageDecoder> decoder) {
   std::unique_ptr<AutoIsolateShutdown> result;
   fml::AutoResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(
       task_runners.GetUITaskRunner(), fml::MakeCopyable([&]() mutable {
         result = RunDartCodeInIsolateOnUITaskRunner(
             vm_ref, settings, task_runners, entrypoint, args, kernel_file_path,
-            io_manager, volatile_path_tracker);
+            io_manager, volatile_path_tracker, std::move(decoder));
         latch.Signal();
       }));
   latch.Wait();

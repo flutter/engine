@@ -2,8 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <memory>
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/mapping.h"
+#include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/impeller/core/allocator.h"
 #include "flutter/impeller/core/device_buffer.h"
@@ -833,9 +836,18 @@ TEST_F(ImageDecoderFixtureTest,
     io_manager = std::make_unique<TestIOManager>(runners.GetIOTaskRunner());
   });
 
-  auto isolate = RunDartCodeInIsolate(vm_ref, settings, runners, "main", {},
-                                      GetDefaultKernelFilePath(),
-                                      io_manager->GetWeakIOManager());
+  auto loop = fml::ConcurrentMessageLoop::Create();
+  std::unique_ptr<ImageDecoder> decoder;
+  fml::WeakPtr<ImageDecoder> weak_decoder;
+  PostTaskSync(runners.GetUITaskRunner(), [&] {
+    decoder = ImageDecoder::Make(settings, runners, loop->GetTaskRunner(),
+                                 io_manager->GetWeakIOManager(),
+                                 std::make_shared<fml::SyncSwitch>());
+    weak_decoder = decoder->GetWeakPtr();
+  });
+  auto isolate = RunDartCodeInIsolate(
+      vm_ref, settings, runners, "main", {}, GetDefaultKernelFilePath(),
+      io_manager->GetWeakIOManager(), nullptr, std::move(weak_decoder));
 
   // Latch the IO task runner.
   runners.GetIOTaskRunner()->PostTask([&]() { io_latch.Wait(); });
@@ -869,6 +881,7 @@ TEST_F(ImageDecoderFixtureTest,
     io_latch.Signal();
   });
 
+  PostTaskSync(runners.GetUITaskRunner(), [&]() { decoder = nullptr; });
   // Destroy the IO manager
   PostTaskSync(runners.GetIOTaskRunner(), [&]() { io_manager.reset(); });
 }
@@ -898,21 +911,38 @@ TEST_F(ImageDecoderFixtureTest, MultiFrameCodecDidAccessGpuDisabledSyncSwitch) {
   fml::RefPtr<MultiFrameCodec> codec;
   fml::AutoResetWaitableEvent latch;
 
-  auto validate_frame_callback = [&latch](Dart_NativeArguments args) {
-    EXPECT_FALSE(Dart_IsNull(Dart_GetNativeArgument(args, 0)));
-    latch.Signal();
-  };
-
-  AddNativeCallback("ValidateFrameCallback",
-                    CREATE_NATIVE_ENTRY(validate_frame_callback));
   // Setup the IO manager.
   PostTaskSync(runners.GetIOTaskRunner(), [&]() {
     io_manager = std::make_unique<TestIOManager>(runners.GetIOTaskRunner());
   });
 
-  auto isolate = RunDartCodeInIsolate(vm_ref, settings, runners, "main", {},
-                                      GetDefaultKernelFilePath(),
-                                      io_manager->GetWeakIOManager());
+  auto validate_frame_callback = [&latch, &runners,
+                                  &io_manager](Dart_NativeArguments args) {
+    EXPECT_FALSE(Dart_IsNull(Dart_GetNativeArgument(args, 0)));
+
+    PostTaskSync(runners.GetIOTaskRunner(), [&]() {
+      EXPECT_TRUE(io_manager->did_access_is_gpu_disabled_sync_switch_);
+    });
+
+    latch.Signal();
+  };
+
+  AddNativeCallback("ValidateFrameCallback",
+                    CREATE_NATIVE_ENTRY(validate_frame_callback));
+
+  auto loop = fml::ConcurrentMessageLoop::Create();
+  std::unique_ptr<ImageDecoder> decoder;
+  fml::WeakPtr<ImageDecoder> weak_decoder;
+
+  PostTaskSync(runners.GetUITaskRunner(), [&] {
+    decoder = ImageDecoder::Make(settings, runners, loop->GetTaskRunner(),
+                                 io_manager->GetWeakIOManager(),
+                                 std::make_shared<fml::SyncSwitch>());
+    weak_decoder = decoder->GetWeakPtr();
+  });
+  auto isolate = RunDartCodeInIsolate(
+      vm_ref, settings, runners, "main", {}, GetDefaultKernelFilePath(),
+      io_manager->GetWeakIOManager(), nullptr, std::move(weak_decoder));
 
   PostTaskSync(runners.GetUITaskRunner(), [&]() {
     fml::AutoResetWaitableEvent isolate_latch;
@@ -939,14 +969,12 @@ TEST_F(ImageDecoderFixtureTest, MultiFrameCodecDidAccessGpuDisabledSyncSwitch) {
     isolate_latch.Wait();
   });
 
-  PostTaskSync(runners.GetIOTaskRunner(), [&]() {
-    EXPECT_TRUE(io_manager->did_access_is_gpu_disabled_sync_switch_);
-  });
-
   latch.Wait();
 
   // Destroy the Isolate
   isolate = nullptr;
+
+  PostTaskSync(runners.GetUITaskRunner(), [&]() { decoder = nullptr; });
 
   // Destroy the MultiFrameCodec
   PostTaskSync(runners.GetUITaskRunner(), [&]() { codec = nullptr; });
@@ -982,8 +1010,13 @@ TEST_F(ImageDecoderFixtureTest,
   fml::RefPtr<MultiFrameCodec> codec;
   fml::AutoResetWaitableEvent latch;
 
-  auto validate_frame_callback = [&latch](Dart_NativeArguments args) {
+  auto validate_frame_callback = [&latch, &runners,
+                                  &io_manager](Dart_NativeArguments args) {
     EXPECT_FALSE(Dart_IsNull(Dart_GetNativeArgument(args, 0)));
+
+    PostTaskSync(runners.GetIOTaskRunner(), [&]() {
+      EXPECT_TRUE(io_manager->did_access_is_gpu_disabled_sync_switch_);
+    });
     latch.Signal();
   };
 
@@ -997,9 +1030,19 @@ TEST_F(ImageDecoderFixtureTest,
     io_manager->SetGpuDisabled(true);
   });
 
-  auto isolate = RunDartCodeInIsolate(vm_ref, settings, runners, "main", {},
-                                      GetDefaultKernelFilePath(),
-                                      io_manager->GetWeakIOManager());
+  auto loop = fml::ConcurrentMessageLoop::Create();
+  std::unique_ptr<ImageDecoder> decoder;
+  fml::WeakPtr<ImageDecoder> weak_decoder;
+
+  PostTaskSync(runners.GetUITaskRunner(), [&] {
+    decoder = ImageDecoder::Make(settings, runners, loop->GetTaskRunner(),
+                                 io_manager->GetWeakIOManager(),
+                                 std::make_shared<fml::SyncSwitch>());
+    weak_decoder = decoder->GetWeakPtr();
+  });
+  auto isolate = RunDartCodeInIsolate(
+      vm_ref, settings, runners, "main", {}, GetDefaultKernelFilePath(),
+      io_manager->GetWeakIOManager(), nullptr, std::move(weak_decoder));
 
   PostTaskSync(runners.GetUITaskRunner(), [&]() {
     fml::AutoResetWaitableEvent isolate_latch;
@@ -1026,17 +1069,114 @@ TEST_F(ImageDecoderFixtureTest,
     isolate_latch.Wait();
   });
 
-  PostTaskSync(runners.GetIOTaskRunner(), [&]() {
-    EXPECT_TRUE(io_manager->did_access_is_gpu_disabled_sync_switch_);
-  });
-
   latch.Wait();
 
   // Destroy the Isolate
   isolate = nullptr;
 
+  PostTaskSync(runners.GetUITaskRunner(), [&]() { decoder = nullptr; });
+
   // Destroy the MultiFrameCodec
   PostTaskSync(runners.GetUITaskRunner(), [&]() { codec = nullptr; });
+
+  // Destroy the IO manager
+  PostTaskSync(runners.GetIOTaskRunner(), [&]() { io_manager.reset(); });
+}
+
+TEST_F(ImageDecoderFixtureTest, MultiFrameCodecCanDecodeParallel) {
+  auto gif_mapping = OpenFixtureAsSkData("hello_loop_2.webp");
+
+  ASSERT_TRUE(gif_mapping);
+
+  ImageGeneratorRegistry registry;
+  std::vector<std::shared_ptr<ImageGenerator>> generators;
+  auto cpu_core_nums = std::thread::hardware_concurrency();
+  auto test_count = 2 * cpu_core_nums;
+  for (auto i = 0U; i < test_count; i++) {
+    std::shared_ptr<ImageGenerator> gif_generator =
+        registry.CreateCompatibleGenerator(gif_mapping);
+    ASSERT_TRUE(gif_generator);
+    generators.push_back(gif_generator);
+  }
+
+  TaskRunners runners(GetCurrentTestName(),         // label
+                      CreateNewThread("platform"),  // platform
+                      CreateNewThread("raster"),    // raster
+                      CreateNewThread("ui"),        // ui
+                      CreateNewThread("io")         // io
+  );
+
+  std::unique_ptr<TestIOManager> io_manager;
+  fml::CountDownLatch latch(test_count);
+
+  auto validate_frame_callback = [&latch](Dart_NativeArguments args) {
+    EXPECT_FALSE(Dart_IsNull(Dart_GetNativeArgument(args, 0)));
+    latch.CountDown();
+  };
+
+  AddNativeCallback("ValidateFrameCallback",
+                    CREATE_NATIVE_ENTRY(validate_frame_callback));
+
+  // Setup the IO manager.
+  PostTaskSync(runners.GetIOTaskRunner(), [&]() {
+    io_manager = std::make_unique<TestIOManager>(runners.GetIOTaskRunner());
+  });
+
+  auto settings = CreateSettingsForFixture();
+  auto vm_ref = DartVMRef::Create(settings);
+  auto vm_data = vm_ref.GetVMData();
+
+  auto loop = fml::ConcurrentMessageLoop::Create();
+  std::unique_ptr<ImageDecoder> decoder;
+  fml::WeakPtr<ImageDecoder> weak_decoder;
+  PostTaskSync(runners.GetUITaskRunner(), [&] {
+    decoder = ImageDecoder::Make(settings, runners, loop->GetTaskRunner(),
+                                 io_manager->GetWeakIOManager(),
+                                 std::make_shared<fml::SyncSwitch>());
+    weak_decoder = decoder->GetWeakPtr();
+  });
+  auto isolate = RunDartCodeInIsolate(
+      vm_ref, settings, runners, "main", {}, GetDefaultKernelFilePath(),
+      io_manager->GetWeakIOManager(), nullptr, std::move(weak_decoder));
+
+  std::vector<fml::RefPtr<MultiFrameCodec>> codecs_holder;
+  for (auto i = 0U; i < test_count; i++) {
+    runners.GetIOTaskRunner()->PostTask([&, count = i]() {
+      fml::AutoResetWaitableEvent isolate_latch;
+
+      EXPECT_TRUE(isolate->RunInIsolateScope([&]() -> bool {
+        Dart_Handle library = Dart_RootLibrary();
+        if (Dart_IsError(library)) {
+          isolate_latch.Signal();
+          return false;
+        }
+        Dart_Handle closure =
+            Dart_GetField(library, Dart_NewStringFromCString("frameCallback"));
+        if (Dart_IsError(closure) || !Dart_IsClosure(closure)) {
+          isolate_latch.Signal();
+          return false;
+        }
+
+        auto codec =
+            fml::MakeRefCounted<MultiFrameCodec>(std::move(generators[count]));
+        codecs_holder.push_back(codec);
+        codec->getNextFrame(closure);
+        isolate_latch.Signal();
+        return true;
+      }));
+
+      isolate_latch.Wait();
+    });
+  }
+
+  latch.Wait();
+
+  // Destroy the Isolate
+  isolate = nullptr;
+  PostTaskSync(runners.GetUITaskRunner(), [&]() { decoder = nullptr; });
+
+  // Destroy the MultiFrameCodec
+  PostTaskSync(runners.GetUITaskRunner(), [&]() { codecs_holder.clear(); });
 
   // Destroy the IO manager
   PostTaskSync(runners.GetIOTaskRunner(), [&]() { io_manager.reset(); });

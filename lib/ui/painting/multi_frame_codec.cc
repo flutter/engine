@@ -4,17 +4,17 @@
 
 #include "flutter/lib/ui/painting/multi_frame_codec.h"
 
+#include <optional>
 #include <utility>
 
 #include "flutter/fml/make_copyable.h"
 #include "flutter/lib/ui/painting/display_list_image_gpu.h"
 #include "flutter/lib/ui/painting/image.h"
+#include "third_party/skia/include/core/SkBitmap.h"
 #if IMPELLER_SUPPORTS_RENDERING
 #include "flutter/lib/ui/painting/image_decoder_impeller.h"
 #endif  // IMPELLER_SUPPORTS_RENDERING
 #include "third_party/dart/runtime/include/dart_api.h"
-#include "third_party/skia/include/codec/SkCodecAnimation.h"
-#include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkPixelRef.h"
 #include "third_party/skia/include/gpu/ganesh/SkImageGanesh.h"
 #include "third_party/tonic/logging/dart_invoke.h"
@@ -40,8 +40,7 @@ static void InvokeNextFrameCallback(
     const fml::RefPtr<CanvasImage>& image,
     int duration,
     const std::string& decode_error,
-    std::unique_ptr<DartPersistentValue> callback,
-    size_t trace_id) {
+    std::unique_ptr<DartPersistentValue> callback) {
   std::shared_ptr<tonic::DartState> dart_state = callback->dart_state().lock();
   if (!dart_state) {
     FML_DLOG(ERROR) << "Could not acquire Dart state while attempting to fire "
@@ -57,92 +56,10 @@ static void InvokeNextFrameCallback(
 std::pair<sk_sp<DlImage>, std::string>
 MultiFrameCodec::State::GetNextFrameImage(
     fml::WeakPtr<GrDirectContext> resourceContext,
+    fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue,
     const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch,
     const std::shared_ptr<impeller::Context>& impeller_context,
-    fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue) {
-  SkBitmap bitmap = SkBitmap();
-  SkImageInfo info = generator_->GetInfo().makeColorType(kN32_SkColorType);
-  if (info.alphaType() == kUnpremul_SkAlphaType) {
-    SkImageInfo updated = info.makeAlphaType(kPremul_SkAlphaType);
-    info = updated;
-  }
-  if (!bitmap.tryAllocPixels(info)) {
-    std::ostringstream ostr;
-    ostr << "Failed to allocate memory for bitmap of size "
-         << info.computeMinByteSize() << "B";
-    std::string decode_error = ostr.str();
-    FML_LOG(ERROR) << decode_error;
-    return std::make_pair(nullptr, decode_error);
-  }
-
-  ImageGenerator::FrameInfo frameInfo =
-      generator_->GetFrameInfo(nextFrameIndex_);
-
-  const int requiredFrameIndex =
-      frameInfo.required_frame.value_or(SkCodec::kNoFrame);
-
-  if (requiredFrameIndex != SkCodec::kNoFrame) {
-    // We are here when the frame said |disposal_method| is
-    // `DisposalMethod::kKeep` or `DisposalMethod::kRestorePrevious` and
-    // |requiredFrameIndex| is set to ex-frame or ex-ex-frame.
-    if (!lastRequiredFrame_.has_value()) {
-      FML_DLOG(INFO)
-          << "Frame " << nextFrameIndex_ << " depends on frame "
-          << requiredFrameIndex
-          << " and no required frames are cached. Using blank slate instead.";
-    } else {
-      // Copy the previous frame's output buffer into the current frame as the
-      // starting point.
-      bitmap.writePixels(lastRequiredFrame_->pixmap());
-      if (restoreBGColorRect_.has_value()) {
-        bitmap.erase(SK_ColorTRANSPARENT, restoreBGColorRect_.value());
-      }
-    }
-  }
-
-  // Write the new frame to the output buffer. The bitmap pixels as supplied
-  // are already set in accordance with the previous frame's disposal policy.
-  if (!generator_->GetPixels(info, bitmap.getPixels(), bitmap.rowBytes(),
-                             nextFrameIndex_, requiredFrameIndex)) {
-    std::ostringstream ostr;
-    ostr << "Could not getPixels for frame " << nextFrameIndex_;
-    std::string decode_error = ostr.str();
-    FML_LOG(ERROR) << decode_error;
-    return std::make_pair(nullptr, decode_error);
-  }
-
-  const bool keep_current_frame =
-      frameInfo.disposal_method == SkCodecAnimation::DisposalMethod::kKeep;
-  const bool restore_previous_frame =
-      frameInfo.disposal_method ==
-      SkCodecAnimation::DisposalMethod::kRestorePrevious;
-  const bool previous_frame_available = lastRequiredFrame_.has_value();
-
-  // Store the current frame in `lastRequiredFrame_` if the frame's disposal
-  // method indicates we should do so.
-  // * When the disposal method is "Keep", the stored frame should always be
-  //   overwritten with the new frame we just crafted.
-  // * When the disposal method is "RestorePrevious", the previously stored
-  //   frame should be retained and used as the backdrop for the next frame
-  //   again. If there isn't already a stored frame, that means we haven't
-  //   rendered any frames yet! When this happens, we just fall back to "Keep"
-  //   behavior and store the current frame as the backdrop of the next frame.
-
-  if (keep_current_frame ||
-      (previous_frame_available && !restore_previous_frame)) {
-    // Replace the stored frame. The `lastRequiredFrame_` will get used as the
-    // starting backdrop for the next frame.
-    lastRequiredFrame_ = bitmap;
-    lastRequiredFrameIndex_ = nextFrameIndex_;
-  }
-
-  if (frameInfo.disposal_method ==
-      SkCodecAnimation::DisposalMethod::kRestoreBGColor) {
-    restoreBGColorRect_ = frameInfo.disposal_rect;
-  } else {
-    restoreBGColorRect_.reset();
-  }
-
+    SkBitmap bitmap) const {
 #if IMPELLER_SUPPORTS_RENDERING
   if (is_impeller_enabled_) {
     // This is safe regardless of whether the GPU is available or not because
@@ -182,24 +99,16 @@ MultiFrameCodec::State::GetNextFrameImage(
                         std::string());
 }
 
-void MultiFrameCodec::State::GetNextFrameAndInvokeCallback(
-    std::unique_ptr<DartPersistentValue> callback,
+void MultiFrameCodec::State::OnGetImageAndInvokeCallback(
     const fml::RefPtr<fml::TaskRunner>& ui_task_runner,
-    fml::WeakPtr<GrDirectContext> resourceContext,
-    fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue,
-    const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch,
-    size_t trace_id,
-    const std::shared_ptr<impeller::Context>& impeller_context) {
+    sk_sp<DlImage> dl_image,
+    std::string decode_error,
+    std::unique_ptr<DartPersistentValue> callback) {
   fml::RefPtr<CanvasImage> image = nullptr;
   int duration = 0;
-  sk_sp<DlImage> dlImage;
-  std::string decode_error;
-  std::tie(dlImage, decode_error) =
-      GetNextFrameImage(std::move(resourceContext), gpu_disable_sync_switch,
-                        impeller_context, std::move(unref_queue));
-  if (dlImage) {
+  if (dl_image) {
     image = CanvasImage::Create();
-    image->set_image(dlImage);
+    image->set_image(std::move(dl_image));
     ImageGenerator::FrameInfo frameInfo =
         generator_->GetFrameInfo(nextFrameIndex_);
     duration = frameInfo.duration;
@@ -210,16 +119,13 @@ void MultiFrameCodec::State::GetNextFrameAndInvokeCallback(
   // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
   ui_task_runner->PostTask(fml::MakeCopyable(
       [callback = std::move(callback), image = std::move(image),
-       decode_error = std::move(decode_error), duration, trace_id]() mutable {
+       decode_error = std::move(decode_error), duration]() mutable {
         InvokeNextFrameCallback(image, duration, decode_error,
-                                std::move(callback), trace_id);
+                                std::move(callback));
       }));
 }
 
 Dart_Handle MultiFrameCodec::getNextFrame(Dart_Handle callback_handle) {
-  static size_t trace_counter = 1;
-  const size_t trace_id = trace_counter++;
-
   if (!Dart_IsClosure(callback_handle)) {
     return tonic::ToDart("Callback must be a function");
   }
@@ -227,37 +133,54 @@ Dart_Handle MultiFrameCodec::getNextFrame(Dart_Handle callback_handle) {
   auto* dart_state = UIDartState::Current();
 
   const auto& task_runners = dart_state->GetTaskRunners();
+  auto image_decoder = dart_state->GetImageDecoder();
 
+  if (!image_decoder) {
+    return tonic::ToDart(
+        "Failed to access the internal image decoder "
+        "registry on this isolate. Please file a bug on "
+        "https://github.com/flutter/flutter/issues.");
+  }
   if (state_->frameCount_ == 0) {
     std::string decode_error("Could not provide any frame.");
     FML_LOG(ERROR) << decode_error;
     task_runners.GetUITaskRunner()->PostTask(fml::MakeCopyable(
-        [trace_id, decode_error = std::move(decode_error),
+        [decode_error = std::move(decode_error),
          callback = std::make_unique<DartPersistentValue>(
              tonic::DartState::Current(), callback_handle)]() mutable {
-          InvokeNextFrameCallback(nullptr, 0, decode_error, std::move(callback),
-                                  trace_id);
+          InvokeNextFrameCallback(nullptr, 0, decode_error,
+                                  std::move(callback));
         }));
     return Dart_Null();
   }
 
-  task_runners.GetIOTaskRunner()->PostTask(fml::MakeCopyable(
-      [callback = std::make_unique<DartPersistentValue>(
-           tonic::DartState::Current(), callback_handle),
-       weak_state = std::weak_ptr<MultiFrameCodec::State>(state_), trace_id,
-       ui_task_runner = task_runners.GetUITaskRunner(),
-       io_manager = dart_state->GetIOManager()]() mutable {
+  image_decoder->DecodeAnimatedImageFrame(
+      state_,
+      fml::MakeCopyable([callback = std::make_unique<DartPersistentValue>(
+                             tonic::DartState::Current(), callback_handle),
+                         weak_state =
+                             std::weak_ptr<MultiFrameCodec::State>(state_),
+                         ui_task_runner = task_runners.GetUITaskRunner(),
+                         io_manager = dart_state->GetIOManager()](
+                            std::optional<SkBitmap> bitmap,
+                            std::string decode_error) mutable {
         auto state = weak_state.lock();
-        if (!state) {
+        if (!state || !io_manager) {
           ui_task_runner->PostTask(fml::MakeCopyable(
               [callback = std::move(callback)]() { callback->Clear(); }));
           return;
         }
-        state->GetNextFrameAndInvokeCallback(
-            std::move(callback), ui_task_runner,
-            io_manager->GetResourceContext(), io_manager->GetSkiaUnrefQueue(),
-            io_manager->GetIsGpuDisabledSyncSwitch(), trace_id,
-            io_manager->GetImpellerContext());
+        sk_sp<DlImage> dl_image;
+        if (bitmap) {
+          std::tie(dl_image, decode_error) = state->GetNextFrameImage(
+              io_manager->GetResourceContext(), io_manager->GetSkiaUnrefQueue(),
+              io_manager->GetIsGpuDisabledSyncSwitch(),
+              io_manager->GetImpellerContext(), std::move(*bitmap));
+        }
+
+        state->OnGetImageAndInvokeCallback(ui_task_runner, std::move(dl_image),
+                                           std::move(decode_error),
+                                           std::move(callback));
       }));
 
   return Dart_Null();

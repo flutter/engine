@@ -82,9 +82,18 @@ TEST_F(ShellIOManagerTest,
         fml::TimeDelta::FromMilliseconds(0));
   });
 
-  auto isolate = RunDartCodeInIsolate(vm_ref, settings, runners, "emptyMain",
-                                      {}, GetDefaultKernelFilePath(),
-                                      io_manager->GetWeakIOManager());
+  auto loop = fml::ConcurrentMessageLoop::Create();
+  std::unique_ptr<ImageDecoder> decoder;
+  fml::WeakPtr<ImageDecoder> weak_decoder;
+  PostTaskSync(runners.GetUITaskRunner(), [&] {
+    decoder = ImageDecoder::Make(settings, runners, loop->GetTaskRunner(),
+                                 io_manager->GetWeakIOManager(),
+                                 std::make_shared<fml::SyncSwitch>());
+    weak_decoder = decoder->GetWeakPtr();
+  });
+  auto isolate = RunDartCodeInIsolate(
+      vm_ref, settings, runners, "emptyMain", {}, GetDefaultKernelFilePath(),
+      io_manager->GetWeakIOManager(), nullptr, std::move(weak_decoder));
 
   PostTaskSync(runners.GetUITaskRunner(), [&]() {
     fml::AutoResetWaitableEvent isolate_latch;
@@ -110,6 +119,7 @@ TEST_F(ShellIOManagerTest,
     isolate_latch.Wait();
   });
 
+  PostTaskSync(runners.GetUITaskRunner(), [&]() { decoder = nullptr; });
   // Destroy the IO manager
   PostTaskSync(runners.GetIOTaskRunner(), [&]() {
     // 'SkiaUnrefQueue.Drain' will be called after 'io_manager.reset()' in this

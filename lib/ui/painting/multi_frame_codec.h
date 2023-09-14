@@ -5,16 +5,24 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_MUTLI_FRAME_CODEC_H_
 #define FLUTTER_LIB_UI_PAINTING_MUTLI_FRAME_CODEC_H_
 
-#include "flutter/fml/macros.h"
+#include "display_list/image/dl_image.h"
+#include "flow/skia_gpu_object.h"
 #include "flutter/lib/ui/painting/codec.h"
 #include "flutter/lib/ui/painting/image_generator.h"
 
+#include <functional>
+#include <memory>
+#include <string>
 #include <utility>
+#include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/fml/synchronization/sync_switch.h"
+#include "flutter/impeller/renderer/context.h"
+#include "third_party/skia/include/core/SkBitmap.h"
 
 using tonic::DartPersistentValue;
 
 namespace flutter {
-
+class ImageDecoder;
 class MultiFrameCodec : public Codec {
  public:
   explicit MultiFrameCodec(std::shared_ptr<ImageGenerator> generator);
@@ -30,7 +38,6 @@ class MultiFrameCodec : public Codec {
   // |Codec|
   Dart_Handle getNextFrame(Dart_Handle args) override;
 
- private:
   // Captures the state shared between the IO and UI task runners.
   //
   // The state is initialized on the UI task runner when the Dart object is
@@ -40,7 +47,7 @@ class MultiFrameCodec : public Codec {
   // Instead, the MultiFrameCodec creates this object when it is constructed,
   // shares it with the IO task runner's decoding work, and sets the live_
   // member to false when it is destructed.
-  struct State {
+  struct State : public std::enable_shared_from_this<State> {
     explicit State(std::shared_ptr<ImageGenerator> generator);
 
     const std::shared_ptr<ImageGenerator> generator_;
@@ -54,29 +61,26 @@ class MultiFrameCodec : public Codec {
     int nextFrameIndex_;
     // The last decoded frame that's required to decode any subsequent frames.
     std::optional<SkBitmap> lastRequiredFrame_;
-    // The index of the last decoded required frame.
-    int lastRequiredFrameIndex_ = -1;
 
     // The rectangle that should be cleared if the previous frame's disposal
     // method was kRestoreBGColor.
     std::optional<SkIRect> restoreBGColorRect_;
 
-    std::pair<sk_sp<DlImage>, std::string> GetNextFrameImage(
-        fml::WeakPtr<GrDirectContext> resourceContext,
-        const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch,
-        const std::shared_ptr<impeller::Context>& impeller_context,
-        fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue);
-
-    void GetNextFrameAndInvokeCallback(
-        std::unique_ptr<DartPersistentValue> callback,
-        const fml::RefPtr<fml::TaskRunner>& ui_task_runner,
+    [[nodiscard]] std::pair<sk_sp<DlImage>, std::string> GetNextFrameImage(
         fml::WeakPtr<GrDirectContext> resourceContext,
         fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue,
         const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch,
-        size_t trace_id,
-        const std::shared_ptr<impeller::Context>& impeller_context);
+        const std::shared_ptr<impeller::Context>& impeller_context,
+        SkBitmap bitmap) const;
+
+    void OnGetImageAndInvokeCallback(
+        const fml::RefPtr<fml::TaskRunner>& ui_task_runner,
+        sk_sp<DlImage> dl_image,
+        std::string decode_error,
+        std::unique_ptr<DartPersistentValue> callback);
   };
 
+ private:
   // Shared across the UI and IO task runners.
   std::shared_ptr<State> state_;
 

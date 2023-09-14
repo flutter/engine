@@ -64,7 +64,8 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolate(
     const std::vector<std::string>& args,
     const std::string& fixtures_path,
     fml::WeakPtr<IOManager> io_manager = {},
-    std::shared_ptr<VolatilePathTracker> volatile_path_tracker = nullptr);
+    std::shared_ptr<VolatilePathTracker> volatile_path_tracker = nullptr,
+    fml::WeakPtr<ImageDecoder> decoder = {});
 
 }  // namespace testing
 }  // namespace flutter
