@@ -65,6 +65,9 @@ bool FenceWaiterVK::AddFence(vk::UniqueFence fence,
                              const fml::closure& callback) {
   TRACE_EVENT0("flutter", "FenceWaiterVK::AddFence");
   if (!IsValid() || !fence || !callback) {
+    // Fence is '0' when a reinterpreted mock fence is passed in.
+    FML_LOG(ERROR) << "Invalid fence waiter. Fence: " << !!fence
+                   << " Callback: " << !!callback << ".";
     return false;
   }
   {
