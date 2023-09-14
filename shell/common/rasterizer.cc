@@ -555,8 +555,7 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
   // and that view must be the implicit view. Properly support multi-view
   // in the future.
   FML_CHECK(tasks.size() == 1u);
-  auto& task = tasks.front();
-  FML_DCHECK(task.view_id == kFlutterImplicitViewId);
+  FML_DCHECK(tasks.front().view_id == kFlutterImplicitViewId);
 
   std::optional<fml::TimePoint> presentation_time = std::nullopt;
   // TODO (https://github.com/flutter/flutter/issues/105596): this can be in
@@ -573,38 +572,41 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
   compositor_context_->ui_time().SetLapTime(
       frame_timings_recorder.GetBuildDuration());
 
-  int64_t view_id = kFlutterImplicitViewId;
-  std::unique_ptr<LayerTree> layer_tree = std::move(task.layer_tree);
-  float device_pixel_ratio = task.device_pixel_ratio;
+  std::list<LayerTreeTask> resubmitted_tasks;
+  for (LayerTreeTask& task : tasks) {
+    int64_t view_id = task.view_id;
+    std::unique_ptr<LayerTree> layer_tree = std::move(task.layer_tree);
+    float device_pixel_ratio = task.device_pixel_ratio;
 
-  DrawSurfaceStatus status =
-      DrawToSurfaceUnsafe(view_id, *layer_tree, device_pixel_ratio,
-                          frame_timings_recorder, presentation_time);
-  last_draw_status_ = status;
+    DrawSurfaceStatus status =
+        DrawToSurfaceUnsafe(view_id, *layer_tree, device_pixel_ratio,
+                            frame_timings_recorder, presentation_time);
+    frame_timings_recorder.RecordRasterEnd(&compositor_context_->raster_cache());
 
-  std::unique_ptr<FrameItem> resubmitted_item;
-  if (status == DrawSurfaceStatus::kSuccess) {
-    last_successful_tasks_.insert_or_assign(
-        view_id,
-        LayerTreeTask(view_id, std::move(layer_tree), device_pixel_ratio));
-  } else if (status == DrawSurfaceStatus::kRetry) {
-    std::list<LayerTreeTask> resubmitted_tasks;
-    resubmitted_tasks.emplace_back(view_id, std::move(layer_tree),
-                                   device_pixel_ratio);
-    resubmitted_item = std::make_unique<FrameItem>(
-        std::move(resubmitted_tasks),
-        frame_timings_recorder.CloneUntil(
-            FrameTimingsRecorder::State::kBuildEnd));
+    last_draw_status_ = status;
+    if (status == DrawSurfaceStatus::kSuccess) {
+      last_successful_tasks_.insert_or_assign(
+          view_id,
+          LayerTreeTask(view_id, std::move(layer_tree), device_pixel_ratio));
+    } else if (status == DrawSurfaceStatus::kRetry) {
+      resubmitted_tasks.emplace_back(view_id, std::move(layer_tree),
+                                    device_pixel_ratio);
+    }
   }
-
-  frame_timings_recorder.RecordRasterEnd(&compositor_context_->raster_cache());
   FireNextFrameCallbackIfPresent();
 
   if (surface_->GetContext()) {
     surface_->GetContext()->performDeferredCleanup(kSkiaCleanupExpiration);
   }
 
-  return resubmitted_item;
+  if (resubmitted_tasks.empty()) {
+    return nullptr;
+  } else {
+    return std::make_unique<FrameItem>(
+        std::move(resubmitted_tasks),
+        frame_timings_recorder.CloneUntil(
+            FrameTimingsRecorder::State::kBuildEnd));
+  }
 }
 
 /// \see Rasterizer::DrawToSurfaces
