@@ -513,13 +513,12 @@ PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
 
 }  // namespace
 
-std::shared_ptr<ContextVK> CreateMockVulkanContext(
-    const std::function<void(ContextVK::Settings&)>& settings_callback) {
+std::shared_ptr<ContextVK> MockVulkanContextBuilder::Build() {
   auto message_loop = fml::ConcurrentMessageLoop::Create();
   ContextVK::Settings settings;
   settings.proc_address_callback = GetMockVulkanProcAddress;
-  if (settings_callback) {
-    settings_callback(settings);
+  if (settings_callback_) {
+    settings_callback_(settings);
   }
   return ContextVK::Create(std::move(settings));
 }
