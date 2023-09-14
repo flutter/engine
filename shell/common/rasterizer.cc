@@ -428,10 +428,12 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
                  .GetRasterTaskRunner()
                  ->RunsTasksOnCurrentThread());
 
+
+  if (tasks.empty()) {
+    return DoDrawResult{DoDrawStatus::kDone};
+  }
   if (!surface_) {
-    return DoDrawResult{
-        .status = DoDrawStatus::kNotSetUp,
-    };
+    return DoDrawResult{DoDrawStatus::kNotSetUp};
   }
 
   PersistentCache* persistent_cache = PersistentCache::GetCacheForProcess();
@@ -441,9 +443,7 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
       DrawToSurfaces(*frame_timings_recorder, std::move(tasks));
   FML_DCHECK(result.status != DoDrawStatus::kEnqueuePipeline);
   if (result.status == DoDrawStatus::kGpuUnavailable) {
-    return DoDrawResult{
-        .status = DoDrawStatus::kGpuUnavailable,
-    };
+    return DoDrawResult{DoDrawStatus::kGpuUnavailable};
   }
 
   if (persistent_cache->IsDumpingSkp() &&
