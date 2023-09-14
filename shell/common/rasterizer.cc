@@ -581,7 +581,8 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
     DrawSurfaceStatus status =
         DrawToSurfaceUnsafe(view_id, *layer_tree, device_pixel_ratio,
                             frame_timings_recorder, presentation_time);
-    frame_timings_recorder.RecordRasterEnd(&compositor_context_->raster_cache());
+    frame_timings_recorder.RecordRasterEnd(
+        &compositor_context_->raster_cache());
 
     last_draw_status_ = status;
     if (status == DrawSurfaceStatus::kSuccess) {
@@ -590,7 +591,7 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
           LayerTreeTask(view_id, std::move(layer_tree), device_pixel_ratio));
     } else if (status == DrawSurfaceStatus::kRetry) {
       resubmitted_tasks.emplace_back(view_id, std::move(layer_tree),
-                                    device_pixel_ratio);
+                                     device_pixel_ratio);
     }
   }
   FireNextFrameCallbackIfPresent();

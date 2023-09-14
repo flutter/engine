@@ -144,7 +144,9 @@ TEST(FrameTimingsRecorderTest, ThrowWhenRecordRasterBeforeBuildEnd) {
   const auto raster_start = fml::TimePoint::Now();
   fml::Status status = recorder->RecordRasterStartImpl(raster_start);
   EXPECT_FALSE(status.ok());
-  EXPECT_EQ(status.message(), "Check failed: state_ == State::kBuildEnd || state_ == State::kRasterEnd.");
+  EXPECT_EQ(status.message(),
+            "Check failed: state_ == State::kBuildEnd "
+            "|| state_ == State::kRasterEnd.");
 }
 
 #endif
