@@ -38,7 +38,9 @@ void WindowsLifecycleManager::DispatchMessage(HWND hwnd,
   PostMessage(hwnd, message, wparam, lparam);
 }
 
-bool WindowsLifecycleManager::HandleCloseMessage(HWND hwnd, WPARAM wparam, LPARAM lparam) {
+bool WindowsLifecycleManager::HandleCloseMessage(HWND hwnd,
+                                                 WPARAM wparam,
+                                                 LPARAM lparam) {
   if (!process_exit_) {
     return false;
   }
