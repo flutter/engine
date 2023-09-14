@@ -3362,5 +3362,31 @@ TEST_P(AiksTest, CaptureInactivatedByDefault) {
   ASSERT_FALSE(GetContext()->capture.IsActive());
 }
 
+// Regression test for https://github.com/flutter/flutter/issues/134678.
+TEST_P(AiksTest, ReleasesTextureOnTeardown) {
+  auto context = GetContext();
+  std::weak_ptr<Texture> weak_texture;
+
+  {
+    auto texture = CreateTextureForFixture("table_mountain_nx.png");
+
+    Canvas canvas;
+    canvas.Scale(GetContentScale());
+    canvas.Translate({100.0f, 100.0f, 0});
+
+    Paint paint;
+    paint.color_source = ColorSource::MakeImage(
+        texture, Entity::TileMode::kClamp, Entity::TileMode::kClamp, {}, {});
+    canvas.DrawRect({0, 0, 600, 600}, paint);
+
+    ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+  }
+
+  // The texture should be released by now.
+  ASSERT_TRUE(weak_texture.expired()) << "When the texture is no longer in use "
+                                         "by the backend, it should be "
+                                         "released.";
+}
+
 }  // namespace testing
 }  // namespace impeller
