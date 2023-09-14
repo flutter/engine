@@ -170,10 +170,10 @@ fml::Status FrameTimingsRecorder::RecordRasterStartImpl(
                        "Check failed: state_ == State::kBuildEnd "
                        "|| state_ == State::kRasterEnd.");
   }
-  state_ = State::kRasterStart;
   if (state_ == State::kBuildEnd) {
     raster_start_ = raster_start;
   }
+  state_ = State::kRasterStart;
   return fml::Status();
 }
 

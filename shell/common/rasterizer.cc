@@ -617,6 +617,7 @@ DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
   FML_DCHECK(surface_);
 
   if (delegate_.ShouldDiscardLayerTree(view_id, layer_tree)) {
+    frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
     return DrawSurfaceStatus::kDiscarded;
   }
 
