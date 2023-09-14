@@ -86,6 +86,7 @@ targets:
     enabled_branches:
       - main
     recipe: engine_v2/builder
+    presubmit: false
     properties:
       config_name: linux_android_emulator
     timeout: 60
@@ -152,6 +153,7 @@ targets:
     enabled_branches:
       - main
     recipe: engine_v2/builder
+    presubmit: false
     properties:
       config_name: linux_benchmarks
     timeout: 60
