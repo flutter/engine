@@ -83,6 +83,7 @@
 ../../../flutter/fml/ascii_trie_unittests.cc
 ../../../flutter/fml/backtrace_unittests.cc
 ../../../flutter/fml/base32_unittest.cc
+../../../flutter/fml/closure_unittests.cc
 ../../../flutter/fml/command_line_unittest.cc
 ../../../flutter/fml/container_unittests.cc
 ../../../flutter/fml/endianness_unittests.cc
@@ -190,6 +191,8 @@
 ../../../flutter/lib/ui/compositing/scene_builder_unittests.cc
 ../../../flutter/lib/ui/fixtures
 ../../../flutter/lib/ui/hooks_unittests.cc
+../../../flutter/lib/ui/painting/image_decoder_no_gl_unittests.cc
+../../../flutter/lib/ui/painting/image_decoder_no_gl_unittests.h
 ../../../flutter/lib/ui/painting/image_decoder_unittests.cc
 ../../../flutter/lib/ui/painting/image_dispose_unittests.cc
 ../../../flutter/lib/ui/painting/image_encoding_unittests.cc
@@ -1591,8 +1594,8 @@
 ../../../third_party/dart/runtime/third_party/double-conversion/.gitignore
 ../../../third_party/dart/runtime/third_party/double-conversion/AUTHORS
 ../../../third_party/dart/runtime/third_party/double-conversion/Changelog
-../../../third_party/dart/runtime/third_party/double-conversion/README
 ../../../third_party/dart/runtime/third_party/double-conversion/README.dart
+../../../third_party/dart/runtime/third_party/double-conversion/README.md
 ../../../third_party/dart/runtime/tools/.gitignore
 ../../../third_party/dart/runtime/tools/android_finder.py
 ../../../third_party/dart/runtime/tools/benchmark.py
@@ -1603,6 +1606,7 @@
 ../../../third_party/dart/runtime/tools/create_snapshot_bin.py
 ../../../third_party/dart/runtime/tools/create_snapshot_file.py
 ../../../third_party/dart/runtime/tools/create_string_literal.py
+../../../third_party/dart/runtime/tools/dart_profiler_symbols.py
 ../../../third_party/dart/runtime/tools/dartfuzz/README.md
 ../../../third_party/dart/runtime/tools/dartfuzz/README_minimize.md
 ../../../third_party/dart/runtime/tools/dartfuzz/analysis_options.yaml

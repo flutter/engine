@@ -70,13 +70,14 @@ bool SurfaceContextVK::SetWindowSurface(vk::UniqueSurfaceKHR surface) {
 std::unique_ptr<Surface> SurfaceContextVK::AcquireNextSurface() {
   TRACE_EVENT0("impeller", __FUNCTION__);
   auto surface = swapchain_ ? swapchain_->AcquireNextDrawable() : nullptr;
-  auto pipeline_library = parent_->GetPipelineLibrary();
-  if (surface && pipeline_library) {
+  if (!surface) {
+    return nullptr;
+  }
+  if (auto pipeline_library = parent_->GetPipelineLibrary()) {
     impeller::PipelineLibraryVK::Cast(*pipeline_library)
         .DidAcquireSurfaceFrame();
   }
-  auto allocator = parent_->GetResourceAllocator();
-  if (allocator) {
+  if (auto allocator = parent_->GetResourceAllocator()) {
     allocator->DidAcquireSurfaceFrame();
   }
   parent_->GetCommandPoolRecycler()->Dispose();
