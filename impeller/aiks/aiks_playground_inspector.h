@@ -21,6 +21,17 @@ class AiksInspector {
       AiksContext& aiks_context,
       const std::function<std::optional<Picture>()>& picture_callback);
 
+  // Resets (releases) the underlying |Picture| object.
+  //
+  // Underlying issue: <https://github.com/flutter/flutter/issues/134678>.
+  //
+  // The tear-down code is not running in the right order; it's torn down after
+  // we shut down the |ContextVK|, which means that the Vulkan allocator still
+  // has a reference to the texture referenced in |Picture|.
+  //
+  // TODO(matanlurey): https://github.com/flutter/flutter/issues/134748.
+  void HackResetDueToTextureLeaks();
+
  private:
   void RenderCapture(CaptureContext& capture_context);
   void RenderCaptureElement(CaptureElement& element);
