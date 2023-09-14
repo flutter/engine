@@ -677,6 +677,7 @@ class Rasterizer final : public SnapshotDelegate,
       int64_t view_id,
       flutter::LayerTree& layer_tree,
       float device_pixel_ratio,
+      FrameTimingsRecorder& frame_timings_recorder,
       std::optional<fml::TimePoint> presentation_time);
 
   void FireNextFrameCallbackIfPresent();

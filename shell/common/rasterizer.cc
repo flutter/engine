@@ -572,15 +572,14 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
 
   compositor_context_->ui_time().SetLapTime(
       frame_timings_recorder.GetBuildDuration());
-  frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
 
   int64_t view_id = kFlutterImplicitViewId;
   std::unique_ptr<LayerTree> layer_tree = std::move(task.layer_tree);
   float device_pixel_ratio = task.device_pixel_ratio;
 
-  DrawSurfaceStatus status = DrawToSurfaceUnsafe(
-      view_id, *layer_tree, device_pixel_ratio, presentation_time);
-
+  DrawSurfaceStatus status =
+      DrawToSurfaceUnsafe(view_id, *layer_tree, device_pixel_ratio,
+                          frame_timings_recorder, presentation_time);
   last_draw_status_ = status;
 
   std::unique_ptr<FrameItem> resubmitted_item;
@@ -613,6 +612,7 @@ DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
     int64_t view_id,
     flutter::LayerTree& layer_tree,
     float device_pixel_ratio,
+    FrameTimingsRecorder& frame_timings_recorder,
     std::optional<fml::TimePoint> presentation_time) {
   FML_DCHECK(surface_);
 
@@ -631,6 +631,8 @@ DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
     // TODO(dkwingsmt): Add view ID here.
     embedder_root_canvas = external_view_embedder_->GetRootCanvas();
   }
+
+  frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
 
   // On Android, the external view embedder deletes surfaces in `BeginFrame`.
   //
