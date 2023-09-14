@@ -3382,6 +3382,13 @@ TEST_P(AiksTest, ReleasesTextureOnTeardown) {
     ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
   }
 
+  // See https://github.com/flutter/flutter/issues/134751.
+  //
+  // If the fence waiter was working this may not be released by the end of the
+  // scope above. Adding a manual shutdown so that future changes to the fence
+  // waiter will not flake this test.
+  context->Shutdown();
+
   // The texture should be released by now.
   ASSERT_TRUE(weak_texture.expired()) << "When the texture is no longer in use "
                                          "by the backend, it should be "
