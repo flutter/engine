@@ -99,6 +99,11 @@ class WindowsLifecycleManager {
                                LPARAM lparam);
 
  private:
+  // Pass top-level window close notifications to the application lifecycle
+  // logic. If the last window of the process receives WM_CLOSE and a listener
+  // is registered for WidgetsBindingObserver.didRequestAppExit, the message is
+  // sent to the framework to query whether the application should be allowed
+  // to quit.
   bool HandleCloseMessage(HWND hwnd, WPARAM wparam, LPARAM lparam);
 
   FlutterWindowsEngine* engine_;
