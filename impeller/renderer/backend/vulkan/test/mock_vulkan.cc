@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/vulkan/test/mock_vulkan.h"
+#include <cstring>
 #include <vector>
 #include "fml/macros.h"
 #include "fml/thread_local.h"
@@ -12,6 +13,12 @@ namespace impeller {
 namespace testing {
 
 namespace {
+
+void StrcpyChecked(char* dst, const char* src) {
+  static constexpr size_t kMaxStrSize = 1024;
+  size_t result = strlcpy(dst, src, kMaxStrSize);
+  FML_CHECK(result < kMaxStrSize);
+}
 
 struct MockCommandBuffer {
   explicit MockCommandBuffer(
@@ -66,7 +73,7 @@ VkResult vkEnumerateInstanceExtensionProperties(
   } else {
     uint32_t count = 0;
     for (const std::string& ext : g_instance_extensions) {
-      strcpy(pProperties[count].extensionName, ext.c_str());
+      StrcpyChecked(pProperties[count].extensionName, ext.c_str());
       pProperties[count].specVersion = 0;
       count++;
     }
@@ -83,7 +90,7 @@ VkResult vkEnumerateInstanceLayerProperties(uint32_t* pPropertyCount,
   } else {
     uint32_t count = 0;
     for (const std::string& layer : g_instance_layers) {
-      strcpy(pProperties[count].layerName, layer.c_str());
+      StrcpyChecked(pProperties[count].layerName, layer.c_str());
       pProperties[count].specVersion = 0;
       count++;
     }
