@@ -691,15 +691,15 @@ class Rasterizer final : public SnapshotDelegate,
   std::unique_ptr<Surface> surface_;
   std::unique_ptr<SnapshotSurfaceProducer> snapshot_surface_producer_;
   std::unique_ptr<flutter::CompositorContext> compositor_context_;
+  // TODO(dkwingsmt): Probably merge them.
   std::unordered_map<int64_t, LayerTreeTask> last_successful_tasks_;
+  std::unordered_map<int64_t, DrawSurfaceStatus> last_draw_statuses_;
   fml::closure next_frame_callback_;
   bool user_override_resource_cache_bytes_;
   std::optional<size_t> max_cache_bytes_;
   fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_;
   std::shared_ptr<ExternalViewEmbedder> external_view_embedder_;
   std::unique_ptr<SnapshotController> snapshot_controller_;
-
-  DrawSurfaceStatus last_draw_status_;
 
   // WeakPtrFactory must be the last member.
   fml::TaskRunnerAffineWeakPtrFactory<Rasterizer> weak_factory_;

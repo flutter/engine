@@ -135,7 +135,12 @@ bool Rasterizer::IsTornDown() {
 
 std::optional<DrawSurfaceStatus> Rasterizer::GetLastDrawStatus(
     int64_t view_id) {
-  return last_draw_status_;
+  auto found = last_draw_statuses_.find(view_id);
+  if (found != last_draw_statuses_.end()) {
+    return found->second;
+  } else {
+    return std::optional<DrawSurfaceStatus>();
+  }
 }
 
 void Rasterizer::EnableThreadMergerIfNeeded() {
@@ -171,6 +176,7 @@ void Rasterizer::NotifyLowMemoryWarning() const {
 
 void Rasterizer::CollectView(int64_t view_id) {
   last_successful_tasks_.erase(view_id);
+  last_draw_statuses_.erase(view_id);
 }
 
 std::shared_ptr<flutter::TextureRegistry> Rasterizer::GetTextureRegistry() {
@@ -561,8 +567,7 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
   while (task_iter != tasks.end()) {
     if (delegate_.ShouldDiscardLayerTree(task_iter->view_id,
                                          *task_iter->layer_tree)) {
-      // TODO(dkwingsmt): multi-view statuses
-      last_draw_status_ = DrawSurfaceStatus::kDiscarded;
+      last_draw_statuses_[task_iter->view_id] = DrawSurfaceStatus::kDiscarded;
       task_iter = tasks.erase(task_iter);
     } else {
       ++task_iter;
@@ -607,7 +612,7 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
     DrawSurfaceStatus status = DrawToSurfaceUnsafe(
         view_id, *layer_tree, device_pixel_ratio, presentation_time);
 
-    last_draw_status_ = status;
+    last_draw_statuses_[view_id] = status;
     if (status == DrawSurfaceStatus::kSuccess) {
       last_successful_tasks_.insert_or_assign(
           view_id,
