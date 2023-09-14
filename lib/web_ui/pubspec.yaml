@@ -23,7 +23,7 @@ dev_dependencies:
   async: any
   convert: any
   crypto: any
-  html: 0.15.0
+  html: 0.15.4
   http: 1.1.0
   http_multi_server: any
   image: 3.0.1
@@ -42,7 +42,7 @@ dev_dependencies:
   test_api: any
   test_core: any
   typed_data: any
-  uuid: 3.0.6
+  uuid: 4.0.0
   watcher: 1.1.0
   web_socket_channel: any
   webdriver: 3.0.1
