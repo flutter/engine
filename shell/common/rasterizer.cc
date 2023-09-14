@@ -227,10 +227,6 @@ DrawStatus Rasterizer::Draw(
   DoDrawResult draw_result;
   LayerTreePipeline::Consumer consumer = [&draw_result, this](
                                              std::unique_ptr<FrameItem> item) {
-    if (item->tasks.empty()) {
-      draw_result.status = DoDrawStatus::kDone;
-      return;
-    }
     draw_result =
         DoDraw(std::move(item->frame_timings_recorder), std::move(item->tasks));
   };
@@ -557,6 +553,36 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
   FML_CHECK(tasks.size() == 1u);
   FML_DCHECK(tasks.front().view_id == kFlutterImplicitViewId);
 
+  compositor_context_->ui_time().SetLapTime(
+      frame_timings_recorder.GetBuildDuration());
+
+  // First traverse: Filter out discarded trees
+  auto task_iter = tasks.begin();
+  while (task_iter != tasks.end()) {
+    if (delegate_.ShouldDiscardLayerTree(task_iter->view_id,
+                                         *task_iter->layer_tree)) {
+      // TODO(dkwingsmt): multi-view statuses
+      last_draw_status_ = DrawSurfaceStatus::kDiscarded;
+      task_iter = tasks.erase(task_iter);
+    } else {
+      ++task_iter;
+    }
+  }
+  if (tasks.empty()) {
+    frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
+    frame_timings_recorder.RecordRasterEnd();
+    return nullptr;
+  }
+
+  if (external_view_embedder_) {
+    FML_DCHECK(!external_view_embedder_->GetUsedThisFrame());
+    external_view_embedder_->SetUsedThisFrame(true);
+    external_view_embedder_->BeginFrame(
+        // TODO(dkwingsmt): Add all views here.
+        tasks.front().layer_tree->frame_size(), surface_->GetContext(),
+        tasks.front().device_pixel_ratio, raster_thread_merger_);
+  }
+
   std::optional<fml::TimePoint> presentation_time = std::nullopt;
   // TODO (https://github.com/flutter/flutter/issues/105596): this can be in
   // the past and might need to get snapped to future as this frame could
@@ -569,20 +595,17 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
     }
   }
 
-  compositor_context_->ui_time().SetLapTime(
-      frame_timings_recorder.GetBuildDuration());
+  frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
 
+  // Second traverse: draw all layer trees.
   std::list<LayerTreeTask> resubmitted_tasks;
   for (LayerTreeTask& task : tasks) {
     int64_t view_id = task.view_id;
     std::unique_ptr<LayerTree> layer_tree = std::move(task.layer_tree);
     float device_pixel_ratio = task.device_pixel_ratio;
 
-    DrawSurfaceStatus status =
-        DrawToSurfaceUnsafe(view_id, *layer_tree, device_pixel_ratio,
-                            frame_timings_recorder, presentation_time);
-    frame_timings_recorder.RecordRasterEnd(
-        &compositor_context_->raster_cache());
+    DrawSurfaceStatus status = DrawToSurfaceUnsafe(
+        view_id, *layer_tree, device_pixel_ratio, presentation_time);
 
     last_draw_status_ = status;
     if (status == DrawSurfaceStatus::kSuccess) {
@@ -594,6 +617,8 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
                                      device_pixel_ratio);
     }
   }
+  // TODO(dkwingsmt): Pass in all raster caches
+  frame_timings_recorder.RecordRasterEnd(&compositor_context_->raster_cache());
   FireNextFrameCallbackIfPresent();
 
   if (surface_->GetContext()) {
@@ -615,28 +640,14 @@ DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
     int64_t view_id,
     flutter::LayerTree& layer_tree,
     float device_pixel_ratio,
-    FrameTimingsRecorder& frame_timings_recorder,
     std::optional<fml::TimePoint> presentation_time) {
   FML_DCHECK(surface_);
 
-  if (delegate_.ShouldDiscardLayerTree(view_id, layer_tree)) {
-    frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
-    return DrawSurfaceStatus::kDiscarded;
-  }
-
   DlCanvas* embedder_root_canvas = nullptr;
   if (external_view_embedder_) {
-    external_view_embedder_->SetUsedThisFrame(true);
-    external_view_embedder_->BeginFrame(
-        // TODO(dkwingsmt): Add view ID here.
-        layer_tree.frame_size(), surface_->GetContext(), device_pixel_ratio,
-        raster_thread_merger_);
-    FML_DCHECK(external_view_embedder_->GetUsedThisFrame());
     // TODO(dkwingsmt): Add view ID here.
     embedder_root_canvas = external_view_embedder_->GetRootCanvas();
   }
-
-  frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
 
   // On Android, the external view embedder deletes surfaces in `BeginFrame`.
   //

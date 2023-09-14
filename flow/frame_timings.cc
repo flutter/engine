@@ -165,15 +165,12 @@ fml::Status FrameTimingsRecorder::RecordBuildEndImpl(fml::TimePoint build_end) {
 fml::Status FrameTimingsRecorder::RecordRasterStartImpl(
     fml::TimePoint raster_start) {
   std::scoped_lock state_lock(state_mutex_);
-  if (state_ != State::kBuildEnd && state_ != State::kRasterEnd) {
+  if (state_ != State::kBuildEnd) {
     return fml::Status(fml::StatusCode::kFailedPrecondition,
-                       "Check failed: state_ == State::kBuildEnd "
-                       "|| state_ == State::kRasterEnd.");
-  }
-  if (state_ == State::kBuildEnd) {
-    raster_start_ = raster_start;
+                       "Check failed: state_ == State::kBuildEnd.");
   }
   state_ = State::kRasterStart;
+  raster_start_ = raster_start;
   return fml::Status();
 }
 
@@ -186,10 +183,13 @@ FrameTiming FrameTimingsRecorder::RecordRasterEnd(const RasterCache* cache) {
   if (cache) {
     const RasterCacheMetrics& layer_metrics = cache->layer_metrics();
     const RasterCacheMetrics& picture_metrics = cache->picture_metrics();
-    layer_cache_count_ += layer_metrics.total_count();
-    layer_cache_bytes_ += layer_metrics.total_bytes();
-    picture_cache_count_ += picture_metrics.total_count();
-    picture_cache_bytes_ += picture_metrics.total_bytes();
+    layer_cache_count_ = layer_metrics.total_count();
+    layer_cache_bytes_ = layer_metrics.total_bytes();
+    picture_cache_count_ = picture_metrics.total_count();
+    picture_cache_bytes_ = picture_metrics.total_bytes();
+  } else {
+    layer_cache_count_ = layer_cache_bytes_ = picture_cache_count_ =
+        picture_cache_bytes_ = 0;
   }
   timing_.Set(FrameTiming::kVsyncStart, vsync_start_);
   timing_.Set(FrameTiming::kBuildStart, build_start_);

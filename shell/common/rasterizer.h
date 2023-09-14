@@ -671,13 +671,12 @@ class Rasterizer final : public SnapshotDelegate,
   // Draws the layer tree to the specified view, assuming we have access to the
   // GPU.
   //
-  // This method pushes the frame timing recorder from build end to raster
-  // start.
+  // This method is not affiliated with the frame timing recorder, but should be
+  // included between the RasterStart and RasterEnd.
   DrawSurfaceStatus DrawToSurfaceUnsafe(
       int64_t view_id,
       flutter::LayerTree& layer_tree,
       float device_pixel_ratio,
-      FrameTimingsRecorder& frame_timings_recorder,
       std::optional<fml::TimePoint> presentation_time);
 
   void FireNextFrameCallbackIfPresent();

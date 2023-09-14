@@ -98,17 +98,12 @@ class FrameTimingsRecorder {
   /// Records a raster start event.
   void RecordRasterStart(fml::TimePoint raster_start);
 
-  /// Records a raster end event, and builds a `FrameTiming` that summarizes all
-  /// the events. This summary is sent to the framework.
-  ///
-  /// RecordRasterStart-RecordRasterEnd pairs can be called for as many times as
-  /// needed, each time per layer tree. Subsequent pairs will not refresh raster
-  /// start time, but will refresh raster end time, and accumulate cache
-  /// metrics.
-  FrameTiming RecordRasterEnd(const RasterCache* cache = nullptr);
-
   /// Clones the recorder until (and including) the specified state.
   std::unique_ptr<FrameTimingsRecorder> CloneUntil(State state);
+
+  /// Records a raster end event, and builds a `FrameTiming` that summarizes all
+  /// the events. This summary is sent to the framework.
+  FrameTiming RecordRasterEnd(const RasterCache* cache = nullptr);
 
   /// Returns the frame number. Frame number is unique per frame and a frame
   /// built earlier will have a frame number less than a frame that has been
@@ -148,10 +143,10 @@ class FrameTimingsRecorder {
   fml::TimePoint raster_end_;
   fml::TimePoint raster_end_wall_time_;
 
-  size_t layer_cache_count_ = 0;
-  size_t layer_cache_bytes_ = 0;
-  size_t picture_cache_count_ = 0;
-  size_t picture_cache_bytes_ = 0;
+  size_t layer_cache_count_;
+  size_t layer_cache_bytes_;
+  size_t picture_cache_count_;
+  size_t picture_cache_bytes_;
 
   // Set when `RecordRasterEnd` is called. Cannot be reset once set.
   FrameTiming timing_;
