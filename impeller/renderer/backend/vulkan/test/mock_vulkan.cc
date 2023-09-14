@@ -68,7 +68,7 @@ VkResult vkEnumerateInstanceExtensionProperties(
     uint32_t count = 0;
     for (const std::string& ext : g_instance_extensions) {
       strncpy(pProperties[count].extensionName, ext.c_str(),
-              VK_MAX_EXTENSION_NAME_SIZE);
+              sizeof(VkExtensionProperties::extensionName));
       pProperties[count].specVersion = 0;
       count++;
     }
@@ -86,7 +86,7 @@ VkResult vkEnumerateInstanceLayerProperties(uint32_t* pPropertyCount,
     uint32_t count = 0;
     for (const std::string& layer : g_instance_layers) {
       strncpy(pProperties[count].layerName, layer.c_str(),
-              VK_MAX_EXTENSION_NAME_SIZE);
+              sizeof(VkLayerProperties::layerName));
       pProperties[count].specVersion = 0;
       count++;
     }
