@@ -14,12 +14,6 @@ namespace testing {
 
 namespace {
 
-void StrcpyChecked(char* dst, const char* src) {
-  static constexpr size_t kMaxStrSize = 1024;
-  size_t result = strlcpy(dst, src, kMaxStrSize);
-  FML_CHECK(result < kMaxStrSize);
-}
-
 struct MockCommandBuffer {
   explicit MockCommandBuffer(
       std::shared_ptr<std::vector<std::string>> called_functions)
@@ -73,7 +67,8 @@ VkResult vkEnumerateInstanceExtensionProperties(
   } else {
     uint32_t count = 0;
     for (const std::string& ext : g_instance_extensions) {
-      StrcpyChecked(pProperties[count].extensionName, ext.c_str());
+      strncpy(pProperties[count].extensionName, ext.c_str(),
+              VK_MAX_EXTENSION_NAME_SIZE);
       pProperties[count].specVersion = 0;
       count++;
     }
@@ -90,7 +85,8 @@ VkResult vkEnumerateInstanceLayerProperties(uint32_t* pPropertyCount,
   } else {
     uint32_t count = 0;
     for (const std::string& layer : g_instance_layers) {
-      StrcpyChecked(pProperties[count].layerName, layer.c_str());
+      strncpy(pProperties[count].layerName, layer.c_str(),
+              VK_MAX_EXTENSION_NAME_SIZE);
       pProperties[count].specVersion = 0;
       count++;
     }
