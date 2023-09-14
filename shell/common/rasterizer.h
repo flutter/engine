@@ -646,6 +646,9 @@ class Rasterizer final : public SnapshotDelegate,
       GrDirectContext* surface_context,
       bool compressed);
 
+  // This method starts with the frame timing recorder at build end. This
+  // method might push it to raster end and get the recorded time, or abort in
+  // the middle and not get the recorded time.
   DoDrawResult DoDraw(
       std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
       std::list<LayerTreeTask> tasks);

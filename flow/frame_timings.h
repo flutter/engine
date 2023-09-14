@@ -116,6 +116,12 @@ class FrameTimingsRecorder {
   /// Returns the recorded time from when `RecordRasterEnd` is called.
   FrameTiming GetRecordedTime() const;
 
+  /// Asserts in debug mode that the recorder is current at the specified state.
+  ///
+  /// A `GetState` method is not preferred to avoid other logic relying on this
+  /// state.
+  void AssertInState(State state) const;
+
  private:
   FML_FRIEND_TEST(FrameTimingsRecorderTest, ThrowWhenRecordBuildBeforeVsync);
   FML_FRIEND_TEST(FrameTimingsRecorderTest,

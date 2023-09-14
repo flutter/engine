@@ -294,10 +294,10 @@ DrawStatus Rasterizer::ToDrawStatus(DoDrawStatus status) {
   switch (status) {
     case DoDrawStatus::kEnqueuePipeline:
       return DrawStatus::kDone;
-    case DoDrawStatus::kGpuUnavailable:
-      return DrawStatus::kGpuUnavailable;
     case DoDrawStatus::kNotSetUp:
       return DrawStatus::kNotSetUp;
+    case DoDrawStatus::kGpuUnavailable:
+      return DrawStatus::kGpuUnavailable;
     default:
       FML_CHECK(status == DoDrawStatus::kDone)
           << "Unrecognized status " << (int)status;
@@ -427,6 +427,7 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
   FML_DCHECK(delegate_.GetTaskRunners()
                  .GetRasterTaskRunner()
                  ->RunsTasksOnCurrentThread());
+  frame_timings_recorder->AssertInState(FrameTimingsRecorder::State::kBuildEnd);
 
 
   if (tasks.empty()) {
@@ -441,6 +442,7 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
 
   DoDrawResult result =
       DrawToSurfaces(*frame_timings_recorder, std::move(tasks));
+
   FML_DCHECK(result.status != DoDrawStatus::kEnqueuePipeline);
   if (result.status == DoDrawStatus::kGpuUnavailable) {
     return DoDrawResult{DoDrawStatus::kGpuUnavailable};
@@ -526,6 +528,7 @@ Rasterizer::DoDrawResult Rasterizer::DrawToSurfaces(
     std::list<LayerTreeTask> tasks) {
   TRACE_EVENT0("flutter", "Rasterizer::DrawToSurfaces");
   FML_DCHECK(surface_);
+  frame_timings_recorder.AssertInState(FrameTimingsRecorder::State::kBuildEnd);
 
   DoDrawResult result{
       .status = DoDrawStatus::kDone,
@@ -546,6 +549,7 @@ Rasterizer::DoDrawResult Rasterizer::DrawToSurfaces(
                   frame_timings_recorder, std::move(tasks));
             }));
   }
+  frame_timings_recorder.AssertInState(FrameTimingsRecorder::State::kRasterEnd);
 
   return result;
 }
