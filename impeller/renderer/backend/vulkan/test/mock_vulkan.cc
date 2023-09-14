@@ -5,6 +5,7 @@
 #include "impeller/renderer/backend/vulkan/test/mock_vulkan.h"
 #include <vector>
 #include "fml/macros.h"
+#include "fml/thread_local.h"
 #include "impeller/base/thread_safety.h"
 
 namespace impeller {
@@ -54,7 +55,7 @@ class MockDevice final {
 
 void noop() {}
 
-thread_local std::vector<std::string> g_instance_extensions;
+FML_THREAD_LOCAL std::vector<std::string> g_instance_extensions;
 
 VkResult vkEnumerateInstanceExtensionProperties(
     const char* pLayerName,
@@ -73,7 +74,7 @@ VkResult vkEnumerateInstanceExtensionProperties(
   return VK_SUCCESS;
 }
 
-thread_local std::vector<std::string> g_instance_layers;
+FML_THREAD_LOCAL std::vector<std::string> g_instance_layers;
 
 VkResult vkEnumerateInstanceLayerProperties(uint32_t* pPropertyCount,
                                             VkLayerProperties* pProperties) {
