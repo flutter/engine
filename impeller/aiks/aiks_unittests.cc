@@ -1206,6 +1206,37 @@ TEST_P(AiksTest, CanRenderRoundedRectWithNonUniformRadii) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, CanRenderStrokePathThatEndsAtSharpTurn) {
+  Canvas canvas;
+
+  Paint paint;
+  paint.color = Color::Red();
+  paint.style = Paint::Style::kStroke;
+  paint.stroke_width = 200;
+
+  Rect rect = {100, 100, 200, 200};
+  PathBuilder builder;
+  builder.AddArc(rect, Degrees(0), Degrees(90), false);
+
+  canvas.DrawPath(builder.TakePath(), paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderStrokePathWithCubicLine) {
+  Canvas canvas;
+
+  Paint paint;
+  paint.color = Color::Red();
+  paint.style = Paint::Style::kStroke;
+  paint.stroke_width = 20;
+
+  PathBuilder builder;
+  builder.AddCubicCurve({0, 200}, {50, 400}, {350, 0}, {400, 200});
+
+  canvas.DrawPath(builder.TakePath(), paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, CanRenderDifferencePaths) {
   Canvas canvas;
 
@@ -1636,7 +1667,7 @@ TEST_P(AiksTest, ColorWheel) {
   auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
     // UI state.
     static bool cache_the_wheel = true;
-    static int current_blend_index = 14;
+    static int current_blend_index = 3;
     static float dst_alpha = 1;
     static float src_alpha = 1;
     static Color color0 = Color::Red();
@@ -1943,6 +1974,22 @@ TEST_P(AiksTest, DrawRectStrokesRenderCorrectly) {
   paint.color = Color::Red();
   paint.style = Paint::Style::kStroke;
   paint.stroke_width = 10;
+
+  canvas.Translate({100, 100});
+  canvas.DrawPath(
+      PathBuilder{}.AddRect(Rect::MakeSize(Size{100, 100})).TakePath(),
+      {paint});
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, DrawRectStrokesWithBevelJoinRenderCorrectly) {
+  Canvas canvas;
+  Paint paint;
+  paint.color = Color::Red();
+  paint.style = Paint::Style::kStroke;
+  paint.stroke_width = 10;
+  paint.stroke_join = Join::kBevel;
 
   canvas.Translate({100, 100});
   canvas.DrawPath(
@@ -3173,7 +3220,7 @@ TEST_P(AiksTest, MatrixSaveLayerFilter) {
     canvas.SaveLayer({.image_filter = ImageFilter::MakeMatrix(
                           Matrix::MakeTranslation(Vector2(1, 1) *
                                                   (200 + 100 * k1OverSqrt2)) *
-                              Matrix::MakeScale(Vector2(1, 1) * 0.2) *
+                              Matrix::MakeScale(Vector2(1, 1) * 0.5) *
                               Matrix::MakeTranslation(Vector2(-200, -200)),
                           SamplerDescriptor{})},
                      std::nullopt);
@@ -3201,7 +3248,7 @@ TEST_P(AiksTest, MatrixBackdropFilter) {
         {}, std::nullopt,
         ImageFilter::MakeMatrix(
             Matrix::MakeTranslation(Vector2(1, 1) * (100 + 100 * k1OverSqrt2)) *
-                Matrix::MakeScale(Vector2(1, 1) * 0.2) *
+                Matrix::MakeScale(Vector2(1, 1) * 0.5) *
                 Matrix::MakeTranslation(Vector2(-100, -100)),
             SamplerDescriptor{}));
     canvas.Restore();
