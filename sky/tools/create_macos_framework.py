@@ -92,7 +92,6 @@ def main():
   subprocess.check_call([
       'lipo', arm64_dylib, x64_dylib, '-create', '-output', fat_framework_binary
   ])
-  process_framework(dst, args, fat_framework, fat_framework_binary)
 
   # Add group and other readability to all files.
   versions_path = os.path.join(fat_framework, 'Versions')
@@ -107,6 +106,8 @@ def main():
                                       stdin=find_subprocess.stdout)
   find_subprocess.wait()
   xargs_subprocess.wait()
+
+  process_framework(dst, args, fat_framework, fat_framework_binary)
 
   return 0
 
