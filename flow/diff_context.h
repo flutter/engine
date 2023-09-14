@@ -46,8 +46,7 @@ class DiffContext {
   explicit DiffContext(SkISize frame_size,
                        PaintRegionMap& this_frame_paint_region_map,
                        const PaintRegionMap& last_frame_paint_region_map,
-                       bool has_raster_cache,
-                       bool impeller_enabled);
+                       bool has_raster_cache);
 
   // Starts a new subtree.
   void BeginSubtree();
@@ -162,8 +161,6 @@ class DiffContext {
   // cached.
   bool has_raster_cache() const { return has_raster_cache_; }
 
-  bool impeller_enabled() const { return impeller_enabled_; }
-
   class Statistics {
    public:
     // Picture replaced by different picture
@@ -248,7 +245,6 @@ class DiffContext {
   PaintRegionMap& this_frame_paint_region_map_;
   const PaintRegionMap& last_frame_paint_region_map_;
   bool has_raster_cache_;
-  bool impeller_enabled_;
 
   void AddDamage(const SkRect& rect);
 
