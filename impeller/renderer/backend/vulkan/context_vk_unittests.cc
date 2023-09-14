@@ -94,5 +94,17 @@ TEST(ContextVKTest, CanCreateContextInAbsenceOfValidationLayers) {
   ASSERT_NE(context, nullptr);
 }
 
+TEST(ContextVKTest, CanCreateContextWithValidationLayers) {
+  auto context =
+      MockVulkanContextBuilder()
+          .SetSettingsCallback(
+              [](auto& settings) { settings.enable_validation = true; })
+          .SetInstanceExtensions(
+              {"VK_KHR_surface", "VK_MVK_macos_surface", "VK_EXT_debug_utils"})
+          .SetInstanceLayers({"VK_LAYER_KHRONOS_validation"})
+          .Build();
+  ASSERT_NE(context, nullptr);
+}
+
 }  // namespace testing
 }  // namespace impeller

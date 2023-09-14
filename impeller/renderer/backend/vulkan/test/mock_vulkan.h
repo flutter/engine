@@ -18,6 +18,8 @@ std::shared_ptr<std::vector<std::string>> GetMockVulkanFunctions(
 
 class MockVulkanContextBuilder {
  public:
+  MockVulkanContextBuilder();
+
   //------------------------------------------------------------------------------
   /// @brief      Create a Vulkan context with Vulkan functions mocked. The
   ///             caller is given a chance to tinker on the settings right
@@ -35,8 +37,22 @@ class MockVulkanContextBuilder {
     return *this;
   }
 
+  MockVulkanContextBuilder& SetInstanceExtensions(
+      const std::vector<std::string>& instance_extensions) {
+    instance_extensions_ = instance_extensions;
+    return *this;
+  }
+
+  MockVulkanContextBuilder& SetInstanceLayers(
+      const std::vector<std::string>& instance_layers) {
+    instance_layers_ = instance_layers;
+    return *this;
+  }
+
  private:
   std::function<void(ContextVK::Settings&)> settings_callback_;
+  std::vector<std::string> instance_extensions_;
+  std::vector<std::string> instance_layers_;
 };
 
 }  // namespace testing
