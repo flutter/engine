@@ -25,9 +25,9 @@ class AiksInspector {
   //
   // Underlying issue: <https://github.com/flutter/flutter/issues/134678>.
   //
-  // The tear-down code is not running in the right order; it's torn down after
-  // we shut down the |ContextVK|, which means that the Vulkan allocator still
-  // has a reference to the texture referenced in |Picture|.
+  // The tear-down code is not running in the right order; we still have a
+  // reference to the |Picture| object when the |Context| is being destroyed,
+  // which causes the |Texture| objects to leak.
   //
   // TODO(matanlurey): https://github.com/flutter/flutter/issues/134748.
   void HackResetDueToTextureLeaks();
