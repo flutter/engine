@@ -95,76 +95,90 @@ void FenceWaiterVK::Main() {
     // critical section. Copy the array of entries and immediately unlock the
     // mutex.
     WaitSet wait_set = wait_set_;
-
-    const auto terminate = terminate_;
-
     lock.unlock();
 
+    const auto terminate = terminate_;
     if (terminate) {
+      WaitUntilEmpty();
       break;
     }
 
-    // Check if the context had died in the meantime.
-    auto device_holder = device_holder_.lock();
-    if (!device_holder) {
+    if (!Wait(wait_set)) {
       break;
-    }
-
-    const auto& device = device_holder->GetDevice();
-
-    // Wait for one or more fences to be signaled. Any additional fences added
-    // to the waiter will be serviced in the next pass. If a fence that is going
-    // to be signaled at an abnormally long deadline is the only one in the set,
-    // a timeout will bail out the wait.
-    auto fences = GetFencesForWaitSet(wait_set);
-    if (fences.empty()) {
-      continue;
-    }
-
-    auto result = device.waitForFences(
-        fences.size(),                           // fences count
-        fences.data(),                           // fences
-        false,                                   // wait for all
-        std::chrono::nanoseconds{100ms}.count()  // timeout (ns)
-    );
-    if (!(result == vk::Result::eSuccess || result == vk::Result::eTimeout)) {
-      VALIDATION_LOG << "Fence waiter encountered an unexpected error. Tearing "
-                        "down the waiter thread.";
-      break;
-    }
-
-    // One or more fences have been signaled. Find out which ones and update
-    // their signaled statuses.
-    {
-      TRACE_EVENT0("impeller", "CheckFenceStatus");
-      for (auto& entry : wait_set) {
-        entry->UpdateSignalledStatus(device);
-      }
-      wait_set.clear();
-    }
-
-    // Quickly acquire the wait set lock and erase signaled entries. Make sure
-    // the mutex is unlocked before calling the destructors of the erased
-    // entries. These might touch allocators.
-    WaitSet erased_entries;
-    {
-      static auto is_signalled = [](const auto& entry) {
-        return entry->IsSignalled();
-      };
-      std::scoped_lock lock(wait_set_mutex_);
-      std::copy_if(wait_set_.begin(), wait_set_.end(),
-                   std::back_inserter(erased_entries), is_signalled);
-      wait_set_.erase(
-          std::remove_if(wait_set_.begin(), wait_set_.end(), is_signalled),
-          wait_set_.end());
-    }
-
-    {
-      TRACE_EVENT0("impeller", "ClearSignaledFences");
-      // Erase the erased entries which will invoke callbacks.
-      erased_entries.clear();  // Bit redundant because of scope but hey.
     }
   }
+}
+
+void FenceWaiterVK::WaitUntilEmpty() {
+  while (!wait_set_.empty() && Wait(wait_set_)) {
+    // Intentionally empty.
+  }
+}
+
+bool FenceWaiterVK::Wait(WaitSet& wait_set) {
+  using namespace std::literals::chrono_literals;
+
+  // Check if the context had died in the meantime.
+  auto device_holder = device_holder_.lock();
+  if (!device_holder) {
+    return false;
+  }
+
+  const auto& device = device_holder->GetDevice();
+  // Wait for one or more fences to be signaled. Any additional fences added
+  // to the waiter will be serviced in the next pass. If a fence that is going
+  // to be signaled at an abnormally long deadline is the only one in the set,
+  // a timeout will bail out the wait.
+  auto fences = GetFencesForWaitSet(wait_set);
+  if (fences.empty()) {
+    return true;
+  }
+
+  auto result = device.waitForFences(
+      fences.size(),                           // fences count
+      fences.data(),                           // fences
+      false,                                   // wait for all
+      std::chrono::nanoseconds{100ms}.count()  // timeout (ns)
+  );
+  if (!(result == vk::Result::eSuccess || result == vk::Result::eTimeout)) {
+    VALIDATION_LOG << "Fence waiter encountered an unexpected error. Tearing "
+                      "down the waiter thread.";
+    return false;
+  }
+
+  // One or more fences have been signaled. Find out which ones and update
+  // their signaled statuses.
+  {
+    TRACE_EVENT0("impeller", "CheckFenceStatus");
+    for (auto& entry : wait_set) {
+      entry->UpdateSignalledStatus(device);
+    }
+    wait_set.clear();
+  }
+
+  // Quickly acquire the wait set lock and erase signaled entries. Make sure
+  // the mutex is unlocked before calling the destructors of the erased
+  // entries. These might touch allocators.
+  WaitSet erased_entries;
+  {
+    static auto is_signalled = [](const auto& entry) {
+      return entry->IsSignalled();
+    };
+    std::scoped_lock lock(wait_set_mutex_);
+    std::copy_if(wait_set_.begin(), wait_set_.end(),
+                 std::back_inserter(erased_entries), is_signalled);
+    wait_set_.erase(
+        std::remove_if(wait_set_.begin(), wait_set_.end(), is_signalled),
+        wait_set_.end());
+  }
+
+  {
+    TRACE_EVENT0("impeller", "ClearSignaledFences");
+    // Erase the erased entries which will invoke callbacks.
+    erased_entries.clear();  // Bit redundant because of scope but hey.
+  }
+
+  return true;
 }
 
 void FenceWaiterVK::Terminate() {

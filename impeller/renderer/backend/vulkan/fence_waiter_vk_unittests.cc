@@ -83,8 +83,7 @@ TEST(FenceWaiterVKTest, ExecutesNewFenceThenOldFence) {
   signal.Wait();
 }
 
-TEST(FenceWaiterVKTest, DoesNotLeakFenceAddedAfterTermination) {
-  MockFence* raw_fence = nullptr;
+TEST(FenceWaiterVKTest, StillDestroysFenceIfTerminating) {
   auto signal = fml::ManualResetWaitableEvent();
 
   {
@@ -94,17 +93,15 @@ TEST(FenceWaiterVKTest, DoesNotLeakFenceAddedAfterTermination) {
     waiter->Terminate();
 
     auto fence = device.createFenceUnique({}).value;
-    raw_fence = MockFence::GetRawPointer(fence);
     waiter->AddFence(std::move(fence), [&signal]() { signal.Signal(); });
   }
 
-  // Ensure the fence was destroyed.
-  EXPECT_FALSE(raw_fence) << "Fence was not destroyed despite destruction.";
+  // Ensure the fence still triggers.
+  signal.Wait();
 }
 
 TEST(FenceWaiterVKTest, InProgressFencesStillWaitIfTerminated) {
   MockFence* raw_fence = nullptr;
-  auto signal = fml::ManualResetWaitableEvent();
 
   {
     auto const context = MockVulkanContextBuilder().Build();
@@ -117,16 +114,23 @@ TEST(FenceWaiterVKTest, InProgressFencesStillWaitIfTerminated) {
     // Even if the fence is eSuccess, it's not guaranteed to be called in time.
     MockFence::SetStatus(fence, vk::Result::eNotReady);
     raw_fence = MockFence::GetRawPointer(fence);
-    waiter->AddFence(std::move(fence), [&signal]() { signal.Signal(); });
+    waiter->AddFence(std::move(fence), []() {
+      // Intentionally empty, imagine this is holding on to a reference.
+    });
+
+    // Spawn a thread to signal the fence.
+    std::thread([&]() {
+      // Wait 1 second.
+      std::this_thread::sleep_for(std::chrono::seconds(1));
+
+      // Signal the fence.
+      raw_fence->SetStatus(vk::Result::eSuccess);
+    }).detach();
 
     // Terminate the waiter by letting it drop out of scope.
   }
 
-  // Signal the fence.
-  raw_fence->SetStatus(vk::Result::eSuccess);
-
-  // Ensure the callback is still called, because that would cleanup the fence.
-  EXPECT_TRUE(signal.WaitWithTimeout(fml::TimeDelta::FromMilliseconds(2000)));
+  // This will hang if the fence was not signalled.
 }
 
 }  // namespace testing
