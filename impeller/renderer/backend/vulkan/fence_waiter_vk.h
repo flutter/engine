@@ -47,7 +47,7 @@ class FenceWaiterVK {
 
   void Main();
 
-  bool Wait(WaitSet& wait_set);
+  bool Wait();
   void WaitUntilEmpty();
 
   FML_DISALLOW_COPY_AND_ASSIGN(FenceWaiterVK);

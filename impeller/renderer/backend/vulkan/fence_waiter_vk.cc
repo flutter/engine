@@ -58,11 +58,15 @@ FenceWaiterVK::~FenceWaiterVK() {
 bool FenceWaiterVK::AddFence(vk::UniqueFence fence,
                              const fml::closure& callback) {
   TRACE_EVENT0("flutter", "FenceWaiterVK::AddFence");
-  if (!fence || !callback || terminate_) {
+  if (!fence || !callback) {
     return false;
   }
   {
+    // Maintain the invariant that terminate_ is accessed only under the lock.
     std::scoped_lock lock(wait_set_mutex_);
+    if (terminate_) {
+      return false;
+    }
     wait_set_.emplace_back(WaitSetEntry::Create(std::move(fence), callback));
   }
   wait_set_cv_.notify_one();
@@ -86,24 +90,30 @@ void FenceWaiterVK::Main() {
   using namespace std::literals::chrono_literals;
 
   while (true) {
-    std::unique_lock lock(wait_set_mutex_);
+    bool terminate;
 
-    // If there are no fences to wait on, wait on the condition variable.
-    wait_set_cv_.wait(lock, [&]() { return !wait_set_.empty() || terminate_; });
+    {
+      std::unique_lock lock(wait_set_mutex_);
 
-    // We don't want to check on fence status or collect wait set entries in the
-    // critical section. Copy the array of entries and immediately unlock the
-    // mutex.
-    WaitSet wait_set = wait_set_;
-    lock.unlock();
+      // If there are no fences to wait on, wait on the condition variable.
+      wait_set_cv_.wait(lock,
+                        [&]() { return !wait_set_.empty() || terminate_; });
 
-    const auto terminate = terminate_;
+      // We don't want to check on fence status or collect wait set entries in
+      // the critical section. Copy the array of entries and immediately unlock
+      // the mutex.
+      WaitSet wait_set = wait_set_;
+
+      // Still under the lock, check if the waiter has been terminated.
+      terminate = terminate_;
+    }
+
     if (terminate) {
       WaitUntilEmpty();
       break;
     }
 
-    if (!Wait(wait_set)) {
+    if (!Wait()) {
       break;
     }
   }
@@ -113,12 +123,19 @@ void FenceWaiterVK::WaitUntilEmpty() {
   // Note, there is no lock because once terminate_ is set to true, no other
   // fence can be added to the wait set. Just in case, here's a FML_DCHECK:
   FML_DCHECK(terminate_) << "Fence waiter must be terminated.";
-  while (!wait_set_.empty() && Wait(wait_set_)) {
+  while (!wait_set_.empty() && Wait()) {
     // Intentionally empty.
   }
 }
 
-bool FenceWaiterVK::Wait(WaitSet& wait_set) {
+bool FenceWaiterVK::Wait() {
+  // Snapshot the wait set and wait on the fences.
+  WaitSet wait_set;
+  {
+    std::scoped_lock lock(wait_set_mutex_);
+    wait_set = wait_set_;
+  }
+
   using namespace std::literals::chrono_literals;
 
   // Check if the context had died in the meantime.
