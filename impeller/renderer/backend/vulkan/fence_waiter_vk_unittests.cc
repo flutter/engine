@@ -62,6 +62,7 @@ TEST(FenceWaiterVKTest, ExecutesNewFenceThenOldFence) {
 
   auto signal = fml::ManualResetWaitableEvent();
   auto fence = device.createFenceUnique({}).value;
+  MockFence::SetStatus(fence, vk::Result::eNotReady);
   auto raw_fence = MockFence::GetRawPointer(fence);
   waiter->AddFence(std::move(fence), [&signal]() { signal.Signal(); });
 
