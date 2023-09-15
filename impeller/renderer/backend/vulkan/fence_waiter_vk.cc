@@ -135,11 +135,10 @@ bool FenceWaiterVK::Wait(WaitSet& wait_set) {
   }
 
   auto result = device.waitForFences(
-      fences.size(),                           // fences count
-      fences.data(),                           // fences
-      false,                                   // wait for all
-      std::chrono::nanoseconds{100ms}.count()  // timeout (ns)
-  );
+      /*fenceCount=*/fences.size(),
+      /*pFences=*/fences.data(),
+      /*waitAll=*/false,
+      /*timeout=*/std::chrono::nanoseconds{100ms}.count());
   if (!(result == vk::Result::eSuccess || result == vk::Result::eTimeout)) {
     VALIDATION_LOG << "Fence waiter encountered an unexpected error. Tearing "
                       "down the waiter thread.";
@@ -161,10 +160,12 @@ bool FenceWaiterVK::Wait(WaitSet& wait_set) {
   // entries. These might touch allocators.
   WaitSet erased_entries;
   {
-    static auto is_signalled = [](const auto& entry) {
+    static constexpr auto is_signalled = [](const auto& entry) {
       return entry->IsSignalled();
     };
     std::scoped_lock lock(wait_set_mutex_);
+
+    // TODO(matanlurey): Iterate the list 1x by copying is_signaled into erased.
     std::copy_if(wait_set_.begin(), wait_set_.end(),
                  std::back_inserter(erased_entries), is_signalled);
     wait_set_.erase(
