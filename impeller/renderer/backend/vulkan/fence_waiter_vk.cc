@@ -90,7 +90,8 @@ void FenceWaiterVK::Main() {
   using namespace std::literals::chrono_literals;
 
   while (true) {
-    bool terminate;
+    // We'll read the terminate_ flag within the lock below.
+    bool terminate = false;
 
     {
       std::unique_lock lock(wait_set_mutex_);
@@ -98,11 +99,6 @@ void FenceWaiterVK::Main() {
       // If there are no fences to wait on, wait on the condition variable.
       wait_set_cv_.wait(lock,
                         [&]() { return !wait_set_.empty() || terminate_; });
-
-      // We don't want to check on fence status or collect wait set entries in
-      // the critical section. Copy the array of entries and immediately unlock
-      // the mutex.
-      WaitSet wait_set = wait_set_;
 
       // Still under the lock, check if the waiter has been terminated.
       terminate = terminate_;
