@@ -20,11 +20,8 @@ class SkwasmImageDecoder extends BrowserImageDecoder {
     final int width = frame.codedWidth.toInt();
     final int height = frame.codedHeight.toInt();
     final SkwasmSurface surface = (renderer as SkwasmRenderer).surface;
-    final int videoFrameId = surface.acquireObjectId();
-    skwasmInstance.skwasmRegisterObject(videoFrameId.toJS, frame as JSAny);
-    skwasmInstance.skwasmTransferObjectToThread(videoFrameId.toJS, surface.threadId.toJS);
-    return SkwasmImage(imageCreateFromVideoFrame(
-      videoFrameId,
+    return SkwasmImage(imageCreateFromTextureSource(
+      frame as JSAny,
       width,
       height,
       surface.handle,

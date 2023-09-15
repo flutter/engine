@@ -69,6 +69,9 @@ class FilterInput {
       const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
       Scalar scale);
 
+  /// @see  `FilterContents::HasBasisTransformations`
+  virtual bool IsTranslationOnly() const;
+
   /// @brief  Returns `true` unless this input is a `FilterInput`, which may
   ///         take other inputs.
   virtual bool IsLeaf() const;
@@ -77,6 +80,12 @@ class FilterInput {
   ///         of `inputs`.
   /// @see    `FilterInput::IsLeaf`
   virtual void SetLeafInputs(const FilterInput::Vector& inputs);
+
+  /// @brief  Sets the effect transform of filter inputs.
+  virtual void SetEffectTransform(const Matrix& matrix);
+
+  /// @brief  Turns on subpass mode for filter inputs.
+  virtual void SetRenderingMode(Entity::RenderingMode rendering_mode);
 };
 
 }  // namespace impeller

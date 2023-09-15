@@ -61,6 +61,33 @@ void Path::SetConvexity(Convexity value) {
   convexity_ = value;
 }
 
+void Path::Shift(Point shift) {
+  size_t currentIndex = 0;
+  for (const auto& component : components_) {
+    switch (component.type) {
+      case ComponentType::kLinear:
+        linears_[component.index].p1 += shift;
+        linears_[component.index].p2 += shift;
+        break;
+      case ComponentType::kQuadratic:
+        quads_[component.index].cp += shift;
+        quads_[component.index].p1 += shift;
+        quads_[component.index].p2 += shift;
+        break;
+      case ComponentType::kCubic:
+        cubics_[component.index].cp1 += shift;
+        cubics_[component.index].cp2 += shift;
+        cubics_[component.index].p1 += shift;
+        cubics_[component.index].p2 += shift;
+        break;
+      case ComponentType::kContour:
+        contours_[component.index].destination += shift;
+        break;
+    }
+    currentIndex++;
+  }
+}
+
 Path& Path::AddLinearComponent(Point p1, Point p2) {
   linears_.emplace_back(p1, p2);
   components_.emplace_back(ComponentType::kLinear, linears_.size() - 1);
@@ -297,9 +324,10 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
         return Vector2(0, -1);
       };
 
+  std::vector<PolylineContour::Component> components;
   std::optional<size_t> previous_path_component_index;
   auto end_contour = [&polyline, &previous_path_component_index,
-                      &get_path_component]() {
+                      &get_path_component, &components]() {
     // Whenever a contour has ended, extract the exact end direction from the
     // last component.
     if (polyline.contours.empty()) {
@@ -312,6 +340,8 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
 
     auto& contour = polyline.contours.back();
     contour.end_direction = Vector2(0, 1);
+    contour.components = components;
+    components.clear();
 
     size_t previous_index = previous_path_component_index.value();
     while (!std::holds_alternative<std::monostate>(
@@ -336,14 +366,26 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
     const auto& component = components_[component_i];
     switch (component.type) {
       case ComponentType::kLinear:
+        components.push_back({
+            .component_start_index = polyline.points.size(),
+            .is_curve = false,
+        });
         collect_points(linears_[component.index].CreatePolyline());
         previous_path_component_index = component_i;
         break;
       case ComponentType::kQuadratic:
+        components.push_back({
+            .component_start_index = polyline.points.size(),
+            .is_curve = true,
+        });
         collect_points(quads_[component.index].CreatePolyline(scale));
         previous_path_component_index = component_i;
         break;
       case ComponentType::kCubic:
+        components.push_back({
+            .component_start_index = polyline.points.size(),
+            .is_curve = true,
+        });
         collect_points(cubics_[component.index].CreatePolyline(scale));
         previous_path_component_index = component_i;
         break;
@@ -359,25 +401,31 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
         const auto& contour = contours_[component.index];
         polyline.contours.push_back({.start_index = polyline.points.size(),
                                      .is_closed = contour.is_closed,
-                                     .start_direction = start_direction});
+                                     .start_direction = start_direction,
+                                     .components = components});
         previous_contour_point = std::nullopt;
         collect_points({contour.destination});
         break;
     }
-    end_contour();
   }
+  end_contour();
   return polyline;
 }
 
 std::optional<Rect> Path::GetBoundingBox() const {
+  return computed_bounds_;
+}
+
+void Path::ComputeBounds() {
   auto min_max = GetMinMaxCoveragePoints();
   if (!min_max.has_value()) {
-    return std::nullopt;
+    computed_bounds_ = std::nullopt;
+    return;
   }
   auto min = min_max->first;
   auto max = min_max->second;
   const auto difference = max - min;
-  return Rect{min.x, min.y, difference.x, difference.y};
+  computed_bounds_ = Rect{min.x, min.y, difference.x, difference.y};
 }
 
 std::optional<Rect> Path::GetTransformedBoundingBox(
@@ -432,6 +480,10 @@ std::optional<std::pair<Point, Point>> Path::GetMinMaxCoveragePoints() const {
   }
 
   return std::make_pair(min.value(), max.value());
+}
+
+void Path::SetBounds(Rect rect) {
+  computed_bounds_ = rect;
 }
 
 }  // namespace impeller
