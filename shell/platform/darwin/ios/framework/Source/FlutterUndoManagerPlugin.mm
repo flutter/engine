@@ -106,9 +106,7 @@ static NSString* const kCanRedo = @"canRedo";
     // will not show up until the next keystroke (or other trigger).
     UITextInputAssistantItem* assistantItem =
         _viewController.engine.textInputPlugin.textInputView.inputAssistantItem;
-    NSArray<UIBarButtonItemGroup*>* leadingGroups = assistantItem.leadingBarButtonGroups;
-    assistantItem.leadingBarButtonGroups = @[];
-    assistantItem.leadingBarButtonGroups = leadingGroups;
+    assistantItem.leadingBarButtonGroups = assistantItem.leadingBarButtonGroups;
   }
   [self undoManager].groupsByEvent = groupsByEvent;
 }
