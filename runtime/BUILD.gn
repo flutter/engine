@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//flutter/common/config.gni")
+import("//flutter/testing/run_tests.gni")
 import("//flutter/testing/testing.gni")
 
 source_set("test_font") {
@@ -156,6 +157,13 @@ if (enable_unittests) {
     ]
   }
 
+  run_tests_py("run_runtime_unittests") {
+    testonly = true
+    deps = [ ":runtime_unittests" ]
+    name = "runtime_unittests"
+    type = "engine"
+  }
+
   test_fixtures("no_plugin_registrant") {
     dart_main = "fixtures/no_dart_plugin_registrant_test.dart"
     use_target_as_artifact_prefix = true
@@ -175,6 +183,13 @@ if (enable_unittests) {
       "//flutter/testing",
       "//flutter/testing:fixture_test",
     ]
+  }
+
+  run_tests_py("run_no_dart_plugin_registrant_unittests") {
+    testonly = true
+    deps = [ ":no_dart_plugin_registrant_unittests" ]
+    name = "no_dart_plugin_registrant_unittests"
+    type = "engine"
   }
 
   test_fixtures("plugin_registrant") {
@@ -197,5 +212,12 @@ if (enable_unittests) {
       "//flutter/testing",
       "//flutter/testing:fixture_test",
     ]
+  }
+
+  run_tests_py("run_dart_plugin_registrant_unittests") {
+    testonly = true
+    deps = [ ":dart_plugin_registrant_unittests" ]
+    name = "dart_plugin_registrant_unittests"
+    type = "engine"
   }
 }

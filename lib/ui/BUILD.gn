@@ -6,6 +6,7 @@ import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
 import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/shell/config.gni")
+import("//flutter/testing/run_tests.gni")
 import("//flutter/testing/testing.gni")
 
 source_set("ui") {
@@ -299,5 +300,12 @@ if (enable_unittests) {
 
       deps += [ "//flutter/testing:opengl" ]
     }
+  }
+
+  run_tests_py("run_ui_unittests") {
+    testonly = true
+    deps = [ ":ui_unittests" ]
+    name = "ui_unittests"
+    type = "engine"
   }
 }

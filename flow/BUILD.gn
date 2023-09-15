@@ -6,6 +6,7 @@ import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
 import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/shell/config.gni")
+import("//flutter/testing/run_tests.gni")
 import("//flutter/testing/testing.gni")
 
 source_set("flow") {
@@ -139,6 +140,13 @@ if (enable_unittests) {
       ":flow",
       "//flutter/common/graphics",
     ]
+  }
+
+  run_tests_py("run_flow_unittests") {
+    testonly = true
+    deps = [ ":flow_unittests" ]
+    name = "flow_unittests"
+    type = "engine"
   }
 
   executable("flow_unittests") {

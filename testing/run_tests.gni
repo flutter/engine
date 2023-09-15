@@ -1,0 +1,64 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+# Supported types:
+# 'engine',
+# 'dart',
+# 'java',
+# 'objc',
+template("run_tests_py") {
+  action(target_name) {
+    assert(defined(invoker.name), "The test name must be specified.")
+    assert(defined(invoker.type), "The test type must be specified.")
+    forward_variables_from(invoker,
+                           [
+                             "visibility",
+                             "testonly",
+                             "deps",
+                             "inputs",
+                           ])
+
+    # TODO(zanderso):
+    # - Assert only allowed types.
+    # - Use a pool.
+
+    script = "//flutter/testing/run_tests.py"
+
+    output = "$target_out_dir/${target_name}.tested"
+    outputs = [ output ]
+
+    # Figure out the variant.
+    variant = get_path_info(root_out_dir, "name")
+
+    variant_flag = "--variant"
+    if (invoker.type == "java") {
+      variant_flag = "--android-variant"
+    } else if (invoker.type == "objc") {
+      variant_flag = "--ios-variant"
+    }
+
+    filter = invoker.name
+
+    filter_flag = "--engine-filter"
+    if (invoker.type == "dart") {
+      filter_flag = "--dart-filter"
+    } else if (invoker.type == "java") {
+      filter_flag = "--java-filter"
+    } else if (invoker.type == "objc") {
+      filter_flag = "--objc-filter"
+    }
+
+    args = [
+      "--type",
+      invoker.type,
+      variant_flag,
+      variant,
+      filter_flag,
+      filter,
+      "--engine-capture-core-dump",
+      "--output",
+      rebase_path(output),
+    ]
+  }
+}

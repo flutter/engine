@@ -6,6 +6,7 @@ import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
 import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/shell/gpu/gpu.gni")
+import("//flutter/testing/run_tests.gni")
 import("//flutter/testing/testing.gni")
 
 # Template to generate a dart embedder resource.cc file.
@@ -341,5 +342,12 @@ if (enable_unittests) {
         "//third_party/swiftshader",
       ]
     }
+  }
+
+  run_tests_py("run_shell_unittests") {
+    testonly = true
+    deps = [ ":shell_unittests" ]
+    name = "shell_unittests"
+    type = "engine"
   }
 }
