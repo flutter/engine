@@ -77,12 +77,6 @@ class MockVulkanContextBuilder {
   std::function<void(ContextVK::Settings&)> settings_callback_;
   std::vector<std::string> instance_extensions_;
   std::vector<std::string> instance_layers_;
-
-  static std::shared_ptr<MockFence> DefaultFenceCallback() {
-    return std::make_shared<MockFence>();
-  }
-  std::function<std::shared_ptr<MockFence>()> fence_factory_ =
-      DefaultFenceCallback;
 };
 
 }  // namespace testing
