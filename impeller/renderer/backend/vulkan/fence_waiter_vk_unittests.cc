@@ -103,35 +103,28 @@ TEST(FenceWaiterVKTest, StillDestroysFenceIfTerminating) {
 
 TEST(FenceWaiterVKTest, InProgressFencesStillWaitIfTerminated) {
   MockFence* raw_fence = nullptr;
+  auto signal = fml::ManualResetWaitableEvent();
 
-  {
-    auto const context = MockVulkanContextBuilder().Build();
-    auto const device = context->GetDevice();
-    auto const waiter = context->GetFenceWaiter();
+  auto const context = MockVulkanContextBuilder().Build();
+  auto const device = context->GetDevice();
+  auto const waiter = context->GetFenceWaiter();
 
-    // Add a fence that isn't signalled yet.
-    auto fence = device.createFenceUnique({}).value;
+  // Add a fence that isn't signalled yet.
+  auto fence = device.createFenceUnique({}).value;
 
-    // Even if the fence is eSuccess, it's not guaranteed to be called in time.
-    MockFence::SetStatus(fence, vk::Result::eNotReady);
-    raw_fence = MockFence::GetRawPointer(fence);
-    waiter->AddFence(std::move(fence), []() {
-      // Intentionally empty, imagine this is holding on to a reference.
-    });
+  // Even if the fence is eSuccess, it's not guaranteed to be called in time.
+  MockFence::SetStatus(fence, vk::Result::eNotReady);
+  raw_fence = MockFence::GetRawPointer(fence);
+  waiter->AddFence(std::move(fence), [&signal]() { signal.Signal(); });
 
-    // Spawn a thread to signal the fence.
-    std::thread([&]() {
-      // Wait 1 second.
-      std::this_thread::sleep_for(std::chrono::seconds(1));
+  // Terminate the waiter.
+  waiter->Terminate();
 
-      // Signal the fence.
-      raw_fence->SetStatus(vk::Result::eSuccess);
-    }).detach();
-
-    // Terminate the waiter by letting it drop out of scope.
-  }
+  // Signal the fence.
+  raw_fence->SetStatus(vk::Result::eSuccess);
 
   // This will hang if the fence was not signalled.
+  signal.Wait();
 }
 
 }  // namespace testing

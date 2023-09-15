@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "impeller/base/thread.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "vulkan/vulkan_enums.hpp"
 
@@ -24,7 +25,10 @@ class MockFence final {
   MockFence() = default;
 
   // Returns the result that was set in the constructor or |SetStatus|.
-  VkResult GetStatus() { return static_cast<VkResult>(result_); }
+  VkResult GetStatus() {
+    Lock lock(result_mutex_);
+    return static_cast<VkResult>(result_);
+  }
 
   // Sets the result that will be returned by `GetFenceStatus`.
   void SetStatus(vk::Result result) { result_ = result; }
@@ -34,7 +38,7 @@ class MockFence final {
     // Cast the fence to a MockFence and set the result.
     VkFence raw_fence = fence.get();
     MockFence* mock_fence = reinterpret_cast<MockFence*>(raw_fence);
-    mock_fence->result_ = result;
+    mock_fence->SetStatus(result);
   }
 
   // Gets a raw pointer to manipulate the fence after it's been moved.
@@ -47,6 +51,7 @@ class MockFence final {
 
  private:
   vk::Result result_ = vk::Result::eSuccess;
+  Mutex result_mutex_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(MockFence);
 };
