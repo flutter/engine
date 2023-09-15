@@ -22,7 +22,6 @@
 #include "impeller/entity/contents/conical_gradient_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
-#include "impeller/entity/contents/scene_contents.h"
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/geometry/color.h"
@@ -1206,6 +1205,37 @@ TEST_P(AiksTest, CanRenderRoundedRectWithNonUniformRadii) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, CanRenderStrokePathThatEndsAtSharpTurn) {
+  Canvas canvas;
+
+  Paint paint;
+  paint.color = Color::Red();
+  paint.style = Paint::Style::kStroke;
+  paint.stroke_width = 200;
+
+  Rect rect = {100, 100, 200, 200};
+  PathBuilder builder;
+  builder.AddArc(rect, Degrees(0), Degrees(90), false);
+
+  canvas.DrawPath(builder.TakePath(), paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderStrokePathWithCubicLine) {
+  Canvas canvas;
+
+  Paint paint;
+  paint.color = Color::Red();
+  paint.style = Paint::Style::kStroke;
+  paint.stroke_width = 20;
+
+  PathBuilder builder;
+  builder.AddCubicCurve({0, 200}, {50, 400}, {350, 0}, {400, 200});
+
+  canvas.DrawPath(builder.TakePath(), paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, CanRenderDifferencePaths) {
   Canvas canvas;
 
@@ -1943,6 +1973,22 @@ TEST_P(AiksTest, DrawRectStrokesRenderCorrectly) {
   paint.color = Color::Red();
   paint.style = Paint::Style::kStroke;
   paint.stroke_width = 10;
+
+  canvas.Translate({100, 100});
+  canvas.DrawPath(
+      PathBuilder{}.AddRect(Rect::MakeSize(Size{100, 100})).TakePath(),
+      {paint});
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, DrawRectStrokesWithBevelJoinRenderCorrectly) {
+  Canvas canvas;
+  Paint paint;
+  paint.color = Color::Red();
+  paint.style = Paint::Style::kStroke;
+  paint.stroke_width = 10;
+  paint.stroke_join = Join::kBevel;
 
   canvas.Translate({100, 100});
   canvas.DrawPath(
@@ -3173,7 +3219,7 @@ TEST_P(AiksTest, MatrixSaveLayerFilter) {
     canvas.SaveLayer({.image_filter = ImageFilter::MakeMatrix(
                           Matrix::MakeTranslation(Vector2(1, 1) *
                                                   (200 + 100 * k1OverSqrt2)) *
-                              Matrix::MakeScale(Vector2(1, 1) * 0.2) *
+                              Matrix::MakeScale(Vector2(1, 1) * 0.5) *
                               Matrix::MakeTranslation(Vector2(-200, -200)),
                           SamplerDescriptor{})},
                      std::nullopt);
@@ -3201,7 +3247,7 @@ TEST_P(AiksTest, MatrixBackdropFilter) {
         {}, std::nullopt,
         ImageFilter::MakeMatrix(
             Matrix::MakeTranslation(Vector2(1, 1) * (100 + 100 * k1OverSqrt2)) *
-                Matrix::MakeScale(Vector2(1, 1) * 0.2) *
+                Matrix::MakeScale(Vector2(1, 1) * 0.5) *
                 Matrix::MakeTranslation(Vector2(-100, -100)),
             SamplerDescriptor{}));
     canvas.Restore();
@@ -3360,6 +3406,39 @@ TEST_P(AiksTest, CaptureContext) {
 
 TEST_P(AiksTest, CaptureInactivatedByDefault) {
   ASSERT_FALSE(GetContext()->capture.IsActive());
+}
+
+// Regression test for https://github.com/flutter/flutter/issues/134678.
+TEST_P(AiksTest, ReleasesTextureOnTeardown) {
+  auto context = GetContext();
+  std::weak_ptr<Texture> weak_texture;
+
+  {
+    auto texture = CreateTextureForFixture("table_mountain_nx.png");
+
+    Canvas canvas;
+    canvas.Scale(GetContentScale());
+    canvas.Translate({100.0f, 100.0f, 0});
+
+    Paint paint;
+    paint.color_source = ColorSource::MakeImage(
+        texture, Entity::TileMode::kClamp, Entity::TileMode::kClamp, {}, {});
+    canvas.DrawRect({0, 0, 600, 600}, paint);
+
+    ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+  }
+
+  // See https://github.com/flutter/flutter/issues/134751.
+  //
+  // If the fence waiter was working this may not be released by the end of the
+  // scope above. Adding a manual shutdown so that future changes to the fence
+  // waiter will not flake this test.
+  context->Shutdown();
+
+  // The texture should be released by now.
+  ASSERT_TRUE(weak_texture.expired()) << "When the texture is no longer in use "
+                                         "by the backend, it should be "
+                                         "released.";
 }
 
 }  // namespace testing
