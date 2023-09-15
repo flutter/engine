@@ -25,10 +25,7 @@ class MockFence final {
   MockFence() = default;
 
   // Returns the result that was set in the constructor or |SetStatus|.
-  VkResult GetStatus() {
-    Lock lock(result_mutex_);
-    return static_cast<VkResult>(result_);
-  }
+  VkResult GetStatus() { return static_cast<VkResult>(result_.load()); }
 
   // Sets the result that will be returned by `GetFenceStatus`.
   void SetStatus(vk::Result result) { result_ = result; }
@@ -50,8 +47,7 @@ class MockFence final {
   }
 
  private:
-  vk::Result result_ = vk::Result::eSuccess;
-  Mutex result_mutex_;
+  std::atomic<vk::Result> result_ = vk::Result::eSuccess;
 
   FML_DISALLOW_COPY_AND_ASSIGN(MockFence);
 };

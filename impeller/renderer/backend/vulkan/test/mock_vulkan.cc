@@ -428,7 +428,6 @@ VkResult vkCreateFence(VkDevice device,
 VkResult vkDestroyFence(VkDevice device,
                         VkFence fence,
                         const VkAllocationCallbacks* pAllocator) {
-  MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
   delete reinterpret_cast<MockFence*>(fence);
   return VK_SUCCESS;
 }
