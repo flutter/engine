@@ -5,6 +5,7 @@
 import 'dart:io' as io show Directory, File, Platform, stderr;
 
 import 'package:args/args.dart';
+import 'package:engine_repo_tools/engine_repo_tools.dart';
 import 'package:path/path.dart' as path;
 
 // Path to root of the flutter/engine repository containing this script.
@@ -91,8 +92,9 @@ class Options {
   factory Options.fromCommandLine(
     List<String> arguments, {
     StringSink? errSink,
+    Engine? engine,
   }) {
-    final ArgResults argResults = _argParser.parse(arguments);
+    final ArgResults argResults = _argParser(engine: engine).parse(arguments);
 
     String? buildCommandsPath = argResults['compile-commands'] as String?;
 
@@ -134,74 +136,78 @@ class Options {
     );
   }
 
-  static final ArgParser _argParser = ArgParser()
-    ..addFlag(
-      'help',
-      abbr: 'h',
-      help: 'Print help.',
-      negatable: false,
-    )
-    ..addFlag(
-      'lint-all',
-      help: 'Lint all of the sources, regardless of FLUTTER_NOLINT.',
-    )
-    ..addFlag(
-      'lint-head',
-      help: 'Lint files changed in the tip-of-tree commit.',
-    )
-    ..addFlag(
-      'fix',
-      help: 'Apply suggested fixes.',
-    )
-    ..addFlag(
-      'verbose',
-      help: 'Print verbose output.',
-    )
-    ..addOption(
-      'shard-id',
-      help: 'When used with the shard-commands option this identifies which shard will execute.',
-      valueHelp: 'A number less than 1 + the number of shard-commands arguments.',
-    )
-    ..addOption(
-      'shard-variants',
-      help: 'Comma separated list of other targets, this invocation '
-            'will only execute a subset of the intersection and the difference of the '
-            'compile commands. Use with `shard-id`.'
-    )
-    ..addOption(
-      'compile-commands',
-      help: 'Use the given path as the source of compile_commands.json. This '
-            'file is created by running "tools/gn". Cannot be used with --target-variant '
-            'or --src-dir.',
-    )
-    ..addOption(
-      'target-variant',
-      aliases: <String>['variant'],
-      help: 'The engine variant directory containing compile_commands.json '
-            'created by running "tools/gn". Cannot be used with --compile-commands.',
-      valueHelp: 'host_debug|android_debug_unopt|ios_debug|ios_debug_sim_unopt',
-      defaultsTo: 'host_debug',
-    )
-    ..addOption('mac-host-warnings-as-errors',
-        help:
-            'checks that will be treated as errors when running debug_host on mac.')
-    ..addOption(
-      'src-dir',
-      help: 'Path to the engine src directory. Cannot be used with --compile-commands.',
-      valueHelp: 'path/to/engine/src',
-      defaultsTo: path.dirname(_engineRoot),
-    )
-    ..addOption(
-      'checks',
-      help: 'Perform the given checks on the code. Defaults to the empty '
-            'string, indicating all checks should be performed.',
-      defaultsTo: '',
-    )
-    ..addFlag(
-      'enable-check-profile',
-      help: 'Enable per-check timing profiles and print a report to stderr.',
-      negatable: false,
-    );
+  static ArgParser _argParser({required Engine? engine}) {
+    engine ??= Engine.tryFindWithin();
+    final io.Directory? latestBuild = engine?.latestOutput()?.path;
+    return ArgParser()
+      ..addFlag(
+        'help',
+        abbr: 'h',
+        help: 'Print help.',
+        negatable: false,
+      )
+      ..addFlag(
+        'lint-all',
+        help: 'Lint all of the sources, regardless of FLUTTER_NOLINT.',
+      )
+      ..addFlag(
+        'lint-head',
+        help: 'Lint files changed in the tip-of-tree commit.',
+      )
+      ..addFlag(
+        'fix',
+        help: 'Apply suggested fixes.',
+      )
+      ..addFlag(
+        'verbose',
+        help: 'Print verbose output.',
+      )
+      ..addOption(
+        'shard-id',
+        help: 'When used with the shard-commands option this identifies which shard will execute.',
+        valueHelp: 'A number less than 1 + the number of shard-commands arguments.',
+      )
+      ..addOption(
+        'shard-variants',
+        help: 'Comma separated list of other targets, this invocation '
+              'will only execute a subset of the intersection and the difference of the '
+              'compile commands. Use with `shard-id`.'
+      )
+      ..addOption(
+        'compile-commands',
+        help: 'Use the given path as the source of compile_commands.json. This '
+              'file is created by running "tools/gn". Cannot be used with --target-variant '
+              'or --src-dir.',
+      )
+      ..addOption(
+        'target-variant',
+        aliases: <String>['variant'],
+        help: 'The engine variant directory name containing compile_commands.json '
+              'created by running "tools/gn". Cannot be used with --compile-commands.',
+        valueHelp: 'host_debug|android_debug_unopt|ios_debug|ios_debug_sim_unopt',
+        defaultsTo: latestBuild == null ? 'host_debug' : path.basename(latestBuild.path),
+      )
+      ..addOption('mac-host-warnings-as-errors',
+          help:
+              'checks that will be treated as errors when running debug_host on mac.')
+      ..addOption(
+        'src-dir',
+        help: 'Path to the engine src directory. Cannot be used with --compile-commands.',
+        valueHelp: 'path/to/engine/src',
+        defaultsTo: path.dirname(_engineRoot),
+      )
+      ..addOption(
+        'checks',
+        help: 'Perform the given checks on the code. Defaults to the empty '
+              'string, indicating all checks should be performed.',
+        defaultsTo: '',
+      )
+      ..addFlag(
+        'enable-check-profile',
+        help: 'Enable per-check timing profiles and print a report to stderr.',
+        negatable: false,
+      );
+  }
 
   /// Whether to print a help message and exit.
   final bool help;
@@ -249,7 +255,7 @@ class Options {
   final StringSink _errSink;
 
   /// Print command usage with an additional message.
-  void printUsage({String? message}) {
+  void printUsage({String? message, required Engine? engine}) {
     if (message != null) {
       _errSink.writeln(message);
     }
@@ -257,7 +263,7 @@ class Options {
       'Usage: bin/main.dart [--help] [--lint-all] [--lint-head] [--fix] [--verbose] '
       '[--diff-branch] [--target-variant variant] [--src-dir path/to/engine/src]',
     );
-    _errSink.writeln(_argParser.usage);
+    _errSink.writeln(_argParser(engine: engine).usage);
   }
 
   /// Command line argument validation.
