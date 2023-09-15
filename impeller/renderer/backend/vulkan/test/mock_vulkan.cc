@@ -4,10 +4,13 @@
 
 #include "impeller/renderer/backend/vulkan/test/mock_vulkan.h"
 #include <cstring>
+#include <utility>
 #include <vector>
 #include "fml/macros.h"
 #include "fml/thread_local.h"
 #include "impeller/base/thread_safety.h"
+#include "vulkan/vulkan_core.h"
+#include "vulkan/vulkan_enums.hpp"
 
 namespace impeller {
 namespace testing {
@@ -42,6 +45,11 @@ class MockDevice final {
     called_functions_->push_back(function);
   }
 
+  void SetFenceFactory(
+      std::function<std::shared_ptr<MockFence>()> fence_factory) {
+    fence_factory_ = std::move(fence_factory);
+  }
+
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(MockDevice);
 
@@ -52,6 +60,8 @@ class MockDevice final {
   Mutex command_buffers_mutex_;
   std::vector<std::unique_ptr<MockCommandBuffer>> command_buffers_
       IPLR_GUARDED_BY(command_buffers_mutex_);
+
+  std::function<std::shared_ptr<MockFence>()> fence_factory_;
 };
 
 void noop() {}
@@ -410,7 +420,8 @@ VkResult vkCreateFence(VkDevice device,
                        const VkFenceCreateInfo* pCreateInfo,
                        const VkAllocationCallbacks* pAllocator,
                        VkFence* pFence) {
-  *pFence = reinterpret_cast<VkFence>(0xfe0ce);
+  MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
+  *pFence = reinterpret_cast<VkFence>(new MockFence());
   return VK_SUCCESS;
 }
 
@@ -430,7 +441,9 @@ VkResult vkWaitForFences(VkDevice device,
 }
 
 VkResult vkGetFenceStatus(VkDevice device, VkFence fence) {
-  return VK_SUCCESS;
+  MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
+  MockFence* mock_fence = reinterpret_cast<MockFence*>(fence);
+  return mock_fence->GetStatus();
 }
 
 VkResult vkCreateDebugUtilsMessengerEXT(
@@ -562,6 +575,7 @@ std::shared_ptr<ContextVK> MockVulkanContextBuilder::Build() {
   g_instance_extensions = instance_extensions_;
   g_instance_layers = instance_layers_;
   std::shared_ptr<ContextVK> result = ContextVK::Create(std::move(settings));
+
   return result;
 }
 

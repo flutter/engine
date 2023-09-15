@@ -5,16 +5,40 @@
 #pragma once
 
 #include <functional>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "impeller/renderer/backend/vulkan/context_vk.h"
+#include "vulkan/vulkan_enums.hpp"
 
 namespace impeller {
 namespace testing {
 
 std::shared_ptr<std::vector<std::string>> GetMockVulkanFunctions(
     VkDevice device);
+
+// A test-controlled version of |vk::Fence|.
+class MockFence final {
+ public:
+  MockFence() = default;
+
+  // Returns the result that was set in the constructor or |SetStatus|.
+  VkResult GetStatus() { return static_cast<VkResult>(result_); }
+
+  // Sets the result that will be returned by `GetFenceStatus`.
+  static void SetStatus(vk::UniqueFence& fence, vk::Result result) {
+    // Cast the fence to a MockFence and set the result.
+    VkFence raw_fence = fence.get();
+    MockFence* mock_fence = reinterpret_cast<MockFence*>(raw_fence);
+    mock_fence->result_ = result;
+  }
+
+ private:
+  vk::Result result_ = vk::Result::eSuccess;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(MockFence);
+};
 
 class MockVulkanContextBuilder {
  public:
@@ -53,6 +77,12 @@ class MockVulkanContextBuilder {
   std::function<void(ContextVK::Settings&)> settings_callback_;
   std::vector<std::string> instance_extensions_;
   std::vector<std::string> instance_layers_;
+
+  static std::shared_ptr<MockFence> DefaultFenceCallback() {
+    return std::make_shared<MockFence>();
+  }
+  std::function<std::shared_ptr<MockFence>()> fence_factory_ =
+      DefaultFenceCallback;
 };
 
 }  // namespace testing
