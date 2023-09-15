@@ -97,7 +97,7 @@ TEST(FenceWaiterVKTest, AddFenceDoesNothingIfTerminating) {
   }
 
   // Ensure the fence did _not_ signal.
-  EXPECT_FALSE(signal.WaitWithTimeout(fml::TimeDelta::FromMilliseconds(100)));
+  EXPECT_TRUE(signal.WaitWithTimeout(fml::TimeDelta::FromMilliseconds(100)));
 }
 
 TEST(FenceWaiterVKTest, InProgressFencesStillWaitIfTerminated) {
