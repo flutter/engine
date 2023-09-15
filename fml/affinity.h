@@ -21,4 +21,4 @@ enum class CpuAffinity {
 /// @brief Request that the current thread switch to the given `affinity`.
 bool RequestAffinity(CpuAffinity affinity);
 
-}
+}  // namespace fml

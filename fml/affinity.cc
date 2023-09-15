@@ -4,13 +4,13 @@
 
 #include "flutter/fml/affinity.h"
 
+#include <ctype.h>
 #include <pthread.h>
 #include <sched.h>
+#include <string.h>
 #include <sys/resource.h>
 #include <sys/time.h>
 #include <unistd.h>
-#include <ctype.h>
-#include <string.h>
 #include <cstdio>
 #include <cstdlib>
 #include "flutter/fml/logging.h"
@@ -141,7 +141,6 @@ bool HasField(const char* field) {
   FML_DCHECK(data_ != nullptr);
   return (FieldStart(field) != nullptr);
 }
-
 
 bool RequestAffinity(CpuAffinity affinity) {
   // Populate CPU Info if undefined.
