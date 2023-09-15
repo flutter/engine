@@ -47,7 +47,6 @@ class WaitSetEntry {
 FenceWaiterVK::FenceWaiterVK(std::weak_ptr<DeviceHolder> device_holder)
     : device_holder_(std::move(device_holder)) {
   waiter_thread_ = std::make_unique<std::thread>([&]() { Main(); });
-  is_valid_ = true;
 }
 
 FenceWaiterVK::~FenceWaiterVK() {
@@ -55,10 +54,6 @@ FenceWaiterVK::~FenceWaiterVK() {
   if (waiter_thread_) {
     waiter_thread_->join();
   }
-}
-
-bool FenceWaiterVK::IsValid() const {
-  return is_valid_;
 }
 
 bool FenceWaiterVK::AddFence(vk::UniqueFence fence,
