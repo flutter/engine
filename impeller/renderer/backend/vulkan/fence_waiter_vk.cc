@@ -58,7 +58,7 @@ FenceWaiterVK::~FenceWaiterVK() {
 bool FenceWaiterVK::AddFence(vk::UniqueFence fence,
                              const fml::closure& callback) {
   TRACE_EVENT0("flutter", "FenceWaiterVK::AddFence");
-  if (!fence || !callback) {
+  if (!fence || !callback || terminate_) {
     return false;
   }
   {

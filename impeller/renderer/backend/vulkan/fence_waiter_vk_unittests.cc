@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "fml/synchronization/waitable_event.h"
-#include "fml/time/time_delta.h"
 #include "gtest/gtest.h"  // IWYU pragma: keep
 #include "impeller/renderer/backend/vulkan/fence_waiter_vk.h"  // IWYU pragma: keep
 #include "impeller/renderer/backend/vulkan/test/mock_vulkan.h"
@@ -84,7 +83,7 @@ TEST(FenceWaiterVKTest, ExecutesNewFenceThenOldFence) {
   signal.Wait();
 }
 
-TEST(FenceWaiterVKTest, StillDestroysFenceIfTerminating) {
+TEST(FenceWaiterVKTest, AddFenceDoesNothingIfTerminating) {
   auto signal = fml::ManualResetWaitableEvent();
 
   {
@@ -97,8 +96,8 @@ TEST(FenceWaiterVKTest, StillDestroysFenceIfTerminating) {
     waiter->AddFence(std::move(fence), [&signal]() { signal.Signal(); });
   }
 
-  // Ensure the fence still triggers.
-  signal.Wait();
+  // Ensure the fence did _not_ signal.
+  EXPECT_FALSE(signal.WaitWithTimeout(fml::TimeDelta::FromMilliseconds(100)));
 }
 
 TEST(FenceWaiterVKTest, InProgressFencesStillWaitIfTerminated) {
