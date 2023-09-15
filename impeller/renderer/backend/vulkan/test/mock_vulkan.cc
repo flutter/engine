@@ -45,11 +45,6 @@ class MockDevice final {
     called_functions_->push_back(function);
   }
 
-  void SetFenceFactory(
-      std::function<std::shared_ptr<MockFence>()> fence_factory) {
-    fence_factory_ = std::move(fence_factory);
-  }
-
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(MockDevice);
 
@@ -60,8 +55,6 @@ class MockDevice final {
   Mutex command_buffers_mutex_;
   std::vector<std::unique_ptr<MockCommandBuffer>> command_buffers_
       IPLR_GUARDED_BY(command_buffers_mutex_);
-
-  std::function<std::shared_ptr<MockFence>()> fence_factory_;
 };
 
 void noop() {}
