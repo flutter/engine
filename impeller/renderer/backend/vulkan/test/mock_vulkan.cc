@@ -425,6 +425,14 @@ VkResult vkCreateFence(VkDevice device,
   return VK_SUCCESS;
 }
 
+VkResult vkDestroyFence(VkDevice device,
+                        VkFence fence,
+                        const VkAllocationCallbacks* pAllocator) {
+  MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
+  delete reinterpret_cast<MockFence*>(fence);
+  return VK_SUCCESS;
+}
+
 VkResult vkQueueSubmit(VkQueue queue,
                        uint32_t submitCount,
                        const VkSubmitInfo* pSubmits,
@@ -546,6 +554,8 @@ PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
     return (PFN_vkVoidFunction)vkEndCommandBuffer;
   } else if (strcmp("vkCreateFence", pName) == 0) {
     return (PFN_vkVoidFunction)vkCreateFence;
+  } else if (strcmp("vkDestroyFence", pName) == 0) {
+    return (PFN_vkVoidFunction)vkDestroyFence;
   } else if (strcmp("vkQueueSubmit", pName) == 0) {
     return (PFN_vkVoidFunction)vkQueueSubmit;
   } else if (strcmp("vkWaitForFences", pName) == 0) {

@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <utility>
 
 #include "flutter/fml/thread.h"
 #include "flutter/fml/trace_event.h"
@@ -51,15 +52,13 @@ FenceWaiterVK::FenceWaiterVK(std::weak_ptr<DeviceHolder> device_holder)
 
 FenceWaiterVK::~FenceWaiterVK() {
   Terminate();
-  if (waiter_thread_) {
-    waiter_thread_->join();
-  }
+  waiter_thread_->join();
 }
 
 bool FenceWaiterVK::AddFence(vk::UniqueFence fence,
                              const fml::closure& callback) {
   TRACE_EVENT0("flutter", "FenceWaiterVK::AddFence");
-  if (!IsValid() || !fence || !callback) {
+  if (!fence || !callback) {
     return false;
   }
   {

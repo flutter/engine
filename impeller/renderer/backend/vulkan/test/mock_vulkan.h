@@ -27,11 +27,22 @@ class MockFence final {
   VkResult GetStatus() { return static_cast<VkResult>(result_); }
 
   // Sets the result that will be returned by `GetFenceStatus`.
+  void SetStatus(vk::Result result) { result_ = result; }
+
+  // Sets the result that will be returned by `GetFenceStatus`.
   static void SetStatus(vk::UniqueFence& fence, vk::Result result) {
     // Cast the fence to a MockFence and set the result.
     VkFence raw_fence = fence.get();
     MockFence* mock_fence = reinterpret_cast<MockFence*>(raw_fence);
     mock_fence->result_ = result;
+  }
+
+  // Gets a raw pointer to manipulate the fence after it's been moved.
+  static MockFence* GetRawPointer(vk::UniqueFence& fence) {
+    // Cast the fence to a MockFence and get the result.
+    VkFence raw_fence = fence.get();
+    MockFence* mock_fence = reinterpret_cast<MockFence*>(raw_fence);
+    return mock_fence;
   }
 
  private:
