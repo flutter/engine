@@ -110,6 +110,9 @@ void FenceWaiterVK::Main() {
 }
 
 void FenceWaiterVK::WaitUntilEmpty() {
+  // Note, there is no lock because once terminate_ is set to true, no other
+  // fence can be added to the wait set. Just in case, here's a FML_DCHECK:
+  FML_DCHECK(terminate_) << "Fence waiter must be terminated.";
   while (!wait_set_.empty() && Wait(wait_set_)) {
     // Intentionally empty.
   }
