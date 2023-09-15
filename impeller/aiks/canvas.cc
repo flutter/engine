@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "flutter/fml/logging.h"
+#include "impeller/aiks/image_filter.h"
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
@@ -57,17 +58,28 @@ void Canvas::Save() {
 
 void Canvas::Save(bool create_subpass,
                   BlendMode blend_mode,
-                  EntityPass::BackdropFilterProc backdrop_filter) {
+                  const std::shared_ptr<ImageFilter>& backdrop_filter) {
   auto entry = CanvasStackEntry{};
   entry.xformation = xformation_stack_.back().xformation;
   entry.cull_rect = xformation_stack_.back().cull_rect;
   entry.stencil_depth = xformation_stack_.back().stencil_depth;
   if (create_subpass) {
-    entry.is_subpass = true;
+    entry.rendering_mode = Entity::RenderingMode::kSubpass;
     auto subpass = std::make_unique<EntityPass>();
     subpass->SetEnableOffscreenCheckerboard(
         debug_options.offscreen_texture_checkerboard);
-    subpass->SetBackdropFilter(std::move(backdrop_filter));
+    if (backdrop_filter) {
+      EntityPass::BackdropFilterProc backdrop_filter_proc =
+          [backdrop_filter = backdrop_filter->Clone()](
+              const FilterInput::Ref& input, const Matrix& effect_transform,
+              Entity::RenderingMode rendering_mode) {
+            auto filter = backdrop_filter->WrapInput(input);
+            filter->SetEffectTransform(effect_transform);
+            filter->SetRenderingMode(rendering_mode);
+            return filter;
+          };
+      subpass->SetBackdropFilter(backdrop_filter_proc);
+    }
     subpass->SetBlendMode(blend_mode);
     current_pass_ = GetCurrentPass().AddSubpass(std::move(subpass));
     current_pass_->SetTransformation(xformation_stack_.back().xformation);
@@ -81,7 +93,8 @@ bool Canvas::Restore() {
   if (xformation_stack_.size() == 1) {
     return false;
   }
-  if (xformation_stack_.back().is_subpass) {
+  if (xformation_stack_.back().rendering_mode ==
+      Entity::RenderingMode::kSubpass) {
     current_pass_ = GetCurrentPass().GetSuperpass();
     FML_DCHECK(current_pass_);
   }
@@ -518,7 +531,7 @@ size_t Canvas::GetStencilDepth() const {
 
 void Canvas::SaveLayer(const Paint& paint,
                        std::optional<Rect> bounds,
-                       const Paint::ImageFilterProc& backdrop_filter) {
+                       const std::shared_ptr<ImageFilter>& backdrop_filter) {
   Save(true, paint.blend_mode, backdrop_filter);
 
   auto& new_layer_pass = GetCurrentPass();

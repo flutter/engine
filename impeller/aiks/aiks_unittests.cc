@@ -14,6 +14,7 @@
 #include "impeller/aiks/aiks_playground.h"
 #include "impeller/aiks/canvas.h"
 #include "impeller/aiks/image.h"
+#include "impeller/aiks/image_filter.h"
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/aiks/testing/context_spy.h"
 #include "impeller/core/capture.h"
@@ -21,7 +22,6 @@
 #include "impeller/entity/contents/conical_gradient_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
-#include "impeller/entity/contents/scene_contents.h"
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/geometry/color.h"
@@ -1205,6 +1205,37 @@ TEST_P(AiksTest, CanRenderRoundedRectWithNonUniformRadii) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, CanRenderStrokePathThatEndsAtSharpTurn) {
+  Canvas canvas;
+
+  Paint paint;
+  paint.color = Color::Red();
+  paint.style = Paint::Style::kStroke;
+  paint.stroke_width = 200;
+
+  Rect rect = {100, 100, 200, 200};
+  PathBuilder builder;
+  builder.AddArc(rect, Degrees(0), Degrees(90), false);
+
+  canvas.DrawPath(builder.TakePath(), paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderStrokePathWithCubicLine) {
+  Canvas canvas;
+
+  Paint paint;
+  paint.color = Color::Red();
+  paint.style = Paint::Style::kStroke;
+  paint.stroke_width = 20;
+
+  PathBuilder builder;
+  builder.AddCubicCurve({0, 200}, {50, 400}, {350, 0}, {400, 200});
+
+  canvas.DrawPath(builder.TakePath(), paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, CanRenderDifferencePaths) {
   Canvas canvas;
 
@@ -1951,6 +1982,22 @@ TEST_P(AiksTest, DrawRectStrokesRenderCorrectly) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, DrawRectStrokesWithBevelJoinRenderCorrectly) {
+  Canvas canvas;
+  Paint paint;
+  paint.color = Color::Red();
+  paint.style = Paint::Style::kStroke;
+  paint.stroke_width = 10;
+  paint.stroke_join = Join::kBevel;
+
+  canvas.Translate({100, 100});
+  canvas.DrawPath(
+      PathBuilder{}.AddRect(Rect::MakeSize(Size{100, 100})).TakePath(),
+      {paint});
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, SaveLayerDrawsBehindSubsequentEntities) {
   // Compare with https://fiddle.skia.org/c/9e03de8567ffb49e7e83f53b64bcf636
   Canvas canvas;
@@ -2110,12 +2157,9 @@ TEST_P(AiksTest, PaintWithFilters) {
 
   ASSERT_TRUE(paint.HasColorFilter());
 
-  paint.image_filter = [](const FilterInput::Ref& input,
-                          const Matrix& effect_transform, bool is_subpass) {
-    return FilterContents::MakeGaussianBlur(
-        input, Sigma(1.0), Sigma(1.0), FilterContents::BlurStyle::kNormal,
-        Entity::TileMode::kClamp, effect_transform);
-  };
+  paint.image_filter = ImageFilter::MakeBlur(Sigma(1.0), Sigma(1.0),
+                                             FilterContents::BlurStyle::kNormal,
+                                             Entity::TileMode::kClamp);
 
   ASSERT_TRUE(paint.HasColorFilter());
 
@@ -2141,12 +2185,9 @@ TEST_P(AiksTest, OpacityPeepHoleApplicationTest) {
   ASSERT_FALSE(delegate->CanCollapseIntoParentPass(entity_pass.get()));
 
   paint.color_filter = nullptr;
-  paint.image_filter = [](const FilterInput::Ref& input,
-                          const Matrix& effect_transform, bool is_subpass) {
-    return FilterContents::MakeGaussianBlur(
-        input, Sigma(1.0), Sigma(1.0), FilterContents::BlurStyle::kNormal,
-        Entity::TileMode::kClamp, effect_transform);
-  };
+  paint.image_filter = ImageFilter::MakeBlur(Sigma(1.0), Sigma(1.0),
+                                             FilterContents::BlurStyle::kNormal,
+                                             Entity::TileMode::kClamp);
 
   // Paint has image filter, can't elide.
   delegate = std::make_shared<OpacityPeepholePassDelegate>(paint);
@@ -2313,11 +2354,9 @@ TEST_P(AiksTest, CollapsedDrawPaintInSubpassBackdropFilter) {
   canvas.DrawPaint(
       {.color = Color::Yellow(), .blend_mode = BlendMode::kSource});
   canvas.SaveLayer({}, {},
-                   [](const FilterInput::Ref& input,
-                      const Matrix& effect_transform, bool is_subpass) {
-                     return FilterContents::MakeGaussianBlur(input, Sigma(20.0),
-                                                             Sigma(20.0));
-                   });
+                   ImageFilter::MakeBlur(Sigma(20.0), Sigma(20.0),
+                                         FilterContents::BlurStyle::kNormal,
+                                         Entity::TileMode::kDecal));
   canvas.DrawPaint(
       {.color = Color::CornflowerBlue(), .blend_mode = BlendMode::kSourceOver});
 
@@ -2515,12 +2554,8 @@ TEST_P(AiksTest, TranslucentSaveLayerWithBlendImageFilterDrawsCorrectly) {
 
   canvas.SaveLayer({
       .color = Color::Black().WithAlpha(0.5),
-      .image_filter =
-          [](FilterInput::Ref input, const Matrix& effect_transform,
-             bool is_subpass) {
-            return ColorFilterContents::MakeBlend(
-                BlendMode::kDestinationOver, {std::move(input)}, Color::Red());
-          },
+      .image_filter = ImageFilter::MakeFromColorFilter(
+          *ColorFilter::MakeBlend(BlendMode::kDestinationOver, Color::Red())),
   });
 
   canvas.DrawRect(Rect::MakeXYWH(100, 500, 300, 300), {.color = Color::Blue()});
@@ -2589,17 +2624,14 @@ TEST_P(AiksTest, TranslucentSaveLayerWithColorMatrixImageFilterDrawsCorrectly) {
 
   canvas.SaveLayer({
       .color = Color::Black().WithAlpha(0.5),
-      .image_filter =
-          [](FilterInput::Ref input, const Matrix& effect_transform,
-             bool is_subpass) {
-            return ColorFilterContents::MakeColorMatrix({std::move(input)},
-                                                        {.array = {
-                                                             1, 0, 0, 0, 0,  //
-                                                             0, 1, 0, 0, 0,  //
-                                                             0, 0, 1, 0, 0,  //
-                                                             0, 0, 0, 2, 0   //
-                                                         }});
-          },
+      .image_filter = ImageFilter::MakeFromColorFilter(
+          *ColorFilter::MakeMatrix({.array =
+                                        {
+                                            1, 0, 0, 0, 0,  //
+                                            0, 1, 0, 0, 0,  //
+                                            0, 0, 1, 0, 0,  //
+                                            0, 0, 0, 2, 0   //
+                                        }})),
   });
   canvas.DrawImage(image, {100, 500}, {});
   canvas.Restore();
@@ -2616,17 +2648,14 @@ TEST_P(AiksTest,
 
   canvas.SaveLayer({
       .color = Color::Black().WithAlpha(0.5),
-      .image_filter =
-          [](FilterInput::Ref input, const Matrix& effect_transform,
-             bool is_subpass) {
-            return ColorFilterContents::MakeColorMatrix(
-                {std::move(input)}, {.array = {
-                                         1, 0,   0, 0,   0,  //
-                                         0, 1,   0, 0,   0,  //
-                                         0, 0.2, 1, 0,   0,  //
-                                         0, 0,   0, 0.5, 0   //
-                                     }});
-          },
+      .image_filter = ImageFilter::MakeFromColorFilter(
+          *ColorFilter::MakeMatrix({.array =
+                                        {
+                                            1, 0,   0, 0,   0,  //
+                                            0, 1,   0, 0,   0,  //
+                                            0, 0.2, 1, 0,   0,  //
+                                            0, 0,   0, 0.5, 0   //
+                                        }})),
       .color_filter =
           ColorFilter::MakeBlend(BlendMode::kModulate, Color::Green()),
   });
@@ -2758,13 +2787,9 @@ TEST_P(AiksTest, CanRenderBackdropBlurInteractive) {
     canvas.DrawCircle({180, 120}, 100, {.color = Color::OrangeRed()});
     canvas.ClipRRect(Rect::MakeLTRB(a.x, a.y, b.x, b.y), 20);
     canvas.SaveLayer({.blend_mode = BlendMode::kSource}, std::nullopt,
-                     [](const FilterInput::Ref& input,
-                        const Matrix& effect_transform, bool is_subpass) {
-                       return FilterContents::MakeGaussianBlur(
-                           input, Sigma(20.0), Sigma(20.0),
-                           FilterContents::BlurStyle::kNormal,
-                           Entity::TileMode::kClamp, effect_transform);
-                     });
+                     ImageFilter::MakeBlur(Sigma(20.0), Sigma(20.0),
+                                           FilterContents::BlurStyle::kNormal,
+                                           Entity::TileMode::kClamp));
     canvas.Restore();
 
     return canvas.EndRecordingAsPicture();
@@ -2781,13 +2806,9 @@ TEST_P(AiksTest, CanRenderBackdropBlur) {
   canvas.DrawCircle({180, 120}, 100, {.color = Color::OrangeRed()});
   canvas.ClipRRect(Rect::MakeLTRB(75, 50, 375, 275), 20);
   canvas.SaveLayer({.blend_mode = BlendMode::kSource}, std::nullopt,
-                   [](const FilterInput::Ref& input,
-                      const Matrix& effect_transform, bool is_subpass) {
-                     return FilterContents::MakeGaussianBlur(
-                         input, Sigma(30.0), Sigma(30.0),
-                         FilterContents::BlurStyle::kNormal,
-                         Entity::TileMode::kClamp, effect_transform);
-                   });
+                   ImageFilter::MakeBlur(Sigma(30.0), Sigma(30.0),
+                                         FilterContents::BlurStyle::kNormal,
+                                         Entity::TileMode::kClamp));
   canvas.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
@@ -2797,13 +2818,9 @@ TEST_P(AiksTest, CanRenderBackdropBlurHugeSigma) {
   Canvas canvas;
   canvas.DrawCircle({400, 400}, 300, {.color = Color::Green()});
   canvas.SaveLayer({.blend_mode = BlendMode::kSource}, std::nullopt,
-                   [](const FilterInput::Ref& input,
-                      const Matrix& effect_transform, bool is_subpass) {
-                     return FilterContents::MakeGaussianBlur(
-                         input, Sigma(999999), Sigma(999999),
-                         FilterContents::BlurStyle::kNormal,
-                         Entity::TileMode::kClamp, effect_transform);
-                   });
+                   ImageFilter::MakeBlur(Sigma(999999), Sigma(999999),
+                                         FilterContents::BlurStyle::kNormal,
+                                         Entity::TileMode::kClamp));
   canvas.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
@@ -2816,14 +2833,9 @@ TEST_P(AiksTest, CanRenderClippedBlur) {
       {400, 400}, 200,
       {
           .color = Color::Green(),
-          .image_filter =
-              [](const FilterInput::Ref& input, const Matrix& effect_transform,
-                 bool is_subpass) {
-                return FilterContents::MakeGaussianBlur(
-                    input, Sigma(20), Sigma(20),
-                    FilterContents::BlurStyle::kNormal,
-                    Entity::TileMode::kClamp, effect_transform);
-              },
+          .image_filter = ImageFilter::MakeBlur(
+              Sigma(20.0), Sigma(20.0), FilterContents::BlurStyle::kNormal,
+              Entity::TileMode::kClamp),
       });
   canvas.Restore();
 
@@ -3127,11 +3139,9 @@ TEST_P(AiksTest, CanCanvasDrawPictureWithAdvancedBlend) {
 TEST_P(AiksTest, CanCanvasDrawPictureWithBackdropFilter) {
   Canvas subcanvas;
   subcanvas.SaveLayer({}, {},
-                      [](const FilterInput::Ref& input,
-                         const Matrix& effect_transform, bool is_subpass) {
-                        return FilterContents::MakeGaussianBlur(
-                            input, Sigma(20.0), Sigma(20.0));
-                      });
+                      ImageFilter::MakeBlur(Sigma(20.0), Sigma(20.0),
+                                            FilterContents::BlurStyle::kNormal,
+                                            Entity::TileMode::kDecal));
   auto image = std::make_shared<Image>(CreateTextureForFixture("kalimba.jpg"));
   Paint paint;
   paint.color = Color::Red().WithAlpha(0.5);
@@ -3206,17 +3216,12 @@ TEST_P(AiksTest, MatrixSaveLayerFilter) {
                        .blend_mode = BlendMode::kPlus});
     // Should render a second circle, centered on the bottom-right-most edge of
     // the circle.
-    canvas.SaveLayer({.image_filter =
-                          [](const FilterInput::Ref& input,
-                             const Matrix& effect_transform, bool is_subpass) {
-                            Matrix matrix =
-                                Matrix::MakeTranslation(
-                                    Vector2(1, 1) * (100 + 100 * k1OverSqrt2)) *
-                                Matrix::MakeScale(Vector2(1, 1) * 0.2) *
-                                Matrix::MakeTranslation(Vector2(-100, -100));
-                            return FilterContents::MakeMatrixFilter(
-                                input, matrix, {}, Matrix(), true);
-                          }},
+    canvas.SaveLayer({.image_filter = ImageFilter::MakeMatrix(
+                          Matrix::MakeTranslation(Vector2(1, 1) *
+                                                  (200 + 100 * k1OverSqrt2)) *
+                              Matrix::MakeScale(Vector2(1, 1) * 0.5) *
+                              Matrix::MakeTranslation(Vector2(-200, -200)),
+                          SamplerDescriptor{})},
                      std::nullopt);
     canvas.DrawCircle(Point(200, 200), 100,
                       {.color = Color::Green().WithAlpha(0.5),
@@ -3238,17 +3243,13 @@ TEST_P(AiksTest, MatrixBackdropFilter) {
                        .blend_mode = BlendMode::kPlus});
     // Should render a second circle, centered on the bottom-right-most edge of
     // the circle.
-    canvas.SaveLayer({}, std::nullopt,
-                     [](const FilterInput::Ref& input,
-                        const Matrix& effect_transform, bool is_subpass) {
-                       Matrix matrix =
-                           Matrix::MakeTranslation(Vector2(1, 1) *
-                                                   (100 + 100 * k1OverSqrt2)) *
-                           Matrix::MakeScale(Vector2(1, 1) * 0.2) *
-                           Matrix::MakeTranslation(Vector2(-100, -100));
-                       return FilterContents::MakeMatrixFilter(
-                           input, matrix, {}, Matrix(), true);
-                     });
+    canvas.SaveLayer(
+        {}, std::nullopt,
+        ImageFilter::MakeMatrix(
+            Matrix::MakeTranslation(Vector2(1, 1) * (100 + 100 * k1OverSqrt2)) *
+                Matrix::MakeScale(Vector2(1, 1) * 0.5) *
+                Matrix::MakeTranslation(Vector2(-100, -100)),
+            SamplerDescriptor{}));
     canvas.Restore();
   }
   canvas.Restore();
@@ -3329,14 +3330,14 @@ TEST_P(AiksTest, PipelineBlendSingleParameter) {
     canvas.Translate(Point(100, 100));
     canvas.DrawCircle(Point(200, 200), 200, {.color = Color::Blue()});
     canvas.ClipRect(Rect(100, 100, 200, 200));
-    canvas.DrawCircle(
-        Point(200, 200), 200,
-        {.color = Color::Green(),
-         .blend_mode = BlendMode::kSourceOver,
-         .image_filter = [](const FilterInput::Ref& input,
-                            const Matrix& effect_transform, bool is_subpass) {
-           return ColorFilterContents::MakeBlend(BlendMode::kSource, {input});
-         }});
+    canvas.DrawCircle(Point(200, 200), 200,
+                      {
+                          .color = Color::Green(),
+                          .blend_mode = BlendMode::kSourceOver,
+                          .image_filter = ImageFilter::MakeFromColorFilter(
+                              *ColorFilter::MakeBlend(BlendMode::kDestination,
+                                                      Color::White())),
+                      });
     canvas.Restore();
   }
 
@@ -3405,6 +3406,39 @@ TEST_P(AiksTest, CaptureContext) {
 
 TEST_P(AiksTest, CaptureInactivatedByDefault) {
   ASSERT_FALSE(GetContext()->capture.IsActive());
+}
+
+// Regression test for https://github.com/flutter/flutter/issues/134678.
+TEST_P(AiksTest, ReleasesTextureOnTeardown) {
+  auto context = GetContext();
+  std::weak_ptr<Texture> weak_texture;
+
+  {
+    auto texture = CreateTextureForFixture("table_mountain_nx.png");
+
+    Canvas canvas;
+    canvas.Scale(GetContentScale());
+    canvas.Translate({100.0f, 100.0f, 0});
+
+    Paint paint;
+    paint.color_source = ColorSource::MakeImage(
+        texture, Entity::TileMode::kClamp, Entity::TileMode::kClamp, {}, {});
+    canvas.DrawRect({0, 0, 600, 600}, paint);
+
+    ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+  }
+
+  // See https://github.com/flutter/flutter/issues/134751.
+  //
+  // If the fence waiter was working this may not be released by the end of the
+  // scope above. Adding a manual shutdown so that future changes to the fence
+  // waiter will not flake this test.
+  context->Shutdown();
+
+  // The texture should be released by now.
+  ASSERT_TRUE(weak_texture.expired()) << "When the texture is no longer in use "
+                                         "by the backend, it should be "
+                                         "released.";
 }
 
 }  // namespace testing

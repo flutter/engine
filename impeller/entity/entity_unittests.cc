@@ -91,6 +91,13 @@ class TestPassDelegate final : public EntityPassDelegate {
     return nullptr;
   }
 
+  // |EntityPassDelegate|
+  std::shared_ptr<FilterContents> WithImageFilter(
+      const FilterInput::Variant& input,
+      const Matrix& effect_transform) const override {
+    return nullptr;
+  }
+
  private:
   const std::optional<Rect> coverage_;
   const bool collapse_;
@@ -1191,12 +1198,11 @@ TEST_P(EntityTest, MorphologyFilter) {
     input = texture;
     input_size = input_rect.size;
 
-    auto effect_transform = Matrix::MakeScale(
-        Vector2{effect_transform_scale, effect_transform_scale});
-
     auto contents = FilterContents::MakeMorphology(
         FilterInput::Make(input), Radius{radius[0]}, Radius{radius[1]},
-        morphology_types[selected_morphology_type], effect_transform);
+        morphology_types[selected_morphology_type]);
+    contents->SetEffectTransform(Matrix::MakeScale(
+        Vector2{effect_transform_scale, effect_transform_scale}));
 
     auto ctm = Matrix::MakeScale(GetContentScale()) *
                Matrix::MakeTranslation(Vector3(offset[0], offset[1])) *

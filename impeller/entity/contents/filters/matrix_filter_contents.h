@@ -17,7 +17,11 @@ class MatrixFilterContents final : public FilterContents {
 
   void SetMatrix(Matrix matrix);
 
-  void SetIsSubpass(bool is_subpass);
+  // |FilterContents|
+  void SetRenderingMode(Entity::RenderingMode rendering_mode) override;
+
+  // |FilterContents|
+  bool IsTranslationOnly() const override;
 
   void SetSamplerDescriptor(SamplerDescriptor desc);
 
@@ -39,7 +43,7 @@ class MatrixFilterContents final : public FilterContents {
 
   Matrix matrix_;
   SamplerDescriptor sampler_descriptor_ = {};
-  bool is_subpass_ = false;
+  Entity::RenderingMode rendering_mode_ = Entity::RenderingMode::kDirect;
 
   FML_DISALLOW_COPY_AND_ASSIGN(MatrixFilterContents);
 };

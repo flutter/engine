@@ -1029,6 +1029,8 @@ ORIGIN: ../../../flutter/impeller/aiks/color_source.cc + ../../../flutter/LICENS
 ORIGIN: ../../../flutter/impeller/aiks/color_source.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/aiks/image.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/aiks/image.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/aiks/image_filter.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/aiks/image_filter.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/aiks/paint.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/aiks/paint.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/aiks/paint_pass_delegate.cc + ../../../flutter/LICENSE
@@ -1329,8 +1331,6 @@ ORIGIN: ../../../flutter/impeller/entity/shaders/debug/checkerboard.frag + ../..
 ORIGIN: ../../../flutter/impeller/entity/shaders/debug/checkerboard.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur.vert + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_alpha_decal.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_alpha_nodecal.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_noalpha_decal.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_noalpha_nodecal.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/geometry/points.comp + ../../../flutter/LICENSE
@@ -3288,8 +3288,6 @@ ORIGIN: ../../../flutter/shell/platform/windows/text_input_manager.h + ../../../
 ORIGIN: ../../../flutter/shell/platform/windows/text_input_plugin.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/windows/text_input_plugin.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/windows/text_input_plugin_delegate.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/windows/window.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/windows/window.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/windows/window_binding_handler.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/windows/window_binding_handler_delegate.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/windows/window_proc_delegate_manager.cc + ../../../flutter/LICENSE
@@ -3775,6 +3773,8 @@ FILE: ../../../flutter/impeller/aiks/color_source.cc
 FILE: ../../../flutter/impeller/aiks/color_source.h
 FILE: ../../../flutter/impeller/aiks/image.cc
 FILE: ../../../flutter/impeller/aiks/image.h
+FILE: ../../../flutter/impeller/aiks/image_filter.cc
+FILE: ../../../flutter/impeller/aiks/image_filter.h
 FILE: ../../../flutter/impeller/aiks/paint.cc
 FILE: ../../../flutter/impeller/aiks/paint.h
 FILE: ../../../flutter/impeller/aiks/paint_pass_delegate.cc
@@ -4075,8 +4075,6 @@ FILE: ../../../flutter/impeller/entity/shaders/debug/checkerboard.frag
 FILE: ../../../flutter/impeller/entity/shaders/debug/checkerboard.vert
 FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur.glsl
 FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur.vert
-FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_alpha_decal.frag
-FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_alpha_nodecal.frag
 FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_noalpha_decal.frag
 FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_noalpha_nodecal.frag
 FILE: ../../../flutter/impeller/entity/shaders/geometry/points.comp
@@ -6060,8 +6058,6 @@ FILE: ../../../flutter/shell/platform/windows/text_input_manager.h
 FILE: ../../../flutter/shell/platform/windows/text_input_plugin.cc
 FILE: ../../../flutter/shell/platform/windows/text_input_plugin.h
 FILE: ../../../flutter/shell/platform/windows/text_input_plugin_delegate.h
-FILE: ../../../flutter/shell/platform/windows/window.cc
-FILE: ../../../flutter/shell/platform/windows/window.h
 FILE: ../../../flutter/shell/platform/windows/window_binding_handler.h
 FILE: ../../../flutter/shell/platform/windows/window_binding_handler_delegate.h
 FILE: ../../../flutter/shell/platform/windows/window_proc_delegate_manager.cc

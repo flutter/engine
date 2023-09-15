@@ -14,8 +14,14 @@ void MatrixFilterContents::SetMatrix(Matrix matrix) {
   matrix_ = matrix;
 }
 
-void MatrixFilterContents::SetIsSubpass(bool is_subpass) {
-  is_subpass_ = is_subpass;
+void MatrixFilterContents::SetRenderingMode(
+    Entity::RenderingMode rendering_mode) {
+  rendering_mode_ = rendering_mode;
+  FilterContents::SetRenderingMode(rendering_mode);
+}
+
+bool MatrixFilterContents::IsTranslationOnly() const {
+  return matrix_.Basis().IsIdentity() && FilterContents::IsTranslationOnly();
 }
 
 void MatrixFilterContents::SetSamplerDescriptor(SamplerDescriptor desc) {
@@ -49,7 +55,9 @@ std::optional<Entity> MatrixFilterContents::RenderFilter(
   // mentioned above). And so we sneak the subpass's captured CTM in through the
   // effect transform.
 
-  auto transform = is_subpass_ ? effect_transform : entity.GetTransformation();
+  auto transform = rendering_mode_ == Entity::RenderingMode::kSubpass
+                       ? effect_transform
+                       : entity.GetTransformation();
   snapshot->transform = transform *           //
                         matrix_ *             //
                         transform.Invert() *  //
@@ -72,7 +80,9 @@ std::optional<Rect> MatrixFilterContents::GetFilterCoverage(
   if (!coverage.has_value()) {
     return std::nullopt;
   }
-  auto& m = is_subpass_ ? effect_transform : inputs[0]->GetTransform(entity);
+  auto& m = rendering_mode_ == Entity::RenderingMode::kSubpass
+                ? effect_transform
+                : inputs[0]->GetTransform(entity);
   auto transform = m *          //
                    matrix_ *    //
                    m.Invert();  //
