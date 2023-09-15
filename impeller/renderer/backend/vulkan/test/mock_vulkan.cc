@@ -575,7 +575,6 @@ std::shared_ptr<ContextVK> MockVulkanContextBuilder::Build() {
   g_instance_extensions = instance_extensions_;
   g_instance_layers = instance_layers_;
   std::shared_ptr<ContextVK> result = ContextVK::Create(std::move(settings));
-
   return result;
 }
 
