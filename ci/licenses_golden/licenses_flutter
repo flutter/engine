@@ -870,6 +870,8 @@ ORIGIN: ../../../flutter/fml/concurrent_message_loop.cc + ../../../flutter/LICEN
 ORIGIN: ../../../flutter/fml/concurrent_message_loop.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/concurrent_message_loop_factory.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/container.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/fml/cpu_affinity.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/fml/cpu_affinity.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/dart/dart_converter.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/dart/dart_converter.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/delayed_task.cc + ../../../flutter/LICENSE
@@ -3616,6 +3618,8 @@ FILE: ../../../flutter/fml/concurrent_message_loop.cc
 FILE: ../../../flutter/fml/concurrent_message_loop.h
 FILE: ../../../flutter/fml/concurrent_message_loop_factory.cc
 FILE: ../../../flutter/fml/container.h
+FILE: ../../../flutter/fml/cpu_affinity.cc
+FILE: ../../../flutter/fml/cpu_affinity.h
 FILE: ../../../flutter/fml/dart/dart_converter.cc
 FILE: ../../../flutter/fml/dart/dart_converter.h
 FILE: ../../../flutter/fml/delayed_task.cc
