@@ -61,7 +61,7 @@ const std::vector<size_t>& CPUSpeedTracker::GetIndices(
 // required because files under /proc do not always return a valid size
 // when using fseek(0, SEEK_END) + ftell(). Nor can they be mmap()-ed.
 std::optional<int32_t> ReadIntFromFile(const std::string& path) {
-  int data_length = 0u;
+  size_t data_length = 0u;
   FILE* fp = fopen(path.c_str(), "r");
   if (fp == nullptr) {
     return std::nullopt;
@@ -76,19 +76,18 @@ std::optional<int32_t> ReadIntFromFile(const std::string& path) {
   }
   fclose(fp);
 
-  // Read the contents of the cpuinfo file.
   if (data_length <= 0) {
     return std::nullopt;
   }
 
+  // Read the contents of the cpuinfo file.
   char* data = reinterpret_cast<char*>(malloc(data_length + 1));
   fp = fopen(path.c_str(), "r");
   if (fp == nullptr) {
     free(data);
     return std::nullopt;
   }
-
-  for (intptr_t offset = 0; offset < data_length;) {
+  for (uintptr_t offset = 0; offset < data_length;) {
     size_t n = fread(data + offset, 1, data_length - offset, fp);
     if (n == 0) {
       break;
@@ -98,8 +97,11 @@ std::optional<int32_t> ReadIntFromFile(const std::string& path) {
   fclose(fp);
 
   if (data == nullptr) {
+    free(data);
     return std::nullopt;
   }
+  // zero end of buffer.
+  data[data_length] = 0;
 
   // Dont use stoi because if this data isnt a parseable number then it
   // will abort, as we compile with exceptions disabled.
