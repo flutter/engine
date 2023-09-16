@@ -11,7 +11,7 @@ namespace impeller {
 namespace testing {
 
 TEST(CommandPoolRecyclerVKTest, GetsACommandPoolPerThread) {
-  auto const context = CreateMockVulkanContext();
+  auto const context = MockVulkanContextBuilder().Build();
 
   // Record the memory location of each pointer to a command pool.
   int* pool1 = nullptr;
@@ -38,7 +38,7 @@ TEST(CommandPoolRecyclerVKTest, GetsACommandPoolPerThread) {
 }
 
 TEST(CommandPoolRecyclerVKTest, GetsTheSameCommandPoolOnSameThread) {
-  auto const context = CreateMockVulkanContext();
+  auto const context = MockVulkanContextBuilder().Build();
 
   auto const pool1 = context->GetCommandPoolRecycler()->Get();
   auto const pool2 = context->GetCommandPoolRecycler()->Get();
@@ -71,7 +71,7 @@ class DeathRattle final {
 }  // namespace
 
 TEST(CommandPoolRecyclerVKTest, ReclaimMakesCommandPoolAvailable) {
-  auto const context = CreateMockVulkanContext();
+  auto const context = MockVulkanContextBuilder().Build();
 
   {
     // Fetch a pool (which will be created).
