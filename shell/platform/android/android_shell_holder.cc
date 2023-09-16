@@ -12,11 +12,16 @@
 #include <memory>
 #include <optional>
 
+#include <sstream>
 #include <string>
 #include <utility>
 
 #include "flutter/fml/logging.h"
+#include "flutter/fml/make_copyable.h"
 #include "flutter/fml/message_loop.h"
+#include "flutter/fml/native_library.h"
+#include "flutter/fml/platform/android/jni_util.h"
+#include "flutter/lib/ui/painting/image_generator_registry.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/common/thread_host.h"
@@ -27,6 +32,159 @@
 
 namespace flutter {
 
+/// The CPU Affinity provides a hint to the operating system on which cores a
+/// particular thread should be scheduled on. The operating system may or may
+/// not honor these requests.
+enum class CpuAffinity {
+  /// @brief Request CPU affinity for the performance cores.
+  ///
+  ///        Generally speaking, only the UI and Raster thread should
+  ///        use this option.
+  kPerformance,
+
+  /// @brief Request CPU affinity for the efficiency cores.
+  kEfficiency,
+
+  /// @brief Request affinity for all non-performance cores.
+  kNotPerformance,
+};
+
+struct CpuIndexAndSpeed {
+  size_t index;
+  int32_t speed;
+};
+
+class CPUSpeedTracker {
+ public:
+  explicit CPUSpeedTracker(std::vector<CpuIndexAndSpeed> data)
+      : cpu_speeds_(data) {
+    std::optional<int32_t> max_speed = std::nullopt;
+    std::optional<int32_t> min_speed = std::nullopt;
+    for (const auto& data : cpu_speeds_) {
+      if (!max_speed.has_value() || data.speed > max_speed.value()) {
+        max_speed = data.speed;
+      }
+      if (!min_speed.has_value() || data.speed < min_speed.value()) {
+        min_speed = data.speed;
+      }
+    }
+    if (!max_speed.has_value() || !min_speed.has_value() ||
+        min_speed.value() == max_speed.value()) {
+      return;
+    }
+    for (const auto& data : cpu_speeds_) {
+      if (data.speed == max_speed.value()) {
+        performance_.push_back(data.index);
+      } else {
+        not_performance_.push_back(data.index);
+      }
+      if (data.speed == min_speed.value()) {
+        efficiency_.push_back(data.index);
+      }
+    }
+
+    valid_ = true;
+  }
+
+  bool IsValid() const { return valid_; }
+
+  const std::vector<size_t>& GetIndexes(CpuAffinity affinity) const {
+    switch (affinity) {
+      case CpuAffinity::kPerformance:
+        return performance_;
+      case CpuAffinity::kEfficiency:
+        return efficiency_;
+      case CpuAffinity::kNotPerformance:
+        return not_performance_;
+    }
+  }
+
+ private:
+  bool valid_ = false;
+  std::vector<CpuIndexAndSpeed> cpu_speeds_;
+  std::vector<size_t> efficiency_;
+  std::vector<size_t> performance_;
+  std::vector<size_t> not_performance_;
+};
+
+std::once_flag cpu_tracker_flag_;
+static CPUSpeedTracker* tracker_;
+
+void InitCPUInfo(size_t cpu_count) {
+  std::vector<CpuIndexAndSpeed> cpu_speeds;
+
+  // Get the size of the cpuinfo file by reading it until the end. This is
+  // required because files under /proc do not always return a valid size
+  // when using fseek(0, SEEK_END) + ftell(). Nor can they be mmap()-ed.
+  for (auto i = 0u; i < cpu_count; i++) {
+    int data_length = 0;
+    auto path = "/sys/devices/system/cpu/cpu" + std::to_string(i) +
+                "/cpufreq/cpuinfo_max_freq";
+    FILE* fp = fopen(path.c_str(), "r");
+    if (fp != nullptr) {
+      for (;;) {
+        char buffer[256];
+        size_t n = fread(buffer, 1, sizeof(buffer), fp);
+        if (n == 0) {
+          break;
+        }
+        data_length += n;
+      }
+      fclose(fp);
+    }
+
+    // Read the contents of the cpuinfo file.
+    char* data = reinterpret_cast<char*>(malloc(data_length + 1));
+    fp = fopen(path.c_str(), "r");
+    if (fp != nullptr) {
+      for (intptr_t offset = 0; offset < data_length;) {
+        size_t n = fread(data + offset, 1, data_length - offset, fp);
+        if (n == 0) {
+          break;
+        }
+        offset += n;
+      }
+      fclose(fp);
+    }
+
+    // Parse the CPU info numbers.
+    if (data != nullptr) {
+      auto speed = std::stoi(data);
+      if (speed > 0) {
+        cpu_speeds.push_back({.index = i, .speed = speed});
+      }
+    }
+  }
+
+  tracker_ = new CPUSpeedTracker(cpu_speeds);
+}
+
+bool RequestAffinity(CpuAffinity affinity) {
+  // Populate CPU Info if undefined.
+  auto count = std::thread::hardware_concurrency();
+  std::call_once(cpu_tracker_flag_, [count]() {
+    InitCPUInfo(count);
+  });
+  if (tracker_ == nullptr) {
+    return true;
+  }
+
+  // Determine physical core count and speed.
+
+  // If we either cannot determine slow versus fast cores, or if there is no
+  // distinction in core speed, return without setting affinity.
+  if (!tracker_->IsValid()) {
+    return true;
+  }
+
+  cpu_set_t set;
+  CPU_ZERO(&set);
+  for (const auto index : tracker_->GetIndexes(affinity)) {
+    CPU_SET(index, &set);
+  }
+  return sched_setaffinity(gettid(), sizeof(set), &set) == 0;
+}
+
 /// Inheriting ThreadConfigurer and use Android platform thread API to configure
 /// the thread priorities
 static void AndroidPlatformThreadConfigSetter(
@@ -36,62 +194,25 @@ static void AndroidPlatformThreadConfigSetter(
   // set thread priority
   switch (config.priority) {
     case fml::Thread::ThreadPriority::BACKGROUND: {
-      cpu_set_t set;
-      auto count = 8;
-      CPU_ZERO(&set);
-
-      // Assume the first half of the CPUs are slower.
-      for (auto i = 0; i < 4; i++) {
-        CPU_SET(i, &set);
-      }
-      if (sched_setaffinity(gettid(), sizeof(set), &set) != 0) {
-        FML_LOG(ERROR) << "Failed to set affinity";
-      }
+      RequestAffinity(CpuAffinity::kEfficiency);
       if (::setpriority(PRIO_PROCESS, 0, 10) != 0) {
         FML_LOG(ERROR) << "Failed to set IO task runner priority";
       }
       break;
     }
     case fml::Thread::ThreadPriority::DISPLAY: {
-      // Android describes -8 as "most important display threads, for
-      // compositing the screen and retrieving input events". Conservatively
-      // set the raster thread to slightly lower priority than it.
-      cpu_set_t set;
-      CPU_ZERO(&set);
-
-      // Assume the last two CPUs are the fastest...
-      auto count = 8;
-      CPU_SET(count - 2, &set);
-      CPU_SET(count - 1, &set);
-      if (sched_setaffinity(gettid(), sizeof(set), &set) != 0) {
-        FML_LOG(ERROR) << "Failed to set affinity";
-      }
-      if (::setpriority(PRIO_PROCESS, 0, -10) != 0) {
-        FML_LOG(ERROR) << "Failed to set priority to -8";
-        // Defensive fallback. Depending on the OEM, it may not be possible
-        // to set priority to -5.
-        if (::setpriority(PRIO_PROCESS, 0, -2) != 0) {
-          FML_LOG(ERROR) << "Failed to set raster task runner priority";
-        }
+      RequestAffinity(CpuAffinity::kPerformance);
+      if (::setpriority(PRIO_PROCESS, 0, -1) != 0) {
+        FML_LOG(ERROR) << "Failed to set UI task runner priority";
       }
       break;
     }
     case fml::Thread::ThreadPriority::RASTER: {
+      RequestAffinity(CpuAffinity::kPerformance);
       // Android describes -8 as "most important display threads, for
       // compositing the screen and retrieving input events". Conservatively
       // set the raster thread to slightly lower priority than it.
-      cpu_set_t set;
-      auto count = 8;
-      CPU_ZERO(&set);
-
-      // Assume the last two CPUs are the fastest...
-      CPU_SET(count - 2, &set);
-      CPU_SET(count - 1, &set);
-      if (sched_setaffinity(gettid(), sizeof(set), &set) != 0) {
-        FML_LOG(ERROR) << "Failed to set affinity";
-      }
-      if (::setpriority(PRIO_PROCESS, 0, -10) != 0) {
-        FML_LOG(ERROR) << "Failed to set priority to -8";
+      if (::setpriority(PRIO_PROCESS, 0, -5) != 0) {
         // Defensive fallback. Depending on the OEM, it may not be possible
         // to set priority to -5.
         if (::setpriority(PRIO_PROCESS, 0, -2) != 0) {
@@ -101,23 +222,7 @@ static void AndroidPlatformThreadConfigSetter(
       break;
     }
     default:
-      cpu_set_t set;
-      sched_getaffinity(gettid(), sizeof(set), &set);
-      auto count = 8;
-      // Remove whatever affinities we set the engine and ui threads to.
-      CPU_ZERO(&set);
-      // Assume the first half of the CPUs are slower.
-      for (auto i = 0; i < 4; i++) {
-        CPU_SET(i, &set);
-      }
-      if (sched_setaffinity(gettid(), sizeof(set), &set) != 0) {
-        FML_LOG(ERROR) << "Failed to set affinity";
-      }
-
-      if (sched_setaffinity(0, sizeof(set), &set) != 0) {
-        FML_LOG(ERROR) << "Failed to set affinity";
-      }
-
+      RequestAffinity(CpuAffinity::kNotPerformance);
       if (::setpriority(PRIO_PROCESS, 0, 0) != 0) {
         FML_LOG(ERROR) << "Failed to set priority";
       }
