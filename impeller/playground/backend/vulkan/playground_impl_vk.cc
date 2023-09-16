@@ -98,6 +98,8 @@ PlaygroundImplVK::PlaygroundImplVK(PlaygroundSwitches switches)
   // regressions, but for now this is a workaround.
   //
   // TODO(matanlurey): https://github.com/flutter/flutter/issues/134852.
+  //
+  // (Note, if you're using MoltenVK, or Linux, you can comment out this line).
   context_vk->SetSyncPresentation(true);
 
   VkSurfaceKHR vk_surface;
