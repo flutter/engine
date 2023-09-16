@@ -3,8 +3,11 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/vulkan/test/mock_vulkan.h"
+#include <cstring>
+#include <utility>
 #include <vector>
 #include "fml/macros.h"
+#include "fml/thread_local.h"
 #include "impeller/base/thread_safety.h"
 #include "impeller/renderer/backend/vulkan/vk.h"  // IWYU pragma: keep.
 
@@ -80,25 +83,41 @@ class MockDevice final {
 
 void noop() {}
 
+FML_THREAD_LOCAL std::vector<std::string> g_instance_extensions;
+
 VkResult vkEnumerateInstanceExtensionProperties(
     const char* pLayerName,
     uint32_t* pPropertyCount,
     VkExtensionProperties* pProperties) {
   if (!pProperties) {
-    *pPropertyCount = 2;
-
+    *pPropertyCount = g_instance_extensions.size();
   } else {
-    strcpy(pProperties[0].extensionName, "VK_KHR_surface");
-    pProperties[0].specVersion = 0;
-    strcpy(pProperties[1].extensionName, "VK_MVK_macos_surface");
-    pProperties[1].specVersion = 0;
+    uint32_t count = 0;
+    for (const std::string& ext : g_instance_extensions) {
+      strncpy(pProperties[count].extensionName, ext.c_str(),
+              sizeof(VkExtensionProperties::extensionName));
+      pProperties[count].specVersion = 0;
+      count++;
+    }
   }
   return VK_SUCCESS;
 }
 
+FML_THREAD_LOCAL std::vector<std::string> g_instance_layers;
+
 VkResult vkEnumerateInstanceLayerProperties(uint32_t* pPropertyCount,
                                             VkLayerProperties* pProperties) {
-  *pPropertyCount = 0;
+  if (!pProperties) {
+    *pPropertyCount = g_instance_layers.size();
+  } else {
+    uint32_t count = 0;
+    for (const std::string& layer : g_instance_layers) {
+      strncpy(pProperties[count].layerName, layer.c_str(),
+              sizeof(VkLayerProperties::layerName));
+      pProperties[count].specVersion = 0;
+      count++;
+    }
+  }
   return VK_SUCCESS;
 }
 
@@ -429,7 +448,15 @@ VkResult vkCreateFence(VkDevice device,
                        const VkFenceCreateInfo* pCreateInfo,
                        const VkAllocationCallbacks* pAllocator,
                        VkFence* pFence) {
-  *pFence = reinterpret_cast<VkFence>(0xfe0ce);
+  MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
+  *pFence = reinterpret_cast<VkFence>(new MockFence());
+  return VK_SUCCESS;
+}
+
+VkResult vkDestroyFence(VkDevice device,
+                        VkFence fence,
+                        const VkAllocationCallbacks* pAllocator) {
+  delete reinterpret_cast<MockFence*>(fence);
   return VK_SUCCESS;
 }
 
@@ -449,6 +476,22 @@ VkResult vkWaitForFences(VkDevice device,
 }
 
 VkResult vkGetFenceStatus(VkDevice device, VkFence fence) {
+  MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
+  MockFence* mock_fence = reinterpret_cast<MockFence*>(fence);
+  return mock_fence->GetStatus();
+}
+
+VkResult vkCreateDebugUtilsMessengerEXT(
+    VkInstance instance,
+    const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+    const VkAllocationCallbacks* pAllocator,
+    VkDebugUtilsMessengerEXT* pMessenger) {
+  return VK_SUCCESS;
+}
+
+VkResult vkSetDebugUtilsObjectNameEXT(
+    VkDevice device,
+    const VkDebugUtilsObjectNameInfoEXT* pNameInfo) {
   return VK_SUCCESS;
 }
 
@@ -540,27 +583,38 @@ PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
     return (PFN_vkVoidFunction)vkEndCommandBuffer;
   } else if (strcmp("vkCreateFence", pName) == 0) {
     return (PFN_vkVoidFunction)vkCreateFence;
+  } else if (strcmp("vkDestroyFence", pName) == 0) {
+    return (PFN_vkVoidFunction)vkDestroyFence;
   } else if (strcmp("vkQueueSubmit", pName) == 0) {
     return (PFN_vkVoidFunction)vkQueueSubmit;
   } else if (strcmp("vkWaitForFences", pName) == 0) {
     return (PFN_vkVoidFunction)vkWaitForFences;
   } else if (strcmp("vkGetFenceStatus", pName) == 0) {
     return (PFN_vkVoidFunction)vkGetFenceStatus;
+  } else if (strcmp("vkCreateDebugUtilsMessengerEXT", pName) == 0) {
+    return (PFN_vkVoidFunction)vkCreateDebugUtilsMessengerEXT;
+  } else if (strcmp("vkSetDebugUtilsObjectNameEXT", pName) == 0) {
+    return (PFN_vkVoidFunction)vkSetDebugUtilsObjectNameEXT;
   }
   return noop;
 }
 
 }  // namespace
 
-std::shared_ptr<ContextVK> CreateMockVulkanContext(
-    const std::function<void(ContextVK::Settings&)>& settings_callback) {
+MockVulkanContextBuilder::MockVulkanContextBuilder()
+    : instance_extensions_({"VK_KHR_surface", "VK_MVK_macos_surface"}) {}
+
+std::shared_ptr<ContextVK> MockVulkanContextBuilder::Build() {
   auto message_loop = fml::ConcurrentMessageLoop::Create();
   ContextVK::Settings settings;
   settings.proc_address_callback = GetMockVulkanProcAddress;
-  if (settings_callback) {
-    settings_callback(settings);
+  if (settings_callback_) {
+    settings_callback_(settings);
   }
-  return ContextVK::Create(std::move(settings));
+  g_instance_extensions = instance_extensions_;
+  g_instance_layers = instance_layers_;
+  std::shared_ptr<ContextVK> result = ContextVK::Create(std::move(settings));
+  return result;
 }
 
 std::shared_ptr<std::vector<std::string>> GetMockVulkanFunctions(

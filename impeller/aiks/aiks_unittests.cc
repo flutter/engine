@@ -5,6 +5,7 @@
 #include <array>
 #include <cmath>
 #include <cstdlib>
+#include <iostream>
 #include <memory>
 #include <tuple>
 #include <utility>
@@ -1262,6 +1263,32 @@ TEST_P(AiksTest, CanRenderDifferencePaths) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+// Regression test for https://github.com/flutter/flutter/issues/134816.
+//
+// It should be possible to draw 3 lines, and not have an implicit close path.
+TEST_P(AiksTest, CanDrawAnOpenPath) {
+  Canvas canvas;
+
+  // Starting at (50, 50), draw lines from:
+  // 1. (50, height)
+  // 2. (width, height)
+  // 3. (width, 50)
+  PathBuilder builder;
+  builder.MoveTo({50, 50});
+  builder.LineTo({50, 100});
+  builder.LineTo({100, 100});
+  builder.LineTo({100, 50});
+
+  Paint paint;
+  paint.color = Color::Red();
+  paint.style = Paint::Style::kStroke;
+  paint.stroke_width = 10;
+
+  canvas.DrawPath(builder.TakePath(), paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 static sk_sp<SkData> OpenFixtureAsSkData(const char* fixture_name) {
   auto mapping = flutter::testing::OpenFixtureAsMapping(fixture_name);
   if (!mapping) {
@@ -1308,7 +1335,11 @@ bool RenderTextInCanvasSkia(const std::shared_ptr<Context>& context,
   }
 
   // Create the Impeller text frame and draw it at the designated baseline.
-  auto frame = MakeTextFrameFromTextBlobSkia(blob);
+  auto maybe_frame = MakeTextFrameFromTextBlobSkia(blob);
+  if (!maybe_frame.has_value()) {
+    return false;
+  }
+  auto frame = maybe_frame.value();
 
   Paint text_paint;
   text_paint.color = Color::Yellow().WithAlpha(options.alpha);
@@ -1497,7 +1528,7 @@ TEST_P(AiksTest, CanRenderTextOutsideBoundaries) {
     {
       auto blob = SkTextBlob::MakeFromString(t.text, sk_font);
       ASSERT_NE(blob, nullptr);
-      auto frame = MakeTextFrameFromTextBlobSkia(blob);
+      auto frame = MakeTextFrameFromTextBlobSkia(blob).value();
       canvas.DrawTextFrame(frame, Point(), text_paint);
     }
     canvas.Restore();
@@ -3101,7 +3132,12 @@ TEST_P(AiksTest, TextForegroundShaderWithTransform) {
 
   auto blob = SkTextBlob::MakeFromString("Hello", sk_font);
   ASSERT_NE(blob, nullptr);
-  auto frame = MakeTextFrameFromTextBlobSkia(blob);
+  auto maybe_frame = MakeTextFrameFromTextBlobSkia(blob);
+  ASSERT_TRUE(maybe_frame.has_value());
+  if (!maybe_frame.has_value()) {
+    return;
+  }
+  auto frame = maybe_frame.value();
   canvas.DrawTextFrame(frame, Point(), text_paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
