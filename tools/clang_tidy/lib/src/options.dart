@@ -8,9 +8,7 @@ import 'package:args/args.dart';
 import 'package:engine_repo_tools/engine_repo_tools.dart';
 import 'package:path/path.dart' as path;
 
-// Path to root of the flutter/engine repository containing this script.
-final String _engineRoot = path.dirname(path.dirname(path.dirname(path.dirname(path.fromUri(io.Platform.script)))));
-
+final Engine _engineRoot = Engine.findWithin(path.dirname(path.fromUri(io.Platform.script)));
 
 /// Adds warnings as errors for only specific runs.  This is helpful if migrating one platform at a time.
 String? _platformSpecificWarningsAsErrors(ArgResults options) {
@@ -94,7 +92,11 @@ class Options {
     StringSink? errSink,
     Engine? engine,
   }) {
-    final ArgResults argResults = _argParser(engine: engine).parse(arguments);
+    // TODO(matanlurey): Refactor this further, ideally moving all of the engine
+    // resolution logic (i.e. --src-dir, --target-variant, --compile-commands)
+    // into a separate method, and perhaps also adding `engine.output(name)`
+    // to engine_repo_tools instead of path manipulation inlined below.
+    final ArgResults argResults = _argParser(defaultEngine: engine).parse(arguments);
 
     String? buildCommandsPath = argResults['compile-commands'] as String?;
 
@@ -136,9 +138,9 @@ class Options {
     );
   }
 
-  static ArgParser _argParser({required Engine? engine}) {
-    engine ??= Engine.tryFindWithin();
-    final io.Directory? latestBuild = engine?.latestOutput()?.path;
+  static ArgParser _argParser({required Engine? defaultEngine}) {
+    defaultEngine ??= _engineRoot;
+    final io.Directory? latestBuild = defaultEngine.latestOutput()?.path;
     return ArgParser()
       ..addFlag(
         'help',
@@ -194,7 +196,7 @@ class Options {
         'src-dir',
         help: 'Path to the engine src directory. Cannot be used with --compile-commands.',
         valueHelp: 'path/to/engine/src',
-        defaultsTo: path.dirname(_engineRoot),
+        defaultsTo: _engineRoot.srcDir.path,
       )
       ..addOption(
         'checks',
@@ -225,7 +227,7 @@ class Options {
   final int? shardId;
 
   /// The root of the flutter/engine repository.
-  final io.Directory repoPath = io.Directory(_engineRoot);
+  final io.Directory repoPath = _engineRoot.flutterDir;
 
   /// Argument sent as `warnings-as-errors` to clang-tidy.
   final String? warningsAsErrors;
@@ -263,7 +265,7 @@ class Options {
       'Usage: bin/main.dart [--help] [--lint-all] [--lint-head] [--fix] [--verbose] '
       '[--diff-branch] [--target-variant variant] [--src-dir path/to/engine/src]',
     );
-    _errSink.writeln(_argParser(engine: engine).usage);
+    _errSink.writeln(_argParser(defaultEngine: engine).usage);
   }
 
   /// Command line argument validation.

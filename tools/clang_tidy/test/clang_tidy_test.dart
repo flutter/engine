@@ -111,7 +111,7 @@ void _withTempFile(String prefix, void Function(String path) func) {
 Future<int> main(List<String> args) async {
   final String? buildCommands =
       args.firstOrNull ??
-      Engine.findWithin().latestOutput()?.compileCommandsJson?.path;
+      Engine.findWithin().latestOutput()?.compileCommandsJson.path;
 
   if (buildCommands == null || args.length > 1) {
     io.stderr.writeln(
