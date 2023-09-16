@@ -162,9 +162,7 @@ void InitCPUInfo(size_t cpu_count) {
 bool RequestAffinity(CpuAffinity affinity) {
   // Populate CPU Info if undefined.
   auto count = std::thread::hardware_concurrency();
-  std::call_once(cpu_tracker_flag_, [count]() {
-    InitCPUInfo(count);
-  });
+  std::call_once(cpu_tracker_flag_, [count]() { InitCPUInfo(count); });
   if (tracker_ == nullptr) {
     return true;
   }
