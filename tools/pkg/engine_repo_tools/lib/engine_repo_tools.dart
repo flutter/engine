@@ -308,14 +308,10 @@ final class Output {
   /// The directory containing the output target.
   final io.Directory path;
 
-  /// The `compile_commands.json` file for this output target.
+  /// The `compile_commands.json` file that should exist for this output target.
   ///
-  /// Returns `null` if the file does not exist.
-  io.File? get compileCommandsJson {
-    final io.File file = io.File(p.join(path.path, 'compile_commands.json'));
-    if (!file.existsSync()) {
-      return null;
-    }
-    return file;
+  /// The file may not exist.
+  io.File get compileCommandsJson {
+    return io.File(p.join(path.path, 'compile_commands.json'));
   }
 }
