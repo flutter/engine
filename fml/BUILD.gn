@@ -19,6 +19,8 @@ source_set("fml") {
     "concurrent_message_loop.cc",
     "concurrent_message_loop.h",
     "container.h",
+    "cpu_affinity.cc",
+    "cpu_affinity.h",
     "delayed_task.cc",
     "delayed_task.h",
     "eintr_wrapper.h",
@@ -324,6 +326,7 @@ if (enable_unittests) {
       "closure_unittests.cc",
       "command_line_unittest.cc",
       "container_unittests.cc",
+      "cpu_affinity_unittests.cc",
       "endianness_unittests.cc",
       "file_unittest.cc",
       "hash_combine_unittests.cc",
@@ -367,10 +370,6 @@ if (enable_unittests) {
         "platform/win/file_win_unittests.cc",
         "platform/win/wstring_conversion_unittests.cc",
       ]
-    }
-
-    if (is_android) {
-      sources += [ "platform/android/cpu_affiity_unittests.cc" ]
     }
 
     deps = [
