@@ -8,8 +8,6 @@ import("//flutter/testing/testing.gni")
 
 source_set("fml") {
   sources = [
-    "affinity.cc",
-    "affinity.h",
     "ascii_trie.cc",
     "ascii_trie.h",
     "backtrace.h",
@@ -172,6 +170,8 @@ source_set("fml") {
 
   if (is_android) {
     sources += [
+      "platform/android/cpu_affinity.cc",
+      "platform/android/cpu_affinity.h",
       "platform/android/jni_util.cc",
       "platform/android/jni_util.h",
       "platform/android/jni_weak_ref.cc",
@@ -367,6 +367,10 @@ if (enable_unittests) {
         "platform/win/file_win_unittests.cc",
         "platform/win/wstring_conversion_unittests.cc",
       ]
+    }
+
+    if (is_android) {
+      sources += [ "platform/android/cpu_affiity_unittests.cc" ]
     }
 
     deps = [

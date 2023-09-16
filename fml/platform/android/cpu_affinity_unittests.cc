@@ -2,12 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/fml/affinity.h"
+#include "cpu_affinity.h"
+
+#include "gtest/gtest.h"
+#include "logging.h"
 
 namespace fml {
+namespace testing {
 
-bool RequestAffinity(CpuAffinity affinity) {
-  return false;
+TEST(CpuAffinity, CanDoThing) {
+  EXPECT_EQ(true, false);
 }
 
+}  // namespace testing
 }  // namespace fml
