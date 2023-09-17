@@ -674,6 +674,7 @@
 ../../../fuchsia/sdk/linux/pkg/fidl_cpp_v2/meta.json
 ../../../fuchsia/sdk/linux/pkg/fidl_cpp_wire/meta.json
 ../../../fuchsia/sdk/linux/pkg/fidl_driver/meta.json
+../../../fuchsia/sdk/linux/pkg/fidl_driver_natural/meta.json
 ../../../fuchsia/sdk/linux/pkg/fidl_driver_transport/meta.json
 ../../../fuchsia/sdk/linux/pkg/fit-promise/meta.json
 ../../../fuchsia/sdk/linux/pkg/fit/meta.json
