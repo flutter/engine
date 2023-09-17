@@ -100,7 +100,7 @@ std::optional<int32_t> ReadIntFromFile(const std::string& path) {
     free(data);
     return std::nullopt;
   }
-  // zero end of buffer.
+  // Ensure zeroed end of buffer before reading.
   data[data_length] = 0;
 
   // Dont use stoi because if this data isnt a parseable number then it
@@ -108,6 +108,8 @@ std::optional<int32_t> ReadIntFromFile(const std::string& path) {
   int speed = 0;
   std::istringstream input(data);
   input >> speed;
+  free(data);
+
   if (speed > 0) {
     return speed;
   }
