@@ -78,8 +78,7 @@ void SurfaceTextureExternalTexture::Paint(PaintContext& context,
       context.canvas->DrawImage(dl_image_, {0, 0}, sampling, context.paint);
     }
   } else {
-    FML_LOG(WARNING)
-        << "No DlImage available for SurfaceTextureExternalTexture to paint.";
+    FML_LOG(WARNING) << "No DlImage available.";
   }
 }
 
