@@ -42,5 +42,7 @@ CheckOptions:
   - key: readability-identifier-naming.PrivateMemberSuffix
     value: "_"
 
-# Lint headers within paths that don't contain "third_party/".
-HeaderFilterRegex: "^(?!third_party/).*$"
+# Lint headers within paths contain "/flutter/".
+# Note this is because of our buildroot setup, so the full path of a lint is:
+# "../../flutter/impeller/core/runtime_types.h:1:1" as reported.
+HeaderFilterRegex: ".*\\flutter\\.*"
