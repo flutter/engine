@@ -4,10 +4,9 @@
 
 #include <thread>
 
-#include "flutter/fml/synchronization/count_down_latch.h"
-#include "flutter/testing/testing.h"
+#include "flutter/testing/testing.h"  // IWYU pragma: keep
+#include "fml/synchronization/waitable_event.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
-#include "impeller/renderer/backend/vulkan/fence_waiter_vk.h"
 #include "impeller/renderer/backend/vulkan/test/mock_vulkan.h"
 
 namespace impeller {
@@ -18,7 +17,7 @@ TEST(CommandEncoderVKTest, DeleteEncoderAfterThreadDies) {
   // command buffers before it cleans up its command pool.
   std::shared_ptr<std::vector<std::string>> called_functions;
   {
-    auto context = CreateMockVulkanContext();
+    auto context = MockVulkanContextBuilder().Build();
     called_functions = GetMockVulkanFunctions(context->GetDevice());
     std::shared_ptr<CommandEncoderVK> encoder;
     std::thread thread([&] {
@@ -26,6 +25,7 @@ TEST(CommandEncoderVKTest, DeleteEncoderAfterThreadDies) {
       encoder = factory.Create();
     });
     thread.join();
+    context->Shutdown();
   }
   auto destroy_pool =
       std::find(called_functions->begin(), called_functions->end(),
@@ -46,7 +46,7 @@ TEST(CommandEncoderVKTest, CleanupAfterSubmit) {
   {
     fml::AutoResetWaitableEvent wait_for_submit;
     fml::AutoResetWaitableEvent wait_for_thread_join;
-    auto context = CreateMockVulkanContext();
+    auto context = MockVulkanContextBuilder().Build();
     std::thread thread([&] {
       CommandEncoderFactoryVK factory(context);
       std::shared_ptr<CommandEncoderVK> encoder = factory.Create();
@@ -60,7 +60,9 @@ TEST(CommandEncoderVKTest, CleanupAfterSubmit) {
     wait_for_thread_join.Signal();
     wait_for_submit.Wait();
     called_functions = GetMockVulkanFunctions(context->GetDevice());
+    context->Shutdown();
   }
+
   auto destroy_pool =
       std::find(called_functions->begin(), called_functions->end(),
                 "vkDestroyCommandPool");
