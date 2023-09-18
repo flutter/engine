@@ -4,8 +4,8 @@
 
 #include "flutter/fml/cpu_affinity.h"
 
+#include <fstream>
 #include <optional>
-#include <sstream>
 #include <string>
 
 namespace fml {
@@ -61,55 +61,14 @@ const std::vector<size_t>& CPUSpeedTracker::GetIndices(
 // required because files under /proc do not always return a valid size
 // when using fseek(0, SEEK_END) + ftell(). Nor can they be mmap()-ed.
 std::optional<int32_t> ReadIntFromFile(const std::string& path) {
-  size_t data_length = 0u;
-  FILE* fp = fopen(path.c_str(), "r");
-  if (fp == nullptr) {
-    return std::nullopt;
-  }
-  for (;;) {
-    char buffer[256];
-    size_t n = fread(buffer, 1, sizeof(buffer), fp);
-    if (n == 0) {
-      break;
-    }
-    data_length += n;
-  }
-  fclose(fp);
-
-  if (data_length <= 0) {
-    return std::nullopt;
-  }
-
-  // Read the contents of the cpuinfo file.
-  char* data = reinterpret_cast<char*>(malloc(data_length + 1));
-  fp = fopen(path.c_str(), "r");
-  if (fp == nullptr) {
-    free(data);
-    return std::nullopt;
-  }
-  for (uintptr_t offset = 0; offset < data_length;) {
-    size_t n = fread(data + offset, 1, data_length - offset, fp);
-    if (n == 0) {
-      break;
-    }
-    offset += n;
-  }
-  fclose(fp);
-
-  if (data == nullptr) {
-    free(data);
-    return std::nullopt;
-  }
-  // Ensure zeroed end of buffer before reading.
-  data[data_length] = 0;
+  // size_t data_length = 0u;
+  std::ifstream file;
+  file.open(path.c_str());
 
   // Dont use stoi because if this data isnt a parseable number then it
   // will abort, as we compile with exceptions disabled.
   int speed = 0;
-  std::istringstream input(data);
-  input >> speed;
-  free(data);
-
+  file >> speed;
   if (speed > 0) {
     return speed;
   }
