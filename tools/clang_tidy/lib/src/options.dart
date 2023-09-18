@@ -185,7 +185,10 @@ class Options {
         'target-variant',
         aliases: <String>['variant'],
         help: 'The engine variant directory name containing compile_commands.json '
-              'created by running "tools/gn". Cannot be used with --compile-commands.',
+              'created by running "tools/gn".\n\nIf not provided, the default is '
+              'the latest build in the engine defined by --src-dir (or the '
+              'default path, see --src-dir for details).\n\n'
+              'Cannot be used with --compile-commands.',
         valueHelp: 'host_debug|android_debug_unopt|ios_debug|ios_debug_sim_unopt',
         defaultsTo: latestBuild == null ? 'host_debug' : path.basename(latestBuild.path),
       )
@@ -194,7 +197,11 @@ class Options {
               'checks that will be treated as errors when running debug_host on mac.')
       ..addOption(
         'src-dir',
-        help: 'Path to the engine src directory. Cannot be used with --compile-commands.',
+        help:
+              'Path to the engine src directory.\n\n'
+              'If not provided, the default is the engine root directory that '
+              'contains the `clang_tidy` tool.\n\n'
+              'Cannot be used with --compile-commands.',
         valueHelp: 'path/to/engine/src',
         defaultsTo: _engineRoot.srcDir.path,
       )
