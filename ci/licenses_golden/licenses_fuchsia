@@ -1,4 +1,4 @@
-Signature: 3bac45365f2bb8627d6e570a793365b8
+Signature: c3fd941dfa4989c98789c7cebb5617fc
 
 ====================================================================================================
 LIBRARY: fuchsia_sdk
@@ -3755,6 +3755,7 @@ ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.resolution/overview.fi
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.resolution/package.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.resolution/resolver.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.sandbox/sandbox.fidl + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/namespace.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/overview.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.debugdata/publisher.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics/overview.fidl + ../../../fuchsia/sdk/linux/LICENSE
@@ -4003,6 +4004,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.resolution/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.resolution/package.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.resolution/resolver.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.sandbox/sandbox.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/namespace.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.debugdata/publisher.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics/overview.fidl

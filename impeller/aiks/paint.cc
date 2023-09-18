@@ -58,17 +58,25 @@ std::shared_ptr<Contents> Paint::CreateContentsForGeometry(
 
 std::shared_ptr<Contents> Paint::WithFilters(
     std::shared_ptr<Contents> input) const {
-  input = WithColorFilter(input, /*absorb_opacity=*/true);
+  input = WithColorFilter(input, ColorFilterContents::AbsorbOpacity::kYes);
   input = WithInvertFilter(input);
-  input = WithImageFilter(input, Matrix(), /*is_subpass=*/false);
+  auto image_filter =
+      WithImageFilter(input, Matrix(), Entity::RenderingMode::kDirect);
+  if (image_filter) {
+    input = image_filter;
+  }
   return input;
 }
 
 std::shared_ptr<Contents> Paint::WithFiltersForSubpassTarget(
     std::shared_ptr<Contents> input,
     const Matrix& effect_transform) const {
-  input = WithImageFilter(input, effect_transform, /*is_subpass=*/true);
-  input = WithColorFilter(input, /*absorb_opacity=*/true);
+  auto image_filter =
+      WithImageFilter(input, effect_transform, Entity::RenderingMode::kSubpass);
+  if (image_filter) {
+    input = image_filter;
+  }
+  input = WithColorFilter(input, ColorFilterContents::AbsorbOpacity::kYes);
   return input;
 }
 
@@ -81,22 +89,22 @@ std::shared_ptr<Contents> Paint::WithMaskBlur(std::shared_ptr<Contents> input,
   return input;
 }
 
-std::shared_ptr<Contents> Paint::WithImageFilter(
-    std::shared_ptr<Contents> input,
+std::shared_ptr<FilterContents> Paint::WithImageFilter(
+    const FilterInput::Variant& input,
     const Matrix& effect_transform,
-    bool is_subpass) const {
+    Entity::RenderingMode rendering_mode) const {
   if (!image_filter) {
-    return input;
+    return nullptr;
   }
   auto filter = image_filter->WrapInput(FilterInput::Make(input));
-  filter->SetIsForSubpass(is_subpass);
+  filter->SetRenderingMode(rendering_mode);
   filter->SetEffectTransform(effect_transform);
   return filter;
 }
 
 std::shared_ptr<Contents> Paint::WithColorFilter(
     std::shared_ptr<Contents> input,
-    bool absorb_opacity) const {
+    ColorFilterContents::AbsorbOpacity absorb_opacity) const {
   // Image input types will directly set their color filter,
   // if any. See `TiledTextureContents.SetColorFilter`.
   if (color_source.GetType() == ColorSource::Type::kImage) {
@@ -179,7 +187,8 @@ std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
 
   if (color_filter) {
     color_contents = color_filter->WrapWithGPUColorFilter(
-        FilterInput::Make(color_source_contents), true);
+        FilterInput::Make(color_source_contents),
+        ColorFilterContents::AbsorbOpacity::kYes);
   }
 
   /// 5. Composite the color source with the blurred mask.

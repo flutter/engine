@@ -41,7 +41,7 @@ class EntityPass {
   using BackdropFilterProc = std::function<std::shared_ptr<FilterContents>(
       FilterInput::Ref,
       const Matrix& effect_transform,
-      bool is_subpass)>;
+      Entity::RenderingMode rendering_mode)>;
 
   struct StencilCoverageLayer {
     std::optional<Rect> coverage;
@@ -141,6 +141,9 @@ class EntityPass {
 
   void SetEnableOffscreenCheckerboard(bool enabled);
 
+  //----------------------------------------------------------------------------
+  /// @brief  Get the coverage of an unfiltered subpass.
+  ///
   std::optional<Rect> GetSubpassCoverage(
       const EntityPass& subpass,
       std::optional<Rect> coverage_limit) const;
