@@ -171,7 +171,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// * [PlatformDisptacher.views] for a list of all [FlutterView]s provided
   ///   by the platform.
   @override
-  ui.FlutterView? get implicitView => viewData[kImplicitViewId];
+  EngineSingletonFlutterWindow? get implicitView =>
+      viewData[kImplicitViewId] as EngineSingletonFlutterWindow?;
 
   /// A callback that is invoked whenever the platform's [devicePixelRatio],
   /// [physicalSize], [padding], [viewInsets], or [systemGestureInsets]
@@ -505,10 +506,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             // TODO(a-wallen): As multi-window support expands, the pop call
             // will need to include the view ID. Right now only one view is
             // supported.
-            (viewData[kImplicitViewId]! as EngineSingletonFlutterWindow)
-                .browserHistory
-                .exit()
-                .then((_) {
+            implicitView!.browserHistory.exit().then((_) {
               replyToPlatformMessage(
                   callback, codec.encodeSuccessEnvelope(true));
             });
@@ -535,7 +533,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             return;
           case 'SystemChrome.setPreferredOrientations':
             final List<dynamic> arguments = decoded.arguments as List<dynamic>;
-            flutterViewEmbedder.setPreferredOrientation(arguments).then((bool success) {
+            ScreenOrientation.instance.setPreferredOrientation(arguments).then((bool success) {
               replyToPlatformMessage(
                   callback, codec.encodeSuccessEnvelope(success));
             });
@@ -585,7 +583,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         final Map<dynamic, dynamic> arguments = decoded.arguments as Map<dynamic, dynamic>;
         switch (decoded.method) {
           case 'activateSystemCursor':
-            MouseCursor.instance!.activateSystemCursor(arguments.tryString('kind'));
+            implicitView!.mouseCursor.activateSystemCursor(arguments.tryString('kind'));
         }
         return;
 
@@ -618,9 +616,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         // TODO(a-wallen): As multi-window support expands, the navigation call
         // will need to include the view ID. Right now only one view is
         // supported.
-        (viewData[kImplicitViewId]! as EngineSingletonFlutterWindow)
-            .handleNavigationMessage(data)
-            .then((bool handled) {
+        implicitView!.handleNavigationMessage(data).then((bool handled) {
           if (handled) {
             const MethodCodec codec = JSONMethodCodec();
             replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
@@ -1231,8 +1227,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///    requests from the embedder.
   @override
   String get defaultRouteName {
-    return _defaultRouteName ??=
-        (viewData[kImplicitViewId]! as EngineSingletonFlutterWindow).browserHistory.currentPath;
+    return _defaultRouteName ??= implicitView!.browserHistory.currentPath;
   }
 
   /// Lazily initialized when the `defaultRouteName` getter is invoked.
