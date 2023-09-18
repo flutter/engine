@@ -42,5 +42,5 @@ CheckOptions:
   - key: readability-identifier-naming.PrivateMemberSuffix
     value: "_"
 
-# Ignores system headers and files in paths that contain "third_party".
-HeaderFilterRegex: ".*third_party.*"
+# Lint headers within paths that don't contain "third_party/".
+HeaderFilterRegex: "^(?!third_party/).*$"
