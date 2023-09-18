@@ -73,6 +73,17 @@
                            "supported, downgrading the color gamut to sRGB.";
     }
     self.layer.opaque = opaque;
+
+    // This line is necessary. CoreAnimation(or UIKit) may take this to do
+    // something to compute the final frame presented on screen, if we don't set this,
+    // it will make it take long time for us to take next CAMetalDrawable and will
+    // cause constant junk during rendering. Note: setting any background color will
+    // disable opaque, which on full screen flutter apps removes the direct to display
+    // optimization. This can increase presentation time by a frame interval, which
+    // is problematic on high frame rate devices.
+    if (!opaque) {
+      self.backgroundColor = UIColor.whiteColor;
+    }
   }
 
   return self;
