@@ -30,8 +30,8 @@ const bool debugPrintPlatformMessages = false;
 const int kImplicitViewId = 0;
 
 /// The Web implementation of [ui.SingletonFlutterWindow].
-class EngineFlutterWindow extends ui.SingletonFlutterWindow {
-  EngineFlutterWindow(this.viewId, this.platformDispatcher) {
+class EngineSingletonFlutterWindow extends ui.SingletonFlutterWindow {
+  EngineSingletonFlutterWindow(this.viewId, this.platformDispatcher) {
     platformDispatcher.viewData[viewId] = this;
     platformDispatcher.windowConfigurations[viewId] = const ViewConfiguration();
     if (ui_web.isCustomUrlStrategySet) {
@@ -366,8 +366,10 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
 /// `dart:ui` window delegates to this value. However, this value has a wider
 /// API surface, providing Web-specific functionality that the standard
 /// `dart:ui` version does not.
-final EngineFlutterWindow window =
-    EngineFlutterWindow(kImplicitViewId, EnginePlatformDispatcher.instance);
+final EngineSingletonFlutterWindow window = EngineSingletonFlutterWindow(
+  kImplicitViewId,
+  EnginePlatformDispatcher.instance,
+);
 
 /// The Web implementation of [ui.ViewPadding].
 class ViewPadding implements ui.ViewPadding {

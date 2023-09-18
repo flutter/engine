@@ -8,7 +8,7 @@ import 'package:ui/ui.dart' as ui;
 extension SingletonFlutterWindowExtension on ui.SingletonFlutterWindow {
   /// Overrides the value of [physicalSize] in tests.
   set debugPhysicalSizeOverride(ui.Size? value) {
-    (this as EngineFlutterWindow).debugPhysicalSizeOverride = value;
+    (this as EngineSingletonFlutterWindow).debugPhysicalSizeOverride = value;
   }
 }
 
