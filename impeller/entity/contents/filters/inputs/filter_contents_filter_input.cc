@@ -58,6 +58,10 @@ void FilterContentsFilterInput::PopulateGlyphAtlas(
   filter_->PopulateGlyphAtlas(lazy_glyph_atlas, scale);
 }
 
+bool FilterContentsFilterInput::IsTranslationOnly() const {
+  return filter_->IsTranslationOnly();
+}
+
 bool FilterContentsFilterInput::IsLeaf() const {
   return false;
 }
@@ -71,8 +75,9 @@ void FilterContentsFilterInput::SetEffectTransform(const Matrix& matrix) {
   filter_->SetEffectTransform(matrix);
 }
 
-void FilterContentsFilterInput::SetIsForSubpass(bool is_for_subpass) {
-  filter_->SetIsForSubpass(is_for_subpass);
+void FilterContentsFilterInput::SetRenderingMode(
+    Entity::RenderingMode rendering_mode) {
+  filter_->SetRenderingMode(rendering_mode);
 }
 
 }  // namespace impeller
