@@ -219,11 +219,11 @@ IRect SurfaceMTL::coverage() const {
 }
 
 bool ShouldPresentSync() {
-  #ifdef FML_OS_IOS
-    return [[NSThread currentThread] isMainThread];
-  #else
-    return true;
-  #endif // FML_OS_IOS
+#ifdef FML_OS_IOS
+  return [[NSThread currentThread] isMainThread];
+#else
+  return true;
+#endif  // FML_OS_IOS
 }
 
 // |Surface|
