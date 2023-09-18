@@ -37,15 +37,16 @@ struct CpuIndexAndSpeed {
 /// @brief A class that computes the correct CPU indices for a requested CPU
 ///        affinity.
 ///
-///        Note: this is visible for testing.
+/// @note  This is visible for testing.
 class CPUSpeedTracker {
  public:
   explicit CPUSpeedTracker(std::vector<CpuIndexAndSpeed> data);
 
   /// @brief The class is valid if it has more than one CPU index and a distinct
-  /// set of
-  ///        efficiency or performance CPUs. If all CPUs are the same speed this
-  ///        returns false, and all requests to set affinity are ignored.
+  ///        set of efficiency or performance CPUs.
+  ///
+  ///        If all CPUs are the same speed this returns false, and all requests
+  ///        to set affinity are ignored.
   bool IsValid() const;
 
   /// @brief Return the set of CPU indices for the requested CPU affinity.
@@ -61,7 +62,7 @@ class CPUSpeedTracker {
   std::vector<size_t> not_performance_;
 };
 
-/// Visible for testing.
+/// @note Visible for testing.
 std::optional<int32_t> ReadIntFromFile(const std::string& path);
 
 }  // namespace fml

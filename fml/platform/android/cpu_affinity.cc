@@ -16,8 +16,8 @@ namespace fml {
 
 /// The CPUSpeedTracker is initialized once the first time a thread affinity is
 /// requested.
-std::once_flag cpu_tracker_flag_;
-static CPUSpeedTracker* tracker_;
+std::once_flag gCPUTrackerFlag;
+static CPUSpeedTracker* gCPUTracker;
 
 // For each CPU index provided, attempts to open the file
 // /sys/devices/system/cpu/cpu$NUM/cpufreq/cpuinfo_max_freq and parse a number
@@ -33,24 +33,24 @@ void InitCPUInfo(size_t cpu_count) {
       cpu_speeds.push_back({.index = i, .speed = speed.value()});
     }
   }
-  tracker_ = new CPUSpeedTracker(cpu_speeds);
+  gCPUTracker = new CPUSpeedTracker(cpu_speeds);
 }
 
 bool RequestAffinity(CpuAffinity affinity) {
   // Populate CPU Info if uninitialized.
   auto count = std::thread::hardware_concurrency();
-  std::call_once(cpu_tracker_flag_, [count]() { InitCPUInfo(count); });
-  if (tracker_ == nullptr) {
+  std::call_once(gCPUTrackerFlag, [count]() { InitCPUInfo(count); });
+  if (gCPUTracker == nullptr) {
     return true;
   }
 
-  if (!tracker_->IsValid()) {
+  if (!gCPUTracker->IsValid()) {
     return true;
   }
 
   cpu_set_t set;
   CPU_ZERO(&set);
-  for (const auto index : tracker_->GetIndices(affinity)) {
+  for (const auto index : gCPUTracker->GetIndices(affinity)) {
     CPU_SET(index, &set);
   }
   return sched_setaffinity(gettid(), sizeof(set), &set) == 0;
