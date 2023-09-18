@@ -28,12 +28,14 @@ enum class CpuAffinity {
 };
 
 struct CpuIndexAndSpeed {
+  // The index of the given CPU.
   size_t index;
-  int32_t speed;
+  // CPU speed in kHZ
+  int64_t speed;
 };
 
 /// @brief A class that computes the correct CPU indices for a requested CPU
-/// affinity.
+///        affinity.
 ///
 ///        Note: this is visible for testing.
 class CPUSpeedTracker {

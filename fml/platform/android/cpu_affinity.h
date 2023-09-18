@@ -12,6 +12,10 @@ namespace fml {
 ///
 ///        Returns true if successfull, or if it was a no-op. This function is
 ///        only supported on Android devices.
+///
+///        Affinity requests are based on documented CPU speed. This speed data
+///        is parsed from cpuinfo_max_freq files, see also:
+///        https://www.kernel.org/doc/Documentation/cpu-freq/user-guide.txt
 bool RequestAffinity(CpuAffinity affinity);
 
 }  // namespace fml

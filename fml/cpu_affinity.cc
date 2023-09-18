@@ -12,8 +12,8 @@ namespace fml {
 
 CPUSpeedTracker::CPUSpeedTracker(std::vector<CpuIndexAndSpeed> data)
     : cpu_speeds_(std::move(data)) {
-  std::optional<int32_t> max_speed = std::nullopt;
-  std::optional<int32_t> min_speed = std::nullopt;
+  std::optional<int64_t> max_speed = std::nullopt;
+  std::optional<int64_t> min_speed = std::nullopt;
   for (const auto& data : cpu_speeds_) {
     if (!max_speed.has_value() || data.speed > max_speed.value()) {
       max_speed = data.speed;
@@ -67,7 +67,7 @@ std::optional<int32_t> ReadIntFromFile(const std::string& path) {
 
   // Dont use stoi because if this data isnt a parseable number then it
   // will abort, as we compile with exceptions disabled.
-  int speed = 0;
+  int64_t speed = 0;
   file >> speed;
   if (speed > 0) {
     return speed;
