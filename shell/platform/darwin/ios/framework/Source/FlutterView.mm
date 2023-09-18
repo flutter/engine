@@ -73,12 +73,6 @@
                            "supported, downgrading the color gamut to sRGB.";
     }
     self.layer.opaque = opaque;
-
-    // This line is necessary. CoreAnimation(or UIKit) may take this to do
-    // something to compute the final frame presented on screen, if we don't set this,
-    // it will make it take long time for us to take next CAMetalDrawable and will
-    // cause constant junk during rendering.
-    self.backgroundColor = UIColor.clearColor;
   }
 
   return self;
