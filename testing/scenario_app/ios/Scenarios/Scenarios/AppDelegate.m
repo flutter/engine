@@ -10,6 +10,8 @@
 #import "TextPlatformView.h"
 
 // A UIViewController that sets YES for its preferedStatusBarHidden property.
+// StatusBar includes current time, which is non-deterministic. This ViewController
+// removes the StatusBar to make the screenshot deterministic.
 @interface NoStatusBarViewController : UIViewController
 
 @end
