@@ -723,7 +723,8 @@ def run_objc_tests(ios_variant='ios_debug_sim_unopt', test_filter=None):
       'xcrun '
       'simctl '
       'create '
-      '%s com.apple.CoreSimulator.SimDeviceType.iPhone-11 %s' % (new_simulator_name, runtime_id)
+      '%s com.apple.CoreSimulator.SimDeviceType.iPhone-11 %s' %
+      (new_simulator_name, runtime_id)
   ]
   run_cmd(create_simulator, shell=True)
 
