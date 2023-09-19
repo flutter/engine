@@ -273,7 +273,7 @@ public class TextInputPluginTest {
             true,
             false, // Delta model is disabled.
             TextInputChannel.TextCapitalization.NONE,
-            new TextInputChannel.InputType(TextInputChannel.TextInputType.TEXT, false, false),
+            new TextInputChannel.InputType(TextInputChannel.TextInputType.MULTILINE, false, false),
             null,
             null,
             null,
@@ -1304,6 +1304,42 @@ public class TextInputPluginTest {
 
     textInputPlugin.showTextInput(testView);
     assertEquals(testImm.isSoftInputVisible(), false);
+  }
+
+  @Test
+  public void inputConnection_textInputTypeMultilineAndSuggestionsDisabled() {
+    // Regression test for https://github.com/flutter/flutter/issues/71679.
+    View testView = new View(ctx);
+    DartExecutor dartExecutor = mock(DartExecutor.class);
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
+    TextInputPlugin textInputPlugin =
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
+    textInputPlugin.setTextInputClient(
+        0,
+        new TextInputChannel.Configuration(
+            false,
+            false,
+            false, // Disable suggestions.
+            true,
+            false,
+            TextInputChannel.TextCapitalization.NONE,
+            new TextInputChannel.InputType(TextInputChannel.TextInputType.MULTILINE, false, false),
+            null,
+            null,
+            null,
+            null,
+            null));
+
+    EditorInfo editorInfo = new EditorInfo();
+    InputConnection connection =
+        textInputPlugin.createInputConnection(testView, mock(KeyboardManager.class), editorInfo);
+
+    assertEquals(
+        editorInfo.inputType,
+        InputType.TYPE_CLASS_TEXT
+            | InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+            | InputType.TYPE_TEXT_VARIATION_PASSWORD);
   }
 
   // -------- Start: Autofill Tests -------
