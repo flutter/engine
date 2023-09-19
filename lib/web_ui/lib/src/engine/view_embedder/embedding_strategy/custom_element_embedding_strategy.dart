@@ -4,6 +4,7 @@
 
 import 'package:ui/src/engine/dom.dart';
 
+import '../hot_restart_cache_handler.dart';
 import 'embedding_strategy.dart';
 
 /// An [EmbeddingStrategy] that renders flutter inside a target host element.
