@@ -165,12 +165,12 @@ FLUTTER_DARWIN_EXPORT
  * Defines whether the channel should show warning messages when discarding messages
  * due to overflow.
  *
- * @param allowed When true, the channel is expected to overflow and warning messages
- *                will not be shown.
+ * @param warns When false, the channel is expected to overflow and warning messages
+ *              will not be shown.
  * @param name The channel name.
  * @param messenger The binary messenger.
  */
-+ (void)setWarnsOnOverflow:(BOOL)allowed
++ (void)setWarnsOnOverflow:(BOOL)warns
         forChannelWithName:(NSString*)name
            binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger;
 
@@ -178,10 +178,10 @@ FLUTTER_DARWIN_EXPORT
  * Defines whether the channel should show warning messages when discarding messages
  * due to overflow.
  *
- * @param allowed When true, the channel is expected to overflow and warning messages
- *                will not be shown.
+ * @param warns When false, the channel is expected to overflow and warning messages
+ *              will not be shown.
  */
-- (void)setWarnsOnOverflow:(BOOL)allowed;
+- (void)setWarnsOnOverflow:(BOOL)warns;
 
 @end
 

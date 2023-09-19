@@ -188,7 +188,7 @@ FLUTTER_ASSERT_ARC
   NSData* expectedMessage = [NSData dataWithBytes:bytes length:sizeof(bytes)];
 
   OCMExpect([binaryMessenger sendOnChannel:@"dev.flutter/channel-buffers" message:expectedMessage]);
-  [channel setWarnsOnOverflow:YES];
+  [channel setWarnsOnOverflow:NO];
   OCMVerifyAll(binaryMessenger);
   [binaryMessenger stopMocking];
 }
