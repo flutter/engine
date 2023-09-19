@@ -47,6 +47,12 @@ void runSemanticsTests() {
   group('Role managers', () {
     _testRoleManagerLifecycle();
   });
+  group('labels', () {
+    _testLabels();
+  });
+  group('labels for JAWS', () {
+    _testLabelsForJaws();
+  });
   group('container', () {
     _testContainer();
   });
@@ -337,120 +343,19 @@ void _testEngineSemanticsOwner() {
     expect(placeholder.isConnected, isFalse);
   });
 
-  void renderSemantics({String? label, String? tooltip}) {
-    final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
-    updateNode(
-      builder,
-      transform: Matrix4.identity().toFloat64(),
-      rect: const ui.Rect.fromLTRB(0, 0, 20, 20),
-      childrenInHitTestOrder: Int32List.fromList(<int>[1]),
-      childrenInTraversalOrder: Int32List.fromList(<int>[1]),
-    );
-    updateNode(
-      builder,
-      id: 1,
-      label: label ?? '',
-      tooltip: tooltip ?? '',
-      transform: Matrix4.identity().toFloat64(),
-      rect: const ui.Rect.fromLTRB(0, 0, 20, 20),
-    );
-    semantics().updateSemantics(builder.build());
-  }
-
-  void renderLabel(String label) {
-    renderSemantics(label: label);
-  }
-
-  test('produces an aria-label', () async {
-    semantics().semanticsEnabled = true;
-
-    // Create
-    renderLabel('Hello');
-
-    final Map<int, SemanticsObject> tree = semantics().debugSemanticsTree!;
-    expect(tree.length, 2);
-    expect(tree[0]!.id, 0);
-    expect(tree[0]!.element.tagName.toLowerCase(), 'flt-semantics');
-    expect(tree[1]!.id, 1);
-    expect(tree[1]!.label, 'Hello');
-
-    expectSemanticsTree('''
-<sem style="$rootSemanticStyle">
-  <sem-c>
-    <sem role="text" aria-label="Hello"></sem>
-  </sem-c>
-</sem>''');
-
-    // Update
-    renderLabel('World');
-
-    expectSemanticsTree('''
-<sem style="$rootSemanticStyle">
-  <sem-c>
-    <sem role="text" aria-label="World"></sem>
-  </sem-c>
-</sem>''');
-
-    // Remove
-    renderLabel('');
-
-    expectSemanticsTree('''
-<sem style="$rootSemanticStyle">
-  <sem-c>
-    <sem role="text"></sem>
-  </sem-c>
-</sem>''');
-
-    semantics().semanticsEnabled = false;
-  });
-
-  test('tooltip is part of label', () async {
-    semantics().semanticsEnabled = true;
-
-    // Create
-    renderSemantics(tooltip: 'tooltip');
-
-    final Map<int, SemanticsObject> tree = semantics().debugSemanticsTree!;
-    expect(tree.length, 2);
-    expect(tree[0]!.id, 0);
-    expect(tree[0]!.element.tagName.toLowerCase(), 'flt-semantics');
-    expect(tree[1]!.id, 1);
-    expect(tree[1]!.tooltip, 'tooltip');
-
-    expectSemanticsTree('''
-<sem style="$rootSemanticStyle">
-  <sem-c>
-    <sem aria-label="tooltip"></sem>
-  </sem-c>
-</sem>''');
-
-    // Update
-    renderSemantics(label: 'Hello', tooltip: 'tooltip');
-
-    expectSemanticsTree('''
-<sem style="$rootSemanticStyle">
-  <sem-c>
-    <sem role="text" aria-label="tooltip\nHello"></sem>
-  </sem-c>
-</sem>''');
-
-    // Remove
-    renderSemantics();
-
-    expectSemanticsTree('''
-<sem style="$rootSemanticStyle">
-  <sem-c>
-    <sem role="text"></sem>
-  </sem-c>
-</sem>''');
-
-    semantics().semanticsEnabled = false;
-  });
-
   test('clears semantics tree when disabled', () {
     expect(semantics().debugSemanticsTree, isEmpty);
     semantics().semanticsEnabled = true;
-    renderLabel('Hello');
+
+    final SemanticsTester tester = SemanticsTester(semantics());
+    tester.updateNode(
+      id: 0,
+      label: 'd',
+      transform: Matrix4.identity().toFloat64(),
+      rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+    );
+    tester.apply();
+
     expect(semantics().debugSemanticsTree, isNotEmpty);
     semantics().semanticsEnabled = false;
     expect(semantics().debugSemanticsTree, isEmpty);
@@ -554,6 +459,197 @@ void _testEngineSemanticsOwner() {
       <MockRoleManagerLogEntry>[
         (method: 'update', phase: SemanticsUpdatePhase.updating),
       ],
+    );
+
+    semantics().semanticsEnabled = false;
+  });
+}
+
+void renderLabelAndValue({String? label, String? tooltip}) {
+  final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+  updateNode(
+    builder,
+    transform: Matrix4.identity().toFloat64(),
+    rect: const ui.Rect.fromLTRB(0, 0, 20, 20),
+    childrenInHitTestOrder: Int32List.fromList(<int>[1]),
+    childrenInTraversalOrder: Int32List.fromList(<int>[1]),
+  );
+  updateNode(
+    builder,
+    id: 1,
+    label: label ?? '',
+    tooltip: tooltip ?? '',
+    transform: Matrix4.identity().toFloat64(),
+    rect: const ui.Rect.fromLTRB(0, 0, 20, 20),
+  );
+  semantics().updateSemantics(builder.build());
+}
+
+void _testLabels() {
+  test('produces an aria-label', () async {
+    semantics().semanticsEnabled = true;
+
+    // Create
+    renderLabelAndValue(label: 'Hello');
+
+    final Map<int, SemanticsObject> tree = semantics().debugSemanticsTree!;
+    expect(tree.length, 2);
+    expect(tree[0]!.id, 0);
+    expect(tree[0]!.element.tagName.toLowerCase(), 'flt-semantics');
+    expect(tree[1]!.id, 1);
+    expect(tree[1]!.label, 'Hello');
+
+    expectSemanticsTree('''
+<sem style="$rootSemanticStyle">
+  <sem-c>
+    <sem role="text" aria-label="Hello"></sem>
+  </sem-c>
+</sem>''');
+
+    // Update
+    renderLabelAndValue(label: 'World');
+
+    expectSemanticsTree('''
+<sem style="$rootSemanticStyle">
+  <sem-c>
+    <sem role="text" aria-label="World"></sem>
+  </sem-c>
+</sem>''');
+
+    // Remove
+    renderLabelAndValue(label: '');
+
+    expectSemanticsTree('''
+<sem style="$rootSemanticStyle">
+  <sem-c>
+    <sem role="text"></sem>
+  </sem-c>
+</sem>''');
+
+    semantics().semanticsEnabled = false;
+  });
+
+  test('tooltip is part of label', () async {
+    semantics().semanticsEnabled = true;
+
+    // Create
+    renderLabelAndValue(tooltip: 'tooltip');
+
+    final Map<int, SemanticsObject> tree = semantics().debugSemanticsTree!;
+    expect(tree.length, 2);
+    expect(tree[0]!.id, 0);
+    expect(tree[0]!.element.tagName.toLowerCase(), 'flt-semantics');
+    expect(tree[1]!.id, 1);
+    expect(tree[1]!.tooltip, 'tooltip');
+
+    expectSemanticsTree('''
+<sem style="$rootSemanticStyle">
+  <sem-c>
+    <sem aria-label="tooltip"></sem>
+  </sem-c>
+</sem>''');
+
+    // Update
+    renderLabelAndValue(label: 'Hello', tooltip: 'tooltip');
+
+    expectSemanticsTree('''
+<sem style="$rootSemanticStyle">
+  <sem-c>
+    <sem role="text" aria-label="tooltip\nHello"></sem>
+  </sem-c>
+</sem>''');
+
+    // Remove
+    renderLabelAndValue();
+
+    expectSemanticsTree('''
+<sem style="$rootSemanticStyle">
+  <sem-c>
+    <sem role="text"></sem>
+  </sem-c>
+</sem>''');
+
+    semantics().semanticsEnabled = false;
+  });
+}
+
+void _testLabelsForJaws() {
+  setUp(() {
+    useJawsWorkaroundForLabels = true;
+  });
+
+  tearDown(() {
+    useJawsWorkaroundForLabels = false;
+  });
+
+  test('puts aria-label into a child span', () async {
+    semantics().semanticsEnabled = true;
+
+    // Create
+    renderLabelAndValue(label: 'Hello');
+
+    final Map<int, SemanticsObject> tree = semantics().debugSemanticsTree!;
+    expect(tree.length, 2);
+    expect(tree[0]!.id, 0);
+    expect(tree[0]!.element.tagName.toLowerCase(), 'flt-semantics');
+    expect(tree[1]!.id, 1);
+    expect(tree[1]!.label, 'Hello');
+
+    expectSemanticsTree('''
+<sem style="$rootSemanticStyle">
+  <sem-c>
+    <sem role="text">
+      <span aria-label="Hello"></span>
+    </sem>
+  </sem-c>
+</sem>''');
+
+    final DomElement originalSpan = domDocument.querySelector('span[aria-label="Hello"]')!;
+
+    // Update
+    renderLabelAndValue(label: 'World');
+
+    expectSemanticsTree('''
+<sem style="$rootSemanticStyle">
+  <sem-c>
+    <sem role="text">
+      <span aria-label="World"></span>
+    </sem>
+  </sem-c>
+</sem>''');
+
+    expect(
+      reason: 'Expect the previous span to be reused',
+      domDocument.querySelector('span[aria-label="World"]'),
+      originalSpan,
+    );
+
+    // Remove
+    renderLabelAndValue();
+
+    expectSemanticsTree('''
+<sem style="$rootSemanticStyle">
+  <sem-c>
+    <sem role="text"></sem>
+  </sem-c>
+</sem>''');
+
+    // Another update
+    renderLabelAndValue(label: 'Bonjour le monde');
+
+    expectSemanticsTree('''
+<sem style="$rootSemanticStyle">
+  <sem-c>
+    <sem role="text">
+      <span aria-label="Bonjour le monde"></span>
+    </sem>
+  </sem-c>
+</sem>''');
+
+    expect(
+      reason: 'Expect the previous span to be reused',
+      domDocument.querySelector('span[aria-label="Bonjour le monde"]'),
+      originalSpan,
     );
 
     semantics().semanticsEnabled = false;
