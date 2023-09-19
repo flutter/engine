@@ -8,6 +8,11 @@
 #include <chrono>
 #include <utility>
 
+#ifdef FML_OS_ANDROID
+#include "fml/cpu_affinity.h"
+#include "flutter/fml/platform/android/cpu_affinity.h"
+#endif // FML_OS_ANDROID
+
 #include "flutter/fml/thread.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/validation.h"
@@ -86,8 +91,11 @@ static std::vector<vk::Fence> GetFencesForWaitSet(const WaitSet& set) {
 void FenceWaiterVK::Main() {
   fml::Thread::SetCurrentThreadName(
       fml::Thread::ThreadConfig{"io.flutter.impeller.fence_waiter"});
-
+#ifdef FML_OS_ANDROID
+  // Since this thread mostly waits on fences, it doesn't need to be fast.
+  fml::RequestAffinity(fml::CpuAffinity::kEfficiency);
   using namespace std::literals::chrono_literals;
+#endif // FML_OS_ANDROID
 
   while (true) {
     // We'll read the terminate_ flag within the lock below.

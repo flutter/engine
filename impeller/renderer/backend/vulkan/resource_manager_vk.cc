@@ -8,6 +8,11 @@
 #include "flutter/fml/trace_event.h"
 #include "fml/logging.h"
 
+#ifdef FML_OS_ANDROID
+#include "fml/cpu_affinity.h"
+#include "flutter/fml/platform/android/cpu_affinity.h"
+#endif // FML_OS_ANDROID
+
 namespace impeller {
 
 std::shared_ptr<ResourceManagerVK> ResourceManagerVK::Create() {
@@ -39,6 +44,11 @@ void ResourceManagerVK::Start() {
 
   fml::Thread::SetCurrentThreadName(
       fml::Thread::ThreadConfig{"io.flutter.impeller.resource_manager"});
+#ifdef FML_OS_ANDROID
+  // While this code calls destructors it doesn't need to be particularly fast with them,
+  // as long as it doesn't interrupt raster thread.
+  fml::RequestAffinity(fml::CpuAffinity::kEfficiency);
+#endif // FML_OS_ANDROID
 
   bool should_exit = false;
   while (!should_exit) {

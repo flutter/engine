@@ -61,7 +61,6 @@ const std::vector<size_t>& CPUSpeedTracker::GetIndices(
 // required because files under /proc do not always return a valid size
 // when using fseek(0, SEEK_END) + ftell(). Nor can they be mmap()-ed.
 std::optional<int64_t> ReadIntFromFile(const std::string& path) {
-  // size_t data_length = 0u;
   std::ifstream file;
   file.open(path.c_str());
 

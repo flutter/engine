@@ -8,6 +8,7 @@
 #include <pthread.h>
 #include <sys/resource.h>
 #include <sys/time.h>
+#include "flutter/fml/platform/android/cpu_affinity.h"
 #endif  // FML_OS_ANDROID
 
 #include <map>
@@ -132,6 +133,9 @@ void ContextVK::Setup(Settings settings) {
       std::min(4u, std::thread::hardware_concurrency()));
 #ifdef FML_OS_ANDROID
   raster_message_loop_->PostTaskToAllWorkers([]() {
+    // Currently we only use the worker task pool for small parts of a frame
+    // workload, if this changes this setting may need to be adjusted.
+    fml::RequestAffinity(fml::CpuAffinity::kNotPerformance);
     if (::setpriority(PRIO_PROCESS, gettid(), -5) != 0) {
       FML_LOG(ERROR) << "Failed to set Workers task runner priority";
     }
