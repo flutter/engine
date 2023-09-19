@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-name: git_repo_tools
+name: process_fakes
 publish_to: none
 environment:
   sdk: '>=3.2.0-0 <4.0.0'
@@ -17,34 +17,8 @@ environment:
 # relative to this directory into //third_party/dart
 
 dependencies:
-  meta: any
-  path: any
   process: any
-  process_runner: any
-
-dev_dependencies:
-  async_helper: any
-  expect: any
-  litetest: any
-  process_fakes: any
-  smith: any
 
 dependency_overrides:
-  async_helper:
-    path: ../../../../third_party/dart/pkg/async_helper
-  expect:
-    path: ../../../../third_party/dart/pkg/expect
-  litetest:
-    path: ../../../testing/litetest
-  meta:
-    path: ../../../../third_party/dart/pkg/meta
-  path:
-    path: ../../../../third_party/dart/third_party/pkg/path
   process:
     path: ../../../../third_party/pkg/process
-  process_fakes:
-    path: ../process_fakes
-  process_runner:
-    path: ../../../../third_party/pkg/process_runner
-  smith:
-    path: ../../../../third_party/dart/pkg/smith
