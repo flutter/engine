@@ -17,19 +17,19 @@ constexpr LogSeverity kLogFatal = 3;
 constexpr LogSeverity kLogNumSeverities = 4;
 
 // DEPRECATED: Use |kLogInfo|.
-[[deprecated]] constexpr LogSeverity LOG_INFO = kLogInfo;
+constexpr LogSeverity LOG_INFO = kLogInfo;
 
 // DEPRECATED: Use |kLogWarning|.
-[[deprecated]] constexpr LogSeverity LOG_WARNING = kLogWarning;
+constexpr LogSeverity LOG_WARNING = kLogWarning;
 
 // DEPRECATED: Use |kLogError|.
-[[deprecated]] constexpr LogSeverity LOG_ERROR = kLogError;
+constexpr LogSeverity LOG_ERROR = kLogError;
 
 // DEPRECATED: Use |kLogFatal|.
-[[deprecated]] constexpr LogSeverity LOG_FATAL = kLogFatal;
+constexpr LogSeverity LOG_FATAL = kLogFatal;
 
 // DEPRECATED: Use |kLogNumSeverities|.
-[[deprecated]] constexpr LogSeverity LOG_NUM_SEVERITIES = kLogNumSeverities;
+constexpr LogSeverity LOG_NUM_SEVERITIES = kLogNumSeverities;
 
 // One of the Windows headers defines ERROR to 0. This makes the token
 // concatenation in FML_LOG(ERROR) to resolve to LOG_0. We define this back to
@@ -46,7 +46,7 @@ const LogSeverity kLogDFatal = kLogFatal;
 #endif
 
 // DEPRECATED: Use |kLogDFatal|.
-[[deprecated]] const LogSeverity LOG_DFATAL = kLogDFatal;
+const LogSeverity LOG_DFATAL = kLogDFatal;
 
 }  // namespace fml
 
