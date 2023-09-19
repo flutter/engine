@@ -9,15 +9,26 @@ import 'semantics.dart';
 /// level (h1 ... h6).
 class Heading extends PrimaryRoleManager {
   Heading(SemanticsObject semanticsObject)
-      : super.withBasics(PrimaryRole.heading, semanticsObject);
+      : super.withBasics(PrimaryRole.heading, semanticsObject) {
+        addHeadingRole();
+      }
 
   @override
   void update() {
     super.update();
 
-      if (semanticsObject.headingLevel != -1) {
-        semanticsObject.setAriaRole('heading');
-        semanticsObject.element.setAttribute('aria-level', semanticsObject.headingLevel);
-      }
+    if (semanticsObject.headingLevel != -1) {
+      addHeadingLevel(semanticsObject.headingLevel);
+    } else {
+      addHeadingLevel(1);
+    }
+  }
+
+  void addHeadingRole() {
+    semanticsObject.setAriaRole('heading');
+  }
+
+  void addHeadingLevel(int headingLevel) {
+    semanticsObject.element.setAttribute('aria-level', headingLevel);
   }
 }

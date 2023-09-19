@@ -786,6 +786,11 @@ abstract class SemanticsUpdateBuilder {
   /// z-direction starting at `elevation`. Basically, in the z-direction the
   /// node starts at `elevation` above the parent and ends at `elevation` +
   /// `thickness` above the parent.
+  /// 
+  /// The `headingLevel` describes that this node is a heading, additionally
+  /// indicates the hierarchy level this node represents as a heading. A value
+  /// of -1 indicates that this node is not a heading. A value of 1 or greater
+  /// indicates that this node is a heading at the specified level.
   void updateNode({
     required int id,
     required int flags,

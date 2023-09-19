@@ -230,7 +230,7 @@ class SemanticsNodeUpdate {
     required this.childrenInTraversalOrder,
     required this.childrenInHitTestOrder,
     required this.additionalActions,
-    required this.headingLevel,
+    this.headingLevel,
   });
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
@@ -330,7 +330,7 @@ class SemanticsNodeUpdate {
   final double thickness;
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
-  final int headingLevel;
+  final int? headingLevel;
 }
 
 /// Identifies [PrimaryRoleManager] implementations.
@@ -1097,7 +1097,7 @@ class SemanticsObject {
   /// Whether this object represents an editable text field.
   bool get isTextField => hasFlag(ui.SemanticsFlag.isTextField);
 
-  /// Whether this object represents a heading element
+  /// Whether this object represents a heading element.
   bool get isHeading => headingLevel != -1;
 
   /// Whether this object needs screen readers attention right away.
@@ -1528,8 +1528,8 @@ class SemanticsObject {
       PrimaryRole.dialog => Dialog(this),
       PrimaryRole.image => ImageRoleManager(this),
       PrimaryRole.platformView => PlatformViewRoleManager(this),
-      PrimaryRole.generic => GenericRole(this),
       PrimaryRole.heading => Heading(this),
+      PrimaryRole.generic => GenericRole(this),
     };
   }
 

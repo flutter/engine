@@ -670,25 +670,45 @@ void _testHeader() {
     semantics().semanticsEnabled = false;
   });
 
-  test('renders aria-level tag for headers with heading level', () {
+  test('renders aria-level tag for headings with heading level', () {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
 
-    final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
-    updateNode(
-      builder,
-      flags: 0 | ui.SemanticsFlag.isHeader.index,
-      headingLevel: 1,
-      label: 'Header of the page',
-      transform: Matrix4.identity().toFloat64(),
-      rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
-    );
+    // State 1: render element with an initial headingLevel.
+    {
+      final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+      updateNode(
+        builder,
+        headingLevel: 2,
+        label: 'Heading of the page',
+        transform: Matrix4.identity().toFloat64(),
+        rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+      );
 
-    semantics().updateSemantics(builder.build());
-    expectSemanticsTree('''
-<sem role="heading" aria-label="Header of the page" aria-level="1" style="$rootSemanticStyle"></sem>
-''');
+      semantics().updateSemantics(builder.build());
+      expectSemanticsTree('''
+  <sem role="heading" aria-label="Heading of the page" aria-level="2" style="$rootSemanticStyle"></sem>
+  ''');
+    }
+
+    // State 2: when the new state "clears" the headingLevel, a default value
+    // of 1 is assigned, as the aria-level is a required attribute for the
+    // heading role.
+    {
+      final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+      updateNode(
+        builder,
+        label: 'Heading of the page',
+        transform: Matrix4.identity().toFloat64(),
+        rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+      );
+
+      semantics().updateSemantics(builder.build());
+      expectSemanticsTree('''
+  <sem role="heading" aria-label="Heading of the page" aria-level="1" style="$rootSemanticStyle"></sem>
+  ''');
+    }
 
     semantics().semanticsEnabled = false;
   });
