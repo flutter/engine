@@ -130,7 +130,7 @@ static vk::UniqueRenderPass CreateCompatRenderPassForPipeline(
   }
 
   // This pass is not used with the render pass. It is only necessary to tell
-  // Vulkan the expected render pass layout. The acutal pass will be created
+  // Vulkan the expected render pass layout. The actual pass will be created
   // later during render pass setup and will need to be compatible with this
   // one.
   ContextVK::SetDebugName(device, pass.get(),
