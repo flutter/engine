@@ -39,7 +39,9 @@ DART="${DART_BIN}/dart"
 if [[ -z "${FLUTTER_LINT_PRINT_FIX}" ]]; then
   fix_flag=""
 else
-  fix_flag="--fix"
+  # FIXME: Remove before submitting.
+  # https://github.com/flutter/flutter/wiki/Engine-Clang-Tidy-Linter#clang-tidy-fix-on-ci
+  fix_flag="--fix --lint-all"
 fi
 
 COMPILE_COMMANDS="$SRC_DIR/out/host_debug/compile_commands.json"
