@@ -8,6 +8,7 @@
 
 #include <syslog.h>
 
+#import <Metal/Metal.h>
 #include <sstream>
 #include <string>
 
@@ -22,6 +23,8 @@
 #import "flutter/shell/platform/darwin/common/command_line.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 
+FLUTTER_ASSERT_NOT_ARC
+
 extern "C" {
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
 // Used for debugging dart:* sources.
@@ -31,6 +34,20 @@ extern const intptr_t kPlatformStrongDillSize;
 }
 
 static const char* kApplicationKernelSnapshotFileName = "kernel_blob.bin";
+
+static BOOL DoesHardwareSupportsWideGamut() {
+  id<MTLDevice> device = MTLCreateSystemDefaultDevice();
+  BOOL result;
+  if (@available(iOS 13.0, *)) {
+    // MTLGPUFamilyApple2 = A9/A10
+    result = [device supportsFamily:MTLGPUFamilyApple2];
+  } else {
+    // A9/A10 on iOS 10+
+    result = [device supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily3_v2];
+  }
+  [device release];
+  return result;
+}
 
 flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* processInfoOrNil) {
   auto command_line = flutter::CommandLineFromNSProcessInfo(processInfoOrNil);
@@ -155,7 +172,8 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
   settings.enable_wide_gamut = false;
 #else
   NSNumber* nsEnableWideGamut = [mainBundle objectForInfoDictionaryKey:@"FLTEnableWideGamut"];
-  BOOL enableWideGamut = nsEnableWideGamut ? nsEnableWideGamut.boolValue : YES;
+  BOOL enableWideGamut =
+      (nsEnableWideGamut ? nsEnableWideGamut.boolValue : YES) && DoesHardwareSupportsWideGamut();
   settings.enable_wide_gamut = enableWideGamut;
 #endif
 
