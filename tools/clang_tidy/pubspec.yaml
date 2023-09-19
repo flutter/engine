@@ -19,6 +19,7 @@ environment:
 dependencies:
   args: any
   git_repo_tools: any
+  engine_repo_tools: any
   meta: any
   path: any
   process: any
@@ -40,6 +41,8 @@ dependency_overrides:
     path: ../../../third_party/dart/pkg/async_helper
   collection:
     path: ../../../third_party/dart/third_party/pkg/collection
+  engine_repo_tools:
+    path: ../pkg/engine_repo_tools
   expect:
     path: ../../../third_party/dart/pkg/expect
   file:
