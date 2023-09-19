@@ -69,4 +69,26 @@
   XCTAssertEqual(layer.pixelFormat, MTLPixelFormatBGRA8Unorm);
 }
 
+- (void)testLayerOpacityIsPreservedYes {
+  FakeDelegate* delegate = [[[FakeDelegate alloc] init] autorelease];
+  FlutterView* view = [[[FlutterView alloc] initWithDelegate:delegate opaque:YES
+                                             enableWideGamut:NO] autorelease];
+
+  XCTAssertTrue(view.layer.opaque);
+  CGColor* bgColor = view.layer.backgroundColor;
+  CGColor* expectedColor = [UIColor.clearColor CGColor];
+  XCTAssertEqual(bgColor, expectedColor);
+}
+
+- (void)testLayerOpacityIsPreservedNo {
+  FakeDelegate* delegate = [[[FakeDelegate alloc] init] autorelease];
+  FlutterView* view = [[[FlutterView alloc] initWithDelegate:delegate opaque:NO
+                                             enableWideGamut:NO] autorelease];
+
+  XCTAssertFalse(view.layer.opaque);
+  CGColor* bgColor = view.layer.backgroundColor;
+  CGColor* expectedColor = [UIColor.clearColor CGColor];
+  XCTAssertEqual(bgColor, expectedColor);
+}
+
 @end

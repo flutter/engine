@@ -55,10 +55,6 @@ GPUCAMetalLayerHandle IOSSurfaceMetalImpeller::GetCAMetalLayer(const SkISize& fr
   // Flutter needs to read from the color attachment in cases where there are effects such as
   // backdrop filters. Flutter plugins that create platform views may also read from the layer.
   layer.framebufferOnly = NO;
-  // Note: this setting improves the performance of the "CPU TO Display Latency" metric in
-  // metal system trace. On high frame rate devices, this reduces the time we spend waiting
-  // for drawable availibility.
-  layer.opaque = YES;
 
   // When there are platform views in the scene, the drawable needs to be presented in the same
   // transaction as the one created for platform views. When the drawable are being presented from

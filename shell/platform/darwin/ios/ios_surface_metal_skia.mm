@@ -57,10 +57,6 @@ GPUCAMetalLayerHandle IOSSurfaceMetalSkia::GetCAMetalLayer(const SkISize& frame_
   // Flutter needs to read from the color attachment in cases where there are effects such as
   // backdrop filters. Flutter plugins that create platform views may also read from the layer.
   layer.framebufferOnly = NO;
-  // Note: this setting improves the performance of the "CPU TO Display Latency" metric in
-  // metal system trace. On high frame rate devices, this reduces the time we spend waiting
-  // for drawable availibility.
-  layer.opaque = YES;
 
   const auto drawable_size = CGSizeMake(frame_info.width(), frame_info.height());
   if (!CGSizeEqualToSize(drawable_size, layer.drawableSize)) {

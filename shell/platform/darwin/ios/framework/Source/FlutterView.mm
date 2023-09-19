@@ -72,7 +72,6 @@
       FML_DLOG(WARNING) << "Rendering wide gamut colors is turned on but isn't "
                            "supported, downgrading the color gamut to sRGB.";
     }
-    self.layer.opaque = opaque;
 
     // This line is necessary. CoreAnimation(or UIKit) may take this to do
     // something to compute the final frame presented on screen, if we don't set this,
@@ -81,9 +80,10 @@
     // disable opaque, which on full screen flutter apps removes the direct to display
     // optimization. This can increase presentation time by a frame interval, which
     // is problematic on high frame rate devices.
-    if (!opaque) {
-      self.backgroundColor = UIColor.whiteColor;
-    }
+    self.backgroundColor = UIColor.clearColor;
+    // Make sure to set this value after backgroundColor above, otherwise it will
+    // reset the value of opaque.
+    self.layer.opaque = opaque;
   }
 
   return self;
@@ -101,7 +101,7 @@
     layer.allowsGroupOpacity = YES;
     layer.contentsScale = screenScale;
     layer.rasterizationScale = screenScale;
-    layer.framebufferOnly = flutter::Settings::kSurfaceDataAccessible ? NO : YES;
+    layer.framebufferOnly = NO;
     if (_isWideGamutEnabled && self.isWideGamutSupported) {
       CGColorSpaceRef srgb = CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB);
       layer.colorspace = srgb;
