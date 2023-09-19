@@ -173,6 +173,8 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
   // As of Xcode 14.1, the wide gamut surface pixel formats are not supported by
   // the simulator.
   settings.enable_wide_gamut = false;
+  // Removes unused function warning.
+  (void)DoesHardwareSupportWideGamut;
 #else
   NSNumber* nsEnableWideGamut = [mainBundle objectForInfoDictionaryKey:@"FLTEnableWideGamut"];
   BOOL enableWideGamut =
