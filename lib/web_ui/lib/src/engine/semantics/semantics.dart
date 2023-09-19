@@ -232,7 +232,7 @@ class SemanticsNodeUpdate {
     required this.childrenInTraversalOrder,
     required this.childrenInHitTestOrder,
     required this.additionalActions,
-    required this.headingLevel,
+    this.headingLevel,
   });
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
@@ -335,7 +335,7 @@ class SemanticsNodeUpdate {
   final double thickness;
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
-  final int headingLevel;
+  final int? headingLevel;
 }
 
 /// Identifies [PrimaryRoleManager] implementations.
@@ -1643,6 +1643,7 @@ class SemanticsObject {
       PrimaryRole.platformView => PlatformViewRoleManager(this),
       PrimaryRole.heading => Heading(this),
       PrimaryRole.link => Link(this),
+      PrimaryRole.heading => Heading(this),
       PrimaryRole.generic => GenericRole(this),
     };
   }
