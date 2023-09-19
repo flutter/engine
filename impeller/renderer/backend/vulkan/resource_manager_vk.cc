@@ -4,10 +4,10 @@
 
 #include "impeller/renderer/backend/vulkan/resource_manager_vk.h"
 
+#include "flutter/fml/cpu_affinity.h"
 #include "flutter/fml/thread.h"
 #include "flutter/fml/trace_event.h"
 #include "fml/logging.h"
-#include "flutter/fml/cpu_affinity.h"
 
 namespace impeller {
 
