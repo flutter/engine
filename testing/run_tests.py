@@ -717,11 +717,13 @@ def run_objc_tests(ios_variant='ios_debug_sim_unopt', test_filter=None):
   # from another test run.
   delete_simulator(new_simulator_name)
 
+  runtime_id = 'iOS16.4'
+
   create_simulator = [
       'xcrun '
       'simctl '
       'create '
-      '%s com.apple.CoreSimulator.SimDeviceType.iPhone-11' % new_simulator_name
+      '%s com.apple.CoreSimulator.SimDeviceType.iPhone-11 %s' % (new_simulator_name, runtime_id)
   ]
   run_cmd(create_simulator, shell=True)
 
