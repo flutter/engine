@@ -218,14 +218,6 @@ IRect SurfaceMTL::coverage() const {
   return IRect::MakeSize(resolve_texture_->GetSize());
 }
 
-bool ShouldPresentSync() {
-#ifdef FML_OS_IOS
-  return [[NSThread currentThread] isMainThread];
-#else
-  return true;
-#endif  // FML_OS_IOS
-}
-
 // |Surface|
 bool SurfaceMTL::Present() const {
   auto context = context_.lock();
@@ -260,14 +252,9 @@ bool SurfaceMTL::Present() const {
     id<MTLCommandBuffer> command_buffer =
         ContextMTL::Cast(context.get())
             ->CreateMTLCommandBuffer("Present Waiter Command Buffer");
-    if (ShouldPresentSync()) {
-      [command_buffer commit];
-      [command_buffer waitUntilScheduled];
-      [drawable_ present];
-    } else {
-      [command_buffer presentDrawable:drawable_];
-      [command_buffer commit];
-    }
+    [command_buffer commit];
+    [command_buffer waitUntilScheduled];
+    [drawable_ present];
   }
 
   return true;
