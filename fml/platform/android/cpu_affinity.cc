@@ -47,7 +47,7 @@ bool SetUpCPUTracker() {
   return true;
 }
 
-std::optional<size_t> EfficiencyCoreCount() {
+std::optional<size_t> AndroidEfficiencyCoreCount() {
   if (!SetUpCPUTracker()) {
     return true;
   }
@@ -56,7 +56,7 @@ std::optional<size_t> EfficiencyCoreCount() {
   return result;
 }
 
-bool RequestAffinity(CpuAffinity affinity) {
+bool AndroidRequestAffinity(CpuAffinity affinity) {
   if (!SetUpCPUTracker()) {
     return true;
   }

@@ -11,6 +11,7 @@
 
 #include "flutter/common/settings.h"
 #include "flutter/fml/compiler_specific.h"
+#include "flutter/fml/cpu_affinity.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/size.h"
@@ -28,10 +29,6 @@
 #include "third_party/tonic/file_loader/file_loader.h"
 #include "third_party/tonic/logging/dart_error.h"
 #include "third_party/tonic/typed_data/typed_list.h"
-
-#ifdef FML_OS_ANDROID
-#include "flutter/fml/platform/android/cpu_affinity.h"
-#endif  // FML_OS_ANDROID
 
 namespace dart {
 namespace observatory {
@@ -289,13 +286,9 @@ size_t DartVM::GetVMLaunchCount() {
 DartVM::DartVM(const std::shared_ptr<const DartVMData>& vm_data,
                std::shared_ptr<IsolateNameServer> isolate_name_server)
     : settings_(vm_data->GetSettings()),
-#ifdef FML_OS_ANDROID
       concurrent_message_loop_(fml::ConcurrentMessageLoop::Create(
           fml::EfficiencyCoreCount().value_or(
               std::thread::hardware_concurrency()))),
-#else
-      concurrent_message_loop_(fml::ConcurrentMessageLoop::Create()),
-#endif  // FML_OS_ANDROID
       skia_concurrent_executor_(
           [runner = concurrent_message_loop_->GetTaskRunner()](
               const fml::closure& work) { runner->PostTask(work); }),

@@ -3,12 +3,41 @@
 // found in the LICENSE file.
 
 #include "flutter/fml/cpu_affinity.h"
+#include "flutter/fml/build_config.h"
 
 #include <fstream>
 #include <optional>
 #include <string>
 
+#ifdef FML_OS_ANDROID
+#include "flutter/fml/platform/android/cpu_affinity.h"
+#endif  // FML_OS_ANDROID
+
 namespace fml {
+
+std::optional<size_t> EfficiencyCoreCount() {
+#ifdef FML_OS_ANDROID
+  return AndroidEfficiencyCoreCount();
+#else
+  return std::nullopt;
+#endif
+}
+
+/// @brief Request the given affinity for the current thread.
+///
+///        Returns true if successfull, or if it was a no-op. This function is
+///        only supported on Android devices.
+///
+///        Affinity requests are based on documented CPU speed. This speed data
+///        is parsed from cpuinfo_max_freq files, see also:
+///        https://www.kernel.org/doc/Documentation/cpu-freq/user-guide.txt
+bool RequestAffinity(CpuAffinity affinity) {
+#ifdef FML_OS_ANDROID
+  return AndroidRequestAffinity(affinity);
+#else
+  return true;
+#endif
+}
 
 CPUSpeedTracker::CPUSpeedTracker(std::vector<CpuIndexAndSpeed> data)
     : cpu_speeds_(std::move(data)) {
