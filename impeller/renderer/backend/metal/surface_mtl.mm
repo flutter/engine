@@ -248,13 +248,17 @@ bool SurfaceMTL::Present() const {
   }
 
   if (drawable_) {
-    TRACE_EVENT0("flutter", "waitUntilScheduled");
     id<MTLCommandBuffer> command_buffer =
         ContextMTL::Cast(context.get())
             ->CreateMTLCommandBuffer("Present Waiter Command Buffer");
-    [command_buffer commit];
-    [command_buffer waitUntilScheduled];
-    [drawable_ present];
+    if ([[NSThread currentThread] isMainThread]) {
+      [command_buffer commit];
+      [command_buffer waitUntilScheduled];
+      [drawable_ present];
+    } else {
+      [command_buffer presentDrawable:drawable_];
+      [command_buffer commit];
+    }
   }
 
   return true;
