@@ -9,6 +9,18 @@
 #import "ScreenBeforeFlutter.h"
 #import "TextPlatformView.h"
 
+// A UIViewController that sets YES for its preferedStatusBarHidden property.
+@interface NoStatusBarViewController : UIViewController
+
+@end
+
+@implementation NoStatusBarViewController
+- (BOOL)prefersStatusBarHidden {
+  return YES;
+}
+@end
+
+// The FlutterViewController version of NoStatusBarViewController
 @interface NoStatusBarFlutterViewController : FlutterViewController
 
 @end
@@ -166,7 +178,7 @@
   UIViewController* rootViewController = flutterViewController;
   // Make Flutter View's origin x/y not 0.
   if ([scenarioIdentifier isEqualToString:@"non_full_screen_flutter_view_platform_view"]) {
-    rootViewController = [UIViewController new];
+    rootViewController = [[NoStatusBarViewController alloc] init];
     [rootViewController.view addSubview:flutterViewController.view];
     flutterViewController.view.frame = CGRectMake(150, 150, 500, 500);
   }
