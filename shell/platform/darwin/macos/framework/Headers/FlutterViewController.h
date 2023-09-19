@@ -20,7 +20,8 @@ typedef NS_ENUM(NSInteger, FlutterMouseTrackingMode) {
   kFlutterMouseTrackingModeInKeyWindow = 1,
   FlutterMouseTrackingModeInKeyWindow __attribute__((deprecated)) = kFlutterMouseTrackingModeInKeyWindow,
   // Hover events will be sent to Flutter when the view is in the active app.
-  kFlutterMouseTrackingModeInActiveApp,
+  kFlutterMouseTrackingModeInActiveApp = 2,
+  FlutterMouseTrackingModeInActiveApp __attribute__((deprecated)) = kFlutterMouseTrackingModeInActiveApp,
   // Hover events will be sent to Flutter regardless of window and app focus.
   kFlutterMouseTrackingModeAlways,
 };
