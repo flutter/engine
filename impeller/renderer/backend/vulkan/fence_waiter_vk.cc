@@ -9,9 +9,9 @@
 #include <utility>
 
 #ifdef FML_OS_ANDROID
-#include "fml/cpu_affinity.h"
 #include "flutter/fml/platform/android/cpu_affinity.h"
-#endif // FML_OS_ANDROID
+#include "fml/cpu_affinity.h"
+#endif  // FML_OS_ANDROID
 
 #include "flutter/fml/thread.h"
 #include "flutter/fml/trace_event.h"
@@ -95,7 +95,7 @@ void FenceWaiterVK::Main() {
   // Since this thread mostly waits on fences, it doesn't need to be fast.
   fml::RequestAffinity(fml::CpuAffinity::kEfficiency);
   using namespace std::literals::chrono_literals;
-#endif // FML_OS_ANDROID
+#endif  // FML_OS_ANDROID
 
   while (true) {
     // We'll read the terminate_ flag within the lock below.
