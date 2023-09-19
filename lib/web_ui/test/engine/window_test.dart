@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:js_interop';
 import 'dart:js_util' as js_util;
 import 'dart:typed_data';
 
@@ -331,19 +332,18 @@ Future<void> testMain() async {
     // The `orientation` property cannot be overridden, so this test overrides the entire `screen`.
     js_util.setProperty(domWindow, 'screen', js_util.jsify(<Object?, Object?>{
       'orientation': <Object?, Object?>{
-        'lock': allowInterop((String lockType) {
+        'lock': (String lockType) {
           lockCalls.add(lockType);
-          return Promise<Object?>(allowInterop((PromiseResolver<Object?> resolve, PromiseRejecter reject) {
-            if (!simulateError) {
-              resolve.resolve(null);
-            } else {
-              reject.reject('Simulating error');
+          return futureToPromise(() async {
+            if (simulateError) {
+              throw Error();
             }
-          }));
-        }),
-        'unlock': allowInterop(() {
+            return 0.toJS;
+          }());
+        }.toJS,
+        'unlock': () {
           unlockCount += 1;
-        }),
+        }.toJS,
       },
     }));
 
@@ -358,25 +358,25 @@ Future<void> testMain() async {
     unlockCount = 0;
 
     expect(await sendSetPreferredOrientations(<dynamic>['DeviceOrientation.portraitUp']), isTrue);
-    expect(lockCalls, <String>[FlutterViewEmbedder.orientationLockTypePortraitPrimary]);
+    expect(lockCalls, <String>[ScreenOrientation.lockTypePortraitPrimary]);
     expect(unlockCount, 0);
     lockCalls.clear();
     unlockCount = 0;
 
     expect(await sendSetPreferredOrientations(<dynamic>['DeviceOrientation.portraitDown']), isTrue);
-    expect(lockCalls, <String>[FlutterViewEmbedder.orientationLockTypePortraitSecondary]);
+    expect(lockCalls, <String>[ScreenOrientation.lockTypePortraitSecondary]);
     expect(unlockCount, 0);
     lockCalls.clear();
     unlockCount = 0;
 
     expect(await sendSetPreferredOrientations(<dynamic>['DeviceOrientation.landscapeLeft']), isTrue);
-    expect(lockCalls, <String>[FlutterViewEmbedder.orientationLockTypeLandscapePrimary]);
+    expect(lockCalls, <String>[ScreenOrientation.lockTypeLandscapePrimary]);
     expect(unlockCount, 0);
     lockCalls.clear();
     unlockCount = 0;
 
     expect(await sendSetPreferredOrientations(<dynamic>['DeviceOrientation.landscapeRight']), isTrue);
-    expect(lockCalls, <String>[FlutterViewEmbedder.orientationLockTypeLandscapeSecondary]);
+    expect(lockCalls, <String>[ScreenOrientation.lockTypeLandscapeSecondary]);
     expect(unlockCount, 0);
     lockCalls.clear();
     unlockCount = 0;
@@ -389,7 +389,7 @@ Future<void> testMain() async {
 
     simulateError = true;
     expect(await sendSetPreferredOrientations(<dynamic>['DeviceOrientation.portraitDown']), isFalse);
-    expect(lockCalls, <String>[FlutterViewEmbedder.orientationLockTypePortraitSecondary]);
+    expect(lockCalls, <String>[ScreenOrientation.lockTypePortraitSecondary]);
     expect(unlockCount, 0);
 
     js_util.setProperty(domWindow, 'screen', original);

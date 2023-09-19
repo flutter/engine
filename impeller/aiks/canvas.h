@@ -35,7 +35,7 @@ struct CanvasStackEntry {
   // |cull_rect| is conservative screen-space bounds of the clipped output area
   std::optional<Rect> cull_rect;
   size_t stencil_depth = 0u;
-  bool is_subpass = false;
+  Entity::RenderingMode rendering_mode = Entity::RenderingMode::kDirect;
   bool contains_clips = false;
 };
 
@@ -140,7 +140,7 @@ class Canvas {
 
   void DrawPicture(const Picture& picture);
 
-  void DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
+  void DrawTextFrame(const TextFrame& text_frame,
                      Point position,
                      const Paint& paint);
 

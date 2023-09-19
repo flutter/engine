@@ -83,8 +83,10 @@
 ../../../flutter/fml/ascii_trie_unittests.cc
 ../../../flutter/fml/backtrace_unittests.cc
 ../../../flutter/fml/base32_unittest.cc
+../../../flutter/fml/closure_unittests.cc
 ../../../flutter/fml/command_line_unittest.cc
 ../../../flutter/fml/container_unittests.cc
+../../../flutter/fml/cpu_affinity_unittests.cc
 ../../../flutter/fml/endianness_unittests.cc
 ../../../flutter/fml/file_unittest.cc
 ../../../flutter/fml/hash_combine_unittests.cc
@@ -152,7 +154,9 @@
 ../../../flutter/impeller/playground
 ../../../flutter/impeller/renderer/backend/vulkan/blit_command_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/command_encoder_vk_unittests.cc
+../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/context_vk_unittests.cc
+../../../flutter/impeller/renderer/backend/vulkan/fence_waiter_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/pass_bindings_cache_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/resource_manager_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/test
@@ -189,6 +193,8 @@
 ../../../flutter/lib/ui/compositing/scene_builder_unittests.cc
 ../../../flutter/lib/ui/fixtures
 ../../../flutter/lib/ui/hooks_unittests.cc
+../../../flutter/lib/ui/painting/image_decoder_no_gl_unittests.cc
+../../../flutter/lib/ui/painting/image_decoder_no_gl_unittests.h
 ../../../flutter/lib/ui/painting/image_decoder_unittests.cc
 ../../../flutter/lib/ui/painting/image_dispose_unittests.cc
 ../../../flutter/lib/ui/painting/image_encoding_unittests.cc
@@ -986,7 +992,6 @@
 ../../../third_party/angle/.git
 ../../../third_party/angle/.gitattributes
 ../../../third_party/angle/.gitignore
-../../../third_party/angle/.gitmodules
 ../../../third_party/angle/.gn
 ../../../third_party/angle/.style.yapf
 ../../../third_party/angle/.vpython
@@ -1125,7 +1130,6 @@
 ../../../third_party/angle/src/third_party/ceval/package.json
 ../../../third_party/angle/src/third_party/libXNVCtrl/README.chromium
 ../../../third_party/angle/src/third_party/volk
-../../../third_party/angle/testing
 ../../../third_party/angle/third_party
 ../../../third_party/angle/tools
 ../../../third_party/angle/util
@@ -1590,8 +1594,8 @@
 ../../../third_party/dart/runtime/third_party/double-conversion/.gitignore
 ../../../third_party/dart/runtime/third_party/double-conversion/AUTHORS
 ../../../third_party/dart/runtime/third_party/double-conversion/Changelog
-../../../third_party/dart/runtime/third_party/double-conversion/README
 ../../../third_party/dart/runtime/third_party/double-conversion/README.dart
+../../../third_party/dart/runtime/third_party/double-conversion/README.md
 ../../../third_party/dart/runtime/tools/.gitignore
 ../../../third_party/dart/runtime/tools/android_finder.py
 ../../../third_party/dart/runtime/tools/benchmark.py
@@ -1602,6 +1606,7 @@
 ../../../third_party/dart/runtime/tools/create_snapshot_bin.py
 ../../../third_party/dart/runtime/tools/create_snapshot_file.py
 ../../../third_party/dart/runtime/tools/create_string_literal.py
+../../../third_party/dart/runtime/tools/dart_profiler_symbols.py
 ../../../third_party/dart/runtime/tools/dartfuzz/README.md
 ../../../third_party/dart/runtime/tools/dartfuzz/README_minimize.md
 ../../../third_party/dart/runtime/tools/dartfuzz/analysis_options.yaml
