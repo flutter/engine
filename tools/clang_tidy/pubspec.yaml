@@ -18,6 +18,7 @@ environment:
 
 dependencies:
   args: any
+  git_repo_tools: any
   meta: any
   path: any
   process: any
@@ -27,6 +28,7 @@ dev_dependencies:
   async_helper: any
   expect: any
   litetest: any
+  process_fakes: any
   smith: any
 
 dependency_overrides:
@@ -42,6 +44,8 @@ dependency_overrides:
     path: ../../../third_party/dart/pkg/expect
   file:
     path: ../../../third_party/pkg/file/packages/file
+  git_repo_tools:
+    path: ../pkg/git_repo_tools
   litetest:
     path: ../../testing/litetest
   meta:
@@ -52,6 +56,8 @@ dependency_overrides:
     path: ../../../third_party/pkg/platform
   process:
     path: ../../../third_party/pkg/process
+  process_fakes:
+    path: ../pkg/process_fakes
   process_runner:
     path: ../../../third_party/pkg/process_runner
   smith:
