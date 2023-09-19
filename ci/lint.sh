@@ -27,13 +27,12 @@ function follow_links() (
   echo "$file"
 )
 
-# FIXME: Remove before submitting.
-# https://github.com/flutter/flutter/wiki/Engine-Clang-Tidy-Linter#clang-tidy-fix-on-ci
-export FLUTTER_LINT_PRINT_FIX=1
-
 SCRIPT_DIR=$(follow_links "$(dirname -- "${BASH_SOURCE[0]}")")
 PYLINT="${SCRIPT_DIR}/pylint.sh"
 CLANG_TIDY="${SCRIPT_DIR}/clang_tidy.sh"
 
 "${PYLINT}" "$@"
-"${CLANG_TIDY}" "$@"
+
+# FIXME: Remove before submitting.
+# https://github.com/flutter/flutter/wiki/Engine-Clang-Tidy-Linter#clang-tidy-fix-on-ci
+FLUTTER_LINT_PRINT_FIX=1 "${CLANG_TIDY}" "$@"
