@@ -36,7 +36,7 @@ DART="${DART_BIN}/dart"
 # FLUTTER_LINT_PRINT_FIX will make it so that fix is executed and the generated
 # diff is printed to stdout if clang-tidy fails. This is helpful for enabling
 # new lints.
-if [[ true ]]; then
+if [[ false ]]; then
   fix_flag=""
 else
   # FIXME: Remove before submitting.
