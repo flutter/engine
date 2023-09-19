@@ -63,6 +63,6 @@ class CPUSpeedTracker {
 };
 
 /// @note Visible for testing.
-std::optional<int32_t> ReadIntFromFile(const std::string& path);
+std::optional<int64_t> ReadIntFromFile(const std::string& path);
 
 }  // namespace fml
