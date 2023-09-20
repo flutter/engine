@@ -185,11 +185,12 @@ class Paragraph {
       int lineNumber,
       skia::textlayout::LineMetrics* lineMetrics) const = 0;
 
-  // Returns the total number of lines the paragraph has.
+  // Returns the total number of visible lines in the paragraph.
   virtual size_t GetNumberOfLines() const = 0;
 
-  // Returns the line number (zero-indexed) that contains the given code unit
-  // offset, or -1 if the given offset is out of bounds.
+  // Returns the zero-indexed line number that contains the given code unit
+  // offset. Returns -1 if the given offset is out of bounds, or points to a
+  // codepoint that is logically after the last visible codepoint.
   //
   // If the offset points to a hard line break, this method returns the line
   // number of the line this hard line break breaks, intead of the new line it

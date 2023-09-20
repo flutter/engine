@@ -3231,7 +3231,7 @@ extension SkParagraphExtension on SkParagraph {
   external SkLineMetrics? _getLineMetricsAt(JSNumber index);
   SkLineMetrics? getLineMetricsAt(double index) => _getLineMetricsAt(index.toJS);
 
-  @JS('lineNumber')
+  @JS('getNumberOfLines')
   external JSNumber _getNumberOfLines();
   double getNumberOfLines() => _getNumberOfLines().toDartDouble;
 

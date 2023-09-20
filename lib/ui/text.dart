@@ -3005,22 +3005,22 @@ abstract class Paragraph {
   List<LineMetrics> computeLineMetrics();
 
   /// Returns the [LineMetrics] for the line at `lineNumber`, or null if the
-  /// given `lineNumber` is out of bounds.
-  ///
-  /// For instance, `getLineMetricsAt(0)` returns the [LineMetrics] of the first
-  /// line in the paragraph, when the paragraph isn't empty.
+  /// given `lineNumber` is greater than or equal to [numberOfLines].
   LineMetrics? getLineMetricsAt(int lineNumber);
 
-  /// The total number of lines in the paragraph.
+  /// The total number of visible lines in the paragraph.
   ///
-  /// Returns a non-negative number. If `maxLines` is set to a non-null value
-  /// that is greater than one, the `numberOfLines` value is always smaller than
-  /// or equal to `maxLines`.
+  /// Returns a non-negative number. If `maxLines` is non-null, the value of
+  /// [numberOfLines] never exceeds `maxLines`.
   int get numberOfLines;
 
   /// Returns the line number of the line that contains the code unit that
-  /// `codeUnitOffset` points to, or null if the given `codeUnitOffset` is out
-  /// of bounds.
+  /// `codeUnitOffset` points to.
+  ///
+  /// This method returns null if the given `codeUnitOffset` is out of bounds, or
+  /// is logically after the last visible codepoint. This includes the case where
+  /// its codepoint belongs to a visible line, but the text layout library
+  /// replaced it with an ellipsis.
   ///
   /// If the target code unit points to a control character that introduces
   /// mandatory line breaks (most notably the line feed character `LF`, typically
