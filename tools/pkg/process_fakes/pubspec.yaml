@@ -20,5 +20,13 @@ dependencies:
   process: any
 
 dependency_overrides:
+  file:
+    path: ../../../../third_party/pkg/file/packages/file
+  meta:
+    path: ../../../../third_party/dart/pkg/meta
+  path:
+    path: ../../../../third_party/dart/third_party/pkg/path
+  platform:
+    path: ../../../../third_party/pkg/platform
   process:
     path: ../../../../third_party/pkg/process
