@@ -32,16 +32,11 @@ static const TESSalloc kAlloc = {
 };
 
 Tessellator::Tessellator()
-    : c_tess_alloc_(nullptr, &DestroyTessAlloc),
-      c_tessellator_(nullptr, &DestroyTessellator) {
+    : c_tessellator_(nullptr, &DestroyTessellator) {
+  TESSalloc alloc = kAlloc;
   {
-    CTessAlloc tess_alloc(new TESSalloc(), &DestroyTessAlloc);
-    c_tess_alloc_ = std::move(tess_alloc);
-  }
-  memcpy(c_tess_alloc_.get(), &kAlloc, sizeof(TESSalloc));
-  {
-    CTessellator tessellator(::tessNewTess(c_tess_alloc_.get()),
-                             &DestroyTessellator);
+    // libTess2 copies the TESSalloc despite the non-const argument.
+    CTessellator tessellator(::tessNewTess(&alloc), &DestroyTessellator);
     c_tessellator_ = std::move(tessellator);
   }
 }
@@ -137,12 +132,6 @@ Tessellator::Result Tessellator::Tessellate(
 void DestroyTessellator(TESStesselator* tessellator) {
   if (tessellator != nullptr) {
     ::tessDeleteTess(tessellator);
-  }
-}
-
-void DestroyTessAlloc(TESSalloc* alloc) {
-  if (alloc != nullptr) {
-    delete alloc;
   }
 }
 

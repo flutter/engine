@@ -13,7 +13,6 @@
 #include "impeller/geometry/point.h"
 
 struct TESStesselator;
-struct TESSalloc;
 
 namespace impeller {
 
@@ -21,10 +20,6 @@ void DestroyTessellator(TESStesselator* tessellator);
 
 using CTessellator =
     std::unique_ptr<TESStesselator, decltype(&DestroyTessellator)>;
-
-void DestroyTessAlloc(TESSalloc* alloc);
-
-using CTessAlloc = std::unique_ptr<TESSalloc, decltype(&DestroyTessAlloc)>;
 
 enum class WindingOrder {
   kClockwise,
@@ -69,7 +64,6 @@ class Tessellator {
                                  const BuilderCallback& callback) const;
 
  private:
-  CTessAlloc c_tess_alloc_;
   CTessellator c_tessellator_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Tessellator);
