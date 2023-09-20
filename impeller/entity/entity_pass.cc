@@ -534,10 +534,17 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
           proc(FilterInput::Make(std::move(texture)),
                subpass->xformation_.Basis(), Entity::RenderingMode::kSubpass);
 
+      // If the very first thing we render in this EntityPass is a subpass that
+      // happens to have a backdrop filter, than that backdrop filter will end
+      // may wind up sampling from the raw, uncleared texture that came straight
+      // out of the texture cache. By calling `pass_context.GetRenderPass` here,
+      // we force the texture to pass through at least one RenderPass with the
+      // correct clear configuration before any sampling occurs.
+      pass_context.GetRenderPass(pass_depth);
+
       // The subpass will need to read from the current pass texture when
       // rendering the backdrop, so if there's an active pass, end it prior to
       // rendering the subpass.
-      pass_context.GetRenderPass(pass_depth);
       pass_context.EndPass();
     }
 
@@ -679,6 +686,13 @@ bool EntityPass::OnRender(
   if (!pass_context.IsValid()) {
     VALIDATION_LOG << SPrintF("Pass context invalid (Depth=%d)", pass_depth);
     return false;
+  }
+
+  if (!collapsed_parent_pass &&
+      !GetClearColor(root_pass_size).IsTransparent()) {
+    // Force the pass context to create at least one new pass if the clear color
+    // is present.
+    pass_context.GetRenderPass(pass_depth);
   }
 
   auto render_element = [&stencil_depth_floor, &pass_context, &pass_depth,
