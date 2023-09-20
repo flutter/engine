@@ -85,22 +85,6 @@ enum class DrawSurfaceStatus {
   kDiscarded,
 };
 
-// The information to draw a layer tree to a specified view.
-struct LayerTreeTask {
-  LayerTreeTask(int64_t view_id,
-                std::unique_ptr<LayerTree> layer_tree,
-                float device_pixel_ratio)
-      : view_id(view_id),
-        layer_tree(std::move(layer_tree)),
-        device_pixel_ratio(device_pixel_ratio) {}
-  /// The target view to drawn to.
-  int64_t view_id;
-  /// The target layer tree to be drawn.
-  std::unique_ptr<LayerTree> layer_tree;
-  /// The pixel ratio of the target view.
-  float device_pixel_ratio;
-};
-
 // The information to draw to all views of a frame.
 struct FrameItem {
   FrameItem(std::list<LayerTreeTask> tasks,
