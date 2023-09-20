@@ -608,11 +608,10 @@ class Rasterizer final : public SnapshotDelegate,
 
   // The result of `DoDraw`.
   //
-  // Normally `DoDraw` returns simply a raster status. However, sometimes we
-  // need to attempt to rasterize the layer tree again. This happens when
-  // layer_tree has not successfully rasterized due to changes in the thread
-  // configuration, in which case the resubmitted task will be inserted to the
-  // front of the pipeline.
+  // Normally `DoDraw` simply returns a status. However, sometimes we need to
+  // attempt to rasterize the layer tree again. See RasterStatus::kResubmit and
+  // kSkipAndRetry for when it happens.  In such cases, `resubmitted_item` will
+  // not be null and its `tasks` will not be empty.
   struct DoDrawResult {
     DoDrawStatus status = DoDrawStatus::kDone;
 
