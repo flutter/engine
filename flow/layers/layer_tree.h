@@ -94,18 +94,6 @@ class LayerTree {
   FML_DISALLOW_COPY_AND_ASSIGN(LayerTree);
 };
 
-struct LayerTreeTask {
-  LayerTreeTask(int64_t view_id,
-                std::unique_ptr<LayerTree> layer_tree,
-                float device_pixel_ratio)
-      : view_id(view_id),
-        layer_tree(std::move(layer_tree)),
-        device_pixel_ratio(device_pixel_ratio) {}
-  int64_t view_id;
-  std::unique_ptr<LayerTree> layer_tree;
-  float device_pixel_ratio;
-};
-
 }  // namespace flutter
 
 #endif  // FLUTTER_FLOW_LAYERS_LAYER_TREE_H_

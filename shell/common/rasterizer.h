@@ -85,6 +85,34 @@ enum class DrawSurfaceStatus {
   kDiscarded,
 };
 
+// The information to draw a layer tree to a specified view.
+struct LayerTreeTask {
+  LayerTreeTask(int64_t view_id,
+                std::unique_ptr<LayerTree> layer_tree,
+                float device_pixel_ratio)
+      : view_id(view_id),
+        layer_tree(std::move(layer_tree)),
+        device_pixel_ratio(device_pixel_ratio) {}
+  /// The target view to drawn to.
+  int64_t view_id;
+  /// The target layer tree to be drawn.
+  std::unique_ptr<LayerTree> layer_tree;
+  /// The pixel ratio of the target view.
+  float device_pixel_ratio;
+};
+
+// The information to draw to all views of a frame.
+struct FrameItem {
+  FrameItem(std::list<LayerTreeTask> tasks,
+            std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder)
+      : layer_tree_tasks(std::move(tasks)),
+        frame_timings_recorder(std::move(frame_timings_recorder)) {}
+  std::list<LayerTreeTask> layer_tree_tasks;
+  std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder;
+};
+
+using FramePipeline = Pipeline<FrameItem>;
+
 //------------------------------------------------------------------------------
 /// The rasterizer is a component owned by the shell that resides on the raster
 /// task runner. Each shell owns exactly one instance of a rasterizer. The
@@ -324,7 +352,7 @@ class Rasterizer final : public SnapshotDelegate,
   /// @param[in]  pipeline  The layer tree pipeline to take the next layer tree
   ///                       to render from.
   ///
-  DrawStatus Draw(const std::shared_ptr<LayerTreePipeline>& pipeline);
+  DrawStatus Draw(const std::shared_ptr<FramePipeline>& pipeline);
 
   //----------------------------------------------------------------------------
   /// @brief      The type of the screenshot to obtain of the previously

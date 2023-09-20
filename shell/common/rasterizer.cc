@@ -219,7 +219,7 @@ void Rasterizer::DrawLastLayerTree(
 }
 
 DrawStatus Rasterizer::Draw(
-    const std::shared_ptr<LayerTreePipeline>& pipeline) {
+    const std::shared_ptr<FramePipeline>& pipeline) {
   TRACE_EVENT0("flutter", "GPURasterizer::Draw");
   if (raster_thread_merger_ &&
       !raster_thread_merger_->IsOnRasterizingThread()) {
@@ -231,11 +231,11 @@ DrawStatus Rasterizer::Draw(
                  ->RunsTasksOnCurrentThread());
 
   DoDrawResult draw_result;
-  LayerTreePipeline::Consumer consumer = [&draw_result, this](
-                                             std::unique_ptr<FrameItem> item) {
-    draw_result =
-        DoDraw(std::move(item->frame_timings_recorder), std::move(item->tasks));
-  };
+  FramePipeline::Consumer consumer =
+      [&draw_result, this](std::unique_ptr<FrameItem> item) {
+        draw_result = DoDraw(std::move(item->frame_timings_recorder),
+                             std::move(item->layer_tree_tasks));
+      };
 
   PipelineConsumeResult consume_result = pipeline->Consume(consumer);
   if (consume_result == PipelineConsumeResult::NoneAvailable) {
@@ -284,7 +284,7 @@ DrawStatus Rasterizer::Draw(
 
 bool Rasterizer::ShouldResubmitFrame(const DoDrawResult& result) {
   if (result.resubmitted_item) {
-    FML_CHECK(!result.resubmitted_item->tasks.empty());
+    FML_CHECK(!result.resubmitted_item->layer_tree_tasks.empty());
     return true;
   }
   return false;
@@ -428,7 +428,6 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
                  .GetRasterTaskRunner()
                  ->RunsTasksOnCurrentThread());
   frame_timings_recorder->AssertInState(FrameTimingsRecorder::State::kBuildEnd);
-
 
   if (tasks.empty()) {
     return DoDrawResult{DoDrawStatus::kDone};
