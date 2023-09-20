@@ -110,7 +110,7 @@ void testMain() {
             isNotNull,
             reason: 'The container has a single child, the created view.',
           );
-          final DomElement platformView = platformViewsContainer.lastElementChild!;
+          final DomElement platformView = platformViewsContainer.children.single;
           expect(
             platformView.querySelector('div#success'),
             isNotNull,
