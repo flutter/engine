@@ -153,7 +153,8 @@
                 "parameters": [
                     "--engine-version",
                     "${REVISION}",
-                    "--skip-build"
+                    "--skip-build",
+		    "--upload"
                 ],
                 "script": "flutter/tools/fuchsia/build_fuchsia_artifacts.py",
                 "language": "python3"
