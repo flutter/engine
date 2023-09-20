@@ -13,14 +13,16 @@ class Heading extends PrimaryRoleManager {
         addHeadingRole();
       }
 
+  static const int defaultHeadingLevel = 1;
+
   @override
   void update() {
     super.update();
 
     if (semanticsObject.headingLevel != -1) {
-      addHeadingLevel(semanticsObject.headingLevel);
+      addHeadingLevel(semanticsObject.headingLevel ?? defaultHeadingLevel);
     } else {
-      addHeadingLevel(1);
+      addHeadingLevel(defaultHeadingLevel);
     }
   }
 
