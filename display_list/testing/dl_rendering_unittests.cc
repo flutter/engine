@@ -25,6 +25,7 @@
 #include "third_party/skia/include/effects/SkImageFilters.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/GrRecordingContext.h"
+#include "third_party/skia/include/gpu/GrTypes.h"
 
 namespace flutter {
 namespace testing {
@@ -492,7 +493,7 @@ class RenderEnvironment {
     auto surface = getSurface(info.width, info.height);
     FML_DCHECK(surface != nullptr);
     auto canvas = surface->getCanvas();
-    canvas->clear(info.bg);
+    canvas->clear(ToSk(info.bg));
 
     int restore_count = canvas->save();
     canvas->scale(info.scale, info.scale);
@@ -501,7 +502,7 @@ class RenderEnvironment {
 
     if (GrDirectContext* dContext =
             GrAsDirectContext(surface->recordingContext())) {
-      dContext->flushAndSubmit(surface, /*syncCpu=*/true);
+      dContext->flushAndSubmit(surface.get(), GrSyncCpu::kYes);
     }
     return std::make_unique<RenderResult>(surface);
   }
@@ -563,7 +564,7 @@ class CaseParameters {
                        dl_setup,
                        kEmptySkRenderer,
                        kEmptyDlRenderer,
-                       SK_ColorTRANSPARENT,
+                       DlColor(SK_ColorTRANSPARENT),
                        false,
                        false,
                        false) {}
@@ -984,7 +985,7 @@ class CanvasCompareTester {
                    "saveLayer with alpha, no bounds",
                    [=](SkCanvas* cv, SkPaint& p) {
                      SkPaint save_p;
-                     save_p.setColor(alpha_layer_color);
+                     save_p.setColor(ToSk(alpha_layer_color));
                      cv->saveLayer(nullptr, &save_p);
                    },
                    [=](DlCanvas* cv, DlPaint& p) {
@@ -998,7 +999,7 @@ class CanvasCompareTester {
                    "saveLayer with peephole alpha, no bounds",
                    [=](SkCanvas* cv, SkPaint& p) {
                      SkPaint save_p;
-                     save_p.setColor(alpha_layer_color);
+                     save_p.setColor(ToSk(alpha_layer_color));
                      cv->saveLayer(nullptr, &save_p);
                    },
                    [=](DlCanvas* cv, DlPaint& p) {
@@ -1012,7 +1013,7 @@ class CanvasCompareTester {
                    "saveLayer with alpha and bounds",
                    [=](SkCanvas* cv, SkPaint& p) {
                      SkPaint save_p;
-                     save_p.setColor(alpha_layer_color);
+                     save_p.setColor(ToSk(alpha_layer_color));
                      cv->saveLayer(layer_bounds, &save_p);
                    },
                    [=](DlCanvas* cv, DlPaint& p) {
@@ -1272,7 +1273,7 @@ class CanvasCompareTester {
                      "Blend == SrcIn",
                      [=](SkCanvas*, SkPaint& p) {
                        p.setBlendMode(SkBlendMode::kSrcIn);
-                       p.setColor(blendable_color);
+                       p.setColor(ToSk(blendable_color));
                      },
                      [=](DlCanvas*, DlPaint& p) {
                        p.setBlendMode(DlBlendMode::kSrcIn);
@@ -1284,7 +1285,7 @@ class CanvasCompareTester {
                      "Blend == DstIn",
                      [=](SkCanvas*, SkPaint& p) {
                        p.setBlendMode(SkBlendMode::kDstIn);
-                       p.setColor(blendable_color);
+                       p.setColor(ToSk(blendable_color));
                      },
                      [=](DlCanvas*, DlPaint& p) {
                        p.setBlendMode(DlBlendMode::kDstIn);
@@ -1431,7 +1432,7 @@ class CanvasCompareTester {
                    CaseParameters(
                        "ColorFilter == RotateRGB",
                        [=](SkCanvas*, SkPaint& p) {
-                         p.setColor(DlColor::kYellow());
+                         p.setColor(ToSk(DlColor::kYellow()));
                          p.setColorFilter(sk_color_filter);
                        },
                        [=](DlCanvas*, DlPaint& p) {
@@ -1447,7 +1448,7 @@ class CanvasCompareTester {
             CaseParameters(
                 "ColorFilter == Invert",
                 [=](SkCanvas*, SkPaint& p) {
-                  p.setColor(DlColor::kYellow());
+                  p.setColor(ToSk(DlColor::kYellow()));
                   p.setColorFilter(SkColorFilters::Matrix(invert_color_matrix));
                 },
                 [=](DlCanvas*, DlPaint& p) {
@@ -2129,11 +2130,11 @@ class CanvasCompareTester {
       for (int x = 0; x < kTestWidth; x++) {
         uint32_t ref_pixel = ref_row[x];
         uint32_t test_pixel = test_row[x];
-        if (ref_pixel != bg.argb || test_pixel != bg.argb) {
+        if (ref_pixel != bg.argb() || test_pixel != bg.argb()) {
           pixels_touched++;
           for (int i = 0; i < 32; i += 8) {
             int ref_comp = (ref_pixel >> i) & 0xff;
-            int bg_comp = (bg.argb >> i) & 0xff;
+            int bg_comp = (bg.argb() >> i) & 0xff;
             SkScalar faded_comp = bg_comp + (ref_comp - bg_comp) * opacity;
             int test_comp = (test_pixel >> i) & 0xff;
             if (std::abs(faded_comp - test_comp) > fudge) {
@@ -3271,16 +3272,16 @@ sk_sp<DisplayList> makeTestDisplayList() {
   DisplayListBuilder builder;
   DlPaint paint;
   paint.setDrawStyle(DlDrawStyle::kFill);
-  paint.setColor(SK_ColorRED);
+  paint.setColor(DlColor(SK_ColorRED));
   builder.DrawRect({kRenderLeft, kRenderTop, kRenderCenterX, kRenderCenterY},
                    paint);
-  paint.setColor(SK_ColorBLUE);
+  paint.setColor(DlColor(SK_ColorBLUE));
   builder.DrawRect({kRenderCenterX, kRenderTop, kRenderRight, kRenderCenterY},
                    paint);
-  paint.setColor(SK_ColorGREEN);
+  paint.setColor(DlColor(SK_ColorGREEN));
   builder.DrawRect({kRenderLeft, kRenderCenterY, kRenderCenterX, kRenderBottom},
                    paint);
-  paint.setColor(SK_ColorYELLOW);
+  paint.setColor(DlColor(SK_ColorYELLOW));
   builder.DrawRect(
       {kRenderCenterX, kRenderCenterY, kRenderRight, kRenderBottom}, paint);
   return builder.Build();
@@ -3487,8 +3488,8 @@ TEST_F(DisplayListCanvas, SaveLayerConsolidation) {
                                            DlBlendMode::kSrcATop),
       std::make_shared<DlMatrixColorFilter>(commutable_color_matrix),
       std::make_shared<DlMatrixColorFilter>(non_commutable_color_matrix),
-      DlSrgbToLinearGammaColorFilter::instance,
-      DlLinearToSrgbGammaColorFilter::instance,
+      DlSrgbToLinearGammaColorFilter::kInstance,
+      DlLinearToSrgbGammaColorFilter::kInstance,
   };
   std::vector<std::shared_ptr<DlImageFilter>> image_filters = {
       std::make_shared<DlBlurImageFilter>(5.0f, 5.0f, DlTileMode::kDecal),
@@ -3665,7 +3666,7 @@ TEST_F(DisplayListCanvas, MatrixColorFilterModifyTransparencyCheck) {
     auto dl_filter = DlMatrixColorFilter::Make(matrix);
     bool is_identity = (dl_filter == nullptr || original_value == value);
 
-    DlPaint paint(0x7f7f7f7f);
+    DlPaint paint(DlColor(0x7f7f7f7f));
     DlPaint filter_save_paint = DlPaint().setColorFilter(&filter);
 
     DisplayListBuilder builder1;
@@ -3737,7 +3738,7 @@ TEST_F(DisplayListCanvas, MatrixColorFilterOpacityCommuteCheck) {
     auto filter = DlMatrixColorFilter::Make(matrix);
     EXPECT_EQ(SkScalarIsFinite(value), filter != nullptr);
 
-    DlPaint paint(0x80808080);
+    DlPaint paint(DlColor(0x80808080));
     DlPaint opacity_save_paint = DlPaint().setOpacity(0.5);
     DlPaint filter_save_paint = DlPaint().setColorFilter(filter);
 
@@ -3849,7 +3850,7 @@ TEST_F(DisplayListCanvas, BlendColorFilterModifyTransparencyCheck) {
       ASSERT_NE(DlBlendColorFilter::Make(color, mode), nullptr) << desc;
     }
 
-    DlPaint paint(0x7f7f7f7f);
+    DlPaint paint(DlColor(0x7f7f7f7f));
     DlPaint filter_save_paint = DlPaint().setColorFilter(&filter);
 
     DisplayListBuilder builder1;
@@ -3914,7 +3915,7 @@ TEST_F(DisplayListCanvas, BlendColorFilterOpacityCommuteCheck) {
       ASSERT_NE(DlBlendColorFilter::Make(color, mode), nullptr) << desc;
     }
 
-    DlPaint paint(0x80808080);
+    DlPaint paint(DlColor(0x80808080));
     DlPaint opacity_save_paint = DlPaint().setOpacity(0.5);
     DlPaint filter_save_paint = DlPaint().setColorFilter(&filter);
 
@@ -4018,7 +4019,7 @@ class DisplayListNopTest : public DisplayListCanvas {
           int x = 0;
           for (DlColor color : test_dst_colors) {
             SkPaint paint;
-            paint.setColor(color);
+            paint.setColor(ToSk(color));
             paint.setBlendMode(SkBlendMode::kSrc);
             canvas->drawRect(SkRect::MakeXYWH(x, 0, 1, 1), paint);
             x++;
@@ -4120,8 +4121,8 @@ class DisplayListNopTest : public DisplayListCanvas {
       const uint32_t* dst_pixels = dst_data->addr32(0, y);
       const uint32_t* result_pixels = result_data->addr32(0, y);
       for (int x = 0; x < dst_data->width(); x++) {
-        all_flags |=
-            check_color_result(dst_pixels[x], result_pixels[x], dl, desc);
+        all_flags |= check_color_result(DlColor(dst_pixels[x]),
+                                        DlColor(result_pixels[x]), dl, desc);
       }
     }
     return all_flags;
@@ -4157,11 +4158,11 @@ class DisplayListNopTest : public DisplayListCanvas {
     }
 
     auto sk_mode = static_cast<SkBlendMode>(mode);
-    auto sk_color_filter = SkColorFilters::Blend(color, sk_mode);
+    auto sk_color_filter = SkColorFilters::Blend(ToSk(color), sk_mode);
     int all_flags = 0;
     if (sk_color_filter) {
       for (DlColor dst_color : test_dst_colors) {
-        DlColor result = sk_color_filter->filterColor(dst_color);
+        DlColor result = DlColor(sk_color_filter->filterColor(ToSk(dst_color)));
         all_flags |= check_color_result(dst_color, result, dl, desc);
       }
       if ((all_flags & kWasMTB) != 0) {
@@ -4191,7 +4192,7 @@ class DisplayListNopTest : public DisplayListCanvas {
     auto sk_mode = static_cast<SkBlendMode>(mode);
     SkPaint sk_paint;
     sk_paint.setBlendMode(sk_mode);
-    sk_paint.setColor(color);
+    sk_paint.setColor(ToSk(color));
     for (auto& provider : CanvasCompareTester::kTestProviders) {
       auto result_surface = provider->MakeOffscreenSurface(
           test_image->width(), test_image->height(),
@@ -4203,7 +4204,8 @@ class DisplayListNopTest : public DisplayListCanvas {
       if (GrDirectContext* direct_context = GrAsDirectContext(
               result_surface->sk_surface()->recordingContext())) {
         direct_context->flushAndSubmit();
-        direct_context->flushAndSubmit(result_surface->sk_surface(), true);
+        direct_context->flushAndSubmit(result_surface->sk_surface().get(),
+                                       GrSyncCpu::kYes);
       }
       auto result_pixels =
           std::make_unique<RenderResult>(result_surface->sk_surface());
@@ -4250,7 +4252,7 @@ class DisplayListNopTest : public DisplayListCanvas {
     auto sk_mode = static_cast<SkBlendMode>(mode);
     SkPaint sk_paint;
     sk_paint.setBlendMode(sk_mode);
-    sk_paint.setColor(color);
+    sk_paint.setColor(ToSk(color));
     sk_paint.setColorFilter(ToSk(color_filter));
     sk_paint.setImageFilter(ToSk(image_filter));
     for (auto& provider : CanvasCompareTester::kTestProviders) {
@@ -4264,7 +4266,8 @@ class DisplayListNopTest : public DisplayListCanvas {
       if (GrDirectContext* direct_context = GrAsDirectContext(
               result_surface->sk_surface()->recordingContext())) {
         direct_context->flushAndSubmit();
-        direct_context->flushAndSubmit(result_surface->sk_surface(), true);
+        direct_context->flushAndSubmit(result_surface->sk_surface().get(),
+                                       GrSyncCpu::kYes);
       }
       auto result_pixels =
           std::make_unique<RenderResult>(result_surface->sk_surface());

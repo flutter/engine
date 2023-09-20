@@ -5,6 +5,7 @@
 #include <array>
 #include <cmath>
 #include <cstdlib>
+#include <iostream>
 #include <memory>
 #include <tuple>
 #include <utility>
@@ -22,7 +23,6 @@
 #include "impeller/entity/contents/conical_gradient_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
-#include "impeller/entity/contents/scene_contents.h"
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/geometry/color.h"
@@ -1206,6 +1206,37 @@ TEST_P(AiksTest, CanRenderRoundedRectWithNonUniformRadii) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, CanRenderStrokePathThatEndsAtSharpTurn) {
+  Canvas canvas;
+
+  Paint paint;
+  paint.color = Color::Red();
+  paint.style = Paint::Style::kStroke;
+  paint.stroke_width = 200;
+
+  Rect rect = {100, 100, 200, 200};
+  PathBuilder builder;
+  builder.AddArc(rect, Degrees(0), Degrees(90), false);
+
+  canvas.DrawPath(builder.TakePath(), paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderStrokePathWithCubicLine) {
+  Canvas canvas;
+
+  Paint paint;
+  paint.color = Color::Red();
+  paint.style = Paint::Style::kStroke;
+  paint.stroke_width = 20;
+
+  PathBuilder builder;
+  builder.AddCubicCurve({0, 200}, {50, 400}, {350, 0}, {400, 200});
+
+  canvas.DrawPath(builder.TakePath(), paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, CanRenderDifferencePaths) {
   Canvas canvas;
 
@@ -1228,6 +1259,32 @@ TEST_P(AiksTest, CanRenderDifferencePaths) {
       std::make_shared<Image>(CreateTextureForFixture("boston.jpg")), {10, 10},
       Paint{});
   canvas.DrawPath(path, paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+// Regression test for https://github.com/flutter/flutter/issues/134816.
+//
+// It should be possible to draw 3 lines, and not have an implicit close path.
+TEST_P(AiksTest, CanDrawAnOpenPath) {
+  Canvas canvas;
+
+  // Starting at (50, 50), draw lines from:
+  // 1. (50, height)
+  // 2. (width, height)
+  // 3. (width, 50)
+  PathBuilder builder;
+  builder.MoveTo({50, 50});
+  builder.LineTo({50, 100});
+  builder.LineTo({100, 100});
+  builder.LineTo({100, 50});
+
+  Paint paint;
+  paint.color = Color::Red();
+  paint.style = Paint::Style::kStroke;
+  paint.stroke_width = 10;
+
+  canvas.DrawPath(builder.TakePath(), paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
@@ -1278,7 +1335,11 @@ bool RenderTextInCanvasSkia(const std::shared_ptr<Context>& context,
   }
 
   // Create the Impeller text frame and draw it at the designated baseline.
-  auto frame = MakeTextFrameFromTextBlobSkia(blob);
+  auto maybe_frame = MakeTextFrameFromTextBlobSkia(blob);
+  if (!maybe_frame.has_value()) {
+    return false;
+  }
+  auto frame = maybe_frame.value();
 
   Paint text_paint;
   text_paint.color = Color::Yellow().WithAlpha(options.alpha);
@@ -1467,7 +1528,7 @@ TEST_P(AiksTest, CanRenderTextOutsideBoundaries) {
     {
       auto blob = SkTextBlob::MakeFromString(t.text, sk_font);
       ASSERT_NE(blob, nullptr);
-      auto frame = MakeTextFrameFromTextBlobSkia(blob);
+      auto frame = MakeTextFrameFromTextBlobSkia(blob).value();
       canvas.DrawTextFrame(frame, Point(), text_paint);
     }
     canvas.Restore();
@@ -1513,6 +1574,23 @@ TEST_P(AiksTest, CanDrawPaintWithAdvancedBlend) {
   canvas.DrawPaint({.color = Color::MediumTurquoise()});
   canvas.DrawPaint({.color = Color::Color::OrangeRed().WithAlpha(0.5),
                     .blend_mode = BlendMode::kHue});
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, DrawPaintWithAdvancedBlendOverFilter) {
+  Paint filtered = {
+      .color = Color::Black(),
+      .mask_blur_descriptor =
+          Paint::MaskBlurDescriptor{
+              .style = FilterContents::BlurStyle::kNormal,
+              .sigma = Sigma(60),
+          },
+  };
+
+  Canvas canvas;
+  canvas.DrawPaint({.color = Color::White()});
+  canvas.DrawCircle({300, 300}, 200, filtered);
+  canvas.DrawPaint({.color = Color::Green(), .blend_mode = BlendMode::kScreen});
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
@@ -1952,6 +2030,22 @@ TEST_P(AiksTest, DrawRectStrokesRenderCorrectly) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, DrawRectStrokesWithBevelJoinRenderCorrectly) {
+  Canvas canvas;
+  Paint paint;
+  paint.color = Color::Red();
+  paint.style = Paint::Style::kStroke;
+  paint.stroke_width = 10;
+  paint.stroke_join = Join::kBevel;
+
+  canvas.Translate({100, 100});
+  canvas.DrawPath(
+      PathBuilder{}.AddRect(Rect::MakeSize(Size{100, 100})).TakePath(),
+      {paint});
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, SaveLayerDrawsBehindSubsequentEntities) {
   // Compare with https://fiddle.skia.org/c/9e03de8567ffb49e7e83f53b64bcf636
   Canvas canvas;
@@ -2187,6 +2281,30 @@ TEST_P(AiksTest, DrawPaintAbsorbsClears) {
   ASSERT_EQ(render_pass->GetCommands().size(), 0llu);
 }
 
+// This is important to enforce with texture reuse, since cached textures need
+// to be cleared before reuse.
+TEST_P(AiksTest,
+       ParentSaveLayerCreatesRenderPassWhenChildBackdropFilterIsPresent) {
+  Canvas canvas;
+  canvas.SaveLayer({}, std::nullopt, ImageFilter::MakeMatrix(Matrix(), {}));
+  canvas.DrawPaint({.color = Color::Red(), .blend_mode = BlendMode::kSource});
+  canvas.DrawPaint({.color = Color::CornflowerBlue().WithAlpha(0.75),
+                    .blend_mode = BlendMode::kSourceOver});
+  canvas.Restore();
+
+  Picture picture = canvas.EndRecordingAsPicture();
+
+  std::shared_ptr<ContextSpy> spy = ContextSpy::Make();
+  std::shared_ptr<Context> real_context = GetContext();
+  std::shared_ptr<ContextMock> mock_context = spy->MakeContext(real_context);
+  AiksContext renderer(mock_context, nullptr);
+  std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
+
+  ASSERT_EQ(spy->render_passes_.size(), 3llu);
+  std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
+  ASSERT_EQ(render_pass->GetCommands().size(), 0llu);
+}
+
 TEST_P(AiksTest, DrawRectAbsorbsClears) {
   Canvas canvas;
   canvas.DrawRect({0, 0, 300, 300},
@@ -2289,6 +2407,35 @@ TEST_P(AiksTest, ClipRectElidesNoOpClips) {
   ASSERT_EQ(spy->render_passes_.size(), 1llu);
   std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
   ASSERT_EQ(render_pass->GetCommands().size(), 0llu);
+}
+
+TEST_P(AiksTest, ClearColorOptimizationDoesNotApplyForBackdropFilters) {
+  Canvas canvas;
+  canvas.SaveLayer({}, std::nullopt,
+                   ImageFilter::MakeBlur(Sigma(3), Sigma(3),
+                                         FilterContents::BlurStyle::kNormal,
+                                         Entity::TileMode::kClamp));
+  canvas.DrawPaint({.color = Color::Red(), .blend_mode = BlendMode::kSource});
+  canvas.DrawPaint({.color = Color::CornflowerBlue().WithAlpha(0.75),
+                    .blend_mode = BlendMode::kSourceOver});
+  canvas.Restore();
+
+  Picture picture = canvas.EndRecordingAsPicture();
+
+  std::optional<Color> actual_color;
+  picture.pass->IterateAllElements([&](EntityPass::Element& element) -> bool {
+    if (auto subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
+      actual_color = subpass->get()->GetClearColor();
+    }
+    // Fail if the first element isn't a subpass.
+    return true;
+  });
+
+  ASSERT_TRUE(actual_color.has_value());
+  if (!actual_color) {
+    return;
+  }
+  ASSERT_EQ(actual_color.value(), Color::BlackTransparent());
 }
 
 TEST_P(AiksTest, CollapsedDrawPaintInSubpass) {
@@ -3055,7 +3202,12 @@ TEST_P(AiksTest, TextForegroundShaderWithTransform) {
 
   auto blob = SkTextBlob::MakeFromString("Hello", sk_font);
   ASSERT_NE(blob, nullptr);
-  auto frame = MakeTextFrameFromTextBlobSkia(blob);
+  auto maybe_frame = MakeTextFrameFromTextBlobSkia(blob);
+  ASSERT_TRUE(maybe_frame.has_value());
+  if (!maybe_frame.has_value()) {
+    return;
+  }
+  auto frame = maybe_frame.value();
   canvas.DrawTextFrame(frame, Point(), text_paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
@@ -3173,7 +3325,7 @@ TEST_P(AiksTest, MatrixSaveLayerFilter) {
     canvas.SaveLayer({.image_filter = ImageFilter::MakeMatrix(
                           Matrix::MakeTranslation(Vector2(1, 1) *
                                                   (200 + 100 * k1OverSqrt2)) *
-                              Matrix::MakeScale(Vector2(1, 1) * 0.2) *
+                              Matrix::MakeScale(Vector2(1, 1) * 0.5) *
                               Matrix::MakeTranslation(Vector2(-200, -200)),
                           SamplerDescriptor{})},
                      std::nullopt);
@@ -3201,7 +3353,7 @@ TEST_P(AiksTest, MatrixBackdropFilter) {
         {}, std::nullopt,
         ImageFilter::MakeMatrix(
             Matrix::MakeTranslation(Vector2(1, 1) * (100 + 100 * k1OverSqrt2)) *
-                Matrix::MakeScale(Vector2(1, 1) * 0.2) *
+                Matrix::MakeScale(Vector2(1, 1) * 0.5) *
                 Matrix::MakeTranslation(Vector2(-100, -100)),
             SamplerDescriptor{}));
     canvas.Restore();
@@ -3360,6 +3512,39 @@ TEST_P(AiksTest, CaptureContext) {
 
 TEST_P(AiksTest, CaptureInactivatedByDefault) {
   ASSERT_FALSE(GetContext()->capture.IsActive());
+}
+
+// Regression test for https://github.com/flutter/flutter/issues/134678.
+TEST_P(AiksTest, ReleasesTextureOnTeardown) {
+  auto context = GetContext();
+  std::weak_ptr<Texture> weak_texture;
+
+  {
+    auto texture = CreateTextureForFixture("table_mountain_nx.png");
+
+    Canvas canvas;
+    canvas.Scale(GetContentScale());
+    canvas.Translate({100.0f, 100.0f, 0});
+
+    Paint paint;
+    paint.color_source = ColorSource::MakeImage(
+        texture, Entity::TileMode::kClamp, Entity::TileMode::kClamp, {}, {});
+    canvas.DrawRect({0, 0, 600, 600}, paint);
+
+    ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+  }
+
+  // See https://github.com/flutter/flutter/issues/134751.
+  //
+  // If the fence waiter was working this may not be released by the end of the
+  // scope above. Adding a manual shutdown so that future changes to the fence
+  // waiter will not flake this test.
+  context->Shutdown();
+
+  // The texture should be released by now.
+  ASSERT_TRUE(weak_texture.expired()) << "When the texture is no longer in use "
+                                         "by the backend, it should be "
+                                         "released.";
 }
 
 }  // namespace testing

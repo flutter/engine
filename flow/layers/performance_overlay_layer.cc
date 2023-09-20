@@ -14,9 +14,6 @@
 #include "flow/stopwatch_sk.h"
 #include "third_party/skia/include/core/SkFont.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
-#ifdef IMPELLER_SUPPORTS_RENDERING
-#include "impeller/typographer/backends/skia/text_frame_skia.h"  // nogncheck
-#endif  // IMPELLER_SUPPORTS_RENDERING
 
 namespace flutter {
 namespace {
@@ -52,15 +49,8 @@ void VisualizeStopWatch(DlCanvas* canvas,
     auto text = PerformanceOverlayLayer::MakeStatisticsText(
         stopwatch, label_prefix, font_path);
     // Historically SK_ColorGRAY (== 0xFF888888) was used here
-    DlPaint paint(0xFF888888);
-#ifdef IMPELLER_SUPPORTS_RENDERING
-    if (impeller_enabled) {
-      canvas->DrawTextFrame(impeller::MakeTextFrameFromTextBlobSkia(text),
-                            x + label_x, y + height + label_y, paint);
-    }
-#endif  // IMPELLER_SUPPORTS_RENDERING
+    DlPaint paint(DlColor(0xFF888888));
     canvas->DrawTextBlob(text, x + label_x, y + height + label_y, paint);
-    return;
   }
 }
 

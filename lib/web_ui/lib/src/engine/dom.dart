@@ -322,7 +322,7 @@ external DomHTMLDocument get domDocument;
 
 @JS()
 @staticInterop
-class DomEventTarget {}
+class DomEventTarget implements JSObject {}
 
 extension DomEventTargetExtension on DomEventTarget {
   @JS('addEventListener')
@@ -743,6 +743,7 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   set alignContent(String value) => setProperty('align-content', value);
   set textAlign(String value) => setProperty('text-align', value);
   set font(String value) => setProperty('font', value);
+  set cursor(String value) => setProperty('cursor', value);
   String get width => getPropertyValue('width');
   String get height => getPropertyValue('height');
   String get position => getPropertyValue('position');
@@ -807,6 +808,7 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   String get alignContent => getPropertyValue('align-content');
   String get textAlign => getPropertyValue('text-align');
   String get font => getPropertyValue('font');
+  String get cursor => getPropertyValue('cursor');
 
   @JS('getPropertyValue')
   external JSString _getPropertyValue(JSString property);
@@ -1132,7 +1134,7 @@ extension WebGLContextExtension on WebGLContext {
 
 @JS()
 @staticInterop
-abstract class DomCanvasImageSource {}
+abstract class DomCanvasImageSource implements JSObject {}
 
 @JS()
 @staticInterop
@@ -1425,7 +1427,7 @@ extension DomImageDataExtension on DomImageData {
 
 @JS('ImageBitmap')
 @staticInterop
-class DomImageBitmap {}
+class DomImageBitmap implements JSObject {}
 
 extension DomImageBitmapExtension on DomImageBitmap {
   external JSNumber get width;
@@ -1828,7 +1830,7 @@ class HttpFetchError implements Exception {
 
 @JS()
 @staticInterop
-class DomResponse {}
+class DomResponse implements JSObject {}
 
 extension DomResponseExtension on DomResponse {
   @JS('status')
@@ -1865,7 +1867,7 @@ extension DomHeadersExtension on DomHeaders {
 
 @JS()
 @staticInterop
-class _DomReadableStream {}
+class _DomReadableStream implements JSObject {}
 
 extension _DomReadableStreamExtension on _DomReadableStream {
   external _DomStreamReader getReader();
@@ -2067,6 +2069,10 @@ extension DomHTMLTextAreaElementExtension on DomHTMLTextAreaElement {
   @JS('name')
   external set _name(JSString value);
   set name(String value) => _name = value.toJS;
+
+  @JS('selectionDirection')
+  external JSString? get _selectionDirection;
+  String? get selectionDirection => _selectionDirection?.toDart;
 
   @JS('selectionStart')
   external JSNumber? get _selectionStart;
@@ -2703,6 +2709,10 @@ extension DomHTMLInputElementExtension on DomHTMLInputElement {
   @JS('autocomplete')
   external set _autocomplete(JSString value);
   set autocomplete(String value) => _autocomplete = value.toJS;
+
+  @JS('selectionDirection')
+  external JSString? get _selectionDirection;
+  String? get selectionDirection => _selectionDirection?.toDart;
 
   @JS('selectionStart')
   external JSNumber? get _selectionStart;

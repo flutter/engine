@@ -187,7 +187,7 @@ void DlSkCanvasAdapter::DrawPaint(const DlPaint& paint) {
 }
 
 void DlSkCanvasAdapter::DrawColor(DlColor color, DlBlendMode mode) {
-  delegate_->drawColor(color, ToSk(mode));
+  delegate_->drawColor(ToSk(color), ToSk(mode));
 }
 
 void DlSkCanvasAdapter::DrawLine(const SkPoint& p0,
@@ -323,14 +323,6 @@ void DlSkCanvasAdapter::DrawTextBlob(const sk_sp<SkTextBlob>& blob,
                                      SkScalar y,
                                      const DlPaint& paint) {
   delegate_->drawTextBlob(blob, x, y, ToSk(paint));
-}
-
-void DlSkCanvasAdapter::DrawTextFrame(
-    const std::shared_ptr<impeller::TextFrame>& text_frame,
-    SkScalar x,
-    SkScalar y,
-    const DlPaint& paint) {
-  FML_CHECK(false);
 }
 
 void DlSkCanvasAdapter::DrawShadow(const SkPath& path,

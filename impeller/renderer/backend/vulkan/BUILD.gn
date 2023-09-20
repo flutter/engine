@@ -10,11 +10,14 @@ impeller_component("vulkan_unittests") {
   sources = [
     "blit_command_vk_unittests.cc",
     "command_encoder_vk_unittests.cc",
+    "command_pool_vk_unittests.cc",
     "context_vk_unittests.cc",
+    "fence_waiter_vk_unittests.cc",
     "pass_bindings_cache_unittests.cc",
     "resource_manager_vk_unittests.cc",
     "test/mock_vulkan.cc",
     "test/mock_vulkan.h",
+    "test/mock_vulkan_unittests.cc",
   ]
   deps = [
     ":vulkan",
@@ -109,12 +112,11 @@ impeller_component("vulkan") {
     "../../../blobcat:blobcat_lib",
     "//flutter/flutter_vma",
     "//flutter/fml",
-    "//flutter/vulkan/procs",
     "//third_party/vulkan-deps/vulkan-headers/src:vulkan_headers",
     "//third_party/vulkan_memory_allocator",
   ]
 
-  if (enable_vulkan_validation_layers) {
+  if (impeller_enable_vulkan_validation_layers) {
     defines = [ "IMPELLER_ENABLE_VULKAN_VALIDATION_LAYERS" ]
   }
 }
