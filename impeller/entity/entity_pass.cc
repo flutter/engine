@@ -537,6 +537,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       // The subpass will need to read from the current pass texture when
       // rendering the backdrop, so if there's an active pass, end it prior to
       // rendering the subpass.
+      pass_context.GetRenderPass(pass_depth);
       pass_context.EndPass();
     }
 
@@ -678,13 +679,6 @@ bool EntityPass::OnRender(
   if (!pass_context.IsValid()) {
     VALIDATION_LOG << SPrintF("Pass context invalid (Depth=%d)", pass_depth);
     return false;
-  }
-
-  if (!collapsed_parent_pass &&
-      !GetClearColor(root_pass_size).IsTransparent()) {
-    // Force the pass context to create at least one new pass if the clear color
-    // is present.
-    pass_context.GetRenderPass(pass_depth);
   }
 
   auto render_element = [&stencil_depth_floor, &pass_context, &pass_depth,
