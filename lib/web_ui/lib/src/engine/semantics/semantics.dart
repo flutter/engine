@@ -985,8 +985,8 @@ class SemanticsObject {
   }
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
-  int get headingLevel => _headingLevel;
-  int _headingLevel = -1;
+  int? get headingLevel => _headingLevel;
+  int? _headingLevel = -1;
 
   static const int _headingLevelIndex = 1 << 24;
   void _markHeadingLevelDirty() {
