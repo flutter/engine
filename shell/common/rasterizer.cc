@@ -26,8 +26,11 @@
 #include "third_party/skia/include/core/SkSerialProcs.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/encode/SkPngEncoder.h"
+#include "third_party/skia/include/gpu/GpuTypes.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/GrTypes.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 #include "third_party/skia/include/utils/SkBase64.h"
 
@@ -110,7 +113,7 @@ void Rasterizer::Teardown() {
     if (context_switch->GetResult()) {
       compositor_context_->OnGrContextDestroyed();
       if (auto* context = surface_->GetContext()) {
-        context->purgeUnlockedResources(/*scratchResourcesOnly=*/false);
+        context->purgeUnlockedResources(GrPurgeResourceOptions::kAllResources);
       }
     }
     surface_.reset();
@@ -344,7 +347,7 @@ std::unique_ptr<Rasterizer::GpuImageResult> Rasterizer::MakeSkiaGpuImage(
 
             GrBackendTexture texture = context->createBackendTexture(
                 image_info.width(), image_info.height(), image_info.colorType(),
-                GrMipmapped::kNo, GrRenderable::kYes);
+                skgpu::Mipmapped::kNo, GrRenderable::kYes);
             if (!texture.isValid()) {
               result = std::make_unique<SnapshotDelegate::GpuImageResult>(
                   GrBackendTexture(), nullptr, nullptr,
@@ -696,6 +699,9 @@ static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
 #else
   SkSerialProcs procs = {0};
   procs.fTypefaceProc = SerializeTypefaceWithData;
+  procs.fImageProc = [](SkImage* img, void*) -> sk_sp<SkData> {
+    return SkPngEncoder::Encode(nullptr, img, SkPngEncoder::Options{});
+  };
 #endif
 
   return recorder.finishRecordingAsPicture()->serialize(&procs);

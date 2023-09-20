@@ -61,8 +61,17 @@ class Path {
   };
 
   struct PolylineContour {
+    struct Component {
+      size_t component_start_index;
+      /// Denotes whether this component is a curve.
+      ///
+      /// This is set to true when this component is generated from
+      /// QuadraticComponent or CubicPathComponent.
+      bool is_curve;
+    };
     /// Index that denotes the first point of this contour.
     size_t start_index;
+
     /// Denotes whether the last point of this contour is connected to the first
     /// point of this contour or not.
     bool is_closed;
@@ -71,6 +80,12 @@ class Path {
     Vector2 start_direction;
     /// The direction of the contour's end cap.
     Vector2 end_direction;
+
+    /// Distinct components in this contour.
+    ///
+    /// If this contour is generated from multiple path components, each
+    /// path component forms a component in this vector.
+    std::vector<Component> components;
   };
 
   /// One or more contours represented as a series of points and indices in
@@ -138,6 +153,8 @@ class Path {
 
   void SetFillType(FillType fill);
 
+  void SetBounds(Rect rect);
+
   Path& AddLinearComponent(Point p1, Point p2);
 
   Path& AddQuadraticComponent(Point p1, Point cp, Point p2);
@@ -145,6 +162,12 @@ class Path {
   Path& AddCubicComponent(Point p1, Point cp1, Point cp2, Point p2);
 
   Path& AddContourComponent(Point destination, bool is_closed = false);
+
+  /// @brief Called by `PathBuilder` to compute the bounds for certain paths.
+  ///
+  /// `PathBuilder` may set the bounds directly, in case they come from a source
+  /// with already computed bounds, such as an SkPath.
+  void ComputeBounds();
 
   void SetContourClosed(bool is_closed);
 
@@ -178,6 +201,8 @@ class Path {
   std::vector<QuadraticPathComponent> quads_;
   std::vector<CubicPathComponent> cubics_;
   std::vector<ContourComponent> contours_;
+
+  std::optional<Rect> computed_bounds_;
 };
 
 }  // namespace impeller

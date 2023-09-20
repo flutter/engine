@@ -12,6 +12,7 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/aiks/image.h"
+#include "impeller/aiks/image_filter.h"
 #include "impeller/aiks/paint.h"
 #include "impeller/aiks/picture.h"
 #include "impeller/core/sampler_descriptor.h"
@@ -34,7 +35,7 @@ struct CanvasStackEntry {
   // |cull_rect| is conservative screen-space bounds of the clipped output area
   std::optional<Rect> cull_rect;
   size_t stencil_depth = 0u;
-  bool is_subpass = false;
+  Entity::RenderingMode rendering_mode = Entity::RenderingMode::kDirect;
   bool contains_clips = false;
 };
 
@@ -68,7 +69,7 @@ class Canvas {
 
   void SaveLayer(const Paint& paint,
                  std::optional<Rect> bounds = std::nullopt,
-                 const Paint::ImageFilterProc& backdrop_filter = nullptr);
+                 const std::shared_ptr<ImageFilter>& backdrop_filter = nullptr);
 
   bool Restore();
 
@@ -180,7 +181,7 @@ class Canvas {
 
   void Save(bool create_subpass,
             BlendMode = BlendMode::kSourceOver,
-            EntityPass::BackdropFilterProc backdrop_filter = nullptr);
+            const std::shared_ptr<ImageFilter>& backdrop_filter = nullptr);
 
   void RestoreClip();
 
