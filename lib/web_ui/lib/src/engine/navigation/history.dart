@@ -220,8 +220,8 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
     assert(
       _hasSerialCount(currentState),
       currentState == null
-          ? 'unexpected null state'
-          : 'state is missing field \'serialCount\'',
+          ? 'unexpected null history state'
+          : "history state is missing field 'serialCount'",
     );
     final int backCount = _currentSerialCount;
     if (backCount > 0) {
