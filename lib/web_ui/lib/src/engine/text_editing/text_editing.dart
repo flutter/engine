@@ -1048,7 +1048,7 @@ abstract class TextEditingStrategy {
 
   /// Set style to the native DOM element used for text editing.
   void updateElementStyle(EditableTextStyle style);
-  
+
   /// Set scroll state on the input or textarea element.
   void setScrollState(EditableTextScrollState scrollState);
 
@@ -2484,7 +2484,7 @@ class EditableTextScrollState {
   void applyToDomElement(DomHTMLElement domElement) {
     domElement.scrollLeft = scrollLeft;
     domElement.scrollTop = scrollTop;
-  } 
+  }
 }
 
 /// Describes the location and size of the editing element on the screen.
