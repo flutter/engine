@@ -1048,6 +1048,9 @@ abstract class TextEditingStrategy {
 
   /// Set style to the native DOM element used for text editing.
   void updateElementStyle(EditableTextStyle style);
+  
+  /// Set scroll state on the input or textarea element.
+  void setScrollState(EditableTextScrollState scrollState);
 
   /// Disables the element so it's no longer used for text editing.
   ///
@@ -1213,6 +1216,9 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
   /// Styles associated with the editable text.
   EditableTextStyle? style;
 
+  /// Scroll state associated with editable text
+  EditableTextScrollState? scroll;
+
   /// Size and transform of the editable text on the page.
   EditableTextGeometry? geometry;
 
@@ -1343,6 +1349,15 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
   }
 
   @override
+  void setScrollState(EditableTextScrollState scrollState) {
+    scroll = scrollState;
+
+    if (isEnabled) {
+      scrollState.applyToDomElement(activeDomElement);
+    }
+  }
+
+  @override
   void disable() {
     assert(isEnabled);
 
@@ -1350,6 +1365,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     lastEditingState = null;
     _editingDeltaState = null;
     style = null;
+    scroll = null;
     geometry = null;
 
     for (int i = 0; i < subscriptions.length; i++) {
@@ -1484,6 +1500,9 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     if (lastEditingState != null) {
       setEditingState(lastEditingState);
     }
+
+    // Apply scroll state when element is activated and editing state is set on it.
+    scroll?.applyToDomElement(activeDomElement);
 
     // Re-focuses after setting editing state.
     activeDomElement.focus();
@@ -2012,6 +2031,20 @@ class TextInputSetStyle extends TextInputCommand {
   }
 }
 
+/// Responds to the 'TextInput.setScrollState' message.
+class TextInputSetScrollState extends TextInputCommand {
+  const TextInputSetScrollState({
+    required this.scrollState,
+  });
+
+  final EditableTextScrollState scrollState;
+
+  @override
+  void run(HybridTextEditing textEditing) {
+    textEditing.strategy.setScrollState(scrollState);
+  }
+}
+
 /// Responds to the 'TextInput.clearClient' message.
 class TextInputClearClient extends TextInputCommand {
   const TextInputClearClient();
@@ -2159,6 +2192,13 @@ class TextEditingChannel {
       case 'TextInput.setStyle':
         command = TextInputSetStyle(
           style: EditableTextStyle.fromFrameworkMessage(
+            call.arguments as Map<String, dynamic>,
+          ),
+        );
+
+      case 'TextInput.setScrollState':
+        command = TextInputSetScrollState(
+          scrollState: EditableTextScrollState.fromFrameworkMessage(
             call.arguments as Map<String, dynamic>,
           ),
         );
@@ -2355,6 +2395,8 @@ class EditableTextStyle {
     required this.textAlign,
     required this.fontFamily,
     required this.fontWeight,
+    required this.lineHeight,
+    required this.letterSpacing,
   });
 
   factory EditableTextStyle.fromFrameworkMessage(
@@ -2363,6 +2405,8 @@ class EditableTextStyle {
     assert(flutterStyle.containsKey('fontFamily'));
     assert(flutterStyle.containsKey('textAlignIndex'));
     assert(flutterStyle.containsKey('textDirectionIndex'));
+    assert(flutterStyle.containsKey('lineHeight'));
+    assert(flutterStyle.containsKey('letterSpacing'));
 
     final int textAlignIndex = flutterStyle['textAlignIndex'] as int;
     final int textDirectionIndex = flutterStyle['textDirectionIndex'] as int;
@@ -2382,6 +2426,8 @@ class EditableTextStyle {
       textAlign: ui.TextAlign.values[textAlignIndex],
       textDirection: ui.TextDirection.values[textDirectionIndex],
       fontWeight: fontWeight,
+      lineHeight: flutterStyle.tryDouble('lineHeight'),
+      letterSpacing: flutterStyle.tryDouble('letterSpacing'),
     );
   }
 
@@ -2392,6 +2438,8 @@ class EditableTextStyle {
   final String? fontFamily;
   final ui.TextAlign textAlign;
   final ui.TextDirection textDirection;
+  final double? lineHeight;
+  final double? letterSpacing;
 
   String? get align => textAlignToCssValue(textAlign, textDirection);
 
@@ -2401,8 +2449,42 @@ class EditableTextStyle {
   void applyToDomElement(DomHTMLElement domElement) {
     domElement.style
       ..textAlign = align!
-      ..font = cssFont;
+      ..font = cssFont
+      ..lineHeight = '$lineHeight'
+      ..letterSpacing = '${letterSpacing}px';
   }
+}
+
+/// Information on the scroll state of a text editing element.
+///
+/// This information is received via TextInput.setScrollState message.
+class EditableTextScrollState {
+  EditableTextScrollState({
+    required this.scrollTop,
+    required this.scrollLeft,
+  });
+
+  factory EditableTextScrollState.fromFrameworkMessage(
+      Map<String, dynamic> flutterStyle) {
+    assert(flutterStyle.containsKey('scrollTop'));
+    assert(flutterStyle.containsKey('scrollLeft'));
+
+    final double scrollTop = flutterStyle['scrollTop'] as double;
+    final double scrollLeft = flutterStyle['scrollLeft'] as double;
+
+    return EditableTextScrollState(
+      scrollTop: scrollTop,
+      scrollLeft: scrollLeft,
+    );
+  }
+
+  final double scrollTop;
+  final double scrollLeft;
+
+  void applyToDomElement(DomHTMLElement domElement) {
+    domElement.scrollLeft = scrollLeft;
+    domElement.scrollTop = scrollTop;
+  } 
 }
 
 /// Describes the location and size of the editing element on the screen.
@@ -2460,7 +2542,7 @@ class EditableTextGeometry {
   void applyToDomElement(DomHTMLElement domElement) {
     final String cssTransform = float64ListToCssTransform(globalTransform);
     domElement.style
-      ..width = '${width}px'
+      ..width = '${width - 2}px'
       ..height = '${height}px'
       ..transform = cssTransform;
   }
