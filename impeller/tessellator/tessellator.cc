@@ -21,7 +21,7 @@ static void HeapFree(void* userData, void* ptr) {
 }
 
 // Note: these units are "number of entities" for bucket size and not in KB.
-static TESSalloc alloc = {
+static const TESSalloc kAlloc = {
     HeapAlloc, HeapRealloc, HeapFree, 0, /* =userData */
     16,                                  /* =meshEdgeBucketSize */
     16,                                  /* =meshVertexBucketSize */
@@ -32,7 +32,19 @@ static TESSalloc alloc = {
 };
 
 Tessellator::Tessellator()
-    : c_tessellator_(::tessNewTess(&alloc), &DestroyTessellator) {}
+    : c_tess_alloc_(nullptr, &DestroyTessAlloc),
+      c_tessellator_(nullptr, &DestroyTessellator) {
+  {
+    CTessAlloc tess_alloc(new TESSalloc(), &DestroyTessAlloc);
+    c_tess_alloc_ = std::move(tess_alloc);
+  }
+  memcpy(c_tess_alloc_.get(), &kAlloc, sizeof(TESSalloc));
+  {
+    CTessellator tessellator(::tessNewTess(c_tess_alloc_.get()),
+                             &DestroyTessellator);
+    c_tessellator_ = std::move(tessellator);
+  }
+}
 
 Tessellator::~Tessellator() = default;
 
@@ -125,6 +137,12 @@ Tessellator::Result Tessellator::Tessellate(
 void DestroyTessellator(TESStesselator* tessellator) {
   if (tessellator != nullptr) {
     ::tessDeleteTess(tessellator);
+  }
+}
+
+void DestroyTessAlloc(TESSalloc* alloc) {
+  if (alloc != nullptr) {
+    delete alloc;
   }
 }
 
