@@ -322,7 +322,7 @@ external DomHTMLDocument get domDocument;
 
 @JS()
 @staticInterop
-class DomEventTarget {}
+class DomEventTarget implements JSObject {}
 
 extension DomEventTargetExtension on DomEventTarget {
   @JS('addEventListener')
@@ -1135,7 +1135,7 @@ extension WebGLContextExtension on WebGLContext {
 
 @JS()
 @staticInterop
-abstract class DomCanvasImageSource {}
+abstract class DomCanvasImageSource implements JSObject {}
 
 @JS()
 @staticInterop
@@ -1428,7 +1428,7 @@ extension DomImageDataExtension on DomImageData {
 
 @JS('ImageBitmap')
 @staticInterop
-class DomImageBitmap {}
+class DomImageBitmap implements JSObject {}
 
 extension DomImageBitmapExtension on DomImageBitmap {
   external JSNumber get width;
@@ -1831,7 +1831,7 @@ class HttpFetchError implements Exception {
 
 @JS()
 @staticInterop
-class DomResponse {}
+class DomResponse implements JSObject {}
 
 extension DomResponseExtension on DomResponse {
   @JS('status')
@@ -1868,7 +1868,7 @@ extension DomHeadersExtension on DomHeaders {
 
 @JS()
 @staticInterop
-class _DomReadableStream {}
+class _DomReadableStream implements JSObject {}
 
 extension _DomReadableStreamExtension on _DomReadableStream {
   external _DomStreamReader getReader();
