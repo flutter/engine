@@ -39,3 +39,5 @@ CheckOptions:
     value: "lower_case"
   - key: readability-identifier-naming.PrivateMemberSuffix
     value: "_"
+
+HeaderFilterRegex: "(?!flutter/third_party/).*\\flutter\\.*"
