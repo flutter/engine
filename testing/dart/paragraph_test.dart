@@ -240,27 +240,6 @@ void main() {
     expect(line?.lineNumber, 1);
   });
 
-  test('getLineMetricsAt', () {
-    const double fontSize = 10.0;
-    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
-      fontSize: fontSize,
-      textDirection: TextDirection.rtl,
-      height: 2.0,
-    ));
-    builder.addText('Test\nTest');
-    final Paragraph paragraph = builder.build();
-    paragraph.layout(const ParagraphConstraints(width: 100.0));
-    final LineMetrics? line = paragraph.getLineMetricsAt(1);
-    expect(line?.hardBreak, isTrue);
-    expect(line?.ascent, 15.0);
-    expect(line?.descent, 5.0);
-    expect(line?.height, 20.0);
-    expect(line?.width, 40.0);
-    expect(line?.left, 100.0 - 40.0);
-    expect(line?.baseline, 20.0 + 15.0);
-    expect(line?.lineNumber, 1);
-  });
-
   test('line number', () {
     const double fontSize = 10.0;
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize));
@@ -287,13 +266,25 @@ void main() {
 
   test('OOB indices as input', () {
     const double fontSize = 10.0;
-    final Paragraph paragraph = ParagraphBuilder(ParagraphStyle(
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
       fontSize: fontSize,
-    )).build();
-    paragraph.layout(const ParagraphConstraints(width: double.infinity));
+      maxLines: 1,
+      ellipsis: 'BBB',
+    ))..addText('A' * 100);
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: 100));
+
+    expect(paragraph.numberOfLines, 1);
 
     expect(paragraph.getLineMetricsAt(-1), isNull);
+    expect(paragraph.getLineMetricsAt(0), isNotNull);
+    expect(paragraph.getLineMetricsAt(1), isNull);
+
     expect(paragraph.getLineNumberAt(-1), isNull);
+    expect(paragraph.getLineNumberAt(0), 0);
+    expect(paragraph.getLineNumberAt(6), 0);
+    // The last 3 characters on the first line are ellipsized with BBB.
+    expect(paragraph.getLineMetricsAt(7), isNull);
   });
 
   test('painting a disposed paragraph does not crash', () {

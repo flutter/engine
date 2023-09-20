@@ -242,8 +242,7 @@ class CanvasParagraph implements ui.Paragraph {
 
   @override
   EngineLineMetrics? getLineMetricsAt(int lineNumber) {
-    assert(lineNumber >= 0);
-    return lineNumber < lines.length
+    return 0 <= lineNumber && lineNumber < lines.length
       ? lines[lineNumber].lineMetrics
       : null;
   }
@@ -252,7 +251,7 @@ class CanvasParagraph implements ui.Paragraph {
   int get numberOfLines => lines.length;
 
   @override
-  int? getLineNumber(int codeUnitOffset) {
+  int? getLineNumberAt(int codeUnitOffset) {
     assert(codeUnitOffset >= 0);
     return _findLine(codeUnitOffset, 0, numberOfLines);
   }

@@ -697,7 +697,7 @@ abstract class Paragraph {
   List<LineMetrics> computeLineMetrics();
   LineMetrics? getLineMetricsAt(int lineNumber);
   int get numberOfLines;
-  int? getLineNumber(int codeUnitOffset);
+  int? getLineNumberAt(int codeUnitOffset);
   void dispose();
   bool get debugDisposed;
 }

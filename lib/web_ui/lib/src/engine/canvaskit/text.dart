@@ -742,9 +742,10 @@ class CkParagraph implements ui.Paragraph {
   }
 
   @override
-  int? getLineNumber(int codeUnitOffset) {
+  int? getLineNumberAt(int codeUnitOffset) {
     assert(!_disposed, 'Paragraph has been disposed.');
-    return skiaObject.getLineNumberAt(codeUnitOffset.toDouble()).toInt();
+    final int lineNumber = skiaObject.getLineNumberAt(codeUnitOffset.toDouble()).toInt();
+    return lineNumber >= 0 ? lineNumber : null;
   }
 
   bool _disposed = false;

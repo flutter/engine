@@ -105,7 +105,7 @@ class SkwasmParagraph extends SkwasmObjectWrapper<RawParagraph> implements ui.Pa
   int get numberOfLines => paragraphGetLineCount(handle);
 
   @override
-  int? getLineNumber(int codeUnitOffset) {
+  int? getLineNumberAt(int codeUnitOffset) {
     final int lineNumber = paragraphGetLineNumberAt(handle, codeUnitOffset);
     return lineNumber >= 0 ? lineNumber : null;
   }
