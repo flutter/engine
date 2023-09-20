@@ -31,8 +31,7 @@ static const TESSalloc kAlloc = {
     0                                    /* =extraVertices */
 };
 
-Tessellator::Tessellator()
-    : c_tessellator_(nullptr, &DestroyTessellator) {
+Tessellator::Tessellator() : c_tessellator_(nullptr, &DestroyTessellator) {
   TESSalloc alloc = kAlloc;
   {
     // libTess2 copies the TESSalloc despite the non-const argument.
