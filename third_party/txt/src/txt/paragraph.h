@@ -22,6 +22,8 @@
 #include "line_metrics.h"
 #include "paragraph_style.h"
 #include "third_party/skia/include/core/SkRect.h"
+#include "third_party/skia/modules/skparagraph/include/Metrics.h"
+#include "third_party/skia/modules/skparagraph/include/Paragraph.h"
 
 class SkCanvas;
 
@@ -178,6 +180,21 @@ class Paragraph {
   virtual Range<size_t> GetWordBoundary(size_t offset) = 0;
 
   virtual std::vector<LineMetrics>& GetLineMetrics() = 0;
+
+  virtual bool GetLineMetricsAt(
+      int lineNumber,
+      skia::textlayout::LineMetrics* lineMetrics) const = 0;
+
+  // Returns the total number of lines the paragraph has.
+  virtual size_t GetNumberOfLines() const = 0;
+
+  // Returns the line number (zero-indexed) that contains the given code unit
+  // offset, or -1 if the given offset is out of bounds.
+  //
+  // If the offset points to a hard line break, this method returns the line
+  // number of the line this hard line break breaks, intead of the new line it
+  // creates.
+  virtual int GetLineNumberAt(size_t utf16Offset) const = 0;
 };
 
 }  // namespace txt

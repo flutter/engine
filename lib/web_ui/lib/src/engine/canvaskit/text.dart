@@ -728,6 +728,25 @@ class CkParagraph implements ui.Paragraph {
     return result;
   }
 
+  @override
+  ui.LineMetrics? getLineMetricsAt(int lineNumber) {
+    assert(!_disposed, 'Paragraph has been disposed.');
+    final SkLineMetrics? metrics = skiaObject.getLineMetricsAt(lineNumber.toDouble());
+    return metrics == null ? null : CkLineMetrics._(metrics);
+  }
+
+  @override
+  int get numberOfLines {
+    assert(!_disposed, 'Paragraph has been disposed.');
+    return skiaObject.getNumberOfLines().toInt();
+  }
+
+  @override
+  int? getLineNumber(int codeUnitOffset) {
+    assert(!_disposed, 'Paragraph has been disposed.');
+    return skiaObject.getLineNumberAt(codeUnitOffset.toDouble()).toInt();
+  }
+
   bool _disposed = false;
 
   @override

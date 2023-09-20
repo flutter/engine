@@ -40,7 +40,7 @@ class CanvasParagraph implements ui.Paragraph {
   final EngineParagraphStyle paragraphStyle;
 
   /// The full textual content of the paragraph.
-  late String plainText;
+  final String plainText;
 
   /// Whether this paragraph can be drawn on a bitmap canvas.
   ///
@@ -238,6 +238,34 @@ class CanvasParagraph implements ui.Paragraph {
   @override
   List<EngineLineMetrics> computeLineMetrics() {
     return lines.map((ParagraphLine line) => line.lineMetrics).toList();
+  }
+
+  @override
+  EngineLineMetrics? getLineMetricsAt(int lineNumber) {
+    assert(lineNumber >= 0);
+    return lineNumber < lines.length
+      ? lines[lineNumber].lineMetrics
+      : null;
+  }
+
+  @override
+  int get numberOfLines => lines.length;
+
+  @override
+  int? getLineNumber(int codeUnitOffset) {
+    assert(codeUnitOffset >= 0);
+    return _findLine(codeUnitOffset, 0, numberOfLines);
+  }
+
+  int? _findLine(int codeUnitOffset, int startLine, int endLine) {
+    if (endLine <= startLine || codeUnitOffset < lines[startLine].startIndex || lines[endLine].endIndex <= codeUnitOffset) {
+      return null;
+    }
+    if (endLine == startLine + 1) {
+      return startLine;
+    }
+    final int midIndex = (startLine + endLine) ~/ 2;
+    return _findLine(codeUnitOffset, midIndex, endLine) ?? _findLine(codeUnitOffset, startLine, midIndex);
   }
 
   bool _disposed = false;
