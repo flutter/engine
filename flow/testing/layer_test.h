@@ -195,7 +195,6 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
     paint_context_.layer_snapshot_store = nullptr;
   }
 
-
  private:
   void set_raster_cache_(std::unique_ptr<RasterCache> raster_cache) {
     raster_cache_ = std::move(raster_cache);
