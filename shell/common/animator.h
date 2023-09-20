@@ -39,8 +39,7 @@ class Animator final {
     virtual void OnAnimatorUpdateLatestFrameTargetTime(
         fml::TimePoint frame_target_time) = 0;
 
-    virtual void OnAnimatorDraw(
-        std::shared_ptr<FramePipeline> pipeline) = 0;
+    virtual void OnAnimatorDraw(std::shared_ptr<FramePipeline> pipeline) = 0;
 
     virtual void OnAnimatorDrawLastLayerTree(
         std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) = 0;

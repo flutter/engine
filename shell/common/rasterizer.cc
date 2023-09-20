@@ -218,8 +218,7 @@ void Rasterizer::DrawLastLayerTree(
   }
 }
 
-DrawStatus Rasterizer::Draw(
-    const std::shared_ptr<FramePipeline>& pipeline) {
+DrawStatus Rasterizer::Draw(const std::shared_ptr<FramePipeline>& pipeline) {
   TRACE_EVENT0("flutter", "GPURasterizer::Draw");
   if (raster_thread_merger_ &&
       !raster_thread_merger_->IsOnRasterizingThread()) {
@@ -231,11 +230,11 @@ DrawStatus Rasterizer::Draw(
                  ->RunsTasksOnCurrentThread());
 
   DoDrawResult draw_result;
-  FramePipeline::Consumer consumer =
-      [&draw_result, this](std::unique_ptr<FrameItem> item) {
-        draw_result = DoDraw(std::move(item->frame_timings_recorder),
-                             std::move(item->layer_tree_tasks));
-      };
+  FramePipeline::Consumer consumer = [&draw_result,
+                                      this](std::unique_ptr<FrameItem> item) {
+    draw_result = DoDraw(std::move(item->frame_timings_recorder),
+                         std::move(item->layer_tree_tasks));
+  };
 
   PipelineConsumeResult consume_result = pipeline->Consume(consumer);
   if (consume_result == PipelineConsumeResult::NoneAvailable) {
