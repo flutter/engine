@@ -17,6 +17,10 @@ environment:
 # relative to this directory into //third_party/dart
 
 dependencies:
+  file: any
+  meta: any
+  path: any
+  platform: any
   process: any
 
 dependency_overrides:
