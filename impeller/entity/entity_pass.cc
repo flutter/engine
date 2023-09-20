@@ -110,12 +110,39 @@ std::optional<Rect> EntityPass::GetElementsCoverage(
     if (auto entity = std::get_if<Entity>(&element)) {
       coverage = entity->GetCoverage();
 
+      // When the coverage limit is std::nullopt, that means there is no limit,
+      // as opposed to empty coverage.
       if (coverage.has_value() && coverage_limit.has_value()) {
+        const auto* filter = entity->GetContents()->AsFilter();
+        if (!filter || filter->IsTranslationOnly()) {
+          coverage = coverage->Intersection(coverage_limit.value());
+        }
+      }
+    } else if (auto subpass_ptr =
+                   std::get_if<std::unique_ptr<EntityPass>>(&element)) {
+      auto& subpass = *subpass_ptr->get();
+
+      std::optional<Rect> unfiltered_coverage =
+          GetSubpassCoverage(subpass, std::nullopt);
+      if (!unfiltered_coverage.has_value()) {
+        continue;
+      }
+
+      std::shared_ptr<FilterContents> image_filter =
+          subpass.delegate_->WithImageFilter(*unfiltered_coverage,
+                                             subpass.xformation_);
+      if (image_filter) {
+        Entity subpass_entity;
+        subpass_entity.SetTransformation(subpass.xformation_);
+        coverage = image_filter->GetCoverage(subpass_entity);
+      } else {
+        coverage = unfiltered_coverage;
+      }
+
+      if (coverage.has_value() && coverage_limit.has_value() &&
+          (!image_filter || image_filter->IsTranslationOnly())) {
         coverage = coverage->Intersection(coverage_limit.value());
       }
-    } else if (auto subpass =
-                   std::get_if<std::unique_ptr<EntityPass>>(&element)) {
-      coverage = GetSubpassCoverage(*subpass->get(), coverage_limit);
     } else {
       FML_UNREACHABLE();
     }
@@ -135,6 +162,16 @@ std::optional<Rect> EntityPass::GetElementsCoverage(
 std::optional<Rect> EntityPass::GetSubpassCoverage(
     const EntityPass& subpass,
     std::optional<Rect> coverage_limit) const {
+  std::shared_ptr<FilterContents> image_filter =
+      subpass.delegate_->WithImageFilter(Rect(), subpass.xformation_);
+
+  // If the filter graph transforms the basis of the subpass, then its space
+  // has deviated too much from the parent pass to safely intersect with the
+  // pass coverage limit.
+  coverage_limit =
+      (image_filter && image_filter->IsTranslationOnly() ? std::nullopt
+                                                         : coverage_limit);
+
   auto entities_coverage = subpass.GetElementsCoverage(coverage_limit);
   // The entities don't cover anything. There is nothing to do.
   if (!entities_coverage.has_value()) {
@@ -493,9 +530,17 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       auto texture = pass_context.GetTexture();
       // Render the backdrop texture before any of the pass elements.
       const auto& proc = subpass->backdrop_filter_proc_;
-      subpass_backdrop_filter_contents = proc(
-          FilterInput::Make(std::move(texture)), subpass->xformation_.Basis(),
-          /*is_subpass*/ true);
+      subpass_backdrop_filter_contents =
+          proc(FilterInput::Make(std::move(texture)),
+               subpass->xformation_.Basis(), Entity::RenderingMode::kSubpass);
+
+      // If the very first thing we render in this EntityPass is a subpass that
+      // happens to have a backdrop filter, than that backdrop filter will end
+      // may wind up sampling from the raw, uncleared texture that came straight
+      // out of the texture cache. By calling `pass_context.GetRenderPass` here,
+      // we force the texture to pass through at least one RenderPass with the
+      // correct clear configuration before any sampling occurs.
+      pass_context.GetRenderPass(pass_depth);
 
       // The subpass will need to read from the current pass texture when
       // rendering the backdrop, so if there's an active pass, end it prior to
@@ -1054,6 +1099,10 @@ void EntityPass::SetBlendMode(BlendMode blend_mode) {
 
 Color EntityPass::GetClearColor(ISize target_size) const {
   Color result = Color::BlackTransparent();
+  if (backdrop_filter_proc_) {
+    return result;
+  }
+
   for (const Element& element : elements_) {
     auto [entity_color, blend_mode] =
         ElementAsBackgroundColor(element, target_size);

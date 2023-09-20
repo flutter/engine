@@ -83,8 +83,10 @@
 ../../../flutter/fml/ascii_trie_unittests.cc
 ../../../flutter/fml/backtrace_unittests.cc
 ../../../flutter/fml/base32_unittest.cc
+../../../flutter/fml/closure_unittests.cc
 ../../../flutter/fml/command_line_unittest.cc
 ../../../flutter/fml/container_unittests.cc
+../../../flutter/fml/cpu_affinity_unittests.cc
 ../../../flutter/fml/endianness_unittests.cc
 ../../../flutter/fml/file_unittest.cc
 ../../../flutter/fml/hash_combine_unittests.cc
@@ -152,7 +154,9 @@
 ../../../flutter/impeller/playground
 ../../../flutter/impeller/renderer/backend/vulkan/blit_command_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/command_encoder_vk_unittests.cc
+../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/context_vk_unittests.cc
+../../../flutter/impeller/renderer/backend/vulkan/fence_waiter_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/pass_bindings_cache_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/resource_manager_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/test
@@ -631,6 +635,7 @@
 ../../../fuchsia/sdk/linux/fidl/zx/meta.json
 ../../../fuchsia/sdk/linux/meta
 ../../../fuchsia/sdk/linux/packages/blobs
+../../../fuchsia/sdk/linux/packages/heapdump-collector/meta.json
 ../../../fuchsia/sdk/linux/packages/realm_builder_server/meta.json
 ../../../fuchsia/sdk/linux/pkg/async-cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/async-default/meta.json
@@ -671,9 +676,11 @@
 ../../../fuchsia/sdk/linux/pkg/fidl_cpp_v2/meta.json
 ../../../fuchsia/sdk/linux/pkg/fidl_cpp_wire/meta.json
 ../../../fuchsia/sdk/linux/pkg/fidl_driver/meta.json
+../../../fuchsia/sdk/linux/pkg/fidl_driver_natural/meta.json
 ../../../fuchsia/sdk/linux/pkg/fidl_driver_transport/meta.json
 ../../../fuchsia/sdk/linux/pkg/fit-promise/meta.json
 ../../../fuchsia/sdk/linux/pkg/fit/meta.json
+../../../fuchsia/sdk/linux/pkg/heapdump_instrumentation/meta.json
 ../../../fuchsia/sdk/linux/pkg/images_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/input_report_reader/meta.json
 ../../../fuchsia/sdk/linux/pkg/inspect/meta.json
@@ -988,7 +995,6 @@
 ../../../third_party/angle/.git
 ../../../third_party/angle/.gitattributes
 ../../../third_party/angle/.gitignore
-../../../third_party/angle/.gitmodules
 ../../../third_party/angle/.gn
 ../../../third_party/angle/.style.yapf
 ../../../third_party/angle/.vpython
@@ -1127,7 +1133,6 @@
 ../../../third_party/angle/src/third_party/ceval/package.json
 ../../../third_party/angle/src/third_party/libXNVCtrl/README.chromium
 ../../../third_party/angle/src/third_party/volk
-../../../third_party/angle/testing
 ../../../third_party/angle/third_party
 ../../../third_party/angle/tools
 ../../../third_party/angle/util
@@ -1592,8 +1597,8 @@
 ../../../third_party/dart/runtime/third_party/double-conversion/.gitignore
 ../../../third_party/dart/runtime/third_party/double-conversion/AUTHORS
 ../../../third_party/dart/runtime/third_party/double-conversion/Changelog
-../../../third_party/dart/runtime/third_party/double-conversion/README
 ../../../third_party/dart/runtime/third_party/double-conversion/README.dart
+../../../third_party/dart/runtime/third_party/double-conversion/README.md
 ../../../third_party/dart/runtime/tools/.gitignore
 ../../../third_party/dart/runtime/tools/android_finder.py
 ../../../third_party/dart/runtime/tools/benchmark.py

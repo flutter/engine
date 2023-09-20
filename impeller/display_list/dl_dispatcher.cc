@@ -34,6 +34,7 @@
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/scalar.h"
 #include "impeller/geometry/sigma.h"
+#include "impeller/typographer/backends/skia/text_frame_skia.h"
 
 #if IMPELLER_ENABLE_3D
 #include "impeller/entity/contents/scene_contents.h"
@@ -848,19 +849,29 @@ void DlDispatcher::drawDRRect(const SkRRect& outer, const SkRRect& inner) {
 // |flutter::DlOpReceiver|
 void DlDispatcher::drawPath(const SkPath& path) {
   SkRect rect;
-  SkRRect rrect;
-  SkRect oval;
-  if (path.isRect(&rect)) {
+
+  // We can't "optimize" a path into a rectangle if it's open.
+  bool closed;
+  if (path.isRect(&rect, &closed); closed) {
     canvas_.DrawRect(skia_conversions::ToRect(rect), paint_);
-  } else if (path.isRRect(&rrect) && rrect.isSimple()) {
+    return;
+  }
+
+  SkRRect rrect;
+  if (path.isRRect(&rrect) && rrect.isSimple()) {
     canvas_.DrawRRect(skia_conversions::ToRect(rrect.rect()),
                       rrect.getSimpleRadii().fX, paint_);
-  } else if (path.isOval(&oval) && oval.width() == oval.height()) {
+    return;
+  }
+
+  SkRect oval;
+  if (path.isOval(&oval) && oval.width() == oval.height()) {
     canvas_.DrawCircle(skia_conversions::ToPoint(oval.center()),
                        oval.width() * 0.5, paint_);
-  } else {
-    canvas_.DrawPath(skia_conversions::ToPath(path), paint_);
+    return;
   }
+
+  canvas_.DrawPath(skia_conversions::ToPath(path), paint_);
 }
 
 // |flutter::DlOpReceiver|
@@ -1060,14 +1071,20 @@ void DlDispatcher::drawDisplayList(
 void DlDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                 SkScalar x,
                                 SkScalar y) {
-  // When running with Impeller enabled Skia text blobs are converted to
-  // Impeller text frames in paragraph_skia.cc
-  UNIMPLEMENTED;
-}
+  const auto maybe_text_frame = MakeTextFrameFromTextBlobSkia(blob);
+  if (!maybe_text_frame.has_value()) {
+    return;
+  }
+  const auto text_frame = maybe_text_frame.value();
+  if (paint_.style == Paint::Style::kStroke ||
+      paint_.color_source.GetType() != ColorSource::Type::kColor) {
+    auto bounds = blob->bounds();
+    auto path = skia_conversions::PathDataFromTextBlob(
+        blob, Point(x + bounds.left(), y + bounds.top()));
+    canvas_.DrawPath(path, paint_);
+    return;
+  }
 
-void DlDispatcher::drawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
-                                 SkScalar x,
-                                 SkScalar y) {
   canvas_.DrawTextFrame(text_frame,             //
                         impeller::Point{x, y},  //
                         paint_                  //
