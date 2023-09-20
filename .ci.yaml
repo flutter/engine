@@ -89,7 +89,10 @@ targets:
     presubmit: true # THIS LINE IS JUST TO CONFIRM THE TESTS PASS. REMOVE!
     properties:
       config_name: linux_android_emulator
-      avd_cipd_version: "34"
+      dependencies: >-
+        [
+          {"dependency": "android_virtual_device", "version": "version:34"}
+        ]
     timeout: 60
 
   - name: Linux builder_cache
