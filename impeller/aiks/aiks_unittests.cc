@@ -2264,6 +2264,30 @@ TEST_P(AiksTest, DrawPaintAbsorbsClears) {
   ASSERT_EQ(render_pass->GetCommands().size(), 0llu);
 }
 
+// This is important to enforce with texture reuse, since cached textures need
+// to be cleared before reuse.
+TEST_P(AiksTest,
+       ParentSaveLayerCreatesRenderPassWhenChildBackdropFilterIsPresent) {
+  Canvas canvas;
+  canvas.SaveLayer({}, std::nullopt, ImageFilter::MakeMatrix(Matrix(), {}));
+  canvas.DrawPaint({.color = Color::Red(), .blend_mode = BlendMode::kSource});
+  canvas.DrawPaint({.color = Color::CornflowerBlue().WithAlpha(0.75),
+                    .blend_mode = BlendMode::kSourceOver});
+  canvas.Restore();
+
+  Picture picture = canvas.EndRecordingAsPicture();
+
+  std::shared_ptr<ContextSpy> spy = ContextSpy::Make();
+  std::shared_ptr<Context> real_context = GetContext();
+  std::shared_ptr<ContextMock> mock_context = spy->MakeContext(real_context);
+  AiksContext renderer(mock_context, nullptr);
+  std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
+
+  ASSERT_EQ(spy->render_passes_.size(), 3llu);
+  std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
+  ASSERT_EQ(render_pass->GetCommands().size(), 0llu);
+}
+
 TEST_P(AiksTest, DrawRectAbsorbsClears) {
   Canvas canvas;
   canvas.DrawRect({0, 0, 300, 300},
@@ -2366,6 +2390,35 @@ TEST_P(AiksTest, ClipRectElidesNoOpClips) {
   ASSERT_EQ(spy->render_passes_.size(), 1llu);
   std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
   ASSERT_EQ(render_pass->GetCommands().size(), 0llu);
+}
+
+TEST_P(AiksTest, ClearColorOptimizationDoesNotApplyForBackdropFilters) {
+  Canvas canvas;
+  canvas.SaveLayer({}, std::nullopt,
+                   ImageFilter::MakeBlur(Sigma(3), Sigma(3),
+                                         FilterContents::BlurStyle::kNormal,
+                                         Entity::TileMode::kClamp));
+  canvas.DrawPaint({.color = Color::Red(), .blend_mode = BlendMode::kSource});
+  canvas.DrawPaint({.color = Color::CornflowerBlue().WithAlpha(0.75),
+                    .blend_mode = BlendMode::kSourceOver});
+  canvas.Restore();
+
+  Picture picture = canvas.EndRecordingAsPicture();
+
+  std::optional<Color> actual_color;
+  picture.pass->IterateAllElements([&](EntityPass::Element& element) -> bool {
+    if (auto subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
+      actual_color = subpass->get()->GetClearColor();
+    }
+    // Fail if the first element isn't a subpass.
+    return true;
+  });
+
+  ASSERT_TRUE(actual_color.has_value());
+  if (!actual_color) {
+    return;
+  }
+  ASSERT_EQ(actual_color.value(), Color::BlackTransparent());
 }
 
 TEST_P(AiksTest, CollapsedDrawPaintInSubpass) {
