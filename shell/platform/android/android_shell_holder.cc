@@ -16,6 +16,7 @@
 #include <string>
 #include <utility>
 
+#include "flutter/fml/cpu_affinity.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/message_loop.h"
@@ -41,18 +42,21 @@ static void AndroidPlatformThreadConfigSetter(
   // set thread priority
   switch (config.priority) {
     case fml::Thread::ThreadPriority::BACKGROUND: {
+      fml::RequestAffinity(fml::CpuAffinity::kEfficiency);
       if (::setpriority(PRIO_PROCESS, 0, 10) != 0) {
         FML_LOG(ERROR) << "Failed to set IO task runner priority";
       }
       break;
     }
     case fml::Thread::ThreadPriority::DISPLAY: {
+      fml::RequestAffinity(fml::CpuAffinity::kPerformance);
       if (::setpriority(PRIO_PROCESS, 0, -1) != 0) {
         FML_LOG(ERROR) << "Failed to set UI task runner priority";
       }
       break;
     }
     case fml::Thread::ThreadPriority::RASTER: {
+      fml::RequestAffinity(fml::CpuAffinity::kPerformance);
       // Android describes -8 as "most important display threads, for
       // compositing the screen and retrieving input events". Conservatively
       // set the raster thread to slightly lower priority than it.
@@ -66,6 +70,7 @@ static void AndroidPlatformThreadConfigSetter(
       break;
     }
     default:
+      fml::RequestAffinity(fml::CpuAffinity::kNotPerformance);
       if (::setpriority(PRIO_PROCESS, 0, 0) != 0) {
         FML_LOG(ERROR) << "Failed to set priority";
       }

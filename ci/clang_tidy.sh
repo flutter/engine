@@ -18,7 +18,7 @@ unset CDPATH
 function follow_links() (
   cd -P "$(dirname -- "$1")"
   file="$PWD/$(basename -- "$1")"
-  while [[ -h "$file" ]]; do
+  while [[ -L "$file" ]]; do
     cd -P "$(dirname -- "$file")"
     file="$(readlink -- "$file")"
     cd -P "$(dirname -- "$file")"
@@ -28,25 +28,36 @@ function follow_links() (
 )
 
 SCRIPT_DIR=$(follow_links "$(dirname -- "${BASH_SOURCE[0]}")")
-SRC_DIR="$(cd "$SCRIPT_DIR/../.."; pwd -P)"
-FLUTTER_DIR="$(cd "$SCRIPT_DIR/.."; pwd -P)"
+SRC_DIR="$(
+  cd "$SCRIPT_DIR/../.."
+  pwd -P
+)"
+FLUTTER_DIR="$(
+  cd "$SCRIPT_DIR/.."
+  pwd -P
+)"
 DART_BIN="${SRC_DIR}/third_party/dart/tools/sdks/dart-sdk/bin"
 DART="${DART_BIN}/dart"
 
 # FLUTTER_LINT_PRINT_FIX will make it so that fix is executed and the generated
 # diff is printed to stdout if clang-tidy fails. This is helpful for enabling
 # new lints.
+
+# To run on CI, just uncomment the following line:
+FLUTTER_LINT_PRINT_FIX=1
+
 if [[ -z "${FLUTTER_LINT_PRINT_FIX}" ]]; then
   fix_flag=""
 else
-  # FIXME: Remove before submitting.
-  # https://github.com/flutter/flutter/wiki/Engine-Clang-Tidy-Linter#clang-tidy-fix-on-ci
   fix_flag="--fix --lint-all"
 fi
 
 COMPILE_COMMANDS="$SRC_DIR/out/host_debug/compile_commands.json"
 if [ ! -f "$COMPILE_COMMANDS" ]; then
-  (cd "$SRC_DIR"; ./flutter/tools/gn)
+  (
+    cd "$SRC_DIR"
+    ./flutter/tools/gn
+  )
 fi
 
 echo "$(date +%T) Running clang_tidy"
