@@ -604,7 +604,7 @@ DEFINE_CLIP_SHAPE_OP(RRect, Difference)
   struct Clip##clipop##PathOp final : TransformClipOpBase {              \
     static const auto kType = DisplayListOpType::kClip##clipop##Path;    \
                                                                          \
-    Clip##clipop##PathOp(SkPath path, bool is_aa)                        \
+    Clip##clipop##PathOp(const SkPath& path, bool is_aa)                 \
         : is_aa(is_aa), path(path) {}                                    \
                                                                          \
     const bool is_aa;                                                    \
@@ -807,7 +807,7 @@ struct DrawVerticesOp final : DrawOpBase {
   struct name##Op final : DrawOpBase {                                   \
     static const auto kType = DisplayListOpType::k##name;                \
                                                                          \
-    name##Op(const sk_sp<DlImage> image,                                 \
+    name##Op(const sk_sp<DlImage>& image,                                \
              const SkPoint& point,                                       \
              DlImageSampling sampling)                                   \
         : point(point), sampling(sampling), image(std::move(image)) {}   \
@@ -838,7 +838,7 @@ DEFINE_DRAW_IMAGE_OP(DrawImageWithAttr, true)
 struct DrawImageRectOp final : DrawOpBase {
   static const auto kType = DisplayListOpType::kDrawImageRect;
 
-  DrawImageRectOp(const sk_sp<DlImage> image,
+  DrawImageRectOp(const sk_sp<DlImage>& image,
                   const SkRect& src,
                   const SkRect& dst,
                   DlImageSampling sampling,
@@ -849,7 +849,7 @@ struct DrawImageRectOp final : DrawOpBase {
         sampling(sampling),
         render_with_attributes(render_with_attributes),
         constraint(constraint),
-        image(std::move(image)) {}
+        image(image) {}
 
   const SkRect src;
   const SkRect dst;
@@ -880,7 +880,7 @@ struct DrawImageRectOp final : DrawOpBase {
   struct name##Op final : DrawOpBase {                                     \
     static const auto kType = DisplayListOpType::k##name;                  \
                                                                            \
-    name##Op(const sk_sp<DlImage> image,                                   \
+    name##Op(const sk_sp<DlImage>& image,                                  \
              const SkIRect& center,                                        \
              const SkRect& dst,                                            \
              DlFilterMode mode)                                            \
