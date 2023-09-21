@@ -30,13 +30,13 @@ class PlatformViewRoleManager extends PrimaryRoleManager {
 
     if (semanticsObject.isPlatformView) {
       if (semanticsObject.isPlatformViewIdDirty) {
-        semanticsObject.element.setAttribute(
+        setAttribute(
           'aria-owns',
           getPlatformViewDomId(semanticsObject.platformViewId),
         );
       }
     } else {
-      semanticsObject.element.removeAttribute('aria-owns');
+      removeAttribute('aria-owns');
     }
   }
 }
