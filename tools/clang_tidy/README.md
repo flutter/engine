@@ -4,7 +4,7 @@ A wrapper library and program that runs `clang_tidy` on the Flutter engine repo.
 
 ```shell
 # Assuming you are in the `flutter` root of the engine repo.
-dart ./tools/clang_tidy/bin/main.dart
+./tools/clang_tidy/bin/main.dart
 ```
 
 By default, the linter runs over _modified_[^1] files in the _latest_[^2] build
@@ -13,7 +13,7 @@ of the engine.
 A subset of checks can also be fixed automatically by passing `--fix`:
 
 ```shell
-dart ./tools/clang_tidy/bin/main.dart --fix
+./tools/clang_tidy/bin/main.dart --fix
 ```
 
 To configure what lints are enabled, see [`.clang-tidy`](../../.clang-tidy).
@@ -30,31 +30,31 @@ Some common use cases are described below, or use `--help` to see all options.
 To run adding a check _not_ specified in `.clang-tidy`:
 
 ```shell
-dart ./tools/clang_tidy/bin/main.dart --checks="<check-name-to-run>"
+./tools/clang_tidy/bin/main.dart --checks="<check-name-to-run>"
 ```
 
 It's possible also to use wildcards to add multiple checks:
 
 ```shell
-dart ./tools/clang_tidy/bin/main.dart --checks="readability-*"
+./tools/clang_tidy/bin/main.dart --checks="readability-*"
 ```
 
 To remove a specific check:
 
 ```shell
-dart ./tools/clang_tidy/bin/main.dart --checks="-<check-name-to-remove>"
+./tools/clang_tidy/bin/main.dart --checks="-<check-name-to-remove>"
 ```
 
 To remove multiple checks:
 
 ```shell
-dart ./tools/clang_tidy/bin/main.dart --checks="-readability-*"
+./tools/clang_tidy/bin/main.dart --checks="-readability-*"
 ```
 
 To remove _all_ checks (usually to add a specific check):
 
 ```shell
-dart ./tools/clang_tidy/bin/main.dart --checks="-*,<only-check-to-run>"
+./tools/clang_tidy/bin/main.dart --checks="-*,<only-check-to-run>"
 ```
 
 ### Specify a specific build
@@ -65,13 +65,13 @@ a difference in behavior between two builds.
 Use `--target-variant` to specify a build:
 
 ```shell
-dart ./tools/clang_tidy/bin/main.dart --target-variant <engine-variant>
+./tools/clang_tidy/bin/main.dart --target-variant <engine-variant>
 ```
 
 For example, to check the `android_debug_unopt` build:
 
 ```shell
-dart ./tools/clang_tidy/bin/main.dart --target-variant android_debug_unopt
+./tools/clang_tidy/bin/main.dart --target-variant android_debug_unopt
 ```
 
 In rarer cases, for example comparing two different checkouts of the engine,
@@ -85,7 +85,7 @@ have not changed.
 Use `--lint-all` to lint all files in the repo:
 
 ```shell
-dart ./tools/clang_tidy/bin/main.dart --lint-all
+./tools/clang_tidy/bin/main.dart --lint-all
 ```
 
 > **⚠️ WARNING**: This will take a long time to run.
