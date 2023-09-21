@@ -251,18 +251,17 @@ class CanvasParagraph implements ui.Paragraph {
   int get numberOfLines => lines.length;
 
   @override
-  int? getLineNumberAt(int codeUnitOffset) {
-    assert(codeUnitOffset >= 0);
-    return _findLine(codeUnitOffset, 0, numberOfLines);
-  }
+  int? getLineNumberAt(int codeUnitOffset) => _findLine(codeUnitOffset, 0, lines.length);
 
   int? _findLine(int codeUnitOffset, int startLine, int endLine) {
-    if (endLine <= startLine || codeUnitOffset < lines[startLine].startIndex || lines[endLine].endIndex <= codeUnitOffset) {
+    if (endLine <= startLine || codeUnitOffset < lines[startLine].startIndex || lines[endLine - 1].endIndex <= codeUnitOffset) {
       return null;
     }
     if (endLine == startLine + 1) {
       return startLine;
     }
+    // endLine >= startLine + 2 thus we have
+    // startLine + 1 <= midIndex <= endLine - 1
     final int midIndex = (startLine + endLine) ~/ 2;
     return _findLine(codeUnitOffset, midIndex, endLine) ?? _findLine(codeUnitOffset, startLine, midIndex);
   }
