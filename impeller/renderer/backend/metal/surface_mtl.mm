@@ -256,6 +256,7 @@ bool SurfaceMTL::Present() const {
     // transaction/capture work correctly.
     if ([[NSThread currentThread] isMainThread] ||
         [[MTLCaptureManager sharedCaptureManager] isCapturing]) {
+      TRACE_EVENT0("flutter", "waitUntilScheduled");
       [command_buffer commit];
       [command_buffer waitUntilScheduled];
       [drawable_ present];
