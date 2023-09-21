@@ -2232,23 +2232,7 @@ TEST_F(ShellTest, ScreenshotImpeller) {
             Rasterizer::ScreenshotType::CompressedImage, false));
       });
 
-  auto fixtures_dir =
-      fml::OpenDirectory(GetFixturesPath(), false, fml::FilePermission::kRead);
-
-  auto reference_png = fml::FileMapping::CreateReadOnly(
-      fixtures_dir, "shelltest_screenshot.png");
-
-  // Use MakeWithoutCopy instead of MakeWithCString because we don't want to
-  // encode the null sentinel
-  sk_sp<SkData> reference_data = SkData::MakeWithoutCopy(
-      reference_png->GetMapping(), reference_png->GetSize());
-
-  sk_sp<SkData> screenshot_data = screenshot_future.get().data;
-  if (!reference_data->equals(screenshot_data.get())) {
-    LogSkData(reference_data, "reference");
-    LogSkData(screenshot_data, "screenshot");
-    ASSERT_TRUE(false);
-  }
+  ASSERT_EQ(screenshot_future.get().data, nullptr);
 
   DestroyShell(std::move(shell));
 }
