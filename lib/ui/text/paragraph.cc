@@ -8,10 +8,14 @@
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/task_runner.h"
+#include "third_party/dart/runtime/include/dart_api.h"
+#include "third_party/skia/modules/skparagraph/include/DartTypes.h"
+#include "third_party/skia/modules/skparagraph/include/Paragraph.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_binding_macros.h"
 #include "third_party/tonic/dart_library_natives.h"
+#include "third_party/tonic/logging/dart_invoke.h"
 
 namespace flutter {
 
@@ -116,18 +120,71 @@ Dart_Handle Paragraph::getPositionForOffset(double dx, double dy) {
   return tonic::DartConverter<decltype(result)>::ToDart(result);
 }
 
-Dart_Handle Paragraph::getWordBoundary(unsigned offset) {
-  txt::Paragraph::Range<size_t> point = m_paragraph->GetWordBoundary(offset);
+Dart_Handle Paragraph::getGlyphInfoAt(unsigned utf16Offset,
+                                      Dart_Handle constructor) const {
+  skia::textlayout::Paragraph::GlyphInfo glyphInfo;
+  const bool found = m_paragraph->GetGlyphInfoAt(utf16Offset, &glyphInfo);
+  if (!found) {
+    return Dart_Null();
+  }
+  Dart_Handle arguments[8] = {
+      Dart_NewDouble(glyphInfo.fGraphemeLayoutBounds.fLeft),
+      Dart_NewDouble(glyphInfo.fGraphemeLayoutBounds.fTop),
+      Dart_NewDouble(glyphInfo.fGraphemeLayoutBounds.fRight),
+      Dart_NewDouble(glyphInfo.fGraphemeLayoutBounds.fBottom),
+      Dart_NewInteger(glyphInfo.fGraphemeClusterTextRange.start),
+      Dart_NewInteger(glyphInfo.fGraphemeClusterTextRange.end),
+      Dart_NewBoolean(glyphInfo.fDirection ==
+                      skia::textlayout::TextDirection::kLtr),
+      Dart_NewBoolean(glyphInfo.fIsEllipsis),
+  };
+
+  Dart_Handle handle = Dart_InvokeClosure(
+      constructor, sizeof(arguments) / sizeof(Dart_Handle), arguments);
+  tonic::CheckAndHandleError(handle);
+  return handle;
+}
+
+Dart_Handle Paragraph::getClosestGlyphInfo(double dx,
+                                           double dy,
+                                           Dart_Handle constructor) const {
+  skia::textlayout::Paragraph::GlyphInfo glyphInfo;
+  const bool found =
+      m_paragraph->GetClosestGlyphInfoAtCoordinate(dx, dy, &glyphInfo);
+  if (!found) {
+    return Dart_Null();
+  }
+  Dart_Handle arguments[8] = {
+      Dart_NewDouble(glyphInfo.fGraphemeLayoutBounds.fLeft),
+      Dart_NewDouble(glyphInfo.fGraphemeLayoutBounds.fTop),
+      Dart_NewDouble(glyphInfo.fGraphemeLayoutBounds.fRight),
+      Dart_NewDouble(glyphInfo.fGraphemeLayoutBounds.fBottom),
+      Dart_NewInteger(glyphInfo.fGraphemeClusterTextRange.start),
+      Dart_NewInteger(glyphInfo.fGraphemeClusterTextRange.end),
+      Dart_NewBoolean(glyphInfo.fDirection ==
+                      skia::textlayout::TextDirection::kLtr),
+      Dart_NewBoolean(glyphInfo.fIsEllipsis),
+  };
+
+  Dart_Handle handle = Dart_InvokeClosure(
+      constructor, sizeof(arguments) / sizeof(Dart_Handle), arguments);
+  tonic::CheckAndHandleError(handle);
+  return handle;
+}
+
+Dart_Handle Paragraph::getWordBoundary(unsigned utf16Offset) {
+  txt::Paragraph::Range<size_t> point =
+      m_paragraph->GetWordBoundary(utf16Offset);
   std::vector<size_t> result = {point.start, point.end};
   return tonic::DartConverter<decltype(result)>::ToDart(result);
 }
 
-Dart_Handle Paragraph::getLineBoundary(unsigned offset) {
+Dart_Handle Paragraph::getLineBoundary(unsigned utf16Offset) {
   std::vector<txt::LineMetrics> metrics = m_paragraph->GetLineMetrics();
   int line_start = -1;
   int line_end = -1;
   for (txt::LineMetrics& line : metrics) {
-    if (offset >= line.start_index && offset <= line.end_index) {
+    if (utf16Offset >= line.start_index && utf16Offset <= line.end_index) {
       line_start = line.start_index;
       line_end = line.end_index;
       break;
@@ -137,7 +194,7 @@ Dart_Handle Paragraph::getLineBoundary(unsigned offset) {
   return tonic::DartConverter<decltype(result)>::ToDart(result);
 }
 
-tonic::Float64List Paragraph::computeLineMetrics() {
+tonic::Float64List Paragraph::computeLineMetrics() const {
   std::vector<txt::LineMetrics> metrics = m_paragraph->GetLineMetrics();
 
   // Layout:
@@ -163,6 +220,64 @@ tonic::Float64List Paragraph::computeLineMetrics() {
   }
 
   return result;
+}
+
+Dart_Handle Paragraph::getLineMetricsAt(int lineNumber,
+                                        Dart_Handle constructor) const {
+  skia::textlayout::LineMetrics line;
+  const bool found = m_paragraph->GetLineMetricsAt(lineNumber, &line);
+  if (!found) {
+    return Dart_Null();
+  }
+  Dart_Handle arguments[9] = {
+      Dart_NewBoolean(line.fHardBreak),
+      Dart_NewDouble(line.fAscent),
+      Dart_NewDouble(line.fDescent),
+      Dart_NewDouble(line.fUnscaledAscent),
+      // We add then round to get the height. The
+      // definition of height here is different
+      // than the one in LibTxt.
+      Dart_NewDouble(round(line.fAscent + line.fDescent)),
+      Dart_NewDouble(line.fWidth),
+      Dart_NewDouble(line.fLeft),
+      Dart_NewDouble(line.fBaseline),
+      Dart_NewInteger(line.fLineNumber),
+  };
+
+  Dart_Handle handle = Dart_InvokeClosure(
+      constructor, sizeof(arguments) / sizeof(Dart_Handle), arguments);
+  tonic::CheckAndHandleError(handle);
+  return handle;
+}
+
+Dart_Handle Paragraph::getFontInfoAt(size_t utf16Offset,
+                                     Dart_Handle constructor) const {
+  SkFont font = m_paragraph->GetFontAt(utf16Offset);
+  const auto typeface = font.getTypeface();
+  if (!typeface) {
+    return Dart_Null();
+  }
+  SkString fontFamily;
+  typeface->getFamilyName(&fontFamily);
+
+  Dart_Handle arguments[4] = {
+      Dart_NewStringFromCString(fontFamily.c_str()),
+      Dart_NewInteger(font.getTypeface()->fontStyle().weight()),
+      Dart_NewBoolean(font.getTypeface()->isItalic()),
+      Dart_NewDouble(font.getSize()),
+  };
+  Dart_Handle handle = Dart_InvokeClosure(
+      constructor, sizeof(arguments) / sizeof(Dart_Handle), arguments);
+  tonic::CheckAndHandleError(handle);
+  return handle;
+}
+
+size_t Paragraph::getNumberOfLines() const {
+  return m_paragraph->GetNumberOfLines();
+}
+
+int Paragraph::getLineNumberAt(size_t utf16Offset) const {
+  return m_paragraph->GetLineNumberAt(utf16Offset);
 }
 
 void Paragraph::dispose() {

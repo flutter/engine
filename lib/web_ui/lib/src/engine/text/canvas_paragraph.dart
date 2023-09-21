@@ -40,7 +40,7 @@ class CanvasParagraph implements ui.Paragraph {
   final EngineParagraphStyle paragraphStyle;
 
   /// The full textual content of the paragraph.
-  late String plainText;
+  final String plainText;
 
   /// Whether this paragraph can be drawn on a bitmap canvas.
   ///
@@ -206,6 +206,30 @@ class CanvasParagraph implements ui.Paragraph {
   }
 
   @override
+  ui.GlyphInfo? getClosestGlyphInfoForOffset(ui.Offset offset) => _layoutService.getClosestGlyphCluster(offset);
+
+  @override
+  ui.GlyphInfo? getGlyphInfoAt(int codeUnitOffset) {
+    final int? lineNumber = _findLine(codeUnitOffset, 0, numberOfLines);
+    if (lineNumber == null) {
+      return null;
+    }
+    final List<LayoutFragment> lineFragments = lines[lineNumber].fragments;
+    for (final LayoutFragment fragment in lineFragments) {
+      if (fragment.overlapsWith(codeUnitOffset, codeUnitOffset + 1)) {
+        final ui.TextRange? range = fragment.getCharacterRangeAt(codeUnitOffset);
+        assert(range != null);
+        if (range != null) {
+          final ui.TextBox box = fragment.toTextBox(start: range.start, end: range.end);
+          return ui.GlyphInfo(box.toRect(), range, box.direction, false);
+        }
+      }
+    }
+    assert(false, 'This should not be reachable.');
+    return null;
+  }
+
+  @override
   ui.TextRange getWordBoundary(ui.TextPosition position) {
     final int characterPosition;
     switch (position.affinity) {
@@ -239,6 +263,35 @@ class CanvasParagraph implements ui.Paragraph {
   List<EngineLineMetrics> computeLineMetrics() {
     return lines.map((ParagraphLine line) => line.lineMetrics).toList();
   }
+
+  @override
+  EngineLineMetrics? getLineMetricsAt(int lineNumber) {
+    return 0 <= lineNumber && lineNumber < lines.length
+      ? lines[lineNumber].lineMetrics
+      : null;
+  }
+
+  @override
+  int get numberOfLines => lines.length;
+
+  @override
+  int? getLineNumberAt(int codeUnitOffset) => _findLine(codeUnitOffset, 0, lines.length);
+
+  int? _findLine(int codeUnitOffset, int startLine, int endLine) {
+    if (endLine <= startLine || codeUnitOffset < lines[startLine].startIndex || lines[endLine - 1].endIndex <= codeUnitOffset) {
+      return null;
+    }
+    if (endLine == startLine + 1) {
+      return startLine;
+    }
+    // endLine >= startLine + 2 thus we have
+    // startLine + 1 <= midIndex <= endLine - 1
+    final int midIndex = (startLine + endLine) ~/ 2;
+    return _findLine(codeUnitOffset, midIndex, endLine) ?? _findLine(codeUnitOffset, startLine, midIndex);
+  }
+
+  @override
+  ui.FontInfo? getFontInfoAt(int codeUnitOffset) => null;
 
   bool _disposed = false;
 

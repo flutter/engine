@@ -1191,6 +1191,103 @@ class FontVariation {
   String toString() => "FontVariation('$axis', $value)";
 }
 
+/// Diagnostic information of a font.
+final class FontInfo {
+  FontInfo._(this.fontFamily, this.weight, bool isItalic, this.size)
+    : style = isItalic ? FontStyle.italic : FontStyle.normal;
+
+  /// The name of the typeface family used to render text ("Roboto", for example).
+  final String fontFamily;
+
+  /// The thickness value of the glyphs of the typeface.
+  ///
+  /// The integer value corresponds to the predefined [FontWeight] values.
+  /// [FontWeight.w400] corresponds to a weight value of 200, for example.
+  final int weight;
+
+  /// The style of the typeface ("italics" for example).
+  final FontStyle style;
+
+  /// The size of the font.
+  final double size;
+
+  @override
+  String toString() {
+    final String weightDescription = switch (weight) {
+      100 => ' thin',
+      200 => ' extra-light',
+      300 => ' light',
+      400 => '',
+      500 => ' medium',
+      600 => ' semi-bold',
+      700 => ' bold',
+      800 => ' extra-bold',
+      900 => ' black',
+      final int weight => ' w$weight'
+    };
+    final String styleDescription = switch (style) {
+      FontStyle.normal => '',
+      FontStyle.italic => ' italic',
+    };
+    // Example: "Times New Roman bold italic, 14 px".
+    return '$fontFamily$weightDescription$styleDescription, $size px';
+  }
+}
+
+/// The measurements of a glyph sequence that consists of one or more visually
+/// connected characters in a piece of text.
+///
+/// A glyph cluster is a sequence of glyphs rendered together. This includes
+/// a glyph sequence that form a ligature, or base glyphs followed by diacritical
+/// marks (À).
+///
+/// ### Limitations
+///
+/// A [GlyphInfo] currently doesn't provide extra information when it is a
+/// ligature, which usually
+final class GlyphInfo {
+  GlyphInfo._(double left, double top, double right, double bottom, int graphemeStart, int graphemeEnd, bool isLTR, this.isEllipsis)
+    : graphemeClusterLayoutBounds = Rect.fromLTRB(left, top, right, bottom),
+      graphemeClusterCodeUnitRange = TextRange(start: graphemeStart, end: graphemeEnd),
+      writingDirection = isLTR ? TextDirection.ltr : TextDirection.rtl;
+
+  /// The layout rect of the [GlyphInfo], in the paragraph's coordiates.
+  ///
+  /// This is not a tight bounding box that encloses the glyph cluster. Rather,
+  /// the vertical extent reported is derived from the font metrics (instead of
+  /// glyph metrics), and the horizontal extent is x-advance.
+  ///
+  /// The width represents the
+  /// x_advance and height is from the font metrics.
+  final Rect graphemeClusterLayoutBounds;
+
+  /// The range of the UTF-16 code units that the characters in this
+  /// [GlyphInfo] comprises.
+  final TextRange graphemeClusterCodeUnitRange;
+
+  /// The [TextDirection] of the [GlyphInfo].
+  final TextDirection writingDirection;
+
+  final bool isEllipsis;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    return other is GlyphInfo
+        && graphemeClusterLayoutBounds == other.graphemeClusterLayoutBounds
+        && graphemeClusterCodeUnitRange == other.graphemeClusterCodeUnitRange
+        && writingDirection == other.writingDirection;
+  }
+
+  @override
+  int get hashCode => Object.hash(graphemeClusterLayoutBounds, graphemeClusterCodeUnitRange, writingDirection);
+
+  @override
+  String toString() => 'Glyph($graphemeClusterLayoutBounds, textRange: $graphemeClusterCodeUnitRange, direction: $writingDirection)';
+}
+
 /// Whether and how to align text horizontally.
 // The order of this enum must match the order of the values in RenderStyleConstants.h's ETextAlign.
 enum TextAlign {
@@ -2772,6 +2869,18 @@ class LineMetrics {
     required this.lineNumber,
   });
 
+  LineMetrics._(
+    this.hardBreak,
+    this.ascent,
+    this.descent,
+    this.unscaledAscent,
+    this.height,
+    this.width,
+    this.left,
+    this.baseline,
+    this.lineNumber,
+  );
+
   /// True if this line ends with an explicit line break (e.g. '\n') or is the end
   /// of the paragraph. False otherwise.
   final bool hardBreak;
@@ -2959,6 +3068,16 @@ abstract class Paragraph {
   /// Returns the text position closest to the given offset.
   TextPosition getPositionForOffset(Offset offset);
 
+  /// Returns the [GlyphInfo] of the closest glyph to the given `offset` in the
+  /// paragraph coordinate system, or null if the glyph is not in the visible
+  /// range.
+  GlyphInfo? getClosestGlyphInfoForOffset(Offset offset);
+
+  /// Returns the [GlyphInfo] located at the given UTF-16 `codeUnitOffset` in
+  /// the paragraph, or null if the given `codeUnitOffset` is out of the visible
+  /// lines or is ellipsized.
+  GlyphInfo? getGlyphInfoAt(int codeUnitOffset);
+
   /// Returns the [TextRange] of the word at the given [TextPosition].
   ///
   /// Characters not part of a word, such as spaces, symbols, and punctuation,
@@ -2991,6 +3110,36 @@ abstract class Paragraph {
   /// This can potentially return a large amount of data, so it is not recommended
   /// to repeatedly call this. Instead, cache the results.
   List<LineMetrics> computeLineMetrics();
+
+  /// Returns the [LineMetrics] for the line at `lineNumber`, or null if the
+  /// given `lineNumber` is greater than or equal to [numberOfLines].
+  LineMetrics? getLineMetricsAt(int lineNumber);
+
+  /// The total number of visible lines in the paragraph.
+  ///
+  /// Returns a non-negative number. If `maxLines` is non-null, the value of
+  /// [numberOfLines] never exceeds `maxLines`.
+  int get numberOfLines;
+
+  /// Returns the line number of the line that contains the code unit that
+  /// `codeUnitOffset` points to.
+  ///
+  /// This method returns null if the given `codeUnitOffset` is out of bounds, or
+  /// is logically after the last visible codepoint. This includes the case where
+  /// its codepoint belongs to a visible line, but the text layout library
+  /// replaced it with an ellipsis.
+  ///
+  /// If the target code unit points to a control character that introduces
+  /// mandatory line breaks (most notably the line feed character `LF`, typically
+  /// represented in strings as the escape sequence "\n"), to conform to
+  /// [the unicode rules](https://unicode.org/reports/tr14/#LB4), the control
+  /// character itself is always considered to be at the end of "current" line
+  /// rather than the beginning of the new line.
+  int? getLineNumberAt(int codeUnitOffset);
+
+  /// Returns the information of the font used to render the glyph at the given
+  /// UTF-16 `codeUnitOffset`, or null if the `codeUnitOffset` is out of bounds.
+  FontInfo? getFontInfoAt(int codeUnitOffset);
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
@@ -3098,6 +3247,16 @@ base class _NativeParagraph extends NativeFieldWrapperClass1 implements Paragrap
   external List<int> _getPositionForOffset(double dx, double dy);
 
   @override
+  GlyphInfo? getGlyphInfoAt(int codeUnitOffset) => _getGlyphInfoAt(codeUnitOffset, GlyphInfo._);
+  @Native<Handle Function(Pointer<Void>, Uint32, Handle)>(symbol: 'Paragraph::getGlyphInfoAt')
+  external GlyphInfo? _getGlyphInfoAt(int codeUnitOffset, Function constructor);
+
+  @override
+  GlyphInfo? getClosestGlyphInfoForOffset(Offset offset) => _getClosestGlyphInfoForOffset(offset.dx, offset.dy, GlyphInfo._);
+  @Native<Handle Function(Pointer<Void>, Double, Double, Handle)>(symbol: 'Paragraph::getClosestGlyphInfo')
+  external GlyphInfo? _getClosestGlyphInfoForOffset(double dx, double dy, Function constructor);
+
+  @override
   TextRange getWordBoundary(TextPosition position) {
     final int characterPosition;
     switch (position.affinity) {
@@ -3168,6 +3327,28 @@ base class _NativeParagraph extends NativeFieldWrapperClass1 implements Paragrap
 
   @Native<Handle Function(Pointer<Void>)>(symbol: 'Paragraph::computeLineMetrics')
   external Float64List _computeLineMetrics();
+
+  @override
+  LineMetrics? getLineMetricsAt(int lineNumber) => _getLineMetricsAt(lineNumber, LineMetrics._);
+  @Native<Handle Function(Pointer<Void>, Uint32, Handle)>(symbol: 'Paragraph::getLineMetricsAt')
+  external LineMetrics? _getLineMetricsAt(int lineNumber, Function constructor);
+
+  @override
+  FontInfo? getFontInfoAt(int codeUnitOffset) => _getFontInfoAt(codeUnitOffset, FontInfo._);
+  @Native<Handle Function(Pointer<Void>, Uint32, Handle)>(symbol: 'Paragraph::getFontInfoAt')
+  external FontInfo? _getFontInfoAt(int codeUnitOffset, Function constructor);
+
+  @override
+  @Native<Uint32 Function(Pointer<Void>)>(symbol: 'Paragraph::getNumberOfLines')
+  external int get numberOfLines;
+
+  @override
+  int? getLineNumberAt(int codeUnitOffset) {
+    final int lineNumber = _getLineNumber(codeUnitOffset);
+    return lineNumber < 0 ? null : lineNumber;
+  }
+  @Native<Int32 Function(Pointer<Void>, Uint32)>(symbol: 'Paragraph::getLineNumberAt')
+  external int _getLineNumber(int codeUnitOffset);
 
   @override
   void dispose() {

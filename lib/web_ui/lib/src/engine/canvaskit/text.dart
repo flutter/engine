@@ -659,6 +659,18 @@ class CkParagraph implements ui.Paragraph {
   }
 
   @override
+  ui.GlyphInfo? getClosestGlyphInfoForOffset(ui.Offset offset) {
+    assert(!_disposed, 'Paragraph has been disposed.');
+    return skiaObject.getClosestGlyphInfoAt(offset.dx, offset.dy);
+  }
+
+  @override
+  ui.GlyphInfo? getGlyphInfoAt(int codeUnitOffset) {
+    assert(!_disposed, 'Paragraph has been disposed.');
+    return skiaObject.getGlyphInfoAt(codeUnitOffset.toDouble());
+  }
+
+  @override
   ui.TextRange getWordBoundary(ui.TextPosition position) {
     assert(!_disposed, 'Paragraph has been disposed.');
     final int characterPosition;
@@ -726,6 +738,32 @@ class CkParagraph implements ui.Paragraph {
       result.add(CkLineMetrics._(metric));
     }
     return result;
+  }
+
+  @override
+  ui.LineMetrics? getLineMetricsAt(int lineNumber) {
+    assert(!_disposed, 'Paragraph has been disposed.');
+    final SkLineMetrics? metrics = skiaObject.getLineMetricsAt(lineNumber.toDouble());
+    return metrics == null ? null : CkLineMetrics._(metrics);
+  }
+
+  @override
+  int get numberOfLines {
+    assert(!_disposed, 'Paragraph has been disposed.');
+    return skiaObject.getNumberOfLines().toInt();
+  }
+
+  @override
+  int? getLineNumberAt(int codeUnitOffset) {
+    assert(!_disposed, 'Paragraph has been disposed.');
+    final int lineNumber = skiaObject.getLineNumberAt(codeUnitOffset.toDouble()).toInt();
+    return lineNumber >= 0 ? lineNumber : null;
+  }
+
+  @override
+  ui.FontInfo? getFontInfoAt(int codeUnitOffset) {
+    assert(!_disposed, 'Paragraph has been disposed.');
+    return skiaObject.getFontInfoAt(codeUnitOffset.toDouble());
   }
 
   bool _disposed = false;

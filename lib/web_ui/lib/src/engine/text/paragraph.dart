@@ -208,6 +208,36 @@ class ParagraphLine {
     return buffer.toString();
   }
 
+  // Find the closest [LayoutFragment] to the given horizontal offset `dx`, that
+  // is not an [EllipsisFragment].
+  LayoutFragment? closestFragmentAtOffset(double dx) {
+    final List<LayoutFragment> fs = switch (fragments) {
+      [...final List<LayoutFragment> rest, EllipsisFragment()]
+      || final List<LayoutFragment> rest => rest,
+    };
+
+    ({LayoutFragment fragment, double distance})? closestFragment;
+    for (final LayoutFragment fragment in fs) {
+      assert(fragment is! EllipsisFragment);
+      final double distance;
+      if (dx < fragment.left) {
+        distance = fragment.left - dx;
+      } else if (dx > fragment.right) {
+        distance = dx - fragment.right;
+      } else {
+        return fragment;
+      }
+      assert(distance > 0);
+
+      final double? minDistance = closestFragment?.distance;
+      if (minDistance == null || minDistance > distance) {
+        closestFragment = (fragment: fragment, distance: distance);
+      }
+    }
+    final LayoutFragment? fragment = closestFragment?.fragment;
+    return fragment;
+  }
+
   @override
   int get hashCode => Object.hash(
         lineMetrics,

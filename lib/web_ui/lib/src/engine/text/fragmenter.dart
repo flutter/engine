@@ -29,6 +29,7 @@ abstract class TextFragment {
 
   /// Whether this fragment's range overlaps with the range from [start] to [end].
   bool overlapsWith(int start, int end) {
-    return start < this.end && this.start < end;
+    assert(end > start);
+    return start <= this.end && this.start < end;
   }
 }

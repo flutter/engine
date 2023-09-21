@@ -102,6 +102,20 @@ class SkwasmParagraph extends SkwasmObjectWrapper<RawParagraph> implements ui.Pa
   bool get didExceedMaxLines => paragraphGetDidExceedMaxLines(handle);
 
   @override
+  int get numberOfLines => paragraphGetLineCount(handle);
+
+  @override
+  int? getLineNumberAt(int codeUnitOffset) {
+    final int lineNumber = paragraphGetLineNumberAt(handle, codeUnitOffset);
+    return lineNumber >= 0 ? lineNumber : null;
+  }
+
+  @override
+  ui.FontInfo? getFontInfoAt(int codeUnitOffset) {
+    return null;
+  }
+
+  @override
   void layout(ui.ParagraphConstraints constraints) {
     paragraphLayout(handle, constraints.width);
     if (!_hasCheckedForMissingCodePoints) {
@@ -180,6 +194,40 @@ class SkwasmParagraph extends SkwasmObjectWrapper<RawParagraph> implements ui.Pa
   });
 
   @override
+  ui.GlyphInfo? getGlyphInfoAt(int codeUnitOffset) {
+    return withStackScope((StackScope scope) {
+      final Pointer<Float> outRect = scope.allocFloatArray(4);
+      final Pointer<Uint32> outRange = scope.allocUint32Array(2);
+      final Pointer<Bool> outBooleanFlags = scope.allocBoolArray(2);
+      return paragraphGetGlyphInfoAt(handle, codeUnitOffset, outRect, outRange, outBooleanFlags)
+        ? ui.GlyphInfo(
+          ui.Rect.fromLTRB(outRect[0], outRect[1], outRect[2], outRect[3]),
+          ui.TextRange(start: outRange[0], end: outRange[1]),
+          outBooleanFlags[0] ? ui.TextDirection.ltr : ui.TextDirection.rtl,
+          outBooleanFlags[1],
+        )
+        : null;
+    });
+  }
+
+  @override
+  ui.GlyphInfo? getClosestGlyphInfoForOffset(ui.Offset offset) {
+    return withStackScope((StackScope scope) {
+      final Pointer<Float> outRect = scope.allocFloatArray(4);
+      final Pointer<Uint32> outRange = scope.allocUint32Array(2);
+      final Pointer<Bool> outBooleanFlags = scope.allocBoolArray(2);
+      return paragraphGetClosestGlyphInfoAtCoordinate(handle, offset.dx, offset.dy, outRect, outRange, outBooleanFlags)
+        ? ui.GlyphInfo(
+          ui.Rect.fromLTRB(outRect[0], outRect[1], outRect[2], outRect[3]),
+          ui.TextRange(start: outRange[0], end: outRange[1]),
+          outBooleanFlags[0] ? ui.TextDirection.ltr : ui.TextDirection.rtl,
+          outBooleanFlags[1],
+        )
+        : null;
+    });
+  }
+
+  @override
   ui.TextRange getWordBoundary(ui.TextPosition position) => withStackScope((StackScope scope) {
     final Pointer<Int32> outRange = scope.allocInt32Array(2);
     paragraphGetWordBoundary(handle, position.offset, outRange);
@@ -213,6 +261,12 @@ class SkwasmParagraph extends SkwasmObjectWrapper<RawParagraph> implements ui.Pa
     return List<SkwasmLineMetrics>.generate(lineCount,
       (int index) => SkwasmLineMetrics._(paragraphGetLineMetricsAtIndex(handle, index))
     );
+  }
+
+  @override
+  ui.LineMetrics? getLineMetricsAt(int index) {
+    final LineMetricsHandle lineMetrics = paragraphGetLineMetricsAtIndex(handle, index);
+    return lineMetrics == nullptr ? SkwasmLineMetrics._(lineMetrics) : null;
   }
 }
 
