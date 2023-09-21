@@ -16,6 +16,26 @@ constexpr LogSeverity kLogError = 2;
 constexpr LogSeverity kLogFatal = 3;
 constexpr LogSeverity kLogNumSeverities = 4;
 
+// DEPRECATED: Use |kLogInfo|.
+// NOLINTNEXTLINE(readability-identifier-naming)
+constexpr LogSeverity LOG_INFO = kLogInfo;
+
+// DEPRECATED: Use |kLogWarning|.
+// NOLINTNEXTLINE(readability-identifier-naming)
+constexpr LogSeverity LOG_WARNING = kLogWarning;
+
+// DEPRECATED: Use |kLogError|.
+// NOLINTNEXTLINE(readability-identifier-naming)
+constexpr LogSeverity LOG_ERROR = kLogError;
+
+// DEPRECATED: Use |kLogFatal|.
+// NOLINTNEXTLINE(readability-identifier-naming)
+constexpr LogSeverity LOG_FATAL = kLogFatal;
+
+// DEPRECATED: Use |kLogNumSeverities|.
+// NOLINTNEXTLINE(readability-identifier-naming)
+constexpr LogSeverity LOG_NUM_SEVERITIES = kLogNumSeverities;
+
 // One of the Windows headers defines ERROR to 0. This makes the token
 // concatenation in FML_LOG(ERROR) to resolve to LOG_0. We define this back to
 // the appropriate log level.
@@ -29,6 +49,10 @@ const LogSeverity kLogDFatal = kLogError;
 #else
 const LogSeverity kLogDFatal = kLogFatal;
 #endif
+
+// DEPRECATED: Use |kLogDFatal|.
+// NOLINTNEXTLINE(readability-identifier-naming)
+const LogSeverity LOG_DFATAL = kLogDFatal;
 
 }  // namespace fml
 
