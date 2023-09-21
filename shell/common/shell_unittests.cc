@@ -2195,6 +2195,64 @@ TEST_F(ShellTest, Screenshot) {
   DestroyShell(std::move(shell));
 }
 
+TEST_F(ShellTest, ScreenshotImpeller) {
+  auto settings = CreateSettingsForFixture();
+  settings.enable_impeller = true;
+  fml::AutoResetWaitableEvent firstFrameLatch;
+  settings.frame_rasterized_callback =
+      [&firstFrameLatch](const FrameTiming& t) { firstFrameLatch.Signal(); };
+
+  std::unique_ptr<Shell> shell = CreateShell(settings);
+
+  // Create the surface needed by rasterizer
+  PlatformViewNotifyCreated(shell.get());
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  LayerTreeBuilder builder = [&](const std::shared_ptr<ContainerLayer>& root) {
+    auto display_list_layer = std::make_shared<DisplayListLayer>(
+        SkPoint::Make(10, 10), MakeSizedDisplayList(80, 80), false, false);
+    root->Add(display_list_layer);
+  };
+
+  PumpOneFrame(shell.get(), 100, 100, builder);
+  firstFrameLatch.Wait();
+
+  std::promise<Rasterizer::Screenshot> screenshot_promise;
+  auto screenshot_future = screenshot_promise.get_future();
+
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetRasterTaskRunner(),
+      [&screenshot_promise, &shell]() {
+        auto rasterizer = shell->GetRasterizer();
+        screenshot_promise.set_value(rasterizer->ScreenshotLastLayerTree(
+            Rasterizer::ScreenshotType::CompressedImage, false));
+      });
+
+  auto fixtures_dir =
+      fml::OpenDirectory(GetFixturesPath(), false, fml::FilePermission::kRead);
+
+  auto reference_png = fml::FileMapping::CreateReadOnly(
+      fixtures_dir, "shelltest_screenshot.png");
+
+  // Use MakeWithoutCopy instead of MakeWithCString because we don't want to
+  // encode the null sentinel
+  sk_sp<SkData> reference_data = SkData::MakeWithoutCopy(
+      reference_png->GetMapping(), reference_png->GetSize());
+
+  sk_sp<SkData> screenshot_data = screenshot_future.get().data;
+  if (!reference_data->equals(screenshot_data.get())) {
+    LogSkData(reference_data, "reference");
+    LogSkData(screenshot_data, "screenshot");
+    ASSERT_TRUE(false);
+  }
+
+  DestroyShell(std::move(shell));
+}
+
 TEST_F(ShellTest, CanConvertToAndFromMappings) {
   const size_t buffer_size = 2 << 20;
 
