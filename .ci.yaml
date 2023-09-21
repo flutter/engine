@@ -159,9 +159,9 @@ targets:
     timeout: 60
 
   - name: Linux Fuchsia
-    bringup: true
     recipe: engine/engine
     properties:
+      add_recipes_cq: "true"
       build_fuchsia: "true"
       fuchsia_ctl_version: version:0.0.27
       # ensure files from pre-production Fuchsia SDK tests are purged from cache
@@ -217,10 +217,10 @@ targets:
       - web_sdk/**
 
   - name: Linux linux_fuchsia
+    bringup: true
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
-      add_recipes_cq: "true"
       release_build: "true"
       config_name: linux_fuchsia
     drone_dimensions:
