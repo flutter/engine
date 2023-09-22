@@ -1,4 +1,4 @@
-Signature: ccb68a6de7ae6e927496980023d2bcb7
+Signature: 5b8810e5ba501ce0635bf839f7f456b1
 
 ====================================================================================================
 LIBRARY: etc1
@@ -389,7 +389,6 @@ FILE: ../../../third_party/skia/relnotes/directcontext_submit.md
 FILE: ../../../third_party/skia/relnotes/minify-mesh.md
 FILE: ../../../third_party/skia/relnotes/patheffects.md
 FILE: ../../../third_party/skia/relnotes/shadowflags.md
-FILE: ../../../third_party/skia/relnotes/skpicture_png.md
 FILE: ../../../third_party/skia/src/gpu/gpu_workaround_list.txt
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_compute.minified.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_compute.unoptimized.sksl
@@ -8780,7 +8779,6 @@ ORIGIN: ../../../third_party/skia/gm/surface_manager/GaneshVulkanSurfaceManager.
 ORIGIN: ../../../third_party/skia/gm/surface_manager/RasterSurfaceManager.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/gm/surface_manager/SurfaceManager.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/gm/vias/SimpleVias.cpp + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/gm/workingspace.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/android/SkCanvasAndroid.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/android/SkHeifDecoder.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/android/SkImageAndroid.h + ../../../third_party/skia/LICENSE
@@ -9002,8 +9000,6 @@ ORIGIN: ../../../third_party/skia/src/shaders/SkRuntimeShader.h + ../../../third
 ORIGIN: ../../../third_party/skia/src/shaders/SkShaderBase.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/shaders/SkTriColorShader.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/shaders/SkTriColorShader.h + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/src/shaders/SkWorkingColorSpaceShader.cpp + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/src/shaders/SkWorkingColorSpaceShader.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/shaders/gradients/SkRadialGradient.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/shaders/gradients/SkSweepGradient.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/sksl/analysis/SkSLGetLoopControlFlowInfo.cpp + ../../../third_party/skia/LICENSE
@@ -9041,7 +9037,6 @@ FILE: ../../../third_party/skia/gm/surface_manager/GaneshVulkanSurfaceManager.cp
 FILE: ../../../third_party/skia/gm/surface_manager/RasterSurfaceManager.cpp
 FILE: ../../../third_party/skia/gm/surface_manager/SurfaceManager.cpp
 FILE: ../../../third_party/skia/gm/vias/SimpleVias.cpp
-FILE: ../../../third_party/skia/gm/workingspace.cpp
 FILE: ../../../third_party/skia/include/android/SkCanvasAndroid.h
 FILE: ../../../third_party/skia/include/android/SkHeifDecoder.h
 FILE: ../../../third_party/skia/include/android/SkImageAndroid.h
@@ -9263,8 +9258,6 @@ FILE: ../../../third_party/skia/src/shaders/SkRuntimeShader.h
 FILE: ../../../third_party/skia/src/shaders/SkShaderBase.cpp
 FILE: ../../../third_party/skia/src/shaders/SkTriColorShader.cpp
 FILE: ../../../third_party/skia/src/shaders/SkTriColorShader.h
-FILE: ../../../third_party/skia/src/shaders/SkWorkingColorSpaceShader.cpp
-FILE: ../../../third_party/skia/src/shaders/SkWorkingColorSpaceShader.h
 FILE: ../../../third_party/skia/src/shaders/gradients/SkRadialGradient.h
 FILE: ../../../third_party/skia/src/shaders/gradients/SkSweepGradient.h
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLGetLoopControlFlowInfo.cpp
