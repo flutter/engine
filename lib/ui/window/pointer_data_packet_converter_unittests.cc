@@ -129,6 +129,7 @@ void CreateSimulatedTrackpadGestureData(PointerData& data,  // NOLINT
   data.pan_delta_y = 0.0;
   data.scale = scale;
   data.rotation = rotation;
+  data.view_id = 0;
 }
 
 void UnpackPointerPacket(std::vector<PointerData>& output,  // NOLINT

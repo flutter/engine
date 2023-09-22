@@ -26,6 +26,7 @@ static const size_t kInitialWindowHeight = 600;
 // Maximum damage history - for triple buffering we need to store damage for
 // last two frames; Some Android devices (Pixel 4) use quad buffering.
 static const int kMaxHistorySize = 10;
+static constexpr int64_t kImplicitViewId = 0;
 
 // Keeps track of the most recent frame damages so that existing damage can
 // be easily computed.
@@ -56,6 +57,9 @@ void GLFWcursorPositionCallbackAtPhase(GLFWwindow* window,
       std::chrono::duration_cast<std::chrono::microseconds>(
           std::chrono::high_resolution_clock::now().time_since_epoch())
           .count();
+  // TODO(loicsharma): This assumes all pointer events are on the implicit
+  // view and should be updated to support multiple views.
+  event.view_id = 0;
   FlutterEngineSendPointerEvent(
       reinterpret_cast<FlutterEngine>(glfwGetWindowUserPointer(window)), &event,
       1);

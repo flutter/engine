@@ -411,6 +411,9 @@ void FlutterWindowsView::SendPointerPanZoomEnd(int32_t device_id) {
   event.x = state->pan_zoom_start_x;
   event.y = state->pan_zoom_start_y;
   event.phase = FlutterPointerPhase::kPanZoomEnd;
+  // TODO(loicsharma): This assumes all pointer events are on the implicit
+  // view and should be updated to support multiple views.
+  event.view_id = 0;
   SendPointerEventWithData(event, state);
 }
 
@@ -490,6 +493,10 @@ void FlutterWindowsView::SendScrollInertiaCancel(int32_t device_id,
 void FlutterWindowsView::SendPointerEventWithData(
     const FlutterPointerEvent& event_data,
     PointerState* state) {
+  // TODO(dkwingsmt): The Windows embedder doesn't support multi-view for now.
+  // Use the real view ID when it does.
+  int64_t view_id = kImplicitViewId;
+
   // If sending anything other than an add, and the pointer isn't already added,
   // synthesize an add to satisfy Flutter's expectations about events.
   if (!state->flutter_state_is_added &&
@@ -499,6 +506,7 @@ void FlutterWindowsView::SendPointerEventWithData(
     event.x = event_data.x;
     event.y = event_data.y;
     event.buttons = 0;
+    event.view_id = view_id;
     SendPointerEventWithData(event, state);
   }
 
@@ -513,6 +521,7 @@ void FlutterWindowsView::SendPointerEventWithData(
   event.device_kind = state->device_kind;
   event.device = state->pointer_id;
   event.buttons = state->buttons;
+  event.view_id = view_id_;
 
   // Set metadata that's always the same regardless of the event.
   event.struct_size = sizeof(event);
