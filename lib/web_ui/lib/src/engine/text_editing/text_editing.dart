@@ -12,6 +12,7 @@ import 'package:ui/ui.dart' as ui;
 import '../browser_detection.dart';
 import '../dom.dart';
 import '../embedder.dart';
+import '../mouse/prevent_default.dart';
 import '../platform_dispatcher.dart';
 import '../safe_browser_api.dart';
 import '../semantics.dart';
@@ -210,9 +211,7 @@ class EngineAutofillForm {
     formElement.noValidate = true;
     formElement.method = 'post';
     formElement.action = '#';
-    formElement.addEventListener('submit', createDomEventListener((DomEvent e) {
-      e.preventDefault();
-    }));
+    formElement.addEventListener('submit', preventDefaultListener);
 
     // We need to explicitly disable pointer events on the form in Safari Desktop,
     // so that we don't have pointer event collisions if users hover over or click
@@ -547,7 +546,7 @@ class TextEditingDeltaState {
     if (isTextBeingRemoved) {
       // When text is deleted outside of the composing region or is cut using the native toolbar,
       // we calculate the length of the deleted text by comparing the new and old editing state lengths.
-      // If the deletion is backward, the length is susbtracted from the [deltaEnd]
+      // If the deletion is backward, the length is subtracted from the [deltaEnd]
       // that we set when beforeinput was fired to determine the [deltaStart].
       // If the deletion is forward, [deltaStart] is set to the new editing state baseOffset
       // and [deltaEnd] is set to [deltaStart] incremented by the length of the deletion.
@@ -561,9 +560,10 @@ class TextEditingDeltaState {
         newTextEditingDeltaState.deltaEnd = newTextEditingDeltaState.deltaStart + deletedLength;
       }
     } else if (isTextBeingChangedAtActiveSelection) {
+      final bool isPreviousSelectionInverted = lastEditingState!.baseOffset! > lastEditingState.extentOffset!;
       // When a selection of text is replaced by a copy/paste operation we set the starting range
       // of the delta to be the beginning of the selection of the previous editing state.
-      newTextEditingDeltaState.deltaStart = lastEditingState!.baseOffset!;
+      newTextEditingDeltaState.deltaStart = isPreviousSelectionInverted ? lastEditingState.extentOffset! : lastEditingState.baseOffset!;
     }
 
     // If we are composing then set the delta range to the composing region we
@@ -769,17 +769,31 @@ class EditingState {
   factory EditingState.fromDomElement(DomHTMLElement? domElement) {
     if (domInstanceOfString(domElement, 'HTMLInputElement')) {
       final DomHTMLInputElement element = domElement! as DomHTMLInputElement;
-      return EditingState(
-          text: element.value,
-          baseOffset: element.selectionStart?.toInt(),
-          extentOffset: element.selectionEnd?.toInt());
+      if (element.selectionDirection == 'backward') {
+        return EditingState(
+            text: element.value,
+            baseOffset: element.selectionEnd?.toInt(),
+            extentOffset: element.selectionStart?.toInt());
+      } else {
+        return EditingState(
+            text: element.value,
+            baseOffset: element.selectionStart?.toInt(),
+            extentOffset: element.selectionEnd?.toInt());
+        }
     } else if (domInstanceOfString(domElement, 'HTMLTextAreaElement')) {
       final DomHTMLTextAreaElement element = domElement! as
           DomHTMLTextAreaElement;
-      return EditingState(
-          text: element.value,
-          baseOffset: element.selectionStart?.toInt(),
-          extentOffset: element.selectionEnd?.toInt());
+      if (element.selectionDirection == 'backward') {
+        return EditingState(
+            text: element.value,
+            baseOffset: element.selectionEnd?.toInt(),
+            extentOffset: element.selectionStart?.toInt());
+      } else {
+        return EditingState(
+            text: element.value,
+            baseOffset: element.selectionStart?.toInt(),
+            extentOffset: element.selectionEnd?.toInt());
+      }
     } else {
       throw UnsupportedError('Initialized with unsupported input type');
     }
@@ -1411,23 +1425,25 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     final String? inputType = getJsProperty<void>(event, 'inputType') as String?;
 
     if (inputType != null) {
+      final bool isSelectionInverted = lastEditingState!.baseOffset! > lastEditingState!.extentOffset!;
+      final int deltaOffset = isSelectionInverted ? lastEditingState!.baseOffset! : lastEditingState!.extentOffset!;
       if (inputType.contains('delete')) {
         // The deltaStart is set in handleChange because there is where we get access
         // to the new selection baseOffset which is our new deltaStart.
         editingDeltaState.deltaText = '';
-        editingDeltaState.deltaEnd = lastEditingState!.extentOffset!;
+        editingDeltaState.deltaEnd = deltaOffset;
       } else if (inputType == 'insertLineBreak'){
         // event.data is null on a line break, so we manually set deltaText as a line break by setting it to '\n'.
         editingDeltaState.deltaText = '\n';
-        editingDeltaState.deltaStart = lastEditingState!.extentOffset!;
-        editingDeltaState.deltaEnd = lastEditingState!.extentOffset!;
+        editingDeltaState.deltaStart = deltaOffset;
+        editingDeltaState.deltaEnd = deltaOffset;
       } else if (eventData != null) {
         // When event.data is not null we will begin by considering this delta as an insertion
         // at the selection extentOffset. This may change due to logic in handleChange to handle
         // composition and other IME behaviors.
         editingDeltaState.deltaText = eventData;
-        editingDeltaState.deltaStart = lastEditingState!.extentOffset!;
-        editingDeltaState.deltaEnd = lastEditingState!.extentOffset!;
+        editingDeltaState.deltaStart = deltaOffset;
+        editingDeltaState.deltaEnd = deltaOffset;
       }
     }
   }

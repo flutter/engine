@@ -161,7 +161,6 @@ targets:
   - name: Linux Fuchsia
     recipe: engine/engine
     properties:
-      add_recipes_cq: "true"
       build_fuchsia: "true"
       fuchsia_ctl_version: version:0.0.27
       # ensure files from pre-production Fuchsia SDK tests are purged from cache
@@ -361,7 +360,7 @@ targets:
         {"download_emsdk": true}
       dependencies: >-
         [
-          {"dependency": "chrome_and_driver", "version": "version:115.0"},
+          {"dependency": "chrome_and_driver", "version": "version:117.0"},
           {"dependency": "curl", "version": "version:7.64.0"}
         ]
       framework: "true"
@@ -465,10 +464,6 @@ targets:
       add_recipes_cq: "true"
       release_build: "true"
       config_name: mac_ios_engine
-      dependencies: >-
-        [
-          {"dependency": "jazzy", "version": "0.14.1"}
-        ]
       $flutter/osx_sdk : >-
         {
           "sdk_version": "14e300c"

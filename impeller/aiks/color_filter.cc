@@ -45,7 +45,7 @@ BlendColorFilter::~BlendColorFilter() = default;
 
 std::shared_ptr<ColorFilterContents> BlendColorFilter::WrapWithGPUColorFilter(
     std::shared_ptr<FilterInput> input,
-    bool absorb_opacity) const {
+    ColorFilterContents::AbsorbOpacity absorb_opacity) const {
   auto filter =
       ColorFilterContents::MakeBlend(blend_mode_, {std::move(input)}, color_);
   filter->SetAbsorbOpacity(absorb_opacity);
@@ -56,6 +56,10 @@ ColorFilter::ColorFilterProc BlendColorFilter::GetCPUColorFilterProc() const {
   return [filter_blend_mode = blend_mode_, filter_color = color_](Color color) {
     return color.Blend(filter_color, filter_blend_mode);
   };
+}
+
+std::shared_ptr<ColorFilter> BlendColorFilter::Clone() const {
+  return std::make_shared<BlendColorFilter>(*this);
 }
 
 /*******************************************************************************
@@ -69,7 +73,7 @@ MatrixColorFilter::~MatrixColorFilter() = default;
 
 std::shared_ptr<ColorFilterContents> MatrixColorFilter::WrapWithGPUColorFilter(
     std::shared_ptr<FilterInput> input,
-    bool absorb_opacity) const {
+    ColorFilterContents::AbsorbOpacity absorb_opacity) const {
   auto filter =
       ColorFilterContents::MakeColorMatrix({std::move(input)}, color_matrix_);
   filter->SetAbsorbOpacity(absorb_opacity);
@@ -80,6 +84,10 @@ ColorFilter::ColorFilterProc MatrixColorFilter::GetCPUColorFilterProc() const {
   return [color_matrix = color_matrix_](Color color) {
     return color.ApplyColorMatrix(color_matrix);
   };
+}
+
+std::shared_ptr<ColorFilter> MatrixColorFilter::Clone() const {
+  return std::make_shared<MatrixColorFilter>(*this);
 }
 
 /*******************************************************************************
@@ -93,7 +101,7 @@ SrgbToLinearColorFilter::~SrgbToLinearColorFilter() = default;
 std::shared_ptr<ColorFilterContents>
 SrgbToLinearColorFilter::WrapWithGPUColorFilter(
     std::shared_ptr<FilterInput> input,
-    bool absorb_opacity) const {
+    ColorFilterContents::AbsorbOpacity absorb_opacity) const {
   auto filter = ColorFilterContents::MakeSrgbToLinearFilter({std::move(input)});
   filter->SetAbsorbOpacity(absorb_opacity);
   return filter;
@@ -102,6 +110,10 @@ SrgbToLinearColorFilter::WrapWithGPUColorFilter(
 ColorFilter::ColorFilterProc SrgbToLinearColorFilter::GetCPUColorFilterProc()
     const {
   return [](Color color) { return color.SRGBToLinear(); };
+}
+
+std::shared_ptr<ColorFilter> SrgbToLinearColorFilter::Clone() const {
+  return std::make_shared<SrgbToLinearColorFilter>(*this);
 }
 
 /*******************************************************************************
@@ -115,7 +127,7 @@ LinearToSrgbColorFilter::~LinearToSrgbColorFilter() = default;
 std::shared_ptr<ColorFilterContents>
 LinearToSrgbColorFilter::WrapWithGPUColorFilter(
     std::shared_ptr<FilterInput> input,
-    bool absorb_opacity) const {
+    ColorFilterContents::AbsorbOpacity absorb_opacity) const {
   auto filter = ColorFilterContents::MakeSrgbToLinearFilter({std::move(input)});
   filter->SetAbsorbOpacity(absorb_opacity);
   return filter;
@@ -124,6 +136,10 @@ LinearToSrgbColorFilter::WrapWithGPUColorFilter(
 ColorFilter::ColorFilterProc LinearToSrgbColorFilter::GetCPUColorFilterProc()
     const {
   return [](Color color) { return color.LinearToSRGB(); };
+}
+
+std::shared_ptr<ColorFilter> LinearToSrgbColorFilter::Clone() const {
+  return std::make_shared<LinearToSrgbColorFilter>(*this);
 }
 
 }  // namespace impeller

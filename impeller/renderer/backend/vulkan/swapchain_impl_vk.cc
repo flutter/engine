@@ -375,15 +375,20 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
       nullptr               // fence
   );
 
-  if (acq_result == vk::Result::eErrorOutOfDateKHR) {
-    return AcquireResult{true /* out of date */};
-  }
-
-  if (acq_result != vk::Result::eSuccess &&
-      acq_result != vk::Result::eSuboptimalKHR) {
-    VALIDATION_LOG << "Could not acquire next swapchain image: "
-                   << vk::to_string(acq_result);
-    return {};
+  switch (acq_result) {
+    case vk::Result::eSuccess:
+      // Keep going.
+      break;
+    case vk::Result::eSuboptimalKHR:
+    case vk::Result::eErrorOutOfDateKHR:
+      // A recoverable error. Just say we are out of date.
+      return AcquireResult{true /* out of date */};
+      break;
+    default:
+      // An unrecoverable error.
+      VALIDATION_LOG << "Could not acquire next swapchain image: "
+                     << vk::to_string(acq_result);
+      return AcquireResult{false /* out of date */};
   }
 
   if (index >= images_.size()) {
@@ -465,7 +470,7 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
     }
   }
 
-  auto task = [&, index, image, current_frame = current_frame_] {
+  auto task = [&, index, current_frame = current_frame_] {
     auto context_strong = context_.lock();
     if (!context_strong) {
       return;

@@ -5,7 +5,6 @@
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 
 #include "flutter/fml/closure.h"
-#include "flutter/fml/trace_event.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/fence_waiter_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
@@ -21,7 +20,7 @@ class TrackedObjectsVK {
     if (!pool) {
       return;
     }
-    auto buffer = pool->CreateGraphicsCommandBuffer();
+    auto buffer = pool->CreateCommandBuffer();
     if (!buffer) {
       return;
     }
@@ -34,13 +33,7 @@ class TrackedObjectsVK {
     if (!buffer_) {
       return;
     }
-    auto pool = pool_.lock();
-    if (!pool) {
-      // The buffer can not be freed if its command pool has been destroyed.
-      buffer_.release();
-      return;
-    }
-    pool->CollectGraphicsCommandBuffer(std::move(buffer_));
+    pool_->CollectCommandBuffer(std::move(buffer_));
   }
 
   bool IsValid() const { return is_valid_; }
@@ -86,7 +79,8 @@ class TrackedObjectsVK {
 
  private:
   DescriptorPoolVK desc_pool_;
-  std::weak_ptr<CommandPoolVK> pool_;
+  // `shared_ptr` since command buffers have a link to the command pool.
+  std::shared_ptr<CommandPoolVK> pool_;
   vk::UniqueCommandBuffer buffer_;
   std::set<std::shared_ptr<SharedObjectVK>> tracked_objects_;
   std::set<std::shared_ptr<const Buffer>> tracked_buffers_;
@@ -110,7 +104,11 @@ std::shared_ptr<CommandEncoderVK> CommandEncoderFactoryVK::Create() {
     return nullptr;
   }
   auto& context_vk = ContextVK::Cast(*context);
-  auto tls_pool = CommandPoolVK::GetThreadLocal(&context_vk);
+  auto recycler = context_vk.GetCommandPoolRecycler();
+  if (!recycler) {
+    return nullptr;
+  }
+  auto tls_pool = recycler->Get();
   if (!tls_pool) {
     return nullptr;
   }

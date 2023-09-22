@@ -14,6 +14,7 @@
 @implementation GoldenTestManager
 
 NSDictionary* launchArgsMap;
+const double kDefaultRmseThreshold = 0.5;
 
 - (instancetype)initWithLaunchArg:(NSString*)launchArg {
   self = [super init];
@@ -73,10 +74,10 @@ NSDictionary* launchArgsMap;
   return self;
 }
 
-- (void)checkGoldenForTest:(XCTestCase*)test {
+- (void)checkGoldenForTest:(XCTestCase*)test rmesThreshold:(double)rmesThreshold {
   XCUIScreenshot* screenshot = [[XCUIScreen mainScreen] screenshot];
   if (!_goldenImage.image) {
-    XCTAttachment* attachment = [XCTAttachment attachmentWithScreenshot:screenshot.image];
+    XCTAttachment* attachment = [XCTAttachment attachmentWithScreenshot:screenshot];
     attachment.name = [_goldenImage.goldenName stringByAppendingString:@"_new.png"];
     attachment.lifetime = XCTAttachmentLifetimeKeepAlways;
     [test addAttachment:attachment];
@@ -88,7 +89,7 @@ NSDictionary* launchArgsMap;
                       _goldenImage.goldenName);
   }
 
-  if (![_goldenImage compareGoldenToImage:screenshot.image]) {
+  if (![_goldenImage compareGoldenToImage:screenshot.image rmesThreshold:rmesThreshold]) {
     XCTAttachment* screenshotAttachment = [XCTAttachment attachmentWithImage:screenshot.image];
     screenshotAttachment.name = [_goldenImage.goldenName stringByAppendingString:@"_actual.png"];
     screenshotAttachment.lifetime = XCTAttachmentLifetimeKeepAlways;

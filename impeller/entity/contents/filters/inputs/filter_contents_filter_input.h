@@ -37,10 +37,19 @@ class FilterContentsFilterInput final : public FilterInput {
       Scalar scale) override;
 
   // |FilterInput|
+  bool IsTranslationOnly() const override;
+
+  // |FilterInput|
   bool IsLeaf() const override;
 
   // |FilterInput|
   void SetLeafInputs(const FilterInput::Vector& inputs) override;
+
+  // |FilterInput|
+  virtual void SetEffectTransform(const Matrix& matrix) override;
+
+  // |FilterInput|
+  virtual void SetRenderingMode(Entity::RenderingMode rendering_mode) override;
 
  private:
   explicit FilterContentsFilterInput(std::shared_ptr<FilterContents> filter);

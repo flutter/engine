@@ -5,7 +5,7 @@
 name: githooks
 publish_to: none
 environment:
-  sdk: '>=3.0.0-0 <4.0.0'
+  sdk: '>=3.2.0-0 <4.0.0'
 
 # Do not add any dependencies that require more than what is provided in
 # //third_party.pkg, //third_party/dart/pkg, or
@@ -18,9 +18,9 @@ environment:
 
 dependencies:
   args: any
+  clang_tidy: any
   meta: any
   path: any
-  clang_tidy: any
 
 dev_dependencies:
   async_helper: any
@@ -39,10 +39,14 @@ dependency_overrides:
     path: ../clang_tidy
   collection:
     path: ../../../third_party/dart/third_party/pkg/collection
+  engine_repo_tools:
+    path: ../pkg/engine_repo_tools
   expect:
     path: ../../../third_party/dart/pkg/expect
   file:
     path: ../../../third_party/pkg/file/packages/file
+  git_repo_tools:
+    path: ../pkg/git_repo_tools
   litetest:
     path: ../../testing/litetest
   meta:

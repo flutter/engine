@@ -11,6 +11,7 @@
 
 #include "flutter/common/settings.h"
 #include "flutter/fml/compiler_specific.h"
+#include "flutter/fml/cpu_affinity.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/size.h"
@@ -98,6 +99,12 @@ static const char* kDartEndlessTraceBufferArgs[]{
 static const char* kDartSystraceTraceBufferArgs[] = {
     "--systrace_timeline",
 };
+
+static std::string DartFileRecorderArgs(const std::string& path) {
+  std::ostringstream oss;
+  oss << "--timeline_recorder=perfettofile:" << path;
+  return oss.str();
+}
 
 FML_ALLOW_UNUSED_TYPE
 static const char* kDartDefaultTraceStreamsArgs[]{
@@ -279,7 +286,9 @@ size_t DartVM::GetVMLaunchCount() {
 DartVM::DartVM(const std::shared_ptr<const DartVMData>& vm_data,
                std::shared_ptr<IsolateNameServer> isolate_name_server)
     : settings_(vm_data->GetSettings()),
-      concurrent_message_loop_(fml::ConcurrentMessageLoop::Create()),
+      concurrent_message_loop_(fml::ConcurrentMessageLoop::Create(
+          fml::EfficiencyCoreCount().value_or(
+              std::thread::hardware_concurrency()))),
       skia_concurrent_executor_(
           [runner = concurrent_message_loop_->GetTaskRunner()](
               const fml::closure& work) { runner->PostTask(work); }),
@@ -386,6 +395,14 @@ DartVM::DartVM(const std::shared_ptr<const DartVMData>& vm_data,
   if (settings_.trace_systrace) {
     PushBackAll(&args, kDartSystraceTraceBufferArgs,
                 fml::size(kDartSystraceTraceBufferArgs));
+    PushBackAll(&args, kDartSystraceTraceStreamsArgs,
+                fml::size(kDartSystraceTraceStreamsArgs));
+  }
+
+  std::string file_recorder_args;
+  if (!settings_.trace_to_file.empty()) {
+    file_recorder_args = DartFileRecorderArgs(settings_.trace_to_file);
+    args.push_back(file_recorder_args.c_str());
     PushBackAll(&args, kDartSystraceTraceStreamsArgs,
                 fml::size(kDartSystraceTraceStreamsArgs));
   }
