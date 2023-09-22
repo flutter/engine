@@ -6,6 +6,7 @@
 
 #include <chrono>
 
+#include "flutter/common/constants.h"
 #include "flutter/fml/platform/win/wstring_conversion.h"
 #include "flutter/shell/platform/common/accessibility_bridge.h"
 #include "flutter/shell/platform/windows/keyboard_key_channel_handler.h"
@@ -495,7 +496,7 @@ void FlutterWindowsView::SendPointerEventWithData(
     PointerState* state) {
   // TODO(dkwingsmt): The Windows embedder doesn't support multi-view for now.
   // Use the real view ID when it does.
-  int64_t view_id = kImplicitViewId;
+  int64_t view_id = flutter::kFlutterImplicitViewId;
 
   // If sending anything other than an add, and the pointer isn't already added,
   // synthesize an add to satisfy Flutter's expectations about events.
