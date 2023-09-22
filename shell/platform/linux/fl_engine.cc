@@ -26,6 +26,8 @@
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_string_codec.h"
 
+static constexpr int64_t kFlutterImplicitViewId = 0ll;
+
 // Unique number associated with platform tasks.
 static constexpr size_t kPlatformTaskRunnerIdentifier = 1;
 
@@ -766,11 +768,15 @@ void fl_engine_send_window_metrics_event(FlEngine* self,
     return;
   }
 
+  // TODO(dkwingsmt)
+  int64_t view_id = kFlutterImplicitViewId;
   FlutterWindowMetricsEvent event = {};
+  memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
   event.struct_size = sizeof(FlutterWindowMetricsEvent);
   event.width = width;
   event.height = height;
   event.pixel_ratio = pixel_ratio;
+  event.view_id = view_id;
   self->embedder_api.SendWindowMetricsEvent(self->engine, &event);
 }
 

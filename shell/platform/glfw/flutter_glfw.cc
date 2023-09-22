@@ -42,6 +42,7 @@ static_assert(FLUTTER_ENGINE_VERSION == 1, "");
 const int kFlutterDesktopDontCare = GLFW_DONT_CARE;
 
 static constexpr double kDpPerInch = 160.0;
+static constexpr int64_t kFlutterImplicitViewId = 0ll;
 
 // Struct for storing state within an instance of the GLFW Window.
 struct FlutterDesktopWindowControllerState {
@@ -284,6 +285,7 @@ static void SendWindowMetrics(FlutterDesktopWindowControllerState* controller,
   double dpi = controller->window_wrapper->pixels_per_screen_coordinate *
                controller->monitor_screen_coordinates_per_inch;
 
+  int64_t view_id = kFlutterImplicitViewId;
   FlutterWindowMetricsEvent event = {};
   event.struct_size = sizeof(event);
   event.width = width;
@@ -296,6 +298,7 @@ static void SendWindowMetrics(FlutterDesktopWindowControllerState* controller,
   } else {
     event.pixel_ratio = controller->window_wrapper->pixel_ratio_override;
   }
+  event.view_id = view_id;
   FlutterEngineSendWindowMetricsEvent(controller->engine->flutter_engine,
                                       &event);
 }

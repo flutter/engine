@@ -52,6 +52,8 @@ static uint64_t NanosFromEpoch(int millis_from_now) {
 namespace flutter {
 namespace testing {
 
+static constexpr int64_t kImplicitViewId = 0ll;
+
 using EmbedderTest = testing::EmbedderTest;
 
 TEST(EmbedderTestNoFixture, MustNotRunWithInvalidArgs) {
@@ -847,6 +849,7 @@ TEST_F(EmbedderTest,
   event.physical_view_inset_right = 0.0;
   event.physical_view_inset_bottom = 0.0;
   event.physical_view_inset_left = 0.0;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
@@ -977,6 +980,7 @@ TEST_F(EmbedderTest, NoLayerCreatedForTransparentOverlayOnTopOfPlatformLayer) {
   event.physical_view_inset_right = 0.0;
   event.physical_view_inset_bottom = 0.0;
   event.physical_view_inset_left = 0.0;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
@@ -1113,6 +1117,7 @@ TEST_F(EmbedderTest, NoLayerCreatedForNoOverlayOnTopOfPlatformLayer) {
   event.physical_view_inset_right = 0.0;
   event.physical_view_inset_bottom = 0.0;
   event.physical_view_inset_left = 0.0;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
@@ -1184,6 +1189,7 @@ TEST_F(EmbedderTest, CanDeinitializeAnEngine) {
   event.physical_view_inset_right = 0.0;
   event.physical_view_inset_bottom = 0.0;
   event.physical_view_inset_left = 0.0;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kInvalidArguments);
   engine.reset();
@@ -1417,6 +1423,7 @@ TEST_F(EmbedderTest, VerifyB143464703WithSoftwareBackend) {
   event.physical_view_inset_right = 0.0;
   event.physical_view_inset_bottom = 0.0;
   event.physical_view_inset_left = 0.0;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
@@ -1909,6 +1916,7 @@ TEST_F(EmbedderTest, InvalidFlutterWindowMetricsEvent) {
   event.physical_view_inset_right = 0.0;
   event.physical_view_inset_bottom = 0.0;
   event.physical_view_inset_left = 0.0;
+  event.view_id = kImplicitViewId;
 
   // Pixel ratio must be positive.
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
@@ -1919,6 +1927,7 @@ TEST_F(EmbedderTest, InvalidFlutterWindowMetricsEvent) {
   event.physical_view_inset_right = -1.0;
   event.physical_view_inset_bottom = -1.0;
   event.physical_view_inset_left = -1.0;
+  event.view_id = kImplicitViewId;
 
   // Physical view insets must be non-negative.
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
@@ -1928,6 +1937,7 @@ TEST_F(EmbedderTest, InvalidFlutterWindowMetricsEvent) {
   event.physical_view_inset_right = 900;
   event.physical_view_inset_bottom = 700;
   event.physical_view_inset_left = 900;
+  event.view_id = kImplicitViewId;
 
   // Top/bottom insets cannot be greater than height.
   // Left/right insets cannot be greater than width.
@@ -1976,6 +1986,7 @@ static void expectSoftwareRenderingOutputMatches(
   event.width = 1;
   event.height = 1;
   event.pixel_ratio = 1.0;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
@@ -2488,6 +2499,7 @@ TEST_F(EmbedderTest, VsyncCallbackPostedIntoFuture) {
     event.width = 800;
     event.height = 600;
     event.pixel_ratio = 1.0;
+    event.view_id = kImplicitViewId;
 
     ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
               kSuccess);
@@ -2564,6 +2576,7 @@ TEST_F(EmbedderTest, CanSetNextFrameCallback) {
   event.physical_view_inset_right = 0.0;
   event.physical_view_inset_bottom = 0.0;
   event.physical_view_inset_left = 0.0;
+  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 

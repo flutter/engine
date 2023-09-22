@@ -13,6 +13,7 @@
 static double g_pixelRatio = 1.0;
 static const size_t kInitialWindowWidth = 800;
 static const size_t kInitialWindowHeight = 600;
+static constexpr int64_t kImplicitViewId = 0;
 
 static_assert(FLUTTER_ENGINE_VERSION == 1,
               "This Flutter Embedder was authored against the stable Flutter "
@@ -73,10 +74,13 @@ static void GLFWKeyCallback(GLFWwindow* window,
 
 void GLFWwindowSizeCallback(GLFWwindow* window, int width, int height) {
   FlutterWindowMetricsEvent event = {};
+  memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
   event.struct_size = sizeof(event);
   event.width = width * g_pixelRatio;
   event.height = height * g_pixelRatio;
   event.pixel_ratio = g_pixelRatio;
+  // TODO(dkwingsmt)
+  event.view_id = kImplicitViewId;
   FlutterEngineSendWindowMetricsEvent(
       reinterpret_cast<FlutterEngine>(glfwGetWindowUserPointer(window)),
       &event);

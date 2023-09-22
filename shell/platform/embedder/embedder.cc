@@ -2133,8 +2133,7 @@ FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
   if (engine == nullptr || flutter_metrics == nullptr) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
   }
-  // TODO(dkwingsmt): Use a real view ID when multiview is supported.
-  int64_t view_id = kFlutterImplicitViewId;
+  int64_t view_id = SAFE_ACCESS(flutter_metrics, view_id, 0);
 
   flutter::ViewportMetrics metrics;
 
