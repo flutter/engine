@@ -146,8 +146,7 @@ class FlutterWindowsEngine {
   }
 
   // Informs the engine that the window metrics have changed.
-  void SendWindowMetricsEvent(int64_t view_id,
-                              const FlutterWindowMetricsEvent& event);
+  void SendWindowMetricsEvent(const FlutterWindowMetricsEvent& event);
 
   // Informs the engine of an incoming pointer event.
   void SendPointerEvent(const FlutterPointerEvent& event);

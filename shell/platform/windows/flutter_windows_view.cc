@@ -274,7 +274,7 @@ void FlutterWindowsView::SendWindowMetrics(size_t width,
                                            double dpiScale) const {
   // TODO(dkwingsmt): The Windows embedder doesn't support multi-view for now.
   // Use the real view ID when it does.
-  int64_t view_id = kImplicitViewId;
+  int64_t view_id = flutter::kFlutterImplicitViewId;
   FlutterWindowMetricsEvent event = {};
   memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
   event.struct_size = sizeof(event);

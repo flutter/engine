@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "flutter/common/constants.h"
 #include "flutter/shell/platform/common/app_lifecycle_state.h"
 #include "flutter/shell/platform/common/engine_switches.h"
 #include "flutter/shell/platform/embedder/embedder.h"
@@ -25,8 +26,6 @@
 #include "flutter/shell/platform/linux/fl_texture_registrar_private.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_string_codec.h"
-
-static constexpr int64_t kFlutterImplicitViewId = 0ll;
 
 // Unique number associated with platform tasks.
 static constexpr size_t kPlatformTaskRunnerIdentifier = 1;
@@ -770,7 +769,7 @@ void fl_engine_send_window_metrics_event(FlEngine* self,
 
   // TODO(dkwingsmt): The Linux embedder doesn't support multi-view for now. Use
   // the real view ID when it does.
-  int64_t view_id = kFlutterImplicitViewId;
+  int64_t view_id = flutter::kFlutterImplicitViewId;
   FlutterWindowMetricsEvent event = {};
   memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
   event.struct_size = sizeof(FlutterWindowMetricsEvent);

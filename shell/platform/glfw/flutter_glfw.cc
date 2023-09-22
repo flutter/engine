@@ -14,6 +14,7 @@
 #include <iostream>
 #include <string>
 
+#include "flutter/common/constants.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/plugin_registrar.h"
 #include "flutter/shell/platform/common/incoming_message_dispatcher.h"
 #include "flutter/shell/platform/common/path_utils.h"
@@ -42,7 +43,6 @@ static_assert(FLUTTER_ENGINE_VERSION == 1, "");
 const int kFlutterDesktopDontCare = GLFW_DONT_CARE;
 
 static constexpr double kDpPerInch = 160.0;
-static constexpr int64_t kFlutterImplicitViewId = 0ll;
 
 // Struct for storing state within an instance of the GLFW Window.
 struct FlutterDesktopWindowControllerState {
@@ -287,7 +287,7 @@ static void SendWindowMetrics(FlutterDesktopWindowControllerState* controller,
 
   // TODO(dkwingsmt): GLFW doesn't support multi-view for now. Use the real
   // view ID when it does.
-  int64_t view_id = kFlutterImplicitViewId;
+  int64_t view_id = flutter::kFlutterImplicitViewId;
   FlutterWindowMetricsEvent event = {};
   memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
   event.struct_size = sizeof(event);
