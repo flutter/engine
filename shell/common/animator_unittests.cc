@@ -43,7 +43,7 @@ class FakeAnimatorDelegate : public Animator::Delegate {
 
   MOCK_METHOD(void,
               OnAnimatorDraw,
-              (std::shared_ptr<LayerTreePipeline> pipeline),
+              (std::shared_ptr<FramePipeline> pipeline),
               (override));
 
   void OnAnimatorDrawLastLayerTree(

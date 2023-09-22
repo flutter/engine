@@ -94,6 +94,7 @@ class LayerTree {
   FML_DISALLOW_COPY_AND_ASSIGN(LayerTree);
 };
 
+// The information to draw a layer tree to a specified view.
 struct LayerTreeTask {
   LayerTreeTask(int64_t view_id,
                 std::unique_ptr<LayerTree> layer_tree,
@@ -101,8 +102,11 @@ struct LayerTreeTask {
       : view_id(view_id),
         layer_tree(std::move(layer_tree)),
         device_pixel_ratio(device_pixel_ratio) {}
+  /// The target view to drawn to.
   int64_t view_id;
+  /// The target layer tree to be drawn.
   std::unique_ptr<LayerTree> layer_tree;
+  /// The pixel ratio of the target view.
   float device_pixel_ratio;
 };
 

@@ -39,8 +39,7 @@ class Animator final {
     virtual void OnAnimatorUpdateLatestFrameTargetTime(
         fml::TimePoint frame_target_time) = 0;
 
-    virtual void OnAnimatorDraw(
-        std::shared_ptr<LayerTreePipeline> pipeline) = 0;
+    virtual void OnAnimatorDraw(std::shared_ptr<FramePipeline> pipeline) = 0;
 
     virtual void OnAnimatorDrawLastLayerTree(
         std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) = 0;
@@ -104,9 +103,9 @@ class Animator final {
   std::list<LayerTreeTask> layer_trees_tasks_;
   uint64_t frame_request_number_ = 1;
   fml::TimeDelta dart_frame_deadline_;
-  std::shared_ptr<LayerTreePipeline> layer_tree_pipeline_;
+  std::shared_ptr<FramePipeline> layer_tree_pipeline_;
   fml::Semaphore pending_frame_semaphore_;
-  LayerTreePipeline::ProducerContinuation producer_continuation_;
+  FramePipeline::ProducerContinuation producer_continuation_;
   bool regenerate_layer_tree_ = false;
   bool frame_scheduled_ = false;
   std::deque<uint64_t> trace_flow_ids_;

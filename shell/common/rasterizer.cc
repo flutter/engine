@@ -197,8 +197,7 @@ void Rasterizer::DrawLastLayerTree(
   }
 }
 
-RasterStatus Rasterizer::Draw(
-    const std::shared_ptr<LayerTreePipeline>& pipeline) {
+RasterStatus Rasterizer::Draw(const std::shared_ptr<FramePipeline>& pipeline) {
   TRACE_EVENT0("flutter", "GPURasterizer::Draw");
   if (raster_thread_merger_ &&
       !raster_thread_merger_->IsOnRasterizingThread()) {
@@ -210,17 +209,17 @@ RasterStatus Rasterizer::Draw(
                  ->RunsTasksOnCurrentThread());
 
   DoDrawResult draw_result;
-  LayerTreePipeline::Consumer consumer =
+  FramePipeline::Consumer consumer =
       [&draw_result, this,
        &delegate = delegate_](std::unique_ptr<FrameItem> item) {
         // TODO(dkwingsmt): The rasterizer only supports rendering a single view
         // and that view must be the implicit view. Properly support multi-view
         // in the future.
-        FML_DCHECK(item->tasks.size() <= 1u);
-        if (item->tasks.empty()) {
+        FML_DCHECK(item->layer_tree_tasks.size() <= 1u);
+        if (item->layer_tree_tasks.empty()) {
           return;
         }
-        auto& task = item->tasks.front();
+        auto& task = item->layer_tree_tasks.front();
         FML_DCHECK(task.view_id == kFlutterImplicitViewId);
         std::unique_ptr<LayerTree> layer_tree = std::move(task.layer_tree);
         std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =

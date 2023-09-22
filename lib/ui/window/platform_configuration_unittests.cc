@@ -39,7 +39,7 @@ class MockRuntimeDelegate : public RuntimeDelegate {
   MOCK_METHOD(void, ScheduleFrame, (bool), (override));
   MOCK_METHOD(void,
               Render,
-              (std::unique_ptr<flutter::LayerTree>, float),
+              (int64_t, std::unique_ptr<flutter::LayerTree>, float),
               (override));
   MOCK_METHOD(void,
               UpdateSemantics,

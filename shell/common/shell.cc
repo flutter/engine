@@ -1220,16 +1220,16 @@ void Shell::OnAnimatorUpdateLatestFrameTargetTime(
 }
 
 // |Animator::Delegate|
-void Shell::OnAnimatorDraw(std::shared_ptr<LayerTreePipeline> pipeline) {
+void Shell::OnAnimatorDraw(std::shared_ptr<FramePipeline> pipeline) {
   FML_DCHECK(is_set_up_);
 
   task_runners_.GetRasterTaskRunner()->PostTask(fml::MakeCopyable(
       [&waiting_for_first_frame = waiting_for_first_frame_,
        &waiting_for_first_frame_condition = waiting_for_first_frame_condition_,
        rasterizer = rasterizer_->GetWeakPtr(),
-       weak_pipeline = std::weak_ptr<LayerTreePipeline>(pipeline)]() mutable {
+       weak_pipeline = std::weak_ptr<FramePipeline>(pipeline)]() mutable {
         if (rasterizer) {
-          std::shared_ptr<LayerTreePipeline> pipeline = weak_pipeline.lock();
+          std::shared_ptr<FramePipeline> pipeline = weak_pipeline.lock();
           if (pipeline) {
             rasterizer->Draw(pipeline);
           }
