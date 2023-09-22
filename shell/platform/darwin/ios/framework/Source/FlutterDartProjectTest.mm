@@ -102,11 +102,26 @@ FLUTTER_ASSERT_ARC
     id mockBundle = OCMClassMock([NSBundle class]);
     id mockMainBundle = OCMPartialMock([NSBundle mainBundle]);
     NSString* resultAssetsPath = @"path/to/foo/assets";
-    OCMStub([mockBundle pathForResource:@"flutter_assets" ofType:@""]).andReturn(nil);
-    OCMStub([mockMainBundle pathForResource:@"flutter_assets" ofType:@""])
+    OCMStub([mockBundle pathForResource:@"Frameworks/App.framework/flutter_assets" ofType:@""]).andReturn(nil);
+    OCMStub([mockMainBundle pathForResource:@"Frameworks/App.framework/flutter_assets" ofType:@""])
         .andReturn(resultAssetsPath);
     NSString* path = FLTAssetsPathFromBundle(mockBundle);
     XCTAssertEqualObjects(path, @"path/to/foo/assets");
+  }
+}
+
+- (void)testFLTAssetPathReturnsTheCorrectValue {
+  {
+    // Found asset path in info.plist
+    id mockBundle = OCMClassMock([NSBundle class]);
+    OCMStub([mockBundle objectForInfoDictionaryKey:@"FLTAssetsPath"]).andReturn(@"foo/assets");
+    XCTAssertEqualObjects(FLTAssetPath(mockBundle), @"foo/assets");
+  }
+  {
+    // No asset path in info.plist, use default value
+    id mockBundle = OCMClassMock([NSBundle class]);
+    OCMStub([mockBundle objectForInfoDictionaryKey:@"FLTAssetsPath"]).andReturn(nil);
+    XCTAssertEqualObjects(FLTAssetPath(mockBundle), kDefaultAssetPath);
   }
 }
 
