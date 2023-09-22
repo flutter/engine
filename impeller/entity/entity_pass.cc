@@ -143,6 +143,9 @@ std::optional<Rect> EntityPass::GetElementsCoverage(
               unfiltered_coverage = backdrop_coverage;
             }
           }
+        } else {
+          VALIDATION_LOG << "The EntityPass backdrop filter proc didn't return "
+                            "a valid filter.";
         }
       }
 
