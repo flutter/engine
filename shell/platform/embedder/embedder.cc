@@ -102,8 +102,6 @@ extern const intptr_t kPlatformStrongDillSize;
 const int32_t kFlutterSemanticsNodeIdBatchEnd = -1;
 const int32_t kFlutterSemanticsCustomActionIdBatchEnd = -1;
 
-static constexpr int64_t kFlutterImplicitViewId = 0;
-
 // A message channel to send platform-independent FlutterKeyData to the
 // framework.
 //
