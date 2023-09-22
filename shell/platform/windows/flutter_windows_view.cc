@@ -6,6 +6,7 @@
 
 #include <chrono>
 
+#include "flutter/common/constants.h"
 #include "flutter/fml/platform/win/wstring_conversion.h"
 #include "flutter/shell/platform/common/accessibility_bridge.h"
 #include "flutter/shell/platform/windows/keyboard_key_channel_handler.h"
