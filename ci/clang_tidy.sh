@@ -38,7 +38,7 @@ DART="${DART_BIN}/dart"
 # new lints.
 
 # To run on CI, just uncomment the following line:
-FLUTTER_LINT_PRINT_FIX=1
+# FLUTTER_LINT_PRINT_FIX=1
 
 if [[ -z "${FLUTTER_LINT_PRINT_FIX}" ]]; then
   fix_flag=""
