@@ -1292,15 +1292,14 @@ TEST_P(AiksTest, CanDrawAnOpenPath) {
 TEST_P(AiksTest, CanDrawAnOpenPathThatIsntARect) {
   Canvas canvas;
 
-  // Starting at (50, 50), draw lines from:
-  // 1. (50, height)
-  // 2. (width, height)
-  // 3. (width, 50)
+  // Draw a stroked path that is explicitly closed to verify
+  // It doesn't become a rectangle.
   PathBuilder builder;
   builder.MoveTo({50, 50});
   builder.LineTo({520, 120});
   builder.LineTo({300, 310});
   builder.LineTo({100, 50});
+  builder.Close();
 
   Paint paint;
   paint.color = Color::Red();
