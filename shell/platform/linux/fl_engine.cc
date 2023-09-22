@@ -768,7 +768,8 @@ void fl_engine_send_window_metrics_event(FlEngine* self,
     return;
   }
 
-  // TODO(dkwingsmt)
+  // TODO(dkwingsmt): The Linux embedder doesn't support multi-view for now. Use
+  // the real view ID when it does.
   int64_t view_id = kFlutterImplicitViewId;
   FlutterWindowMetricsEvent event = {};
   memset(&event, 0, sizeof(FlutterWindowMetricsEvent));

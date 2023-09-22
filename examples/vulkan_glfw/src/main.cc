@@ -125,14 +125,16 @@ void GLFWKeyCallback(GLFWwindow* window,
 void GLFWframebufferSizeCallback(GLFWwindow* window, int width, int height) {
   g_state.resize_pending = true;
 
+  // TODO(dkwingsmt): GLFW doesn't support multi-view for now. Use the real
+  // view ID when it does.
+  int64_t view_id = kImplicitViewId;
   FlutterWindowMetricsEvent event = {};
   memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
   event.struct_size = sizeof(event);
   event.width = width;
   event.height = height;
   event.pixel_ratio = g_pixelRatio;
-  // TODO(dkwingsmt)
-  event.view_id = kImplicitViewId;
+  event.view_id = view_id;
   FlutterEngineSendWindowMetricsEvent(g_state.engine, &event);
 }
 

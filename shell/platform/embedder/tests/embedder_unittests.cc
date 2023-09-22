@@ -841,6 +841,7 @@ TEST_F(EmbedderTest,
 
   // Send a window metrics events so frames may be scheduled.
   FlutterWindowMetricsEvent event = {};
+  memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
   event.struct_size = sizeof(event);
   event.width = 800;
   event.height = 600;
@@ -972,6 +973,7 @@ TEST_F(EmbedderTest, NoLayerCreatedForTransparentOverlayOnTopOfPlatformLayer) {
 
   // Send a window metrics events so frames may be scheduled.
   FlutterWindowMetricsEvent event = {};
+  memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
   event.struct_size = sizeof(event);
   event.width = 800;
   event.height = 600;
@@ -1109,6 +1111,7 @@ TEST_F(EmbedderTest, NoLayerCreatedForNoOverlayOnTopOfPlatformLayer) {
 
   // Send a window metrics events so frames may be scheduled.
   FlutterWindowMetricsEvent event = {};
+  memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
   event.struct_size = sizeof(event);
   event.width = 800;
   event.height = 600;
@@ -1181,6 +1184,7 @@ TEST_F(EmbedderTest, CanDeinitializeAnEngine) {
 
   // Sending events to a deinitialized engine fails.
   FlutterWindowMetricsEvent event = {};
+  memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
   event.struct_size = sizeof(event);
   event.width = 800;
   event.height = 600;
@@ -1415,6 +1419,7 @@ TEST_F(EmbedderTest, VerifyB143464703WithSoftwareBackend) {
 
   // Send a window metrics events so frames may be scheduled.
   FlutterWindowMetricsEvent event = {};
+  memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
   event.struct_size = sizeof(event);
   event.width = 1024;
   event.height = 600;
@@ -1908,6 +1913,7 @@ TEST_F(EmbedderTest, InvalidFlutterWindowMetricsEvent) {
   ASSERT_TRUE(engine.is_valid());
 
   FlutterWindowMetricsEvent event = {};
+  memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
   event.struct_size = sizeof(event);
   event.width = 800;
   event.height = 600;
@@ -1982,6 +1988,7 @@ static void expectSoftwareRenderingOutputMatches(
 
   // Send a window metrics events so frames may be scheduled.
   FlutterWindowMetricsEvent event = {};
+  memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
   event.struct_size = sizeof(event);
   event.width = 1;
   event.height = 1;
@@ -2495,6 +2502,7 @@ TEST_F(EmbedderTest, VsyncCallbackPostedIntoFuture) {
 
     // Send a window metrics events so frames may be scheduled.
     FlutterWindowMetricsEvent event = {};
+    memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
     event.struct_size = sizeof(event);
     event.width = 800;
     event.height = 600;
@@ -2568,6 +2576,7 @@ TEST_F(EmbedderTest, CanSetNextFrameCallback) {
 
   // Send a window metrics events so frames may be scheduled.
   FlutterWindowMetricsEvent event = {};
+  memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
   event.struct_size = sizeof(event);
   event.width = 800;
   event.height = 600;

@@ -493,10 +493,9 @@ void FlutterWindowsEngine::AddPluginRegistrarDestructionCallback(
 }
 
 void FlutterWindowsEngine::SendWindowMetricsEvent(
-    int64_t view_id,
     const FlutterWindowMetricsEvent& event) {
   if (engine_) {
-    embedder_api_.SendWindowMetricsEvent(engine_, view_id, &event);
+    embedder_api_.SendWindowMetricsEvent(engine_, &event);
   }
 }
 

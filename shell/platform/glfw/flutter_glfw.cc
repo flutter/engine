@@ -285,8 +285,11 @@ static void SendWindowMetrics(FlutterDesktopWindowControllerState* controller,
   double dpi = controller->window_wrapper->pixels_per_screen_coordinate *
                controller->monitor_screen_coordinates_per_inch;
 
+  // TODO(dkwingsmt): GLFW doesn't support multi-view for now. Use the real
+  // view ID when it does.
   int64_t view_id = kFlutterImplicitViewId;
   FlutterWindowMetricsEvent event = {};
+  memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
   event.struct_size = sizeof(event);
   event.width = width;
   event.height = height;
