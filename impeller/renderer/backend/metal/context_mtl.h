@@ -93,6 +93,8 @@ class ContextMTL final : public Context,
 
   std::shared_ptr<const fml::SyncSwitch> GetIsGpuDisabledSyncSwitch() const;
 
+  id<MTLDevice> GetDevice() const;
+
  private:
   id<MTLDevice> device_ = nullptr;
   id<MTLCommandQueue> command_queue_ = nullptr;

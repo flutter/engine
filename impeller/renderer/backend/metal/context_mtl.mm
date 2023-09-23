@@ -367,6 +367,10 @@ bool ContextMTL::UpdateOffscreenLayerPixelFormat(PixelFormat format) {
   return true;
 }
 
+id<MTLDevice> ContextMTL::GetDevice() const {
+  return device_;
+}
+
 id<MTLCommandBuffer> ContextMTL::CreateMTLCommandBuffer(
     const std::string& label) const {
   auto buffer = [command_queue_ commandBuffer];
