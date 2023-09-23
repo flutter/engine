@@ -53,5 +53,8 @@ impeller_component("metal") {
     "//flutter/fml",
   ]
 
-  frameworks = [ "Metal.framework", "UIKit.framework" ]
+  frameworks = [
+    "Metal.framework",
+    "UIKit.framework",
+  ]
 }
