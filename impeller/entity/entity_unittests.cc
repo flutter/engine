@@ -44,6 +44,7 @@
 #include "impeller/geometry/geometry_asserts.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/sigma.h"
+#include "impeller/geometry/vector.h"
 #include "impeller/playground/playground.h"
 #include "impeller/playground/widgets.h"
 #include "impeller/renderer/command.h"
@@ -2477,7 +2478,7 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
   contents->SetColor(Color::Red());
 
   Entity entity;
-  entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  entity.SetTransformation(Matrix::MakeScale(Vector3(2, 2, 1)));
   entity.SetBlendMode(BlendMode::kColorBurn);
   entity.SetContents(contents);
 
@@ -2502,17 +2503,36 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
   EXPECT_TRUE(pass->Render(content_context, rt));
 
   EXPECT_EQ(test_allocator->GetDescriptors().size(), 6u);
-  // Onscreen render target.
-  EXPECT_EQ(test_allocator->GetDescriptors()[0].size, ISize(1000, 1000));
-  EXPECT_EQ(test_allocator->GetDescriptors()[1].size, ISize(1000, 1000));
+  if (test_allocator->GetDescriptors().size() == 6u) {
+    // Onscreen render target.
+    EXPECT_EQ(test_allocator->GetDescriptors()[0].size, ISize(1000, 1000));
+    EXPECT_EQ(test_allocator->GetDescriptors()[1].size, ISize(1000, 1000));
 
-  // Offscreen rect render target.
-  EXPECT_EQ(test_allocator->GetDescriptors()[2].size, ISize(200, 200));
-  EXPECT_EQ(test_allocator->GetDescriptors()[3].size, ISize(200, 200));
+    // Offscreen rect render target.
+    EXPECT_EQ(test_allocator->GetDescriptors()[2].size, ISize(200, 200));
+    EXPECT_EQ(test_allocator->GetDescriptors()[3].size, ISize(200, 200));
 
-  // Advanced blend render target.
-  EXPECT_EQ(test_allocator->GetDescriptors()[4].size, ISize(200, 200));
-  EXPECT_EQ(test_allocator->GetDescriptors()[5].size, ISize(200, 200));
+    // Advanced blend render target.
+    EXPECT_EQ(test_allocator->GetDescriptors()[4].size, ISize(200, 200));
+    EXPECT_EQ(test_allocator->GetDescriptors()[5].size, ISize(200, 200));
+  } else if (test_allocator->GetDescriptors().size() == 9u) {
+    // Onscreen render target.
+    EXPECT_EQ(test_allocator->GetDescriptors()[0].size, ISize(1000, 1000));
+    EXPECT_EQ(test_allocator->GetDescriptors()[1].size, ISize(1000, 1000));
+    EXPECT_EQ(test_allocator->GetDescriptors()[2].size, ISize(1000, 1000));
+
+    // Offscreen rect render target.
+    EXPECT_EQ(test_allocator->GetDescriptors()[3].size, ISize(200, 200));
+    EXPECT_EQ(test_allocator->GetDescriptors()[4].size, ISize(200, 200));
+    EXPECT_EQ(test_allocator->GetDescriptors()[5].size, ISize(200, 200));
+
+    // Advanced blend render target.
+    EXPECT_EQ(test_allocator->GetDescriptors()[5].size, ISize(200, 200));
+    EXPECT_EQ(test_allocator->GetDescriptors()[6].size, ISize(200, 200));
+    EXPECT_EQ(test_allocator->GetDescriptors()[7].size, ISize(200, 200));
+  } else {
+    EXPECT_TRUE(false);
+  }
 }
 
 }  // namespace testing
