@@ -2468,7 +2468,8 @@ class TestRenderTargetAllocator : public RenderTargetAllocator {
 
 TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
   if (GetContext()->GetCapabilities()->SupportsFramebufferFetch()) {
-    GTEST_SKIP() << "Backends that support framebuffer fetch dont use coverage for advanced blends.";
+    GTEST_SKIP() << "Backends that support framebuffer fetch dont use coverage "
+                    "for advanced blends.";
   }
 
   auto contents = std::make_shared<SolidColorContents>();
@@ -2484,7 +2485,8 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
   EXPECT_TRUE(coverage.has_value());
 
   auto pass = std::make_unique<EntityPass>();
-  auto test_allocator = std::make_shared<TestRenderTargetAllocator>(GetContext()->GetResourceAllocator());
+  auto test_allocator = std::make_shared<TestRenderTargetAllocator>(
+      GetContext()->GetResourceAllocator());
   auto stencil_config = RenderTarget::AttachmentConfig{
       .storage_mode = StorageMode::kDevicePrivate,
       .load_action = LoadAction::kClear,
@@ -2493,8 +2495,8 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
   auto rt = RenderTarget::CreateOffscreen(
       *GetContext(), *test_allocator, ISize::MakeWH(1000, 1000), "Offscreen",
       RenderTarget::kDefaultColorAttachmentConfig, stencil_config);
-  auto content_context =
-      ContentContext(GetContext(), TypographerContextSkia::Make(), test_allocator);
+  auto content_context = ContentContext(
+      GetContext(), TypographerContextSkia::Make(), test_allocator);
   pass->AddEntity(entity);
 
   EXPECT_TRUE(pass->Render(content_context, rt));
