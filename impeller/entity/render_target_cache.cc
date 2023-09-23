@@ -7,8 +7,10 @@
 
 namespace impeller {
 
-RenderTargetCache::RenderTargetCache(std::shared_ptr<Allocator> allocator)
-    : RenderTargetAllocator(std::move(allocator)) {}
+RenderTargetCache::RenderTargetCache(std::shared_ptr<Allocator> allocator,
+                                     bool allow_intraframe_use)
+    : RenderTargetAllocator(std::move(allocator)),
+      allow_intraframe_use_(allow_intraframe_use) {}
 
 void RenderTargetCache::Start() {
   for (auto& td : texture_data_) {
@@ -40,7 +42,9 @@ std::shared_ptr<Texture> RenderTargetCache::CreateTexture(
   for (auto& td : texture_data_) {
     const auto other_desc = td.texture->GetTextureDescriptor();
     FML_DCHECK(td.texture != nullptr);
-    if (!td.used_this_frame && desc == other_desc) {
+    if (desc == other_desc &&
+        (!td.used_this_frame ||
+         (td.texture.use_count() == 1 && allow_intraframe_use_))) {
       td.used_this_frame = true;
       return td.texture;
     }

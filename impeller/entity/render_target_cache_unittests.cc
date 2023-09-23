@@ -85,5 +85,29 @@ TEST(RenderTargetCacheTest, DoesNotPersistFailedAllocations) {
   ASSERT_EQ(render_target_cache.CachedTextureCount(), 0u);
 }
 
+TEST(RenderTargetCacheTest, AllowsIntraFrameReuse) {
+  auto allocator = std::make_shared<TestAllocator>();
+  auto render_target_cache = RenderTargetCache(allocator, true);
+  auto desc = TextureDescriptor{
+      .format = PixelFormat::kR8G8B8A8UNormInt,
+      .size = ISize(100, 100),
+      .usage = static_cast<TextureUsageMask>(TextureUsage::kRenderTarget)};
+
+  render_target_cache.Start();
+
+  // Create two different textures.
+  auto texture_1 = render_target_cache.CreateTexture(desc);
+  auto texture_2 = render_target_cache.CreateTexture(desc);
+
+  ASSERT_EQ(render_target_cache.CachedTextureCount(), 2u);
+
+  // Release texture 1 so that the cache has the only reference to it.
+  texture_1.reset();
+
+  // Allocate a 3rd texture, it should recycle the texture from 1.
+  auto texture_3 = render_target_cache.CreateTexture(desc);
+  ASSERT_EQ(render_target_cache.CachedTextureCount(), 2u);
+}
+
 }  // namespace testing
 }  // namespace impeller

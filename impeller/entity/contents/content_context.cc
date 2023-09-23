@@ -171,7 +171,8 @@ ContentContext::ContentContext(
       scene_context_(std::make_shared<scene::SceneContext>(context_)),
 #endif  // IMPELLER_ENABLE_3D
       render_target_cache_(std::make_shared<RenderTargetCache>(
-          context_->GetResourceAllocator())) {
+          context_->GetResourceAllocator(),
+          context_->GetBackendType() == Context::BackendType::kVulkan)) {
   if (!context_ || !context_->IsValid()) {
     return;
   }
