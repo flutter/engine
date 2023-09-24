@@ -790,7 +790,11 @@ abstract class SemanticsUpdateBuilder {
   /// The `headingLevel` describes that this node is a heading, additionally
   /// indicates the hierarchy level this node represents as a heading. A value
   /// of -1 indicates that this node is not a heading. A value of 1 or greater
-  /// indicates that this node is a heading at the specified level.
+  /// indicates that this node is a heading at the specified level. The valid
+  /// value range is from 1 to 6, inclusive. This attribute is only used for
+  /// Web platform, and it will have no effect on other platforms. See also:
+  /// https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/heading_role
+  /// https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-level
   void updateNode({
     required int id,
     required int flags,
@@ -899,6 +903,10 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
     int? headingLevel,
   }) {
     assert(_matrix4IsValid(transform));
+    assert (
+      headingLevel! <= 6, 
+      "Heading level can't be greater than 6",
+    );
     _updateNode(
       id,
       flags,

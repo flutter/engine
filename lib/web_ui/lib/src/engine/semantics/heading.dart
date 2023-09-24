@@ -19,6 +19,10 @@ class Heading extends PrimaryRoleManager {
   void update() {
     super.update();
 
+    if (!semanticsObject.isHeadingLevelDirty) {
+      return;
+    }
+
     if (semanticsObject.headingLevel != -1) {
       addHeadingLevel(semanticsObject.headingLevel ?? defaultHeadingLevel);
     } else {

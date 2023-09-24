@@ -989,6 +989,10 @@ class SemanticsObject {
   int? _headingLevel = -1;
 
   static const int _headingLevelIndex = 1 << 24;
+
+  /// Whether the [headingLevel] field has been updated but has not been
+  /// applied to the DOM yet.
+  bool get isHeadingLevelDirty => _isDirty(_headingLevelIndex);
   void _markHeadingLevelDirty() {
     _dirtyFields |= _headingLevelIndex;
   }
