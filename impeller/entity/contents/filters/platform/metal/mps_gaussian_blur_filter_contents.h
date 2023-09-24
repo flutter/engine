@@ -9,13 +9,13 @@
 
 namespace impeller {
 
-class AppleGaussianBlurFilterContents final : public FilterContents {
+class MPSGaussianBlurFilterContents final : public FilterContents {
  public:
-  AppleGaussianBlurFilterContents();
+  MPSGaussianBlurFilterContents();
 
-  ~AppleGaussianBlurFilterContents() override;
+  ~MPSGaussianBlurFilterContents() override;
 
-  void SetSigma(Sigma sigma_x, Sigma sigma_y);
+  void SetSigma(Sigma sigma);
 
   void SetTileMode(Entity::TileMode tile_mode);
 
@@ -29,11 +29,10 @@ class AppleGaussianBlurFilterContents final : public FilterContents {
       const Rect& coverage,
       const std::optional<Rect>& coverage_hint) const override;
 
-  Sigma sigma_x_;
-  Sigma sigma_y_;
+  Sigma sigma_;
   Entity::TileMode tile_mode_ = Entity::TileMode::kDecal;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(AppleGaussianBlurFilterContents);
+  FML_DISALLOW_COPY_AND_ASSIGN(MPSGaussianBlurFilterContents);
 };
 
 }  // namespace impeller

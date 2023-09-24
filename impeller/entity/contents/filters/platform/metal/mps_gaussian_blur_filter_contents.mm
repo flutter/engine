@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "impeller/entity/contents/filters/apple_filter_kernel.h"
+#include "impeller/entity/contents/filters/platform/metal/mps_gaussian_blur_filter_contents.h"
 
 #include <MetalPerformanceShaders/MetalPerformanceShaders.h>
 #include <optional>
@@ -23,21 +23,20 @@
 
 namespace impeller {
 
-AppleGaussianBlurFilterContents::AppleGaussianBlurFilterContents() {}
+MPSGaussianBlurFilterContents::MPSGaussianBlurFilterContents() {}
 
-AppleGaussianBlurFilterContents::~AppleGaussianBlurFilterContents() {}
+MPSGaussianBlurFilterContents::~MPSGaussianBlurFilterContents() {}
 
-void AppleGaussianBlurFilterContents::SetSigma(Sigma sigma_x, Sigma sigma_y) {
-  sigma_x_ = sigma_x;
-  sigma_y_ = sigma_y;
+void MPSGaussianBlurFilterContents::SetSigma(Sigma sigma) {
+  sigma_ = sigma;
 }
 
-void AppleGaussianBlurFilterContents::SetTileMode(Entity::TileMode tile_mode) {
+void MPSGaussianBlurFilterContents::SetTileMode(Entity::TileMode tile_mode) {
   tile_mode_ = tile_mode;
 }
 
 // |FilterContents|
-std::optional<Entity> AppleGaussianBlurFilterContents::RenderFilter(
+std::optional<Entity> MPSGaussianBlurFilterContents::RenderFilter(
     const FilterInput::Vector& inputs,
     const ContentContext& renderer,
     const Entity& entity,
@@ -56,7 +55,7 @@ std::optional<Entity> AppleGaussianBlurFilterContents::RenderFilter(
   auto* context = ContextMTL::Cast(renderer.GetContext().get());
   MPSImageGaussianBlur* kernel =
       [[MPSImageGaussianBlur alloc] initWithDevice:context->GetDevice()
-                                             sigma:sigma_x_.sigma];
+                                             sigma:sigma_.sigma];
 
   TextureDescriptor descriptor;
   descriptor.size = ISize::Ceil(coverage.size);
@@ -84,9 +83,8 @@ std::optional<Entity> AppleGaussianBlurFilterContents::RenderFilter(
              destinationTexture:output_texture];
   [command_buffer commit];
 
-  return Entity::FromSnapshot(
-      Snapshot{.texture = destination, .transform = input_snapshot->transform},
-      entity.GetBlendMode(), entity.GetStencilDepth());
+  return Entity::FromSnapshot(Snapshot{.texture = destination},
+                              entity.GetBlendMode(), entity.GetStencilDepth());
 }
 
 }  // namespace impeller

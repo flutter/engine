@@ -4,18 +4,12 @@
 
 #include "impeller/entity/contents/filters/filter_contents.h"
 
-#include <algorithm>
-#include <cmath>
-#include <cstddef>
 #include <memory>
 #include <optional>
-#include <tuple>
 #include <utility>
 
-#include "flutter/fml/logging.h"
 #include "impeller/core/formats.h"
 #include "impeller/entity/contents/content_context.h"
-#include "impeller/entity/contents/filters/apple_filter_kernel.h"
 #include "impeller/entity/contents/filters/border_mask_blur_filter_contents.h"
 #include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
@@ -25,9 +19,12 @@
 #include "impeller/entity/contents/filters/yuv_to_rgb_filter_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/entity.h"
-#include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/render_pass.h"
+
+#if defined(FML_OS_MACOS) || defined(FML_OS_IOS)
+#include "impeller/entity/contents/filters/platform/metal/mps_gaussian_blur_filter_contents.h"
+#endif  //  (FML_OS_MACOS || FML_OS_IOS)
 
 namespace impeller {
 
@@ -56,18 +53,21 @@ std::shared_ptr<FilterContents> FilterContents::MakeGaussianBlur(
     Sigma sigma_y,
     BlurStyle blur_style,
     Entity::TileMode tile_mode) {
-  auto filter = std::make_shared<AppleGaussianBlurFilterContents>();
-  filter->SetSigma(sigma_x, sigma_y);
-  filter->SetTileMode(tile_mode);
-  filter->SetInputs({input});
-  return filter;
-  // auto x_blur = MakeDirectionalGaussianBlur(
-  //     input, sigma_x, Point(1, 0), BlurStyle::kNormal, tile_mode, false, {});
-  // auto y_blur = MakeDirectionalGaussianBlur(FilterInput::Make(x_blur),
-  // sigma_y,
-  //                                           Point(0, 1), blur_style,
-  //                                           tile_mode, true, sigma_x);
-  // return y_blur;
+#if defined(FML_OS_MACOS) || defined(FML_OS_IOS)
+  if (sigma_x.sigma == sigma_y.sigma) {
+    auto filter = std::make_shared<MPSGaussianBlurFilterContents>();
+    filter->SetSigma(sigma_x);
+    filter->SetTileMode(tile_mode);
+    filter->SetInputs({input});
+    return filter;
+  }
+#endif  // defined(FML_OS_MACOS) || defined(FML_OS_IOS)
+  auto x_blur = MakeDirectionalGaussianBlur(
+      input, sigma_x, Point(1, 0), BlurStyle::kNormal, tile_mode, false, {});
+  auto y_blur = MakeDirectionalGaussianBlur(FilterInput::Make(x_blur), sigma_y,
+                                            Point(0, 1), blur_style, tile_mode,
+                                            true, sigma_x);
+  return y_blur;
 }
 
 std::shared_ptr<FilterContents> FilterContents::MakeBorderMaskBlur(

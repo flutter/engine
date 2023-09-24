@@ -155,8 +155,6 @@ impeller_component("entity") {
     "contents/content_context.h",
     "contents/contents.cc",
     "contents/contents.h",
-    "contents/filters/apple_filter_kernel.h",
-    "contents/filters/apple_filter_kernel.mm",
     "contents/filters/blend_filter_contents.cc",
     "contents/filters/blend_filter_contents.h",
     "contents/filters/border_mask_blur_filter_contents.cc",
@@ -243,6 +241,13 @@ impeller_component("entity") {
     "render_target_cache.h",
   ]
 
+  if (is_ios || is_mac) {
+    sources += [
+      "contents/filters/platform/metal/mps_gaussian_blur_filter_contents.h",
+      "contents/filters/platform/metal/mps_gaussian_blur_filter_contents.mm",
+    ]
+  }
+
   if (impeller_debug) {
     sources += [
       "contents/checkerboard_contents.cc",
@@ -270,7 +275,9 @@ impeller_component("entity") {
 
   deps = [ "//flutter/fml" ]
 
-  frameworks = [ "MetalPerformanceShaders.framework" ]
+  if (is_ios || is_mac) {
+    frameworks = [ "MetalPerformanceShaders.framework" ]
+  }
 }
 
 impeller_component("entity_unittests") {
