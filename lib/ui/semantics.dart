@@ -904,7 +904,7 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
   }) {
     assert(_matrix4IsValid(transform));
     assert (
-      headingLevel! <= 6, 
+      headingLevel! <= 6,
       "Heading level can't be greater than 6",
     );
     _updateNode(
