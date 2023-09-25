@@ -61,10 +61,23 @@ NSString* FLTAssetsPathFromBundle(NSBundle* bundle) {
   NSString* flutterAssetsPath = FLTAssetPath(bundle);
   // Use the raw path solution so that asset path can be returned from unloaded bundles.
   // See https://github.com/flutter/engine/pull/46073
-  NSString* assetsPath = [bundle pathForResource:flutterAssetsPath ofType:@""];
+  NSString* assetsPath = [bundle pathForResource:flutterAssetsPath ofType:nil];
+  if (assetsPath.length == 0) {
+    // In app extension, using full relative path(kDefaultAssetPath)
+    // returns nil when the app bundle is not loaded. We try to use
+    // the sub folder name, which can successfully return a valid path.
+    assetsPath = [bundle pathForResource:@"flutter_assets" ofType:nil];
+  }
 
   if (assetsPath.length == 0) {
-    assetsPath = [[NSBundle mainBundle] pathForResource:flutterAssetsPath ofType:@""];
+    assetsPath = [[NSBundle mainBundle] pathForResource:flutterAssetsPath ofType:nil];
+  }
+
+  if (assetsPath.length == 0) {
+    // In app extension, using full relative path(kDefaultAssetPath)
+    // returns nil when the app bundle is not loaded. We try to use
+    // the sub folder name, which can successfully return a valid path.
+    assetsPath = [[NSBundle mainBundle] pathForResource:@"flutter_assets" ofType:nil];
   }
   return assetsPath;
 }
