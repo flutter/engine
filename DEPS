@@ -471,6 +471,9 @@ deps = {
   'src/third_party/dart/third_party/pkg/string_scanner':
    Var('dart_git') + '/string_scanner.git@da9142cf9809e7e1364144b8193ec60d87f0a4b8',
 
+  'src/third_party/dart/third_party/pkg/tar':
+   Var('dart_git') + '/external/github.com/simolus3/tar.git@3c68cba8e51c569428222b9185469249206172c6',
+
   'src/third_party/dart/third_party/pkg/term_glyph':
    Var('dart_git') + '/term_glyph.git@1b28285a7e818b8e87c4d2119d968c5b36d73c7a',
 
@@ -511,11 +514,6 @@ deps = {
    {'dep_type': 'cipd', 'packages': [{'package': 'dart/dart-sdk/${{platform}}', 'version': 'version:3.2.0-150.0.dev'}]},
 
   # WARNING: end of dart dependencies list that is cleaned up automatically - see create_updated_flutter_deps.py.
-
-  # TODO(github.com/flutter/flutter/issues/135463): update create_updated_flutter_deps.py to handle this dependency.
-  'src/third_party/dart/third_party/pkg/tar':
-   Var('dart_git') + '/external/github.com/simolus3/tar.git@3c68cba8e51c569428222b9185469249206172c6',
-
 
   # Prebuilt Dart SDK of the same revision as the Dart SDK source checkout
   'src/flutter/prebuilts/linux-x64/dart-sdk': {
