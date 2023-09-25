@@ -144,7 +144,8 @@ Tessellator::Result Tessellator::Tessellate(
       indices.emplace_back(elements[i]);
     }
 
-    if (!callback(reinterpret_cast<float*>(points.data()), points.size(), nullptr, 0u)) {
+    if (!callback(reinterpret_cast<float*>(points.data()), points.size(),
+                  nullptr, 0u)) {
       return Result::kInputError;
     }
   }
