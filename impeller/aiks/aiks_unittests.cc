@@ -3616,8 +3616,10 @@ TEST_P(AiksTest, ClearBlend) {
 TEST_P(AiksTest, ClearBlendImage) {
   Canvas canvas;
   Paint paint;
-  auto dst = std::make_shared<Image>(CreateTextureForFixture("blend_mode_dst.png"));
-  auto src = std::make_shared<Image>(CreateTextureForFixture("blend_mode_src.png"));
+  auto dst =
+      std::make_shared<Image>(CreateTextureForFixture("blend_mode_dst.png"));
+  auto src =
+      std::make_shared<Image>(CreateTextureForFixture("blend_mode_src.png"));
   canvas.DrawImage(dst, Point::MakeXY(100.0, 100.0), paint);
   Paint clear;
   clear.blend_mode = BlendMode::kClear;
