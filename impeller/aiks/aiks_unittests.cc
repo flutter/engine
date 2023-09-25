@@ -3588,7 +3588,6 @@ TEST_P(AiksTest, ClearBlendWithBlur) {
   canvas.DrawRect(Rect::MakeXYWH(0, 0, 600.0, 600.0), white);
 
   Paint clear;
-  clear.color = Color::White();
   clear.blend_mode = BlendMode::kClear;
   clear.mask_blur_descriptor = Paint::MaskBlurDescriptor{
       .style = FilterContents::BlurStyle::kNormal,
