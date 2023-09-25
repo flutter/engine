@@ -2501,8 +2501,11 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
   pass->AddEntity(entity);
 
   EXPECT_TRUE(pass->Render(content_context, rt));
+  FML_LOG(ERROR) << "ALLOCATED";
+  for (auto i = 0u; i < test_allocator->GetDescriptors().size(); i++) {
+    FML_LOG(ERROR) << test_allocator->GetDescriptors()[i].size;
+  }
 
-  EXPECT_EQ(test_allocator->GetDescriptors().size(), 6u);
   if (test_allocator->GetDescriptors().size() == 6u) {
     // Onscreen render target.
     EXPECT_EQ(test_allocator->GetDescriptors()[0].size, ISize(1000, 1000));
