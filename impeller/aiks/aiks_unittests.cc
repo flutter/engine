@@ -3581,5 +3581,24 @@ TEST_P(AiksTest, VerticesGeometryUVPositionData) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, ClearBlendWithBlur) {
+  Canvas canvas;
+  Paint white;
+  white.color = Color::White();
+  canvas.DrawRect(Rect::MakeXYWH(0, 0, 600.0, 600.0), white);
+
+  Paint clear;
+  clear.color = Color::White();
+  clear.blend_mode = BlendMode::kClear;
+  clear.mask_blur_descriptor = Paint::MaskBlurDescriptor{
+      .style = FilterContents::BlurStyle::kNormal,
+      .sigma = Sigma(20),
+  };
+
+  canvas.DrawCircle(Point::MakeXY(300.0, 300.0), 200.0, clear);
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 }  // namespace testing
 }  // namespace impeller
