@@ -273,7 +273,7 @@ public class TextInputPluginTest {
             true,
             false, // Delta model is disabled.
             TextInputChannel.TextCapitalization.NONE,
-            new TextInputChannel.InputType(TextInputChannel.TextInputType.MULTILINE, false, false),
+            new TextInputChannel.InputType(TextInputChannel.TextInputType.TEXT, false, false),
             null,
             null,
             null,
@@ -1339,7 +1339,7 @@ public class TextInputPluginTest {
         InputType.TYPE_CLASS_TEXT
             | InputType.TYPE_TEXT_FLAG_MULTI_LINE
             | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
-            | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+            | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
   }
 
   // -------- Start: Autofill Tests -------

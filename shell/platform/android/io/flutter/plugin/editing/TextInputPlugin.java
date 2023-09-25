@@ -275,7 +275,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       if (!enableSuggestions) {
         // Note: both required. Some devices ignore TYPE_TEXT_FLAG_NO_SUGGESTIONS.
         textType |= InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS;
-        textType |= InputType.TYPE_TEXT_VARIATION_PASSWORD;
+        textType |= InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD;
       }
     }
 
