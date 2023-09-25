@@ -512,6 +512,11 @@ deps = {
 
   # WARNING: end of dart dependencies list that is cleaned up automatically - see create_updated_flutter_deps.py.
 
+  # TODO(github.com/flutter/flutter/issues/135463): update create_updated_flutter_deps.py to handle this dependency.
+  'src/third_party/dart/third_party/pkg/tar':
+   Var('dart_git') + '/external/github.com/simolus3/tar.git@3c68cba8e51c569428222b9185469249206172c6',
+
+
   # Prebuilt Dart SDK of the same revision as the Dart SDK source checkout
   'src/flutter/prebuilts/linux-x64/dart-sdk': {
     'packages': [
