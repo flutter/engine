@@ -2504,6 +2504,8 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
   FML_LOG(ERROR) << "ALLOCATED";
   for (auto i = 0u; i < test_allocator->GetDescriptors().size(); i++) {
     FML_LOG(ERROR) << test_allocator->GetDescriptors()[i].size;
+    FML_LOG(ERROR) << PixelFormatToString(
+        test_allocator->GetDescriptors()[i].format);
   }
 
   if (test_allocator->GetDescriptors().size() == 6u) {
