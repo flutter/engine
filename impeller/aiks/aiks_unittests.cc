@@ -5,7 +5,6 @@
 #include <array>
 #include <cmath>
 #include <cstdlib>
-#include <iostream>
 #include <memory>
 #include <tuple>
 #include <utility>
@@ -1289,6 +1288,28 @@ TEST_P(AiksTest, CanDrawAnOpenPath) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, CanDrawAnOpenPathThatIsntARect) {
+  Canvas canvas;
+
+  // Draw a stroked path that is explicitly closed to verify
+  // It doesn't become a rectangle.
+  PathBuilder builder;
+  builder.MoveTo({50, 50});
+  builder.LineTo({520, 120});
+  builder.LineTo({300, 310});
+  builder.LineTo({100, 50});
+  builder.Close();
+
+  Paint paint;
+  paint.color = Color::Red();
+  paint.style = Paint::Style::kStroke;
+  paint.stroke_width = 10;
+
+  canvas.DrawPath(builder.TakePath(), paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 static sk_sp<SkData> OpenFixtureAsSkData(const char* fixture_name) {
   auto mapping = flutter::testing::OpenFixtureAsMapping(fixture_name);
   if (!mapping) {
@@ -1335,11 +1356,7 @@ bool RenderTextInCanvasSkia(const std::shared_ptr<Context>& context,
   }
 
   // Create the Impeller text frame and draw it at the designated baseline.
-  auto maybe_frame = MakeTextFrameFromTextBlobSkia(blob);
-  if (!maybe_frame.has_value()) {
-    return false;
-  }
-  auto frame = maybe_frame.value();
+  auto frame = MakeTextFrameFromTextBlobSkia(blob);
 
   Paint text_paint;
   text_paint.color = Color::Yellow().WithAlpha(options.alpha);
@@ -1528,7 +1545,7 @@ TEST_P(AiksTest, CanRenderTextOutsideBoundaries) {
     {
       auto blob = SkTextBlob::MakeFromString(t.text, sk_font);
       ASSERT_NE(blob, nullptr);
-      auto frame = MakeTextFrameFromTextBlobSkia(blob).value();
+      auto frame = MakeTextFrameFromTextBlobSkia(blob);
       canvas.DrawTextFrame(frame, Point(), text_paint);
     }
     canvas.Restore();
@@ -3202,12 +3219,7 @@ TEST_P(AiksTest, TextForegroundShaderWithTransform) {
 
   auto blob = SkTextBlob::MakeFromString("Hello", sk_font);
   ASSERT_NE(blob, nullptr);
-  auto maybe_frame = MakeTextFrameFromTextBlobSkia(blob);
-  ASSERT_TRUE(maybe_frame.has_value());
-  if (!maybe_frame.has_value()) {
-    return;
-  }
-  auto frame = maybe_frame.value();
+  auto frame = MakeTextFrameFromTextBlobSkia(blob);
   canvas.DrawTextFrame(frame, Point(), text_paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
