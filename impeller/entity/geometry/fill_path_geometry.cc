@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/entity/geometry/fill_path_geometry.h"
+#include "impeller/core/formats.h"
 
 namespace impeller {
 
@@ -48,10 +49,15 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
           size_t indices_count) {
         vertex_buffer.vertex_buffer = host_buffer.Emplace(
             vertices, vertices_count * sizeof(float), alignof(float));
-        vertex_buffer.index_buffer = host_buffer.Emplace(
-            indices, indices_count * sizeof(uint16_t), alignof(uint16_t));
-        vertex_buffer.vertex_count = indices_count;
-        vertex_buffer.index_type = IndexType::k16bit;
+        if (indices != nullptr) {
+          vertex_buffer.index_buffer = host_buffer.Emplace(
+              indices, indices_count * sizeof(uint16_t), alignof(uint16_t));
+          vertex_buffer.vertex_count = indices_count;
+          vertex_buffer.index_type = IndexType::k16bit;
+        } else {
+          vertex_buffer.vertex_count = vertices_count;
+          vertex_buffer.index_type = IndexType::kNone;
+        }
         return true;
       });
   if (tesselation_result != Tessellator::Result::kSuccess) {

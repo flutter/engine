@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/tessellator/tessellator.h"
+#include "flutter/fml/logging.h"
 
 #include "third_party/libtess2/Include/tesselator.h"
 
@@ -115,14 +116,37 @@ Tessellator::Result Tessellator::Tessellate(
   auto vertices = tessGetVertices(tessellator);
   int elementItemCount = tessGetElementCount(tessellator) * kPolygonSize;
   auto elements = tessGetElements(tessellator);
-  // libtess uses an int index internally due to usage of -1 as a sentinel
-  // value.
-  std::vector<uint16_t> indices(elementItemCount);
-  for (int i = 0; i < elementItemCount; i++) {
-    indices[i] = static_cast<uint16_t>(elements[i]);
-  }
-  if (!callback(vertices, vertexItemCount, indices.data(), elementItemCount)) {
-    return Result::kInputError;
+
+  if (elementItemCount < 65535) {
+    // libtess uses an int index internally due to usage of -1 as a sentinel
+    // value.
+    std::vector<uint16_t> indices(elementItemCount);
+    for (int i = 0; i < elementItemCount; i++) {
+      indices[i] = static_cast<uint16_t>(elements[i]);
+    }
+    if (!callback(vertices, vertexItemCount, indices.data(),
+                  elementItemCount)) {
+      return Result::kInputError;
+    }
+  } else {
+    std::vector<Point> points;
+    std::vector<uint32_t> indices;
+
+    int vertexItemCount = tessGetVertexCount(tessellator) * kVertexSize;
+    auto vertices = tessGetVertices(tessellator);
+    for (int i = 0; i < vertexItemCount; i += 2) {
+      points.emplace_back(vertices[i], vertices[i + 1]);
+    }
+
+    int elementItemCount = tessGetElementCount(tessellator) * kPolygonSize;
+    auto elements = tessGetElements(tessellator);
+    for (int i = 0; i < elementItemCount; i++) {
+      indices.emplace_back(elements[i]);
+    }
+
+    if (!callback(reinterpret_cast<float*>(points.data()), points.size(), nullptr, 0u)) {
+      return Result::kInputError;
+    }
   }
 
   return Result::kSuccess;
