@@ -27,7 +27,7 @@ class LayerTree;
 enum class RasterStatus {
   // Frame has been successfully rasterized.
   kSuccess,
-  // Frame has been submited, but should be submitted again. This is only used
+  // Frame has been submited, but must be submitted again. This is only used
   // on Android when switching the background surface to FlutterImageView.
   //
   // On Android, the first frame doesn't make the image available
@@ -35,7 +35,7 @@ enum class RasterStatus {
   //
   // TODO(egarciad): https://github.com/flutter/flutter/issues/65652
   kResubmit,
-  // Frame should be dropped and a new frame with the same layer tree should be
+  // Frame has be dropped and a new frame with the same layer tree must be
   // attempted.
   //
   // This is currently used to wait for the thread merger to merge

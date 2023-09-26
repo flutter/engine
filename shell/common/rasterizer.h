@@ -68,7 +68,7 @@ enum class DrawStatus {
 enum class DrawSurfaceStatus {
   // The layer tree was successfully rasterized.
   kSuccess,
-  // The layer tree should be submitted again.
+  // The layer tree must be submitted again.
   //
   // This can occur on Android when switching the background surface to
   // FlutterImageView.  On Android, the first frame doesn't make the image
@@ -261,7 +261,7 @@ class Rasterizer final : public SnapshotDelegate,
   //----------------------------------------------------------------------------
   /// @brief      Deallocate the resources for displaying a view.
   ///
-  ///             This method should be called when a view is removed.
+  ///             This method must be called when a view is removed.
   ///
   ///             The rasterizer don't need views to be registered. Last-frame
   ///             states for views are recorded when layer trees are rasterized
@@ -686,7 +686,7 @@ class Rasterizer final : public SnapshotDelegate,
   // Draws the layer tree to the specified view, assuming we have access to the
   // GPU.
   //
-  // This method is not affiliated with the frame timing recorder, but should be
+  // This method is not affiliated with the frame timing recorder, but must be
   // included between the RasterStart and RasterEnd.
   DrawSurfaceStatus DrawToSurfaceUnsafe(
       int64_t view_id,

@@ -299,11 +299,10 @@ DrawStatus Rasterizer::ToDrawStatus(DoDrawStatus status) {
       return DrawStatus::kNotSetUp;
     case DoDrawStatus::kGpuUnavailable:
       return DrawStatus::kGpuUnavailable;
-    default:
-      FML_CHECK(status == DoDrawStatus::kDone)
-          << "Unrecognized status " << (int)status;
+    case DoDrawStatus::kDone:
       return DrawStatus::kDone;
   }
+  FML_UNREACHABLE();
 }
 
 namespace {

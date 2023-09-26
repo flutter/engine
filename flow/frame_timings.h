@@ -116,10 +116,11 @@ class FrameTimingsRecorder {
   /// Returns the recorded time from when `RecordRasterEnd` is called.
   FrameTiming GetRecordedTime() const;
 
-  /// Asserts in debug mode that the recorder is current at the specified state.
-  ///
-  /// A `GetState` method is not preferred to avoid other logic relying on this
+  /// Asserts in unopt builds that the recorder is current at the specified
   /// state.
+  ///
+  /// Instead of adding a `GetState` method and asserting on the result, this
+  /// method prevents other logic from relying on the state.
   void AssertInState(State state) const;
 
  private:
