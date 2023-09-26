@@ -55,7 +55,8 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
           vertex_buffer.vertex_count = indices_count;
           vertex_buffer.index_type = IndexType::k16bit;
         } else {
-          vertex_buffer.vertex_count = vertices_count;
+          vertex_buffer.index_buffer = {};
+          vertex_buffer.vertex_count = indices_count;
           vertex_buffer.index_type = IndexType::kNone;
         }
         return true;
@@ -128,8 +129,10 @@ GeometryResult FillPathGeometry::GetPositionUVBuffer(
           vertex_builder.AppendVertex(data);
         }
         FML_DCHECK(vertex_builder.GetVertexCount() == vertices_count / 2);
-        for (auto i = 0u; i < indices_count; i++) {
-          vertex_builder.AppendIndex(indices[i]);
+        if (indices != nullptr) {
+          for (auto i = 0u; i < indices_count; i++) {
+            vertex_builder.AppendIndex(indices[i]);
+          }
         }
         return true;
       });

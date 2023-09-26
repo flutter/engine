@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "impeller/tessellator/tessellator.h"
-#include "flutter/fml/logging.h"
 
 #include "third_party/libtess2/Include/tesselator.h"
 
@@ -79,74 +78,131 @@ Tessellator::Result Tessellator::Tessellate(
   constexpr int kVertexSize = 2;
   constexpr int kPolygonSize = 3;
 
-  //----------------------------------------------------------------------------
-  /// Feed contour information to the tessellator.
-  ///
-  static_assert(sizeof(Point) == 2 * sizeof(float));
-  for (size_t contour_i = 0; contour_i < polyline.contours.size();
-       contour_i++) {
-    size_t start_point_index, end_point_index;
-    std::tie(start_point_index, end_point_index) =
-        polyline.GetContourPointBounds(contour_i);
+  if (polyline.contours.size() > 30 && fill_type == FillType::kNonZero) {
+    std::vector<Point> points;
+    std::vector<float> data;
 
-    ::tessAddContour(tessellator,  // the C tessellator
-                     kVertexSize,  //
-                     polyline.points.data() + start_point_index,  //
-                     sizeof(Point),                               //
-                     end_point_index - start_point_index          //
-    );
-  }
+    //----------------------------------------------------------------------------
+    /// Feed contour information to the tessellator.
+    ///
+    size_t total = 0u;
+    static_assert(sizeof(Point) == 2 * sizeof(float));
+    for (size_t contour_i = 0; contour_i < polyline.contours.size();
+         contour_i++) {
+      size_t start_point_index, end_point_index;
+      std::tie(start_point_index, end_point_index) =
+          polyline.GetContourPointBounds(contour_i);
 
-  //----------------------------------------------------------------------------
-  /// Let's tessellate.
-  ///
-  auto result = ::tessTesselate(tessellator,                   // tessellator
-                                ToTessWindingRule(fill_type),  // winding
-                                TESS_POLYGONS,                 // element type
-                                kPolygonSize,                  // polygon size
-                                kVertexSize,                   // vertex size
-                                nullptr  // normal (null is automatic)
-  );
+      ::tessAddContour(tessellator,  // the C tessellator
+                       kVertexSize,  //
+                       polyline.points.data() + start_point_index,  //
+                       sizeof(Point),                               //
+                       end_point_index - start_point_index          //
+      );
 
-  if (result != 1) {
-    return Result::kTessellationError;
-  }
+      //----------------------------------------------------------------------------
+      /// Let's tessellate.
+      ///
+      auto result = ::tessTesselate(tessellator,  // tessellator
+                                    ToTessWindingRule(fill_type),  // winding
+                                    TESS_POLYGONS,  // element type
+                                    kPolygonSize,   // polygon size
+                                    kVertexSize,    // vertex size
+                                    nullptr  // normal (null is automatic)
+      );
 
-  int vertexItemCount = tessGetVertexCount(tessellator) * kVertexSize;
-  auto vertices = tessGetVertices(tessellator);
-  int elementItemCount = tessGetElementCount(tessellator) * kPolygonSize;
-  auto elements = tessGetElements(tessellator);
+      if (result != 1) {
+        return Result::kTessellationError;
+      }
 
-  if (elementItemCount < 65535) {
-    // libtess uses an int index internally due to usage of -1 as a sentinel
-    // value.
-    std::vector<uint16_t> indices(elementItemCount);
-    for (int i = 0; i < elementItemCount; i++) {
-      indices[i] = static_cast<uint16_t>(elements[i]);
+      int vertexItemCount = tessGetVertexCount(tessellator) * kVertexSize;
+      auto vertices = tessGetVertices(tessellator);
+      for (int i = 0; i < vertexItemCount; i += 2) {
+        points.emplace_back(vertices[i], vertices[i + 1]);
+      }
+
+      int elementItemCount = tessGetElementCount(tessellator) * kPolygonSize;
+      auto elements = tessGetElements(tessellator);
+      total += elementItemCount;
+      for (int i = 0; i < elementItemCount; i++) {
+        data.emplace_back(points[elements[i]].x);
+        data.emplace_back(points[elements[i]].y);
+      }
+      points.clear();
     }
-    if (!callback(vertices, vertexItemCount, indices.data(),
-                  elementItemCount)) {
+    if (!callback(data.data(), data.size(), nullptr, total)) {
       return Result::kInputError;
     }
   } else {
-    std::vector<Point> points;
-    std::vector<uint32_t> indices;
+    //----------------------------------------------------------------------------
+    /// Feed contour information to the tessellator.
+    ///
+    static_assert(sizeof(Point) == 2 * sizeof(float));
+    for (size_t contour_i = 0; contour_i < polyline.contours.size();
+         contour_i++) {
+      size_t start_point_index, end_point_index;
+      std::tie(start_point_index, end_point_index) =
+          polyline.GetContourPointBounds(contour_i);
 
-    int vertexItemCount = tessGetVertexCount(tessellator) * kVertexSize;
-    auto vertices = tessGetVertices(tessellator);
-    for (int i = 0; i < vertexItemCount; i += 2) {
-      points.emplace_back(vertices[i], vertices[i + 1]);
+      ::tessAddContour(tessellator,  // the C tessellator
+                       kVertexSize,  //
+                       polyline.points.data() + start_point_index,  //
+                       sizeof(Point),                               //
+                       end_point_index - start_point_index          //
+      );
+    }
+
+    //----------------------------------------------------------------------------
+    /// Let's tessellate.
+    ///
+    auto result = ::tessTesselate(tessellator,                   // tessellator
+                                  ToTessWindingRule(fill_type),  // winding
+                                  TESS_POLYGONS,                 // element type
+                                  kPolygonSize,                  // polygon size
+                                  kVertexSize,                   // vertex size
+                                  nullptr  // normal (null is automatic)
+    );
+
+    if (result != 1) {
+      return Result::kTessellationError;
     }
 
     int elementItemCount = tessGetElementCount(tessellator) * kPolygonSize;
-    auto elements = tessGetElements(tessellator);
-    for (int i = 0; i < elementItemCount; i++) {
-      indices.emplace_back(elements[i]);
-    }
+    if (elementItemCount < 65535) {
+      int vertexItemCount = tessGetVertexCount(tessellator) * kVertexSize;
+      auto vertices = tessGetVertices(tessellator);
+      auto elements = tessGetElements(tessellator);
 
-    if (!callback(reinterpret_cast<float*>(points.data()), points.size(),
-                  nullptr, 0u)) {
-      return Result::kInputError;
+      // libtess uses an int index internally due to usage of -1 as a sentinel
+      // value.
+      std::vector<uint16_t> indices(elementItemCount);
+      for (int i = 0; i < elementItemCount; i++) {
+        indices[i] = static_cast<uint16_t>(elements[i]);
+      }
+      if (!callback(vertices, vertexItemCount, indices.data(),
+                    elementItemCount)) {
+        return Result::kInputError;
+      }
+    } else {
+      std::vector<Point> points;
+      std::vector<uint16_t> indices;
+
+      int vertexItemCount = tessGetVertexCount(tessellator) * kVertexSize;
+      auto vertices = tessGetVertices(tessellator);
+      for (int i = 0; i < vertexItemCount; i += 2) {
+        points.emplace_back(vertices[i], vertices[i + 1]);
+      }
+
+      int elementItemCount = tessGetElementCount(tessellator) * kPolygonSize;
+      auto elements = tessGetElements(tessellator);
+      for (int i = 0; i < elementItemCount; i++) {
+        indices.emplace_back(elements[i]);
+      }
+
+      if (!callback(reinterpret_cast<float*>(points.data()), points.size(),
+                    nullptr, elementItemCount)) {
+        return Result::kInputError;
+      }
     }
   }
 
