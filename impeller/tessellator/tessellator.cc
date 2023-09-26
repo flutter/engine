@@ -123,22 +123,22 @@ Tessellator::Result Tessellator::Tessellate(
         return Result::kTessellationError;
       }
 
-      int vertexItemCount = tessGetVertexCount(tessellator) * kVertexSize;
+      int vertex_item_count = tessGetVertexCount(tessellator) * kVertexSize;
       auto vertices = tessGetVertices(tessellator);
-      for (int i = 0; i < vertexItemCount; i += 2) {
+      for (int i = 0; i < vertex_item_count; i += 2) {
         points.emplace_back(vertices[i], vertices[i + 1]);
       }
 
-      int elementItemCount = tessGetElementCount(tessellator) * kPolygonSize;
+      int element_item_count = tessGetElementCount(tessellator) * kPolygonSize;
       auto elements = tessGetElements(tessellator);
-      total += elementItemCount;
-      for (int i = 0; i < elementItemCount; i++) {
+      total += element_item_count;
+      for (int i = 0; i < element_item_count; i++) {
         data.emplace_back(points[elements[i]].x);
         data.emplace_back(points[elements[i]].y);
       }
       points.clear();
     }
-    if (!callback(data.data(), data.size(), nullptr, total)) {
+    if (!callback(data.data(), total, nullptr, 0u)) {
       return Result::kInputError;
     }
   } else {
@@ -183,7 +183,7 @@ Tessellator::Result Tessellator::Tessellate(
     // a uint32 index buffer, but this is done for simplicity with the other
     // fast path above.
     if (elementItemCount < 65535) {
-      int vertexItemCount = tessGetVertexCount(tessellator) * kVertexSize;
+      int vertex_item_count = tessGetVertexCount(tessellator);
       auto vertices = tessGetVertices(tessellator);
       auto elements = tessGetElements(tessellator);
 
@@ -193,7 +193,7 @@ Tessellator::Result Tessellator::Tessellate(
       for (int i = 0; i < elementItemCount; i++) {
         indices[i] = static_cast<uint16_t>(elements[i]);
       }
-      if (!callback(vertices, vertexItemCount, indices.data(),
+      if (!callback(vertices, vertex_item_count, indices.data(),
                     elementItemCount)) {
         return Result::kInputError;
       }
@@ -201,19 +201,19 @@ Tessellator::Result Tessellator::Tessellate(
       std::vector<Point> points;
       std::vector<float> data;
 
-      int vertexItemCount = tessGetVertexCount(tessellator) * kVertexSize;
+      int vertex_item_count = tessGetVertexCount(tessellator) * kVertexSize;
       auto vertices = tessGetVertices(tessellator);
-      for (int i = 0; i < vertexItemCount; i += 2) {
+      for (int i = 0; i < vertex_item_count; i += 2) {
         points.emplace_back(vertices[i], vertices[i + 1]);
       }
 
-      int elementItemCount = tessGetElementCount(tessellator) * kPolygonSize;
+      int element_item_count = tessGetElementCount(tessellator) * kPolygonSize;
       auto elements = tessGetElements(tessellator);
       for (int i = 0; i < elementItemCount; i++) {
         data.emplace_back(points[elements[i]].x);
         data.emplace_back(points[elements[i]].y);
       }
-      if (!callback(data.data(), data.size(), nullptr, elementItemCount)) {
+      if (!callback(data.data(), element_item_count, nullptr, 0u)) {
         return Result::kInputError;
       }
     }

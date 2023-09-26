@@ -48,7 +48,7 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
           const float* vertices, size_t vertices_count, const uint16_t* indices,
           size_t indices_count) {
         vertex_buffer.vertex_buffer = host_buffer.Emplace(
-            vertices, vertices_count * sizeof(float), alignof(float));
+            vertices, vertices_count * sizeof(float) * 2, alignof(float));
         if (indices != nullptr) {
           vertex_buffer.index_buffer = host_buffer.Emplace(
               indices, indices_count * sizeof(uint16_t), alignof(uint16_t));
@@ -56,7 +56,7 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
           vertex_buffer.index_type = IndexType::k16bit;
         } else {
           vertex_buffer.index_buffer = {};
-          vertex_buffer.vertex_count = indices_count;
+          vertex_buffer.vertex_count = vertices_count;
           vertex_buffer.index_type = IndexType::kNone;
         }
         return true;
@@ -119,7 +119,7 @@ GeometryResult FillPathGeometry::GetPositionUVBuffer(
       [&vertex_builder, &texture_coverage, &effect_transform](
           const float* vertices, size_t vertices_count, const uint16_t* indices,
           size_t indices_count) {
-        for (auto i = 0u; i < vertices_count; i += 2) {
+        for (auto i = 0u; i < vertices_count * 2; i += 2) {
           VS::PerVertexData data;
           Point vtx = {vertices[i], vertices[i + 1]};
           data.position = vtx;
@@ -128,7 +128,7 @@ GeometryResult FillPathGeometry::GetPositionUVBuffer(
                                 texture_coverage.size;
           vertex_builder.AppendVertex(data);
         }
-        FML_DCHECK(vertex_builder.GetVertexCount() == vertices_count / 2);
+        FML_DCHECK(vertex_builder.GetVertexCount() == vertices_count);
         if (indices != nullptr) {
           for (auto i = 0u; i < indices_count; i++) {
             vertex_builder.AppendIndex(indices[i]);

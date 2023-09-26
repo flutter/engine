@@ -47,14 +47,11 @@ class Tessellator {
   /// @brief A callback that returns the results of the tessellation.
   ///
   ///        The index buffer may not be populated, in which case [indices] will
-  ///        be nullptr. The [vertices_size] is the size of the vertices array
-  ///        and not the number of vertices, which is usually vertices_size / 2.
-  ///        In cases where the indices is nullptr, vertex_or_index_count will
-  ///        contain the count of indices.
+  ///        be nullptr and indices_count will be 0.
   using BuilderCallback = std::function<bool(const float* vertices,
-                                             size_t vertices_size,
+                                             size_t vertices_count,
                                              const uint16_t* indices,
-                                             size_t vertex_or_index_count)>;
+                                             size_t indices_count)>;
 
   //----------------------------------------------------------------------------
   /// @brief      Generates filled triangles from the polyline. A callback is
