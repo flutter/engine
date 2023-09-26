@@ -1191,49 +1191,6 @@ class FontVariation {
   String toString() => "FontVariation('$axis', $value)";
 }
 
-/// Diagnostic information of a font.
-final class FontInfo {
-  FontInfo._(this.fontFamily, this.weight, bool isItalic, this.size)
-    : style = isItalic ? FontStyle.italic : FontStyle.normal;
-
-  /// The name of the typeface family used to render text ("Roboto", for example).
-  final String fontFamily;
-
-  /// The thickness value of the glyphs of the typeface.
-  ///
-  /// The integer value corresponds to the predefined [FontWeight] values.
-  /// [FontWeight.w400] corresponds to a weight value of 200, for example.
-  final int weight;
-
-  /// The style of the typeface ("italics" for example).
-  final FontStyle style;
-
-  /// The size of the font.
-  final double size;
-
-  @override
-  String toString() {
-    final String weightDescription = switch (weight) {
-      100 => ' thin',
-      200 => ' extra-light',
-      300 => ' light',
-      400 => '',
-      500 => ' medium',
-      600 => ' semi-bold',
-      700 => ' bold',
-      800 => ' extra-bold',
-      900 => ' black',
-      final int weight => ' w$weight'
-    };
-    final String styleDescription = switch (style) {
-      FontStyle.normal => '',
-      FontStyle.italic => ' italic',
-    };
-    // Example: "Times New Roman bold italic, 14 px".
-    return '$fontFamily$weightDescription$styleDescription, $size px';
-  }
-}
-
 /// The measurements of a glyph (or a sequence of visually connected glyphs)
 /// within a paragraph.
 ///
@@ -3145,10 +3102,6 @@ abstract class Paragraph {
   /// rather than the beginning of the new line.
   int? getLineNumberAt(int codeUnitOffset);
 
-  /// Returns the information of the font used to render the glyph at the given
-  /// UTF-16 `codeUnitOffset`, or null if the `codeUnitOffset` is out of bounds.
-  FontInfo? getFontInfoAt(int codeUnitOffset);
-
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
   void dispose();
@@ -3340,11 +3293,6 @@ base class _NativeParagraph extends NativeFieldWrapperClass1 implements Paragrap
   LineMetrics? getLineMetricsAt(int lineNumber) => _getLineMetricsAt(lineNumber, LineMetrics._);
   @Native<Handle Function(Pointer<Void>, Uint32, Handle)>(symbol: 'Paragraph::getLineMetricsAt')
   external LineMetrics? _getLineMetricsAt(int lineNumber, Function constructor);
-
-  @override
-  FontInfo? getFontInfoAt(int codeUnitOffset) => _getFontInfoAt(codeUnitOffset, FontInfo._);
-  @Native<Handle Function(Pointer<Void>, Uint32, Handle)>(symbol: 'Paragraph::getFontInfoAt')
-  external FontInfo? _getFontInfoAt(int codeUnitOffset, Function constructor);
 
   @override
   @Native<Uint32 Function(Pointer<Void>)>(symbol: 'Paragraph::getNumberOfLines')

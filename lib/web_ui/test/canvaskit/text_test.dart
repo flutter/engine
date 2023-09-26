@@ -166,6 +166,7 @@ void testMain() {
       final ui.ParagraphBuilder builder = ui.ParagraphBuilder(CkParagraphStyle(
         fontStyle: ui.FontStyle.normal,
         fontWeight: ui.FontWeight.normal,
+        fontFamily: 'FlutterTest',
         fontSize: fontSize,
         maxLines: 1,
         ellipsis: 'BBB',
@@ -182,10 +183,11 @@ void testMain() {
       expect(paragraph.getGlyphInfoAt(200), isNull);
     });
 
-    test('Basic glyph mtreics 2', () {
+    test('Basic glyph metrics 2', () {
       const double fontSize = 10.0;
       final ui.ParagraphBuilder builder = ui.ParagraphBuilder(CkParagraphStyle(
         fontSize: fontSize,
+        fontFamily: 'FlutterTest',
       ));
       builder.addText('Test\nTest');
       final ui.Paragraph paragraph = builder.build();

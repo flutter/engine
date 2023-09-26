@@ -219,24 +219,6 @@ void main() {
     expect(line.end, 10);
   });
 
-  test('getFontInfoAt', () {
-    const double fontSize = 10.0;
-    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
-      fontFamily: 'Ahem',
-      fontStyle: FontStyle.normal,
-      fontWeight: FontWeight.normal,
-      fontSize: fontSize,
-      textDirection: TextDirection.rtl,
-    ));
-    builder.addText('Test');
-    final Paragraph paragraph = builder.build();
-    paragraph.layout(const ParagraphConstraints(width: double.infinity));
-    expect(paragraph.getFontInfoAt(1)?.fontFamily, 'Ahem');
-    expect(paragraph.getFontInfoAt(1)?.weight, 400);
-    expect(paragraph.getFontInfoAt(1)?.style, FontStyle.normal);
-    expect(paragraph.getFontInfoAt(1)?.size, fontSize);
-  });
-
   test('getLineMetricsAt', () {
     const double fontSize = 10.0;
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
@@ -279,7 +261,6 @@ void main() {
 
     expect(paragraph.getClosestGlyphInfoForOffset(Offset.zero), isNull);
     expect(paragraph.getGlyphInfoAt(0), isNull);
-    expect(paragraph.getFontInfoAt(0), isNull);
 
     expect(paragraph.getLineMetricsAt(0), isNull);
     expect(paragraph.numberOfLines, 0);

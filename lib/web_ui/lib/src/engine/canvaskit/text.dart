@@ -760,12 +760,6 @@ class CkParagraph implements ui.Paragraph {
     return lineNumber >= 0 ? lineNumber : null;
   }
 
-  @override
-  ui.FontInfo? getFontInfoAt(int codeUnitOffset) {
-    assert(!_disposed, 'Paragraph has been disposed.');
-    return skiaObject.getFontInfoAt(codeUnitOffset.toDouble());
-  }
-
   bool _disposed = false;
 
   @override

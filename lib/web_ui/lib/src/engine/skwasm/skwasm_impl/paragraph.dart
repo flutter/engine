@@ -111,11 +111,6 @@ class SkwasmParagraph extends SkwasmObjectWrapper<RawParagraph> implements ui.Pa
   }
 
   @override
-  ui.FontInfo? getFontInfoAt(int codeUnitOffset) {
-    return null;
-  }
-
-  @override
   void layout(ui.ParagraphConstraints constraints) {
     paragraphLayout(handle, constraints.width);
     if (!_hasCheckedForMissingCodePoints) {

@@ -220,37 +220,6 @@ class FontVariation {
   String toString() => "FontVariation('$axis', $value)";
 }
 
-class FontInfo {
-  FontInfo(this.fontFamily, this.weight, this.style, this.size);
-
-  final String fontFamily;
-  final int weight;
-  final FontStyle style;
-  final double size;
-
-  @override
-  String toString() {
-    final String weightDescription = switch (weight) {
-      100 => ' thin',
-      200 => ' extra-light',
-      300 => ' light',
-      400 => '',
-      500 => ' medium',
-      600 => ' semi-bold',
-      700 => ' bold',
-      800 => ' extra-bold',
-      900 => ' black',
-      final int weight => ' w$weight'
-    };
-    final String styleDescription = switch (style) {
-      FontStyle.normal => '',
-      FontStyle.italic => ' italic',
-    };
-    // Example: "Times New Roman bold italic, 14 px".
-    return '$fontFamily$weightDescription$styleDescription, $size px';
-  }
-}
-
 final class GlyphInfo {
   GlyphInfo(this.graphemeClusterLayoutBounds, this.graphemeClusterCodeUnitRange, this.writingDirection);
 
@@ -756,7 +725,6 @@ abstract class Paragraph {
   LineMetrics? getLineMetricsAt(int lineNumber);
   int get numberOfLines;
   int? getLineNumberAt(int codeUnitOffset);
-  FontInfo? getFontInfoAt(int codeUnitOffset);
   void dispose();
   bool get debugDisposed;
 }

@@ -3004,7 +3004,6 @@ class SkFontStyle {
 }
 
 extension SkFontStyleExtension on SkFontStyle {
-  external SkFontWeight get weight;
   external set weight(SkFontWeight? value);
   external set slant(SkFontSlant? value);
 }
@@ -3069,15 +3068,6 @@ extension SkFontVariationExtension on SkFontVariation {
 @staticInterop
 class SkTypeface {}
 
-extension SkTypefaceExtension on SkTypeface {
-  @JS('getFamilyName')
-  external JSString get familyName;
-
-  external SkFontStyle get fontStyle;
-
-  external JSBoolean get isItalic;
-}
-
 @JS('window.flutterCanvasKit.Font')
 @staticInterop
 class SkFont {
@@ -3085,11 +3075,6 @@ class SkFont {
 }
 
 extension SkFontExtension on SkFont {
-  @JS('getSize')
-  external JSNumber get _getSize;
-
-  external SkFontStyle get fontStyle;
-
   @JS('getGlyphIDs')
   external JSUint16Array _getGlyphIDs(JSString text);
   Uint16List getGlyphIDs(String text) => _getGlyphIDs(text.toJS).toDart;
@@ -3100,22 +3085,6 @@ extension SkFontExtension on SkFont {
   void getGlyphBounds(
       List<int> glyphs, SkPaint? paint, Uint8List? output) =>
       _getGlyphBounds(glyphs.toJSAnyShallow, paint, output?.toJS);
-
-  @JS('getTypeface')
-  external SkTypeface? get _typeface;
-
-  ui.FontInfo? get _fontInfo {
-    final SkTypeface? typeface = _typeface;
-    if (typeface == null) {
-      return null;
-    }
-    return ui.FontInfo(
-      typeface.familyName.toDart,
-      typeface.fontStyle.weight.value.toInt(),
-      typeface.isItalic.toDart ? ui.FontStyle.italic : ui.FontStyle.normal,
-      _getSize.toDartDouble,
-    );
-  }
 }
 
 @JS()
@@ -3230,8 +3199,7 @@ extension SkGlyphClusterInfoExtension on SkGlyphClusterInfo {
   external SkTextRange get _textRange;
 
   ui.GlyphInfo get _glyphCluster {
-    final Float32List rectArray = _bounds.toDart;
-    final ui.Rect bounds = ui.Rect.fromLTRB(rectArray[0], rectArray[1], rectArray[2], rectArray[3]);
+    final ui.Rect bounds = fromSkRect(_bounds.toDart);
     final ui.TextRange textRange = ui.TextRange(start: _textRange.start.toInt(), end: _textRange.end.toInt());
     return ui.GlyphInfo(bounds, textRange, ui.TextDirection.values[_direction.value.toInt()]);
   }
@@ -3351,12 +3319,6 @@ extension SkParagraphExtension on SkParagraph {
   external SkTextRange _getWordBoundary(JSNumber position);
   SkTextRange getWordBoundary(double position) =>
       _getWordBoundary(position.toJS);
-
-  @JS('getFontAt')
-  external SkFont? _getFontAt(JSNumber position);
-  ui.FontInfo? getFontInfoAt(double position) {
-    return _getFontAt(position.toJS)?._fontInfo;
-  }
 
   @JS('layout')
   external JSVoid _layout(JSNumber width);

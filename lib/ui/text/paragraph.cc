@@ -248,28 +248,6 @@ Dart_Handle Paragraph::getLineMetricsAt(int lineNumber,
   return handle;
 }
 
-Dart_Handle Paragraph::getFontInfoAt(size_t utf16Offset,
-                                     Dart_Handle constructor) const {
-  SkFont font = m_paragraph->GetFontAt(utf16Offset);
-  const auto typeface = font.getTypeface();
-  if (!typeface) {
-    return Dart_Null();
-  }
-  SkString fontFamily;
-  typeface->getFamilyName(&fontFamily);
-
-  Dart_Handle arguments[4] = {
-      Dart_NewStringFromCString(fontFamily.c_str()),
-      Dart_NewInteger(font.getTypeface()->fontStyle().weight()),
-      Dart_NewBoolean(font.getTypeface()->isItalic()),
-      Dart_NewDouble(font.getSize()),
-  };
-  Dart_Handle handle = Dart_InvokeClosure(
-      constructor, sizeof(arguments) / sizeof(Dart_Handle), arguments);
-  tonic::CheckAndHandleError(handle);
-  return handle;
-}
-
 size_t Paragraph::getNumberOfLines() const {
   return m_paragraph->GetNumberOfLines();
 }
