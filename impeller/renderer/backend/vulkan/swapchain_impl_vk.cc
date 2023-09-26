@@ -470,7 +470,7 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
     }
   }
 
-  auto task = [&, index, image, current_frame = current_frame_] {
+  auto task = [&, index, current_frame = current_frame_] {
     auto context_strong = context_.lock();
     if (!context_strong) {
       return;

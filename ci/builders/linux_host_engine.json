@@ -13,7 +13,9 @@
                 "--runtime-mode",
                 "debug",
                 "--unoptimized",
-                "--prebuilt-dart-sdk"
+                "--prebuilt-dart-sdk",
+                "--rbe",
+                "--no-goma"
             ],
             "name": "host_debug_unopt",
             "ninja": {
@@ -39,7 +41,9 @@
                 "--unoptimized",
                 "--prebuilt-dart-sdk",
                 "--target-dir",
-                "host_debug_impeller_vulkan"
+                "host_debug_impeller_vulkan",
+                "--rbe",
+                "--no-goma"
             ],
             "name": "host_debug_impeller_vulkan",
             "ninja": {
@@ -53,14 +57,14 @@
                 {
                     "language": "python3",
                     "name": "Host Tests for host_debug_impeller_vulkan",
+                    "script": "flutter/testing/run_tests.py",
                     "parameters": [
                         "--variant",
                         "host_debug_impeller_vulkan",
                         "--type",
                         "impeller-vulkan",
                         "--engine-capture-core-dump"
-                    ],
-                    "script": "flutter/testing/run_tests.py"
+                    ]
                 }
             ]
         },
@@ -91,7 +95,9 @@
                 "--runtime-mode",
                 "debug",
                 "--prebuilt-dart-sdk",
-                "--build-embedder-examples"
+                "--build-embedder-examples",
+                "--rbe",
+                "--no-goma"
             ],
             "name": "host_debug",
             "ninja": {
@@ -110,14 +116,14 @@
                 {
                     "language": "python3",
                     "name": "Host Tests for host_debug",
+                    "script": "flutter/testing/run_tests.py",
                     "parameters": [
                         "--variant",
                         "host_debug",
                         "--type",
-                        "dart",
+                        "dart,dart-host",
                         "--engine-capture-core-dump"
-                    ],
-                    "script": "flutter/testing/run_tests.py"
+                    ]
                 }
             ]
         },
@@ -142,7 +148,9 @@
                 "profile",
                 "--no-lto",
                 "--prebuilt-dart-sdk",
-                "--build-embedder-examples"
+                "--build-embedder-examples",
+                "--rbe",
+                "--no-goma"
             ],
             "name": "host_profile",
             "ninja": {
@@ -158,14 +166,14 @@
                 {
                     "language": "python3",
                     "name": "Host Tests for host_profile",
+                    "script": "flutter/testing/run_tests.py",
                     "parameters": [
                         "--variant",
                         "host_profile",
                         "--type",
-                        "dart,engine",
+                        "dart,dart-host,engine",
                         "--engine-capture-core-dump"
-                    ],
-                    "script": "flutter/testing/run_tests.py"
+                    ]
                 }
             ]
         },
@@ -192,7 +200,9 @@
                 "--runtime-mode",
                 "release",
                 "--prebuilt-dart-sdk",
-                "--build-embedder-examples"
+                "--build-embedder-examples",
+                "--rbe",
+                "--no-goma"
             ],
             "name": "host_release",
             "ninja": {
@@ -216,14 +226,14 @@
                 {
                     "language": "python3",
                     "name": "Host Tests for host_release",
+                    "script": "flutter/testing/run_tests.py",
                     "parameters": [
                         "--variant",
                         "host_release",
                         "--type",
-                        "dart,engine,benchmarks",
+                        "dart,dart-host,engine,benchmarks",
                         "--engine-capture-core-dump"
-                    ],
-                    "script": "flutter/testing/run_tests.py"
+                    ]
                 },
                 {
                     "language": "bash",
@@ -233,10 +243,10 @@
                 {
                     "language": "bash",
                     "name": "Upload metrics dry-run",
-		    "parameters": [
+                    "script": "flutter/testing/benchmark/upload_metrics.sh",
+                    "parameters": [
                         "--no-upload"
-                    ],
-                    "script": "flutter/testing/benchmark/upload_metrics.sh"
+                    ]
                 }
             ]
         }
