@@ -653,7 +653,7 @@ class Shell final : public PlatformView::Delegate,
   void OnAnimatorDraw(std::shared_ptr<FramePipeline> pipeline) override;
 
   // |Animator::Delegate|
-  void OnAnimatorDrawLastLayerTree(
+  void OnAnimatorDrawLastLayerTrees(
       std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) override;
 
   // |Engine::Delegate|

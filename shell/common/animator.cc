@@ -85,7 +85,7 @@ void Animator::BeginFrame(
   }
 
   frame_scheduled_ = false;
-  regenerate_layer_tree_ = false;
+  regenerate_layer_trees_ = false;
   pending_frame_semaphore_.Signal();
 
   if (!producer_continuation_) {
@@ -191,15 +191,15 @@ const std::weak_ptr<VsyncWaiter> Animator::GetVsyncWaiter() const {
   return weak;
 }
 
-bool Animator::CanReuseLastLayerTree() {
-  return !regenerate_layer_tree_;
+bool Animator::CanReuseLastLayerTrees() {
+  return !regenerate_layer_trees_;
 }
 
-void Animator::DrawLastLayerTree(
+void Animator::DrawLastLayerTrees(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
   // This method is very cheap, but this makes it explicitly clear in trace
   // files.
-  TRACE_EVENT0("flutter", "Animator::DrawLastLayerTree");
+  TRACE_EVENT0("flutter", "Animator::DrawLastLayerTrees");
 
   pending_frame_semaphore_.Signal();
   // In this case BeginFrame doesn't get called, we need to
@@ -209,18 +209,18 @@ void Animator::DrawLastLayerTree(
   const auto now = fml::TimePoint::Now();
   frame_timings_recorder->RecordBuildStart(now);
   frame_timings_recorder->RecordBuildEnd(now);
-  delegate_.OnAnimatorDrawLastLayerTree(std::move(frame_timings_recorder));
+  delegate_.OnAnimatorDrawLastLayerTrees(std::move(frame_timings_recorder));
 }
 
-void Animator::RequestFrame(bool regenerate_layer_tree) {
-  if (regenerate_layer_tree) {
+void Animator::RequestFrame(bool regenerate_layer_trees) {
+  if (regenerate_layer_trees) {
     // This event will be closed by BeginFrame. BeginFrame will only be called
-    // if regenerating the layer tree. If a frame has been requested to update
+    // if regenerating the layer trees. If a frame has been requested to update
     // an external texture, this will be false and no BeginFrame call will
     // happen.
     TRACE_EVENT_ASYNC_BEGIN0("flutter", "Frame Request Pending",
                              frame_request_number_);
-    regenerate_layer_tree_ = true;
+    regenerate_layer_trees_ = true;
   }
 
   if (!pending_frame_semaphore_.TryWait()) {
@@ -251,8 +251,8 @@ void Animator::AwaitVSync() {
       [self = weak_factory_.GetWeakPtr()](
           std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
         if (self) {
-          if (self->CanReuseLastLayerTree()) {
-            self->DrawLastLayerTree(std::move(frame_timings_recorder));
+          if (self->CanReuseLastLayerTrees()) {
+            self->DrawLastLayerTrees(std::move(frame_timings_recorder));
           } else {
             self->BeginFrame(std::move(frame_timings_recorder));
           }

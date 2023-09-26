@@ -828,7 +828,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   void SetAccessibilityFeatures(int32_t flags);
 
   // |RuntimeDelegate|
-  void ScheduleFrame(bool regenerate_layer_tree) override;
+  void ScheduleFrame(bool regenerate_layer_trees) override;
 
   /// Schedule a frame with the default parameter of regenerating the layer
   /// tree.

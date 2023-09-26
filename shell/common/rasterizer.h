@@ -265,41 +265,42 @@ class Rasterizer final : public SnapshotDelegate,
   ///
   ///             The rasterizer don't need views to be registered. Last-frame
   ///             states for views are recorded when layer trees are rasterized
-  ///             to the view and used during `Rasterizer::DrawLastLayerTree`.
+  ///             to the view and used during `Rasterizer::DrawLastLayerTrees`.
   ///
   /// @param[in]  view_id  The ID of the view.
   ///
   void CollectView(int64_t view_id);
 
   //----------------------------------------------------------------------------
-  /// @brief      Sometimes, it may be necessary to render the same frame again
-  ///             without having to wait for the framework to build a whole new
-  ///             layer tree describing the same contents. One such case is when
-  ///             external textures (video or camera streams for example) are
-  ///             updated in an otherwise static layer tree. To support this use
-  ///             case, the rasterizer holds onto the last rendered layer tree.
+  /// @brief      Returns the last successfully drawn layer tree for the given
+  ///             view, or nullptr if there isn't any. This is useful during
+  ///             `DrawLastLayerTrees` and computing frame damage.
   ///
   /// @bug        https://github.com/flutter/flutter/issues/33939
   ///
   /// @return     A pointer to the last layer or `nullptr` if this rasterizer
-  ///             has never rendered a frame.
+  ///             has never rendered a frame to the given view.
   ///
   flutter::LayerTree* GetLastLayerTree(int64_t view_id);
 
   //----------------------------------------------------------------------------
-  /// @brief      Draws a last layer tree to the render surface. This may seem
-  ///             entirely redundant at first glance. After all, on surface loss
-  ///             and re-acquisition, the framework generates a new layer tree.
-  ///             Otherwise, why render the same contents to the screen again?
-  ///             This is used as an optimization in cases where there are
-  ///             external textures (video or camera streams for example) in
-  ///             referenced in the layer tree. These textures may be updated at
-  ///             a cadence different from that of the Flutter application.
-  ///             Flutter can re-render the layer tree with just the updated
-  ///             textures instead of waiting for the framework to do the work
-  ///             to generate the layer tree describing the same contents.
+  /// @brief      Draws the last layer trees with their last configuration. This
+  ///             may seem entirely redundant at first glance. After all, on
+  ///             surface loss and re-acquisition, the framework generates a new
+  ///             layer tree. Otherwise, why render the same contents to the
+  ///             screen again? This is used as an optimization in cases where
+  ///             there are external textures (video or camera streams for
+  ///             example) in referenced in the layer tree. These textures may
+  ///             be updated at a cadence different from that of the Flutter
+  ///             application. Flutter can re-render the layer tree with just
+  ///             the updated textures instead of waiting for the framework to
+  ///             do the work to generate the layer tree describing the same
+  ///             contents.
   ///
-  void DrawLastLayerTree(
+  ///             Calling this method clears all last layer trees
+  ///             (GetLastLayerTree).
+  ///
+  void DrawLastLayerTrees(
       std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder);
 
   // |SnapshotDelegate|
@@ -590,16 +591,25 @@ class Rasterizer final : public SnapshotDelegate,
     kGpuUnavailable,
   };
 
-  // The result of `DoDraw`.
-  //
-  // Normally `DoDraw` simply returns a status. However, sometimes we need to
-  // attempt to rasterize the layer tree again. See RasterStatus::kResubmit and
-  // kSkipAndRetry for when it happens.  In such cases, `resubmitted_item` will
-  // not be null and its `tasks` will not be empty.
+  // The result of DoDraw.
   struct DoDrawResult {
+    // The overall status of the drawing process.
+    //
+    // The status of drawing a specific view is available at GetLastDrawStatus.
     DoDrawStatus status = DoDrawStatus::kDone;
 
+    // The frame item that needs to be submitted again.
+    //
+    // See RasterStatus::kResubmit and kSkipAndRetry for when it happens.
+    //
+    // If `resubmitted_item` is not null, its `tasks` is guaranteed to be
+    // non-empty.
     std::unique_ptr<FrameItem> resubmitted_item;
+  };
+
+  struct ViewRecord {
+    std::unique_ptr<LayerTreeTask> last_successful_task;
+    std::optional<DrawSurfaceStatus> last_draw_status;
   };
 
   // |SnapshotDelegate|
@@ -694,6 +704,8 @@ class Rasterizer final : public SnapshotDelegate,
       float device_pixel_ratio,
       std::optional<fml::TimePoint> presentation_time);
 
+  ViewRecord& EnsureViewRecord(int64_t view_id);
+
   void FireNextFrameCallbackIfPresent();
 
   static bool ShouldResubmitFrame(const DoDrawResult& result);
@@ -706,10 +718,7 @@ class Rasterizer final : public SnapshotDelegate,
   std::unique_ptr<Surface> surface_;
   std::unique_ptr<SnapshotSurfaceProducer> snapshot_surface_producer_;
   std::unique_ptr<flutter::CompositorContext> compositor_context_;
-  // TODO(dkwingsmt): Probably merge them.
-  std::unordered_map<int64_t, std::unique_ptr<LayerTreeTask>>
-      last_successful_tasks_;
-  std::unordered_map<int64_t, DrawSurfaceStatus> last_draw_statuses_;
+  std::unordered_map<int64_t, ViewRecord> view_records_;
   fml::closure next_frame_callback_;
   bool user_override_resource_cache_bytes_;
   std::optional<size_t> max_cache_bytes_;

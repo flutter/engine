@@ -121,7 +121,7 @@ void Rasterizer::Teardown() {
     surface_.reset();
   }
 
-  last_successful_tasks_.clear();
+  view_records_.clear();
 
   if (raster_thread_merger_.get() != nullptr &&
       raster_thread_merger_.get()->IsMerged()) {
@@ -137,9 +137,9 @@ bool Rasterizer::IsTornDown() {
 
 std::optional<DrawSurfaceStatus> Rasterizer::GetLastDrawStatus(
     int64_t view_id) {
-  auto found = last_draw_statuses_.find(view_id);
-  if (found != last_draw_statuses_.end()) {
-    return found->second;
+  auto found = view_records_.find(view_id);
+  if (found != view_records_.end()) {
+    return found->second.last_draw_status;
   } else {
     return std::optional<DrawSurfaceStatus>();
   }
@@ -177,8 +177,7 @@ void Rasterizer::NotifyLowMemoryWarning() const {
 }
 
 void Rasterizer::CollectView(int64_t view_id) {
-  last_successful_tasks_.erase(view_id);
-  last_draw_statuses_.erase(view_id);
+  view_records_.erase(view_id);
 }
 
 std::shared_ptr<flutter::TextureRegistry> Rasterizer::GetTextureRegistry() {
@@ -190,23 +189,31 @@ GrDirectContext* Rasterizer::GetGrContext() {
 }
 
 flutter::LayerTree* Rasterizer::GetLastLayerTree(int64_t view_id) {
-  auto found = last_successful_tasks_.find(view_id);
-  if (found == last_successful_tasks_.end()) {
+  auto found = view_records_.find(view_id);
+  if (found == view_records_.end()) {
     return nullptr;
   }
-  return found->second->layer_tree.get();
+  auto& last_task = found->second.last_successful_task;
+  if (last_task == nullptr) {
+    return nullptr;
+  }
+  return last_task->layer_tree.get();
 }
 
-void Rasterizer::DrawLastLayerTree(
+void Rasterizer::DrawLastLayerTrees(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
-  if (last_successful_tasks_.empty() || !surface_) {
+  if (!surface_) {
     return;
   }
   std::vector<std::unique_ptr<LayerTreeTask>> tasks;
-  for (auto& [view_id, task] : last_successful_tasks_) {
-    tasks.push_back(std::move(task));
+  for (auto& [view_id, view_record] : view_records_) {
+    if (view_record.last_successful_task) {
+      tasks.push_back(std::move(view_record.last_successful_task));
+    }
   }
-  last_successful_tasks_.clear();
+  if (tasks.empty()) {
+    return;
+  }
 
   DoDrawResult result =
       DrawToSurfaces(*frame_timings_recorder, std::move(tasks));
@@ -559,7 +566,7 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
   // TODO(dkwingsmt): The rasterizer only supports rendering a single view
   // and that view must be the implicit view. Properly support multi-view
   // in the future.
-  FML_CHECK(tasks.size() == 1u);
+  FML_CHECK(tasks.size() == 1u) << "Unexpected size of " << tasks.size();
   FML_DCHECK(tasks.front()->view_id == kFlutterImplicitViewId);
 
   compositor_context_->ui_time().SetLapTime(
@@ -570,7 +577,8 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
   while (task_iter != tasks.end()) {
     LayerTreeTask& task = **task_iter;
     if (delegate_.ShouldDiscardLayerTree(task.view_id, *task.layer_tree)) {
-      last_draw_statuses_[task.view_id] = DrawSurfaceStatus::kDiscarded;
+      EnsureViewRecord(task.view_id).last_draw_status =
+          DrawSurfaceStatus::kDiscarded;
       task_iter = tasks.erase(task_iter);
     } else {
       ++task_iter;
@@ -614,12 +622,13 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
 
     DrawSurfaceStatus status = DrawToSurfaceUnsafe(
         view_id, *layer_tree, device_pixel_ratio, presentation_time);
+    FML_DCHECK(status != DrawSurfaceStatus::kDiscarded);
 
-    last_draw_statuses_[view_id] = status;
+    auto& view_record = EnsureViewRecord(task->view_id);
+    view_record.last_draw_status = status;
     if (status == DrawSurfaceStatus::kSuccess) {
-      last_successful_tasks_.insert_or_assign(
-          view_id, std::make_unique<LayerTreeTask>(
-                       view_id, std::move(layer_tree), device_pixel_ratio));
+      view_record.last_successful_task = std::make_unique<LayerTreeTask>(
+          view_id, std::move(layer_tree), device_pixel_ratio);
     } else if (status == DrawSurfaceStatus::kRetry) {
       resubmitted_tasks.push_back(std::make_unique<LayerTreeTask>(
           view_id, std::move(layer_tree), device_pixel_ratio));
@@ -760,6 +769,10 @@ DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
   }
 
   return DrawSurfaceStatus::kFailed;
+}
+
+Rasterizer::ViewRecord& Rasterizer::EnsureViewRecord(int64_t view_id) {
+  return view_records_[view_id];
 }
 
 static sk_sp<SkData> ScreenshotLayerTreeAsPicture(

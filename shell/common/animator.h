@@ -41,7 +41,7 @@ class Animator final {
 
     virtual void OnAnimatorDraw(std::shared_ptr<FramePipeline> pipeline) = 0;
 
-    virtual void OnAnimatorDrawLastLayerTree(
+    virtual void OnAnimatorDrawLastLayerTrees(
         std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) = 0;
   };
 
@@ -51,7 +51,7 @@ class Animator final {
 
   ~Animator();
 
-  void RequestFrame(bool regenerate_layer_tree = true);
+  void RequestFrame(bool regenerate_layer_trees = true);
 
   void Render(std::unique_ptr<flutter::LayerTree> layer_tree,
               float device_pixel_ratio);
@@ -84,9 +84,9 @@ class Animator final {
  private:
   void BeginFrame(std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder);
 
-  bool CanReuseLastLayerTree();
+  bool CanReuseLastLayerTrees();
 
-  void DrawLastLayerTree(
+  void DrawLastLayerTrees(
       std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder);
 
   void AwaitVSync();
@@ -104,7 +104,7 @@ class Animator final {
   std::shared_ptr<FramePipeline> layer_tree_pipeline_;
   fml::Semaphore pending_frame_semaphore_;
   FramePipeline::ProducerContinuation producer_continuation_;
-  bool regenerate_layer_tree_ = false;
+  bool regenerate_layer_trees_ = false;
   bool frame_scheduled_ = false;
   std::deque<uint64_t> trace_flow_ids_;
   bool has_rendered_ = false;

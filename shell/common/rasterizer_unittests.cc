@@ -421,7 +421,7 @@ TEST(RasterizerTest,
       /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled())
       .WillRepeatedly(Return(true));
-  // Prepare two frames for Draw() and DrawLastLayerTree().
+  // Prepare two frames for Draw() and DrawLastLayerTrees().
   EXPECT_CALL(*surface, AcquireFrame(SkISize()))
       .WillOnce(Return(ByMove(std::move(surface_frame1))))
       .WillOnce(Return(ByMove(std::move(surface_frame2))));
@@ -458,9 +458,9 @@ TEST(RasterizerTest,
   ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
   rasterizer->Draw(pipeline);
 
-  // The DrawLastLayerTree() will respectively call BeginFrame(), SubmitFrame()
+  // The DrawLastLayerTrees() will respectively call BeginFrame(), SubmitFrame()
   // and EndFrame() one more time, totally 2 times.
-  rasterizer->DrawLastLayerTree(CreateFinishedBuildRecorder());
+  rasterizer->DrawLastLayerTrees(CreateFinishedBuildRecorder());
 }
 
 TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNoSurfaceIsSet) {
