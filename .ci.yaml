@@ -91,7 +91,7 @@ targets:
       config_name: linux_android_emulator
       dependencies: >-
         [
-          {"dependency": "android_virtual_device", "version": "version:34"}
+          {"dependency": "android_virtual_device", "version": "34"}
         ]
     timeout: 60
 
