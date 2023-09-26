@@ -6,7 +6,6 @@
 #import "GoldenTestManager.h"
 
 @interface AppExtensionTests : XCTestCase
-@property(nonatomic, strong) XCUIApplication* application;
 @property(nonatomic, strong) XCUIApplication* hostApplication;
 @end
 
@@ -15,7 +14,6 @@
 - (void)setUp {
   [super setUp];
   self.continueAfterFailure = NO;
-  self.application = [[XCUIApplication alloc] init];
   self.hostApplication =
       [[XCUIApplication alloc] initWithBundleIdentifier:@"dev.flutter.FlutterAppExtensionTestHost"];
 }
