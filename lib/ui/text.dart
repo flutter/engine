@@ -1234,41 +1234,40 @@ final class FontInfo {
   }
 }
 
-/// The measurements of a glyph sequence that consists of one or more visually
-/// connected characters in a piece of text.
+/// The measurements of a glyph (or a sequence of visually connected glyphs)
+/// within a paragraph.
 ///
-/// A glyph cluster is a sequence of glyphs rendered together. This includes
-/// a glyph sequence that form a ligature, or base glyphs followed by diacritical
-/// marks (À).
+/// This object is typically associated with a codepoint (or a code unit) in the
+/// paragraph.
 ///
-/// ### Limitations
+/// See also:
 ///
-/// A [GlyphInfo] currently doesn't provide extra information when it is a
-/// ligature, which usually
+///  * [Paragraph.getGlyphInfoAt], which finds the [GlyphInfo] associated with
+///    a code unit.
+///  * [Paragraph.getClosestGlyphInfoForOffset], which finds the [GlyphInfo] of
+///    the glyph(s) onscreen that's closest to the given [Offset].
 final class GlyphInfo {
-  GlyphInfo._(double left, double top, double right, double bottom, int graphemeStart, int graphemeEnd, bool isLTR, this.isEllipsis)
+  GlyphInfo._(double left, double top, double right, double bottom, int graphemeStart, int graphemeEnd, bool isLTR)
     : graphemeClusterLayoutBounds = Rect.fromLTRB(left, top, right, bottom),
       graphemeClusterCodeUnitRange = TextRange(start: graphemeStart, end: graphemeEnd),
       writingDirection = isLTR ? TextDirection.ltr : TextDirection.rtl;
 
-  /// The layout rect of the [GlyphInfo], in the paragraph's coordiates.
+  /// The layout rect of the grapheme cluster the associated codepoint is part
+  /// of, in the paragraph's coordiates.
   ///
-  /// This is not a tight bounding box that encloses the glyph cluster. Rather,
-  /// the vertical extent reported is derived from the font metrics (instead of
-  /// glyph metrics), and the horizontal extent is x-advance.
-  ///
-  /// The width represents the
-  /// x_advance and height is from the font metrics.
+  /// This is **not** a tight bounding box that encloses the glyph cluster.
+  /// Rather, the vertical extent reported is derived from the font metrics
+  /// (instead of glyph metrics), and the horizontal extent is the accumulated
+  /// (since it may consist of multiple glyphs) horizontal advance of the
+  /// grapheme clsuter.
   final Rect graphemeClusterLayoutBounds;
 
-  /// The range of the UTF-16 code units that the characters in this
-  /// [GlyphInfo] comprises.
+  /// The UTF-16 range of the grapheme cluster that encloses the associated
+  /// codepoint.
   final TextRange graphemeClusterCodeUnitRange;
 
-  /// The [TextDirection] of the [GlyphInfo].
+  /// The writing direction within the [GlyphInfo].
   final TextDirection writingDirection;
-
-  final bool isEllipsis;
 
   @override
   bool operator ==(Object other) {
@@ -3071,6 +3070,15 @@ abstract class Paragraph {
   /// Returns the [GlyphInfo] of the closest glyph to the given `offset` in the
   /// paragraph coordinate system, or null if the glyph is not in the visible
   /// range.
+  ///
+  /// This method can be used to implement glyph hit-testing. The "closest" in
+  /// the method name doesn't mean the returned [GlyphInfo] will be closest in
+  /// terms of euclidean distance: this method first finds the line closest to
+  /// `offset.dy`, and then returns the [GlyphInfo] of the closest glyph(s)
+  /// within that line.
+  ///
+  /// The returned [GlyphInfo] can help determine whether the given `offset`
+  /// directly hits a glyph in the paragraph.
   GlyphInfo? getClosestGlyphInfoForOffset(Offset offset);
 
   /// Returns the [GlyphInfo] located at the given UTF-16 `codeUnitOffset` in
