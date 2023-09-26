@@ -162,6 +162,7 @@ void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree,
       frame_timings_recorder_->GetVsyncTargetTime());
 
   // TODO(dkwingsmt): Currently only supports a single window.
+  // See https://github.com/flutter/flutter/issues/135530, item 2.
   int64_t view_id = kFlutterImplicitViewId;
   std::vector<std::unique_ptr<LayerTreeTask>> layer_trees_tasks;
   layer_trees_tasks.push_back(std::make_unique<LayerTreeTask>(

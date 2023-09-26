@@ -566,6 +566,7 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
   // TODO(dkwingsmt): The rasterizer only supports rendering a single view
   // and that view must be the implicit view. Properly support multi-view
   // in the future.
+  // See https://github.com/flutter/flutter/issues/135530, item 2 & 4.
   FML_CHECK(tasks.size() == 1u) << "Unexpected size of " << tasks.size();
   FML_DCHECK(tasks.front()->view_id == kFlutterImplicitViewId);
 
@@ -595,6 +596,7 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
     external_view_embedder_->SetUsedThisFrame(true);
     external_view_embedder_->BeginFrame(
         // TODO(dkwingsmt): Add all views here.
+        // See https://github.com/flutter/flutter/issues/135530, item 4.
         tasks.front()->layer_tree->frame_size(), surface_->GetContext(),
         tasks.front()->device_pixel_ratio, raster_thread_merger_);
   }
@@ -634,7 +636,8 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
           view_id, std::move(layer_tree), device_pixel_ratio));
     }
   }
-  // TODO(dkwingsmt): Pass in all raster caches
+  // TODO(dkwingsmt): Pass in raster cache(s) for all views.
+  // See https://github.com/flutter/flutter/issues/135530, item 4.
   frame_timings_recorder.RecordRasterEnd(&compositor_context_->raster_cache());
   FireNextFrameCallbackIfPresent();
 
@@ -864,6 +867,8 @@ Rasterizer::Screenshot Rasterizer::ScreenshotLastLayerTree(
     bool base64_encode) {
   // TODO(dkwingsmt): Support screenshotting all last layer trees
   // when the shell protocol supports multi-views.
+  // https://github.com/flutter/flutter/issues/135534
+  // https://github.com/flutter/flutter/issues/135535
   auto* layer_tree = GetLastLayerTree(kFlutterImplicitViewId);
   if (layer_tree == nullptr) {
     FML_LOG(ERROR) << "Last layer tree was null when screenshotting.";
