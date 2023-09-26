@@ -163,9 +163,9 @@ void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree,
 
   // TODO(dkwingsmt): Currently only supports a single window.
   int64_t view_id = kFlutterImplicitViewId;
-  std::list<LayerTreeTask> layer_trees_tasks;
-  layer_trees_tasks.emplace_back(view_id, std::move(layer_tree),
-                                 device_pixel_ratio);
+  std::vector<std::unique_ptr<LayerTreeTask>> layer_trees_tasks;
+  layer_trees_tasks.push_back(std::make_unique<LayerTreeTask>(
+      view_id, std::move(layer_tree), device_pixel_ratio));
   // Commit the pending continuation.
   PipelineProduceResult result =
       producer_continuation_.Complete(std::make_unique<FrameItem>(

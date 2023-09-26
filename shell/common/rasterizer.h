@@ -58,9 +58,9 @@ enum class DrawStatus {
   // Nothing was done, because the call was not on the raster thread. Yielded to
   // let this frame be serviced on the right thread.
   kYielded,
-  // Nothing was done, because pipeline was empty.
+  // Nothing was done, because the pipeline was empty.
   kPipelineEmpty,
-  // Nothing was done, because GPU was unavailable.
+  // Nothing was done, because the GPU was unavailable.
   kGpuUnavailable,
 };
 
@@ -87,11 +87,11 @@ enum class DrawSurfaceStatus {
 
 // The information to draw to all views of a frame.
 struct FrameItem {
-  FrameItem(std::list<LayerTreeTask> tasks,
+  FrameItem(std::vector<std::unique_ptr<LayerTreeTask>> tasks,
             std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder)
       : layer_tree_tasks(std::move(tasks)),
         frame_timings_recorder(std::move(frame_timings_recorder)) {}
-  std::list<LayerTreeTask> layer_tree_tasks;
+  std::vector<std::unique_ptr<LayerTreeTask>> layer_tree_tasks;
   std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder;
 };
 
@@ -229,7 +229,7 @@ class Rasterizer final : public SnapshotDelegate,
   ///             collects associated resources. No more rendering may occur
   ///             till the next call to `Rasterizer::Setup` with a new render
   ///             surface. Calling a teardown without a setup is user error.
-  ///             Calling this method for multiple times is safe.
+  ///             Calling this method multiple times is safe.
   ///
   void Teardown();
 
@@ -564,14 +564,14 @@ class Rasterizer final : public SnapshotDelegate,
   //----------------------------------------------------------------------------
   /// @brief      Returns whether TearDown has been called.
   ///
-  ///             This method is only used only in unit tests.
+  ///             This method is used only in unit tests.
   ///
   bool IsTornDown();
 
   //----------------------------------------------------------------------------
   /// @brief      Returns the last status of drawing the specific view.
   ///
-  ///             This method is only used only in unit tests.
+  ///             This method is used only in unit tests.
   ///
   std::optional<DrawSurfaceStatus> GetLastDrawStatus(int64_t view_id);
 
@@ -662,11 +662,12 @@ class Rasterizer final : public SnapshotDelegate,
   // the middle and not get the recorded time.
   DoDrawResult DoDraw(
       std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
-      std::list<LayerTreeTask> tasks);
+      std::vector<std::unique_ptr<LayerTreeTask>> tasks);
 
   // This method pushes the frame timing recorder from build end to raster end.
-  DoDrawResult DrawToSurfaces(FrameTimingsRecorder& frame_timings_recorder,
-                              std::list<LayerTreeTask> tasks);
+  DoDrawResult DrawToSurfaces(
+      FrameTimingsRecorder& frame_timings_recorder,
+      std::vector<std::unique_ptr<LayerTreeTask>> tasks);
 
   // Draws the specified layer trees to views, assuming we have access to the
   // GPU.
@@ -680,7 +681,7 @@ class Rasterizer final : public SnapshotDelegate,
   // This method pushes the frame timing recorder from build end to raster end.
   std::unique_ptr<FrameItem> DrawToSurfacesUnsafe(
       FrameTimingsRecorder& frame_timings_recorder,
-      std::list<LayerTreeTask> tasks);
+      std::vector<std::unique_ptr<LayerTreeTask>> tasks);
 
   // Draws the layer tree to the specified view, assuming we have access to the
   // GPU.
@@ -706,7 +707,8 @@ class Rasterizer final : public SnapshotDelegate,
   std::unique_ptr<SnapshotSurfaceProducer> snapshot_surface_producer_;
   std::unique_ptr<flutter::CompositorContext> compositor_context_;
   // TODO(dkwingsmt): Probably merge them.
-  std::unordered_map<int64_t, LayerTreeTask> last_successful_tasks_;
+  std::unordered_map<int64_t, std::unique_ptr<LayerTreeTask>>
+      last_successful_tasks_;
   std::unordered_map<int64_t, DrawSurfaceStatus> last_draw_statuses_;
   fml::closure next_frame_callback_;
   bool user_override_resource_cache_bytes_;

@@ -34,12 +34,13 @@ namespace {
 constexpr float kDevicePixelRatio = 2.0f;
 constexpr int64_t kImplicitViewId = 0;
 
-std::list<LayerTreeTask> SingleLayerTreeList(
+std::vector<std::unique_ptr<LayerTreeTask>> SingleLayerTreeList(
     int64_t view_id,
     std::unique_ptr<LayerTree> layer_tree,
     float pixel_ratio) {
-  std::list<LayerTreeTask> tasks;
-  tasks.emplace_back(view_id, std::move(layer_tree), pixel_ratio);
+  std::vector<std::unique_ptr<LayerTreeTask>> tasks;
+  tasks.push_back(std::make_unique<LayerTreeTask>(
+      view_id, std::move(layer_tree), pixel_ratio));
   return tasks;
 }
 
