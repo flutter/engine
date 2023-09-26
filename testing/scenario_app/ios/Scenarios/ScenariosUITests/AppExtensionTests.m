@@ -27,9 +27,9 @@
   }
   [button tap];
   BOOL launchedExtensionInFlutter = NO;
-  // Custom share extenton button (like the one we made in this test) does not have a unique
+  // Custom share extension button (like the one in this test) does not have a unique
   // identity. They are all identified as `XCElementSnapshotPrivilegedValuePlaceholder`.
-  // We loop through all the `XCElementSnapshotPrivilegedValuePlaceholder` and find the Flutter one.
+  // Loop through all the `XCElementSnapshotPrivilegedValuePlaceholder` and find the Flutter one.
   for (int i = 0; i < self.hostApplication.collectionViews.cells.count; i++) {
     XCUIElement* shareSheetCell =
         [self.hostApplication.collectionViews.cells elementBoundByIndex:i];
