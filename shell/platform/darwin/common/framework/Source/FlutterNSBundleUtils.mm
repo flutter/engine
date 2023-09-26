@@ -8,7 +8,7 @@
 
 FLUTTER_ASSERT_ARC
 
-static GetFlutterAssetPathFromBundle(NSBundle* bundle) {
+static NSString* GetFlutterAssetPathFromBundle(NSBundle* bundle) {
   NSString* flutterAssetsPath = FLTAssetPath(bundle);
   // Use the raw path solution so that asset path can be returned from unloaded bundles.
   // See https://github.com/flutter/engine/pull/46073
