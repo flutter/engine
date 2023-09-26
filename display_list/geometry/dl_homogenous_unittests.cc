@@ -10,74 +10,74 @@ namespace testing {
 
 TEST(DlHomogenousTest, EmptyConstructor) {
   DlFHomogenous3D hpt;
-  EXPECT_EQ(hpt.x(), 0.0f);
-  EXPECT_EQ(hpt.y(), 0.0f);
-  EXPECT_EQ(hpt.z(), 0.0f);
-  EXPECT_EQ(hpt.w(), 1.0f);
+  ASSERT_EQ(hpt.x(), 0.0f);
+  ASSERT_EQ(hpt.y(), 0.0f);
+  ASSERT_EQ(hpt.z(), 0.0f);
+  ASSERT_EQ(hpt.w(), 1.0f);
   ASSERT_TRUE(hpt.IsFinite());
   ASSERT_TRUE(hpt.IsUnclipped());
-  EXPECT_EQ(hpt.Normalize(), DlFHomogenous3D());
-  EXPECT_EQ(hpt.NormalizeToPoint(), DlFPoint());
+  ASSERT_EQ(hpt.Normalize(), DlFHomogenous3D());
+  ASSERT_EQ(hpt.NormalizeToPoint(), DlFPoint());
 }
 
 TEST(DlHomogenousTest, DefaultConstructor) {
   DlFHomogenous3D hpt = DlFHomogenous3D();
-  EXPECT_EQ(hpt.x(), 0.0f);
-  EXPECT_EQ(hpt.y(), 0.0f);
-  EXPECT_EQ(hpt.z(), 0.0f);
-  EXPECT_EQ(hpt.w(), 1.0f);
+  ASSERT_EQ(hpt.x(), 0.0f);
+  ASSERT_EQ(hpt.y(), 0.0f);
+  ASSERT_EQ(hpt.z(), 0.0f);
+  ASSERT_EQ(hpt.w(), 1.0f);
   ASSERT_TRUE(hpt.IsFinite());
   ASSERT_TRUE(hpt.IsUnclipped());
-  EXPECT_EQ(hpt.Normalize(), DlFHomogenous3D());
-  EXPECT_EQ(hpt.NormalizeToPoint(), DlFPoint());
+  ASSERT_EQ(hpt.Normalize(), DlFHomogenous3D());
+  ASSERT_EQ(hpt.NormalizeToPoint(), DlFPoint());
 }
 
 TEST(DlHomogenousTest, XYConstructor) {
   DlFHomogenous3D hpt = DlFHomogenous3D(2.0f, 3.0f);
-  EXPECT_EQ(hpt.x(), 2.0f);
-  EXPECT_EQ(hpt.y(), 3.0f);
-  EXPECT_EQ(hpt.z(), 0.0f);
-  EXPECT_EQ(hpt.w(), 1.0f);
+  ASSERT_EQ(hpt.x(), 2.0f);
+  ASSERT_EQ(hpt.y(), 3.0f);
+  ASSERT_EQ(hpt.z(), 0.0f);
+  ASSERT_EQ(hpt.w(), 1.0f);
   ASSERT_TRUE(hpt.IsFinite());
   ASSERT_TRUE(hpt.IsUnclipped());
-  EXPECT_EQ(hpt.Normalize(), DlFHomogenous3D(2.0f, 3.0f, 0.0f, 1.0f));
-  EXPECT_EQ(hpt.NormalizeToPoint(), DlFPoint(2.0f, 3.0f));
+  ASSERT_EQ(hpt.Normalize(), DlFHomogenous3D(2.0f, 3.0f, 0.0f, 1.0f));
+  ASSERT_EQ(hpt.NormalizeToPoint(), DlFPoint(2.0f, 3.0f));
 }
 
 TEST(DlHomogenousTest, PointConstructor) {
   DlFHomogenous3D hpt = DlFHomogenous3D(DlFPoint(2.0f, 3.0f));
-  EXPECT_EQ(hpt.x(), 2.0f);
-  EXPECT_EQ(hpt.y(), 3.0f);
-  EXPECT_EQ(hpt.z(), 0.0f);
-  EXPECT_EQ(hpt.w(), 1.0f);
+  ASSERT_EQ(hpt.x(), 2.0f);
+  ASSERT_EQ(hpt.y(), 3.0f);
+  ASSERT_EQ(hpt.z(), 0.0f);
+  ASSERT_EQ(hpt.w(), 1.0f);
   ASSERT_TRUE(hpt.IsFinite());
   ASSERT_TRUE(hpt.IsUnclipped());
-  EXPECT_EQ(hpt.Normalize(), DlFHomogenous3D(2.0f, 3.0f, 0.0f, 1.0f));
-  EXPECT_EQ(hpt.NormalizeToPoint(), DlFPoint(2.0f, 3.0f));
+  ASSERT_EQ(hpt.Normalize(), DlFHomogenous3D(2.0f, 3.0f, 0.0f, 1.0f));
+  ASSERT_EQ(hpt.NormalizeToPoint(), DlFPoint(2.0f, 3.0f));
 }
 
 TEST(DlHomogenousTest, XYZConstructor) {
   DlFHomogenous3D hpt = DlFHomogenous3D(2.0f, 3.0f, 4.0f);
-  EXPECT_EQ(hpt.x(), 2.0f);
-  EXPECT_EQ(hpt.y(), 3.0f);
-  EXPECT_EQ(hpt.z(), 4.0f);
-  EXPECT_EQ(hpt.w(), 1.0f);
+  ASSERT_EQ(hpt.x(), 2.0f);
+  ASSERT_EQ(hpt.y(), 3.0f);
+  ASSERT_EQ(hpt.z(), 4.0f);
+  ASSERT_EQ(hpt.w(), 1.0f);
   ASSERT_TRUE(hpt.IsFinite());
   ASSERT_TRUE(hpt.IsUnclipped());
-  EXPECT_EQ(hpt.Normalize(), DlFHomogenous3D(2.0f, 3.0f, 4.0f, 1.0f));
-  EXPECT_EQ(hpt.NormalizeToPoint(), DlFPoint(2.0f, 3.0f));
+  ASSERT_EQ(hpt.Normalize(), DlFHomogenous3D(2.0f, 3.0f, 4.0f, 1.0f));
+  ASSERT_EQ(hpt.NormalizeToPoint(), DlFPoint(2.0f, 3.0f));
 }
 
 TEST(DlHomogenousTest, XYZWConstructor) {
   DlFHomogenous3D hpt = DlFHomogenous3D(2.0f, 4.0f, 6.0f, 8.0f);
-  EXPECT_EQ(hpt.x(), 2.0f);
-  EXPECT_EQ(hpt.y(), 4.0f);
-  EXPECT_EQ(hpt.z(), 6.0f);
-  EXPECT_EQ(hpt.w(), 8.0f);
+  ASSERT_EQ(hpt.x(), 2.0f);
+  ASSERT_EQ(hpt.y(), 4.0f);
+  ASSERT_EQ(hpt.z(), 6.0f);
+  ASSERT_EQ(hpt.w(), 8.0f);
   ASSERT_TRUE(hpt.IsFinite());
   ASSERT_TRUE(hpt.IsUnclipped());
-  EXPECT_EQ(hpt.Normalize(), DlFHomogenous3D(0.25f, 0.5f, 0.75f, 1.0f));
-  EXPECT_EQ(hpt.NormalizeToPoint(), DlFPoint(0.25f, 0.5f));
+  ASSERT_EQ(hpt.Normalize(), DlFHomogenous3D(0.25f, 0.5f, 0.75f, 1.0f));
+  ASSERT_EQ(hpt.NormalizeToPoint(), DlFPoint(0.25f, 0.5f));
 }
 
 TEST(DlHomogenousTest, NaNInfinityCoordinates) {
@@ -108,6 +108,7 @@ TEST(DlHomogenousTest, NaNInfinityCoordinates) {
       ASSERT_EQ(hpt, hpt_nonf) << label;
     } else {
       ASSERT_FALSE(hpt_nonf.IsFinite()) << label;
+      ASSERT_NE(hpt, hpt_nonf) << label;
     }
 
     DlFHomogenous3D hpt_nonf_norm = hpt_nonf.Normalize();
@@ -127,7 +128,7 @@ TEST(DlHomogenousTest, NaNInfinityCoordinates) {
     }
   };
 
-  for (int mask = 0; mask < 16; mask++) {
+  for (int mask = 0; mask <= 0xf; mask++) {
     test_non_finite(hpt, mask, nan);
     test_non_finite(hpt, mask, pos_inf);
     test_non_finite(hpt, mask, neg_inf);

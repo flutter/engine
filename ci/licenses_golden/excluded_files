@@ -42,6 +42,7 @@
 ../../../flutter/display_list/effects/dl_path_effect_unittests.cc
 ../../../flutter/display_list/geometry/dl_angle_unittests.cc
 ../../../flutter/display_list/geometry/dl_homogenous_unittests.cc
+../../../flutter/display_list/geometry/dl_point_unittests.cc
 ../../../flutter/display_list/geometry/dl_rect_unittests.cc
 ../../../flutter/display_list/geometry/dl_region_unittests.cc
 ../../../flutter/display_list/geometry/dl_round_rect_unittests.cc

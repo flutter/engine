@@ -13,6 +13,11 @@
 
 namespace flutter {
 
+#define DL_ONLY_ON_FLOAT(Type) DL_ONLY_ON_FLOAT_M(, Type)
+#define DL_ONLY_ON_FLOAT_M(Modifiers, Type) \
+  template <typename U = T>                 \
+  Modifiers std::enable_if_t<std::is_floating_point_v<U>, Type>
+
 template <typename T>
 struct DlTPoint {
  private:
@@ -29,7 +34,7 @@ struct DlTPoint {
   constexpr DlTPoint(T x, T y) : x_(x), y_(y) {}
 
   template <typename U>
-  explicit constexpr DlTPoint(const U& p) {
+  constexpr explicit DlTPoint(const U& p) {
     DlTpoint(p.x(), p.y());
   }
 
@@ -59,7 +64,8 @@ struct DlTPoint {
   bool operator==(const DlTPoint& p) const { return x_ == p.x_ && y_ == p.y_; }
   bool operator!=(const DlTPoint& p) const { return !(*this == p); }
 
-  bool IsFinite() const { return DlScalars_AreFinite(x_, y_); }
+  DL_ONLY_ON_FLOAT(bool)
+  IsFinite() const { return DlScalars_AreFinite(x_, y_); }
 };
 
 using DlFPoint = DlTPoint<DlScalar>;
@@ -216,6 +222,9 @@ struct DlFVector4 : public DlFVector3 {
     return DlFVector3::IsFinite() && DlScalar_IsFinite(w_);
   }
 };
+
+#undef DL_ONLY_ON_FLOAT
+#undef DL_ONLY_ON_FLOAT_M
 
 }  // namespace flutter
 
