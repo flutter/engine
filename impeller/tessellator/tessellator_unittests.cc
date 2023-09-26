@@ -92,7 +92,7 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
   {
     Tessellator t;
     PathBuilder builder = {};
-    for (auto i = 0; i < 60; i++) {
+    for (auto i = 0u; i < Tessellator::kMultiContourThreshold + 1; i++) {
       builder.AddCircle(Point(i, i), 4);
     }
     auto polyline = builder.TakePath().CreatePolyline(1.0f);

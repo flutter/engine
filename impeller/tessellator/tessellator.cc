@@ -58,10 +58,6 @@ static int ToTessWindingRule(FillType fill_type) {
   return TESS_WINDING_ODD;
 }
 
-/// @brief An arbitrary value to determine when a multi-contour non-zero fill
-/// path should be split into multiple tessellations.
-static constexpr size_t kMultiContourThreshold = 30u;
-
 Tessellator::Result Tessellator::Tessellate(
     FillType fill_type,
     const Path::Polyline& polyline,
