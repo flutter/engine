@@ -58,6 +58,10 @@ static int ToTessWindingRule(FillType fill_type) {
   return TESS_WINDING_ODD;
 }
 
+/// @brief An arbitrary value to determine when a multi-contour non-zero fill
+/// path should be split into multiple tessellations.
+static constexpr size_t kMultiContourThreshold = 30u;
+
 Tessellator::Result Tessellator::Tessellate(
     FillType fill_type,
     const Path::Polyline& polyline,
@@ -78,7 +82,11 @@ Tessellator::Result Tessellator::Tessellate(
   constexpr int kVertexSize = 2;
   constexpr int kPolygonSize = 3;
 
-  if (polyline.contours.size() > 30 && fill_type == FillType::kNonZero) {
+  // If we have a larger polyline and the fill type is non-zero, we can split
+  // the tessellation up per contour. Since in general the complexity is at
+  // least nlog(n), this speeds up the processes substantially.
+  if (polyline.contours.size() > kMultiContourThreshold &&
+      fill_type == FillType::kNonZero) {
     std::vector<Point> points;
     std::vector<float> data;
 
@@ -168,6 +176,12 @@ Tessellator::Result Tessellator::Tessellate(
     }
 
     int elementItemCount = tessGetElementCount(tessellator) * kPolygonSize;
+
+    // We default to using a 16bit index buffer, but in cases where we generate
+    // more tessellated data than this can contain we need to fall back to
+    // dropping the index buffer entirely. Instead code could instead switch to
+    // a uint32 index buffer, but this is done for simplicity with the other
+    // fast path above.
     if (elementItemCount < 65535) {
       int vertexItemCount = tessGetVertexCount(tessellator) * kVertexSize;
       auto vertices = tessGetVertices(tessellator);
@@ -185,7 +199,7 @@ Tessellator::Result Tessellator::Tessellate(
       }
     } else {
       std::vector<Point> points;
-      std::vector<uint16_t> indices;
+      std::vector<float> data;
 
       int vertexItemCount = tessGetVertexCount(tessellator) * kVertexSize;
       auto vertices = tessGetVertices(tessellator);
@@ -196,11 +210,10 @@ Tessellator::Result Tessellator::Tessellate(
       int elementItemCount = tessGetElementCount(tessellator) * kPolygonSize;
       auto elements = tessGetElements(tessellator);
       for (int i = 0; i < elementItemCount; i++) {
-        indices.emplace_back(elements[i]);
+        data.emplace_back(points[elements[i]].x);
+        data.emplace_back(points[elements[i]].y);
       }
-
-      if (!callback(reinterpret_cast<float*>(points.data()), points.size(),
-                    nullptr, elementItemCount)) {
+      if (!callback(data.data(), data.size(), nullptr, elementItemCount)) {
         return Result::kInputError;
       }
     }

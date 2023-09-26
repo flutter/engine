@@ -4,6 +4,7 @@
 
 #include "flutter/testing/testing.h"
 #include "gtest/gtest.h"
+#include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/tessellator/tessellator.h"
 
@@ -81,6 +82,51 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
 
     ASSERT_EQ(polyline.points.size(), 2u);
     ASSERT_EQ(result, Tessellator::Result::kInputError);
+  }
+
+  // More than 30 contours, non-zero fill mode.
+  {
+    Tessellator t;
+    PathBuilder builder = {};
+    for (auto i = 0; i < 60; i++) {
+      builder.AddCircle(Point(i, i), 4);
+    }
+    auto polyline = builder.TakePath().CreatePolyline(1.0f);
+    bool no_indices = false;
+    Tessellator::Result result = t.Tessellate(
+        FillType::kNonZero, polyline,
+        [&no_indices](const float* vertices, size_t vertices_size,
+                      const uint16_t* indices, size_t indices_size) {
+          no_indices = indices == nullptr;
+          return true;
+        });
+
+    ASSERT_TRUE(no_indices);
+    ASSERT_EQ(result, Tessellator::Result::kSuccess);
+  }
+
+  // More than uint16 points, odd fill mode.
+  {
+    Tessellator t;
+    PathBuilder builder = {};
+    for (auto i = 0; i < 1000; i++) {
+      builder.AddCircle(Point(i, i), 4);
+    }
+    auto polyline = builder.TakePath(FillType::kOdd).CreatePolyline(1.0f);
+    bool no_indices = false;
+    size_t indices_count = 0u;
+    Tessellator::Result result = t.Tessellate(
+        FillType::kOdd, polyline,
+        [&no_indices, &indices_count](const float* vertices, size_t vertices_size,
+                      const uint16_t* indices, size_t indices_size) {
+          no_indices = indices == nullptr;
+          indices_count = indices_size;
+          return true;
+        });
+
+    ASSERT_TRUE(no_indices);
+    ASSERT_TRUE(indices_count >= 65535);
+    ASSERT_EQ(result, Tessellator::Result::kSuccess);
   }
 }
 
