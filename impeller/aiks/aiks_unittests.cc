@@ -3584,7 +3584,7 @@ TEST_P(AiksTest, VerticesGeometryUVPositionData) {
 TEST_P(AiksTest, ClearBlendWithBlur) {
   Canvas canvas;
   Paint white;
-  white.color = Color::White();
+  white.color = Color::Blue();
   canvas.DrawRect(Rect::MakeXYWH(0, 0, 600.0, 600.0), white);
 
   Paint clear;
@@ -3602,7 +3602,7 @@ TEST_P(AiksTest, ClearBlendWithBlur) {
 TEST_P(AiksTest, ClearBlend) {
   Canvas canvas;
   Paint white;
-  white.color = Color::White();
+  white.color = Color::Blue();
   canvas.DrawRect(Rect::MakeXYWH(0, 0, 600.0, 600.0), white);
 
   Paint clear;
