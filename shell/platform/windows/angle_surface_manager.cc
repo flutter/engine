@@ -305,6 +305,10 @@ void AngleSurfaceManager::DestroySurface() {
   render_surface_ = EGL_NO_SURFACE;
 }
 
+bool AngleSurfaceManager::HasContextCurrent() {
+  return eglGetCurrentContext() != EGL_NO_CONTEXT;
+}
+
 bool AngleSurfaceManager::MakeCurrent() {
   return (eglMakeCurrent(egl_display_, render_surface_, render_surface_,
                          egl_context_) == EGL_TRUE);

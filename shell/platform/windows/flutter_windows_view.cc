@@ -598,7 +598,7 @@ void FlutterWindowsView::CreateRenderSurface() {
     // Creating the render surface runs on the platform thread and
     // makes the EGL context current. Thus, the EGL context must be
     // released so that the raster thread can use it for rendering.
-    engine_->surface_manager()->ClearContext();
+    engine_->surface_manager()->ClearCurrent();
 
     resize_target_width_ = bounds.width;
     resize_target_height_ = bounds.height;
