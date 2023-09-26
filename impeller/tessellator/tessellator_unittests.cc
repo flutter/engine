@@ -115,14 +115,15 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
     auto polyline = builder.TakePath(FillType::kOdd).CreatePolyline(1.0f);
     bool no_indices = false;
     size_t indices_count = 0u;
-    Tessellator::Result result = t.Tessellate(
-        FillType::kOdd, polyline,
-        [&no_indices, &indices_count](const float* vertices, size_t vertices_size,
-                      const uint16_t* indices, size_t indices_size) {
-          no_indices = indices == nullptr;
-          indices_count = indices_size;
-          return true;
-        });
+    Tessellator::Result result =
+        t.Tessellate(FillType::kOdd, polyline,
+                     [&no_indices, &indices_count](
+                         const float* vertices, size_t vertices_size,
+                         const uint16_t* indices, size_t indices_size) {
+                       no_indices = indices == nullptr;
+                       indices_count = indices_size;
+                       return true;
+                     });
 
     ASSERT_TRUE(no_indices);
     ASSERT_TRUE(indices_count >= 65535);
