@@ -32,7 +32,7 @@ class DisplayListGLComplexityCalculator
  private:
   class GLHelper : public ComplexityCalculatorHelper {
    public:
-    GLHelper(unsigned int ceiling)
+    explicit GLHelper(unsigned int ceiling)
         : ComplexityCalculatorHelper(ceiling),
           save_layer_count_(0),
           draw_text_blob_count_(0) {}
@@ -70,6 +70,9 @@ class DisplayListGLComplexityCalculator
     void drawTextBlob(const sk_sp<SkTextBlob> blob,
                       SkScalar x,
                       SkScalar y) override;
+    void drawTextFrame(const std::shared_ptr<impeller::TextFrame>& text_frame,
+                       SkScalar x,
+                       SkScalar y) override;
     void drawShadow(const SkPath& path,
                     const DlColor color,
                     const SkScalar elevation,
