@@ -648,7 +648,7 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
     final ui.TextRange fullRange = ui.TextRange(start: _graphemeStarts[startIndex], end: _graphemeStarts[endIndex]);
     final ui.TextBox fullBox = toTextBox(start: fullRange.start, end: fullRange.end);
     if (startIndex + 1 == endIndex) {
-      return ui.GlyphInfo(fullBox.toRect(), fullRange, fullBox.direction, false);
+      return ui.GlyphInfo(fullBox.toRect(), fullRange, fullBox.direction);
     }
     assert(startIndex + 1 < endIndex);
     final ui.TextBox(:double left, :double right) = fullBox;
@@ -686,7 +686,7 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
       ),
     };
     final ui.TextBox box = toTextBox(start: range.start, end: range.end);
-    return ui.GlyphInfo(box.toRect(), range, box.direction, false);
+    return ui.GlyphInfo(box.toRect(), range, box.direction);
   }
 
   ui.TextRange? getCharacterRangeAt(int codeUnitOffset) {
@@ -718,7 +718,7 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
     }
     if (end - start == 1 || _graphemeStarts.length <= 2) {
       final ui.TextBox box = toTextBox(start: start, end: end);
-      return ui.GlyphInfo(box.toRect(), ui.TextRange(start: start, end: end), box.direction, false);
+      return ui.GlyphInfo(box.toRect(), ui.TextRange(start: start, end: end), box.direction);
     }
     return _getClosestCharacterInRange(x, 0, _graphemeStarts.length - 1);
   }

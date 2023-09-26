@@ -219,25 +219,6 @@ void main() {
     expect(line.end, 10);
   });
 
-  test('querying glyph clusters', () {
-    const double fontSize = 10.0;
-    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
-      fontSize: fontSize,
-    ));
-    builder.addText('Test\nTest');
-    final Paragraph paragraph = builder.build();
-    paragraph.layout(const ParagraphConstraints(width: double.infinity));
-
-    final GlyphInfo? bottomRight = paragraph.getClosestGlyphInfoForOffset(const Offset(99.0, 99.0));
-    final GlyphInfo? last = paragraph.getGlyphInfoAt(8);
-    expect(bottomRight, equals(last));
-    expect(bottomRight, notEquals(paragraph.getGlyphInfoAt(0)));
-
-    expect(bottomRight?.graphemeClusterLayoutBounds, const Rect.fromLTWH(30, 10, 10, 10));
-    expect(bottomRight?.graphemeClusterCodeUnitRange, const TextRange(start: 8, end: 9));
-    expect(bottomRight?.writingDirection, TextDirection.ltr);
-  });
-
   test('getFontInfoAt', () {
     const double fontSize = 10.0;
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
@@ -303,6 +284,9 @@ void main() {
     expect(paragraph.getLineMetricsAt(0), isNull);
     expect(paragraph.numberOfLines, 0);
     expect(paragraph.getLineNumberAt(0), isNull);
+
+    expect(paragraph.getGlyphInfoAt(0), isNull);
+    expect(paragraph.getClosestGlyphInfoForOffset(Offset.zero), isNull);
   });
 
   test('OOB indices as input', () {
@@ -318,7 +302,7 @@ void main() {
     expect(paragraph.numberOfLines, 1);
 
     expect(paragraph.getLineMetricsAt(-1), isNull);
-    expect(paragraph.getLineMetricsAt(0), isNotNull);
+    expect(paragraph.getLineMetricsAt(0)?.lineNumber, 0);
     expect(paragraph.getLineMetricsAt(1), isNull);
 
     expect(paragraph.getLineNumberAt(-1), isNull);
@@ -328,9 +312,32 @@ void main() {
     expect(paragraph.getLineMetricsAt(7), isNull);
 
     expect(paragraph.getGlyphInfoAt(-1), isNull);
-    expect(paragraph.getFontInfoAt(-1), isNull);
     expect(paragraph.getLineMetricsAt(-1), isNull);
     expect(paragraph.getLineNumberAt(-1), isNull);
+
+    expect(paragraph.getGlyphInfoAt(0)?.graphemeClusterCodeUnitRange, const TextRange(start: 0, end: 1));
+    expect(paragraph.getGlyphInfoAt(6)?.graphemeClusterCodeUnitRange, const TextRange(start: 6, end: 7));
+    expect(paragraph.getGlyphInfoAt(7), isNull);
+    expect(paragraph.getGlyphInfoAt(200), isNull);
+  });
+
+  test('querying glyph info', () {
+    const double fontSize = 10.0;
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontSize: fontSize,
+    ));
+    builder.addText('Test\nTest');
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: double.infinity));
+
+    final GlyphInfo? bottomRight = paragraph.getClosestGlyphInfoForOffset(const Offset(99.0, 99.0));
+    final GlyphInfo? last = paragraph.getGlyphInfoAt(8);
+    expect(bottomRight, equals(last));
+    expect(bottomRight, notEquals(paragraph.getGlyphInfoAt(0)));
+
+    expect(bottomRight?.graphemeClusterLayoutBounds, const Rect.fromLTWH(30, 10, 10, 10));
+    expect(bottomRight?.graphemeClusterCodeUnitRange, const TextRange(start: 8, end: 9));
+    expect(bottomRight?.writingDirection, TextDirection.ltr);
   });
 
   test('painting a disposed paragraph does not crash', () {

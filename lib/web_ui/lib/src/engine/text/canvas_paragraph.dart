@@ -221,7 +221,7 @@ class CanvasParagraph implements ui.Paragraph {
         assert(range != null);
         if (range != null) {
           final ui.TextBox box = fragment.toTextBox(start: range.start, end: range.end);
-          return ui.GlyphInfo(box.toRect(), range, box.direction, false);
+          return ui.GlyphInfo(box.toRect(), range, box.direction);
         }
       }
     }

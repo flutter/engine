@@ -78,7 +78,7 @@ external bool paragraphGetClosestGlyphInfoAtCoordinate(
   double offsetX, double offsetY,
   Pointer<Float> graphemeLayoutBounds,   // 4 floats, [LTRB]
   Pointer<Uint32> graphemeCodeUnitRange, // 2 `size_t`s, start and end.
-  Pointer<Bool> booleanFlags,            // 2 booleans, isLTR and isEllipsis.
+  Pointer<Bool> booleanFlags,            // 1 boolean, isLTR.
 );
 
 @Native<Bool Function(ParagraphHandle, Uint32, Pointer<Float>, Pointer<Uint32>, Pointer<Bool>)>(symbol: 'paragraph_getGlyphInfoAt')
@@ -87,7 +87,7 @@ external bool paragraphGetGlyphInfoAt(
   int codeUnitOffset,
   Pointer<Float> graphemeLayoutBounds,   // 4 floats, [LTRB]
   Pointer<Uint32> graphemeCodeUnitRange, // 2 `size_t`s, start and end.
-  Pointer<Bool> booleanFlags,            // 2 booleans, isLTR and isEllipsis.
+  Pointer<Bool> booleanFlags,            // 1 boolean, isLTR.
 );
 
 @Native<Void Function(

@@ -3004,7 +3004,6 @@ class SkFontStyle {
 }
 
 extension SkFontStyleExtension on SkFontStyle {
-
   external SkFontWeight get weight;
   external set weight(SkFontWeight? value);
   external set slant(SkFontSlant? value);
@@ -3230,14 +3229,11 @@ extension SkGlyphClusterInfoExtension on SkGlyphClusterInfo {
   @JS('graphemeClusterTextRange')
   external SkTextRange get _textRange;
 
-  @JS('isEllipsis')
-  external bool get _isEllipsis;
-
   ui.GlyphInfo get _glyphCluster {
     final Float32List rectArray = _bounds.toDart;
     final ui.Rect bounds = ui.Rect.fromLTRB(rectArray[0], rectArray[1], rectArray[2], rectArray[3]);
     final ui.TextRange textRange = ui.TextRange(start: _textRange.start.toInt(), end: _textRange.end.toInt());
-    return ui.GlyphInfo(bounds, textRange, ui.TextDirection.values[_direction.value.toInt()], _isEllipsis);
+    return ui.GlyphInfo(bounds, textRange, ui.TextDirection.values[_direction.value.toInt()]);
   }
 }
 
@@ -3347,9 +3343,9 @@ extension SkParagraphExtension on SkParagraph {
   external SkGlyphClusterInfo? _getGlyphInfoAt(JSNumber position);
   ui.GlyphInfo? getGlyphInfoAt(double position) => _getGlyphInfoAt(position.toJS)?._glyphCluster;
 
-  @JS('getClosestGlyphInfoAt')
-  external SkGlyphClusterInfo? _getClosestGlyphInfoAt(JSNumber x, JSNumber y);
-  ui.GlyphInfo? getClosestGlyphInfoAt(double x, double y) => _getClosestGlyphInfoAt(x.toJS, y.toJS)?._glyphCluster;
+  @JS('getClosestGlyphInfoAtCoordinate')
+  external SkGlyphClusterInfo? _getClosestGlyphInfoAtCoordinate(JSNumber x, JSNumber y);
+  ui.GlyphInfo? getClosestGlyphInfoAt(double x, double y) => _getClosestGlyphInfoAtCoordinate(x.toJS, y.toJS)?._glyphCluster;
 
   @JS('getWordBoundary')
   external SkTextRange _getWordBoundary(JSNumber position);

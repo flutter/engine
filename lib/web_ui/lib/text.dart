@@ -252,16 +252,11 @@ class FontInfo {
 }
 
 final class GlyphInfo {
-  //GlyphInfo._(double left, double top, double right, double bottom, int graphemeStart, int graphemeEnd, bool isLTR, this.isEllipsis)
-  //  : graphemeClusterLayoutBounds = Rect.fromLTRB(left, top, right, bottom),
-  //    graphemeClusterCodeUnitRange = TextRange(start: graphemeStart, end: graphemeEnd),
-  //    writingDirection = isLTR ? TextDirection.ltr : TextDirection.rtl;
-  GlyphInfo(this.graphemeClusterLayoutBounds, this.graphemeClusterCodeUnitRange, this.writingDirection, this.isEllipsis);
+  GlyphInfo(this.graphemeClusterLayoutBounds, this.graphemeClusterCodeUnitRange, this.writingDirection);
 
   final Rect graphemeClusterLayoutBounds;
   final TextRange graphemeClusterCodeUnitRange;
   final TextDirection writingDirection;
-  final bool isEllipsis;
 
   @override
   bool operator ==(Object other) {

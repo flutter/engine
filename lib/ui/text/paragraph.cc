@@ -127,7 +127,7 @@ Dart_Handle Paragraph::getGlyphInfoAt(unsigned utf16Offset,
   if (!found) {
     return Dart_Null();
   }
-  Dart_Handle arguments[8] = {
+  Dart_Handle arguments[7] = {
       Dart_NewDouble(glyphInfo.fGraphemeLayoutBounds.fLeft),
       Dart_NewDouble(glyphInfo.fGraphemeLayoutBounds.fTop),
       Dart_NewDouble(glyphInfo.fGraphemeLayoutBounds.fRight),
@@ -136,7 +136,6 @@ Dart_Handle Paragraph::getGlyphInfoAt(unsigned utf16Offset,
       Dart_NewInteger(glyphInfo.fGraphemeClusterTextRange.end),
       Dart_NewBoolean(glyphInfo.fDirection ==
                       skia::textlayout::TextDirection::kLtr),
-      Dart_NewBoolean(glyphInfo.fIsEllipsis),
   };
 
   Dart_Handle handle = Dart_InvokeClosure(
@@ -154,7 +153,7 @@ Dart_Handle Paragraph::getClosestGlyphInfo(double dx,
   if (!found) {
     return Dart_Null();
   }
-  Dart_Handle arguments[8] = {
+  Dart_Handle arguments[7] = {
       Dart_NewDouble(glyphInfo.fGraphemeLayoutBounds.fLeft),
       Dart_NewDouble(glyphInfo.fGraphemeLayoutBounds.fTop),
       Dart_NewDouble(glyphInfo.fGraphemeLayoutBounds.fRight),
@@ -163,7 +162,6 @@ Dart_Handle Paragraph::getClosestGlyphInfo(double dx,
       Dart_NewInteger(glyphInfo.fGraphemeClusterTextRange.end),
       Dart_NewBoolean(glyphInfo.fDirection ==
                       skia::textlayout::TextDirection::kLtr),
-      Dart_NewBoolean(glyphInfo.fIsEllipsis),
   };
 
   Dart_Handle handle = Dart_InvokeClosure(

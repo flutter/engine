@@ -105,7 +105,7 @@ Future<void> testMain() async {
     expect(paragraph.numberOfLines, 1);
 
     expect(paragraph.getLineMetricsAt(-1), isNull);
-    expect(paragraph.getLineMetricsAt(0), isNotNull);
+    expect(paragraph.getLineMetricsAt(0)?.lineNumber, 0);
     expect(paragraph.getLineMetricsAt(1), isNull);
 
     expect(paragraph.getLineNumberAt(-1), isNull);
@@ -113,6 +113,27 @@ Future<void> testMain() async {
     expect(paragraph.getLineNumberAt(6), 0);
     // The last 3 characters on the first line are ellipsized with BBB.
     expect(paragraph.getLineNumberAt(7), isNull);
+  });
+
+  test('Basic glyph metrics', () {
+    const double fontSize = 10;
+    final ParagraphBuilder builder = ParagraphBuilder(CkParagraphStyle(
+      fontStyle: FontStyle.normal,
+      fontWeight: FontWeight.normal,
+      fontSize: fontSize,
+      maxLines: 1,
+      ellipsis: 'BBB',
+    ))..addText('A' * 100);
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: 100.0));
+
+    expect(paragraph.getGlyphInfoAt(-1), isNull);
+
+    // The last 3 characters on the first line are ellipsized with BBB.
+    expect(paragraph.getGlyphInfoAt(0)?.graphemeClusterCodeUnitRange, const TextRange(start: 0, end: 1));
+    expect(paragraph.getGlyphInfoAt(6)?.graphemeClusterCodeUnitRange, const TextRange(start: 6, end: 7));
+    expect(paragraph.getGlyphInfoAt(7), isNull);
+    expect(paragraph.getGlyphInfoAt(200), isNull);
   });
 
   test('Can disable rounding hack', () {

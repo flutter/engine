@@ -61,29 +61,43 @@ SKWASM_EXPORT int32_t paragraph_getPositionForOffset(Paragraph* paragraph,
   return position.position;
 }
 
-SKWASM_EXPORT bool paragraph_getClosestGlyphInfoAtCoordinate(Paragraph* paragraph, SkScalar offsetX, SkScalar offsetY, SkScalar* graphemeLayoutBounds, size_t* garphemeCodeUnitRange, bool* booleanFlags) {
+SKWASM_EXPORT bool paragraph_getClosestGlyphInfoAtCoordinate(
+    Paragraph* paragraph,
+    SkScalar offsetX,
+    SkScalar offsetY,
+    SkScalar* graphemeLayoutBounds,
+    size_t* garphemeCodeUnitRange,
+    bool* booleanFlags) {
   Paragraph::GlyphInfo glyphInfo;
   if (!paragraph->getClosestUTF16GlyphInfoAt(offsetX, offsetY, &glyphInfo)) {
-      return false;
+    return false;
   }
   // This is more verbose than memcpying the whole struct but ideally we don't
   // want to depend on the exact memory layout of the struct.
-  std::memcpy(graphemeLayoutBounds, &glyphInfo.fGraphemeLayoutBounds, 4 * sizeof(SkScalar));
-  std::memcpy(garphemeCodeUnitRange, &glyphInfo.fGraphemeClusterTextRange, 2 * sizeof(size_t));
-  booleanFlags[0] = glyphInfo.fDirection == skia::textlayout::TextDirection::kLtr;
-  booleanFlags[1] = glyphInfo.fIsEllipsis;
+  std::memcpy(graphemeLayoutBounds, &glyphInfo.fGraphemeLayoutBounds,
+              4 * sizeof(SkScalar));
+  std::memcpy(garphemeCodeUnitRange, &glyphInfo.fGraphemeClusterTextRange,
+              2 * sizeof(size_t));
+  booleanFlags[0] =
+      glyphInfo.fDirection == skia::textlayout::TextDirection::kLtr;
   return true;
 }
 
-SKWASM_EXPORT bool paragraph_getGlyphInfoAt(Paragraph* paragraph, size_t index,  SkScalar* graphemeLayoutBounds, size_t* garphemeCodeUnitRange, bool* booleanFlags) {
+SKWASM_EXPORT bool paragraph_getGlyphInfoAt(Paragraph* paragraph,
+                                            size_t index,
+                                            SkScalar* graphemeLayoutBounds,
+                                            size_t* garphemeCodeUnitRange,
+                                            bool* booleanFlags) {
   Paragraph::GlyphInfo glyphInfo;
   if (!paragraph->getGlyphInfoAtUTF16Offset(index, &glyphInfo)) {
     return false;
   }
-  std::memcpy(graphemeLayoutBounds, &glyphInfo.fGraphemeLayoutBounds, 4 * sizeof(SkScalar));
-  std::memcpy(garphemeCodeUnitRange, &glyphInfo.fGraphemeClusterTextRange, 2 * sizeof(size_t));
-  booleanFlags[0] = glyphInfo.fDirection == skia::textlayout::TextDirection::kLtr;
-  booleanFlags[1] = glyphInfo.fIsEllipsis;
+  std::memcpy(graphemeLayoutBounds, &glyphInfo.fGraphemeLayoutBounds,
+              4 * sizeof(SkScalar));
+  std::memcpy(garphemeCodeUnitRange, &glyphInfo.fGraphemeClusterTextRange,
+              2 * sizeof(size_t));
+  booleanFlags[0] =
+      glyphInfo.fDirection == skia::textlayout::TextDirection::kLtr;
   return true;
 }
 
