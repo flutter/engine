@@ -30,6 +30,30 @@ class Serializer {
 
   void Write(const Path& path) {}
 
+  void Write(const std::vector<Point>& points) {}
+
+  void Write(const PointStyle& point_style) {}
+
+  void Write(const std::shared_ptr<Image>& image) {}
+
+  void Write(const SamplerDescriptor& sampler) {}
+
+  void Write(const Entity::ClipOperation& clip_op) {}
+
+  void Write(const Picture& clip_op) {}
+
+  void Write(const std::shared_ptr<TextFrame>& text_frame) {}
+
+  void Write(const std::shared_ptr<VerticesGeometry>& vertices) {}
+
+  void Write(const BlendMode& blend_mode) {}
+
+  void Write(const std::vector<Matrix>& matrices) {}
+
+  void Write(const std::vector<Rect>& matrices) {}
+
+  void Write(const std::vector<Color>& matrices) {}
+
   CanvasRecorderOp last_op_;
 };
 }  // namespace
@@ -144,6 +168,68 @@ TEST(CanvasRecorder, DrawCircle) {
   CanvasRecorder<Serializer> recorder;
   recorder.DrawCircle(Point(), 0, Paint());
   ASSERT_EQ(recorder.GetSerializer().last_op_, CanvasRecorderOp::DrawCircle);
+}
+
+TEST(CanvasRecorder, DrawPoints) {
+  CanvasRecorder<Serializer> recorder;
+  recorder.DrawPoints(std::vector<Point>{}, 0, Paint(), PointStyle::kRound);
+  ASSERT_EQ(recorder.GetSerializer().last_op_, CanvasRecorderOp::DrawPoints);
+}
+
+TEST(CanvasRecorder, DrawImage) {
+  CanvasRecorder<Serializer> recorder;
+  recorder.DrawImage({}, {}, {}, {});
+  ASSERT_EQ(recorder.GetSerializer().last_op_, CanvasRecorderOp::DrawImage);
+}
+
+TEST(CanvasRecorder, DrawImageRect) {
+  CanvasRecorder<Serializer> recorder;
+  recorder.DrawImageRect({}, {}, {}, {}, {});
+  ASSERT_EQ(recorder.GetSerializer().last_op_, CanvasRecorderOp::DrawImageRect);
+}
+
+TEST(CanvasRecorder, ClipPath) {
+  CanvasRecorder<Serializer> recorder;
+  recorder.ClipPath({});
+  ASSERT_EQ(recorder.GetSerializer().last_op_, CanvasRecorderOp::ClipPath);
+}
+
+TEST(CanvasRecorder, ClipRect) {
+  CanvasRecorder<Serializer> recorder;
+  recorder.ClipRect({});
+  ASSERT_EQ(recorder.GetSerializer().last_op_, CanvasRecorderOp::ClipRect);
+}
+
+TEST(CanvasRecorder, ClipRRect) {
+  CanvasRecorder<Serializer> recorder;
+  recorder.ClipRRect({}, 0);
+  ASSERT_EQ(recorder.GetSerializer().last_op_, CanvasRecorderOp::ClipRRect);
+}
+
+TEST(CanvasRecorder, DrawPicture) {
+  CanvasRecorder<Serializer> recorder;
+  recorder.DrawPicture({});
+  ASSERT_EQ(recorder.GetSerializer().last_op_, CanvasRecorderOp::DrawPicture);
+}
+
+TEST(CanvasRecorder, DrawTextFrame) {
+  CanvasRecorder<Serializer> recorder;
+  recorder.DrawTextFrame({}, {}, {});
+  ASSERT_EQ(recorder.GetSerializer().last_op_, CanvasRecorderOp::DrawTextFrame);
+}
+
+TEST(CanvasRecorder, DrawVertices) {
+  CanvasRecorder<Serializer> recorder;
+  auto geometry = std::shared_ptr<VerticesGeometry>(
+      new VerticesGeometry({}, {}, {}, {}, {}, {}));
+  recorder.DrawVertices(geometry, {}, {});
+  ASSERT_EQ(recorder.GetSerializer().last_op_, CanvasRecorderOp::DrawVertices);
+}
+
+TEST(CanvasRecorder, DrawAtlas) {
+  CanvasRecorder<Serializer> recorder;
+  recorder.DrawAtlas({}, {}, {}, {}, {}, {}, {}, {});
+  ASSERT_EQ(recorder.GetSerializer().last_op_, CanvasRecorderOp::DrawAtlas);
 }
 
 }  // namespace testing

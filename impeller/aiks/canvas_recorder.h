@@ -27,6 +27,16 @@ enum CanvasRecorderOp {
   DrawRect,
   DrawRRect,
   DrawCircle,
+  DrawPoints,
+  DrawImage,
+  DrawImageRect,
+  ClipPath,
+  ClipRect,
+  ClipRRect,
+  DrawPicture,
+  DrawTextFrame,
+  DrawVertices,
+  DrawAtlas,
 };
 
 template <typename Serializer>
@@ -48,51 +58,6 @@ class CanvasRecorder {
     serializer_.Write(op);
     return (canvas_.*canvasMethod)();
   }
-
-  // template <typename FuncType, typename Arg0>
-  // auto ExecuteAndSerialize(CanvasRecorderOp op,
-  //                          FuncType canvasMethod,
-  //                          Arg0&& arg0)
-  //     -> decltype((std::declval<Canvas>().*
-  //                  canvasMethod)(std::forward<Arg0>(arg0))) {
-  //   serializer_.Write(op);
-  //   serializer_.Write(arg0);
-  //   return (canvas_.*canvasMethod)(std::forward<Arg0>(arg0));
-  // }
-
-  // template <typename FuncType, typename Arg0, typename Arg1>
-  // auto ExecuteAndSerialize(CanvasRecorderOp op,
-  //                          FuncType canvasMethod,
-  //                          Arg0&& arg0,
-  //                          Arg1&& arg1)
-  //     -> decltype((std::declval<Canvas>().*
-  //                  canvasMethod)(std::forward<Arg0>(arg0),
-  //                                std::forward<Arg1>(arg1))) {
-  //   serializer_.Write(op);
-  //   serializer_.Write(arg0);
-  //   serializer_.Write(arg1);
-  //   return (canvas_.*canvasMethod)(std::forward<Arg0>(arg0),
-  //                                  std::forward<Arg1>(arg1));
-  // }
-
-  // template <typename FuncType, typename Arg0, typename Arg1, typename Arg2>
-  // auto ExecuteAndSerialize(CanvasRecorderOp op,
-  //                          FuncType canvasMethod,
-  //                          Arg0&& arg0,
-  //                          Arg1&& arg1,
-  //                          Arg2&& arg2)
-  //     -> decltype((std::declval<Canvas>().*
-  //                  canvasMethod)(std::forward<Arg0>(arg0),
-  //                                std::forward<Arg1>(arg1),
-  //                                std::forward<Arg2>(arg2))) {
-  //   serializer_.Write(op);
-  //   serializer_.Write(arg0);
-  //   serializer_.Write(arg1);
-  //   serializer_.Write(arg2);
-  //   return (canvas_.*canvasMethod)(std::forward<Arg0>(arg0),
-  //                                  std::forward<Arg1>(arg1),
-  //                                  std::forward<Arg2>(arg2));
-  // }
 
   template <typename FuncType, typename... Args>
   auto ExecuteAndSerialize(CanvasRecorderOp op,
@@ -118,11 +83,8 @@ class CanvasRecorder {
       const Paint& paint,
       std::optional<Rect> bounds = std::nullopt,
       const std::shared_ptr<ImageFilter>& backdrop_filter = nullptr) {
-    serializer_.Write(CanvasRecorderOp::SaveLayer);
-    serializer_.Write(paint);
-    serializer_.Write(bounds);
-    serializer_.Write(backdrop_filter);
-    return canvas_.SaveLayer(paint, bounds, backdrop_filter);
+    return ExecuteAndSerialize(CanvasRecorderOp::SaveLayer, &Canvas::SaveLayer,
+                               paint, bounds, backdrop_filter);
   }
 
   bool Restore() {
@@ -215,44 +177,75 @@ class CanvasRecorder {
                                &Canvas::DrawCircle, center, radius, paint);
   }
 
-  void DrawPoints(std::vector<Point>,
+  void DrawPoints(std::vector<Point> points,
                   Scalar radius,
                   const Paint& paint,
-                  PointStyle point_style) {}
+                  PointStyle point_style) {
+    return ExecuteAndSerialize(CanvasRecorderOp::DrawPoints,
+                               &Canvas::DrawPoints, points, radius, paint,
+                               point_style);
+  }
 
   void DrawImage(const std::shared_ptr<Image>& image,
                  Point offset,
                  const Paint& paint,
-                 SamplerDescriptor sampler = {}) {}
+                 SamplerDescriptor sampler = {}) {
+    return ExecuteAndSerialize(CanvasRecorderOp::DrawImage, &Canvas::DrawImage,
+                               image, offset, paint, sampler);
+  }
 
   void DrawImageRect(const std::shared_ptr<Image>& image,
                      Rect source,
                      Rect dest,
                      const Paint& paint,
-                     SamplerDescriptor sampler = {}) {}
+                     SamplerDescriptor sampler = {}) {
+    return ExecuteAndSerialize(CanvasRecorderOp::DrawImageRect,
+                               &Canvas::DrawImageRect, image, source, dest,
+                               paint, sampler);
+  }
 
   void ClipPath(
       const Path& path,
-      Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect) {}
+      Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect) {
+    return ExecuteAndSerialize(CanvasRecorderOp::ClipPath, &Canvas::ClipPath,
+                               path, clip_op);
+  }
 
   void ClipRect(
       const Rect& rect,
-      Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect) {}
+      Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect) {
+    return ExecuteAndSerialize(CanvasRecorderOp::ClipRect, &Canvas::ClipRect,
+                               rect, clip_op);
+  }
 
   void ClipRRect(
       const Rect& rect,
       Scalar corner_radius,
-      Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect) {}
+      Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect) {
+    return ExecuteAndSerialize(CanvasRecorderOp::ClipRRect, &Canvas::ClipRRect,
+                               rect, corner_radius, clip_op);
+  }
 
-  void DrawPicture(const Picture& picture) {}
+  void DrawPicture(const Picture& picture) {
+    return ExecuteAndSerialize(CanvasRecorderOp::DrawPicture,
+                               &Canvas::DrawPicture, picture);
+  }
 
   void DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
                      Point position,
-                     const Paint& paint) {}
+                     const Paint& paint) {
+    return ExecuteAndSerialize(CanvasRecorderOp::DrawTextFrame,
+                               &Canvas::DrawTextFrame, text_frame, position,
+                               paint);
+  }
 
   void DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
                     BlendMode blend_mode,
-                    const Paint& paint) {}
+                    const Paint& paint) {
+    return ExecuteAndSerialize(CanvasRecorderOp::DrawVertices,
+                               &Canvas::DrawVertices, vertices, blend_mode,
+                               paint);
+  }
 
   void DrawAtlas(const std::shared_ptr<Image>& atlas,
                  std::vector<Matrix> transforms,
@@ -261,7 +254,18 @@ class CanvasRecorder {
                  BlendMode blend_mode,
                  SamplerDescriptor sampler,
                  std::optional<Rect> cull_rect,
-                 const Paint& paint) {}
+                 const Paint& paint) {
+    return ExecuteAndSerialize(CanvasRecorderOp::DrawAtlas,  //
+                               &Canvas::DrawAtlas,           //
+                               atlas,                           //
+                               transforms,                      //
+                               texture_coordinates,             //
+                               colors,                          //
+                               blend_mode,                      //
+                               sampler,                         //
+                               cull_rect,                       //
+                               paint);
+  }
 
   Picture EndRecordingAsPicture() { return canvas_.EndRecordingAsPicture(); }
 
