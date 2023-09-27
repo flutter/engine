@@ -2660,6 +2660,41 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(range.range.length, 20u);
 }
 
+- (void)testFlutterTokenizerEndOfDocumentLineRangeQuery {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  id<UITextInputTokenizer> tokenizer = [inputView tokenizer];
+
+  NSString* text = @"Random text\nwith 2 lines";
+  [inputView insertText:text];
+
+  FlutterTextPosition* endOfDocumentWithBackwardAffinity =
+      [FlutterTextPosition positionWithIndex:text.length affinity:UITextStorageDirectionBackward];
+
+  FlutterTextRange* range =
+      (FlutterTextRange*)[tokenizer rangeEnclosingPosition:endOfDocumentWithBackwardAffinity
+                                           withGranularity:UITextGranularityLine
+                                               inDirection:UITextLayoutDirectionRight];
+
+  if (@available(iOS 17.0, *)) {
+    XCTAssertNil(range);
+  } else {
+    XCTAssertEqual(range.range.location, 12u);
+    XCTAssertEqual(range.range.length, 12u);
+  }
+
+  // End of document with forward affinity should still be considered as part of the document.
+  // This is used by voice control's delete line command.
+  FlutterTextPosition* endOfDocumentWithForwardAffinity =
+      [FlutterTextPosition positionWithIndex:text.length affinity:UITextStorageDirectionForward];
+
+  range = (FlutterTextRange*)[tokenizer rangeEnclosingPosition:endOfDocumentWithForwardAffinity
+                                               withGranularity:UITextGranularityLine
+                                                   inDirection:UITextLayoutDirectionRight];
+
+  XCTAssertEqual(range.range.location, 12u);
+  XCTAssertEqual(range.range.length, 12u);
+}
+
 - (void)testFlutterTextInputPluginRetainsFlutterTextInputView {
   FlutterViewController* flutterViewController = [[FlutterViewController alloc] init];
   FlutterTextInputPlugin* myInputPlugin = [[FlutterTextInputPlugin alloc] initWithDelegate:engine];
