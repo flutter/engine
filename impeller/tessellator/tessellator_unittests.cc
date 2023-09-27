@@ -129,7 +129,7 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
         });
 
     ASSERT_TRUE(no_indices);
-    ASSERT_TRUE(count >= 65535);
+    ASSERT_TRUE(count >= USHRT_MAX);
     ASSERT_EQ(result, Tessellator::Result::kSuccess);
   }
 }
