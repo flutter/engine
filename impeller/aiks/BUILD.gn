@@ -60,6 +60,7 @@ impeller_component("aiks_unittests") {
 
   sources = [
     "aiks_unittests.cc",
+    "canvas_recorder_unittests.cc",
     "canvas_unittests.cc",
     "testing/context_mock.h",
     "testing/context_spy.cc",
