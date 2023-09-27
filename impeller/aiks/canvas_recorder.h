@@ -26,6 +26,7 @@ enum CanvasRecorderOp {
   DrawPaint,
   DrawRect,
   DrawRRect,
+  DrawCircle,
 };
 
 template <typename Serializer>
@@ -48,49 +49,61 @@ class CanvasRecorder {
     return (canvas_.*canvasMethod)();
   }
 
-  template <typename FuncType, typename Arg0>
-  auto ExecuteAndSerialize(CanvasRecorderOp op,
-                           FuncType canvasMethod,
-                           Arg0&& arg0)
-      -> decltype((std::declval<Canvas>().*
-                   canvasMethod)(std::forward<Arg0>(arg0))) {
-    serializer_.Write(op);
-    serializer_.Write(arg0);
-    return (canvas_.*canvasMethod)(std::forward<Arg0>(arg0));
-  }
+  // template <typename FuncType, typename Arg0>
+  // auto ExecuteAndSerialize(CanvasRecorderOp op,
+  //                          FuncType canvasMethod,
+  //                          Arg0&& arg0)
+  //     -> decltype((std::declval<Canvas>().*
+  //                  canvasMethod)(std::forward<Arg0>(arg0))) {
+  //   serializer_.Write(op);
+  //   serializer_.Write(arg0);
+  //   return (canvas_.*canvasMethod)(std::forward<Arg0>(arg0));
+  // }
 
-  template <typename FuncType, typename Arg0, typename Arg1>
-  auto ExecuteAndSerialize(CanvasRecorderOp op,
-                           FuncType canvasMethod,
-                           Arg0&& arg0,
-                           Arg1&& arg1)
-      -> decltype((std::declval<Canvas>().*
-                   canvasMethod)(std::forward<Arg0>(arg0),
-                                 std::forward<Arg1>(arg1))) {
-    serializer_.Write(op);
-    serializer_.Write(arg0);
-    serializer_.Write(arg1);
-    return (canvas_.*canvasMethod)(std::forward<Arg0>(arg0),
-                                   std::forward<Arg1>(arg1));
-  }
+  // template <typename FuncType, typename Arg0, typename Arg1>
+  // auto ExecuteAndSerialize(CanvasRecorderOp op,
+  //                          FuncType canvasMethod,
+  //                          Arg0&& arg0,
+  //                          Arg1&& arg1)
+  //     -> decltype((std::declval<Canvas>().*
+  //                  canvasMethod)(std::forward<Arg0>(arg0),
+  //                                std::forward<Arg1>(arg1))) {
+  //   serializer_.Write(op);
+  //   serializer_.Write(arg0);
+  //   serializer_.Write(arg1);
+  //   return (canvas_.*canvasMethod)(std::forward<Arg0>(arg0),
+  //                                  std::forward<Arg1>(arg1));
+  // }
 
-  template <typename FuncType, typename Arg0, typename Arg1, typename Arg2>
+  // template <typename FuncType, typename Arg0, typename Arg1, typename Arg2>
+  // auto ExecuteAndSerialize(CanvasRecorderOp op,
+  //                          FuncType canvasMethod,
+  //                          Arg0&& arg0,
+  //                          Arg1&& arg1,
+  //                          Arg2&& arg2)
+  //     -> decltype((std::declval<Canvas>().*
+  //                  canvasMethod)(std::forward<Arg0>(arg0),
+  //                                std::forward<Arg1>(arg1),
+  //                                std::forward<Arg2>(arg2))) {
+  //   serializer_.Write(op);
+  //   serializer_.Write(arg0);
+  //   serializer_.Write(arg1);
+  //   serializer_.Write(arg2);
+  //   return (canvas_.*canvasMethod)(std::forward<Arg0>(arg0),
+  //                                  std::forward<Arg1>(arg1),
+  //                                  std::forward<Arg2>(arg2));
+  // }
+
+  template <typename FuncType, typename... Args>
   auto ExecuteAndSerialize(CanvasRecorderOp op,
                            FuncType canvasMethod,
-                           Arg0&& arg0,
-                           Arg1&& arg1,
-                           Arg2&& arg2)
+                           Args&&... args)
       -> decltype((std::declval<Canvas>().*
-                   canvasMethod)(std::forward<Arg0>(arg0),
-                                 std::forward<Arg1>(arg1),
-                                 std::forward<Arg2>(arg2))) {
+                   canvasMethod)(std::forward<Args>(args)...)) {
     serializer_.Write(op);
-    serializer_.Write(arg0);
-    serializer_.Write(arg1);
-    serializer_.Write(arg2);
-    return (canvas_.*canvasMethod)(std::forward<Arg0>(arg0),
-                                   std::forward<Arg1>(arg1),
-                                   std::forward<Arg2>(arg2));
+    // Serialize each argument
+    (serializer_.Write(std::forward<Args>(args)), ...);
+    return (canvas_.*canvasMethod)(std::forward<Args>(args)...);
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -195,10 +208,12 @@ class CanvasRecorder {
   void DrawRRect(Rect rect, Scalar corner_radius, const Paint& paint) {
     return ExecuteAndSerialize(CanvasRecorderOp::DrawRRect, &Canvas::DrawRRect,
                                rect, corner_radius, paint);
-
   }
 
-  void DrawCircle(Point center, Scalar radius, const Paint& paint) {}
+  void DrawCircle(Point center, Scalar radius, const Paint& paint) {
+    return ExecuteAndSerialize(CanvasRecorderOp::DrawCircle,
+                               &Canvas::DrawCircle, center, radius, paint);
+  }
 
   void DrawPoints(std::vector<Point>,
                   Scalar radius,

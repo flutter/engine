@@ -140,5 +140,11 @@ TEST(CanvasRecorder, DrawRRect) {
   ASSERT_EQ(recorder.GetSerializer().last_op_, CanvasRecorderOp::DrawRRect);
 }
 
+TEST(CanvasRecorder, DrawCircle) {
+  CanvasRecorder<Serializer> recorder;
+  recorder.DrawCircle(Point(), 0, Paint());
+  ASSERT_EQ(recorder.GetSerializer().last_op_, CanvasRecorderOp::DrawCircle);
+}
+
 }  // namespace testing
 }  // namespace impeller
