@@ -80,7 +80,8 @@ class ReadResult extends _Result {
   List<Handle> get handles => _handles!;
 
   @pragma('vm:entry-point')
-  const ReadResult(final int status, [this._bytes, this._numBytes, this._handles])
+  const ReadResult(final int status,
+      [this._bytes, this._numBytes, this._handles])
       : super(status);
 
   /// Returns the bytes as a Uint8List. If status != OK this will throw
@@ -109,8 +110,7 @@ class HandleInfo {
   const HandleInfo(this.handle, this.type, this.rights);
 
   @override
-  String toString() =>
-      'HandleInfo(handle=$handle, type=$type, rights=$rights)';
+  String toString() => 'HandleInfo(handle=$handle, type=$type, rights=$rights)';
 }
 
 @pragma('vm:entry-point')
@@ -124,7 +124,8 @@ class ReadEtcResult extends _Result {
   List<HandleInfo> get handleInfos => _handleInfos!;
 
   @pragma('vm:entry-point')
-  const ReadEtcResult(final int status, [this._bytes, this._numBytes, this._handleInfos])
+  const ReadEtcResult(final int status,
+      [this._bytes, this._numBytes, this._handleInfos])
       : super(status);
 
   /// Returns the bytes as a Uint8List. If status != OK this will throw
@@ -193,7 +194,7 @@ class MapResult extends _Result {
 }
 
 @pragma('vm:entry-point')
-class System extends NativeFieldWrapperClass1 {
+base class System extends NativeFieldWrapperClass1 {
   // No public constructor - this only has static methods.
   System._();
 
@@ -205,9 +206,11 @@ class System extends NativeFieldWrapperClass1 {
   @pragma('vm:external-name', 'System_ConnectToService')
   external static int connectToService(String path, Handle channel);
   @pragma('vm:external-name', 'System_ChannelWrite')
-  external static int channelWrite(Handle channel, ByteData data, List<Handle> handles);
+  external static int channelWrite(
+      Handle channel, ByteData data, List<Handle> handles);
   @pragma('vm:external-name', 'System_ChannelWriteEtc')
-  external static int channelWriteEtc(Handle channel, ByteData data, List<HandleDisposition> handleDispositions);
+  external static int channelWriteEtc(Handle channel, ByteData data,
+      List<HandleDisposition> handleDispositions);
   @pragma('vm:external-name', 'System_ChannelQueryAndRead')
   external static ReadResult channelQueryAndRead(Handle channel);
   @pragma('vm:external-name', 'System_ChannelQueryAndReadEtc')
@@ -221,7 +224,8 @@ class System extends NativeFieldWrapperClass1 {
   @pragma('vm:external-name', 'System_SocketCreate')
   external static HandlePairResult socketCreate([int options = 0]);
   @pragma('vm:external-name', 'System_SocketWrite')
-  external static WriteResult socketWrite(Handle socket, ByteData data, int options);
+  external static WriteResult socketWrite(
+      Handle socket, ByteData data, int options);
   @pragma('vm:external-name', 'System_SocketRead')
   external static ReadResult socketRead(Handle socket, int size);
 
@@ -254,5 +258,7 @@ class System extends NativeFieldWrapperClass1 {
   external static int _nativeClockGetMonotonic();
 
   // TODO(edcoyne): Remove this, it is required to safely do an API transition across repos.
-  static int reboot() { return -2; /*ZX_ERR_NOT_SUPPORTED*/ }
+  static int reboot() {
+    return -2; /*ZX_ERR_NOT_SUPPORTED*/
+  }
 }

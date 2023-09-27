@@ -8,7 +8,7 @@ part of zircon;
 // ignore_for_file: public_member_api_docs
 
 @pragma('vm:entry-point')
-class Handle extends NativeFieldWrapperClass1 {
+base class Handle extends NativeFieldWrapperClass1 {
   // No public constructor - this can only be created from native code.
   @pragma('vm:entry-point')
   Handle._();
@@ -31,8 +31,7 @@ class Handle extends NativeFieldWrapperClass1 {
 
   @override
   bool operator ==(Object other) {
-    return other is Handle
-        && other.handle == handle;
+    return other is Handle && other.handle == handle;
   }
 
   @override
