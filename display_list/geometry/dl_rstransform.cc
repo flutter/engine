@@ -26,7 +26,7 @@ void DlRSTransform::ToQuad(DlScalar width,
 }
 
 DlAngle DlRSTransform::ExtractAngle() const {
-  DlFVector cos_sin = trig_ / trig_.Length();
+  DlFVector cos_sin = scaled_trig_.Normalize();
   return DlAngle::Radians(atan2f(cos_sin.y(), cos_sin.x()));
 }
 

@@ -41,7 +41,28 @@ struct DlTPoint {
   constexpr inline T x() const { return x_; }
   constexpr inline T y() const { return y_; }
 
-  constexpr inline T Length() const { return std::sqrt(x_ * x_ + y_ * y_); }
+  constexpr inline DlScalar GetLengthSquared() const {
+    return x_ * x_ + y_ * y_;
+  }
+  constexpr inline DlScalar GetLength() const {
+    return std::sqrt(GetLengthSquared());
+  }
+
+  constexpr inline DlScalar GetDistanceSquared(const DlTPoint& p) {
+    return (*this - p).GetLengthSquared();
+  }
+  constexpr inline DlScalar GetDistance(const DlTPoint& p) {
+    return (*this - p).GetLength();
+  }
+
+  DL_ONLY_ON_FLOAT_M(constexpr inline, DlTPoint)
+  Normalize() const {
+    DlScalar scale = 1.0f / GetLength();
+    if (DlScalar_IsFinite(scale)) {
+      return *this * scale;
+    }
+    return {1, 0};
+  }
 
   template <typename U>
   void operator=(const U& p) {
