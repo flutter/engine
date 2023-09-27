@@ -55,6 +55,17 @@ impeller_component("aiks_playground") {
   ]
 }
 
+impeller_component("canvas_recorder") {
+  sources = [
+    "canvas_recorder.h",
+    "trace_serializer.h",
+    "trace_serializer.cc",
+  ]
+  deps = [
+    ":aiks",
+  ]
+}
+
 impeller_component("aiks_unittests") {
   testonly = true
 
@@ -62,6 +73,7 @@ impeller_component("aiks_unittests") {
     "aiks_unittests.cc",
     "canvas_recorder_unittests.cc",
     "canvas_unittests.cc",
+    "trace_serializer_unittests.cc",
     "testing/context_mock.h",
     "testing/context_spy.cc",
     "testing/context_spy.h",
@@ -69,6 +81,7 @@ impeller_component("aiks_unittests") {
   deps = [
     ":aiks",
     ":aiks_playground",
+    ":canvas_recorder",
     "//flutter/impeller/geometry:geometry_asserts",
     "//flutter/impeller/golden_tests:golden_playground_test",
     "//flutter/impeller/playground:playground_test",

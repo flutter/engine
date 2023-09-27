@@ -4,13 +4,15 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "impeller/aiks/canvas.h"
 
 #define FLT_CANVAS_RECORDER_OP_ARG(name) CanvasRecorderOp::name, &Canvas::name
 
 namespace impeller {
 
-enum CanvasRecorderOp {
+enum CanvasRecorderOp : uint16_t {
   Save,
   SaveLayer,
   Restore,
