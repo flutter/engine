@@ -132,15 +132,15 @@ class CanvasRecorder {
   }
 
   void Scale(const Vector2& scale) {
-    serializer_.Write(CanvasRecorderOp::Scale2);
-    serializer_.Write(scale);
-    return canvas_.Scale(scale);
+    return ExecuteAndSerialize(
+        CanvasRecorderOp::Scale2,
+        static_cast<void (Canvas::*)(const Vector2&)>(&Canvas::Scale), scale);
   }
 
   void Scale(const Vector3& scale) {
-    serializer_.Write(CanvasRecorderOp::Scale3);
-    serializer_.Write(scale);
-    return canvas_.Scale(scale);
+    return ExecuteAndSerialize(
+        CanvasRecorderOp::Scale3,
+        static_cast<void (Canvas::*)(const Vector3&)>(&Canvas::Scale), scale);
   }
 
   void Skew(Scalar sx, Scalar sy) {
@@ -257,13 +257,13 @@ class CanvasRecorder {
                  const Paint& paint) {
     return ExecuteAndSerialize(CanvasRecorderOp::DrawAtlas,  //
                                &Canvas::DrawAtlas,           //
-                               atlas,                           //
-                               transforms,                      //
-                               texture_coordinates,             //
-                               colors,                          //
-                               blend_mode,                      //
-                               sampler,                         //
-                               cull_rect,                       //
+                               atlas,                        //
+                               transforms,                   //
+                               texture_coordinates,          //
+                               colors,                       //
+                               blend_mode,                   //
+                               sampler,                      //
+                               cull_rect,                    //
                                paint);
   }
 
