@@ -27,139 +27,133 @@ TEST(SkiaConversionsTest, ToColor) {
 
 TEST(SkiaConversionsTest, GradientStopConversion) {
   // Typical gradient.
-  {
-    std::vector<flutter::DlColor> colors = {flutter::DlColor::kBlue(),
-                                            flutter::DlColor::kRed(),
-                                            flutter::DlColor::kGreen()};
-    std::vector<float> stops = {0.0, 0.5, 1.0};
-    const auto gradient =
-        flutter::DlColorSource::MakeLinear(SkPoint::Make(0, 0),          //
-                                           SkPoint::Make(1.0, 1.0),      //
-                                           3,                            //
-                                           colors.data(),                //
-                                           stops.data(),                 //
-                                           flutter::DlTileMode::kClamp,  //
-                                           nullptr                       //
-        );
+  std::vector<flutter::DlColor> colors = {flutter::DlColor::kBlue(),
+                                          flutter::DlColor::kRed(),
+                                          flutter::DlColor::kGreen()};
+  std::vector<float> stops = {0.0, 0.5, 1.0};
+  const auto gradient =
+      flutter::DlColorSource::MakeLinear(SkPoint::Make(0, 0),          //
+                                         SkPoint::Make(1.0, 1.0),      //
+                                         3,                            //
+                                         colors.data(),                //
+                                         stops.data(),                 //
+                                         flutter::DlTileMode::kClamp,  //
+                                         nullptr                       //
+      );
 
-    std::vector<Color> converted_colors;
-    std::vector<Scalar> converted_stops;
-    skia_conversions::ConvertStops(gradient.get(), converted_colors,
-                                   converted_stops);
+  std::vector<Color> converted_colors;
+  std::vector<Scalar> converted_stops;
+  skia_conversions::ConvertStops(gradient.get(), converted_colors,
+                                 converted_stops);
 
-    ASSERT_TRUE(ScalarNearlyEqual(converted_stops[0], 0.0f));
-    ASSERT_TRUE(ScalarNearlyEqual(converted_stops[1], 0.5f));
-    ASSERT_TRUE(ScalarNearlyEqual(converted_stops[2], 1.0f));
-  }
+  ASSERT_TRUE(ScalarNearlyEqual(converted_stops[0], 0.0f));
+  ASSERT_TRUE(ScalarNearlyEqual(converted_stops[1], 0.5f));
+  ASSERT_TRUE(ScalarNearlyEqual(converted_stops[2], 1.0f));
+}
 
-  // Missing 0.0 first stop gradient.
-  {
-    std::vector<flutter::DlColor> colors = {flutter::DlColor::kBlue(),
-                                            flutter::DlColor::kRed()};
-    std::vector<float> stops = {0.5, 1.0};
-    const auto gradient =
-        flutter::DlColorSource::MakeLinear(SkPoint::Make(0, 0),          //
-                                           SkPoint::Make(1.0, 1.0),      //
-                                           2,                            //
-                                           colors.data(),                //
-                                           stops.data(),                 //
-                                           flutter::DlTileMode::kClamp,  //
-                                           nullptr                       //
-        );
+TEST(SkiaConversionsTest, GradientMissing0) {
+  std::vector<flutter::DlColor> colors = {flutter::DlColor::kBlue(),
+                                          flutter::DlColor::kRed()};
+  std::vector<float> stops = {0.5, 1.0};
+  const auto gradient =
+      flutter::DlColorSource::MakeLinear(SkPoint::Make(0, 0),          //
+                                         SkPoint::Make(1.0, 1.0),      //
+                                         2,                            //
+                                         colors.data(),                //
+                                         stops.data(),                 //
+                                         flutter::DlTileMode::kClamp,  //
+                                         nullptr                       //
+      );
 
-    std::vector<Color> converted_colors;
-    std::vector<Scalar> converted_stops;
-    skia_conversions::ConvertStops(gradient.get(), converted_colors,
-                                   converted_stops);
+  std::vector<Color> converted_colors;
+  std::vector<Scalar> converted_stops;
+  skia_conversions::ConvertStops(gradient.get(), converted_colors,
+                                 converted_stops);
 
-    // First color is inserted as blue.
-    ASSERT_TRUE(ScalarNearlyEqual(converted_colors[0].blue, 1.0f));
-    ASSERT_TRUE(ScalarNearlyEqual(converted_stops[0], 0.0f));
-    ASSERT_TRUE(ScalarNearlyEqual(converted_stops[1], 0.5f));
-    ASSERT_TRUE(ScalarNearlyEqual(converted_stops[2], 1.0f));
-  }
+  // First color is inserted as blue.
+  ASSERT_TRUE(ScalarNearlyEqual(converted_colors[0].blue, 1.0f));
+  ASSERT_TRUE(ScalarNearlyEqual(converted_stops[0], 0.0f));
+  ASSERT_TRUE(ScalarNearlyEqual(converted_stops[1], 0.5f));
+  ASSERT_TRUE(ScalarNearlyEqual(converted_stops[2], 1.0f));
+}
 
-  // Missing 1.0 last stop gradient.
-  {
-    std::vector<flutter::DlColor> colors = {flutter::DlColor::kBlue(),
-                                            flutter::DlColor::kRed()};
-    std::vector<float> stops = {0.0, .5};
-    const auto gradient =
-        flutter::DlColorSource::MakeLinear(SkPoint::Make(0, 0),          //
-                                           SkPoint::Make(1.0, 1.0),      //
-                                           2,                            //
-                                           colors.data(),                //
-                                           stops.data(),                 //
-                                           flutter::DlTileMode::kClamp,  //
-                                           nullptr                       //
-        );
+TEST(SkiaConversionsTest, GradientMissingLastValue) {
+  std::vector<flutter::DlColor> colors = {flutter::DlColor::kBlue(),
+                                          flutter::DlColor::kRed()};
+  std::vector<float> stops = {0.0, .5};
+  const auto gradient =
+      flutter::DlColorSource::MakeLinear(SkPoint::Make(0, 0),          //
+                                         SkPoint::Make(1.0, 1.0),      //
+                                         2,                            //
+                                         colors.data(),                //
+                                         stops.data(),                 //
+                                         flutter::DlTileMode::kClamp,  //
+                                         nullptr                       //
+      );
 
-    std::vector<Color> converted_colors;
-    std::vector<Scalar> converted_stops;
-    skia_conversions::ConvertStops(gradient.get(), converted_colors,
-                                   converted_stops);
+  std::vector<Color> converted_colors;
+  std::vector<Scalar> converted_stops;
+  skia_conversions::ConvertStops(gradient.get(), converted_colors,
+                                 converted_stops);
 
-    // Last color is inserted as red.
-    ASSERT_TRUE(ScalarNearlyEqual(converted_colors[2].red, 1.0f));
-    ASSERT_TRUE(ScalarNearlyEqual(converted_stops[0], 0.0f));
-    ASSERT_TRUE(ScalarNearlyEqual(converted_stops[1], 0.5f));
-    ASSERT_TRUE(ScalarNearlyEqual(converted_stops[2], 1.0f));
-  }
+  // Last color is inserted as red.
+  ASSERT_TRUE(ScalarNearlyEqual(converted_colors[2].red, 1.0f));
+  ASSERT_TRUE(ScalarNearlyEqual(converted_stops[0], 0.0f));
+  ASSERT_TRUE(ScalarNearlyEqual(converted_stops[1], 0.5f));
+  ASSERT_TRUE(ScalarNearlyEqual(converted_stops[2], 1.0f));
+}
 
-  // Values greater than 1.0.
-  {
-    std::vector<flutter::DlColor> colors = {flutter::DlColor::kBlue(),
-                                            flutter::DlColor::kGreen(),
-                                            flutter::DlColor::kRed()};
-    std::vector<float> stops = {0.0, 100, 1.0};
-    const auto gradient =
-        flutter::DlColorSource::MakeLinear(SkPoint::Make(0, 0),          //
-                                           SkPoint::Make(1.0, 1.0),      //
-                                           3,                            //
-                                           colors.data(),                //
-                                           stops.data(),                 //
-                                           flutter::DlTileMode::kClamp,  //
-                                           nullptr                       //
-        );
+TEST(SkiaConversionsTest, GradientStopGreaterThan1) {
+  std::vector<flutter::DlColor> colors = {flutter::DlColor::kBlue(),
+                                          flutter::DlColor::kGreen(),
+                                          flutter::DlColor::kRed()};
+  std::vector<float> stops = {0.0, 100, 1.0};
+  const auto gradient =
+      flutter::DlColorSource::MakeLinear(SkPoint::Make(0, 0),          //
+                                         SkPoint::Make(1.0, 1.0),      //
+                                         3,                            //
+                                         colors.data(),                //
+                                         stops.data(),                 //
+                                         flutter::DlTileMode::kClamp,  //
+                                         nullptr                       //
+      );
 
-    std::vector<Color> converted_colors;
-    std::vector<Scalar> converted_stops;
-    skia_conversions::ConvertStops(gradient.get(), converted_colors,
-                                   converted_stops);
+  std::vector<Color> converted_colors;
+  std::vector<Scalar> converted_stops;
+  skia_conversions::ConvertStops(gradient.get(), converted_colors,
+                                 converted_stops);
 
-    // Value is clamped to 1.0
-    ASSERT_TRUE(ScalarNearlyEqual(converted_stops[0], 0.0f));
-    ASSERT_TRUE(ScalarNearlyEqual(converted_stops[1], 1.0f));
-    ASSERT_TRUE(ScalarNearlyEqual(converted_stops[2], 1.0f));
-  }
+  // Value is clamped to 1.0
+  ASSERT_TRUE(ScalarNearlyEqual(converted_stops[0], 0.0f));
+  ASSERT_TRUE(ScalarNearlyEqual(converted_stops[1], 1.0f));
+  ASSERT_TRUE(ScalarNearlyEqual(converted_stops[2], 1.0f));
+}
 
-  // Non monotonic values.
-  {
-    std::vector<flutter::DlColor> colors = {
-        flutter::DlColor::kBlue(), flutter::DlColor::kGreen(),
-        flutter::DlColor::kGreen(), flutter::DlColor::kRed()};
-    std::vector<float> stops = {0.0, 0.5, 0.4, 1.0};
-    const auto gradient =
-        flutter::DlColorSource::MakeLinear(SkPoint::Make(0, 0),          //
-                                           SkPoint::Make(1.0, 1.0),      //
-                                           4,                            //
-                                           colors.data(),                //
-                                           stops.data(),                 //
-                                           flutter::DlTileMode::kClamp,  //
-                                           nullptr                       //
-        );
+TEST(SkiaConversionsTest, GradientConversionNonMonotonic) {
+  std::vector<flutter::DlColor> colors = {
+      flutter::DlColor::kBlue(), flutter::DlColor::kGreen(),
+      flutter::DlColor::kGreen(), flutter::DlColor::kRed()};
+  std::vector<float> stops = {0.0, 0.5, 0.4, 1.0};
+  const auto gradient =
+      flutter::DlColorSource::MakeLinear(SkPoint::Make(0, 0),          //
+                                         SkPoint::Make(1.0, 1.0),      //
+                                         4,                            //
+                                         colors.data(),                //
+                                         stops.data(),                 //
+                                         flutter::DlTileMode::kClamp,  //
+                                         nullptr                       //
+      );
 
-    std::vector<Color> converted_colors;
-    std::vector<Scalar> converted_stops;
-    skia_conversions::ConvertStops(gradient.get(), converted_colors,
-                                   converted_stops);
+  std::vector<Color> converted_colors;
+  std::vector<Scalar> converted_stops;
+  skia_conversions::ConvertStops(gradient.get(), converted_colors,
+                                 converted_stops);
 
-    // Value is clamped to 0.5
-    ASSERT_TRUE(ScalarNearlyEqual(converted_stops[0], 0.0f));
-    ASSERT_TRUE(ScalarNearlyEqual(converted_stops[1], 0.5f));
-    ASSERT_TRUE(ScalarNearlyEqual(converted_stops[2], 0.5f));
-    ASSERT_TRUE(ScalarNearlyEqual(converted_stops[3], 1.0f));
-  }
+  // Value is clamped to 0.5
+  ASSERT_TRUE(ScalarNearlyEqual(converted_stops[0], 0.0f));
+  ASSERT_TRUE(ScalarNearlyEqual(converted_stops[1], 0.5f));
+  ASSERT_TRUE(ScalarNearlyEqual(converted_stops[2], 0.5f));
+  ASSERT_TRUE(ScalarNearlyEqual(converted_stops[3], 1.0f));
 }
 
 }  // namespace testing
