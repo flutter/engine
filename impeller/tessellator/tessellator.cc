@@ -171,7 +171,7 @@ Tessellator::Result Tessellator::Tessellate(
       return Result::kTessellationError;
     }
 
-    int elementItemCount = tessGetElementCount(tessellator) * kPolygonSize;
+    int element_item_count = tessGetElementCount(tessellator) * kPolygonSize;
 
     // We default to using a 16bit index buffer, but in cases where we generate
     // more tessellated data than this can contain we need to fall back to
