@@ -21,8 +21,6 @@ namespace flutter {
 
 class RuntimeDelegate {
  public:
-  virtual bool ImplicitViewEnabled() = 0;
-
   virtual std::string DefaultRouteName() = 0;
 
   virtual void ScheduleFrame(bool regenerate_layer_tree = true) = 0;
@@ -55,6 +53,11 @@ class RuntimeDelegate {
 
   virtual std::weak_ptr<PlatformMessageHandler> GetPlatformMessageHandler()
       const = 0;
+
+  virtual void SendChannelUpdate(std::string name, bool listening) = 0;
+
+  virtual double GetScaledFontSize(double unscaled_font_size,
+                                   int configuration_id) const = 0;
 
  protected:
   virtual ~RuntimeDelegate();

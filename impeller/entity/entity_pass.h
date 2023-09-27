@@ -36,10 +36,12 @@ class EntityPass {
   /// `GetEntityForElement()`.
   using Element = std::variant<Entity, std::unique_ptr<EntityPass>>;
 
+  static const std::string kCaptureDocumentName;
+
   using BackdropFilterProc = std::function<std::shared_ptr<FilterContents>(
       FilterInput::Ref,
       const Matrix& effect_transform,
-      bool is_subpass)>;
+      Entity::RenderingMode rendering_mode)>;
 
   struct StencilCoverageLayer {
     std::optional<Rect> coverage;
@@ -52,7 +54,7 @@ class EntityPass {
 
   ~EntityPass();
 
-  void SetDelegate(std::unique_ptr<EntityPassDelegate> delgate);
+  void SetDelegate(std::shared_ptr<EntityPassDelegate> delgate);
 
   /// @brief  Set the bounds limit, which is provided by the user when creating
   ///         a SaveLayer. This is a hint that allows the user to communicate
@@ -75,12 +77,16 @@ class EntityPass {
 
   void SetElements(std::vector<Element> elements);
 
+  //----------------------------------------------------------------------------
   /// @brief  Appends a given pass as a subpass.
+  ///
   EntityPass* AddSubpass(std::unique_ptr<EntityPass> pass);
 
+  //----------------------------------------------------------------------------
   /// @brief  Merges a given pass into this pass. Useful for drawing
   ///         pre-recorded pictures that don't require rendering into a separate
   ///         subpass.
+  ///
   void AddSubpassInline(std::unique_ptr<EntityPass> pass);
 
   EntityPass* GetSuperpass() const;
@@ -88,28 +94,44 @@ class EntityPass {
   bool Render(ContentContext& renderer,
               const RenderTarget& render_target) const;
 
+  /// @brief  Iterate all elements (entities and subpasses) in this pass,
+  ///         recursively including elements of child passes. The iteration
+  ///         order is depth-first. Whenever a subpass elements is encountered,
+  ///         it's included in the stream before its children.
+  void IterateAllElements(const std::function<bool(Element&)>& iterator);
+
+  //----------------------------------------------------------------------------
   /// @brief  Iterate all entities in this pass, recursively including entities
   ///         of child passes. The iteration order is depth-first.
+  ///
   void IterateAllEntities(const std::function<bool(Entity&)>& iterator);
 
+  //----------------------------------------------------------------------------
   /// @brief  Iterate all entities in this pass, recursively including entities
   ///         of child passes. The iteration order is depth-first and does not
   ///         allow modification of the entities.
+  ///
   void IterateAllEntities(
       const std::function<bool(const Entity&)>& iterator) const;
 
+  //----------------------------------------------------------------------------
   /// @brief  Iterate entities in this pass up until the first subpass is found.
   ///         This is useful for limiting look-ahead optimizations.
   ///
   /// @return Returns whether a subpass was encountered.
+  ///
   bool IterateUntilSubpass(const std::function<bool(Entity&)>& iterator);
 
+  //----------------------------------------------------------------------------
   /// @brief Return the number of elements on this pass.
+  ///
   size_t GetElementCount() const;
 
   void SetTransformation(Matrix xformation);
 
   void SetStencilDepth(size_t stencil_depth);
+
+  size_t GetStencilDepth();
 
   void SetBlendMode(BlendMode blend_mode);
 
@@ -119,6 +141,9 @@ class EntityPass {
 
   void SetEnableOffscreenCheckerboard(bool enabled);
 
+  //----------------------------------------------------------------------------
+  /// @brief  Get the coverage of an unfiltered subpass.
+  ///
   std::optional<Rect> GetSubpassCoverage(
       const EntityPass& subpass,
       std::optional<Rect> coverage_limit) const;
@@ -152,6 +177,7 @@ class EntityPass {
 
   EntityResult GetEntityForElement(const EntityPass::Element& element,
                                    ContentContext& renderer,
+                                   Capture& capture,
                                    InlinePassContext& pass_context,
                                    ISize root_pass_size,
                                    Point global_pass_position,
@@ -159,6 +185,7 @@ class EntityPass {
                                    StencilCoverageStack& stencil_coverage_stack,
                                    size_t stencil_depth_floor) const;
 
+  //----------------------------------------------------------------------------
   /// @brief     OnRender is the internal command recording routine for
   ///            `EntityPass`. Its job is to walk through each `Element` which
   ///            was appended to the scene (either an `Entity` via `AddEntity()`
@@ -214,7 +241,9 @@ class EntityPass {
   ///                                      creating a new `RenderPass`. This
   ///                                      "collapses" the Elements into the
   ///                                      parent pass.
+  ///
   bool OnRender(ContentContext& renderer,
+                Capture& capture,
                 ISize root_pass_size,
                 EntityPassTarget& pass_target,
                 Point global_pass_position,
@@ -253,7 +282,7 @@ class EntityPass {
 
   BackdropFilterProc backdrop_filter_proc_ = nullptr;
 
-  std::unique_ptr<EntityPassDelegate> delegate_ =
+  std::shared_ptr<EntityPassDelegate> delegate_ =
       EntityPassDelegate::MakeDefault();
 
   FML_DISALLOW_COPY_AND_ASSIGN(EntityPass);

@@ -9,10 +9,10 @@
 #include <utility>
 
 #include "flutter/fml/logging.h"
+#include "impeller/aiks/image_filter.h"
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
-#include "impeller/entity/contents/color_source_text_contents.h"
 #include "impeller/entity/contents/solid_rrect_blur_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
@@ -58,17 +58,28 @@ void Canvas::Save() {
 
 void Canvas::Save(bool create_subpass,
                   BlendMode blend_mode,
-                  EntityPass::BackdropFilterProc backdrop_filter) {
+                  const std::shared_ptr<ImageFilter>& backdrop_filter) {
   auto entry = CanvasStackEntry{};
   entry.xformation = xformation_stack_.back().xformation;
   entry.cull_rect = xformation_stack_.back().cull_rect;
   entry.stencil_depth = xformation_stack_.back().stencil_depth;
   if (create_subpass) {
-    entry.is_subpass = true;
+    entry.rendering_mode = Entity::RenderingMode::kSubpass;
     auto subpass = std::make_unique<EntityPass>();
     subpass->SetEnableOffscreenCheckerboard(
         debug_options.offscreen_texture_checkerboard);
-    subpass->SetBackdropFilter(std::move(backdrop_filter));
+    if (backdrop_filter) {
+      EntityPass::BackdropFilterProc backdrop_filter_proc =
+          [backdrop_filter = backdrop_filter->Clone()](
+              const FilterInput::Ref& input, const Matrix& effect_transform,
+              Entity::RenderingMode rendering_mode) {
+            auto filter = backdrop_filter->WrapInput(input);
+            filter->SetEffectTransform(effect_transform);
+            filter->SetRenderingMode(rendering_mode);
+            return filter;
+          };
+      subpass->SetBackdropFilter(backdrop_filter_proc);
+    }
     subpass->SetBlendMode(blend_mode);
     current_pass_ = GetCurrentPass().AddSubpass(std::move(subpass));
     current_pass_->SetTransformation(xformation_stack_.back().xformation);
@@ -82,7 +93,8 @@ bool Canvas::Restore() {
   if (xformation_stack_.size() == 1) {
     return false;
   }
-  if (xformation_stack_.back().is_subpass) {
+  if (xformation_stack_.back().rendering_mode ==
+      Entity::RenderingMode::kSubpass) {
     current_pass_ = GetCurrentPass().GetSuperpass();
     FML_DCHECK(current_pass_);
   }
@@ -427,20 +439,29 @@ void Canvas::DrawPicture(const Picture& picture) {
     return;
   }
 
-  auto save_count = GetSaveCount();
-  Save();
-
   // Clone the base pass and account for the CTM updates.
   auto pass = picture.pass->Clone();
-  pass->IterateAllEntities([&](auto& entity) -> bool {
-    entity.IncrementStencilDepth(GetStencilDepth());
-    entity.SetTransformation(GetCurrentTransformation() *
-                             entity.GetTransformation());
-    return true;
+
+  pass->IterateAllElements([&](auto& element) -> bool {
+    if (auto entity = std::get_if<Entity>(&element)) {
+      entity->IncrementStencilDepth(GetStencilDepth());
+      entity->SetTransformation(GetCurrentTransformation() *
+                                entity->GetTransformation());
+      return true;
+    }
+
+    if (auto subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
+      subpass->get()->SetStencilDepth(subpass->get()->GetStencilDepth() +
+                                      GetStencilDepth());
+      return true;
+    }
+
+    FML_UNREACHABLE();
   });
+
   GetCurrentPass().AddSubpassInline(std::move(pass));
 
-  RestoreToCount(save_count);
+  RestoreClip();
 }
 
 void Canvas::DrawImage(const std::shared_ptr<Image>& image,
@@ -483,7 +504,7 @@ void Canvas::DrawImageRect(const std::shared_ptr<Image>& image,
   Entity entity;
   entity.SetBlendMode(paint.blend_mode);
   entity.SetStencilDepth(GetStencilDepth());
-  entity.SetContents(paint.WithFilters(contents, false));
+  entity.SetContents(paint.WithFilters(contents));
   entity.SetTransformation(GetCurrentTransformation());
 
   GetCurrentPass().AddEntity(entity);
@@ -510,7 +531,7 @@ size_t Canvas::GetStencilDepth() const {
 
 void Canvas::SaveLayer(const Paint& paint,
                        std::optional<Rect> bounds,
-                       const Paint::ImageFilterProc& backdrop_filter) {
+                       const std::shared_ptr<ImageFilter>& backdrop_filter) {
   Save(true, paint.blend_mode, backdrop_filter);
 
   auto& new_layer_pass = GetCurrentPass();
@@ -519,13 +540,13 @@ void Canvas::SaveLayer(const Paint& paint,
   // Only apply opacity peephole on default blending.
   if (paint.blend_mode == BlendMode::kSourceOver) {
     new_layer_pass.SetDelegate(
-        std::make_unique<OpacityPeepholePassDelegate>(paint));
+        std::make_shared<OpacityPeepholePassDelegate>(paint));
   } else {
-    new_layer_pass.SetDelegate(std::make_unique<PaintPassDelegate>(paint));
+    new_layer_pass.SetDelegate(std::make_shared<PaintPassDelegate>(paint));
   }
 }
 
-void Canvas::DrawTextFrame(const TextFrame& text_frame,
+void Canvas::DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
                            Point position,
                            const Paint& paint) {
   Entity entity;
@@ -534,37 +555,19 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
 
   auto text_contents = std::make_shared<TextContents>();
   text_contents->SetTextFrame(text_frame);
-
-  if (paint.color_source.GetType() != ColorSource::Type::kColor) {
-    auto color_text_contents = std::make_shared<ColorSourceTextContents>();
-    entity.SetTransformation(GetCurrentTransformation());
-
-    Entity test;
-    auto maybe_cvg = text_contents->GetCoverage(test);
-    FML_CHECK(maybe_cvg.has_value());
-    // Covered by FML_CHECK.
-    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
-    auto cvg = maybe_cvg.value();
-    color_text_contents->SetTextPosition(cvg.origin + position);
-
-    text_contents->SetOffset(-cvg.origin);
-    color_text_contents->SetTextContents(std::move(text_contents));
-    color_text_contents->SetColorSourceContents(
-        paint.color_source.GetContents(paint));
-
-    entity.SetContents(
-        paint.WithFilters(std::move(color_text_contents), false));
-
-    GetCurrentPass().AddEntity(entity);
-    return;
-  }
-
   text_contents->SetColor(paint.color);
 
   entity.SetTransformation(GetCurrentTransformation() *
                            Matrix::MakeTranslation(position));
 
-  entity.SetContents(paint.WithFilters(std::move(text_contents), true));
+  // TODO(bdero): This mask blur application is a hack. It will always wind up
+  //              doing a gaussian blur that affects the color source itself
+  //              instead of just the mask. The color filter text support
+  //              needs to be reworked in order to interact correctly with
+  //              mask filters.
+  //              https://github.com/flutter/flutter/issues/133297
+  entity.SetContents(
+      paint.WithFilters(paint.WithMaskBlur(std::move(text_contents), true)));
 
   GetCurrentPass().AddEntity(entity);
 }
@@ -673,7 +676,7 @@ void Canvas::DrawAtlas(const std::shared_ptr<Image>& atlas,
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetStencilDepth(GetStencilDepth());
   entity.SetBlendMode(paint.blend_mode);
-  entity.SetContents(paint.WithFilters(contents, false));
+  entity.SetContents(paint.WithFilters(contents));
 
   GetCurrentPass().AddEntity(entity);
 }

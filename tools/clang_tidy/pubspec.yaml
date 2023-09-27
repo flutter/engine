@@ -5,7 +5,7 @@
 name: clang_tidy
 publish_to: none
 environment:
-  sdk: '>=3.0.0-0 <4.0.0'
+  sdk: '>=3.2.0-0 <4.0.0'
 
 # Do not add any dependencies that require more than what is provided in
 # //third_party/pkg, //third_party/dart/pkg, or
@@ -18,14 +18,18 @@ environment:
 
 dependencies:
   args: any
+  git_repo_tools: any
+  engine_repo_tools: any
   meta: any
   path: any
+  process: any
   process_runner: any
 
 dev_dependencies:
   async_helper: any
   expect: any
   litetest: any
+  process_fakes: any
   smith: any
 
 dependency_overrides:
@@ -37,10 +41,14 @@ dependency_overrides:
     path: ../../../third_party/dart/pkg/async_helper
   collection:
     path: ../../../third_party/dart/third_party/pkg/collection
+  engine_repo_tools:
+    path: ../pkg/engine_repo_tools
   expect:
     path: ../../../third_party/dart/pkg/expect
   file:
     path: ../../../third_party/pkg/file/packages/file
+  git_repo_tools:
+    path: ../pkg/git_repo_tools
   litetest:
     path: ../../testing/litetest
   meta:
@@ -51,6 +59,8 @@ dependency_overrides:
     path: ../../../third_party/pkg/platform
   process:
     path: ../../../third_party/pkg/process
+  process_fakes:
+    path: ../pkg/process_fakes
   process_runner:
     path: ../../../third_party/pkg/process_runner
   smith:

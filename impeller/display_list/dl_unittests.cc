@@ -411,6 +411,33 @@ TEST_P(DisplayListTest, CanDrawWithOddPathWinding) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
+// Regression test for https://github.com/flutter/flutter/issues/134816.
+//
+// It should be possible to draw 3 lines, and not have an implicit close path.
+TEST_P(DisplayListTest, CanDrawAnOpenPath) {
+  flutter::DisplayListBuilder builder;
+  flutter::DlPaint paint;
+
+  paint.setColor(flutter::DlColor::kRed());
+  paint.setDrawStyle(flutter::DlDrawStyle::kStroke);
+  paint.setStrokeWidth(10);
+
+  builder.Translate(300, 300);
+
+  // Move to (50, 50) and draw lines from:
+  // 1. (50, height)
+  // 2. (width, height)
+  // 3. (width, 50)
+  SkPath path;
+  path.moveTo(50, 50);
+  path.lineTo(50, 100);
+  path.lineTo(100, 100);
+  path.lineTo(100, 50);
+  builder.DrawPath(path, paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
 TEST_P(DisplayListTest, CanDrawWithMaskBlur) {
   auto texture = CreateTextureForFixture("embarcadero.jpg");
   flutter::DisplayListBuilder builder;
@@ -456,6 +483,32 @@ TEST_P(DisplayListTest, CanDrawStrokedText) {
   builder.DrawTextBlob(
       SkTextBlob::MakeFromString("stoked about stroked text", CreateTestFont()),
       250, 250, paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+// Regression test for https://github.com/flutter/flutter/issues/133157.
+TEST_P(DisplayListTest, StrokedTextNotOffsetFromNormalText) {
+  flutter::DisplayListBuilder builder;
+  flutter::DlPaint paint;
+  auto const& text_blob = SkTextBlob::MakeFromString("00000", CreateTestFont());
+
+  // https://api.flutter.dev/flutter/material/Colors/blue-constant.html.
+  auto const& mat_blue = flutter::DlColor(0xFF2196f3);
+
+  // Draw a blue filled rectangle so the text is easier to see.
+  paint.setDrawStyle(flutter::DlDrawStyle::kFill);
+  paint.setColor(mat_blue);
+  builder.DrawRect(SkRect::MakeXYWH(0, 0, 500, 500), paint);
+
+  // Draw stacked text, with stroked text on top.
+  paint.setDrawStyle(flutter::DlDrawStyle::kFill);
+  paint.setColor(flutter::DlColor::kWhite());
+  builder.DrawTextBlob(text_blob, 250, 250, paint);
+
+  paint.setDrawStyle(flutter::DlDrawStyle::kStroke);
+  paint.setColor(flutter::DlColor::kBlack());
+  builder.DrawTextBlob(text_blob, 250, 250, paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -1143,11 +1196,13 @@ TEST_P(DisplayListTest, CanDrawRectWithLinearToSrgbColorFilter) {
   flutter::DlPaint paint;
   paint.setColor(flutter::DlColor(0xFF2196F3).withAlpha(128));
   flutter::DisplayListBuilder builder;
-  paint.setColorFilter(flutter::DlLinearToSrgbGammaColorFilter::instance.get());
+  paint.setColorFilter(
+      flutter::DlLinearToSrgbGammaColorFilter::kInstance.get());
   builder.DrawRect(SkRect::MakeXYWH(0, 0, 200, 200), paint);
   builder.Translate(0, 200);
 
-  paint.setColorFilter(flutter::DlSrgbToLinearGammaColorFilter::instance.get());
+  paint.setColorFilter(
+      flutter::DlSrgbToLinearGammaColorFilter::kInstance.get());
   builder.DrawRect(SkRect::MakeXYWH(0, 0, 200, 200), paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -1470,6 +1525,29 @@ TEST_P(DisplayListTest, DrawVerticesSolidColorTrianglesWithIndices) {
 
   paint.setColor(flutter::DlColor::kWhite());
   builder.DrawVertices(vertices, flutter::DlBlendMode::kSrcOver, paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, DrawVerticesPremultipliesColors) {
+  std::vector<SkPoint> positions = {
+      SkPoint::Make(100, 300), SkPoint::Make(200, 100), SkPoint::Make(300, 300),
+      SkPoint::Make(200, 500)};
+  auto color = flutter::DlColor::kBlue().withAlpha(0x99);
+  std::vector<uint16_t> indices = {0, 1, 2, 0, 2, 3};
+  std::vector<flutter::DlColor> colors = {color, color, color, color};
+
+  auto vertices = flutter::DlVertices::Make(
+      flutter::DlVertexMode::kTriangles, 6, positions.data(),
+      /*texture_coorindates=*/nullptr, colors.data(), 6, indices.data());
+
+  flutter::DisplayListBuilder builder;
+  flutter::DlPaint paint;
+  paint.setBlendMode(flutter::DlBlendMode::kSrcOver);
+  paint.setColor(flutter::DlColor::kRed());
+
+  builder.DrawRect(SkRect::MakeLTRB(0, 0, 400, 400), paint);
+  builder.DrawVertices(vertices, flutter::DlBlendMode::kDst, paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }

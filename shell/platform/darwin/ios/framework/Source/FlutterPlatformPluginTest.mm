@@ -19,6 +19,7 @@
 - (BOOL)isLiveTextInputAvailable;
 - (void)searchWeb:(NSString*)searchTerm;
 - (void)showLookUpViewController:(NSString*)term;
+- (void)showShareViewController:(NSString*)content;
 @end
 
 @interface UIViewController ()
@@ -28,14 +29,51 @@
 @end
 
 @implementation FlutterPlatformPluginTest
-- (void)testSearchWebInvoked {
+- (void)testSearchWebInvokedWithEscapedTerm {
+  id mockApplication = OCMClassMock([UIApplication class]);
+  OCMStub([mockApplication sharedApplication]).andReturn(mockApplication);
+
   FlutterEngine* engine = [[[FlutterEngine alloc] initWithName:@"test" project:nil] autorelease];
   std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
       std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
   [engine runWithEntrypoint:nil];
 
   XCTestExpectation* invokeExpectation =
-      [self expectationWithDescription:@"Web search launched with search term"];
+      [self expectationWithDescription:@"Web search launched with escaped search term"];
+
+  FlutterPlatformPlugin* plugin =
+      [[[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakPtr()] autorelease];
+  FlutterPlatformPlugin* mockPlugin = OCMPartialMock(plugin);
+
+  FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"SearchWeb.invoke"
+                                                                    arguments:@"Testing Word!"];
+
+  FlutterResult result = ^(id result) {
+    OCMVerify([mockPlugin searchWeb:@"Testing Word!"]);
+#if not APPLICATION_EXTENSION_API_ONLY
+    OCMVerify([mockApplication openURL:[NSURL URLWithString:@"x-web-search://?Testing%20Word!"]
+                               options:@{}
+                     completionHandler:nil]);
+#endif
+    [invokeExpectation fulfill];
+  };
+
+  [mockPlugin handleMethodCall:methodCall result:result];
+  [self waitForExpectationsWithTimeout:1 handler:nil];
+  [mockApplication stopMocking];
+}
+
+- (void)testSearchWebInvokedWithNonEscapedTerm {
+  id mockApplication = OCMClassMock([UIApplication class]);
+  OCMStub([mockApplication sharedApplication]).andReturn(mockApplication);
+
+  FlutterEngine* engine = [[[FlutterEngine alloc] initWithName:@"test" project:nil] autorelease];
+  std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
+      std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
+  [engine runWithEntrypoint:nil];
+
+  XCTestExpectation* invokeExpectation =
+      [self expectationWithDescription:@"Web search launched with non escaped search term"];
 
   FlutterPlatformPlugin* plugin =
       [[[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakPtr()] autorelease];
@@ -46,11 +84,17 @@
 
   FlutterResult result = ^(id result) {
     OCMVerify([mockPlugin searchWeb:@"Test"]);
+#if not APPLICATION_EXTENSION_API_ONLY
+    OCMVerify([mockApplication openURL:[NSURL URLWithString:@"x-web-search://?Test"]
+                               options:@{}
+                     completionHandler:nil]);
+#endif
     [invokeExpectation fulfill];
   };
 
   [mockPlugin handleMethodCall:methodCall result:result];
   [self waitForExpectationsWithTimeout:1 handler:nil];
+  [mockApplication stopMocking];
 }
 
 - (void)testLookUpCallInitiated {
@@ -81,6 +125,40 @@
   };
   [mockPlugin handleMethodCall:methodCall result:result];
   [self waitForExpectationsWithTimeout:2 handler:nil];
+}
+
+- (void)testShareScreenInvoked {
+  FlutterEngine* engine = [[[FlutterEngine alloc] initWithName:@"test" project:nil] autorelease];
+  [engine runWithEntrypoint:nil];
+  std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
+      std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
+
+  XCTestExpectation* presentExpectation =
+      [self expectationWithDescription:@"Share view controller presented"];
+
+  FlutterViewController* engineViewController =
+      [[[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil] autorelease];
+  FlutterViewController* mockEngineViewController = OCMPartialMock(engineViewController);
+  OCMStub([mockEngineViewController
+      presentViewController:[OCMArg isKindOfClass:[UIActivityViewController class]]
+                   animated:YES
+                 completion:nil]);
+
+  FlutterPlatformPlugin* plugin =
+      [[[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakPtr()] autorelease];
+  FlutterPlatformPlugin* mockPlugin = OCMPartialMock(plugin);
+
+  FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"Share.invoke"
+                                                                    arguments:@"Test"];
+  FlutterResult result = ^(id result) {
+    OCMVerify([mockEngineViewController
+        presentViewController:[OCMArg isKindOfClass:[UIActivityViewController class]]
+                     animated:YES
+                   completion:nil]);
+    [presentExpectation fulfill];
+  };
+  [mockPlugin handleMethodCall:methodCall result:result];
+  [self waitForExpectationsWithTimeout:1 handler:nil];
 }
 
 - (void)testClipboardHasCorrectStrings {

@@ -293,6 +293,39 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     ///        Flutter to the host platform (and its responses).
     virtual const std::shared_ptr<PlatformMessageHandler>&
     GetPlatformMessageHandler() const = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Invoked when a listener is registered on a platform channel.
+    ///
+    /// @param[in]  name             The name of the platform channel to which a
+    ///                              listener has been registered or cleared.
+    ///
+    /// @param[in]  listening        Whether the listener has been set (true) or
+    ///                              cleared (false).
+    ///
+    virtual void OnEngineChannelUpdate(std::string name, bool listening) = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Synchronously invokes platform-specific APIs to apply the
+    ///             system text scaling on the given unscaled font size.
+    ///
+    ///             Platforms that support this feature (currently it's only
+    ///             implemented for Android SDK level 34+) will send a valid
+    ///             configuration_id to potential callers, before this method
+    ///             can be called.
+    ///
+    /// @param[in]  unscaled_font_size  The unscaled font size specified by the
+    ///                                 app developer. The value is in logical
+    ///                                 pixels, and is guaranteed to be finite
+    ///                                 and non-negative.
+    /// @param[in]  configuration_id    The unique id of the configuration to
+    ///                                 use for computing the scaled font size.
+    ///
+    /// @return     The scaled font size in logical pixels, or -1 when the given
+    ///             configuration_id did not match a valid configuration.
+    ///
+    virtual double GetScaledFontSize(double unscaled_font_size,
+                                     int configuration_id) const = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -676,6 +709,31 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   std::optional<uint32_t> GetUIIsolateReturnCode();
 
   //----------------------------------------------------------------------------
+  /// @brief      Notify the Flutter application that a new view is available.
+  ///
+  ///             A view must be added before other methods can refer to it,
+  ///             including the implicit view. Adding a view that already exists
+  ///             triggers an assertion.
+  ///
+  /// @param[in]  view_id           The ID of the new view.
+  /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
+  ///
+  void AddView(int64_t view_id, const ViewportMetrics& view_metrics);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Notify the Flutter application that a view is no
+  ///             longer available.
+  ///
+  ///             Removing a view that does not exist triggers an assertion.
+  ///
+  ///             The implicit view (kFlutterImplicitViewId) should never be
+  ///             removed. Doing so triggers an assertion.
+  ///
+  /// @param[in]  view_id  The ID of the view.
+  ///
+  void RemoveView(int64_t view_id);
+
+  //----------------------------------------------------------------------------
   /// @brief      Updates the viewport metrics for a view. The viewport metrics
   ///             detail the size of the rendering viewport in texels as well as
   ///             edge insets if present.
@@ -899,9 +957,6 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
 
  private:
   // |RuntimeDelegate|
-  bool ImplicitViewEnabled() override;
-
-  // |RuntimeDelegate|
   std::string DefaultRouteName() override;
 
   // |RuntimeDelegate|
@@ -932,6 +987,13 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   // |RuntimeDelegate|
   std::weak_ptr<PlatformMessageHandler> GetPlatformMessageHandler()
       const override;
+
+  // |RuntimeDelegate|
+  void SendChannelUpdate(std::string name, bool listening) override;
+
+  // |RuntimeDelegate|
+  double GetScaledFontSize(double unscaled_font_size,
+                           int configuration_id) const override;
 
   void SetNeedsReportTimings(bool value) override;
 

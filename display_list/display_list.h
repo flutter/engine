@@ -136,6 +136,7 @@ namespace flutter {
                                     \
   V(DrawDisplayList)                \
   V(DrawTextBlob)                   \
+  V(DrawTextFrame)                  \
                                     \
   V(DrawShadow)                     \
   V(DrawShadowTransparentOccluder)
@@ -159,7 +160,8 @@ class SaveLayerOptions {
 
   SaveLayerOptions() : flags_(0) {}
   SaveLayerOptions(const SaveLayerOptions& options) : flags_(options.flags_) {}
-  SaveLayerOptions(const SaveLayerOptions* options) : flags_(options->flags_) {}
+  explicit SaveLayerOptions(const SaveLayerOptions* options)
+      : flags_(options->flags_) {}
 
   SaveLayerOptions without_optimizations() const {
     SaveLayerOptions options;

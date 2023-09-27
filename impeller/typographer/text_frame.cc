@@ -8,30 +8,13 @@ namespace impeller {
 
 TextFrame::TextFrame() = default;
 
+TextFrame::TextFrame(std::vector<TextRun>& runs, Rect bounds, bool has_color)
+    : runs_(std::move(runs)), bounds_(bounds), has_color_(has_color) {}
+
 TextFrame::~TextFrame() = default;
 
-std::optional<Rect> TextFrame::GetBounds() const {
-  std::optional<Rect> result;
-
-  for (const auto& run : runs_) {
-    for (const auto& glyph_position : run.GetGlyphPositions()) {
-      Rect glyph_rect =
-          Rect(glyph_position.position + glyph_position.glyph.bounds.origin,
-               glyph_position.glyph.bounds.size);
-      result = result.has_value() ? result->Union(glyph_rect) : glyph_rect;
-    }
-  }
-
-  return result;
-}
-
-bool TextFrame::AddTextRun(const TextRun& run) {
-  if (!run.IsValid()) {
-    return false;
-  }
-  has_color_ |= run.HasColor();
-  runs_.emplace_back(run);
-  return true;
+Rect TextFrame::GetBounds() const {
+  return bounds_;
 }
 
 size_t TextFrame::GetRunCount() const {
@@ -84,12 +67,13 @@ Scalar TextFrame::RoundScaledFontSize(Scalar scale, Scalar point_size) {
   return std::round(scale * 100) / 100;
 }
 
-void TextFrame::CollectUniqueFontGlyphPairs(FontGlyphPair::Set& set,
+void TextFrame::CollectUniqueFontGlyphPairs(FontGlyphMap& glyph_map,
                                             Scalar scale) const {
   for (const TextRun& run : GetRuns()) {
     const Font& font = run.GetFont();
     auto rounded_scale =
         RoundScaledFontSize(scale, font.GetMetrics().point_size);
+    auto& set = glyph_map[{font, rounded_scale}];
     for (const TextRun::GlyphPosition& glyph_position :
          run.GetGlyphPositions()) {
 #if false
@@ -99,7 +83,7 @@ if (rounded_scale != scale) {
   FML_LOG(ERROR) << glyph_position.glyph.bounds.size * delta;
 }
 #endif
-      set.insert({font, glyph_position.glyph, rounded_scale});
+      set.insert(glyph_position.glyph);
     }
   }
 }

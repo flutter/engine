@@ -19,7 +19,7 @@ void RenderTargetCache::Start() {
 void RenderTargetCache::End() {
   std::vector<TextureData> retain;
 
-  for (auto td : texture_data_) {
+  for (const auto& td : texture_data_) {
     if (td.used_this_frame) {
       retain.push_back(td);
     }
@@ -39,12 +39,16 @@ std::shared_ptr<Texture> RenderTargetCache::CreateTexture(
 
   for (auto& td : texture_data_) {
     const auto other_desc = td.texture->GetTextureDescriptor();
+    FML_DCHECK(td.texture != nullptr);
     if (!td.used_this_frame && desc == other_desc) {
       td.used_this_frame = true;
       return td.texture;
     }
   }
   auto result = RenderTargetAllocator::CreateTexture(desc);
+  if (result == nullptr) {
+    return result;
+  }
   texture_data_.push_back(
       TextureData{.used_this_frame = true, .texture = result});
   return result;

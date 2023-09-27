@@ -260,7 +260,7 @@ std::ostream& operator<<(std::ostream& os, const DlFilterMode& mode) {
 }
 
 std::ostream& operator<<(std::ostream& os, const DlColor& color) {
-  return os << "DlColor(" << std::hex << color.argb << std::dec << ")";
+  return os << "DlColor(" << std::hex << color.argb() << std::dec << ")";
 }
 
 std::ostream& operator<<(std::ostream& os, DlImageSampling sampling) {
@@ -859,6 +859,15 @@ void DisplayListStreamDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,
            << blob.get() << ", "
            << x << ", " << y << ");" << std::endl;
 }
+
+void DisplayListStreamDispatcher::drawTextFrame(const std::shared_ptr<impeller::TextFrame>& text_frame,
+                     SkScalar x,
+                     SkScalar y) {
+    startl() << "drawTextFrame("
+      << text_frame.get() << ", "
+      << x << ", " << y << ");" << std::endl;
+}
+
 void DisplayListStreamDispatcher::drawShadow(const SkPath& path,
                                              const DlColor color,
                                              const SkScalar elevation,

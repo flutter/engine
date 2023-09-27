@@ -5,6 +5,7 @@
 #pragma once
 
 #include <variant>
+#include "impeller/core/capture.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/matrix.h"
@@ -21,6 +22,17 @@ class Entity {
  public:
   static constexpr BlendMode kLastPipelineBlendMode = BlendMode::kModulate;
   static constexpr BlendMode kLastAdvancedBlendMode = BlendMode::kLuminosity;
+
+  enum class RenderingMode {
+    /// In direct mode, the Entity's transform is used as the current
+    /// local-to-screen transformation matrix.
+    kDirect,
+    /// In subpass mode, the Entity passed through the filter is in screen space
+    /// rather than local space, and so some filters (namely,
+    /// MatrixFilterContents) need to interpret the given EffectTransform as the
+    /// current transformation matrix.
+    kSubpass,
+  };
 
   /// An enum to define how to repeat, fold, or omit colors outside of the
   /// typically defined range of the source of the colors (such as the
@@ -96,11 +108,16 @@ class Entity {
 
   Scalar DeriveTextScale() const;
 
+  Capture& GetCapture() const;
+
+  void SetCapture(Capture capture) const;
+
  private:
   Matrix transformation_;
   std::shared_ptr<Contents> contents_;
   BlendMode blend_mode_ = BlendMode::kSourceOver;
   uint32_t stencil_depth_ = 0u;
+  mutable Capture capture_;
 };
 
 }  // namespace impeller

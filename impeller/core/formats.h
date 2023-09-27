@@ -107,6 +107,7 @@ enum class PixelFormat {
   kB10G10R10A10XR,
   // Depth and stencil formats.
   kS8UInt,
+  kD24UnormS8Uint,
   kD32FloatS8UInt,
 };
 
@@ -140,6 +141,8 @@ constexpr const char* PixelFormatToString(PixelFormat format) {
       return "B10G10R10A10XR";
     case PixelFormat::kS8UInt:
       return "S8UInt";
+    case PixelFormat::kD24UnormS8Uint:
+      return "D24UnormS8Uint";
     case PixelFormat::kD32FloatS8UInt:
       return "D32FloatS8UInt";
   }
@@ -322,11 +325,33 @@ enum class IndexType {
   kNone,
 };
 
+/// Decides how backend draws pixels based on input vertices.
 enum class PrimitiveType {
+  /// Draws a triage for each separate set of three vertices.
+  ///
+  /// Vertices [A, B, C, D, E, F] will produce triages
+  /// [ABC, DEF].
   kTriangle,
+
+  /// Draws a triage for every adjacent three vertices.
+  ///
+  /// Vertices [A, B, C, D, E, F] will produce triages
+  /// [ABC, BCD, CDE, DEF].
   kTriangleStrip,
+
+  /// Draws a line for each separate set of two vertices.
+  ///
+  /// Vertices [A, B, C] will produce discontinued line
+  /// [AB, BC].
   kLine,
+
+  /// Draws a continuous line that connect every input vertices
+  ///
+  /// Vertices [A, B, C] will produce one continuous line
+  /// [ABC].
   kLineStrip,
+
+  /// Draws a point at each input vertex.
   kPoint,
   // Triangle fans are implementation dependent and need extra extensions
   // checks. Hence, they are not supported here.
@@ -380,7 +405,7 @@ enum class SamplerAddressMode {
   // supported) defaults.
 
   /// @brief decal sampling mode is only supported on devices that pass
-  ///        the Capabilities.SupportsDecalTileMode check.
+  ///        the `Capabilities.SupportsDecalSamplerAddressMode` check.
   kDecal,
 };
 
@@ -409,6 +434,8 @@ constexpr size_t BytesPerPixelForPixelFormat(PixelFormat format) {
     case PixelFormat::kB8G8R8A8UNormIntSRGB:
     case PixelFormat::kB10G10R10XRSRGB:
     case PixelFormat::kB10G10R10XR:
+      return 4u;
+    case PixelFormat::kD24UnormS8Uint:
       return 4u;
     case PixelFormat::kD32FloatS8UInt:
       return 5u;

@@ -18,6 +18,10 @@
 
 #include <algorithm>
 #include <numeric>
+#include "display_list/dl_paint.h"
+#include "fml/logging.h"
+#include "impeller/typographer/backends/skia/text_frame_skia.h"
+#include "include/core/SkMatrix.h"
 
 namespace txt {
 
@@ -45,27 +49,29 @@ txt::FontStyle GetTxtFontStyle(SkFontStyle::Slant font_slant) {
 
 class DisplayListParagraphPainter : public skt::ParagraphPainter {
  public:
+  //----------------------------------------------------------------------------
+  /// @brief      Creates a |skt::ParagraphPainter| that draws to DisplayList.
+  ///
+  /// @param      builder  The display list builder.
+  /// @param[in]  dl_paints The paints referenced by ID in the `drawX` methods.
+  /// @param[in]  draw_path_effect  If true, draw path effects directly by
+  ///                               drawing multiple lines instead of providing
+  //                                a path effect to the paint.
+  ///
+  /// @note       Impeller does not (and will not) support path effects, but the
+  ///             Skia backend does. That means that if we want to draw dashed
+  ///             and dotted lines, we need to draw them directly using the
+  ///             `drawLine` API instead of using a path effect.
+  ///
+  ///             See https://github.com/flutter/flutter/issues/126673. It
+  ///             probably makes sense to eventually make this a compile-time
+  ///             decision (i.e. with `#ifdef`) instead of a runtime option.
   DisplayListParagraphPainter(DisplayListBuilder* builder,
-                              const std::vector<DlPaint>& dl_paints)
-      : builder_(builder), dl_paints_(dl_paints) {}
-
-  DlPaint toDlPaint(const DecorationStyle& decor_style,
-                    DlDrawStyle draw_style = DlDrawStyle::kStroke) {
-    DlPaint paint;
-    paint.setDrawStyle(draw_style);
-    paint.setAntiAlias(true);
-    paint.setColor(decor_style.getColor());
-    paint.setStrokeWidth(decor_style.getStrokeWidth());
-    std::optional<DashPathEffect> dash_path_effect =
-        decor_style.getDashPathEffect();
-    if (dash_path_effect) {
-      std::array<SkScalar, 2> intervals{dash_path_effect->fOnLength,
-                                        dash_path_effect->fOffLength};
-      paint.setPathEffect(
-          DlDashPathEffect::Make(intervals.data(), intervals.size(), 0));
-    }
-    return paint;
-  }
+                              const std::vector<DlPaint>& dl_paints,
+                              bool impeller_enabled)
+      : builder_(builder),
+        dl_paints_(dl_paints),
+        impeller_enabled_(impeller_enabled) {}
 
   void drawTextBlob(const sk_sp<SkTextBlob>& blob,
                     SkScalar x,
@@ -76,6 +82,22 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
     }
     size_t paint_id = std::get<PaintID>(paint);
     FML_DCHECK(paint_id < dl_paints_.size());
+
+#ifdef IMPELLER_SUPPORTS_RENDERING
+    if (impeller_enabled_) {
+      if (ShouldRenderAsPath(dl_paints_[paint_id])) {
+        auto path = skia::textlayout::Paragraph::GetPath(blob.get());
+        auto transformed = path.makeTransform(SkMatrix::Translate(
+            x + blob->bounds().left(), y + blob->bounds().top()));
+        builder_->DrawPath(transformed, dl_paints_[paint_id]);
+        return;
+      }
+
+      builder_->DrawTextFrame(impeller::MakeTextFrameFromTextBlobSkia(blob), x,
+                              y, dl_paints_[paint_id]);
+      return;
+    }
+#endif  // IMPELLER_SUPPORTS_RENDERING
     builder_->DrawTextBlob(blob, x, y, dl_paints_[paint_id]);
   }
 
@@ -88,10 +110,15 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
       return;
     }
     DlPaint paint;
-    paint.setColor(color);
+    paint.setColor(DlColor(color));
     if (blur_sigma > 0.0) {
       DlBlurMaskFilter filter(DlBlurStyle::kNormal, blur_sigma, false);
       paint.setMaskFilter(&filter);
+    }
+    if (impeller_enabled_) {
+      builder_->DrawTextFrame(impeller::MakeTextFrameFromTextBlobSkia(blob), x,
+                              y, paint);
+      return;
     }
     builder_->DrawTextBlob(blob, x, y, paint);
   }
@@ -118,8 +145,27 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
                 SkScalar x1,
                 SkScalar y1,
                 const DecorationStyle& decor_style) override {
-    builder_->DrawLine(SkPoint::Make(x0, y0), SkPoint::Make(x1, y1),
-                       toDlPaint(decor_style));
+    // We only support horizontal lines.
+    FML_DCHECK(y0 == y1);
+
+    // This function is called for both solid and dashed lines. If we're drawing
+    // a dashed line, and we're using the Impeller backend, then we need to draw
+    // the line directly using the `drawLine` API instead of using a path effect
+    // (because Impeller does not support path effects).
+    auto dash_path_effect = decor_style.getDashPathEffect();
+#ifdef IMPELLER_SUPPORTS_RENDERING
+    if (impeller_enabled_ && dash_path_effect) {
+      auto path = dashedLine(x0, x1, y0, *dash_path_effect);
+      builder_->DrawPath(path, toDlPaint(decor_style));
+      return;
+    }
+#endif  // IMPELLER_SUPPORTS_RENDERING
+
+    auto paint = toDlPaint(decor_style);
+    if (dash_path_effect) {
+      setPathEffect(paint, *dash_path_effect);
+    }
+    builder_->DrawLine(SkPoint::Make(x0, y0), SkPoint::Make(x1, y1), paint);
   }
 
   void clipRect(const SkRect& rect) override {
@@ -135,15 +181,74 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
   void restore() override { builder_->Restore(); }
 
  private:
+  SkPath dashedLine(SkScalar x0,
+                    SkScalar x1,
+                    SkScalar y0,
+                    const DashPathEffect& dash_path_effect) {
+    auto dx = 0.0;
+    auto path = SkPath();
+    auto on = true;
+    auto length = x1 - x0;
+    while (dx < length) {
+      if (on) {
+        // Draw the on part of the dash.
+        path.moveTo(x0 + dx, y0);
+        dx += dash_path_effect.fOnLength;
+        path.lineTo(x0 + dx, y0);
+      } else {
+        // Skip the off part of the dash.
+        dx += dash_path_effect.fOffLength;
+      }
+      on = !on;
+    }
+
+    path.close();
+    return path;
+  }
+
+  bool ShouldRenderAsPath(const DlPaint& paint) const {
+    FML_DCHECK(impeller_enabled_);
+    // Text with non-trivial color sources or stroke paint mode should be
+    // rendered as a path when running on Impeller for correctness. These
+    // filters rely on having the glyph coverage, whereas regular text is
+    // drawn as rectangular texture samples.
+    return ((paint.getColorSource() && !paint.getColorSource()->asColor()) ||
+            paint.getDrawStyle() == DlDrawStyle::kStroke);
+  }
+
+  DlPaint toDlPaint(const DecorationStyle& decor_style,
+                    DlDrawStyle draw_style = DlDrawStyle::kStroke) {
+    DlPaint paint;
+    paint.setDrawStyle(draw_style);
+    paint.setAntiAlias(true);
+    paint.setColor(DlColor(decor_style.getColor()));
+    paint.setStrokeWidth(decor_style.getStrokeWidth());
+    return paint;
+  }
+
+  void setPathEffect(DlPaint& paint, const DashPathEffect& dash_path_effect) {
+    // Impeller does not support path effects, so we should never be setting.
+    FML_DCHECK(!impeller_enabled_);
+
+    std::array<SkScalar, 2> intervals{dash_path_effect.fOnLength,
+                                      dash_path_effect.fOffLength};
+    auto effect = DlDashPathEffect::Make(intervals.data(), intervals.size(), 0);
+    paint.setPathEffect(effect);
+  }
+
   DisplayListBuilder* builder_;
   const std::vector<DlPaint>& dl_paints_;
+  const bool impeller_enabled_;
 };
 
 }  // anonymous namespace
 
 ParagraphSkia::ParagraphSkia(std::unique_ptr<skt::Paragraph> paragraph,
-                             std::vector<flutter::DlPaint>&& dl_paints)
-    : paragraph_(std::move(paragraph)), dl_paints_(dl_paints) {}
+                             std::vector<flutter::DlPaint>&& dl_paints,
+                             bool impeller_enabled)
+    : paragraph_(std::move(paragraph)),
+      dl_paints_(dl_paints),
+      impeller_enabled_(impeller_enabled) {}
 
 double ParagraphSkia::GetMaxWidth() {
   return SkScalarToDouble(paragraph_->getMaxWidth());
@@ -223,7 +328,7 @@ void ParagraphSkia::Layout(double width) {
 }
 
 bool ParagraphSkia::Paint(DisplayListBuilder* builder, double x, double y) {
-  DisplayListParagraphPainter painter(builder, dl_paints_);
+  DisplayListParagraphPainter painter(builder, dl_paints_, impeller_enabled_);
   paragraph_->paint(&painter, x, y);
   return true;
 }

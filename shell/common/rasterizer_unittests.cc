@@ -17,6 +17,7 @@
 
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/GrTypes.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 
 #include "gmock/gmock.h"
@@ -29,59 +30,82 @@ using testing::ReturnRef;
 
 namespace flutter {
 namespace {
+
 constexpr float kDevicePixelRatio = 2.0f;
 
 class MockDelegate : public Rasterizer::Delegate {
  public:
-  MOCK_METHOD1(OnFrameRasterized, void(const FrameTiming& frame_timing));
-  MOCK_METHOD0(GetFrameBudget, fml::Milliseconds());
-  MOCK_CONST_METHOD0(GetLatestFrameTargetTime, fml::TimePoint());
-  MOCK_CONST_METHOD0(GetTaskRunners, const TaskRunners&());
-  MOCK_CONST_METHOD0(GetParentRasterThreadMerger,
-                     const fml::RefPtr<fml::RasterThreadMerger>());
-  MOCK_CONST_METHOD0(GetIsGpuDisabledSyncSwitch,
-                     std::shared_ptr<const fml::SyncSwitch>());
-  MOCK_METHOD0(CreateSnapshotSurface, std::unique_ptr<Surface>());
-  MOCK_CONST_METHOD0(GetSettings, const Settings&());
+  MOCK_METHOD(void,
+              OnFrameRasterized,
+              (const FrameTiming& frame_timing),
+              (override));
+  MOCK_METHOD(fml::Milliseconds, GetFrameBudget, (), (override));
+  MOCK_METHOD(fml::TimePoint, GetLatestFrameTargetTime, (), (const, override));
+  MOCK_METHOD(const TaskRunners&, GetTaskRunners, (), (const, override));
+  MOCK_METHOD(const fml::RefPtr<fml::RasterThreadMerger>,
+              GetParentRasterThreadMerger,
+              (),
+              (const, override));
+  MOCK_METHOD(std::shared_ptr<const fml::SyncSwitch>,
+              GetIsGpuDisabledSyncSwitch,
+              (),
+              (const, override));
+  MOCK_METHOD(const Settings&, GetSettings, (), (const, override));
+  MOCK_METHOD(bool,
+              ShouldDiscardLayerTree,
+              (int64_t, const flutter::LayerTree&),
+              (override));
 };
 
 class MockSurface : public Surface {
  public:
-  MOCK_METHOD0(IsValid, bool());
-  MOCK_METHOD1(AcquireFrame,
-               std::unique_ptr<SurfaceFrame>(const SkISize& size));
-  MOCK_CONST_METHOD0(GetRootTransformation, SkMatrix());
-  MOCK_METHOD0(GetContext, GrDirectContext*());
-  MOCK_METHOD0(GetExternalViewEmbedder, ExternalViewEmbedder*());
-  MOCK_METHOD0(MakeRenderContextCurrent, std::unique_ptr<GLContextResult>());
-  MOCK_METHOD0(ClearRenderContext, bool());
-  MOCK_CONST_METHOD0(AllowsDrawingWhenGpuDisabled, bool());
+  MOCK_METHOD(bool, IsValid, (), (override));
+  MOCK_METHOD(std::unique_ptr<SurfaceFrame>,
+              AcquireFrame,
+              (const SkISize& size),
+              (override));
+  MOCK_METHOD(SkMatrix, GetRootTransformation, (), (const, override));
+  MOCK_METHOD(GrDirectContext*, GetContext, (), (override));
+  MOCK_METHOD(std::unique_ptr<GLContextResult>,
+              MakeRenderContextCurrent,
+              (),
+              (override));
+  MOCK_METHOD(bool, ClearRenderContext, (), (override));
+  MOCK_METHOD(bool, AllowsDrawingWhenGpuDisabled, (), (const, override));
 };
 
 class MockExternalViewEmbedder : public ExternalViewEmbedder {
  public:
-  MOCK_METHOD0(GetRootCanvas, DlCanvas*());
-  MOCK_METHOD0(CancelFrame, void());
-  MOCK_METHOD4(BeginFrame,
-               void(SkISize frame_size,
-                    GrDirectContext* context,
-                    double device_pixel_ratio,
-                    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger));
-  MOCK_METHOD2(PrerollCompositeEmbeddedView,
-               void(int64_t view_id,
-                    std::unique_ptr<EmbeddedViewParams> params));
-  MOCK_METHOD1(PostPrerollAction,
-               PostPrerollResult(
-                   fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger));
-  MOCK_METHOD1(CompositeEmbeddedView, DlCanvas*(int64_t view_id));
-  MOCK_METHOD3(SubmitFrame,
-               void(GrDirectContext* context,
-                    const std::shared_ptr<impeller::AiksContext>& aiks_context,
-                    std::unique_ptr<SurfaceFrame> frame));
-  MOCK_METHOD2(EndFrame,
-               void(bool should_resubmit_frame,
-                    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger));
-  MOCK_METHOD0(SupportsDynamicThreadMerging, bool());
+  MOCK_METHOD(DlCanvas*, GetRootCanvas, (), (override));
+  MOCK_METHOD(void, CancelFrame, (), (override));
+  MOCK_METHOD(void,
+              BeginFrame,
+              (SkISize frame_size,
+               GrDirectContext* context,
+               double device_pixel_ratio,
+               fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger),
+              (override));
+  MOCK_METHOD(void,
+              PrerollCompositeEmbeddedView,
+              (int64_t view_id, std::unique_ptr<EmbeddedViewParams> params),
+              (override));
+  MOCK_METHOD(PostPrerollResult,
+              PostPrerollAction,
+              (fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger),
+              (override));
+  MOCK_METHOD(DlCanvas*, CompositeEmbeddedView, (int64_t view_id), (override));
+  MOCK_METHOD(void,
+              SubmitFrame,
+              (GrDirectContext * context,
+               const std::shared_ptr<impeller::AiksContext>& aiks_context,
+               std::unique_ptr<SurfaceFrame> frame),
+              (override));
+  MOCK_METHOD(void,
+              EndFrame,
+              (bool should_resubmit_frame,
+               fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger),
+              (override));
+  MOCK_METHOD(bool, SupportsDynamicThreadMerging, (), (override));
 };
 }  // namespace
 
@@ -129,7 +153,8 @@ TEST(RasterizerTest, drawEmptyPipeline) {
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-    rasterizer->Draw(pipeline, nullptr);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    rasterizer->Draw(pipeline);
     latch.Signal();
   });
   latch.Wait();
@@ -199,8 +224,8 @@ TEST(RasterizerTest,
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
-    auto no_discard = [](LayerTree&) { return false; };
-    rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    rasterizer->Draw(pipeline);
     latch.Signal();
   });
   latch.Wait();
@@ -265,8 +290,8 @@ TEST(
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
-    auto no_discard = [](LayerTree&) { return false; };
-    rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    rasterizer->Draw(pipeline);
     latch.Signal();
   });
   latch.Wait();
@@ -336,8 +361,8 @@ TEST(
   PipelineProduceResult result =
       pipeline->Produce().Complete(std::move(layer_tree_item));
   EXPECT_TRUE(result.success);
-  auto no_discard = [](LayerTree&) { return false; };
-  rasterizer->Draw(pipeline, no_discard);
+  ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+  rasterizer->Draw(pipeline);
 }
 
 TEST(RasterizerTest,
@@ -410,11 +435,11 @@ TEST(RasterizerTest,
   PipelineProduceResult result =
       pipeline->Produce().Complete(std::move(layer_tree_item));
   EXPECT_TRUE(result.success);
-  auto no_discard = [](LayerTree&) { return false; };
 
   // The Draw() will respectively call BeginFrame(), SubmitFrame() and
   // EndFrame() one time.
-  rasterizer->Draw(pipeline, no_discard);
+  ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+  rasterizer->Draw(pipeline);
 
   // The DrawLastLayerTree() will respectively call BeginFrame(), SubmitFrame()
   // and EndFrame() one more time, totally 2 times.
@@ -460,8 +485,8 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNoSurfaceIsSet) {
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
-    auto no_discard = [](LayerTree&) { return false; };
-    rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    rasterizer->Draw(pipeline);
     latch.Signal();
   });
   latch.Wait();
@@ -517,8 +542,8 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNotUsedThisFrame) {
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
     // Always discard the layer tree.
-    auto discard_callback = [](LayerTree&) { return true; };
-    RasterStatus status = rasterizer->Draw(pipeline, discard_callback);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(true));
+    RasterStatus status = rasterizer->Draw(pipeline);
     EXPECT_EQ(status, RasterStatus::kDiscarded);
     latch.Signal();
   });
@@ -561,8 +586,8 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenPipelineIsEmpty) {
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-    auto no_discard = [](LayerTree&) { return false; };
-    RasterStatus status = rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    RasterStatus status = rasterizer->Draw(pipeline);
     EXPECT_EQ(status, RasterStatus::kFailed);
     latch.Signal();
   });
@@ -619,8 +644,8 @@ TEST(RasterizerTest,
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
-    auto no_discard = [](LayerTree&) { return false; };
-    rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    rasterizer->Draw(pipeline);
     latch.Signal();
   });
   latch.Wait();
@@ -677,8 +702,8 @@ TEST(
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
-    auto no_discard = [](LayerTree&) { return false; };
-    RasterStatus status = rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    RasterStatus status = rasterizer->Draw(pipeline);
     EXPECT_EQ(status, RasterStatus::kSuccess);
     latch.Signal();
   });
@@ -735,8 +760,8 @@ TEST(
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
-    auto no_discard = [](LayerTree&) { return false; };
-    RasterStatus status = rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    RasterStatus status = rasterizer->Draw(pipeline);
     EXPECT_EQ(status, RasterStatus::kSuccess);
     latch.Signal();
   });
@@ -792,8 +817,8 @@ TEST(
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
-    auto no_discard = [](LayerTree&) { return false; };
-    RasterStatus status = rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    RasterStatus status = rasterizer->Draw(pipeline);
     EXPECT_EQ(status, RasterStatus::kDiscarded);
     latch.Signal();
   });
@@ -848,8 +873,8 @@ TEST(
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
-    auto no_discard = [](LayerTree&) { return false; };
-    RasterStatus status = rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    RasterStatus status = rasterizer->Draw(pipeline);
     EXPECT_EQ(status, RasterStatus::kFailed);
     latch.Signal();
   });
@@ -929,10 +954,10 @@ TEST(RasterizerTest,
       EXPECT_TRUE(result.success);
       EXPECT_EQ(result.is_first_item, i == 0);
     }
-    auto no_discard = [](LayerTree&) { return false; };
     // Although we only call 'Rasterizer::Draw' once, it will be called twice
     // finally because there are two items in the pipeline.
-    rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    rasterizer->Draw(pipeline);
   });
   count_down_latch.Wait();
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
@@ -990,7 +1015,7 @@ TEST(RasterizerTest, TeardownFreesResourceCache) {
 
   SkPaint paint;
   sk_surface->getCanvas()->drawPaint(paint);
-  context->flushAndSubmit(true);
+  context->flushAndSubmit(GrSyncCpu::kYes);
 
   EXPECT_EQ(context->getResourceCachePurgeableBytes(), 0ul);
 
@@ -1100,10 +1125,10 @@ TEST(RasterizerTest, presentationTimeSetWhenVsyncTargetInFuture) {
       EXPECT_TRUE(result.success);
       EXPECT_EQ(result.is_first_item, i == 0);
     }
-    auto no_discard = [](LayerTree&) { return false; };
     // Although we only call 'Rasterizer::Draw' once, it will be called twice
     // finally because there are two items in the pipeline.
-    rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    rasterizer->Draw(pipeline);
   });
 
   submit_latch.Wait();
@@ -1181,8 +1206,8 @@ TEST(RasterizerTest, presentationTimeNotSetWhenVsyncTargetInPast) {
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
     EXPECT_EQ(result.is_first_item, true);
-    auto no_discard = [](LayerTree&) { return false; };
-    rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    rasterizer->Draw(pipeline);
   });
 
   submit_latch.Wait();

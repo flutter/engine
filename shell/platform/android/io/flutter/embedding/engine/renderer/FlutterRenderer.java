@@ -50,6 +50,7 @@ public class FlutterRenderer implements TextureRegistry {
   @NonNull private final AtomicLong nextTextureId = new AtomicLong(0L);
   @Nullable private Surface surface;
   private boolean isDisplayingFlutterUi = false;
+  private int isRenderingToImageViewCount = 0;
   private Handler handler = new Handler();
 
   @NonNull
@@ -81,6 +82,19 @@ public class FlutterRenderer implements TextureRegistry {
    */
   public boolean isDisplayingFlutterUi() {
     return isDisplayingFlutterUi;
+  }
+
+  /**
+   * Informs the renderer whether the surface it is rendering to is backend by a {@code
+   * FlutterImageView}, which requires additional synchonization in the Vulkan backend.
+   */
+  public void SetRenderingToImageView(boolean value) {
+    if (value) {
+      isRenderingToImageViewCount++;
+    } else {
+      isRenderingToImageViewCount--;
+    }
+    flutterJNI.SetIsRenderingToImageView(isRenderingToImageViewCount > 0);
   }
 
   /**
@@ -322,6 +336,7 @@ public class FlutterRenderer implements TextureRegistry {
 
   @Keep
   final class ImageTextureRegistryEntry implements TextureRegistry.ImageTextureEntry {
+    private static final String TAG = "ImageTextureRegistryEntry";
     private final long id;
     private boolean released;
     private Image image;
@@ -336,11 +351,16 @@ public class FlutterRenderer implements TextureRegistry {
     }
 
     @Override
+    @TargetApi(19)
     public void release() {
       if (released) {
         return;
       }
       released = true;
+      if (image != null) {
+        image.close();
+        image = null;
+      }
       unregisterTexture(id);
     }
 
@@ -356,8 +376,10 @@ public class FlutterRenderer implements TextureRegistry {
       if (toClose != null) {
         toClose.close();
       }
-      // Mark that we have a new frame available.
-      markTextureFrameAvailable(id);
+      if (image != null) {
+        // Mark that we have a new frame available.
+        markTextureFrameAvailable(id);
+      }
     }
 
     @Override
@@ -371,12 +393,18 @@ public class FlutterRenderer implements TextureRegistry {
     }
 
     @Override
+    @TargetApi(19)
     protected void finalize() throws Throwable {
       try {
         if (released) {
           return;
         }
-
+        if (image != null) {
+          // Be sure to finalize any cached image.
+          image.close();
+          image = null;
+        }
+        released = true;
         handler.post(new TextureFinalizerRunnable(id, flutterJNI));
       } finally {
         super.finalize();

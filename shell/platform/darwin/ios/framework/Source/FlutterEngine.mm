@@ -8,6 +8,7 @@
 
 #include <memory>
 
+#include "flutter/common/constants.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/platform/darwin/platform_version.h"
 #include "flutter/fml/trace_event.h"
@@ -39,8 +40,6 @@
 #import "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
 #include "flutter/shell/profiling/sampling_profiler.h"
 
-static constexpr int64_t kFlutterImplicitViewId = 0ll;
-
 /// Inheriting ThreadConfigurer and use iOS platform thread API to configure the thread priorities
 /// Using iOS platform thread API to configure thread priority
 static void IOSPlatformThreadConfigSetter(const fml::Thread::ThreadConfig& config) {
@@ -50,15 +49,18 @@ static void IOSPlatformThreadConfigSetter(const fml::Thread::ThreadConfig& confi
   // set thread priority
   switch (config.priority) {
     case fml::Thread::ThreadPriority::BACKGROUND: {
+      pthread_set_qos_class_self_np(QOS_CLASS_BACKGROUND, 0);
       [[NSThread currentThread] setThreadPriority:0];
       break;
     }
     case fml::Thread::ThreadPriority::NORMAL: {
+      pthread_set_qos_class_self_np(QOS_CLASS_DEFAULT, 0);
       [[NSThread currentThread] setThreadPriority:0.5];
       break;
     }
     case fml::Thread::ThreadPriority::RASTER:
     case fml::Thread::ThreadPriority::DISPLAY: {
+      pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
       [[NSThread currentThread] setThreadPriority:1.0];
       sched_param param;
       int policy;
@@ -333,7 +335,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   if (!self.platformView) {
     return;
   }
-  self.platformView->SetViewportMetrics(kFlutterImplicitViewId, viewportMetrics);
+  self.platformView->SetViewportMetrics(flutter::kFlutterImplicitViewId, viewportMetrics);
 }
 
 - (void)dispatchPointerDataPacket:(std::unique_ptr<flutter::PointerDataPacket>)packet {
@@ -1516,7 +1518,8 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   }];
 }
 
-- (void)addApplicationDelegate:(NSObject<FlutterPlugin>*)delegate {
+- (void)addApplicationDelegate:(NSObject<FlutterPlugin>*)delegate
+    NS_EXTENSION_UNAVAILABLE_IOS("Disallowed in plugins used in app extensions") {
   id<UIApplicationDelegate> appDelegate = [[UIApplication sharedApplication] delegate];
   if ([appDelegate conformsToProtocol:@protocol(FlutterAppLifeCycleProvider)]) {
     id<FlutterAppLifeCycleProvider> lifeCycleProvider =

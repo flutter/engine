@@ -50,7 +50,7 @@
             "recipe": "engine_v2/tester_engine",
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac",
+                "os=Mac-12",
                 "cpu=arm64"
             ],
             "gclient_variables": {
@@ -72,7 +72,7 @@
                         "--shard-id=0",
                         "--shard-variants=host_debug,host_debug,host_debug"
                     ],
-		    "max_attempts": 1,
+                    "max_attempts": 1,
                     "script": "flutter/ci/clang_tidy.sh"
                 }
             ]
@@ -82,7 +82,7 @@
             "recipe": "engine_v2/tester_engine",
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac",
+                "os=Mac-12",
                 "cpu=arm64"
             ],
             "gclient_variables": {
@@ -114,7 +114,7 @@
             "recipe": "engine_v2/tester_engine",
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac",
+                "os=Mac-12",
                 "cpu=arm64"
             ],
             "gclient_variables": {
@@ -146,7 +146,7 @@
             "recipe": "engine_v2/tester_engine",
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac",
+                "os=Mac-12",
                 "cpu=arm64"
             ],
             "gclient_variables": {
@@ -178,7 +178,7 @@
             "recipe": "engine_v2/tester_engine",
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac",
+                "os=Mac-12",
                 "cpu=arm64"
             ],
             "gclient_variables": {
@@ -201,7 +201,7 @@
                         "--shard-id=0",
                         "--shard-variants=host_debug"
                     ],
-		    "max_attempts": 1,
+                    "max_attempts": 1,
                     "script": "flutter/ci/clang_tidy.sh"
                 }
             ]

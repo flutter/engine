@@ -10,12 +10,14 @@
 #include "impeller/renderer/context.h"
 #include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/text_frame.h"
+#include "impeller/typographer/typographer_context.h"
 
 namespace impeller {
 
 class LazyGlyphAtlas {
  public:
-  LazyGlyphAtlas();
+  explicit LazyGlyphAtlas(
+      std::shared_ptr<TypographerContext> typographer_context);
 
   ~LazyGlyphAtlas();
 
@@ -24,12 +26,14 @@ class LazyGlyphAtlas {
   void ResetTextFrames();
 
   std::shared_ptr<GlyphAtlas> CreateOrGetGlyphAtlas(
-      GlyphAtlas::Type type,
-      std::shared_ptr<Context> context) const;
+      Context& context,
+      GlyphAtlas::Type type) const;
 
  private:
-  FontGlyphPair::Set alpha_set_;
-  FontGlyphPair::Set color_set_;
+  std::shared_ptr<TypographerContext> typographer_context_;
+
+  FontGlyphMap alpha_glyph_map_;
+  FontGlyphMap color_glyph_map_;
   std::shared_ptr<GlyphAtlasContext> alpha_context_;
   std::shared_ptr<GlyphAtlasContext> color_context_;
   mutable std::unordered_map<GlyphAtlas::Type, std::shared_ptr<GlyphAtlas>>

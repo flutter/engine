@@ -4,25 +4,45 @@
 
 #include "impeller/renderer/backend/vulkan/resource_manager_vk.h"
 
+#include "flutter/fml/cpu_affinity.h"
 #include "flutter/fml/thread.h"
 #include "flutter/fml/trace_event.h"
+#include "fml/logging.h"
 
 namespace impeller {
 
 std::shared_ptr<ResourceManagerVK> ResourceManagerVK::Create() {
+  // It will be tempting to refactor this to create the waiter thread in the
+  // static method instead of the constructor. However, that causes the
+  // destructor never to be called, and the thread never terminates!
+  //
+  // See https://github.com/flutter/flutter/issues/134482.
   return std::shared_ptr<ResourceManagerVK>(new ResourceManagerVK());
 }
 
-ResourceManagerVK::ResourceManagerVK() : waiter_([&]() { Main(); }) {}
+ResourceManagerVK::ResourceManagerVK() : waiter_([&]() { Start(); }) {}
 
 ResourceManagerVK::~ResourceManagerVK() {
+  FML_DCHECK(waiter_.get_id() != std::this_thread::get_id())
+      << "The ResourceManager being destructed on its own spawned thread is a "
+      << "sign that ContextVK was not properly destroyed. A usual fix for this "
+      << "is to ensure that ContextVK is shutdown (i.e. context->Shutdown()) "
+         "before the ResourceManager is destroyed (i.e. at the end of a test).";
   Terminate();
   waiter_.join();
 }
 
-void ResourceManagerVK::Main() {
+void ResourceManagerVK::Start() {
+  // It's possible for Start() to be called when terminating:
+  // { ResourceManagerVK::Create(); }
+  //
+  // ... so no FML_DCHECK here.
+
   fml::Thread::SetCurrentThreadName(
       fml::Thread::ThreadConfig{"io.flutter.impeller.resource_manager"});
+  // While this code calls destructors it doesn't need to be particularly fast
+  // with them, as long as it doesn't interrupt raster thread.
+  fml::RequestAffinity(fml::CpuAffinity::kEfficiency);
 
   bool should_exit = false;
   while (!should_exit) {
@@ -65,6 +85,9 @@ void ResourceManagerVK::Reclaim(std::unique_ptr<ResourceVK> resource) {
 }
 
 void ResourceManagerVK::Terminate() {
+  // The thread should not be terminated more than once.
+  FML_DCHECK(!should_exit_);
+
   {
     std::scoped_lock lock(reclaimables_mutex_);
     should_exit_ = true;

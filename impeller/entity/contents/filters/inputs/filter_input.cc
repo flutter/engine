@@ -76,10 +76,18 @@ void FilterInput::PopulateGlyphAtlas(
 
 FilterInput::~FilterInput() = default;
 
+bool FilterInput::IsTranslationOnly() const {
+  return true;
+}
+
 bool FilterInput::IsLeaf() const {
   return true;
 }
 
 void FilterInput::SetLeafInputs(const FilterInput::Vector& inputs) {}
+
+void FilterInput::SetEffectTransform(const Matrix& matrix) {}
+
+void FilterInput::SetRenderingMode(Entity::RenderingMode rendering_mode) {}
 
 }  // namespace impeller

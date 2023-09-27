@@ -147,6 +147,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   // Whether software rendering is used.
   private boolean usesSoftwareRendering = false;
 
+  private static boolean enableHardwareBufferRenderingTarget = true;
+
   private final PlatformViewsChannel.PlatformViewsHandler channelHandler =
       new PlatformViewsChannel.PlatformViewsHandler() {
 
@@ -968,12 +970,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   private static PlatformViewRenderTarget makePlatformViewRenderTarget(
       TextureRegistry textureRegistry) {
-    if (Build.VERSION.SDK_INT >= 29) {
-      // Prefer ImageReader-based backend on versions >= 29.
+    if (enableHardwareBufferRenderingTarget && Build.VERSION.SDK_INT >= 29) {
       final TextureRegistry.ImageTextureEntry textureEntry = textureRegistry.createImageTexture();
       return new ImageReaderPlatformViewRenderTarget(textureEntry);
     }
-    // Fallback to SurfaceTexture support on old phones.
     final TextureRegistry.SurfaceTextureEntry textureEntry = textureRegistry.createSurfaceTexture();
     return new SurfaceTexturePlatformViewRenderTarget(textureEntry);
   }
