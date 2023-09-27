@@ -15,8 +15,7 @@ base class HandleDisposition extends NativeFieldWrapperClass1 {
   }
 
   @pragma('vm:external-name', 'HandleDisposition_constructor')
-  external void _constructor(
-      int operation, Handle handle, int type, int rights);
+  external void _constructor(int operation, Handle handle, int type, int rights);
 
   @pragma('vm:external-name', 'HandleDisposition_operation')
   external int get operation;

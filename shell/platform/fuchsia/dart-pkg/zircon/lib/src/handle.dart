@@ -31,7 +31,8 @@ base class Handle extends NativeFieldWrapperClass1 {
 
   @override
   bool operator ==(Object other) {
-    return other is Handle && other.handle == handle;
+    return other is Handle
+        && other.handle == handle;
   }
 
   @override
