@@ -4191,8 +4191,11 @@ base class Gradient extends Shader {
   /// If `colorStops` is provided, `colorStops[i]` is a number from 0.0 to 1.0
   /// that specifies where `color[i]` begins in the gradient. If `colorStops` is
   /// not provided, then only two stops, at 0.0 and 1.0, are implied (and
-  /// `color` must therefore only have two entries). The color stop values will
-  /// be clamped to the range from 0.0 to 1.0.
+  /// `color` must therefore only have two entries). Stop values less than 0.0
+  /// will be rounded up to 0.0 and stop values greater than 1.0 will be rounded
+  /// down to 1.0. Each stop value must be greater than or equal to the previous
+  /// stop value. Stop values that do not meet this criteria will be rounded up
+  /// to the previous stop value.
   ///
   /// The behavior before `from` and after `to` is described by the `tileMode`
   /// argument. For details, see the [TileMode] enum.
@@ -4234,8 +4237,11 @@ base class Gradient extends Shader {
   /// If `colorStops` is provided, `colorStops[i]` is a number from 0.0 to 1.0
   /// that specifies where `color[i]` begins in the gradient. If `colorStops` is
   /// not provided, then only two stops, at 0.0 and 1.0, are implied (and
-  /// `color` must therefore only have two entries). The color stop values will
-  /// be clamped to the range from 0.0 to 1.0.
+  /// `color` must therefore only have two entries). Stop values less than 0.0
+  /// will be rounded up to 0.0 and stop values greater than 1.0 will be rounded
+  /// down to 1.0. Each stop value must be greater than or equal to the previous
+  /// stop value. Stop values that do not meet this criteria will be rounded up
+  /// to the previous stop value.
   ///
   /// The behavior before and after the radius is described by the `tileMode`
   /// argument. For details, see the [TileMode] enum.
@@ -4297,8 +4303,11 @@ base class Gradient extends Shader {
   /// If `colorStops` is provided, `colorStops[i]` is a number from 0.0 to 1.0
   /// that specifies where `color[i]` begins in the gradient. If `colorStops` is
   /// not provided, then only two stops, at 0.0 and 1.0, are implied (and
-  /// `color` must therefore only have two entries). The color stop values will
-  /// be clamped to the range from 0.0 to 1.0.
+  /// `color` must therefore only have two entries). Stop values less than 0.0
+  /// will be rounded up to 0.0 and stop values greater than 1.0 will be rounded
+  /// down to 1.0. Each stop value must be greater than or equal to the previous
+  /// stop value. Stop values that do not meet this criteria will be rounded up
+  /// to the previous stop value.
   ///
   /// The behavior before `startAngle` and after `endAngle` is described by the
   /// `tileMode` argument. For details, see the [TileMode] enum.
