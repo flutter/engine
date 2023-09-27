@@ -178,7 +178,7 @@ Tessellator::Result Tessellator::Tessellate(
     // dropping the index buffer entirely. Instead code could instead switch to
     // a uint32 index buffer, but this is done for simplicity with the other
     // fast path above.
-    if (elementItemCount < 65535) {
+    if (elementItemCount < USHRT_MAX) {
       int vertex_item_count = tessGetVertexCount(tessellator);
       auto vertices = tessGetVertices(tessellator);
       auto elements = tessGetElements(tessellator);
