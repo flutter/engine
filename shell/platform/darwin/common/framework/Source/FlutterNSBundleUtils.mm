@@ -8,7 +8,7 @@
 
 FLUTTER_ASSERT_ARC
 
-NSString* kDefaultAssetPath = @"Frameworks/App.framework/flutter_assets";
+const NSString* kDefaultAssetPath = @"Frameworks/App.framework/flutter_assets";
 static NSString* GetFlutterAssetsPathFromBundle(NSBundle* bundle, NSString* relativeAssetsPath);
 
 NSBundle* FLTFrameworkBundleInternal(NSString* flutterFrameworkBundleID, NSURL* searchURL) {
