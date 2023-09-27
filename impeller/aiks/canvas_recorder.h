@@ -6,6 +6,8 @@
 
 #include "impeller/aiks/canvas.h"
 
+#define FLT_CANVAS_RECORDER_OP_ARG(name) CanvasRecorderOp::name, &Canvas::name
+
 namespace impeller {
 
 enum CanvasRecorderOp {
@@ -83,19 +85,19 @@ class CanvasRecorder {
       const Paint& paint,
       std::optional<Rect> bounds = std::nullopt,
       const std::shared_ptr<ImageFilter>& backdrop_filter = nullptr) {
-    return ExecuteAndSerialize(CanvasRecorderOp::SaveLayer, &Canvas::SaveLayer,
-                               paint, bounds, backdrop_filter);
+    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(SaveLayer), paint,
+                               bounds, backdrop_filter);
   }
 
   bool Restore() {
-    return ExecuteAndSerialize(CanvasRecorderOp::Restore, &Canvas::Restore);
+    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(Restore));
   }
 
   size_t GetSaveCount() const { return canvas_.GetSaveCount(); }
 
   void RestoreToCount(size_t count) {
-    return ExecuteAndSerialize(CanvasRecorderOp::RestoreToCount,
-                               &Canvas::RestoreToCount, count);
+    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(RestoreToCount),
+                               count);
   }
 
   const Matrix& GetCurrentTransformation() const {
@@ -107,28 +109,25 @@ class CanvasRecorder {
   }
 
   void ResetTransform() {
-    return ExecuteAndSerialize(CanvasRecorderOp::ResetTransform,
-                               &Canvas::ResetTransform);
+    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(ResetTransform));
   }
 
   void Transform(const Matrix& xformation) {
-    return ExecuteAndSerialize(CanvasRecorderOp::Transform, &Canvas::Transform,
+    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(Transform),
                                xformation);
   }
 
   void Concat(const Matrix& xformation) {
-    return ExecuteAndSerialize(CanvasRecorderOp::Concat, &Canvas::Concat,
-                               xformation);
+    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(Concat), xformation);
   }
 
   void PreConcat(const Matrix& xformation) {
-    return ExecuteAndSerialize(CanvasRecorderOp::PreConcat, &Canvas::PreConcat,
+    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(PreConcat),
                                xformation);
   }
 
   void Translate(const Vector3& offset) {
-    return ExecuteAndSerialize(CanvasRecorderOp::Translate, &Canvas::Translate,
-                               offset);
+    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(Translate), offset);
   }
 
   void Scale(const Vector2& scale) {
@@ -144,54 +143,51 @@ class CanvasRecorder {
   }
 
   void Skew(Scalar sx, Scalar sy) {
-    return ExecuteAndSerialize(CanvasRecorderOp::Skew, &Canvas::Skew, sx, sy);
+    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(Skew), sx, sy);
   }
 
   void Rotate(Radians radians) {
-    return ExecuteAndSerialize(CanvasRecorderOp::Rotate, &Canvas::Rotate,
-                               radians);
+    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(Rotate), radians);
   }
 
   void DrawPath(const Path& path, const Paint& paint) {
-    return ExecuteAndSerialize(CanvasRecorderOp::DrawPath, &Canvas::DrawPath,
-                               path, paint);
-  }
-
-  void DrawPaint(const Paint& paint) {
-    return ExecuteAndSerialize(CanvasRecorderOp::DrawPaint, &Canvas::DrawPaint,
+    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(DrawPath), path,
                                paint);
   }
 
+  void DrawPaint(const Paint& paint) {
+    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(DrawPaint), paint);
+  }
+
   void DrawRect(Rect rect, const Paint& paint) {
-    return ExecuteAndSerialize(CanvasRecorderOp::DrawRect, &Canvas::DrawRect,
-                               rect, paint);
+    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(DrawRect), rect,
+                               paint);
   }
 
   void DrawRRect(Rect rect, Scalar corner_radius, const Paint& paint) {
-    return ExecuteAndSerialize(CanvasRecorderOp::DrawRRect, &Canvas::DrawRRect,
-                               rect, corner_radius, paint);
+    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(DrawRRect), rect,
+                               corner_radius, paint);
   }
 
   void DrawCircle(Point center, Scalar radius, const Paint& paint) {
-    return ExecuteAndSerialize(CanvasRecorderOp::DrawCircle,
-                               &Canvas::DrawCircle, center, radius, paint);
+    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(DrawCircle), center,
+                               radius, paint);
   }
 
   void DrawPoints(std::vector<Point> points,
                   Scalar radius,
                   const Paint& paint,
                   PointStyle point_style) {
-    return ExecuteAndSerialize(CanvasRecorderOp::DrawPoints,
-                               &Canvas::DrawPoints, points, radius, paint,
-                               point_style);
+    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(DrawPoints), points,
+                               radius, paint, point_style);
   }
 
   void DrawImage(const std::shared_ptr<Image>& image,
                  Point offset,
                  const Paint& paint,
                  SamplerDescriptor sampler = {}) {
-    return ExecuteAndSerialize(CanvasRecorderOp::DrawImage, &Canvas::DrawImage,
-                               image, offset, paint, sampler);
+    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(DrawImage), image,
+                               offset, paint, sampler);
   }
 
   void DrawImageRect(const std::shared_ptr<Image>& image,
@@ -199,52 +195,49 @@ class CanvasRecorder {
                      Rect dest,
                      const Paint& paint,
                      SamplerDescriptor sampler = {}) {
-    return ExecuteAndSerialize(CanvasRecorderOp::DrawImageRect,
-                               &Canvas::DrawImageRect, image, source, dest,
-                               paint, sampler);
+    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(DrawImageRect), image,
+                               source, dest, paint, sampler);
   }
 
   void ClipPath(
       const Path& path,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect) {
-    return ExecuteAndSerialize(CanvasRecorderOp::ClipPath, &Canvas::ClipPath,
-                               path, clip_op);
+    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(ClipPath), path,
+                               clip_op);
   }
 
   void ClipRect(
       const Rect& rect,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect) {
-    return ExecuteAndSerialize(CanvasRecorderOp::ClipRect, &Canvas::ClipRect,
-                               rect, clip_op);
+    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(ClipRect), rect,
+                               clip_op);
   }
 
   void ClipRRect(
       const Rect& rect,
       Scalar corner_radius,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect) {
-    return ExecuteAndSerialize(CanvasRecorderOp::ClipRRect, &Canvas::ClipRRect,
-                               rect, corner_radius, clip_op);
+    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(ClipRRect), rect,
+                               corner_radius, clip_op);
   }
 
   void DrawPicture(const Picture& picture) {
-    return ExecuteAndSerialize(CanvasRecorderOp::DrawPicture,
-                               &Canvas::DrawPicture, picture);
+    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(DrawPicture),
+                               picture);
   }
 
   void DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
                      Point position,
                      const Paint& paint) {
-    return ExecuteAndSerialize(CanvasRecorderOp::DrawTextFrame,
-                               &Canvas::DrawTextFrame, text_frame, position,
-                               paint);
+    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(DrawTextFrame),
+                               text_frame, position, paint);
   }
 
   void DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
                     BlendMode blend_mode,
                     const Paint& paint) {
-    return ExecuteAndSerialize(CanvasRecorderOp::DrawVertices,
-                               &Canvas::DrawVertices, vertices, blend_mode,
-                               paint);
+    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(DrawVertices),
+                               vertices, blend_mode, paint);
   }
 
   void DrawAtlas(const std::shared_ptr<Image>& atlas,
@@ -255,15 +248,14 @@ class CanvasRecorder {
                  SamplerDescriptor sampler,
                  std::optional<Rect> cull_rect,
                  const Paint& paint) {
-    return ExecuteAndSerialize(CanvasRecorderOp::DrawAtlas,  //
-                               &Canvas::DrawAtlas,           //
-                               atlas,                        //
-                               transforms,                   //
-                               texture_coordinates,          //
-                               colors,                       //
-                               blend_mode,                   //
-                               sampler,                      //
-                               cull_rect,                    //
+    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(DrawAtlas),  //
+                               atlas,                                  //
+                               transforms,                             //
+                               texture_coordinates,                    //
+                               colors,                                 //
+                               blend_mode,                             //
+                               sampler,                                //
+                               cull_rect,                              //
                                paint);
   }
 
