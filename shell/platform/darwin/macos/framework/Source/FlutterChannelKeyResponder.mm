@@ -42,12 +42,13 @@
 
 /// Checks single modifier flag from event flags and sends appropriate key event
 /// if it is different from the previous state.
-- (void)checkModifierFlag:(NSUInteger)modifierFlag
-            forEventFlags:(NSEventModifierFlags)modifierFlags
+- (void)checkModifierFlag:(NSUInteger)targetMask
+            forEventFlags:(NSEventModifierFlags)eventFlags
                   keyCode:(NSUInteger)keyCode
                 timestamp:(NSTimeInterval)timestamp {
-  if ((modifierFlags & modifierFlag) != (_previouslyPressedFlags & modifierFlag)) {
-    uint64_t newFlags = (_previouslyPressedFlags & ~modifierFlag) | (modifierFlags & modifierFlag);
+  NSAssert((targetMask & (targetMask - 1)) == 0, @"targetMask must only have one bit set");
+  if ((eventFlags & targetMask) != (_previouslyPressedFlags & targetMask)) {
+    uint64_t newFlags = (_previouslyPressedFlags & ~targetMask) | (eventFlags & targetMask);
 
     // Sets combined flag if either left or right modifier is pressed, unsets otherwise.
     auto updateCombinedFlag = [&](uint64_t side1, uint64_t side2, NSEventModifierFlags flag) {
