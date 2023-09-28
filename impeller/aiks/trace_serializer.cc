@@ -11,7 +11,7 @@ namespace {
 
 class ImageFilterTraceVisitor : public ImageFilterVisitor {
  public:
-  ImageFilterTraceVisitor(std::ostream& os) : os_(os) {}
+  explicit ImageFilterTraceVisitor(std::ostream& os) : os_(os) {}
   void Visit(const BlurImageFilter& filter) override {
     os_ << "BlurImageFilter";
   }
