@@ -16,6 +16,7 @@ namespace impeller {
 /// golden tests can be written at a higher level, migrate these to
 /// flutter::DisplayListOpType.
 enum CanvasRecorderOp : uint16_t {
+  New,
   Save,
   SaveLayer,
   Restore,
@@ -53,11 +54,17 @@ enum CanvasRecorderOp : uint16_t {
 template <typename Serializer>
 class CanvasRecorder {
  public:
-  CanvasRecorder() : canvas_() {}
+  CanvasRecorder() : canvas_() {
+    serializer_.Write(CanvasRecorderOp::New);
+  }
 
-  explicit CanvasRecorder(Rect cull_rect) : canvas_(cull_rect) {}
+  explicit CanvasRecorder(Rect cull_rect) : canvas_(cull_rect) {
+    serializer_.Write(CanvasRecorderOp::New);
+  }
 
-  explicit CanvasRecorder(IRect cull_rect) : canvas_(cull_rect) {}
+  explicit CanvasRecorder(IRect cull_rect) : canvas_(cull_rect) {
+    serializer_.Write(CanvasRecorderOp::New);
+  }
 
   ~CanvasRecorder() {}
 

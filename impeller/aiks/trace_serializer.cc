@@ -14,6 +14,7 @@ namespace impeller {
 namespace {
 std::string_view CanvasRecorderOpToString(CanvasRecorderOp op) {
   switch (op) {
+    FLT_CANVAS_RECORDER_OP_TO_STRING(New);
     FLT_CANVAS_RECORDER_OP_TO_STRING(Save);
     FLT_CANVAS_RECORDER_OP_TO_STRING(SaveLayer);
     FLT_CANVAS_RECORDER_OP_TO_STRING(Restore);
@@ -49,9 +50,13 @@ std::string_view CanvasRecorderOpToString(CanvasRecorderOp op) {
 TraceSerializer::TraceSerializer() {}
 
 void TraceSerializer::Write(CanvasRecorderOp op) {
-  FML_LOG(ERROR) << CanvasRecorderOpToString(op) << ":" << buffer_.str();
-  buffer_.str("");
-  buffer_.clear();
+  if (op == CanvasRecorderOp::New) {
+    FML_LOG(ERROR) << "######################################################";
+  } else {
+    FML_LOG(ERROR) << CanvasRecorderOpToString(op) << ":" << buffer_.str();
+    buffer_.str("");
+    buffer_.clear();
+  }
 }
 
 void TraceSerializer::Write(const Paint& paint) {
