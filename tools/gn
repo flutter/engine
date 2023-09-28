@@ -1227,6 +1227,12 @@ def parse_args(args):
   )
 
   parser.add_argument(
+      '--enable-impeller-trace-canvas',
+      default=False,
+      action='store_true',
+      help='Enables tracing calls to Canvas.'
+  )
+  parser.add_argument(
       '--malioc-path', type=str, help='The path to the malioc tool.'
   )
 
