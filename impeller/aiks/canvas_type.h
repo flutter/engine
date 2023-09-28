@@ -10,6 +10,9 @@
 
 namespace impeller {
 
+/// CanvasType defines what is the concrete type of the Canvas to be used. When
+/// the recorder is enabled it will be swapped out in place of the Canvas at
+/// compile-time.
 #ifdef IMPELLER_TRACE_CANVAS
 using CanvasType = CanvasRecorder<TraceSerializer>;
 #else
