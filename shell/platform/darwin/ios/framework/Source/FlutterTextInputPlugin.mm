@@ -943,7 +943,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
       return NO;
     }
   }
-  return [FlutterTextInputView instancesRespondToSelector:selector];
+  return [super respondsToSelector:selector];
 }
 
 - (void)setTextInputClient:(int)client {
