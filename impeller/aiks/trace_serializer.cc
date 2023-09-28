@@ -49,49 +49,91 @@ std::string_view CanvasRecorderOpToString(CanvasRecorderOp op) {
 TraceSerializer::TraceSerializer() {}
 
 void TraceSerializer::Write(CanvasRecorderOp op) {
-  FML_LOG(ERROR) << CanvasRecorderOpToString(op);
+  FML_LOG(ERROR) << CanvasRecorderOpToString(op) << ":" << buffer_.str();
+  buffer_.clear();
 }
 
-void TraceSerializer::Write(const Paint& paint) {}
+void TraceSerializer::Write(const Paint& paint) {
+  buffer_ << "[Paint] ";
+}
 
-void TraceSerializer::Write(const std::optional<Rect> optional_rect) {}
+void TraceSerializer::Write(const std::optional<Rect> optional_rect) {
+  buffer_ << "[std::optional<Rect>] ";
+}
 
-void TraceSerializer::Write(const std::shared_ptr<ImageFilter>& image_filter) {}
+void TraceSerializer::Write(const std::shared_ptr<ImageFilter>& image_filter) {
+  buffer_ << "[std::shared_ptr<ImageFilter>] ";
+}
 
-void TraceSerializer::Write(size_t size) {}
+void TraceSerializer::Write(size_t size) {
+  buffer_ << "[std::shared_ptr<ImageFilter>] ";
+}
 
-void TraceSerializer::Write(const Matrix& matrix) {}
+void TraceSerializer::Write(const Matrix& matrix) {
+  buffer_ << "[Matrix] ";
+}
 
-void TraceSerializer::Write(const Vector3& vec3) {}
+void TraceSerializer::Write(const Vector3& vec3) {
+  buffer_ << "[Vector3] ";
+}
 
-void TraceSerializer::Write(const Vector2& vec2) {}
+void TraceSerializer::Write(const Vector2& vec2) {
+  buffer_ << "[Vector2] ";
+}
 
-void TraceSerializer::Write(const Radians& vec2) {}
+void TraceSerializer::Write(const Radians& vec2) {
+  buffer_ << "[Radians] ";
+}
 
-void TraceSerializer::Write(const Path& path) {}
+void TraceSerializer::Write(const Path& path) {
+  buffer_ << "[Path] ";
+}
 
-void TraceSerializer::Write(const std::vector<Point>& points) {}
+void TraceSerializer::Write(const std::vector<Point>& points) {
+  buffer_ << "[std::vector<Point>] ";
+}
 
-void TraceSerializer::Write(const PointStyle& point_style) {}
+void TraceSerializer::Write(const PointStyle& point_style) {
+  buffer_ << "[PointStyle] ";
+}
 
-void TraceSerializer::Write(const std::shared_ptr<Image>& image) {}
+void TraceSerializer::Write(const std::shared_ptr<Image>& image) {
+  buffer_ << "[std::shared_ptr<Image>] ";
+}
 
-void TraceSerializer::Write(const SamplerDescriptor& sampler) {}
+void TraceSerializer::Write(const SamplerDescriptor& sampler) {
+  buffer_ << "[SamplerDescriptor] ";
+}
 
-void TraceSerializer::Write(const Entity::ClipOperation& clip_op) {}
+void TraceSerializer::Write(const Entity::ClipOperation& clip_op) {
+  buffer_ << "[Entity::ClipOperation] ";
+}
 
-void TraceSerializer::Write(const Picture& clip_op) {}
+void TraceSerializer::Write(const Picture& clip_op) {
+  buffer_ << "[Picture] ";
+}
 
-void TraceSerializer::Write(const std::shared_ptr<TextFrame>& text_frame) {}
+void TraceSerializer::Write(const std::shared_ptr<TextFrame>& text_frame) {
+  buffer_ << "[std::shared_ptr<TextFrame>] ";
+}
 
 void TraceSerializer::Write(const std::shared_ptr<VerticesGeometry>& vertices) {
+  buffer_ << "[std::shared_ptr<VerticesGeometry>] ";
 }
 
-void TraceSerializer::Write(const BlendMode& blend_mode) {}
+void TraceSerializer::Write(const BlendMode& blend_mode) {
+  buffer_ << "[BlendMode] ";
+}
 
-void TraceSerializer::Write(const std::vector<Matrix>& matrices) {}
+void TraceSerializer::Write(const std::vector<Matrix>& matrices) {
+  buffer_ << "[std::vector<Matrix>] ";
+}
 
-void TraceSerializer::Write(const std::vector<Rect>& matrices) {}
+void TraceSerializer::Write(const std::vector<Rect>& matrices) {
+  buffer_ << "[std::vector<Rect>] ";
+}
 
-void TraceSerializer::Write(const std::vector<Color>& matrices) {}
+void TraceSerializer::Write(const std::vector<Color>& matrices) {
+  buffer_ << "[std::vector<Color>] ";
+}
 }  // namespace impeller

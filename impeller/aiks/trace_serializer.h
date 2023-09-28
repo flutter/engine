@@ -56,6 +56,9 @@ class TraceSerializer {
   void Write(const std::vector<Rect>& matrices);
 
   void Write(const std::vector<Color>& matrices);
+
+private:
+  std::stringstream buffer_;
 };
 
 }  // namespace impeller

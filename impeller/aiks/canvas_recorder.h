@@ -12,6 +12,9 @@
 
 namespace impeller {
 
+/// TODO(tbd): These are very similar to `flutter::DisplayListOpType`. When
+/// golden tests can be written at a higher level, migrate these to
+/// flutter::DisplayListOpType.
 enum CanvasRecorderOp : uint16_t {
   Save,
   SaveLayer,
@@ -43,6 +46,10 @@ enum CanvasRecorderOp : uint16_t {
   DrawAtlas,
 };
 
+/// Static polymorphic replacement for impeller::Canvas that records methods
+/// called on an impeller::Canvas and forwards it to a real instance.
+/// TODO(tbd): Move this recorder to the DisplayList level when golden tests can
+/// be written at the ui.Canvas layer.
 template <typename Serializer>
 class CanvasRecorder {
  public:
@@ -69,9 +76,9 @@ class CanvasRecorder {
                            Args&&... args)
       -> decltype((std::declval<Canvas>().*
                    canvasMethod)(std::forward<Args>(args)...)) {
-    serializer_.Write(op);
     // Serialize each argument
     (serializer_.Write(std::forward<Args>(args)), ...);
+    serializer_.Write(op);
     return (canvas_.*canvasMethod)(std::forward<Args>(args)...);
   }
 
