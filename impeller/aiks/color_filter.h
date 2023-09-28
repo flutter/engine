@@ -166,9 +166,9 @@ class MergedColorFilter final : public ColorFilter {
   // |ColorFilter|
   std::shared_ptr<ColorFilter> Clone() const override;
 
-  private:
-    std::shared_ptr<ColorFilter> outer_;
-    std::shared_ptr<ColorFilter> inner_;
+ private:
+  std::shared_ptr<ColorFilter> outer_;
+  std::shared_ptr<ColorFilter> inner_;
 };
 
 }  // namespace impeller
