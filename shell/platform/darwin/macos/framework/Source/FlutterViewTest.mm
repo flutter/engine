@@ -28,11 +28,11 @@ constexpr int64_t kImplicitViewId = 0ll;
 TEST(FlutterView, ShouldInheritContentsScaleReturnsYes) {
   id<MTLDevice> device = MTLCreateSystemDefaultDevice();
   id<MTLCommandQueue> queue = [device newCommandQueue];
-  TestFlutterViewDelegate* listener = [[TestFlutterViewDelegate alloc] init];
+  TestFlutterViewDelegate* delegate = [[TestFlutterViewDelegate alloc] init];
   FlutterThreadSynchronizer* threadSynchronizer = [[FlutterThreadSynchronizer alloc] init];
   FlutterView* view = [[FlutterView alloc] initWithMTLDevice:device
                                                 commandQueue:queue
-                                             reshapeListener:listener
+                                                    delegate:delegate
                                           threadSynchronizer:threadSynchronizer
                                                       viewId:kImplicitViewId];
   EXPECT_EQ([view layer:view.layer shouldInheritContentsScale:3.0 fromWindow:view.window], YES);

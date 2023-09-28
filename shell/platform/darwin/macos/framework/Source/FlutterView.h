@@ -49,7 +49,7 @@ constexpr FlutterViewId kFlutterImplicitViewId = 0ll;
  */
 - (nullable instancetype)initWithMTLDevice:(nonnull id<MTLDevice>)device
                               commandQueue:(nonnull id<MTLCommandQueue>)commandQueue
-                           reshapeListener:(nonnull id<FlutterViewDelegate>)reshapeListener
+                                  delegate:(nonnull id<FlutterViewDelegate>)delegate
                         threadSynchronizer:(nonnull FlutterThreadSynchronizer*)threadSynchronizer
                                     viewId:(int64_t)viewId NS_DESIGNATED_INITIALIZER;
 

@@ -22,7 +22,7 @@
 
 - (instancetype)initWithMTLDevice:(id<MTLDevice>)device
                      commandQueue:(id<MTLCommandQueue>)commandQueue
-                  reshapeListener:(id<FlutterViewDelegate>)reshapeListener
+                         delegate:(id<FlutterViewDelegate>)delegate
                threadSynchronizer:(FlutterThreadSynchronizer*)threadSynchronizer
                            viewId:(int64_t)viewId {
   self = [super initWithFrame:NSZeroRect];
@@ -31,7 +31,7 @@
     [self setBackgroundColor:[NSColor blackColor]];
     [self setLayerContentsRedrawPolicy:NSViewLayerContentsRedrawDuringViewResize];
     _viewId = viewId;
-    _viewDelegate = reshapeListener;
+    _viewDelegate = delegate;
     _threadSynchronizer = threadSynchronizer;
     _surfaceManager = [[FlutterSurfaceManager alloc] initWithDevice:device
                                                        commandQueue:commandQueue

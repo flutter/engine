@@ -831,7 +831,7 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
                                           commandQueue:(id<MTLCommandQueue>)commandQueue {
   return [[FlutterView alloc] initWithMTLDevice:device
                                    commandQueue:commandQueue
-                                reshapeListener:self
+                                       delegate:self
                              threadSynchronizer:_threadSynchronizer
                                          viewId:_viewId];
 }
