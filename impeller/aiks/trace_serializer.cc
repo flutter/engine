@@ -64,7 +64,11 @@ void TraceSerializer::Write(const Paint& paint) {
 }
 
 void TraceSerializer::Write(const std::optional<Rect> optional_rect) {
-  buffer_ << "[std::optional<Rect>] ";
+  if (optional_rect.has_value()) {
+    buffer_ << "[" << optional_rect.value() << "] ";
+  } else {
+    buffer_ << "[None] ";
+  }
 }
 
 void TraceSerializer::Write(const std::shared_ptr<ImageFilter>& image_filter) {
@@ -72,23 +76,23 @@ void TraceSerializer::Write(const std::shared_ptr<ImageFilter>& image_filter) {
 }
 
 void TraceSerializer::Write(size_t size) {
-  buffer_ << "[std::shared_ptr<ImageFilter>] ";
+  buffer_ << "[" << size << "] ";
 }
 
 void TraceSerializer::Write(const Matrix& matrix) {
-  buffer_ << "[Matrix] ";
+  buffer_ << "[" << matrix << "] ";
 }
 
 void TraceSerializer::Write(const Vector3& vec3) {
-  buffer_ << "[Vector3] ";
+  buffer_ << "[" << vec3 << "] ";
 }
 
 void TraceSerializer::Write(const Vector2& vec2) {
-  buffer_ << "[Vector2] ";
+  buffer_ << "[" << vec2 << "] ";
 }
 
-void TraceSerializer::Write(const Radians& vec2) {
-  buffer_ << "[Radians] ";
+void TraceSerializer::Write(const Radians& radians) {
+  buffer_ << "[" << radians.radians << "] ";
 }
 
 void TraceSerializer::Write(const Path& path) {
@@ -112,7 +116,14 @@ void TraceSerializer::Write(const SamplerDescriptor& sampler) {
 }
 
 void TraceSerializer::Write(const Entity::ClipOperation& clip_op) {
-  buffer_ << "[Entity::ClipOperation] ";
+  switch (clip_op) {
+    case Entity::ClipOperation::kDifference:
+      buffer_ << "[kDifference] ";
+      break;
+    case Entity::ClipOperation::kIntersect:
+      buffer_ << "[kIntersect] ";
+      break;
+  }
 }
 
 void TraceSerializer::Write(const Picture& clip_op) {
