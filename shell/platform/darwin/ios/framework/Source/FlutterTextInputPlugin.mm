@@ -930,6 +930,15 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   return _textInputPlugin.textInputDelegate;
 }
 
+- (BOOL)respondsToSelector:(SEL)selector {
+  if (@available(iOS 17.0, *)) {
+    if (selector == @selector(insertionPointColor)) {
+      return NO;
+    }
+  }
+  return [FlutterTextInputView instancesRespondToSelector:selector];
+}
+
 - (void)setTextInputClient:(int)client {
   _textInputClient = client;
   _hasPlaceholder = NO;
