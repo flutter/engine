@@ -604,7 +604,7 @@ def gather_dart_test(
   command_args.extend(custom_options)
 
   if (enable_impeller):
-    command_args += [ '--enable-impeller' ]
+    command_args += ['--enable-impeller']
 
   command_args += [
       '--use-test-fonts',
