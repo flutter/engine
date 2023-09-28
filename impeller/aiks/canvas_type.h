@@ -13,7 +13,6 @@ namespace impeller {
 #ifdef IMPELLER_TRACE_CANVAS
 using CanvasType = CanvasRecorder<TraceSerializer>;
 #else
-#error hi
 using CanvasType = Canvas;
 #endif
 

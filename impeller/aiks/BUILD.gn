@@ -14,6 +14,7 @@ impeller_component("aiks") {
     "aiks_context.h",
     "canvas.cc",
     "canvas.h",
+    "canvas_recorder.h",
     "canvas_type.h",
     "color_filter.cc",
     "color_filter.h",
@@ -31,6 +32,7 @@ impeller_component("aiks") {
     "picture.h",
     "picture_recorder.cc",
     "picture_recorder.h",
+    "trace_serializer.h",
   ]
 
   public_deps = [
@@ -42,11 +44,7 @@ impeller_component("aiks") {
   deps = [ "//flutter/fml" ]
 
   if (impeller_trace_canvas) {
-    sources += [
-      "canvas_recorder.h",
-      "trace_serializer.cc",
-      "trace_serializer.h",
-    ]
+    sources += [ "trace_serializer.cc" ]
     public_configs = [ ":impeller_canvas_recorder_config" ]
   }
 }
@@ -97,11 +95,8 @@ impeller_component("aiks_unittests") {
   ]
 
   if (!impeller_trace_canvas) {
-    sources += [
-      "canvas_recorder.h",
-      "trace_serializer.cc",
-      "trace_serializer.h",
-    ]
+    sources += [ "trace_serializer.cc" ]
+    public_configs = [ ":impeller_canvas_recorder_config" ]
   }
 }
 

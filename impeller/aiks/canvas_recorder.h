@@ -54,6 +54,12 @@ enum CanvasRecorderOp : uint16_t {
 template <typename Serializer>
 class CanvasRecorder {
  public:
+#ifndef IMPELLER_TRACE_CANVAS
+  // Canvas recorder should only be used when IMPELLER_TRACE_CANVAS is defined
+  // (never in production code).
+  static_assert(false);
+#endif
+
   CanvasRecorder() : canvas_() { serializer_.Write(CanvasRecorderOp::New); }
 
   explicit CanvasRecorder(Rect cull_rect) : canvas_(cull_rect) {
