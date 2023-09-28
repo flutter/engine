@@ -67,10 +67,6 @@ impeller_component("aiks_playground") {
   ]
 }
 
-impeller_component("canvas_recorder") {
-  deps = [ ":aiks" ]
-}
-
 impeller_component("aiks_unittests") {
   testonly = true
 
