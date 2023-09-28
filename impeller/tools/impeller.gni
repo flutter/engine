@@ -46,7 +46,7 @@ declare_args() {
   impeller_enable_3d = false
 
   # Enable to get trace statements for canvas usage.
-  impeller_trace_canvas = true
+  impeller_trace_canvas = false
 }
 
 declare_args() {
