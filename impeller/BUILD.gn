@@ -8,9 +8,7 @@ import("tools/impeller.gni")
 config("impeller_public_config") {
   include_dirs = [ ".." ]
 
-  if (!defined(defines)) {
-    defines = []
-  }
+  defines = []
 
   if (impeller_debug) {
     defines += [ "IMPELLER_DEBUG=1" ]
