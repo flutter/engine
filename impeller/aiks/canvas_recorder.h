@@ -54,9 +54,7 @@ enum CanvasRecorderOp : uint16_t {
 template <typename Serializer>
 class CanvasRecorder {
  public:
-  CanvasRecorder() : canvas_() {
-    serializer_.Write(CanvasRecorderOp::New);
-  }
+  CanvasRecorder() : canvas_() { serializer_.Write(CanvasRecorderOp::New); }
 
   explicit CanvasRecorder(Rect cull_rect) : canvas_(cull_rect) {
     serializer_.Write(CanvasRecorderOp::New);
