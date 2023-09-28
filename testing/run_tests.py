@@ -581,6 +581,7 @@ def gather_dart_test(
     build_dir,
     dart_file,
     multithreaded,
+    enable_impeller=False,
     enable_observatory=False,
     expect_failure=False,
 ):
@@ -601,6 +602,9 @@ def gather_dart_test(
   )
   dart_file_contents.close()
   command_args.extend(custom_options)
+
+  if (enable_impeller):
+    command_args += [ '--enable-impeller' ]
 
   command_args += [
       '--use-test-fonts',
@@ -850,8 +854,10 @@ def gather_dart_tests(build_dir, test_filter):
         logger.info(
             "Gathering dart test '%s' with observatory enabled", dart_test_file
         )
-        yield gather_dart_test(build_dir, dart_test_file, True, True)
-        yield gather_dart_test(build_dir, dart_test_file, False, True)
+        yield gather_dart_test(build_dir, dart_test_file, True, False, True)
+        yield gather_dart_test(build_dir, dart_test_file, True, True, True)
+        yield gather_dart_test(build_dir, dart_test_file, False, False, True)
+        yield gather_dart_test(build_dir, dart_test_file, False, True, True)
 
   for dart_test_file in dart_tests:
     if test_filter is not None and os.path.basename(dart_test_file
@@ -859,8 +865,10 @@ def gather_dart_tests(build_dir, test_filter):
       logger.info("Skipping '%s' due to filter.", dart_test_file)
     else:
       logger.info("Gathering dart test '%s'", dart_test_file)
-      yield gather_dart_test(build_dir, dart_test_file, True)
-      yield gather_dart_test(build_dir, dart_test_file, False)
+      yield gather_dart_test(build_dir, dart_test_file, True, False)
+      yield gather_dart_test(build_dir, dart_test_file, True, True)
+      yield gather_dart_test(build_dir, dart_test_file, False, False)
+      yield gather_dart_test(build_dir, dart_test_file, False, True)
 
 
 def gather_dart_smoke_test(build_dir, test_filter):
