@@ -49,8 +49,9 @@ enum CanvasRecorderOp : uint16_t {
 
 /// Static polymorphic replacement for impeller::Canvas that records methods
 /// called on an impeller::Canvas and forwards it to a real instance.
-/// TODO(tbd): Move this recorder to the DisplayList level when golden tests can
-/// be written at the ui.Canvas layer.
+/// TODO(https://github.com/flutter/flutter/issues/135718): Move this recorder
+/// to the DisplayList level when golden tests can be written at the ui.Canvas
+/// layer.
 template <typename Serializer>
 class CanvasRecorder {
  public:
