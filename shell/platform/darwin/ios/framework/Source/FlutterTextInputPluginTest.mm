@@ -790,7 +790,11 @@ FLUTTER_ASSERT_ARC
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   BOOL respondsToInsertionPointColor =
       [inputView respondsToSelector:@selector(insertionPointColor)];
-  XCAssertEqual(respondsToInsertionPointColor, !@available(iOS 17, *));
+  if (@available(iOS 17, *)) {
+    XCTAssertFalse(respondsToInsertionPointColor);
+  } else {
+    XCTAssertTrue(respondsToInsertionPointColor);
+  }
 }
 
 #pragma mark - TextEditingDelta tests
