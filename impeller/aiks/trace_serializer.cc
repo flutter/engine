@@ -8,6 +8,49 @@
 namespace impeller {
 
 namespace {
+
+class ImageFilterTraceVisitor : public ImageFilterVisitor {
+ public:
+  ImageFilterTraceVisitor(std::ostream& os) : os_(os) {}
+  void Visit(const BlurImageFilter& filter) override {
+    os_ << "BlurImageFilter";
+  }
+  void Visit(const LocalMatrixImageFilter& filter) override {
+    os_ << "LocalMatrixImageFilter";
+  }
+  void Visit(const DilateImageFilter& filter) override {
+    os_ << "DilateImageFilter";
+  }
+  void Visit(const ErodeImageFilter& filter) override {
+    os_ << "ErodeImageFilter";
+  }
+  void Visit(const MatrixImageFilter& filter) override {
+    os_ << "{MatrixImageFilter matrix: " << filter.GetMatrix() << "}";
+  }
+  void Visit(const ComposeImageFilter& filter) override {
+    os_ << "ComposeImageFilter";
+  }
+  void Visit(const ColorImageFilter& filter) override {
+    os_ << "ColorImageFilter";
+  }
+
+ private:
+  std::ostream& os_;
+};
+
+std::ostream& operator<<(std::ostream& os,
+                         const std::shared_ptr<ImageFilter>& image_filter) {
+  if (image_filter) {
+    os << "[";
+    ImageFilterTraceVisitor visitor(os);
+    image_filter->Visit(visitor);
+    os << "]";
+  } else {
+    os << "[None]";
+  }
+  return os;
+}
+
 std::ostream& operator<<(std::ostream& os, const Paint& paint) {
   os << "{" << std::endl;
   os << "  color: [" << paint.color << "]" << std::endl;
@@ -99,7 +142,7 @@ void TraceSerializer::Write(const std::optional<Rect> optional_rect) {
 }
 
 void TraceSerializer::Write(const std::shared_ptr<ImageFilter>& image_filter) {
-  buffer_ << "[std::shared_ptr<ImageFilter>] ";
+  buffer_ << image_filter << " ";
 }
 
 void TraceSerializer::Write(size_t size) {
