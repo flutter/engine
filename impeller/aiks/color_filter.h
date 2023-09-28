@@ -147,4 +147,28 @@ class LinearToSrgbColorFilter final : public ColorFilter {
   std::shared_ptr<ColorFilter> Clone() const override;
 };
 
+/// @brief Applies color filters as f(g(x)), where x is the input color.
+class MergedColorFilter final : public ColorFilter {
+ public:
+  explicit MergedColorFilter(std::shared_ptr<ColorFilter> outer_,
+                             std::shared_ptr<ColorFilter> inner_);
+
+  ~MergedColorFilter() override;
+
+  // |ColorFilter|
+  std::shared_ptr<ColorFilterContents> WrapWithGPUColorFilter(
+      std::shared_ptr<FilterInput> input,
+      ColorFilterContents::AbsorbOpacity absorb_opacity) const override;
+
+  // |ColorFilter|
+  ColorFilterProc GetCPUColorFilterProc() const override;
+
+  // |ColorFilter|
+  std::shared_ptr<ColorFilter> Clone() const override;
+
+  private:
+    std::shared_ptr<ColorFilter> outer_;
+    std::shared_ptr<ColorFilter> inner_;
+};
+
 }  // namespace impeller

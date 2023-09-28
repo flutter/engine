@@ -3,7 +3,10 @@
 // found in the LICENSE file.
 
 #include "impeller/aiks/color_filter.h"
+
+#include <utility>
 #include "impeller/entity/contents/filters/color_filter_contents.h"
+#include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/geometry/color.h"
 
@@ -140,6 +143,39 @@ ColorFilter::ColorFilterProc LinearToSrgbColorFilter::GetCPUColorFilterProc()
 
 std::shared_ptr<ColorFilter> LinearToSrgbColorFilter::Clone() const {
   return std::make_shared<LinearToSrgbColorFilter>(*this);
+}
+
+/*******************************************************************************
+ ******* MergedColorFilter
+ ******************************************************************************/
+
+MergedColorFilter::MergedColorFilter(std::shared_ptr<ColorFilter> outer,
+                                     std::shared_ptr<ColorFilter> inner)
+    : outer_(std::move(outer)), inner_(std::move(inner)) {}
+
+MergedColorFilter::~MergedColorFilter() = default;
+
+std::shared_ptr<ColorFilterContents> MergedColorFilter::WrapWithGPUColorFilter(
+    std::shared_ptr<FilterInput> input,
+    ColorFilterContents::AbsorbOpacity absorb_opacity) const {
+  std::shared_ptr<FilterContents> inner = inner_->WrapWithGPUColorFilter(
+      input, ColorFilterContents::AbsorbOpacity::kNo);
+  return outer_->WrapWithGPUColorFilter(FilterInput::Make(inner),
+                                        absorb_opacity);
+}
+
+// |ColorFilter|
+ColorFilter::ColorFilterProc MergedColorFilter::GetCPUColorFilterProc() const {
+  auto inner_proc = inner_->GetCPUColorFilterProc();
+  auto outer_proc = outer_->GetCPUColorFilterProc();
+  return [inner_proc, outer_proc](Color color) {
+    return outer_proc(inner_proc(color));
+  };
+}
+
+// |ColorFilter|
+std::shared_ptr<ColorFilter> MergedColorFilter::Clone() const {
+  return std::make_shared<MergedColorFilter>(outer_, inner_);
 }
 
 }  // namespace impeller
