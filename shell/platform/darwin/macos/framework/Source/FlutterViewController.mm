@@ -286,7 +286,7 @@ void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
   // redispatched by the TextInputPlugin, in which case it needs to bubble up so that menus
   // can handle key equivalents.
   if (self.window.firstResponder != _flutterView || [_controller isDispatchingKeyEvent:event]) {
-    return NO;
+    return [super performKeyEquivalent:event];
   }
   [_flutterView keyDown:event];
   return YES;
