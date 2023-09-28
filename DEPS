@@ -602,7 +602,7 @@ deps = {
    Var('flutter_git') + '/third_party/libpng' + '@' + '9187b6e12756317f6d44fc669ac11dfc262bd192',
 
   'src/third_party/libwebp':
-   Var('chromium_git') + '/webm/libwebp.git' + '@' + '2af26267cdfcb63a88e5c74a85927a12d6ca1d76', # 1.3.1
+   Var('chromium_git') + '/webm/libwebp.git' + '@' + 'fd7bb21c0cb56e8a82e9bfa376164b842f433f3b', # 1.3.2
 
   'src/third_party/wuffs':
    Var('skia_git') + '/external/github.com/google/wuffs-mirror-release-c.git' + '@' + '600cd96cf47788ee3a74b40a6028b035c9fd6a61',
