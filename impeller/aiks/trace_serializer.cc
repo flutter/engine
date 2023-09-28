@@ -7,6 +7,33 @@
 
 namespace impeller {
 
+namespace {
+std::ostream& operator<<(std::ostream& os, const Paint& paint) {
+  os << "{" << std::endl;
+  os << "  color: [" << paint.color << "]" << std::endl;
+  os << "  color_source:"
+     << "[ColorSource]" << std::endl;
+  os << "  dither: [" << paint.dither << "]" << std::endl;
+  os << "  stroke_width: [" << paint.stroke_width << "]" << std::endl;
+  os << "  stroke_cap: "
+     << "[Paint::Cap]" << std::endl;
+  os << "  stroke_join: "
+     << "[Paint::Join]" << std::endl;
+  os << "  stroke_miter: [" << paint.stroke_miter << "]" << std::endl;
+  os << "  style:"
+     << "[Paint::Style]" << std::endl;
+  os << "  blend_mode: [" << BlendModeToString(paint.blend_mode) << "]"
+     << std::endl;
+  os << "  invert_colors: [" << paint.invert_colors << "]" << std::endl;
+  os << "  image_filter: " << paint.image_filter << std::endl;
+  os << "  color_filter: " << paint.color_filter << std::endl;
+  os << "  mask_blur_descriptor: "
+     << "[std::optional<MaskBlurDescriptor>]" << std::endl;
+  os << "}";
+  return os;
+}
+}  // namespace
+
 #define FLT_CANVAS_RECORDER_OP_TO_STRING(name) \
   case CanvasRecorderOp::name:                 \
     return #name
@@ -60,7 +87,7 @@ void TraceSerializer::Write(CanvasRecorderOp op) {
 }
 
 void TraceSerializer::Write(const Paint& paint) {
-  buffer_ << "[Paint] ";
+  buffer_ << "[" << paint << "] ";
 }
 
 void TraceSerializer::Write(const std::optional<Rect> optional_rect) {
@@ -139,7 +166,7 @@ void TraceSerializer::Write(const std::shared_ptr<VerticesGeometry>& vertices) {
 }
 
 void TraceSerializer::Write(const BlendMode& blend_mode) {
-  buffer_ << "[BlendMode] ";
+  buffer_ << "[" << BlendModeToString(blend_mode) << "] ";
 }
 
 void TraceSerializer::Write(const std::vector<Matrix>& matrices) {
