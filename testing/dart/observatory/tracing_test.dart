@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:convert' show base64Decode;
+import 'dart:io';
 import 'dart:developer' as developer;
 import 'dart:ui';
 
@@ -11,6 +12,8 @@ import 'package:litetest/litetest.dart';
 import 'package:vm_service/vm_service.dart' as vms;
 import 'package:vm_service/vm_service_io.dart';
 import 'package:vm_service_protos/vm_service_protos.dart';
+
+bool get impellerEnabled => Platform.executableArguments.contains('--enable-impeller');
 
 Future<void> _testChromeFormatTrace(vms.VmService vmService) async {
   final vms.Timeline timeline = await vmService.getVMTimeline();
@@ -32,7 +35,7 @@ Future<void> _testChromeFormatTrace(vms.VmService vmService) async {
     }
   }
   expect(saveLayerRecordCount, 3);
-  expect(saveLayerCount, 3);
+  expect(saveLayerCount, impellerEnabled ? 2 : 3);
   expect(flowEventCount, 5);
 }
 
@@ -59,7 +62,7 @@ Future<void> _testPerfettoFormatTrace(vms.VmService vmService) async {
     }
   }
   expect(saveLayerRecordCount, 3);
-  expect(saveLayerCount, 3);
+  expect(saveLayerCount, impellerEnabled ? 2 : 3);
   expect(flowIdCount, 5);
 }
 
@@ -80,6 +83,7 @@ void main() {
       final PictureRecorder recorder = PictureRecorder();
       final Canvas canvas = Canvas(recorder);
       canvas.drawColor(const Color(0xff0000ff), BlendMode.srcOut);
+      // Will saveLayer implicitly for Skia, but not Impeller.
       canvas.drawPaint(Paint()..imageFilter = ImageFilter.blur(sigmaX: 2, sigmaY: 3));
       canvas.saveLayer(null, Paint());
       canvas.drawRect(const Rect.fromLTRB(10, 10, 20, 20), Paint());

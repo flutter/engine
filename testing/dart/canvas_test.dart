@@ -14,6 +14,8 @@ import 'package:vector_math/vector_math_64.dart';
 
 typedef CanvasCallback = void Function(Canvas canvas);
 
+bool get impellerEnabled => Platform.executableArguments.contains('--enable-impeller');
+
 Future<Image> createImage(int width, int height) {
   final Completer<Image> completer = Completer<Image>();
   decodeImageFromPixels(
@@ -190,7 +192,7 @@ void main() {
     expect(image.height, equals(100));
 
     final bool areEqual =
-        await fuzzyGoldenImageCompare(image, 'canvas_test_toImage.png');
+        await fuzzyGoldenImageCompare(image, '${impellerEnabled ? 'impeller_' : ''}canvas_test_toImage.png');
     expect(areEqual, true);
   });
 
@@ -438,6 +440,12 @@ void main() {
     recorder = PictureRecorder();
     canvas = Canvas(recorder);
 
+    if (impellerEnabled) {
+      // Impeller tries to automagically scale this. See
+      // https://github.com/flutter/flutter/issues/128885
+      canvas.drawImage(image, Offset.zero, Paint());
+      return;
+    }
     // On a slower CI machine, the raster thread may get behind the UI thread
     // here. However, once the image is in an error state it will immediately
     // throw on subsequent attempts.

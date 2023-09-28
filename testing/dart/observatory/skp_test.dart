@@ -5,12 +5,15 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:litetest/litetest.dart';
 import 'package:vm_service/vm_service.dart' as vms;
 import 'package:vm_service/vm_service_io.dart';
+
+bool get impellerEnabled => Platform.executableArguments.contains('--enable-impeller');
 
 void main() {
   test('Capture an SKP ', () async {
@@ -42,13 +45,19 @@ void main() {
     PlatformDispatcher.instance.scheduleFrame();
     await completer.future;
 
-    final vms.Response response = await vmService.callServiceExtension('_flutter.screenshotSkp');
+    try {
+      final vms.Response response = await vmService.callServiceExtension('_flutter.screenshotSkp');
+      expect(impellerEnabled, false);
+      final String base64data = response.json!['skp'] as String;
+      expect(base64data, isNotNull);
+      expect(base64data, isNotEmpty);
+      final Uint8List decoded = base64Decode(base64data);
+      expect(decoded.sublist(0, 8), 'skiapict'.codeUnits);
+    } on vms.RPCError catch (e) {
+      expect(impellerEnabled, true);
+      expect(e.toString(), contains('Cannot capture SKP screenshot with Impeller enabled.'));
+    }
 
-    final String base64data = response.json!['skp'] as String;
-    expect(base64data, isNotNull);
-    expect(base64data, isNotEmpty);
-    final Uint8List decoded = base64Decode(base64data);
-    expect(decoded.sublist(0, 8), 'skiapict'.codeUnits);
 
     await vmService.dispose();
   });

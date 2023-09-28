@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "flutter/fml/logging.h"
+#include "flutter/fml/trace_event.h"
 #include "impeller/aiks/image_filter.h"
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/entity/contents/atlas_contents.h"
@@ -532,6 +533,7 @@ size_t Canvas::GetStencilDepth() const {
 void Canvas::SaveLayer(const Paint& paint,
                        std::optional<Rect> bounds,
                        const std::shared_ptr<ImageFilter>& backdrop_filter) {
+  TRACE_EVENT0("flutter", "Canvas::saveLayer");
   Save(true, paint.blend_mode, backdrop_filter);
 
   auto& new_layer_pass = GetCurrentPass();

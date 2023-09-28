@@ -4,8 +4,12 @@
 
 // ignore_for_file: avoid_relative_lib_imports
 
+import 'dart:io';
+
 import 'package:litetest/litetest.dart';
 import '../../lib/gpu/lib/gpu.dart' as gpu;
+
+bool get impellerEnabled => Platform.executableArguments.contains('--enable-impeller');
 
 void main() {
   // TODO(131346): Remove this once we migrate the Dart GPU API into this space.
@@ -23,6 +27,10 @@ void main() {
   });
 
   test('gpu.context throws exception for incompatible embedders', () async {
+    if (impellerEnabled) {
+      expect(gpu.gpuContext != null, true);
+      return;
+    }
     try {
       // ignore: unnecessary_statements
       gpu.gpuContext; // Force the

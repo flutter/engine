@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "impeller/renderer/surface.h"
 #define FML_USED_ON_EMBEDDER
 
 #include <cstdlib>
@@ -28,6 +29,44 @@
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/skia/include/core/SkSurface.h"
+
+#if IMPELLER_SUPPORTS_RENDERING
+#include <vulkan/vulkan.h>                                        // nogncheck
+#include "impeller/core/formats.h"                                // nogncheck
+#include "impeller/entity/vk/entity_shaders_vk.h"                 // nogncheck
+#include "impeller/entity/vk/modern_shaders_vk.h"                 // nogncheck
+#include "impeller/renderer/backend/vulkan/context_vk.h"          // nogncheck
+#include "impeller/renderer/backend/vulkan/surface_context_vk.h"  // nogncheck
+#include "impeller/renderer/context.h"                            // nogncheck
+#include "impeller/renderer/vk/compute_shaders_vk.h"              // nogncheck
+#include "shell/gpu/gpu_surface_vulkan_impeller.h"                // nogncheck
+#if IMPELLER_ENABLE_3D
+#include "impeller/scene/shaders/vk/scene_shaders_vk.h"  // nogncheck
+#endif                                                   // IMPELLER_ENABLE_3D
+
+static std::vector<std::shared_ptr<fml::Mapping>> ShaderLibraryMappings() {
+  return {
+    std::make_shared<fml::NonOwnedMapping>(impeller_entity_shaders_vk_data,
+                                           impeller_entity_shaders_vk_length),
+        std::make_shared<fml::NonOwnedMapping>(
+            impeller_modern_shaders_vk_data, impeller_modern_shaders_vk_length),
+#if IMPELLER_ENABLE_3D
+        std::make_shared<fml::NonOwnedMapping>(
+            impeller_scene_shaders_vk_data, impeller_scene_shaders_vk_length),
+#endif  // IMPELLER_ENABLE_3D
+        std::make_shared<fml::NonOwnedMapping>(
+            impeller_compute_shaders_vk_data,
+            impeller_compute_shaders_vk_length),
+  };
+}
+
+#else
+namespace impeller {
+class Context;
+class ContextVK;
+class SurfaceContextVK;
+}  // namespace impeller
+#endif  // IMPELLER_SUPPORTS_RENDERING
 
 #if defined(FML_OS_WIN)
 #include <combaseapi.h>
@@ -81,11 +120,30 @@ class TesterGPUSurfaceSoftware : public GPUSurfaceSoftware {
 class TesterPlatformView : public PlatformView,
                            public GPUSurfaceSoftwareDelegate {
  public:
-  TesterPlatformView(Delegate& delegate, const TaskRunners& task_runners)
-      : PlatformView(delegate, task_runners) {}
+  TesterPlatformView(Delegate& delegate,
+                     const TaskRunners& task_runners,
+                     const std::shared_ptr<impeller::Context>& impeller_context,
+                     const std::shared_ptr<impeller::SurfaceContextVK>&
+                         impeller_surface_context)
+      : PlatformView(delegate, task_runners),
+        impeller_context_(impeller_context),
+        impeller_surface_context_(impeller_surface_context) {}
+
+  // |PlatformView|
+  std::shared_ptr<impeller::Context> GetImpellerContext() const override {
+    return impeller_context_;
+  }
 
   // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface() override {
+    if (delegate_.OnPlatformViewGetSettings().enable_impeller) {
+      FML_DCHECK(impeller_context_);
+      auto surface =
+          std::make_unique<GPUSurfaceVulkanImpeller>(impeller_surface_context_);
+      FML_DCHECK(surface->IsValid());
+      return surface;
+    }
+    FML_DCHECK(!impeller_context_);
     auto surface = std::make_unique<TesterGPUSurfaceSoftware>(
         this, true /* render to surface */);
     FML_DCHECK(surface->IsValid());
@@ -126,6 +184,8 @@ class TesterPlatformView : public PlatformView,
 
  private:
   sk_sp<SkSurface> sk_surface_ = nullptr;
+  std::shared_ptr<impeller::Context> impeller_context_;
+  std::shared_ptr<impeller::SurfaceContextVK> impeller_surface_context_;
   std::shared_ptr<TesterExternalViewEmbedder> external_view_embedder_ =
       std::make_shared<TesterExternalViewEmbedder>();
 };
@@ -235,10 +295,52 @@ int RunTester(const flutter::Settings& settings,
                                           io_task_runner         // io
   );
 
+  std::shared_ptr<impeller::ContextVK> impeller_context;
+  std::shared_ptr<impeller::SurfaceContextVK> impeller_surface_context;
+
+#if IMPELLER_SUPPORTS_RENDERING
+  if (settings.enable_impeller) {
+    impeller::ContextVK::Settings context_settings;
+    context_settings.proc_address_callback =
+        reinterpret_cast<PFN_vkGetInstanceProcAddr>(&::vkGetInstanceProcAddr);
+    context_settings.shader_libraries_data = ShaderLibraryMappings();
+    context_settings.cache_directory = fml::paths::GetCachesDirectory();
+    context_settings.enable_validation = settings.enable_vulkan_validation;
+
+    impeller_context = impeller::ContextVK::Create(std::move(context_settings));
+    if (!impeller_context || !impeller_context->IsValid()) {
+      VALIDATION_LOG << "Could not create Vulkan context.";
+      return -1;
+    }
+
+    impeller::vk::SurfaceKHR vk_surface;
+    impeller::vk::HeadlessSurfaceCreateInfoEXT surface_create_info;
+    auto res = impeller_context->GetInstance().createHeadlessSurfaceEXT(
+        &surface_create_info,  // surface create info
+        nullptr,               // allocator
+        &vk_surface            // surface
+    );
+    if (res != impeller::vk::Result::eSuccess) {
+      VALIDATION_LOG << "Could not create surface for tester "
+                     << impeller::vk::to_string(res);
+      return -1;
+    }
+
+    impeller::vk::UniqueSurfaceKHR surface{vk_surface,
+                                           impeller_context->GetInstance()};
+    impeller_surface_context = impeller_context->CreateSurfaceContext();
+    if (!impeller_surface_context->SetWindowSurface(std::move(surface))) {
+      VALIDATION_LOG << "Could not set up surface for context.";
+      return -1;
+    }
+  }
+#endif  // IMPELLER_SUPPORTS_RENDERING
+
   Shell::CreateCallback<PlatformView> on_create_platform_view =
-      [](Shell& shell) {
-        return std::make_unique<TesterPlatformView>(shell,
-                                                    shell.GetTaskRunners());
+      [impeller_context, impeller_surface_context](Shell& shell) {
+        return std::make_unique<TesterPlatformView>(
+            shell, shell.GetTaskRunners(), impeller_context,
+            impeller_surface_context);
       };
 
   Shell::CreateCallback<Rasterizer> on_create_rasterizer = [](Shell& shell) {

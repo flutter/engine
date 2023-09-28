@@ -2,10 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:litetest/litetest.dart';
+
+bool get impellerEnabled => Platform.executableArguments.contains('--enable-impeller');
 
 const Color red = Color(0xFFAA0000);
 const Color green = Color(0xFF00AA00);
@@ -174,6 +177,10 @@ void main() {
   }
 
   test('ImageFilter - blur', () async {
+    if (impellerEnabled) {
+      print('Disabled - see https://github.com/flutter/flutter/issues/135712');
+      return;
+    }
     final Paint paint = Paint()
       ..color = green
       ..imageFilter = makeBlur(1.0, 1.0, TileMode.decal);
@@ -201,6 +208,11 @@ void main() {
   });
 
   test('ImageFilter - matrix', () async {
+    if (impellerEnabled) {
+      print('Disabled - see https://github.com/flutter/flutter/issues/135712');
+      return;
+    }
+
     final Paint paint = Paint()
       ..color = green
       ..imageFilter = makeScale(2.0, 2.0, 1.5, 1.5);
@@ -227,6 +239,11 @@ void main() {
   });
 
   test('ImageFilter - from color filters', () async {
+    if (impellerEnabled) {
+      print('Disabled - see https://github.com/flutter/flutter/issues/135712');
+      return;
+    }
+
     final Paint paint = Paint()
       ..color = green
       ..imageFilter = const ColorFilter.matrix(constValueColorMatrix);
@@ -236,6 +253,11 @@ void main() {
   });
 
   test('ImageFilter - color filter composition', () async {
+    if (impellerEnabled) {
+      print('Disabled - see https://github.com/flutter/flutter/issues/135712');
+      return;
+    }
+
     final ImageFilter compOrder1 = ImageFilter.compose(
       outer: const ColorFilter.matrix(halvesBrightnessColorMatrix),
       inner: const ColorFilter.matrix(constValueColorMatrix),
