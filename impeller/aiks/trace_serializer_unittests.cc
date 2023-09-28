@@ -16,5 +16,5 @@ TEST(TraceSerializer, Save) {
   ASSERT_TRUE(ss.str().size() > 0);
 }
 
-}
-}
+}  // namespace testing
+}  // namespace impeller

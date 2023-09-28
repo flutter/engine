@@ -57,7 +57,7 @@ class TraceSerializer {
 
   void Write(const std::vector<Color>& matrices);
 
-private:
+ private:
   std::stringstream buffer_;
 };
 

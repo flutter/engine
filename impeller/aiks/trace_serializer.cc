@@ -50,6 +50,7 @@ TraceSerializer::TraceSerializer() {}
 
 void TraceSerializer::Write(CanvasRecorderOp op) {
   FML_LOG(ERROR) << CanvasRecorderOpToString(op) << ":" << buffer_.str();
+  buffer_.str("");
   buffer_.clear();
 }
 
