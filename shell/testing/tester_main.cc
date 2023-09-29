@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "impeller/renderer/surface.h"
 #define FML_USED_ON_EMBEDDER
 
 #include <cstdlib>
@@ -38,6 +37,7 @@
 #include "impeller/renderer/backend/vulkan/context_vk.h"          // nogncheck
 #include "impeller/renderer/backend/vulkan/surface_context_vk.h"  // nogncheck
 #include "impeller/renderer/context.h"                            // nogncheck
+#include "impeller/renderer/surface.h"                            // nogncheck
 #include "impeller/renderer/vk/compute_shaders_vk.h"              // nogncheck
 #include "shell/gpu/gpu_surface_vulkan_impeller.h"                // nogncheck
 #if IMPELLER_ENABLE_3D
