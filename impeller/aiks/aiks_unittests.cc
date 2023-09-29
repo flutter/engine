@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "flutter/testing/testing.h"
+#include "fml/synchronization/waitable_event.h"
 #include "impeller/aiks/aiks_playground.h"
 #include "impeller/aiks/canvas.h"
 #include "impeller/aiks/image.h"
@@ -18,6 +19,7 @@
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/aiks/testing/context_spy.h"
 #include "impeller/core/capture.h"
+#include "impeller/core/formats.h"
 #include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/contents/conical_gradient_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
@@ -3564,6 +3566,51 @@ TEST_P(AiksTest, ClearBlend) {
   canvas.DrawCircle(Point::MakeXY(300.0, 300.0), 200.0, clear);
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanvasReadback) {
+  Canvas canvas;
+  Paint paint;
+  paint.color = Color::Red();
+
+  canvas.DrawRect(Rect::MakeLTRB(0, 0, 100, 100), paint);
+  auto picture = canvas.EndRecordingAsPicture();
+
+  AiksContext renderer(GetContext(), nullptr);
+  auto texture = picture.ToImage(renderer, {1, 1});
+
+  auto latch = std::make_shared<fml::AutoResetWaitableEvent>();
+  bool success = false;
+  std::array<uint8_t, 4> bytes;
+
+  texture->GetTexture()->GetContents(
+      GetContext(), [&](const std::shared_ptr<const fml::Mapping>& data) {
+        if (data && data->GetSize() >= 4u) {
+          success = true;
+          bytes[0] = data->GetMapping()[0];
+          bytes[1] = data->GetMapping()[1];
+          bytes[2] = data->GetMapping()[2];
+          bytes[3] = data->GetMapping()[3];
+        }
+        latch->Signal();
+      });
+  latch->Wait();
+
+  auto format = texture->GetTexture()->GetTextureDescriptor().format;
+  if (format == PixelFormat::kR8G8B8A8UNormInt) {
+    ASSERT_EQ(bytes[0], 255);
+    ASSERT_EQ(bytes[1], 0);
+    ASSERT_EQ(bytes[2], 0);
+    ASSERT_EQ(bytes[3], 255);
+  } else if (format == PixelFormat::kB8G8R8A8UNormInt) {
+    ASSERT_EQ(bytes[0], 0);
+    ASSERT_EQ(bytes[1], 0);
+    ASSERT_EQ(bytes[2], 255);
+    ASSERT_EQ(bytes[3], 255);
+  } else {
+    ASSERT_TRUE(false);
+  }
+  ASSERT_TRUE(success);
 }
 
 }  // namespace testing

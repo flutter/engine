@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/core/device_buffer.h"
+#include <memory>
 
 namespace impeller {
 
@@ -67,6 +68,31 @@ const DeviceBufferDescriptor& DeviceBuffer::GetDeviceBufferDescriptor() const {
   }
 
   return OnCopyHostBuffer(source, source_range, offset);
+}
+
+std::shared_ptr<fml::Mapping> DeviceBuffer::AsMapping() const {
+  return std::make_shared<DeviceBufferMapping>(shared_from_this());
+}
+
+DeviceBufferMapping::DeviceBufferMapping(
+    const std::shared_ptr<const DeviceBuffer>& data)
+    : data_(data) {}
+
+DeviceBufferMapping::~DeviceBufferMapping() = default;
+
+// |Mapping|
+size_t DeviceBufferMapping::GetSize() const {
+  return data_->GetDeviceBufferDescriptor().size;
+}
+
+// |Mapping|
+const uint8_t* DeviceBufferMapping::GetMapping() const {
+  return data_->OnGetContents();
+}
+
+// |Mapping|
+bool DeviceBufferMapping::IsDontNeedSafe() const {
+  return false;
 }
 
 }  // namespace impeller

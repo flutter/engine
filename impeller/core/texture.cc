@@ -5,6 +5,9 @@
 #include "impeller/core/texture.h"
 
 #include "impeller/base/validation.h"
+#include "impeller/core/device_buffer_descriptor.h"
+#include "impeller/renderer/command_buffer.h"
+#include "impeller/renderer/context.h"
 
 namespace impeller {
 
@@ -48,6 +51,38 @@ bool Texture::SetContents(std::shared_ptr<const fml::Mapping> mapping,
 
 bool Texture::IsOpaque() const {
   return is_opaque_;
+}
+
+void Texture::GetContents(const std::shared_ptr<Context>& context,
+                          const ReadbackCallback& callback) {
+  auto cmd_buffer = context->CreateCommandBuffer();
+  auto blit_pass = cmd_buffer->CreateBlitPass();
+  auto buffer_size = GetTextureDescriptor().GetByteSizeOfBaseMipLevel();
+
+  DeviceBufferDescriptor desc;
+  desc.size = buffer_size;
+  desc.storage_mode = StorageMode::kHostVisible;
+  auto device_buffer = context->GetResourceAllocator()->CreateBuffer(desc);
+  if (!device_buffer) {
+    callback(nullptr);
+    return;
+  }
+
+  if (!blit_pass->AddCopy(shared_from_this(), device_buffer)) {
+    callback(nullptr);
+    return;
+  }
+  if (!blit_pass->EncodeCommands(context->GetResourceAllocator()) ||
+      !cmd_buffer->SubmitCommands(
+          [callback, device_buffer](CommandBuffer::Status status) {
+            if (status == CommandBuffer::Status::kCompleted) {
+              callback(device_buffer->AsMapping());
+            } else {
+              callback(nullptr);
+            }
+          })) {
+    callback(nullptr);
+  }
 }
 
 size_t Texture::GetMipCount() const {

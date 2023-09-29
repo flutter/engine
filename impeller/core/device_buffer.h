@@ -8,6 +8,7 @@
 #include <string>
 
 #include "flutter/fml/macros.h"
+#include "fml/mapping.h"
 #include "impeller/core/allocator.h"
 #include "impeller/core/buffer.h"
 #include "impeller/core/buffer_view.h"
@@ -21,6 +22,10 @@ class DeviceBuffer : public Buffer,
                      public std::enable_shared_from_this<DeviceBuffer> {
  public:
   virtual ~DeviceBuffer();
+
+  DeviceBuffer(const DeviceBuffer&) = delete;
+
+  DeviceBuffer& operator=(const DeviceBuffer&) = delete;
 
   [[nodiscard]] bool CopyHostBuffer(const uint8_t* source,
                                     Range source_range,
@@ -41,6 +46,8 @@ class DeviceBuffer : public Buffer,
   std::shared_ptr<const DeviceBuffer> GetDeviceBuffer(
       Allocator& allocator) const;
 
+  std::shared_ptr<fml::Mapping> AsMapping() const;
+
   const DeviceBufferDescriptor& GetDeviceBufferDescriptor() const;
 
   virtual uint8_t* OnGetContents() const = 0;
@@ -53,9 +60,29 @@ class DeviceBuffer : public Buffer,
   virtual bool OnCopyHostBuffer(const uint8_t* source,
                                 Range source_range,
                                 size_t offset) = 0;
+};
+
+class DeviceBufferMapping final : public fml::Mapping {
+ public:
+  explicit DeviceBufferMapping(const std::shared_ptr<const DeviceBuffer>& data);
+
+  ~DeviceBufferMapping() override;
+
+  // |Mapping|
+  size_t GetSize() const override;
+
+  // |Mapping|
+  const uint8_t* GetMapping() const override;
+
+  // |Mapping|
+  bool IsDontNeedSafe() const override;
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(DeviceBuffer);
+  std::shared_ptr<const DeviceBuffer> data_;
+
+  DeviceBufferMapping(const DeviceBufferMapping&) = delete;
+
+  DeviceBufferMapping& operator=(const DeviceBufferMapping&) = delete;
 };
 
 }  // namespace impeller
