@@ -30,26 +30,18 @@ std::optional<SkColorType> ToSkColorType(impeller::PixelFormat format) {
   }
 }
 
-sk_sp<SkImage> ConvertBufferToSkImage(
-    const std::shared_ptr<impeller::DeviceBuffer>& buffer,
-    SkColorType color_type,
-    SkISize dimensions) {
-  auto buffer_view = buffer->AsBufferView();
-
+sk_sp<SkImage> ConvertBufferToSkImage(std::unique_ptr<const uint8_t[]> data,
+                                      SkColorType color_type,
+                                      SkISize dimensions) {
   SkImageInfo image_info = SkImageInfo::Make(dimensions, color_type,
                                              SkAlphaType::kPremul_SkAlphaType);
 
   SkBitmap bitmap;
-  auto func = [](void* addr, void* context) {
-    auto buffer =
-        static_cast<std::shared_ptr<impeller::DeviceBuffer>*>(context);
-    buffer->reset();
-    delete buffer;
-  };
+  auto func = [](void* addr, void* context) { free(addr); };
   auto bytes_per_pixel = image_info.bytesPerPixel();
-  bitmap.installPixels(image_info, buffer_view.contents,
-                       dimensions.width() * bytes_per_pixel, func,
-                       new std::shared_ptr<impeller::DeviceBuffer>(buffer));
+  bitmap.installPixels(image_info,
+                       const_cast<void*>(static_cast<const void*>(data.get())),
+                       dimensions.width() * bytes_per_pixel, func, nullptr);
   bitmap.setImmutable();
 
   sk_sp<SkImage> raster_image = SkImages::RasterFromBitmap(bitmap);
@@ -105,32 +97,19 @@ void ImageEncodingImpeller::ConvertDlImageToSkImage(
     return;
   }
 
-  impeller::DeviceBufferDescriptor buffer_desc;
-  buffer_desc.storage_mode = impeller::StorageMode::kHostVisible;
-  buffer_desc.size =
-      texture->GetTextureDescriptor().GetByteSizeOfBaseMipLevel();
-  auto buffer =
-      impeller_context->GetResourceAllocator()->CreateBuffer(buffer_desc);
-  auto command_buffer = impeller_context->CreateCommandBuffer();
-  command_buffer->SetLabel("BlitTextureToBuffer Command Buffer");
-  auto pass = command_buffer->CreateBlitPass();
-  pass->SetLabel("BlitTextureToBuffer Blit Pass");
-  pass->AddCopy(texture, buffer);
-  pass->EncodeCommands(impeller_context->GetResourceAllocator());
-  auto completion = [buffer, color_type = color_type.value(), dimensions,
+  auto completion = [color_type = color_type.value(), dimensions,
                      encode_task = std::move(encode_task)](
-                        impeller::CommandBuffer::Status status) {
-    if (status != impeller::CommandBuffer::Status::kCompleted) {
+                        std::unique_ptr<const uint8_t[]> data) {
+    if (data == nullptr) {
       encode_task(nullptr);
       return;
     }
-    auto sk_image = ConvertBufferToSkImage(buffer, color_type, dimensions);
+    auto sk_image =
+        ConvertBufferToSkImage(std::move(data), color_type, dimensions);
     encode_task(sk_image);
   };
 
-  if (!command_buffer->SubmitCommands(completion)) {
-    FML_LOG(ERROR) << "Failed to submit commands.";
-  }
+  impeller_context->GetTextureContents(texture, completion);
 }
 
 void ImageEncodingImpeller::ConvertImageToRaster(

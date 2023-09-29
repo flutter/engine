@@ -157,7 +157,7 @@ class Context {
   virtual std::shared_ptr<CommandBuffer> CreateCommandBuffer() const = 0;
 
   using ReadbackCallback =
-      std::function<void(std::shared_ptr<const DeviceBuffer> buffer)>;
+      std::function<void(std::unique_ptr<const uint8_t[]> buffer)>;
 
   /// @brief Read the base mip level of this texture into a host visible buffer
   ///        and return the results via [callback].
