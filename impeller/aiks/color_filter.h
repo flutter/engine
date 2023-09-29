@@ -35,8 +35,8 @@ class ColorFilter {
   static std::shared_ptr<ColorFilter> MakeLinearToSrgb();
 
   static std::shared_ptr<ColorFilter> MakeComposed(
-      std::shared_ptr<ColorFilter> outer,
-      std::shared_ptr<ColorFilter> inner);
+      const std::shared_ptr<ColorFilter>& outer,
+      const std::shared_ptr<ColorFilter>& inner);
 
   /// @brief  Wraps the given filter input with a GPU-based filter that will
   ///         perform the color operation. The given input will first be
@@ -154,8 +154,8 @@ class LinearToSrgbColorFilter final : public ColorFilter {
 /// @brief Applies color filters as f(g(x)), where x is the input color.
 class ComposedColorFilter final : public ColorFilter {
  public:
-  ComposedColorFilter(std::shared_ptr<ColorFilter> outer,
-                      std::shared_ptr<ColorFilter> inner);
+  ComposedColorFilter(const std::shared_ptr<ColorFilter>& outer,
+                      const std::shared_ptr<ColorFilter>& inner);
 
   ~ComposedColorFilter() override;
 

@@ -38,8 +38,8 @@ std::shared_ptr<ColorFilter> ColorFilter::MakeLinearToSrgb() {
 }
 
 std::shared_ptr<ColorFilter> ColorFilter::MakeComposed(
-    std::shared_ptr<ColorFilter> outer,
-    std::shared_ptr<ColorFilter> inner) {
+    const std::shared_ptr<ColorFilter>& outer,
+    const std::shared_ptr<ColorFilter>& inner) {
   return std::make_shared<ComposedColorFilter>(outer, inner);
 }
 
@@ -155,9 +155,10 @@ std::shared_ptr<ColorFilter> LinearToSrgbColorFilter::Clone() const {
  ******* ComposedColorFilter
  ******************************************************************************/
 
-ComposedColorFilter::ComposedColorFilter(std::shared_ptr<ColorFilter> outer,
-                                         std::shared_ptr<ColorFilter> inner)
-    : outer_(std::move(outer)), inner_(std::move(inner)) {}
+ComposedColorFilter::ComposedColorFilter(
+    const std::shared_ptr<ColorFilter>& outer,
+    const std::shared_ptr<ColorFilter>& inner)
+    : outer_(outer), inner_(inner) {}
 
 ComposedColorFilter::~ComposedColorFilter() = default;
 
