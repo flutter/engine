@@ -491,7 +491,7 @@ void DlDispatcher::setColorFilter(const flutter::DlColorFilter* filter) {
   if (paint_.color_filter) {
     auto color_filter = ToColorFilter(filter);
     paint_.color_filter =
-        ColorFilter::MakeComposed(std::move(paint_.color_filter), color_filter);
+        ColorFilter::MakeComposed(paint_.color_filter, color_filter);
   } else {
     paint_.color_filter = ToColorFilter(filter);
   }
@@ -502,7 +502,7 @@ void DlDispatcher::setInvertColors(bool invert) {
   if (paint_.color_filter) {
     auto invert_filter = ColorFilter::MakeMatrix(kColorInversion);
     paint_.color_filter = ColorFilter::MakeComposed(
-        invert_filter, std::move(paint_.color_filter));
+        invert_filter, paint_.color_filter);
   } else {
     paint_.color_filter = ColorFilter::MakeMatrix(kColorInversion);
   }
