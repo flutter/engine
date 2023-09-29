@@ -18,6 +18,7 @@
 #include "impeller/aiks/image_filter.h"
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/aiks/testing/context_spy.h"
+#include "impeller/core/allocator.h"
 #include "impeller/core/capture.h"
 #include "impeller/core/formats.h"
 #include "impeller/entity/contents/color_source_contents.h"
@@ -3585,13 +3586,13 @@ TEST_P(AiksTest, CanvasReadback) {
 
   GetContext()->GetTextureContents(
       texture->GetTexture(),
-      [&](const std::shared_ptr<const fml::Mapping>& data) {
-        if (data && data->GetSize() >= 4u) {
+      [&](const std::shared_ptr<const DeviceBuffer>& data) {
+        if (data && data->GetDeviceBufferDescriptor().size >= 4u) {
           success = true;
-          bytes[0] = data->GetMapping()[0];
-          bytes[1] = data->GetMapping()[1];
-          bytes[2] = data->GetMapping()[2];
-          bytes[3] = data->GetMapping()[3];
+          bytes[0] = data->OnGetContents()[0];
+          bytes[1] = data->OnGetContents()[1];
+          bytes[2] = data->OnGetContents()[2];
+          bytes[3] = data->OnGetContents()[3];
         }
         latch->Signal();
       });
