@@ -136,7 +136,7 @@ TEST_P(AiksTest, CanRenderMergedColorFilterImage) {
   Paint paint;
   auto image = std::make_shared<Image>(CreateTextureForFixture("kalimba.jpg"));
   paint.color = Color::Red();
-  paint.color_filter = std::make_shared<MergedColorFilter>(
+  paint.color_filter = ColorFilter::MakeComposed(
       ColorFilter::MakeMatrix(kColorInversion),
       ColorFilter::MakeBlend(BlendMode::kColorDodge, Color::Aqua()));
   canvas.DrawImage(image, Point::MakeXY(100.0, 100.0), paint);
@@ -147,7 +147,7 @@ TEST_P(AiksTest, CanRenderMergedColorFilter) {
   Canvas canvas;
   Paint paint;
   paint.color = Color::Red();
-  paint.color_filter = std::make_shared<MergedColorFilter>(
+  paint.color_filter = ColorFilter::MakeComposed(
       ColorFilter::MakeMatrix(kColorInversion),
       ColorFilter::MakeBlend(BlendMode::kColorDodge, Color::Aqua()));
   canvas.DrawRect(Rect::MakeLTRB(0, 0, 100, 100), paint);
@@ -158,7 +158,7 @@ TEST_P(AiksTest, CanRenderMergedColorFilterDrawPaint) {
   Canvas canvas;
   Paint paint;
   paint.color = Color::Red();
-  paint.color_filter = std::make_shared<MergedColorFilter>(
+  paint.color_filter = ColorFilter::MakeComposed(
       ColorFilter::MakeMatrix(kColorInversion),
       ColorFilter::MakeBlend(BlendMode::kColorDodge, Color::Aqua()));
   canvas.DrawPaint(paint);

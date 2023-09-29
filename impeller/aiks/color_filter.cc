@@ -37,6 +37,12 @@ std::shared_ptr<ColorFilter> ColorFilter::MakeLinearToSrgb() {
   return std::make_shared<LinearToSrgbColorFilter>();
 }
 
+std::shared_ptr<ColorFilter> ColorFilter::MakeComposed(
+    std::shared_ptr<ColorFilter> outer,
+    std::shared_ptr<ColorFilter> inner) {
+  return std::make_shared<ComposedColorFilter>(outer, inner);
+}
+
 /*******************************************************************************
  ******* BlendColorFilter
  ******************************************************************************/
@@ -146,16 +152,17 @@ std::shared_ptr<ColorFilter> LinearToSrgbColorFilter::Clone() const {
 }
 
 /*******************************************************************************
- ******* MergedColorFilter
+ ******* ComposedColorFilter
  ******************************************************************************/
 
-MergedColorFilter::MergedColorFilter(std::shared_ptr<ColorFilter> outer,
-                                     std::shared_ptr<ColorFilter> inner)
+ComposedColorFilter::ComposedColorFilter(std::shared_ptr<ColorFilter> outer,
+                                         std::shared_ptr<ColorFilter> inner)
     : outer_(std::move(outer)), inner_(std::move(inner)) {}
 
-MergedColorFilter::~MergedColorFilter() = default;
+ComposedColorFilter::~ComposedColorFilter() = default;
 
-std::shared_ptr<ColorFilterContents> MergedColorFilter::WrapWithGPUColorFilter(
+std::shared_ptr<ColorFilterContents>
+ComposedColorFilter::WrapWithGPUColorFilter(
     std::shared_ptr<FilterInput> input,
     ColorFilterContents::AbsorbOpacity absorb_opacity) const {
   std::shared_ptr<FilterContents> inner = inner_->WrapWithGPUColorFilter(
@@ -165,7 +172,8 @@ std::shared_ptr<ColorFilterContents> MergedColorFilter::WrapWithGPUColorFilter(
 }
 
 // |ColorFilter|
-ColorFilter::ColorFilterProc MergedColorFilter::GetCPUColorFilterProc() const {
+ColorFilter::ColorFilterProc ComposedColorFilter::GetCPUColorFilterProc()
+    const {
   auto inner_proc = inner_->GetCPUColorFilterProc();
   auto outer_proc = outer_->GetCPUColorFilterProc();
   return [inner_proc, outer_proc](Color color) {
@@ -174,8 +182,8 @@ ColorFilter::ColorFilterProc MergedColorFilter::GetCPUColorFilterProc() const {
 }
 
 // |ColorFilter|
-std::shared_ptr<ColorFilter> MergedColorFilter::Clone() const {
-  return std::make_shared<MergedColorFilter>(outer_, inner_);
+std::shared_ptr<ColorFilter> ComposedColorFilter::Clone() const {
+  return std::make_shared<ComposedColorFilter>(outer_, inner_);
 }
 
 }  // namespace impeller

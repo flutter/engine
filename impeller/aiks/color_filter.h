@@ -34,6 +34,10 @@ class ColorFilter {
 
   static std::shared_ptr<ColorFilter> MakeLinearToSrgb();
 
+  static std::shared_ptr<ColorFilter> MakeComposed(
+      std::shared_ptr<ColorFilter> outer,
+      std::shared_ptr<ColorFilter> inner);
+
   /// @brief  Wraps the given filter input with a GPU-based filter that will
   ///         perform the color operation. The given input will first be
   ///         rendered to a texture and then filtered.
@@ -148,12 +152,12 @@ class LinearToSrgbColorFilter final : public ColorFilter {
 };
 
 /// @brief Applies color filters as f(g(x)), where x is the input color.
-class MergedColorFilter final : public ColorFilter {
+class ComposedColorFilter final : public ColorFilter {
  public:
-  explicit MergedColorFilter(std::shared_ptr<ColorFilter> outer_,
-                             std::shared_ptr<ColorFilter> inner_);
+  explicit ComposedColorFilter(std::shared_ptr<ColorFilter> outer_,
+                               std::shared_ptr<ColorFilter> inner_);
 
-  ~MergedColorFilter() override;
+  ~ComposedColorFilter() override;
 
   // |ColorFilter|
   std::shared_ptr<ColorFilterContents> WrapWithGPUColorFilter(
