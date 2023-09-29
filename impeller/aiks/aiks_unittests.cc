@@ -3583,8 +3583,9 @@ TEST_P(AiksTest, CanvasReadback) {
   bool success = false;
   std::array<uint8_t, 4> bytes;
 
-  texture->GetTexture()->GetContents(
-      GetContext(), [&](const std::shared_ptr<const fml::Mapping>& data) {
+  GetContext()->GetTextureContents(
+      texture->GetTexture(),
+      [&](const std::shared_ptr<const fml::Mapping>& data) {
         if (data && data->GetSize() >= 4u) {
           success = true;
           bytes[0] = data->GetMapping()[0];
