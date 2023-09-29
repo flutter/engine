@@ -1205,37 +1205,6 @@ TEST_P(AiksTest, CanRenderRoundedRectWithNonUniformRadii) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-TEST_P(AiksTest, CanRenderStrokePathThatEndsAtSharpTurn) {
-  Canvas canvas;
-
-  Paint paint;
-  paint.color = Color::Red();
-  paint.style = Paint::Style::kStroke;
-  paint.stroke_width = 200;
-
-  Rect rect = {100, 100, 200, 200};
-  PathBuilder builder;
-  builder.AddArc(rect, Degrees(0), Degrees(90), false);
-
-  canvas.DrawPath(builder.TakePath(), paint);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CanRenderStrokePathWithCubicLine) {
-  Canvas canvas;
-
-  Paint paint;
-  paint.color = Color::Red();
-  paint.style = Paint::Style::kStroke;
-  paint.stroke_width = 20;
-
-  PathBuilder builder;
-  builder.AddCubicCurve({0, 200}, {50, 400}, {350, 0}, {400, 200});
-
-  canvas.DrawPath(builder.TakePath(), paint);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
 TEST_P(AiksTest, CanRenderDifferencePaths) {
   Canvas canvas;
 
@@ -2038,22 +2007,6 @@ TEST_P(AiksTest, DrawRectStrokesRenderCorrectly) {
   paint.color = Color::Red();
   paint.style = Paint::Style::kStroke;
   paint.stroke_width = 10;
-
-  canvas.Translate({100, 100});
-  canvas.DrawPath(
-      PathBuilder{}.AddRect(Rect::MakeSize(Size{100, 100})).TakePath(),
-      {paint});
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, DrawRectStrokesWithBevelJoinRenderCorrectly) {
-  Canvas canvas;
-  Paint paint;
-  paint.color = Color::Red();
-  paint.style = Paint::Style::kStroke;
-  paint.stroke_width = 10;
-  paint.stroke_join = Join::kBevel;
 
   canvas.Translate({100, 100});
   canvas.DrawPath(
@@ -2988,7 +2941,7 @@ TEST_P(AiksTest, CanRenderForegroundAdvancedBlendWithMaskBlur) {
   canvas.ClipRect(Rect::MakeXYWH(100, 150, 400, 400));
   canvas.DrawCircle({400, 400}, 200,
                     {
-                        .color = Color::White(),
+                        .color = Color::Grey(),
                         .color_filter = ColorFilter::MakeBlend(
                             BlendMode::kColor, Color::Green()),
                         .mask_blur_descriptor =
@@ -3557,6 +3510,60 @@ TEST_P(AiksTest, ReleasesTextureOnTeardown) {
   ASSERT_TRUE(weak_texture.expired()) << "When the texture is no longer in use "
                                          "by the backend, it should be "
                                          "released.";
+}
+
+// Regression test for https://github.com/flutter/flutter/issues/135441 .
+TEST_P(AiksTest, VerticesGeometryUVPositionData) {
+  Canvas canvas;
+  Paint paint;
+  auto texture = CreateTextureForFixture("table_mountain_nx.png");
+
+  paint.color_source = ColorSource::MakeImage(texture, Entity::TileMode::kClamp,
+                                              Entity::TileMode::kClamp, {}, {});
+
+  auto vertices = {Point(0, 0), Point(texture->GetSize().width, 0),
+                   Point(0, texture->GetSize().height)};
+  std::vector<uint16_t> indices = {0u, 1u, 2u};
+  std::vector<Point> texture_coordinates = {};
+  std::vector<Color> vertex_colors = {};
+  auto geometry = std::make_shared<VerticesGeometry>(
+      vertices, indices, texture_coordinates, vertex_colors,
+      Rect::MakeLTRB(0, 0, 1, 1), VerticesGeometry::VertexMode::kTriangleStrip);
+
+  canvas.DrawVertices(geometry, BlendMode::kSourceOver, paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, ClearBlendWithBlur) {
+  Canvas canvas;
+  Paint white;
+  white.color = Color::Blue();
+  canvas.DrawRect(Rect::MakeXYWH(0, 0, 600.0, 600.0), white);
+
+  Paint clear;
+  clear.blend_mode = BlendMode::kClear;
+  clear.mask_blur_descriptor = Paint::MaskBlurDescriptor{
+      .style = FilterContents::BlurStyle::kNormal,
+      .sigma = Sigma(20),
+  };
+
+  canvas.DrawCircle(Point::MakeXY(300.0, 300.0), 200.0, clear);
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, ClearBlend) {
+  Canvas canvas;
+  Paint white;
+  white.color = Color::Blue();
+  canvas.DrawRect(Rect::MakeXYWH(0, 0, 600.0, 600.0), white);
+
+  Paint clear;
+  clear.blend_mode = BlendMode::kClear;
+
+  canvas.DrawCircle(Point::MakeXY(300.0, 300.0), 200.0, clear);
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
 }  // namespace testing
