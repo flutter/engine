@@ -120,14 +120,23 @@ class TesterGPUSurfaceSoftware : public GPUSurfaceSoftware {
 class TesterPlatformView : public PlatformView,
                            public GPUSurfaceSoftwareDelegate {
  public:
-  TesterPlatformView(Delegate& delegate,
-                     const TaskRunners& task_runners,
-                     const std::shared_ptr<impeller::Context>& impeller_context,
-                     const std::shared_ptr<impeller::SurfaceContextVK>&
-                         impeller_surface_context)
+  TesterPlatformView(
+      Delegate& delegate,
+      const TaskRunners& task_runners,
+      const std::shared_ptr<impeller::ContextVK>& impeller_context,
+      const std::shared_ptr<impeller::SurfaceContextVK>&
+          impeller_surface_context)
       : PlatformView(delegate, task_runners),
         impeller_context_(impeller_context),
         impeller_surface_context_(impeller_surface_context) {}
+
+  ~TesterPlatformView() {
+#if IMPELLER_SUPPORTS_RENDERING
+    if (impeller_context_) {
+      impeller_context_->Shutdown();
+    }
+#endif
+  }
 
   // |PlatformView|
   std::shared_ptr<impeller::Context> GetImpellerContext() const override {
