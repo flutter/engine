@@ -61,10 +61,13 @@ struct Paint {
   Scalar stroke_miter = 4.0;
   Style style = Style::kFill;
   BlendMode blend_mode = BlendMode::kSourceOver;
+  bool invert_colors = false;
 
   std::shared_ptr<ImageFilter> image_filter;
   std::shared_ptr<ColorFilter> color_filter;
   std::optional<MaskBlurDescriptor> mask_blur_descriptor;
+
+  std::shared_ptr<ColorFilter> GetColorFilter() const;
 
   /// @brief      Wrap this paint's configured filters to the given contents.
   /// @param[in]  input           The contents to wrap with paint's filters.

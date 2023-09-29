@@ -124,43 +124,39 @@ TEST_P(AiksTest, CanRenderImage) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-constexpr ColorMatrix kColorInversion = {.array = {
-                                             -1.0, 0,    0,    1.0, 0,  //
-                                             0,    -1.0, 0,    1.0, 0,  //
-                                             0,    0,    -1.0, 1.0, 0,  //
-                                             1.0,  1.0,  1.0,  1.0, 0   //
-                                         }};
-
-TEST_P(AiksTest, CanRenderMergedColorFilterImage) {
+TEST_P(AiksTest, CanRenderInvertedImageWithColorFilter) {
   Canvas canvas;
   Paint paint;
   auto image = std::make_shared<Image>(CreateTextureForFixture("kalimba.jpg"));
   paint.color = Color::Red();
-  paint.color_filter = ColorFilter::MakeComposed(
-      ColorFilter::MakeMatrix(kColorInversion),
-      ColorFilter::MakeBlend(BlendMode::kSourceOver, Color::Yellow()));
+  paint.color_filter =
+      ColorFilter::MakeBlend(BlendMode::kSourceOver, Color::Yellow());
+  paint.invert_colors = true;
+
   canvas.DrawImage(image, Point::MakeXY(100.0, 100.0), paint);
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-TEST_P(AiksTest, CanRenderMergedColorFilter) {
+TEST_P(AiksTest, CanRenderColorFilterWithInvertColors) {
   Canvas canvas;
   Paint paint;
   paint.color = Color::Red();
-  paint.color_filter = ColorFilter::MakeComposed(
-      ColorFilter::MakeMatrix(kColorInversion),
-      ColorFilter::MakeBlend(BlendMode::kSourceOver, Color::Yellow()));
+  paint.color_filter =
+      ColorFilter::MakeBlend(BlendMode::kSourceOver, Color::Yellow());
+  paint.invert_colors = true;
+
   canvas.DrawRect(Rect::MakeLTRB(0, 0, 100, 100), paint);
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-TEST_P(AiksTest, CanRenderMergedColorFilterDrawPaint) {
+TEST_P(AiksTest, CanRenderColorFilterWithInvertColorsDrawPaint) {
   Canvas canvas;
   Paint paint;
   paint.color = Color::Red();
-  paint.color_filter = ColorFilter::MakeComposed(
-      ColorFilter::MakeMatrix(kColorInversion),
-      ColorFilter::MakeBlend(BlendMode::kSourceOver, Color::Yellow()));
+  paint.color_filter =
+      ColorFilter::MakeBlend(BlendMode::kSourceOver, Color::Yellow());
+  paint.invert_colors = true;
+
   canvas.DrawPaint(paint);
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }

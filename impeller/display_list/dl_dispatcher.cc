@@ -33,18 +33,6 @@
 
 namespace impeller {
 
-/// A color matrix which inverts colors.
-// clang-format off
-constexpr ColorMatrix kColorInversion = {
-  .array = {
-    -1.0,    0,    0, 1.0, 0, //
-       0, -1.0,    0, 1.0, 0, //
-       0,    0, -1.0, 1.0, 0, //
-     1.0,  1.0,  1.0, 1.0, 0  //
-  }
-};
-// clang-format on
-
 #define UNIMPLEMENTED \
   FML_DLOG(ERROR) << "Unimplemented detail in " << __FUNCTION__;
 
@@ -487,25 +475,12 @@ static std::shared_ptr<ColorFilter> ToColorFilter(
 
 // |flutter::DlOpReceiver|
 void DlDispatcher::setColorFilter(const flutter::DlColorFilter* filter) {
-  // Needs https://github.com/flutter/flutter/issues/95434
-  if (paint_.color_filter) {
-    auto color_filter = ToColorFilter(filter);
-    paint_.color_filter =
-        ColorFilter::MakeComposed(paint_.color_filter, color_filter);
-  } else {
-    paint_.color_filter = ToColorFilter(filter);
-  }
+  paint_.color_filter = ToColorFilter(filter);
 }
 
 // |flutter::DlOpReceiver|
 void DlDispatcher::setInvertColors(bool invert) {
-  if (paint_.color_filter) {
-    auto invert_filter = ColorFilter::MakeMatrix(kColorInversion);
-    paint_.color_filter =
-        ColorFilter::MakeComposed(invert_filter, paint_.color_filter);
-  } else {
-    paint_.color_filter = ColorFilter::MakeMatrix(kColorInversion);
-  }
+  paint_.invert_colors = invert;
 }
 
 // |flutter::DlOpReceiver|
