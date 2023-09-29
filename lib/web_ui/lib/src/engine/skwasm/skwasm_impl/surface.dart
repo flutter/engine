@@ -22,6 +22,7 @@ WasmVoid callbackHandler(WasmI32 callbackId, WasmI32 context, WasmExternRef? jsC
   return WasmVoid();
 }
 
+// This class handles callbacks coming from Skwasm by keeping a map of callback IDs to Completers
 class SkwasmCallbackHandler {
   SkwasmCallbackHandler._withCallbackPointer(this.callbackPointer);
 
@@ -37,6 +38,7 @@ class SkwasmCallbackHandler {
   final OnRenderCallbackHandle callbackPointer;
   final Map<CallbackId, Completer<JSAny>> _pendingCallbacks = <int, Completer<JSAny>>{};
 
+  // Returns a future that will resolve when Skwasm calls back with the given callbackID
   Future<JSAny> registerCallback(int callbackId) {
     final Completer<JSAny> completer = Completer<JSAny>();
     _pendingCallbacks[callbackId] = completer;
@@ -44,6 +46,10 @@ class SkwasmCallbackHandler {
   }
 
   void handleCallback(WasmI32 callbackId, WasmI32 context, WasmExternRef? jsContext) {
+    // Skwasm can either callback with a JS object (an externref) or it can call back
+    // with a simple integer, which usually refers to a pointer on its heap. In order
+    // to coerce these into a single type, we just make the completers take a JSAny
+    // that either contains the JS object or a JSNumber that contains the integer value.
     final Completer<JSAny> completer = _pendingCallbacks.remove(callbackId.toIntUnsigned())!;
     if (!jsContext.isNull) {
       completer.complete(jsContext!.toJS);
@@ -51,7 +57,6 @@ class SkwasmCallbackHandler {
       completer.complete(context.toIntUnsigned().toJS);
     }
   }
-
 }
 
 class SkwasmSurface {
