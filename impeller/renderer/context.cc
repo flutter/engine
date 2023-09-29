@@ -41,7 +41,7 @@ void Context::GetTextureContents(const std::shared_ptr<Texture>& texture,
       !cmd_buffer->SubmitCommands(
           [callback, device_buffer](CommandBuffer::Status status) {
             if (status == CommandBuffer::Status::kCompleted) {
-              callback(device_buffer->AsMapping());
+              callback(device_buffer);
             } else {
               callback(nullptr);
             }

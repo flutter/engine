@@ -8,6 +8,7 @@
 #include <string>
 
 #include "flutter/fml/macros.h"
+#include "impeller/core/allocator.h"
 #include "impeller/core/capture.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/host_buffer.h"
@@ -156,7 +157,7 @@ class Context {
   virtual std::shared_ptr<CommandBuffer> CreateCommandBuffer() const = 0;
 
   using ReadbackCallback =
-      std::function<void(std::shared_ptr<const fml::Mapping> mapping)>;
+      std::function<void(std::shared_ptr<const DeviceBuffer> buffer)>;
 
   /// @brief Read the base mip level of this texture into a host visible buffer
   ///        and return the results via [callback].
