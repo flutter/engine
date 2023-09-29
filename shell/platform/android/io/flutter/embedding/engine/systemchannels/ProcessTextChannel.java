@@ -18,7 +18,23 @@ import java.util.Map;
  * {@link ProcessTextChannel} is a platform channel that is used by the framework to initiate text
  * processing feature in the embedding and for the embedding to send back the results.
  *
- * <p>TODO(bleroux): add more documentation.
+ * <p>When there is new a text context menu to display, the framework will send to the embedding the
+ * message {@code ProcessText.queryTextActions}. In response, the {@link
+ * io.flutter.plugin.text.ProcessTextPlugin} will return a map of all activities that can be performed
+ * to process text. The map keys are generated IDs and the values are the activities labels.
+ * On the first request, the {@link io.flutter.plugin.text.ProcessTextPlugin} will make a call to
+ * Android's package manager to query all activities that can be performed for the
+ * {@code Intent.ACTION_PROCESS_TEXT} intent.
+ *
+ * <p>When an text processing action has to be executed, the framework will send to the embedding the
+ * message {@code ProcessText.processTextAction} with the {@code int id} of the choosen text action and the
+ * {@code String} of text to process as arguments. In response, the {@link
+ * io.flutter.plugin.text.ProcessTextPlugin} will make a call to the Android application activity to
+ * start the activity exposing the text action and it will return the processed text, or null if the
+ * activity did not return a value.
+ *
+ * <p>{@link io.flutter.plugin.text.ProcessTextPlugin} implements {@link ProcessTextMethodHandler}
+ * that parses incoming messages from Flutter.
  */
 public class ProcessTextChannel {
   private static final String TAG = "ProcessTextChannel";

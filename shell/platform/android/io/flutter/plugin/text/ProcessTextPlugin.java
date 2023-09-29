@@ -27,7 +27,7 @@ public class ProcessTextPlugin implements FlutterPlugin, ActivityAware, Activity
   @NonNull private final ProcessTextChannel processTextChannel;
   @NonNull private final PackageManager packageManager;
   @Nullable private ActivityPluginBinding activityBinding;
-  @NonNull private Map<Integer, ResolveInfo> resolveInfosById = new HashMap<Integer, ResolveInfo>();
+  private Map<Integer, ResolveInfo> resolveInfosById;
 
   @NonNull
   private Map<Integer, MethodChannel.Result> requestsByCode =
@@ -37,12 +37,14 @@ public class ProcessTextPlugin implements FlutterPlugin, ActivityAware, Activity
     this.processTextChannel = processTextChannel;
     this.packageManager = processTextChannel.packageManager;
 
-    this.cacheResolveInfos();
-
     processTextChannel.setMethodHandler(
         new ProcessTextChannel.ProcessTextMethodHandler() {
           @Override
           public Map<Integer, String> queryTextActions() {
+            if (resolveInfosById == null) {
+              resolveInfosById = new HashMap<Integer, ResolveInfo>();
+              cacheResolveInfos();
+            }
             Map<Integer, String> result = new HashMap<Integer, String>();
             for (Integer id : resolveInfosById.keySet()) {
               final ResolveInfo info = resolveInfosById.get(id);
@@ -64,6 +66,11 @@ public class ProcessTextPlugin implements FlutterPlugin, ActivityAware, Activity
 
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
               result.error("error", "Android version not supported", null);
+              return;
+            }
+
+            if (resolveInfosById == null) {
+              result.error("error", "Can not process text actions before calling queryTextActions", null);
               return;
             }
 
