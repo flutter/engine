@@ -155,7 +155,7 @@ class LinearToSrgbColorFilter final : public ColorFilter {
 class ComposedColorFilter final : public ColorFilter {
  public:
   ComposedColorFilter(std::shared_ptr<ColorFilter> outer,
-                               std::shared_ptr<ColorFilter> inner);
+                      std::shared_ptr<ColorFilter> inner);
 
   ~ComposedColorFilter() override;
 
