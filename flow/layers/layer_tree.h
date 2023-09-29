@@ -104,7 +104,7 @@ struct LayerTreeTask {
         layer_tree(std::move(layer_tree)),
         device_pixel_ratio(device_pixel_ratio) {}
 
-  /// The target view to drawn to.
+  /// The target view to draw to.
   int64_t view_id;
   /// The target layer tree to be drawn.
   std::unique_ptr<LayerTree> layer_tree;
@@ -112,7 +112,7 @@ struct LayerTreeTask {
   float device_pixel_ratio;
 
  private:
-  FML_DISALLOW_COPY(LayerTreeTask);
+  FML_DISALLOW_COPY_AND_ASSIGN(LayerTreeTask);
 };
 
 }  // namespace flutter
