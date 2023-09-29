@@ -22,8 +22,9 @@ executable("testing") {
   ]
 
   sources = [ "tester_main.cc" ]
+  libs = []
   if (is_win) {
-    libs = [
+    libs += [
       "psapi.lib",
       "user32.lib",
       "FontSub.lib",
@@ -53,11 +54,11 @@ executable("testing") {
     ]
 
     if (is_win) {
-      libs = [ "$root_out_dir/vk_swiftshader.dll" ]
+      libs += [ "$root_out_dir/vk_swiftshader.dll" ]
     } else if (is_mac) {
-      libs = [ "$root_out_dir/libvk_swiftshader.dylib" ]
+      libs += [ "$root_out_dir/libvk_swiftshader.dylib" ]
     } else if (is_linux) {
-      libs = [ "$root_out_dir/libvk_swiftshader.so" ]
+      libs += [ "$root_out_dir/libvk_swiftshader.so" ]
     } else {
       assert(
           false,
