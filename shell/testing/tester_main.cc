@@ -136,6 +136,7 @@ class TesterPlatformView : public PlatformView,
 
   // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface() override {
+#if IMPELLER_SUPPORTS_RENDERING
     if (delegate_.OnPlatformViewGetSettings().enable_impeller) {
       FML_DCHECK(impeller_context_);
       auto surface =
@@ -143,6 +144,7 @@ class TesterPlatformView : public PlatformView,
       FML_DCHECK(surface->IsValid());
       return surface;
     }
+#endif  // IMPELLER_SUPPORTS_RENDERING
     FML_DCHECK(!impeller_context_);
     auto surface = std::make_unique<TesterGPUSurfaceSoftware>(
         this, true /* render to surface */);
