@@ -140,7 +140,7 @@ class TesterPlatformView : public PlatformView,
 
   // |PlatformView|
   std::shared_ptr<impeller::Context> GetImpellerContext() const override {
-    return impeller_context_;
+    return std::static_pointer_cast<impeller::Context>(impeller_context_);
   }
 
   // |PlatformView|
@@ -195,7 +195,7 @@ class TesterPlatformView : public PlatformView,
 
  private:
   sk_sp<SkSurface> sk_surface_ = nullptr;
-  std::shared_ptr<impeller::Context> impeller_context_;
+  std::shared_ptr<impeller::ContextVK> impeller_context_;
   std::shared_ptr<impeller::SurfaceContextVK> impeller_surface_context_;
   std::shared_ptr<TesterExternalViewEmbedder> external_view_embedder_ =
       std::make_shared<TesterExternalViewEmbedder>();
@@ -321,7 +321,7 @@ int RunTester(const flutter::Settings& settings,
     impeller_context = impeller::ContextVK::Create(std::move(context_settings));
     if (!impeller_context || !impeller_context->IsValid()) {
       VALIDATION_LOG << "Could not create Vulkan context.";
-      return -1;
+      return EXIT_FAILURE;
     }
 
     impeller::vk::SurfaceKHR vk_surface;
@@ -334,7 +334,7 @@ int RunTester(const flutter::Settings& settings,
     if (res != impeller::vk::Result::eSuccess) {
       VALIDATION_LOG << "Could not create surface for tester "
                      << impeller::vk::to_string(res);
-      return -1;
+      return EXIT_FAILURE;
     }
 
     impeller::vk::UniqueSurfaceKHR surface{vk_surface,
@@ -342,7 +342,7 @@ int RunTester(const flutter::Settings& settings,
     impeller_surface_context = impeller_context->CreateSurfaceContext();
     if (!impeller_surface_context->SetWindowSurface(std::move(surface))) {
       VALIDATION_LOG << "Could not set up surface for context.";
-      return -1;
+      return EXIT_FAILURE;
     }
   }
 #endif  // IMPELLER_SUPPORTS_RENDERING
