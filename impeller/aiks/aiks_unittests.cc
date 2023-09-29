@@ -274,6 +274,16 @@ TEST_P(AiksTest, CanRenderCurvedStrokes) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, CanRenderThickCurvedStrokes) {
+  Canvas canvas;
+  Paint paint;
+  paint.color = Color::Red();
+  paint.stroke_width = 100.0;
+  paint.style = Paint::Style::kStroke;
+  canvas.DrawPath(PathBuilder{}.AddCircle({200, 200}, 75).TakePath(), paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, CanRenderClips) {
   Canvas canvas;
   Paint paint;
