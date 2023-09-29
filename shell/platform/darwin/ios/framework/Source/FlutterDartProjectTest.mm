@@ -98,6 +98,18 @@ FLUTTER_ASSERT_ARC
     XCTAssertEqualObjects(path, @"path/to/foo/assets");
   }
   {
+    // Found asset path in info.plist, is not overriden by main bundle
+    id mockBundle = OCMClassMock([NSBundle class]);
+    id mockMainBundle = OCMPartialMock(NSBundle.mainBundle);
+    OCMStub([mockBundle objectForInfoDictionaryKey:@"FLTAssetsPath"]).andReturn(@"foo/assets");
+    OCMStub([mockMainBundle objectForInfoDictionaryKey:@"FLTAssetsPath"]).andReturn(nil);
+    NSString* resultAssetsPath = @"path/to/foo/assets";
+    OCMStub([mockBundle pathForResource:@"foo/assets" ofType:nil]).andReturn(resultAssetsPath);
+    NSString* path = FLTAssetsPathFromBundle(mockBundle);
+    XCTAssertEqualObjects(path, @"path/to/foo/assets");
+    [mockMainBundle stopMocking];
+  }
+  {
     // No asset path in info.plist, defaults to main bundle
     id mockBundle = OCMClassMock([NSBundle class]);
     id mockMainBundle = OCMPartialMock([NSBundle mainBundle]);
@@ -108,6 +120,7 @@ FLUTTER_ASSERT_ARC
         .andReturn(resultAssetsPath);
     NSString* path = FLTAssetsPathFromBundle(mockBundle);
     XCTAssertEqualObjects(path, @"path/to/foo/assets");
+    [mockMainBundle stopMocking];
   }
 }
 

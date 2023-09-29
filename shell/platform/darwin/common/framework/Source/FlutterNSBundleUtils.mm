@@ -9,7 +9,7 @@
 FLUTTER_ASSERT_ARC
 
 const NSString* kDefaultAssetPath = @"Frameworks/App.framework/flutter_assets";
-static NSString* GetFlutterAssetPathFromBundle(NSBundle* bundle);
+static NSString* GetFlutterAssetsPathFromBundle(NSBundle* bundle, NSString* relativeAssetsPath);
 
 NSBundle* FLTFrameworkBundleInternal(NSString* flutterFrameworkBundleID, NSURL* searchURL) {
   NSDirectoryEnumerator<NSURL*>* frameworkEnumerator = [NSFileManager.defaultManager
@@ -59,18 +59,18 @@ NSString* FLTAssetPath(NSBundle* bundle) {
 }
 
 NSString* FLTAssetsPathFromBundle(NSBundle* bundle) {
-  NSString* flutterAssetsPath = GetFlutterAssetPathFromBundle(bundle);
+  NSString* relativeAssetsPath = FLTAssetPath(bundle);
+  NSString* flutterAssetsPath = GetFlutterAssetsPathFromBundle(bundle, relativeAssetsPath);
   if (flutterAssetsPath.length == 0) {
-    flutterAssetsPath = GetFlutterAssetPathFromBundle(NSBundle.mainBundle);
+    flutterAssetsPath = GetFlutterAssetsPathFromBundle(NSBundle.mainBundle, relativeAssetsPath);
   }
   return flutterAssetsPath;
 }
 
-static NSString* GetFlutterAssetPathFromBundle(NSBundle* bundle) {
-  NSString* flutterAssetsPath = FLTAssetPath(bundle);
+static NSString* GetFlutterAssetsPathFromBundle(NSBundle* bundle, NSString* relativeAssetsPath) {
   // Use the raw path solution so that asset path can be returned from unloaded bundles.
   // See https://github.com/flutter/engine/pull/46073
-  NSString* assetsPath = [bundle pathForResource:flutterAssetsPath ofType:nil];
+  NSString* assetsPath = [bundle pathForResource:relativeAssetsPath ofType:nil];
   if (assetsPath.length == 0) {
     // In app extension, using full relative path (kDefaultAssetPath)
     // returns nil when the app bundle is not loaded. Try to use
