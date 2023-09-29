@@ -29,15 +29,6 @@ class DescriptionGLES {
   bool HasExtension(const std::string& ext) const;
 
   /// @brief      Returns whether GLES includes the debug extension.
-  ///
-  /// @warning    There are known devices (at the time of this writing, both
-  ///             the Pixel 6A and Pixel Fold included) that report this as
-  ///             `true`, but will fail at runtime when attempting to use the
-  ///             functions (i.e. `glPushDebugGroup` and `glPopDebugGroup`).
-  ///
-  ///             Call `glDebugMessageControl` to setup the debug state before
-  ///             using the debug functions, otherwise a `GL_OUT_OF_MEMORY`
-  ///             error will be generated in debug mode.
   bool HasDebugExtension() const;
 
  private:
