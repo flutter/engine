@@ -138,7 +138,7 @@ TEST_P(AiksTest, CanRenderMergedColorFilterImage) {
   paint.color = Color::Red();
   paint.color_filter = ColorFilter::MakeComposed(
       ColorFilter::MakeMatrix(kColorInversion),
-      ColorFilter::MakeBlend(BlendMode::kColorDodge, Color::Aqua()));
+      ColorFilter::MakeBlend(BlendMode::kSourceOver, Color::Yellow()));
   canvas.DrawImage(image, Point::MakeXY(100.0, 100.0), paint);
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
@@ -149,7 +149,7 @@ TEST_P(AiksTest, CanRenderMergedColorFilter) {
   paint.color = Color::Red();
   paint.color_filter = ColorFilter::MakeComposed(
       ColorFilter::MakeMatrix(kColorInversion),
-      ColorFilter::MakeBlend(BlendMode::kColorDodge, Color::Aqua()));
+      ColorFilter::MakeBlend(BlendMode::kSourceOver, Color::Yellow()));
   canvas.DrawRect(Rect::MakeLTRB(0, 0, 100, 100), paint);
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
@@ -160,7 +160,7 @@ TEST_P(AiksTest, CanRenderMergedColorFilterDrawPaint) {
   paint.color = Color::Red();
   paint.color_filter = ColorFilter::MakeComposed(
       ColorFilter::MakeMatrix(kColorInversion),
-      ColorFilter::MakeBlend(BlendMode::kColorDodge, Color::Aqua()));
+      ColorFilter::MakeBlend(BlendMode::kSourceOver, Color::Yellow()));
   canvas.DrawPaint(paint);
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }

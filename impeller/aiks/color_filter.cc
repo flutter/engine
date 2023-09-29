@@ -174,9 +174,9 @@ ComposedColorFilter::WrapWithGPUColorFilter(
 // |ColorFilter|
 ColorFilter::ColorFilterProc ComposedColorFilter::GetCPUColorFilterProc()
     const {
-  auto inner_proc = inner_->GetCPUColorFilterProc();
-  auto outer_proc = outer_->GetCPUColorFilterProc();
-  return [inner_proc, outer_proc](Color color) {
+  return [inner = inner_, outer = outer_](Color color) {
+    auto inner_proc = inner->GetCPUColorFilterProc();
+    auto outer_proc = outer->GetCPUColorFilterProc();
     return outer_proc(inner_proc(color));
   };
 }
