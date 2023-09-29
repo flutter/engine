@@ -902,10 +902,11 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 
 // Prevent UIKit from showing selection handles or highlights. This is needed
 // because Scribble interactions require the view to have it's actual frame on
-// the screen.
+// the screen. They're not needed on iOS 17 with the new
+// UITextSelectionDisplayInteraction API.
 //
-// These are not documented methods. On iOS 17, the insertion point color is also
-// used to paint the highlighted background of the selected IME candidate:
+// These are undocumented methods. On iOS 17, the insertion point color is also
+// used as the highlighted background of the selected IME candidate:
 // https://github.com/flutter/flutter/issues/132548
 // So the respondsToSelector method is overridden to return NO for this method
 // on iOS 17+.
