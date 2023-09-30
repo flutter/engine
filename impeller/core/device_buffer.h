@@ -50,13 +50,6 @@ class DeviceBuffer : public Buffer,
 
   virtual uint8_t* OnGetContents() const = 0;
 
-  /// @brief returns a malloc allocated unique ptr to a copy of the contents of
-  ///        this buffer.
-  ///
-  /// The size of the returned buffer will be the same as the size of this
-  /// buffer.
-  std::unique_ptr<const uint8_t[]> CopyToUnqiueBuffer() const;
-
  protected:
   const DeviceBufferDescriptor desc_;
 

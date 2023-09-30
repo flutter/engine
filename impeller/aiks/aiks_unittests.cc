@@ -3584,14 +3584,14 @@ TEST_P(AiksTest, CanvasReadback) {
   bool success = false;
   std::array<uint8_t, 4> bytes;
 
-  GetContext()->GetTextureContents(
-      texture->GetTexture(), [&](const std::shared_ptr<const uint8_t[]>& data) {
-        if (data) {
+  GetContext()->ReadTextureToDeviceBuffer(
+      texture->GetTexture(), [&](const std::shared_ptr<DeviceBuffer>& data) {
+        if (data && data->GetDeviceBufferDescriptor().size == 4u) {
           success = true;
-          bytes[0] = data[0];
-          bytes[1] = data[1];
-          bytes[2] = data[2];
-          bytes[3] = data[3];
+          bytes[0] = data->OnGetContents()[0];
+          bytes[1] = data->OnGetContents()[1];
+          bytes[2] = data->OnGetContents()[2];
+          bytes[3] = data->OnGetContents()[3];
         }
         latch->Signal();
       });

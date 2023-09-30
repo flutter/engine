@@ -70,11 +70,4 @@ const DeviceBufferDescriptor& DeviceBuffer::GetDeviceBufferDescriptor() const {
   return OnCopyHostBuffer(source, source_range, offset);
 }
 
-std::unique_ptr<const uint8_t[]> DeviceBuffer::CopyToUnqiueBuffer() const {
-  auto size = GetDeviceBufferDescriptor().size;
-  auto raw_data = static_cast<uint8_t*>(malloc(size));
-  memcpy(raw_data, OnGetContents(), size);
-  return std::unique_ptr<const uint8_t[]>(raw_data);
-}
-
 }  // namespace impeller

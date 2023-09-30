@@ -17,8 +17,9 @@ bool Context::UpdateOffscreenLayerPixelFormat(PixelFormat format) {
   return false;
 }
 
-void Context::GetTextureContents(const std::shared_ptr<Texture>& texture,
-                                 const ReadbackCallback& callback) const {
+void Context::ReadTextureToDeviceBuffer(
+    const std::shared_ptr<Texture>& texture,
+    const ReadbackCallback& callback) const {
   auto cmd_buffer = CreateCommandBuffer();
   auto blit_pass = cmd_buffer->CreateBlitPass();
   auto buffer_size =
@@ -41,7 +42,7 @@ void Context::GetTextureContents(const std::shared_ptr<Texture>& texture,
       !cmd_buffer->SubmitCommands(
           [callback, device_buffer](CommandBuffer::Status status) {
             if (status == CommandBuffer::Status::kCompleted) {
-              callback(device_buffer->CopyToUnqiueBuffer());
+              callback(device_buffer);
             } else {
               callback(nullptr);
             }

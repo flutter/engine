@@ -157,7 +157,7 @@ class Context {
   virtual std::shared_ptr<CommandBuffer> CreateCommandBuffer() const = 0;
 
   using ReadbackCallback =
-      std::function<void(std::unique_ptr<const uint8_t[]> buffer)>;
+      std::function<void(std::shared_ptr<DeviceBuffer> buffer)>;
 
   /// @brief Read the base mip level of this texture into a host visible buffer
   ///        and return the results via [callback].
@@ -169,8 +169,8 @@ class Context {
   ///
   ///        The format of the returned data is defined by the pixel format of
   ///        this texture's descriptor.
-  void GetTextureContents(const std::shared_ptr<Texture>& texture,
-                          const ReadbackCallback& callback) const;
+  void ReadTextureToDeviceBuffer(const std::shared_ptr<Texture>& texture,
+                                 const ReadbackCallback& callback) const;
 
   //----------------------------------------------------------------------------
   /// @brief      Force all pending asynchronous work to finish. This is
