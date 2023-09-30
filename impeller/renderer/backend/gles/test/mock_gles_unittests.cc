@@ -33,5 +33,16 @@ TEST(MockGLES, CapturesPushAndPopDebugGroup) {
                        {"PushDebugGroupKHR", "PopDebugGroupKHR"}));
 }
 
+// Tests that if we call a function we have not mocked, it's OK.
+TEST(MockGLES, CanCallUnmockedFunction) {
+  auto mock_gles = MockGLES::Init();
+
+  auto& gl = mock_gles->GetProcTable();
+  gl.DeleteFramebuffers(1, nullptr);
+
+  // Test should still complete.
+  // If we end up mocking DeleteFramebuffers, delete this test.
+}
+
 }  // namespace testing
 }  // namespace impeller
