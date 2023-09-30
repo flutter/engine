@@ -2469,7 +2469,6 @@ TEST_P(EntityTest, StencilAndCover) {
   auto contents = std::make_shared<SolidColorContents>();
   contents->SetGeometry(Geometry::MakeFillPath(builder.TakePath()));
   contents->SetColor(Color::Red());
-  contents->SetSTC(true);
 
   Entity entity;
   entity.SetTransformation(Matrix::MakeScale(Vector3(2, 2, 1)));
