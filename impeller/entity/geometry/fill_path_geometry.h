@@ -7,6 +7,7 @@
 #include <optional>
 
 #include "impeller/entity/geometry/geometry.h"
+#include "impeller/geometry/path.h"
 #include "impeller/geometry/rect.h"
 
 namespace impeller {
@@ -26,7 +27,8 @@ class FillPathGeometry : public Geometry {
   // |Geometry|
   GeometryResult GetPositionBuffer(const ContentContext& renderer,
                                    const Entity& entity,
-                                   RenderPass& pass) override;
+                                   RenderPass& pass,
+                                   bool stc = false) override;
 
   // |Geometry|
   GeometryVertexType GetVertexType() const override;
@@ -41,8 +43,14 @@ class FillPathGeometry : public Geometry {
                                      const Entity& entity,
                                      RenderPass& pass) override;
 
+  // |Geometry|
+  bool UseStcHint() const override {
+    return !path_.IsConvex() && path_.GetFillType() == FillType::kNonZero;
+  };
+
   Path path_;
   std::optional<Rect> inner_rect_;
+
 
   FML_DISALLOW_COPY_AND_ASSIGN(FillPathGeometry);
 };

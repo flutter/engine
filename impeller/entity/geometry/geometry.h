@@ -78,7 +78,8 @@ class Geometry {
 
   virtual GeometryResult GetPositionBuffer(const ContentContext& renderer,
                                            const Entity& entity,
-                                           RenderPass& pass) = 0;
+                                           RenderPass& pass,
+                                           bool stc = false) = 0;
 
   virtual GeometryResult GetPositionUVBuffer(Rect texture_coverage,
                                              Matrix effect_transform,
@@ -87,6 +88,10 @@ class Geometry {
                                              RenderPass& pass);
 
   virtual GeometryVertexType GetVertexType() const = 0;
+
+  virtual bool UseStcHint() const {
+    return false;
+  }
 
   virtual std::optional<Rect> GetCoverage(const Matrix& transform) const = 0;
 

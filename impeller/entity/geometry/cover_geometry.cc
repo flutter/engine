@@ -14,7 +14,8 @@ CoverGeometry::~CoverGeometry() = default;
 
 GeometryResult CoverGeometry::GetPositionBuffer(const ContentContext& renderer,
                                                 const Entity& entity,
-                                                RenderPass& pass) {
+                                                RenderPass& pass,
+                                                bool stc) {
   auto rect = Rect(Size(pass.GetRenderTargetSize()));
   constexpr uint16_t kRectIndicies[4] = {0, 1, 2, 3};
   auto& host_buffer = pass.GetTransientsBuffer();

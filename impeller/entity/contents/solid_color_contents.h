@@ -48,6 +48,10 @@ class SolidColorContents final : public ColorSourceContents {
               const Entity& entity,
               RenderPass& pass) const override;
 
+  bool RenderSTC(const ContentContext& renderer,
+                 const Entity& entity,
+                 RenderPass& pass) const;
+
   std::optional<Color> AsBackgroundColor(const Entity& entity,
                                          ISize target_size) const override;
 

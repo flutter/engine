@@ -19,7 +19,8 @@ PointFieldGeometry::~PointFieldGeometry() = default;
 GeometryResult PointFieldGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
-    RenderPass& pass) {
+    RenderPass& pass,
+    bool stc) {
   if (renderer.GetDeviceCapabilities().SupportsCompute()) {
     return GetPositionBufferGPU(renderer, entity, pass);
   }

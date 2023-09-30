@@ -346,7 +346,8 @@ StrokePathGeometry::CreateSolidStrokeVertices(
 GeometryResult StrokePathGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
-    RenderPass& pass) {
+    RenderPass& pass,
+    bool stc) {
   if (stroke_width_ < 0.0) {
     return {};
   }

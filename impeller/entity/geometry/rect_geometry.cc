@@ -12,7 +12,8 @@ RectGeometry::~RectGeometry() = default;
 
 GeometryResult RectGeometry::GetPositionBuffer(const ContentContext& renderer,
                                                const Entity& entity,
-                                               RenderPass& pass) {
+                                               RenderPass& pass,
+                                               bool stc) {
   auto& host_buffer = pass.GetTransientsBuffer();
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,

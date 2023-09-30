@@ -47,7 +47,8 @@ class StrokePathGeometry : public Geometry {
   // |Geometry|
   GeometryResult GetPositionBuffer(const ContentContext& renderer,
                                    const Entity& entity,
-                                   RenderPass& pass) override;
+                                   RenderPass& pass,
+                                   bool stc = false) override;
 
   // |Geometry|
   GeometryResult GetPositionUVBuffer(Rect texture_coverage,

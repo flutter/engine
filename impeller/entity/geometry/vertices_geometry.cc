@@ -113,7 +113,8 @@ std::optional<Rect> VerticesGeometry::GetTextureCoordinateCoverge() const {
 GeometryResult VerticesGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
-    RenderPass& pass) {
+    RenderPass& pass,
+    bool stc) {
   auto index_count = indices_.size();
   auto vertex_count = vertices_.size();
 

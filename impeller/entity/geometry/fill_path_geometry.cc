@@ -16,9 +16,30 @@ FillPathGeometry::~FillPathGeometry() = default;
 GeometryResult FillPathGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
-    RenderPass& pass) {
+    RenderPass& pass,
+    bool stc) {
   auto& host_buffer = pass.GetTransientsBuffer();
   VertexBuffer vertex_buffer;
+
+  if (stc) {
+    auto [points, indices] = TessellateConvex(
+        path_.CreatePolyline(entity.GetTransformation().GetMaxBasisLength()));
+
+    vertex_buffer.vertex_buffer = host_buffer.Emplace(
+        points.data(), points.size() * sizeof(Point), alignof(Point));
+    vertex_buffer.index_buffer = host_buffer.Emplace(
+        indices.data(), indices.size() * sizeof(uint16_t), alignof(uint16_t));
+    vertex_buffer.vertex_count = indices.size();
+    vertex_buffer.index_type = IndexType::k16bit;
+
+    return GeometryResult{
+        .type = PrimitiveType::kTriangle,
+        .vertex_buffer = vertex_buffer,
+        .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                     entity.GetTransformation(),
+        .prevent_overdraw = false,
+    };
+  }
 
   if (path_.GetFillType() == FillType::kNonZero &&  //
       path_.IsConvex()) {
