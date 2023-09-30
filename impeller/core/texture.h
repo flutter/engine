@@ -15,8 +15,6 @@
 
 namespace impeller {
 
-class Context;
-
 class Texture {
  public:
   virtual ~Texture();
