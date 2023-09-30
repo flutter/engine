@@ -112,8 +112,7 @@ void ImageEncodingImpeller::ConvertDlImageToSkImage(
       encode_task(nullptr);
       return;
     }
-    auto sk_image =
-        ConvertBufferToSkImage(std::move(data), color_type, dimensions);
+    auto sk_image = ConvertBufferToSkImage(data, color_type, dimensions);
     encode_task(sk_image);
   };
 
