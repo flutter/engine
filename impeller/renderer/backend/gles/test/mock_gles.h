@@ -15,6 +15,8 @@ namespace testing {
 /// (as function pointers). This class maintains a set of function pointers that
 /// appear to be GLES functions, but are actually just stubs that record
 /// invocations.
+///
+/// See `README.md` for more information.
 class MockGLES final {
  public:
   /// @brief      Returns an initialized |MockGLES| instance.
