@@ -51,7 +51,6 @@ class FillPathGeometry : public Geometry {
   Path path_;
   std::optional<Rect> inner_rect_;
 
-
   FML_DISALLOW_COPY_AND_ASSIGN(FillPathGeometry);
 };
 

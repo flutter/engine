@@ -89,9 +89,7 @@ class Geometry {
 
   virtual GeometryVertexType GetVertexType() const = 0;
 
-  virtual bool UseStcHint() const {
-    return false;
-  }
+  virtual bool UseStcHint() const { return false; }
 
   virtual std::optional<Rect> GetCoverage(const Matrix& transform) const = 0;
 
