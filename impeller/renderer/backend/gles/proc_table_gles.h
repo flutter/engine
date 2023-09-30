@@ -10,6 +10,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
+#include "impeller/base/validation.h"
 #include "impeller/renderer/backend/gles/capabilities_gles.h"
 #include "impeller/renderer/backend/gles/description_gles.h"
 #include "impeller/renderer/backend/gles/gles.h"
@@ -65,6 +66,12 @@ struct GLProc {
   auto operator()(Args&&... args) const {
 #ifdef IMPELLER_ERROR_CHECK_ALL_GL_CALLS
     AutoErrorCheck error(error_fn, name);
+    // We check for the existence of extensions, and reset the function pointer
+    // but it's still called unconditionally below, and will segfault. This
+    // validation log will at least give us a hint as to what's going on.
+    if (!IsAvailable()) {
+      VALIDATION_LOG << "Unavailable GL function called: " << name << ".";
+    }
 #endif  // IMPELLER_ERROR_CHECK_ALL_GL_CALLS
 #ifdef IMPELLER_TRACE_ALL_GL_CALLS
     TRACE_EVENT0("impeller", name);
@@ -75,7 +82,6 @@ struct GLProc {
   constexpr bool IsAvailable() const { return function != nullptr; }
 
   void Reset() {
-    name = nullptr;
     function = nullptr;
     error_fn = nullptr;
   }
@@ -189,6 +195,7 @@ class ProcTableGLES {
  public:
   using Resolver = std::function<void*(const char* function_name)>;
   explicit ProcTableGLES(Resolver resolver);
+  ProcTableGLES(ProcTableGLES&& other) = default;
 
   ~ProcTableGLES();
 
