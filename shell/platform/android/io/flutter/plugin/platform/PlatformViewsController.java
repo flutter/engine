@@ -147,7 +147,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   // Whether software rendering is used.
   private boolean usesSoftwareRendering = false;
 
-  private static boolean enableHardwareBufferRenderingTarget = true;
+  private static boolean enableHardwareBufferRenderingTarget = false;
 
   private final PlatformViewsChannel.PlatformViewsHandler channelHandler =
       new PlatformViewsChannel.PlatformViewsHandler() {
@@ -773,6 +773,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     usesSoftwareRendering = useSoftwareRendering;
   }
 
+  public void setDisableImageReaderPlatformViews(boolean disableImageReaderPlatformViews) {
+    enableHardwareBufferRenderingTarget = !disableImageReaderPlatformViews;
+  }
+
   /**
    * Detaches this platform views controller.
    *
@@ -972,9 +976,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       TextureRegistry textureRegistry) {
     if (enableHardwareBufferRenderingTarget && Build.VERSION.SDK_INT >= 29) {
       final TextureRegistry.ImageTextureEntry textureEntry = textureRegistry.createImageTexture();
+      Log.i(TAG, "PlatformView is using ImageReader backend");
       return new ImageReaderPlatformViewRenderTarget(textureEntry);
     }
     final TextureRegistry.SurfaceTextureEntry textureEntry = textureRegistry.createSurfaceTexture();
+    Log.i(TAG, "PlatformView is using SurfaceTexture backend");
     return new SurfaceTexturePlatformViewRenderTarget(textureEntry);
   }
 
