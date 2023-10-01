@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html xmlns="https://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+	<head>
+		<meta charset="utf-8" />
+<meta name="Author" content="Apple Inc." />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<link rel="shortcut icon" href="/favicon.ico" />
+<link rel="icon" href="/favicon.ico" />
+<link rel="mask-icon" href="/apple-logo.svg" color="#333333">
+
+<link rel="stylesheet" href="/assets/styles/global.dist.css?15182301193" type="text/css" />
+<link rel="stylesheet" href="/assets/styles/dark-mode.css?31162315129" type="text/css" media="(prefers-color-scheme: dark)" data-color-scheme="dark" />
+<link rel="stylesheet" href="/assets/styles/localization.css?00232331179" type="text/css" />
+
+<script src="/assets/scripts/lib/jquery/jquery-3.6.0.min.js?41172203193"></script>
+<script src="/assets/scripts/settings.js?41172203193"></script>
+<script src="/assets/scripts/language-locales.js?39192318087"></script>
+<script src="/assets/scripts/DeveloperBreadcrumbs.js?32172326199"></script>
+
+<script async src="/assets/scripts/lib/jquery/jquery.retinate.js?41172203193"></script>
+<script async src="/assets/scripts/global.js?41172203193"></script>
+<script async src="/assets/scripts/global-logout.js?41172203193"></script>
+
+
+
+		<link rel="stylesheet" href="https://www.apple.com/wss/fonts?family=SF+Pro&v=2" type="text/css" />
+<link rel="stylesheet" href="https://www.apple.com/wss/fonts?family=SF+Pro+Icons&v=1" type="text/css" />
+<link rel="stylesheet" href="https://www.apple.com/wss/fonts?family=SF+Mono&v=2" type="text/css" />
+<link rel="stylesheet" href="https://www.apple.com/wss/fonts?family=Apple+Icons&amp;v=1" type="text/css" />
+
+		<title>Metal Overview - Apple Developer</title>
+		<meta name="omni_page" content="Metal Overview - (English)" />
+		<meta name="Description" content="Metal powers hardware-accelerated graphics on Apple platforms by providing a low-overhead API, rich shading language, tight integration between graphics and compute, and an unparalleled suite of GPU profiling and debugging tools." />
+		<meta name="search_icon" content="/assets/elements/icons/metal/metal-96x96_2x.png" />
+
+		<meta property="og:locale" content="en_US" />
+		<meta property="og:site_name" content="Apple Developer" />
+		<meta property="og:type" content="website" />
+		<meta property="og:image" content="https://developer.apple.com/news/images/og/metal-og.jpg" />
+		<meta property="og:title" content="Metal Overview - Apple Developer" />
+		<meta property="og:description" content="Metal powers hardware-accelerated graphics on Apple platforms by providing a low-overhead API, rich shading language, tight integration between graphics and compute, and an unparalleled suite of GPU profiling and debugging tools." />
+		<meta property="og:url" content="https://developer.apple.com/metal/" />
+
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:image" content="https://developer.apple.com/news/images/og/metal-og-twitter.jpg" />
+		<meta name="twitter:description" content="Metal powers hardware-accelerated graphics on Apple platforms by providing a low-overhead API, rich shading language, tight integration between graphics and compute, and an unparalleled suite of GPU profiling and debugging tools." />
+		<meta name="twitter:title" content="Metal Overview - Apple Developer" />
+		<meta name="twitter:url" content="https://developer.apple.com/metal/" />
+
+		<link rel="alternate" href="https://developer.apple.com/metal/" hreflang="en" />
+		<link rel="alternate" href="https://developer.apple.com/cn/metal/" hreflang="zh-CN" />
+		<link rel="alternate" href="https://developer.apple.com/jp/metal/" hreflang="ja-JP" />
+		<link rel="alternate" href="https://developer.apple.com/kr/metal/" hreflang="ko-KR" />
+		<link rel="canonical" href="https://developer.apple.com/metal/" />
+
+		<link rel="stylesheet" type="text/css" href="/metal/styles/metal.css" />
+		<link rel="stylesheet" type="text/css" href="/metal/styles/overview.css" />
+	</head>
+	<body id="metal" class="dmf">
+		<script>
+	const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+	if (window.Settings.preferredColorScheme) {
+		const colorTheme = (window.Settings.preferredColorScheme === 'auto') && !prefersDark ? 'light' : (window.Settings.preferredColorScheme === 'light') ? 'light' : 'dark'
+		document.body.setAttribute('data-color-scheme', colorTheme);
+	} else {
+		document.body.setAttribute('data-color-scheme', prefersDark ? 'dark' : 'light');
+	}
+</script>
+<style>
+	/* footer */
+	html body[data-color-scheme='dark'] #main section.section.section-resources.bg-alt {background-color:var(--fill-tertiary);color:var(--glyph-gray);}
+	html body[data-color-scheme='dark'] .developer-router-links {background-color:var(--fill-tertiary);color:var(--glyph-gray);}
+	html body[data-color-scheme='dark'] .footer {background-color:var(--fill-tertiary);color:var(--glyph-gray-tertiary);}
+	/* body backgrounds */
+	body[data-color-scheme='dark'].dmf {background-color: #000;}
+	html body[data-color-scheme='dark'].dmf .bg-alt {background-color:var(--fill-tertiary);}
+	html body[data-color-scheme='dark'].dmf .bg-blue {background-color:var(--fill-blue-secondary);}
+	html body[data-color-scheme='dark'].dmf .bg-green-blue {background:linear-gradient(135deg, #65976d 0%, #588ea4 100%)}
+	html body[data-color-scheme='dark'].dmf .bg-yellow {background: linear-gradient(to bottom, var(--fill-tertiary) 0%, var(--fill-tertiary-alt) 100%);}
+	html body[data-color-scheme='dark'].dmf .bg-light {background-color:var(--fill-secondary-alt);}
+	html body[data-color-scheme='dark'].dmf .bg-gradient, html body[data-color-scheme='dark'].dmf .bg-grad {background:linear-gradient(to bottom, var(--dark) 0%, var(--fill-gray-secondary-alt) 100%);}
+	html body[data-color-scheme='dark'].dmf .bg-grad-down {background:linear-gradient(to bottom, var(--dark) 0%, var(--fill-gray-secondary-alt) 100%);}
+	html body[data-color-scheme='dark'].dmf .bg-grad-up {background:linear-gradient(to bottom, var(--fill-gray-secondary-alt) 0%, var(--dark) 100%);}
+	html body[data-color-scheme='dark'].dmf .bg-blue-gradient, html body[data-color-scheme='dark'].dmf .bg-gradient-blue {background:linear-gradient(to bottom, var(--fill-blue-gradient-light) 0%, var(--fill-blue-gradient-dark) 100%);}
+	html body[data-color-scheme='dark'].dmf .bg-blue-gradient-alt {background: linear-gradient(90deg, #061830 0%, #102d48 100%);}
+	/* globalNav */
+	html body[data-color-scheme='dark'] #ac-globalnav {background: var(--fill-tertiary);}
+	/* localNav */
+	html body[data-color-scheme='dark'] .localnav.localnav-scrim .localnav-background,
+	html body[data-color-scheme='dark'] .localnav-scrim.localnav.localnav-background {
+		background-color: rgba(29, 29, 31, 0.9);
+	}
+	@supports ((-webkit-backdrop-filter: initial) or (backdrop-filter: initial)) {
+		html body[data-color-scheme='dark'] .localnav.localnav-scrim .localnav-background,
+		html body[data-color-scheme='dark'] .localnav-scrim.localnav.localnav-background {
+			background-color: rgba(29, 29, 31, 0.72);
+		}
+	}
+</style>
+<link rel="stylesheet" href="/assets/styles/globalnav.css?41172203193" type="text/css" />
+
+<link rel="stylesheet" href="/assets/styles/suggest-lang.css?41172203193" type="text/css" />
+<div id="suggest-lang" class="ribbon hide" lang="en">
+	<div class="ribbon-content-wrapper">
+		<div class="ribbon-content row">
+			<div class="column large-12 large-centered">
+				<p><a href="#" id="suggest-link" class="ribbon-link more">View in English</a></p>
+				<button id="suggest-closer" class="icon icon-after icon-reset" aria-label="Dismiss language suggestion" tabindex="0"></button>
+			</div>
+		</div>
+	</div>
+</div>
+<script src="/assets/scripts/suggest-lang.js?05152322130"></script>
+<aside id="ac-gn-segmentbar" class="ac-gn-segmentbar" lang="en-US" dir="ltr">
+</aside>
+<input type="checkbox" id="ac-gn-menustate" class="ac-gn-menustate" />
+<nav id="ac-globalnav" class="no-js" role="navigation" aria-label="Global" data-hires="false" data-analytics-region="global nav" lang="en-US" dir="ltr"
+    data-www-domain="www.apple.com"
+    data-store-locale="us"
+    data-store-root-path="/us"
+    data-store-api="/[storefront]/shop/bag/status"
+    data-search-locale="en_US"
+    data-search-suggestions-api="/search-services/suggestions/"
+    data-search-defaultlinks-api="/search-services/suggestions/defaultlinks/"
+    data-search-suggestions-enabled="false">
+	<div class="ac-gn-content">
+		<ul class="ac-gn-header">
+			<li class="ac-gn-item ac-gn-menuicon">
+				<label class="ac-gn-menuicon-label" for="ac-gn-menustate" aria-hidden="true">
+					<span class="ac-gn-menuicon-bread ac-gn-menuicon-bread-top">
+						<span class="ac-gn-menuicon-bread-crust ac-gn-menuicon-bread-crust-top"></span>
+					</span>
+					<span class="ac-gn-menuicon-bread ac-gn-menuicon-bread-bottom">
+						<span class="ac-gn-menuicon-bread-crust ac-gn-menuicon-bread-crust-bottom"></span>
+					</span>
+				</label>
+				<a href="#ac-gn-menustate" role="button" class="ac-gn-menuanchor ac-gn-menuanchor-open" id="ac-gn-menuanchor-open">
+					<span class="ac-gn-menuanchor-label">Global Nav Open Menu</span>
+				</a>
+				<a href="#" role="button" class="ac-gn-menuanchor ac-gn-menuanchor-close" id="ac-gn-menuanchor-close">
+					<span class="ac-gn-menuanchor-label">Global Nav Close Menu</span>
+				</a>
+			</li>
+			<li class="ac-gn-item ac-gn-apple">
+				<a class="ac-gn-link ac-gn-link-apple-developer" href="/" data-analytics-title="appledeveloper home" id="ac-gn-firstfocus-small">
+					<span class="ac-gn-link-text">Apple Developer</span>
+				</a>
+			</li>
+		</ul>
+		<div class="ac-gn-search-placeholder-container" role="search">
+			<div class="ac-gn-search ac-gn-search-small">
+				<a id="ac-gn-link-search-small" class="ac-gn-link" href="/search/" data-analytics-title="search" data-analytics-click="search" data-analytics-intrapage-link aria-label="Search">
+					<div class="ac-gn-search-placeholder-bar">
+						<div class="ac-gn-search-placeholder-input">
+							<div class="ac-gn-search-placeholder-input-text" aria-hidden="true">
+								<div class="ac-gn-link-search ac-gn-search-placeholder-input-icon"></div>
+								<span class="ac-gn-search-placeholder">Search</span>
+							</div>
+						</div>
+						<div class="ac-gn-searchview-close ac-gn-searchview-close-small ac-gn-search-placeholder-searchview-close">
+							<span class="ac-gn-searchview-close-cancel" aria-hidden="true">Cancel</span>
+						</div>
+					</div>
+				</a>
+			</div>
+		</div>
+		<ul class="ac-gn-list">
+			<li class="ac-gn-item ac-gn-apple">
+				<a class="ac-gn-link ac-gn-link-apple-developer" href="/" data-analytics-title="appledeveloper home" id="ac-gn-firstfocus">
+					<span class="ac-gn-link-text">Apple Developer</span>
+					</a>
+			</li>
+			<li class="ac-gn-item ac-gn-item-menu ac-gn-news">
+				<a class="ac-gn-link ac-gn-link-news" href="/news/" data-analytics-title="news">
+					<span class="ac-gn-link-text">News</span>
+					</a>
+			</li>
+			<li class="ac-gn-item ac-gn-item-menu ac-gn-discover">
+				<a class="ac-gn-link ac-gn-link-discover" href="/discover/" data-analytics-title="discover">
+					<span class="ac-gn-link-text">Discover</span>
+					</a>
+			</li>
+			<li class="ac-gn-item ac-gn-item-menu ac-gn-design">
+				<a class="ac-gn-link ac-gn-link-design" href="/design/" data-analytics-title="design">
+					<span class="ac-gn-link-text">Design</span>
+					</a>
+			</li>
+			<li class="ac-gn-item ac-gn-item-menu ac-gn-develop">
+				<a class="ac-gn-link ac-gn-link-develop" href="/develop/" data-analytics-title="develop">
+					<span class="ac-gn-link-text">Develop</span>
+					</a>
+			</li>
+			<li class="ac-gn-item ac-gn-item-menu ac-gn-distribute">
+				<a class="ac-gn-link ac-gn-link-distribute" href="/distribute/" data-analytics-title="distribute">
+					<span class="ac-gn-link-text">Distribute</span>
+					</a>
+			</li>
+			<li class="ac-gn-item ac-gn-item-menu ac-gn-dsupport">
+				<a class="ac-gn-link ac-gn-link-dsupport" href="/support/" data-analytics-title="dsupport">
+					<span class="ac-gn-link-text">Support</span>
+					</a>
+			</li>
+			<li class="ac-gn-item ac-gn-item-menu ac-gn-account">
+				<a class="ac-gn-link ac-gn-link-account" href="/account/" data-analytics-title="account">
+					<span class="ac-gn-link-text">Account</span>
+					</a>
+			</li>
+			<li class="ac-gn-item ac-gn-item-menu ac-gn-search" role="search">
+				<a id="ac-gn-link-search" class="ac-gn-link ac-gn-link-search" href="/search/" data-analytics-title="search" data-analytics-click="search" data-analytics-intrapage-link aria-label="Search"></a>
+			</li>
+		</ul>
+		<aside id="ac-gn-searchview" class="ac-gn-searchview" role="search" data-analytics-region="search">
+			<div class="ac-gn-searchview-content">
+				<div class="ac-gn-searchview-bar">
+					<div class="ac-gn-searchview-bar-wrapper">
+						<form id="ac-gn-searchform" class="ac-gn-searchform" action="/search/" method="get">
+							<div class="ac-gn-searchform-wrapper">
+								<input id="ac-gn-searchform-input" class="ac-gn-searchform-input" type="text" name="q" aria-label="Search" placeholder="Search" autocorrect="off" autocapitalize="off" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="true" aria-owns="quicklinks suggestions" />
+								<button id="ac-gn-searchform-submit" class="ac-gn-searchform-submit" type="submit" disabled aria-label="Submit Search"></button>
+								<button id="ac-gn-searchform-reset" class="ac-gn-searchform-reset" type="reset" disabled aria-label="Clear Search">
+										<span class="ac-gn-searchform-reset-background"></span>
+									</button>
+							</div>
+						</form>
+						<button id="ac-gn-searchview-close-small" class="ac-gn-searchview-close ac-gn-searchview-close-small" aria-label="Cancel Search">
+								<span class="ac-gn-searchview-close-cancel" aria-hidden="true">
+									Cancel
+								</span>
+							</button>
+					</div>
+				</div>
+				<aside id="ac-gn-searchresults" class="ac-gn-searchresults hidden" data-string-quicklinks="Quick Links" data-string-suggestions="Suggested Searches" data-string-noresults="">
+                    <section class="ac-gn-searchresults-section ac-gn-searchresults-section-defaultlinks">
+                        <div class="ac-gn-searchresults-section-wrapper">
+							<div class="search-group-checkbox hidden"><input id="group-input" type="checkbox" name="group-filter" checked>Only search within “<span id="group-search-label"></span>”</div>
+                            <h3 class="ac-gn-searchresults-header ac-gn-searchresults-animated">Quick Links</h3>
+                            <ul class="ac-gn-searchresults-list" id="defaultlinks" role="listbox">
+                            </ul>
+                            <span role="status" class="ac-gn-searchresults-count" aria-live="polite">5 Quick Links</span>
+                        </div>
+                    </section>
+                </aside>
+			</div>
+			<button id="ac-gn-searchview-close" class="ac-gn-searchview-close" aria-label="Cancel Search">
+					<span class="ac-gn-searchview-close-wrapper">
+						<span class="ac-gn-searchview-close-left"></span>
+						<span class="ac-gn-searchview-close-right"></span>
+					</span>
+				</button>
+		</aside>
+			</div>
+</nav>
+<div class="ac-gn-blur"></div>
+<div id="ac-gn-curtain" class="ac-gn-curtain"></div>
+<div id="ac-gn-placeholder" class="ac-nav-placeholder"></div>
+<script src="/assets/scripts/ac-globalnav.built.js?41172203193"></script>
+<link rel="stylesheet" href="/assets/styles/search.css?17042322115">
+<script src="/assets/scripts/search.js?48172337109"></script>
+
+		<!-- metrics -->
+<script>
+    /* RSID: */
+    var s_account="awdappledeveloper"
+</script>	
+<script src="/assets/metrics/scripts/analytics.js?10202020"></script>
+<script>
+    s.pageName= AC && AC.Tracking && AC.Tracking.pageName();
+    s.channel="www.en.developer"
+    s.channel="www.en.developer";
+
+    
+    /************* DO NOT ALTER ANYTHING BELOW THIS LINE ! **************/
+    var s_code=s.t();if(s_code)document.write(s_code)
+</script>
+<!-- /metrics -->
+		<link rel="stylesheet" property="stylesheet" href="/assets/styles/localnav.css" type="text/css" />
+<input type="checkbox" id="localnav-menustate" class="localnav-menustate"/>
+<nav id="localnav" class="localnav localnav-scrim" data-sticky role="navigation">
+	<div class="localnav-wrapper">
+		<div class="localnav-background"></div>
+		<div class="localnav-content">
+			<h2 class="localnav-title">
+				<a href="/metal/">Metal</a>
+			</h2>
+
+			<div class="localnav-menu">
+				<a href="#localnav-menustate" class="localnav-menucta-anchor localnav-menucta-anchor-open" id="localnav-menustate-open">
+					<span class="localnav-menucta-anchor-label">Open Menu</span>
+				</a>
+				<a href="#" class="localnav-menucta-anchor localnav-menucta-anchor-close" id="localnav-menustate-close">
+					<span class="localnav-menucta-anchor-label">Close Menu</span>
+				</a>
+				<div class="localnav-menu-tray">
+					<ul class="localnav-menu-items">
+						<li class="localnav-menu-item">
+							<a href="/metal/" class="localnav-menu-link">Overview</a>
+						</li>
+						<li class="localnav-menu-item">
+							<a href="/metal/tools/" class="localnav-menu-link">Tools</a>
+						</li>
+						<li class="localnav-menu-item">
+							<a href="/metal/sample-code/" class="localnav-menu-link">Sample Code</a>
+						</li>
+					</ul>
+				</div>
+				<div class="localnav-actions localnav-actions-center">
+					<div class="localnav-action localnav-action-menucta" aria-hidden="true">
+						<label for="localnav-menustate" class="localnav-menucta">
+							<span class="localnav-menucta-chevron"></span>
+						</label>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</nav>
+<label id="localnav-curtain" for="localnav-menustate"></label>
+<script src="/assets/scripts/ac-localnav.built.js"></script>
+<script type="text/javascript" src="/assets/scripts/localnav.js"></script>
+
+
+		<main id="main" class="main" role="main">
+			<div class="ribbon ribbon-blue">
+				<div class="ribbon-drop-wrapper">
+					<div class="ribbon-content-wrapper">
+						<div class="ribbon-content row">
+							<div class="column large-centered large-12">
+								<p>
+									<a href="/videos/all-videos/?q=Metal" class="ribbon-link">Watch the latest videos about Metal <span class="nowrap icon icon-after icon-playcircle"><span class="loc-partial-sub"></span></span></a>
+								</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<section class="section section-hero bg-light">
+				<div class="section-content">
+					<div class="row">
+						<div class="column large-centered large-12 text-center">
+							<img src="/assets/elements/icons/metal/metal-96x96_2x.png" class="center" width="96" alt="" />
+							<h1 class="typography-tagline-reduced">Accelerate graphics and much more with&nbsp;Metal</h1>
+							<p class="typography-intro">Metal powers hardware-accelerated graphics on Apple platforms by providing a low-overhead API, rich shading language, tight integration between graphics and compute, and an unparalleled suite of GPU profiling and debugging tools. Your games and pro apps can take full advantage of the incredible performance and efficiency of Apple silicon across iPhone, iPad, Mac, and Apple TV. This year, the new game porting toolkit makes it easier than ever to bring games from other platforms to Mac and the Metal shader converter dramatically simplifies the process of converting your game’s shaders and graphics code.</p>
+						</div>
+					</div>
+					<figure class="device-hero device-macbook-pro-5th-gen-16-silver center">
+						<picture class="device-screen">
+							<img src="/metal/images/screen-mdt-hero-large_2x.jpg" width="100%" alt="" aria-label="" />
+						</picture>
+					</figure>
+				</div>
+			</section>
+
+			<section class="section section-whats-new">
+				<div class="section-content">
+					<div class="row">
+						<div class="column large-7 small-12">
+							<h3>Gaming</h3>
+							
+							<h4 class="typography-headline-body">Game porting toolkit</h4>
+							<p>Use the game porting toolkit to eliminate months of up-front work and evaluate how well your game could run on Mac before writing any code.</p>
+							<ul class="links small">
+								<li class="download"><a href="/download/all/?q=game%20porting%20toolkit">Download</a></li>
+								<li class="video"><a href="/videos/play/wwdc2023/10123/">Watch video</a></li>
+							</ul>
+
+							<h4 class="typography-headline-body">Metal shader converter</h4>
+							<p>Convert your shaders and graphics code so that your game can take full advantage of the powerful features and performance of Apple silicon.</p>
+							<ul class="links small">
+								<li class="document"><a href="/metal/shader-converter/">Get started</a></li>
+								<li class="download"><a href="/download/all/?q=shader%20converter">Download</a></li>
+								<li class="video"><a href="/videos/play/wwdc2023/10124/">Watch video</a></li>
+							</ul>
+
+							<h4 class="typography-headline-body">MetalFX Upscaling</h4>
+							<p>Render complex scenes in less time per frame with high-performance upscaling and anti-aliasing. This year, MetalFX Upscaling supports more devices with improved quality and increased scaling.</p>
+							<ul class="links small">
+								<li class="document"><a href="/documentation/metalfx/">Get started</a></li>
+								<li class="video"><a href="/videos/play/wwdc2022/10103/">Watch video</a></li>
+							</ul>
+
+							<h4 class="typography-headline-body">Offline shader compilation</h4>
+							<p>Generate GPU binaries at build time and eliminate in-app shader compilation, improve game performance, and reduce load times. Now, the GPU binary compiler supports ray tracing and dynamically linked libraries with a toolchain for macOS or Windows.</p>
+							<ul class="links small">
+								<li class="download"><a href="https://developer.apple.com/download/all/?q=metal%20developer%20tools%20for%20windows">Metal Developer Tools for Windows 4 beta<span class="loc-en-only"></span></a></li>
+								<li class="video"><a href="/videos/play/wwdc2023/10124/">Watch video</a></li>
+							</ul>
+
+							<h4 class="typography-headline-body">Frame pacing</h4>
+							<p>Provide smooth frame rates and more responsive interactions using the new CAMetalDisplayLink.</p>
+							<ul class="links small">
+								<li class="sample-code"><a href="/documentation/metal/metal_sample_code_library/achieving_smooth_frame_rates_with_metal_s_display_link">Sample code</a></li>
+							</ul>
+
+							<h3 class="divider-top">High-fidelity graphics</h3>
+
+							<h4 class="typography-headline-body">Ray tracing</h4>
+							<p>Scale your games and production renderers to even more realistic and detailed scenes. Multiple levels of instancing and curve primitive support deliver more efficient representation of complex materials such as trees, hair, and fur.</p>
+							<ul class="links small">
+								<li class="video"><a href="/videos/play/wwdc2023/10128/">Watch video</a></li>
+							</ul>
+
+							<h4 class="typography-headline-body">Mesh shader tools</h4>
+							<p>Debug your mesh shader pipelines with Xcode 15. The shader validation tool now detects out-of-bounds memory accesses from object and mesh shaders. The Metal debugger adds support for mesh shader geometry visualization and shader debugging of object and mesh shaders.</p>
+							<ul class="links small">
+								<li class="document"><a href="/documentation/xcode/metal-developer-workflows/">Get started</a></li>
+							</ul>
+
+							<h3 class="divider-top">Machine learning</h3>
+							
+
+							<h4 class="typography-headline-body">MPS Graph</h4>
+							<p>Integrate CoreML and ONNX models into your Metal app faster with MPS Graph conversion tools, and load native MPS Graph models more quickly with the new serialization format.</p>
+							<ul class="links small">
+								<li class="document"><a href="/documentation/metalperformanceshadersgraph/">Get started</a></li>
+							</ul>
+
+							<h4 class="typography-headline-body">ML frameworks</h4>
+							<p>Accelerate the training of machine learning models right on your Mac with TensorFlow, PyTorch, and now JAX. With updates to Metal backend support, you can train a wider set of networks faster with new features like custom kernels and mixed-precision training.</p>
+							<ul class="links small">
+								<li class="document"><a href="/metal/pytorch/">Get started with PyTorch</a></li>
+								<li class="document"><a href="/metal/tensorflow-plugin/">Get started with TensorFlow</a></li>
+								<li class="document"><a href="/metal/jax/">Get started with JAX</a></li>
+							</ul>
+
+						</div>
+						<div class="column large-offset-1 large-4 small-offset-0 small-12">
+							<ul class="divided-list">
+								<li>
+									<h4>Documentation &amp; resources</h4>
+									<p class="typography-subbody">Browse documentation, developer tools, sample code, and videos to learn more about Metal.</p>
+									<ul class="links small typography-subbody">
+										<li class="document"><a href="/documentation/metal/">Metal documentation<span class="loc-en-only"></span></a></li>
+										<li class="document"><a href="/metal/Metal-Feature-Set-Tables.pdf">Metal feature set tables (PDF)<span class="loc-en-only"></span></a></li>
+										<li class="document"><a href="/metal/Metal-Feature-Set-Tables.zip">Metal feature set tables (numbers)<span class="loc-en-only"></span></a></li>
+											<li class="document"><a href="/documentation/metalperformanceshaders/">Metal Performance Shaders</a></li>
+										<li class="document"><a href="/metal/Metal-Shading-Language-Specification.pdf">Metal shading language specification<span class="loc-en-only"></span></a></li>
+										<li class="document"><a href="/metal/tools/">Metal developer tools</a></li>
+										<li class="sample-code"><a href="/metal/sample-code/">Sample code</a></li>
+										<li class="video"><a href="/videos/graphics-games/">Videos</a></li>
+									</ul>
+								</li>
+								<li>
+									<h5>Metal-cpp</h5>
+									<p class="typography-subbody">Add Metal functionality to graphics apps, games, and game engines using low overhead Metal C++ headers.</p>
+									<ul class="links small typography-subbody">
+										<li class="document"><a href="/metal/cpp/">Getting started with Metal-cpp</a></li>
+										<li class="sample-code">
+											<a href="/metal/LearnMetalCPP.zip">Sample code<span class="loc-en-only"></span></a>
+										</li>
+									</ul>
+								</li>
+								<li>
+									<h5>Games</h5>
+									<p class="typography-subbody">Use Metal to create the next generation of games. Download the game porting toolkit, Metal shader converter, and Metal shader converter for Windows to easily bring your games to Mac.  </p>
+									<ul class="links small typography-subbody">
+										<li class="document"><a href="/games/">Apple technologies for game developers</a></li>
+										<li class="download"><a href="https://developer.apple.com/download/all/?q=game%20porting%20toolkit">Game porting toolkit</a></li>
+										<li class="download"><a href="https://developer.apple.com/download/all/?q=shader%20converter">Metal shader converter</a></li>
+									</ul>
+								</li>
+
+								<li>
+									<h5>Machine learning</h5>
+									<p class="typography-subbody">Enable high-performance training and inference on the GPU with Metal.</p>
+									<ul class="links small typography-subbody">
+										<li class="document"><a href="/documentation/metalperformanceshadersgraph/">Metal Performance Shaders Graph</a></li>
+										<li class="document"><a href="/metal/pytorch/">Metal backend for PyTorch</a></li>
+										<li class="document"><a href="/metal/tensorflow-plugin/">Metal backend for TensorFlow</a></li>
+										<li class="document"><a href="/metal/jax/">Metal backend for JAX</a></li>
+										<li class="video"><a href="/videos/all-videos/?q=metal%20performance%20shaders">Videos</a></li>
+									</ul>
+								</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</section>
+
+		</main>
+
+		<link rel="stylesheet" href="/assets/styles/router-strip.css" type="text/css" />
+		<aside class="section developer-router-links">
+			<div class="section-content">
+				<div class="row">
+					<div class="column large-3 medium-6 small-12">
+						<a href="/download/" class="block text-center">
+							<figure class="router-icon router-icon-downloads"></figure>
+							<p><strong>SDKs and betas</strong></p>
+							<p class="typography-subbody">Download SDKs and beta operating systems for all Apple&nbsp;platforms.</p>
+							<p class="typography-subbody"><span class="block-link more">View downloads<span class="loc-en-only"></span></span></p>
+						</a>
+					</div>
+					<div class="column large-3 medium-6 small-12">
+						<a href="/metal/tools/" class="block text-center">
+							<figure class="router-icon router-icon-service"></figure>
+							<p><strong>Tools</strong></p>
+							<p class="typography-subbody">Use our groundbreaking Metal&nbsp;developer&nbsp;tools for your&nbsp;apps.</p>
+							<p class="typography-subbody"><span class="block-link more">View Metal Developer Tools<span class="loc-en-only"></span></span></p>
+						</a>
+					</div>
+					<div class="column large-3 medium-6 small-12">
+						<a href="/videos/graphics-games/" class="block text-center">
+							<figure class="router-icon router-icon-videos"></figure>
+							<p><strong>Videos</strong></p>
+							<p class="typography-subbody">Learn how to take advantage of&nbsp;the&nbsp;latest advancements in&nbsp;Metal.</p>
+							<p class="typography-subbody"><span class="block-link more">Watch Metal videos<span class="loc-partial-sub"></span></span></p>
+						</a>
+					</div>
+					<div class="column large-3 medium-6 small-12">
+						<a href="/forums/tags/metal/" class="block text-center">
+							<figure class="router-icon router-icon-forums"></figure>
+							<p><strong>Forums</strong></p>
+							<p class="typography-subbody">Ask questions and discuss Metal with Apple engineers and other&nbsp;developers.</p>
+							<p class="typography-subbody"><span class="block-link more">View Metal discussions<span class="loc-en-only"></span></span></p>
+						</a>
+					</div>
+				</div>
+			</div>
+		</aside>
+
+		<link rel="stylesheet" href="/assets/styles/footer.dist.css?41172203193">
+<footer id="footer" class="footer" role="contentinfo" aria-labelledby="footer-label">
+    <div class="footer-content">
+        <h2 class="footer-label" id="footer-label">Developer Footer</h2>
+		<div class="footer-sosumi">
+			<ul class="no-bullet">
+				<li>Metal 3 is supported on the following hardware:</li>
+				<li>iPhone and iPad: Apple A13 Bionic or later</li>
+				<li>Mac: Apple silicon (M1 or later), AMD Radeon Pro Vega series, AMD Radeon Pro 5000/6000 series, Intel Iris Plus Graphics series, Intel UHD Graphics 630</li>
+			</ul>
+		</div>
+		<developer-breadcrumbs>
+			<li>Metal</li>
+		</developer-breadcrumbs>
+		        <nav class="footer-directory" aria-label="Apple Developer Directory" role="navigation">
+	<!--googleoff: all-->
+	<div class="footer-directory-column">
+		<input class="footer-directory-column-section-state" type="checkbox" id="footer-directory-column-section-state-platform" />
+		<div class="footer-directory-column-section">
+			<label class="footer-directory-column-section-label" for="footer-directory-column-section-state-platform">
+				<h3 class="footer-directory-column-section-title">Platforms</h3>
+			</label>
+			<a href="#footer-directory-column-section-state-platform" class="footer-directory-column-section-anchor footer-directory-column-section-anchor-open"> <span class="footer-directory-column-section-anchor-label">Open Menu</span> </a>
+			<a href="#" class="footer-directory-column-section-anchor footer-directory-column-section-anchor-close"> <span class="footer-directory-column-section-anchor-label">Close Menu</span> </a>
+			<ul class="footer-directory-column-section-list">
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/ios/">iOS</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/ipados/">iPadOS</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/macos/">macOS</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/tvos/">tvOS</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/watchos/">watchOS</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/visionos/">visionOS</a></li>
+			</ul>
+		</div>
+
+		<input class="footer-directory-column-section-state" type="checkbox" id="footer-directory-column-section-state-tools" />
+		<div class="footer-directory-column-section">
+			<label class="footer-directory-column-section-label" for="footer-directory-column-section-state-tools">
+				<h3 class="footer-directory-column-section-title">Tools</h3>
+			</label>
+			<a href="#footer-directory-column-section-state-tools" class="footer-directory-column-section-anchor footer-directory-column-section-anchor-open"> <span class="footer-directory-column-section-anchor-label">Open Menu</span> </a>
+			<a href="#" class="footer-directory-column-section-anchor footer-directory-column-section-anchor-close"> <span class="footer-directory-column-section-anchor-label">Close Menu</span> </a>
+			<ul class="footer-directory-column-section-list">
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/swift/">Swift</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/swiftui/">SwiftUI</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/swift-playgrounds/">Swift Playgrounds</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/testflight/">TestFlight</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/xcode/">Xcode</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/xcode-cloud/">Xcode Cloud</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/sf-symbols/">SF Symbols</a></li>
+			</ul>
+		</div>
+	</div>
+
+	<div class="footer-directory-column">
+		<input class="footer-directory-column-section-state" type="checkbox" id="footer-directory-column-section-state-topics" />
+		<div class="footer-directory-column-section">
+			<label class="footer-directory-column-section-label" for="footer-directory-column-section-state-topics">
+				<h3 class="footer-directory-column-section-title">Topics &amp; Technologies</h3>
+			</label>
+			<a href="#footer-directory-column-section-state-topics" class="footer-directory-column-section-anchor footer-directory-column-section-anchor-open"> <span class="footer-directory-column-section-anchor-label">Open Menu</span> </a>
+			<a href="#" class="footer-directory-column-section-anchor footer-directory-column-section-anchor-close"> <span class="footer-directory-column-section-anchor-label">Close Menu</span> </a>
+			<ul class="footer-directory-column-section-list">
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/accessibility/">Accessibility</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/accessories/">Accessories</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/app-extensions/">App Extensions</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/app-store/">App Store</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/audio/">Audio &amp; Video</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/augmented-reality/">Augmented Reality</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/business/">Business</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/design/">Design</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/distribute/">Distribution</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/education/">Education</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/fonts/">Fonts</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/games/">Games</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/health-fitness/">Health &amp; Fitness</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/in-app-purchase/">In-App Purchase</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/localization/">Localization</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/maps/">Maps &amp; Location</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/machine-learning/">Machine Learning</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="https://opensource.apple.com">Open Source</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/security/">Security</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/safari/">Safari &amp; Web</a></li>
+			</ul>
+		</div>
+	</div>
+
+	<div class="footer-directory-column">
+		<input class="footer-directory-column-section-state" type="checkbox" id="footer-directory-column-section-state-resources" />
+		<div class="footer-directory-column-section">
+			<label class="footer-directory-column-section-label" for="footer-directory-column-section-state-resources">
+				<h3 class="footer-directory-column-section-title">Resources</h3>
+			</label>
+			<a href="#footer-directory-column-section-state-resources" class="footer-directory-column-section-anchor footer-directory-column-section-anchor-open"> <span class="footer-directory-column-section-anchor-label">Open Menu</span> </a>
+			<a href="#" class="footer-directory-column-section-anchor footer-directory-column-section-anchor-close"> <span class="footer-directory-column-section-anchor-label">Close Menu</span> </a>
+			<ul class="footer-directory-column-section-list">
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/documentation/">Documentation</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/learn/curriculum/">Curriculum</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/download/">Downloads</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/forums/">Forums</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/videos/">Videos</a></li>
+			</ul>
+		</div>
+
+		<input class="footer-directory-column-section-state" type="checkbox" id="footer-directory-column-section-state-support" />
+		<div class="footer-directory-column-section">
+			<label class="footer-directory-column-section-label" for="footer-directory-column-section-state-support">
+				<h3 class="footer-directory-column-section-title">Support</h3>
+			</label>
+			<a href="#footer-directory-column-section-state-support" class="footer-directory-column-section-anchor footer-directory-column-section-anchor-open"> <span class="footer-directory-column-section-anchor-label">Open Menu</span> </a>
+			<a href="#" class="footer-directory-column-section-anchor footer-directory-column-section-anchor-close"> <span class="footer-directory-column-section-anchor-label">Close Menu</span> </a>
+			<ul class="footer-directory-column-section-list">
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/support/articles/">Support Articles</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/contact/">Contact Us</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/bug-reporting/">Bug Reporting</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/system-status/">System Status</a></li>
+			</ul>
+		</div>
+
+		<input class="footer-directory-column-section-state" type="checkbox" id="footer-directory-column-section-state-account" />
+		<div class="footer-directory-column-section">
+			<label class="footer-directory-column-section-label" for="footer-directory-column-section-state-account">
+				<h3 class="footer-directory-column-section-title">Account</h3>
+			</label>
+			<a href="#footer-directory-column-section-state-account" class="footer-directory-column-section-anchor footer-directory-column-section-anchor-open"> <span class="footer-directory-column-section-anchor-label">Open Menu</span> </a>
+			<a href="#" class="footer-directory-column-section-anchor footer-directory-column-section-anchor-close"> <span class="footer-directory-column-section-anchor-label">Close Menu</span> </a>
+			<ul class="footer-directory-column-section-list">
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/account/">Apple Developer</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="https://appstoreconnect.apple.com/">App Store Connect</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/account/ios/certificate/">Certificates, IDs, &amp; Profiles</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="https://feedbackassistant.apple.com/">Feedback Assistant</a></li>
+			</ul>
+		</div>
+	</div>
+	
+	<div class="footer-directory-column">
+		<input class="footer-directory-column-section-state" type="checkbox" id="footer-directory-column-section-state-programs" />
+		<div class="footer-directory-column-section">
+			<label class="footer-directory-column-section-label" for="footer-directory-column-section-state-programs">
+				<h3 class="footer-directory-column-section-title">Programs</h3>
+			</label>
+			<a href="#footer-directory-column-section-state-programs" class="footer-directory-column-section-anchor footer-directory-column-section-anchor-open"> <span class="footer-directory-column-section-anchor-label">Open Menu</span> </a>
+			<a href="#" class="footer-directory-column-section-anchor footer-directory-column-section-anchor-close"> <span class="footer-directory-column-section-anchor-label">Close Menu</span> </a>
+			<ul class="footer-directory-column-section-list">
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/programs/">Apple Developer Program</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/programs/enterprise/">Apple Developer Enterprise Program</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/app-store/small-business-program/">App Store Small Business Program</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="https://mfi.apple.com/">MFi Program</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/programs/news-partner/">News Partner Program</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/programs/video-partner/">Video Partner Program</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/security-bounty/">Security Bounty Program</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/programs/security-research-device/">Security Research Device Program</a></li>
+			</ul>
+		</div>
+
+		<input class="footer-directory-column-section-state" type="checkbox" id="footer-directory-column-section-state-events" />
+		<div class="footer-directory-column-section">
+			<label class="footer-directory-column-section-label" for="footer-directory-column-section-state-events">
+				<h3 class="footer-directory-column-section-title">Events</h3>
+			</label>
+			<a href="#footer-directory-column-section-state-events" class="footer-directory-column-section-anchor footer-directory-column-section-anchor-open"> <span class="footer-directory-column-section-anchor-label">Open Menu</span> </a>
+			<a href="#" class="footer-directory-column-section-anchor footer-directory-column-section-anchor-close"> <span class="footer-directory-column-section-anchor-label">Close Menu</span> </a>
+			<ul class="footer-directory-column-section-list">
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/events/">Events Overview</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/accelerator/">App Accelerators</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/app-store/app-store-awards/">App Store Awards</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/design/awards/">Apple Design Awards</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/learn/experts/#academies">Apple Developer Academies</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/entrepreneur-camp/">Entrepreneur Camp</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/events/ask-apple/">Ask Apple</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/tech-talks/">Tech Talks</a></li>
+				<li class="footer-directory-column-section-item"><a class="footer-directory-column-section-link" href="/wwdc/">WWDC</a></li>
+			</ul>
+		</div>
+	</div>
+	<!--googleon: all-->
+</nav>
+        <section class="footer-mini" vocab="http://schema.org/" typeof="Organization">
+	<div class="footer-mini-news">
+		<div class="copy">
+			Get the <a href="https://apps.apple.com/us/app/apple-developer/id640199958">Apple Developer app</a>.
+		</div>
+		<div class="content">
+			<div class="color-scheme-toggle"
+				role="radiogroup"
+				tabindex="0"
+				aria-label="Select a color scheme preference">
+
+				<label data-color-scheme-option="light">
+
+					<input type="radio" value="light" autocomplete="off"
+						onchange="window.setPreferredColorScheme(event.target.value)" />
+
+					<div class="text">Light</div>
+
+				</label>
+
+				<label data-color-scheme-option="dark">
+
+					<input type="radio" value="dark" autocomplete="off"
+						onchange="window.setPreferredColorScheme(event.target.value)" />
+
+					<div class="text">Dark</div>
+
+				</label>
+
+				<label data-color-scheme-option="auto">
+
+					<input type="radio" value="auto" autocomplete="off"
+						onchange="window.setPreferredColorScheme(event.target.value)" />
+
+					<div class="text">Auto</div>
+
+				</label>
+
+			</div>
+			<script async src="/assets/scripts/color-scheme-toggle.js"></script>
+		</div>
+	</div>
+	<link rel="stylesheet" href="/assets/styles/language-dropdown.css?41172203193">
+	<div class="language-dropdown dropdown-container legacy-form hidden">
+		<select class="dropdown" aria-label="Language Dropdown"></select>
+		<span class="dropdown-icon icon icon-chevrondown" aria-hidden="true"></span>
+	</div>
+	<script src="/assets/scripts/language-dropdown.js?46182321067"></script>
+	<div class="footer-mini-legal">
+		<div class="footer-mini-legal-copyright">Copyright ©  2023 <a href="https://www.apple.com">Apple Inc.</a> All rights reserved.</div>
+		<div class="footer-mini-legal-links">
+			<a class="footer-mini-legal-link" href="https://www.apple.com/legal/internet-services/terms/site.html" class="first">Terms of Use</a>
+			<a class="footer-mini-legal-link" href="https://www.apple.com/legal/privacy/en-ww/">Privacy Policy</a>
+			<a class="footer-mini-legal-link" href="/support/terms/">Agreements and Guidelines</a>
+		</div>
+	</div>
+</section>
+    </div>
+</footer>
+	</body>
+</html>
