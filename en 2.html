@@ -1,0 +1,1080 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en" class="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Make 2D Games With GameMaker | Free Video Game Maker</title>
+<meta name="description" content="Make a game with GameMaker, the best free video game engine. Perfect for beginners and professionals. Learn to build your own 2D games with our simple tutorials." />
+
+<link rel="alternate" hreflang="x-default" href="https://gamemaker.io/en" />
+<link rel="alternate" hreflang="en" href="https://gamemaker.io/en" />
+<link rel="alternate" hreflang="de" href="https://gamemaker.io/de" />
+<link rel="alternate" hreflang="fr" href="https://gamemaker.io/fr" />
+<link rel="alternate" hreflang="pt-BR" href="https://gamemaker.io/pt-BR" />
+<link rel="alternate" hreflang="es" href="https://gamemaker.io/es" />
+<link rel="alternate" hreflang="ru" href="https://gamemaker.io/ru" />
+<link rel="alternate" hreflang="zh-CN" href="https://gamemaker.io/zh-CN" />
+<link rel="alternate" hreflang="ja-JP" href="https://gamemaker.io/ja-JP" />
+<link rel="alternate" hreflang="it" href="https://gamemaker.io/it" />
+<link rel="alternate" hreflang="pl-PL" href="https://gamemaker.io/pl-PL" />
+<link rel="alternate" hreflang="ko-KR" href="https://gamemaker.io/ko-KR" />
+
+<meta name="csrf-param" content="_csrf" />
+<meta name="csrf-token" content="KN6NFmL4Te5Jh0pKI_1Z_sMq432OhzX28zA2mcUMiLU" />
+
+<link rel="apple-touch-icon" sizes="180x180" href="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/theme/images/favicon/apple-touch-icon.png?1693817204">
+<link rel="icon" type="image/png" sizes="32x32" href="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/theme/images/favicon/favicon-32x32.png?1693817204">
+<link rel="icon" type="image/png" sizes="16x16" href="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/theme/images/favicon/favicon-16x16.png?1693817204">
+<link rel="mask-icon" href="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/theme/images/favicon/safari-pinned-tab.svg?1693817204" color="#71b417">
+<meta name="msapplication-TileColor" content="#000000">
+<meta name="theme-color" content="#000000">
+
+<meta name="facebook-domain-verification" content="rp40eipojte0w50d9ivrcc668svb3i" />
+<meta property="og:title" content="Make 2D Games With GameMaker | Free Video Game Maker" />
+<meta property="og:url" content="https://gamemaker.io/en" />
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/theme/images/og/thumbnail_gm_logo.png?1693817204" />
+<meta property="og:image" content="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/theme/images/og/banner_gm.png?1693817204">
+<meta property="og:description" content="Make a game with GameMaker, the best free video game engine. Perfect for beginners and professionals. Learn to build your own 2D games with our simple tutorials." />
+<meta property="og:site_name" content="GameMaker">
+<meta property="og:locale" content="en" />
+<meta property="fb:admins" content="765296503593040">
+
+<meta name="twitter:card" content="summary">
+<meta name="twitter:site" content="https://gamemaker.io/en">
+<meta name="twitter:title" content="Make 2D Games With GameMaker | Free Video Game Maker">
+<meta name="twitter:description" content="Make a game with GameMaker, the best free video game engine. Perfect for beginners and professionals. Learn to build your own 2D games with our simple tutorials.">
+<meta name="twitter:creator" content="@yoyogames">
+<meta name="twitter:image" content="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/theme/images/og/thumbnail_gm_logo.png?1693817204">
+
+<meta name="msvalidate.01" content="DA01E04142C94B212DAE709831DB363D">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+<link href="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/theme/stylesheets/bundle.c894603e2bd1622bd035.css?1693817204" media="screen" rel="stylesheet" type="text/css" />
+<link href="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/theme/fonts/all.css?1693817204" media="screen" rel="stylesheet" type="text/css" />
+<script src="https://cdn.jsdelivr.net/npm/vue@2.7.14"></script>
+<script src="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/theme/javascripts/bundle.ba4e16dfd257ce976d6f.js?1693817204" type="text/javascript"></script>
+<script src="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/theme/javascripts/cookie.umd.min.js?1693817204" type="text/javascript"></script>
+<link rel="stylesheet" type="text/css" href="/io-assets/locomotive/wysihtml5_editor-fc9dd453168cc989b0d1e4df89ed54a330618916423c4a4ac4a804329cc4fb1a.css"></head>
+<body>
+<div id="vScripts">
+<load-scripts ref="loadScripts" iaa-url="https://identity.gamemaker.io" api-url="https://gamemaker.io/en/country-check" accounts-url="https://id.gamemaker.io" subscriptions-url="https://api.yoyogames.com" bundles-api-url="https://api.gamemaker.io" countries-url="https://api.yoyogames.com" gtm-id="GTM-WDW63M4">
+</load-scripts>
+</div>
+<div id="yoyoCookie">
+<cookie></cookie>
+</div>
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+<symbol id="trial" viewBox="0 0 64 64">
+<path d="M32.2 15.2l14.8 14.8h-16.8v16.8l-14.8-14.8 16.8-16.8zM32.2 12.4l-19.6 19.6 19.6 19.6v-19.6h19.6l-19.6-19.6z"></path>
+</symbol>
+<symbol id="creator" viewBox="0 0 32 32">
+<path d="M16 9.257c-3.040 0-5.509 2.469-5.509 5.509 0 0.869 0.206 1.669 0.549 2.4 0 0 0.251 0.709 1.509 2.537s1.143 3.68 1.143 3.68c0 0.251 0.206 0.434 0.434 0.434h1.006l-1.211 0.366c-0.229 0.069-0.366 0.32-0.297 0.549l0.023 0.091c0.069 0.229 0.32 0.366 0.549 0.297l3.52-1.097c0.137-0.046 0.229-0.137 0.274-0.274 0.137-0.069 0.251-0.229 0.251-0.389 0 0-0.114-1.851 1.143-3.68s1.509-2.537 1.509-2.537c0.343-0.731 0.549-1.531 0.549-2.4 0.069-3.017-2.4-5.486-5.44-5.486zM20.343 16.869l-0.046 0.046c-0.023 0.046-0.32 0.754-1.44 2.377-1.074 1.554-1.234 3.109-1.257 3.771-0.046 0-0.091 0-0.114 0.023l-0.091 0.023h-2.994c-0.023-0.64-0.183-2.24-1.257-3.817-1.12-1.623-1.417-2.331-1.44-2.377v-0.023l-0.046-0.023c-0.32-0.663-0.48-1.349-0.48-2.103 0-2.651 2.149-4.8 4.8-4.8s4.8 2.149 4.8 4.8c0.023 0.731-0.137 1.44-0.434 2.103z"></path>
+<path d="M18.217 24.709c-0.069-0.229-0.32-0.366-0.571-0.297l-3.68 1.143c-0.229 0.069-0.366 0.32-0.297 0.571l0.023 0.069c0.069 0.229 0.32 0.366 0.571 0.297l3.68-1.143c0.229-0.069 0.366-0.32 0.297-0.571l-0.023-0.069z"></path>
+<path d="M8.823 13.737h-2.24c-0.251 0-0.457 0.206-0.457 0.457v0.069c0 0.251 0.206 0.457 0.457 0.457h2.24c0.251 0 0.457-0.206 0.457-0.457v-0.069c0-0.251-0.206-0.457-0.457-0.457z"></path>
+<path d="M15.931 7.474h0.069c0.251 0 0.457-0.206 0.457-0.457v-2.24c0-0.251-0.206-0.457-0.457-0.457h-0.069c-0.251 0-0.457 0.206-0.457 0.457v2.24c0 0.251 0.206 0.457 0.457 0.457z"></path>
+<path d="M25.417 13.669h-2.24c-0.251 0-0.457 0.206-0.457 0.457v0.069c0 0.251 0.206 0.457 0.457 0.457h2.24c0.251 0 0.457-0.206 0.457-0.457v-0.069c0-0.251-0.206-0.457-0.457-0.457z"></path>
+<path d="M20.754 9.44c0.183 0.183 0.457 0.183 0.64 0l1.6-1.6c0.183-0.183 0.183-0.457 0-0.64l-0.046-0.046c-0.183-0.183-0.457-0.183-0.64 0l-1.6 1.6c-0.183 0.183-0.183 0.457 0 0.64l0.046 0.046z"></path>
+<path d="M10.56 9.486c0.183 0.183 0.457 0.183 0.64 0l0.046-0.046c0.183-0.183 0.183-0.457 0-0.64l-1.6-1.6c-0.183-0.183-0.457-0.183-0.64 0l-0.046 0.046c-0.183 0.183-0.183 0.457 0 0.64l1.6 1.6z"></path>
+<path d="M17.509 26.194c-0.069-0.206-0.274-0.32-0.48-0.251l-2.514 0.777c-0.206 0.069-0.32 0.274-0.251 0.48l0.069 0.206c0.069 0.206 0.274 0.32 0.48 0.251l2.514-0.777c0.206-0.069 0.32-0.274 0.251-0.48l-0.069-0.206z"></path>
+<path d="M16.663 10.971c-0.183-0.046-0.366 0.069-0.411 0.251s0.069 0.366 0.251 0.411c1.28 0.343 2.286 1.371 2.651 2.651 0.046 0.16 0.183 0.251 0.32 0.251 0.023 0 0.069 0 0.091-0.023 0.183-0.046 0.297-0.229 0.251-0.411-0.434-1.509-1.646-2.72-3.154-3.131z"></path>
+</symbol>
+<symbol id="developer" viewBox="0 0 32 32">
+<path d="M28.709 17.897h-0.937v-3.109c0-0.274-0.229-0.503-0.503-0.503h-1.531v-5.897c0-0.229-0.183-0.389-0.389-0.389h-17.029c-0.229 0-0.389 0.183-0.389 0.389v7.291h-3.246c-0.229 0-0.389 0.183-0.389 0.389v7.246h-1.486c0.023 0.389 0.343 0.686 0.731 0.686h13.029c0.389 0 0.709-0.297 0.731-0.686h-1.486v-1.029h3.954v-0.16l-0.64-0.091-0.526-1.829h2.56v2.263c0 0.274 0.229 0.503 0.503 0.503h4.686v0.549c0 0.274 0.229 0.503 0.503 0.503h1.874c0.274 0 0.503-0.229 0.503-0.503v-5.12c-0.046-0.274-0.251-0.503-0.526-0.503zM10.857 23.52h-1.6c-0.114 0-0.229-0.091-0.251-0.206h2.080c-0.023 0.114-0.114 0.206-0.229 0.206zM15.429 16.183v6.743h-10.743v-6.834h10.743v0.091zM21.143 14.789v3.109h-5.326v-1.829c0-0.229-0.183-0.389-0.389-0.389h-6.811v-7.017h16.434v5.623h-3.406c-0.274 0.023-0.503 0.229-0.503 0.503zM24.457 22.743c-0.114 0-0.206-0.091-0.206-0.206s0.091-0.206 0.206-0.206 0.206 0.091 0.206 0.206c0 0.114-0.091 0.206-0.206 0.206zM26.331 18.4v3.703h-4.526v-6.926h5.326v2.72h-0.297c-0.274 0-0.503 0.229-0.503 0.503zM27.771 23.771c-0.114 0-0.206-0.091-0.206-0.206s0.091-0.206 0.206-0.206c0.114 0 0.206 0.091 0.206 0.206s-0.091 0.206-0.206 0.206zM29.006 23.131h-2.469v-4.343h2.469v4.343z"></path>
+</symbol>
+<symbol id="console" viewBox="0 0 32 32">
+<path d="M12.594 15.314c-1.166 0-2.080 0.914-2.080 2.080 0 1.143 0.937 2.080 2.080 2.080s2.080-0.937 2.080-2.080c0-1.166-0.937-2.080-2.080-2.080zM12.594 19.314c-1.074 0-1.92-0.869-1.92-1.92 0-1.074 0.869-1.92 1.92-1.92s1.92 0.869 1.92 1.92c0 1.051-0.869 1.92-1.92 1.92z"></path>
+<path d="M20.297 17.234c0 0.732-0.594 1.326-1.326 1.326s-1.326-0.594-1.326-1.326c0-0.732 0.594-1.326 1.326-1.326s1.326 0.594 1.326 1.326z"></path>
+<path d="M18.971 15.246c-1.097 0-2.011 0.891-2.011 2.011 0 1.097 0.891 2.011 2.011 2.011s2.011-0.891 2.011-2.011c0-1.12-0.914-2.011-2.011-2.011zM18.971 19.086c-1.029 0-1.851-0.823-1.851-1.851s0.823-1.851 1.851-1.851 1.851 0.823 1.851 1.851c0 1.029-0.823 1.851-1.851 1.851z"></path>
+<path d="M10.949 13.531c0 0.732-0.594 1.326-1.326 1.326s-1.326-0.594-1.326-1.326c0-0.732 0.594-1.326 1.326-1.326s1.326 0.594 1.326 1.326z"></path>
+<path d="M11.703 13.531c0-1.143-0.937-2.080-2.080-2.080s-2.080 0.937-2.080 2.080c0 1.143 0.937 2.080 2.080 2.080s2.080-0.937 2.080-2.080zM9.623 15.429c-1.051 0-1.897-0.846-1.897-1.897s0.846-1.897 1.897-1.897 1.897 0.846 1.897 1.897-0.846 1.897-1.897 1.897z"></path>
+<path d="M13.76 16.937h-0.48c-0.137 0-0.251-0.114-0.251-0.251v-0.457c0-0.137-0.114-0.251-0.251-0.251h-0.411c-0.137 0-0.251 0.114-0.251 0.251v0.48c0 0.137-0.114 0.251-0.251 0.251h-0.48c-0.137 0-0.251 0.114-0.251 0.251v0.389c0 0.137 0.114 0.251 0.251 0.251h0.48c0.137 0 0.251 0.114 0.251 0.251v0.48c0 0.137 0.114 0.251 0.251 0.251h0.434c0.137 0 0.251-0.114 0.251-0.251v-0.48c0-0.137 0.114-0.251 0.251-0.251h0.48c0.137 0 0.251-0.114 0.251-0.251v-0.411c-0.046-0.137-0.137-0.251-0.274-0.251z"></path>
+<path d="M20.686 14.034c0.274 0 0.503-0.229 0.503-0.503s-0.229-0.503-0.503-0.503-0.503 0.229-0.503 0.503c0 0.274 0.229 0.503 0.503 0.503z"></path>
+<path d="M20.686 14.423c0.503 0 0.891-0.411 0.891-0.891 0-0.503-0.411-0.891-0.891-0.891s-0.891 0.411-0.891 0.891c0 0.503 0.389 0.891 0.891 0.891zM20.686 12.777c0.411 0 0.754 0.343 0.754 0.754s-0.343 0.754-0.754 0.754-0.754-0.343-0.754-0.754c0-0.411 0.343-0.754 0.754-0.754z"></path>
+<path d="M22.971 13.531c0 0.274 0.229 0.503 0.503 0.503s0.503-0.229 0.503-0.503c0-0.274-0.229-0.503-0.503-0.503s-0.503 0.229-0.503 0.503z"></path>
+<path d="M22.583 13.531c0 0.503 0.411 0.891 0.891 0.891s0.891-0.411 0.891-0.891c0-0.503-0.411-0.891-0.891-0.891s-0.891 0.389-0.891 0.891zM24.251 13.531c0 0.411-0.343 0.754-0.754 0.754s-0.754-0.343-0.754-0.754c0-0.411 0.343-0.754 0.754-0.754s0.754 0.343 0.754 0.754z"></path>
+<path d="M22.080 12.64c0.274 0 0.503-0.229 0.503-0.503s-0.229-0.503-0.503-0.503-0.503 0.229-0.503 0.503c0 0.274 0.229 0.503 0.503 0.503z"></path>
+<path d="M22.080 13.029c0.503 0 0.891-0.411 0.891-0.891 0-0.503-0.411-0.891-0.891-0.891s-0.891 0.411-0.891 0.891c0 0.48 0.411 0.891 0.891 0.891zM22.080 11.383c0.411 0 0.754 0.343 0.754 0.754s-0.343 0.754-0.754 0.754-0.754-0.343-0.754-0.754c0-0.434 0.343-0.754 0.754-0.754z"></path>
+<path d="M22.583 14.926c0 0.278-0.225 0.503-0.503 0.503s-0.503-0.225-0.503-0.503c0-0.278 0.225-0.503 0.503-0.503s0.503 0.225 0.503 0.503z"></path>
+<path d="M22.080 14.034c-0.503 0-0.891 0.411-0.891 0.891 0 0.503 0.411 0.891 0.891 0.891s0.891-0.411 0.891-0.891c0.023-0.503-0.389-0.891-0.891-0.891zM22.080 15.68c-0.411 0-0.754-0.343-0.754-0.754s0.343-0.754 0.754-0.754 0.754 0.343 0.754 0.754c0 0.411-0.343 0.754-0.754 0.754z"></path>
+<path d="M13.646 13.966h1.143c0.091 0 0.16-0.069 0.16-0.16v-0.251c0-0.091-0.069-0.16-0.16-0.16h-1.143c-0.091 0-0.16 0.069-0.16 0.16v0.251c-0.023 0.091 0.069 0.16 0.16 0.16z"></path>
+<path d="M17.211 13.966h1.143c0.091 0 0.16-0.069 0.16-0.16v-0.251c0-0.091-0.069-0.16-0.16-0.16h-1.143c-0.091 0-0.16 0.069-0.16 0.16v0.251c0 0.091 0.069 0.16 0.16 0.16z"></path>
+<path d="M24.343 11.017c-0.434-0.571-0.891-0.914-1.417-1.097-0.32-0.411-0.96-0.846-1.577-0.846-0.869 0-1.714 0.686-1.783 1.257 0 0 0 0-0.023 0-0.411 0.274-0.823 0.526-1.554 0.526h-1.211c-0.046-0.251-0.251-0.434-0.503-0.503v-2.926h-0.594v2.903c-0.251 0.046-0.457 0.251-0.503 0.503h-1.211c-0.731 0-1.143-0.251-1.554-0.526 0 0 0 0-0.023 0-0.069-0.549-0.914-1.257-1.783-1.257-0.617 0-1.257 0.411-1.577 0.846-0.526 0.183-0.96 0.526-1.417 1.097-1.211 1.6-2.811 8.069-2.217 11.383 0.183 1.006 0.549 1.669 1.097 2.011 0.16 0.091 0.366 0.16 0.617 0.16 0.777 0 1.897-0.526 2.926-1.669l0.96-0.96c0.709-0.709 2.286-1.28 3.109-1.28h3.703c0.823 0 2.4 0.571 3.109 1.28l0.96 0.96c1.349 1.509 2.857 1.943 3.543 1.531 0.549-0.343 0.914-1.006 1.097-2.011 0.64-3.314-0.96-9.783-2.171-11.383zM26.126 22.309c-0.16 0.869-0.457 1.44-0.891 1.714-0.457 0.274-1.737-0.069-2.994-1.463l-0.96-0.96c-0.8-0.8-2.491-1.394-3.429-1.394h-3.703c-0.937 0-2.629 0.617-3.429 1.394l-0.983 0.983c-1.234 1.394-2.537 1.737-2.971 1.44-0.434-0.274-0.731-0.846-0.891-1.714-0.594-3.314 1.074-9.646 2.126-11.040 0.686-0.891 1.326-1.12 2.377-1.12 0.16 0 0.343 0 0.549 0.023 0.571 0.069 0.914 0.297 1.28 0.526 0.457 0.297 0.937 0.594 1.783 0.594h1.691l-0.046-0.251c0-0.023 0-0.023 0-0.046 0-0.114 0.091-0.229 0.229-0.229h0.297c0.114 0 0.229 0.091 0.229 0.229 0 0.023 0 0.023 0 0.046l-0.046 0.251h1.691c0.869 0 1.349-0.297 1.783-0.594 0.366-0.229 0.709-0.457 1.257-0.526 1.394-0.069 2.149 0.069 2.926 1.097 1.029 1.394 2.72 7.749 2.126 11.040z"></path>
+</symbol>
+<symbol id="gms2" viewBox="0 0 200 200">
+<path d="M153.382,53.7l-100,100,100,100,42.11-42.11V153.7h57.89Zm0,100v42.1l-42.106-42.1L153.382,111.6,195.488,153.7Z" transform="translate(-53.382 -53.701)" />
+</symbol>
+<symbol id="free" viewBox="0 0 64 64">
+<path d="M32.2,5.8l23.1,23.1H29.1v26.2L6,32C6,32,32.2,5.8,32.2,5.8z M32.2,1.4L1.6,32l30.6,30.6V32h30.6C62.8,32,32.2,1.4,32.2,1.4z" />
+</symbol>
+<symbol id="indie" viewBox="0 0 64 64">
+<path d="M32,9.6c0.7,0,1.2-0.6,1.2-1.2S32.7,7.1,32,7.1c-4,0-7.2,3.2-7.2,7.2c0,0.7,0.6,1.2,1.2,1.2s1.2-0.6,1.2-1.2
+    C27.2,11.7,29.4,9.6,32,9.6z" />
+<path d="M61.7,54.9c0-0.4,0-0.7-0.1-1.1l-4.4-12.1c-0.4-1.1-1.8-2-3.2-2H37.1V26c4.4-2,7.4-6.3,7.4-11.4C44.5,7.6,38.9,2,32,2
+    c-6.9,0-12.5,5.6-12.5,12.5c0,5.1,3,9.5,7.4,11.4v13.7H10.1c-1.5,0-2.8,0.8-3.2,2L2.5,53.8c-0.1,0.4-0.2,0.7-0.1,1.1
+    c0,0,0,0.1,0,0.1v3.7c0,1.8,1.5,3.2,3.2,3.2h52.9c1.8,0,3.2-1.5,3.2-3.2V55C61.7,54.9,61.7,54.9,61.7,54.9z M21.9,14.6
+    C21.9,9,26.5,4.5,32,4.5c5.6,0,10.1,4.5,10.1,10.1c0,3.9-2.2,7.2-5.4,8.9c-0.7,0.4-1.5,0.7-2.3,0.9c-0.8,0.2-1.6,0.3-2.4,0.3
+    c-0.8,0-1.6-0.1-2.4-0.3c-0.8-0.2-1.6-0.5-2.3-0.9C24.1,21.8,21.9,18.4,21.9,14.6z M34.7,26.8v12.9v2.5v2.6c0,1.3-1.1,2.4-2.4,2.4
+    h-0.6c-1.3,0-2.3-1.1-2.3-2.4v-2.6v-2.5V26.8c0.9,0.2,1.7,0.3,2.7,0.3C32.9,27.1,33.8,27,34.7,26.8z M9.1,42.5
+    c0.1-0.1,0.5-0.4,0.9-0.4h16.8v2.6c0,2.7,2.2,4.8,4.8,4.8h0.6c2.7,0,4.8-2.2,4.8-4.8v-2.6h16.8c0.5,0,0.8,0.2,0.9,0.3l4.1,11.3H5.1
+    L9.1,42.5z M59.2,58.7c0,0.4-0.3,0.8-0.8,0.8H5.6c-0.4,0-0.8-0.3-0.8-0.8v-2.7h54.4V58.7z" />
+<path d="M17,44.6c-2.9,0-5.1,1.3-5.1,3V49c0,1.8,2.1,3,5.1,3s5.1-1.3,5.1-3v-1.4C22.1,45.8,20,44.6,17,44.6z M19.7,48.9
+    c-0.2,0.2-1.1,0.7-2.6,0.7c-1.5,0-2.4-0.5-2.6-0.7v-1.2c0.2-0.2,1.1-0.7,2.6-0.7c1.5,0,2.4,0.5,2.6,0.7V48.9z" />
+<path d="M47.3,44.6c-2.9,0-5.1,1.3-5.1,3V49c0,1.8,2.1,3,5.1,3c2.9,0,5.1-1.3,5.1-3v-1.4C52.3,45.8,50.2,44.6,47.3,44.6z
+    M49.9,48.9c-0.2,0.2-1.1,0.7-2.6,0.7c-1.5,0-2.4-0.5-2.6-0.7v-1.2c0.2-0.2,1.1-0.7,2.6-0.7c1.5,0,2.4,0.5,2.6,0.7V48.9z" />
+</symbol>
+<symbol id="enterprise" viewBox="0 0 64 64">
+<path d="M60.8,1.8c-1.1,0-5,0.3-10.3,1.7c-0.7,0.2-1.4,0.4-2.1,0.6c-6.5,2-16.1,6.1-24.8,14.7L14,18.9c-0.8,0-1.5,0.4-2,1.1
+    L2.3,33.6c-0.4,0.5-0.6,1.2-0.5,1.8c0.1,0.5,0.3,1,0.7,1.4C2.5,36.9,2.6,37,2.7,37c0.3,0.2,0.6,0.4,1,0.5l10.8,2.1
+    c0.3,2.5,1.4,4.9,3.2,6.9c1.9,1.7,4.2,2.7,6.7,3l2.1,10.8c0.1,0.6,0.5,1.2,1.1,1.5c0.4,0.3,0.8,0.4,1.3,0.4c0.2,0,0.4,0,0.5-0.1
+    c0.4-0.1,0.7-0.2,0.9-0.4L44,51.9c0.6-0.5,0.9-1.2,1-1.9l0.1-9.7c8.6-8.7,12.8-18.3,14.8-24.8c0.2-0.6,0.4-1.3,0.6-2.1
+    c0.9-3.5,1.5-7,1.7-10l0-1.5L60.8,1.8z M42.9,38.8L42.7,39l-9.1,5.3c-0.6,0.4-0.8,1.2-0.5,1.8c0.1,0.1,0.1,0.2,0.2,0.3
+    c0.4,0.4,1.1,0.5,1.6,0.2l7.5-4.4l-0.1,7.7L29,59.4l-2.4-12.4l-1.1,0c-2.2,0-4.4-0.9-6-2.3c-1.5-1.7-2.4-3.9-2.5-6.2l0-1L4.6,34.8
+    l9.6-13.3l7.5-0.1L17.4,29c-0.3,0.5-0.2,1.2,0.2,1.6c0.1,0.1,0.2,0.1,0.3,0.2c0.6,0.4,1.4,0.1,1.8-0.5l5.1-8.8l0.4-0.4
+    C33.5,12.7,43,8.6,49.5,6.6c1,1.5,2.1,2.9,3.4,4.2c1.4,1.4,2.9,2.6,4.5,3.6C55.5,20.9,51.3,30.4,42.9,38.8z M58.2,11.7
+    C57,10.9,55.8,10,54.8,9c-1-1-1.8-2-2.6-3.1c2.4-0.6,4.8-1.1,7.3-1.3C59.3,5.9,59,8.5,58.2,11.7z" />
+<path d="M19.7,49.7c-0.5,0-1,0.1-1.3,0.4c-0.7,0.5-1.4,0.8-2.3,0.9c-0.7,0.1-1.4,0-2-0.5c-0.6-0.4-1-1-1.1-1.7c-0.1-0.3,0-0.6,0-1
+    c0.1-0.8,0.4-1.6,0.8-2.1c0.3-0.3,0.5-0.8,0.5-1.3c0-0.5-0.2-0.9-0.5-1.3c-0.4-0.4-1-0.6-1.5-0.5c-1.8,0.2-3.5,1-4.7,2.3
+    c-3,3-3.3,12.4-3.3,13.4c0,0.4,0.1,0.7,0.4,1c0.2,0.2,0.6,0.4,0.9,0.4c0,0,0,0,0,0c1.1,0,10.5-0.3,13.5-3.3c1.3-1.3,2.1-3,2.3-4.8
+    c0-0.5-0.1-1-0.4-1.3C20.6,49.9,20.2,49.7,19.7,49.7z M17.2,54.6c-1.4,1.4-6.1,2.2-10.3,2.5c0.3-4.2,1.1-8.9,2.5-10.3
+    c0.4-0.4,0.9-0.8,1.4-1c-0.2,0.6-0.4,1.2-0.4,1.7c-0.1,0.6-0.1,1.2,0,1.8c0.2,1.4,1,2.6,2.1,3.4c1.1,0.8,2.5,1.1,3.9,0.9
+    c0.6-0.1,1.2-0.2,1.8-0.4C18,53.7,17.6,54.2,17.2,54.6z" />
+<path d="M44.1,12.2L44.1,12.2c-0.5,0.1-12.2,3.8-16.9,14c-0.3,0.6,0,1.4,0.6,1.7c0.2,0.1,0.3,0.1,0.5,0.1c0.5,0,0.9-0.3,1.1-0.7
+    c4.2-9.1,15.2-12.6,15.3-12.6c0.3-0.1,0.6-0.3,0.7-0.6s0.2-0.6,0.1-1C45.4,12.4,44.7,12,44.1,12.2z" />
+</symbol>
+<symbol id="switch" viewBox="0 0 48.691 52">
+<g id="Nintendo_Switch_Logo" transform="translate(-74.193 833)">
+<path id="Path_14" data-name="Path 14" d="M200.148-832.823a8.484,8.484,0,0,0-6.73,6.186c-.3,1.149-.319,1.822-.286,10.733.02,8.184.027,8.375.163,9.007a8.523,8.523,0,0,0,6.614,6.634,30.177,30.177,0,0,0,4.7.143c3.807.027,4.2.02,4.3-.082s.109-1.414.109-16.287c0-11.026-.02-16.219-.068-16.314-.068-.122-.184-.129-4.167-.122A43.934,43.934,0,0,0,200.148-832.823Zm6.152,16.314v13.772l-2.767-.034a14.322,14.322,0,0,1-3.331-.17,5.766,5.766,0,0,1-4.269-4.446c-.15-.687-.15-17.6-.007-18.272a5.837,5.837,0,0,1,3.521-4.208c.9-.36,1.312-.4,4.221-.408l2.631-.007Z" transform="translate(-110.844 -0.068)" />
+<path id="Path_15" data-name="Path 15" d="M271.566-733.706a3.624,3.624,0,0,0-1.427.714,3.013,3.013,0,0,0-1.013,2.529,2.139,2.139,0,0,0,.279,1.115,3.1,3.1,0,0,0,1.461,1.468,2.106,2.106,0,0,0,1.162.272,2.473,2.473,0,0,0,1.088-.122,3.068,3.068,0,0,0,2.114-3.4A3.122,3.122,0,0,0,271.566-733.706Z" transform="translate(-181.677 -92.489)" />
+<path id="Path_16" data-name="Path 16" d="M475.048-832.952c-.027.02-.048,7.389-.048,16.375,0,14.825.007,16.328.109,16.368.184.068,5.458.041,6.111-.027a8.485,8.485,0,0,0,6.519-4.486,10.1,10.1,0,0,0,.51-1.19c.428-1.278.415-.938.415-10.706,0-7.8-.014-8.959-.109-9.455a8.44,8.44,0,0,0-6.92-6.825,26.594,26.594,0,0,0-3.576-.1C476.427-833,475.068-832.98,475.048-832.952Zm7.26,14.8a3.326,3.326,0,0,1,2.284,2.121,3.553,3.553,0,0,1-.007,2.162,3.356,3.356,0,0,1-2.277,2.107,3.347,3.347,0,0,1-4-2.27,3.9,3.9,0,0,1,.027-1.917A3.3,3.3,0,0,1,482.307-818.147Z" transform="translate(-373.562)" />
+<path id="Path_17" data-name="Path 17" d="M728.295-278.739a2.19,2.19,0,0,0-1.5,2.461,2.089,2.089,0,0,0,1.142,1.584,2.111,2.111,0,0,0,2.434-.3,2.014,2.014,0,0,0,.727-1.631,2.044,2.044,0,0,0-.619-1.557A2.332,2.332,0,0,0,728.295-278.739Zm1.2.992a1.172,1.172,0,0,1,.666,1.013,1.175,1.175,0,0,1-.755,1.264,1.259,1.259,0,0,1-1.686-1.441,1.139,1.139,0,0,1,.632-.829A1.3,1.3,0,0,1,729.5-277.746Z" transform="translate(-608.211 -516.508)" />
+<path id="Path_18" data-name="Path 18" d="M79-275.02v2.08l.428-.02.421-.02.034-1.312.034-1.312.986,1.326.986,1.332.408-.014.408-.02v-4.079l-.421-.02-.428-.02v2.685l-1-1.339-1.006-1.339H79Z" transform="translate(-4.48 -518.113)" />
+<path id="Path_19" data-name="Path 19" d="M179-274.927v2.073h.884V-277H179Z" transform="translate(-97.683 -518.206)" />
+<path id="Path_20" data-name="Path 20" d="M237.185-276.912c-.02.048-.027.972-.02,2.053l.02,1.971.428.02.421.02V-275.6l1.02,1.373,1.02,1.373h.816V-277h-.884l-.014,1.305-.02,1.305-.979-1.305L238.022-277h-.4C237.355-277,237.206-276.973,237.185-276.912Z" transform="translate(-151.892 -518.206)" />
+<path id="Path_21" data-name="Path 21" d="M334.048-276.952a1.233,1.233,0,0,0-.048.442v.394h1.359v3.263h.884v-3.263h1.292V-277h-1.72A16.853,16.853,0,0,0,334.048-276.952Z" transform="translate(-242.147 -518.206)" />
+<path id="Path_22" data-name="Path 22" d="M430-274.927v2.073h3.195v-.816h-2.379v-.952h2.175v-.748h-2.175v-.816l1.176-.014,1.169-.02.02-.394.02-.387H430Z" transform="translate(-331.621 -518.206)" />
+<path id="Path_23" data-name="Path 23" d="M526.185-276.912c-.02.048-.027.972-.02,2.053l.02,1.971.428.02.421.02V-275.6l1.02,1.373,1.02,1.373h.816V-277h-.884l-.014,1.305-.02,1.305-.979-1.305L527.022-277h-.4C526.355-277,526.206-276.973,526.185-276.912Z" transform="translate(-421.247 -518.206)" />
+<path id="Path_24" data-name="Path 24" d="M632-275.12v2.08h.9a3.19,3.19,0,0,0,1.992-.415,2.032,2.032,0,0,0-.367-3.548,3.247,3.247,0,0,0-1.421-.17L632-277.2Zm2.223-1.054a1.2,1.2,0,0,1,.53,1.6c-.218.449-.659.653-1.434.653h-.5V-276.3h.564A2.038,2.038,0,0,1,634.223-276.174Z" transform="translate(-519.89 -518.019)" />
+<path id="Path_25" data-name="Path 25" d="M552.625-189.343a4.066,4.066,0,0,0-2.481,1.305,4.063,4.063,0,0,0,.116,5.69,3.679,3.679,0,0,0,1.876,1.088,4.1,4.1,0,0,0,3.548-.714c.4-.3.924-.884.884-.986-.014-.027-.292-.279-.625-.571l-.6-.523-.184.238a2.485,2.485,0,0,1-3.677.245,3.013,3.013,0,0,1-.455-.625,1.7,1.7,0,0,1-.19-1.04,1.794,1.794,0,0,1,.17-1.02,2.466,2.466,0,0,1,2.828-1.292,2.646,2.646,0,0,1,1.278.8l.231.279.3-.245c.163-.129.449-.381.632-.544l.34-.306-.265-.326A4.18,4.18,0,0,0,552.625-189.343Z" transform="translate(-442.567 -599.874)" />
+<path id="Path_26" data-name="Path 26" d="M76.437-186.8c-1.618.428-2.454,1.509-2.094,2.733.258.9,1.115,1.346,3.392,1.754,1.529.272,1.978.5,1.978.979,0,.333-.2.578-.625.775-.367.17-.449.184-1.373.184a4.592,4.592,0,0,1-2.332-.455,2.093,2.093,0,0,0-.483-.184c-.082.1-.727,1.305-.707,1.319a10.915,10.915,0,0,0,1.6.591,9.627,9.627,0,0,0,3.161.1c1.523-.285,2.277-.986,2.345-2.162a1.721,1.721,0,0,0-1.054-1.91,8.246,8.246,0,0,0-2.434-.727c-1.149-.224-1.475-.333-1.713-.557a.54.54,0,0,1,.007-.768c.489-.489,2.243-.51,3.6-.034a1.026,1.026,0,0,0,.455.088,12.93,12.93,0,0,0,.537-1.271,7.555,7.555,0,0,0-1.625-.476A7.462,7.462,0,0,0,76.437-186.8Z" transform="translate(0 -602.151)" />
+<path id="Path_27" data-name="Path 27" d="M192.307-185.978c.02.068.5,1.761,1.06,3.759s1.04,3.691,1.06,3.752c.034.109.143.122.979.122h.945l.075-.258c.673-2.434,1.353-4.717,1.387-4.636.02.054.34,1.169.707,2.481l.666,2.379.952.02.952.02,1.081-3.793c.591-2.087,1.088-3.834,1.108-3.881s-.17-.082-.829-.082h-.85l-.1.319c-.054.184-.381,1.407-.727,2.719s-.653,2.4-.68,2.4-.34-1.033-.707-2.3-.727-2.481-.8-2.719l-.129-.428-.693.02-.693.02-.8,2.719c-.435,1.5-.8,2.733-.8,2.753s-.313-1.081-.673-2.447-.707-2.61-.748-2.773l-.082-.285h-.85C192.341-186.093,192.273-186.086,192.307-185.978Z" transform="translate(-110.079 -602.927)" />
+<path id="Path_28" data-name="Path 28" d="M382-182.219v3.875h1.767l-.014-3.861-.02-3.854-.863-.02-.87-.02Z" transform="translate(-286.884 -602.927)" />
+<path id="Path_29" data-name="Path 29" d="M435-185.15v.85h2.447v6.05h1.7v-6.05l1.21-.014,1.2-.02v-1.631l-3.276-.02L435-186Z" transform="translate(-336.281 -603.02)" />
+<path id="Path_30" data-name="Path 30" d="M686-182.219v3.875h1.631V-181.4h3.6v3.059h1.631l-.014-3.861-.02-3.854-.8-.02-.8-.02v3.066h-3.6v-3.059H686Z" transform="translate(-570.219 -602.927)" />
+</g>
+</symbol>
+</svg>
+<a href="#main-content" class="skip-link">Skip Link</a>
+<div id="app">
+<country-notice :translations="{
+          'country_notice_title': 'Choose Your Country or Region',
+          'country_notice_text': 'Choose your country or region to see content specific to your location.',
+          'country_notice_button': 'Country or Region'
+        }">
+</country-notice>
+<country-select :translations="{
+        'country_select_title': 'Choose Your Country or Region',
+        'country_select_text': 'Choose your country or region to see content specific to your location.',
+        'country_select_label': 'Country or Region',
+        'country_select_button': 'Continue'
+      }">
+</country-select>
+<site-header ref="header" inline-template>
+<div class="header">
+<div class="header-logo">
+<a href="/en">
+<img class="header-logo-img" src="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/theme/images/svg/GM_Primary.svg?1693817204" alt="GameMaker Logo" />
+</a>
+</div>
+<nav class="header-menu" role="navigation" aria-label="main navigation">
+<div class="header-menu-inner">
+<ul id="site-main_menu-section" class="main-nav" data-locomotive-section-id="site-main_menu" data-locomotive-section-type="main_menu">
+<li class="main-nav-item  " data-locomotive-block="section-site-main_menu-block-0">
+<div class="main-nav-link-wrap">
+<a href="/en/showcase" class="main-nav-link">
+Showcase
+</a>
+</div>
+</li>
+<li class="main-nav-item  " data-locomotive-block="section-site-main_menu-block-1">
+<div class="main-nav-link-wrap">
+<a href="/en/tutorials" class="main-nav-link">
+Tutorials
+</a>
+</div>
+</li>
+<li class="main-nav-item  " data-locomotive-block="section-site-main_menu-block-2">
+<div class="main-nav-link-wrap">
+<a href="/en/community" class="main-nav-link">
+Community
+</a>
+</div>
+</li>
+<li class="main-nav-item  " data-locomotive-block="section-site-main_menu-block-3">
+<div class="main-nav-link-wrap">
+<a href="/en/blog" class="main-nav-link">
+Blog
+</a>
+</div>
+</li>
+</ul>
+</div>
+<div class="header-menu-cta"><div id="locomotive-section-site-header_cta" class="locomotive-section" data-locomotive-section-type="header_cta"><span id="site-header_cta-section"></span>
+<a href="/en/download" class="header-cta button is-primary" data-locomotive-section-id="site-header_cta" data-locomotive-section-type="header_cta">Download</a>
+</div></div>
+</nav>
+<div class="header-aside">
+<div class="toolbar">
+<div class="toolbar-item">
+<a href="https://id.gamemaker.io" class="toolbar-button">
+<i class="far fa-user-circle"></i>
+<span class="sr-only">Account Menu</span>
+</a>
+</div>
+<div class="toolbar-item" :class="{ 'is-active': showLan }">
+<button class="toolbar-button" type="button" @click.prevent="toggleLan()" aria-label="Language">
+<span class="toolbar-button-icon">
+<img src="https://coal.yoyogames.com/locale/en.svg" alt="en">
+</span>
+<span class="sr-only">Language</span>
+</button>
+<div v-show="showLan" class="toolbar-dropdown alt" style="display:none;">
+<div id="locale-switcher">
+<a href="/en" class="current en" @click.prevent="updateLocale($event, 'en')">
+<span class="dropdown-item-icon">
+<img src="https://coal.yoyogames.com/locale/en.svg" alt="English">
+</span>
+English
+</a>
+<a href="/de" class=" de" @click.prevent="updateLocale($event, 'de')">
+<span class="dropdown-item-icon">
+<img src="https://coal.yoyogames.com/locale/de.svg" alt="German">
+</span>
+Deutsch
+</a>
+<a href="/es" class=" es" @click.prevent="updateLocale($event, 'es')">
+<span class="dropdown-item-icon">
+<img src="https://coal.yoyogames.com/locale/es.svg" alt="Spanish">
+</span>
+Español
+</a>
+<a href="/fr" class=" fr" @click.prevent="updateLocale($event, 'fr')">
+<span class="dropdown-item-icon">
+<img src="https://coal.yoyogames.com/locale/fr.svg" alt="French">
+</span>
+Français
+</a>
+<a href="/pt-BR" class=" pt-BR" @click.prevent="updateLocale($event, 'pt-BR')">
+<span class="dropdown-item-icon">
+<img src="https://coal.yoyogames.com/locale/pt-BR.svg" alt="Brazilian Portuguese">
+</span>
+Português Brasileiro
+</a>
+<a href="/ru" class=" ru" @click.prevent="updateLocale($event, 'ru')">
+<span class="dropdown-item-icon">
+<img src="https://coal.yoyogames.com/locale/ru.svg" alt="Russian">
+</span>
+Русский
+</a>
+<a href="/zh-CN" class=" zh-CN" @click.prevent="updateLocale($event, 'zh-CN')">
+<span class="dropdown-item-icon">
+<img src="https://coal.yoyogames.com/locale/zh-CN.svg" alt="Chinese">
+</span>
+中文
+</a>
+<a href="/pl-PL" class=" pl-PL" @click.prevent="updateLocale($event, 'pl-PL')">
+<span class="dropdown-item-icon">
+<img src="https://coal.yoyogames.com/locale/pl-PL.svg" alt="Polish">
+</span>
+Polski
+</a>
+</div>
+</div>
+</div>
+</div>
+<div id="locomotive-section-site-header_cta" class="locomotive-section" data-locomotive-section-type="header_cta"><span id="site-header_cta-section"></span>
+<a href="/en/download" class="header-cta button is-primary" data-locomotive-section-id="site-header_cta" data-locomotive-section-type="header_cta">Download</a>
+</div>
+</div>
+<button @click="toggleNav" class="nav-button">
+<span class="nav-button-lines"></span>
+<span class="nav-button-text sr-only">Menu</span>
+</button>
+</div>
+</site-header>
+<main id="main-content" class="site-main">
+<div id="page-gm_intro-section" data-locomotive-section-id="page-gm_intro" data-locomotive-section-type="gm_intro">
+<div class="gm-intro-slider">
+<swiper-wrapper effect="fade" :navigation="false" :pagination="false" :autoplay="true" :speed="2000" :overflow="false">
+<swiper-slide lazy="true">
+<picture>
+<source srcset="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/64e4944d37ddc56e563bcd7f/Chicory.png" loading="lazy" alt="Chicory" media="(min-device-width: 768px)" />
+<script type="text/javascript" style="display:none">
+//<![CDATA[
+window.__mirage2 = {petok:"m9F1mXLNnPnmRrh1LJqVJiAAdD7E8xkxPJVKdzD4ClQ-1800-0"};
+//]]>
+</script>
+<script type="text/javascript" src="https://ajax.cloudflare.com/cdn-cgi/scripts/04b3eb47/cloudflare-static/mirage2.min.js"></script>
+<img data-cfsrc="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/64e6132889ecb60017896227/Zero.png" loading="lazy" alt="Zero" media="(max-device-width: 767px)" style="display:none;visibility:hidden;" /><noscript><img src="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/64e6132889ecb60017896227/Zero.png" loading="lazy" alt="Zero" media="(max-device-width: 767px)" /></noscript>
+</picture>
+</swiper-slide>
+<swiper-slide lazy="true">
+<picture>
+<source srcset="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/64e46fc037ddc56c3e6ba926/Zero.png" loading="lazy" alt="Zero Sievert" media="(min-device-width: 768px)" />
+<img data-cfsrc="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/64e6132889ecb60017896227/Zero.png" loading="lazy" alt="Zero" media="(max-device-width: 767px)" style="display:none;visibility:hidden;" /><noscript><img src="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/64e6132889ecb60017896227/Zero.png" loading="lazy" alt="Zero" media="(max-device-width: 767px)" /></noscript>
+</picture>
+</swiper-slide>
+<swiper-slide lazy="true">
+<picture>
+<source srcset="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/64e46fb937ddc56e563bcd53/TooDeeTopDee.png" loading="lazy" alt=" Toodee and Topdee" media="(min-device-width: 768px)" />
+<img data-cfsrc="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/64e6132889ecb60017896227/Zero.png" loading="lazy" alt="Zero" media="(max-device-width: 767px)" style="display:none;visibility:hidden;" /><noscript><img src="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/64e6132889ecb60017896227/Zero.png" loading="lazy" alt="Zero" media="(max-device-width: 767px)" /></noscript>
+</picture>
+</swiper-slide>
+<swiper-slide lazy="true">
+<picture>
+<source srcset="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/64e46fb437ddc56e563bcd51/Moonleap_Background.png" loading="lazy" alt="Moonleap" media="(min-device-width: 768px)" />
+<img data-cfsrc="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/64e6132889ecb60017896227/Zero.png" loading="lazy" alt="Zero" media="(max-device-width: 767px)" style="display:none;visibility:hidden;" /><noscript><img src="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/64e6132889ecb60017896227/Zero.png" loading="lazy" alt="Zero" media="(max-device-width: 767px)" /></noscript>
+</picture>
+</swiper-slide>
+</swiper-wrapper>
+</div>
+<div class="gm-intro">
+<div class="gm-intro-content">
+<div class="gm-intro-header">
+<div class="gm-intro-pretitle">The Ultimate 2D Game Engine</div>
+<h1 class="gm-intro-title feature-font">LET'S MAKE A GAME</h1>
+</div>
+<div class="gm-intro-body">
+<div class="gm-intro-cta" data-locomotive-block="section-page-gm_intro-block-0">
+<div class="gm-intro-cta-text">GameMaker makes game design easy, regardless of your background or skill level. All you need is an idea!
+</div>
+</div>
+<div class="gm-intro-cta" data-locomotive-block="section-page-gm_intro-block-1">
+<div class="gm-intro-cta-text"></div>
+</div>
+<div class="gm-intro-cta" data-locomotive-block="section-page-gm_intro-block-2">
+<div class="gm-intro-cta-text"></div>
+</div>
+<div class="gm-intro-cta" data-locomotive-block="section-page-gm_intro-block-3">
+<div class="gm-intro-cta-text"></div>
+</div>
+<div class="gm-intro-cta" data-locomotive-block="section-page-gm_intro-block-4">
+<div class="gm-intro-cta-text"></div>
+</div>
+</div>
+<div>
+<a href="https://id.gamemaker.io/account" target="_blank" rel="noopener" class="button is-primary">REGISTER NOW</a>
+</div>
+</div>
+</div>
+</div>
+<div id="locomotive-section-page-cta_blocks" class="locomotive-section" data-locomotive-section-type="cta_blocks"><span id="page-cta_blocks-section"></span>
+<div id="page-cta_blocks-section" class="section section-dark" data-locomotive-section-id="page-cta_blocks" data-locomotive-section-type="cta_blocks">
+<div class="section-header">
+<div class="section-header-body">
+<h2 class="section-title feature-font is-alt">MAKE YOUR GAME, YOUR WAY</h2>
+</div>
+</div>
+<div class="section-body">
+<div class="columns">
+<div class="column">
+<div class="cta-block">
+<div class="cta-block-image">
+<img loading="lazy" data-cfsrc="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/63a1933e8a5bd00017ea6db8/sr.jpg" alt style="display:none;visibility:hidden;" /><noscript><img loading="lazy" src="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/63a1933e8a5bd00017ea6db8/sr.jpg" alt /></noscript>
+</div>
+<div class="cta-block-action">
+<a href="/en/tutorials/make-arcade-space-shooter" class="cta-text-link">
+Make It In 15 Minutes
+</a>
+</div>
+</div>
+</div>
+<div class="column">
+<div class="cta-block">
+<div class="cta-block-image">
+<img loading="lazy" data-cfsrc="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/63863e3f0c49a3000a44c149/asset-bundles.png" alt style="display:none;visibility:hidden;" /><noscript><img loading="lazy" src="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/63863e3f0c49a3000a44c149/asset-bundles.png" alt /></noscript>
+</div>
+<div class="cta-block-action">
+<a href="/en/bundles" class="cta-text-link">
+Download Asset Bundles
+</a>
+</div>
+</div>
+</div>
+<div class="column">
+<div class="cta-block">
+<div class="cta-block-image">
+<img loading="lazy" data-cfsrc="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/648ade5df901180018b85cb6/stock_photo_edited_1.png" alt style="display:none;visibility:hidden;" /><noscript><img loading="lazy" src="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/648ade5df901180018b85cb6/stock_photo_edited_1.png" alt /></noscript>
+</div>
+<div class="cta-block-action">
+<a href="/en/blog/space-rocks-education-materials" class="cta-text-link">
+Teach Game Design
+</a>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="locomotive-section-page-quote_slider" class="locomotive-section" data-locomotive-section-type="quote_slider"><span id="page-quote_slider-section"></span>
+<div id="page-quote_slider-section" class="section section-dark section-secondary" data-locomotive-section-id="page-quote_slider" data-locomotive-section-type="quote_slider">
+<div class="section-body is-relative">
+<swiper-wrapper class="bullets-below" slides-per-view="1" :free-mode="false" :space-between="20" :overflow="false" :navigation="false" :autoplay="false" :pagination-el="{
+          el: '.testimonial-bullets',
+          type: 'bullets',
+          clickable: 'true'
+        }" :navigation-el="{
+          nextEl: '#page-quote_slider-section-next',
+          prevEl: '#page-quote_slider-section-prev'
+        }" :allow-touch-move="false">
+<swiper-slide class="quote-slide">
+<figure>
+<blockquote class="quote-slide-content">
+<p>
+“I’m impressed with how well GameMaker scales when you start out - from knowing nothing to getting familiar with it. [...] I still like GameMaker today, as a full time developer, just because it has all the tools I need to make the games.”
+</p>
+</blockquote>
+<figcaption class="quote-slide-author">Greg Lobanov (Chicory: A Colorful Tale)</figcaption>
+</figure>
+</swiper-slide>
+<swiper-slide class="quote-slide">
+<figure>
+<blockquote class="quote-slide-content">
+<p>
+“It's easy to pick up and start learning. With GameMaker, making games is not only simple, but also fun.”
+</p>
+</blockquote>
+<figcaption class="quote-slide-author">Gabriel Gonçalves (Gagonfe)</figcaption>
+</figure>
+</swiper-slide>
+<swiper-slide class="quote-slide">
+<figure>
+<blockquote class="quote-slide-content">
+<p>
+“GameMaker's systems were easy enough to approach as a novice and are now so second-nature to me that I'm comfortable tackling larger-scale problems that I wouldn't have dreamt of four years ago.”
+</p>
+</blockquote>
+<figcaption class="quote-slide-author">Carl Pilon (Orange Pylon Games)</figcaption>
+</figure>
+</swiper-slide>
+<swiper-slide class="quote-slide">
+<figure>
+<blockquote class="quote-slide-content">
+<p>
+“Using GameMaker's in-built tools let me understand the role they play in game development and gave me the foundations I needed to go on to recreate any of them for myself in larger contexts. It was the perfect stepping stone for me to go from knowing nothing to feeling like I am an experienced games programmer.”
+</p>
+</blockquote>
+<figcaption class="quote-slide-author">Gabe Weiner (lazyeye)</figcaption>
+</figure>
+</swiper-slide>
+<swiper-slide class="quote-slide">
+<figure>
+<blockquote class="quote-slide-content">
+<p>
+“GameMaker basically taught me how to make games.”
+</p>
+</blockquote>
+<figcaption class="quote-slide-author">Carlos Azuaga (CZAzuaga)</figcaption>
+</figure>
+</swiper-slide>
+<swiper-slide class="quote-slide">
+<figure>
+<blockquote class="quote-slide-content">
+<p>
+“Everything I know about programming I learned thanks to GameMaker. It was my very first coding experience and I'm glad I stuck with it. The GameMaker community is also vast and there's tons of content in forums and tutorials, which made the learning process a lot less scary.”
+</p>
+</blockquote>
+<figcaption class="quote-slide-author">Matias Schmied (maitan69)</figcaption>
+</figure>
+</swiper-slide>
+<swiper-slide class="quote-slide">
+<figure>
+<blockquote class="quote-slide-content">
+<p>
+“Honestly, without GameMaker, I probably wouldn't even have gotten to the hobby stage of game development. It gave me an approachable way to get into game dev and realise my ideas, that I otherwise couldn't have.”
+</p>
+</blockquote>
+<figcaption class="quote-slide-author">Benjamin Kiefer (BenStar)</figcaption>
+</figure>
+</swiper-slide>
+<swiper-slide class="quote-slide">
+<figure>
+<blockquote class="quote-slide-content">
+<p>
+“GML is a lot easier to learn than other programming languages.”
+</p>
+</blockquote>
+<figcaption class="quote-slide-author">FriendlyCosmonaut</figcaption>
+</figure>
+</swiper-slide>
+</swiper-wrapper>
+<div class="testimonial-bullets bullets-container bullets-alt mt-0"></div>
+<div class="swiper-arrow-prev" id="page-quote_slider-section-prev"></div>
+<div class="swiper-arrow-next" id="page-quote_slider-section-next"></div>
+</div>
+</div>
+
+</div>
+<div id="locomotive-section-page-video_ctas" class="locomotive-section" data-locomotive-section-type="video_ctas"><span id="page-video_ctas-section"></span>
+<div id="page-video_ctas-section" class="section section-dark" data-locomotive-section-id="page-video_ctas" data-locomotive-section-type="video_ctas">
+<div class="section-header">
+<div class="section-header-body">
+<h2 class="section-title feature-font is-alt">GameMaker Features</h2>
+<div class="section-intro">
+Built with game developers of all skill levels in mind, GameMaker lets you make your game your way. Export your games to PlayStation 5, Xbox Series X|S, Nintendo Switch, GX.games, and Steam.
+</div>
+</div>
+</div>
+<div class="section-body">
+<div class="video-ctas">
+<div class="video-ctas-body is-relative">
+<swiper-wrapper class="bullets-below bullets-alt" slides-per-view="1" :free-mode="false" :space-between="30" :overflow="false" :navigation="false" :autoplay="true" :pagination-el="{
+                el: '.video-ctas-bullets',
+                type: 'bullets',
+                clickable: 'true'
+              }" :breakpoints="{
+                500: {
+                  slidesPerView: 2,
+                  allowTouchMove: true
+                },
+                900: {
+                  slidesPerView: 3,
+                }
+              }" :navigation-el="{
+                nextEl: '#page-video_ctas-section-next',
+                prevEl: '#page-video_ctas-section-prev'
+              }" :allow-touch-move="false">
+<swiper-slide class="video-cta">
+<div class="video-cta-figure js_video-cta" data-videoref="page-video_ctas-section-1" tabindex="0" role="button">
+<div class="image is-16by9">
+<img loading="lazy" data-cfsrc="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/64edc6d237ddc56c3e6bcff5/GS-OB-small.jpg" alt="How To Download, Install, and Set Up " style="display:none;visibility:hidden;" /><noscript><img loading="lazy" src="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/64edc6d237ddc56c3e6bcff5/GS-OB-small.jpg" alt="How To Download, Install, and Set Up " /></noscript>
+</div>
+<div class="video-icon"><i class="fas fa-play"></i></div>
+</div>
+<div class="video-cta-body">
+<p></p>
+</div>
+</swiper-slide>
+<swiper-slide class="video-cta">
+<div class="video-cta-figure js_video-cta" data-videoref="page-video_ctas-section-2" tabindex="0" role="button">
+<div class="image is-16by9">
+<img loading="lazy" data-cfsrc="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/64edc6d137ddc56c3e6bcff3/IDE-OB-hero-small.jpg" alt="The user interface" style="display:none;visibility:hidden;" /><noscript><img loading="lazy" src="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/64edc6d137ddc56c3e6bcff3/IDE-OB-hero-small.jpg" alt="The user interface" /></noscript>
+</div>
+<div class="video-icon"><i class="fas fa-play"></i></div>
+</div>
+<div class="video-cta-body">
+<p></p>
+</div>
+</swiper-slide>
+<swiper-slide class="video-cta">
+<div class="video-cta-figure js_video-cta" data-videoref="page-video_ctas-section-3" tabindex="0" role="button">
+<div class="image is-16by9">
+<img loading="lazy" data-cfsrc="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/64edc6d237ddc56c3e6bcff4/AOR_IDE_smalljpg.jpg" alt="Assets, objects, and rooms" style="display:none;visibility:hidden;" /><noscript><img loading="lazy" src="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/64edc6d237ddc56c3e6bcff4/AOR_IDE_smalljpg.jpg" alt="Assets, objects, and rooms" /></noscript>
+</div>
+<div class="video-icon"><i class="fas fa-play"></i></div>
+</div>
+<div class="video-cta-body">
+<p></p>
+</div>
+</swiper-slide>
+<swiper-slide class="video-cta">
+<div class="video-cta-figure js_video-cta" data-videoref="page-video_ctas-section-4" tabindex="0" role="button">
+<div class="image is-16by9">
+<img loading="lazy" data-cfsrc="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/64edc6d237ddc56c3e6bcff6/GML-OB-small.jpg" alt="Coding Languages" style="display:none;visibility:hidden;" /><noscript><img loading="lazy" src="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/64edc6d237ddc56c3e6bcff6/GML-OB-small.jpg" alt="Coding Languages" /></noscript>
+</div>
+<div class="video-icon"><i class="fas fa-play"></i></div>
+</div>
+<div class="video-cta-body">
+<p></p>
+</div>
+</swiper-slide>
+<swiper-slide class="video-cta">
+<div class="video-cta-figure js_video-cta" data-videoref="page-video_ctas-section-5" tabindex="0" role="button">
+<div class="image is-16by9">
+<img loading="lazy" data-cfsrc="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/64edc6d337ddc56c3e6bcff8/E-OB-small-Dark.jpg" alt="Events" style="display:none;visibility:hidden;" /><noscript><img loading="lazy" src="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/64edc6d337ddc56c3e6bcff8/E-OB-small-Dark.jpg" alt="Events" /></noscript>
+</div>
+<div class="video-icon"><i class="fas fa-play"></i></div>
+</div>
+<div class="video-cta-body">
+<p></p>
+</div>
+</swiper-slide>
+<swiper-slide class="video-cta">
+<div class="video-cta-figure js_video-cta" data-videoref="page-video_ctas-section-6" tabindex="0" role="button">
+<div class="image is-16by9">
+<img loading="lazy" data-cfsrc="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/64edc6d337ddc56c3e6bcff7/EX-OB-small-Dark.jpg" alt="Export your game" style="display:none;visibility:hidden;" /><noscript><img loading="lazy" src="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/assets/64edc6d337ddc56c3e6bcff7/EX-OB-small-Dark.jpg" alt="Export your game" /></noscript>
+</div>
+<div class="video-icon"><i class="fas fa-play"></i></div>
+</div>
+<div class="video-cta-body">
+<p></p>
+</div>
+</swiper-slide>
+</swiper-wrapper>
+<div class="swiper-arrow-prev" id="page-video_ctas-section-prev"></div>
+<div class="swiper-arrow-next" id="page-video_ctas-section-next"></div>
+</div>
+</div>
+<div class="video-ctas-bullets bullets-container bullets-alt"></div>
+<div class="buttons is-centered mt-6">
+<a href="/en/gamemaker/features" class="button is-primary is-outlined">
+See all features
+</a>
+</div>
+</div>
+</div>
+<video-modal title="How To Download, Install, and Set Up " ref="page-video_ctas-section-1" video-url="https://www.youtube.com/embed/lKgC-pWQ1a8">
+<span class="sr-only">How To Download, Install, and Set Up </span>
+</video-modal>
+<video-modal title="The user interface" ref="page-video_ctas-section-2" video-url="https://www.youtube.com/embed/6enBPAYmX5U">
+<span class="sr-only">The user interface</span>
+</video-modal>
+<video-modal title="Assets, objects, and rooms" ref="page-video_ctas-section-3" video-url="https://www.youtube.com/embed/w2_qt-fLYtE">
+<span class="sr-only">Assets, objects, and rooms</span>
+</video-modal>
+<video-modal title="Coding Languages" ref="page-video_ctas-section-4" video-url="https://www.youtube.com/embed/DnT94v8mZCg">
+<span class="sr-only">Coding Languages</span>
+</video-modal>
+<video-modal title="Events" ref="page-video_ctas-section-5" video-url="https://www.youtube.com/embed/fd3zCP0AZbg">
+<span class="sr-only">Events</span>
+</video-modal>
+<video-modal title="Export your game" ref="page-video_ctas-section-6" video-url="https://www.youtube.com/embed/bdKFVO7a3l4">
+<span class="sr-only">Export your game</span>
+</video-modal>
+</div>
+<div id="locomotive-section-page-info_cards" class="locomotive-section" data-locomotive-section-type="info_cards"><span id="page-info_cards-section"></span>
+<div id="page-info_cards-section" class="section" data-locomotive-section-id="page-info_cards" data-locomotive-section-type="info_cards">
+<div class="section-header section-header-centered">
+<div class="section-header-body">
+<h2 class="section-title feature-font is-alt">Tiers</h2>
+<div class="section-subtitle is-alt">The Ultimate 2D Game Development Tool</div>
+</div>
+</div>
+<div class="section-body">
+<div class="columns is-multiline is-variable is-4">
+<div class="column is-one-quarter-desktop is-half-tablet">
+<div class="box info-card">
+<div class="info-card-icon">
+<svg class="info-card-icon-svg">
+<use xlink:href="#free" />
+</svg>
+</div>
+<div class="info-card-title">Free</div>
+<div class="info-card-body">
+<ul><li>Completely free, no credit card required</li><li>Make your first game with our free tutorials</li><li>Upload your game to GX.games!</li></ul>
+</div>
+<div class="info-card-action">
+<a href="/en/download" class="button is-primary">
+Start Now
+</a>
+</div>
+</div>
+</div>
+<div class="column is-one-quarter-desktop is-half-tablet">
+<div class="box info-card">
+<div class="info-card-icon">
+<svg class="info-card-icon-svg">
+<use xlink:href="#creator" />
+</svg>
+</div>
+<div class="info-card-title">Creator</div>
+<div class="info-card-body">
+<ul><li>Start your game development career and release your games on desktop stores.</li><li>Export your game to Desktop - Windows, macOS, and Linux platforms.</li></ul>
+</div>
+<div class="info-card-action">
+<a href="/en/get" class="button is-primary">
+Find Out More
+</a>
+</div>
+</div>
+</div>
+<div class="column is-one-quarter-desktop is-half-tablet">
+<div class="box info-card">
+<div class="info-card-icon">
+<svg class="info-card-icon-svg">
+<use xlink:href="#indie" />
+</svg>
+</div>
+<div class="info-card-title">Indie</div>
+<div class="info-card-body">
+<ul><li>Level up your game development and release your games with multiple export options.</li><li>Export your game to Desktop, Web, and Mobile platforms.</li></ul>
+</div>
+<div class="info-card-action">
+<a href="/en/get" class="button is-primary">
+Find Out More
+</a>
+</div>
+</div>
+</div>
+<div class="column is-one-quarter-desktop is-half-tablet">
+<div class="box info-card">
+<div class="info-card-icon">
+<svg class="info-card-icon-svg">
+<use xlink:href="#enterprise" />
+</svg>
+</div>
+<div class="info-card-title">Enterprise</div>
+<div class="info-card-body">
+<ul><li>A must-have for small and large studios alike. Release on major console platforms.</li><li>Export your game to any platform from a single code base.</li></ul>
+</div>
+<div class="info-card-action">
+<a href="/en/get" class="button is-primary">
+Find out more
+</a>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="section-footer">
+<div class="section-footer-body">
+<div class="section-subtitle">Are you an educator? Explore our education licenses and enhance your teaching experience.</div>
+</div>
+<div class="section-footer-action">
+<a href="/en/education" class="button is-secondary is-outlined">
+Learn More
+</a>
+</div>
+</div>
+</div>
+</div>
+<div id="locomotive-section-page-featured_showcase" class="locomotive-section" data-locomotive-section-type="featured_showcase"><span id="page-featured_showcase-section"></span>
+<div id="page-featured_showcase-section" class="section section-dark section-secondary " data-locomotive-section-id="page-featured_showcase" data-locomotive-section-type="featured_showcase">
+<div class="section-header">
+<div class="section-header-body">
+<h2 class="section-title feature-font is-alt">Made with GameMaker</h2>
+</div>
+</div>
+<div class="section-body is-boxed">
+<swiper-wrapper class slides-per-view="1" :free-mode="false" :overflow="false" :navigation="false" :autoplay="true" effect="fade" :pagination="false">
+<swiper-slide>
+<div class="columns is-variable is-4-desktop">
+<div class="column">
+<a href="/en/showcase/chicory-a-colorful-tale" class="cta-tile has-shadow has-no-scale">
+<div class="cta-tile-image image is-16by9 is-rounded has-no-overlay">
+<img loading="lazy" data-cfsrc="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/content_entry5e6a48c646214800085d75a1/622233985703d500125738ee/files/egs_chicoryacolorfultale_cover_1.jpg?1678442234" alt="Chicory: A Colorful Tale" style="display:none;visibility:hidden;"><noscript><img loading="lazy" src="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/content_entry5e6a48c646214800085d75a1/622233985703d500125738ee/files/egs_chicoryacolorfultale_cover_1.jpg?1678442234" alt="Chicory: A Colorful Tale"></noscript>
+</div>
+<div class="cta-tile-body sr-only">
+<h3 class="cta-tile-title">Chicory: A Colorful Tale</h3>
+<span class="cta-tile-subtitle">Greg Lobanov and friends</span>
+</div>
+</a>
+</div>
+<div class="column">
+<a href="/en/showcase/katana-zero" class="cta-tile has-shadow has-no-scale">
+<div class="cta-tile-image image is-16by9 is-rounded has-no-overlay">
+<img loading="lazy" data-cfsrc="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/content_entry5e6a48c646214800085d75a1/5f3a6e4fdbb16000072576ac/files/cov-katana-zero.jpg?1678442242" alt="Katana ZERO" style="display:none;visibility:hidden;"><noscript><img loading="lazy" src="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/content_entry5e6a48c646214800085d75a1/5f3a6e4fdbb16000072576ac/files/cov-katana-zero.jpg?1678442242" alt="Katana ZERO"></noscript>
+</div>
+<div class="cta-tile-body sr-only">
+<h3 class="cta-tile-title">Katana ZERO</h3>
+<span class="cta-tile-subtitle">Askiisoft</span>
+</div>
+</a>
+</div>
+<div class="column">
+<a href="/en/showcase/post-void" class="cta-tile has-shadow has-no-scale">
+<div class="cta-tile-image image is-16by9 is-rounded has-no-overlay">
+<img loading="lazy" data-cfsrc="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/content_entry5e6a48c646214800085d75a1/60421e49ba248000070c31ea/files/cov-pv.png?1678442270" alt="Post Void" style="display:none;visibility:hidden;"><noscript><img loading="lazy" src="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/content_entry5e6a48c646214800085d75a1/60421e49ba248000070c31ea/files/cov-pv.png?1678442270" alt="Post Void"></noscript>
+</div>
+<div class="cta-tile-body sr-only">
+<h3 class="cta-tile-title">Post Void</h3>
+<span class="cta-tile-subtitle">YCJY Games</span>
+</div>
+</a>
+</div>
+</div>
+</swiper-slide>
+<swiper-slide>
+<div class="columns is-variable is-4-desktop">
+<div class="column">
+<a href="/en/showcase/forager" class="cta-tile has-shadow has-no-scale">
+<div class="cta-tile-image image is-16by9 is-rounded has-no-overlay">
+<img loading="lazy" data-cfsrc="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/content_entry5e6a48c646214800085d75a1/5f2ac8aeb8ce4b00077d546c/files/cov-forager.png?1678442288" alt="Forager" style="display:none;visibility:hidden;"><noscript><img loading="lazy" src="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/content_entry5e6a48c646214800085d75a1/5f2ac8aeb8ce4b00077d546c/files/cov-forager.png?1678442288" alt="Forager"></noscript>
+</div>
+<div class="cta-tile-body sr-only">
+<h3 class="cta-tile-title">Forager</h3>
+<span class="cta-tile-subtitle">HopFrog</span>
+</div>
+</a>
+</div>
+<div class="column">
+<a href="/en/showcase/nuclear-throne" class="cta-tile has-shadow has-no-scale">
+<div class="cta-tile-image image is-16by9 is-rounded has-no-overlay">
+<img loading="lazy" data-cfsrc="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/content_entry5e6a48c646214800085d75a1/5f4e57ccb8ce4b00077d5684/files/cov-nuclear-throne.jpg?1678442294" alt="Nuclear Throne" style="display:none;visibility:hidden;"><noscript><img loading="lazy" src="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/content_entry5e6a48c646214800085d75a1/5f4e57ccb8ce4b00077d5684/files/cov-nuclear-throne.jpg?1678442294" alt="Nuclear Throne"></noscript>
+</div>
+<div class="cta-tile-body sr-only">
+<h3 class="cta-tile-title">Nuclear Throne</h3>
+<span class="cta-tile-subtitle">Vlambeer</span>
+</div>
+</a>
+</div>
+<div class="column">
+<a href="/en/showcase/zero-sievert" class="cta-tile has-shadow has-no-scale">
+<div class="cta-tile-image image is-16by9 is-rounded has-no-overlay">
+<img loading="lazy" data-cfsrc="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/content_entry5e6a48c646214800085d75a1/643409513fe4960018f684d1/files/ZSsmall.jpg?1681131941" alt="ZERO Sievert" style="display:none;visibility:hidden;"><noscript><img loading="lazy" src="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/content_entry5e6a48c646214800085d75a1/643409513fe4960018f684d1/files/ZSsmall.jpg?1681131941" alt="ZERO Sievert"></noscript>
+</div>
+<div class="cta-tile-body sr-only">
+<h3 class="cta-tile-title">ZERO Sievert</h3>
+<span class="cta-tile-subtitle">CABO Studio</span>
+</div>
+</a>
+</div>
+</div>
+</swiper-slide>
+</swiper-wrapper>
+<div class="shoutout has-text-centered mt-5">Follow in the footsteps of indie classics such as Undertale, Forager, and Chicory: A Colorful Tale.</div>
+</div>
+<div class="buttons is-centered mt-6">
+<a href="/en/showcase" class="button is-primary is-outlined">
+See showcase
+</a>
+</div>
+</div>
+
+</div>
+<div id="locomotive-section-page-gx_corner" class="locomotive-section" data-locomotive-section-type="gx_corner"><span id="page-gx_corner-section"></span>
+<div id="page-gx_corner-section" class="section section-dark" data-locomotive-section-id="page-gx_corner" data-locomotive-section-type="gx_corner">
+<div class="section-header has-logo">
+<div class="section-header-body">
+<h2 class="section-title feature-font is-alt">SHARE YOUR GAME TO MILLIONS WITH GX.GAMES</h2>
+<div class="section-intro">
+GX.games - the gaming platform which connects GameMaker creators with Opera GX users.
+</div>
+</div>
+</div>
+<div class="section-body is-relative">
+<div class="image gx-image">
+<img loading="lazy" data-cfsrc="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/theme/images/GXgames_compressed.png?1693817204" alt="GameMaker" style="display:none;visibility:hidden;" /><noscript><img loading="lazy" src="https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/theme/images/GXgames_compressed.png?1693817204" alt="GameMaker" /></noscript>
+</div>
+<a href="https://gx.games" class="gx-callout" target="_blank" rel="noopener">
+<div class="gx-callout-title">GX.games</div>
+<div class="gx-callout-text">See YOUR game listed <b>here...</b></div>
+<div class="gx-callout-icon"><i class="fas fa-arrow-down"></i></div>
+</a>
+<div class="callout-bar mt-6 has-no-bg">
+<div class="callout-bar-inner">
+<div class="callout-bar-title">Promote your game on GX.games. It's FREE!</div>
+<div class="callout-bar-body">
+<a href="https://gx.games" class="button is-gxc is-outlined" target="_blank" rel="noopener">
+Start Now
+</a>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<footer class="site-footer">
+<div class="site-footer-main">
+<div id="site-footer_menus-section" class="columns" data-locomotive-section-id="site-footer_menus" data-locomotive-section-type="footer_menus">
+<div class="column footer-column" data-locomotive-block="section-site-footer_menus-block-0" data-index="0">
+<footer-block title="GameMaker" :window-width="windowWidth">
+<ul class="footer-list">
+<li class="footer-list-item">
+<a href="/en/download" class="footer-list-link ">
+Download
+</a>
+</li>
+<li class="footer-list-item">
+<a href="/en/gamemaker/features" class="footer-list-link ">
+Features
+</a>
+</li>
+<li class="footer-list-item">
+<a href="/en/get" class="footer-list-link ">
+Pricing
+</a>
+</li>
+<li class="footer-list-item">
+<a href="https://marketplace.gamemaker.io/" class="footer-list-link is-external">
+Marketplace
+</a>
+</li>
+<li class="footer-list-item">
+<a href="/en/bundles" class="footer-list-link ">
+Asset Bundles
+</a>
+</li>
+<li class="footer-list-item">
+<a href="/en/roadmap" class="footer-list-link ">
+Roadmap
+</a>
+</li>
+<li class="footer-list-item">
+<a href="/en/education" class="footer-list-link ">
+Education
+</a>
+</li>
+</ul>
+</footer-block>
+</div>
+<div class="column footer-column" data-locomotive-block="section-site-footer_menus-block-1" data-index="0">
+<footer-block title="Support" :window-width="windowWidth">
+<ul class="footer-list">
+<li class="footer-list-item">
+<a href="https://manual.yoyogames.com" class="footer-list-link is-external">
+Manual
+</a>
+</li>
+<li class="footer-list-item">
+<a href="https://gms.yoyogames.com/ReleaseNotes.html" class="footer-list-link is-external">
+Release Notes
+</a>
+</li>
+<li class="footer-list-item">
+<a href="https://help.yoyogames.com/" class="footer-list-link ">
+Help Center
+</a>
+</li>
+<li class="footer-list-item">
+<a href="https://contact.gamemaker.io/contact-us#bug" class="footer-list-link ">
+Report a Bug
+</a>
+</li>
+<li class="footer-list-item">
+<a href="/en/blog" class="footer-list-link ">
+Blog
+</a>
+</li>
+<li class="footer-list-item">
+<a href="/account" class="footer-list-link ">
+Accounts
+</a>
+</li>
+</ul>
+</footer-block>
+</div>
+<div class="column footer-column" data-locomotive-block="section-site-footer_menus-block-2" data-index="0">
+<footer-block title="Team" :window-width="windowWidth">
+<ul class="footer-list">
+<li class="footer-list-item">
+<a href="/en/about" class="footer-list-link ">
+About Us
+</a>
+</li>
+<li class="footer-list-item">
+<a href="/en/jobs" class="footer-list-link ">
+Jobs
+</a>
+</li>
+<li class="footer-list-item">
+<a href="https://contact.gamemaker.io/contact-us" class="footer-list-link ">
+Contact
+</a>
+</li>
+</ul>
+</footer-block>
+</div>
+<div class="column">
+<div class="footer-block">
+<span class="footer-block-title">Social Media</span>
+<ul class="social-list">
+<li class="social-list-item">
+<a href="https://www.facebook.com/GameMakerEngine" target="_blank" rel="noopener">
+<span class="sr-only">Facebook</span>
+<i class="fab fa-facebook"></i>
+</a>
+</li>
+<li class="social-list-item">
+<a href="https://twitter.com/GameMakerEngine" target="_blank" rel="noopener">
+<span class="sr-only">Twitter</span>
+<i class="fab fa-twitter"></i>
+</a>
+</li>
+<li class="social-list-item">
+<a href="https://www.youtube.com/@GameMakerEngine" target="_blank" rel="noopener">
+<span class="sr-only">YouTube</span>
+<i class="fab fa-youtube"></i>
+</a>
+</li>
+<li class="social-list-item">
+<a href="https://discord.gg/gamemaker" target="_blank" rel="noopener">
+<span class="sr-only">Discord</span>
+<i class="fab fa-discord"></i>
+</a>
+</li>
+</ul>
+</div>
+<div class="footer-block mt-6">
+<country-link></country-link>
+</div>
+</div>
+</div>
+</div>
+<div class="site-footer-meta">
+<ul id="site-footer_bottom_menu-section" class="meta-list" data-locomotive-section-id="site-footer_bottom_menu" data-locomotive-section-type="footer_bottom_menu">
+<li data-locomotive-block="section-site-footer_bottom_menu-block-0" class="meta-list-item" data-index="0">
+<a href="/en/legal">Legal</a>
+</li>
+<li data-locomotive-block="section-site-footer_bottom_menu-block-1" class="meta-list-item" data-index="1">
+<a href="/en/legal/privacy">Privacy Policy</a>
+</li>
+<li data-locomotive-block="section-site-footer_bottom_menu-block-2" class="meta-list-item" data-index="2">
+<a href="/en/legal/cookies">Cookie Policy & Preferences</a>
+</li>
+</ul>
+<div class="copyright">Copyright © 2013 - 2023 YoYo Games Ltd.</div>
+<div class="site-meta-logo" id="back-top-top">
+<svg>
+<use xlink:href="#gms2" />
+</svg>
+</div>
+</div>
+</footer>
+</div>
+<script>
+  function localeCheck() {
+    if (document.cookie.split(';').some((item) => item.trim().startsWith('yyg-locale='))) {
+      var localeCookieValue = document.cookie.split('; ').find(row => row.startsWith('yyg-locale=')).split('=')[1];
+    }
+    if (document.cookie.split(';').some((item) => item.trim().startsWith('yoyocookieconsent_functional='))) {
+      var consentCookieValue = document.cookie.split('; ').find(row => row.startsWith('yoyocookieconsent_functional=')).split('=')[1];
+    }
+    let localeCookie = typeof localeCookieValue != 'undefined';
+    let consentCookie = typeof consentCookieValue != 'undefined' && consentCookieValue != 'false';
+    let userLang = navigator.language || navigator.userLanguage;
+    let current_locale = 'en';
+    let locales = ["en","de","fr","pt-BR","es","ru","zh-CN","ja-JP","it","pl-PL","ko-KR"];
+    let pagePaths = [];
+    pagePaths['en'] = "/en";pagePaths['de'] = "/de";pagePaths['fr'] = "/fr";pagePaths['pt-BR'] = "/pt-BR";pagePaths['es'] = "/es";pagePaths['ru'] = "/ru";pagePaths['zh-CN'] = "/zh-CN";pagePaths['ja-JP'] = "/ja-JP";pagePaths['it'] = "/it";pagePaths['pl-PL'] = "/pl-PL";pagePaths['ko-KR'] = "/ko-KR";
+    let index = locales.findIndex(item => userLang.includes(item));
+    if (index != -1 && !userLang.includes(current_locale) && !localeCookie && consentCookie) {
+      let site;
+      if (window.location.href.indexOf('yoyo') > -1) {
+        site = 'site=.yoyogames.com';
+      }
+      document.cookie = `yyg-locale=${locales[index]}; max-age=604800; path=/; ${site}`;
+      window.location.href = pagePaths[locales[index]];
+    }
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    localeCheck();
+  });
+  window.addEventListener('cookieToolUpdated', () => {
+    localeCheck();
+  });
+</script>
+<script type="application/ld+json">
+  {
+    "@context": "http://schema.org",
+    "@type": "Organization",
+    "name": "YoYo Games",
+    "legalName": "YoYo Games Ltd",
+    "url": "https://www.yoyogames.com",
+    "logo": "https://coal.gamemaker.io/sites/5d75794b3c84c70006700381/theme/images/logo.svg?1693817204",
+    "foundingDate": "2004",
+    "sameAs": [
+      "https://twitter.com/GameMakerEngine",
+      "https://www.facebook.com/GameMakerEngine",
+      "https://www.youtube.com/user/yoyogamesltd",
+      "https://en.wikipedia.org/wiki/YoYo_Games"
+    ]
+  }
+</script>
+<script>(function(){var js = "window['__CF$cv$params']={r:'801b1b88accec4fc',t:'MTY5Mzg4MTYyNy4xOTcwMDA='};_cpo=document.createElement('script');_cpo.nonce='',_cpo.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js',document.getElementsByTagName('head')[0].appendChild(_cpo);";var _0xh = document.createElement('iframe');_0xh.height = 1;_0xh.width = 1;_0xh.style.position = 'absolute';_0xh.style.top = 0;_0xh.style.left = 0;_0xh.style.border = 'none';_0xh.style.visibility = 'hidden';document.body.appendChild(_0xh);function handler() {var _0xi = _0xh.contentDocument || _0xh.contentWindow.document;if (_0xi) {var _0xj = _0xi.createElement('script');_0xj.innerHTML = js;_0xi.getElementsByTagName('head')[0].appendChild(_0xj);}}if (document.readyState !== 'loading') {handler();} else if (window.addEventListener) {document.addEventListener('DOMContentLoaded', handler);} else {var prev = document.onreadystatechange || function () {};document.onreadystatechange = function (e) {prev(e);if (document.readyState !== 'loading') {document.onreadystatechange = prev;handler();}};}})();</script></body>
+</html>
