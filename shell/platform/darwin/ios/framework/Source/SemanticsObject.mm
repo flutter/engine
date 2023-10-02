@@ -5,6 +5,7 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.h"
 
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterSemanticsScrollView.h"
 
 namespace {
@@ -862,7 +863,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
 - (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridgeIos>)bridge
                            uid:(int32_t)uid
-                  platformView:(UIView<FlutterSemanticsProtocol>*)platformView {
+                  platformView:(nonnull FlutterTouchInterceptingView*)platformView {
   if (self = [super initWithBridge:bridge uid:uid]) {
     _platformView = [platformView retain];
     [platformView setFlutterAccessibilityContainer:self];

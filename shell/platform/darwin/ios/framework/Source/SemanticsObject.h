@@ -18,14 +18,7 @@ constexpr float kScrollExtentMaxForInf = 1000;
 
 @class FlutterCustomAccessibilityAction;
 @class FlutterPlatformViewSemanticsContainer;
-
-@protocol FlutterSemanticsProtocol <NSObject>
-// Adding functionalities for any object to assign accessibilityContainer.
-// For example, this allows the PlatformView be able to link back to the accessibility tree.
-// See: https://github.com/flutter/flutter/issues/135504
-- (void)setFlutterAccessibilityContainer:(NSObject*)flutterAccessibilityContainer;
-
-@end
+@class FlutterTouchInterceptingView;
 
 /**
  * A node in the iOS semantics tree. This object is a wrapper over a native accessibiliy
@@ -179,7 +172,7 @@ constexpr float kScrollExtentMaxForInf = 1000;
 
 - (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridgeIos>)bridge
                            uid:(int32_t)uid
-                  platformView:(UIView<FlutterSemanticsProtocol>*)platformView
+                  platformView:(FlutterTouchInterceptingView*)platformView
     NS_DESIGNATED_INITIALIZER;
 
 @end

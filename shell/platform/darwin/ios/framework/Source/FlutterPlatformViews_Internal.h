@@ -231,10 +231,15 @@ class FlutterPlatformViewsController {
   // Returns the `FlutterPlatformView`'s `view` object associated with the view_id.
   //
   // If the `FlutterPlatformViewsController` does not contain any `FlutterPlatformView` object or
-  // a `FlutterPlatformView` object asscociated with the view_id cannot be found, the method
+  // a `FlutterPlatformView` object associated with the view_id cannot be found, the method
   // returns nil.
   UIView* GetPlatformViewByID(int64_t view_id);
 
+  // Returns the `FlutterTouchInterceptingView` with the view_id.
+  //
+  // If the `FlutterPlatformViewsController` does not contain any `FlutterPlatformView` object or
+  // a `FlutterPlatformView` object associated with the view_id cannot be found, the method
+  // returns nil.
   FlutterTouchInterceptingView* GetFlutterTouchInterceptingViewByID(int64_t);
 
   PostPrerollResult PostPrerollAction(
@@ -412,7 +417,7 @@ class FlutterPlatformViewsController {
 // This view has 2 roles:
 // 1. Delay or prevent touch events from arriving the embedded view.
 // 2. Dispatching all events that are hittested to the embedded view to the FlutterView.
-@interface FlutterTouchInterceptingView : UIView <FlutterSemanticsProtocol>
+@interface FlutterTouchInterceptingView : UIView
 - (instancetype)initWithEmbeddedView:(UIView*)embeddedView
              platformViewsController:
                  (fml::WeakPtr<flutter::FlutterPlatformViewsController>)platformViewsController
@@ -428,6 +433,9 @@ class FlutterPlatformViewsController {
 // Get embedded view
 - (UIView*)embeddedView;
 
+// The FlutterTouchInterceptingView assigns `flutterAccessibilityContainer` as its
+// accessibilityContainer.
+- (void)setFlutterAccessibilityContainer:(NSObject*)flutterAccessibilityContainer;
 @end
 
 @interface UIView (FirstResponder)
