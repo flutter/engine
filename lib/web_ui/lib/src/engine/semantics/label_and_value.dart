@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import '../dom.dart';
 import 'semantics.dart';
 
 /// Renders [SemanticsObject.label] and/or [SemanticsObject.value] to the semantics DOM.

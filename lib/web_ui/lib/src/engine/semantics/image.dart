@@ -56,7 +56,7 @@ class ImageRoleManager extends PrimaryRoleManager {
       _setLabel(_auxiliaryImageElement);
     } else if (semanticsObject.isVisualOnly) {
       setAriaRole('img');
-      _setLabel(semanticsObject.element);
+      _setLabel(element);
       _cleanUpAuxiliaryElement();
     } else {
       _cleanUpAuxiliaryElement();

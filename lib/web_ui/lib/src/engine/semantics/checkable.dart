@@ -13,7 +13,6 @@
 
 import 'package:ui/ui.dart' as ui;
 
-import '../dom.dart';
 import 'semantics.dart';
 
 /// The specific type of checkable control.

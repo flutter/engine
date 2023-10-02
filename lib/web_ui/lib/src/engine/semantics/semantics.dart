@@ -585,7 +585,7 @@ abstract class PrimaryRoleManager {
   /// gesture mode changes.
   @mustCallSuper
   void dispose() {
-    element.removeAttribute('role');
+    removeAttribute('role');
     _isDisposed = true;
   }
 }
