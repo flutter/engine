@@ -89,6 +89,26 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
 }  // namespace
 }  // namespace flutter
 
+// A mock platform view for testing
+@interface TestPlatformView : UIView <FlutterSemanticsProtocol>
+
+@property(weak, nonatomic) NSObject* container;
+- (id)accessibilityContainer;
+
+@end
+
+@implementation TestPlatformView
+
+- (void)setFlutterAccessibilityContainer:(NSObject*)flutterAccessibilityContainer {
+  self.container = flutterAccessibilityContainer;
+}
+
+- (id)accessibilityContainer {
+  return self.container;
+}
+
+@end
+
 @interface SemanticsObjectTest : XCTestCase
 @end
 
@@ -210,7 +230,8 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
   SemanticsObject* object0 = [[SemanticsObject alloc] initWithBridge:bridge uid:0];
   SemanticsObject* object1 = [[SemanticsObject alloc] initWithBridge:bridge uid:1];
   SemanticsObject* object3 = [[SemanticsObject alloc] initWithBridge:bridge uid:3];
-  UIView* platformView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];
+  TestPlatformView* platformView =
+      [[TestPlatformView alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];
   FlutterPlatformViewSemanticsContainer* platformViewSemanticsContainer =
       [[FlutterPlatformViewSemanticsContainer alloc] initWithBridge:bridge
                                                                 uid:1
@@ -901,15 +922,15 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
   fml::WeakPtrFactory<flutter::MockAccessibilityBridge> factory(
       new flutter::MockAccessibilityBridge());
   fml::WeakPtr<flutter::MockAccessibilityBridge> bridge = factory.GetWeakPtr();
-  __weak UIView* weakPlatformView;
+  __weak TestPlatformView* weakPlatformView;
   @autoreleasepool {
-    UIView* platformView = [[UIView alloc] init];
+    TestPlatformView* platformView = [[TestPlatformView alloc] init];
 
     FlutterPlatformViewSemanticsContainer* container =
         [[FlutterPlatformViewSemanticsContainer alloc] initWithBridge:bridge
                                                                   uid:1
                                                          platformView:platformView];
-    XCTAssertEqualObjects(container.accessibilityElements, @[ platformView ]);
+    XCTAssertEqualObjects(platformView.accessibilityContainer, container);
     weakPlatformView = platformView;
     XCTAssertNotNil(weakPlatformView);
   }

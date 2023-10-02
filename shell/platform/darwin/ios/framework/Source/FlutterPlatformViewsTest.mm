@@ -19,6 +19,10 @@ FLUTTER_ASSERT_NOT_ARC
 static FlutterPlatformViewsTestMockPlatformView* gMockPlatformView = nil;
 const float kFloatCompareEpsilon = 0.001;
 
+@interface FlutterTouchInterceptingView (Test)
+- (id)accessibilityContainer;
+@end
+
 @interface FlutterPlatformViewsTestMockPlatformView : UIView
 @end
 @implementation FlutterPlatformViewsTestMockPlatformView
@@ -3097,6 +3101,14 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   flutterPlatformViewsController->Reset();
   XCTAssertEqual(mockFlutterView.subviews.count, 1u);
   XCTAssertEqual(mockFlutterView.subviews.firstObject, someView);
+}
+
+- (void)testFlutterTouchInterceptingViewLinksToAccessibilityContainer {
+  FlutterTouchInterceptingView* touchInteceptorView =
+      [[[FlutterTouchInterceptingView alloc] init] autorelease];
+  NSObject* container = [[[NSObject alloc] init] autorelease];
+  [touchInteceptorView setFlutterAccessibilityContainer:container];
+  XCTAssertEqualObjects([touchInteceptorView accessibilityContainer], container);
 }
 
 @end

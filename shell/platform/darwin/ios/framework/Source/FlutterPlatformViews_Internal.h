@@ -12,6 +12,7 @@
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlugin.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.h"
 #import "flutter/shell/platform/darwin/ios/ios_context.h"
 
 @class FlutterTouchInterceptingView;
@@ -234,6 +235,8 @@ class FlutterPlatformViewsController {
   // returns nil.
   UIView* GetPlatformViewByID(int64_t view_id);
 
+  FlutterTouchInterceptingView* GetFlutterTouchInterceptingViewByID(int64_t);
+
   PostPrerollResult PostPrerollAction(
       const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger);
 
@@ -409,7 +412,7 @@ class FlutterPlatformViewsController {
 // This view has 2 roles:
 // 1. Delay or prevent touch events from arriving the embedded view.
 // 2. Dispatching all events that are hittested to the embedded view to the FlutterView.
-@interface FlutterTouchInterceptingView : UIView
+@interface FlutterTouchInterceptingView : UIView <FlutterSemanticsProtocol>
 - (instancetype)initWithEmbeddedView:(UIView*)embeddedView
              platformViewsController:
                  (fml::WeakPtr<flutter::FlutterPlatformViewsController>)platformViewsController
@@ -424,6 +427,7 @@ class FlutterPlatformViewsController {
 
 // Get embedded view
 - (UIView*)embeddedView;
+
 @end
 
 @interface UIView (FirstResponder)
