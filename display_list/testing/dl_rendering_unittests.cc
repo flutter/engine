@@ -2235,6 +2235,8 @@ class CanvasCompareTester {
 
   static std::string to_png_filename(const std::string& desc) {
     std::string ret = "dl_rendertests_impeller_images/";
+    int mkdir_success = mkdir(ret.c_str(), 0777);
+    EXPECT_TRUE(mkdir_success == 0 || errno == EEXIST);
     for (const char& ch : desc) {
       ret += (ch == ':' || ch == ' ') ? '_' : ch;
     }
@@ -2313,18 +2315,18 @@ class CanvasCompareTester {
       }
       if (!success) {
         FML_LOG(ERROR) << "Impeller issue encountered for: " << *display_list;
-        std::string filename = to_png_filename(imp_info);
+        std::string filename = to_png_filename(info + " (Impeller Output)");
         imp_result->write(filename);
         FML_LOG(ERROR) << "output saved in: " << filename;
-        std::string src_filename = to_png_filename(imp_info + " (Source)");
+        std::string src_filename = to_png_filename(info + " (Impeller Input)");
         env.ref_impeller_result()->write(src_filename);
         FML_LOG(ERROR) << "compare to reference without attributes: "
                        << src_filename;
-        std::string sk_filename = to_png_filename(info + " (Skia Result)");
+        std::string sk_filename = to_png_filename(info + " (Skia Output)");
         sk_result->write(sk_filename);
         FML_LOG(ERROR) << "and to Skia reference with attributes: "
                        << sk_filename;
-        std::string sk_src_filename = to_png_filename(info + " (Skia Source)");
+        std::string sk_src_filename = to_png_filename(info + " (Skia Input)");
         env.ref_sk_result()->write(sk_src_filename);
         FML_LOG(ERROR) << "operating on Skia source image: " << sk_src_filename;
       }
