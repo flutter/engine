@@ -1080,6 +1080,7 @@ class TestParameters {
 class CanvasCompareTester {
  public:
   static std::vector<BackendType> kTestBackends;
+  static std::string kTempDirectory;
 
   static std::unique_ptr<DlSurfaceProvider> GetProvider(BackendType type) {
     auto provider = DlSurfaceProvider::Create(type);
@@ -2234,9 +2235,11 @@ class CanvasCompareTester {
   }
 
   static std::string to_png_filename(const std::string& desc) {
-    std::string ret = "dl_rendertests_impeller_images/";
-    int mkdir_success = mkdir(ret.c_str(), 0777);
-    EXPECT_TRUE(mkdir_success == 0 || errno == EEXIST);
+    if (kTempDirectory.length() == 0) {
+      kTempDirectory = fml::CreateTemporaryDirectory();
+    }
+
+    std::string ret = kTempDirectory + "/";
     for (const char& ch : desc) {
       ret += (ch == ':' || ch == ' ') ? '_' : ch;
     }
@@ -2716,6 +2719,7 @@ class CanvasCompareTester {
 };
 
 std::vector<BackendType> CanvasCompareTester::kTestBackends;
+std::string CanvasCompareTester::kTempDirectory = "";
 
 BoundsTolerance CanvasCompareTester::DefaultTolerance =
     BoundsTolerance().addAbsolutePadding(1, 1);
