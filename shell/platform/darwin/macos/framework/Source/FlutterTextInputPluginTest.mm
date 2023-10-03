@@ -1361,6 +1361,89 @@
   return true;
 }
 
+- (bool)handleArrowKeyWhenImePopoverIsActive {
+  id engineMock = flutter::testing::CreateMockFlutterEngine(@"");
+  id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [engineMock binaryMessenger])
+      .andReturn(binaryMessengerMock);
+  OCMStub([[engineMock ignoringNonObjectArgs] sendKeyEvent:FlutterKeyEvent {}
+                                                  callback:nil
+                                                  userData:nil]);
+
+  NSTextInputContext* textInputContext = OCMClassMock([NSTextInputContext class]);
+  OCMStub([textInputContext handleEvent:[OCMArg any]]).andReturn(YES);
+
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
+                                                                                nibName:@""
+                                                                                 bundle:nil];
+
+  FlutterTextInputPlugin* plugin =
+      [[FlutterTextInputPlugin alloc] initWithViewController:viewController];
+
+  plugin.textInputContext = textInputContext;
+
+  NSDictionary* setClientConfig = @{
+    @"inputAction" : @"action",
+    @"enableDeltaModel" : @"true",
+    @"inputType" : @{@"name" : @"inputName"},
+  };
+  [plugin handleMethodCall:[FlutterMethodCall methodCallWithMethodName:@"TextInput.setClient"
+                                                             arguments:@[ @(1), setClientConfig ]]
+                    result:^(id){
+                    }];
+
+  [plugin handleMethodCall:[FlutterMethodCall methodCallWithMethodName:@"TextInput.show"
+                                                             arguments:@[]]
+                    result:^(id){
+                    }];
+
+  // Set marked text, simulate active IME popover.
+  [plugin setMarkedText:@"m"
+          selectedRange:NSMakeRange(0, 1)
+       replacementRange:NSMakeRange(NSNotFound, 0)];
+
+  // Right arrow key. This, unlike the key below should be handled by the plugin.
+  NSEvent* event = [NSEvent keyEventWithType:NSEventTypeKeyDown
+                                    location:NSZeroPoint
+                               modifierFlags:0xa00100
+                                   timestamp:0
+                                windowNumber:0
+                                     context:nil
+                                  characters:@"\uF702"
+                 charactersIgnoringModifiers:@"\uF702"
+                                   isARepeat:NO
+                                     keyCode:0x4];
+
+  // Plugin should mark the event as key equivalent.
+  [plugin performKeyEquivalent:event];
+
+  if ([plugin handleKeyEvent:event] != true) {
+    return false;
+  }
+
+  // CTRL+H (delete backwards)
+  event = [NSEvent keyEventWithType:NSEventTypeKeyDown
+                           location:NSZeroPoint
+                      modifierFlags:0x40101
+                          timestamp:0
+                       windowNumber:0
+                            context:nil
+                         characters:@"\uF702"
+        charactersIgnoringModifiers:@"\uF702"
+                          isARepeat:NO
+                            keyCode:0x4];
+
+  // Plugin should mark the event as key equivalent.
+  [plugin performKeyEquivalent:event];
+
+  if ([plugin handleKeyEvent:event] != false) {
+    return false;
+  }
+
+  return true;
+}
+
 - (bool)unhandledKeyEquivalent {
   id engineMock = flutter::testing::CreateMockFlutterEngine(@"");
   id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
@@ -1814,6 +1897,10 @@ TEST(FlutterTextInputPluginTest, TestPerformKeyEquivalent) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testPerformKeyEquivalent]);
 }
 
+TEST(FlutterTextInputPluginTest, HandleArrowKeyWhenImePopoverIsActive) {
+  ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] handleArrowKeyWhenImePopoverIsActive]);
+}
+
 TEST(FlutterTextInputPluginTest, UnhandledKeyEquivalent) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] unhandledKeyEquivalent]);
 }
@@ -1962,7 +2049,42 @@ TEST(FlutterTextInputPluginTest, IsAddedAndRemovedFromViewHierarchy) {
   ASSERT_FALSE(window.firstResponder == viewController.textInputPlugin);
 }
 
-TEST(FlutterTextInputPluginTest, HasZeroSize) {
+TEST(FlutterTextInputPluginTest, FirstResponderIsCorrect) {
+  FlutterEngine* engine = CreateTestEngine();
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  [viewController loadView];
+
+  NSWindow* window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600)
+                                                 styleMask:NSBorderlessWindowMask
+                                                   backing:NSBackingStoreBuffered
+                                                     defer:NO];
+  window.contentView = viewController.view;
+
+  ASSERT_TRUE(viewController.flutterView.acceptsFirstResponder);
+
+  [window makeFirstResponder:viewController.flutterView];
+
+  [viewController.textInputPlugin
+      handleMethodCall:[FlutterMethodCall methodCallWithMethodName:@"TextInput.show" arguments:@[]]
+                result:^(id){
+                }];
+
+  ASSERT_TRUE(window.firstResponder == viewController.textInputPlugin);
+
+  ASSERT_FALSE(viewController.flutterView.acceptsFirstResponder);
+
+  [viewController.textInputPlugin
+      handleMethodCall:[FlutterMethodCall methodCallWithMethodName:@"TextInput.hide" arguments:@[]]
+                result:^(id){
+                }];
+
+  ASSERT_TRUE(viewController.flutterView.acceptsFirstResponder);
+  ASSERT_TRUE(window.firstResponder == viewController.flutterView);
+}
+
+TEST(FlutterTextInputPluginTest, HasZeroSizeAndClipsToBounds) {
   id engineMock = flutter::testing::CreateMockFlutterEngine(@"");
   id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
   OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
@@ -1977,6 +2099,7 @@ TEST(FlutterTextInputPluginTest, HasZeroSize) {
       [[FlutterTextInputPlugin alloc] initWithViewController:viewController];
 
   ASSERT_TRUE(NSIsEmptyRect(plugin.frame));
+  ASSERT_TRUE(plugin.clipsToBounds);
 }
 
 }  // namespace flutter::testing

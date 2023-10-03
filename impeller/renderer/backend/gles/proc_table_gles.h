@@ -6,12 +6,10 @@
 
 #include <functional>
 #include <string>
-#include <vector>
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
-#include "flutter/fml/trace_event.h"
 #include "impeller/renderer/backend/gles/capabilities_gles.h"
 #include "impeller/renderer/backend/gles/description_gles.h"
 #include "impeller/renderer/backend/gles/gles.h"
@@ -19,6 +17,7 @@
 namespace impeller {
 
 const char* GLErrorToString(GLenum value);
+bool GLErrorIsFatal(GLenum value);
 
 struct AutoErrorCheck {
   const PFNGLGETERRORPROC error_fn;
@@ -30,9 +29,18 @@ struct AutoErrorCheck {
   ~AutoErrorCheck() {
     if (error_fn) {
       auto error = error_fn();
-      FML_CHECK(error == GL_NO_ERROR)
-          << "GL Error " << GLErrorToString(error) << "(" << error << ")"
-          << " encountered on call to " << name;
+      if (error == GL_NO_ERROR) {
+        return;
+      }
+      if (GLErrorIsFatal(error)) {
+        FML_LOG(FATAL) << "Fatal GL Error " << GLErrorToString(error) << "("
+                       << error << ")"
+                       << " encountered on call to " << name;
+      } else {
+        FML_LOG(ERROR) << "GL Error " << GLErrorToString(error) << "(" << error
+                       << ")"
+                       << " encountered on call to " << name;
+      }
     }
   }
 };
@@ -65,9 +73,9 @@ struct GLProc {
   ///
   template <class... Args>
   auto operator()(Args&&... args) const {
-#ifdef IMPELLER_ERROR_CHECK_ALL_GL_CALLS
+#ifdef IMPELLER_DEBUG
     AutoErrorCheck error(error_fn, name);
-#endif  // IMPELLER_ERROR_CHECK_ALL_GL_CALLS
+#endif  // IMPELLER_DEBUG
 #ifdef IMPELLER_TRACE_ALL_GL_CALLS
     TRACE_EVENT0("impeller", name);
 #endif  // IMPELLER_TRACE_ALL_GL_CALLS
@@ -170,11 +178,13 @@ struct GLProc {
 
 #define FOR_EACH_IMPELLER_GLES3_PROC(PROC) PROC(BlitFramebuffer);
 
-#define FOR_EACH_IMPELLER_EXT_PROC(PROC) \
-  PROC(DiscardFramebufferEXT);           \
-  PROC(PushDebugGroupKHR);               \
-  PROC(PopDebugGroupKHR);                \
-  PROC(ObjectLabelKHR);
+#define FOR_EACH_IMPELLER_EXT_PROC(PROC)   \
+  PROC(DiscardFramebufferEXT);             \
+  PROC(FramebufferTexture2DMultisampleEXT) \
+  PROC(PushDebugGroupKHR);                 \
+  PROC(PopDebugGroupKHR);                  \
+  PROC(ObjectLabelKHR);                    \
+  PROC(RenderbufferStorageMultisampleEXT);
 
 enum class DebugResourceType {
   kTexture,
@@ -188,7 +198,7 @@ enum class DebugResourceType {
 class ProcTableGLES {
  public:
   using Resolver = std::function<void*(const char* function_name)>;
-  ProcTableGLES(Resolver resolver);
+  explicit ProcTableGLES(Resolver resolver);
 
   ~ProcTableGLES();
 
