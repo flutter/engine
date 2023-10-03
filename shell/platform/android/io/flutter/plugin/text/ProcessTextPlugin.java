@@ -4,6 +4,7 @@
 
 package io.flutter.plugin.text;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -11,6 +12,7 @@ import android.content.pm.ResolveInfo;
 import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
@@ -21,7 +23,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ProcessTextPlugin implements FlutterPlugin, ActivityAware, ActivityResultListener {
+public class ProcessTextPlugin
+    implements FlutterPlugin,
+        ActivityAware,
+        ActivityResultListener,
+        ProcessTextChannel.ProcessTextMethodHandler {
   private static final String TAG = "ProcessTextPlugin";
 
   @NonNull private final ProcessTextChannel processTextChannel;
@@ -37,65 +43,63 @@ public class ProcessTextPlugin implements FlutterPlugin, ActivityAware, Activity
     this.processTextChannel = processTextChannel;
     this.packageManager = processTextChannel.packageManager;
 
-    processTextChannel.setMethodHandler(
-        new ProcessTextChannel.ProcessTextMethodHandler() {
-          @Override
-          public Map<Integer, String> queryTextActions() {
-            if (resolveInfosById == null) {
-              resolveInfosById = new HashMap<Integer, ResolveInfo>();
-              cacheResolveInfos();
-            }
-            Map<Integer, String> result = new HashMap<Integer, String>();
-            for (Integer id : resolveInfosById.keySet()) {
-              final ResolveInfo info = resolveInfosById.get(id);
-              result.put(id, info.loadLabel(packageManager).toString());
-            }
-            return result;
-          }
+    processTextChannel.setMethodHandler(this);
+  }
 
-          @Override
-          public void processTextAction(
-              @NonNull int id,
-              @NonNull String text,
-              @NonNull boolean readOnly,
-              @NonNull MethodChannel.Result result) {
-            if (activityBinding == null) {
-              result.error("error", "Plugin not bound to an Activity", null);
-              return;
-            }
+  @Override
+  public Map<Integer, String> queryTextActions() {
+    if (resolveInfosById == null) {
+      resolveInfosById = new HashMap<Integer, ResolveInfo>();
+      cacheResolveInfos();
+    }
+    Map<Integer, String> result = new HashMap<Integer, String>();
+    for (Integer id : resolveInfosById.keySet()) {
+      final ResolveInfo info = resolveInfosById.get(id);
+      result.put(id, info.loadLabel(packageManager).toString());
+    }
+    return result;
+  }
 
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-              result.error("error", "Android version not supported", null);
-              return;
-            }
+  @Override
+  public void processTextAction(
+      @NonNull int id,
+      @NonNull String text,
+      @NonNull boolean readOnly,
+      @NonNull MethodChannel.Result result) {
+    if (activityBinding == null) {
+      result.error("error", "Plugin not bound to an Activity", null);
+      return;
+    }
 
-            if (resolveInfosById == null) {
-              result.error("error", "Can not process text actions before calling queryTextActions", null);
-              return;
-            }
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+      result.error("error", "Android version not supported", null);
+      return;
+    }
 
-            final ResolveInfo info = resolveInfosById.get(id);
-            if (info == null) {
-              result.error("error", "Text processing activity not found", null);
-              return;
-            }
+    if (resolveInfosById == null) {
+      result.error("error", "Can not process text actions before calling queryTextActions", null);
+      return;
+    }
 
-            Integer requestCode = result.hashCode();
-            requestsByCode.put(requestCode, result);
+    final ResolveInfo info = resolveInfosById.get(id);
+    if (info == null) {
+      result.error("error", "Text processing activity not found", null);
+      return;
+    }
 
-            Intent intent =
-                new Intent()
-                    .setClassName(info.activityInfo.packageName, info.activityInfo.name)
-                    .setAction(Intent.ACTION_PROCESS_TEXT)
-                    .setType("text/plain")
-                    .putExtra(Intent.EXTRA_PROCESS_TEXT, text)
-                    .putExtra(Intent.EXTRA_PROCESS_TEXT_READONLY, readOnly);
+    Integer requestCode = result.hashCode();
+    requestsByCode.put(requestCode, result);
 
-            // Start the text processing activity. onActivityResult callback is called
-            // when the activity completes.
-            activityBinding.getActivity().startActivityForResult(intent, requestCode);
-          }
-        });
+    Intent intent = new Intent();
+    intent.setClassName(info.activityInfo.packageName, info.activityInfo.name);
+    intent.setAction(Intent.ACTION_PROCESS_TEXT);
+    intent.setType("text/plain");
+    intent.putExtra(Intent.EXTRA_PROCESS_TEXT, text);
+    intent.putExtra(Intent.EXTRA_PROCESS_TEXT_READONLY, readOnly);
+
+    // Start the text processing activity. onActivityResult callback is called
+    // when the activity completes.
+    activityBinding.getActivity().startActivityForResult(intent, requestCode);
   }
 
   private void cacheResolveInfos() {
@@ -126,6 +130,8 @@ public class ProcessTextPlugin implements FlutterPlugin, ActivityAware, Activity
    *
    * <p>The result is null when an activity does not return an updated text.
    */
+  @TargetApi(Build.VERSION_CODES.M)
+  @RequiresApi(Build.VERSION_CODES.M)
   public boolean onActivityResult(int requestCode, int resultCode, @Nullable Intent intent) {
     String result = null;
     if (resultCode == Activity.RESULT_OK) {

@@ -20,15 +20,15 @@ import java.util.Map;
  *
  * <p>When there is new a text context menu to display, the framework will send to the embedding the
  * message {@code ProcessText.queryTextActions}. In response, the {@link
- * io.flutter.plugin.text.ProcessTextPlugin} will return a map of all activities that can be performed
- * to process text. The map keys are generated IDs and the values are the activities labels.
- * On the first request, the {@link io.flutter.plugin.text.ProcessTextPlugin} will make a call to
- * Android's package manager to query all activities that can be performed for the
- * {@code Intent.ACTION_PROCESS_TEXT} intent.
+ * io.flutter.plugin.text.ProcessTextPlugin} will return a map of all activities that can be
+ * performed to process text. The map keys are generated IDs and the values are the activities
+ * labels. On the first request, the {@link io.flutter.plugin.text.ProcessTextPlugin} will make a
+ * call to Android's package manager to query all activities that can be performed for the {@code
+ * Intent.ACTION_PROCESS_TEXT} intent.
  *
- * <p>When an text processing action has to be executed, the framework will send to the embedding the
- * message {@code ProcessText.processTextAction} with the {@code int id} of the choosen text action and the
- * {@code String} of text to process as arguments. In response, the {@link
+ * <p>When an text processing action has to be executed, the framework will send to the embedding
+ * the message {@code ProcessText.processTextAction} with the {@code int id} of the choosen text
+ * action and the {@code String} of text to process as arguments. In response, the {@link
  * io.flutter.plugin.text.ProcessTextPlugin} will make a call to the Android application activity to
  * start the activity exposing the text action and it will return the processed text, or null if the
  * activity did not return a value.
@@ -107,7 +107,12 @@ public class ProcessTextChannel {
     /**
      * Requests to run a text action on a given input text.
      *
-     * <p>TODO(bleroux): add documentation for parameters.
+     * @param id The ID of the text action returned by queryTextActions.
+     * @param input The text to be processed.
+     * @param readOnly Indicates to the activity if the processed text will be used as read-only.
+     *     see
+     *     https://developer.android.com/reference/android/content/Intent#EXTRA_PROCESS_TEXT_READONLY
+     * @param result The method channel result instance used to reply.
      */
     void processTextAction(
         @NonNull int id,
