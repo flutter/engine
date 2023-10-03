@@ -18,6 +18,7 @@
 namespace impeller {
 
 const char* GLErrorToString(GLenum value);
+bool GLErrorIsFatal(GLenum value);
 
 struct AutoErrorCheck {
   const PFNGLGETERRORPROC error_fn;
@@ -29,9 +30,18 @@ struct AutoErrorCheck {
   ~AutoErrorCheck() {
     if (error_fn) {
       auto error = error_fn();
-      FML_CHECK(error == GL_NO_ERROR)
-          << "GL Error " << GLErrorToString(error) << "(" << error << ")"
-          << " encountered on call to " << name;
+      if (error == GL_NO_ERROR) {
+        return;
+      }
+      if (GLErrorIsFatal(error)) {
+        FML_LOG(FATAL) << "Fatal GL Error " << GLErrorToString(error) << "("
+                       << error << ")"
+                       << " encountered on call to " << name;
+      } else {
+        FML_LOG(ERROR) << "GL Error " << GLErrorToString(error) << "(" << error
+                       << ")"
+                       << " encountered on call to " << name;
+      }
     }
   }
 };
@@ -64,7 +74,7 @@ struct GLProc {
   ///
   template <class... Args>
   auto operator()(Args&&... args) const {
-#ifdef IMPELLER_ERROR_CHECK_ALL_GL_CALLS
+#ifdef IMPELLER_DEBUG
     AutoErrorCheck error(error_fn, name);
     // We check for the existence of extensions, and reset the function pointer
     // but it's still called unconditionally below, and will segfault. This
@@ -72,7 +82,7 @@ struct GLProc {
     if (!IsAvailable()) {
       VALIDATION_LOG << "Unavailable GL function called: " << name << ".";
     }
-#endif  // IMPELLER_ERROR_CHECK_ALL_GL_CALLS
+#endif  // IMPELLER_DEBUG
 #ifdef IMPELLER_TRACE_ALL_GL_CALLS
     TRACE_EVENT0("impeller", name);
 #endif  // IMPELLER_TRACE_ALL_GL_CALLS
