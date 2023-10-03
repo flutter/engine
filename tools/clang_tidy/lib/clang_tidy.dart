@@ -59,7 +59,7 @@ class ClangTidy {
   ///   If omitted, checks will be determined by the `.clang-tidy` file in the
   ///   repo.
   ///
-  /// - [lintAll] when true indicates that all files should be linted.
+  /// - [lintTarget] is what files to lint.
   ///
   /// ## Optional (Test Overrides)
   ///
@@ -214,8 +214,9 @@ class ClangTidy {
     return computeResult + runResult > 0 ? 1 : 0;
   }
 
-  /// The files with local modifications or all the files if `lintAll` was
-  /// specified.
+  /// The files with local modifications or all/a subset of all files.
+  ///
+  /// See [LintTarget] for more information.
   @visibleForTesting
   Future<List<io.File>> computeFilesOfInterest() async {
     switch (options.lintTarget) {
