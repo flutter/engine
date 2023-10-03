@@ -238,10 +238,6 @@ bool ReactorGLES::FlushOps() {
 #ifdef IMPELLER_DEBUG
   // glDebugMessageControl sometimes must be called before glPushDebugGroup:
   // https://github.com/flutter/flutter/issues/135715#issuecomment-1740153506
-  //
-  // It's also not clear why it's necessary to call before each
-  // glPushDebugGroup call (one theory is separately for each EGL context),
-  // but it's necessary to get this to work on some modern Android devices.
   SetupDebugGroups();
 #endif
 
