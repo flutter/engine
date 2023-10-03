@@ -41,7 +41,7 @@ class MockGLES final {
   ~MockGLES();
 
  private:
-  friend void recordCall(const char* name);
+  friend void RecordGLCall(const char* name);
 
   MockGLES();
 

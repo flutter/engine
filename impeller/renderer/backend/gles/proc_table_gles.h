@@ -10,7 +10,6 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
-#include "impeller/base/validation.h"
 #include "impeller/renderer/backend/gles/capabilities_gles.h"
 #include "impeller/renderer/backend/gles/description_gles.h"
 #include "impeller/renderer/backend/gles/gles.h"
@@ -79,9 +78,8 @@ struct GLProc {
     // We check for the existence of extensions, and reset the function pointer
     // but it's still called unconditionally below, and will segfault. This
     // validation log will at least give us a hint as to what's going on.
-    if (!IsAvailable()) {
-      VALIDATION_LOG << "Unavailable GL function called: " << name << ".";
-    }
+    FML_CHECK(IsAvailable()) << "GL function " << name << " is not available. "
+                             << "This is likely due to a missing extension.";
 #endif  // IMPELLER_DEBUG
 #ifdef IMPELLER_TRACE_ALL_GL_CALLS
     TRACE_EVENT0("impeller", name);
