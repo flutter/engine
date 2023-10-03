@@ -140,7 +140,11 @@ class TesterPlatformView : public PlatformView,
 
   // |PlatformView|
   std::shared_ptr<impeller::Context> GetImpellerContext() const override {
+#if IMPELLER_SUPPORTS_RENDERING
     return std::static_pointer_cast<impeller::Context>(impeller_context_);
+#else
+    return nullptr;
+#endif  // IMPELLER_SUPPORTS_RENDERING
   }
 
   // |PlatformView|
