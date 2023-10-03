@@ -323,21 +323,6 @@ void ProcTableGLES::PushDebugGroup(const std::string& label) const {
     return;
   }
 
-  // glDebugMessageControl sometimes must be called before glPushDebugGroup:
-  // https://github.com/flutter/flutter/issues/135715#issuecomment-1740153506
-  //
-  // It's also not clear why it's necessary to call before each
-  // glPushDebugGroup call (one theory is separately for each EGL context),
-  // but it's necessary to get this to work on some modern Android devices.
-
-  // Setup of a default active debug group: Filter everything in.
-  DebugMessageControlKHR(GL_DONT_CARE,  // source
-                         GL_DONT_CARE,  // type
-                         GL_DONT_CARE,  // severity
-                         0,             // count
-                         nullptr,       // ids
-                         GL_TRUE);      // enabled
-
   UniqueID id;
   const auto label_length =
       std::min<GLsizei>(debug_label_max_length_ - 1, label.size());
