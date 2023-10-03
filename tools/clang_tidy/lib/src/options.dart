@@ -8,6 +8,8 @@ import 'package:args/args.dart';
 import 'package:engine_repo_tools/engine_repo_tools.dart';
 import 'package:path/path.dart' as path;
 
+import 'lint_target.dart';
+
 final Engine _engineRoot = Engine.findWithin(path.dirname(path.fromUri(io.Platform.script)));
 
 /// Adds warnings as errors for only specific runs.  This is helpful if migrating one platform at a time.
@@ -28,8 +30,7 @@ class Options {
     this.help = false,
     this.verbose = false,
     this.checksArg = '',
-    this.lintAll = false,
-    this.lintHead = false,
+    this.lintTarget = const LintChanged(),
     this.fix = false,
     this.errorMessage,
     this.warningsAsErrors,
@@ -69,14 +70,25 @@ class Options {
     required List<io.File> shardCommandsPaths,
     int? shardId,
   }) {
+    final LintTarget lintTarget;
+    if (options.wasParsed('lint-all') || io.Platform.environment['FLUTTER_LINT_ALL'] != null) {
+      final String? pattern = options['lint-all'] as String?;
+      if (pattern == null || pattern.trim().isEmpty) {
+        lintTarget = const LintAll();
+      } else {
+        lintTarget = LintRegex(RegExp(pattern));
+      }
+    } else if (options.wasParsed('lint-head')) {
+      lintTarget = const LintHead();
+    } else {
+      lintTarget = const LintChanged();
+    }
     return Options(
       help: options['help'] as bool,
       verbose: options['verbose'] as bool,
       buildCommandsPath: buildCommandsPath,
       checksArg: options.wasParsed('checks') ? options['checks'] as String : '',
-      lintAll: io.Platform.environment['FLUTTER_LINT_ALL'] != null ||
-               options['lint-all'] as bool,
-      lintHead: options['lint-head'] as bool,
+      lintTarget: lintTarget,
       fix: options['fix'] as bool,
       errSink: errSink,
       warningsAsErrors: _platformSpecificWarningsAsErrors(options),
@@ -148,9 +160,12 @@ class Options {
         help: 'Print help.',
         negatable: false,
       )
-      ..addFlag(
+      ..addOption(
         'lint-all',
         help: 'Lint all of the sources, regardless of FLUTTER_NOLINT.',
+        valueHelp: 'May provide a regex to filter files, otherwise all files are linted. '
+                   'For example, `--lint-all .*impeller.*` will lint all files '
+                   'within a path that contains "impeller".',
       )
       ..addFlag(
         'lint-head',
@@ -245,11 +260,8 @@ class Options {
   /// Check argument to be supplied to the clang-tidy subprocess.
   final String? checks;
 
-  /// Whether all files should be linted.
-  final bool lintAll;
-
-  /// Whether to lint only files changed in the tip-of-tree commit.
-  final bool lintHead;
+  /// What files to lint.
+  final LintTarget lintTarget;
 
   /// Whether checks should apply available fix-ups to the working copy.
   final bool fix;
