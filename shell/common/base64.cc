@@ -27,7 +27,7 @@ static const signed char decodeData[] = {
 
 namespace flutter {
 
-Base64::Error Base64::Decode(const void* srcv, size_t srcLength, void* dstv, size_t* dstLength){
+Base64::Error Base64::Decode(const void* srcv, size_t srcLength, void* dstv, size_t* dstLength) {
     const unsigned char* src = static_cast<const unsigned char*>(srcv);
     unsigned char* dst = static_cast<unsigned char*>(dstv);
 
@@ -68,7 +68,9 @@ Base64::Error Base64::Decode(const void* srcv, size_t srcLength, void* dstv, siz
                     break;
                 }
             }
-            // Handle padding
+            // As an optimization, if we find an equals sign
+            // we assume all future bytes to read are the
+            // appropriate number of padding equals signs.
             if (byte < 2) {
                 return Error::kBadPadding;
             }
