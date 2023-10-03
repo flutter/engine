@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "GLES3/gl3.h"
+#include "fml/logging.h"
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
 #include "impeller/renderer/backend/gles/test/mock_gles.h"
 
@@ -110,6 +111,9 @@ static_assert(CheckSameSignature<decltype(mockPushDebugGroupKHR),  //
                                  decltype(glPushDebugGroupKHR)>::value);
 
 std::shared_ptr<MockGLES> MockGLES::Init() {
+  // If we cannot obtain a lock, MockGLES is already being used elsewhere.
+  FML_CHECK(g_test_lock.try_lock())
+      << "MockGLES is already being used by another test.";
   auto mock_gles = std::shared_ptr<MockGLES>(new MockGLES());
   g_mock_gles = mock_gles;
   return mock_gles;
@@ -133,9 +137,7 @@ const ProcTableGLES::Resolver kMockResolver = [](const char* name) {
   }
 };
 
-MockGLES::MockGLES() : proc_table_(kMockResolver) {
-  g_test_lock.lock();
-}
+MockGLES::MockGLES() : proc_table_(kMockResolver) {}
 
 MockGLES::~MockGLES() {
   g_test_lock.unlock();
