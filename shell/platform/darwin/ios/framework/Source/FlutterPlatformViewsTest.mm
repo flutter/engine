@@ -11,6 +11,7 @@
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTouchInterceptingView_Test.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
@@ -18,10 +19,6 @@ FLUTTER_ASSERT_NOT_ARC
 @class FlutterPlatformViewsTestMockPlatformView;
 static FlutterPlatformViewsTestMockPlatformView* gMockPlatformView = nil;
 const float kFloatCompareEpsilon = 0.001;
-
-@interface FlutterTouchInterceptingView (Test)
-- (id)accessibilityContainer;
-@end
 
 @interface FlutterPlatformViewsTestMockPlatformView : UIView
 @end

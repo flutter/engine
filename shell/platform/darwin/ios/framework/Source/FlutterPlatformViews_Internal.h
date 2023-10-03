@@ -433,8 +433,7 @@ class FlutterPlatformViewsController {
 // Get embedded view
 - (UIView*)embeddedView;
 
-// The FlutterTouchInterceptingView assigns `flutterAccessibilityContainer` as its
-// accessibilityContainer.
+// Sets flutterAccessibilityContainer as this view's accessibilityContainer.
 - (void)setFlutterAccessibilityContainer:(NSObject*)flutterAccessibilityContainer;
 @end
 

@@ -7,7 +7,7 @@
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTouchInterceptingView+Tests.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTouchInterceptingView_Test.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/SemanticsObjectTestMocks.h"
 
@@ -73,16 +73,16 @@ FLUTTER_ASSERT_NOT_ARC
   fml::WeakPtr<flutter::MockAccessibilityBridge> bridge = factory.GetWeakPtr();
   FlutterTouchInterceptingView* platformView =
       [[[FlutterTouchInterceptingView alloc] init] autorelease];
-
-  FlutterPlatformViewSemanticsContainer* container =
-      [[FlutterPlatformViewSemanticsContainer alloc] initWithBridge:bridge
-                                                                uid:1
-                                                       platformView:platformView];
-  XCTAssertEqualObjects(platformView.accessibilityContainer, container);
-  XCTAssertEqual(platformView.retainCount, 2u);
+  @autoreleasepool {
+    FlutterPlatformViewSemanticsContainer* container =
+        [[[FlutterPlatformViewSemanticsContainer alloc] initWithBridge:bridge
+                                                                   uid:1
+                                                          platformView:platformView] autorelease];
+    XCTAssertEqualObjects(platformView.accessibilityContainer, container);
+    XCTAssertEqual(platformView.retainCount, 2u);
+  }
   // Check if there's no more strong references to `platformView` after container and platformView
   // are released.
-  [container release];
   XCTAssertEqual(platformView.retainCount, 1u);
 }
 
