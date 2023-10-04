@@ -165,6 +165,7 @@ source_set("base64") {
       "base64.cc",
       "base64.h",
     ]
+    deps = ["//flutter/fml"]
 }
 
 template("shell_host_executable") {
