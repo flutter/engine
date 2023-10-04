@@ -143,8 +143,8 @@ source_set("common") {
     "//flutter/fml",
     "//flutter/lib/ui",
     "//flutter/runtime",
-    "//flutter/shell/profiling",
     "//flutter/shell/common:base64",
+    "//flutter/shell/profiling",
     "//third_party/dart/runtime:dart_api",
     "//third_party/skia",
   ]
@@ -161,11 +161,11 @@ source_set("common") {
 
 # These are in their own source_set to avoid a dependency cycle with //common/graphics
 source_set("base64") {
-    sources = [
-      "base64.cc",
-      "base64.h",
-    ]
-    deps = ["//flutter/fml"]
+  sources = [
+    "base64.cc",
+    "base64.h",
+  ]
+  deps = [ "//flutter/fml" ]
 }
 
 template("shell_host_executable") {

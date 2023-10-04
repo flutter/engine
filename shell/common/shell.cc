@@ -23,8 +23,8 @@
 #include "flutter/fml/paths.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/runtime/dart_vm.h"
-#include "flutter/shell/common/engine.h"
 #include "flutter/shell/common/base64.h"
+#include "flutter/shell/common/engine.h"
 #include "flutter/shell/common/skia_event_tracer_impl.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/vsync_waiter.h"
@@ -1842,7 +1842,8 @@ bool Shell::OnServiceProtocolGetSkSLs(
   for (const auto& sksl : sksls) {
     // TODO(kjlubick) We shouldn't need to call Encode once to pre-flight the
     // encode length. It should be ceil(4/3 * sksl.value->size()).
-    size_t b64_size = Base64::Encode(sksl.value->data(), sksl.value->size(), nullptr);
+    size_t b64_size =
+        Base64::Encode(sksl.value->data(), sksl.value->size(), nullptr);
     sk_sp<SkData> b64_data = SkData::MakeUninitialized(b64_size + 1);
     char* b64_char = static_cast<char*>(b64_data->writable_data());
     Base64::Encode(sksl.value->data(), sksl.value->size(), b64_char);
