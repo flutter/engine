@@ -240,7 +240,7 @@ class FlutterPlatformViewsController {
   // If the `FlutterPlatformViewsController` does not contain any `FlutterPlatformView` object or
   // a `FlutterPlatformView` object associated with the view_id cannot be found, the method
   // returns nil.
-  FlutterTouchInterceptingView* GetFlutterTouchInterceptingViewByID(int64_t);
+  FlutterTouchInterceptingView* GetFlutterTouchInterceptingViewByID(int64_t view_id);
 
   PostPrerollResult PostPrerollAction(
       const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger);
