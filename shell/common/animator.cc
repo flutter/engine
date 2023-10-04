@@ -161,14 +161,7 @@ void Animator::Render(int64_t view_id,
                       float device_pixel_ratio) {
   has_rendered_ = true;
 
-  if (!frame_timings_recorder_) {
-    // Framework can directly call render with a built scene.
-    frame_timings_recorder_ = std::make_unique<FrameTimingsRecorder>();
-    const fml::TimePoint placeholder_time = fml::TimePoint::Now();
-    frame_timings_recorder_->RecordVsync(placeholder_time, placeholder_time);
-    frame_timings_recorder_->RecordBuildStart(placeholder_time);
-  }
-
+  FML_CHECK(frame_timings_recorder_ != nullptr);
   TRACE_EVENT_WITH_FRAME_NUMBER(frame_timings_recorder_, "flutter",
                                 "Animator::Render", /*flow_id_count=*/0,
                                 /*flow_ids=*/nullptr);
