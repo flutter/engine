@@ -1243,7 +1243,7 @@ void Shell::OnAnimatorDraw(std::shared_ptr<FramePipeline> pipeline) {
 }
 
 // |Animator::Delegate|
-void Shell::OnAnimatorDrawLastLayerTree(
+void Shell::OnAnimatorDrawLastLayerTrees(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
   FML_DCHECK(is_set_up_);
 
@@ -1251,7 +1251,7 @@ void Shell::OnAnimatorDrawLastLayerTree(
       [rasterizer = rasterizer_->GetWeakPtr(),
        frame_timings_recorder = std::move(frame_timings_recorder)]() mutable {
         if (rasterizer) {
-          rasterizer->DrawLastLayerTree(std::move(frame_timings_recorder));
+          rasterizer->DrawLastLayerTrees(std::move(frame_timings_recorder));
         }
       });
 
@@ -1971,7 +1971,8 @@ bool Shell::OnServiceProtocolRenderFrameWithRasterStats(
   // TODO(dkwingsmt): This method only handles view #0, including the snapshot
   // and the frame size. We need to adapt this method to multi-view.
   // https://github.com/flutter/flutter/issues/131892
-  if (auto last_layer_tree = rasterizer_->GetLastLayerTree()) {
+  int64_t view_id = kFlutterImplicitViewId;
+  if (auto last_layer_tree = rasterizer_->GetLastLayerTree(view_id)) {
     auto& allocator = response->GetAllocator();
     response->SetObject();
     response->AddMember("type", "RenderFrameWithRasterStats", allocator);
@@ -1986,7 +1987,7 @@ bool Shell::OnServiceProtocolRenderFrameWithRasterStats(
     frame_timings_recorder->RecordBuildEnd(now);
 
     last_layer_tree->enable_leaf_layer_tracing(true);
-    rasterizer_->DrawLastLayerTree(std::move(frame_timings_recorder));
+    rasterizer_->DrawLastLayerTrees(std::move(frame_timings_recorder));
     last_layer_tree->enable_leaf_layer_tracing(false);
 
     rapidjson::Value snapshots;
@@ -2002,7 +2003,7 @@ bool Shell::OnServiceProtocolRenderFrameWithRasterStats(
 
     response->AddMember("snapshots", snapshots, allocator);
 
-    const auto& frame_size = ExpectedFrameSize(kFlutterImplicitViewId);
+    const auto& frame_size = ExpectedFrameSize(view_id);
     response->AddMember("frame_width", frame_size.width(), allocator);
     response->AddMember("frame_height", frame_size.height(), allocator);
 

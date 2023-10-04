@@ -46,7 +46,7 @@ class FakeAnimatorDelegate : public Animator::Delegate {
               (std::shared_ptr<FramePipeline> pipeline),
               (override));
 
-  void OnAnimatorDrawLastLayerTree(
+  void OnAnimatorDrawLastLayerTrees(
       std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) override {}
 
   bool notify_idle_called_ = false;

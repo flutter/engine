@@ -34,12 +34,13 @@ namespace {
 constexpr float kDevicePixelRatio = 2.0f;
 constexpr int64_t kImplicitViewId = 0;
 
-std::list<LayerTreeTask> SingleLayerTreeList(
+std::vector<std::unique_ptr<LayerTreeTask>> SingleLayerTreeList(
     int64_t view_id,
     std::unique_ptr<LayerTree> layer_tree,
     float pixel_ratio) {
-  std::list<LayerTreeTask> tasks;
-  tasks.emplace_back(view_id, std::move(layer_tree), pixel_ratio);
+  std::vector<std::unique_ptr<LayerTreeTask>> tasks;
+  tasks.push_back(std::make_unique<LayerTreeTask>(
+      view_id, std::move(layer_tree), pixel_ratio));
   return tasks;
 }
 
@@ -420,7 +421,7 @@ TEST(RasterizerTest,
       /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled())
       .WillRepeatedly(Return(true));
-  // Prepare two frames for Draw() and DrawLastLayerTree().
+  // Prepare two frames for Draw() and DrawLastLayerTrees().
   EXPECT_CALL(*surface, AcquireFrame(SkISize()))
       .WillOnce(Return(ByMove(std::move(surface_frame1))))
       .WillOnce(Return(ByMove(std::move(surface_frame2))));
@@ -457,9 +458,9 @@ TEST(RasterizerTest,
   ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
   rasterizer->Draw(pipeline);
 
-  // The DrawLastLayerTree() will respectively call BeginFrame(), SubmitFrame()
+  // The DrawLastLayerTrees() will respectively call BeginFrame(), SubmitFrame()
   // and EndFrame() one more time, totally 2 times.
-  rasterizer->DrawLastLayerTree(CreateFinishedBuildRecorder());
+  rasterizer->DrawLastLayerTrees(CreateFinishedBuildRecorder());
 }
 
 TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNoSurfaceIsSet) {
@@ -524,6 +525,10 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNotUsedThisFrame) {
   ON_CALL(delegate, GetSettings()).WillByDefault(ReturnRef(settings));
   EXPECT_CALL(delegate, GetTaskRunners())
       .WillRepeatedly(ReturnRef(task_runners));
+  auto is_gpu_disabled_sync_switch =
+      std::make_shared<const fml::SyncSwitch>(false);
+  ON_CALL(delegate, GetIsGpuDisabledSyncSwitch())
+      .WillByDefault(Return(is_gpu_disabled_sync_switch));
 
   auto rasterizer = std::make_unique<Rasterizer>(delegate);
   auto surface = std::make_unique<NiceMock<MockSurface>>();
@@ -561,8 +566,10 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNotUsedThisFrame) {
     EXPECT_TRUE(result.success);
     // Always discard the layer tree.
     ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(true));
-    RasterStatus status = rasterizer->Draw(pipeline);
-    EXPECT_EQ(status, RasterStatus::kDiscarded);
+    DrawStatus status = rasterizer->Draw(pipeline);
+    EXPECT_EQ(status, DrawStatus::kDone);
+    EXPECT_EQ(rasterizer->GetLastDrawStatus(kImplicitViewId),
+              DrawSurfaceStatus::kDiscarded);
     latch.Signal();
   });
   latch.Wait();
@@ -605,8 +612,8 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenPipelineIsEmpty) {
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
     ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
-    RasterStatus status = rasterizer->Draw(pipeline);
-    EXPECT_EQ(status, RasterStatus::kFailed);
+    DrawStatus status = rasterizer->Draw(pipeline);
+    EXPECT_EQ(status, DrawStatus::kPipelineEmpty);
     latch.Signal();
   });
   latch.Wait();
@@ -723,8 +730,8 @@ TEST(
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
     ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
-    RasterStatus status = rasterizer->Draw(pipeline);
-    EXPECT_EQ(status, RasterStatus::kSuccess);
+    DrawStatus status = rasterizer->Draw(pipeline);
+    EXPECT_EQ(status, DrawStatus::kDone);
     latch.Signal();
   });
   latch.Wait();
@@ -782,8 +789,8 @@ TEST(
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
     ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
-    RasterStatus status = rasterizer->Draw(pipeline);
-    EXPECT_EQ(status, RasterStatus::kSuccess);
+    DrawStatus status = rasterizer->Draw(pipeline);
+    EXPECT_EQ(status, DrawStatus::kDone);
     latch.Signal();
   });
   latch.Wait();
@@ -840,8 +847,8 @@ TEST(
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
     ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
-    RasterStatus status = rasterizer->Draw(pipeline);
-    EXPECT_EQ(status, RasterStatus::kDiscarded);
+    DrawStatus status = rasterizer->Draw(pipeline);
+    EXPECT_EQ(status, DrawStatus::kGpuUnavailable);
     latch.Signal();
   });
   latch.Wait();
@@ -897,8 +904,10 @@ TEST(
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
     ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
-    RasterStatus status = rasterizer->Draw(pipeline);
-    EXPECT_EQ(status, RasterStatus::kFailed);
+    DrawStatus status = rasterizer->Draw(pipeline);
+    EXPECT_EQ(status, DrawStatus::kDone);
+    EXPECT_EQ(rasterizer->GetLastDrawStatus(kImplicitViewId),
+              DrawSurfaceStatus::kFailed);
     latch.Signal();
   });
   latch.Wait();
