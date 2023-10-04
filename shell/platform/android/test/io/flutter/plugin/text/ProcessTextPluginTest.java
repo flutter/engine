@@ -126,13 +126,13 @@ public class ProcessTextPluginTest {
     final int action2Id = 1;
     assertEquals(textActions, Map.of(action1Id, "Action1", action2Id, "Action2"));
 
-    // Set up activity binding.
+    // Set up the activity binding.
     ActivityPluginBinding mockActivityPluginBinding = mock(ActivityPluginBinding.class);
     Activity mockActivity = mock(Activity.class);
     when(mockActivityPluginBinding.getActivity()).thenReturn(mockActivity);
     processTextPlugin.onAttachedToActivity(mockActivityPluginBinding);
 
-    // Execute first action.
+    // Execute th first action.
     String textToBeProcessed = "Flutter!";
     MethodChannel.Result result = mock(MethodChannel.Result.class);
     processTextPlugin.processTextAction(action1Id, textToBeProcessed, false, result);
@@ -143,7 +143,7 @@ public class ProcessTextPluginTest {
     Intent intent = intentCaptor.getValue();
     assertEquals(intent.getStringExtra(Intent.EXTRA_PROCESS_TEXT), textToBeProcessed);
 
-    // Simulate an Android activity answer which does not return any value.
+    // Simulate an Android activity answer which does not return a value.
     Intent resultIntent = new Intent();
     processTextPlugin.onActivityResult(result.hashCode(), Activity.RESULT_OK, resultIntent);
 
@@ -175,13 +175,13 @@ public class ProcessTextPluginTest {
     final int action2Id = 1;
     assertEquals(textActions, Map.of(action1Id, "Action1", action2Id, "Action2"));
 
-    // Set up activity binding.
+    // Set up the activity binding.
     ActivityPluginBinding mockActivityPluginBinding = mock(ActivityPluginBinding.class);
     Activity mockActivity = mock(Activity.class);
     when(mockActivityPluginBinding.getActivity()).thenReturn(mockActivity);
     processTextPlugin.onAttachedToActivity(mockActivityPluginBinding);
 
-    // Execute first action.
+    // Execute the first action.
     String textToBeProcessed = "Flutter!";
     MethodChannel.Result result = mock(MethodChannel.Result.class);
     processTextPlugin.processTextAction(action1Id, textToBeProcessed, false, result);

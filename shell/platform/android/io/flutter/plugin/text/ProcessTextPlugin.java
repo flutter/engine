@@ -97,8 +97,8 @@ public class ProcessTextPlugin
     intent.putExtra(Intent.EXTRA_PROCESS_TEXT, text);
     intent.putExtra(Intent.EXTRA_PROCESS_TEXT_READONLY, readOnly);
 
-    // Start the text processing activity. onActivityResult callback is called
-    // when the activity completes.
+    // Start the text processing activity. When the activity complets, the onActivityResult callback
+    // is called.
     activityBinding.getActivity().startActivityForResult(intent, requestCode);
   }
 
@@ -128,7 +128,11 @@ public class ProcessTextPlugin
   /**
    * Executed when a text processing activity terminates.
    *
-   * <p>The result is null when an activity does not return an updated text.
+   * <p>When an activity returns a value, the request is completed successfully and returns the
+   * processed text.
+   *
+   * <p>When an activity does not return a valuen. the request is completed successfully and returns
+   * null.
    */
   @TargetApi(Build.VERSION_CODES.M)
   @RequiresApi(Build.VERSION_CODES.M)
