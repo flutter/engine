@@ -13,7 +13,7 @@ namespace flutter {
 namespace testing {
 
 TEST(Base64, EncodeStrings) {
-  auto test = [](std::string input, std::string output) {
+  auto test = [](const std::string& input, const std::string& output) {
     char buffer[256];
     size_t len = Base64::Encode(input.c_str(), input.length(), &buffer);
     FML_CHECK(len <= 256);
@@ -30,7 +30,7 @@ TEST(Base64, EncodeStrings) {
 }
 
 TEST(Base64, EncodeBytes) {
-  auto test = [](const uint8_t input[], size_t num, std::string output) {
+  auto test = [](const uint8_t input[], size_t num, const std::string& output) {
     char buffer[512];
     size_t len = Base64::Encode(input, num, &buffer);
     FML_CHECK(len <= 512);
@@ -58,7 +58,7 @@ TEST(Base64, EncodeBytes) {
 }
 
 TEST(Base64, DecodeStrings_Success) {
-  auto test = [](std::string input, std::string output) {
+  auto test = [](const std::string& input, const std::string& output) {
     char buffer[256];
     size_t len = 0;
     auto err = Base64::Decode(input.c_str(), input.length(), &buffer, &len);
@@ -79,7 +79,7 @@ TEST(Base64, DecodeStrings_Success) {
 }
 
 TEST(Base64, DecodeStrings_Errors) {
-  auto test = [](std::string input, Base64::Error expectedError) {
+  auto test = [](const std::string& input, Base64::Error expectedError) {
     char buffer[256];
     size_t len = 0;
     auto err = Base64::Decode(input.c_str(), input.length(), &buffer, &len);
@@ -97,7 +97,7 @@ TEST(Base64, DecodeStrings_Errors) {
 }
 
 TEST(Base64, DecodeBytes) {
-  auto test = [](std::string input, const uint8_t output[], size_t num) {
+  auto test = [](const std::string& input, const uint8_t output[], size_t num) {
     char buffer[256];
     size_t len = 0;
     auto err = Base64::Decode(input.c_str(), input.length(), &buffer, &len);

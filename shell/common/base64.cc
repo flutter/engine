@@ -11,12 +11,12 @@
 #define DecodePad -2
 #define EncodePad 64
 
-static const char default_encode[] =
+static const char kDefaultEncode[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "abcdefghijklmnopqrstuvwxyz"
     "0123456789+/=";
 
-static const signed char decodeData[] = {
+static const signed char kDecodeData[] = {
     62, -1, -1,        -1, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1,
     -1, -1, DecodePad, -1, -1, -1, 0,  1,  2,  3,  4,  5,  6,  7,  8,  9,
     10, 11, 12,        13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
@@ -37,7 +37,7 @@ Base64::Error Base64::Decode(const void* srcv,
   bool padThree = false;
   char unsigned const* const end = src + srcLength;
   while (src < end) {
-    unsigned char bytes[4];
+    unsigned char bytes[4] = {0, 0, 0, 0};
     int byte = 0;
     do {
       unsigned char srcByte = *src++;
@@ -51,7 +51,7 @@ Base64::Error Base64::Decode(const void* srcv,
       if (srcByte < '+' || srcByte > 'z') {
         return Error::kBadChar;
       }
-      signed char decoded = decodeData[srcByte - '+'];
+      signed char decoded = kDecodeData[srcByte - '+'];
       bytes[byte] = decoded;
       if (decoded != DecodePad) {
         if (decoded < 0) {
@@ -119,7 +119,7 @@ size_t Base64::Encode(const void* srcv, size_t length, void* dstv) {
   const unsigned char* src = static_cast<const unsigned char*>(srcv);
   unsigned char* dst = static_cast<unsigned char*>(dstv);
 
-  const char* encode = default_encode;
+  const char* encode = kDefaultEncode;
   if (dst) {
     size_t remainder = length % 3;
     char unsigned const* const end = &src[length - remainder];
