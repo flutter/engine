@@ -641,9 +641,9 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
 
     // Start non-collapsed subpasses with a fresh clip coverage stack limited by
     // the subpass coverage. This is important because image filters applied to
-    // save layers may transform the subpass texture after its rendered, causing
-    // parent clip coverage to get misaligned with the actual area that the
-    // subpass will affect in the parent pass.
+    // save layers may transform the subpass texture after it's rendered,
+    // causing parent clip coverage to get misaligned with the actual area that
+    // the subpass will affect in the parent pass.
     ClipCoverageStack subpass_clip_coverage_stack = {ClipCoverageLayer{
         .coverage = subpass_coverage, .clip_depth = subpass->clip_depth_}};
 

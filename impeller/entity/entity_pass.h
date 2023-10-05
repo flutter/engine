@@ -142,7 +142,16 @@ class EntityPass {
   void SetEnableOffscreenCheckerboard(bool enabled);
 
   //----------------------------------------------------------------------------
-  /// @brief  Get the coverage of an unfiltered subpass.
+  /// @brief  Computes the coverage of a given subpass. This is used to
+  ///         determine the texture size of a given subpass before it's rendered
+  ///         to and passed through the subpass ImageFilter, if any.
+  ///
+  /// @param[in]  subpass         The EntityPass for which to compute
+  ///                             pre-filteredcoverage.
+  /// @param[in]  coverage_limit  Confines coverage to a specified area. This
+  ///                             hint is used to trim coverage to the root
+  ///                             framebuffer area. `std::nullopt` means no
+  ///                             coverage.
   ///
   std::optional<Rect> GetSubpassCoverage(
       const EntityPass& subpass,

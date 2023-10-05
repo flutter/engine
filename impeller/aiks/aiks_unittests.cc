@@ -3639,7 +3639,26 @@ TEST_P(AiksTest, MatrixImageFilterDoesntCullWhenTranslatedFromOffscreen) {
       .image_filter = std::make_shared<MatrixImageFilter>(
           Matrix::MakeTranslation({300, 0}), SamplerDescriptor{}),
   });
-  canvas.DrawCircle({-300, 0}, 100, {.color = Color::White()});
+  canvas.DrawCircle({-300, 0}, 100, {.color = Color::Green()});
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+// Render a white circle at the top left corner of the screen.
+TEST_P(AiksTest,
+       MatrixImageFilterDoesntCullWhenScaledAndTranslatedFromOffscreen) {
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  canvas.Translate({100, 100});
+  // Draw a circle in a SaveLayer at -300, but move it back on-screen with a
+  // +300 translation applied by a SaveLayer image filter.
+  canvas.SaveLayer({
+      .image_filter = std::make_shared<MatrixImageFilter>(
+          Matrix::MakeTranslation({300, 0}) * Matrix::MakeScale({2, 2, 2}),
+          SamplerDescriptor{}),
+  });
+  canvas.DrawCircle({-150, 0}, 50, {.color = Color::Green()});
   canvas.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
