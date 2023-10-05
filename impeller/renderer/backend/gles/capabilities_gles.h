@@ -15,7 +15,7 @@ namespace impeller {
 class ProcTableGLES;
 
 struct CapabilitiesGLES {
-  CapabilitiesGLES(const ProcTableGLES& gl);
+  explicit CapabilitiesGLES(const ProcTableGLES& gl);
 
   // Must be at least 8.
   size_t max_combined_texture_image_units = 8;
@@ -55,6 +55,8 @@ struct CapabilitiesGLES {
 
   // May be 0.
   size_t num_shader_binary_formats = 0;
+
+  bool supports_framebuffer_fetch = false;
 
   size_t GetMaxTextureUnits(ShaderStage stage) const;
 };

@@ -110,11 +110,6 @@ impeller_shaders("framebuffer_blend_entity_shaders") {
     metal_version = "2.3"
   }
 
-  # This version is to disable malioc checks.
-  if (impeller_enable_opengles) {
-    gles_language_version = 460
-  }
-
   if (impeller_enable_vulkan) {
     vulkan_language_version = 130
   }

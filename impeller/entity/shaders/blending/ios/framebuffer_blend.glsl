@@ -1,4 +1,4 @@
-#version 450
+#version 320 es
 
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
@@ -9,7 +9,6 @@
 #include <impeller/texture.glsl>
 #include <impeller/types.glsl>
 
-#ifdef IMPELLER_TARGET_METAL
 layout(set = 0,
        binding = 0,
        input_attachment_index = 0) uniform subpassInput uSub;
@@ -17,12 +16,6 @@ layout(set = 0,
 vec4 ReadDestination() {
   return subpassLoad(uSub);
 }
-#else
-
-vec4 ReadDestination() {
-  return vec4(0);
-}
-#endif
 
 uniform sampler2D texture_sampler_src;
 
