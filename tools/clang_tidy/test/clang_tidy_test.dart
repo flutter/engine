@@ -275,7 +275,24 @@ Future<int> main(List<String> args) async {
 
     expect(result, equals(1));
     expect(fixture.errBuffer.toString(), contains(
-      'ERROR: At most one of --lint-all and --lint-head can be passed.',
+      'ERROR: At most one of --lint-all, --lint-head, --lint-regex can be passed.',
+    ));
+  });
+
+  test('Error when --lint-all and --lint-regex are used together', () async {
+    final Fixture fixture = Fixture.fromCommandLine(
+      <String>[
+        '--compile-commands',
+        '/unused',
+        '--lint-all',
+        '--lint-regex=".*"',
+      ],
+    );
+    final int result = await fixture.tool.run();
+
+    expect(result, equals(1));
+    expect(fixture.errBuffer.toString(), contains(
+      'ERROR: At most one of --lint-all, --lint-head, --lint-regex can be passed.',
     ));
   });
 
@@ -316,7 +333,7 @@ Future<int> main(List<String> args) async {
     final Fixture fixture = Fixture.fromOptions(
       Options(
         buildCommandsPath: io.File(buildCommands),
-        lintTarget: LintRegex(RegExp(r'.*test.*\.cc$')),
+        lintTarget: const LintRegex(r'.*test.*\.cc$'),
       ),
       processManager: FakeProcessManager(
         onStart: (List<String> command) {

@@ -36,5 +36,5 @@ final class LintRegex extends LintTarget {
   const LintRegex(this.regex);
 
   /// The regular expression to match against file paths.
-  final RegExp regex;
+  final String regex;
 }

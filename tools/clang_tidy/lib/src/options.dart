@@ -72,12 +72,9 @@ class Options {
   }) {
     final LintTarget lintTarget;
     if (options.wasParsed('lint-all') || io.Platform.environment['FLUTTER_LINT_ALL'] != null) {
-      final String? pattern = options['lint-all'] as String?;
-      if (pattern == null || pattern.trim().isEmpty) {
-        lintTarget = const LintAll();
-      } else {
-        lintTarget = LintRegex(RegExp(pattern));
-      }
+      lintTarget = const LintAll();
+    } else if (options.wasParsed('lint-regex')) {
+      lintTarget = LintRegex(options['lint-regex'] as String? ?? '');
     } else if (options.wasParsed('lint-head')) {
       lintTarget = const LintHead();
     } else {
@@ -161,13 +158,15 @@ class Options {
         negatable: false,
       )
       ..addOption(
+        'lint-regex',
+        help: 'Lint all files, regardless of FLUTTER_NOLINT. Provide a regex '
+              'to filter files. For example, `--lint-regex=".*impeller.*"` will '
+              'lint all files within a path that contains "impeller".',
+        valueHelp: 'regex',
+      )
+      ..addFlag(
         'lint-all',
-        help: 'Lint all of the sources, regardless of FLUTTER_NOLINT. May '
-              'provide a regex to filter files, otherwise all files are '
-              'linted. For example, `--lint-all=".*impeller.*"` will lint all '
-              'files within a path that contains "impeller".',
-        valueHelp: 'regex or empty',
-        defaultsTo: '',
+        help: 'Lint all files, regardless of FLUTTER_NOLINT.',
       )
       ..addFlag(
         'lint-head',
@@ -304,8 +303,8 @@ class Options {
       return 'ERROR: --compile-commands option cannot be used with --src-dir.';
     }
 
-    if (argResults.wasParsed('lint-all') && argResults.wasParsed('lint-head')) {
-      return 'ERROR: At most one of --lint-all and --lint-head can be passed.';
+    if (const <String>['lint-all', 'lint-head', 'lint-regex'].where(argResults.wasParsed).length > 1) {
+      return 'ERROR: At most one of --lint-all, --lint-head, --lint-regex can be passed.';
     }
 
     if (!buildCommandsPath.existsSync()) {

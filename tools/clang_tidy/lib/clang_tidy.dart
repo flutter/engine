@@ -158,10 +158,9 @@ class ClangTidy {
             'Checking $changedFilesCount files that have changed compared to '
             'HEAD.',
           );
-        case LintRegex(:final RegExp regex):
+        case LintRegex(:final String regex):
           _outSink.writeln(
-            'Checking $changedFilesCount files that match the regex '
-            '${regex.pattern}.',
+            'Checking $changedFilesCount files that match the regex "$regex".',
           );
       }
     }
@@ -225,11 +224,12 @@ class ClangTidy {
           .listSync(recursive: true)
           .whereType<io.File>()
           .toList();
-      case LintRegex(:final RegExp regex):
+      case LintRegex(:final String regex):
+        final RegExp pattern = RegExp(regex);
         return options.repoPath
           .listSync(recursive: true)
           .whereType<io.File>()
-          .where((io.File file) => regex.hasMatch(file.path))
+          .where((io.File file) => pattern.hasMatch(file.path))
           .toList();
       case LintChanged():
         final GitRepo repo = GitRepo.fromRoot(
