@@ -91,7 +91,7 @@ dart ./tools/clang_tidy/bin/main.dart --lint-all
 Or, provide a regular expression to lint files that match:
 
 ```shell
-dart ./tools/clang_tidy/bin/main.dart --lint-all=".*test.*\.cc"
+dart ./tools/clang_tidy/bin/main.dart --lint-regex=".*test.*\.cc"
 ```
 
 > **⚠️ WARNING**: This may take a long time to run if a pattern is not provided
