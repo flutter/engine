@@ -57,7 +57,7 @@ TEST(Base64, EncodeBytes) {
        "Hy8/T19vf4+fr7/P3+/w==");
 }
 
-TEST(Base64, DecodeStrings_Success) {
+TEST(Base64, DecodeStringsSuccess) {
   auto test = [](const std::string& input, const std::string& output) {
     char buffer[256];
     size_t len = 0;
@@ -78,7 +78,7 @@ TEST(Base64, DecodeStrings_Success) {
   test("Y X Bwb GU=", "apple");
 }
 
-TEST(Base64, DecodeStrings_Errors) {
+TEST(Base64, DecodeStringsHasErrors) {
   auto test = [](const std::string& input, Base64::Error expectedError) {
     char buffer[256];
     size_t len = 0;
