@@ -1,4 +1,4 @@
-Signature: 5d0552eaa9233599d8efcccc097464f9
+Signature: a5564d09f645ecd5585b06d44af67877
 
 ====================================================================================================
 LIBRARY: fuchsia_sdk
@@ -3756,10 +3756,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: fuchsia_sdk
 ORIGIN: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/errors.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/syscalls/internal/cdecls.inc + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/syscalls/iob.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/arch/riscv64/sysroot/include/zircon/errors.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/arch/riscv64/sysroot/include/zircon/syscalls/internal/cdecls.inc + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/arch/riscv64/sysroot/include/zircon/syscalls/iob.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/errors.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/syscalls/internal/cdecls.inc + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/syscalls/iob.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/bind/fuchsia/fuchsia.bind + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/performance_publish.dart + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/trace_processing/metrics/power_metrics.dart + ../../../fuchsia/sdk/linux/LICENSE
@@ -4013,10 +4016,13 @@ ORIGIN: ../../../fuchsia/sdk/linux/pkg/vulkan/client.shard.cml + ../../../fuchsi
 TYPE: LicenseType.bsd
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/errors.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/syscalls/internal/cdecls.inc
+FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/syscalls/iob.h
 FILE: ../../../fuchsia/sdk/linux/arch/riscv64/sysroot/include/zircon/errors.h
 FILE: ../../../fuchsia/sdk/linux/arch/riscv64/sysroot/include/zircon/syscalls/internal/cdecls.inc
+FILE: ../../../fuchsia/sdk/linux/arch/riscv64/sysroot/include/zircon/syscalls/iob.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/errors.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/syscalls/internal/cdecls.inc
+FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/syscalls/iob.h
 FILE: ../../../fuchsia/sdk/linux/bind/fuchsia/fuchsia.bind
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/performance_publish.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/trace_processing/metrics/power_metrics.dart
@@ -4353,6 +4359,7 @@ ORIGIN: ../../../fuchsia/sdk/linux/pkg/driver_testing_cpp/driver_runtime.cc + ..
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/driver_testing_cpp/environment_variables.cc + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/driver_testing_cpp/test_environment.cc + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/driver_testing_cpp/test_node.cc + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/pkg/fidl_driver_natural/include/lib/fidl_driver/cpp/natural_ostream.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/heapdump_instrumentation/include/heapdump/bind.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/heapdump_instrumentation/include/heapdump/snapshot.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/heapdump_instrumentation/include/heapdump/stats.h + ../../../fuchsia/sdk/linux/LICENSE
@@ -4360,6 +4367,8 @@ ORIGIN: ../../../fuchsia/sdk/linux/pkg/inspect/offer.shard.cml + ../../../fuchsi
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/inspect/use.shard.cml + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/sync_cpp/include/lib/sync/cpp/mutex.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/sys_service_cpp/service_handler.cc + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/pkg/zx/include/lib/zx/iob.h + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/pkg/zx/iob.cc + ../../../fuchsia/sdk/linux/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/flatland_example.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/media_session.dart
@@ -4418,6 +4427,7 @@ FILE: ../../../fuchsia/sdk/linux/pkg/driver_testing_cpp/driver_runtime.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/driver_testing_cpp/environment_variables.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/driver_testing_cpp/test_environment.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/driver_testing_cpp/test_node.cc
+FILE: ../../../fuchsia/sdk/linux/pkg/fidl_driver_natural/include/lib/fidl_driver/cpp/natural_ostream.h
 FILE: ../../../fuchsia/sdk/linux/pkg/heapdump_instrumentation/include/heapdump/bind.h
 FILE: ../../../fuchsia/sdk/linux/pkg/heapdump_instrumentation/include/heapdump/snapshot.h
 FILE: ../../../fuchsia/sdk/linux/pkg/heapdump_instrumentation/include/heapdump/stats.h
@@ -4425,6 +4435,8 @@ FILE: ../../../fuchsia/sdk/linux/pkg/inspect/offer.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect/use.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/sync_cpp/include/lib/sync/cpp/mutex.h
 FILE: ../../../fuchsia/sdk/linux/pkg/sys_service_cpp/service_handler.cc
+FILE: ../../../fuchsia/sdk/linux/pkg/zx/include/lib/zx/iob.h
+FILE: ../../../fuchsia/sdk/linux/pkg/zx/iob.cc
 ----------------------------------------------------------------------------------------------------
 Copyright 2023 The Fuchsia Authors. All rights reserved.
 
