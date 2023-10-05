@@ -19,7 +19,6 @@ environment:
 dependencies:
   args: any
   git_repo_tools: any
-  glob: any
   engine_repo_tools: any
   meta: any
   path: any

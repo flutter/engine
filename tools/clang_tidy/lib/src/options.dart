@@ -162,10 +162,12 @@ class Options {
       )
       ..addOption(
         'lint-all',
-        help: 'Lint all of the sources, regardless of FLUTTER_NOLINT.',
-        valueHelp: 'May provide a regex to filter files, otherwise all files are linted. '
-                   'For example, `--lint-all=".*impeller.*"` will lint all files '
-                   'within a path that contains "impeller".',
+        help: 'Lint all of the sources, regardless of FLUTTER_NOLINT. May '
+              'provide a regex to filter files, otherwise all files are '
+              'linted. For example, `--lint-all=".*impeller.*"` will lint all '
+              'files within a path that contains "impeller".',
+        valueHelp: 'regex or empty',
+        defaultsTo: '',
       )
       ..addFlag(
         'lint-head',
