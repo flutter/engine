@@ -115,10 +115,6 @@ Base64::Error Base64::Decode(const void* srcv,
   return Error::kNone;
 }
 
-#if defined _WIN32
-#pragma warning(pop)
-#endif
-
 size_t Base64::Encode(const void* srcv, size_t length, void* dstv) {
   const unsigned char* src = static_cast<const unsigned char*>(srcv);
   unsigned char* dst = static_cast<unsigned char*>(dstv);
