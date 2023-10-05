@@ -99,10 +99,6 @@ std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
         {{coverage.origin.x + coverage.size.width,
           coverage.origin.y + coverage.size.height},
          input_uvs[3]},
-        {coverage.origin, input_uvs[0]},
-        {{coverage.origin.x + coverage.size.width,
-          coverage.origin.y + coverage.size.height},
-         input_uvs[3]},
         {{coverage.origin.x, coverage.origin.y + coverage.size.height},
          input_uvs[2]},
     });
@@ -111,6 +107,7 @@ std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
     Command cmd;
     DEBUG_COMMAND_INFO(cmd, "Border Mask Blur Filter");
     auto options = OptionsFromPassAndEntity(pass, entity);
+    options.primitive_type = PrimitiveType::kTriangleStrip;
 
     cmd.pipeline = renderer.GetBorderMaskBlurPipeline(options);
     cmd.BindVertices(vtx_buffer);

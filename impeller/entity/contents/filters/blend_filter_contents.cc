@@ -156,13 +156,12 @@ static std::optional<Entity> AdvancedBlend(
         {Point(0, 0), dst_uvs[0], src_uvs[0]},
         {Point(size.width, 0), dst_uvs[1], src_uvs[1]},
         {Point(size.width, size.height), dst_uvs[3], src_uvs[3]},
-        {Point(0, 0), dst_uvs[0], src_uvs[0]},
-        {Point(size.width, size.height), dst_uvs[3], src_uvs[3]},
         {Point(0, size.height), dst_uvs[2], src_uvs[2]},
     });
     auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
     auto options = OptionsFromPass(pass);
+    options.primitive_type = PrimitiveType::kTriangleStrip;
     options.blend_mode = BlendMode::kSource;
     std::shared_ptr<Pipeline<PipelineDescriptor>> pipeline =
         std::invoke(pipeline_proc, renderer, options);
@@ -285,9 +284,6 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
         {Point(origin.x + size.width, origin.y), dst_uvs[1], dst_uvs[1]},
         {Point(origin.x + size.width, origin.y + size.height), dst_uvs[3],
          dst_uvs[3]},
-        {origin, dst_uvs[0], dst_uvs[0]},
-        {Point(origin.x + size.width, origin.y + size.height), dst_uvs[3],
-         dst_uvs[3]},
         {Point(origin.x, origin.y + size.height), dst_uvs[2], dst_uvs[2]},
     });
     auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
@@ -298,6 +294,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
     cmd.BindVertices(vtx_buffer);
     cmd.stencil_reference = entity.GetClipDepth();
     auto options = OptionsFromPass(pass);
+    options.primitive_type = PrimitiveType::kTriangleStrip;
 
     switch (blend_mode) {
       case BlendMode::kScreen:
@@ -460,9 +457,6 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
         {Point(origin.x + size.width, origin.y), dst_uvs[1], color},
         {Point(origin.x + size.width, origin.y + size.height), dst_uvs[3],
          color},
-        {origin, dst_uvs[0], color},
-        {Point(origin.x + size.width, origin.y + size.height), dst_uvs[3],
-         color},
         {Point(origin.x, origin.y + size.height), dst_uvs[2], color},
     });
     auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
@@ -473,6 +467,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
     cmd.BindVertices(vtx_buffer);
     cmd.stencil_reference = entity.GetClipDepth();
     auto options = OptionsFromPass(pass);
+    options.primitive_type = PrimitiveType::kTriangleStrip;
     cmd.pipeline = renderer.GetPorterDuffBlendPipeline(options);
 
     FS::FragInfo frag_info;
@@ -571,6 +566,7 @@ static std::optional<Entity> PipelineBlend(
     DEBUG_COMMAND_INFO(cmd, SPrintF("Pipeline Blend Filter (%s)",
                                     BlendModeToString(blend_mode)));
     auto options = OptionsFromPass(pass);
+    options.primitive_type = PrimitiveType::kTriangleStrip;
 
     auto add_blend_command = [&](std::optional<Snapshot> input) {
       if (!input.has_value()) {
@@ -590,8 +586,6 @@ static std::optional<Entity> PipelineBlend(
       vtx_builder.AddVertices({
           {Point(0, 0), Point(0, 0)},
           {Point(size.width, 0), Point(1, 0)},
-          {Point(size.width, size.height), Point(1, 1)},
-          {Point(0, 0), Point(0, 0)},
           {Point(size.width, size.height), Point(1, 1)},
           {Point(0, size.height), Point(0, 1)},
       });

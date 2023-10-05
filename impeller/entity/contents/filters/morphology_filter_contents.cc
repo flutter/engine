@@ -6,6 +6,7 @@
 
 #include <cmath>
 
+#include "impeller/core/formats.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/renderer/render_pass.h"
@@ -81,8 +82,6 @@ std::optional<Entity> DirectionalMorphologyFilterContents::RenderFilter(
         {Point(0, 0), input_uvs[0]},
         {Point(1, 0), input_uvs[1]},
         {Point(1, 1), input_uvs[3]},
-        {Point(0, 0), input_uvs[0]},
-        {Point(1, 1), input_uvs[3]},
         {Point(0, 1), input_uvs[2]},
     });
 
@@ -118,6 +117,7 @@ std::optional<Entity> DirectionalMorphologyFilterContents::RenderFilter(
     Command cmd;
     DEBUG_COMMAND_INFO(cmd, "Morphology Filter");
     auto options = OptionsFromPass(pass);
+    options.primitive_type = PrimitiveType::kTriangleStrip;
     options.blend_mode = BlendMode::kSource;
     cmd.pipeline = renderer.GetMorphologyFilterPipeline(options);
     cmd.BindVertices(vtx_buffer);
