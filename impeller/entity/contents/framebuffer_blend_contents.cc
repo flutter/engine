@@ -132,12 +132,7 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
   FS::FragInfo frag_info;
 
   auto src_sampler_descriptor = src_snapshot->sampler_descriptor;
-  if (!renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode()) {
-    src_sampler_descriptor.width_address_mode =
-        SamplerAddressMode::kClampToEdge;
-    src_sampler_descriptor.height_address_mode =
-        SamplerAddressMode::kClampToEdge;
-  } else {
+  if (renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode()) {
     src_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
     src_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
   }
