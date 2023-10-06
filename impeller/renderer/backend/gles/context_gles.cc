@@ -59,8 +59,7 @@ ContextGLES::ContextGLES(std::unique_ptr<ProcTableGLES> gl,
         std::shared_ptr<SamplerLibraryGLES>(new SamplerLibraryGLES());
   }
 
-  { device_capabilities_ = reactor_->GetProcTable().GetCapabilities(); }
-
+  device_capabilities_ = reactor_->GetProcTable().GetCapabilities();
   is_valid_ = true;
 }
 
