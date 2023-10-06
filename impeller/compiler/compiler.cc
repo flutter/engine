@@ -155,7 +155,8 @@ static CompilerBackend CreateGLSLCompiler(const spirv_cross::ParsedIR& ir,
                              ? source_options.gles_language_version
                              : 100;
     sl_options.es = true;
-    if (source_options.type == SourceType::kFragmentShader) {
+    if (source_options.require_framebuffer_fetch &&
+        source_options.type == SourceType::kFragmentShader) {
       gl_compiler->remap_ext_framebuffer_fetch(0, 0, true);
     }
     gl_compiler->set_variable_type_remap_callback(
