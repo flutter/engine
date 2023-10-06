@@ -1681,6 +1681,41 @@ TEST_P(DisplayListTest, DrawVerticesBlendModes) {
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
+TEST(DisplayListTest, RRectBoundsComputation) {
+  SkRRect rrect = SkRRect::MakeRectXY(SkRect::MakeLTRB(0, 0, 100, 100), 4, 4);
+  SkPath path = SkPath().addRRect(rrect);
+
+  flutter::DlPaint paint;
+  paint.setColor(flutter::DlColor::kRed());
+  flutter::DisplayListBuilder builder;
+
+  builder.DrawPath(path, paint);
+  auto display_list = builder.Build();
+
+  DlDispatcher dispatcher;
+  display_list->Dispatch(dispatcher);
+  auto picture = dispatcher.EndRecordingAsPicture();
+
+  ASSERT_EQ(picture.pass->GetElementCount(), 1u);
+
+  std::optional<Rect> coverage;
+  picture.pass->IterateAllEntities([&coverage](Entity& entity) {
+    if (std::static_pointer_cast<SolidColorContents>(entity.GetContents())) {
+      auto contents =
+          std::static_pointer_cast<SolidColorContents>(entity.GetContents());
+      Entity entity;
+      coverage = contents->GetCoverage(entity);
+      return false;
+    }
+    return true;
+  });
+
+  // Validate that the RRect coverage is _exactly_ the same as the input rect.
+  ASSERT_TRUE(coverage.has_value());
+  ASSERT_EQ(coverage.value_or(Rect::MakeMaximum()),
+            Rect::MakeLTRB(0, 0, 100, 100));
+}
+
 #ifdef IMPELLER_ENABLE_3D
 TEST_P(DisplayListTest, SceneColorSource) {
   // Load up the scene.
