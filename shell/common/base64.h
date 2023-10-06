@@ -20,11 +20,7 @@ struct Base64 {
   /**
      Base64 encodes src into dst.
 
-     Normally this is called once with 'dst' nullptr to get the required size,
-     then again with an allocated 'dst' pointer to do the actual encoding.
-
-     @param dst nullptr or a pointer to a buffer large enough to receive the
-     result
+     @param dst a pointer to a buffer large enough to receive the result.
 
      @return the required length of dst for encoding.
   */
@@ -43,8 +39,8 @@ struct Base64 {
   /**
      Base64 decodes src into dst.
 
-     Normally this is called once with 'dst' nullptr to get the required size,
-     then again with an allocated 'dst' pointer to do the actual encoding.
+     This can be called once with 'dst' nullptr to get the required size,
+     then again with an allocated 'dst' pointer to do the actual decoding.
 
      @param dst nullptr or a pointer to a buffer large enough to receive the
      result
