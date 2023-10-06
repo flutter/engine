@@ -90,11 +90,13 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
         auto transformed = path.makeTransform(SkMatrix::Translate(
             x + blob->bounds().left(), y + blob->bounds().top()));
         builder_->DrawPath(transformed, dl_paints_[paint_id]);
-        return;
       }
 
-      builder_->DrawTextFrame(impeller::MakeTextFrameFromTextBlobSkia(blob), x,
-                              y, dl_paints_[paint_id]);
+      if (ShouldRenderAsTextFrame(dl_paints_[paint_id])) {
+        builder_->DrawTextFrame(impeller::MakeTextFrameFromTextBlobSkia(blob),
+                                x, y, dl_paints_[paint_id]);
+      }
+
       return;
     }
 #endif  // IMPELLER_SUPPORTS_RENDERING
@@ -213,7 +215,15 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
     // filters rely on having the glyph coverage, whereas regular text is
     // drawn as rectangular texture samples.
     return ((paint.getColorSource() && !paint.getColorSource()->asColor()) ||
-            paint.getDrawStyle() == DlDrawStyle::kStroke);
+            paint.getDrawStyle() == DlDrawStyle::kStroke ||
+            paint.getDrawStyle() == DlDrawStyle::kStrokeAndFill);
+  }
+
+  bool ShouldRenderAsTextFrame(const DlPaint& paint) const {
+    FML_DCHECK(impeller_enabled_);
+    return ((paint.getColorSource() && paint.getColorSource()->asColor()) ||
+            paint.getDrawStyle() == DlDrawStyle::kFill ||
+            paint.getDrawStyle() == DlDrawStyle::kStrokeAndFill);
   }
 
   DlPaint toDlPaint(const DecorationStyle& decor_style,
