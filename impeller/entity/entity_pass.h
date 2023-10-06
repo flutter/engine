@@ -150,8 +150,13 @@ class EntityPass {
   ///                             pre-filteredcoverage.
   /// @param[in]  coverage_limit  Confines coverage to a specified area. This
   ///                             hint is used to trim coverage to the root
-  ///                             framebuffer area. `std::nullopt` means no
-  ///                             coverage.
+  ///                             framebuffer area. `std::nullopt` means there
+  ///                             is no limit.
+  ///
+  /// @return  The screen space pixel area that the subpass contents will render
+  ///          into, prior to being transformed by the subpass ImageFilter, if
+  ///          any. `std::nullopt` means rendering the subpass will have no
+  ///          effect on the color attachment.
   ///
   std::optional<Rect> GetSubpassCoverage(
       const EntityPass& subpass,
