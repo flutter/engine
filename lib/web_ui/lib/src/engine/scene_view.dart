@@ -16,6 +16,20 @@ abstract class PictureRenderer {
   FutureOr<DomImageBitmap> renderPicture(ScenePicture picture);
 }
 
+class SceneRender {
+  SceneRender(this.scene, this.completer) {
+    scene.beginRender();
+  }
+
+  final EngineScene scene;
+  final Completer<void> completer;
+
+  void done() {
+    scene.endRender();
+    completer.complete();
+  }
+}
+
 // This class builds a DOM tree that composites an `EngineScene`.
 class EngineSceneView {
   factory EngineSceneView(PictureRenderer pictureRenderer) {
@@ -30,16 +44,38 @@ class EngineSceneView {
 
   List<SliceContainer> containers = <SliceContainer>[];
 
-  int queuedRenders = 0;
-  static const int kMaxQueuedRenders = 3;
+  SceneRender? currentRender;
+  SceneRender? nextRender;
 
-  Future<void> renderScene(EngineScene scene) async {
-    if (queuedRenders >= kMaxQueuedRenders) {
-      return;
+  Future<void> renderScene(EngineScene scene) {
+    if (currentRender != null) {
+      // If a scene is already queued up, drop it and queue this one up instead
+      // so that the scene view always displays the most recently requested scene.
+      nextRender?.done();
+      final Completer<void> completer = Completer<void>();
+      nextRender = SceneRender(scene, completer);
+      return completer.future;
     }
-    queuedRenders += 1;
+    final Completer<void> completer = Completer<void>();
+    currentRender = SceneRender(scene, completer);
+    _kickRenderLoop();
+    return completer.future;
+  }
 
-    scene.beginRender();
+  Future<void> _kickRenderLoop() async {
+    final SceneRender current = currentRender!;
+    await _renderScene(current.scene);
+    current.done();
+    currentRender = nextRender;
+    nextRender = null;
+    if (currentRender == null) {
+      return;
+    } else {
+      return _kickRenderLoop();
+    }
+  }
+
+  Future<void> _renderScene(EngineScene scene) async {
     final List<LayerSlice> slices = scene.rootLayer.slices;
     final Iterable<Future<DomImageBitmap?>> renderFutures = slices.map(
       (LayerSlice slice) async => switch (slice) {
@@ -113,9 +149,6 @@ class EngineSceneView {
       sceneElement.removeChild(currentElement);
       currentElement = sibling;
     }
-    scene.endRender();
-
-    queuedRenders -= 1;
   }
 }
 
