@@ -1,4 +1,4 @@
-Signature: 95bdc0e2435d6077de8dce19fd4ec798
+Signature: c3477bd0325b8d94925741c2651875ba
 
 ====================================================================================================
 LIBRARY: fuchsia_sdk
@@ -542,18 +542,18 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/lib/libpthread.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/lib/librt.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/lib/libzircon.so
 FILE: ../../../fuchsia/sdk/linux/data/config/symbol_index/config.json
-FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/arm64/release/content_checklist_path
-FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/arm64/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/riscv64/release/content_checklist_path
-FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/riscv64/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64/release/content_checklist_path
-FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/arm64/release/content_checklist_path
-FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/arm64/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/riscv64/release/content_checklist_path
-FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/riscv64/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/x64/release/content_checklist_path
-FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/x64/release/package_manifest.json
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/arm64-api15/release/content_checklist_path
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/arm64-api15/release/package_manifest.json
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/riscv64-api15/release/content_checklist_path
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/riscv64-api15/release/package_manifest.json
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api15/release/content_checklist_path
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api15/release/package_manifest.json
+FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/arm64-api15/release/content_checklist_path
+FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/arm64-api15/release/package_manifest.json
+FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/riscv64-api15/release/content_checklist_path
+FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/riscv64-api15/release/package_manifest.json
+FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/x64-api15/release/content_checklist_path
+FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/x64-api15/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/pkg/async-default/async-default.ifs
 FILE: ../../../fuchsia/sdk/linux/pkg/driver_runtime_shared_lib/driver_runtime.ifs
 FILE: ../../../fuchsia/sdk/linux/pkg/fdio/fdio.ifs
@@ -2367,18 +2367,18 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/lib/libpthread.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/lib/librt.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/lib/libzircon.so
 FILE: ../../../fuchsia/sdk/linux/data/config/symbol_index/config.json
-FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/arm64/release/content_checklist_path
-FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/arm64/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/riscv64/release/content_checklist_path
-FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/riscv64/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64/release/content_checklist_path
-FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/arm64/release/content_checklist_path
-FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/arm64/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/riscv64/release/content_checklist_path
-FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/riscv64/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/x64/release/content_checklist_path
-FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/x64/release/package_manifest.json
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/arm64-api15/release/content_checklist_path
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/arm64-api15/release/package_manifest.json
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/riscv64-api15/release/content_checklist_path
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/riscv64-api15/release/package_manifest.json
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api15/release/content_checklist_path
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api15/release/package_manifest.json
+FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/arm64-api15/release/content_checklist_path
+FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/arm64-api15/release/package_manifest.json
+FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/riscv64-api15/release/content_checklist_path
+FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/riscv64-api15/release/package_manifest.json
+FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/x64-api15/release/content_checklist_path
+FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/x64-api15/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/pkg/async-default/async-default.ifs
 FILE: ../../../fuchsia/sdk/linux/pkg/driver_runtime_shared_lib/driver_runtime.ifs
 FILE: ../../../fuchsia/sdk/linux/pkg/fdio/fdio.ifs
@@ -2447,6 +2447,7 @@ ORIGIN: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/lookup.h + ..
 ORIGIN: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/syscalls/clock.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/syscalls/scheduler.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/utc.h + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/bind/fuchsia.platform/fuchsia.platform.bind + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/dart/sl4f/lib/sl4f.dart + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/audio.dart + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/device_log.dart + ../../../fuchsia/sdk/linux/LICENSE
@@ -2745,6 +2746,7 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/lookup.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/syscalls/clock.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/syscalls/scheduler.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/utc.h
+FILE: ../../../fuchsia/sdk/linux/bind/fuchsia.platform/fuchsia.platform.bind
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/sl4f.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/audio.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/device_log.dart
@@ -3065,6 +3067,7 @@ ORIGIN: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/boot/crash-re
 ORIGIN: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/string_view.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/syscalls-next.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/testonly-syscalls.h + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/bind/fuchsia.arm.platform/fuchsia.arm.platform.bind + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/component.dart + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/device.dart + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/diagnostics.dart + ../../../fuchsia/sdk/linux/LICENSE
@@ -3239,6 +3242,7 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/boot/crash-reas
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/string_view.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/syscalls-next.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/testonly-syscalls.h
+FILE: ../../../fuchsia/sdk/linux/bind/fuchsia.arm.platform/fuchsia.arm.platform.bind
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/component.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/device.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/diagnostics.dart
@@ -3752,10 +3756,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: fuchsia_sdk
 ORIGIN: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/errors.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/syscalls/internal/cdecls.inc + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/syscalls/iob.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/arch/riscv64/sysroot/include/zircon/errors.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/arch/riscv64/sysroot/include/zircon/syscalls/internal/cdecls.inc + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/arch/riscv64/sysroot/include/zircon/syscalls/iob.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/errors.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/syscalls/internal/cdecls.inc + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/syscalls/iob.h + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/bind/fuchsia/fuchsia.bind + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/performance_publish.dart + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/trace_processing/metrics/power_metrics.dart + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.accessibility.semantics/overview.fidl + ../../../fuchsia/sdk/linux/LICENSE
@@ -4008,10 +4016,14 @@ ORIGIN: ../../../fuchsia/sdk/linux/pkg/vulkan/client.shard.cml + ../../../fuchsi
 TYPE: LicenseType.bsd
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/errors.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/syscalls/internal/cdecls.inc
+FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/syscalls/iob.h
 FILE: ../../../fuchsia/sdk/linux/arch/riscv64/sysroot/include/zircon/errors.h
 FILE: ../../../fuchsia/sdk/linux/arch/riscv64/sysroot/include/zircon/syscalls/internal/cdecls.inc
+FILE: ../../../fuchsia/sdk/linux/arch/riscv64/sysroot/include/zircon/syscalls/iob.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/errors.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/syscalls/internal/cdecls.inc
+FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/syscalls/iob.h
+FILE: ../../../fuchsia/sdk/linux/bind/fuchsia/fuchsia.bind
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/performance_publish.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/trace_processing/metrics/power_metrics.dart
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.accessibility.semantics/overview.fidl
@@ -4347,6 +4359,7 @@ ORIGIN: ../../../fuchsia/sdk/linux/pkg/driver_testing_cpp/driver_runtime.cc + ..
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/driver_testing_cpp/environment_variables.cc + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/driver_testing_cpp/test_environment.cc + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/driver_testing_cpp/test_node.cc + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/pkg/fidl_driver_natural/include/lib/fidl_driver/cpp/natural_ostream.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/heapdump_instrumentation/include/heapdump/bind.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/heapdump_instrumentation/include/heapdump/snapshot.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/heapdump_instrumentation/include/heapdump/stats.h + ../../../fuchsia/sdk/linux/LICENSE
@@ -4354,6 +4367,8 @@ ORIGIN: ../../../fuchsia/sdk/linux/pkg/inspect/offer.shard.cml + ../../../fuchsi
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/inspect/use.shard.cml + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/sync_cpp/include/lib/sync/cpp/mutex.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/sys_service_cpp/service_handler.cc + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/pkg/zx/include/lib/zx/iob.h + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/pkg/zx/iob.cc + ../../../fuchsia/sdk/linux/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/flatland_example.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/media_session.dart
@@ -4412,6 +4427,7 @@ FILE: ../../../fuchsia/sdk/linux/pkg/driver_testing_cpp/driver_runtime.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/driver_testing_cpp/environment_variables.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/driver_testing_cpp/test_environment.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/driver_testing_cpp/test_node.cc
+FILE: ../../../fuchsia/sdk/linux/pkg/fidl_driver_natural/include/lib/fidl_driver/cpp/natural_ostream.h
 FILE: ../../../fuchsia/sdk/linux/pkg/heapdump_instrumentation/include/heapdump/bind.h
 FILE: ../../../fuchsia/sdk/linux/pkg/heapdump_instrumentation/include/heapdump/snapshot.h
 FILE: ../../../fuchsia/sdk/linux/pkg/heapdump_instrumentation/include/heapdump/stats.h
@@ -4419,6 +4435,8 @@ FILE: ../../../fuchsia/sdk/linux/pkg/inspect/offer.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect/use.shard.cml
 FILE: ../../../fuchsia/sdk/linux/pkg/sync_cpp/include/lib/sync/cpp/mutex.h
 FILE: ../../../fuchsia/sdk/linux/pkg/sys_service_cpp/service_handler.cc
+FILE: ../../../fuchsia/sdk/linux/pkg/zx/include/lib/zx/iob.h
+FILE: ../../../fuchsia/sdk/linux/pkg/zx/iob.cc
 ----------------------------------------------------------------------------------------------------
 Copyright 2023 The Fuchsia Authors. All rights reserved.
 
@@ -4988,18 +5006,18 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/lib/libpthread.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/lib/librt.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/lib/libzircon.so
 FILE: ../../../fuchsia/sdk/linux/data/config/symbol_index/config.json
-FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/arm64/release/content_checklist_path
-FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/arm64/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/riscv64/release/content_checklist_path
-FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/riscv64/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64/release/content_checklist_path
-FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/arm64/release/content_checklist_path
-FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/arm64/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/riscv64/release/content_checklist_path
-FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/riscv64/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/x64/release/content_checklist_path
-FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/x64/release/package_manifest.json
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/arm64-api15/release/content_checklist_path
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/arm64-api15/release/package_manifest.json
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/riscv64-api15/release/content_checklist_path
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/riscv64-api15/release/package_manifest.json
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api15/release/content_checklist_path
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api15/release/package_manifest.json
+FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/arm64-api15/release/content_checklist_path
+FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/arm64-api15/release/package_manifest.json
+FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/riscv64-api15/release/content_checklist_path
+FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/riscv64-api15/release/package_manifest.json
+FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/x64-api15/release/content_checklist_path
+FILE: ../../../fuchsia/sdk/linux/packages/realm_builder_server/x64-api15/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/pkg/async-default/async-default.ifs
 FILE: ../../../fuchsia/sdk/linux/pkg/driver_runtime_shared_lib/driver_runtime.ifs
 FILE: ../../../fuchsia/sdk/linux/pkg/fdio/fdio.ifs
