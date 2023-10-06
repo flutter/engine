@@ -28,7 +28,7 @@ in vec2 v_src_texture_coords;
 
 out vec4 frag_color;
 
-f16vec4 Sample(f16sampler2D texture_sampler, vec2 texture_coords) {
+vec4 Sample(sampler2D texture_sampler, vec2 texture_coords) {
 // gles 2.0 is the only backend without native decal support.
 #ifdef IMPELLER_TARGET_OPENGLES
   return IPSampleDecal(texture_sampler, texture_coords);
