@@ -124,7 +124,8 @@ class Reflector {
       const spirv_cross::SmallVector<spirv_cross::Resource>& resources) const;
 
   std::optional<nlohmann::json::object_t> ReflectType(
-      const spirv_cross::TypeID& type_id) const;
+      const spirv_cross::TypeID& type_id,
+      const std::string& struct_name) const;
 
   nlohmann::json::object_t EmitStructDefinition(
       std::optional<Reflector::StructDefinition> struc) const;

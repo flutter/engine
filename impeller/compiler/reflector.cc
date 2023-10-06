@@ -26,6 +26,36 @@
 namespace impeller {
 namespace compiler {
 
+static std::string NormalizeUniformKey(const std::string& key) {
+  std::string result;
+  result.reserve(key.length());
+  for (char ch : key) {
+    if (ch != '_') {
+      result.push_back(toupper(ch));
+    }
+  }
+  return result;
+}
+
+static std::string CreateUniformMemberKey(const std::string& struct_name,
+                                          const std::string& member,
+                                          bool is_array) {
+  std::string result;
+  result.reserve(struct_name.length() + member.length() + (is_array ? 4 : 1));
+  result += struct_name;
+  result += '.';
+  result += member;
+  if (is_array) {
+    result += "[0]";
+  }
+  return NormalizeUniformKey(result);
+}
+
+static std::string CreateUniformMemberKeyForSampler(
+    const std::string& non_struct_member) {
+  return NormalizeUniformKey(non_struct_member);
+}
+
 static std::string BaseTypeToString(spirv_cross::SPIRType::BaseType type) {
   using Type = spirv_cross::SPIRType::BaseType;
   switch (type) {
@@ -249,14 +279,20 @@ std::optional<nlohmann::json> Reflector::GenerateTemplateArguments() const {
     auto& sampled_images = root["sampled_images"] = nlohmann::json::array_t{};
     for (auto value : combined_sampled_images.value()) {
       value["descriptor_type"] = "DescriptorType::kSampledImage";
+      value["uniform_non_struct_name"] =
+          CreateUniformMemberKeyForSampler(value["name"]);
       sampled_images.emplace_back(std::move(value));
     }
     for (auto value : images.value()) {
       value["descriptor_type"] = "DescriptorType::kImage";
+      value["uniform_non_struct_name"] =
+          CreateUniformMemberKeyForSampler(value["name"]);
       sampled_images.emplace_back(std::move(value));
     }
     for (auto value : samplers.value()) {
       value["descriptor_type"] = "DescriptorType::kSampledSampler";
+      value["uniform_non_struct_name"] =
+          CreateUniformMemberKeyForSampler(value["name"]);
       sampled_images.emplace_back(std::move(value));
     }
   }
@@ -451,7 +487,7 @@ std::optional<nlohmann::json::object_t> Reflector::ReflectResource(
       CompilerBackend::ExtendedResourceIndex::kPrimary, resource.id);
   result["ext_res_1"] = compiler_.GetExtendedMSLResourceBinding(
       CompilerBackend::ExtendedResourceIndex::kSecondary, resource.id);
-  auto type = ReflectType(resource.type_id);
+  auto type = ReflectType(resource.type_id, resource.name);
   if (!type.has_value()) {
     return std::nullopt;
   }
@@ -461,7 +497,8 @@ std::optional<nlohmann::json::object_t> Reflector::ReflectResource(
 }
 
 std::optional<nlohmann::json::object_t> Reflector::ReflectType(
-    const spirv_cross::TypeID& type_id) const {
+    const spirv_cross::TypeID& type_id,
+    const std::string& struct_name) const {
   nlohmann::json::object_t result;
 
   const auto type = compiler_->get_type(type_id);
@@ -485,6 +522,9 @@ std::optional<nlohmann::json::object_t> Reflector::ReflectType(
       } else {
         member["array_elements"] = "std::nullopt";
       }
+      member["uniform_struct_name"] =
+          CreateUniformMemberKey(struct_name, struct_member.name,
+                                 struct_member.array_elements.value_or(1) > 1);
       members.emplace_back(std::move(member));
     }
   }

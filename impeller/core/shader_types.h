@@ -71,10 +71,12 @@ struct ShaderStructMemberMetadata {
   size_t size;
   size_t byte_length;
   std::optional<size_t> array_elements;
+  std::string uniform_struct_name;
 };
 
 struct ShaderMetadata {
   std::string name;
+  std::string uniform_non_struct_name;
   std::vector<ShaderStructMemberMetadata> members;
 };
 

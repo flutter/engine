@@ -4,11 +4,9 @@
 
 #include "impeller/renderer/backend/gles/buffer_bindings_gles.h"
 
-#include <algorithm>
 #include <cstring>
 #include <vector>
 
-#include "impeller/base/config.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/gles/device_buffer_gles.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
@@ -59,25 +57,6 @@ static std::string NormalizeUniformKey(const std::string& key) {
     }
   }
   return result;
-}
-
-static std::string CreateUniformMemberKey(const std::string& struct_name,
-                                          const std::string& member,
-                                          bool is_array) {
-  std::string result;
-  result.reserve(struct_name.length() + member.length() + (is_array ? 4 : 1));
-  result += struct_name;
-  result += '.';
-  result += member;
-  if (is_array) {
-    result += "[0]";
-  }
-  return NormalizeUniformKey(result);
-}
-
-static std::string CreateUniformMemberKey(
-    const std::string& non_struct_member) {
-  return NormalizeUniformKey(non_struct_member);
 }
 
 bool BufferBindingsGLES::ReadUniformsBindings(const ProcTableGLES& gl,
@@ -203,8 +182,7 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
 
     size_t element_count = member.array_elements.value_or(1);
 
-    const auto member_key =
-        CreateUniformMemberKey(metadata->name, member.name, element_count > 1);
+    const auto member_key = member.uniform_struct_name;
     const auto location = uniform_locations_.find(member_key);
     if (location == uniform_locations_.end()) {
       // The list of uniform locations only contains "active" uniforms that are
@@ -306,8 +284,7 @@ bool BufferBindingsGLES::BindTextures(const ProcTableGLES& gl,
       return false;
     }
 
-    const auto uniform_key =
-        CreateUniformMemberKey(data.second.texture.GetMetadata()->name);
+    const auto uniform_key = data.second.texture.GetMetadata()->uniform_non_struct_name;
     auto uniform = uniform_locations_.find(uniform_key);
     if (uniform == uniform_locations_.end()) {
       VALIDATION_LOG << "Could not find uniform for key: " << uniform_key;

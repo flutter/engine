@@ -97,7 +97,7 @@ TEST_P(CompilerTest, BindingBaseForFragShader) {
   ASSERT_GT(frag_uniform_binding, vert_uniform_binding);
 }
 
-TEST_P(CompilerTest, UniformsHaveBindingAndSet) {
+TEST_P(CompilerTest, UniformsHaveBindingSetAndComputedName) {
   ASSERT_TRUE(CanCompileAndReflect("sample_with_binding.vert",
                                    SourceType::kVertexShader));
   ASSERT_TRUE(CanCompileAndReflect("sample.frag", SourceType::kFragmentShader));

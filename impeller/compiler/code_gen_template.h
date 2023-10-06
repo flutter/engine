@@ -226,15 +226,17 @@ static_assert(offsetof(Shader::{{def.name}}, {{member.name}}) == {{member.offset
 {% for buffer in buffers %}
 ShaderMetadata Shader::kMetadata{{camel_case(buffer.name)}} = {
   "{{buffer.name}}",    // name
+  "",                   // uniform_non_struct_name
   std::vector<ShaderStructMemberMetadata> {
     {% for member in buffer.type.members %}
       ShaderStructMemberMetadata {
-        {{ member.base_type }},      // type
-        "{{ member.name }}",         // name
-        {{ member.offset }},         // offset
-        {{ member.size }},           // size
-        {{ member.byte_length }},    // byte_length
-        {{ member.array_elements }}, // array_elements
+        {{ member.base_type }},             // type
+        "{{ member.name }}",                 // name
+        {{ member.offset }},                 // offset
+        {{ member.size }},                   // size
+        {{ member.byte_length }},            // byte_length
+        {{ member.array_elements }},         // array_elements
+        "{{ member.uniform_struct_name}}",     // uniform_struct_name
       },
     {% endfor %}
   } // members
@@ -244,6 +246,7 @@ ShaderMetadata Shader::kMetadata{{camel_case(buffer.name)}} = {
 {% for sampled_image in sampled_images %}
 ShaderMetadata Shader::kMetadata{{camel_case(sampled_image.name)}} = {
     "{{sampled_image.name}}",    // name
+    "{{sampled_image.uniform_non_struct_name}}", // uniform_non_struct_name
     std::vector<ShaderStructMemberMetadata> {}, // 0 members
 };
 {% endfor %}
