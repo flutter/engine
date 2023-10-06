@@ -94,37 +94,6 @@ static BOOL IsEmoji(NSString* text, NSRange charRange) {
   return gotCodePoint && u_hasBinaryProperty(codePoint, UCHAR_EMOJI);
 }
 
-// Adjust `range` in place when the text within `replacementRange` is replaced
-// with text that has a length of `newLength`.
-static void AdjustTextRangeForTextReplacement(NSRange& range,
-                                              const NSRange& replacementRange,
-                                              NSUInteger newLength) {
-  if (range.location == NSNotFound || replacementRange.location == NSNotFound) {
-    return;
-  }
-  const NSUInteger rangeEnd = range.location + range.length;
-  const NSUInteger replacementRangeEnd = replacementRange.location + replacementRange.length;
-  const NSUInteger overlapLength =
-      MAX(0.0, MIN(rangeEnd, replacementRangeEnd) - MAX(range.location, replacementRange.location));
-
-  // There's no overlap between `range` and `replacementRange`.
-  if (overlapLength == 0) {
-    if (replacementRange.location < range.location) {
-      range.location += newLength - replacementRange.length;
-    }
-    return;
-  }
-  if (replacementRange.location < range.location) {
-    range.location = replacementRange.location + newLength;
-  }
-  range.length -= overlapLength;
-  const BOOL isSubset = range.length != 0 && range.location <= replacementRange.location &&
-                        replacementRangeEnd <= rangeEnd;
-  if (isSubset) {
-    range.length += newLength;
-  }
-}
-
 // "TextInputType.none" is a made-up input type that's typically
 // used when there's an in-app virtual keyboard. If
 // "TextInputType.none" is specified, disable the system
@@ -1261,23 +1230,19 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 
 // Replace the text within the specified range with the given text,
 // without notifying the framework.
-//
-// If `adjustTextRange` is YES, this method also adjusts the current
-// `markedTextRange` and `selectedTextRange` to ensure they are within the bounds
-// of the updated text.
 - (void)replaceRangeLocal:(NSRange)range withText:(NSString*)text {
   [self.text replaceCharactersInRange:[self clampSelection:range forText:self.text]
                            withString:text];
 
-  NSRange selectedRange = _selectedTextRange.range;
-  NSRange markedTextRange = ((FlutterTextRange*)self.markedTextRange).range;
-  NSUInteger replacementLength = text.length;
-  AdjustTextRangeForTextReplacement(selectedRange, range, replacementLength);
-  AdjustTextRangeForTextReplacement(markedTextRange, range, replacementLength);
+  // Adjust the selected range and the marked text range. There's no
+  // documentation but UITextField always sets markedTextRange to nil,
+  // and collapses the selection to the end of the new replacement text.
+  range.location += text.length;
+  range.length = 0;
+  const NSRange newSelectionRange = [self clampSelection:range forText:self.text];
 
-  [self setSelectedTextRangeLocal:[FlutterTextRange rangeWithNSRange:selectedRange]];
-  self.markedTextRange =
-      markedTextRange.length > 0 ? [FlutterTextRange rangeWithNSRange:markedTextRange] : nil;
+  [self setSelectedTextRangeLocal:[FlutterTextRange rangeWithNSRange:newSelectionRange]];
+  self.markedTextRange = nil;
 }
 
 - (void)replaceRange:(UITextRange*)range withText:(NSString*)text {
@@ -1369,12 +1334,13 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     markedText = @"";
   }
 
-  const NSRange actualReplacedRange = ((FlutterTextRange*)self.markedTextRange).range.length > 0
-                                          ? ((FlutterTextRange*)self.markedTextRange).range
-                                          : _selectedTextRange.range;
+  const FlutterTextRange* currentMarkedTextRange = (FlutterTextRange*)self.markedTextRange;
+  const NSRange& actualReplacedRange = currentMarkedTextRange && !currentMarkedTextRange.isEmpty
+                                           ? currentMarkedTextRange.range
+                                           : _selectedTextRange.range;
   // No need to call replaceRangeLocal as this method always adjusts the
   // selected/marked text ranges anyways.
-  [self.text replaceCharactersInRange:actualReplacedRange withString:self.text];
+  [self.text replaceCharactersInRange:actualReplacedRange withString:markedText];
 
   const NSRange newMarkedRange = NSMakeRange(actualReplacedRange.location, markedText.length);
   self.markedTextRange =
