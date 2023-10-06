@@ -85,9 +85,11 @@ class ShellTest : public FixtureTest {
                            double width = 1,
                            double height = 1,
                            LayerTreeBuilder = {});
+  // TODO(dkwingsmt): Refactor builder and render_implicit_view
   static void PumpOneFrame(Shell* shell,
                            const flutter::ViewportMetrics& viewport_metrics,
-                           LayerTreeBuilder = {});
+                           LayerTreeBuilder = {},
+                           bool render_implicit_view = true);
   static void DispatchFakePointerData(Shell* shell);
   static void DispatchPointerData(Shell* shell,
                                   std::unique_ptr<PointerDataPacket> packet);

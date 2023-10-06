@@ -60,6 +60,7 @@ void Animator::EnqueueTraceFlowId(uint64_t trace_flow_id) {
 
 void Animator::BeginFrame(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
+  FML_CHECK(frame_timings_recorder_ == nullptr);
   TRACE_EVENT_ASYNC_END0("flutter", "Frame Request Pending",
                          frame_request_number_);
   frame_request_number_++;
@@ -112,21 +113,34 @@ void Animator::BeginFrame(
   dart_frame_deadline_ = frame_target_time.ToEpochDelta();
   uint64_t frame_number = frame_timings_recorder_->GetFrameNumber();
   delegate_.OnAnimatorBeginFrame(frame_target_time, frame_number);
+}
 
-  // Commit the pending continuation.
-  PipelineProduceResult result =
-      producer_continuation_.Complete(std::make_unique<FrameItem>(
-          std::move(layer_trees_tasks_), std::move(frame_timings_recorder_)));
+void Animator::EndFrame() {
+  FML_CHECK(frame_timings_recorder_ != nullptr);
+  if (!layer_trees_tasks_.empty()) {
+    // The build is completed in OnAnimatorBeginFrame.
+    frame_timings_recorder_->RecordBuildEnd(fml::TimePoint::Now());
 
-  if (!result.success) {
-    FML_DLOG(INFO) << "Failed to commit to the pipeline";
-  } else if (!result.is_first_item) {
-    // Do nothing. It has been successfully pushed to the pipeline but not as
-    // the first item. Eventually the 'Rasterizer' will consume it, so we don't
-    // need to notify the delegate.
-  } else {
-    delegate_.OnAnimatorDraw(layer_tree_pipeline_);
+    delegate_.OnAnimatorUpdateLatestFrameTargetTime(
+        frame_timings_recorder_->GetVsyncTargetTime());
+
+    // Commit the pending continuation.
+    PipelineProduceResult result =
+        producer_continuation_.Complete(std::make_unique<FrameItem>(
+            std::move(layer_trees_tasks_), std::move(frame_timings_recorder_)));
+
+    if (!result.success) {
+      FML_DLOG(INFO) << "Failed to commit to the pipeline";
+    } else if (!result.is_first_item) {
+      // Do nothing. It has been successfully pushed to the pipeline but not as
+      // the first item. Eventually the 'Rasterizer' will consume it, so we
+      // don't need to notify the delegate.
+    } else {
+      delegate_.OnAnimatorDraw(layer_tree_pipeline_);
+    }
   }
+  FML_DCHECK(layer_trees_tasks_.empty());
+  frame_timings_recorder_ = nullptr;  // Ensure it's cleared.
 
   if (!frame_scheduled_ && has_rendered_) {
     // Wait a tad more than 3 60hz frames before reporting a big idle period.
@@ -165,10 +179,6 @@ void Animator::Render(int64_t view_id,
   TRACE_EVENT_WITH_FRAME_NUMBER(frame_timings_recorder_, "flutter",
                                 "Animator::Render", /*flow_id_count=*/0,
                                 /*flow_ids=*/nullptr);
-  frame_timings_recorder_->RecordBuildEnd(fml::TimePoint::Now());
-
-  delegate_.OnAnimatorUpdateLatestFrameTargetTime(
-      frame_timings_recorder_->GetVsyncTargetTime());
 
   layer_trees_tasks_.push_back(std::make_unique<LayerTreeTask>(
       view_id, std::move(layer_tree), device_pixel_ratio));
@@ -243,6 +253,7 @@ void Animator::AwaitVSync() {
             self->DrawLastLayerTrees(std::move(frame_timings_recorder));
           } else {
             self->BeginFrame(std::move(frame_timings_recorder));
+            self->EndFrame();
           }
         }
       });

@@ -154,6 +154,7 @@ void ShellTest::SetViewportMetrics(Shell* shell, double width, double height) {
               std::make_unique<FrameTimingsRecorder>();
           recorder->RecordVsync(frame_begin_time, frame_end_time);
           engine->animator_->BeginFrame(std::move(recorder));
+          engine->animator_->EndFrame();
         }
         latch.Signal();
       });
@@ -181,7 +182,8 @@ void ShellTest::PumpOneFrame(Shell* shell,
 
 void ShellTest::PumpOneFrame(Shell* shell,
                              const flutter::ViewportMetrics& viewport_metrics,
-                             LayerTreeBuilder builder) {
+                             LayerTreeBuilder builder,
+                             bool render_implicit_view) {
   // Set viewport to nonempty, and call Animator::BeginFrame to make the layer
   // tree pipeline nonempty. Without either of this, the layer tree below
   // won't be rasterized.
@@ -204,21 +206,25 @@ void ShellTest::PumpOneFrame(Shell* shell,
   // Call |Render| to rasterize a layer tree and trigger |OnFrameRasterized|
   fml::WeakPtr<RuntimeDelegate> runtime_delegate = shell->weak_engine_;
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [&latch, runtime_delegate, &builder, viewport_metrics]() {
-        SkMatrix identity;
-        identity.setIdentity();
-        auto root_layer = std::make_shared<TransformLayer>(identity);
-        auto layer_tree = std::make_unique<LayerTree>(
-            LayerTree::Config{.root_layer = root_layer},
-            SkISize::Make(viewport_metrics.physical_width,
-                          viewport_metrics.physical_height));
-        float device_pixel_ratio =
-            static_cast<float>(viewport_metrics.device_pixel_ratio);
-        if (builder) {
-          builder(root_layer);
+      [&latch, engine = shell->weak_engine_, runtime_delegate, &builder,
+       viewport_metrics, render_implicit_view]() {
+        if (render_implicit_view) {
+          SkMatrix identity;
+          identity.setIdentity();
+          auto root_layer = std::make_shared<TransformLayer>(identity);
+          auto layer_tree = std::make_unique<LayerTree>(
+              LayerTree::Config{.root_layer = root_layer},
+              SkISize::Make(viewport_metrics.physical_width,
+                            viewport_metrics.physical_height));
+          float device_pixel_ratio =
+              static_cast<float>(viewport_metrics.device_pixel_ratio);
+          if (builder) {
+            builder(root_layer);
+          }
+          runtime_delegate->Render(kImplicitViewId, std::move(layer_tree),
+                                   device_pixel_ratio);
         }
-        runtime_delegate->Render(kImplicitViewId, std::move(layer_tree),
-                                 device_pixel_ratio);
+        engine->animator_->EndFrame();
         latch.Signal();
       });
   latch.Wait();

@@ -1059,6 +1059,9 @@ TEST_F(ShellTest, OnPlatformViewDestroyDisablesThreadMerger) {
   PumpOneFrame(shell.get(), 100, 100, builder);
 
   auto result = shell->WaitForFirstFrame(fml::TimeDelta::Max());
+  // Wait for the rasterizer to process the frame. WaitForFirstFrame only waits
+  // for the Animator, but end_frame_callback is called by the Rasterizer.
+  PostSync(shell->GetTaskRunners().GetRasterTaskRunner(), [] {});
   ASSERT_TRUE(result.ok()) << "Result: " << static_cast<int>(result.code())
                            << ": " << result.message();
 
@@ -1562,8 +1565,9 @@ TEST_F(ShellTest, WaitForFirstFrameZeroSizeFrame) {
   RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get(), {1.0, 0.0, 0.0, 22, 0});
   fml::Status result = shell->WaitForFirstFrame(fml::TimeDelta::Zero());
-  ASSERT_FALSE(result.ok());
-  ASSERT_EQ(result.code(), fml::StatusCode::kDeadlineExceeded);
+  EXPECT_FALSE(result.ok());
+  EXPECT_EQ(result.message(), "timeout");
+  EXPECT_EQ(result.code(), fml::StatusCode::kDeadlineExceeded);
 
   DestroyShell(std::move(shell));
 }
@@ -2616,7 +2620,7 @@ TEST_F(ShellTest, OnServiceProtocolRenderFrameWithRasterStatsWorks) {
   configuration.SetEntrypoint("scene_with_red_box");
 
   RunEngine(shell.get(), std::move(configuration));
-  PumpOneFrame(shell.get());
+  PumpOneFrame(shell.get(), {1.0, 1, 1, 22, 0}, {}, false);
 
   ServiceProtocol::Handler::ServiceProtocolMap empty_params;
   rapidjson::Document document;

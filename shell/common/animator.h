@@ -84,6 +84,7 @@ class Animator final {
 
  private:
   void BeginFrame(std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder);
+  void EndFrame();
 
   bool CanReuseLastLayerTrees();
 
