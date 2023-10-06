@@ -9,7 +9,8 @@
 namespace impeller {
 
 // https://registry.khronos.org/OpenGL/extensions/EXT/EXT_shader_framebuffer_fetch.txt
-static std::string kFramebufferFetchExtension = "GL_EXT_shader_framebuffer_fetch";
+static std::string kFramebufferFetchExtension =
+    "GL_EXT_shader_framebuffer_fetch";
 
 CapabilitiesGLES::CapabilitiesGLES(const ProcTableGLES& gl) {
   {
@@ -100,8 +101,7 @@ CapabilitiesGLES::CapabilitiesGLES(const ProcTableGLES& gl) {
       extensions.insert(str);
     }
 
-    if (extensions.find(kFramebufferFetchExtension) !=
-        extensions.end()) {
+    if (extensions.find(kFramebufferFetchExtension) != extensions.end()) {
       supports_framebuffer_fetch_ = true;
     }
   }
