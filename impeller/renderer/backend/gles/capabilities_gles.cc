@@ -8,6 +8,9 @@
 
 namespace impeller {
 
+// https://registry.khronos.org/OpenGL/extensions/EXT/EXT_shader_framebuffer_fetch.txt
+static std::string kFramebufferFetchExtension = "GL_EXT_shader_framebuffer_fetch";
+
 CapabilitiesGLES::CapabilitiesGLES(const ProcTableGLES& gl) {
   {
     GLint value = 0;
@@ -97,9 +100,9 @@ CapabilitiesGLES::CapabilitiesGLES(const ProcTableGLES& gl) {
       extensions.insert(str);
     }
 
-    if (extensions.find("GL_EXT_shader_framebuffer_fetch") !=
+    if (extensions.find(kFramebufferFetchExtension) !=
         extensions.end()) {
-      supports_framebuffer_fetch = true;
+      supports_framebuffer_fetch_ = true;
     }
   }
 }
@@ -117,6 +120,62 @@ size_t CapabilitiesGLES::GetMaxTextureUnits(ShaderStage stage) const {
       return 0u;
   }
   FML_UNREACHABLE();
+}
+
+bool CapabilitiesGLES::SupportsOffscreenMSAA() const {
+  return false;
+}
+
+bool CapabilitiesGLES::SupportsSSBO() const {
+  return false;
+}
+
+bool CapabilitiesGLES::SupportsBufferToTextureBlits() const {
+  return false;
+}
+
+bool CapabilitiesGLES::SupportsTextureToTextureBlits() const {
+  return false;
+}
+
+bool CapabilitiesGLES::SupportsFramebufferFetch() const {
+  return supports_framebuffer_fetch_;
+}
+
+bool CapabilitiesGLES::SupportsCompute() const {
+  return false;
+}
+
+bool CapabilitiesGLES::SupportsComputeSubgroups() const {
+  return false;
+}
+
+bool CapabilitiesGLES::SupportsReadFromOnscreenTexture() const {
+  return false;
+}
+
+bool CapabilitiesGLES::SupportsReadFromResolve() const {
+  return false;
+}
+
+bool CapabilitiesGLES::SupportsDecalSamplerAddressMode() const {
+  return false;
+}
+
+bool CapabilitiesGLES::SupportsDeviceTransientTextures() const {
+  return false;
+}
+
+PixelFormat CapabilitiesGLES::GetDefaultColorFormat() const {
+  return PixelFormat::kR8G8B8A8UNormInt;
+}
+
+PixelFormat CapabilitiesGLES::GetDefaultStencilFormat() const {
+  return PixelFormat::kS8UInt;
+}
+
+PixelFormat CapabilitiesGLES::GetDefaultDepthStencilFormat() const {
+  return PixelFormat::kD24UnormS8Uint;
 }
 
 }  // namespace impeller
