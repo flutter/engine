@@ -17,6 +17,7 @@ impeller_component("gles_unittests") {
     "test/mock_gles.cc",
     "test/mock_gles.h",
     "test/mock_gles_unittests.cc",
+    "test/capabilities_unittests.cc",
   ]
   deps = [
     ":gles",
