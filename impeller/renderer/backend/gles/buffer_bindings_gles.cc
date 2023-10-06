@@ -284,7 +284,8 @@ bool BufferBindingsGLES::BindTextures(const ProcTableGLES& gl,
       return false;
     }
 
-    const auto uniform_key = data.second.texture.GetMetadata()->uniform_non_struct_name;
+    const auto uniform_key =
+        data.second.texture.GetMetadata()->uniform_non_struct_name;
     auto uniform = uniform_locations_.find(uniform_key);
     if (uniform == uniform_locations_.end()) {
       VALIDATION_LOG << "Could not find uniform for key: " << uniform_key;
