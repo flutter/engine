@@ -151,7 +151,7 @@ size_t Base64::Encode(const void* srcv, size_t length, void* dstv) {
       *dst++ = encode[EncodePad];
     }
   }
-  return (length + 2) / 3 * 4;
+  return EncodedSize(length);
 }
 
 }  // namespace flutter
