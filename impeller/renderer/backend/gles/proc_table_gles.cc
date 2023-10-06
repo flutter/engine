@@ -150,7 +150,8 @@ const DescriptionGLES* ProcTableGLES::GetDescription() const {
   return description_.get();
 }
 
-const std::shared_ptr<const CapabilitiesGLES>& ProcTableGLES::GetCapabilities() const {
+const std::shared_ptr<const CapabilitiesGLES>& ProcTableGLES::GetCapabilities()
+    const {
   return capabilities_;
 }
 
