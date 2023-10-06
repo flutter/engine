@@ -94,6 +94,37 @@ static BOOL IsEmoji(NSString* text, NSRange charRange) {
   return gotCodePoint && u_hasBinaryProperty(codePoint, UCHAR_EMOJI);
 }
 
+// Adjust `range` in place when the text within `replacementRange` is replaced
+// with text that has a length of `newLength`.
+static void AdjustTextRangeForTextReplacement(NSRange& range,
+                                              const NSRange& replacementRange,
+                                              NSUInteger newLength) {
+  if (range.location == NSNotFound || replacementRange.location == NSNotFound) {
+    return;
+  }
+  const NSUInteger rangeEnd = range.location + range.length;
+  const NSUInteger replacementRangeEnd = replacementRange.location + replacementRange.length;
+  const NSUInteger overlapLength =
+      MAX(0.0, MIN(rangeEnd, replacementRangeEnd) - MAX(range.location, replacementRange.location));
+
+  // There's no overlap between `range` and `replacementRange`.
+  if (overlapLength == 0) {
+    if (replacementRange.location < range.location) {
+      range.location += newLength - replacementRange.length;
+    }
+    return;
+  }
+  if (replacementRange.location < range.location) {
+    range.location = replacementRange.location + newLength;
+  }
+  range.length -= overlapLength;
+  const BOOL isSubset = range.length != 0 && range.location <= replacementRange.location &&
+                        replacementRangeEnd <= rangeEnd;
+  if (isSubset) {
+    range.length += newLength;
+  }
+}
+
 // "TextInputType.none" is a made-up input type that's typically
 // used when there's an in-app virtual keyboard. If
 // "TextInputType.none" is specified, disable the system
@@ -814,7 +845,6 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 
     // UITextInput
     _text = [[NSMutableString alloc] init];
-    _markedText = [[NSMutableString alloc] init];
     _selectedTextRange = [[FlutterTextRange alloc] initWithNSRange:NSMakeRange(0, 0)];
     _markedRect = kInvalidFirstRect;
     _cachedFirstRect = kInvalidFirstRect;
@@ -1231,26 +1261,23 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 
 // Replace the text within the specified range with the given text,
 // without notifying the framework.
+//
+// If `adjustTextRange` is YES, this method also adjusts the current
+// `markedTextRange` and `selectedTextRange` to ensure they are within the bounds
+// of the updated text.
 - (void)replaceRangeLocal:(NSRange)range withText:(NSString*)text {
-  NSRange selectedRange = _selectedTextRange.range;
-
-  // Adjust the text selection:
-  // * reduce the length by the intersection length
-  // * adjust the location by newLength - oldLength + intersectionLength
-  NSRange intersectionRange = NSIntersectionRange(range, selectedRange);
-  if (range.location <= selectedRange.location) {
-    selectedRange.location += text.length - range.length;
-  }
-  if (intersectionRange.location != NSNotFound) {
-    selectedRange.location += intersectionRange.length;
-    selectedRange.length -= intersectionRange.length;
-  }
-
   [self.text replaceCharactersInRange:[self clampSelection:range forText:self.text]
                            withString:text];
-  [self setSelectedTextRangeLocal:[FlutterTextRange
-                                      rangeWithNSRange:[self clampSelection:selectedRange
-                                                                    forText:self.text]]];
+
+  NSRange selectedRange = _selectedTextRange.range;
+  NSRange markedTextRange = ((FlutterTextRange*)self.markedTextRange).range;
+  NSUInteger replacementLength = text.length;
+  AdjustTextRangeForTextReplacement(selectedRange, range, replacementLength);
+  AdjustTextRangeForTextReplacement(markedTextRange, range, replacementLength);
+
+  [self setSelectedTextRangeLocal:[FlutterTextRange rangeWithNSRange:selectedRange]];
+  self.markedTextRange =
+      markedTextRange.length > 0 ? [FlutterTextRange rangeWithNSRange:markedTextRange] : nil;
 }
 
 - (void)replaceRange:(UITextRange*)range withText:(NSString*)text {
@@ -1328,11 +1355,10 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   return YES;
 }
 
+// Either replaces the existing marked text or, if none is present, inserts it in
+// place of the current selection.
 - (void)setMarkedText:(NSString*)markedText selectedRange:(NSRange)markedSelectedRange {
   NSString* textBeforeChange = [self.text copy];
-  NSRange selectedRange = _selectedTextRange.range;
-  NSRange markedTextRange = ((FlutterTextRange*)self.markedTextRange).range;
-  NSRange actualReplacedRange;
 
   if (_scribbleInteractionStatus != FlutterScribbleInteractionStatusNone ||
       _scribbleFocusStatus != FlutterScribbleFocusStatusUnfocused) {
@@ -1343,25 +1369,20 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     markedText = @"";
   }
 
-  if (markedTextRange.length > 0) {
-    // Replace text in the marked range with the new text.
-    [self replaceRangeLocal:markedTextRange withText:markedText];
-    actualReplacedRange = markedTextRange;
-    markedTextRange.length = markedText.length;
-  } else {
-    // Replace text in the selected range with the new text.
-    actualReplacedRange = selectedRange;
-    [self replaceRangeLocal:selectedRange withText:markedText];
-    markedTextRange = NSMakeRange(selectedRange.location, markedText.length);
-  }
+  const NSRange actualReplacedRange = ((FlutterTextRange*)self.markedTextRange).range.length > 0
+                                          ? ((FlutterTextRange*)self.markedTextRange).range
+                                          : _selectedTextRange.range;
+  // No need to call replaceRangeLocal as this method always adjusts the
+  // selected/marked text ranges anyways.
+  [self.text replaceCharactersInRange:actualReplacedRange withString:self.text];
 
+  const NSRange newMarkedRange = NSMakeRange(actualReplacedRange.location, markedText.length);
   self.markedTextRange =
-      markedTextRange.length > 0 ? [FlutterTextRange rangeWithNSRange:markedTextRange] : nil;
+      newMarkedRange.length > 0 ? [FlutterTextRange rangeWithNSRange:newMarkedRange] : nil;
 
-  NSUInteger selectionLocation = markedSelectedRange.location + markedTextRange.location;
-  selectedRange = NSMakeRange(selectionLocation, markedSelectedRange.length);
+  markedSelectedRange.location += newMarkedRange.location;
   [self setSelectedTextRangeLocal:[FlutterTextRange
-                                      rangeWithNSRange:[self clampSelection:selectedRange
+                                      rangeWithNSRange:[self clampSelection:markedSelectedRange
                                                                     forText:self.text]]];
   if (_enableDeltaModel) {
     NSRange nextReplaceRange = [self clampSelection:actualReplacedRange forText:textBeforeChange];
