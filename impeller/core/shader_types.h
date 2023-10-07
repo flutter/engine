@@ -71,11 +71,14 @@ struct ShaderStructMemberMetadata {
   size_t size;
   size_t byte_length;
   std::optional<size_t> array_elements;
+  mutable std::optional<int> location = std::nullopt;
+  ;
 };
 
 struct ShaderMetadata {
   std::string name;
   std::vector<ShaderStructMemberMetadata> members;
+  mutable std::optional<int> location = std::nullopt;
 };
 
 struct ShaderUniformSlot {

@@ -8,6 +8,7 @@
 #include <cstring>
 #include <vector>
 
+#include "GLES3/gl3.h"
 #include "impeller/base/config.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/gles/device_buffer_gles.h"
@@ -203,14 +204,26 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
 
     size_t element_count = member.array_elements.value_or(1);
 
-    const auto member_key =
-        CreateUniformMemberKey(metadata->name, member.name, element_count > 1);
-    const auto location = uniform_locations_.find(member_key);
-    if (location == uniform_locations_.end()) {
-      // The list of uniform locations only contains "active" uniforms that are
-      // not optimized out. So this situation is expected to happen when unused
-      // uniforms are present in the shader.
-      continue;
+    GLint location;
+    auto maybe_location = member.location;
+    if (!maybe_location.has_value()) {
+      const auto member_key = CreateUniformMemberKey(
+          metadata->name, member.name, element_count > 1);
+      const auto computed_location = uniform_locations_.find(member_key);
+      if (computed_location == uniform_locations_.end()) {
+        // The list of uniform locations only contains "active" uniforms that
+        // are not optimized out. So this situation is expected to happen when
+        // unused uniforms are present in the shader.
+        member.location = -1;
+        continue;
+      }
+      location = computed_location->second;
+      member.location = computed_location->second;
+    } else {
+      if (maybe_location.value() == -1) {
+        continue;
+      }
+      location = maybe_location.value();
     }
 
     size_t element_stride = member.byte_length / element_count;
@@ -238,34 +251,34 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
       case ShaderType::kFloat:
         switch (member.size) {
           case sizeof(Matrix):
-            gl.UniformMatrix4fv(location->second,  // location
-                                element_count,     // count
-                                GL_FALSE,          // normalize
-                                buffer_data        // data
+            gl.UniformMatrix4fv(location,       // location
+                                element_count,  // count
+                                GL_FALSE,       // normalize
+                                buffer_data     // data
             );
             continue;
           case sizeof(Vector4):
-            gl.Uniform4fv(location->second,  // location
-                          element_count,     // count
-                          buffer_data        // data
+            gl.Uniform4fv(location,       // location
+                          element_count,  // count
+                          buffer_data     // data
             );
             continue;
           case sizeof(Vector3):
-            gl.Uniform3fv(location->second,  // location
-                          element_count,     // count
-                          buffer_data        // data
+            gl.Uniform3fv(location,       // location
+                          element_count,  // count
+                          buffer_data     // data
             );
             continue;
           case sizeof(Vector2):
-            gl.Uniform2fv(location->second,  // location
-                          element_count,     // count
-                          buffer_data        // data
+            gl.Uniform2fv(location,       // location
+                          element_count,  // count
+                          buffer_data     // data
             );
             continue;
           case sizeof(Scalar):
-            gl.Uniform1fv(location->second,  // location
-                          element_count,     // count
-                          buffer_data        // data
+            gl.Uniform1fv(location,       // location
+                          element_count,  // count
+                          buffer_data     // data
             );
             continue;
         }
@@ -288,7 +301,7 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
       case ShaderType::kSampledImage:
       case ShaderType::kSampler:
         VALIDATION_LOG << "Could not bind uniform buffer data for key: "
-                       << member_key;
+                       << member.name;
         return false;
     }
   }
@@ -306,12 +319,20 @@ bool BufferBindingsGLES::BindTextures(const ProcTableGLES& gl,
       return false;
     }
 
-    const auto uniform_key =
-        CreateUniformMemberKey(data.second.texture.GetMetadata()->name);
-    auto uniform = uniform_locations_.find(uniform_key);
-    if (uniform == uniform_locations_.end()) {
-      VALIDATION_LOG << "Could not find uniform for key: " << uniform_key;
-      return false;
+    GLint location;
+    auto maybe_location = data.second.texture.GetMetadata()->location;
+    if (!maybe_location.has_value()) {
+      const auto uniform_key =
+          CreateUniformMemberKey(data.second.texture.GetMetadata()->name);
+      auto uniform = uniform_locations_.find(uniform_key);
+      if (uniform == uniform_locations_.end()) {
+        VALIDATION_LOG << "Could not find uniform for key: " << uniform_key;
+        return false;
+      }
+      data.second.texture.GetMetadata()->location = uniform->second;
+      location = uniform->second;
+    } else {
+      location = maybe_location.value();
     }
 
     //--------------------------------------------------------------------------
@@ -343,7 +364,7 @@ bool BufferBindingsGLES::BindTextures(const ProcTableGLES& gl,
     //--------------------------------------------------------------------------
     /// Set the texture uniform location.
     ///
-    gl.Uniform1i(uniform->second, active_index);
+    gl.Uniform1i(location, active_index);
 
     //--------------------------------------------------------------------------
     /// Bump up the active index at binding.
