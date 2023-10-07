@@ -91,20 +91,8 @@ CapabilitiesGLES::CapabilitiesGLES(const ProcTableGLES& gl) {
     num_shader_binary_formats = value;
   }
 
-  {
-    GLint extension_count = 0;
-    gl.GetIntegerv(GL_NUM_EXTENSIONS, &extension_count);
-
-    std::set<std::string> extensions;
-    for (int i = 0; i < extension_count; ++i) {
-      auto str = reinterpret_cast<const char*>(gl.GetStringi(GL_EXTENSIONS, i));
-      extensions.insert(str);
-    }
-
-    if (extensions.find(kFramebufferFetchExtension) != extensions.end()) {
-      supports_framebuffer_fetch_ = true;
-    }
-  }
+  supports_framebuffer_fetch_ =
+      gl.GetDescription()->HasExtension(kFramebufferFetchExtension);
 }
 
 size_t CapabilitiesGLES::GetMaxTextureUnits(ShaderStage stage) const {
