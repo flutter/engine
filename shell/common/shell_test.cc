@@ -22,6 +22,39 @@ namespace testing {
 
 constexpr int64_t kImplicitViewId = 0;
 
+FrameContent ViewContent::NoViews() {
+  return std::map<int64_t, ViewContent>();
+}
+
+FrameContent ViewContent::DummyView(double width, double height) {
+  FrameContent result;
+  result[kImplicitViewId] = ViewContent{
+      .viewport_metrics = {1.0, width, height, 22, 0},
+      .builder = {},
+  };
+  return result;
+}
+
+FrameContent ViewContent::DummyView(flutter::ViewportMetrics viewport_metrics) {
+  FrameContent result;
+  result[kImplicitViewId] = ViewContent{
+      .viewport_metrics = viewport_metrics,
+      .builder = {},
+  };
+  return result;
+}
+
+FrameContent ViewContent::ImplicitView(double width,
+                                       double height,
+                                       LayerTreeBuilder builder) {
+  FrameContent result;
+  result[kImplicitViewId] = ViewContent{
+      .viewport_metrics = {1.0, width, height, 22, 0},
+      .builder = std::move(builder),
+  };
+  return result;
+}
+
 ShellTest::ShellTest()
     : thread_host_("io.flutter.test." + GetCurrentTestName() + ".",
                    ThreadHost::Type::Platform | ThreadHost::Type::IO |
@@ -173,24 +206,20 @@ void ShellTest::NotifyIdle(Shell* shell, fml::TimeDelta deadline) {
   latch.Wait();
 }
 
-void ShellTest::PumpOneFrame(Shell* shell,
-                             double width,
-                             double height,
-                             LayerTreeBuilder builder) {
-  PumpOneFrame(shell, {1.0, width, height, 22, 0}, std::move(builder));
+void ShellTest::PumpOneFrame(Shell* shell) {
+  PumpOneFrame(shell, ViewContent::DummyView());
 }
 
-void ShellTest::PumpOneFrame(Shell* shell,
-                             const flutter::ViewportMetrics& viewport_metrics,
-                             LayerTreeBuilder builder,
-                             bool render_implicit_view) {
+void ShellTest::PumpOneFrame(Shell* shell, FrameContent frame_content) {
   // Set viewport to nonempty, and call Animator::BeginFrame to make the layer
   // tree pipeline nonempty. Without either of this, the layer tree below
   // won't be rasterized.
   fml::AutoResetWaitableEvent latch;
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [&latch, engine = shell->weak_engine_, viewport_metrics]() {
-        engine->SetViewportMetrics(kImplicitViewId, viewport_metrics);
+      [&latch, engine = shell->weak_engine_, &frame_content]() {
+        for (auto& [view_id, view_content] : frame_content) {
+          engine->SetViewportMetrics(view_id, view_content.viewport_metrics);
+        }
         const auto frame_begin_time = fml::TimePoint::Now();
         const auto frame_end_time =
             frame_begin_time + fml::TimeDelta::FromSecondsF(1.0 / 60.0);
@@ -206,22 +235,22 @@ void ShellTest::PumpOneFrame(Shell* shell,
   // Call |Render| to rasterize a layer tree and trigger |OnFrameRasterized|
   fml::WeakPtr<RuntimeDelegate> runtime_delegate = shell->weak_engine_;
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [&latch, engine = shell->weak_engine_, runtime_delegate, &builder,
-       viewport_metrics, render_implicit_view]() {
-        if (render_implicit_view) {
+      [&latch, engine = shell->weak_engine_, runtime_delegate,
+       &frame_content]() {
+        for (auto& [view_id, view_content] : frame_content) {
           SkMatrix identity;
           identity.setIdentity();
           auto root_layer = std::make_shared<TransformLayer>(identity);
           auto layer_tree = std::make_unique<LayerTree>(
               LayerTree::Config{.root_layer = root_layer},
-              SkISize::Make(viewport_metrics.physical_width,
-                            viewport_metrics.physical_height));
-          float device_pixel_ratio =
-              static_cast<float>(viewport_metrics.device_pixel_ratio);
-          if (builder) {
-            builder(root_layer);
+              SkISize::Make(view_content.viewport_metrics.physical_width,
+                            view_content.viewport_metrics.physical_height));
+          float device_pixel_ratio = static_cast<float>(
+              view_content.viewport_metrics.device_pixel_ratio);
+          if (view_content.builder) {
+            view_content.builder(root_layer);
           }
-          runtime_delegate->Render(kImplicitViewId, std::move(layer_tree),
+          runtime_delegate->Render(view_id, std::move(layer_tree),
                                    device_pixel_ratio);
         }
         engine->animator_->EndFrame();
