@@ -150,6 +150,7 @@ struct RenderPassData {
 
   const auto& gl = reactor.GetProcTable();
 
+#ifdef IMPELLER_DEBUG
   fml::ScopedCleanupClosure pop_pass_debug_marker(
       [&gl]() { gl.PopDebugGroup(); });
   if (!pass_data.label.empty()) {
@@ -157,6 +158,7 @@ struct RenderPassData {
   } else {
     pop_pass_debug_marker.Release();
   }
+#endif
 
   GLuint fbo = GL_NONE;
   fml::ScopedCleanupClosure delete_fbo([&gl, &fbo]() {
