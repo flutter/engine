@@ -34,5 +34,15 @@ TEST(CapabilitiesGLES, CanInitializeWithDefaults) {
             PixelFormat::kD24UnormS8Uint);
 }
 
+TEST(CapabilitiesGLES, SupportsDecalSamplerAddressMode) {
+  auto const extensions = std::vector<unsigned char*>{
+      (unsigned char*)"GL_KHR_debug",                 //
+      (unsigned char*)"GL_EXT_texture_border_clamp",  //
+  };
+  auto mock_gles = MockGLES::Init(extensions);
+  auto capabilities = mock_gles->GetProcTable().GetCapabilities();
+  EXPECT_TRUE(capabilities->SupportsDecalSamplerAddressMode());
+}
+
 }  // namespace testing
 }  // namespace impeller
