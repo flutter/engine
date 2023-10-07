@@ -71,6 +71,11 @@ struct ShaderStructMemberMetadata {
   size_t size;
   size_t byte_length;
   std::optional<size_t> array_elements;
+  /// @brief This field is used to cache the runtime location of this
+  ///        Uniform data after the first time the shader metadata is used in
+  ///        the OpenGLES backend.
+  ///
+  ///        See buffer_binding_gles.cc.
   mutable std::optional<int> location = std::nullopt;
   ;
 };
@@ -78,6 +83,11 @@ struct ShaderStructMemberMetadata {
 struct ShaderMetadata {
   std::string name;
   std::vector<ShaderStructMemberMetadata> members;
+  /// @brief This field is used to cache the runtime location of this
+  ///        Uniform data after the first time the shader metadata is used in
+  ///        the OpenGLES backend.
+  ///
+  ///        See buffer_binding_gles.cc.
   mutable std::optional<int> location = std::nullopt;
 };
 
