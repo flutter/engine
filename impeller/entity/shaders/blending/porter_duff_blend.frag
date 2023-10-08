@@ -19,7 +19,7 @@ uniform FragInfo {
   float16_t dst_coeff_src_color;
   float16_t input_alpha;
   float16_t output_alpha;
-  bool supports_decal_sampler_address_mode;
+  float supports_decal_sampler_address_mode;
 }
 frag_info;
 
@@ -29,7 +29,7 @@ in f16vec4 v_color;
 out f16vec4 frag_color;
 
 f16vec4 Sample(f16sampler2D texture_sampler, vec2 texture_coords) {
-  if (frag_info.supports_decal_sampler_address_mode) {
+  if (frag_info.supports_decal_sampler_address_mode > 0.0) {
     return texture(texture_sampler, texture_coords);
   } else {
     return IPSampleDecal(texture_sampler, texture_coords);

@@ -19,7 +19,7 @@ uniform FragInfo {
   f16vec2 uv_offset;
   float16_t radius;
   float16_t morph_type;
-  bool supports_decal_sampler_address_mode;
+  float supports_decal_sampler_address_mode;
 }
 frag_info;
 
@@ -34,7 +34,7 @@ void main() {
     vec2 texture_coords = v_texture_coords + frag_info.uv_offset * i;
 
     f16vec4 color;
-    if (frag_info.supports_decal_sampler_address_mode) {
+    if (frag_info.supports_decal_sampler_address_mode > 0.0) {
       color = texture(texture_sampler, texture_coords);
     } else {
       color = IPHalfSampleDecal(texture_sampler, texture_coords);
