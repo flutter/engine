@@ -28,7 +28,7 @@ f16vec4 Sample(f16sampler2D texture_sampler, vec2 texture_coords) {
   if (blend_info.supports_decal_sampler_address_mode > 0.0) {
     return texture(texture_sampler, texture_coords);
   } else {
-    return IPSampleDecal(texture_sampler, texture_coords);
+    return IPHalfSampleDecal(texture_sampler, texture_coords);
   }
 }
 
