@@ -54,7 +54,7 @@ static GLint ToParam(MinMagFilter minmag_filter,
 }
 
 static GLint ToAddressMode(SamplerAddressMode mode,
-                           const CapabilitiesGLES& capabilities) {
+                           bool supports_decal_sampler_address_mode) {
   switch (mode) {
     case SamplerAddressMode::kClampToEdge:
       return GL_CLAMP_TO_EDGE;
@@ -63,7 +63,7 @@ static GLint ToAddressMode(SamplerAddressMode mode,
     case SamplerAddressMode::kMirror:
       return GL_MIRRORED_REPEAT;
     case SamplerAddressMode::kDecal:
-      if (capabilities.SupportsDecalSamplerAddressMode()) {
+      if (supports_decal_sampler_address_mode) {
         return GL_CLAMP_TO_BORDER;
       }
       break;
@@ -102,10 +102,12 @@ bool SamplerGLES::ConfigureBoundTexture(const TextureGLES& texture,
                    ToParam(desc.mag_filter));
   gl.TexParameteri(
       target.value(), GL_TEXTURE_WRAP_S,
-      ToAddressMode(desc.width_address_mode, *gl.GetCapabilities()));
+      ToAddressMode(desc.width_address_mode,
+                    gl.GetCapabilities()->SupportsDecalSamplerAddressMode()));
   gl.TexParameteri(
       target.value(), GL_TEXTURE_WRAP_T,
-      ToAddressMode(desc.height_address_mode, *gl.GetCapabilities()));
+      ToAddressMode(desc.height_address_mode,
+                    gl.GetCapabilities()->SupportsDecalSamplerAddressMode()));
   return true;
 }
 

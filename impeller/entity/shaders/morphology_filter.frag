@@ -19,6 +19,7 @@ uniform FragInfo {
   f16vec2 uv_offset;
   float16_t radius;
   float16_t morph_type;
+  bool supports_decal_sampler_address_mode;
 }
 frag_info;
 
@@ -32,12 +33,12 @@ void main() {
   for (float16_t i = -frag_info.radius; i <= frag_info.radius; i++) {
     vec2 texture_coords = v_texture_coords + frag_info.uv_offset * i;
 
-// gles 2.0 is the only backend without native decal support.
-#ifdef IMPELLER_TARGET_OPENGLES
-    f16vec4 color = IPHalfSampleDecal(texture_sampler, texture_coords);
-#else
-    f16vec4 color = texture(texture_sampler, texture_coords);
-#endif
+    f16vec4 color;
+    if (frag_info.supports_decal_sampler_address_mode) {
+      color = texture(texture_sampler, texture_coords);
+    } else {
+      color = IPHalfSampleDecal(texture_sampler, texture_coords);
+    }
 
     if (frag_info.morph_type == kMorphTypeDilate) {
       result = max(color, result);

@@ -26,7 +26,7 @@ class MockGLES final {
   /// invocations on this instance of |MockGLES|. As such, it should only be
   /// called once per test.
   static std::shared_ptr<MockGLES> Init(
-      const std::optional<std::vector<unsigned char*>>& extensions =
+      const std::optional<std::vector<const unsigned char*>>& extensions =
           std::nullopt);
 
   /// @brief      Returns a configured |ProcTableGLES| instance.

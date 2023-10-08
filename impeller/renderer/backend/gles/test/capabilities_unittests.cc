@@ -35,9 +35,9 @@ TEST(CapabilitiesGLES, CanInitializeWithDefaults) {
 }
 
 TEST(CapabilitiesGLES, SupportsDecalSamplerAddressMode) {
-  auto const extensions = std::vector<unsigned char*>{
-      (unsigned char*)"GL_KHR_debug",                 //
-      (unsigned char*)"GL_EXT_texture_border_clamp",  //
+  auto const extensions = std::vector<const unsigned char*>{
+      reinterpret_cast<const unsigned char*>("GL_KHR_debug"),                 //
+      reinterpret_cast<const unsigned char*>("GL_EXT_texture_border_clamp"),  //
   };
   auto mock_gles = MockGLES::Init(extensions);
   auto capabilities = mock_gles->GetProcTable().GetCapabilities();

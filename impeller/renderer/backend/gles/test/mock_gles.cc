@@ -19,7 +19,7 @@ static std::mutex g_test_lock;
 
 static std::weak_ptr<MockGLES> g_mock_gles;
 
-static std::vector<unsigned char*> g_extensions;
+static std::vector<const unsigned char*> g_extensions;
 
 // Has friend visibility into MockGLES to record calls.
 void RecordGLCall(const char* name) {
@@ -39,7 +39,7 @@ void doNothing() {}
 
 auto const kMockVendor = (unsigned char*)"MockGLES";
 auto const kMockVersion = (unsigned char*)"3.0";
-auto const kExtensions = std::vector<unsigned char*>{
+auto const kExtensions = std::vector<const unsigned char*>{
     (unsigned char*)"GL_KHR_debug"  //
 };
 
@@ -113,7 +113,7 @@ static_assert(CheckSameSignature<decltype(mockPushDebugGroupKHR),  //
                                  decltype(glPushDebugGroupKHR)>::value);
 
 std::shared_ptr<MockGLES> MockGLES::Init(
-    const std::optional<std::vector<unsigned char*>>& extensions) {
+    const std::optional<std::vector<const unsigned char*>>& extensions) {
   // If we cannot obtain a lock, MockGLES is already being used elsewhere.
   FML_CHECK(g_test_lock.try_lock())
       << "MockGLES is already being used by another test.";
