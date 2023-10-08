@@ -38,7 +38,7 @@ FrameContent ViewContent::DummyView(double width, double height) {
 FrameContent ViewContent::DummyView(flutter::ViewportMetrics viewport_metrics) {
   FrameContent result;
   result[kImplicitViewId] = ViewContent{
-      .viewport_metrics = viewport_metrics,
+      .viewport_metrics = std::move(viewport_metrics),
       .builder = {},
   };
   return result;
