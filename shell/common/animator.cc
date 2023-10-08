@@ -60,7 +60,10 @@ void Animator::EnqueueTraceFlowId(uint64_t trace_flow_id) {
 
 void Animator::BeginFrame(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
-  FML_CHECK(frame_timings_recorder_ == nullptr);
+  // Both frame_timings_recorder_ and layer_trees_tasks_ must be empty if not
+  // between BeginFrame and EndFrame.
+  FML_DCHECK(frame_timings_recorder_ == nullptr);
+  FML_DCHECK(layer_trees_tasks_.empty());
   TRACE_EVENT_ASYNC_END0("flutter", "Frame Request Pending",
                          frame_request_number_);
   frame_request_number_++;
@@ -139,8 +142,7 @@ void Animator::EndFrame() {
       delegate_.OnAnimatorDraw(layer_tree_pipeline_);
     }
   }
-  FML_DCHECK(layer_trees_tasks_.empty());
-  frame_timings_recorder_ = nullptr;  // Ensure it's cleared.
+  frame_timings_recorder_ = nullptr;
 
   if (!frame_scheduled_ && has_rendered_) {
     // Wait a tad more than 3 60hz frames before reporting a big idle period.
@@ -168,6 +170,10 @@ void Animator::EndFrame() {
         },
         kNotifyIdleTaskWaitTime);
   }
+  // Both frame_timings_recorder_ and layer_trees_tasks_ must be empty if not
+  // between BeginFrame and EndFrame.
+  FML_DCHECK(layer_trees_tasks_.empty());
+  FML_DCHECK(frame_timings_recorder_ == nullptr);
 }
 
 void Animator::Render(int64_t view_id,
