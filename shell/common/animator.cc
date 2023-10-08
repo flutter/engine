@@ -128,6 +128,8 @@ void Animator::EndFrame() {
         frame_timings_recorder_->GetVsyncTargetTime());
 
     // Commit the pending continuation.
+    printf("layer_trees_tasks_ moved to rasterizer\n");
+    fflush(stdout);
     PipelineProduceResult result =
         producer_continuation_.Complete(std::make_unique<FrameItem>(
             std::move(layer_trees_tasks_), std::move(frame_timings_recorder_)));
@@ -186,6 +188,8 @@ void Animator::Render(int64_t view_id,
                                 "Animator::Render", /*flow_id_count=*/0,
                                 /*flow_ids=*/nullptr);
 
+  printf("layer_trees_tasks_.add\n");
+  fflush(stdout);
   layer_trees_tasks_.push_back(std::make_unique<LayerTreeTask>(
       view_id, std::move(layer_tree), device_pixel_ratio));
 }
