@@ -42,6 +42,7 @@
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/common/vsync_waiter_fallback.h"
+#include "flutter/shell/common/vsync_waiters_test.h"
 #include "flutter/shell/version/version.h"
 #include "flutter/testing/mock_canvas.h"
 #include "flutter/testing/testing.h"
@@ -64,6 +65,7 @@ constexpr int64_t kImplicitViewId = 0ll;
 
 using ::testing::_;
 using ::testing::Return;
+using ::testing::ReturnRef;
 
 namespace {
 class MockPlatformViewDelegate : public PlatformView::Delegate {
@@ -4621,6 +4623,128 @@ TEST_F(ShellTest, ShellFlushesPlatformStatesByMain) {
 
   PlatformViewNotifyDestroyed(shell.get());
   DestroyShell(std::move(shell), task_runners);
+}
+
+class MockShell : public Engine::Delegate, public Animator::Delegate {
+ public:
+  /* Engine::Delegate */
+  MOCK_METHOD(void,
+              OnEngineUpdateSemantics,
+              (SemanticsNodeUpdates, CustomAccessibilityActionUpdates),
+              (override));
+  MOCK_METHOD(void,
+              OnEngineHandlePlatformMessage,
+              (std::unique_ptr<PlatformMessage>),
+              (override));
+  MOCK_METHOD(void, OnPreEngineRestart, (), (override));
+  MOCK_METHOD(void, OnRootIsolateCreated, (), (override));
+  MOCK_METHOD(void,
+              UpdateIsolateDescription,
+              (const std::string, int64_t),
+              (override));
+  MOCK_METHOD(void, SetNeedsReportTimings, (bool), (override));
+  MOCK_METHOD(std::unique_ptr<std::vector<std::string>>,
+              ComputePlatformResolvedLocale,
+              (const std::vector<std::string>&),
+              (override));
+  MOCK_METHOD(void, RequestDartDeferredLibrary, (intptr_t), (override));
+  MOCK_METHOD(fml::TimePoint, GetCurrentTimePoint, (), (override));
+  MOCK_METHOD(const std::shared_ptr<PlatformMessageHandler>&,
+              GetPlatformMessageHandler,
+              (),
+              (const, override));
+  MOCK_METHOD(void, OnEngineChannelUpdate, (std::string, bool), (override));
+  MOCK_METHOD(double,
+              GetScaledFontSize,
+              (double font_size, int configuration_id),
+              (const, override));
+
+  /* Animator::Delegate */
+  MOCK_METHOD(void,
+              OnAnimatorBeginFrame,
+              (fml::TimePoint frame_target_time, uint64_t frame_number),
+              (override));
+  MOCK_METHOD(void,
+              OnAnimatorNotifyIdle,
+              (fml::TimeDelta deadline),
+              (override));
+  MOCK_METHOD(void,
+              OnAnimatorUpdateLatestFrameTargetTime,
+              (fml::TimePoint frame_target_time),
+              (override));
+  MOCK_METHOD(void,
+              OnAnimatorDraw,
+              (std::shared_ptr<FramePipeline> pipeline),
+              (override));
+  MOCK_METHOD(void,
+              OnAnimatorDrawLastLayerTrees,
+              (std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder),
+              (override));
+};
+
+TEST_F(ShellTest, AnimatorAcceptsMultipleRenders) {
+  MockShell mock_shell;
+  std::shared_ptr<PlatformMessageHandler> platform_message_handler =
+      std::make_shared<MockPlatformMessageHandler>();
+  EXPECT_CALL(mock_shell, GetPlatformMessageHandler)
+      .WillOnce(ReturnRef(platform_message_handler));
+
+  TaskRunners task_runners = GetTaskRunnersForFixture();
+  Settings settings = CreateSettingsForFixture();
+  std::unique_ptr<Engine> engine;
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("animatorRenderMultipleTimes");
+
+  PointerDataDispatcherMaker dispatcher_maker =
+      [](DefaultPointerDataDispatcher::Delegate& delegate) {
+        return std::make_unique<DefaultPointerDataDispatcher>(delegate);
+      };
+
+  fml::WeakPtr<IOManager> io_manager;
+  fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate;
+
+  fml::AutoResetWaitableEvent latch;
+  AddNativeCallback("NotifyNative", CREATE_NATIVE_ENTRY([&latch](auto args) {
+                      latch.Signal();
+                    }));
+
+  auto [vm, isolate_snapshot] = Shell::InferVmInitDataFromSettings(settings);
+  FML_CHECK(vm) << "Must be able to initialize the VM.";
+  PostSync(task_runners.GetUITaskRunner(),
+           [&, vm = &vm, isolate_snapshot = isolate_snapshot] {
+             auto animator = std::make_unique<Animator>(
+                 mock_shell, task_runners,
+                 static_cast<std::unique_ptr<VsyncWaiter>>(
+                     std::make_unique<testing::ConstantFiringVsyncWaiter>(
+                         task_runners)));
+             engine = std::make_unique<Engine>(
+                 /*delegate=*/mock_shell,
+                 /*dispatcher_maker=*/dispatcher_maker,
+                 /*vm=*/*vm,
+                 /*isolate_snapshot=*/isolate_snapshot,
+                 /*task_runners=*/task_runners,
+                 /*platform_data=*/PlatformData(),
+                 /*settings=*/settings,
+                 /*animator=*/std::move(animator),
+                 /*io_manager=*/io_manager,
+                 /*unref_queue=*/nullptr,
+                 /*snapshot_delegate=*/snapshot_delegate,
+                 /*volatile_path_tracker=*/nullptr,
+                 /*gpu_disabled_switch=*/std::make_shared<fml::SyncSwitch>());
+
+             Engine::RunStatus run_status =
+                 engine->Run(std::move(configuration));
+             FML_CHECK(run_status == Engine::RunStatus::Success)
+                 << "Engine failed to run.";
+             (void)run_status;  // Suppress unused-variable warning
+           });
+
+  latch.Wait();
+
+  PostSync(task_runners.GetUITaskRunner(), [&engine] {
+    printf("Clearing engine\n");
+    engine.reset();
+  });
 }
 
 }  // namespace testing

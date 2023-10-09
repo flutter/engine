@@ -547,3 +547,9 @@ void testReportViewWidths() {
     nativeReportViewWidthsCallback(getCurrentViewWidths());
   };
 }
+
+@pragma('vm:entry-point')
+void animatorRenderMultipleTimes() {
+  print('Success!!');
+  notifyNative();
+}
