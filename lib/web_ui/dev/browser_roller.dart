@@ -232,15 +232,9 @@ class _BrowserRoller {
 
     await _unzipAndDeleteFile(chromeDownload, platformDir);
 
-    late String relativePlatformDirPath;
-    // Preserve the `chrome-mac` directory when bundling, but remove it for win and linux.
-    if (platform.os == 'mac') {
-      relativePlatformDirPath = path.relative(platformDir.path, from: _rollDir.path);
-    } else {
-      final io.Directory? actualContentRoot = await _locateContentRoot(platformDir);
-      assert(actualContentRoot != null);
-      relativePlatformDirPath = path.relative(actualContentRoot!.path, from: _rollDir.path);
-    }
+    final io.Directory? actualContentRoot = await _locateContentRoot(platformDir);
+    assert(actualContentRoot != null);
+    final String relativePlatformDirPath = path.relative(actualContentRoot!.path, from: _rollDir.path);
 
     vprint('  Uploading Chromium (${platform.name}) to CIPD...');
     await uploadDirectoryToCipd(
