@@ -533,17 +533,6 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   return self;
 }
 
-- (BOOL)isEqual:(nullable id)other {
-  if (self == other) {
-    return YES;
-  }
-  if (!other || ![other isKindOfClass:[FlutterTextPosition class]]) {
-    return NO;
-  }
-  FlutterTextPosition* otherPosition = (FlutterTextPosition*)other;
-  return _index == otherPosition.index && _affinity == otherPosition.affinity;
-}
-
 @end
 
 #pragma mark - FlutterTextRange
@@ -632,15 +621,14 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 - (UITextRange*)lineEnclosingPosition:(UITextPosition*)position {
   // TODO(hellohuanlin): Remove iOS 17 check. The same logic should apply to older versions too.
   if (@available(iOS 17.0, *)) {
-    // The end of document (with backward affinity) should not be part of any line, since end is
-    // exclusive. This is to fix 2 bugs:
-    // 1. Keyboard freezes when switching languages:
-    // https://github.com/flutter/flutter/issues/134716
-    // 2. Auto correction candidate menu does not show up in iOS 17:
-    // https://github.com/flutter/flutter/issues/132594
-    // The end of document with forward affinity should still return the last line, which is used
-    // by voice control's delete line command.
-    if ([position isEqual:[_textInputView endOfDocument]]) {
+    FlutterTextPosition* flutterPosition = (FlutterTextPosition*)position;
+    if (flutterPosition.index > _textInputView.text.length) {
+      return nil;
+    }
+    // end of document with forward affinity is still considered as part of the document, which is
+    // used by voice control's delete line command.
+    if (flutterPosition.index == _textInputView.text.length &&
+        flutterPosition.affinity == UITextStorageDirectionBackward) {
       return nil;
     }
   }

@@ -2660,7 +2660,7 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(range.range.length, 20u);
 }
 
-- (void)testFlutterTokenizerEndOfDocumentLineRangeQuery {
+- (void)testFlutterTokenizerLineRangeQueryWithEndOfDocumentAndBackwardAffinity {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   id<UITextInputTokenizer> tokenizer = [inputView tokenizer];
 
@@ -2681,9 +2681,15 @@ FLUTTER_ASSERT_ARC
     XCTAssertEqual(range.range.location, 12u);
     XCTAssertEqual(range.range.length, 12u);
   }
+}
 
-  // End of document with forward affinity should still be considered as part of the document.
-  // This is used by voice control's delete line command.
+- (void)testFlutterTokenizerLineRangeQueryWithEndOfDocumentAndForwardAffinity {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  id<UITextInputTokenizer> tokenizer = [inputView tokenizer];
+
+  NSString* text = @"Random text\nwith 2 lines";
+  [inputView insertText:text];
+
   FlutterTextPosition* endOfDocumentWithForwardAffinity =
       [FlutterTextPosition positionWithIndex:text.length affinity:UITextStorageDirectionForward];
 
