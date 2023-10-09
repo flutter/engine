@@ -215,8 +215,10 @@ void ShellTest::PumpOneFrame(Shell* shell, FrameContent frame_content) {
   // tree pipeline nonempty. Without either of this, the layer tree below
   // won't be rasterized.
   fml::AutoResetWaitableEvent latch;
+  fml::WeakPtr<RuntimeDelegate> runtime_delegate = shell->weak_engine_;
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [&latch, engine = shell->weak_engine_, &frame_content]() {
+      [&latch, engine = shell->weak_engine_, &frame_content,
+       runtime_delegate]() {
         for (auto& [view_id, view_content] : frame_content) {
           engine->SetViewportMetrics(view_id, view_content.viewport_metrics);
         }
@@ -229,16 +231,7 @@ void ShellTest::PumpOneFrame(Shell* shell, FrameContent frame_content) {
         printf("From ShellTest::PumpOneFrame\n");
         fflush(stdout);
         engine->animator_->BeginFrame(std::move(recorder));
-        latch.Signal();
-      });
-  latch.Wait();
 
-  latch.Reset();
-  // Call |Render| to rasterize a layer tree and trigger |OnFrameRasterized|
-  fml::WeakPtr<RuntimeDelegate> runtime_delegate = shell->weak_engine_;
-  shell->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [&latch, engine = shell->weak_engine_, runtime_delegate,
-       &frame_content]() {
         for (auto& [view_id, view_content] : frame_content) {
           SkMatrix identity;
           identity.setIdentity();

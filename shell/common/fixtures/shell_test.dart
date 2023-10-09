@@ -322,6 +322,7 @@ void onBeginFrameWithNotifyNativeMain() {
   PlatformDispatcher.instance.onBeginFrame = (Duration beginTime) {
     nativeOnBeginFrame(beginTime.inMicroseconds);
   };
+  PlatformDispatcher.instance.scheduleFrame();
   notifyNative();
 }
 
