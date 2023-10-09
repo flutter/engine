@@ -59,7 +59,7 @@ std::optional<Entity> DirectionalMorphologyFilterContents::RenderFilter(
 
   if (radius_.radius < kEhCloseEnough) {
     return Entity::FromSnapshot(input_snapshot.value(), entity.GetBlendMode(),
-                                entity.GetStencilDepth());
+                                entity.GetClipDepth());
   }
 
   auto maybe_input_uvs = input_snapshot->GetCoverageUVs(coverage);
@@ -127,6 +127,8 @@ std::optional<Entity> DirectionalMorphologyFilterContents::RenderFilter(
       sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
       sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
     }
+    frag_info.supports_decal_sampler_address_mode =
+        renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode();
 
     FS::BindTextureSampler(
         cmd, input_snapshot->texture,
@@ -153,7 +155,7 @@ std::optional<Entity> DirectionalMorphologyFilterContents::RenderFilter(
                .transform = Matrix::MakeTranslation(coverage.origin),
                .sampler_descriptor = sampler_desc,
                .opacity = input_snapshot->opacity},
-      entity.GetBlendMode(), entity.GetStencilDepth());
+      entity.GetBlendMode(), entity.GetClipDepth());
 }
 
 std::optional<Rect> DirectionalMorphologyFilterContents::GetFilterCoverage(

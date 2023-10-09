@@ -1027,6 +1027,8 @@ ORIGIN: ../../../flutter/impeller/aiks/aiks_playground_inspector.cc + ../../../f
 ORIGIN: ../../../flutter/impeller/aiks/aiks_playground_inspector.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/aiks/canvas.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/aiks/canvas.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/aiks/canvas_recorder.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/aiks/canvas_type.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/aiks/color_filter.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/aiks/color_filter.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/aiks/color_source.cc + ../../../flutter/LICENSE
@@ -1043,6 +1045,8 @@ ORIGIN: ../../../flutter/impeller/aiks/picture.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/aiks/picture.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/aiks/picture_recorder.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/aiks/picture_recorder.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/aiks/trace_serializer.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/aiks/trace_serializer.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/archivist/archivable.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/archivist/archivable.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/archivist/archive.cc + ../../../flutter/LICENSE
@@ -2242,6 +2246,8 @@ ORIGIN: ../../../flutter/runtime/test_font_data.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/runtime/test_font_data.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/animator.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/animator.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/common/base64.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/common/base64.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/context_options.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/context_options.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/dart_native_benchmarks.cc + ../../../flutter/LICENSE
@@ -2697,6 +2703,7 @@ ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextI
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextureRegistryRelay.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextureRegistryRelay.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextureRegistryRelayTest.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTouchInterceptingView_Test.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUIPressProxy.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUIPressProxy.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUmbrellaImport.m + ../../../flutter/LICENSE
@@ -2718,6 +2725,8 @@ ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/KeyCodeMap_I
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObjectTest.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObjectTestMocks.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObjectTest_mrc.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/UIViewController+FlutterScreenAndSceneIfLoaded.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/UIViewController+FlutterScreenAndSceneIfLoaded.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/UIViewController_FlutterScreenAndSceneIfLoadedTest.mm + ../../../flutter/LICENSE
@@ -3777,6 +3786,8 @@ FILE: ../../../flutter/impeller/aiks/aiks_playground_inspector.cc
 FILE: ../../../flutter/impeller/aiks/aiks_playground_inspector.h
 FILE: ../../../flutter/impeller/aiks/canvas.cc
 FILE: ../../../flutter/impeller/aiks/canvas.h
+FILE: ../../../flutter/impeller/aiks/canvas_recorder.h
+FILE: ../../../flutter/impeller/aiks/canvas_type.h
 FILE: ../../../flutter/impeller/aiks/color_filter.cc
 FILE: ../../../flutter/impeller/aiks/color_filter.h
 FILE: ../../../flutter/impeller/aiks/color_source.cc
@@ -3793,6 +3804,8 @@ FILE: ../../../flutter/impeller/aiks/picture.cc
 FILE: ../../../flutter/impeller/aiks/picture.h
 FILE: ../../../flutter/impeller/aiks/picture_recorder.cc
 FILE: ../../../flutter/impeller/aiks/picture_recorder.h
+FILE: ../../../flutter/impeller/aiks/trace_serializer.cc
+FILE: ../../../flutter/impeller/aiks/trace_serializer.h
 FILE: ../../../flutter/impeller/archivist/archivable.cc
 FILE: ../../../flutter/impeller/archivist/archivable.h
 FILE: ../../../flutter/impeller/archivist/archive.cc
@@ -4997,6 +5010,8 @@ FILE: ../../../flutter/runtime/test_font_data.cc
 FILE: ../../../flutter/runtime/test_font_data.h
 FILE: ../../../flutter/shell/common/animator.cc
 FILE: ../../../flutter/shell/common/animator.h
+FILE: ../../../flutter/shell/common/base64.cc
+FILE: ../../../flutter/shell/common/base64.h
 FILE: ../../../flutter/shell/common/context_options.cc
 FILE: ../../../flutter/shell/common/context_options.h
 FILE: ../../../flutter/shell/common/dart_native_benchmarks.cc
@@ -5465,6 +5480,7 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInp
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextureRegistryRelay.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextureRegistryRelay.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextureRegistryRelayTest.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTouchInterceptingView_Test.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUIPressProxy.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUIPressProxy.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUmbrellaImport.m
@@ -5486,6 +5502,8 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/KeyCodeMap_Int
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObjectTest.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObjectTestMocks.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObjectTest_mrc.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/UIViewController+FlutterScreenAndSceneIfLoaded.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/UIViewController+FlutterScreenAndSceneIfLoaded.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/UIViewController_FlutterScreenAndSceneIfLoadedTest.mm

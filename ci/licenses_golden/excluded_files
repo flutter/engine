@@ -122,8 +122,10 @@
 ../../../flutter/impeller/.gitignore
 ../../../flutter/impeller/README.md
 ../../../flutter/impeller/aiks/aiks_unittests.cc
+../../../flutter/impeller/aiks/canvas_recorder_unittests.cc
 ../../../flutter/impeller/aiks/canvas_unittests.cc
 ../../../flutter/impeller/aiks/testing
+../../../flutter/impeller/aiks/trace_serializer_unittests.cc
 ../../../flutter/impeller/archivist/archivist_unittests.cc
 ../../../flutter/impeller/base/README.md
 ../../../flutter/impeller/base/base_unittests.cc
@@ -152,6 +154,7 @@
 ../../../flutter/impeller/golden_tests_harvester/test
 ../../../flutter/impeller/image/README.md
 ../../../flutter/impeller/playground
+../../../flutter/impeller/renderer/backend/gles/test
 ../../../flutter/impeller/renderer/backend/vulkan/blit_command_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/command_encoder_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk_unittests.cc
@@ -229,6 +232,7 @@
 ../../../flutter/runtime/no_dart_plugin_registrant_unittests.cc
 ../../../flutter/runtime/type_conversions_unittests.cc
 ../../../flutter/shell/common/animator_unittests.cc
+../../../flutter/shell/common/base64_unittests.cc
 ../../../flutter/shell/common/context_options_unittests.cc
 ../../../flutter/shell/common/dl_op_spy_unittests.cc
 ../../../flutter/shell/common/engine_unittests.cc
@@ -387,6 +391,7 @@
 ../../../flutter/sky/tools/install_framework_headers.py
 ../../../flutter/sky/tools/objcopy.py
 ../../../flutter/testing
+../../../flutter/third_party/.clang-tidy
 ../../../flutter/third_party/accessibility/README.md
 ../../../flutter/third_party/accessibility/ax/ax_enum_util_unittest.cc
 ../../../flutter/third_party/accessibility/ax/ax_event_generator_unittest.cc
@@ -470,6 +475,9 @@
 ../../../fuchsia/sdk/linux/arch/riscv64/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/arch/x64/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/arch/x64/sysroot/dist/lib/ld.so.1
+../../../fuchsia/sdk/linux/bind/fuchsia.arm.platform/meta.json
+../../../fuchsia/sdk/linux/bind/fuchsia.platform/meta.json
+../../../fuchsia/sdk/linux/bind/fuchsia/meta.json
 ../../../fuchsia/sdk/linux/dart/sl4f/meta.json
 ../../../fuchsia/sdk/linux/data/config/symbol_index/meta.json
 ../../../fuchsia/sdk/linux/docs
@@ -1659,6 +1667,7 @@
 ../../../third_party/dart/runtime/vm/compiler/assembler/assembler_ia32_test.cc
 ../../../third_party/dart/runtime/vm/compiler/assembler/assembler_riscv_test.cc
 ../../../third_party/dart/runtime/vm/compiler/assembler/assembler_test.cc
+../../../third_party/dart/runtime/vm/compiler/assembler/assembler_test.h
 ../../../third_party/dart/runtime/vm/compiler/assembler/assembler_x64_test.cc
 ../../../third_party/dart/runtime/vm/compiler/assembler/disassembler_test.cc
 ../../../third_party/dart/runtime/vm/compiler/backend/bce_test.cc
@@ -2641,7 +2650,6 @@
 ../../../third_party/skia/gm/BUILD.bazel
 ../../../third_party/skia/gm/android_gm_test.bzl
 ../../../third_party/skia/gm/png_codec.bzl
-../../../third_party/skia/gm/surface_manager/BUILD.bazel
 ../../../third_party/skia/gm/vias/BUILD.bazel
 ../../../third_party/skia/gn/BUILD.bazel
 ../../../third_party/skia/gn/__init__.py

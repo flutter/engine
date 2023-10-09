@@ -1,4 +1,4 @@
-Signature: b342b432b49d09cf10a2d480bfc2dcef
+Signature: 116a50d0facb820efdab648f654d3c41
 
 ====================================================================================================
 LIBRARY: dart
@@ -4501,6 +4501,7 @@ ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/string_helper.dart 
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/string_stringref_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/sync_star_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/typed_data.dart + ../../../third_party/dart/LICENSE
+ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/wasm_types_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/weak_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/typed_data.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/typed_data_patch.dart + ../../../third_party/dart/LICENSE
@@ -4549,6 +4550,7 @@ FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/string_helper.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/string_stringref_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/sync_star_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/typed_data.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/wasm_types_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/weak_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/typed_data.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm_js_compatibility/lib/typed_data_patch.dart
