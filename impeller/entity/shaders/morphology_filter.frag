@@ -34,11 +34,15 @@ void main() {
     vec2 texture_coords = v_texture_coords + frag_info.uv_offset * i;
 
     f16vec4 color;
+#ifdef IMPELLER_TARGET_OPENGLES
     if (frag_info.supports_decal_sampler_address_mode > 0.0) {
       color = texture(texture_sampler, texture_coords);
     } else {
       color = IPHalfSampleDecal(texture_sampler, texture_coords);
     }
+#else
+    color = texture(texture_sampler, texture_coords);
+#endif
 
     if (frag_info.morph_type == kMorphTypeDilate) {
       result = max(color, result);

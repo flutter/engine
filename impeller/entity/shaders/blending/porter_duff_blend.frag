@@ -29,11 +29,15 @@ in f16vec4 v_color;
 out f16vec4 frag_color;
 
 f16vec4 Sample(f16sampler2D texture_sampler, vec2 texture_coords) {
+#ifdef IMPELLER_TARGET_OPENGLES
   if (frag_info.supports_decal_sampler_address_mode > 0.0) {
     return texture(texture_sampler, texture_coords);
   } else {
     return IPHalfSampleDecal(texture_sampler, texture_coords);
   }
+#else
+  return texture(texture_sampler, texture_coords);
+#endif
 }
 
 void main() {
