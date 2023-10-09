@@ -52,18 +52,6 @@ executable("testing") {
       "//flutter/impeller",
       "//third_party/swiftshader",
     ]
-
-    if (is_win) {
-      libs += [ "$root_out_dir/vk_swiftshader.dll" ]
-    } else if (is_mac) {
-      libs += [ "$root_out_dir/libvk_swiftshader.dylib" ]
-    } else if (is_linux) {
-      libs += [ "$root_out_dir/libvk_swiftshader.so" ]
-    } else {
-      assert(
-          false,
-          "Only Windows, Mac, and Linux are supported for this target with Impeller.")
-    }
   }
 
   metadata = {

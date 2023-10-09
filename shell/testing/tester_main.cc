@@ -60,6 +60,14 @@ static std::vector<std::shared_ptr<fml::Mapping>> ShaderLibraryMappings() {
   };
 }
 
+#if FML_OS_MACOSX
+#define VULKAN_SO_PATH "libvk_swiftshader.dylib"
+#elif FML_OS_WIN
+#define VULKAN_SO_PATH "vk_swiftshader.dll"
+#else
+#define VULKAN_SO_PATH "libvk_swiftshader.so"
+#endif
+
 #else
 namespace impeller {
 class Context;
@@ -315,9 +323,15 @@ int RunTester(const flutter::Settings& settings,
 
 #if IMPELLER_SUPPORTS_RENDERING
   if (settings.enable_impeller) {
+    auto proc_table =
+        fml::MakeRefCounted<vulkan::VulkanProcTable>(VULKAN_SO_PATH);
+    if (!proc_table->NativeGetInstanceProcAddr()) {
+      FML_LOG(ERROR) << "Could not load Swiftshader library.";
+      return EXIT_FAILURE;
+    }
     impeller::ContextVK::Settings context_settings;
     context_settings.proc_address_callback =
-        reinterpret_cast<PFN_vkGetInstanceProcAddr>(&::vkGetInstanceProcAddr);
+        proc_table->NativeGetInstanceProcAddr();
     context_settings.shader_libraries_data = ShaderLibraryMappings();
     context_settings.cache_directory = fml::paths::GetCachesDirectory();
     context_settings.enable_validation = settings.enable_vulkan_validation;
