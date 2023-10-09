@@ -587,7 +587,7 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
   while (task_iter != tasks.end()) {
     LayerTreeTask& task = **task_iter;
     if (delegate_.ShouldDiscardLayerTree(task.view_id, *task.layer_tree)) {
-      printf("Discarding %lld (%d, %d)\n", task.view_id,
+      printf("Discarding %d (%d, %d)\n", (int)task.view_id,
              task.layer_tree->frame_size().width(),
              task.layer_tree->frame_size().height());
       fflush(stdout);
@@ -644,12 +644,12 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
     auto& view_record = EnsureViewRecord(task->view_id);
     view_record.last_draw_status = status;
     if (status == DrawSurfaceStatus::kSuccess) {
-      printf("Stored successful %lld\n", view_id);
+      printf("Stored successful %d\n", (int)view_id);
       fflush(stdout);
       view_record.last_successful_task = std::make_unique<LayerTreeTask>(
           view_id, std::move(layer_tree), device_pixel_ratio);
     } else if (status == DrawSurfaceStatus::kRetry) {
-      printf("Stored resubmitted %lld\n", view_id);
+      printf("Stored resubmitted %d\n", (int)view_id);
       fflush(stdout);
       resubmitted_tasks.push_back(std::make_unique<LayerTreeTask>(
           view_id, std::move(layer_tree), device_pixel_ratio));
