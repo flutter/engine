@@ -209,19 +209,18 @@ class _BrowserRoller {
   // Downloads Chromium from the internet, packs it in the directory structure
   // that the LUCI script wants. The result of this will be then uploaded to CIPD.
   Future<void> _rollChromium(_Platform platform) async {
-    final String chromeBuild = platform.binding.getChromeBuild(_lock.chromeLock);
-    final String majorVersion = _lock.chromeLock.version;
-    final String url = platform.binding.getChromeDownloadUrl(chromeBuild);
+    final String version = _lock.chromeLock.version;
+    final String url = platform.binding.getChromeDownloadUrl(version);
     final String cipdPackageName = 'flutter_internal/browsers/chrome/${platform.name}';
     final io.Directory platformDir = io.Directory(path.join(_rollDir.path, platform.name));
-    print('\nRolling Chromium for ${platform.name} (version:$majorVersion, build $chromeBuild)');
+    print('\nRolling Chromium for ${platform.name} (version:$version)');
     // Bail out if CIPD already has version:$majorVersion for this package!
     if (!dryRun && await cipdKnowsPackageVersion(
       package: cipdPackageName,
-      versionTag: majorVersion,
+      versionTag: version,
       isVerbose: verbose
     )) {
-      print('  Skipping $cipdPackageName version:$majorVersion. Already uploaded to CIPD!');
+      print('  Skipping $cipdPackageName version:$version. Already uploaded to CIPD!');
       vprint('  Update  browser_lock.yaml  and use a different version value.');
       return;
     }
@@ -248,9 +247,9 @@ class _BrowserRoller {
       directory: _rollDir,
       packageName: cipdPackageName,
       configFileName: 'cipd.chromium.${platform.name}.yaml',
-      description: 'Chromium $majorVersion (build $chromeBuild) used for testing',
-      version: majorVersion,
-      buildId: chromeBuild,
+      description: 'Chromium $version used for testing',
+      version: version,
+      buildId: version,
       root: relativePlatformDirPath,
       isDryRun: dryRun,
       isVerbose: verbose,
@@ -260,19 +259,18 @@ class _BrowserRoller {
   // Downloads Chromedriver from the internet, packs it in the directory structure
   // that the LUCI script wants. The result of this will be then uploaded to CIPD.
   Future<void> _rollChromeDriver(_Platform platform) async {
-    final String chromeBuild = platform.binding.getChromeBuild(_lock.chromeLock);
-    final String majorVersion = _lock.chromeLock.version;
-    final String url = platform.binding.getChromeDriverDownloadUrl(chromeBuild);
+    final String version = _lock.chromeLock.version;
+    final String url = platform.binding.getChromeDriverDownloadUrl(version);
     final String cipdPackageName = 'flutter_internal/browser-drivers/chrome/${platform.name}';
     final io.Directory platformDir = io.Directory(path.join(_rollDir.path, '${platform.name}_driver'));
-    print('\nRolling Chromedriver for ${platform.os}-${platform.arch} (version:$majorVersion, build $chromeBuild)');
+    print('\nRolling Chromedriver for ${platform.os}-${platform.arch} (version:$version)');
     // Bail out if CIPD already has version:$majorVersion for this package!
     if (!dryRun && await cipdKnowsPackageVersion(
       package: cipdPackageName,
-      versionTag: majorVersion,
+      versionTag: version,
       isVerbose: verbose
     )) {
-      print('  Skipping $cipdPackageName version:$majorVersion. Already uploaded to CIPD!');
+      print('  Skipping $cipdPackageName version:$version. Already uploaded to CIPD!');
       vprint('  Update  browser_lock.yaml  and use a different version value.');
       return;
     }
@@ -294,9 +292,9 @@ class _BrowserRoller {
       directory: _rollDir,
       packageName: cipdPackageName,
       configFileName: 'cipd.chromedriver.${platform.name}.yaml',
-      description: 'Chromedriver for Chromium $majorVersion (build $chromeBuild) used for testing',
-      version: majorVersion,
-      buildId: chromeBuild,
+      description: 'Chromedriver for Chromium $version used for testing',
+      version: version,
+      buildId: version,
       root: relativePlatformDirPath,
       isDryRun: dryRun,
       isVerbose: verbose,
