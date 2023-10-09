@@ -22,7 +22,11 @@ static TextureGLES::Type GetTextureTypeFromDescriptor(
   const auto render_target =
       static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
   if (usage == render_target) {
-    return TextureGLES::Type::kRenderBuffer;
+    if (desc.sample_count == SampleCount::kCount1) {
+      return TextureGLES::Type::kRenderBuffer;
+    } else {
+      return TextureGLES::Type::kRenderBufferMultisampled;
+    }
   }
   return TextureGLES::Type::kTexture;
 }
@@ -506,7 +510,6 @@ static GLenum ToAttachmentPoint(TextureGLES::AttachmentPoint point) {
 }
 
 bool TextureGLES::SetAsFramebufferAttachment(GLenum target,
-                                             GLuint fbo,
                                              AttachmentPoint point) const {
   if (!IsValid()) {
     return false;
