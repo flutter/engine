@@ -226,6 +226,8 @@ void ShellTest::PumpOneFrame(Shell* shell, FrameContent frame_content) {
         std::unique_ptr<FrameTimingsRecorder> recorder =
             std::make_unique<FrameTimingsRecorder>();
         recorder->RecordVsync(frame_begin_time, frame_end_time);
+        printf("From ShellTest::PumpOneFrame\n");
+        fflush(stdout);
         engine->animator_->BeginFrame(std::move(recorder));
         latch.Signal();
       });
@@ -253,6 +255,8 @@ void ShellTest::PumpOneFrame(Shell* shell, FrameContent frame_content) {
           runtime_delegate->Render(view_id, std::move(layer_tree),
                                    device_pixel_ratio);
         }
+        printf("From ShellTest::PumpOneFrame\n");
+        fflush(stdout);
         engine->animator_->EndFrame();
         latch.Signal();
       });
