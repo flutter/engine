@@ -241,8 +241,6 @@ DrawStatus Rasterizer::Draw(const std::shared_ptr<FramePipeline>& pipeline) {
   DoDrawResult draw_result;
   FramePipeline::Consumer consumer = [&draw_result,
                                       this](std::unique_ptr<FrameItem> item) {
-    printf("Consumed\n");
-    fflush(stdout);
     draw_result = DoDraw(std::move(item->frame_timings_recorder),
                          std::move(item->layer_tree_tasks));
   };
@@ -440,13 +438,9 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
   frame_timings_recorder->AssertInState(FrameTimingsRecorder::State::kBuildEnd);
 
   if (tasks.empty()) {
-    printf("Return: Tasks empty\n");
-    fflush(stdout);
     return DoDrawResult{DoDrawStatus::kDone};
   }
   if (!surface_) {
-    printf("Return: Tasks no surface\n");
-    fflush(stdout);
     return DoDrawResult{DoDrawStatus::kNotSetUp};
   }
 
@@ -553,8 +547,6 @@ Rasterizer::DoDrawResult Rasterizer::DrawToSurfaces(
     delegate_.GetIsGpuDisabledSyncSwitch()->Execute(
         fml::SyncSwitch::Handlers()
             .SetIfTrue([&] {
-              printf("Return: GPU disabled\n");
-              fflush(stdout);
               result.status = DoDrawStatus::kGpuUnavailable;
               frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
               frame_timings_recorder.RecordRasterEnd();
@@ -587,10 +579,6 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
   while (task_iter != tasks.end()) {
     LayerTreeTask& task = **task_iter;
     if (delegate_.ShouldDiscardLayerTree(task.view_id, *task.layer_tree)) {
-      printf("Discarding %d (%d, %d)\n", (int)task.view_id,
-             task.layer_tree->frame_size().width(),
-             task.layer_tree->frame_size().height());
-      fflush(stdout);
       EnsureViewRecord(task.view_id).last_draw_status =
           DrawSurfaceStatus::kDiscarded;
       task_iter = tasks.erase(task_iter);
@@ -599,8 +587,6 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
     }
   }
   if (tasks.empty()) {
-    printf("Return: No tasks 2\n");
-    fflush(stdout);
     frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
     frame_timings_recorder.RecordRasterEnd();
     return nullptr;
@@ -644,13 +630,9 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
     auto& view_record = EnsureViewRecord(task->view_id);
     view_record.last_draw_status = status;
     if (status == DrawSurfaceStatus::kSuccess) {
-      printf("Stored successful %d\n", (int)view_id);
-      fflush(stdout);
       view_record.last_successful_task = std::make_unique<LayerTreeTask>(
           view_id, std::move(layer_tree), device_pixel_ratio);
     } else if (status == DrawSurfaceStatus::kRetry) {
-      printf("Stored resubmitted %d\n", (int)view_id);
-      fflush(stdout);
       resubmitted_tasks.push_back(std::make_unique<LayerTreeTask>(
           view_id, std::move(layer_tree), device_pixel_ratio));
     } else {

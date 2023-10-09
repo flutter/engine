@@ -60,8 +60,6 @@ void Animator::EnqueueTraceFlowId(uint64_t trace_flow_id) {
 
 void Animator::BeginFrame(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
-  printf("Animator::BeginFrame\n");
-  fflush(stdout);
   // Both frame_timings_recorder_ and layer_trees_tasks_ must be empty if not
   // between BeginFrame and EndFrame.
   FML_DCHECK(frame_timings_recorder_ == nullptr);
@@ -130,8 +128,6 @@ void Animator::EndFrame() {
         frame_timings_recorder_->GetVsyncTargetTime());
 
     // Commit the pending continuation.
-    printf("layer_trees_tasks_ moved to rasterizer\n");
-    fflush(stdout);
     PipelineProduceResult result =
         producer_continuation_.Complete(std::make_unique<FrameItem>(
             std::move(layer_trees_tasks_), std::move(frame_timings_recorder_)));
@@ -147,8 +143,6 @@ void Animator::EndFrame() {
     }
   }
   frame_timings_recorder_ = nullptr;  // Ensure it's cleared.
-  printf("Animator::EndFrame\n");
-  fflush(stdout);
 
   if (!frame_scheduled_ && has_rendered_) {
     // Wait a tad more than 3 60hz frames before reporting a big idle period.
@@ -186,16 +180,12 @@ void Animator::Render(int64_t view_id,
                       std::unique_ptr<flutter::LayerTree> layer_tree,
                       float device_pixel_ratio) {
   has_rendered_ = true;
-  printf("Animator::Render\n");
-  fflush(stdout);
 
   FML_CHECK(frame_timings_recorder_ != nullptr);
   TRACE_EVENT_WITH_FRAME_NUMBER(frame_timings_recorder_, "flutter",
                                 "Animator::Render", /*flow_id_count=*/0,
                                 /*flow_ids=*/nullptr);
 
-  printf("layer_trees_tasks_.add\n");
-  fflush(stdout);
   layer_trees_tasks_.push_back(std::make_unique<LayerTreeTask>(
       view_id, std::move(layer_tree), device_pixel_ratio));
 }
@@ -268,8 +258,6 @@ void Animator::AwaitVSync() {
           if (self->CanReuseLastLayerTrees()) {
             self->DrawLastLayerTrees(std::move(frame_timings_recorder));
           } else {
-            printf("From Animator::AwaitVSync\n");
-            fflush(stdout);
             self->BeginFrame(std::move(frame_timings_recorder));
             self->EndFrame();
           }
