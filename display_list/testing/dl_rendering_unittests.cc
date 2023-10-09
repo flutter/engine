@@ -1080,7 +1080,8 @@ class TestParameters {
 class CanvasCompareTester {
  public:
   static std::vector<BackendType> kTestBackends;
-  static std::string kTempDirectory;
+  static std::string kImpellerFailureDirectory;
+  static bool kSaveImpellerFailures;
 
   static std::unique_ptr<DlSurfaceProvider> GetProvider(BackendType type) {
     auto provider = DlSurfaceProvider::Create(type);
@@ -2235,11 +2236,11 @@ class CanvasCompareTester {
   }
 
   static std::string to_png_filename(const std::string& desc) {
-    if (kTempDirectory.length() == 0) {
-      kTempDirectory = fml::CreateTemporaryDirectory();
+    if (kImpellerFailureDirectory.length() == 0) {
+      kImpellerFailureDirectory = fml::CreateTemporaryDirectory();
     }
 
-    std::string ret = kTempDirectory + "/";
+    std::string ret = kImpellerFailureDirectory + "/";
     for (const char& ch : desc) {
       ret += (ch == ':' || ch == ' ') ? '_' : ch;
     }
@@ -2316,7 +2317,7 @@ class CanvasCompareTester {
                       env.ref_impeller_result(), imp_result.get(), false,
                       imp_info + " (attribute should affect rendering)");
       }
-      if (!success) {
+      if (!success && kSaveImpellerFailures) {
         FML_LOG(ERROR) << "Impeller issue encountered for: " << *display_list;
         std::string filename = to_png_filename(info + " (Impeller Output)");
         imp_result->write(filename);
@@ -2719,7 +2720,8 @@ class CanvasCompareTester {
 };
 
 std::vector<BackendType> CanvasCompareTester::kTestBackends;
-std::string CanvasCompareTester::kTempDirectory = "";
+std::string CanvasCompareTester::kImpellerFailureDirectory = "";
+bool CanvasCompareTester::kSaveImpellerFailures = false;
 
 BoundsTolerance CanvasCompareTester::DefaultTolerance =
     BoundsTolerance().addAbsolutePadding(1, 1);
@@ -2745,14 +2747,49 @@ class DisplayListRenderingTestBase : public BaseT,
     return true;
   }
 
+  static void Usage() {
+    FML_LOG(INFO) << "Usage: display_list_rendertests [options]";
+    FML_LOG(INFO) << "  options:";
+    FML_LOG(INFO) << "    --render-help                  "
+                  << "Prints this usage information";
+    FML_LOG(INFO) << "    --[no-]enable-software         "
+                  << "Enables testing on SW back end";
+    FML_LOG(INFO) << "    --[no-]enable-metal            "
+                  << "Enables testing on Metal back end";
+    FML_LOG(INFO) << "    --[no-]enable-[open]gl         "
+                  << "Enables testing on OpenGL back end";
+    FML_LOG(INFO) << "    --[no-]save-impeller-failures  "
+                  << "Save test images on Impeller testing failure";
+    FML_LOG(INFO) << "    --impeller-failure-dir         "
+                  << "Directory to save Impeller failure images";
+  }
+
   static void SetUpTestSuite() {
     bool do_software = true;
     bool do_opengl = false;
-    bool do_metal = false;
+    bool do_metal = true;
     std::vector<std::string> args = ::testing::internal::GetArgvs();
     for (auto p_arg = std::next(args.begin()); p_arg != args.end(); p_arg++) {
       std::string arg = *p_arg;
       bool enable = true;
+      if (arg == "--render-help") {
+        Usage();
+        continue;
+      }
+      if (StartsWith(arg, "--impeller-failure-dir")) {
+        if (StartsWith(arg, "--impeller-failure-dir=")) {
+          arg = arg.substr(23);
+        } else if (p_arg++ != args.end()) {
+          arg = *p_arg;
+        } else {
+          break;
+        }
+        while (arg.length() > 0 && arg[arg.length() - 1] == '/') {
+          arg = arg.substr(0, arg.length() - 1);
+        }
+        CanvasCompareTester::kImpellerFailureDirectory = arg;
+        continue;
+      }
       if (StartsWith(arg, "--no")) {
         enable = false;
         arg = "-" + arg.substr(4);
@@ -2763,6 +2800,8 @@ class DisplayListRenderingTestBase : public BaseT,
         do_opengl = enable;
       } else if (arg == "--enable-metal") {
         do_metal = enable;
+      } else if (arg == "--save-impeller-failures") {
+        CanvasCompareTester::kSaveImpellerFailures = enable;
       }
     }
     if (do_software) {
