@@ -130,10 +130,10 @@ abstract class MacPlatformBinding extends PlatformBinding {
   @override
   String getChromeExecutablePath(io.Directory versionDir) => path.join(
         versionDir.path,
-        'Google Chrome For Testing.app',
+        'Google Chrome for Testing.app',
         'Contents',
         'MacOS',
-        'Google Chrome For Testing',
+        'Google Chrome for Testing',
       );
 
   @override
