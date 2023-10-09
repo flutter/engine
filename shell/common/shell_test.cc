@@ -125,16 +125,18 @@ void ShellTest::RestartEngine(Shell* shell, RunConfiguration configuration) {
   ASSERT_TRUE(restarted.get_future().get());
 }
 
-void ShellTest::VSyncFlush(Shell* shell, bool& will_draw_new_frame) {
+void ShellTest::VSyncFlush(Shell* shell, bool* will_draw_new_frame) {
   fml::AutoResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(),
-      [shell, &will_draw_new_frame, &latch] {
+      [shell, will_draw_new_frame, &latch] {
         // The following UI task ensures that all previous UI tasks are flushed.
         fml::AutoResetWaitableEvent ui_latch;
         shell->GetTaskRunners().GetUITaskRunner()->PostTask(
-            [&ui_latch, &will_draw_new_frame]() {
-              will_draw_new_frame = true;
+            [&ui_latch, will_draw_new_frame]() {
+              if (will_draw_new_frame != nullptr) {
+                *will_draw_new_frame = true;
+              }
               ui_latch.Signal();
             });
 

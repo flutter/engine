@@ -2097,7 +2097,16 @@ TEST_F(ShellTest, SecondaryVsyncCallbackShouldBeCalledAfterVsyncCallback) {
                       is_on_begin_frame_called = true;
                       count_down_latch.CountDown();
                     }));
-  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
+  std::unique_ptr<Shell> shell = CreateShell({
+      .settings = settings,
+      .task_runners = task_runners,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          // Suppress automatic vsync and manually VSyncFlush later to ensure
+          // that, when the secondary vsync callback is scheduled, the primary
+          // vsync callback is still pending.
+          .simulate_vsync = true,
+      }),
+  });
   ASSERT_TRUE(shell->IsSetup());
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
@@ -2117,6 +2126,7 @@ TEST_F(ShellTest, SecondaryVsyncCallbackShouldBeCalledAfterVsyncCallback) {
         });
         shell->GetEngine()->ScheduleFrame();
       });
+  VSyncFlush(shell.get());
   count_down_latch.Wait();
   EXPECT_TRUE(is_on_begin_frame_called);
   EXPECT_TRUE(is_secondary_callback_called);

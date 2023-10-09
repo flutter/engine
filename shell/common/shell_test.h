@@ -102,8 +102,8 @@ class ShellTest : public FixtureTest {
   static void RestartEngine(Shell* shell, RunConfiguration configuration);
 
   /// Issue as many VSYNC as needed to flush the UI tasks so far, and reset
-  /// the `will_draw_new_frame` to true.
-  static void VSyncFlush(Shell* shell, bool& will_draw_new_frame);
+  /// the content of `will_draw_new_frame` to true if it's not nullptr.
+  static void VSyncFlush(Shell* shell, bool* will_draw_new_frame = nullptr);
 
   static void SetViewportMetrics(Shell* shell, double width, double height);
   static void NotifyIdle(Shell* shell, fml::TimeDelta deadline);
