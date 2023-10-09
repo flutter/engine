@@ -41,7 +41,6 @@ FONTS_DIR = os.path.join(
 ROBOTO_FONT_PATH = os.path.join(FONTS_DIR, 'Roboto-Regular.ttf')
 FONT_SUBSET_DIR = os.path.join(BUILDROOT_DIR, 'flutter', 'tools', 'font-subset')
 
-FML_UNITTESTS_FILTER = '--gtest_filter=-*TimeSensitiveTest*'
 ENCODING = 'UTF-8'
 
 logger = logging.getLogger(__name__)
