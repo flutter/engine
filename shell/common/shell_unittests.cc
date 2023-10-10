@@ -64,6 +64,7 @@ namespace testing {
 constexpr int64_t kImplicitViewId = 0ll;
 
 using ::testing::_;
+using ::testing::Invoke;
 using ::testing::Return;
 using ::testing::ReturnRef;
 
@@ -4684,14 +4685,28 @@ class MockShell : public Engine::Delegate, public Animator::Delegate {
 
 TEST_F(ShellTest, AnimatorAcceptsMultipleRenders) {
   MockShell mock_shell;
+  std::unique_ptr<Engine> engine;
   std::shared_ptr<PlatformMessageHandler> platform_message_handler =
       std::make_shared<MockPlatformMessageHandler>();
   EXPECT_CALL(mock_shell, GetPlatformMessageHandler)
       .WillOnce(ReturnRef(platform_message_handler));
+  fml::AutoResetWaitableEvent draw_latch;
+  EXPECT_CALL(mock_shell, OnAnimatorDraw)
+      .WillOnce(Invoke([&draw_latch](std::shared_ptr<FramePipeline> pipeline) {
+        auto status = pipeline->Consume([&](std::unique_ptr<FrameItem> item) {
+          EXPECT_EQ(item->layer_tree_tasks.size(), 2u);
+        });
+        EXPECT_EQ(status, PipelineConsumeResult::Done);
+        draw_latch.Signal();
+      }));
+  EXPECT_CALL(mock_shell, OnAnimatorBeginFrame)
+      .WillOnce(Invoke(
+          [&engine](fml::TimePoint frame_target_time, uint64_t frame_number) {
+            engine->BeginFrame(frame_target_time, frame_number);
+          }));
 
   TaskRunners task_runners = GetTaskRunnersForFixture();
   Settings settings = CreateSettingsForFixture();
-  std::unique_ptr<Engine> engine;
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("animatorRenderMultipleTimes");
 
@@ -4703,9 +4718,10 @@ TEST_F(ShellTest, AnimatorAcceptsMultipleRenders) {
   fml::WeakPtr<IOManager> io_manager;
   fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate;
 
-  fml::AutoResetWaitableEvent latch;
-  AddNativeCallback("NotifyNative", CREATE_NATIVE_ENTRY([&latch](auto args) {
-                      latch.Signal();
+  fml::AutoResetWaitableEvent callback_ready_latch;
+  AddNativeCallback("NotifyNative",
+                    CREATE_NATIVE_ENTRY([&callback_ready_latch](auto args) {
+                      callback_ready_latch.Signal();
                     }));
 
   auto [vm, isolate_snapshot] = Shell::InferVmInitDataFromSettings(settings);
@@ -4737,14 +4753,17 @@ TEST_F(ShellTest, AnimatorAcceptsMultipleRenders) {
              FML_CHECK(run_status == Engine::RunStatus::Success)
                  << "Engine failed to run.";
              (void)run_status;  // Suppress unused-variable warning
+             engine->AddView(1, {1, 10, 10, 22, 0});
+             engine->AddView(2, {1, 10, 10, 22, 0});
            });
 
-  latch.Wait();
+  callback_ready_latch.Wait();
 
-  PostSync(task_runners.GetUITaskRunner(), [&engine] {
-    printf("Clearing engine\n");
-    engine.reset();
-  });
+  PostSync(task_runners.GetUITaskRunner(),
+           [&engine] { engine->ScheduleFrame(); });
+  draw_latch.Wait();
+
+  PostSync(task_runners.GetUITaskRunner(), [&engine] { engine.reset(); });
 }
 
 }  // namespace testing
