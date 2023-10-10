@@ -22,11 +22,11 @@ jobs:
       id-token: write
     steps:
       - name: "Checkout code"
-        uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608
         with:
           persist-credentials: false
       - name: "Run analysis"
-        uses: ossf/scorecard-action@80e868c13c90f172d68d1f4501dee99e2479f7af
+        uses: ossf/scorecard-action@483ef80eb98fb506c348f7d62e28055e49fe2398
         with:
           results_file: results.sarif
           results_format: sarif

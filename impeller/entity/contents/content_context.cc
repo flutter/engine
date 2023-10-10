@@ -38,10 +38,19 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
 
   switch (pipeline_blend) {
     case BlendMode::kClear:
-      color0.dst_alpha_blend_factor = BlendFactor::kZero;
-      color0.dst_color_blend_factor = BlendFactor::kZero;
-      color0.src_alpha_blend_factor = BlendFactor::kZero;
-      color0.src_color_blend_factor = BlendFactor::kZero;
+      if (is_for_rrect_blur_clear) {
+        color0.alpha_blend_op = BlendOperation::kReverseSubtract;
+        color0.color_blend_op = BlendOperation::kReverseSubtract;
+        color0.dst_alpha_blend_factor = BlendFactor::kOne;
+        color0.dst_color_blend_factor = BlendFactor::kOne;
+        color0.src_alpha_blend_factor = BlendFactor::kDestinationColor;
+        color0.src_color_blend_factor = BlendFactor::kDestinationColor;
+      } else {
+        color0.dst_alpha_blend_factor = BlendFactor::kZero;
+        color0.dst_color_blend_factor = BlendFactor::kZero;
+        color0.src_alpha_blend_factor = BlendFactor::kZero;
+        color0.src_color_blend_factor = BlendFactor::kZero;
+      }
       break;
     case BlendMode::kSource:
       color0.blending_enabled = false;
@@ -162,7 +171,8 @@ static std::unique_ptr<PipelineT> CreateDefaultPipeline(
 
 ContentContext::ContentContext(
     std::shared_ptr<Context> context,
-    std::shared_ptr<TypographerContext> typographer_context)
+    std::shared_ptr<TypographerContext> typographer_context,
+    std::shared_ptr<RenderTargetAllocator> render_target_allocator)
     : context_(std::move(context)),
       lazy_glyph_atlas_(
           std::make_shared<LazyGlyphAtlas>(std::move(typographer_context))),
@@ -170,8 +180,10 @@ ContentContext::ContentContext(
 #if IMPELLER_ENABLE_3D
       scene_context_(std::make_shared<scene::SceneContext>(context_)),
 #endif  // IMPELLER_ENABLE_3D
-      render_target_cache_(std::make_shared<RenderTargetCache>(
-          context_->GetResourceAllocator())) {
+      render_target_cache_(render_target_allocator == nullptr
+                               ? std::make_shared<RenderTargetCache>(
+                                     context_->GetResourceAllocator())
+                               : std::move(render_target_allocator)) {
   if (!context_ || !context_->IsValid()) {
     return;
   }
@@ -370,21 +382,15 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
     subpass_target = RenderTarget::CreateOffscreenMSAA(
         *context, *GetRenderTargetCache(), texture_size,
         SPrintF("%s Offscreen", label.c_str()),
-        RenderTarget::kDefaultColorAttachmentConfigMSAA  //
-#ifndef FML_OS_ANDROID  // Reduce PSO variants for Vulkan.
-        ,
+        RenderTarget::kDefaultColorAttachmentConfigMSAA,
         std::nullopt  // stencil_attachment_config
-#endif                // FML_OS_ANDROID
     );
   } else {
     subpass_target = RenderTarget::CreateOffscreen(
         *context, *GetRenderTargetCache(), texture_size,
         SPrintF("%s Offscreen", label.c_str()),
-        RenderTarget::kDefaultColorAttachmentConfig  //
-#ifndef FML_OS_ANDROID  // Reduce PSO variants for Vulkan.
-        ,
+        RenderTarget::kDefaultColorAttachmentConfig,  //
         std::nullopt  // stencil_attachment_config
-#endif                // FML_OS_ANDROID
     );
   }
   auto subpass_texture = subpass_target.GetRenderTargetTexture();

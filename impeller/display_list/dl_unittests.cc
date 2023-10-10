@@ -21,6 +21,7 @@
 #include "impeller/display_list/dl_dispatcher.h"
 #include "impeller/display_list/dl_image_impeller.h"
 #include "impeller/display_list/dl_playground.h"
+#include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/contents/solid_rrect_blur_contents.h"
 #include "impeller/geometry/constants.h"
@@ -1196,11 +1197,13 @@ TEST_P(DisplayListTest, CanDrawRectWithLinearToSrgbColorFilter) {
   flutter::DlPaint paint;
   paint.setColor(flutter::DlColor(0xFF2196F3).withAlpha(128));
   flutter::DisplayListBuilder builder;
-  paint.setColorFilter(flutter::DlLinearToSrgbGammaColorFilter::instance.get());
+  paint.setColorFilter(
+      flutter::DlLinearToSrgbGammaColorFilter::kInstance.get());
   builder.DrawRect(SkRect::MakeXYWH(0, 0, 200, 200), paint);
   builder.Translate(0, 200);
 
-  paint.setColorFilter(flutter::DlSrgbToLinearGammaColorFilter::instance.get());
+  paint.setColorFilter(
+      flutter::DlSrgbToLinearGammaColorFilter::kInstance.get());
   builder.DrawRect(SkRect::MakeXYWH(0, 0, 200, 200), paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -1677,6 +1680,65 @@ TEST_P(DisplayListTest, DrawVerticesBlendModes) {
   };
 
   ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+template <typename Contents>
+static std::optional<Rect> GetCoverageOfFirstEntity(const Picture& picture) {
+  std::optional<Rect> coverage;
+  picture.pass->IterateAllEntities([&coverage](Entity& entity) {
+    if (std::static_pointer_cast<Contents>(entity.GetContents())) {
+      auto contents = std::static_pointer_cast<Contents>(entity.GetContents());
+      Entity entity;
+      coverage = contents->GetCoverage(entity);
+      return false;
+    }
+    return true;
+  });
+  return coverage;
+}
+
+TEST(DisplayListTest, RRectBoundsComputation) {
+  SkRRect rrect = SkRRect::MakeRectXY(SkRect::MakeLTRB(0, 0, 100, 100), 4, 4);
+  SkPath path = SkPath().addRRect(rrect);
+
+  flutter::DlPaint paint;
+  flutter::DisplayListBuilder builder;
+
+  builder.DrawPath(path, paint);
+  auto display_list = builder.Build();
+
+  DlDispatcher dispatcher;
+  display_list->Dispatch(dispatcher);
+  auto picture = dispatcher.EndRecordingAsPicture();
+
+  std::optional<Rect> coverage =
+      GetCoverageOfFirstEntity<SolidColorContents>(picture);
+
+  // Validate that the RRect coverage is _exactly_ the same as the input rect.
+  ASSERT_TRUE(coverage.has_value());
+  ASSERT_EQ(coverage.value_or(Rect::MakeMaximum()),
+            Rect::MakeLTRB(0, 0, 100, 100));
+}
+
+TEST(DisplayListTest, CircleBoundsComputation) {
+  SkPath path = SkPath().addCircle(0, 0, 5);
+
+  flutter::DlPaint paint;
+  flutter::DisplayListBuilder builder;
+
+  builder.DrawPath(path, paint);
+  auto display_list = builder.Build();
+
+  DlDispatcher dispatcher;
+  display_list->Dispatch(dispatcher);
+  auto picture = dispatcher.EndRecordingAsPicture();
+
+  std::optional<Rect> coverage =
+      GetCoverageOfFirstEntity<SolidColorContents>(picture);
+
+  ASSERT_TRUE(coverage.has_value());
+  ASSERT_EQ(coverage.value_or(Rect::MakeMaximum()),
+            Rect::MakeLTRB(-5, -5, 5, 5));
 }
 
 #ifdef IMPELLER_ENABLE_3D

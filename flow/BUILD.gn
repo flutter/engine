@@ -99,7 +99,10 @@ source_set("flow") {
   deps = [ "//third_party/skia" ]
 
   if (impeller_supports_rendering) {
-    deps += [ "//flutter/impeller" ]
+    deps += [
+      "//flutter/impeller",
+      "//flutter/impeller/typographer/backends/skia:typographer_skia_backend",
+    ]
   }
 }
 
@@ -185,6 +188,7 @@ if (enable_unittests) {
       "//flutter/common/graphics",
       "//flutter/display_list/testing:display_list_testing",
       "//flutter/fml",
+      "//flutter/shell/common:base64",
       "//flutter/testing:skia",
       "//flutter/testing:testing_lib",
       "//third_party/dart/runtime:libdart_jit",  # for tracing
