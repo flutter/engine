@@ -1608,6 +1608,26 @@ TEST_P(AiksTest, DrawPaintWithAdvancedBlendOverFilter) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, DrawAdvancedBlendPartlyOffscreen) {
+  std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
+                               Color{0.1294, 0.5882, 0.9529, 1.0}};
+  std::vector<Scalar> stops = {0.0, 1.0};
+
+  Paint paint = {
+      .color_source = ColorSource::MakeLinearGradient(
+          {0, 0}, {100, 100}, std::move(colors), std::move(stops),
+          Entity::TileMode::kRepeat, Matrix::MakeScale(Vector3(0.3, 0.3, 0.3))),
+      .blend_mode = BlendMode::kLighten,
+  };
+
+  Canvas canvas;
+  canvas.DrawPaint({.color = Color::Blue()});
+  canvas.Scale(Vector2(2, 2));
+  canvas.ClipRect(Rect::MakeLTRB(0, 0, 200, 200));
+  canvas.DrawCircle({100, 100}, 100, paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 #define BLEND_MODE_TUPLE(blend_mode) {#blend_mode, BlendMode::k##blend_mode},
 
 struct BlendModeSelection {
@@ -3599,15 +3619,46 @@ TEST_P(AiksTest, MatrixImageFilterMagnify) {
   canvas.Translate({600, -200});
   canvas.SaveLayer({
       .image_filter = std::make_shared<MatrixImageFilter>(
-          Matrix{
-              2, 0, 0, 0,  //
-              0, 2, 0, 0,  //
-              0, 0, 2, 0,  //
-              0, 0, 0, 1   //
-          },
+          Matrix::MakeScale({2, 2, 2}), SamplerDescriptor{}),
+  });
+  canvas.DrawImage(image, {0, 0},
+                   Paint{.color = Color::White().WithAlpha(0.5)});
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+// Render a white circle at the top left corner of the screen.
+TEST_P(AiksTest, MatrixImageFilterDoesntCullWhenTranslatedFromOffscreen) {
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  canvas.Translate({100, 100});
+  // Draw a circle in a SaveLayer at -300, but move it back on-screen with a
+  // +300 translation applied by a SaveLayer image filter.
+  canvas.SaveLayer({
+      .image_filter = std::make_shared<MatrixImageFilter>(
+          Matrix::MakeTranslation({300, 0}), SamplerDescriptor{}),
+  });
+  canvas.DrawCircle({-300, 0}, 100, {.color = Color::Green()});
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+// Render a white circle at the top left corner of the screen.
+TEST_P(AiksTest,
+       MatrixImageFilterDoesntCullWhenScaledAndTranslatedFromOffscreen) {
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  canvas.Translate({100, 100});
+  // Draw a circle in a SaveLayer at -300, but move it back on-screen with a
+  // +300 translation applied by a SaveLayer image filter.
+  canvas.SaveLayer({
+      .image_filter = std::make_shared<MatrixImageFilter>(
+          Matrix::MakeTranslation({300, 0}) * Matrix::MakeScale({2, 2, 2}),
           SamplerDescriptor{}),
   });
-  canvas.DrawImage(image, {0, 0}, Paint{.color = Color(1.0, 1.0, 1.0, 0.5)});
+  canvas.DrawCircle({-150, 0}, 50, {.color = Color::Green()});
   canvas.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));

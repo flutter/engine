@@ -21,6 +21,9 @@ bool GLErrorIsFatal(GLenum value);
 
 struct AutoErrorCheck {
   const PFNGLGETERRORPROC error_fn;
+
+  // TODO(matanlurey) Change to string_view.
+  // https://github.com/flutter/flutter/issues/135922
   const char* name;
 
   AutoErrorCheck(PFNGLGETERRORPROC error, const char* name)
@@ -49,6 +52,9 @@ template <class T>
 struct GLProc {
   using GLFunctionType = T;
 
+  // TODO(matanlurey) Change to string_view.
+  // https://github.com/flutter/flutter/issues/135922
+
   //----------------------------------------------------------------------------
   /// The name of the GL function.
   ///
@@ -75,6 +81,11 @@ struct GLProc {
   auto operator()(Args&&... args) const {
 #ifdef IMPELLER_DEBUG
     AutoErrorCheck error(error_fn, name);
+    // We check for the existence of extensions, and reset the function pointer
+    // but it's still called unconditionally below, and will segfault. This
+    // validation log will at least give us a hint as to what's going on.
+    FML_CHECK(IsAvailable()) << "GL function " << name << " is not available. "
+                             << "This is likely due to a missing extension.";
 #endif  // IMPELLER_DEBUG
 #ifdef IMPELLER_TRACE_ALL_GL_CALLS
     TRACE_EVENT0("impeller", name);
@@ -85,7 +96,6 @@ struct GLProc {
   constexpr bool IsAvailable() const { return function != nullptr; }
 
   void Reset() {
-    name = nullptr;
     function = nullptr;
     error_fn = nullptr;
   }
@@ -179,6 +189,7 @@ struct GLProc {
 #define FOR_EACH_IMPELLER_GLES3_PROC(PROC) PROC(BlitFramebuffer);
 
 #define FOR_EACH_IMPELLER_EXT_PROC(PROC)   \
+  PROC(DebugMessageControlKHR);            \
   PROC(DiscardFramebufferEXT);             \
   PROC(FramebufferTexture2DMultisampleEXT) \
   PROC(PushDebugGroupKHR);                 \
@@ -199,6 +210,7 @@ class ProcTableGLES {
  public:
   using Resolver = std::function<void*(const char* function_name)>;
   explicit ProcTableGLES(Resolver resolver);
+  ProcTableGLES(ProcTableGLES&& other) = default;
 
   ~ProcTableGLES();
 
@@ -217,7 +229,7 @@ class ProcTableGLES {
 
   const DescriptionGLES* GetDescription() const;
 
-  const CapabilitiesGLES* GetCapabilities() const;
+  const std::shared_ptr<const CapabilitiesGLES>& GetCapabilities() const;
 
   std::string DescribeCurrentFramebuffer() const;
 
@@ -236,7 +248,7 @@ class ProcTableGLES {
  private:
   bool is_valid_ = false;
   std::unique_ptr<DescriptionGLES> description_;
-  std::unique_ptr<CapabilitiesGLES> capabilities_;
+  std::shared_ptr<const CapabilitiesGLES> capabilities_;
   GLint debug_label_max_length_ = 0;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ProcTableGLES);
