@@ -123,7 +123,10 @@ class DiffContext {
   // The idea of readback region is that if any part of the readback region
   // needs to be repainted, then the whole readback region must be repainted;
   //
-  // Paint rect and readback rect is in screen coordinates.
+  // paint_rect - rectangle where the filter paints contents (in screen
+  //              coordinates)
+  // readback_rect - rectangle where the filter samples from (in screen
+  //                 coordinates)
   void AddReadbackRegion(const SkIRect& paint_rect,
                          const SkIRect& readback_rect);
 
