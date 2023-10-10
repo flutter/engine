@@ -4693,14 +4693,15 @@ TEST_F(ShellTest, AnimatorAcceptsMultipleRenders) {
       .WillOnce(ReturnRef(platform_message_handler));
   fml::AutoResetWaitableEvent draw_latch;
   EXPECT_CALL(mock_shell, OnAnimatorDraw)
-      .WillOnce(Invoke([&draw_latch](
-                           const std::shared_ptr<FramePipeline>& pipeline) {
-        auto status = pipeline->Consume([&](std::unique_ptr<FrameItem> item) {
-          EXPECT_EQ(item->layer_tree_tasks.size(), 2u);
-        });
-        EXPECT_EQ(status, PipelineConsumeResult::Done);
-        draw_latch.Signal();
-      }));
+      .WillOnce(
+          Invoke([&draw_latch](const std::shared_ptr<FramePipeline>& pipeline) {
+            auto status =
+                pipeline->Consume([&](std::unique_ptr<FrameItem> item) {
+                  EXPECT_EQ(item->layer_tree_tasks.size(), 2u);
+                });
+            EXPECT_EQ(status, PipelineConsumeResult::Done);
+            draw_latch.Signal();
+          }));
   EXPECT_CALL(mock_shell, OnAnimatorBeginFrame)
       .WillOnce(Invoke(
           [&engine](fml::TimePoint frame_target_time, uint64_t frame_number) {
