@@ -24,6 +24,7 @@
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/gpu/gpu_surface_software.h"
+#include "vulkan/procs/vulkan_proc_table.h"
 
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
 #include "third_party/dart/runtime/include/dart_api.h"
@@ -125,8 +126,10 @@ class TesterPlatformView : public PlatformView,
       const TaskRunners& task_runners,
       const std::shared_ptr<impeller::ContextVK>& impeller_context,
       const std::shared_ptr<impeller::SurfaceContextVK>&
-          impeller_surface_context)
+          impeller_surface_context,
+      const fml::RefPtr<vulkan::VulkanProcTable>& vulkan_proc_table)
       : PlatformView(delegate, task_runners),
+        vulkan_proc_table_(vulkan_proc_table),
         impeller_context_(impeller_context),
         impeller_surface_context_(impeller_surface_context) {}
 
@@ -199,6 +202,7 @@ class TesterPlatformView : public PlatformView,
 
  private:
   sk_sp<SkSurface> sk_surface_ = nullptr;
+  fml::RefPtr<vulkan::VulkanProcTable> vulkan_proc_table_;
   std::shared_ptr<impeller::ContextVK> impeller_context_;
   std::shared_ptr<impeller::SurfaceContextVK> impeller_surface_context_;
   std::shared_ptr<TesterExternalViewEmbedder> external_view_embedder_ =
@@ -312,18 +316,19 @@ int RunTester(const flutter::Settings& settings,
 
   std::shared_ptr<impeller::ContextVK> impeller_context;
   std::shared_ptr<impeller::SurfaceContextVK> impeller_surface_context;
+  fml::RefPtr<vulkan::VulkanProcTable> vulkan_proc_table;
 
 #if IMPELLER_SUPPORTS_RENDERING
   if (settings.enable_impeller) {
-    auto proc_table =
+    vulkan_proc_table =
         fml::MakeRefCounted<vulkan::VulkanProcTable>(VULKAN_SO_PATH);
-    if (!proc_table->NativeGetInstanceProcAddr()) {
+    if (!vulkan_proc_table->NativeGetInstanceProcAddr()) {
       FML_LOG(ERROR) << "Could not load Swiftshader library.";
       return EXIT_FAILURE;
     }
     impeller::ContextVK::Settings context_settings;
     context_settings.proc_address_callback =
-        proc_table->NativeGetInstanceProcAddr();
+        vulkan_proc_table->NativeGetInstanceProcAddr();
     context_settings.shader_libraries_data = ShaderLibraryMappings();
     context_settings.cache_directory = fml::paths::GetCachesDirectory();
     context_settings.enable_validation = settings.enable_vulkan_validation;
@@ -358,10 +363,11 @@ int RunTester(const flutter::Settings& settings,
 #endif  // IMPELLER_SUPPORTS_RENDERING
 
   Shell::CreateCallback<PlatformView> on_create_platform_view =
-      [impeller_context, impeller_surface_context](Shell& shell) {
+      [impeller_context, impeller_surface_context,
+       vulkan_proc_table](Shell& shell) {
         return std::make_unique<TesterPlatformView>(
             shell, shell.GetTaskRunners(), impeller_context,
-            impeller_surface_context);
+            impeller_surface_context, vulkan_proc_table);
       };
 
   Shell::CreateCallback<Rasterizer> on_create_rasterizer = [](Shell& shell) {
