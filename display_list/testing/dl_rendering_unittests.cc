@@ -830,6 +830,20 @@ class TestParameters {
   bool uses_paint() const { return !flags_.ignores_paint(); }
   bool uses_gradient() const { return flags_.applies_shader(); }
 
+  bool impeller_compatible(const DlPaint& paint) const {
+    if (is_draw_text_blob()) {
+      // Non-color text is rendered as paths
+      if (paint.getColorSourcePtr() && !paint.getColorSourcePtr()->asColor()) {
+        return false;
+      }
+      // Non-filled text (stroke or stroke and fill) is rendered as paths
+      if (paint.getDrawStyle() != DlDrawStyle::kFill) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   bool should_match(const RenderEnvironment& env,
                     const CaseParameters& caseP,
                     const DlPaint& attr,
@@ -2312,7 +2326,13 @@ class CanvasCompareTester {
                               info + " (attribute should affect rendering)");
     }
 
-    if (env.supports_impeller()) {
+    // If either the reference setup or the test setup contain attributes
+    // that Impeller doesn't support, we skip the Impeller testing. This
+    // is mostly stroked or patterned text which is vectored through drawPath
+    // for Impeller.
+    if (env.supports_impeller() &&
+        testP.impeller_compatible(dl_job.setup_paint()) &&
+        testP.impeller_compatible(env.ref_dl_paint())) {
       DlJobRenderer imp_job(caseP.dl_setup(),      //
                             testP.imp_renderer(),  //
                             caseP.dl_restore(),    //
@@ -2333,7 +2353,8 @@ class CanvasCompareTester {
                       imp_info + " (attribute should affect rendering)");
       }
       if (!success) {
-        FML_LOG(ERROR) << "Impeller issue encountered for: " << *display_list;
+        FML_LOG(ERROR) << "Impeller issue encountered for: "
+                       << *imp_job.MakeDisplayList(base_info);
         std::string filename = to_png_filename(info + " (Impeller Output)");
         imp_result->write(filename);
         FML_LOG(ERROR) << "output saved in: " << filename;
