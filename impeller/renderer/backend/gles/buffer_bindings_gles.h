@@ -12,7 +12,6 @@
 #include "impeller/renderer/backend/gles/gles.h"
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
 #include "impeller/renderer/command.h"
-#include "impeller/renderer/vertex_descriptor.h"
 
 namespace impeller {
 

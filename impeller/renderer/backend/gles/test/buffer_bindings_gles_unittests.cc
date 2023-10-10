@@ -6,7 +6,6 @@
 #include "gtest/gtest.h"
 #include "impeller/core/shader_types.h"
 #include "impeller/renderer/backend/gles/buffer_bindings_gles.h"
-#include "impeller/renderer/backend/gles/proc_table_gles.h"
 #include "impeller/renderer/backend/gles/test/mock_gles.h"
 
 namespace impeller {

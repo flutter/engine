@@ -4,11 +4,9 @@
 
 #include "impeller/renderer/backend/gles/buffer_bindings_gles.h"
 
-#include <algorithm>
 #include <cstring>
 #include <vector>
 
-#include "impeller/base/config.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/gles/device_buffer_gles.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
