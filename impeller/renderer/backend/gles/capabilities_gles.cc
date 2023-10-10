@@ -9,8 +9,15 @@
 namespace impeller {
 
 // https://registry.khronos.org/OpenGL/extensions/EXT/EXT_shader_framebuffer_fetch.txt
-static std::string kFramebufferFetchExtension =
+static const constexpr char* kFramebufferFetchExt =
     "GL_EXT_shader_framebuffer_fetch";
+
+static const constexpr char* kTextureBorderClampExt =
+    "GL_EXT_texture_border_clamp";
+static const constexpr char* kNvidiaTextureBorderClampExt =
+    "GL_NV_texture_border_clamp";
+static const constexpr char* kOESTextureBorderClampExt =
+    "GL_OES_texture_border_clamp";
 
 CapabilitiesGLES::CapabilitiesGLES(const ProcTableGLES& gl) {
   {
@@ -92,11 +99,11 @@ CapabilitiesGLES::CapabilitiesGLES(const ProcTableGLES& gl) {
   }
 
   supports_framebuffer_fetch_ =
-      gl.GetDescription()->HasExtension(kFramebufferFetchExtension);
+      gl.GetDescription()->HasExtension(kFramebufferFetchExt);
 
-  if (gl.GetDescription()->HasExtension("GL_EXT_texture_border_clamp") ||
-      gl.GetDescription()->HasExtension("GL_NV_texture_border_clamp") ||
-      gl.GetDescription()->HasExtension("GL_OES_texture_border_clamp")) {
+  if (gl.GetDescription()->HasExtension(kTextureBorderClampExt) ||
+      gl.GetDescription()->HasExtension(kNvidiaTextureBorderClampExt) ||
+      gl.GetDescription()->HasExtension(kOESTextureBorderClampExt)) {
     supports_decal_sampler_address_mode_ = true;
   }
 }
