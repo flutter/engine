@@ -19,16 +19,6 @@
 namespace flutter {
 namespace testing {
 
-// static void PostSync(const fml::RefPtr<fml::TaskRunner>& task_runner,
-//                      const fml::closure& task) {
-//   fml::AutoResetWaitableEvent latch;
-//   fml::TaskRunner::RunNowOrPostTask(task_runner, [&latch, &task] {
-//     task();
-//     latch.Signal();
-//   });
-//   latch.Wait();
-// }
-
 class ImageDisposeTest : public ShellTest {
  public:
   template <class T>
