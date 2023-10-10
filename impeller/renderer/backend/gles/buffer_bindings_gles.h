@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "flutter/fml/macros.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/renderer/backend/gles/gles.h"
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
 #include "impeller/renderer/command.h"
@@ -41,6 +42,20 @@ class BufferBindingsGLES {
                        const Bindings& fragment_bindings) const;
 
   bool UnbindVertexAttributes(const ProcTableGLES& gl) const;
+
+  // Visible for testing.
+  std::optional<GLint> LookupUniformLocation(
+      const ShaderMetadata* metadata,
+      const ShaderStructMemberMetadata& member,
+      bool is_array) const;
+
+  // Visible for testing.
+  GLint LookupTextureLocation(const ShaderMetadata* metadata) const;
+
+  // Visible for testing.
+  std::map<std::string, GLint>& GetUniformLocationsForTesting() {
+    return uniform_locations_;
+  }
 
  private:
   //----------------------------------------------------------------------------

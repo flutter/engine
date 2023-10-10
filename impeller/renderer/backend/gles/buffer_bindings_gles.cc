@@ -174,6 +174,50 @@ bool BufferBindingsGLES::UnbindVertexAttributes(const ProcTableGLES& gl) const {
   return true;
 }
 
+// Visible for testing.
+std::optional<GLint> BufferBindingsGLES::LookupUniformLocation(
+    const ShaderMetadata* metadata,
+    const ShaderStructMemberMetadata& member,
+    bool is_array) const {
+  auto maybe_location = member.location;
+  if (!maybe_location.has_value()) {
+    const auto member_key =
+        CreateUniformMemberKey(metadata->name, member.name, is_array);
+    const auto computed_location = uniform_locations_.find(member_key);
+    if (computed_location == uniform_locations_.end()) {
+      // The list of uniform locations only contains "active" uniforms that
+      // are not optimized out. So this situation is expected to happen when
+      // unused uniforms are present in the shader.
+      member.location = -1;
+      return std::nullopt;
+    }
+    auto location = computed_location->second;
+    member.location = computed_location->second;
+    return location;
+  }
+  // Uniform was optimized out, continue.
+  if (maybe_location.value() == -1) {
+    return std::nullopt;
+  }
+  return maybe_location.value();
+}
+
+GLint BufferBindingsGLES::LookupTextureLocation(
+    const ShaderMetadata* metadata) const {
+  auto maybe_location = metadata->location;
+  if (!maybe_location.has_value()) {
+    const auto uniform_key = CreateUniformMemberKey(metadata->name);
+    auto uniform = uniform_locations_.find(uniform_key);
+    if (uniform == uniform_locations_.end()) {
+      VALIDATION_LOG << "Could not find uniform for key: " << uniform_key;
+      return false;
+    }
+    metadata->location = uniform->second;
+    return uniform->second;
+  }
+  return maybe_location.value();
+}
+
 bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
                                            Allocator& transients_allocator,
                                            const BufferResource& buffer) const {
@@ -204,30 +248,14 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
 
     size_t element_count = member.array_elements.value_or(1);
 
-    GLint location;
-    auto maybe_location = member.location;
+    auto maybe_location =
+        LookupUniformLocation(metadata, member, element_count > 1);
     if (!maybe_location.has_value()) {
-      const auto member_key = CreateUniformMemberKey(
-          metadata->name, member.name, element_count > 1);
-      const auto computed_location = uniform_locations_.find(member_key);
-      if (computed_location == uniform_locations_.end()) {
-        // The list of uniform locations only contains "active" uniforms that
-        // are not optimized out. So this situation is expected to happen when
-        // unused uniforms are present in the shader.
-        member.location = -1;
-        continue;
-      }
-      location = computed_location->second;
-      member.location = computed_location->second;
-    } else {
-      if (maybe_location.value() == -1) {
-        continue;
-      }
-      location = maybe_location.value();
+      continue;
     }
+    auto location = maybe_location.value();
 
     size_t element_stride = member.byte_length / element_count;
-
     auto* buffer_data =
         reinterpret_cast<const GLfloat*>(buffer_ptr + member.offset);
 
@@ -319,21 +347,7 @@ bool BufferBindingsGLES::BindTextures(const ProcTableGLES& gl,
       return false;
     }
 
-    GLint location;
-    auto maybe_location = data.second.texture.GetMetadata()->location;
-    if (!maybe_location.has_value()) {
-      const auto uniform_key =
-          CreateUniformMemberKey(data.second.texture.GetMetadata()->name);
-      auto uniform = uniform_locations_.find(uniform_key);
-      if (uniform == uniform_locations_.end()) {
-        VALIDATION_LOG << "Could not find uniform for key: " << uniform_key;
-        return false;
-      }
-      data.second.texture.GetMetadata()->location = uniform->second;
-      location = uniform->second;
-    } else {
-      location = maybe_location.value();
-    }
+    GLint location = LookupTextureLocation(data.second.texture.GetMetadata());
 
     //--------------------------------------------------------------------------
     /// Set the active texture unit.

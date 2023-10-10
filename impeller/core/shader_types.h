@@ -77,7 +77,6 @@ struct ShaderStructMemberMetadata {
   ///
   ///        See buffer_binding_gles.cc.
   mutable std::optional<int> location = std::nullopt;
-  ;
 };
 
 struct ShaderMetadata {
