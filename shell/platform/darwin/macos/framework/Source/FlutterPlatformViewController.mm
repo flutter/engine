@@ -116,6 +116,10 @@
     NSNumber* arg = [call arguments];
     int64_t viewId = [arg longLongValue];
     [self onDisposeWithViewID:viewId result:result];
+  } else if ([[call method] isEqualToString:@"acceptGesture"]) {
+    result(nil);
+  } else if ([[call method] isEqualToString:@"rejectGesture"]) {
+    result(nil);
   } else {
     result(FlutterMethodNotImplemented);
   }
