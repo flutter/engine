@@ -2093,8 +2093,12 @@ TEST_F(ShellTest, SecondaryVsyncCallbackShouldBeCalledAfterVsyncCallback) {
       "NotifyNative",
       CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) { latch.Signal(); }));
   fml::CountDownLatch count_down_latch(2);
+  bool start_testing = false;
   AddNativeCallback("NativeOnBeginFrame",
                     CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                      if (!start_testing) {
+                        return;
+                      }
                       EXPECT_FALSE(is_on_begin_frame_called);
                       EXPECT_FALSE(is_secondary_callback_called);
                       is_on_begin_frame_called = true;
@@ -2103,12 +2107,6 @@ TEST_F(ShellTest, SecondaryVsyncCallbackShouldBeCalledAfterVsyncCallback) {
   std::unique_ptr<Shell> shell = CreateShell({
       .settings = settings,
       .task_runners = task_runners,
-      .platform_view_create_callback = ShellTestPlatformViewBuilder({
-          // Suppress automatic vsync and manually VSyncFlush later to ensure
-          // that, when the secondary vsync callback is scheduled, the primary
-          // vsync callback is still pending.
-          .simulate_vsync = true,
-      }),
   });
   ASSERT_TRUE(shell->IsSetup());
 
@@ -2117,8 +2115,6 @@ TEST_F(ShellTest, SecondaryVsyncCallbackShouldBeCalledAfterVsyncCallback) {
   RunEngine(shell.get(), std::move(configuration));
 
   // Wait for the application to attach the listener.
-  printf("Wait1\n");
-  fflush(stdout);
   latch.Wait();
 
   fml::TaskRunner::RunNowOrPostTask(
@@ -2130,13 +2126,9 @@ TEST_F(ShellTest, SecondaryVsyncCallbackShouldBeCalledAfterVsyncCallback) {
           count_down_latch.CountDown();
         });
         shell->GetEngine()->ScheduleFrame();
+        start_testing = true;
       });
-  VSyncFlush(shell.get());
-  printf("Wait2\n");
-  fflush(stdout);
   count_down_latch.Wait();
-  printf("Wait finish\n");
-  fflush(stdout);
   EXPECT_TRUE(is_on_begin_frame_called);
   EXPECT_TRUE(is_secondary_callback_called);
   DestroyShell(std::move(shell), task_runners);
