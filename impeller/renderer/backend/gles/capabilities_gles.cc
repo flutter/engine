@@ -8,6 +8,17 @@
 
 namespace impeller {
 
+// https://registry.khronos.org/OpenGL/extensions/EXT/EXT_shader_framebuffer_fetch.txt
+static const constexpr char* kFramebufferFetchExt =
+    "GL_EXT_shader_framebuffer_fetch";
+
+static const constexpr char* kTextureBorderClampExt =
+    "GL_EXT_texture_border_clamp";
+static const constexpr char* kNvidiaTextureBorderClampExt =
+    "GL_NV_texture_border_clamp";
+static const constexpr char* kOESTextureBorderClampExt =
+    "GL_OES_texture_border_clamp";
+
 CapabilitiesGLES::CapabilitiesGLES(const ProcTableGLES& gl) {
   {
     GLint value = 0;
@@ -86,6 +97,15 @@ CapabilitiesGLES::CapabilitiesGLES(const ProcTableGLES& gl) {
     gl.GetIntegerv(GL_NUM_SHADER_BINARY_FORMATS, &value);
     num_shader_binary_formats = value;
   }
+
+  supports_framebuffer_fetch_ =
+      gl.GetDescription()->HasExtension(kFramebufferFetchExt);
+
+  if (gl.GetDescription()->HasExtension(kTextureBorderClampExt) ||
+      gl.GetDescription()->HasExtension(kNvidiaTextureBorderClampExt) ||
+      gl.GetDescription()->HasExtension(kOESTextureBorderClampExt)) {
+    supports_decal_sampler_address_mode_ = true;
+  }
 }
 
 size_t CapabilitiesGLES::GetMaxTextureUnits(ShaderStage stage) const {
@@ -120,7 +140,7 @@ bool CapabilitiesGLES::SupportsTextureToTextureBlits() const {
 }
 
 bool CapabilitiesGLES::SupportsFramebufferFetch() const {
-  return false;
+  return supports_framebuffer_fetch_;
 }
 
 bool CapabilitiesGLES::SupportsCompute() const {
@@ -140,7 +160,7 @@ bool CapabilitiesGLES::SupportsReadFromResolve() const {
 }
 
 bool CapabilitiesGLES::SupportsDecalSamplerAddressMode() const {
-  return false;
+  return supports_decal_sampler_address_mode_;
 }
 
 bool CapabilitiesGLES::SupportsDeviceTransientTextures() const {
