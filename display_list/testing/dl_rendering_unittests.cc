@@ -17,7 +17,7 @@
 #include "flutter/testing/display_list_testing.h"
 #include "flutter/testing/testing.h"
 #ifdef IMPELLER_SUPPORTS_RENDERING
-#include "impeller/typographer/backends/skia/text_frame_skia.h"  // nogncheck
+#include "flutter/impeller/typographer/backends/skia/text_frame_skia.h"
 #endif  // IMPELLER_SUPPORTS_RENDERING
 
 #include "third_party/skia/include/core/SkBBHFactory.h"
@@ -3637,7 +3637,9 @@ TEST_F(DisplayListRendering, DrawTextBlob) {
 #else
   sk_sp<SkTextBlob> blob =
       CanvasCompareTester::MakeTextBlob("Testing", kRenderHeight * 0.33f);
+#ifdef IMPELLER_SUPPORTS_RENDERING
   auto frame = impeller::MakeTextFrameFromTextBlobSkia(blob);
+#endif  // IMPELLER_SUPPORTS_RENDERING
   SkScalar render_y_1_3 = kRenderTop + kRenderHeight * 0.3;
   SkScalar render_y_2_3 = kRenderTop + kRenderHeight * 0.6;
   CanvasCompareTester::RenderAll(  //
@@ -3654,12 +3656,14 @@ TEST_F(DisplayListRendering, DrawTextBlob) {
             ctx.canvas->DrawTextBlob(blob, kRenderLeft, render_y_2_3, paint);
             ctx.canvas->DrawTextBlob(blob, kRenderLeft, kRenderBottom, paint);
           },
+#ifdef IMPELLER_SUPPORTS_RENDERING
           [=](const DlRenderContext& ctx) {
             auto paint = ctx.paint;
             ctx.canvas->DrawTextFrame(frame, kRenderLeft, render_y_1_3, paint);
             ctx.canvas->DrawTextFrame(frame, kRenderLeft, render_y_2_3, paint);
             ctx.canvas->DrawTextFrame(frame, kRenderLeft, kRenderBottom, paint);
           },
+#endif  // IMPELLER_SUPPORTS_RENDERING
           kDrawTextBlobFlags)
           .set_draw_text_blob(),
       // From examining the bounds differential for the "Default" case, the
