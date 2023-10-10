@@ -84,10 +84,8 @@ public class ProcessTextPluginTest {
         new ProcessTextChannel(mockBinaryMessenger, mockPackageManager);
 
     // Set up mocked result for PackageManager.queryIntentActivities.
-    ResolveInfo action1 = mock(ResolveInfo.class);
-    when(action1.loadLabel(mockPackageManager)).thenReturn("Action1");
-    ResolveInfo action2 = mock(ResolveInfo.class);
-    when(action2.loadLabel(mockPackageManager)).thenReturn("Action2");
+    ResolveInfo action1 = createFakeResolveInfo("Action1", mockPackageManager);
+    ResolveInfo action2 = createFakeResolveInfo("Action2", mockPackageManager);
     List<ResolveInfo> infos = new ArrayList<ResolveInfo>(Arrays.asList(action1, action2));
     Intent intent = new Intent().setAction(Intent.ACTION_PROCESS_TEXT).setType("text/plain");
     when(mockPackageManager.queryIntentActivities(
@@ -96,9 +94,9 @@ public class ProcessTextPluginTest {
 
     // ProcessTextPlugin should retrieve the mocked text actions.
     ProcessTextPlugin processTextPlugin = new ProcessTextPlugin(processTextChannel);
-    Map<Integer, String> textActions = processTextPlugin.queryTextActions();
-    final int action1Id = 0;
-    final int action2Id = 1;
+    Map<String, String> textActions = processTextPlugin.queryTextActions();
+    final String action1Id = "mockActivityName.Action1";
+    final String action2Id = "mockActivityName.Action2";
     assertEquals(textActions, Map.of(action1Id, "Action1", action2Id, "Action2"));
   }
 
@@ -121,9 +119,9 @@ public class ProcessTextPluginTest {
 
     // ProcessTextPlugin should retrieve the mocked text actions.
     ProcessTextPlugin processTextPlugin = new ProcessTextPlugin(processTextChannel);
-    Map<Integer, String> textActions = processTextPlugin.queryTextActions();
-    final int action1Id = 0;
-    final int action2Id = 1;
+    Map<String, String> textActions = processTextPlugin.queryTextActions();
+    final String action1Id = "mockActivityName.Action1";
+    final String action2Id = "mockActivityName.Action2";
     assertEquals(textActions, Map.of(action1Id, "Action1", action2Id, "Action2"));
 
     // Set up the activity binding.
@@ -170,9 +168,9 @@ public class ProcessTextPluginTest {
 
     // ProcessTextPlugin should retrieve the mocked text actions.
     ProcessTextPlugin processTextPlugin = new ProcessTextPlugin(processTextChannel);
-    Map<Integer, String> textActions = processTextPlugin.queryTextActions();
-    final int action1Id = 0;
-    final int action2Id = 1;
+    Map<String, String> textActions = processTextPlugin.queryTextActions();
+    final String action1Id = "mockActivityName.Action1";
+    final String action2Id = "mockActivityName.Action2";
     assertEquals(textActions, Map.of(action1Id, "Action1", action2Id, "Action2"));
 
     // Set up the activity binding.
@@ -217,7 +215,7 @@ public class ProcessTextPluginTest {
       packageNameField.set(activityInfo, "mockActivityPackageName");
       Field nameField = PackageItemInfo.class.getDeclaredField("name");
       nameField.setAccessible(true);
-      nameField.set(activityInfo, "mockActivityName");
+      nameField.set(activityInfo, "mockActivityName." + label);
     } catch (Exception ex) {
       // Test will failed if reflection APIs throw.
     }

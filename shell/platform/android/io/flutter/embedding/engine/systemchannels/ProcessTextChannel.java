@@ -60,7 +60,7 @@ public class ProcessTextChannel {
           switch (method) {
             case METHOD_QUERY_TEXT_ACTIONS:
               try {
-                Map<Integer, String> actions = processTextMethodHandler.queryTextActions();
+                Map<String, String> actions = processTextMethodHandler.queryTextActions();
                 result.success(actions);
               } catch (IllegalStateException exception) {
                 result.error("error", exception.getMessage(), null);
@@ -69,7 +69,7 @@ public class ProcessTextChannel {
             case METHOD_PROCESS_TEXT_ACTION:
               try {
                 final ArrayList<Object> argumentList = (ArrayList<Object>) args;
-                int id = (int) (argumentList.get(0));
+                String id = (String) (argumentList.get(0));
                 String text = (String) (argumentList.get(1));
                 boolean readOnly = (boolean) (argumentList.get(2));
                 processTextMethodHandler.processTextAction(id, text, readOnly, result);
@@ -101,7 +101,7 @@ public class ProcessTextChannel {
 
   public interface ProcessTextMethodHandler {
     /** Requests the map of text actions. Each text action has a unique id and a localized label. */
-    Map<Integer, String> queryTextActions();
+    Map<String, String> queryTextActions();
 
     /**
      * Requests to run a text action on a given input text.
@@ -114,7 +114,7 @@ public class ProcessTextChannel {
      * @param result The method channel result instance used to reply.
      */
     void processTextAction(
-        @NonNull int id,
+        @NonNull String id,
         @NonNull String input,
         @NonNull boolean readOnly,
         @NonNull MethodChannel.Result result);

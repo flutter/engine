@@ -33,7 +33,7 @@ public class ProcessTextPlugin
   @NonNull private final ProcessTextChannel processTextChannel;
   @NonNull private final PackageManager packageManager;
   @Nullable private ActivityPluginBinding activityBinding;
-  private Map<Integer, ResolveInfo> resolveInfosById;
+  private Map<String, ResolveInfo> resolveInfosById;
 
   @NonNull
   private Map<Integer, MethodChannel.Result> requestsByCode =
@@ -47,13 +47,13 @@ public class ProcessTextPlugin
   }
 
   @Override
-  public Map<Integer, String> queryTextActions() {
+  public Map<String, String> queryTextActions() {
     if (resolveInfosById == null) {
-      resolveInfosById = new HashMap<Integer, ResolveInfo>();
+      resolveInfosById = new HashMap<String, ResolveInfo>();
       cacheResolveInfos();
     }
-    Map<Integer, String> result = new HashMap<Integer, String>();
-    for (Integer id : resolveInfosById.keySet()) {
+    Map<String, String> result = new HashMap<String, String>();
+    for (String id : resolveInfosById.keySet()) {
       final ResolveInfo info = resolveInfosById.get(id);
       result.put(id, info.loadLabel(packageManager).toString());
     }
@@ -62,7 +62,7 @@ public class ProcessTextPlugin
 
   @Override
   public void processTextAction(
-      @NonNull int id,
+      @NonNull String id,
       @NonNull String text,
       @NonNull boolean readOnly,
       @NonNull MethodChannel.Result result) {
@@ -97,7 +97,8 @@ public class ProcessTextPlugin
     intent.putExtra(Intent.EXTRA_PROCESS_TEXT, text);
     intent.putExtra(Intent.EXTRA_PROCESS_TEXT_READONLY, readOnly);
 
-    // Start the text processing activity. When the activity complets, the onActivityResult callback
+    // Start the text processing activity. When the activity completes, the onActivityResult
+    // callback
     // is called.
     activityBinding.getActivity().startActivityForResult(intent, requestCode);
   }
@@ -116,12 +117,11 @@ public class ProcessTextPlugin
       infos = packageManager.queryIntentActivities(intent, 0);
     }
 
-    // Assign an internal id for communication between the engine and the framework.
-    int index = 0;
     resolveInfosById.clear();
     for (ResolveInfo info : infos) {
+      final String id = info.activityInfo.name;
       final String label = info.loadLabel(packageManager).toString();
-      resolveInfosById.put(index++, info);
+      resolveInfosById.put(id, info);
     }
   }
 
@@ -131,7 +131,7 @@ public class ProcessTextPlugin
    * <p>When an activity returns a value, the request is completed successfully and returns the
    * processed text.
    *
-   * <p>When an activity does not return a valuen. the request is completed successfully and returns
+   * <p>When an activity does not return a value. the request is completed successfully and returns
    * null.
    */
   @TargetApi(Build.VERSION_CODES.M)
@@ -168,7 +168,7 @@ public class ProcessTextPlugin
 
   // ActivityAware interface implementation.
   //
-  // Store the binding and manage the activity result listerner.
+  // Store the binding and manage the activity result listener.
 
   public void onAttachedToActivity(@NonNull ActivityPluginBinding binding) {
     this.activityBinding = binding;
