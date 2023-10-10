@@ -2086,6 +2086,7 @@ TEST_F(ShellTest, CanScheduleFrameFromPlatform) {
 TEST_F(ShellTest, SecondaryVsyncCallbackShouldBeCalledAfterVsyncCallback) {
   bool is_on_begin_frame_called = false;
   bool is_secondary_callback_called = false;
+  bool test_started = false;
   Settings settings = CreateSettingsForFixture();
   TaskRunners task_runners = GetTaskRunnersForFixture();
   fml::AutoResetWaitableEvent latch;
@@ -2093,10 +2094,9 @@ TEST_F(ShellTest, SecondaryVsyncCallbackShouldBeCalledAfterVsyncCallback) {
       "NotifyNative",
       CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) { latch.Signal(); }));
   fml::CountDownLatch count_down_latch(2);
-  bool start_testing = false;
   AddNativeCallback("NativeOnBeginFrame",
                     CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
-                      if (!start_testing) {
+                      if (!test_started) {
                         return;
                       }
                       EXPECT_FALSE(is_on_begin_frame_called);
@@ -2120,13 +2120,16 @@ TEST_F(ShellTest, SecondaryVsyncCallbackShouldBeCalledAfterVsyncCallback) {
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetUITaskRunner(), [&]() {
         shell->GetEngine()->ScheduleSecondaryVsyncCallback(0, [&]() {
+          if (!test_started) {
+            return;
+          }
           EXPECT_TRUE(is_on_begin_frame_called);
           EXPECT_FALSE(is_secondary_callback_called);
           is_secondary_callback_called = true;
           count_down_latch.CountDown();
         });
         shell->GetEngine()->ScheduleFrame();
-        start_testing = true;
+        test_started = true;
       });
   count_down_latch.Wait();
   EXPECT_TRUE(is_on_begin_frame_called);
