@@ -8,7 +8,6 @@
 #include <cstring>
 #include <vector>
 
-#include "GLES3/gl3.h"
 #include "impeller/base/config.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/gles/device_buffer_gles.h"
