@@ -14,7 +14,7 @@ import 'package:path/path.dart' as path;
 
 import 'shader_test_file_utils.dart';
 
-bool get impellerEnabled => Platform.executableArguments.contains('--enable-impeller');
+import 'impeller_enabled.dart';
 
 void main() async {
   bool assertsEnabled = false;

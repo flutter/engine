@@ -9,7 +9,7 @@ import 'dart:ui' as ui;
 import 'package:litetest/litetest.dart';
 import 'package:path/path.dart' as path;
 
-bool get impellerEnabled => Platform.executableArguments.contains('--enable-impeller');
+import 'impeller_enabled.dart';
 
 void main() {
 

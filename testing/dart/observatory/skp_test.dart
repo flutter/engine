@@ -5,7 +5,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
-import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -13,7 +12,7 @@ import 'package:litetest/litetest.dart';
 import 'package:vm_service/vm_service.dart' as vms;
 import 'package:vm_service/vm_service_io.dart';
 
-bool get impellerEnabled => Platform.executableArguments.contains('--enable-impeller');
+import '../impeller_enabled.dart';
 
 void main() {
   test('Capture an SKP ', () async {

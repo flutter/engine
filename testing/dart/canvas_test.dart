@@ -12,9 +12,9 @@ import 'package:litetest/litetest.dart';
 import 'package:path/path.dart' as path;
 import 'package:vector_math/vector_math_64.dart';
 
-typedef CanvasCallback = void Function(Canvas canvas);
+import 'impeller_enabled.dart';
 
-bool get impellerEnabled => Platform.executableArguments.contains('--enable-impeller');
+typedef CanvasCallback = void Function(Canvas canvas);
 
 Future<Image> createImage(int width, int height) {
   final Completer<Image> completer = Completer<Image>();

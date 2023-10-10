@@ -4,12 +4,10 @@
 
 // ignore_for_file: avoid_relative_lib_imports
 
-import 'dart:io';
-
 import 'package:litetest/litetest.dart';
 import '../../lib/gpu/lib/gpu.dart' as gpu;
 
-bool get impellerEnabled => Platform.executableArguments.contains('--enable-impeller');
+import 'impeller_enabled.dart';
 
 void main() {
   // TODO(131346): Remove this once we migrate the Dart GPU API into this space.

@@ -4,7 +4,6 @@
 
 import 'dart:async';
 import 'dart:convert' show base64Decode;
-import 'dart:io';
 import 'dart:developer' as developer;
 import 'dart:ui';
 
@@ -13,7 +12,7 @@ import 'package:vm_service/vm_service.dart' as vms;
 import 'package:vm_service/vm_service_io.dart';
 import 'package:vm_service_protos/vm_service_protos.dart';
 
-bool get impellerEnabled => Platform.executableArguments.contains('--enable-impeller');
+import '../impeller_enabled.dart';
 
 Future<void> _testChromeFormatTrace(vms.VmService vmService) async {
   final vms.Timeline timeline = await vmService.getVMTimeline();

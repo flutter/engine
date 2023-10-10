@@ -854,10 +854,34 @@ def gather_dart_tests(build_dir, test_filter):
         logger.info(
             "Gathering dart test '%s' with observatory enabled", dart_test_file
         )
-        yield gather_dart_test(build_dir, dart_test_file, True, False, True)
-        yield gather_dart_test(build_dir, dart_test_file, True, True, True)
-        yield gather_dart_test(build_dir, dart_test_file, False, False, True)
-        yield gather_dart_test(build_dir, dart_test_file, False, True, True)
+        yield gather_dart_test(
+            build_dir,
+            dart_test_file,
+            multithreaded=True,
+            enable_impeller=False,
+            enable_observatory=True,
+        )
+        yield gather_dart_test(
+            build_dir,
+            dart_test_file,
+            multithreaded=True,
+            enable_impeller=True,
+            enable_observatory=True
+        )
+        yield gather_dart_test(
+            build_dir,
+            dart_test_file,
+            multithreaded=False,
+            enable_impeller=False,
+            enable_observatory=True
+        )
+        yield gather_dart_test(
+            build_dir,
+            dart_test_file,
+            multithreaded=False,
+            enable_impeller=True,
+            enable_observatory=True
+        )
 
   for dart_test_file in dart_tests:
     if test_filter is not None and os.path.basename(dart_test_file
@@ -865,10 +889,18 @@ def gather_dart_tests(build_dir, test_filter):
       logger.info("Skipping '%s' due to filter.", dart_test_file)
     else:
       logger.info("Gathering dart test '%s'", dart_test_file)
-      yield gather_dart_test(build_dir, dart_test_file, True, False)
-      yield gather_dart_test(build_dir, dart_test_file, True, True)
-      yield gather_dart_test(build_dir, dart_test_file, False, False)
-      yield gather_dart_test(build_dir, dart_test_file, False, True)
+      yield gather_dart_test(
+          build_dir, dart_test_file, multithreaded=True, enable_impeller=False
+      )
+      yield gather_dart_test(
+          build_dir, dart_test_file, multithreaded=True, enable_impeller=True
+      )
+      yield gather_dart_test(
+          build_dir, dart_test_file, multithreaded=False, enable_impeller=False
+      )
+      yield gather_dart_test(
+          build_dir, dart_test_file, multithreaded=False, enable_impeller=True
+      )
 
 
 def gather_dart_smoke_test(build_dir, test_filter):
@@ -883,8 +915,12 @@ def gather_dart_smoke_test(build_dir, test_filter):
                                                  ) not in test_filter:
     logger.info("Skipping '%s' due to filter.", smoke_test)
   else:
-    yield gather_dart_test(build_dir, smoke_test, True, expect_failure=True)
-    yield gather_dart_test(build_dir, smoke_test, False, expect_failure=True)
+    yield gather_dart_test(
+        build_dir, smoke_test, multithreaded=True, expect_failure=True
+    )
+    yield gather_dart_test(
+        build_dir, smoke_test, multithreaded=False, expect_failure=True
+    )
 
 
 def gather_dart_package_tests(build_dir, package_path, extra_opts):

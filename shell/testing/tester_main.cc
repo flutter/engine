@@ -31,6 +31,7 @@
 
 #if IMPELLER_SUPPORTS_RENDERING
 #include <vulkan/vulkan.h>                                        // nogncheck
+#include "flutter/vulkan/swiftshader_path.h"                      // nogncheck
 #include "impeller/core/formats.h"                                // nogncheck
 #include "impeller/entity/vk/entity_shaders_vk.h"                 // nogncheck
 #include "impeller/entity/vk/modern_shaders_vk.h"                 // nogncheck
@@ -59,15 +60,6 @@ static std::vector<std::shared_ptr<fml::Mapping>> ShaderLibraryMappings() {
             impeller_compute_shaders_vk_length),
   };
 }
-
-#if FML_OS_MACOSX
-#define VULKAN_SO_PATH "libvk_swiftshader.dylib"
-#elif FML_OS_WIN
-#define VULKAN_SO_PATH "vk_swiftshader.dll"
-#else
-#define VULKAN_SO_PATH "libvk_swiftshader.so"
-#endif
-
 #else
 namespace impeller {
 class Context;

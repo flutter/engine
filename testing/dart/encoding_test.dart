@@ -10,7 +10,7 @@ import 'dart:ui';
 import 'package:litetest/litetest.dart';
 import 'package:path/path.dart' as path;
 
-bool get impellerEnabled => Platform.executableArguments.contains('--enable-impeller');
+import 'impeller_enabled.dart';
 
 const int _kWidth = 10;
 const int _kRadius = 2;

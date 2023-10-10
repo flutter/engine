@@ -13,7 +13,7 @@ import 'package:litetest/litetest.dart';
 import 'package:vm_service/vm_service.dart' as vms;
 import 'package:vm_service/vm_service_io.dart';
 
-bool get impellerEnabled => Platform.executableArguments.contains('--enable-impeller');
+import '../impeller_enabled.dart';
 
 void main() {
   test('Setting invalid directory returns an error', () async {
