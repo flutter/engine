@@ -42,6 +42,7 @@
 #include "impeller/renderer/surface.h"                            // nogncheck
 #include "impeller/renderer/vk/compute_shaders_vk.h"              // nogncheck
 #include "shell/gpu/gpu_surface_vulkan_impeller.h"                // nogncheck
+#include "vulkan/procs/vulkan_proc_table.h"
 #if IMPELLER_ENABLE_3D
 #include "impeller/scene/shaders/vk/scene_shaders_vk.h"  // nogncheck
 #endif                                                   // IMPELLER_ENABLE_3D
@@ -67,6 +68,10 @@ class Context;
 class ContextVK;
 class SurfaceContextVK;
 }  // namespace impeller
+
+namespace vulkan {
+class VulkanProcTable;
+}
 #endif  // IMPELLER_SUPPORTS_RENDERING
 
 #if defined(FML_OS_WIN)
