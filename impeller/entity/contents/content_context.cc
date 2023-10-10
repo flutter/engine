@@ -164,6 +164,7 @@ static std::unique_ptr<PipelineT> CreateDefaultPipeline(
   const auto default_color_format =
       context.GetCapabilities()->GetDefaultColorFormat();
   ContentContextOptions{.sample_count = SampleCount::kCount4,
+                        .primitive_type = PrimitiveType::kTriangleStrip,
                         .color_attachment_pixel_format = default_color_format}
       .ApplyToPipelineDescriptor(*desc);
   return std::make_unique<PipelineT>(context, desc);
