@@ -2117,6 +2117,7 @@ TEST_F(ShellTest, SecondaryVsyncCallbackShouldBeCalledAfterVsyncCallback) {
   RunEngine(shell.get(), std::move(configuration));
 
   // Wait for the application to attach the listener.
+  printf("Wait1\n");fflush(stdout);
   latch.Wait();
 
   fml::TaskRunner::RunNowOrPostTask(
@@ -2130,7 +2131,9 @@ TEST_F(ShellTest, SecondaryVsyncCallbackShouldBeCalledAfterVsyncCallback) {
         shell->GetEngine()->ScheduleFrame();
       });
   VSyncFlush(shell.get());
+  printf("Wait2\n");fflush(stdout);
   count_down_latch.Wait();
+  printf("Wait finish\n");fflush(stdout);
   EXPECT_TRUE(is_on_begin_frame_called);
   EXPECT_TRUE(is_secondary_callback_called);
   DestroyShell(std::move(shell), task_runners);
