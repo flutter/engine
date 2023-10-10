@@ -169,7 +169,7 @@ void testMain() {
     ///
     /// Then it does the same, but asserts that the families aren't downloaded again
     /// (because they already exist in memory).
-    Future<void> _checkDownloadedFamiliesForString(String text, List<String> expectedFamilies) async {
+    Future<void> checkDownloadedFamiliesForString(String text, List<String> expectedFamilies) async {
       // Try rendering text that requires fallback fonts, initially before the fonts are loaded.
       ui.ParagraphBuilder pb = ui.ParagraphBuilder(ui.ParagraphStyle());
       pb.addText(text);
@@ -197,21 +197,21 @@ void testMain() {
     test(
         'can find fonts for two adjacent unmatched code points from different fonts',
         () async {
-      await _checkDownloadedFamiliesForString('ヽಠ', <String>[
+      await checkDownloadedFamiliesForString('ヽಠ', <String>[
         'Noto Sans SC',
         'Noto Sans Kannada',
       ]);
     });
 
     test('can find glyph for 2/3 symbol', () async {
-      await _checkDownloadedFamiliesForString('⅔', <String>[
+      await checkDownloadedFamiliesForString('⅔', <String>[
         'Noto Sans',
       ]);
     });
 
     // https://github.com/flutter/devtools/issues/6149
     test('can find glyph for treble clef', () async {
-      await _checkDownloadedFamiliesForString('𝄞', <String>[
+      await checkDownloadedFamiliesForString('𝄞', <String>[
         'Noto Music',
       ]);
     });
