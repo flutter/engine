@@ -419,8 +419,8 @@ targets:
         {
           "sdk_version": "14e300c"
         }
-    device_type: none
-    cpu: x86
+      device_type: none
+      cpu: x86
     drone_dimensions:
       - os=Mac-13
       - cpu=x86
