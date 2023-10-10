@@ -10,9 +10,9 @@
 #define VULKAN_SO_PATH "libvk_swiftshader.dylib"
 #elif FML_OS_WIN
 #define VULKAN_SO_PATH "vk_swiftshader.dll"
-#elif FML_OS_LINUX
+#else
 #define VULKAN_SO_PATH "libvk_swiftshader.so"
-#endif  // FML_OS_LINUX
+#endif  // !FML_OS_MACOSX && !FML_OS_WIN
 #endif  // VULKAN_SO_PATH
 
 #endif  // FLUTTER_VULKAN_SWIFTSHADER_PATH_H_
