@@ -105,18 +105,32 @@ void ImageEncodingImpeller::ConvertDlImageToSkImage(
     return;
   }
 
-  auto completion = [color_type = color_type.value(), dimensions,
+  impeller::DeviceBufferDescriptor buffer_desc;
+  buffer_desc.storage_mode = impeller::StorageMode::kHostVisible;
+  buffer_desc.size =
+      texture->GetTextureDescriptor().GetByteSizeOfBaseMipLevel();
+  auto buffer =
+      impeller_context->GetResourceAllocator()->CreateBuffer(buffer_desc);
+  auto command_buffer = impeller_context->CreateCommandBuffer();
+  command_buffer->SetLabel("BlitTextureToBuffer Command Buffer");
+  auto pass = command_buffer->CreateBlitPass();
+  pass->SetLabel("BlitTextureToBuffer Blit Pass");
+  pass->AddCopy(texture, buffer);
+  pass->EncodeCommands(impeller_context->GetResourceAllocator());
+  auto completion = [buffer, color_type = color_type.value(), dimensions,
                      encode_task = std::move(encode_task)](
-                        const std::shared_ptr<impeller::DeviceBuffer>& data) {
-    if (data == nullptr) {
+                        impeller::CommandBuffer::Status status) {
+    if (status != impeller::CommandBuffer::Status::kCompleted) {
       encode_task(nullptr);
       return;
     }
-    auto sk_image = ConvertBufferToSkImage(data, color_type, dimensions);
+    auto sk_image = ConvertBufferToSkImage(buffer, color_type, dimensions);
     encode_task(sk_image);
   };
 
-  impeller_context->ReadTextureToDeviceBuffer(texture, completion);
+  if (!command_buffer->SubmitCommands(completion)) {
+    FML_LOG(ERROR) << "Failed to submit commands.";
+  }
 }
 
 void ImageEncodingImpeller::ConvertImageToRaster(
