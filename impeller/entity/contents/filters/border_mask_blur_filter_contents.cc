@@ -96,11 +96,11 @@ std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
         {coverage.origin, input_uvs[0]},
         {{coverage.origin.x + coverage.size.width, coverage.origin.y},
          input_uvs[1]},
+        {{coverage.origin.x, coverage.origin.y + coverage.size.height},
+         input_uvs[2]},
         {{coverage.origin.x + coverage.size.width,
           coverage.origin.y + coverage.size.height},
          input_uvs[3]},
-        {{coverage.origin.x, coverage.origin.y + coverage.size.height},
-         input_uvs[2]},
     });
     auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 

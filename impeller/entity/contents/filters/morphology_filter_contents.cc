@@ -81,8 +81,8 @@ std::optional<Entity> DirectionalMorphologyFilterContents::RenderFilter(
     vtx_builder.AddVertices({
         {Point(0, 0), input_uvs[0]},
         {Point(1, 0), input_uvs[1]},
-        {Point(1, 1), input_uvs[3]},
         {Point(0, 1), input_uvs[2]},
+        {Point(1, 1), input_uvs[3]},
     });
 
     auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);

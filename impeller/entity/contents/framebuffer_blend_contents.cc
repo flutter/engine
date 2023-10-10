@@ -63,8 +63,8 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
   vtx_builder.AddVertices({
       {Point(0, 0), Point(0, 0)},
       {Point(size.width, 0), Point(1, 0)},
-      {Point(size.width, size.height), Point(1, 1)},
       {Point(0, size.height), Point(0, 1)},
+      {Point(size.width, size.height), Point(1, 1)},
   });
   auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 

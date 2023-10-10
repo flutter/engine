@@ -59,8 +59,8 @@ std::optional<Entity> SrgbToLinearFilterContents::RenderFilter(
     vtx_builder.AddVertices({
         {Point(0, 0)},
         {Point(1, 0)},
-        {Point(1, 1)},
         {Point(0, 1)},
+        {Point(1, 1)},
     });
 
     auto& host_buffer = pass.GetTransientsBuffer();

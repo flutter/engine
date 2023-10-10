@@ -155,8 +155,8 @@ static std::optional<Entity> AdvancedBlend(
     vtx_builder.AddVertices({
         {Point(0, 0), dst_uvs[0], src_uvs[0]},
         {Point(size.width, 0), dst_uvs[1], src_uvs[1]},
-        {Point(size.width, size.height), dst_uvs[3], src_uvs[3]},
         {Point(0, size.height), dst_uvs[2], src_uvs[2]},
+        {Point(size.width, size.height), dst_uvs[3], src_uvs[3]},
     });
     auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
@@ -282,9 +282,9 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
     vtx_builder.AddVertices({
         {origin, dst_uvs[0], dst_uvs[0]},
         {Point(origin.x + size.width, origin.y), dst_uvs[1], dst_uvs[1]},
+        {Point(origin.x, origin.y + size.height), dst_uvs[2], dst_uvs[2]},
         {Point(origin.x + size.width, origin.y + size.height), dst_uvs[3],
          dst_uvs[3]},
-        {Point(origin.x, origin.y + size.height), dst_uvs[2], dst_uvs[2]},
     });
     auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
@@ -455,9 +455,9 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
     vtx_builder.AddVertices({
         {origin, dst_uvs[0], color},
         {Point(origin.x + size.width, origin.y), dst_uvs[1], color},
+        {Point(origin.x, origin.y + size.height), dst_uvs[2], color},
         {Point(origin.x + size.width, origin.y + size.height), dst_uvs[3],
          color},
-        {Point(origin.x, origin.y + size.height), dst_uvs[2], color},
     });
     auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
@@ -586,8 +586,8 @@ static std::optional<Entity> PipelineBlend(
       vtx_builder.AddVertices({
           {Point(0, 0), Point(0, 0)},
           {Point(size.width, 0), Point(1, 0)},
-          {Point(size.width, size.height), Point(1, 1)},
           {Point(0, size.height), Point(0, 1)},
+          {Point(size.width, size.height), Point(1, 1)},
       });
       auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
       cmd.BindVertices(vtx_buffer);
