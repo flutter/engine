@@ -7,6 +7,9 @@
 !.clang-tidy
 !README.md
 
+# Allow custom README.flutter files in each folder.
+**/README.flutter
+
 # Include folders that have hand-written code (not DEPS).
 !accessibility/
 !canvaskit/
