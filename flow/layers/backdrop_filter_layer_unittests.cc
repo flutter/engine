@@ -494,16 +494,16 @@ TEST_F(BackdropLayerDiffTest, ReadbackOutsideOfPaintArea) {
   l1.root()->Add(clip);
   auto damage = DiffLayerTree(l1, MockLayerTree(SkISize::Make(100, 100)));
 
-  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(10, 10, 80, 80));
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(60 - 50, 60 - 50, 80, 80));
 
   MockLayerTree l2(SkISize::Make(100, 100));
   // path inside readback area must trigger whole readback repaint + filter
   // repaint.
-  auto path2 = SkPath().addRect(SkRect::MakeLTRB(10, 10, 20, 20));
+  auto path2 = SkPath().addRect(SkRect::MakeXYWH(60 - 50, 60 - 50, 10, 10));
   l2.root()->Add(clip);
   l2.root()->Add(std::make_shared<MockLayer>(path2));
   damage = DiffLayerTree(l2, l1);
-  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(10, 10, 80, 80));
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(60 - 50, 60 - 50, 80, 80));
 }
 
 TEST_F(BackdropLayerDiffTest, BackdropLayerInvalidTransform) {
