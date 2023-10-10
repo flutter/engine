@@ -238,13 +238,14 @@ TEST(ImageEncodingImpellerTest, ConvertDlImageToSkImage16Float) {
   bool did_call = false;
   ImageEncodingImpeller::ConvertDlImageToSkImage(
       image,
-      [&did_call](const sk_sp<SkImage>& image) {
+      [&did_call](const fml::StatusOr<sk_sp<SkImage>>& image) {
         did_call = true;
-        ASSERT_TRUE(image);
-        EXPECT_EQ(100, image->width());
-        EXPECT_EQ(100, image->height());
-        EXPECT_EQ(kRGBA_F16_SkColorType, image->colorType());
-        EXPECT_EQ(nullptr, image->colorSpace());
+        ASSERT_TRUE(image.ok());
+        ASSERT_TRUE(image.value());
+        EXPECT_EQ(100, image.value()->width());
+        EXPECT_EQ(100, image.value()->height());
+        EXPECT_EQ(kRGBA_F16_SkColorType, image.value()->colorType());
+        EXPECT_EQ(nullptr, image.value()->colorSpace());
       },
       context);
   EXPECT_TRUE(did_call);
@@ -264,13 +265,14 @@ TEST(ImageEncodingImpellerTest, ConvertDlImageToSkImage10XR) {
   bool did_call = false;
   ImageEncodingImpeller::ConvertDlImageToSkImage(
       image,
-      [&did_call](const sk_sp<SkImage>& image) {
+      [&did_call](const fml::StatusOr<sk_sp<SkImage>>& image) {
         did_call = true;
-        ASSERT_TRUE(image);
-        EXPECT_EQ(100, image->width());
-        EXPECT_EQ(100, image->height());
-        EXPECT_EQ(kBGR_101010x_XR_SkColorType, image->colorType());
-        EXPECT_EQ(nullptr, image->colorSpace());
+        ASSERT_TRUE(image.ok());
+        ASSERT_TRUE(image.value());
+        EXPECT_EQ(100, image.value()->width());
+        EXPECT_EQ(100, image.value()->height());
+        EXPECT_EQ(kBGR_101010x_XR_SkColorType, image.value()->colorType());
+        EXPECT_EQ(nullptr, image.value()->colorSpace());
       },
       context);
   EXPECT_TRUE(did_call);

@@ -1936,16 +1936,23 @@ base class _Image extends NativeFieldWrapperClass1 {
   external int get height;
 
   Future<ByteData?> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba}) {
-    return _futurize((_Callback<ByteData> callback) {
-      return _toByteData(format.index, (Uint8List? encoded) {
-        callback(encoded!.buffer.asByteData());
-      });
+    final Completer<ByteData?> completer = Completer<ByteData?>();
+    final String? syncError = _toByteData(format.index, (Uint8List? encoded, String? error) {
+      if (encoded != null) {
+        completer.complete(encoded.buffer.asByteData());
+      } else {
+        completer.completeError(Exception(error ?? 'unknown error'));
+      }
     });
+    if (syncError != null) {
+      completer.completeError(Exception(syncError));
+    }
+    return completer.future;
   }
 
   /// Returns an error message on failure, null on success.
   @Native<Handle Function(Pointer<Void>, Int32, Handle)>(symbol: 'Image::toByteData')
-  external String? _toByteData(int format, _Callback<Uint8List?> callback);
+  external String? _toByteData(int format, void Function(Uint8List?, String?) callback);
 
   bool _disposed = false;
   void dispose() {
