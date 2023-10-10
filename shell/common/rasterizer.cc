@@ -635,8 +635,6 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
     } else if (status == DrawSurfaceStatus::kRetry) {
       resubmitted_tasks.push_back(std::make_unique<LayerTreeTask>(
           view_id, std::move(layer_tree), device_pixel_ratio));
-    } else {
-      printf("Other status %d\n", static_cast<uint32_t>(status));
     }
   }
   // TODO(dkwingsmt): Pass in raster cache(s) for all views.

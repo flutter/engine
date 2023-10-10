@@ -232,6 +232,10 @@ void ShellTest::PumpOneFrame(Shell* shell, FrameContent frame_content) {
         recorder->RecordVsync(frame_begin_time, frame_end_time);
         engine->animator_->BeginFrame(std::move(recorder));
 
+        // The BeginFrame phase and the EndFrame phase must be performed in a
+        // single task, otherwise a normal vsync might be inserted in between,
+        // causing flaky assertion errors.
+
         for (auto& [view_id, view_content] : frame_content) {
           SkMatrix identity;
           identity.setIdentity();

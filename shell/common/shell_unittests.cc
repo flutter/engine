@@ -4691,14 +4691,17 @@ TEST_F(ShellTest, AnimatorAcceptsMultipleRenders) {
   EXPECT_CALL(mock_shell, GetPlatformMessageHandler)
       .WillOnce(ReturnRef(platform_message_handler));
   fml::AutoResetWaitableEvent draw_latch;
-  EXPECT_CALL(mock_shell, OnAnimatorDraw)
-      .WillOnce(Invoke([&draw_latch](std::shared_ptr<FramePipeline> pipeline) {
+  std::function<void(std::shared_ptr<FramePipeline> pipeline)>
+      mock_on_animator_draw = [&draw_latch](
+                                  std::shared_ptr<FramePipeline> pipeline) {
         auto status = pipeline->Consume([&](std::unique_ptr<FrameItem> item) {
           EXPECT_EQ(item->layer_tree_tasks.size(), 2u);
         });
         EXPECT_EQ(status, PipelineConsumeResult::Done);
         draw_latch.Signal();
-      }));
+      };
+  EXPECT_CALL(mock_shell, OnAnimatorDraw)
+      .WillOnce(Invoke(mock_on_animator_draw));
   EXPECT_CALL(mock_shell, OnAnimatorBeginFrame)
       .WillOnce(Invoke(
           [&engine](fml::TimePoint frame_target_time, uint64_t frame_number) {
@@ -4708,7 +4711,7 @@ TEST_F(ShellTest, AnimatorAcceptsMultipleRenders) {
   TaskRunners task_runners = GetTaskRunnersForFixture();
   Settings settings = CreateSettingsForFixture();
   auto configuration = RunConfiguration::InferFromSettings(settings);
-  configuration.SetEntrypoint("animatorRenderMultipleTimes");
+  configuration.SetEntrypoint("onBeginFrameRendersMultipleViews");
 
   PointerDataDispatcherMaker dispatcher_maker =
       [](DefaultPointerDataDispatcher::Delegate& delegate) {

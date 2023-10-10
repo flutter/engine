@@ -549,7 +549,7 @@ void testReportViewWidths() {
 }
 
 @pragma('vm:entry-point')
-void animatorRenderMultipleTimes() {
+void onBeginFrameRendersMultipleViews() {
   PlatformDispatcher.instance.onBeginFrame = (Duration beginTime) {
     for (final FlutterView view in PlatformDispatcher.instance.views) {
       final SceneBuilder builder = SceneBuilder();
