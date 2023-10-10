@@ -5,6 +5,7 @@
 # Include the .gitignore file itself and .clang-tidy.
 !.gitignore
 !.clang-tidy
+!README.md
 
 # Include folders that have hand-written code (not DEPS).
 !accessibility/
