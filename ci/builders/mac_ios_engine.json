@@ -97,7 +97,7 @@
             "drone_dimensions": [
                 "device_type=none",
                 "os=Mac-12",
-		"cpu=x64"
+		"cpu=x86-64"
             ],
             "gn": [
                 "--ios",
