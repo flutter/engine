@@ -124,12 +124,8 @@ Damage DiffContext::ComputeDamage(const SkIRect& accumulated_buffer_damage,
 
   for (const auto& r : readbacks_) {
     SkRect rect = SkRect::Make(r.rect);
-    if (rect.intersects(frame_damage)) {
-      frame_damage.join(rect);
-    }
-    if (rect.intersects(buffer_damage)) {
-      buffer_damage.join(rect);
-    }
+    frame_damage.join(rect);
+    buffer_damage.join(rect);
   }
 
   Damage res;

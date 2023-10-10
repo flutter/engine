@@ -469,8 +469,7 @@ TEST_F(BackdropLayerDiffTest, BackdropLayer) {
   auto path1 = SkPath().addRect(SkRect::MakeLTRB(180, 180, 190, 190));
   l4.root()->Add(std::make_shared<MockLayer>(path1));
   damage = DiffLayerTree(l4, l3);
-
-  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(180, 180, 190, 190));
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(0, 0, 190, 190));
 
   MockLayerTree l5;
   l5.root()->Add(scale);
