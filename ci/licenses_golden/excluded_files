@@ -97,7 +97,6 @@
 ../../../flutter/fml/memory/ref_counted_unittest.cc
 ../../../flutter/fml/memory/task_runner_checker_unittest.cc
 ../../../flutter/fml/memory/weak_ptr_unittest.cc
-../../../flutter/fml/message_loop_impl_unittests.cc
 ../../../flutter/fml/message_loop_task_queues_merge_unmerge_unittests.cc
 ../../../flutter/fml/message_loop_task_queues_unittests.cc
 ../../../flutter/fml/message_loop_unittests.cc
@@ -392,6 +391,8 @@
 ../../../flutter/sky/tools/objcopy.py
 ../../../flutter/testing
 ../../../flutter/third_party/.clang-tidy
+../../../flutter/third_party/.gitignore
+../../../flutter/third_party/README.md
 ../../../flutter/third_party/accessibility/README.md
 ../../../flutter/third_party/accessibility/ax/ax_enum_util_unittest.cc
 ../../../flutter/third_party/accessibility/ax/ax_event_generator_unittest.cc
@@ -476,6 +477,7 @@
 ../../../fuchsia/sdk/linux/arch/x64/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/arch/x64/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/bind/fuchsia.arm.platform/meta.json
+../../../fuchsia/sdk/linux/bind/fuchsia.nxp.platform/meta.json
 ../../../fuchsia/sdk/linux/bind/fuchsia.platform/meta.json
 ../../../fuchsia/sdk/linux/bind/fuchsia/meta.json
 ../../../fuchsia/sdk/linux/dart/sl4f/meta.json
@@ -2860,6 +2862,7 @@
 ../../../third_party/skia/src/gpu/mtl/BUILD.bazel
 ../../../third_party/skia/src/gpu/tessellate/BUILD.bazel
 ../../../third_party/skia/src/gpu/vk/BUILD.bazel
+../../../third_party/skia/src/gpu/vk/vulkanmemoryallocator/BUILD.bazel
 ../../../third_party/skia/src/image/BUILD.bazel
 ../../../third_party/skia/src/lazy/BUILD.bazel
 ../../../third_party/skia/src/opts/BUILD.bazel
