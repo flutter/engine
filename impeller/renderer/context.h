@@ -163,9 +163,9 @@ class Context {
   ///        and return the results via [callback].
   ///
   ///        This operation will be executed async if possible. The context will
-  ///        be invoked with a valid fml::Mapping if the operation succeeded, or
-  ///        a nullptr if it failed. This may be invoked from a different thread
-  ///        than it was executed on.
+  ///        be invoked with a valid impeller::DeviceBuffer if the operation
+  ///        succeeded, or a nullptr if it failed. This callback may be invoked
+  ///        from a different thread than it was created on.
   ///
   ///        The format of the returned data is defined by the pixel format of
   ///        this texture's descriptor.
