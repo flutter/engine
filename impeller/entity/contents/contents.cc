@@ -49,11 +49,11 @@ bool Contents::IsOpaque() const {
   return false;
 }
 
-Contents::StencilCoverage Contents::GetStencilCoverage(
+Contents::ClipCoverage Contents::GetClipCoverage(
     const Entity& entity,
-    const std::optional<Rect>& current_stencil_coverage) const {
-  return {.type = StencilCoverage::Type::kNoChange,
-          .coverage = current_stencil_coverage};
+    const std::optional<Rect>& current_clip_coverage) const {
+  return {.type = ClipCoverage::Type::kNoChange,
+          .coverage = current_clip_coverage};
 }
 
 std::optional<Snapshot> Contents::RenderToSnapshot(
@@ -123,14 +123,18 @@ std::optional<Color> Contents::AsBackgroundColor(const Entity& entity,
   return {};
 }
 
+const FilterContents* Contents::AsFilter() const {
+  return nullptr;
+}
+
 bool Contents::ApplyColorFilter(
     const Contents::ColorFilterProc& color_filter_proc) {
   return false;
 }
 
 bool Contents::ShouldRender(const Entity& entity,
-                            const std::optional<Rect>& stencil_coverage) const {
-  if (!stencil_coverage.has_value()) {
+                            const std::optional<Rect>& clip_coverage) const {
+  if (!clip_coverage.has_value()) {
     return false;
   }
 
@@ -141,7 +145,7 @@ bool Contents::ShouldRender(const Entity& entity,
   if (coverage == Rect::MakeMaximum()) {
     return true;
   }
-  return stencil_coverage->IntersectsWithRect(coverage.value());
+  return clip_coverage->IntersectsWithRect(coverage.value());
 }
 
 void Contents::SetCoverageHint(std::optional<Rect> coverage_hint) {

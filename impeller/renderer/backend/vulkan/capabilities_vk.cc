@@ -7,17 +7,14 @@
 #include <algorithm>
 
 #include "impeller/base/validation.h"
+#include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 
 namespace impeller {
 
 static constexpr const char* kInstanceLayer = "ImpellerInstance";
 
-CapabilitiesVK::CapabilitiesVK(bool enable_validations)
-    : enable_validations_(enable_validations) {
-  if (enable_validations_) {
-    FML_LOG(INFO) << "Vulkan validations are enabled.";
-  }
+CapabilitiesVK::CapabilitiesVK(bool enable_validations) {
   auto extensions = vk::enumerateInstanceExtensionProperties();
   auto layers = vk::enumerateInstanceLayerProperties();
 
@@ -41,6 +38,17 @@ CapabilitiesVK::CapabilitiesVK(bool enable_validations)
     }
   }
 
+  validations_enabled_ =
+      enable_validations && HasLayer("VK_LAYER_KHRONOS_validation");
+  if (enable_validations && !validations_enabled_) {
+    FML_LOG(ERROR)
+        << "Requested Impeller context creation with validations but the "
+           "validation layers could not be found. Expect no Vulkan validation "
+           "checks!";
+  }
+  if (validations_enabled_) {
+    FML_LOG(INFO) << "Vulkan validations are enabled.";
+  }
   is_valid_ = true;
 }
 
@@ -51,19 +59,15 @@ bool CapabilitiesVK::IsValid() const {
 }
 
 bool CapabilitiesVK::AreValidationsEnabled() const {
-  return enable_validations_;
+  return validations_enabled_;
 }
 
 std::optional<std::vector<std::string>> CapabilitiesVK::GetEnabledLayers()
     const {
   std::vector<std::string> required;
 
-  if (enable_validations_) {
-    if (!HasLayer("VK_LAYER_KHRONOS_validation")) {
-      VALIDATION_LOG
-          << "Requested validations but the validation layer was not found.";
-      return std::nullopt;
-    }
+  if (validations_enabled_) {
+    // The presence of this layer is already checked in the ctor.
     required.push_back("VK_LAYER_KHRONOS_validation");
   }
 
@@ -130,7 +134,7 @@ CapabilitiesVK::GetEnabledInstanceExtensions() const {
     return std::nullopt;
   }
 
-  if (enable_validations_) {
+  if (validations_enabled_) {
     if (!HasExtension("VK_EXT_debug_utils")) {
       VALIDATION_LOG << "Requested validations but could not find the "
                         "VK_EXT_debug_utils extension.";
@@ -248,10 +252,11 @@ static bool PhysicalDeviceSupportsRequiredFormats(
     const vk::PhysicalDevice& device) {
   const auto has_color_format =
       HasSuitableColorFormat(device, vk::Format::eB8G8R8A8Unorm);
-  const auto has_depth_stencil_format =
+  const auto has_stencil_format =
       HasSuitableDepthStencilFormat(device, vk::Format::eS8Uint) ||
+      HasSuitableDepthStencilFormat(device, vk::Format::eD32SfloatS8Uint) ||
       HasSuitableDepthStencilFormat(device, vk::Format::eD24UnormS8Uint);
-  return has_color_format && has_depth_stencil_format;
+  return has_color_format && has_stencil_format;
 }
 
 static bool HasRequiredProperties(const vk::PhysicalDevice& physical_device) {
@@ -330,15 +335,23 @@ bool CapabilitiesVK::HasExtension(const std::string& ext) const {
 }
 
 void CapabilitiesVK::SetOffscreenFormat(PixelFormat pixel_format) const {
-  color_format_ = pixel_format;
+  default_color_format_ = pixel_format;
 }
 
 bool CapabilitiesVK::SetPhysicalDevice(const vk::PhysicalDevice& device) {
-  if (HasSuitableDepthStencilFormat(device, vk::Format::eS8Uint)) {
-    depth_stencil_format_ = PixelFormat::kS8UInt;
+  if (HasSuitableDepthStencilFormat(device, vk::Format::eD32SfloatS8Uint)) {
+    default_depth_stencil_format_ = PixelFormat::kD32FloatS8UInt;
   } else if (HasSuitableDepthStencilFormat(device,
                                            vk::Format::eD24UnormS8Uint)) {
-    depth_stencil_format_ = PixelFormat::kD32FloatS8UInt;
+    default_depth_stencil_format_ = PixelFormat::kD24UnormS8Uint;
+  } else {
+    default_depth_stencil_format_ = PixelFormat::kUnknown;
+  }
+
+  if (HasSuitableDepthStencilFormat(device, vk::Format::eS8Uint)) {
+    default_stencil_format_ = PixelFormat::kS8UInt;
+  } else if (default_stencil_format_ != PixelFormat::kUnknown) {
+    default_stencil_format_ = default_depth_stencil_format_;
   } else {
     return false;
   }
@@ -368,7 +381,7 @@ bool CapabilitiesVK::SetPhysicalDevice(const vk::PhysicalDevice& device) {
     for (auto i = 0u; i < memory_properties.memoryTypeCount; i++) {
       if (memory_properties.memoryTypes[i].propertyFlags &
           vk::MemoryPropertyFlagBits::eLazilyAllocated) {
-        supports_memoryless_textures_ = true;
+        supports_device_transient_textures_ = true;
       }
     }
   }
@@ -389,11 +402,6 @@ bool CapabilitiesVK::SetPhysicalDevice(const vk::PhysicalDevice& device) {
   }
 
   return true;
-}
-
-// |Capabilities|
-bool CapabilitiesVK::HasThreadingRestrictions() const {
-  return false;
 }
 
 // |Capabilities|
@@ -443,23 +451,28 @@ bool CapabilitiesVK::SupportsReadFromOnscreenTexture() const {
   return false;
 }
 
-bool CapabilitiesVK::SupportsDecalTileMode() const {
+bool CapabilitiesVK::SupportsDecalSamplerAddressMode() const {
   return true;
 }
 
 // |Capabilities|
-bool CapabilitiesVK::SupportsMemorylessTextures() const {
-  return supports_memoryless_textures_;
+bool CapabilitiesVK::SupportsDeviceTransientTextures() const {
+  return supports_device_transient_textures_;
 }
 
 // |Capabilities|
 PixelFormat CapabilitiesVK::GetDefaultColorFormat() const {
-  return color_format_;
+  return default_color_format_;
 }
 
 // |Capabilities|
 PixelFormat CapabilitiesVK::GetDefaultStencilFormat() const {
-  return depth_stencil_format_;
+  return default_stencil_format_;
+}
+
+// |Capabilities|
+PixelFormat CapabilitiesVK::GetDefaultDepthStencilFormat() const {
+  return default_depth_stencil_format_;
 }
 
 const vk::PhysicalDeviceProperties&

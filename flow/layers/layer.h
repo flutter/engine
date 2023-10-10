@@ -14,10 +14,10 @@
 #include "flutter/display_list/dl_canvas.h"
 #include "flutter/flow/diff_context.h"
 #include "flutter/flow/embedded_views.h"
-#include "flutter/flow/instrumentation.h"
 #include "flutter/flow/layer_snapshot_store.h"
 #include "flutter/flow/layers/layer_state_stack.h"
 #include "flutter/flow/raster_cache.h"
+#include "flutter/flow/stopwatch.h"
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/logging.h"
@@ -70,8 +70,6 @@ struct PrerollContext {
   // These allow us to track properties like elevation, opacity, and the
   // presence of a texture layer during Preroll.
   bool has_texture_layer = false;
-
-  bool impeller_enabled = false;
 
   // The list of flags that describe which rendering state attributes
   // (such as opacity, ColorFilter, ImageFilter) a given layer can

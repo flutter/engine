@@ -91,26 +91,6 @@ targets:
       config_name: linux_android_emulator
     timeout: 60
 
-  - name: Linux Android Emulator Tests
-    bringup: true
-    recipe: engine/scenarios
-    enabled_branches:
-      - main
-    properties:
-      dependencies: >-
-        [
-          {"dependency": "android_virtual_device", "version": "33"},
-          {"dependency": "goldctl", "version": "git_revision:f808dcff91b221ae313e540c09d79696cd08b8de"}
-        ]
-      upload_packages: "true"
-      clobber: "true"
-    timeout: 60
-    runIf:
-      - DEPS
-      - .ci.yaml
-      - testing/**
-      - shell/platform/android/**
-
   - name: Linux builder_cache
     enabled_branches:
       - main
@@ -178,23 +158,22 @@ targets:
       config_name: linux_benchmarks
     timeout: 60
 
-  - name: Linux Benchmarks (no-upload)
-    recipe: engine/engine_metrics
-    bringup: true
-    properties:
-      build_host: "true"
-      upload_metrics: "false"
-    timeout: 60
-
   - name: Linux Fuchsia
     recipe: engine/engine
     properties:
-      add_recipes_cq: "true"
       build_fuchsia: "true"
       fuchsia_ctl_version: version:0.0.27
       # ensure files from pre-production Fuchsia SDK tests are purged from cache
       clobber: "true"
     timeout: 90
+    runIfNot:
+      - lib/web_ui/**
+      - shell/platform/android/**
+      - shell/platform/darwin/**
+      - shell/platform/glfw/**
+      - shell/platform/linux/**
+      - shell/platform/windows/**
+      - web_sdk/**
 
   - name: Linux Fuchsia FEMU
     recipe: engine/femu_test
@@ -207,6 +186,14 @@ targets:
       emulator_arch: "x64"
       enable_cso: "true"
     timeout: 60
+    runIfNot:
+      - lib/web_ui/**
+      - shell/platform/android/**
+      - shell/platform/darwin/**
+      - shell/platform/glfw/**
+      - shell/platform/linux/**
+      - shell/platform/windows/**
+      - web_sdk/**
 
   - name: Linux Fuchsia arm64 FEMU
     recipe: engine/femu_test
@@ -219,12 +206,14 @@ targets:
       enable_cso: "true"
     timeout: 60
     bringup: true
-
-  - name: Linux Framework Smoke Tests
-    recipe: engine/framework_smoke
-    enabled_branches:
-      - main
-    timeout: 60
+    runIfNot:
+      - lib/web_ui/**
+      - shell/platform/android/**
+      - shell/platform/darwin/**
+      - shell/platform/glfw/**
+      - shell/platform/linux/**
+      - shell/platform/windows/**
+      - web_sdk/**
 
   - name: Linux linux_fuchsia
     bringup: true
@@ -235,9 +224,24 @@ targets:
       config_name: linux_fuchsia
     drone_dimensions:
       - os=Linux
+    runIfNot:
+      - lib/web_ui/**
+      - shell/platform/android/**
+      - shell/platform/darwin/**
+      - shell/platform/glfw/**
+      - shell/platform/linux/**
+      - shell/platform/windows/**
+      - web_sdk/**
+
+  - name: Linux Framework Smoke Tests
+    recipe: engine/framework_smoke
+    enabled_branches:
+      - main
+    timeout: 60
 
   - name: Linux linux_clang_tidy
     recipe: engine_v2/engine_v2
+    presubmit: false
     timeout: 120
     properties:
       config_name: linux_clang_tidy
@@ -246,14 +250,31 @@ targets:
       - .ci.yaml
       - tools/clang_tidy/**
       - ci/builders/**
-      - ci/lint.sh
+      - ci/clang_tidy.sh
       - "**.h"
       - "**.c"
       - "**.cc"
       - "**.fbs"
       - "**.frag"
       - "**.vert"
-      - "**.py"
+
+  - name: Linux linux_clang_tidy_presubmit
+    recipe: engine_v2/engine_v2
+    timeout: 120
+    properties:
+      config_name: linux_clang_tidy_presubmit
+    runIf:
+      - DEPS
+      - .ci.yaml
+      - tools/clang_tidy/**
+      - ci/builders/**
+      - ci/clang_tidy.sh
+      - "**.h"
+      - "**.c"
+      - "**.cc"
+      - "**.fbs"
+      - "**.frag"
+      - "**.vert"
 
   - name: Linux linux_arm_host_engine
     recipe: engine_v2/engine_v2
@@ -339,7 +360,7 @@ targets:
         {"download_emsdk": true}
       dependencies: >-
         [
-          {"dependency": "chrome_and_driver", "version": "version:115.0"},
+          {"dependency": "chrome_and_driver", "version": "version:117.0"},
           {"dependency": "curl", "version": "version:7.64.0"}
         ]
       framework: "true"
@@ -371,6 +392,7 @@ targets:
 
   - name: Mac mac_clang_tidy
     recipe: engine_v2/engine_v2
+    presubmit: false
     timeout: 120
     properties:
       config_name: mac_clang_tidy
@@ -379,7 +401,27 @@ targets:
       - .ci.yaml
       - tools/clang_tidy/**
       - ci/builders/**
-      - ci/lint.sh
+      - ci/clang_tidy.sh
+      - "**.h"
+      - "**.c"
+      - "**.cc"
+      - "**.fbs"
+      - "**.frag"
+      - "**.vert"
+      - "**.m"
+      - "**.mm"
+
+  - name: Mac mac_clang_tidy_presubmit
+    recipe: engine_v2/engine_v2
+    timeout: 120
+    properties:
+      config_name: mac_clang_tidy_presubmit
+    runIf:
+      - DEPS
+      - .ci.yaml
+      - tools/clang_tidy/**
+      - ci/builders/**
+      - ci/clang_tidy.sh
       - "**.h"
       - "**.c"
       - "**.cc"
@@ -422,10 +464,6 @@ targets:
       add_recipes_cq: "true"
       release_build: "true"
       config_name: mac_ios_engine
-      dependencies: >-
-        [
-          {"dependency": "jazzy", "version": "0.14.1"}
-        ]
       $flutter/osx_sdk : >-
         {
           "sdk_version": "14e300c"

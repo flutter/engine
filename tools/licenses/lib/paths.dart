@@ -38,6 +38,7 @@ final Set<String> skippedPaths = <String>{
   r'fuchsia/sdk/linux/docs',
   r'fuchsia/sdk/linux/meta',
   r'fuchsia/sdk/linux/NOTICE.fuchsia', // covers things that contribute to the Fuchsia SDK; see fxb/94240
+  r'fuchsia/sdk/linux/packages/blobs', // See https://github.com/flutter/flutter/issues/134042.
   r'fuchsia/sdk/linux/tools',
   r'fuchsia/sdk/mac/docs',
   r'fuchsia/sdk/mac/meta',
@@ -184,6 +185,7 @@ final Set<String> skippedPaths = <String>{
   r'third_party/skia/third_party/lua', // not linked in
   r'third_party/skia/third_party/vello', // not linked in
   r'third_party/skia/tools', // contains nothing that ends up in the binary executable
+  r'third_party/stb',
   r'third_party/swiftshader', // only used on hosts for tests
   r'third_party/tinygltf',
   r'third_party/vulkan-deps/glslang/LICENSE', // excluded to make sure we don't accidentally apply it as a default license

@@ -12,6 +12,7 @@
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkPicture.h"
+#include "third_party/skia/include/gpu/GpuTypes.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/ganesh/GrExternalTextureGenerator.h"
@@ -79,25 +80,22 @@ class ExternalWebGLTexture : public GrExternalTexture {
 };
 }  // namespace
 
-class VideoFrameImageGenerator : public GrExternalTextureGenerator {
+class TextureSourceImageGenerator : public GrExternalTextureGenerator {
  public:
-  VideoFrameImageGenerator(SkImageInfo ii,
-                           SkwasmObjectId videoFrameId,
-                           Skwasm::Surface* surface)
+  TextureSourceImageGenerator(SkImageInfo ii,
+                              SkwasmObject textureSource,
+                              Skwasm::Surface* surface)
       : GrExternalTextureGenerator(ii),
-        _videoFrameId(videoFrameId),
-        _surface(surface) {}
-
-  ~VideoFrameImageGenerator() override {
-    _surface->disposeVideoFrame(_videoFrameId);
-  }
+        _textureSourceWrapper(
+            surface->createTextureSourceWrapper(textureSource)) {}
 
   std::unique_ptr<GrExternalTexture> generateExternalTexture(
       GrRecordingContext* context,
-      GrMipMapped mipmapped) override {
+      skgpu::Mipmapped mipmapped) override {
     GrGLTextureInfo glInfo;
-    glInfo.fID = skwasm_createGlTextureFromVideoFrame(
-        _videoFrameId, fInfo.width(), fInfo.height());
+    glInfo.fID = skwasm_createGlTextureFromTextureSource(
+        _textureSourceWrapper->getTextureSource(), fInfo.width(),
+        fInfo.height());
     glInfo.fFormat = GL_RGBA8_OES;
     glInfo.fTarget = GL_TEXTURE_2D;
 
@@ -108,8 +106,7 @@ class VideoFrameImageGenerator : public GrExternalTextureGenerator {
   }
 
  private:
-  SkwasmObjectId _videoFrameId;
-  Skwasm::Surface* _surface;
+  std::unique_ptr<Skwasm::TextureSourceWrapper> _textureSourceWrapper;
 };
 
 SKWASM_EXPORT SkImage* image_createFromPicture(SkPicture* picture,
@@ -135,16 +132,17 @@ SKWASM_EXPORT SkImage* image_createFromPixels(SkData* data,
       .release();
 }
 
-SKWASM_EXPORT SkImage* image_createFromVideoFrame(SkwasmObjectId videoFrameId,
-                                                  int width,
-                                                  int height,
-                                                  Skwasm::Surface* surface) {
+SKWASM_EXPORT SkImage* image_createFromTextureSource(SkwasmObject textureSource,
+                                                     int width,
+                                                     int height,
+                                                     Skwasm::Surface* surface) {
   return SkImages::DeferredFromTextureGenerator(
-             std::make_unique<VideoFrameImageGenerator>(
-                 SkImageInfo::Make(width, height,
-                                   SkColorType::kRGBA_8888_SkColorType,
-                                   SkAlphaType::kPremul_SkAlphaType),
-                 videoFrameId, surface))
+             std::unique_ptr<TextureSourceImageGenerator>(
+                 new TextureSourceImageGenerator(
+                     SkImageInfo::Make(width, height,
+                                       SkColorType::kRGBA_8888_SkColorType,
+                                       SkAlphaType::kPremul_SkAlphaType),
+                     textureSource, surface)))
       .release();
 }
 

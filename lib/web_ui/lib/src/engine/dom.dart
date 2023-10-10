@@ -322,7 +322,7 @@ external DomHTMLDocument get domDocument;
 
 @JS()
 @staticInterop
-class DomEventTarget {}
+class DomEventTarget implements JSObject {}
 
 extension DomEventTargetExtension on DomEventTarget {
   @JS('addEventListener')
@@ -529,6 +529,8 @@ extension DomElementExtension on DomElement {
       createDomListWrapper<DomElement>(_children);
 
   external DomElement? get firstElementChild;
+
+  external DomElement? get nextElementSibling;
 
   @JS('clientHeight')
   external JSNumber get _clientHeight;
@@ -741,6 +743,7 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   set alignContent(String value) => setProperty('align-content', value);
   set textAlign(String value) => setProperty('text-align', value);
   set font(String value) => setProperty('font', value);
+  set cursor(String value) => setProperty('cursor', value);
   String get width => getPropertyValue('width');
   String get height => getPropertyValue('height');
   String get position => getPropertyValue('position');
@@ -805,6 +808,7 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   String get alignContent => getPropertyValue('align-content');
   String get textAlign => getPropertyValue('text-align');
   String get font => getPropertyValue('font');
+  String get cursor => getPropertyValue('cursor');
 
   @JS('getPropertyValue')
   external JSString _getPropertyValue(JSString property);
@@ -1105,6 +1109,9 @@ extension DomCanvasElementExtension on DomCanvasElement {
     }
     return getContext('webgl2')! as WebGLContext;
   }
+
+  DomCanvasRenderingContextBitmapRenderer get contextBitmapRenderer =>
+      getContext('bitmaprenderer')! as DomCanvasRenderingContextBitmapRenderer;
 }
 
 @JS()
@@ -1127,7 +1134,7 @@ extension WebGLContextExtension on WebGLContext {
 
 @JS()
 @staticInterop
-abstract class DomCanvasImageSource {}
+abstract class DomCanvasImageSource implements JSObject {}
 
 @JS()
 @staticInterop
@@ -1394,6 +1401,15 @@ extension DomCanvasRenderingContextWebGlExtension
   bool isContextLost() => _isContextLost().toDart;
 }
 
+@JS()
+@staticInterop
+class DomCanvasRenderingContextBitmapRenderer {}
+
+extension DomCanvasRenderingContextBitmapRendererExtension
+  on DomCanvasRenderingContextBitmapRenderer {
+  external void transferFromImageBitmap(DomImageBitmap bitmap);
+}
+
 @JS('ImageData')
 @staticInterop
 class DomImageData {
@@ -1407,6 +1423,43 @@ extension DomImageDataExtension on DomImageData {
   @JS('data')
   external JSUint8ClampedArray get _data;
   Uint8ClampedList get data => _data.toDart;
+}
+
+@JS('ImageBitmap')
+@staticInterop
+class DomImageBitmap implements JSObject {}
+
+extension DomImageBitmapExtension on DomImageBitmap {
+  external JSNumber get width;
+  external JSNumber get height;
+  external void close();
+}
+
+
+@JS('createImageBitmap')
+external JSPromise _createImageBitmap1(
+  JSAny source,
+);
+@JS('createImageBitmap')
+external JSPromise _createImageBitmap2(
+  JSAny source,
+  JSNumber x,
+  JSNumber y,
+  JSNumber width,
+  JSNumber height,
+);
+JSPromise createImageBitmap(JSAny source, [({int x, int y, int width, int height})? bounds]) {
+  if (bounds != null) {
+    return _createImageBitmap2(
+      source,
+      bounds.x.toJS,
+      bounds.y.toJS,
+      bounds.width.toJS,
+      bounds.height.toJS
+    );
+  } else {
+    return _createImageBitmap1(source);
+  }
 }
 
 @JS()
@@ -1777,7 +1830,7 @@ class HttpFetchError implements Exception {
 
 @JS()
 @staticInterop
-class DomResponse {}
+class DomResponse implements JSObject {}
 
 extension DomResponseExtension on DomResponse {
   @JS('status')
@@ -1814,7 +1867,7 @@ extension DomHeadersExtension on DomHeaders {
 
 @JS()
 @staticInterop
-class _DomReadableStream {}
+class _DomReadableStream implements JSObject {}
 
 extension _DomReadableStreamExtension on _DomReadableStream {
   external _DomStreamReader getReader();
@@ -2016,6 +2069,10 @@ extension DomHTMLTextAreaElementExtension on DomHTMLTextAreaElement {
   @JS('name')
   external set _name(JSString value);
   set name(String value) => _name = value.toJS;
+
+  @JS('selectionDirection')
+  external JSString? get _selectionDirection;
+  String? get selectionDirection => _selectionDirection?.toDart;
 
   @JS('selectionStart')
   external JSNumber? get _selectionStart;
@@ -2240,10 +2297,24 @@ extension DomURLExtension on DomURL {
 @staticInterop
 class DomBlob {
   external factory DomBlob(JSArray parts);
+
+  external factory DomBlob.withOptions(JSArray parts, JSAny options);
 }
 
-DomBlob createDomBlob(List<Object?> parts) =>
-    DomBlob(parts.toJSAnyShallow as JSArray);
+extension DomBlobExtension on DomBlob {
+  external JSPromise arrayBuffer();
+}
+
+DomBlob createDomBlob(List<Object?> parts, [Map<String, dynamic>? options]) {
+  if (options == null) {
+    return DomBlob(parts.toJSAnyShallow as JSArray);
+  } else {
+    return DomBlob.withOptions(
+      parts.toJSAnyShallow as JSArray,
+      options.toJSAnyDeep
+    );
+  }
+}
 
 typedef DomMutationCallback = void Function(
     JSArray mutation, DomMutationObserver observer);
@@ -2355,6 +2426,13 @@ class DomMouseEvent extends DomUIEvent {
   external factory DomMouseEvent.arg2(JSString type, JSAny initDict);
 }
 
+@JS('InputEvent')
+@staticInterop
+class DomInputEvent extends DomUIEvent {
+  external factory DomInputEvent.arg1(JSString type);
+  external factory DomInputEvent.arg2(JSString type, JSAny initDict);
+}
+
 extension DomMouseEventExtension on DomMouseEvent {
   @JS('clientX')
   external JSNumber get _clientX;
@@ -2405,6 +2483,14 @@ DomMouseEvent createDomMouseEvent(String type, [Map<dynamic, dynamic>? init]) {
     return DomMouseEvent.arg1(type.toJS);
   } else {
     return DomMouseEvent.arg2(type.toJS, init.toJSAnyDeep);
+  }
+}
+
+DomInputEvent createDomInputEvent(String type, [Map<dynamic, dynamic>? init]) {
+  if (init == null) {
+    return DomInputEvent.arg1(type.toJS);
+  } else {
+    return DomInputEvent.arg2(type.toJS, init.toJSAnyDeep);
   }
 }
 
@@ -2623,6 +2709,10 @@ extension DomHTMLInputElementExtension on DomHTMLInputElement {
   @JS('autocomplete')
   external set _autocomplete(JSString value);
   set autocomplete(String value) => _autocomplete = value.toJS;
+
+  @JS('selectionDirection')
+  external JSString? get _selectionDirection;
+  String? get selectionDirection => _selectionDirection?.toDart;
 
   @JS('selectionStart')
   external JSNumber? get _selectionStart;

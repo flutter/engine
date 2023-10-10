@@ -48,8 +48,8 @@ enum class Convexity {
 ///             All shapes supported by Impeller are paths either directly or
 ///             via approximation (in the case of circles).
 ///
-///             Creating paths that describe complex shapes is usually done by a
-///             path builder.
+///             Paths are externally immutable once created, Creating paths must
+///             be done using a path builder.
 ///
 class Path {
  public:
@@ -95,21 +95,9 @@ class Path {
 
   size_t GetComponentCount(std::optional<ComponentType> type = {}) const;
 
-  void SetFillType(FillType fill);
-
   FillType GetFillType() const;
 
   bool IsConvex() const;
-
-  Path& AddLinearComponent(Point p1, Point p2);
-
-  Path& AddQuadraticComponent(Point p1, Point cp, Point p2);
-
-  Path& AddCubicComponent(Point p1, Point cp1, Point cp2, Point p2);
-
-  Path& AddContourComponent(Point destination, bool is_closed = false);
-
-  void SetContourClosed(bool is_closed);
 
   template <class T>
   using Applier = std::function<void(size_t index, const T& component)>;
@@ -130,17 +118,6 @@ class Path {
   bool GetContourComponentAtIndex(size_t index,
                                   ContourComponent& contour) const;
 
-  bool UpdateLinearComponentAtIndex(size_t index,
-                                    const LinearPathComponent& linear);
-
-  bool UpdateQuadraticComponentAtIndex(size_t index,
-                                       const QuadraticPathComponent& quadratic);
-
-  bool UpdateCubicComponentAtIndex(size_t index, CubicPathComponent& cubic);
-
-  bool UpdateContourComponentAtIndex(size_t index,
-                                     const ContourComponent& contour);
-
   /// Callers must provide the scale factor for how this path will be
   /// transformed.
   ///
@@ -159,6 +136,39 @@ class Path {
 
   void SetConvexity(Convexity value);
 
+  void SetFillType(FillType fill);
+
+  void SetBounds(Rect rect);
+
+  Path& AddLinearComponent(Point p1, Point p2);
+
+  Path& AddQuadraticComponent(Point p1, Point cp, Point p2);
+
+  Path& AddCubicComponent(Point p1, Point cp1, Point cp2, Point p2);
+
+  Path& AddContourComponent(Point destination, bool is_closed = false);
+
+  /// @brief Called by `PathBuilder` to compute the bounds for certain paths.
+  ///
+  /// `PathBuilder` may set the bounds directly, in case they come from a source
+  /// with already computed bounds, such as an SkPath.
+  void ComputeBounds();
+
+  void SetContourClosed(bool is_closed);
+
+  void Shift(Point shift);
+
+  bool UpdateLinearComponentAtIndex(size_t index,
+                                    const LinearPathComponent& linear);
+
+  bool UpdateQuadraticComponentAtIndex(size_t index,
+                                       const QuadraticPathComponent& quadratic);
+
+  bool UpdateCubicComponentAtIndex(size_t index, CubicPathComponent& cubic);
+
+  bool UpdateContourComponentAtIndex(size_t index,
+                                     const ContourComponent& contour);
+
   struct ComponentIndexPair {
     ComponentType type = ComponentType::kLinear;
     size_t index = 0;
@@ -176,6 +186,8 @@ class Path {
   std::vector<QuadraticPathComponent> quads_;
   std::vector<CubicPathComponent> cubics_;
   std::vector<ContourComponent> contours_;
+
+  std::optional<Rect> computed_bounds_;
 };
 
 }  // namespace impeller

@@ -26,7 +26,7 @@ class TextContents final : public Contents {
 
   ~TextContents();
 
-  void SetTextFrame(const TextFrame& frame);
+  void SetTextFrame(const std::shared_ptr<TextFrame>& frame);
 
   void SetColor(Color color);
 
@@ -56,16 +56,16 @@ class TextContents final : public Contents {
               RenderPass& pass) const override;
 
  private:
-  TextFrame frame_;
+  std::shared_ptr<TextFrame> frame_;
   Scalar scale_ = 1.0;
   Color color_;
   Scalar inherited_opacity_ = 1.0;
   Vector2 offset_;
 
   std::shared_ptr<GlyphAtlas> ResolveAtlas(
+      Context& context,
       GlyphAtlas::Type type,
-      const std::shared_ptr<LazyGlyphAtlas>& lazy_atlas,
-      std::shared_ptr<Context> context) const;
+      const std::shared_ptr<LazyGlyphAtlas>& lazy_atlas) const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(TextContents);
 };

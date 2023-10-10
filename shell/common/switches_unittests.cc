@@ -51,6 +51,14 @@ TEST(SwitchesTest, SkiaTraceAllowlistFlag) {
 #endif
 }
 
+TEST(SwitchesTest, TraceToFile) {
+  fml::CommandLine command_line = fml::CommandLineFromInitializerList(
+      {"command", "--trace-to-file=trace.binpb"});
+  EXPECT_TRUE(command_line.HasOption("trace-to-file"));
+  Settings settings = SettingsFromCommandLine(command_line);
+  EXPECT_EQ(settings.trace_to_file, "trace.binpb");
+}
+
 TEST(SwitchesTest, RouteParsedFlag) {
   fml::CommandLine command_line =
       fml::CommandLineFromInitializerList({"command", "--route=/animation"});
@@ -112,6 +120,25 @@ TEST(SwitchesTest, NoEnableImpeller) {
     EXPECT_TRUE(command_line.HasOption("enable-impeller"));
     Settings settings = SettingsFromCommandLine(command_line);
     EXPECT_EQ(settings.enable_impeller, false);
+  }
+}
+
+TEST(SwitchesTest, DisableImageReaderPlatformViews) {
+  {
+    // enable
+    fml::CommandLine command_line = fml::CommandLineFromInitializerList(
+        {"command", "--disable-image-reader-platform-views"});
+    EXPECT_TRUE(command_line.HasOption("disable-image-reader-platform-views"));
+    Settings settings = SettingsFromCommandLine(command_line);
+    EXPECT_EQ(settings.disable_image_reader_platform_views, true);
+  }
+  {
+    // disable
+    fml::CommandLine command_line = fml::CommandLineFromInitializerList(
+        {"command", "--disable-image-reader-platform-views=false"});
+    EXPECT_TRUE(command_line.HasOption("disable-image-reader-platform-views"));
+    Settings settings = SettingsFromCommandLine(command_line);
+    EXPECT_EQ(settings.disable_image_reader_platform_views, false);
   }
 }
 

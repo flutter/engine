@@ -10,7 +10,6 @@
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/allocation.h"
-#include "impeller/base/config.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
@@ -33,6 +32,8 @@ HandleType ToHandleType(TextureGLES::Type type) {
     case TextureGLES::Type::kTexture:
       return HandleType::kTexture;
     case TextureGLES::Type::kRenderBuffer:
+    // MSAA textures are treated as render buffers.
+    case TextureGLES::Type::kRenderBufferMultisampled:
       return HandleType::kRenderBuffer;
   }
   FML_UNREACHABLE();
@@ -119,6 +120,7 @@ struct TexImage2DData {
         break;
       case PixelFormat::kUnknown:
       case PixelFormat::kS8UInt:
+      case PixelFormat::kD24UnormS8Uint:
       case PixelFormat::kD32FloatS8UInt:
       case PixelFormat::kR8UNormInt:
       case PixelFormat::kR8G8UNormInt:
@@ -167,6 +169,7 @@ struct TexImage2DData {
       case PixelFormat::kB8G8R8A8UNormInt:
       case PixelFormat::kB8G8R8A8UNormIntSRGB:
       case PixelFormat::kS8UInt:
+      case PixelFormat::kD24UnormS8Uint:
       case PixelFormat::kD32FloatS8UInt:
       case PixelFormat::kR8UNormInt:
       case PixelFormat::kR8G8UNormInt:
@@ -314,6 +317,8 @@ static std::optional<GLenum> ToRenderBufferFormat(PixelFormat format) {
       return GL_RGBA16F;
     case PixelFormat::kS8UInt:
       return GL_STENCIL_INDEX8;
+    case PixelFormat::kD24UnormS8Uint:
+      return GL_DEPTH24_STENCIL8;
     case PixelFormat::kD32FloatS8UInt:
       return GL_DEPTH32F_STENCIL8;
     case PixelFormat::kUnknown:
@@ -379,7 +384,7 @@ void TextureGLES::InitializeContentsIfNecessary() const {
       }
 
     } break;
-    case Type::kRenderBuffer:
+    case Type::kRenderBuffer: {
       auto render_buffer_format =
           ToRenderBufferFormat(GetTextureDescriptor().format);
       if (!render_buffer_format.has_value()) {
@@ -395,7 +400,27 @@ void TextureGLES::InitializeContentsIfNecessary() const {
                                size.height                    // height
         );
       }
+    } break;
+    case Type::kRenderBufferMultisampled: {
+      auto render_buffer_msaa =
+          ToRenderBufferFormat(GetTextureDescriptor().format);
+      if (!render_buffer_msaa.has_value()) {
+        VALIDATION_LOG << "Invalid format for render-buffer MSAA image.";
+        return;
+      }
+      gl.BindRenderbuffer(GL_RENDERBUFFER, handle.value());
+      {
+        TRACE_EVENT0("impeller", "RenderBufferStorageInitialization");
+        gl.RenderbufferStorageMultisampleEXT(
+            GL_RENDERBUFFER,             // target
+            4,                           // samples
+            render_buffer_msaa.value(),  // internal format
+            size.width,                  // width
+            size.height                  // height
+        );
+      }
       break;
+    }
   }
 }
 
@@ -422,6 +447,8 @@ bool TextureGLES::Bind() const {
       gl.BindTexture(target.value(), handle.value());
     } break;
     case Type::kRenderBuffer:
+    // MSAA textures are treated as render buffers.
+    case Type::kRenderBufferMultisampled:
       gl.BindRenderbuffer(GL_RENDERBUFFER, handle.value());
       break;
   }
@@ -504,6 +531,18 @@ bool TextureGLES::SetAsFramebufferAttachment(GLenum target,
                                  ToAttachmentPoint(point),  // attachment
                                  GL_RENDERBUFFER,  // render-buffer target
                                  handle.value()    // render-buffer
+      );
+      break;
+    case Type::kRenderBufferMultisampled:
+      // Assume that when MSAA is enabled, we're using 4x MSAA.
+      FML_DCHECK(GetTextureDescriptor().sample_count == SampleCount::kCount4);
+      gl.FramebufferTexture2DMultisampleEXT(
+          target,                    // target
+          ToAttachmentPoint(point),  // attachment
+          GL_TEXTURE_2D,             // textarget
+          handle.value(),            // texture
+          0,                         // level
+          4                          // samples
       );
       break;
   }

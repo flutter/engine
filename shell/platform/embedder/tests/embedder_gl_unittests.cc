@@ -103,12 +103,26 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToOpenGLFramebuffer) {
           backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeFramebuffer;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(0, 0, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0, 0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[0], layer);
         }
@@ -135,12 +149,26 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToOpenGLFramebuffer) {
           backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeFramebuffer;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(2, 3, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[2], layer);
         }
@@ -196,12 +224,26 @@ TEST_F(EmbedderTest, RasterCacheDisabledWithPlatformViews) {
           backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeFramebuffer;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(0, 0, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0, 0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[0], layer);
         }
@@ -228,12 +270,26 @@ TEST_F(EmbedderTest, RasterCacheDisabledWithPlatformViews) {
           backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeFramebuffer;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(3, 3, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[2], layer);
         }
@@ -300,12 +356,26 @@ TEST_F(EmbedderTest, RasterCacheEnabled) {
           backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeFramebuffer;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(0, 0, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0, 0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[0], layer);
         }
@@ -369,12 +439,26 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToOpenGLTexture) {
           backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeTexture;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(0, 0, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0, 0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[0], layer);
         }
@@ -401,12 +485,26 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToOpenGLTexture) {
           backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeTexture;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(2, 3, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[2], layer);
         }
@@ -463,12 +561,26 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToSoftwareBuffer) {
               backing_store.software.row_bytes * backing_store.software.height,
               800 * 4 * 600.0);
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(0, 0, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0, 0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[0], layer);
         }
@@ -493,12 +605,27 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToSoftwareBuffer) {
           backing_store.struct_size = sizeof(backing_store);
           backing_store.type = kFlutterBackingStoreTypeSoftware;
           backing_store.did_update = true;
+
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(2, 3, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[2], layer);
         }
@@ -555,12 +682,26 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderKnownScene) {
           backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeTexture;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(0, 0, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[0], layer);
         }
@@ -588,12 +729,26 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderKnownScene) {
           backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeTexture;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(30, 30, 80, 180),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[2], layer);
         }
@@ -621,12 +776,26 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderKnownScene) {
           backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeTexture;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(50, 50, 100, 200),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[4], layer);
         }
@@ -738,12 +907,26 @@ TEST_F(EmbedderTest, CustomCompositorMustWorkWithCustomTaskRunner) {
           backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeTexture;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(0, 0, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0, 0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[0], layer);
         }
@@ -753,12 +936,26 @@ TEST_F(EmbedderTest, CustomCompositorMustWorkWithCustomTaskRunner) {
           platform_view.struct_size = sizeof(platform_view);
           platform_view.identifier = 42;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(2, 3, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypePlatformView;
           layer.platform_view = &platform_view;
           layer.size = FlutterSizeMake(123.0, 456.0);
           layer.offset = FlutterPointMake(1.0, 2.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[1], layer);
         }
@@ -770,12 +967,26 @@ TEST_F(EmbedderTest, CustomCompositorMustWorkWithCustomTaskRunner) {
           backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeTexture;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(2, 3, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[2], layer);
         }
@@ -852,12 +1063,26 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderWithRootLayerOnly) {
           backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeTexture;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(0, 0, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[0], layer);
         }
@@ -919,12 +1144,26 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderWithPlatformLayerOnBottom) {
           backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeTexture;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(0, 0, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[0], layer);
         }
@@ -1039,12 +1278,26 @@ TEST_F(EmbedderTest,
           backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeTexture;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(0, 0, 600, 800),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(600.0, 800.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[0], layer);
         }
@@ -1072,12 +1325,26 @@ TEST_F(EmbedderTest,
           backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeTexture;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(30, 720, 180, 770),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(600.0, 800.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[2], layer);
         }
@@ -1105,12 +1372,26 @@ TEST_F(EmbedderTest,
           backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeTexture;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(50, 700, 200, 750),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(600.0, 800.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[4], layer);
         }
@@ -1386,12 +1667,26 @@ TEST_P(EmbedderTestMultiBackend,
           backing_store.did_update = true;
           ConfigureBackingStore(backing_store, backend, true);
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(0, 0, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[0], layer);
         }
@@ -1418,12 +1713,26 @@ TEST_P(EmbedderTestMultiBackend,
           backing_store.did_update = true;
           ConfigureBackingStore(backing_store, backend, true);
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(0, 0, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[2], layer);
         }
@@ -1499,12 +1808,26 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositorOnNonRootLayerWithXform) {
           backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeFramebuffer;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(0, 0, 600, 800),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(600.0, 800.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[0], layer);
         }
@@ -1532,12 +1855,26 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositorOnNonRootLayerWithXform) {
           backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeFramebuffer;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(0, 0, 600, 800),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(600.0, 800.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[2], layer);
         }
@@ -1842,12 +2179,26 @@ TEST_P(EmbedderTestMultiBackend,
           backing_store.did_update = true;
           ConfigureBackingStore(backing_store, backend, false);
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(0, 0, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[0], layer);
         }
@@ -1874,12 +2225,26 @@ TEST_P(EmbedderTestMultiBackend,
           backing_store.did_update = true;
           ConfigureBackingStore(backing_store, backend, false);
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(0, 0, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[2], layer);
         }
@@ -1937,12 +2302,26 @@ TEST_F(
           backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeTexture;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(0, 0, 600, 800),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(600.0, 800.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[0], layer);
         }
@@ -1970,12 +2349,26 @@ TEST_F(
           backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeTexture;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(0, 0, 600, 800),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(600.0, 800.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[2], layer);
         }
@@ -2106,12 +2499,26 @@ TEST_P(EmbedderTestMultiBackend, PlatformViewMutatorsAreValid) {
           backing_store.did_update = true;
           ConfigureBackingStore(backing_store, backend, false);
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(0, 0, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[0], layer);
         }
@@ -2202,12 +2609,26 @@ TEST_F(EmbedderTest, PlatformViewMutatorsAreValidWithPixelRatio) {
           backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeTexture;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(0, 0, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[0], layer);
         }
@@ -2304,12 +2725,26 @@ TEST_F(EmbedderTest,
           backing_store.did_update = true;
           backing_store.open_gl.type = kFlutterOpenGLTargetTypeTexture;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(0, 0, 600, 800),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(600.0, 800.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[0], layer);
         }
@@ -3220,7 +3655,7 @@ TEST_F(EmbedderTest,
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
-  builder.SetDartEntrypoint("render_gradient");
+  builder.SetDartEntrypoint("render_gradient_retained");
   builder.GetRendererConfig().open_gl.populate_existing_damage =
       [](void* context, const intptr_t id,
          FlutterDamage* existing_damage) -> void {
@@ -3233,7 +3668,8 @@ TEST_F(EmbedderTest,
       .SetGLPopulateExistingDamageCallback(
           [](const intptr_t id, FlutterDamage* existing_damage_ptr) {
             const size_t num_rects = 1;
-            FlutterRect existing_damage_rects[num_rects] = {
+            // The array must be valid after the callback returns.
+            static FlutterRect existing_damage_rects[num_rects] = {
                 FlutterRect{0, 0, 800, 600}};
             existing_damage_ptr->num_rects = num_rects;
             existing_damage_ptr->damage = existing_damage_rects;
@@ -3242,9 +3678,11 @@ TEST_F(EmbedderTest,
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
 
+  fml::AutoResetWaitableEvent latch;
+
   // First frame should be entirely rerendered.
   static_cast<EmbedderTestContextGL&>(context).SetGLPresentCallback(
-      [](FlutterPresentInfo present_info) {
+      [&](FlutterPresentInfo present_info) {
         const size_t num_rects = 1;
         ASSERT_EQ(present_info.frame_damage.num_rects, num_rects);
         ASSERT_EQ(present_info.frame_damage.damage->left, 0);
@@ -3257,6 +3695,8 @@ TEST_F(EmbedderTest,
         ASSERT_EQ(present_info.buffer_damage.damage->top, 0);
         ASSERT_EQ(present_info.buffer_damage.damage->right, 800);
         ASSERT_EQ(present_info.buffer_damage.damage->bottom, 600);
+
+        latch.Signal();
       });
 
   // Send a window metrics events so frames may be scheduled.
@@ -3267,12 +3707,13 @@ TEST_F(EmbedderTest,
   event.pixel_ratio = 1.0;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
+  latch.Wait();
 
   // Because it's the same as the first frame, the second frame damage should
   // be empty but, because there was a full existing buffer damage, the buffer
   // damage should be the entire screen.
   static_cast<EmbedderTestContextGL&>(context).SetGLPresentCallback(
-      [](FlutterPresentInfo present_info) {
+      [&](FlutterPresentInfo present_info) {
         const size_t num_rects = 1;
         ASSERT_EQ(present_info.frame_damage.num_rects, num_rects);
         ASSERT_EQ(present_info.frame_damage.damage->left, 0);
@@ -3285,10 +3726,13 @@ TEST_F(EmbedderTest,
         ASSERT_EQ(present_info.buffer_damage.damage->top, 0);
         ASSERT_EQ(present_info.buffer_damage.damage->right, 800);
         ASSERT_EQ(present_info.buffer_damage.damage->bottom, 600);
+
+        latch.Signal();
       });
 
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
+  latch.Wait();
 }
 
 TEST_F(EmbedderTest, PresentInfoReceivesEmptyDamage) {
@@ -3296,7 +3740,7 @@ TEST_F(EmbedderTest, PresentInfoReceivesEmptyDamage) {
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
-  builder.SetDartEntrypoint("render_gradient");
+  builder.SetDartEntrypoint("render_gradient_retained");
   builder.GetRendererConfig().open_gl.populate_existing_damage =
       [](void* context, const intptr_t id,
          FlutterDamage* existing_damage) -> void {
@@ -3309,7 +3753,8 @@ TEST_F(EmbedderTest, PresentInfoReceivesEmptyDamage) {
       .SetGLPopulateExistingDamageCallback(
           [](const intptr_t id, FlutterDamage* existing_damage_ptr) {
             const size_t num_rects = 1;
-            FlutterRect existing_damage_rects[num_rects] = {
+            // The array must be valid after the callback returns.
+            static FlutterRect existing_damage_rects[num_rects] = {
                 FlutterRect{0, 0, 0, 0}};
             existing_damage_ptr->num_rects = num_rects;
             existing_damage_ptr->damage = existing_damage_rects;
@@ -3318,9 +3763,11 @@ TEST_F(EmbedderTest, PresentInfoReceivesEmptyDamage) {
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
 
+  fml::AutoResetWaitableEvent latch;
+
   // First frame should be entirely rerendered.
   static_cast<EmbedderTestContextGL&>(context).SetGLPresentCallback(
-      [](FlutterPresentInfo present_info) {
+      [&](FlutterPresentInfo present_info) {
         const size_t num_rects = 1;
         ASSERT_EQ(present_info.frame_damage.num_rects, num_rects);
         ASSERT_EQ(present_info.frame_damage.damage->left, 0);
@@ -3333,6 +3780,8 @@ TEST_F(EmbedderTest, PresentInfoReceivesEmptyDamage) {
         ASSERT_EQ(present_info.buffer_damage.damage->top, 0);
         ASSERT_EQ(present_info.buffer_damage.damage->right, 800);
         ASSERT_EQ(present_info.buffer_damage.damage->bottom, 600);
+
+        latch.Signal();
       });
 
   // Send a window metrics events so frames may be scheduled.
@@ -3343,11 +3792,12 @@ TEST_F(EmbedderTest, PresentInfoReceivesEmptyDamage) {
   event.pixel_ratio = 1.0;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
+  latch.Wait();
 
   // Because it's the same as the first frame, the second frame should not be
   // rerendered assuming there is no existing damage.
   static_cast<EmbedderTestContextGL&>(context).SetGLPresentCallback(
-      [](FlutterPresentInfo present_info) {
+      [&](FlutterPresentInfo present_info) {
         const size_t num_rects = 1;
         ASSERT_EQ(present_info.frame_damage.num_rects, num_rects);
         ASSERT_EQ(present_info.frame_damage.damage->left, 0);
@@ -3360,10 +3810,13 @@ TEST_F(EmbedderTest, PresentInfoReceivesEmptyDamage) {
         ASSERT_EQ(present_info.buffer_damage.damage->top, 0);
         ASSERT_EQ(present_info.buffer_damage.damage->right, 0);
         ASSERT_EQ(present_info.buffer_damage.damage->bottom, 0);
+
+        latch.Signal();
       });
 
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
+  latch.Wait();
 }
 
 TEST_F(EmbedderTest, PresentInfoReceivesPartialDamage) {
@@ -3371,7 +3824,7 @@ TEST_F(EmbedderTest, PresentInfoReceivesPartialDamage) {
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
-  builder.SetDartEntrypoint("render_gradient");
+  builder.SetDartEntrypoint("render_gradient_retained");
   builder.GetRendererConfig().open_gl.populate_existing_damage =
       [](void* context, const intptr_t id,
          FlutterDamage* existing_damage) -> void {
@@ -3382,9 +3835,10 @@ TEST_F(EmbedderTest, PresentInfoReceivesPartialDamage) {
   // Return existing damage as only part of the screen on purpose.
   static_cast<EmbedderTestContextGL&>(context)
       .SetGLPopulateExistingDamageCallback(
-          [](const intptr_t id, FlutterDamage* existing_damage_ptr) {
+          [&](const intptr_t id, FlutterDamage* existing_damage_ptr) {
             const size_t num_rects = 1;
-            FlutterRect existing_damage_rects[num_rects] = {
+            // The array must be valid after the callback returns.
+            static FlutterRect existing_damage_rects[num_rects] = {
                 FlutterRect{200, 150, 400, 300}};
             existing_damage_ptr->num_rects = num_rects;
             existing_damage_ptr->damage = existing_damage_rects;
@@ -3393,9 +3847,11 @@ TEST_F(EmbedderTest, PresentInfoReceivesPartialDamage) {
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
 
+  fml::AutoResetWaitableEvent latch;
+
   // First frame should be entirely rerendered.
   static_cast<EmbedderTestContextGL&>(context).SetGLPresentCallback(
-      [](FlutterPresentInfo present_info) {
+      [&](FlutterPresentInfo present_info) {
         const size_t num_rects = 1;
         ASSERT_EQ(present_info.frame_damage.num_rects, num_rects);
         ASSERT_EQ(present_info.frame_damage.damage->left, 0);
@@ -3408,6 +3864,8 @@ TEST_F(EmbedderTest, PresentInfoReceivesPartialDamage) {
         ASSERT_EQ(present_info.buffer_damage.damage->top, 0);
         ASSERT_EQ(present_info.buffer_damage.damage->right, 800);
         ASSERT_EQ(present_info.buffer_damage.damage->bottom, 600);
+
+        latch.Signal();
       });
 
   // Send a window metrics events so frames may be scheduled.
@@ -3418,12 +3876,13 @@ TEST_F(EmbedderTest, PresentInfoReceivesPartialDamage) {
   event.pixel_ratio = 1.0;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
+  latch.Wait();
 
   // Because it's the same as the first frame, the second frame damage should be
   // empty but, because there was a partial existing damage, the buffer damage
   // should represent that partial damage area.
   static_cast<EmbedderTestContextGL&>(context).SetGLPresentCallback(
-      [](FlutterPresentInfo present_info) {
+      [&](FlutterPresentInfo present_info) {
         const size_t num_rects = 1;
         ASSERT_EQ(present_info.frame_damage.num_rects, num_rects);
         ASSERT_EQ(present_info.frame_damage.damage->left, 0);
@@ -3436,10 +3895,13 @@ TEST_F(EmbedderTest, PresentInfoReceivesPartialDamage) {
         ASSERT_EQ(present_info.buffer_damage.damage->top, 150);
         ASSERT_EQ(present_info.buffer_damage.damage->right, 400);
         ASSERT_EQ(present_info.buffer_damage.damage->bottom, 300);
+
+        latch.Signal();
       });
 
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
+  latch.Wait();
 }
 
 TEST_F(EmbedderTest, PopulateExistingDamageReceivesValidID) {
@@ -3447,7 +3909,7 @@ TEST_F(EmbedderTest, PopulateExistingDamageReceivesValidID) {
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
-  builder.SetDartEntrypoint("render_gradient");
+  builder.SetDartEntrypoint("render_gradient_retained");
   builder.GetRendererConfig().open_gl.populate_existing_damage =
       [](void* context, const intptr_t id,
          FlutterDamage* existing_damage) -> void {
@@ -3465,6 +3927,8 @@ TEST_F(EmbedderTest, PopulateExistingDamageReceivesValidID) {
           [window_fbo_id = window_fbo_id](intptr_t id,
                                           FlutterDamage* existing_damage) {
             ASSERT_EQ(id, window_fbo_id);
+            existing_damage->num_rects = 0;
+            existing_damage->damage = nullptr;
           });
 
   // Send a window metrics events so frames may be scheduled.
@@ -3482,7 +3946,7 @@ TEST_F(EmbedderTest, PopulateExistingDamageReceivesInvalidID) {
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
-  builder.SetDartEntrypoint("render_gradient");
+  builder.SetDartEntrypoint("render_gradient_retained");
   builder.GetRendererConfig().open_gl.populate_existing_damage =
       [](void* context, const intptr_t id,
          FlutterDamage* existing_damage) -> void {
@@ -3511,6 +3975,8 @@ TEST_F(EmbedderTest, PopulateExistingDamageReceivesInvalidID) {
           [window_fbo_id = window_fbo_id](intptr_t id,
                                           FlutterDamage* existing_damage) {
             ASSERT_NE(id, window_fbo_id);
+            existing_damage->num_rects = 0;
+            existing_damage->damage = nullptr;
           });
 
   // Send a window metrics events so frames may be scheduled.
@@ -4075,24 +4541,162 @@ TEST_F(EmbedderTest, ExternalTextureGLRefreshedTooOften) {
   glFinish();
 }
 
-TEST_F(EmbedderTest,
-       PresentInfoReceivesNoDamageWhenPopulateExistingDamageIsUndefined) {
+TEST_F(
+    EmbedderTest,
+    PresentInfoReceivesFullScreenDamageWhenPopulateExistingDamageIsNotProvided) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
-  builder.SetDartEntrypoint("render_gradient");
+  builder.SetDartEntrypoint("render_gradient_retained");
   builder.GetRendererConfig().open_gl.populate_existing_damage = nullptr;
 
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
 
-  // No damage should be passed.
+  fml::AutoResetWaitableEvent latch;
+
+  // First frame should be entirely rerendered.
   static_cast<EmbedderTestContextGL&>(context).SetGLPresentCallback(
-      [](FlutterPresentInfo present_info) {
-        ASSERT_EQ(present_info.frame_damage.damage, nullptr);
-        ASSERT_EQ(present_info.buffer_damage.damage, nullptr);
+      [&](FlutterPresentInfo present_info) {
+        const size_t num_rects = 1;
+        ASSERT_EQ(present_info.frame_damage.num_rects, num_rects);
+        ASSERT_EQ(present_info.frame_damage.damage->left, 0);
+        ASSERT_EQ(present_info.frame_damage.damage->top, 0);
+        ASSERT_EQ(present_info.frame_damage.damage->right, 800);
+        ASSERT_EQ(present_info.frame_damage.damage->bottom, 600);
+
+        ASSERT_EQ(present_info.buffer_damage.num_rects, num_rects);
+        ASSERT_EQ(present_info.buffer_damage.damage->left, 0);
+        ASSERT_EQ(present_info.buffer_damage.damage->top, 0);
+        ASSERT_EQ(present_info.buffer_damage.damage->right, 800);
+        ASSERT_EQ(present_info.buffer_damage.damage->bottom, 600);
+
+        latch.Signal();
       });
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 800;
+  event.height = 600;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+  latch.Wait();
+
+  // Since populate_existing_damage is not provided, the partial repaint
+  // functionality is actually disabled. So, the next frame should be entirely
+  // new frame.
+  static_cast<EmbedderTestContextGL&>(context).SetGLPresentCallback(
+      [&](FlutterPresentInfo present_info) {
+        const size_t num_rects = 1;
+        ASSERT_EQ(present_info.frame_damage.num_rects, num_rects);
+        ASSERT_EQ(present_info.frame_damage.damage->left, 0);
+        ASSERT_EQ(present_info.frame_damage.damage->top, 0);
+        ASSERT_EQ(present_info.frame_damage.damage->right, 800);
+        ASSERT_EQ(present_info.frame_damage.damage->bottom, 600);
+
+        ASSERT_EQ(present_info.buffer_damage.num_rects, num_rects);
+        ASSERT_EQ(present_info.buffer_damage.damage->left, 0);
+        ASSERT_EQ(present_info.buffer_damage.damage->top, 0);
+        ASSERT_EQ(present_info.buffer_damage.damage->right, 800);
+        ASSERT_EQ(present_info.buffer_damage.damage->bottom, 600);
+
+        latch.Signal();
+      });
+
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+  latch.Wait();
+}
+
+TEST_F(EmbedderTest,
+       PresentInfoReceivesJoinedDamageWhenExistingDamageContainsMultipleRects) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
+  builder.SetDartEntrypoint("render_gradient_retained");
+  builder.GetRendererConfig().open_gl.populate_existing_damage =
+      [](void* context, const intptr_t id,
+         FlutterDamage* existing_damage) -> void {
+    return reinterpret_cast<EmbedderTestContextGL*>(context)
+        ->GLPopulateExistingDamage(id, existing_damage);
+  };
+
+  // Return existing damage as the entire screen on purpose.
+  static_cast<EmbedderTestContextGL&>(context)
+      .SetGLPopulateExistingDamageCallback(
+          [](const intptr_t id, FlutterDamage* existing_damage_ptr) {
+            const size_t num_rects = 2;
+            // The array must be valid after the callback returns.
+            static FlutterRect existing_damage_rects[num_rects] = {
+                FlutterRect{100, 150, 200, 250},
+                FlutterRect{200, 250, 300, 350},
+            };
+            existing_damage_ptr->num_rects = num_rects;
+            existing_damage_ptr->damage = existing_damage_rects;
+          });
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  fml::AutoResetWaitableEvent latch;
+
+  // First frame should be entirely rerendered.
+  static_cast<EmbedderTestContextGL&>(context).SetGLPresentCallback(
+      [&](FlutterPresentInfo present_info) {
+        const size_t num_rects = 1;
+        ASSERT_EQ(present_info.frame_damage.num_rects, num_rects);
+        ASSERT_EQ(present_info.frame_damage.damage->left, 0);
+        ASSERT_EQ(present_info.frame_damage.damage->top, 0);
+        ASSERT_EQ(present_info.frame_damage.damage->right, 800);
+        ASSERT_EQ(present_info.frame_damage.damage->bottom, 600);
+
+        ASSERT_EQ(present_info.buffer_damage.num_rects, num_rects);
+        ASSERT_EQ(present_info.buffer_damage.damage->left, 0);
+        ASSERT_EQ(present_info.buffer_damage.damage->top, 0);
+        ASSERT_EQ(present_info.buffer_damage.damage->right, 800);
+        ASSERT_EQ(present_info.buffer_damage.damage->bottom, 600);
+
+        latch.Signal();
+      });
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 800;
+  event.height = 600;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+  latch.Wait();
+
+  // Because it's the same as the first frame, the second frame damage should
+  // be empty but, because there was a full existing buffer damage, the buffer
+  // damage should be the entire screen.
+  static_cast<EmbedderTestContextGL&>(context).SetGLPresentCallback(
+      [&](FlutterPresentInfo present_info) {
+        const size_t num_rects = 1;
+        ASSERT_EQ(present_info.frame_damage.num_rects, num_rects);
+        ASSERT_EQ(present_info.frame_damage.damage->left, 0);
+        ASSERT_EQ(present_info.frame_damage.damage->top, 0);
+        ASSERT_EQ(present_info.frame_damage.damage->right, 0);
+        ASSERT_EQ(present_info.frame_damage.damage->bottom, 0);
+
+        ASSERT_EQ(present_info.buffer_damage.num_rects, num_rects);
+        ASSERT_EQ(present_info.buffer_damage.damage->left, 100);
+        ASSERT_EQ(present_info.buffer_damage.damage->top, 150);
+        ASSERT_EQ(present_info.buffer_damage.damage->right, 300);
+        ASSERT_EQ(present_info.buffer_damage.damage->bottom, 350);
+
+        latch.Signal();
+      });
+
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+  latch.Wait();
 }
 
 INSTANTIATE_TEST_SUITE_P(

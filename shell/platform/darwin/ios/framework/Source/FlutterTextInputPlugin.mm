@@ -878,9 +878,11 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     self.keyboardAppearance = UIKeyboardAppearanceDefault;
   }
   NSString* autocorrect = configuration[kAutocorrectionType];
-  self.autocorrectionType = autocorrect && ![autocorrect boolValue]
-                                ? UITextAutocorrectionTypeNo
-                                : UITextAutocorrectionTypeDefault;
+  bool autocorrectIsDisabled = autocorrect && ![autocorrect boolValue];
+  self.autocorrectionType =
+      autocorrectIsDisabled ? UITextAutocorrectionTypeNo : UITextAutocorrectionTypeDefault;
+  self.spellCheckingType =
+      autocorrectIsDisabled ? UITextSpellCheckingTypeNo : UITextSpellCheckingTypeDefault;
   self.autofillId = AutofillIdFromDictionary(configuration);
   if (autofill == nil) {
     self.textContentType = @"";
@@ -1617,6 +1619,8 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 // and to position the
 // candidates view for multi-stage input methods (e.g., Japanese) when using a
 // physical keyboard.
+// Returns the rect for the queried range, or a subrange through the end of line, if
+// the range encompasses multiple lines.
 - (CGRect)firstRectForRange:(UITextRange*)range {
   NSAssert([range.start isKindOfClass:[FlutterTextPosition class]],
            @"Expected a FlutterTextPosition for range.start (got %@).", [range.start class]);
@@ -1671,6 +1675,14 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   if (end < start) {
     first = end;
   }
+
+  CGRect startSelectionRect = CGRectNull;
+  CGRect endSelectionRect = CGRectNull;
+  // Selection rects from different langauges may have different minY/maxY.
+  // So we need to iterate through each rects to update minY/maxY.
+  CGFloat minY = CGFLOAT_MAX;
+  CGFloat maxY = CGFLOAT_MIN;
+
   FlutterTextRange* textRange = [FlutterTextRange
       rangeWithNSRange:fml::RangeForCharactersInRange(self.text, NSMakeRange(0, self.text.length))];
   for (NSUInteger i = 0; i < [_selectionRects count]; i++) {
@@ -1681,11 +1693,38 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
         !isLastSelectionRect && _selectionRects[i + 1].position > first;
     if (startsOnOrBeforeStartOfRange &&
         (endOfTextIsAfterStartOfRange || nextSelectionRectIsAfterStartOfRange)) {
-      return _selectionRects[i].rect;
+      // TODO(hellohaunlin): Remove iOS 17 check. The logic should also work for older versions.
+      if (@available(iOS 17, *)) {
+        startSelectionRect = _selectionRects[i].rect;
+      } else {
+        return _selectionRects[i].rect;
+      }
+    }
+    if (!CGRectIsNull(startSelectionRect)) {
+      minY = fmin(minY, CGRectGetMinY(_selectionRects[i].rect));
+      maxY = fmax(maxY, CGRectGetMaxY(_selectionRects[i].rect));
+      BOOL endsOnOrAfterEndOfRange = _selectionRects[i].position >= end - 1;  // end is exclusive
+      BOOL nextSelectionRectIsOnNextLine =
+          !isLastSelectionRect &&
+          // Selection rects from different langauges in 2 lines may overlap with each other.
+          // A good approximation is to check if the center of next rect is below the bottom of
+          // current rect.
+          // TODO(hellohuanlin): Consider passing the line break info from framework.
+          CGRectGetMidY(_selectionRects[i + 1].rect) > CGRectGetMaxY(_selectionRects[i].rect);
+      if (endsOnOrAfterEndOfRange || isLastSelectionRect || nextSelectionRectIsOnNextLine) {
+        endSelectionRect = _selectionRects[i].rect;
+        break;
+      }
     }
   }
-
-  return CGRectZero;
+  if (CGRectIsNull(startSelectionRect) || CGRectIsNull(endSelectionRect)) {
+    return CGRectZero;
+  } else {
+    // fmin/fmax to support both LTR and RTL languages.
+    CGFloat minX = fmin(CGRectGetMinX(startSelectionRect), CGRectGetMinX(endSelectionRect));
+    CGFloat maxX = fmax(CGRectGetMaxX(startSelectionRect), CGRectGetMaxX(endSelectionRect));
+    return CGRectMake(minX, minY, maxX - minX, maxY - minY);
+  }
 }
 
 - (CGRect)caretRectForPosition:(UITextPosition*)position {
@@ -2449,18 +2488,32 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 }
 
 - (void)setEditableSizeAndTransform:(NSDictionary*)dictionary {
-  [_activeView setEditableTransform:dictionary[@"transform"]];
+  NSArray* transform = dictionary[@"transform"];
+  [_activeView setEditableTransform:transform];
+  const int leftIndex = 12;
+  const int topIndex = 13;
   if ([_activeView isScribbleAvailable]) {
     // This is necessary to set up where the scribble interactable element will be.
-    int leftIndex = 12;
-    int topIndex = 13;
     _inputHider.frame =
-        CGRectMake([dictionary[@"transform"][leftIndex] intValue],
-                   [dictionary[@"transform"][topIndex] intValue], [dictionary[@"width"] intValue],
-                   [dictionary[@"height"] intValue]);
+        CGRectMake([transform[leftIndex] intValue], [transform[topIndex] intValue],
+                   [dictionary[@"width"] intValue], [dictionary[@"height"] intValue]);
     _activeView.frame =
         CGRectMake(0, 0, [dictionary[@"width"] intValue], [dictionary[@"height"] intValue]);
     _activeView.tintColor = [UIColor clearColor];
+  } else {
+    // TODO(hellohuanlin): Also need to handle iOS 16 case, where the auto-correction highlight does
+    // not match the size of text.
+    // See https://github.com/flutter/flutter/issues/131695
+    if (@available(iOS 17, *)) {
+      // Move auto-correction highlight to overlap with the actual text.
+      // This is to fix an issue where the system auto-correction highlight is displayed at
+      // the top left corner of the screen on iOS 17+.
+      // This problem also happens on iOS 16, but the size of highlight does not match the text.
+      // See https://github.com/flutter/flutter/issues/131695
+      // TODO(hellohuanlin): Investigate if we can use non-zero size.
+      _inputHider.frame =
+          CGRectMake([transform[leftIndex] intValue], [transform[topIndex] intValue], 0, 0);
+    }
   }
 }
 
@@ -2488,6 +2541,10 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
                                                          ? NSWritingDirectionLeftToRight
                                                          : NSWritingDirectionRightToLeft]];
   }
+
+  // TODO(hellohuanlin): Investigate why notifying the text input system about text changes (via
+  // textWillChange and textDidChange APIs) causes a bug where we cannot enter text with IME
+  // keyboards. Issue: https://github.com/flutter/flutter/issues/133908
   _activeView.selectionRects = rectsAsRect;
 }
 

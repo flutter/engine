@@ -5,18 +5,6 @@
 // For documentation see https://github.com/flutter/engine/blob/main/lib/ui/painting.dart
 part of ui;
 
-// ignore: unused_element, Used in Shader assert.
-bool _offsetIsValid(Offset offset) {
-  assert(!offset.dx.isNaN && !offset.dy.isNaN, 'Offset argument contained a NaN value.');
-  return true;
-}
-
-// ignore: unused_element, Used in Shader assert.
-bool _matrix4IsValid(Float32List matrix4) {
-  assert(matrix4.length == 16, 'Matrix4 must have 16 entries.');
-  return true;
-}
-
 void _validateColorStops(List<Color> colors, List<double>? colorStops) {
   if (colorStops == null) {
     if (colors.length != 2) {
@@ -533,9 +521,22 @@ class TargetImageSize {
   final int? height;
 }
 
-Future<Codec> webOnlyInstantiateImageCodecFromUrl(Uri uri,
-  {engine.WebOnlyImageCodecChunkCallback? chunkCallback}) =>
-  engine.renderer.instantiateImageCodecFromUrl(uri, chunkCallback: chunkCallback);
+// TODO(mdebbar): Deprecate this and remove it.
+// https://github.com/flutter/flutter/issues/127395
+Future<Codec> webOnlyInstantiateImageCodecFromUrl(
+  Uri uri, {
+  ui_web.ImageCodecChunkCallback? chunkCallback,
+}) {
+  assert(() {
+    engine.printWarning(
+      'The webOnlyInstantiateImageCodecFromUrl API is deprecated and will be '
+      'removed in a future release. Please use `createImageCodecFromUrl` from '
+      '`dart:ui_web` instead.',
+    );
+    return true;
+  }());
+  return ui_web.createImageCodecFromUrl(uri, chunkCallback: chunkCallback);
+}
 
 void decodeImageFromList(Uint8List list, ImageDecoderCallback callback) {
   _decodeImageFromListAsync(list, callback);

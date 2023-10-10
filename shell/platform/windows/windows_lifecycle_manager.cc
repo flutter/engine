@@ -14,7 +14,7 @@
 namespace flutter {
 
 WindowsLifecycleManager::WindowsLifecycleManager(FlutterWindowsEngine* engine)
-    : engine_(engine), process_close_(false) {}
+    : engine_(engine) {}
 
 WindowsLifecycleManager::~WindowsLifecycleManager() {}
 
@@ -38,6 +38,30 @@ void WindowsLifecycleManager::DispatchMessage(HWND hwnd,
   PostMessage(hwnd, message, wparam, lparam);
 }
 
+bool WindowsLifecycleManager::HandleCloseMessage(HWND hwnd,
+                                                 WPARAM wparam,
+                                                 LPARAM lparam) {
+  if (!process_exit_) {
+    return false;
+  }
+  auto key = std::make_tuple(hwnd, wparam, lparam);
+  auto itr = sent_close_messages_.find(key);
+  if (itr != sent_close_messages_.end()) {
+    if (itr->second == 1) {
+      sent_close_messages_.erase(itr);
+    } else {
+      sent_close_messages_[key]--;
+    }
+    return false;
+  }
+  if (IsLastWindowOfProcess()) {
+    engine_->RequestApplicationQuit(hwnd, wparam, lparam,
+                                    AppExitType::cancelable);
+    return true;
+  }
+  return false;
+}
+
 bool WindowsLifecycleManager::WindowProc(HWND hwnd,
                                          UINT msg,
                                          WPARAM wpar,
@@ -48,27 +72,8 @@ bool WindowsLifecycleManager::WindowProc(HWND hwnd,
     // send a request to the framework to see if the app should exit. If it
     // is, we re-dispatch a new WM_CLOSE message. In order to allow the new
     // message to reach other delegates, we ignore it here.
-    case WM_CLOSE: {
-      if (!process_close_) {
-        return false;
-      }
-      auto key = std::make_tuple(hwnd, wpar, lpar);
-      auto itr = sent_close_messages_.find(key);
-      if (itr != sent_close_messages_.end()) {
-        if (itr->second == 1) {
-          sent_close_messages_.erase(itr);
-        } else {
-          sent_close_messages_[key]--;
-        }
-        return false;
-      }
-      if (IsLastWindowOfProcess()) {
-        engine_->RequestApplicationQuit(hwnd, wpar, lpar,
-                                        AppExitType::cancelable);
-        return true;
-      }
-      break;
-    }
+    case WM_CLOSE:
+      return HandleCloseMessage(hwnd, wpar, lpar);
 
     // DWM composition can be disabled on Windows 7.
     // Notify the engine as this can result in screen tearing.
@@ -179,8 +184,12 @@ bool WindowsLifecycleManager::IsLastWindowOfProcess() {
   return num_windows <= 1;
 }
 
-void WindowsLifecycleManager::BeginProcessingClose() {
-  process_close_ = true;
+void WindowsLifecycleManager::BeginProcessingLifecycle() {
+  process_lifecycle_ = true;
+}
+
+void WindowsLifecycleManager::BeginProcessingExit() {
+  process_exit_ = true;
 }
 
 // TODO(schectman): Wait until the platform channel is registered to send
@@ -191,7 +200,7 @@ void WindowsLifecycleManager::SetLifecycleState(AppLifecycleState state) {
     return;
   }
   state_ = state;
-  if (engine_) {
+  if (engine_ && process_lifecycle_) {
     const char* state_name = AppLifecycleStateToString(state);
     engine_->SendPlatformMessage("flutter/lifecycle",
                                  reinterpret_cast<const uint8_t*>(state_name),
@@ -280,6 +289,11 @@ std::optional<LRESULT> WindowsLifecycleManager::ExternalWindowMessage(
       break;
     case WM_DESTROY:
       event = flutter::WindowStateEvent::kHide;
+      break;
+    case WM_CLOSE:
+      if (HandleCloseMessage(hwnd, wparam, lparam)) {
+        return NULL;
+      }
       break;
   }
 

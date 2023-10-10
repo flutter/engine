@@ -490,14 +490,22 @@ action("android_jar") {
     ":pom_libflutter",
   ]
 
-  if (enable_vulkan_validation_layers) {
+  if (impeller_enable_vulkan_validation_layers) {
     assert(impeller_enable_vulkan)
-    deps += [ "//third_party/vulkan_validation_layers" ]
+
+    # We use a different toolchain here so that vulkan validation layers are
+    # built against API level 26, which they require, rather than the default.
+    # This is safe because the Engine can do a version check before loading the
+    # .so for the validation layers.
+    apilevel26_toolchain = "//build/toolchain/android:clang_arm64_apilevel26"
+    validation_layer_target =
+        "//third_party/vulkan_validation_layers($apilevel26_toolchain)"
+    validation_layer_out_dir =
+        get_label_info(validation_layer_target, "root_out_dir")
+    deps += [ validation_layer_target ]
     args += [
       "--native_lib",
-      rebase_path("libVkLayer_khronos_validation.so",
-                  root_build_dir,
-                  root_build_dir),
+      rebase_path("$validation_layer_out_dir/libVkLayer_khronos_validation.so"),
     ]
     if (current_cpu == "arm64") {
       args += [

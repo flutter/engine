@@ -6,6 +6,7 @@
 #define FLUTTER_DISPLAY_LIST_SKIA_DL_SK_PAINT_DISPATCHER_H_
 
 #include "flutter/display_list/dl_op_receiver.h"
+#include "flutter/display_list/skia/dl_sk_types.h"
 
 namespace flutter {
 
@@ -14,7 +15,7 @@ namespace flutter {
 // which can be accessed at any time via paint().
 class DlSkPaintDispatchHelper : public virtual DlOpReceiver {
  public:
-  DlSkPaintDispatchHelper(SkScalar opacity = SK_Scalar1)
+  explicit DlSkPaintDispatchHelper(SkScalar opacity = SK_Scalar1)
       : current_color_(SK_ColorBLACK), opacity_(opacity) {
     if (opacity < SK_Scalar1) {
       paint_.setAlphaf(opacity);
@@ -37,7 +38,17 @@ class DlSkPaintDispatchHelper : public virtual DlOpReceiver {
   void setMaskFilter(const DlMaskFilter* filter) override;
   void setImageFilter(const DlImageFilter* filter) override;
 
-  const SkPaint& paint() { return paint_; }
+  const SkPaint& paint() {
+    // On the Impeller backend, we will only support dithering of *gradients*,
+    // and it will be enabled by default (without the option to disable it).
+    // Until Skia support is completely removed, we only want to respect the
+    // dither flag for gradients (otherwise it will also apply to, for
+    // example, images, which is not supported in Impeller).
+    //
+    // See https://github.com/flutter/flutter/issues/112498.
+    paint_.setDither(color_source_gradient_ && dither_);
+    return paint_;
+  }
 
   /// Returns the current opacity attribute which is used to reduce
   /// the alpha of all setColor calls encountered in the streeam
@@ -57,13 +68,15 @@ class DlSkPaintDispatchHelper : public virtual DlOpReceiver {
 
  private:
   SkPaint paint_;
+  bool color_source_gradient_ = false;
+  bool dither_ = false;
   bool invert_colors_ = false;
   sk_sp<SkColorFilter> sk_color_filter_;
 
   sk_sp<SkColorFilter> makeColorFilter() const;
 
   struct SaveInfo {
-    SaveInfo(SkScalar opacity) : opacity(opacity) {}
+    explicit SaveInfo(SkScalar opacity) : opacity(opacity) {}
 
     SkScalar opacity;
   };
@@ -72,7 +85,7 @@ class DlSkPaintDispatchHelper : public virtual DlOpReceiver {
   void set_opacity(SkScalar opacity) {
     if (opacity_ != opacity) {
       opacity_ = opacity;
-      setColor(current_color_);
+      setColor(DlColor(current_color_));
     }
   }
 

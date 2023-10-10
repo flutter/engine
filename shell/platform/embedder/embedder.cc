@@ -20,6 +20,7 @@
 #include "third_party/dart/runtime/bin/elf_loader.h"
 #include "third_party/dart/runtime/include/dart_native_api.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/GpuTypes.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 
@@ -93,6 +94,10 @@ extern const intptr_t kPlatformStrongDillSize;
 #include "impeller/renderer/render_target.h"                      // nogncheck
 #endif  // IMPELLER_SUPPORTS_RENDERING
 #endif  // SHELL_ENABLE_METAL
+
+#ifdef SHELL_ENABLE_VULKAN
+#include "third_party/skia/include/gpu/ganesh/vk/GrVkBackendSurface.h"
+#endif  // SHELL_ENABLE_VULKAN
 
 const int32_t kFlutterSemanticsNodeIdBatchEnd = -1;
 const int32_t kFlutterSemanticsCustomActionIdBatchEnd = -1;
@@ -358,8 +363,7 @@ InferOpenGLPlatformViewCreationCallback(
     if (!populate_existing_damage) {
       return flutter::GLFBOInfo{
           .fbo_id = static_cast<uint32_t>(id),
-          .partial_repaint_enabled = false,
-          .existing_damage = SkIRect::MakeEmpty(),
+          .existing_damage = std::nullopt,
       };
     }
 
@@ -367,29 +371,22 @@ InferOpenGLPlatformViewCreationCallback(
     FlutterDamage existing_damage;
     populate_existing_damage(user_data, id, &existing_damage);
 
-    bool partial_repaint_enabled = true;
-    SkIRect existing_damage_rect;
+    std::optional<SkIRect> existing_damage_rect = std::nullopt;
 
     // Verify that at least one damage rectangle was provided.
     if (existing_damage.num_rects <= 0 || existing_damage.damage == nullptr) {
       FML_LOG(INFO) << "No damage was provided. Forcing full repaint.";
-      existing_damage_rect = SkIRect::MakeEmpty();
-      partial_repaint_enabled = false;
-    } else if (existing_damage.num_rects > 1) {
-      // Log message notifying users that multi-damage is not yet available in
-      // case they try to make use of it.
-      FML_LOG(INFO) << "Damage with multiple rectangles not yet supported. "
-                       "Repainting the whole frame.";
-      existing_damage_rect = SkIRect::MakeEmpty();
-      partial_repaint_enabled = false;
     } else {
-      existing_damage_rect = FlutterRectToSkIRect(*(existing_damage.damage));
+      existing_damage_rect = SkIRect::MakeEmpty();
+      for (size_t i = 0; i < existing_damage.num_rects; i++) {
+        existing_damage_rect->join(
+            FlutterRectToSkIRect(existing_damage.damage[i]));
+      }
     }
 
     // Pass the information about this FBO to the rendering backend.
     return flutter::GLFBOInfo{
         .fbo_id = static_cast<uint32_t>(id),
-        .partial_repaint_enabled = partial_repaint_enabled,
         .existing_damage = existing_damage_rect,
     };
   };
@@ -920,10 +917,10 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
   sk_cfp<FlutterMetalTextureHandle> mtl_texture;
   mtl_texture.retain(metal->texture.texture);
   texture_info.fTexture = mtl_texture;
-  GrBackendTexture backend_texture(config.size.width,   //
-                                   config.size.height,  //
-                                   GrMipMapped::kNo,    //
-                                   texture_info         //
+  GrBackendTexture backend_texture(config.size.width,      //
+                                   config.size.height,     //
+                                   skgpu::Mipmapped::kNo,  //
+                                   texture_info            //
   );
 
   SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
@@ -1105,10 +1102,8 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
       .fSampleCount = 1,
       .fLevelCount = 1,
   };
-  GrBackendTexture backend_texture(config.size.width,   //
-                                   config.size.height,  //
-                                   image_info           //
-  );
+  auto backend_texture = GrBackendTextures::MakeVk(
+      config.size.width, config.size.height, image_info);
 
   SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
 
@@ -1881,6 +1876,17 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
                                       user_data]() { return ptr(user_data); };
   }
 
+  flutter::PlatformViewEmbedder::ChanneUpdateCallback channel_update_callback =
+      nullptr;
+  if (SAFE_ACCESS(args, channel_update_callback, nullptr) != nullptr) {
+    channel_update_callback = [ptr = args->channel_update_callback, user_data](
+                                  const std::string& name, bool listening) {
+      FlutterChannelUpdate update{sizeof(FlutterChannelUpdate), name.c_str(),
+                                  listening};
+      ptr(&update, user_data);
+    };
+  }
+
   auto external_view_embedder_result = InferExternalViewEmbedderFromArgs(
       SAFE_ACCESS(args, compositor, nullptr), settings.enable_impeller);
   if (external_view_embedder_result.second) {
@@ -1895,6 +1901,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
           vsync_callback,                             //
           compute_platform_resolved_locale_callback,  //
           on_pre_engine_restart_callback,             //
+          channel_update_callback,                    //
       };
 
   auto on_create_platform_view = InferPlatformViewCreationCallback(

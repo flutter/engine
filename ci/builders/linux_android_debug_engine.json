@@ -36,6 +36,7 @@
                 {
                     "language": "python3",
                     "name": "Host Tests for android_jit_release_x86",
+                    "script": "flutter/testing/run_tests.py",
                     "parameters": [
                         "--variant",
                         "android_jit_release_x86",
@@ -44,8 +45,7 @@
                         "--engine-capture-core-dump",
                         "--android-variant",
                         "android_jit_release_x86"
-                    ],
-                    "script": "flutter/testing/run_tests.py"
+                    ]
                 }
             ]
         },
@@ -89,6 +89,7 @@
                 {
                     "language": "python3",
                     "name": "Host Tests for android_debug",
+                    "script": "flutter/testing/run_tests.py",
                     "parameters": [
                         "--variant",
                         "android_debug",
@@ -97,8 +98,7 @@
                         "--engine-capture-core-dump",
                         "--android-variant",
                         "android_debug"
-                    ],
-                    "script": "flutter/testing/run_tests.py"
+                    ]
                 }
             ]
         },

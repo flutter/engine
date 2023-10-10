@@ -47,7 +47,7 @@ std::optional<Entity> LinearToSrgbFilterContents::RenderFilter(
                                const Entity& entity, RenderPass& pass) -> bool {
     Command cmd;
     DEBUG_COMMAND_INFO(cmd, "Linear to sRGB Filter");
-    cmd.stencil_reference = entity.GetStencilDepth();
+    cmd.stencil_reference = entity.GetClipDepth();
 
     auto options = OptionsFromPassAndEntity(pass, entity);
     cmd.pipeline = renderer.GetLinearToSrgbFilterPipeline(options);
@@ -76,7 +76,10 @@ std::optional<Entity> LinearToSrgbFilterContents::RenderFilter(
         input_snapshot->texture->GetYCoordScale();
 
     FS::FragInfo frag_info;
-    frag_info.input_alpha = absorb_opacity ? input_snapshot->opacity : 1.0f;
+    frag_info.input_alpha =
+        absorb_opacity == ColorFilterContents::AbsorbOpacity::kYes
+            ? input_snapshot->opacity
+            : 1.0f;
 
     auto sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler({});
     FS::BindInputTexture(cmd, input_snapshot->texture, sampler);
@@ -95,7 +98,7 @@ std::optional<Entity> LinearToSrgbFilterContents::RenderFilter(
 
   Entity sub_entity;
   sub_entity.SetContents(std::move(contents));
-  sub_entity.SetStencilDepth(entity.GetStencilDepth());
+  sub_entity.SetClipDepth(entity.GetClipDepth());
   sub_entity.SetBlendMode(entity.GetBlendMode());
   return sub_entity;
 }

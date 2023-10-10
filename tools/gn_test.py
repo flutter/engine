@@ -20,14 +20,14 @@ class GNTestCase(unittest.TestCase):
     self.assertEqual(gn.get_out_dir(args), expected_build_dir)
 
   def test_get_out_dir(self):
-    self._expect_build_dir([], 'out/host_debug')
-    self._expect_build_dir(['--runtime-mode', 'release'], 'out/host_release')
-    self._expect_build_dir(['--ios'], 'out/ios_debug')
-    self._expect_build_dir(['--ios', '--runtime-mode', 'release'],
-                           'out/ios_release')
-    self._expect_build_dir(['--android'], 'out/android_debug')
-    self._expect_build_dir(['--android', '--runtime-mode', 'release'],
-                           'out/android_release')
+    self._expect_build_dir(['--debug'], 'out/Debug')
+    self._expect_build_dir(['--release'], 'out/Release')
+    self._expect_build_dir(['--ios'], 'out/ios_Debug')
+    self._expect_build_dir(['--ios'], 'out/ios_Debug_extension_safe')
+    self._expect_build_dir(['--ios', '--release'], 'out/ios_Release')
+    self._expect_build_dir(['--ios'], 'out/ios_Release_extension_safe')
+    self._expect_build_dir(['--android'], 'out/android_Debug')
+    self._expect_build_dir(['--android', '--release'], 'out/android_Release')
 
   def _gn_args(self, arg_list):
     args = gn.parse_args(['gn'] + arg_list)
@@ -49,6 +49,13 @@ class GNTestCase(unittest.TestCase):
     self.assertFalse(args.simulator)
     self.assertEqual(args.simulator_cpu, 'x64')
 
+  def test_cannot_use_android_and_enable_unittests(self):
+    with self.assertRaises(SystemExit):
+      self._gn_args(['--android', '--enable-unittests'])
+
+  def test_cannot_use_ios_and_enable_unittests(self):
+    with self.assertRaises(SystemExit):
+      self._gn_args(['--ios', '--enable-unittests'])
 
 if __name__ == '__main__':
   unittest.main()

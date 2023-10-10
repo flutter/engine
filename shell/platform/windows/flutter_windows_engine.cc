@@ -15,6 +15,7 @@
 #include "flutter/shell/platform/common/client_wrapper/binary_messenger_impl.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/standard_message_codec.h"
 #include "flutter/shell/platform/common/path_utils.h"
+#include "flutter/shell/platform/embedder/embedder_struct_macros.h"
 #include "flutter/shell/platform/windows/accessibility_bridge_windows.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/keyboard_key_channel_handler.h"
@@ -373,12 +374,25 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
       host->root_isolate_create_callback_();
     }
   };
+  args.channel_update_callback = [](const FlutterChannelUpdate* update,
+                                    void* user_data) {
+    auto host = static_cast<FlutterWindowsEngine*>(user_data);
+    if (SAFE_ACCESS(update, channel, nullptr) != nullptr) {
+      std::string channel_name(update->channel);
+      host->OnChannelUpdate(std::move(channel_name),
+                            SAFE_ACCESS(update, listening, false));
+    }
+  };
 
   args.custom_task_runners = &custom_task_runners;
 
   if (aot_data_) {
     args.aot_data = aot_data_.get();
   }
+
+  // The platform thread creates OpenGL contexts. These
+  // must be released to be used by the engine's threads.
+  FML_DCHECK(!surface_manager_ || !surface_manager_->HasContextCurrent());
 
   FlutterRendererConfig renderer_config;
 
@@ -792,10 +806,6 @@ void FlutterWindowsEngine::OnDwmCompositionChanged() {
   view_->OnDwmCompositionChanged();
 }
 
-void FlutterWindowsEngine::OnApplicationLifecycleEnabled() {
-  lifecycle_manager_->BeginProcessingClose();
-}
-
 void FlutterWindowsEngine::OnWindowStateEvent(HWND hwnd,
                                               WindowStateEvent event) {
   lifecycle_manager_->OnWindowStateEvent(hwnd, event);
@@ -811,6 +821,14 @@ std::optional<LRESULT> FlutterWindowsEngine::ProcessExternalWindowMessage(
                                                      lparam);
   }
   return std::nullopt;
+}
+
+void FlutterWindowsEngine::OnChannelUpdate(std::string name, bool listening) {
+  if (name == "flutter/platform" && listening) {
+    lifecycle_manager_->BeginProcessingExit();
+  } else if (name == "flutter/lifecycle" && listening) {
+    lifecycle_manager_->BeginProcessingLifecycle();
+  }
 }
 
 }  // namespace flutter

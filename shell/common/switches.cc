@@ -354,6 +354,9 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   settings.trace_systrace =
       command_line.HasOption(FlagForSwitch(Switch::TraceSystrace));
 
+  command_line.GetOptionValue(FlagForSwitch(Switch::TraceToFile),
+                              &settings.trace_to_file);
+
   settings.skia_deterministic_rendering_on_cpu =
       command_line.HasOption(FlagForSwitch(Switch::SkiaDeterministicRendering));
 
@@ -449,6 +452,17 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
                                     &enable_impeller_value)) {
       settings.enable_impeller =
           enable_impeller_value.empty() || "true" == enable_impeller_value;
+    }
+  }
+
+  {
+    std::string disable_image_reader_platform_views_value;
+    if (command_line.GetOptionValue(
+            FlagForSwitch(Switch::DisableImageReaderPlatformViews),
+            &disable_image_reader_platform_views_value)) {
+      settings.disable_image_reader_platform_views =
+          disable_image_reader_platform_views_value.empty() ||
+          "true" == disable_image_reader_platform_views_value;
     }
   }
 

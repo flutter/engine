@@ -9,6 +9,7 @@
 #include "impeller/entity/contents/anonymous_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/contents.h"
+#include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/vector.h"
 #include "impeller/renderer/render_pass.h"
@@ -56,7 +57,7 @@ std::optional<Entity> ColorMatrixFilterContents::RenderFilter(
                                const Entity& entity, RenderPass& pass) -> bool {
     Command cmd;
     DEBUG_COMMAND_INFO(cmd, "Color Matrix Filter");
-    cmd.stencil_reference = entity.GetStencilDepth();
+    cmd.stencil_reference = entity.GetClipDepth();
 
     auto options = OptionsFromPassAndEntity(pass, entity);
     cmd.pipeline = renderer.GetColorMatrixColorFilterPipeline(options);
@@ -94,7 +95,10 @@ std::optional<Entity> ColorMatrixFilterContents::RenderFilter(
         matrix[3], matrix[8], matrix[13], matrix[18]
     );
     // clang-format on
-    frag_info.input_alpha = absorb_opacity ? input_snapshot->opacity : 1.0f;
+    frag_info.input_alpha =
+        absorb_opacity == ColorFilterContents::AbsorbOpacity::kYes
+            ? input_snapshot->opacity
+            : 1.0f;
     auto sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler({});
     FS::BindInputTexture(cmd, input_snapshot->texture, sampler);
     FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
@@ -113,7 +117,7 @@ std::optional<Entity> ColorMatrixFilterContents::RenderFilter(
 
   Entity sub_entity;
   sub_entity.SetContents(std::move(contents));
-  sub_entity.SetStencilDepth(entity.GetStencilDepth());
+  sub_entity.SetClipDepth(entity.GetClipDepth());
   sub_entity.SetBlendMode(entity.GetBlendMode());
   return sub_entity;
 }

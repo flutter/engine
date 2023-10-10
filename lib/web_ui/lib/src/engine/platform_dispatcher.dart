@@ -60,24 +60,6 @@ class HighContrastSupport {
   }
 }
 
-class EngineFlutterDisplay extends ui.Display {
-  EngineFlutterDisplay({
-    required this.id,
-    required this.devicePixelRatio,
-    required this.size,
-    required this.refreshRate,
-  });
-
-  @override
-  final int id;
-  @override
-  final double devicePixelRatio;
-  @override
-  final ui.Size size;
-  @override
-  final double refreshRate;
-}
-
 /// Platform event dispatcher.
 ///
 /// This is the central entry point for platform messages and configuration
@@ -141,13 +123,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   }
 
   @override
-  Iterable<ui.Display> get displays => <ui.Display>[
-    EngineFlutterDisplay(
-      id: 0,
-      size: ui.Size(domWindow.screen?.width ?? 0, domWindow.screen?.height ?? 0),
-      devicePixelRatio: domWindow.devicePixelRatio,
-      refreshRate: 60,
-    )
+  Iterable<EngineFlutterDisplay> displays = <EngineFlutterDisplay>[
+    EngineFlutterDisplay.instance,
   ];
 
   /// The current list of windows.
@@ -194,7 +171,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// * [PlatformDisptacher.views] for a list of all [FlutterView]s provided
   ///   by the platform.
   @override
-  ui.FlutterView? get implicitView => viewData[kImplicitViewId];
+  EngineFlutterWindow? get implicitView => viewData[kImplicitViewId] as EngineFlutterWindow?;
 
   /// A callback that is invoked whenever the platform's [devicePixelRatio],
   /// [physicalSize], [padding], [viewInsets], or [systemGestureInsets]
@@ -229,13 +206,6 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     if (_onMetricsChanged != null) {
       invoke(_onMetricsChanged, _onMetricsChangedZone);
     }
-  }
-
-  /// Returns device pixel ratio returned by browser.
-  static double get browserDevicePixelRatio {
-    final double ratio = domWindow.devicePixelRatio;
-    // Guard against WebOS returning 0.
-    return (ratio == 0.0) ? 1.0 : ratio;
   }
 
   /// A callback invoked when any window begins a frame.
@@ -535,10 +505,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             // TODO(a-wallen): As multi-window support expands, the pop call
             // will need to include the view ID. Right now only one view is
             // supported.
-            (viewData[kImplicitViewId]! as EngineFlutterWindow)
-                .browserHistory
-                .exit()
-                .then((_) {
+            implicitView!.browserHistory.exit().then((_) {
               replyToPlatformMessage(
                   callback, codec.encodeSuccessEnvelope(true));
             });
@@ -565,7 +532,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             return;
           case 'SystemChrome.setPreferredOrientations':
             final List<dynamic> arguments = decoded.arguments as List<dynamic>;
-            flutterViewEmbedder.setPreferredOrientation(arguments).then((bool success) {
+            ScreenOrientation.instance.setPreferredOrientation(arguments).then((bool success) {
               replyToPlatformMessage(
                   callback, codec.encodeSuccessEnvelope(success));
             });
@@ -599,11 +566,11 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         final MethodCall decoded = codec.decodeMethodCall(data);
         switch (decoded.method) {
           case 'enableContextMenu':
-            flutterViewEmbedder.enableContextMenu();
+            implicitView!.contextMenu.enable();
             replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             return;
           case 'disableContextMenu':
-            flutterViewEmbedder.disableContextMenu();
+            implicitView!.contextMenu.disable();
             replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             return;
         }
@@ -615,7 +582,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         final Map<dynamic, dynamic> arguments = decoded.arguments as Map<dynamic, dynamic>;
         switch (decoded.method) {
           case 'activateSystemCursor':
-            MouseCursor.instance!.activateSystemCursor(arguments.tryString('kind'));
+            implicitView!.mouseCursor.activateSystemCursor(arguments.tryString('kind'));
         }
         return;
 
@@ -629,7 +596,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
       case 'flutter/platform_views':
         _platformViewMessageHandler ??= PlatformViewMessageHandler(
-          contentManager: platformViewManager,
+          contentManager: PlatformViewManager.instance,
           contentHandler: (DomElement content) {
             flutterViewEmbedder.glassPaneElement.append(content);
           },
@@ -648,9 +615,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         // TODO(a-wallen): As multi-window support expands, the navigation call
         // will need to include the view ID. Right now only one view is
         // supported.
-        (viewData[kImplicitViewId]! as EngineFlutterWindow)
-            .handleNavigationMessage(data)
-            .then((bool handled) {
+        implicitView!.handleNavigationMessage(data).then((bool handled) {
           if (handled) {
             const MethodCodec codec = JSONMethodCodec();
             replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
@@ -1248,7 +1213,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// ## iOS
   ///
   /// On iOS, calling
-  /// [`FlutterViewController.setInitialRoute`](/objcdoc/Classes/FlutterViewController.html#/c:objc%28cs%29FlutterViewController%28im%29setInitialRoute:)
+  /// [`FlutterViewController.setInitialRoute`](/ios-embedder/interface_flutter_view_controller.html#a7f269c2da73312f856d42611cc12a33f)
   /// will set this value. The value must be set sufficiently early, i.e. before
   /// the [runApp] call is executed in Dart, for this to have any effect on the
   /// framework. The `application:didFinishLaunchingWithOptions:` method is a
@@ -1261,8 +1226,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///    requests from the embedder.
   @override
   String get defaultRouteName {
-    return _defaultRouteName ??=
-        (viewData[kImplicitViewId]! as EngineFlutterWindow).browserHistory.currentPath;
+    return _defaultRouteName ??= implicitView!.browserHistory.currentPath;
   }
 
   /// Lazily initialized when the `defaultRouteName` getter is invoked.
@@ -1287,6 +1251,9 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   @override
   ui.FrameData get frameData => const ui.FrameData.webOnly();
+
+  @override
+  double scaleFontSize(double unscaledFontSize) => unscaledFontSize * textScaleFactor;
 }
 
 bool _handleWebTestEnd2EndMessage(MethodCodec codec, ByteData? data) {
@@ -1294,7 +1261,7 @@ bool _handleWebTestEnd2EndMessage(MethodCodec codec, ByteData? data) {
   final double ratio = double.parse(decoded.arguments as String);
   switch (decoded.method) {
     case 'setDevicePixelRatio':
-      window.debugOverrideDevicePixelRatio(ratio);
+      EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(ratio);
       EnginePlatformDispatcher.instance.onMetricsChanged!();
       return true;
   }

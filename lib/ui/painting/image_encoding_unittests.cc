@@ -31,13 +31,16 @@ fml::AutoResetWaitableEvent message_latch;
 
 class MockDlImage : public DlImage {
  public:
-  MOCK_CONST_METHOD0(skia_image, sk_sp<SkImage>());
-  MOCK_CONST_METHOD0(impeller_texture, std::shared_ptr<impeller::Texture>());
-  MOCK_CONST_METHOD0(isOpaque, bool());
-  MOCK_CONST_METHOD0(isTextureBacked, bool());
-  MOCK_CONST_METHOD0(isUIThreadSafe, bool());
-  MOCK_CONST_METHOD0(dimensions, SkISize());
-  MOCK_CONST_METHOD0(GetApproximateByteSize, size_t());
+  MOCK_METHOD(sk_sp<SkImage>, skia_image, (), (const, override));
+  MOCK_METHOD(std::shared_ptr<impeller::Texture>,
+              impeller_texture,
+              (),
+              (const, override));
+  MOCK_METHOD(bool, isOpaque, (), (const, override));
+  MOCK_METHOD(bool, isTextureBacked, (), (const, override));
+  MOCK_METHOD(bool, isUIThreadSafe, (), (const, override));
+  MOCK_METHOD(SkISize, dimensions, (), (const, override));
+  MOCK_METHOD(size_t, GetApproximateByteSize, (), (const, override));
 };
 
 }  // namespace
@@ -57,8 +60,8 @@ class MockSyncSwitch {
     std::function<void()> false_handler = [] {};
   };
 
-  MOCK_CONST_METHOD1(Execute, void(const Handlers& handlers));
-  MOCK_METHOD1(SetSwitch, void(bool value));
+  MOCK_METHOD(void, Execute, (const Handlers& handlers), (const));
+  MOCK_METHOD(void, SetSwitch, (bool value));
 };
 
 TEST_F(ShellTest, EncodeImageGivesExternalTypedData) {
@@ -272,6 +275,29 @@ TEST(ImageEncodingImpellerTest, ConvertDlImageToSkImage10XR) {
       context);
   EXPECT_TRUE(did_call);
 }
+
+TEST(ImageEncodingImpellerTest, PngEncoding10XR) {
+  int width = 100;
+  int height = 100;
+  SkImageInfo info = SkImageInfo::Make(
+      width, height, kBGR_101010x_XR_SkColorType, kUnpremul_SkAlphaType);
+
+  auto surface = SkSurfaces::Raster(info);
+  SkCanvas* canvas = surface->getCanvas();
+
+  SkPaint paint;
+  paint.setColor(SK_ColorBLUE);
+  paint.setAntiAlias(true);
+
+  canvas->clear(SK_ColorWHITE);
+  canvas->drawCircle(width / 2, height / 2, 100, paint);
+
+  sk_sp<SkImage> image = surface->makeImageSnapshot();
+
+  sk_sp<SkData> png = EncodeImage(image, ImageByteFormat::kPNG);
+  EXPECT_TRUE(png);
+}
+
 #endif  // IMPELLER_SUPPORTS_RENDERING
 
 }  // namespace testing

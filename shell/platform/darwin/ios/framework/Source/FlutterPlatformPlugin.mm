@@ -17,7 +17,10 @@ namespace {
 
 constexpr char kTextPlainFormat[] = "text/plain";
 const UInt32 kKeyPressClickSoundId = 1306;
+
+#if not APPLICATION_EXTENSION_API_ONLY
 const NSString* searchURLPrefix = @"x-web-search://?";
+#endif
 
 }  // namespace
 
@@ -36,6 +39,24 @@ const char* const kOverlayStyleUpdateNotificationKey =
 }  // namespace flutter
 
 using namespace flutter;
+
+static void SetStatusBarHiddenForSharedApplication(BOOL hidden) {
+#if APPLICATION_EXTENSION_API_ONLY
+  [UIApplication sharedApplication].statusBarHidden = hidden;
+#else
+  FML_LOG(WARNING) << "Application based status bar styling is not available in app extension.";
+#endif
+}
+
+static void SetStatusBarStyleForSharedApplication(UIStatusBarStyle style) {
+#if APPLICATION_EXTENSION_API_ONLY
+  // Note: -[UIApplication setStatusBarStyle] is deprecated in iOS9
+  // in favor of delegating to the view controller.
+  [[UIApplication sharedApplication] setStatusBarStyle:style];
+#else
+  FML_LOG(WARNING) << "Application based status bar styling is not available in app extension.";
+#endif
+}
 
 @interface FlutterPlatformPlugin ()
 
@@ -123,12 +144,27 @@ using namespace flutter;
   } else if ([method isEqualToString:@"LookUp.invoke"]) {
     [self showLookUpViewController:args];
     result(nil);
+  } else if ([method isEqualToString:@"Share.invoke"]) {
+    [self showShareViewController:args];
+    result(nil);
   } else {
     result(FlutterMethodNotImplemented);
   }
 }
 
+- (void)showShareViewController:(NSString*)content {
+  UIViewController* engineViewController = [_engine.get() viewController];
+  NSArray* itemsToShare = @[ content ?: [NSNull null] ];
+  UIActivityViewController* activityViewController =
+      [[[UIActivityViewController alloc] initWithActivityItems:itemsToShare
+                                         applicationActivities:nil] autorelease];
+  [engineViewController presentViewController:activityViewController animated:YES completion:nil];
+}
+
 - (void)searchWeb:(NSString*)searchTerm {
+#if APPLICATION_EXTENSION_API_ONLY
+  FML_LOG(WARNING) << "SearchWeb.invoke is not availabe in app extension.";
+#else
   NSString* escapedText = [searchTerm
       stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet
                                                              URLHostAllowedCharacterSet]];
@@ -137,6 +173,7 @@ using namespace flutter;
   [[UIApplication sharedApplication] openURL:[NSURL URLWithString:searchURL]
                                      options:@{}
                            completionHandler:nil];
+#endif
 }
 
 - (void)playSystemSound:(NSString*)soundType {
@@ -219,7 +256,7 @@ using namespace flutter;
     // We opt out of view controller based status bar visibility since we want
     // to be able to modify this on the fly. The key used is
     // UIViewControllerBasedStatusBarAppearance.
-    [UIApplication sharedApplication].statusBarHidden = statusBarShouldBeHidden;
+    SetStatusBarHiddenForSharedApplication(statusBarShouldBeHidden);
   }
 }
 
@@ -234,7 +271,7 @@ using namespace flutter;
     // We opt out of view controller based status bar visibility since we want
     // to be able to modify this on the fly. The key used is
     // UIViewControllerBasedStatusBarAppearance.
-    [UIApplication sharedApplication].statusBarHidden = !edgeToEdge;
+    SetStatusBarHiddenForSharedApplication(!edgeToEdge);
   }
   [[NSNotificationCenter defaultCenter]
       postNotificationName:edgeToEdge ? FlutterViewControllerShowHomeIndicator
@@ -272,9 +309,7 @@ using namespace flutter;
                       object:nil
                     userInfo:@{@(kOverlayStyleUpdateNotificationKey) : @(statusBarStyle)}];
   } else {
-    // Note: -[UIApplication setStatusBarStyle] is deprecated in iOS9
-    // in favor of delegating to the view controller.
-    [[UIApplication sharedApplication] setStatusBarStyle:statusBarStyle];
+    SetStatusBarStyleForSharedApplication(statusBarStyle);
   }
 }
 
@@ -338,7 +373,6 @@ using namespace flutter;
 
 - (void)showLookUpViewController:(NSString*)term {
   UIViewController* engineViewController = [_engine.get() viewController];
-  FML_DCHECK(![engineViewController presentingViewController]);
   UIReferenceLibraryViewController* referenceLibraryViewController =
       [[[UIReferenceLibraryViewController alloc] initWithTerm:term] autorelease];
   [engineViewController presentViewController:referenceLibraryViewController

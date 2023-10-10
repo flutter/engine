@@ -25,9 +25,9 @@
 // - Function signatures (names, argument counts, argument order, and argument
 //   type) cannot change.
 // - The core behavior of existing functions cannot change.
-// - Instead of nesting structures by value within another structure, prefer
-//   nesting by pointer. This ensures that adding members to the nested struct
-//   does not break the ABI of the parent struct.
+// - Instead of nesting structures by value within another structure/union,
+//   prefer nesting by pointer. This ensures that adding members to the nested
+//   struct does not break the ABI of the parent struct/union.
 // - Instead of array of structures, prefer array of pointers to structures.
 //   This ensures that array indexing does not break if members are added
 //   to the structure.
@@ -757,6 +757,11 @@ typedef struct {
   /// The queue family index of the VkQueue supplied in the next field.
   uint32_t queue_family_index;
   /// VkQueue handle.
+  /// The queue should not be used without protection from a mutex to make sure
+  /// it is not used simultaneously with other threads. That mutex should match
+  /// the one injected via the |get_instance_proc_address_callback|.
+  /// There is a proposal to remove the need for the mutex at
+  /// https://github.com/flutter/flutter/issues/134573.
   FlutterVulkanQueueHandle queue;
   /// The number of instance extensions available for enumerating in the next
   /// field.
@@ -780,6 +785,12 @@ typedef struct {
   /// For example: VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME
   const char** enabled_device_extensions;
   /// The callback invoked when resolving Vulkan function pointers.
+  /// At a bare minimum this should be used to swap out any calls that operate
+  /// on vkQueue's for threadsafe variants that obtain locks for their duration.
+  /// The functions to swap out are "vkQueueSubmit" and "vkQueueWaitIdle".  An
+  /// example of how to do that can be found in the test
+  /// "EmbedderTest.CanSwapOutVulkanCalls" unit-test in
+  /// //shell/platform/embedder/tests/embedder_vk_unittests.cc.
   FlutterVulkanInstanceProcAddressCallback get_instance_proc_address_callback;
   /// The callback invoked when the engine requests a VkImage from the embedder
   /// for rendering the next frame.
@@ -1064,6 +1075,57 @@ typedef int64_t FlutterPlatformViewIdentifier;
 FLUTTER_EXPORT
 extern const int32_t kFlutterSemanticsNodeIdBatchEnd;
 
+// The enumeration of possible string attributes that affect how assistive
+// technologies announce a string.
+//
+// See dart:ui's implementers of the StringAttribute abstract class.
+typedef enum {
+  // Indicates the string should be announced character by character.
+  kSpellOut,
+  // Indicates the string should be announced using the specified locale.
+  kLocale,
+} FlutterStringAttributeType;
+
+// Indicates the assistive technology should announce out the string character
+// by character.
+//
+// See dart:ui's SpellOutStringAttribute.
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterSpellOutStringAttribute).
+  size_t struct_size;
+} FlutterSpellOutStringAttribute;
+
+// Indicates the assistive technology should announce the string using the
+// specified locale.
+//
+// See dart:ui's LocaleStringAttribute.
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterLocaleStringAttribute).
+  size_t struct_size;
+  // The locale of this attribute.
+  const char* locale;
+} FlutterLocaleStringAttribute;
+
+// Indicates how the assistive technology should treat the string.
+//
+// See dart:ui's StringAttribute.
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterStringAttribute).
+  size_t struct_size;
+  // The position this attribute starts.
+  size_t start;
+  // The next position after the attribute ends.
+  size_t end;
+  /// The type of the attribute described by the subsequent union.
+  FlutterStringAttributeType type;
+  union {
+    // Indicates the string should be announced character by character.
+    const FlutterSpellOutStringAttribute* spell_out;
+    // Indicates the string should be announced using the specified locale.
+    const FlutterLocaleStringAttribute* locale;
+  };
+} FlutterStringAttribute;
+
 /// A node that represents some semantic data.
 ///
 /// The semantics tree is maintained during the semantics phase of the pipeline
@@ -1215,6 +1277,31 @@ typedef struct {
   FlutterPlatformViewIdentifier platform_view_id;
   /// A textual tooltip attached to the node.
   const char* tooltip;
+  // The number of string attributes associated with the `label`.
+  size_t label_attribute_count;
+  // Array of string attributes associated with the `label`.
+  // Has length `label_attribute_count`.
+  const FlutterStringAttribute** label_attributes;
+  // The number of string attributes associated with the `hint`.
+  size_t hint_attribute_count;
+  // Array of string attributes associated with the `hint`.
+  // Has length `hint_attribute_count`.
+  const FlutterStringAttribute** hint_attributes;
+  // The number of string attributes associated with the `value`.
+  size_t value_attribute_count;
+  // Array of string attributes associated with the `value`.
+  // Has length `value_attribute_count`.
+  const FlutterStringAttribute** value_attributes;
+  // The number of string attributes associated with the `increased_value`.
+  size_t increased_value_attribute_count;
+  // Array of string attributes associated with the `increased_value`.
+  // Has length `increased_value_attribute_count`.
+  const FlutterStringAttribute** increased_value_attributes;
+  // The number of string attributes associated with the `decreased_value`.
+  size_t decreased_value_attribute_count;
+  // Array of string attributes associated with the `decreased_value`.
+  // Has length `decreased_value_attribute_count`.
+  const FlutterStringAttribute** decreased_value_attributes;
 } FlutterSemanticsNode2;
 
 /// `FlutterSemanticsCustomAction` ID used as a sentinel to signal the end of a
@@ -1325,6 +1412,20 @@ typedef void (*FlutterUpdateSemanticsCallback)(
 typedef void (*FlutterUpdateSemanticsCallback2)(
     const FlutterSemanticsUpdate2* /* semantics update */,
     void* /* user data*/);
+
+/// An update to whether a message channel has a listener set or not.
+typedef struct {
+  // The size of the struct. Must be sizeof(FlutterChannelUpdate).
+  size_t struct_size;
+  /// The name of the channel.
+  const char* channel;
+  /// True if a listener has been set, false if one has been cleared.
+  bool listening;
+} FlutterChannelUpdate;
+
+typedef void (*FlutterChannelUpdateCallback)(
+    const FlutterChannelUpdate* /* channel update */,
+    void* /* user data */);
 
 typedef struct _FlutterTaskRunner* FlutterTaskRunner;
 
@@ -1573,6 +1674,27 @@ typedef enum {
   kFlutterLayerContentTypePlatformView,
 } FlutterLayerContentType;
 
+/// A region represented by a collection of non-overlapping rectangles.
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterRegion).
+  size_t struct_size;
+  /// Number of rectangles in the region.
+  size_t rects_count;
+  /// The rectangles that make up the region.
+  FlutterRect* rects;
+} FlutterRegion;
+
+/// Contains additional information about the backing store provided
+/// during presentation to the embedder.
+typedef struct {
+  size_t struct_size;
+
+  /// The area of the backing store that contains Flutter contents. Pixels
+  /// outside of this area are transparent and the embedder may choose not
+  /// to render them. Coordinates are in physical pixels.
+  FlutterRegion* paint_region;
+} FlutterBackingStorePresentInfo;
+
 typedef struct {
   /// This size of this struct. Must be sizeof(FlutterLayer).
   size_t struct_size;
@@ -1592,6 +1714,10 @@ typedef struct {
   FlutterPoint offset;
   /// The size of the layer (in physical pixels).
   FlutterSize size;
+
+  /// Extra information for the backing store that the embedder may
+  /// use during presentation.
+  FlutterBackingStorePresentInfo* backing_store_present_info;
 } FlutterLayer;
 
 typedef bool (*FlutterBackingStoreCreateCallback)(
@@ -2118,6 +2244,11 @@ typedef struct {
   /// and `update_semantics_callback2` may be provided; the others must be set
   /// to null.
   FlutterUpdateSemanticsCallback2 update_semantics_callback2;
+
+  /// The callback invoked by the engine in response to a channel listener
+  /// being registered on the framework side. The callback is invoked from
+  /// a task posted to the platform thread.
+  FlutterChannelUpdateCallback channel_update_callback;
 } FlutterProjectArgs;
 
 #ifndef FLUTTER_ENGINE_NO_PROTOTYPES

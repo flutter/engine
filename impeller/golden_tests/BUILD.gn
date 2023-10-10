@@ -15,6 +15,7 @@ impeller_component("golden_playground_test") {
     "//flutter/fml",
     "//flutter/impeller/aiks",
     "//flutter/impeller/playground",
+    "//flutter/impeller/typographer/backends/skia:typographer_skia_backend",
     "//flutter/testing:testing_lib",
   ]
 
@@ -46,12 +47,13 @@ if (is_mac) {
     sources = [
       "metal_screenshot.h",
       "metal_screenshot.mm",
-      "metal_screenshoter.h",
-      "metal_screenshoter.mm",
+      "metal_screenshotter.h",
+      "metal_screenshotter.mm",
     ]
 
     deps = [
       "//flutter/impeller/aiks",
+      "//flutter/impeller/display_list",
       "//flutter/impeller/playground",
       "//flutter/impeller/renderer/backend/metal:metal",
     ]

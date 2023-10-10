@@ -30,7 +30,7 @@ static std::optional<SamplerAddressMode> TileModeToAddressMode(
       return SamplerAddressMode::kRepeat;
       break;
     case Entity::TileMode::kDecal:
-      if (capabilities.SupportsDecalTileMode()) {
+      if (capabilities.SupportsDecalSamplerAddressMode()) {
         return SamplerAddressMode::kDecal;
       }
       return std::nullopt;
@@ -145,7 +145,7 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
     DEBUG_COMMAND_INFO(cmd, "TextureFill");
   }
 
-  cmd.stencil_reference = entity.GetStencilDepth();
+  cmd.stencil_reference = entity.GetClipDepth();
 
   auto options = OptionsFromPassAndEntity(pass, entity);
   if (geometry_result.prevent_overdraw) {

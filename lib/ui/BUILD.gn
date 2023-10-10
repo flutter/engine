@@ -155,8 +155,6 @@ source_set("ui") {
     "window/pointer_data_packet_converter.h",
     "window/viewport_metrics.cc",
     "window/viewport_metrics.h",
-    "window/window.cc",
-    "window/window.h",
   ]
 
   public_configs = [ "//flutter:config" ]
@@ -235,6 +233,7 @@ if (enable_unittests) {
       "fixtures/hello_loop_2.gif",
       "fixtures/hello_loop_2.webp",
       "fixtures/FontManifest.json",
+      "fixtures/WideGamutIndexed.png",
       "//flutter/third_party/txt/third_party/fonts/Roboto-Medium.ttf",
     ]
   }
@@ -264,6 +263,8 @@ if (enable_unittests) {
     sources = [
       "compositing/scene_builder_unittests.cc",
       "hooks_unittests.cc",
+      "painting/image_decoder_no_gl_unittests.cc",
+      "painting/image_decoder_no_gl_unittests.h",
       "painting/image_dispose_unittests.cc",
       "painting/image_encoding_unittests.cc",
       "painting/image_generator_registry_unittests.cc",

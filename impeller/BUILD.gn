@@ -14,6 +14,10 @@ config("impeller_public_config") {
     defines += [ "IMPELLER_DEBUG=1" ]
   }
 
+  if (impeller_capture) {
+    defines += [ "IMPELLER_ENABLE_CAPTURE=1" ]
+  }
+
   if (impeller_supports_rendering) {
     defines += [ "IMPELLER_SUPPORTS_RENDERING=1" ]
   }
@@ -34,15 +38,15 @@ config("impeller_public_config") {
     defines += [ "IMPELLER_TRACE_ALL_GL_CALLS" ]
   }
 
-  if (impeller_error_check_all_gl_calls) {
-    defines += [ "IMPELLER_ERROR_CHECK_ALL_GL_CALLS" ]
-  }
-
   if (is_win) {
     defines += [
       # TODO(dnfield): https://github.com/flutter/flutter/issues/50053
       "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING",
     ]
+  }
+
+  if (impeller_enable_3d) {
+    defines += [ "IMPELLER_ENABLE_3D" ]
   }
 }
 
@@ -62,7 +66,7 @@ group("impeller") {
       "image:image_skia_backend",
       "renderer",
       "renderer/backend",
-      "typographer",
+      "typographer/backends/skia:typographer_skia_backend",
     ]
   }
 }
@@ -103,6 +107,10 @@ impeller_component("impeller_unittests") {
 
   if (impeller_enable_vulkan) {
     deps += [ "//flutter/impeller/renderer/backend/vulkan:vulkan_unittests" ]
+  }
+
+  if (impeller_enable_opengles) {
+    deps += [ "//flutter/impeller/renderer/backend/gles:gles_unittests" ]
   }
 
   if (glfw_vulkan_library != "") {

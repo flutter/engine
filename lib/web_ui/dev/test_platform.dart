@@ -544,7 +544,6 @@ class BrowserPlatform extends PlatformPlugin {
         <!DOCTYPE html>
         <html>
         <head>
-          <title>${htmlEscape.convert(test)} Test</title>
           <meta name="assetBase" content="/">
           <script>
             window.flutterConfiguration = {
@@ -1005,7 +1004,7 @@ class BrowserManager {
           final String pathToTest = p.dirname(path);
 
           final String mapPath = p.join(
-            _sourceMapDirectory!.path,
+            _sourceMapDirectory.path,
             pathToTest,
             sourceMapFileName
           );
