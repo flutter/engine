@@ -209,8 +209,6 @@ def buildtools_dir():
   host_cpu = get_host_cpu()
   if host_os == 'win':
     host_os = 'windows'
-  if host_os == 'mac' and host_cpu == 'arm64':
-    host_cpu = 'x64'
   return '%s-%s' % (host_os, host_cpu)
 
 
@@ -456,7 +454,7 @@ def to_gn_args(args):
   #     must be x64 to target x64.
   # TODO(cbracken): https://github.com/flutter/flutter/issues/103386
   if get_host_os() == 'mac' and not args.force_mac_arm64:
-    gn_args['host_cpu'] = 'x64'
+    gn_args['host_cpu'] = get_host_cpu()
 
   if is_host_build(args) and gn_args['host_os'] == 'mac':
     # macOS unit tests include Vulkan headers which reference Metal types
