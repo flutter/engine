@@ -32,7 +32,6 @@ abstract class PlatformBinding {
     }
     if (io.Platform.isMacOS) {
       if (environment.isMacosArm) {
-        print('MACOS ARM!');
         return MacArmPlatformBinding();
       }
       return Macx64PlatformBinding();
