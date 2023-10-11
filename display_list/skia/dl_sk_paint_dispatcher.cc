@@ -40,9 +40,6 @@ void DlSkPaintDispatchHelper::restore_opacity() {
 void DlSkPaintDispatchHelper::setAntiAlias(bool aa) {
   paint_.setAntiAlias(aa);
 }
-void DlSkPaintDispatchHelper::setDither(bool dither) {
-  dither_ = dither;
-}
 void DlSkPaintDispatchHelper::setInvertColors(bool invert) {
   invert_colors_ = invert;
   paint_.setColorFilter(makeColorFilter());

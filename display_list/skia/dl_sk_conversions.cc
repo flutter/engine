@@ -51,12 +51,10 @@ SkPaint ToSk(const DlPaint& paint, bool force_stroke) {
     // images, which is not supported in Impeller).
     //
     // See https://github.com/flutter/flutter/issues/112498.
-    if (color_source->isGradient()) {
-      // Originates from `dart:ui#Paint.enableDithering`.
-      auto user_specified_dither = paint.isDither();
-      sk_paint.setDither(user_specified_dither);
-    }
+    sk_paint.setDither(color_source->isGradient());
     sk_paint.setShader(ToSk(color_source));
+  } else {
+    sk_paint.setDither(false);
   }
 
   sk_paint.setMaskFilter(ToSk(paint.getMaskFilterPtr()));

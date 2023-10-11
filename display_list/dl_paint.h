@@ -61,12 +61,6 @@ class DlPaint {
     return *this;
   }
 
-  bool isDither() const { return is_dither_; }
-  DlPaint& setDither(bool isDither) {
-    is_dither_ = isDither;
-    return *this;
-  }
-
   bool isInvertColors() const { return is_invert_colors_; }
   DlPaint& setInvertColors(bool isInvertColors) {
     is_invert_colors_ = isInvertColors;

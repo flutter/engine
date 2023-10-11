@@ -101,7 +101,6 @@ class DisplayListTestBase : public BaseT {
     DlPaint defaults;
 
     EXPECT_EQ(builder_paint.isAntiAlias(), defaults.isAntiAlias());
-    EXPECT_EQ(builder_paint.isDither(), defaults.isDither());
     EXPECT_EQ(builder_paint.isInvertColors(), defaults.isInvertColors());
     EXPECT_EQ(builder_paint.getColor(), defaults.getColor());
     EXPECT_EQ(builder_paint.getBlendMode(), defaults.getBlendMode());
@@ -387,7 +386,6 @@ TEST_F(DisplayListTest, BuildRestoresAttributes) {
   builder.Build();
   check_defaults(builder, cull_rect);
 
-  receiver.setDither(true);
   builder.Build();
   check_defaults(builder, cull_rect);
 

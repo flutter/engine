@@ -169,10 +169,6 @@ const DlPaint* Paint::paint(DlPaint& paint,
     paint.setInvertColors(uint_data[kInvertColorIndex] != 0);
   }
 
-  if (flags.applies_dither()) {
-    paint.setDither(uint_data[kDitherIndex] != 0);
-  }
-
   if (flags.applies_path_effect()) {
     // The paint API exposed to Dart does not support path effects.  But other
     // operations such as text may set a path effect, which must be cleared.
@@ -270,8 +266,6 @@ void Paint::toDlPaint(DlPaint& paint) const {
   paint.setStrokeJoin(static_cast<DlStrokeJoin>(stroke_join));
 
   paint.setInvertColors(uint_data[kInvertColorIndex] != 0);
-
-  paint.setDither(uint_data[kDitherIndex] != 0);
 
   switch (uint_data[kMaskFilterIndex]) {
     case kNull:

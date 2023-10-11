@@ -23,7 +23,6 @@ class DlSkPaintDispatchHelper : public virtual DlOpReceiver {
   }
 
   void setAntiAlias(bool aa) override;
-  void setDither(bool dither) override;
   void setDrawStyle(DlDrawStyle style) override;
   void setColor(DlColor color) override;
   void setStrokeWidth(SkScalar width) override;
@@ -41,12 +40,12 @@ class DlSkPaintDispatchHelper : public virtual DlOpReceiver {
   const SkPaint& paint() {
     // On the Impeller backend, we will only support dithering of *gradients*,
     // and it will be enabled by default (without the option to disable it).
-    // Until Skia support is completely removed, we only want to respect the
-    // dither flag for gradients (otherwise it will also apply to, for
-    // example, images, which is not supported in Impeller).
+    // Until Skia support is completely removed, we only want to dither
+    // gradients (otherwise it will also apply to, for example, images, which is
+    // not supported in Impeller).
     //
     // See https://github.com/flutter/flutter/issues/112498.
-    paint_.setDither(color_source_gradient_ && dither_);
+    paint_.setDither(color_source_gradient_);
     return paint_;
   }
 

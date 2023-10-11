@@ -45,60 +45,20 @@ TEST(DisplayListUtils, OverRestore) {
 }
 
 // https://github.com/flutter/flutter/issues/132860.
-TEST(DisplayListUtils, SetDitherIgnoredIfColorSourceNotGradient) {
+TEST(DisplayListUtils, SetColorSourceDithersIfGradient) {
   MockDispatchHelper helper;
-  helper.setDither(true);
-  EXPECT_FALSE(helper.paint().isDither());
+
+  helper.setColorSource(kTestLinearGradient.get());
+  EXPECT_TRUE(helper.paint().isDither());
 }
 
 // https://github.com/flutter/flutter/issues/132860.
-TEST(DisplayListUtils, SetColorSourceClearsDitherIfNotGradient) {
+TEST(DisplayListUtils, SetColorSourceDoesNotDitherIfNotGradient) {
   MockDispatchHelper helper;
-  helper.setDither(true);
+
+  helper.setColorSource(kTestLinearGradient.get());
   helper.setColorSource(nullptr);
   EXPECT_FALSE(helper.paint().isDither());
-}
-
-// https://github.com/flutter/flutter/issues/132860.
-TEST(DisplayListUtils, SetDitherTrueThenSetColorSourceDithersIfGradient) {
-  MockDispatchHelper helper;
-
-  // A naive implementation would ignore the dither flag here since the current
-  // color source is not a gradient.
-  helper.setDither(true);
-  helper.setColorSource(kTestLinearGradient.get());
-  EXPECT_TRUE(helper.paint().isDither());
-}
-
-// https://github.com/flutter/flutter/issues/132860.
-TEST(DisplayListUtils, SetDitherTrueThenRenderNonGradientThenRenderGradient) {
-  MockDispatchHelper helper;
-
-  // "Render" a dithered non-gradient.
-  helper.setDither(true);
-  EXPECT_FALSE(helper.paint().isDither());
-
-  // "Render" a gradient.
-  helper.setColorSource(kTestLinearGradient.get());
-  EXPECT_TRUE(helper.paint().isDither());
-}
-
-// https://github.com/flutter/flutter/issues/132860.
-TEST(DisplayListUtils, SetDitherTrueThenGradientTHenNonGradientThenGradient) {
-  MockDispatchHelper helper;
-
-  // "Render" a dithered gradient.
-  helper.setDither(true);
-  helper.setColorSource(kTestLinearGradient.get());
-  EXPECT_TRUE(helper.paint().isDither());
-
-  // "Render" a non-gradient.
-  helper.setColorSource(nullptr);
-  EXPECT_FALSE(helper.paint().isDither());
-
-  // "Render" a gradient again.
-  helper.setColorSource(kTestLinearGradient.get());
-  EXPECT_TRUE(helper.paint().isDither());
 }
 
 }  // namespace testing

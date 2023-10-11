@@ -871,10 +871,6 @@ class TestParameters {
         return false;
       }
     }
-    if (flags_.applies_dither() &&  //
-        ref_attr.isDither() != attr.isDither()) {
-      return false;
-    }
     if (flags_.applies_color() &&  //
         ref_attr.getColor() != attr.getColor()) {
       return false;
@@ -1819,19 +1815,7 @@ class CanvasCompareTester {
                          },
                          [=](const DlSetupContext& ctx) {
                            dl_dither_setup(ctx);
-                           ctx.paint.setDither(true);
-                         })
-                         .with_bg(dither_bg));
-          RenderWith(testP, dither_env, tolerance,
-                     CaseParameters(
-                         "Dither = False",
-                         [=](const SkSetupContext& ctx) {
-                           sk_dither_setup(ctx);
-                           ctx.paint.setDither(false);
-                         },
-                         [=](const DlSetupContext& ctx) {
-                           dl_dither_setup(ctx);
-                           ctx.paint.setDither(false);
+                           // Dithering is implicitly enabled for gradients.
                          })
                          .with_bg(dither_bg));
         }
