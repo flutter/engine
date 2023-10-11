@@ -23,6 +23,8 @@
 // CREATE_NATIVE_ENTRY is leaky by design
 // NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
 
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+
 namespace flutter {
 namespace testing {
 
@@ -225,6 +227,10 @@ std::shared_ptr<impeller::Context> MakeConvertDlImageToSkImageContext(
 }  // namespace
 
 TEST_F(ShellTest, EncodeImageFailsWithoutGPUImpeller) {
+#ifndef FML_OS_MACOSX
+  // Only works on macos currently.
+  GTEST_SKIP();
+#endif
   Settings settings = CreateSettingsForFixture();
   settings.enable_impeller = true;
   TaskRunners task_runners("test",                  // label
