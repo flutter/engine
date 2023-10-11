@@ -362,9 +362,6 @@ std::ostream& DisplayListStreamDispatcher::out_array(std::string name,  // NOLIN
 void DisplayListStreamDispatcher::setAntiAlias(bool aa) {
   startl() << "setAntiAlias(" << aa << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::setDither(bool dither) {
-  startl() << "setDither(" << dither << ");" << std::endl;
-}
 void DisplayListStreamDispatcher::setDrawStyle(DlDrawStyle style) {
   startl() << "setStyle(" << style << ");" << std::endl;
 }

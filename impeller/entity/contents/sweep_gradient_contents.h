@@ -45,8 +45,6 @@ class SweepGradientContents final : public ColorSourceContents {
 
   void SetTileMode(Entity::TileMode tile_mode);
 
-  void SetDither(bool dither);
-
   const std::vector<Color>& GetColors() const;
 
   const std::vector<Scalar>& GetStops() const;
