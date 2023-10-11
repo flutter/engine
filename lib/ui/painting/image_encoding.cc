@@ -11,6 +11,7 @@
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/make_copyable.h"
+#include "flutter/fml/status_or.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/ui/painting/image.h"
 #if IMPELLER_SUPPORTS_RENDERING
