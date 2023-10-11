@@ -196,7 +196,7 @@ class TesterPlatformView : public PlatformView,
 
  private:
   sk_sp<SkSurface> sk_surface_ = nullptr;
-  ImpellerVulkanContextHolder impeller_context_holder_;
+  [[maybe_unused]] ImpellerVulkanContextHolder impeller_context_holder_;
   std::shared_ptr<TesterExternalViewEmbedder> external_view_embedder_ =
       std::make_shared<TesterExternalViewEmbedder>();
 };

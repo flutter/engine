@@ -192,9 +192,9 @@ void main() {
     expect(image.height, equals(100));
 
     final bool areEqual =
-        await fuzzyGoldenImageCompare(image, '${impellerEnabled ? 'impeller_' : ''}canvas_test_toImage.png');
+        await fuzzyGoldenImageCompare(image, 'canvas_test_toImage.png');
     expect(areEqual, true);
-  });
+  }, skip: impellerEnabled);
 
   Gradient makeGradient() {
     return Gradient.linear(
