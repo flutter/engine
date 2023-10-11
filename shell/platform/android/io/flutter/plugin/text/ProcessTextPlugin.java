@@ -49,7 +49,6 @@ public class ProcessTextPlugin
   @Override
   public Map<String, String> queryTextActions() {
     if (resolveInfosById == null) {
-      resolveInfosById = new HashMap<String, ResolveInfo>();
       cacheResolveInfos();
     }
     Map<String, String> result = new HashMap<String, String>();
@@ -104,6 +103,8 @@ public class ProcessTextPlugin
   }
 
   private void cacheResolveInfos() {
+    resolveInfosById = new HashMap<String, ResolveInfo>();
+
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
       return;
     }
@@ -117,7 +118,6 @@ public class ProcessTextPlugin
       infos = packageManager.queryIntentActivities(intent, 0);
     }
 
-    resolveInfosById.clear();
     for (ResolveInfo info : infos) {
       final String id = info.activityInfo.name;
       final String label = info.loadLabel(packageManager).toString();
