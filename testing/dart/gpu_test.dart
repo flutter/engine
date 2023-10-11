@@ -25,15 +25,16 @@ void main() {
   });
 
   test('gpu.context throws exception for incompatible embedders', () async {
-    if (impellerEnabled) {
-      expect(gpu.gpuContext != null, true);
-      return;
-    }
     try {
       // ignore: unnecessary_statements
-      gpu.gpuContext; // Force the
-      fail('Exception not thrown');
+      gpu.gpuContext; // Force the context to instantiate.
+      if (!impellerEnabled) {
+        fail('Exception not thrown, but no Impeller context available.');
+      }
     } catch (e) {
+      if (impellerEnabled) {
+        fail('Exception thrown even though Impeller is enabled.');
+      }
       expect(
           e.toString(),
           contains(

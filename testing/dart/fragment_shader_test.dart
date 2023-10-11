@@ -5,16 +5,14 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert' as convert;
-import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:litetest/litetest.dart';
 import 'package:path/path.dart' as path;
 
-import 'shader_test_file_utils.dart';
-
 import 'impeller_enabled.dart';
+import 'shader_test_file_utils.dart';
 
 void main() async {
   bool assertsEnabled = false;
