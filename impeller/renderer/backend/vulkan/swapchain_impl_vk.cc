@@ -4,15 +4,39 @@
 
 #include "impeller/renderer/backend/vulkan/swapchain_impl_vk.h"
 
+#include "fml/trace_event.h"
+#include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_vk.h"
 #include "impeller/renderer/backend/vulkan/swapchain_image_vk.h"
+#include "impeller/renderer/context.h"
 #include "vulkan/vulkan_structs.hpp"
 
 namespace impeller {
+
+// Submit an empty cmd buffer and track its completion so that we can record
+// the approximate time that the GPU workload started/ended in the Dart
+// timeline.
+static void RunGPUCompletionTracking(const ContextVK& context, bool start) {
+  auto cmd_buffer = context.CreateCommandBuffer();
+  if (!cmd_buffer->SubmitCommands([start](CommandBuffer::Status status) {
+        if (status == CommandBuffer::Status::kPending) {
+          return;
+        }
+        if (start) {
+          TRACE_EVENT0("flutter", "GPUStart");
+        } else {
+          TRACE_EVENT0("flutter", "GPUEnd");
+        }
+        // We report this event regardless of the status to simplify the tracing
+        // code required to process the event.
+      })) {
+    VALIDATION_LOG << "Failed to submit tracking cmd buffer.";
+  }
+}
 
 static constexpr size_t kMaxFramesInFlight = 3u;
 
@@ -374,6 +398,9 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
       *sync->render_ready,  // signal semaphore
       nullptr               // fence
   );
+#ifdef IMPELLER_DEBUG
+  RunGPUCompletionTracking(context, /*start=*/true);
+#endif  // IMPELLER_DEBUG
 
   switch (acq_result) {
     case vk::Result::eSuccess:
@@ -420,6 +447,10 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
 
   const auto& context = ContextVK::Cast(*context_strong);
   const auto& sync = synchronizers_[current_frame_];
+
+#ifdef IMPELLER_DEBUG
+  RunGPUCompletionTracking(context, /*start=*/false);
+#endif  // IMPELLER_DEBUG
 
   //----------------------------------------------------------------------------
   /// Transition the image to color-attachment-optimal.
