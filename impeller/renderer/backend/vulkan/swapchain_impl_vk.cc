@@ -17,6 +17,7 @@
 
 namespace impeller {
 
+#ifdef IMPELLER_DEBUG
 // Submit an empty cmd buffer and track its completion so that we can record
 // the approximate time that the GPU workload started/ended in the Dart
 // timeline.
@@ -37,6 +38,7 @@ static void RunGPUCompletionTracking(const ContextVK& context, bool start) {
     VALIDATION_LOG << "Failed to submit tracking cmd buffer.";
   }
 }
+#endif  // IMPELLER_DEBUG
 
 static constexpr size_t kMaxFramesInFlight = 3u;
 
