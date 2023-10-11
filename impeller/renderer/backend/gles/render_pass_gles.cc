@@ -5,6 +5,7 @@
 #include "impeller/renderer/backend/gles/render_pass_gles.h"
 
 #include "flutter/fml/trace_event.h"
+#include "fml/closure.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/gles/device_buffer_gles.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
@@ -192,8 +193,10 @@ struct RenderPassData {
       }
     }
 
-    if (gl.CheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-      VALIDATION_LOG << "Could not create a complete frambuffer.";
+    auto status = gl.CheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE) {
+      VALIDATION_LOG << "Could not create a complete frambuffer: "
+                     << DebugToFramebufferError(status);
       return false;
     }
   }

@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//third_party/glfw/glfw_args.gni")
+import("//flutter/third_party/glfw/glfw_args.gni")
 import("tools/impeller.gni")
 
 config("impeller_public_config") {
@@ -111,6 +111,10 @@ impeller_component("impeller_unittests") {
 
   if (impeller_enable_vulkan) {
     deps += [ "//flutter/impeller/renderer/backend/vulkan:vulkan_unittests" ]
+  }
+
+  if (impeller_enable_opengles) {
+    deps += [ "//flutter/impeller/renderer/backend/gles:gles_unittests" ]
   }
 
   if (glfw_vulkan_library != "") {
