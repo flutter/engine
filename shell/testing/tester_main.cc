@@ -156,7 +156,6 @@ class TesterPlatformView : public PlatformView,
       return surface;
     }
 #endif  // IMPELLER_SUPPORTS_RENDERING
-    FML_DCHECK(!impeller_context_holder_.context);
     auto surface = std::make_unique<TesterGPUSurfaceSoftware>(
         this, true /* render to surface */);
     FML_DCHECK(surface->IsValid());
