@@ -45,7 +45,7 @@ Future<void> main(List<String> args) async {
     ]));
     final ProcessResult runResult = Process.runSync(dart, <String>[regularDill]);
     checkProcessResult(runResult);
-    String paintString = '"Paint.toString":"Paint(Color(0xffffffff);)"';
+    String paintString = '"Paint.toString":"Paint(Color(0xffffffff))"';
     if (buildDir.contains('release')) {
       paintString = '"Paint.toString":"Instance of \'Paint\'"';
     }
