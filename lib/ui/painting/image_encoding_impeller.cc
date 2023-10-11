@@ -65,7 +65,7 @@ void DoConvertImageToRasterImpeller(
       fml::SyncSwitch::Handlers()
           .SetIfTrue([&encode_task] {
             encode_task(
-                fml::Status(fml::StatusCode::kUnavailable, "gpu unavailable"));
+                fml::Status(fml::StatusCode::kUnavailable, "GPU unavailable."));
           })
           .SetIfFalse([&dl_image, &encode_task, &impeller_context] {
             ImageEncodingImpeller::ConvertDlImageToSkImage(
@@ -82,14 +82,12 @@ void ImageEncodingImpeller::ConvertDlImageToSkImage(
   auto texture = dl_image->impeller_texture();
 
   if (impeller_context == nullptr) {
-    FML_LOG(ERROR) << "Impeller context was null.";
     encode_task(fml::Status(fml::StatusCode::kFailedPrecondition,
                             "Impeller context was null."));
     return;
   }
 
   if (texture == nullptr) {
-    FML_LOG(ERROR) << "Image was null.";
     encode_task(
         fml::Status(fml::StatusCode::kFailedPrecondition, "Image was null."));
     return;
@@ -99,14 +97,12 @@ void ImageEncodingImpeller::ConvertDlImageToSkImage(
   auto color_type = ToSkColorType(texture->GetTextureDescriptor().format);
 
   if (dimensions.isEmpty()) {
-    FML_LOG(ERROR) << "Image dimensions were empty.";
     encode_task(fml::Status(fml::StatusCode::kFailedPrecondition,
                             "Image dimensions were empty."));
     return;
   }
 
   if (!color_type.has_value()) {
-    FML_LOG(ERROR) << "Failed to get color type from pixel format.";
     encode_task(fml::Status(fml::StatusCode::kUnimplemented,
                             "Failed to get color type from pixel format."));
     return;

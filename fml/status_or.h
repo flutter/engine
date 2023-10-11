@@ -11,7 +11,22 @@
 
 namespace fml {
 
-/// TODO(): Replace with absl::StatusOr.
+// TODO(https://github.com/flutter/flutter/issues/134741): Replace with
+// absl::StatusOr.
+/// Represents a union type of an object of type `T` and an fml::Status.
+///
+/// This is often used as a replacement for C++ exceptions where a function that
+/// could fail may return an error or a result. These are typically used for
+/// errors that are meant to be recovered from. If there is no recovery
+/// available `FML_CHECK` is more appropriate.
+///
+/// Example:
+/// StatusOr<int> div(int n, int d) {
+///   if (d == 0) {
+///     return Status(StatusCode::kFailedPrecondition, "div by zero");
+///   }
+///   return n / d;
+/// }
 template <typename T>
 class StatusOr {
  public:

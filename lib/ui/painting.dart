@@ -1941,7 +1941,7 @@ base class _Image extends NativeFieldWrapperClass1 {
       if (encoded != null) {
         completer.complete(encoded.buffer.asByteData());
       } else {
-        completer.completeError(Exception(error ?? 'unknown error'));
+        completer.completeError(Exception(error ?? 'Unknown exception.'));
       }
     });
     if (syncError != null) {
