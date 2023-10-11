@@ -247,7 +247,7 @@ TEST_F(ShellTest, EncodeImageFailsWithoutGPUImpeller) {
 
   std::unique_ptr<Shell> shell = CreateShell({
       .settings = settings,
-      .task_runners = std::move(task_runners),
+      .task_runners = task_runners,
   });
 
   auto turn_off_gpu = [&](Dart_NativeArguments args) {
