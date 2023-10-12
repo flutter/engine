@@ -13,9 +13,7 @@
 namespace impeller {
 namespace testing {
 
-class MetalScreenshoter;
-
-/// A screenshot that was produced from `MetalScreenshoter`.
+/// A screenshot that was produced from `MetalScreenshotter`.
 class MetalScreenshot {
  public:
   ~MetalScreenshot();
@@ -26,13 +24,15 @@ class MetalScreenshot {
 
   size_t GetWidth() const;
 
+  size_t GetBytesPerRow() const;
+
   bool WriteToPNG(const std::string& path) const;
 
  private:
-  friend class MetalScreenshoter;
-  MetalScreenshot(CGImageRef cgImage);
+  friend class MetalScreenshotter;
+  explicit MetalScreenshot(CGImageRef cgImage);
   FML_DISALLOW_COPY_AND_ASSIGN(MetalScreenshot);
-  CGImageRef cgImage_;
+  CGImageRef cg_image_;
   CFDataRef pixel_data_;
 };
 }  // namespace testing

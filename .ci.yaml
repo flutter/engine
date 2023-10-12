@@ -161,7 +161,6 @@ targets:
   - name: Linux Fuchsia
     recipe: engine/engine
     properties:
-      add_recipes_cq: "true"
       build_fuchsia: "true"
       fuchsia_ctl_version: version:0.0.27
       # ensure files from pre-production Fuchsia SDK tests are purged from cache
@@ -361,7 +360,7 @@ targets:
         {"download_emsdk": true}
       dependencies: >-
         [
-          {"dependency": "chrome_and_driver", "version": "version:115.0"},
+          {"dependency": "chrome_and_driver", "version": "version:118.0.5993.70"},
           {"dependency": "curl", "version": "version:7.64.0"}
         ]
       framework: "true"

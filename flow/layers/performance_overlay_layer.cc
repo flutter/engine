@@ -52,15 +52,15 @@ void VisualizeStopWatch(DlCanvas* canvas,
     auto text = PerformanceOverlayLayer::MakeStatisticsText(
         stopwatch, label_prefix, font_path);
     // Historically SK_ColorGRAY (== 0xFF888888) was used here
-    DlPaint paint(0xFF888888);
+    DlPaint paint(DlColor(0xFF888888));
 #ifdef IMPELLER_SUPPORTS_RENDERING
     if (impeller_enabled) {
       canvas->DrawTextFrame(impeller::MakeTextFrameFromTextBlobSkia(text),
                             x + label_x, y + height + label_y, paint);
+      return;
     }
 #endif  // IMPELLER_SUPPORTS_RENDERING
     canvas->DrawTextBlob(text, x + label_x, y + height + label_y, paint);
-    return;
   }
 }
 

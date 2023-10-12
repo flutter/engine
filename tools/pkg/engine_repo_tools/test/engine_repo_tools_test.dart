@@ -187,7 +187,7 @@ void main() {
       io.Directory(p.join(emptyDir.path, 'src', 'out', 'host_debug_unopt_arm64')).createSync(recursive: true);
 
       final Engine engine = Engine.fromSrcPath(p.join(emptyDir.path, 'src'));
-      final List<String> outputs = engine.outputs().map((Output o) => p.basename(o.dir.path)).toList()..sort();
+      final List<String> outputs = engine.outputs().map((Output o) => p.basename(o.path.path)).toList()..sort();
       expect(outputs, <String>[
         'host_debug',
         'host_debug_unopt_arm64',
@@ -202,23 +202,39 @@ void main() {
 
     try {
       // Create a valid engine.
-      io.Directory(p.join(emptyDir.path, 'src', 'flutter')).createSync(recursive: true);
-      io.Directory(p.join(emptyDir.path, 'src', 'out')).createSync(recursive: true);
+      final io.Directory srcDir = io.Directory(p.join(emptyDir.path, 'src'))
+        ..createSync(recursive: true);
+      final io.Directory flutterDir = io.Directory(p.join(srcDir.path, 'flutter'))
+        ..createSync(recursive: true);
+      final io.Directory outDir = io.Directory(p.join(srcDir.path, 'out'))
+        ..createSync(recursive: true);
 
       // Create two targets in out: host_debug and host_debug_unopt_arm64.
-      io.Directory(p.join(emptyDir.path, 'src', 'out', 'host_debug')).createSync(recursive: true);
-      io.Directory(p.join(emptyDir.path, 'src', 'out', 'host_debug_unopt_arm64')).createSync(recursive: true);
+      final io.Directory hostDebug = io.Directory(p.join(outDir.path, 'host_debug'))
+        ..createSync(recursive: true);
+      final io.Directory hostDebugUnoptArm64 = io.Directory(
+        p.join(outDir.path, 'host_debug_unopt_arm64'),
+      )..createSync(recursive: true);
 
-      // Intentionnally make host_debug a day old to ensure it is not picked.
-      final io.File oldJson = io.File(p.join(emptyDir.path, 'src', 'out', 'host_debug', 'compile_commands.json'))..createSync();
-      oldJson.setLastModifiedSync(oldJson.lastModifiedSync().subtract(const Duration(days: 1)));
+      final Engine engine = TestEngine.withPaths(
+        srcDir: srcDir,
+        flutterDir: flutterDir,
+        outDir: outDir,
+        outputs: <TestOutput>[
+          TestOutput(
+            hostDebug,
+            lastModified: DateTime.utc(2023, 9, 23, 21, 16),
+          ),
+          TestOutput(
+            hostDebugUnoptArm64,
+            lastModified: DateTime.utc(2023, 9, 23, 22, 16),
+          ),
+        ],
+      );
 
-      io.File(p.join(emptyDir.path, 'src', 'out', 'host_debug_unopt_arm64', 'compile_commands.json')).createSync();
-
-      final Engine engine = Engine.fromSrcPath(p.join(emptyDir.path, 'src'));
       final Output? latestOutput = engine.latestOutput();
       expect(latestOutput, isNotNull);
-      expect(p.basename(latestOutput!.dir.path), 'host_debug_unopt_arm64');
+      expect(p.basename(latestOutput!.path.path), 'host_debug_unopt_arm64');
       expect(latestOutput.compileCommandsJson, isNotNull);
     } finally {
       tearDown();

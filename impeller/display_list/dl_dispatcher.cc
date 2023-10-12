@@ -8,7 +8,6 @@
 #include <cstring>
 #include <memory>
 #include <optional>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -16,20 +15,13 @@
 #include "flutter/fml/trace_event.h"
 #include "impeller/aiks/color_filter.h"
 #include "impeller/core/formats.h"
-#include "impeller/display_list/dl_image_impeller.h"
 #include "impeller/display_list/dl_vertices_geometry.h"
 #include "impeller/display_list/nine_patch_converter.h"
 #include "impeller/display_list/skia_conversions.h"
-#include "impeller/entity/contents/conical_gradient_contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
-#include "impeller/entity/contents/linear_gradient_contents.h"
-#include "impeller/entity/contents/radial_gradient_contents.h"
 #include "impeller/entity/contents/runtime_effect_contents.h"
-#include "impeller/entity/contents/sweep_gradient_contents.h"
-#include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/entity/entity.h"
-#include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/scalar.h"
@@ -271,30 +263,6 @@ static std::vector<Color> ToColors(const flutter::DlColor colors[], int count) {
   return result;
 }
 
-// Convert display list colors + stops into impeller colors and stops, taking
-// care to ensure that the stops always start with 0.0 and end with 1.0.
-template <typename T>
-static void ConvertStops(T* gradient,
-                         std::vector<Color>* colors,
-                         std::vector<float>* stops) {
-  FML_DCHECK(gradient->stop_count() >= 2);
-
-  auto* dl_colors = gradient->colors();
-  auto* dl_stops = gradient->stops();
-  if (dl_stops[0] != 0.0) {
-    colors->emplace_back(skia_conversions::ToColor(dl_colors[0]));
-    stops->emplace_back(0);
-  }
-  for (auto i = 0; i < gradient->stop_count(); i++) {
-    colors->emplace_back(skia_conversions::ToColor(dl_colors[i]));
-    stops->emplace_back(dl_stops[i]);
-  }
-  if (stops->back() != 1.0) {
-    colors->emplace_back(colors->back());
-    stops->emplace_back(1.0);
-  }
-}
-
 static std::optional<ColorSource::Type> ToColorSourceType(
     flutter::DlColorSourceType type) {
   switch (type) {
@@ -351,7 +319,7 @@ void DlDispatcher::setColorSource(const flutter::DlColorSource* source) {
       auto end_point = skia_conversions::ToPoint(linear->end_point());
       std::vector<Color> colors;
       std::vector<float> stops;
-      ConvertStops(linear, &colors, &stops);
+      skia_conversions::ConvertStops(linear, colors, stops);
 
       auto tile_mode = ToTileMode(linear->tile_mode());
       auto matrix = ToMatrix(linear->matrix());
@@ -372,7 +340,7 @@ void DlDispatcher::setColorSource(const flutter::DlColorSource* source) {
       SkScalar focus_radius = conical_gradient->start_radius();
       std::vector<Color> colors;
       std::vector<float> stops;
-      ConvertStops(conical_gradient, &colors, &stops);
+      skia_conversions::ConvertStops(conical_gradient, colors, stops);
 
       auto tile_mode = ToTileMode(conical_gradient->tile_mode());
       auto matrix = ToMatrix(conical_gradient->matrix());
@@ -390,7 +358,7 @@ void DlDispatcher::setColorSource(const flutter::DlColorSource* source) {
       auto radius = radialGradient->radius();
       std::vector<Color> colors;
       std::vector<float> stops;
-      ConvertStops(radialGradient, &colors, &stops);
+      skia_conversions::ConvertStops(radialGradient, colors, stops);
 
       auto tile_mode = ToTileMode(radialGradient->tile_mode());
       auto matrix = ToMatrix(radialGradient->matrix());
@@ -409,7 +377,7 @@ void DlDispatcher::setColorSource(const flutter::DlColorSource* source) {
       auto end_angle = Degrees(sweepGradient->end());
       std::vector<Color> colors;
       std::vector<float> stops;
-      ConvertStops(sweepGradient, &colors, &stops);
+      skia_conversions::ConvertStops(sweepGradient, colors, stops);
 
       auto tile_mode = ToTileMode(sweepGradient->tile_mode());
       auto matrix = ToMatrix(sweepGradient->matrix());
@@ -507,7 +475,6 @@ static std::shared_ptr<ColorFilter> ToColorFilter(
 
 // |flutter::DlOpReceiver|
 void DlDispatcher::setColorFilter(const flutter::DlColorFilter* filter) {
-  // Needs https://github.com/flutter/flutter/issues/95434
   paint_.color_filter = ToColorFilter(filter);
 }
 
@@ -848,19 +815,29 @@ void DlDispatcher::drawDRRect(const SkRRect& outer, const SkRRect& inner) {
 // |flutter::DlOpReceiver|
 void DlDispatcher::drawPath(const SkPath& path) {
   SkRect rect;
-  SkRRect rrect;
-  SkRect oval;
-  if (path.isRect(&rect)) {
+
+  // We can't "optimize" a path into a rectangle if it's open.
+  bool closed;
+  if (path.isRect(&rect, &closed) && closed) {
     canvas_.DrawRect(skia_conversions::ToRect(rect), paint_);
-  } else if (path.isRRect(&rrect) && rrect.isSimple()) {
+    return;
+  }
+
+  SkRRect rrect;
+  if (path.isRRect(&rrect) && rrect.isSimple()) {
     canvas_.DrawRRect(skia_conversions::ToRect(rrect.rect()),
                       rrect.getSimpleRadii().fX, paint_);
-  } else if (path.isOval(&oval) && oval.width() == oval.height()) {
+    return;
+  }
+
+  SkRect oval;
+  if (path.isOval(&oval) && oval.width() == oval.height()) {
     canvas_.DrawCircle(skia_conversions::ToPoint(oval.center()),
                        oval.width() * 0.5, paint_);
-  } else {
-    canvas_.DrawPath(skia_conversions::ToPath(path), paint_);
+    return;
   }
+
+  canvas_.DrawPath(skia_conversions::ToPath(path), paint_);
 }
 
 // |flutter::DlOpReceiver|

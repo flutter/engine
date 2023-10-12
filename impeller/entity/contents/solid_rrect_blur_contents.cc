@@ -80,18 +80,21 @@ bool SolidRRectBlurContents::Render(const ContentContext& renderer,
         {Point(left, top)},
         {Point(right, top)},
         {Point(left, bottom)},
-        {Point(left, bottom)},
-        {Point(right, top)},
         {Point(right, bottom)},
     });
   }
 
   Command cmd;
   DEBUG_COMMAND_INFO(cmd, "RRect Shadow");
-  auto opts = OptionsFromPassAndEntity(pass, entity);
-  opts.primitive_type = PrimitiveType::kTriangle;
+  ContentContextOptions opts = OptionsFromPassAndEntity(pass, entity);
+  opts.primitive_type = PrimitiveType::kTriangleStrip;
+  Color color = color_;
+  if (entity.GetBlendMode() == BlendMode::kClear) {
+    opts.is_for_rrect_blur_clear = true;
+    color = Color::White();
+  }
   cmd.pipeline = renderer.GetRRectBlurPipeline(opts);
-  cmd.stencil_reference = entity.GetStencilDepth();
+  cmd.stencil_reference = entity.GetClipDepth();
 
   cmd.BindVertices(vtx_builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
 
@@ -102,7 +105,7 @@ bool SolidRRectBlurContents::Render(const ContentContext& renderer,
   VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
   FS::FragInfo frag_info;
-  frag_info.color = color_;
+  frag_info.color = color;
   frag_info.blur_sigma = blur_sigma;
   frag_info.rect_size = Point(positive_rect.size);
   frag_info.corner_radius =
@@ -114,6 +117,12 @@ bool SolidRRectBlurContents::Render(const ContentContext& renderer,
     return false;
   }
 
+  return true;
+}
+
+bool SolidRRectBlurContents::ApplyColorFilter(
+    const ColorFilterProc& color_filter_proc) {
+  color_ = color_filter_proc(color_);
   return true;
 }
 

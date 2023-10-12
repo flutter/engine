@@ -4,6 +4,7 @@
 
 #include "impeller/renderer/backend/vulkan/resource_manager_vk.h"
 
+#include "flutter/fml/cpu_affinity.h"
 #include "flutter/fml/thread.h"
 #include "flutter/fml/trace_event.h"
 #include "fml/logging.h"
@@ -22,6 +23,11 @@ std::shared_ptr<ResourceManagerVK> ResourceManagerVK::Create() {
 ResourceManagerVK::ResourceManagerVK() : waiter_([&]() { Start(); }) {}
 
 ResourceManagerVK::~ResourceManagerVK() {
+  FML_DCHECK(waiter_.get_id() != std::this_thread::get_id())
+      << "The ResourceManager being destructed on its own spawned thread is a "
+      << "sign that ContextVK was not properly destroyed. A usual fix for this "
+      << "is to ensure that ContextVK is shutdown (i.e. context->Shutdown()) "
+         "before the ResourceManager is destroyed (i.e. at the end of a test).";
   Terminate();
   waiter_.join();
 }
@@ -34,6 +40,9 @@ void ResourceManagerVK::Start() {
 
   fml::Thread::SetCurrentThreadName(
       fml::Thread::ThreadConfig{"io.flutter.impeller.resource_manager"});
+  // While this code calls destructors it doesn't need to be particularly fast
+  // with them, as long as it doesn't interrupt raster thread.
+  fml::RequestAffinity(fml::CpuAffinity::kEfficiency);
 
   bool should_exit = false;
   while (!should_exit) {

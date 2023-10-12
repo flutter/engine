@@ -110,7 +110,7 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
       return;
     }
     DlPaint paint;
-    paint.setColor(color);
+    paint.setColor(DlColor(color));
     if (blur_sigma > 0.0) {
       DlBlurMaskFilter filter(DlBlurStyle::kNormal, blur_sigma, false);
       paint.setMaskFilter(&filter);
@@ -213,7 +213,7 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
     // filters rely on having the glyph coverage, whereas regular text is
     // drawn as rectangular texture samples.
     return ((paint.getColorSource() && !paint.getColorSource()->asColor()) ||
-            paint.getDrawStyle() == DlDrawStyle::kStroke);
+            paint.getDrawStyle() != DlDrawStyle::kFill);
   }
 
   DlPaint toDlPaint(const DecorationStyle& decor_style,
@@ -221,7 +221,7 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
     DlPaint paint;
     paint.setDrawStyle(draw_style);
     paint.setAntiAlias(true);
-    paint.setColor(decor_style.getColor());
+    paint.setColor(DlColor(decor_style.getColor()));
     paint.setStrokeWidth(decor_style.getStrokeWidth());
     return paint;
   }

@@ -4,10 +4,8 @@
 
 #include "impeller/renderer/backend/gles/render_pass_gles.h"
 
-#include <algorithm>
-
 #include "flutter/fml/trace_event.h"
-#include "impeller/base/config.h"
+#include "fml/closure.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/gles/device_buffer_gles.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
@@ -195,8 +193,10 @@ struct RenderPassData {
       }
     }
 
-    if (gl.CheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-      VALIDATION_LOG << "Could not create a complete frambuffer.";
+    auto status = gl.CheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE) {
+      VALIDATION_LOG << "Could not create a complete frambuffer: "
+                     << DebugToFramebufferError(status);
       return false;
     }
   }
@@ -207,7 +207,12 @@ struct RenderPassData {
                 pass_data.clear_color.alpha   // alpha
   );
   if (pass_data.depth_attachment) {
+    // TODO(bdero): Desktop GL for Apple requires glClearDepth. glClearDepthf
+    //              throws GL_INVALID_OPERATION.
+    //              https://github.com/flutter/flutter/issues/136322
+#if !FML_OS_MACOSX
     gl.ClearDepthf(pass_data.clear_depth);
+#endif
   }
   if (pass_data.stencil_attachment) {
     gl.ClearStencil(pass_data.clear_stencil);
@@ -303,7 +308,12 @@ struct RenderPassData {
                 viewport.rect.size.height       // height
     );
     if (pass_data.depth_attachment) {
+      // TODO(bdero): Desktop GL for Apple requires glDepthRange. glDepthRangef
+      //              throws GL_INVALID_OPERATION.
+      //              https://github.com/flutter/flutter/issues/136322
+#if !FML_OS_MACOSX
       gl.DepthRangef(viewport.depth_range.z_near, viewport.depth_range.z_far);
+#endif
     }
 
     //--------------------------------------------------------------------------

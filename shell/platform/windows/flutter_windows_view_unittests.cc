@@ -110,8 +110,8 @@ class MockFlutterWindowsEngine : public FlutterWindowsEngine {
  public:
   MockFlutterWindowsEngine() : FlutterWindowsEngine(GetTestProject()) {}
 
-  MOCK_METHOD(bool, Stop, (), (override));
-  MOCK_METHOD(bool, PostRasterThreadTask, (fml::closure), (override));
+  MOCK_METHOD(bool, Stop, (), ());
+  MOCK_METHOD(bool, PostRasterThreadTask, (fml::closure), ());
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(MockFlutterWindowsEngine);

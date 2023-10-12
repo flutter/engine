@@ -142,6 +142,7 @@ SwapchainImplVK::SwapchainImplVK(
     vk::SwapchainKHR old_swapchain,
     vk::SurfaceTransformFlagBitsKHR last_transform) {
   if (!context) {
+    VALIDATION_LOG << "Cannot create a swapchain without a context.";
     return;
   }
 
@@ -470,7 +471,7 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
     }
   }
 
-  auto task = [&, index, image, current_frame = current_frame_] {
+  auto task = [&, index, current_frame = current_frame_] {
     auto context_strong = context_.lock();
     if (!context_strong) {
       return;
