@@ -240,7 +240,9 @@ void testMain() {
       int count = 0;
       ui.window.onPlatformMessage = (String channel, ByteData? data,
           ui.PlatformMessageResponseCallback? callback) {
-        count += 1;
+        if (channel == 'flutter/keyevent') {
+          count += 1;
+        }
       };
 
       dispatchKeyboardEvent('keydown');
