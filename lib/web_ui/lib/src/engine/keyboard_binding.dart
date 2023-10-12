@@ -108,7 +108,8 @@ class KeyboardBinding {
       RawKeyboard.instance?.handleHtmlEvent(domEvent);
     });
     _addEventListener('keyup', (DomEvent domEvent) {
-      _converter.handleEvent(FlutterHtmlKeyboardEvent(domEvent as DomKeyboardEvent));
+      final FlutterHtmlKeyboardEvent event = FlutterHtmlKeyboardEvent(domEvent as DomKeyboardEvent);
+      _converter.handleEvent(event);
       RawKeyboard.instance?.handleHtmlEvent(domEvent);
     });
   }

@@ -52,6 +52,10 @@ void testMain() {
 
       DomKeyboardEvent event;
 
+      // Dispatch a keydown event first so that KeyboardBinding will recognize the keyup event.
+      // and will not set preventDefault on it.
+      event = dispatchKeyboardEvent('keydown', key: 'SomeKey', code: 'SomeCode', keyCode: 1);
+
       event = dispatchKeyboardEvent('keyup', key: 'SomeKey', code: 'SomeCode', keyCode: 1);
 
       expect(event.defaultPrevented, isFalse);
@@ -245,18 +249,18 @@ void testMain() {
         }
       };
 
-      dispatchKeyboardEvent('keydown');
+      dispatchKeyboardEvent('keydown', key: 'SomeKey', code: 'SomeCode');
       expect(count, 1);
-      dispatchKeyboardEvent('keyup');
+      dispatchKeyboardEvent('keyup', key: 'SomeKey', code: 'SomeCode');
       expect(count, 2);
 
       RawKeyboard.instance!.dispose();
       expect(RawKeyboard.instance, isNull);
 
       // No more event dispatching.
-      dispatchKeyboardEvent('keydown');
+      dispatchKeyboardEvent('keydown', key: 'SomeKey', code: 'SomeCode');
       expect(count, 2);
-      dispatchKeyboardEvent('keyup');
+      dispatchKeyboardEvent('keyup', key: 'SomeKey', code: 'SomeCode');
       expect(count, 2);
     });
 
@@ -766,8 +770,8 @@ void useTextEditingElement(ElementCallback callback) {
 DomKeyboardEvent dispatchKeyboardEvent(
   String type, {
   DomEventTarget? target,
-  String? key,
-  String? code,
+  required String? key,
+  required String? code,
   int location = 0,
   bool repeat = false,
   bool isShiftPressed = false,
