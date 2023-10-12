@@ -36,10 +36,7 @@ template("flutter_frontend_server") {
 
   kernel_output = invoker.kernel_output
 
-  common_deps = [
-    "//flutter/flutter_frontend_server:frontend_server",
-    "//flutter/lib/snapshot:strong_platform",
-  ]
+  common_deps = [ "//flutter/lib/snapshot:strong_platform" ]
   if (defined(invoker.deps)) {
     common_deps += invoker.deps
   }
@@ -75,6 +72,7 @@ template("flutter_frontend_server") {
                 ]
 
   if (flutter_prebuilt_dart_sdk) {
+    common_deps += [ "//flutter/flutter_frontend_server:frontend_server" ]
     action(target_name) {
       forward_variables_from(invoker,
                              [
@@ -100,7 +98,7 @@ template("flutter_frontend_server") {
       args = [ dart ] + common_vm_args + [ frontend_server ] + common_args
     }
   } else {
-    dart_action(target_name) {
+    prebuilt_dart_action(target_name) {
       forward_variables_from(invoker,
                              [
                                "visibility",
@@ -109,8 +107,7 @@ template("flutter_frontend_server") {
                              [ "pool" ])
       deps = common_deps
       pool = "//flutter/build/dart:dart_pool"
-      script = "$root_gen_dir/frontend_server.dart.snapshot"
-      packages = rebase_path(invoker.package_config)
+      script = "//third_party/dart/pkg/frontend_server/bin/frontend_server_starter.dart"
       inputs = [ invoker.main_dart ]
       outputs = [ invoker.kernel_output ]
       depfile = snapshot_depfile
