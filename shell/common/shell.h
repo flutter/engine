@@ -438,6 +438,16 @@ class Shell final : public PlatformView::Delegate,
   const std::shared_ptr<fml::ConcurrentTaskRunner>
   GetConcurrentWorkerTaskRunner() const;
 
+  // Infer the VM ref and the isolate snapshot based on the settings.
+  //
+  // If the VM is already running, the settings are ignored, but the returned
+  // isolate snapshot always prioritize what is specified by the settings, and
+  // falls back to the one VM was launched with.
+  //
+  // This function is what Shell::Create uses to infer snapshot settings.
+  static std::pair<DartVMRef, fml::RefPtr<const DartSnapshot>>
+  InferVmInitDataFromSettings(Settings& settings);
+
  private:
   using ServiceProtocolHandler =
       std::function<bool(const ServiceProtocol::Handler::ServiceProtocolMap&,
@@ -640,10 +650,10 @@ class Shell final : public PlatformView::Delegate,
       fml::TimePoint frame_target_time) override;
 
   // |Animator::Delegate|
-  void OnAnimatorDraw(std::shared_ptr<LayerTreePipeline> pipeline) override;
+  void OnAnimatorDraw(std::shared_ptr<FramePipeline> pipeline) override;
 
   // |Animator::Delegate|
-  void OnAnimatorDrawLastLayerTree(
+  void OnAnimatorDrawLastLayerTrees(
       std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) override;
 
   // |Engine::Delegate|

@@ -18,6 +18,8 @@
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 
+#include "impeller/typographer/text_frame.h"
+
 namespace flutter {
 
 //------------------------------------------------------------------------------
@@ -83,8 +85,8 @@ class DlCanvas {
   virtual void TransformReset() = 0;
   virtual void Transform(const SkMatrix* matrix) = 0;
   virtual void Transform(const SkM44* matrix44) = 0;
-  virtual void Transform(const SkMatrix& matrix) { Transform(&matrix); }
-  virtual void Transform(const SkM44& matrix44) { Transform(&matrix44); }
+  void Transform(const SkMatrix& matrix) { Transform(&matrix); }
+  void Transform(const SkM44& matrix44) { Transform(&matrix44); }
   virtual void SetTransform(const SkMatrix* matrix) = 0;
   virtual void SetTransform(const SkM44* matrix44) = 0;
   virtual void SetTransform(const SkMatrix& matrix) { SetTransform(&matrix); }
@@ -177,12 +179,11 @@ class DlCanvas {
       SrcRectConstraint constraint = SrcRectConstraint::kFast) {
     DrawImageRect(image, SkRect::Make(src), dst, sampling, paint, constraint);
   }
-  virtual void DrawImageRect(
-      const sk_sp<DlImage>& image,
-      const SkRect& dst,
-      DlImageSampling sampling,
-      const DlPaint* paint = nullptr,
-      SrcRectConstraint constraint = SrcRectConstraint::kFast) {
+  void DrawImageRect(const sk_sp<DlImage>& image,
+                     const SkRect& dst,
+                     DlImageSampling sampling,
+                     const DlPaint* paint = nullptr,
+                     SrcRectConstraint constraint = SrcRectConstraint::kFast) {
     DrawImageRect(image, image->bounds(), dst, sampling, paint, constraint);
   }
   virtual void DrawImageNine(const sk_sp<DlImage>& image,
@@ -201,6 +202,13 @@ class DlCanvas {
                          const DlPaint* paint = nullptr) = 0;
   virtual void DrawDisplayList(const sk_sp<DisplayList> display_list,
                                SkScalar opacity = SK_Scalar1) = 0;
+
+  virtual void DrawTextFrame(
+      const std::shared_ptr<impeller::TextFrame>& text_frame,
+      SkScalar x,
+      SkScalar y,
+      const DlPaint& paint) = 0;
+
   virtual void DrawTextBlob(const sk_sp<SkTextBlob>& blob,
                             SkScalar x,
                             SkScalar y,
