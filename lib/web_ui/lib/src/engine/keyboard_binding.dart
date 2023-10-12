@@ -5,7 +5,6 @@
 import 'dart:js_interop';
 
 import 'package:meta/meta.dart';
-import 'package:ui/src/engine/raw_keyboard.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:web_locale_keymap/web_locale_keymap.dart' as locale_keymap;
 
@@ -14,6 +13,7 @@ import 'browser_detection.dart';
 import 'dom.dart';
 import 'key_map.g.dart';
 import 'platform_dispatcher.dart';
+import 'raw_keyboard.dart';
 import 'semantics.dart';
 
 typedef _VoidCallback = void Function();
