@@ -23,19 +23,30 @@
 namespace flutter {
 namespace testing {
 
+std::string DlSurfaceProvider::BackendName(BackendType type) {
+  switch (type) {
+    case kMetalBackend:
+      return "Metal";
+    case kOpenGlBackend:
+      return "OpenGL";
+    case kSoftwareBackend:
+      return "Software";
+  }
+}
+
 std::unique_ptr<DlSurfaceProvider> DlSurfaceProvider::Create(
     BackendType backend_type) {
   switch (backend_type) {
 #ifdef ENABLE_SOFTWARE_BENCHMARKS
-    case kSoftware_Backend:
+    case kSoftwareBackend:
       return std::make_unique<DlSoftwareSurfaceProvider>();
 #endif
 #ifdef ENABLE_OPENGL_BENCHMARKS
-    case kOpenGL_Backend:
+    case kOpenGLBackend:
       return std::make_unique<DlOpenGLSurfaceProvider>();
 #endif
 #ifdef ENABLE_METAL_BENCHMARKS
-    case kMetal_Backend:
+    case kMetalBackend:
       return std::make_unique<DlMetalSurfaceProvider>();
 #endif
     default:

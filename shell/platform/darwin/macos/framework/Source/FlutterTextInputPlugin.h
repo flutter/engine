@@ -9,6 +9,11 @@
 
 @class FlutterTextField;
 
+@interface NSView (ClipsToBounds)
+// This property is available since macOS 10.9 but only declared in macOS 14 SDK.
+@property BOOL clipsToBounds API_AVAILABLE(macos(10.9));
+@end
+
 /**
  * A plugin to handle text input.
  *
@@ -64,5 +69,6 @@
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (NSRect)firstRectForCharacterRange:(NSRange)range actualRange:(NSRangePointer)actualRange;
 - (NSDictionary*)editingState;
+@property(nonatomic) NSTextInputContext* textInputContext;
 @property(readwrite, nonatomic) NSString* customRunLoopMode;
 @end

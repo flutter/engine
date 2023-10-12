@@ -1091,9 +1091,8 @@ class Paint {
   /// Constructs an empty [Paint] object with all fields initialized to
   /// their defaults.
   Paint() {
-    if (enableDithering) {
-      _dither = true;
-    }
+    // TODO(matanlurey): Remove as part of https://github.com/flutter/flutter/issues/112498.
+    _enableDithering();
   }
 
   // Paint objects are encoded in two buffers:
@@ -1479,26 +1478,10 @@ class Paint {
     _data.setInt32(_kInvertColorOffset, value ? 1 : 0, _kFakeHostEndian);
   }
 
-  bool get _dither {
-    return _data.getInt32(_kDitherOffset, _kFakeHostEndian) == 1;
+  // TODO(matanlurey): Remove as part of https://github.com/flutter/flutter/issues/112498.
+  void _enableDithering() {
+    _data.setInt32(_kDitherOffset, 1, _kFakeHostEndian);
   }
-  set _dither(bool value) {
-    _data.setInt32(_kDitherOffset, value ? 1 : 0, _kFakeHostEndian);
-  }
-
-  /// Whether to dither the output when drawing some elements such as gradients.
-  ///
-  /// It is not expected that this flag will be used in the future; please leave
-  /// feedback in <https://github.com/flutter/flutter/issues/112498> if there is
-  /// a use case for this flag to remain long term.
-  @Deprecated(
-    'Dithering is now enabled by default on some elements (such as gradients) '
-    'and further support for dithering is expected to be handled by custom '
-    'shaders, so this flag is being removed: '
-    'https://github.com/flutter/flutter/issues/112498.'
-    'This feature was deprecated after 3.14.0-0.1.pre.'
-  )
-  static bool enableDithering = true;
 
   @override
   String toString() {
@@ -1561,9 +1544,6 @@ class Paint {
     }
     if (invertColors) {
       result.write('${semicolon}invert: $invertColors');
-    }
-    if (_dither) {
-      result.write('${semicolon}dither: $_dither');
     }
     result.write(')');
     return result.toString();
@@ -3482,8 +3462,9 @@ class ColorFilter implements ImageFilter {
         _matrix = null,
         _type = _kTypeMode;
 
-  /// Construct a color filter that transforms a color by a 5x5 matrix, where
-  /// the fifth row is implicitly added in an identity configuration.
+  /// Construct a color filter from a 4x5 row-major matrix. The matrix is
+  /// interpreted as a 5x5 matrix, where the fifth row is the identity
+  /// configuration.
   ///
   /// Every pixel's color value, represented as an `[R, G, B, A]`, is matrix
   /// multiplied to create a new color:
@@ -4190,7 +4171,11 @@ base class Gradient extends Shader {
   /// If `colorStops` is provided, `colorStops[i]` is a number from 0.0 to 1.0
   /// that specifies where `color[i]` begins in the gradient. If `colorStops` is
   /// not provided, then only two stops, at 0.0 and 1.0, are implied (and
-  /// `color` must therefore only have two entries).
+  /// `color` must therefore only have two entries). Stop values less than 0.0
+  /// will be rounded up to 0.0 and stop values greater than 1.0 will be rounded
+  /// down to 1.0. Each stop value must be greater than or equal to the previous
+  /// stop value. Stop values that do not meet this criteria will be rounded up
+  /// to the previous stop value.
   ///
   /// The behavior before `from` and after `to` is described by the `tileMode`
   /// argument. For details, see the [TileMode] enum.
@@ -4232,7 +4217,11 @@ base class Gradient extends Shader {
   /// If `colorStops` is provided, `colorStops[i]` is a number from 0.0 to 1.0
   /// that specifies where `color[i]` begins in the gradient. If `colorStops` is
   /// not provided, then only two stops, at 0.0 and 1.0, are implied (and
-  /// `color` must therefore only have two entries).
+  /// `color` must therefore only have two entries). Stop values less than 0.0
+  /// will be rounded up to 0.0 and stop values greater than 1.0 will be rounded
+  /// down to 1.0. Each stop value must be greater than or equal to the previous
+  /// stop value. Stop values that do not meet this criteria will be rounded up
+  /// to the previous stop value.
   ///
   /// The behavior before and after the radius is described by the `tileMode`
   /// argument. For details, see the [TileMode] enum.
@@ -4294,7 +4283,11 @@ base class Gradient extends Shader {
   /// If `colorStops` is provided, `colorStops[i]` is a number from 0.0 to 1.0
   /// that specifies where `color[i]` begins in the gradient. If `colorStops` is
   /// not provided, then only two stops, at 0.0 and 1.0, are implied (and
-  /// `color` must therefore only have two entries).
+  /// `color` must therefore only have two entries). Stop values less than 0.0
+  /// will be rounded up to 0.0 and stop values greater than 1.0 will be rounded
+  /// down to 1.0. Each stop value must be greater than or equal to the previous
+  /// stop value. Stop values that do not meet this criteria will be rounded up
+  /// to the previous stop value.
   ///
   /// The behavior before `startAngle` and after `endAngle` is described by the
   /// `tileMode` argument. For details, see the [TileMode] enum.

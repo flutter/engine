@@ -8,6 +8,7 @@ import android.annotation.TargetApi;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
+import android.hardware.SyncFence;
 import android.media.Image;
 import android.os.Build;
 import android.os.Handler;
@@ -18,9 +19,9 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
-import io.flutter.embedding.engine.renderer.FlutterRenderer.ImageTextureRegistryEntry;
 import io.flutter.view.TextureRegistry;
 import io.flutter.view.TextureRegistry.ImageTextureEntry;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -223,15 +224,18 @@ public class FlutterRenderer implements TextureRegistry {
       this.textureWrapper = new SurfaceTextureWrapper(surfaceTexture, onFrameConsumed);
 
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-        // The callback relies on being executed on the UI thread (unsynchronised read of
+        // The callback relies on being executed on the UI thread (unsynchronised read
+        // of
         // mNativeView
         // and also the engine code check for platform thread in
         // Shell::OnPlatformViewMarkTextureFrameAvailable),
         // so we explicitly pass a Handler for the current thread.
         this.surfaceTexture().setOnFrameAvailableListener(onFrameListener, new Handler());
       } else {
-        // Android documentation states that the listener can be called on an arbitrary thread.
-        // But in practice, versions of Android that predate the newer API will call the listener
+        // Android documentation states that the listener can be called on an arbitrary
+        // thread.
+        // But in practice, versions of Android that predate the newer API will call the
+        // listener
         // on the thread where the SurfaceTexture was constructed.
         this.surfaceTexture().setOnFrameAvailableListener(onFrameListener);
       }
@@ -367,6 +371,9 @@ public class FlutterRenderer implements TextureRegistry {
     @Override
     @TargetApi(19)
     public void pushImage(Image image) {
+      if (released) {
+        return;
+      }
       Image toClose;
       synchronized (this) {
         toClose = this.image;
@@ -374,6 +381,7 @@ public class FlutterRenderer implements TextureRegistry {
       }
       // Close the previously pushed buffer.
       if (toClose != null) {
+        Log.e(TAG, "Dropping PlatformView Frame");
         toClose.close();
       }
       if (image != null) {
@@ -383,11 +391,25 @@ public class FlutterRenderer implements TextureRegistry {
     }
 
     @Override
+    @TargetApi(33)
     public Image acquireLatestImage() {
       Image r;
       synchronized (this) {
         r = this.image;
         this.image = null;
+      }
+      if (r != null) {
+        try {
+          SyncFence fence = r.getFence();
+          if (fence.getSignalTime() == SyncFence.SIGNAL_TIME_PENDING) {
+            boolean signaled = fence.awaitForever();
+            if (!signaled) {
+              Log.e(TAG, "acquireLatestImage image's fence was never signalled.");
+            }
+          }
+        } catch (IOException e) {
+          // Drop.
+        }
       }
       return r;
     }
@@ -479,9 +501,12 @@ public class FlutterRenderer implements TextureRegistry {
     if (surface != null) {
       flutterJNI.onSurfaceDestroyed();
 
-      // TODO(mattcarroll): the source of truth for this call should be FlutterJNI, which is where
-      // the call to onFlutterUiDisplayed() comes from. However, no such native callback exists yet,
-      // so until the engine and FlutterJNI are configured to call us back when rendering stops,
+      // TODO(mattcarroll): the source of truth for this call should be FlutterJNI,
+      // which is where
+      // the call to onFlutterUiDisplayed() comes from. However, no such native
+      // callback exists yet,
+      // so until the engine and FlutterJNI are configured to call us back when
+      // rendering stops,
       // we will manually monitor that change here.
       if (isDisplayingFlutterUi) {
         flutterUiDisplayListener.onFlutterUiNoLongerDisplayed();
