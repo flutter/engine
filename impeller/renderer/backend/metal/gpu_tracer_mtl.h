@@ -8,28 +8,44 @@
 
 #include <memory>
 #include <optional>
+#include "impeller/base/thread.h"
+#include "impeller/base/thread_safety.h"
+#include "impeller/geometry/scalar.h"
 
 namespace impeller {
 
 class ContextMTL;
 
+/// @brief Approximate the GPU frame time by computing a difference between the
+/// smallest
+///        GPUStartTime and largest GPUEndTime for all cmd buffers submitted in
+///        a frame workload.
 class GPUTracerMTL {
  public:
-  explicit GPUTracerMTL(const std::weak_ptr<ContextMTL>& context);
+  GPUTracerMTL() = default;
 
   ~GPUTracerMTL() = default;
 
-  /// @brief Record the approximate start time of the GPU workload for the
-  ///        current frame.
-  void RecordStartFrameTime();
+  /// @brief Record that the current frame has ended. Any additional cmd buffers
+  /// will be
+  ///        attributed to the "next" frame.
+  void MarkFrameEnd();
 
-  /// @brief Record the approximate end time of the GPU workload for the current
-  ///        frame.
-  void RecordEndFrameTime();
+  /// @brief Record the current cmd buffer GPU execution timestamps into an
+  /// aggregate
+  ///        frame workload metric.
+  void RecordCmdBuffer(id<MTLCommandBuffer> buffer);
 
  private:
-  std::weak_ptr<ContextMTL> context_;
-  CFTimeInterval pending_interval_;
+  struct GPUTraceState {
+    Scalar smallest_timestamp = std::numeric_limits<float>::max();
+    Scalar largest_timestamp = 0;
+    size_t pending_buffers = 0;
+  };
+
+  mutable Mutex trace_state_mutex_;
+  GPUTraceState trace_states_[16] IPLR_GUARDED_BY(trace_state_mutex_);
+  size_t current_state_ IPLR_GUARDED_BY(trace_state_mutex_) = 0u;
 };
 
 }  // namespace impeller

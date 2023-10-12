@@ -13,40 +13,41 @@
 
 namespace impeller {
 
-GPUTracerMTL::GPUTracerMTL(const std::weak_ptr<ContextMTL>& context)
-    : context_(context) {}
-
-void GPUTracerMTL::RecordStartFrameTime() {
-  if (@available(ios 10.3, tvos 10.2, macos 10.15, macCatalyst 13.0, *)) {
-    auto strong_context = context_.lock();
-    if (!strong_context) {
-      return;
-    }
-    auto cmd_buffer = strong_context->CreateMTLCommandBuffer("FrameStartTime");
-    [cmd_buffer addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
-      pending_interval_ = buffer.GPUStartTime;
-    }];
-    [cmd_buffer commit];
-  }
+void GPUTracerMTL::MarkFrameEnd() {
+#ifdef IMPELLER_DEBUG
+  Lock lock(trace_state_mutex_);
+  current_state_ = (current_state_ + 1) % 16;
+#endif  // IMPELLER_DEBUG
 }
 
-void GPUTracerMTL::RecordEndFrameTime() {
+void GPUTracerMTL::RecordCmdBuffer(id<MTLCommandBuffer> buffer) {
+#ifdef IMPELLER_DEBUG
+  Lock lock(trace_state_mutex_);
+  auto current_state = current_state_;
+  trace_states_[current_state].pending_buffers += 1;
+
   if (@available(ios 10.3, tvos 10.2, macos 10.15, macCatalyst 13.0, *)) {
-    auto strong_context = context_.lock();
-    if (!strong_context) {
-      return;
-    }
-    auto cmd_buffer = strong_context->CreateMTLCommandBuffer("FrameEndTime");
-    [cmd_buffer addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
-      auto end = buffer.GPUEndTime;
-      // Convert deltas in seconds into milliseconds.
-      auto gpu_ms = (end - pending_interval_) * 1000;
-      FML_TRACE_COUNTER("flutter", "GPUTracer",
-                        1234,  // Trace Counter ID
-                        "FrameTimeMS", gpu_ms);
+    [buffer addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
+      Lock lock(trace_state_mutex_);
+      auto& state = trace_states_[current_state];
+      state.pending_buffers--;
+      state.smallest_timestamp = std::min(
+          state.smallest_timestamp, static_cast<Scalar>(buffer.GPUStartTime));
+      state.largest_timestamp = std::max(
+          state.largest_timestamp, static_cast<Scalar>(buffer.GPUEndTime));
+
+      if (state.pending_buffers == 0) {
+        auto gpu_ms =
+            (state.largest_timestamp - state.smallest_timestamp) * 1000;
+        state.smallest_timestamp = std::numeric_limits<float>::max();
+        state.largest_timestamp = 0;
+        FML_TRACE_COUNTER("flutter", "GPUTracer",
+                          1234,  // Trace Counter ID
+                          "FrameTimeMS", gpu_ms);
+      }
     }];
-    [cmd_buffer commit];
   }
+#endif  // IMPELLER_DEBUG
 }
 
 }  // namespace impeller

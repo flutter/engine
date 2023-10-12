@@ -159,6 +159,12 @@ static CommandBuffer::Status ToCommitResult(MTLCommandBufferStatus status) {
 }
 
 bool CommandBufferMTL::OnSubmitCommands(CompletionCallback callback) {
+  auto context = context_.lock();
+  if (!context) {
+    return false;
+  }
+  ContextMTL::Cast(*context).GetGPUTracer()->RecordCmdBuffer(buffer_);
+
   if (callback) {
     [buffer_
         addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
@@ -189,6 +195,8 @@ bool CommandBufferMTL::SubmitCommandsAsync(
   [buffer_ enqueue];
   auto buffer = buffer_;
   buffer_ = nil;
+
+  ContextMTL::Cast(*context).GetGPUTracer()->RecordCmdBuffer(buffer);
 
   auto worker_task_runner = ContextMTL::Cast(*context).GetWorkerTaskRunner();
   auto mtl_render_pass = static_cast<RenderPassMTL*>(render_pass.get());

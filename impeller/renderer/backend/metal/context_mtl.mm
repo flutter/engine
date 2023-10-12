@@ -144,7 +144,7 @@ ContextMTL::ContextMTL(
 
   device_capabilities_ =
       InferMetalCapabilities(device_, PixelFormat::kB8G8R8A8UNormInt);
-  gpu_tracer_ = std::make_shared<GPUTracerMTL>(weak_from_this());
+  gpu_tracer_ = std::make_shared<GPUTracerMTL>();
   is_valid_ = true;
 }
 
