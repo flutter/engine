@@ -200,6 +200,61 @@ public class ProcessTextPluginTest {
     verify(result).success(processedText);
   }
 
+  @SuppressWarnings("deprecation")
+  // setMessageHandler is deprecated.
+  @Test
+  public void doNotCrashOnNonRelatedActivityResult() {
+    DartExecutor mockBinaryMessenger = mock(DartExecutor.class);
+    PackageManager mockPackageManager = mock(PackageManager.class);
+    ProcessTextChannel processTextChannel =
+        new ProcessTextChannel(mockBinaryMessenger, mockPackageManager);
+
+    // Set up mocked result for PackageManager.queryIntentActivities.
+    ResolveInfo action1 = createFakeResolveInfo("Action1", mockPackageManager);
+    ResolveInfo action2 = createFakeResolveInfo("Action2", mockPackageManager);
+    List<ResolveInfo> infos = new ArrayList<ResolveInfo>(Arrays.asList(action1, action2));
+    when(mockPackageManager.queryIntentActivities(
+            any(Intent.class), any(PackageManager.ResolveInfoFlags.class)))
+        .thenReturn(infos);
+
+    // ProcessTextPlugin should retrieve the mocked text actions.
+    ProcessTextPlugin processTextPlugin = new ProcessTextPlugin(processTextChannel);
+    Map<String, String> textActions = processTextPlugin.queryTextActions();
+    final String action1Id = "mockActivityName.Action1";
+    final String action2Id = "mockActivityName.Action2";
+    assertEquals(textActions, Map.of(action1Id, "Action1", action2Id, "Action2"));
+
+    // Set up the activity binding.
+    ActivityPluginBinding mockActivityPluginBinding = mock(ActivityPluginBinding.class);
+    Activity mockActivity = mock(Activity.class);
+    when(mockActivityPluginBinding.getActivity()).thenReturn(mockActivity);
+    processTextPlugin.onAttachedToActivity(mockActivityPluginBinding);
+
+    // Execute the first action.
+    String textToBeProcessed = "Flutter!";
+    MethodChannel.Result result = mock(MethodChannel.Result.class);
+    processTextPlugin.processTextAction(action1Id, textToBeProcessed, false, result);
+
+    // Activity.startActivityForResult should have been called.
+    ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+    verify(mockActivity, times(1)).startActivityForResult(intentCaptor.capture(), anyInt());
+    Intent intent = intentCaptor.getValue();
+    assertEquals(intent.getStringExtra(Intent.EXTRA_PROCESS_TEXT), textToBeProcessed);
+
+    // Result to a request not sent by this plugin should be ignored.
+    final int externalRequestCode = 42;
+    processTextPlugin.onActivityResult(externalRequestCode, Activity.RESULT_OK, new Intent());
+
+    // Simulate an Android activity answer which returns a transformed text.
+    String processedText = "Flutter!!!";
+    Intent resultIntent = new Intent();
+    resultIntent.putExtra(Intent.EXTRA_PROCESS_TEXT, processedText);
+    processTextPlugin.onActivityResult(result.hashCode(), Activity.RESULT_OK, resultIntent);
+
+    // Success with the transformed text is expected.
+    verify(result).success(processedText);
+  }
+
   private ResolveInfo createFakeResolveInfo(String label, PackageManager mockPackageManager) {
     ResolveInfo resolveInfo = mock(ResolveInfo.class);
     ActivityInfo activityInfo = new ActivityInfo();

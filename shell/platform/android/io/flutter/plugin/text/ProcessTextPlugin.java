@@ -137,6 +137,11 @@ public class ProcessTextPlugin
   @TargetApi(Build.VERSION_CODES.M)
   @RequiresApi(Build.VERSION_CODES.M)
   public boolean onActivityResult(int requestCode, int resultCode, @Nullable Intent intent) {
+    // Return early if the result is not related to a request sent by this plugin.
+    if (!requestsByCode.containsKey(requestCode)) {
+      return false;
+    }
+
     String result = null;
     if (resultCode == Activity.RESULT_OK) {
       result = intent.getStringExtra(Intent.EXTRA_PROCESS_TEXT);
