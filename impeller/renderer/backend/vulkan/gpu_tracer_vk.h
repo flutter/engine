@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 #include <memory>
+
 #include "impeller/renderer/backend/vulkan/context_vk.h"
-#include "impeller/renderer/backend/vulkan/vk.h"
 
 namespace impeller {
 
@@ -12,7 +12,7 @@ namespace impeller {
 /// execution time.
 class GPUTracerVK {
  public:
-  explicit GPUTracerVK(const std::shared_ptr<ContextVK>& context);
+  explicit GPUTracerVK(const std::weak_ptr<ContextVK>& context);
 
   ~GPUTracerVK() = default;
 
@@ -27,7 +27,7 @@ class GPUTracerVK {
  private:
   void ResetQueryPool(size_t pool);
 
-  const std::shared_ptr<ContextVK> context_;
+  const std::weak_ptr<ContextVK> context_;
   vk::UniqueQueryPool query_pool_ = {};
 
   size_t current_index_ = 0u;

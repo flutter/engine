@@ -16,17 +16,24 @@ namespace impeller {
 
 static constexpr uint32_t kPoolSize = 128u;
 
-GPUTracerVK::GPUTracerVK(const std::shared_ptr<ContextVK>& context)
+GPUTracerVK::GPUTracerVK(const std::weak_ptr<ContextVK>& context)
     : context_(context) {
-  timestamp_period_ =
-      context_->GetPhysicalDevice().getProperties().limits.timestampPeriod;
-  FML_LOG(ERROR)
-      << context_->GetPhysicalDevice().getProperties().limits.timestampPeriod;
+  auto strong_context = context_.lock();
+  if (!strong_context) {
+    return;
+  }
+  timestamp_period_ = strong_context->GetPhysicalDevice()
+                          .getProperties()
+                          .limits.timestampPeriod;
+  if (timestamp_period_ <= 0) {
+    // The device does not support timestamp queries.
+    return;
+  }
   vk::QueryPoolCreateInfo info;
   info.queryCount = kPoolSize;
   info.queryType = vk::QueryType::eTimestamp;
 
-  auto [status, pool] = context_->GetDevice().createQueryPoolUnique(info);
+  auto [status, pool] = strong_context->GetDevice().createQueryPoolUnique(info);
   if (status != vk::Result::eSuccess) {
     VALIDATION_LOG << "Failed to create query pool.";
     return;
@@ -39,7 +46,11 @@ void GPUTracerVK::RecordStartFrameTime() {
   if (!valid_) {
     return;
   }
-  auto buffer = context_->CreateCommandBuffer();
+  auto strong_context = context_.lock();
+  if (!strong_context) {
+    return;
+  }
+  auto buffer = strong_context->CreateCommandBuffer();
   auto vk_trace_cmd_buffer =
       CommandBufferVK::Cast(*buffer).GetEncoder()->GetCommandBuffer();
   // The two commands below are executed in order, such that writeTimeStamp is
@@ -67,11 +78,16 @@ void GPUTracerVK::RecordEndFrameTime() {
   if (!valid_ || !started_frame_) {
     return;
   }
+  auto strong_context = context_.lock();
+  if (!strong_context) {
+    return;
+  }
+
   started_frame_ = false;
   auto last_query = current_index_;
   current_index_ += 1;
 
-  auto buffer = context_->CreateCommandBuffer();
+  auto buffer = strong_context->CreateCommandBuffer();
   auto vk_trace_cmd_buffer =
       CommandBufferVK::Cast(*buffer).GetEncoder()->GetCommandBuffer();
   vk_trace_cmd_buffer.resetQueryPool(query_pool_.get(), current_index_, 1);
@@ -80,9 +96,15 @@ void GPUTracerVK::RecordEndFrameTime() {
 
   // On completion of the second time stamp recording, we read back this value
   // and the previous value. The difference is approximately the frame time.
-  if (!buffer->SubmitCommands([&, last_query](CommandBuffer::Status status) {
+  const auto device_holder = strong_context->GetDeviceHolder();
+  if (!buffer->SubmitCommands([&, last_query,
+                               device_holder](CommandBuffer::Status status) {
+        auto strong_context = context_.lock();
+        if (!strong_context) {
+          return;
+        }
         uint64_t bits[2] = {0, 0};
-        auto result = context_->GetDevice().getQueryPoolResults(
+        auto result = device_holder->GetDevice().getQueryPoolResults(
             query_pool_.get(), last_query, 2, sizeof(bits), &bits,
             sizeof(int64_t), vk::QueryResultFlagBits::e64);
 
