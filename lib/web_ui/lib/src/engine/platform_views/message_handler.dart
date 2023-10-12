@@ -63,13 +63,12 @@ class PlatformViewMessageHandler {
   /// If all goes well, this function will `callback` with an empty success envelope.
   /// In case of error, this will `callback` with an error envelope describing the error.
   void _createPlatformView(
-    MethodCall methodCall,
+    Map<dynamic, dynamic> arguments,
     _PlatformMessageResponseCallback callback,
   ) {
-    final Map<dynamic, dynamic> args = methodCall.arguments as Map<dynamic, dynamic>;
-    final int viewId = args.readInt('id');
-    final String viewType = args.readString('viewType');
-    final Object? params = args['params'];
+    final int viewId = arguments.readInt('id');
+    final String viewType = arguments.readString('viewType');
+    final Object? params = arguments['params'];
 
     if (!_contentManager.knowsViewType(viewType)) {
       callback(_codec.encodeErrorEnvelope(
@@ -114,16 +113,35 @@ class PlatformViewMessageHandler {
   ///
   /// This function should always `callback` with an empty success envelope.
   void _disposePlatformView(
-    MethodCall methodCall,
+    int viewId,
     _PlatformMessageResponseCallback callback,
   ) {
-    final int viewId = methodCall.arguments as int;
-
     // The contentManager removes the slot and the contents from its internal
     // cache, and the DOM.
     _contentManager.clearPlatformView(viewId);
 
     callback(_codec.encodeSuccessEnvelope(null));
+  }
+
+  /// Handles legacy PlatformViewCalls that don't contain a `flutterViewId`.
+  ///
+  /// This is transitional code to support the old platform view channel. As
+  /// soon as the framework code is updated to send the `flutterViewId`, this
+  /// method can be removed.
+  void handleLegacyPlatformViewCall(
+    String method,
+    dynamic arguments,
+    _PlatformMessageResponseCallback callback,
+  ) {
+    switch (method) {
+      case 'create':
+        _createPlatformView(arguments as Map<dynamic, dynamic>, callback);
+        return;
+      case 'dispose':
+        _disposePlatformView(arguments as int, callback);
+        return;
+    }
+    callback(null);
   }
 
   /// Handles a PlatformViewCall to the `flutter/platform_views` channel.
@@ -132,16 +150,16 @@ class PlatformViewMessageHandler {
   /// * `create`: See [_createPlatformView]
   /// * `dispose`: See [_disposePlatformView]
   void handlePlatformViewCall(
-    ByteData? data,
+    String method,
+    Map<dynamic, dynamic> arguments,
     _PlatformMessageResponseCallback callback,
   ) {
-    final MethodCall decoded = _codec.decodeMethodCall(data);
-    switch (decoded.method) {
+    switch (method) {
       case 'create':
-        _createPlatformView(decoded, callback);
+        _createPlatformView(arguments, callback);
         return;
       case 'dispose':
-        _disposePlatformView(decoded, callback);
+        _disposePlatformView(arguments.readInt('id'), callback);
         return;
     }
     callback(null);

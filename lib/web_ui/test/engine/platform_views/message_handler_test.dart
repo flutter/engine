@@ -37,9 +37,13 @@ void testMain() {
             platformViewsContainer: createDomElement('div'),
             contentManager: contentManager,
           );
-          final ByteData? message = _getCreateMessage(viewType, viewId);
+          final Map<dynamic, dynamic> arguments = _getCreateArguments(
+            viewType: viewType,
+            viewId: viewId,
+            flutterViewId: kImplicitViewId,
+          );
 
-          messageHandler.handlePlatformViewCall(message, completer.complete);
+          messageHandler.handlePlatformViewCall('create', arguments, completer.complete);
 
           final ByteData? response = await completer.future;
           try {
@@ -59,9 +63,13 @@ void testMain() {
             platformViewsContainer: createDomElement('div'),
             contentManager: contentManager,
           );
-          final ByteData? message = _getCreateMessage(viewType, viewId);
+          final Map<dynamic, dynamic> arguments = _getCreateArguments(
+            viewType: viewType,
+            viewId: viewId,
+            flutterViewId: kImplicitViewId,
+          );
 
-          messageHandler.handlePlatformViewCall(message, completer.complete);
+          messageHandler.handlePlatformViewCall('create', arguments, completer.complete);
 
           final ByteData? response = await completer.future;
           try {
@@ -80,9 +88,13 @@ void testMain() {
             platformViewsContainer: createDomElement('div'),
             contentManager: contentManager,
           );
-          final ByteData? message = _getCreateMessage(viewType, viewId);
+          final Map<dynamic, dynamic> arguments = _getCreateArguments(
+            viewType: viewType,
+            viewId: viewId,
+            flutterViewId: kImplicitViewId,
+          );
 
-          messageHandler.handlePlatformViewCall(message, completer.complete);
+          messageHandler.handlePlatformViewCall('create', arguments, completer.complete);
 
           final ByteData? response = await completer.future;
           expect(codec.decodeEnvelope(response!), isNull,
@@ -99,9 +111,13 @@ void testMain() {
             platformViewsContainer: platformViewsContainer,
             contentManager: contentManager,
           );
-          final ByteData? message = _getCreateMessage(viewType, viewId);
+          final Map<dynamic, dynamic> arguments = _getCreateArguments(
+            viewType: viewType,
+            viewId: viewId,
+            flutterViewId: kImplicitViewId,
+          );
 
-          messageHandler.handlePlatformViewCall(message, completer.complete);
+          messageHandler.handlePlatformViewCall('create', arguments, completer.complete);
 
           final ByteData? response = await completer.future;
 
@@ -138,25 +154,48 @@ void testMain() {
 
           completers.add(Completer<ByteData?>());
           messageHandler.handlePlatformViewCall(
-            _getCreateMessage(viewType, 111),
+            'create',
+            _getCreateArguments(
+              viewType: viewType,
+              viewId: 111,
+              flutterViewId: kImplicitViewId,
+            ),
             completers.last.complete,
           );
 
           completers.add(Completer<ByteData?>());
           messageHandler.handlePlatformViewCall(
-            _getCreateMessage(viewType, 222, <dynamic, dynamic>{'foo': 'bar'}),
+            'create',
+            _getCreateArguments(
+              viewType: viewType,
+              viewId: 222,
+              flutterViewId: kImplicitViewId,
+              params: <dynamic, dynamic>{'foo': 'bar'},
+            ),
             completers.last.complete,
           );
 
           completers.add(Completer<ByteData?>());
           messageHandler.handlePlatformViewCall(
-            _getCreateMessage(viewType, 333, 'foobar'),
+            'create',
+            _getCreateArguments(
+              viewType: viewType,
+              viewId: 333,
+              flutterViewId: kImplicitViewId,
+              params: 'foobar',
+            ),
             completers.last.complete,
           );
 
           completers.add(Completer<ByteData?>());
           messageHandler.handlePlatformViewCall(
-            _getCreateMessage(viewType, 444, <dynamic>[1, null, 'str']),
+            'create',
+            _getCreateArguments(
+              viewType: viewType,
+              viewId: 444,
+              flutterViewId: kImplicitViewId,
+              params: <dynamic>[1, null, 'str'],
+            ),
             completers.last.complete,
           );
 
@@ -193,10 +232,14 @@ void testMain() {
             platformViewsContainer: createDomElement('div'),
             contentManager: contentManager,
           );
-          final ByteData? message = _getCreateMessage(viewType, viewId);
+          final Map<dynamic, dynamic> arguments = _getCreateArguments(
+            viewType: viewType,
+            viewId: viewId,
+            flutterViewId: kImplicitViewId,
+          );
 
           expect(() {
-            messageHandler.handlePlatformViewCall(message, (_) {});
+            messageHandler.handlePlatformViewCall('create', arguments, (_) {});
           }, throwsA(isA<TypeError>()));
         });
       });
@@ -213,9 +256,12 @@ void testMain() {
             platformViewsContainer: createDomElement('div'),
             contentManager: contentManager,
           );
-          final ByteData? message = _getDisposeMessage(viewId);
+          final Map<dynamic, dynamic> arguments = _getDisposeArguments(
+            viewId: viewId,
+            flutterViewId: kImplicitViewId,
+          );
 
-          messageHandler.handlePlatformViewCall(message, completer.complete);
+          messageHandler.handlePlatformViewCall('dispose', arguments, completer.complete);
 
           final ByteData? response = await completer.future;
           expect(codec.decodeEnvelope(response!), isNull,
@@ -228,9 +274,12 @@ void testMain() {
             platformViewsContainer: createDomElement('div'),
             contentManager: _FakePlatformViewManager(viewIdCompleter.complete),
           );
-          final ByteData? message = _getDisposeMessage(viewId);
+          final Map<dynamic, dynamic> arguments = _getDisposeArguments(
+            viewId: viewId,
+            flutterViewId: kImplicitViewId,
+          );
 
-          messageHandler.handlePlatformViewCall(message, completer.complete);
+          messageHandler.handlePlatformViewCall('dispose', arguments, completer.complete);
 
           final int disposedViewId = await viewIdCompleter.future;
           expect(disposedViewId, viewId,
@@ -254,20 +303,26 @@ class _FakePlatformViewManager extends PlatformViewManager {
   }
 }
 
-ByteData? _getCreateMessage(String viewType, int viewId, [Object? params]) {
-  return codec.encodeMethodCall(MethodCall(
-    'create',
-    <String, dynamic>{
-      'id': viewId,
-      'viewType': viewType,
-      if (params != null) 'params': params,
-    },
-  ));
+Map<dynamic, dynamic> _getCreateArguments({
+  required String viewType,
+  required int viewId,
+  required int flutterViewId,
+  Object? params,
+}) {
+  return <String, dynamic>{
+    'id': viewId,
+    'viewType': viewType,
+    if (params != null) 'params': params,
+    'flutterViewId': flutterViewId,
+  };
 }
 
-ByteData? _getDisposeMessage(int viewId) {
-  return codec.encodeMethodCall(MethodCall(
-    'dispose',
-    viewId,
-  ));
+Map<dynamic, dynamic> _getDisposeArguments({
+  required int viewId,
+  required int flutterViewId,
+}) {
+  return <dynamic, dynamic>{
+    'id': viewId,
+    'flutterViewId': flutterViewId,
+  };
 }
