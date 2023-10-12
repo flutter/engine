@@ -20,7 +20,7 @@ GPUTracerVK::GPUTracerVK(const std::shared_ptr<ContextVK>& context)
     : context_(context) {
   timestamp_period_ =
       context_->GetPhysicalDevice().getProperties().limits.timestampPeriod;
-
+  FML_LOG(ERROR) << context_->GetPhysicalDevice().getProperties().limits.timestampPeriod;
   vk::QueryPoolCreateInfo info;
   info.queryCount = kPoolSize;
   info.queryType = vk::QueryType::eTimestamp;
