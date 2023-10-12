@@ -145,7 +145,7 @@ class ContextVK final : public Context,
 
   std::shared_ptr<CommandPoolRecyclerVK> GetCommandPoolRecycler() const;
 
-   std::shared_ptr<GPUTracerVK> GetGPUTracer() const;
+  std::shared_ptr<GPUTracerVK> GetGPUTracer() const;
 
   void RecordFrameEndTime() const;
 
