@@ -25,6 +25,9 @@ class RawKeyboard {
   /// Use the [instance] getter to get the singleton after calling this method.
   static void initialize({bool onMacOs = false}) {
     _instance ??= RawKeyboard._(onMacOs);
+    // KeyboardBinding is instance is responsible for forwarding the keyboard
+    // events to the RawKeyboard handler.
+    KeyboardBinding.initInstance();
   }
 
   /// The [RawKeyboard] singleton.
@@ -36,7 +39,6 @@ class RawKeyboard {
   /// The timer is for when to synthesize a keyup for the [KeyboardEvent.code]
   /// if no repeat events were received.
   final Map<String, Timer> _keydownTimers = <String, Timer>{};
-
 
   /// Uninitializes the [RawKeyboard] singleton.
   ///
