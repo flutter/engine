@@ -25,7 +25,7 @@ class RawKeyboard {
   /// Use the [instance] getter to get the singleton after calling this method.
   static void initialize({bool onMacOs = false}) {
     _instance ??= RawKeyboard._(onMacOs);
-    // KeyboardBinding is instance is responsible for forwarding the keyboard
+    // KeyboardBinding is responsible for forwarding the keyboard
     // events to the RawKeyboard handler.
     KeyboardBinding.initInstance();
   }
