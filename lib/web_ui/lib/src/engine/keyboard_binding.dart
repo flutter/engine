@@ -5,6 +5,7 @@
 import 'dart:js_interop';
 
 import 'package:meta/meta.dart';
+import 'package:ui/src/engine/raw_keyboard.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:web_locale_keymap/web_locale_keymap.dart' as locale_keymap;
 
@@ -104,9 +105,11 @@ class KeyboardBinding {
     _addEventListener('keydown', (DomEvent domEvent) {
       final FlutterHtmlKeyboardEvent event = FlutterHtmlKeyboardEvent(domEvent as DomKeyboardEvent);
       _converter.handleEvent(event);
+      RawKeyboard.instance?.handleHtmlEvent(domEvent);
     });
-    _addEventListener('keyup', (DomEvent event) {
-      _converter.handleEvent(FlutterHtmlKeyboardEvent(event as DomKeyboardEvent));
+    _addEventListener('keyup', (DomEvent domEvent) {
+      _converter.handleEvent(FlutterHtmlKeyboardEvent(domEvent as DomKeyboardEvent));
+      RawKeyboard.instance?.handleHtmlEvent(domEvent);
     });
   }
 
@@ -209,6 +212,7 @@ class FlutterHtmlKeyboardEvent {
 
   bool getModifierState(String key) => _event.getModifierState(key);
   void preventDefault() => _event.preventDefault();
+  void stopPropagation() => _event.stopPropagation();
   bool get defaultPrevented => _event.defaultPrevented;
 }
 
