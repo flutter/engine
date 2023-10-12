@@ -75,13 +75,24 @@ void applyGlobalCssRulesToSheet(
   // The invisible semantic text field may have a visible cursor and selection
   // highlight. The following 2 CSS rules force everything to be transparent.
   sheet.insertRule('''
-    $cssSelectorPrefix input::selection {
+    $cssSelectorPrefix flt-text-editing-host input::selection {
       background-color: transparent;
     }
   ''', sheet.cssRules.length);
   sheet.insertRule('''
-    $cssSelectorPrefix textarea::selection {
+    $cssSelectorPrefix flt-text-editing-host textarea::selection {
       background-color: transparent;
+    }
+  ''', sheet.cssRules.length);
+  sheet.insertRule('''
+    $cssSelectorPrefix flt-glass-pane {
+      --selection-background: #000000;
+    }
+  ''', sheet.cssRules.length);
+
+  sheet.insertRule('''
+    $cssSelectorPrefix .customInputSelection::selection {
+      background-color: var(--selection-background);
     }
   ''', sheet.cssRules.length);
 
