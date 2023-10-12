@@ -41,6 +41,8 @@ class QueueVK {
 
   void InsertDebugMarker(const char* label) const;
 
+  size_t GetTimestampBits() const;
+
  private:
   mutable Mutex queue_mutex_;
 

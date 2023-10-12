@@ -105,6 +105,8 @@ impeller_component("vulkan") {
     "vk.h",
     "vma.cc",
     "vma.h",
+    "gpu_tracer_vk.h",
+    "gpu_tracer_vk.cc"
   ]
 
   public_deps = [
