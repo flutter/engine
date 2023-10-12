@@ -14,6 +14,7 @@ import argparse
 import os
 import re
 import sys
+import json
 
 SCRIPT_DIR = os.path.dirname(sys.argv[0])
 CHECKOUT_ROOT = os.path.realpath(os.path.join(SCRIPT_DIR, '..'))
@@ -59,16 +60,26 @@ def parse_deps_file(deps_file):
 
   # Extract the deps and filter.
   deps = local_scope.get('deps', {})
-  filtered_deps = []
+  filtered_osv_deps = []
   for _, dep in deps.items():
     # We currently do not support packages or cipd which are represented
     # as dictionaries.
-    if isinstance(dep, str):
-      filtered_deps.append(dep)
-  return filtered_deps
+    if not isinstance(dep, str):
+      continue
+
+    dep_split = dep.rsplit('@', 1)
+    filtered_osv_deps.append({
+        'package': {'name': dep_split[0], 'commit': dep_split[1]}
+    })
+
+  osv_result = {
+      'packageSource': {'path': deps_file, 'type': 'lockfile'},
+      'packages': filtered_osv_deps
+  }
+  return osv_result
 
 
-def parse_readme(deps):
+def parse_readme():
   """
   Opens the Flutter Accessibility Library README and uses the commit hash
   found in the README to check for viulnerabilities.
@@ -80,14 +91,20 @@ def parse_readme(deps):
     content = file.readlines()
     commit_line = content[CHROMIUM_README_COMMIT_LINE]
     commit = re.search(r'(?<=\[).*(?=\])', commit_line)
-    deps.append(CHROMIUM + '@' + commit.group())
-    return deps
+
+    osv_result = {
+        'packageSource': {'path': file_path, 'type': 'lockfile'},
+        'packages': [{'package': {'name': CHROMIUM, 'commit': commit.group()}}]
+    }
+
+    return osv_result
 
 
 def write_manifest(deps, manifest_file):
-  print('\n'.join(sorted(deps)))
+  output = {'results': deps}
+  print(json.dumps(output, indent=2))
   with open(manifest_file, 'w') as manifest:
-    manifest.write('\n'.join(sorted(deps)))
+    json.dump(output, manifest, indent=2)
 
 
 def parse_args(args):
@@ -116,9 +133,9 @@ def parse_args(args):
 
 def main(argv):
   args = parse_args(argv)
-  deps = parse_deps_file(args.deps)
-  deps = parse_readme(deps)
-  write_manifest(deps, args.output)
+  deps_deps = parse_deps_file(args.deps)
+  readme_deps = parse_readme()
+  write_manifest([deps_deps, readme_deps], args.output)
   return 0
 
 
