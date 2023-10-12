@@ -15,6 +15,7 @@
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/sampler.h"
 #include "impeller/renderer/backend/metal/allocator_mtl.h"
+#include "impeller/renderer/backend/metal/app_state_notifier.h"
 #include "impeller/renderer/backend/metal/command_buffer_mtl.h"
 #include "impeller/renderer/backend/metal/pipeline_library_mtl.h"
 #include "impeller/renderer/backend/metal/shader_library_mtl.h"
@@ -93,6 +94,9 @@ class ContextMTL final : public Context,
 
   std::shared_ptr<const fml::SyncSwitch> GetIsGpuDisabledSyncSwitch() const;
 
+  // |Context|
+  void StoreTaskForGPU(std::function<void()> task) override;
+
  private:
   id<MTLDevice> device_ = nullptr;
   id<MTLCommandQueue> command_queue_ = nullptr;
@@ -103,6 +107,8 @@ class ContextMTL final : public Context,
   std::shared_ptr<const Capabilities> device_capabilities_;
   std::shared_ptr<fml::ConcurrentMessageLoop> raster_message_loop_;
   std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch_;
+  std::vector<std::function<void()>> tasks_awaiting_gpu_;
+  AppStateNotifier app_state_notifier_;
   bool is_valid_ = false;
 
   ContextMTL(
@@ -113,6 +119,8 @@ class ContextMTL final : public Context,
 
   std::shared_ptr<CommandBuffer> CreateCommandBufferInQueue(
       id<MTLCommandQueue> queue) const;
+
+  void FlushTasksAwaitingGPU();
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContextMTL);
 };

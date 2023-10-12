@@ -176,6 +176,12 @@ class Context {
 
   CaptureContext capture;
 
+  /// Threadsafe.
+  /// `task` should be executed on the platform thread.
+  virtual void StoreTaskForGPU(std::function<void()> task) {
+    FML_CHECK(false && "not supported in this context");
+  }
+
  protected:
   Context();
 

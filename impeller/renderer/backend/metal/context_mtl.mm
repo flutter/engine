@@ -83,6 +83,9 @@ ContextMTL::ContextMTL(
     return;
   }
 
+  app_state_notifier_.SetAppDidBecomeActiveCallback(
+      [this] { this->FlushTasksAwaitingGPU(); });
+
   // Worker task runner.
   {
     raster_message_loop_ = fml::ConcurrentMessageLoop::Create(
@@ -374,6 +377,17 @@ id<MTLCommandBuffer> ContextMTL::CreateMTLCommandBuffer(
     [buffer setLabel:@(label.data())];
   }
   return buffer;
+}
+
+void ContextMTL::StoreTaskForGPU(std::function<void()> task) {
+  tasks_awaiting_gpu_.emplace_back(std::move(task));
+}
+
+void ContextMTL::FlushTasksAwaitingGPU() {
+  for (const auto& task : tasks_awaiting_gpu_) {
+    task();
+  }
+  tasks_awaiting_gpu_.clear();
 }
 
 }  // namespace impeller
