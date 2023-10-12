@@ -166,6 +166,7 @@ std::unique_ptr<SurfaceMTL> SurfaceMTL::MakeFromTexture(
     destination_texture = render_target->GetRenderTargetTexture();
   }
 
+  ContextMTL::Cast(context.get())->GetGPUTracer()->RecordStartFrameTime();
   return std::unique_ptr<SurfaceMTL>(new SurfaceMTL(
       context,                                  // context
       *render_target,                           // target
@@ -246,6 +247,7 @@ bool SurfaceMTL::Present() const {
       return false;
     }
   }
+  ContextMTL::Cast(context.get())->GetGPUTracer()->RecordEndFrameTime();
 
   if (drawable_) {
     id<MTLCommandBuffer> command_buffer =
