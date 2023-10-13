@@ -3664,5 +3664,25 @@ TEST_P(AiksTest,
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+// This should be solid red, if you see a little red box this is broken.
+TEST_P(AiksTest, ClearColorOptimizationWhenSubpassIsBiggerThanParentPass) {
+  SetWindowSize({400, 400});
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  canvas.DrawRect(Rect::MakeLTRB(200, 200, 300, 300), {.color = Color::Red()});
+  canvas.SaveLayer({
+      .image_filter = std::make_shared<MatrixImageFilter>(
+          Matrix::MakeScale({2, 2, 1}), SamplerDescriptor{}),
+  });
+  // Draw a rectangle that would fully cover the parent pass size, but not
+  // the subpass that it is rendered in.
+  canvas.DrawRect(Rect::MakeLTRB(0, 0, 400, 400), {.color = Color::Green()});
+  // Draw a bigger rectangle to force the subpass to be bigger.
+  canvas.DrawRect(Rect::MakeLTRB(0, 0, 800, 800), {.color = Color::Red()});
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 }  // namespace testing
 }  // namespace impeller
