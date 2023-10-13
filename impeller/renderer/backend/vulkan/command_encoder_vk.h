@@ -6,7 +6,6 @@
 
 #include <functional>
 #include <optional>
-#include <set>
 
 #include "flutter/fml/macros.h"
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
@@ -15,7 +14,6 @@
 #include "impeller/renderer/backend/vulkan/device_holder.h"
 #include "impeller/renderer/backend/vulkan/queue_vk.h"
 #include "impeller/renderer/backend/vulkan/shared_object_vk.h"
-#include "impeller/renderer/backend/vulkan/vk.h"
 
 namespace impeller {
 
@@ -58,7 +56,7 @@ class CommandEncoderVK {
 
   bool IsValid() const;
 
-  bool Submit(SubmitCallback callback = {});
+  bool Submit(const SubmitCallback& callback = {});
 
   bool Track(std::shared_ptr<SharedObjectVK> object);
 
