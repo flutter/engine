@@ -22,8 +22,12 @@ TEST_F(PlatformMacTests, RegisterSystemFonts) {
   DynamicFontManager dynamic_font_manager;
   RegisterSystemFonts(dynamic_font_manager);
   ASSERT_EQ(dynamic_font_manager.font_provider().GetFamilyCount(), 2ul);
-  ASSERT_NE(dynamic_font_manager.font_provider().MatchFamily("Cupertino-System-Display"), nullptr);
-  ASSERT_NE(dynamic_font_manager.font_provider().MatchFamily("Cupertino-System-Text"), nullptr);
+  ASSERT_NE(dynamic_font_manager.font_provider().MatchFamily(
+                "Cupertino-System-Display"),
+            nullptr);
+  ASSERT_NE(
+      dynamic_font_manager.font_provider().MatchFamily("Cupertino-System-Text"),
+      nullptr);
 }
 
 }  // namespace testing
