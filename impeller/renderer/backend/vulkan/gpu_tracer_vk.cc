@@ -63,7 +63,7 @@ void GPUTracerVK::RecordStartFrameTime() {
   // To work around this, the tracer only resets the query that will be
   // used next.
   vk_trace_cmd_buffer.resetQueryPool(query_pool_.get(), current_index_, 1);
-  vk_trace_cmd_buffer.writeTimestamp(vk::PipelineStageFlagBits::eTopOfPipe,
+  vk_trace_cmd_buffer.writeTimestamp(vk::PipelineStageFlagBits::eBottomOfPipe,
                                      query_pool_.get(), current_index_);
 
   if (!buffer->SubmitCommands()) {
