@@ -75,6 +75,42 @@ sk_sp<SkImage> ConvertBufferToSkImage(
   return result;
 }
 
+void DoConvertImageToRasterImpellerWithRetry(
+    const sk_sp<DlImage>& dl_image,
+    const std::function<void(fml::StatusOr<sk_sp<SkImage>>)>& encode_task,
+    const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch,
+    const std::shared_ptr<impeller::Context>& impeller_context,
+    const fml::RefPtr<fml::TaskRunner>& retry_runner) {
+  fml::Status status = DoConvertImageToRasterImpeller(
+      dl_image, std::move(encode_task), is_gpu_disabled_sync_switch,
+      impeller_context);
+  if (!status.ok()) {
+    if (status.code() == fml::StatusCode::kUnavailable) {
+      impeller_context->StoreTaskForGPU(
+          [dl_image = std::move(dl_image), encode_task = std::move(encode_task),
+           is_gpu_disabled_sync_switch, impeller_context, retry_runner] {
+            auto retry_task = [dl_image = std::move(dl_image),
+                               encode_task = std::move(encode_task),
+                               is_gpu_disabled_sync_switch, impeller_context] {
+              fml::Status retry_status = DoConvertImageToRasterImpeller(
+                  dl_image, encode_task, is_gpu_disabled_sync_switch,
+                  impeller_context);
+              if (!retry_status.ok()) {
+                encode_task(retry_status);
+              }
+            };
+            if (retry_runner) {
+              retry_runner->PostTask(retry_task);
+            } else {
+              retry_task();
+            }
+          });
+    } else {
+      encode_task(status);
+    }
+  }
+}
+
 }  // namespace
 
 void ImageEncodingImpeller::ConvertDlImageToSkImage(
@@ -155,25 +191,9 @@ void ImageEncodingImpeller::ConvertImageToRaster(
   };
 
   if (dl_image->owning_context() != DlImage::OwningContext::kRaster) {
-    fml::Status status = DoConvertImageToRasterImpeller(
-        dl_image, encode_task, is_gpu_disabled_sync_switch, impeller_context);
-    if (!status.ok()) {
-      if (status.code() == fml::StatusCode::kUnavailable) {
-        impeller_context->StoreTaskForGPU([dl_image = std::move(dl_image),
-                                           encode_task = std::move(encode_task),
-                                           is_gpu_disabled_sync_switch,
-                                           impeller_context] {
-          fml::Status retry_status = DoConvertImageToRasterImpeller(
-              dl_image, encode_task, is_gpu_disabled_sync_switch,
-              impeller_context);
-          if (!retry_status.ok()) {
-            encode_task(retry_status);
-          }
-        });
-      } else {
-        encode_task(status);
-      }
-    }
+    DoConvertImageToRasterImpellerWithRetry(
+        dl_image, encode_task, is_gpu_disabled_sync_switch, impeller_context,
+        /*retry_runner=*/nullptr);
     return;
   }
 
@@ -181,31 +201,9 @@ void ImageEncodingImpeller::ConvertImageToRaster(
                                 io_task_runner, is_gpu_disabled_sync_switch,
                                 impeller_context,
                                 raster_task_runner]() mutable {
-    fml::Status status = DoConvertImageToRasterImpeller(
+    DoConvertImageToRasterImpellerWithRetry(
         dl_image, std::move(encode_task), is_gpu_disabled_sync_switch,
-        impeller_context);
-    if (!status.ok()) {
-      if (status.code() == fml::StatusCode::kUnavailable) {
-        impeller_context->StoreTaskForGPU(
-            [dl_image = std::move(dl_image),
-             encode_task = std::move(encode_task), is_gpu_disabled_sync_switch,
-             impeller_context, raster_task_runner] {
-              raster_task_runner->PostTask(
-                  [dl_image = std::move(dl_image),
-                   encode_task = std::move(encode_task),
-                   is_gpu_disabled_sync_switch, impeller_context] {
-                    fml::Status retry_status = DoConvertImageToRasterImpeller(
-                        dl_image, encode_task, is_gpu_disabled_sync_switch,
-                        impeller_context);
-                    if (!retry_status.ok()) {
-                      encode_task(retry_status);
-                    }
-                  });
-            });
-      } else {
-        encode_task(status);
-      }
-    }
+        impeller_context, raster_task_runner);
   });
 }
 
