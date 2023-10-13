@@ -25,9 +25,10 @@ class SyncSwitch {
   class Observer {
    public:
     virtual ~Observer() = default;
-    /// `new_value` not guaranteed to be the value of the SyncSwitch during
-    /// execution, it should be checked with calls to SyncSwitch::Execute.
-    virtual void OnSyncSwitchUpdate(bool new_value) = 0;
+    /// `new_is_disabled` not guaranteed to be the value of the SyncSwitch
+    /// during execution, it should be checked with calls to
+    /// SyncSwitch::Execute.
+    virtual void OnSyncSwitchUpdate(bool new_is_disabled) = 0;
   };
 
   /// Represents the 2 code paths available when calling |SyncSwitch::Execute|.
