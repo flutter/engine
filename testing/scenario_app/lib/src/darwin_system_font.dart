@@ -22,13 +22,13 @@ class DarwinSystemFont extends Scenario {
     final Canvas canvas = Canvas(recorder);
 
     final ParagraphBuilder paragraphBuilderPro =
-        ParagraphBuilder(ParagraphStyle(fontFamily: "Cupertino-System-Display"))
-          ..pushStyle(TextStyle(fontSize: 50, fontFamily: "Cupertino-System-Display"))
+        ParagraphBuilder(ParagraphStyle(fontFamily: 'Cupertino-System-Display'))
+          ..pushStyle(TextStyle(fontSize: 50))
           ..addText('Cupertino System Display\n')
           ..pop();
     final ParagraphBuilder paragraphBuilderText =
-        ParagraphBuilder(ParagraphStyle(fontFamily: "Cupertino-System-Text"))
-          ..pushStyle(TextStyle(fontSize: 50, fontFamily: "Cupertino-System-Text"))
+        ParagraphBuilder(ParagraphStyle(fontFamily: 'Cupertino-System-Text'))
+          ..pushStyle(TextStyle(fontSize: 50))
           ..addText('Cupertino System Text\n')
           ..pop();
 
