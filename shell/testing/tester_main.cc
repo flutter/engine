@@ -30,7 +30,7 @@
 #include "third_party/skia/include/core/SkSurface.h"
 
 // Impeller should only be enabled if the Vulkan backend is enabled.
-#define ALLOW_IMPELLER IMPELLER_SUPPORTS_RENDERING&& IMPELLER_ENABLE_VULKAN
+#define ALLOW_IMPELLER (IMPELLER_SUPPORTS_RENDERING && IMPELLER_ENABLE_VULKAN)
 
 #if ALLOW_IMPELLER
 #include <vulkan/vulkan.h>                                        // nogncheck
