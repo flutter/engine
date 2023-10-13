@@ -20,7 +20,7 @@ class ContextMTL;
 /// smallest
 ///        GPUStartTime and largest GPUEndTime for all cmd buffers submitted in
 ///        a frame workload.
-class GPUTracerMTL {
+class GPUTracerMTL : public std::enable_shared_from_this<GPUTracerMTL> {
  public:
   GPUTracerMTL() = default;
 

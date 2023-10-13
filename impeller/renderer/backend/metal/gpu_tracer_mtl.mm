@@ -15,21 +15,28 @@ namespace impeller {
 
 void GPUTracerMTL::MarkFrameEnd() {
 #ifdef IMPELLER_DEBUG
-  Lock lock(trace_state_mutex_);
-  current_state_ = (current_state_ + 1) % 16;
+  if (@available(ios 10.3, tvos 10.2, macos 10.15, macCatalyst 13.0, *)) {
+    Lock lock(trace_state_mutex_);
+    current_state_ = (current_state_ + 1) % 16;
+  }
 #endif  // IMPELLER_DEBUG
 }
 
 void GPUTracerMTL::RecordCmdBuffer(id<MTLCommandBuffer> buffer) {
 #ifdef IMPELLER_DEBUG
-  Lock lock(trace_state_mutex_);
-  auto current_state = current_state_;
-  trace_states_[current_state].pending_buffers += 1;
-
   if (@available(ios 10.3, tvos 10.2, macos 10.15, macCatalyst 13.0, *)) {
+    Lock lock(trace_state_mutex_);
+    auto current_state = current_state_;
+    trace_states_[current_state].pending_buffers += 1;
+
+    auto weak_self = weak_from_this();
     [buffer addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
-      Lock lock(trace_state_mutex_);
-      auto& state = trace_states_[current_state];
+      auto self = weak_self.lock();
+      if (!self) {
+        return;
+      }
+      Lock lock(self->trace_state_mutex_);
+      auto& state = self->trace_states_[current_state];
       state.pending_buffers--;
       state.smallest_timestamp = std::min(
           state.smallest_timestamp, static_cast<Scalar>(buffer.GPUStartTime));
