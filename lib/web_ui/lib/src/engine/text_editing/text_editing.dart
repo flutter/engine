@@ -1936,7 +1936,7 @@ DefaultTextEditingStrategy createDefaultTextEditingStrategy(HybridTextEditing te
     strategy = IOSTextEditingStrategy(textEditing);
   } else if (browserEngine == BrowserEngine.webkit) {
     strategy = SafariDesktopTextEditingStrategy(textEditing);
-  } else if (browserEngine == BrowserEngine.blink &&
+  } else if ((browserEngine == BrowserEngine.blink || browserEngine == BrowserEngine.firefox) &&
       operatingSystem == OperatingSystem.android) {
     strategy = AndroidTextEditingStrategy(textEditing);
   } else if (browserEngine == BrowserEngine.firefox) {
