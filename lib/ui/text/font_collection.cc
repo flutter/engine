@@ -20,7 +20,6 @@
 #include "third_party/tonic/dart_library_natives.h"
 #include "third_party/tonic/logging/dart_invoke.h"
 #include "third_party/tonic/typed_data/typed_list.h"
-#include "third_party/txt/src/txt/platform.h"
 #include "txt/asset_font_manager.h"
 #include "txt/test_font_manager.h"
 #if FML_OS_MACOSX || FML_OS_IOS

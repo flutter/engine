@@ -17,7 +17,7 @@
 #define FONT_CLASS NSFont
 #endif  // TARGET_OS_EMBEDDED
 
-// Apple system font larger than size 29 returns SFProText typeface.
+// Apple system font larger than size 29 returns SFProPro typeface.
 static const CGFloat kSFProDisplayBreakPoint = 29;
 // Apple system font smaller than size 16 returns SFProText typeface.
 static const CGFloat kSFProTextBreakPoint = 16;
@@ -47,10 +47,13 @@ void RegisterSystemFonts(const DynamicFontManager& dynamic_font_manager) {
   //
   // Below code manually loads and registers them as two different fonts
   // so Flutter app can access them on macOS and iOS.
-  // System fonts from 17 to 28 also have dynamic spacing based on size.
-  // These two fonts will not match the spacing when sizes are from 17 to 28.
-  // The framework will handle the spacing. See:
-  // https://www.wwdcnotes.com/notes/wwdc20/10175/
+  //
+  // Darwin system fonts from 17 to 28 also have dynamic spacing based on sizes.
+  // These two fonts do not match the spacings when sizes are from 17 to 28.
+  // The spacing should be handled by the app or framework.
+  //
+  // See https://www.wwdcnotes.com/notes/wwdc20/10175/ for Apple's document on
+  // this topic.
   sk_sp<SkTypeface> large_system_font =
       SkMakeTypefaceFromCTFont(CTFontCreateUIFontForLanguage(
           kCTFontUIFontSystem, kSFProDisplayBreakPoint, nullptr));
