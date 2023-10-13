@@ -180,8 +180,15 @@ class Context {
 
   CaptureContext capture;
 
+  /// Stores a task on the `ContextMTL` that is awaiting access for the GPU.
+  ///
+  /// The task will be executed in the event that the GPU access has changed to
+  /// being available or that the task has been canceled. The task should
+  /// operate with the `SyncSwitch` to make sure the GPU is accessible.
+  ///
   /// Threadsafe.
-  /// `task` should be executed on the platform thread.
+  ///
+  /// `task` will be executed on the platform thread.
   virtual void StoreTaskForGPU(std::function<void()> task) {
     FML_CHECK(false && "not supported in this context");
   }
