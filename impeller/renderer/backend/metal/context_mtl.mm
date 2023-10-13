@@ -399,8 +399,8 @@ void ContextMTL::FlushTasksAwaitingGPU() {
 ContextMTL::SyncSwitchObserver::SyncSwitchObserver(ContextMTL& parent)
     : parent_(parent) {}
 
-void ContextMTL::SyncSwitchObserver::OnSyncSwitchUpdate(bool new_value) {
-  if (new_value) {
+void ContextMTL::SyncSwitchObserver::OnSyncSwitchUpdate(bool new_is_disabled) {
+  if (!new_is_disabled) {
     parent_.FlushTasksAwaitingGPU();
   }
 }
