@@ -11,13 +11,14 @@
 **/README.flutter
 
 # Include folders that have hand-written code (not DEPS).
-!accessibility/
-!canvaskit/
+# !foo/** means "include everything in foo/".
+!accessibility/**
+!canvaskit/**
 !ninja/
-!spring_animation/
-!test_shaders/
-!tonic/
-!txt/
-!web_locale_keymap/
-!web_test_fonts/
-!web_unicode/
+!spring_animation/**
+!test_shaders/**
+!tonic/**
+!txt/**
+!web_locale_keymap/**
+!web_test_fonts/**
+!web_unicode/**

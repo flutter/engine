@@ -20,5 +20,5 @@ When adding a new _externally_ sourced third-party library, update `.gitignore`:
 ```diff
 # Ignores all third_party/ directories except for the ones we want to track.
 
-+ !{folder_name}/
++ !{folder_name}/**
 ```
