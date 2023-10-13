@@ -171,16 +171,16 @@ bool CommandEncoderVK::Submit(SubmitCallback callback) {
   InsertDebugMarker("QueueSubmit");
 
   worker_->PostTask([tracked_objects = std::move(tracked_objects_),
-                     queue = std::move(queue_),
-                     fence_waiter = std::move(fence_waiter_),
-                     device_holder = std::move(device_holder_)]() {
+                     queue = std::move(queue_), fence_waiter = fence_waiter_,
+                     device_holder = std::move(device_holder_),
+                     callback = callback, fail_callback = fail_callback]() {
     // Success or failure, you only get to submit once.
-    // fml::ScopedCleanupClosure reset([&]() {
-    //   if (fail_callback) {
-    //     callback(false);
-    //   }
-    //   Reset();
-    // });
+    bool local_fail_callback = fail_callback;
+    fml::ScopedCleanupClosure reset([&]() {
+      if (local_fail_callback) {
+        callback(false);
+      }
+    });
     auto command_buffer = tracked_objects->GetCommandBuffer();
 
     auto status = command_buffer.end();
@@ -214,12 +214,12 @@ bool CommandEncoderVK::Submit(SubmitCallback callback) {
 
     // Submit will proceed, call callback with true when it is done and do not
     // call when `reset` is collected.
-    // fail_callback = false;
+    local_fail_callback = false;
     return fence_waiter->AddFence(
-        std::move(fence), [tracked_objects = std::move(tracked_objects)] {
-          // if (callback) {
-          //   callback(true);
-          // }
+        std::move(fence), [tracked_objects = tracked_objects, callback] {
+          if (callback) {
+            callback(true);
+          }
         });
   });
   is_valid_ = false;
@@ -231,13 +231,6 @@ vk::CommandBuffer CommandEncoderVK::GetCommandBuffer() const {
     return tracked_objects_->GetCommandBuffer();
   }
   return {};
-}
-
-void CommandEncoderVK::Reset() {
-  tracked_objects_.reset();
-
-  queue_ = nullptr;
-  is_valid_ = false;
 }
 
 bool CommandEncoderVK::Track(std::shared_ptr<SharedObjectVK> object) {

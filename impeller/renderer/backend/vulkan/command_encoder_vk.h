@@ -94,8 +94,6 @@ class CommandEncoderVK {
   const std::shared_ptr<fml::ConcurrentTaskRunner> worker_;
   bool is_valid_ = true;
 
-  void Reset();
-
   FML_DISALLOW_COPY_AND_ASSIGN(CommandEncoderVK);
 };
 
