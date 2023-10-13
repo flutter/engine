@@ -247,18 +247,18 @@ void testMain() {
         count += 1;
       };
 
-      dispatchKeyboardEvent('keydown', key: 'SomeKey', code: 'SomeCode');
+      dispatchKeyboardEvent('keydown');
       expect(count, 1);
-      dispatchKeyboardEvent('keyup', key: 'SomeKey', code: 'SomeCode');
+      dispatchKeyboardEvent('keyup');
       expect(count, 2);
 
       RawKeyboard.instance!.dispose();
       expect(RawKeyboard.instance, isNull);
 
       // No more event dispatching.
-      dispatchKeyboardEvent('keydown', key: 'SomeKey', code: 'SomeCode');
+      dispatchKeyboardEvent('keydown');
       expect(count, 2);
-      dispatchKeyboardEvent('keyup', key: 'SomeKey', code: 'SomeCode');
+      dispatchKeyboardEvent('keyup');
       expect(count, 2);
     });
 
@@ -768,8 +768,8 @@ void useTextEditingElement(ElementCallback callback) {
 DomKeyboardEvent dispatchKeyboardEvent(
   String type, {
   DomEventTarget? target,
-  required String? key,
-  required String? code,
+  String? key,
+  String? code,
   int location = 0,
   bool repeat = false,
   bool isShiftPressed = false,
