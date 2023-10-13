@@ -2134,9 +2134,12 @@ TEST_P(AiksTest, CanRenderClippedLayers) {
     canvas.DrawRect(Rect::MakeSize(Size{400, 400}), {.color = Color::White()});
     // Fill the layer with green, but do so with a color blend that can't be
     // collapsed into the parent pass.
+    // TODO(jonahwilliams): this blend mode was changed from color burn to
+    // hardlight to work around https://github.com/flutter/flutter/issues/136554
+    // .
     canvas.DrawRect(
         Rect::MakeSize(Size{400, 400}),
-        {.color = Color::Green(), .blend_mode = BlendMode::kColorBurn});
+        {.color = Color::Green(), .blend_mode = BlendMode::kHardLight});
   }
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
