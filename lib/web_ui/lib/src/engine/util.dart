@@ -14,6 +14,7 @@ import 'package:ui/ui.dart' as ui;
 import 'browser_detection.dart';
 import 'dom.dart';
 import 'safe_browser_api.dart';
+import 'services.dart';
 import 'vector_math.dart';
 
 /// Generic callback signature, used by [_futurize].
@@ -625,6 +626,23 @@ extension JsonExtensions on Map<dynamic, dynamic> {
   double? tryDouble(String propertyName) {
     return (this[propertyName] as num?)?.toDouble();
   }
+}
+
+/// Extracts view ID from the [MethodCall.arguments] map.
+///
+/// Throws if the view ID is not present or if [arguments] is not a map.
+int readFlutterViewId(Object? arguments) {
+  return tryFlutterViewId(arguments)!;
+}
+
+/// Extracts view ID from the [MethodCall.arguments] map.
+///
+/// Returns null if the view ID is not present or if [arguments] is not a map.
+int? tryFlutterViewId(Object? arguments) {
+  if (arguments is Map) {
+    return arguments.tryInt('flutterViewId');
+  }
+  return null;
 }
 
 /// Prints a list of bytes in hex format.

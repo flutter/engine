@@ -592,14 +592,13 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
       case 'flutter/platform_views':
         final MethodCall(:String method, :dynamic arguments) = standardCodec.decodeMethodCall(data);
-        if (arguments is Map<dynamic, dynamic>) {
-          final int? flutterViewId = arguments.tryInt('flutterViewId');
-          if (flutterViewId != null) {
-            viewData[flutterViewId]!.platformViewMessageHandler.handlePlatformViewCall(method, arguments, callback!);
-            return;
-          }
+        final int? flutterViewId = tryFlutterViewId(arguments);
+        if (flutterViewId == null) {
+          implicitView!.platformViewMessageHandler.handleLegacyPlatformViewCall(method, arguments, callback!);
+          return;
         }
-        implicitView!.platformViewMessageHandler.handleLegacyPlatformViewCall(method, arguments, callback!);
+        arguments as Map<dynamic, dynamic>;
+        viewData[flutterViewId]!.platformViewMessageHandler.handlePlatformViewCall(method, arguments, callback!);
         return;
 
       case 'flutter/accessibility':
