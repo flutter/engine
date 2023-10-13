@@ -136,7 +136,7 @@ std::shared_ptr<CommandEncoderVK> CommandEncoderFactoryVK::Create() {
 
   return std::make_shared<CommandEncoderVK>(
       context_vk.GetDeviceHolder(), tracked_objects, queue,
-      context_vk.GetFenceWaiter(), context_vk.GetConcurrentWorkerTaskRunner());
+      context_vk.GetFenceWaiter(), context_vk.GetSubmitTaskRunner());
 }
 
 CommandEncoderVK::CommandEncoderVK(
@@ -169,11 +169,22 @@ bool CommandEncoderVK::Submit(const SubmitCallback& callback) {
   }
 
   InsertDebugMarker("QueueSubmit");
+  auto command_buffer = tracked_objects_->GetCommandBuffer();
+
+  auto status = command_buffer.end();
+  if (status != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Failed to end command buffer: " << vk::to_string(status);
+    if (fail_callback) {
+      callback(false);
+    }
+    return false;
+  }
 
   worker_->PostTask([tracked_objects = std::move(tracked_objects_),
                      queue = std::move(queue_), fence_waiter = fence_waiter_,
                      device_holder = std::move(device_holder_),
-                     callback = callback, fail_callback = fail_callback]() {
+                     callback = callback, fail_callback = fail_callback,
+                     command_buffer = std::move(command_buffer)]() {
     // Success or failure, you only get to submit once.
     bool local_fail_callback = fail_callback;
     fml::ScopedCleanupClosure reset([&]() {
@@ -181,14 +192,6 @@ bool CommandEncoderVK::Submit(const SubmitCallback& callback) {
         callback(false);
       }
     });
-    auto command_buffer = tracked_objects->GetCommandBuffer();
-
-    auto status = command_buffer.end();
-    if (status != vk::Result::eSuccess) {
-      VALIDATION_LOG << "Failed to end command buffer: "
-                     << vk::to_string(status);
-      return false;
-    }
     std::shared_ptr<const DeviceHolder> strong_device = device_holder.lock();
     if (!strong_device) {
       VALIDATION_LOG << "Device lost.";
@@ -206,7 +209,7 @@ bool CommandEncoderVK::Submit(const SubmitCallback& callback) {
     std::vector<vk::CommandBuffer> buffers = {command_buffer};
     submit_info.setCommandBuffers(buffers);
 
-    status = queue->Submit(submit_info, *fence);
+    auto status = queue->Submit(submit_info, *fence);
     if (status != vk::Result::eSuccess) {
       VALIDATION_LOG << "Failed to submit queue: " << vk::to_string(status);
       return false;

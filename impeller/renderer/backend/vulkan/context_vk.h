@@ -132,6 +132,11 @@ class ContextVK final : public Context,
   const std::shared_ptr<fml::ConcurrentTaskRunner>
   GetConcurrentWorkerTaskRunner() const;
 
+  /// @brief A task runner for submitting Vulkan cmd buffers.
+  ///
+  ///        This guarantees submission order by only using a single thread.
+  const std::shared_ptr<fml::ConcurrentTaskRunner> GetSubmitTaskRunner() const;
+
   std::shared_ptr<SurfaceContextVK> CreateSurfaceContext();
 
   const std::shared_ptr<QueueVK>& GetGraphicsQueue() const;
@@ -171,6 +176,7 @@ class ContextVK final : public Context,
   std::shared_ptr<CommandPoolRecyclerVK> command_pool_recycler_;
   std::string device_name_;
   std::shared_ptr<fml::ConcurrentMessageLoop> raster_message_loop_;
+  std::shared_ptr<fml::ConcurrentMessageLoop> submit_message_loop_;
   bool sync_presentation_ = false;
   const uint64_t hash_;
 

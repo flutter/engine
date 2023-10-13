@@ -4,6 +4,7 @@
 
 #include "impeller/renderer/backend/vulkan/swapchain_impl_vk.h"
 
+#include "fml/trace_event.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
@@ -451,33 +452,35 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
     }
   }
 
-  //----------------------------------------------------------------------------
-  /// Signal that the presentation semaphore is ready.
-  ///
-  {
-    vk::SubmitInfo submit_info;
-    vk::PipelineStageFlags wait_stage =
-        vk::PipelineStageFlagBits::eColorAttachmentOutput;
-    submit_info.setWaitDstStageMask(wait_stage);
-    submit_info.setWaitSemaphores(*sync->render_ready);
-    submit_info.setSignalSemaphores(*sync->present_ready);
-    submit_info.setCommandBuffers(vk_final_cmd_buffer);
-    auto result =
-        context.GetGraphicsQueue()->Submit(submit_info, *sync->acquire);
-    if (result != vk::Result::eSuccess) {
-      VALIDATION_LOG << "Could not wait on render semaphore: "
-                     << vk::to_string(result);
-      return false;
-    }
-  }
-
-  auto task = [&, index, current_frame = current_frame_] {
+  auto task = [&, index, current_frame = current_frame_,
+               vk_final_cmd_buffer = vk_final_cmd_buffer] {
+    TRACE_EVENT0("impeller", "SwapchainImplVK::Present");
     auto context_strong = context_.lock();
     if (!context_strong) {
       return;
     }
 
     const auto& sync = synchronizers_[current_frame];
+
+    //----------------------------------------------------------------------------
+    /// Signal that the presentation semaphore is ready.
+    ///
+    {
+      vk::SubmitInfo submit_info;
+      vk::PipelineStageFlags wait_stage =
+          vk::PipelineStageFlagBits::eColorAttachmentOutput;
+      submit_info.setWaitDstStageMask(wait_stage);
+      submit_info.setWaitSemaphores(*sync->render_ready);
+      submit_info.setSignalSemaphores(*sync->present_ready);
+      submit_info.setCommandBuffers(vk_final_cmd_buffer);
+      auto result =
+          context.GetGraphicsQueue()->Submit(submit_info, *sync->acquire);
+      if (result != vk::Result::eSuccess) {
+        VALIDATION_LOG << "Could not wait on render semaphore: "
+                       << vk::to_string(result);
+        return;
+      }
+    }
 
     //----------------------------------------------------------------------------
     /// Present the image.
@@ -514,7 +517,7 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
   if (context.GetSyncPresentation()) {
     task();
   } else {
-    context.GetConcurrentWorkerTaskRunner()->PostTask(task);
+    context.GetSubmitTaskRunner()->PostTask(task);
   }
   return true;
 }

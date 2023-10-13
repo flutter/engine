@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/vulkan/context_vk.h"
+#include "fml/concurrent_message_loop.h"
 
 #ifdef FML_OS_ANDROID
 #include <pthread.h>
@@ -127,8 +128,19 @@ void ContextVK::Setup(Settings settings) {
     return;
   }
 
+  submit_message_loop_ = fml::ConcurrentMessageLoop::Create(1u);
   raster_message_loop_ = fml::ConcurrentMessageLoop::Create(
       std::min(4u, std::thread::hardware_concurrency()));
+  submit_message_loop_->PostTaskToAllWorkers([]() {
+    // Currently we only use the worker task pool for small parts of a frame
+    // workload, if this changes this setting may need to be adjusted.
+    fml::RequestAffinity(fml::CpuAffinity::kNotPerformance);
+#ifdef FML_OS_ANDROID
+    if (::setpriority(PRIO_PROCESS, gettid(), -5) != 0) {
+      FML_LOG(ERROR) << "Failed to set Workers task runner priority";
+    }
+#endif  // FML_OS_ANDROID
+  });
   raster_message_loop_->PostTaskToAllWorkers([]() {
     // Currently we only use the worker task pool for small parts of a frame
     // workload, if this changes this setting may need to be adjusted.
@@ -530,6 +542,11 @@ std::shared_ptr<CommandPoolRecyclerVK> ContextVK::GetCommandPoolRecycler()
 std::unique_ptr<CommandEncoderFactoryVK>
 ContextVK::CreateGraphicsCommandEncoderFactory() const {
   return std::make_unique<CommandEncoderFactoryVK>(weak_from_this());
+}
+
+const std::shared_ptr<fml::ConcurrentTaskRunner>
+ContextVK::GetSubmitTaskRunner() const {
+  return submit_message_loop_->GetTaskRunner();
 }
 
 }  // namespace impeller
