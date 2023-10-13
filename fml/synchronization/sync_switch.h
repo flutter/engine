@@ -21,6 +21,15 @@ namespace fml {
 /// at a time.
 class SyncSwitch {
  public:
+  /// Observes changes to the SyncSwitch.
+  class Observer {
+   public:
+    virtual ~Observer() = default;
+    /// `new_value` not guaranteed to be the value of the SyncSwitch during
+    /// execution, it should be checked with calls to SyncSwitch::Execute.
+    virtual void OnSyncSwitchUpdate(bool new_value) = 0;
+  };
+
   /// Represents the 2 code paths available when calling |SyncSwitch::Execute|.
   struct Handlers {
     /// Sets the handler that will be executed if the |SyncSwitch| is true.
@@ -53,8 +62,15 @@ class SyncSwitch {
   /// @param[in]  value  New value for the |SyncSwitch|.
   void SetSwitch(bool value);
 
+  /// Threadsafe.
+  void AddObserver(Observer* observer) const;
+
+  /// Threadsafe.
+  void RemoveObserver(Observer* observer) const;
+
  private:
   mutable std::unique_ptr<fml::SharedMutex> mutex_;
+  mutable std::vector<Observer*> observers_;
   bool value_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(SyncSwitch);

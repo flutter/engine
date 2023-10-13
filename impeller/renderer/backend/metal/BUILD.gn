@@ -8,8 +8,6 @@ impeller_component("metal") {
   sources = [
     "allocator_mtl.h",
     "allocator_mtl.mm",
-    "app_state_notifier.h",
-    "app_state_notifier.mm",
     "blit_command_mtl.h",
     "blit_command_mtl.mm",
     "blit_pass_mtl.h",
@@ -56,7 +54,4 @@ impeller_component("metal") {
   ]
 
   frameworks = [ "Metal.framework" ]
-  if (is_ios) {
-    frameworks += [ "UIKit.framework" ]
-  }
 }

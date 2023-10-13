@@ -83,8 +83,8 @@ ContextMTL::ContextMTL(
     return;
   }
 
-  app_state_notifier_.SetAppDidBecomeActiveCallback(
-      [this] { this->FlushTasksAwaitingGPU(); });
+  sync_switch_observer_.reset(new SyncSwitchObserver(*this));
+  is_gpu_disabled_sync_switch_->AddObserver(sync_switch_observer_.get());
 
   // Worker task runner.
   {
@@ -287,7 +287,9 @@ std::shared_ptr<ContextMTL> ContextMTL::Create(
   return context;
 }
 
-ContextMTL::~ContextMTL() = default;
+ContextMTL::~ContextMTL() {
+  is_gpu_disabled_sync_switch_->RemoveObserver(sync_switch_observer_.get());
+}
 
 Context::BackendType ContextMTL::GetBackendType() const {
   return Context::BackendType::kMetal;
@@ -388,6 +390,15 @@ void ContextMTL::FlushTasksAwaitingGPU() {
     task();
   }
   tasks_awaiting_gpu_.clear();
+}
+
+ContextMTL::SyncSwitchObserver::SyncSwitchObserver(ContextMTL& parent)
+    : parent_(parent) {}
+
+void ContextMTL::SyncSwitchObserver::OnSyncSwitchUpdate(bool new_value) {
+  if (new_value) {
+    parent_.FlushTasksAwaitingGPU();
+  }
 }
 
 }  // namespace impeller

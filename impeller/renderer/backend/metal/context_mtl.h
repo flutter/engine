@@ -15,7 +15,6 @@
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/sampler.h"
 #include "impeller/renderer/backend/metal/allocator_mtl.h"
-#include "impeller/renderer/backend/metal/app_state_notifier.h"
 #include "impeller/renderer/backend/metal/command_buffer_mtl.h"
 #include "impeller/renderer/backend/metal/pipeline_library_mtl.h"
 #include "impeller/renderer/backend/metal/shader_library_mtl.h"
@@ -98,6 +97,16 @@ class ContextMTL final : public Context,
   void StoreTaskForGPU(std::function<void()> task) override;
 
  private:
+  class SyncSwitchObserver : public fml::SyncSwitch::Observer {
+   public:
+    SyncSwitchObserver(ContextMTL& parent);
+    virtual ~SyncSwitchObserver() = default;
+    void OnSyncSwitchUpdate(bool new_value) override;
+
+   private:
+    ContextMTL& parent_;
+  };
+
   id<MTLDevice> device_ = nullptr;
   id<MTLCommandQueue> command_queue_ = nullptr;
   std::shared_ptr<ShaderLibraryMTL> shader_library_;
@@ -108,7 +117,7 @@ class ContextMTL final : public Context,
   std::shared_ptr<fml::ConcurrentMessageLoop> raster_message_loop_;
   std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch_;
   std::vector<std::function<void()>> tasks_awaiting_gpu_;
-  AppStateNotifier app_state_notifier_;
+  std::unique_ptr<SyncSwitchObserver> sync_switch_observer_;
   bool is_valid_ = false;
 
   ContextMTL(
