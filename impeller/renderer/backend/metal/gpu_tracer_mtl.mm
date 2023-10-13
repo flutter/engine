@@ -49,7 +49,7 @@ void GPUTracerMTL::RecordCmdBuffer(id<MTLCommandBuffer> buffer) {
         state.smallest_timestamp = std::numeric_limits<float>::max();
         state.largest_timestamp = 0;
         FML_TRACE_COUNTER("flutter", "GPUTracer",
-                          1234,  // Trace Counter ID
+                          reinterpret_cast<int64_t>(this),  // Trace Counter ID
                           "FrameTimeMS", gpu_ms);
       }
     }];
