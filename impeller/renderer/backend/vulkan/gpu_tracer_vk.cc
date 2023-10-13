@@ -116,7 +116,7 @@ void GPUTracerVK::RecordEndFrameTime() {
           // timeline event but that is a job for a future Jonah.
           auto gpu_ms = (((bits[1] - bits[0]) * timestamp_period_) / 1000000);
           FML_TRACE_COUNTER("flutter", "GPUTracer",
-                            1234,  // Trace Counter ID
+                            reinterpret_cast<int64_t>(this),  // Trace Counter ID
                             "FrameTimeMS", gpu_ms);
         }
       })) {
