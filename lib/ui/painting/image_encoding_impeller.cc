@@ -75,6 +75,9 @@ sk_sp<SkImage> ConvertBufferToSkImage(
   return result;
 }
 
+/// Same as `DoConvertImageToRasterImpeller` but it will attempt to retry the
+/// operation if `DoConvertImageToRasterImpeller` returns kUnavailable when the
+/// GPU becomes available again.
 void DoConvertImageToRasterImpellerWithRetry(
     const sk_sp<DlImage>& dl_image,
     std::function<void(fml::StatusOr<sk_sp<SkImage>>)>&& encode_task,
@@ -84,6 +87,8 @@ void DoConvertImageToRasterImpellerWithRetry(
   fml::Status status = DoConvertImageToRasterImpeller(
       dl_image, encode_task, is_gpu_disabled_sync_switch, impeller_context);
   if (!status.ok()) {
+    // If the conversion failed because of the GPU is unavailable, store the
+    // task on the Context so it can be executed when the GPU becomes available.
     if (status.code() == fml::StatusCode::kUnavailable) {
       impeller_context->StoreTaskForGPU(
           [dl_image, encode_task = std::move(encode_task),
@@ -95,9 +100,13 @@ void DoConvertImageToRasterImpellerWithRetry(
                   dl_image, encode_task, is_gpu_disabled_sync_switch,
                   impeller_context);
               if (!retry_status.ok()) {
+                // The retry failed for some reason, maybe the GPU became
+                // unavailable again. Don't retry again, just fail in this case.
                 encode_task(retry_status);
               }
             };
+            // If a `retry_runner` is specified, post the retry to it, otherwise
+            // execute it directly.
             if (retry_runner) {
               retry_runner->PostTask(retry_task);
             } else {
@@ -105,6 +114,7 @@ void DoConvertImageToRasterImpellerWithRetry(
             }
           });
     } else {
+      // Pass on errors that are not `kUnavailable`.
       encode_task(status);
     }
   }
