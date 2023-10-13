@@ -115,9 +115,10 @@ void GPUTracerVK::RecordEndFrameTime() {
           // This value should probably be available in some form besides a
           // timeline event but that is a job for a future Jonah.
           auto gpu_ms = (((bits[1] - bits[0]) * timestamp_period_) / 1000000);
-          FML_TRACE_COUNTER("flutter", "GPUTracer",
-                            reinterpret_cast<int64_t>(this),  // Trace Counter ID
-                            "FrameTimeMS", gpu_ms);
+          FML_TRACE_COUNTER(
+              "flutter", "GPUTracer",
+              reinterpret_cast<int64_t>(this),  // Trace Counter ID
+              "FrameTimeMS", gpu_ms);
         }
       })) {
     if (!buffer->SubmitCommands()) {
