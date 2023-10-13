@@ -52,6 +52,10 @@ class Context {
     kVulkan,
   };
 
+  /// The maximum number of tasks that should ever be stored for
+  /// `StoreTaskForGPU`.
+  static constexpr int32_t kMaxTasksAwaitingGPU = 10;
+
   //----------------------------------------------------------------------------
   /// @brief      Destroys an Impeller context.
   ///

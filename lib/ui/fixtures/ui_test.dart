@@ -326,6 +326,8 @@ external void _validateExternal(Uint8List result);
 external void _validateError(String? error);
 @pragma('vm:external-name', 'TurnOffGPU')
 external void _turnOffGPU();
+@pragma('vm:external-name', 'FlushGpuAwaitingTasks')
+external void _flushGpuAwaitingTasks();
 
 @pragma('vm:entry-point')
 Future<void> toByteDataWithoutGPU() async {
@@ -339,11 +341,16 @@ Future<void> toByteDataWithoutGPU() async {
   final Picture picture = pictureRecorder.endRecording();
   final Image image = await picture.toImage(100, 100);
   _turnOffGPU();
+  Timer flusher = Timer.periodic(Duration(milliseconds: 1), (timer) {
+    _flushGpuAwaitingTasks();
+  });
   try {
     ByteData? byteData = await image.toByteData();
     _validateError(null);
-  } catch (ex) {
-    _validateError(ex.toString());
+  } catch (error) {
+    _validateError(error.toString());
+  } finally {
+    flusher.cancel();
   }
 }
 

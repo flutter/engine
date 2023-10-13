@@ -6,8 +6,8 @@
 
 #include <Metal/Metal.h>
 
+#include <deque>
 #include <string>
-#include <vector>
 
 #include "flutter/fml/concurrent_message_loop.h"
 #include "flutter/fml/macros.h"
@@ -116,7 +116,7 @@ class ContextMTL final : public Context,
   std::shared_ptr<const Capabilities> device_capabilities_;
   std::shared_ptr<fml::ConcurrentMessageLoop> raster_message_loop_;
   std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch_;
-  std::vector<std::function<void()>> tasks_awaiting_gpu_;
+  std::deque<std::function<void()>> tasks_awaiting_gpu_;
   std::unique_ptr<SyncSwitchObserver> sync_switch_observer_;
   bool is_valid_ = false;
 
