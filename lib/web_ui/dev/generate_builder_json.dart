@@ -149,12 +149,12 @@ Iterable<dynamic> _getTestStepsForPlatform(
         'test_dependencies': <dynamic>[
           <String, dynamic>{
             'dependency': 'goldctl',
-            'version': 'git_revision:3a77d0b12c697a840ca0c7705208e8622dc94603',
+            'version': 'git_revision:dddc0623e63150cbbafdcb273d4048f329e1dd09',
           },
           if (suite.runConfig.browser == BrowserName.chrome)
             <String, dynamic>{
               'dependency': 'chrome_and_driver',
-              'version': 'version:117.0',
+              'version': '118.0.5993.70',
             },
           if (suite.runConfig.browser == BrowserName.firefox)
             <String, dynamic>{
