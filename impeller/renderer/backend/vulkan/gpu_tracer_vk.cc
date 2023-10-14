@@ -14,7 +14,7 @@
 
 namespace impeller {
 
-static constexpr uint32_t kPoolSize = 128u;
+static constexpr uint32_t kPoolSize = 32u;
 
 GPUTracerVK::GPUTracerVK(const std::weak_ptr<ContextVK>& context)
     : context_(context) {
@@ -102,10 +102,6 @@ void GPUTracerVK::RecordEndFrameTime() {
   const auto device_holder = strong_context->GetDeviceHolder();
   if (!buffer->SubmitCommands([&, last_query,
                                device_holder](CommandBuffer::Status status) {
-        auto strong_context = context_.lock();
-        if (!strong_context) {
-          return;
-        }
         uint64_t bits[2] = {0, 0};
         auto result = device_holder->GetDevice().getQueryPoolResults(
             query_pool_.get(), last_query, 2, sizeof(bits), &bits,
@@ -121,9 +117,7 @@ void GPUTracerVK::RecordEndFrameTime() {
               "FrameTimeMS", gpu_ms);
         }
       })) {
-    if (!buffer->SubmitCommands()) {
-      VALIDATION_LOG << "GPUTracerVK failed to record frame end time.";
-    }
+    VALIDATION_LOG << "GPUTracerVK failed to record frame end time.";
   }
 
   if (current_index_ == kPoolSize - 1) {
