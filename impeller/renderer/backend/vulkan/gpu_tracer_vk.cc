@@ -100,23 +100,27 @@ void GPUTracerVK::RecordEndFrameTime() {
   // On completion of the second time stamp recording, we read back this value
   // and the previous value. The difference is approximately the frame time.
   const auto device_holder = strong_context->GetDeviceHolder();
-  if (!buffer->SubmitCommands([&, last_query,
-                               device_holder](CommandBuffer::Status status) {
+  auto submitted = buffer->SubmitCommands(
+      [&, last_query, device_holder](CommandBuffer::Status status) {
+        if (status != CommandBuffer::Status::kCompleted) {
+          return;
+        }
         uint64_t bits[2] = {0, 0};
         auto result = device_holder->GetDevice().getQueryPoolResults(
             query_pool_.get(), last_query, 2, sizeof(bits), &bits,
             sizeof(int64_t), vk::QueryResultFlagBits::e64);
 
-        if (result == vk::Result::eSuccess) {
-          // This value should probably be available in some form besides a
-          // timeline event but that is a job for a future Jonah.
-          auto gpu_ms = (((bits[1] - bits[0]) * timestamp_period_) / 1000000);
-          FML_TRACE_COUNTER(
-              "flutter", "GPUTracer",
-              reinterpret_cast<int64_t>(this),  // Trace Counter ID
-              "FrameTimeMS", gpu_ms);
+        if (result != vk::Result::eSuccess) {
+          return;
         }
-      })) {
+        // This value should probably be available in some form besides a
+        // timeline event but that is a job for a future Jonah.
+        auto gpu_ms = (((bits[1] - bits[0]) * timestamp_period_) / 1000000);
+        FML_TRACE_COUNTER("flutter", "GPUTracer",
+                          reinterpret_cast<int64_t>(this),  // Trace Counter ID
+                          "FrameTimeMS", gpu_ms);
+      });
+  if (!submitted) {
     VALIDATION_LOG << "GPUTracerVK failed to record frame end time.";
   }
 
