@@ -27,6 +27,7 @@
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/debug_report_vk.h"
 #include "impeller/renderer/backend/vulkan/fence_waiter_vk.h"
+#include "impeller/renderer/backend/vulkan/gpu_tracer_vk.h"
 #include "impeller/renderer/backend/vulkan/resource_manager_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_context_vk.h"
 #include "impeller/renderer/capabilities.h"
@@ -442,6 +443,10 @@ void ContextVK::Setup(Settings settings) {
   device_name_ = std::string(physical_device_properties.deviceName);
   is_valid_ = true;
 
+  // Create the GPU Tracer later because it depends on state from
+  // the ContextVK.
+  gpu_tracer_ = std::make_shared<GPUTracerVK>(weak_from_this());
+
   //----------------------------------------------------------------------------
   /// Label all the relevant objects. This happens after setup so that the
   /// debug messengers have had a chance to be set up.
@@ -547,6 +552,10 @@ ContextVK::CreateGraphicsCommandEncoderFactory() const {
 const std::shared_ptr<fml::ConcurrentTaskRunner>
 ContextVK::GetSubmitTaskRunner() const {
   return submit_message_loop_->GetTaskRunner();
+}
+
+std::shared_ptr<GPUTracerVK> ContextVK::GetGPUTracer() const {
+  return gpu_tracer_;
 }
 
 }  // namespace impeller

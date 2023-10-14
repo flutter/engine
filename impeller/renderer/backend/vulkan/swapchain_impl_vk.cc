@@ -5,12 +5,15 @@
 #include "impeller/renderer/backend/vulkan/swapchain_impl_vk.h"
 
 #include "fml/trace_event.h"
+#include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
+#include "impeller/renderer/backend/vulkan/gpu_tracer_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_vk.h"
 #include "impeller/renderer/backend/vulkan/swapchain_image_vk.h"
+#include "impeller/renderer/context.h"
 #include "vulkan/vulkan_structs.hpp"
 
 namespace impeller {
@@ -213,9 +216,9 @@ SwapchainImplVK::SwapchainImplVK(
                               vk::ImageUsageFlagBits::eTransferDst;
   swapchain_info.preTransform = vk::SurfaceTransformFlagBitsKHR::eIdentity;
   swapchain_info.compositeAlpha = composite.value();
-  // If we set the clipped value to true, Vulkan expects we will never read back
-  // from the buffer. This is analogous to [CAMetalLayer framebufferOnly] in
-  // Metal.
+  // If we set the clipped value to true, Vulkan expects we will never read
+  // back from the buffer. This is analogous to [CAMetalLayer framebufferOnly]
+  // in Metal.
   swapchain_info.clipped = true;
   // Setting queue family indices is irrelevant since the present mode is
   // exclusive.
@@ -377,6 +380,9 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
       nullptr               // fence
   );
 
+  /// Record the approximate start of the GPU workload.
+  context.GetGPUTracer()->RecordStartFrameTime();
+
   switch (acq_result) {
     case vk::Result::eSuccess:
       // Keep going.
@@ -481,6 +487,9 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
         return;
       }
     }
+
+    /// Record the approximate end of the GPU workload.
+    context.GetGPUTracer()->RecordEndFrameTime();
 
     //----------------------------------------------------------------------------
     /// Present the image.
