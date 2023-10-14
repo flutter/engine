@@ -1617,6 +1617,7 @@ ORIGIN: ../../../flutter/fml/shared_thread_merger.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/shared_thread_merger.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/size.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/status.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/fml/status_or.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/string_conversion.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/string_conversion.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/synchronization/atomic_object.h + ../../../flutter/LICENSE
@@ -2186,6 +2187,8 @@ ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/fence_waiter_vk.cc + .
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/fence_waiter_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/formats_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/formats_vk.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/gpu_tracer_vk.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/gpu_tracer_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/pass_bindings_cache.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/pass_bindings_cache.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_cache_vk.cc + ../../../flutter/LICENSE
@@ -4379,6 +4382,7 @@ FILE: ../../../flutter/fml/shared_thread_merger.cc
 FILE: ../../../flutter/fml/shared_thread_merger.h
 FILE: ../../../flutter/fml/size.h
 FILE: ../../../flutter/fml/status.h
+FILE: ../../../flutter/fml/status_or.h
 FILE: ../../../flutter/fml/string_conversion.cc
 FILE: ../../../flutter/fml/string_conversion.h
 FILE: ../../../flutter/fml/synchronization/atomic_object.h
@@ -4948,6 +4952,8 @@ FILE: ../../../flutter/impeller/renderer/backend/vulkan/fence_waiter_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/fence_waiter_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/formats_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/formats_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/gpu_tracer_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/gpu_tracer_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/limits_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/pass_bindings_cache.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/pass_bindings_cache.h
