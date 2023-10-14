@@ -513,6 +513,7 @@ void ContextVK::Shutdown() {
   resource_manager_.reset();
 
   raster_message_loop_->Terminate();
+  submit_message_loop_->Terminate();
 }
 
 std::shared_ptr<SurfaceContextVK> ContextVK::CreateSurfaceContext() {
