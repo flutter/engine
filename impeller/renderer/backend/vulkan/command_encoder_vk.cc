@@ -184,7 +184,7 @@ bool CommandEncoderVK::Submit(const SubmitCallback& callback) {
                      queue = std::move(queue_), fence_waiter = fence_waiter_,
                      device_holder = std::move(device_holder_),
                      callback = callback, fail_callback = fail_callback,
-                     command_buffer = std::move(command_buffer)]() {
+                     command_buffer = command_buffer]() {
     // Success or failure, you only get to submit once.
     bool local_fail_callback = fail_callback;
     fml::ScopedCleanupClosure reset([&]() {
