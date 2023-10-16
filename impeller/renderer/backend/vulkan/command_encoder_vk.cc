@@ -7,6 +7,7 @@
 #include "flutter/fml/closure.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/fence_waiter_vk.h"
+#include "impeller/renderer/backend/vulkan/gpu_tracer_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
 
 namespace impeller {
@@ -133,21 +134,27 @@ std::shared_ptr<CommandEncoderVK> CommandEncoderFactoryVK::Create() {
     context_vk.SetDebugName(tracked_objects->GetCommandBuffer(),
                             label_.value());
   }
+#ifdef IMPELLER_DEBUG
+  context->GetGPUTracer()->RecordCmdBufferStart(
+      tracked_objects->GetCommandBuffer());
+#endif  // IMPELLER_DEBUG
 
-  return std::make_shared<CommandEncoderVK>(context_vk.GetDeviceHolder(),
-                                            tracked_objects, queue,
-                                            context_vk.GetFenceWaiter());
+  return std::make_shared<CommandEncoderVK>(
+      context_vk.GetDeviceHolder(), tracked_objects, queue,
+      context_vk.GetFenceWaiter(), context->GetGPUTracer());
 }
 
 CommandEncoderVK::CommandEncoderVK(
     std::weak_ptr<const DeviceHolder> device_holder,
     std::shared_ptr<TrackedObjectsVK> tracked_objects,
     const std::shared_ptr<QueueVK>& queue,
-    std::shared_ptr<FenceWaiterVK> fence_waiter)
+    std::shared_ptr<FenceWaiterVK> fence_waiter,
+    const std::shared_ptr<GPUTracerVK>& gpu_tracer)
     : device_holder_(std::move(device_holder)),
       tracked_objects_(std::move(tracked_objects)),
       queue_(queue),
-      fence_waiter_(std::move(fence_waiter)) {}
+      fence_waiter_(std::move(fence_waiter)),
+      gpu_tracer_(gpu_tracer) {}
 
 CommandEncoderVK::~CommandEncoderVK() = default;
 
@@ -178,18 +185,26 @@ bool CommandEncoderVK::Submit(SubmitCallback callback) {
 
   auto command_buffer = GetCommandBuffer();
 
+  size_t end_frame = 0u;
+#ifdef IMPELLER_DEBUG
+  end_frame = gpu_tracer_->RecordCmdBufferEnd(command_buffer);
+#endif  // IMPELLER_DEBUG
+
   auto status = command_buffer.end();
   if (status != vk::Result::eSuccess) {
+    gpu_tracer_->OnFenceComplete(end_frame);
     VALIDATION_LOG << "Failed to end command buffer: " << vk::to_string(status);
     return false;
   }
   std::shared_ptr<const DeviceHolder> strong_device = device_holder_.lock();
   if (!strong_device) {
+    gpu_tracer_->OnFenceComplete(end_frame);
     VALIDATION_LOG << "Device lost.";
     return false;
   }
   auto [fence_result, fence] = strong_device->GetDevice().createFenceUnique({});
   if (fence_result != vk::Result::eSuccess) {
+    gpu_tracer_->OnFenceComplete(end_frame);
     VALIDATION_LOG << "Failed to create fence: " << vk::to_string(fence_result);
     return false;
   }
@@ -199,6 +214,7 @@ bool CommandEncoderVK::Submit(SubmitCallback callback) {
   submit_info.setCommandBuffers(buffers);
   status = queue_->Submit(submit_info, *fence);
   if (status != vk::Result::eSuccess) {
+    gpu_tracer_->OnFenceComplete(end_frame);
     VALIDATION_LOG << "Failed to submit queue: " << vk::to_string(status);
     return false;
   }
@@ -206,9 +222,12 @@ bool CommandEncoderVK::Submit(SubmitCallback callback) {
   // Submit will proceed, call callback with true when it is done and do not
   // call when `reset` is collected.
   fail_callback = false;
+  auto gpu_tracer = gpu_tracer_;
   return fence_waiter_->AddFence(
       std::move(fence),
-      [callback, tracked_objects = std::move(tracked_objects_)] {
+      [callback, tracked_objects = std::move(tracked_objects_), gpu_tracer,
+       end_frame] {
+        gpu_tracer->OnFenceComplete(end_frame);
         if (callback) {
           callback(true);
         }
