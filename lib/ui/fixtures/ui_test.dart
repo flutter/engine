@@ -325,7 +325,11 @@ external void _validateExternal(Uint8List result);
 @pragma('vm:external-name', 'ValidateError')
 external void _validateError(String? error);
 @pragma('vm:external-name', 'TurnOffGPU')
-external void _turnOffGPU();
+external void _turnOffGPU(bool value);
+@pragma('vm:external-name', 'FlushGpuAwaitingTasks')
+external void _flushGpuAwaitingTasks();
+@pragma('vm:external-name', 'ValidateNotNull')
+external void _validateNotNull(Object? object);
 
 @pragma('vm:entry-point')
 Future<void> toByteDataWithoutGPU() async {
@@ -338,12 +342,40 @@ Future<void> toByteDataWithoutGPU() async {
   canvas.drawCircle(c, 25.0, paint);
   final Picture picture = pictureRecorder.endRecording();
   final Image image = await picture.toImage(100, 100);
-  _turnOffGPU();
+  _turnOffGPU(true);
+  Timer flusher = Timer.periodic(Duration(milliseconds: 1), (timer) {
+    _flushGpuAwaitingTasks();
+  });
   try {
     ByteData? byteData = await image.toByteData();
     _validateError(null);
-  } catch (ex) {
-    _validateError(ex.toString());
+  } catch (error) {
+    _validateError(error.toString());
+  } finally {
+    flusher.cancel();
+  }
+}
+
+@pragma('vm:entry-point')
+Future<void> toByteDataRetries() async {
+  final PictureRecorder pictureRecorder = PictureRecorder();
+  final Canvas canvas = Canvas(pictureRecorder);
+  final Paint paint = Paint()
+    ..color = Color.fromRGBO(255, 255, 255, 1.0)
+    ..style = PaintingStyle.fill;
+  final Offset c = Offset(50.0, 50.0);
+  canvas.drawCircle(c, 25.0, paint);
+  final Picture picture = pictureRecorder.endRecording();
+  final Image image = await picture.toImage(100, 100);
+  _turnOffGPU(true);
+  Future<void>.delayed(Duration(milliseconds: 10), () {
+    _turnOffGPU(false);
+  });
+  try {
+    ByteData? byteData = await image.toByteData();
+    _validateNotNull(byteData);
+  } catch (error) {
+    _validateNotNull(null);
   }
 }
 
@@ -1100,45 +1132,3 @@ external void _callHook(
   Object? arg20,
   Object? arg21,
 ]);
-
-Scene _createRedBoxScene(Size size) {
-  final SceneBuilder builder = SceneBuilder();
-  builder.pushOffset(0.0, 0.0);
-  final Paint paint = Paint()
-    ..color = Color.fromARGB(255, 255, 0, 0)
-    ..style = PaintingStyle.fill;
-  final PictureRecorder baseRecorder = PictureRecorder();
-  final Canvas canvas = Canvas(baseRecorder);
-  canvas.drawRect(Rect.fromLTRB(0.0, 0.0, size.width, size.height), paint);
-  final Picture picture = baseRecorder.endRecording();
-  builder.addPicture(Offset(0.0, 0.0), picture);
-  builder.pop();
-  return builder.build();
-}
-
-@pragma('vm:entry-point')
-void incorrectImmediateRender() {
-  PlatformDispatcher.instance.views.first.render(_createRedBoxScene(Size(2, 2)));
-  _finish();
-  // Don't schedule a frame here. This test only checks if the
-  // [FlutterView.render] call is propagated to PlatformConfiguration.render
-  // and thus doesn't need anything from `Animator` or `Engine`, which,
-  // besides, are not even created in the native side at all.
-}
-
-@pragma('vm:entry-point')
-void incorrectDoubleRender() {
-  PlatformDispatcher.instance.onBeginFrame = (Duration value) {
-    PlatformDispatcher.instance.views.first.render(_createRedBoxScene(Size(2, 2)));
-    PlatformDispatcher.instance.views.first.render(_createRedBoxScene(Size(3, 3)));
-  };
-  PlatformDispatcher.instance.onDrawFrame = () {
-    PlatformDispatcher.instance.views.first.render(_createRedBoxScene(Size(4, 4)));
-    PlatformDispatcher.instance.views.first.render(_createRedBoxScene(Size(5, 5)));
-  };
-  _finish();
-  // Don't schedule a frame here. This test only checks if the
-  // [FlutterView.render] call is propagated to PlatformConfiguration.render
-  // and thus doesn't need anything from `Animator` or `Engine`, which,
-  // besides, are not even created in the native side at all.
-}
