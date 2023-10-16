@@ -52,14 +52,18 @@ public class FlutterImageView extends View implements RenderSurface {
   @Nullable private Bitmap currentBitmap;
   @Nullable private FlutterRenderer flutterRenderer;
   @NonNull private final Set<Runnable> onImageAvailableListeners = new HashSet<>();
-  @NonNull private final ImageReader.OnImageAvailableListener onImageAvailableListener = new ImageReader.OnImageAvailableListener() {
-    @Override
-    public void onImageAvailable(ImageReader reader) {
-      for (Runnable listener : onImageAvailableListeners) {
-        listener.run();
-      }
-    }
-  };
+
+  @NonNull
+  private final ImageReader.OnImageAvailableListener onImageAvailableListener =
+      new ImageReader.OnImageAvailableListener() {
+        @Override
+        public void onImageAvailable(ImageReader reader) {
+          for (Runnable listener : onImageAvailableListeners) {
+            listener.run();
+          }
+        }
+      };
+
   @NonNull private final Deque<Image> acquiredImages = new ArrayDeque<>();
   /** Image pending to be draw. */
   @Nullable private Image pendingImage;
@@ -362,7 +366,7 @@ public class FlutterImageView extends View implements RenderSurface {
   /**
    * Close the image after it is drawn on screen.
    *
-   * The image might be drawn after the next FrameCallback. Close the image after the following
+   * <p>The image might be drawn after the next FrameCallback. Close the image after the following
    * FrameCallback to make sure it is drawn on screen.
    */
   private void closeImageAfterDrawing(@NonNull final Image image) {
