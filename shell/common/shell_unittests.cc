@@ -4736,39 +4736,36 @@ class EngineContext {
                 std::unique_ptr<Animator> animator,  //
                 DartVMRef vm,                        //
                 fml::RefPtr<const DartSnapshot> isolate_snapshot)
-      : task_runners_(task_runners),
-        isolate_snapshot_(std::move(isolate_snapshot)),
-        vm_(std::move(vm)) {
-    dispatcher_maker_ = [](DefaultPointerDataDispatcher::Delegate& delegate) {
-      return std::make_unique<DefaultPointerDataDispatcher>(delegate);
-    };
-    PostSync(task_runners.GetUITaskRunner(),
-             [this, &settings, &animator, &delegate] {
-               engine_ = std::make_unique<Engine>(
-                   /*delegate=*/delegate,
-                   /*dispatcher_maker=*/dispatcher_maker_,
-                   /*vm=*/*&vm_,
-                   /*isolate_snapshot=*/isolate_snapshot_,
-                   /*task_runners=*/task_runners_,
-                   /*platform_data=*/PlatformData(),
-                   /*settings=*/settings,
-                   /*animator=*/std::move(animator),
-                   /*io_manager=*/io_manager_,
-                   /*unref_queue=*/nullptr,
-                   /*snapshot_delegate=*/snapshot_delegate_,
-                   /*volatile_path_tracker=*/nullptr,
-                   /*gpu_disabled_switch=*/std::make_shared<fml::SyncSwitch>());
-             });
+      : task_runners_(task_runners), vm_(std::move(vm)) {
+    PostSync(task_runners.GetUITaskRunner(), [this, &settings, &animator,
+                                              &delegate, &isolate_snapshot] {
+      auto dispatcher_maker =
+          [](DefaultPointerDataDispatcher::Delegate& delegate) {
+            return std::make_unique<DefaultPointerDataDispatcher>(delegate);
+          };
+      engine_ = std::make_unique<Engine>(
+          /*delegate=*/delegate,
+          /*dispatcher_maker=*/dispatcher_maker,
+          /*vm=*/*&vm_,
+          /*isolate_snapshot=*/std::move(isolate_snapshot),
+          /*task_runners=*/task_runners_,
+          /*platform_data=*/PlatformData(),
+          /*settings=*/settings,
+          /*animator=*/std::move(animator),
+          /*io_manager=*/io_manager_,
+          /*unref_queue=*/nullptr,
+          /*snapshot_delegate=*/snapshot_delegate_,
+          /*volatile_path_tracker=*/nullptr,
+          /*gpu_disabled_switch=*/std::make_shared<fml::SyncSwitch>());
+    });
   }
 
   TaskRunners task_runners_;
-  fml::RefPtr<const DartSnapshot> isolate_snapshot_;
   DartVMRef vm_;
   std::unique_ptr<Engine> engine_;
 
   fml::WeakPtr<IOManager> io_manager_;
   fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate_;
-  PointerDataDispatcherMaker dispatcher_maker_;
 };
 
 TEST_F(ShellTest, AnimatorAcceptsMultipleRenders) {
@@ -4796,8 +4793,8 @@ TEST_F(ShellTest, AnimatorAcceptsMultipleRenders) {
         engine_context->engine().BeginFrame(frame_target_time, frame_number);
       }));
 
-  TaskRunners task_runners = GetTaskRunnersForFixture();
   Settings settings = CreateSettingsForFixture();
+  TaskRunners task_runners = GetTaskRunnersForFixture();
 
   fml::AutoResetWaitableEvent callback_ready_latch;
   AddNativeCallback("NotifyNative",
