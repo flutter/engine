@@ -4684,9 +4684,97 @@ class MockShell : public Engine::Delegate, public Animator::Delegate {
               (override));
 };
 
+class EngineContext {
+ public:
+  using EngineCallback = std::function<void(Engine&)>;
+
+  [[nodiscard]] static std::unique_ptr<EngineContext> Create(
+      Engine::Delegate& delegate,  //
+      Settings settings,           //
+      TaskRunners task_runners,    //
+      std::unique_ptr<Animator> animator) {
+    auto [vm, isolate_snapshot] = Shell::InferVmInitDataFromSettings(settings);
+    FML_CHECK(vm) << "Must be able to initialize the VM.";
+    // Construct the class with `new` because `make_unique` has no access to the
+    // private constructor.
+    EngineContext* raw_pointer =
+        new EngineContext(delegate, settings, task_runners, std::move(animator),
+                          std::move(vm), isolate_snapshot);
+    return std::unique_ptr<EngineContext>(raw_pointer);
+  }
+
+  Engine& engine() {
+    FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
+    return *engine_;
+  }
+
+  void Run(RunConfiguration configuration) {
+    PostSync(task_runners_.GetUITaskRunner(), [this, &configuration] {
+      Engine::RunStatus run_status = engine_->Run(std::move(configuration));
+      FML_CHECK(run_status == Engine::RunStatus::Success)
+          << "Engine failed to run.";
+      (void)run_status;  // Suppress unused-variable warning
+    });
+  }
+
+  // Run a task that operates the Engine on the UI thread, and wait
+  // for the task to end.
+  void EngineTaskSync(EngineCallback task) {
+    ASSERT_TRUE(engine_);
+    ASSERT_TRUE(task);
+    PostSync(task_runners_.GetUITaskRunner(), [&]() { task(*engine_); });
+  }
+
+  ~EngineContext() {
+    PostSync(task_runners_.GetUITaskRunner(), [this] { engine_.reset(); });
+  }
+
+ private:
+  EngineContext(Engine::Delegate& delegate,          //
+                Settings settings,                   //
+                TaskRunners task_runners,            //
+                std::unique_ptr<Animator> animator,  //
+                DartVMRef vm,                        //
+                fml::RefPtr<const DartSnapshot> isolate_snapshot)
+      : task_runners_(task_runners),
+        isolate_snapshot_(std::move(isolate_snapshot)),
+        vm_(std::move(vm)) {
+    dispatcher_maker_ = [](DefaultPointerDataDispatcher::Delegate& delegate) {
+      return std::make_unique<DefaultPointerDataDispatcher>(delegate);
+    };
+    PostSync(task_runners.GetUITaskRunner(),
+             [this, &settings, &animator, &delegate] {
+               engine_ = std::make_unique<Engine>(
+                   /*delegate=*/delegate,
+                   /*dispatcher_maker=*/dispatcher_maker_,
+                   /*vm=*/*&vm_,
+                   /*isolate_snapshot=*/isolate_snapshot_,
+                   /*task_runners=*/task_runners_,
+                   /*platform_data=*/PlatformData(),
+                   /*settings=*/settings,
+                   /*animator=*/std::move(animator),
+                   /*io_manager=*/io_manager_,
+                   /*unref_queue=*/nullptr,
+                   /*snapshot_delegate=*/snapshot_delegate_,
+                   /*volatile_path_tracker=*/nullptr,
+                   /*gpu_disabled_switch=*/std::make_shared<fml::SyncSwitch>());
+             });
+  }
+
+  TaskRunners task_runners_;
+  fml::RefPtr<const DartSnapshot> isolate_snapshot_;
+  DartVMRef vm_;
+  std::unique_ptr<Engine> engine_;
+
+  fml::WeakPtr<IOManager> io_manager_;
+  fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate_;
+  PointerDataDispatcherMaker dispatcher_maker_;
+};
+
 TEST_F(ShellTest, AnimatorAcceptsMultipleRenders) {
   MockShell mock_shell;
-  std::unique_ptr<Engine> engine;
+  std::unique_ptr<EngineContext> engine_context;
+
   std::shared_ptr<PlatformMessageHandler> platform_message_handler =
       std::make_shared<MockPlatformMessageHandler>();
   EXPECT_CALL(mock_shell, GetPlatformMessageHandler)
@@ -4703,23 +4791,13 @@ TEST_F(ShellTest, AnimatorAcceptsMultipleRenders) {
             draw_latch.Signal();
           }));
   EXPECT_CALL(mock_shell, OnAnimatorBeginFrame)
-      .WillOnce(Invoke(
-          [&engine](fml::TimePoint frame_target_time, uint64_t frame_number) {
-            engine->BeginFrame(frame_target_time, frame_number);
-          }));
+      .WillOnce(Invoke([&engine_context](fml::TimePoint frame_target_time,
+                                         uint64_t frame_number) {
+        engine_context->engine().BeginFrame(frame_target_time, frame_number);
+      }));
 
   TaskRunners task_runners = GetTaskRunnersForFixture();
   Settings settings = CreateSettingsForFixture();
-  auto configuration = RunConfiguration::InferFromSettings(settings);
-  configuration.SetEntrypoint("onBeginFrameRendersMultipleViews");
-
-  PointerDataDispatcherMaker dispatcher_maker =
-      [](DefaultPointerDataDispatcher::Delegate& delegate) {
-        return std::make_unique<DefaultPointerDataDispatcher>(delegate);
-      };
-
-  fml::WeakPtr<IOManager> io_manager;
-  fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate;
 
   fml::AutoResetWaitableEvent callback_ready_latch;
   AddNativeCallback("NotifyNative",
@@ -4727,46 +4805,33 @@ TEST_F(ShellTest, AnimatorAcceptsMultipleRenders) {
                       callback_ready_latch.Signal();
                     }));
 
-  auto [vm, isolate_snapshot] = Shell::InferVmInitDataFromSettings(settings);
-  FML_CHECK(vm) << "Must be able to initialize the VM.";
+  std::unique_ptr<Animator> animator;
   PostSync(task_runners.GetUITaskRunner(),
-           [&, vm = &vm, isolate_snapshot = isolate_snapshot] {
-             auto animator = std::make_unique<Animator>(
+           [&animator, &mock_shell, &task_runners] {
+             animator = std::make_unique<Animator>(
                  mock_shell, task_runners,
                  static_cast<std::unique_ptr<VsyncWaiter>>(
                      std::make_unique<testing::ConstantFiringVsyncWaiter>(
                          task_runners)));
-             engine = std::make_unique<Engine>(
-                 /*delegate=*/mock_shell,
-                 /*dispatcher_maker=*/dispatcher_maker,
-                 /*vm=*/*vm,
-                 /*isolate_snapshot=*/isolate_snapshot,
-                 /*task_runners=*/task_runners,
-                 /*platform_data=*/PlatformData(),
-                 /*settings=*/settings,
-                 /*animator=*/std::move(animator),
-                 /*io_manager=*/io_manager,
-                 /*unref_queue=*/nullptr,
-                 /*snapshot_delegate=*/snapshot_delegate,
-                 /*volatile_path_tracker=*/nullptr,
-                 /*gpu_disabled_switch=*/std::make_shared<fml::SyncSwitch>());
-
-             Engine::RunStatus run_status =
-                 engine->Run(std::move(configuration));
-             FML_CHECK(run_status == Engine::RunStatus::Success)
-                 << "Engine failed to run.";
-             (void)run_status;  // Suppress unused-variable warning
-             engine->AddView(1, {1, 10, 10, 22, 0});
-             engine->AddView(2, {1, 10, 10, 22, 0});
            });
+
+  engine_context = EngineContext::Create(mock_shell, settings, task_runners,
+                                         std::move(animator));
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("onBeginFrameRendersMultipleViews");
+  engine_context->Run(std::move(configuration));
+
+  engine_context->EngineTaskSync([](Engine& engine) {
+    engine.AddView(1, {1, 10, 10, 22, 0});
+    engine.AddView(2, {1, 10, 10, 22, 0});
+  });
 
   callback_ready_latch.Wait();
 
-  PostSync(task_runners.GetUITaskRunner(),
-           [&engine] { engine->ScheduleFrame(); });
+  engine_context->EngineTaskSync(
+      [](Engine& engine) { engine.ScheduleFrame(); });
   draw_latch.Wait();
-
-  PostSync(task_runners.GetUITaskRunner(), [&engine] { engine.reset(); });
 }
 
 }  // namespace testing
