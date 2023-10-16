@@ -230,12 +230,12 @@ StreamChannel<dynamic> _connectToIframe(String url, int id) {
     message.stopPropagation();
 
     if (message.data == 'port') {
-        final DomMessagePort port = message.ports.first;
-        domSubscriptions.add(
-            DomSubscription(port, 'message',(DomEvent event) {
-          controller.local.sink.add((event as DomMessageEvent).data);
-        }));
-        port.start();
+      final DomMessagePort port = message.ports.first;
+      domSubscriptions.add(
+          DomSubscription(port, 'message',(DomEvent event) {
+        controller.local.sink.add((event as DomMessageEvent).data);
+      }));
+      port.start();
       streamSubscriptions.add(controller.local.stream.listen(port.postMessage));
     } else if (message.data['ready'] == true) {
       // This message indicates that the iframe is actively listening for
