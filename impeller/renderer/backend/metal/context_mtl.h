@@ -6,8 +6,8 @@
 
 #include <Metal/Metal.h>
 
+#include <deque>
 #include <string>
-#include <vector>
 
 #include "flutter/fml/concurrent_message_loop.h"
 #include "flutter/fml/macros.h"
@@ -98,7 +98,20 @@ class ContextMTL final : public Context,
   std::shared_ptr<GPUTracerMTL> GetGPUTracer() const;
 #endif  // IMPELLER_DEBUG
 
+  // |Context|
+  void StoreTaskForGPU(std::function<void()> task) override;
+
  private:
+  class SyncSwitchObserver : public fml::SyncSwitch::Observer {
+   public:
+    SyncSwitchObserver(ContextMTL& parent);
+    virtual ~SyncSwitchObserver() = default;
+    void OnSyncSwitchUpdate(bool new_value) override;
+
+   private:
+    ContextMTL& parent_;
+  };
+
   id<MTLDevice> device_ = nullptr;
   id<MTLCommandQueue> command_queue_ = nullptr;
   std::shared_ptr<ShaderLibraryMTL> shader_library_;
@@ -111,6 +124,8 @@ class ContextMTL final : public Context,
 #ifdef IMPELLER_DEBUG
   std::shared_ptr<GPUTracerMTL> gpu_tracer_;
 #endif  // IMPELLER_DEBUG
+  std::deque<std::function<void()>> tasks_awaiting_gpu_;
+  std::unique_ptr<SyncSwitchObserver> sync_switch_observer_;
   bool is_valid_ = false;
 
   ContextMTL(
@@ -121,6 +136,8 @@ class ContextMTL final : public Context,
 
   std::shared_ptr<CommandBuffer> CreateCommandBufferInQueue(
       id<MTLCommandQueue> queue) const;
+
+  void FlushTasksAwaitingGPU();
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContextMTL);
 };

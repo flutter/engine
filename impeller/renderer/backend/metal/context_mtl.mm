@@ -85,6 +85,9 @@ ContextMTL::ContextMTL(
     return;
   }
 
+  sync_switch_observer_.reset(new SyncSwitchObserver(*this));
+  is_gpu_disabled_sync_switch_->AddObserver(sync_switch_observer_.get());
+
   // Worker task runner.
   {
     raster_message_loop_ = fml::ConcurrentMessageLoop::Create(
@@ -288,7 +291,9 @@ std::shared_ptr<ContextMTL> ContextMTL::Create(
   return context;
 }
 
-ContextMTL::~ContextMTL() = default;
+ContextMTL::~ContextMTL() {
+  is_gpu_disabled_sync_switch_->RemoveObserver(sync_switch_observer_.get());
+}
 
 Context::BackendType ContextMTL::GetBackendType() const {
   return Context::BackendType::kMetal;
@@ -384,6 +389,30 @@ id<MTLCommandBuffer> ContextMTL::CreateMTLCommandBuffer(
     [buffer setLabel:@(label.data())];
   }
   return buffer;
+}
+
+void ContextMTL::StoreTaskForGPU(std::function<void()> task) {
+  tasks_awaiting_gpu_.emplace_back(std::move(task));
+  while (tasks_awaiting_gpu_.size() > kMaxTasksAwaitingGPU) {
+    tasks_awaiting_gpu_.front()();
+    tasks_awaiting_gpu_.pop_front();
+  }
+}
+
+void ContextMTL::FlushTasksAwaitingGPU() {
+  for (const auto& task : tasks_awaiting_gpu_) {
+    task();
+  }
+  tasks_awaiting_gpu_.clear();
+}
+
+ContextMTL::SyncSwitchObserver::SyncSwitchObserver(ContextMTL& parent)
+    : parent_(parent) {}
+
+void ContextMTL::SyncSwitchObserver::OnSyncSwitchUpdate(bool new_is_disabled) {
+  if (!new_is_disabled) {
+    parent_.FlushTasksAwaitingGPU();
+  }
 }
 
 }  // namespace impeller
