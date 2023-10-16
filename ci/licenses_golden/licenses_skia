@@ -1,4 +1,4 @@
-Signature: 6a9f7e57b6ac3b40b65178a7bcb1846e
+Signature: 947534a16c5dcca3d24bf2033f7fc045
 
 ====================================================================================================
 LIBRARY: etc1
@@ -8950,7 +8950,6 @@ ORIGIN: ../../../third_party/skia/src/image/SkSurface_Null.cpp + ../../../third_
 ORIGIN: ../../../third_party/skia/src/image/SkTiledImageUtils.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/opts/SkOpts_RestoreTarget.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/opts/SkOpts_SetTarget.h + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/src/ports/SkImageGenerator_empty.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/ports/fontations/src/ffi.rs + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/ports/fontations/src/skpath_bridge.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/shaders/SkBlendShader.h + ../../../third_party/skia/LICENSE
@@ -9215,7 +9214,6 @@ FILE: ../../../third_party/skia/src/image/SkSurface_Null.cpp
 FILE: ../../../third_party/skia/src/image/SkTiledImageUtils.cpp
 FILE: ../../../third_party/skia/src/opts/SkOpts_RestoreTarget.h
 FILE: ../../../third_party/skia/src/opts/SkOpts_SetTarget.h
-FILE: ../../../third_party/skia/src/ports/SkImageGenerator_empty.cpp
 FILE: ../../../third_party/skia/src/ports/fontations/src/ffi.rs
 FILE: ../../../third_party/skia/src/ports/fontations/src/skpath_bridge.h
 FILE: ../../../third_party/skia/src/shaders/SkBlendShader.h
