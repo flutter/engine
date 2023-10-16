@@ -33,7 +33,7 @@ TEST(GPUTrackerVK, CanTraceCmdBuffer) {
 
   ASSERT_EQ(frame_id, 0u);
 
-  tracer->OnFenceComplete(frame_id);
+  tracer->OnFenceComplete(frame_id, true);
 }
 #endif  // IMPELLER_DEBUG
 

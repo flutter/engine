@@ -187,19 +187,19 @@ bool CommandEncoderVK::Submit(SubmitCallback callback) {
 
   auto status = command_buffer.end();
   if (status != vk::Result::eSuccess) {
-    gpu_tracer_->OnFenceComplete(end_frame);
+    gpu_tracer_->OnFenceComplete(end_frame, false);
     VALIDATION_LOG << "Failed to end command buffer: " << vk::to_string(status);
     return false;
   }
   std::shared_ptr<const DeviceHolder> strong_device = device_holder_.lock();
   if (!strong_device) {
-    gpu_tracer_->OnFenceComplete(end_frame);
+    gpu_tracer_->OnFenceComplete(end_frame, false);
     VALIDATION_LOG << "Device lost.";
     return false;
   }
   auto [fence_result, fence] = strong_device->GetDevice().createFenceUnique({});
   if (fence_result != vk::Result::eSuccess) {
-    gpu_tracer_->OnFenceComplete(end_frame);
+    gpu_tracer_->OnFenceComplete(end_frame, false);
     VALIDATION_LOG << "Failed to create fence: " << vk::to_string(fence_result);
     return false;
   }
@@ -209,7 +209,7 @@ bool CommandEncoderVK::Submit(SubmitCallback callback) {
   submit_info.setCommandBuffers(buffers);
   status = queue_->Submit(submit_info, *fence);
   if (status != vk::Result::eSuccess) {
-    gpu_tracer_->OnFenceComplete(end_frame);
+    gpu_tracer_->OnFenceComplete(end_frame, false);
     VALIDATION_LOG << "Failed to submit queue: " << vk::to_string(status);
     return false;
   }
@@ -222,7 +222,7 @@ bool CommandEncoderVK::Submit(SubmitCallback callback) {
       std::move(fence),
       [callback, tracked_objects = std::move(tracked_objects_), gpu_tracer,
        end_frame] {
-        gpu_tracer->OnFenceComplete(end_frame);
+        gpu_tracer->OnFenceComplete(end_frame, true);
         if (callback) {
           callback(true);
         }

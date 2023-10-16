@@ -9,7 +9,7 @@
 #include "fml/trace_event.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
-#include "vulkan/vulkan_enums.hpp"
+#include "vulkan/vulkan.hpp"
 
 namespace impeller {
 
@@ -50,6 +50,7 @@ void GPUTracerVK::MarkFrameEnd() {
 
   state.pending_buffers = 0;
   state.current_index = 0;
+  state.contains_failure = false;
   in_frame_ = false;
 }
 
@@ -109,7 +110,7 @@ size_t GPUTracerVK::RecordCmdBufferEnd(const vk::CommandBuffer& buffer) {
   return current_state_;
 }
 
-void GPUTracerVK::OnFenceComplete(size_t frame_index) {
+void GPUTracerVK::OnFenceComplete(size_t frame_index, bool success) {
   if (!valid_) {
     return;
   }
@@ -118,9 +119,10 @@ void GPUTracerVK::OnFenceComplete(size_t frame_index) {
   if (state.pending_buffers == 0) {
     return;
   }
+  state.contains_failure = !success;
   state.pending_buffers -= 1;
 
-  if (state.pending_buffers == 0) {
+  if (state.pending_buffers == 0 && !state.contains_failure) {
     auto buffer_count = state.current_index;
     std::vector<uint64_t> bits(buffer_count);
 

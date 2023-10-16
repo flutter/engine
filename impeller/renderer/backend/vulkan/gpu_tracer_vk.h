@@ -29,7 +29,7 @@ class GPUTracerVK {
   size_t RecordCmdBufferEnd(const vk::CommandBuffer& buffer);
 
   /// @brief Signal that the cmd buffer is completed.
-  void OnFenceComplete(size_t frame_index);
+  void OnFenceComplete(size_t frame_index, bool success);
 
   /// @brief Signal the start of a frame workload.
   ///
@@ -48,6 +48,7 @@ class GPUTracerVK {
   struct GPUTraceState {
     size_t current_index = 0;
     size_t pending_buffers = 0;
+    bool contains_failure = false;
     vk::UniqueQueryPool query_pool;
   };
 
