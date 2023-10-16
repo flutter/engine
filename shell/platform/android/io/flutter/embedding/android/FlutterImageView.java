@@ -26,9 +26,9 @@ import io.flutter.Log;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -45,15 +45,22 @@ import java.util.Set;
  * onDraw}.
  */
 @TargetApi(19)
-public class FlutterImageView extends View
-    implements RenderSurface, ImageReader.OnImageAvailableListener {
+public class FlutterImageView extends View implements RenderSurface {
   private static final String TAG = "FlutterImageView";
 
   @NonNull private ImageReader imageReader;
   @Nullable private Bitmap currentBitmap;
   @Nullable private FlutterRenderer flutterRenderer;
   @NonNull private final Set<Runnable> onImageAvailableListeners = new HashSet<>();
-  @NonNull private final List<Image> acquiredImages = new ArrayList<>();
+  @NonNull private final ImageReader.OnImageAvailableListener onImageAvailableListener = new ImageReader.OnImageAvailableListener() {
+    @Override
+    public void onImageAvailable(ImageReader reader) {
+      for (Runnable listener : onImageAvailableListeners) {
+        listener.run();
+      }
+    }
+  };
+  @NonNull private final Deque<Image> acquiredImages = new ArrayDeque<>();
   /** Image pending to be draw. */
   @Nullable private Image pendingImage;
 
@@ -111,15 +118,7 @@ public class FlutterImageView extends View
 
   private void setOnImageAvailableListener() {
     if (imageReader != null) {
-      imageReader.setOnImageAvailableListener(this, null);
-    }
-  }
-
-  /** OnImageAvailableListener callback. */
-  @Override
-  public void onImageAvailable(ImageReader reader) {
-    for (Runnable listener : onImageAvailableListeners) {
-      listener.run();
+      imageReader.setOnImageAvailableListener(onImageAvailableListener, null);
     }
   }
 
@@ -228,7 +227,11 @@ public class FlutterImageView extends View
     // 3. While the engine will also stop producing frames, there is a race condition.
     final Image newImage = imageReader.acquireLatestImage();
     if (newImage != null) {
-      acquiredImages.add(newImage);
+      if (pendingImage != null) {
+        pendingImage.close();
+        acquiredImages.remove(pendingImage);
+      }
+      acquiredImages.addLast(newImage);
       pendingImage = newImage;
       invalidate();
       closeImageAfterDrawing(newImage);
@@ -293,7 +296,7 @@ public class FlutterImageView extends View
   }
 
   @TargetApi(29)
-  private void updateCurrentBitmap(@NonNull final Image currentImage) {
+  private void updateCurrentBitmap(@NonNull Image currentImage) {
     if (android.os.Build.VERSION.SDK_INT >= 29) {
       final HardwareBuffer buffer = currentImage.getHardwareBuffer();
       currentBitmap = Bitmap.wrapHardwareBuffer(buffer, ColorSpace.get(ColorSpace.Named.SRGB));
@@ -347,7 +350,7 @@ public class FlutterImageView extends View
       if (acquiredImages.isEmpty()) {
         break;
       } else {
-        Image image = acquiredImages.remove(0);
+        Image image = acquiredImages.removeFirst();
         image.close();
         if (pendingImage == image) {
           pendingImage = null;
@@ -359,7 +362,7 @@ public class FlutterImageView extends View
   /**
    * Close the image after it is drawn on screen.
    *
-   * <p>The image might be drawn after the next FrameCallback. Close the image after the following
+   * The image might be drawn after the next FrameCallback. Close the image after the following
    * FrameCallback to make sure it is drawn on screen.
    */
   private void closeImageAfterDrawing(@NonNull final Image image) {

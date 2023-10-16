@@ -1562,8 +1562,8 @@ public class FlutterJNI {
      * @param currentNanoTime The value of System.nanoTime() when the rasterizer begin its
      *     rendering.
      */
-    default void onRasterStart(
-        long buildStartTime, long buildEndTime, long rasterStartTime, long currentNanoTime) {}
+    void onRasterStart(
+        long buildStartTime, long buildEndTime, long rasterStartTime, long currentNanoTime);
   }
 
   /**
