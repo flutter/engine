@@ -585,6 +585,8 @@ TEST_F(EngineTest, AnimatorAcceptsMultipleRenders) {
             auto status =
                 pipeline->Consume([&](std::unique_ptr<FrameItem> item) {
                   EXPECT_EQ(item->layer_tree_tasks.size(), 2u);
+                  EXPECT_EQ(item->layer_tree_tasks[0]->view_id, 1);
+                  EXPECT_EQ(item->layer_tree_tasks[1]->view_id, 2);
                 });
             EXPECT_EQ(status, PipelineConsumeResult::Done);
             draw_latch.Signal();
