@@ -3054,7 +3054,6 @@ extension DomMessageEventSourceExtension on DomMessageEventLocation {
   external String? get href;
 }
 
-
 @JS()
 @staticInterop
 class DomHTMLIFrameElement extends DomHTMLElement {}
