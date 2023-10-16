@@ -144,7 +144,9 @@ ContextMTL::ContextMTL(
 
   device_capabilities_ =
       InferMetalCapabilities(device_, PixelFormat::kB8G8R8A8UNormInt);
+#ifdef IMPELLER_DEBUG
   gpu_tracer_ = std::make_shared<GPUTracerMTL>();
+#endif  // IMPELLER_DEBUG
   is_valid_ = true;
 }
 
@@ -327,9 +329,11 @@ void ContextMTL::Shutdown() {
   raster_message_loop_.reset();
 }
 
+#ifdef IMPELLER_DEBUG
 std::shared_ptr<GPUTracerMTL> ContextMTL::GetGPUTracer() const {
   return gpu_tracer_;
 }
+#endif  // IMPELLER_DEBUG
 
 const std::shared_ptr<fml::ConcurrentTaskRunner>
 ContextMTL::GetWorkerTaskRunner() const {

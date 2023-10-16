@@ -94,7 +94,9 @@ class ContextMTL final : public Context,
 
   std::shared_ptr<const fml::SyncSwitch> GetIsGpuDisabledSyncSwitch() const;
 
+#ifdef IMPELLER_DEBUG
   std::shared_ptr<GPUTracerMTL> GetGPUTracer() const;
+#endif  // IMPELLER_DEBUG
 
  private:
   id<MTLDevice> device_ = nullptr;
@@ -106,7 +108,9 @@ class ContextMTL final : public Context,
   std::shared_ptr<const Capabilities> device_capabilities_;
   std::shared_ptr<fml::ConcurrentMessageLoop> raster_message_loop_;
   std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch_;
+#ifdef IMPELLER_DEBUG
   std::shared_ptr<GPUTracerMTL> gpu_tracer_;
+#endif  // IMPELLER_DEBUG
   bool is_valid_ = false;
 
   ContextMTL(

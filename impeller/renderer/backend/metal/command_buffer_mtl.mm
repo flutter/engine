@@ -163,8 +163,9 @@ bool CommandBufferMTL::OnSubmitCommands(CompletionCallback callback) {
   if (!context) {
     return false;
   }
+#ifdef IMPELLER_DEBUG
   ContextMTL::Cast(*context).GetGPUTracer()->RecordCmdBuffer(buffer_);
-
+#endif  // IMPELLER_DEBUG
   if (callback) {
     [buffer_
         addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
@@ -196,7 +197,9 @@ bool CommandBufferMTL::SubmitCommandsAsync(
   auto buffer = buffer_;
   buffer_ = nil;
 
+#ifdef IMPELLER_DEBUG
   ContextMTL::Cast(*context).GetGPUTracer()->RecordCmdBuffer(buffer);
+#endif  // IMPELLER_DEBUG
 
   auto worker_task_runner = ContextMTL::Cast(*context).GetWorkerTaskRunner();
   auto mtl_render_pass = static_cast<RenderPassMTL*>(render_pass.get());

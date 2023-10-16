@@ -14,16 +14,13 @@
 namespace impeller {
 
 void GPUTracerMTL::MarkFrameEnd() {
-#ifdef IMPELLER_DEBUG
   if (@available(ios 10.3, tvos 10.2, macos 10.15, macCatalyst 13.0, *)) {
     Lock lock(trace_state_mutex_);
     current_state_ = (current_state_ + 1) % 16;
   }
-#endif  // IMPELLER_DEBUG
 }
 
 void GPUTracerMTL::RecordCmdBuffer(id<MTLCommandBuffer> buffer) {
-#ifdef IMPELLER_DEBUG
   if (@available(ios 10.3, tvos 10.2, macos 10.15, macCatalyst 13.0, *)) {
     Lock lock(trace_state_mutex_);
     auto current_state = current_state_;
@@ -54,7 +51,6 @@ void GPUTracerMTL::RecordCmdBuffer(id<MTLCommandBuffer> buffer) {
       }
     }];
   }
-#endif  // IMPELLER_DEBUG
 }
 
 }  // namespace impeller

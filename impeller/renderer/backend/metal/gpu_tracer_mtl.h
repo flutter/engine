@@ -43,11 +43,9 @@ class GPUTracerMTL : public std::enable_shared_from_this<GPUTracerMTL> {
     size_t pending_buffers = 0;
   };
 
-  [[maybe_unused]] mutable Mutex trace_state_mutex_;
-  [[maybe_unused]] GPUTraceState trace_states_[16] IPLR_GUARDED_BY(
-      trace_state_mutex_);
-  [[maybe_unused]] size_t current_state_ IPLR_GUARDED_BY(trace_state_mutex_) =
-      0u;
+  mutable Mutex trace_state_mutex_;
+  GPUTraceState trace_states_[16] IPLR_GUARDED_BY(trace_state_mutex_);
+  size_t current_state_ IPLR_GUARDED_BY(trace_state_mutex_) = 0u;
 };
 
 }  // namespace impeller
