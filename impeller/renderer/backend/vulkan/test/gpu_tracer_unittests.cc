@@ -9,13 +9,11 @@
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/gpu_tracer_vk.h"
 #include "impeller/renderer/backend/vulkan/test/mock_vulkan.h"
-#include "impeller/renderer/command_buffer.h"
-#include "impeller/renderer/render_target.h"
-#include "vulkan/vulkan_enums.hpp"
 
 namespace impeller {
 namespace testing {
 
+#ifdef IMPELLER_DEBUG
 TEST(GPUTrackerVK, CanTraceCmdBuffer) {
   auto const context = MockVulkanContextBuilder().Build();
 
@@ -37,6 +35,7 @@ TEST(GPUTrackerVK, CanTraceCmdBuffer) {
 
   tracer->OnFenceComplete(frame_id);
 }
+#endif  // IMPELLER_DEBUG
 
 }  // namespace testing
 }  // namespace impeller
