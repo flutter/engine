@@ -30,6 +30,10 @@ GPUTracerVK::GPUTracerVK(const std::shared_ptr<DeviceHolder>& device_holder)
 #endif
 }
 
+bool GPUTracerVK::IsValid() const {
+  return valid_;
+}
+
 void GPUTracerVK::MarkFrameStart() {
   in_frame_ = true;
 }

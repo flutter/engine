@@ -10,6 +10,8 @@
 #include "fml/thread_local.h"
 #include "impeller/base/thread_safety.h"
 #include "impeller/renderer/backend/vulkan/vk.h"  // IWYU pragma: keep.
+#include "third_party/swiftshader/include/vulkan/vulkan_core.h"
+#include "vulkan/vulkan_core.h"
 
 namespace impeller {
 namespace testing {
@@ -22,6 +24,8 @@ struct MockCommandBuffer {
       : called_functions_(std::move(called_functions)) {}
   std::shared_ptr<std::vector<std::string>> called_functions_;
 };
+
+struct MockQueryPool {};
 
 struct MockCommandPool {};
 
@@ -153,6 +157,7 @@ void vkGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
       static_cast<VkSampleCountFlags>(VK_SAMPLE_COUNT_1_BIT |
                                       VK_SAMPLE_COUNT_4_BIT);
   pProperties->limits.maxImageDimension2D = 4096;
+  pProperties->limits.timestampPeriod = 1;
 }
 
 void vkGetPhysicalDeviceQueueFamilyProperties(
@@ -495,6 +500,14 @@ VkResult vkSetDebugUtilsObjectNameEXT(
   return VK_SUCCESS;
 }
 
+VkResult vkCreateQueryPool(VkDevice device,
+                           const VkQueryPoolCreateInfo* pCreateInfo,
+                           const VkAllocationCallbacks* pAllocator,
+                           VkQueryPool* pQueryPool) {
+  *pQueryPool = reinterpret_cast<VkQueryPool>(new MockQueryPool());
+  return VK_SUCCESS;
+}
+
 PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
                                             const char* pName) {
   if (strcmp("vkEnumerateInstanceExtensionProperties", pName) == 0) {
@@ -595,6 +608,8 @@ PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
     return (PFN_vkVoidFunction)vkCreateDebugUtilsMessengerEXT;
   } else if (strcmp("vkSetDebugUtilsObjectNameEXT", pName) == 0) {
     return (PFN_vkVoidFunction)vkSetDebugUtilsObjectNameEXT;
+  } else if (strcmp("vkCreateQueryPool", pName) == 0) {
+    return (PFN_vkVoidFunction)vkCreateQueryPool;
   }
   return noop;
 }

@@ -40,6 +40,8 @@ class GPUTracerVK {
   /// @brief Signal the end of a frame workload.
   void MarkFrameEnd();
 
+  bool IsValid() const;
+
  private:
   const std::shared_ptr<DeviceHolder> device_holder_;
 
