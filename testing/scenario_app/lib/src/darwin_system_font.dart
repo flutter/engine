@@ -7,7 +7,7 @@ import 'dart:ui';
 import 'channel_util.dart';
 import 'scenario.dart';
 
-/// Tries to draw darwin system font: Cupertino-System-Pro, Cupertino-System-Text
+/// Tries to draw darwin system font: Cupertino-System-Display, Cupertino-System-Text
 class DarwinSystemFont extends Scenario {
   /// Creates the DarwinSystemFont scenario.
   DarwinSystemFont(super.view);
@@ -21,7 +21,7 @@ class DarwinSystemFont extends Scenario {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
 
-    final ParagraphBuilder paragraphBuilderPro =
+    final ParagraphBuilder paragraphBuilderDisplay =
         ParagraphBuilder(ParagraphStyle(fontFamily: 'Cupertino-System-Display'))
           ..pushStyle(TextStyle(fontSize: 50))
           ..addText('Cupertino System Display\n')
@@ -32,7 +32,7 @@ class DarwinSystemFont extends Scenario {
           ..addText('Cupertino System Text\n')
           ..pop();
 
-    final Paragraph paragraphPro = paragraphBuilderPro.build();
+    final Paragraph paragraphPro = paragraphBuilderDisplay.build();
     paragraphPro.layout(ParagraphConstraints(width: _screenWidth));
     canvas.drawParagraph(paragraphPro, const Offset(50, 80));
 
