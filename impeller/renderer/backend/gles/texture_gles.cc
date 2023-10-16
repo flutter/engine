@@ -386,7 +386,6 @@ void TextureGLES::InitializeContentsIfNecessary() const {
                       nullptr                    // data
         );
       }
-
     } break;
     case Type::kRenderBuffer: {
       auto render_buffer_format =
@@ -406,6 +405,27 @@ void TextureGLES::InitializeContentsIfNecessary() const {
       }
     } break;
     case Type::kRenderBufferMultisampled: {
+      gl.BindTexture(GL_TEXTURE_2D, handle.value());
+      {
+        TRACE_EVENT0("impeller", "TexImage2DInitialization");
+        TexImage2DData tex_data(GetTextureDescriptor().format);
+        // TODO: Remove this before submitting.
+        FML_LOG(ERROR) << "*** " << __PRETTY_FUNCTION__
+                       << " size_w=" << size.width << " h=" << size.height
+                       << " iformat=" << tex_data.internal_format
+                       << " eformat=" << tex_data.external_format;
+        // https://github.com/flutter/engine/blob/main/impeller/renderer/backend/gles/texture_gles.cc#L96
+        gl.TexImage2D(GL_TEXTURE_2D,  // target
+                      0u,             // LOD level (base mip level size checked)
+                      tex_data.internal_format,  // internal format
+                      size.width,                // width
+                      size.height,               // height
+                      0u,                        // border
+                      tex_data.external_format,  // format
+                      tex_data.type,             // type
+                      nullptr                    // data
+        );
+      }
       auto render_buffer_msaa =
           ToRenderBufferFormat(GetTextureDescriptor().format);
       if (!render_buffer_msaa.has_value()) {
