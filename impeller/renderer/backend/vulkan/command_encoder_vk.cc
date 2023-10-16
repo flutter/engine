@@ -134,10 +134,8 @@ std::shared_ptr<CommandEncoderVK> CommandEncoderFactoryVK::Create() {
     context_vk.SetDebugName(tracked_objects->GetCommandBuffer(),
                             label_.value());
   }
-#ifdef IMPELLER_DEBUG
   context->GetGPUTracer()->RecordCmdBufferStart(
       tracked_objects->GetCommandBuffer());
-#endif  // IMPELLER_DEBUG
 
   return std::make_shared<CommandEncoderVK>(
       context_vk.GetDeviceHolder(), tracked_objects, queue,
@@ -185,10 +183,7 @@ bool CommandEncoderVK::Submit(SubmitCallback callback) {
 
   auto command_buffer = GetCommandBuffer();
 
-  size_t end_frame = 0u;
-#ifdef IMPELLER_DEBUG
-  end_frame = gpu_tracer_->RecordCmdBufferEnd(command_buffer);
-#endif  // IMPELLER_DEBUG
+  size_t end_frame = gpu_tracer_->RecordCmdBufferEnd(command_buffer);
 
   auto status = command_buffer.end();
   if (status != vk::Result::eSuccess) {

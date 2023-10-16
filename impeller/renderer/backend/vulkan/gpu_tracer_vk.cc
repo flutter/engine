@@ -35,6 +35,9 @@ void GPUTracerVK::MarkFrameStart() {
 }
 
 void GPUTracerVK::MarkFrameEnd() {
+  if (!valid_) {
+    return;
+  }
   Lock lock(trace_state_mutex_);
   current_state_ = (current_state_ + 1) % 16;
 
