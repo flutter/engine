@@ -132,6 +132,51 @@ class MockRuntimeController : public RuntimeController {
   MOCK_METHOD(bool, NotifyIdle, (fml::TimeDelta), (override));
 };
 
+class MockAnimatorDelegate : public Animator::Delegate {
+ public:
+  /* Animator::Delegate */
+  MOCK_METHOD(void,
+              OnAnimatorBeginFrame,
+              (fml::TimePoint frame_target_time, uint64_t frame_number),
+              (override));
+  MOCK_METHOD(void,
+              OnAnimatorNotifyIdle,
+              (fml::TimeDelta deadline),
+              (override));
+  MOCK_METHOD(void,
+              OnAnimatorUpdateLatestFrameTargetTime,
+              (fml::TimePoint frame_target_time),
+              (override));
+  MOCK_METHOD(void,
+              OnAnimatorDraw,
+              (std::shared_ptr<FramePipeline> pipeline),
+              (override));
+  MOCK_METHOD(void,
+              OnAnimatorDrawLastLayerTrees,
+              (std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder),
+              (override));
+};
+
+class MockPlatformMessageHandler : public PlatformMessageHandler {
+ public:
+  MOCK_METHOD(void,
+              HandlePlatformMessage,
+              (std::unique_ptr<PlatformMessage> message),
+              (override));
+  MOCK_METHOD(bool,
+              DoesHandlePlatformMessageOnPlatformThread,
+              (),
+              (const, override));
+  MOCK_METHOD(void,
+              InvokePlatformMessageResponseCallback,
+              (int response_id, std::unique_ptr<fml::Mapping> mapping),
+              (override));
+  MOCK_METHOD(void,
+              InvokePlatformMessageEmptyResponseCallback,
+              (int response_id),
+              (override));
+};
+
 std::unique_ptr<PlatformMessage> MakePlatformMessage(
     const std::string& channel,
     const std::map<std::string, std::string>& values,
@@ -523,51 +568,6 @@ TEST_F(EngineTest, PassesLoadDartDeferredLibraryErrorToRuntime) {
     engine->LoadDartDeferredLibraryError(error_id, error_message, true);
   });
 }
-
-class MockAnimatorDelegate : public Animator::Delegate {
- public:
-  /* Animator::Delegate */
-  MOCK_METHOD(void,
-              OnAnimatorBeginFrame,
-              (fml::TimePoint frame_target_time, uint64_t frame_number),
-              (override));
-  MOCK_METHOD(void,
-              OnAnimatorNotifyIdle,
-              (fml::TimeDelta deadline),
-              (override));
-  MOCK_METHOD(void,
-              OnAnimatorUpdateLatestFrameTargetTime,
-              (fml::TimePoint frame_target_time),
-              (override));
-  MOCK_METHOD(void,
-              OnAnimatorDraw,
-              (std::shared_ptr<FramePipeline> pipeline),
-              (override));
-  MOCK_METHOD(void,
-              OnAnimatorDrawLastLayerTrees,
-              (std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder),
-              (override));
-};
-
-class MockPlatformMessageHandler : public PlatformMessageHandler {
- public:
-  MOCK_METHOD(void,
-              HandlePlatformMessage,
-              (std::unique_ptr<PlatformMessage> message),
-              (override));
-  MOCK_METHOD(bool,
-              DoesHandlePlatformMessageOnPlatformThread,
-              (),
-              (const, override));
-  MOCK_METHOD(void,
-              InvokePlatformMessageResponseCallback,
-              (int response_id, std::unique_ptr<fml::Mapping> mapping),
-              (override));
-  MOCK_METHOD(void,
-              InvokePlatformMessageEmptyResponseCallback,
-              (int response_id),
-              (override));
-};
 
 TEST_F(EngineTest, AnimatorAcceptsMultipleRenders) {
   MockAnimatorDelegate animator_delegate;
