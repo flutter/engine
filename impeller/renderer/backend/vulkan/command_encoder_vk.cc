@@ -183,7 +183,7 @@ bool CommandEncoderVK::Submit(SubmitCallback callback) {
 
   auto command_buffer = GetCommandBuffer();
 
-  size_t end_frame = gpu_tracer_->RecordCmdBufferEnd(command_buffer);
+  auto end_frame = gpu_tracer_->RecordCmdBufferEnd(command_buffer);
 
   auto status = command_buffer.end();
   if (status != vk::Result::eSuccess) {
@@ -222,7 +222,9 @@ bool CommandEncoderVK::Submit(SubmitCallback callback) {
       std::move(fence),
       [callback, tracked_objects = std::move(tracked_objects_), gpu_tracer,
        end_frame] {
-        gpu_tracer->OnFenceComplete(end_frame, true);
+        if (end_frame.has_value()) {
+          gpu_tracer->OnFenceComplete(end_frame, true);
+        }
         if (callback) {
           callback(true);
         }

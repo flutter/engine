@@ -26,26 +26,32 @@ GPUTracerVK::GPUTracerVK(const std::shared_ptr<DeviceHolder>& device_holder)
   }
   // Disable tracing in release mode.
 #ifdef IMPELLER_DEBUG
-  valid_ = true;
+  enabled_ = true;
 #endif
 }
 
-bool GPUTracerVK::IsValid() const {
-  return valid_;
+bool GPUTracerVK::IsEnabled() const {
+  return enabled_;
 }
 
 void GPUTracerVK::MarkFrameStart() {
+  FML_DCHECK(!in_frame_);
   in_frame_ = true;
 }
 
 void GPUTracerVK::MarkFrameEnd() {
-  if (!valid_) {
+  if (!enabled_) {
     return;
   }
   Lock lock(trace_state_mutex_);
   current_state_ = (current_state_ + 1) % 16;
 
   auto& state = trace_states_[current_state_];
+  // If there are still pending buffers on the trace state we're switching to,
+  // that means that a cmd buffer we were relying on to signal this likely
+  // never finished. This shouldn't happen unless there is a bug in the
+  // encoder logic. We set it to zero anyway to prevent a validation error
+  // from becoming a memory leak.
   FML_DCHECK(state.pending_buffers == 0u);
 
   state.pending_buffers = 0;
@@ -55,7 +61,7 @@ void GPUTracerVK::MarkFrameEnd() {
 }
 
 void GPUTracerVK::RecordCmdBufferStart(const vk::CommandBuffer& buffer) {
-  if (!valid_ || !in_frame_) {
+  if (!enabled_ || !in_frame_) {
     return;
   }
   Lock lock(trace_state_mutex_);
@@ -92,9 +98,10 @@ void GPUTracerVK::RecordCmdBufferStart(const vk::CommandBuffer& buffer) {
   state.current_index += 1;
 }
 
-size_t GPUTracerVK::RecordCmdBufferEnd(const vk::CommandBuffer& buffer) {
-  if (!valid_ || !in_frame_) {
-    return 0;
+std::optional<size_t> GPUTracerVK::RecordCmdBufferEnd(
+    const vk::CommandBuffer& buffer) {
+  if (!enabled_ || !in_frame_) {
+    return std::nullopt;
   }
   Lock lock(trace_state_mutex_);
   GPUTraceState& state = trace_states_[current_state_];
@@ -110,10 +117,12 @@ size_t GPUTracerVK::RecordCmdBufferEnd(const vk::CommandBuffer& buffer) {
   return current_state_;
 }
 
-void GPUTracerVK::OnFenceComplete(size_t frame_index, bool success) {
-  if (!valid_) {
+void GPUTracerVK::OnFenceComplete(std::optional<size_t> maybe_frame_index,
+                                  bool success) {
+  if (!enabled_ || !maybe_frame_index.has_value()) {
     return;
   }
+  auto frame_index = maybe_frame_index.value();
   Lock lock(trace_state_mutex_);
   GPUTraceState& state = trace_states_[frame_index];
   if (state.pending_buffers == 0) {
@@ -130,6 +139,7 @@ void GPUTracerVK::OnFenceComplete(size_t frame_index, bool success) {
         state.query_pool.get(), 0, state.current_index,
         buffer_count * sizeof(uint64_t), bits.data(), sizeof(uint64_t),
         vk::QueryResultFlagBits::e64);
+
     // This may return VK_NOT_READY if the query couldn't be completed, or if
     // there are queries still pending. From local testing, this happens
     // occassionally on very expensive frames. Its unclear if we can do anything

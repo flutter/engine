@@ -14,12 +14,12 @@ namespace impeller {
 namespace testing {
 
 #ifdef IMPELLER_DEBUG
-TEST(GPUTrackerVK, CanTraceCmdBuffer) {
+TEST(GPUTracerVK, CanTraceCmdBuffer) {
   auto const context = MockVulkanContextBuilder().Build();
 
   auto tracer = std::make_shared<GPUTracerVK>(context->GetDeviceHolder());
 
-  ASSERT_TRUE(tracer->IsValid());
+  ASSERT_TRUE(tracer->IsEnabled());
 
   auto cmd_buffer = context->CreateCommandBuffer();
   auto vk_cmd_buffer = CommandBufferVK::Cast(cmd_buffer.get());
@@ -32,8 +32,49 @@ TEST(GPUTrackerVK, CanTraceCmdBuffer) {
   tracer->MarkFrameEnd();
 
   ASSERT_EQ(frame_id, 0u);
+  auto called = GetMockVulkanFunctions(context->GetDevice());
+  ASSERT_NE(called, nullptr);
+  ASSERT_TRUE(std::find(called->begin(), called->end(), "vkCreateQueryPool") !=
+              called->end());
+  ASSERT_TRUE(std::find(called->begin(), called->end(),
+                        "vkGetQueryPoolResults") == called->end());
 
   tracer->OnFenceComplete(frame_id, true);
+
+  ASSERT_TRUE(std::find(called->begin(), called->end(),
+                        "vkGetQueryPoolResults") != called->end());
+}
+
+TEST(GPUTracerVK, DoesNotTraceOutsideOfFrameWorkload) {
+  auto const context = MockVulkanContextBuilder().Build();
+
+  auto tracer = std::make_shared<GPUTracerVK>(context->GetDeviceHolder());
+
+  ASSERT_TRUE(tracer->IsEnabled());
+
+  auto cmd_buffer = context->CreateCommandBuffer();
+  auto vk_cmd_buffer = CommandBufferVK::Cast(cmd_buffer.get());
+  auto blit_ass = cmd_buffer->CreateBlitPass();
+
+  tracer->RecordCmdBufferStart(vk_cmd_buffer->GetEncoder()->GetCommandBuffer());
+  auto frame_id = tracer->RecordCmdBufferEnd(
+      vk_cmd_buffer->GetEncoder()->GetCommandBuffer());
+
+  ASSERT_TRUE(!frame_id.has_value());
+  auto called = GetMockVulkanFunctions(context->GetDevice());
+
+  ASSERT_NE(called, nullptr);
+  ASSERT_TRUE(std::find(called->begin(), called->end(), "vkCreateQueryPool") ==
+              called->end());
+  ASSERT_TRUE(std::find(called->begin(), called->end(),
+                        "vkGetQueryPoolResults") == called->end());
+
+  tracer->OnFenceComplete(frame_id, true);
+
+  ASSERT_TRUE(std::find(called->begin(), called->end(), "vkCreateQueryPool") ==
+              called->end());
+  ASSERT_TRUE(std::find(called->begin(), called->end(),
+                        "vkGetQueryPoolResults") == called->end());
 }
 #endif  // IMPELLER_DEBUG
 

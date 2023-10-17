@@ -26,10 +26,12 @@ class GPUTracerVK {
   ///        time.
   ///
   ///        Returns the index that should be passed to [OnFenceComplete].
-  size_t RecordCmdBufferEnd(const vk::CommandBuffer& buffer);
+  std::optional<size_t> RecordCmdBufferEnd(const vk::CommandBuffer& buffer);
 
   /// @brief Signal that the cmd buffer is completed.
-  void OnFenceComplete(size_t frame_index, bool success);
+  ///
+  ///        If [frame_index] is std::nullopt, this frame recording is ignored.
+  void OnFenceComplete(std::optional<size_t> frame_index, bool success);
 
   /// @brief Signal the start of a frame workload.
   ///
@@ -40,7 +42,8 @@ class GPUTracerVK {
   /// @brief Signal the end of a frame workload.
   void MarkFrameEnd();
 
-  bool IsValid() const;
+  // visible for testing.
+  bool IsEnabled() const;
 
  private:
   const std::shared_ptr<DeviceHolder> device_holder_;
@@ -48,6 +51,9 @@ class GPUTracerVK {
   struct GPUTraceState {
     size_t current_index = 0;
     size_t pending_buffers = 0;
+    // If a cmd buffer submission fails for any reason, this field is used
+    // to indicate that the query pool results may be incomplete and this
+    // frame should be discarded.
     bool contains_failure = false;
     vk::UniqueQueryPool query_pool;
   };
@@ -58,8 +64,16 @@ class GPUTracerVK {
 
   // The number of nanoseconds for each timestamp unit.
   float timestamp_period_ = 1;
+
+  // If in_frame_ is not true, then this cmd buffer was started as a part of
+  // some non-frame workload like image decoding. We should not record this as
+  // part of the frame workload, as the gap between this non-frame and a
+  // frameworkload may be substantial. For example, support the engine creates a
+  // cmd buffer to perform an image upload at timestamp 0 and then 30 ms later
+  // actually renders a frame. Without the in_frame_ guard, the GPU frame time
+  // would include this 30ms gap during which the engine was idle.
   bool in_frame_ = false;
-  bool valid_ = false;
+  bool enabled_ = false;
 };
 
 }  // namespace impeller

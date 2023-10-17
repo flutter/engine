@@ -505,6 +505,32 @@ VkResult vkCreateQueryPool(VkDevice device,
                            const VkAllocationCallbacks* pAllocator,
                            VkQueryPool* pQueryPool) {
   *pQueryPool = reinterpret_cast<VkQueryPool>(new MockQueryPool());
+  MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
+  mock_device->AddCalledFunction("vkCreateQueryPool");
+  return VK_SUCCESS;
+}
+
+VkResult vkGetQueryPoolResults(VkDevice device,
+                               VkQueryPool queryPool,
+                               uint32_t firstQuery,
+                               uint32_t queryCount,
+                               size_t dataSize,
+                               void* pData,
+                               VkDeviceSize stride,
+                               VkQueryResultFlags flags) {
+  MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
+  if (dataSize == sizeof(uint32_t)) {
+    uint32_t* data = static_cast<uint32_t*>(pData);
+    for (auto i = firstQuery; i < queryCount; i++) {
+      data[0] = i;
+    }
+  } else if (dataSize == sizeof(int64_t)) {
+    uint64_t* data = static_cast<uint64_t*>(pData);
+    for (auto i = firstQuery; i < queryCount; i++) {
+      data[0] = i;
+    }
+  }
+  mock_device->AddCalledFunction("vkGetQueryPoolResults");
   return VK_SUCCESS;
 }
 
@@ -610,6 +636,8 @@ PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
     return (PFN_vkVoidFunction)vkSetDebugUtilsObjectNameEXT;
   } else if (strcmp("vkCreateQueryPool", pName) == 0) {
     return (PFN_vkVoidFunction)vkCreateQueryPool;
+  } else if (strcmp("vkGetQueryPoolResults", pName) == 0) {
+    return (PFN_vkVoidFunction)vkGetQueryPoolResults;
   }
   return noop;
 }
