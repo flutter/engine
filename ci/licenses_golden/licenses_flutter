@@ -2633,6 +2633,7 @@ ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextI
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextureRegistryRelay.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextureRegistryRelay.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextureRegistryRelayTest.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTouchInterceptingView_Test.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUIPressProxy.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUIPressProxy.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUmbrellaImport.m + ../../../flutter/LICENSE
@@ -2654,6 +2655,8 @@ ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/KeyCodeMap_I
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObjectTest.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObjectTestMocks.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObjectTest_mrc.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/VsyncWaiterIosTest.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.mm + ../../../flutter/LICENSE
@@ -5328,6 +5331,7 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInp
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextureRegistryRelay.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextureRegistryRelay.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextureRegistryRelayTest.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTouchInterceptingView_Test.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUIPressProxy.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUIPressProxy.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUmbrellaImport.m
@@ -5349,6 +5353,8 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/KeyCodeMap_Int
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObjectTest.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObjectTestMocks.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObjectTest_mrc.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/VsyncWaiterIosTest.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.mm
