@@ -21,18 +21,21 @@ static TextureGLES::Type GetTextureTypeFromDescriptor(
   const auto usage = static_cast<TextureUsageMask>(desc.usage);
   const auto render_target =
       static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
+  const auto is_msaa = desc.sample_count == SampleCount::kCount4;
   if (usage == render_target) {
-    return TextureGLES::Type::kRenderBuffer;
+    return is_msaa ? TextureGLES::Type::kRenderBufferMultisampled
+                   : TextureGLES::Type::kRenderBuffer;
   }
-  return TextureGLES::Type::kTexture;
+  return is_msaa ? TextureGLES::Type::kTextureMultisampled
+                 : TextureGLES::Type::kTexture;
 }
 
 HandleType ToHandleType(TextureGLES::Type type) {
   switch (type) {
     case TextureGLES::Type::kTexture:
+    case TextureGLES::Type::kTextureMultisampled:
       return HandleType::kTexture;
     case TextureGLES::Type::kRenderBuffer:
-    // MSAA textures are treated as render buffers.
     case TextureGLES::Type::kRenderBufferMultisampled:
       return HandleType::kRenderBuffer;
   }
@@ -362,7 +365,8 @@ void TextureGLES::InitializeContentsIfNecessary() const {
   }
 
   switch (type_) {
-    case Type::kTexture: {
+    case Type::kTexture:
+    case Type::kTextureMultisampled: {
       TexImage2DData tex_data(GetTextureDescriptor().format);
       if (!tex_data.IsValid()) {
         VALIDATION_LOG << "Invalid format for texture image.";
@@ -382,9 +386,9 @@ void TextureGLES::InitializeContentsIfNecessary() const {
                       nullptr                    // data
         );
       }
-
     } break;
-    case Type::kRenderBuffer: {
+    case Type::kRenderBuffer:
+    case Type::kRenderBufferMultisampled: {
       auto render_buffer_format =
           ToRenderBufferFormat(GetTextureDescriptor().format);
       if (!render_buffer_format.has_value()) {
@@ -394,33 +398,24 @@ void TextureGLES::InitializeContentsIfNecessary() const {
       gl.BindRenderbuffer(GL_RENDERBUFFER, handle.value());
       {
         TRACE_EVENT0("impeller", "RenderBufferStorageInitialization");
-        gl.RenderbufferStorage(GL_RENDERBUFFER,               // target
-                               render_buffer_format.value(),  // internal format
-                               size.width,                    // width
-                               size.height                    // height
-        );
+        if (type_ == Type::kRenderBuffer) {
+          gl.RenderbufferStorage(
+              GL_RENDERBUFFER,               // target
+              render_buffer_format.value(),  // internal format
+              size.width,                    // width
+              size.height                    // height
+          );
+        } else {
+          gl.RenderbufferStorageMultisampleEXT(
+              GL_RENDERBUFFER,               // target
+              4,                             // samples
+              render_buffer_format.value(),  // internal format
+              size.width,                    // width
+              size.height                    // height
+          );
+        }
       }
     } break;
-    case Type::kRenderBufferMultisampled: {
-      auto render_buffer_msaa =
-          ToRenderBufferFormat(GetTextureDescriptor().format);
-      if (!render_buffer_msaa.has_value()) {
-        VALIDATION_LOG << "Invalid format for render-buffer MSAA image.";
-        return;
-      }
-      gl.BindRenderbuffer(GL_RENDERBUFFER, handle.value());
-      {
-        TRACE_EVENT0("impeller", "RenderBufferStorageInitialization");
-        gl.RenderbufferStorageMultisampleEXT(
-            GL_RENDERBUFFER,             // target
-            4,                           // samples
-            render_buffer_msaa.value(),  // internal format
-            size.width,                  // width
-            size.height                  // height
-        );
-      }
-      break;
-    }
   }
 }
 
@@ -438,7 +433,8 @@ bool TextureGLES::Bind() const {
   }
   const auto& gl = reactor_->GetProcTable();
   switch (type_) {
-    case Type::kTexture: {
+    case Type::kTexture:
+    case Type::kTextureMultisampled: {
       const auto target = ToTextureTarget(GetTextureDescriptor().type);
       if (!target.has_value()) {
         VALIDATION_LOG << "Could not bind texture of this type.";
@@ -447,7 +443,6 @@ bool TextureGLES::Bind() const {
       gl.BindTexture(target.value(), handle.value());
     } break;
     case Type::kRenderBuffer:
-    // MSAA textures are treated as render buffers.
     case Type::kRenderBufferMultisampled:
       gl.BindRenderbuffer(GL_RENDERBUFFER, handle.value());
       break;
@@ -506,7 +501,6 @@ static GLenum ToAttachmentPoint(TextureGLES::AttachmentPoint point) {
 }
 
 bool TextureGLES::SetAsFramebufferAttachment(GLenum target,
-                                             GLuint fbo,
                                              AttachmentPoint point) const {
   if (!IsValid()) {
     return false;
@@ -517,6 +511,7 @@ bool TextureGLES::SetAsFramebufferAttachment(GLenum target,
     return false;
   }
   const auto& gl = reactor_->GetProcTable();
+
   switch (type_) {
     case Type::kTexture:
       gl.FramebufferTexture2D(target,                    // target
@@ -526,16 +521,7 @@ bool TextureGLES::SetAsFramebufferAttachment(GLenum target,
                               0                          // level
       );
       break;
-    case Type::kRenderBuffer:
-      gl.FramebufferRenderbuffer(target,                    // target
-                                 ToAttachmentPoint(point),  // attachment
-                                 GL_RENDERBUFFER,  // render-buffer target
-                                 handle.value()    // render-buffer
-      );
-      break;
-    case Type::kRenderBufferMultisampled:
-      // Assume that when MSAA is enabled, we're using 4x MSAA.
-      FML_DCHECK(GetTextureDescriptor().sample_count == SampleCount::kCount4);
+    case Type::kTextureMultisampled:
       gl.FramebufferTexture2DMultisampleEXT(
           target,                    // target
           ToAttachmentPoint(point),  // attachment
@@ -545,7 +531,19 @@ bool TextureGLES::SetAsFramebufferAttachment(GLenum target,
           4                          // samples
       );
       break;
+    // Both a standard render buffer and a multisampled render buffer need to
+    // be attached the same way. The only difference is that the multisampled
+    // render buffer will be resolved in a "InitializeContentsIfNecessary".
+    case Type::kRenderBuffer:
+    case Type::kRenderBufferMultisampled:
+      gl.FramebufferRenderbuffer(target,                    // target
+                                 ToAttachmentPoint(point),  // attachment
+                                 GL_RENDERBUFFER,  // render-buffer target
+                                 handle.value()    // render-buffer
+      );
+      break;
   }
+
   return true;
 }
 

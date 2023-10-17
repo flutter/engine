@@ -106,6 +106,17 @@ CapabilitiesGLES::CapabilitiesGLES(const ProcTableGLES& gl) {
       gl.GetDescription()->HasExtension(kOESTextureBorderClampExt)) {
     supports_decal_sampler_address_mode_ = true;
   }
+
+  if (gl.GetDescription()->HasExtension(
+          "GL_EXT_multisampled_render_to_texture")) {
+    supports_offscreen_msaa_ = true;
+
+    // We hard-code 4x MSAA, so let's make sure it's supported.
+    GLint value = 0;
+    gl.GetIntegerv(GL_MAX_SAMPLES_EXT, &value);
+    FML_DCHECK(value == 4) << "Unexpected max samples value: " << value << ". "
+                           << "Only 4x MSAA is currently supported.";
+  }
 }
 
 size_t CapabilitiesGLES::GetMaxTextureUnits(ShaderStage stage) const {
@@ -124,7 +135,7 @@ size_t CapabilitiesGLES::GetMaxTextureUnits(ShaderStage stage) const {
 }
 
 bool CapabilitiesGLES::SupportsOffscreenMSAA() const {
-  return false;
+  return supports_offscreen_msaa_;
 }
 
 bool CapabilitiesGLES::SupportsSSBO() const {
