@@ -1819,7 +1819,6 @@
 ../../../third_party/dart/third_party/firefox_jsshell
 ../../../third_party/dart/third_party/mdn/browser-compat-data/README.google
 ../../../third_party/dart/third_party/pkg
-../../../third_party/dart/third_party/pkg_tested
 ../../../third_party/dart/third_party/requirejs
 ../../../third_party/dart/tools
 ../../../third_party/dart/utils/OWNERS
