@@ -63,9 +63,9 @@ void GPUTracerVK::MarkFrameEnd() {
   in_frame_ = false;
 }
 
-
 void GPUTracerVK::RecordCmdBufferStart(const vk::CommandBuffer& buffer) {
-  if (!enabled_ || std::this_thread::get_id() != raster_thread_id_ || !in_frame_) {
+  if (!enabled_ || std::this_thread::get_id() != raster_thread_id_ ||
+      !in_frame_) {
     return;
   }
   Lock lock(trace_state_mutex_);
@@ -102,8 +102,10 @@ void GPUTracerVK::RecordCmdBufferStart(const vk::CommandBuffer& buffer) {
   state.current_index += 1;
 }
 
-std::optional<size_t> GPUTracerVK::RecordCmdBufferEnd(const vk::CommandBuffer& buffer) {
-  if (!enabled_ || std::this_thread::get_id() != raster_thread_id_ || !in_frame_) {
+std::optional<size_t> GPUTracerVK::RecordCmdBufferEnd(
+    const vk::CommandBuffer& buffer) {
+  if (!enabled_ || std::this_thread::get_id() != raster_thread_id_ ||
+      !in_frame_) {
     return std::nullopt;
   }
   Lock lock(trace_state_mutex_);
@@ -120,7 +122,8 @@ std::optional<size_t> GPUTracerVK::RecordCmdBufferEnd(const vk::CommandBuffer& b
   return current_state_;
 }
 
-void GPUTracerVK::OnFenceComplete(std::optional<size_t> maybe_frame_index, bool success) {
+void GPUTracerVK::OnFenceComplete(std::optional<size_t> maybe_frame_index,
+                                  bool success) {
   if (!enabled_ || !maybe_frame_index.has_value()) {
     return;
   }
