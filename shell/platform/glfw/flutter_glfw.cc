@@ -224,6 +224,10 @@ void FlutterDesktopMessengerUnlock(FlutterDesktopMessengerRef messenger) {
   messenger->GetMutex().unlock();
 }
 
+void FlutterDesktopMessengerResize(FlutterDesktopMessengerRef messenger,
+                                   const char* channel,
+                                   int64_t newSize) {}
+
 // Retrieves state bag for the window in question from the GLFWWindow.
 static FlutterDesktopWindowControllerState* GetWindowController(
     GLFWwindow* window) {

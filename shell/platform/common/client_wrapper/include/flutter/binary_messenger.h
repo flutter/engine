@@ -45,6 +45,19 @@ class BinaryMessenger {
   // existing handler.
   virtual void SetMessageHandler(const std::string& channel,
                                  BinaryMessageHandler handler) = 0;
+
+  // Adjusts the number of messages that will get buffered when sending messages
+  // to channels that aren't fully set up yet. For example, the engine isn't
+  // running yet or the channel's message handler isn't set up on the Dart side
+  // yet.
+  virtual void Resize(const std::string& channel, int64_t newSize) = 0;
+
+  // Defines whether the channel should show warning messages when discarding
+  // messages due to overflow.
+  //
+  // When |warns| is false, the channel is expected to overflow and warning
+  // messages will not be shown.
+  virtual void SetWarnsOnOverflow(const std::string& channel, bool warns) = 0;
 };
 
 }  // namespace flutter

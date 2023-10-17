@@ -36,6 +36,12 @@ class BinaryMessengerImpl : public BinaryMessenger {
   void SetMessageHandler(const std::string& channel,
                          BinaryMessageHandler handler) override;
 
+  // |flutter::BinaryMessenger|
+  void Resize(const std::string& channel, int64_t newSize) override;
+
+  // |flutter::BinaryMessenger|
+  void SetWarnsOnOverflow(const std::string& channel, bool warns) override;
+
  private:
   // Handle for interacting with the C API.
   FlutterDesktopMessengerRef messenger_;

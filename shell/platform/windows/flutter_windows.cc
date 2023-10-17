@@ -13,7 +13,10 @@
 #include <memory>
 #include <vector>
 
+#include "flutter/shell/platform/common/client_wrapper/include/flutter/encodable_value.h"
+#include "flutter/shell/platform/common/client_wrapper/include/flutter/method_channel.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/plugin_registrar.h"
+#include "flutter/shell/platform/common/client_wrapper/include/flutter/standard_method_codec.h"
 #include "flutter/shell/platform/common/incoming_message_dispatcher.h"
 #include "flutter/shell/platform/common/path_utils.h"
 #include "flutter/shell/platform/embedder/embedder.h"
@@ -26,6 +29,8 @@
 #include "flutter/shell/platform/windows/window_state.h"
 
 static_assert(FLUTTER_ENGINE_VERSION == 1, "");
+
+static constexpr char kControlChannelName[] = "dev.flutter/channel-buffer";
 
 // Returns the engine corresponding to the given opaque API handle.
 static flutter::FlutterWindowsEngine* EngineFromHandle(
@@ -380,4 +385,25 @@ bool FlutterDesktopTextureRegistrarMarkExternalTextureFrameAvailable(
     int64_t texture_id) {
   return TextureRegistrarFromHandle(texture_registrar)
       ->MarkTextureFrameAvailable(texture_id);
+}
+
+void FlutterDesktopMessengerResize(FlutterDesktopMessengerRef messenger,
+                                   const char* channel,
+                                   int64_t newSize) {
+  auto binaryMessenger =
+      std::make_unique<flutter::BinaryMessengerImpl>(messenger);
+  auto controlChannel =
+      std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+          binaryMessenger.release(), kControlChannelName,
+          &flutter::StandardMethodCodec::GetInstance());
+
+  const flutter::StandardMethodCodec& codec =
+      flutter::StandardMethodCodec::GetInstance();
+  flutter::MethodCall<> call(
+      "resize",
+      std::make_unique<flutter::EncodableValue>(flutter::EncodableList{
+          flutter::EncodableValue(channel),
+          flutter::EncodableValue(newSize),
+      }));
+  auto encoded = codec.EncodeMethodCall(call);
 }

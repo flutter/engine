@@ -127,6 +127,15 @@ void BinaryMessengerImpl::SetMessageHandler(const std::string& channel,
                                      ForwardToHandler, message_handler);
 }
 
+void BinaryMessengerImpl::Resize(const std::string& channel, int64_t newSize) {
+  FlutterDesktopMessengerResize(messenger_, channel.c_str(), newSize);
+}
+
+void BinaryMessengerImpl::SetWarnsOnOverflow(const std::string& channel,
+                                             bool warns) {
+  // TODO(bleroux).
+}
+
 // ========== engine_method_result.h ==========
 
 namespace internal {

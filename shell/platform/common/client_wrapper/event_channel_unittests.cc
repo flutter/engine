@@ -29,6 +29,10 @@ class TestBinaryMessenger : public BinaryMessenger {
     last_message_handler_ = handler;
   }
 
+  void Resize(const std::string& channel, int64_t newSize) override {}
+
+  void SetWarnsOnOverflow(const std::string& channel, bool warns) override {}
+
   std::string last_message_handler_channel() {
     return last_message_handler_channel_;
   }

@@ -159,3 +159,7 @@ bool FlutterDesktopTextureRegistrarMarkExternalTextureFrameAvailable(
   }
   return result;
 }
+
+void FlutterDesktopMessengerResize(FlutterDesktopMessengerRef messenger,
+                                   const char* channel,
+                                   int64_t newSize) {}

@@ -137,6 +137,11 @@ FlutterDesktopMessengerLock(FlutterDesktopMessengerRef messenger);
 FLUTTER_EXPORT void FlutterDesktopMessengerUnlock(
     FlutterDesktopMessengerRef messenger);
 
+FLUTTER_EXPORT void FlutterDesktopMessengerResize(
+    FlutterDesktopMessengerRef messenger,
+    const char* channel,
+    int64_t newSize);
+
 #if defined(__cplusplus)
 }  // extern "C"
 #endif

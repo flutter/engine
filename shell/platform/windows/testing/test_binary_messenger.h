@@ -64,6 +64,10 @@ class TestBinaryMessenger : public BinaryMessenger {
     }
   }
 
+  void Resize(const std::string& channel, int64_t newSize) override {}
+
+  void SetWarnsOnOverflow(const std::string& channel, bool warns) override {}
+
  private:
   // Handler to call for SendMessage.
   SendHandler send_handler_;
