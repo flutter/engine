@@ -73,7 +73,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _addFontSizeObserver();
     _addLocaleChangedListener();
     registerHotRestartListener(dispose);
-    _setAppLifecycleState(ui.AppLifecycleState.resumed);
+    AppLifecycleState.instance.addListener(_setAppLifecycleState);
   }
 
   /// The [EnginePlatformDispatcher] singleton.
@@ -101,6 +101,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _disconnectFontSizeObserver();
     _removeLocaleChangedListener();
     HighContrastSupport.instance.removeListener(_updateHighContrast);
+    AppLifecycleState.instance.removeListener(_setAppLifecycleState);
   }
 
   /// Receives all events related to platform configuration changes.
@@ -959,10 +960,10 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   }
 
   void _setAppLifecycleState(ui.AppLifecycleState state) {
-    sendPlatformMessage(
+    EnginePlatformDispatcher.instance.invokeOnPlatformMessage(
       'flutter/lifecycle',
-      ByteData.sublistView(utf8.encode(state.toString())),
-      null,
+      const StringCodec().encodeMessage(state.toString()),
+      (_) {},
     );
   }
 
