@@ -16,7 +16,6 @@ import android.media.Image;
 import android.media.Image.Plane;
 import android.media.ImageReader;
 import android.util.AttributeSet;
-import android.view.Choreographer;
 import android.view.Surface;
 import android.view.View;
 import androidx.annotation.NonNull;
@@ -26,8 +25,6 @@ import io.flutter.Log;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import java.nio.ByteBuffer;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
@@ -64,9 +61,10 @@ public class FlutterImageView extends View implements RenderSurface {
         }
       };
 
-  @NonNull private final Deque<Image> acquiredImages = new ArrayDeque<>();
   /** Image pending to be draw. */
   @Nullable private Image pendingImage;
+  /** An Image that needs to be closed once the associated Bitmap is no longer in use. */
+  @Nullable private Image pendingCloseImage;
 
   public ImageReader getImageReader() {
     return imageReader;
@@ -143,10 +141,10 @@ public class FlutterImageView extends View implements RenderSurface {
           width,
           height,
           PixelFormat.RGBA_8888,
-          3,
+          4,
           HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE | HardwareBuffer.USAGE_GPU_COLOR_OUTPUT);
     } else {
-      return ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 3);
+      return ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 4);
     }
   }
 
@@ -222,7 +220,6 @@ public class FlutterImageView extends View implements RenderSurface {
     if (!isAttachedToFlutterRenderer) {
       return false;
     }
-    closeImageIfNeeded(imageReader);
     // 1. `acquireLatestImage()` may return null if no new image is available.
     // 2. There's no guarantee that `onDraw()` is called after `invalidate()`.
     // For example, the device may not produce new frames if it's in sleep mode
@@ -233,12 +230,9 @@ public class FlutterImageView extends View implements RenderSurface {
     if (newImage != null) {
       if (pendingImage != null) {
         pendingImage.close();
-        acquiredImages.remove(pendingImage);
       }
-      acquiredImages.addLast(newImage);
       pendingImage = newImage;
       invalidate();
-      closeImageAfterDrawing(newImage);
     }
     return newImage != null || pendingImage != null;
   }
@@ -284,6 +278,10 @@ public class FlutterImageView extends View implements RenderSurface {
     super.onDraw(canvas);
     if (pendingImage != null) {
       updateCurrentBitmap(pendingImage);
+      if (pendingCloseImage != null) {
+        pendingCloseImage.close();
+      }
+      pendingCloseImage = pendingImage;
       pendingImage = null;
     }
     if (currentBitmap != null) {
@@ -292,11 +290,14 @@ public class FlutterImageView extends View implements RenderSurface {
   }
 
   private void closeAllImages() {
-    for (Image image : acquiredImages) {
-      image.close();
+    if (pendingImage != null) {
+      pendingImage.close();
+      pendingImage = null;
     }
-    acquiredImages.clear();
-    pendingImage = null;
+    if (pendingCloseImage != null) {
+      pendingCloseImage.close();
+      pendingCloseImage = null;
+    }
   }
 
   @TargetApi(29)
@@ -342,56 +343,6 @@ public class FlutterImageView extends View implements RenderSurface {
       // with the new size in the native side.
       flutterRenderer.swapSurface(imageReader.getSurface());
     }
-  }
-
-  /** Close the first image if exceeding the maximum number of images. */
-  private void closeImageIfNeeded(@Nullable ImageReader imageReader) {
-    if (imageReader == null) {
-      return;
-    }
-    int maxImage = imageReader.getMaxImages();
-    while (acquiredImages.size() >= maxImage - 1) {
-      if (acquiredImages.isEmpty()) {
-        break;
-      } else {
-        Image image = acquiredImages.removeFirst();
-        image.close();
-        if (pendingImage == image) {
-          pendingImage = null;
-        }
-      }
-    }
-  }
-
-  /**
-   * Close the image after it is drawn on screen.
-   *
-   * <p>The image might be drawn after the next FrameCallback. Close the image after the following
-   * FrameCallback to make sure it is drawn on screen.
-   */
-  private void closeImageAfterDrawing(@NonNull final Image image) {
-    Choreographer.FrameCallback secondFrameCallback =
-        new Choreographer.FrameCallback() {
-          @Override
-          public void doFrame(long frameTimeNanos) {
-            if (acquiredImages.remove(image)) {
-              image.close();
-              if (pendingImage == image) {
-                pendingImage = null;
-              }
-            } else {
-              // The image is already closed
-            }
-          }
-        };
-    Choreographer.FrameCallback firstFrameCallback =
-        new Choreographer.FrameCallback() {
-          @Override
-          public void doFrame(long frameTimeNanos) {
-            Choreographer.getInstance().postFrameCallback(secondFrameCallback);
-          }
-        };
-    Choreographer.getInstance().postFrameCallback(firstFrameCallback);
   }
 
   /**
