@@ -24,6 +24,7 @@
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/framebuffer_blend_contents.h"
+#include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/inline_pass_context.h"
@@ -195,6 +196,10 @@ std::optional<Rect> EntityPass::GetElementsCoverage(
 std::optional<Rect> EntityPass::GetSubpassCoverage(
     const EntityPass& subpass,
     std::optional<Rect> coverage_limit) const {
+  if (!(subpass.GetClearColor() == Color::BlackTransparent())) {
+    return coverage_limit;
+  }
+
   std::shared_ptr<FilterContents> image_filter =
       subpass.delegate_->WithImageFilter(Rect(), subpass.xformation_);
 
@@ -890,6 +895,21 @@ bool EntityPass::OnRender(
     backdrop_entity.SetClipDepth(clip_depth_floor);
 
     render_element(backdrop_entity);
+  } else if (elements_.empty()) {
+    Entity clear_entity;
+    Color clear_color = GetClearColor();
+    clear_entity.SetContents(SolidColorContents::Make(
+        PathBuilder()
+            .AddRect({local_pass_position.x, local_pass_position.y,
+                      static_cast<Scalar>(clear_color_size.width),
+                      static_cast<Scalar>(clear_color_size.height)})
+            .TakePath(),
+        clear_color));
+    clear_entity.SetTransformation(
+        Matrix::MakeTranslation(Vector3(-local_pass_position)));
+    clear_entity.SetClipDepth(clip_depth_floor);
+
+    render_element(clear_entity);
   }
 
   bool is_collapsing_clear_colors = !collapsed_parent_pass &&
@@ -1148,7 +1168,7 @@ void EntityPass::SetBlendMode(BlendMode blend_mode) {
 }
 
 Color EntityPass::GetClearColor(ISize target_size) const {
-  Color result = Color::BlackTransparent();
+  Color result = clear_color_;
   if (backdrop_filter_proc_) {
     return result;
   }
@@ -1162,6 +1182,10 @@ Color EntityPass::GetClearColor(ISize target_size) const {
     result = result.Blend(entity_color.value(), blend_mode);
   }
   return result.Premultiply();
+}
+
+void EntityPass::SetClearColor(const Color& color) {
+  clear_color_ = color;
 }
 
 void EntityPass::SetBackdropFilter(BackdropFilterProc proc) {
