@@ -741,7 +741,6 @@
 ../../../fuchsia/sdk/linux/pkg/zx/meta.json
 ../../../fuchsia/sdk/linux/tools
 ../../../fuchsia/sdk/linux/version_history.json
-../../../gpu/README.md
 ../../../out
 ../../../third_party/abseil-cpp/.git
 ../../../third_party/abseil-cpp/.github
@@ -1820,6 +1819,7 @@
 ../../../third_party/dart/third_party/firefox_jsshell
 ../../../third_party/dart/third_party/mdn/browser-compat-data/README.google
 ../../../third_party/dart/third_party/pkg
+../../../third_party/dart/third_party/pkg_tested
 ../../../third_party/dart/third_party/requirejs
 ../../../third_party/dart/tools
 ../../../third_party/dart/utils/OWNERS
