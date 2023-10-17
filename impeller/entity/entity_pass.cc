@@ -198,12 +198,10 @@ std::optional<Rect> EntityPass::GetSubpassCoverage(
   std::shared_ptr<FilterContents> image_filter =
       subpass.delegate_->WithImageFilter(Rect(), subpass.xformation_);
 
-  // If the filter graph transforms the basis of the subpass, then its space
-  // has deviated too much from the parent pass to safely intersect with the
-  // pass coverage limit.
-  coverage_limit =
-      (image_filter && !image_filter->IsTranslationOnly() ? std::nullopt
-                                                          : coverage_limit);
+  // If the subpass has an image filter, then its coverage space may deviate
+  // from the parent pass and make intersecting with the pass coverage limit
+  // unsafe.
+  coverage_limit = image_filter ? std::nullopt : coverage_limit;
 
   auto entities_coverage = subpass.GetElementsCoverage(coverage_limit);
   // The entities don't cover anything. There is nothing to do.
@@ -641,6 +639,14 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     auto subpass_capture = capture.CreateChild("EntityPass");
     subpass_capture.AddRect("Coverage", *subpass_coverage, {.readonly = true});
 
+    // Start non-collapsed subpasses with a fresh clip coverage stack limited by
+    // the subpass coverage. This is important because image filters applied to
+    // save layers may transform the subpass texture after it's rendered,
+    // causing parent clip coverage to get misaligned with the actual area that
+    // the subpass will affect in the parent pass.
+    ClipCoverageStack subpass_clip_coverage_stack = {ClipCoverageLayer{
+        .coverage = subpass_coverage, .clip_depth = subpass->clip_depth_}};
+
     // Stencil textures aren't shared between EntityPasses (as much of the
     // time they are transient).
     if (!subpass->OnRender(
@@ -652,7 +658,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
             subpass_coverage->origin -
                 global_pass_position,         // local_pass_position
             ++pass_depth,                     // pass_depth
-            clip_coverage_stack,              // clip_coverage_stack
+            subpass_clip_coverage_stack,      // clip_coverage_stack
             subpass->clip_depth_,             // clip_depth_floor
             subpass_backdrop_filter_contents  // backdrop_filter_contents
             )) {
@@ -720,9 +726,10 @@ bool EntityPass::OnRender(
     VALIDATION_LOG << SPrintF("Pass context invalid (Depth=%d)", pass_depth);
     return false;
   }
+  auto clear_color_size = pass_target.GetRenderTarget().GetRenderTargetSize();
 
   if (!collapsed_parent_pass &&
-      !GetClearColor(root_pass_size).IsTransparent()) {
+      !GetClearColor(clear_color_size).IsTransparent()) {
     // Force the pass context to create at least one new pass if the clear color
     // is present.
     pass_context.GetRenderPass(pass_depth);
@@ -802,7 +809,8 @@ bool EntityPass::OnRender(
             ClipCoverageLayer{.coverage = clip_coverage.coverage,
                               .clip_depth = element_entity.GetClipDepth() + 1});
         FML_DCHECK(clip_coverage_stack.back().clip_depth ==
-                   clip_coverage_stack.size() - 1);
+                   clip_coverage_stack.front().clip_depth +
+                       clip_coverage_stack.size() - 1);
 
         if (!op.has_value()) {
           // Running this append op won't impact the clip buffer because the
@@ -817,20 +825,21 @@ bool EntityPass::OnRender(
           return true;
         }
 
-        auto restoration_depth = element_entity.GetClipDepth();
-        FML_DCHECK(restoration_depth < clip_coverage_stack.size());
+        auto restoration_index = element_entity.GetClipDepth() -
+                                 clip_coverage_stack.front().clip_depth;
+        FML_DCHECK(restoration_index < clip_coverage_stack.size());
 
         // We only need to restore the area that covers the coverage of the
         // clip rect at target depth + 1.
         std::optional<Rect> restore_coverage =
-            (restoration_depth + 1 < clip_coverage_stack.size())
-                ? clip_coverage_stack[restoration_depth + 1].coverage
+            (restoration_index + 1 < clip_coverage_stack.size())
+                ? clip_coverage_stack[restoration_index + 1].coverage
                 : std::nullopt;
         if (restore_coverage.has_value()) {
           // Make the coverage rectangle relative to the current pass.
           restore_coverage->origin -= global_pass_position;
         }
-        clip_coverage_stack.resize(restoration_depth + 1);
+        clip_coverage_stack.resize(restoration_index + 1);
 
         if (!clip_coverage_stack.back().coverage.has_value()) {
           // Running this restore op won't make anything renderable, so skip it.
@@ -891,7 +900,7 @@ bool EntityPass::OnRender(
     // Skip elements that are incorporated into the clear color.
     if (is_collapsing_clear_colors) {
       auto [entity_color, _] =
-          ElementAsBackgroundColor(element, root_pass_size);
+          ElementAsBackgroundColor(element, clear_color_size);
       if (entity_color.has_value()) {
         continue;
       }

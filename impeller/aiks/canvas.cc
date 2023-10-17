@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "flutter/fml/logging.h"
+#include "flutter/fml/trace_event.h"
 #include "impeller/aiks/image_filter.h"
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/entity/contents/atlas_contents.h"
@@ -252,6 +253,7 @@ void Canvas::DrawRRect(Rect rect, Scalar corner_radius, const Paint& paint) {
   auto path = PathBuilder{}
                   .SetConvexity(Convexity::kConvex)
                   .AddRoundedRect(rect, corner_radius)
+                  .SetBounds(rect)
                   .TakePath();
   if (paint.style == Paint::Style::kFill) {
     Entity entity;
@@ -273,10 +275,13 @@ void Canvas::DrawCircle(Point center, Scalar radius, const Paint& paint) {
                               paint)) {
     return;
   }
-  auto circle_path = PathBuilder{}
-                         .AddCircle(center, radius)
-                         .SetConvexity(Convexity::kConvex)
-                         .TakePath();
+  auto circle_path =
+      PathBuilder{}
+          .AddCircle(center, radius)
+          .SetConvexity(Convexity::kConvex)
+          .SetBounds(Rect::MakeLTRB(center.x - radius, center.y - radius,
+                                    center.x + radius, center.y + radius))
+          .TakePath();
   DrawPath(circle_path, paint);
 }
 
@@ -317,6 +322,7 @@ void Canvas::ClipRRect(const Rect& rect,
   auto path = PathBuilder{}
                   .SetConvexity(Convexity::kConvex)
                   .AddRoundedRect(rect, corner_radius)
+                  .SetBounds(rect)
                   .TakePath();
 
   std::optional<Rect> inner_rect = (corner_radius * 2 < rect.size.width &&
@@ -531,6 +537,7 @@ size_t Canvas::GetClipDepth() const {
 void Canvas::SaveLayer(const Paint& paint,
                        std::optional<Rect> bounds,
                        const std::shared_ptr<ImageFilter>& backdrop_filter) {
+  TRACE_EVENT0("flutter", "Canvas::saveLayer");
   Save(true, paint.blend_mode, backdrop_filter);
 
   auto& new_layer_pass = GetCurrentPass();

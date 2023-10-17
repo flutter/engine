@@ -29,7 +29,10 @@ final Set<String> skippedPaths = <String>{
   r'flutter/lib/web_ui/dev', // these are build tools; they do not end up in Engine artifacts
   r'flutter/prebuilts',
   r'flutter/sky/packages/sky_engine/LICENSE',
+  r'flutter/third_party/glfw/deps', // Only used by examples and tests; not linked in build.
+  r'flutter/third_party/glfw/docs',
   r'flutter/third_party/gn',
+  r'flutter/third_party/imgui',
   r'flutter/third_party/ninja', // build system
   r'flutter/third_party/test_shaders', // for tests only
   r'flutter/third_party/txt/third_party/fonts',
@@ -98,8 +101,6 @@ final Set<String> skippedPaths = <String>{
   r'third_party/fontconfig', // not used in standard configurations
   r'third_party/freetype2/builds',
   r'third_party/freetype2/src/tools',
-  r'third_party/glfw/deps', // Only used by examples and tests; not linked in build.
-  r'third_party/glfw/docs',
   r'third_party/gradle',
   r'third_party/harfbuzz/docs',
   r'third_party/harfbuzz/util', // utils are command line tools that do not end up in the binary
@@ -112,7 +113,6 @@ final Set<String> skippedPaths = <String>{
   r'third_party/icu/source/data/brkitr/dictionaries/cjdict.txt', // explicitly handled by ICU license
   r'third_party/icu/source/data/brkitr/dictionaries/laodict.txt', // explicitly handled by ICU license
   r'third_party/icu/source/data/dtd',
-  r'third_party/imgui',
   r'third_party/inja/doc', // documentation
   r'third_party/inja/third_party/amalgamate', // only used at build time
   r'third_party/inja/third_party/include/doctest', // seems to be a unit test library

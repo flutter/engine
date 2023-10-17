@@ -28,9 +28,6 @@ pubspec.lock
 docs/doxygen/
 xcuserdata
 
-third_party/gn/
-third_party/ninja/ninja*
-
 # Miscellaneous
 *.class
 *.lock
@@ -133,3 +130,4 @@ app.*.symbols
 
 # Prebuilt binaries.
 /prebuilts/
+/build/secondary/third_party/protobuf
