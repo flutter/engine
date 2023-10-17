@@ -1361,9 +1361,6 @@ public class FlutterView extends FrameLayout
       Log.v(TAG, "Tried to revert the image view, but no previous surface was used.");
       return;
     }
-    if (previousRenderSurface == flutterImageView) {
-      return;
-    }
     renderSurface = previousRenderSurface;
     previousRenderSurface = null;
 
