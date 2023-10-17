@@ -464,6 +464,7 @@ struct RenderPassData {
     }
   }
 
+  // TODO: Try commenting out and see if this fixes the issue.
   if (gl.DiscardFramebufferEXT.IsAvailable()) {
     std::vector<GLenum> attachments;
 

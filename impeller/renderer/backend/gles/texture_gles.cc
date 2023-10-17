@@ -531,9 +531,6 @@ bool TextureGLES::SetAsFramebufferAttachment(GLenum target,
           4                          // samples
       );
       break;
-    // Both a standard render buffer and a multisampled render buffer need to
-    // be attached the same way. The only difference is that the multisampled
-    // render buffer will be resolved in a "InitializeContentsIfNecessary".
     case Type::kRenderBuffer:
     case Type::kRenderBufferMultisampled:
       gl.FramebufferRenderbuffer(target,                    // target
@@ -541,6 +538,7 @@ bool TextureGLES::SetAsFramebufferAttachment(GLenum target,
                                  GL_RENDERBUFFER,  // render-buffer target
                                  handle.value()    // render-buffer
       );
+      gl.BindRenderbuffer(GL_RENDERBUFFER, GL_NONE);
       break;
   }
 
