@@ -79,7 +79,7 @@ std::ostream& operator<<(std::ostream& os, const ColorSource& color_source) {
       os << "kScene";
       break;
   }
-  os << "}";
+  os << " }";
   return os;
 }
 
