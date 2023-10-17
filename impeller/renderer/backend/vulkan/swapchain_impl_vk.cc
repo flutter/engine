@@ -459,77 +459,78 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
     }
   }
 
-  context.GetSubmitTaskRunner()->PostTask([&, index, current_frame = current_frame_,
-               vk_final_cmd_buffer = vk_final_cmd_buffer] {
-    TRACE_EVENT0("impeller", "SwapchainImplVK::Present");
-    auto context_strong = context_.lock();
-    if (!context_strong) {
-      return;
-    }
+  context.GetSubmitTaskRunner()->PostTask(
+      [&, index, current_frame = current_frame_,
+       vk_final_cmd_buffer = vk_final_cmd_buffer] {
+        TRACE_EVENT0("impeller", "SwapchainImplVK::Present");
+        auto context_strong = context_.lock();
+        if (!context_strong) {
+          return;
+        }
 
-    const auto& sync = synchronizers_[current_frame];
+        const auto& sync = synchronizers_[current_frame];
 
-    //----------------------------------------------------------------------------
-    /// Signal that the presentation semaphore is ready.
-    ///
-    {
-      vk::SubmitInfo submit_info;
-      vk::PipelineStageFlags wait_stage =
-          vk::PipelineStageFlagBits::eColorAttachmentOutput;
-      submit_info.setWaitDstStageMask(wait_stage);
-      submit_info.setWaitSemaphores(*sync->render_ready);
-      submit_info.setSignalSemaphores(*sync->present_ready);
-      submit_info.setCommandBuffers(vk_final_cmd_buffer);
-      auto result =
-          context.GetGraphicsQueue()->Submit(submit_info, *sync->acquire);
-      if (result != vk::Result::eSuccess) {
-        VALIDATION_LOG << "Could not wait on render semaphore: "
-                       << vk::to_string(result);
-        return;
-      }
-    }
+        //----------------------------------------------------------------------------
+        /// Signal that the presentation semaphore is ready.
+        ///
+        {
+          vk::SubmitInfo submit_info;
+          vk::PipelineStageFlags wait_stage =
+              vk::PipelineStageFlagBits::eColorAttachmentOutput;
+          submit_info.setWaitDstStageMask(wait_stage);
+          submit_info.setWaitSemaphores(*sync->render_ready);
+          submit_info.setSignalSemaphores(*sync->present_ready);
+          submit_info.setCommandBuffers(vk_final_cmd_buffer);
+          auto result =
+              context.GetGraphicsQueue()->Submit(submit_info, *sync->acquire);
+          if (result != vk::Result::eSuccess) {
+            VALIDATION_LOG << "Could not wait on render semaphore: "
+                           << vk::to_string(result);
+            return;
+          }
+        }
 
-    /// Record the approximate end of the GPU workload.
-    context.GetGPUTracer()->RecordEndFrameTime();
+        /// Record the approximate end of the GPU workload.
+        context.GetGPUTracer()->RecordEndFrameTime();
 
-    //----------------------------------------------------------------------------
-    /// Present the image.
-    ///
-    uint32_t indices[] = {static_cast<uint32_t>(index)};
+        //----------------------------------------------------------------------------
+        /// Present the image.
+        ///
+        uint32_t indices[] = {static_cast<uint32_t>(index)};
 
-    vk::PresentInfoKHR present_info;
-    present_info.setSwapchains(*swapchain_);
-    present_info.setImageIndices(indices);
-    present_info.setWaitSemaphores(*sync->present_ready);
+        vk::PresentInfoKHR present_info;
+        present_info.setSwapchains(*swapchain_);
+        present_info.setImageIndices(indices);
+        present_info.setWaitSemaphores(*sync->present_ready);
 
-    switch (auto result = present_queue_.presentKHR(present_info)) {
-      case vk::Result::eErrorOutOfDateKHR:
-        // Caller will recreate the impl on acquisition, not submission.
-        [[fallthrough]];
-      case vk::Result::eErrorSurfaceLostKHR:
-        // Vulkan guarantees that the set of queue operations will still
-        // complete successfully.
-        [[fallthrough]];
-      case vk::Result::eSuboptimalKHR:
-        // Even though we're handling rotation changes via polling, we
-        // still need to handle the case where the swapchain signals that
-        // it's suboptimal (i.e. every frame when we are rotated given we
-        // aren't doing Vulkan pre-rotation).
-        [[fallthrough]];
-      case vk::Result::eSuccess:
-        return;
-      default:
-        VALIDATION_LOG << "Could not present queue: " << vk::to_string(result);
-        return;
-    }
-    FML_UNREACHABLE();
-  });
+        switch (auto result = present_queue_.presentKHR(present_info)) {
+          case vk::Result::eErrorOutOfDateKHR:
+            // Caller will recreate the impl on acquisition, not submission.
+            [[fallthrough]];
+          case vk::Result::eErrorSurfaceLostKHR:
+            // Vulkan guarantees that the set of queue operations will still
+            // complete successfully.
+            [[fallthrough]];
+          case vk::Result::eSuboptimalKHR:
+            // Even though we're handling rotation changes via polling, we
+            // still need to handle the case where the swapchain signals that
+            // it's suboptimal (i.e. every frame when we are rotated given we
+            // aren't doing Vulkan pre-rotation).
+            [[fallthrough]];
+          case vk::Result::eSuccess:
+            return;
+          default:
+            VALIDATION_LOG << "Could not present queue: "
+                           << vk::to_string(result);
+            return;
+        }
+        FML_UNREACHABLE();
+      });
   if (context.GetSyncPresentation()) {
-   std::shared_ptr<fml::CountDownLatch> latch = std::make_shared<fml::CountDownLatch>(1u);
-   context.GetSubmitTaskRunner()->PostTask([latch]() {
-    latch->CountDown();
-   });
-   latch->Wait();
+    std::shared_ptr<fml::CountDownLatch> latch =
+        std::make_shared<fml::CountDownLatch>(1u);
+    context.GetSubmitTaskRunner()->PostTask([latch]() { latch->CountDown(); });
+    latch->Wait();
   }
   return true;
 }
