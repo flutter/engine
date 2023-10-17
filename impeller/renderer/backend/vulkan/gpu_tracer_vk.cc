@@ -4,6 +4,7 @@
 
 #include "impeller/renderer/backend/vulkan/gpu_tracer_vk.h"
 
+#include <thread>
 #include <utility>
 #include "fml/logging.h"
 #include "fml/trace_event.h"
@@ -37,12 +38,14 @@ bool GPUTracerVK::IsEnabled() const {
 void GPUTracerVK::MarkFrameStart() {
   FML_DCHECK(!in_frame_);
   in_frame_ = true;
+  raster_thread_id_ = std::this_thread::get_id();
 }
 
 void GPUTracerVK::MarkFrameEnd() {
   if (!enabled_) {
     return;
   }
+
   Lock lock(trace_state_mutex_);
   current_state_ = (current_state_ + 1) % 16;
 
@@ -60,8 +63,9 @@ void GPUTracerVK::MarkFrameEnd() {
   in_frame_ = false;
 }
 
+
 void GPUTracerVK::RecordCmdBufferStart(const vk::CommandBuffer& buffer) {
-  if (!enabled_ || !in_frame_) {
+  if (!enabled_ || std::this_thread::get_id() != raster_thread_id_ || !in_frame_) {
     return;
   }
   Lock lock(trace_state_mutex_);
@@ -98,9 +102,8 @@ void GPUTracerVK::RecordCmdBufferStart(const vk::CommandBuffer& buffer) {
   state.current_index += 1;
 }
 
-std::optional<size_t> GPUTracerVK::RecordCmdBufferEnd(
-    const vk::CommandBuffer& buffer) {
-  if (!enabled_ || !in_frame_) {
+std::optional<size_t> GPUTracerVK::RecordCmdBufferEnd(const vk::CommandBuffer& buffer) {
+  if (!enabled_ || std::this_thread::get_id() != raster_thread_id_ || !in_frame_) {
     return std::nullopt;
   }
   Lock lock(trace_state_mutex_);
@@ -117,8 +120,7 @@ std::optional<size_t> GPUTracerVK::RecordCmdBufferEnd(
   return current_state_;
 }
 
-void GPUTracerVK::OnFenceComplete(std::optional<size_t> maybe_frame_index,
-                                  bool success) {
+void GPUTracerVK::OnFenceComplete(std::optional<size_t> maybe_frame_index, bool success) {
   if (!enabled_ || !maybe_frame_index.has_value()) {
     return;
   }
@@ -139,7 +141,6 @@ void GPUTracerVK::OnFenceComplete(std::optional<size_t> maybe_frame_index,
         state.query_pool.get(), 0, state.current_index,
         buffer_count * sizeof(uint64_t), bits.data(), sizeof(uint64_t),
         vk::QueryResultFlagBits::e64);
-
     // This may return VK_NOT_READY if the query couldn't be completed, or if
     // there are queries still pending. From local testing, this happens
     // occassionally on very expensive frames. Its unclear if we can do anything

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include <memory>
+#include <thread>
 
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/device_holder.h"
@@ -73,6 +74,10 @@ class GPUTracerVK {
   // actually renders a frame. Without the in_frame_ guard, the GPU frame time
   // would include this 30ms gap during which the engine was idle.
   bool in_frame_ = false;
+
+  // Track the raster thread id to avoid recording mipmap/image cmd buffers
+  // that are not guaranteed to start/end according to frame boundaries.
+  std::thread::id raster_thread_id_;
   bool enabled_ = false;
 };
 
