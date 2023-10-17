@@ -41,7 +41,7 @@ GPUTracerVK::GPUTracerVK(const std::weak_ptr<ContextVK>& context)
   query_pool_ = std::move(pool);
   // Disable tracing in release mode.
 #ifdef IMPELLER_DEBUG
-  valid_ = true;
+  valid_ = false;
 #endif
 }
 

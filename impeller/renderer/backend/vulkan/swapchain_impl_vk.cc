@@ -4,6 +4,7 @@
 
 #include "impeller/renderer/backend/vulkan/swapchain_impl_vk.h"
 
+#include "fml/synchronization/count_down_latch.h"
 #include "fml/trace_event.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
@@ -458,7 +459,7 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
     }
   }
 
-  auto task = [&, index, current_frame = current_frame_,
+  context.GetSubmitTaskRunner()->PostTask([&, index, current_frame = current_frame_,
                vk_final_cmd_buffer = vk_final_cmd_buffer] {
     TRACE_EVENT0("impeller", "SwapchainImplVK::Present");
     auto context_strong = context_.lock();
@@ -522,11 +523,13 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
         return;
     }
     FML_UNREACHABLE();
-  };
+  });
   if (context.GetSyncPresentation()) {
-    task();
-  } else {
-    context.GetSubmitTaskRunner()->PostTask(task);
+   std::shared_ptr<fml::CountDownLatch> latch = std::make_shared<fml::CountDownLatch>(1u);
+   context.GetSubmitTaskRunner()->PostTask([latch]() {
+    latch->CountDown();
+   });
+   latch->Wait();
   }
   return true;
 }
