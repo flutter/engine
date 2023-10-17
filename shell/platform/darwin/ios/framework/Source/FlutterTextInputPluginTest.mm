@@ -30,7 +30,6 @@ FLUTTER_ASSERT_ARC
 - (BOOL)isVisibleToAutofill;
 - (id<FlutterTextInputDelegate>)textInputDelegate;
 - (void)configureWithDictionary:(NSDictionary*)configuration;
-- (void)replaceRangeLocal:(NSRange)range withText:(NSString*)text;
 @end
 
 @interface FlutterTextInputViewSpy : FlutterTextInputView
@@ -798,7 +797,7 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(markedTextRange.length, 9ul);
 
   // Replaces space with space.
-  [inputView replaceRangeLocal:NSMakeRange(4, 1) withText:@" "];
+  [inputView replaceRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(4, 1)] withText:@" "];
   selectedTextRange = ((FlutterTextRange*)inputView.selectedTextRange).range;
 
   XCTAssertEqual(selectedTextRange.location, 5ul);

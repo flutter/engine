@@ -1254,9 +1254,8 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   // Adjust the selected range and the marked text range. There's no
   // documentation but UITextField always sets markedTextRange to nil,
   // and collapses the selection to the end of the new replacement text.
-  range.location += text.length;
-  range.length = 0;
-  const NSRange newSelectionRange = [self clampSelection:range forText:self.text];
+  const NSRange newSelectionRange =
+      [self clampSelection:NSMakeRange(range.location + text.length, 0) forText:self.text];
 
   [self setSelectedTextRangeLocal:[FlutterTextRange rangeWithNSRange:newSelectionRange]];
   self.markedTextRange = nil;
@@ -1363,10 +1362,12 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   self.markedTextRange =
       newMarkedRange.length > 0 ? [FlutterTextRange rangeWithNSRange:newMarkedRange] : nil;
 
-  markedSelectedRange.location += newMarkedRange.location;
-  [self setSelectedTextRangeLocal:[FlutterTextRange
-                                      rangeWithNSRange:[self clampSelection:markedSelectedRange
-                                                                    forText:self.text]]];
+  [self setSelectedTextRangeLocal:
+            [FlutterTextRange
+                rangeWithNSRange:[self clampSelection:NSMakeRange(markedSelectedRange.location +
+                                                                      newMarkedRange.location,
+                                                                  markedSelectedRange.length)
+                                              forText:self.text]]];
   if (_enableDeltaModel) {
     NSRange nextReplaceRange = [self clampSelection:actualReplacedRange forText:textBeforeChange];
     [self updateEditingStateWithDelta:flutter::TextEditingDelta(
