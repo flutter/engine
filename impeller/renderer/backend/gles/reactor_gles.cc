@@ -115,7 +115,7 @@ static bool CollectGLHandle(const ProcTableGLES& gl,
       gl.DeleteTextures(1u, &handle);
       return true;
     case HandleType::kBuffer:
-      gl.DeleteBuffers(1u, &handle);
+      // gl.DeleteBuffers(1u, &handle);
       return true;
     case HandleType::kProgram:
       gl.DeleteProgram(handle);
