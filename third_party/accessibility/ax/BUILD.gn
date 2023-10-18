@@ -2,12 +2,11 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/common/config.gni")
+import("//common/config.gni")
 
 source_set("ax") {
-  visibility = [ "//flutter/third_party/accessibility/*" ]
-  public_configs =
-      [ "//flutter/third_party/accessibility:accessibility_config" ]
+  visibility = [ "//third_party/accessibility/*" ]
+  public_configs = [ "//third_party/accessibility:accessibility_config" ]
 
   sources = [
     "platform/ax_platform_node.cc",
@@ -107,14 +106,14 @@ source_set("ax") {
       "uiautomationcore.lib",
     ]
     deps = [
-      "//flutter/fml:fml",
+      "//fml:fml",
       "//third_party/icu:icui18n",
     ]
   }
 
   public_deps = [
-    "//flutter/third_party/accessibility/ax_build",
-    "//flutter/third_party/accessibility/base",
-    "//flutter/third_party/accessibility/gfx",
+    "//third_party/accessibility/ax_build",
+    "//third_party/accessibility/base",
+    "//third_party/accessibility/gfx",
   ]
 }

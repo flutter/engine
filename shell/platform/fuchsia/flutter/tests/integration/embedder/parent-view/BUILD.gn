@@ -3,17 +3,17 @@
 # found in the LICENSE file.
 
 import("//build/fuchsia/sdk.gni")
-import("//flutter/tools/fuchsia/dart/dart_library.gni")
-import("//flutter/tools/fuchsia/flutter/flutter_component.gni")
-import("//flutter/tools/fuchsia/gn-sdk/package.gni")
+import("//tools/fuchsia/dart/dart_library.gni")
+import("//tools/fuchsia/flutter/flutter_component.gni")
+import("//tools/fuchsia/gn-sdk/package.gni")
 
 dart_library("lib") {
   package_name = "parent-view"
   sources = [ "parent_view.dart" ]
 
   deps = [
-    "//flutter/shell/platform/fuchsia/dart:args",
-    "//flutter/shell/platform/fuchsia/dart:vector_math",
+    "//shell/platform/fuchsia/dart:args",
+    "//shell/platform/fuchsia/dart:vector_math",
   ]
 }
 

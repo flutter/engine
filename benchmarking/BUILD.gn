@@ -15,7 +15,7 @@ source_set("benchmarking") {
   ]
 
   public_deps = [
-    "//flutter/fml",
+    "//fml",
     "//third_party/benchmark",
   ]
 

@@ -27,7 +27,7 @@ impeller_component("base") {
     "version.h",
   ]
 
-  deps = [ "//flutter/fml" ]
+  deps = [ "//fml" ]
 }
 
 impeller_component("base_unittests") {
@@ -35,6 +35,6 @@ impeller_component("base_unittests") {
   sources = [ "base_unittests.cc" ]
   deps = [
     ":base",
-    "//flutter/testing",
+    "//testing",
   ]
 }

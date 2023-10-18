@@ -5,10 +5,10 @@
 assert(is_fuchsia)
 
 import("//build/fuchsia/sdk.gni")
-import("//flutter/common/config.gni")
-import("//flutter/testing/testing.gni")
-import("//flutter/tools/fuchsia/dart.gni")
-import("//flutter/tools/fuchsia/fuchsia_host_bundle.gni")
+import("//common/config.gni")
+import("//testing/testing.gni")
+import("//tools/fuchsia/dart.gni")
+import("//tools/fuchsia/fuchsia_host_bundle.gni")
 
 product_suffix = ""
 
@@ -19,7 +19,7 @@ if (flutter_runtime_mode == "release") {
 fuchsia_host_bundle("flutter_binaries") {
   name = "flutter_binaries"
 
-  _flutter_tester_label = "//flutter/shell/testing:testing($host_toolchain)"
+  _flutter_tester_label = "//shell/testing:testing($host_toolchain)"
 
   deps = [ _flutter_tester_label ]
 
@@ -40,7 +40,7 @@ fuchsia_host_bundle("dart_binaries") {
 
   _kernel_compiler_label = "dart:kernel_compiler($host_toolchain)"
   _frontend_server_label =
-      "//flutter/flutter_frontend_server:frontend_server($host_toolchain)"
+      "//flutter_frontend_server:frontend_server($host_toolchain)"
   _list_libraries_label = "dart:list_libraries($host_toolchain)"
 
   deps = [

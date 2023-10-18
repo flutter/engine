@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/common/config.gni")
-import("//flutter/impeller/tools/impeller.gni")
+import("//common/config.gni")
+import("//impeller/tools/impeller.gni")
 
 impeller_component("golden_playground_test") {
   testonly = true
@@ -12,11 +12,11 @@ impeller_component("golden_playground_test") {
 
   deps = [
     ":digest",
-    "//flutter/fml",
-    "//flutter/impeller/aiks",
-    "//flutter/impeller/playground",
-    "//flutter/impeller/typographer/backends/skia:typographer_skia_backend",
-    "//flutter/testing:testing_lib",
+    "//fml",
+    "//impeller/aiks",
+    "//impeller/playground",
+    "//impeller/typographer/backends/skia:typographer_skia_backend",
+    "//testing:testing_lib",
   ]
 
   if (is_mac) {
@@ -37,7 +37,7 @@ impeller_component("digest") {
     "working_directory.h",
   ]
 
-  deps = [ "//flutter/fml" ]
+  deps = [ "//fml" ]
 }
 
 if (is_mac) {
@@ -52,10 +52,10 @@ if (is_mac) {
     ]
 
     deps = [
-      "//flutter/impeller/aiks",
-      "//flutter/impeller/display_list",
-      "//flutter/impeller/playground",
-      "//flutter/impeller/renderer/backend/metal:metal",
+      "//impeller/aiks",
+      "//impeller/display_list",
+      "//impeller/playground",
+      "//impeller/renderer/backend/metal:metal",
     ]
   }
 
@@ -72,9 +72,9 @@ if (is_mac) {
     deps = [
       ":digest",
       ":metal_screenshot",
-      "//flutter/impeller/aiks",
-      "//flutter/impeller/aiks:aiks_unittests_golden",
-      "//flutter/impeller/fixtures",
+      "//impeller/aiks",
+      "//impeller/aiks:aiks_unittests_golden",
+      "//impeller/fixtures",
       "//third_party/googletest:gtest",
       "//third_party/swiftshader",
     ]

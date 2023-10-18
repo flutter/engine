@@ -11,14 +11,14 @@ buildconfig = "//build/config/BUILDCONFIG.gn"
 # The secondary source root is a parallel directory tree where
 # GN build files are placed when they can not be placed directly
 # in the source tree, e.g. for third party source trees.
-secondary_source = "//flutter/build/secondary/"
+secondary_source = "//build/secondary/"
 
 # The set of targets known to pass 'gn check'. When all targets pass, remove
 # this.
 check_targets = [
   "//dart/*",
   "//flow/*",
-  "//flutter/*",
+  "//*",
   "//glue/*",
   "//mojo/*",
   "//skia/*",

@@ -4,8 +4,8 @@
 
 assert(is_win)
 
-import("//flutter/shell/platform/glfw/config.gni")
-import("//flutter/testing/testing.gni")
+import("//shell/platform/glfw/config.gni")
+import("//testing/testing.gni")
 
 _public_headers = [ "public/flutter_windows.h" ]
 
@@ -26,13 +26,12 @@ config("relative_flutter_windows_headers") {
 source_set("flutter_windows_headers") {
   public = _public_headers
 
-  public_deps = [ "//flutter/shell/platform/common:common_cpp_library_headers" ]
+  public_deps = [ "//shell/platform/common:common_cpp_library_headers" ]
 
-  configs +=
-      [ "//flutter/shell/platform/common:desktop_library_implementation" ]
+  configs += [ "//shell/platform/common:desktop_library_implementation" ]
 
   public_configs =
-      [ "//flutter/shell/platform/common:relative_flutter_library_headers" ]
+      [ "//shell/platform/common:relative_flutter_library_headers" ]
 }
 
 source_set("flutter_windows_source") {
@@ -114,7 +113,7 @@ source_set("flutter_windows_source") {
   ]
 
   configs += [
-    "//flutter/shell/platform/common:desktop_library_implementation",
+    "//shell/platform/common:desktop_library_implementation",
     "//third_party/angle:gl_prototypes",
   ]
 
@@ -123,20 +122,20 @@ source_set("flutter_windows_source") {
   defines = [ "FLUTTER_ENGINE_NO_PROTOTYPES" ]
 
   public_deps = [
-    "//flutter/fml:string_conversion",
-    "//flutter/shell/platform/common:common_cpp_accessibility",
-    "//flutter/shell/platform/common:common_cpp_enums",
+    "//fml:string_conversion",
+    "//shell/platform/common:common_cpp_accessibility",
+    "//shell/platform/common:common_cpp_enums",
   ]
 
   deps = [
     ":flutter_windows_headers",
-    "//flutter/fml:fml",
-    "//flutter/shell/platform/common:common_cpp",
-    "//flutter/shell/platform/common:common_cpp_input",
-    "//flutter/shell/platform/common:common_cpp_switches",
-    "//flutter/shell/platform/common/client_wrapper:client_wrapper",
-    "//flutter/shell/platform/embedder:embedder_as_internal_library",
-    "//flutter/shell/platform/windows/client_wrapper:client_wrapper_windows",
+    "//fml:fml",
+    "//shell/platform/common:common_cpp",
+    "//shell/platform/common:common_cpp_input",
+    "//shell/platform/common:common_cpp_switches",
+    "//shell/platform/common/client_wrapper:client_wrapper",
+    "//shell/platform/embedder:embedder_as_internal_library",
+    "//shell/platform/windows/client_wrapper:client_wrapper_windows",
     "//third_party/angle:libEGL_static",  # the order of libEGL_static and
                                           # libGLESv2_static is important.. if
                                           # reversed, will cause a linker error
@@ -152,7 +151,7 @@ copy("publish_headers_windows") {
   outputs = [ "$root_out_dir/{{source_file_part}}" ]
 
   # The Windows header assumes the presence of the common headers.
-  deps = [ "//flutter/shell/platform/common:publish_headers" ]
+  deps = [ "//shell/platform/common:publish_headers" ]
 }
 
 shared_library("flutter_windows") {
@@ -222,8 +221,7 @@ executable("flutter_windows_unittests") {
     "windows_lifecycle_manager_unittests.cc",
   ]
 
-  configs +=
-      [ "//flutter/shell/platform/common:desktop_library_implementation" ]
+  configs += [ "//shell/platform/common:desktop_library_implementation" ]
 
   public_configs = [ "//flutter:config" ]
 
@@ -231,19 +229,19 @@ executable("flutter_windows_unittests") {
     ":flutter_windows_fixtures",
     ":flutter_windows_headers",
     ":flutter_windows_source",
-    "//flutter/shell/platform/common:common_cpp",
-    "//flutter/shell/platform/common/client_wrapper:client_wrapper",
-    "//flutter/shell/platform/embedder:embedder_as_internal_library",
-    "//flutter/shell/platform/embedder:embedder_test_utils",
-    "//flutter/testing",
-    "//flutter/testing:dart",
-    "//flutter/third_party/tonic",
+    "//shell/platform/common:common_cpp",
+    "//shell/platform/common/client_wrapper:client_wrapper",
+    "//shell/platform/embedder:embedder_as_internal_library",
+    "//shell/platform/embedder:embedder_test_utils",
+    "//testing",
+    "//testing:dart",
     "//third_party/rapidjson",
+    "//third_party/tonic",
   ]
 }
 
 shared_library("flutter_windows_glfw") {
-  deps = [ "//flutter/shell/platform/glfw:flutter_glfw" ]
+  deps = [ "//shell/platform/glfw:flutter_glfw" ]
 
   public_configs = [ "//flutter:config" ]
 }
@@ -252,8 +250,8 @@ group("windows_glfw") {
   deps = [
     ":flutter_windows",
     ":flutter_windows_glfw",
-    "//flutter/shell/platform/glfw:publish_headers_glfw",
-    "//flutter/shell/platform/glfw/client_wrapper:publish_wrapper_glfw",
+    "//shell/platform/glfw:publish_headers_glfw",
+    "//shell/platform/glfw/client_wrapper:publish_wrapper_glfw",
   ]
 }
 
@@ -261,7 +259,7 @@ group("windows") {
   deps = [
     ":flutter_windows",
     ":publish_headers_windows",
-    "//flutter/shell/platform/windows/client_wrapper:publish_wrapper_windows",
+    "//shell/platform/windows/client_wrapper:publish_wrapper_windows",
   ]
 
   if (build_glfw_shell) {

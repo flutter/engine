@@ -2,15 +2,15 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/build/zip_bundle.gni")
-import("//flutter/common/config.gni")
-import("//flutter/web_sdk/web_sdk.gni")
+import("//build/zip_bundle.gni")
+import("//common/config.gni")
 import("//third_party/dart/build/dart/dart_action.gni")
+import("//web_sdk/web_sdk.gni")
 
 web_ui_sources = exec_script("//third_party/dart/tools/list_dart_files.py",
                              [
                                "absolute",
-                               rebase_path("//flutter/lib/web_ui/lib"),
+                               rebase_path("//lib/web_ui/lib"),
                              ],
                              "list lines")
 
@@ -35,11 +35,11 @@ group("web_sdk") {
 
 sdk_rewriter("web_ui_library_sources") {
   ui = true
-  input_dir = "//flutter/lib/web_ui/lib/"
+  input_dir = "//lib/web_ui/lib/"
   output_dir = "$root_out_dir/flutter_web_sdk/lib/ui/"
 
   # exclude everything in the engine directory, it will be a separate internal library
-  exclude_patterns = [ rebase_path("//flutter/lib/web_ui/lib/src/*") ]
+  exclude_patterns = [ rebase_path("//lib/web_ui/lib/src/*") ]
 }
 
 web_ui_ui_web_with_output("web_ui_ui_web") {
@@ -48,53 +48,51 @@ web_ui_ui_web_with_output("web_ui_ui_web") {
 
 sdk_rewriter("web_engine_library") {
   library_name = "engine"
-  api_file = "//flutter/lib/web_ui/lib/src/engine.dart"
-  input_dir = "//flutter/lib/web_ui/lib/src/engine/"
+  api_file = "//lib/web_ui/lib/src/engine.dart"
+  input_dir = "//lib/web_ui/lib/src/engine/"
   output_dir = "$root_out_dir/flutter_web_sdk/lib/_engine/"
 
   # exclude skwasm, it will be a separate internal library
-  exclude_patterns =
-      [ rebase_path("//flutter/lib/web_ui/lib/src/engine/skwasm/*") ]
+  exclude_patterns = [ rebase_path("//lib/web_ui/lib/src/engine/skwasm/*") ]
 }
 
 sdk_rewriter("skwasm_stub_library") {
   library_name = "skwasm_stub"
-  api_file = "//flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_stub.dart"
-  input_dir = "//flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_stub/"
+  api_file = "//lib/web_ui/lib/src/engine/skwasm/skwasm_stub.dart"
+  input_dir = "//lib/web_ui/lib/src/engine/skwasm/skwasm_stub/"
   output_dir = "$root_out_dir/flutter_web_sdk/lib/_skwasm_stub/"
 }
 
 sdk_rewriter("skwasm_impl_library") {
   library_name = "skwasm_impl"
-  api_file = "//flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl.dart"
-  input_dir = "//flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/"
+  api_file = "//lib/web_ui/lib/src/engine/skwasm/skwasm_impl.dart"
+  input_dir = "//lib/web_ui/lib/src/engine/skwasm/skwasm_impl/"
   output_dir = "$root_out_dir/flutter_web_sdk/lib/_skwasm_impl/"
 }
 
 sdk_rewriter("web_unicode_library") {
   library_name = "web_unicode"
-  api_file = "//flutter/third_party/web_unicode/lib/web_unicode.dart"
-  input_dir = "//flutter/third_party/web_unicode/lib/web_unicode/"
+  api_file = "//third_party/web_unicode/lib/web_unicode.dart"
+  input_dir = "//third_party/web_unicode/lib/web_unicode/"
   output_dir = "$root_out_dir/flutter_web_sdk/lib/_web_unicode/"
 }
 
 sdk_rewriter("web_test_fonts_library") {
   library_name = "web_test_fonts"
-  api_file = "//flutter/third_party/web_test_fonts/lib/web_test_fonts.dart"
-  input_dir = "//flutter/third_party/web_test_fonts/lib/web_test_fonts/"
+  api_file = "//third_party/web_test_fonts/lib/web_test_fonts.dart"
+  input_dir = "//third_party/web_test_fonts/lib/web_test_fonts/"
   output_dir = "$root_out_dir/flutter_web_sdk/lib/_web_test_fonts/"
 }
 
 sdk_rewriter("web_locale_keymap_library") {
   library_name = "web_locale_keymap"
-  api_file =
-      "//flutter/third_party/web_locale_keymap/lib/web_locale_keymap.dart"
-  input_dir = "//flutter/third_party/web_locale_keymap/lib/web_locale_keymap/"
+  api_file = "//third_party/web_locale_keymap/lib/web_locale_keymap.dart"
+  input_dir = "//third_party/web_locale_keymap/lib/web_locale_keymap/"
   output_dir = "$root_out_dir/flutter_web_sdk/lib/_web_locale_keymap/"
 }
 
 copy("web_ui_library") {
-  sources = [ "//flutter/web_sdk/libraries.json" ]
+  sources = [ "//web_sdk/libraries.json" ]
 
   outputs = [ "$root_out_dir/flutter_web_sdk/{{source_file_part}}" ]
 }
@@ -118,7 +116,7 @@ template("_dartdevc") {
       inputs = invoker.inputs
       outputs = invoker.outputs
 
-      pool = "//flutter/build/dart:dart_pool"
+      pool = "//build/dart:dart_pool"
 
       ext = ""
       if (is_win) {
@@ -145,7 +143,7 @@ template("_dartdevc") {
 
       script = "//third_party/dart/pkg/dev_compiler/bin/dartdevc.dart"
 
-      pool = "//flutter/build/dart:dart_pool"
+      pool = "//build/dart:dart_pool"
     }
   }
 }
@@ -168,7 +166,7 @@ template("_kernel_worker") {
       inputs = invoker.inputs
       outputs = invoker.outputs
 
-      pool = "//flutter/build/dart:dart_pool"
+      pool = "//build/dart:dart_pool"
 
       ext = ""
       if (is_win) {
@@ -196,7 +194,7 @@ template("_kernel_worker") {
 
       script = "//third_party/dart/utils/bazel/kernel_worker.dart"
 
-      pool = "//flutter/build/dart:dart_pool"
+      pool = "//build/dart:dart_pool"
     }
   }
 }
@@ -520,9 +518,9 @@ if (!is_fuchsia) {
 
     if (is_wasm) {
       deps += [
-        "//flutter/third_party/canvaskit:canvaskit_chromium_group",
-        "//flutter/third_party/canvaskit:canvaskit_group",
-        "//flutter/third_party/canvaskit:skwasm_group",
+        "//third_party/canvaskit:canvaskit_chromium_group",
+        "//third_party/canvaskit:canvaskit_group",
+        "//third_party/canvaskit:skwasm_group",
       ]
     }
 

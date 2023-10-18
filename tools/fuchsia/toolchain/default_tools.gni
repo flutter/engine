@@ -20,7 +20,7 @@ if (host_os == "mac") {
   # microseconds) which causes spurious ninja rebuilds. As a result, shell to a
   # helper to copy rather than calling cp -r. See https://fxbug.dev/56376#c5.
   copy_command += "ln -f {{source}} {{output}} 2>/dev/null || (" +
-                  rebase_path("//flutter/tools/fuchsia/toolchain/copy.py") +
+                  rebase_path("//tools/fuchsia/toolchain/copy.py") +
                   " {{source}} {{output}})"
 } else {
   copy_command += "ln -f {{source}} {{output}} 2>/dev/null || (rm -f {{output}} && cp -af {{source}} {{output}})"

@@ -3,9 +3,9 @@
 # found in the LICENSE file.
 
 import("//build/fuchsia/config.gni")
-import("//flutter/tools/fuchsia/fuchsia_debug_symbols.gni")
-import("//flutter/tools/fuchsia/fuchsia_libs.gni")
-import("//flutter/tools/fuchsia/gn-sdk/config/config.gni")
+import("//tools/fuchsia/fuchsia_debug_symbols.gni")
+import("//tools/fuchsia/fuchsia_libs.gni")
+import("//tools/fuchsia/gn-sdk/config/config.gni")
 
 # Compiles a CML file for a V2 component.
 #
@@ -23,7 +23,7 @@ template("_compile_cml") {
                              "testonly",
                              "visibility",
                            ])
-    script = "//flutter/tools/fuchsia/compile_cml.py"
+    script = "//tools/fuchsia/compile_cml.py"
 
     inputs = [ "$fuchsia_tool_dir/cmc" ]
     sources = [ invoker.manifest ]
@@ -146,7 +146,7 @@ template("_fuchsia_archive") {
   }
 
   action("${target_name}_dir") {
-    script = "//flutter/tools/fuchsia/copy_path.py"
+    script = "//tools/fuchsia/copy_path.py"
     sources = copy_sources
     response_file_contents = rebase_path(copy_sources + copy_outputs)
     deps = pkg_dir_deps
@@ -157,7 +157,7 @@ template("_fuchsia_archive") {
 
   manifest_json_file = "${root_out_dir}/${target_name}_package_manifest.json"
   action(target_name) {
-    script = "//flutter/tools/fuchsia/gen_package.py"
+    script = "//tools/fuchsia/gen_package.py"
     deps = pkg_dir_deps + [
              ":${target_name}_dir",
              ":${_dbg_symbols_target}",
@@ -300,11 +300,11 @@ template("fuchsia_test_archive") {
     generated_cml_file = "$root_out_dir/$test_suite.cml"
     action(interpolate_cml_target) {
       testonly = true
-      script = "//flutter/tools/fuchsia/interpolate_test_suite.py"
-      sources = [ "//flutter/testing/fuchsia/meta/test_suite.cml" ]
+      script = "//tools/fuchsia/interpolate_test_suite.py"
+      sources = [ "//testing/fuchsia/meta/test_suite.cml" ]
       args = [
         "--input",
-        rebase_path("//flutter/testing/fuchsia/meta/test_suite.cml"),
+        rebase_path("//testing/fuchsia/meta/test_suite.cml"),
         "--test-suite",
         test_suite,
         "--output",

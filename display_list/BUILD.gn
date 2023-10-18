@@ -3,9 +3,9 @@
 # found in the LICENSE file.
 
 import("//build/fuchsia/sdk.gni")
-import("//flutter/common/config.gni")
-import("//flutter/impeller/tools/impeller.gni")
-import("//flutter/testing/testing.gni")
+import("//common/config.gni")
+import("//impeller/tools/impeller.gni")
+import("//testing/testing.gni")
 
 config("display_list_config") {
   defines = []
@@ -85,9 +85,9 @@ source_set("display_list") {
   public_configs = [ ":display_list_config" ]
 
   public_deps = [
-    "//flutter/fml",
-    "//flutter/impeller/runtime_stage",
-    "//flutter/impeller/typographer",
+    "//fml",
+    "//impeller/runtime_stage",
+    "//impeller/typographer",
     "//third_party/skia",
   ]
 
@@ -125,8 +125,8 @@ if (enable_unittests) {
     deps = [
       ":display_list",
       ":display_list_fixtures",
-      "//flutter/display_list/testing:display_list_testing",
-      "//flutter/testing",
+      "//display_list/testing:display_list_testing",
+      "//testing",
     ]
 
     if (!defined(defines)) {
@@ -152,11 +152,11 @@ if (enable_unittests) {
     deps = [
       ":display_list",
       ":display_list_fixtures",
-      "//flutter/common/graphics",
-      "//flutter/display_list/testing:display_list_surface_provider",
-      "//flutter/display_list/testing:display_list_testing",
-      "//flutter/impeller/typographer/backends/skia:typographer_skia_backend",
-      "//flutter/testing",
+      "//common/graphics",
+      "//display_list/testing:display_list_surface_provider",
+      "//display_list/testing:display_list_testing",
+      "//impeller/typographer/backends/skia:typographer_skia_backend",
+      "//testing",
     ]
 
     if (!defined(defines)) {
@@ -182,9 +182,9 @@ if (enable_unittests) {
     deps = [
       ":display_list",
       ":display_list_fixtures",
-      "//flutter/benchmarking",
-      "//flutter/display_list/testing:display_list_testing",
-      "//flutter/testing:testing_lib",
+      "//benchmarking",
+      "//display_list/testing:display_list_testing",
+      "//testing:testing_lib",
     ]
   }
 
@@ -195,8 +195,8 @@ if (enable_unittests) {
 
     deps = [
       ":display_list_fixtures",
-      "//flutter/benchmarking",
-      "//flutter/testing:testing_lib",
+      "//benchmarking",
+      "//testing:testing_lib",
     ]
   }
 }
@@ -216,12 +216,12 @@ source_set("display_list_benchmarks_source") {
   deps = [
     ":display_list",
     ":display_list_benchmarks_fixtures",
-    "//flutter/benchmarking",
-    "//flutter/common/graphics",
-    "//flutter/display_list/testing:display_list_surface_provider",
-    "//flutter/fml",
-    "//flutter/testing:skia",
-    "//flutter/testing:testing_lib",
+    "//benchmarking",
+    "//common/graphics",
+    "//display_list/testing:display_list_surface_provider",
+    "//fml",
+    "//testing:skia",
+    "//testing:testing_lib",
     "//third_party/dart/runtime:libdart_jit",  # for tracing
     "//third_party/skia",
   ]
@@ -242,7 +242,7 @@ if (is_ios) {
       "//build/config/gcc:symbol_visibility_hidden",
       "//build/config:symbol_visibility_hidden",
     ]
-    configs += [ "//flutter/benchmarking:benchmark_library_config" ]
+    configs += [ "//benchmarking:benchmark_library_config" ]
     cflags = [
       "-fobjc-arc",
       "-mios-simulator-version-min=$ios_testing_deployment_target",
@@ -251,7 +251,7 @@ if (is_ios) {
         [ "-Wl,-install_name,@rpath/libios_display_list_benchmarks.dylib" ]
     deps = [
       ":display_list_benchmarks_source",
-      "//flutter/benchmarking:benchmarking_library",
+      "//benchmarking:benchmarking_library",
     ]
   }
 }

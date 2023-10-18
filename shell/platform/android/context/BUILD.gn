@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/common/config.gni")
-import("//flutter/shell/config.gni")
+import("//common/config.gni")
+import("//shell/config.gni")
 
 source_set("context") {
   sources = [
@@ -14,12 +14,12 @@ source_set("context") {
   public_configs = [ "//flutter:config" ]
 
   deps = [
-    "//flutter/fml",
-    "//flutter/impeller/renderer",
+    "//fml",
+    "//impeller/renderer",
     "//third_party/skia",
   ]
 
   if (shell_enable_vulkan) {
-    deps += [ "//flutter/vulkan" ]
+    deps += [ "//vulkan" ]
   }
 }

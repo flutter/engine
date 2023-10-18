@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/common/config.gni")
-import("//flutter/testing/testing.gni")
+import("//common/config.gni")
+import("//testing/testing.gni")
 
 source_set("external_view_embedder") {
   sources = [
@@ -16,12 +16,12 @@ source_set("external_view_embedder") {
   public_configs = [ "//flutter:config" ]
 
   deps = [
-    "//flutter/common",
-    "//flutter/flow",
-    "//flutter/fml",
-    "//flutter/shell/platform/android/context",
-    "//flutter/shell/platform/android/jni",
-    "//flutter/shell/platform/android/surface",
+    "//common",
+    "//flow",
+    "//fml",
+    "//shell/platform/android/context",
+    "//shell/platform/android/jni",
+    "//shell/platform/android/surface",
     "//third_party/skia",
   ]
 }
@@ -41,13 +41,13 @@ executable("android_external_view_embedder_unittests") {
   deps = [
     ":external_view_embedder",
     ":external_view_embedder_fixtures",
-    "//flutter/flow",
-    "//flutter/shell/gpu:gpu_surface_gl",
-    "//flutter/shell/platform/android/jni:jni_mock",
-    "//flutter/shell/platform/android/surface",
-    "//flutter/shell/platform/android/surface:surface_mock",
-    "//flutter/testing",
-    "//flutter/testing:dart",
-    "//flutter/testing:skia",
+    "//flow",
+    "//shell/gpu:gpu_surface_gl",
+    "//shell/platform/android/jni:jni_mock",
+    "//shell/platform/android/surface",
+    "//shell/platform/android/surface:surface_mock",
+    "//testing",
+    "//testing:dart",
+    "//testing:skia",
   ]
 }

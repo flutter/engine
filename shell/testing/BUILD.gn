@@ -3,8 +3,8 @@
 # found in the LICENSE file.
 
 import("//build/fuchsia/sdk.gni")
-import("//flutter/impeller/tools/impeller.gni")
-import("//flutter/shell/gpu/gpu.gni")
+import("//impeller/tools/impeller.gni")
+import("//shell/gpu/gpu.gni")
 
 shell_gpu_configuration("tester_gpu_configuration") {
   enable_software = true
@@ -33,23 +33,23 @@ executable("testing") {
   }
 
   deps = [
-    "//flutter/assets",
-    "//flutter/common",
-    "//flutter/flow",
-    "//flutter/fml",
-    "//flutter/lib/snapshot",
-    "//flutter/shell/common",
-    "//flutter/shell/gpu:gpu_surface_software",
-    "//flutter/third_party/tonic",
+    "//assets",
+    "//common",
+    "//flow",
+    "//fml",
+    "//lib/snapshot",
+    "//shell/common",
+    "//shell/gpu:gpu_surface_software",
     "//third_party/dart/runtime:libdart_jit",
     "//third_party/dart/runtime/bin:dart_io_api",
     "//third_party/skia",
+    "//third_party/tonic",
   ]
 
   if (impeller_supports_rendering) {
     deps += [
       ":tester_gpu_configuration",
-      "//flutter/impeller",
+      "//impeller",
       "//third_party/swiftshader",
     ]
   }

@@ -3,9 +3,9 @@
 # found in the LICENSE file.
 
 import("//build/compiled_action.gni")
-import("//flutter/common/config.gni")
-import("//flutter/impeller/tools/malioc.gni")
-import("//flutter/testing/testing.gni")
+import("//common/config.gni")
+import("//impeller/tools/malioc.gni")
+import("//testing/testing.gni")
 
 declare_args() {
   impeller_debug =
@@ -93,7 +93,7 @@ template("impeller_component") {
         public_configs = []
       }
 
-      public_configs += [ "//flutter/impeller:impeller_public_config" ]
+      public_configs += [ "//impeller:impeller_public_config" ]
 
       if (!defined(invoker.cflags)) {
         cflags = []
@@ -161,7 +161,7 @@ template("metal_library") {
       metal_library_symbols_path,
     ]
 
-    script = "//flutter/impeller/tools/build_metal_library.py"
+    script = "//impeller/tools/build_metal_library.py"
 
     depfile = "$target_gen_dir/mtl/$metal_library_name.depfile"
 
@@ -220,15 +220,15 @@ template("embed_blob") {
       "--source",
       rebase_path(invoker.blob),
     ]
-    script = "//flutter/impeller/tools/xxd.py"
+    script = "//impeller/tools/xxd.py"
     deps = invoker.deps
   }
 
   embed_config = "embed_$target_name"
   config(embed_config) {
-    include_dirs = [ get_path_info(
-            get_label_info("//flutter/impeller:impeller", "target_gen_dir"),
-            "dir") ]
+    include_dirs =
+        [ get_path_info(get_label_info("//impeller:impeller", "target_gen_dir"),
+                        "dir") ]
   }
 
   source_set(target_name) {
@@ -245,7 +245,7 @@ template("_impellerc") {
   if (impeller_use_prebuilt_impellerc == "") {
     compiled_action_foreach(target_name) {
       forward_variables_from(invoker, "*")
-      tool = "//flutter/impeller/compiler:impellerc"
+      tool = "//impeller/compiler:impellerc"
     }
   } else {
     action_foreach(target_name) {
@@ -305,7 +305,7 @@ template("impellerc") {
     depfile_intermediate_path = rebase_path(depfile_path, root_build_dir)
     depfile = depfile_path
 
-    shader_lib_dir = rebase_path("//flutter/impeller/compiler/shader_lib")
+    shader_lib_dir = rebase_path("//impeller/compiler/shader_lib")
     args = [
       "--input={{source}}",
       "--include={{source_dir}}",
@@ -398,9 +398,9 @@ template("impellerc_reflect") {
 
   reflect_config = "reflect_$target_name"
   config(reflect_config) {
-    include_dirs = [ get_path_info(
-            get_label_info("//flutter/impeller:impeller", "target_gen_dir"),
-            "dir") ]
+    include_dirs =
+        [ get_path_info(get_label_info("//impeller:impeller", "target_gen_dir"),
+                        "dir") ]
   }
 
   impellerc_invocation = invoker.impellerc_invocation
@@ -416,7 +416,7 @@ template("impellerc_reflect") {
                              ])
 
     deps = [
-      "//flutter/impeller/core",
+      "//impeller/core",
       impellerc_invocation,
     ]
   }
@@ -499,7 +499,7 @@ template("blobcat_library") {
 
   output_file = "$target_gen_dir/$target_name.shaderblob"
   compiled_action(target_name) {
-    tool = "//flutter/impeller/blobcat"
+    tool = "//impeller/blobcat"
     inputs = invoker.shaders
     outputs = [ output_file ]
     output_path_rebased = rebase_path(output_file, root_build_dir)
@@ -821,7 +821,7 @@ template("_scenec") {
   if (impeller_use_prebuilt_scenec == "") {
     compiled_action_foreach(target_name) {
       forward_variables_from(invoker, "*")
-      tool = "//flutter/impeller/scene/importer:scenec"
+      tool = "//impeller/scene/importer:scenec"
     }
   } else {
     action_foreach(target_name) {

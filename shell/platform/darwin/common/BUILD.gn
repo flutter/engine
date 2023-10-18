@@ -4,8 +4,8 @@
 
 assert(is_mac || is_ios)
 
-import("//flutter/common/config.gni")
-import("//flutter/testing/testing.gni")
+import("//common/config.gni")
+import("//testing/testing.gni")
 import("framework_common.gni")
 
 source_set("common") {
@@ -21,7 +21,7 @@ source_set("common") {
 
   deps = [
     ":availability_version_check",
-    "//flutter/fml",
+    "//fml",
   ]
 
   public_configs = [ "//flutter:config" ]
@@ -45,7 +45,7 @@ source_set("availability_version_check") {
 
   sources = [ "availability_version_check.cc" ]
 
-  deps = [ "//flutter/fml" ]
+  deps = [ "//fml" ]
 
   public_configs = [ "//flutter:config" ]
 }
@@ -84,7 +84,7 @@ source_set("framework_common") {
     ":framework_relative_headers",
   ]
 
-  deps = [ "//flutter/fml" ]
+  deps = [ "//fml" ]
 }
 
 test_fixtures("framework_common_fixtures") {
@@ -109,7 +109,7 @@ executable("framework_common_unittests") {
   deps = [
     ":framework_common",
     ":framework_common_fixtures",
-    "//flutter/testing",
+    "//testing",
     "//third_party/dart/runtime:libdart_jit",
     "//third_party/ocmock:ocmock",
   ]

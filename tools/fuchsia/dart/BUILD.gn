@@ -2,9 +2,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/tools/fuchsia/dart/toolchain.gni")
-import("//flutter/tools/fuchsia/sdk/sdk_targets.gni")
-import("//flutter/tools/fuchsia/toolchain/basic_toolchain.gni")
+import("//tools/fuchsia/dart/toolchain.gni")
+import("//tools/fuchsia/sdk/sdk_targets.gni")
+import("//tools/fuchsia/toolchain/basic_toolchain.gni")
 
 if (current_toolchain == default_toolchain) {
   # A toolchain dedicated to processing and analyzing Dart packages.

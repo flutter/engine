@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/build/dart/rules.gni")
-import("//flutter/testing/rules/runtime_mode.gni")
+import("//build/dart/rules.gni")
+import("//testing/rules/runtime_mode.gni")
 
 flutter_snapshot("scenario_app_snapshot") {
   main_dart = "lib/main.dart"

@@ -2,16 +2,16 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-# NOTE: Generally, the build rules in //flutter/tools/fuchsia/dart/,
-# //flutter/tools/fuchsia/dart/kernel/, and similar SUBDIRECTORIES of
-# //flutter/tools/fuchsia/ (such as //flutter/tools/fuchsia/flutter/)
+# NOTE: Generally, the build rules in //tools/fuchsia/dart/,
+# //tools/fuchsia/dart/kernel/, and similar SUBDIRECTORIES of
+# //tools/fuchsia/ (such as //tools/fuchsia/flutter/)
 # mirror the directory paths and much of the build rule content of fuchsia.git
 # //build/...
 #
 # Most of the fuchsia-derived build rules were implemented after some similar
-# build rules already existed in the directory //flutter/tools/fuchsia/
+# build rules already existed in the directory //tools/fuchsia/
 # and several existing build targets use these (legacy) build rules.
-# Though some rules and targets in //flutter/tools/fuchsia/ have similar names
+# Though some rules and targets in //tools/fuchsia/ have similar names
 # to the fuchsia.git-derived rules, the rule structures and behavior can be
 # different. Therefore both are maintained for now.
 #
@@ -19,4 +19,4 @@
 # original dart.gni are relevant and useful to the new fuchsia.git-derived
 # rules, so these definitions can simply be imported.
 
-import("//flutter/tools/fuchsia/dart.gni")
+import("//tools/fuchsia/dart.gni")

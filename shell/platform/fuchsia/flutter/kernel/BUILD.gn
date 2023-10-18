@@ -4,15 +4,16 @@
 
 import("//build/compiled_action.gni")
 import("//build/fuchsia/sdk.gni")
-import("//flutter/common/config.gni")
-import("//flutter/tools/fuchsia/dart.gni")
+import("//common/config.gni")
 import("//third_party/dart/utils/compile_platform.gni")
+import("//tools/fuchsia/dart.gni")
 
 compile_platform("kernel_platform_files") {
   single_root_scheme = "org-dartlang-sdk"
   single_root_base = rebase_path("../../../../../../")
 
-  libraries_specification_uri = "org-dartlang-sdk:///flutter/shell/platform/fuchsia/flutter/kernel/libraries.json"
+  libraries_specification_uri =
+      "org-dartlang-sdk:///shell/platform/fuchsia/flutter/kernel/libraries.json"
 
   outputs = [
     "$root_out_dir/flutter_runner_patched_sdk/platform_strong.dill",

@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/build/dart/rules.gni")
+import("//build/dart/rules.gni")
 
 tests = [
   "assets_test.dart",
@@ -57,7 +57,7 @@ foreach(test, tests) {
 
 group("dart") {
   testonly = true
-  deps = [ "//flutter/testing/dart/observatory" ]
+  deps = [ "//testing/dart/observatory" ]
   foreach(test, tests) {
     deps += [ ":compile_$test" ]
   }

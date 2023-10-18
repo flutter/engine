@@ -2,9 +2,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/tools/fuchsia/dart/dart.gni")
-import("//flutter/tools/fuchsia/dart/dart_package_config.gni")
-import("//flutter/tools/fuchsia/dart/toolchain.gni")
+import("//tools/fuchsia/dart/dart.gni")
+import("//tools/fuchsia/dart/dart_package_config.gni")
+import("//tools/fuchsia/dart/toolchain.gni")
 
 # Defines a Dart library
 #
@@ -248,7 +248,7 @@ if (current_toolchain == dart_toolchain) {
     if (!disable_source_verification) {
       source_verification_target_name = "${target_name}_source_verification"
       action(source_verification_target_name) {
-        script = "//flutter/tools/fuchsia/dart/verify_sources.py"
+        script = "//tools/fuchsia/dart/verify_sources.py"
         output_file = "$target_gen_dir/$target_name.missing"
 
         sources = rebased_sources
@@ -295,7 +295,7 @@ if (current_toolchain == dart_toolchain) {
     action(_all_deps_sources_target) {
       forward_variables_from(invoker, [ "testonly" ])
 
-      script = "//flutter/tools/fuchsia/dart/merge_deps_sources.py"
+      script = "//tools/fuchsia/dart/merge_deps_sources.py"
 
       outputs = [ _all_deps_sources_file ]
       depfile = "${_all_deps_sources_file}.d"

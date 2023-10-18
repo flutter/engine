@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/shell/version/version.gni")
+import("//shell/version/version.gni")
 
 shared_library("path_ops") {
   sources = [

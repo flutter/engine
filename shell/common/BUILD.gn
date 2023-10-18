@@ -3,10 +3,10 @@
 # found in the LICENSE file.
 
 import("//build/fuchsia/sdk.gni")
-import("//flutter/common/config.gni")
-import("//flutter/impeller/tools/impeller.gni")
-import("//flutter/shell/gpu/gpu.gni")
-import("//flutter/testing/testing.gni")
+import("//common/config.gni")
+import("//impeller/tools/impeller.gni")
+import("//shell/gpu/gpu.gni")
+import("//testing/testing.gni")
 
 # Template to generate a dart embedder resource.cc file.
 # Required invoker inputs:
@@ -62,7 +62,7 @@ template("dart_embedder_resources") {
 source_set("platform_message_handler") {
   sources = [ "platform_message_handler.h" ]
   public_configs = [ "//flutter:config" ]
-  deps = [ "//flutter/fml:fml" ]
+  deps = [ "//fml:fml" ]
 }
 
 source_set("display") {
@@ -74,7 +74,7 @@ source_set("display") {
     "variable_refresh_rate_reporter.h",
   ]
   public_configs = [ "//flutter:config" ]
-  deps = [ "//flutter/fml:fml" ]
+  deps = [ "//fml:fml" ]
 }
 
 source_set("common") {
@@ -129,22 +129,22 @@ source_set("common") {
   public_deps = [
     ":display",
     ":platform_message_handler",
-    "//flutter/shell/version",
-    "//flutter/third_party/tonic",
-    "//flutter/third_party/txt",
+    "//shell/version",
     "//third_party/rapidjson",
+    "//third_party/tonic",
+    "//third_party/txt",
   ]
 
   deps = [
-    "//flutter/assets",
-    "//flutter/common",
-    "//flutter/common/graphics",
-    "//flutter/flow",
-    "//flutter/fml",
-    "//flutter/lib/ui",
-    "//flutter/runtime",
-    "//flutter/shell/common:base64",
-    "//flutter/shell/profiling",
+    "//assets",
+    "//common",
+    "//common/graphics",
+    "//flow",
+    "//fml",
+    "//lib/ui",
+    "//runtime",
+    "//shell/common:base64",
+    "//shell/profiling",
     "//third_party/dart/runtime:dart_api",
     "//third_party/skia",
   ]
@@ -155,7 +155,7 @@ source_set("common") {
       "snapshot_controller_impeller.h",
     ]
 
-    deps += [ "//flutter/impeller" ]
+    deps += [ "//impeller" ]
   }
 }
 
@@ -165,7 +165,7 @@ source_set("base64") {
     "base64.cc",
     "base64.h",
   ]
-  deps = [ "//flutter/fml" ]
+  deps = [ "//fml" ]
 }
 
 template("shell_host_executable") {
@@ -180,8 +180,8 @@ template("shell_host_executable") {
 
     deps += [
       ":common",
-      "//flutter/lib/snapshot",
-      "//flutter/runtime:libdart",
+      "//lib/snapshot",
+      "//runtime:libdart",
     ]
 
     public_configs = [ "//flutter:export_dynamic_symbols" ]
@@ -213,11 +213,11 @@ if (enable_unittests) {
 
     deps = [
       ":shell_unittests_fixtures",
-      "//flutter/benchmarking",
-      "//flutter/flow",
-      "//flutter/testing:dart",
-      "//flutter/testing:fixture_test",
-      "//flutter/testing:testing_lib",
+      "//benchmarking",
+      "//flow",
+      "//testing:dart",
+      "//testing:fixture_test",
+      "//testing:testing_lib",
     ]
   }
 
@@ -243,21 +243,21 @@ if (enable_unittests) {
     ]
 
     public_deps = [
-      "//flutter/common/graphics",
-      "//flutter/flow",
-      "//flutter/fml/dart",
-      "//flutter/runtime",
-      "//flutter/shell/common",
-      "//flutter/testing",
+      "//common/graphics",
+      "//flow",
+      "//fml/dart",
+      "//runtime",
+      "//shell/common",
+      "//testing",
     ]
 
     deps = [
       ":shell_unittests_gpu_configuration",
-      "//flutter/assets",
-      "//flutter/common",
-      "//flutter/lib/ui",
-      "//flutter/testing:dart",
-      "//flutter/testing:fixture_test",
+      "//assets",
+      "//common",
+      "//lib/ui",
+      "//testing:dart",
+      "//testing:fixture_test",
       "//third_party/rapidjson",
       "//third_party/skia",
     ]
@@ -273,7 +273,7 @@ if (enable_unittests) {
         "shell_test_platform_view_gl.h",
       ]
 
-      public_deps += [ "//flutter/testing:opengl" ]
+      public_deps += [ "//testing:opengl" ]
     }
 
     if (test_enable_vulkan) {
@@ -283,8 +283,8 @@ if (enable_unittests) {
       ]
 
       public_deps += [
-        "//flutter/flutter_vma:flutter_skia_vma",
-        "//flutter/vulkan",
+        "//flutter_vma:flutter_skia_vma",
+        "//vulkan",
       ]
     }
 
@@ -294,7 +294,7 @@ if (enable_unittests) {
         "shell_test_platform_view_metal.mm",
       ]
 
-      public_deps += [ "//flutter/shell/platform/darwin/graphics" ]
+      public_deps += [ "//shell/platform/darwin/graphics" ]
     }
   }
 
@@ -321,12 +321,12 @@ if (enable_unittests) {
     deps = [
       ":shell_test_fixture_sources",
       ":shell_unittests_fixtures",
-      "//flutter/assets",
-      "//flutter/common/graphics",
-      "//flutter/shell/common:base64",
-      "//flutter/shell/profiling:profiling_unittests",
-      "//flutter/shell/version",
-      "//flutter/testing:fixture_test",
+      "//assets",
+      "//common/graphics",
+      "//shell/common:base64",
+      "//shell/profiling:profiling_unittests",
+      "//shell/version",
+      "//testing:fixture_test",
       "//third_party/googletest:gmock",
     ]
 

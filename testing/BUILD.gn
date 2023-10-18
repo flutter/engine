@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/common/config.gni")
-import("//flutter/shell/config.gni")
+import("//common/config.gni")
+import("//shell/config.gni")
 import("testing.gni")
 
 config("dynamic_symbols") {
@@ -36,8 +36,8 @@ source_set("testing_lib") {
   ]
 
   public_deps = [
-    "//flutter/display_list",
-    "//flutter/fml",
+    "//display_list",
+    "//fml",
     "//third_party/googletest:gmock",
     "//third_party/googletest:gtest",
   ]
@@ -67,12 +67,12 @@ source_set("dart") {
 
   public_deps = [
     ":testing_lib",
-    "//flutter/common",
-    "//flutter/runtime",
-    "//flutter/runtime:libdart",
-    "//flutter/third_party/tonic",
+    "//common",
+    "//runtime",
+    "//runtime:libdart",
     "//third_party/dart/runtime/bin:elf_loader",
     "//third_party/skia",
+    "//third_party/tonic",
   ]
 }
 
@@ -92,8 +92,7 @@ source_set("skia") {
 }
 
 dart_snapshot_kernel("vmservice_kernel") {
-  dart_main =
-      rebase_path("//flutter/shell/vmservice/empty.dart", root_build_dir)
+  dart_main = rebase_path("//shell/vmservice/empty.dart", root_build_dir)
   dart_kernel = "$target_gen_dir/assets/vmservice_kernel.bin"
 }
 
@@ -115,8 +114,8 @@ source_set("fixture_test") {
 
   public_deps = [
     ":dart",
-    "//flutter/common",
-    "//flutter/runtime",
+    "//common",
+    "//runtime",
   ]
 
   if (flutter_runtime_mode == "profile") {
@@ -141,11 +140,11 @@ if (enable_unittests && shell_enable_vulkan) {
 
     deps = [
       ":skia",
-      "//flutter/flutter_vma:flutter_skia_vma",
-      "//flutter/fml",
-      "//flutter/shell/common",
-      "//flutter/vulkan",
-      "//flutter/vulkan/procs",
+      "//flutter_vma:flutter_skia_vma",
+      "//fml",
+      "//shell/common",
+      "//vulkan",
+      "//vulkan/procs",
     ]
 
     if (!is_fuchsia) {
@@ -160,7 +159,7 @@ if (enable_unittests) {
     fixtures = []
   }
 
-  # The //flutter/testing library provides utility methods to other test targets.
+  # The //testing library provides utility methods to other test targets.
   # This test target tests the testing utilities.
   executable("testing_unittests") {
     testonly = true
@@ -171,7 +170,7 @@ if (enable_unittests) {
       ":skia",
       ":testing",
       ":testing_fixtures",
-      "//flutter/runtime:libdart",
+      "//runtime:libdart",
     ]
 
     if (shell_enable_metal) {
@@ -181,7 +180,7 @@ if (enable_unittests) {
     }
 
     if (shell_enable_vulkan) {
-      deps += [ "//flutter/vulkan" ]
+      deps += [ "//vulkan" ]
     }
   }
 }
@@ -207,13 +206,13 @@ if (is_mac || is_ios) {
       ]
       deps = [
         ":skia",
-        "//flutter/fml",
+        "//fml",
       ]
 
       # Skia's Vulkan support is enabled for all platforms (except iOS), and so parts of
       # Skia's graphics context reference Vulkan symbols.
       if (shell_enable_vulkan) {
-        deps += [ "//flutter/vulkan" ]
+        deps += [ "//vulkan" ]
       }
     }
 
@@ -234,7 +233,7 @@ if (use_swiftshader) {
 
     deps = [
       ":skia",
-      "//flutter/fml",
+      "//fml",
     ]
 
     configs -= [ "//build/config/clang:extra_warnings" ]

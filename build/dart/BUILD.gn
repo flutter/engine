@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/build/concurrent_jobs.gni")
-import("//flutter/common/config.gni")
+import("//build/concurrent_jobs.gni")
+import("//common/config.gni")
 import("//third_party/dart/build/dart/copy_tree.gni")
 
 declare_args() {

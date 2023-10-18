@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/vulkan/config.gni")
+import("//vulkan/config.gni")
 import("../../../tools/impeller.gni")
 
 config("gles_config") {
@@ -22,7 +22,7 @@ impeller_component("gles_unittests") {
   ]
   deps = [
     ":gles",
-    "//flutter/testing:testing_lib",
+    "//testing:testing_lib",
   ]
 }
 
@@ -91,6 +91,6 @@ impeller_component("gles") {
   public_deps = [
     "../../:renderer",
     "../../../blobcat:blobcat_lib",
-    "//flutter/fml",
+    "//fml",
   ]
 }

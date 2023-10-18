@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import("//build/fuchsia/sdk.gni")
-import("//flutter/common/config.gni")
-import("//flutter/testing/testing.gni")
+import("//common/config.gni")
+import("//testing/testing.gni")
 
 declare_args() {
   flutter_use_fontconfig = false
@@ -79,9 +79,9 @@ source_set("txt") {
   public_configs = [ ":txt_config" ]
 
   public_deps = [
-    "//flutter/display_list",
-    "//flutter/fml",
-    "//flutter/impeller/typographer/backends/skia:typographer_skia_backend",
+    "//display_list",
+    "//fml",
+    "//impeller/typographer/backends/skia:typographer_skia_backend",
     "//third_party/harfbuzz",
     "//third_party/icu",
     "//third_party/skia",
@@ -99,7 +99,7 @@ source_set("txt") {
 
   if (is_mac || is_ios) {
     sources += [ "src/txt/platform_mac.mm" ]
-    deps += [ "//flutter/fml" ]
+    deps += [ "//fml" ]
   } else if (is_android) {
     sources += [ "src/txt/platform_android.cc" ]
   } else if (is_linux) {
@@ -132,8 +132,8 @@ if (enable_unittests) {
     deps = [
       ":txt",
       ":txt_fixtures",
-      "//flutter/fml",
-      "//flutter/testing:testing_lib",
+      "//fml",
+      "//testing:testing_lib",
       "//third_party/benchmark",
       "//third_party/skia/modules/skparagraph",
     ]
@@ -155,10 +155,10 @@ if (enable_unittests) {
     deps = [
       ":txt",
       ":txt_fixtures",
-      "//flutter/fml",
-      "//flutter/runtime:test_font",
-      "//flutter/testing:skia",
-      "//flutter/testing:testing_lib",
+      "//fml",
+      "//runtime:test_font",
+      "//testing:skia",
+      "//testing:testing_lib",
       "//third_party/skia/modules/skparagraph:skparagraph",
     ]
 

@@ -22,6 +22,6 @@ source_set("scenic") {
     "//build/fuchsia/pkg:async-cpp",
     "//build/fuchsia/pkg:async-testing",
     "//build/fuchsia/pkg:fidl_cpp",
-    "//flutter/fml",
+    "//fml",
   ]
 }

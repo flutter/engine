@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/common/config.gni")
-import("//flutter/shell/version/version.gni")
+import("//common/config.gni")
+import("//shell/version/version.gni")
 
 if (flutter_runtime_mode == "jit_release") {
   android_zip_archive_dir = "android-$target_cpu-jit-release"
@@ -45,8 +45,7 @@ template("zip_bundle") {
 
   generated_file(license_target) {
     source_path = rebase_path(".", "//flutter")
-    license_path =
-        rebase_path("//flutter/sky/packages/sky_engine/LICENSE", "//flutter")
+    license_path = rebase_path("//sky/packages/sky_engine/LICENSE", "//flutter")
     git_url = "https://github.com/flutter/engine/tree/$engine_version"
     sky_engine_url = "https://storage.googleapis.com/flutter_infra_release/flutter/$engine_version/sky_engine.zip"
     outputs = [ license_readme ]
@@ -62,7 +61,7 @@ template("zip_bundle") {
   }
 
   action(target_name) {
-    script = "//flutter/build/zip.py"
+    script = "//build/zip.py"
     outputs = [ "$root_build_dir/zip_archives/${invoker.output}" ]
     sources = [ license_readme ]
     forward_variables_from(invoker, [ "visibility" ])
@@ -118,7 +117,7 @@ template("zip_bundle_from_file") {
                              "visibility",
                              "deps",
                            ])
-    script = "//flutter/build/zip.py"
+    script = "//build/zip.py"
     outputs = [ "$root_build_dir/zip_archives/${invoker.output}" ]
     sources = []
     location_source_path = "$target_gen_dir/zip_bundle.txt"

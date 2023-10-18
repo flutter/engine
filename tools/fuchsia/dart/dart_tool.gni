@@ -2,9 +2,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/tools/fuchsia/dart/dart_library.gni")
-import("//flutter/tools/fuchsia/dart/dart_package_config.gni")
-import("//flutter/tools/fuchsia/dart/toolchain.gni")
+import("//tools/fuchsia/dart/dart_library.gni")
+import("//tools/fuchsia/dart/dart_package_config.gni")
+import("//tools/fuchsia/dart/toolchain.gni")
 
 # Wraps a dart snapshot in a script to be invoked by dart
 #
@@ -40,7 +40,7 @@ template("_dart_snapshot_invocation") {
                              "deps",
                            ])
 
-    script = "//flutter/tools/fuchsia/dart/gen_app_invocation.py"
+    script = "//tools/fuchsia/dart/gen_app_invocation.py"
 
     app_path = "$root_out_dir/dart-tools/$app_name"
     dart_binary = invoker.dart

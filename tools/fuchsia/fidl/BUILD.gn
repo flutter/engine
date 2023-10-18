@@ -3,10 +3,10 @@
 # found in the LICENSE file.
 
 import("//build/fuchsia/sdk.gni")
-import("//flutter/tools/fuchsia/fidl/fidl.gni")
-import("//flutter/tools/fuchsia/fidl/toolchain.gni")
-import("//flutter/tools/fuchsia/sdk/sdk_targets.gni")
-import("//flutter/tools/fuchsia/toolchain/basic_toolchain.gni")
+import("//tools/fuchsia/fidl/fidl.gni")
+import("//tools/fuchsia/fidl/toolchain.gni")
+import("//tools/fuchsia/sdk/sdk_targets.gni")
+import("//tools/fuchsia/toolchain/basic_toolchain.gni")
 
 # A toolchain dedicated to processing FIDL libraries.
 # The only targets in this toolchain are action() targets, so it

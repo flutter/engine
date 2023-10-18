@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/impeller/tools/impeller.gni")
+import("//impeller/tools/impeller.gni")
 
 impeller_component("geometry") {
   sources = [
@@ -44,7 +44,7 @@ impeller_component("geometry") {
 
   deps = [
     "../base",
-    "//flutter/fml",
+    "//fml",
   ]
 }
 
@@ -53,7 +53,7 @@ impeller_component("geometry_asserts") {
   sources = [ "geometry_asserts.h" ]
   deps = [
     ":geometry",
-    "//flutter/testing:testing_lib",
+    "//testing:testing_lib",
   ]
 }
 
@@ -63,7 +63,7 @@ impeller_component("geometry_unittests") {
   deps = [
     ":geometry",
     ":geometry_asserts",
-    "//flutter/testing:testing_lib",
+    "//testing:testing_lib",
   ]
 }
 
@@ -73,6 +73,6 @@ executable("geometry_benchmarks") {
   deps = [
     ":geometry",
     "../tessellator",
-    "//flutter/benchmarking",
+    "//benchmarking",
   ]
 }

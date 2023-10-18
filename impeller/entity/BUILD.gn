@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/impeller/tools/impeller.gni")
+import("//impeller/tools/impeller.gni")
 
 impeller_shaders("entity_shaders") {
   name = "entity"
@@ -261,7 +261,7 @@ impeller_component("entity") {
     public_deps += [ "../scene" ]
   }
 
-  deps = [ "//flutter/fml" ]
+  deps = [ "//fml" ]
 }
 
 impeller_component("entity_unittests") {
@@ -279,7 +279,7 @@ impeller_component("entity_unittests") {
     ":entity",
     "../geometry:geometry_asserts",
     "../playground:playground_test",
-    "//flutter/impeller/typographer/backends/skia:typographer_skia_backend",
+    "//impeller/typographer/backends/skia:typographer_skia_backend",
   ]
 }
 
@@ -290,6 +290,6 @@ impeller_component("render_target_cache_unittests") {
 
   deps = [
     ":entity",
-    "//flutter/testing:testing_lib",
+    "//testing:testing_lib",
   ]
 }

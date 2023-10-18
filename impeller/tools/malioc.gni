@@ -3,8 +3,8 @@
 # found in the LICENSE file.
 
 import("//build/compiled_action.gni")
-import("//flutter/common/config.gni")
-import("//flutter/testing/testing.gni")
+import("//common/config.gni")
+import("//testing/testing.gni")
 
 declare_args() {
   # Path to the Mali offline compiler tool 'malioc'.
@@ -18,7 +18,7 @@ declare_args() {
 
 if (impeller_malioc_path != "") {
   _core_list_file = "$root_build_dir/mali_core_list.json"
-  exec_script("//flutter/impeller/tools/malioc_cores.py",
+  exec_script("//impeller/tools/malioc_cores.py",
               [
                 "--malioc",
                 rebase_path(impeller_malioc_path, root_build_dir),
@@ -71,7 +71,7 @@ template("malioc_analyze_shaders") {
                                        ])
 
                 script = "//build/gn_run_malioc.py"
-                pool = "//flutter/impeller/tools:malioc_pool"
+                pool = "//impeller/tools:malioc_pool"
 
                 # Nest all malioc output under its own subdirectory of root_gen_dir
                 # so that it's easier to diff it against the state before any changes.

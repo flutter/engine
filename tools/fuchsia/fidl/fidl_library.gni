@@ -2,15 +2,15 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/tools/executable_action.gni")
-import("//flutter/tools/fuchsia/fidl/fidl.gni")
-import("//flutter/tools/fuchsia/fidl/toolchain.gni")
-import("//flutter/tools/fuchsia/gn-sdk/config/config.gni")
+import("//tools/executable_action.gni")
+import("//tools/fuchsia/fidl/fidl.gni")
+import("//tools/fuchsia/fidl/toolchain.gni")
+import("//tools/fuchsia/gn-sdk/config/config.gni")
 
 # Generates some representation of a FIDL library that's consumable by Language
 # bindings generators.
 #
-# The parameters for this template are defined in //flutter/tools/fuchsia/fidl/fidl.gni. The
+# The parameters for this template are defined in //tools/fuchsia/fidl/fidl.gni. The
 # relevant parameters in this template are:
 #   - name;
 #   - sources.
@@ -60,7 +60,7 @@ template("fidl_library") {
   action(response_file_target_name) {
     visibility = [ ":*" ]
 
-    script = "//flutter/tools/fuchsia/fidl/gen_response_file.py"
+    script = "//tools/fuchsia/fidl/gen_response_file.py"
 
     forward_variables_from(invoker,
                            [

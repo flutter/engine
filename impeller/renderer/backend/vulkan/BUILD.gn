@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/vulkan/config.gni")
+import("//vulkan/config.gni")
 import("../../../tools/impeller.gni")
 
 impeller_component("vulkan_unittests") {
@@ -22,7 +22,7 @@ impeller_component("vulkan_unittests") {
   ]
   deps = [
     ":vulkan",
-    "//flutter/testing:testing_lib",
+    "//testing:testing_lib",
   ]
 }
 
@@ -113,8 +113,8 @@ impeller_component("vulkan") {
   public_deps = [
     "../../:renderer",
     "../../../blobcat:blobcat_lib",
-    "//flutter/flutter_vma",
-    "//flutter/fml",
+    "//flutter_vma",
+    "//fml",
     "//third_party/vulkan-deps/vulkan-headers/src:vulkan_headers",
     "//third_party/vulkan_memory_allocator",
   ]

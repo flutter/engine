@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/common/config.gni")
-import("//flutter/testing/testing.gni")
+import("//common/config.gni")
+import("//testing/testing.gni")
 
 config("desktop_library_implementation") {
   defines = [ "FLUTTER_DESKTOP_LIBRARY" ]
@@ -54,7 +54,7 @@ source_set("common_cpp_input") {
 
   public_configs = [ "//flutter:config" ]
 
-  deps = [ "//flutter/fml:fml" ]
+  deps = [ "//fml:fml" ]
 }
 
 source_set("common_cpp_enums") {
@@ -65,7 +65,7 @@ source_set("common_cpp_enums") {
 
   public_configs = [
     "//flutter:config",
-    "//flutter/common:flutter_config",
+    "//common:flutter_config",
   ]
 }
 
@@ -76,7 +76,7 @@ source_set("common_cpp_switches") {
 
   public_configs = [
     "//flutter:config",
-    "//flutter/common:flutter_config",
+    "//common:flutter_config",
   ]
 }
 
@@ -93,13 +93,12 @@ source_set("common_cpp_accessibility") {
     "flutter_platform_node_delegate.cc",
   ]
 
-  public_configs =
-      [ "//flutter/third_party/accessibility:accessibility_config" ]
+  public_configs = [ "//third_party/accessibility:accessibility_config" ]
 
   public_deps = [
-    "//flutter/fml:fml",
-    "//flutter/shell/platform/embedder:embedder_as_internal_library",
-    "//flutter/third_party/accessibility",
+    "//fml:fml",
+    "//shell/platform/embedder:embedder_as_internal_library",
+    "//third_party/accessibility",
   ]
 }
 
@@ -124,8 +123,8 @@ source_set("common_cpp") {
 
   deps = [
     ":common_cpp_library_headers",
-    "//flutter/shell/platform/common/client_wrapper:client_wrapper",
-    "//flutter/shell/platform/embedder:embedder_as_internal_library",
+    "//shell/platform/common/client_wrapper:client_wrapper",
+    "//shell/platform/embedder:embedder_as_internal_library",
   ]
 
   public_deps = [
@@ -162,7 +161,7 @@ if (enable_unittests) {
     deps = [
       ":common_cpp_core",
       ":common_cpp_core_fixtures",
-      "//flutter/testing",
+      "//testing",
       "//third_party/dart/runtime:libdart_jit",
     ]
 
@@ -192,10 +191,10 @@ if (enable_unittests) {
       ":common_cpp_fixtures",
       ":common_cpp_input",
       ":common_cpp_switches",
-      "//flutter/fml:string_conversion",
-      "//flutter/shell/platform/common/client_wrapper:client_wrapper",
-      "//flutter/shell/platform/common/client_wrapper:client_wrapper_library_stubs",
-      "//flutter/testing",
+      "//fml:string_conversion",
+      "//shell/platform/common/client_wrapper:client_wrapper",
+      "//shell/platform/common/client_wrapper:client_wrapper_library_stubs",
+      "//testing",
     ]
 
     # The accessibility bridge only supports MacOS for now.

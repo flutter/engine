@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-source_root = "//flutter/third_party/imgui"
+source_root = "//third_party/imgui"
 
 source_set("imgui") {
   public = [
@@ -36,7 +36,7 @@ config("imgui_headers") {
 source_set("imgui_glfw") {
   public_deps = [
     ":imgui",
-    "//flutter/third_party/glfw",
+    "//third_party/glfw",
   ]
 
   public_configs = [ ":imgui_headers" ]

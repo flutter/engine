@@ -2,9 +2,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/common/config.gni")
-import("//flutter/shell/config.gni")
-import("//flutter/testing/testing.gni")
+import("//common/config.gni")
+import("//shell/config.gni")
+import("//testing/testing.gni")
 
 source_set("graphics") {
   sources = [
@@ -21,11 +21,11 @@ source_set("graphics") {
   # target containing graphics sources that embedders can depend on. Any
   # additions here could result in added app sizes across embeddings.
   deps = [
-    "//flutter/assets",
-    "//flutter/display_list",
-    "//flutter/fml",
-    "//flutter/shell/common:base64",
-    "//flutter/shell/version:version",
+    "//assets",
+    "//display_list",
+    "//fml",
+    "//shell/common:base64",
+    "//shell/version:version",
     "//third_party/boringssl",
     "//third_party/rapidjson",
     "//third_party/skia",

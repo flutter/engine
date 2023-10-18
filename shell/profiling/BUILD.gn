@@ -2,11 +2,11 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/shell/config.gni")
+import("//shell/config.gni")
 
 _profiler_deps = [
-  "//flutter/common",
-  "//flutter/fml",
+  "//common",
+  "//fml",
 ]
 
 source_set("profiling") {
@@ -23,6 +23,6 @@ source_set("profiling_unittests") {
   sources = [ "sampling_profiler_unittest.cc" ]
   deps = [
     ":profiling",
-    "//flutter/testing",
+    "//testing",
   ]
 }

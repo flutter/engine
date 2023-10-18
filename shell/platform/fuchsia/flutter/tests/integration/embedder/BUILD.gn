@@ -5,7 +5,7 @@
 assert(is_fuchsia)
 
 import("//build/fuchsia/sdk.gni")
-import("//flutter/tools/fuchsia/fuchsia_archive.gni")
+import("//tools/fuchsia/fuchsia_archive.gni")
 
 group("tests") {
   testonly = true
@@ -36,9 +36,9 @@ executable("flutter-embedder-test-bin") {
     "$fuchsia_sdk_root/pkg:fidl_cpp",
     "$fuchsia_sdk_root/pkg:sys_component_cpp_testing",
     "$fuchsia_sdk_root/pkg:zx",
-    "//flutter/fml",
-    "//flutter/shell/platform/fuchsia/flutter/tests/integration/utils:check_view",
-    "//flutter/shell/platform/fuchsia/flutter/tests/integration/utils:screenshot",
+    "//fml",
+    "//shell/platform/fuchsia/flutter/tests/integration/utils:check_view",
+    "//shell/platform/fuchsia/flutter/tests/integration/utils:screenshot",
     "//third_party/googletest:gtest",
     "//third_party/googletest:gtest_main",
   ]
@@ -53,7 +53,7 @@ fuchsia_test_archive("flutter-embedder-test") {
     # "OOT" copies of the runners used by tests, to avoid conflicting with the
     # runners in the base fuchsia image.
     # TODO(fxbug.dev/106575): Fix this with subpackages.
-    "//flutter/shell/platform/fuchsia/flutter:oot_flutter_jit_runner",
+    "//shell/platform/fuchsia/flutter:oot_flutter_jit_runner",
   ]
 
   binary = "$target_name"

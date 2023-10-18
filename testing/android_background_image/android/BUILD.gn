@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/testing/rules/android.gni")
+import("//testing/rules/android.gni")
 
 _android_sources = [
   "app/build.gradle",
@@ -19,7 +19,8 @@ gradle_task("android_lint") {
   outputs =
       [ "$root_out_dir/android_background_image/reports/lint-results.xml" ]
 
-  deps = [ "//flutter/testing/android_background_image:android_background_image_snapshot" ]
+  deps =
+      [ "//testing/android_background_image:android_background_image_snapshot" ]
 }
 
 gradle_task("build_apk") {
@@ -31,7 +32,7 @@ gradle_task("build_apk") {
 
   deps = [
     ":android_lint",
-    "//flutter/testing/android_background_image:android_background_image_snapshot",
+    "//testing/android_background_image:android_background_image_snapshot",
   ]
 }
 

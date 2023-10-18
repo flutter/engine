@@ -4,7 +4,7 @@
 
 import("glfw_args.gni")
 
-_checkout_dir = "//flutter/third_party/glfw"
+_checkout_dir = "//third_party/glfw"
 
 config("relative_glfw_headers") {
   include_dirs = [

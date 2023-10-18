@@ -2,9 +2,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/build/zip_bundle.gni")
-import("//flutter/shell/platform/common/client_wrapper/publish.gni")
-import("//flutter/testing/testing.gni")
+import("//build/zip_bundle.gni")
+import("//shell/platform/common/client_wrapper/publish.gni")
+import("//testing/testing.gni")
 
 _wrapper_includes = [
   "include/flutter/dart_project.h",
@@ -24,8 +24,8 @@ _wrapper_sources = [
 # directories of the core wrapper files so these includes will work.
 config("relative_core_wrapper_headers") {
   include_dirs = [
-    "//flutter/shell/platform/common/client_wrapper",
-    "//flutter/shell/platform/common/client_wrapper/include/flutter",
+    "//shell/platform/common/client_wrapper",
+    "//shell/platform/common/client_wrapper/include/flutter",
   ]
 }
 
@@ -35,18 +35,17 @@ source_set("client_wrapper_windows") {
   public = _wrapper_includes
 
   deps = [
-    "//flutter/shell/platform/common:common_cpp_library_headers",
-    "//flutter/shell/platform/common/client_wrapper:client_wrapper",
-    "//flutter/shell/platform/windows:flutter_windows_headers",
+    "//shell/platform/common:common_cpp_library_headers",
+    "//shell/platform/common/client_wrapper:client_wrapper",
+    "//shell/platform/windows:flutter_windows_headers",
   ]
 
-  configs +=
-      [ "//flutter/shell/platform/common:desktop_library_implementation" ]
+  configs += [ "//shell/platform/common:desktop_library_implementation" ]
 
   public_configs = [
     ":relative_core_wrapper_headers",
-    "//flutter/shell/platform/common:relative_flutter_library_headers",
-    "//flutter/shell/platform/windows:relative_flutter_windows_headers",
+    "//shell/platform/common:relative_flutter_library_headers",
+    "//shell/platform/windows:relative_flutter_windows_headers",
   ]
 }
 
@@ -64,7 +63,7 @@ source_set("client_wrapper_library_stubs_windows") {
 
   defines = [ "FLUTTER_DESKTOP_LIBRARY" ]
 
-  public_deps = [ "//flutter/shell/platform/windows:flutter_windows_headers" ]
+  public_deps = [ "//shell/platform/windows:flutter_windows_headers" ]
 }
 
 test_fixtures("client_wrapper_windows_fixtures") {
@@ -89,8 +88,8 @@ executable("client_wrapper_windows_unittests") {
     ":client_wrapper_library_stubs_windows",
     ":client_wrapper_windows",
     ":client_wrapper_windows_fixtures",
-    "//flutter/shell/platform/common/client_wrapper:client_wrapper_library_stubs",
-    "//flutter/testing",
+    "//shell/platform/common/client_wrapper:client_wrapper_library_stubs",
+    "//testing",
 
     # TODO(chunhtai): Consider refactoring flutter_root/testing so that there's a testing
     # target that doesn't require a Dart runtime to be linked in.
@@ -117,13 +116,13 @@ zip_bundle("client_wrapper_archive") {
   deps = [
     ":client_wrapper_windows",
     ":publish_wrapper_windows",
-    "//flutter/shell/platform/common/client_wrapper:client_wrapper",
+    "//shell/platform/common/client_wrapper:client_wrapper",
   ]
   tmp_files = []
   foreach(source_file, client_wrapper_file_archive_list) {
     tmp_files += [
       {
-        source = "//flutter/shell/platform/common/client_wrapper/$source_file"
+        source = "//shell/platform/common/client_wrapper/$source_file"
         destination = "cpp_client_wrapper/$source_file"
       },
     ]
@@ -133,7 +132,7 @@ zip_bundle("client_wrapper_archive") {
   foreach(source_file, win_client_wrapper_file_archive_list) {
     tmp_files += [
       {
-        source = "//flutter/shell/platform/windows/client_wrapper/$source_file"
+        source = "//shell/platform/windows/client_wrapper/$source_file"
         destination = "cpp_client_wrapper/$source_file"
       },
     ]
@@ -143,8 +142,7 @@ zip_bundle("client_wrapper_archive") {
   headers = core_cpp_client_wrapper_includes +
             core_cpp_client_wrapper_internal_headers
   foreach(header, headers) {
-    rebased_path =
-        rebase_path(header, "//flutter/shell/platform/common/client_wrapper")
+    rebased_path = rebase_path(header, "//shell/platform/common/client_wrapper")
     tmp_files += [
       {
         source = header
@@ -156,8 +154,8 @@ zip_bundle("client_wrapper_archive") {
   # Wrapper includes
   foreach(header, _wrapper_includes) {
     rebased_path =
-        rebase_path("//flutter/shell/platform/windows/client_wrapper/$header",
-                    "//flutter/shell/platform/windows/client_wrapper")
+        rebase_path("//shell/platform/windows/client_wrapper/$header",
+                    "//shell/platform/windows/client_wrapper")
     tmp_files += [
       {
         source = header

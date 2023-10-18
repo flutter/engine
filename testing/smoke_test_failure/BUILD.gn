@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/build/dart/rules.gni")
+import("//build/dart/rules.gni")
 
 tests = [ "fail_test.dart" ]
 

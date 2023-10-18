@@ -5,11 +5,11 @@
 assert(is_mac)
 
 import("//build/config/mac/mac_sdk.gni")
-import("//flutter/build/zip_bundle.gni")
-import("//flutter/shell/gpu/gpu.gni")
-import("//flutter/shell/platform/darwin/common/framework_common.gni")
-import("//flutter/shell/platform/glfw/config.gni")
-import("//flutter/testing/testing.gni")
+import("//build/zip_bundle.gni")
+import("//shell/gpu/gpu.gni")
+import("//shell/platform/darwin/common/framework_common.gni")
+import("//shell/platform/glfw/config.gni")
+import("//testing/testing.gni")
 
 shell_gpu_configuration("macos_gpu_configuration") {
   enable_software = true
@@ -23,8 +23,8 @@ group("macos") {
   if (build_glfw_shell) {
     deps += [
       ":flutter_macos_glfw",
-      "//flutter/shell/platform/glfw:publish_headers_glfw",
-      "//flutter/shell/platform/glfw/client_wrapper:publish_wrapper_glfw",
+      "//shell/platform/glfw:publish_headers_glfw",
+      "//shell/platform/glfw/client_wrapper:publish_wrapper_glfw",
     ]
   }
 }
@@ -115,16 +115,16 @@ source_set("flutter_framework_source") {
 
   deps = [
     ":macos_gpu_configuration",
-    "//flutter/flow:flow",
-    "//flutter/fml",
-    "//flutter/shell/platform/common:common_cpp_accessibility",
-    "//flutter/shell/platform/common:common_cpp_enums",
-    "//flutter/shell/platform/common:common_cpp_input",
-    "//flutter/shell/platform/common:common_cpp_switches",
-    "//flutter/shell/platform/darwin/common:availability_version_check",
-    "//flutter/shell/platform/darwin/common:framework_common",
-    "//flutter/shell/platform/darwin/graphics:graphics",
-    "//flutter/shell/platform/embedder:embedder_as_internal_library",
+    "//flow:flow",
+    "//fml",
+    "//shell/platform/common:common_cpp_accessibility",
+    "//shell/platform/common:common_cpp_enums",
+    "//shell/platform/common:common_cpp_input",
+    "//shell/platform/common:common_cpp_switches",
+    "//shell/platform/darwin/common:availability_version_check",
+    "//shell/platform/darwin/common:framework_common",
+    "//shell/platform/darwin/graphics:graphics",
+    "//shell/platform/embedder:embedder_as_internal_library",
     "//third_party/skia",
   ]
 
@@ -204,16 +204,16 @@ executable("flutter_desktop_darwin_unittests") {
   deps = [
     ":flutter_desktop_darwin_fixtures",
     ":flutter_framework_source",
-    "//flutter/shell/platform/common:common_cpp_accessibility",
-    "//flutter/shell/platform/common:common_cpp_enums",
-    "//flutter/shell/platform/darwin/common:framework_common",
-    "//flutter/shell/platform/darwin/graphics",
-    "//flutter/shell/platform/embedder:embedder_as_internal_library",
-    "//flutter/shell/platform/embedder:embedder_test_utils",
-    "//flutter/testing",
-    "//flutter/testing:dart",
-    "//flutter/testing:skia",
-    "//flutter/testing:testing_lib",
+    "//shell/platform/common:common_cpp_accessibility",
+    "//shell/platform/common:common_cpp_enums",
+    "//shell/platform/darwin/common:framework_common",
+    "//shell/platform/darwin/graphics",
+    "//shell/platform/embedder:embedder_as_internal_library",
+    "//shell/platform/embedder:embedder_test_utils",
+    "//testing",
+    "//testing:dart",
+    "//testing:skia",
+    "//testing:testing_lib",
     "//third_party/ocmock:ocmock",
   ]
 }
@@ -240,7 +240,7 @@ copy("copy_framework_module_map") {
 }
 
 action("copy_framework_headers") {
-  script = "//flutter/sky/tools/install_framework_headers.py"
+  script = "//sky/tools/install_framework_headers.py"
   visibility = [ ":*" ]
   sources = get_path_info(_flutter_framework_headers, "abspath") +
             framework_common_headers
@@ -309,7 +309,7 @@ group("flutter_framework") {
 
 if (build_glfw_shell) {
   shared_library("flutter_macos_glfw") {
-    deps = [ "//flutter/shell/platform/glfw:flutter_glfw" ]
+    deps = [ "//shell/platform/glfw:flutter_glfw" ]
 
     public_configs = [ "//flutter:config" ]
   }

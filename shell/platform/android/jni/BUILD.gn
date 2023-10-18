@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/common/config.gni")
-import("//flutter/testing/testing.gni")
+import("//common/config.gni")
+import("//testing/testing.gni")
 
 source_set("jni") {
   sources = [
@@ -14,10 +14,10 @@ source_set("jni") {
   public_configs = [ "//flutter:config" ]
 
   deps = [
-    "//flutter/flow",
-    "//flutter/fml",
-    "//flutter/lib/ui",
-    "//flutter/shell/platform/android/surface:native_window",
+    "//flow",
+    "//fml",
+    "//lib/ui",
+    "//shell/platform/android/surface:native_window",
     "//third_party/skia",
   ]
 }
@@ -44,8 +44,8 @@ executable("jni_unittests") {
   deps = [
     ":jni_fixtures",
     ":jni_mock",
-    "//flutter/testing",
-    "//flutter/testing:dart",
-    "//flutter/testing:skia",
+    "//testing",
+    "//testing:dart",
+    "//testing:skia",
   ]
 }

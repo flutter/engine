@@ -6,11 +6,11 @@ assert(is_ios)
 
 import("//build/config/ios/ios_sdk.gni")
 import("//build/toolchain/clang.gni")
-import("//flutter/common/config.gni")
-import("//flutter/shell/config.gni")
-import("//flutter/shell/gpu/gpu.gni")
-import("//flutter/shell/platform/darwin/common/framework_common.gni")
-import("//flutter/testing/testing.gni")
+import("//common/config.gni")
+import("//shell/config.gni")
+import("//shell/gpu/gpu.gni")
+import("//shell/platform/darwin/common/framework_common.gni")
+import("//testing/testing.gni")
 
 _flutter_framework_dir = "$root_out_dir/Flutter.framework"
 
@@ -50,9 +50,9 @@ source_set("flutter_framework_source_arc") {
   allow_circular_includes_from = [ ":flutter_framework_source" ]
   deps = [
     ":flutter_framework_source",
-    "//flutter/fml",
-    "//flutter/shell/platform/common:common_cpp_input",
-    "//flutter/shell/platform/darwin/common:framework_common",
+    "//fml",
+    "//shell/platform/common:common_cpp_input",
+    "//shell/platform/darwin/common:framework_common",
     "//third_party/icu",
   ]
   public_configs = [ "//flutter:config" ]
@@ -175,26 +175,26 @@ source_set("flutter_framework_source") {
       "ios_surface_metal_skia.mm",
     ]
 
-    deps += [ "//flutter/shell/platform/darwin/graphics" ]
+    deps += [ "//shell/platform/darwin/graphics" ]
   }
 
   deps += [
     ":ios_gpu_configuration",
-    "//flutter/common",
-    "//flutter/common/graphics",
-    "//flutter/flow",
-    "//flutter/fml",
-    "//flutter/lib/ui",
-    "//flutter/runtime",
-    "//flutter/runtime:libdart",
-    "//flutter/shell/common",
-    "//flutter/shell/platform/common:common_cpp_input",
-    "//flutter/shell/platform/darwin/common",
-    "//flutter/shell/platform/darwin/common:framework_common",
-    "//flutter/shell/platform/embedder:embedder_as_internal_library",
-    "//flutter/shell/profiling:profiling",
-    "//flutter/third_party/spring_animation",
+    "//common",
+    "//common/graphics",
+    "//flow",
+    "//fml",
+    "//lib/ui",
+    "//runtime",
+    "//runtime:libdart",
+    "//shell/common",
+    "//shell/platform/common:common_cpp_input",
+    "//shell/platform/darwin/common",
+    "//shell/platform/darwin/common:framework_common",
+    "//shell/platform/embedder:embedder_as_internal_library",
+    "//shell/profiling:profiling",
     "//third_party/skia",
+    "//third_party/spring_animation",
   ]
 
   public_configs = [
@@ -250,20 +250,20 @@ source_set("ios_test_flutter_mrc") {
   deps = [
     ":flutter_framework_source",
     ":flutter_framework_source_arc",
-    "//flutter/common:common",
-    "//flutter/lib/ui:ui",
-    "//flutter/shell/common:common",
-    "//flutter/shell/platform/darwin/common:framework_common",
-    "//flutter/shell/platform/embedder:embedder_as_internal_library",
-    "//flutter/third_party/tonic",
-    "//flutter/third_party/txt",
+    "//common:common",
+    "//lib/ui:ui",
+    "//shell/common:common",
+    "//shell/platform/darwin/common:framework_common",
+    "//shell/platform/embedder:embedder_as_internal_library",
     "//third_party/ocmock:ocmock_shared",
     "//third_party/rapidjson",
     "//third_party/skia",
+    "//third_party/tonic",
+    "//third_party/txt",
   ]
 
   if (shell_enable_vulkan) {
-    deps += [ "//flutter/vulkan" ]
+    deps += [ "//vulkan" ]
   }
 
   if (darwin_extension_safe) {
@@ -322,17 +322,17 @@ shared_library("ios_test_flutter") {
     ":flutter_framework_source_arc",
     ":ios_gpu_configuration",
     ":ios_test_flutter_mrc",
-    "//flutter/common:common",
-    "//flutter/lib/ui:ui",
-    "//flutter/shell/platform/darwin/common:framework_common",
-    "//flutter/shell/platform/embedder:embedder_as_internal_library",
-    "//flutter/shell/platform/embedder:embedder_test_utils",
-    "//flutter/third_party/spring_animation",
-    "//flutter/third_party/tonic",
-    "//flutter/third_party/txt",
+    "//common:common",
+    "//lib/ui:ui",
+    "//shell/platform/darwin/common:framework_common",
+    "//shell/platform/embedder:embedder_as_internal_library",
+    "//shell/platform/embedder:embedder_test_utils",
     "//third_party/ocmock:ocmock_shared",
     "//third_party/rapidjson",
     "//third_party/skia",
+    "//third_party/spring_animation",
+    "//third_party/tonic",
+    "//third_party/txt",
   ]
   public_configs = [
     ":ios_gpu_configuration_config",
@@ -393,7 +393,7 @@ copy("copy_asan_runtime_dylib") {
 }
 
 action("copy_framework_info_plist") {
-  script = "//flutter/build/copy_info_plist.py"
+  script = "//build/copy_info_plist.py"
   visibility = [ ":*" ]
   sources = [ "framework/Info.plist" ]
   outputs = [ "$_flutter_framework_dir/Info.plist" ]
@@ -414,7 +414,7 @@ copy("copy_framework_module_map") {
 }
 
 action("copy_framework_headers") {
-  script = "//flutter/sky/tools/install_framework_headers.py"
+  script = "//sky/tools/install_framework_headers.py"
   visibility = [ ":*" ]
   sources = get_path_info(_flutter_framework_headers, "abspath") +
             framework_common_headers
@@ -486,7 +486,7 @@ group("universal_flutter_framework") {
 }
 
 action("flutter_framework") {
-  script = "//flutter/sky/tools/create_xcframework.py"
+  script = "//sky/tools/create_xcframework.py"
   outputs = [ "$root_out_dir/Flutter.xcframework" ]
   args = [
     "--frameworks",

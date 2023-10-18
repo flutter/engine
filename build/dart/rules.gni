@@ -6,7 +6,7 @@
 
 import("//build/compiled_action.gni")
 import("//build/module_args/dart.gni")
-import("//flutter/common/config.gni")
+import("//common/config.gni")
 import("//third_party/dart/build/dart/dart_action.gni")
 import("//third_party/dart/sdk_args.gni")
 
@@ -36,7 +36,7 @@ template("flutter_frontend_server") {
 
   kernel_output = invoker.kernel_output
 
-  common_deps = [ "//flutter/lib/snapshot:strong_platform" ]
+  common_deps = [ "//lib/snapshot:strong_platform" ]
   if (defined(invoker.deps)) {
     common_deps += invoker.deps
   }
@@ -73,7 +73,7 @@ template("flutter_frontend_server") {
                 ]
 
   if (flutter_prebuilt_dart_sdk) {
-    common_deps += [ "//flutter/flutter_frontend_server:frontend_server" ]
+    common_deps += [ "//flutter_frontend_server:frontend_server" ]
     action(target_name) {
       forward_variables_from(invoker,
                              [
@@ -82,7 +82,7 @@ template("flutter_frontend_server") {
                              ],
                              [ "pool" ])
       deps = common_deps
-      pool = "//flutter/build/dart:dart_pool"
+      pool = "//build/dart:dart_pool"
       script = "//build/gn_run_binary.py"
       inputs = [ invoker.main_dart ]
       outputs = [ invoker.kernel_output ]
@@ -107,7 +107,7 @@ template("flutter_frontend_server") {
                              ],
                              [ "pool" ])
       deps = common_deps
-      pool = "//flutter/build/dart:dart_pool"
+      pool = "//build/dart:dart_pool"
       script = "//third_party/dart/pkg/frontend_server/bin/frontend_server_starter.dart"
       inputs = [ invoker.main_dart ]
       outputs = [ invoker.kernel_output ]
@@ -222,7 +222,7 @@ template("flutter_snapshot") {
         assert(false)
       }
     } else {
-      deps += [ "//flutter/lib/snapshot:generate_snapshot_bin" ]
+      deps += [ "//lib/snapshot:generate_snapshot_bin" ]
       vm_snapshot_data =
           "$root_gen_dir/flutter/lib/snapshot/vm_isolate_snapshot.bin"
       snapshot_data = "$root_gen_dir/flutter/lib/snapshot/isolate_snapshot.bin"
@@ -356,7 +356,7 @@ template("application_snapshot") {
       inputs = extra_inputs
       outputs = [ output ]
       depfile = depfile
-      pool = "//flutter/build/dart:dart_pool"
+      pool = "//build/dart:dart_pool"
 
       ext = ""
       if (is_win) {
@@ -377,7 +377,7 @@ template("application_snapshot") {
                                "visibility",
                              ])
       script = main_dart
-      pool = "//flutter/build/dart:dart_pool"
+      pool = "//build/dart:dart_pool"
       deps = extra_deps
       inputs = extra_inputs
       outputs = [ output ]
@@ -425,7 +425,7 @@ template("_dart_pkg_helper") {
       sdk_ext_mappings += invoker.sdk_ext_mappings
     }
 
-    script = rebase_path("//flutter/build/dart/tools/dart_pkg.py", ".", "//")
+    script = rebase_path("//build/dart/tools/dart_pkg.py", ".", "//")
 
     entrypoints = []
     if (defined(invoker.apps)) {
@@ -442,7 +442,7 @@ template("_dart_pkg_helper") {
     if (defined(invoker.sources)) {
       sources += invoker.sources
     } else if (defined(invoker.pkg_dir)) {
-      list_script = rebase_path("//flutter/build/dart/tools/ls.py", ".", "//")
+      list_script = rebase_path("//build/dart/tools/ls.py", ".", "//")
       extra_flags += [ "--read_only" ]
       ls_sources = exec_script(list_script,
                                [
@@ -494,7 +494,7 @@ template("dart_pkg") {
     pubspec_yaml_path = rebase_path("pubspec.yaml")
   }
   dart_package_name_script =
-      rebase_path("//flutter/build/dart/tools/dart_package_name.py", ".", "//")
+      rebase_path("//build/dart/tools/dart_package_name.py", ".", "//")
   dart_package_name = exec_script(dart_package_name_script,
                                   [
                                     "--pubspec",

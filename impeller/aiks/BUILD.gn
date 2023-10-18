@@ -41,7 +41,7 @@ impeller_component("aiks") {
     "../geometry",
   ]
 
-  deps = [ "//flutter/fml" ]
+  deps = [ "//fml" ]
 
   if (impeller_trace_canvas) {
     sources += [ "trace_serializer.cc" ]
@@ -62,9 +62,8 @@ impeller_component("aiks_playground") {
     ":aiks",
     "../playground:playground_test",
   ]
-  public_deps = [
-    "//flutter/impeller/typographer/backends/skia:typographer_skia_backend",
-  ]
+  public_deps =
+      [ "//impeller/typographer/backends/skia:typographer_skia_backend" ]
 }
 
 impeller_component("aiks_unittests") {
@@ -82,12 +81,12 @@ impeller_component("aiks_unittests") {
   deps = [
     ":aiks",
     ":aiks_playground",
-    "//flutter/impeller/geometry:geometry_asserts",
-    "//flutter/impeller/golden_tests:golden_playground_test",
-    "//flutter/impeller/playground:playground_test",
-    "//flutter/impeller/scene",
-    "//flutter/impeller/typographer/backends/stb:typographer_stb_backend",
-    "//flutter/testing:testing_lib",
+    "//impeller/geometry:geometry_asserts",
+    "//impeller/golden_tests:golden_playground_test",
+    "//impeller/playground:playground_test",
+    "//impeller/scene",
+    "//impeller/typographer/backends/stb:typographer_stb_backend",
+    "//testing:testing_lib",
   ]
 
   if (!impeller_trace_canvas) {
@@ -113,11 +112,11 @@ impeller_component("aiks_unittests_golden") {
   deps = [
     ":aiks",
     ":aiks_playground",
-    "//flutter/impeller/geometry:geometry_asserts",
-    "//flutter/impeller/golden_tests:golden_playground_test",
-    "//flutter/impeller/playground:playground_test",
-    "//flutter/impeller/scene",
-    "//flutter/impeller/typographer/backends/stb:typographer_stb_backend",
-    "//flutter/testing:testing_lib",
+    "//impeller/geometry:geometry_asserts",
+    "//impeller/golden_tests:golden_playground_test",
+    "//impeller/playground:playground_test",
+    "//impeller/scene",
+    "//impeller/typographer/backends/stb:typographer_stb_backend",
+    "//testing:testing_lib",
   ]
 }

@@ -2,12 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//build/bin_to_obj.gni")
 import("//build/compiled_action.gni")
 import("//build/fuchsia/sdk.gni")
-import("//flutter/build/bin_to_obj.gni")
-import("//flutter/common/config.gni")
-import("//flutter/impeller/tools/impeller.gni")
-import("//flutter/lib/ui/dart_ui.gni")
+import("//common/config.gni")
+import("//impeller/tools/impeller.gni")
+import("//lib/ui/dart_ui.gni")
 import("//third_party/dart/utils/compile_platform.gni")
 
 # Generates the Dart/Flutter core platform files and tools.
@@ -219,10 +219,10 @@ compile_platform("strong_platform") {
   single_root_base = rebase_path("../../../")
   if (impeller_enable_3d) {
     libraries_specification_uri =
-        "org-dartlang-sdk:///flutter/lib/snapshot/libraries_experimental.json"
+        "org-dartlang-sdk:///lib/snapshot/libraries_experimental.json"
   } else {
     libraries_specification_uri =
-        "org-dartlang-sdk:///flutter/lib/snapshot/libraries.json"
+        "org-dartlang-sdk:///lib/snapshot/libraries.json"
   }
 
   outputs = [
@@ -230,7 +230,7 @@ compile_platform("strong_platform") {
     "$root_out_dir/flutter_patched_sdk/vm_outline_strong.dill",
   ]
 
-  pool = "//flutter/build/dart:dart_pool"
+  pool = "//build/dart:dart_pool"
 
   is_runtime_mode_release =
       flutter_runtime_mode == "release" || flutter_runtime_mode == "jit_release"

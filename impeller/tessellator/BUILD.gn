@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/impeller/tools/impeller.gni")
+import("//impeller/tools/impeller.gni")
 
 impeller_component("tessellator") {
   sources = [
@@ -45,6 +45,6 @@ impeller_component("tessellator_unittests") {
   sources = [ "tessellator_unittests.cc" ]
   deps = [
     ":tessellator",
-    "//flutter/testing",
+    "//testing",
   ]
 }

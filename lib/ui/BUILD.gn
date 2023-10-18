@@ -3,10 +3,10 @@
 # found in the LICENSE file.
 
 import("//build/fuchsia/sdk.gni")
-import("//flutter/common/config.gni")
-import("//flutter/impeller/tools/impeller.gni")
-import("//flutter/shell/config.gni")
-import("//flutter/testing/testing.gni")
+import("//common/config.gni")
+import("//impeller/tools/impeller.gni")
+import("//shell/config.gni")
+import("//testing/testing.gni")
 
 source_set("ui") {
   cflags = [
@@ -160,25 +160,25 @@ source_set("ui") {
   public_configs = [ "//flutter:config" ]
 
   public_deps = [
-    "//flutter/flow",
-    "//flutter/shell/common:display",
-    "//flutter/shell/common:platform_message_handler",
-    "//flutter/third_party/txt",
+    "//flow",
+    "//shell/common:display",
+    "//shell/common:platform_message_handler",
+    "//third_party/txt",
   ]
 
   deps = [
-    "//flutter/assets",
-    "//flutter/common",
-    "//flutter/common/graphics",
-    "//flutter/display_list",
-    "//flutter/fml",
-    "//flutter/impeller/runtime_stage",
-    "//flutter/runtime:dart_plugin_registrant",
-    "//flutter/runtime:test_font",
-    "//flutter/third_party/tonic",
+    "//assets",
+    "//common",
+    "//common/graphics",
+    "//display_list",
+    "//fml",
+    "//impeller/runtime_stage",
+    "//runtime:dart_plugin_registrant",
+    "//runtime:test_font",
     "//third_party/dart/runtime/bin:dart_io_api",
     "//third_party/rapidjson",
     "//third_party/skia",
+    "//third_party/tonic",
     "//third_party/zlib:zlib",
   ]
 
@@ -193,8 +193,8 @@ source_set("ui") {
     ]
 
     deps += [
-      "//flutter/impeller",
-      "//flutter/impeller/display_list:skia_conversions",
+      "//impeller",
+      "//impeller/display_list:skia_conversions",
     ]
   }
 
@@ -214,7 +214,7 @@ source_set("ui") {
       "painting/scene/scene_shader.h",
     ]
 
-    deps += [ "//flutter/impeller/scene" ]
+    deps += [ "//impeller/scene" ]
   }
 }
 
@@ -234,7 +234,7 @@ if (enable_unittests) {
       "fixtures/hello_loop_2.webp",
       "fixtures/FontManifest.json",
       "fixtures/WideGamutIndexed.png",
-      "//flutter/third_party/txt/third_party/fonts/Roboto-Medium.ttf",
+      "//third_party/txt/third_party/fonts/Roboto-Medium.ttf",
     ]
   }
 
@@ -248,10 +248,10 @@ if (enable_unittests) {
     deps = [
       ":ui",
       ":ui_unittests_fixtures",
-      "//flutter/benchmarking",
-      "//flutter/lib/snapshot",
-      "//flutter/shell/common",
-      "//flutter/testing:fixture_test",
+      "//benchmarking",
+      "//lib/snapshot",
+      "//shell/common",
+      "//testing:fixture_test",
     ]
   }
 
@@ -282,22 +282,22 @@ if (enable_unittests) {
     deps = [
       ":ui",
       ":ui_unittests_fixtures",
-      "//flutter/common",
-      "//flutter/impeller",
-      "//flutter/lib/snapshot",
-      "//flutter/shell/common:shell_test_fixture_sources",
-      "//flutter/testing",
-      "//flutter/testing:dart",
-      "//flutter/testing:fixture_test",
-      "//flutter/third_party/tonic",
+      "//common",
+      "//impeller",
+      "//lib/snapshot",
+      "//shell/common:shell_test_fixture_sources",
+      "//testing",
+      "//testing:dart",
+      "//testing:fixture_test",
       "//third_party/dart/runtime/bin:elf_loader",
+      "//third_party/tonic",
     ]
 
     # TODO(https://github.com/flutter/flutter/issues/63837): This test is hard-coded to use a TestGLSurface so it cannot run on fuchsia.
     if (shell_enable_gl) {
       sources += [ "painting/image_decoder_unittests.cc" ]
 
-      deps += [ "//flutter/testing:opengl" ]
+      deps += [ "//testing:opengl" ]
     }
   }
 }

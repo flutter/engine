@@ -3,10 +3,10 @@
 # found in the LICENSE file.
 
 import("//build/fuchsia/sdk.gni")
-import("//flutter/common/config.gni")
-import("//flutter/impeller/tools/impeller.gni")
-import("//flutter/shell/config.gni")
-import("//flutter/testing/testing.gni")
+import("//common/config.gni")
+import("//impeller/tools/impeller.gni")
+import("//shell/config.gni")
+import("//testing/testing.gni")
 
 source_set("flow") {
   sources = [
@@ -90,18 +90,18 @@ source_set("flow") {
   public_configs = [ "//flutter:config" ]
 
   public_deps = [
-    "//flutter/common",
-    "//flutter/common/graphics",
-    "//flutter/display_list",
-    "//flutter/fml",
+    "//common",
+    "//common/graphics",
+    "//display_list",
+    "//fml",
   ]
 
   deps = [ "//third_party/skia" ]
 
   if (impeller_supports_rendering) {
     deps += [
-      "//flutter/impeller",
-      "//flutter/impeller/typographer/backends/skia:typographer_skia_backend",
+      "//impeller",
+      "//impeller/typographer/backends/skia:typographer_skia_backend",
     ]
   }
 }
@@ -131,13 +131,13 @@ if (enable_unittests) {
     ]
 
     public_deps = [
-      "//flutter/testing:skia",
+      "//testing:skia",
       "//third_party/googletest:gtest",
     ]
 
     deps = [
       ":flow",
-      "//flutter/common/graphics",
+      "//common/graphics",
     ]
   }
 
@@ -185,12 +185,12 @@ if (enable_unittests) {
       ":flow",
       ":flow_fixtures",
       ":flow_testing",
-      "//flutter/common/graphics",
-      "//flutter/display_list/testing:display_list_testing",
-      "//flutter/fml",
-      "//flutter/shell/common:base64",
-      "//flutter/testing:skia",
-      "//flutter/testing:testing_lib",
+      "//common/graphics",
+      "//display_list/testing:display_list_testing",
+      "//fml",
+      "//shell/common:base64",
+      "//testing:skia",
+      "//testing:testing_lib",
       "//third_party/dart/runtime:libdart_jit",  # for tracing
       "//third_party/googletest:gtest",
       "//third_party/skia",

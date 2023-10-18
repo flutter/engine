@@ -21,8 +21,8 @@ source_set("sdk_ext") {
   deps = [
     "$fuchsia_sdk_root/pkg:async-cpp",
     "../zircon",
-    "//flutter/fml",
-    "//flutter/third_party/tonic",
+    "//fml",
+    "//third_party/tonic",
   ]
 
   public_deps = [ "$fuchsia_sdk_root/pkg:zx" ]

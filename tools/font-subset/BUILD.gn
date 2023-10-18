@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/build/zip_bundle.gni")
+import("//build/zip_bundle.gni")
 
 executable("_font-subset") {
   output_name = "font-subset"
@@ -62,7 +62,7 @@ zip_bundle("font-subset") {
 
   deps = [
     ":_font-subset",
-    "//flutter/tools/const_finder",
+    "//tools/const_finder",
   ]
   if (is_mac) {
     deps += [ ":font_entitlement_config" ]

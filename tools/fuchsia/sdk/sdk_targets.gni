@@ -3,8 +3,8 @@
 # found in the LICENSE file.
 
 import("//build/fuchsia/sdk.gni")
-import("//flutter/tools/fuchsia/dart/dart_library.gni")
-import("//flutter/tools/fuchsia/fidl/fidl.gni")
+import("//tools/fuchsia/dart/dart_library.gni")
+import("//tools/fuchsia/fidl/fidl.gni")
 
 _fuchsia_sdk_path = "//fuchsia/sdk/$host_os"
 
@@ -32,7 +32,7 @@ template("_fuchsia_dart_library") {
   }
 
   foreach(dep, meta.fidl_deps) {
-    _deps += [ "//flutter/tools/fuchsia/fidl:$dep" ]
+    _deps += [ "//tools/fuchsia/fidl:$dep" ]
   }
 
   # Compute the third_party deps. The Fuchsia SDK doesn't know where to resolve
@@ -63,7 +63,7 @@ template("_fuchsia_dart_library") {
   }
 
   foreach(third_party_dep, meta.third_party_deps) {
-    _deps += [ "//flutter/shell/platform/fuchsia/dart:" + third_party_dep.name ]
+    _deps += [ "//shell/platform/fuchsia/dart:" + third_party_dep.name ]
   }
 
   dart_library(target_name) {

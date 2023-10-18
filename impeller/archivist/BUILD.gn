@@ -32,7 +32,7 @@ impeller_component("archivist") {
   public_deps = [ "../base" ]
 
   deps = [
-    "//flutter/fml",
+    "//fml",
     "//third_party/sqlite",
   ]
 }
@@ -46,6 +46,6 @@ impeller_component("archivist_unittests") {
   ]
   deps = [
     ":archivist",
-    "//flutter/testing",
+    "//testing",
   ]
 }

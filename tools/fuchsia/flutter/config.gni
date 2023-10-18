@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/tools/fuchsia/flutter/flutter_build_config.gni")
+import("//tools/fuchsia/flutter/flutter_build_config.gni")
 
 declare_args() {
   if (flutter_runtime_mode == "release") {

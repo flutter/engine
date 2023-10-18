@@ -3,32 +3,32 @@
 # found in the LICENSE file.
 
 dart_ui_files = [
-  "//flutter/lib/ui/annotations.dart",
-  "//flutter/lib/ui/channel_buffers.dart",
-  "//flutter/lib/ui/compositing.dart",
-  "//flutter/lib/ui/geometry.dart",
-  "//flutter/lib/ui/hash_codes.dart",
-  "//flutter/lib/ui/hooks.dart",
-  "//flutter/lib/ui/isolate_name_server.dart",
-  "//flutter/lib/ui/key.dart",
-  "//flutter/lib/ui/lerp.dart",
-  "//flutter/lib/ui/math.dart",
-  "//flutter/lib/ui/natives.dart",
-  "//flutter/lib/ui/painting.dart",
-  "//flutter/lib/ui/platform_dispatcher.dart",
-  "//flutter/lib/ui/plugins.dart",
-  "//flutter/lib/ui/pointer.dart",
-  "//flutter/lib/ui/semantics.dart",
-  "//flutter/lib/ui/text.dart",
-  "//flutter/lib/ui/ui.dart",
-  "//flutter/lib/ui/window.dart",
+  "//lib/ui/annotations.dart",
+  "//lib/ui/channel_buffers.dart",
+  "//lib/ui/compositing.dart",
+  "//lib/ui/geometry.dart",
+  "//lib/ui/hash_codes.dart",
+  "//lib/ui/hooks.dart",
+  "//lib/ui/isolate_name_server.dart",
+  "//lib/ui/key.dart",
+  "//lib/ui/lerp.dart",
+  "//lib/ui/math.dart",
+  "//lib/ui/natives.dart",
+  "//lib/ui/painting.dart",
+  "//lib/ui/platform_dispatcher.dart",
+  "//lib/ui/plugins.dart",
+  "//lib/ui/pointer.dart",
+  "//lib/ui/semantics.dart",
+  "//lib/ui/text.dart",
+  "//lib/ui/ui.dart",
+  "//lib/ui/window.dart",
 ]
 
-dart_ui_path = "//flutter/lib/ui/ui.dart"
+dart_ui_path = "//lib/ui/ui.dart"
 
 dart_ui_web_files = [
   "$root_out_dir/flutter_web_sdk/lib/ui_web/ui_web/url_strategy.dart",
   "$root_out_dir/flutter_web_sdk/lib/ui_web/ui_web.dart",
 ]
 
-dart_ui_web_path = "//flutter/lib/web_ui/lib/ui_web/src/ui_web.dart"
+dart_ui_web_path = "//lib/web_ui/lib/ui_web/src/ui_web.dart"

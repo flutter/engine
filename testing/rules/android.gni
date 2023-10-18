@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/testing/rules/runtime_mode.gni")
+import("//testing/rules/runtime_mode.gni")
 
 template("gradle_task") {
   action(target_name) {
@@ -13,7 +13,7 @@ template("gradle_task") {
            "gradle_project_dir is required (normally: rebase_path(\".\"")
     assert(defined(invoker.app_name), "app_name is a required parameter")
 
-    script = "//flutter/testing/rules/run_gradle.py"
+    script = "//testing/rules/run_gradle.py"
 
     inputs = [ "$root_out_dir/flutter.jar" ]
     sources = invoker.sources
@@ -34,7 +34,7 @@ template("gradle_task") {
       inputs += [ "$target_gen_dir/libs/$android_app_abi/libapp.so" ]
     }
 
-    deps = [ "//flutter/shell/platform/android:android_jar" ]
+    deps = [ "//shell/platform/android:android_jar" ]
 
     if (defined(invoker.deps)) {
       deps += invoker.deps

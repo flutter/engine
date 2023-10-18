@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/testing/rules/runtime_mode.gni")
+import("//testing/rules/runtime_mode.gni")
 import("//third_party/dart/build/dart/copy_tree.gni")
 
 _app_framework_dir = "$root_out_dir/scenario_app/Scenarios/App.framework"
@@ -20,7 +20,7 @@ shared_library("app_framework_dylib") {
 
   ldflags = [ "-Wl,-install_name,@rpath/App.framework/App" ]
 
-  deps = [ "//flutter/testing/scenario_app:scenario_app_snapshot" ]
+  deps = [ "//testing/scenario_app:scenario_app_snapshot" ]
 }
 
 copy("copy_dylib") {
@@ -61,6 +61,6 @@ group("ios") {
     ":copy_dylib",
     ":copy_info_plist",
     ":copy_ios_xcodeproj",
-    "//flutter/shell/platform/darwin/ios:flutter_framework",
+    "//shell/platform/darwin/ios:flutter_framework",
   ]
 }

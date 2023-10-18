@@ -9,7 +9,7 @@
 # would be better to implement a script for Flutter, to either generate these
 # BUILD.gn files or dynamically generate the GN targets.
 
-import("//flutter/tools/fuchsia/dart/dart_library.gni")
+import("//tools/fuchsia/dart/dart_library.gni")
 
 dart_library("logging") {
   package_name = "logging"

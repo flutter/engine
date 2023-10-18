@@ -13,7 +13,7 @@ impeller_component("gles") {
 
   deps = [
     "../../base",
-    "//flutter/fml",
+    "//fml",
   ]
 
   libs = []

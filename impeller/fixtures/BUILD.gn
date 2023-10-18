@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/impeller/tools/impeller.gni")
-import("//flutter/testing/testing.gni")
+import("//impeller/tools/impeller.gni")
+import("//testing/testing.gni")
 
 impeller_shaders("shader_fixtures") {
   name = "fixtures"
@@ -66,9 +66,9 @@ impellerc("runtime_stages") {
 
 test_fixtures("file_fixtures") {
   fixtures = [
-    "//flutter/third_party/txt/third_party/fonts/HomemadeApple.ttf",
-    "//flutter/third_party/txt/third_party/fonts/NotoColorEmoji.ttf",
-    "//flutter/third_party/txt/third_party/fonts/Roboto-Regular.ttf",
+    "//third_party/txt/third_party/fonts/HomemadeApple.ttf",
+    "//third_party/txt/third_party/fonts/NotoColorEmoji.ttf",
+    "//third_party/txt/third_party/fonts/Roboto-Regular.ttf",
     "airplane.jpg",
     "bay_bridge.jpg",
     "blend_mode_dst.png",

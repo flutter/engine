@@ -6,7 +6,7 @@ group("sky") {
   testonly = true
 
   deps = [
-    "//flutter/shell",
-    "//flutter/sky/packages",
+    "//shell",
+    "//sky/packages",
   ]
 }

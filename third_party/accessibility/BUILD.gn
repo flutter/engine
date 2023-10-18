@@ -2,19 +2,19 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/common/config.gni")
-import("//flutter/testing/testing.gni")
+import("//common/config.gni")
+import("//testing/testing.gni")
 
 config("accessibility_config") {
   visibility = [
-    "//flutter/shell/platform/common:common_cpp_accessibility",
-    "//flutter/third_party/accessibility/*",
+    "//shell/platform/common:common_cpp_accessibility",
+    "//third_party/accessibility/*",
   ]
   if (is_win) {
     # TODO(cbracken): https://github.com/flutter/flutter/issues/92229
     defines = [ "_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING" ]
   }
-  include_dirs = [ "//flutter/third_party/accessibility" ]
+  include_dirs = [ "//third_party/accessibility" ]
 }
 
 source_set("accessibility") {
@@ -119,8 +119,8 @@ if (enable_unittests) {
       deps = [
         ":accessibility",
         ":accessibility_fixtures",
-        "//flutter/testing",
-        "//flutter/testing:dart",
+        "//testing",
+        "//testing:dart",
       ]
     }
   }

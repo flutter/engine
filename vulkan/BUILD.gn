@@ -43,8 +43,8 @@ source_set("vulkan") {
 
   deps = [
     "procs",
-    "//flutter/flutter_vma:flutter_skia_vma",
-    "//flutter/fml",
+    "//flutter_vma:flutter_skia_vma",
+    "//fml",
     "//third_party/skia",
   ]
 

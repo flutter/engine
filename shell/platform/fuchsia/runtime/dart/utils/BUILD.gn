@@ -5,8 +5,8 @@
 assert(is_fuchsia)
 
 import("//build/fuchsia/sdk.gni")
-import("//flutter/common/config.gni")
-import("//flutter/testing/testing.gni")
+import("//common/config.gni")
+import("//testing/testing.gni")
 
 config("utils_config") {
   include_dirs = [ "../../.." ]
@@ -49,7 +49,7 @@ template("make_utils") {
              "$fuchsia_sdk_root/pkg:trace",
              "$fuchsia_sdk_root/pkg:vfs_cpp",
              "$fuchsia_sdk_root/pkg:zx",
-             "//flutter/third_party/tonic",
+             "//third_party/tonic",
            ]
 
     public_configs = [ ":utils_config" ]
@@ -59,13 +59,13 @@ template("make_utils") {
 action("generate_build_info_cc_file") {
   inputs = [
     "build_info_in.cc",
-    "//flutter/.git/logs/HEAD",
+    "//.git/logs/HEAD",
     "//fuchsia/sdk/$host_os/meta/manifest.json",
     "//third_party/dart/.git/logs/HEAD",
   ]
   outputs = [ "$target_gen_dir/build_info.cc" ]
 
-  script = "//flutter/tools/fuchsia/make_build_info.py"
+  script = "//tools/fuchsia/make_build_info.py"
   args = [
     "--input",
     rebase_path("build_info_in.cc", root_build_dir),
@@ -100,7 +100,7 @@ executable("dart_utils_unittests") {
     ":utils",
     ":utils_fixtures",
     "$fuchsia_sdk_root/pkg:sys_inspect_cpp",
-    "//flutter/testing",
+    "//testing",
     "//third_party/dart/runtime:libdart_jit",
     "//third_party/dart/runtime/bin:dart_io_api",
   ]

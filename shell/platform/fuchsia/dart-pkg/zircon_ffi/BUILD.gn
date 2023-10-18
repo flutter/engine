@@ -27,7 +27,7 @@ shared_library("zircon_ffi") {
 
   deps = [
     "$fuchsia_sdk_root/pkg:zx",
-    "//flutter/fml",
+    "//fml",
     "//third_party/dart/runtime:dart_api",
   ]
 }

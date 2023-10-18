@@ -2,16 +2,16 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/common/config.gni")
-import("//flutter/impeller/tools/impeller.gni")
-import("//flutter/shell/config.gni")
+import("//common/config.gni")
+import("//impeller/tools/impeller.gni")
+import("//shell/config.gni")
 
 gpu_common_deps = [
-  "//flutter/common",
-  "//flutter/common/graphics",
-  "//flutter/flow",
-  "//flutter/fml",
-  "//flutter/shell/common",
+  "//common",
+  "//common/graphics",
+  "//flow",
+  "//fml",
+  "//shell/common",
   "//third_party/skia",
 ]
 
@@ -42,7 +42,7 @@ source_set("gpu_surface_gl") {
       "gpu_surface_gl_impeller.h",
     ]
 
-    public_deps += [ "//flutter/impeller" ]
+    public_deps += [ "//impeller" ]
   }
 }
 
@@ -54,9 +54,9 @@ source_set("gpu_surface_vulkan") {
     "gpu_surface_vulkan_delegate.h",
   ]
   public_deps = gpu_common_deps + [
-                  "//flutter/shell/platform/embedder:embedder_headers",
-                  "//flutter/vulkan",
-                  "//flutter/vulkan/procs",
+                  "//shell/platform/embedder:embedder_headers",
+                  "//vulkan",
+                  "//vulkan/procs",
                 ]
 
   if (impeller_enable_vulkan) {
@@ -65,7 +65,7 @@ source_set("gpu_surface_vulkan") {
       "gpu_surface_vulkan_impeller.h",
     ]
 
-    public_deps += [ "//flutter/impeller" ]
+    public_deps += [ "//impeller" ]
   }
 }
 
@@ -85,6 +85,6 @@ source_set("gpu_surface_metal") {
       "gpu_surface_metal_impeller.mm",
     ]
 
-    public_deps += [ "//flutter/impeller" ]
+    public_deps += [ "//impeller" ]
   }
 }

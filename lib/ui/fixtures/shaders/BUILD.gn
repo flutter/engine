@@ -2,22 +2,22 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/impeller/tools/impeller.gni")
-import("//flutter/testing/testing.gni")
+import("//impeller/tools/impeller.gni")
+import("//testing/testing.gni")
 
 if (enable_unittests) {
   group("shaders") {
     testonly = true
     deps = [
       ":fixtures",
-      "//flutter/lib/ui/fixtures/shaders/general_shaders",
-      "//flutter/lib/ui/fixtures/shaders/supported_glsl_op_shaders",
-      "//flutter/lib/ui/fixtures/shaders/supported_op_shaders",
+      "//lib/ui/fixtures/shaders/general_shaders",
+      "//lib/ui/fixtures/shaders/supported_glsl_op_shaders",
+      "//lib/ui/fixtures/shaders/supported_op_shaders",
     ]
   }
 
   impellerc("ink_sparkle") {
-    shaders = [ "//flutter/impeller/fixtures/ink_sparkle.frag" ]
+    shaders = [ "//impeller/fixtures/ink_sparkle.frag" ]
     shader_target_flag = "--sksl"
     intermediates_subdir = "iplr"
     sl_file_extension = "iplr"
@@ -25,7 +25,7 @@ if (enable_unittests) {
   }
 
   impellerc("ink_sparkle_web") {
-    shaders = [ "//flutter/impeller/fixtures/ink_sparkle.frag" ]
+    shaders = [ "//impeller/fixtures/ink_sparkle.frag" ]
     shader_target_flag = "--sksl"
     intermediates_subdir = "iplr-json"
     sl_file_extension = "iplr"
@@ -35,8 +35,8 @@ if (enable_unittests) {
 
   impellerc("sampler_order_fixture") {
     shaders = [
-      "//flutter/impeller/fixtures/ordering/shader_with_samplers.frag",
-      "//flutter/third_party/test_shaders/selman/glow_shader.frag",
+      "//impeller/fixtures/ordering/shader_with_samplers.frag",
+      "//third_party/test_shaders/selman/glow_shader.frag",
     ]
     shader_target_flag = "--runtime-stage-metal"
     intermediates_subdir = "iplr-remap"

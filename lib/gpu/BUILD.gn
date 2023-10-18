@@ -2,9 +2,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/common/config.gni")
-import("//flutter/impeller/tools/impeller.gni")
-import("//flutter/testing/testing.gni")
+import("//common/config.gni")
+import("//impeller/tools/impeller.gni")
+import("//testing/testing.gni")
 
 source_set("gpu") {
   cflags = [
@@ -43,10 +43,10 @@ source_set("gpu") {
     ]
   }
   deps = [
-    "//flutter/impeller",
-    "//flutter/impeller/display_list:skia_conversions",
-    "//flutter/lib/ui",
-    "//flutter/third_party/tonic",
+    "//impeller",
+    "//impeller/display_list:skia_conversions",
+    "//lib/ui",
+    "//third_party/tonic",
   ]
 
   if (is_win) {

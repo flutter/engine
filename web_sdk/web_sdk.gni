@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/common/config.gni")
+import("//common/config.gni")
 import("//third_party/dart/build/dart/dart_action.gni")
 
 dart_sdk_package_config = "//third_party/dart/.dart_tool/package_config.json"
@@ -31,9 +31,9 @@ template("sdk_rewriter") {
 
   prebuilt_dart_action(target_name) {
     packages = dart_sdk_package_config
-    pool = "//flutter/build/dart:dart_pool"
+    pool = "//build/dart:dart_pool"
 
-    script = "//flutter/web_sdk/sdk_rewriter.dart"
+    script = "//web_sdk/sdk_rewriter.dart"
     inputs = source_dart_files + [ script ]
 
     stamp_location = "$target_gen_dir/$target_name.stamp"
@@ -78,8 +78,8 @@ template("web_ui_ui_web_with_output") {
   sdk_rewriter(target_name) {
     library_name = "ui_web"
     is_public = true
-    api_file = "//flutter/lib/web_ui/lib/ui_web/src/ui_web.dart"
-    input_dir = "//flutter/lib/web_ui/lib/ui_web/src/ui_web/"
+    api_file = "//lib/web_ui/lib/ui_web/src/ui_web.dart"
+    input_dir = "//lib/web_ui/lib/ui_web/src/ui_web/"
     output_dir = invoker.output_dir
   }
 }

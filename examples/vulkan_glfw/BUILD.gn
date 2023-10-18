@@ -8,8 +8,8 @@ executable("vulkan_glfw") {
   sources = [ "src/main.cc" ]
 
   deps = [
-    "//flutter/shell/platform/embedder:embedder",
-    "//flutter/third_party/glfw",
+    "//shell/platform/embedder:embedder",
+    "//third_party/glfw",
     "//third_party/vulkan-deps/vulkan-headers/src:vulkan_headers",
   ]
 }

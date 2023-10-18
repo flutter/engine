@@ -12,8 +12,8 @@ source_set("dart") {
   ]
 
   public_deps = [
-    "//flutter/fml",
-    "//flutter/runtime:libdart",
-    "//flutter/third_party/tonic",
+    "//fml",
+    "//runtime:libdart",
+    "//third_party/tonic",
   ]
 }

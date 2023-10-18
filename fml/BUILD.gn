@@ -3,8 +3,8 @@
 # found in the LICENSE file.
 
 import("//build/fuchsia/sdk.gni")
-import("//flutter/common/config.gni")
-import("//flutter/testing/testing.gni")
+import("//common/config.gni")
+import("//testing/testing.gni")
 
 source_set("fml") {
   sources = [
@@ -128,7 +128,7 @@ source_set("fml") {
 
   public_configs = [
     "//flutter:config",
-    "//flutter/common:flutter_config",
+    "//common:flutter_config",
   ]
 
   libs = []
@@ -256,7 +256,7 @@ source_set("build_config") {
 
   public_configs = [
     "//flutter:config",
-    "//flutter/common:flutter_config",
+    "//common:flutter_config",
   ]
 }
 
@@ -268,7 +268,7 @@ source_set("command_line") {
 
   public_configs = [
     "//flutter:config",
-    "//flutter/common:flutter_config",
+    "//common:flutter_config",
   ]
 }
 
@@ -296,7 +296,7 @@ source_set("string_conversion") {
 
   public_configs = [
     "//flutter:config",
-    "//flutter/common:flutter_config",
+    "//common:flutter_config",
   ]
 }
 
@@ -311,8 +311,8 @@ if (enable_unittests) {
     sources = [ "message_loop_task_queues_benchmark.cc" ]
 
     deps = [
-      "//flutter/benchmarking",
-      "//flutter/fml",
+      "//benchmarking",
+      "//fml",
     ]
   }
 
@@ -373,11 +373,11 @@ if (enable_unittests) {
 
     deps = [
       ":fml_fixtures",
-      "//flutter/fml",
-      "//flutter/fml/dart",
-      "//flutter/runtime",
-      "//flutter/runtime:libdart",
-      "//flutter/testing",
+      "//fml",
+      "//fml/dart",
+      "//runtime",
+      "//runtime:libdart",
+      "//testing",
     ]
 
     # This is needed for //third_party/googletest for linking zircon symbols.

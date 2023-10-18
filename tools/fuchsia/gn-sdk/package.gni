@@ -105,7 +105,7 @@ template("fuchsia_package") {
 
   action(_manifest_target) {
     forward_variables_from(invoker, [ "testonly" ])
-    script = "//flutter/tools/fuchsia/gn-sdk/prepare_package_inputs.py"
+    script = "//tools/fuchsia/gn-sdk/prepare_package_inputs.py"
 
     inputs = [
       _runtime_deps_file,

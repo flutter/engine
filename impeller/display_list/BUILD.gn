@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/impeller/tools/impeller.gni")
+import("//impeller/tools/impeller.gni")
 
 impeller_component("skia_conversions") {
   sources = [
@@ -13,8 +13,8 @@ impeller_component("skia_conversions") {
   public_deps = [
     "../core",
     "../geometry",
-    "//flutter/display_list",
-    "//flutter/fml",
+    "//display_list",
+    "//fml",
     "//third_party/skia",
     "//third_party/skia/modules/skparagraph",
   ]
@@ -35,9 +35,9 @@ impeller_component("display_list") {
   public_deps = [
     ":skia_conversions",
     "../aiks",
-    "//flutter/display_list",
-    "//flutter/fml",
-    "//flutter/impeller/typographer/backends/skia:typographer_skia_backend",
+    "//display_list",
+    "//fml",
+    "//impeller/typographer/backends/skia:typographer_skia_backend",
     "//third_party/skia",
   ]
 
@@ -61,8 +61,8 @@ impeller_component("display_list_unittests") {
   deps = [
     ":display_list",
     "../playground:playground_test",
-    "//flutter/impeller/scene",
-    "//flutter/impeller/typographer/backends/stb:typographer_stb_backend",
+    "//impeller/scene",
+    "//impeller/typographer/backends/stb:typographer_stb_backend",
   ]
 
   if (!defined(defines)) {
@@ -80,6 +80,6 @@ impeller_component("skia_conversions_unittests") {
 
   deps = [
     ":skia_conversions",
-    "//flutter/testing:testing_lib",
+    "//testing:testing_lib",
   ]
 }

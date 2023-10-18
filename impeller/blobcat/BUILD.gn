@@ -6,7 +6,7 @@ import("//third_party/flatbuffers/flatbuffers.gni")
 import("../tools/impeller.gni")
 
 config("blobcat_config") {
-  configs = [ "//flutter/impeller:impeller_public_config" ]
+  configs = [ "//impeller:impeller_public_config" ]
   include_dirs = [ "$root_gen_dir/flutter" ]
 }
 
@@ -27,7 +27,7 @@ impeller_component("blobcat_lib") {
   public_deps = [
     ":blobcat_flatbuffers",
     "../base",
-    "//flutter/fml",
+    "//fml",
   ]
 }
 
@@ -39,7 +39,7 @@ impeller_component("blobcat") {
   deps = [
     ":blobcat_lib",
     "../base",
-    "//flutter/fml",
+    "//fml",
   ]
 }
 
@@ -50,7 +50,7 @@ impeller_component("blobcat_unittests") {
 
   deps = [
     ":blobcat_lib",
-    "//flutter/fml",
-    "//flutter/testing",
+    "//fml",
+    "//testing",
   ]
 }

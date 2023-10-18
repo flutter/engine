@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/impeller/tools/impeller.gni")
+import("//impeller/tools/impeller.gni")
 
 impeller_shaders("imgui_shaders") {
   name = "imgui"
@@ -19,10 +19,10 @@ impeller_shaders("imgui_shaders") {
 impeller_component("imgui_impeller_backend") {
   public_deps = [
     ":imgui_shaders",
-    "//flutter/third_party/imgui",
+    "//third_party/imgui",
   ]
 
-  deps = [ "//flutter/impeller/renderer" ]
+  deps = [ "//impeller/renderer" ]
 
   sources = [
     "imgui_impl_impeller.cc",

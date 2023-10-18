@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/impeller/tools/impeller.gni")
-import("//flutter/testing/testing.gni")
+import("//impeller/tools/impeller.gni")
+import("//testing/testing.gni")
 
 impeller_component("playground") {
   sources = [
@@ -46,9 +46,9 @@ impeller_component("playground") {
     "../renderer",
     "../scene/shaders",
     "imgui:imgui_impeller_backend",
-    "//flutter/fml",
-    "//flutter/third_party/glfw",
-    "//flutter/third_party/imgui:imgui_glfw",
+    "//fml",
+    "//third_party/glfw",
+    "//third_party/imgui:imgui_glfw",
   ]
 
   if (impeller_supports_rendering) {
@@ -79,6 +79,6 @@ impeller_component("playground_test") {
 
   public_deps = [
     ":playground",
-    "//flutter/testing:testing_lib",
+    "//testing:testing_lib",
   ]
 }

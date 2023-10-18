@@ -3,8 +3,8 @@
 # found in the LICENSE file.
 
 if (is_ios || is_mac) {
-  import("//flutter/common/config.gni")
-  import("//flutter/testing/testing.gni")
+  import("//common/config.gni")
+  import("//testing/testing.gni")
 
   source_set("spring_animation") {
     sources = [
@@ -25,7 +25,7 @@ if (is_ios || is_mac) {
       deps = [
         ":spring_animation",
         ":spring_animation_fixtures",
-        "//flutter/testing",
+        "//testing",
       ]
       public_configs = [ "//flutter:config" ]
     }

@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/build/dart/rules.gni")
-import("//flutter/tools/fuchsia/dart/dart_library.gni")
+import("//build/dart/rules.gni")
+import("//tools/fuchsia/dart/dart_library.gni")
 
 application_snapshot("kernel_compiler") {
   main_dart = "compiler.dart"
@@ -103,7 +103,7 @@ dart_library("expect") {
 }
 
 dart_library("litetest") {
-  package_root = "//flutter/testing/litetest"
+  package_root = "//testing/litetest"
   package_name = "litetest"
 
   pubspec = "$package_root/pubspec.yaml"

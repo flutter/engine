@@ -3,8 +3,8 @@
 # found in the LICENSE file.
 
 import("//build/compiled_action.gni")
-import("//flutter/impeller/tools/impeller.gni")
-import("//flutter/testing/testing.gni")
+import("//impeller/tools/impeller.gni")
+import("//testing/testing.gni")
 
 if (enable_unittests) {
   test_shaders = [

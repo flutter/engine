@@ -16,8 +16,7 @@ source_set("tinygltf") {
     "$source_root/third_party/include",
   ]
 
-  sources =
-      [ "//flutter/build/secondary/third_party/tinygltf/tinygltf_stub.cc" ]
+  sources = [ "//build/secondary/third_party/tinygltf/tinygltf_stub.cc" ]
 
   deps = [ "//third_party/json" ]
 }

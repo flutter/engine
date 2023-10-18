@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/common/config.gni")
-import("//flutter/testing/testing.gni")
+import("//common/config.gni")
+import("//testing/testing.gni")
 
 source_set("platform_view_android_delegate") {
   sources = [
@@ -14,11 +14,11 @@ source_set("platform_view_android_delegate") {
   public_configs = [ "//flutter:config" ]
 
   deps = [
-    "//flutter/common",
-    "//flutter/fml",
-    "//flutter/lib/ui",
-    "//flutter/shell/common",
-    "//flutter/shell/platform/android/jni",
+    "//common",
+    "//fml",
+    "//lib/ui",
+    "//shell/common",
+    "//shell/platform/android/jni",
     "//third_party/skia",
   ]
 }
@@ -35,9 +35,9 @@ executable("platform_view_android_delegate_unittests") {
   deps = [
     ":platform_view_android_delegate",
     ":platform_view_android_delegate_fixtures",
-    "//flutter/shell/platform/android/jni:jni_mock",
-    "//flutter/testing",
-    "//flutter/testing:dart",
-    "//flutter/third_party/txt",
+    "//shell/platform/android/jni:jni_mock",
+    "//testing",
+    "//testing:dart",
+    "//third_party/txt",
   ]
 }

@@ -2,9 +2,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/tools/fuchsia/dart/config.gni")
-import("//flutter/tools/fuchsia/dart/dart.gni")
-import("//flutter/tools/fuchsia/flutter/internal/flutter_dart_component.gni")
+import("//tools/fuchsia/dart/config.gni")
+import("//tools/fuchsia/dart/dart.gni")
+import("//tools/fuchsia/flutter/internal/flutter_dart_component.gni")
 
 # Defines a Dart component which can be used in a fuchsia package
 #

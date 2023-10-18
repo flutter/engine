@@ -4,9 +4,9 @@
 
 assert(is_linux)
 
-import("//flutter/build/zip_bundle.gni")
-import("//flutter/shell/platform/glfw/config.gni")
-import("//flutter/testing/testing.gni")
+import("//build/zip_bundle.gni")
+import("//shell/platform/glfw/config.gni")
+import("//testing/testing.gni")
 
 group("linux") {
   deps = [
@@ -16,8 +16,8 @@ group("linux") {
   if (build_glfw_shell) {
     deps += [
       ":flutter_linux_glfw",
-      "//flutter/shell/platform/glfw:publish_headers_glfw",
-      "//flutter/shell/platform/glfw/client_wrapper:publish_wrapper_glfw",
+      "//shell/platform/glfw:publish_headers_glfw",
+      "//shell/platform/glfw/client_wrapper:publish_wrapper_glfw",
     ]
   }
 }
@@ -34,7 +34,7 @@ config("disable_fatal_link_warnings") {
 
 if (build_glfw_shell) {
   shared_library("flutter_linux_glfw") {
-    deps = [ "//flutter/shell/platform/glfw:flutter_glfw" ]
+    deps = [ "//shell/platform/glfw:flutter_glfw" ]
 
     configs += [ ":disable_fatal_link_warnings" ]
 
@@ -94,7 +94,7 @@ source_set("flutter_linux_sources") {
              "key_mapping.h",
            ]
 
-  configs += [ "//flutter/shell/platform/linux/config:gtk" ]
+  configs += [ "//shell/platform/linux/config:gtk" ]
 
   sources = [
     "fl_accessibility_plugin.cc",
@@ -158,26 +158,26 @@ source_set("flutter_linux_sources") {
   ]
 
   deps = [
-    "//flutter/fml",
-    "//flutter/shell/platform/common:common_cpp_enums",
-    "//flutter/shell/platform/common:common_cpp_input",
-    "//flutter/shell/platform/common:common_cpp_switches",
-    "//flutter/shell/platform/embedder:embedder_headers",
+    "//fml",
+    "//shell/platform/common:common_cpp_enums",
+    "//shell/platform/common:common_cpp_input",
+    "//shell/platform/common:common_cpp_switches",
+    "//shell/platform/embedder:embedder_headers",
     "//third_party/rapidjson",
   ]
 }
 
 source_set("flutter_linux") {
   configs += [
-    "//flutter/shell/platform/linux/config:gtk",
-    "//flutter/shell/platform/linux/config:epoxy",
+    "//shell/platform/linux/config:gtk",
+    "//shell/platform/linux/config:epoxy",
   ]
 
   defines = [ "FLUTTER_ENGINE_NO_PROTOTYPES" ]
 
   public_deps = [ ":flutter_linux_sources" ]
 
-  deps = [ "//flutter/shell/platform/embedder:embedder_as_internal_library" ]
+  deps = [ "//shell/platform/embedder:embedder_as_internal_library" ]
 }
 
 test_fixtures("flutter_linux_fixtures") {
@@ -244,7 +244,7 @@ executable("flutter_linux_unittests") {
 
   public_configs = [ "//flutter:config" ]
 
-  configs += [ "//flutter/shell/platform/linux/config:gtk" ]
+  configs += [ "//shell/platform/linux/config:gtk" ]
 
   defines = [
     "FLUTTER_ENGINE_NO_PROTOTYPES",
@@ -258,11 +258,11 @@ executable("flutter_linux_unittests") {
     ":flutter_linux_fixtures",
     ":flutter_linux_gschemas",
     ":flutter_linux_sources",
-    "//flutter/runtime:libdart",
-    "//flutter/shell/platform/common:common_cpp_enums",
-    "//flutter/shell/platform/embedder:embedder_headers",
-    "//flutter/shell/platform/embedder:embedder_test_utils",
-    "//flutter/testing",
+    "//runtime:libdart",
+    "//shell/platform/common:common_cpp_enums",
+    "//shell/platform/embedder:embedder_headers",
+    "//shell/platform/embedder:embedder_test_utils",
+    "//testing",
   ]
 }
 

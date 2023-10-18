@@ -12,8 +12,8 @@ source_set("assets") {
   ]
 
   deps = [
-    "//flutter/common",
-    "//flutter/fml",
+    "//common",
+    "//fml",
   ]
 
   public_configs = [ "//flutter:config" ]

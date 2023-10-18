@@ -7,8 +7,8 @@
 # file is here to protect against accidentally introducing external
 # dependencies or depending on internal implementation details.
 source_set("numerics") {
-  visibility = [ "//flutter/third_party/accessibility/*" ]
-  include_dirs = [ "//flutter/third_party/accessibility" ]
+  visibility = [ "//third_party/accessibility/*" ]
+  include_dirs = [ "//third_party/accessibility" ]
 
   sources = [
     "checked_math_impl.h",
@@ -29,5 +29,5 @@ source_set("numerics") {
     "safe_math.h",
   ]
 
-  deps = [ "//flutter/third_party/accessibility/ax_build" ]
+  deps = [ "//third_party/accessibility/ax_build" ]
 }

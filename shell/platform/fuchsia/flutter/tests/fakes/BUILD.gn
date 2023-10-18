@@ -26,8 +26,8 @@ source_set("focus") {
 
   deps = [
     "//build/fuchsia/pkg:sys_cpp_testing",
-    "//flutter/lib/ui",
-    "//flutter/testing",
+    "//lib/ui",
+    "//testing",
     "//third_party/rapidjson",
   ]
 }
@@ -39,8 +39,8 @@ source_set("pointer") {
 
   deps = [
     "//build/fuchsia/pkg:sys_cpp_testing",
-    "//flutter/lib/ui",
-    "//flutter/testing",
+    "//lib/ui",
+    "//testing",
     "//third_party/rapidjson",
   ]
 }

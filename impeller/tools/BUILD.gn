@@ -3,9 +3,9 @@
 # found in the LICENSE file.
 
 import("//build/compiled_action.gni")
-import("//flutter/common/config.gni")
-import("//flutter/impeller/tools/malioc.gni")
-import("//flutter/testing/testing.gni")
+import("//common/config.gni")
+import("//impeller/tools/malioc.gni")
+import("//testing/testing.gni")
 
 declare_args() {
   # Maximum number of malioc processes to run in parallel.
@@ -15,7 +15,7 @@ declare_args() {
 }
 
 if (impeller_concurrent_malioc_jobs == -1) {
-  _script = "//flutter/build/get_concurrent_jobs.py"
+  _script = "//build/get_concurrent_jobs.py"
   _args = [
     "--reserve-memory=1GB",
     "--memory-per-job",

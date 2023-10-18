@@ -324,7 +324,7 @@ template("fuchsia_repo") {
   assert(defined(invoker.repo), "The location of the repo should be specified.")
 
   action(target_name) {
-    script = "//flutter/tools/fuchsia/gen_repo.py"
+    script = "//tools/fuchsia/gen_repo.py"
 
     pm_binary = rebase_path("${_fuchsia_tools_path}/pm")
     repo_directory = invoker.repo

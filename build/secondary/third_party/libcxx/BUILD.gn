@@ -4,7 +4,7 @@
 
 config("libcxx_config") {
   defines = [ "_LIBCPP_DISABLE_AVAILABILITY=1" ]
-  include_dirs = [ "//flutter/build/secondary/third_party/libcxx/config" ]
+  include_dirs = [ "//build/secondary/third_party/libcxx/config" ]
 }
 
 config("src_include") {

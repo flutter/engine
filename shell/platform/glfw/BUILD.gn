@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/testing/testing.gni")
+import("//testing/testing.gni")
 
 _public_headers = [ "public/flutter_glfw.h" ]
 
@@ -19,13 +19,12 @@ config("relative_flutter_glfw_headers") {
 source_set("flutter_glfw_headers") {
   public = _public_headers
 
-  public_deps = [ "//flutter/shell/platform/common:common_cpp_library_headers" ]
+  public_deps = [ "//shell/platform/common:common_cpp_library_headers" ]
 
-  configs +=
-      [ "//flutter/shell/platform/common:desktop_library_implementation" ]
+  configs += [ "//shell/platform/common:desktop_library_implementation" ]
 
   public_configs =
-      [ "//flutter/shell/platform/common:relative_flutter_library_headers" ]
+      [ "//shell/platform/common:relative_flutter_library_headers" ]
 }
 
 source_set("flutter_glfw") {
@@ -49,24 +48,23 @@ source_set("flutter_glfw") {
     "text_input_plugin.h",
   ]
 
-  configs +=
-      [ "//flutter/shell/platform/common:desktop_library_implementation" ]
+  configs += [ "//shell/platform/common:desktop_library_implementation" ]
 
   deps = [
     ":flutter_glfw_headers",
-    "//flutter/shell/platform/common:common_cpp",
-    "//flutter/shell/platform/common:common_cpp_input",
-    "//flutter/shell/platform/common/client_wrapper:client_wrapper",
-    "//flutter/shell/platform/embedder:embedder_as_internal_library",
-    "//flutter/shell/platform/glfw/client_wrapper:client_wrapper_glfw",
-    "//flutter/third_party/glfw",
+    "//shell/platform/common:common_cpp",
+    "//shell/platform/common:common_cpp_input",
+    "//shell/platform/common/client_wrapper:client_wrapper",
+    "//shell/platform/embedder:embedder_as_internal_library",
+    "//shell/platform/glfw/client_wrapper:client_wrapper_glfw",
+    "//third_party/glfw",
     "//third_party/rapidjson",
   ]
 
   if (is_linux) {
     libs = [ "GL" ]
 
-    configs += [ "//flutter/shell/platform/linux/config:x11" ]
+    configs += [ "//shell/platform/linux/config:x11" ]
   } else if (is_mac) {
     frameworks = [
       "CoreVideo.framework",
@@ -85,8 +83,8 @@ executable("flutter_glfw_unittests") {
   deps = [
     ":flutter_glfw",
     ":flutter_glfw_fixtures",
-    "//flutter/shell/platform/embedder:embedder_headers",
-    "//flutter/testing",
+    "//shell/platform/embedder:embedder_headers",
+    "//testing",
   ]
 }
 
@@ -95,5 +93,5 @@ copy("publish_headers_glfw") {
   outputs = [ "$root_out_dir/{{source_file_part}}" ]
 
   # The GLFW header assumes the presence of the common headers.
-  deps = [ "//flutter/shell/platform/common:publish_headers" ]
+  deps = [ "//shell/platform/common:publish_headers" ]
 }

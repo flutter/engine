@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/flutter_vma/config.gni")
+import("//flutter_vma/config.gni")
 
 source_set("flutter_vma") {
   sources = [
@@ -15,7 +15,7 @@ source_set("flutter_vma") {
   }
 
   public_deps = [
-    "//flutter/fml",
+    "//fml",
     "//third_party/vulkan-deps/vulkan-headers/src:vulkan_headers",
     "//third_party/vulkan_memory_allocator",
   ]
@@ -31,8 +31,8 @@ source_set("flutter_skia_vma") {
 
   public_deps = [
     ":flutter_vma",
-    "//flutter/fml",
-    "//flutter/vulkan/procs",
+    "//fml",
     "//third_party/skia",
+    "//vulkan/procs",
   ]
 }

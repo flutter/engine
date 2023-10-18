@@ -3,8 +3,8 @@
 # found in the LICENSE file.
 
 source_set("ax_build") {
-  visibility = [ "//flutter/third_party/accessibility/*" ]
-  include_dirs = [ "//flutter/third_party/accessibility" ]
+  visibility = [ "//third_party/accessibility/*" ]
+  include_dirs = [ "//third_party/accessibility" ]
 
   sources = [ "build_config.h" ]
 }
