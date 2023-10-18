@@ -263,7 +263,7 @@ StrokePathGeometry::CreateSolidStrokeVertices(
     offset = Vector2{-direction.y, direction.x} * stroke_width * 0.5;
   };
 
-  auto add_vertices_for_linear_compoent =
+  auto add_vertices_for_linear_component =
       [&vtx_builder, &offset, &previous_offset, &vtx, &polyline,
        &compute_offset, scaled_miter_limit, scale, &join_proc](
           const size_t component_start_index, const size_t component_end_index,
@@ -407,7 +407,7 @@ StrokePathGeometry::CreateSolidStrokeVertices(
             component_start_index, component_end_index, contour_start_point_i,
             contour_end_point_i, contour);
       } else {
-        add_vertices_for_linear_compoent(
+        add_vertices_for_linear_component(
             component_start_index, component_end_index, contour_start_point_i,
             contour_end_point_i, contour);
       }
