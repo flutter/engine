@@ -4,10 +4,12 @@
 
 #include "impeller/renderer/backend/vulkan/swapchain_impl_vk.h"
 
+#include "fml/synchronization/count_down_latch.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
+#include "impeller/renderer/backend/vulkan/fence_waiter_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/gpu_tracer_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_vk.h"
@@ -25,24 +27,20 @@ static constexpr size_t kMaxFramesInFlight = 3u;
 static constexpr size_t kPollFramesForOrientation = 1u;
 
 struct FrameSynchronizer {
-  vk::UniqueFence acquire;
+  std::shared_ptr<fml::CountDownLatch> acquire;
   vk::UniqueSemaphore render_ready;
   vk::UniqueSemaphore present_ready;
-  std::shared_ptr<CommandBuffer> final_cmd_buffer;
   bool is_valid = false;
 
   explicit FrameSynchronizer(const vk::Device& device) {
-    auto acquire_res = device.createFenceUnique(
-        vk::FenceCreateInfo{vk::FenceCreateFlagBits::eSignaled});
     auto render_res = device.createSemaphoreUnique({});
     auto present_res = device.createSemaphoreUnique({});
-    if (acquire_res.result != vk::Result::eSuccess ||
-        render_res.result != vk::Result::eSuccess ||
+    if (render_res.result != vk::Result::eSuccess ||
         present_res.result != vk::Result::eSuccess) {
       VALIDATION_LOG << "Could not create synchronizer.";
       return;
     }
-    acquire = std::move(acquire_res.value);
+    acquire = std::make_shared<fml::CountDownLatch>(0u);
     render_ready = std::move(render_res.value);
     present_ready = std::move(present_res.value);
     is_valid = true;
@@ -51,20 +49,8 @@ struct FrameSynchronizer {
   ~FrameSynchronizer() = default;
 
   bool WaitForFence(const vk::Device& device) {
-    if (auto result = device.waitForFences(
-            *acquire,                             // fence
-            true,                                 // wait all
-            std::numeric_limits<uint64_t>::max()  // timeout (ns)
-        );
-        result != vk::Result::eSuccess) {
-      VALIDATION_LOG << "Fence wait failed: " << vk::to_string(result);
-      return false;
-    }
-    if (auto result = device.resetFences(*acquire);
-        result != vk::Result::eSuccess) {
-      VALIDATION_LOG << "Could not reset fence: " << vk::to_string(result);
-      return false;
-    }
+    acquire->Wait();
+    acquire = std::make_shared<fml::CountDownLatch>(1u);
     return true;
   }
 };
@@ -435,14 +421,13 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
   //----------------------------------------------------------------------------
   /// Transition the image to color-attachment-optimal.
   ///
-  sync->final_cmd_buffer = context.CreateCommandBuffer();
-  if (!sync->final_cmd_buffer) {
+  auto final_cmd_buffer = context.CreateCommandBuffer();
+  if (!final_cmd_buffer) {
     return false;
   }
 
-  auto vk_final_cmd_buffer = CommandBufferVK::Cast(*sync->final_cmd_buffer)
-                                 .GetEncoder()
-                                 ->GetCommandBuffer();
+  auto vk_final_cmd_buffer =
+      CommandBufferVK::Cast(*final_cmd_buffer).GetEncoder()->GetCommandBuffer();
   {
     BarrierVK barrier;
     barrier.new_layout = vk::ImageLayout::ePresentSrcKHR;
@@ -472,13 +457,26 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
     submit_info.setWaitSemaphores(*sync->render_ready);
     submit_info.setSignalSemaphores(*sync->present_ready);
     submit_info.setCommandBuffers(vk_final_cmd_buffer);
-    auto result =
-        context.GetGraphicsQueue()->Submit(submit_info, *sync->acquire);
+
+    auto [result, fence] =
+        context.GetDevice().createFenceUnique(vk::FenceCreateInfo{});
+    if (result != vk::Result::eSuccess) {
+      sync->acquire->CountDown();
+      return false;
+    }
+
+    result = context.GetGraphicsQueue()->Submit(submit_info, fence.get());
     if (result != vk::Result::eSuccess) {
       VALIDATION_LOG << "Could not wait on render semaphore: "
                      << vk::to_string(result);
+      sync->acquire->CountDown();
       return false;
     }
+    context.GetFenceWaiter()->AddFence(
+        std::move(fence), [latch = sync->acquire,
+                           final_cmd_buffer = std::move(final_cmd_buffer)]() {
+          latch->CountDown();
+        });
   }
 
   auto task = [&, index, current_frame = current_frame_] {
