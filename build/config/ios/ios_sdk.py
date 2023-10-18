@@ -8,7 +8,7 @@ import os
 import subprocess
 import sys
 
-sys.path.insert(1, '../../build')
+sys.path.insert(1, '../../flutter/build')
 from pyutil.file_util import symlink
 
 # This script returns the path to the SDK of the given type. Pass the type of
