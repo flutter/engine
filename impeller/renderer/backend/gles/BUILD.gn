@@ -44,6 +44,7 @@ impeller_component("gles") {
     "command_buffer_gles.h",
     "context_gles.cc",
     "context_gles.h",
+    "context_gles.h",
     "description_gles.cc",
     "description_gles.h",
     "device_buffer_gles.cc",
@@ -51,6 +52,8 @@ impeller_component("gles") {
     "formats_gles.cc",
     "formats_gles.h",
     "gles.h",
+    "gpu_tracer_gles.cc",
+    "gpu_tracer_gles.h",
     "handle_gles.cc",
     "handle_gles.h",
     "pipeline_gles.cc",
@@ -75,9 +78,6 @@ impeller_component("gles") {
     "surface_gles.h",
     "texture_gles.cc",
     "texture_gles.h",
-    "context_gles.h",
-    "gpu_tracer_gles.cc",
-    "gpu_tracer_gles.h",
   ]
 
   if (!is_android && !is_fuchsia) {

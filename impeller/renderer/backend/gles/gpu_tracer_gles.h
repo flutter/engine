@@ -18,9 +18,7 @@ class GPUTracerGLES {
 
   void MarkFrameEnd(const ProcTableGLES& gl);
 
-  bool HasStartedFrame() const {
-    return has_started_frame_;
-  }
+  bool HasStartedFrame() const { return has_started_frame_; }
 
  private:
   std::vector<uint32_t> queries_;
