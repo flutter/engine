@@ -20,10 +20,10 @@ namespace impeller {
 ///             easier to reason about.
 ///
 ///             In the other Impeller backends (like Metal and Vulkan),
-///             resources can be created, used, and consumed on any thread with
+///             resources can be created, used, and deleted on any thread with
 ///             relatively few restrictions. However, OpenGL resources can only
-///             be created, used, and consumed on a thread on which an OpenGL
-///             context (or one in the same sharegroup) is  current.
+///             be created, used, and deleted on a thread on which an OpenGL
+///             context (or one in the same sharegroup) is current.
 ///
 ///             There aren't too many OpenGL contexts to go around and making
 ///             the caller reason about the timing and threading requirement
@@ -86,7 +86,7 @@ class ReactorGLES {
   using Ref = std::shared_ptr<ReactorGLES>;
 
   //----------------------------------------------------------------------------
-  /// @brief      Create a new reactor. There are expensive and only per
+  /// @brief      Create a new reactor. There are expensive and only one per
   ///             application instance is necessary.
   ///
   /// @param[in]  gl    The proc table for GL access. This is necessary for the
@@ -139,7 +139,7 @@ class ReactorGLES {
   const ProcTableGLES& GetProcTable() const;
 
   //----------------------------------------------------------------------------
-  /// @brief      Returns the OpenGL handle for reactor handle if one is
+  /// @brief      Returns the OpenGL handle for a reactor handle if one is
   ///             available. This is typically only safe to call within a
   ///             reaction. That is, within a `ReactorGLES::Operation`.
   ///
