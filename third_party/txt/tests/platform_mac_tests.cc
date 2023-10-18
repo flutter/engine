@@ -23,10 +23,10 @@ TEST_F(PlatformMacTests, RegisterSystemFonts) {
   RegisterSystemFonts(dynamic_font_manager);
   ASSERT_EQ(dynamic_font_manager.font_provider().GetFamilyCount(), 2ul);
   ASSERT_NE(dynamic_font_manager.font_provider().MatchFamily(
-                "Cupertino-System-Display"),
+                "CupertinoSystemDisplay"),
             nullptr);
   ASSERT_NE(
-      dynamic_font_manager.font_provider().MatchFamily("Cupertino-System-Text"),
+      dynamic_font_manager.font_provider().MatchFamily("CupertinoSystemText"),
       nullptr);
 }
 
