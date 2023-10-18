@@ -477,6 +477,50 @@ void testMain() {
 
   // ALL ADAPTERS
 
+  _testEach(
+    <_BasicEventContext>[
+      _PointerEventContext(),
+      _MouseEventContext(),
+      _TouchEventContext(),
+    ],
+    'event listeners are attached to the bubble phase',
+    (_BasicEventContext context) {
+      PointerBinding.instance!.debugOverrideDetector(context);
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
+        packets.add(packet);
+      };
+
+      final DomEventListener stopPropagationListener = createDomEventListener((DomEvent event) {
+        event.stopPropagation();
+      });
+
+      // The event listener reaches `PointerBinding` as expected.
+      DomEvent event = context.primaryDown();
+      flutterViewElement.dispatchEvent(event);
+      expect(packets, isNotEmpty);
+      packets.clear();
+
+      // Stop propagation during bubble phase. This should happen after the
+      // event has been handled by `PointerBinding`.
+      event = context.primaryDown();
+      flutterViewElement.addEventListener(event.type, stopPropagationListener);
+      flutterViewElement.dispatchEvent(event);
+      expect(packets, isNotEmpty);
+      packets.clear();
+
+      // Stop propagation during capture phase. This should prevent the event
+      // from reaching `PointerBinding`.
+      event = context.primaryDown();
+      flutterViewElement.addEventListener(event.type, stopPropagationListener, true);
+      flutterViewElement.dispatchEvent(event);
+      expect(packets, isEmpty);
+
+      flutterViewElement.removeEventListener(event.type, stopPropagationListener);
+      flutterViewElement.removeEventListener(event.type, stopPropagationListener, true);
+    },
+  );
+
   _testEach<_BasicEventContext>(
     <_BasicEventContext>[
       _PointerEventContext(),
@@ -3334,6 +3378,7 @@ class _TouchEventContext extends _BasicEventContext
     return createDomTouchEvent(
       eventType,
       <String, dynamic>{
+        'bubbles': true,
         'changedTouches': touches
             .map(
               (_TouchDetails details) => _createTouch(
@@ -3550,6 +3595,7 @@ class _PointerEventContext extends _BasicEventContext
     String? pointerType,
   }) {
     return createDomPointerEvent('pointerdown', <String, dynamic>{
+      'bubbles': true,
       'pointerId': pointer,
       'button': button,
       'buttons': buttons,
@@ -3604,6 +3650,7 @@ class _PointerEventContext extends _BasicEventContext
     String? pointerType,
   }) {
     return createDomPointerEvent('pointermove', <String, dynamic>{
+      'bubbles': true,
       'pointerId': pointer,
       'button': button,
       'buttons': buttons,
@@ -3639,6 +3686,7 @@ class _PointerEventContext extends _BasicEventContext
     String? pointerType,
   }) {
     return createDomPointerEvent('pointerleave', <String, dynamic>{
+      'bubbles': true,
       'pointerId': pointer,
       'button': button,
       'buttons': buttons,
@@ -3703,6 +3751,7 @@ class _PointerEventContext extends _BasicEventContext
     return touches
         .map((_TouchDetails details) =>
             createDomPointerEvent('pointercancel', <String, dynamic>{
+              'bubbles': true,
               'pointerId': details.pointer,
               'button': 0,
               'buttons': 0,
