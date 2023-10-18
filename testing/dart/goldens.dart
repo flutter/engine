@@ -53,13 +53,13 @@ class ImageComparer {
   /// Adds an [Image] to Skia Gold for comparison.
   ///
   /// The [fileName] must be unique per [testSuiteName].
-  Future<void> addGoldenImage(Image image, String fileName) {
+  Future<void> addGoldenImage(Image image, String fileName) async {
     final ByteData data =
         (await image.toByteData(format: ImageByteFormat.png))!;
 
     final File file = File(path.join(_client.workDirectory.path, fileName))
       ..writeAsBytesSync(data.buffer.asUint8List());
-    return _client.addImg(
+    await _client.addImg(
       testSuiteName,
       file,
       screenshotSize: image.width * image.height,
