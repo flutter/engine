@@ -1559,11 +1559,9 @@ public class FlutterJNI {
      * @param buildStartTime Timestamp (in nanoseconds) when build process started.
      * @param buildEndTime Timestamp (in nanoseconds) when build process completed.
      * @param rasterStartTime Timestamp (in nanoseconds) when the rasterizer begin its rendering.
-     * @param currentNanoTime The value of System.nanoTime() when the rasterizer begin its
-     *     rendering.
      */
     void onRasterStart(
-        long buildStartTime, long buildEndTime, long rasterStartTime, long currentNanoTime);
+        long buildStartTime, long buildEndTime, long rasterStartTime);
   }
 
   /**
@@ -1574,9 +1572,8 @@ public class FlutterJNI {
    * @param rasterStartTime Timestamp (in nanoseconds) when the rasterizer begin its rendering.
    */
   public void onRasterStart(long buildStartTime, long buildEndTime, long rasterStartTime) {
-    long nanoTime = System.nanoTime();
     for (OnFrameTimeListener listener : onFrameTimeListeners) {
-      listener.onRasterStart(buildStartTime, buildEndTime, rasterStartTime, nanoTime);
+      listener.onRasterStart(buildStartTime, buildEndTime, rasterStartTime);
     }
   }
 
