@@ -104,17 +104,15 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
   }
 
   if (blur_sigma_.sigma < kEhCloseEnough) {
-    return Entity::FromSnapshot(
-        input_snapshot.value(), entity.GetBlendMode(),
-        entity.GetStencilDepth());  // No blur to render.
+    return Entity::FromSnapshot(input_snapshot.value(), entity.GetBlendMode(),
+                                entity.GetClipDepth());  // No blur to render.
   }
 
   // If the radius length is < .5, the shader will take at most 1 sample,
   // resulting in no blur.
   if (transformed_blur_radius_length < .5) {
-    return Entity::FromSnapshot(
-        input_snapshot.value(), entity.GetBlendMode(),
-        entity.GetStencilDepth());  // No blur to render.
+    return Entity::FromSnapshot(input_snapshot.value(), entity.GetBlendMode(),
+                                entity.GetClipDepth());  // No blur to render.
   }
 
   // A matrix that rotates the snapshot space such that the blur direction is
@@ -159,10 +157,8 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
     vtx_builder.AddVertices({
         {Point(0, 0), input_uvs[0]},
         {Point(1, 0), input_uvs[1]},
-        {Point(1, 1), input_uvs[3]},
-        {Point(0, 0), input_uvs[0]},
-        {Point(1, 1), input_uvs[3]},
         {Point(0, 1), input_uvs[2]},
+        {Point(1, 1), input_uvs[3]},
     });
     auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
@@ -187,6 +183,7 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
     cmd.BindVertices(vtx_buffer);
 
     auto options = OptionsFromPass(pass);
+    options.primitive_type = PrimitiveType::kTriangleStrip;
     options.blend_mode = BlendMode::kSource;
     auto input_descriptor = input_snapshot->sampler_descriptor;
     switch (tile_mode_) {
@@ -273,7 +270,7 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
                                               (scaled_size / floored_size)),
                .sampler_descriptor = sampler_desc,
                .opacity = input_snapshot->opacity},
-      entity.GetBlendMode(), entity.GetStencilDepth());
+      entity.GetBlendMode(), entity.GetClipDepth());
 }
 
 std::optional<Rect> DirectionalGaussianBlurFilterContents::GetFilterCoverage(

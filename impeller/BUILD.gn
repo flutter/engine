@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//third_party/glfw/glfw_args.gni")
+import("//flutter/third_party/glfw/glfw_args.gni")
 import("tools/impeller.gni")
 
 config("impeller_public_config") {
@@ -34,12 +34,12 @@ config("impeller_public_config") {
     defines += [ "IMPELLER_ENABLE_VULKAN=1" ]
   }
 
-  if (impeller_trace_all_gl_calls) {
-    defines += [ "IMPELLER_TRACE_ALL_GL_CALLS" ]
+  if (impeller_enable_vulkan_playgrounds) {
+    defines += [ "IMPELLER_ENABLE_VULKAN_PLAYGROUNDS=1" ]
   }
 
-  if (impeller_error_check_all_gl_calls) {
-    defines += [ "IMPELLER_ERROR_CHECK_ALL_GL_CALLS" ]
+  if (impeller_trace_all_gl_calls) {
+    defines += [ "IMPELLER_TRACE_ALL_GL_CALLS" ]
   }
 
   if (is_win) {
@@ -111,6 +111,10 @@ impeller_component("impeller_unittests") {
 
   if (impeller_enable_vulkan) {
     deps += [ "//flutter/impeller/renderer/backend/vulkan:vulkan_unittests" ]
+  }
+
+  if (impeller_enable_opengles) {
+    deps += [ "//flutter/impeller/renderer/backend/gles:gles_unittests" ]
   }
 
   if (glfw_vulkan_library != "") {

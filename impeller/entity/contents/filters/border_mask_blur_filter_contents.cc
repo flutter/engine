@@ -96,25 +96,22 @@ std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
         {coverage.origin, input_uvs[0]},
         {{coverage.origin.x + coverage.size.width, coverage.origin.y},
          input_uvs[1]},
-        {{coverage.origin.x + coverage.size.width,
-          coverage.origin.y + coverage.size.height},
-         input_uvs[3]},
-        {coverage.origin, input_uvs[0]},
-        {{coverage.origin.x + coverage.size.width,
-          coverage.origin.y + coverage.size.height},
-         input_uvs[3]},
         {{coverage.origin.x, coverage.origin.y + coverage.size.height},
          input_uvs[2]},
+        {{coverage.origin.x + coverage.size.width,
+          coverage.origin.y + coverage.size.height},
+         input_uvs[3]},
     });
     auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
     Command cmd;
     DEBUG_COMMAND_INFO(cmd, "Border Mask Blur Filter");
     auto options = OptionsFromPassAndEntity(pass, entity);
+    options.primitive_type = PrimitiveType::kTriangleStrip;
 
     cmd.pipeline = renderer.GetBorderMaskBlurPipeline(options);
     cmd.BindVertices(vtx_buffer);
-    cmd.stencil_reference = entity.GetStencilDepth();
+    cmd.stencil_reference = entity.GetClipDepth();
 
     VS::FrameInfo frame_info;
     frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
@@ -146,7 +143,7 @@ std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
 
   Entity sub_entity;
   sub_entity.SetContents(std::move(contents));
-  sub_entity.SetStencilDepth(entity.GetStencilDepth());
+  sub_entity.SetClipDepth(entity.GetClipDepth());
   sub_entity.SetBlendMode(entity.GetBlendMode());
   return sub_entity;
 }
