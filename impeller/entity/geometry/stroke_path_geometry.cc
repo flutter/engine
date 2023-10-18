@@ -298,7 +298,7 @@ StrokePathGeometry::CreateSolidStrokeVertices(
         }
       };
 
-  auto add_vertices_for_curve_compoent =
+  auto add_vertices_for_curve_component =
       [&vtx_builder, &offset, &previous_offset, &vtx, &polyline,
        &compute_offset, scaled_miter_limit, scale, &join_proc](
           const size_t component_start_index, const size_t component_end_index,
@@ -403,7 +403,7 @@ StrokePathGeometry::CreateSolidStrokeVertices(
                             : contour.components[contour_component_i + 1]
                                   .component_start_index;
       if (component.is_curve) {
-        add_vertices_for_curve_compoent(
+        add_vertices_for_curve_component(
             component_start_index, component_end_index, contour_start_point_i,
             contour_end_point_i, contour);
       } else {
