@@ -23,18 +23,18 @@ dependencies:
 
 dependency_overrides:
   collection:
-    path: ../../../third_party/dart/third_party/pkg/collection
+    path: ../../third_party/dart/third_party/pkg/collection
   crypto:
-    path: ../../../third_party/dart/third_party/pkg/crypto
+    path: ../../third_party/dart/third_party/pkg/crypto
   file:
-    path: ../../../third_party/pkg/file/packages/file
+    path: ../../third_party/pkg/file/packages/file
   meta:
-    path: ../../../third_party/dart/pkg/meta
+    path: ../../third_party/dart/pkg/meta
   path:
-    path: ../../../third_party/dart/third_party/pkg/path
+    path: ../../third_party/dart/third_party/pkg/path
   platform:
-    path: ../../../third_party/pkg/platform
+    path: ../../third_party/pkg/platform
   process:
-    path: ../../../third_party/pkg/process
+    path: ../../third_party/pkg/process
   typed_data:
-    path: ../../../third_party/dart/third_party/pkg/typed_data
+    path: ../../third_party/dart/third_party/pkg/typed_data

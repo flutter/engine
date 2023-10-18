@@ -118,7 +118,7 @@ def find_unlisted_packages():
 
 def main():
   dart_sdk_bin = os.path.join(
-      SRC_ROOT, 'third_party', 'dart', 'tools', 'sdks', 'dart-sdk', 'bin'
+      SRC_ROOT, 'flutter', 'third_party', 'dart', 'tools', 'sdks', 'dart-sdk', 'bin'
   )
 
   # Ensure all relevant packages are listed in ALL_PACKAGES.
