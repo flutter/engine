@@ -18,13 +18,15 @@ const String _kSkiaGoldWorkDirectoryKey = 'kSkiaGoldWorkDirectory';
 /// Contains utilities for comparing two images in memory that are expected to
 /// be identical, or for adding images to Skia gold for comparison.
 class ImageComparer {
-  ImageComparer._({required this.testSuiteName, required SkiaGoldClient client})
-      : _client = client {}
+  ImageComparer._({
+    required this.testSuiteName,
+    required SkiaGoldClient client,
+  }) : _client = client;
 
   /// Creates an image comparer and authorizes.
   static Future<ImageComparer> create({required String testSuiteName}) async {
     const String workDirectoryPath =
-        const String.fromEnvironment(_kSkiaGoldWorkDirectoryKey);
+        String.fromEnvironment(_kSkiaGoldWorkDirectoryKey);
     if (workDirectoryPath.isEmpty) {
       throw UnsupportedError(
           'Using ImageComparer requries defining kSkiaGoldWorkDirectoryKey.');
