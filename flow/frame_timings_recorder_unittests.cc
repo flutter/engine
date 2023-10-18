@@ -35,12 +35,16 @@ TEST(FrameTimingsRecorderTest, RecordBuildTimes) {
   recorder->RecordVsync(st, en);
 
   const auto build_start = fml::TimePoint::Now();
+  const auto build_start_wall_time = fml::TimePoint::CurrentWallTime();
   const auto build_end = build_start + fml::TimeDelta::FromMillisecondsF(16);
-  recorder->RecordBuildStart(build_start);
-  recorder->RecordBuildEnd(build_end);
+  const auto build_end_wall_time = build_start_wall_time + fml::TimeDelta::FromMillisecondsF(16);
+  recorder->RecordBuildStart(build_start, build_start_wall_time);
+  recorder->RecordBuildEnd(build_end, build_end_wall_time);
 
   ASSERT_EQ(build_start, recorder->GetBuildStartTime());
   ASSERT_EQ(build_end, recorder->GetBuildEndTime());
+  ASSERT_EQ(build_start_wall_time, recorder->GetBuildStartWallTime());
+  ASSERT_EQ(build_end_wall_time, recorder->GetBuildEndWallTime());
 }
 
 TEST(FrameTimingsRecorderTest, RecordRasterTimes) {
@@ -51,14 +55,17 @@ TEST(FrameTimingsRecorderTest, RecordRasterTimes) {
   recorder->RecordVsync(st, en);
 
   const auto build_start = fml::TimePoint::Now();
+  const auto build_start_wall_time = fml::TimePoint::CurrentWallTime();
   const auto build_end = build_start + fml::TimeDelta::FromMillisecondsF(16);
-  recorder->RecordBuildStart(build_start);
-  recorder->RecordBuildEnd(build_end);
+  const auto build_end_wall_time = build_start_wall_time + fml::TimeDelta::FromMillisecondsF(16);
+  recorder->RecordBuildStart(build_start, build_start_wall_time);
+  recorder->RecordBuildEnd(build_end, build_end_wall_time);
 
   using namespace std::chrono_literals;
 
   const auto raster_start = fml::TimePoint::Now();
-  recorder->RecordRasterStart(raster_start);
+  const auto raster_start_wall_time = fml::TimePoint::CurrentWallTime();
+  recorder->RecordRasterStart(raster_start, raster_start_wall_time);
   const auto before_raster_end_wall_time = fml::TimePoint::CurrentWallTime();
   std::this_thread::sleep_for(1ms);
   const auto timing = recorder->RecordRasterEnd();
@@ -66,6 +73,7 @@ TEST(FrameTimingsRecorderTest, RecordRasterTimes) {
   const auto after_raster_end_wall_time = fml::TimePoint::CurrentWallTime();
 
   ASSERT_EQ(raster_start, recorder->GetRasterStartTime());
+  ASSERT_EQ(raster_start_wall_time, recorder->GetRasterStartWallTime());
   ASSERT_GT(recorder->GetRasterEndWallTime(), before_raster_end_wall_time);
   ASSERT_LT(recorder->GetRasterEndWallTime(), after_raster_end_wall_time);
   ASSERT_EQ(recorder->GetFrameNumber(), timing.GetFrameNumber());
@@ -83,9 +91,11 @@ TEST(FrameTimingsRecorderTest, RecordRasterTimesWithCache) {
   recorder->RecordVsync(st, en);
 
   const auto build_start = fml::TimePoint::Now();
+  const auto build_start_wall_time = fml::TimePoint::CurrentWallTime();
   const auto build_end = build_start + fml::TimeDelta::FromMillisecondsF(16);
-  recorder->RecordBuildStart(build_start);
-  recorder->RecordBuildEnd(build_end);
+  const auto build_end_wall_time = build_start_wall_time + fml::TimeDelta::FromMillisecondsF(16);
+  recorder->RecordBuildStart(build_start, build_start_wall_time);
+  recorder->RecordBuildEnd(build_end, build_end_wall_time);
 
   using namespace std::chrono_literals;
 
@@ -93,7 +103,8 @@ TEST(FrameTimingsRecorderTest, RecordRasterTimesWithCache) {
   cache.BeginFrame();
 
   const auto raster_start = fml::TimePoint::Now();
-  recorder->RecordRasterStart(raster_start);
+  const auto raster_start_wall_time = fml::TimePoint::CurrentWallTime();
+  recorder->RecordRasterStart(raster_start, raster_start_wall_time);
 
   cache.AddMockLayer(100, 100);
   size_t layer_bytes = cache.EstimateLayerCacheByteSize();
@@ -112,6 +123,7 @@ TEST(FrameTimingsRecorderTest, RecordRasterTimesWithCache) {
   const auto after_raster_end_wall_time = fml::TimePoint::CurrentWallTime();
 
   ASSERT_EQ(raster_start, recorder->GetRasterStartTime());
+  ASSERT_EQ(raster_start_wall_time, recorder->GetRasterStartWallTime());
   ASSERT_GT(recorder->GetRasterEndWallTime(), before_raster_end_wall_time);
   ASSERT_LT(recorder->GetRasterEndWallTime(), after_raster_end_wall_time);
   ASSERT_EQ(recorder->GetFrameNumber(), timing.GetFrameNumber());
@@ -129,7 +141,8 @@ TEST(FrameTimingsRecorderTest, ThrowWhenRecordBuildBeforeVsync) {
   auto recorder = std::make_unique<FrameTimingsRecorder>();
 
   const auto build_start = fml::TimePoint::Now();
-  fml::Status status = recorder->RecordBuildStartImpl(build_start);
+  const auto wall_time = fml::TimePoint::CurrentWallTime();
+  fml::Status status = recorder->RecordBuildStartImpl(build_start, wall_time);
   EXPECT_FALSE(status.ok());
   EXPECT_EQ(status.message(), "Check failed: state_ == State::kVsync.");
 }
@@ -142,7 +155,8 @@ TEST(FrameTimingsRecorderTest, ThrowWhenRecordRasterBeforeBuildEnd) {
   recorder->RecordVsync(st, en);
 
   const auto raster_start = fml::TimePoint::Now();
-  fml::Status status = recorder->RecordRasterStartImpl(raster_start);
+  const auto wall_time = fml::TimePoint::CurrentWallTime();
+  fml::Status status = recorder->RecordRasterStartImpl(raster_start, wall_time);
   EXPECT_FALSE(status.ok());
   EXPECT_EQ(status.message(), "Check failed: state_ == State::kBuildEnd.");
 }
@@ -181,13 +195,14 @@ TEST(FrameTimingsRecorderTest, ClonedHasSameBuildStart) {
 
   const auto now = fml::TimePoint::Now();
   recorder->RecordVsync(now, now + fml::TimeDelta::FromMilliseconds(16));
-  recorder->RecordBuildStart(fml::TimePoint::Now());
+  recorder->RecordBuildStart(fml::TimePoint::Now(), fml::TimePoint::CurrentWallTime());
 
   auto cloned = recorder->CloneUntil(FrameTimingsRecorder::State::kBuildStart);
   ASSERT_EQ(recorder->GetFrameNumber(), cloned->GetFrameNumber());
   ASSERT_EQ(recorder->GetVsyncStartTime(), cloned->GetVsyncStartTime());
   ASSERT_EQ(recorder->GetVsyncTargetTime(), cloned->GetVsyncTargetTime());
   ASSERT_EQ(recorder->GetBuildStartTime(), cloned->GetBuildStartTime());
+  ASSERT_EQ(recorder->GetBuildStartWallTime(), cloned->GetBuildStartWallTime());
 }
 
 TEST(FrameTimingsRecorderTest, ClonedHasSameBuildEnd) {
@@ -195,8 +210,8 @@ TEST(FrameTimingsRecorderTest, ClonedHasSameBuildEnd) {
 
   const auto now = fml::TimePoint::Now();
   recorder->RecordVsync(now, now + fml::TimeDelta::FromMilliseconds(16));
-  recorder->RecordBuildStart(fml::TimePoint::Now());
-  recorder->RecordBuildEnd(fml::TimePoint::Now());
+  recorder->RecordBuildStart(fml::TimePoint::Now(), fml::TimePoint::CurrentWallTime());
+  recorder->RecordBuildEnd(fml::TimePoint::Now(), fml::TimePoint::CurrentWallTime());
 
   auto cloned = recorder->CloneUntil(FrameTimingsRecorder::State::kBuildEnd);
   ASSERT_EQ(recorder->GetFrameNumber(), cloned->GetFrameNumber());
@@ -204,6 +219,7 @@ TEST(FrameTimingsRecorderTest, ClonedHasSameBuildEnd) {
   ASSERT_EQ(recorder->GetVsyncTargetTime(), cloned->GetVsyncTargetTime());
   ASSERT_EQ(recorder->GetBuildStartTime(), cloned->GetBuildStartTime());
   ASSERT_EQ(recorder->GetBuildEndTime(), cloned->GetBuildEndTime());
+  ASSERT_EQ(recorder->GetBuildEndWallTime(), cloned->GetBuildEndWallTime());
 }
 
 TEST(FrameTimingsRecorderTest, ClonedHasSameRasterStart) {
@@ -211,9 +227,9 @@ TEST(FrameTimingsRecorderTest, ClonedHasSameRasterStart) {
 
   const auto now = fml::TimePoint::Now();
   recorder->RecordVsync(now, now + fml::TimeDelta::FromMilliseconds(16));
-  recorder->RecordBuildStart(fml::TimePoint::Now());
-  recorder->RecordBuildEnd(fml::TimePoint::Now());
-  recorder->RecordRasterStart(fml::TimePoint::Now());
+  recorder->RecordBuildStart(fml::TimePoint::Now(), fml::TimePoint::CurrentWallTime());
+  recorder->RecordBuildEnd(fml::TimePoint::Now(), fml::TimePoint::CurrentWallTime());
+  recorder->RecordRasterStart(fml::TimePoint::Now(), fml::TimePoint::CurrentWallTime());
 
   auto cloned = recorder->CloneUntil(FrameTimingsRecorder::State::kRasterStart);
   ASSERT_EQ(recorder->GetFrameNumber(), cloned->GetFrameNumber());
@@ -222,6 +238,7 @@ TEST(FrameTimingsRecorderTest, ClonedHasSameRasterStart) {
   ASSERT_EQ(recorder->GetBuildStartTime(), cloned->GetBuildStartTime());
   ASSERT_EQ(recorder->GetBuildEndTime(), cloned->GetBuildEndTime());
   ASSERT_EQ(recorder->GetRasterStartTime(), cloned->GetRasterStartTime());
+  ASSERT_EQ(recorder->GetRasterStartWallTime(), cloned->GetRasterStartWallTime());
 }
 
 TEST(FrameTimingsRecorderTest, ClonedHasSameRasterEnd) {
@@ -229,9 +246,9 @@ TEST(FrameTimingsRecorderTest, ClonedHasSameRasterEnd) {
 
   const auto now = fml::TimePoint::Now();
   recorder->RecordVsync(now, now + fml::TimeDelta::FromMilliseconds(16));
-  recorder->RecordBuildStart(fml::TimePoint::Now());
-  recorder->RecordBuildEnd(fml::TimePoint::Now());
-  recorder->RecordRasterStart(fml::TimePoint::Now());
+  recorder->RecordBuildStart(fml::TimePoint::Now(), fml::TimePoint::CurrentWallTime());
+  recorder->RecordBuildEnd(fml::TimePoint::Now(), fml::TimePoint::CurrentWallTime());
+  recorder->RecordRasterStart(fml::TimePoint::Now(), fml::TimePoint::CurrentWallTime());
   recorder->RecordRasterEnd();
 
   auto cloned = recorder->CloneUntil(FrameTimingsRecorder::State::kRasterEnd);
@@ -256,9 +273,9 @@ TEST(FrameTimingsRecorderTest, ClonedHasSameRasterEndWithCache) {
 
   const auto now = fml::TimePoint::Now();
   recorder->RecordVsync(now, now + fml::TimeDelta::FromMilliseconds(16));
-  recorder->RecordBuildStart(fml::TimePoint::Now());
-  recorder->RecordBuildEnd(fml::TimePoint::Now());
-  recorder->RecordRasterStart(fml::TimePoint::Now());
+  recorder->RecordBuildStart(fml::TimePoint::Now(), fml::TimePoint::CurrentWallTime());
+  recorder->RecordBuildEnd(fml::TimePoint::Now(), fml::TimePoint::CurrentWallTime());
+  recorder->RecordRasterStart(fml::TimePoint::Now(), fml::TimePoint::CurrentWallTime());
 
   cache.AddMockLayer(100, 100);
   size_t layer_bytes = cache.EstimateLayerCacheByteSize();

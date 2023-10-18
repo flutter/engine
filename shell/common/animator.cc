@@ -65,7 +65,7 @@ void Animator::BeginFrame(
   frame_request_number_++;
 
   frame_timings_recorder_ = std::move(frame_timings_recorder);
-  frame_timings_recorder_->RecordBuildStart(fml::TimePoint::Now());
+  frame_timings_recorder_->RecordBuildStart(fml::TimePoint::Now(), fml::TimePoint::CurrentWallTime());
 
   size_t flow_id_count = trace_flow_ids_.size();
   std::unique_ptr<uint64_t[]> flow_ids =
@@ -149,14 +149,15 @@ void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree,
     // Framework can directly call render with a built scene.
     frame_timings_recorder_ = std::make_unique<FrameTimingsRecorder>();
     const fml::TimePoint placeholder_time = fml::TimePoint::Now();
+    const auto wall_time = fml::TimePoint::CurrentWallTime();
     frame_timings_recorder_->RecordVsync(placeholder_time, placeholder_time);
-    frame_timings_recorder_->RecordBuildStart(placeholder_time);
+    frame_timings_recorder_->RecordBuildStart(placeholder_time, wall_time);
   }
 
   TRACE_EVENT_WITH_FRAME_NUMBER(frame_timings_recorder_, "flutter",
                                 "Animator::Render", /*flow_id_count=*/0,
                                 /*flow_ids=*/nullptr);
-  frame_timings_recorder_->RecordBuildEnd(fml::TimePoint::Now());
+  frame_timings_recorder_->RecordBuildEnd(fml::TimePoint::Now(), fml::TimePoint::CurrentWallTime());
 
   delegate_.OnAnimatorUpdateLatestFrameTargetTime(
       frame_timings_recorder_->GetVsyncTargetTime());
@@ -208,8 +209,9 @@ void Animator::DrawLastLayerTrees(
   // given that the frame doesn't get built in this case, we
   // will use Now() for both start and end times as an indication.
   const auto now = fml::TimePoint::Now();
-  frame_timings_recorder->RecordBuildStart(now);
-  frame_timings_recorder->RecordBuildEnd(now);
+  const auto wall_time = fml::TimePoint::CurrentWallTime();
+  frame_timings_recorder->RecordBuildStart(now, wall_time);
+  frame_timings_recorder->RecordBuildEnd(now, wall_time);
   delegate_.OnAnimatorDrawLastLayerTrees(std::move(frame_timings_recorder));
 }
 
