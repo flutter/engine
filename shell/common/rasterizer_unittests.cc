@@ -201,7 +201,8 @@ TEST(RasterizerTest,
   framebuffer_info.supports_readback = true;
 
   auto surface_frame = std::make_unique<SurfaceFrame>(
-      /*surface=*/nullptr, framebuffer_info,
+      /*surface=*/
+      nullptr, framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
@@ -273,7 +274,8 @@ TEST(
   SurfaceFrame::FramebufferInfo framebuffer_info;
   framebuffer_info.supports_readback = true;
   auto surface_frame = std::make_unique<SurfaceFrame>(
-      /*surface=*/nullptr, framebuffer_info,
+      /*surface=*/
+      nullptr, framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
@@ -345,7 +347,8 @@ TEST(
   framebuffer_info.supports_readback = true;
 
   auto surface_frame = std::make_unique<SurfaceFrame>(
-      /*surface=*/nullptr, framebuffer_info,
+      /*surface=*/
+      nullptr, framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
@@ -414,11 +417,13 @@ TEST(RasterizerTest,
   framebuffer_info.supports_readback = true;
 
   auto surface_frame1 = std::make_unique<SurfaceFrame>(
-      /*surface=*/nullptr, framebuffer_info,
+      /*surface=*/
+      nullptr, framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   auto surface_frame2 = std::make_unique<SurfaceFrame>(
-      /*surface=*/nullptr, framebuffer_info,
+      /*surface=*/
+      nullptr, framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled())
@@ -647,7 +652,8 @@ TEST(RasterizerTest,
   SurfaceFrame::FramebufferInfo framebuffer_info;
   framebuffer_info.supports_readback = true;
   auto surface_frame = std::make_unique<SurfaceFrame>(
-      /*surface=*/nullptr, /*framebuffer_info=*/framebuffer_info,
+      /*surface=*/
+      nullptr, /*framebuffer_info=*/framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
@@ -706,7 +712,8 @@ TEST(
   framebuffer_info.supports_readback = true;
 
   auto surface_frame = std::make_unique<SurfaceFrame>(
-      /*surface=*/nullptr, /*framebuffer_info=*/framebuffer_info,
+      /*surface=*/
+      nullptr, /*framebuffer_info=*/framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
@@ -766,7 +773,8 @@ TEST(
   framebuffer_info.supports_readback = true;
 
   auto surface_frame = std::make_unique<SurfaceFrame>(
-      /*surface=*/nullptr, /*framebuffer_info=*/framebuffer_info,
+      /*surface=*/
+      nullptr, /*framebuffer_info=*/framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(false));
@@ -825,7 +833,8 @@ TEST(
   framebuffer_info.supports_readback = true;
 
   auto surface_frame = std::make_unique<SurfaceFrame>(
-      /*surface=*/nullptr, /*framebuffer_info=*/framebuffer_info,
+      /*surface=*/
+      nullptr, /*framebuffer_info=*/framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(false));
@@ -947,7 +956,8 @@ TEST(RasterizerTest,
         SurfaceFrame::FramebufferInfo framebuffer_info;
         framebuffer_info.supports_readback = true;
         return std::make_unique<SurfaceFrame>(
-            /*surface=*/nullptr, framebuffer_info,
+            /*surface=*/
+            nullptr, framebuffer_info,
             /*submit_callback=*/
             [](const SurfaceFrame& frame, DlCanvas*) { return true; },
             /*frame_size=*/SkISize::Make(800, 600));
