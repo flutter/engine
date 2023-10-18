@@ -448,6 +448,10 @@ class Shell final : public PlatformView::Delegate,
   // falls back to the one VM was launched with.
   //
   // This function is what Shell::Create uses to infer snapshot settings.
+  //
+  // TODO(dkwingsmt): Extracting this method is part of a bigger change. If the
+  // entire change is not eventually landed, we should merge this method back
+  // to Create. https://github.com/flutter/flutter/issues/136826
   static DartVMRef InferVmInitDataFromSettings(
       fml::RefPtr<const DartSnapshot>& out_isolate_snapshot,
       Settings& settings);
