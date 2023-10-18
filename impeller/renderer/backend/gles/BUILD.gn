@@ -75,6 +75,9 @@ impeller_component("gles") {
     "surface_gles.h",
     "texture_gles.cc",
     "texture_gles.h",
+    "context_gles.h",
+    "gpu_tracer_gles.cc",
+    "gpu_tracer_gles.h",
   ]
 
   if (!is_android && !is_fuchsia) {

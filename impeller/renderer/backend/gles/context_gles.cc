@@ -7,6 +7,7 @@
 #include "impeller/base/config.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/gles/command_buffer_gles.h"
+#include "impeller/renderer/backend/gles/gpu_tracer_gles.h"
 
 namespace impeller {
 
@@ -62,6 +63,7 @@ ContextGLES::ContextGLES(std::unique_ptr<ProcTableGLES> gl,
             device_capabilities_->SupportsDecalSamplerAddressMode()));
   }
 
+  gpu_tracer_ = std::make_shared<GPUTracerGLES>(reactor_->GetProcTable());
   is_valid_ = true;
 }
 
