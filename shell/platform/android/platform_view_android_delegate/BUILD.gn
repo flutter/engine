@@ -11,7 +11,7 @@ source_set("platform_view_android_delegate") {
     "platform_view_android_delegate.h",
   ]
 
-  public_configs = [ "//flutter:config" ]
+  public_configs = [ "//:config" ]
 
   deps = [
     "//common",

@@ -11,7 +11,7 @@ source_set("test_font") {
     "test_font_data.h",
   ]
   deps = [ "//third_party/skia" ]
-  public_configs = [ "//flutter:config" ]
+  public_configs = [ "//:config" ]
   defines = []
   if (flutter_runtime_mode == "debug" || current_toolchain == host_toolchain) {
     # Though the test font data is small, we dont want to add to the binary size
@@ -95,7 +95,7 @@ source_set("runtime") {
     "//third_party/rapidjson",
   ]
 
-  public_configs = [ "//flutter:config" ]
+  public_configs = [ "//:config" ]
 
   deps = [
     ":dart_plugin_registrant",
@@ -138,7 +138,7 @@ if (enable_unittests) {
       "type_conversions_unittests.cc",
     ]
 
-    public_configs = [ "//flutter:export_dynamic_symbols" ]
+    public_configs = [ "//:export_dynamic_symbols" ]
 
     public_deps = [
       ":libdart",
@@ -166,7 +166,7 @@ if (enable_unittests) {
 
     sources = [ "no_dart_plugin_registrant_unittests.cc" ]
 
-    public_configs = [ "//flutter:export_dynamic_symbols" ]
+    public_configs = [ "//:export_dynamic_symbols" ]
 
     public_deps = [
       ":no_plugin_registrant",
@@ -187,7 +187,7 @@ if (enable_unittests) {
 
     sources = [ "dart_plugin_registrant_unittests.cc" ]
 
-    public_configs = [ "//flutter:export_dynamic_symbols" ]
+    public_configs = [ "//:export_dynamic_symbols" ]
 
     public_deps = [
       ":plugin_registrant",

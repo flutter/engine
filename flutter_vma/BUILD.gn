@@ -20,7 +20,7 @@ source_set("flutter_vma") {
     "//third_party/vulkan_memory_allocator",
   ]
 
-  public_configs = [ "//flutter:config" ]
+  public_configs = [ "//:config" ]
 }
 
 source_set("flutter_skia_vma") {

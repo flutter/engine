@@ -11,7 +11,7 @@ if (is_ios || is_mac) {
       "spring_animation.h",
       "spring_animation.mm",
     ]
-    public_configs = [ "//flutter:config" ]
+    public_configs = [ "//:config" ]
   }
 
   if (enable_unittests) {
@@ -27,7 +27,7 @@ if (is_ios || is_mac) {
         ":spring_animation_fixtures",
         "//testing",
       ]
-      public_configs = [ "//flutter:config" ]
+      public_configs = [ "//:config" ]
     }
   }
 }

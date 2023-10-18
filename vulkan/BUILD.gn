@@ -48,7 +48,7 @@ source_set("vulkan") {
     "//third_party/skia",
   ]
 
-  public_configs = [ "//flutter:config" ]
+  public_configs = [ "//:config" ]
 
   public_deps =
       [ "//third_party/vulkan-deps/vulkan-headers/src:vulkan_headers" ]

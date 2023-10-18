@@ -12,7 +12,7 @@ source_set("surface") {
     "snapshot_surface_producer.h",
   ]
 
-  public_configs = [ "//flutter:config" ]
+  public_configs = [ "//:config" ]
 
   deps = [
     ":native_window",
@@ -31,7 +31,7 @@ source_set("native_window") {
     "android_native_window.h",
   ]
 
-  public_configs = [ "//flutter:config" ]
+  public_configs = [ "//:config" ]
 
   deps = [
     "//fml",
@@ -47,7 +47,7 @@ source_set("surface_mock") {
     "android_surface_mock.h",
   ]
 
-  public_configs = [ "//flutter:config" ]
+  public_configs = [ "//:config" ]
 
   deps = [
     ":surface",

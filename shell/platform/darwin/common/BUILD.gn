@@ -24,7 +24,7 @@ source_set("common") {
     "//fml",
   ]
 
-  public_configs = [ "//flutter:config" ]
+  public_configs = [ "//:config" ]
 }
 
 # Provides an implementation for _availability_version_check.
@@ -47,7 +47,7 @@ source_set("availability_version_check") {
 
   deps = [ "//fml" ]
 
-  public_configs = [ "//flutter:config" ]
+  public_configs = [ "//:config" ]
 }
 
 # Shared framework headers end up in the same folder as platform-specific
@@ -80,7 +80,7 @@ source_set("framework_common") {
   defines = [ "FLUTTER_FRAMEWORK" ]
 
   public_configs = [
-    "//flutter:config",
+    "//:config",
     ":framework_relative_headers",
   ]
 
@@ -114,5 +114,5 @@ executable("framework_common_unittests") {
     "//third_party/ocmock:ocmock",
   ]
 
-  public_configs = [ "//flutter:config" ]
+  public_configs = [ "//:config" ]
 }

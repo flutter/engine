@@ -13,7 +13,7 @@ source_set("external_view_embedder") {
     "surface_pool.h",
   ]
 
-  public_configs = [ "//flutter:config" ]
+  public_configs = [ "//:config" ]
 
   deps = [
     "//common",

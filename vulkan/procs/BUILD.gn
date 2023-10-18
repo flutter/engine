@@ -12,7 +12,7 @@ source_set("procs") {
     "vulkan_proc_table.h",
   ]
 
-  public_configs = [ "//flutter:config" ]
+  public_configs = [ "//:config" ]
 
   public_deps = [
     "//fml",

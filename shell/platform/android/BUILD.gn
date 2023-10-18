@@ -48,7 +48,7 @@ executable("flutter_shell_native_unittests") {
     "apk_asset_provider_unittests.cc",
     "flutter_shell_native_unittests.cc",
   ]
-  public_configs = [ "//flutter:config" ]
+  public_configs = [ "//:config" ]
   deps = [
     ":flutter_shell_native_src",
     "//shell/platform/android/jni:jni_mock",
@@ -157,7 +157,7 @@ source_set("flutter_shell_native_src") {
     "//vulkan",
   ]
 
-  public_configs = [ "//flutter:config" ]
+  public_configs = [ "//:config" ]
 
   defines = []
 

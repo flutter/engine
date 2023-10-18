@@ -17,8 +17,8 @@ executable("testing") {
   output_name = "flutter_tester"
 
   public_configs = [
-    "//flutter:config",
-    "//flutter:export_dynamic_symbols",
+    "//:config",
+    "//:export_dynamic_symbols",
   ]
 
   sources = [ "tester_main.cc" ]

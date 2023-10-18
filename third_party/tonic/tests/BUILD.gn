@@ -12,7 +12,7 @@ test_fixtures("tonic_fixtures") {
 executable("tonic_unittests") {
   testonly = true
 
-  public_configs = [ "//flutter:export_dynamic_symbols" ]
+  public_configs = [ "//:export_dynamic_symbols" ]
 
   sources = [
     "dart_persistent_handle_unittest.cc",

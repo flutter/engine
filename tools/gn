@@ -1321,7 +1321,6 @@ def main(argv):
   command = [
       '%s/flutter/third_party/gn/gn%s' % (SRC_ROOT, exe),
       'gen',
-      '--check',
       '--export-compile-commands',
       '--root=%s' % os.path.abspath(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
   ]

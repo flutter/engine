@@ -52,7 +52,7 @@ source_set("common_cpp_input") {
 
   configs += [ ":desktop_library_implementation" ]
 
-  public_configs = [ "//flutter:config" ]
+  public_configs = [ "//:config" ]
 
   deps = [ "//fml:fml" ]
 }
@@ -64,7 +64,7 @@ source_set("common_cpp_enums") {
   ]
 
   public_configs = [
-    "//flutter:config",
+    "//:config",
     "//common:flutter_config",
   ]
 }
@@ -75,7 +75,7 @@ source_set("common_cpp_switches") {
   sources = [ "engine_switches.cc" ]
 
   public_configs = [
-    "//flutter:config",
+    "//:config",
     "//common:flutter_config",
   ]
 }
@@ -119,7 +119,7 @@ source_set("common_cpp") {
 
   configs += [ ":desktop_library_implementation" ]
 
-  public_configs = [ "//flutter:config" ]
+  public_configs = [ "//:config" ]
 
   deps = [
     ":common_cpp_library_headers",
@@ -145,7 +145,7 @@ source_set("common_cpp_core") {
 
   sources = [ "path_utils.cc" ]
 
-  public_configs = [ "//flutter:config" ]
+  public_configs = [ "//:config" ]
 }
 
 if (enable_unittests) {
@@ -165,7 +165,7 @@ if (enable_unittests) {
       "//third_party/dart/runtime:libdart_jit",
     ]
 
-    public_configs = [ "//flutter:config" ]
+    public_configs = [ "//:config" ]
   }
 
   test_fixtures("common_cpp_fixtures") {
@@ -209,6 +209,6 @@ if (enable_unittests) {
       deps += [ ":common_cpp_accessibility" ]
     }
 
-    public_configs = [ "//flutter:config" ]
+    public_configs = [ "//:config" ]
   }
 }

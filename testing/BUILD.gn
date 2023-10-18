@@ -41,7 +41,7 @@ source_set("testing_lib") {
     "//third_party/googletest:gmock",
     "//third_party/googletest:gtest",
   ]
-  public_configs = [ "//flutter:config" ]
+  public_configs = [ "//:config" ]
 }
 
 source_set("testing") {

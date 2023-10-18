@@ -38,7 +38,7 @@ if (build_glfw_shell) {
 
     configs += [ ":disable_fatal_link_warnings" ]
 
-    public_configs = [ "//flutter:config" ]
+    public_configs = [ "//:config" ]
   }
 }
 
@@ -242,7 +242,7 @@ executable("flutter_linux_unittests") {
     "testing/mock_texture_registrar.cc",
   ]
 
-  public_configs = [ "//flutter:config" ]
+  public_configs = [ "//:config" ]
 
   configs += [ "//shell/platform/linux/config:gtk" ]
 
@@ -271,7 +271,7 @@ shared_library("flutter_linux_gtk") {
 
   ldflags = [ "-Wl,-rpath,\$ORIGIN" ]
 
-  public_configs = [ "//flutter:config" ]
+  public_configs = [ "//:config" ]
 }
 
 copy("publish_headers_linux") {

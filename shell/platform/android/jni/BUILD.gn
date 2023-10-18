@@ -11,7 +11,7 @@ source_set("jni") {
     "platform_view_android_jni.h",
   ]
 
-  public_configs = [ "//flutter:config" ]
+  public_configs = [ "//:config" ]
 
   deps = [
     "//flow",
@@ -27,7 +27,7 @@ source_set("jni_mock") {
 
   sources = [ "jni_mock.h" ]
 
-  public_configs = [ "//flutter:config" ]
+  public_configs = [ "//:config" ]
 
   deps = [ ":jni" ]
 }

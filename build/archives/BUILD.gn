@@ -96,11 +96,11 @@ if (build_engine_artifacts && !is_android) {
           destination = "libtessellator$dll"
         },
         {
-          source = "$root_gen_dir/flutter/lib/snapshot/isolate_snapshot.bin"
+          source = "$root_gen_dir/lib/snapshot/isolate_snapshot.bin"
           destination = "isolate_snapshot.bin"
         },
         {
-          source = "$root_gen_dir/flutter/lib/snapshot/vm_isolate_snapshot.bin"
+          source = "$root_gen_dir/lib/snapshot/vm_isolate_snapshot.bin"
           destination = "vm_isolate_snapshot.bin"
         },
         {
@@ -222,7 +222,7 @@ if (host_os == "win") {
   zip_bundle("windows_flutter") {
     output = "$full_target_platform_name-$flutter_runtime_mode/$full_target_platform_name-flutter.zip"
     deps = [
-      "//flutter:gen_snapshot",
+      "//:gen_snapshot",
       "//shell/platform/common:publish_headers",
       "//shell/platform/windows:flutter_windows",
       "//shell/platform/windows:publish_headers_windows",
@@ -296,7 +296,7 @@ if (is_mac) {
 
 if (host_os == "win") {
   zip_bundle("archive_win_gen_snapshot") {
-    deps = [ "//flutter:gen_snapshot" ]
+    deps = [ "//:gen_snapshot" ]
     output = "$full_target_platform_name-$flutter_runtime_mode/windows-x64.zip"
     files = [
       {

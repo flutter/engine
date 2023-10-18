@@ -20,7 +20,7 @@ source_set("benchmarking") {
   ]
 
   public_configs = [
-    "//flutter:config",
+    "//:config",
     ":benchmark_config",
   ]
 }
@@ -42,7 +42,7 @@ source_set("benchmarking_library") {
   public_deps = [ "//third_party/benchmark" ]
 
   public_configs = [
-    "//flutter:config",
+    "//:config",
     ":benchmark_config",
     ":benchmark_library_config",
   ]
