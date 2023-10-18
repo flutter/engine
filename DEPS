@@ -982,17 +982,6 @@ hooks = [
     'action': ['python3', 'src/build/vs_toolchain.py', 'update'],
   },
   {
-    # Ensure that we don't accidentally reference any .pyc files whose
-    # corresponding .py files have already been deleted.
-    'name': 'remove_stale_pyc_files',
-    'pattern': 'src/tools/.*\\.py',
-    'action': [
-        'python3',
-        'src/tools/remove_stale_pyc_files.py',
-        'src/tools',
-    ],
-  },
-  {
     'name': 'dia_dll',
     'pattern': '.',
     'condition': 'download_windows_deps',
