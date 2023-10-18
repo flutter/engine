@@ -440,10 +440,7 @@ class Shell final : public PlatformView::Delegate,
 
   // Infer the VM ref and the isolate snapshot based on the settings.
   //
-  // The inferred VM ref is returned, while the inferred isolate snapshot
-  // is assigned through the reference parameter.
-  //
-  // If the VM is already running, the settings are ignored, but the resulting
+  // If the VM is already running, the settings are ignored, but the returned
   // isolate snapshot always prioritize what is specified by the settings, and
   // falls back to the one VM was launched with.
   //
@@ -452,9 +449,8 @@ class Shell final : public PlatformView::Delegate,
   // TODO(dkwingsmt): Extracting this method is part of a bigger change. If the
   // entire change is not eventually landed, we should merge this method back
   // to Create. https://github.com/flutter/flutter/issues/136826
-  static DartVMRef InferVmInitDataFromSettings(
-      fml::RefPtr<const DartSnapshot>& out_isolate_snapshot,
-      Settings& settings);
+  static std::pair<DartVMRef, fml::RefPtr<const DartSnapshot>>
+  InferVmInitDataFromSettings(Settings& settings);
 
  private:
   using ServiceProtocolHandler =
