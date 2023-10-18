@@ -547,7 +547,8 @@ Rasterizer::DoDrawResult Rasterizer::DrawToSurfaces(
         fml::SyncSwitch::Handlers()
             .SetIfTrue([&] {
               result.status = DoDrawStatus::kGpuUnavailable;
-              frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now(), fml::TimePoint::CurrentWallTime());
+              frame_timings_recorder.RecordRasterStart(
+                  fml::TimePoint::Now(), fml::TimePoint::CurrentWallTime());
               frame_timings_recorder.RecordRasterEnd();
             })
             .SetIfFalse([&] {
@@ -586,7 +587,8 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
     }
   }
   if (tasks.empty()) {
-    frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now(), fml::TimePoint::CurrentWallTime());
+    frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now(),
+                                             fml::TimePoint::CurrentWallTime());
     frame_timings_recorder.RecordRasterEnd();
     return nullptr;
   }
@@ -613,7 +615,8 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
     }
   }
 
-  frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now(), fml::TimePoint::CurrentWallTime());
+  frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now(),
+                                           fml::TimePoint::CurrentWallTime());
 
   if (external_view_embedder_) {
     external_view_embedder_->OnRasterStart(frame_timings_recorder);

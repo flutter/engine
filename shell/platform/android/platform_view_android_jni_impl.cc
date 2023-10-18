@@ -1930,12 +1930,15 @@ void PlatformViewAndroidJNIImpl::OnRasterStart(
 
   env->CallVoidMethod(
       java_object.obj(), g_on_raster_start_method,
-      reinterpret_cast<jlong>(
-          frame_timings_recorder.GetBuildStartWallTime().ToEpochDelta().ToNanoseconds()),
-      reinterpret_cast<jlong>(
-          frame_timings_recorder.GetBuildEndWallTime().ToEpochDelta().ToNanoseconds()),
-      reinterpret_cast<jlong>(
-          frame_timings_recorder.GetRasterStartWallTime().ToEpochDelta().ToNanoseconds()));
+      reinterpret_cast<jlong>(frame_timings_recorder.GetBuildStartWallTime()
+                                  .ToEpochDelta()
+                                  .ToNanoseconds()),
+      reinterpret_cast<jlong>(frame_timings_recorder.GetBuildEndWallTime()
+                                  .ToEpochDelta()
+                                  .ToNanoseconds()),
+      reinterpret_cast<jlong>(frame_timings_recorder.GetRasterStartWallTime()
+                                  .ToEpochDelta()
+                                  .ToNanoseconds()));
   FML_CHECK(fml::jni::CheckException(env));
 }
 

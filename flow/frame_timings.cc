@@ -126,20 +126,26 @@ void FrameTimingsRecorder::RecordVsync(fml::TimePoint vsync_start,
   (void)status;
 }
 
-void FrameTimingsRecorder::RecordBuildStart(fml::TimePoint build_start, fml::TimePoint build_start_wall_time) {
+void FrameTimingsRecorder::RecordBuildStart(
+    fml::TimePoint build_start,
+    fml::TimePoint build_start_wall_time) {
   fml::Status status = RecordBuildStartImpl(build_start, build_start_wall_time);
   FML_DCHECK(status.ok());
   (void)status;
 }
 
-void FrameTimingsRecorder::RecordBuildEnd(fml::TimePoint build_end, fml::TimePoint build_end_wall_time) {
+void FrameTimingsRecorder::RecordBuildEnd(fml::TimePoint build_end,
+                                          fml::TimePoint build_end_wall_time) {
   fml::Status status = RecordBuildEndImpl(build_end, build_end_wall_time);
   FML_DCHECK(status.ok());
   (void)status;
 }
 
-void FrameTimingsRecorder::RecordRasterStart(fml::TimePoint raster_start, fml::TimePoint raster_start_wall_time) {
-  fml::Status status = RecordRasterStartImpl(raster_start, raster_start_wall_time);
+void FrameTimingsRecorder::RecordRasterStart(
+    fml::TimePoint raster_start,
+    fml::TimePoint raster_start_wall_time) {
+  fml::Status status =
+      RecordRasterStartImpl(raster_start, raster_start_wall_time);
   FML_DCHECK(status.ok());
   (void)status;
 }
@@ -158,7 +164,8 @@ fml::Status FrameTimingsRecorder::RecordVsyncImpl(fml::TimePoint vsync_start,
 }
 
 fml::Status FrameTimingsRecorder::RecordBuildStartImpl(
-    fml::TimePoint build_start, fml::TimePoint build_start_wall_time) {
+    fml::TimePoint build_start,
+    fml::TimePoint build_start_wall_time) {
   std::scoped_lock state_lock(state_mutex_);
   if (state_ != State::kVsync) {
     return fml::Status(fml::StatusCode::kFailedPrecondition,
@@ -170,7 +177,9 @@ fml::Status FrameTimingsRecorder::RecordBuildStartImpl(
   return fml::Status();
 }
 
-fml::Status FrameTimingsRecorder::RecordBuildEndImpl(fml::TimePoint build_end, fml::TimePoint build_end_wall_time) {
+fml::Status FrameTimingsRecorder::RecordBuildEndImpl(
+    fml::TimePoint build_end,
+    fml::TimePoint build_end_wall_time) {
   std::scoped_lock state_lock(state_mutex_);
   if (state_ != State::kBuildStart) {
     return fml::Status(fml::StatusCode::kFailedPrecondition,
@@ -183,7 +192,8 @@ fml::Status FrameTimingsRecorder::RecordBuildEndImpl(fml::TimePoint build_end, f
 }
 
 fml::Status FrameTimingsRecorder::RecordRasterStartImpl(
-    fml::TimePoint raster_start, fml::TimePoint raster_start_wall_time) {
+    fml::TimePoint raster_start,
+    fml::TimePoint raster_start_wall_time) {
   std::scoped_lock state_lock(state_mutex_);
   if (state_ != State::kBuildEnd) {
     return fml::Status(fml::StatusCode::kFailedPrecondition,

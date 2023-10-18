@@ -129,7 +129,8 @@ TEST(RasterizerTest, create) {
 }
 
 static std::unique_ptr<FrameTimingsRecorder> CreateFinishedBuildRecorder(
-    fml::TimePoint timestamp, fml::TimePoint wall_time) {
+    fml::TimePoint timestamp,
+    fml::TimePoint wall_time) {
   std::unique_ptr<FrameTimingsRecorder> recorder =
       std::make_unique<FrameTimingsRecorder>();
   recorder->RecordVsync(timestamp, timestamp);
@@ -139,7 +140,8 @@ static std::unique_ptr<FrameTimingsRecorder> CreateFinishedBuildRecorder(
 }
 
 static std::unique_ptr<FrameTimingsRecorder> CreateFinishedBuildRecorder() {
-  return CreateFinishedBuildRecorder(fml::TimePoint::Now(), fml::TimePoint::CurrentWallTime());
+  return CreateFinishedBuildRecorder(fml::TimePoint::Now(),
+                                     fml::TimePoint::CurrentWallTime());
 }
 
 TEST(RasterizerTest, drawEmptyPipeline) {

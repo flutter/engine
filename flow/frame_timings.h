@@ -99,13 +99,16 @@ class FrameTimingsRecorder {
   void RecordVsync(fml::TimePoint vsync_start, fml::TimePoint vsync_target);
 
   /// Records a build start event.
-  void RecordBuildStart(fml::TimePoint build_start, fml::TimePoint build_start_wall_time);
+  void RecordBuildStart(fml::TimePoint build_start,
+                        fml::TimePoint build_start_wall_time);
 
   /// Records a build end event.
-  void RecordBuildEnd(fml::TimePoint build_end, fml::TimePoint build_end_wall_time);
+  void RecordBuildEnd(fml::TimePoint build_end,
+                      fml::TimePoint build_end_wall_time);
 
   /// Records a raster start event.
-  void RecordRasterStart(fml::TimePoint raster_start, fml::TimePoint raster_start_wall_time);
+  void RecordRasterStart(fml::TimePoint raster_start,
+                         fml::TimePoint raster_start_wall_time);
 
   /// Clones the recorder until (and including) the specified state.
   std::unique_ptr<FrameTimingsRecorder> CloneUntil(State state);
@@ -139,9 +142,15 @@ class FrameTimingsRecorder {
 
   [[nodiscard]] fml::Status RecordVsyncImpl(fml::TimePoint vsync_start,
                                             fml::TimePoint vsync_target);
-  [[nodiscard]] fml::Status RecordBuildStartImpl(fml::TimePoint build_start, fml::TimePoint build_start_wall_time);
-  [[nodiscard]] fml::Status RecordBuildEndImpl(fml::TimePoint build_end, fml::TimePoint build_end_wall_time);
-  [[nodiscard]] fml::Status RecordRasterStartImpl(fml::TimePoint raster_start, fml::TimePoint raster_start_wall_time);
+  [[nodiscard]] fml::Status RecordBuildStartImpl(
+      fml::TimePoint build_start,
+      fml::TimePoint build_start_wall_time);
+  [[nodiscard]] fml::Status RecordBuildEndImpl(
+      fml::TimePoint build_end,
+      fml::TimePoint build_end_wall_time);
+  [[nodiscard]] fml::Status RecordRasterStartImpl(
+      fml::TimePoint raster_start,
+      fml::TimePoint raster_start_wall_time);
 
   static std::atomic<uint64_t> frame_number_gen_;
 
