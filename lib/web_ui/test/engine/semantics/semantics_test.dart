@@ -443,7 +443,7 @@ void _testEngineSemanticsOwner() {
     expectSemanticsTree('''
 <sem style="$rootSemanticStyle">
   <sem-c>
-    <a aria-label="Hello" style="display: block;"></a>
+    <a aria-label="Hello" role="button" style="display: block;"></a>
   </sem-c>
 </sem>''');
     expect(existingParent, tree[1]!.element.parent);

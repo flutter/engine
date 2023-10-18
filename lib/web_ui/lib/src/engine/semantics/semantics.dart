@@ -1545,7 +1545,7 @@ class SemanticsObject {
   void _updateRoles() {
     PrimaryRoleManager? currentPrimaryRole = primaryRole;
     final PrimaryRole roleId = _getPrimaryRoleIdentifier();
-    final DomElement? currentElement = primaryRole?.element;
+    final DomElement? previousElement = primaryRole?.element;
 
     if (currentPrimaryRole != null) {
       if (currentPrimaryRole.role == roleId) {
@@ -1574,16 +1574,15 @@ class SemanticsObject {
     }
 
     // Reparent element.
-    if (currentElement != element) {
+    if (previousElement != element) {
       final DomElement? container = _childContainerElement;
       if (container != null) {
-        container.remove();
         element.append(container);
       }
-      final DomElement? parent = currentElement?.parent;
+      final DomElement? parent = previousElement?.parent;
       if (parent != null) {
-        parent.insertBefore(element, currentElement);
-        currentElement!.remove();
+        parent.insertBefore(element, previousElement);
+        previousElement!.remove();
       }
     }
   }
