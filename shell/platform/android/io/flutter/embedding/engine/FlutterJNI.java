@@ -1560,8 +1560,7 @@ public class FlutterJNI {
      * @param buildEndTime Timestamp (in nanoseconds) when build process completed.
      * @param rasterStartTime Timestamp (in nanoseconds) when the rasterizer begin its rendering.
      */
-    void onRasterStart(
-        long buildStartTime, long buildEndTime, long rasterStartTime);
+    void onRasterStart(long buildStartTime, long buildEndTime, long rasterStartTime);
   }
 
   /**

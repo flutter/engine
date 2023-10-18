@@ -384,8 +384,7 @@ public class FlutterEngineTest {
     FlutterEngine flutterEngine = new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJNI);
     FlutterJNI.OnFrameTimeListener listener =
         new FlutterJNI.OnFrameTimeListener() {
-          public void onRasterStart(
-              long buildStart, long buildEnd, long rasterStart) {}
+          public void onRasterStart(long buildStart, long buildEnd, long rasterStart) {}
         };
 
     flutterEngine.addOnFrameTimeListener(listener);

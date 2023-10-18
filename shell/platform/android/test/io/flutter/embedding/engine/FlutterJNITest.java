@@ -263,8 +263,7 @@ public class FlutterJNITest {
     final long[] times = {-1, -1, -1};
     FlutterJNI.OnFrameTimeListener listener =
         new FlutterJNI.OnFrameTimeListener() {
-          public void onRasterStart(
-              long buildStartTime, long buildEndTime, long rasterStartTime) {
+          public void onRasterStart(long buildStartTime, long buildEndTime, long rasterStartTime) {
             times[0] = buildStartTime;
             times[1] = buildEndTime;
             times[2] = rasterStartTime;
