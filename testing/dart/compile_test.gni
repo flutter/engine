@@ -51,8 +51,11 @@ template("compile_flutter_dart_test") {
     rebase_path(snapshot_depfile),
     "--output-dill",
     rebase_path(invoker.dart_kernel, root_out_dir),
-    rebase_path(invoker.dart_file),
   ]
+  if (defined(invoker.extra_cfe_args)) {
+    common_args += invoker.extra_cfe_args
+  }
+  common_args += [ rebase_path(invoker.dart_file) ]
 
   if (flutter_prebuilt_dart_sdk) {
     action(target_name) {

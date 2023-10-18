@@ -48,9 +48,11 @@ tests = [
 ]
 
 foreach(test, tests) {
+  skia_gold_work_dir = rebase_path("$root_gen_dir/skia_gold_$test")
   compile_flutter_dart_test("compile_$test") {
     dart_file = test
     dart_kernel = "$root_gen_dir/$test.dill"
+    extra_cfe_args = [ "-DkSkiaGoldWorkDirectory=$skia_gold_work_dir" ]
     packages = ".dart_tool/package_config.json"
   }
 }
