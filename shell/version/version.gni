@@ -10,7 +10,7 @@ declare_args() {
   dart_version = ""
 }
 
-_flutter_root = "//flutter"
+_flutter_root = "//"
 
 if (engine_version == "") {
   engine_version_lines =
