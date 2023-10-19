@@ -895,21 +895,6 @@ bool EntityPass::OnRender(
     backdrop_entity.SetClipDepth(clip_depth_floor);
 
     render_element(backdrop_entity);
-  } else if (elements_.empty()) {
-    Entity clear_entity;
-    Color clear_color = GetClearColor();
-    clear_entity.SetContents(SolidColorContents::Make(
-        PathBuilder()
-            .AddRect({local_pass_position.x, local_pass_position.y,
-                      static_cast<Scalar>(clear_color_size.width),
-                      static_cast<Scalar>(clear_color_size.height)})
-            .TakePath(),
-        clear_color));
-    clear_entity.SetTransformation(
-        Matrix::MakeTranslation(Vector3(-local_pass_position)));
-    clear_entity.SetClipDepth(clip_depth_floor);
-
-    render_element(clear_entity);
   }
 
   bool is_collapsing_clear_colors = !collapsed_parent_pass &&
