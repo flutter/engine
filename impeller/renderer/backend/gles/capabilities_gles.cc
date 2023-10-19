@@ -167,6 +167,10 @@ bool CapabilitiesGLES::SupportsDeviceTransientTextures() const {
   return false;
 }
 
+bool CapabilitiesGLES::SupportsNativeAdvancedBlends() const {
+  return false;
+}
+
 PixelFormat CapabilitiesGLES::GetDefaultColorFormat() const {
   return PixelFormat::kR8G8B8A8UNormInt;
 }

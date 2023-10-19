@@ -460,6 +460,13 @@ struct ColorAttachmentDescriptor {
   BlendOperation alpha_blend_op = BlendOperation::kAdd;
   BlendFactor dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
 
+  /// @brief If the advanced blend override is specified, then all other fields
+  ///        are ignored.
+  ///
+  ///        This is only valid if the platform has native support for advanced
+  ///        blend modes.
+  std::optional<BlendMode> advanced_blend_override = std::nullopt;
+
   std::underlying_type_t<ColorWriteMask> write_mask =
       static_cast<uint64_t>(ColorWriteMask::kAll);
 
@@ -472,14 +479,15 @@ struct ColorAttachmentDescriptor {
            src_alpha_blend_factor == o.src_alpha_blend_factor &&  //
            alpha_blend_op == o.alpha_blend_op &&                  //
            dst_alpha_blend_factor == o.dst_alpha_blend_factor &&  //
-           write_mask == o.write_mask;
+           write_mask == o.write_mask &&                          //
+           advanced_blend_override == o.advanced_blend_override;
   }
 
   constexpr size_t Hash() const {
-    return fml::HashCombine(format, blending_enabled, src_color_blend_factor,
-                            color_blend_op, dst_color_blend_factor,
-                            src_alpha_blend_factor, alpha_blend_op,
-                            dst_alpha_blend_factor, write_mask);
+    return fml::HashCombine(
+        format, blending_enabled, src_color_blend_factor, color_blend_op,
+        dst_color_blend_factor, src_alpha_blend_factor, alpha_blend_op,
+        dst_alpha_blend_factor, write_mask, advanced_blend_override);
   }
 };
 

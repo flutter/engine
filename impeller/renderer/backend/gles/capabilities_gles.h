@@ -107,6 +107,9 @@ class CapabilitiesGLES final
   bool SupportsDeviceTransientTextures() const override;
 
   // |Capabilities|
+  bool SupportsNativeAdvancedBlends() const override;
+
+  // |Capabilities|
   PixelFormat GetDefaultColorFormat() const override;
 
   // |Capabilities|

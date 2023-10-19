@@ -68,6 +68,7 @@ static std::unique_ptr<Capabilities> InferMetalCapabilities(
       .SetSupportsReadFromResolve(true)
       .SetSupportsReadFromOnscreenTexture(true)
       .SetSupportsDeviceTransientTextures(true)
+      .SetSupportsNativeAdvancedBlends(false)
       .Build();
 }
 

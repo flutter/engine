@@ -79,6 +79,10 @@ class Capabilities {
   /// @brief  Whether the context backend supports `SamplerAddressMode::Decal`.
   virtual bool SupportsDecalSamplerAddressMode() const = 0;
 
+  /// @brief Whether the "non-pipeline" advanced blends are supported via
+  ///        Additional blend configuration.
+  virtual bool SupportsNativeAdvancedBlends() const = 0;
+
   /// @brief  Whether the context backend supports allocating
   ///         `StorageMode::kDeviceTransient` (aka "memoryless") textures, which
   ///         are temporary textures kept in tile memory for the duration of the
@@ -143,6 +147,8 @@ class CapabilitiesBuilder {
 
   CapabilitiesBuilder& SetSupportsDeviceTransientTextures(bool value);
 
+  CapabilitiesBuilder& SetSupportsNativeAdvancedBlends(bool value);
+
   std::unique_ptr<Capabilities> Build();
 
  private:
@@ -157,6 +163,7 @@ class CapabilitiesBuilder {
   bool supports_read_from_resolve_ = false;
   bool supports_decal_sampler_address_mode_ = false;
   bool supports_device_transient_textures_ = false;
+  bool supports_native_advanced_blends_ = false;
   std::optional<PixelFormat> default_color_format_ = std::nullopt;
   std::optional<PixelFormat> default_stencil_format_ = std::nullopt;
   std::optional<PixelFormat> default_depth_stencil_format_ = std::nullopt;

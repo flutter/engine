@@ -23,11 +23,12 @@ namespace impeller {
 void ContentContextOptions::ApplyToPipelineDescriptor(
     PipelineDescriptor& desc) const {
   auto pipeline_blend = blend_mode;
-  if (blend_mode > Entity::kLastPipelineBlendMode) {
-    VALIDATION_LOG << "Cannot use blend mode " << static_cast<int>(blend_mode)
-                   << " as a pipeline blend.";
-    pipeline_blend = BlendMode::kSourceOver;
-  }
+
+  // if (blend_mode > Entity::kLastPipelineBlendMode) {
+  //   VALIDATION_LOG << "Cannot use blend mode " << static_cast<int>(blend_mode)
+  //                  << " as a pipeline blend.";
+  //   pipeline_blend = BlendMode::kSourceOver;
+  // }
 
   desc.SetSampleCount(sample_count);
 
@@ -132,7 +133,9 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
       color0.src_color_blend_factor = BlendFactor::kZero;
       break;
     default:
-      FML_UNREACHABLE();
+      // This is an advanced blend, set the override.
+      color0.advanced_blend_override = blend_mode;
+      break;
   }
   desc.SetColorAttachmentDescriptor(0u, color0);
 
@@ -149,7 +152,6 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
   }
 
   desc.SetPrimitiveType(primitive_type);
-
   desc.SetPolygonMode(wireframe ? PolygonMode::kLine : PolygonMode::kFill);
 }
 

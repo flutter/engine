@@ -335,6 +335,14 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
   blend_state.setAttachments(attachment_blend_state);
   pipeline_info.setPColorBlendState(&blend_state);
 
+  vk::PipelineColorBlendAdvancedStateCreateInfoEXT state;
+  if (desc.GetColorAttachmentDescriptors().find(0u)->second.advanced_blend_override.has_value()) {
+    state.setBlendOverlap(vk::BlendOverlapEXT::eUncorrelated); // dunno
+    state.setSrcPremultiplied(true); // double check
+    state.setDstPremultiplied(true);
+    blend_state.pNext = &state;
+  }
+
   std::shared_ptr<DeviceHolder> strong_device = device_holder_.lock();
   if (!strong_device) {
     return nullptr;

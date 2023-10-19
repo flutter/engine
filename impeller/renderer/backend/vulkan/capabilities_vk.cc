@@ -455,6 +455,10 @@ bool CapabilitiesVK::SupportsDecalSamplerAddressMode() const {
   return true;
 }
 
+bool CapabilitiesVK::SupportsNativeAdvancedBlends() const {
+  return false;
+}
+
 // |Capabilities|
 bool CapabilitiesVK::SupportsDeviceTransientTextures() const {
   return supports_device_transient_textures_;

@@ -312,10 +312,12 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
 }
 
 uint32_t EntityPass::GetTotalPassReads(ContentContext& renderer) const {
-  return renderer.GetDeviceCapabilities().SupportsFramebufferFetch()
-             ? backdrop_filter_reads_from_pass_texture_
-             : backdrop_filter_reads_from_pass_texture_ +
-                   advanced_blend_reads_from_pass_texture_;
+  if (renderer.GetDeviceCapabilities().SupportsFramebufferFetch() ||
+      renderer.GetDeviceCapabilities().SupportsNativeAdvancedBlends()) {
+    return backdrop_filter_reads_from_pass_texture_;
+  }
+  return backdrop_filter_reads_from_pass_texture_ +
+         advanced_blend_reads_from_pass_texture_;
 }
 
 bool EntityPass::Render(ContentContext& renderer,
@@ -934,7 +936,11 @@ bool EntityPass::OnRender(
     ///
 
     if (result.entity.GetBlendMode() > Entity::kLastPipelineBlendMode) {
-      if (renderer.GetDeviceCapabilities().SupportsFramebufferFetch()) {
+      if (renderer.GetDeviceCapabilities().SupportsNativeAdvancedBlends()) {
+        // If native support for advanced blends is present, pass the entity
+        // through as-is.
+        continue;
+      } else if (renderer.GetDeviceCapabilities().SupportsFramebufferFetch()) {
         auto src_contents = result.entity.GetContents();
         auto contents = std::make_shared<FramebufferBlendContents>();
         contents->SetChildContents(src_contents);

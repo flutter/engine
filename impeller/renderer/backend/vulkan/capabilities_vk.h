@@ -91,6 +91,9 @@ class CapabilitiesVK final : public Capabilities,
   bool SupportsDeviceTransientTextures() const override;
 
   // |Capabilities|
+  bool SupportsNativeAdvancedBlends() const override;
+
+  // |Capabilities|
   PixelFormat GetDefaultColorFormat() const override;
 
   // |Capabilities|
