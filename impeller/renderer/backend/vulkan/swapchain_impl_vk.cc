@@ -4,12 +4,15 @@
 
 #include "impeller/renderer/backend/vulkan/swapchain_impl_vk.h"
 
+#include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
+#include "impeller/renderer/backend/vulkan/gpu_tracer_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_vk.h"
 #include "impeller/renderer/backend/vulkan/swapchain_image_vk.h"
+#include "impeller/renderer/context.h"
 #include "vulkan/vulkan_structs.hpp"
 
 namespace impeller {
@@ -142,6 +145,7 @@ SwapchainImplVK::SwapchainImplVK(
     vk::SwapchainKHR old_swapchain,
     vk::SurfaceTransformFlagBitsKHR last_transform) {
   if (!context) {
+    VALIDATION_LOG << "Cannot create a swapchain without a context.";
     return;
   }
 
@@ -396,6 +400,9 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
     return {};
   }
 
+  /// Record all subsequent cmd buffers as part of the current frame.
+  context.GetGPUTracer()->MarkFrameStart();
+
   auto image = images_[index % images_.size()];
   uint32_t image_index = index;
   return AcquireResult{SurfaceVK::WrapSwapchainImage(
@@ -420,6 +427,10 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
 
   const auto& context = ContextVK::Cast(*context_strong);
   const auto& sync = synchronizers_[current_frame_];
+
+  /// Record the approximate end of the GPU workload. This is intentionally
+  /// done before creating the final cmd buffer as that is not tracked.
+  context.GetGPUTracer()->MarkFrameEnd();
 
   //----------------------------------------------------------------------------
   /// Transition the image to color-attachment-optimal.

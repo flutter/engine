@@ -726,9 +726,10 @@ bool EntityPass::OnRender(
     VALIDATION_LOG << SPrintF("Pass context invalid (Depth=%d)", pass_depth);
     return false;
   }
+  auto clear_color_size = pass_target.GetRenderTarget().GetRenderTargetSize();
 
   if (!collapsed_parent_pass &&
-      !GetClearColor(root_pass_size).IsTransparent()) {
+      !GetClearColor(clear_color_size).IsTransparent()) {
     // Force the pass context to create at least one new pass if the clear color
     // is present.
     pass_context.GetRenderPass(pass_depth);
@@ -808,7 +809,8 @@ bool EntityPass::OnRender(
             ClipCoverageLayer{.coverage = clip_coverage.coverage,
                               .clip_depth = element_entity.GetClipDepth() + 1});
         FML_DCHECK(clip_coverage_stack.back().clip_depth ==
-                   clip_coverage_stack.size() - 1);
+                   clip_coverage_stack.front().clip_depth +
+                       clip_coverage_stack.size() - 1);
 
         if (!op.has_value()) {
           // Running this append op won't impact the clip buffer because the
@@ -823,20 +825,21 @@ bool EntityPass::OnRender(
           return true;
         }
 
-        auto restoration_depth = element_entity.GetClipDepth();
-        FML_DCHECK(restoration_depth < clip_coverage_stack.size());
+        auto restoration_index = element_entity.GetClipDepth() -
+                                 clip_coverage_stack.front().clip_depth;
+        FML_DCHECK(restoration_index < clip_coverage_stack.size());
 
         // We only need to restore the area that covers the coverage of the
         // clip rect at target depth + 1.
         std::optional<Rect> restore_coverage =
-            (restoration_depth + 1 < clip_coverage_stack.size())
-                ? clip_coverage_stack[restoration_depth + 1].coverage
+            (restoration_index + 1 < clip_coverage_stack.size())
+                ? clip_coverage_stack[restoration_index + 1].coverage
                 : std::nullopt;
         if (restore_coverage.has_value()) {
           // Make the coverage rectangle relative to the current pass.
           restore_coverage->origin -= global_pass_position;
         }
-        clip_coverage_stack.resize(restoration_depth + 1);
+        clip_coverage_stack.resize(restoration_index + 1);
 
         if (!clip_coverage_stack.back().coverage.has_value()) {
           // Running this restore op won't make anything renderable, so skip it.
@@ -897,7 +900,7 @@ bool EntityPass::OnRender(
     // Skip elements that are incorporated into the clear color.
     if (is_collapsing_clear_colors) {
       auto [entity_color, _] =
-          ElementAsBackgroundColor(element, root_pass_size);
+          ElementAsBackgroundColor(element, clear_color_size);
       if (entity_color.has_value()) {
         continue;
       }
