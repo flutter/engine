@@ -98,13 +98,13 @@ constexpr vk::BlendOp ToAdvancedVKBlendOp(BlendMode blend_mode) {
     case BlendMode::kMultiply:
       return vk::BlendOp::eMultiplyEXT;
     case BlendMode::kHue:
-      return vk::BlendOp::eHslHueEXT; // Is this right?
+      return vk::BlendOp::eHslHueEXT;  // Is this right?
     case BlendMode::kSaturation:
-      return vk::BlendOp::eHslSaturationEXT; // Is this right?
+      return vk::BlendOp::eHslSaturationEXT;  // Is this right?
     case BlendMode::kColor:
-      return vk::BlendOp::eHslColorEXT; // Is this right?
+      return vk::BlendOp::eHslColorEXT;  // Is this right?
     case BlendMode::kLuminosity:
-      return vk::BlendOp::eHslLuminosityEXT; // Is this right?
+      return vk::BlendOp::eHslLuminosityEXT;  // Is this right?
       break;
     default:
       break;
@@ -145,7 +145,8 @@ ToVKPipelineColorBlendAttachmentState(const ColorAttachmentDescriptor& desc) {
 
   res.setSrcColorBlendFactor(ToVKBlendFactor(desc.src_color_blend_factor));
   if (desc.advanced_blend_override.has_value()) {
-    res.setColorBlendOp(ToAdvancedVKBlendOp(desc.advanced_blend_override.value()));
+    res.setColorBlendOp(
+        ToAdvancedVKBlendOp(desc.advanced_blend_override.value()));
   } else {
     res.setColorBlendOp(ToVKBlendOp(desc.color_blend_op));
   }
@@ -154,7 +155,8 @@ ToVKPipelineColorBlendAttachmentState(const ColorAttachmentDescriptor& desc) {
   res.setSrcAlphaBlendFactor(ToVKBlendFactor(desc.src_alpha_blend_factor));
 
   if (desc.advanced_blend_override.has_value()) {
-    res.setAlphaBlendOp(ToAdvancedVKBlendOp(desc.advanced_blend_override.value()));
+    res.setAlphaBlendOp(
+        ToAdvancedVKBlendOp(desc.advanced_blend_override.value()));
   } else {
     res.setAlphaBlendOp(ToVKBlendOp(desc.alpha_blend_op));
   }

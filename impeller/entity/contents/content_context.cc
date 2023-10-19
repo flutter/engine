@@ -25,7 +25,8 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
   auto pipeline_blend = blend_mode;
 
   // if (blend_mode > Entity::kLastPipelineBlendMode) {
-  //   VALIDATION_LOG << "Cannot use blend mode " << static_cast<int>(blend_mode)
+  //   VALIDATION_LOG << "Cannot use blend mode " <<
+  //   static_cast<int>(blend_mode)
   //                  << " as a pipeline blend.";
   //   pipeline_blend = BlendMode::kSourceOver;
   // }
