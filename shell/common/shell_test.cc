@@ -382,5 +382,9 @@ size_t ShellTest::GetLiveTrackedPathCount(
       });
 }
 
+void ShellTest::TurnOffGPU(Shell* shell, bool value) {
+  shell->is_gpu_disabled_sync_switch_->SetSwitch(value);
+}
+
 }  // namespace testing
 }  // namespace flutter
