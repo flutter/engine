@@ -4,7 +4,6 @@
 ../../../.github
 ../../../.gitignore
 ../../../.gn
-../../../.ycm_extra_conf.py
 ../../../AUTHORS
 ../../../CODEOWNERS
 ../../../README.md
@@ -388,7 +387,6 @@
 ../../../flutter/sky/tools/create_xcframework.py
 ../../../flutter/sky/tools/dist_dart_pkg.py
 ../../../flutter/sky/tools/install_framework_headers.py
-../../../flutter/sky/tools/objcopy.py
 ../../../flutter/testing
 ../../../flutter/third_party/.clang-tidy
 ../../../flutter/third_party/.gitignore
@@ -446,6 +444,7 @@
 ../../../flutter/third_party/glfw/src/CMakeLists.txt
 ../../../flutter/third_party/glfw/tests
 ../../../flutter/third_party/gn
+../../../flutter/third_party/imgui
 ../../../flutter/third_party/ninja
 ../../../flutter/third_party/spring_animation/README.md
 ../../../flutter/third_party/test_shaders
@@ -742,7 +741,6 @@
 ../../../fuchsia/sdk/linux/pkg/zx/meta.json
 ../../../fuchsia/sdk/linux/tools
 ../../../fuchsia/sdk/linux/version_history.json
-../../../gpu/README.md
 ../../../out
 ../../../third_party/abseil-cpp/.git
 ../../../third_party/abseil-cpp/.github
@@ -1608,14 +1606,6 @@
 ../../../third_party/dart/runtime/observatory/tests
 ../../../third_party/dart/runtime/observatory/update_sources.py
 ../../../third_party/dart/runtime/observatory/web/third_party/README.md
-../../../third_party/dart/runtime/observatory_2/.gitignore
-../../../third_party/dart/runtime/observatory_2/HACKING.md
-../../../third_party/dart/runtime/observatory_2/analysis_options.yaml
-../../../third_party/dart/runtime/observatory_2/lib/src/elements/css/shared.css
-../../../third_party/dart/runtime/observatory_2/pubspec.yaml
-../../../third_party/dart/runtime/observatory_2/tests
-../../../third_party/dart/runtime/observatory_2/update_sources.py
-../../../third_party/dart/runtime/observatory_2/web/third_party/README.md
 ../../../third_party/dart/runtime/tests
 ../../../third_party/dart/runtime/third_party/binary_size
 ../../../third_party/dart/runtime/third_party/d3
@@ -2241,7 +2231,6 @@
 ../../../third_party/icu/source/tools/toolutil/sources.txt
 ../../../third_party/icu/source/tools/tzcode/Makefile.in
 ../../../third_party/icu/source/tools/tzcode/readme.txt
-../../../third_party/imgui
 ../../../third_party/inja/.clang-format
 ../../../third_party/inja/.git
 ../../../third_party/inja/.github
