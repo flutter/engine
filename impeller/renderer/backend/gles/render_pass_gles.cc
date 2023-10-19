@@ -154,7 +154,7 @@ struct RenderPassData {
   const auto& gl = reactor.GetProcTable();
 #ifdef IMPELLER_DEBUG
   tracer->MarkFrameStart(gl);
-#endif // IMPELLER_DEBUG
+#endif  // IMPELLER_DEBUG
 
   fml::ScopedCleanupClosure pop_pass_debug_marker(
       [&gl]() { gl.PopDebugGroup(); });
@@ -502,7 +502,7 @@ struct RenderPassData {
   if (is_default_fbo) {
     tracer->MarkFrameEnd(gl);
   }
-#endif // IMPELLER_DEBUG
+#endif  // IMPELLER_DEBUG
 
   return true;
 }

@@ -41,9 +41,7 @@ class ContextGLES final : public Context,
 
   bool RemoveReactorWorker(ReactorGLES::WorkerID id);
 
-  std::shared_ptr<GPUTracerGLES> GetGPUTracer() const {
-   return gpu_tracer_;
-  }
+  std::shared_ptr<GPUTracerGLES> GetGPUTracer() const { return gpu_tracer_; }
 
  private:
   ReactorGLES::Ref reactor_;
