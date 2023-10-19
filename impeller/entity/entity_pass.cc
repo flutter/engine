@@ -196,10 +196,6 @@ std::optional<Rect> EntityPass::GetElementsCoverage(
 std::optional<Rect> EntityPass::GetSubpassCoverage(
     const EntityPass& subpass,
     std::optional<Rect> coverage_limit) const {
-  if (!(subpass.GetClearColor() == Color::BlackTransparent())) {
-    return coverage_limit;
-  }
-
   std::shared_ptr<FilterContents> image_filter =
       subpass.delegate_->WithImageFilter(Rect(), subpass.xformation_);
 
@@ -208,18 +204,26 @@ std::optional<Rect> EntityPass::GetSubpassCoverage(
   // unsafe.
   coverage_limit = image_filter ? std::nullopt : coverage_limit;
 
-  auto entities_coverage = subpass.GetElementsCoverage(coverage_limit);
-  // The entities don't cover anything. There is nothing to do.
-  if (!entities_coverage.has_value()) {
-    return std::nullopt;
-  }
+  if (subpass.GetClearColor() == Color::BlackTransparent()) {
+    auto entities_coverage = subpass.GetElementsCoverage(coverage_limit);
+    // The entities don't cover anything. There is nothing to do.
+    if (!entities_coverage.has_value()) {
+      return std::nullopt;
+    }
 
-  if (!subpass.bounds_limit_.has_value()) {
-    return entities_coverage;
+    if (!subpass.bounds_limit_.has_value()) {
+      return entities_coverage;
+    }
+    auto user_bounds_coverage =
+        subpass.bounds_limit_->TransformBounds(subpass.xformation_);
+    return entities_coverage->Intersection(user_bounds_coverage);
+  } else {
+    if (subpass.bounds_limit_.has_value()) {
+      return subpass.bounds_limit_->TransformBounds(subpass.xformation_);
+    } else {
+      return coverage_limit;
+    }
   }
-  auto user_bounds_coverage =
-      subpass.bounds_limit_->TransformBounds(subpass.xformation_);
-  return entities_coverage->Intersection(user_bounds_coverage);
 }
 
 EntityPass* EntityPass::GetSuperpass() const {
