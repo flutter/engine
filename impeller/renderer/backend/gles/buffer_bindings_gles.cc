@@ -88,6 +88,9 @@ bool BufferBindingsGLES::ReadUniformsBindings(const ProcTableGLES& gl,
 
   GLint uniform_count = 0;
   gl.GetProgramiv(program, GL_ACTIVE_UNIFORMS, &uniform_count);
+
+  // Query the Program for all active uniform locations, and
+  // record this via normalized key.
   for (GLint i = 0; i < uniform_count; i++) {
     std::vector<GLchar> name;
     name.resize(max_name_size);
@@ -137,11 +140,10 @@ bool BufferBindingsGLES::BindVertexAttributes(const ProcTableGLES& gl,
   return true;
 }
 
-bool BufferBindingsGLES::BindUniformData(
-    const ProcTableGLES& gl,
-    Allocator& transients_allocator,
-    const Bindings& vertex_bindings,
-    const Bindings& fragment_bindings) const {
+bool BufferBindingsGLES::BindUniformData(const ProcTableGLES& gl,
+                                         Allocator& transients_allocator,
+                                         const Bindings& vertex_bindings,
+                                         const Bindings& fragment_bindings) {
   for (const auto& buffer : vertex_bindings.buffers) {
     if (!BindUniformBuffer(gl, transients_allocator, buffer.second.view)) {
       return false;
@@ -171,53 +173,58 @@ bool BufferBindingsGLES::UnbindVertexAttributes(const ProcTableGLES& gl) const {
   return true;
 }
 
-// Visible for testing.
-std::optional<GLint> BufferBindingsGLES::LookupUniformLocation(
-    const ShaderMetadata* metadata,
-    const ShaderStructMemberMetadata& member,
-    bool is_array) const {
-  auto maybe_location = member.location;
-  if (!maybe_location.has_value()) {
-    const auto member_key =
-        CreateUniformMemberKey(metadata->name, member.name, is_array);
-    const auto computed_location = uniform_locations_.find(member_key);
-    if (computed_location == uniform_locations_.end()) {
-      // The list of uniform locations only contains "active" uniforms that
-      // are not optimized out. So this situation is expected to happen when
-      // unused uniforms are present in the shader.
-      member.location = -1;
-      return std::nullopt;
-    }
-    auto location = computed_location->second;
-    member.location = computed_location->second;
-    return location;
+GLint BufferBindingsGLES::ComputeTextureLocation(
+    const ShaderMetadata* metadata) {
+  auto location = binding_map_.find(metadata->name);
+  if (location != binding_map_.end()) {
+    return location->second[0];
   }
-  // Uniform was optimized out, continue.
-  if (maybe_location.value() == -1) {
-    return std::nullopt;
+  auto& locations = binding_map_[metadata->name] = {};
+  auto computed_location =
+      uniform_locations_.find(CreateUniformMemberKey(metadata->name));
+  if (computed_location == uniform_locations_.end()) {
+    locations.push_back(-1);
+  } else {
+    locations.push_back(computed_location->second);
   }
-  return maybe_location.value();
+  return locations[0];
 }
 
-GLint BufferBindingsGLES::LookupTextureLocation(
-    const ShaderMetadata* metadata) const {
-  auto maybe_location = metadata->location;
-  if (!maybe_location.has_value()) {
-    const auto uniform_key = CreateUniformMemberKey(metadata->name);
-    auto uniform = uniform_locations_.find(uniform_key);
-    if (uniform == uniform_locations_.end()) {
-      VALIDATION_LOG << "Could not find uniform for key: " << uniform_key;
-      return false;
-    }
-    metadata->location = uniform->second;
-    return uniform->second;
+const std::vector<GLint>& BufferBindingsGLES::ComputeUniformLocations(
+    const ShaderMetadata* metadata) {
+  auto location = binding_map_.find(metadata->name);
+  if (location != binding_map_.end()) {
+    return location->second;
   }
-  return maybe_location.value();
+
+  // For each metadata member, look up the binding location and record
+  // it in the binding map.
+  auto& locations = binding_map_[metadata->name] = {};
+  for (const auto member : metadata->members) {
+    if (member.type == ShaderType::kVoid) {
+      // Void types are used for padding. We are obviously not going to find
+      // mappings for these. Keep going.
+      locations.push_back(-1);
+      continue;
+    }
+
+    size_t element_count = member.array_elements.value_or(1);
+    const auto member_key =
+        CreateUniformMemberKey(metadata->name, member.name, element_count > 1);
+    const auto computed_location = uniform_locations_.find(member_key);
+    if (computed_location == uniform_locations_.end()) {
+      // Uniform was not active.
+      locations.push_back(-1);
+      continue;
+    }
+    locations.push_back(computed_location->second);
+  }
+  return locations;
 }
 
 bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
                                            Allocator& transients_allocator,
-                                           const BufferResource& buffer) const {
+                                           const BufferResource& buffer) {
   const auto* metadata = buffer.GetMetadata();
   auto device_buffer =
       buffer.resource.buffer->GetDeviceBuffer(transients_allocator);
@@ -236,31 +243,24 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
     return false;
   }
 
-  for (const auto& member : metadata->members) {
-    if (member.type == ShaderType::kVoid) {
-      // Void types are used for padding. We are obviously not going to find
-      // mappings for these. Keep going.
+  const auto& locations = ComputeUniformLocations(metadata);
+  for (auto i = 0u; i < metadata->members.size(); i++) {
+    const auto& member = metadata->members[i];
+    auto location = locations[i];
+    if (location == -1) {
       continue;
     }
 
     size_t element_count = member.array_elements.value_or(1);
-
-    auto maybe_location =
-        LookupUniformLocation(metadata, member, element_count > 1);
-    if (!maybe_location.has_value()) {
-      continue;
-    }
-    auto location = maybe_location.value();
-
     size_t element_stride = member.byte_length / element_count;
     auto* buffer_data =
         reinterpret_cast<const GLfloat*>(buffer_ptr + member.offset);
 
     std::vector<uint8_t> array_element_buffer;
     if (element_count > 1) {
-      // When binding uniform arrays, the elements must be contiguous. Copy the
-      // uniforms to a temp buffer to eliminate any padding needed by the other
-      // backends.
+      // When binding uniform arrays, the elements must be contiguous. Copy
+      // the uniforms to a temp buffer to eliminate any padding needed by the
+      // other backends.
       array_element_buffer.resize(member.size * element_count);
       for (size_t element_i = 0; element_i < element_count; element_i++) {
         std::memcpy(array_element_buffer.data() + element_i * member.size,
@@ -335,7 +335,7 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
 
 bool BufferBindingsGLES::BindTextures(const ProcTableGLES& gl,
                                       const Bindings& bindings,
-                                      ShaderStage stage) const {
+                                      ShaderStage stage) {
   size_t active_index = 0;
   for (const auto& data : bindings.sampled_images) {
     const auto& texture_gles = TextureGLES::Cast(*data.second.texture.resource);
@@ -344,7 +344,10 @@ bool BufferBindingsGLES::BindTextures(const ProcTableGLES& gl,
       return false;
     }
 
-    GLint location = LookupTextureLocation(data.second.texture.GetMetadata());
+    auto location = ComputeTextureLocation(data.second.texture.GetMetadata());
+    if (location == -1) {
+      return false;
+    }
 
     //--------------------------------------------------------------------------
     /// Set the active texture unit.

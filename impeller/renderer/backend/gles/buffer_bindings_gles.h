@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <map>
+#include <unordered_map>
 #include <vector>
 
 #include "flutter/fml/macros.h"
@@ -38,23 +38,9 @@ class BufferBindingsGLES {
   bool BindUniformData(const ProcTableGLES& gl,
                        Allocator& transients_allocator,
                        const Bindings& vertex_bindings,
-                       const Bindings& fragment_bindings) const;
+                       const Bindings& fragment_bindings);
 
   bool UnbindVertexAttributes(const ProcTableGLES& gl) const;
-
-  // Visible for testing.
-  std::optional<GLint> LookupUniformLocation(
-      const ShaderMetadata* metadata,
-      const ShaderStructMemberMetadata& member,
-      bool is_array) const;
-
-  // Visible for testing.
-  GLint LookupTextureLocation(const ShaderMetadata* metadata) const;
-
-  // Visible for testing.
-  std::map<std::string, GLint>& GetUniformLocationsForTesting() {
-    return uniform_locations_;
-  }
 
  private:
   //----------------------------------------------------------------------------
@@ -69,15 +55,24 @@ class BufferBindingsGLES {
     GLsizei offset = 0u;
   };
   std::vector<VertexAttribPointer> vertex_attrib_arrays_;
-  std::map<std::string, GLint> uniform_locations_;
+
+  std::unordered_map<std::string, GLint> uniform_locations_;
+
+  using BindingMap = std::unordered_map<std::string, std::vector<GLint>>;
+  BindingMap binding_map_ = {};
+
+  const std::vector<GLint>& ComputeUniformLocations(
+      const ShaderMetadata* metadata);
+
+  GLint ComputeTextureLocation(const ShaderMetadata* metadata);
 
   bool BindUniformBuffer(const ProcTableGLES& gl,
                          Allocator& transients_allocator,
-                         const BufferResource& buffer) const;
+                         const BufferResource& buffer);
 
   bool BindTextures(const ProcTableGLES& gl,
                     const Bindings& bindings,
-                    ShaderStage stage) const;
+                    ShaderStage stage);
 
   FML_DISALLOW_COPY_AND_ASSIGN(BufferBindingsGLES);
 };
