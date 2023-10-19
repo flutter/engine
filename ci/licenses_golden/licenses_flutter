@@ -1617,6 +1617,7 @@ ORIGIN: ../../../flutter/fml/shared_thread_merger.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/shared_thread_merger.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/size.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/status.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/fml/status_or.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/string_conversion.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/string_conversion.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/synchronization/atomic_object.h + ../../../flutter/LICENSE
@@ -2127,6 +2128,8 @@ ORIGIN: ../../../flutter/impeller/renderer/backend/metal/device_buffer_mtl.h + .
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/device_buffer_mtl.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/formats_mtl.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/formats_mtl.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/metal/gpu_tracer_mtl.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/metal/gpu_tracer_mtl.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/pipeline_library_mtl.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/pipeline_library_mtl.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/pipeline_mtl.h + ../../../flutter/LICENSE
@@ -2184,6 +2187,8 @@ ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/fence_waiter_vk.cc + .
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/fence_waiter_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/formats_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/formats_vk.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/gpu_tracer_vk.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/gpu_tracer_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/pass_bindings_cache.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/pass_bindings_cache.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_cache_vk.cc + ../../../flutter/LICENSE
@@ -3091,6 +3096,7 @@ ORIGIN: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/syst
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/NavigationChannel.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformChannel.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformViewsChannel.java + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/ProcessTextChannel.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/RestorationChannel.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/SpellCheckChannel.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/SystemChannel.java + ../../../flutter/LICENSE
@@ -3133,6 +3139,7 @@ ORIGIN: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/Platf
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsController.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/SingleViewPresentation.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/VirtualDisplayController.java + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/android/io/flutter/plugin/text/ProcessTextPlugin.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/util/HandlerCompat.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/util/PathUtils.java + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/io/flutter/util/Preconditions.java + ../../../flutter/LICENSE
@@ -3498,6 +3505,7 @@ ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterVie
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewTest.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/KeyCodeMap.g.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/KeyCodeMap_Internal.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/NSView+ClipsToBounds.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/TestFlutterPlatformView.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/TestFlutterPlatformView.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder.cc + ../../../flutter/LICENSE
@@ -4377,6 +4385,7 @@ FILE: ../../../flutter/fml/shared_thread_merger.cc
 FILE: ../../../flutter/fml/shared_thread_merger.h
 FILE: ../../../flutter/fml/size.h
 FILE: ../../../flutter/fml/status.h
+FILE: ../../../flutter/fml/status_or.h
 FILE: ../../../flutter/fml/string_conversion.cc
 FILE: ../../../flutter/fml/string_conversion.h
 FILE: ../../../flutter/fml/synchronization/atomic_object.h
@@ -4887,6 +4896,8 @@ FILE: ../../../flutter/impeller/renderer/backend/metal/device_buffer_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/device_buffer_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/formats_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/formats_mtl.mm
+FILE: ../../../flutter/impeller/renderer/backend/metal/gpu_tracer_mtl.h
+FILE: ../../../flutter/impeller/renderer/backend/metal/gpu_tracer_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/pipeline_library_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/pipeline_library_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/pipeline_mtl.h
@@ -4944,6 +4955,8 @@ FILE: ../../../flutter/impeller/renderer/backend/vulkan/fence_waiter_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/fence_waiter_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/formats_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/formats_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/gpu_tracer_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/gpu_tracer_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/limits_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/pass_bindings_cache.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/pass_bindings_cache.h
@@ -5862,6 +5875,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/system
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/NavigationChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformViewsChannel.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/ProcessTextChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/RestorationChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/SettingsChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/SpellCheckChannel.java
@@ -5909,6 +5923,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/Platfor
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/SingleViewPresentation.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/SurfaceTexturePlatformViewRenderTarget.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/VirtualDisplayController.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/text/ProcessTextPlugin.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/util/HandlerCompat.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/util/PathUtils.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/util/Preconditions.java
@@ -6278,6 +6293,7 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewP
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/KeyCodeMap.g.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/KeyCodeMap_Internal.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/NSView+ClipsToBounds.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/TestFlutterPlatformView.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/TestFlutterPlatformView.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/module.modulemap
