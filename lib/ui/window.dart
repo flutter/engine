@@ -355,7 +355,7 @@ class FlutterView {
   ///   painting.
   void render(Scene scene) {
     // Duplicated calls or calls outside of onBeginFrame/onDrawFrame (indicated
-    // by _renderedViews being null) are ignored. See _debugRenderedViews.
+    // by _debugRenderedViews being null) are ignored. See _debugRenderedViews.
     bool validRender = true;
     assert(() {
       validRender = platformDispatcher._debugRenderedViews?.add(this) ?? false;
