@@ -16,17 +16,17 @@ abstract class PictureRenderer {
   FutureOr<DomImageBitmap> renderPicture(ScenePicture picture);
 }
 
-class SceneRender {
-  SceneRender(this.scene, this.completer) {
+class _SceneRender {
+  _SceneRender(this.scene, this._completer) {
     scene.beginRender();
   }
 
   final EngineScene scene;
-  final Completer<void> completer;
+  final Completer<void> _completer;
 
   void done() {
     scene.endRender();
-    completer.complete();
+    _completer.complete();
   }
 }
 
@@ -44,31 +44,31 @@ class EngineSceneView {
 
   List<SliceContainer> containers = <SliceContainer>[];
 
-  SceneRender? currentRender;
-  SceneRender? nextRender;
+  _SceneRender? _currentRender;
+  _SceneRender? _nextRender;
 
   Future<void> renderScene(EngineScene scene) {
-    if (currentRender != null) {
+    if (_currentRender != null) {
       // If a scene is already queued up, drop it and queue this one up instead
       // so that the scene view always displays the most recently requested scene.
-      nextRender?.done();
+      _nextRender?.done();
       final Completer<void> completer = Completer<void>();
-      nextRender = SceneRender(scene, completer);
+      _nextRender = _SceneRender(scene, completer);
       return completer.future;
     }
     final Completer<void> completer = Completer<void>();
-    currentRender = SceneRender(scene, completer);
+    _currentRender = _SceneRender(scene, completer);
     _kickRenderLoop();
     return completer.future;
   }
 
   Future<void> _kickRenderLoop() async {
-    final SceneRender current = currentRender!;
+    final _SceneRender current = _currentRender!;
     await _renderScene(current.scene);
     current.done();
-    currentRender = nextRender;
-    nextRender = null;
-    if (currentRender == null) {
+    _currentRender = _nextRender;
+    _nextRender = null;
+    if (_currentRender == null) {
       return;
     } else {
       return _kickRenderLoop();
