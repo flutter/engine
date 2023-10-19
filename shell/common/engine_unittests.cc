@@ -599,11 +599,10 @@ TEST_F(EngineTest, AnimatorAcceptsMultipleRenders) {
         });
       }));
 
-  fml::AutoResetWaitableEvent callback_ready_latch;
+  static fml::AutoResetWaitableEvent callback_ready_latch;
+  callback_ready_latch.Reset();
   AddNativeCallback("NotifyNative",
-                    CREATE_NATIVE_ENTRY([&callback_ready_latch](auto args) {
-                      callback_ready_latch.Signal();
-                    }));
+                    [](auto args) { callback_ready_latch.Signal(); });
 
   std::unique_ptr<Animator> animator;
   PostSync(task_runners_.GetUITaskRunner(),
