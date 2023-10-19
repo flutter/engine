@@ -308,21 +308,28 @@ class PlatformDispatcher {
     _invoke(onMetricsChanged, _onMetricsChangedZone);
   }
 
-  // [FlutterView]s for which [FlutterView.render] has already been called
-  // during the current [onBeginFrame]/[onDrawFrame] callback sequence.
+  // A debug-only variable that stores the [FlutterView]s for which
+  // [FlutterView.render] has already been called during the current
+  // [onBeginFrame]/[onDrawFrame] callback sequence.
   //
-  // The field is null outside the scope of those callbacks indicating that
-  // calls to [FlutterView.render] must be ignored. Furthermore, if a given
-  // [FlutterView] is already present in this set when its [FlutterView.render]
-  // is called again, that call must be ignored as a duplicate.
+  // It is null outside the scope of those callbacks indicating that calls to
+  // [FlutterView.render] must be ignored. Furthermore, if a given [FlutterView]
+  // is already present in this set when its [FlutterView.render] is called
+  // again, that call must be ignored as a duplicate.
   //
   // Between [onBeginFrame] and [onDrawFrame] the properties value is
   // temporarily stored in `_renderedViewsBetweenCallbacks` so that it survives
   // the gap between the two callbacks.
-  Set<FlutterView>? _renderedViews;
-  // Temporary storage of the `_renderedViews` value between `_beginFrame` and
-  // `_drawFrame`.
-  Set<FlutterView>? _renderedViewsBetweenCallbacks;
+  //
+  // In release build, this variable is null, and therefore the calling rule is
+  // not enforced. This is because the check might hurt cold startup delay;
+  // see https://github.com/flutter/engine/pull/46919.
+  Set<FlutterView>? _debugRenderedViews;
+  // A debug-only variable that temporarily stores the `_renderedViews` value
+  // between `_beginFrame` and `_drawFrame`.
+  //
+  // In release build, this variable is null.
+  Set<FlutterView>? _debugRenderedViewsBetweenCallbacks;
 
   /// A callback invoked when any view begins a frame.
   ///
@@ -344,20 +351,26 @@ class PlatformDispatcher {
 
   // Called from the engine, via hooks.dart
   void _beginFrame(int microseconds) {
-    assert(_renderedViews == null);
-    assert(_renderedViewsBetweenCallbacks == null);
+    assert(_debugRenderedViews == null);
+    assert(_debugRenderedViewsBetweenCallbacks == null);
+    assert(() {
+      _debugRenderedViews = <FlutterView>{};
+      return true;
+    }());
 
-    _renderedViews = <FlutterView>{};
     _invoke1<Duration>(
       onBeginFrame,
       _onBeginFrameZone,
       Duration(microseconds: microseconds),
     );
-    _renderedViewsBetweenCallbacks = _renderedViews;
-    _renderedViews = null;
 
-    assert(_renderedViews == null);
-    assert(_renderedViewsBetweenCallbacks != null);
+    assert(_debugRenderedViews != null);
+    assert(_debugRenderedViewsBetweenCallbacks == null);
+    assert(() {
+      _debugRenderedViewsBetweenCallbacks = _debugRenderedViews;
+      _debugRenderedViews = null;
+      return true;
+    }());
   }
 
   /// A callback that is invoked for each frame after [onBeginFrame] has
@@ -375,16 +388,22 @@ class PlatformDispatcher {
 
   // Called from the engine, via hooks.dart
   void _drawFrame() {
-    assert(_renderedViews == null);
-    assert(_renderedViewsBetweenCallbacks != null);
+    assert(_debugRenderedViews == null);
+    assert(_debugRenderedViewsBetweenCallbacks != null);
+    assert(() {
+      _debugRenderedViews = _debugRenderedViewsBetweenCallbacks;
+      _debugRenderedViewsBetweenCallbacks = null;
+      return true;
+    }());
 
-    _renderedViews = _renderedViewsBetweenCallbacks;
-    _renderedViewsBetweenCallbacks = null;
     _invoke(onDrawFrame, _onDrawFrameZone);
-    _renderedViews = null;
 
-    assert(_renderedViews == null);
-    assert(_renderedViewsBetweenCallbacks == null);
+    assert(_debugRenderedViews != null);
+    assert(_debugRenderedViewsBetweenCallbacks == null);
+    assert(() {
+      _debugRenderedViews = null;
+      return true;
+    }());
   }
 
   /// A callback that is invoked when pointer data is available.

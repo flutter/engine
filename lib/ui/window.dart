@@ -327,21 +327,14 @@ class FlutterView {
 
   /// Updates the view's rendering on the GPU with the newly provided [Scene].
   ///
-  /// ## Requirement for calling this method
-  ///
-  /// This method must be called within the synchronous scope of the
+  /// This function must be called within the scope of the
   /// [PlatformDispatcher.onBeginFrame] or [PlatformDispatcher.onDrawFrame]
-  /// callbacks. Calls out of this scope will be ignored. To use this method,
-  /// create a callback that calls this method instead, and assign it to either
-  /// of the fields above; then schedule a frame, which is done typically with
-  /// [PlatformDispatcher.scheduleFrame]. Also, make sure the callback does not
-  /// have `await` before the `FlutterWindow.render` call.
+  /// callbacks being invoked.
   ///
-  /// Additionally, this method can only be called once for each view during a
-  /// single [PlatformDispatcher.onBeginFrame]/[PlatformDispatcher.onDrawFrame]
-  /// callback sequence. Duplicate calls will be ignored in production.
-  ///
-  /// ## How to record a scene
+  /// If this function is called a second time during a single
+  /// [PlatformDispatcher.onBeginFrame]/[PlatformDispatcher.onDrawFrame]
+  /// callback sequence or called outside the scope of those callbacks, the call
+  /// will be ignored.
   ///
   /// To record graphical operations, first create a [PictureRecorder], then
   /// construct a [Canvas], passing that [PictureRecorder] to its constructor.
@@ -361,12 +354,16 @@ class FlutterView {
   /// * [RendererBinding], the Flutter framework class which manages layout and
   ///   painting.
   void render(Scene scene) {
-    if (platformDispatcher._renderedViews?.add(this) != true) {
-      // Duplicated calls or calls outside of onBeginFrame/onDrawFrame
-      // (indicated by _renderedViews being null) are ignored, as documented.
-      return;
+    // Duplicated calls or calls outside of onBeginFrame/onDrawFrame (indicated
+    // by _debugRenderedViews being null) are ignored. See _debugRenderedViews.
+    bool validRender = true;
+    assert(() {
+      validRender = platformDispatcher._debugRenderedViews?.add(this) ?? false;
+      return true;
+    }());
+    if (validRender) {
+      _render(viewId, scene as _NativeScene);
     }
-    _render(viewId, scene as _NativeScene);
   }
 
   @Native<Void Function(Int64, Pointer<Void>)>(symbol: 'PlatformConfigurationNativeApi::Render')
