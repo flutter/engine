@@ -80,7 +80,12 @@ SKWASM_EXPORT int paragraph_getLineNumberAt(Paragraph* paragraph,
 SKWASM_EXPORT LineMetrics* paragraph_getLineMetricsAtIndex(Paragraph* paragraph,
                                                            size_t lineNumber) {
   auto metrics = new LineMetrics();
-  return paragraph->getLineMetricsAt(lineNumber, metrics) ? metrics : nullptr;
+  if (paragraph->getLineMetricsAt(lineNumber, metrics)) {
+    return metrics;
+  } else {
+    delete metrics;
+    return nullptr;
+  }
 }
 
 struct TextBoxList {
