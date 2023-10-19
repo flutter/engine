@@ -19,6 +19,7 @@ class EntityPass;
 class EntityPassDelegate {
  public:
   static std::unique_ptr<EntityPassDelegate> MakeDefault();
+  static constexpr Color kDefaultColor = Color::BlackTransparent();
 
   EntityPassDelegate();
 
@@ -37,6 +38,8 @@ class EntityPassDelegate {
   virtual std::shared_ptr<FilterContents> WithImageFilter(
       const FilterInput::Variant& input,
       const Matrix& effect_transform) const = 0;
+
+  virtual const Color& GetColor() const { return kDefaultColor; }
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(EntityPassDelegate);

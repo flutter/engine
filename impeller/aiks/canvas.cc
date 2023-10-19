@@ -542,7 +542,6 @@ void Canvas::SaveLayer(const Paint& paint,
 
   auto& new_layer_pass = GetCurrentPass();
   new_layer_pass.SetBoundsLimit(bounds);
-  new_layer_pass.SetClearColor(paint.color);
 
   // Only apply opacity peephole on default blending.
   if (paint.blend_mode == BlendMode::kSourceOver) {

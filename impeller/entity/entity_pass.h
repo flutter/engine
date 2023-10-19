@@ -137,8 +137,6 @@ class EntityPass {
 
   Color GetClearColor(ISize size = ISize::Infinite()) const;
 
-  void SetClearColor(const Color& color);
-
   void SetBackdropFilter(BackdropFilterProc proc);
 
   void SetEnableOffscreenCheckerboard(bool enabled);
@@ -300,8 +298,6 @@ class EntityPass {
 
   std::shared_ptr<EntityPassDelegate> delegate_ =
       EntityPassDelegate::MakeDefault();
-
-  Color clear_color_ = Color::BlackTransparent();
 
   FML_DISALLOW_COPY_AND_ASSIGN(EntityPass);
 };

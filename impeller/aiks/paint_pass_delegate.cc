@@ -55,6 +55,10 @@ std::shared_ptr<FilterContents> PaintPassDelegate::WithImageFilter(
                                 Entity::RenderingMode::kSubpass);
 }
 
+const Color& PaintPassDelegate::GetColor() const {
+  return paint_.color;
+}
+
 /// OpacityPeepholePassDelegate
 /// ----------------------------------------------
 
@@ -154,6 +158,10 @@ std::shared_ptr<FilterContents> OpacityPeepholePassDelegate::WithImageFilter(
     const Matrix& effect_transform) const {
   return paint_.WithImageFilter(input, effect_transform,
                                 Entity::RenderingMode::kSubpass);
+}
+
+const Color& OpacityPeepholePassDelegate::GetColor() const {
+  return paint_.color;
 }
 
 }  // namespace impeller

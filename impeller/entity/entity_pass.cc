@@ -1153,7 +1153,7 @@ void EntityPass::SetBlendMode(BlendMode blend_mode) {
 }
 
 Color EntityPass::GetClearColor(ISize target_size) const {
-  Color result = clear_color_;
+  Color result = delegate_->GetColor();
   if (backdrop_filter_proc_) {
     return result;
   }
@@ -1167,10 +1167,6 @@ Color EntityPass::GetClearColor(ISize target_size) const {
     result = result.Blend(entity_color.value(), blend_mode);
   }
   return result.Premultiply();
-}
-
-void EntityPass::SetClearColor(const Color& color) {
-  clear_color_ = color;
 }
 
 void EntityPass::SetBackdropFilter(BackdropFilterProc proc) {

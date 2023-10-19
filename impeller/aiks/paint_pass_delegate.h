@@ -37,6 +37,8 @@ class PaintPassDelegate final : public EntityPassDelegate {
       const FilterInput::Variant& input,
       const Matrix& effect_transform) const override;
 
+  const Color& GetColor() const override;
+
  private:
   const Paint paint_;
 
@@ -70,6 +72,8 @@ class OpacityPeepholePassDelegate final : public EntityPassDelegate {
   std::shared_ptr<FilterContents> WithImageFilter(
       const FilterInput::Variant& input,
       const Matrix& effect_transform) const override;
+
+  const Color& GetColor() const override;
 
  private:
   const Paint paint_;
