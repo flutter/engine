@@ -255,9 +255,9 @@ class EngineContext {
   using EngineCallback = std::function<void(Engine&)>;
 
   [[nodiscard]] static std::unique_ptr<EngineContext> Create(
-      Engine::Delegate& delegate,  //
-      Settings settings,           //
-      TaskRunners task_runners,    //
+      Engine::Delegate& delegate,       //
+      Settings settings,                //
+      const TaskRunners& task_runners,  //
       std::unique_ptr<Animator> animator) {
     auto [vm, isolate_snapshot] = Shell::InferVmInitDataFromSettings(settings);
     FML_CHECK(vm) << "Must be able to initialize the VM.";
@@ -300,7 +300,7 @@ class EngineContext {
  private:
   EngineContext(Engine::Delegate& delegate,          //
                 Settings settings,                   //
-                TaskRunners task_runners,            //
+                const TaskRunners& task_runners,     //
                 std::unique_ptr<Animator> animator,  //
                 DartVMRef vm,                        //
                 fml::RefPtr<const DartSnapshot> isolate_snapshot)
