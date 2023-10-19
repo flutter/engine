@@ -50,6 +50,7 @@ void GPUTracerGLES::ProcessQueries(const ProcTableGLES& gl) {
 
   // For reasons unknown to me, querying the state of more than
   // on query object per frame causes crashes on a Pixel 6 pro.
+  // It does not crash on an S10.
   auto latest_query = pending_traces_.front();
 
   // First check if the query is complete without blocking
@@ -60,19 +61,20 @@ void GPUTracerGLES::ProcessQueries(const ProcTableGLES& gl) {
   gl.GetQueryObjectuivEXT(latest_query, GL_QUERY_RESULT_AVAILABLE_EXT,
                           &available);
 
-  if (available == GL_TRUE) {
-    // Return the timer resolution in nanoseconds.
-    uint64_t duration = 0;
-    gl.GetQueryObjectui64vEXT(latest_query, GL_QUERY_RESULT_EXT, &duration);
-    auto gpu_ms = duration / 1000000.0;
-
-    FML_TRACE_COUNTER("flutter", "GPUTracer",
-                      reinterpret_cast<int64_t>(this),  // Trace Counter ID
-                      "FrameTimeMS", gpu_ms);
-
-    gl.DeleteQueriesEXT(1, &latest_query);
-    pending_traces_.pop_front();
+  if (available != GL_TRUE) {
+    return;
   }
+  // Return the timer resolution in nanoseconds.
+  uint64_t duration = 0;
+  gl.GetQueryObjectui64vEXT(latest_query, GL_QUERY_RESULT_EXT, &duration);
+  auto gpu_ms = duration / 1000000.0;
+
+  FML_TRACE_COUNTER("flutter", "GPUTracer",
+                    reinterpret_cast<int64_t>(this),  // Trace Counter ID
+                    "FrameTimeMS", gpu_ms);
+
+  gl.DeleteQueriesEXT(1, &latest_query);
+  pending_traces_.pop_front();
 }
 
 void GPUTracerGLES::MarkFrameEnd(const ProcTableGLES& gl) {
