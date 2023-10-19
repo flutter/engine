@@ -353,7 +353,18 @@ class FlutterView {
   ///   scheduling of frames.
   /// * [RendererBinding], the Flutter framework class which manages layout and
   ///   painting.
-  void render(Scene scene) => _render(scene as _NativeScene);
+  void render(Scene scene) {
+    // Duplicated calls or calls outside of onBeginFrame/onDrawFrame (indicated
+    // by _renderedViews being null) are ignored. See _debugRenderedViews.
+    bool invalidRender = false;
+    assert(() {
+      invalidRender = platformDispatcher._debugRenderedViews?.add(this) ?? true;
+      return true;
+    }());
+    if (!invalidRender) {
+      _render(scene as _NativeScene);
+    }
+  }
 
   @Native<Void Function(Pointer<Void>)>(symbol: 'PlatformConfigurationNativeApi::Render')
   external static void _render(_NativeScene scene);
