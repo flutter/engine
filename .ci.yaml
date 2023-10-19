@@ -293,6 +293,10 @@ targets:
       add_recipes_cq: "true"
       release_build: "true"
       config_name: linux_host_engine
+      dependencies: >-
+        [
+          {"dependency": "goldctl", "version": "git_revision:f808dcff91b221ae313e540c09d79696cd08b8de"}
+        ]
     drone_dimensions:
       - os=Linux
 

@@ -185,6 +185,12 @@
                 "device_type=none",
                 "os=Linux"
             ],
+            "dependencies": [
+                {
+                    "dependency": "goldctl",
+                    "version": "git_revision:dddc0623e63150cbbafdcb273d4048f329e1dd09"
+                }
+            ],
             "gclient_variables": {
                 "download_android_deps": false
             },
