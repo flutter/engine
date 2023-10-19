@@ -62,9 +62,10 @@ gfx::NativeViewAccessible FlutterPlatformNodeDelegateWindows::HitTestSync(
   auto bridge = bridge_.lock();
   FML_DCHECK(bridge);
   for (const ui::AXNode* child : GetAXNode()->children()) {
-    std::shared_ptr<FlutterPlatformNodeDelegateWindows> win_delegate =
-        std::static_pointer_cast<FlutterPlatformNodeDelegateWindows>(
-            bridge->GetFlutterPlatformNodeDelegateFromID(child->id()).lock());
+    std::shared_ptr<FlutterPlatformNodeDelegate> delegate =
+        bridge->GetFlutterPlatformNodeDelegateFromID(child->id()).lock();
+    auto win_delegate =
+        std::static_pointer_cast<FlutterPlatformNodeDelegateWindows>(delegate);
     FML_DCHECK(win_delegate)
         << "No FlutterPlatformNodeDelegate found for node " << child->id();
     auto hit_view = win_delegate->HitTestSync(screen_physical_pixel_x,
