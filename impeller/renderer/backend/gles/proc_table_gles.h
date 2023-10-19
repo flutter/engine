@@ -199,13 +199,10 @@ struct GLProc {
   PROC(RenderbufferStorageMultisampleEXT); \
   PROC(GenQueriesEXT);                     \
   PROC(DeleteQueriesEXT);                  \
-  PROC(IsQueryEXT);                        \
-  PROC(QueryCounterEXT);                   \
   PROC(GetQueryObjectui64vEXT);            \
   PROC(BeginQueryEXT);                     \
   PROC(EndQueryEXT);                       \
-  PROC(GetQueryObjectuivEXT);              \
-  PROC(GetQueryObjectivEXT);
+  PROC(GetQueryObjectuivEXT);
 
 enum class DebugResourceType {
   kTexture,

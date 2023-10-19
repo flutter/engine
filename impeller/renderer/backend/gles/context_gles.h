@@ -42,14 +42,7 @@ class ContextGLES final : public Context,
   bool RemoveReactorWorker(ReactorGLES::WorkerID id);
 
   std::shared_ptr<GPUTracerGLES> GetGPUTracer() const {
-    FML_LOG(ERROR) << "Size: " << gpu_tracers_.size();
-    auto result = gpu_tracers_.find(std::this_thread::get_id());
-    if (result == gpu_tracers_.end()) {
-      return gpu_tracers_[std::this_thread::get_id()] =
-                 std::make_shared<GPUTracerGLES>(GetReactor()->GetProcTable());
-    } else {
-      return result->second;
-    }
+   return gpu_tracer_;
   }
 
  private:
@@ -58,8 +51,7 @@ class ContextGLES final : public Context,
   std::shared_ptr<PipelineLibraryGLES> pipeline_library_;
   std::shared_ptr<SamplerLibraryGLES> sampler_library_;
   std::shared_ptr<AllocatorGLES> resource_allocator_;
-  mutable std::unordered_map<std::thread::id, std::shared_ptr<GPUTracerGLES>>
-      gpu_tracers_;
+  std::shared_ptr<GPUTracerGLES> gpu_tracer_;
 
   // Note: This is stored separately from the ProcTableGLES CapabilitiesGLES
   // in order to satisfy the Context::GetCapabilities signature which returns

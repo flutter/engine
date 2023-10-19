@@ -3,34 +3,27 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/gles/gpu_tracer_gles.h"
-#include "GLES2/gl2ext.h"
-#include "GLES3/gl3.h"
+#include <thread>
+#include "fml/trace_event.h"
 
 namespace impeller {
-
-static const constexpr char* kAngleTimerQuery = "GL_ANGLE_timer_query";
-static const constexpr char* kExtTimerQuery = "GL_EXT_timer_query";
-static const constexpr char* kExtDisjointTimerQuery =
-    "GL_EXT_disjoint_timer_query";
 
 GPUTracerGLES::GPUTracerGLES(const ProcTableGLES& gl) {
 #ifdef IMPELLER_DEBUG
   auto desc = gl.GetDescription();
-  enabled_ = desc->HasExtension(kAngleTimerQuery) ||
-             desc->HasExtension(kExtTimerQuery) ||
-             desc->HasExtension(kExtDisjointTimerQuery);
+  enabled_ = desc->HasExtension("GL_EXT_disjoint_timer_query");
 #endif  // IMPELLER_DEBUG
 }
 
 void GPUTracerGLES::MarkFrameStart(const ProcTableGLES& gl) {
-  if (!enabled_ || has_started_frame_) {
+  if (!enabled_ || has_started_frame_ ||
+      std::this_thread::get_id() != raster_thread_) {
     return;
   }
-  std::stringstream ss;
-  ss << std::this_thread::get_id();
-  uint64_t id = std::stoull(ss.str());
 
-  FML_LOG(ERROR) << "Start: " << id;
+  // At the beginning of a frame, check the status of all pending
+  // previous queries.
+  ProcessQueries(gl);
 
   uint32_t query = 0;
   gl.GenQueriesEXT(1, &query);
@@ -40,58 +33,53 @@ void GPUTracerGLES::MarkFrameStart(const ProcTableGLES& gl) {
 
   has_started_frame_ = true;
 
-  // At the beginning of a frame, check the status of all pending
-  // previous queries.
-  if (!pending_traces_.empty()) {
-    std::vector<uint32_t> pending_traces = pending_traces_;
-    pending_traces_.clear();
-
-    bool done = false;
-    for (auto query : pending_traces) {
-      if (done) {
-        pending_traces_.push_back(query);
-        continue;
-      }
-      // First check if the query is complete without blocking
-      // on the result. Incomplete results are left in the pending
-      // trace vector and will not be checked again for another
-      // frame.
-      GLuint available = GL_FALSE;
-      gl.GetQueryObjectuivEXT(query, GL_QUERY_RESULT_AVAILABLE_EXT, &available);
-
-      if (available == GL_TRUE) {
-        // Return the timer resolution in nanoseconds.
-        uint64_t duration = 0;
-        gl.GetQueryObjectui64vEXT(query, GL_QUERY_RESULT_EXT, &duration);
-        auto gpu_ms = duration / 1000000.0;
-        FML_LOG(ERROR) << "gpu_ms: " << gpu_ms;
-        gl.DeleteQueriesEXT(1, &query);
-        // Only ever check for one query a frame...
-        done = true;
-      } else {
-        done = true;
-        pending_traces_.push_back(query);
-      }
-    }
-  }
-
-  // Allocate a single query object for the start and end of the frame.
-  FML_CHECK(!active_frame_.has_value());
-  FML_CHECK(query != 0);
+  FML_DCHECK(!active_frame_.has_value());
+  FML_DCHECK(query != 0);
   active_frame_ = query;
   gl.BeginQueryEXT(GL_TIME_ELAPSED_EXT, query);
 }
 
-void GPUTracerGLES::MarkFrameEnd(const ProcTableGLES& gl) {
-  if (!enabled_ || !active_frame_.has_value() || !has_started_frame_){
+void GPUTracerGLES::RecordRasterThread() {
+  raster_thread_ = std::this_thread::get_id();
+}
+
+void GPUTracerGLES::ProcessQueries(const ProcTableGLES& gl) {
+  if (pending_traces_.empty()) {
     return;
   }
 
-  std::stringstream ss;
-  ss << std::this_thread::get_id();
-  uint64_t id = std::stoull(ss.str());
+  // For reasons unknown to me, querying the state of more than
+  // on query object per frame causes crashes on a Pixel 6 pro.
+  auto latest_query = pending_traces_.front();
 
-  FML_LOG(ERROR) << "End: " << id;
+  // First check if the query is complete without blocking
+  // on the result. Incomplete results are left in the pending
+  // trace vector and will not be checked again for another
+  // frame.
+  GLuint available = GL_FALSE;
+  gl.GetQueryObjectuivEXT(latest_query, GL_QUERY_RESULT_AVAILABLE_EXT,
+                          &available);
+
+  if (available == GL_TRUE) {
+    // Return the timer resolution in nanoseconds.
+    uint64_t duration = 0;
+    gl.GetQueryObjectui64vEXT(latest_query, GL_QUERY_RESULT_EXT, &duration);
+    auto gpu_ms = duration / 1000000.0;
+
+    FML_TRACE_COUNTER("flutter", "GPUTracer",
+                      reinterpret_cast<int64_t>(this),  // Trace Counter ID
+                      "FrameTimeMS", gpu_ms);
+
+    gl.DeleteQueriesEXT(1, &latest_query);
+    pending_traces_.pop_front();
+  }
+}
+
+void GPUTracerGLES::MarkFrameEnd(const ProcTableGLES& gl) {
+  if (!enabled_ || std::this_thread::get_id() != raster_thread_ ||
+      !active_frame_.has_value() || !has_started_frame_) {
+    return;
+  }
 
   auto query = active_frame_.value();
   gl.EndQueryEXT(GL_TIME_ELAPSED_EXT);

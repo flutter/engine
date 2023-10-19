@@ -4,7 +4,9 @@
 
 #pragma once
 
+#include <deque>
 #include <thread>
+
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
 
 namespace impeller {
@@ -15,16 +17,20 @@ class GPUTracerGLES {
 
   ~GPUTracerGLES() = default;
 
-  bool HasStartedFrame() const {
-    return has_started_frame_;
-  }
+  /// @brief Record the thread id of the raster thread.
+  void RecordRasterThread();
 
+  /// @brief Record the start of a frame workload, if one hasn't already been
+  ///        started.
   void MarkFrameStart(const ProcTableGLES& gl);
 
+  /// @brief Record the end of a frame workload.
   void MarkFrameEnd(const ProcTableGLES& gl);
 
  private:
-  std::vector<uint32_t> pending_traces_;
+  void ProcessQueries(const ProcTableGLES& gl);
+
+  std::deque<uint32_t> pending_traces_;
   std::optional<uint32_t> active_frame_ = std::nullopt;
   std::thread::id raster_thread_;
   bool has_started_frame_ = false;

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/gles/context_gles.h"
+#include <memory>
 
 #include "impeller/base/config.h"
 #include "impeller/base/validation.h"
@@ -62,7 +63,7 @@ ContextGLES::ContextGLES(std::unique_ptr<ProcTableGLES> gl,
         std::shared_ptr<SamplerLibraryGLES>(new SamplerLibraryGLES(
             device_capabilities_->SupportsDecalSamplerAddressMode()));
   }
-
+  gpu_tracer_ = std::make_shared<GPUTracerGLES>(GetReactor()->GetProcTable());
   is_valid_ = true;
 }
 
