@@ -63,7 +63,6 @@ ContextGLES::ContextGLES(std::unique_ptr<ProcTableGLES> gl,
             device_capabilities_->SupportsDecalSamplerAddressMode()));
   }
 
-  gpu_tracer_ = std::make_shared<GPUTracerGLES>(reactor_->GetProcTable());
   is_valid_ = true;
 }
 
