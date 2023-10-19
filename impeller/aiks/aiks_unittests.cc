@@ -2432,7 +2432,8 @@ TEST_P(AiksTest, ClipRectElidesNoOpClips) {
 
 TEST_P(AiksTest, ClearColorOptimizationDoesNotApplyForBackdropFilters) {
   Canvas canvas;
-  canvas.SaveLayer({}, std::nullopt,
+  Paint layer_paint = {.color = Color::BlackTransparent()};
+  canvas.SaveLayer(layer_paint, std::nullopt,
                    ImageFilter::MakeBlur(Sigma(3), Sigma(3),
                                          FilterContents::BlurStyle::kNormal,
                                          Entity::TileMode::kClamp));
