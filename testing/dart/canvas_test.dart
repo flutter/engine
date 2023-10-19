@@ -128,6 +128,7 @@ void main() async {
   testNoCrashes();
 
   final ImageComparer comparer = await ImageComparer.create(testSuiteName: 'canvas_test');
+  print('Got a comparerer $comparer');
 
   test('Simple .toImage', () async {
     final Image image = await toImage((Canvas canvas) {
