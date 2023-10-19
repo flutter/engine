@@ -21,6 +21,8 @@ class ContextVK;
 enum class OptionalDeviceExtensionVK : uint32_t {
   // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VK_EXT_pipeline_creation_feedback.html
   kEXTPipelineCreationFeedback,
+  // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VK_EXT_blend_operation_advanced.html
+  kEXTBlendOperationAdvanced,
   kLast,
 };
 
@@ -112,6 +114,7 @@ class CapabilitiesVK final : public Capabilities,
   vk::PhysicalDeviceProperties device_properties_;
   bool supports_compute_subgroups_ = false;
   bool supports_device_transient_textures_ = false;
+  bool supports_native_advanced_blends_ = false;
   bool is_valid_ = false;
 
   bool HasExtension(const std::string& ext) const;

@@ -9,6 +9,8 @@
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
+#include "vulkan/vulkan_core.h"
+#include "vulkan/vulkan_structs.hpp"
 
 namespace impeller {
 
@@ -156,6 +158,8 @@ static const char* GetDeviceExtensionName(OptionalDeviceExtensionVK ext) {
   switch (ext) {
     case OptionalDeviceExtensionVK::kEXTPipelineCreationFeedback:
       return VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME;
+    case OptionalDeviceExtensionVK::kEXTBlendOperationAdvanced:
+      return VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME;
     case OptionalDeviceExtensionVK::kLast:
       return "Unknown";
   }
@@ -182,6 +186,7 @@ static std::optional<std::set<std::string>> GetSupportedDeviceExtensions(
 
   std::set<std::string> exts;
   for (const auto& device_extension : device_extensions.value) {
+    FML_LOG(ERROR) << "EXT: " << device_extension.extensionName;
     exts.insert(device_extension.extensionName);
   };
 
@@ -358,9 +363,9 @@ bool CapabilitiesVK::SetPhysicalDevice(const vk::PhysicalDevice& device) {
 
   device_properties_ = device.getProperties();
 
-  auto physical_properties_2 =
-      device.getProperties2<vk::PhysicalDeviceProperties2,
-                            vk::PhysicalDeviceSubgroupProperties>();
+  auto physical_properties_2 = device.getProperties2<
+      vk::PhysicalDeviceProperties2, vk::PhysicalDeviceSubgroupProperties,
+      vk::PhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
 
   // Currently shaders only want access to arithmetic subgroup features.
   // If that changes this needs to get updated, and so does Metal (which right
@@ -401,6 +406,16 @@ bool CapabilitiesVK::SetPhysicalDevice(const vk::PhysicalDevice& device) {
     });
   }
 
+  supports_native_advanced_blends_ =
+      physical_properties_2
+          .get<vk::PhysicalDeviceBlendOperationAdvancedPropertiesEXT>()
+          .advancedBlendAllOperations;
+  FML_LOG(ERROR)
+      << physical_properties_2
+             .get<vk::PhysicalDeviceBlendOperationAdvancedPropertiesEXT>()
+             .advancedBlendAllOperations;
+  FML_LOG(ERROR) << "Supports advanced blends: "
+                 << supports_native_advanced_blends_;
   return true;
 }
 
@@ -456,7 +471,7 @@ bool CapabilitiesVK::SupportsDecalSamplerAddressMode() const {
 }
 
 bool CapabilitiesVK::SupportsNativeAdvancedBlends() const {
-  return false;
+  return supports_native_advanced_blends_;
 }
 
 // |Capabilities|
