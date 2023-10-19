@@ -41,7 +41,6 @@ class ImageComparer {
         : _FakeSkiaGoldClient(workDirectory, dimensions);
 
     await client.auth();
-    print('Auth done!');
     return ImageComparer._(testSuiteName: testSuiteName, client: client);
   }
 
@@ -59,7 +58,6 @@ class ImageComparer {
 
     final File file = File(path.join(_client.workDirectory.path, fileName))
       ..writeAsBytesSync(data.buffer.asUint8List());
-      print('Adding image $testSuiteName $file');
     await _client.addImg(
       testSuiteName,
       file,
@@ -68,7 +66,6 @@ class ImageComparer {
       print('Skia gold comparison failed: $error');
       throw Exception('Failed comparison: $testSuiteName/$fileName');
     });
-    print('Added image!');
   }
 
   Future<bool> fuzzyCompareImages(Image golden, Image testImage) async {

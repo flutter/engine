@@ -1017,7 +1017,7 @@ def run_engine_tasks_in_parallel(tasks):
   # processes launched for the queue reader and thread wakeup reader).
   #
   # See: https://bugs.python.org/issue26903
-  max_processes = 1  # multiprocessing.cpu_count()
+  max_processes = multiprocessing.cpu_count()
   if sys_platform.startswith(('cygwin', 'win')) and max_processes > 60:
     max_processes = 60
 
