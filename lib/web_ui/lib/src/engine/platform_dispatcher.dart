@@ -592,7 +592,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
       case 'flutter/platform_views':
         final MethodCall(:String method, :dynamic arguments) = standardCodec.decodeMethodCall(data);
-        final int? flutterViewId = tryFlutterViewId(arguments);
+        final int? flutterViewId = tryViewId(arguments);
         if (flutterViewId == null) {
           implicitView!.platformViewMessageHandler.handleLegacyPlatformViewCall(method, arguments, callback!);
           return;

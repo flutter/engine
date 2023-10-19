@@ -631,16 +631,16 @@ extension JsonExtensions on Map<dynamic, dynamic> {
 /// Extracts view ID from the [MethodCall.arguments] map.
 ///
 /// Throws if the view ID is not present or if [arguments] is not a map.
-int readFlutterViewId(Object? arguments) {
-  return tryFlutterViewId(arguments)!;
+int readViewId(Object? arguments) {
+  return tryViewId(arguments)!;
 }
 
 /// Extracts view ID from the [MethodCall.arguments] map.
 ///
 /// Returns null if the view ID is not present or if [arguments] is not a map.
-int? tryFlutterViewId(Object? arguments) {
+int? tryViewId(Object? arguments) {
   if (arguments is Map) {
-    return arguments.tryInt('flutterViewId');
+    return arguments.tryInt('viewId');
   }
   return null;
 }
