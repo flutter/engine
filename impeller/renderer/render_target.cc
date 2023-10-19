@@ -279,7 +279,7 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
   // Create MSAA color texture.
 
   TextureDescriptor color0_tex_desc;
-  color0_tex_desc.storage_mode = color_attachment_config.storage_mode;
+  color0_tex_desc.storage_mode = StorageMode::kDevicePrivate;
   color0_tex_desc.type = TextureType::kTexture2DMultisample;
   color0_tex_desc.sample_count = SampleCount::kCount4;
   color0_tex_desc.format = pixel_format;
@@ -320,7 +320,7 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
   color0.load_action = color_attachment_config.load_action;
   color0.store_action = color_attachment_config.store_action;
   color0.texture = color0_msaa_tex;
-  color0.resolve_texture = color0_resolve_tex;
+  color0.resolve_texture = color0_msaa_tex;
 
   target.SetColorAttachment(color0, 0u);
 

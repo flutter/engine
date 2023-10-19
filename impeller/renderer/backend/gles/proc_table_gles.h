@@ -115,16 +115,16 @@ struct GLProc {
 #ifdef IMPELLER_TRACE_ALL_GL_CALLS
     TRACE_EVENT0("impeller", name);
 #endif  // IMPELLER_TRACE_ALL_GL_CALLS
-    // // Create an in-memory stream to print the arguments to.
-    // std::ostringstream out;
-    // // Print the function name
-    // out << name << '(';
-    // // Print the arguments
-    // ((out << ", " << args), ...);
-    // // Print the closing parenthesis
-    // out << ')';
-    // // Log the call
-    // FML_LOG(ERROR) << out.str();
+    // Create an in-memory stream to print the arguments to.
+    std::ostringstream out;
+    // Print the function name
+    out << name << '(';
+    // Print the arguments
+    ((out << ", " << args), ...);
+    // Print the closing parenthesis
+    out << ')';
+    // Log the call
+    FML_LOG(ERROR) << out.str();
     return function(std::forward<Args>(args)...);
   }
 

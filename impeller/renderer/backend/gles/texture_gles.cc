@@ -22,7 +22,7 @@ static TextureGLES::Type GetTextureTypeFromDescriptor(
   const auto render_target =
       static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
   const auto is_msaa = desc.sample_count == SampleCount::kCount4;
-  if (usage == render_target) {
+  if (usage == render_target && !is_msaa) {
     FML_LOG(ERROR) << "GetTextureTypeFromDescriptor kRenderBuffer (is_msaa): "
                    << is_msaa;
     return is_msaa ? TextureGLES::Type::kRenderBufferMultisampled
@@ -526,7 +526,6 @@ bool TextureGLES::SetAsFramebufferAttachment(GLenum target,
       );
       break;
     case Type::kTextureMultisampled:
-      FML_LOG(ERROR) << "glFramebufferTexture2DMultisampleEXT";
       gl.FramebufferTexture2DMultisampleEXT(
           target,                    // target
           ToAttachmentPoint(point),  // attachment
