@@ -605,6 +605,11 @@ class FlutterTesterOptions():
       return 'multithreaded'
     return 'single-threaded'
 
+  def impeller_enabled(self):
+    if self.enable_impeller:
+      return 'impeller swiftshader'
+    return 'skia software'
+
 
 def gather_dart_test(build_dir, dart_file, options):
   kernel_file_name = os.path.basename(dart_file) + '.dill'
@@ -636,8 +641,8 @@ def gather_dart_test(build_dir, dart_file, options):
 
   tester_name = 'flutter_tester'
   logger.info(
-      "Running test '%s' using '%s' (%s)", kernel_file_name, tester_name,
-      options.threading_description()
+      "Running test '%s' using '%s' (%s, %s)", kernel_file_name, tester_name,
+      options.threading_description(), options.impeller_enabled()
   )
   forbidden_output = [] if 'unopt' in build_dir or options.expect_failure else [
       '[ERROR'
@@ -1012,7 +1017,7 @@ def run_engine_tasks_in_parallel(tasks):
   # processes launched for the queue reader and thread wakeup reader).
   #
   # See: https://bugs.python.org/issue26903
-  max_processes = multiprocessing.cpu_count()
+  max_processes = 1  # multiprocessing.cpu_count()
   if sys_platform.startswith(('cygwin', 'win')) and max_processes > 60:
     max_processes = 60
 
