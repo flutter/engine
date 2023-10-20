@@ -17,7 +17,8 @@ TEST(GPUTracerGLES, CanFormatFramebufferErrorMessage) {
       reinterpret_cast<const unsigned char*>("GL_EXT_disjoint_timer_query"),  //
   };
   auto mock_gles = MockGLES::Init(extensions);
-  auto tracer = std::make_shared<GPUTracerGLES>(mock_gles->GetProcTable());
+  auto tracer =
+      std::make_shared<GPUTracerGLES>(mock_gles->GetProcTable(), true);
   tracer->RecordRasterThread();
   tracer->MarkFrameStart(mock_gles->GetProcTable());
   tracer->MarkFrameEnd(mock_gles->GetProcTable());

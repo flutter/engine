@@ -11,9 +11,15 @@
 
 namespace impeller {
 
+/// @brief Trace GPU execution times using GL_EXT_disjoint_timer_query on GLES.
+///
+/// Note: there are a substantial number of GPUs where usage of the this API is
+/// known to cause crashes. As a result, this functionality is disabled by
+/// default and can only be enabled in debug/profile mode via a specific opt-in
+/// flag that is exposed in the Android manifest.
 class GPUTracerGLES {
  public:
-  explicit GPUTracerGLES(const ProcTableGLES& gl);
+  GPUTracerGLES(const ProcTableGLES& gl, bool enable_tracing);
 
   ~GPUTracerGLES() = default;
 
@@ -33,7 +39,6 @@ class GPUTracerGLES {
   std::deque<uint32_t> pending_traces_;
   std::optional<uint32_t> active_frame_ = std::nullopt;
   std::thread::id raster_thread_;
-  bool has_started_frame_ = false;
 
   bool enabled_ = false;
 };

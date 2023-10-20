@@ -14,14 +14,16 @@ namespace impeller {
 
 std::shared_ptr<ContextGLES> ContextGLES::Create(
     std::unique_ptr<ProcTableGLES> gl,
-    const std::vector<std::shared_ptr<fml::Mapping>>& shader_libraries) {
+    const std::vector<std::shared_ptr<fml::Mapping>>& shader_libraries,
+    bool enable_gpu_tracing) {
   return std::shared_ptr<ContextGLES>(
-      new ContextGLES(std::move(gl), shader_libraries));
+      new ContextGLES(std::move(gl), shader_libraries, enable_gpu_tracing));
 }
 
-ContextGLES::ContextGLES(std::unique_ptr<ProcTableGLES> gl,
-                         const std::vector<std::shared_ptr<fml::Mapping>>&
-                             shader_libraries_mappings) {
+ContextGLES::ContextGLES(
+    std::unique_ptr<ProcTableGLES> gl,
+    const std::vector<std::shared_ptr<fml::Mapping>>& shader_libraries_mappings,
+    bool enable_gpu_tracing) {
   reactor_ = std::make_shared<ReactorGLES>(std::move(gl));
   if (!reactor_->IsValid()) {
     VALIDATION_LOG << "Could not create valid reactor.";
@@ -63,7 +65,8 @@ ContextGLES::ContextGLES(std::unique_ptr<ProcTableGLES> gl,
         std::shared_ptr<SamplerLibraryGLES>(new SamplerLibraryGLES(
             device_capabilities_->SupportsDecalSamplerAddressMode()));
   }
-  gpu_tracer_ = std::make_shared<GPUTracerGLES>(GetReactor()->GetProcTable());
+  gpu_tracer_ = std::make_shared<GPUTracerGLES>(GetReactor()->GetProcTable(),
+                                                enable_gpu_tracing);
   is_valid_ = true;
 }
 
