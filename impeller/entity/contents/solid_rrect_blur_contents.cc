@@ -17,7 +17,8 @@
 namespace impeller {
 
 namespace {
-// Generous padding to avoid bugs.
+// Generous padding to make sure blurs with large sigmas are fully visible.
+// Used to expand the geometry around the rrect.
 Scalar PadForSigma(Scalar sigma) {
   return sigma * 4.0;
 }
@@ -73,7 +74,7 @@ bool SolidRRectBlurContents::Render(const ContentContext& renderer,
 
   // Clamp the max kernel width/height to 1000.
   auto blur_sigma = std::min(sigma_.sigma, 250.0f);
-  // Increase quality by make the radius a bit bigger than the typical
+  // Increase quality by making the radius a bit bigger than the typical
   // sigma->radius conversion we use for slower blurs.
   auto blur_radius = PadForSigma(blur_sigma);
   auto positive_rect = rect_->GetPositive();
