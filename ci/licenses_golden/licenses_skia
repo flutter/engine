@@ -1,4 +1,4 @@
-Signature: 1c448c583993e17021ff678a7be92323
+Signature: 87bded776e4111cd3ff856b2089f0d53
 
 ====================================================================================================
 LIBRARY: etc1
@@ -387,10 +387,12 @@ FILE: ../../../third_party/skia/modules/pathkit/perf/perfReporter.js
 FILE: ../../../third_party/skia/modules/skparagraph/test.html
 FILE: ../../../third_party/skia/package-lock.json
 FILE: ../../../third_party/skia/relnotes/base64.md
+FILE: ../../../third_party/skia/relnotes/font-default.md
 FILE: ../../../third_party/skia/relnotes/glbackendsemaphore.md
 FILE: ../../../third_party/skia/relnotes/grsurface-info.md
 FILE: ../../../third_party/skia/relnotes/mesh.md
 FILE: ../../../third_party/skia/relnotes/readbuffer-deserial.md
+FILE: ../../../third_party/skia/relnotes/recorder-static-member.md
 FILE: ../../../third_party/skia/relnotes/typeface.md
 FILE: ../../../third_party/skia/relnotes/vk-directcontext.md
 FILE: ../../../third_party/skia/src/gpu/gpu_workaround_list.txt
@@ -8816,6 +8818,7 @@ ORIGIN: ../../../third_party/skia/src/core/SkBlitMask_opts_ssse3.cpp + ../../../
 ORIGIN: ../../../third_party/skia/src/core/SkBlitRow_opts.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkBlitRow_opts_hsw.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkBlitter_A8.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/core/SkBlurEngine.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkBlurMaskFilterImpl.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkCanvas_Raster.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkChecksum.cpp + ../../../third_party/skia/LICENSE
@@ -9086,6 +9089,7 @@ FILE: ../../../third_party/skia/src/core/SkBlitMask_opts_ssse3.cpp
 FILE: ../../../third_party/skia/src/core/SkBlitRow_opts.cpp
 FILE: ../../../third_party/skia/src/core/SkBlitRow_opts_hsw.cpp
 FILE: ../../../third_party/skia/src/core/SkBlitter_A8.h
+FILE: ../../../third_party/skia/src/core/SkBlurEngine.h
 FILE: ../../../third_party/skia/src/core/SkBlurMaskFilterImpl.h
 FILE: ../../../third_party/skia/src/core/SkCanvas_Raster.cpp
 FILE: ../../../third_party/skia/src/core/SkChecksum.cpp
