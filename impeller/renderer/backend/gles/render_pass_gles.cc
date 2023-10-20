@@ -6,6 +6,7 @@
 
 #include "flutter/fml/trace_event.h"
 #include "fml/closure.h"
+#include "fml/logging.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/gles/context_gles.h"
 #include "impeller/renderer/backend/gles/device_buffer_gles.h"
@@ -203,7 +204,10 @@ struct RenderPassData {
     //    @@ render_target.cc @@ CreateOffscreenMSAA
     //    - color0.resolve_texture = color0_resolve_tex;
     //    + color0.resolve_texture = color0_msaa_tex;
-    if (gl.BlitFramebuffer.IsAvailable() && pass_data.resolve_attachment) {
+    if (pass_data.resolve_attachment) {
+      // MSAA should not be enabled if BlitFramebuffer is not available.
+      FML_DCHECK(gl.BlitFramebuffer.IsAvailable());
+
       GLuint draw_fbo = GL_NONE;
       gl.GenFramebuffers(1u, &draw_fbo);
       gl.BindFramebuffer(GL_FRAMEBUFFER, draw_fbo);
