@@ -17,6 +17,11 @@ namespace impeller {
 /// known to cause crashes. As a result, this functionality is disabled by
 /// default and can only be enabled in debug/profile mode via a specific opt-in
 /// flag that is exposed in the Android manifest.
+///
+/// To enable, add the following metadata to the application's Android manifest:
+///   <meta-data
+///       android:name="io.flutter.embedding.android.EnableOpenGLGPUTracing"
+///       android:value="false" />
 class GPUTracerGLES {
  public:
   GPUTracerGLES(const ProcTableGLES& gl, bool enable_tracing);

@@ -68,7 +68,6 @@ void GPUTracerGLES::ProcessQueries(const ProcTableGLES& gl) {
     FML_TRACE_COUNTER("flutter", "GPUTracer",
                       reinterpret_cast<int64_t>(this),  // Trace Counter ID
                       "FrameTimeMS", gpu_ms);
-    FML_LOG(ERROR) << gpu_ms;
     gl.DeleteQueriesEXT(1, &query);
     pending_traces_.pop_front();
   }
