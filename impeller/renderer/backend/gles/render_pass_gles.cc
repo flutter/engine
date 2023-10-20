@@ -7,8 +7,10 @@
 #include "flutter/fml/trace_event.h"
 #include "fml/closure.h"
 #include "impeller/base/validation.h"
+#include "impeller/renderer/backend/gles/context_gles.h"
 #include "impeller/renderer/backend/gles/device_buffer_gles.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
+#include "impeller/renderer/backend/gles/gpu_tracer_gles.h"
 #include "impeller/renderer/backend/gles/pipeline_gles.h"
 #include "impeller/renderer/backend/gles/texture_gles.h"
 
@@ -141,7 +143,8 @@ struct RenderPassData {
     const RenderPassData& pass_data,
     const std::shared_ptr<Allocator>& transients_allocator,
     const ReactorGLES& reactor,
-    const std::vector<Command>& commands) {
+    const std::vector<Command>& commands,
+    const std::shared_ptr<GPUTracerGLES>& tracer) {
   TRACE_EVENT0("impeller", "RenderPassGLES::EncodeCommandsInReactor");
 
   if (commands.empty()) {
@@ -149,6 +152,9 @@ struct RenderPassData {
   }
 
   const auto& gl = reactor.GetProcTable();
+#ifdef IMPELLER_DEBUG
+  tracer->MarkFrameStart(gl);
+#endif  // IMPELLER_DEBUG
 
   fml::ScopedCleanupClosure pop_pass_debug_marker(
       [&gl]() { gl.PopDebugGroup(); });
@@ -176,19 +182,19 @@ struct RenderPassData {
 
     if (auto color = TextureGLES::Cast(pass_data.color_attachment.get())) {
       if (!color->SetAsFramebufferAttachment(
-              GL_FRAMEBUFFER, fbo, TextureGLES::AttachmentPoint::kColor0)) {
+              GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kColor0)) {
         return false;
       }
     }
     if (auto depth = TextureGLES::Cast(pass_data.depth_attachment.get())) {
       if (!depth->SetAsFramebufferAttachment(
-              GL_FRAMEBUFFER, fbo, TextureGLES::AttachmentPoint::kDepth)) {
+              GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kDepth)) {
         return false;
       }
     }
     if (auto stencil = TextureGLES::Cast(pass_data.stencil_attachment.get())) {
       if (!stencil->SetAsFramebufferAttachment(
-              GL_FRAMEBUFFER, fbo, TextureGLES::AttachmentPoint::kStencil)) {
+              GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kStencil)) {
         return false;
       }
     }
@@ -492,6 +498,11 @@ struct RenderPassData {
                              attachments.data()   // size
     );
   }
+#ifdef IMPELLER_DEBUG
+  if (is_default_fbo) {
+    tracer->MarkFrameEnd(gl);
+  }
+#endif  // IMPELLER_DEBUG
 
   return true;
 }
@@ -549,12 +560,13 @@ bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
   }
 
   std::shared_ptr<const RenderPassGLES> shared_this = shared_from_this();
+  auto tracer = ContextGLES::Cast(context).GetGPUTracer();
   return reactor_->AddOperation([pass_data,
                                  allocator = context.GetResourceAllocator(),
-                                 render_pass = std::move(shared_this)](
-                                    const auto& reactor) {
+                                 render_pass = std::move(shared_this),
+                                 tracer](const auto& reactor) {
     auto result = EncodeCommandsInReactor(*pass_data, allocator, reactor,
-                                          render_pass->commands_);
+                                          render_pass->commands_, tracer);
     FML_CHECK(result) << "Must be able to encode GL commands without error.";
   });
 }
