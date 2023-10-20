@@ -25,7 +25,7 @@ class StubPictureRenderer implements PictureRenderer {
 
   @override
   Future<DomImageBitmap> renderPicture(ScenePicture picture) async {
-    lastRenderedPicture = picture;
+    renderedPictures.add(picture);
     final ui.Rect cullRect = picture.cullRect;
     final DomImageBitmap bitmap = (await createImageBitmap(
       scratchCanvasElement,
@@ -34,7 +34,7 @@ class StubPictureRenderer implements PictureRenderer {
     return bitmap;
   }
 
-  ScenePicture? lastRenderedPicture;
+  List<ScenePicture> renderedPictures = <ScenePicture>[];
 }
 
 void testMain() {
@@ -107,7 +107,7 @@ void testMain() {
     debugOverrideDevicePixelRatio(null);
   });
 
-  test('SceneView always renders most recent picture', () async {
+  test('SceneView always renders most recent picture and skips intermediate pictures', () async {
     final List<StubPicture> pictures = <StubPicture>[];
     final List<Future<void>> renderFutures = <Future<void>>[];
     for (int i = 1; i < 20; i++) {
@@ -124,6 +124,10 @@ void testMain() {
       renderFutures.add(sceneView.renderScene(scene));
     }
     await Future.wait(renderFutures);
-    expect(stubPictureRenderer.lastRenderedPicture, pictures.last);
+
+    // Should just render the first and last pictures and skip the one inbetween.
+    expect(stubPictureRenderer.renderedPictures.length, 2);
+    expect(stubPictureRenderer.renderedPictures.first, pictures.first);
+    expect(stubPictureRenderer.renderedPictures.last, pictures.last);
   });
 }
