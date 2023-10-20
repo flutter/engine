@@ -2086,6 +2086,8 @@ ORIGIN: ../../../flutter/impeller/renderer/backend/gles/device_buffer_gles.h + .
 ORIGIN: ../../../flutter/impeller/renderer/backend/gles/formats_gles.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/gles/formats_gles.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/gles/gles.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/gles/gpu_tracer_gles.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/gles/gpu_tracer_gles.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/gles/handle_gles.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/gles/handle_gles.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/gles/pipeline_gles.cc + ../../../flutter/LICENSE
@@ -4039,6 +4041,7 @@ ORIGIN: ../../../flutter/third_party/txt/src/txt/platform.h + ../../../flutter/L
 ORIGIN: ../../../flutter/third_party/txt/src/txt/platform_android.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/txt/src/txt/platform_fuchsia.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/txt/src/txt/platform_linux.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/third_party/txt/src/txt/platform_mac.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/txt/src/txt/platform_mac.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/txt/src/txt/platform_windows.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/web_test_fonts/lib/web_test_fonts.dart + ../../../flutter/LICENSE
@@ -4854,6 +4857,8 @@ FILE: ../../../flutter/impeller/renderer/backend/gles/device_buffer_gles.h
 FILE: ../../../flutter/impeller/renderer/backend/gles/formats_gles.cc
 FILE: ../../../flutter/impeller/renderer/backend/gles/formats_gles.h
 FILE: ../../../flutter/impeller/renderer/backend/gles/gles.h
+FILE: ../../../flutter/impeller/renderer/backend/gles/gpu_tracer_gles.cc
+FILE: ../../../flutter/impeller/renderer/backend/gles/gpu_tracer_gles.h
 FILE: ../../../flutter/impeller/renderer/backend/gles/handle_gles.cc
 FILE: ../../../flutter/impeller/renderer/backend/gles/handle_gles.h
 FILE: ../../../flutter/impeller/renderer/backend/gles/pipeline_gles.cc
@@ -6833,6 +6838,7 @@ FILE: ../../../flutter/third_party/txt/src/txt/platform.h
 FILE: ../../../flutter/third_party/txt/src/txt/platform_android.cc
 FILE: ../../../flutter/third_party/txt/src/txt/platform_fuchsia.cc
 FILE: ../../../flutter/third_party/txt/src/txt/platform_linux.cc
+FILE: ../../../flutter/third_party/txt/src/txt/platform_mac.h
 FILE: ../../../flutter/third_party/txt/src/txt/platform_mac.mm
 FILE: ../../../flutter/third_party/txt/src/txt/platform_windows.cc
 FILE: ../../../flutter/third_party/web_test_fonts/lib/web_test_fonts.dart
