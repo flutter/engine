@@ -988,7 +988,7 @@ class BrowserManager {
       try {
         controller = deserializeSuite(
             path,
-            currentPlatform(_browserEnvironment.packageTestRuntime, null),
+            currentPlatform(_browserEnvironment.packageTestRuntime),
             suiteConfig,
             await _environment,
             suiteChannel,
