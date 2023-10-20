@@ -55,7 +55,7 @@ void GPUTracerVK::MarkFrameEnd() {
   // never finished. This shouldn't happen unless there is a bug in the
   // encoder logic. We set it to zero anyway to prevent a validation error
   // from becoming a memory leak.
-  FML_DCHECK(state.pending_buffers == 0u);
+  FML_CHECK(state.pending_buffers == 0u);
 
   state.pending_buffers = 0;
   state.current_index = 0;
