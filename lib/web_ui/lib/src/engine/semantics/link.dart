@@ -13,6 +13,7 @@ class Link extends PrimaryRoleManager {
   DomElement createElement() {
     final DomElement element = domDocument.createElement('a');
     // TODO(chunhtai): Fill in the real link once the framework sends entire uri.
+    // https://github.com/flutter/flutter/issues/102535.
     element.setAttribute('href', '#');
     element.style.display = 'block';
     return element;

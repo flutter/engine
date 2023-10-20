@@ -441,7 +441,7 @@ abstract class PrimaryRoleManager {
   /// management intereferes with the widget's functionality.
   PrimaryRoleManager.blank(this.role, this.semanticsObject);
 
-  late final DomElement element = _createAndInitElement();
+  late final DomElement element = _initElement(createElement());
 
   /// The primary role identifier.
   final PrimaryRole role;
@@ -462,8 +462,7 @@ abstract class PrimaryRoleManager {
   @protected
   DomElement createElement() => domDocument.createElement('flt-semantics');
 
-  DomElement _createAndInitElement() {
-    final DomElement element = createElement();
+  static DomElement _initElement(DomElement element, SemanticsObject semanticsObject) {
     // DOM nodes created for semantics objects are positioned absolutely using
     // transforms.
     element.style.position = 'absolute';
