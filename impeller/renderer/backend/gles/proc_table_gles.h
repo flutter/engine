@@ -5,7 +5,6 @@
 #pragma once
 
 #include <functional>
-#include <set>
 #include <string>
 
 #include "flutter/fml/logging.h"
@@ -72,30 +71,6 @@ struct GLProc {
   ///
   PFNGLGETERRORPROC error_fn = nullptr;
 
-  // static bool do_log(const char* name) {
-  //   // We should log the following functions:
-  //   // - Anything containing the word "buffer", "texture", "storage".
-  //   // - Ignore case.
-
-  //   // Convert to lowercase.
-  //   std::string lowercase_name(name);
-  //   std::transform(lowercase_name.begin(), lowercase_name.end(),
-  //                  lowercase_name.begin(), ::tolower);
-
-  //   // Check for the keywords.
-  //   if (strstr(lowercase_name.c_str(), "buffer") != nullptr) {
-  //     return true;
-  //   }
-  //   if (strstr(lowercase_name.c_str(), "texture") != nullptr) {
-  //     return true;
-  //   }
-  //   if (strstr(lowercase_name.c_str(), "storage") != nullptr) {
-  //     return true;
-  //   }
-
-  //   return false;
-  // }
-
   //----------------------------------------------------------------------------
   /// @brief      Call the GL function with the appropriate parameters. Lookup
   ///             the documentation for the GL function being called to
@@ -115,16 +90,6 @@ struct GLProc {
 #ifdef IMPELLER_TRACE_ALL_GL_CALLS
     TRACE_EVENT0("impeller", name);
 #endif  // IMPELLER_TRACE_ALL_GL_CALLS
-    // Create an in-memory stream to print the arguments to.
-    std::ostringstream out;
-    // Print the function name
-    out << name << '(';
-    // Print the arguments
-    ((out << ", " << args), ...);
-    // Print the closing parenthesis
-    out << ')';
-    // Log the call
-    FML_LOG(ERROR) << out.str();
     return function(std::forward<Args>(args)...);
   }
 

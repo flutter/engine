@@ -126,7 +126,6 @@ struct RenderPassData {
   std::shared_ptr<Texture> depth_attachment;
   std::shared_ptr<Texture> stencil_attachment;
 
-  bool resolve_color_attachment = false;
   bool clear_color_attachment = true;
   bool clear_depth_attachment = true;
   bool clear_stencil_attachment = true;
@@ -176,7 +175,6 @@ struct RenderPassData {
     gl.BindFramebuffer(GL_FRAMEBUFFER, fbo);
 
     if (auto color = TextureGLES::Cast(pass_data.color_attachment.get())) {
-      FML_LOG(ERROR) << "color.resolve=" << pass_data.resolve_color_attachment;
       if (!color->SetAsFramebufferAttachment(
               GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kColor0)) {
         return false;
@@ -466,7 +464,6 @@ struct RenderPassData {
     }
   }
 
-  // TODO: Try commenting out and see if this fixes the issue.
   //   if (gl.DiscardFramebufferEXT.IsAvailable()) {
   //     std::vector<GLenum> attachments;
 
