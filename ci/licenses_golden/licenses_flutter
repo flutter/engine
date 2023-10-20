@@ -2086,6 +2086,8 @@ ORIGIN: ../../../flutter/impeller/renderer/backend/gles/device_buffer_gles.h + .
 ORIGIN: ../../../flutter/impeller/renderer/backend/gles/formats_gles.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/gles/formats_gles.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/gles/gles.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/gles/gpu_tracer_gles.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/gles/gpu_tracer_gles.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/gles/handle_gles.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/gles/handle_gles.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/gles/pipeline_gles.cc + ../../../flutter/LICENSE
@@ -2128,6 +2130,8 @@ ORIGIN: ../../../flutter/impeller/renderer/backend/metal/device_buffer_mtl.h + .
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/device_buffer_mtl.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/formats_mtl.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/formats_mtl.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/metal/gpu_tracer_mtl.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/metal/gpu_tracer_mtl.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/pipeline_library_mtl.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/pipeline_library_mtl.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/pipeline_mtl.h + ../../../flutter/LICENSE
@@ -2716,6 +2720,7 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/semantics/focusable.dart + ..
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/semantics/image.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/semantics/incrementable.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/semantics/label_and_value.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/semantics/link.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/semantics/live_region.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/semantics/platform_view.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/semantics/scrollable.dart + ../../../flutter/LICENSE
@@ -3503,6 +3508,7 @@ ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterVie
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewTest.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/KeyCodeMap.g.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/KeyCodeMap_Internal.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/NSView+ClipsToBounds.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/TestFlutterPlatformView.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/TestFlutterPlatformView.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder.cc + ../../../flutter/LICENSE
@@ -4036,6 +4042,7 @@ ORIGIN: ../../../flutter/third_party/txt/src/txt/platform.h + ../../../flutter/L
 ORIGIN: ../../../flutter/third_party/txt/src/txt/platform_android.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/txt/src/txt/platform_fuchsia.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/txt/src/txt/platform_linux.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/third_party/txt/src/txt/platform_mac.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/txt/src/txt/platform_mac.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/txt/src/txt/platform_windows.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/web_test_fonts/lib/web_test_fonts.dart + ../../../flutter/LICENSE
@@ -4851,6 +4858,8 @@ FILE: ../../../flutter/impeller/renderer/backend/gles/device_buffer_gles.h
 FILE: ../../../flutter/impeller/renderer/backend/gles/formats_gles.cc
 FILE: ../../../flutter/impeller/renderer/backend/gles/formats_gles.h
 FILE: ../../../flutter/impeller/renderer/backend/gles/gles.h
+FILE: ../../../flutter/impeller/renderer/backend/gles/gpu_tracer_gles.cc
+FILE: ../../../flutter/impeller/renderer/backend/gles/gpu_tracer_gles.h
 FILE: ../../../flutter/impeller/renderer/backend/gles/handle_gles.cc
 FILE: ../../../flutter/impeller/renderer/backend/gles/handle_gles.h
 FILE: ../../../flutter/impeller/renderer/backend/gles/pipeline_gles.cc
@@ -4893,6 +4902,8 @@ FILE: ../../../flutter/impeller/renderer/backend/metal/device_buffer_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/device_buffer_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/formats_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/formats_mtl.mm
+FILE: ../../../flutter/impeller/renderer/backend/metal/gpu_tracer_mtl.h
+FILE: ../../../flutter/impeller/renderer/backend/metal/gpu_tracer_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/pipeline_library_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/pipeline_library_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/pipeline_mtl.h
@@ -5486,6 +5497,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/focusable.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/image.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/incrementable.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/label_and_value.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/link.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/live_region.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/platform_view.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/scrollable.dart
@@ -6288,6 +6300,7 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewP
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/KeyCodeMap.g.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/KeyCodeMap_Internal.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/NSView+ClipsToBounds.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/TestFlutterPlatformView.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/TestFlutterPlatformView.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/module.modulemap
@@ -6827,6 +6840,7 @@ FILE: ../../../flutter/third_party/txt/src/txt/platform.h
 FILE: ../../../flutter/third_party/txt/src/txt/platform_android.cc
 FILE: ../../../flutter/third_party/txt/src/txt/platform_fuchsia.cc
 FILE: ../../../flutter/third_party/txt/src/txt/platform_linux.cc
+FILE: ../../../flutter/third_party/txt/src/txt/platform_mac.h
 FILE: ../../../flutter/third_party/txt/src/txt/platform_mac.mm
 FILE: ../../../flutter/third_party/txt/src/txt/platform_windows.cc
 FILE: ../../../flutter/third_party/web_test_fonts/lib/web_test_fonts.dart
