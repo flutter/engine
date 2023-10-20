@@ -24,6 +24,11 @@ class TestBinaryMessenger : public BinaryMessenger {
             BinaryReply reply) const override {
     send_called_ = true;
     last_reply_handler_ = reply;
+    int length = static_cast<int>(message_size);
+    last_message_size_ = length;
+    std::vector<uint8_t> last_message(length);
+    memcpy(&last_message[0], &message[0], length * sizeof(uint8_t));
+    last_message_ = last_message;
   }
 
   void SetMessageHandler(const std::string& channel,
@@ -42,11 +47,17 @@ class TestBinaryMessenger : public BinaryMessenger {
 
   BinaryMessageHandler last_message_handler() { return last_message_handler_; }
 
+  std::vector<uint8_t> last_message() { return last_message_; }
+
+  int last_message_size() { return last_message_size_; }
+
  private:
   mutable bool send_called_ = false;
   mutable BinaryReply last_reply_handler_;
   std::string last_message_handler_channel_;
   BinaryMessageHandler last_message_handler_;
+  mutable std::vector<uint8_t> last_message_;
+  mutable int last_message_size_;
 };
 
 }  // namespace
@@ -154,6 +165,59 @@ TEST(MethodChannelTest, InvokeNotImplemented) {
   // Call the underlying reply handler to ensure it's reported as unimplemented.
   messenger.last_reply_handler()(nullptr, 0);
   EXPECT_TRUE(received_not_implemented);
+}
+
+// Tests that calling Resize generates the binary message expected by the Dart
+// implementation.
+TEST(MethodChannelTest, Resize) {
+  TestBinaryMessenger messenger;
+  const std::string channel_name("flutter/test");
+  MethodChannel channel(&messenger, channel_name,
+                        &StandardMethodCodec::GetInstance());
+
+  channel.Resize(3);
+
+  // The expected content was created from the following Dart code:
+  //   MethodCall call = MethodCall('resize', ['flutter/test',3]);
+  //   StandardMethodCodec().encodeMethodCall(call).buffer.asUint8List();
+  const int expected_message_size = 29;
+
+  EXPECT_EQ(messenger.send_called(), true);
+  EXPECT_EQ(messenger.last_message_size(), expected_message_size);
+
+  int expected[expected_message_size] = {
+      7,   6,   114, 101, 115, 105, 122, 101, 12,  2, 7, 12, 102, 108, 117,
+      116, 116, 101, 114, 47,  116, 101, 115, 116, 3, 3, 0,  0,   0};
+  for (int i = 0; i < expected_message_size; i++) {
+    EXPECT_EQ(messenger.last_message()[i], expected[i]);
+  }
+}
+
+// Tests that calling SetWarnsOnOverflow generates the binary message expected
+// by the Dart implementation.
+TEST(MethodChannelTest, SetWarnsOnOverflow) {
+  TestBinaryMessenger messenger;
+
+  const std::string channel_name("flutter/test");
+  MethodChannel channel(&messenger, channel_name,
+                        &StandardMethodCodec::GetInstance());
+
+  channel.SetWarnsOnOverflow(false);
+
+  // The expected content was created from the following Dart code:
+  //   MethodCall call = MethodCall('overflow',['flutter/test', true]);
+  //   StandardMethodCodec().encodeMethodCall(call).buffer.asUint8List();
+  const int expected_message_size = 27;
+
+  EXPECT_EQ(messenger.send_called(), true);
+  EXPECT_EQ(messenger.last_message_size(), expected_message_size);
+
+  int expected[expected_message_size] = {
+      7,   8,   111, 118, 101, 114, 102, 108, 111, 119, 12,  2,   7, 12,
+      102, 108, 117, 116, 116, 101, 114, 47,  116, 101, 115, 116, 1};
+  for (int i = 0; i < expected_message_size; i++) {
+    EXPECT_EQ(messenger.last_message()[i], expected[i]);
+  }
 }
 
 }  // namespace flutter

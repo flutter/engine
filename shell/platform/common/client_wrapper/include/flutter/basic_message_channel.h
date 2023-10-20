@@ -11,7 +11,8 @@
 
 #include "binary_messenger.h"
 #include "message_codec.h"
-
+#include "method_channel.h"
+#include "standard_method_codec.h"
 namespace flutter {
 
 class EncodableValue;
@@ -99,6 +100,41 @@ class BasicMessageChannel {
       handler(*message, std::move(unencoded_reply));
     };
     messenger_->SetMessageHandler(name_, std::move(binary_handler));
+  }
+
+  // Adjusts the number of messages that will get buffered when sending messages
+  // to channels that aren't fully set up yet. For example, the engine isn't
+  // running yet or the channel's message handler isn't set up on the Dart side
+  // yet.
+  //
+  // |new_size] is an int because the deserialization logic handles only 32 bits
+  // values, see
+  // https://github.com/flutter/engine/blob/93e8901490e78c7ba7e319cce4470d9c6478c6dc/lib/ui/channel_buffers.dart#L495.
+  void Resize(int new_size) {
+    auto control_channel = std::make_unique<MethodChannel<EncodableValue>>(
+        messenger_, kControlChannelName, &StandardMethodCodec::GetInstance());
+
+    control_channel->InvokeMethod(
+        kResizeMethod, std::make_unique<EncodableValue>(EncodableList{
+                           EncodableValue(name_),
+                           EncodableValue(new_size),
+                       }));
+  }
+
+  // Defines whether the channel should show warning messages when discarding
+  // messages due to overflow.
+  //
+  // When |warns| is false, the channel is expected to overflow and warning
+  // messages will not be shown.
+  void SetWarnsOnOverflow(bool warns) {
+    auto control_channel = std::make_unique<MethodChannel<EncodableValue>>(
+        messenger_, kControlChannelName, &StandardMethodCodec::GetInstance());
+
+    control_channel->InvokeMethod(
+        kOverflowMethod, std::make_unique<EncodableValue>(EncodableList{
+                             EncodableValue(name_),
+                             EncodableValue(!warns),
+                         }));
   }
 
  private:
