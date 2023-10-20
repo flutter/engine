@@ -632,7 +632,11 @@ extension JsonExtensions on Map<dynamic, dynamic> {
 ///
 /// Throws if the view ID is not present or if [arguments] is not a map.
 int readViewId(Object? arguments) {
-  return tryViewId(arguments)!;
+  final int? viewId = tryViewId(arguments);
+  if (viewId == null) {
+    throw Exception('Could not find a `viewId` in the arguments: $arguments');
+  }
+  return viewId;
 }
 
 /// Extracts view ID from the [MethodCall.arguments] map.
