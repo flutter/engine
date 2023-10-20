@@ -54,28 +54,26 @@ bool Attachment::IsValid() const {
     }
   }
 
-  // auto storage_mode = resolve_texture
-  //                         ?
-  //                         resolve_texture->GetTextureDescriptor().storage_mode
-  //                         : texture->GetTextureDescriptor().storage_mode;
+  auto storage_mode = resolve_texture
+                          ? resolve_texture->GetTextureDescriptor().storage_mode
+                          : texture->GetTextureDescriptor().storage_mode;
 
-  // if (storage_mode == StorageMode::kDeviceTransient) {
-  //   if (load_action == LoadAction::kLoad) {
-  //     VALIDATION_LOG << "The LoadAction cannot be Load when attaching a
-  //     device "
-  //                       "transient " +
-  //                           std::string(resolve_texture ? "resolve texture."
-  //                                                       : "texture.");
-  //     return false;
-  //   }
-  //   if (store_action != StoreAction::kDontCare) {
-  //     VALIDATION_LOG << "The StoreAction must be DontCare when attaching a "
-  //                       "device transient " +
-  //                           std::string(resolve_texture ? "resolve texture."
-  //                                                       : "texture.");
-  //     return false;
-  //   }
-  // }
+  if (storage_mode == StorageMode::kDeviceTransient) {
+    if (load_action == LoadAction::kLoad) {
+      VALIDATION_LOG << "The LoadAction cannot be Load when attaching a device "
+                        "transient " +
+                            std::string(resolve_texture ? "resolve texture."
+                                                        : "texture.");
+      return false;
+    }
+    if (store_action != StoreAction::kDontCare) {
+      VALIDATION_LOG << "The StoreAction must be DontCare when attaching a "
+                        "device transient " +
+                            std::string(resolve_texture ? "resolve texture."
+                                                        : "texture.");
+      return false;
+    }
+  }
 
   return true;
 }
