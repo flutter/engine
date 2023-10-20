@@ -18,18 +18,15 @@ namespace impeller {
 
 static TextureGLES::Type GetTextureTypeFromDescriptor(
     const TextureDescriptor& desc) {
-  const auto usage = static_cast<TextureUsageMask>(desc.usage);
-  const auto render_target =
-      static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
-  if (usage == render_target) {
-    return TextureGLES::Type::kRenderBuffer;
-  }
-  return TextureGLES::Type::kTexture;
+    const auto is_msaa = desc.sample_count == SampleCount::kCount4;
+    return is_msaa ? TextureGLES::Type::kTextureMultisampled
+                   : TextureGLES::Type::kTexture;
 }
 
 HandleType ToHandleType(TextureGLES::Type type) {
   switch (type) {
     case TextureGLES::Type::kTexture:
+    case TextureGLES::Type::kTextureMultisampled:
       return HandleType::kTexture;
     case TextureGLES::Type::kRenderBuffer:
     // MSAA textures are treated as render buffers.
@@ -362,7 +359,8 @@ void TextureGLES::InitializeContentsIfNecessary() const {
   }
 
   switch (type_) {
-    case Type::kTexture: {
+    case Type::kTexture:
+    case Type::kTextureMultisampled: {
       TexImage2DData tex_data(GetTextureDescriptor().format);
       if (!tex_data.IsValid()) {
         VALIDATION_LOG << "Invalid format for texture image.";
@@ -438,7 +436,8 @@ bool TextureGLES::Bind() const {
   }
   const auto& gl = reactor_->GetProcTable();
   switch (type_) {
-    case Type::kTexture: {
+    case Type::kTexture:
+    case Type::kTextureMultisampled: {
       const auto target = ToTextureTarget(GetTextureDescriptor().type);
       if (!target.has_value()) {
         VALIDATION_LOG << "Could not bind texture of this type.";
@@ -506,7 +505,8 @@ static GLenum ToAttachmentPoint(TextureGLES::AttachmentPoint point) {
 }
 
 bool TextureGLES::SetAsFramebufferAttachment(GLenum target,
-                                             AttachmentPoint point) const {
+                                             AttachmentPoint point,
+                                             bool msaa) const {
   if (!IsValid()) {
     return false;
   }
@@ -525,6 +525,16 @@ bool TextureGLES::SetAsFramebufferAttachment(GLenum target,
                               0                          // level
       );
       break;
+    case Type::kTextureMultisampled:
+       gl.FramebufferTexture2DMultisampleEXT(
+          target,                    // target
+          ToAttachmentPoint(point),  // attachment
+          GL_TEXTURE_2D,             // textarget
+          handle.value(),            // texture
+          0,                         // level
+          4                          // samples
+      );
+       break;
     case Type::kRenderBuffer:
       gl.FramebufferRenderbuffer(target,                    // target
                                  ToAttachmentPoint(point),  // attachment

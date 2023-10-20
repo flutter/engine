@@ -17,6 +17,7 @@ class TextureGLES final : public Texture,
  public:
   enum class Type {
     kTexture,
+    kTextureMultisampled,
     kRenderBuffer,
     kRenderBufferMultisampled,
   };
@@ -46,7 +47,8 @@ class TextureGLES final : public Texture,
     kStencil,
   };
   [[nodiscard]] bool SetAsFramebufferAttachment(GLenum target,
-                                                AttachmentPoint point) const;
+                                                AttachmentPoint point,
+                                                bool msaa = false) const;
 
   Type GetType() const;
 

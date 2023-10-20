@@ -124,7 +124,7 @@ size_t CapabilitiesGLES::GetMaxTextureUnits(ShaderStage stage) const {
 }
 
 bool CapabilitiesGLES::SupportsOffscreenMSAA() const {
-  return false;
+  return true;
 }
 
 bool CapabilitiesGLES::SupportsSSBO() const {

@@ -4,6 +4,7 @@
 
 #include "impeller/renderer/backend/gles/render_pass_gles.h"
 
+#include "GLES3/gl3.h"
 #include "flutter/fml/trace_event.h"
 #include "fml/closure.h"
 #include "impeller/base/validation.h"
@@ -125,6 +126,7 @@ struct RenderPassData {
   Scalar clear_depth = 1.0;
 
   std::shared_ptr<Texture> color_attachment;
+  std::optional<std::shared_ptr<Texture>> resolve_attachment = std::nullopt;
   std::shared_ptr<Texture> depth_attachment;
   std::shared_ptr<Texture> stencil_attachment;
 
@@ -192,12 +194,12 @@ struct RenderPassData {
         return false;
       }
     }
-    if (auto stencil = TextureGLES::Cast(pass_data.stencil_attachment.get())) {
-      if (!stencil->SetAsFramebufferAttachment(
-              GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kStencil)) {
-        return false;
-      }
-    }
+    // if (auto stencil = TextureGLES::Cast(pass_data.stencil_attachment.get())) {
+    //   if (!stencil->SetAsFramebufferAttachment(
+    //           GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kStencil)) {
+    //     return false;
+    //   }
+    // }
 
     auto status = gl.CheckFramebufferStatus(GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE) {
@@ -470,34 +472,53 @@ struct RenderPassData {
     }
   }
 
-  if (gl.DiscardFramebufferEXT.IsAvailable()) {
-    std::vector<GLenum> attachments;
+//   if (gl.DiscardFramebufferEXT.IsAvailable()) {
+//     std::vector<GLenum> attachments;
 
-    if (pass_data.discard_color_attachment) {
-      attachments.push_back(is_default_fbo ? GL_COLOR_EXT
-                                           : GL_COLOR_ATTACHMENT0);
-    }
-    if (pass_data.discard_depth_attachment) {
-      attachments.push_back(is_default_fbo ? GL_DEPTH_EXT
-                                           : GL_DEPTH_ATTACHMENT);
+//     if (pass_data.discard_color_attachment) {
+//       attachments.push_back(is_default_fbo ? GL_COLOR_EXT
+//                                            : GL_COLOR_ATTACHMENT0);
+//     }
+//     if (pass_data.discard_depth_attachment) {
+//       attachments.push_back(is_default_fbo ? GL_DEPTH_EXT
+//                                            : GL_DEPTH_ATTACHMENT);
+//     }
+
+// // TODO(jonahwilliams): discarding the stencil on the default fbo when running
+// // on Windows causes Angle to discard the entire render target. Until we know
+// // the reason, default to storing.
+// #ifdef FML_OS_WIN
+//     if (pass_data.discard_stencil_attachment && !is_default_fbo) {
+// #else
+//     if (pass_data.discard_stencil_attachment) {
+// #endif
+//       attachments.push_back(is_default_fbo ? GL_STENCIL_EXT
+//                                            : GL_STENCIL_ATTACHMENT);
+//     }
+//     gl.DiscardFramebufferEXT(GL_FRAMEBUFFER,      // target
+//                              attachments.size(),  // attachments to discard
+//                              attachments.data()   // size
+//     );
+//   }
+  if (!is_default_fbo && pass_data.resolve_attachment) {
+
+    GLuint draw_framebuffer = 0;
+    gl.GenFramebuffers(1u, &draw_framebuffer);
+    gl.BindFramebuffer(GL_FRAMEBUFFER, draw_framebuffer);
+
+    auto& resolve_gles = TextureGLES::Cast(*pass_data.resolve_attachment.value());
+    if (!resolve_gles.SetAsFramebufferAttachment(GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kColor0)) {
+      return false;
     }
 
-// TODO(jonahwilliams): discarding the stencil on the default fbo when running
-// on Windows causes Angle to discard the entire render target. Until we know
-// the reason, default to storing.
-#ifdef FML_OS_WIN
-    if (pass_data.discard_stencil_attachment && !is_default_fbo) {
-#else
-    if (pass_data.discard_stencil_attachment) {
-#endif
-      attachments.push_back(is_default_fbo ? GL_STENCIL_EXT
-                                           : GL_STENCIL_ATTACHMENT);
-    }
-    gl.DiscardFramebufferEXT(GL_FRAMEBUFFER,      // target
-                             attachments.size(),  // attachments to discard
-                             attachments.data()   // size
-    );
+    gl.BindFramebuffer(GL_DRAW_FRAMEBUFFER, draw_framebuffer);
+    gl.BindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+
+    auto size = pass_data.resolve_attachment.value()->GetTextureDescriptor().size;
+    gl.BlitFramebuffer(0, 0, size.width, size.height, 0, 0, size.width, size.height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
   }
+
 #ifdef IMPELLER_DEBUG
   if (is_default_fbo) {
     tracer->MarkFrameEnd(gl);
@@ -530,7 +551,12 @@ bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
   //----------------------------------------------------------------------------
   /// Setup color data.
   ///
-  pass_data->color_attachment = color0.texture;
+  if (color0.resolve_texture) {
+    pass_data->color_attachment = color0.texture;
+    pass_data->resolve_attachment = color0.resolve_texture;
+  } else {
+    pass_data->color_attachment = color0.texture;
+  }
   pass_data->clear_color = color0.clear_color;
   pass_data->clear_color_attachment = CanClearAttachment(color0.load_action);
   pass_data->discard_color_attachment =

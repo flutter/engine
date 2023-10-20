@@ -171,7 +171,7 @@ constexpr GLenum ToTextureType(TextureType type) {
     case TextureType::kTexture2D:
       return GL_TEXTURE_2D;
     case TextureType::kTexture2DMultisample:
-      return GL_TEXTURE_2D_MULTISAMPLE;
+      return GL_TEXTURE_2D;
     case TextureType::kTextureCube:
       return GL_TEXTURE_CUBE_MAP;
     case TextureType::kTextureExternalOES:
