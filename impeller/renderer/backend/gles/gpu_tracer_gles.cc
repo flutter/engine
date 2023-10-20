@@ -32,7 +32,6 @@ void GPUTracerGLES::MarkFrameStart(const ProcTableGLES& gl) {
     return;
   }
 
-  FML_DCHECK(!active_frame_.has_value());
   active_frame_ = query;
   gl.BeginQueryEXT(GL_TIME_ELAPSED_EXT, query);
 }
@@ -75,7 +74,7 @@ void GPUTracerGLES::ProcessQueries(const ProcTableGLES& gl) {
 
 void GPUTracerGLES::MarkFrameEnd(const ProcTableGLES& gl) {
   if (!enabled_ || std::this_thread::get_id() != raster_thread_ ||
-      !active_frame_.has_value() || !active_frame_.has_value()) {
+      !active_frame_.has_value()) {
     return;
   }
 
