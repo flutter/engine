@@ -18,21 +18,6 @@ external JSArray? get _jsHotRestartStore;
 @JS('window.__flutterState')
 external set _jsHotRestartStore(JSArray? nodes);
 
-final HotRestartCacheHandler? _hotRestartCache = () {
-  // In release mode, we don't need a hot restart cache, so we leave it null.
-  HotRestartCacheHandler? cache;
-  assert(() {
-    cache = HotRestartCacheHandler();
-    return true;
-  }());
-  return cache;
-}();
-
-/// Registers a [DomElement] to be cleaned up after hot restart.
-void registerElementForCleanup(DomElement element) {
-  _hotRestartCache?.registerElement(element);
-}
-
 /// Handles [DomElement]s that need to be removed after a hot-restart.
 ///
 /// This class shouldn't be used directly. It's only made public for testing
@@ -70,4 +55,19 @@ class HotRestartCacheHandler {
   void registerElement(DomElement element) {
     _jsHotRestartStore!.push(element);
   }
+}
+
+final HotRestartCacheHandler? _hotRestartCache = () {
+  // In release mode, we don't need a hot restart cache, so we leave it null.
+  HotRestartCacheHandler? cache;
+  assert(() {
+    cache = HotRestartCacheHandler();
+    return true;
+  }());
+  return cache;
+}();
+
+/// Registers a [DomElement] to be cleaned up after hot restart.
+void registerElementForCleanup(DomElement element) {
+  _hotRestartCache?.registerElement(element);
 }
