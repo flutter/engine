@@ -292,6 +292,15 @@ struct TRect {
                  size.height + amount * 2);
   }
 
+  /// @brief  Returns a rectangle with expanded edges in all directions.
+  ///         Negative expansion results in shrinking.
+  constexpr TRect<T> Expand(TPoint<T> amount) const {
+    return TRect(origin.x - amount.x,        //
+                 origin.y - amount.y,        //
+                 size.width + amount.x * 2,  //
+                 size.height + amount.y * 2);
+  }
+
   /// @brief  Returns a new rectangle that represents the projection of the
   ///         source rectangle onto this rectangle. In other words, the source
   ///         rectangle is redefined in terms of the corrdinate space of this
@@ -305,6 +314,33 @@ struct TRect {
 
 using Rect = TRect<Scalar>;
 using IRect = TRect<int64_t>;
+
+constexpr std::optional<Rect> Union(const Rect& a,
+                                    const std::optional<Rect> b) {
+  if (!b.has_value()) {
+    return a;
+  }
+  return a.Union(b.value());
+}
+
+constexpr std::optional<Rect> Union(const std::optional<Rect> a,
+                                    const Rect& b) {
+  if (!a.has_value()) {
+    return b;
+  }
+  return a.value().Union(b);
+}
+
+constexpr std::optional<Rect> Union(const std::optional<Rect> a,
+                                    const std::optional<Rect> b) {
+  if (!a.has_value()) {
+    return b;
+  }
+  if (!b.has_value()) {
+    return a;
+  }
+  return a.value().Union(b.value());
+}
 
 }  // namespace impeller
 
