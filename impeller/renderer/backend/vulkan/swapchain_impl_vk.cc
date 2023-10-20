@@ -51,10 +51,7 @@ struct FrameSynchronizer {
   ~FrameSynchronizer() = default;
 
   bool WaitForFence(const vk::Device& device) {
-    if (!acquire->WaitWithTimeout(
-            fml::TimeDelta::FromMilliseconds(1'000'000))) {
-      return false;
-    }
+    acquire->Wait();
     acquire->Reset();
     return true;
   }
