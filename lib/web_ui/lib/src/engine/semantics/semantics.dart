@@ -441,7 +441,7 @@ abstract class PrimaryRoleManager {
   /// management intereferes with the widget's functionality.
   PrimaryRoleManager.blank(this.role, this.semanticsObject);
 
-  late final DomElement element = _initElement(createElement());
+  late final DomElement element = _initElement(createElement(), semanticsObject);
 
   /// The primary role identifier.
   final PrimaryRole role;
