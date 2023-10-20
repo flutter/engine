@@ -320,7 +320,7 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
   color0.load_action = color_attachment_config.load_action;
   color0.store_action = color_attachment_config.store_action;
   color0.texture = color0_msaa_tex;
-  color0.resolve_texture = color0_msaa_tex;
+  color0.resolve_texture = color0_resolve_tex;
 
   target.SetColorAttachment(color0, 0u);
 

@@ -125,6 +125,7 @@ struct RenderPassData {
   Scalar clear_depth = 1.0;
 
   std::shared_ptr<Texture> color_attachment;
+  std::shared_ptr<Texture> resolve_attachment;
   std::shared_ptr<Texture> depth_attachment;
   std::shared_ptr<Texture> stencil_attachment;
 
@@ -186,6 +187,49 @@ struct RenderPassData {
         return false;
       }
     }
+
+    // When we have a resolve_attachment, MSAA is being used. We blit from the
+    // MSAA FBO to the resolve FBO, otherwise the resolve FBO ends up being
+    // incomplete (because it has no attachments).
+    //
+    // Note that this only works on OpenGLES 3.0+, or put another way, in older
+    // versions of OpenGLES, MSAA is not currently supported by Impeller. It's
+    // possible to work around this issue a few different ways (not yet done):
+    //
+    // Do not use the resolve_texture, and instead use the MSAA texture only.
+    // To preview what this would look like (but should not be implemented this
+    // way - would impact the HAL):
+    //
+    //    @@ render_target.cc @@ CreateOffscreenMSAA
+    //    - color0.resolve_texture = color0_resolve_tex;
+    //    + color0.resolve_texture = color0_msaa_tex;
+    if (gl.BlitFramebuffer.IsAvailable() && pass_data.resolve_attachment) {
+      GLuint draw_fbo = GL_NONE;
+      gl.GenFramebuffers(1u, &draw_fbo);
+      gl.BindFramebuffer(GL_FRAMEBUFFER, draw_fbo);
+
+      auto resolve = TextureGLES::Cast(pass_data.resolve_attachment.get());
+      if (!resolve->SetAsFramebufferAttachment(
+              GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kColor0)) {
+        return false;
+      }
+
+      gl.BindFramebuffer(GL_DRAW_FRAMEBUFFER, draw_fbo);
+      gl.BindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+      auto size = pass_data.resolve_attachment->GetSize();
+      gl.BlitFramebuffer(0,                    // srcX0
+                         0,                    // srcY0
+                         size.width,           // srcX1
+                         size.height,          // srcY1
+                         0,                    // dstX0
+                         0,                    // dstY0
+                         size.width,           // dstX1
+                         size.height,          // dstY1
+                         GL_COLOR_BUFFER_BIT,  // mask
+                         GL_NEAREST            // filter
+      );
+    }
+
     if (auto depth = TextureGLES::Cast(pass_data.depth_attachment.get())) {
       if (!depth->SetAsFramebufferAttachment(
               GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kDepth)) {
@@ -193,7 +237,11 @@ struct RenderPassData {
       }
     }
     if (auto stencil = TextureGLES::Cast(pass_data.stencil_attachment.get())) {
-      // TODO: Enable before finalizing PR.
+      // TODO: Re-enable before finalizing PR.
+      // Causes "Fatal GL Error GL_INVALID_OPERATION(1282) encountered on call
+      // to glFramebufferTexture2DMultisampleEXT'". We probably don't want to be
+      // using MSAA for the stencil buffer anyway.
+
       // if (!stencil->SetAsFramebufferAttachment(
       //         GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kStencil)) {
       //   return false;
@@ -471,36 +519,34 @@ struct RenderPassData {
     }
   }
 
-  //   if (gl.DiscardFramebufferEXT.IsAvailable()) {
-  //     std::vector<GLenum> attachments;
+  if (gl.DiscardFramebufferEXT.IsAvailable()) {
+    std::vector<GLenum> attachments;
 
-  //     if (pass_data.discard_color_attachment) {
-  //       attachments.push_back(is_default_fbo ? GL_COLOR_EXT
-  //                                            : GL_COLOR_ATTACHMENT0);
-  //     }
-  //     if (pass_data.discard_depth_attachment) {
-  //       attachments.push_back(is_default_fbo ? GL_DEPTH_EXT
-  //                                            : GL_DEPTH_ATTACHMENT);
-  //     }
+    if (pass_data.discard_color_attachment) {
+      attachments.push_back(is_default_fbo ? GL_COLOR_EXT
+                                           : GL_COLOR_ATTACHMENT0);
+    }
+    if (pass_data.discard_depth_attachment) {
+      attachments.push_back(is_default_fbo ? GL_DEPTH_EXT
+                                           : GL_DEPTH_ATTACHMENT);
+    }
 
-  // // TODO(jonahwilliams): discarding the stencil on the default fbo when
-  // running
-  // // on Windows causes Angle to discard the entire render target. Until we
-  // know
-  // // the reason, default to storing.
-  // #ifdef FML_OS_WIN
-  //     if (pass_data.discard_stencil_attachment && !is_default_fbo) {
-  // #else
-  //     if (pass_data.discard_stencil_attachment) {
-  // #endif
-  //       attachments.push_back(is_default_fbo ? GL_STENCIL_EXT
-  //                                            : GL_STENCIL_ATTACHMENT);
-  //     }
-  //     gl.DiscardFramebufferEXT(GL_FRAMEBUFFER,      // target
-  //                              attachments.size(),  // attachments to discard
-  //                              attachments.data()   // size
-  //     );
-  //   }
+// TODO(jonahwilliams): discarding the stencil on the default fbo when running
+// on Windows causes Angle to discard the entire render target. Until we know
+// the reason, default to storing.
+#ifdef FML_OS_WIN
+    if (pass_data.discard_stencil_attachment && !is_default_fbo) {
+#else
+    if (pass_data.discard_stencil_attachment) {
+#endif
+      attachments.push_back(is_default_fbo ? GL_STENCIL_EXT
+                                           : GL_STENCIL_ATTACHMENT);
+    }
+    gl.DiscardFramebufferEXT(GL_FRAMEBUFFER,      // target
+                             attachments.size(),  // attachments to discard
+                             attachments.data()   // size
+    );
+  }
 
   return true;
 }
@@ -529,10 +575,17 @@ bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
   /// Setup color data.
   ///
   pass_data->color_attachment = color0.texture;
+  pass_data->resolve_attachment = color0.resolve_texture;
   pass_data->clear_color = color0.clear_color;
   pass_data->clear_color_attachment = CanClearAttachment(color0.load_action);
   pass_data->discard_color_attachment =
-      CanDiscardAttachmentWhenDone(color0.store_action);
+      CanDiscardAttachmentWhenDone(color0.store_action) &&
+      // TODO(matanlurey): Remove this check.
+      //
+      // We can't discard the color attachment if we're using MSAA, because it
+      // appears that the resolve texture is not complete until the end of the
+      // render pass?
+      !color0.resolve_texture;
 
   //----------------------------------------------------------------------------
   /// Setup depth data.

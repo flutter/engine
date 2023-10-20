@@ -108,7 +108,11 @@ CapabilitiesGLES::CapabilitiesGLES(const ProcTableGLES& gl) {
   }
 
   if (gl.GetDescription()->HasExtension(
-          "GL_EXT_multisampled_render_to_texture")) {
+          "GL_EXT_multisampled_render_to_texture") &&
+      // The current implementation of MSAA support in Impeller GLES requires
+      // the use of glBlitFramebuffer, which is not available on all GLES
+      // implementations. We can't use MSAA on these platforms yet.
+      gl.BlitFramebuffer.IsAvailable()) {
     supports_offscreen_msaa_ = true;
 
     // We hard-code 4x MSAA, so let's make sure it's supported.
