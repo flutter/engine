@@ -189,51 +189,6 @@ struct RenderPassData {
       }
     }
 
-    // When we have a resolve_attachment, MSAA is being used. We blit from the
-    // MSAA FBO to the resolve FBO, otherwise the resolve FBO ends up being
-    // incomplete (because it has no attachments).
-    //
-    // Note that this only works on OpenGLES 3.0+, or put another way, in older
-    // versions of OpenGLES, MSAA is not currently supported by Impeller. It's
-    // possible to work around this issue a few different ways (not yet done):
-    //
-    // Do not use the resolve_texture, and instead use the MSAA texture only.
-    // To preview what this would look like (but should not be implemented this
-    // way - would impact the HAL):
-    //
-    //    @@ render_target.cc @@ CreateOffscreenMSAA
-    //    - color0.resolve_texture = color0_resolve_tex;
-    //    + color0.resolve_texture = color0_msaa_tex;
-    if (pass_data.resolve_attachment) {
-      // MSAA should not be enabled if BlitFramebuffer is not available.
-      FML_DCHECK(gl.BlitFramebuffer.IsAvailable());
-
-      GLuint draw_fbo = GL_NONE;
-      gl.GenFramebuffers(1u, &draw_fbo);
-      gl.BindFramebuffer(GL_FRAMEBUFFER, draw_fbo);
-
-      auto resolve = TextureGLES::Cast(pass_data.resolve_attachment.get());
-      if (!resolve->SetAsFramebufferAttachment(
-              GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kColor0)) {
-        return false;
-      }
-
-      gl.BindFramebuffer(GL_DRAW_FRAMEBUFFER, draw_fbo);
-      gl.BindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
-      auto size = pass_data.resolve_attachment->GetSize();
-      gl.BlitFramebuffer(0,                    // srcX0
-                         0,                    // srcY0
-                         size.width,           // srcX1
-                         size.height,          // srcY1
-                         0,                    // dstX0
-                         0,                    // dstY0
-                         size.width,           // dstX1
-                         size.height,          // dstY1
-                         GL_COLOR_BUFFER_BIT,  // mask
-                         GL_NEAREST            // filter
-      );
-    }
-
     if (auto depth = TextureGLES::Cast(pass_data.depth_attachment.get())) {
       if (!depth->SetAsFramebufferAttachment(
               GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kDepth)) {
@@ -523,6 +478,51 @@ struct RenderPassData {
     }
   }
 
+  // When we have a resolve_attachment, MSAA is being used. We blit from the
+  // MSAA FBO to the resolve FBO, otherwise the resolve FBO ends up being
+  // incomplete (because it has no attachments).
+  //
+  // Note that this only works on OpenGLES 3.0+, or put another way, in older
+  // versions of OpenGLES, MSAA is not currently supported by Impeller. It's
+  // possible to work around this issue a few different ways (not yet done):
+  //
+  // Do not use the resolve_texture, and instead use the MSAA texture only.
+  // To preview what this would look like (but should not be implemented this
+  // way - would impact the HAL):
+  //
+  //    @@ render_target.cc @@ CreateOffscreenMSAA
+  //    - color0.resolve_texture = color0_resolve_tex;
+  //    + color0.resolve_texture = color0_msaa_tex;
+  if (!is_default_fbo && pass_data.resolve_attachment) {
+    // MSAA should not be enabled if BlitFramebuffer is not available.
+    FML_DCHECK(gl.BlitFramebuffer.IsAvailable());
+
+    GLuint draw_fbo = GL_NONE;
+    gl.GenFramebuffers(1u, &draw_fbo);
+    gl.BindFramebuffer(GL_FRAMEBUFFER, draw_fbo);
+
+    auto resolve = TextureGLES::Cast(pass_data.resolve_attachment.get());
+    if (!resolve->SetAsFramebufferAttachment(
+            GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kColor0)) {
+      return false;
+    }
+
+    gl.BindFramebuffer(GL_DRAW_FRAMEBUFFER, draw_fbo);
+    gl.BindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+    auto size = pass_data.resolve_attachment->GetSize();
+    gl.BlitFramebuffer(0,                    // srcX0
+                       0,                    // srcY0
+                       size.width,           // srcX1
+                       size.height,          // srcY1
+                       0,                    // dstX0
+                       0,                    // dstY0
+                       size.width,           // dstX1
+                       size.height,          // dstY1
+                       GL_COLOR_BUFFER_BIT,  // mask
+                       GL_NEAREST            // filter
+    );
+  }
+
   if (gl.DiscardFramebufferEXT.IsAvailable()) {
     std::vector<GLenum> attachments;
 
@@ -583,13 +583,7 @@ bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
   pass_data->clear_color = color0.clear_color;
   pass_data->clear_color_attachment = CanClearAttachment(color0.load_action);
   pass_data->discard_color_attachment =
-      CanDiscardAttachmentWhenDone(color0.store_action) &&
-      // TODO(matanlurey): Remove this check.
-      //
-      // We can't discard the color attachment if we're using MSAA, because it
-      // appears that the resolve texture is not complete until the end of the
-      // render pass?
-      !color0.resolve_texture;
+      CanDiscardAttachmentWhenDone(color0.store_action);
 
   //----------------------------------------------------------------------------
   /// Setup depth data.
