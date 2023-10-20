@@ -40,6 +40,7 @@ class BackgroundCommandPoolVK final {
     if (!recycler) {
       return;
     }
+    buffers_.clear();
 
     recycler->Reclaim(std::move(pool_));
   }
@@ -56,7 +57,7 @@ class BackgroundCommandPoolVK final {
   std::weak_ptr<CommandPoolRecyclerVK> recycler_;
 };
 
-static bool kResetOnBackgroundThread = false;
+static bool kResetOnBackgroundThread = true;
 
 CommandPoolVK::~CommandPoolVK() {
   if (!pool_) {
