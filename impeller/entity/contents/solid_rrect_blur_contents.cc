@@ -16,6 +16,13 @@
 
 namespace impeller {
 
+namespace {
+// Generous padding to avoid bugs.
+Scalar PadForSigma(Scalar sigma) {
+  return sigma * 4.0;
+}
+}  // namespace
+
 SolidRRectBlurContents::SolidRRectBlurContents() = default;
 
 SolidRRectBlurContents::~SolidRRectBlurContents() = default;
@@ -44,7 +51,7 @@ std::optional<Rect> SolidRRectBlurContents::GetCoverage(
     return std::nullopt;
   }
 
-  Scalar radius = sigma_.sigma * 2;
+  Scalar radius = PadForSigma(sigma_.sigma);
 
   auto ltrb = rect_->GetLTRB();
   Rect bounds = Rect::MakeLTRB(ltrb[0] - radius, ltrb[1] - radius,
@@ -68,7 +75,7 @@ bool SolidRRectBlurContents::Render(const ContentContext& renderer,
   auto blur_sigma = std::min(sigma_.sigma, 250.0f);
   // Increase quality by make the radius a bit bigger than the typical
   // sigma->radius conversion we use for slower blurs.
-  auto blur_radius = blur_sigma * 2;
+  auto blur_radius = PadForSigma(blur_sigma);
   auto positive_rect = rect_->GetPositive();
   {
     auto left = -blur_radius;
