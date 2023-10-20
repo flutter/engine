@@ -193,10 +193,11 @@ struct RenderPassData {
       }
     }
     if (auto stencil = TextureGLES::Cast(pass_data.stencil_attachment.get())) {
-      if (!stencil->SetAsFramebufferAttachment(
-              GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kStencil)) {
-        return false;
-      }
+      // TODO: Enable before finalizing PR.
+      // if (!stencil->SetAsFramebufferAttachment(
+      //         GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kStencil)) {
+      //   return false;
+      // }
     }
 
     auto status = gl.CheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -545,7 +546,7 @@ bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
   }
 
   //----------------------------------------------------------------------------
-  /// Setup depth data.
+  /// Setup stencil data.
   ///
   if (stencil0.has_value()) {
     pass_data->stencil_attachment = stencil0->texture;

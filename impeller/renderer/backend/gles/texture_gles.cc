@@ -12,6 +12,7 @@
 #include "impeller/base/allocation.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/texture_descriptor.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
 
 namespace impeller {
@@ -23,13 +24,8 @@ static TextureGLES::Type GetTextureTypeFromDescriptor(
       static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
   const auto is_msaa = desc.sample_count == SampleCount::kCount4;
   if (usage == render_target && !is_msaa) {
-    FML_LOG(ERROR) << "GetTextureTypeFromDescriptor kRenderBuffer (is_msaa): "
-                   << is_msaa;
-    return is_msaa ? TextureGLES::Type::kRenderBufferMultisampled
-                   : TextureGLES::Type::kRenderBuffer;
+    return TextureGLES::Type::kRenderBuffer;
   }
-  FML_LOG(ERROR) << "GetTextureTypeFromDescriptor kTexture (is_msaa): "
-                 << is_msaa;
   return is_msaa ? TextureGLES::Type::kTextureMultisampled
                  : TextureGLES::Type::kTexture;
 }
@@ -40,7 +36,6 @@ HandleType ToHandleType(TextureGLES::Type type) {
     case TextureGLES::Type::kTextureMultisampled:
       return HandleType::kTexture;
     case TextureGLES::Type::kRenderBuffer:
-    case TextureGLES::Type::kRenderBufferMultisampled:
       return HandleType::kRenderBuffer;
   }
   FML_UNREACHABLE();
@@ -391,8 +386,7 @@ void TextureGLES::InitializeContentsIfNecessary() const {
         );
       }
     } break;
-    case Type::kRenderBuffer:
-    case Type::kRenderBufferMultisampled: {
+    case Type::kRenderBuffer: {
       auto render_buffer_format =
           ToRenderBufferFormat(GetTextureDescriptor().format);
       if (!render_buffer_format.has_value()) {
@@ -402,22 +396,11 @@ void TextureGLES::InitializeContentsIfNecessary() const {
       gl.BindRenderbuffer(GL_RENDERBUFFER, handle.value());
       {
         TRACE_EVENT0("impeller", "RenderBufferStorageInitialization");
-        if (type_ == Type::kRenderBuffer) {
-          gl.RenderbufferStorage(
-              GL_RENDERBUFFER,               // target
-              render_buffer_format.value(),  // internal format
-              size.width,                    // width
-              size.height                    // height
-          );
-        } else {
-          gl.RenderbufferStorageMultisampleEXT(
-              GL_RENDERBUFFER,               // target
-              4,                             // samples
-              render_buffer_format.value(),  // internal format
-              size.width,                    // width
-              size.height                    // height
-          );
-        }
+        gl.RenderbufferStorage(GL_RENDERBUFFER,               // target
+                               render_buffer_format.value(),  // internal format
+                               size.width,                    // width
+                               size.height                    // height
+        );
       }
     } break;
   }
@@ -447,7 +430,6 @@ bool TextureGLES::Bind() const {
       gl.BindTexture(target.value(), handle.value());
     } break;
     case Type::kRenderBuffer:
-    case Type::kRenderBufferMultisampled:
       gl.BindRenderbuffer(GL_RENDERBUFFER, handle.value());
       break;
   }
@@ -536,7 +518,6 @@ bool TextureGLES::SetAsFramebufferAttachment(GLenum target,
       );
       break;
     case Type::kRenderBuffer:
-    case Type::kRenderBufferMultisampled:
       gl.FramebufferRenderbuffer(target,                    // target
                                  ToAttachmentPoint(point),  // attachment
                                  GL_RENDERBUFFER,  // render-buffer target

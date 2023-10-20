@@ -19,7 +19,6 @@ class TextureGLES final : public Texture,
     kTexture,
     kTextureMultisampled,
     kRenderBuffer,
-    kRenderBufferMultisampled,
   };
 
   enum class IsWrapped {
