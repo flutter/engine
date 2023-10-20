@@ -477,6 +477,10 @@ void testMain() {
 
   // ALL ADAPTERS
 
+  // The reason we listen for pointer events in the bubble phase instead of the
+  // capture phase is to allow platform views and native text fields to receive
+  // the event first. This way, they can potentially handle the event and stop
+  // its propagation to prevent Flutter from receiving and handling it.
   _testEach(
     <_BasicEventContext>[
       _PointerEventContext(),
@@ -491,33 +495,26 @@ void testMain() {
         packets.add(packet);
       };
 
+      final DomElement child = createDomHTMLDivElement();
+      flutterViewElement.append(child);
+
       final DomEventListener stopPropagationListener = createDomEventListener((DomEvent event) {
         event.stopPropagation();
       });
 
-      // The event listener reaches `PointerBinding` as expected.
-      DomEvent event = context.primaryDown();
-      flutterViewElement.dispatchEvent(event);
+      // The event reaches `PointerBinding` as expected.
+      child.dispatchEvent(context.primaryDown());
       expect(packets, isNotEmpty);
       packets.clear();
 
-      // Stop propagation during bubble phase. This should happen after the
-      // event has been handled by `PointerBinding`.
-      event = context.primaryDown();
-      flutterViewElement.addEventListener(event.type, stopPropagationListener);
-      flutterViewElement.dispatchEvent(event);
-      expect(packets, isNotEmpty);
-      packets.clear();
-
-      // Stop propagation during capture phase. This should prevent the event
-      // from reaching `PointerBinding`.
-      event = context.primaryDown();
-      flutterViewElement.addEventListener(event.type, stopPropagationListener, true);
-      flutterViewElement.dispatchEvent(event);
+      // The child stops propagation so the event doesn't reach `PointerBinding`.
+      final DomEvent event = context.primaryDown();
+      child.addEventListener(event.type, stopPropagationListener);
+      child.dispatchEvent(event);
       expect(packets, isEmpty);
+      packets.clear();
 
-      flutterViewElement.removeEventListener(event.type, stopPropagationListener);
-      flutterViewElement.removeEventListener(event.type, stopPropagationListener, true);
+      child.remove();
     },
   );
 
