@@ -152,6 +152,10 @@ void ManualResetWaitableEvent::Wait() {
 bool ManualResetWaitableEvent::WaitWithTimeout(TimeDelta timeout) {
   std::unique_lock<std::mutex> locker(mutex_);
 
+  if (signaled_) {
+    return true;
+  }
+
   auto last_signal_id = signal_id_;
   // Disable thread-safety analysis for the lambda: We could annotate it with
   // |FML_EXCLUSIVE_LOCKS_REQUIRED(mutex_)|, but then the analyzer currently

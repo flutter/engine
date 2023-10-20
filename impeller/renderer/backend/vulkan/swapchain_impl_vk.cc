@@ -4,7 +4,8 @@
 
 #include "impeller/renderer/backend/vulkan/swapchain_impl_vk.h"
 
-#include "fml/synchronization/count_down_latch.h"
+#include "fml/synchronization/waitable_event.h"
+#include "fml/time/time_delta.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
@@ -27,7 +28,7 @@ static constexpr size_t kMaxFramesInFlight = 3u;
 static constexpr size_t kPollFramesForOrientation = 1u;
 
 struct FrameSynchronizer {
-  std::shared_ptr<fml::CountDownLatch> acquire;
+  std::shared_ptr<fml::ManualResetWaitableEvent> acquire;
   vk::UniqueSemaphore render_ready;
   vk::UniqueSemaphore present_ready;
   bool is_valid = false;
@@ -40,7 +41,8 @@ struct FrameSynchronizer {
       VALIDATION_LOG << "Could not create synchronizer.";
       return;
     }
-    acquire = std::make_shared<fml::CountDownLatch>(0u);
+    acquire = std::make_shared<fml::ManualResetWaitableEvent>();
+    acquire->Signal();
     render_ready = std::move(render_res.value);
     present_ready = std::move(present_res.value);
     is_valid = true;
@@ -49,8 +51,10 @@ struct FrameSynchronizer {
   ~FrameSynchronizer() = default;
 
   bool WaitForFence(const vk::Device& device) {
-    acquire->Wait();
-    acquire = std::make_shared<fml::CountDownLatch>(1u);
+    if (!acquire->WaitWithTimeout(fml::TimeDelta::FromMilliseconds(1000))) {
+      return false;
+    }
+    acquire->Reset();
     return true;
   }
 };
@@ -414,10 +418,6 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
   const auto& context = ContextVK::Cast(*context_strong);
   const auto& sync = synchronizers_[current_frame_];
 
-  /// Record the approximate end of the GPU workload. This is intentionally
-  /// done before creating the final cmd buffer as that is not tracked.
-  context.GetGPUTracer()->MarkFrameEnd();
-
   //----------------------------------------------------------------------------
   /// Transition the image to color-attachment-optimal.
   ///
@@ -461,7 +461,6 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
     auto [result, fence] =
         context.GetDevice().createFenceUnique(vk::FenceCreateInfo{});
     if (result != vk::Result::eSuccess) {
-      sync->acquire->CountDown();
       return false;
     }
 
@@ -469,16 +468,16 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
     if (result != vk::Result::eSuccess) {
       VALIDATION_LOG << "Could not wait on render semaphore: "
                      << vk::to_string(result);
-      sync->acquire->CountDown();
       return false;
     }
     context.GetFenceWaiter()->AddFence(
-        std::move(fence), [latch = sync->acquire,
+        std::move(fence), [waitable_event = sync->acquire,
                            final_cmd_buffer = std::move(final_cmd_buffer)]() {
-          latch->CountDown();
+          waitable_event->Signal();
         });
   }
 
+  context.GetGPUTracer()->MarkFrameEnd();
   auto task = [&, index, current_frame = current_frame_] {
     auto context_strong = context_.lock();
     if (!context_strong) {
