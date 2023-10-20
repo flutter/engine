@@ -135,6 +135,7 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
       break;
     default:
       // This is an advanced blend, set the override.
+      FML_LOG(ERROR) << "advanced blend set override";
       color0.advanced_blend_override = blend_mode;
       break;
   }

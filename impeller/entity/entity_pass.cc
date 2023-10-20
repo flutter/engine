@@ -939,7 +939,6 @@ bool EntityPass::OnRender(
       if (renderer.GetDeviceCapabilities().SupportsNativeAdvancedBlends()) {
         // If native support for advanced blends is present, pass the entity
         // through as-is.
-        continue;
       } else if (renderer.GetDeviceCapabilities().SupportsFramebufferFetch()) {
         auto src_contents = result.entity.GetContents();
         auto contents = std::make_shared<FramebufferBlendContents>();

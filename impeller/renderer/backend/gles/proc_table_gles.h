@@ -111,6 +111,7 @@ struct GLProc {
   PROC(BindTexture);                         \
   PROC(BlendEquationSeparate);               \
   PROC(BlendFuncSeparate);                   \
+  PROC(BlendEquation);                       \
   PROC(BufferData);                          \
   PROC(CheckFramebufferStatus);              \
   PROC(Clear);                               \

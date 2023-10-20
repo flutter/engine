@@ -159,6 +159,12 @@ static CompilerBackend CreateGLSLCompiler(const spirv_cross::ParsedIR& ir,
         source_options.type == SourceType::kFragmentShader) {
       gl_compiler->remap_ext_framebuffer_fetch(0, 0, true);
     }
+    if (source_options.type == SourceType::kFragmentShader) {
+      gl_compiler->add_header_line(
+          "#ifdef GL_KHR_blend_equation_advanced\n"
+          "layout(blend_support_all_equations) out;\n"
+          "#endif\n");
+    }
     gl_compiler->set_variable_type_remap_callback(
         [&](const spirv_cross::SPIRType& type, const std::string& var_name,
             std::string& name_of_type) {

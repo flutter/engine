@@ -4,9 +4,12 @@
 
 #include "impeller/renderer/backend/gles/render_pass_gles.h"
 
+#include "GLES3/gl3.h"
 #include "flutter/fml/trace_event.h"
 #include "fml/closure.h"
+#include "fml/logging.h"
 #include "impeller/base/validation.h"
+#include "impeller/geometry/color.h"
 #include "impeller/renderer/backend/gles/device_buffer_gles.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
 #include "impeller/renderer/backend/gles/pipeline_gles.h"
@@ -34,20 +37,90 @@ void RenderPassGLES::OnSetLabel(std::string label) {
   label_ = std::move(label);
 }
 
+#define MULTIPLY_KHR 0x9294
+#define SCREEN_KHR 0x9295
+#define OVERLAY_KHR 0x9296
+#define DARKEN_KHR 0x9297
+#define LIGHTEN_KHR 0x9298
+#define COLORDODGE_KHR 0x9299
+#define COLORBURN_KHR 0x929A
+#define HARDLIGHT_KHR 0x929B
+#define SOFTLIGHT_KHR 0x929C
+#define DIFFERENCE_KHR 0x929E
+#define EXCLUSION_KHR 0x92A0
+#define HSL_HUE_KHR 0x92AD
+#define HSL_SATURATION_KHR 0x92AE
+#define HSL_COLOR_KHR 0x92AF
+#define HSL_LUMINOSITY_KHR 0x92B0
+
+GLenum AdvancedBlendToBlendFactor(BlendMode blend_mode) {
+  switch (blend_mode) {
+    case BlendMode::kScreen:
+      return SCREEN_KHR;
+    case BlendMode::kOverlay:
+      return OVERLAY_KHR;
+    case BlendMode::kDarken:
+      return DARKEN_KHR;
+    case BlendMode::kLighten:
+      return LIGHTEN_KHR;
+    case BlendMode::kColorDodge:
+      return COLORDODGE_KHR;
+    case BlendMode::kColorBurn:
+      return COLORBURN_KHR;
+    case BlendMode::kHardLight:
+      return HARDLIGHT_KHR;
+    case BlendMode::kSoftLight:
+      return SOFTLIGHT_KHR;
+    case BlendMode::kDifference:
+      return DIFFERENCE_KHR;
+    case BlendMode::kExclusion:
+      return EXCLUSION_KHR;
+    case BlendMode::kMultiply:
+      return MULTIPLY_KHR;
+    case BlendMode::kHue:
+      return HSL_HUE_KHR;
+    case BlendMode::kSaturation:
+      return HSL_SATURATION_KHR;
+    case BlendMode::kColor:
+      return HSL_COLOR_KHR;
+    case BlendMode::kLuminosity:
+    case BlendMode::kClear:
+    case BlendMode::kSource:
+    case BlendMode::kDestination:
+    case BlendMode::kSourceOver:
+    case BlendMode::kDestinationOver:
+    case BlendMode::kSourceIn:
+    case BlendMode::kDestinationIn:
+    case BlendMode::kSourceOut:
+    case BlendMode::kDestinationOut:
+    case BlendMode::kSourceATop:
+    case BlendMode::kDestinationATop:
+    case BlendMode::kXor:
+    case BlendMode::kPlus:
+    case BlendMode::kModulate:
+      FML_UNREACHABLE();
+  }
+}
+
 void ConfigureBlending(const ProcTableGLES& gl,
                        const ColorAttachmentDescriptor* color) {
   if (color->blending_enabled) {
     gl.Enable(GL_BLEND);
-    gl.BlendFuncSeparate(
-        ToBlendFactor(color->src_color_blend_factor),  // src color
-        ToBlendFactor(color->dst_color_blend_factor),  // dst color
-        ToBlendFactor(color->src_alpha_blend_factor),  // src alpha
-        ToBlendFactor(color->dst_alpha_blend_factor)   // dst alpha
-    );
-    gl.BlendEquationSeparate(
-        ToBlendOperation(color->color_blend_op),  // mode color
-        ToBlendOperation(color->alpha_blend_op)   // mode alpha
-    );
+    if (color->advanced_blend_override.has_value()) {
+      FML_LOG(ERROR) << "Configured blending: " << static_cast<int>(color->advanced_blend_override.value());
+      gl.BlendEquation(AdvancedBlendToBlendFactor(color->advanced_blend_override.value()));
+    } else {
+      gl.BlendFuncSeparate(
+          ToBlendFactor(color->src_color_blend_factor),  // src color
+          ToBlendFactor(color->dst_color_blend_factor),  // dst color
+          ToBlendFactor(color->src_alpha_blend_factor),  // src alpha
+          ToBlendFactor(color->dst_alpha_blend_factor)   // dst alpha
+      );
+      gl.BlendEquationSeparate(
+          ToBlendOperation(color->color_blend_op),  // mode color
+          ToBlendOperation(color->alpha_blend_op)   // mode alpha
+      );
+    }
   } else {
     gl.Disable(GL_BLEND);
   }
