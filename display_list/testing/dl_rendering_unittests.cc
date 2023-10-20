@@ -1145,8 +1145,8 @@ class CanvasCompareTester {
                          "Impeller reference")) {
           std::string test_name =
               ::testing::UnitTest::GetInstance()->current_test_info()->name();
-          impeller_result->write(
-              to_png_filename(test_name + " (Impeller reference)"));
+          save_to_png(impeller_result, test_name + " (Impeller reference)",
+                      "base rendering was blank or out of bounds");
         }
       } else {
         static OncePerBackendWarning warnings("No Impeller output tests");
@@ -2267,18 +2267,75 @@ class CanvasCompareTester {
             .with_diff_clip());
   }
 
-  static std::string to_png_filename(const std::string& desc) {
+  enum class DirectoryStatus {
+    kExisted,
+    kCreated,
+    kFailed,
+  };
+
+  static DirectoryStatus CheckDir(const std::string& dir) {
+    auto ret =
+        fml::OpenDirectory(dir.c_str(), false, fml::FilePermission::kRead);
+    if (ret.is_valid()) {
+      return DirectoryStatus::kExisted;
+    }
+    ret =
+        fml::OpenDirectory(dir.c_str(), true, fml::FilePermission::kReadWrite);
+    if (ret.is_valid()) {
+      return DirectoryStatus::kCreated;
+    }
+    FML_LOG(ERROR) << "Could not create directory (" << dir
+                   << ") for impeller failure images"
+                   << ", ret = " << ret.get() << ", errno = " << errno;
+    return DirectoryStatus::kFailed;
+  }
+
+  static void SetupImpellerFailureImageDirectory() {
+    std::string base_dir = "./impeller_failure_images";
+    if (CheckDir(base_dir) == DirectoryStatus::kFailed) {
+      return;
+    }
+    for (int i = 0; i < 10000; i++) {
+      std::string sub_dir = std::to_string(i);
+      while (sub_dir.length() < 4) {
+        sub_dir = "0" + sub_dir;
+      }
+      std::string try_dir = base_dir + "/" + sub_dir;
+      switch (CheckDir(try_dir)) {
+        case DirectoryStatus::kExisted:
+          break;
+        case DirectoryStatus::kCreated:
+          ImpellerFailureImageDirectory = try_dir;
+          return;
+        case DirectoryStatus::kFailed:
+          return;
+      }
+    }
+    FML_LOG(ERROR) << "Too many output directories for Impeller failure images";
+  }
+
+  static void save_to_png(const RenderResult* result,
+                          const std::string& op_desc,
+                          const std::string& reason) {
+    if (!SaveImpellerFailureImages) {
+      return;
+    }
     if (ImpellerFailureImageDirectory.length() == 0) {
-      ImpellerFailureImageDirectory = "./impeller_failure_images";
-      fml::OpenDirectory(ImpellerFailureImageDirectory.c_str(), true,
-                         fml::FilePermission::kReadWrite);
+      SetupImpellerFailureImageDirectory();
+      if (ImpellerFailureImageDirectory.length() == 0) {
+        SaveImpellerFailureImages = false;
+        return;
+      }
     }
 
-    std::string ret = ImpellerFailureImageDirectory + "/";
-    for (const char& ch : desc) {
-      ret += (ch == ':' || ch == ' ') ? '_' : ch;
+    std::string filename = ImpellerFailureImageDirectory + "/";
+    for (const char& ch : op_desc) {
+      filename += (ch == ':' || ch == ' ') ? '_' : ch;
     }
-    return ret + ".png";
+    filename = filename + ".png";
+    result->write(filename);
+    ImpellerFailureImages.push_back(filename);
+    FML_LOG(ERROR) << reason << ": " << filename;
   }
 
   static void RenderWith(const TestParameters& testP,
@@ -2360,26 +2417,14 @@ class CanvasCompareTester {
       if (SaveImpellerFailureImages && !success) {
         FML_LOG(ERROR) << "Impeller issue encountered for: "
                        << *imp_job.MakeDisplayList(base_info);
-        std::string filename = to_png_filename(info + " (Impeller Result)");
-        imp_result->write(filename);
-        ImpellerFailureImages.push_back(filename);
-        FML_LOG(ERROR) << "output saved in: " << filename;
-        std::string src_filename =
-            to_png_filename(info + " (Impeller Reference)");
-        env.ref_impeller_result()->write(src_filename);
-        ImpellerFailureImages.push_back(src_filename);
-        FML_LOG(ERROR) << "compare to reference without attributes: "
-                       << src_filename;
-        std::string sk_filename = to_png_filename(info + " (Skia Result)");
-        sk_result->write(sk_filename);
-        ImpellerFailureImages.push_back(sk_filename);
-        FML_LOG(ERROR) << "and to Skia reference with attributes: "
-                       << sk_filename;
-        std::string sk_src_filename =
-            to_png_filename(info + " (Skia Reference)");
-        env.ref_sk_result()->write(sk_src_filename);
-        ImpellerFailureImages.push_back(sk_src_filename);
-        FML_LOG(ERROR) << "operating on Skia source image: " << sk_src_filename;
+        save_to_png(imp_result.get(), info + " (Impeller Result)",
+                    "output saved in");
+        save_to_png(env.ref_impeller_result(), info + " (Impeller Reference)",
+                    "compare to reference without attributes");
+        save_to_png(sk_result.get(), info + " (Skia Result)",
+                    "and to Skia reference with attributes");
+        save_to_png(env.ref_sk_result(), info + " (Skia Reference)",
+                    "and to Skia reference without attributes");
       }
     }
 
