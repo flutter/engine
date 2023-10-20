@@ -107,8 +107,10 @@ CapabilitiesGLES::CapabilitiesGLES(const ProcTableGLES& gl) {
     supports_decal_sampler_address_mode_ = true;
   }
 
-  supports_native_advanced_blend_ = gl.GetDescription()->HasExtension("GL_KHR_blend_equation_advanced");
-  FML_LOG(ERROR) << "supports native advanced blend: " << supports_native_advanced_blend_;
+  supports_native_advanced_blend_ =
+      gl.GetDescription()->HasExtension("GL_KHR_blend_equation_advanced");
+  FML_LOG(ERROR) << "supports native advanced blend: "
+                 << supports_native_advanced_blend_;
 }
 
 size_t CapabilitiesGLES::GetMaxTextureUnits(ShaderStage stage) const {

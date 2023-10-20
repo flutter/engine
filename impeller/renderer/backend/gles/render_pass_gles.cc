@@ -107,8 +107,11 @@ void ConfigureBlending(const ProcTableGLES& gl,
   if (color->blending_enabled) {
     gl.Enable(GL_BLEND);
     if (color->advanced_blend_override.has_value()) {
-      FML_LOG(ERROR) << "Configured blending: " << static_cast<int>(color->advanced_blend_override.value());
-      gl.BlendEquation(AdvancedBlendToBlendFactor(color->advanced_blend_override.value()));
+      FML_LOG(ERROR) << "Configured blending: "
+                     << static_cast<int>(
+                            color->advanced_blend_override.value());
+      gl.BlendEquation(
+          AdvancedBlendToBlendFactor(color->advanced_blend_override.value()));
     } else {
       gl.BlendFuncSeparate(
           ToBlendFactor(color->src_color_blend_factor),  // src color
