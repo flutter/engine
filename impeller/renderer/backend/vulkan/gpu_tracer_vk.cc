@@ -4,6 +4,8 @@
 
 #include "impeller/renderer/backend/vulkan/gpu_tracer_vk.h"
 
+#include <memory>
+#include <optional>
 #include <thread>
 #include <utility>
 #include "fml/logging.h"
@@ -36,7 +38,7 @@ bool GPUTracerVK::IsEnabled() const {
 }
 
 void GPUTracerVK::MarkFrameStart() {
-  FML_DCHECK(!in_frame_);
+  FML_CHECK(!in_frame_);
   in_frame_ = true;
   raster_thread_id_ = std::this_thread::get_id();
 }
@@ -47,7 +49,7 @@ void GPUTracerVK::MarkFrameEnd() {
   }
 
   Lock lock(trace_state_mutex_);
-  current_state_ = (current_state_ + 1) % 16;
+  current_state_ = (current_state_ + 1) % kTraceStatesSize;
 
   auto& state = trace_states_[current_state_];
   // If there are still pending buffers on the trace state we're switching to,
@@ -55,15 +57,19 @@ void GPUTracerVK::MarkFrameEnd() {
   // never finished. This shouldn't happen unless there is a bug in the
   // encoder logic. We set it to zero anyway to prevent a validation error
   // from becoming a memory leak.
-  FML_DCHECK(state.pending_buffers == 0u);
+  FML_CHECK(state.pending_buffers == 0u);
 
   state.pending_buffers = 0;
   state.current_index = 0;
-  state.contains_failure = false;
   in_frame_ = false;
 }
 
-void GPUTracerVK::RecordCmdBufferStart(const vk::CommandBuffer& buffer) {
+std::unique_ptr<GPUProbe> GPUTracerVK::CreateGPUProbe() {
+  return std::make_unique<GPUProbe>(weak_from_this());
+}
+
+void GPUTracerVK::RecordCmdBufferStart(const vk::CommandBuffer& buffer,
+                                       GPUProbe& probe) {
   if (!enabled_ || std::this_thread::get_id() != raster_thread_id_ ||
       !in_frame_) {
     return;
@@ -98,45 +104,47 @@ void GPUTracerVK::RecordCmdBufferStart(const vk::CommandBuffer& buffer) {
   buffer.writeTimestamp(vk::PipelineStageFlagBits::eTopOfPipe,
                         trace_states_[current_state_].query_pool.get(),
                         state.current_index);
-  state.pending_buffers += 1;
   state.current_index += 1;
+  if (!probe.index_.has_value()) {
+    state.pending_buffers += 1;
+    probe.index_ = current_state_;
+  }
 }
 
-std::optional<size_t> GPUTracerVK::RecordCmdBufferEnd(
-    const vk::CommandBuffer& buffer) {
+void GPUTracerVK::RecordCmdBufferEnd(const vk::CommandBuffer& buffer,
+                                     GPUProbe& probe) {
   if (!enabled_ || std::this_thread::get_id() != raster_thread_id_ ||
       !in_frame_) {
-    return std::nullopt;
+    return;
   }
   Lock lock(trace_state_mutex_);
   GPUTraceState& state = trace_states_[current_state_];
 
   if (state.current_index >= kPoolSize) {
-    return current_state_;
+    return;
   }
 
   buffer.writeTimestamp(vk::PipelineStageFlagBits::eBottomOfPipe,
                         state.query_pool.get(), state.current_index);
 
   state.current_index += 1;
-  return current_state_;
+  if (!probe.index_.has_value()) {
+    state.pending_buffers += 1;
+    probe.index_ = current_state_;
+  }
 }
 
-void GPUTracerVK::OnFenceComplete(std::optional<size_t> maybe_frame_index,
-                                  bool success) {
-  if (!enabled_ || !maybe_frame_index.has_value()) {
+void GPUTracerVK::OnFenceComplete(size_t frame_index) {
+  if (!enabled_) {
     return;
   }
-  auto frame_index = maybe_frame_index.value();
   Lock lock(trace_state_mutex_);
   GPUTraceState& state = trace_states_[frame_index];
-  if (state.pending_buffers == 0) {
-    return;
-  }
-  state.contains_failure = !success;
+
+  FML_CHECK(state.pending_buffers > 0);
   state.pending_buffers -= 1;
 
-  if (state.pending_buffers == 0 && !state.contains_failure) {
+  if (state.pending_buffers == 0) {
     auto buffer_count = state.current_index;
     std::vector<uint64_t> bits(buffer_count);
 
