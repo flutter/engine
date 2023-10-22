@@ -2191,11 +2191,9 @@ TEST_F(ShellTest, Screenshot) {
   DestroyShell(std::move(shell));
 }
 
+// Only supported on macOS hosts as a real metal surface needs to be created.
+#if defined(FML_OS_MACOSX)
 TEST_F(ShellTest, ScreenshotImpeller) {
-#if !defined(FML_OS_MACOSX)
-  GTEST_SKIP() << "Skipping Impeller test on non-macOS platform";
-#endif
-
   auto settings = CreateSettingsForFixture();
   settings.enable_impeller = true;
   fml::AutoResetWaitableEvent firstFrameLatch;
@@ -2242,6 +2240,7 @@ TEST_F(ShellTest, ScreenshotImpeller) {
 
   DestroyShell(std::move(shell));
 }
+#endif
 
 TEST_F(ShellTest, CanConvertToAndFromMappings) {
   const size_t buffer_size = 2 << 20;
