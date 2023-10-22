@@ -2192,13 +2192,23 @@ TEST_F(ShellTest, Screenshot) {
 }
 
 TEST_F(ShellTest, ScreenshotImpeller) {
+#if !defined(FML_OS_MACOSX)
+  GTEST_SKIP() << "Skipping Impeller test on non-macOS platform";
+#endif
+
   auto settings = CreateSettingsForFixture();
   settings.enable_impeller = true;
   fml::AutoResetWaitableEvent firstFrameLatch;
   settings.frame_rasterized_callback =
       [&firstFrameLatch](const FrameTiming& t) { firstFrameLatch.Signal(); };
 
-  std::unique_ptr<Shell> shell = CreateShell(settings);
+  std::unique_ptr<Shell> shell = CreateShell({
+      .settings = settings,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .rendering_backend =
+              ShellTestPlatformView::BackendType::kMetalBackend,
+      }),
+  });
 
   // Create the surface needed by rasterizer
   PlatformViewNotifyCreated(shell.get());
