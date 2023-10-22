@@ -102,7 +102,7 @@ bool ComputePassVK::OnEncodeCommands(const Context& context,
   }
   auto desc_sets =
       AllocateAndBindDescriptorSets(vk_context, encoder, commands_);
-  if (desc_sets.empty()) {
+  if (desc_sets.empty() && !commands_.empty()) {
     return false;
   }
 
