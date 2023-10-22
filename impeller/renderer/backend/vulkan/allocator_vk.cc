@@ -9,9 +9,12 @@
 #include "flutter/fml/memory/ref_ptr.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/texture_descriptor.h"
+#include "impeller/renderer/backend/vulkan/capabilities_vk.h"
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
+#include "vulkan/vulkan_to_string.hpp"
 
 namespace impeller {
 
@@ -148,6 +151,7 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
   allocator_.reset(allocator);
   supports_memoryless_textures_ =
       capabilities.SupportsDeviceTransientTextures();
+  supports_lossy_compression_ = capabilities.SupportsLossyTextureCompression();
   is_valid_ = true;
 }
 
@@ -244,30 +248,19 @@ ToVKTextureMemoryPropertyFlags(StorageMode mode,
   FML_UNREACHABLE();
 }
 
-static VmaAllocationCreateFlags ToVmaAllocationCreateFlags(StorageMode mode) {
-  VmaAllocationCreateFlags flags = 0;
-  switch (mode) {
-    case StorageMode::kHostVisible:
-      return flags;
-    case StorageMode::kDevicePrivate:
-      return flags;
-    case StorageMode::kDeviceTransient:
-      return flags;
-  }
-  FML_UNREACHABLE();
-}
-
 class AllocatedTextureSourceVK final : public TextureSourceVK {
  public:
   AllocatedTextureSourceVK(std::weak_ptr<ResourceManagerVK> resource_manager,
                            const TextureDescriptor& desc,
                            VmaAllocator allocator,
                            vk::Device device,
-                           bool supports_memoryless_textures)
+                           bool supports_memoryless_textures,
+                           bool supports_lossy_compression)
       : TextureSourceVK(desc), resource_(std::move(resource_manager)) {
     FML_DCHECK(desc.format != PixelFormat::kUnknown);
     TRACE_EVENT0("impeller", "CreateDeviceTexture");
-    vk::ImageCreateInfo image_info;
+
+    vk::ImageCreateInfo image_info = {};
     image_info.flags = ToVKImageCreateFlags(desc.type);
     image_info.imageType = vk::ImageType::e2D;
     image_info.format = ToVKImageFormat(desc.format);
@@ -286,13 +279,21 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
                             supports_memoryless_textures);
     image_info.sharingMode = vk::SharingMode::eExclusive;
 
+
+    vk::ImageCompressionControlEXT compression = {};
+    bool use_compression = desc.compression_type == CompressionType::kLossy &&
+                           supports_lossy_compression;
+    compression.flags = use_compression
+                            ? vk::ImageCompressionFlagBitsEXT::eFixedRateDefault
+                            : vk::ImageCompressionFlagBitsEXT::eDisabled;
+    image_info.pNext = &compression;
+
     VmaAllocationCreateInfo alloc_nfo = {};
 
     alloc_nfo.usage = ToVMAMemoryUsage();
     alloc_nfo.preferredFlags =
         static_cast<VkMemoryPropertyFlags>(ToVKTextureMemoryPropertyFlags(
             desc.storage_mode, supports_memoryless_textures));
-    alloc_nfo.flags = ToVmaAllocationCreateFlags(desc.storage_mode);
 
     auto create_info_native =
         static_cast<vk::ImageCreateInfo::NativeType>(image_info);
@@ -408,7 +409,8 @@ std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
       desc,                                            //
       allocator_.get(),                                //
       device_holder->GetDevice(),                      //
-      supports_memoryless_textures_                    //
+      supports_memoryless_textures_,                   //
+      supports_lossy_compression_                      //
   );
   if (!source->IsValid()) {
     return nullptr;

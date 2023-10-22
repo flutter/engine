@@ -21,6 +21,8 @@ class ContextVK;
 enum class OptionalDeviceExtensionVK : uint32_t {
   // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VK_EXT_pipeline_creation_feedback.html
   kEXTPipelineCreationFeedback,
+  // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VK_EXT_image_compression_control.html
+  kEXTImageCompressionControl,
   kLast,
 };
 
@@ -39,6 +41,10 @@ class CapabilitiesVK final : public Capabilities,
   bool AreValidationsEnabled() const;
 
   bool HasOptionalDeviceExtension(OptionalDeviceExtensionVK extension) const;
+
+  bool SupportsLossyTextureCompression() const {
+    return supports_lossy_texture_compression_;
+  }
 
   std::optional<std::vector<std::string>> GetEnabledLayers() const;
 
@@ -108,6 +114,7 @@ class CapabilitiesVK final : public Capabilities,
   PixelFormat default_depth_stencil_format_ = PixelFormat::kUnknown;
   vk::PhysicalDeviceProperties device_properties_;
   bool supports_compute_subgroups_ = false;
+  bool supports_lossy_texture_compression_ = false;
   bool supports_device_transient_textures_ = false;
   bool is_valid_ = false;
 

@@ -410,6 +410,7 @@ ImageDecoderImpeller::UploadTextureToStorage(
   texture_descriptor.size = {image_info.width(), image_info.height()};
   texture_descriptor.mip_count =
       create_mips ? texture_descriptor.size.MipCount() : 1;
+  texture_descriptor.compression_type = impeller::CompressionType::kLossy;
 
   auto texture =
       context->GetResourceAllocator()->CreateTexture(texture_descriptor);

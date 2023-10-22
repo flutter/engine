@@ -9,6 +9,8 @@
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
+#include "vulkan/vulkan_core.h"
+#include "vulkan/vulkan_structs.hpp"
 
 namespace impeller {
 
@@ -156,6 +158,8 @@ static const char* GetDeviceExtensionName(OptionalDeviceExtensionVK ext) {
   switch (ext) {
     case OptionalDeviceExtensionVK::kEXTPipelineCreationFeedback:
       return VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME;
+    case OptionalDeviceExtensionVK::kEXTImageCompressionControl:
+      return VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME;
     case OptionalDeviceExtensionVK::kLast:
       return "Unknown";
   }
@@ -400,6 +404,11 @@ bool CapabilitiesVK::SetPhysicalDevice(const vk::PhysicalDevice& device) {
       }
     });
   }
+
+  supports_lossy_texture_compression_ =
+      optional_device_extensions_.find(
+          OptionalDeviceExtensionVK::kEXTImageCompressionControl) !=
+      optional_device_extensions_.end();
 
   return true;
 }
