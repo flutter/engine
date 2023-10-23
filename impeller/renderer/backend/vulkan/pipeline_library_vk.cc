@@ -105,6 +105,7 @@ static vk::UniqueRenderPass CreateCompatRenderPassForPipeline(
         desc.GetDepthPixelFormat(), sample_count));
   }
   if (desc.HasStencilAttachmentDescriptors()) {
+    FML_LOG(ERROR) << "Stencil format: " << PixelFormatToString(desc.GetStencilPixelFormat());
     depth_stencil_ref = vk::AttachmentReference{
         static_cast<uint32_t>(attachments.size()),
         vk::ImageLayout::eDepthStencilAttachmentOptimal};

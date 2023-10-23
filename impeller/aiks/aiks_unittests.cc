@@ -3687,5 +3687,41 @@ TEST_P(AiksTest, ClearColorOptimizationWhenSubpassIsBiggerThanParentPass) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, BlurHasNoEdge) {
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  canvas.DrawPaint({});
+  Paint blur = {
+      .color = Color::Green(),
+      .mask_blur_descriptor =
+          Paint::MaskBlurDescriptor{
+              .style = FilterContents::BlurStyle::kNormal,
+              .sigma = Sigma(47.6),
+          },
+  };
+  canvas.DrawRect(Rect{300, 300, 200, 200}, blur);
+}
+
+TEST_P(AiksTest, EmptySaveLayerIgnoresPaint) {
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  canvas.DrawPaint(Paint{.color = Color::Red()});
+  canvas.ClipRect({100, 100, 200, 200});
+  canvas.SaveLayer(Paint{.color = Color::Blue()});
+  canvas.Restore();
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, EmptySaveLayerRendersWithClear) {
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  auto image = std::make_shared<Image>(CreateTextureForFixture("airplane.jpg"));
+  canvas.DrawImage(image, {10, 10}, {});
+  canvas.ClipRect({100, 100, 200, 200});
+  canvas.SaveLayer(Paint{.blend_mode = BlendMode::kClear});
+  canvas.Restore();
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 }  // namespace testing
 }  // namespace impeller
