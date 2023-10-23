@@ -299,7 +299,8 @@ bool CommandEncoderVK::IsTracking(
   return tracked_objects_->IsTracking(source);
 }
 
-fml::StatusOr<std::vector<vk::DescriptorSet>> CommandEncoderVK::AllocateDescriptorSets(
+fml::StatusOr<std::vector<vk::DescriptorSet>>
+CommandEncoderVK::AllocateDescriptorSets(
     uint32_t buffer_count,
     uint32_t sampler_count,
     const std::vector<vk::DescriptorSetLayout>& layouts) {
