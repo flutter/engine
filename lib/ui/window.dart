@@ -356,6 +356,8 @@ class FlutterView {
   void render(Scene scene) {
     // Duplicated calls or calls outside of onBeginFrame/onDrawFrame (indicated
     // by _debugRenderedViews being null) are ignored. See _debugRenderedViews.
+    // TODO(dkwingsmt): We should change this skip into an assertion.
+    // https://github.com/flutter/flutter/issues/137073
     bool validRender = true;
     assert(() {
       validRender = platformDispatcher._debugRenderedViews?.add(this) ?? false;
