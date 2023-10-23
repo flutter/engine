@@ -38,7 +38,7 @@ bool GPUTracerVK::IsEnabled() const {
 }
 
 void GPUTracerVK::MarkFrameStart() {
-  FML_CHECK(!in_frame_);
+  FML_DCHECK(!in_frame_);
   in_frame_ = true;
   raster_thread_id_ = std::this_thread::get_id();
 }
@@ -57,7 +57,7 @@ void GPUTracerVK::MarkFrameEnd() {
   // never finished. This shouldn't happen unless there is a bug in the
   // encoder logic. We set it to zero anyway to prevent a validation error
   // from becoming a memory leak.
-  FML_CHECK(state.pending_buffers == 0u);
+  FML_DCHECK(state.pending_buffers == 0u);
 
   state.pending_buffers = 0;
   state.current_index = 0;
@@ -141,7 +141,7 @@ void GPUTracerVK::OnFenceComplete(size_t frame_index) {
   Lock lock(trace_state_mutex_);
   GPUTraceState& state = trace_states_[frame_index];
 
-  FML_CHECK(state.pending_buffers > 0);
+  FML_DCHECK(state.pending_buffers > 0);
   state.pending_buffers -= 1;
 
   if (state.pending_buffers == 0) {
