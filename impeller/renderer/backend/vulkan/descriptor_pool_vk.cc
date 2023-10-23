@@ -42,19 +42,19 @@ static vk::UniqueDescriptorPool CreatePool(const vk::Device& device,
   return std::move(pool);
 }
 
-std::vector<vk::DescriptorSet> DescriptorPoolVK::AllocateDescriptorSets(
+fml::StatusOr<std::vector<vk::DescriptorSet>> DescriptorPoolVK::AllocateDescriptorSets(
     uint32_t buffer_count,
     uint32_t sampler_count,
     const std::vector<vk::DescriptorSetLayout>& layouts) {
   std::shared_ptr<const DeviceHolder> strong_device = device_holder_.lock();
   if (!strong_device) {
-    return {};
+    return fml::Status(fml::StatusCode::kUnknown, "No device");
   }
 
   auto new_pool =
       CreatePool(strong_device->GetDevice(), sampler_count, buffer_count);
   if (!new_pool) {
-    return {};
+    return fml::Status(fml::StatusCode::kUnknown, "Failed to create descriptor pool");
   }
   pool_ = std::move(new_pool);
 
@@ -67,7 +67,7 @@ std::vector<vk::DescriptorSet> DescriptorPoolVK::AllocateDescriptorSets(
   if (result != vk::Result::eSuccess) {
     VALIDATION_LOG << "Could not allocate descriptor sets: "
                    << vk::to_string(result);
-    return {};
+    return fml::Status(fml::StatusCode::kUnknown, "");
   }
   return sets;
 }

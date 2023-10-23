@@ -5,7 +5,7 @@
 #include "impeller/renderer/backend/vulkan/compute_pass_vk.h"
 
 #include "flutter/fml/trace_event.h"
-#include "impeller/renderer/backend/vulkan/binding_helpers.h"
+#include "impeller/renderer/backend/vulkan/binding_helpers_vk.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/compute_pipeline_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
@@ -100,11 +100,12 @@ bool ComputePassVK::OnEncodeCommands(const Context& context,
     VALIDATION_LOG << "Could not update binding layouts for compute pass.";
     return false;
   }
-  auto desc_sets =
+  auto desc_sets_result =
       AllocateAndBindDescriptorSets(vk_context, encoder, commands_);
-  if (desc_sets.empty() && !commands_.empty()) {
+  if (!desc_sets_result.ok()) {
     return false;
   }
+  auto desc_sets = desc_sets_result.value();
 
   TRACE_EVENT0("impeller", "EncodeComputePassCommands");
   size_t desc_index = 0;

@@ -5,6 +5,7 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
+#include "fml/status_or.h"
 #include "impeller/renderer/backend/vulkan/device_holder.h"
 
 namespace impeller {
@@ -27,7 +28,7 @@ class DescriptorPoolVK {
 
   ~DescriptorPoolVK();
 
-  std::vector<vk::DescriptorSet> AllocateDescriptorSets(
+  fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateDescriptorSets(
       uint32_t buffer_count,
       uint32_t sampler_count,
       const std::vector<vk::DescriptorSetLayout>& layouts);

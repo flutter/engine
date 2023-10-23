@@ -12,7 +12,7 @@
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/barrier_vk.h"
-#include "impeller/renderer/backend/vulkan/binding_helpers.h"
+#include "impeller/renderer/backend/vulkan/binding_helpers_vk.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
@@ -521,11 +521,12 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
       static_cast<uint32_t>(target_size.height);
   pass_info.setClearValues(clear_values);
 
-  auto desc_sets =
+  auto desc_sets_result =
       AllocateAndBindDescriptorSets(vk_context, encoder, commands_);
-  if (desc_sets.empty() && !commands_.empty()) {
+  if (!desc_sets_result.ok()) {
     return false;
   }
+  auto desc_sets = desc_sets_result.value();
 
   {
     TRACE_EVENT0("impeller", "EncodeRenderPassCommands");

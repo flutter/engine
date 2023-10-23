@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "impeller/renderer/backend/vulkan/binding_helpers.h"
+#include "impeller/renderer/backend/vulkan/binding_helpers_vk.h"
+#include "fml/status.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
@@ -113,7 +114,7 @@ static bool BindBuffers(const Bindings& bindings,
   return true;
 }
 
-std::vector<vk::DescriptorSet> AllocateAndBindDescriptorSets(
+fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(
     const ContextVK& context,
     const std::shared_ptr<CommandEncoderVK>& encoder,
     const std::vector<Command>& commands) {
@@ -133,10 +134,14 @@ std::vector<vk::DescriptorSet> AllocateAndBindDescriptorSets(
     layouts.emplace_back(
         PipelineVK::Cast(*command.pipeline).GetDescriptorSetLayout());
   }
-  auto descriptor_sets =
+  auto descriptor_result =
       encoder->AllocateDescriptorSets(buffer_count, samplers_count, layouts);
+  if (!descriptor_result.ok()) {
+    return descriptor_result.status();
+  }
+  auto descriptor_sets = descriptor_result.value();
   if (descriptor_sets.empty()) {
-    return {};
+    return fml::Status();
   }
 
   // Step 2: Update the descriptors for all image and buffer descriptors used
@@ -161,7 +166,8 @@ std::vector<vk::DescriptorSet> AllocateAndBindDescriptorSets(
                      descriptor_sets[desc_index], desc_set, buffers, writes) ||
         !BindImages(command.fragment_bindings, allocator, encoder,
                     descriptor_sets[desc_index], images, writes)) {
-      return {};
+      return fml::Status(fml::StatusCode::kUnknown,
+                         "Failed to bind texture or buffer.");
     }
     desc_index += 1;
   }
@@ -170,7 +176,7 @@ std::vector<vk::DescriptorSet> AllocateAndBindDescriptorSets(
   return descriptor_sets;
 }
 
-std::vector<vk::DescriptorSet> AllocateAndBindDescriptorSets(
+fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(
     const ContextVK& context,
     const std::shared_ptr<CommandEncoderVK>& encoder,
     const std::vector<ComputeCommand>& commands) {
@@ -189,12 +195,15 @@ std::vector<vk::DescriptorSet> AllocateAndBindDescriptorSets(
     layouts.emplace_back(
         ComputePipelineVK::Cast(*command.pipeline).GetDescriptorSetLayout());
   }
-  auto descriptor_sets =
+  auto descriptor_result =
       encoder->AllocateDescriptorSets(buffer_count, samplers_count, layouts);
-  if (descriptor_sets.empty()) {
-    return {};
+  if (!descriptor_result.ok()) {
+    return descriptor_result.status();
   }
-
+  auto descriptor_sets = descriptor_result.value();
+  if (descriptor_sets.empty()) {
+    return fml::Status();
+  }
   // Step 2: Update the descriptors for all image and buffer descriptors used
   // in the render pass.
   std::vector<vk::DescriptorImageInfo> images;
@@ -213,7 +222,8 @@ std::vector<vk::DescriptorSet> AllocateAndBindDescriptorSets(
                      descriptor_sets[desc_index], desc_set, buffers, writes) ||
         !BindImages(command.bindings, allocator, encoder,
                     descriptor_sets[desc_index], images, writes)) {
-      return {};
+      return fml::Status(fml::StatusCode::kUnknown,
+                         "Failed to bind texture or buffer.");
     }
     desc_index += 1;
   }

@@ -6,18 +6,19 @@
 
 #include <vector>
 
+#include "fml/status_or.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/compute_command.h"
 
 namespace impeller {
 
-std::vector<vk::DescriptorSet> AllocateAndBindDescriptorSets(
+fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(
     const ContextVK& context,
     const std::shared_ptr<CommandEncoderVK>& encoder,
     const std::vector<Command>& commands);
 
-std::vector<vk::DescriptorSet> AllocateAndBindDescriptorSets(
+fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(
     const ContextVK& context,
     const std::shared_ptr<CommandEncoderVK>& encoder,
     const std::vector<ComputeCommand>& commands);
