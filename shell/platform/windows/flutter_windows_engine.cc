@@ -569,8 +569,7 @@ void FlutterWindowsEngine::HandlePlatformMessage(
 
   auto message = ConvertToDesktopMessage(*engine_message);
 
-  message_dispatcher_->HandleMessage(
-      message, [this] {}, [this] {});
+  message_dispatcher_->HandleMessage(message, [this] {}, [this] {});
 }
 
 void FlutterWindowsEngine::ReloadSystemFonts() {
