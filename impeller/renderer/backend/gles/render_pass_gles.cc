@@ -8,6 +8,7 @@
 #include "fml/closure.h"
 #include "fml/logging.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/texture_descriptor.h"
 #include "impeller/renderer/backend/gles/context_gles.h"
 #include "impeller/renderer/backend/gles/device_buffer_gles.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
@@ -201,10 +202,13 @@ struct RenderPassData {
       // to glFramebufferTexture2DMultisampleEXT'". We probably don't want to be
       // using MSAA for the stencil buffer anyway.
 
-      // if (!stencil->SetAsFramebufferAttachment(
-      //         GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kStencil)) {
-      //   return false;
-      // }
+      FML_LOG(ERROR) << "Stencil buffer -> SetAsFramebufferAttachment\n"
+                     << TextureDescriptorToString(
+                            stencil->GetTextureDescriptor());
+      if (!stencil->SetAsFramebufferAttachment(
+              GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kStencil)) {
+        return false;
+      }
     }
 
     auto status = gl.CheckFramebufferStatus(GL_FRAMEBUFFER);

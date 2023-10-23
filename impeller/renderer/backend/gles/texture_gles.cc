@@ -120,8 +120,12 @@ struct TexImage2DData {
         external_format = GL_RGBA;
         type = GL_HALF_FLOAT;
         break;
-      case PixelFormat::kUnknown:
       case PixelFormat::kS8UInt:
+        internal_format = GL_ALPHA;
+        external_format = GL_ALPHA;
+        type = GL_UNSIGNED_BYTE;
+        break;
+      case PixelFormat::kUnknown:
       case PixelFormat::kD24UnormS8Uint:
       case PixelFormat::kD32FloatS8UInt:
       case PixelFormat::kR8UNormInt:
