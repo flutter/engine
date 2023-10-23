@@ -69,7 +69,6 @@ source_set("fml") {
     "shared_thread_merger.cc",
     "shared_thread_merger.h",
     "size.h",
-    "size.h",
     "status.h",
     "status_or.h",
     "synchronization/atomic_object.h",
