@@ -2,7 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <memory>
 #include "flutter/testing/testing.h"  // IWYU pragma: keep
+#include "fml/synchronization/count_down_latch.h"
 #include "gtest/gtest.h"
 #include "impeller/renderer//backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
@@ -13,74 +15,94 @@
 namespace impeller {
 namespace testing {
 
-// #ifdef IMPELLER_DEBUG
-// TEST(GPUTracerVK, CanTraceCmdBuffer) {
-//   auto const context = MockVulkanContextBuilder().Build();
+#ifdef IMPELLER_DEBUG
+TEST(GPUTracerVK, CanTraceCmdBuffer) {
+  auto const context = MockVulkanContextBuilder().Build();
+  auto tracer = context->GetGPUTracer();
 
-//   auto tracer = std::make_shared<GPUTracerVK>(context->GetDeviceHolder());
+  ASSERT_TRUE(tracer->IsEnabled());
+  tracer->MarkFrameStart();
 
-//   ASSERT_TRUE(tracer->IsEnabled());
+  auto cmd_buffer = context->CreateCommandBuffer();
+  auto blit_pass = cmd_buffer->CreateBlitPass();
+  blit_pass->EncodeCommands(context->GetResourceAllocator());
 
-//   auto cmd_buffer = context->CreateCommandBuffer();
-//   auto vk_cmd_buffer = CommandBufferVK::Cast(cmd_buffer.get());
-//   auto blit_pass = cmd_buffer->CreateBlitPass();
+  auto latch = std::make_shared<fml::CountDownLatch>(1u);
 
-//   tracer->MarkFrameStart();
-//   tracer->RecordCmdBufferStart(vk_cmd_buffer->GetEncoder()->GetCommandBuffer());
-//   auto frame_id = tracer->RecordCmdBufferEnd(
-//       vk_cmd_buffer->GetEncoder()->GetCommandBuffer());
-//   tracer->MarkFrameEnd();
+  if (!cmd_buffer->SubmitCommands(
+          [latch](CommandBuffer::Status status) { latch->CountDown(); })) {
+    GTEST_FAIL() << "Failed to submit cmd buffer";
+  }
 
-//   ASSERT_EQ(frame_id, 0u);
-//   auto called = GetMockVulkanFunctions(context->GetDevice());
-//   ASSERT_NE(called, nullptr);
-//   ASSERT_TRUE(std::find(called->begin(), called->end(), "vkCreateQueryPool")
-//   !=
-//               called->end());
-//   ASSERT_TRUE(std::find(called->begin(), called->end(),
-//                         "vkGetQueryPoolResults") == called->end());
+  tracer->MarkFrameEnd();
+  latch->Wait();
 
-//   tracer->OnFenceComplete(frame_id, true);
+  auto called = GetMockVulkanFunctions(context->GetDevice());
+  ASSERT_NE(called, nullptr);
+  ASSERT_TRUE(std::find(called->begin(), called->end(), "vkCreateQueryPool") !=
+              called->end());
+  ASSERT_TRUE(std::find(called->begin(), called->end(),
+                        "vkGetQueryPoolResults") != called->end());
+}
 
-//   ASSERT_TRUE(std::find(called->begin(), called->end(),
-//                         "vkGetQueryPoolResults") != called->end());
-// }
+TEST(GPUTracerVK, DoesNotTraceOutsideOfFrameWorkload) {
+  auto const context = MockVulkanContextBuilder().Build();
+  auto tracer = context->GetGPUTracer();
 
-// TEST(GPUTracerVK, DoesNotTraceOutsideOfFrameWorkload) {
-//   auto const context = MockVulkanContextBuilder().Build();
+  ASSERT_TRUE(tracer->IsEnabled());
 
-//   auto tracer = std::make_shared<GPUTracerVK>(context->GetDeviceHolder());
+  auto cmd_buffer = context->CreateCommandBuffer();
+  auto blit_pass = cmd_buffer->CreateBlitPass();
+  blit_pass->EncodeCommands(context->GetResourceAllocator());
 
-//   ASSERT_TRUE(tracer->IsEnabled());
+  auto latch = std::make_shared<fml::CountDownLatch>(1u);
+  if (!cmd_buffer->SubmitCommands(
+          [latch](CommandBuffer::Status status) { latch->CountDown(); })) {
+    GTEST_FAIL() << "Failed to submit cmd buffer";
+  }
 
-//   auto cmd_buffer = context->CreateCommandBuffer();
-//   auto vk_cmd_buffer = CommandBufferVK::Cast(cmd_buffer.get());
-//   auto blit_pass = cmd_buffer->CreateBlitPass();
+  latch->Wait();
 
-//   tracer->RecordCmdBufferStart(vk_cmd_buffer->GetEncoder()->GetCommandBuffer());
-//   auto frame_id = tracer->RecordCmdBufferEnd(
-//       vk_cmd_buffer->GetEncoder()->GetCommandBuffer());
+  auto called = GetMockVulkanFunctions(context->GetDevice());
 
-//   ASSERT_TRUE(!frame_id.has_value());
-//   auto called = GetMockVulkanFunctions(context->GetDevice());
+  ASSERT_NE(called, nullptr);
+  ASSERT_TRUE(std::find(called->begin(), called->end(), "vkCreateQueryPool") ==
+              called->end());
+  ASSERT_TRUE(std::find(called->begin(), called->end(),
+                        "vkGetQueryPoolResults") == called->end());
+}
 
-//   ASSERT_NE(called, nullptr);
-//   ASSERT_TRUE(std::find(called->begin(), called->end(), "vkCreateQueryPool")
-//   ==
-//               called->end());
-//   ASSERT_TRUE(std::find(called->begin(), called->end(),
-//                         "vkGetQueryPoolResults") == called->end());
+// This cmd buffer starts when there is a frame but finishes when there is none.
+// This should result in the same recorded work.
+TEST(GPUTracerVK, TracesWithPartialFrameOverlap) {
+  auto const context = MockVulkanContextBuilder().Build();
+  auto tracer = context->GetGPUTracer();
 
-//   tracer->OnFenceComplete(frame_id, true);
+  ASSERT_TRUE(tracer->IsEnabled());
+  tracer->MarkFrameStart();
 
-//   ASSERT_TRUE(std::find(called->begin(), called->end(), "vkCreateQueryPool")
-//   ==
-//               called->end());
-//   ASSERT_TRUE(std::find(called->begin(), called->end(),
-//                         "vkGetQueryPoolResults") == called->end());
-// }
+  auto cmd_buffer = context->CreateCommandBuffer();
+  auto blit_pass = cmd_buffer->CreateBlitPass();
+  blit_pass->EncodeCommands(context->GetResourceAllocator());
+  tracer->MarkFrameEnd();
 
-// #endif  // IMPELLER_DEBUG
+  auto latch = std::make_shared<fml::CountDownLatch>(1u);
+  if (!cmd_buffer->SubmitCommands(
+          [latch](CommandBuffer::Status status) { latch->CountDown(); })) {
+    GTEST_FAIL() << "Failed to submit cmd buffer";
+  }
+
+  latch->Wait();
+
+  auto called = GetMockVulkanFunctions(context->GetDevice());
+  ASSERT_NE(called, nullptr);
+  ASSERT_TRUE(std::find(called->begin(), called->end(), "vkCreateQueryPool") !=
+              called->end());
+  ASSERT_TRUE(std::find(called->begin(), called->end(),
+                        "vkGetQueryPoolResults") != called->end());
+}
+
+#endif  // IMPELLER_DEBUG
 
 }  // namespace testing
 }  // namespace impeller
