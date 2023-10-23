@@ -24,6 +24,8 @@ static TextureGLES::Type GetTextureTypeFromDescriptor(
       static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
   const auto is_msaa = desc.sample_count == SampleCount::kCount4;
   if (usage == render_target && !is_msaa) {
+    // TODO(matanlurey): MSAA render buffers?
+    // See https://github.com/flutter/flutter/issues/137095.
     return TextureGLES::Type::kRenderBuffer;
   }
   return is_msaa ? TextureGLES::Type::kTextureMultisampled
@@ -120,6 +122,11 @@ struct TexImage2DData {
         external_format = GL_RGBA;
         type = GL_HALF_FLOAT;
         break;
+      // TODO(matanlurey): This is a combined depth stencil format (like
+      // kD24UnormS8Uint below). We should find a way to use a stencil-only
+      // format instead.
+      //
+      // See https://github.com/flutter/flutter/issues/137094.
       case PixelFormat::kS8UInt:
         internal_format = GL_DEPTH_STENCIL;
         external_format = GL_DEPTH_STENCIL;

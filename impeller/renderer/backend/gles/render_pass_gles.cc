@@ -481,6 +481,8 @@ struct RenderPassData {
   // Note that this only works on OpenGLES 3.0+, or put another way, in older
   // versions of OpenGLES, MSAA is not currently supported by Impeller. It's
   // possible to work around this issue a few different ways (not yet done).
+  //
+  // TODO(matanlurey): See https://github.com/flutter/flutter/issues/137093.
   if (!is_default_fbo && pass_data.resolve_attachment) {
     // MSAA should not be enabled if BlitFramebuffer is not available.
     FML_DCHECK(gl.BlitFramebuffer.IsAvailable());
