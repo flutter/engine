@@ -480,15 +480,7 @@ struct RenderPassData {
   //
   // Note that this only works on OpenGLES 3.0+, or put another way, in older
   // versions of OpenGLES, MSAA is not currently supported by Impeller. It's
-  // possible to work around this issue a few different ways (not yet done):
-  //
-  // Do not use the resolve_texture, and instead use the MSAA texture only.
-  // To preview what this would look like (but should not be implemented this
-  // way - would impact the HAL):
-  //
-  //    @@ render_target.cc @@ CreateOffscreenMSAA
-  //    - color0.resolve_texture = color0_resolve_tex;
-  //    + color0.resolve_texture = color0_msaa_tex;
+  // possible to work around this issue a few different ways (not yet done).
   if (!is_default_fbo && pass_data.resolve_attachment) {
     // MSAA should not be enabled if BlitFramebuffer is not available.
     FML_DCHECK(gl.BlitFramebuffer.IsAvailable());
