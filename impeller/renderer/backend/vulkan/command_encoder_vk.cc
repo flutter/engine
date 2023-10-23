@@ -218,7 +218,10 @@ bool CommandEncoderVK::Submit(SubmitCallback callback) {
   fail_callback = false;
   return fence_waiter_->AddFence(
       std::move(fence),
-      [callback, tracked_objects = std::move(tracked_objects_)] {
+      [callback, tracked_objects = std::move(tracked_objects_)]() mutable {
+        // Ensure tracked objects are destructed before calling any final
+        // callbacks.
+        tracked_objects.reset();
         if (callback) {
           callback(true);
         }

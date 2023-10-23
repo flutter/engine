@@ -179,4 +179,34 @@ void GPUTracerVK::OnFenceComplete(size_t frame_index) {
   }
 }
 
+GPUProbe::GPUProbe(const std::weak_ptr<GPUTracerVK>& tracer)
+    : tracer_(tracer) {}
+
+GPUProbe::~GPUProbe() {
+  if (!index_.has_value()) {
+    return;
+  }
+  auto tracer = tracer_.lock();
+  if (!tracer) {
+    return;
+  }
+  tracer->OnFenceComplete(index_.value());
+}
+
+void GPUProbe::RecordCmdBufferStart(const vk::CommandBuffer& buffer) {
+  auto tracer = tracer_.lock();
+  if (!tracer) {
+    return;
+  }
+  tracer->RecordCmdBufferStart(buffer, *this);
+}
+
+void GPUProbe::RecordCmdBufferEnd(const vk::CommandBuffer& buffer) {
+  auto tracer = tracer_.lock();
+  if (!tracer) {
+    return;
+  }
+  tracer->RecordCmdBufferEnd(buffer, *this);
+}
+
 }  // namespace impeller

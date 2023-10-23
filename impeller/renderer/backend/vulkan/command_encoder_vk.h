@@ -25,7 +25,7 @@ class Texture;
 class TextureSourceVK;
 class TrackedObjectsVK;
 class FenceWaiterVK;
-struct GPUProbe;
+class GPUProbe;
 
 class CommandEncoderFactoryVK {
  public:

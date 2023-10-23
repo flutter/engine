@@ -11,7 +11,7 @@
 
 namespace impeller {
 
-struct GPUProbe;
+class GPUProbe;
 
 /// @brief A class that uses timestamp queries to record the approximate GPU
 /// execution time.
@@ -38,7 +38,7 @@ class GPUTracerVK : public std::enable_shared_from_this<GPUTracerVK> {
   bool IsEnabled() const;
 
  private:
-  friend struct GPUProbe;
+  friend class GPUProbe;
 
   static const constexpr size_t kTraceStatesSize = 32u;
 
@@ -86,44 +86,22 @@ class GPUTracerVK : public std::enable_shared_from_this<GPUTracerVK> {
   bool enabled_ = false;
 };
 
-struct GPUProbe {
+class GPUProbe {
  public:
-  explicit GPUProbe(const std::weak_ptr<GPUTracerVK>& tracer)
-      : tracer_(tracer) {}
+  explicit GPUProbe(const std::weak_ptr<GPUTracerVK>& tracer);
 
   GPUProbe(GPUProbe&&) = delete;
   GPUProbe& operator=(GPUProbe&&) = delete;
 
-  ~GPUProbe() {
-    if (!index_.has_value()) {
-      return;
-    }
-    auto tracer = tracer_.lock();
-    if (!tracer) {
-      return;
-    }
-    tracer->OnFenceComplete(index_.value());
-  }
+  ~GPUProbe();
 
   /// @brief Record a timestamp query into the provided cmd buffer to record
   ///        start time.
-  void RecordCmdBufferStart(const vk::CommandBuffer& buffer) {
-    auto tracer = tracer_.lock();
-    if (!tracer) {
-      return;
-    }
-    tracer->RecordCmdBufferStart(buffer, *this);
-  }
+  void RecordCmdBufferStart(const vk::CommandBuffer& buffer);
 
   /// @brief Record a timestamp query into the provided cmd buffer to record end
   ///        time.
-  void RecordCmdBufferEnd(const vk::CommandBuffer& buffer) {
-    auto tracer = tracer_.lock();
-    if (!tracer) {
-      return;
-    }
-    tracer->RecordCmdBufferEnd(buffer, *this);
-  }
+  void RecordCmdBufferEnd(const vk::CommandBuffer& buffer);
 
  private:
   friend class GPUTracerVK;
