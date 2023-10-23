@@ -2703,11 +2703,14 @@
 ../../../third_party/skia/include/private/base/README.md
 ../../../third_party/skia/include/private/chromium/BUILD.bazel
 ../../../third_party/skia/include/private/gpu/BUILD.bazel
+../../../third_party/skia/include/private/gpu/dawn/BUILD.bazel
 ../../../third_party/skia/include/private/gpu/ganesh/BUILD.bazel
 ../../../third_party/skia/include/private/gpu/vk/BUILD.bazel
 ../../../third_party/skia/include/sksl/BUILD.bazel
 ../../../third_party/skia/include/sksl/OWNERS
 ../../../third_party/skia/include/svg/BUILD.bazel
+../../../third_party/skia/include/third_party/dawn/BUILD.bazel
+../../../third_party/skia/include/third_party/dawn/README
 ../../../third_party/skia/include/third_party/vulkan/BUILD.bazel
 ../../../third_party/skia/include/utils/BUILD.bazel
 ../../../third_party/skia/include/utils/mac/BUILD.bazel
