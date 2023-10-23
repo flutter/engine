@@ -121,9 +121,9 @@ struct TexImage2DData {
         type = GL_HALF_FLOAT;
         break;
       case PixelFormat::kS8UInt:
-        internal_format = GL_ALPHA;
-        external_format = GL_ALPHA;
-        type = GL_UNSIGNED_BYTE;
+        internal_format = GL_DEPTH_STENCIL;
+        external_format = GL_DEPTH_STENCIL;
+        type = GL_UNSIGNED_INT_24_8;
         break;
       case PixelFormat::kUnknown:
       case PixelFormat::kD24UnormS8Uint:
@@ -139,52 +139,9 @@ struct TexImage2DData {
   }
 
   TexImage2DData(PixelFormat pixel_format,
-                 std::shared_ptr<const fml::Mapping> mapping) {
-    switch (pixel_format) {
-      case PixelFormat::kUnknown:
-        return;
-      case PixelFormat::kA8UNormInt: {
-        internal_format = GL_ALPHA;
-        external_format = GL_ALPHA;
-        type = GL_UNSIGNED_BYTE;
-        data = std::move(mapping);
-        break;
-      }
-      case PixelFormat::kR8G8B8A8UNormInt: {
-        internal_format = GL_RGBA;
-        external_format = GL_RGBA;
-        type = GL_UNSIGNED_BYTE;
-        data = std::move(mapping);
-        break;
-      }
-      case PixelFormat::kR32G32B32A32Float: {
-        internal_format = GL_RGBA;
-        external_format = GL_RGBA;
-        type = GL_FLOAT;
-        data = std::move(mapping);
-        break;
-      }
-      case PixelFormat::kR16G16B16A16Float: {
-        internal_format = GL_RGBA;
-        external_format = GL_RGBA;
-        type = GL_HALF_FLOAT;
-        data = std::move(mapping);
-        break;
-      }
-      case PixelFormat::kR8G8B8A8UNormIntSRGB:
-      case PixelFormat::kB8G8R8A8UNormInt:
-      case PixelFormat::kB8G8R8A8UNormIntSRGB:
-      case PixelFormat::kS8UInt:
-      case PixelFormat::kD24UnormS8Uint:
-      case PixelFormat::kD32FloatS8UInt:
-      case PixelFormat::kR8UNormInt:
-      case PixelFormat::kR8G8UNormInt:
-      case PixelFormat::kB10G10R10XRSRGB:
-      case PixelFormat::kB10G10R10XR:
-      case PixelFormat::kB10G10R10A10XR:
-        return;
-    }
-    is_valid_ = true;
+                 std::shared_ptr<const fml::Mapping> mapping)
+      : TexImage2DData(pixel_format) {
+    data = std::move(mapping);
   }
 
   bool IsValid() const { return is_valid_; }

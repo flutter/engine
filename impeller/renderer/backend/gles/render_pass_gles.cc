@@ -197,14 +197,6 @@ struct RenderPassData {
       }
     }
     if (auto stencil = TextureGLES::Cast(pass_data.stencil_attachment.get())) {
-      // TODO: Re-enable before finalizing PR.
-      // Causes "Fatal GL Error GL_INVALID_OPERATION(1282) encountered on call
-      // to glFramebufferTexture2DMultisampleEXT'". We probably don't want to be
-      // using MSAA for the stencil buffer anyway.
-
-      FML_LOG(ERROR) << "Stencil buffer -> SetAsFramebufferAttachment\n"
-                     << TextureDescriptorToString(
-                            stencil->GetTextureDescriptor());
       if (!stencil->SetAsFramebufferAttachment(
               GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kStencil)) {
         return false;
