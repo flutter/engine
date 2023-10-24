@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/flow/instrumentation.h"
-#include "gmock/gmock.h"
+#include "flutter/flow/stopwatch.h"
+#include "gmock/gmock.h"  // IWYU pragma: keep
 #include "gtest/gtest.h"
 
 using testing::Return;
@@ -40,6 +40,21 @@ TEST(Instrumentation, GetFrameBudgetFromUpdaterTest) {
   Stopwatch stopwatch(updater);
   fml::Milliseconds actual_frame_budget = stopwatch.GetFrameBudget();
   EXPECT_EQ(frame_budget_90fps, actual_frame_budget);
+}
+
+TEST(Instrumentation, GetLapByIndexTest) {
+  fml::Milliseconds frame_budget_90fps = fml::RefreshRateToFrameBudget(90);
+  FixedRefreshRateStopwatch stopwatch(frame_budget_90fps);
+  stopwatch.SetLapTime(fml::TimeDelta::FromMilliseconds(10));
+  EXPECT_EQ(stopwatch.GetLap(1), fml::TimeDelta::FromMilliseconds(10));
+}
+
+TEST(Instrumentation, GetCurrentSampleTest) {
+  fml::Milliseconds frame_budget_90fps = fml::RefreshRateToFrameBudget(90);
+  FixedRefreshRateStopwatch stopwatch(frame_budget_90fps);
+  stopwatch.Start();
+  stopwatch.Stop();
+  EXPECT_EQ(stopwatch.GetCurrentSample(), size_t(1));
 }
 
 }  // namespace testing

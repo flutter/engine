@@ -41,6 +41,8 @@ impeller_component("aiks_playground") {
   sources = [
     "aiks_playground.cc",
     "aiks_playground.h",
+    "aiks_playground_inspector.cc",
+    "aiks_playground_inspector.h",
   ]
   deps = [
     ":aiks",
@@ -67,6 +69,7 @@ impeller_component("aiks_unittests") {
     "//flutter/impeller/geometry:geometry_asserts",
     "//flutter/impeller/golden_tests:golden_playground_test",
     "//flutter/impeller/playground:playground_test",
+    "//flutter/impeller/scene",
     "//flutter/impeller/typographer/backends/stb:typographer_stb_backend",
     "//flutter/testing:testing_lib",
   ]
@@ -92,6 +95,7 @@ impeller_component("aiks_unittests_golden") {
     "//flutter/impeller/geometry:geometry_asserts",
     "//flutter/impeller/golden_tests:golden_playground_test",
     "//flutter/impeller/playground:playground_test",
+    "//flutter/impeller/scene",
     "//flutter/impeller/typographer/backends/stb:typographer_stb_backend",
     "//flutter/testing:testing_lib",
   ]

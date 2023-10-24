@@ -2,91 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/flow/instrumentation.h"
-
-#include <algorithm>
-
-#include "flutter/display_list/skia/dl_sk_canvas.h"
-#include "third_party/skia/include/core/SkPath.h"
-#include "third_party/skia/include/core/SkSurface.h"
+#include "flutter/flow/stopwatch_sk.h"
+#include "include/core/SkCanvas.h"
+#include "include/core/SkImageInfo.h"
+#include "include/core/SkPaint.h"
+#include "include/core/SkPath.h"
+#include "include/core/SkSize.h"
+#include "include/core/SkSurface.h"
 
 namespace flutter {
 
 static const size_t kMaxSamples = 120;
 static const size_t kMaxFrameMarkers = 8;
 
-Stopwatch::Stopwatch(const RefreshRateUpdater& updater)
-    : refresh_rate_updater_(updater),
-      start_(fml::TimePoint::Now()),
-      current_sample_(0) {
-  const fml::TimeDelta delta = fml::TimeDelta::Zero();
-  laps_.resize(kMaxSamples, delta);
-  cache_dirty_ = true;
-  prev_drawn_sample_index_ = 0;
-}
-
-Stopwatch::~Stopwatch() = default;
-
-FixedRefreshRateStopwatch::FixedRefreshRateStopwatch(
-    fml::Milliseconds frame_budget)
-    : Stopwatch(fixed_delegate_), fixed_delegate_(frame_budget) {}
-
-FixedRefreshRateUpdater::FixedRefreshRateUpdater(
-    fml::Milliseconds fixed_frame_budget)
-    : fixed_frame_budget_(fixed_frame_budget) {}
-
-void Stopwatch::Start() {
-  start_ = fml::TimePoint::Now();
-  current_sample_ = (current_sample_ + 1) % kMaxSamples;
-}
-
-void Stopwatch::Stop() {
-  laps_[current_sample_] = fml::TimePoint::Now() - start_;
-}
-
-void Stopwatch::SetLapTime(const fml::TimeDelta& delta) {
-  current_sample_ = (current_sample_ + 1) % kMaxSamples;
-  laps_[current_sample_] = delta;
-}
-
-const fml::TimeDelta& Stopwatch::LastLap() const {
-  return laps_[(current_sample_ - 1) % kMaxSamples];
-}
-
-double Stopwatch::UnitFrameInterval(double raster_time_ms) const {
-  return raster_time_ms / GetFrameBudget().count();
-}
-
-double Stopwatch::UnitHeight(double raster_time_ms,
-                             double max_unit_interval) const {
-  double unit_height = UnitFrameInterval(raster_time_ms) / max_unit_interval;
-  if (unit_height > 1.0) {
-    unit_height = 1.0;
-  }
-  return unit_height;
-}
-
-fml::TimeDelta Stopwatch::MaxDelta() const {
-  fml::TimeDelta max_delta;
-  for (size_t i = 0; i < kMaxSamples; i++) {
-    if (laps_[i] > max_delta) {
-      max_delta = laps_[i];
-    }
-  }
-  return max_delta;
-}
-
-fml::TimeDelta Stopwatch::AverageDelta() const {
-  fml::TimeDelta sum;  // default to 0
-  for (size_t i = 0; i < kMaxSamples; i++) {
-    sum = sum + laps_[i];
-  }
-  return sum / kMaxSamples;
-}
-
-// Initialize the SkSurface for drawing into. Draws the base background and any
-// timing data from before the initial Visualize() call.
-void Stopwatch::InitVisualizeSurface(SkISize size) const {
+void SkStopwatchVisualizer::InitVisualizeSurface(SkISize size) const {
   // Mark as dirty if the size has changed.
   if (visualize_cache_surface_) {
     if (size.width() != visualize_cache_surface_->width() ||
@@ -118,7 +47,7 @@ void Stopwatch::InitVisualizeSurface(SkISize size) const {
 
   // Scale the graph to show frame times up to those that are 3 times the frame
   // time.
-  const double one_frame_ms = GetFrameBudget().count();
+  const double one_frame_ms = stopwatch_.GetFrameBudget().count();
   const double max_interval = one_frame_ms * 3.0;
   const double max_unit_interval = UnitFrameInterval(max_interval);
 
@@ -128,23 +57,26 @@ void Stopwatch::InitVisualizeSurface(SkISize size) const {
   SkPath path;
   path.setIsVolatile(true);
   path.moveTo(x, height);
-  path.lineTo(x, y + height * (1.0 - UnitHeight(laps_[0].ToMillisecondsF(),
-                                                max_unit_interval)));
+  path.lineTo(
+      x, y + height * (1.0 - UnitHeight(stopwatch_.GetLap(0).ToMillisecondsF(),
+                                        max_unit_interval)));
   double unit_x;
   double unit_next_x = 0.0;
   for (size_t i = 0; i < kMaxSamples; i += 1) {
     unit_x = unit_next_x;
     unit_next_x = (static_cast<double>(i + 1) / kMaxSamples);
     const double sample_y =
-        y + height * (1.0 - UnitHeight(laps_[i].ToMillisecondsF(),
+        y + height * (1.0 - UnitHeight(stopwatch_.GetLap(i).ToMillisecondsF(),
                                        max_unit_interval));
     path.lineTo(x + width * unit_x, sample_y);
     path.lineTo(x + width * unit_next_x, sample_y);
   }
   path.lineTo(
       width,
-      y + height * (1.0 - UnitHeight(laps_[kMaxSamples - 1].ToMillisecondsF(),
-                                     max_unit_interval)));
+      y + height *
+              (1.0 -
+               UnitHeight(stopwatch_.GetLap(kMaxSamples - 1).ToMillisecondsF(),
+                          max_unit_interval)));
   path.lineTo(width, height);
   path.close();
 
@@ -153,7 +85,8 @@ void Stopwatch::InitVisualizeSurface(SkISize size) const {
   cache_canvas->drawPath(path, paint);
 }
 
-void Stopwatch::Visualize(DlCanvas* canvas, const SkRect& rect) const {
+void SkStopwatchVisualizer::Visualize(DlCanvas* canvas,
+                                      const SkRect& rect) const {
   // Initialize visualize cache if it has not yet been initialized.
   InitVisualizeSurface(SkISize::Make(rect.width(), rect.height()));
 
@@ -168,7 +101,7 @@ void Stopwatch::Visualize(DlCanvas* canvas, const SkRect& rect) const {
 
   // Scale the graph to show frame times up to those that are 3 times the frame
   // time.
-  const double one_frame_ms = GetFrameBudget().count();
+  const double one_frame_ms = stopwatch_.GetFrameBudget().count();
   const double max_interval = one_frame_ms * 3.0;
   const double max_unit_interval = UnitFrameInterval(max_interval);
 
@@ -189,11 +122,14 @@ void Stopwatch::Visualize(DlCanvas* canvas, const SkRect& rect) const {
   paint.setBlendMode(SkBlendMode::kSrcOver);
   const auto bar_rect = SkRect::MakeLTRB(
       sample_x,
-      y + height * (1.0 -
-                    UnitHeight(laps_[current_sample_ == 0 ? kMaxSamples - 1
-                                                          : current_sample_ - 1]
-                                   .ToMillisecondsF(),
-                               max_unit_interval)),
+      y + height *
+              (1.0 -
+               UnitHeight(stopwatch_
+                              .GetLap(stopwatch_.GetCurrentSample() == 0
+                                          ? kMaxSamples - 1
+                                          : stopwatch_.GetCurrentSample() - 1)
+                              .ToMillisecondsF(),
+                          max_unit_interval)),
       sample_x + width * sample_unit_width, height);
   cache_canvas->drawRect(bar_rect, paint);
 
@@ -228,31 +164,24 @@ void Stopwatch::Visualize(DlCanvas* canvas, const SkRect& rect) const {
   // paint this we don't yet have all the times for the current frame.
   paint.setStyle(SkPaint::Style::kFill_Style);
   paint.setBlendMode(SkBlendMode::kSrcOver);
-  if (UnitFrameInterval(LastLap().ToMillisecondsF()) > 1.0) {
+  if (UnitFrameInterval(stopwatch_.LastLap().ToMillisecondsF()) > 1.0) {
     // budget exceeded
     paint.setColor(SK_ColorRED);
   } else {
     // within budget
     paint.setColor(SK_ColorGREEN);
   }
-  sample_x = x + width * (static_cast<double>(current_sample_) / kMaxSamples);
+  sample_x = x + width * (static_cast<double>(stopwatch_.GetCurrentSample()) /
+                          kMaxSamples);
   const auto marker_rect = SkRect::MakeLTRB(
       sample_x, y, sample_x + width * sample_unit_width, height);
   cache_canvas->drawRect(marker_rect, paint);
-  prev_drawn_sample_index_ = current_sample_;
+  prev_drawn_sample_index_ = stopwatch_.GetCurrentSample();
 
   // Draw the cached surface onto the output canvas.
   auto image = DlImage::Make(visualize_cache_surface_->makeImageSnapshot());
   canvas->DrawImage(image, {rect.x(), rect.y()},
                     DlImageSampling::kNearestNeighbor);
-}
-
-fml::Milliseconds Stopwatch::GetFrameBudget() const {
-  return refresh_rate_updater_.GetFrameBudget();
-}
-
-fml::Milliseconds FixedRefreshRateUpdater::GetFrameBudget() const {
-  return fixed_frame_budget_;
 }
 
 }  // namespace flutter
