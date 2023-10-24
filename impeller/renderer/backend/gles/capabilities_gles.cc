@@ -19,6 +19,10 @@ static const constexpr char* kNvidiaTextureBorderClampExt =
 static const constexpr char* kOESTextureBorderClampExt =
     "GL_OES_texture_border_clamp";
 
+// https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_multisampled_render_to_texture.txt
+static const constexpr char* kMultisampledRenderToTextureExt =
+    "GL_EXT_multisampled_render_to_texture";
+
 CapabilitiesGLES::CapabilitiesGLES(const ProcTableGLES& gl) {
   {
     GLint value = 0;
@@ -108,7 +112,7 @@ CapabilitiesGLES::CapabilitiesGLES(const ProcTableGLES& gl) {
     supports_decal_sampler_address_mode_ = true;
   }
 
-  if (desc->HasExtension("GL_EXT_multisampled_render_to_texture")) {
+  if (desc->HasExtension(kMultisampledRenderToTextureExt)) {
     supports_implicit_msaa_ = true;
 
     // We hard-code 4x MSAA, so let's make sure it's supported.
