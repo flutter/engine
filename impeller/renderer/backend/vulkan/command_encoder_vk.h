@@ -6,7 +6,6 @@
 
 #include <functional>
 #include <optional>
-#include <set>
 
 #include "flutter/fml/macros.h"
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
@@ -26,6 +25,7 @@ class Texture;
 class TextureSourceVK;
 class TrackedObjectsVK;
 class FenceWaiterVK;
+class GPUProbe;
 
 class CommandEncoderFactoryVK {
  public:
@@ -51,8 +51,7 @@ class CommandEncoderVK {
   CommandEncoderVK(std::weak_ptr<const DeviceHolder> device_holder,
                    std::shared_ptr<TrackedObjectsVK> tracked_objects,
                    const std::shared_ptr<QueueVK>& queue,
-                   std::shared_ptr<FenceWaiterVK> fence_waiter,
-                   const std::shared_ptr<GPUTracerVK>& gpu_tracer);
+                   std::shared_ptr<FenceWaiterVK> fence_waiter);
 
   ~CommandEncoderVK();
 
@@ -80,9 +79,10 @@ class CommandEncoderVK {
 
   void InsertDebugMarker(const char* label) const;
 
-  std::optional<vk::DescriptorSet> AllocateDescriptorSet(
-      const vk::DescriptorSetLayout& layout,
-      size_t command_count);
+  fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateDescriptorSets(
+      uint32_t buffer_count,
+      uint32_t sampler_count,
+      const std::vector<vk::DescriptorSetLayout>& layouts);
 
  private:
   friend class ContextVK;
@@ -91,7 +91,6 @@ class CommandEncoderVK {
   std::shared_ptr<TrackedObjectsVK> tracked_objects_;
   std::shared_ptr<QueueVK> queue_;
   const std::shared_ptr<FenceWaiterVK> fence_waiter_;
-  std::shared_ptr<GPUTracerVK> gpu_tracer_;
   bool is_valid_ = true;
 
   void Reset();
