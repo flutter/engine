@@ -5,7 +5,6 @@
 import 'package:ui/ui.dart' as ui;
 
 import '../../engine.dart' show PlatformViewManager;
-import '../configuration.dart';
 import '../dom.dart';
 import '../html/path_to_svg_clip.dart';
 import '../platform_views/slots.dart';
