@@ -129,8 +129,8 @@ void ContextVK::Setup(Settings settings) {
     return;
   }
 
-  submit_message_loop_ = fml::ConcurrentMessageLoop::Create(1u);
-  submit_message_loop_->PostTaskToAllWorkers([]() {
+  queue_submit_thread_ = std::make_unique<fml::Thread>("QueueSubmitThread");
+  queue_submit_thread_->GetTaskRunner()->PostTask([]() {
     // submitKHR is extremely cheap and mostly blocks on an internal fence.
     fml::RequestAffinity(fml::CpuAffinity::kEfficiency);
   });
@@ -493,9 +493,9 @@ const vk::Device& ContextVK::GetDevice() const {
   return device_holder_->device.get();
 }
 
-const std::shared_ptr<fml::ConcurrentTaskRunner>
-ContextVK::GetSubmitTaskRunner() const {
-  return submit_message_loop_->GetTaskRunner();
+const fml::RefPtr<fml::TaskRunner> ContextVK::GetQueueSubmitRunner()
+    const {
+  return queue_submit_thread_->GetTaskRunner();
 }
 
 const std::shared_ptr<fml::ConcurrentTaskRunner>
@@ -512,7 +512,7 @@ void ContextVK::Shutdown() {
   fence_waiter_.reset();
   resource_manager_.reset();
 
-  submit_message_loop_->Terminate();
+  queue_submit_thread_->Join();
   raster_message_loop_->Terminate();
 }
 

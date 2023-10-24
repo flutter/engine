@@ -10,6 +10,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/unique_fd.h"
+#include "fml/thread.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
@@ -143,7 +144,7 @@ class ContextVK final : public Context,
   /// command to a specialized single threaded task runner. The single thread
   /// ensures that we do not queue up too much work and that the submissions
   /// proceed in order.
-  const std::shared_ptr<fml::ConcurrentTaskRunner> GetSubmitTaskRunner() const;
+  const fml::RefPtr<fml::TaskRunner> GetQueueSubmitRunner() const;
 
   std::shared_ptr<SurfaceContextVK> CreateSurfaceContext();
 
@@ -188,7 +189,7 @@ class ContextVK final : public Context,
   std::shared_ptr<CommandPoolRecyclerVK> command_pool_recycler_;
   std::string device_name_;
   std::shared_ptr<fml::ConcurrentMessageLoop> raster_message_loop_;
-  std::shared_ptr<fml::ConcurrentMessageLoop> submit_message_loop_;
+  std::unique_ptr<fml::Thread> queue_submit_thread_;
   std::shared_ptr<GPUTracerVK> gpu_tracer_;
 
   bool sync_presentation_ = false;
