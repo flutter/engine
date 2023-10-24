@@ -286,8 +286,8 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
   color0_tex_desc.size = size;
   color0_tex_desc.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget);
 
-  // TODO: Document.
   if (context.GetCapabilities()->SupportsImplicitResolvingMSAA()) {
+    // See below ("SupportsImplicitResolvingMSAA") for more details.
     color0_tex_desc.storage_mode = StorageMode::kDevicePrivate;
   }
 
