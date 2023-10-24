@@ -315,31 +315,34 @@ struct TRect {
 using Rect = TRect<Scalar>;
 using IRect = TRect<int64_t>;
 
-constexpr std::optional<Rect> Union(const Rect& a,
-                                    const std::optional<Rect> b) {
-  if (!b.has_value()) {
-    return a;
-  }
-  return a.Union(b.value());
+constexpr inline std::optional<Rect> Union(const Rect& a,
+                                           const std::optional<Rect> b) {
+  return b.has_value() ? a.Union(b.value()) : a;
 }
 
-constexpr std::optional<Rect> Union(const std::optional<Rect> a,
-                                    const Rect& b) {
-  if (!a.has_value()) {
-    return b;
-  }
-  return a.value().Union(b);
+constexpr inline std::optional<Rect> Union(const std::optional<Rect> a,
+                                           const Rect& b) {
+  return Union(b, a);
 }
 
-constexpr std::optional<Rect> Union(const std::optional<Rect> a,
-                                    const std::optional<Rect> b) {
-  if (!a.has_value()) {
-    return b;
-  }
-  if (!b.has_value()) {
-    return a;
-  }
-  return a.value().Union(b.value());
+constexpr inline std::optional<Rect> Union(const std::optional<Rect> a,
+                                           const std::optional<Rect> b) {
+  return a.has_value() ? Union(a.value(), b) : b;
+}
+
+constexpr inline std::optional<Rect> Intersection(const Rect& a,
+                                                  const std::optional<Rect> b) {
+  return b.has_value() ? a.Intersection(b.value()) : a;
+}
+
+constexpr inline std::optional<Rect> Intersection(const std::optional<Rect> a,
+                                                  const Rect& b) {
+  return Intersection(b, a);
+}
+
+constexpr inline std::optional<Rect> Intersection(const std::optional<Rect> a,
+                                                  const std::optional<Rect> b) {
+  return a.has_value() ? Intersection(a.value(), b) : b;
 }
 
 }  // namespace impeller

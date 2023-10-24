@@ -2760,6 +2760,36 @@ TEST_P(AiksTest, TranslucentSaveLayerWithColorAndImageFilterDrawsCorrectly) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, ImageFilteredSaveLayerWithUnboundedContents) {
+  Canvas canvas;
+
+  auto texture = CreateTextureForFixture("airplane.jpg");
+  auto blur_filter = ImageFilter::MakeBlur(Sigma{5.0}, Sigma{5.0},
+                                           FilterContents::BlurStyle::kNormal,
+                                           Entity::TileMode::kClamp);
+  auto image_source = ColorSource::MakeImage(texture, Entity::TileMode::kRepeat,
+                                             Entity::TileMode::kRepeat, {}, {});
+
+  canvas.SaveLayer({.image_filter = blur_filter},
+                   Rect::MakeLTRB(100, 100, 200, 200));
+
+  canvas.DrawPaint({.color_source = image_source});
+
+  Paint blue = {.color = Color::Blue()};
+  Paint green = {.color = Color::Green()};
+
+  canvas.DrawRect(Rect::MakeLTRB(125, 125, 175, 175), blue);
+
+  canvas.DrawRect(Rect::MakeLTRB(125, 50, 175, 98), green);
+  canvas.DrawRect(Rect::MakeLTRB(202, 125, 250, 175), green);
+  canvas.DrawRect(Rect::MakeLTRB(125, 202, 175, 250), green);
+  canvas.DrawRect(Rect::MakeLTRB(50, 125, 98, 175), green);
+
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, TranslucentSaveLayerImageDrawsCorrectly) {
   Canvas canvas;
 
