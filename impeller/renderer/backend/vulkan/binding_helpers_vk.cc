@@ -118,6 +118,10 @@ fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(
     const ContextVK& context,
     const std::shared_ptr<CommandEncoderVK>& encoder,
     const std::vector<Command>& commands) {
+  if (commands.empty()) {
+    return std::vector<vk::DescriptorSet>{};
+  }
+
   // Step 1: Determine the total number of buffer and sampler descriptor
   // sets required. Collect this information along with the layout information
   // to allocate a correctly sized descriptor pool.
@@ -180,6 +184,9 @@ fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(
     const ContextVK& context,
     const std::shared_ptr<CommandEncoderVK>& encoder,
     const std::vector<ComputeCommand>& commands) {
+  if (commands.empty()) {
+    return std::vector<vk::DescriptorSet>{};
+  }
   // Step 1: Determine the total number of buffer and sampler descriptor
   // sets required. Collect this information along with the layout information
   // to allocate a correctly sized descriptor pool.
