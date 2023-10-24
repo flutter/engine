@@ -493,8 +493,7 @@ const vk::Device& ContextVK::GetDevice() const {
   return device_holder_->device.get();
 }
 
-const fml::RefPtr<fml::TaskRunner> ContextVK::GetQueueSubmitRunner()
-    const {
+const fml::RefPtr<fml::TaskRunner> ContextVK::GetQueueSubmitRunner() const {
   return queue_submit_thread_->GetTaskRunner();
 }
 
