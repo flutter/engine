@@ -21,8 +21,8 @@ extern "C" {
 typedef void (*VoidCallback)(void* /* user data */);
 
 // Opaque reference to a Flutter window controller.
-typedef struct FlutterDesktopViewControllerState*
-    FlutterDesktopViewControllerRef;
+struct FlutterDesktopViewController;
+typedef struct FlutterDesktopViewController* FlutterDesktopViewControllerRef;
 
 // Opaque reference to a Flutter window.
 struct FlutterDesktopView;
