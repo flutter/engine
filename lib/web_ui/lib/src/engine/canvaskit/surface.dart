@@ -116,21 +116,19 @@ class Surface {
 
     DomImageBitmap bitmap;
     if (Surface.offscreenCanvasSupported) {
-      bitmap = (await createSizedOffscreenImageBitmap(
-        _offscreenCanvas!,
-        0,
-        _pixelHeight - frameSize.height.toInt(),
-        frameSize.width.toInt(),
-        frameSize.height.toInt(),
-      ))!;
+      bitmap = (await createImageBitmap(_offscreenCanvas!, (
+        x: 0,
+        y: _pixelHeight - frameSize.height.toInt(),
+        width: frameSize.width.toInt(),
+        height: frameSize.height.toInt(),
+      )).toDart)! as DomImageBitmap;
     } else {
-      bitmap = (await createSizedImageBitmap(
-        _canvasElement!,
-        0,
-        _pixelHeight - frameSize.height.toInt(),
-        frameSize.width.toInt(),
-        frameSize.height.toInt(),
-      ))!;
+      bitmap = (await createImageBitmap(_canvasElement!, (
+        x: 0,
+        y: _pixelHeight - frameSize.height.toInt(),
+        width: frameSize.width.toInt(),
+        height: frameSize.height.toInt()
+      )).toDart)! as DomImageBitmap;
     }
     canvas.render(bitmap);
   }

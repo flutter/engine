@@ -1,6 +1,7 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+import 'dart:js_interop';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -20,13 +21,13 @@ void testMain() {
     });
 
     Future<DomImageBitmap> newBitmap(int width, int height) async {
-      return (await createSizedImageBitmapFromImageData(
-        createBlankDomImageData(width, height),
-        0,
-        0,
-        width,
-        height,
-      ))!;
+      return (await createImageBitmap(
+          createBlankDomImageData(width, height) as JSAny, (
+        x: 0,
+        y: 0,
+        width: width,
+        height: height,
+      )).toDart)! as DomImageBitmap;
     }
 
     // Regression test for https://github.com/flutter/flutter/issues/75286
