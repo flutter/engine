@@ -199,34 +199,26 @@ external DomIntl get domIntl;
 external DomSymbol get domSymbol;
 
 @JS('createImageBitmap')
-external JSPromise _createImageBitmap(JSAny source);
-Future<DomImageBitmap?> createImageBitmap(JSAny source) =>
-    js_util.promiseToFuture<DomImageBitmap?>(_createImageBitmap(source));
-
+external JSPromise _createImageBitmap1(
+  JSAny source,
+);
 @JS('createImageBitmap')
-external JSPromise _createSizedImageBitmap(DomCanvasElement canvas, JSNumber sx,
-    JSNumber sy, JSNumber sw, JSNumber sh);
-Future<DomImageBitmap?> createSizedImageBitmap(
-        DomCanvasElement canvas, int sx, int sy, int sw, int sh) =>
-    js_util.promiseToFuture<DomImageBitmap?>(
-        _createSizedImageBitmap(canvas, sx.toJS, sy.toJS, sw.toJS, sh.toJS));
-
-@JS('createImageBitmap')
-external JSPromise _createSizedImageBitmapFromImageData(
-    DomImageData imageData, JSNumber sx, JSNumber sy, JSNumber sw, JSNumber sh);
-Future<DomImageBitmap?> createSizedImageBitmapFromImageData(
-        DomImageData imageData, int sx, int sy, int sw, int sh) =>
-    js_util.promiseToFuture<DomImageBitmap?>(
-        _createSizedImageBitmapFromImageData(
-            imageData, sx.toJS, sy.toJS, sw.toJS, sh.toJS));
-
-@JS('createImageBitmap')
-external JSPromise _createSizedOffscreenImageBitmap(DomOffscreenCanvas canvas,
-    JSNumber sx, JSNumber sy, JSNumber sw, JSNumber sh);
-Future<DomImageBitmap?> createSizedOffscreenImageBitmap(
-        DomOffscreenCanvas canvas, int sx, int sy, int sw, int sh) =>
-    js_util.promiseToFuture<DomImageBitmap?>(_createSizedOffscreenImageBitmap(
-        canvas, sx.toJS, sy.toJS, sw.toJS, sh.toJS));
+external JSPromise _createImageBitmap2(
+  JSAny source,
+  JSNumber x,
+  JSNumber y,
+  JSNumber width,
+  JSNumber height,
+);
+JSPromise createImageBitmap(JSAny source,
+    [({int x, int y, int width, int height})? bounds]) {
+  if (bounds != null) {
+    return _createImageBitmap2(source, bounds.x.toJS, bounds.y.toJS,
+        bounds.width.toJS, bounds.height.toJS);
+  } else {
+    return _createImageBitmap1(source);
+  }
+}
 
 @JS()
 @staticInterop
