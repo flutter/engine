@@ -113,13 +113,11 @@ CapabilitiesGLES::CapabilitiesGLES(const ProcTableGLES& gl) {
       // the use of glBlitFramebuffer, which is not available on all GLES
       // implementations. We can't use MSAA on these platforms yet.
       gl.BlitFramebuffer.IsAvailable()) {
-    supports_offscreen_msaa_ = true;
-
     // We hard-code 4x MSAA, so let's make sure it's supported.
     GLint value = 0;
     gl.GetIntegerv(GL_MAX_SAMPLES_EXT, &value);
-    FML_DCHECK(value == 4) << "Unexpected max samples value: " << value << ". "
-                           << "Only 4x MSAA is currently supported.";
+
+    supports_offscreen_msaa_ = value >= 4;
   }
 }
 
