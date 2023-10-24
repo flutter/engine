@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/vulkan/context_vk.h"
+#include "fml/concurrent_message_loop.h"
 
 #ifdef FML_OS_ANDROID
 #include <pthread.h>
@@ -127,6 +128,12 @@ void ContextVK::Setup(Settings settings) {
   if (!settings.proc_address_callback) {
     return;
   }
+
+  submit_message_loop_ = fml::ConcurrentMessageLoop::Create(1u);
+  submit_message_loop_->PostTaskToAllWorkers([]() {
+    // submitKHR is extremely cheap and mostly blocks on an internal fence.
+    fml::RequestAffinity(fml::CpuAffinity::kEfficiency);
+  });
 
   raster_message_loop_ = fml::ConcurrentMessageLoop::Create(
       std::min(4u, std::thread::hardware_concurrency()));
@@ -487,6 +494,11 @@ const vk::Device& ContextVK::GetDevice() const {
 }
 
 const std::shared_ptr<fml::ConcurrentTaskRunner>
+ContextVK::GetSubmitTaskRunner() const {
+  return submit_message_loop_->GetTaskRunner();
+}
+
+const std::shared_ptr<fml::ConcurrentTaskRunner>
 ContextVK::GetConcurrentWorkerTaskRunner() const {
   return raster_message_loop_->GetTaskRunner();
 }
@@ -500,6 +512,7 @@ void ContextVK::Shutdown() {
   fence_waiter_.reset();
   resource_manager_.reset();
 
+  submit_message_loop_->Terminate();
   raster_message_loop_->Terminate();
 }
 

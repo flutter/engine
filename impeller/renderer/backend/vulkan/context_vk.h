@@ -133,6 +133,18 @@ class ContextVK final : public Context,
   const std::shared_ptr<fml::ConcurrentTaskRunner>
   GetConcurrentWorkerTaskRunner() const;
 
+  /// @brief A single-threaded task runner that should only be used for
+  ///        submitKHR.
+  ///
+  /// SubmitKHR will block until all previously submitted command buffers have
+  /// been scheduled. If there are no platform views in the scene (excluding
+  /// texture backed platform views). Then it is safe for SwapchainImpl::Present
+  /// to return before submit has completed. To do so, we offload the submit
+  /// command to a specialized single threaded task runner. The single thread
+  /// ensures that we do not queue up too much work and that the submissions
+  /// proceed in order.
+  const std::shared_ptr<fml::ConcurrentTaskRunner> GetSubmitTaskRunner() const;
+
   std::shared_ptr<SurfaceContextVK> CreateSurfaceContext();
 
   const std::shared_ptr<QueueVK>& GetGraphicsQueue() const;
@@ -176,6 +188,7 @@ class ContextVK final : public Context,
   std::shared_ptr<CommandPoolRecyclerVK> command_pool_recycler_;
   std::string device_name_;
   std::shared_ptr<fml::ConcurrentMessageLoop> raster_message_loop_;
+  std::shared_ptr<fml::ConcurrentMessageLoop> submit_message_loop_;
   std::shared_ptr<GPUTracerVK> gpu_tracer_;
 
   bool sync_presentation_ = false;
