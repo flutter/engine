@@ -171,9 +171,7 @@
                     "script": "flutter/ci/firebase_testlab.py",
                     "parameters": [
                         "--variant",
-                        "out/android_release_arm64",
-                        "--build-id",
-                        "${SWARMING_TASK_ID}"
+                        "android_release_arm64"
                     ]
                 }
             ]
