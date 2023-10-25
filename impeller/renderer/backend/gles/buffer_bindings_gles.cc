@@ -247,6 +247,7 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
   for (auto i = 0u; i < metadata->members.size(); i++) {
     const auto& member = metadata->members[i];
     auto location = locations[i];
+    // Void type or inactive uniform.
     if (location == -1) {
       continue;
     }
