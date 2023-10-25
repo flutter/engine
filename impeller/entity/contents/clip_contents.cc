@@ -86,6 +86,7 @@ bool ClipContents::Render(const ContentContext& renderer,
   auto options = OptionsFromPass(pass);
   options.blend_mode = BlendMode::kDestination;
   cmd.stencil_reference = entity.GetClipDepth();
+  cmd.affects_stencil = true;
   options.stencil_compare = CompareFunction::kEqual;
   options.stencil_operation = StencilOperation::kIncrementClamp;
 
@@ -185,6 +186,7 @@ bool ClipRestoreContents::Render(const ContentContext& renderer,
   options.primitive_type = PrimitiveType::kTriangleStrip;
   cmd.pipeline = renderer.GetClipPipeline(options);
   cmd.stencil_reference = entity.GetClipDepth();
+  cmd.affects_stencil = true;
 
   // Create a rect that covers either the given restore area, or the whole
   // render target texture.

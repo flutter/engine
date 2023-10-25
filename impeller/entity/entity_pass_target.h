@@ -5,11 +5,16 @@
 #pragma once
 
 #include "fml/macros.h"
+#include "impeller/renderer/command.h"
 #include "impeller/renderer/render_target.h"
 
 namespace impeller {
 
 class InlinePassContext;
+
+struct ClipStateHacker {
+  std::vector<Command> clip_affecting_commands;
+};
 
 class EntityPassTarget {
  public:
@@ -29,9 +34,13 @@ class EntityPassTarget {
 
   bool IsValid() const;
 
+  std::shared_ptr<ClipStateHacker> GetHacker() { return clip_state_hacker_; }
+
  private:
   RenderTarget target_;
   std::shared_ptr<Texture> secondary_color_texture_;
+  std::shared_ptr<ClipStateHacker> clip_state_hacker_ =
+      std::make_shared<ClipStateHacker>();
 
   bool supports_read_from_resolve_;
 

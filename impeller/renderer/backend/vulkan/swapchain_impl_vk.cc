@@ -374,7 +374,7 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
   ///
   auto [acq_result, index] = context.GetDevice().acquireNextImageKHR(
       *swapchain_,          // swapchain
-      1'000'000'000,        // timeout (ns) 1000ms
+      1'000'000'000'000,    // timeout (ns) 10000ms
       *sync->render_ready,  // signal semaphore
       nullptr               // fence
   );
@@ -519,11 +519,11 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
     }
     FML_UNREACHABLE();
   };
-  if (context.GetSyncPresentation()) {
-    task();
-  } else {
-    context.GetQueueSubmitRunner()->PostTask(task);
-  }
+  // if (context.GetSyncPresentation()) {
+  task();
+  // } else {
+  //   context.GetQueueSubmitRunner()->PostTask(task);
+  // }
   return true;
 }
 

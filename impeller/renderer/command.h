@@ -176,6 +176,8 @@ struct Command : public ResourceBinder {
   ///
   size_t instance_count = 1u;
 
+  bool affects_stencil = false;
+
   //----------------------------------------------------------------------------
   /// @brief      Specify the vertex and index buffer to use for this command.
   ///

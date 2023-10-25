@@ -7,6 +7,7 @@
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/texture.h"
+#include "impeller/renderer/render_pass.h"
 
 namespace impeller {
 

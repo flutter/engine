@@ -256,10 +256,9 @@ void EntityPass::AddSubpassInline(std::unique_ptr<EntityPass> pass) {
       pass->advanced_blend_reads_from_pass_texture_;
 }
 
-static RenderTarget::AttachmentConfig GetDefaultStencilConfig(bool readable) {
+static RenderTarget::AttachmentConfig GetDefaultStencilConfig() {
   return RenderTarget::AttachmentConfig{
-      .storage_mode = readable ? StorageMode::kDevicePrivate
-                               : StorageMode::kDeviceTransient,
+      .storage_mode = StorageMode::kDeviceTransient,
       .load_action = LoadAction::kDontCare,
       .store_action = StoreAction::kDontCare,
   };
@@ -288,8 +287,8 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
             .resolve_storage_mode = StorageMode::kDevicePrivate,
             .load_action = LoadAction::kDontCare,
             .store_action = StoreAction::kMultisampleResolve,
-            .clear_color = clear_color},   // color_attachment_config
-        GetDefaultStencilConfig(readable)  // stencil_attachment_config
+            .clear_color = clear_color},  // color_attachment_config
+        GetDefaultStencilConfig()         // stencil_attachment_config
     );
   } else {
     target = RenderTarget::CreateOffscreen(
@@ -302,8 +301,8 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
             .load_action = LoadAction::kDontCare,
             .store_action = StoreAction::kDontCare,
             .clear_color = clear_color,
-        },                                 // color_attachment_config
-        GetDefaultStencilConfig(readable)  // stencil_attachment_config
+        },                         // color_attachment_config
+        GetDefaultStencilConfig()  // stencil_attachment_config
     );
   }
 
@@ -468,8 +467,7 @@ bool EntityPass::Render(ContentContext& renderer,
         *renderer.GetContext(), *renderer.GetRenderTargetCache(),
         color0.texture->GetSize(),
         renderer.GetContext()->GetCapabilities()->SupportsOffscreenMSAA(),
-        "ImpellerOnscreen",
-        GetDefaultStencilConfig(reads_from_onscreen_backdrop));
+        "ImpellerOnscreen", GetDefaultStencilConfig());
   }
 
   // Set up the clear color of the root pass.

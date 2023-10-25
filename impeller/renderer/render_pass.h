@@ -6,6 +6,7 @@
 
 #include <string>
 
+#include "impeller/entity/entity_pass_target.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/render_target.h"
@@ -64,11 +65,14 @@ class RenderPass {
   ///
   const std::vector<Command>& GetCommands() const { return commands_; }
 
+  void SetHacker(std::shared_ptr<ClipStateHacker> hacker) { hacker_ = hacker; }
+
  protected:
   const std::weak_ptr<const Context> context_;
   const RenderTarget render_target_;
   std::shared_ptr<HostBuffer> transients_buffer_;
   std::vector<Command> commands_;
+  std::shared_ptr<ClipStateHacker> hacker_;
 
   RenderPass(std::weak_ptr<const Context> context, const RenderTarget& target);
 

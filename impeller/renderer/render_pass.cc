@@ -70,6 +70,11 @@ bool RenderPass::AddCommand(Command&& command) {
     return true;
   }
 
+  if (command.affects_stencil && hacker_) {
+    Command copy_of_command = command;
+    hacker_->clip_affecting_commands.push_back(copy_of_command);
+  }
+
   commands_.emplace_back(std::move(command));
   return true;
 }
