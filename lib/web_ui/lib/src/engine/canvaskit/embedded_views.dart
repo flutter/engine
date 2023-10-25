@@ -56,6 +56,10 @@ class HtmlViewEmbedder {
   /// Canvases used to draw on top of platform views, keyed by platform view ID.
   final Map<int, RenderCanvas> _overlays = <int, RenderCanvas>{};
 
+  /// Maps platform view IDs to the bounds of where they will be rendered in
+  /// screen coordinates.
+  final Map<int, ui.Rect> _platformViewBounds = <int, ui.Rect>{};
+
   /// The views that need to be recomposited into the scene on the next frame.
   final Set<int> _viewsToRecomposite = <int>{};
 
@@ -243,6 +247,8 @@ class HtmlViewEmbedder {
     }
   }
 
+  // TODO(hterkelsen): Compute the platform view bounds while applying
+  //   mutators. We need the bounds to be able to optimize the overlays.
   void _applyMutators(
       EmbeddedViewParams params, DomElement embeddedView, int viewId) {
     final MutatorsStack mutators = params.mutators;
@@ -270,7 +276,7 @@ class HtmlViewEmbedder {
           clipView.style.transform = '';
           // We need to set width and height for the clipView to cover the
           // bounds of the path since Safari seem to incorrectly intersect
-          // the  element bounding rect with the clip path.
+          // the element bounding rect with the clip path.
           clipView.style.width = '100%';
           clipView.style.height = '100%';
           if (mutator.rect != null) {
