@@ -1375,7 +1375,8 @@ public class AccessibilityBridgeTest {
   }
 
   @Test
-  public void itClearsFocusedNodeBeforeSendingEvent() {    BasicMessageChannel mockChannel = mock(BasicMessageChannel.class);
+  public void itClearsFocusedNodeBeforeSendingEvent() {
+    BasicMessageChannel mockChannel = mock(BasicMessageChannel.class);
     AccessibilityChannel accessibilityChannel =
         new AccessibilityChannel(mockChannel, mock(FlutterJNI.class));
     AccessibilityViewEmbedder mockViewEmbedder = mock(AccessibilityViewEmbedder.class);
