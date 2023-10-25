@@ -153,7 +153,7 @@ bool CapabilitiesGLES::SupportsTextureToTextureBlits() const {
 }
 
 bool CapabilitiesGLES::SupportsFramebufferFetch() const {
-  return supports_framebuffer_fetch_;
+  return false;
 }
 
 bool CapabilitiesGLES::SupportsCompute() const {
