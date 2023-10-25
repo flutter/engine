@@ -23,6 +23,10 @@ class ImageComparer {
     required SkiaGoldClient client,
   }) : _client = client;
 
+  // Avoid talking to Skia gold for the force-multithreading variants.
+  bool get _useSkiaGold =>
+      !Platform.executableArguments.contains('--force-multithreading');
+
   /// Creates an image comparer and authorizes.
   static Future<ImageComparer> create({required String testSuiteName}) async {
     const String workDirectoryPath =
@@ -32,11 +36,13 @@ class ImageComparer {
           'Using ImageComparer requries defining kSkiaGoldWorkDirectoryKey.');
     }
 
-    final Directory workDirectory = Directory(workDirectoryPath)..createSync();
+    final Directory workDirectory = Directory(
+      impellerEnabled ? '${workDirectoryPath}_iplr' : workDirectoryPath,
+    )..createSync();
     final Map<String, String> dimensions = <String, String>{
       'impeller_enabled': impellerEnabled.toString(),
     };
-    final SkiaGoldClient client = isSkiaGoldClientAvailable
+    final SkiaGoldClient client = isSkiaGoldClientAvailable && _useSkiaGold
         ? SkiaGoldClient(workDirectory, dimensions: dimensions)
         : _FakeSkiaGoldClient(workDirectory, dimensions);
 
@@ -58,11 +64,13 @@ class ImageComparer {
 
     final File file = File(path.join(_client.workDirectory.path, fileName))
       ..writeAsBytesSync(data.buffer.asUint8List());
-    await _client.addImg(
+    await _client
+        .addImg(
       testSuiteName,
       file,
       screenshotSize: image.width * image.height,
-    ).catchError((dynamic error) {
+    )
+        .catchError((dynamic error) {
       print('Skia gold comparison failed: $error');
       throw Exception('Failed comparison: $testSuiteName/$fileName');
     });
