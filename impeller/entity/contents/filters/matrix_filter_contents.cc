@@ -74,6 +74,9 @@ std::optional<Rect> MatrixFilterContents::GetFilterSourceCoverage(
   auto transform = effect_transform *          //
                    matrix_ *                   //
                    effect_transform.Invert();  //
+  if (transform.GetDeterminant() == 0.0) {
+    return std::nullopt;
+  }
   auto inverse = transform.Invert();
   return output_limit.TransformBounds(inverse);
 }
