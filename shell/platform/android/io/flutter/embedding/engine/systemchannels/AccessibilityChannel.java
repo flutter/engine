@@ -107,7 +107,6 @@ public class AccessibilityChannel {
   public AccessibilityChannel(
       @NonNull BasicMessageChannel<Object> channel, @NonNull FlutterJNI flutterJNI) {
     this.channel = channel;
-
     this.flutterJNI = flutterJNI;
   }
 
