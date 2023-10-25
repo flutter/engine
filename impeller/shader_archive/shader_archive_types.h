@@ -6,10 +6,16 @@
 
 namespace impeller {
 
-enum class BlobShaderType {
+enum class ArchiveShaderType {
   kVertex,
   kFragment,
   kCompute,
+};
+
+enum class ArchiveRenderingBackend {
+  kMetal,
+  kVulkan,
+  kOpenGLES,
 };
 
 }  // namespace impeller

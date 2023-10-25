@@ -9,18 +9,19 @@
 #include "flutter/fml/closure.h"
 #include "impeller/base/config.h"
 #include "impeller/base/validation.h"
-#include "impeller/blobcat/blob_library.h"
 #include "impeller/renderer/backend/gles/shader_function_gles.h"
+#include "impeller/shader_archive/multi_arch_shader_archive.h"
+#include "impeller/shader_archive/shader_archive.h"
 
 namespace impeller {
 
-static ShaderStage ToShaderStage(BlobShaderType type) {
+static ShaderStage ToShaderStage(ArchiveShaderType type) {
   switch (type) {
-    case BlobShaderType::kVertex:
+    case ArchiveShaderType::kVertex:
       return ShaderStage::kVertex;
-    case BlobShaderType::kFragment:
+    case ArchiveShaderType::kFragment:
       return ShaderStage::kFragment;
-    case BlobShaderType::kCompute:
+    case ArchiveShaderType::kCompute:
       return ShaderStage::kCompute;
   }
   FML_UNREACHABLE();
@@ -74,12 +75,13 @@ ShaderLibraryGLES::ShaderLibraryGLES(
     return true;
   };
   for (auto library : shader_libraries) {
-    auto blob_library = BlobLibrary{std::move(library)};
-    if (!blob_library.IsValid()) {
-      VALIDATION_LOG << "Could not construct blob library for shaders.";
+    auto gles_archive = MultiArchShaderArchive::CreateArchiveFromMapping(
+        std::move(library), ArchiveRenderingBackend::kOpenGLES);
+    if (!gles_archive || !gles_archive->IsValid()) {
+      VALIDATION_LOG << "Could not construct shader library.";
       return;
     }
-    blob_library.IterateAllBlobs(iterator);
+    gles_archive->IterateAllShaders(iterator);
   }
 
   functions_ = functions;

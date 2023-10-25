@@ -19,12 +19,12 @@ void main() {
 }
 
 class StubPictureRenderer implements PictureRenderer {
-  final DomCanvasElement scratchCanvasElement = createDomCanvasElement(
-      width: 500, height: 500
-  );
+  final DomCanvasElement scratchCanvasElement =
+      createDomCanvasElement(width: 500, height: 500);
 
   @override
   Future<DomImageBitmap> renderPicture(ScenePicture picture) async {
+    renderedPictures.add(picture);
     final ui.Rect cullRect = picture.cullRect;
     final DomImageBitmap bitmap = (await createImageBitmap(
       scratchCanvasElement,
@@ -32,12 +32,16 @@ class StubPictureRenderer implements PictureRenderer {
     ).toDart)! as DomImageBitmap;
     return bitmap;
   }
+
+  List<ScenePicture> renderedPictures = <ScenePicture>[];
 }
 
 void testMain() {
   late EngineSceneView sceneView;
+  late StubPictureRenderer stubPictureRenderer;
   setUp(() {
-    sceneView = EngineSceneView(StubPictureRenderer());
+    stubPictureRenderer = StubPictureRenderer();
+    sceneView = EngineSceneView(stubPictureRenderer);
   });
 
   test('SceneView places canvas according to device-pixel ratio', () async {
@@ -58,9 +62,11 @@ void testMain() {
     final List<DomElement> children = sceneElement.children.toList();
     expect(children.length, 1);
     final DomElement containerElement = children.first;
-    expect(containerElement.tagName, equalsIgnoringCase('flt-canvas-container'));
+    expect(
+        containerElement.tagName, equalsIgnoringCase('flt-canvas-container'));
 
-    final List<DomElement> containerChildren = containerElement.children.toList();
+    final List<DomElement> containerChildren =
+        containerElement.children.toList();
     expect(containerChildren.length, 1);
     final DomElement canvasElement = containerChildren.first;
     final DomCSSStyleDeclaration style = canvasElement.style;
@@ -72,16 +78,15 @@ void testMain() {
     debugOverrideDevicePixelRatio(null);
   });
 
-  test('SceneView places canvas according to device-pixel ratio', () async {
+  test('SceneView places platform view according to device-pixel ratio', () async {
     debugOverrideDevicePixelRatio(2.0);
 
     final PlatformView platformView = PlatformView(
-      1,
-      const ui.Size(100, 120),
-      const PlatformViewStyling(
-        position: PlatformViewPosition.offset(ui.Offset(50, 80)),
-      )
-    );
+        1,
+        const ui.Size(100, 120),
+        const PlatformViewStyling(
+          position: PlatformViewPosition.offset(ui.Offset(50, 80)),
+        ));
     final EngineRootLayer rootLayer = EngineRootLayer();
     rootLayer.slices.add(PlatformViewSlice(<PlatformView>[platformView], null));
     final EngineScene scene = EngineScene(rootLayer);
@@ -91,7 +96,8 @@ void testMain() {
     final List<DomElement> children = sceneElement.children.toList();
     expect(children.length, 1);
     final DomElement containerElement = children.first;
-    expect(containerElement.tagName, equalsIgnoringCase('flt-platform-view-slot'));
+    expect(
+        containerElement.tagName, equalsIgnoringCase('flt-platform-view-slot'));
 
     final DomCSSStyleDeclaration style = containerElement.style;
     expect(style.left, '25px');
@@ -100,5 +106,29 @@ void testMain() {
     expect(style.height, '60px');
 
     debugOverrideDevicePixelRatio(null);
+  });
+
+  test('SceneView always renders most recent picture and skips intermediate pictures', () async {
+    final List<StubPicture> pictures = <StubPicture>[];
+    final List<Future<void>> renderFutures = <Future<void>>[];
+    for (int i = 1; i < 20; i++) {
+      final StubPicture picture = StubPicture(const ui.Rect.fromLTWH(
+        50,
+        80,
+        100,
+        120,
+      ));
+      pictures.add(picture);
+      final EngineRootLayer rootLayer = EngineRootLayer();
+      rootLayer.slices.add(PictureSlice(picture));
+      final EngineScene scene = EngineScene(rootLayer);
+      renderFutures.add(sceneView.renderScene(scene));
+    }
+    await Future.wait(renderFutures);
+
+    // Should just render the first and last pictures and skip the one inbetween.
+    expect(stubPictureRenderer.renderedPictures.length, 2);
+    expect(stubPictureRenderer.renderedPictures.first, pictures.first);
+    expect(stubPictureRenderer.renderedPictures.last, pictures.last);
   });
 }

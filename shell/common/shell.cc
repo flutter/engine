@@ -177,16 +177,16 @@ std::unique_ptr<Shell> Shell::Create(
   auto resource_cache_limit_calculator =
       std::make_shared<ResourceCacheLimitCalculator>(
           settings.resource_cache_max_bytes_threshold);
-  return CreateWithSnapshot(platform_data,                    //
-                            task_runners,                     //
-                            /*parent_merger=*/nullptr,        //
-                            /*parent_io_manager=*/nullptr,    //
-                            resource_cache_limit_calculator,  //
-                            settings,                         //
-                            std::move(vm),                    //
-                            std::move(isolate_snapshot),      //
-                            on_create_platform_view,          //
-                            on_create_rasterizer,             //
+  return CreateWithSnapshot(platform_data,                     //
+                            task_runners,                      //
+                            /*parent_thread_merger=*/nullptr,  //
+                            /*parent_io_manager=*/nullptr,     //
+                            resource_cache_limit_calculator,   //
+                            settings,                          //
+                            std::move(vm),                     //
+                            std::move(isolate_snapshot),       //
+                            on_create_platform_view,           //
+                            on_create_rasterizer,              //
                             CreateEngine, is_gpu_disabled);
 }
 
@@ -1971,6 +1971,13 @@ bool Shell::OnServiceProtocolRenderFrameWithRasterStats(
     const ServiceProtocol::Handler::ServiceProtocolMap& params,
     rapidjson::Document* response) {
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
+
+  // Impeller does not support this protocol method.
+  if (io_manager_->GetImpellerContext()) {
+    const char* error = "Raster status not supported on Impeller backend.";
+    ServiceProtocolFailureError(response, error);
+    return false;
+  }
 
   // TODO(dkwingsmt): This method only handles view #0, including the snapshot
   // and the frame size. We need to adapt this method to multi-view.

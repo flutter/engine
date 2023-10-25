@@ -17,8 +17,8 @@ class TextureGLES final : public Texture,
  public:
   enum class Type {
     kTexture,
+    kTextureMultisampled,
     kRenderBuffer,
-    kRenderBufferMultisampled,
   };
 
   enum class IsWrapped {
@@ -89,7 +89,9 @@ class TextureGLES final : public Texture,
 
   void InitializeContentsIfNecessary() const;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(TextureGLES);
+  TextureGLES(const TextureGLES&) = delete;
+
+  TextureGLES& operator=(const TextureGLES&) = delete;
 };
 
 }  // namespace impeller
