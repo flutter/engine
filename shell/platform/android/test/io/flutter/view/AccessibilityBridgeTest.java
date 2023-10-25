@@ -1315,7 +1315,6 @@ public class AccessibilityBridgeTest {
     AccessibilityChannel accessibilityChannel =
         new AccessibilityChannel(mockChannel, mock(FlutterJNI.class));
 
-
     AccessibilityViewEmbedder mockViewEmbedder = mock(AccessibilityViewEmbedder.class);
     AccessibilityManager mockManager = mock(AccessibilityManager.class);
     View mockRootView = mock(View.class);
@@ -1367,13 +1366,11 @@ public class AccessibilityBridgeTest {
     accessibilityBridge.performAction(0, AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS, null);
     assertTrue(verifier.verified);
 
-
-        HashMap<String, Object> message = new HashMap<>();
-        message.put("type", "didGainFocus");
-        message.put("nodeId", 0);
-        verify(mockChannel).send(message);
+    HashMap<String, Object> message = new HashMap<>();
+    message.put("type", "didGainFocus");
+    message.put("nodeId", 0);
+    verify(mockChannel).send(message);
   }
-
 
   @Test
   public void itClearsFocusedNodeBeforeSendingEvent() {

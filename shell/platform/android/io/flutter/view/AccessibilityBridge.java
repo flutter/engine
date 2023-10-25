@@ -41,7 +41,6 @@ import io.flutter.plugin.platform.PlatformViewsAccessibilityDelegate;
 import io.flutter.util.Predicate;
 import io.flutter.util.ViewUtils;
 import io.flutter.view.AccessibilityBridge.Flag;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
@@ -1168,7 +1167,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
           accessibilityChannel.dispatchSemanticsAction(
               virtualViewId, Action.DID_GAIN_ACCESSIBILITY_FOCUS);
-    
+
           HashMap<String, Object> message = new HashMap<>();
           message.put("type", "didGainFocus");
           message.put("nodeId", semanticsNode.id);
