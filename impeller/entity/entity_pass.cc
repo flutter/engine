@@ -192,12 +192,6 @@ std::optional<Rect> EntityPass::GetSubpassCoverage(
   std::shared_ptr<FilterContents> image_filter =
       subpass.delegate_->WithImageFilter(Rect(), subpass.xformation_);
 
-  if (subpass.bounds_limit_.has_value()) {
-    auto user_bounds_coverage =
-        subpass.bounds_limit_->TransformBounds(subpass.xformation_);
-    coverage_limit = Intersection(user_bounds_coverage, coverage_limit);
-  }
-
   // If the subpass has an image filter, then its coverage space may deviate
   // from the parent pass and make intersecting with the pass coverage limit
   // unsafe.
@@ -207,8 +201,17 @@ std::optional<Rect> EntityPass::GetSubpassCoverage(
   }
 
   auto entities_coverage = subpass.GetElementsCoverage(coverage_limit);
+  // The entities don't cover anything. There is nothing to do.
+  if (!entities_coverage.has_value()) {
+    return std::nullopt;
+  }
 
-  return entities_coverage;
+  if (!subpass.bounds_limit_.has_value()) {
+    return entities_coverage;
+  }
+  auto user_bounds_coverage =
+      subpass.bounds_limit_->TransformBounds(subpass.xformation_);
+  return entities_coverage->Intersection(user_bounds_coverage);
 }
 
 EntityPass* EntityPass::GetSuperpass() const {

@@ -2763,28 +2763,56 @@ TEST_P(AiksTest, TranslucentSaveLayerWithColorAndImageFilterDrawsCorrectly) {
 TEST_P(AiksTest, ImageFilteredSaveLayerWithUnboundedContents) {
   Canvas canvas;
 
-  auto texture = CreateTextureForFixture("airplane.jpg");
-  auto blur_filter = ImageFilter::MakeBlur(Sigma{5.0}, Sigma{5.0},
+  auto blur_filter = ImageFilter::MakeBlur(Sigma{10.0}, Sigma{10.0},
                                            FilterContents::BlurStyle::kNormal,
-                                           Entity::TileMode::kClamp);
-  auto image_source = ColorSource::MakeImage(texture, Entity::TileMode::kRepeat,
-                                             Entity::TileMode::kRepeat, {}, {});
+                                           Entity::TileMode::kDecal);
+
+  auto DrawLine = [&canvas](const Point& p0, const Point& p1, const Paint& p) {
+    auto path = PathBuilder{}
+                    .AddLine(p0, p1)
+                    .SetConvexity(Convexity::kConvex)
+                    .TakePath();
+    Paint paint = p;
+    paint.style = Paint::Style::kStroke;
+    canvas.DrawPath(path, paint);
+  };
+  // Registration marks for the edge of the SaveLayer
+  DrawLine(Point(75, 100), Point(225, 100), {.color = Color::White()});
+  DrawLine(Point(75, 200), Point(225, 200), {.color = Color::White()});
+  DrawLine(Point(100, 75), Point(100, 225), {.color = Color::White()});
+  DrawLine(Point(200, 75), Point(200, 225), {.color = Color::White()});
 
   canvas.SaveLayer({.image_filter = blur_filter},
                    Rect::MakeLTRB(100, 100, 200, 200));
+  {
+    // DrawPaint to verify correct behavior when the contents are unbounded.
+    canvas.DrawPaint({.color = Color::Yellow()});
 
-  canvas.DrawPaint({.color_source = image_source});
+    // Contrasting rectangle to see interior blurring
+    canvas.DrawRect(Rect::MakeLTRB(125, 125, 175, 175),
+                    {.color = Color::Blue()});
+  }
+  canvas.Restore();
 
-  Paint blue = {.color = Color::Blue()};
-  Paint green = {.color = Color::Green()};
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
 
-  canvas.DrawRect(Rect::MakeLTRB(125, 125, 175, 175), blue);
+TEST_P(AiksTest, ImageFilteredUnboundedSaveLayerWithUnboundedContents) {
+  Canvas canvas;
 
-  canvas.DrawRect(Rect::MakeLTRB(125, 50, 175, 98), green);
-  canvas.DrawRect(Rect::MakeLTRB(202, 125, 250, 175), green);
-  canvas.DrawRect(Rect::MakeLTRB(125, 202, 175, 250), green);
-  canvas.DrawRect(Rect::MakeLTRB(50, 125, 98, 175), green);
+  auto blur_filter = ImageFilter::MakeBlur(Sigma{10.0}, Sigma{10.0},
+                                           FilterContents::BlurStyle::kNormal,
+                                           Entity::TileMode::kDecal);
 
+  canvas.SaveLayer({.image_filter = blur_filter}, std::nullopt);
+  {
+    // DrawPaint to verify correct behavior when the contents are unbounded.
+    canvas.DrawPaint({.color = Color::Yellow()});
+
+    // Contrasting rectangle to see interior blurring
+    canvas.DrawRect(Rect::MakeLTRB(125, 125, 175, 175),
+                    {.color = Color::Blue()});
+  }
   canvas.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
