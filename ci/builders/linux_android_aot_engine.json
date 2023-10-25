@@ -159,7 +159,20 @@
                     "flutter/shell/platform/android:abi_jars",
                     "flutter/shell/platform/android:analyze_snapshot"
                 ]
-            }
+            },
+            "tests": [
+                {
+                    "name": "test: Android Firebase Test",
+                    "language": "python3",
+                    "script": "flutter/ci/firebase_testlab.py",
+                    "parameters": [
+                        "--variant",
+                        "out/android_release_arm64",
+                        "--build-id",
+                        "${SWARMING_TASK_ID}"
+                    ]
+                }
+            ]
         },
         {
             "archives": [
