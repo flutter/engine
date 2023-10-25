@@ -162,6 +162,10 @@
             },
             "tests": [
                 {
+                    "env": {
+                        "STORAGE_BUCKET": "gs://flutter_firebase_testlab_staging",
+                        "GCP_PROJECT": "flutter-infra-staging"
+                    },
                     "name": "test: Android Firebase Test",
                     "language": "python3",
                     "script": "flutter/ci/firebase_testlab.py",
