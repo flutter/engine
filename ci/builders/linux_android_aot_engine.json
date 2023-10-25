@@ -154,8 +154,9 @@
             "ninja": {
                 "config": "android_profile_arm64",
                 "targets": [
-                    "default",
                     "clang_x64/gen_snapshot",
+                    "default",
+                    "flutter/scenario_app/android",
                     "flutter/shell/platform/android:abi_jars",
                     "flutter/shell/platform/android:analyze_snapshot"
                 ]
