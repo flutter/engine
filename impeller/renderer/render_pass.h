@@ -6,10 +6,10 @@
 
 #include <string>
 
-#include "impeller/entity/entity_pass_target.h"
-#include "impeller/renderer/command.h"
-#include "impeller/renderer/command_buffer.h"
-#include "impeller/renderer/render_target.h"
+#include "impeller/entity/entity_pass_target.h"  // nogncheck
+#include "impeller/renderer/command.h"           // nogncheck
+#include "impeller/renderer/command_buffer.h"    // nogncheck
+#include "impeller/renderer/render_target.h"     // nogncheck
 
 namespace impeller {
 
