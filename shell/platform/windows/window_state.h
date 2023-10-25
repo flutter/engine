@@ -16,7 +16,6 @@
 
 namespace flutter {
 struct FlutterWindowsEngine;
-struct FlutterWindowsView;
 }  // namespace flutter
 
 // Wrapper to distinguish the plugin registrar ref from the engine ref given out
