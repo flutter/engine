@@ -315,6 +315,11 @@ struct TRect {
 using Rect = TRect<Scalar>;
 using IRect = TRect<int64_t>;
 
+constexpr inline Rect RoundOut(const Rect& r) {
+  return Rect::MakeLTRB(floor(r.GetLeft()), floor(r.GetTop()),
+                        ceil(r.GetRight()), ceil(r.GetBottom()));
+}
+
 constexpr inline std::optional<Rect> Union(const Rect& a,
                                            const std::optional<Rect> b) {
   return b.has_value() ? a.Union(b.value()) : a;

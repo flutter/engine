@@ -2114,6 +2114,17 @@ TEST(GeometryTest, RectProject) {
   }
 }
 
+TEST(GeometryTest, RectRoundOut) {
+  {
+    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
+    ASSERT_EQ(RoundOut(r), r);
+  }
+  {
+    auto r = Rect::MakeLTRB(-100.1, -100.1, 100.1, 100.1);
+    ASSERT_EQ(RoundOut(r), Rect::MakeLTRB(-101, -101, 101, 101));
+  }
+}
+
 TEST(GeometryTest, CubicPathComponentPolylineDoesNotIncludePointOne) {
   CubicPathComponent component({10, 10}, {20, 35}, {35, 20}, {40, 40});
   auto polyline = component.CreatePolyline(1.0f);
