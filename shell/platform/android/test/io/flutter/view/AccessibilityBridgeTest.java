@@ -1310,7 +1310,12 @@ public class AccessibilityBridgeTest {
 
   @Test
   public void itSetsFocusedNodeBeforeSendingEvent() {
-    AccessibilityChannel mockChannel = mock(AccessibilityChannel.class);
+
+    BasicMessageChannel mockChannel = mock(BasicMessageChannel.class);
+    AccessibilityChannel accessibilityChannel =
+        new AccessibilityChannel(mockChannel, mock(FlutterJNI.class));
+
+
     AccessibilityViewEmbedder mockViewEmbedder = mock(AccessibilityViewEmbedder.class);
     AccessibilityManager mockManager = mock(AccessibilityManager.class);
     View mockRootView = mock(View.class);
@@ -1320,7 +1325,7 @@ public class AccessibilityBridgeTest {
     AccessibilityBridge accessibilityBridge =
         setUpBridge(
             /*rootAccessibilityView=*/ mockRootView,
-            /*accessibilityChannel=*/ mockChannel,
+            /*accessibilityChannel=*/ accessibilityChannel,
             /*accessibilityManager=*/ mockManager,
             /*contentResolver=*/ null,
             /*accessibilityViewEmbedder=*/ mockViewEmbedder,
@@ -1361,7 +1366,14 @@ public class AccessibilityBridgeTest {
         .thenAnswer(invocation -> verifier.verify(invocation));
     accessibilityBridge.performAction(0, AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS, null);
     assertTrue(verifier.verified);
+
+
+        HashMap<String, Object> message = new HashMap<>();
+        message.put("type", "didGainFocus");
+        message.put("nodeId", 0);
+        verify(mockChannel).send(message);
   }
+
 
   @Test
   public void itClearsFocusedNodeBeforeSendingEvent() {

@@ -1170,7 +1170,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
               virtualViewId, Action.DID_GAIN_ACCESSIBILITY_FOCUS);
     
           HashMap<String, Object> message = new HashMap<>();
-          message.put("type", "focus");
+          message.put("type", "didGainFocus");
           message.put("nodeId", semanticsNode.id);
           accessibilityChannel.channel.send(message);
 
