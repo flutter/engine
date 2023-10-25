@@ -24,7 +24,7 @@ class ImageComparer {
   }) : _client = client;
 
   // Avoid talking to Skia gold for the force-multithreading variants.
-  bool get _useSkiaGold =>
+  static bool get _useSkiaGold =>
       !Platform.executableArguments.contains('--force-multithreading');
 
   /// Creates an image comparer and authorizes.
