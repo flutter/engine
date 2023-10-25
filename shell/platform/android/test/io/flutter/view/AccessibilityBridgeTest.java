@@ -1187,7 +1187,9 @@ public class AccessibilityBridgeTest {
 
   @Test
   public void itPerformsClearAccessibilityFocusCorrectly() {
-    AccessibilityChannel mockChannel = mock(AccessibilityChannel.class);
+    BasicMessageChannel mockChannel = mock(BasicMessageChannel.class);
+    AccessibilityChannel accessibilityChannel =
+        new AccessibilityChannel(mockChannel, mock(FlutterJNI.class));
     AccessibilityViewEmbedder mockViewEmbedder = mock(AccessibilityViewEmbedder.class);
     AccessibilityManager mockManager = mock(AccessibilityManager.class);
     View mockRootView = mock(View.class);
@@ -1197,7 +1199,7 @@ public class AccessibilityBridgeTest {
     AccessibilityBridge accessibilityBridge =
         setUpBridge(
             /*rootAccessibilityView=*/ mockRootView,
-            /*accessibilityChannel=*/ mockChannel,
+            /*accessibilityChannel=*/ accessibilityChannel,
             /*accessibilityManager=*/ mockManager,
             /*contentResolver=*/ null,
             /*accessibilityViewEmbedder=*/ mockViewEmbedder,
@@ -1373,8 +1375,9 @@ public class AccessibilityBridgeTest {
   }
 
   @Test
-  public void itClearsFocusedNodeBeforeSendingEvent() {
-    AccessibilityChannel mockChannel = mock(AccessibilityChannel.class);
+  public void itClearsFocusedNodeBeforeSendingEvent() {    BasicMessageChannel mockChannel = mock(BasicMessageChannel.class);
+    AccessibilityChannel accessibilityChannel =
+        new AccessibilityChannel(mockChannel, mock(FlutterJNI.class));
     AccessibilityViewEmbedder mockViewEmbedder = mock(AccessibilityViewEmbedder.class);
     AccessibilityManager mockManager = mock(AccessibilityManager.class);
     View mockRootView = mock(View.class);
@@ -1384,7 +1387,7 @@ public class AccessibilityBridgeTest {
     AccessibilityBridge accessibilityBridge =
         setUpBridge(
             /*rootAccessibilityView=*/ mockRootView,
-            /*accessibilityChannel=*/ mockChannel,
+            /*accessibilityChannel=*/ accessibilityChannel,
             /*accessibilityManager=*/ mockManager,
             /*contentResolver=*/ null,
             /*accessibilityViewEmbedder=*/ mockViewEmbedder,
