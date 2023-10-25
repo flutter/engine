@@ -71,11 +71,10 @@ std::optional<Entity> MatrixFilterContents::RenderFilter(
 std::optional<Rect> MatrixFilterContents::GetFilterSourceCoverage(
     const Matrix& effect_transform,
     const Rect& output_limit) const {
-  auto matrix = matrix_.Basis();
-  if (matrix.GetDeterminant() == 0.0) {
-    return std::nullopt;
-  }
-  auto inverse = matrix.Invert();
+  auto transform = effect_transform *          //
+                   matrix_ *                   //
+                   effect_transform.Invert();  //
+  auto inverse = transform.Invert();
   return output_limit.TransformBounds(inverse);
 }
 
