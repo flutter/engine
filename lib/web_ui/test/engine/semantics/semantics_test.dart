@@ -433,7 +433,7 @@ void _testEngineSemanticsOwner() {
     expectSemanticsTree('''
 <sem style="$rootSemanticStyle">
   <sem-c>
-    <sem aria-label="Hello"></sem>
+    <sem aria-label="Hello" role="text"></sem>
   </sem-c>
 </sem>''');
 
@@ -448,7 +448,7 @@ void _testEngineSemanticsOwner() {
     expectSemanticsTree('''
 <sem style="$rootSemanticStyle">
   <sem-c>
-    <a aria-label="Hello" role="button" style="display: block;"></a>
+    <a aria-label="Hello" style="display: block;"></a>
   </sem-c>
 </sem>''');
     expect(existingParent, tree[1]!.element.parent);
@@ -2108,6 +2108,89 @@ void _testTappable() {
       (0, ui.SemanticsAction.didGainAccessibilityFocus, null),
       (0, ui.SemanticsAction.didLoseAccessibilityFocus, null),
     ]);
+
+    semantics().semanticsEnabled = false;
+  });
+
+  // Regression test for: https://github.com/flutter/flutter/issues/134842
+  //
+  // If the click event is allowed to propagate through the hierarchy, then both
+  // the descendant and the parent will generate a SemanticsAction.tap, causing
+  // a double-tap to happen on the framework side.
+  test('inner tappable overrides ancestor tappable', () async {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final List<CapturedAction> capturedActions = <CapturedAction>[];
+    EnginePlatformDispatcher.instance.onSemanticsActionEvent = (ui.SemanticsActionEvent event) {
+      capturedActions.add((event.nodeId, event.type, event.arguments));
+    };
+
+    final SemanticsTester tester = SemanticsTester(semantics());
+    tester.updateNode(
+      id: 0,
+      isFocusable: true,
+      hasTap: true,
+      hasEnabledState: true,
+      isEnabled: true,
+      isButton: true,
+      rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+      children: <SemanticsNodeUpdate>[
+        tester.updateNode(
+          id: 1,
+          isFocusable: true,
+          hasTap: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          isButton: true,
+          rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+        ),
+      ],
+    );
+    tester.apply();
+
+    expectSemanticsTree('''
+<sem flt-tappable role="button" style="$rootSemanticStyle">
+  <sem-c>
+    <sem flt-tappable role="button"></sem>
+  </sem-c>
+</sem>
+''');
+
+    // Tap on the outer element
+    {
+      final DomElement element = tester.getSemanticsObject(0).element;
+      final DomRect rect = element.getBoundingClientRect();
+
+      element.dispatchEvent(createDomMouseEvent('click', <Object?, Object?>{
+        'clientX': (rect.left + (rect.right - rect.left) / 2).floor(),
+        'clientY': (rect.top + (rect.bottom - rect.top) / 2).floor(),
+      }));
+
+      expect(capturedActions, <CapturedAction>[
+        (0, ui.SemanticsAction.tap, null),
+      ]);
+    }
+
+    // Tap on the inner element
+    {
+      capturedActions.clear();
+      final DomElement element = tester.getSemanticsObject(1).element;
+      final DomRect rect = element.getBoundingClientRect();
+
+      element.dispatchEvent(createDomMouseEvent('click', <Object?, Object?>{
+        'bubbles': true,
+        'clientX': (rect.left + (rect.right - rect.left) / 2).floor(),
+        'clientY': (rect.top + (rect.bottom - rect.top) / 2).floor(),
+      }));
+
+      // The click on the inner element should not propagate to the parent to
+      // avoid sending a second SemanticsAction.tap action to the framework.
+      expect(capturedActions, <CapturedAction>[
+        (1, ui.SemanticsAction.tap, null),
+      ]);
+    }
 
     semantics().semanticsEnabled = false;
   });

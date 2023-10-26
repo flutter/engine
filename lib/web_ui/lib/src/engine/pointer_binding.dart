@@ -272,8 +272,7 @@ class ClickDebouncer {
       // recently and if the node is currently listening to event, forward to
       // the framework.
       if (isListening && _shouldSendClickEventToFramework(click)) {
-        EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
-            semanticsNodeId, ui.SemanticsAction.tap, null);
+        _sendSemanticsTapToFramework(click, semanticsNodeId);
       }
       return;
     }
@@ -285,14 +284,27 @@ class ClickDebouncer {
       final DebounceState state = _state!;
       _state = null;
       state.timer.cancel();
-      EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
-          semanticsNodeId, ui.SemanticsAction.tap, null);
+      _sendSemanticsTapToFramework(click, semanticsNodeId);
     } else {
       // The semantic node is not listening to taps. Flush the pointer events
       // for the framework to figure out what to do with them. It's possible
       // the framework is interested in gestures other than taps.
       _flush();
     }
+  }
+
+  void _sendSemanticsTapToFramework(DomEvent click, int semanticsNodeId) {
+    // Tappable nodes can be nested inside other tappable nodes. If a click
+    // lands on an inner element and is allowed to propagate, it will also
+    // land on the ancestor tappable, leading to both the descendant and the
+    // ancestor sending SemanticsAction.tap to the framework, creating a double
+    // tap/click, which is wrong. More details:
+    //
+    // https://github.com/flutter/flutter/issues/134842
+    click.stopPropagation();
+
+    EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
+        semanticsNodeId, ui.SemanticsAction.tap, null);
   }
 
   void _startDebouncing(DomEvent event, List<ui.PointerData> data) {

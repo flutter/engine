@@ -39,7 +39,7 @@ class Tappable extends RoleManager {
         _isListening,
       );
     });
-    semanticsObject.element.addEventListener('click', _clickListener);
+    owner.element.addEventListener('click', _clickListener);
   }
 
   DomEventListener? _clickListener;
@@ -60,9 +60,9 @@ class Tappable extends RoleManager {
     // contract is that the element that has this attribute is also the element
     // that receives pointer and "click" events.
     if (_isListening) {
-      semanticsObject.element.setAttribute('flt-tappable', '');
+      owner.element.setAttribute('flt-tappable', '');
     } else {
-      semanticsObject.element.removeAttribute('flt-tappable');
+      owner.element.removeAttribute('flt-tappable');
     }
   }
 
