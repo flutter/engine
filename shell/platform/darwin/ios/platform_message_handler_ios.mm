@@ -11,7 +11,7 @@
 
 static uint64_t platform_message_counter = 1;
 
-@interface FLTSerialTaskQueue : NSObject <FlutterTaskQueue>
+@interface FLTSerialTaskQueue : NSObject <FlutterTaskQueueDispatch>
 @property(nonatomic, strong) dispatch_queue_t queue;
 @end
 
@@ -118,12 +118,14 @@ void PlatformMessageHandlerIos::SetMessageHandler(const std::string& channel,
                                                   FlutterBinaryMessageHandler handler,
                                                   NSObject<FlutterTaskQueue>* task_queue) {
   FML_CHECK(platform_task_runner_->RunsTasksOnCurrentThread());
+  FML_CHECK(!task_queue || [task_queue conformsToProtocol:@protocol(FlutterTaskQueueDispatch)]);
   /// TODO(gaaclarke): This should be migrated to a lockfree datastructure.
   std::lock_guard lock(message_handlers_mutex_);
   message_handlers_.erase(channel);
   if (handler) {
     message_handlers_[channel] = {
-        .task_queue = fml::scoped_nsprotocol([task_queue retain]),
+        .task_queue = fml::scoped_nsprotocol(
+            [static_cast<NSObject<FlutterTaskQueueDispatch>*>(task_queue) retain]),
         .handler =
             fml::ScopedBlock<FlutterBinaryMessageHandler>{handler, fml::OwnershipPolicy::kRetain},
     };
