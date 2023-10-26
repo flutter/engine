@@ -11,7 +11,6 @@
 #include "flutter/shell/platform/common/app_lifecycle_state.h"
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMac.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h"
 
@@ -109,31 +108,6 @@ typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
  * Provides the |FlutterEngineTerminationHandler| to be used for this engine.
  */
 @property(nonatomic, readonly) FlutterEngineTerminationHandler* terminationHandler;
-
-/**
- * Attach a view controller to the engine as its default controller.
- *
- * Practically, since FlutterEngine can only be attached with one controller,
- * the given controller, if successfully attached, will always have the default
- * view ID kFlutterImplicitViewId.
- *
- * The engine holds a weak reference to the attached view controller.
- *
- * If the given view controller is already attached to an engine, this call
- * throws an assertion.
- */
-- (void)addViewController:(FlutterViewController*)viewController;
-
-/**
- * Dissociate the given view controller from this engine.
- *
- * If the view controller is not associated with this engine, this call throws an
- * assertion.
- *
- * Practically, since FlutterEngine can only be attached with one controller for
- * now, the given controller must be the current view controller.
- */
-- (void)removeViewController:(FlutterViewController*)viewController;
 
 /**
  * The |FlutterViewController| associated with the given view ID, if any.

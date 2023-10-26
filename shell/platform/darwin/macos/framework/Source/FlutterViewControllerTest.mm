@@ -206,7 +206,6 @@ TEST(FlutterViewController, ReparentsPluginWhenAccessibilityDisabled) {
                                                                                 nibName:nil
                                                                                  bundle:nil];
   [viewController loadView];
-  [engine setViewController:viewController];
   // Creates a NSWindow so that sub view can be first responder.
   NSWindow* window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600)
                                                  styleMask:NSBorderlessWindowMask

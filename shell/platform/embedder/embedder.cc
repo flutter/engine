@@ -102,8 +102,6 @@ extern const intptr_t kPlatformStrongDillSize;
 const int32_t kFlutterSemanticsNodeIdBatchEnd = -1;
 const int32_t kFlutterSemanticsCustomActionIdBatchEnd = -1;
 
-static constexpr int64_t kFlutterImplicitViewId = 0;
-
 // A message channel to send platform-independent FlutterKeyData to the
 // framework.
 //
@@ -1295,12 +1293,12 @@ InferExternalViewEmbedderFromArgs(const FlutterCompositor* compositor,
           };
 
   flutter::EmbedderExternalViewEmbedder::PresentCallback present_callback =
-      [c_present_callback,
-       user_data = compositor->user_data](const auto& layers) {
+      [c_present_callback, user_data = compositor->user_data](
+          const auto& layers, int64_t view_id) {
         TRACE_EVENT0("flutter", "FlutterCompositorPresentLayers");
         return c_present_callback(
             const_cast<const FlutterLayer**>(layers.data()), layers.size(),
-            user_data);
+            view_id, user_data);
       };
 
   return {std::make_unique<flutter::EmbedderExternalViewEmbedder>(
@@ -2116,6 +2114,46 @@ FlutterEngineResult FlutterEngineShutdown(FLUTTER_API_SYMBOL(FlutterEngine)
   }
   auto embedder_engine = reinterpret_cast<flutter::EmbedderEngine*>(engine);
   delete embedder_engine;
+  return kSuccess;
+}
+
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineAddView(FLUTTER_API_SYMBOL(FlutterEngine)
+                                             engine,
+                                         FlutterAddViewInfo* config) {
+  if (engine == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
+  }
+  flutter::EmbedderEngine* embedder_engine =
+      reinterpret_cast<flutter::EmbedderEngine*>(engine);
+  embedder_engine->GetShell().AddView(config->view_id);
+
+  return kSuccess;
+}
+
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineRemoveView(FLUTTER_API_SYMBOL(FlutterEngine)
+                                                engine,
+                                            FlutterRemoveViewInfo* config) {
+  if (engine == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
+  }
+  flutter::EmbedderEngine* embedder_engine =
+      reinterpret_cast<flutter::EmbedderEngine*>(engine);
+  embedder_engine->GetShell().RemoveView(config->view_id);
+
+  return kSuccess;
+}
+
+FlutterEngineResult FlutterEngineRemoveRenderSurface(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    int64_t view_id) {
+  if (engine == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
+  }
+  flutter::EmbedderEngine* embedder_engine =
+      reinterpret_cast<flutter::EmbedderEngine*>(engine);
+  embedder_engine->GetShell().RemoveView(view_id);
   return kSuccess;
 }
 
@@ -3159,6 +3197,8 @@ FlutterEngineResult FlutterEngineGetProcAddresses(
   SET_PROC(Initialize, FlutterEngineInitialize);
   SET_PROC(Deinitialize, FlutterEngineDeinitialize);
   SET_PROC(RunInitialized, FlutterEngineRunInitialized);
+  SET_PROC(AddView, FlutterEngineAddView);
+  SET_PROC(RemoveView, FlutterEngineRemoveView);
   SET_PROC(SendWindowMetricsEvent, FlutterEngineSendWindowMetricsEvent);
   SET_PROC(SendPointerEvent, FlutterEngineSendPointerEvent);
   SET_PROC(SendKeyEvent, FlutterEngineSendKeyEvent);

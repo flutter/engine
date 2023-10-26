@@ -91,6 +91,36 @@ FLUTTER_DARWIN_EXPORT
 @property(nonatomic, nonnull, readonly) id<FlutterBinaryMessenger> binaryMessenger;
 
 /**
+ * Attach a view controller to the engine as its default controller.
+ *
+ * Practically, since FlutterEngine can only be attached with one controller,
+ * the given controller, if successfully attached, will always have the default
+ * view ID kFlutterDefaultViewId.
+ *
+ * The engine holds a weak reference to the attached view controller.
+ *
+ * If the given view controller is already attached to an engine, this call
+ * throws an assertion.
+ */
+- (bool)addViewController:(nonnull FlutterViewController*)viewController;
+
+/**
+ * Dissociate the given view controller from this engine.
+ *
+ * Practically, since FlutterEngine can only be attached with one controller,
+ * the given controller must be the default view controller.
+ *
+ * If the view controller is not associated with this engine, this call throws an
+ * assertion.
+ */
+- (bool)removeViewController:(nonnull FlutterViewController*)viewController;
+
+/**
+ * The |FlutterViewController| associated with the given view ID, if any.
+ */
+- (nullable FlutterViewController*)viewControllerForId:(FlutterViewId)viewId;
+
+/**
  * Shuts the Flutter engine if it is running. The FlutterEngine instance must always be shutdown
  * before it may be collected. Not shutting down the FlutterEngine instance before releasing it will
  * result in the leak of that engine instance.

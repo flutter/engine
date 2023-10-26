@@ -1664,6 +1664,7 @@ typedef struct {
   size_t struct_size;
   /// The size of the render target the engine expects to render into.
   FlutterSize size;
+  int64_t view_id;
 } FlutterBackingStoreConfig;
 
 typedef enum {
@@ -1731,15 +1732,16 @@ typedef bool (*FlutterBackingStoreCollectCallback)(
 
 typedef bool (*FlutterLayersPresentCallback)(const FlutterLayer** layers,
                                              size_t layers_count,
+                                             int64_t view_id,
                                              void* user_data);
 
 typedef struct {
   /// This size of this struct. Must be sizeof(FlutterCompositor).
   size_t struct_size;
-  /// A baton that in not interpreted by the engine in any way. If it passed
+  /// A baton that in not interpreted by the engine in any way. It is passed
   /// back to the embedder in `FlutterCompositor.create_backing_store_callback`,
   /// `FlutterCompositor.collect_backing_store_callback` and
-  /// `FlutterCompositor.present_layers_callback`
+  /// `FlutterCompositor.present_layers_callback`.
   void* user_data;
   /// A callback invoked by the engine to obtain a backing store for a specific
   /// `FlutterLayer`.
@@ -1758,6 +1760,14 @@ typedef struct {
   /// Avoid caching backing stores provided by this compositor.
   bool avoid_backing_store_cache;
 } FlutterCompositor;
+
+typedef struct {
+  int64_t view_id;
+} FlutterAddViewInfo;
+
+typedef struct {
+  int64_t view_id;
+} FlutterRemoveViewInfo;
 
 typedef struct {
   /// This size of this struct. Must be sizeof(FlutterLocale).
@@ -2395,6 +2405,16 @@ FlutterEngineResult FlutterEngineRunInitialized(
     FLUTTER_API_SYMBOL(FlutterEngine) engine);
 
 FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineAddView(FLUTTER_API_SYMBOL(FlutterEngine)
+                                             engine,
+                                         FlutterAddViewInfo* config);
+
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineRemoveView(FLUTTER_API_SYMBOL(FlutterEngine)
+                                                engine,
+                                            int64_t view_id);
+
+FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterWindowMetricsEvent* event);
@@ -2968,6 +2988,12 @@ typedef FlutterEngineResult (*FlutterEngineDeinitializeFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine);
 typedef FlutterEngineResult (*FlutterEngineRunInitializedFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine);
+typedef FlutterEngineResult (*FlutterEngineAddViewFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    FlutterAddViewInfo* config);
+typedef FlutterEngineResult (*FlutterEngineRemoveViewFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    FlutterRemoveViewInfo* config);
 typedef FlutterEngineResult (*FlutterEngineSendWindowMetricsEventFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterWindowMetricsEvent* event);
@@ -3077,6 +3103,8 @@ typedef struct {
   FlutterEngineInitializeFnPtr Initialize;
   FlutterEngineDeinitializeFnPtr Deinitialize;
   FlutterEngineRunInitializedFnPtr RunInitialized;
+  FlutterEngineAddViewFnPtr AddView;
+  FlutterEngineRemoveViewFnPtr RemoveView;
   FlutterEngineSendWindowMetricsEventFnPtr SendWindowMetricsEvent;
   FlutterEngineSendPointerEventFnPtr SendPointerEvent;
   FlutterEngineSendKeyEventFnPtr SendKeyEvent;
