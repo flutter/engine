@@ -274,6 +274,16 @@ TEST_P(AiksTest, CanRenderCurvedStrokes) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, CanRenderThickCurvedStrokes) {
+  Canvas canvas;
+  Paint paint;
+  paint.color = Color::Red();
+  paint.stroke_width = 100.0;
+  paint.style = Paint::Style::kStroke;
+  canvas.DrawPath(PathBuilder{}.AddCircle({100, 100}, 50).TakePath(), paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, CanRenderClips) {
   Canvas canvas;
   Paint paint;
@@ -1233,6 +1243,37 @@ TEST_P(AiksTest, CanRenderRoundedRectWithNonUniformRadii) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, CanRenderStrokePathThatEndsAtSharpTurn) {
+  Canvas canvas;
+
+  Paint paint;
+  paint.color = Color::Red();
+  paint.style = Paint::Style::kStroke;
+  paint.stroke_width = 200;
+
+  Rect rect = {100, 100, 200, 200};
+  PathBuilder builder;
+  builder.AddArc(rect, Degrees(0), Degrees(90), false);
+
+  canvas.DrawPath(builder.TakePath(), paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderStrokePathWithCubicLine) {
+  Canvas canvas;
+
+  Paint paint;
+  paint.color = Color::Red();
+  paint.style = Paint::Style::kStroke;
+  paint.stroke_width = 20;
+
+  PathBuilder builder;
+  builder.AddCubicCurve({0, 200}, {50, 400}, {350, 0}, {400, 200});
+
+  canvas.DrawPath(builder.TakePath(), paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, CanRenderDifferencePaths) {
   Canvas canvas;
 
@@ -2055,6 +2096,22 @@ TEST_P(AiksTest, DrawRectStrokesRenderCorrectly) {
   paint.color = Color::Red();
   paint.style = Paint::Style::kStroke;
   paint.stroke_width = 10;
+
+  canvas.Translate({100, 100});
+  canvas.DrawPath(
+      PathBuilder{}.AddRect(Rect::MakeSize(Size{100, 100})).TakePath(),
+      {paint});
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, DrawRectStrokesWithBevelJoinRenderCorrectly) {
+  Canvas canvas;
+  Paint paint;
+  paint.color = Color::Red();
+  paint.style = Paint::Style::kStroke;
+  paint.stroke_width = 10;
+  paint.stroke_join = Join::kBevel;
 
   canvas.Translate({100, 100});
   canvas.DrawPath(
@@ -3684,6 +3741,93 @@ TEST_P(AiksTest, ClearColorOptimizationWhenSubpassIsBiggerThanParentPass) {
   canvas.DrawRect(Rect::MakeLTRB(0, 0, 800, 800), {.color = Color::Red()});
   canvas.Restore();
 
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, BlurHasNoEdge) {
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  canvas.DrawPaint({});
+  Paint blur = {
+      .color = Color::Green(),
+      .mask_blur_descriptor =
+          Paint::MaskBlurDescriptor{
+              .style = FilterContents::BlurStyle::kNormal,
+              .sigma = Sigma(47.6),
+          },
+  };
+  canvas.DrawRect(Rect{300, 300, 200, 200}, blur);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, EmptySaveLayerIgnoresPaint) {
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  canvas.DrawPaint(Paint{.color = Color::Red()});
+  canvas.ClipRect({100, 100, 200, 200});
+  canvas.SaveLayer(Paint{.color = Color::Blue()});
+  canvas.Restore();
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, EmptySaveLayerRendersWithClear) {
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  auto image = std::make_shared<Image>(CreateTextureForFixture("airplane.jpg"));
+  canvas.DrawImage(image, {10, 10}, {});
+  canvas.ClipRect({100, 100, 200, 200});
+  canvas.SaveLayer(Paint{.blend_mode = BlendMode::kClear});
+  canvas.Restore();
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, BlurredRectangleWithShader) {
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+
+  auto paint_lines = [&canvas](Scalar dx, Scalar dy, Paint paint) {
+    auto draw_line = [&canvas, &paint](Point a, Point b) {
+      canvas.DrawPath(PathBuilder{}.AddLine(a, b).TakePath(), paint);
+    };
+    paint.stroke_width = 5;
+    paint.style = Paint::Style::kStroke;
+    draw_line(Point(dx + 100, dy + 100), Point(dx + 200, dy + 200));
+    draw_line(Point(dx + 100, dy + 200), Point(dx + 200, dy + 100));
+    draw_line(Point(dx + 150, dy + 100), Point(dx + 200, dy + 150));
+    draw_line(Point(dx + 100, dy + 150), Point(dx + 150, dy + 200));
+  };
+
+  AiksContext renderer(GetContext(), nullptr);
+  Canvas recorder_canvas;
+  for (int x = 0; x < 5; ++x) {
+    for (int y = 0; y < 5; ++y) {
+      Rect rect = Rect::MakeXYWH(x * 20, y * 20, 20, 20);
+      Paint paint{.color =
+                      ((x + y) & 1) == 0 ? Color::Yellow() : Color::Blue()};
+      recorder_canvas.DrawRect(rect, paint);
+    }
+  }
+  Picture picture = recorder_canvas.EndRecordingAsPicture();
+  std::shared_ptr<Texture> texture =
+      picture.ToImage(renderer, ISize{100, 100})->GetTexture();
+
+  ColorSource image_source = ColorSource::MakeImage(
+      texture, Entity::TileMode::kRepeat, Entity::TileMode::kRepeat, {}, {});
+  std::shared_ptr<ImageFilter> blur_filter = ImageFilter::MakeBlur(
+      Sigma(5), Sigma(5), FilterContents::BlurStyle::kNormal,
+      Entity::TileMode::kDecal);
+  canvas.DrawRect(Rect::MakeLTRB(0, 0, 300, 600),
+                  Paint{.color = Color::DarkGreen()});
+  canvas.DrawRect(Rect::MakeLTRB(100, 100, 200, 200),
+                  Paint{.color_source = image_source});
+  canvas.DrawRect(Rect::MakeLTRB(300, 0, 600, 600),
+                  Paint{.color = Color::Red()});
+  canvas.DrawRect(
+      Rect::MakeLTRB(400, 100, 500, 200),
+      Paint{.color_source = image_source, .image_filter = blur_filter});
+  paint_lines(0, 300, Paint{.color_source = image_source});
+  paint_lines(300, 300,
+              Paint{.color_source = image_source, .image_filter = blur_filter});
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 

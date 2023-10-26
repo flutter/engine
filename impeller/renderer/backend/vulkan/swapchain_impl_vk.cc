@@ -379,9 +379,6 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
       nullptr               // fence
   );
 
-  /// Record the approximate start of the GPU workload.
-  context.GetGPUTracer()->RecordStartFrameTime();
-
   switch (acq_result) {
     case vk::Result::eSuccess:
       // Keep going.
@@ -402,6 +399,9 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
     VALIDATION_LOG << "Swapchain returned an invalid image index.";
     return {};
   }
+
+  /// Record all subsequent cmd buffers as part of the current frame.
+  context.GetGPUTracer()->MarkFrameStart();
 
   auto image = images_[index % images_.size()];
   uint32_t image_index = index;
@@ -457,9 +457,6 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
     }
   }
 
-  /// Record the approximate end of the GPU workload.
-  context.GetGPUTracer()->RecordEndFrameTime();
-
   //----------------------------------------------------------------------------
   /// Signal that the presentation semaphore is ready.
   ///
@@ -479,6 +476,8 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
       return false;
     }
   }
+
+  context.GetGPUTracer()->MarkFrameEnd();
 
   auto task = [&, index, current_frame = current_frame_] {
     auto context_strong = context_.lock();
@@ -523,7 +522,7 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
   if (context.GetSyncPresentation()) {
     task();
   } else {
-    context.GetConcurrentWorkerTaskRunner()->PostTask(task);
+    context.GetQueueSubmitRunner()->PostTask(task);
   }
   return true;
 }
