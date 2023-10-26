@@ -30,7 +30,7 @@ struct FrameSynchronizer {
   vk::UniqueSemaphore render_ready;
   vk::UniqueSemaphore present_ready;
   std::shared_ptr<CommandBuffer> final_cmd_buffer;
-  /// @brief A semaphore that is signaled _after_ a given swapchain image is
+  /// @brief A latch that is signaled _after_ a given swapchain image is
   ///        presented.
   std::shared_ptr<fml::CountDownLatch> present_latch;
   bool is_valid = false;
