@@ -16,7 +16,6 @@ const String _kLuciEnvName = 'LUCI_CONTEXT';
 const String _skiaGoldHost = 'https://flutter-engine-gold.skia.org';
 const String _instance = 'flutter-engine';
 
-const bool _verbose = true;
 /// Whether the Skia Gold client is available and can be used in this
 /// environment.
 bool get isSkiaGoldClientAvailable => Platform.environment.containsKey(_kGoldctlKey);
@@ -37,7 +36,9 @@ class SkiaGoldClient {
   ///
   /// [dimensions] allows to add attributes about the environment
   /// used to generate the screenshots.
-  SkiaGoldClient(this.workDirectory, { this.dimensions });
+  SkiaGoldClient(this.workDirectory, { this.dimensions, this.verbose = false});
+
+  final bool verbose;
 
   /// Allows to add attributes about the environment used to generate the screenshots.
   final Map<String, String>? dimensions;
@@ -96,7 +97,7 @@ class SkiaGoldClient {
     final List<String> authCommand = <String>[
       _goldctl,
       'auth',
-      if (_verbose) '--verbose',
+      if (verbose) '--verbose',
       '--work-dir', _tempPath,
       '--luci',
     ];
@@ -113,6 +114,9 @@ class SkiaGoldClient {
         ..writeln('stdout: ${result.stdout}')
         ..writeln('stderr: ${result.stderr}');
       throw Exception(buf.toString());
+    } else if (verbose) {
+      print('stdout:\n${result.stdout}');
+      print('stderr:\n${result.stderr}');
     }
   }
 
@@ -136,7 +140,7 @@ class SkiaGoldClient {
     final List<String> imgtestInitCommand = <String>[
       _goldctl,
       'imgtest', 'init',
-      if (_verbose) '--verbose',
+      if (verbose) '--verbose',
       '--instance', _instance,
       '--work-dir', _tempPath,
       '--commit', commitHash,
@@ -166,7 +170,11 @@ class SkiaGoldClient {
         ..writeln('stdout: ${result.stdout}')
         ..writeln('stderr: ${result.stderr}');
       throw Exception(buf.toString());
+    } else if (verbose) {
+      print('stdout:\n${result.stdout}');
+      print('stderr:\n${result.stderr}');
     }
+
   }
 
   /// Executes the `imgtest add` command in the `goldctl` tool.
@@ -232,7 +240,7 @@ class SkiaGoldClient {
     final List<String> imgtestCommand = <String>[
       _goldctl,
       'imgtest', 'add',
-      if (_verbose) '--verbose',
+      if (verbose) '--verbose',
       '--work-dir', _tempPath,
       '--test-name', cleanTestName(testName),
       '--png-file', goldenFile.path,
@@ -247,6 +255,9 @@ class SkiaGoldClient {
       // is meant to inform when an unexpected result occurs.
       print('goldctl imgtest add stdout: ${result.stdout}');
       print('goldctl imgtest add stderr: ${result.stderr}');
+    } else if (verbose) {
+      print('stdout:\n${result.stdout}');
+      print('stderr:\n${result.stderr}');
     }
   }
 
@@ -265,7 +276,7 @@ class SkiaGoldClient {
     final List<String> tryjobInitCommand = <String>[
       _goldctl,
       'imgtest', 'init',
-      if (_verbose) '--verbose',
+      if (verbose) '--verbose',
       '--instance', _instance,
       '--work-dir', _tempPath,
       '--commit', commitHash,
@@ -298,6 +309,9 @@ class SkiaGoldClient {
         ..writeln('stdout: ${result.stdout}')
         ..writeln('stderr: ${result.stderr}');
       throw Exception(buf.toString());
+    } else if (verbose) {
+      print('stdout:\n${result.stdout}');
+      print('stderr:\n${result.stderr}');
     }
   }
 
@@ -322,7 +336,7 @@ class SkiaGoldClient {
     final List<String> tryjobCommand = <String>[
       _goldctl,
       'imgtest', 'add',
-      if (_verbose) '--verbose',
+      if (verbose) '--verbose',
       '--work-dir', _tempPath,
       '--test-name', cleanTestName(testName),
       '--png-file', goldenFile.path,
@@ -344,6 +358,9 @@ class SkiaGoldClient {
         ..writeln('stderr: ${result.stderr}')
         ..writeln();
       throw Exception(buf.toString());
+    } else if (verbose) {
+      print('stdout:\n${result.stdout}');
+      print('stderr:\n${result.stderr}');
     }
   }
 

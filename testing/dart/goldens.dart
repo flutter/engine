@@ -28,9 +28,13 @@ class ImageComparer {
       !Platform.executableArguments.contains('--force-multithreading');
 
   /// Creates an image comparer and authorizes.
-  static Future<ImageComparer> create({required String testSuiteName}) async {
+  static Future<ImageComparer> create({
+    required String testSuiteName,
+    bool verbose = false,
+  }) async {
     if (!testSuiteName.endsWith('.dart')) {
-      throw ArgumentError('"$testSuiteName" must end in .dart', 'testSuiteName');
+      throw ArgumentError(
+          '"$testSuiteName" must end in .dart', 'testSuiteName');
     }
     const String workDirectoryPath =
         String.fromEnvironment(_kSkiaGoldWorkDirectoryKey);
@@ -46,11 +50,12 @@ class ImageComparer {
       'impeller_enabled': impellerEnabled.toString(),
     };
     final SkiaGoldClient client = isSkiaGoldClientAvailable && _useSkiaGold
-        ? SkiaGoldClient(workDirectory, dimensions: dimensions)
+        ? SkiaGoldClient(workDirectory, dimensions: dimensions, verbose: verbose)
         : _FakeSkiaGoldClient(workDirectory, dimensions);
 
     await client.auth();
-    return ImageComparer._(testSuiteName: 'flutter_tester_$testSuiteName', client: client);
+    return ImageComparer._(
+        testSuiteName: 'flutter_tester_$testSuiteName', client: client);
   }
 
   final SkiaGoldClient _client;
@@ -67,11 +72,13 @@ class ImageComparer {
 
     final File file = File(path.join(_client.workDirectory.path, fileName))
       ..writeAsBytesSync(data.buffer.asUint8List());
-    await _client.addImg(
+    await _client
+        .addImg(
       testSuiteName,
       file,
       screenshotSize: image.width * image.height,
-    ).catchError((dynamic error) {
+    )
+        .catchError((dynamic error) {
       print('Skia gold comparison failed: $error');
       throw Exception('Failed comparison: $testSuiteName/$fileName');
     });
