@@ -1676,6 +1676,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     }
   }
 
+  if (@available(iOS 17.0, *)) {
   NSUInteger first = start;
   if (end < start) {
     first = end;
@@ -1698,12 +1699,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
         !isLastSelectionRect && _selectionRects[i + 1].position > first;
     if (startsOnOrBeforeStartOfRange &&
         (endOfTextIsAfterStartOfRange || nextSelectionRectIsAfterStartOfRange)) {
-      // TODO(hellohaunlin): Remove iOS 17 check. The logic should also work for older versions.
-      if (@available(iOS 17, *)) {
-        startSelectionRect = _selectionRects[i].rect;
-      } else {
-        return _selectionRects[i].rect;
-      }
+      startSelectionRect = _selectionRects[i].rect;
     }
     if (!CGRectIsNull(startSelectionRect)) {
       minY = fmin(minY, CGRectGetMinY(_selectionRects[i].rect));
@@ -1729,6 +1725,10 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     CGFloat minX = fmin(CGRectGetMinX(startSelectionRect), CGRectGetMinX(endSelectionRect));
     CGFloat maxX = fmax(CGRectGetMaxX(startSelectionRect), CGRectGetMaxX(endSelectionRect));
     return CGRectMake(minX, minY, maxX - minX, maxY - minY);
+  }
+  } else {
+    // Auto correction highlight on iOS 16 and older is rendered by Flutter.
+    return CGRectZero;
   }
 }
 
