@@ -243,8 +243,6 @@ class HtmlViewEmbedder {
     }
   }
 
-  // TODO(hterkelsen): Compute the platform view bounds while applying
-  //   mutators. We need the bounds to be able to optimize the overlays.
   void _applyMutators(
       EmbeddedViewParams params, DomElement embeddedView, int viewId) {
     final MutatorsStack mutators = params.mutators;
