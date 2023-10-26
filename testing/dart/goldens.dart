@@ -19,7 +19,6 @@ const String _kSkiaGoldWorkDirectoryKey = 'kSkiaGoldWorkDirectory';
 /// be identical, or for adding images to Skia gold for comparison.
 class ImageComparer {
   ImageComparer._({
-    required this.testSuiteName,
     required SkiaGoldClient client,
   }) : _client = client;
 
@@ -29,13 +28,8 @@ class ImageComparer {
 
   /// Creates an image comparer and authorizes.
   static Future<ImageComparer> create({
-    required String testSuiteName,
     bool verbose = false,
   }) async {
-    if (!testSuiteName.endsWith('.dart')) {
-      throw ArgumentError(
-          '"$testSuiteName" must end in .dart', 'testSuiteName');
-    }
     const String workDirectoryPath =
         String.fromEnvironment(_kSkiaGoldWorkDirectoryKey);
     if (workDirectoryPath.isEmpty) {
@@ -55,33 +49,27 @@ class ImageComparer {
         : _FakeSkiaGoldClient(workDirectory, dimensions, verbose: verbose);
 
     await client.auth();
-    return ImageComparer._(
-        testSuiteName: 'flutter_tester_$testSuiteName', client: client);
+    return ImageComparer._(client: client);
   }
 
   final SkiaGoldClient _client;
 
-  /// A unique name for the suite under test, e.g. `canvas_test`.
-  final String testSuiteName;
-
   /// Adds an [Image] to Skia Gold for comparison.
   ///
-  /// The [fileName] must be unique per [testSuiteName].
+  /// The [fileName] must be unique.
   Future<void> addGoldenImage(Image image, String fileName) async {
     final ByteData data =
         (await image.toByteData(format: ImageByteFormat.png))!;
 
     final File file = File(path.join(_client.workDirectory.path, fileName))
       ..writeAsBytesSync(data.buffer.asUint8List());
-    await _client
-        .addImg(
-      testSuiteName,
+    await _client.addImg(
+      fileName,
       file,
       screenshotSize: image.width * image.height,
-    )
-        .catchError((dynamic error) {
+    ).catchError((dynamic error) {
       print('Skia gold comparison failed: $error');
-      throw Exception('Failed comparison: $testSuiteName/$fileName');
+      throw Exception('Failed comparison: $fileName');
     });
   }
 
