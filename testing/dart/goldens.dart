@@ -50,7 +50,7 @@ class ImageComparer {
         : _FakeSkiaGoldClient(workDirectory, dimensions);
 
     await client.auth();
-    return ImageComparer._(testSuiteName: testSuiteName, client: client);
+    return ImageComparer._(testSuiteName: 'flutter_tester_$testSuiteName', client: client);
   }
 
   final SkiaGoldClient _client;
