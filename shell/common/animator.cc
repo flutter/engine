@@ -179,9 +179,10 @@ void Animator::EndFrame() {
 void Animator::Render(int64_t view_id,
                       std::unique_ptr<flutter::LayerTree> layer_tree,
                       float device_pixel_ratio) {
+  FML_CHECK(frame_timings_recorder_ != nullptr);
+    
   has_rendered_ = true;
 
-  FML_CHECK(frame_timings_recorder_ != nullptr);
   TRACE_EVENT_WITH_FRAME_NUMBER(frame_timings_recorder_, "flutter",
                                 "Animator::Render", /*flow_id_count=*/0,
                                 /*flow_ids=*/nullptr);
