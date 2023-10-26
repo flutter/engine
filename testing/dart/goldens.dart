@@ -50,7 +50,8 @@ class ImageComparer {
       'impeller_enabled': impellerEnabled.toString(),
     };
     final SkiaGoldClient client = isSkiaGoldClientAvailable && _useSkiaGold
-        ? SkiaGoldClient(workDirectory, dimensions: dimensions, verbose: verbose)
+        ? SkiaGoldClient(workDirectory,
+            dimensions: dimensions, verbose: verbose)
         : _FakeSkiaGoldClient(workDirectory, dimensions);
 
     await client.auth();
@@ -106,13 +107,20 @@ class ImageComparer {
 // TODO(dnfield): add local comparison against baseline,
 // https://github.com/flutter/flutter/issues/136831
 class _FakeSkiaGoldClient implements SkiaGoldClient {
-  _FakeSkiaGoldClient(this.workDirectory, this.dimensions);
+  _FakeSkiaGoldClient(
+    this.workDirectory,
+    this.dimensions, {
+    this.verbose = false,
+  });
 
   @override
   final Directory workDirectory;
 
   @override
   final Map<String, String> dimensions;
+
+  @override
+  final bool verbose;
 
   @override
   Future<void> auth() async {}
