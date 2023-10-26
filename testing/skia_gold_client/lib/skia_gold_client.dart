@@ -16,6 +16,7 @@ const String _kLuciEnvName = 'LUCI_CONTEXT';
 const String _skiaGoldHost = 'https://flutter-engine-gold.skia.org';
 const String _instance = 'flutter-engine';
 
+const bool _verbose = true;
 /// Whether the Skia Gold client is available and can be used in this
 /// environment.
 bool get isSkiaGoldClientAvailable => Platform.environment.containsKey(_kGoldctlKey);
@@ -95,6 +96,7 @@ class SkiaGoldClient {
     final List<String> authCommand = <String>[
       _goldctl,
       'auth',
+      if (_verbose) '--verbose',
       '--work-dir', _tempPath,
       '--luci',
     ];
@@ -134,6 +136,7 @@ class SkiaGoldClient {
     final List<String> imgtestInitCommand = <String>[
       _goldctl,
       'imgtest', 'init',
+      if (_verbose) '--verbose',
       '--instance', _instance,
       '--work-dir', _tempPath,
       '--commit', commitHash,
@@ -229,6 +232,7 @@ class SkiaGoldClient {
     final List<String> imgtestCommand = <String>[
       _goldctl,
       'imgtest', 'add',
+      if (_verbose) '--verbose',
       '--work-dir', _tempPath,
       '--test-name', cleanTestName(testName),
       '--png-file', goldenFile.path,
@@ -261,6 +265,7 @@ class SkiaGoldClient {
     final List<String> tryjobInitCommand = <String>[
       _goldctl,
       'imgtest', 'init',
+      if (_verbose) '--verbose',
       '--instance', _instance,
       '--work-dir', _tempPath,
       '--commit', commitHash,
@@ -317,6 +322,7 @@ class SkiaGoldClient {
     final List<String> tryjobCommand = <String>[
       _goldctl,
       'imgtest', 'add',
+      if (_verbose) '--verbose',
       '--work-dir', _tempPath,
       '--test-name', cleanTestName(testName),
       '--png-file', goldenFile.path,
