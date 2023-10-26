@@ -38,6 +38,10 @@ class SkiaGoldClient {
   /// used to generate the screenshots.
   SkiaGoldClient(this.workDirectory, { this.dimensions, this.verbose = false});
 
+  /// Whether to print verbose output from goldctl.
+  ///
+  /// This flag is intended for use in debugging CI issues, and should not
+  /// ordinarily be set to true.
   final bool verbose;
 
   /// Allows to add attributes about the environment used to generate the screenshots.

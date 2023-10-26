@@ -52,7 +52,7 @@ class ImageComparer {
     final SkiaGoldClient client = isSkiaGoldClientAvailable && _useSkiaGold
         ? SkiaGoldClient(workDirectory,
             dimensions: dimensions, verbose: verbose)
-        : _FakeSkiaGoldClient(workDirectory, dimensions);
+        : _FakeSkiaGoldClient(workDirectory, dimensions, verbose: verbose);
 
     await client.auth();
     return ImageComparer._(

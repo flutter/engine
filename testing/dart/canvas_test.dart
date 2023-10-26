@@ -127,7 +127,6 @@ void testNoCrashes() {
 void main() async {
   final ImageComparer comparer = await ImageComparer.create(
     testSuiteName: 'canvas_test.dart',
-    verbose: true,
   );
 
   testNoCrashes();
