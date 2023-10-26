@@ -56,10 +56,6 @@ class HtmlViewEmbedder {
   /// Canvases used to draw on top of platform views, keyed by platform view ID.
   final Map<int, RenderCanvas> _overlays = <int, RenderCanvas>{};
 
-  /// Maps platform view IDs to the bounds of where they will be rendered in
-  /// screen coordinates.
-  final Map<int, ui.Rect> _platformViewBounds = <int, ui.Rect>{};
-
   /// The views that need to be recomposited into the scene on the next frame.
   final Set<int> _viewsToRecomposite = <int>{};
 
