@@ -506,11 +506,9 @@ class PlatformDispatcher {
 
   // If this value changes, update the encoding code in the following files:
   //
-  //  * key_data.h
-  //  * key.dart (ui)
-  //  * key.dart (web_ui)
-  //  * HardwareKeyboard.java
-  static const int _kKeyDataFieldCount = 5;
+  //  * key_data.h (kKeyDataFieldCount)
+  //  * KeyData.java (KeyData.FIELD_COUNT)
+  static const int _kKeyDataFieldCount = 6;
 
   // The packet structure is described in `key_data_packet.h`.
   static KeyData _unpackKeyData(ByteData packet) {
@@ -524,6 +522,7 @@ class PlatformDispatcher {
     final KeyData keyData = KeyData(
       timeStamp: Duration(microseconds: packet.getUint64(kStride * offset++, _kFakeHostEndian)),
       type: KeyEventType.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
+      deviceType: KeyEventDeviceType.keyboard,
       physical: packet.getUint64(kStride * offset++, _kFakeHostEndian),
       logical: packet.getUint64(kStride * offset++, _kFakeHostEndian),
       character: character,

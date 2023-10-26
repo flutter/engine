@@ -4,6 +4,7 @@
 
 package io.flutter.embedding.android;
 
+import android.view.InputDevice;
 import android.view.KeyEvent;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -341,6 +342,26 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     }
 
     final KeyData output = new KeyData();
+
+    switch (event.getSource()) {
+      default:
+      case InputDevice.SOURCE_KEYBOARD:
+        output.deviceType = KeyData.DeviceType.kKeyboard;
+        break;
+      case InputDevice.SOURCE_DPAD:
+        output.deviceType = KeyData.DeviceType.kDirectionalPad;
+        break;
+      case InputDevice.SOURCE_GAMEPAD:
+        output.deviceType = KeyData.DeviceType.kGamepad;
+        break;
+      case InputDevice.SOURCE_JOYSTICK:
+        output.deviceType = KeyData.DeviceType.kJoystick;
+        break;
+      case InputDevice.SOURCE_HDMI:
+        output.deviceType = KeyData.DeviceType.kHdmi;
+        break;
+    }
+
     output.timestamp = event.getEventTime();
     output.type = type;
     output.logicalKey = logicalKey;
