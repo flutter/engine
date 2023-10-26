@@ -1677,55 +1677,56 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   }
 
   if (@available(iOS 17.0, *)) {
-  NSUInteger first = start;
-  if (end < start) {
-    first = end;
-  }
-
-  CGRect startSelectionRect = CGRectNull;
-  CGRect endSelectionRect = CGRectNull;
-  // Selection rects from different langauges may have different minY/maxY.
-  // So we need to iterate through each rects to update minY/maxY.
-  CGFloat minY = CGFLOAT_MAX;
-  CGFloat maxY = CGFLOAT_MIN;
-
-  FlutterTextRange* textRange = [FlutterTextRange
-      rangeWithNSRange:fml::RangeForCharactersInRange(self.text, NSMakeRange(0, self.text.length))];
-  for (NSUInteger i = 0; i < [_selectionRects count]; i++) {
-    BOOL startsOnOrBeforeStartOfRange = _selectionRects[i].position <= first;
-    BOOL isLastSelectionRect = i + 1 == [_selectionRects count];
-    BOOL endOfTextIsAfterStartOfRange = isLastSelectionRect && textRange.range.length > first;
-    BOOL nextSelectionRectIsAfterStartOfRange =
-        !isLastSelectionRect && _selectionRects[i + 1].position > first;
-    if (startsOnOrBeforeStartOfRange &&
-        (endOfTextIsAfterStartOfRange || nextSelectionRectIsAfterStartOfRange)) {
-      startSelectionRect = _selectionRects[i].rect;
+    NSUInteger first = start;
+    if (end < start) {
+      first = end;
     }
-    if (!CGRectIsNull(startSelectionRect)) {
-      minY = fmin(minY, CGRectGetMinY(_selectionRects[i].rect));
-      maxY = fmax(maxY, CGRectGetMaxY(_selectionRects[i].rect));
-      BOOL endsOnOrAfterEndOfRange = _selectionRects[i].position >= end - 1;  // end is exclusive
-      BOOL nextSelectionRectIsOnNextLine =
-          !isLastSelectionRect &&
-          // Selection rects from different langauges in 2 lines may overlap with each other.
-          // A good approximation is to check if the center of next rect is below the bottom of
-          // current rect.
-          // TODO(hellohuanlin): Consider passing the line break info from framework.
-          CGRectGetMidY(_selectionRects[i + 1].rect) > CGRectGetMaxY(_selectionRects[i].rect);
-      if (endsOnOrAfterEndOfRange || isLastSelectionRect || nextSelectionRectIsOnNextLine) {
-        endSelectionRect = _selectionRects[i].rect;
-        break;
+
+    CGRect startSelectionRect = CGRectNull;
+    CGRect endSelectionRect = CGRectNull;
+    // Selection rects from different langauges may have different minY/maxY.
+    // So we need to iterate through each rects to update minY/maxY.
+    CGFloat minY = CGFLOAT_MAX;
+    CGFloat maxY = CGFLOAT_MIN;
+
+    FlutterTextRange* textRange =
+        [FlutterTextRange rangeWithNSRange:fml::RangeForCharactersInRange(
+                                               self.text, NSMakeRange(0, self.text.length))];
+    for (NSUInteger i = 0; i < [_selectionRects count]; i++) {
+      BOOL startsOnOrBeforeStartOfRange = _selectionRects[i].position <= first;
+      BOOL isLastSelectionRect = i + 1 == [_selectionRects count];
+      BOOL endOfTextIsAfterStartOfRange = isLastSelectionRect && textRange.range.length > first;
+      BOOL nextSelectionRectIsAfterStartOfRange =
+          !isLastSelectionRect && _selectionRects[i + 1].position > first;
+      if (startsOnOrBeforeStartOfRange &&
+          (endOfTextIsAfterStartOfRange || nextSelectionRectIsAfterStartOfRange)) {
+        startSelectionRect = _selectionRects[i].rect;
+      }
+      if (!CGRectIsNull(startSelectionRect)) {
+        minY = fmin(minY, CGRectGetMinY(_selectionRects[i].rect));
+        maxY = fmax(maxY, CGRectGetMaxY(_selectionRects[i].rect));
+        BOOL endsOnOrAfterEndOfRange = _selectionRects[i].position >= end - 1;  // end is exclusive
+        BOOL nextSelectionRectIsOnNextLine =
+            !isLastSelectionRect &&
+            // Selection rects from different langauges in 2 lines may overlap with each other.
+            // A good approximation is to check if the center of next rect is below the bottom of
+            // current rect.
+            // TODO(hellohuanlin): Consider passing the line break info from framework.
+            CGRectGetMidY(_selectionRects[i + 1].rect) > CGRectGetMaxY(_selectionRects[i].rect);
+        if (endsOnOrAfterEndOfRange || isLastSelectionRect || nextSelectionRectIsOnNextLine) {
+          endSelectionRect = _selectionRects[i].rect;
+          break;
+        }
       }
     }
-  }
-  if (CGRectIsNull(startSelectionRect) || CGRectIsNull(endSelectionRect)) {
-    return CGRectZero;
-  } else {
-    // fmin/fmax to support both LTR and RTL languages.
-    CGFloat minX = fmin(CGRectGetMinX(startSelectionRect), CGRectGetMinX(endSelectionRect));
-    CGFloat maxX = fmax(CGRectGetMaxX(startSelectionRect), CGRectGetMaxX(endSelectionRect));
-    return CGRectMake(minX, minY, maxX - minX, maxY - minY);
-  }
+    if (CGRectIsNull(startSelectionRect) || CGRectIsNull(endSelectionRect)) {
+      return CGRectZero;
+    } else {
+      // fmin/fmax to support both LTR and RTL languages.
+      CGFloat minX = fmin(CGRectGetMinX(startSelectionRect), CGRectGetMinX(endSelectionRect));
+      CGFloat maxX = fmax(CGRectGetMaxX(startSelectionRect), CGRectGetMaxX(endSelectionRect));
+      return CGRectMake(minX, minY, maxX - minX, maxY - minY);
+    }
   } else {
     // Auto correction highlight on iOS 16 and older is rendered by Flutter.
     return CGRectZero;
