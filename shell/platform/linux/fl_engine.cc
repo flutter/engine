@@ -200,7 +200,7 @@ static bool compositor_collect_backing_store_callback(
 }
 
 // Called when embedder should composite contents of each layer onto the screen.
-static bool compositor_present_layers_callback(FlutterPresentViewInfo* info) {
+static bool compositor_present_view_callback(FlutterPresentViewInfo* info) {
   g_return_val_if_fail(FL_IS_RENDERER(info->user_data), false);
   // TODO(dkwingsmt): The Linux embedder only supports rendering to the implicit
   // view for now. Correctly support multiple views.
@@ -544,7 +544,7 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
       compositor_create_backing_store_callback;
   compositor.collect_backing_store_callback =
       compositor_collect_backing_store_callback;
-  compositor.present_view_callback = compositor_present_layers_callback;
+  compositor.present_view_callback = compositor_present_view_callback;
   args.compositor = &compositor;
 
   if (self->embedder_api.RunsAOTCompiledDartCode()) {
