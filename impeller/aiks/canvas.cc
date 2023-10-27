@@ -379,6 +379,7 @@ void Canvas::ClipGeometry(std::unique_ptr<Geometry> geometry,
   entity.SetClipDepth(GetClipDepth());
 
   GetCurrentPass().AddEntity(entity);
+  GetCurrentPass().ContainsClip();
 
   ++xformation_stack_.back().clip_depth;
   xformation_stack_.back().contains_clips = true;

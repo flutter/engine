@@ -359,7 +359,7 @@ bool EntityPass::Render(ContentContext& renderer,
   // there's no need to set up a stencil attachment on the root render target.
   if (!supports_onscreen_backdrop_reads && reads_from_onscreen_backdrop) {
     auto offscreen_target = CreateRenderTarget(
-        renderer, root_render_target.GetRenderTargetSize(), true,
+        renderer, root_render_target.GetRenderTargetSize(), clips_applied_,
         GetClearColor(render_target.GetRenderTargetSize()));
 
     if (!OnRender(renderer,  // renderer
@@ -500,7 +500,6 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
   //--------------------------------------------------------------------------
   /// Setup entity element.
   ///
-
   if (const auto& entity = std::get_if<Entity>(&element)) {
     element_entity = *entity;
     element_entity.SetCapture(capture.CreateChild("Entity"));
@@ -512,16 +511,15 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
           Matrix::MakeTranslation(Vector3(-global_pass_position)) *
           element_entity.GetTransformation());
     }
+    return EntityPass::EntityResult::Success(element_entity);
   }
 
   //--------------------------------------------------------------------------
   /// Setup subpass element.
   ///
-
-  else if (const auto& subpass_ptr =
-               std::get_if<std::unique_ptr<EntityPass>>(&element)) {
+  if (const auto& subpass_ptr =
+          std::get_if<std::unique_ptr<EntityPass>>(&element)) {
     auto subpass = subpass_ptr->get();
-
     if (subpass->delegate_->CanElide()) {
       return EntityPass::EntityResult::Skip();
     }
@@ -691,11 +689,10 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     element_entity.SetTransformation(subpass_texture_capture.AddMatrix(
         "Transform", Matrix::MakeTranslation(Vector3(subpass_coverage->origin -
                                                      global_pass_position))));
-  } else {
-    FML_UNREACHABLE();
-  }
 
-  return EntityPass::EntityResult::Success(element_entity);
+    return EntityPass::EntityResult::Success(element_entity);
+  }
+  FML_UNREACHABLE();
 }
 
 bool EntityPass::RenderElement(Entity& element_entity,
@@ -854,8 +851,9 @@ bool EntityPass::OnRender(
   TRACE_EVENT0("impeller", "EntityPass::OnRender");
 
   auto context = renderer.GetContext();
-  InlinePassContext pass_context(
-      context, pass_target, GetTotalPassReads(renderer), collapsed_parent_pass);
+  InlinePassContext pass_context(context, pass_target,
+                                 GetTotalPassReads(renderer), clips_applied_,
+                                 collapsed_parent_pass);
   if (!pass_context.IsValid()) {
     VALIDATION_LOG << SPrintF("Pass context invalid (Depth=%d)", pass_depth);
     return false;

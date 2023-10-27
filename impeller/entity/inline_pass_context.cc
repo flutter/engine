@@ -18,10 +18,12 @@ InlinePassContext::InlinePassContext(
     std::shared_ptr<Context> context,
     EntityPassTarget& pass_target,
     uint32_t pass_texture_reads,
+    bool contains_clips,
     std::optional<RenderPassResult> collapsed_parent_pass)
     : context_(std::move(context)),
       pass_target_(pass_target),
       total_pass_reads_(pass_texture_reads),
+      contains_clips_(contains_clips),
       is_collapsed_(collapsed_parent_pass.has_value()) {
   if (collapsed_parent_pass.has_value()) {
     pass_ = collapsed_parent_pass.value().pass;
@@ -142,15 +144,15 @@ InlinePassContext::RenderPassResult InlinePassContext::GetRenderPass(
 
   // Only clear the stencil if this is the very first pass of the
   // layer.
-  stencil->load_action =
-      pass_count_ > 0 ? LoadAction::kLoad : LoadAction::kClear;
+  stencil->load_action = (pass_count_ > 0 && contains_clips_)
+                             ? LoadAction::kLoad
+                             : LoadAction::kClear;
   // If we're on the last pass of the layer, there's no need to store the
   // stencil because nothing needs to read it.
-  stencil->store_action = pass_count_ == total_pass_reads_
+  stencil->store_action = (pass_count_ == total_pass_reads_ || !contains_clips_)
                               ? StoreAction::kDontCare
                               : StoreAction::kStore;
   pass_target_.target_.SetStencilAttachment(stencil.value());
-
   pass_target_.target_.SetColorAttachment(color0, 0);
 
   pass_ = command_buffer_->CreateRenderPass(pass_target_.GetRenderTarget());

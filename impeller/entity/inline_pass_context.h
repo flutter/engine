@@ -22,6 +22,7 @@ class InlinePassContext {
       std::shared_ptr<Context> context,
       EntityPassTarget& pass_target,
       uint32_t pass_texture_reads,
+      bool contains_clips,
       std::optional<RenderPassResult> collapsed_parent_pass = std::nullopt);
   ~InlinePassContext();
 
@@ -41,6 +42,7 @@ class InlinePassContext {
   std::shared_ptr<RenderPass> pass_;
   uint32_t pass_count_ = 0;
   uint32_t total_pass_reads_ = 0;
+  bool contains_clips_ = false;
   // Whether this context is collapsed into a parent entity pass.
   bool is_collapsed_ = false;
 
