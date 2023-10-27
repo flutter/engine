@@ -176,7 +176,7 @@ Dart_Handle Paragraph::getLineMetricsAt(int lineNumber,
   if (!found) {
     return Dart_Null();
   }
-  Dart_Handle arguments[9] = {
+  std::array<Dart_Handle, 9> arguments = {
       Dart_NewBoolean(line.fHardBreak),
       Dart_NewDouble(line.fAscent),
       Dart_NewDouble(line.fDescent),
@@ -191,8 +191,8 @@ Dart_Handle Paragraph::getLineMetricsAt(int lineNumber,
       Dart_NewInteger(line.fLineNumber),
   };
 
-  Dart_Handle handle = Dart_InvokeClosure(
-      constructor, sizeof(arguments) / sizeof(Dart_Handle), arguments);
+  Dart_Handle handle =
+      Dart_InvokeClosure(constructor, arguments.size(), arguments.data());
   tonic::CheckAndHandleError(handle);
   return handle;
 }
