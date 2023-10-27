@@ -221,11 +221,12 @@ class CanvasParagraph implements ui.Paragraph {
 
   @override
   ui.TextRange getLineBoundary(ui.TextPosition position) {
-    final int? lineNumber = getLineNumberAt(position.offset);
-    if (lineNumber == null) {
+    if (lines.isEmpty) {
       return ui.TextRange.empty;
     }
-    final ParagraphLine line = lines[lineNumber];
+    final int? lineNumber = getLineNumberAt(position.offset);
+    // Fallback to the last line for backward compatibility.
+    final ParagraphLine line = lineNumber != null ? lines[lineNumber] : lines.last;
     return ui.TextRange(start: line.startIndex, end: line.endIndex - line.trailingNewlines);
   }
 
