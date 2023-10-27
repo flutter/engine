@@ -40,7 +40,9 @@ class CommandEncoderFactoryVK {
   std::weak_ptr<const ContextVK> context_;
   std::optional<std::string> label_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(CommandEncoderFactoryVK);
+  CommandEncoderFactoryVK(const CommandEncoderFactoryVK&) = delete;
+
+  CommandEncoderFactoryVK& operator=(const CommandEncoderFactoryVK&) = delete;
 };
 
 class CommandEncoderVK {
@@ -79,9 +81,10 @@ class CommandEncoderVK {
 
   void InsertDebugMarker(const char* label) const;
 
-  std::optional<vk::DescriptorSet> AllocateDescriptorSet(
-      const vk::DescriptorSetLayout& layout,
-      size_t command_count);
+  fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateDescriptorSets(
+      uint32_t buffer_count,
+      uint32_t sampler_count,
+      const std::vector<vk::DescriptorSetLayout>& layouts);
 
  private:
   friend class ContextVK;
@@ -94,7 +97,9 @@ class CommandEncoderVK {
 
   void Reset();
 
-  FML_DISALLOW_COPY_AND_ASSIGN(CommandEncoderVK);
+  CommandEncoderVK(const CommandEncoderVK&) = delete;
+
+  CommandEncoderVK& operator=(const CommandEncoderVK&) = delete;
 };
 
 }  // namespace impeller

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
+#include "impeller/entity/contents/filters/directional_gaussian_blur_filter_contents.h"
 
 #include <cmath>
 #include <utility>
@@ -271,6 +271,17 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
                .sampler_descriptor = sampler_desc,
                .opacity = input_snapshot->opacity},
       entity.GetBlendMode(), entity.GetClipDepth());
+}
+
+std::optional<Rect>
+DirectionalGaussianBlurFilterContents::GetFilterSourceCoverage(
+    const Matrix& effect_transform,
+    const Rect& output_limit) const {
+  auto transform = effect_transform.Basis();
+  auto transformed_blur_vector =
+      transform.TransformDirection(blur_direction_ * Radius{blur_sigma_}.radius)
+          .Abs();
+  return output_limit.Expand(transformed_blur_vector);
 }
 
 std::optional<Rect> DirectionalGaussianBlurFilterContents::GetFilterCoverage(
