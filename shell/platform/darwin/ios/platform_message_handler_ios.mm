@@ -119,7 +119,8 @@ void PlatformMessageHandlerIos::SetMessageHandler(const std::string& channel,
                                                   NSObject<FlutterTaskQueue>* task_queue) {
   FML_CHECK(platform_task_runner_->RunsTasksOnCurrentThread());
   // Use `respondsToSelector` instead of `conformsToProtocol` to accomodate
-  // hacking in your own `FlutterTaskQueue`.
+  // injecting your own `FlutterTaskQueue`. This is not a supported usage but
+  // not one worth breaking.
   FML_CHECK(!task_queue || [task_queue respondsToSelector:@selector(dispatch:)]);
   /// TODO(gaaclarke): This should be migrated to a lockfree datastructure.
   std::lock_guard lock(message_handlers_mutex_);
