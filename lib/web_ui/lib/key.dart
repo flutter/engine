@@ -198,7 +198,7 @@ class KeyData {
            'physical: 0x${physical.toRadixString(16)}, '
            'logical: ${_logicalToString()}, '
            'character: ${_escapeCharacter()}${_quotedCharCode()}'
-           '${synthesized ? ', synthesized' : ''}';
+           '${synthesized ? ', synthesized' : ''})';
   }
 
   /// Returns a complete textual description of the information in this object.
