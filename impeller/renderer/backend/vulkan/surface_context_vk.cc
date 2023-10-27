@@ -5,6 +5,7 @@
 #include "impeller/renderer/backend/vulkan/surface_context_vk.h"
 
 #include "flutter/fml/trace_event.h"
+#include "impeller/renderer/backend/vulkan/command_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/swapchain_vk.h"
 
@@ -62,6 +63,10 @@ bool SurfaceContextVK::SetWindowSurface(vk::UniqueSurfaceKHR surface) {
     VALIDATION_LOG << "Could not create swapchain.";
     return false;
   }
+  if (!swapchain->IsValid()) {
+    VALIDATION_LOG << "Could not create valid swapchain.";
+    return false;
+  }
   swapchain_ = std::move(swapchain);
   return true;
 }
@@ -79,6 +84,7 @@ std::unique_ptr<Surface> SurfaceContextVK::AcquireNextSurface() {
   if (auto allocator = parent_->GetResourceAllocator()) {
     allocator->DidAcquireSurfaceFrame();
   }
+  parent_->GetCommandPoolRecycler()->Dispose();
   return surface;
 }
 

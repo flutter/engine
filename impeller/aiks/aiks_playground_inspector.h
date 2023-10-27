@@ -21,6 +21,17 @@ class AiksInspector {
       AiksContext& aiks_context,
       const std::function<std::optional<Picture>()>& picture_callback);
 
+  // Resets (releases) the underlying |Picture| object.
+  //
+  // Underlying issue: <https://github.com/flutter/flutter/issues/134678>.
+  //
+  // The tear-down code is not running in the right order; we still have a
+  // reference to the |Picture| object when the |Context| is being destroyed,
+  // which causes the |Texture| objects to leak.
+  //
+  // TODO(matanlurey): https://github.com/flutter/flutter/issues/134748.
+  void HackResetDueToTextureLeaks();
+
  private:
   void RenderCapture(CaptureContext& capture_context);
   void RenderCaptureElement(CaptureElement& element);
@@ -31,7 +42,9 @@ class AiksInspector {
   CaptureElement* selected_element_ = nullptr;
   std::optional<Picture> last_picture_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(AiksInspector);
+  AiksInspector(const AiksInspector&) = delete;
+
+  AiksInspector& operator=(const AiksInspector&) = delete;
 };
 
 };  // namespace impeller

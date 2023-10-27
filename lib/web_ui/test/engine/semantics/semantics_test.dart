@@ -92,6 +92,9 @@ void runSemanticsTests() {
   group('focusable', () {
     _testFocusable();
   });
+  group('link', () {
+    _testLink();
+  });
 }
 
 void _testRoleManagerLifecycle() {
@@ -337,7 +340,11 @@ void _testEngineSemanticsOwner() {
     expect(placeholder.isConnected, isFalse);
   });
 
-  void renderSemantics({String? label, String? tooltip}) {
+  void renderSemantics({String? label, String? tooltip, Set<ui.SemanticsFlag> flags = const <ui.SemanticsFlag>{}}) {
+    int flagValues = 0;
+    for (final ui.SemanticsFlag flag in flags) {
+      flagValues = flagValues | flag.index;
+    }
     final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     updateNode(
       builder,
@@ -351,6 +358,7 @@ void _testEngineSemanticsOwner() {
       id: 1,
       label: label ?? '',
       tooltip: tooltip ?? '',
+      flags: flagValues,
       transform: Matrix4.identity().toFloat64(),
       rect: const ui.Rect.fromLTRB(0, 0, 20, 20),
     );
@@ -377,7 +385,7 @@ void _testEngineSemanticsOwner() {
     expectSemanticsTree('''
 <sem style="$rootSemanticStyle">
   <sem-c>
-    <sem role="text" aria-label="Hello"></sem>
+    <sem aria-label="Hello"></sem>
   </sem-c>
 </sem>''');
 
@@ -387,7 +395,7 @@ void _testEngineSemanticsOwner() {
     expectSemanticsTree('''
 <sem style="$rootSemanticStyle">
   <sem-c>
-    <sem role="text" aria-label="World"></sem>
+    <sem aria-label="World"></sem>
   </sem-c>
 </sem>''');
 
@@ -397,9 +405,48 @@ void _testEngineSemanticsOwner() {
     expectSemanticsTree('''
 <sem style="$rootSemanticStyle">
   <sem-c>
-    <sem role="text"></sem>
+    <sem></sem>
   </sem-c>
 </sem>''');
+
+    semantics().semanticsEnabled = false;
+  });
+
+  test('can switch role', () async {
+    semantics().semanticsEnabled = true;
+
+    // Create
+    renderSemantics(label: 'Hello');
+
+    Map<int, SemanticsObject> tree = semantics().debugSemanticsTree!;
+    expect(tree.length, 2);
+    expect(tree[1]!.element.tagName.toLowerCase(), 'flt-semantics');
+    expect(tree[1]!.id, 1);
+    expect(tree[1]!.label, 'Hello');
+    final DomElement existingParent = tree[1]!.element.parent!;
+
+    expectSemanticsTree('''
+<sem style="$rootSemanticStyle">
+  <sem-c>
+    <sem aria-label="Hello"></sem>
+  </sem-c>
+</sem>''');
+
+    // Update
+    renderSemantics(label: 'Hello', flags: <ui.SemanticsFlag>{ ui.SemanticsFlag.isLink });
+
+    tree = semantics().debugSemanticsTree!;
+    expect(tree.length, 2);
+    expect(tree[1]!.id, 1);
+    expect(tree[1]!.label, 'Hello');
+    expect(tree[1]!.element.tagName.toLowerCase(), 'a');
+    expectSemanticsTree('''
+<sem style="$rootSemanticStyle">
+  <sem-c>
+    <a aria-label="Hello" role="button" style="display: block;"></a>
+  </sem-c>
+</sem>''');
+    expect(existingParent, tree[1]!.element.parent);
 
     semantics().semanticsEnabled = false;
   });
@@ -430,7 +477,7 @@ void _testEngineSemanticsOwner() {
     expectSemanticsTree('''
 <sem style="$rootSemanticStyle">
   <sem-c>
-    <sem role="text" aria-label="tooltip\nHello"></sem>
+    <sem aria-label="tooltip\nHello"></sem>
   </sem-c>
 </sem>''');
 
@@ -440,7 +487,7 @@ void _testEngineSemanticsOwner() {
     expectSemanticsTree('''
 <sem style="$rootSemanticStyle">
   <sem-c>
-    <sem role="text"></sem>
+    <sem></sem>
   </sem-c>
 </sem>''');
 
@@ -1388,7 +1435,7 @@ void _testIncrementables() {
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
 <sem style="$rootSemanticStyle">
-  <input role="slider" aria-valuenow="1" aria-valuetext="d" aria-valuemax="1" aria-valuemin="1">
+  <input aria-valuenow="1" aria-valuetext="d" aria-valuemax="1" aria-valuemin="1">
 </sem>''');
 
     final SemanticsObject node = semantics().debugSemanticsTree![0]!;
@@ -1421,7 +1468,7 @@ void _testIncrementables() {
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
 <sem style="$rootSemanticStyle">
-  <input role="slider" aria-valuenow="1" aria-valuetext="d" aria-valuemax="2" aria-valuemin="1">
+  <input aria-valuenow="1" aria-valuetext="d" aria-valuemax="2" aria-valuemin="1">
 </sem>''');
 
     final DomHTMLInputElement input =
@@ -1454,7 +1501,7 @@ void _testIncrementables() {
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
 <sem style="$rootSemanticStyle">
-  <input role="slider" aria-valuenow="1" aria-valuetext="d" aria-valuemax="1" aria-valuemin="0">
+  <input aria-valuenow="1" aria-valuetext="d" aria-valuemax="1" aria-valuemin="0">
 </sem>''');
 
     final DomHTMLInputElement input =
@@ -1489,7 +1536,7 @@ void _testIncrementables() {
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
 <sem style="$rootSemanticStyle">
-  <input role="slider" aria-valuenow="1" aria-valuetext="d" aria-valuemax="2" aria-valuemin="0">
+  <input aria-valuenow="1" aria-valuetext="d" aria-valuemax="2" aria-valuemin="0">
 </sem>''');
 
     semantics().semanticsEnabled = false;
@@ -1632,7 +1679,7 @@ void _testCheckables() {
 
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
-<sem aria-label="test label" flt-tappable role="switch" aria-checked="true" style="$rootSemanticStyle"></sem>
+<sem aria-label="test label" role="switch" aria-checked="true" style="$rootSemanticStyle"></sem>
 ''');
 
     final SemanticsObject node = semantics().debugSemanticsTree![0]!;
@@ -1690,7 +1737,7 @@ void _testCheckables() {
 
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
-<sem role="switch" flt-tappable aria-checked="false" style="$rootSemanticStyle"></sem>
+<sem role="switch" aria-checked="false" style="$rootSemanticStyle"></sem>
 ''');
 
     semantics().semanticsEnabled = false;
@@ -1716,7 +1763,7 @@ void _testCheckables() {
 
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
-<sem role="checkbox" flt-tappable aria-checked="true" style="$rootSemanticStyle"></sem>
+<sem role="checkbox" aria-checked="true" style="$rootSemanticStyle"></sem>
 ''');
 
     semantics().semanticsEnabled = false;
@@ -1766,7 +1813,7 @@ void _testCheckables() {
 
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
-<sem role="checkbox" flt-tappable aria-checked="false" style="$rootSemanticStyle"></sem>
+<sem role="checkbox" aria-checked="false" style="$rootSemanticStyle"></sem>
 ''');
 
     semantics().semanticsEnabled = false;
@@ -1793,7 +1840,7 @@ void _testCheckables() {
 
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
-<sem role="radio" flt-tappable aria-checked="true" style="$rootSemanticStyle"></sem>
+<sem role="radio" aria-checked="true" style="$rootSemanticStyle"></sem>
 ''');
 
     semantics().semanticsEnabled = false;
@@ -1845,7 +1892,7 @@ void _testCheckables() {
 
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
-<sem role="radio" flt-tappable aria-checked="false" style="$rootSemanticStyle"></sem>
+<sem role="radio" aria-checked="false" style="$rootSemanticStyle"></sem>
 ''');
 
     semantics().semanticsEnabled = false;
@@ -1918,7 +1965,7 @@ void _testTappable() {
     tester.apply();
 
     expectSemanticsTree('''
-<sem role="button" flt-tappable style="$rootSemanticStyle"></sem>
+<sem role="button" style="$rootSemanticStyle"></sem>
 ''');
 
     final SemanticsObject node = semantics().debugSemanticsTree![0]!;
@@ -1979,14 +2026,14 @@ void _testTappable() {
         '<sem role="button" aria-disabled="true" style="$rootSemanticStyle"></sem>');
 
     updateTappable(enabled: true);
-    expectSemanticsTree('<sem role="button" flt-tappable style="$rootSemanticStyle"></sem>');
+    expectSemanticsTree('<sem role="button" style="$rootSemanticStyle"></sem>');
 
     updateTappable(enabled: false);
     expectSemanticsTree(
         '<sem role="button" aria-disabled="true" style="$rootSemanticStyle"></sem>');
 
     updateTappable(enabled: true);
-    expectSemanticsTree('<sem role="button" flt-tappable style="$rootSemanticStyle"></sem>');
+    expectSemanticsTree('<sem role="button" style="$rootSemanticStyle"></sem>');
 
     semantics().semanticsEnabled = false;
   });
@@ -2623,11 +2670,11 @@ void _testDialog() {
       tester.apply();
 
       expectSemanticsTree('''
-        <sem role="dialog" aria-describedby="flt-semantic-node-2" style="$rootSemanticStyle">
+        <sem aria-describedby="flt-semantic-node-2" style="$rootSemanticStyle">
           <sem-c>
             <sem>
               <sem-c>
-                <sem role="text" aria-label="$label"></sem>
+                <sem aria-label="$label"></sem>
               </sem-c>
             </sem>
           </sem-c>
@@ -2716,7 +2763,7 @@ void _testDialog() {
         <sem-c>
           <sem>
             <sem-c>
-              <sem role="text" aria-label="Hello"></sem>
+              <sem aria-label="Hello"></sem>
             </sem-c>
           </sem>
         </sem-c>
@@ -2853,9 +2900,9 @@ void _testFocusable() {
     }
 
     expectSemanticsTree('''
-<sem style="$rootSemanticStyle">
+<sem role="group" style="$rootSemanticStyle">
   <sem-c>
-    <sem role="text" aria-label="focusable text"></sem>
+    <sem aria-label="focusable text"></sem>
   </sem-c>
 </sem>
 ''');
@@ -2889,6 +2936,28 @@ void _testFocusable() {
     expect(domDocument.activeElement, element);
 
     semantics().semanticsEnabled = false;
+  });
+}
+
+void _testLink() {
+  test('nodes with link: true creates anchor tag', () {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    SemanticsObject pumpSemantics() {
+      final SemanticsTester tester = SemanticsTester(semantics());
+      tester.updateNode(
+        id: 0,
+        isLink: true,
+        rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+      );
+      tester.apply();
+      return tester.getSemanticsObject(0);
+    }
+
+    final SemanticsObject object = pumpSemantics();
+    expect(object.element.tagName.toLowerCase(), 'a');
   });
 }
 

@@ -34,8 +34,8 @@ struct CanvasStackEntry {
   Matrix xformation;
   // |cull_rect| is conservative screen-space bounds of the clipped output area
   std::optional<Rect> cull_rect;
-  size_t stencil_depth = 0u;
-  bool is_subpass = false;
+  size_t clip_depth = 0u;
+  Entity::RenderingMode rendering_mode = Entity::RenderingMode::kDirect;
   bool contains_clips = false;
 };
 
@@ -171,7 +171,7 @@ class Canvas {
 
   EntityPass& GetCurrentPass();
 
-  size_t GetStencilDepth() const;
+  size_t GetClipDepth() const;
 
   void ClipGeometry(std::unique_ptr<Geometry> geometry,
                     Entity::ClipOperation clip_op);
@@ -189,7 +189,9 @@ class Canvas {
                                Scalar corner_radius,
                                const Paint& paint);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Canvas);
+  Canvas(const Canvas&) = delete;
+
+  Canvas& operator=(const Canvas&) = delete;
 };
 
 }  // namespace impeller

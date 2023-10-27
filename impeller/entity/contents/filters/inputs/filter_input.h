@@ -56,6 +56,9 @@ class FilterInput {
 
   virtual std::optional<Rect> GetCoverage(const Entity& entity) const = 0;
 
+  virtual std::optional<Rect> GetSourceCoverage(const Matrix& effect_transform,
+                                                const Rect& output_limit) const;
+
   /// @brief  Get the local transform of this filter input. This transform is
   ///         relative to the `Entity` transform space.
   virtual Matrix GetLocalTransform(const Entity& entity) const;
@@ -85,7 +88,7 @@ class FilterInput {
   virtual void SetEffectTransform(const Matrix& matrix);
 
   /// @brief  Turns on subpass mode for filter inputs.
-  virtual void SetIsForSubpass(bool is_for_subpass);
+  virtual void SetRenderingMode(Entity::RenderingMode rendering_mode);
 };
 
 }  // namespace impeller

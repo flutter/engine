@@ -400,10 +400,10 @@ class ImageFilterEngineLayer extends ContainerLayer
 
   @override
   void preroll(PrerollContext prerollContext, Matrix4 matrix) {
-    final Matrix4 transform =
-        (_filter as CkManagedSkImageFilterConvertible).transform;
-    final Matrix4 childMatrix = matrix.multiplied(transform);
-    prerollContext.mutatorsStack.pushTransform(transform);
+    final Matrix4 childMatrix = Matrix4.copy(matrix);
+    childMatrix.translate(_offset.dx, _offset.dy);
+    prerollContext.mutatorsStack
+        .pushTransform(Matrix4.translationValues(_offset.dx, _offset.dy, 0.0));
     final ui.Rect childPaintBounds =
         prerollChildren(prerollContext, childMatrix);
     (_filter as CkManagedSkImageFilterConvertible)

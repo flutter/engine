@@ -52,6 +52,14 @@ class Context {
     kVulkan,
   };
 
+  /// The maximum number of tasks that should ever be stored for
+  /// `StoreTaskForGPU`.
+  ///
+  /// This number was arbitrarily chosen. The idea is that this is a somewhat
+  /// rare situation where tasks happen to get executed in that tiny amount of
+  /// time while an app is being backgrounded but still executing.
+  static constexpr int32_t kMaxTasksAwaitingGPU = 10;
+
   //----------------------------------------------------------------------------
   /// @brief      Destroys an Impeller context.
   ///
@@ -167,7 +175,9 @@ class Context {
   ///
   ///             This is required for correct rendering on Android when using
   ///             the hybrid composition mode. This has no effect on other
-  ///             backends.
+  ///             backends. This is analogous to the check for isMainThread in
+  ///             surface_mtl.mm to block presentation on scheduling of all
+  ///             pending work.
   virtual void SetSyncPresentation(bool value) {}
 
   //----------------------------------------------------------------------------
@@ -176,13 +186,28 @@ class Context {
 
   CaptureContext capture;
 
+  /// Stores a task on the `ContextMTL` that is awaiting access for the GPU.
+  ///
+  /// The task will be executed in the event that the GPU access has changed to
+  /// being available or that the task has been canceled. The task should
+  /// operate with the `SyncSwitch` to make sure the GPU is accessible.
+  ///
+  /// Threadsafe.
+  ///
+  /// `task` will be executed on the platform thread.
+  virtual void StoreTaskForGPU(std::function<void()> task) {
+    FML_CHECK(false && "not supported in this context");
+  }
+
  protected:
   Context();
 
  private:
   mutable Pool<HostBuffer> host_buffer_pool_ = Pool<HostBuffer>(1'000'000);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Context);
+  Context(const Context&) = delete;
+
+  Context& operator=(const Context&) = delete;
 };
 
 }  // namespace impeller

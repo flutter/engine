@@ -14,6 +14,18 @@
 
 namespace impeller {
 
+/// A color matrix which inverts colors.
+// clang-format off
+constexpr ColorMatrix kColorInversion = {
+  .array = {
+    -1.0,    0,    0, 1.0, 0, //
+       0, -1.0,    0, 1.0, 0, //
+       0,    0, -1.0, 1.0, 0, //
+     1.0,  1.0,  1.0, 1.0, 0  //
+  }
+};
+// clang-format on
+
 std::shared_ptr<Contents> Paint::CreateContentsForEntity(const Path& path,
                                                          bool cover) const {
   std::unique_ptr<Geometry> geometry;
@@ -38,6 +50,7 @@ std::shared_ptr<Contents> Paint::CreateContentsForGeometry(
   // Attempt to apply the color filter on the CPU first.
   // Note: This is not just an optimization; some color sources rely on
   //       CPU-applied color filters to behave properly.
+  auto color_filter = GetColorFilter();
   bool needs_color_filter = !!color_filter;
   if (color_filter &&
       contents->ApplyColorFilter(color_filter->GetCPUColorFilterProc())) {
@@ -58,9 +71,9 @@ std::shared_ptr<Contents> Paint::CreateContentsForGeometry(
 
 std::shared_ptr<Contents> Paint::WithFilters(
     std::shared_ptr<Contents> input) const {
-  input = WithColorFilter(input, /*absorb_opacity=*/true);
-  input = WithInvertFilter(input);
-  auto image_filter = WithImageFilter(input, Matrix(), /*is_subpass=*/false);
+  input = WithColorFilter(input, ColorFilterContents::AbsorbOpacity::kYes);
+  auto image_filter =
+      WithImageFilter(input, Matrix(), Entity::RenderingMode::kDirect);
   if (image_filter) {
     input = image_filter;
   }
@@ -71,11 +84,11 @@ std::shared_ptr<Contents> Paint::WithFiltersForSubpassTarget(
     std::shared_ptr<Contents> input,
     const Matrix& effect_transform) const {
   auto image_filter =
-      WithImageFilter(input, effect_transform, /*is_subpass=*/true);
+      WithImageFilter(input, effect_transform, Entity::RenderingMode::kSubpass);
   if (image_filter) {
     input = image_filter;
   }
-  input = WithColorFilter(input, /*absorb_opacity=*/true);
+  input = WithColorFilter(input, ColorFilterContents::AbsorbOpacity::kYes);
   return input;
 }
 
@@ -91,25 +104,26 @@ std::shared_ptr<Contents> Paint::WithMaskBlur(std::shared_ptr<Contents> input,
 std::shared_ptr<FilterContents> Paint::WithImageFilter(
     const FilterInput::Variant& input,
     const Matrix& effect_transform,
-    bool is_subpass) const {
+    Entity::RenderingMode rendering_mode) const {
   if (!image_filter) {
     return nullptr;
   }
   auto filter = image_filter->WrapInput(FilterInput::Make(input));
-  filter->SetIsForSubpass(is_subpass);
+  filter->SetRenderingMode(rendering_mode);
   filter->SetEffectTransform(effect_transform);
   return filter;
 }
 
 std::shared_ptr<Contents> Paint::WithColorFilter(
     std::shared_ptr<Contents> input,
-    bool absorb_opacity) const {
+    ColorFilterContents::AbsorbOpacity absorb_opacity) const {
   // Image input types will directly set their color filter,
   // if any. See `TiledTextureContents.SetColorFilter`.
   if (color_source.GetType() == ColorSource::Type::kImage) {
     return input;
   }
 
+  auto color_filter = GetColorFilter();
   if (!color_filter) {
     return input;
   }
@@ -120,31 +134,8 @@ std::shared_ptr<Contents> Paint::WithColorFilter(
   if (input->ApplyColorFilter(color_filter->GetCPUColorFilterProc())) {
     return input;
   }
-
   return color_filter->WrapWithGPUColorFilter(FilterInput::Make(input),
                                               absorb_opacity);
-}
-
-/// A color matrix which inverts colors.
-// clang-format off
-constexpr ColorMatrix kColorInversion = {
-  .array = {
-    -1.0,    0,    0, 1.0, 0, //
-       0, -1.0,    0, 1.0, 0, //
-       0,    0, -1.0, 1.0, 0, //
-     1.0,  1.0,  1.0, 1.0, 0  //
-  }
-};
-// clang-format on
-
-std::shared_ptr<Contents> Paint::WithInvertFilter(
-    std::shared_ptr<Contents> input) const {
-  if (!invert_colors) {
-    return input;
-  }
-
-  return ColorFilterContents::MakeColorMatrix(
-      {FilterInput::Make(std::move(input))}, kColorInversion);
 }
 
 std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
@@ -186,7 +177,8 @@ std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
 
   if (color_filter) {
     color_contents = color_filter->WrapWithGPUColorFilter(
-        FilterInput::Make(color_source_contents), true);
+        FilterInput::Make(color_source_contents),
+        ColorFilterContents::AbsorbOpacity::kYes);
   }
 
   /// 5. Composite the color source with the blurred mask.
@@ -206,8 +198,22 @@ std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
   return FilterContents::MakeBorderMaskBlur(input, sigma, sigma, style);
 }
 
+std::shared_ptr<ColorFilter> Paint::GetColorFilter() const {
+  if (invert_colors && color_filter) {
+    auto filter = ColorFilter::MakeMatrix(kColorInversion);
+    return ColorFilter::MakeComposed(filter, color_filter);
+  }
+  if (invert_colors) {
+    return ColorFilter::MakeMatrix(kColorInversion);
+  }
+  if (color_filter) {
+    return color_filter;
+  }
+  return nullptr;
+}
+
 bool Paint::HasColorFilter() const {
-  return !!color_filter;
+  return !!color_filter || invert_colors;
 }
 
 }  // namespace impeller

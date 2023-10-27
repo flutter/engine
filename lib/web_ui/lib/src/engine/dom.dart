@@ -198,6 +198,28 @@ external DomIntl get domIntl;
 @JS('Symbol')
 external DomSymbol get domSymbol;
 
+@JS('createImageBitmap')
+external JSPromise _createImageBitmap1(
+  JSAny source,
+);
+@JS('createImageBitmap')
+external JSPromise _createImageBitmap2(
+  JSAny source,
+  JSNumber x,
+  JSNumber y,
+  JSNumber width,
+  JSNumber height,
+);
+JSPromise createImageBitmap(JSAny source,
+    [({int x, int y, int width, int height})? bounds]) {
+  if (bounds != null) {
+    return _createImageBitmap2(source, bounds.x.toJS, bounds.y.toJS,
+        bounds.width.toJS, bounds.height.toJS);
+  } else {
+    return _createImageBitmap1(source);
+  }
+}
+
 @JS()
 @staticInterop
 class DomNavigator {}
@@ -322,7 +344,7 @@ external DomHTMLDocument get domDocument;
 
 @JS()
 @staticInterop
-class DomEventTarget {}
+class DomEventTarget implements JSObject {}
 
 extension DomEventTargetExtension on DomEventTarget {
   @JS('addEventListener')
@@ -529,6 +551,7 @@ extension DomElementExtension on DomElement {
       createDomListWrapper<DomElement>(_children);
 
   external DomElement? get firstElementChild;
+  external DomElement? get lastElementChild;
 
   external DomElement? get nextElementSibling;
 
@@ -743,6 +766,7 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   set alignContent(String value) => setProperty('align-content', value);
   set textAlign(String value) => setProperty('text-align', value);
   set font(String value) => setProperty('font', value);
+  set cursor(String value) => setProperty('cursor', value);
   String get width => getPropertyValue('width');
   String get height => getPropertyValue('height');
   String get position => getPropertyValue('position');
@@ -807,6 +831,7 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   String get alignContent => getPropertyValue('align-content');
   String get textAlign => getPropertyValue('text-align');
   String get font => getPropertyValue('font');
+  String get cursor => getPropertyValue('cursor');
 
   @JS('getPropertyValue')
   external JSString _getPropertyValue(JSString property);
@@ -1132,7 +1157,7 @@ extension WebGLContextExtension on WebGLContext {
 
 @JS()
 @staticInterop
-abstract class DomCanvasImageSource {}
+abstract class DomCanvasImageSource implements JSObject {}
 
 @JS()
 @staticInterop
@@ -1404,7 +1429,7 @@ extension DomCanvasRenderingContextWebGlExtension
 class DomCanvasRenderingContextBitmapRenderer {}
 
 extension DomCanvasRenderingContextBitmapRendererExtension
-  on DomCanvasRenderingContextBitmapRenderer {
+    on DomCanvasRenderingContextBitmapRenderer {
   external void transferFromImageBitmap(DomImageBitmap bitmap);
 }
 
@@ -1412,10 +1437,13 @@ extension DomCanvasRenderingContextBitmapRendererExtension
 @staticInterop
 class DomImageData {
   external factory DomImageData._(JSAny? data, JSNumber sw, JSNumber sh);
+  external factory DomImageData._empty(JSNumber sw, JSNumber sh);
 }
 
-DomImageData createDomImageData(Object? data, int sw, int sh) =>
-    DomImageData._(data?.toJSAnyShallow, sw.toJS, sh.toJS);
+DomImageData createDomImageData(Object data, int sw, int sh) =>
+    DomImageData._(data.toJSAnyShallow, sw.toJS, sh.toJS);
+DomImageData createBlankDomImageData(int sw, int sh) =>
+    DomImageData._empty(sw.toJS, sh.toJS);
 
 extension DomImageDataExtension on DomImageData {
   @JS('data')
@@ -1425,39 +1453,12 @@ extension DomImageDataExtension on DomImageData {
 
 @JS('ImageBitmap')
 @staticInterop
-class DomImageBitmap {}
+class DomImageBitmap implements JSObject {}
 
 extension DomImageBitmapExtension on DomImageBitmap {
   external JSNumber get width;
   external JSNumber get height;
   external void close();
-}
-
-
-@JS('createImageBitmap')
-external JSPromise _createImageBitmap1(
-  JSAny source,
-);
-@JS('createImageBitmap')
-external JSPromise _createImageBitmap2(
-  JSAny source,
-  JSNumber x,
-  JSNumber y,
-  JSNumber width,
-  JSNumber height,
-);
-JSPromise createImageBitmap(JSAny source, [({int x, int y, int width, int height})? bounds]) {
-  if (bounds != null) {
-    return _createImageBitmap2(
-      source,
-      bounds.x.toJS,
-      bounds.y.toJS,
-      bounds.width.toJS,
-      bounds.height.toJS
-    );
-  } else {
-    return _createImageBitmap1(source);
-  }
 }
 
 @JS()
@@ -1502,7 +1503,8 @@ MockHttpFetchResponseFactory? mockHttpFetchResponseFactory;
 /// [httpFetchText] instead.
 Future<HttpFetchResponse> httpFetch(String url) async {
   if (mockHttpFetchResponseFactory != null) {
-    final MockHttpFetchResponse? response = await mockHttpFetchResponseFactory!(url);
+    final MockHttpFetchResponse? response =
+        await mockHttpFetchResponseFactory!(url);
     if (response != null) {
       return response;
     }
@@ -1759,8 +1761,7 @@ class MockHttpFetchPayload implements HttpFetchPayload {
     while (currentIndex < totalLength) {
       final int chunkSize = math.min(_chunkSize, totalLength - currentIndex);
       final Uint8List chunk = Uint8List.sublistView(
-        _byteBuffer.asByteData(), currentIndex, currentIndex + chunkSize
-      );
+          _byteBuffer.asByteData(), currentIndex, currentIndex + chunkSize);
       callback(chunk.toJS as T);
       currentIndex += chunkSize;
     }
@@ -1770,10 +1771,12 @@ class MockHttpFetchPayload implements HttpFetchPayload {
   Future<ByteBuffer> asByteBuffer() async => _byteBuffer;
 
   @override
-  Future<dynamic> json() async => throw AssertionError('json not supported by mock');
+  Future<dynamic> json() async =>
+      throw AssertionError('json not supported by mock');
 
   @override
-  Future<String> text() async => throw AssertionError('text not supported by mock');
+  Future<String> text() async =>
+      throw AssertionError('text not supported by mock');
 }
 
 /// Indicates a missing HTTP payload when one was expected, such as when
@@ -1828,7 +1831,7 @@ class HttpFetchError implements Exception {
 
 @JS()
 @staticInterop
-class DomResponse {}
+class DomResponse implements JSObject {}
 
 extension DomResponseExtension on DomResponse {
   @JS('status')
@@ -1865,7 +1868,7 @@ extension DomHeadersExtension on DomHeaders {
 
 @JS()
 @staticInterop
-class _DomReadableStream {}
+class _DomReadableStream implements JSObject {}
 
 extension _DomReadableStreamExtension on _DomReadableStream {
   external _DomStreamReader getReader();
@@ -2308,9 +2311,7 @@ DomBlob createDomBlob(List<Object?> parts, [Map<String, dynamic>? options]) {
     return DomBlob(parts.toJSAnyShallow as JSArray);
   } else {
     return DomBlob.withOptions(
-      parts.toJSAnyShallow as JSArray,
-      options.toJSAnyDeep
-    );
+        parts.toJSAnyShallow as JSArray, options.toJSAnyDeep);
   }
 }
 
@@ -2842,6 +2843,13 @@ extension DomOffscreenCanvasExtension on DomOffscreenCanvas {
     }
   }
 
+  WebGLContext getGlContext(int majorVersion) {
+    if (majorVersion == 1) {
+      return getContext('webgl')! as WebGLContext;
+    }
+    return getContext('webgl2')! as WebGLContext;
+  }
+
   @JS('convertToBlob')
   external JSPromise _convertToBlob1();
   @JS('convertToBlob')
@@ -2855,6 +2863,11 @@ extension DomOffscreenCanvasExtension on DomOffscreenCanvas {
     }
     return js_util.promiseToFuture(blob);
   }
+
+  @JS('transferToImageBitmap')
+  external JSAny? _transferToImageBitmap();
+  DomImageBitmap transferToImageBitmap() =>
+      _transferToImageBitmap()! as DomImageBitmap;
 }
 
 DomOffscreenCanvas createDomOffscreenCanvas(int width, int height) =>
@@ -3024,6 +3037,31 @@ extension DomMessageEventExtension on DomMessageEvent {
   @JS('origin')
   external JSString get _origin;
   String get origin => _origin.toDart;
+
+  /// The source may be a `WindowProxy`, a `MessagePort`, or a `ServiceWorker`.
+  ///
+  /// When a message is sent from an iframe through `window.parent.postMessage`
+  /// the source will be a `WindowProxy` which has the same methods as [Window].
+  DomMessageEventSource get source => js_util.getProperty(this, 'source');
+
+  List<DomMessagePort> get ports =>
+      js_util.getProperty<List<Object?>>(this, 'ports').cast<DomMessagePort>();
+}
+
+@JS()
+@staticInterop
+class DomMessageEventSource {}
+
+extension DomMEssageEventSourceExtension on DomMessageEventSource {
+  external DomMessageEventLocation? get location;
+}
+
+@JS()
+@staticInterop
+class DomMessageEventLocation {}
+
+extension DomMessageEventSourceExtension on DomMessageEventLocation {
+  external String? get href;
 }
 
 @JS()
@@ -3423,8 +3461,8 @@ class DomSegments {}
 
 extension DomSegmentsExtension on DomSegments {
   DomIteratorWrapper<DomSegment> iterator() {
-    final DomIterator segmentIterator =
-        js_util.callMethod(this, domSymbol.iterator, const <Object?>[]) as DomIterator;
+    final DomIterator segmentIterator = js_util
+        .callMethod(this, domSymbol.iterator, const <Object?>[]) as DomIterator;
     return DomIteratorWrapper<DomSegment>(segmentIterator);
   }
 }
@@ -3561,10 +3599,8 @@ external JSAny? get _finalizationRegistryConstructor;
 // dart2js that causes a crash in the Google3 build if we do use a factory
 // constructor. See b/284478971
 DomFinalizationRegistry createDomFinalizationRegistry(JSFunction cleanup) =>
-  js_util.callConstructor(
-    _finalizationRegistryConstructor!.toObjectShallow,
-    <Object>[cleanup]
-  );
+    js_util.callConstructor(
+        _finalizationRegistryConstructor!.toObjectShallow, <Object>[cleanup]);
 
 extension DomFinalizationRegistryExtension on DomFinalizationRegistry {
   @JS('register')
@@ -3573,11 +3609,12 @@ extension DomFinalizationRegistryExtension on DomFinalizationRegistry {
   @JS('register')
   external JSVoid _register2(JSAny target, JSAny value, JSAny token);
   void register(Object target, Object value, [Object? token]) {
-      if (token != null) {
-        _register2(target.toJSAnyShallow, value.toJSAnyShallow, token.toJSAnyShallow);
-      } else {
-        _register1(target.toJSAnyShallow, value.toJSAnyShallow);
-      }
+    if (token != null) {
+      _register2(
+          target.toJSAnyShallow, value.toJSAnyShallow, token.toJSAnyShallow);
+    } else {
+      _register1(target.toJSAnyShallow, value.toJSAnyShallow);
+    }
   }
 
   @JS('unregister')
@@ -3588,3 +3625,15 @@ extension DomFinalizationRegistryExtension on DomFinalizationRegistry {
 /// Whether the current browser supports `FinalizationRegistry`.
 bool browserSupportsFinalizationRegistry =
     _finalizationRegistryConstructor != null;
+
+@JS('window.OffscreenCanvas')
+external JSAny? get _offscreenCanvasConstructor;
+
+bool browserSupportsOffscreenCanvas = _offscreenCanvasConstructor != null;
+
+@JS()
+@staticInterop
+extension JSArrayExtension on JSArray {
+  external void push(JSAny value);
+  external JSNumber get length;
+}

@@ -16,8 +16,12 @@ import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 import '../engine.dart' show DimensionsProvider, registerHotRestartListener, renderer;
 import 'display.dart';
 import 'dom.dart';
+import 'embedder.dart';
+import 'mouse/context_menu.dart';
+import 'mouse/cursor.dart';
 import 'navigation/history.dart';
 import 'platform_dispatcher.dart';
+import 'platform_views/message_handler.dart';
 import 'services.dart';
 import 'util.dart';
 
@@ -29,8 +33,19 @@ const bool debugPrintPlatformMessages = false;
 /// The view ID for the implicit flutter view provided by the platform.
 const int kImplicitViewId = 0;
 
+/// Represents all views in the Flutter Web Engine.
+///
+/// In addition to everything defined in [ui.FlutterView], this class adds
+/// a few web-specific properties.
+abstract interface class EngineFlutterView extends ui.FlutterView {
+  ContextMenu get contextMenu;
+  MouseCursor get mouseCursor;
+  PlatformViewMessageHandler get platformViewMessageHandler;
+  DomElement get rootElement;
+}
+
 /// The Web implementation of [ui.SingletonFlutterWindow].
-class EngineFlutterWindow extends ui.SingletonFlutterWindow {
+class EngineFlutterWindow extends ui.SingletonFlutterWindow implements EngineFlutterView {
   EngineFlutterWindow(this.viewId, this.platformDispatcher) {
     platformDispatcher.viewData[viewId] = this;
     platformDispatcher.windowConfigurations[viewId] = const ViewConfiguration();
@@ -52,6 +67,19 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
 
   @override
   final EnginePlatformDispatcher platformDispatcher;
+
+  @override
+  late final MouseCursor mouseCursor = MouseCursor(rootElement);
+
+  @override
+  late final ContextMenu contextMenu = ContextMenu(rootElement);
+
+  @override
+  DomElement get rootElement => flutterViewEmbedder.flutterViewElement;
+
+  @override
+  late final PlatformViewMessageHandler platformViewMessageHandler =
+      PlatformViewMessageHandler(platformViewsContainer: flutterViewEmbedder.glassPaneElement);
 
   /// Handles the browser history integration to allow users to use the back
   /// button, etc.

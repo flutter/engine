@@ -6,6 +6,7 @@
 #define FLUTTER_DISPLAY_LIST_SKIA_DL_SK_PAINT_DISPATCHER_H_
 
 #include "flutter/display_list/dl_op_receiver.h"
+#include "flutter/display_list/skia/dl_sk_types.h"
 
 namespace flutter {
 
@@ -14,7 +15,7 @@ namespace flutter {
 // which can be accessed at any time via paint().
 class DlSkPaintDispatchHelper : public virtual DlOpReceiver {
  public:
-  DlSkPaintDispatchHelper(SkScalar opacity = SK_Scalar1)
+  explicit DlSkPaintDispatchHelper(SkScalar opacity = SK_Scalar1)
       : current_color_(SK_ColorBLACK), opacity_(opacity) {
     if (opacity < SK_Scalar1) {
       paint_.setAlphaf(opacity);
@@ -75,7 +76,7 @@ class DlSkPaintDispatchHelper : public virtual DlOpReceiver {
   sk_sp<SkColorFilter> makeColorFilter() const;
 
   struct SaveInfo {
-    SaveInfo(SkScalar opacity) : opacity(opacity) {}
+    explicit SaveInfo(SkScalar opacity) : opacity(opacity) {}
 
     SkScalar opacity;
   };
@@ -84,7 +85,7 @@ class DlSkPaintDispatchHelper : public virtual DlOpReceiver {
   void set_opacity(SkScalar opacity) {
     if (opacity_ != opacity) {
       opacity_ = opacity;
-      setColor(current_color_);
+      setColor(DlColor(current_color_));
     }
   }
 

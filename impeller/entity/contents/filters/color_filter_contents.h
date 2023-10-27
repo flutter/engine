@@ -10,6 +10,11 @@ namespace impeller {
 
 class ColorFilterContents : public FilterContents {
  public:
+  enum class AbsorbOpacity {
+    kYes,
+    kNo,
+  };
+
   /// @brief the [inputs] are expected to be in the order of dst, src.
   static std::shared_ptr<ColorFilterContents> MakeBlend(
       BlendMode blend_mode,
@@ -30,20 +35,27 @@ class ColorFilterContents : public FilterContents {
 
   ~ColorFilterContents() override;
 
-  void SetAbsorbOpacity(bool absorb_opacity);
+  void SetAbsorbOpacity(AbsorbOpacity absorb_opacity);
 
-  bool GetAbsorbOpacity() const;
+  AbsorbOpacity GetAbsorbOpacity() const;
 
   /// @brief Sets an alpha that is applied to the final blended result.
   void SetAlpha(Scalar alpha);
 
   std::optional<Scalar> GetAlpha() const;
 
+  // |FilterContents|
+  std::optional<Rect> GetFilterSourceCoverage(
+      const Matrix& effect_transform,
+      const Rect& output_limit) const override;
+
  private:
-  bool absorb_opacity_ = false;
+  AbsorbOpacity absorb_opacity_ = AbsorbOpacity::kNo;
   std::optional<Scalar> alpha_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ColorFilterContents);
+  ColorFilterContents(const ColorFilterContents&) = delete;
+
+  ColorFilterContents& operator=(const ColorFilterContents&) = delete;
 };
 
 }  // namespace impeller

@@ -27,7 +27,13 @@ class IPLR_CAPABILITY("mutex") Mutex {
  private:
   std::mutex mutex_;
 
-  FML_DISALLOW_COPY_ASSIGN_AND_MOVE(Mutex);
+  Mutex(const Mutex&) = delete;
+
+  Mutex(Mutex&&) = delete;
+
+  Mutex& operator=(const Mutex&) = delete;
+
+  Mutex& operator=(Mutex&&) = delete;
 };
 
 class IPLR_CAPABILITY("mutex") RWMutex {
@@ -48,24 +54,39 @@ class IPLR_CAPABILITY("mutex") RWMutex {
  private:
   std::unique_ptr<fml::SharedMutex> mutex_;
 
-  FML_DISALLOW_COPY_ASSIGN_AND_MOVE(RWMutex);
+  RWMutex(const RWMutex&) = delete;
+
+  RWMutex(RWMutex&&) = delete;
+
+  RWMutex& operator=(const RWMutex&) = delete;
+
+  RWMutex& operator=(RWMutex&&) = delete;
 };
 
 class IPLR_SCOPED_CAPABILITY Lock {
  public:
-  Lock(Mutex& mutex) IPLR_ACQUIRE(mutex) : mutex_(mutex) { mutex_.Lock(); }
+  explicit Lock(Mutex& mutex) IPLR_ACQUIRE(mutex) : mutex_(mutex) {
+    mutex_.Lock();
+  }
 
   ~Lock() IPLR_RELEASE() { mutex_.Unlock(); }
 
  private:
   Mutex& mutex_;
 
-  FML_DISALLOW_COPY_ASSIGN_AND_MOVE(Lock);
+  Lock(const Lock&) = delete;
+
+  Lock(Lock&&) = delete;
+
+  Lock& operator=(const Lock&) = delete;
+
+  Lock& operator=(Lock&&) = delete;
 };
 
 class IPLR_SCOPED_CAPABILITY ReaderLock {
  public:
-  ReaderLock(RWMutex& mutex) IPLR_ACQUIRE_SHARED(mutex) : mutex_(mutex) {
+  explicit ReaderLock(RWMutex& mutex) IPLR_ACQUIRE_SHARED(mutex)
+      : mutex_(mutex) {
     mutex_.LockReader();
   }
 
@@ -74,12 +95,18 @@ class IPLR_SCOPED_CAPABILITY ReaderLock {
  private:
   RWMutex& mutex_;
 
-  FML_DISALLOW_COPY_ASSIGN_AND_MOVE(ReaderLock);
+  ReaderLock(const ReaderLock&) = delete;
+
+  ReaderLock(ReaderLock&&) = delete;
+
+  ReaderLock& operator=(const ReaderLock&) = delete;
+
+  ReaderLock& operator=(ReaderLock&&) = delete;
 };
 
 class IPLR_SCOPED_CAPABILITY WriterLock {
  public:
-  WriterLock(RWMutex& mutex) IPLR_ACQUIRE(mutex) : mutex_(mutex) {
+  explicit WriterLock(RWMutex& mutex) IPLR_ACQUIRE(mutex) : mutex_(mutex) {
     mutex_.LockWriter();
   }
 
@@ -88,7 +115,13 @@ class IPLR_SCOPED_CAPABILITY WriterLock {
  private:
   RWMutex& mutex_;
 
-  FML_DISALLOW_COPY_ASSIGN_AND_MOVE(WriterLock);
+  WriterLock(const WriterLock&) = delete;
+
+  WriterLock(WriterLock&&) = delete;
+
+  WriterLock& operator=(const WriterLock&) = delete;
+
+  WriterLock& operator=(WriterLock&&) = delete;
 };
 
 }  // namespace impeller

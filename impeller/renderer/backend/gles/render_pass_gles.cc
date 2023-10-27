@@ -4,13 +4,15 @@
 
 #include "impeller/renderer/backend/gles/render_pass_gles.h"
 
-#include <algorithm>
-
 #include "flutter/fml/trace_event.h"
-#include "impeller/base/config.h"
+#include "fml/closure.h"
+#include "fml/logging.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/texture_descriptor.h"
+#include "impeller/renderer/backend/gles/context_gles.h"
 #include "impeller/renderer/backend/gles/device_buffer_gles.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
+#include "impeller/renderer/backend/gles/gpu_tracer_gles.h"
 #include "impeller/renderer/backend/gles/pipeline_gles.h"
 #include "impeller/renderer/backend/gles/texture_gles.h"
 
@@ -125,6 +127,7 @@ struct RenderPassData {
   Scalar clear_depth = 1.0;
 
   std::shared_ptr<Texture> color_attachment;
+  std::shared_ptr<Texture> resolve_attachment;
   std::shared_ptr<Texture> depth_attachment;
   std::shared_ptr<Texture> stencil_attachment;
 
@@ -143,7 +146,8 @@ struct RenderPassData {
     const RenderPassData& pass_data,
     const std::shared_ptr<Allocator>& transients_allocator,
     const ReactorGLES& reactor,
-    const std::vector<Command>& commands) {
+    const std::vector<Command>& commands,
+    const std::shared_ptr<GPUTracerGLES>& tracer) {
   TRACE_EVENT0("impeller", "RenderPassGLES::EncodeCommandsInReactor");
 
   if (commands.empty()) {
@@ -151,6 +155,9 @@ struct RenderPassData {
   }
 
   const auto& gl = reactor.GetProcTable();
+#ifdef IMPELLER_DEBUG
+  tracer->MarkFrameStart(gl);
+#endif  // IMPELLER_DEBUG
 
   fml::ScopedCleanupClosure pop_pass_debug_marker(
       [&gl]() { gl.PopDebugGroup(); });
@@ -178,25 +185,28 @@ struct RenderPassData {
 
     if (auto color = TextureGLES::Cast(pass_data.color_attachment.get())) {
       if (!color->SetAsFramebufferAttachment(
-              GL_FRAMEBUFFER, fbo, TextureGLES::AttachmentPoint::kColor0)) {
+              GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kColor0)) {
         return false;
       }
     }
+
     if (auto depth = TextureGLES::Cast(pass_data.depth_attachment.get())) {
       if (!depth->SetAsFramebufferAttachment(
-              GL_FRAMEBUFFER, fbo, TextureGLES::AttachmentPoint::kDepth)) {
+              GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kDepth)) {
         return false;
       }
     }
     if (auto stencil = TextureGLES::Cast(pass_data.stencil_attachment.get())) {
       if (!stencil->SetAsFramebufferAttachment(
-              GL_FRAMEBUFFER, fbo, TextureGLES::AttachmentPoint::kStencil)) {
+              GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kStencil)) {
         return false;
       }
     }
 
-    if (gl.CheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-      VALIDATION_LOG << "Could not create a complete frambuffer.";
+    auto status = gl.CheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE) {
+      VALIDATION_LOG << "Could not create a complete frambuffer: "
+                     << DebugToFramebufferError(status);
       return false;
     }
   }
@@ -207,7 +217,12 @@ struct RenderPassData {
                 pass_data.clear_color.alpha   // alpha
   );
   if (pass_data.depth_attachment) {
+    // TODO(bdero): Desktop GL for Apple requires glClearDepth. glClearDepthf
+    //              throws GL_INVALID_OPERATION.
+    //              https://github.com/flutter/flutter/issues/136322
+#if !FML_OS_MACOSX
     gl.ClearDepthf(pass_data.clear_depth);
+#endif
   }
   if (pass_data.stencil_attachment) {
     gl.ClearStencil(pass_data.clear_stencil);
@@ -303,7 +318,12 @@ struct RenderPassData {
                 viewport.rect.size.height       // height
     );
     if (pass_data.depth_attachment) {
+      // TODO(bdero): Desktop GL for Apple requires glDepthRange. glDepthRangef
+      //              throws GL_INVALID_OPERATION.
+      //              https://github.com/flutter/flutter/issues/136322
+#if !FML_OS_MACOSX
       gl.DepthRangef(viewport.depth_range.z_near, viewport.depth_range.z_far);
+#endif
     }
 
     //--------------------------------------------------------------------------
@@ -354,7 +374,7 @@ struct RenderPassData {
       return false;
     }
 
-    const auto& vertex_desc_gles = pipeline.GetBufferBindings();
+    auto vertex_desc_gles = pipeline.GetBufferBindings();
 
     //--------------------------------------------------------------------------
     /// Bind vertex and index buffers.
@@ -454,6 +474,52 @@ struct RenderPassData {
     }
   }
 
+  // When we have a resolve_attachment, MSAA is being used. We blit from the
+  // MSAA FBO to the resolve FBO, otherwise the resolve FBO ends up being
+  // incomplete (because it has no attachments).
+  //
+  // Note that this only works on OpenGLES 3.0+, or put another way, in older
+  // versions of OpenGLES, MSAA is not currently supported by Impeller. It's
+  // possible to work around this issue a few different ways (not yet done).
+  //
+  // TODO(matanlurey): See https://github.com/flutter/flutter/issues/137093.
+  if (!is_default_fbo && pass_data.resolve_attachment) {
+    // MSAA should not be enabled if BlitFramebuffer is not available.
+    FML_DCHECK(gl.BlitFramebuffer.IsAvailable());
+
+    GLuint draw_fbo = GL_NONE;
+    fml::ScopedCleanupClosure delete_draw_fbo([&gl, &draw_fbo, fbo]() {
+      if (draw_fbo != GL_NONE) {
+        gl.BindFramebuffer(GL_FRAMEBUFFER, fbo);
+        gl.DeleteFramebuffers(1u, &draw_fbo);
+      }
+    });
+
+    gl.GenFramebuffers(1u, &draw_fbo);
+    gl.BindFramebuffer(GL_FRAMEBUFFER, draw_fbo);
+
+    auto resolve = TextureGLES::Cast(pass_data.resolve_attachment.get());
+    if (!resolve->SetAsFramebufferAttachment(
+            GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kColor0)) {
+      return false;
+    }
+
+    gl.BindFramebuffer(GL_DRAW_FRAMEBUFFER, draw_fbo);
+    gl.BindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+    auto size = pass_data.resolve_attachment->GetSize();
+    gl.BlitFramebuffer(0,                    // srcX0
+                       0,                    // srcY0
+                       size.width,           // srcX1
+                       size.height,          // srcY1
+                       0,                    // dstX0
+                       0,                    // dstY0
+                       size.width,           // dstX1
+                       size.height,          // dstY1
+                       GL_COLOR_BUFFER_BIT,  // mask
+                       GL_NEAREST            // filter
+    );
+  }
+
   if (gl.DiscardFramebufferEXT.IsAvailable()) {
     std::vector<GLenum> attachments;
 
@@ -510,6 +576,7 @@ bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
   /// Setup color data.
   ///
   pass_data->color_attachment = color0.texture;
+  pass_data->resolve_attachment = color0.resolve_texture;
   pass_data->clear_color = color0.clear_color;
   pass_data->clear_color_attachment = CanClearAttachment(color0.load_action);
   pass_data->discard_color_attachment =
@@ -527,7 +594,7 @@ bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
   }
 
   //----------------------------------------------------------------------------
-  /// Setup depth data.
+  /// Setup stencil data.
   ///
   if (stencil0.has_value()) {
     pass_data->stencil_attachment = stencil0->texture;
@@ -539,12 +606,13 @@ bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
   }
 
   std::shared_ptr<const RenderPassGLES> shared_this = shared_from_this();
+  auto tracer = ContextGLES::Cast(context).GetGPUTracer();
   return reactor_->AddOperation([pass_data,
                                  allocator = context.GetResourceAllocator(),
-                                 render_pass = std::move(shared_this)](
-                                    const auto& reactor) {
+                                 render_pass = std::move(shared_this),
+                                 tracer](const auto& reactor) {
     auto result = EncodeCommandsInReactor(*pass_data, allocator, reactor,
-                                          render_pass->commands_);
+                                          render_pass->commands_, tracer);
     FML_CHECK(result) << "Must be able to encode GL commands without error.";
   });
 }
