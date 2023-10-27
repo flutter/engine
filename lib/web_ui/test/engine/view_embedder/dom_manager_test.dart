@@ -11,15 +11,17 @@ void main() {
 }
 
 void doTests() {
-  test('fromFlutterViewEmbedderDEPRECATED', () {
-    final FlutterViewEmbedder embedder = FlutterViewEmbedder();
-    final DomManager domManager =
-        DomManager.fromFlutterViewEmbedderDEPRECATED(embedder);
+  group('DomManager', () {
+    test('fromFlutterViewEmbedderDEPRECATED', () {
+      final FlutterViewEmbedder embedder = FlutterViewEmbedder();
+      final DomManager domManager =
+          DomManager.fromFlutterViewEmbedderDEPRECATED(embedder);
 
-    expect(domManager.rootElement, embedder.flutterViewElementDEPRECATED);
-    expect(domManager.renderingHost, embedder.glassPaneShadowDEPRECATED);
-    expect(domManager.platformViewsHost, embedder.glassPaneElementDEPRECATED);
-    expect(domManager.textEditingHost, embedder.textEditingHostNodeDEPRECATED);
-    expect(domManager.semanticsHost, embedder.semanticsHostElementDEPRECATED);
+      expect(domManager.rootElement, embedder.flutterViewElementDEPRECATED);
+      expect(domManager.renderingHost, embedder.glassPaneShadowDEPRECATED);
+      expect(domManager.platformViewsHost, embedder.glassPaneElementDEPRECATED);
+      expect(domManager.textEditingHost, embedder.textEditingHostNodeDEPRECATED);
+      expect(domManager.semanticsHost, embedder.semanticsHostElementDEPRECATED);
+    });
   });
 }

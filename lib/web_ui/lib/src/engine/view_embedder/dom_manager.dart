@@ -36,12 +36,9 @@ import '../embedder.dart';
 ///        +- ...semantics nodes
 ///
 class DomManager {
-  DomManager.fromFlutterViewEmbedderDEPRECATED(FlutterViewEmbedder embedder)
-      : rootElement = embedder.flutterViewElementDEPRECATED,
-        platformViewsHost = embedder.glassPaneElementDEPRECATED,
-        renderingHost = embedder.glassPaneShadowDEPRECATED,
-        textEditingHost = embedder.textEditingHostNodeDEPRECATED,
-        semanticsHost = embedder.semanticsHostElementDEPRECATED;
+  DomManager.fromFlutterViewEmbedderDEPRECATED(this._embedder);
+
+  final FlutterViewEmbedder _embedder;
 
   /// The root DOM element for the entire Flutter View.
   ///
@@ -49,21 +46,21 @@ class DomManager {
   ///
   /// If semantics is enabled, this element also contains the semantics DOM tree,
   /// which captures semantics input events.
-  final DomElement rootElement;
+  DomElement get rootElement => _embedder.flutterViewElementDEPRECATED;
 
   /// Hosts all platform view elements.
-  final DomElement platformViewsHost;
+  DomElement get platformViewsHost => _embedder.glassPaneElementDEPRECATED;
 
   /// Hosts all rendering elements and canvases.
-  final DomShadowRoot renderingHost;
+  DomShadowRoot get renderingHost => _embedder.glassPaneShadowDEPRECATED;
 
   /// Hosts all text editing elements.
-  final DomElement textEditingHost;
+  DomElement get textEditingHost => _embedder.textEditingHostNodeDEPRECATED;
 
   /// Hosts the semantics tree.
   ///
   /// This element is in front of the [renderingHost] and [platformViewsHost].
   /// Otherwise, the phone will disable focusing by touch, only by tabbing
   /// around the UI.
-  final DomElement semanticsHost;
+  DomElement get semanticsHost => _embedder.semanticsHostElementDEPRECATED;
 }
