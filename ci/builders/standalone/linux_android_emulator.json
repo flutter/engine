@@ -20,6 +20,12 @@
         {
             "language": "python3",
             "name": "Android Unit Tests",
+            "test_dependencies": [
+                {
+                  "dependency": "android_virtual_device",
+                  "version": "34"
+                }
+              ],
             "contexts": [
                 "android_virtual_device"
             ],
@@ -34,6 +40,12 @@
         {
             "language": "bash",
             "name": "Scenario App Integration Tests",
+            "test_dependencies": [
+                {
+                  "dependency": "android_virtual_device",
+                  "version": "34"
+                }
+              ],
             "contexts": [
                 "android_virtual_device"
             ],
