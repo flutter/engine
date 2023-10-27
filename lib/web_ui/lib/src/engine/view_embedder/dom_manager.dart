@@ -4,8 +4,25 @@
 
 import 'package:ui/ui.dart' as ui;
 
+import '../display.dart';
 import '../dom.dart';
 import '../embedder.dart';
+import '../global_styles.dart';
+
+/// The tag name for the Flutter View root element.
+const String kFlutterViewTagName = 'flutter-view';
+
+/// The tag name for the glass-pane.
+const String kGlassPaneTagName = 'flt-glass-pane';
+
+/// The tag name for the scene host.
+const String kSceneHostTagName = 'flt-scene-host';
+
+/// The tag name for the semantics host.
+const String kSemanticsHostTagName = 'flt-semantics-host';
+
+/// The tag name for the accessibility announcements host.
+const String kAnnouncementsHostTagName = 'flt-announcement-host';
 
 /// Manages DOM elements and the DOM structure for a [ui.FlutterView].
 ///
@@ -63,4 +80,61 @@ class DomManager {
   /// Otherwise, the phone will disable focusing by touch, only by tabbing
   /// around the UI.
   DomElement get semanticsHost => _embedder.semanticsHostElementDEPRECATED;
+}
+
+/// Manages the CSS styles of the Flutter View.
+class StyleManager {
+  static const String defaultFontStyle = 'normal';
+  static const String defaultFontWeight = 'normal';
+  static const double defaultFontSize = 14;
+  static const String defaultFontFamily = 'sans-serif';
+  static const String defaultCssFont = '$defaultFontStyle $defaultFontWeight ${defaultFontSize}px $defaultFontFamily';
+
+  static void attachGlobalStyles({
+    required DomNode node,
+    required String styleId,
+    required String? styleNonce,
+    required String cssSelectorPrefix,
+  }) {
+    final DomHTMLStyleElement styleElement = createDomHTMLStyleElement(styleNonce);
+    styleElement.id = styleId;
+    // The style element must be appended to the DOM, or its `sheet` will be null later.
+    node.appendChild(styleElement);
+    applyGlobalCssRulesToSheet(
+      styleElement,
+      defaultCssFont: StyleManager.defaultCssFont,
+      cssSelectorPrefix: cssSelectorPrefix,
+    );
+  }
+
+  static void styleSceneHost(
+    DomElement sceneHost, {
+    bool debugShowSemanticsNodes = false,
+  }) {
+    assert(sceneHost.tagName.toLowerCase() == kSceneHostTagName.toLowerCase());
+    // Don't allow the scene to receive pointer events.
+    sceneHost.style.pointerEvents = 'none';
+    // When debugging semantics, make the scene semi-transparent so that the
+    // semantics tree is more prominent.
+    if (debugShowSemanticsNodes) {
+      sceneHost.style.opacity = '0.3';
+    }
+  }
+
+  static void styleSemanticsHost(DomElement semanticsHost) {
+    assert(semanticsHost.tagName.toLowerCase() == kSemanticsHostTagName.toLowerCase());
+    semanticsHost.style
+      ..position = 'absolute'
+      ..transformOrigin = '0 0 0';
+    scaleSemanticsHost(semanticsHost);
+  }
+
+  /// The framework specifies semantics in physical pixels, but CSS uses
+  /// logical pixels. To compensate, an inverse scale is injected at the root
+  /// level.
+  static void scaleSemanticsHost(DomElement semanticsHost) {
+    assert(semanticsHost.tagName.toLowerCase() == kSemanticsHostTagName.toLowerCase());
+    final double dpr = EngineFlutterDisplay.instance.devicePixelRatio;
+    semanticsHost.style.transform = 'scale(${1 / dpr})';
+  }
 }

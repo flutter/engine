@@ -15,7 +15,7 @@ import 'paragraph/helper.dart';
 
 DomElement get sceneHost =>
     EnginePlatformDispatcher.instance.implicitView!.dom.renderingHost
-        .querySelector('flt-scene-host')!;
+        .querySelector(kSceneHostTagName)!;
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);

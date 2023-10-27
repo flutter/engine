@@ -7,8 +7,8 @@ import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import '../browser_detection.dart';
 import '../dom.dart';
-import '../embedder.dart';
 import '../util.dart';
+import '../view_embedder/dom_manager.dart';
 import 'measurement.dart';
 import 'paragraph.dart';
 
@@ -24,7 +24,7 @@ String buildCssFontString({
   if (fontStyle != null) {
     result.write(fontStyle == ui.FontStyle.normal ? 'normal' : 'italic');
   } else {
-    result.write(FlutterViewEmbedder.defaultFontStyle);
+    result.write(StyleManager.defaultFontStyle);
   }
   result.write(' ');
 
@@ -32,14 +32,14 @@ String buildCssFontString({
   if (fontWeight != null) {
     result.write(fontWeightToCss(fontWeight));
   } else {
-    result.write(FlutterViewEmbedder.defaultFontWeight);
+    result.write(StyleManager.defaultFontWeight);
   }
   result.write(' ');
 
   if (fontSize != null) {
     result.write(fontSize.floor());
   } else {
-    result.write(FlutterViewEmbedder.defaultFontSize);
+    result.write(StyleManager.defaultFontSize);
   }
   result.write('px ');
   result.write(canonicalizeFontFamily(fontFamily));

@@ -5,6 +5,7 @@
 import 'browser_detection.dart';
 import 'dom.dart';
 import 'text_editing/text_editing.dart';
+import 'view_embedder/dom_manager.dart';
 
 // Applies the required global CSS to an incoming [DomCSSStyleSheet] `sheet`.
 void applyGlobalCssRulesToSheet(
@@ -20,7 +21,7 @@ void applyGlobalCssRulesToSheet(
 
   // Fixes #115216 by ensuring that our parameters only affect the flt-scene-host children.
   sheet.insertRule('''
-    $cssSelectorPrefix flt-scene-host {
+    $cssSelectorPrefix $kSceneHostTagName {
       font: $defaultCssFont;
     }
   ''', sheet.cssRules.length);
