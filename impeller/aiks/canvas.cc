@@ -377,9 +377,9 @@ void Canvas::ClipGeometry(std::unique_ptr<Geometry> geometry,
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetContents(std::move(contents));
   entity.SetClipDepth(GetClipDepth());
+  entity.record = true;
 
   GetCurrentPass().AddEntity(entity);
-  GetCurrentPass().ContainsClip();
 
   ++xformation_stack_.back().clip_depth;
   xformation_stack_.back().contains_clips = true;
@@ -417,6 +417,7 @@ void Canvas::RestoreClip() {
   // takes up the full render target.
   entity.SetContents(std::make_shared<ClipRestoreContents>());
   entity.SetClipDepth(GetClipDepth());
+  entity.record = true;
 
   GetCurrentPass().AddEntity(entity);
 }

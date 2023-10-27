@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -162,10 +163,6 @@ class EntityPass {
   std::optional<Rect> GetElementsCoverage(
       std::optional<Rect> coverage_limit) const;
 
-  void ContainsClip() {
-    clips_applied_ = true;
-  }
-
  private:
   struct EntityResult {
     enum Status {
@@ -282,6 +279,13 @@ class EntityPass {
   /// evaluated and recorded to an `EntityPassTarget` by the `OnRender` method.
   std::vector<Element> elements_;
 
+  struct EntityPair {
+    Entity entity;
+    Matrix original_transform;
+  };
+
+  mutable std::vector<EntityPair> rendered_clip_entities_;
+
   EntityPass* superpass_ = nullptr;
   Matrix xformation_;
   size_t clip_depth_ = 0u;
@@ -289,6 +293,15 @@ class EntityPass {
   bool flood_clip_ = false;
   bool enable_offscreen_debug_checkerboard_ = false;
   std::optional<Rect> bounds_limit_;
+
+  std::vector<EntityPair> CollectParentClipEntities() {
+    std::vector<EntityPair> result;
+    if (superpass_) {
+      result = superpass_->CollectParentClipEntities();
+    }
+    result.insert(result.end(), rendered_clip_entities_.begin(), rendered_clip_entities_.end());
+    return result;
+  }
 
   /// These values are incremented whenever something is added to the pass that
   /// requires reading from the backdrop texture. Currently, this can happen in
@@ -300,12 +313,6 @@ class EntityPass {
   /// advanced blends.
   uint32_t advanced_blend_reads_from_pass_texture_ = 0;
   uint32_t backdrop_filter_reads_from_pass_texture_ = 0;
-
-  /// The number of clips applied in the current entity pass.
-  ///
-  /// If this value is zero, then the stencil buffer does not have to be stored
-  /// between backdrop filters.
-  bool clips_applied_ = false;
 
   uint32_t GetTotalPassReads(ContentContext& renderer) const;
 
