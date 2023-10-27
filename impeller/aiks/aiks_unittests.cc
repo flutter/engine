@@ -2760,6 +2760,117 @@ TEST_P(AiksTest, TranslucentSaveLayerWithColorAndImageFilterDrawsCorrectly) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, ImageFilteredSaveLayerWithUnboundedContents) {
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+
+  auto test = [&canvas](const std::shared_ptr<ImageFilter>& filter) {
+    auto DrawLine = [&canvas](const Point& p0, const Point& p1,
+                              const Paint& p) {
+      auto path = PathBuilder{}
+                      .AddLine(p0, p1)
+                      .SetConvexity(Convexity::kConvex)
+                      .TakePath();
+      Paint paint = p;
+      paint.style = Paint::Style::kStroke;
+      canvas.DrawPath(path, paint);
+    };
+    // Registration marks for the edge of the SaveLayer
+    DrawLine(Point(75, 100), Point(225, 100), {.color = Color::White()});
+    DrawLine(Point(75, 200), Point(225, 200), {.color = Color::White()});
+    DrawLine(Point(100, 75), Point(100, 225), {.color = Color::White()});
+    DrawLine(Point(200, 75), Point(200, 225), {.color = Color::White()});
+
+    canvas.SaveLayer({.image_filter = filter},
+                     Rect::MakeLTRB(100, 100, 200, 200));
+    {
+      // DrawPaint to verify correct behavior when the contents are unbounded.
+      canvas.DrawPaint({.color = Color::Yellow()});
+
+      // Contrasting rectangle to see interior blurring
+      canvas.DrawRect(Rect::MakeLTRB(125, 125, 175, 175),
+                      {.color = Color::Blue()});
+    }
+    canvas.Restore();
+  };
+
+  test(ImageFilter::MakeBlur(Sigma{10.0}, Sigma{10.0},
+                             FilterContents::BlurStyle::kNormal,
+                             Entity::TileMode::kDecal));
+
+  canvas.Translate({200.0, 0.0});
+
+  test(ImageFilter::MakeDilate(Radius{10.0}, Radius{10.0}));
+
+  canvas.Translate({200.0, 0.0});
+
+  test(ImageFilter::MakeErode(Radius{10.0}, Radius{10.0}));
+
+  canvas.Translate({-400.0, 200.0});
+
+  auto rotate_filter =
+      ImageFilter::MakeMatrix(Matrix::MakeTranslation({150, 150}) *
+                                  Matrix::MakeRotationZ(Degrees{10.0}) *
+                                  Matrix::MakeTranslation({-150, -150}),
+                              SamplerDescriptor{});
+  test(rotate_filter);
+
+  canvas.Translate({200.0, 0.0});
+
+  auto rgb_swap_filter = ImageFilter::MakeFromColorFilter(
+      *ColorFilter::MakeMatrix({.array = {
+                                    0, 1, 0, 0, 0,  //
+                                    0, 0, 1, 0, 0,  //
+                                    1, 0, 0, 0, 0,  //
+                                    0, 0, 0, 1, 0   //
+                                }}));
+  test(rgb_swap_filter);
+
+  canvas.Translate({200.0, 0.0});
+
+  test(ImageFilter::MakeCompose(*rotate_filter, *rgb_swap_filter));
+
+  canvas.Translate({-400.0, 200.0});
+
+  test(ImageFilter::MakeLocalMatrix(Matrix::MakeTranslation({25.0, 25.0}),
+                                    *rotate_filter));
+
+  canvas.Translate({200.0, 0.0});
+
+  test(ImageFilter::MakeLocalMatrix(Matrix::MakeTranslation({25.0, 25.0}),
+                                    *rgb_swap_filter));
+
+  canvas.Translate({200.0, 0.0});
+
+  test(ImageFilter::MakeLocalMatrix(
+      Matrix::MakeTranslation({25.0, 25.0}),
+      *ImageFilter::MakeCompose(*rotate_filter, *rgb_swap_filter)));
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, ImageFilteredUnboundedSaveLayerWithUnboundedContents) {
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+
+  auto blur_filter = ImageFilter::MakeBlur(Sigma{10.0}, Sigma{10.0},
+                                           FilterContents::BlurStyle::kNormal,
+                                           Entity::TileMode::kDecal);
+
+  canvas.SaveLayer({.image_filter = blur_filter}, std::nullopt);
+  {
+    // DrawPaint to verify correct behavior when the contents are unbounded.
+    canvas.DrawPaint({.color = Color::Yellow()});
+
+    // Contrasting rectangle to see interior blurring
+    canvas.DrawRect(Rect::MakeLTRB(125, 125, 175, 175),
+                    {.color = Color::Blue()});
+  }
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, TranslucentSaveLayerImageDrawsCorrectly) {
   Canvas canvas;
 
@@ -3757,6 +3868,7 @@ TEST_P(AiksTest, BlurHasNoEdge) {
           },
   };
   canvas.DrawRect(Rect{300, 300, 200, 200}, blur);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
 TEST_P(AiksTest, EmptySaveLayerIgnoresPaint) {
@@ -3777,6 +3889,56 @@ TEST_P(AiksTest, EmptySaveLayerRendersWithClear) {
   canvas.ClipRect({100, 100, 200, 200});
   canvas.SaveLayer(Paint{.blend_mode = BlendMode::kClear});
   canvas.Restore();
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, BlurredRectangleWithShader) {
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+
+  auto paint_lines = [&canvas](Scalar dx, Scalar dy, Paint paint) {
+    auto draw_line = [&canvas, &paint](Point a, Point b) {
+      canvas.DrawPath(PathBuilder{}.AddLine(a, b).TakePath(), paint);
+    };
+    paint.stroke_width = 5;
+    paint.style = Paint::Style::kStroke;
+    draw_line(Point(dx + 100, dy + 100), Point(dx + 200, dy + 200));
+    draw_line(Point(dx + 100, dy + 200), Point(dx + 200, dy + 100));
+    draw_line(Point(dx + 150, dy + 100), Point(dx + 200, dy + 150));
+    draw_line(Point(dx + 100, dy + 150), Point(dx + 150, dy + 200));
+  };
+
+  AiksContext renderer(GetContext(), nullptr);
+  Canvas recorder_canvas;
+  for (int x = 0; x < 5; ++x) {
+    for (int y = 0; y < 5; ++y) {
+      Rect rect = Rect::MakeXYWH(x * 20, y * 20, 20, 20);
+      Paint paint{.color =
+                      ((x + y) & 1) == 0 ? Color::Yellow() : Color::Blue()};
+      recorder_canvas.DrawRect(rect, paint);
+    }
+  }
+  Picture picture = recorder_canvas.EndRecordingAsPicture();
+  std::shared_ptr<Texture> texture =
+      picture.ToImage(renderer, ISize{100, 100})->GetTexture();
+
+  ColorSource image_source = ColorSource::MakeImage(
+      texture, Entity::TileMode::kRepeat, Entity::TileMode::kRepeat, {}, {});
+  std::shared_ptr<ImageFilter> blur_filter = ImageFilter::MakeBlur(
+      Sigma(5), Sigma(5), FilterContents::BlurStyle::kNormal,
+      Entity::TileMode::kDecal);
+  canvas.DrawRect(Rect::MakeLTRB(0, 0, 300, 600),
+                  Paint{.color = Color::DarkGreen()});
+  canvas.DrawRect(Rect::MakeLTRB(100, 100, 200, 200),
+                  Paint{.color_source = image_source});
+  canvas.DrawRect(Rect::MakeLTRB(300, 0, 600, 600),
+                  Paint{.color = Color::Red()});
+  canvas.DrawRect(
+      Rect::MakeLTRB(400, 100, 500, 200),
+      Paint{.color_source = image_source, .image_filter = blur_filter});
+  paint_lines(0, 300, Paint{.color_source = image_source});
+  paint_lines(300, 300,
+              Paint{.color_source = image_source, .image_filter = blur_filter});
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
