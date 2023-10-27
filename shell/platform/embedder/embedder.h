@@ -1732,8 +1732,17 @@ typedef bool (*FlutterBackingStoreCollectCallback)(
 
 typedef bool (*FlutterLayersPresentCallback)(const FlutterLayer** layers,
                                              size_t layers_count,
-                                             int64_t view_id,
                                              void* user_data);
+typedef struct {
+  /// This size of this struct. Must be sizeof(FlutterPresentViewInfo).
+  size_t struct_size;
+  const FlutterLayer** layers;
+  size_t layers_count;
+  int64_t view_id;
+  void* user_data;
+} FlutterPresentViewInfo;
+
+typedef bool (*FlutterViewPresentCallback)(FlutterPresentViewInfo* info);
 
 typedef struct {
   /// This size of this struct. Must be sizeof(FlutterCompositor).
@@ -1756,13 +1765,23 @@ typedef struct {
   FlutterBackingStoreCollectCallback collect_backing_store_callback;
   /// Callback invoked by the engine to composite the contents of each layer
   /// onto the screen.
+  ///
+  /// Not used if `present_view_callback` is present. At least one of
+  /// `present_layers_callback` or `present_view_callback` must be non-null.
   FlutterLayersPresentCallback present_layers_callback;
   /// Avoid caching backing stores provided by this compositor.
   bool avoid_backing_store_cache;
+  /// Callback invoked by the engine to composite the contents of each layer
+  /// of a view and present it to the view.
+  ///
+  /// At least one of `present_layers_callback` or `present_view_callback` must
+  /// be non-null.
+  FlutterViewPresentCallback present_view_callback;
 } FlutterCompositor;
 
 typedef struct {
   int64_t view_id;
+  FlutterWindowMetricsEvent* metrics;
 } FlutterAddViewInfo;
 
 typedef struct {

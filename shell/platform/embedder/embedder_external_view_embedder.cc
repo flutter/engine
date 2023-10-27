@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <utility>
 
+#include "flutter/common/constants.h"
 #include "flutter/shell/platform/embedder/embedder_layers.h"
 #include "flutter/shell/platform/embedder/embedder_render_target.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
@@ -129,6 +130,7 @@ void EmbedderExternalViewEmbedder::SubmitFrame(
     GrDirectContext* context,
     const std::shared_ptr<impeller::AiksContext>& aiks_context,
     std::unique_ptr<SurfaceFrame> frame) {
+  int64_t native_view_id = kFlutterImplicitViewId;
   auto [matched_render_targets, pending_keys] =
       render_target_cache_.GetExistingTargetsInCache(pending_views_);
 
