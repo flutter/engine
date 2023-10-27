@@ -192,6 +192,8 @@ void PlatformViewAndroid::NotifySurfaceWindowChanged(
         });
     latch.Wait();
   }
+
+  PlatformView::ScheduleFrame();
 }
 
 void PlatformViewAndroid::NotifyDestroyed() {
