@@ -28,8 +28,6 @@ enum KeyEventType {
 /// The source device for the key event.
 ///
 /// Not all platforms supply an accurate type.
-///
-/// Defaults to [keyboard].
 // Must match the KeyEventDeviceType enum in ui/window/key_data.h.
 enum KeyEventDeviceType {
   /// The device is a keyboard.

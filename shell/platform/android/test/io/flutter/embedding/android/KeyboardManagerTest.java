@@ -19,6 +19,7 @@ import android.view.KeyEvent;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import io.flutter.embedding.android.KeyData.DeviceType;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.JSONMessageCodec;
 import io.flutter.util.FakeKeyEvent;
@@ -315,12 +316,14 @@ public class KeyboardManagerTest {
       long physicalKey,
       long logicalKey,
       String character,
-      boolean synthesized) {
+      boolean synthesized,
+      DeviceType deviceType) {
     assertEquals(type, data.type);
     assertEquals(physicalKey, data.physicalKey);
     assertEquals(logicalKey, data.logicalKey);
     assertEquals(character, data.character);
     assertEquals(synthesized, data.synthesized);
+    assertEquals(deviceType, data.deviceType);
   }
 
   static void verifyEmbedderEvents(List<CallRecord> receivedCalls, KeyData[] expectedData) {
@@ -333,7 +336,8 @@ public class KeyboardManagerTest {
           data.physicalKey,
           data.logicalKey,
           data.character,
-          data.synthesized);
+          data.synthesized,
+          data.deviceType);
     }
   }
 
@@ -342,7 +346,8 @@ public class KeyboardManagerTest {
       long physicalKey,
       long logicalKey,
       @Nullable String characters,
-      boolean synthesized) {
+      boolean synthesized,
+      DeviceType deviceType) {
     final KeyData result = new KeyData();
     result.physicalKey = physicalKey;
     result.logicalKey = logicalKey;
@@ -350,6 +355,7 @@ public class KeyboardManagerTest {
     result.type = type;
     result.character = characters;
     result.synthesized = synthesized;
+    result.deviceType = deviceType;
     return result;
   }
 
@@ -405,6 +411,7 @@ public class KeyboardManagerTest {
     data.physicalKey = isLeft ? PHYSICAL_SHIFT_LEFT : PHYSICAL_SHIFT_RIGHT;
     data.logicalKey = isLeft ? LOGICAL_SHIFT_LEFT : LOGICAL_SHIFT_RIGHT;
     data.synthesized = isSynthesized;
+    data.deviceType = KeyData.DeviceType.kKeyboard;
     return data;
   }
 
@@ -439,6 +446,7 @@ public class KeyboardManagerTest {
     data1.type = Type.kRepeat;
     data1.character = "A";
     data1.synthesized = true;
+    data1.deviceType = DeviceType.kKeyboard;
 
     final ByteBuffer data1Buffer = data1.toBytes();
 
@@ -467,6 +475,7 @@ public class KeyboardManagerTest {
     data2.type = Type.kUp;
     data2.character = null;
     data2.synthesized = false;
+    data1.deviceType = DeviceType.kKeyboard;
 
     final ByteBuffer data2Buffer = data2.toBytes();
 
