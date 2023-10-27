@@ -75,7 +75,7 @@ class FlutterViewEmbedder {
   ///
   /// This element is inserted after the [semanticsHostElement] so that
   /// platform views take precedence in DOM event handling.
-  DomElement get sceneHostElement => _sceneHostElement;
+  DomElement get sceneHostElementDEPRECATED => _sceneHostElement;
   late DomElement _sceneHostElement;
 
   /// A child element of body outside the shadowroot that hosts
@@ -101,18 +101,6 @@ class FlutterViewEmbedder {
   /// The last scene element rendered by the [render] method.
   DomElement? get sceneElement => _sceneElement;
   DomElement? _sceneElement;
-
-  /// Don't unnecessarily move DOM nodes around. If a DOM node is
-  /// already in the right place, skip DOM mutation. This is both faster and
-  /// more correct, because moving DOM nodes loses internal state, such as
-  /// text selection.
-  void addSceneToSceneHost(DomElement? sceneElement) {
-    if (sceneElement != _sceneElement) {
-      _sceneElement?.remove();
-      _sceneElement = sceneElement;
-      _sceneHostElement.append(sceneElement!);
-    }
-  }
 
   /// The element that captures input events, such as pointer events.
   ///

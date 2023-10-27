@@ -63,4 +63,24 @@ class DomManager {
   /// Otherwise, the phone will disable focusing by touch, only by tabbing
   /// around the UI.
   DomElement get semanticsHost => _embedder.semanticsHostElementDEPRECATED;
+
+  DomElement get _sceneHost => _embedder.sceneHostElementDEPRECATED;
+
+  DomElement? _lastSceneElement;
+
+  /// Inserts the [sceneElement] into the DOM.
+  ///
+  /// The [sceneElement] is inserted  as a child of the <flt-scene-host> element
+  /// inside the [renderingHost].
+  ///
+  /// If the [sceneElement] has already been inserted, this method does nothing
+  /// to avoid unnecessary DOM mutations. This is both faster and more correct,
+  /// because moving DOM nodes loses internal state, such as text selection.
+  void insertScene(DomElement sceneElement) {
+    if (sceneElement != _lastSceneElement) {
+      _lastSceneElement?.remove();
+      _lastSceneElement = sceneElement;
+      _sceneHost.append(sceneElement);
+    }
+  }
 }
