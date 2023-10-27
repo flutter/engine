@@ -368,6 +368,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     output.physicalKey = physicalKey;
     output.character = character;
     output.synthesized = false;
+    output.deviceType = KeyData.DeviceType.kKeyboard;
 
     sendKeyEvent(output, onKeyEventHandledCallback);
     for (final Runnable postSyncEvent : postSynchronizeEvents) {
@@ -384,6 +385,7 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
     output.physicalKey = physicalKey;
     output.character = null;
     output.synthesized = true;
+    output.deviceType = KeyData.DeviceType.kKeyboard;
     if (physicalKey != 0 && logicalKey != 0) {
       updatePressingState(physicalKey, isDown ? logicalKey : null);
     }
