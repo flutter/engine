@@ -134,6 +134,10 @@ struct TRect {
 
   constexpr bool IsMaximum() const { return *this == MakeMaximum(); }
 
+  constexpr TPoint<Type> GetOrigin() const { return origin; }
+
+  constexpr TSize<Type> GetSize() const { return size; }
+
   constexpr auto GetLeft() const {
     if (IsMaximum()) {
       return -std::numeric_limits<Type>::infinity();
