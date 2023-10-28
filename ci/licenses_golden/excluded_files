@@ -137,11 +137,11 @@
 ../../../flutter/impeller/entity/contents/filters/inputs/filter_input_unittests.cc
 ../../../flutter/impeller/entity/entity_unittests.cc
 ../../../flutter/impeller/entity/geometry/geometry_unittests.cc
-../../../flutter/impeller/entity/geometry/rect_unittests.cc
 ../../../flutter/impeller/entity/render_target_cache_unittests.cc
 ../../../flutter/impeller/fixtures
 ../../../flutter/impeller/geometry/README.md
 ../../../flutter/impeller/geometry/geometry_unittests.cc
+../../../flutter/impeller/geometry/rect_unittests.cc
 ../../../flutter/impeller/golden_tests/README.md
 ../../../flutter/impeller/golden_tests_harvester/.dart_tool
 ../../../flutter/impeller/golden_tests_harvester/.gitignore
