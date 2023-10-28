@@ -1688,9 +1688,8 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   CGFloat minY = CGFLOAT_MAX;
   CGFloat maxY = CGFLOAT_MIN;
 
-  FlutterTextRange* textRange =
-      [FlutterTextRange rangeWithNSRange:fml::RangeForCharactersInRange(
-                                              self.text, NSMakeRange(0, self.text.length))];
+  FlutterTextRange* textRange = [FlutterTextRange
+      rangeWithNSRange:fml::RangeForCharactersInRange(self.text, NSMakeRange(0, self.text.length))];
   for (NSUInteger i = 0; i < [_selectionRects count]; i++) {
     BOOL startsOnOrBeforeStartOfRange = _selectionRects[i].position <= first;
     BOOL isLastSelectionRect = i + 1 == [_selectionRects count];
@@ -1699,12 +1698,14 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
         !isLastSelectionRect && _selectionRects[i + 1].position > first;
     if (startsOnOrBeforeStartOfRange &&
         (endOfTextIsAfterStartOfRange || nextSelectionRectIsAfterStartOfRange)) {
-      if (@available(iOS 17.0, *)) {
+      // TODO(hellohaunlin): Remove iOS 17 check. The logic should also work for older versions.
+      if (@available(iOS 17, *)) {
         startSelectionRect = _selectionRects[i].rect;
       } else {
-        // The iOS 17 system highlight does not repect the height returned by `firstRectForRange` API. 
-        // So we return CGRectZero to hide it. 
-        // However, for iPad scribble, at least 1 character's width is required for advanced gestures (e.g. insert a space with a vertical bar)
+        // The iOS 16 system highlight does not repect the height returned by `firstRectForRange`
+        // API (unlike iOS 17). So we return CGRectZero to hide it (unless if scribble is enabled).
+        // To support scribble's advanced gestures (e.g. insert a space with a vertical bar),
+        // at least 1 character's width is required.
         return [self isScribbleAvailable] ? _selectionRects[i].rect : CGRectZero;
       }
     }

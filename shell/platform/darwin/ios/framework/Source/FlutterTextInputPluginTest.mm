@@ -1578,7 +1578,8 @@ FLUTTER_ASSERT_ARC
     XCTAssertTrue(CGRectEqualToRect(CGRectMake(100, 0, 300, 100),
                                     [inputView firstRectForRange:multiRectRange]));
   } else {
-    XCTAssertTrue(CGRectEqualToRect(CGRectMake(100, 0, 100, 100), [inputView firstRectForRange:multiRectRange]));
+    XCTAssertTrue(CGRectEqualToRect(CGRectMake(100, 0, 100, 100),
+                                    [inputView firstRectForRange:multiRectRange]));
   }
 }
 
