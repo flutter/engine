@@ -1558,6 +1558,30 @@ FLUTTER_ASSERT_ARC
                                   [inputView firstRectForRange:range]));
 }
 
+- (void)testFirstRectForRangeReturnsNoneZeroRectWhenScribbleIsEnabled {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  [inputView setTextInputState:@{@"text" : @"COMPOSING"}];
+
+  FlutterTextInputView* mockInputView = OCMPartialMock(inputView);
+  OCMStub([mockInputView isScribbleAvailable]).andReturn(YES);
+
+  [inputView setSelectionRects:@[
+    [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(0, 0, 100, 100) position:0U],
+    [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(100, 0, 100, 100) position:1U],
+    [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(200, 0, 100, 100) position:2U],
+    [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(300, 0, 100, 100) position:3U],
+  ]];
+
+  FlutterTextRange* multiRectRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(1, 3)];
+
+  if (@available(iOS 17, *)) {
+    XCTAssertTrue(CGRectEqualToRect(CGRectMake(100, 0, 300, 100),
+                                    [inputView firstRectForRange:multiRectRange]));
+  } else {
+    XCTAssertTrue(CGRectEqualToRect(CGRectMake(100, 0, 100, 100), [inputView firstRectForRange:multiRectRange]));
+  }
+}
+
 - (void)testFirstRectForRangeReturnsCorrectRectOnASingleLineLeftToRight {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   [inputView setTextInputState:@{@"text" : @"COMPOSING"}];
