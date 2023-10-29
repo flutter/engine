@@ -596,16 +596,18 @@ FlutterWindow::HandleMessage(UINT const message,
           ScreenToClient(window_handle_, &pt);
           auto x = static_cast<double>(pt.x);
           auto y = static_cast<double>(pt.y);
+          FlutterPointerDeviceKind kind = kFlutterPointerDeviceKindTouch;
+          if (touch.dwFlags & TOUCHEVENTF_PEN) {
+            kind = kFlutterPointerDeviceKindStylus;
+          }
 
           if (touch.dwFlags & TOUCHEVENTF_DOWN) {
-            OnPointerDown(x, y, kFlutterPointerDeviceKindTouch, touch_id,
-                          WM_LBUTTONDOWN);
+            OnPointerDown(x, y, kind, touch_id, WM_LBUTTONDOWN);
           } else if (touch.dwFlags & TOUCHEVENTF_MOVE) {
-            OnPointerMove(x, y, kFlutterPointerDeviceKindTouch, touch_id, 0);
+            OnPointerMove(x, y, kind, touch_id, 0);
           } else if (touch.dwFlags & TOUCHEVENTF_UP) {
-            OnPointerUp(x, y, kFlutterPointerDeviceKindTouch, touch_id,
-                        WM_LBUTTONDOWN);
-            OnPointerLeave(x, y, kFlutterPointerDeviceKindTouch, touch_id);
+            OnPointerUp(x, y, kind, touch_id, WM_LBUTTONDOWN);
+            OnPointerLeave(x, y, kind, touch_id);
             touch_id_generator_.ReleaseNumber(touch.dwID);
           }
         }
