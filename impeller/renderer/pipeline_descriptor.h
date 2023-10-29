@@ -4,17 +4,12 @@
 
 #pragma once
 
-#include <functional>
-#include <future>
 #include <map>
 #include <memory>
 #include <string>
-#include <string_view>
-#include <type_traits>
 #include <unordered_map>
 
 #include "flutter/fml/hash_combine.h"
-#include "flutter/fml/macros.h"
 #include "impeller/base/comparable.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/shader_types.h"
@@ -26,6 +21,27 @@ class ShaderFunction;
 class VertexDescriptor;
 template <typename T>
 class Pipeline;
+
+struct SpecializationConstant {
+  const char* name;
+  size_t index;
+  ShaderType type;
+
+  struct Equal {
+    constexpr bool operator()(const SpecializationConstant& a,
+                              const SpecializationConstant& b) const {
+      return a.name == b.name &&    //
+             a.index == b.index &&  //
+             a.type == b.type;
+    }
+  };
+
+  struct Hash {
+    std::size_t operator()(const SpecializationConstant& key) const {
+      return fml::HashCombine(key.name, key.index, key.type);
+    }
+  };
+};
 
 class PipelineDescriptor final : public Comparable<PipelineDescriptor> {
  public:
@@ -131,6 +147,10 @@ class PipelineDescriptor final : public Comparable<PipelineDescriptor> {
 
   PolygonMode GetPolygonMode() const;
 
+  void SetSpecializationConstants(std::vector<int> values);
+
+  const std::vector<int>& GetSpecializationConstants() const;
+
  private:
   std::string label_;
   SampleCount sample_count_ = SampleCount::kCount1;
@@ -149,6 +169,7 @@ class PipelineDescriptor final : public Comparable<PipelineDescriptor> {
       back_stencil_attachment_descriptor_;
   PrimitiveType primitive_type_ = PrimitiveType::kTriangle;
   PolygonMode polygon_mode_ = PolygonMode::kFill;
+  std::vector<int> specialization_constants_;
 };
 
 }  // namespace impeller

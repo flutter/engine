@@ -8,6 +8,7 @@
 #include <impeller/color.glsl>
 #include <impeller/texture.glsl>
 #include <impeller/types.glsl>
+#include "blend_dispatch.glsl"
 
 layout(set = 0,
        binding = 0,

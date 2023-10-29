@@ -6,6 +6,7 @@
 #include <impeller/color.glsl>
 #include <impeller/texture.glsl>
 #include <impeller/types.glsl>
+#include "blend_dispatch.glsl"
 
 uniform BlendInfo {
   float16_t dst_input_alpha;

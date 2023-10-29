@@ -93,6 +93,28 @@ bool DeepCompareMap(const std::map<Key, std::shared_ptr<ComparableType>>& lhs,
   return true;
 }
 
+template <class Key, class Value, class Hash, class Eq>
+bool CompareUnorderedMap(const std::unordered_map<Key, Value, Hash, Eq>& lhs,
+                         const std::unordered_map<Key, Value, Hash, Eq>& rhs) {
+  if (lhs.size() != rhs.size()) {
+    return false;
+  }
+  for (const auto& [key, value] : lhs) {
+    auto found = rhs.find(key);
+    if (found == rhs.end() || found->second != value) {
+      return false;
+    }
+  }
+  for (const auto& [key, value] : rhs) {
+    auto found = lhs.find(key);
+    if (found == rhs.end() || found->second != value) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 }  // namespace impeller
 
 namespace std {

@@ -5,15 +5,15 @@
 #include "impeller/entity/contents/content_context.h"
 
 #include <memory>
-#include <sstream>
 
 #include "impeller/base/strings.h"
 #include "impeller/core/formats.h"
+#include "impeller/entity/contents/framebuffer_blend_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/render_target_cache.h"
 #include "impeller/renderer/command_buffer.h"
+#include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/pipeline_library.h"
-#include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/tessellator/tessellator.h"
 #include "impeller/typographer/typographer_context.h"
@@ -155,8 +155,10 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
 
 template <typename PipelineT>
 static std::unique_ptr<PipelineT> CreateDefaultPipeline(
-    const Context& context) {
-  auto desc = PipelineT::Builder::MakeDefaultPipelineDescriptor(context);
+    const Context& context,
+    const std::map<SpecializationConstant, uint64_t>& constants = {}) {
+  auto desc =
+      PipelineT::Builder::MakeDefaultPipelineDescriptor(context, constants);
   if (!desc.has_value()) {
     return nullptr;
   }
@@ -217,53 +219,98 @@ ContentContext::ContentContext(
   }
 
   if (context_->GetCapabilities()->SupportsFramebufferFetch()) {
-    framebuffer_blend_color_pipelines_.CreateDefault(*context_,
-                                                     options_trianglestrip);
-    framebuffer_blend_colorburn_pipelines_.CreateDefault(*context_,
-                                                         options_trianglestrip);
+    framebuffer_blend_color_pipelines_.CreateDefault(
+        *context_, options_trianglestrip,
+        {static_cast<int>(BlendSelectValues::kColor)});
+    framebuffer_blend_colorburn_pipelines_.CreateDefault(
+        *context_, options_trianglestrip,
+        {static_cast<int>(BlendSelectValues::kColorBurn)});
     framebuffer_blend_colordodge_pipelines_.CreateDefault(
-        *context_, options_trianglestrip);
-    framebuffer_blend_darken_pipelines_.CreateDefault(*context_,
-                                                      options_trianglestrip);
+        *context_, options_trianglestrip,
+        {static_cast<int>(BlendSelectValues::kColorDodge)});
+    framebuffer_blend_darken_pipelines_.CreateDefault(
+        *context_, options_trianglestrip,
+        {static_cast<int>(BlendSelectValues::kDarken)});
     framebuffer_blend_difference_pipelines_.CreateDefault(
-        *context_, options_trianglestrip);
-    framebuffer_blend_exclusion_pipelines_.CreateDefault(*context_,
-                                                         options_trianglestrip);
-    framebuffer_blend_hardlight_pipelines_.CreateDefault(*context_,
-                                                         options_trianglestrip);
-    framebuffer_blend_hue_pipelines_.CreateDefault(*context_,
-                                                   options_trianglestrip);
-    framebuffer_blend_lighten_pipelines_.CreateDefault(*context_,
-                                                       options_trianglestrip);
+        *context_, options_trianglestrip,
+        {static_cast<int>(BlendSelectValues::kDifference)});
+    framebuffer_blend_exclusion_pipelines_.CreateDefault(
+        *context_, options_trianglestrip,
+        {static_cast<int>(BlendSelectValues::kExclusion)});
+    framebuffer_blend_hardlight_pipelines_.CreateDefault(
+        *context_, options_trianglestrip,
+        {static_cast<int>(BlendSelectValues::kHardLight)});
+    framebuffer_blend_hue_pipelines_.CreateDefault(
+        *context_, options_trianglestrip,
+        {static_cast<int>(BlendSelectValues::kHue)});
+    framebuffer_blend_lighten_pipelines_.CreateDefault(
+        *context_, options_trianglestrip,
+        {static_cast<int>(BlendSelectValues::kLighten)});
     framebuffer_blend_luminosity_pipelines_.CreateDefault(
-        *context_, options_trianglestrip);
-    framebuffer_blend_multiply_pipelines_.CreateDefault(*context_,
-                                                        options_trianglestrip);
-    framebuffer_blend_overlay_pipelines_.CreateDefault(*context_,
-                                                       options_trianglestrip);
+        *context_, options_trianglestrip,
+        {static_cast<int>(BlendSelectValues::kLuminosity)});
+    framebuffer_blend_multiply_pipelines_.CreateDefault(
+        *context_, options_trianglestrip,
+        {static_cast<int>(BlendSelectValues::kMultiply)});
+    framebuffer_blend_overlay_pipelines_.CreateDefault(
+        *context_, options_trianglestrip,
+        {static_cast<int>(BlendSelectValues::kOverlay)});
     framebuffer_blend_saturation_pipelines_.CreateDefault(
-        *context_, options_trianglestrip);
-    framebuffer_blend_screen_pipelines_.CreateDefault(*context_,
-                                                      options_trianglestrip);
-    framebuffer_blend_softlight_pipelines_.CreateDefault(*context_,
-                                                         options_trianglestrip);
+        *context_, options_trianglestrip,
+        {static_cast<int>(BlendSelectValues::kSaturation)});
+    framebuffer_blend_screen_pipelines_.CreateDefault(
+        *context_, options_trianglestrip,
+        {static_cast<int>(BlendSelectValues::kScreen)});
+    framebuffer_blend_softlight_pipelines_.CreateDefault(
+        *context_, options_trianglestrip,
+        {static_cast<int>(BlendSelectValues::kSoftLight)});
   }
 
-  blend_color_pipelines_.CreateDefault(*context_, options_trianglestrip);
-  blend_colorburn_pipelines_.CreateDefault(*context_, options_trianglestrip);
-  blend_colordodge_pipelines_.CreateDefault(*context_, options_trianglestrip);
-  blend_darken_pipelines_.CreateDefault(*context_, options_trianglestrip);
-  blend_difference_pipelines_.CreateDefault(*context_, options_trianglestrip);
-  blend_exclusion_pipelines_.CreateDefault(*context_, options_trianglestrip);
-  blend_hardlight_pipelines_.CreateDefault(*context_, options_trianglestrip);
-  blend_hue_pipelines_.CreateDefault(*context_, options_trianglestrip);
-  blend_lighten_pipelines_.CreateDefault(*context_, options_trianglestrip);
-  blend_luminosity_pipelines_.CreateDefault(*context_, options_trianglestrip);
-  blend_multiply_pipelines_.CreateDefault(*context_, options_trianglestrip);
-  blend_overlay_pipelines_.CreateDefault(*context_, options_trianglestrip);
-  blend_saturation_pipelines_.CreateDefault(*context_, options_trianglestrip);
-  blend_screen_pipelines_.CreateDefault(*context_, options_trianglestrip);
-  blend_softlight_pipelines_.CreateDefault(*context_, options_trianglestrip);
+  blend_color_pipelines_.CreateDefault(
+      *context_, options_trianglestrip,
+      {static_cast<int>(BlendSelectValues::kColor)});
+  blend_colorburn_pipelines_.CreateDefault(
+      *context_, options_trianglestrip,
+      {static_cast<int>(BlendSelectValues::kColorBurn)});
+  blend_colordodge_pipelines_.CreateDefault(
+      *context_, options_trianglestrip,
+      {static_cast<int>(BlendSelectValues::kColorDodge)});
+  blend_darken_pipelines_.CreateDefault(
+      *context_, options_trianglestrip,
+      {static_cast<int>(BlendSelectValues::kDarken)});
+  blend_difference_pipelines_.CreateDefault(
+      *context_, options_trianglestrip,
+      {static_cast<int>(BlendSelectValues::kDifference)});
+  blend_exclusion_pipelines_.CreateDefault(
+      *context_, options_trianglestrip,
+      {static_cast<int>(BlendSelectValues::kExclusion)});
+  blend_hardlight_pipelines_.CreateDefault(
+      *context_, options_trianglestrip,
+      {static_cast<int>(BlendSelectValues::kHardLight)});
+  blend_hue_pipelines_.CreateDefault(
+      *context_, options_trianglestrip,
+      {static_cast<int>(BlendSelectValues::kHue)});
+  blend_lighten_pipelines_.CreateDefault(
+      *context_, options_trianglestrip,
+      {static_cast<int>(BlendSelectValues::kLighten)});
+  blend_luminosity_pipelines_.CreateDefault(
+      *context_, options_trianglestrip,
+      {static_cast<int>(BlendSelectValues::kLuminosity)});
+  blend_multiply_pipelines_.CreateDefault(
+      *context_, options_trianglestrip,
+      {static_cast<int>(BlendSelectValues::kMultiply)});
+  blend_overlay_pipelines_.CreateDefault(
+      *context_, options_trianglestrip,
+      {static_cast<int>(BlendSelectValues::kOverlay)});
+  blend_saturation_pipelines_.CreateDefault(
+      *context_, options_trianglestrip,
+      {static_cast<int>(BlendSelectValues::kSaturation)});
+  blend_screen_pipelines_.CreateDefault(
+      *context_, options_trianglestrip,
+      {static_cast<int>(BlendSelectValues::kScreen)});
+  blend_softlight_pipelines_.CreateDefault(
+      *context_, options_trianglestrip,
+      {static_cast<int>(BlendSelectValues::kSoftLight)});
 
   rrect_blur_pipelines_.CreateDefault(*context_, options_trianglestrip);
   texture_blend_pipelines_.CreateDefault(*context_, options);

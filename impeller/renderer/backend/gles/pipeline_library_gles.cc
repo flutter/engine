@@ -33,6 +33,19 @@ static std::string GetShaderInfoLog(const ProcTableGLES& gl, GLuint shader) {
   return log_string;
 }
 
+static std::string GetShaderSource(const ProcTableGLES& gl, GLuint shader) {
+  // Arbitrarily chosen size that should be larger than most shaders.
+  // Since this only fires on compilation errors the performance shouldn't
+  // matter.
+  auto data = static_cast<char*>(malloc(10240));
+  GLsizei length;
+  gl.GetShaderSource(shader, 10240, &length, data);
+
+  auto result = std::string{data, static_cast<size_t>(length)};
+  free(data);
+  return result;
+}
+
 static void LogShaderCompilationFailure(const ProcTableGLES& gl,
                                         GLuint shader,
                                         const std::string& name,
@@ -63,10 +76,7 @@ static void LogShaderCompilationFailure(const ProcTableGLES& gl,
   stream << " shader for '" << name << "' with error:" << std::endl;
   stream << GetShaderInfoLog(gl, shader) << std::endl;
   stream << "Shader source was: " << std::endl;
-  stream << std::string{reinterpret_cast<const char*>(
-                            source_mapping.GetMapping()),
-                        source_mapping.GetSize()}
-         << std::endl;
+  stream << GetShaderSource(gl, shader) << std::endl;
   VALIDATION_LOG << stream.str();
 }
 
@@ -105,8 +115,17 @@ static bool LinkProgram(
   fml::ScopedCleanupClosure delete_frag_shader(
       [&gl, frag_shader]() { gl.DeleteShader(frag_shader); });
 
-  gl.ShaderSourceMapping(vert_shader, *vert_mapping);
-  gl.ShaderSourceMapping(frag_shader, *frag_mapping);
+  std::vector<std::string> defines = {};
+  size_t index = 0;
+  for (const auto value : descriptor.GetSpecializationConstants()) {
+    std::stringstream ss;
+    ss << "#define SPIRV_CROSS_CONSTANT_ID_" << index << " " << value;
+    defines.emplace_back(ss.str());
+    index++;
+  }
+
+  gl.ShaderSourceMapping(vert_shader, *vert_mapping, defines);
+  gl.ShaderSourceMapping(frag_shader, *frag_mapping, defines);
 
   gl.CompileShader(vert_shader);
   gl.CompileShader(frag_shader);
