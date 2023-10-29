@@ -294,16 +294,14 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
       return nullptr;
     }
 
-    size_t index = 0;
     std::vector<vk::SpecializationMapEntry>& entries =
         map_entries[entrypoint_count];
-    for (auto value : constants) {
+    for (auto i = 0u; i < constants.size(); i++) {
       vk::SpecializationMapEntry entry;
-      entry.offset = (index * sizeof(int));
+      entry.offset = (i * sizeof(int));
       entry.size = sizeof(int);
-      entry.constantID = index;
+      entry.constantID = i;
       entries.emplace_back(entry);
-      index++;
     }
 
     vk::SpecializationInfo& specialization_info =
