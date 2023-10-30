@@ -22,6 +22,7 @@ import 'mouse/cursor.dart';
 import 'navigation/history.dart';
 import 'platform_dispatcher.dart';
 import 'platform_views/message_handler.dart';
+import 'semantics/accessibility.dart';
 import 'services.dart';
 import 'util.dart';
 import 'view_embedder/dom_manager.dart';
@@ -39,6 +40,7 @@ const int kImplicitViewId = 0;
 /// In addition to everything defined in [ui.FlutterView], this class adds
 /// a few web-specific properties.
 abstract interface class EngineFlutterView extends ui.FlutterView {
+  AccessibilityAnnouncements get accessibilityAnnouncements;
   ContextMenu get contextMenu;
   DomManager get dom;
   MouseCursor get mouseCursor;
@@ -68,6 +70,12 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow implements EngineFlu
 
   @override
   final EnginePlatformDispatcher platformDispatcher;
+
+  @override
+  // TODO(yjbanov): How should this look like for multi-view?
+  //                https://github.com/flutter/flutter/issues/137445
+  AccessibilityAnnouncements get accessibilityAnnouncements =>
+      AccessibilityAnnouncements(hostElement: dom.announcementsHost);
 
   @override
   late final MouseCursor mouseCursor = MouseCursor(dom.rootElement);
