@@ -161,8 +161,7 @@ void ProcTableGLES::ShaderSourceMapping(
 
   std::stringstream ss;
   for (auto i = 0u; i < defines.size(); i++) {
-    ss << "#define SPIRV_CROSS_CONSTANT_ID_" << index << " " << defines[i]
-       << '\n';
+    ss << "#define SPIRV_CROSS_CONSTANT_ID_" << i << " " << defines[i] << '\n';
   }
   auto define_string = ss.str();
   shader_source.insert(index + 1, define_string);
