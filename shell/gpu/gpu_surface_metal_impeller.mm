@@ -99,6 +99,10 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
 
   auto drawable = impeller::SurfaceMTL::GetMetalDrawableAndValidate(
       impeller_renderer_->GetContext(), mtl_layer);
+  if (!drawable) {
+    FML_LOG(ERROR) << "Failed to acquire next drawable.";
+    return nullptr;
+  }
   if (Settings::kSurfaceDataAccessible) {
     last_texture_.reset([drawable.texture retain]);
   }
