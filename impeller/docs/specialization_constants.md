@@ -1,13 +1,15 @@
 # Specialization Constants
 
+A specialization constant is a named variable that contains a value that contains a known constant
+value at runtime, but not when the shader is authored. These variables are bound to specific values when
+the shader is compiled on application start up and allow the backend to perform optimizations such as branch elimination and constant folding.
+
 Specialization constants have two possible benefits when used in a shader:
 
   * Improving performance, by removing branching and conditional code.
   * Code organization/size, by removing the number of shader source files required.
 
-These goals are interrrelated, we can always reduce the number of shaders by creating
-ubershaders. Or we can reduce branching by adding more shader variants. Specialization
-constants provide a happy medium where the source files would be highly reptitive.
+These goals are related: The number of shaders can be reduce by adding runtime branching to create more generic shaders. Alternatively, branching can be reduced by adding more specialized shader variants. Specialization constants provide a happy medium where the source files can be combined with branching but done so in a way that has no runtime cost.
 
 ## Example Usage
 
@@ -19,11 +21,11 @@ result, the following code was used to conditionally decal:
 ```glsl
 // Decal sample if necessary.
 vec4 Sample(sampler2D sampler, vec2 coord) {
-    #ifdef GLES
-        return IPSampleDecal(sampler, coord)
-    #else
-        return texture(sampler, coord);
-    #endif
+#ifdef GLES
+  return IPSampleDecal(sampler, coord)
+#else
+  return texture(sampler, coord);
+#endif
 }
 ```
 
@@ -36,14 +38,14 @@ uniform float supports_decal;
 
 // Decal sample if necessary.
 vec4 Sample(sampler2D sampler, vec2 coord) {
-    #ifdef GLES
-      if (supports_decal) {
-        return texture(sampler, coord);
-      }
-      return IPSampleDecal(sampler, coord)
-    #else
-        return texture(sampler, coord);
-    #endif
+#ifdef GLES
+  if (supports_decal) {
+    return texture(sampler, coord);
+  }
+  return IPSampleDecal(sampler, coord)
+#else
+  return texture(sampler, coord);
+#endif
 }
 ```
 
@@ -61,10 +63,10 @@ shader. This constant will be `1` if decal is supported and `0` otherwise.
 layout(constant_id = 0) const int supports_decal = 1;
 
 vec4 Sample(sampler2D sampler, vec2 coord) {
-    if (supports_decal) {
-      return texture(sampler, coord);
-    }
-    return IPSampleDecal(sampler, coord)
+  if (supports_decal) {
+    return texture(sampler, coord);
+  }
+  return IPSampleDecal(sampler, coord)
 }
 
 ```
@@ -77,9 +79,12 @@ Immediately we realize a number of benefits:
 
 ## Implementation
 
-Currently the only constant values that are support are 32bit ints. This should be sufficient for now as we
-should generally only use these values for true/false or select-style constants. Please don't try to add
-constant color values or anything like that.
+Only 32bit ints are supported as const values and can be used to represent:
+
+* true/false via 0/1.
+* function selection, such as advanced blends. The specialization value maps to a specific blend function. For example, 0 maps to screen and 1 to overlay via a giant if/else macro.
+
+*AVOID* adding specialization constants for color values or anything more complex.
 
 Specialization constants are provided to the CreateDefault argument in content_context.cc and aren't a
 part of variants. This is intentional: specialization constants shouldn't be used to create (potentially unlimited) runtime variants of a shader.
