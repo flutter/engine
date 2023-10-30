@@ -15,6 +15,7 @@
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/GrRecordingContext.h"
 #include "third_party/skia/include/gpu/GrTypes.h"
+#include "third_party/txt/src/txt/platform.h"
 
 namespace flutter {
 namespace testing {
@@ -1203,7 +1204,7 @@ void BM_DrawTextBlob(benchmark::State& state,
 
   for (size_t i = 0; i < draw_calls; i++) {
     character[0] = 'A' + (i % 26);
-    auto blob = SkTextBlob::MakeFromString(character, SkFont());
+    auto blob = SkTextBlob::MakeFromString(character, txt::DefaultFont());
     builder.DrawTextBlob(blob, 50.0f, 50.0f, paint);
   }
 

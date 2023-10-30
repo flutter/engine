@@ -223,6 +223,7 @@ source_set("display_list_benchmarks_source") {
     "//flutter/fml",
     "//flutter/testing:skia",
     "//flutter/testing:testing_lib",
+    "//flutter/third_party/txt:txt",
     "//third_party/dart/runtime:libdart_jit",  # for tracing
     "//third_party/skia",
   ]
