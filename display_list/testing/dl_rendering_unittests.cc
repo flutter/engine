@@ -13,6 +13,7 @@
 #include "flutter/display_list/skia/dl_sk_dispatcher.h"
 #include "flutter/display_list/testing/dl_test_surface_provider.h"
 #include "flutter/display_list/utils/dl_comparable.h"
+#include "flutter/fml/file.h"
 #include "flutter/fml/math.h"
 #include "flutter/testing/display_list_testing.h"
 #include "flutter/testing/testing.h"
@@ -1098,8 +1099,10 @@ class TestParameters {
 
 class CanvasCompareTester {
  public:
-  static std::vector<BackendType> kTestBackends;
-  static std::string kTempDirectory;
+  static std::vector<BackendType> TestBackends;
+  static std::string ImpellerFailureImageDirectory;
+  static bool SaveImpellerFailureImages;
+  static std::vector<std::string> ImpellerFailureImages;
 
   static std::unique_ptr<DlSurfaceProvider> GetProvider(BackendType type) {
     auto provider = DlSurfaceProvider::Create(type);
@@ -1118,7 +1121,7 @@ class CanvasCompareTester {
     if (!provider) {
       return false;
     }
-    CanvasCompareTester::kTestBackends.push_back(type);
+    CanvasCompareTester::TestBackends.push_back(type);
     return true;
   }
 
@@ -1126,7 +1129,7 @@ class CanvasCompareTester {
 
   static void RenderAll(const TestParameters& params,
                         const BoundsTolerance& tolerance = DefaultTolerance) {
-    for (auto& back_end : kTestBackends) {
+    for (auto& back_end : TestBackends) {
       auto provider = GetProvider(back_end);
       RenderEnvironment env = RenderEnvironment::MakeN32(provider.get());
       env.init_ref(kEmptySkSetup, params.sk_renderer(),  //
@@ -1138,8 +1141,8 @@ class CanvasCompareTester {
                          "Impeller reference")) {
           std::string test_name =
               ::testing::UnitTest::GetInstance()->current_test_info()->name();
-          impeller_result->write(
-              to_png_filename(test_name + " (Impeller reference)"));
+          save_to_png(impeller_result, test_name + " (Impeller reference)",
+                      "base rendering was blank or out of bounds");
         }
       } else {
         static OncePerBackendWarning warnings("No Impeller output tests");
@@ -2248,16 +2251,75 @@ class CanvasCompareTester {
             .with_diff_clip());
   }
 
-  static std::string to_png_filename(const std::string& desc) {
-    if (kTempDirectory.length() == 0) {
-      kTempDirectory = fml::CreateTemporaryDirectory();
+  enum class DirectoryStatus {
+    kExisted,
+    kCreated,
+    kFailed,
+  };
+
+  static DirectoryStatus CheckDir(const std::string& dir) {
+    auto ret =
+        fml::OpenDirectory(dir.c_str(), false, fml::FilePermission::kRead);
+    if (ret.is_valid()) {
+      return DirectoryStatus::kExisted;
+    }
+    ret =
+        fml::OpenDirectory(dir.c_str(), true, fml::FilePermission::kReadWrite);
+    if (ret.is_valid()) {
+      return DirectoryStatus::kCreated;
+    }
+    FML_LOG(ERROR) << "Could not create directory (" << dir
+                   << ") for impeller failure images"
+                   << ", ret = " << ret.get() << ", errno = " << errno;
+    return DirectoryStatus::kFailed;
+  }
+
+  static void SetupImpellerFailureImageDirectory() {
+    std::string base_dir = "./impeller_failure_images";
+    if (CheckDir(base_dir) == DirectoryStatus::kFailed) {
+      return;
+    }
+    for (int i = 0; i < 10000; i++) {
+      std::string sub_dir = std::to_string(i);
+      while (sub_dir.length() < 4) {
+        sub_dir = "0" + sub_dir;
+      }
+      std::string try_dir = base_dir + "/" + sub_dir;
+      switch (CheckDir(try_dir)) {
+        case DirectoryStatus::kExisted:
+          break;
+        case DirectoryStatus::kCreated:
+          ImpellerFailureImageDirectory = try_dir;
+          return;
+        case DirectoryStatus::kFailed:
+          return;
+      }
+    }
+    FML_LOG(ERROR) << "Too many output directories for Impeller failure images";
+  }
+
+  static void save_to_png(const RenderResult* result,
+                          const std::string& op_desc,
+                          const std::string& reason) {
+    if (!SaveImpellerFailureImages) {
+      return;
+    }
+    if (ImpellerFailureImageDirectory.length() == 0) {
+      SetupImpellerFailureImageDirectory();
+      if (ImpellerFailureImageDirectory.length() == 0) {
+        SaveImpellerFailureImages = false;
+        return;
+      }
     }
 
-    std::string ret = kTempDirectory + "/";
-    for (const char& ch : desc) {
-      ret += (ch == ':' || ch == ' ') ? '_' : ch;
+    std::string filename = ImpellerFailureImageDirectory + "/";
+    for (const char& ch : op_desc) {
+      filename += (ch == ':' || ch == ' ') ? '_' : ch;
     }
-    return ret + ".png";
+    filename = filename + ".png";
+    result->write(filename);
+    ImpellerFailureImages.push_back(filename);
+    FML_LOG(ERROR) << reason << ": " << filename;
   }
 
   static void RenderWith(const TestParameters& testP,
@@ -2336,23 +2398,17 @@ class CanvasCompareTester {
                       env.ref_impeller_result(), imp_result.get(), false,
                       imp_info + " (attribute should affect rendering)");
       }
-      if (!success) {
+      if (SaveImpellerFailureImages && !success) {
         FML_LOG(ERROR) << "Impeller issue encountered for: "
                        << *imp_job.MakeDisplayList(base_info);
-        std::string filename = to_png_filename(info + " (Impeller Output)");
-        imp_result->write(filename);
-        FML_LOG(ERROR) << "output saved in: " << filename;
-        std::string src_filename = to_png_filename(info + " (Impeller Input)");
-        env.ref_impeller_result()->write(src_filename);
-        FML_LOG(ERROR) << "compare to reference without attributes: "
-                       << src_filename;
-        std::string sk_filename = to_png_filename(info + " (Skia Output)");
-        sk_result->write(sk_filename);
-        FML_LOG(ERROR) << "and to Skia reference with attributes: "
-                       << sk_filename;
-        std::string sk_src_filename = to_png_filename(info + " (Skia Input)");
-        env.ref_sk_result()->write(sk_src_filename);
-        FML_LOG(ERROR) << "operating on Skia source image: " << sk_src_filename;
+        save_to_png(imp_result.get(), info + " (Impeller Result)",
+                    "output saved in");
+        save_to_png(env.ref_impeller_result(), info + " (Impeller Reference)",
+                    "compare to reference without attributes");
+        save_to_png(sk_result.get(), info + " (Skia Result)",
+                    "and to Skia reference with attributes");
+        save_to_png(env.ref_sk_result(), info + " (Skia Reference)",
+                    "and to Skia reference without attributes");
       }
     }
 
@@ -2739,8 +2795,10 @@ class CanvasCompareTester {
   }
 };
 
-std::vector<BackendType> CanvasCompareTester::kTestBackends;
-std::string CanvasCompareTester::kTempDirectory = "";
+std::vector<BackendType> CanvasCompareTester::TestBackends;
+std::string CanvasCompareTester::ImpellerFailureImageDirectory = "";
+bool CanvasCompareTester::SaveImpellerFailureImages = false;
+std::vector<std::string> CanvasCompareTester::ImpellerFailureImages;
 
 BoundsTolerance CanvasCompareTester::DefaultTolerance =
     BoundsTolerance().addAbsolutePadding(1, 1);
@@ -2774,6 +2832,10 @@ class DisplayListRenderingTestBase : public BaseT,
     for (auto p_arg = std::next(args.begin()); p_arg != args.end(); p_arg++) {
       std::string arg = *p_arg;
       bool enable = true;
+      if (arg == "--save-impeller-failures") {
+        CanvasCompareTester::SaveImpellerFailureImages = true;
+        continue;
+      }
       if (StartsWith(arg, "--no")) {
         enable = false;
         arg = "-" + arg.substr(4);
@@ -2796,10 +2858,23 @@ class DisplayListRenderingTestBase : public BaseT,
       CanvasCompareTester::AddProvider(BackendType::kMetalBackend);
     }
     std::string providers = "";
-    for (auto& back_end : CanvasCompareTester::kTestBackends) {
+    for (auto& back_end : CanvasCompareTester::TestBackends) {
       providers += " " + DlSurfaceProvider::BackendName(back_end);
     }
     FML_LOG(INFO) << "Running tests on [" << providers << " ]";
+  }
+
+  static void TearDownTestSuite() {
+    if (CanvasCompareTester::ImpellerFailureImages.size() > 0) {
+      FML_LOG(INFO);
+      FML_LOG(INFO) << CanvasCompareTester::ImpellerFailureImages.size()
+                    << " images saved in "
+                    << CanvasCompareTester::ImpellerFailureImageDirectory;
+      for (auto filename : CanvasCompareTester::ImpellerFailureImages) {
+        FML_LOG(INFO) << "  " << filename;
+      }
+      FML_LOG(INFO);
+    }
   }
 
  private:
@@ -3795,7 +3870,7 @@ TEST_F(DisplayListRendering, SaveLayerClippedContentStillFilters) {
   CaseParameters case_params("Filtered SaveLayer with clipped content");
   BoundsTolerance tolerance = BoundsTolerance().addAbsolutePadding(6.0f, 6.0f);
 
-  for (auto& back_end : CanvasCompareTester::kTestBackends) {
+  for (auto& back_end : CanvasCompareTester::TestBackends) {
     auto provider = CanvasCompareTester::GetProvider(back_end);
     RenderEnvironment env = RenderEnvironment::MakeN32(provider.get());
     env.init_ref(kEmptySkSetup, test_params.sk_renderer(),  //
@@ -3910,7 +3985,7 @@ TEST_F(DisplayListRendering, SaveLayerConsolidation) {
                                                bool same, bool rev_same,
                                                const std::string& desc1,
                                                const std::string& desc2) {
-    for (auto& back_end : CanvasCompareTester::kTestBackends) {
+    for (auto& back_end : CanvasCompareTester::TestBackends) {
       auto provider = CanvasCompareTester::GetProvider(back_end);
       auto env = std::make_unique<RenderEnvironment>(
           provider.get(), PixelFormat::kN32PremulPixelFormat);
@@ -4023,7 +4098,7 @@ TEST_F(DisplayListRendering, MatrixColorFilterModifyTransparencyCheck) {
     builder2.Restore();
     auto display_list2 = builder2.Build();
 
-    for (auto& back_end : CanvasCompareTester::kTestBackends) {
+    for (auto& back_end : CanvasCompareTester::TestBackends) {
       auto provider = CanvasCompareTester::GetProvider(back_end);
       auto env = std::make_unique<RenderEnvironment>(
           provider.get(), PixelFormat::kN32PremulPixelFormat);
@@ -4094,7 +4169,7 @@ TEST_F(DisplayListRendering, MatrixColorFilterOpacityCommuteCheck) {
     builder2.Restore();
     auto display_list2 = builder2.Build();
 
-    for (auto& back_end : CanvasCompareTester::kTestBackends) {
+    for (auto& back_end : CanvasCompareTester::TestBackends) {
       auto provider = CanvasCompareTester::GetProvider(back_end);
       auto env = std::make_unique<RenderEnvironment>(
           provider.get(), PixelFormat::kN32PremulPixelFormat);
@@ -4199,7 +4274,7 @@ TEST_F(DisplayListRendering, BlendColorFilterModifyTransparencyCheck) {
     builder2.Restore();
     auto display_list2 = builder2.Build();
 
-    for (auto& back_end : CanvasCompareTester::kTestBackends) {
+    for (auto& back_end : CanvasCompareTester::TestBackends) {
       auto provider = CanvasCompareTester::GetProvider(back_end);
       auto env = std::make_unique<RenderEnvironment>(
           provider.get(), PixelFormat::kN32PremulPixelFormat);
@@ -4263,7 +4338,7 @@ TEST_F(DisplayListRendering, BlendColorFilterOpacityCommuteCheck) {
     builder2.Restore();
     auto display_list2 = builder2.Build();
 
-    for (auto& back_end : CanvasCompareTester::kTestBackends) {
+    for (auto& back_end : CanvasCompareTester::TestBackends) {
       auto provider = CanvasCompareTester::GetProvider(back_end);
       auto env = std::make_unique<RenderEnvironment>(
           provider.get(), PixelFormat::kN32PremulPixelFormat);
@@ -4522,7 +4597,7 @@ class DisplayListNopTest : public DisplayListRendering {
     SkPaint sk_paint;
     sk_paint.setBlendMode(sk_mode);
     sk_paint.setColor(ToSk(color));
-    for (auto& back_end : CanvasCompareTester::kTestBackends) {
+    for (auto& back_end : CanvasCompareTester::TestBackends) {
       auto provider = CanvasCompareTester::GetProvider(back_end);
       auto result_surface = provider->MakeOffscreenSurface(
           test_image->width(), test_image->height(),
@@ -4585,7 +4660,7 @@ class DisplayListNopTest : public DisplayListRendering {
     sk_paint.setColor(ToSk(color));
     sk_paint.setColorFilter(ToSk(color_filter));
     sk_paint.setImageFilter(ToSk(image_filter));
-    for (auto& back_end : CanvasCompareTester::kTestBackends) {
+    for (auto& back_end : CanvasCompareTester::TestBackends) {
       auto provider = CanvasCompareTester::GetProvider(back_end);
       auto result_surface = provider->MakeOffscreenSurface(
           w, h, DlSurfaceProvider::kN32PremulPixelFormat);

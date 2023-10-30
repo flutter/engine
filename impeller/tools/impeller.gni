@@ -22,7 +22,14 @@ declare_args() {
       (is_linux || is_win || is_android) && target_os != "fuchsia"
 
   # Whether the Vulkan backend is enabled.
-  impeller_enable_vulkan =
+  impeller_enable_vulkan = (is_linux || is_win || is_android ||
+                            enable_unittests) && target_os != "fuchsia"
+
+  # Whether playgrounds should run with Vulkan.
+  #
+  # impeller_enable_vulkan may be true in build environments that run tests but
+  # do not have a Vulkan ICD present.
+  impeller_enable_vulkan_playgrounds =
       (is_linux || is_win || is_android) && target_os != "fuchsia"
 
   # Whether to use a prebuilt impellerc.
@@ -485,14 +492,14 @@ template("_impeller_shaders_metal") {
   }
 }
 
-template("blobcat_library") {
+template("shader_archive") {
   assert(defined(invoker.shaders),
          "The shaders to build the library from must be specified.")
   assert(defined(invoker.deps), "Target dependencies must be specified.")
 
-  output_file = "$target_gen_dir/$target_name.shaderblob"
+  output_file = "$target_gen_dir/$target_name.shar"
   compiled_action(target_name) {
-    tool = "//flutter/impeller/blobcat"
+    tool = "//flutter/impeller/shader_archive:shader_archiver"
     inputs = invoker.shaders
     outputs = [ output_file ]
     output_path_rebased = rebase_path(output_file, root_build_dir)
@@ -558,7 +565,7 @@ template("_impeller_shaders_gles") {
   }
 
   gles_lib = "genlib_$target_name"
-  blobcat_library(gles_lib) {
+  shader_archive(gles_lib) {
     shaders = gles_shaders
     deps = [ ":$impellerc_gles" ]
   }
@@ -634,7 +641,7 @@ template("_impeller_shaders_vk") {
   }
 
   vk_lib = "genlib_$target_name"
-  blobcat_library(vk_lib) {
+  shader_archive(vk_lib) {
     shaders = vk_shaders
     deps = [ ":$impellerc_vk" ]
   }

@@ -78,6 +78,7 @@ std::optional<Entity> YUVToRGBFilterContents::RenderFilter(
     cmd.stencil_reference = entity.GetClipDepth();
 
     auto options = OptionsFromPassAndEntity(pass, entity);
+    options.primitive_type = PrimitiveType::kTriangleStrip;
     cmd.pipeline = renderer.GetYUVToRGBFilterPipeline(options);
 
     auto size = y_input_snapshot->texture->GetSize();
@@ -86,10 +87,8 @@ std::optional<Entity> YUVToRGBFilterContents::RenderFilter(
     vtx_builder.AddVertices({
         {Point(0, 0)},
         {Point(1, 0)},
-        {Point(1, 1)},
-        {Point(0, 0)},
-        {Point(1, 1)},
         {Point(0, 1)},
+        {Point(1, 1)},
     });
 
     auto& host_buffer = pass.GetTransientsBuffer();
@@ -136,6 +135,12 @@ std::optional<Entity> YUVToRGBFilterContents::RenderFilter(
   sub_entity.SetClipDepth(entity.GetClipDepth());
   sub_entity.SetBlendMode(entity.GetBlendMode());
   return sub_entity;
+}
+
+std::optional<Rect> YUVToRGBFilterContents::GetFilterSourceCoverage(
+    const Matrix& effect_transform,
+    const Rect& output_limit) const {
+  return output_limit;
 }
 
 }  // namespace impeller

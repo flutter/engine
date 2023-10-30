@@ -9,15 +9,12 @@
 #include <optional>
 #include <vector>
 
-#include "flutter/fml/macros.h"
-#include "impeller/core/texture.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/entity_pass_delegate.h"
 #include "impeller/entity/inline_pass_context.h"
 #include "impeller/renderer/render_target.h"
-#include "impeller/typographer/lazy_glyph_atlas.h"
 
 namespace impeller {
 
@@ -189,6 +186,14 @@ class EntityPass {
     static EntityResult Skip() { return {{}, kSkip}; }
   };
 
+  bool RenderElement(Entity& element_entity,
+                     size_t clip_depth_floor,
+                     InlinePassContext& pass_context,
+                     int32_t pass_depth,
+                     ContentContext& renderer,
+                     ClipCoverageStack& clip_coverage_stack,
+                     Point global_pass_position) const;
+
   EntityResult GetEntityForElement(const EntityPass::Element& element,
                                    ContentContext& renderer,
                                    Capture& capture,
@@ -299,7 +304,9 @@ class EntityPass {
   std::shared_ptr<EntityPassDelegate> delegate_ =
       EntityPassDelegate::MakeDefault();
 
-  FML_DISALLOW_COPY_AND_ASSIGN(EntityPass);
+  EntityPass(const EntityPass&) = delete;
+
+  EntityPass& operator=(const EntityPass&) = delete;
 };
 
 }  // namespace impeller

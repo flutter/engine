@@ -20,6 +20,11 @@ class LocalMatrixFilterContents final : public FilterContents {
   // |FilterContents|
   Matrix GetLocalTransform(const Matrix& parent_transform) const override;
 
+  // |FilterContents|
+  std::optional<Rect> GetFilterSourceCoverage(
+      const Matrix& effect_transform,
+      const Rect& output_limit) const override;
+
  private:
   // |FilterContents|
   std::optional<Entity> RenderFilter(
@@ -32,7 +37,10 @@ class LocalMatrixFilterContents final : public FilterContents {
 
   Matrix matrix_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(LocalMatrixFilterContents);
+  LocalMatrixFilterContents(const LocalMatrixFilterContents&) = delete;
+
+  LocalMatrixFilterContents& operator=(const LocalMatrixFilterContents&) =
+      delete;
 };
 
 }  // namespace impeller
