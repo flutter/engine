@@ -2874,7 +2874,7 @@ ORIGIN: ../../../flutter/impeller/entity/shaders/blending/advanced_blend.frag + 
 ORIGIN: ../../../flutter/impeller/entity/shaders/blending/advanced_blend.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/blending/blend.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/blending/blend.vert + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/blending/blend_dispatch.glsl + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/blending/blend_select.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/blending/framebuffer_blend.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/blending/framebuffer_blend.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/blending/porter_duff_blend.frag + ../../../flutter/LICENSE
@@ -5628,7 +5628,7 @@ FILE: ../../../flutter/impeller/entity/shaders/blending/advanced_blend.frag
 FILE: ../../../flutter/impeller/entity/shaders/blending/advanced_blend.vert
 FILE: ../../../flutter/impeller/entity/shaders/blending/blend.frag
 FILE: ../../../flutter/impeller/entity/shaders/blending/blend.vert
-FILE: ../../../flutter/impeller/entity/shaders/blending/blend_dispatch.glsl
+FILE: ../../../flutter/impeller/entity/shaders/blending/blend_select.glsl
 FILE: ../../../flutter/impeller/entity/shaders/blending/framebuffer_blend.frag
 FILE: ../../../flutter/impeller/entity/shaders/blending/framebuffer_blend.vert
 FILE: ../../../flutter/impeller/entity/shaders/blending/porter_duff_blend.frag
