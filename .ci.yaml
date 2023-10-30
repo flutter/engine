@@ -389,25 +389,25 @@ targets:
   #   drone_dimensions:
   #     - os=Linux
 
-  # - name: Mac mac_clang_tidy
-  #   recipe: engine_v2/engine_v2
-  #   timeout: 120
-  #   properties:
-  #     config_name: mac_clang_tidy
-  #   runIf:
-  #     - DEPS
-  #     - .ci.yaml
-  #     - tools/clang_tidy/**
-  #     - ci/builders/**
-  #     - ci/clang_tidy.sh
-  #     - "**.h"
-  #     - "**.c"
-  #     - "**.cc"
-  #     - "**.fbs"
-  #     - "**.frag"
-  #     - "**.vert"
-  #     - "**.m"
-  #     - "**.mm"
+  - name: Mac mac_clang_tidy
+    recipe: engine_v2/engine_v2
+    timeout: 120
+    properties:
+      config_name: mac_clang_tidy
+    runIf:
+      - DEPS
+      - .ci.yaml
+      - tools/clang_tidy/**
+      - ci/builders/**
+      - ci/clang_tidy.sh
+      - "**.h"
+      - "**.c"
+      - "**.cc"
+      - "**.fbs"
+      - "**.frag"
+      - "**.vert"
+      - "**.m"
+      - "**.mm"
 
   # - name: Mac mac_clang_tidy_presubmit
   #   recipe: engine_v2/engine_v2
@@ -455,20 +455,20 @@ targets:
   #     add_recipes_cq: "true"
   #   timeout: 120
 
-  - name: Mac mac_ios_engine
-    recipe: engine_v2/engine_v2
-    timeout: 120
-    properties:
-      add_recipes_cq: "true"
-      release_build: "true"
-      config_name: mac_ios_engine
-      $flutter/osx_sdk : >-
-        {
-          "sdk_version": "14e300c"
-        }
-    drone_dimensions:
-      - os=Mac-13
-      - cpu=x86
+  # - name: Mac mac_ios_engine
+  #   recipe: engine_v2/engine_v2
+  #   timeout: 120
+  #   properties:
+  #     add_recipes_cq: "true"
+  #     release_build: "true"
+  #     config_name: mac_ios_engine
+  #     $flutter/osx_sdk : >-
+  #       {
+  #         "sdk_version": "14e300c"
+  #       }
+  #   drone_dimensions:
+  #     - os=Mac-13
+  #     - cpu=x86
 
   # - name: Mac impeller-cmake-example
   #   recipe: engine_v2/engine_v2
