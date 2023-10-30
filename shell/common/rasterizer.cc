@@ -564,13 +564,6 @@ Rasterizer::DoDrawResult Rasterizer::DrawToSurfaces(
 std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
     FrameTimingsRecorder& frame_timings_recorder,
     std::vector<std::unique_ptr<LayerTreeTask>> tasks) {
-  // TODO(dkwingsmt): The rasterizer only supports rendering a single view
-  // and that view must be the implicit view. Properly support multi-view
-  // in the future.
-  // See https://github.com/flutter/flutter/issues/135530, item 2 & 4.
-  FML_CHECK(tasks.size() == 1u) << "Unexpected size of " << tasks.size();
-  FML_DCHECK(tasks.front()->view_id == kFlutterImplicitViewId);
-
   compositor_context_->ui_time().SetLapTime(
       frame_timings_recorder.GetBuildDuration());
 
