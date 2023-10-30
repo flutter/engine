@@ -387,8 +387,8 @@ class SkiaGoldClient {
     final int maxDifferentPixels = (screenshotSize * differentPixelsRate).toInt();
     return <String>[
       '--add-test-optional-key', 'image_matching_algorithm:$algorithm',
-      '--add-test-optional-key', 'fuzzy_max_different_pixels:$maxDifferentPixels',
-      '--add-test-optional-key', 'fuzzy_pixel_delta_threshold:$pixelDeltaThreshold',
+      // '--add-test-optional-key', 'fuzzy_max_different_pixels:$maxDifferentPixels',
+      // '--add-test-optional-key', 'fuzzy_pixel_delta_threshold:$pixelDeltaThreshold',
     ];
   }
 
