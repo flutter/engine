@@ -70,9 +70,6 @@ std::ostream& operator<<(std::ostream& os, const DlPaint& paint) {
   if (paint.getMaskFilter()) {
     os << ", " << paint.getMaskFilter();
   }
-  if (paint.isDither()) {
-    os << ", dither: " << paint.isDither();
-  }
   if (paint.isInvertColors()) {
     os << ", invertColors: " << paint.isInvertColors();
   }
