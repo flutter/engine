@@ -5,15 +5,16 @@
 #include "txt/platform.h"
 
 #include "fml/logging.h"
+#include "third_party/skia/include/core/SkFont.h"
 #include "third_party/skia/include/core/SkFontMgr.h"
+#include "third_party/skia/include/core/SkFontStyle.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
 #include "third_party/skia/include/core/SkTypeface.h"
-#include "third_party/skia/include/core/SkFont.h"
-#include "third_party/skia/include/core/SkFontStyle.h"
 
 namespace txt {
 
-static sk_sp<SkTypeface> MakeTypefaceFromName(const char* name, SkFontStyle style) {
+static sk_sp<SkTypeface> MakeTypefaceFromName(const char* name,
+                                              SkFontStyle style) {
   sk_sp<SkFontMgr> fm = GetDefaultFontManager(0);
   FML_CHECK(fm);
   sk_sp<SkTypeface> face = fm->legacyMakeTypeface(name, style);

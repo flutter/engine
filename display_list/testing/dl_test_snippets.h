@@ -225,8 +225,7 @@ static sk_sp<DisplayList> TestDisplayList2 =
 
 static sk_sp<SkTextBlob> MakeTextBlob(std::string string) {
   return SkTextBlob::MakeFromText(string.c_str(), string.size(),
-                                  txt::DefaultFont(),
-                                  SkTextEncoding::kUTF8);
+                                  txt::DefaultFont(), SkTextEncoding::kUTF8);
 }
 static sk_sp<SkTextBlob> TestBlob1 = MakeTextBlob("TestBlob1");
 static sk_sp<SkTextBlob> TestBlob2 = MakeTextBlob("TestBlob2");

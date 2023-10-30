@@ -9,9 +9,9 @@
 #include <vector>
 
 #include "flutter/fml/macros.h"
+#include "third_party/skia/include/core/SkFont.h"
 #include "third_party/skia/include/core/SkFontMgr.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
-#include "third_party/skia/include/core/SkFont.h"
 
 namespace txt {
 
