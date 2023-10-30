@@ -61,6 +61,7 @@ source_set("txt") {
     "src/txt/paragraph_style.h",
     "src/txt/placeholder_run.cc",
     "src/txt/placeholder_run.h",
+    "src/txt/platform_common.cc",
     "src/txt/platform.h",
     "src/txt/run_metrics.h",
     "src/txt/test_font_manager.cc",

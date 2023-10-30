@@ -13,6 +13,7 @@
 #include "third_party/skia/include/effects/SkDashPathEffect.h"
 #include "third_party/skia/include/effects/SkGradientShader.h"
 #include "third_party/skia/include/effects/SkImageFilters.h"
+#include "third_party/txt/src/txt/platform.h"
 
 namespace flutter {
 namespace testing {
@@ -223,7 +224,8 @@ static sk_sp<DisplayList> TestDisplayList2 =
     MakeTestDisplayList(25, 25, SK_ColorBLUE);
 
 static sk_sp<SkTextBlob> MakeTextBlob(std::string string) {
-  return SkTextBlob::MakeFromText(string.c_str(), string.size(), SkFont(),
+  return SkTextBlob::MakeFromText(string.c_str(), string.size(),
+                                  txt::DefaultFont(),
                                   SkTextEncoding::kUTF8);
 }
 static sk_sp<SkTextBlob> TestBlob1 = MakeTextBlob("TestBlob1");

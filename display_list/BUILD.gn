@@ -127,6 +127,7 @@ if (enable_unittests) {
       ":display_list_fixtures",
       "//flutter/display_list/testing:display_list_testing",
       "//flutter/testing",
+      "//flutter/third_party/txt:txt",
     ]
 
     if (!defined(defines)) {

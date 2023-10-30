@@ -14,6 +14,7 @@
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkColor.h"
 #include "third_party/skia/include/core/SkImage.h"
+#include "third_party/txt/src/txt/platform.h"
 
 namespace flutter {
 namespace testing {
@@ -306,7 +307,7 @@ TEST(DisplayListComplexity, DrawVertices) {
 
 TEST(DisplayListComplexity, DrawTextBlob) {
   auto text_blob = SkTextBlob::MakeFromString(
-      "The quick brown fox jumps over the lazy dog.", SkFont());
+      "The quick brown fox jumps over the lazy dog.", txt::DefaultFont());
 
   DisplayListBuilder builder;
   builder.DrawTextBlob(text_blob, 0.0f, 0.0f, DlPaint());

@@ -4,6 +4,8 @@
 
 #include "txt/platform.h"
 
+#include "fml/logging.h"
+
 namespace txt {
 
 std::vector<std::string> GetDefaultFontFamilies() {
@@ -11,6 +13,8 @@ std::vector<std::string> GetDefaultFontFamilies() {
 }
 
 sk_sp<SkFontMgr> GetDefaultFontManager(uint32_t font_initialization_data) {
+  // TODO(b/305780908) Replace this with a singleton that depends on which
+  // platform we are on and which SkFontMgr was compiled in.
   return SkFontMgr::RefDefault();
 }
 
