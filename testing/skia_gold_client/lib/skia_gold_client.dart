@@ -248,7 +248,7 @@ class SkiaGoldClient {
       '--work-dir', _tempPath,
       '--test-name', cleanTestName(testName),
       '--png-file', goldenFile.path,
-      ..._getMatchingArguments(testName, screenshotSize, pixelDeltaThreshold, maxDifferentPixelsRate),
+      // ..._getMatchingArguments(testName, screenshotSize, pixelDeltaThreshold, maxDifferentPixelsRate),
     ];
 
     final ProcessResult result = await _runCommand(imgtestCommand);
@@ -344,7 +344,7 @@ class SkiaGoldClient {
       '--work-dir', _tempPath,
       '--test-name', cleanTestName(testName),
       '--png-file', goldenFile.path,
-      ..._getMatchingArguments(testName, screenshotSize, pixelDeltaThreshold, differentPixelsRate),
+      // ..._getMatchingArguments(testName, screenshotSize, pixelDeltaThreshold, differentPixelsRate),
     ];
 
     final ProcessResult result = await _runCommand(tryjobCommand);
@@ -368,29 +368,29 @@ class SkiaGoldClient {
     }
   }
 
-  List<String> _getMatchingArguments(
-    String testName,
-    int screenshotSize,
-    int pixelDeltaThreshold,
-    double differentPixelsRate,
-  ) {
-    // The algorithm to be used when matching images. The available options are:
-    // - "fuzzy": Allows for customizing the thresholds of pixel differences.
-    // - "sobel": Same as "fuzzy" but performs edge detection before performing
-    //            a fuzzy match.
-    const String algorithm = 'fuzzy';
+  // List<String> _getMatchingArguments(
+  //   String testName,
+  //   int screenshotSize,
+  //   int pixelDeltaThreshold,
+  //   double differentPixelsRate,
+  // ) {
+  //   // The algorithm to be used when matching images. The available options are:
+  //   // - "fuzzy": Allows for customizing the thresholds of pixel differences.
+  //   // - "sobel": Same as "fuzzy" but performs edge detection before performing
+  //   //            a fuzzy match.
+  //   const String algorithm = 'fuzzy';
 
-    // The number of pixels in this image that are allowed to differ from the
-    // baseline. It's okay for this to be a slightly high number like 10% of the
-    // image size because those wrong pixels are constrained by
-    // `pixelDeltaThreshold` below.
-    final int maxDifferentPixels = (screenshotSize * differentPixelsRate).toInt();
-    return <String>[
-      '--add-test-optional-key', 'image_matching_algorithm:$algorithm',
-      // '--add-test-optional-key', 'fuzzy_max_different_pixels:$maxDifferentPixels',
-      // '--add-test-optional-key', 'fuzzy_pixel_delta_threshold:$pixelDeltaThreshold',
-    ];
-  }
+  //   // The number of pixels in this image that are allowed to differ from the
+  //   // baseline. It's okay for this to be a slightly high number like 10% of the
+  //   // image size because those wrong pixels are constrained by
+  //   // `pixelDeltaThreshold` below.
+  //   final int maxDifferentPixels = (screenshotSize * differentPixelsRate).toInt();
+  //   return <String>[
+  //     '--add-test-optional-key', 'image_matching_algorithm:$algorithm',
+  //     // '--add-test-optional-key', 'fuzzy_max_different_pixels:$maxDifferentPixels',
+  //     // '--add-test-optional-key', 'fuzzy_pixel_delta_threshold:$pixelDeltaThreshold',
+  //   ];
+  // }
 
   /// Returns the latest positive digest for the given test known to Skia Gold
   /// at head.
