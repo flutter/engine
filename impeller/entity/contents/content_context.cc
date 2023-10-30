@@ -156,8 +156,7 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
 template <typename PipelineT>
 static std::unique_ptr<PipelineT> CreateDefaultPipeline(
     const Context& context) {
-  auto desc =
-      PipelineT::Builder::MakeDefaultPipelineDescriptor(context);
+  auto desc = PipelineT::Builder::MakeDefaultPipelineDescriptor(context);
   if (!desc.has_value()) {
     return nullptr;
   }

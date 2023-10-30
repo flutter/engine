@@ -139,9 +139,10 @@ bool ProcTableGLES::IsValid() const {
   return is_valid_;
 }
 
-void ProcTableGLES::ShaderSourceMapping(GLuint shader,
-                                        const fml::Mapping& mapping,
-                                        const std::vector<int32_t>& defines) const {
+void ProcTableGLES::ShaderSourceMapping(
+    GLuint shader,
+    const fml::Mapping& mapping,
+    const std::vector<int32_t>& defines) const {
   if (defines.empty()) {
     const GLchar* sources[] = {
         reinterpret_cast<const GLchar*>(mapping.GetMapping())};
