@@ -7,6 +7,7 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
+import 'dart:isolate';
 
 import 'package:litetest/litetest.dart';
 import 'package:path/path.dart' as path;
@@ -126,6 +127,7 @@ void testNoCrashes() {
 }
 
 void main() async {
+  ReceivePort port = ReceivePort('test');
   final ImageComparer comparer = await ImageComparer.create(verbose: true);
 
   // testNoCrashes();
@@ -144,6 +146,8 @@ void main() async {
     // expect(image.width, equals(100));
     // expect(image.height, equals(100));
     await comparer.addGoldenImage(image, 'canvas_test_toImage.png');
+    print('Added golden image');
+    port.close();
   // });
 
   // Gradient makeGradient() {

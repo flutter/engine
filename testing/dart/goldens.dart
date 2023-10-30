@@ -67,11 +67,10 @@ class ImageComparer {
       fileName,
       file,
       screenshotSize: image.width * image.height,
-    );
-    // .catchError((dynamic error) {
-    //   print('Skia gold comparison failed: $error');
-    //   throw Exception('Failed comparison: $fileName');
-    // });
+    ).catchError((dynamic error) {
+      print('Skia gold comparison failed: $error');
+      throw Exception('Failed comparison: $fileName');
+    });
   }
 
   Future<bool> fuzzyCompareImages(Image golden, Image testImage) async {
