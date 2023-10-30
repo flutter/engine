@@ -11,6 +11,7 @@ import 'dart:ui';
 import 'package:litetest/litetest.dart';
 import 'package:path/path.dart' as path;
 import 'package:vector_math/vector_math_64.dart';
+import 'package:process/process.dart';
 
 import 'goldens.dart';
 import 'impeller_enabled.dart';
@@ -1031,6 +1032,19 @@ void main() async {
     canvas.restoreToCount(canvas.getSaveCount() + 1);
     expect(canvas.getSaveCount(), equals(6));
   });
+
+  await null;
+  final command = [
+    Platform.environment['GOLDCTL']!,
+    'imgtest',
+    'finalize',
+  ];
+  print(command.join(' '));
+  final result = await LocalProcessManager().run(command);
+  print(result);
+  print(result.exitCode);
+  print(result.stdout);
+  print(result.stderr);
 }
 
 Matcher listEquals(ByteData expected) => (dynamic v) {
