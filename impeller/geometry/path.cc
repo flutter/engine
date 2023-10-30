@@ -367,7 +367,7 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
     switch (component.type) {
       case ComponentType::kLinear:
         components.push_back({
-            .component_start_index = polyline.points.size(),
+            .component_start_index = polyline.points.size() - 1,
             .is_curve = false,
         });
         collect_points(linears_[component.index].CreatePolyline());
@@ -375,7 +375,7 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
         break;
       case ComponentType::kQuadratic:
         components.push_back({
-            .component_start_index = polyline.points.size(),
+            .component_start_index = polyline.points.size() - 1,
             .is_curve = true,
         });
         collect_points(quads_[component.index].CreatePolyline(scale));
@@ -383,7 +383,7 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
         break;
       case ComponentType::kCubic:
         components.push_back({
-            .component_start_index = polyline.points.size(),
+            .component_start_index = polyline.points.size() - 1,
             .is_curve = true,
         });
         collect_points(cubics_[component.index].CreatePolyline(scale));

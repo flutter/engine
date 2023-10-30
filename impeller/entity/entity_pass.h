@@ -9,15 +9,12 @@
 #include <optional>
 #include <vector>
 
-#include "flutter/fml/macros.h"
-#include "impeller/core/texture.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/entity_pass_delegate.h"
 #include "impeller/entity/inline_pass_context.h"
 #include "impeller/renderer/render_target.h"
-#include "impeller/typographer/lazy_glyph_atlas.h"
 
 namespace impeller {
 
@@ -43,12 +40,12 @@ class EntityPass {
       const Matrix& effect_transform,
       Entity::RenderingMode rendering_mode)>;
 
-  struct StencilCoverageLayer {
+  struct ClipCoverageLayer {
     std::optional<Rect> coverage;
-    size_t stencil_depth;
+    size_t clip_depth;
   };
 
-  using StencilCoverageStack = std::vector<StencilCoverageLayer>;
+  using ClipCoverageStack = std::vector<ClipCoverageLayer>;
 
   EntityPass();
 
@@ -129,9 +126,9 @@ class EntityPass {
 
   void SetTransformation(Matrix xformation);
 
-  void SetStencilDepth(size_t stencil_depth);
+  void SetClipDepth(size_t clip_depth);
 
-  size_t GetStencilDepth();
+  size_t GetClipDepth();
 
   void SetBlendMode(BlendMode blend_mode);
 
@@ -142,7 +139,21 @@ class EntityPass {
   void SetEnableOffscreenCheckerboard(bool enabled);
 
   //----------------------------------------------------------------------------
-  /// @brief  Get the coverage of an unfiltered subpass.
+  /// @brief  Computes the coverage of a given subpass. This is used to
+  ///         determine the texture size of a given subpass before it's rendered
+  ///         to and passed through the subpass ImageFilter, if any.
+  ///
+  /// @param[in]  subpass         The EntityPass for which to compute
+  ///                             pre-filteredcoverage.
+  /// @param[in]  coverage_limit  Confines coverage to a specified area. This
+  ///                             hint is used to trim coverage to the root
+  ///                             framebuffer area. `std::nullopt` means there
+  ///                             is no limit.
+  ///
+  /// @return  The screen space pixel area that the subpass contents will render
+  ///          into, prior to being transformed by the subpass ImageFilter, if
+  ///          any. `std::nullopt` means rendering the subpass will have no
+  ///          effect on the color attachment.
   ///
   std::optional<Rect> GetSubpassCoverage(
       const EntityPass& subpass,
@@ -175,6 +186,14 @@ class EntityPass {
     static EntityResult Skip() { return {{}, kSkip}; }
   };
 
+  bool RenderElement(Entity& element_entity,
+                     size_t clip_depth_floor,
+                     InlinePassContext& pass_context,
+                     int32_t pass_depth,
+                     ContentContext& renderer,
+                     ClipCoverageStack& clip_coverage_stack,
+                     Point global_pass_position) const;
+
   EntityResult GetEntityForElement(const EntityPass::Element& element,
                                    ContentContext& renderer,
                                    Capture& capture,
@@ -182,8 +201,8 @@ class EntityPass {
                                    ISize root_pass_size,
                                    Point global_pass_position,
                                    uint32_t pass_depth,
-                                   StencilCoverageStack& stencil_coverage_stack,
-                                   size_t stencil_depth_floor) const;
+                                   ClipCoverageStack& clip_coverage_stack,
+                                   size_t clip_depth_floor) const;
 
   //----------------------------------------------------------------------------
   /// @brief     OnRender is the internal command recording routine for
@@ -217,20 +236,20 @@ class EntityPass {
   ///                                      and debugging purposes. This can vary
   ///                                      depending on whether passes are
   ///                                      collapsed or not.
-  /// @param[in]  stencil_coverage_stack   A global stack of coverage rectangles
-  ///                                      for the stencil buffer at each depth.
+  /// @param[in]  clip_coverage_stack      A global stack of coverage rectangles
+  ///                                      for the clip buffer at each depth.
   ///                                      Higher depths are more restrictive.
   ///                                      Used to cull Elements that we
   ///                                      know won't result in a visible
   ///                                      change.
-  /// @param[in]  stencil_depth_floor      The stencil depth that a value of
+  /// @param[in]  clip_depth_floor         The clip depth that a value of
   ///                                      zero corresponds to in the given
-  ///                                      `pass_target` stencil buffer.
+  ///                                      `pass_target` clip buffer.
   ///                                      When new `pass_target`s are created
-  ///                                      for subpasses, their stencils are
+  ///                                      for subpasses, their clip buffers are
   ///                                      initialized at zero, and so this
   ///                                      value is used to offset Entity clip
-  ///                                      depths to match the stencil.
+  ///                                      depths to match the clip buffer.
   /// @param[in]  backdrop_filter_contents Optional. Is supplied, this contents
   ///                                      is rendered prior to anything else in
   ///                                      the `EntityPass`, offset by the
@@ -249,8 +268,8 @@ class EntityPass {
                 Point global_pass_position,
                 Point local_pass_position,
                 uint32_t pass_depth,
-                StencilCoverageStack& stencil_coverage_stack,
-                size_t stencil_depth_floor = 0,
+                ClipCoverageStack& clip_coverage_stack,
+                size_t clip_depth_floor = 0,
                 std::shared_ptr<Contents> backdrop_filter_contents = nullptr,
                 const std::optional<InlinePassContext::RenderPassResult>&
                     collapsed_parent_pass = std::nullopt) const;
@@ -261,7 +280,7 @@ class EntityPass {
 
   EntityPass* superpass_ = nullptr;
   Matrix xformation_;
-  size_t stencil_depth_ = 0u;
+  size_t clip_depth_ = 0u;
   BlendMode blend_mode_ = BlendMode::kSourceOver;
   bool flood_clip_ = false;
   bool enable_offscreen_debug_checkerboard_ = false;
@@ -285,7 +304,9 @@ class EntityPass {
   std::shared_ptr<EntityPassDelegate> delegate_ =
       EntityPassDelegate::MakeDefault();
 
-  FML_DISALLOW_COPY_AND_ASSIGN(EntityPass);
+  EntityPass(const EntityPass&) = delete;
+
+  EntityPass& operator=(const EntityPass&) = delete;
 };
 
 }  // namespace impeller

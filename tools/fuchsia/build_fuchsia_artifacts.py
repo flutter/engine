@@ -235,7 +235,7 @@ def CopyBuildToBucket(runtime_mode, arch, optimized, product):
   bucket_root = os.path.join(_bucket_directory, 'flutter')
   licenses_root = os.path.join(_src_root_dir, 'flutter/ci/licenses_golden')
   license_files = [
-      'licenses_flutter', 'licenses_fuchsia', 'licenses_gpu', 'licenses_skia',
+      'licenses_flutter', 'licenses_fuchsia', 'licenses_skia',
       'licenses_third_party'
   ]
   for license in license_files:
@@ -495,9 +495,17 @@ def main():
         if args.copy_unoptimized_debug_artifacts and runtime_mode == 'debug' and optimized:
           CopyBuildToBucket(runtime_mode, arch, not optimized, product)
 
+  # Set revision to HEAD if empty and remove upload. This is to support
+  # presubmit workflows.
+  should_upload = args.upload
+  engine_version = args.engine_version
+  if not engine_version:
+    engine_version = 'HEAD'
+    should_upload = False
+
   # Create and optionally upload CIPD package
   if args.cipd_dry_run or args.upload:
-    ProcessCIPDPackage(args.upload, args.engine_version)
+    ProcessCIPDPackage(should_upload, engine_version)
 
   return 0
 

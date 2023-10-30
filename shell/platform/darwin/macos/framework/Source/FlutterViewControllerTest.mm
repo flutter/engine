@@ -38,6 +38,42 @@
 }
 @end
 
+/// Responder wrapper that forwards key events to another responder. This is a necessary middle step
+/// for mocking responder because when setting the responder to controller AppKit will access ivars
+/// of the objects, which means it must extend NSResponder instead of just implementing the
+/// selectors.
+@interface FlutterResponderWrapper : NSResponder {
+  NSResponder* _responder;
+}
+@end
+
+@implementation FlutterResponderWrapper
+
+- (instancetype)initWithResponder:(NSResponder*)responder {
+  if (self = [super init]) {
+    _responder = responder;
+  }
+  return self;
+}
+
+- (void)keyDown:(NSEvent*)event {
+  [_responder keyDown:event];
+}
+
+- (void)keyUp:(NSEvent*)event {
+  [_responder keyUp:event];
+}
+
+- (BOOL)performKeyEquivalent:(NSEvent*)event {
+  return [_responder performKeyEquivalent:event];
+}
+
+- (void)flagsChanged:(NSEvent*)event {
+  [_responder flagsChanged:event];
+}
+
+@end
+
 // A FlutterViewController subclass for testing that mouseDown/mouseUp get called when
 // mouse events are sent to the associated view.
 @interface MouseEventFlutterViewController : FlutterViewController
@@ -60,6 +96,7 @@
 - (bool)testKeyEventsArePropagatedIfNotHandled;
 - (bool)testKeyEventsAreNotPropagatedIfHandled;
 - (bool)testCtrlTabKeyEventIsPropagated;
+- (bool)testKeyEquivalentIsPassedToTextInputPlugin;
 - (bool)testFlagsChangedEventsArePropagatedIfNotHandled;
 - (bool)testKeyboardIsRestartedOnEngineRestart;
 - (bool)testTrackpadGesturesAreSentToFramework;
@@ -215,6 +252,10 @@ TEST(FlutterViewControllerTest, TestCtrlTabKeyEventIsPropagated) {
   ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testCtrlTabKeyEventIsPropagated]);
 }
 
+TEST(FlutterViewControllerTest, TestKeyEquivalentIsPassedToTextInputPlugin) {
+  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testKeyEquivalentIsPassedToTextInputPlugin]);
+}
+
 TEST(FlutterViewControllerTest, TestFlagsChangedEventsArePropagatedIfNotHandled) {
   ASSERT_TRUE(
       [[FlutterViewControllerTestObjC alloc] testFlagsChangedEventsArePropagatedIfNotHandled]);
@@ -331,6 +372,64 @@ TEST(FlutterViewControllerTest, testViewControllerIsReleased) {
   const uint64_t kPhysicalKeyTab = 0x7002b;
 
   [viewController viewWillAppear];  // Initializes the event channel.
+  // Creates a NSWindow so that FlutterView view can be first responder.
+  NSWindow* window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600)
+                                                 styleMask:NSBorderlessWindowMask
+                                                   backing:NSBackingStoreBuffered
+                                                     defer:NO];
+  window.contentView = viewController.view;
+  [window makeFirstResponder:viewController.flutterView];
+  [viewController.view performKeyEquivalent:event];
+
+  EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(last_event.physical, kPhysicalKeyTab);
+  return true;
+}
+
+- (bool)testKeyEquivalentIsPassedToTextInputPlugin {
+  id engineMock = flutter::testing::CreateMockFlutterEngine(@"");
+  __block bool called = false;
+  __block FlutterKeyEvent last_event;
+  OCMStub([[engineMock ignoringNonObjectArgs] sendKeyEvent:FlutterKeyEvent {}
+                                                  callback:nil
+                                                  userData:nil])
+      .andDo((^(NSInvocation* invocation) {
+        FlutterKeyEvent* event;
+        [invocation getArgument:&event atIndex:2];
+        called = true;
+        last_event = *event;
+      }));
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
+                                                                                nibName:@""
+                                                                                 bundle:nil];
+  // Ctrl+tab
+  NSEvent* event = [NSEvent keyEventWithType:NSEventTypeKeyDown
+                                    location:NSZeroPoint
+                               modifierFlags:0x40101
+                                   timestamp:0
+                                windowNumber:0
+                                     context:nil
+                                  characters:@""
+                 charactersIgnoringModifiers:@""
+                                   isARepeat:NO
+                                     keyCode:48];
+  const uint64_t kPhysicalKeyTab = 0x7002b;
+
+  [viewController viewWillAppear];  // Initializes the event channel.
+
+  NSWindow* window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600)
+                                                 styleMask:NSBorderlessWindowMask
+                                                   backing:NSBackingStoreBuffered
+                                                     defer:NO];
+  window.contentView = viewController.view;
+
+  [viewController.view addSubview:viewController.textInputPlugin];
+
+  // Make the textInputPlugin first responder. This should still result in
+  // view controller reporting the key event.
+  [window makeFirstResponder:viewController.textInputPlugin];
+
   [viewController.view performKeyEquivalent:event];
 
   EXPECT_TRUE(called);
@@ -354,7 +453,8 @@ TEST(FlutterViewControllerTest, testViewControllerIsReleased) {
                                                                                 nibName:@""
                                                                                  bundle:nil];
   id responderMock = flutter::testing::mockResponder();
-  viewController.nextResponder = responderMock;
+  id responderWrapper = [[FlutterResponderWrapper alloc] initWithResponder:responderMock];
+  viewController.nextResponder = responderWrapper;
   NSDictionary* expectedEvent = @{
     @"keymap" : @"macos",
     @"type" : @"keydown",
@@ -430,7 +530,8 @@ TEST(FlutterViewControllerTest, testViewControllerIsReleased) {
                                                                                 nibName:@""
                                                                                  bundle:nil];
   id responderMock = flutter::testing::mockResponder();
-  viewController.nextResponder = responderMock;
+  id responderWrapper = [[FlutterResponderWrapper alloc] initWithResponder:responderMock];
+  viewController.nextResponder = responderWrapper;
   NSDictionary* expectedEvent = @{
     @"keymap" : @"macos",
     @"type" : @"keydown",
@@ -483,7 +584,8 @@ TEST(FlutterViewControllerTest, testViewControllerIsReleased) {
                                                                                 nibName:@""
                                                                                  bundle:nil];
   id responderMock = flutter::testing::mockResponder();
-  viewController.nextResponder = responderMock;
+  id responderWrapper = [[FlutterResponderWrapper alloc] initWithResponder:responderMock];
+  viewController.nextResponder = responderWrapper;
   NSDictionary* expectedEvent = @{
     @"keymap" : @"macos",
     @"type" : @"keydown",
@@ -762,7 +864,7 @@ TEST(FlutterViewControllerTest, testViewControllerIsReleased) {
   CGEventRef cgEventDiscreteShift =
       CGEventCreateScrollWheelEvent(NULL, kCGScrollEventUnitPixel, 1, 0);
   CGEventSetType(cgEventDiscreteShift, kCGEventScrollWheel);
-  CGEventSetFlags(cgEventDiscreteShift, kCGEventFlagMaskShift);
+  CGEventSetFlags(cgEventDiscreteShift, kCGEventFlagMaskShift | flutter::kModifierFlagShiftLeft);
   CGEventSetIntegerValueField(cgEventDiscreteShift, kCGScrollWheelEventIsContinuous, 0);
   CGEventSetIntegerValueField(cgEventDiscreteShift, kCGScrollWheelEventDeltaAxis2,
                               0);  // scroll_delta_x
@@ -957,13 +1059,17 @@ static void SwizzledNoop(id self, SEL _cmd) {}
 
 - (bool)testModifierKeysAreSynthesizedOnMouseMove {
   id engineMock = flutter::testing::CreateMockFlutterEngine(@"");
+  id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [engineMock binaryMessenger])
+      .andReturn(binaryMessengerMock);
+
   // Need to return a real renderer to allow view controller to load.
   FlutterRenderer* renderer_ = [[FlutterRenderer alloc] initWithFlutterEngine:engineMock];
   OCMStub([engineMock renderer]).andReturn(renderer_);
 
   // Capture calls to sendKeyEvent
-  __block NSMutableArray<KeyEventWrapper*>* events =
-      [[NSMutableArray<KeyEventWrapper*> alloc] init];
+  __block NSMutableArray<KeyEventWrapper*>* events = [NSMutableArray array];
   OCMStub([[engineMock ignoringNonObjectArgs] sendKeyEvent:FlutterKeyEvent {}
                                                   callback:nil
                                                   userData:nil])
@@ -971,6 +1077,17 @@ static void SwizzledNoop(id self, SEL _cmd) {}
         FlutterKeyEvent* event;
         [invocation getArgument:&event atIndex:2];
         [events addObject:[[KeyEventWrapper alloc] initWithEvent:event]];
+      }));
+
+  __block NSMutableArray<NSDictionary*>* channelEvents = [NSMutableArray array];
+  OCMStub([binaryMessengerMock sendOnChannel:@"flutter/keyevent"
+                                     message:[OCMArg any]
+                                 binaryReply:[OCMArg any]])
+      .andDo((^(NSInvocation* invocation) {
+        NSData* data;
+        [invocation getArgument:&data atIndex:3];
+        id event = [[FlutterJSONMessageCodec sharedInstance] decode:data];
+        [channelEvents addObject:event];
       }));
 
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
@@ -987,12 +1104,27 @@ static void SwizzledNoop(id self, SEL _cmd) {}
   // For each modifier key, check that key events are synthesized.
   for (NSNumber* keyCode in flutter::keyCodeToModifierFlag) {
     FlutterKeyEvent* event;
+    NSDictionary* channelEvent;
     NSNumber* logicalKey;
     NSNumber* physicalKey;
-    NSNumber* flag = flutter::keyCodeToModifierFlag[keyCode];
+    NSEventModifierFlags flag = [flutter::keyCodeToModifierFlag[keyCode] unsignedLongValue];
+
+    // Cocoa event always contain combined flags.
+    if (flag & (flutter::kModifierFlagShiftLeft | flutter::kModifierFlagShiftRight)) {
+      flag |= NSEventModifierFlagShift;
+    }
+    if (flag & (flutter::kModifierFlagControlLeft | flutter::kModifierFlagControlRight)) {
+      flag |= NSEventModifierFlagControl;
+    }
+    if (flag & (flutter::kModifierFlagAltLeft | flutter::kModifierFlagAltRight)) {
+      flag |= NSEventModifierFlagOption;
+    }
+    if (flag & (flutter::kModifierFlagMetaLeft | flutter::kModifierFlagMetaRight)) {
+      flag |= NSEventModifierFlagCommand;
+    }
 
     // Should synthesize down event.
-    NSEvent* mouseEvent = flutter::testing::CreateMouseEvent([flag unsignedLongValue]);
+    NSEvent* mouseEvent = flutter::testing::CreateMouseEvent(flag);
     [viewController mouseMoved:mouseEvent];
     EXPECT_EQ([events count], 1u);
     event = events[0].data;
@@ -1002,6 +1134,11 @@ static void SwizzledNoop(id self, SEL _cmd) {}
     EXPECT_EQ(event->logical, logicalKey.unsignedLongLongValue);
     EXPECT_EQ(event->physical, physicalKey.unsignedLongLongValue);
     EXPECT_EQ(event->synthesized, true);
+
+    channelEvent = channelEvents[0];
+    EXPECT_TRUE([channelEvent[@"type"] isEqual:@"keydown"]);
+    EXPECT_TRUE([channelEvent[@"keyCode"] isEqual:keyCode]);
+    EXPECT_TRUE([channelEvent[@"modifiers"] isEqual:@(flag)]);
 
     // Should synthesize up event.
     mouseEvent = flutter::testing::CreateMouseEvent(0x00);
@@ -1015,7 +1152,13 @@ static void SwizzledNoop(id self, SEL _cmd) {}
     EXPECT_EQ(event->physical, physicalKey.unsignedLongLongValue);
     EXPECT_EQ(event->synthesized, true);
 
+    channelEvent = channelEvents[1];
+    EXPECT_TRUE([channelEvent[@"type"] isEqual:@"keyup"]);
+    EXPECT_TRUE([channelEvent[@"keyCode"] isEqual:keyCode]);
+    EXPECT_TRUE([channelEvent[@"modifiers"] isEqual:@(0)]);
+
     [events removeAllObjects];
+    [channelEvents removeAllObjects];
   };
 
   return true;

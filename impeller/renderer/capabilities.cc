@@ -21,6 +21,9 @@ class StandardCapabilities final : public Capabilities {
   }
 
   // |Capabilities|
+  bool SupportsImplicitResolvingMSAA() const override { return false; }
+
+  // |Capabilities|
   bool SupportsSSBO() const override { return supports_ssbo_; }
 
   // |Capabilities|
@@ -129,7 +132,9 @@ class StandardCapabilities final : public Capabilities {
   PixelFormat default_stencil_format_ = PixelFormat::kUnknown;
   PixelFormat default_depth_stencil_format_ = PixelFormat::kUnknown;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(StandardCapabilities);
+  StandardCapabilities(const StandardCapabilities&) = delete;
+
+  StandardCapabilities& operator=(const StandardCapabilities&) = delete;
 };
 
 CapabilitiesBuilder::CapabilitiesBuilder() = default;

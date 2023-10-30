@@ -45,7 +45,7 @@ std::optional<Entity> MatrixFilterContents::RenderFilter(
   // scaled up, then translations applied by the matrix should be magnified
   // accordingly.
   //
-  // To accomplish this, we sandwitch the filter's matrix within the CTM in both
+  // To accomplish this, we sandwich the filter's matrix within the CTM in both
   // cases. But notice that for the subpass backdrop filter case, we use the
   // "effect transform" instead of the Entity's transform!
   //
@@ -65,7 +65,20 @@ std::optional<Entity> MatrixFilterContents::RenderFilter(
 
   snapshot->sampler_descriptor = sampler_descriptor_;
   return Entity::FromSnapshot(snapshot, entity.GetBlendMode(),
-                              entity.GetStencilDepth());
+                              entity.GetClipDepth());
+}
+
+std::optional<Rect> MatrixFilterContents::GetFilterSourceCoverage(
+    const Matrix& effect_transform,
+    const Rect& output_limit) const {
+  auto transform = effect_transform *          //
+                   matrix_ *                   //
+                   effect_transform.Invert();  //
+  if (transform.GetDeterminant() == 0.0) {
+    return std::nullopt;
+  }
+  auto inverse = transform.Invert();
+  return output_limit.TransformBounds(inverse);
 }
 
 std::optional<Rect> MatrixFilterContents::GetFilterCoverage(

@@ -246,15 +246,27 @@ bool SurfaceMTL::Present() const {
       return false;
     }
   }
+#ifdef IMPELLER_DEBUG
+  ContextMTL::Cast(context.get())->GetGPUTracer()->MarkFrameEnd();
+#endif  // IMPELLER_DEBUG
 
   if (drawable_) {
-    TRACE_EVENT0("flutter", "waitUntilScheduled");
     id<MTLCommandBuffer> command_buffer =
         ContextMTL::Cast(context.get())
             ->CreateMTLCommandBuffer("Present Waiter Command Buffer");
-    [command_buffer commit];
-    [command_buffer waitUntilScheduled];
-    [drawable_ present];
+    // If the threads have been merged, or there is a pending frame capture,
+    // then block on cmd buffer scheduling to ensure that the
+    // transaction/capture work correctly.
+    if ([[NSThread currentThread] isMainThread] ||
+        [[MTLCaptureManager sharedCaptureManager] isCapturing]) {
+      TRACE_EVENT0("flutter", "waitUntilScheduled");
+      [command_buffer commit];
+      [command_buffer waitUntilScheduled];
+      [drawable_ present];
+    } else {
+      [command_buffer presentDrawable:drawable_];
+      [command_buffer commit];
+    }
   }
 
   return true;

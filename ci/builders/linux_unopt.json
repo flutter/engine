@@ -13,7 +13,9 @@
                 "--prebuilt-dart-sdk",
                 "--asan",
                 "--lsan",
-                "--dart-debug"
+                "--dart-debug",
+                "--rbe",
+                "--no-goma"
             ],
             "name": "host_debug_unopt",
             "ninja": {
@@ -38,15 +40,15 @@
                 {
                     "language": "python3",
                     "name": "test: Host_Tests_for_host_debug_unopt",
+                    "script": "flutter/testing/run_tests.py",
                     "parameters": [
                         "--variant",
                         "host_debug_unopt",
                         "--type",
-                        "dart,engine",
+                        "dart,dart-host,engine",
                         "--engine-capture-core-dump",
                         "--use-sanitizer-suppressions"
-                    ],
-                    "script": "flutter/testing/run_tests.py"
+                    ]
                 },
                 {
                     "name": "analyze_dart_ui",
@@ -89,7 +91,9 @@
             ],
             "gn": [
                 "--android",
-                "--unoptimized"
+                "--unoptimized",
+                "--rbe",
+                "--no-goma"
             ],
             "name": "android_debug_unopt",
             "ninja": {
@@ -104,6 +108,7 @@
                 {
                     "language": "python3",
                     "name": "test: Host Tests for android_debug_unopt",
+                    "script": "flutter/testing/run_tests.py",
                     "parameters": [
                         "--variant",
                         "android_debug_unopt",
@@ -112,20 +117,19 @@
                         "--engine-capture-core-dump",
                         "--android-variant",
                         "android_debug_unopt"
-                    ],
-                    "script": "flutter/testing/run_tests.py"
+                    ]
                 },
                 {
                     "language": "python3",
                     "name": "malioc diff",
+                    "script": "flutter/impeller/tools/malioc_diff.py",
                     "parameters": [
                         "--before-relative-to-src",
                         "flutter/impeller/tools/malioc.json",
                         "--after-relative-to-src",
                         "out/android_debug_unopt/gen/malioc",
                         "--print-diff"
-                    ],
-                    "script": "flutter/impeller/tools/malioc_diff.py"
+                    ]
                 }
             ]
         }

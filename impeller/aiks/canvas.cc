@@ -4,11 +4,11 @@
 
 #include "impeller/aiks/canvas.h"
 
-#include <algorithm>
 #include <optional>
 #include <utility>
 
 #include "flutter/fml/logging.h"
+#include "flutter/fml/trace_event.h"
 #include "impeller/aiks/image_filter.h"
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/entity/contents/atlas_contents.h"
@@ -62,7 +62,7 @@ void Canvas::Save(bool create_subpass,
   auto entry = CanvasStackEntry{};
   entry.xformation = xformation_stack_.back().xformation;
   entry.cull_rect = xformation_stack_.back().cull_rect;
-  entry.stencil_depth = xformation_stack_.back().stencil_depth;
+  entry.clip_depth = xformation_stack_.back().clip_depth;
   if (create_subpass) {
     entry.rendering_mode = Entity::RenderingMode::kSubpass;
     auto subpass = std::make_unique<EntityPass>();
@@ -83,7 +83,7 @@ void Canvas::Save(bool create_subpass,
     subpass->SetBlendMode(blend_mode);
     current_pass_ = GetCurrentPass().AddSubpass(std::move(subpass));
     current_pass_->SetTransformation(xformation_stack_.back().xformation);
-    current_pass_->SetStencilDepth(xformation_stack_.back().stencil_depth);
+    current_pass_->SetClipDepth(xformation_stack_.back().clip_depth);
   }
   xformation_stack_.emplace_back(entry);
 }
@@ -173,7 +173,7 @@ void Canvas::RestoreToCount(size_t count) {
 void Canvas::DrawPath(const Path& path, const Paint& paint) {
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
-  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.WithFilters(paint.CreateContentsForEntity(path)));
 
@@ -183,7 +183,7 @@ void Canvas::DrawPath(const Path& path, const Paint& paint) {
 void Canvas::DrawPaint(const Paint& paint) {
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
-  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.CreateContentsForEntity({}, true));
 
@@ -217,7 +217,7 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
 
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
-  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(new_paint.blend_mode);
   entity.SetContents(new_paint.WithFilters(std::move(contents)));
 
@@ -238,7 +238,7 @@ void Canvas::DrawRect(Rect rect, const Paint& paint) {
 
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
-  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.WithFilters(
       paint.CreateContentsForGeometry(Geometry::MakeRect(rect))));
@@ -253,11 +253,12 @@ void Canvas::DrawRRect(Rect rect, Scalar corner_radius, const Paint& paint) {
   auto path = PathBuilder{}
                   .SetConvexity(Convexity::kConvex)
                   .AddRoundedRect(rect, corner_radius)
+                  .SetBounds(rect)
                   .TakePath();
   if (paint.style == Paint::Style::kFill) {
     Entity entity;
     entity.SetTransformation(GetCurrentTransformation());
-    entity.SetStencilDepth(GetStencilDepth());
+    entity.SetClipDepth(GetClipDepth());
     entity.SetBlendMode(paint.blend_mode);
     entity.SetContents(paint.WithFilters(
         paint.CreateContentsForGeometry(Geometry::MakeFillPath(path))));
@@ -274,10 +275,13 @@ void Canvas::DrawCircle(Point center, Scalar radius, const Paint& paint) {
                               paint)) {
     return;
   }
-  auto circle_path = PathBuilder{}
-                         .AddCircle(center, radius)
-                         .SetConvexity(Convexity::kConvex)
-                         .TakePath();
+  auto circle_path =
+      PathBuilder{}
+          .AddCircle(center, radius)
+          .SetConvexity(Convexity::kConvex)
+          .SetBounds(Rect::MakeLTRB(center.x - radius, center.y - radius,
+                                    center.x + radius, center.y + radius))
+          .TakePath();
   DrawPath(circle_path, paint);
 }
 
@@ -318,6 +322,7 @@ void Canvas::ClipRRect(const Rect& rect,
   auto path = PathBuilder{}
                   .SetConvexity(Convexity::kConvex)
                   .AddRoundedRect(rect, corner_radius)
+                  .SetBounds(rect)
                   .TakePath();
 
   std::optional<Rect> inner_rect = (corner_radius * 2 < rect.size.width &&
@@ -371,11 +376,11 @@ void Canvas::ClipGeometry(std::unique_ptr<Geometry> geometry,
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetContents(std::move(contents));
-  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetClipDepth(GetClipDepth());
 
   GetCurrentPass().AddEntity(entity);
 
-  ++xformation_stack_.back().stencil_depth;
+  ++xformation_stack_.back().clip_depth;
   xformation_stack_.back().contains_clips = true;
 }
 
@@ -410,7 +415,7 @@ void Canvas::RestoreClip() {
   // This path is empty because ClipRestoreContents just generates a quad that
   // takes up the full render target.
   entity.SetContents(std::make_shared<ClipRestoreContents>());
-  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetClipDepth(GetClipDepth());
 
   GetCurrentPass().AddEntity(entity);
 }
@@ -425,7 +430,7 @@ void Canvas::DrawPoints(std::vector<Point> points,
 
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
-  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.WithFilters(paint.CreateContentsForGeometry(
       Geometry::MakePointField(std::move(points), radius,
@@ -444,15 +449,15 @@ void Canvas::DrawPicture(const Picture& picture) {
 
   pass->IterateAllElements([&](auto& element) -> bool {
     if (auto entity = std::get_if<Entity>(&element)) {
-      entity->IncrementStencilDepth(GetStencilDepth());
+      entity->IncrementStencilDepth(GetClipDepth());
       entity->SetTransformation(GetCurrentTransformation() *
                                 entity->GetTransformation());
       return true;
     }
 
     if (auto subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
-      subpass->get()->SetStencilDepth(subpass->get()->GetStencilDepth() +
-                                      GetStencilDepth());
+      subpass->get()->SetClipDepth(subpass->get()->GetClipDepth() +
+                                   GetClipDepth());
       return true;
     }
 
@@ -503,7 +508,7 @@ void Canvas::DrawImageRect(const std::shared_ptr<Image>& image,
 
   Entity entity;
   entity.SetBlendMode(paint.blend_mode);
-  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetClipDepth(GetClipDepth());
   entity.SetContents(paint.WithFilters(contents));
   entity.SetTransformation(GetCurrentTransformation());
 
@@ -525,13 +530,14 @@ EntityPass& Canvas::GetCurrentPass() {
   return *current_pass_;
 }
 
-size_t Canvas::GetStencilDepth() const {
-  return xformation_stack_.back().stencil_depth;
+size_t Canvas::GetClipDepth() const {
+  return xformation_stack_.back().clip_depth;
 }
 
 void Canvas::SaveLayer(const Paint& paint,
                        std::optional<Rect> bounds,
                        const std::shared_ptr<ImageFilter>& backdrop_filter) {
+  TRACE_EVENT0("flutter", "Canvas::saveLayer");
   Save(true, paint.blend_mode, backdrop_filter);
 
   auto& new_layer_pass = GetCurrentPass();
@@ -546,15 +552,15 @@ void Canvas::SaveLayer(const Paint& paint,
   }
 }
 
-void Canvas::DrawTextFrame(const TextFrame& text_frame,
+void Canvas::DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
                            Point position,
                            const Paint& paint) {
   Entity entity;
-  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
 
   auto text_contents = std::make_shared<TextContents>();
-  text_contents->SetTextFrame(TextFrame(text_frame));
+  text_contents->SetTextFrame(text_frame);
   text_contents->SetColor(paint.color);
 
   entity.SetTransformation(GetCurrentTransformation() *
@@ -601,7 +607,7 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
 
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
-  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
 
   // If there are no vertex color or texture coordinates. Or if there
@@ -674,7 +680,7 @@ void Canvas::DrawAtlas(const std::shared_ptr<Image>& atlas,
 
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
-  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.WithFilters(contents));
 

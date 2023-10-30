@@ -8,7 +8,6 @@
 #include <cstring>
 #include <memory>
 #include <optional>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -16,25 +15,17 @@
 #include "flutter/fml/trace_event.h"
 #include "impeller/aiks/color_filter.h"
 #include "impeller/core/formats.h"
-#include "impeller/display_list/dl_image_impeller.h"
 #include "impeller/display_list/dl_vertices_geometry.h"
 #include "impeller/display_list/nine_patch_converter.h"
 #include "impeller/display_list/skia_conversions.h"
-#include "impeller/entity/contents/conical_gradient_contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
-#include "impeller/entity/contents/linear_gradient_contents.h"
-#include "impeller/entity/contents/radial_gradient_contents.h"
 #include "impeller/entity/contents/runtime_effect_contents.h"
-#include "impeller/entity/contents/sweep_gradient_contents.h"
-#include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/entity/entity.h"
-#include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/scalar.h"
 #include "impeller/geometry/sigma.h"
-#include "impeller/typographer/backends/skia/text_frame_skia.h"
 
 #if IMPELLER_ENABLE_3D
 #include "impeller/entity/contents/scene_contents.h"
@@ -272,30 +263,6 @@ static std::vector<Color> ToColors(const flutter::DlColor colors[], int count) {
   return result;
 }
 
-// Convert display list colors + stops into impeller colors and stops, taking
-// care to ensure that the stops always start with 0.0 and end with 1.0.
-template <typename T>
-static void ConvertStops(T* gradient,
-                         std::vector<Color>* colors,
-                         std::vector<float>* stops) {
-  FML_DCHECK(gradient->stop_count() >= 2);
-
-  auto* dl_colors = gradient->colors();
-  auto* dl_stops = gradient->stops();
-  if (dl_stops[0] != 0.0) {
-    colors->emplace_back(skia_conversions::ToColor(dl_colors[0]));
-    stops->emplace_back(0);
-  }
-  for (auto i = 0; i < gradient->stop_count(); i++) {
-    colors->emplace_back(skia_conversions::ToColor(dl_colors[i]));
-    stops->emplace_back(dl_stops[i]);
-  }
-  if (stops->back() != 1.0) {
-    colors->emplace_back(colors->back());
-    stops->emplace_back(1.0);
-  }
-}
-
 static std::optional<ColorSource::Type> ToColorSourceType(
     flutter::DlColorSourceType type) {
   switch (type) {
@@ -352,7 +319,7 @@ void DlDispatcher::setColorSource(const flutter::DlColorSource* source) {
       auto end_point = skia_conversions::ToPoint(linear->end_point());
       std::vector<Color> colors;
       std::vector<float> stops;
-      ConvertStops(linear, &colors, &stops);
+      skia_conversions::ConvertStops(linear, colors, stops);
 
       auto tile_mode = ToTileMode(linear->tile_mode());
       auto matrix = ToMatrix(linear->matrix());
@@ -373,7 +340,7 @@ void DlDispatcher::setColorSource(const flutter::DlColorSource* source) {
       SkScalar focus_radius = conical_gradient->start_radius();
       std::vector<Color> colors;
       std::vector<float> stops;
-      ConvertStops(conical_gradient, &colors, &stops);
+      skia_conversions::ConvertStops(conical_gradient, colors, stops);
 
       auto tile_mode = ToTileMode(conical_gradient->tile_mode());
       auto matrix = ToMatrix(conical_gradient->matrix());
@@ -391,7 +358,7 @@ void DlDispatcher::setColorSource(const flutter::DlColorSource* source) {
       auto radius = radialGradient->radius();
       std::vector<Color> colors;
       std::vector<float> stops;
-      ConvertStops(radialGradient, &colors, &stops);
+      skia_conversions::ConvertStops(radialGradient, colors, stops);
 
       auto tile_mode = ToTileMode(radialGradient->tile_mode());
       auto matrix = ToMatrix(radialGradient->matrix());
@@ -410,7 +377,7 @@ void DlDispatcher::setColorSource(const flutter::DlColorSource* source) {
       auto end_angle = Degrees(sweepGradient->end());
       std::vector<Color> colors;
       std::vector<float> stops;
-      ConvertStops(sweepGradient, &colors, &stops);
+      skia_conversions::ConvertStops(sweepGradient, colors, stops);
 
       auto tile_mode = ToTileMode(sweepGradient->tile_mode());
       auto matrix = ToMatrix(sweepGradient->matrix());
@@ -508,7 +475,6 @@ static std::shared_ptr<ColorFilter> ToColorFilter(
 
 // |flutter::DlOpReceiver|
 void DlDispatcher::setColorFilter(const flutter::DlColorFilter* filter) {
-  // Needs https://github.com/flutter/flutter/issues/95434
   paint_.color_filter = ToColorFilter(filter);
 }
 
@@ -852,7 +818,7 @@ void DlDispatcher::drawPath(const SkPath& path) {
 
   // We can't "optimize" a path into a rectangle if it's open.
   bool closed;
-  if (path.isRect(&rect, &closed); closed) {
+  if (path.isRect(&rect, &closed) && closed) {
     canvas_.DrawRect(skia_conversions::ToRect(rect), paint_);
     return;
   }
@@ -1071,20 +1037,14 @@ void DlDispatcher::drawDisplayList(
 void DlDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                 SkScalar x,
                                 SkScalar y) {
-  const auto maybe_text_frame = MakeTextFrameFromTextBlobSkia(blob);
-  if (!maybe_text_frame.has_value()) {
-    return;
-  }
-  const auto text_frame = maybe_text_frame.value();
-  if (paint_.style == Paint::Style::kStroke ||
-      paint_.color_source.GetType() != ColorSource::Type::kColor) {
-    auto bounds = blob->bounds();
-    auto path = skia_conversions::PathDataFromTextBlob(
-        blob, Point(x + bounds.left(), y + bounds.top()));
-    canvas_.DrawPath(path, paint_);
-    return;
-  }
+  // When running with Impeller enabled Skia text blobs are converted to
+  // Impeller text frames in paragraph_skia.cc
+  UNIMPLEMENTED;
+}
 
+void DlDispatcher::drawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
+                                 SkScalar x,
+                                 SkScalar y) {
   canvas_.DrawTextFrame(text_frame,             //
                         impeller::Point{x, y},  //
                         paint_                  //

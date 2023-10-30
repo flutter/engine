@@ -17,16 +17,16 @@ bool DisplayListsEQ_Verbose(const DisplayList* a, const DisplayList* b);
 bool inline DisplayListsEQ_Verbose(const DisplayList& a, const DisplayList& b) {
   return DisplayListsEQ_Verbose(&a, &b);
 }
-bool inline DisplayListsEQ_Verbose(sk_sp<const DisplayList> a,
-                                   sk_sp<const DisplayList> b) {
+bool inline DisplayListsEQ_Verbose(const sk_sp<const DisplayList>& a,
+                                   const sk_sp<const DisplayList>& b) {
   return DisplayListsEQ_Verbose(a.get(), b.get());
 }
 bool DisplayListsNE_Verbose(const DisplayList* a, const DisplayList* b);
 bool inline DisplayListsNE_Verbose(const DisplayList& a, const DisplayList& b) {
   return DisplayListsNE_Verbose(&a, &b);
 }
-bool inline DisplayListsNE_Verbose(sk_sp<const DisplayList> a,
-                                   sk_sp<const DisplayList> b) {
+bool inline DisplayListsNE_Verbose(const sk_sp<const DisplayList>& a,
+                                   const sk_sp<const DisplayList>& b) {
   return DisplayListsNE_Verbose(a.get(), b.get());
 }
 
@@ -52,9 +52,9 @@ extern std::ostream& operator<<(std::ostream& os, const DlImage* image);
 
 class DisplayListStreamDispatcher final : public DlOpReceiver {
  public:
-  DisplayListStreamDispatcher(std::ostream& os,
-                              int cur_indent = 2,
-                              int indent = 2)
+  explicit DisplayListStreamDispatcher(std::ostream& os,
+                                       int cur_indent = 2,
+                                       int indent = 2)
       : os_(os), cur_indent_(cur_indent), indent_(indent) {}
 
   void setAntiAlias(bool aa) override;
@@ -144,6 +144,9 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
   void drawTextBlob(const sk_sp<SkTextBlob> blob,
                     SkScalar x,
                     SkScalar y) override;
+  void drawTextFrame(const std::shared_ptr<impeller::TextFrame>& text_frame,
+                     SkScalar x,
+                     SkScalar y) override;
   void drawShadow(const SkPath& path,
                   const DlColor color,
                   const SkScalar elevation,
