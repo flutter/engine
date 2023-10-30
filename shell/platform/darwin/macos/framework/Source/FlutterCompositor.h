@@ -59,17 +59,13 @@ class FlutterCompositor {
  private:
   class ViewPresenter {
    public:
-    ViewPresenter(id<FlutterViewProvider> view_provider,
-                  const FlutterPlatformViewController* platform_views_controller);
+    ViewPresenter(const FlutterPlatformViewController* platform_views_controller);
 
     void PresentPlatformViews(FlutterView* default_base_view,
                               const FlutterLayer** layers,
                               size_t layers_count);
 
    private:
-    // Shared view_provider_ from the compositor.
-    id<FlutterViewProvider> const view_provider_;
-
     // Shared platform_view_controller_ from the compositor.
     const FlutterPlatformViewController* platform_view_controller_;
 

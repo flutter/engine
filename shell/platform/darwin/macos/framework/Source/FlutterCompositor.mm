@@ -18,7 +18,7 @@ FlutterCompositor::FlutterCompositor(id<FlutterViewProvider> view_provider,
 void FlutterCompositor::AddView(int64_t view_id) {
   FML_CHECK(presenters_.find(view_id) == presenters_.end());
   presenters_.emplace(std::piecewise_construct, std::forward_as_tuple(view_id),
-                      std::forward_as_tuple(view_provider_, platform_view_controller_));
+                      std::forward_as_tuple(platform_view_controller_));
 }
 
 void FlutterCompositor::RemoveView(int64_t view_id) {
@@ -28,9 +28,6 @@ void FlutterCompositor::RemoveView(int64_t view_id) {
 
 bool FlutterCompositor::CreateBackingStore(const FlutterBackingStoreConfig* config,
                                            FlutterBackingStore* backing_store_out) {
-  // TODO(dkwingsmt): This class only supports single-view for now. As more
-  // classes are gradually converted to multi-view, it should get the view ID
-  // from somewhere.
   FlutterView* view = [view_provider_ viewForId:config->view_id];
   if (!view) {
     return false;
@@ -91,12 +88,9 @@ bool FlutterCompositor::Present(FlutterViewId view_id,
 }
 
 FlutterCompositor::ViewPresenter::ViewPresenter(
-    id<FlutterViewProvider> view_provider,
     const FlutterPlatformViewController* platform_view_controller)
-    : view_provider_(view_provider),
-      platform_view_controller_(platform_view_controller),
+    : platform_view_controller_(platform_view_controller),
       mutator_views_([NSMapTable strongToStrongObjectsMapTable]) {
-  FML_CHECK(view_provider_ != nullptr);
 }
 
 void FlutterCompositor::ViewPresenter::PresentPlatformViews(FlutterView* default_base_view,
