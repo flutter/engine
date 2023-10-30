@@ -811,8 +811,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
                                                ) { return true; };
 
   _compositor.present_view_callback = [](FlutterPresentViewInfo* info) {
-    return reinterpret_cast<flutter::FlutterCompositor*>(info->user_data)->Present(info->view_id, info->layers,
-                                                                             info->layers_count);
+    return reinterpret_cast<flutter::FlutterCompositor*>(info->user_data)
+        ->Present(info->view_id, info->layers, info->layers_count);
   };
 
   _compositor.avoid_backing_store_cache = true;

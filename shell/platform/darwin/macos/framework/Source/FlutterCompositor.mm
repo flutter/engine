@@ -90,8 +90,7 @@ bool FlutterCompositor::Present(FlutterViewId view_id,
 FlutterCompositor::ViewPresenter::ViewPresenter(
     const FlutterPlatformViewController* platform_view_controller)
     : platform_view_controller_(platform_view_controller),
-      mutator_views_([NSMapTable strongToStrongObjectsMapTable]) {
-}
+      mutator_views_([NSMapTable strongToStrongObjectsMapTable]) {}
 
 void FlutterCompositor::ViewPresenter::PresentPlatformViews(FlutterView* default_base_view,
                                                             const FlutterLayer** layers,
