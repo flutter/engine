@@ -429,31 +429,31 @@ targets:
   #     - "**.m"
   #     - "**.mm"
 
-  - name: Mac mac_host_engine
-    recipe: engine_v2/engine_v2
-    timeout: 120
-    properties:
-      add_recipes_cq: "true"
-      release_build: "true"
-      cpu: arm64
-      config_name: mac_host_engine
-      dependencies: >-
-        [
-          {"dependency": "goldctl", "version": "git_revision:f808dcff91b221ae313e540c09d79696cd08b8de"}
-        ]
-      $flutter/osx_sdk : >-
-        {
-          "sdk_version": "14e300c"
-        }
-    drone_dimensions:
-      - os=Mac-13
-
-  # - name: Linux mac_unopt
+  # - name: Mac mac_host_engine
   #   recipe: engine_v2/engine_v2
-  #   properties:
-  #     config_name: mac_unopt
-  #     add_recipes_cq: "true"
   #   timeout: 120
+  #   properties:
+  #     add_recipes_cq: "true"
+  #     release_build: "true"
+  #     cpu: arm64
+  #     config_name: mac_host_engine
+  #     dependencies: >-
+  #       [
+  #         {"dependency": "goldctl", "version": "git_revision:f808dcff91b221ae313e540c09d79696cd08b8de"}
+  #       ]
+  #     $flutter/osx_sdk : >-
+  #       {
+  #         "sdk_version": "14e300c"
+  #       }
+  #   drone_dimensions:
+  #     - os=Mac-13
+
+  - name: Linux mac_unopt
+    recipe: engine_v2/engine_v2
+    properties:
+      config_name: mac_unopt
+      add_recipes_cq: "true"
+    timeout: 120
 
   # - name: Mac mac_ios_engine
   #   recipe: engine_v2/engine_v2
