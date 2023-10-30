@@ -260,6 +260,11 @@ class ProcTableGLES {
 
   void PopDebugGroup() const;
 
+  // Visible For testing.
+  std::optional<std::string> ComputeShaderWithDefines(
+      const fml::Mapping& mapping,
+      const std::vector<int32_t>& defines) const;
+
  private:
   bool is_valid_ = false;
   std::unique_ptr<DescriptionGLES> description_;

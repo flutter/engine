@@ -150,13 +150,29 @@ void ProcTableGLES::ShaderSourceMapping(
     ShaderSource(shader, 1u, sources, lengths);
     return;
   }
+  const auto& shader_source = ComputeShaderWithDefines(mapping, defines);
+  if (!shader_source.has_value()) {
+    VALIDATION_LOG << "Failed to append constant data to shader";
+    return;
+  }
+
+  const GLchar* sources[] = {
+      reinterpret_cast<const GLchar*>(shader_source->c_str())};
+  const GLint lengths[] = {static_cast<GLint>(shader_source->size())};
+  ShaderSource(shader, 1u, sources, lengths);
+}
+
+// Visible For testing.
+std::optional<std::string> ProcTableGLES::ComputeShaderWithDefines(
+    const fml::Mapping& mapping,
+    const std::vector<int32_t>& defines) const {
   auto shader_source = std::string{
       reinterpret_cast<const char*>(mapping.GetMapping()), mapping.GetSize()};
 
   auto index = shader_source.find('\n');
   if (index == std::string::npos) {
     VALIDATION_LOG << "Failed to append constant data to shader";
-    return;
+    return std::nullopt;
   }
 
   std::stringstream ss;
@@ -165,11 +181,7 @@ void ProcTableGLES::ShaderSourceMapping(
   }
   auto define_string = ss.str();
   shader_source.insert(index + 1, define_string);
-
-  const GLchar* sources[] = {
-      reinterpret_cast<const GLchar*>(shader_source.c_str())};
-  const GLint lengths[] = {static_cast<GLint>(shader_source.size())};
-  ShaderSource(shader, 1u, sources, lengths);
+  return shader_source;
 }
 
 const DescriptionGLES* ProcTableGLES::GetDescription() const {
