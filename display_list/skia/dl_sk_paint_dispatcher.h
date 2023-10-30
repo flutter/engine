@@ -68,7 +68,6 @@ class DlSkPaintDispatchHelper : public virtual DlOpReceiver {
  private:
   SkPaint paint_;
   bool color_source_gradient_ = false;
-  bool dither_ = false;
   bool invert_colors_ = false;
   sk_sp<SkColorFilter> sk_color_filter_;
 
