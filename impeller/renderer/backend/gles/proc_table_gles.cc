@@ -139,10 +139,9 @@ bool ProcTableGLES::IsValid() const {
   return is_valid_;
 }
 
-void ProcTableGLES::ShaderSourceMapping(
-    GLuint shader,
-    const fml::Mapping& mapping,
-    const std::vector<std::string>& defines) const {
+void ProcTableGLES::ShaderSourceMapping(GLuint shader,
+                                        const fml::Mapping& mapping,
+                                        const std::vector<int32_t>& defines) const {
   if (defines.empty()) {
     const GLchar* sources[] = {
         reinterpret_cast<const GLchar*>(mapping.GetMapping())};
@@ -160,9 +159,9 @@ void ProcTableGLES::ShaderSourceMapping(
   }
 
   std::stringstream ss;
-  for (auto define : defines) {
-    ss << define;
-    ss << '\n';
+  for (auto i = 0u; i < defines.size(); i++) {
+    ss << "#define SPIRV_CROSS_CONSTANT_ID_" << index << " " << defines[i]
+       << '\n';
   }
   auto define_string = ss.str();
   shader_source.insert(index + 1, define_string);

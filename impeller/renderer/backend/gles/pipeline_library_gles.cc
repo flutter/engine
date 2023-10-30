@@ -115,17 +115,10 @@ static bool LinkProgram(
   fml::ScopedCleanupClosure delete_frag_shader(
       [&gl, frag_shader]() { gl.DeleteShader(frag_shader); });
 
-  std::vector<std::string> defines = {};
-  size_t index = 0;
-  for (const auto value : descriptor.GetSpecializationConstants()) {
-    std::stringstream ss;
-    ss << "#define SPIRV_CROSS_CONSTANT_ID_" << index << " " << value;
-    defines.emplace_back(ss.str());
-    index++;
-  }
-
-  gl.ShaderSourceMapping(vert_shader, *vert_mapping, defines);
-  gl.ShaderSourceMapping(frag_shader, *frag_mapping, defines);
+  gl.ShaderSourceMapping(vert_shader, *vert_mapping,
+                         descriptor.GetSpecializationConstants());
+  gl.ShaderSourceMapping(frag_shader, *frag_mapping,
+                         descriptor.GetSpecializationConstants());
 
   gl.CompileShader(vert_shader);
   gl.CompileShader(frag_shader);

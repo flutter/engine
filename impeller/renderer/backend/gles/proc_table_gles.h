@@ -240,7 +240,7 @@ class ProcTableGLES {
   /// support static specialization. For example, setting "#define Foo 1".
   void ShaderSourceMapping(GLuint shader,
                            const fml::Mapping& mapping,
-                           const std::vector<std::string>& defines = {}) const;
+                           const std::vector<int32_t>& defines = {}) const;
 
   const DescriptionGLES* GetDescription() const;
 

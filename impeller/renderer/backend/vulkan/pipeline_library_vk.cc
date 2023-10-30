@@ -298,8 +298,8 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
         map_entries[entrypoint_count];
     for (auto i = 0u; i < constants.size(); i++) {
       vk::SpecializationMapEntry entry;
-      entry.offset = (i * sizeof(int));
-      entry.size = sizeof(int);
+      entry.offset = (i * sizeof(int32_t));
+      entry.size = sizeof(int32_t);
       entry.constantID = i;
       entries.emplace_back(entry);
     }
@@ -308,7 +308,7 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
         specialization_infos[entrypoint_count];
     specialization_info.setMapEntries(map_entries[entrypoint_count]);
     specialization_info.setPData(constants.data());
-    specialization_info.setDataSize(sizeof(int) * constants.size());
+    specialization_info.setDataSize(sizeof(int32_t) * constants.size());
 
     vk::PipelineShaderStageCreateInfo info;
     info.setStage(stage.value());
