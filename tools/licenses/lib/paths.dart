@@ -29,11 +29,24 @@ final Set<String> skippedPaths = <String>{
   r'flutter/lib/web_ui/dev', // these are build tools; they do not end up in Engine artifacts
   r'flutter/prebuilts',
   r'flutter/sky/packages/sky_engine/LICENSE',
+  r'flutter/third_party/flatbuffers/android',
+  r'flutter/third_party/flatbuffers/benchmarks',
+  r'flutter/third_party/flatbuffers/docs',
+  r'flutter/third_party/flatbuffers/go',
+  r'flutter/third_party/flatbuffers/net',
+  r'flutter/third_party/flatbuffers/php',
+  r'flutter/third_party/flatbuffers/python',
+  r'flutter/third_party/flatbuffers/rust',
+  r'flutter/third_party/flatbuffers/ts',
   r'flutter/third_party/glfw/deps', // Only used by examples and tests; not linked in build.
   r'flutter/third_party/glfw/docs',
   r'flutter/third_party/gn',
   r'flutter/third_party/imgui',
   r'flutter/third_party/ninja', // build system
+  r'flutter/third_party/rapidjson/contrib', // contains nothing that ends up in the binary executable
+  r'flutter/third_party/rapidjson/doc', // documentation
+  r'flutter/third_party/shaderc/third_party/LICENSE.glslang', // unclear what the purpose of this file is
+  r'flutter/third_party/shaderc/third_party/LICENSE.spirv-tools', // unclear what the purpose of this file is
   r'flutter/third_party/test_shaders', // for tests only
   r'flutter/third_party/txt/third_party/fonts',
   r'flutter/tools',
@@ -88,15 +101,6 @@ final Set<String> skippedPaths = <String>{
   r'third_party/dart/tools', // not shipped in binary
   r'third_party/expat/expat/doc',
   r'third_party/expat/expat/win32/expat.iss',
-  r'third_party/flatbuffers/android',
-  r'third_party/flatbuffers/benchmarks',
-  r'third_party/flatbuffers/docs',
-  r'third_party/flatbuffers/go',
-  r'third_party/flatbuffers/net',
-  r'third_party/flatbuffers/php',
-  r'third_party/flatbuffers/python',
-  r'third_party/flatbuffers/rust',
-  r'third_party/flatbuffers/ts',
   r'third_party/google_fonts_for_unit_tests', // only used in web unit tests
   r'third_party/fontconfig', // not used in standard configurations
   r'third_party/freetype2/builds',
@@ -113,9 +117,9 @@ final Set<String> skippedPaths = <String>{
   r'third_party/icu/source/data/brkitr/dictionaries/cjdict.txt', // explicitly handled by ICU license
   r'third_party/icu/source/data/brkitr/dictionaries/laodict.txt', // explicitly handled by ICU license
   r'third_party/icu/source/data/dtd',
-  r'third_party/inja/doc', // documentation
-  r'third_party/inja/third_party/amalgamate', // only used at build time
-  r'third_party/inja/third_party/include/doctest', // seems to be a unit test library
+  r'flutter/third_party/inja/doc', // documentation
+  r'flutter/third_party/inja/third_party/amalgamate', // only used at build time
+  r'flutter/third_party/inja/third_party/include/doctest', // seems to be a unit test library
   r'third_party/java', // only used for Android builds
   r'third_party/json/docs',
   r'third_party/libcxx/benchmarks',
@@ -128,9 +132,9 @@ final Set<String> skippedPaths = <String>{
   r'third_party/libpng/powerpc', // not linked in
   r'third_party/libpng/projects', // not linked in
   r'third_party/libpng/scripts', // not linked in
-  r'third_party/libtess2/Contrib/nanosvg.c', // only used by the ../Example
-  r'third_party/libtess2/Contrib/nanosvg.h', // only used by the ../Example
-  r'third_party/libtess2/Example',
+  r'flutter/third_party/libtess2/Contrib/nanosvg.c', // only used by the ../Example
+  r'flutter/third_party/libtess2/Contrib/nanosvg.h', // only used by the ../Example
+  r'flutter/third_party/libtess2/Example',
   r'third_party/libwebp/doc',
   r'third_party/libwebp/gradle', // not included in our build
   r'third_party/libwebp/swig', // not included in our build
@@ -160,12 +164,8 @@ final Set<String> skippedPaths = <String>{
   r'third_party/pkg/quiver',
   r'third_party/pkg/vector_math',
   r'third_party/pyyaml', // build-time dependency only
-  r'third_party/rapidjson/contrib', // contains nothing that ends up in the binary executable
-  r'third_party/rapidjson/doc', // documentation
   r'third_party/root_certificates/certdata.pem',
   r'third_party/root_certificates/certdata.txt',
-  r'third_party/shaderc/third_party/LICENSE.glslang', // unclear what the purpose of this file is
-  r'third_party/shaderc/third_party/LICENSE.spirv-tools', // unclear what the purpose of this file is
   r'third_party/skia/bazel', // contains nothing that ends up in the binary executable
   r'third_party/skia/bench',
   r'third_party/skia/demos.skia.org',
