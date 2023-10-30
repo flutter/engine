@@ -1,8 +1,6 @@
 # Specialization Constants
 
-A specialization constant is a named variable that contains a value that contains a known constant
-value at runtime, but not when the shader is authored. These variables are bound to specific values when
-the shader is compiled on application start up and allow the backend to perform optimizations such as branch elimination and constant folding.
+A specialization constant is a named variable that is known to be constant at runtime but not when the shader is authored. These variables are bound to specific values when the shader is compiled on application start up and allow the backend to perform optimizations such as branch elimination and constant folding.
 
 Specialization constants have two possible benefits when used in a shader:
 
