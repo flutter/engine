@@ -1348,21 +1348,6 @@ TEST_P(AiksTest, CanDrawAnOpenPathThatIsntARect) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-static sk_sp<SkData> OpenFixtureAsSkData(const char* fixture_name) {
-  auto mapping = flutter::testing::OpenFixtureAsMapping(fixture_name);
-  if (!mapping) {
-    return nullptr;
-  }
-  auto data = SkData::MakeWithProc(
-      mapping->GetMapping(), mapping->GetSize(),
-      [](const void* ptr, void* context) {
-        delete reinterpret_cast<fml::Mapping*>(context);
-      },
-      mapping.get());
-  mapping.release();
-  return data;
-}
-
 struct TextRenderOptions {
   Scalar font_size = 50;
   Scalar alpha = 1;
@@ -1383,7 +1368,7 @@ bool RenderTextInCanvasSkia(const std::shared_ptr<Context>& context,
                     Paint{.color = Color::Red().WithAlpha(0.25)});
 
   // Construct the text blob.
-  auto mapping = OpenFixtureAsSkData(font_fixture.c_str());
+  auto mapping = flutter::testing::OpenFixtureAsSkData(font_fixture.c_str());
   if (!mapping) {
     return false;
   }
@@ -1560,7 +1545,7 @@ TEST_P(AiksTest, CanRenderTextOutsideBoundaries) {
   canvas.Translate({200, 150});
 
   // Construct the text blob.
-  auto mapping = OpenFixtureAsSkData("wtf.otf");
+  auto mapping = flutter::testing::OpenFixtureAsSkData("wtf.otf");
   ASSERT_NE(mapping, nullptr);
 
   Scalar font_size = 80;
@@ -3366,7 +3351,7 @@ TEST_P(AiksTest, CanDrawPointsWithTextureMap) {
 // moved into DLDispatching. Path data requires the SkTextBlobs which are not
 // used in impeller::TextFrames.
 TEST_P(AiksTest, TextForegroundShaderWithTransform) {
-  auto mapping = OpenFixtureAsSkData("Roboto-Regular.ttf");
+  auto mapping = flutter::testing::OpenFixtureAsSkData("Roboto-Regular.ttf");
   ASSERT_NE(mapping, nullptr);
 
   Scalar font_size = 100;
