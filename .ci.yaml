@@ -448,27 +448,27 @@ targets:
   #   drone_dimensions:
   #     - os=Mac-13
 
-  - name: Linux mac_unopt
-    recipe: engine_v2/engine_v2
-    properties:
-      config_name: mac_unopt
-      add_recipes_cq: "true"
-    timeout: 120
-
-  # - name: Mac mac_ios_engine
+  # - name: Linux mac_unopt
   #   recipe: engine_v2/engine_v2
-  #   timeout: 120
   #   properties:
+  #     config_name: mac_unopt
   #     add_recipes_cq: "true"
-  #     release_build: "true"
-  #     config_name: mac_ios_engine
-  #     $flutter/osx_sdk : >-
-  #       {
-  #         "sdk_version": "14e300c"
-  #       }
-  #   drone_dimensions:
-  #     - os=Mac-13
-  #     - cpu=x86
+  #   timeout: 120
+
+  - name: Mac mac_ios_engine
+    recipe: engine_v2/engine_v2
+    timeout: 120
+    properties:
+      add_recipes_cq: "true"
+      release_build: "true"
+      config_name: mac_ios_engine
+      $flutter/osx_sdk : >-
+        {
+          "sdk_version": "14e300c"
+        }
+    drone_dimensions:
+      - os=Mac-13
+      - cpu=x86
 
   # - name: Mac impeller-cmake-example
   #   recipe: engine_v2/engine_v2
