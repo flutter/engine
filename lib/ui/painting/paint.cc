@@ -34,8 +34,9 @@ constexpr int kMaskFilterIndex = 9;
 constexpr int kMaskFilterBlurStyleIndex = 10;
 constexpr int kMaskFilterSigmaIndex = 11;
 constexpr int kInvertColorIndex = 12;
-constexpr int kDitherIndex = 13;
-constexpr size_t kDataByteCount = 56;  // 4 * (last index + 1)
+constexpr size_t kDataByteCount = 52;  // 4 * (last index + 1)
+static_assert(kDataByteCount == sizeof(uint32_t) * (kInvertColorIndex + 1),
+              "kDataByteCount must match the size of the data array.");
 
 // Indices for objects.
 constexpr int kShaderIndex = 0;
