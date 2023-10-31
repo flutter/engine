@@ -51,10 +51,7 @@ if command -v arch &> /dev/null && [[ $(arch) == "arm64" ]]; then
   CLANG_TIDY_PATH="buildtools/mac-arm64/clang/bin/clang-tidy"
 fi
 
-COMPILE_COMMANDS="$SRC_DIR/out/$BUILD_DIR/compile_commands.json"
-if [ ! -f "$COMPILE_COMMANDS" ]; then
-  (cd "$SRC_DIR"; ./flutter/tools/gn)
-fi
+(cd "$SRC_DIR"; ./flutter/tools/gn)
 
 echo "$(date +%T) Running clang_tidy"
 
