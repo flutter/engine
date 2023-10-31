@@ -36,8 +36,9 @@ class OffscreenSurfaceImpeller : public OffscreenSurfaceBase {
 
  private:
   std::shared_ptr<impeller::AiksContext> surface_context_;
+  SkISize size_;
   std::shared_ptr<DisplayListBuilder> builder_ =
-      std::make_shared<DisplayListBuilder>(false);
+      std::make_shared<DisplayListBuilder>(true);
 
   OffscreenSurfaceImpeller(const OffscreenSurfaceImpeller&) = default;
   OffscreenSurfaceImpeller(OffscreenSurfaceImpeller&&) = delete;

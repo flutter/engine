@@ -5,8 +5,10 @@
 #include "flutter/flow/layers/offscreen_surface_impeller.h"
 
 #include "fml/synchronization/count_down_latch.h"
+#include "impeller/core/formats.h"
 #include "impeller/display_list/dl_dispatcher.h"
 #include "impeller/renderer/command_buffer.h"
+#include "include/core/SkRect.h"
 #include "include/core/SkSize.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkData.h"
@@ -22,18 +24,33 @@ namespace flutter {
 OffscreenSurfaceImpeller::OffscreenSurfaceImpeller(
     const std::shared_ptr<impeller::AiksContext>& surface_context,
     const SkISize& size)
-    : surface_context_(surface_context) {}
+    : surface_context_(surface_context), size_(size) {}
+
+static std::optional<SkColorType> ToColorType(
+    impeller::PixelFormat pixel_format) {
+  switch (pixel_format) {
+    case impeller::PixelFormat::kR8G8B8A8UNormInt:
+      return kRGBA_8888_SkColorType;
+    case impeller::PixelFormat::kB8G8R8A8UNormInt:
+      return kBGRA_8888_SkColorType;
+    case impeller::PixelFormat::kR16G16B16A16Float:
+      return kRGBA_F16_SkColorType;
+    case impeller::PixelFormat::kB10G10R10XR:
+      return kBGR_101010x_XR_SkColorType;
+    default:
+      return std::nullopt;
+  }
+  return std::nullopt;
+}
 
 sk_sp<SkData> OffscreenSurfaceImpeller::GetRasterData(bool compressed) const {
   auto display_list = builder_->Build();
   if (!display_list) {
     return nullptr;
   }
-
-  auto raw_size = display_list->bounds();
-  SkIRect sk_cull_rect = SkIRect::MakeWH(raw_size.width(), raw_size.height());
-  impeller::Rect cull_rect = impeller::Rect::MakeLTRB(
-      0, 0, sk_cull_rect.width(), sk_cull_rect.height());
+  SkIRect sk_cull_rect = SkIRect::MakeWH(size_.width(), size_.height());
+  impeller::Rect cull_rect =
+      impeller::Rect::MakeLTRB(0, 0, size_.width(), size_.height());
   impeller::DlDispatcher impeller_dispatcher(cull_rect);
   display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
   auto picture = impeller_dispatcher.EndRecordingAsPicture();
@@ -84,20 +101,18 @@ sk_sp<SkData> OffscreenSurfaceImpeller::GetRasterData(bool compressed) const {
   }
 
   auto buffer_view = device_buffer->AsBufferView();
+  auto color_format = ToColorType(texture->GetTextureDescriptor().format);
 
-  SkColorType color_type = SkColorType::kRGBA_8888_SkColorType;
-  auto impeller_format = texture->GetTextureDescriptor().format;
-  if (impeller_format == impeller::PixelFormat::kR8G8B8A8UNormInt) {
-    color_type = SkColorType::kRGBA_8888_SkColorType;
-  } else if (impeller_format == impeller::PixelFormat::kB8G8R8A8UNormInt) {
-    color_type = SkColorType::kBGRA_8888_SkColorType;
-  } else {
-    FML_LOG(ERROR) << "Unsupported surface format.";
+  if (!color_format.has_value()) {
+    FML_LOG(ERROR) << "Unsupported surface format: "
+                   << impeller::PixelFormatToString(
+                          texture->GetTextureDescriptor().format);
+    return nullptr;
   }
 
   SkISize image_size =
       SkISize::Make(image->GetSize().width, image->GetSize().height);
-  SkImageInfo image_info = SkImageInfo::Make(image_size, color_type,
+  SkImageInfo image_info = SkImageInfo::Make(image_size, color_format.value(),
                                              SkAlphaType::kPremul_SkAlphaType);
 
   SkBitmap bitmap;
@@ -111,7 +126,11 @@ sk_sp<SkData> OffscreenSurfaceImpeller::GetRasterData(bool compressed) const {
   // If the caller want the pixels to be compressed, there is a Skia utility to
   // compress to PNG. Use that.
   if (compressed) {
-    return SkPngEncoder::Encode(nullptr, raster_image.get(), {});
+    auto result = SkPngEncoder::Encode(nullptr, raster_image.get(), {});
+    if (!result) {
+      FML_LOG(ERROR) << "Failed to encode image to PNG.";
+    }
+    return result;
   }
 
   // Copy it into a bitmap and return the same.
