@@ -12,7 +12,7 @@ import 'package:process/process.dart';
 const String _kGoldctlKey = 'GOLDCTL';
 const String _kPresubmitEnvName = 'GOLD_TRYJOB';
 const String _kLuciEnvName = 'LUCI_CONTEXT';
-const String _kEngineCheckout = 'ENGINE_CHECKOUT';
+const String _kEngineCheckout = 'ENGINE_CHECKOUT_PATH';
 
 const String _skiaGoldHost = 'https://flutter-engine-gold.skia.org';
 const String _instance = 'flutter-engine';
