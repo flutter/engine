@@ -287,6 +287,8 @@ class Options {
 
   final StringSink _errSink;
 
+  /// Override for which clang-tidy to use. If it is null it will be derived
+  /// instead.
   final io.File? clangTidyPath;
 
   /// Print command usage with an additional message.
