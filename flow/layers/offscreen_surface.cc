@@ -66,7 +66,7 @@ static sk_sp<SkData> GetRasterData(const sk_sp<SkSurface>& offscreen_surface,
   return SkData::MakeWithCopy(pixmap.addr32(), pixmap.computeByteSize());
 }
 
-OffscreenSurface::OffscreenSurface(GrDirectContext* surface_context,
+OffscreenSurfaceSkia::OffscreenSurfaceSkia(GrDirectContext* surface_context,
                                    const SkISize& size) {
   offscreen_surface_ = CreateSnapshotSurface(surface_context, size);
   if (offscreen_surface_) {
@@ -74,15 +74,15 @@ OffscreenSurface::OffscreenSurface(GrDirectContext* surface_context,
   }
 }
 
-sk_sp<SkData> OffscreenSurface::GetRasterData(bool compressed) const {
+sk_sp<SkData> OffscreenSurfaceSkia::GetRasterData(bool compressed) const {
   return flutter::GetRasterData(offscreen_surface_, compressed);
 }
 
-DlCanvas* OffscreenSurface::GetCanvas() {
+DlCanvas* OffscreenSurfaceSkia::GetCanvas() {
   return &adapter_;
 }
 
-bool OffscreenSurface::IsValid() const {
+bool OffscreenSurfaceSkia::IsValid() const {
   return offscreen_surface_ != nullptr;
 }
 

@@ -665,6 +665,7 @@ class Rasterizer final : public SnapshotDelegate,
       flutter::LayerTree* tree,
       flutter::CompositorContext& compositor_context,
       GrDirectContext* surface_context,
+      const std::shared_ptr<impeller::AiksContext>& aiks_context,
       bool compressed);
 
   // This method starts with the frame timing recorder at build end. This

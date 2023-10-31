@@ -130,7 +130,7 @@ void DisplayListLayer::Paint(PaintContext& context) const {
   if (context.enable_leaf_layer_tracing) {
     const auto canvas_size = context.canvas->GetBaseLayerSize();
     auto offscreen_surface =
-        std::make_unique<OffscreenSurface>(context.gr_context, canvas_size);
+        std::make_unique<OffscreenSurfaceSkia>(context.gr_context, canvas_size);
 
     const auto& ctm = context.canvas->GetTransform();
 

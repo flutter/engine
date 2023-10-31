@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "flow/frame_timings.h"
+#include "flow/layers/offscreen_surface_impeller.h"
 #include "flutter/common/constants.h"
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/flow/layers/offscreen_surface.h"
@@ -17,6 +18,7 @@
 #include "flutter/shell/common/base64.h"
 #include "flutter/shell/common/serialization_callbacks.h"
 #include "fml/make_copyable.h"
+#include "impeller/aiks/aiks_context.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkImage.h"
@@ -817,11 +819,19 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
     flutter::LayerTree* tree,
     flutter::CompositorContext& compositor_context,
     GrDirectContext* surface_context,
+    const std::shared_ptr<impeller::AiksContext>& aiks_context,
     bool compressed) {
+  std::unique_ptr<OffscreenSurfaceBase> snapshot_surface;
+
   // Attempt to create a snapshot surface depending on whether we have access
   // to a valid GPU rendering context.
-  std::unique_ptr<OffscreenSurface> snapshot_surface =
-      std::make_unique<OffscreenSurface>(surface_context, tree->frame_size());
+  if (aiks_context) {
+    snapshot_surface = std::make_unique<OffscreenSurfaceImpeller>(
+        aiks_context, tree->frame_size());
+  } else {
+    snapshot_surface = std::make_unique<OffscreenSurfaceSkia>(
+        surface_context, tree->frame_size());
+  }
 
   if (!snapshot_surface->IsValid()) {
     FML_LOG(ERROR) << "Screenshot: unable to create snapshot surface";
@@ -882,6 +892,9 @@ Rasterizer::Screenshot Rasterizer::ScreenshotLastLayerTree(
   GrDirectContext* surface_context =
       surface_ ? surface_->GetContext() : nullptr;
 
+  std::shared_ptr<impeller::AiksContext> aiks_context =
+      surface_ ? surface_->GetAiksContext() : nullptr;
+
   switch (type) {
     case ScreenshotType::SkiaPicture:
       format = "ScreenshotType::SkiaPicture";
@@ -890,12 +903,12 @@ Rasterizer::Screenshot Rasterizer::ScreenshotLastLayerTree(
     case ScreenshotType::UncompressedImage:
       format = "ScreenshotType::UncompressedImage";
       data = ScreenshotLayerTreeAsImage(layer_tree, *compositor_context_,
-                                        surface_context, false);
+                                        surface_context, aiks_context, false);
       break;
     case ScreenshotType::CompressedImage:
       format = "ScreenshotType::CompressedImage";
       data = ScreenshotLayerTreeAsImage(layer_tree, *compositor_context_,
-                                        surface_context, true);
+                                        surface_context, aiks_context, true);
       break;
     case ScreenshotType::SurfaceData: {
       Surface::SurfaceData surface_data = surface_->GetSurfaceData();

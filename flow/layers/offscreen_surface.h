@@ -5,9 +5,6 @@
 #ifndef FLUTTER_FLOW_LAYERS_OFFSCREEN_SURFACE_H_
 #define FLUTTER_FLOW_LAYERS_OFFSCREEN_SURFACE_H_
 
-#include "flutter/fml/logging.h"
-#include "flutter/fml/macros.h"
-
 #include "flutter/display_list/dl_canvas.h"
 #include "flutter/display_list/skia/dl_sk_canvas.h"
 #include "third_party/skia/include/core/SkData.h"
@@ -19,24 +16,38 @@ class GrDirectContext;
 
 namespace flutter {
 
-class OffscreenSurface {
+class OffscreenSurfaceBase {
  public:
-  explicit OffscreenSurface(GrDirectContext* surface_context,
-                            const SkISize& size);
+  virtual ~OffscreenSurfaceBase() {}
 
-  ~OffscreenSurface() = default;
+  virtual sk_sp<SkData> GetRasterData(bool compressed) const = 0;
 
-  sk_sp<SkData> GetRasterData(bool compressed) const;
+  virtual DlCanvas* GetCanvas() = 0;
 
-  DlCanvas* GetCanvas();
+  virtual bool IsValid() const = 0;
+};
 
-  bool IsValid() const;
+class OffscreenSurfaceSkia : public OffscreenSurfaceBase {
+ public:
+  explicit OffscreenSurfaceSkia(GrDirectContext* surface_context,
+                                const SkISize& size);
+
+  ~OffscreenSurfaceSkia() override = default;
+
+  sk_sp<SkData> GetRasterData(bool compressed) const override;
+
+  DlCanvas* GetCanvas() override;
+
+  bool IsValid() const override;
 
  private:
   sk_sp<SkSurface> offscreen_surface_;
   DlSkCanvasAdapter adapter_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(OffscreenSurface);
+  OffscreenSurfaceSkia(const OffscreenSurfaceSkia&) = default;
+  OffscreenSurfaceSkia(OffscreenSurfaceSkia&&) = delete;
+  OffscreenSurfaceSkia& operator=(const OffscreenSurfaceSkia&) = default;
+  OffscreenSurfaceSkia& operator=(OffscreenSurfaceSkia&&) = delete;
 };
 
 }  // namespace flutter
