@@ -23,8 +23,6 @@ static TextureGLES::Type GetTextureTypeFromDescriptor(
   const auto render_target =
       static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
   const auto is_msaa = desc.sample_count == SampleCount::kCount4;
-  // If the texture is a render target and a stencil-formatted texture.
-  // TODO: Explain why.
   if (usage == render_target && desc.format == PixelFormat::kS8UInt) {
     return is_msaa ? TextureGLES::Type::kRenderBufferMultisampled
                    : TextureGLES::Type::kRenderBuffer;
