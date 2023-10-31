@@ -23,6 +23,7 @@
 #include "impeller/entity/entity.h"
 #include "impeller/entity/inline_pass_context.h"
 #include "impeller/geometry/color.h"
+#include "impeller/geometry/rect.h"
 #include "impeller/renderer/command_buffer.h"
 
 #ifdef IMPELLER_DEBUG
@@ -129,13 +130,8 @@ std::optional<Rect> EntityPass::GetElementsCoverage(
         if (backdrop_filter) {
           auto backdrop_coverage = backdrop_filter->GetCoverage({});
           if (backdrop_coverage.has_value()) {
-            backdrop_coverage->origin += accumulated_coverage->origin;
-            if (unfiltered_coverage.has_value()) {
-              unfiltered_coverage =
-                  unfiltered_coverage->Union(*backdrop_coverage);
-            } else {
-              unfiltered_coverage = backdrop_coverage;
-            }
+            unfiltered_coverage =
+                Union(backdrop_coverage.value(), unfiltered_coverage);
           }
         } else {
           VALIDATION_LOG << "The EntityPass backdrop filter proc didn't return "
@@ -166,24 +162,12 @@ std::optional<Rect> EntityPass::GetElementsCoverage(
         element_coverage = unfiltered_coverage;
       }
 
-      if (element_coverage.has_value() && coverage_limit.has_value() &&
-          (!image_filter || image_filter->IsTranslationOnly())) {
-        element_coverage =
-            element_coverage->Intersection(coverage_limit.value());
-      }
+      element_coverage = Intersection(element_coverage, coverage_limit);
     } else {
       FML_UNREACHABLE();
     }
 
-    if (!accumulated_coverage.has_value() && element_coverage.has_value()) {
-      accumulated_coverage = element_coverage;
-      continue;
-    }
-    if (!element_coverage.has_value()) {
-      continue;
-    }
-    accumulated_coverage =
-        accumulated_coverage->Union(element_coverage.value());
+    accumulated_coverage = Union(accumulated_coverage, element_coverage);
   }
   return accumulated_coverage;
 }
