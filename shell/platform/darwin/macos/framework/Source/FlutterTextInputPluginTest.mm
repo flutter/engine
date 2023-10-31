@@ -12,6 +12,8 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/NSView+ClipsToBounds.h"
 
 #import <OCMock/OCMock.h>
+
+#import "flutter/testing/autoreleasepool_test.h"
 #import "flutter/testing/testing.h"
 
 @interface FlutterTextField (Testing)
@@ -1816,109 +1818,119 @@ FlutterEngine* CreateTestEngine() {
 }
 }  // namespace
 
-TEST(FlutterTextInputPluginTest, TestEmptyCompositionRange) {
+// AutoreleasePoolTest subclass that exists simply to provide more specific naming.
+class FlutterTextInputPluginTest : public AutoreleasePoolTest {
+ public:
+  FlutterTextInputPluginTest() = default;
+  ~FlutterTextInputPluginTest() = default;
+
+ private:
+  FML_DISALLOW_COPY_AND_ASSIGN(FlutterTextInputPluginTest);
+};
+
+TEST_F(FlutterTextInputPluginTest, TestEmptyCompositionRange) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testEmptyCompositionRange]);
 }
 
-TEST(FlutterTextInputPluginTest, TestSetMarkedTextWithSelectionChange) {
+TEST_F(FlutterTextInputPluginTest, TestSetMarkedTextWithSelectionChange) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testSetMarkedTextWithSelectionChange]);
 }
 
-TEST(FlutterTextInputPluginTest, TestSetMarkedTextWithReplacementRange) {
+TEST_F(FlutterTextInputPluginTest, TestSetMarkedTextWithReplacementRange) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testSetMarkedTextWithReplacementRange]);
 }
 
-TEST(FlutterTextInputPluginTest, TestComposingRegionRemovedByFramework) {
+TEST_F(FlutterTextInputPluginTest, TestComposingRegionRemovedByFramework) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testComposingRegionRemovedByFramework]);
 }
 
-TEST(FlutterTextInputPluginTest, TestClearClientDuringComposing) {
+TEST_F(FlutterTextInputPluginTest, TestClearClientDuringComposing) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testClearClientDuringComposing]);
 }
 
-TEST(FlutterTextInputPluginTest, TestAutocompleteDisabledWhenAutofillNotSet) {
+TEST_F(FlutterTextInputPluginTest, TestAutocompleteDisabledWhenAutofillNotSet) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testAutocompleteDisabledWhenAutofillNotSet]);
 }
 
-TEST(FlutterTextInputPluginTest, TestAutocompleteEnabledWhenAutofillSet) {
+TEST_F(FlutterTextInputPluginTest, TestAutocompleteEnabledWhenAutofillSet) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testAutocompleteEnabledWhenAutofillSet]);
 }
 
-TEST(FlutterTextInputPluginTest, TestAutocompleteEnabledWhenAutofillSetNoHint) {
+TEST_F(FlutterTextInputPluginTest, TestAutocompleteEnabledWhenAutofillSetNoHint) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testAutocompleteEnabledWhenAutofillSetNoHint]);
 }
 
-TEST(FlutterTextInputPluginTest, TestAutocompleteDisabledWhenObscureTextSet) {
+TEST_F(FlutterTextInputPluginTest, TestAutocompleteDisabledWhenObscureTextSet) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testAutocompleteDisabledWhenObscureTextSet]);
 }
 
-TEST(FlutterTextInputPluginTest, TestAutocompleteDisabledWhenPasswordAutofillSet) {
+TEST_F(FlutterTextInputPluginTest, TestAutocompleteDisabledWhenPasswordAutofillSet) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testAutocompleteDisabledWhenPasswordAutofillSet]);
 }
 
-TEST(FlutterTextInputPluginTest, TestAutocompleteDisabledWhenAutofillGroupIncludesPassword) {
+TEST_F(FlutterTextInputPluginTest, TestAutocompleteDisabledWhenAutofillGroupIncludesPassword) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc]
       testAutocompleteDisabledWhenAutofillGroupIncludesPassword]);
 }
 
-TEST(FlutterTextInputPluginTest, TestFirstRectForCharacterRange) {
+TEST_F(FlutterTextInputPluginTest, TestFirstRectForCharacterRange) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testFirstRectForCharacterRange]);
 }
 
-TEST(FlutterTextInputPluginTest, TestFirstRectForCharacterRangeAtInfinity) {
+TEST_F(FlutterTextInputPluginTest, TestFirstRectForCharacterRangeAtInfinity) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testFirstRectForCharacterRangeAtInfinity]);
 }
 
-TEST(FlutterTextInputPluginTest, TestFirstRectForCharacterRangeWithEsotericAffineTransform) {
+TEST_F(FlutterTextInputPluginTest, TestFirstRectForCharacterRangeWithEsotericAffineTransform) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc]
       testFirstRectForCharacterRangeWithEsotericAffineTransform]);
 }
 
-TEST(FlutterTextInputPluginTest, TestSetEditingStateWithTextEditingDelta) {
+TEST_F(FlutterTextInputPluginTest, TestSetEditingStateWithTextEditingDelta) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testSetEditingStateWithTextEditingDelta]);
 }
 
-TEST(FlutterTextInputPluginTest, TestOperationsThatTriggerDelta) {
+TEST_F(FlutterTextInputPluginTest, TestOperationsThatTriggerDelta) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testOperationsThatTriggerDelta]);
 }
 
-TEST(FlutterTextInputPluginTest, TestComposingWithDelta) {
+TEST_F(FlutterTextInputPluginTest, TestComposingWithDelta) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testComposingWithDelta]);
 }
 
-TEST(FlutterTextInputPluginTest, testComposingWithDeltasWhenSelectionIsActive) {
+TEST_F(FlutterTextInputPluginTest, testComposingWithDeltasWhenSelectionIsActive) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testComposingWithDeltasWhenSelectionIsActive]);
 }
 
-TEST(FlutterTextInputPluginTest, TestLocalTextAndSelectionUpdateAfterDelta) {
+TEST_F(FlutterTextInputPluginTest, TestLocalTextAndSelectionUpdateAfterDelta) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testLocalTextAndSelectionUpdateAfterDelta]);
 }
 
-TEST(FlutterTextInputPluginTest, TestPerformKeyEquivalent) {
+TEST_F(FlutterTextInputPluginTest, TestPerformKeyEquivalent) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testPerformKeyEquivalent]);
 }
 
-TEST(FlutterTextInputPluginTest, HandleArrowKeyWhenImePopoverIsActive) {
+TEST_F(FlutterTextInputPluginTest, HandleArrowKeyWhenImePopoverIsActive) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] handleArrowKeyWhenImePopoverIsActive]);
 }
 
-TEST(FlutterTextInputPluginTest, UnhandledKeyEquivalent) {
+TEST_F(FlutterTextInputPluginTest, UnhandledKeyEquivalent) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] unhandledKeyEquivalent]);
 }
 
-TEST(FlutterTextInputPluginTest, TestSelectorsAreForwardedToFramework) {
+TEST_F(FlutterTextInputPluginTest, TestSelectorsAreForwardedToFramework) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testSelectorsAreForwardedToFramework]);
 }
 
-TEST(FlutterTextInputPluginTest, TestInsertNewLine) {
+TEST_F(FlutterTextInputPluginTest, TestInsertNewLine) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testInsertNewLine]);
 }
 
-TEST(FlutterTextInputPluginTest, TestSendActionDoNotInsertNewLine) {
+TEST_F(FlutterTextInputPluginTest, TestSendActionDoNotInsertNewLine) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testSendActionDoNotInsertNewLine]);
 }
 
-TEST(FlutterTextInputPluginTest, CanWorkWithFlutterTextField) {
+TEST_F(FlutterTextInputPluginTest, CanWorkWithFlutterTextField) {
   FlutterEngine* engine = CreateTestEngine();
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
                                                                                 nibName:nil
@@ -1983,7 +1995,7 @@ TEST(FlutterTextInputPluginTest, CanWorkWithFlutterTextField) {
   [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
 }
 
-TEST(FlutterTextInputPluginTest, CanNotBecomeResponderIfNoViewController) {
+TEST_F(FlutterTextInputPluginTest, CanNotBecomeResponderIfNoViewController) {
   FlutterEngine* engine = CreateTestEngine();
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
                                                                                 nibName:nil
@@ -2017,7 +2029,7 @@ TEST(FlutterTextInputPluginTest, CanNotBecomeResponderIfNoViewController) {
   EXPECT_EQ([textField becomeFirstResponder], NO);
 }
 
-TEST(FlutterTextInputPluginTest, IsAddedAndRemovedFromViewHierarchy) {
+TEST_F(FlutterTextInputPluginTest, IsAddedAndRemovedFromViewHierarchy) {
   FlutterEngine* engine = CreateTestEngine();
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
                                                                                 nibName:nil
@@ -2050,7 +2062,7 @@ TEST(FlutterTextInputPluginTest, IsAddedAndRemovedFromViewHierarchy) {
   ASSERT_FALSE(window.firstResponder == viewController.textInputPlugin);
 }
 
-TEST(FlutterTextInputPluginTest, FirstResponderIsCorrect) {
+TEST_F(FlutterTextInputPluginTest, FirstResponderIsCorrect) {
   FlutterEngine* engine = CreateTestEngine();
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
                                                                                 nibName:nil
@@ -2085,7 +2097,7 @@ TEST(FlutterTextInputPluginTest, FirstResponderIsCorrect) {
   ASSERT_TRUE(window.firstResponder == viewController.flutterView);
 }
 
-TEST(FlutterTextInputPluginTest, HasZeroSizeAndClipsToBounds) {
+TEST_F(FlutterTextInputPluginTest, HasZeroSizeAndClipsToBounds) {
   id engineMock = flutter::testing::CreateMockFlutterEngine(@"");
   id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
   OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
