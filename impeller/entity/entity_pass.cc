@@ -725,7 +725,8 @@ bool EntityPass::RenderElement(Entity& element_entity,
   // blit the non-MSAA resolve texture of the previous pass to MSAA textures
   // (let alone a transient one).
   if (result.backdrop_texture) {
-    // Restore any clips that were recorded before the backdrop filter was applied.
+    // Restore any clips that were recorded before the backdrop filter was
+    // applied.
     for (const auto& entity : clip_replay_->GetReplayEntities()) {
       if (!entity.Render(renderer, *result.pass)) {
         VALIDATION_LOG << "Failed to render entity for clip restore.";

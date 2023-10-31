@@ -287,7 +287,8 @@ class EntityPass {
   bool flood_clip_ = false;
   bool enable_offscreen_debug_checkerboard_ = false;
   std::optional<Rect> bounds_limit_;
-  std::unique_ptr<EntityPassClipReplay> clip_replay_ = std::make_unique<EntityPassClipReplay>();
+  std::unique_ptr<EntityPassClipReplay> clip_replay_ =
+      std::make_unique<EntityPassClipReplay>();
 
   /// These values are incremented whenever something is added to the pass that
   /// requires reading from the backdrop texture. Currently, this can happen in
