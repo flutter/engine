@@ -7,7 +7,6 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
-import 'dart:isolate';
 
 import 'package:litetest/litetest.dart';
 import 'package:path/path.dart' as path;
@@ -127,7 +126,6 @@ void testNoCrashes() {
 }
 
 void main() async {
-  ReceivePort port = ReceivePort('test');
   final ImageComparer comparer = await ImageComparer.create(verbose: true);
 
   testNoCrashes();
@@ -1034,8 +1032,6 @@ void main() async {
     canvas.restoreToCount(canvas.getSaveCount() + 1);
     expect(canvas.getSaveCount(), equals(6));
   });
-
-  port.close();
 }
 
 Matcher listEquals(ByteData expected) => (dynamic v) {

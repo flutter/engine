@@ -6,7 +6,7 @@ import 'dart:async';
 import 'dart:io' show stdout;
 import 'dart:isolate';
 
-import 'package:async_helper/async_minitest.dart' as m;
+import 'package:async_helper/async_helper.dart' as m;
 import 'package:expect/expect.dart' as e;
 
 /// The state that each [Test] may be in.
@@ -35,9 +35,8 @@ class Test {
     this.body, {
     StringSink? logger,
     TestLifecycle? lifecycle,
-  }) :
-    _logger = logger ?? stdout,
-    _lifecycle = lifecycle ?? _DefaultTestLifecycle(name);
+  })  : _logger = logger ?? stdout,
+        _lifecycle = lifecycle ?? _DefaultTestLifecycle(name);
 
   /// The name of the test.
   final String name;
@@ -52,30 +51,32 @@ class Test {
   TestState state = TestState.allocated;
 
   final TestLifecycle _lifecycle;
+  final Object _testToken = Object();
 
   /// Runs the test.
   ///
   /// Also signals the test's progress to the [TestLifecycle] object
   /// that was provided when the [Test] was constructed, which will eventually
   /// call the provided [onDone] callback.
-  void run({
+  Future<void> run({
     void Function()? onDone,
-  }) {
-    m.test(name, () async {
-      await Future<void>(() async {
-        state = TestState.started;
-        _logger.writeln('Test "$name": Started');
-        try {
-          await body();
-          state = TestState.succeeded;
-          _logger.writeln('Test "$name": Passed');
-        } on e.ExpectException catch (e, st) {
-          state = TestState.failed;
-          _logger.writeln('Test "$name": Failed\n$e\n$st');
-        } finally {
-          _lifecycle.onDone(cleanup: onDone);
-        }
-      });
+  }) async {
+    m.asyncStart();
+    await Future<void>(() async {
+      state = TestState.started;
+      _logger.writeln('Test "$name": Started');
+      try {
+        await body();
+        state = TestState.succeeded;
+        _logger.writeln('Test "$name": Passed');
+      } on e.ExpectException catch (e, st) {
+        state = TestState.failed;
+        _logger.writeln('Test "$name": Failed\n$e\n$st');
+      } finally {
+        _lifecycle.onDone(cleanup: onDone);
+      }
+    }).then((_) {
+      m.asyncEnd();
     });
     _lifecycle.onStart();
   }
