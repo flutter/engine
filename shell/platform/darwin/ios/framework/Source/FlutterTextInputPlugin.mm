@@ -602,7 +602,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     case UITextGranularityLine:
       // The default UITextInputStringTokenizer does not handle line granularity
       // correctly. We need to implement our own line tokenizer.
-      result = [self lineEnclosingPosition:position];
+      result = [self lineEnclosingPosition:position inDirection:direction];
       break;
     case UITextGranularityCharacter:
     case UITextGranularityWord:
@@ -618,8 +618,18 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   return result;
 }
 
-- (UITextRange*)lineEnclosingPosition:(UITextPosition*)position {
+- (UITextRange*)lineEnclosingPosition:(UITextPosition*)position
+                          inDirection:(UITextDirection)direction {
   // Gets the first line break position after the input position.
+
+  // If querying the line from end of document in forward direction, report not found.
+  // This is an undocumented behavior of the default `UITextInputStringTokenizer`.
+  FlutterTextPosition* flutterPosition = (FlutterTextPosition*)position;
+  if (flutterPosition.index >= _textInputView.text.length &&
+      direction == UITextStorageDirectionForward) {
+    return nil;
+  }
+
   NSString* textAfter = [_textInputView
       textInRange:[_textInputView textRangeFromPosition:position
                                              toPosition:[_textInputView endOfDocument]]];
