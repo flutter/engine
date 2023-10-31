@@ -386,9 +386,6 @@ TEST_F(DisplayListTest, BuildRestoresAttributes) {
   builder.Build();
   check_defaults(builder, cull_rect);
 
-  builder.Build();
-  check_defaults(builder, cull_rect);
-
   receiver.setInvertColors(true);
   builder.Build();
   check_defaults(builder, cull_rect);

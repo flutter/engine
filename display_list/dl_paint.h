@@ -216,7 +216,6 @@ class DlPaint {
       unsigned stroke_cap_ : kStrokeCapBits;
       unsigned stroke_join_ : kStrokeJoinBits;
       unsigned is_anti_alias_ : 1;
-      unsigned is_dither_ : 1;
       unsigned is_invert_colors_ : 1;
     };
   };

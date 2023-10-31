@@ -53,8 +53,6 @@ SkPaint ToSk(const DlPaint& paint, bool force_stroke) {
     // See https://github.com/flutter/flutter/issues/112498.
     sk_paint.setDither(color_source->isGradient());
     sk_paint.setShader(ToSk(color_source));
-  } else {
-    sk_paint.setDither(false);
   }
 
   sk_paint.setMaskFilter(ToSk(paint.getMaskFilterPtr()));

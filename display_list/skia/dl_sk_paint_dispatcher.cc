@@ -70,8 +70,13 @@ void DlSkPaintDispatchHelper::setBlendMode(DlBlendMode mode) {
   paint_.setBlendMode(ToSk(mode));
 }
 void DlSkPaintDispatchHelper::setColorSource(const DlColorSource* source) {
-  color_source_gradient_ = source && source->isGradient();
   paint_.setShader(ToSk(source));
+
+  // On the Impeller backend, we only support dithering of *gradients*, and so
+  // by default, so this will force Skia to match that behavior (i.e. turning
+  // dithering on for gradient paints, and off for everything else).
+  auto const is_gradient = source && source->isGradient();
+  paint_.setDither(is_gradient);
 }
 void DlSkPaintDispatchHelper::setImageFilter(const DlImageFilter* filter) {
   paint_.setImageFilter(ToSk(filter));
