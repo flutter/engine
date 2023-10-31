@@ -11,7 +11,6 @@ import 'dart:ui';
 import 'package:litetest/litetest.dart';
 import 'package:path/path.dart' as path;
 import 'package:vector_math/vector_math_64.dart';
-import 'package:process/process.dart';
 
 import 'goldens.dart';
 import 'impeller_enabled.dart';
