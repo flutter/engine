@@ -67,7 +67,7 @@ static sk_sp<SkData> GetRasterData(const sk_sp<SkSurface>& offscreen_surface,
 }
 
 OffscreenSurfaceSkia::OffscreenSurfaceSkia(GrDirectContext* surface_context,
-                                   const SkISize& size) {
+                                           const SkISize& size) {
   offscreen_surface_ = CreateSnapshotSurface(surface_context, size);
   if (offscreen_surface_) {
     adapter_.set_canvas(offscreen_surface_->getCanvas());

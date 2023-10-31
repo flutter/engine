@@ -22,8 +22,9 @@ namespace flutter {
 
 class OffscreenSurfaceImpeller : public OffscreenSurfaceBase {
  public:
-  OffscreenSurfaceImpeller(const std::shared_ptr<impeller::AiksContext>& surface_context,
-                           const SkISize& size);
+  OffscreenSurfaceImpeller(
+      const std::shared_ptr<impeller::AiksContext>& surface_context,
+      const SkISize& size);
 
   ~OffscreenSurfaceImpeller() override = default;
 
@@ -35,7 +36,8 @@ class OffscreenSurfaceImpeller : public OffscreenSurfaceBase {
 
  private:
   std::shared_ptr<impeller::AiksContext> surface_context_;
-  std::shared_ptr<DisplayListBuilder> builder_ = std::make_shared<DisplayListBuilder>(false);
+  std::shared_ptr<DisplayListBuilder> builder_ =
+      std::make_shared<DisplayListBuilder>(false);
 
   OffscreenSurfaceImpeller(const OffscreenSurfaceImpeller&) = default;
   OffscreenSurfaceImpeller(OffscreenSurfaceImpeller&&) = delete;
