@@ -23,7 +23,9 @@ static TextureGLES::Type GetTextureTypeFromDescriptor(
   const auto render_target =
       static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
   const auto is_msaa = desc.sample_count == SampleCount::kCount4;
-  if (usage == render_target) {
+  // If the texture is a render target and a stencil-formatted texture.
+  // TODO: Explain why.
+  if (usage == render_target && desc.format == PixelFormat::kS8UInt) {
     return is_msaa ? TextureGLES::Type::kRenderBufferMultisampled
                    : TextureGLES::Type::kRenderBuffer;
   }
@@ -505,7 +507,6 @@ bool TextureGLES::SetAsFramebufferAttachment(GLenum target,
                                  GL_RENDERBUFFER,  // render-buffer target
                                  handle.value()    // render-buffer
       );
-      gl.BindRenderbuffer(GL_RENDERBUFFER, GL_NONE);
       break;
   }
 

@@ -188,19 +188,19 @@ struct GLProc {
 
 #define FOR_EACH_IMPELLER_GLES3_PROC(PROC) PROC(BlitFramebuffer);
 
-#define FOR_EACH_IMPELLER_EXT_PROC(PROC)   \
-  PROC(DebugMessageControlKHR);            \
-  PROC(DiscardFramebufferEXT);             \
-  PROC(FramebufferTexture2DMultisampleEXT) \
-  PROC(PushDebugGroupKHR);                 \
-  PROC(PopDebugGroupKHR);                  \
-  PROC(ObjectLabelKHR);                    \
-  PROC(RenderbufferStorageMultisampleEXT); \
-  PROC(GenQueriesEXT);                     \
-  PROC(DeleteQueriesEXT);                  \
-  PROC(GetQueryObjectui64vEXT);            \
-  PROC(BeginQueryEXT);                     \
-  PROC(EndQueryEXT);                       \
+#define FOR_EACH_IMPELLER_EXT_PROC(PROC)    \
+  PROC(DebugMessageControlKHR);             \
+  PROC(DiscardFramebufferEXT);              \
+  PROC(FramebufferTexture2DMultisampleEXT); \
+  PROC(PushDebugGroupKHR);                  \
+  PROC(PopDebugGroupKHR);                   \
+  PROC(ObjectLabelKHR);                     \
+  PROC(RenderbufferStorageMultisampleEXT);  \
+  PROC(GenQueriesEXT);                      \
+  PROC(DeleteQueriesEXT);                   \
+  PROC(GetQueryObjectui64vEXT);             \
+  PROC(BeginQueryEXT);                      \
+  PROC(EndQueryEXT);                        \
   PROC(GetQueryObjectuivEXT);
 
 enum class DebugResourceType {
