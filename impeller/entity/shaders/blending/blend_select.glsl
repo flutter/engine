@@ -21,7 +21,7 @@
 // kSaturation,
 // kColor,
 // kLuminosity,
-// Note, this isn't a switch as GLSL 1.0 does not support them.
+// Note, this isn't a switch as GLSL ES 1.0 does not support them.
 #define AdvancedBlend(blend_type)           \
   f16vec3 Blend(f16vec3 dst, f16vec3 src) { \
     if (blend_type == 0) {                  \
