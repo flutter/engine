@@ -450,7 +450,7 @@ class SkiaGoldClient {
   String _getEngineCheckoutPath() {
     // TODO(137638): This should not be necessary, but Platform.script on
     // flutter_tester does not actually provide helpful information.
-    final String? engineCheckout = Platform.environment[_kEngineCheckout]
+    final String? engineCheckout = Platform.environment[_kEngineCheckout];
     if (engineCheckout != null) {
       return path.join(engineCheckout, 'src', 'flutter');
     }
@@ -460,12 +460,13 @@ class SkiaGoldClient {
 
   /// Returns the current commit hash of the engine repository.
   Future<String> _getCurrentCommit() async {
+    final String engineCheckout = _getEngineCheckoutPath();
     final ProcessResult revParse = await process.run(
       <String>['git', 'rev-parse', 'HEAD'],
-      workingDirectory: _getEngineCheckoutPath(),
+      workingDirectory: engineCheckout,
     );
     if (revParse.exitCode != 0) {
-      throw Exception('Current commit of the engine can not be found from path ${currentScript.path}.');
+      throw Exception('Current commit of the engine can not be found from path $engineCheckout.');
     }
     return (revParse.stdout as String).trim();
   }
