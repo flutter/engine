@@ -510,10 +510,6 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     element_entity = *entity;
     element_entity.SetCapture(capture.CreateChild("Entity"));
 
-    if (element_entity.record) {
-      rendered_clip_entities_.push_back({element_entity, element_entity.GetTransformation()});
-    }
-
     if (!global_pass_position.IsZero()) {
       // If the pass image is going to be rendered with a non-zero position,
       // apply the negative translation to entity copies before rendering them
@@ -729,6 +725,13 @@ bool EntityPass::RenderElement(Entity& element_entity,
   // blit the non-MSAA resolve texture of the previous pass to MSAA textures
   // (let alone a transient one).
   if (result.backdrop_texture) {
+    // Restore any clips that were recorded before the backdrop filter was applied.
+    for (const auto& entity : clip_replay_->GetReplayEntities()) {
+      if (!entity.Render(renderer, *result.pass)) {
+        VALIDATION_LOG << "Failed to render entity for clip restore.";
+      }
+    }
+
     auto size_rect = Rect::MakeSize(result.pass->GetRenderTargetSize());
     auto msaa_backdrop_contents = TextureContents::MakeRect(size_rect);
     msaa_backdrop_contents->SetStencilEnabled(false);
@@ -841,7 +844,7 @@ bool EntityPass::RenderElement(Entity& element_entity,
 #endif
 
   element_entity.SetClipDepth(element_entity.GetClipDepth() - clip_depth_floor);
-
+  clip_replay_->RecordEntity(element_entity, clip_coverage.type);
   if (!element_entity.Render(renderer, *result.pass)) {
     VALIDATION_LOG << "Failed to render entity.";
     return false;
@@ -878,24 +881,6 @@ bool EntityPass::OnRender(
     // Force the pass context to create at least one new pass if the clear color
     // is present.
     pass_context.GetRenderPass(pass_depth);
-  }
-
-  if (superpass_) {
-    auto pending_clip_entities = superpass_->CollectParentClipEntities();
-    for (auto entity : pending_clip_entities) {
-      if (!global_pass_position.IsZero()) {
-        // If the pass image is going to be rendered with a non-zero position,
-        // apply the negative translation to entity copies before rendering them
-        // so that they'll end up rendering to the correct on-screen position.
-        entity.entity.SetTransformation(
-            Matrix::MakeTranslation(Vector3(-global_pass_position)) *
-            entity.original_transform);
-      }
-      auto result = pass_context.GetRenderPass(pass_depth);
-      if (!entity.entity.Render(renderer, *result.pass)) {
-        FML_LOG(ERROR) << "ERROR";
-      }
-    }
   }
 
   if (backdrop_filter_proc_) {
@@ -1202,6 +1187,23 @@ void EntityPass::SetBackdropFilter(BackdropFilterProc proc) {
 
 void EntityPass::SetEnableOffscreenCheckerboard(bool enabled) {
   enable_offscreen_debug_checkerboard_ = enabled;
+}
+
+void EntityPassClipReplay::RecordEntity(Entity entity,
+                                        Contents::ClipCoverage::Type type) {
+  switch (type) {
+    case Contents::ClipCoverage::Type::kNoChange:
+      return;
+    case Contents::ClipCoverage::Type::kAppend:
+      rendered_clip_entities_.push_back(entity);
+    case Contents::ClipCoverage::Type::kRestore:
+      rendered_clip_entities_.pop_back();
+      break;
+  }
+}
+
+const std::vector<Entity>& EntityPassClipReplay::GetReplayEntities() const {
+  return rendered_clip_entities_;
 }
 
 }  // namespace impeller

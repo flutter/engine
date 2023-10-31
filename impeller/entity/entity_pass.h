@@ -20,6 +20,7 @@
 namespace impeller {
 
 class ContentContext;
+class EntityPassClipReplay;
 
 class EntityPass {
  public:
@@ -279,13 +280,6 @@ class EntityPass {
   /// evaluated and recorded to an `EntityPassTarget` by the `OnRender` method.
   std::vector<Element> elements_;
 
-  struct EntityPair {
-    Entity entity;
-    Matrix original_transform;
-  };
-
-  mutable std::vector<EntityPair> rendered_clip_entities_;
-
   EntityPass* superpass_ = nullptr;
   Matrix xformation_;
   size_t clip_depth_ = 0u;
@@ -293,15 +287,7 @@ class EntityPass {
   bool flood_clip_ = false;
   bool enable_offscreen_debug_checkerboard_ = false;
   std::optional<Rect> bounds_limit_;
-
-  std::vector<EntityPair> CollectParentClipEntities() {
-    std::vector<EntityPair> result;
-    if (superpass_) {
-      result = superpass_->CollectParentClipEntities();
-    }
-    result.insert(result.end(), rendered_clip_entities_.begin(), rendered_clip_entities_.end());
-    return result;
-  }
+  std::unique_ptr<EntityPassClipReplay> clip_replay_ = std::make_unique<EntityPassClipReplay>();
 
   /// These values are incremented whenever something is added to the pass that
   /// requires reading from the backdrop texture. Currently, this can happen in
@@ -324,6 +310,22 @@ class EntityPass {
   EntityPass(const EntityPass&) = delete;
 
   EntityPass& operator=(const EntityPass&) = delete;
+};
+
+/// @brief A class that tracks all clips that have been recorded in the current
+///        entity pass stencil.
+///
+///        These clips are replayed when restoring the backdrop so that the
+///        stencil buffer is left in an identical state.
+class EntityPassClipReplay {
+ public:
+  /// @brief Record the entity based on the provided coverage [type].
+  void RecordEntity(Entity entity, Contents::ClipCoverage::Type type);
+
+  const std::vector<Entity>& GetReplayEntities() const;
+
+ private:
+  std::vector<Entity> rendered_clip_entities_;
 };
 
 }  // namespace impeller

@@ -114,8 +114,6 @@ class Entity {
 
   void SetCapture(Capture capture) const;
 
-  bool record = false;
-
  private:
   Matrix transformation_;
   std::shared_ptr<Contents> contents_;

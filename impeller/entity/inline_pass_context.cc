@@ -21,7 +21,6 @@ InlinePassContext::InlinePassContext(
     std::optional<RenderPassResult> collapsed_parent_pass)
     : context_(std::move(context)),
       pass_target_(pass_target),
-      total_pass_reads_(pass_texture_reads),
       is_collapsed_(collapsed_parent_pass.has_value()) {
   if (collapsed_parent_pass.has_value()) {
     pass_ = collapsed_parent_pass.value().pass;
@@ -140,9 +139,6 @@ InlinePassContext::RenderPassResult InlinePassContext::GetRenderPass(
     return {};
   }
 
-  if (total_pass_reads_ > 0) {
-    FML_LOG(ERROR) << "clear despite read.";
-  }
   stencil->load_action = LoadAction::kClear;
   stencil->store_action = StoreAction::kDontCare;
   pass_target_.target_.SetStencilAttachment(stencil.value());
