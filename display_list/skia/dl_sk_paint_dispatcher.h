@@ -42,7 +42,7 @@ class DlSkPaintDispatchHelper : public virtual DlOpReceiver {
     // and it will be enabled by default (without the option to disable it).
     // Until Skia support is completely removed, we only want to respect the
     // dither flag for gradients (otherwise it will also apply to, for
-    // example, image ops and image sources, which are not supported in
+    // example, image ops and image sources, which are not dithered in
     // Impeller) and only on those operations that use the color source.
     //
     // The color_source_gradient_ flag lets us know if the color source is
