@@ -129,10 +129,8 @@ std::optional<Rect> EntityPass::GetElementsCoverage(
                 subpass.xformation_, Entity::RenderingMode::kSubpass);
         if (backdrop_filter) {
           auto backdrop_coverage = backdrop_filter->GetCoverage({});
-          if (backdrop_coverage.has_value()) {
-            unfiltered_coverage =
-                Union(backdrop_coverage.value(), unfiltered_coverage);
-          }
+          unfiltered_coverage =
+              Rect::Union(unfiltered_coverage, backdrop_coverage);
         } else {
           VALIDATION_LOG << "The EntityPass backdrop filter proc didn't return "
                             "a valid filter.";
@@ -162,12 +160,12 @@ std::optional<Rect> EntityPass::GetElementsCoverage(
         element_coverage = unfiltered_coverage;
       }
 
-      element_coverage = Intersection(element_coverage, coverage_limit);
+      element_coverage = Rect::Intersection(element_coverage, coverage_limit);
     } else {
       FML_UNREACHABLE();
     }
 
-    accumulated_coverage = Union(accumulated_coverage, element_coverage);
+    accumulated_coverage = Rect::Union(accumulated_coverage, element_coverage);
   }
   return accumulated_coverage;
 }
@@ -747,19 +745,8 @@ bool EntityPass::RenderElement(Entity& element_entity,
   // clip coverage (which is the max clip bounds). The contents may
   // optionally use this hint to avoid unnecessary rendering work.
   auto element_coverage_hint = element_entity.GetContents()->GetCoverageHint();
-  if (element_coverage_hint.has_value() &&
-      // If the `current_clip_coverage` is `std::nullopt`, just fall into the
-      // else case and let std::nullopt get assigned as the coverage hint.
-      current_clip_coverage.has_value()) {
-    // If the element already has a coverage hint (because its an advanced
-    // blend), then we need to intersect the clip coverage hint with the
-    // existing coverage hint.
-    element_entity.GetContents()->SetCoverageHint(
-        element_coverage_hint.value().Intersection(
-            current_clip_coverage.value()));
-  } else {
-    element_entity.GetContents()->SetCoverageHint(current_clip_coverage);
-  }
+  element_entity.GetContents()->SetCoverageHint(
+      Rect::Intersection(element_coverage_hint, current_clip_coverage));
 
   switch (clip_coverage.type) {
     case Contents::ClipCoverage::Type::kNoChange:
