@@ -1776,6 +1776,7 @@ class CanvasCompareTester {
                        "LinearGradient GYB",
                        [=](const SkSetupContext& ctx) {
                          ctx.paint.setShader(sk_gradient);
+                         ctx.paint.setDither(testP.uses_gradient());
                        },
                        [=](const DlSetupContext& ctx) {
                          ctx.paint.setColorSource(dl_gradient);

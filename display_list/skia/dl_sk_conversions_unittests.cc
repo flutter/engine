@@ -298,8 +298,20 @@ TEST(DisplayListSkConversions, ToSkDitheringEnabledForGradients) {
                                                     SkPoint::Make(100, 100), 0,
                                                     0, 0, DlTileMode::kClamp));
 
-  SkPaint sk_paint = ToSk(dl_paint);
-  EXPECT_TRUE(sk_paint.isDither());
+  {
+    SkPaint sk_paint = ToSk(dl_paint);
+    EXPECT_TRUE(sk_paint.isDither());
+  }
+
+  {
+    SkPaint sk_paint = ToStrokedSk(dl_paint);
+    EXPECT_TRUE(sk_paint.isDither());
+  }
+
+  {
+    SkPaint sk_paint = ToNonShaderSk(dl_paint);
+    EXPECT_FALSE(sk_paint.isDither());
+  }
 }
 
 }  // namespace testing

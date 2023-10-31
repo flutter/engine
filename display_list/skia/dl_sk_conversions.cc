@@ -19,14 +19,13 @@ constexpr float kInvertColorMatrix[20] = {
 };
 // clang-format on
 
-SkPaint ToSk(const DlPaint& paint, bool force_stroke) {
+SkPaint ToSk(const DlPaint& paint) {
   SkPaint sk_paint;
 
   sk_paint.setAntiAlias(paint.isAntiAlias());
   sk_paint.setColor(ToSk(paint.getColor()));
   sk_paint.setBlendMode(ToSk(paint.getBlendMode()));
-  sk_paint.setStyle(force_stroke ? SkPaint::kStroke_Style
-                                 : ToSk(paint.getDrawStyle()));
+  sk_paint.setStyle(ToSk(paint.getDrawStyle()));
   sk_paint.setStrokeWidth(paint.getStrokeWidth());
   sk_paint.setStrokeMiter(paint.getStrokeMiter());
   sk_paint.setStrokeCap(ToSk(paint.getStrokeCap()));
@@ -59,6 +58,18 @@ SkPaint ToSk(const DlPaint& paint, bool force_stroke) {
   sk_paint.setPathEffect(ToSk(paint.getPathEffectPtr()));
 
   return sk_paint;
+}
+
+SkPaint ToStrokedSk(const DlPaint& paint) {
+  DlPaint stroked_paint = paint;
+  stroked_paint.setDrawStyle(DlDrawStyle::kStroke);
+  return ToSk(stroked_paint);
+}
+
+SkPaint ToNonShaderSk(const DlPaint& paint) {
+  DlPaint non_shader_paint = paint;
+  non_shader_paint.setColorSource(nullptr);
+  return ToSk(non_shader_paint);
 }
 
 sk_sp<SkShader> ToSk(const DlColorSource* source) {
