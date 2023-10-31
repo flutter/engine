@@ -126,7 +126,7 @@ void testNoCrashes() {
 }
 
 void main() async {
-  final ImageComparer comparer = await ImageComparer.create(verbose: true);
+  final ImageComparer comparer = await ImageComparer.create();
 
   testNoCrashes();
 

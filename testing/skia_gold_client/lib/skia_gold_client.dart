@@ -12,6 +12,7 @@ import 'package:process/process.dart';
 const String _kGoldctlKey = 'GOLDCTL';
 const String _kPresubmitEnvName = 'GOLD_TRYJOB';
 const String _kLuciEnvName = 'LUCI_CONTEXT';
+const String _kEngineCheckout = 'ENGINE_CHECKOUT';
 
 const String _skiaGoldHost = 'https://flutter-engine-gold.skia.org';
 const String _instance = 'flutter-engine';
@@ -446,12 +447,22 @@ class SkiaGoldClient {
     return imageBytes;
   }
 
+  String _getEngineCheckoutPath() {
+    // TODO(137638): This should not be necessary, but Platform.script on
+    // flutter_tester does not actually provide helpful information.
+    final String? engineCheckout = Platform.environment[_kEngineCheckout]
+    if (engineCheckout != null) {
+      return path.join(engineCheckout, 'src', 'flutter');
+    }
+    final File currentScript = File.fromUri(Platform.script);
+    return currentScript.parent.absolute.path;
+  }
+
   /// Returns the current commit hash of the engine repository.
   Future<String> _getCurrentCommit() async {
-    final File currentScript = File.fromUri(Platform.script);
     final ProcessResult revParse = await process.run(
       <String>['git', 'rev-parse', 'HEAD'],
-      workingDirectory: currentScript.parent.absolute.path,
+      workingDirectory: _getEngineCheckoutPath(),
     );
     if (revParse.exitCode != 0) {
       throw Exception('Current commit of the engine can not be found from path ${currentScript.path}.');

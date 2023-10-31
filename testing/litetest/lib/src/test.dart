@@ -51,7 +51,7 @@ class Test {
   TestState state = TestState.allocated;
 
   final TestLifecycle _lifecycle;
-  final Object _testToken = Object();
+  bool _initializedTestNameCallback = false;
 
   /// Runs the test.
   ///
@@ -61,8 +61,14 @@ class Test {
   Future<void> run({
     void Function()? onDone,
   }) async {
+    if (!_initializedTestNameCallback) {
+      e.ExpectException.setTestNameCallback(() {
+        return Zone.current[#testName] as String? ?? '';
+      });
+      _initializedTestNameCallback = true;
+    }
     m.asyncStart();
-    await Future<void>(() async {
+    await runZoned(() async {
       state = TestState.started;
       _logger.writeln('Test "$name": Started');
       try {
@@ -75,7 +81,7 @@ class Test {
       } finally {
         _lifecycle.onDone(cleanup: onDone);
       }
-    }).then((_) {
+    }, zoneValues: <Object, Object>{#testName: name}).then((_) {
       m.asyncEnd();
     });
     _lifecycle.onStart();

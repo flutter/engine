@@ -54,10 +54,10 @@ Future<void> main() async {
     expect(result, true);
     expect(buffer.toString(), equals('''
 Test "Test1": Started
-Test "Test1": Passed
 Test "Test2": Started
-Test "Test2": Passed
 Test "Test3": Started
+Test "Test1": Passed
+Test "Test2": Passed
 Test "Test3": Passed
 ''',
     ));
