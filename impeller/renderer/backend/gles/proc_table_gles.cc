@@ -169,8 +169,8 @@ std::optional<std::string> ProcTableGLES::ComputeShaderWithDefines(
   auto shader_source = std::string{
       reinterpret_cast<const char*>(mapping.GetMapping()), mapping.GetSize()};
 
-  // Look for the first newline after the '#version' header, which impellerc will
-  // always emit as the first line of a compiled shader.
+  // Look for the first newline after the '#version' header, which impellerc
+  // will always emit as the first line of a compiled shader.
   auto index = shader_source.find('\n');
   if (index == std::string::npos) {
     VALIDATION_LOG << "Failed to append constant data to shader";
