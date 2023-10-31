@@ -253,13 +253,12 @@ void EntityPass::AddSubpassInline(std::unique_ptr<EntityPass> pass) {
       pass->advanced_blend_reads_from_pass_texture_;
 }
 
-static RenderTarget::AttachmentConfig GetDefaultStencilConfig(bool readable) {
-  return RenderTarget::AttachmentConfig{
-      .storage_mode = StorageMode::kDeviceTransient,
-      .load_action = LoadAction::kDontCare,
-      .store_action = StoreAction::kDontCare,
-  };
-}
+static const constexpr RenderTarget::AttachmentConfig kDefaultStencilConfig =
+    RenderTarget::AttachmentConfig{
+        .storage_mode = StorageMode::kDeviceTransient,
+        .load_action = LoadAction::kDontCare,
+        .store_action = StoreAction::kDontCare,
+    };
 
 static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
                                            ISize size,
@@ -284,8 +283,8 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
             .resolve_storage_mode = StorageMode::kDevicePrivate,
             .load_action = LoadAction::kDontCare,
             .store_action = StoreAction::kMultisampleResolve,
-            .clear_color = clear_color},   // color_attachment_config
-        GetDefaultStencilConfig(readable)  // stencil_attachment_config
+            .clear_color = clear_color},  // color_attachment_config
+        kDefaultStencilConfig             // stencil_attachment_config
     );
   } else {
     target = RenderTarget::CreateOffscreen(
@@ -298,8 +297,8 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
             .load_action = LoadAction::kDontCare,
             .store_action = StoreAction::kDontCare,
             .clear_color = clear_color,
-        },                                 // color_attachment_config
-        GetDefaultStencilConfig(readable)  // stencil_attachment_config
+        },                     // color_attachment_config
+        kDefaultStencilConfig  // stencil_attachment_config
     );
   }
 
@@ -360,10 +359,6 @@ bool EntityPass::Render(ContentContext& renderer,
   // and then blit the results onto the onscreen texture. If using this branch,
   // there's no need to set up a stencil attachment on the root render target.
   if (!supports_onscreen_backdrop_reads && reads_from_onscreen_backdrop) {
-    if (superpass_) {
-      FML_LOG(ERROR) << "Offscreen has superpass that reads from backdrop";
-    }
-
     auto offscreen_target = CreateRenderTarget(
         renderer, root_render_target.GetRenderTargetSize(), true,
         GetClearColor(render_target.GetRenderTargetSize()));
@@ -468,8 +463,7 @@ bool EntityPass::Render(ContentContext& renderer,
         *renderer.GetContext(), *renderer.GetRenderTargetCache(),
         color0.texture->GetSize(),
         renderer.GetContext()->GetCapabilities()->SupportsOffscreenMSAA(),
-        "ImpellerOnscreen",
-        GetDefaultStencilConfig(reads_from_onscreen_backdrop));
+        "ImpellerOnscreen", kDefaultStencilConfig);
   }
 
   // Set up the clear color of the root pass.
@@ -1190,7 +1184,9 @@ void EntityPass::SetEnableOffscreenCheckerboard(bool enabled) {
   enable_offscreen_debug_checkerboard_ = enabled;
 }
 
-void EntityPassClipReplay::RecordEntity(Entity entity,
+EntityPassClipReplay::EntityPassClipReplay() {}
+
+void EntityPassClipReplay::RecordEntity(const Entity& entity,
                                         Contents::ClipCoverage::Type type) {
   switch (type) {
     case Contents::ClipCoverage::Type::kNoChange:

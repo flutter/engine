@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <cstdint>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -320,8 +319,12 @@ class EntityPass {
 ///        stencil buffer is left in an identical state.
 class EntityPassClipReplay {
  public:
+  EntityPassClipReplay();
+
+  ~EntityPassClipReplay() = default;
+
   /// @brief Record the entity based on the provided coverage [type].
-  void RecordEntity(Entity entity, Contents::ClipCoverage::Type type);
+  void RecordEntity(const Entity& entity, Contents::ClipCoverage::Type type);
 
   const std::vector<Entity>& GetReplayEntities() const;
 
