@@ -1,4 +1,4 @@
-Signature: ff311a7533b4575386e27d5c77e9810d
+Signature: c7ea76f5b89559349024bb80f7f1cba5
 
 ====================================================================================================
 LIBRARY: etc1
@@ -387,11 +387,16 @@ FILE: ../../../third_party/skia/modules/pathkit/perf/perfReporter.js
 FILE: ../../../third_party/skia/modules/skparagraph/test.html
 FILE: ../../../third_party/skia/package-lock.json
 FILE: ../../../third_party/skia/relnotes/base64.md
+FILE: ../../../third_party/skia/relnotes/font-default.md
 FILE: ../../../third_party/skia/relnotes/glbackendsemaphore.md
+FILE: ../../../third_party/skia/relnotes/graphite_borrow.md
 FILE: ../../../third_party/skia/relnotes/grsurface-info.md
 FILE: ../../../third_party/skia/relnotes/mesh.md
 FILE: ../../../third_party/skia/relnotes/readbuffer-deserial.md
+FILE: ../../../third_party/skia/relnotes/recorder-static-member.md
+FILE: ../../../third_party/skia/relnotes/typeface.md
 FILE: ../../../third_party/skia/relnotes/vk-directcontext.md
+FILE: ../../../third_party/skia/relnotes/waitSemaphore.md
 FILE: ../../../third_party/skia/src/gpu/gpu_workaround_list.txt
 FILE: ../../../third_party/skia/src/ports/fontations/Cargo.toml
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_compute.minified.sksl
@@ -8634,6 +8639,7 @@ ORIGIN: ../../../third_party/skia/src/codec/SkJpegXmp.h + ../../../third_party/s
 ORIGIN: ../../../third_party/skia/src/codec/SkTiffUtility.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/codec/SkTiffUtility.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/codec/SkXmp.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/core/SkMipmapHQDownSampler.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkRasterPipelineContextUtils.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkRasterPipelineOpContexts.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkRasterPipelineOpList.h + ../../../third_party/skia/LICENSE
@@ -8678,6 +8684,7 @@ FILE: ../../../third_party/skia/src/codec/SkJpegXmp.h
 FILE: ../../../third_party/skia/src/codec/SkTiffUtility.cpp
 FILE: ../../../third_party/skia/src/codec/SkTiffUtility.h
 FILE: ../../../third_party/skia/src/codec/SkXmp.cpp
+FILE: ../../../third_party/skia/src/core/SkMipmapHQDownSampler.cpp
 FILE: ../../../third_party/skia/src/core/SkRasterPipelineContextUtils.h
 FILE: ../../../third_party/skia/src/core/SkRasterPipelineOpContexts.h
 FILE: ../../../third_party/skia/src/core/SkRasterPipelineOpList.h
@@ -8729,6 +8736,7 @@ LIBRARY: skia
 ORIGIN: ../../../third_party/skia/fuzz/FuzzCubicRoots.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/fuzz/FuzzPrecompile.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/fuzz/FuzzQuadRoots.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/fuzz/oss_fuzz/FuzzColorspace.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/fuzz/oss_fuzz/FuzzCubicRoots.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/fuzz/oss_fuzz/FuzzPrecompile.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/fuzz/oss_fuzz/FuzzQuadRoots.cpp + ../../../third_party/skia/LICENSE
@@ -8784,15 +8792,18 @@ ORIGIN: ../../../third_party/skia/include/private/gpu/graphite/ContextOptionsPri
 ORIGIN: ../../../third_party/skia/modules/bentleyottmann/include/BentleyOttmann1.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/bentleyottmann/include/BruteForceCrossings.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/bentleyottmann/include/EventQueue.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/modules/bentleyottmann/include/EventQueueInterface.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/bentleyottmann/include/Int96.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/bentleyottmann/include/Point.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/bentleyottmann/include/Segment.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/modules/bentleyottmann/include/SweepLine.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/bentleyottmann/src/BentleyOttmann1.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/bentleyottmann/src/BruteForceCrossings.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/bentleyottmann/src/EventQueue.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/bentleyottmann/src/Int96.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/bentleyottmann/src/Point.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/bentleyottmann/src/Segment.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/modules/bentleyottmann/src/SweepLine.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/base/SkBezierCurves.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/base/SkCubics.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/base/SkCubics.h + ../../../third_party/skia/LICENSE
@@ -8813,6 +8824,7 @@ ORIGIN: ../../../third_party/skia/src/core/SkBlitMask_opts_ssse3.cpp + ../../../
 ORIGIN: ../../../third_party/skia/src/core/SkBlitRow_opts.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkBlitRow_opts_hsw.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkBlitter_A8.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/core/SkBlurEngine.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkBlurMaskFilterImpl.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkCanvas_Raster.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkChecksum.cpp + ../../../third_party/skia/LICENSE
@@ -8934,6 +8946,8 @@ ORIGIN: ../../../third_party/skia/src/gpu/graphite/geom/EdgeAAQuad.h + ../../../
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/render/CoverageMaskRenderStep.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/render/CoverageMaskRenderStep.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/render/GraphiteVertexFiller.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/gpu/graphite/render/PerEdgeAAQuadRenderStep.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/gpu/graphite/render/PerEdgeAAQuadRenderStep.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/vk/VulkanDescriptorPool.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/vk/VulkanDescriptorPool.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/vk/VulkanDescriptorSet.cpp + ../../../third_party/skia/LICENSE
@@ -8995,6 +9009,7 @@ TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/fuzz/FuzzCubicRoots.cpp
 FILE: ../../../third_party/skia/fuzz/FuzzPrecompile.cpp
 FILE: ../../../third_party/skia/fuzz/FuzzQuadRoots.cpp
+FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzColorspace.cpp
 FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzCubicRoots.cpp
 FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzPrecompile.cpp
 FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzQuadRoots.cpp
@@ -9050,15 +9065,18 @@ FILE: ../../../third_party/skia/include/private/gpu/graphite/ContextOptionsPriv.
 FILE: ../../../third_party/skia/modules/bentleyottmann/include/BentleyOttmann1.h
 FILE: ../../../third_party/skia/modules/bentleyottmann/include/BruteForceCrossings.h
 FILE: ../../../third_party/skia/modules/bentleyottmann/include/EventQueue.h
+FILE: ../../../third_party/skia/modules/bentleyottmann/include/EventQueueInterface.h
 FILE: ../../../third_party/skia/modules/bentleyottmann/include/Int96.h
 FILE: ../../../third_party/skia/modules/bentleyottmann/include/Point.h
 FILE: ../../../third_party/skia/modules/bentleyottmann/include/Segment.h
+FILE: ../../../third_party/skia/modules/bentleyottmann/include/SweepLine.h
 FILE: ../../../third_party/skia/modules/bentleyottmann/src/BentleyOttmann1.cpp
 FILE: ../../../third_party/skia/modules/bentleyottmann/src/BruteForceCrossings.cpp
 FILE: ../../../third_party/skia/modules/bentleyottmann/src/EventQueue.cpp
 FILE: ../../../third_party/skia/modules/bentleyottmann/src/Int96.cpp
 FILE: ../../../third_party/skia/modules/bentleyottmann/src/Point.cpp
 FILE: ../../../third_party/skia/modules/bentleyottmann/src/Segment.cpp
+FILE: ../../../third_party/skia/modules/bentleyottmann/src/SweepLine.cpp
 FILE: ../../../third_party/skia/src/base/SkBezierCurves.h
 FILE: ../../../third_party/skia/src/base/SkCubics.cpp
 FILE: ../../../third_party/skia/src/base/SkCubics.h
@@ -9079,6 +9097,7 @@ FILE: ../../../third_party/skia/src/core/SkBlitMask_opts_ssse3.cpp
 FILE: ../../../third_party/skia/src/core/SkBlitRow_opts.cpp
 FILE: ../../../third_party/skia/src/core/SkBlitRow_opts_hsw.cpp
 FILE: ../../../third_party/skia/src/core/SkBlitter_A8.h
+FILE: ../../../third_party/skia/src/core/SkBlurEngine.h
 FILE: ../../../third_party/skia/src/core/SkBlurMaskFilterImpl.h
 FILE: ../../../third_party/skia/src/core/SkCanvas_Raster.cpp
 FILE: ../../../third_party/skia/src/core/SkChecksum.cpp
@@ -9200,6 +9219,8 @@ FILE: ../../../third_party/skia/src/gpu/graphite/geom/EdgeAAQuad.h
 FILE: ../../../third_party/skia/src/gpu/graphite/render/CoverageMaskRenderStep.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/render/CoverageMaskRenderStep.h
 FILE: ../../../third_party/skia/src/gpu/graphite/render/GraphiteVertexFiller.cpp
+FILE: ../../../third_party/skia/src/gpu/graphite/render/PerEdgeAAQuadRenderStep.cpp
+FILE: ../../../third_party/skia/src/gpu/graphite/render/PerEdgeAAQuadRenderStep.h
 FILE: ../../../third_party/skia/src/gpu/graphite/vk/VulkanDescriptorPool.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/vk/VulkanDescriptorPool.h
 FILE: ../../../third_party/skia/src/gpu/graphite/vk/VulkanDescriptorSet.cpp

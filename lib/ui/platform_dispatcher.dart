@@ -73,7 +73,7 @@ const String _kFlutterKeyDataChannel = 'flutter/keydata';
 
 @pragma('vm:entry-point')
 ByteData? _wrapUnmodifiableByteData(ByteData? byteData) =>
-    byteData == null ? null : UnmodifiableByteDataView(byteData);
+    byteData?.asUnmodifiableView();
 
 /// A token that represents a root isolate.
 class RootIsolateToken {
@@ -308,6 +308,20 @@ class PlatformDispatcher {
     _invoke(onMetricsChanged, _onMetricsChangedZone);
   }
 
+  // The [FlutterView]s for which [FlutterView.render] has already been called
+  // during the current [onBeginFrame]/[onDrawFrame] callback sequence.
+  //
+  // It is null outside the scope of those callbacks indicating that calls to
+  // [FlutterView.render] must be ignored. Furthermore, if a given [FlutterView]
+  // is already present in this set when its [FlutterView.render] is called
+  // again, that call must be ignored as a duplicate.
+  //
+  // Between [onBeginFrame] and [onDrawFrame] the properties value is
+  // temporarily stored in `_renderedViewsBetweenCallbacks` so that it survives
+  // the gap between the two callbacks.
+  Set<FlutterView>? _renderedViews;
+  // The `_renderedViews` value between `_beginFrame` and `_drawFrame`.
+  Set<FlutterView>? _renderedViewsBetweenCallbacks;
 
   /// A callback invoked when any view begins a frame.
   ///
@@ -329,11 +343,20 @@ class PlatformDispatcher {
 
   // Called from the engine, via hooks.dart
   void _beginFrame(int microseconds) {
+    assert(_renderedViews == null);
+    assert(_renderedViewsBetweenCallbacks == null);
+    _renderedViews = <FlutterView>{};
+
     _invoke1<Duration>(
       onBeginFrame,
       _onBeginFrameZone,
       Duration(microseconds: microseconds),
     );
+
+    assert(_renderedViews != null);
+    assert(_renderedViewsBetweenCallbacks == null);
+    _renderedViewsBetweenCallbacks = _renderedViews;
+    _renderedViews = null;
   }
 
   /// A callback that is invoked for each frame after [onBeginFrame] has
@@ -351,7 +374,16 @@ class PlatformDispatcher {
 
   // Called from the engine, via hooks.dart
   void _drawFrame() {
+    assert(_renderedViews == null);
+    assert(_renderedViewsBetweenCallbacks != null);
+    _renderedViews = _renderedViewsBetweenCallbacks;
+    _renderedViewsBetweenCallbacks = null;
+
     _invoke(onDrawFrame, _onDrawFrameZone);
+
+    assert(_renderedViews != null);
+    assert(_renderedViewsBetweenCallbacks == null);
+    _renderedViews = null;
   }
 
   /// A callback that is invoked when pointer data is available.

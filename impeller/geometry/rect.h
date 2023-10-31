@@ -134,6 +134,20 @@ struct TRect {
 
   constexpr bool IsMaximum() const { return *this == MakeMaximum(); }
 
+  /// @brief Returns the upper left corner of the rectangle as specified
+  ///        when it was constructed.
+  ///
+  ///        Note that unlike the |GetLeft|, |GetTop|, and |GetLeftTop|
+  ///        methods which will return values as if the rectangle had been
+  ///        "unswapped" by calling |GetPositive| on it, this method
+  ///        returns the raw origin values.
+  constexpr TPoint<Type> GetOrigin() const { return origin; }
+
+  /// @brief Returns the size of the rectangle as specified when it was
+  ///        constructed and which may be negative in either width or
+  ///        height.
+  constexpr TSize<Type> GetSize() const { return size; }
+
   constexpr auto GetLeft() const {
     if (IsMaximum()) {
       return -std::numeric_limits<Type>::infinity();
@@ -292,6 +306,15 @@ struct TRect {
                  size.height + amount * 2);
   }
 
+  /// @brief  Returns a rectangle with expanded edges in all directions.
+  ///         Negative expansion results in shrinking.
+  constexpr TRect<T> Expand(TPoint<T> amount) const {
+    return TRect(origin.x - amount.x,        //
+                 origin.y - amount.y,        //
+                 size.width + amount.x * 2,  //
+                 size.height + amount.y * 2);
+  }
+
   /// @brief  Returns a new rectangle that represents the projection of the
   ///         source rectangle onto this rectangle. In other words, the source
   ///         rectangle is redefined in terms of the corrdinate space of this
@@ -305,6 +328,41 @@ struct TRect {
 
 using Rect = TRect<Scalar>;
 using IRect = TRect<int64_t>;
+
+constexpr inline Rect RoundOut(const Rect& r) {
+  return Rect::MakeLTRB(floor(r.GetLeft()), floor(r.GetTop()),
+                        ceil(r.GetRight()), ceil(r.GetBottom()));
+}
+
+constexpr inline std::optional<Rect> Union(const Rect& a,
+                                           const std::optional<Rect> b) {
+  return b.has_value() ? a.Union(b.value()) : a;
+}
+
+constexpr inline std::optional<Rect> Union(const std::optional<Rect> a,
+                                           const Rect& b) {
+  return Union(b, a);
+}
+
+constexpr inline std::optional<Rect> Union(const std::optional<Rect> a,
+                                           const std::optional<Rect> b) {
+  return a.has_value() ? Union(a.value(), b) : b;
+}
+
+constexpr inline std::optional<Rect> Intersection(const Rect& a,
+                                                  const std::optional<Rect> b) {
+  return b.has_value() ? a.Intersection(b.value()) : a;
+}
+
+constexpr inline std::optional<Rect> Intersection(const std::optional<Rect> a,
+                                                  const Rect& b) {
+  return Intersection(b, a);
+}
+
+constexpr inline std::optional<Rect> Intersection(const std::optional<Rect> a,
+                                                  const std::optional<Rect> b) {
+  return a.has_value() ? Intersection(a.value(), b) : b;
+}
 
 }  // namespace impeller
 

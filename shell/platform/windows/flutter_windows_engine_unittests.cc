@@ -12,6 +12,7 @@
 #include "flutter/shell/platform/windows/testing/engine_modifier.h"
 #include "flutter/shell/platform/windows/testing/flutter_windows_engine_builder.h"
 #include "flutter/shell/platform/windows/testing/mock_window_binding_handler.h"
+#include "flutter/shell/platform/windows/testing/mock_windows_proc_table.h"
 #include "flutter/shell/platform/windows/testing/test_keyboard.h"
 #include "flutter/shell/platform/windows/testing/windows_test.h"
 #include "flutter/third_party/accessibility/ax/platform/ax_platform_node_win.h"
@@ -24,6 +25,8 @@
 
 namespace flutter {
 namespace testing {
+
+using ::testing::Return;
 
 class FlutterWindowsEngineTest : public WindowsTest {};
 
@@ -558,29 +561,41 @@ TEST_F(FlutterWindowsEngineTest, GetExecutableName) {
 // Ensure that after setting or resetting the high contrast feature,
 // the corresponding status flag can be retrieved from the engine.
 TEST_F(FlutterWindowsEngineTest, UpdateHighContrastFeature) {
+  auto windows_proc_table = std::make_shared<MockWindowsProcTable>();
+  EXPECT_CALL(*windows_proc_table, GetHighContrastEnabled)
+      .WillOnce(Return(true))
+      .WillOnce(Return(false));
+
   FlutterWindowsEngineBuilder builder{GetContext()};
+  builder.SetWindowsProcTable(windows_proc_table);
   std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
   EngineModifier modifier(engine.get());
 
-  bool called = false;
+  std::optional<FlutterAccessibilityFeature> engine_flags;
   modifier.embedder_api().UpdateAccessibilityFeatures = MOCK_ENGINE_PROC(
-      UpdateAccessibilityFeatures, ([&called](auto engine, auto flags) {
-        called = true;
+      UpdateAccessibilityFeatures, ([&engine_flags](auto engine, auto flags) {
+        engine_flags = flags;
         return kSuccess;
       }));
 
-  engine->UpdateHighContrastEnabled(true);
-  EXPECT_TRUE(
-      engine->EnabledAccessibilityFeatures() &
-      FlutterAccessibilityFeature::kFlutterAccessibilityFeatureHighContrast);
-  EXPECT_TRUE(engine->high_contrast_enabled());
-  EXPECT_TRUE(called);
+  // 1: High contrast is enabled.
+  engine->UpdateHighContrastMode();
 
-  engine->UpdateHighContrastEnabled(false);
-  EXPECT_FALSE(
-      engine->EnabledAccessibilityFeatures() &
+  EXPECT_TRUE(engine->high_contrast_enabled());
+  EXPECT_TRUE(engine_flags.has_value());
+  EXPECT_TRUE(
+      engine_flags.value() &
       FlutterAccessibilityFeature::kFlutterAccessibilityFeatureHighContrast);
+
+  // 2: High contrast is disabled.
+  engine_flags.reset();
+  engine->UpdateHighContrastMode();
+
   EXPECT_FALSE(engine->high_contrast_enabled());
+  EXPECT_TRUE(engine_flags.has_value());
+  EXPECT_FALSE(
+      engine_flags.value() &
+      FlutterAccessibilityFeature::kFlutterAccessibilityFeatureHighContrast);
 }
 
 TEST_F(FlutterWindowsEngineTest, PostRasterThreadTask) {
@@ -620,6 +635,7 @@ TEST_F(FlutterWindowsEngineTest, AlertPlatformMessage) {
   FlutterWindowsEngineBuilder builder{GetContext()};
   builder.SetDartEntrypoint("alertPlatformChannel");
 
+  auto engine = builder.Build();
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
   ui::AXPlatformNodeDelegateBase parent_delegate;
@@ -628,10 +644,9 @@ TEST_F(FlutterWindowsEngineTest, AlertPlatformMessage) {
     return &delegate;
   });
   MockFlutterWindowsView view(std::move(window_binding_handler));
-  view.SetEngine(builder.Build());
-  FlutterWindowsEngine* engine = view.GetEngine();
+  view.SetEngine(engine.get());
 
-  EngineModifier modifier(engine);
+  EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
 
   auto binary_messenger =
@@ -688,15 +703,15 @@ TEST_F(FlutterWindowsEngineTest, TestExit) {
   builder.SetDartEntrypoint("exitTestExit");
   bool finished = false;
 
+  auto engine = builder.Build();
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
   MockFlutterWindowsView view(std::move(window_binding_handler));
-  view.SetEngine(builder.Build());
-  FlutterWindowsEngine* engine = view.GetEngine();
+  view.SetEngine(engine.get());
 
-  EngineModifier modifier(engine);
+  EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
-  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine);
+  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine.get());
   ON_CALL(*handler, Quit)
       .WillByDefault(
           [&finished](std::optional<HWND> hwnd, std::optional<WPARAM> wparam,
@@ -726,15 +741,15 @@ TEST_F(FlutterWindowsEngineTest, TestExitCancel) {
   bool finished = false;
   bool did_call = false;
 
+  auto engine = builder.Build();
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
   MockFlutterWindowsView view(std::move(window_binding_handler));
-  view.SetEngine(builder.Build());
-  FlutterWindowsEngine* engine = view.GetEngine();
+  view.SetEngine(engine.get());
 
-  EngineModifier modifier(engine);
+  EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
-  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine);
+  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine.get());
   ON_CALL(*handler, Quit)
       .WillByDefault([&finished](std::optional<HWND> hwnd,
                                  std::optional<WPARAM> wparam,
@@ -777,15 +792,15 @@ TEST_F(FlutterWindowsEngineTest, TestExitSecondCloseMessage) {
   builder.SetDartEntrypoint("exitTestExit");
   bool second_close = false;
 
+  auto engine = builder.Build();
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
   MockFlutterWindowsView view(std::move(window_binding_handler));
-  view.SetEngine(builder.Build());
-  FlutterWindowsEngine* engine = view.GetEngine();
+  view.SetEngine(engine.get());
 
-  EngineModifier modifier(engine);
+  EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
-  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine);
+  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine.get());
   auto& handler_obj = *handler;
   ON_CALL(handler_obj, IsLastWindowOfProcess).WillByDefault([]() {
     return true;
@@ -839,15 +854,15 @@ TEST_F(FlutterWindowsEngineTest, TestExitCloseMultiWindow) {
   builder.SetDartEntrypoint("exitTestExit");
   bool finished = false;
 
+  auto engine = builder.Build();
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
   MockFlutterWindowsView view(std::move(window_binding_handler));
-  view.SetEngine(builder.Build());
-  FlutterWindowsEngine* engine = view.GetEngine();
+  view.SetEngine(engine.get());
 
-  EngineModifier modifier(engine);
+  EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
-  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine);
+  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine.get());
   ON_CALL(*handler, IsLastWindowOfProcess).WillByDefault([&finished]() {
     finished = true;
     return false;
@@ -870,15 +885,15 @@ TEST_F(FlutterWindowsEngineTest, TestExitCloseMultiWindow) {
 TEST_F(FlutterWindowsEngineTest, LifecycleManagerDisabledByDefault) {
   FlutterWindowsEngineBuilder builder{GetContext()};
 
+  auto engine = builder.Build();
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
   MockFlutterWindowsView view(std::move(window_binding_handler));
-  view.SetEngine(builder.Build());
-  FlutterWindowsEngine* engine = view.GetEngine();
+  view.SetEngine(engine.get());
 
-  EngineModifier modifier(engine);
+  EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
-  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine);
+  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine.get());
   EXPECT_CALL(*handler, IsLastWindowOfProcess).Times(0);
   modifier.SetLifecycleManager(std::move(handler));
 
@@ -889,15 +904,15 @@ TEST_F(FlutterWindowsEngineTest, LifecycleManagerDisabledByDefault) {
 TEST_F(FlutterWindowsEngineTest, EnableApplicationLifecycle) {
   FlutterWindowsEngineBuilder builder{GetContext()};
 
+  auto engine = builder.Build();
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
   MockFlutterWindowsView view(std::move(window_binding_handler));
-  view.SetEngine(builder.Build());
-  FlutterWindowsEngine* engine = view.GetEngine();
+  view.SetEngine(engine.get());
 
-  EngineModifier modifier(engine);
+  EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
-  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine);
+  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine.get());
   ON_CALL(*handler, IsLastWindowOfProcess).WillByDefault([]() {
     return false;
   });
@@ -912,15 +927,15 @@ TEST_F(FlutterWindowsEngineTest, EnableApplicationLifecycle) {
 TEST_F(FlutterWindowsEngineTest, ApplicationLifecycleExternalWindow) {
   FlutterWindowsEngineBuilder builder{GetContext()};
 
+  auto engine = builder.Build();
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
   MockFlutterWindowsView view(std::move(window_binding_handler));
-  view.SetEngine(builder.Build());
-  FlutterWindowsEngine* engine = view.GetEngine();
+  view.SetEngine(engine.get());
 
-  EngineModifier modifier(engine);
+  EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
-  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine);
+  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine.get());
   ON_CALL(*handler, IsLastWindowOfProcess).WillByDefault([]() {
     return false;
   });
@@ -934,15 +949,15 @@ TEST_F(FlutterWindowsEngineTest, ApplicationLifecycleExternalWindow) {
 TEST_F(FlutterWindowsEngineTest, AppStartsInResumedState) {
   FlutterWindowsEngineBuilder builder{GetContext()};
 
+  auto engine = builder.Build();
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
   MockFlutterWindowsView view(std::move(window_binding_handler));
-  view.SetEngine(builder.Build());
-  FlutterWindowsEngine* engine = view.GetEngine();
+  view.SetEngine(engine.get());
 
-  EngineModifier modifier(engine);
+  EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
-  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine);
+  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine.get());
   EXPECT_CALL(*handler, SetLifecycleState(AppLifecycleState::kResumed))
       .Times(1);
   modifier.SetLifecycleManager(std::move(handler));
@@ -952,13 +967,13 @@ TEST_F(FlutterWindowsEngineTest, AppStartsInResumedState) {
 TEST_F(FlutterWindowsEngineTest, LifecycleStateTransition) {
   FlutterWindowsEngineBuilder builder{GetContext()};
 
+  auto engine = builder.Build();
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
   MockFlutterWindowsView view(std::move(window_binding_handler));
-  view.SetEngine(builder.Build());
-  FlutterWindowsEngine* engine = view.GetEngine();
+  view.SetEngine(engine.get());
 
-  EngineModifier modifier(engine);
+  EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
   engine->Run();
 
@@ -981,13 +996,13 @@ TEST_F(FlutterWindowsEngineTest, LifecycleStateTransition) {
 TEST_F(FlutterWindowsEngineTest, ExternalWindowMessage) {
   FlutterWindowsEngineBuilder builder{GetContext()};
 
+  auto engine = builder.Build();
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
   MockFlutterWindowsView view(std::move(window_binding_handler));
-  view.SetEngine(builder.Build());
-  FlutterWindowsEngine* engine = view.GetEngine();
+  view.SetEngine(engine.get());
 
-  EngineModifier modifier(engine);
+  EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
   // Sets lifecycle state to resumed.
   engine->Run();
@@ -1007,14 +1022,14 @@ TEST_F(FlutterWindowsEngineTest, InnerWindowHidden) {
   HWND outer = reinterpret_cast<HWND>(1);
   HWND inner = reinterpret_cast<HWND>(2);
 
+  auto engine = builder.Build();
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
   MockFlutterWindowsView view(std::move(window_binding_handler));
   ON_CALL(view, GetPlatformWindow).WillByDefault([=]() { return inner; });
-  view.SetEngine(builder.Build());
-  FlutterWindowsEngine* engine = view.GetEngine();
+  view.SetEngine(engine.get());
 
-  EngineModifier modifier(engine);
+  EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
   // Sets lifecycle state to resumed.
   engine->Run();
@@ -1041,15 +1056,15 @@ TEST_F(FlutterWindowsEngineTest, EnableLifecycleState) {
   builder.SetDartEntrypoint("enableLifecycleTest");
   bool finished = false;
 
+  auto engine = builder.Build();
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
   MockFlutterWindowsView view(std::move(window_binding_handler));
-  view.SetEngine(builder.Build());
-  FlutterWindowsEngine* engine = view.GetEngine();
+  view.SetEngine(engine.get());
 
-  EngineModifier modifier(engine);
+  EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
-  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine);
+  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine.get());
   ON_CALL(*handler, SetLifecycleState)
       .WillByDefault([handler_ptr = handler.get()](AppLifecycleState state) {
         handler_ptr->WindowsLifecycleManager::SetLifecycleState(state);
@@ -1094,15 +1109,15 @@ TEST_F(FlutterWindowsEngineTest, LifecycleStateToFrom) {
   bool enabled_lifecycle = false;
   bool dart_responded = false;
 
+  auto engine = builder.Build();
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
   MockFlutterWindowsView view(std::move(window_binding_handler));
-  view.SetEngine(builder.Build());
-  FlutterWindowsEngine* engine = view.GetEngine();
+  view.SetEngine(engine.get());
 
-  EngineModifier modifier(engine);
+  EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
-  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine);
+  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine.get());
   ON_CALL(*handler, SetLifecycleState)
       .WillByDefault([handler_ptr = handler.get()](AppLifecycleState state) {
         handler_ptr->WindowsLifecycleManager::SetLifecycleState(state);
@@ -1141,16 +1156,17 @@ TEST_F(FlutterWindowsEngineTest, ChannelListenedTo) {
   FlutterWindowsEngineBuilder builder{GetContext()};
   builder.SetDartEntrypoint("enableLifecycleToFrom");
 
+  auto engine = builder.Build();
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
   MockFlutterWindowsView view(std::move(window_binding_handler));
-  view.SetEngine(builder.Build());
-  FlutterWindowsEngine* engine = view.GetEngine();
-  EngineModifier modifier(engine);
+  view.SetEngine(engine.get());
+
+  EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
 
   bool lifecycle_began = false;
-  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine);
+  auto handler = std::make_unique<MockWindowsLifecycleManager>(engine.get());
   handler->begin_processing_callback = [&]() { lifecycle_began = true; };
   modifier.SetLifecycleManager(std::move(handler));
 
