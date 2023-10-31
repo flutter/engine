@@ -220,7 +220,7 @@ Future<int> main(List<String> args) async {
           '--clang-tidy="foo/bar"',
         ],);
       expect(options.clangTidyPath, isNotNull);
-      expect(options.clangTidyPath.path, equals('foo/bar'));
+      expect(options.clangTidyPath!.path, equals('foo/bar'));
     });
   });
 
