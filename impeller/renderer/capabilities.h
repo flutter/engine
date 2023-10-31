@@ -19,6 +19,11 @@ class Capabilities {
   ///         color/stencil textures.
   virtual bool SupportsOffscreenMSAA() const = 0;
 
+  /// @brief  Whether the context backend supports multisampled rendering to
+  ///         the on-screen surface without requiring an explicit resolve of
+  ///         the MSAA color attachment.
+  virtual bool SupportsImplicitResolvingMSAA() const = 0;
+
   /// @brief  Whether the context backend supports binding Shader Storage Buffer
   ///         Objects (SSBOs) to pipelines.
   virtual bool SupportsSSBO() const = 0;
@@ -106,7 +111,9 @@ class Capabilities {
  protected:
   Capabilities();
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Capabilities);
+  Capabilities(const Capabilities&) = delete;
+
+  Capabilities& operator=(const Capabilities&) = delete;
 };
 
 class CapabilitiesBuilder {
@@ -161,7 +168,9 @@ class CapabilitiesBuilder {
   std::optional<PixelFormat> default_stencil_format_ = std::nullopt;
   std::optional<PixelFormat> default_depth_stencil_format_ = std::nullopt;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(CapabilitiesBuilder);
+  CapabilitiesBuilder(const CapabilitiesBuilder&) = delete;
+
+  CapabilitiesBuilder& operator=(const CapabilitiesBuilder&) = delete;
 };
 
 }  // namespace impeller

@@ -175,7 +175,9 @@ class Context {
   ///
   ///             This is required for correct rendering on Android when using
   ///             the hybrid composition mode. This has no effect on other
-  ///             backends.
+  ///             backends. This is analogous to the check for isMainThread in
+  ///             surface_mtl.mm to block presentation on scheduling of all
+  ///             pending work.
   virtual void SetSyncPresentation(bool value) {}
 
   //----------------------------------------------------------------------------
@@ -203,7 +205,9 @@ class Context {
  private:
   mutable Pool<HostBuffer> host_buffer_pool_ = Pool<HostBuffer>(1'000'000);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Context);
+  Context(const Context&) = delete;
+
+  Context& operator=(const Context&) = delete;
 };
 
 }  // namespace impeller
