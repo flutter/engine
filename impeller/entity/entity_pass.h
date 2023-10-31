@@ -19,7 +19,7 @@
 namespace impeller {
 
 class ContentContext;
-class EntityPassClipReplay;
+class EntityPassClipRecorder;
 
 class EntityPass {
  public:
@@ -286,8 +286,8 @@ class EntityPass {
   bool flood_clip_ = false;
   bool enable_offscreen_debug_checkerboard_ = false;
   std::optional<Rect> bounds_limit_;
-  std::unique_ptr<EntityPassClipReplay> clip_replay_ =
-      std::make_unique<EntityPassClipReplay>();
+  std::unique_ptr<EntityPassClipRecorder> clip_replay_ =
+      std::make_unique<EntityPassClipRecorder>();
 
   /// These values are incremented whenever something is added to the pass that
   /// requires reading from the backdrop texture. Currently, this can happen in
@@ -317,11 +317,11 @@ class EntityPass {
 ///
 ///        These clips are replayed when restoring the backdrop so that the
 ///        stencil buffer is left in an identical state.
-class EntityPassClipReplay {
+class EntityPassClipRecorder {
  public:
-  EntityPassClipReplay();
+  EntityPassClipRecorder();
 
-  ~EntityPassClipReplay() = default;
+  ~EntityPassClipRecorder() = default;
 
   /// @brief Record the entity based on the provided coverage [type].
   void RecordEntity(const Entity& entity, Contents::ClipCoverage::Type type);

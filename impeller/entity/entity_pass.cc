@@ -262,7 +262,6 @@ static const constexpr RenderTarget::AttachmentConfig kDefaultStencilConfig =
 
 static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
                                            ISize size,
-                                           bool readable,
                                            const Color& clear_color) {
   auto context = renderer.GetContext();
 
@@ -359,9 +358,9 @@ bool EntityPass::Render(ContentContext& renderer,
   // and then blit the results onto the onscreen texture. If using this branch,
   // there's no need to set up a stencil attachment on the root render target.
   if (!supports_onscreen_backdrop_reads && reads_from_onscreen_backdrop) {
-    auto offscreen_target = CreateRenderTarget(
-        renderer, root_render_target.GetRenderTargetSize(), true,
-        GetClearColor(render_target.GetRenderTargetSize()));
+    auto offscreen_target =
+        CreateRenderTarget(renderer, root_render_target.GetRenderTargetSize(),
+                           GetClearColor(render_target.GetRenderTargetSize()));
 
     if (!OnRender(renderer,  // renderer
                   capture,   // capture
@@ -621,10 +620,9 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     }
 
     auto subpass_target = CreateRenderTarget(
-        renderer,                                  // renderer
-        subpass_size,                              // size
-        subpass->GetTotalPassReads(renderer) > 0,  // readable
-        subpass->GetClearColor(subpass_size));     // clear_color
+        renderer,                               // renderer
+        subpass_size,                           // size
+        subpass->GetClearColor(subpass_size));  // clear_color
 
     if (!subpass_target.IsValid()) {
       VALIDATION_LOG << "Subpass render target is invalid.";
@@ -1185,10 +1183,10 @@ void EntityPass::SetEnableOffscreenCheckerboard(bool enabled) {
   enable_offscreen_debug_checkerboard_ = enabled;
 }
 
-EntityPassClipReplay::EntityPassClipReplay() {}
+EntityPassClipRecorder::EntityPassClipRecorder() {}
 
-void EntityPassClipReplay::RecordEntity(const Entity& entity,
-                                        Contents::ClipCoverage::Type type) {
+void EntityPassClipRecorder::RecordEntity(const Entity& entity,
+                                          Contents::ClipCoverage::Type type) {
   switch (type) {
     case Contents::ClipCoverage::Type::kNoChange:
       return;
@@ -1201,7 +1199,7 @@ void EntityPassClipReplay::RecordEntity(const Entity& entity,
   }
 }
 
-const std::vector<Entity>& EntityPassClipReplay::GetReplayEntities() const {
+const std::vector<Entity>& EntityPassClipRecorder::GetReplayEntities() const {
   return rendered_clip_entities_;
 }
 
