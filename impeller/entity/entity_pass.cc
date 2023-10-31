@@ -721,7 +721,8 @@ bool EntityPass::RenderElement(Entity& element_entity,
   if (result.backdrop_texture) {
     // Restore any clips that were recorded before the backdrop filter was
     // applied.
-    for (const auto& entity : clip_replay_->GetReplayEntities()) {
+    auto& replay_entities = clip_replay_->GetReplayEntities();
+    for (const auto& entity : replay_entities) {
       if (!entity.Render(renderer, *result.pass)) {
         VALIDATION_LOG << "Failed to render entity for clip restore.";
       }
@@ -1193,6 +1194,7 @@ void EntityPassClipReplay::RecordEntity(const Entity& entity,
       return;
     case Contents::ClipCoverage::Type::kAppend:
       rendered_clip_entities_.push_back(entity);
+      break;
     case Contents::ClipCoverage::Type::kRestore:
       rendered_clip_entities_.pop_back();
       break;
