@@ -751,7 +751,7 @@ deps = {
      'packages': [
        {
         'package': 'flutter/java/openjdk/${{platform}}',
-        'version': 'version:11'
+        'version': 'version:17'
        }
      ],
      'condition': 'download_android_deps',

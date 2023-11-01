@@ -28,7 +28,7 @@ import org.robolectric.annotation.Config;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
 
-@TargetApi(31)
+@TargetApi(33)
 @RunWith(AndroidJUnit4.class)
 public class PlatformViewWrapperTest {
   private final Context ctx = ApplicationProvider.getApplicationContext();
@@ -238,9 +238,9 @@ public class PlatformViewWrapperTest {
   public static class ShadowView {}
 
   @Implements(ViewGroup.class)
-  public static class ShadowViewGroup extends org.robolectric.shadows.ShadowView {
+  public class ShadowViewGroup extends  org.robolectric.shadows.ShadowViewGroup { //, org.robolectric.shadows.ShadowViewGroup {
     @Implementation
-    public boolean requestSendAccessibilityEvent(View child, AccessibilityEvent event) {
+    protected boolean requestSendAccessibilityEvent(View child, AccessibilityEvent event) {
       return true;
     }
   }

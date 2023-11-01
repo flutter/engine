@@ -52,7 +52,7 @@ import org.robolectric.shadows.ShadowLooper;
 public class PlatformPluginTest {
   private final Context ctx = ApplicationProvider.getApplicationContext();
 
-  @Config(sdk = 16)
+  @Config(sdk = 19)
   @Test
   public void itIgnoresNewHapticEventsOnOldAndroidPlatforms() {
     View fakeDecorView = mock(View.class);
