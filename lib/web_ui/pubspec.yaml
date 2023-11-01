@@ -23,8 +23,6 @@ dev_dependencies:
   async: any
   convert: any
   crypto: any
-  engine_repo_tools:
-    path: ../../tools/pkg/engine_repo_tools
   html: 0.15.4
   http: 1.1.0
   http_multi_server: any
@@ -56,3 +54,7 @@ dev_dependencies:
     path: ../../web_sdk/web_engine_tester
   skia_gold_client:
     path: ../../testing/skia_gold_client
+
+dependency_overrides:
+  engine_repo_tools:
+    path: ../../tools/pkg/engine_repo_tools
