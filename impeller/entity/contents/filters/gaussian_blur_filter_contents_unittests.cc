@@ -86,4 +86,20 @@ TEST(GaussianBlurFilterContents, CoverageWithTexture) {
   ASSERT_EQ(coverage, Rect::MakeLTRB(99, 99, 201, 201));
 }
 
+TEST(GaussianBlurFilterContents, CoverageWithEffectTransform) {
+  TextureDescriptor desc = {
+      .size = ISize(100, 100),
+  };
+  Scalar sigma_radius_1 = CalculateSigmaForBlurRadius(1.0);
+  GaussianBlurFilterContents contents(/*sigma=*/sigma_radius_1);
+  std::shared_ptr<MockTexture> texture = std::make_shared<MockTexture>(desc);
+  EXPECT_CALL(*texture, GetSize()).WillRepeatedly(Return(ISize(100, 100)));
+  FilterInput::Vector inputs = {FilterInput::Make(texture)};
+  Entity entity;
+  entity.SetTransformation(Matrix::MakeTranslation({100, 100, 0}));
+  std::optional<Rect> coverage = contents.GetFilterCoverage(
+      inputs, entity, /*effect_transform=*/Matrix::MakeScale({2.0, 2.0, 1.0}));
+  ASSERT_EQ(coverage, Rect::MakeLTRB(100 - 2, 100 - 2, 200 + 2, 200 + 2));
+}
+
 }  // namespace impeller
