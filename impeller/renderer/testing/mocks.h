@@ -10,6 +10,7 @@
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/context.h"
 #include "impeller/renderer/render_target.h"
+#include "impeller/typographer/typographer_context.h"
 
 namespace impeller {
 namespace testing {
@@ -161,6 +162,31 @@ class MockTexture : public Texture {
   MOCK_METHOD(bool,
               OnSetContents,
               (std::shared_ptr<const fml::Mapping> mapping, size_t slice),
+              (override));
+};
+
+class MockTypographerContext : public TypographerContext {
+ public:
+  MOCK_METHOD(std::shared_ptr<GlyphAtlas>,
+              CreateGlyphAtlas,
+              (Context & context,
+               GlyphAtlas::Type type,
+               std::shared_ptr<GlyphAtlasContext> atlas_context,
+               const FontGlyphMap& font_glyph_map),
+              (const, override));
+  MOCK_METHOD(std::shared_ptr<GlyphAtlasContext>,
+              CreateGlyphAtlasContext,
+              (),
+              (const, override));
+};
+
+class MockRenderTargetAllocator : public RenderTargetAllocator {
+ public:
+  MockRenderTargetAllocator(std::shared_ptr<Allocator> allocator)
+      : RenderTargetAllocator(allocator) {}
+  MOCK_METHOD(std::shared_ptr<Texture>,
+              CreateTexture,
+              (const TextureDescriptor& desc),
               (override));
 };
 
