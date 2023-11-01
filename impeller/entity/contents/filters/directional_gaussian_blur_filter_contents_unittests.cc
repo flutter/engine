@@ -4,30 +4,16 @@
 
 #include "flutter/testing/testing.h"
 #include "gmock/gmock.h"
+#include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/directional_gaussian_blur_filter_contents.h"
+#include "impeller/renderer/testing/mocks.h"
 
 namespace impeller {
+namespace testing {
 
-using testing::Return;
+using ::testing::Return;
 
 namespace {
-
-class MockTexture : public Texture {
- public:
-  MockTexture(TextureDescriptor desc) : Texture(desc) {}
-
-  MOCK_METHOD(void, SetLabel, (std::string_view label), (override));
-  MOCK_METHOD(bool, IsValid, (), (const, override));
-  MOCK_METHOD(ISize, GetSize, (), (const, override));
-  MOCK_METHOD(bool,
-              OnSetContents,
-              (const uint8_t* contents, size_t length, size_t slice),
-              (override));
-  MOCK_METHOD(bool,
-              OnSetContents,
-              (std::shared_ptr<const fml::Mapping> mapping, size_t slice),
-              (override));
-};
 
 Scalar CalculateSigmaForBlurRadius(Scalar blur_radius) {
   // See Sigma.h
@@ -64,4 +50,24 @@ TEST(DirectionalGaussianBlurFilterContents, FilterSourceCoverage) {
   ASSERT_EQ(coverage, Rect::MakeLTRB(100 - 2, 100, 200 + 2, 200));
 }
 
+TEST(DirectionalGaussianBlurFilterContents, RenderNothing) {
+  Scalar sigma_radius_1 = CalculateSigmaForBlurRadius(1.0);
+  auto contents = std::make_unique<DirectionalGaussianBlurFilterContents>();
+  contents->SetSigma(Sigma{sigma_radius_1});
+  contents->SetDirection({1.0, 0.0});
+  auto mock_context = std::make_shared<MockImpellerContext>();
+  auto mock_typographer_context = std::make_shared<MockTypographerContext>();
+  auto mock_allocator = std::make_shared<MockAllocator>();
+  auto mock_render_target_allocator =
+      std::make_shared<MockRenderTargetAllocator>(mock_allocator);
+  ContentContext renderer(mock_context, mock_typographer_context,
+                          mock_render_target_allocator);
+  Entity entity;
+  Rect coverage_hint = Rect::MakeLTRB(0, 0, 0, 0);
+  std::optional<Entity> result =
+      contents->GetEntity(renderer, entity, coverage_hint);
+  ASSERT_FALSE(result.has_value());
+}
+
+}  // namespace testing
 }  // namespace impeller
