@@ -130,23 +130,23 @@ targets:
   #       }
   #   timeout: 60
 
-  - name: Mac builder_cache
-    enabled_branches:
-      - main
-    recipe: engine_v2/cache
-    properties:
-      cache_name: "builder"
-      cache_root: "cache"
-      cache_paths: >-
-        [
-          "builder",
-          "git"
-        ]
-      gclient_variables: >-
-        {
-          "download_android_deps": "true"
-        }
-    timeout: 60
+  # - name: Mac builder_cache
+  #   enabled_branches:
+  #     - main
+  #   recipe: engine_v2/cache
+  #   properties:
+  #     cache_name: "builder"
+  #     cache_root: "cache"
+  #     cache_paths: >-
+  #       [
+  #         "builder",
+  #         "git"
+  #       ]
+  #     gclient_variables: >-
+  #       {
+  #         "download_android_deps": "true"
+  #       }
+  #   timeout: 60
 
   # - name: Linux linux_benchmarks
   #   enabled_branches:
@@ -448,12 +448,12 @@ targets:
   #   drone_dimensions:
   #     - os=Mac-13
 
-  # - name: Linux mac_unopt
-  #   recipe: engine_v2/engine_v2
-  #   properties:
-  #     config_name: mac_unopt
-  #     add_recipes_cq: "true"
-  #   timeout: 120
+  - name: Linux mac_unopt
+    recipe: engine_v2/engine_v2
+    properties:
+      config_name: mac_unopt
+      add_recipes_cq: "true"
+    timeout: 120
 
   # - name: Mac mac_ios_engine
   #   recipe: engine_v2/engine_v2
