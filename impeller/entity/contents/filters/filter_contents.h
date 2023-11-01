@@ -132,17 +132,23 @@ class FilterContents : public Contents {
   // |Contents|
   const FilterContents* AsFilter() const override;
 
-  /// @brief Determines the coverage of source pixels that will be needed
-  ///        to apply this filter under the given transform and produce
-  ///        results anywhere within the indicated coverage limit.
+  /// @brief  Determines the coverage of source pixels that will be needed
+  ///         to produce results for the indicated output limit. This is a
+  ///         reverse bounds calculation computing a source coverage from
+  ///         an intended output coverage.
   ///
-  ///        This is useful for subpass rendering scenarios where a filter
-  ///        will be applied to the output of the subpass and we need to
-  ///        determine how large of a render target to allocate in order
-  ///        to collect all pixels that might affect the supplied output
-  ///        coverage limit. While we might clip the rendering of the subpass,
-  ///        we want to avoid clipping out any pixels that contribute to
-  ///        the output limit via the filtering operation.
+  ///         The method computes a result such that if the filter is applied
+  ///         to a set of pixels filling the computed source coverage, it
+  ///         should produce an output that covers the entire indicated
+  ///         |output_limit|.
+  ///
+  ///         This is useful for subpass rendering scenarios where a filter
+  ///         will be applied to the output of the subpass and we need to
+  ///         determine how large of a render target to allocate in order
+  ///         to collect all pixels that might affect the supplied output
+  ///         coverage limit. While we might clip the rendering of the subpass,
+  ///         we want to avoid clipping out any pixels that contribute to
+  ///         the output limit via the filtering operation.
   std::optional<Rect> GetSourceCoverage(const Matrix& effect_transform,
                                         const Rect& output_limit) const;
 
@@ -178,11 +184,28 @@ class FilterContents : public Contents {
   virtual void SetRenderingMode(Entity::RenderingMode rendering_mode);
 
  private:
+  /// @brief  Internal utility method for |GetLocalCoverage|.
+  ///
+  ///         |GetLocalCoverage| will intersect the filter's coverage as
+  ///         computed by this method with the oject's coverage hint.
+  ///         This method should compute the coverage of the associated
+  ///         inputs and then apply any modifications to that coverage
+  ///         representing the actions of the filtering operation, ignoring
+  ///         the coverage hint.
   virtual std::optional<Rect> GetFilterCoverage(
       const FilterInput::Vector& inputs,
       const Entity& entity,
       const Matrix& effect_transform) const;
 
+  /// @brief  Internal utility method for |GetSourceCoverage|.
+  ///
+  ///         The public method will use this method to compute the inverse
+  ///         coverage for the indicated |output_limit| and then go on to
+  ///         consult the inputs to further expand/refine the required
+  ///         source coverage.
+  ///         This method is only responsible for computing the inverse
+  ///         coverage for the filtering operation based on the indicated
+  ///         |output_coverage|, ignoring the inputs.
   virtual std::optional<Rect> GetFilterSourceCoverage(
       const Matrix& effect_transform,
       const Rect& output_limit) const = 0;
