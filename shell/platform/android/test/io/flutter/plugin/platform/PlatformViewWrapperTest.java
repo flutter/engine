@@ -238,7 +238,9 @@ public class PlatformViewWrapperTest {
   public static class ShadowView {}
 
   @Implements(ViewGroup.class)
-  public class ShadowViewGroup extends  org.robolectric.shadows.ShadowViewGroup { //, org.robolectric.shadows.ShadowViewGroup {
+  public class ShadowViewGroup
+      extends org.robolectric.shadows
+          .ShadowViewGroup { // , org.robolectric.shadows.ShadowViewGroup {
     @Implementation
     protected boolean requestSendAccessibilityEvent(View child, AccessibilityEvent event) {
       return true;
