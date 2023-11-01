@@ -2145,6 +2145,9 @@ FlutterEngineResult FlutterEngineShutdown(FLUTTER_API_SYMBOL(FlutterEngine)
 static FlutterEngineResult BuildViewportMetrics(
     flutter::ViewportMetrics* metrics,
     const FlutterWindowMetricsEvent* flutter_metrics) {
+  if (flutter_metrics == nullptr) {
+    return kSuccess;
+  }
   metrics->physical_width = SAFE_ACCESS(flutter_metrics, width, 0.0);
   metrics->physical_height = SAFE_ACCESS(flutter_metrics, height, 0.0);
   metrics->device_pixel_ratio = SAFE_ACCESS(flutter_metrics, pixel_ratio, 1.0);
