@@ -102,4 +102,13 @@ TEST(GaussianBlurFilterContents, CoverageWithEffectTransform) {
   ASSERT_EQ(coverage, Rect::MakeLTRB(100 - 2, 100 - 2, 200 + 2, 200 + 2));
 }
 
+TEST(GaussianBlurFilterContents, FilterSourceCoverage) {
+  Scalar sigma_radius_1 = CalculateSigmaForBlurRadius(1.0);
+  auto contents = std::make_unique<GaussianBlurFilterContents>(sigma_radius_1);
+  std::optional<Rect> coverage = contents->GetFilterSourceCoverage(
+      /*effect_transform=*/Matrix::MakeScale({2.0, 2.0, 1.0}),
+      /*output_limit=*/Rect::MakeLTRB(100, 100, 200, 200));
+  ASSERT_EQ(coverage, Rect::MakeLTRB(100 - 2, 100 - 2, 200 + 2, 200 + 2));
+}
+
 }  // namespace impeller
