@@ -3610,7 +3610,6 @@ TEST_P(AiksTest, MatrixImageFilterMagnify) {
 
 // This should be solid red, if you see a little red box this is broken.
 TEST_P(AiksTest, ClearColorOptimizationWhenSubpassIsBiggerThanParentPass) {
-  SetWindowSize({400, 400});
   Canvas canvas;
   canvas.Scale(GetContentScale());
   canvas.DrawRect(Rect::MakeLTRB(200, 200, 300, 300), {.color = Color::Red()});
