@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <set>
 #include <string>
@@ -59,6 +60,9 @@ class CapabilitiesVK final : public Capabilities,
 
   // |Capabilities|
   bool SupportsOffscreenMSAA() const override;
+
+  // |Capabilities|
+  bool SupportsImplicitResolvingMSAA() const override;
 
   // |Capabilities|
   bool SupportsSSBO() const override;

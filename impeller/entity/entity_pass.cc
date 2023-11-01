@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// FLUTTER_NOLINT: https://github.com/flutter/flutter/issues/132129
-
 #include "impeller/entity/entity_pass.h"
 
 #include <memory>
@@ -25,6 +23,7 @@
 #include "impeller/entity/entity.h"
 #include "impeller/entity/inline_pass_context.h"
 #include "impeller/geometry/color.h"
+#include "impeller/geometry/rect.h"
 #include "impeller/renderer/command_buffer.h"
 
 #ifdef IMPELLER_DEBUG
@@ -97,19 +96,20 @@ size_t EntityPass::GetSubpassesDepth() const {
 
 std::optional<Rect> EntityPass::GetElementsCoverage(
     std::optional<Rect> coverage_limit) const {
-  std::optional<Rect> result;
+  std::optional<Rect> accumulated_coverage;
   for (const auto& element : elements_) {
-    std::optional<Rect> coverage;
+    std::optional<Rect> element_coverage;
 
     if (auto entity = std::get_if<Entity>(&element)) {
-      coverage = entity->GetCoverage();
+      element_coverage = entity->GetCoverage();
 
       // When the coverage limit is std::nullopt, that means there is no limit,
       // as opposed to empty coverage.
-      if (coverage.has_value() && coverage_limit.has_value()) {
+      if (element_coverage.has_value() && coverage_limit.has_value()) {
         const auto* filter = entity->GetContents()->AsFilter();
         if (!filter || filter->IsTranslationOnly()) {
-          coverage = coverage->Intersection(coverage_limit.value());
+          element_coverage =
+              element_coverage->Intersection(coverage_limit.value());
         }
       }
     } else if (auto subpass_ptr =
@@ -122,21 +122,15 @@ std::optional<Rect> EntityPass::GetElementsCoverage(
       // If the current pass elements have any coverage so far and there's a
       // backdrop filter, then incorporate the backdrop filter in the
       // pre-filtered coverage of the subpass.
-      if (result.has_value() && subpass.backdrop_filter_proc_) {
+      if (accumulated_coverage.has_value() && subpass.backdrop_filter_proc_) {
         std::shared_ptr<FilterContents> backdrop_filter =
-            subpass.backdrop_filter_proc_(FilterInput::Make(result.value()),
-                                          subpass.xformation_,
-                                          Entity::RenderingMode::kSubpass);
+            subpass.backdrop_filter_proc_(
+                FilterInput::Make(accumulated_coverage.value()),
+                subpass.xformation_, Entity::RenderingMode::kSubpass);
         if (backdrop_filter) {
           auto backdrop_coverage = backdrop_filter->GetCoverage({});
-          backdrop_coverage->origin += result->origin;
-          if (backdrop_coverage.has_value()) {
-            if (unfiltered_coverage.has_value()) {
-              unfiltered_coverage = coverage->Union(*backdrop_coverage);
-            } else {
-              unfiltered_coverage = backdrop_coverage;
-            }
-          }
+          unfiltered_coverage =
+              Rect::Union(unfiltered_coverage, backdrop_coverage);
         } else {
           VALIDATION_LOG << "The EntityPass backdrop filter proc didn't return "
                             "a valid filter.";
@@ -161,29 +155,19 @@ std::optional<Rect> EntityPass::GetElementsCoverage(
       if (image_filter) {
         Entity subpass_entity;
         subpass_entity.SetTransformation(subpass.xformation_);
-        coverage = image_filter->GetCoverage(subpass_entity);
+        element_coverage = image_filter->GetCoverage(subpass_entity);
       } else {
-        coverage = unfiltered_coverage;
+        element_coverage = unfiltered_coverage;
       }
 
-      if (coverage.has_value() && coverage_limit.has_value() &&
-          (!image_filter || image_filter->IsTranslationOnly())) {
-        coverage = coverage->Intersection(coverage_limit.value());
-      }
+      element_coverage = Rect::Intersection(element_coverage, coverage_limit);
     } else {
       FML_UNREACHABLE();
     }
 
-    if (!result.has_value() && coverage.has_value()) {
-      result = coverage;
-      continue;
-    }
-    if (!coverage.has_value()) {
-      continue;
-    }
-    result = result->Union(coverage.value());
+    accumulated_coverage = Rect::Union(accumulated_coverage, element_coverage);
   }
-  return result;
+  return accumulated_coverage;
 }
 
 std::optional<Rect> EntityPass::GetSubpassCoverage(
@@ -253,18 +237,15 @@ void EntityPass::AddSubpassInline(std::unique_ptr<EntityPass> pass) {
       pass->advanced_blend_reads_from_pass_texture_;
 }
 
-static RenderTarget::AttachmentConfig GetDefaultStencilConfig(bool readable) {
-  return RenderTarget::AttachmentConfig{
-      .storage_mode = readable ? StorageMode::kDevicePrivate
-                               : StorageMode::kDeviceTransient,
-      .load_action = LoadAction::kDontCare,
-      .store_action = StoreAction::kDontCare,
-  };
-}
+static const constexpr RenderTarget::AttachmentConfig kDefaultStencilConfig =
+    RenderTarget::AttachmentConfig{
+        .storage_mode = StorageMode::kDeviceTransient,
+        .load_action = LoadAction::kDontCare,
+        .store_action = StoreAction::kDontCare,
+    };
 
 static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
                                            ISize size,
-                                           bool readable,
                                            const Color& clear_color) {
   auto context = renderer.GetContext();
 
@@ -285,8 +266,8 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
             .resolve_storage_mode = StorageMode::kDevicePrivate,
             .load_action = LoadAction::kDontCare,
             .store_action = StoreAction::kMultisampleResolve,
-            .clear_color = clear_color},   // color_attachment_config
-        GetDefaultStencilConfig(readable)  // stencil_attachment_config
+            .clear_color = clear_color},  // color_attachment_config
+        kDefaultStencilConfig             // stencil_attachment_config
     );
   } else {
     target = RenderTarget::CreateOffscreen(
@@ -299,8 +280,8 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
             .load_action = LoadAction::kDontCare,
             .store_action = StoreAction::kDontCare,
             .clear_color = clear_color,
-        },                                 // color_attachment_config
-        GetDefaultStencilConfig(readable)  // stencil_attachment_config
+        },                     // color_attachment_config
+        kDefaultStencilConfig  // stencil_attachment_config
     );
   }
 
@@ -361,9 +342,9 @@ bool EntityPass::Render(ContentContext& renderer,
   // and then blit the results onto the onscreen texture. If using this branch,
   // there's no need to set up a stencil attachment on the root render target.
   if (!supports_onscreen_backdrop_reads && reads_from_onscreen_backdrop) {
-    auto offscreen_target = CreateRenderTarget(
-        renderer, root_render_target.GetRenderTargetSize(), true,
-        GetClearColor(render_target.GetRenderTargetSize()));
+    auto offscreen_target =
+        CreateRenderTarget(renderer, root_render_target.GetRenderTargetSize(),
+                           GetClearColor(render_target.GetRenderTargetSize()));
 
     if (!OnRender(renderer,  // renderer
                   capture,   // capture
@@ -465,8 +446,7 @@ bool EntityPass::Render(ContentContext& renderer,
         *renderer.GetContext(), *renderer.GetRenderTargetCache(),
         color0.texture->GetSize(),
         renderer.GetContext()->GetCapabilities()->SupportsOffscreenMSAA(),
-        "ImpellerOnscreen",
-        GetDefaultStencilConfig(reads_from_onscreen_backdrop));
+        "ImpellerOnscreen", kDefaultStencilConfig);
   }
 
   // Set up the clear color of the root pass.
@@ -503,10 +483,10 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
   //--------------------------------------------------------------------------
   /// Setup entity element.
   ///
-
   if (const auto& entity = std::get_if<Entity>(&element)) {
     element_entity = *entity;
     element_entity.SetCapture(capture.CreateChild("Entity"));
+
     if (!global_pass_position.IsZero()) {
       // If the pass image is going to be rendered with a non-zero position,
       // apply the negative translation to entity copies before rendering them
@@ -515,16 +495,15 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
           Matrix::MakeTranslation(Vector3(-global_pass_position)) *
           element_entity.GetTransformation());
     }
+    return EntityPass::EntityResult::Success(element_entity);
   }
 
   //--------------------------------------------------------------------------
   /// Setup subpass element.
   ///
-
-  else if (const auto& subpass_ptr =
-               std::get_if<std::unique_ptr<EntityPass>>(&element)) {
+  if (const auto& subpass_ptr =
+          std::get_if<std::unique_ptr<EntityPass>>(&element)) {
     auto subpass = subpass_ptr->get();
-
     if (subpass->delegate_->CanElide()) {
       return EntityPass::EntityResult::Skip();
     }
@@ -616,7 +595,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       return EntityPass::EntityResult::Skip();
     }
 
-    subpass_coverage = RoundOut(subpass_coverage.value());
+    subpass_coverage = Rect::RoundOut(subpass_coverage.value());
 
     auto subpass_size = ISize(subpass_coverage->size);
     if (subpass_size.IsEmpty()) {
@@ -625,10 +604,9 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     }
 
     auto subpass_target = CreateRenderTarget(
-        renderer,                                  // renderer
-        subpass_size,                              // size
-        subpass->GetTotalPassReads(renderer) > 0,  // readable
-        subpass->GetClearColor(subpass_size));     // clear_color
+        renderer,                               // renderer
+        subpass_size,                           // size
+        subpass->GetClearColor(subpass_size));  // clear_color
 
     if (!subpass_target.IsValid()) {
       VALIDATION_LOG << "Subpass render target is invalid.";
@@ -696,11 +674,10 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     element_entity.SetTransformation(subpass_texture_capture.AddMatrix(
         "Transform", Matrix::MakeTranslation(Vector3(subpass_coverage->origin -
                                                      global_pass_position))));
-  } else {
-    FML_UNREACHABLE();
-  }
 
-  return EntityPass::EntityResult::Success(element_entity);
+    return EntityPass::EntityResult::Success(element_entity);
+  }
+  FML_UNREACHABLE();
 }
 
 bool EntityPass::RenderElement(Entity& element_entity,
@@ -724,6 +701,15 @@ bool EntityPass::RenderElement(Entity& element_entity,
   // blit the non-MSAA resolve texture of the previous pass to MSAA textures
   // (let alone a transient one).
   if (result.backdrop_texture) {
+    // Restore any clips that were recorded before the backdrop filter was
+    // applied.
+    auto& replay_entities = clip_replay_->GetReplayEntities();
+    for (const auto& entity : replay_entities) {
+      if (!entity.Render(renderer, *result.pass)) {
+        VALIDATION_LOG << "Failed to render entity for clip restore.";
+      }
+    }
+
     auto size_rect = Rect::MakeSize(result.pass->GetRenderTargetSize());
     auto msaa_backdrop_contents = TextureContents::MakeRect(size_rect);
     msaa_backdrop_contents->SetStencilEnabled(false);
@@ -760,16 +746,9 @@ bool EntityPass::RenderElement(Entity& element_entity,
   // rendered output will actually be used, and so we set this to the current
   // clip coverage (which is the max clip bounds). The contents may
   // optionally use this hint to avoid unnecessary rendering work.
-  if (element_entity.GetContents()->GetCoverageHint().has_value()) {
-    // If the element already has a coverage hint (because its an advanced
-    // blend), then we need to intersect the clip coverage hint with the
-    // existing coverage hint.
-    element_entity.GetContents()->SetCoverageHint(
-        current_clip_coverage->Intersection(
-            element_entity.GetContents()->GetCoverageHint().value()));
-  } else {
-    element_entity.GetContents()->SetCoverageHint(current_clip_coverage);
-  }
+  auto element_coverage_hint = element_entity.GetContents()->GetCoverageHint();
+  element_entity.GetContents()->SetCoverageHint(
+      Rect::Intersection(element_coverage_hint, current_clip_coverage));
 
   switch (clip_coverage.type) {
     case Contents::ClipCoverage::Type::kNoChange:
@@ -836,6 +815,7 @@ bool EntityPass::RenderElement(Entity& element_entity,
 #endif
 
   element_entity.SetClipDepth(element_entity.GetClipDepth() - clip_depth_floor);
+  clip_replay_->RecordEntity(element_entity, clip_coverage.type);
   if (!element_entity.Render(renderer, *result.pass)) {
     VALIDATION_LOG << "Failed to render entity.";
     return false;
@@ -1178,6 +1158,26 @@ void EntityPass::SetBackdropFilter(BackdropFilterProc proc) {
 
 void EntityPass::SetEnableOffscreenCheckerboard(bool enabled) {
   enable_offscreen_debug_checkerboard_ = enabled;
+}
+
+EntityPassClipRecorder::EntityPassClipRecorder() {}
+
+void EntityPassClipRecorder::RecordEntity(const Entity& entity,
+                                          Contents::ClipCoverage::Type type) {
+  switch (type) {
+    case Contents::ClipCoverage::Type::kNoChange:
+      return;
+    case Contents::ClipCoverage::Type::kAppend:
+      rendered_clip_entities_.push_back(entity);
+      break;
+    case Contents::ClipCoverage::Type::kRestore:
+      rendered_clip_entities_.pop_back();
+      break;
+  }
+}
+
+const std::vector<Entity>& EntityPassClipRecorder::GetReplayEntities() const {
+  return rendered_clip_entities_;
 }
 
 }  // namespace impeller
