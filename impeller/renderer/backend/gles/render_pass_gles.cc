@@ -4,9 +4,14 @@
 
 #include "impeller/renderer/backend/gles/render_pass_gles.h"
 
+#include <cstdint>
+
+#include "GLES3/gl3.h"
 #include "flutter/fml/trace_event.h"
 #include "fml/closure.h"
+#include "fml/logging.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/texture_descriptor.h"
 #include "impeller/renderer/backend/gles/context_gles.h"
 #include "impeller/renderer/backend/gles/device_buffer_gles.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
@@ -186,6 +191,7 @@ struct RenderPassData {
         return false;
       }
     }
+
     if (auto depth = TextureGLES::Cast(pass_data.depth_attachment.get())) {
       if (!depth->SetAsFramebufferAttachment(
               GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kDepth)) {
@@ -370,7 +376,7 @@ struct RenderPassData {
       return false;
     }
 
-    const auto& vertex_desc_gles = pipeline.GetBufferBindings();
+    auto vertex_desc_gles = pipeline.GetBufferBindings();
 
     //--------------------------------------------------------------------------
     /// Bind vertex and index buffers.
@@ -498,6 +504,7 @@ struct RenderPassData {
                              attachments.data()   // size
     );
   }
+
 #ifdef IMPELLER_DEBUG
   if (is_default_fbo) {
     tracer->MarkFrameEnd(gl);
@@ -536,6 +543,14 @@ bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
   pass_data->discard_color_attachment =
       CanDiscardAttachmentWhenDone(color0.store_action);
 
+  // When we are using EXT_multisampled_render_to_texture, it is implicitly
+  // resolved when we bind the texture to the framebuffer. We don't need to
+  // discard the attachment when we are done.
+  if (color0.resolve_texture) {
+    FML_DCHECK(context.GetCapabilities()->SupportsImplicitResolvingMSAA());
+    pass_data->discard_color_attachment = false;
+  }
+
   //----------------------------------------------------------------------------
   /// Setup depth data.
   ///
@@ -548,7 +563,7 @@ bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
   }
 
   //----------------------------------------------------------------------------
-  /// Setup depth data.
+  /// Setup stencil data.
   ///
   if (stencil0.has_value()) {
     pass_data->stencil_attachment = stencil0->texture;

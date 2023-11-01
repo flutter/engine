@@ -13,6 +13,7 @@
 #include "impeller/renderer/backend/vulkan/vk.h"
 
 #include <array>
+#include <cstdint>
 #include <memory>
 
 namespace impeller {
@@ -61,7 +62,9 @@ class AllocatorVK final : public Allocator {
   // |Allocator|
   ISize GetMaxTextureSizeSupported() const override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(AllocatorVK);
+  AllocatorVK(const AllocatorVK&) = delete;
+
+  AllocatorVK& operator=(const AllocatorVK&) = delete;
 };
 
 }  // namespace impeller

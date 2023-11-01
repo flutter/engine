@@ -1,5 +1,465 @@
 ====================================================================================================
+LIBRARY: flatbuffers
+ORIGIN: ../../../flutter/third_party/flatbuffers/dart/LICENSE
+TYPE: LicenseType.apache
+FILE: ../../../flutter/third_party/flatbuffers/dart/lib/flat_buffers.dart
+FILE: ../../../flutter/third_party/flatbuffers/dart/lib/flex_buffers.dart
+FILE: ../../../flutter/third_party/flatbuffers/dart/lib/src/builder.dart
+FILE: ../../../flutter/third_party/flatbuffers/dart/lib/src/reference.dart
+FILE: ../../../flutter/third_party/flatbuffers/dart/lib/src/types.dart
+----------------------------------------------------------------------------------------------------
+Apache License
+Version 2.0, January 2004
+http://www.apache.org/licenses/
+
+TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+
+1. Definitions.
+
+   "License" shall mean the terms and conditions for use, reproduction,
+   and distribution as defined by Sections 1 through 9 of this document.
+
+   "Licensor" shall mean the copyright owner or entity authorized by
+   the copyright owner that is granting the License.
+
+   "Legal Entity" shall mean the union of the acting entity and all
+   other entities that control, are controlled by, or are under common
+   control with that entity. For the purposes of this definition,
+   "control" means (i) the power, direct or indirect, to cause the
+   direction or management of such entity, whether by contract or
+   otherwise, or (ii) ownership of fifty percent (50%) or more of the
+   outstanding shares, or (iii) beneficial ownership of such entity.
+
+   "You" (or "Your") shall mean an individual or Legal Entity
+   exercising permissions granted by this License.
+
+   "Source" form shall mean the preferred form for making modifications,
+   including but not limited to software source code, documentation
+   source, and configuration files.
+
+   "Object" form shall mean any form resulting from mechanical
+   transformation or translation of a Source form, including but
+   not limited to compiled object code, generated documentation,
+   and conversions to other media types.
+
+   "Work" shall mean the work of authorship, whether in Source or
+   Object form, made available under the License, as indicated by a
+   copyright notice that is included in or attached to the work
+   (an example is provided in the Appendix below).
+
+   "Derivative Works" shall mean any work, whether in Source or Object
+   form, that is based on (or derived from) the Work and for which the
+   editorial revisions, annotations, elaborations, or other modifications
+   represent, as a whole, an original work of authorship. For the purposes
+   of this License, Derivative Works shall not include works that remain
+   separable from, or merely link (or bind by name) to the interfaces of,
+   the Work and Derivative Works thereof.
+
+   "Contribution" shall mean any work of authorship, including
+   the original version of the Work and any modifications or additions
+   to that Work or Derivative Works thereof, that is intentionally
+   submitted to Licensor for inclusion in the Work by the copyright owner
+   or by an individual or Legal Entity authorized to submit on behalf of
+   the copyright owner. For the purposes of this definition, "submitted"
+   means any form of electronic, verbal, or written communication sent
+   to the Licensor or its representatives, including but not limited to
+   communication on electronic mailing lists, source code control systems,
+   and issue tracking systems that are managed by, or on behalf of, the
+   Licensor for the purpose of discussing and improving the Work, but
+   excluding communication that is conspicuously marked or otherwise
+   designated in writing by the copyright owner as "Not a Contribution."
+
+   "Contributor" shall mean Licensor and any individual or Legal Entity
+   on behalf of whom a Contribution has been received by Licensor and
+   subsequently incorporated within the Work.
+
+2. Grant of Copyright License. Subject to the terms and conditions of
+   this License, each Contributor hereby grants to You a perpetual,
+   worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+   copyright license to reproduce, prepare Derivative Works of,
+   publicly display, publicly perform, sublicense, and distribute the
+   Work and such Derivative Works in Source or Object form.
+
+3. Grant of Patent License. Subject to the terms and conditions of
+   this License, each Contributor hereby grants to You a perpetual,
+   worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+   (except as stated in this section) patent license to make, have made,
+   use, offer to sell, sell, import, and otherwise transfer the Work,
+   where such license applies only to those patent claims licensable
+   by such Contributor that are necessarily infringed by their
+   Contribution(s) alone or by combination of their Contribution(s)
+   with the Work to which such Contribution(s) was submitted. If You
+   institute patent litigation against any entity (including a
+   cross-claim or counterclaim in a lawsuit) alleging that the Work
+   or a Contribution incorporated within the Work constitutes direct
+   or contributory patent infringement, then any patent licenses
+   granted to You under this License for that Work shall terminate
+   as of the date such litigation is filed.
+
+4. Redistribution. You may reproduce and distribute copies of the
+   Work or Derivative Works thereof in any medium, with or without
+   modifications, and in Source or Object form, provided that You
+   meet the following conditions:
+
+   (a) You must give any other recipients of the Work or
+       Derivative Works a copy of this License; and
+
+   (b) You must cause any modified files to carry prominent notices
+       stating that You changed the files; and
+
+   (c) You must retain, in the Source form of any Derivative Works
+       that You distribute, all copyright, patent, trademark, and
+       attribution notices from the Source form of the Work,
+       excluding those notices that do not pertain to any part of
+       the Derivative Works; and
+
+   (d) If the Work includes a "NOTICE" text file as part of its
+       distribution, then any Derivative Works that You distribute must
+       include a readable copy of the attribution notices contained
+       within such NOTICE file, excluding those notices that do not
+       pertain to any part of the Derivative Works, in at least one
+       of the following places: within a NOTICE text file distributed
+       as part of the Derivative Works; within the Source form or
+       documentation, if provided along with the Derivative Works; or,
+       within a display generated by the Derivative Works, if and
+       wherever such third-party notices normally appear. The contents
+       of the NOTICE file are for informational purposes only and
+       do not modify the License. You may add Your own attribution
+       notices within Derivative Works that You distribute, alongside
+       or as an addendum to the NOTICE text from the Work, provided
+       that such additional attribution notices cannot be construed
+       as modifying the License.
+
+   You may add Your own copyright statement to Your modifications and
+   may provide additional or different license terms and conditions
+   for use, reproduction, or distribution of Your modifications, or
+   for any such Derivative Works as a whole, provided Your use,
+   reproduction, and distribution of the Work otherwise complies with
+   the conditions stated in this License.
+
+5. Submission of Contributions. Unless You explicitly state otherwise,
+   any Contribution intentionally submitted for inclusion in the Work
+   by You to the Licensor shall be under the terms and conditions of
+   this License, without any additional terms or conditions.
+   Notwithstanding the above, nothing herein shall supersede or modify
+   the terms of any separate license agreement you may have executed
+   with Licensor regarding such Contributions.
+
+6. Trademarks. This License does not grant permission to use the trade
+   names, trademarks, service marks, or product names of the Licensor,
+   except as required for reasonable and customary use in describing the
+   origin of the Work and reproducing the content of the NOTICE file.
+
+7. Disclaimer of Warranty. Unless required by applicable law or
+   agreed to in writing, Licensor provides the Work (and each
+   Contributor provides its Contributions) on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+   implied, including, without limitation, any warranties or conditions
+   of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
+   PARTICULAR PURPOSE. You are solely responsible for determining the
+   appropriateness of using or redistributing the Work and assume any
+   risks associated with Your exercise of permissions under this License.
+
+8. Limitation of Liability. In no event and under no legal theory,
+   whether in tort (including negligence), contract, or otherwise,
+   unless required by applicable law (such as deliberate and grossly
+   negligent acts) or agreed to in writing, shall any Contributor be
+   liable to You for damages, including any direct, indirect, special,
+   incidental, or consequential damages of any character arising as a
+   result of this License or out of the use or inability to use the
+   Work (including but not limited to damages for loss of goodwill,
+   work stoppage, computer failure or malfunction, or any and all
+   other commercial damages or losses), even if such Contributor
+   has been advised of the possibility of such damages.
+
+9. Accepting Warranty or Additional Liability. While redistributing
+   the Work or Derivative Works thereof, You may choose to offer,
+   and charge a fee for, acceptance of support, warranty, indemnity,
+   or other liability obligations and/or rights consistent with this
+   License. However, in accepting such obligations, You may act only
+   on Your own behalf and on Your sole responsibility, not on behalf
+   of any other Contributor, and only if You agree to indemnify,
+   defend, and hold each Contributor harmless for any liability
+   incurred by, or claims asserted against, such Contributor by reason
+   of your accepting any such warranty or additional liability.
+
+END OF TERMS AND CONDITIONS
+
+APPENDIX: How to apply the Apache License to your work.
+
+   To apply the Apache License to your work, attach the following
+   boilerplate notice, with the fields enclosed by brackets "[]"
+   replaced with your own identifying information. (Don't include
+   the brackets!)  The text should be enclosed in the appropriate
+   comment syntax for the file format. We also recommend that a
+   file or class name and description of purpose be included on the
+   same "printed page" as the copyright notice for easier
+   identification within third-party archives.
+
+Copyright 2014 Google Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: flatbuffers
+LIBRARY: shaderc
 LIBRARY: txt
+ORIGIN: ../../../flutter/third_party/flatbuffers/LICENSE.txt
+ORIGIN: ../../../flutter/third_party/flatbuffers/swift/LICENSE
+ORIGIN: ../../../flutter/third_party/shaderc/LICENSE
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/conan/test_package/test_package.cpp
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/grpc/flatbuffers-java-grpc/src/main/java/com/google/flatbuffers/grpc/FlatbuffersUtils.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/grpc/src/compiler/java_generator.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/grpc/src/compiler/java_generator.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/grpc/src/compiler/python_generator.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/grpc/src/compiler/python_generator.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/grpc/src/compiler/schema_interface.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/grpc/src/compiler/swift_generator.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/grpc/src/compiler/swift_generator.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/grpc/src/compiler/ts_generator.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/include/flatbuffers/allocator.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/include/flatbuffers/array.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/include/flatbuffers/bfbs_generator.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/include/flatbuffers/buffer.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/include/flatbuffers/buffer_ref.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/include/flatbuffers/code_generators.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/include/flatbuffers/default_allocator.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/include/flatbuffers/detached_buffer.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/include/flatbuffers/flatbuffer_builder.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/include/flatbuffers/flatbuffers.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/include/flatbuffers/flatc.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/include/flatbuffers/flex_flat_util.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/include/flatbuffers/flexbuffers.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/include/flatbuffers/grpc.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/include/flatbuffers/hash.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/include/flatbuffers/idl.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/include/flatbuffers/minireflect.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/include/flatbuffers/pch/flatc_pch.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/include/flatbuffers/pch/pch.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/include/flatbuffers/reflection.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/include/flatbuffers/registry.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/include/flatbuffers/stl_emulation.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/include/flatbuffers/string.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/include/flatbuffers/struct.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/include/flatbuffers/table.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/include/flatbuffers/util.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/include/flatbuffers/vector.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/include/flatbuffers/vector_downward.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/include/flatbuffers/verifier.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/BaseVector.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/BooleanVector.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/ByteBufferUtil.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/ByteVector.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/Constants.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/DoubleVector.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/FlatBufferBuilder.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/FlexBuffers.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/FlexBuffersBuilder.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/FloatVector.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/IntVector.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/LongVector.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/ShortVector.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/StringVector.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/Struct.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/Table.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/UnionVector.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/Utf8.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/Utf8Old.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/BaseVector.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/BooleanVector.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/ByteBufferUtil.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/ByteVector.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/Constants.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/DoubleVector.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/FlatBufferBuilder.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/FlexBuffers.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/FlexBuffersBuilder.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/FloatVector.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/IntVector.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/LongVector.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/ShortVector.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/StringVector.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/Struct.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/Table.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/UnionVector.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/Utf8.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/Utf8Old.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/kotlin/com/google/flatbuffers/kotlin/benchmark/FlexBuffersBenchmark.kt
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/kotlin/com/google/flatbuffers/kotlin/benchmark/JsonBenchmark.kt
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/kotlin/com/google/flatbuffers/kotlin/benchmark/UTF8Benchmark.kt
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/flatbuffers-kotlin/src/commonMain/kotlin/com/google/flatbuffers/kotlin/Buffers.kt
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/flatbuffers-kotlin/src/commonMain/kotlin/com/google/flatbuffers/kotlin/ByteArray.kt
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/flatbuffers-kotlin/src/commonMain/kotlin/com/google/flatbuffers/kotlin/FlexBuffers.kt
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/flatbuffers-kotlin/src/commonMain/kotlin/com/google/flatbuffers/kotlin/FlexBuffersBuilder.kt
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/flatbuffers-kotlin/src/commonMain/kotlin/com/google/flatbuffers/kotlin/FlexBuffersInternals.kt
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/flatbuffers-kotlin/src/commonMain/kotlin/com/google/flatbuffers/kotlin/JSON.kt
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/flatbuffers-kotlin/src/commonMain/kotlin/com/google/flatbuffers/kotlin/Utf8.kt
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/flatbuffers-kotlin/src/commonTest/kotlin/com/google/flatbuffers/kotlin/ByteArrayTest.kt
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/flatbuffers-kotlin/src/commonTest/kotlin/com/google/flatbuffers/kotlin/FlexBuffersTest.kt
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/flatbuffers-kotlin/src/commonTest/kotlin/com/google/flatbuffers/kotlin/JSONTest.kt
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/flatbuffers-kotlin/src/jsMain/kotlin/com/google/flatbuffers/kotlin/ByteArray.kt
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/flatbuffers-kotlin/src/jvmMain/kotlin/com/google/flatbuffers/kotlin/ByteArray.kt
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/flatbuffers-kotlin/src/nativeMain/kotlin/com/google/flatbuffers/kotlin/ByteArray.kt
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/kotlin/spotless/spotless.kt
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/lobster/flatbuffers.lobster
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/src/annotated_binary_text_gen.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/src/bfbs_gen.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/src/bfbs_gen_lua.cpp
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/src/bfbs_gen_lua.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/src/binary_annotator.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/src/code_generators.cpp
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/src/flatc.cpp
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/src/flatc_main.cpp
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/src/flathash.cpp
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/src/idl_gen_cpp.cpp
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/src/idl_gen_csharp.cpp
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/src/idl_gen_dart.cpp
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/src/idl_gen_fbs.cpp
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/src/idl_gen_go.cpp
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/src/idl_gen_grpc.cpp
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/src/idl_gen_java.cpp
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/src/idl_gen_json_schema.cpp
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/src/idl_gen_kotlin.cpp
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/src/idl_gen_lobster.cpp
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/src/idl_gen_lua.cpp
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/src/idl_gen_php.cpp
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/src/idl_gen_python.cpp
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/src/idl_gen_rust.cpp
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/src/idl_gen_swift.cpp
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/src/idl_gen_text.cpp
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/src/idl_gen_ts.cpp
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/src/idl_parser.cpp
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/src/reflection.cpp
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/src/util.cpp
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/swift/Package.swift
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/swift/Package@swift-5.5.swift
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/ByteBuffer.swift
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Constants.swift
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Enum.swift
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/FlatBufferBuilder.swift
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/FlatBufferObject.swift
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/FlatBuffersUtils.swift
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/FlatbuffersErrors.swift
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Int+extension.swift
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Message.swift
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Mutable.swift
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/NativeObject.swift
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Offset.swift
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Root.swift
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/String+extension.swift
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Struct.swift
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Table.swift
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/TableVerifier.swift
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/VeriferOptions.swift
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Verifiable.swift
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Verifier.swift
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/android_test/test.cpp
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/glslc/src/dependency_info.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/glslc/src/dependency_info.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/glslc/src/file.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/glslc/src/file.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/glslc/src/file_compiler.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/glslc/src/file_compiler.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/glslc/src/file_includer.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/glslc/src/file_includer.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/glslc/src/file_test.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/glslc/src/main.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/glslc/src/resource_parse.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/glslc/src/resource_parse.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/glslc/src/resource_parse_test.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/glslc/src/shader_stage.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/glslc/src/shader_stage.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/glslc/src/stage_test.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/android-release/continuous_arm.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/android-release/continuous_x86.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/android-release/presubmit_arm.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/android-release/presubmit_x86.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/linux/continuous_clang_asan.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/linux/continuous_clang_debug.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/linux/continuous_clang_release.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/linux/continuous_gcc_coverage.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/linux/continuous_gcc_debug.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/linux/continuous_gcc_debug_exception.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/linux/continuous_gcc_release.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/linux/continuous_license_check.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/linux/continuous_mingw_release.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/linux/presubmit_clang_asan.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/linux/presubmit_clang_debug.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/linux/presubmit_clang_release.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/linux/presubmit_gcc_coverage.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/linux/presubmit_gcc_debug.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/linux/presubmit_gcc_release.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/linux/presubmit_license_check.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/macos/continuous_clang_debug.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/macos/continuous_clang_release.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/macos/presubmit_clang_debug.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/macos/presubmit_clang_release.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/ndk-build/continuous_khronos.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/ndk-build/presubmit_khronos.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/windows/continuous_debug_2017.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/windows/continuous_release_2015.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/windows/continuous_release_2017.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/windows/presubmit_debug_2017.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/windows/presubmit_release_2015.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/kokoro/windows/presubmit_release_2017.cfg
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc/include/shaderc/env.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc/include/shaderc/shaderc.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc/include/shaderc/shaderc.hpp
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc/include/shaderc/status.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc/include/shaderc/visibility.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc/src/common_shaders_for_test.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc/src/shaderc.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc/src/shaderc_c_smoke_test.c
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc/src/shaderc_cpp_test.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc/src/shaderc_private.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc/src/shaderc_private_test.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc/src/shaderc_test.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/args.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/compiler.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/counting_includer.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/exceptions.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/file_finder.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/format.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/io_shaderc.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/message.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/mutex.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/resources.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/resources.inc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/shader_stage.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/spirv_tools_wrapper.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/string_piece.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/universal_unistd.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/version_profile.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/src/args.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/src/compiler.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/src/compiler_test.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/src/counting_includer_test.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/src/death_test.h
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/src/file_finder.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/src/file_finder_test.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/src/format_test.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/src/io_shaderc.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/src/io_shaderc_test.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/src/message.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/src/message_test.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/src/mutex_test.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/src/resources.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/src/shader_stage.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/src/spirv_tools_wrapper.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/src/string_piece_test.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/src/version_profile.cc
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/shaderc/libshaderc_util/src/version_profile_test.cc
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/benchmarks/skparagraph_benchmarks.cc
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/benchmarks/txt_run_all_benchmarks.cc
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/skia/paragraph_builder_skia.cc
@@ -37,6 +497,369 @@ ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutte
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/typeface_font_asset_provider.cc
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/typeface_font_asset_provider.h
 TYPE: LicenseType.apache
+FILE: ../../../flutter/third_party/flatbuffers/composer.json
+FILE: ../../../flutter/third_party/flatbuffers/conan/test_package/test_package.cpp
+FILE: ../../../flutter/third_party/flatbuffers/grpc/boringssl.patch
+FILE: ../../../flutter/third_party/flatbuffers/grpc/flatbuffers-java-grpc/src/main/java/com/google/flatbuffers/grpc/FlatbuffersUtils.java
+FILE: ../../../flutter/third_party/flatbuffers/grpc/src/compiler/cpp_generator.cc
+FILE: ../../../flutter/third_party/flatbuffers/grpc/src/compiler/cpp_generator.h
+FILE: ../../../flutter/third_party/flatbuffers/grpc/src/compiler/go_generator.cc
+FILE: ../../../flutter/third_party/flatbuffers/grpc/src/compiler/go_generator.h
+FILE: ../../../flutter/third_party/flatbuffers/grpc/src/compiler/java_generator.cc
+FILE: ../../../flutter/third_party/flatbuffers/grpc/src/compiler/java_generator.h
+FILE: ../../../flutter/third_party/flatbuffers/grpc/src/compiler/python_generator.cc
+FILE: ../../../flutter/third_party/flatbuffers/grpc/src/compiler/python_generator.h
+FILE: ../../../flutter/third_party/flatbuffers/grpc/src/compiler/schema_interface.h
+FILE: ../../../flutter/third_party/flatbuffers/grpc/src/compiler/swift_generator.cc
+FILE: ../../../flutter/third_party/flatbuffers/grpc/src/compiler/swift_generator.h
+FILE: ../../../flutter/third_party/flatbuffers/grpc/src/compiler/ts_generator.cc
+FILE: ../../../flutter/third_party/flatbuffers/grpc/src/compiler/ts_generator.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/allocator.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/array.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/base.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/bfbs_generator.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/buffer.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/buffer_ref.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/code_generators.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/default_allocator.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/detached_buffer.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/flatbuffer_builder.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/flatbuffers.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/flatc.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/flex_flat_util.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/flexbuffers.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/grpc.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/hash.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/idl.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/minireflect.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/pch/flatc_pch.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/pch/pch.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/reflection.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/reflection_generated.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/registry.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/stl_emulation.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/string.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/struct.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/table.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/util.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/vector.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/vector_downward.h
+FILE: ../../../flutter/third_party/flatbuffers/include/flatbuffers/verifier.h
+FILE: ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/ArrayReadWriteBuf.java
+FILE: ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/BaseVector.java
+FILE: ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/BooleanVector.java
+FILE: ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/ByteBufferReadWriteBuf.java
+FILE: ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/ByteBufferUtil.java
+FILE: ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/ByteVector.java
+FILE: ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/Constants.java
+FILE: ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/DoubleVector.java
+FILE: ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/FlatBufferBuilder.java
+FILE: ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/FlexBuffers.java
+FILE: ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/FlexBuffersBuilder.java
+FILE: ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/FloatVector.java
+FILE: ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/IntVector.java
+FILE: ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/LongVector.java
+FILE: ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/ReadBuf.java
+FILE: ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/ReadWriteBuf.java
+FILE: ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/ShortVector.java
+FILE: ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/StringVector.java
+FILE: ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/Struct.java
+FILE: ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/Table.java
+FILE: ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/UnionVector.java
+FILE: ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/Utf8.java
+FILE: ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/Utf8Old.java
+FILE: ../../../flutter/third_party/flatbuffers/java/com/google/flatbuffers/Utf8Safe.java
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/benchmark/build.gradle.kts
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/ArrayReadWriteBuf.java
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/BaseVector.java
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/BooleanVector.java
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/ByteBufferReadWriteBuf.java
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/ByteBufferUtil.java
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/ByteVector.java
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/Constants.java
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/DoubleVector.java
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/FlatBufferBuilder.java
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/FlexBuffers.java
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/FlexBuffersBuilder.java
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/FloatVector.java
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/IntVector.java
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/LongVector.java
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/ReadBuf.java
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/ReadWriteBuf.java
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/ShortVector.java
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/StringVector.java
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/Struct.java
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/Table.java
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/UnionVector.java
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/Utf8.java
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/Utf8Old.java
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/java/com/google/flatbuffers/Utf8Safe.java
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/kotlin/com/google/flatbuffers/kotlin/benchmark/FlexBuffersBenchmark.kt
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/kotlin/com/google/flatbuffers/kotlin/benchmark/JsonBenchmark.kt
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/benchmark/src/jvmMain/kotlin/com/google/flatbuffers/kotlin/benchmark/UTF8Benchmark.kt
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/build.gradle.kts
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/flatbuffers-kotlin/build.gradle.kts
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/flatbuffers-kotlin/src/commonMain/kotlin/com/google/flatbuffers/kotlin/Buffers.kt
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/flatbuffers-kotlin/src/commonMain/kotlin/com/google/flatbuffers/kotlin/ByteArray.kt
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/flatbuffers-kotlin/src/commonMain/kotlin/com/google/flatbuffers/kotlin/FlexBuffers.kt
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/flatbuffers-kotlin/src/commonMain/kotlin/com/google/flatbuffers/kotlin/FlexBuffersBuilder.kt
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/flatbuffers-kotlin/src/commonMain/kotlin/com/google/flatbuffers/kotlin/FlexBuffersInternals.kt
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/flatbuffers-kotlin/src/commonMain/kotlin/com/google/flatbuffers/kotlin/JSON.kt
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/flatbuffers-kotlin/src/commonMain/kotlin/com/google/flatbuffers/kotlin/Utf8.kt
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/flatbuffers-kotlin/src/commonTest/kotlin/com/google/flatbuffers/kotlin/ByteArrayTest.kt
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/flatbuffers-kotlin/src/commonTest/kotlin/com/google/flatbuffers/kotlin/FlexBuffersTest.kt
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/flatbuffers-kotlin/src/commonTest/kotlin/com/google/flatbuffers/kotlin/JSONTest.kt
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/flatbuffers-kotlin/src/jsMain/kotlin/com/google/flatbuffers/kotlin/ByteArray.kt
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/flatbuffers-kotlin/src/jvmMain/kotlin/com/google/flatbuffers/kotlin/ByteArray.kt
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/flatbuffers-kotlin/src/nativeMain/kotlin/com/google/flatbuffers/kotlin/ByteArray.kt
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/libs.versions.toml
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/META-INF/MANIFEST.MF
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/gradle-wrapper-classpath.properties
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/cli/AbstractCommandLineConverter.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/cli/AbstractPropertiesCommandLineConverter.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/cli/CommandLineArgumentException.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/cli/CommandLineConverter.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/cli/CommandLineOption.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/cli/CommandLineParser$1.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/cli/CommandLineParser$AfterFirstSubCommand.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/cli/CommandLineParser$AfterOptions.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/cli/CommandLineParser$BeforeFirstSubCommand.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/cli/CommandLineParser$CaseInsensitiveStringComparator.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/cli/CommandLineParser$KnownOptionParserState.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/cli/CommandLineParser$MissingOptionArgState.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/cli/CommandLineParser$OptionAwareParserState.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/cli/CommandLineParser$OptionComparator.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/cli/CommandLineParser$OptionParserState.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/cli/CommandLineParser$OptionString.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/cli/CommandLineParser$OptionStringComparator.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/cli/CommandLineParser$ParserState.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/cli/CommandLineParser$UnknownOptionParserState.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/cli/CommandLineParser.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/cli/ParsedCommandLine.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/cli/ParsedCommandLineOption.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/cli/ProjectPropertiesCommandLineConverter.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/cli/SystemPropertiesCommandLineConverter.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/wrapper/BootstrapMainStarter$1.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/wrapper/BootstrapMainStarter.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/wrapper/Download$1.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/wrapper/Download$DefaultDownloadProgressListener.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/wrapper/Download$ProxyAuthenticator.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/wrapper/Download.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/wrapper/DownloadProgressListener.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/wrapper/ExclusiveFileAccessManager.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/wrapper/GradleUserHomeLookup.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/wrapper/GradleWrapperMain.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/wrapper/IDownload.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/wrapper/Install$1.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/wrapper/Install$InstallCheck.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/wrapper/Install.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/wrapper/Logger.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/wrapper/PathAssembler$LocalDistribution.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/wrapper/PathAssembler.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/wrapper/SystemPropertiesHandler.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/wrapper/WrapperConfiguration.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.jar!/org/gradle/wrapper/WrapperExecutor.class
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/gradle/wrapper/gradle-wrapper.properties
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/settings.gradle.kts
+FILE: ../../../flutter/third_party/flatbuffers/kotlin/spotless/spotless.kt
+FILE: ../../../flutter/third_party/flatbuffers/lobster/flatbuffers.lobster
+FILE: ../../../flutter/third_party/flatbuffers/lua/flatbuffers.lua
+FILE: ../../../flutter/third_party/flatbuffers/lua/flatbuffers/binaryarray.lua
+FILE: ../../../flutter/third_party/flatbuffers/lua/flatbuffers/builder.lua
+FILE: ../../../flutter/third_party/flatbuffers/lua/flatbuffers/compat.lua
+FILE: ../../../flutter/third_party/flatbuffers/lua/flatbuffers/compat_5_1.lua
+FILE: ../../../flutter/third_party/flatbuffers/lua/flatbuffers/compat_5_3.lua
+FILE: ../../../flutter/third_party/flatbuffers/lua/flatbuffers/compat_luajit.lua
+FILE: ../../../flutter/third_party/flatbuffers/lua/flatbuffers/numTypes.lua
+FILE: ../../../flutter/third_party/flatbuffers/lua/flatbuffers/view.lua
+FILE: ../../../flutter/third_party/flatbuffers/reflection/reflection.fbs
+FILE: ../../../flutter/third_party/flatbuffers/src/annotated_binary_text_gen.cpp
+FILE: ../../../flutter/third_party/flatbuffers/src/annotated_binary_text_gen.h
+FILE: ../../../flutter/third_party/flatbuffers/src/bfbs_gen.h
+FILE: ../../../flutter/third_party/flatbuffers/src/bfbs_gen_lua.cpp
+FILE: ../../../flutter/third_party/flatbuffers/src/bfbs_gen_lua.h
+FILE: ../../../flutter/third_party/flatbuffers/src/bfbs_namer.h
+FILE: ../../../flutter/third_party/flatbuffers/src/binary_annotator.cpp
+FILE: ../../../flutter/third_party/flatbuffers/src/binary_annotator.h
+FILE: ../../../flutter/third_party/flatbuffers/src/code_generators.cpp
+FILE: ../../../flutter/third_party/flatbuffers/src/flatc.cpp
+FILE: ../../../flutter/third_party/flatbuffers/src/flatc_main.cpp
+FILE: ../../../flutter/third_party/flatbuffers/src/flathash.cpp
+FILE: ../../../flutter/third_party/flatbuffers/src/idl_gen_cpp.cpp
+FILE: ../../../flutter/third_party/flatbuffers/src/idl_gen_csharp.cpp
+FILE: ../../../flutter/third_party/flatbuffers/src/idl_gen_dart.cpp
+FILE: ../../../flutter/third_party/flatbuffers/src/idl_gen_fbs.cpp
+FILE: ../../../flutter/third_party/flatbuffers/src/idl_gen_go.cpp
+FILE: ../../../flutter/third_party/flatbuffers/src/idl_gen_grpc.cpp
+FILE: ../../../flutter/third_party/flatbuffers/src/idl_gen_java.cpp
+FILE: ../../../flutter/third_party/flatbuffers/src/idl_gen_json_schema.cpp
+FILE: ../../../flutter/third_party/flatbuffers/src/idl_gen_kotlin.cpp
+FILE: ../../../flutter/third_party/flatbuffers/src/idl_gen_lobster.cpp
+FILE: ../../../flutter/third_party/flatbuffers/src/idl_gen_lua.cpp
+FILE: ../../../flutter/third_party/flatbuffers/src/idl_gen_php.cpp
+FILE: ../../../flutter/third_party/flatbuffers/src/idl_gen_python.cpp
+FILE: ../../../flutter/third_party/flatbuffers/src/idl_gen_rust.cpp
+FILE: ../../../flutter/third_party/flatbuffers/src/idl_gen_swift.cpp
+FILE: ../../../flutter/third_party/flatbuffers/src/idl_gen_text.cpp
+FILE: ../../../flutter/third_party/flatbuffers/src/idl_gen_ts.cpp
+FILE: ../../../flutter/third_party/flatbuffers/src/idl_namer.h
+FILE: ../../../flutter/third_party/flatbuffers/src/idl_parser.cpp
+FILE: ../../../flutter/third_party/flatbuffers/src/namer.h
+FILE: ../../../flutter/third_party/flatbuffers/src/reflection.cpp
+FILE: ../../../flutter/third_party/flatbuffers/src/util.cpp
+FILE: ../../../flutter/third_party/flatbuffers/swift/FlatBuffers.podspec
+FILE: ../../../flutter/third_party/flatbuffers/swift/Package.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Package@swift-5.5.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/ByteBuffer.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Constants.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Documentation.docc/Documentation.md
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Documentation.docc/Resources/code/fbs/monster_step_1.fbs
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Documentation.docc/Resources/code/fbs/monster_step_2.fbs
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Documentation.docc/Resources/code/fbs/monster_step_3.fbs
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Documentation.docc/Resources/code/fbs/monster_step_4.fbs
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Documentation.docc/Resources/code/fbs/monster_step_5.fbs
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Documentation.docc/Resources/code/fbs/monster_step_6.fbs
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Documentation.docc/Resources/code/fbs/monster_step_7.fbs
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Documentation.docc/Resources/code/swift/swift_code_1.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Documentation.docc/Resources/code/swift/swift_code_10.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Documentation.docc/Resources/code/swift/swift_code_11.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Documentation.docc/Resources/code/swift/swift_code_12.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Documentation.docc/Resources/code/swift/swift_code_13.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Documentation.docc/Resources/code/swift/swift_code_2.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Documentation.docc/Resources/code/swift/swift_code_3.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Documentation.docc/Resources/code/swift/swift_code_4.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Documentation.docc/Resources/code/swift/swift_code_5.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Documentation.docc/Resources/code/swift/swift_code_6.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Documentation.docc/Resources/code/swift/swift_code_7.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Documentation.docc/Resources/code/swift/swift_code_8.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Documentation.docc/Resources/code/swift/swift_code_9.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Documentation.docc/Resources/images/tutorial_cover_image_1.png
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Documentation.docc/Tutorials/Tutorial_Table_of_Contents.tutorial
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Documentation.docc/Tutorials/create_your_first_buffer.tutorial
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Documentation.docc/Tutorials/creating_flatbuffer_schema.tutorial
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Documentation.docc/Tutorials/reading_bytebuffer.tutorial
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Enum.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/FlatBufferBuilder.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/FlatBufferObject.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/FlatBuffersUtils.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/FlatbuffersErrors.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Int+extension.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Message.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Mutable.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/NativeObject.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Offset.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Root.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/String+extension.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Struct.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Table.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/TableVerifier.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/VeriferOptions.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Verifiable.swift
+FILE: ../../../flutter/third_party/flatbuffers/swift/Sources/FlatBuffers/Verifier.swift
+FILE: ../../../flutter/third_party/flatbuffers/tsconfig.json
+FILE: ../../../flutter/third_party/flatbuffers/tsconfig.mjs.json
+FILE: ../../../flutter/third_party/flatbuffers/yarn.lock
+FILE: ../../../flutter/third_party/shaderc/DEVELOPMENT.howto.md
+FILE: ../../../flutter/third_party/shaderc/android_test/test.cpp
+FILE: ../../../flutter/third_party/shaderc/downloads.md
+FILE: ../../../flutter/third_party/shaderc/glslc/src/dependency_info.cc
+FILE: ../../../flutter/third_party/shaderc/glslc/src/dependency_info.h
+FILE: ../../../flutter/third_party/shaderc/glslc/src/file.cc
+FILE: ../../../flutter/third_party/shaderc/glslc/src/file.h
+FILE: ../../../flutter/third_party/shaderc/glslc/src/file_compiler.cc
+FILE: ../../../flutter/third_party/shaderc/glslc/src/file_compiler.h
+FILE: ../../../flutter/third_party/shaderc/glslc/src/file_includer.cc
+FILE: ../../../flutter/third_party/shaderc/glslc/src/file_includer.h
+FILE: ../../../flutter/third_party/shaderc/glslc/src/file_test.cc
+FILE: ../../../flutter/third_party/shaderc/glslc/src/main.cc
+FILE: ../../../flutter/third_party/shaderc/glslc/src/resource_parse.cc
+FILE: ../../../flutter/third_party/shaderc/glslc/src/resource_parse.h
+FILE: ../../../flutter/third_party/shaderc/glslc/src/resource_parse_test.cc
+FILE: ../../../flutter/third_party/shaderc/glslc/src/shader_stage.cc
+FILE: ../../../flutter/third_party/shaderc/glslc/src/shader_stage.h
+FILE: ../../../flutter/third_party/shaderc/glslc/src/stage_test.cc
+FILE: ../../../flutter/third_party/shaderc/kokoro/android-release/continuous_arm.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/android-release/continuous_x86.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/android-release/presubmit_arm.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/android-release/presubmit_x86.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/img/linux.png
+FILE: ../../../flutter/third_party/shaderc/kokoro/img/macos.png
+FILE: ../../../flutter/third_party/shaderc/kokoro/img/windows.png
+FILE: ../../../flutter/third_party/shaderc/kokoro/linux/continuous_clang_asan.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/linux/continuous_clang_debug.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/linux/continuous_clang_release.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/linux/continuous_gcc_coverage.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/linux/continuous_gcc_debug.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/linux/continuous_gcc_debug_exception.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/linux/continuous_gcc_release.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/linux/continuous_license_check.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/linux/continuous_mingw_release.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/linux/presubmit_clang_asan.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/linux/presubmit_clang_debug.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/linux/presubmit_clang_release.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/linux/presubmit_gcc_coverage.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/linux/presubmit_gcc_debug.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/linux/presubmit_gcc_release.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/linux/presubmit_license_check.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/macos/continuous_clang_debug.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/macos/continuous_clang_release.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/macos/presubmit_clang_debug.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/macos/presubmit_clang_release.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/ndk-build/continuous_khronos.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/ndk-build/presubmit_khronos.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/windows/continuous_debug_2017.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/windows/continuous_release_2015.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/windows/continuous_release_2017.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/windows/presubmit_debug_2017.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/windows/presubmit_release_2015.cfg
+FILE: ../../../flutter/third_party/shaderc/kokoro/windows/presubmit_release_2017.cfg
+FILE: ../../../flutter/third_party/shaderc/libshaderc/include/shaderc/env.h
+FILE: ../../../flutter/third_party/shaderc/libshaderc/include/shaderc/shaderc.h
+FILE: ../../../flutter/third_party/shaderc/libshaderc/include/shaderc/shaderc.hpp
+FILE: ../../../flutter/third_party/shaderc/libshaderc/include/shaderc/status.h
+FILE: ../../../flutter/third_party/shaderc/libshaderc/include/shaderc/visibility.h
+FILE: ../../../flutter/third_party/shaderc/libshaderc/src/common_shaders_for_test.h
+FILE: ../../../flutter/third_party/shaderc/libshaderc/src/shaderc.cc
+FILE: ../../../flutter/third_party/shaderc/libshaderc/src/shaderc_c_smoke_test.c
+FILE: ../../../flutter/third_party/shaderc/libshaderc/src/shaderc_cpp_test.cc
+FILE: ../../../flutter/third_party/shaderc/libshaderc/src/shaderc_private.h
+FILE: ../../../flutter/third_party/shaderc/libshaderc/src/shaderc_private_test.cc
+FILE: ../../../flutter/third_party/shaderc/libshaderc/src/shaderc_test.cc
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/args.h
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/compiler.h
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/counting_includer.h
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/exceptions.h
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/file_finder.h
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/format.h
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/io_shaderc.h
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/message.h
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/mutex.h
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/resources.h
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/resources.inc
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/shader_stage.h
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/spirv_tools_wrapper.h
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/string_piece.h
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/universal_unistd.h
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/include/libshaderc_util/version_profile.h
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/src/args.cc
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/src/compiler.cc
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/src/compiler_test.cc
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/src/counting_includer_test.cc
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/src/death_test.h
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/src/file_finder.cc
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/src/file_finder_test.cc
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/src/format_test.cc
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/src/io_shaderc.cc
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/src/io_shaderc_test.cc
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/src/message.cc
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/src/message_test.cc
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/src/mutex_test.cc
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/src/resources.cc
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/src/shader_stage.cc
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/src/spirv_tools_wrapper.cc
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/src/string_piece_test.cc
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/src/version_profile.cc
+FILE: ../../../flutter/third_party/shaderc/libshaderc_util/src/version_profile_test.cc
 FILE: ../../../flutter/third_party/txt/benchmarks/skparagraph_benchmarks.cc
 FILE: ../../../flutter/third_party/txt/benchmarks/txt_run_all_benchmarks.cc
 FILE: ../../../flutter/third_party/txt/src/skia/paragraph_builder_skia.cc
@@ -307,6 +1130,175 @@ freely, subject to the following restrictions:
 ====================================================================================================
 
 ====================================================================================================
+LIBRARY: include
+ORIGIN: ../../../flutter/third_party/inja/third_party/include/hayai/hayai_clock.hpp
+TYPE: LicenseType.unknown
+FILE: ../../../flutter/third_party/inja/third_party/include/hayai/hayai_clock.hpp
+----------------------------------------------------------------------------------------------------
+Copyright (C) 2011 Nick Bruun <nick@bruun.co>
+Copyright (C) 2013 Vlad Lazarenko <vlad@lazarenko.me>
+Copyright (C) 2014 Nicolas Pauss <nicolas.pauss@gmail.com>
+====================================================================================================
+
+====================================================================================================
+LIBRARY: rapidjson
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/schema.h + http://opensource->org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/schema.h
+TYPE: LicenseType.mit
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/schema.h
+----------------------------------------------------------------------------------------------------
+Copyright (C) 2015 THL A29 Limited, a Tencent company, and Milo Yip-> All rights reserved->
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: rapidjson
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/allocators.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/allocators.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/cursorstreamwrapper.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/cursorstreamwrapper.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/document.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/document.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/encodedstream.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/encodedstream.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/encodings.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/encodings.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/error/en.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/error/en.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/error/error.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/error/error.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/filereadstream.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/filereadstream.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/filewritestream.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/filewritestream.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/fwd.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/fwd.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/internal/biginteger.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/internal/biginteger.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/internal/diyfp.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/internal/diyfp.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/internal/dtoa.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/internal/dtoa.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/internal/ieee754.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/internal/ieee754.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/internal/itoa.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/internal/itoa.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/internal/meta.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/internal/meta.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/internal/pow10.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/internal/pow10.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/internal/regex.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/internal/regex.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/internal/stack.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/internal/stack.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/internal/strfunc.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/internal/strfunc.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/internal/strtod.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/internal/strtod.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/internal/swap.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/internal/swap.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/istreamwrapper.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/istreamwrapper.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/memorybuffer.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/memorybuffer.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/memorystream.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/memorystream.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/ostreamwrapper.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/ostreamwrapper.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/pointer.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/pointer.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/prettywriter.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/prettywriter.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/rapidjson.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/rapidjson.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/reader.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/reader.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/stream.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/stream.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/stringbuffer.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/stringbuffer.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/writer.h + http://opensource.org/licenses/MIT referenced by ../../../flutter/third_party/rapidjson/include/rapidjson/writer.h
+TYPE: LicenseType.mit
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/allocators.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/cursorstreamwrapper.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/document.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/encodedstream.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/encodings.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/error/en.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/error/error.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/filereadstream.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/filewritestream.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/fwd.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/internal/biginteger.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/internal/diyfp.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/internal/dtoa.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/internal/ieee754.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/internal/itoa.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/internal/meta.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/internal/pow10.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/internal/regex.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/internal/stack.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/internal/strfunc.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/internal/strtod.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/internal/swap.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/istreamwrapper.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/memorybuffer.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/memorystream.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/ostreamwrapper.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/pointer.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/prettywriter.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/rapidjson.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/reader.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/stream.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/stringbuffer.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/writer.h
+----------------------------------------------------------------------------------------------------
+Copyright (C) 2015 THL A29 Limited, a Tencent company, and Milo Yip. All rights reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: libtess2
+ORIGIN: ../../../flutter/third_party/libtess2/Include/tesselator.h
+ORIGIN: ../../../flutter/third_party/libtess2/LICENSE.txt
+ORIGIN: ../../../flutter/third_party/libtess2/Source/bucketalloc.c
+ORIGIN: ../../../flutter/third_party/libtess2/Source/bucketalloc.h
+ORIGIN: ../../../flutter/third_party/libtess2/Source/dict.c
+ORIGIN: ../../../flutter/third_party/libtess2/Source/dict.h
+ORIGIN: ../../../flutter/third_party/libtess2/Source/geom.c
+ORIGIN: ../../../flutter/third_party/libtess2/Source/geom.h
+ORIGIN: ../../../flutter/third_party/libtess2/Source/mesh.c
+ORIGIN: ../../../flutter/third_party/libtess2/Source/mesh.h
+ORIGIN: ../../../flutter/third_party/libtess2/Source/priorityq.c
+ORIGIN: ../../../flutter/third_party/libtess2/Source/priorityq.h
+ORIGIN: ../../../flutter/third_party/libtess2/Source/sweep.c
+ORIGIN: ../../../flutter/third_party/libtess2/Source/sweep.h
+ORIGIN: ../../../flutter/third_party/libtess2/Source/tess.c
+ORIGIN: ../../../flutter/third_party/libtess2/Source/tess.h
+TYPE: LicenseType.mit
+FILE: ../../../flutter/third_party/libtess2/Bin/bg.svg
+FILE: ../../../flutter/third_party/libtess2/Bin/fg.svg
+FILE: ../../../flutter/third_party/libtess2/Include/tesselator.h
+FILE: ../../../flutter/third_party/libtess2/Source/bucketalloc.c
+FILE: ../../../flutter/third_party/libtess2/Source/bucketalloc.h
+FILE: ../../../flutter/third_party/libtess2/Source/dict.c
+FILE: ../../../flutter/third_party/libtess2/Source/dict.h
+FILE: ../../../flutter/third_party/libtess2/Source/geom.c
+FILE: ../../../flutter/third_party/libtess2/Source/geom.h
+FILE: ../../../flutter/third_party/libtess2/Source/mesh.c
+FILE: ../../../flutter/third_party/libtess2/Source/mesh.h
+FILE: ../../../flutter/third_party/libtess2/Source/priorityq.c
+FILE: ../../../flutter/third_party/libtess2/Source/priorityq.h
+FILE: ../../../flutter/third_party/libtess2/Source/sweep.c
+FILE: ../../../flutter/third_party/libtess2/Source/sweep.h
+FILE: ../../../flutter/third_party/libtess2/Source/tess.c
+FILE: ../../../flutter/third_party/libtess2/Source/tess.h
+FILE: ../../../flutter/third_party/libtess2/premake4.lua
+----------------------------------------------------------------------------------------------------
+Copyright (C) [dates of first publication] Silicon Graphics, Inc.
+All Rights Reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice including the dates of first publication and either this
+permission notice or a reference to http://oss.sgi.com/projects/FreeB/ shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL SILICON GRAPHICS, INC.
+BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+OR OTHER DEALINGS IN THE SOFTWARE.
+
+Except as contained in this notice, the name of Silicon Graphics, Inc. shall not
+be used in advertising or otherwise to promote the sale, use or other dealings in
+this Software without prior written authorization from Silicon Graphics, Inc.
+====================================================================================================
+
+====================================================================================================
 LIBRARY: glfw
 ORIGIN: ../../../flutter/third_party/glfw/LICENSE.md
 TYPE: LicenseType.unknown
@@ -541,6 +1533,42 @@ freely, subject to the following restrictions:
 ====================================================================================================
 
 ====================================================================================================
+LIBRARY: rapidjson
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/msinttypes/inttypes.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/msinttypes/stdint.h
+TYPE: LicenseType.bsd
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/msinttypes/inttypes.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/msinttypes/stdint.h
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2006-2013 Alexander Chemeris
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+  1. Redistributions of source code must retain the above copyright notice,
+     this list of conditions and the following disclaimer.
+
+  2. Redistributions in binary form must reproduce the above copyright
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
+
+  3. Neither the name of the product nor the names of its contributors may
+     be used to endorse or promote products derived from this software
+     without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
 LIBRARY: glfw
 ORIGIN: ../../../flutter/third_party/glfw/src/cocoa_joystick.h
 ORIGIN: ../../../flutter/third_party/glfw/src/null_joystick.h
@@ -600,6 +1628,60 @@ freely, subject to the following restrictions:
 
 3. This notice may not be removed or altered from any source
    distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: include
+ORIGIN: ../../../flutter/third_party/inja/third_party/include/nlohmann/json.hpp
+TYPE: LicenseType.mit
+FILE: ../../../flutter/third_party/inja/third_party/include/nlohmann/json.hpp
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2008-2009 Bjoern Hoehrmann <bjoern@hoehrmann.de>
+
+Permission is hereby  granted, free of charge, to any  person obtaining a copy
+of this software and associated  documentation files (the "Software"), to deal
+in the Software  without restriction, including without  limitation the rights
+to  use, copy,  modify, merge,  publish, distribute,  sublicense, and/or  sell
+copies  of  the Software,  and  to  permit persons  to  whom  the Software  is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE  IS PROVIDED "AS  IS", WITHOUT WARRANTY  OF ANY KIND,  EXPRESS OR
+IMPLIED,  INCLUDING BUT  NOT  LIMITED TO  THE  WARRANTIES OF  MERCHANTABILITY,
+FITNESS FOR  A PARTICULAR PURPOSE AND  NONINFRINGEMENT. IN NO EVENT  SHALL THE
+AUTHORS  OR COPYRIGHT  HOLDERS  BE  LIABLE FOR  ANY  CLAIM,  DAMAGES OR  OTHER
+LIABILITY, WHETHER IN AN ACTION OF  CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE  OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: include
+ORIGIN: ../../../flutter/third_party/inja/third_party/include/nlohmann/json.hpp
+TYPE: LicenseType.mit
+FILE: ../../../flutter/third_party/inja/third_party/include/nlohmann/json.hpp
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2009 Florian Loitsch.
+
+Permission is hereby  granted, free of charge, to any  person obtaining a copy
+of this software and associated  documentation files (the "Software"), to deal
+in the Software  without restriction, including without  limitation the rights
+to  use, copy,  modify, merge,  publish, distribute,  sublicense, and/or  sell
+copies  of  the Software,  and  to  permit persons  to  whom  the Software  is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE  IS PROVIDED "AS  IS", WITHOUT WARRANTY  OF ANY KIND,  EXPRESS OR
+IMPLIED,  INCLUDING BUT  NOT  LIMITED TO  THE  WARRANTIES OF  MERCHANTABILITY,
+FITNESS FOR  A PARTICULAR PURPOSE AND  NONINFRINGEMENT. IN NO EVENT  SHALL THE
+AUTHORS  OR COPYRIGHT  HOLDERS  BE  LIABLE FOR  ANY  CLAIM,  DAMAGES OR  OTHER
+LIABILITY, WHETHER IN AN ACTION OF  CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE  OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 ====================================================================================================
 
 ====================================================================================================
@@ -794,6 +1876,49 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 
 ====================================================================================================
+LIBRARY: include
+ORIGIN: ../../../flutter/third_party/inja/third_party/include/hayai/LICENSE.md
+TYPE: LicenseType.unknown
+FILE: ../../../flutter/third_party/inja/third_party/include/hayai/hayai.hpp
+FILE: ../../../flutter/third_party/inja/third_party/include/hayai/hayai_benchmarker.hpp
+FILE: ../../../flutter/third_party/inja/third_party/include/hayai/hayai_compatibility.hpp
+FILE: ../../../flutter/third_party/inja/third_party/include/hayai/hayai_console.hpp
+FILE: ../../../flutter/third_party/inja/third_party/include/hayai/hayai_console_outputter.hpp
+FILE: ../../../flutter/third_party/inja/third_party/include/hayai/hayai_default_test_factory.hpp
+FILE: ../../../flutter/third_party/inja/third_party/include/hayai/hayai_fixture.hpp
+FILE: ../../../flutter/third_party/inja/third_party/include/hayai/hayai_json_outputter.hpp
+FILE: ../../../flutter/third_party/inja/third_party/include/hayai/hayai_junit_xml_outputter.hpp
+FILE: ../../../flutter/third_party/inja/third_party/include/hayai/hayai_main.hpp
+FILE: ../../../flutter/third_party/inja/third_party/include/hayai/hayai_outputter.hpp
+FILE: ../../../flutter/third_party/inja/third_party/include/hayai/hayai_test.hpp
+FILE: ../../../flutter/third_party/inja/third_party/include/hayai/hayai_test_descriptor.hpp
+FILE: ../../../flutter/third_party/inja/third_party/include/hayai/hayai_test_factory.hpp
+FILE: ../../../flutter/third_party/inja/third_party/include/hayai/hayai_test_result.hpp
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2011 - Nick Bruun.
+
+This software is provided 'as-is', without any express or implied
+warranty. In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1.  The origin of this software must not be misrepresented; you must not
+    claim that you wrote the original software. If you use this software
+    in a product, an acknowledgment in the product documentation would be
+    appreciated but is not required.
+2.  Altered source versions must be plainly marked as such, and must not be
+    misrepresented as being the original software.
+3.  If you meet (any of) the author(s), you're encouraged to buy them a beer,
+    a drink or whatever is suited to the situation, given that you like the
+    software.
+4.  This notice may not be removed or altered from any source
+    distribution.
+====================================================================================================
+
+====================================================================================================
 LIBRARY: accessibility
 ORIGIN: ../../../flutter/third_party/accessibility/base/auto_reset.h + ../../../flutter/third_party/accessibility/LICENSE
 ORIGIN: ../../../flutter/third_party/accessibility/base/win/atl_module.h + ../../../flutter/third_party/accessibility/LICENSE
@@ -975,6 +2100,33 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 
 ====================================================================================================
+LIBRARY: include
+ORIGIN: ../../../flutter/third_party/inja/third_party/include/nlohmann/json.hpp
+TYPE: LicenseType.mit
+FILE: ../../../flutter/third_party/inja/third_party/include/nlohmann/json.hpp
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2013-2019 Niels Lohmann <http://nlohmann.me>.
+
+Permission is hereby  granted, free of charge, to any  person obtaining a copy
+of this software and associated  documentation files (the "Software"), to deal
+in the Software  without restriction, including without  limitation the rights
+to  use, copy,  modify, merge,  publish, distribute,  sublicense, and/or  sell
+copies  of  the Software,  and  to  permit persons  to  whom  the Software  is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE  IS PROVIDED "AS  IS", WITHOUT WARRANTY  OF ANY KIND,  EXPRESS OR
+IMPLIED,  INCLUDING BUT  NOT  LIMITED TO  THE  WARRANTIES OF  MERCHANTABILITY,
+FITNESS FOR  A PARTICULAR PURPOSE AND  NONINFRINGEMENT. IN NO EVENT  SHALL THE
+AUTHORS  OR COPYRIGHT  HOLDERS  BE  LIABLE FOR  ANY  CLAIM,  DAMAGES OR  OTHER
+LIABILITY, WHETHER IN AN ACTION OF  CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE  OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+====================================================================================================
+
+====================================================================================================
 LIBRARY: glfw
 ORIGIN: ../../../flutter/third_party/glfw/src/linux_joystick.h
 ORIGIN: ../../../flutter/third_party/glfw/src/wl_init.c
@@ -1137,6 +2289,71 @@ freely, subject to the following restrictions:
 
 3. This notice may not be removed or altered from any source
    distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: inja
+ORIGIN: ../../../flutter/third_party/inja/LICENSE
+TYPE: LicenseType.mit
+FILE: ../../../flutter/third_party/inja/include/inja/config.hpp
+FILE: ../../../flutter/third_party/inja/include/inja/environment.hpp
+FILE: ../../../flutter/third_party/inja/include/inja/exceptions.hpp
+FILE: ../../../flutter/third_party/inja/include/inja/function_storage.hpp
+FILE: ../../../flutter/third_party/inja/include/inja/lexer.hpp
+FILE: ../../../flutter/third_party/inja/include/inja/node.hpp
+FILE: ../../../flutter/third_party/inja/include/inja/parser.hpp
+FILE: ../../../flutter/third_party/inja/include/inja/renderer.hpp
+FILE: ../../../flutter/third_party/inja/include/inja/statistics.hpp
+FILE: ../../../flutter/third_party/inja/include/inja/template.hpp
+FILE: ../../../flutter/third_party/inja/include/inja/token.hpp
+FILE: ../../../flutter/third_party/inja/include/inja/utils.hpp
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2018-2021 Berscheid
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: inja
+ORIGIN: ../../../flutter/third_party/inja/include/inja/inja.hpp
+ORIGIN: ../../../flutter/third_party/inja/single_include/inja/inja.hpp
+TYPE: LicenseType.mit
+FILE: ../../../flutter/third_party/inja/include/inja/inja.hpp
+FILE: ../../../flutter/third_party/inja/single_include/inja/inja.hpp
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2018-2021 Lars Berscheid
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 ====================================================================================================
 
 ====================================================================================================
@@ -1719,13 +2936,6 @@ ORIGIN: ../../../flutter/impeller/base/validation.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/base/validation.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/base/version.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/base/version.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/blobcat/blob.fbs + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/blobcat/blob_library.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/blobcat/blob_library.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/blobcat/blob_types.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/blobcat/blob_writer.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/blobcat/blob_writer.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/blobcat/blobcat_main.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/code_gen_template.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/compiler.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/compiler.h + ../../../flutter/LICENSE
@@ -1844,10 +3054,10 @@ ORIGIN: ../../../flutter/impeller/entity/contents/filters/color_filter_contents.
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/color_filter_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/color_matrix_filter_contents.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/color_matrix_filter_contents.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/contents/filters/directional_gaussian_blur_filter_contents.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/contents/filters/directional_gaussian_blur_filter_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/filter_contents.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/filter_contents.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/contents/filters/gaussian_blur_filter_contents.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/contents/filters/gaussian_blur_filter_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/inputs/contents_filter_input.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/inputs/contents_filter_input.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/inputs/filter_contents_filter_input.cc + ../../../flutter/LICENSE
@@ -2160,6 +3370,8 @@ ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/android_hardware_buffe
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/android_hardware_buffer_texture_source_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/barrier_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/barrier_vk.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/binding_helpers_vk.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/binding_helpers_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/blit_command_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/blit_command_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/blit_pass_vk.cc + ../../../flutter/LICENSE
@@ -2338,6 +3550,18 @@ ORIGIN: ../../../flutter/impeller/scene/shaders/unlit.frag + ../../../flutter/LI
 ORIGIN: ../../../flutter/impeller/scene/shaders/unskinned.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/scene/skin.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/scene/skin.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/shader_archive/multi_arch_shader_archive.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/shader_archive/multi_arch_shader_archive.fbs + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/shader_archive/multi_arch_shader_archive.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/shader_archive/multi_arch_shader_archive_writer.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/shader_archive/multi_arch_shader_archive_writer.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/shader_archive/shader_archive.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/shader_archive/shader_archive.fbs + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/shader_archive/shader_archive.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/shader_archive/shader_archive_main.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/shader_archive/shader_archive_types.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/shader_archive/shader_archive_writer.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/shader_archive/shader_archive_writer.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/tessellator/c/tessellator.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/tessellator/c/tessellator.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/tessellator/dart/lib/tessellator.dart + ../../../flutter/LICENSE
@@ -2572,6 +3796,7 @@ ORIGIN: ../../../flutter/lib/ui/window/pointer_data_packet_converter.cc + ../../
 ORIGIN: ../../../flutter/lib/ui/window/pointer_data_packet_converter.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/window/viewport_metrics.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/window/viewport_metrics.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/flutter_js/flutter.js + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/annotations.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/canvas.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/channel_buffers.dart + ../../../flutter/LICENSE
@@ -2619,10 +3844,11 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/picture_recorder.da
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/platform_message.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/raster_cache.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/rasterizer.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/render_canvas.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/render_canvas_factory.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/renderer.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/shader.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/surface.dart + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/surface_factory.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/text.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/text_fragmenter.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/util.dart + ../../../flutter/LICENSE
@@ -2804,6 +4030,7 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/vector_math.dart + ../../../f
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/dimensions_provider/custom_element_dimensions_provider.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/dimensions_provider/dimensions_provider.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/dimensions_provider/full_page_dimensions_provider.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/dom_manager.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/embedding_strategy/custom_element_embedding_strategy.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/embedding_strategy/embedding_strategy.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/embedding_strategy/full_page_embedding_strategy.dart + ../../../flutter/LICENSE
@@ -3277,6 +4504,7 @@ ORIGIN: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMeta
 ORIGIN: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/ios/flutter_task_queue_dispatch.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Headers/Flutter.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterAppDelegate.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterCallbackCache.h + ../../../flutter/LICENSE
@@ -3441,7 +4669,6 @@ ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterCha
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterChannelKeyResponderTest.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.mm + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositorTest.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEmbedderExternalTextureTest.mm + ../../../flutter/LICENSE
@@ -3919,6 +5146,7 @@ ORIGIN: ../../../flutter/shell/platform/windows/flutter_windows_texture_registra
 ORIGIN: ../../../flutter/shell/platform/windows/flutter_windows_texture_registrar.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/windows/flutter_windows_view.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/windows/flutter_windows_view.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/windows/flutter_windows_view_controller.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/windows/keyboard_handler_base.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/windows/keyboard_key_channel_handler.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/windows/keyboard_key_channel_handler.h + ../../../flutter/LICENSE
@@ -4491,13 +5719,6 @@ FILE: ../../../flutter/impeller/base/validation.cc
 FILE: ../../../flutter/impeller/base/validation.h
 FILE: ../../../flutter/impeller/base/version.cc
 FILE: ../../../flutter/impeller/base/version.h
-FILE: ../../../flutter/impeller/blobcat/blob.fbs
-FILE: ../../../flutter/impeller/blobcat/blob_library.cc
-FILE: ../../../flutter/impeller/blobcat/blob_library.h
-FILE: ../../../flutter/impeller/blobcat/blob_types.h
-FILE: ../../../flutter/impeller/blobcat/blob_writer.cc
-FILE: ../../../flutter/impeller/blobcat/blob_writer.h
-FILE: ../../../flutter/impeller/blobcat/blobcat_main.cc
 FILE: ../../../flutter/impeller/compiler/code_gen_template.h
 FILE: ../../../flutter/impeller/compiler/compiler.cc
 FILE: ../../../flutter/impeller/compiler/compiler.h
@@ -4616,10 +5837,10 @@ FILE: ../../../flutter/impeller/entity/contents/filters/color_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/color_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/color_matrix_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/color_matrix_filter_contents.h
+FILE: ../../../flutter/impeller/entity/contents/filters/directional_gaussian_blur_filter_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/filters/directional_gaussian_blur_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/filter_contents.h
-FILE: ../../../flutter/impeller/entity/contents/filters/gaussian_blur_filter_contents.cc
-FILE: ../../../flutter/impeller/entity/contents/filters/gaussian_blur_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/contents_filter_input.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/contents_filter_input.h
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/filter_contents_filter_input.cc
@@ -4932,6 +6153,8 @@ FILE: ../../../flutter/impeller/renderer/backend/vulkan/android_hardware_buffer_
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/android_hardware_buffer_texture_source_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/barrier_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/barrier_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/binding_helpers_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/binding_helpers_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/blit_command_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/blit_command_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/blit_pass_vk.cc
@@ -5111,6 +6334,18 @@ FILE: ../../../flutter/impeller/scene/shaders/unlit.frag
 FILE: ../../../flutter/impeller/scene/shaders/unskinned.vert
 FILE: ../../../flutter/impeller/scene/skin.cc
 FILE: ../../../flutter/impeller/scene/skin.h
+FILE: ../../../flutter/impeller/shader_archive/multi_arch_shader_archive.cc
+FILE: ../../../flutter/impeller/shader_archive/multi_arch_shader_archive.fbs
+FILE: ../../../flutter/impeller/shader_archive/multi_arch_shader_archive.h
+FILE: ../../../flutter/impeller/shader_archive/multi_arch_shader_archive_writer.cc
+FILE: ../../../flutter/impeller/shader_archive/multi_arch_shader_archive_writer.h
+FILE: ../../../flutter/impeller/shader_archive/shader_archive.cc
+FILE: ../../../flutter/impeller/shader_archive/shader_archive.fbs
+FILE: ../../../flutter/impeller/shader_archive/shader_archive.h
+FILE: ../../../flutter/impeller/shader_archive/shader_archive_main.cc
+FILE: ../../../flutter/impeller/shader_archive/shader_archive_types.h
+FILE: ../../../flutter/impeller/shader_archive/shader_archive_writer.cc
+FILE: ../../../flutter/impeller/shader_archive/shader_archive_writer.h
 FILE: ../../../flutter/impeller/tessellator/c/tessellator.cc
 FILE: ../../../flutter/impeller/tessellator/c/tessellator.h
 FILE: ../../../flutter/impeller/tessellator/dart/lib/tessellator.dart
@@ -5349,6 +6584,7 @@ FILE: ../../../flutter/lib/ui/window/pointer_data_packet_converter.cc
 FILE: ../../../flutter/lib/ui/window/pointer_data_packet_converter.h
 FILE: ../../../flutter/lib/ui/window/viewport_metrics.cc
 FILE: ../../../flutter/lib/ui/window/viewport_metrics.h
+FILE: ../../../flutter/lib/web_ui/flutter_js/flutter.js
 FILE: ../../../flutter/lib/web_ui/lib/annotations.dart
 FILE: ../../../flutter/lib/web_ui/lib/canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/channel_buffers.dart
@@ -5396,10 +6632,11 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/picture_recorder.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/platform_message.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/raster_cache.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/rasterizer.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/render_canvas.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/render_canvas_factory.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/renderer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/shader.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/surface.dart
-FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/surface_factory.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/text.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/text_fragmenter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/util.dart
@@ -5581,6 +6818,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/vector_math.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/dimensions_provider/custom_element_dimensions_provider.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/dimensions_provider/dimensions_provider.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/dimensions_provider/full_page_dimensions_provider.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/dom_manager.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/embedding_strategy/custom_element_embedding_strategy.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/embedding_strategy/embedding_strategy.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/embedding_strategy/full_page_embedding_strategy.dart
@@ -6066,6 +7304,7 @@ FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalS
 FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.mm
 FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.h
 FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/flutter_task_queue_dispatch.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/Flutter.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterAppDelegate.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterCallbackCache.h
@@ -6233,7 +7472,6 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterChann
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterChannelKeyResponderTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.mm
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositorTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEmbedderExternalTextureTest.mm
@@ -6717,6 +7955,7 @@ FILE: ../../../flutter/shell/platform/windows/flutter_windows_texture_registrar.
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_texture_registrar.h
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_view.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_view.h
+FILE: ../../../flutter/shell/platform/windows/flutter_windows_view_controller.h
 FILE: ../../../flutter/shell/platform/windows/keyboard_handler_base.h
 FILE: ../../../flutter/shell/platform/windows/keyboard_key_channel_handler.cc
 FILE: ../../../flutter/shell/platform/windows/keyboard_key_channel_handler.h
@@ -7400,6 +8639,51 @@ which is quoted below:
 ====================================================================================================
 
 ====================================================================================================
+LIBRARY: rapidjson
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/msinttypes/inttypes.h
+ORIGIN: ../../../flutter/third_party/rapidjson/include/rapidjson/msinttypes/stdint.h
+TYPE: LicenseType.unknown
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/msinttypes/inttypes.h
+FILE: ../../../flutter/third_party/rapidjson/include/rapidjson/msinttypes/stdint.h
+----------------------------------------------------------------------------------------------------
+The above software in this distribution may have been modified by
+THL A29 Limited ("Tencent Modifications").
+All Tencent Modifications are Copyright (C) 2015 THL A29 Limited.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: sqlite
+ORIGIN: ../../../flutter/third_party/sqlite/LICENSE
+TYPE: LicenseType.unknown
+FILE: ../../../flutter/third_party/sqlite/sqlite3.c
+FILE: ../../../flutter/third_party/sqlite/sqlite3.h
+----------------------------------------------------------------------------------------------------
+The source code for SQLite is in the public domain. No claim of
+copyright is made on any part of the core source code. (The
+documentation and test code is a different matter - some sections of
+documentation and test logic are governed by open-source licenses.)
+All contributors to the SQLite core software have signed affidavits
+specifically disavowing any copyright interest in the code. This means
+that anybody is able to legally do anything they want with the SQLite
+source code.
+
+There are other SQL database engines with liberal licenses that allow
+the code to be broadly and freely used. But those other engines are
+still governed by copyright law. SQLite is different in that copyright
+law simply does not apply.
+
+The source code files for other SQL database engines typically begin
+with a comment describing your legal rights to view and copy that
+file. The SQLite source code contains no license since it is not
+governed by copyright. Instead of a license, the SQLite source code
+offers a blessing:
+
+May you do good and not evil
+May you find forgiveness for yourself and forgive others
+May you share freely, never taking more than you give.
+====================================================================================================
+
+====================================================================================================
 LIBRARY: web_unicode
 ORIGIN: http://www.unicode.org/terms_of_use.html referenced by ../../../flutter/third_party/web_unicode/properties/LineBreak.txt
 ORIGIN: http://www.unicode.org/terms_of_use.html referenced by ../../../flutter/third_party/web_unicode/properties/WordBreakProperty.txt
@@ -7509,4 +8793,4 @@ use or other dealings in these Data Files or Software without prior
 written authorization of the copyright holder.
 ====================================================================================================
 
-Total license count: 39
+Total license count: 53
