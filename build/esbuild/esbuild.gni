@@ -10,11 +10,11 @@ template("esbuild") {
   action(target_name) {
     forward_variables_from(invoker, [ "public_deps" ])
     if (host_os == "win") {
-      executable_suffix = ".exe"
+      executable_subpath = "esbuild.exe"
     } else {
-      executable_suffix = ""
+      executable_subpath = "bin/esbuild"
     }
-    esbuild = "$host_prebuilts_path/esbuild/bin/esbuild$executable_suffix"
+    esbuild = "$host_prebuilts_path/esbuild/$executable_subpath"
 
     script = "//build/gn_run_binary.py"
     inputs = [
