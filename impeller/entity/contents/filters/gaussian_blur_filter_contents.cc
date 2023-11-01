@@ -29,10 +29,11 @@ std::optional<Rect> GaussianBlurFilterContents::GetFilterCoverage(
   }
 
   Scalar blur_radius = CalculateBlurRadius(sigma_);
-  return Rect::MakeLTRB(input_coverage.value().GetLeft() - blur_radius,
-                        input_coverage.value().GetTop() - blur_radius,
-                        input_coverage.value().GetRight() + blur_radius,
-                        input_coverage.value().GetBottom() + blur_radius);
+  Vector3 blur_radii = effect_transform.Basis() * Vector3{blur_radius, blur_radius, 0.0};
+  return Rect::MakeLTRB(input_coverage.value().GetLeft() - blur_radii.y,
+                        input_coverage.value().GetTop() - blur_radii.x,
+                        input_coverage.value().GetRight() + blur_radii.x,
+                        input_coverage.value().GetBottom() + blur_radii.y);
 }
 
 std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
