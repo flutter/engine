@@ -2703,15 +2703,21 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(range.range.length, 6u);
 }
 
-- (void)testFlutterTokenizerLineEnclosingEndOfDocumentInForwardDirectionShouldReturnNil {
+- (void)testFlutterTokenizerLineEnclosingEndOfDocumentInForwardDirectionShouldReturnNilOnIOS17 {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   [inputView insertText:@"0123456789\n012345"];
   id<UITextInputTokenizer> tokenizer = [inputView tokenizer];
 
-  UITextRange* range = [tokenizer rangeEnclosingPosition:[inputView endOfDocument]
-                                         withGranularity:UITextGranularityLine
-                                             inDirection:UITextStorageDirectionForward];
-  XCTAssertNil(range);
+  FlutterTextRange* range =
+      (FlutterTextRange*)[tokenizer rangeEnclosingPosition:[inputView endOfDocument]
+                                           withGranularity:UITextGranularityLine
+                                               inDirection:UITextStorageDirectionForward];
+  if (@available(iOS 17.0, *)) {
+    XCTAssertNil(range);
+  } else {
+    XCTAssertEqual(range.range.location, 11u);
+    XCTAssertEqual(range.range.length, 6u);
+  }
 }
 
 - (void)testFlutterTextInputPluginRetainsFlutterTextInputView {
