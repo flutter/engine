@@ -133,9 +133,10 @@ class FilterContents : public Contents {
   const FilterContents* AsFilter() const override;
 
   /// @brief  Determines the coverage of source pixels that will be needed
-  ///         to produce results for the indicated output limit. This is a
-  ///         reverse bounds calculation computing a source coverage from
-  ///         an intended output coverage.
+  ///         to produce results for the indicated |output_limit| under the
+  ///         indicated |effect_transform|. This is essentially a reverse of
+  ///         the |GetCoverage| method computing a source coverage from
+  ///         an intended |output_limit| coverage.
   ///
   ///         The method computes a result such that if the filter is applied
   ///         to a set of pixels filling the computed source coverage, it
