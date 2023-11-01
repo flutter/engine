@@ -30,6 +30,9 @@ The web UI is available on https://flutter-engine-gold.skia.org/.
 
 ```yaml
 dependencies:
+  # needed for skia_gold_client to avoid a cache miss.
+  engine_repo_tools:
+    path: <relative-path>/tools/pkg/engine_repo_tools
   skia_gold_client:
     path: <relative-path>/testing/skia_gold_client
 ```
