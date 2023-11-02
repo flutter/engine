@@ -200,7 +200,7 @@ group("unittests") {
       ]
     }
 
-    if (!is_win && !is_fuchsia) {
+    if (!is_fuchsia) {
       public_deps += [
         "//flutter/shell/platform/android/external_view_embedder:android_external_view_embedder_unittests",
         "//flutter/shell/platform/android/jni:jni_unittests",
