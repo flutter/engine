@@ -87,7 +87,7 @@ vars = {
   'download_dart_sdk': True,
 
   # Checkout Android dependencies only on platforms where we build for Android targets.
-  'download_android_deps': 'host_os == "mac" or (host_os == "linux" and host_cpu == "x64")',
+  'download_android_deps': True,
 
   # Checkout Windows dependencies only if we are building on Windows.
   'download_windows_deps' : 'host_os == "win"',
