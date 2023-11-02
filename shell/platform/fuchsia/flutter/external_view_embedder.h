@@ -83,9 +83,9 @@ class ExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
 
   // |ExternalViewEmbedder|
-  void SubmitFrame(GrDirectContext* context,
-                   const std::shared_ptr<impeller::AiksContext>& aiks_context,
-                   std::unique_ptr<flutter::SurfaceFrame> frame) override;
+  void SubmitView(GrDirectContext* context,
+                  const std::shared_ptr<impeller::AiksContext>& aiks_context,
+                  std::unique_ptr<flutter::SurfaceFrame> frame) override;
 
   // |ExternalViewEmbedder|
   void CancelFrame() override { Reset(); }

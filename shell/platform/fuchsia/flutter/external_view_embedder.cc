@@ -132,11 +132,11 @@ void ExternalViewEmbedder::EndFrame(
   TRACE_EVENT0("flutter", "ExternalViewEmbedder::EndFrame");
 }
 
-void ExternalViewEmbedder::SubmitFrame(
+void ExternalViewEmbedder::SubmitView(
     GrDirectContext* context,
     const std::shared_ptr<impeller::AiksContext>& aiks_context,
     std::unique_ptr<flutter::SurfaceFrame> frame) {
-  TRACE_EVENT0("flutter", "ExternalViewEmbedder::SubmitFrame");
+  TRACE_EVENT0("flutter", "ExternalViewEmbedder::SubmitView");
   std::vector<std::unique_ptr<SurfaceProducerSurface>> frame_surfaces;
   std::unordered_map<EmbedderLayerId, size_t> frame_surface_indices;
 

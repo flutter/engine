@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <utility>
 
+#include "flutter/common/constants.h"
 #include "flutter/shell/platform/embedder/embedder_layers.h"
 #include "flutter/shell/platform/embedder/embedder_render_target.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
@@ -51,10 +52,16 @@ void EmbedderExternalViewEmbedder::CancelFrame() {
 
 // |ExternalViewEmbedder|
 void EmbedderExternalViewEmbedder::BeginFrame(
-    SkISize frame_size,
     GrDirectContext* context,
-    double device_pixel_ratio,
-    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {}
+
+// |ExternalViewEmbedder|
+void EmbedderExternalViewEmbedder::PrepareView(int64_t native_view_id,
+                                               SkISize frame_size,
+                                               double device_pixel_ratio) {
+  // TODO(dkwingsmt): This class only supports rendering into the implicit view.
+  // Properly support multi-view in the future.
+  FML_DCHECK(native_view_id == kFlutterImplicitViewId);
   Reset();
 
   pending_frame_size_ = frame_size;
@@ -123,7 +130,7 @@ static FlutterBackingStoreConfig MakeBackingStoreConfig(
 }
 
 // |ExternalViewEmbedder|
-void EmbedderExternalViewEmbedder::SubmitFrame(
+void EmbedderExternalViewEmbedder::SubmitView(
     GrDirectContext* context,
     const std::shared_ptr<impeller::AiksContext>& aiks_context,
     std::unique_ptr<SurfaceFrame> frame) {

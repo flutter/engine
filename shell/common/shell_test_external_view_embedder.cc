@@ -41,10 +41,13 @@ void ShellTestExternalViewEmbedder::CancelFrame() {}
 
 // |ExternalViewEmbedder|
 void ShellTestExternalViewEmbedder::BeginFrame(
-    SkISize frame_size,
     GrDirectContext* context,
-    double device_pixel_ratio,
-    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {}
+
+// |ExternalViewEmbedder|
+void ShellTestExternalViewEmbedder::PrepareView(int64_t native_view_id,
+                                                SkISize frame_size,
+                                                double device_pixel_ratio) {
   visited_platform_views_.clear();
   mutators_stacks_.clear();
   current_composition_params_.clear();
@@ -89,7 +92,7 @@ DlCanvas* ShellTestExternalViewEmbedder::CompositeEmbeddedView(
 }
 
 // |ExternalViewEmbedder|
-void ShellTestExternalViewEmbedder::SubmitFrame(
+void ShellTestExternalViewEmbedder::SubmitView(
     GrDirectContext* context,
     const std::shared_ptr<impeller::AiksContext>& aiks_context,
     std::unique_ptr<SurfaceFrame> frame) {

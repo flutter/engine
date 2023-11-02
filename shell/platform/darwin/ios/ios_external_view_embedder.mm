@@ -4,6 +4,8 @@
 
 #import "flutter/shell/platform/darwin/ios/ios_external_view_embedder.h"
 
+#include "flutter/common/constants.h"
+
 namespace flutter {
 
 IOSExternalViewEmbedder::IOSExternalViewEmbedder(
@@ -31,11 +33,18 @@ void IOSExternalViewEmbedder::CancelFrame() {
 
 // |ExternalViewEmbedder|
 void IOSExternalViewEmbedder::BeginFrame(
-    SkISize frame_size,
     GrDirectContext* context,
-    double device_pixel_ratio,
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::BeginFrame");
+}
+
+// |ExternalViewEmbedder|
+void IOSExternalViewEmbedder::PrepareView(int64_t native_view_id,
+                                          SkISize frame_size,
+                                          double device_pixel_ratio) {
+  // TODO(dkwingsmt): This class only supports rendering into the implicit view.
+  // Properly support multi-view in the future.
+  FML_DCHECK(native_view_id == kFlutterImplicitViewId);
   FML_CHECK(platform_views_controller_);
   platform_views_controller_->BeginFrame(frame_size);
 }
@@ -66,11 +75,10 @@ DlCanvas* IOSExternalViewEmbedder::CompositeEmbeddedView(int64_t view_id) {
 }
 
 // |ExternalViewEmbedder|
-void IOSExternalViewEmbedder::SubmitFrame(
-    GrDirectContext* context,
-    const std::shared_ptr<impeller::AiksContext>& aiks_context,
-    std::unique_ptr<SurfaceFrame> frame) {
-  TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::SubmitFrame");
+void IOSExternalViewEmbedder::SubmitView(GrDirectContext* context,
+                                         const std::shared_ptr<impeller::AiksContext>& aiks_context,
+                                         std::unique_ptr<SurfaceFrame> frame) {
+  TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::SubmitView");
   FML_CHECK(platform_views_controller_);
   platform_views_controller_->SubmitFrame(context, ios_context_, std::move(frame));
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::DidSubmitFrame");

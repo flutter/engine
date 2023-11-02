@@ -51,9 +51,9 @@ class MockExternalViewEmbedder : public flutter::ExternalViewEmbedder {
       double device_pixel_ratio,
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override {}
 
-  void SubmitFrame(GrDirectContext* context,
-                   const std::shared_ptr<impeller::AiksContext>& aiks_context,
-                   std::unique_ptr<flutter::SurfaceFrame> frame) override {}
+  void SubmitView(GrDirectContext* context,
+                  const std::shared_ptr<impeller::AiksContext>& aiks_context,
+                  std::unique_ptr<flutter::SurfaceFrame> frame) override {}
 
   void PrerollCompositeEmbeddedView(
       int64_t view_id,
