@@ -4,6 +4,7 @@
 
 #include "impeller/entity/contents/tiled_texture_contents.h"
 
+#include "fml/logging.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/geometry/geometry.h"
@@ -197,6 +198,9 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
 
     // Also, external textures cannot be bound to color filters, so ignore this
     // case for now.
+    FML_DCHECK(!color_filter_)
+        << "Color filters are not currently supported for external textures.";
+
     FSExternal::BindSAMPLEREXTERNALOESTextureSampler(
         cmd, texture_,
         renderer.GetContext()->GetSamplerLibrary()->GetSampler(sampler_desc));
