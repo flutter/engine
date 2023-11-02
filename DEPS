@@ -496,7 +496,7 @@ deps = {
    Var('dart_git') + '/external/github.com/google/webkit_inspection_protocol.dart.git' + '@' + Var('dart_webkit_inspection_protocol_rev'),
 
   'src/third_party/dart/third_party/pkg/yaml':
-   Var('dart_git') + '/yaml.git@9f0d64934c07bc27438074616455618b7103582d',
+  'https://github.com/yaml/pyyaml.git@155ec463f6a854ac14ccd5e2dda8017ce42a508a',
 
   'src/third_party/dart/third_party/pkg/yaml_edit':
    Var('dart_git') + '/yaml_edit.git' + '@' + Var('dart_yaml_edit_rev'),
