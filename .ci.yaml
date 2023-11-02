@@ -216,7 +216,7 @@ targets:
       - web_sdk/**
 
   - name: Linux linux_fuchsia
-    bringup: true
+    bringup: false
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
