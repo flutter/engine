@@ -143,7 +143,7 @@ vars = {
   "upstream_boringssl_gen": "https://github.com/dart-lang/boringssl_gen.git",
   "upstream_boringssl": "https://github.com/openssl/openssl.git",
   "upstream_browser_launcher": "https://github.com/dart-lang/browser_launcher.git",
-  "upstream_buildroot": "https://github.com/flutter/buildroot.git",
+  "upstream_buildroot": "https://github.com/gmackall/buildroot.git",
   "upstream_cli_util": "https://github.com/dart-lang/cli_util.git",
   "upstream_clock": "https://github.com/dart-lang/clock.git",
   "upstream_collection": "https://github.com/dart-lang/collection.git",
