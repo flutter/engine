@@ -79,7 +79,7 @@
                     "language": "python3",
                     "script": "flutter/tools/fuchsia/upload_to_symbol_server.py",
                     "parameters": [
-                        "--symbol-dir ",
+                        "--symbol-dir",
 			"out/fuchsia_debug_arm64/.build-id",
                         "--engine-version",
                         "${REVISION}"
@@ -163,7 +163,7 @@
                     "language": "python3",
                     "script": "flutter/tools/fuchsia/upload_to_symbol_server.py",
                     "parameters": [
-                        "--symbol-dir ",
+                        "--symbol-dir",
 			"out/fuchsia_debug_x64/.build-id",
                         "--engine-version",
                         "${REVISION}"
