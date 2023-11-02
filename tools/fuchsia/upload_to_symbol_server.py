@@ -66,6 +66,12 @@ def main():
       required=True,
       help='Specifies the flutter engine SHA.'
   )
+  parser.add_argument(
+      '--upload',
+      default=False,
+      action='store_true',
+      help='If set, uploads symbols to the server.'
+  )
 
   args = parser.parse_args()
 
