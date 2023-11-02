@@ -25,9 +25,8 @@ class TestBinaryMessenger : public BinaryMessenger {
     send_called_ = true;
     int length = static_cast<int>(message_size);
     last_message_size_ = length;
-    std::vector<uint8_t> last_message(length);
-    memcpy(&last_message[0], &message[0], length * sizeof(uint8_t));
-    last_message_ = last_message;
+    last_message_ =
+        std::vector<uint8_t>(message, message + length * sizeof(uint8_t));
   }
 
   void SetMessageHandler(const std::string& channel,

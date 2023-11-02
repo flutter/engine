@@ -12,7 +12,7 @@
 #include "binary_messenger.h"
 #include "message_codec.h"
 #include "method_channel.h"
-#include "standard_method_codec.h"
+
 namespace flutter {
 
 class EncodableValue;

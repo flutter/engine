@@ -15,11 +15,11 @@
 #include "method_result.h"
 #include "standard_method_codec.h"
 
+namespace flutter {
+
 static constexpr char kControlChannelName[] = "dev.flutter/channel-buffers";
 static constexpr char kResizeMethod[] = "resize";
 static constexpr char kOverflowMethod[] = "overflow";
-
-namespace flutter {
 
 class EncodableValue;
 
