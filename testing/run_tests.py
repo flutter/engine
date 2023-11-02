@@ -392,6 +392,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
     return (name, flags, extra_env)
 
   unittests = [
+      make_test('android_external_view_embedder_unittests'),
       make_test('client_wrapper_glfw_unittests'),
       make_test('client_wrapper_unittests'),
       make_test('common_cpp_core_unittests'),
@@ -403,7 +404,9 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
       make_test('embedder_proctable_unittests'),
       make_test('embedder_unittests'),
       make_test('fml_unittests'),
+      make_test('jni_unittests'),
       make_test('no_dart_plugin_registrant_unittests'),
+      make_test('platform_view_android_delegate_unittests'),
       make_test('runtime_unittests'),
       make_test('testing_unittests'),
       make_test('tonic_unittests'),
@@ -413,10 +416,6 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
 
   if not is_windows():
     unittests += [
-        # https://github.com/google/googletest/issues/2490
-        make_test('android_external_view_embedder_unittests'),
-        make_test('jni_unittests'),
-        make_test('platform_view_android_delegate_unittests'),
         # https://github.com/flutter/flutter/issues/36295
         make_test('shell_unittests'),
     ]
