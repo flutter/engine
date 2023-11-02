@@ -123,7 +123,8 @@ void Animator::EndFrame() {
   FML_CHECK(frame_timings_recorder_ != nullptr);
   if (!layer_trees_tasks_.empty()) {
     // The build is completed in OnAnimatorBeginFrame.
-    frame_timings_recorder_->RecordBuildEnd(fml::TimePoint::Now());
+    frame_timings_recorder_->RecordBuildEnd(fml::TimePoint::Now(),
+                                            fml::TimePoint::CurrentWallTime());
 
     delegate_.OnAnimatorUpdateLatestFrameTargetTime(
         frame_timings_recorder_->GetVsyncTargetTime());
