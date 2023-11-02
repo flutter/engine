@@ -577,7 +577,7 @@ deps = {
   'src/flutter/prebuilts/linux-x64/esbuild': {
     'packages': [
       {
-        'package': 'flutter_internal/tools/esbuild/linux-amd64',
+        'package': 'flutter/tools/esbuild/linux-amd64',
         'version': Var('esbuild_version')
       }
     ],
@@ -587,7 +587,7 @@ deps = {
   'src/flutter/prebuilts/macos-x64/esbuild': {
     'packages': [
       {
-        'package': 'flutter_internal/tools/esbuild/mac-amd64',
+        'package': 'flutter/tools/esbuild/mac-amd64',
         'version': Var('esbuild_version')
       }
     ],
@@ -597,7 +597,7 @@ deps = {
   'src/flutter/prebuilts/macos-arm64/esbuild': {
     'packages': [
       {
-        'package': 'flutter_internal/tools/esbuild/mac-arm64',
+        'package': 'flutter/tools/esbuild/mac-arm64',
         'version': Var('esbuild_version')
       }
     ],
@@ -607,7 +607,7 @@ deps = {
   'src/flutter/prebuilts/windows-x64/esbuild': {
     'packages': [
       {
-        'package': 'flutter_internal/tools/esbuild/windows-amd64',
+        'package': 'flutter/tools/esbuild/windows-amd64',
         'version': Var('esbuild_version')
       }
     ],

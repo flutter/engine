@@ -341,7 +341,7 @@ class _PackageRoller {
   Future<void> _rollEsbuild(_Platform platform) async {
     final String version = _lock.esbuildLock.version;
     final String url = platform.binding.getEsbuildDownloadUrl(version);
-    final String cipdPackageName = 'flutter_internal/tools/esbuild/${platform.name}';
+    final String cipdPackageName = 'flutter/tools/esbuild/${platform.name}';
     final io.Directory platformDir = io.Directory(path.join(_rollDir.path, platform.name));
     print('\nRolling esbuild for ${platform.name} (version:$version)');
     // Bail out if CIPD already has version:$majorVersion for this package!
