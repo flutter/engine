@@ -35,8 +35,6 @@ f16vec4 Sample(f16sampler2D texture_sampler, vec2 texture_coords) {
   return IPHalfSampleDecal(texture_sampler, texture_coords);
 }
 
-AdvancedBlend(blend_type);
-
 void main() {
   f16vec4 dst_sample = Sample(texture_sampler_dst,  // sampler
                               v_dst_texture_coords  // texture coordinates
@@ -51,7 +49,7 @@ void main() {
                              ) *
                           blend_info.src_input_alpha;
 
-  f16vec3 blend_result = Blend(dst.rgb, src.rgb);
+  f16vec3 blend_result = AdvancedBlend(dst.rgb, src.rgb, blend_type);
   f16vec4 blended = mix(src, f16vec4(blend_result, dst.a), dst.a);
   frag_color = mix(dst_sample, blended, src.a);
 }
