@@ -19,6 +19,7 @@ namespace testing {
 using EntityTest = EntityPlayground;
 INSTANTIATE_PLAYGROUND_SUITE(EntityTest);
 
+#ifdef IMPELLER_DEBUG
 TEST(EntityTest, HasNulloptCoverage) {
   auto contents = std::make_shared<CheckerboardContents>();
 
@@ -43,6 +44,7 @@ TEST_P(EntityTest, RendersWithoutError) {
   ASSERT_TRUE(contents->Render(*content_context, entity, *render_pass));
   ASSERT_FALSE(render_pass->GetCommands().empty());
 }
+#endif  // IMPELLER_DEBUG
 
 }  // namespace testing
 }  // namespace impeller
