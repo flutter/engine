@@ -51,13 +51,15 @@ TEST_P(DirectionalGaussianBlurFilterContentsTest, CoverageWithEffectTransform) {
   entity.SetTransformation(Matrix::MakeTranslation({100, 100, 0}));
   std::optional<Rect> coverage = contents->GetFilterCoverage(
       inputs, entity, /*effect_transform=*/Matrix::MakeScale({2.0, 2.0, 1.0}));
-  ASSERT_TRUE(coverage.has_value());
-  EXPECT_NEAR(coverage->GetLeft(), 100 - 2,
-              0.5);  // Higher tolerance for sigma scaling.
-  EXPECT_NEAR(coverage->GetTop(), 100, 0.01);
-  EXPECT_NEAR(coverage->GetRight(), 200 + 2,
-              0.5);  // Higher tolerance for sigma scaling.
-  EXPECT_NEAR(coverage->GetBottom(), 200, 0.01);
+  EXPECT_TRUE(coverage.has_value());
+  if (coverage.has_value()) {
+    EXPECT_NEAR(coverage->GetLeft(), 100 - 2,
+                0.5);  // Higher tolerance for sigma scaling.
+    EXPECT_NEAR(coverage->GetTop(), 100, 0.01);
+    EXPECT_NEAR(coverage->GetRight(), 200 + 2,
+                0.5);  // Higher tolerance for sigma scaling.
+    EXPECT_NEAR(coverage->GetBottom(), 200, 0.01);
+  }
 }
 
 TEST(DirectionalGaussianBlurFilterContentsTest, FilterSourceCoverage) {
@@ -84,7 +86,8 @@ TEST_P(DirectionalGaussianBlurFilterContentsTest, RenderNoCoverage) {
   ASSERT_FALSE(result.has_value());
 }
 
-TEST_P(DirectionalGaussianBlurFilterContentsTest, RenderCoverageMatchesGetCoverage) {
+TEST_P(DirectionalGaussianBlurFilterContentsTest,
+       RenderCoverageMatchesGetCoverage) {
   TextureDescriptor desc = {
       .format = PixelFormat::kB8G8R8A8UNormInt,
       .size = ISize(100, 100),
@@ -108,14 +111,16 @@ TEST_P(DirectionalGaussianBlurFilterContentsTest, RenderCoverageMatchesGetCovera
   std::optional<Rect> contents_coverage = contents->GetCoverage(entity);
   EXPECT_TRUE(result_coverage.has_value());
   EXPECT_TRUE(contents_coverage.has_value());
-  EXPECT_NEAR(result_coverage.value().GetLeft(),
-              contents_coverage.value().GetLeft(), kEhCloseEnough);
-  EXPECT_NEAR(result_coverage.value().GetTop(),
-              contents_coverage.value().GetTop(), kEhCloseEnough);
-  EXPECT_NEAR(result_coverage.value().GetRight(),
-              contents_coverage.value().GetRight(), kEhCloseEnough);
-  EXPECT_NEAR(result_coverage.value().GetBottom(),
-              contents_coverage.value().GetBottom(), kEhCloseEnough);
+  if (result_coverage.has_value() && contents_coverage.has_value()) {
+    EXPECT_NEAR(result_coverage.value().GetLeft(),
+                contents_coverage.value().GetLeft(), kEhCloseEnough);
+    EXPECT_NEAR(result_coverage.value().GetTop(),
+                contents_coverage.value().GetTop(), kEhCloseEnough);
+    EXPECT_NEAR(result_coverage.value().GetRight(),
+                contents_coverage.value().GetRight(), kEhCloseEnough);
+    EXPECT_NEAR(result_coverage.value().GetBottom(),
+                contents_coverage.value().GetBottom(), kEhCloseEnough);
+  }
 }
 
 }  // namespace testing
