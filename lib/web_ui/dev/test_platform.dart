@@ -84,6 +84,9 @@ class BrowserPlatform extends PlatformPlugin {
         .add(createSimpleDirectoryHandler(getTestSetDirectory(suite.testBundle.testSet)))
         .add(_testImageListingHandler)
 
+        // Serves the configuration for a test.
+        .add(_testConfigurationHandler)
+
         // Serves the initial HTML for the test.
         .add(_testBootstrapHandler)
 
@@ -526,6 +529,20 @@ class BrowserPlatform extends PlatformPlugin {
     }
   }
 
+  shelf.Response _testConfigurationHandler(shelf.Request request) {
+    final String path = p.fromUri(request.url);
+    if (path.endsWith('.config.json')) {
+      return shelf.Response.ok('''
+{
+  "canvasKitBaseUrl": "/canvaskit/",
+  "useColorEmoji": true,
+  "canvasKitVariant": "${getCanvasKitVariant()}"
+}
+      ''');
+    }
+    return shelf.Response.notFound('Not found.');
+  }
+
   /// Serves the HTML file that bootstraps the test.
   shelf.Response _testBootstrapHandler(shelf.Request request) {
     final String path = p.fromUri(request.url);
@@ -538,13 +555,14 @@ class BrowserPlatform extends PlatformPlugin {
       final String scriptBase = htmlEscape.convert(p.basename(test));
       final String link = '<link rel="x-dart-test" href="$scriptBase"${linkSkwasm ? " skwasm" : ""}>';
 
-      final String testRunner = isWasm ? '/test_dart2wasm.js' : 'packages/test/dart.js';
+      final String testRunner = isWasm ? '/test_dart2wasm.js' : '/test_dart2js.js';
 
       return shelf.Response.ok('''
         <!DOCTYPE html>
         <html>
         <head>
           <meta name="assetBase" content="/">
+          <script src="flutter_js/flutter.js" defer></script>
           <script>
             window.flutterConfiguration = {
               canvasKitBaseUrl: "/canvaskit/",
