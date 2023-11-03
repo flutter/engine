@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
+#include "impeller/entity/contents/filters/directional_gaussian_blur_filter_contents.h"
 
 #include <cmath>
 #include <utility>
@@ -22,6 +22,23 @@
 #include "impeller/renderer/sampler_library.h"
 
 namespace impeller {
+
+// This function was derived with polynomial regression when comparing the
+// results with Skia.  Changing the curve below should invalidate this.
+//
+// The following data points were used:
+//   0 | 1
+//  75 | 0.8
+// 150 | 0.5
+// 300 | 0.22
+// 400 | 0.2
+// 500 | 0.15
+Sigma ScaleSigma(Sigma sigma) {
+  // Limit the kernel size to 1000x1000 pixels, like Skia does.
+  Scalar clamped = std::min(sigma.sigma, 500.0f);
+  Scalar scalar = 1.02 - 3.89e-3 * clamped + 4.36e-06 * clamped * clamped;
+  return Sigma(clamped * scalar);
+}
 
 DirectionalGaussianBlurFilterContents::DirectionalGaussianBlurFilterContents() =
     default;
@@ -76,8 +93,7 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
     return std::nullopt;
   }
 
-  // Limit the kernel size to 1000x1000 pixels, like Skia does.
-  auto radius = std::min(Radius{blur_sigma_}.radius, 500.0f);
+  auto radius = Radius{ScaleSigma(blur_sigma_)}.radius;
 
   auto transform = entity.GetTransformation() * effect_transform.Basis();
   auto transformed_blur_radius =
@@ -90,12 +106,10 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
   std::optional<Rect> expanded_coverage_hint;
   if (coverage_hint.has_value()) {
     auto r =
-        Size(transformed_blur_radius_length, transformed_blur_radius_length)
+        Point(transformed_blur_radius_length, transformed_blur_radius_length)
             .Abs();
     expanded_coverage_hint =
-        is_second_pass_ ? coverage_hint
-                        : Rect(coverage_hint.value().origin - r,
-                               Size(coverage_hint.value().size + r * 2));
+        is_second_pass_ ? coverage_hint : coverage_hint->Expand(r);
   }
   auto input_snapshot = inputs[0]->GetSnapshot("GaussianBlur", renderer, entity,
                                                expanded_coverage_hint);
@@ -273,6 +287,17 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
       entity.GetBlendMode(), entity.GetClipDepth());
 }
 
+std::optional<Rect>
+DirectionalGaussianBlurFilterContents::GetFilterSourceCoverage(
+    const Matrix& effect_transform,
+    const Rect& output_limit) const {
+  auto transform = effect_transform.Basis();
+  auto transformed_blur_vector =
+      transform.TransformDirection(blur_direction_ * Radius{blur_sigma_}.radius)
+          .Abs();
+  return output_limit.Expand(transformed_blur_vector);
+}
+
 std::optional<Rect> DirectionalGaussianBlurFilterContents::GetFilterCoverage(
     const FilterInput::Vector& inputs,
     const Entity& entity,
@@ -290,9 +315,7 @@ std::optional<Rect> DirectionalGaussianBlurFilterContents::GetFilterCoverage(
   auto transformed_blur_vector =
       transform.TransformDirection(blur_direction_ * Radius{blur_sigma_}.radius)
           .Abs();
-  auto extent = coverage->size + transformed_blur_vector * 2;
-  return Rect(coverage->origin - transformed_blur_vector,
-              Size(extent.x, extent.y));
+  return coverage->Expand(transformed_blur_vector);
 }
 
 }  // namespace impeller
