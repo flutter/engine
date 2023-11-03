@@ -63,8 +63,9 @@
 #include "impeller/entity/yuv_to_rgb_filter.frag.h"
 #include "impeller/entity/yuv_to_rgb_filter.vert.h"
 
-#include "impeller/entity/gaussian_blur.frag.h"
 #include "impeller/entity/gaussian_blur.vert.h"
+#include "impeller/entity/gaussian_blur_noalpha_decal.frag.h"
+#include "impeller/entity/gaussian_blur_noalpha_nodecal.frag.h"
 
 #include "impeller/entity/position_color.vert.h"
 
@@ -129,9 +130,11 @@ using PositionUVPipeline =
 using TiledTexturePipeline =
     RenderPipelineT<TextureFillVertexShader, TiledTextureFillFragmentShader>;
 using GaussianBlurDecalPipeline =
-    RenderPipelineT<GaussianBlurVertexShader, GaussianBlurFragmentShader>;
+    RenderPipelineT<GaussianBlurVertexShader,
+                    GaussianBlurNoalphaDecalFragmentShader>;
 using GaussianBlurPipeline =
-    RenderPipelineT<GaussianBlurVertexShader, GaussianBlurFragmentShader>;
+    RenderPipelineT<GaussianBlurVertexShader,
+                    GaussianBlurNoalphaNodecalFragmentShader>;
 using BorderMaskBlurPipeline =
     RenderPipelineT<BorderMaskBlurVertexShader, BorderMaskBlurFragmentShader>;
 using MorphologyFilterPipeline =
