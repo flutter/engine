@@ -6,12 +6,6 @@
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/trace_event.h"
 
-// https://learn.microsoft.com/en-us/windows/win32/winprog/windows-data-types
-#if defined(_MSC_VER)
-#include <BaseTsd.h>
-typedef SSIZE_T ssize_t;
-#endif
-
 namespace flutter {
 
 AndroidExternalViewEmbedder::AndroidExternalViewEmbedder(
@@ -104,7 +98,7 @@ void AndroidExternalViewEmbedder::SubmitFrame(
     // This is done by querying the r-tree that holds the records for the
     // picture recorder corresponding to the flow layers added after a platform
     // view layer.
-    for (ssize_t j = i; j >= 0; j--) {
+    for (size_t j = i; j >= 0; j--) {
       int64_t current_view_id = composition_order_[j];
       SkRect current_view_rect = GetViewRect(current_view_id);
       // The rect above the `current_view_rect`
