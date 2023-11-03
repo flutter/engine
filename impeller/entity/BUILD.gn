@@ -134,7 +134,6 @@ impeller_component("entity") {
     "contents/filters/directional_gaussian_blur_filter_contents.h",
     "contents/filters/filter_contents.cc",
     "contents/filters/filter_contents.h",
-    "contents/filters/filter_contents.h",
     "contents/filters/gaussian_blur_filter_contents.cc",
     "contents/filters/gaussian_blur_filter_contents.h",
     "contents/filters/inputs/contents_filter_input.cc",
