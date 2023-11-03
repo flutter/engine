@@ -429,6 +429,7 @@
 ../../../flutter/third_party/accessibility/gfx/geometry/vector2d_unittest.cc
 ../../../flutter/third_party/accessibility/gfx/range/range_unittest.cc
 ../../../flutter/third_party/accessibility/gfx/test
+../../../flutter/third_party/benchmark
 ../../../flutter/third_party/flatbuffers/.bazelci
 ../../../flutter/third_party/flatbuffers/.clang-format
 ../../../flutter/third_party/flatbuffers/.editorconfig
@@ -1346,7 +1347,6 @@
 ../../../third_party/angle/third_party
 ../../../third_party/angle/tools
 ../../../third_party/angle/util
-../../../third_party/benchmark
 ../../../third_party/boringssl/.git
 ../../../third_party/boringssl/.gitignore
 ../../../third_party/boringssl/OWNERS
