@@ -39,6 +39,9 @@ def process_symbols(should_upload, symbol_dir):
   for (dirpath, dirnames, filenames) in os.walk(full_path):
     files.extend([os.path.join(dirpath, f) for f in filenames])
 
+  print('List of files to upload')
+  print('\n'.join(files))
+
   # Remove dbg_files
   files = [f for f in files if 'dbg_success' not in f]
 
@@ -47,7 +50,7 @@ def process_symbols(should_upload, symbol_dir):
         FUCHSIA_ARTIFACTS_BUCKET_NAME, remote_filename(file)
     )
     if should_upload:
-      command = 'gsutil cp %s %s' % (full_path, remote_path)
+      command = 'gsutil cp %s %s' % (file, remote_path)
       subprocess.check_call(command)
     else:
       print(remote_path)
@@ -81,6 +84,7 @@ def main():
     engine_version = 'HEAD'
     should_upload = False
 
+  should_upload = True # Remove me
   process_symbols(should_upload, args.symbol_dir)
   return 0
 
