@@ -181,6 +181,35 @@ struct TRect {
     return {GetRight(), GetBottom()};
   }
 
+  /// @brief  Computes the normalized location of an absolute point relative
+  ///         to this rectangle and returns it as a relative Scalar Point
+  ///         where (0, 0) represents the origin and (1, 1) represents the
+  ///         lower right corner of the rectangle.
+  ///
+  ///         Empty rectangles produce (0, 0) for all input values as well
+  ///         as infinite rectangles in the case where the computation is
+  ///         mathematically impossible.
+  template <typename U>
+  constexpr TPoint<Scalar> NormalizePoint(TPoint<U> absolute) {
+    if (size.IsEmpty()) {
+      // empty rects have no interior so the only point that maps correctly
+      // via the calculations is the origin and the rest produce infinities
+      // or NaN. To avoid polluting the downstream calculations with values
+      // that are not finite, all points will be the origin relative to an
+      // empty rectangle. The checks below would catch this case for zero
+      // sized empty rects, but not for negative sizes.
+      return {};
+    }
+    Scalar relativeX =
+        (static_cast<Scalar>(absolute.x) - origin.x) / size.width;
+    Scalar relativeY =
+        (static_cast<Scalar>(absolute.y) - origin.y) / size.height;
+    // An infinite rect can still produce NaN for (infinity / infinity)
+    return (std::isfinite(relativeX) && std::isfinite(relativeY))
+               ? Point(relativeX, relativeY)
+               : Point();
+  }
+
   constexpr std::array<T, 4> GetLTRB() const {
     return {GetLeft(), GetTop(), GetRight(), GetBottom()};
   }
