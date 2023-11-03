@@ -22,5 +22,9 @@ esbuild("flutter_js_bundle") {
   entry_point = "$root_out_dir/flutter_web_sdk/flutter_js/src/flutter.js"
   output_bundle = "$root_out_dir/flutter_web_sdk/flutter_js"
 
+  bundle = true
+  minify = true
+  sourcemap = true
+
   public_deps = [ ":flutter_js_sources" ]
 }

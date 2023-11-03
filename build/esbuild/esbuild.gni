@@ -21,16 +21,20 @@ template("esbuild") {
       esbuild,
       invoker.entry_point,
     ]
-    outputs = [
-      invoker.output_bundle,
-      invoker.output_bundle + ".map",
-    ]
+    outputs = [ invoker.output_bundle ]
     absolute_output = rebase_path(invoker.output_bundle)
-    args = [
-      rebase_path(esbuild, root_build_dir),
-      "--bundle",
-      "--minify",
-      "--sourcemap",
+    args = [ rebase_path(esbuild, root_build_dir) ]
+    if (defined(invoker.bundle) && invoker.bundle) {
+      args += [ "--bundle" ]
+    }
+    if (defined(invoker.minify) && invoker.minify) {
+      args += [ "--minify" ]
+    }
+    if (defined(invoker.sourcemap) && invoker.sourcemap) {
+      args += [ "--sourcemap" ]
+      outputs += [ invoker.output_bundle + ".map" ]
+    }
+    args += [
       "--outdir=$absolute_output",
       rebase_path(invoker.entry_point),
     ]
