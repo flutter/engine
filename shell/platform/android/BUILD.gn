@@ -38,6 +38,10 @@ source_set("image_generator") {
   ]
 }
 
+test_fixtures("android_shell_fixtures") {
+  fixtures = []
+}
+
 executable("flutter_shell_native_unittests") {
   visibility = [ "*" ]
   testonly = true
@@ -46,11 +50,11 @@ executable("flutter_shell_native_unittests") {
     "android_context_gl_unittests.cc",
     "android_shell_holder_unittests.cc",
     "apk_asset_provider_unittests.cc",
-    "flutter_shell_native_unittests.cc",
     "platform_view_android_unittests.cc",
   ]
   public_configs = [ "//flutter:config" ]
   deps = [
+    ":android_shell_fixtures",
     ":flutter_shell_native_src",
     "//flutter/shell/platform/android/jni:jni_mock",
     "//flutter/testing",
