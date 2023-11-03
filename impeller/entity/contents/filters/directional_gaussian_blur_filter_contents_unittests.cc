@@ -105,8 +105,10 @@ TEST_P(DirectionalGaussianBlurFilterContentsTest,
   Entity entity;
   std::optional<Entity> result =
       contents->GetEntity(*renderer, entity, /*coverage_hint=*/{});
-  ASSERT_TRUE(result.has_value());
-  EXPECT_EQ(result.value().GetBlendMode(), BlendMode::kSourceOver);
+  EXPECT_TRUE(result.has_value());
+  if (result.has_value()) {
+    EXPECT_EQ(result.value().GetBlendMode(), BlendMode::kSourceOver);
+  }
   std::optional<Rect> result_coverage = result.value().GetCoverage();
   std::optional<Rect> contents_coverage = contents->GetCoverage(entity);
   EXPECT_TRUE(result_coverage.has_value());
