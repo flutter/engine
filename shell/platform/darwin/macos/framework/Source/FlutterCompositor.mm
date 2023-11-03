@@ -16,14 +16,14 @@ FlutterCompositor::FlutterCompositor(id<FlutterViewProvider> view_provider,
 }
 
 void FlutterCompositor::AddView(int64_t view_id) {
-  FML_CHECK(presenters_.find(view_id) == presenters_.end());
-  presenters_.emplace(std::piecewise_construct, std::forward_as_tuple(view_id),
-                      std::forward_as_tuple(platform_view_controller_));
+  auto [new_iter, created] = presenters_.try_emplace(/*key=*/view_id, /*ctor args=*/
+                                                     platform_view_controller_);
+  FML_CHECK(created) << "View " << view_id << " already existed.";
 }
 
 void FlutterCompositor::RemoveView(int64_t view_id) {
-  FML_CHECK(presenters_.find(view_id) != presenters_.end());
-  presenters_.erase(view_id);
+  size_t num_erased = presenters_.erase(view_id);
+  FML_CHECK(num_erased == 1) << "View " << view_id << "did not exist.";
 }
 
 bool FlutterCompositor::CreateBackingStore(const FlutterBackingStoreConfig* config,

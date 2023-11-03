@@ -61,7 +61,7 @@ class FlutterCompositor {
  private:
   class ViewPresenter {
    public:
-    ViewPresenter(const FlutterPlatformViewController* platform_views_controller);
+    explicit ViewPresenter(const FlutterPlatformViewController* platform_views_controller);
 
     void PresentPlatformViews(FlutterView* default_base_view,
                               const FlutterLayer** layers,

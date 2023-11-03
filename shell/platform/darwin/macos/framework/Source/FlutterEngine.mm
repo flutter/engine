@@ -508,6 +508,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
                            object:nil];
 
   _platformViewController = [[FlutterPlatformViewController alloc] init];
+  _macOSCompositor = std::make_unique<flutter::FlutterCompositor>(
+      [[FlutterViewEngineProvider alloc] initWithEngine:self], _platformViewController);
   _threadSynchronizer = [[FlutterThreadSynchronizer alloc] init];
   [self setUpPlatformViewChannel];
   [self setUpAccessibilityChannel];
@@ -718,9 +720,11 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   [controller setUpWithEngine:self viewId:viewId threadSynchronizer:_threadSynchronizer];
   NSAssert(controller.viewId == viewId, @"Failed to assign view ID.");
   [_viewControllers setObject:controller forKey:@(viewId)];
+  _macOSCompositor->AddView(viewId);
 }
 
 - (void)deregisterViewControllerForId:(FlutterViewId)viewId {
+  _macOSCompositor->RemoveView(viewId);
   FlutterViewController* oldController = [self viewControllerForId:viewId];
   if (oldController != nil) {
     [oldController detachFromEngine];
@@ -795,9 +799,6 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (FlutterCompositor*)createFlutterCompositor {
-  _macOSCompositor = std::make_unique<flutter::FlutterCompositor>(
-      [[FlutterViewEngineProvider alloc] initWithEngine:self], _platformViewController);
-
   _compositor = {};
   _compositor.struct_size = sizeof(FlutterCompositor);
   _compositor.user_data = _macOSCompositor.get();
