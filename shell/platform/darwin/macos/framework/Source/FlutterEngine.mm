@@ -668,6 +668,10 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   FlutterViewController* nextViewController;
   while ((nextViewController = [viewControllerEnumerator nextObject])) {
     FlutterViewId viewId = nextViewController.viewId;
+    // The implicit view should never be added.
+    if (viewId == kFlutterImplicitViewId) {
+      continue;
+    }
     bool successful = [self addViewToEmbedderEngine:viewId];
     NSAssert(successful, @"Failed to add view %lld.", viewId);
     [self updateWindowMetricsForViewController:nextViewController];
