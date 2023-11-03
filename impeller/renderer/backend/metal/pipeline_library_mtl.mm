@@ -31,14 +31,11 @@ static MTLRenderPipelineDescriptor* GetMTLRenderPipelineDescriptor(
 
   const auto& constants = desc.GetSpecializationConstants();
   for (const auto& entry : desc.GetStageEntrypoints()) {
+    // Don't specialize the vertex stage. This restriction is noted in the
+    // specialization constants md file.
     if (entry.first == ShaderStage::kVertex) {
-      if (constants.empty()) {
-        descriptor.vertexFunction =
-            ShaderFunctionMTL::Cast(*entry.second).GetMTLFunction();
-      } else {
-        descriptor.vertexFunction = ShaderFunctionMTL::Cast(*entry.second)
-                                        .GetMTLFunctionSpecialized(constants);
-      }
+      descriptor.vertexFunction =
+          ShaderFunctionMTL::Cast(*entry.second).GetMTLFunction();
     }
     if (entry.first == ShaderStage::kFragment) {
       if (constants.empty()) {
