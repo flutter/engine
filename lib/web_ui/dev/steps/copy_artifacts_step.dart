@@ -53,7 +53,7 @@ class CopyArtifactsStep implements PipelineStep {
   }
 
   Future<void> copyTestBootstrapScripts() async {
-    for (final String filename in [
+    for (final String filename in <String>[
       'test_dart2js.js',
       'test_dart2wasm.js',
     ]) {
