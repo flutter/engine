@@ -103,7 +103,7 @@ class scoped_nsprotocol
       : ScopedTypeRef<NST, Traits>(that_as_subclass) {}
 
   scoped_nsprotocol(scoped_nsprotocol<NST>&& that)
-      : ScopedTypeRef<NST, Traits>(that) {}
+      : ScopedTypeRef<NST, Traits>(std::move(that)) {}
 
   scoped_nsprotocol& operator=(const scoped_nsprotocol<NST>& that) {
     ScopedTypeRef<NST, Traits>::operator=(that);
@@ -168,7 +168,7 @@ class scoped_nsobject : public scoped_nsprotocol<NST*> {
       : scoped_nsprotocol<NST*>(that_as_subclass) {}
 
   scoped_nsobject(scoped_nsobject<NST>&& that)
-      : scoped_nsprotocol<NST*>(that) {}
+      : scoped_nsprotocol<NST*>(std::move(that)) {}
 
   scoped_nsobject& operator=(const scoped_nsobject<NST>& that) {
     scoped_nsprotocol<NST*>::operator=(that);
@@ -216,7 +216,8 @@ class scoped_nsobject<id> : public scoped_nsprotocol<id> {
   explicit scoped_nsobject(const scoped_nsobject<NSR>& that_as_subclass)
       : scoped_nsprotocol<id>(that_as_subclass) {}
 
-  scoped_nsobject(scoped_nsobject<id>&& that) : scoped_nsprotocol<id>(that) {}
+  scoped_nsobject(scoped_nsobject<id>&& that)
+      : scoped_nsprotocol<id>(std::move(that)) {}
 
   scoped_nsobject& operator=(const scoped_nsobject<id>& that) {
     scoped_nsprotocol<id>::operator=(that);
