@@ -6,6 +6,12 @@
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/trace_event.h"
 
+// https://learn.microsoft.com/en-us/windows/win32/winprog/windows-data-types
+#if defined(_MSC_VER)
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#endif
+
 namespace flutter {
 
 AndroidExternalViewEmbedder::AndroidExternalViewEmbedder(
