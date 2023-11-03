@@ -6,6 +6,7 @@
 #define FLUTTER_FML_PLATFORM_DARWIN_SCOPED_NSOBJECT_H_
 
 #include <type_traits>
+#include <utility>
 
 // Include NSObject.h directly because Foundation.h pulls in many dependencies.
 // (Approx 100k lines of code versus 1.5k for NSObject.h). scoped_nsobject gets

@@ -10,6 +10,12 @@
 
 namespace {
 
+// This is to suppress the bugprone-use-after-move warning.
+// This strategy is recommanded here:
+// https://clang.llvm.org/extra/clang-tidy/checks/bugprone/use-after-move.html#silencing-erroneous-warnings
+template <class T>
+void IS_INITIALIZED(T&) {}
+
 TEST(ScopedNSObjectTest, ScopedNSObject) {
   fml::scoped_nsobject<NSObject> p1([[NSObject alloc] init]);
   ASSERT_TRUE(p1.get());
@@ -51,10 +57,11 @@ TEST(ScopedNSObjectTest, ScopedNSObject) {
   }
   ASSERT_EQ(2u, [p1 retainCount]);
 
-  fml::scoped_nsobject<NSObject> p7([NSObject new]);
+  fml::scoped_nsobject<NSObject> p7([[NSObject alloc] init]);
   fml::scoped_nsobject<NSObject> p8(std::move(p7));
   ASSERT_TRUE(p8);
   ASSERT_EQ(1u, [p8 retainCount]);
+  IS_INITIALIZED(p7);
   ASSERT_FALSE(p7.get());
 }
 
