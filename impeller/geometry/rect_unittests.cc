@@ -14,14 +14,14 @@ namespace testing {
 TEST(RectTest, RectOriginSizeGetters) {
   {
     Rect r = Rect::MakeOriginSize({10, 20}, {50, 40});
-    ASSERT_EQ(r.GetOrigin(), Point(10, 20));
-    ASSERT_EQ(r.GetSize(), Size(50, 40));
+    EXPECT_EQ(r.GetOrigin(), Point(10, 20));
+    EXPECT_EQ(r.GetSize(), Size(50, 40));
   }
 
   {
     Rect r = Rect::MakeLTRB(10, 20, 50, 40);
-    ASSERT_EQ(r.GetOrigin(), Point(10, 20));
-    ASSERT_EQ(r.GetSize(), Size(40, 20));
+    EXPECT_EQ(r.GetOrigin(), Point(10, 20));
+    EXPECT_EQ(r.GetSize(), Size(40, 20));
   }
 }
 
@@ -44,14 +44,14 @@ TEST(RectTest, RectMakeSize) {
     Size s(100, 200);
     IRect r = IRect::MakeSize(s);
     IRect expected = IRect::MakeLTRB(0, 0, 100, 200);
-    ASSERT_EQ(r, expected);
+    EXPECT_EQ(r, expected);
   }
 
   {
     ISize s(100, 200);
     IRect r = IRect::MakeSize(s);
     IRect expected = IRect::MakeLTRB(0, 0, 100, 200);
-    ASSERT_EQ(r, expected);
+    EXPECT_EQ(r, expected);
   }
 }
 
@@ -70,19 +70,19 @@ TEST(RectTest, NormalizePoint) {
                      const std::string& pt_desc,                  //
                      Point expected) {
     // Scalar point inside Scalar rect
-    ASSERT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(Point(px, py)),
+    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(Point(px, py)),
               expected)
         << "Point(" << pt_desc << ") in " << rect_desc << " Rect";
     // Scalar point inside Integer rect
-    ASSERT_EQ(IRect::MakeLTRB(l, t, r, b).NormalizePoint(Point(px, py)),
+    EXPECT_EQ(IRect::MakeLTRB(l, t, r, b).NormalizePoint(Point(px, py)),
               expected)
         << "Point(" << pt_desc << ") in " << rect_desc << " IRect";
     // Integer point inside Scalar rect
-    ASSERT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(IPoint(px, py)),
+    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(IPoint(px, py)),
               expected)
         << "IPoint(" << pt_desc << ") in " << rect_desc << " Rect";
     // Integer point inside Integer rect
-    ASSERT_EQ(IRect::MakeLTRB(l, t, r, b).NormalizePoint(IPoint(px, py)),
+    EXPECT_EQ(IRect::MakeLTRB(l, t, r, b).NormalizePoint(IPoint(px, py)),
               expected)
         << "IPoint(" << pt_desc << ") in " << rect_desc << " IRect";
 
@@ -91,17 +91,17 @@ TEST(RectTest, NormalizePoint) {
     auto nan_y = Point(px, nan);
     auto nan_p = Point(nan, nan);
     // Nan Scalar point inside Scalar and integer rects
-    ASSERT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(nan_x), Point())
+    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(nan_x), Point())
         << "Point(NaN x) in " << rect_desc << " Rect";
-    ASSERT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(nan_y), Point())
+    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(nan_y), Point())
         << "Point(NaN y) in " << rect_desc << " Rect";
-    ASSERT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(nan_p), Point())
+    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(nan_p), Point())
         << "Point(NaN x&y) in " << rect_desc << " Rect";
-    ASSERT_EQ(IRect::MakeLTRB(l, t, r, b).NormalizePoint(nan_x), Point())
+    EXPECT_EQ(IRect::MakeLTRB(l, t, r, b).NormalizePoint(nan_x), Point())
         << "Point(NaN x) in " << rect_desc << " Rect";
-    ASSERT_EQ(IRect::MakeLTRB(l, t, r, b).NormalizePoint(nan_y), Point())
+    EXPECT_EQ(IRect::MakeLTRB(l, t, r, b).NormalizePoint(nan_y), Point())
         << "Point(NaN y) in " << rect_desc << " Rect";
-    ASSERT_EQ(IRect::MakeLTRB(l, t, r, b).NormalizePoint(nan_p), Point())
+    EXPECT_EQ(IRect::MakeLTRB(l, t, r, b).NormalizePoint(nan_p), Point())
         << "Point(NaN x&y) in " << rect_desc << " Rect";
   };
 
@@ -153,39 +153,39 @@ TEST(RectTest, NormalizePointToNonFiniteRects) {
     auto inf = std::numeric_limits<Scalar>::infinity();
 
     // Scalar point inside Scalar rect
-    ASSERT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(Point(px, py)),
+    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(Point(px, py)),
               expected)
         << "Point(" << pt_desc << ") in Rect";
     // Scalar point inside Scalar rect with NaN left
-    ASSERT_EQ(Rect::MakeLTRB(nan, t, r, b).NormalizePoint(Point(px, py)),
+    EXPECT_EQ(Rect::MakeLTRB(nan, t, r, b).NormalizePoint(Point(px, py)),
               Point())
         << "Point(" << pt_desc << ") in Rect NaN Left";
     // Scalar point inside Scalar rect with NaN top
-    ASSERT_EQ(Rect::MakeLTRB(l, nan, r, b).NormalizePoint(Point(px, py)),
+    EXPECT_EQ(Rect::MakeLTRB(l, nan, r, b).NormalizePoint(Point(px, py)),
               Point())
         << "Point(" << pt_desc << ") in Rect NaN Top";
     // Scalar point inside Scalar rect with NaN right
-    ASSERT_EQ(Rect::MakeLTRB(l, t, nan, b).NormalizePoint(Point(px, py)),
+    EXPECT_EQ(Rect::MakeLTRB(l, t, nan, b).NormalizePoint(Point(px, py)),
               Point())
         << "Point(" << pt_desc << ") in Rect NaN Left";
     // Scalar point inside Scalar rect with NaN bottom
-    ASSERT_EQ(Rect::MakeLTRB(l, t, r, nan).NormalizePoint(Point(px, py)),
+    EXPECT_EQ(Rect::MakeLTRB(l, t, r, nan).NormalizePoint(Point(px, py)),
               Point())
         << "Point(" << pt_desc << ") in Rect NaN Top";
     // Scalar point inside Scalar rect with infinite left
-    ASSERT_EQ(Rect::MakeLTRB(-inf, t, r, b).NormalizePoint(Point(px, py)),
+    EXPECT_EQ(Rect::MakeLTRB(-inf, t, r, b).NormalizePoint(Point(px, py)),
               Point())
         << "Point(" << pt_desc << ") in Rect -Inf Left";
     // Scalar point inside Scalar rect with infinite top
-    ASSERT_EQ(Rect::MakeLTRB(l, -inf, r, b).NormalizePoint(Point(px, py)),
+    EXPECT_EQ(Rect::MakeLTRB(l, -inf, r, b).NormalizePoint(Point(px, py)),
               Point())
         << "Point(" << pt_desc << ") in Rect -Inf Top";
     // Scalar point inside Scalar rect with infinite right
-    ASSERT_EQ(Rect::MakeLTRB(l, t, inf, b).NormalizePoint(Point(px, py)),
+    EXPECT_EQ(Rect::MakeLTRB(l, t, inf, b).NormalizePoint(Point(px, py)),
               Point(0, expected.y))
         << "Point(" << pt_desc << ") in Rect Inf Right";
     // Scalar point inside Scalar rect with infinite bottom
-    ASSERT_EQ(Rect::MakeLTRB(l, t, r, inf).NormalizePoint(Point(px, py)),
+    EXPECT_EQ(Rect::MakeLTRB(l, t, r, inf).NormalizePoint(Point(px, py)),
               Point(expected.x, 0))
         << "Point(" << pt_desc << ") in Rect Inf Bottom";
 
@@ -194,11 +194,11 @@ TEST(RectTest, NormalizePointToNonFiniteRects) {
     auto nan_y = Point(px, nan);
     auto nan_p = Point(nan, nan);
     // Nan Scalar point inside Scalar rect
-    ASSERT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(nan_x), Point())
+    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(nan_x), Point())
         << "Point(NaN x) in Rect";
-    ASSERT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(nan_y), Point())
+    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(nan_y), Point())
         << "Point(NaN y) in Rect";
-    ASSERT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(nan_p), Point())
+    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(nan_p), Point())
         << "Point(NaN x&y) in Rect";
 
     // Testing with infinite points
@@ -206,17 +206,17 @@ TEST(RectTest, NormalizePointToNonFiniteRects) {
     auto inf_y = Point(px, inf);
     auto inf_p = Point(inf, inf);
     // Infinite Scalar point inside Scalar rect
-    ASSERT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(inf_x), Point())
+    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(inf_x), Point())
         << "Point(Infinite x) in Rect";
-    ASSERT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(inf_y), Point())
+    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(inf_y), Point())
         << "Point(Infinite y) in Rect";
-    ASSERT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(inf_p), Point())
+    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(inf_p), Point())
         << "Point(Infinite x&y) in Rect";
-    ASSERT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(-inf_x), Point())
+    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(-inf_x), Point())
         << "Point(-Infinite x) in Rect";
-    ASSERT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(-inf_y), Point())
+    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(-inf_y), Point())
         << "Point(-Infinite y) in Rect";
-    ASSERT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(-inf_p), Point())
+    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(-inf_p), Point())
         << "Point(-Infinite x&y) in Rect";
   };
 
