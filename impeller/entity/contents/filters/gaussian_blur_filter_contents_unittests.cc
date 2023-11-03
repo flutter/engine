@@ -5,12 +5,11 @@
 #include "flutter/testing/testing.h"
 #include "gmock/gmock.h"
 #include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
+#include "impeller/entity/entity_playground.h"
 #include "impeller/renderer/testing/mocks.h"
 
 namespace impeller {
 namespace testing {
-
-using ::testing::Return;
 
 namespace {
 
@@ -20,12 +19,15 @@ Scalar CalculateSigmaForBlurRadius(Scalar blur_radius) {
 }
 }  // namespace
 
-TEST(GaussianBlurFilterContents, Create) {
+using GaussianBlurFilterContentsTest = EntityPlayground;
+INSTANTIATE_PLAYGROUND_SUITE(GaussianBlurFilterContentsTest);
+
+TEST(GaussianBlurFilterContentsTest, Create) {
   GaussianBlurFilterContents contents;
   ASSERT_EQ(contents.GetSigma(), 0.0);
 }
 
-TEST(GaussianBlurFilterContents, CoverageEmpty) {
+TEST(GaussianBlurFilterContentsTest, CoverageEmpty) {
   GaussianBlurFilterContents contents;
   FilterInput::Vector inputs = {};
   Entity entity;
@@ -34,7 +36,7 @@ TEST(GaussianBlurFilterContents, CoverageEmpty) {
   ASSERT_FALSE(coverage.has_value());
 }
 
-TEST(GaussianBlurFilterContents, CoverageSimple) {
+TEST(GaussianBlurFilterContentsTest, CoverageSimple) {
   GaussianBlurFilterContents contents;
   FilterInput::Vector inputs = {
       FilterInput::Make(Rect::MakeLTRB(10, 10, 110, 110))};
@@ -44,7 +46,7 @@ TEST(GaussianBlurFilterContents, CoverageSimple) {
   ASSERT_EQ(coverage, Rect::MakeLTRB(10, 10, 110, 110));
 }
 
-TEST(GaussianBlurFilterContents, CoverageWithSigma) {
+TEST(GaussianBlurFilterContentsTest, CoverageWithSigma) {
   Scalar sigma_radius_1 = CalculateSigmaForBlurRadius(1.0);
   GaussianBlurFilterContents contents(/*sigma=*/sigma_radius_1);
   FilterInput::Vector inputs = {
@@ -55,14 +57,16 @@ TEST(GaussianBlurFilterContents, CoverageWithSigma) {
   ASSERT_EQ(coverage, Rect::MakeLTRB(99, 99, 201, 201));
 }
 
-TEST(GaussianBlurFilterContents, CoverageWithTexture) {
+TEST_P(GaussianBlurFilterContentsTest, CoverageWithTexture) {
   TextureDescriptor desc = {
+      .format = PixelFormat::kB8G8R8A8UNormInt,
       .size = ISize(100, 100),
   };
   Scalar sigma_radius_1 = CalculateSigmaForBlurRadius(1.0);
   GaussianBlurFilterContents contents(/*sigma=*/sigma_radius_1);
-  std::shared_ptr<MockTexture> texture = std::make_shared<MockTexture>(desc);
-  EXPECT_CALL(*texture, GetSize()).WillRepeatedly(Return(ISize(100, 100)));
+  std::shared_ptr<Texture> texture =
+      GetContentContext()->GetContext()->GetResourceAllocator()->CreateTexture(
+          desc);
   FilterInput::Vector inputs = {FilterInput::Make(texture)};
   Entity entity;
   entity.SetTransformation(Matrix::MakeTranslation({100, 100, 0}));
@@ -71,14 +75,16 @@ TEST(GaussianBlurFilterContents, CoverageWithTexture) {
   ASSERT_EQ(coverage, Rect::MakeLTRB(99, 99, 201, 201));
 }
 
-TEST(GaussianBlurFilterContents, CoverageWithEffectTransform) {
+TEST_P(GaussianBlurFilterContentsTest, CoverageWithEffectTransform) {
   TextureDescriptor desc = {
+      .format = PixelFormat::kB8G8R8A8UNormInt,
       .size = ISize(100, 100),
   };
   Scalar sigma_radius_1 = CalculateSigmaForBlurRadius(1.0);
   GaussianBlurFilterContents contents(/*sigma=*/sigma_radius_1);
-  std::shared_ptr<MockTexture> texture = std::make_shared<MockTexture>(desc);
-  EXPECT_CALL(*texture, GetSize()).WillRepeatedly(Return(ISize(100, 100)));
+  std::shared_ptr<Texture> texture =
+      GetContentContext()->GetContext()->GetResourceAllocator()->CreateTexture(
+          desc);
   FilterInput::Vector inputs = {FilterInput::Make(texture)};
   Entity entity;
   entity.SetTransformation(Matrix::MakeTranslation({100, 100, 0}));
@@ -87,7 +93,7 @@ TEST(GaussianBlurFilterContents, CoverageWithEffectTransform) {
   ASSERT_EQ(coverage, Rect::MakeLTRB(100 - 2, 100 - 2, 200 + 2, 200 + 2));
 }
 
-TEST(GaussianBlurFilterContents, FilterSourceCoverage) {
+TEST(GaussianBlurFilterContentsTest, FilterSourceCoverage) {
   Scalar sigma_radius_1 = CalculateSigmaForBlurRadius(1.0);
   auto contents = std::make_unique<GaussianBlurFilterContents>(sigma_radius_1);
   std::optional<Rect> coverage = contents->GetFilterSourceCoverage(
