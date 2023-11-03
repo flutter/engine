@@ -922,6 +922,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       }
       if (content != null) {
         result.setContentDescription(content);
+        result.setViewIdResourceName(content.toString());
       }
     }
 
