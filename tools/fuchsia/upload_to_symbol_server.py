@@ -52,7 +52,7 @@ def process_symbols(should_upload, symbol_dir):
     )
     if should_upload:
       gsutil = os.path.join(os.environ['DEPOT_TOOLS'], 'gsutil.py')
-      command = 'python3 %s cp %s %s' % (gsutil, file, remote_path)
+      command = ['python3', gsutil, '--', 'cp', gsutil, file, remote_path]
       subprocess.check_call(command)
     else:
       print(remote_path)
