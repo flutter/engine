@@ -197,6 +197,7 @@ class MockRenderTargetAllocator : public RenderTargetAllocator {
 class MockCapabilities : public Capabilities {
  public:
   MOCK_METHOD(bool, SupportsOffscreenMSAA, (), (const, override));
+  MOCK_METHOD(bool, SupportsImplicitResolvingMSAA, (), (const, override));
   MOCK_METHOD(bool, SupportsSSBO, (), (const, override));
   MOCK_METHOD(bool, SupportsBufferToTextureBlits, (), (const, override));
   MOCK_METHOD(bool, SupportsTextureToTextureBlits, (), (const, override));
