@@ -51,7 +51,8 @@ def process_symbols(should_upload, symbol_dir):
         remote_filename(file)
     )
     if should_upload:
-      command = 'gsutil.py cp %s %s' % (file, remote_path)
+      gsutil = os.path.join(os.environ['DEPOT_TOOLS'], 'gsutil.py')
+      command = '%s cp %s %s' % (gsutil, file, remote_path)
       subprocess.check_call(command)
     else:
       print(remote_path)
