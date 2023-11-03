@@ -562,7 +562,7 @@ class BrowserPlatform extends PlatformPlugin {
         <html>
         <head>
           <meta name="assetBase" content="/">
-          <script src="flutter_js/flutter.js" defer></script>
+          <script src="/flutter_js/flutter.js"></script>
           <script>
             window.flutterConfiguration = {
               canvasKitBaseUrl: "/canvaskit/",
