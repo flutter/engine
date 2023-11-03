@@ -96,6 +96,7 @@ void AccessibilityBridge::UpdateSemantics(
   for (const auto& entry : nodes) {
     const flutter::SemanticsNode& node = entry.second;
     SemanticsObject* object = GetOrCreateObject(node.id, nodes);
+    object.accessibilityIdentifier = [NSString stringWithUTF8String:node.label.c_str()];
     layoutChanged = layoutChanged || [object nodeWillCauseLayoutChange:&node];
     scrollOccured = scrollOccured || [object nodeWillCauseScroll:&node];
     needsAnnouncement = [object nodeShouldTriggerAnnouncement:&node];
