@@ -70,9 +70,6 @@ std::ostream& operator<<(std::ostream& os, const DlPaint& paint) {
   if (paint.getMaskFilter()) {
     os << ", " << paint.getMaskFilter();
   }
-  if (paint.isDither()) {
-    os << ", dither: " << paint.isDither();
-  }
   if (paint.isInvertColors()) {
     os << ", invertColors: " << paint.isInvertColors();
   }
@@ -287,6 +284,17 @@ static std::ostream& operator<<(std::ostream& os, const SkTextBlob* blob) {
   return os << "&SkTextBlob(ID: " << blob->uniqueID() << ", " << blob->bounds() << ")";
 }
 
+static std::ostream& operator<<(std::ostream& os,
+                                const impeller::TextFrame* frame) {
+  if (frame == nullptr) {
+    return os << "no text";
+  }
+  auto bounds = frame->GetBounds();
+  return os << "&TextFrame("
+            << bounds.GetLeft() << ", " << bounds.GetTop() << " => "
+            << bounds.GetRight() << ", " << bounds.GetBottom() << ")";
+}
+
 std::ostream& operator<<(std::ostream& os, const DlVertexMode& mode) {
   switch (mode) {
     case DlVertexMode::kTriangles:     return os << "VertexMode::kTriangles";
@@ -350,9 +358,6 @@ std::ostream& DisplayListStreamDispatcher::out_array(std::string name,  // NOLIN
 
 void DisplayListStreamDispatcher::setAntiAlias(bool aa) {
   startl() << "setAntiAlias(" << aa << ");" << std::endl;
-}
-void DisplayListStreamDispatcher::setDither(bool dither) {
-  startl() << "setDither(" << dither << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::setDrawStyle(DlDrawStyle style) {
   startl() << "setStyle(" << style << ");" << std::endl;
@@ -859,6 +864,16 @@ void DisplayListStreamDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,
            << blob.get() << ", "
            << x << ", " << y << ");" << std::endl;
 }
+
+void DisplayListStreamDispatcher::drawTextFrame(
+    const std::shared_ptr<impeller::TextFrame>& text_frame,
+    SkScalar x,
+    SkScalar y) {
+  startl() << "drawTextFrame("
+    << text_frame.get() << ", "
+    << x << ", " << y << ");" << std::endl;
+}
+
 void DisplayListStreamDispatcher::drawShadow(const SkPath& path,
                                              const DlColor color,
                                              const SkScalar elevation,

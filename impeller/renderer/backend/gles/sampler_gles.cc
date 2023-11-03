@@ -53,7 +53,8 @@ static GLint ToParam(MinMagFilter minmag_filter,
   FML_UNREACHABLE();
 }
 
-static GLint ToAddressMode(SamplerAddressMode mode) {
+static GLint ToAddressMode(SamplerAddressMode mode,
+                           bool supports_decal_sampler_address_mode) {
   switch (mode) {
     case SamplerAddressMode::kClampToEdge:
       return GL_CLAMP_TO_EDGE;
@@ -62,7 +63,11 @@ static GLint ToAddressMode(SamplerAddressMode mode) {
     case SamplerAddressMode::kMirror:
       return GL_MIRRORED_REPEAT;
     case SamplerAddressMode::kDecal:
-      break;  // Unsupported.
+      if (supports_decal_sampler_address_mode) {
+        return IMPELLER_GL_CLAMP_TO_BORDER;
+      } else {
+        return GL_CLAMP_TO_EDGE;
+      }
   }
   FML_UNREACHABLE();
 }
@@ -92,14 +97,28 @@ bool SamplerGLES::ConfigureBoundTexture(const TextureGLES& texture,
     mip_filter = desc.mip_filter;
   }
 
-  gl.TexParameteri(target.value(), GL_TEXTURE_MIN_FILTER,
+  gl.TexParameteri(*target, GL_TEXTURE_MIN_FILTER,
                    ToParam(desc.min_filter, mip_filter));
-  gl.TexParameteri(target.value(), GL_TEXTURE_MAG_FILTER,
-                   ToParam(desc.mag_filter));
-  gl.TexParameteri(target.value(), GL_TEXTURE_WRAP_S,
-                   ToAddressMode(desc.width_address_mode));
-  gl.TexParameteri(target.value(), GL_TEXTURE_WRAP_T,
-                   ToAddressMode(desc.height_address_mode));
+  gl.TexParameteri(*target, GL_TEXTURE_MAG_FILTER, ToParam(desc.mag_filter));
+
+  const auto supports_decal_mode =
+      gl.GetCapabilities()->SupportsDecalSamplerAddressMode();
+
+  const auto wrap_s =
+      ToAddressMode(desc.width_address_mode, supports_decal_mode);
+  const auto wrap_t =
+      ToAddressMode(desc.height_address_mode, supports_decal_mode);
+
+  gl.TexParameteri(*target, GL_TEXTURE_WRAP_S, wrap_s);
+  gl.TexParameteri(*target, GL_TEXTURE_WRAP_T, wrap_t);
+
+  if (wrap_s == IMPELLER_GL_CLAMP_TO_BORDER ||
+      wrap_t == IMPELLER_GL_CLAMP_TO_BORDER) {
+    // Transparent black.
+    const GLfloat border_color[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+    gl.TexParameterfv(*target, IMPELLER_GL_TEXTURE_BORDER_COLOR, border_color);
+  }
+
   return true;
 }
 

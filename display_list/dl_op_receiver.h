@@ -55,7 +55,6 @@ class DlOpReceiver {
   // another method that changes the same attribute. The current set of
   // attributes is not affected by |save| and |restore|.
   virtual void setAntiAlias(bool aa) = 0;
-  virtual void setDither(bool dither) = 0;
   virtual void setDrawStyle(DlDrawStyle style) = 0;
   virtual void setColor(DlColor color) = 0;
   virtual void setStrokeWidth(float width) = 0;
@@ -257,6 +256,10 @@ class DlOpReceiver {
   virtual void drawTextBlob(const sk_sp<SkTextBlob> blob,
                             SkScalar x,
                             SkScalar y) = 0;
+  virtual void drawTextFrame(
+      const std::shared_ptr<impeller::TextFrame>& text_frame,
+      SkScalar x,
+      SkScalar y) = 0;
   virtual void drawShadow(const SkPath& path,
                           const DlColor color,
                           const SkScalar elevation,

@@ -188,8 +188,7 @@ void testMain() {
       final ui.ParagraphBuilder builder = ui.ParagraphBuilder(CkParagraphStyle(
         fontSize: fontSize,
         fontFamily: 'FlutterTest',
-      ));
-      builder.addText('Test\nTest');
+      ))..addText('Test\nTest');
       final ui.Paragraph paragraph = builder.build();
       paragraph.layout(const ui.ParagraphConstraints(width: double.infinity));
 

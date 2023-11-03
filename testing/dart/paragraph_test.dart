@@ -293,9 +293,6 @@ void main() {
     expect(paragraph.getLineMetricsAt(7), isNull);
 
     expect(paragraph.getGlyphInfoAt(-1), isNull);
-    expect(paragraph.getLineMetricsAt(-1), isNull);
-    expect(paragraph.getLineNumberAt(-1), isNull);
-
     expect(paragraph.getGlyphInfoAt(0)?.graphemeClusterCodeUnitRange, const TextRange(start: 0, end: 1));
     expect(paragraph.getGlyphInfoAt(6)?.graphemeClusterCodeUnitRange, const TextRange(start: 6, end: 7));
     expect(paragraph.getGlyphInfoAt(7), isNull);

@@ -206,10 +206,6 @@ class Paragraph {
   // number of the line this hard line break breaks, intead of the new line it
   // creates.
   virtual int GetLineNumberAt(size_t utf16Offset) const = 0;
-
-  // Returns the font used for rendering the glyph at the given codeUnitIndex.
-  // The input offset must be in the valid range.
-  virtual SkFont GetFontAt(size_t utf16Offset) const = 0;
 };
 
 }  // namespace txt

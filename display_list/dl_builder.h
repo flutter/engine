@@ -224,6 +224,16 @@ class DisplayListBuilder final : public virtual DlCanvas,
                     SkScalar x,
                     SkScalar y,
                     const DlPaint& paint) override;
+
+  void drawTextFrame(const std::shared_ptr<impeller::TextFrame>& text_frame,
+                     SkScalar x,
+                     SkScalar y) override;
+
+  void DrawTextFrame(const std::shared_ptr<impeller::TextFrame>& text_frame,
+                     SkScalar x,
+                     SkScalar y,
+                     const DlPaint& paint) override;
+
   // |DlCanvas|
   void DrawShadow(const SkPath& path,
                   const DlColor color,
@@ -257,12 +267,6 @@ class DisplayListBuilder final : public virtual DlCanvas,
   void setAntiAlias(bool aa) override {
     if (current_.isAntiAlias() != aa) {
       onSetAntiAlias(aa);
-    }
-  }
-  // |DlOpReceiver|
-  void setDither(bool dither) override {
-    if (current_.isDither() != dither) {
-      onSetDither(dither);
     }
   }
   // |DlOpReceiver|
@@ -663,7 +667,6 @@ class DisplayListBuilder final : public virtual DlCanvas,
   }
 
   void onSetAntiAlias(bool aa);
-  void onSetDither(bool dither);
   void onSetInvertColors(bool invert);
   void onSetStrokeCap(DlStrokeCap cap);
   void onSetStrokeJoin(DlStrokeJoin join);

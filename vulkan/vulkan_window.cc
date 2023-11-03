@@ -19,6 +19,7 @@
 
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/vk/GrVkDirectContext.h"
 
 namespace vulkan {
 
@@ -118,6 +119,7 @@ GrDirectContext* VulkanWindow::GetSkiaGrContext() {
 }
 
 bool VulkanWindow::CreateSkiaGrContext() {
+#ifdef SK_VUKLAN
   GrVkBackendContext backend_context;
 
   if (!CreateSkiaBackendContext(&backend_context)) {
@@ -127,7 +129,7 @@ bool VulkanWindow::CreateSkiaGrContext() {
   GrContextOptions options;
   options.fReduceOpsTaskSplitting = GrContextOptions::Enable::kNo;
   sk_sp<GrDirectContext> context =
-      GrDirectContext::MakeVulkan(backend_context, options);
+      GrDirectContexts::MakeVulkan(backend_context, options);
 
   if (context == nullptr) {
     return false;
@@ -138,6 +140,9 @@ bool VulkanWindow::CreateSkiaGrContext() {
   skia_gr_context_ = context;
 
   return true;
+#else
+  return false;
+#endif  // SK_VULKAN
 }
 
 bool VulkanWindow::CreateSkiaBackendContext(GrVkBackendContext* context) {

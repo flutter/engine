@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
@@ -32,6 +33,11 @@ struct SourceOptions {
   /// @brief Whether half-precision textures should be supported, requiring
   /// opengl semantics. Only used on metal targets.
   bool use_half_textures = false;
+
+  /// @brief Whether the GLSL framebuffer fetch extension will be required.
+  ///
+  /// Only used on OpenGLES targets.
+  bool require_framebuffer_fetch = false;
 
   SourceOptions();
 

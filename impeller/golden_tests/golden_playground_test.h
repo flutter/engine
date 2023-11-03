@@ -57,6 +57,9 @@ class GoldenPlaygroundTest
 
   ISize GetWindowSize() const;
 
+ protected:
+  void SetWindowSize(ISize size);
+
  private:
 #if FML_OS_MACOSX
   // This must be placed first so that the autorelease pool is not destroyed
@@ -70,7 +73,9 @@ class GoldenPlaygroundTest
   // This is only a shared_ptr so it can work with a forward declared type.
   std::shared_ptr<GoldenPlaygroundTestImpl> pimpl_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(GoldenPlaygroundTest);
+  GoldenPlaygroundTest(const GoldenPlaygroundTest&) = delete;
+
+  GoldenPlaygroundTest& operator=(const GoldenPlaygroundTest&) = delete;
 };
 
 }  // namespace impeller
