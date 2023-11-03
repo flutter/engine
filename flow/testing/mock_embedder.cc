@@ -30,8 +30,8 @@ void MockViewEmbedder::BeginFrame(
 
 // |ExternalViewEmbedder|
 void MockViewEmbedder::PrepareView(int64_t native_view_id,
-                  SkISize frame_size,
-                  double device_pixel_ratio) {}
+                                   SkISize frame_size,
+                                   double device_pixel_ratio) {}
 
 // |ExternalViewEmbedder|
 void MockViewEmbedder::PrerollCompositeEmbeddedView(
