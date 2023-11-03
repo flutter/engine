@@ -84,7 +84,7 @@ def main():
     engine_version = 'HEAD'
     should_upload = False
 
-  should_upload = True # Remove me
+  should_upload = True  # Remove me
   process_symbols(should_upload, args.symbol_dir)
   return 0
 
