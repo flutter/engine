@@ -89,6 +89,7 @@ class DirectionalGaussianBlurFilterContentsTest : public ::testing::Test {
         .WillRepeatedly(Invoke(([](const TextureDescriptor& desc) {
           auto result = std::make_shared<MockTexture>(desc);
           EXPECT_CALL(*result, IsValid()).WillRepeatedly(Return(true));
+          EXPECT_CALL(*result, GetSize()).WillRepeatedly(Return(desc.size));
           return result;
         })));
   }
@@ -174,11 +175,22 @@ TEST_F(DirectionalGaussianBlurFilterContentsTest, RenderSomething) {
   ContentContext renderer(mock_context_, mock_typographer_context_,
                           mock_render_target_allocator_);
   Entity entity;
-  Rect coverage_hint = Rect::MakeLTRB(0, 0, 0, 0);
   std::optional<Entity> result =
-      contents->GetEntity(renderer, entity, coverage_hint);
+      contents->GetEntity(renderer, entity, /*coverage_hint=*/{});
   ASSERT_TRUE(result.has_value());
-  ASSERT_EQ(result.value().GetBlendMode(), BlendMode::kSourceOver);
+  EXPECT_EQ(result.value().GetBlendMode(), BlendMode::kSourceOver);
+  std::optional<Rect> result_coverage = result.value().GetCoverage();
+  std::optional<Rect> contents_coverage = contents->GetCoverage(entity);
+  EXPECT_TRUE(result_coverage.has_value());
+  EXPECT_TRUE(contents_coverage.has_value());
+  EXPECT_NEAR(result_coverage.value().GetLeft(),
+              contents_coverage.value().GetLeft(), kEhCloseEnough);
+  EXPECT_NEAR(result_coverage.value().GetTop(),
+              contents_coverage.value().GetTop(), kEhCloseEnough);
+  EXPECT_NEAR(result_coverage.value().GetRight(),
+              contents_coverage.value().GetRight(), kEhCloseEnough);
+  EXPECT_NEAR(result_coverage.value().GetBottom(),
+              contents_coverage.value().GetBottom(), kEhCloseEnough);
 }
 
 }  // namespace testing
