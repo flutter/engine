@@ -245,6 +245,7 @@ impeller_component("entity_unittests") {
     "entity_playground.h",
     "entity_unittests.cc",
     "geometry/geometry_unittests.cc",
+    "contents/checkerboard_contents_unittests.cc"
   ]
 
   deps = [
