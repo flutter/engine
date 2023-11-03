@@ -12,11 +12,7 @@
 namespace impeller {
 namespace testing {
 
-using ::testing::_;
-using ::testing::An;
-using ::testing::Invoke;
 using ::testing::Return;
-using ::testing::ReturnRef;
 
 namespace {
 
