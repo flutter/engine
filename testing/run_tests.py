@@ -414,6 +414,9 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
       make_test('ui_unittests', flags=repeat_flags + ['--timeout=90']),
   ]
 
+  # Print if the machine is detected as "is_windows()"
+  print('is_windows() = %s' % is_windows() % ' on ' % sys_platform)
+
   if not is_windows():
     unittests += [
         # https://github.com/flutter/flutter/issues/36295
