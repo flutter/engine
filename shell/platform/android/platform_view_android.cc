@@ -313,7 +313,6 @@ void PlatformViewAndroid::RegisterExternalTexture(
   if (auto const impeller = android_context_->GetImpellerContext()) {
     switch (android_context_->RenderingApi()) {
       case AndroidRenderingAPI::kOpenGLES:
-        impeller::ContextGLES::Cast(*impeller);
         texture = std::make_shared<SurfaceTextureExternalTextureImpellerGL>(
             /*context=*/std::static_pointer_cast<impeller::ContextGLES>(
                 impeller),
