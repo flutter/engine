@@ -36,9 +36,8 @@ void PictureRecorder::endRecording(Dart_Handle dart_picture) {
     return;
   }
 
-  fml::RefPtr<Picture> picture;
-
-  picture = Picture::Create(dart_picture, display_list_builder_->Build());
+  Picture::CreateAndAssociateWithDartWrapper(dart_picture,
+                                             display_list_builder_->Build());
   display_list_builder_ = nullptr;
 
   canvas_->Invalidate();
