@@ -4,6 +4,7 @@
 
 import 'dart:typed_data';
 
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../scene_painting.dart';
@@ -98,7 +99,20 @@ class CkPicture implements ScenePicture {
   @override
   CkImage toImageSync(int width, int height) {
     assert(debugCheckNotDisposed('Cannot convert picture to image.'));
+    if (RenderCanvasFactory.instance.pictureToImageSurface.usingSoftwareBackend) {
+      return toImageSyncSoftware(width, height);
+    }
 
+    final CkSurface ckSurface = CanvasKitRenderer.instance.rasterizer.createOffscreenSurface(ui.Size(width.toDouble(), height.toDouble()));
+    final CkCanvas ckCanvas = ckSurface.getCanvas();
+    ckCanvas.clear(const ui.Color(0x00000000));
+    ckCanvas.drawPicture(this);
+    final SkImage skImage = ckSurface.surface.makeImageSnapshot();
+    ckSurface.dispose();
+    return CkImage(skImage);
+  }
+
+  CkImage toImageSyncSoftware(int width, int height) {
     final Surface surface = RenderCanvasFactory.instance.pictureToImageSurface;
     final CkSurface ckSurface = surface
         .createOrUpdateSurface(ui.Size(width.toDouble(), height.toDouble()));

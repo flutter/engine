@@ -23,6 +23,11 @@ class Rasterizer {
         _currentFrameSize, canvas, pictures);
   }
 
+  /// Create an offscreen render target surface.
+  CkSurface createOffscreenSurface(ui.Size size) {
+    return _offscreenSurface.createRenderTargetSurface(size);
+  }
+
   /// Sets the maximum size of the Skia resource cache, in bytes.
   void setSkiaResourceCacheMaxBytes(int bytes) =>
       _offscreenSurface.setSkiaResourceCacheMaxBytes(bytes);

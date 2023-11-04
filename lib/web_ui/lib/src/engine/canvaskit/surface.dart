@@ -444,6 +444,18 @@ class Surface {
   /// OffscreenCanvas, but only with the context2d API, not WebGL.
   static bool get offscreenCanvasSupported =>
       browserSupportsOffscreenCanvas && !isSafari;
+
+  /// This method is not supported if software rendering is used.
+  CkSurface createRenderTargetSurface(ui.Size size) {
+    assert(!usingSoftwareBackend);
+
+    final SkSurface skSurface = canvasKit.MakeRenderTarget(
+      _grContext!,
+      size.width.ceil(),
+      size.height.ceil(),
+    )!;
+    return CkSurface(skSurface, _glContext);
+  }
 }
 
 /// A Dart wrapper around Skia's CkSurface.
