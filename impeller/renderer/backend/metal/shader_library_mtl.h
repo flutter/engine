@@ -42,8 +42,10 @@ class ShaderLibraryMTL final : public ShaderLibrary {
   explicit ShaderLibraryMTL(NSArray<id<MTLLibrary>>* libraries);
 
   // |ShaderLibrary|
-  std::shared_ptr<const ShaderFunction> GetFunction(std::string_view name,
-                                                    ShaderStage stage) override;
+  std::shared_ptr<const ShaderFunction> GetFunction(
+      std::string_view name,
+      ShaderStage stage,
+      const std::vector<int32_t>& specialization_constants) override;
 
   // |ShaderLibrary|
   void RegisterFunction(std::string name,
@@ -52,7 +54,10 @@ class ShaderLibraryMTL final : public ShaderLibrary {
                         RegistrationCallback callback) override;
 
   // |ShaderLibrary|
-  void UnregisterFunction(std::string name, ShaderStage stage) override;
+  void UnregisterFunction(
+      std::string name,
+      ShaderStage stage,
+      const std::vector<int32_t>& specialization_constants) override;
 
   id<MTLDevice> GetDevice() const;
 

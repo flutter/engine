@@ -11,6 +11,7 @@
 #include "flutter/fml/container.h"
 #include "impeller/base/promise.h"
 #include "impeller/renderer/backend/metal/compute_pipeline_mtl.h"
+#include "impeller/renderer/backend/metal/context_mtl.h"
 #include "impeller/renderer/backend/metal/formats_mtl.h"
 #include "impeller/renderer/backend/metal/pipeline_mtl.h"
 #include "impeller/renderer/backend/metal/shader_function_mtl.h"
@@ -18,8 +19,10 @@
 
 namespace impeller {
 
-PipelineLibraryMTL::PipelineLibraryMTL(id<MTLDevice> device)
-    : device_(device) {}
+PipelineLibraryMTL::PipelineLibraryMTL(
+    id<MTLDevice> device,
+    std::shared_ptr<fml::ConcurrentTaskRunner> workers)
+    : workers_(workers), device_(device) {}
 
 PipelineLibraryMTL::~PipelineLibraryMTL() = default;
 
@@ -29,22 +32,14 @@ static MTLRenderPipelineDescriptor* GetMTLRenderPipelineDescriptor(
   descriptor.label = @(desc.GetLabel().c_str());
   descriptor.rasterSampleCount = static_cast<NSUInteger>(desc.GetSampleCount());
 
-  const auto& constants = desc.GetSpecializationConstants();
   for (const auto& entry : desc.GetStageEntrypoints()) {
-    // Don't specialize the vertex stage. This restriction is noted in the
-    // specialization constants md file.
     if (entry.first == ShaderStage::kVertex) {
       descriptor.vertexFunction =
           ShaderFunctionMTL::Cast(*entry.second).GetMTLFunction();
     }
     if (entry.first == ShaderStage::kFragment) {
-      if (constants.empty()) {
-        descriptor.fragmentFunction =
-            ShaderFunctionMTL::Cast(*entry.second).GetMTLFunction();
-      } else {
-        descriptor.fragmentFunction = ShaderFunctionMTL::Cast(*entry.second)
-                                          .GetMTLFunctionSpecialized(constants);
-      }
+      descriptor.fragmentFunction =
+          ShaderFunctionMTL::Cast(*entry.second).GetMTLFunction();
     }
   }
 
@@ -104,7 +99,9 @@ PipelineFuture<PipelineDescriptor> PipelineLibraryMTL::GetPipeline(
     return found->second;
   }
 
-  if (!IsValid()) {
+  auto strong_workers = workers_;
+  if (!IsValid() || !workers_) {
+    FML_LOG(ERROR) << "Not valid or no strong context";
     return {
         descriptor,
         RealizedFuture<std::shared_ptr<Pipeline<PipelineDescriptor>>>(nullptr)};
@@ -115,8 +112,8 @@ PipelineFuture<PipelineDescriptor> PipelineLibraryMTL::GetPipeline(
   auto pipeline_future =
       PipelineFuture<PipelineDescriptor>{descriptor, promise->get_future()};
   pipelines_[descriptor] = pipeline_future;
-  auto weak_this = weak_from_this();
 
+  auto weak_this = weak_from_this();
   auto completion_handler =
       ^(id<MTLRenderPipelineState> _Nullable render_pipeline_state,
         NSError* _Nullable error) {
@@ -130,6 +127,7 @@ PipelineFuture<PipelineDescriptor> PipelineLibraryMTL::GetPipeline(
 
         auto strong_this = weak_this.lock();
         if (!strong_this) {
+          FML_LOG(ERROR) << "Not strong this";
           promise->set_value(nullptr);
           return;
         }
@@ -142,19 +140,16 @@ PipelineFuture<PipelineDescriptor> PipelineLibraryMTL::GetPipeline(
             ));
         promise->set_value(new_pipeline);
       };
-  auto mtl_descriptor = GetMTLRenderPipelineDescriptor(descriptor);
-#if FML_OS_IOS
-  [device_ newRenderPipelineStateWithDescriptor:mtl_descriptor
-                              completionHandler:completion_handler];
-#else   // FML_OS_IOS
-  // TODO(116919): Investigate and revert speculative fix to make MTL pipeline
-  //               state creation use a worker.
-  NSError* error = nil;
-  auto render_pipeline_state =
-      [device_ newRenderPipelineStateWithDescriptor:mtl_descriptor
-                                              error:&error];
-  completion_handler(render_pipeline_state, error);
-#endif  // FML_OS_IOS
+
+  strong_workers->PostTask([descriptor, device = device_,
+                            pipeline = shared_from_this(),
+                            completion_handler]() {
+    auto weak_this = pipeline->weak_from_this();
+
+    auto mtl_descriptor = GetMTLRenderPipelineDescriptor(descriptor);
+    [device newRenderPipelineStateWithDescriptor:mtl_descriptor
+                               completionHandler:completion_handler];
+  });
   return pipeline_future;
 }
 

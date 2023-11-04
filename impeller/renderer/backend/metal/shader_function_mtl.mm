@@ -3,44 +3,48 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/metal/shader_function_mtl.h"
+#include "fml/trace_event.h"
+#include "impeller/base/thread.h"
+#include "impeller/base/thread_safety.h"
 
 namespace impeller {
 
-ShaderFunctionMTL::ShaderFunctionMTL(UniqueID parent_library_id,
-                                     id<MTLFunction> function,
-                                     id<MTLLibrary> library,
-                                     std::string name,
-                                     ShaderStage stage)
+class PendingMTLShader {
+ public:
+  explicit PendingMTLShader(std::future<id<MTLFunction>> pending_shader)
+      : pending_shader_(std::move(pending_shader)) {}
+
+  id<MTLFunction> GetMTLFunction() {
+    TRACE_EVENT0("flutter", "GetMTLFunction");
+    Lock lock(mutex_);
+    if (did_load_) {
+      return loaded_function_;
+    }
+    did_load_ = true;
+    loaded_function_ = pending_shader_.get();
+    return loaded_function_;
+  }
+
+ private:
+  Mutex mutex_;
+  std::future<id<MTLFunction>> pending_shader_ IPLR_GUARDED_BY(mutex_);
+  id<MTLFunction> loaded_function_ = nil;
+  bool did_load_ = false;
+};
+
+ShaderFunctionMTL::ShaderFunctionMTL(
+    UniqueID parent_library_id,
+    std::future<id<MTLFunction>> pending_shader,
+    std::string name,
+    ShaderStage stage)
     : ShaderFunction(parent_library_id, std::move(name), stage),
-      function_(function),
-      library_(library) {}
+      pending_function_(
+          std::make_unique<PendingMTLShader>(std::move(pending_shader))) {}
 
 ShaderFunctionMTL::~ShaderFunctionMTL() = default;
 
-id<MTLFunction> ShaderFunctionMTL::GetMTLFunctionSpecialized(
-    const std::vector<int>& constants) const {
-  MTLFunctionConstantValues* constantValues =
-      [[MTLFunctionConstantValues alloc] init];
-  size_t index = 0;
-  for (const auto value : constants) {
-    int copied_value = value;
-    [constantValues setConstantValue:&copied_value
-                                type:MTLDataTypeInt
-                             atIndex:index];
-    index++;
-  }
-  NSError* error = nil;
-  auto result = [library_ newFunctionWithName:@(GetName().data())
-                               constantValues:constantValues
-                                        error:&error];
-  if (error != nil) {
-    return nil;
-  }
-  return result;
-}
-
 id<MTLFunction> ShaderFunctionMTL::GetMTLFunction() const {
-  return function_;
+  return pending_function_->GetMTLFunction();
 }
 
 }  // namespace impeller

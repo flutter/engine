@@ -66,10 +66,12 @@ struct PipelineBuilder {
 
     // Resolve pipeline entrypoints.
     {
+      // Specialization constants are only supported in the fragment stage.
       auto vertex_function = context.GetShaderLibrary()->GetFunction(
-          VertexShader::kEntrypointName, ShaderStage::kVertex);
+          VertexShader::kEntrypointName, ShaderStage::kVertex, {});
       auto fragment_function = context.GetShaderLibrary()->GetFunction(
-          FragmentShader::kEntrypointName, ShaderStage::kFragment);
+          FragmentShader::kEntrypointName, ShaderStage::kFragment,
+          desc.GetSpecializationConstants());
 
       if (!vertex_function || !fragment_function) {
         VALIDATION_LOG << "Could not resolve pipeline entrypoint(s) '"

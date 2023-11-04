@@ -88,7 +88,7 @@ TEST(ContextVKTest, DeleteShaderFunctionAfterContext) {
         "foobar", ShaderStage::kFragment,
         std::make_shared<fml::DataMapping>(data), [](bool) {});
     shader_function = context->GetShaderLibrary()->GetFunction(
-        "foobar_fragment_main", ShaderStage::kFragment);
+        "foobar_fragment_main", ShaderStage::kFragment, {});
     ASSERT_TRUE(shader_function);
     functions = GetMockVulkanFunctions(context->GetDevice());
     ASSERT_TRUE(std::find(functions->begin(), functions->end(),

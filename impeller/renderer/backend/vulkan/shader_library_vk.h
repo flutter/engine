@@ -35,8 +35,10 @@ class ShaderLibraryVK final : public ShaderLibrary {
       const std::vector<std::shared_ptr<fml::Mapping>>& shader_libraries_data);
 
   // |ShaderLibrary|
-  std::shared_ptr<const ShaderFunction> GetFunction(std::string_view name,
-                                                    ShaderStage stage) override;
+  std::shared_ptr<const ShaderFunction> GetFunction(
+      std::string_view name,
+      ShaderStage stage,
+      const std::vector<int32_t>& specialization_constants) override;
 
   // |ShaderLibrary|
   void RegisterFunction(std::string name,
@@ -49,7 +51,10 @@ class ShaderLibraryVK final : public ShaderLibrary {
                         const std::shared_ptr<fml::Mapping>& code);
 
   // |ShaderLibrary|
-  void UnregisterFunction(std::string name, ShaderStage stage) override;
+  void UnregisterFunction(
+      std::string name,
+      ShaderStage stage,
+      const std::vector<int32_t>& specialization_constants) override;
 
   ShaderLibraryVK(const ShaderLibraryVK&) = delete;
 

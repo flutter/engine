@@ -209,16 +209,16 @@ TEST_P(RuntimeStageTest, CanRegisterStage) {
   ASSERT_TRUE(future.get());
   {
     auto function =
-        library->GetFunction(stage.GetEntrypoint(), ShaderStage::kFragment);
+        library->GetFunction(stage.GetEntrypoint(), ShaderStage::kFragment, {});
     ASSERT_NE(function, nullptr);
   }
 
   // Check if unregistering works.
 
-  library->UnregisterFunction(stage.GetEntrypoint(), ShaderStage::kFragment);
+  library->UnregisterFunction(stage.GetEntrypoint(), ShaderStage::kFragment, {});
   {
     auto function =
-        library->GetFunction(stage.GetEntrypoint(), ShaderStage::kFragment);
+        library->GetFunction(stage.GetEntrypoint(), ShaderStage::kFragment, {});
     ASSERT_EQ(function, nullptr);
   }
 }
@@ -235,9 +235,9 @@ TEST_P(RuntimeStageTest, CanCreatePipelineFromRuntimeStage) {
   PipelineDescriptor desc;
   desc.SetLabel("Runtime Stage InkSparkle");
   desc.AddStageEntrypoint(
-      library->GetFunction(VS::kEntrypointName, ShaderStage::kVertex));
+      library->GetFunction(VS::kEntrypointName, ShaderStage::kVertex, {}));
   desc.AddStageEntrypoint(
-      library->GetFunction(stage->GetEntrypoint(), ShaderStage::kFragment));
+      library->GetFunction(stage->GetEntrypoint(), ShaderStage::kFragment, {}));
   auto vertex_descriptor = std::make_shared<VertexDescriptor>();
   vertex_descriptor->SetStageInputs(VS::kAllShaderStageInputs,
                                     VS::kInterleavedBufferLayout);

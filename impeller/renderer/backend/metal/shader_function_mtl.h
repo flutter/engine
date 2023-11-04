@@ -5,12 +5,15 @@
 #pragma once
 
 #include <Metal/Metal.h>
+#include <future>
 
 #include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/renderer/shader_function.h"
 
 namespace impeller {
+
+class PendingMTLShader;
 
 class ShaderFunctionMTL final
     : public ShaderFunction,
@@ -21,18 +24,13 @@ class ShaderFunctionMTL final
 
   id<MTLFunction> GetMTLFunction() const;
 
-  id<MTLFunction> GetMTLFunctionSpecialized(
-      const std::vector<int>& constants) const;
-
  private:
   friend class ShaderLibraryMTL;
 
-  id<MTLFunction> function_ = nullptr;
-  id<MTLLibrary> library_ = nullptr;
+  std::unique_ptr<PendingMTLShader> pending_function_;
 
   ShaderFunctionMTL(UniqueID parent_library_id,
-                    id<MTLFunction> function,
-                    id<MTLLibrary> library,
+                    std::future<id<MTLFunction>> pending_shader,
                     std::string name,
                     ShaderStage stage);
 

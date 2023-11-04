@@ -97,10 +97,13 @@ bool ShaderLibraryVK::IsValid() const {
 // |ShaderLibrary|
 std::shared_ptr<const ShaderFunction> ShaderLibraryVK::GetFunction(
     std::string_view name,
-    ShaderStage stage) {
+    ShaderStage stage,
+    const std::vector<int32_t>& specialization_constants) {
   ReaderLock lock(functions_mutex_);
 
-  const auto key = ShaderKey{{name.data(), name.size()}, stage};
+  // The Vulkan backend does not create [ShaderFunction] objects per
+  // specialization.
+  const auto key = ShaderKey{{name.data(), name.size()}, stage, {}};
   auto found = functions_.find(key);
   if (found != functions_.end()) {
     return found->second;
@@ -170,22 +173,26 @@ bool ShaderLibraryVK::RegisterFunction(
                           "Shader " + name);
 
   WriterLock lock(functions_mutex_);
-  functions_[ShaderKey{key_name, stage}] = std::shared_ptr<ShaderFunctionVK>(
-      new ShaderFunctionVK(device_holder_,
-                           library_id_,              //
-                           key_name,                 //
-                           stage,                    //
-                           std::move(shader_module)  //
-                           ));
+  functions_[ShaderKey{key_name, stage, {}}] =
+      std::shared_ptr<ShaderFunctionVK>(new ShaderFunctionVK(
+          device_holder_,
+          library_id_,              //
+          key_name,                 //
+          stage,                    //
+          std::move(shader_module)  //
+          ));
 
   return true;
 }
 
 // |ShaderLibrary|
-void ShaderLibraryVK::UnregisterFunction(std::string name, ShaderStage stage) {
+void ShaderLibraryVK::UnregisterFunction(
+    std::string name,
+    ShaderStage stage,
+    const std::vector<int32_t>& specialization_constants) {
   WriterLock lock(functions_mutex_);
 
-  const auto key = ShaderKey{name, stage};
+  const auto key = ShaderKey{name, stage, {}};
 
   auto found = functions_.find(key);
   if (found != functions_.end()) {

@@ -5,8 +5,10 @@
 #pragma once
 
 #include <Metal/Metal.h>
+#include <memory>
 
 #include "flutter/fml/macros.h"
+#include "fml/concurrent_message_loop.h"
 #include "impeller/renderer/pipeline_library.h"
 
 namespace impeller {
@@ -15,19 +17,18 @@ class ContextMTL;
 
 class PipelineLibraryMTL final : public PipelineLibrary {
  public:
-  PipelineLibraryMTL();
-
   // |PipelineLibrary|
   ~PipelineLibraryMTL() override;
 
  private:
   friend ContextMTL;
 
+  std::shared_ptr<fml::ConcurrentTaskRunner> workers_;
   id<MTLDevice> device_ = nullptr;
   PipelineMap pipelines_;
   ComputePipelineMap compute_pipelines_;
 
-  explicit PipelineLibraryMTL(id<MTLDevice> device);
+  PipelineLibraryMTL(id<MTLDevice> device, std::shared_ptr<fml::ConcurrentTaskRunner> workers);
 
   // |PipelineLibrary|
   bool IsValid() const override;

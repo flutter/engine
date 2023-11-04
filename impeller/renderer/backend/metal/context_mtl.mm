@@ -126,7 +126,7 @@ ContextMTL::ContextMTL(
   // Setup the pipeline library.
   {
     pipeline_library_ =
-        std::shared_ptr<PipelineLibraryMTL>(new PipelineLibraryMTL(device_));
+        std::shared_ptr<PipelineLibraryMTL>(new PipelineLibraryMTL(device_, raster_message_loop_->GetTaskRunner()));
   }
 
   // Setup the sampler library.

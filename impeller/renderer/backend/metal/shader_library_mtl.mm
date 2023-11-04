@@ -4,8 +4,12 @@
 
 #include "impeller/renderer/backend/metal/shader_library_mtl.h"
 
+#include <future>
+#include <memory>
+
 #include "flutter/fml/closure.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/renderer/backend/metal/shader_function_mtl.h"
 
 namespace impeller {
@@ -42,7 +46,8 @@ static MTLFunctionType ToMTLFunctionType(ShaderStage stage) {
 
 std::shared_ptr<const ShaderFunction> ShaderLibraryMTL::GetFunction(
     std::string_view name,
-    ShaderStage stage) {
+    ShaderStage stage,
+    const std::vector<int32_t>& specialization_constants) {
   if (!IsValid()) {
     return nullptr;
   }
@@ -52,10 +57,17 @@ std::shared_ptr<const ShaderFunction> ShaderLibraryMTL::GetFunction(
     return nullptr;
   }
 
-  ShaderKey key(name, stage);
+  // Don't specialize the vertex stage. This restriction is noted in the
+  // specialization constants md file.
+  FML_CHECK(stage == ShaderStage::kFragment ||
+            specialization_constants.empty());
 
-  id<MTLFunction> function = nil;
+  ShaderKey key(name, stage, specialization_constants);
+
+  // id<MTLFunction> function = nil;
   id<MTLLibrary> library = nil;
+  std::shared_ptr<std::promise<id<MTLFunction>>> func_promise =
+      std::make_shared<std::promise<id<MTLFunction>>>();
 
   {
     ReaderLock lock(libraries_mutex_);
@@ -64,26 +76,49 @@ std::shared_ptr<const ShaderFunction> ShaderLibraryMTL::GetFunction(
       return found->second;
     }
 
-    for (size_t i = 0, count = [libraries_ count]; i < count; i++) {
-      library = libraries_[i];
-      function = [library newFunctionWithName:@(name.data())];
-      if (function) {
-        break;
+    MTLFunctionConstantValues* constantValues;
+    if (!specialization_constants.empty()) {
+      constantValues = [[MTLFunctionConstantValues alloc] init];
+      size_t index = 0;
+      for (const auto value : specialization_constants) {
+        int copied_value = value;
+        [constantValues setConstantValue:&copied_value
+                                    type:MTLDataTypeInt
+                                 atIndex:index];
+        index++;
       }
     }
 
-    if (function == nil) {
+    for (size_t i = 0, count = [libraries_ count]; i < count; i++) {
+      library = libraries_[i];
+      if (![library.functionNames containsObject:(@(name.data()))]) {
+        continue;
+      }
+      if (constantValues == nil) {
+        func_promise->set_value([library newFunctionWithName:@(name.data())]);
+      } else {
+        func_promise = std::make_shared<std::promise<id<MTLFunction>>>();
+        [library
+            newFunctionWithName:@(name.data())
+                 constantValues:constantValues
+              completionHandler:^(id<MTLFunction> function, NSError* error) {
+                if (function.functionType != ToMTLFunctionType(stage)) {
+                  VALIDATION_LOG << "Library function named " << name
+                                 << " was for an unexpected shader stage.";
+                }
+                func_promise->set_value(function);
+              }];
+      }
+      break;
+    }
+
+    if (func_promise == nullptr) {
       return nullptr;
     }
 
-    if (function.functionType != ToMTLFunctionType(stage)) {
-      VALIDATION_LOG << "Library function named " << name
-                     << " was for an unexpected shader stage.";
-      return nullptr;
-    }
-
-    auto func = std::shared_ptr<ShaderFunctionMTL>(new ShaderFunctionMTL(
-        library_id_, function, library, {name.data(), name.size()}, stage));
+    auto func = std::shared_ptr<ShaderFunctionMTL>(
+        new ShaderFunctionMTL(library_id_, func_promise->get_future(),
+                              {name.data(), name.size()}, stage));
     functions_[key] = func;
 
     return func;
@@ -146,7 +181,10 @@ void ShaderLibraryMTL::RegisterFunction(std::string name,   // unused
 }
 
 // |ShaderLibrary|
-void ShaderLibraryMTL::UnregisterFunction(std::string name, ShaderStage stage) {
+void ShaderLibraryMTL::UnregisterFunction(
+    std::string name,
+    ShaderStage stage,
+    const std::vector<int32_t>& specialization_constants) {
   ReaderLock lock(libraries_mutex_);
 
   // Find the shader library containing this function name and remove it.
@@ -168,7 +206,7 @@ void ShaderLibraryMTL::UnregisterFunction(std::string name, ShaderStage stage) {
 
   // Remove the shader from the function cache.
 
-  ShaderKey key(name, stage);
+  ShaderKey key(name, stage, specialization_constants);
 
   auto found = functions_.find(key);
   if (found == functions_.end()) {

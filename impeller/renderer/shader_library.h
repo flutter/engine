@@ -23,9 +23,15 @@ class ShaderLibrary : public std::enable_shared_from_this<ShaderLibrary> {
 
   virtual bool IsValid() const = 0;
 
+  /// @brief Look up the [ShaderFunction] for the given [name], [stage], and
+  ///        [specialization_constants].
+  ///
+  /// Specialization constants are only supported for fragment stage shaders.
+  /// All other stages will ignore these values.
   virtual std::shared_ptr<const ShaderFunction> GetFunction(
       std::string_view name,
-      ShaderStage stage) = 0;
+      ShaderStage stage,
+      const std::vector<int32_t>& specialization_constants) = 0;
 
   using RegistrationCallback = std::function<void(bool)>;
   virtual void RegisterFunction(std::string name,
@@ -33,7 +39,15 @@ class ShaderLibrary : public std::enable_shared_from_this<ShaderLibrary> {
                                 std::shared_ptr<fml::Mapping> code,
                                 RegistrationCallback callback);
 
-  virtual void UnregisterFunction(std::string name, ShaderStage stage) = 0;
+  /// @brief Unregister the [ShaderFunction] for the given [name], [stage], and
+  ///        [specialization_constants].
+  ///
+  /// Specialization constants are only supported for fragment stage shaders.
+  /// All other stages will ignore these values.
+  virtual void UnregisterFunction(
+      std::string name,
+      ShaderStage stage,
+      const std::vector<int32_t>& specialization_constants) = 0;
 
  protected:
   ShaderLibrary();

@@ -61,12 +61,12 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   // TODO(113719): Register the shader function earlier.
 
   std::shared_ptr<const ShaderFunction> function = library->GetFunction(
-      runtime_stage_->GetEntrypoint(), ShaderStage::kFragment);
+      runtime_stage_->GetEntrypoint(), ShaderStage::kFragment, {});
 
   if (function && runtime_stage_->IsDirty()) {
     context->GetPipelineLibrary()->RemovePipelinesWithEntryPoint(function);
     library->UnregisterFunction(runtime_stage_->GetEntrypoint(),
-                                ShaderStage::kFragment);
+                                ShaderStage::kFragment, {});
 
     function = nullptr;
   }
@@ -90,7 +90,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
     }
 
     function = library->GetFunction(runtime_stage_->GetEntrypoint(),
-                                    ShaderStage::kFragment);
+                                    ShaderStage::kFragment, {});
     if (!function) {
       VALIDATION_LOG
           << "Failed to fetch runtime effect function immediately after "
@@ -121,9 +121,9 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   PipelineDescriptor desc;
   desc.SetLabel("Runtime Stage");
   desc.AddStageEntrypoint(
-      library->GetFunction(VS::kEntrypointName, ShaderStage::kVertex));
+      library->GetFunction(VS::kEntrypointName, ShaderStage::kVertex, {}));
   desc.AddStageEntrypoint(library->GetFunction(runtime_stage_->GetEntrypoint(),
-                                               ShaderStage::kFragment));
+                                               ShaderStage::kFragment, {}));
   auto vertex_descriptor = std::make_shared<VertexDescriptor>();
   vertex_descriptor->SetStageInputs(VS::kAllShaderStageInputs,
                                     VS::kInterleavedBufferLayout);

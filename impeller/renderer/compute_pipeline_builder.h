@@ -58,7 +58,7 @@ struct ComputePipelineBuilder {
     // Resolve pipeline entrypoints.
     {
       auto compute_function = context.GetShaderLibrary()->GetFunction(
-          ComputeShader::kEntrypointName, ShaderStage::kCompute);
+          ComputeShader::kEntrypointName, ShaderStage::kCompute, {});
 
       if (!compute_function) {
         VALIDATION_LOG << "Could not resolve compute pipeline entrypoint '"
