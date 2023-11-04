@@ -33,9 +33,9 @@ void ShaderFunctionMTL::GetMTLFunctionSpecialized(
   [library_ newFunctionWithName:@(GetName().data())
                  constantValues:constantValues
               completionHandler:^(id<MTLFunction> _Nullable function,
-                                  NSError* _Nullable error){
-      callback(function);
-    }];
+                                  NSError* _Nullable error) {
+                callback(function);
+              }];
 }
 
 id<MTLFunction> ShaderFunctionMTL::GetMTLFunction() const {
