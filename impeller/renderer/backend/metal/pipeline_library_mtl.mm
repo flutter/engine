@@ -9,6 +9,7 @@
 
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/container.h"
+#include "fml/synchronization/count_down_latch.h"
 #include "impeller/base/promise.h"
 #include "impeller/renderer/backend/metal/compute_pipeline_mtl.h"
 #include "impeller/renderer/backend/metal/formats_mtl.h"
@@ -26,7 +27,7 @@ PipelineLibraryMTL::~PipelineLibraryMTL() = default;
 using Callback = std::function<void(MTLRenderPipelineDescriptor*)>;
 
 static void GetMTLRenderPipelineDescriptor(const PipelineDescriptor& desc,
-                                           Callback callback) {
+                                           const Callback& callback) {
   auto descriptor = [[MTLRenderPipelineDescriptor alloc] init];
   descriptor.label = @(desc.GetLabel().c_str());
   descriptor.rasterSampleCount = static_cast<NSUInteger>(desc.GetSampleCount());
@@ -52,6 +53,9 @@ static void GetMTLRenderPipelineDescriptor(const PipelineDescriptor& desc,
   descriptor.stencilAttachmentPixelFormat =
       ToMTLPixelFormat(desc.GetStencilPixelFormat());
 
+  // This latch is used to ensure that GetMTLFunctionSpecialized does not finish
+  // before the descriptor is completely set up.
+  fml::CountDownLatch latch(1u);
   const auto& constants = desc.GetSpecializationConstants();
   for (const auto& entry : desc.GetStageEntrypoints()) {
     if (entry.first == ShaderStage::kVertex) {
@@ -66,14 +70,17 @@ static void GetMTLRenderPipelineDescriptor(const PipelineDescriptor& desc,
         async = true;
         ShaderFunctionMTL::Cast(*entry.second)
             .GetMTLFunctionSpecialized(
-                constants, [callback, descriptor](id<MTLFunction> function) {
+                constants,
+                [callback, descriptor, &latch](id<MTLFunction> function) {
                   descriptor.fragmentFunction = function;
+                  latch.Wait();
                   callback(descriptor);
                 });
       }
     }
   }
 
+  latch.CountDown();
   if (!async) {
     callback(descriptor);
   }

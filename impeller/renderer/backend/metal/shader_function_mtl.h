@@ -24,7 +24,7 @@ class ShaderFunctionMTL final
   using CompileCallback = std::function<void(id<MTLFunction>)>;
 
   void GetMTLFunctionSpecialized(const std::vector<int>& constants,
-                                 CompileCallback callback) const;
+                                 const CompileCallback& callback) const;
 
  private:
   friend class ShaderLibraryMTL;

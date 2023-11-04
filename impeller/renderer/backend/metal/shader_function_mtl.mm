@@ -19,7 +19,7 @@ ShaderFunctionMTL::~ShaderFunctionMTL() = default;
 
 void ShaderFunctionMTL::GetMTLFunctionSpecialized(
     const std::vector<int>& constants,
-    CompileCallback callback) const {
+    const CompileCallback& callback) const {
   MTLFunctionConstantValues* constantValues =
       [[MTLFunctionConstantValues alloc] init];
   size_t index = 0;
