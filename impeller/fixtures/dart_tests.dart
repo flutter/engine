@@ -33,3 +33,48 @@ void canEmplaceHostBuffer() {
   assert(view1.offsetInBytes >= 4);
   assert(view1.lengthInBytes == 4);
 }
+
+@pragma('vm:entry-point')
+void canCreateDeviceBuffer() {
+  final gpu.DeviceBuffer deviceBuffer =
+      gpu.gpuContext.createDeviceBuffer(gpu.StorageMode.hostVisible, 4);
+  assert(deviceBuffer.sizeInBytes == 4);
+}
+
+@pragma('vm:entry-point')
+void canOverwriteDeviceBuffer() {
+  final gpu.DeviceBuffer deviceBuffer =
+      gpu.gpuContext.createDeviceBuffer(gpu.StorageMode.hostVisible, 4);
+  deviceBuffer
+      .overwrite(Int8List.fromList(<int>[0, 1, 2, 3]).buffer.asByteData());
+}
+
+@pragma('vm:entry-point')
+void deviceBufferOverwriteThrowsWhenOutOfBounds() {
+  final gpu.DeviceBuffer deviceBuffer =
+      gpu.gpuContext.createDeviceBuffer(gpu.StorageMode.hostVisible, 4);
+  String? exception;
+  try {
+    deviceBuffer.overwrite(
+        Int8List.fromList(<int>[0, 1, 2, 3]).buffer.asByteData(),
+        destinationOffsetInBytes: 1);
+  } catch (e) {
+    exception = e.toString();
+  }
+  assert(exception!.contains('Failed to overwrite device buffer.'));
+}
+
+@pragma('vm:entry-point')
+void deviceBufferOverwriteThrowsForNegativeDestinationOffset() {
+  final gpu.DeviceBuffer deviceBuffer =
+      gpu.gpuContext.createDeviceBuffer(gpu.StorageMode.hostVisible, 4);
+  String? exception;
+  try {
+    deviceBuffer.overwrite(
+        Int8List.fromList(<int>[0, 1, 2, 3]).buffer.asByteData(),
+        destinationOffsetInBytes: -1);
+  } catch (e) {
+    exception = e.toString();
+  }
+  assert(exception!.contains('destinationOffsetInBytes must be positive.'));
+}

@@ -111,19 +111,35 @@ TEST_P(RendererDartTest, CanInstantiateFlutterGPUContext) {
   ASSERT_TRUE(result);
 }
 
-TEST_P(RendererDartTest, CanEmplaceHostBuffer) {
-  auto isolate = GetIsolate();
-  bool result = isolate->RunInIsolateScope([]() -> bool {
-    if (tonic::CheckAndHandleError(
-            ::Dart_Invoke(Dart_RootLibrary(),
-                          tonic::ToDart("canEmplaceHostBuffer"), 0, nullptr))) {
-      return false;
-    }
-    return true;
-  });
+#define DART_TEST_CASE(name)                                            \
+  TEST_P(RendererDartTest, name) {                                      \
+    auto isolate = GetIsolate();                                        \
+    bool result = isolate->RunInIsolateScope([]() -> bool {             \
+      if (tonic::CheckAndHandleError(::Dart_Invoke(                     \
+              Dart_RootLibrary(), tonic::ToDart(#name), 0, nullptr))) { \
+        return false;                                                   \
+      }                                                                 \
+      return true;                                                      \
+    });                                                                 \
+    ASSERT_TRUE(result);                                                \
+  }
 
-  ASSERT_TRUE(result);
-}
+/// These test entries correspond to Dart functions located in
+/// `flutter/impeller/fixtures/dart_tests.dart`
+
+DART_TEST_CASE(canEmplaceHostBuffer);
+DART_TEST_CASE(canCreateDeviceBuffer);
+DART_TEST_CASE(canOverwriteDeviceBuffer);
+DART_TEST_CASE(deviceBufferOverwriteThrowsForNegativeDestinationOffset);
+
+/// This VM as it's running in this test harness wigs out for Flutter GPU calls
+/// that return Dart handles. This doesn't happen when actually running in the
+/// production engine, so just comment these out for now.
+/// > Dart Error: Callbacks into the Dart VM are currently prohibited. Either
+/// > there are outstanding pointers from Dart_TypedDataAcquireData that have
+/// > not been released with Dart_TypedDataReleaseData, or a finalizer is
+/// > running.
+// DART_TEST_CASE(deviceBufferOverwriteThrowsWhenOutOfBounds);
 
 }  // namespace testing
 }  // namespace impeller

@@ -2,8 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:ffi';
-import 'dart:nativewrappers';
+part of flutter_gpu;
 
 /// A handle to a graphics context. Used to create and manage GPU resources.
 ///
@@ -16,6 +15,16 @@ base class GpuContext extends NativeFieldWrapperClass1 {
     if (error != null) {
       throw Exception(error);
     }
+  }
+
+  /// Create a buffer on the device of a given size.
+  DeviceBuffer createDeviceBuffer(StorageMode storageMode, int sizeInBytes) {
+    return DeviceBuffer._initialize(this, storageMode, sizeInBytes);
+  }
+
+  /// Create a buffer on the device, initialized with the given [data].
+  DeviceBuffer createDeviceBufferWithCopy(ByteData data) {
+    return DeviceBuffer._initializeWithHostData(this, data);
   }
 
   /// Associates the default Impeller context with this Context.
