@@ -4,10 +4,10 @@
 
 #pragma once
 
+#include <future>
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include <future>
 
 #include "flutter/fml/hash_combine.h"
 #include "flutter/fml/macros.h"

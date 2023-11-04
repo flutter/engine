@@ -28,7 +28,8 @@ class PipelineLibraryMTL final : public PipelineLibrary {
   PipelineMap pipelines_;
   ComputePipelineMap compute_pipelines_;
 
-  PipelineLibraryMTL(id<MTLDevice> device, std::shared_ptr<fml::ConcurrentTaskRunner> workers);
+  PipelineLibraryMTL(id<MTLDevice> device,
+                     std::shared_ptr<fml::ConcurrentTaskRunner> workers);
 
   // |PipelineLibrary|
   bool IsValid() const override;

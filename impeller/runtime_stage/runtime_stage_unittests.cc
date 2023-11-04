@@ -215,7 +215,8 @@ TEST_P(RuntimeStageTest, CanRegisterStage) {
 
   // Check if unregistering works.
 
-  library->UnregisterFunction(stage.GetEntrypoint(), ShaderStage::kFragment, {});
+  library->UnregisterFunction(stage.GetEntrypoint(), ShaderStage::kFragment,
+                              {});
   {
     auto function =
         library->GetFunction(stage.GetEntrypoint(), ShaderStage::kFragment, {});
