@@ -60,7 +60,8 @@ TEST(RectTest, RectMakeSize) {
 #define TEST_NORMALIZE_POINT(RT, PT, l, t, r, b, px, py, expected)            \
   EXPECT_EQ(RT::MakeLTRB(l, t, r, b).NormalizePoint(PT(px, py)), expected)    \
       << #RT "::MakeLTRB(" << l << ", " << t << ", " << r << ", " << b << ")" \
-      << ".NormalizePoint(" << #PT "(" << px << ", " << py << "))"
+      << ".NormalizePoint(" << #PT "(" << px << ", " << py << "))"            \
+      << std::endl
 
 TEST(RectTest, NormalizePoint) {
   // Tests finite rects including:
