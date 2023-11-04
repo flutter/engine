@@ -82,8 +82,11 @@ Only 32bit ints are supported as const values and can be used to represent:
 * true/false via 0/1.
 * function selection, such as advanced blends. The specialization value maps to a specific blend function. For example, 0 maps to screen and 1 to overlay via a giant if/else macro.
 
+<<<<<<< HEAD
 Additionally, specialization constants are only supported in the fragment stage. This restriction could be relaxed with additional changes to impellerc to analyze where the specialization constants are used.
 
+=======
+>>>>>>> origin/add_specialization_support
 *AVOID* adding specialization constants for color values or anything more complex.
 
 Specialization constants are provided to the CreateDefault argument in content_context.cc and aren't a

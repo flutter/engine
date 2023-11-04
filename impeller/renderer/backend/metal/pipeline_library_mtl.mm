@@ -7,6 +7,8 @@
 #include <Foundation/Foundation.h>
 #include <Metal/Metal.h>
 
+#include <utility>
+
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/container.h"
 #include "impeller/base/promise.h"
@@ -22,7 +24,7 @@ namespace impeller {
 PipelineLibraryMTL::PipelineLibraryMTL(
     id<MTLDevice> device,
     std::shared_ptr<fml::ConcurrentTaskRunner> workers)
-    : workers_(workers), device_(device) {}
+    : workers_(std::move(workers)), device_(device) {}
 
 PipelineLibraryMTL::~PipelineLibraryMTL() = default;
 
