@@ -10,7 +10,6 @@
 #include <string>
 #include <vector>
 
-#include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/capabilities.h"
@@ -81,9 +80,6 @@ class CapabilitiesVK final : public Capabilities,
 
   // |Capabilities|
   bool SupportsComputeSubgroups() const override;
-
-  // |Capabilities|
-  bool SupportsReadFromResolve() const override;
 
   // |Capabilities|
   bool SupportsReadFromOnscreenTexture() const override;

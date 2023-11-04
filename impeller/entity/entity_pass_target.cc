@@ -10,10 +10,8 @@
 
 namespace impeller {
 
-EntityPassTarget::EntityPassTarget(const RenderTarget& render_target,
-                                   bool supports_read_from_resolve)
-    : target_(render_target),
-      supports_read_from_resolve_(supports_read_from_resolve) {}
+EntityPassTarget::EntityPassTarget(const RenderTarget& render_target)
+    : target_(render_target) {}
 
 std::shared_ptr<Texture> EntityPassTarget::Flip(Allocator& allocator) {
   auto color0 = target_.GetColorAttachments().find(0)->second;
@@ -24,14 +22,6 @@ std::shared_ptr<Texture> EntityPassTarget::Flip(Allocator& allocator) {
     // necessary. Unlike MSAA passes, non-MSAA passes can be trivially loaded
     // with `LoadAction::kLoad`.
     return color0.texture;
-  }
-
-  if (supports_read_from_resolve_) {
-    // Just return the current resolve texture, which is safe to read in the
-    // next render pass that'll resolve to `target_`.
-    //
-    // Note that this can only be done when MSAA is being used.
-    return color0.resolve_texture;
   }
 
   if (!secondary_color_texture_) {

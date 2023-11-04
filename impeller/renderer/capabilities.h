@@ -68,19 +68,6 @@ class Capabilities {
   ///         texture for shader reading.
   virtual bool SupportsReadFromOnscreenTexture() const = 0;
 
-  /// @brief  Whether the context backend supports binding the current
-  ///         `RenderPass` attachments. This is supported if the backend can
-  ///         guarantee that attachment textures will not be mutated until the
-  ///         render pass has fully completed.
-  ///
-  ///         This is possible because many mobile graphics cards track
-  ///         `RenderPass` attachment state in intermediary tile memory prior to
-  ///         Storing the pass in the heap allocated attachments on DRAM.
-  ///         Metal's hazard tracking and Vulkan's barriers are granular enough
-  ///         to allow for safely accessing attachment textures prior to storage
-  ///         in the same `RenderPass`.
-  virtual bool SupportsReadFromResolve() const = 0;
-
   /// @brief  Whether the context backend supports `SamplerAddressMode::Decal`.
   virtual bool SupportsDecalSamplerAddressMode() const = 0;
 
@@ -138,8 +125,6 @@ class CapabilitiesBuilder {
 
   CapabilitiesBuilder& SetSupportsReadFromOnscreenTexture(bool value);
 
-  CapabilitiesBuilder& SetSupportsReadFromResolve(bool value);
-
   CapabilitiesBuilder& SetDefaultColorFormat(PixelFormat value);
 
   CapabilitiesBuilder& SetDefaultStencilFormat(PixelFormat value);
@@ -161,7 +146,6 @@ class CapabilitiesBuilder {
   bool supports_compute_ = false;
   bool supports_compute_subgroups_ = false;
   bool supports_read_from_onscreen_texture_ = false;
-  bool supports_read_from_resolve_ = false;
   bool supports_decal_sampler_address_mode_ = false;
   bool supports_device_transient_textures_ = false;
   std::optional<PixelFormat> default_color_format_ = std::nullopt;

@@ -4,8 +4,6 @@
 
 #include "impeller/renderer/backend/vulkan/capabilities_vk.h"
 
-#include <algorithm>
-
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
@@ -444,11 +442,6 @@ bool CapabilitiesVK::SupportsCompute() const {
 bool CapabilitiesVK::SupportsComputeSubgroups() const {
   // Set by |SetPhysicalDevice|.
   return supports_compute_subgroups_;
-}
-
-// |Capabilities|
-bool CapabilitiesVK::SupportsReadFromResolve() const {
-  return false;
 }
 
 // |Capabilities|

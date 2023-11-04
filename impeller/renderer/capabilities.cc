@@ -55,11 +55,6 @@ class StandardCapabilities final : public Capabilities {
   }
 
   // |Capabilities|
-  bool SupportsReadFromResolve() const override {
-    return supports_read_from_resolve_;
-  }
-
-  // |Capabilities|
   bool SupportsDecalSamplerAddressMode() const override {
     return supports_decal_sampler_address_mode_;
   }
@@ -92,7 +87,6 @@ class StandardCapabilities final : public Capabilities {
                        bool supports_compute,
                        bool supports_compute_subgroups,
                        bool supports_read_from_onscreen_texture,
-                       bool supports_read_from_resolve,
                        bool supports_decal_sampler_address_mode,
                        bool supports_device_transient_textures,
                        PixelFormat default_color_format,
@@ -107,7 +101,6 @@ class StandardCapabilities final : public Capabilities {
         supports_compute_subgroups_(supports_compute_subgroups),
         supports_read_from_onscreen_texture_(
             supports_read_from_onscreen_texture),
-        supports_read_from_resolve_(supports_read_from_resolve),
         supports_decal_sampler_address_mode_(
             supports_decal_sampler_address_mode),
         supports_device_transient_textures_(supports_device_transient_textures),
@@ -125,7 +118,6 @@ class StandardCapabilities final : public Capabilities {
   bool supports_compute_ = false;
   bool supports_compute_subgroups_ = false;
   bool supports_read_from_onscreen_texture_ = false;
-  bool supports_read_from_resolve_ = false;
   bool supports_decal_sampler_address_mode_ = false;
   bool supports_device_transient_textures_ = false;
   PixelFormat default_color_format_ = PixelFormat::kUnknown;
@@ -186,12 +178,6 @@ CapabilitiesBuilder& CapabilitiesBuilder::SetSupportsReadFromOnscreenTexture(
   return *this;
 }
 
-CapabilitiesBuilder& CapabilitiesBuilder::SetSupportsReadFromResolve(
-    bool read_from_resolve) {
-  supports_read_from_resolve_ = read_from_resolve;
-  return *this;
-}
-
 CapabilitiesBuilder& CapabilitiesBuilder::SetDefaultColorFormat(
     PixelFormat value) {
   default_color_format_ = value;
@@ -232,7 +218,6 @@ std::unique_ptr<Capabilities> CapabilitiesBuilder::Build() {
       supports_compute_,                                                  //
       supports_compute_subgroups_,                                        //
       supports_read_from_onscreen_texture_,                               //
-      supports_read_from_resolve_,                                        //
       supports_decal_sampler_address_mode_,                               //
       supports_device_transient_textures_,                                //
       default_color_format_.value_or(PixelFormat::kUnknown),              //
