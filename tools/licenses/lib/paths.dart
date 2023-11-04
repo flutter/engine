@@ -29,6 +29,7 @@ final Set<String> skippedPaths = <String>{
   r'flutter/lib/web_ui/dev', // these are build tools; they do not end up in Engine artifacts
   r'flutter/prebuilts',
   r'flutter/sky/packages/sky_engine/LICENSE',
+  r'flutter/third_party/benchmark', // only used by tests
   r'flutter/third_party/flatbuffers/android',
   r'flutter/third_party/flatbuffers/benchmarks',
   r'flutter/third_party/flatbuffers/docs',
@@ -74,7 +75,6 @@ final Set<String> skippedPaths = <String>{
   r'third_party/angle/third_party', // Unused by Flutter: BUILD files with forwarding targets (but no code).
   r'third_party/angle/tools', // These are build-time tools, and aren't shipped.
   r'third_party/angle/util',
-  r'third_party/benchmark', // only used by tests
   r'third_party/boringssl/src/crypto/err/err_data_generate.go',
   r'third_party/boringssl/src/fuzz', // testing tools, not shipped
   r'third_party/boringssl/src/rust', // rust-related code is not shipped
@@ -117,9 +117,9 @@ final Set<String> skippedPaths = <String>{
   r'third_party/icu/source/data/brkitr/dictionaries/cjdict.txt', // explicitly handled by ICU license
   r'third_party/icu/source/data/brkitr/dictionaries/laodict.txt', // explicitly handled by ICU license
   r'third_party/icu/source/data/dtd',
-  r'third_party/inja/doc', // documentation
-  r'third_party/inja/third_party/amalgamate', // only used at build time
-  r'third_party/inja/third_party/include/doctest', // seems to be a unit test library
+  r'flutter/third_party/inja/doc', // documentation
+  r'flutter/third_party/inja/third_party/amalgamate', // only used at build time
+  r'flutter/third_party/inja/third_party/include/doctest', // seems to be a unit test library
   r'third_party/java', // only used for Android builds
   r'third_party/json/docs',
   r'third_party/libcxx/benchmarks',
@@ -132,9 +132,9 @@ final Set<String> skippedPaths = <String>{
   r'third_party/libpng/powerpc', // not linked in
   r'third_party/libpng/projects', // not linked in
   r'third_party/libpng/scripts', // not linked in
-  r'third_party/libtess2/Contrib/nanosvg.c', // only used by the ../Example
-  r'third_party/libtess2/Contrib/nanosvg.h', // only used by the ../Example
-  r'third_party/libtess2/Example',
+  r'flutter/third_party/libtess2/Contrib/nanosvg.c', // only used by the ../Example
+  r'flutter/third_party/libtess2/Contrib/nanosvg.h', // only used by the ../Example
+  r'flutter/third_party/libtess2/Example',
   r'third_party/libwebp/doc',
   r'third_party/libwebp/gradle', // not included in our build
   r'third_party/libwebp/swig', // not included in our build
