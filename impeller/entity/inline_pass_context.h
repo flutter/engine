@@ -22,6 +22,7 @@ class InlinePassContext {
 
   InlinePassContext(
       std::shared_ptr<Context> context,
+      std::shared_ptr<RenderTargetAllocator> allocator,
       EntityPassTarget& pass_target,
       uint32_t pass_texture_reads,
       std::optional<RenderPassResult> collapsed_parent_pass = std::nullopt);
@@ -38,6 +39,7 @@ class InlinePassContext {
 
  private:
   std::shared_ptr<Context> context_;
+  std::shared_ptr<RenderTargetAllocator> allocator_;
   EntityPassTarget& pass_target_;
   std::shared_ptr<CommandBuffer> command_buffer_;
   std::shared_ptr<RenderPass> pass_;

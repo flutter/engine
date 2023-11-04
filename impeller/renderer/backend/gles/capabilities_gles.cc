@@ -173,10 +173,6 @@ bool CapabilitiesGLES::SupportsReadFromOnscreenTexture() const {
   return false;
 }
 
-bool CapabilitiesGLES::SupportsReadFromResolve() const {
-  return false;
-}
-
 bool CapabilitiesGLES::SupportsDecalSamplerAddressMode() const {
   return supports_decal_sampler_address_mode_;
 }

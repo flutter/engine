@@ -22,7 +22,7 @@ class EntityPassTarget {
   ///         result of `GetRenderTarget` is guaranteed to be able to read the
   ///         previous pass's backdrop texture (which is returned by this
   ///         method).
-  std::shared_ptr<Texture> Flip(Allocator& allocator);
+  std::shared_ptr<Texture> Flip(RenderTargetAllocator& allocator);
 
   const RenderTarget& GetRenderTarget() const;
 

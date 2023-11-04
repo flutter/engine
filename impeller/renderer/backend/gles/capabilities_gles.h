@@ -101,9 +101,6 @@ class CapabilitiesGLES final
   bool SupportsReadFromOnscreenTexture() const override;
 
   // |Capabilities|
-  bool SupportsReadFromResolve() const override;
-
-  // |Capabilities|
   bool SupportsDecalSamplerAddressMode() const override;
 
   // |Capabilities|

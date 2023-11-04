@@ -7,13 +7,14 @@
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/texture.h"
+#include "impeller/renderer/render_target.h"
 
 namespace impeller {
 
 EntityPassTarget::EntityPassTarget(const RenderTarget& render_target)
     : target_(render_target) {}
 
-std::shared_ptr<Texture> EntityPassTarget::Flip(Allocator& allocator) {
+std::shared_ptr<Texture> EntityPassTarget::Flip(RenderTargetAllocator& allocator) {
   auto color0 = target_.GetColorAttachments().find(0)->second;
   if (!color0.resolve_texture) {
     VALIDATION_LOG << "EntityPassTarget Flip should never be called for a "

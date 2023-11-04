@@ -15,10 +15,12 @@ namespace impeller {
 
 InlinePassContext::InlinePassContext(
     std::shared_ptr<Context> context,
+    std::shared_ptr<RenderTargetAllocator> allocator,
     EntityPassTarget& pass_target,
     uint32_t pass_texture_reads,
     std::optional<RenderPassResult> collapsed_parent_pass)
     : context_(std::move(context)),
+      allocator_(std::move(allocator)),
       pass_target_(pass_target),
       is_collapsed_(collapsed_parent_pass.has_value()) {
   if (collapsed_parent_pass.has_value()) {
@@ -106,7 +108,7 @@ InlinePassContext::RenderPassResult InlinePassContext::GetRenderPass(
                        ->second.resolve_texture != nullptr;
     if (pass_count_ > 0 && is_msaa) {
       result.backdrop_texture =
-          pass_target_.Flip(*context_->GetResourceAllocator());
+          pass_target_.Flip(*allocator_);
       if (!result.backdrop_texture) {
         VALIDATION_LOG << "Could not flip the EntityPass render target.";
       }
