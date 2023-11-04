@@ -107,8 +107,7 @@ InlinePassContext::RenderPassResult InlinePassContext::GetRenderPass(
                        .find(0)
                        ->second.resolve_texture != nullptr;
     if (pass_count_ > 0 && is_msaa) {
-      result.backdrop_texture =
-          pass_target_.Flip(*allocator_);
+      result.backdrop_texture = pass_target_.Flip(*allocator_);
       if (!result.backdrop_texture) {
         VALIDATION_LOG << "Could not flip the EntityPass render target.";
       }

@@ -14,7 +14,8 @@ namespace impeller {
 EntityPassTarget::EntityPassTarget(const RenderTarget& render_target)
     : target_(render_target) {}
 
-std::shared_ptr<Texture> EntityPassTarget::Flip(RenderTargetAllocator& allocator) {
+std::shared_ptr<Texture> EntityPassTarget::Flip(
+    RenderTargetAllocator& allocator) {
   auto color0 = target_.GetColorAttachments().find(0)->second;
   if (!color0.resolve_texture) {
     VALIDATION_LOG << "EntityPassTarget Flip should never be called for a "
