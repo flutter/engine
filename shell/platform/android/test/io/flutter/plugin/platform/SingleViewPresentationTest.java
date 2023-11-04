@@ -4,6 +4,7 @@
 
 package io.flutter.plugin.platform;
 
+import static android.os.Build.VERSION_CODES.KITKAT;
 import static android.os.Build.VERSION_CODES.P;
 import static android.os.Build.VERSION_CODES.R;
 import static org.junit.Assert.assertEquals;
