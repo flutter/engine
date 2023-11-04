@@ -55,6 +55,13 @@ TEST(RectTest, RectMakeSize) {
   }
 }
 
+// Performs an EXPECT_EQ on the operation of Rect::NormalizePoint and
+// outputs the raw data for the test case on failure to help with diagnosis
+#define TEST_NORMALIZE_POINT(RT, PT, l, t, r, b, px, py, expected)            \
+  EXPECT_EQ(RT::MakeLTRB(l, t, r, b).NormalizePoint(PT(px, py)), expected)    \
+      << #RT "::MakeLTRB(" << l << ", " << t << ", " << r << ", " << b << ")" \
+      << ".NormalizePoint(" << #PT "(" << px << ", " << py << "))"
+
 TEST(RectTest, NormalizePoint) {
   // Tests finite rects including:
   // - points at the corners, inside, and outside
@@ -62,51 +69,55 @@ TEST(RectTest, NormalizePoint) {
   //   negative width and/or height
   // - all combinations of integer and scalar rects and points.
 
-  // Tests one rectangle in all 4 combinations of integer and scalar data
-  // and also against NaN point values
+  // Tests one rectangle against one point in all 4 combinations of integer
+  // and scalar data types and with NaN and infinity point values
   auto test_one = [](int64_t l, int64_t t, int64_t r, int64_t b,  //
-                     const std::string& rect_desc,                //
                      int64_t px, int64_t py,                      //
-                     const std::string& pt_desc,                  //
                      Point expected) {
-    // Scalar point inside Scalar rect
-    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(Point(px, py)),
-              expected)
-        << "Point(" << pt_desc << ") in " << rect_desc << " Rect";
-
-    // Scalar point inside Integer rect
-    EXPECT_EQ(IRect::MakeLTRB(l, t, r, b).NormalizePoint(Point(px, py)),
-              expected)
-        << "Point(" << pt_desc << ") in " << rect_desc << " IRect";
-
-    // Integer point inside Scalar rect
-    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(IPoint(px, py)),
-              expected)
-        << "IPoint(" << pt_desc << ") in " << rect_desc << " Rect";
-
-    // Integer point inside Integer rect
-    EXPECT_EQ(IRect::MakeLTRB(l, t, r, b).NormalizePoint(IPoint(px, py)),
-              expected)
-        << "IPoint(" << pt_desc << ") in " << rect_desc << " IRect";
+    // First test with all combinations of [I]Rect and [I]Point
+    // clang-format off
+    TEST_NORMALIZE_POINT( Rect,  Point, l, t, r, b, px, py, expected);
+    TEST_NORMALIZE_POINT(IRect,  Point, l, t, r, b, px, py, expected);
+    TEST_NORMALIZE_POINT( Rect, IPoint, l, t, r, b, px, py, expected);
+    TEST_NORMALIZE_POINT(IRect, IPoint, l, t, r, b, px, py, expected);
+    // clang-format on
 
     // Now test nan handling by substituting a nan for the X and/or Y of
     // the point.
     auto nan = std::numeric_limits<Scalar>::quiet_NaN();
-    auto nan_x = Point(nan, py);
-    auto nan_y = Point(px, nan);
-    auto nan_p = Point(nan, nan);
-    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(nan_x), Point())
-        << "Point(NaN x) in " << rect_desc << " Rect";
-    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(nan_y), Point())
-        << "Point(NaN y) in " << rect_desc << " Rect";
-    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(nan_p), Point())
-        << "Point(NaN x&y) in " << rect_desc << " Rect";
-    EXPECT_EQ(IRect::MakeLTRB(l, t, r, b).NormalizePoint(nan_x), Point())
-        << "Point(NaN x) in " << rect_desc << " Rect";
-    EXPECT_EQ(IRect::MakeLTRB(l, t, r, b).NormalizePoint(nan_y), Point())
-        << "Point(NaN y) in " << rect_desc << " Rect";
-    EXPECT_EQ(IRect::MakeLTRB(l, t, r, b).NormalizePoint(nan_p), Point())
-        << "Point(NaN x&y) in " << rect_desc << " Rect";
+    // Test with Rect and IRect, but we have to use Point to hold the NaN
+    // clang-format off
+    TEST_NORMALIZE_POINT( Rect, Point, l, t, r, b, nan,  py, Point());
+    TEST_NORMALIZE_POINT( Rect, Point, l, t, r, b,  px, nan, Point());
+    TEST_NORMALIZE_POINT( Rect, Point, l, t, r, b, nan, nan, Point());
+    TEST_NORMALIZE_POINT(IRect, Point, l, t, r, b, nan,  py, Point());
+    TEST_NORMALIZE_POINT(IRect, Point, l, t, r, b,  px, nan, Point());
+    TEST_NORMALIZE_POINT(IRect, Point, l, t, r, b, nan, nan, Point());
+    // clang-format on
+
+    // Now test +/- infinity handling by substituting an infinity for the
+    // X and/or Y of the point.
+    auto inf = std::numeric_limits<Scalar>::infinity();
+
+    // Test with Rect, but we have to use Point to hold the infinity
+    // clang-format off
+    TEST_NORMALIZE_POINT( Rect, Point, l, t, r, b,  inf,   py, Point());
+    TEST_NORMALIZE_POINT( Rect, Point, l, t, r, b,   px,  inf, Point());
+    TEST_NORMALIZE_POINT( Rect, Point, l, t, r, b,  inf,  inf, Point());
+    TEST_NORMALIZE_POINT( Rect, Point, l, t, r, b, -inf,   py, Point());
+    TEST_NORMALIZE_POINT( Rect, Point, l, t, r, b,   px, -inf, Point());
+    TEST_NORMALIZE_POINT( Rect, Point, l, t, r, b, -inf, -inf, Point());
+    // clang-format on
+
+    // Test with IRect, but we have to use Point to hold the infinity
+    // clang-format off
+    TEST_NORMALIZE_POINT(IRect, Point, l, t, r, b,  inf,   py, Point());
+    TEST_NORMALIZE_POINT(IRect, Point, l, t, r, b,   px,  inf, Point());
+    TEST_NORMALIZE_POINT(IRect, Point, l, t, r, b,  inf,  inf, Point());
+    TEST_NORMALIZE_POINT(IRect, Point, l, t, r, b, -inf,   py, Point());
+    TEST_NORMALIZE_POINT(IRect, Point, l, t, r, b,   px, -inf, Point());
+    TEST_NORMALIZE_POINT(IRect, Point, l, t, r, b, -inf, -inf, Point());
+    // clang-format on
   };
 
   // Tests the rectangle as specified, which is assumed to be non-empty
@@ -115,41 +126,48 @@ TEST(RectTest, NormalizePoint) {
   // both.
   auto test = [&test_one](int64_t l, int64_t t, int64_t r, int64_t b,  //
                           int64_t px, int64_t py,                      //
-                          const std::string& pt_desc, Point expected) {
+                          Point expected) {
     // clang-format off
-    //                         rect                    point   expected
-    //         rect         description     point      desc     result
-    test_one(l, t, r, b,    "non-empty",   px, py,   pt_desc,  expected);
-    test_one(l, t, l, b,    "LR empty",    px, py,   pt_desc,  Point());
-    test_one(r, t, l, b,   "LR reversed",  px, py,   pt_desc,  Point());
-    test_one(l, t, r, t,    "TB empty",    px, py,   pt_desc,  Point());
-    test_one(l, b, r, t,   "TB reversed",  px, py,   pt_desc,  Point());
-    test_one(l, t, l, t,    "all empty",   px, py,   pt_desc,  Point());
-    test_one(r, b, l, t,  "all reversed",  px, py,   pt_desc,  Point());
+    //                             expected
+    //         rect        point    result
+    test_one(l, t, r, b,  px, py,  expected);  // normal
+    test_one(l, t, l, b,  px, py,  Point());   // empty horizontally
+    test_one(r, t, l, b,  px, py,  Point());   // reversed horizontally
+    test_one(l, t, r, t,  px, py,  Point());   // empty vertically
+    test_one(l, b, r, t,  px, py,  Point());   // reversed vertically
+    test_one(l, t, l, t,  px, py,  Point());   // empty in both axes
+    test_one(r, b, l, t,  px, py,  Point());   // reversed in both axes
     // clang-format on
   };
 
   // clang-format off
-  //        rect             point        point          expected
-  //  [ l    t    r    b ] [ px   py ]  description       result
-  test(100, 100, 200, 200,  100, 100,      "UL",       Point(0, 0));
-  test(100, 100, 200, 200,  200, 100,      "UR",       Point(1, 0));
-  test(100, 100, 200, 200,  200, 200,      "LR",       Point(1, 1));
-  test(100, 100, 200, 200,  100, 200,      "LL",       Point(0, 1));
-  test(100, 100, 200, 200,  150, 150,    "Center",     Point(0.5, 0.5));
-  test(100, 100, 200, 200,    0,   0,   "outside UL",  Point(-1, -1));
-  test(100, 100, 200, 200,  300,   0,   "outside UR",  Point(2, -1));
-  test(100, 100, 200, 200,  300, 300,   "outside LR",  Point(2, 2));
-  test(100, 100, 200, 200,    0, 300,   "outside LL",  Point(-1, 2));
+  //        rect             point       expected
+  //  [ l    t    r    b ] [ px   py ]    result
+  test(100, 100, 200, 200,  100, 100,   Point(0, 0));      // Upper Left  (UL)
+  test(100, 100, 200, 200,  200, 100,   Point(1, 0));      // Upper Right (UR)
+  test(100, 100, 200, 200,  200, 200,   Point(1, 1));      // Lower Right (LR)
+  test(100, 100, 200, 200,  100, 200,   Point(0, 1));      // Lower Left  (LL)
+  test(100, 100, 200, 200,  150, 150,   Point(0.5, 0.5));  // Center
+  test(100, 100, 200, 200,    0,   0,   Point(-1, -1));    // Outside UL
+  test(100, 100, 200, 200,  300,   0,   Point(2, -1));     // Outside UR
+  test(100, 100, 200, 200,  300, 300,   Point(2, 2));      // Outside LR
+  test(100, 100, 200, 200,    0, 300,   Point(-1, 2));     // Outside LL
   // clang-format on
 
-  // We can't test the true min and max due to overflow of the xywh
-  // internal representation, but we can test with half their values.
+  // We can't test the true min and max 64-bit values due to overflow of
+  // the xywh internal representation, but we can test with half their
+  // values.
+  //
   // When TRect is converted to ltrb notation, we can relax this
   // restriction.
   int64_t min_int = std::numeric_limits<int64_t>::min() / 2;
   int64_t max_int = std::numeric_limits<int64_t>::max() / 2;
-  test(min_int, 100, max_int, 200, 0, 150, "max int center", Point(0.5, 0.5));
+
+  // clang-format off
+  test(min_int,     100, max_int,     200,   0, 150, Point(0.5, 0.5));
+  test(    100, min_int,     200, max_int, 150,   0, Point(0.5, 0.5));
+  test(min_int, min_int, max_int, max_int, 150, 150, Point(0.5, 0.5));
+  // clang-format on
 }
 
 TEST(RectTest, NormalizePointToNonFiniteRects) {
@@ -161,101 +179,47 @@ TEST(RectTest, NormalizePointToNonFiniteRects) {
   // Tests one rectangle against supplied point values and NaN replacements.
   auto test = [](Scalar l, Scalar t, Scalar r, Scalar b,  //
                  Scalar px, Scalar py,                    //
-                 const std::string& pt_desc,              //
                  Point expected) {
     auto nan = std::numeric_limits<Scalar>::quiet_NaN();
     auto inf = std::numeric_limits<Scalar>::infinity();
 
-    // Scalar point inside Scalar rect
-    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(Point(px, py)),
-              expected)
-        << "Point(" << pt_desc << ") in Rect";
+    TEST_NORMALIZE_POINT(Rect, Point, l, t, r, b, px, py, expected);
 
-    // Scalar point inside Scalar rect with NaN left
-    EXPECT_EQ(Rect::MakeLTRB(nan, t, r, b).NormalizePoint(Point(px, py)),
-              Point())
-        << "Point(" << pt_desc << ") in Rect NaN Left";
+    // Now retest with NaN replacing each rect parameter - producing (0, 0)
+    TEST_NORMALIZE_POINT(Rect, Point, nan, t, r, b, px, py, Point());
+    TEST_NORMALIZE_POINT(Rect, Point, l, nan, r, b, px, py, Point());
+    TEST_NORMALIZE_POINT(Rect, Point, l, t, nan, b, px, py, Point());
+    TEST_NORMALIZE_POINT(Rect, Point, l, t, r, nan, px, py, Point());
 
-    // Scalar point inside Scalar rect with NaN top
-    EXPECT_EQ(Rect::MakeLTRB(l, nan, r, b).NormalizePoint(Point(px, py)),
-              Point())
-        << "Point(" << pt_desc << ") in Rect NaN Top";
+    // Now retest with -inf replacing the left/top values - producing (0, 0)
+    TEST_NORMALIZE_POINT(Rect, Point, -inf, t, r, b, px, py, Point());
+    TEST_NORMALIZE_POINT(Rect, Point, l, -inf, r, b, px, py, Point());
 
-    // Scalar point inside Scalar rect with NaN right
-    EXPECT_EQ(Rect::MakeLTRB(l, t, nan, b).NormalizePoint(Point(px, py)),
-              Point())
-        << "Point(" << pt_desc << ") in Rect NaN Left";
-
-    // Scalar point inside Scalar rect with NaN bottom
-    EXPECT_EQ(Rect::MakeLTRB(l, t, r, nan).NormalizePoint(Point(px, py)),
-              Point())
-        << "Point(" << pt_desc << ") in Rect NaN Top";
-
-    // Scalar point inside Scalar rect with infinite left
-    EXPECT_EQ(Rect::MakeLTRB(-inf, t, r, b).NormalizePoint(Point(px, py)),
-              Point())
-        << "Point(" << pt_desc << ") in Rect -Inf Left";
-
-    // Scalar point inside Scalar rect with infinite top
-    EXPECT_EQ(Rect::MakeLTRB(l, -inf, r, b).NormalizePoint(Point(px, py)),
-              Point())
-        << "Point(" << pt_desc << ") in Rect -Inf Top";
-
-    // Scalar point inside Scalar rect with infinite right
-    EXPECT_EQ(Rect::MakeLTRB(l, t, inf, b).NormalizePoint(Point(px, py)),
-              Point(0, expected.y))
-        << "Point(" << pt_desc << ") in Rect Inf Right";
-
-    // Scalar point inside Scalar rect with infinite bottom
-    EXPECT_EQ(Rect::MakeLTRB(l, t, r, inf).NormalizePoint(Point(px, py)),
-              Point(expected.x, 0))
-        << "Point(" << pt_desc << ") in Rect Inf Bottom";
-
-    // Now test NaN handling by substituting a NaN for the X and/or Y of
-    // the point.
-    auto nan_x = Point(nan, py);
-    auto nan_y = Point(px, nan);
-    auto nan_p = Point(nan, nan);
-    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(nan_x), Point())
-        << "Point(NaN x) in Rect";
-    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(nan_y), Point())
-        << "Point(NaN y) in Rect";
-    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(nan_p), Point())
-        << "Point(NaN x&y) in Rect";
-
-    // Now test +/- infinity handling by substituting an infinity for the
-    // X and/or Y of the point.
-    auto inf_x = Point(inf, py);
-    auto inf_y = Point(px, inf);
-    auto inf_p = Point(inf, inf);
-    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(inf_x), Point())
-        << "Point(Infinite x) in Rect";
-    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(inf_y), Point())
-        << "Point(Infinite y) in Rect";
-    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(inf_p), Point())
-        << "Point(Infinite x&y) in Rect";
-    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(-inf_x), Point())
-        << "Point(-Infinite x) in Rect";
-    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(-inf_y), Point())
-        << "Point(-Infinite y) in Rect";
-    EXPECT_EQ(Rect::MakeLTRB(l, t, r, b).NormalizePoint(-inf_p), Point())
-        << "Point(-Infinite x&y) in Rect";
+    // Now retest with +inf replacing the right/bottom values which
+    // produces a valid result, but the associated normalized coordinate
+    // will always be 0.
+    TEST_NORMALIZE_POINT(Rect, Point, l, t, inf, b, px, py,
+                         Point(0, expected.y));
+    TEST_NORMALIZE_POINT(Rect, Point, l, t, r, inf, px, py,
+                         Point(expected.x, 0));
   };
 
   // clang-format off
-  //        rect             point         point         expected
-  //  [ l    t    r    b ] [ px   py ]   description       result
-  test(100, 100, 200, 200,  100, 100,       "UL",       Point(0, 0));
-  test(100, 100, 200, 200,  200, 100,       "UR",       Point(1, 0));
-  test(100, 100, 200, 200,  200, 200,       "LR",       Point(1, 1));
-  test(100, 100, 200, 200,  100, 200,       "LL",       Point(0, 1));
-  test(100, 100, 200, 200,  150, 150,     "Center",     Point(0.5, 0.5));
-  test(100, 100, 200, 200,    0,   0,   "outside UL",   Point(-1, -1));
-  test(100, 100, 200, 200,  300,   0,   "outside UR",   Point(2, -1));
-  test(100, 100, 200, 200,  300, 300,   "outside LR",   Point(2, 2));
-  test(100, 100, 200, 200,    0, 300,   "outside LL",   Point(-1, 2));
+  //          rect             point       expected
+  //  [ l    t    r    b ]  [ px   py ]     result
+  test(100, 100, 200, 200,   100, 100,   Point(0, 0));      // Upper Left  (UL)
+  test(100, 100, 200, 200,   200, 100,   Point(1, 0));      // Upper Right (UR)
+  test(100, 100, 200, 200,   200, 200,   Point(1, 1));      // Lower Right (LR)
+  test(100, 100, 200, 200,   100, 200,   Point(0, 1));      // Lower Left  (LL)
+  test(100, 100, 200, 200,   150, 150,   Point(0.5, 0.5));  // Center
+  test(100, 100, 200, 200,     0,   0,   Point(-1, -1));    // Outside UL
+  test(100, 100, 200, 200,   300,   0,   Point(2, -1));     // Outside UR
+  test(100, 100, 200, 200,   300, 300,   Point(2, 2));      // Outside LR
+  test(100, 100, 200, 200,     0, 300,   Point(-1, 2));     // Outside LL
   // clang-format on
 }
+
+#undef TEST_NORMALIZE_POINT
 
 }  // namespace testing
 }  // namespace impeller
