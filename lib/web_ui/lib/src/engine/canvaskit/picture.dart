@@ -4,7 +4,6 @@
 
 import 'dart:typed_data';
 
-import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../scene_painting.dart';
@@ -13,6 +12,7 @@ import 'canvaskit_api.dart';
 import 'image.dart';
 import 'native_memory.dart';
 import 'render_canvas_factory.dart';
+import 'renderer.dart';
 import 'surface.dart';
 
 /// Implements [ui.Picture] on top of [SkPicture].
