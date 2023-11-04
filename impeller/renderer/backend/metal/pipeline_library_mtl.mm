@@ -31,7 +31,7 @@ static void GetMTLRenderPipelineDescriptor(const PipelineDescriptor& desc,
   auto descriptor = [[MTLRenderPipelineDescriptor alloc] init];
   descriptor.label = @(desc.GetLabel().c_str());
   descriptor.rasterSampleCount = static_cast<NSUInteger>(desc.GetSampleCount());
-  bool async = false;
+  bool created_specialized_function = false;
 
   if (const auto& vertex_descriptor = desc.GetVertexDescriptor()) {
     VertexDescriptorMTL vertex_descriptor_mtl;
@@ -55,7 +55,7 @@ static void GetMTLRenderPipelineDescriptor(const PipelineDescriptor& desc,
 
   // This latch is used to ensure that GetMTLFunctionSpecialized does not finish
   // before the descriptor is completely set up.
-  fml::CountDownLatch latch(1u);
+  auto latch = std::make_shared<fml::CountDownLatch>(1u);
   const auto& constants = desc.GetSpecializationConstants();
   for (const auto& entry : desc.GetStageEntrypoints()) {
     if (entry.first == ShaderStage::kVertex) {
@@ -67,21 +67,22 @@ static void GetMTLRenderPipelineDescriptor(const PipelineDescriptor& desc,
         descriptor.fragmentFunction =
             ShaderFunctionMTL::Cast(*entry.second).GetMTLFunction();
       } else {
-        async = true;
+        // This code only expects a single specialized function per pipeline.
+        FML_CHECK(!created_specialized_function);
+        created_specialized_function = true;
         ShaderFunctionMTL::Cast(*entry.second)
             .GetMTLFunctionSpecialized(
                 constants,
-                [callback, descriptor, &latch](id<MTLFunction> function) {
+                [callback, descriptor, latch](id<MTLFunction> function) {
                   descriptor.fragmentFunction = function;
-                  latch.Wait();
                   callback(descriptor);
                 });
       }
     }
   }
 
-  latch.CountDown();
-  if (!async) {
+  latch->CountDown();
+  if (!created_specialized_function) {
     callback(descriptor);
   }
 }

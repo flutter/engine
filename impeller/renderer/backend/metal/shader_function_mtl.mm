@@ -30,11 +30,12 @@ void ShaderFunctionMTL::GetMTLFunctionSpecialized(
                              atIndex:index];
     index++;
   }
+  CompileCallback callback_value = callback;
   [library_ newFunctionWithName:@(GetName().data())
                  constantValues:constantValues
               completionHandler:^(id<MTLFunction> _Nullable function,
                                   NSError* _Nullable error) {
-                callback(function);
+                callback_value(function);
               }];
 }
 
