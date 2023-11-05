@@ -86,8 +86,6 @@ class ParagraphSkia : public Paragraph {
 
   Range<size_t> GetWordBoundary(size_t offset) override;
 
-  SkFont GetFontAt(size_t utf16Offset) const override;
-
  private:
   TextStyle SkiaToTxt(const skia::textlayout::TextStyle& skia);
 

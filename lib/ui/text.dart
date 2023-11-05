@@ -1191,16 +1191,13 @@ class FontVariation {
   String toString() => "FontVariation('$axis', $value)";
 }
 
-/// The measurements of a glyph (or a sequence of visually connected glyphs)
-/// within a paragraph.
-///
-/// This object is typically associated with a codepoint (or a code unit) in the
-/// paragraph.
+/// The measurements of a character (or a sequence of visually connected
+/// characters) within a paragraph.
 ///
 /// See also:
 ///
 ///  * [Paragraph.getGlyphInfoAt], which finds the [GlyphInfo] associated with
-///    a code unit.
+///    a code unit in the text.
 ///  * [Paragraph.getClosestGlyphInfoForOffset], which finds the [GlyphInfo] of
 ///    the glyph(s) onscreen that's closest to the given [Offset].
 final class GlyphInfo {
@@ -1209,18 +1206,16 @@ final class GlyphInfo {
       graphemeClusterCodeUnitRange = TextRange(start: graphemeStart, end: graphemeEnd),
       writingDirection = isLTR ? TextDirection.ltr : TextDirection.rtl;
 
-  /// The layout rect of the grapheme cluster the associated codepoint is part
-  /// of, in the paragraph's coordiates.
+  /// The layout bounding rect of the associated character, in the paragraph's
+  /// coordinates.
   ///
-  /// This is **not** a tight bounding box that encloses the glyph cluster.
-  /// Rather, the vertical extent reported is derived from the font metrics
-  /// (instead of glyph metrics), and the horizontal extent is the accumulated
-  /// (since it may consist of multiple glyphs) horizontal advance of the
-  /// grapheme clsuter.
+  /// This is **not** the tight bounding box that encloses the character's outline.
+  /// The vertical extent reported is derived from the font metrics (instead of
+  /// glyph metrics), and the horizontal extent is the horizontal advance of the
+  /// character.
   final Rect graphemeClusterLayoutBounds;
 
-  /// The UTF-16 range of the grapheme cluster that encloses the associated
-  /// codepoint.
+  /// The UTF-16 range of the associated character in the text.
   final TextRange graphemeClusterCodeUnitRange;
 
   /// The writing direction within the [GlyphInfo].
@@ -3024,18 +3019,16 @@ abstract class Paragraph {
   /// Returns the text position closest to the given offset.
   TextPosition getPositionForOffset(Offset offset);
 
-  /// Returns the [GlyphInfo] of the closest glyph to the given `offset` in the
+  /// Returns the [GlyphInfo] of the glyph closest to the given `offset` in the
   /// paragraph coordinate system, or null if the glyph is not in the visible
   /// range.
   ///
-  /// This method can be used to implement glyph hit-testing. The "closest" in
-  /// the method name doesn't mean the returned [GlyphInfo] will be closest in
-  /// terms of euclidean distance: this method first finds the line closest to
-  /// `offset.dy`, and then returns the [GlyphInfo] of the closest glyph(s)
-  /// within that line.
+  /// This method first finds the line closest to `offset.dy`, and then returns
+  /// the [GlyphInfo] of the closest glyph(s) within that line.
   ///
-  /// The returned [GlyphInfo] can help determine whether the given `offset`
-  /// directly hits a glyph in the paragraph.
+  /// This method can be used to implement per-glyph hit-testing. The returned
+  /// [GlyphInfo] can help determine whether the given `offset` directly hits a
+  /// glyph in the paragraph.
   GlyphInfo? getClosestGlyphInfoForOffset(Offset offset);
 
   /// Returns the [GlyphInfo] located at the given UTF-16 `codeUnitOffset` in

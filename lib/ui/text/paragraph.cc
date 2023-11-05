@@ -120,14 +120,9 @@ Dart_Handle Paragraph::getPositionForOffset(double dx, double dy) {
   return tonic::DartConverter<decltype(result)>::ToDart(result);
 }
 
-Dart_Handle Paragraph::getGlyphInfoAt(unsigned utf16Offset,
-                                      Dart_Handle constructor) const {
-  skia::textlayout::Paragraph::GlyphInfo glyphInfo;
-  const bool found = m_paragraph->GetGlyphInfoAt(utf16Offset, &glyphInfo);
-  if (!found) {
-    return Dart_Null();
-  }
-  Dart_Handle arguments[7] = {
+Dart_Handle glyphInfoFrom(Dart_Handle constructor,
+                          skia::textlayout::Paragraph::GlyphInfo& glyphInfo) {
+  std::array<Dart_Handle, 7> arguments = {
       Dart_NewDouble(glyphInfo.fGraphemeLayoutBounds.fLeft),
       Dart_NewDouble(glyphInfo.fGraphemeLayoutBounds.fTop),
       Dart_NewDouble(glyphInfo.fGraphemeLayoutBounds.fRight),
@@ -137,9 +132,17 @@ Dart_Handle Paragraph::getGlyphInfoAt(unsigned utf16Offset,
       Dart_NewBoolean(glyphInfo.fDirection ==
                       skia::textlayout::TextDirection::kLtr),
   };
+  return Dart_InvokeClosure(constructor, arguments.size(), arguments.data());
+}
 
-  Dart_Handle handle = Dart_InvokeClosure(
-      constructor, sizeof(arguments) / sizeof(Dart_Handle), arguments);
+Dart_Handle Paragraph::getGlyphInfoAt(unsigned utf16Offset,
+                                      Dart_Handle constructor) const {
+  skia::textlayout::Paragraph::GlyphInfo glyphInfo;
+  const bool found = m_paragraph->GetGlyphInfoAt(utf16Offset, &glyphInfo);
+  if (!found) {
+    return Dart_Null();
+  }
+  Dart_Handle handle = glyphInfoFrom(constructor, glyphInfo);
   tonic::CheckAndHandleError(handle);
   return handle;
 }
@@ -153,19 +156,7 @@ Dart_Handle Paragraph::getClosestGlyphInfo(double dx,
   if (!found) {
     return Dart_Null();
   }
-  Dart_Handle arguments[7] = {
-      Dart_NewDouble(glyphInfo.fGraphemeLayoutBounds.fLeft),
-      Dart_NewDouble(glyphInfo.fGraphemeLayoutBounds.fTop),
-      Dart_NewDouble(glyphInfo.fGraphemeLayoutBounds.fRight),
-      Dart_NewDouble(glyphInfo.fGraphemeLayoutBounds.fBottom),
-      Dart_NewInteger(glyphInfo.fGraphemeClusterTextRange.start),
-      Dart_NewInteger(glyphInfo.fGraphemeClusterTextRange.end),
-      Dart_NewBoolean(glyphInfo.fDirection ==
-                      skia::textlayout::TextDirection::kLtr),
-  };
-
-  Dart_Handle handle = Dart_InvokeClosure(
-      constructor, sizeof(arguments) / sizeof(Dart_Handle), arguments);
+  Dart_Handle handle = glyphInfoFrom(constructor, glyphInfo);
   tonic::CheckAndHandleError(handle);
   return handle;
 }

@@ -3208,7 +3208,7 @@ extension SkGlyphClusterInfoExtension on SkGlyphClusterInfo {
   @JS('graphemeClusterTextRange')
   external SkTextRange get _textRange;
 
-  ui.GlyphInfo get _glyphCluster {
+  ui.GlyphInfo get _glyphInfo {
     final ui.Rect bounds = fromSkRect(_bounds.toDart);
     final ui.TextRange textRange = ui.TextRange(start: _textRange.start.toInt(), end: _textRange.end.toInt());
     return ui.GlyphInfo(bounds, textRange, ui.TextDirection.values[_direction.value.toInt()]);
@@ -3319,11 +3319,11 @@ extension SkParagraphExtension on SkParagraph {
 
   @JS('getGlyphInfoAt')
   external SkGlyphClusterInfo? _getGlyphInfoAt(JSNumber position);
-  ui.GlyphInfo? getGlyphInfoAt(double position) => _getGlyphInfoAt(position.toJS)?._glyphCluster;
+  ui.GlyphInfo? getGlyphInfoAt(double position) => _getGlyphInfoAt(position.toJS)?._glyphInfo;
 
   @JS('getClosestGlyphInfoAtCoordinate')
   external SkGlyphClusterInfo? _getClosestGlyphInfoAtCoordinate(JSNumber x, JSNumber y);
-  ui.GlyphInfo? getClosestGlyphInfoAt(double x, double y) => _getClosestGlyphInfoAtCoordinate(x.toJS, y.toJS)?._glyphCluster;
+  ui.GlyphInfo? getClosestGlyphInfoAt(double x, double y) => _getClosestGlyphInfoAtCoordinate(x.toJS, y.toJS)?._glyphInfo;
 
   @JS('getWordBoundary')
   external SkTextRange _getWordBoundary(JSNumber position);
