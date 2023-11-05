@@ -832,6 +832,13 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 #pragma mark - Framework-internal methods
 
 - (bool)addViewController:(FlutterViewController*)controller {
+  // Adding a view controller when there is no implicit view should always
+  // assign it to the implicit view controller. This might seem confusing at a
+  // glace, but it's the best we can do to ensure backward compatibility.
+  if ([self viewControllerForId:kFlutterImplicitViewId] == nil) {
+    self.viewController = controller;
+    return true;
+  }
   FlutterViewId viewId = [self generateViewId];
   [self registerViewController:controller forId:viewId];
   if (_engine != nullptr) {
