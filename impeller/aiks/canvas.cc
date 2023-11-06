@@ -271,8 +271,9 @@ void Canvas::DrawRRect(Rect rect, Scalar corner_radius, const Paint& paint) {
 
 void Canvas::DrawCircle(Point center, Scalar radius, const Paint& paint) {
   Size half_size(radius, radius);
-  if (AttemptDrawBlurredRRect(Rect(center - half_size, half_size * 2), radius,
-                              paint)) {
+  if (AttemptDrawBlurredRRect(
+          Rect::MakeOriginSize(center - half_size, half_size * 2), radius,
+          paint)) {
     return;
   }
   auto circle_path =
@@ -325,8 +326,11 @@ void Canvas::ClipRRect(const Rect& rect,
                   .SetBounds(rect)
                   .TakePath();
 
-  std::optional<Rect> inner_rect = (corner_radius * 2 < rect.size.width &&
-                                    corner_radius * 2 < rect.size.height)
+  auto size = rect.GetSize();
+  // Does the rounded rect have a flat part on the top/bottom or left/right?
+  bool flat_on_TB = corner_radius * 2 < size.width;
+  bool flat_on_LR = corner_radius * 2 < size.height;
+  std::optional<Rect> inner_rect = (flat_on_LR && flat_on_TB)
                                        ? rect.Expand(-corner_radius)
                                        : std::make_optional<Rect>();
   auto geometry = Geometry::MakeFillPath(path, inner_rect);
@@ -352,12 +356,12 @@ void Canvas::ClipRRect(const Rect& rect,
         // without involving the curved corners
         // Since this is a subtract operation, we can subtract each
         // rectangle piece individually without fear of interference.
-        if (corner_radius * 2 < rect.size.width) {
+        if (flat_on_TB) {
           SubtractCulling(Rect::MakeLTRB(
               rect.GetLeft() + corner_radius, rect.GetTop(),
               rect.GetRight() - corner_radius, rect.GetBottom()));
         }
-        if (corner_radius * 2 < rect.size.height) {
+        if (flat_on_LR) {
           SubtractCulling(Rect::MakeLTRB(
               rect.GetLeft(), rect.GetTop() + corner_radius,  //
               rect.GetRight(), rect.GetBottom() - corner_radius));
@@ -478,8 +482,7 @@ void Canvas::DrawImage(const std::shared_ptr<Image>& image,
   }
 
   const auto source = Rect::MakeSize(image->GetSize());
-  const auto dest =
-      Rect::MakeXYWH(offset.x, offset.y, source.size.width, source.size.height);
+  const auto dest = source.Shift(offset);
 
   DrawImageRect(image, source, dest, paint, std::move(sampler));
 }
@@ -489,7 +492,7 @@ void Canvas::DrawImageRect(const std::shared_ptr<Image>& image,
                            Rect dest,
                            const Paint& paint,
                            SamplerDescriptor sampler) {
-  if (!image || source.size.IsEmpty() || dest.size.IsEmpty()) {
+  if (!image || source.IsEmpty() || dest.IsEmpty()) {
     return;
   }
 
