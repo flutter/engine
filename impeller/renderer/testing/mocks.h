@@ -9,12 +9,7 @@
 #include "impeller/core/texture.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/context.h"
-#include "impeller/renderer/pipeline_library.h"
-#include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
-#include "impeller/renderer/sampler_library.h"
-#include "impeller/renderer/shader_function.h"
-#include "impeller/typographer/typographer_context.h"
 
 namespace impeller {
 namespace testing {
@@ -167,114 +162,6 @@ class MockTexture : public Texture {
               OnSetContents,
               (std::shared_ptr<const fml::Mapping> mapping, size_t slice),
               (override));
-};
-
-class MockTypographerContext : public TypographerContext {
- public:
-  MOCK_METHOD(std::shared_ptr<GlyphAtlas>,
-              CreateGlyphAtlas,
-              (Context & context,
-               GlyphAtlas::Type type,
-               std::shared_ptr<GlyphAtlasContext> atlas_context,
-               const FontGlyphMap& font_glyph_map),
-              (const, override));
-  MOCK_METHOD(std::shared_ptr<GlyphAtlasContext>,
-              CreateGlyphAtlasContext,
-              (),
-              (const, override));
-};
-
-class MockRenderTargetAllocator : public RenderTargetAllocator {
- public:
-  MockRenderTargetAllocator(std::shared_ptr<Allocator> allocator)
-      : RenderTargetAllocator(allocator) {}
-  MOCK_METHOD(std::shared_ptr<Texture>,
-              CreateTexture,
-              (const TextureDescriptor& desc),
-              (override));
-};
-
-class MockCapabilities : public Capabilities {
- public:
-  MOCK_METHOD(bool, SupportsOffscreenMSAA, (), (const, override));
-  MOCK_METHOD(bool, SupportsImplicitResolvingMSAA, (), (const, override));
-  MOCK_METHOD(bool, SupportsSSBO, (), (const, override));
-  MOCK_METHOD(bool, SupportsBufferToTextureBlits, (), (const, override));
-  MOCK_METHOD(bool, SupportsTextureToTextureBlits, (), (const, override));
-  MOCK_METHOD(bool, SupportsFramebufferFetch, (), (const, override));
-  MOCK_METHOD(bool, SupportsCompute, (), (const, override));
-  MOCK_METHOD(bool, SupportsComputeSubgroups, (), (const, override));
-  MOCK_METHOD(bool, SupportsReadFromOnscreenTexture, (), (const, override));
-  MOCK_METHOD(bool, SupportsReadFromResolve, (), (const, override));
-  MOCK_METHOD(bool, SupportsDecalSamplerAddressMode, (), (const, override));
-  MOCK_METHOD(bool, SupportsDeviceTransientTextures, (), (const, override));
-  MOCK_METHOD(PixelFormat, GetDefaultColorFormat, (), (const, override));
-  MOCK_METHOD(PixelFormat, GetDefaultStencilFormat, (), (const, override));
-  MOCK_METHOD(PixelFormat, GetDefaultDepthStencilFormat, (), (const, override));
-};
-
-class MockRenderPass : public RenderPass {
- public:
-  MockRenderPass(std::weak_ptr<const Context> context,
-                 const RenderTarget& target)
-      : RenderPass(context, target) {}
-  MOCK_METHOD(bool, IsValid, (), (const, override));
-  MOCK_METHOD(void, OnSetLabel, (std::string), (override));
-  MOCK_METHOD(bool, OnEncodeCommands, (const Context&), (const, override));
-};
-
-class MockSamplerLibrary : public SamplerLibrary {
- public:
-  MOCK_METHOD(std::shared_ptr<const Sampler>,
-              GetSampler,
-              (SamplerDescriptor),
-              (override));
-};
-
-class MockShaderLibrary : public ShaderLibrary {
- public:
-  MOCK_METHOD(bool, IsValid, (), (const, override));
-  MOCK_METHOD(std::shared_ptr<const ShaderFunction>,
-              GetFunction,
-              (std::string_view name, ShaderStage stage),
-              (override));
-  MOCK_METHOD(void,
-              UnregisterFunction,
-              (std::string name, ShaderStage stage),
-              (override));
-};
-
-class MockShaderFunction : public ShaderFunction {
- public:
-  MockShaderFunction(UniqueID parent_library_id,
-                     std::string name,
-                     ShaderStage stage)
-      : ShaderFunction(parent_library_id, name, stage) {}
-};
-
-class MockPipelineLibrary : public PipelineLibrary {
- public:
-  MOCK_METHOD(bool, IsValid, (), (const, override));
-  MOCK_METHOD(PipelineFuture<PipelineDescriptor>,
-              GetPipeline,
-              (PipelineDescriptor descriptor),
-              (override));
-  MOCK_METHOD(PipelineFuture<ComputePipelineDescriptor>,
-              GetPipeline,
-              (ComputePipelineDescriptor descriptor),
-              (override));
-  MOCK_METHOD(void,
-              RemovePipelinesWithEntryPoint,
-              (std::shared_ptr<const ShaderFunction> function),
-              (override));
-};
-
-template <typename T>
-class MockPipeline : public Pipeline<T> {
- public:
-  MockPipeline(std::weak_ptr<PipelineLibrary> library, T desc)
-      : Pipeline<T>(library, desc) {}
-  MOCK_METHOD(bool, IsValid, (), (const, override));
 };
 
 }  // namespace testing
