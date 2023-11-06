@@ -74,7 +74,6 @@ const int _kDeadKeyMeta = 0x80000000;
 
 const ui.KeyData _emptyKeyData = ui.KeyData(
   type: ui.KeyEventType.down,
-  deviceType: ui.KeyEventDeviceType.keyboard,
   timeStamp: Duration.zero,
   logical: 0,
   physical: 0,
@@ -363,7 +362,6 @@ class KeyboardConverter {
       () => ui.KeyData(
         timeStamp: currentTimeStamp + _kKeydownCancelDurationMac,
         type: ui.KeyEventType.up,
-        deviceType: ui.KeyEventDeviceType.keyboard,
         physical: physicalKey,
         logical: logicalKey,
         character: null,
@@ -437,7 +435,6 @@ class KeyboardConverter {
         () => ui.KeyData(
           timeStamp: timeStamp,
           type: ui.KeyEventType.up,
-          deviceType: ui.KeyEventDeviceType.keyboard,
           physical: physicalKey,
           logical: logicalKey(),
           character: null,
@@ -473,7 +470,6 @@ class KeyboardConverter {
           _dispatchKeyData!(ui.KeyData(
             timeStamp: timeStamp,
             type: ui.KeyEventType.up,
-            deviceType: ui.KeyEventDeviceType.keyboard,
             physical: physicalKey,
             logical: logicalKey(),
             character: null,
@@ -542,7 +538,6 @@ class KeyboardConverter {
           _dispatchKeyData!(ui.KeyData(
             timeStamp: timeStamp,
             type: ui.KeyEventType.up,
-            deviceType: ui.KeyEventDeviceType.keyboard,
             physical: physicalKey,
             logical: testeeLogicalKey,
             character: null,
@@ -567,7 +562,6 @@ class KeyboardConverter {
     final ui.KeyData keyData = ui.KeyData(
       timeStamp: timeStamp,
       type: type,
-      deviceType: ui.KeyEventDeviceType.keyboard,
       physical: physicalKey,
       logical: lastLogicalRecord ?? logicalKey(),
       character: type == ui.KeyEventType.up ? null : character,
@@ -680,7 +674,6 @@ class KeyboardConverter {
     performDispatchKeyData(ui.KeyData(
       timeStamp: _eventTimeStampToDuration(domTimestamp),
       type: ui.KeyEventType.down,
-      deviceType: ui.KeyEventDeviceType.keyboard,
       physical: physical,
       logical: logical,
       character: null,
@@ -694,7 +687,6 @@ class KeyboardConverter {
     performDispatchKeyData(ui.KeyData(
       timeStamp: _eventTimeStampToDuration(domTimestamp),
       type: ui.KeyEventType.up,
-      deviceType: ui.KeyEventDeviceType.keyboard,
       physical: physical,
       logical: logical,
       character: null,

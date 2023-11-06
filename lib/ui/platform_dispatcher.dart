@@ -522,7 +522,6 @@ class PlatformDispatcher {
     final KeyData keyData = KeyData(
       timeStamp: Duration(microseconds: packet.getUint64(kStride * offset++, _kFakeHostEndian)),
       type: KeyEventType.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
-      deviceType: KeyEventDeviceType.keyboard,
       physical: packet.getUint64(kStride * offset++, _kFakeHostEndian),
       logical: packet.getUint64(kStride * offset++, _kFakeHostEndian),
       character: character,

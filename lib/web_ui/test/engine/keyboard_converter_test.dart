@@ -55,7 +55,6 @@ void testMain() {
   test('KeyData.toString', () {
     expect(const ui.KeyData(
       type: ui.KeyEventType.down,
-      deviceType: ui.KeyEventDeviceType.keyboard,
       physical: 0x700e5,
       logical: 0x61,
       character: 'A',
@@ -65,7 +64,6 @@ void testMain() {
 
     expect(const ui.KeyData(
       type: ui.KeyEventType.up,
-      deviceType: ui.KeyEventDeviceType.keyboard,
       physical: 0x700e6,
       logical: 0x100000061,
       character: '\n',
@@ -75,7 +73,6 @@ void testMain() {
 
     expect(const ui.KeyData(
       type: ui.KeyEventType.repeat,
-      deviceType: ui.KeyEventDeviceType.keyboard,
       physical: 0x700e7,
       logical: 0x9900000071,
       character: null,
@@ -738,7 +735,7 @@ void testMain() {
       );
       keyDataList.clear();
 
-      // Keyup of KeyA is omitted due to being a shortcut.
+      // Key Up of KeyA is omitted due to being a shortcut.
 
       async.elapse(const Duration(milliseconds: 2500));
       expectKeyData(keyDataList.last,
@@ -806,7 +803,7 @@ void testMain() {
     async.elapse(const Duration(milliseconds: 50));
     converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a', kMeta)..timeStamp = 700);
 
-    // Keyup of KeyA is omitted due to being a shortcut.
+    // Key Up of KeyA is omitted due to being a shortcut.
 
     async.elapse(const Duration(milliseconds: 2000));
     expectKeyData(keyDataList.last,

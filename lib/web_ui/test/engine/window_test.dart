@@ -155,7 +155,6 @@ Future<void> testMain() async {
     const  ui.KeyData keyData = ui.KeyData(
       timeStamp: Duration(milliseconds: 1),
       type: ui.KeyEventType.repeat,
-      deviceType: ui.KeyEventDeviceType.keyboard,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: 'a',
@@ -186,7 +185,6 @@ Future<void> testMain() async {
     const  ui.KeyData keyData = ui.KeyData(
       timeStamp: Duration(milliseconds: 1),
       type: ui.KeyEventType.repeat,
-      deviceType: ui.KeyEventDeviceType.keyboard,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: 'a',
