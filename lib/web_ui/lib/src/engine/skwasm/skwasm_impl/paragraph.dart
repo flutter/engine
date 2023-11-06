@@ -196,7 +196,7 @@ class SkwasmParagraph extends SkwasmObjectWrapper<RawParagraph> implements ui.Pa
       final Pointer<Bool> outBooleanFlags = scope.allocBoolArray(1);
       return paragraphGetGlyphInfoAt(handle, codeUnitOffset, outRect, outRange, outBooleanFlags)
         ? ui.GlyphInfo(
-          ui.Rect.fromLTRB(outRect[0], outRect[1], outRect[2], outRect[3]),
+          scope.convertRectFromNative(outRect),
           ui.TextRange(start: outRange[0], end: outRange[1]),
           outBooleanFlags[0] ? ui.TextDirection.ltr : ui.TextDirection.rtl,
         )
@@ -212,7 +212,7 @@ class SkwasmParagraph extends SkwasmObjectWrapper<RawParagraph> implements ui.Pa
       final Pointer<Bool> outBooleanFlags = scope.allocBoolArray(1);
       return paragraphGetClosestGlyphInfoAtCoordinate(handle, offset.dx, offset.dy, outRect, outRange, outBooleanFlags)
         ? ui.GlyphInfo(
-          ui.Rect.fromLTRB(outRect[0], outRect[1], outRect[2], outRect[3]),
+          scope.convertRectFromNative(outRect),
           ui.TextRange(start: outRange[0], end: outRange[1]),
           outBooleanFlags[0] ? ui.TextDirection.ltr : ui.TextDirection.rtl,
         )
