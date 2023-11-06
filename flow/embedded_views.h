@@ -365,6 +365,13 @@ class DisplayListEmbedderViewSlice : public EmbedderViewSlice {
 //
 // Used on iOS, Android (hybrid composite mode), and on embedded platforms
 // that provide a system compositor as part of the project arguments.
+//
+// The lifecycle of drawing a frame using ExternalViewEmbedder is:
+//
+//   1. At the start of a frame, call |BeginFrame|, then |SetUsedThisFrame| to
+//      true.
+//   2. For each view to be drawn, call |PrepareView|, then |SubmitView|.
+//   3. At the end of a frame, if |GetUsedThisFrame| is true, call |EndFrame|.
 class ExternalViewEmbedder {
   // TODO(cyanglaz): Make embedder own the `EmbeddedViewParams`.
 
@@ -407,6 +414,7 @@ class ExternalViewEmbedder {
   // Must be called on the UI thread.
   virtual DlCanvas* CompositeEmbeddedView(int64_t view_id) = 0;
 
+  // Prepare for a view to be drawn.
   virtual void PrepareView(int64_t native_view_id,
                            SkISize frame_size,
                            double device_pixel_ratio) = 0;
