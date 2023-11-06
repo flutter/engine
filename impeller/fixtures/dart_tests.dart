@@ -36,45 +36,45 @@ void canEmplaceHostBuffer() {
 
 @pragma('vm:entry-point')
 void canCreateDeviceBuffer() {
-  final gpu.DeviceBuffer deviceBuffer =
+  final gpu.DeviceBuffer? deviceBuffer =
       gpu.gpuContext.createDeviceBuffer(gpu.StorageMode.hostVisible, 4);
-  assert(deviceBuffer.sizeInBytes == 4);
+  assert(deviceBuffer != null);
+  assert(deviceBuffer!.sizeInBytes == 4);
 }
 
 @pragma('vm:entry-point')
 void canOverwriteDeviceBuffer() {
-  final gpu.DeviceBuffer deviceBuffer =
+  final gpu.DeviceBuffer? deviceBuffer =
       gpu.gpuContext.createDeviceBuffer(gpu.StorageMode.hostVisible, 4);
-  deviceBuffer
+  assert(deviceBuffer != null);
+  final bool success = deviceBuffer!
       .overwrite(Int8List.fromList(<int>[0, 1, 2, 3]).buffer.asByteData());
+  assert(success);
 }
 
 @pragma('vm:entry-point')
-void deviceBufferOverwriteThrowsWhenOutOfBounds() {
-  final gpu.DeviceBuffer deviceBuffer =
+void deviceBufferOverwriteFailsWhenOutOfBounds() {
+  final gpu.DeviceBuffer? deviceBuffer =
       gpu.gpuContext.createDeviceBuffer(gpu.StorageMode.hostVisible, 4);
-  String? exception;
-  try {
-    deviceBuffer.overwrite(
-        Int8List.fromList(<int>[0, 1, 2, 3]).buffer.asByteData(),
-        destinationOffsetInBytes: 1);
-  } catch (e) {
-    exception = e.toString();
-  }
-  assert(exception!.contains('Failed to overwrite device buffer.'));
+  assert(deviceBuffer != null);
+  final bool success = deviceBuffer!.overwrite(
+      Int8List.fromList(<int>[0, 1, 2, 3]).buffer.asByteData(),
+      destinationOffsetInBytes: 1);
+  assert(!success);
 }
 
 @pragma('vm:entry-point')
 void deviceBufferOverwriteThrowsForNegativeDestinationOffset() {
-  final gpu.DeviceBuffer deviceBuffer =
+  final gpu.DeviceBuffer? deviceBuffer =
       gpu.gpuContext.createDeviceBuffer(gpu.StorageMode.hostVisible, 4);
+  assert(deviceBuffer != null);
   String? exception;
   try {
-    deviceBuffer.overwrite(
+    deviceBuffer!.overwrite(
         Int8List.fromList(<int>[0, 1, 2, 3]).buffer.asByteData(),
         destinationOffsetInBytes: -1);
   } catch (e) {
     exception = e.toString();
   }
-  assert(exception!.contains('destinationOffsetInBytes must be positive.'));
+  assert(exception!.contains('destinationOffsetInBytes must be positive'));
 }

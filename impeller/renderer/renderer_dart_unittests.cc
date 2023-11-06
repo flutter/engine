@@ -129,17 +129,10 @@ TEST_P(RendererDartTest, CanInstantiateFlutterGPUContext) {
 
 DART_TEST_CASE(canEmplaceHostBuffer);
 DART_TEST_CASE(canCreateDeviceBuffer);
-DART_TEST_CASE(canOverwriteDeviceBuffer);
-DART_TEST_CASE(deviceBufferOverwriteThrowsForNegativeDestinationOffset);
 
-/// This VM as it's running in this test harness wigs out for Flutter GPU calls
-/// that return Dart handles. This doesn't happen when actually running in the
-/// production engine, so just comment these out for now.
-/// > Dart Error: Callbacks into the Dart VM are currently prohibited. Either
-/// > there are outstanding pointers from Dart_TypedDataAcquireData that have
-/// > not been released with Dart_TypedDataReleaseData, or a finalizer is
-/// > running.
-// DART_TEST_CASE(deviceBufferOverwriteThrowsWhenOutOfBounds);
+DART_TEST_CASE(canOverwriteDeviceBuffer);
+DART_TEST_CASE(deviceBufferOverwriteFailsWhenOutOfBounds);
+DART_TEST_CASE(deviceBufferOverwriteThrowsForNegativeDestinationOffset);
 
 }  // namespace testing
 }  // namespace impeller

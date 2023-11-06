@@ -26,37 +26,42 @@ class BufferView {
 /// A buffer that can be referenced by commands on the GPU.
 mixin Buffer {}
 
-/// [DeviceBuffer] is a [Buffer] which is allocated on the device (GPU resident
-/// memory).
+/// [DeviceBuffer] is a region of memory allocated on the device heap
+/// (GPU-resident memory).
 base class DeviceBuffer extends NativeFieldWrapperClass1 with Buffer {
+  bool _valid = false;
+  get isValid {
+    return _valid;
+  }
+
   /// Creates a new DeviceBuffer.
   DeviceBuffer._initialize(
       GpuContext gpuContext, StorageMode storageMode, int sizeInBytes)
       : storageMode = storageMode,
         sizeInBytes = sizeInBytes {
-    _initialize(gpuContext, storageMode.index, sizeInBytes);
+    _valid = _initialize(gpuContext, storageMode.index, sizeInBytes);
   }
 
   /// Creates a new host visible DeviceBuffer with data copied from the host.
   DeviceBuffer._initializeWithHostData(GpuContext gpuContext, ByteData data)
       : storageMode = StorageMode.hostVisible,
         sizeInBytes = data.lengthInBytes {
-    _initializeWithHostData(gpuContext, data);
+    _valid = _initializeWithHostData(gpuContext, data);
   }
 
   final StorageMode storageMode;
   final int sizeInBytes;
 
   /// Wrap with native counterpart.
-  @Native<Void Function(Handle, Pointer<Void>, Int, Int)>(
+  @Native<Bool Function(Handle, Pointer<Void>, Int, Int)>(
       symbol: 'InternalFlutterGpu_DeviceBuffer_Initialize')
-  external void _initialize(
+  external bool _initialize(
       GpuContext gpuContext, int storageMode, int sizeInBytes);
 
   /// Wrap with native counterpart.
-  @Native<Void Function(Handle, Pointer<Void>, Handle)>(
+  @Native<Bool Function(Handle, Pointer<Void>, Handle)>(
       symbol: 'InternalFlutterGpu_DeviceBuffer_InitializeWithHostData')
-  external void _initializeWithHostData(GpuContext gpuContext, ByteData data);
+  external bool _initializeWithHostData(GpuContext gpuContext, ByteData data);
 
   /// Overwrite a range of bytes in the already created [DeviceBuffer].
   ///
@@ -66,17 +71,24 @@ base class DeviceBuffer extends NativeFieldWrapperClass1 with Buffer {
   /// The entire length of [sourceBytes] will be copied into the [DeviceBuffer],
   /// starting at byte index [destinationOffsetInBytes] in the [DeviceBuffer].
   /// If performing this copy would result in an out of bounds write to the
-  /// buffer, then an exception will be thrown instead.
-  void overwrite(ByteData sourceBytes, {int destinationOffsetInBytes = 0}) {
-    String? error = _overwrite(sourceBytes, destinationOffsetInBytes);
-    if (error != null) {
-      throw Exception(error);
+  /// buffer, then the write will not be attempted and will fail.
+  ///
+  /// Returns [true] if the write was successful, or [false] if the write
+  /// failed due to an internal error.
+  bool overwrite(ByteData sourceBytes, {int destinationOffsetInBytes = 0}) {
+    if (storageMode != StorageMode.hostVisible) {
+      throw Exception(
+          'DeviceBuffer.overwrite can only be used with DeviceBuffers that are host visible');
     }
+    if (destinationOffsetInBytes < 0) {
+      throw Exception('destinationOffsetInBytes must be positive');
+    }
+    return _overwrite(sourceBytes, destinationOffsetInBytes);
   }
 
-  @Native<Handle Function(Pointer<Void>, Handle, Int)>(
+  @Native<Bool Function(Pointer<Void>, Handle, Int)>(
       symbol: 'InternalFlutterGpu_DeviceBuffer_Overwrite')
-  external String? _overwrite(ByteData bytes, int destinationOffsetInBytes);
+  external bool _overwrite(ByteData bytes, int destinationOffsetInBytes);
 }
 
 /// [HostBuffer] is a [Buffer] which is allocated on the host (native CPU
