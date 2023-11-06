@@ -81,6 +81,7 @@ TEST_P(EntityPassTargetTest, SwapWithMSAAImplicitResolve) {
 
   ASSERT_EQ(msaa_tex, color0.texture);
   ASSERT_NE(resolve_tex, color0.resolve_texture);
+  ASSERT_TRUE(false);  // see if this runs.
 }
 
 }  // namespace testing
