@@ -65,11 +65,12 @@ EmbedderSurfaceGLImpeller::EmbedderSurfaceGLImpeller(
   gl_dispatch_table_.gl_make_current_callback();
 
   std::vector<std::shared_ptr<fml::Mapping>> shader_mappings = {
-    std::make_shared<fml::NonOwnedMapping>(impeller_entity_shaders_gles_data,
-                                           impeller_entity_shaders_gles_length),
+      std::make_shared<fml::NonOwnedMapping>(
+          impeller_entity_shaders_gles_data,
+          impeller_entity_shaders_gles_length),
 #if IMPELLER_ENABLE_3D
-    std::make_shared<fml::NonOwnedMapping>(impeller_scene_shaders_gles_data,
-                                           impeller_scene_shaders_gles_length),
+      std::make_shared<fml::NonOwnedMapping>(
+          impeller_scene_shaders_gles_data, impeller_scene_shaders_gles_length),
 #endif  // IMPELLER_ENABLE_3D
   };
   auto gl = std::make_unique<impeller::ProcTableGLES>(
@@ -78,21 +79,21 @@ EmbedderSurfaceGLImpeller::EmbedderSurfaceGLImpeller(
     return;
   }
 
-  impeller_context_ =
-      impeller::ContextGLES::Create(std::move(gl), shader_mappings);
+  impeller_context_ = impeller::ContextGLES::Create(
+      std::move(gl), shader_mappings, /*enable_gpu_tracing=*/false);
 
   if (!impeller_context_) {
     FML_LOG(ERROR) << "Could not create Impeller context.";
     return;
   }
 
-  worker_->SetReactionsAllowedOnCurrentThread(true);
   auto worker_id = impeller_context_->AddReactorWorker(worker_);
   if (!worker_id.has_value()) {
     FML_LOG(ERROR) << "Could not add reactor worker.";
     return;
   }
 
+  gl_dispatch_table_.gl_clear_current_callback();
   FML_LOG(ERROR) << "Using the Impeller rendering backend (OpenGL).";
   valid_ = true;
 }

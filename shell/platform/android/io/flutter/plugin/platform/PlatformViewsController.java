@@ -181,12 +181,14 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           }
           if (textureRegistry == null) {
             throw new IllegalStateException(
-                "Texture registry is null. This means that platform views controller was detached, view id: "
+                "Texture registry is null. This means that platform views controller was detached,"
+                    + " view id: "
                     + viewId);
           }
           if (flutterView == null) {
             throw new IllegalStateException(
-                "Flutter view is null. This means the platform views controller doesn't have an attached view, view id: "
+                "Flutter view is null. This means the platform views controller doesn't have an"
+                    + " attached view, view id: "
                     + viewId);
           }
 
@@ -195,7 +197,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           final View embeddedView = platformView.getView();
           if (embeddedView.getParent() != null) {
             throw new IllegalStateException(
-                "The Android view returned from PlatformView#getView() was already added to a parent view.");
+                "The Android view returned from PlatformView#getView() was already added to a"
+                    + " parent view.");
           }
 
           // The newer Texture Layer Hybrid Composition mode isn't suppported if any of the
@@ -773,6 +776,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     usesSoftwareRendering = useSoftwareRendering;
   }
 
+  public void setDisableImageReaderPlatformViews(boolean disableImageReaderPlatformViews) {
+    enableHardwareBufferRenderingTarget = !disableImageReaderPlatformViews;
+  }
+
   /**
    * Detaches this platform views controller.
    *
@@ -970,11 +977,13 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   private static PlatformViewRenderTarget makePlatformViewRenderTarget(
       TextureRegistry textureRegistry) {
-    if (enableHardwareBufferRenderingTarget && Build.VERSION.SDK_INT >= 29) {
+    if (enableHardwareBufferRenderingTarget && Build.VERSION.SDK_INT >= 33) {
       final TextureRegistry.ImageTextureEntry textureEntry = textureRegistry.createImageTexture();
+      Log.i(TAG, "PlatformView is using ImageReader backend");
       return new ImageReaderPlatformViewRenderTarget(textureEntry);
     }
     final TextureRegistry.SurfaceTextureEntry textureEntry = textureRegistry.createSurfaceTexture();
+    Log.i(TAG, "PlatformView is using SurfaceTexture backend");
     return new SurfaceTexturePlatformViewRenderTarget(textureEntry);
   }
 
@@ -1092,7 +1101,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     }
     if (embeddedView.getParent() != null) {
       throw new IllegalStateException(
-          "The Android view returned from PlatformView#getView() was already added to a parent view.");
+          "The Android view returned from PlatformView#getView() was already added to a parent"
+              + " view.");
     }
     final FlutterMutatorView parentView =
         new FlutterMutatorView(

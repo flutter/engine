@@ -4,6 +4,7 @@
 
 import("//build/config/android/config.gni")
 import("//build/toolchain/clang.gni")
+import("//flutter/build/bin_to_obj.gni")
 import("//flutter/build/zip_bundle.gni")
 import("//flutter/common/config.gni")
 import("//flutter/impeller/tools/impeller.gni")
@@ -63,11 +64,18 @@ shared_library("flutter_shell_native") {
   ldflags = [ "-Wl,--version-script=" + rebase_path("android_exports.lst") ]
 }
 
+bin_to_assembly("icudtl_asm") {
+  deps = []
+  input = "//third_party/icu/flutter/icudtl.dat"
+  symbol = "_binary_icudtl_dat_start"
+  size_symbol = "_binary_icudtl_dat_size"
+  executable = false
+}
+
 source_set("flutter_shell_native_src") {
   visibility = [ ":*" ]
 
   sources = [
-    "$root_build_dir/flutter_icu/icudtl.o",
     "android_choreographer.cc",
     "android_choreographer.h",
     "android_context_gl_impeller.cc",
@@ -96,12 +104,12 @@ source_set("flutter_shell_native_src") {
     "apk_asset_provider.h",
     "flutter_main.cc",
     "flutter_main.h",
-    "hardware_buffer_external_texture.cc",
-    "hardware_buffer_external_texture.h",
-    "hardware_buffer_external_texture_gl.cc",
-    "hardware_buffer_external_texture_gl.h",
-    "hardware_buffer_external_texture_vk.cc",
-    "hardware_buffer_external_texture_vk.h",
+    "image_external_texture.cc",
+    "image_external_texture.h",
+    "image_external_texture_gl.cc",
+    "image_external_texture_gl.h",
+    "image_external_texture_vk.cc",
+    "image_external_texture_vk.h",
     "library_loader.cc",
     "ndk_helpers.cc",
     "ndk_helpers.h",
@@ -121,9 +129,11 @@ source_set("flutter_shell_native_src") {
     "vsync_waiter_android.h",
   ]
 
+  sources += get_target_outputs(":icudtl_asm")
+
   public_deps = [
     ":android_gpu_configuration",
-    ":icudtl_object",
+    ":icudtl_asm",
     ":image_generator",
     "//flutter/assets",
     "//flutter/common",
@@ -265,6 +275,7 @@ android_java_sources = [
   "io/flutter/embedding/engine/systemchannels/NavigationChannel.java",
   "io/flutter/embedding/engine/systemchannels/PlatformChannel.java",
   "io/flutter/embedding/engine/systemchannels/PlatformViewsChannel.java",
+  "io/flutter/embedding/engine/systemchannels/ProcessTextChannel.java",
   "io/flutter/embedding/engine/systemchannels/RestorationChannel.java",
   "io/flutter/embedding/engine/systemchannels/SettingsChannel.java",
   "io/flutter/embedding/engine/systemchannels/SpellCheckChannel.java",
@@ -312,6 +323,7 @@ android_java_sources = [
   "io/flutter/plugin/platform/SingleViewPresentation.java",
   "io/flutter/plugin/platform/SurfaceTexturePlatformViewRenderTarget.java",
   "io/flutter/plugin/platform/VirtualDisplayController.java",
+  "io/flutter/plugin/text/ProcessTextPlugin.java",
   "io/flutter/util/HandlerCompat.java",
   "io/flutter/util/PathUtils.java",
   "io/flutter/util/Preconditions.java",
@@ -421,28 +433,6 @@ action("flutter_shell_java") {
   deps = [
     ":check_imports",
     ":gen_android_build_config_java",
-  ]
-}
-
-action("icudtl_object") {
-  script = "//flutter/sky/tools/objcopy.py"
-
-  icudtl_input = "//third_party/icu/flutter/icudtl.dat"
-  icudtl_output = "$root_build_dir/flutter_icu/icudtl.o"
-
-  inputs = [ "$icudtl_input" ]
-
-  outputs = [ "$icudtl_output" ]
-
-  args = [
-    "--objcopy",
-    rebase_path(android_objcopy),
-    "--input",
-    rebase_path(icudtl_input),
-    "--output",
-    rebase_path(icudtl_output),
-    "--arch",
-    current_cpu,
   ]
 }
 

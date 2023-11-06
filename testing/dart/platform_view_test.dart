@@ -10,7 +10,6 @@ void main() {
   test('PlatformView layers do not emit errors from tester', () async {
     final SceneBuilder builder = SceneBuilder();
     builder.addPlatformView(1);
-
     PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
       final Scene scene = builder.build();
       PlatformDispatcher.instance.implicitView!.render(scene);

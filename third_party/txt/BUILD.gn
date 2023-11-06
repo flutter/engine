@@ -81,6 +81,7 @@ source_set("txt") {
   public_deps = [
     "//flutter/display_list",
     "//flutter/fml",
+    "//flutter/impeller/typographer/backends/skia:typographer_skia_backend",
     "//third_party/harfbuzz",
     "//third_party/icu",
     "//third_party/skia",
@@ -97,7 +98,10 @@ source_set("txt") {
   }
 
   if (is_mac || is_ios) {
-    sources += [ "src/txt/platform_mac.mm" ]
+    sources += [
+      "src/txt/platform_mac.h",
+      "src/txt/platform_mac.mm",
+    ]
     deps += [ "//flutter/fml" ]
   } else if (is_android) {
     sources += [ "src/txt/platform_android.cc" ]
@@ -133,7 +137,7 @@ if (enable_unittests) {
       ":txt_fixtures",
       "//flutter/fml",
       "//flutter/testing:testing_lib",
-      "//third_party/benchmark",
+      "//flutter/third_party/benchmark",
       "//third_party/skia/modules/skparagraph",
     ]
   }
@@ -146,6 +150,10 @@ if (enable_unittests) {
       "tests/paragraph_unittests.cc",
       "tests/txt_run_all_unittests.cc",
     ]
+
+    if (is_mac || is_ios) {
+      sources += [ "tests/platform_mac_tests.cc" ]
+    }
 
     public_configs = [ ":txt_config" ]
 

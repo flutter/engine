@@ -9,6 +9,8 @@
 #include "impeller/base/allocation.h"
 #include "impeller/base/comparable.h"
 #include "impeller/base/validation.h"
+#include "impeller/renderer/backend/gles/capabilities_gles.h"
+#include "impeller/renderer/capabilities.h"
 
 namespace impeller {
 
@@ -30,6 +32,20 @@ const char* GLErrorToString(GLenum value) {
       return "GL_OUT_OF_MEMORY";
   }
   return "Unknown.";
+}
+
+bool GLErrorIsFatal(GLenum value) {
+  switch (value) {
+    case GL_NO_ERROR:
+      return false;
+    case GL_INVALID_ENUM:
+    case GL_INVALID_VALUE:
+    case GL_INVALID_OPERATION:
+    case GL_INVALID_FRAMEBUFFER_OPERATION:
+    case GL_OUT_OF_MEMORY:
+      return true;
+  }
+  return false;
 }
 
 ProcTableGLES::Resolver WrappedResolver(
@@ -111,7 +127,7 @@ ProcTableGLES::ProcTableGLES(Resolver resolver) {
     DiscardFramebufferEXT.Reset();
   }
 
-  capabilities_ = std::make_unique<CapabilitiesGLES>(*this);
+  capabilities_ = std::make_shared<CapabilitiesGLES>(*this);
 
   is_valid_ = true;
 }
@@ -134,8 +150,9 @@ const DescriptionGLES* ProcTableGLES::GetDescription() const {
   return description_.get();
 }
 
-const CapabilitiesGLES* ProcTableGLES::GetCapabilities() const {
-  return capabilities_.get();
+const std::shared_ptr<const CapabilitiesGLES>& ProcTableGLES::GetCapabilities()
+    const {
+  return capabilities_;
 }
 
 static const char* FramebufferStatusToString(GLenum status) {
@@ -305,9 +322,11 @@ bool ProcTableGLES::SetDebugLabel(DebugResourceType type,
 }
 
 void ProcTableGLES::PushDebugGroup(const std::string& label) const {
+#ifdef IMPELLER_DEBUG
   if (debug_label_max_length_ <= 0) {
     return;
   }
+
   UniqueID id;
   const auto label_length =
       std::min<GLsizei>(debug_label_max_length_ - 1, label.size());
@@ -316,13 +335,17 @@ void ProcTableGLES::PushDebugGroup(const std::string& label) const {
                     label_length,                     // length
                     label.data()                      // message
   );
+#endif  // IMPELLER_DEBUG
 }
 
 void ProcTableGLES::PopDebugGroup() const {
+#ifdef IMPELLER_DEBUG
   if (debug_label_max_length_ <= 0) {
     return;
   }
+
   PopDebugGroupKHR();
+#endif  // IMPELLER_DEBUG
 }
 
 std::string ProcTableGLES::GetProgramInfoLogString(GLuint program) const {

@@ -59,13 +59,12 @@ ColorSource ColorSource::MakeLinearGradient(Point start_point,
     contents->SetStops(stops);
     contents->SetEndPoints(start_point, end_point);
     contents->SetTileMode(tile_mode);
-    contents->SetDither(paint.dither);
     contents->SetEffectTransform(effect_transform);
 
     std::vector<Point> bounds{start_point, end_point};
     auto intrinsic_size = Rect::MakePointBounds(bounds.begin(), bounds.end());
     if (intrinsic_size.has_value()) {
-      contents->SetColorSourceSize(intrinsic_size->size);
+      contents->SetColorSourceSize(intrinsic_size->GetSize());
     }
     return contents;
   };
@@ -92,7 +91,6 @@ ColorSource ColorSource::MakeConicalGradient(Point center,
     contents->SetStops(stops);
     contents->SetCenterAndRadius(center, radius);
     contents->SetTileMode(tile_mode);
-    contents->SetDither(paint.dither);
     contents->SetEffectTransform(effect_transform);
     contents->SetFocus(focus_center, focus_radius);
 
@@ -100,7 +98,7 @@ ColorSource ColorSource::MakeConicalGradient(Point center,
     std::vector<Point> bounds{center + radius_pt, center - radius_pt};
     auto intrinsic_size = Rect::MakePointBounds(bounds.begin(), bounds.end());
     if (intrinsic_size.has_value()) {
-      contents->SetColorSourceSize(intrinsic_size->size);
+      contents->SetColorSourceSize(intrinsic_size->GetSize());
     }
     return contents;
   };
@@ -124,14 +122,13 @@ ColorSource ColorSource::MakeRadialGradient(Point center,
     contents->SetStops(stops);
     contents->SetCenterAndRadius(center, radius);
     contents->SetTileMode(tile_mode);
-    contents->SetDither(paint.dither);
     contents->SetEffectTransform(effect_transform);
 
     auto radius_pt = Point(radius, radius);
     std::vector<Point> bounds{center + radius_pt, center - radius_pt};
     auto intrinsic_size = Rect::MakePointBounds(bounds.begin(), bounds.end());
     if (intrinsic_size.has_value()) {
-      contents->SetColorSourceSize(intrinsic_size->size);
+      contents->SetColorSourceSize(intrinsic_size->GetSize());
     }
     return contents;
   };
@@ -156,7 +153,6 @@ ColorSource ColorSource::MakeSweepGradient(Point center,
     contents->SetColors(colors);
     contents->SetStops(stops);
     contents->SetTileMode(tile_mode);
-    contents->SetDither(paint.dither);
     contents->SetEffectTransform(effect_transform);
 
     return contents;
