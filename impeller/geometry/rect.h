@@ -123,6 +123,7 @@ struct TRect {
     return Union(o).size == size;
   }
 
+  /// Returns true if either of the width or height are 0, negative, or NaN.
   constexpr bool IsEmpty() const { return size.IsEmpty(); }
 
   constexpr bool IsMaximum() const { return *this == MakeMaximum(); }

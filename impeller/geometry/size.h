@@ -96,6 +96,7 @@ struct TSize {
 
   constexpr Type Area() const { return width * height; }
 
+  /// Returns true if either of the width or height are 0, negative, or NaN.
   constexpr bool IsEmpty() const { return !(width > 0 && height > 0); }
 
   template <class U>
