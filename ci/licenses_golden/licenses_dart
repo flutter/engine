@@ -1,4 +1,4 @@
-Signature: 4f6c6ef3539e00d6683e50d9e5058131
+Signature: a88142098930724810ab7906133411fb
 
 ====================================================================================================
 LIBRARY: dart
@@ -4283,6 +4283,12 @@ FILE: ../../../third_party/dart/runtime/observatory/web/favicon.ico
 FILE: ../../../third_party/dart/runtime/observatory/web/index.html
 FILE: ../../../third_party/dart/runtime/observatory/web/third_party/trace_viewer_full.html
 FILE: ../../../third_party/dart/runtime/observatory/web/timeline.html
+FILE: ../../../third_party/dart/runtime/tools/entitlements/dart.plist
+FILE: ../../../third_party/dart/runtime/tools/entitlements/dart_precompiled_runtime.plist
+FILE: ../../../third_party/dart/runtime/tools/entitlements/dart_precompiled_runtime_product.plist
+FILE: ../../../third_party/dart/runtime/tools/entitlements/gen_snapshot.plist
+FILE: ../../../third_party/dart/runtime/tools/entitlements/gen_snapshot_product.plist
+FILE: ../../../third_party/dart/runtime/tools/entitlements/run_vm_tests.plist
 FILE: ../../../third_party/dart/runtime/tools/wiki/styles/style.scss
 FILE: ../../../third_party/dart/runtime/tools/wiki/templates/includes/auto-refresh.html
 FILE: ../../../third_party/dart/runtime/tools/wiki/templates/page.html
