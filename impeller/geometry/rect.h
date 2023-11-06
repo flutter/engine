@@ -20,22 +20,12 @@ template <class T>
 struct TRect {
   using Type = T;
 
+  /// DEPRECATED: Use |GetOrigin|
   TPoint<Type> origin;
+  /// DEPRECATED: Use |GetSize|
   TSize<Type> size;
 
   constexpr TRect() : origin({0, 0}), size({0, 0}) {}
-
-  constexpr TRect(TSize<Type> size) : origin({0.0, 0.0}), size(size) {}
-
-  constexpr TRect(TPoint<Type> origin, TSize<Type> size)
-      : origin(origin), size(size) {}
-
-  constexpr TRect(const Type components[4])
-      : origin(components[0], components[1]),
-        size(components[2], components[3]) {}
-
-  constexpr TRect(Type x, Type y, Type width, Type height)
-      : origin(x, y), size(width, height) {}
 
   constexpr static TRect MakeLTRB(Type left,
                                   Type top,
@@ -46,6 +36,11 @@ struct TRect {
 
   constexpr static TRect MakeXYWH(Type x, Type y, Type width, Type height) {
     return TRect(x, y, width, height);
+  }
+
+  constexpr static TRect MakeOriginSize(const TPoint<Type>& origin,
+                                        const TSize<Type>& size) {
+    return TRect(origin, size);
   }
 
   template <class U>
@@ -324,45 +319,55 @@ struct TRect {
         TSize<T>(1.0 / static_cast<Scalar>(size.width),
                  1.0 / static_cast<Scalar>(size.height)));
   }
+
+  constexpr static TRect RoundOut(const TRect& r) {
+    return TRect::MakeLTRB(floor(r.GetLeft()), floor(r.GetTop()),
+                           ceil(r.GetRight()), ceil(r.GetBottom()));
+  }
+
+  constexpr static std::optional<TRect> Union(const TRect& a,
+                                              const std::optional<TRect> b) {
+    return b.has_value() ? a.Union(b.value()) : a;
+  }
+
+  constexpr static std::optional<TRect> Union(const std::optional<TRect> a,
+                                              const TRect& b) {
+    return Union(b, a);
+  }
+
+  constexpr static std::optional<TRect> Union(const std::optional<TRect> a,
+                                              const std::optional<TRect> b) {
+    return a.has_value() ? Union(a.value(), b) : b;
+  }
+
+  constexpr static std::optional<TRect> Intersection(
+      const TRect& a,
+      const std::optional<TRect> b) {
+    return b.has_value() ? a.Intersection(b.value()) : a;
+  }
+
+  constexpr static std::optional<TRect> Intersection(
+      const std::optional<TRect> a,
+      const TRect& b) {
+    return Intersection(b, a);
+  }
+
+  constexpr static std::optional<TRect> Intersection(
+      const std::optional<TRect> a,
+      const std::optional<TRect> b) {
+    return a.has_value() ? Intersection(a.value(), b) : b;
+  }
+
+ private:
+  constexpr TRect(Type x, Type y, Type width, Type height)
+      : origin(x, y), size(width, height) {}
+
+  constexpr TRect(TPoint<Type> origin, TSize<Type> size)
+      : origin(origin), size(size) {}
 };
 
 using Rect = TRect<Scalar>;
 using IRect = TRect<int64_t>;
-
-constexpr inline Rect RoundOut(const Rect& r) {
-  return Rect::MakeLTRB(floor(r.GetLeft()), floor(r.GetTop()),
-                        ceil(r.GetRight()), ceil(r.GetBottom()));
-}
-
-constexpr inline std::optional<Rect> Union(const Rect& a,
-                                           const std::optional<Rect> b) {
-  return b.has_value() ? a.Union(b.value()) : a;
-}
-
-constexpr inline std::optional<Rect> Union(const std::optional<Rect> a,
-                                           const Rect& b) {
-  return Union(b, a);
-}
-
-constexpr inline std::optional<Rect> Union(const std::optional<Rect> a,
-                                           const std::optional<Rect> b) {
-  return a.has_value() ? Union(a.value(), b) : b;
-}
-
-constexpr inline std::optional<Rect> Intersection(const Rect& a,
-                                                  const std::optional<Rect> b) {
-  return b.has_value() ? a.Intersection(b.value()) : a;
-}
-
-constexpr inline std::optional<Rect> Intersection(const std::optional<Rect> a,
-                                                  const Rect& b) {
-  return Intersection(b, a);
-}
-
-constexpr inline std::optional<Rect> Intersection(const std::optional<Rect> a,
-                                                  const std::optional<Rect> b) {
-  return a.has_value() ? Intersection(a.value(), b) : b;
-}
 
 }  // namespace impeller
 
