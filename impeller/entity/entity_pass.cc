@@ -285,7 +285,8 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
     );
   }
 
-  return EntityPassTarget(target);
+  return EntityPassTarget(
+      target, renderer.GetDeviceCapabilities().SupportsImplicitResolvingMSAA());
 }
 
 uint32_t EntityPass::GetTotalPassReads(ContentContext& renderer) const {
@@ -391,7 +392,10 @@ bool EntityPass::Render(ContentContext& renderer,
         entity.SetContents(contents);
         entity.SetBlendMode(BlendMode::kSource);
 
-        entity.Render(renderer, *render_pass);
+        if (!entity.Render(renderer, *render_pass)) {
+          VALIDATION_LOG << "Failed to render EntityPass root blit.";
+          return false;
+        }
       }
 
       if (!render_pass->EncodeCommands()) {
@@ -447,7 +451,9 @@ bool EntityPass::Render(ContentContext& renderer,
   color0.clear_color = GetClearColor(render_target.GetRenderTargetSize());
   root_render_target.SetColorAttachment(color0, 0);
 
-  EntityPassTarget pass_target(root_render_target);
+  EntityPassTarget pass_target(
+      root_render_target,
+      renderer.GetDeviceCapabilities().SupportsImplicitResolvingMSAA());
 
   return OnRender(                               //
       renderer,                                  // renderer
