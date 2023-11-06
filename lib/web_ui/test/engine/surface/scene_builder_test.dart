@@ -16,6 +16,7 @@ import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import '../../common/matchers.dart';
+import '../../common/test_initialization.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -23,7 +24,7 @@ void main() {
 
 void testMain() {
   setUpAll(() async {
-    await ui_web.bootstrapEngine();
+    await bootstrapAndWait()
   });
 
   group('SceneBuilder', () {

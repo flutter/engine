@@ -12,6 +12,8 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
+import '../common/test_initialization.dart';
+
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
@@ -183,7 +185,7 @@ const String kJsonIPLR = r'''
 
 void testMain() {
   setUpAll(() async {
-    await ui_web.bootstrapEngine();
+    await bootstrapAndWait();
   });
 
   test('FragmentProgram can be created from JSON IPLR bundle', () {

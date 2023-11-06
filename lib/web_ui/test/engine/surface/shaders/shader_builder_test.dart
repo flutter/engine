@@ -7,6 +7,8 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
+import '../../../common/test_initialization.dart';
+
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
@@ -24,7 +26,7 @@ void testMain() {
       ')';
 
   setUpAll(() async {
-    await ui_web.bootstrapEngine();
+    await bootstrapAndWait();
   });
 
   group('Shader Declarations', () {

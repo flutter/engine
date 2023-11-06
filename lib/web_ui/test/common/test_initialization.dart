@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
+
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' as engine;
 import 'package:ui/ui.dart' as ui;
@@ -41,4 +43,10 @@ void setUpUnitTests({
   tearDownAll(() async {
     fakeAssetManager.popAssetScope(debugFontsScope);
   });
+}
+
+Future<void> bootstrapAndWait() async {
+  final Completer<void> completer = Completer<void>();
+  await ui_web.bootstrapEngine(runApp: () => completer.complete());
+  await completer.future;
 }
