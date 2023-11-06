@@ -946,16 +946,6 @@ deps = {
 
   # Get the SDK from https://chrome-infra-packages.appspot.com/p/fuchsia/sdk/core at the 'latest' tag
   # Get the toolchain from https://chrome-infra-packages.appspot.com/p/fuchsia/clang at the 'goma' tag
-   'src/fuchsia/sdk/mac': {
-     'packages': [
-       {
-        'package': 'fuchsia/sdk/core/mac-amd64',
-        'version': 'V3diHxFGlypUQKNH_d80Ij8Ffm72KFugziWp4afkUDkC'
-       }
-     ],
-     'condition': 'host_os == "mac" and not download_fuchsia_sdk',
-     'dep_type': 'cipd',
-   },
    'src/fuchsia/sdk/linux': {
      'packages': [
        {
