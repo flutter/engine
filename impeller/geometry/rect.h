@@ -123,8 +123,6 @@ struct TRect {
     return Union(o).size == size;
   }
 
-  constexpr bool IsZero() const { return size.IsZero(); }
-
   constexpr bool IsEmpty() const { return size.IsEmpty(); }
 
   constexpr bool IsMaximum() const { return *this == MakeMaximum(); }
