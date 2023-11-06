@@ -462,7 +462,7 @@ public class KeyboardManagerTest {
             + "41",
         printBufferBytes(data1Buffer));
     // `position` is considered as the message size.
-    assertEquals(49, data1Buffer.position());
+    assertEquals(57, data1Buffer.position());
 
     data1Buffer.rewind();
     final KeyData data1Loaded = new KeyData(data1Buffer);
@@ -476,7 +476,7 @@ public class KeyboardManagerTest {
     data2.type = Type.kUp;
     data2.character = null;
     data2.synthesized = false;
-    data1.deviceType = DeviceType.kDirectionalPad;
+    data2.deviceType = DeviceType.kDirectionalPad;
 
     final ByteBuffer data2Buffer = data2.toBytes();
 

@@ -39,10 +39,10 @@ enum class KeyEventDeviceType : int64_t {
   // control or similar.
   kDirectionalPad,
 
-  // The source is a gamepad button
+  // The source is a gamepad button.
   kGamepad,
 
-  // The source is a joystick button
+  // The source is a joystick button.
   kJoystick,
 
   // The source is a device connected to an HDMI bus.
