@@ -678,14 +678,15 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
     // there can only be one writing direction in the fragment.
     final ui.TextRange range = switch ((fullBox.direction, x <= left)) {
       (ui.TextDirection.ltr, true) || (ui.TextDirection.rtl, false) => ui.TextRange(
-        start: start + _graphemeStarts[startIndex],
-        end: start + _graphemeStarts[startIndex + 1],
+        start: _graphemeStarts[startIndex],
+        end: _graphemeStarts[startIndex + 1],
       ),
       (ui.TextDirection.ltr, false) || (ui.TextDirection.rtl, true) => ui.TextRange(
-        start: start + _graphemeStarts[endIndex - 1],
-        end: start + _graphemeStarts[endIndex],
+        start: _graphemeStarts[endIndex - 1],
+        end: _graphemeStarts[endIndex],
       ),
     };
+    assert(!range.isCollapsed);
     final ui.TextBox box = toTextBox(start: range.start, end: range.end);
     return ui.GlyphInfo(box.toRect(), range, box.direction);
   }

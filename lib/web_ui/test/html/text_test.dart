@@ -117,7 +117,7 @@ Future<void> testMain() async {
 
   test('Basic glyph metrics', () {
     const double fontSize = 10;
-    final ParagraphBuilder builder = ParagraphBuilder(CkParagraphStyle(
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
       fontStyle: FontStyle.normal,
       fontWeight: FontWeight.normal,
       fontSize: fontSize,
@@ -138,7 +138,7 @@ Future<void> testMain() async {
 
   test('Basic glyph metrics - hit test', () {
     const double fontSize = 10.0;
-    final ParagraphBuilder builder = ParagraphBuilder(CkParagraphStyle(
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
       fontSize: fontSize,
       fontFamily: 'FlutterTest',
     ))..addText('Test\nTest');
