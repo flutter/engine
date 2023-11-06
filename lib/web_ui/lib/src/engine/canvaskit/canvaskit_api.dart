@@ -3200,7 +3200,7 @@ class SkGlyphClusterInfo {}
 
 extension SkGlyphClusterInfoExtension on SkGlyphClusterInfo {
   @JS('graphemeLayoutBounds')
-  external JSFloat32Array get _bounds;
+  external JSArray get _bounds;
 
   @JS('dir')
   external SkTextDirection get _direction;
@@ -3209,7 +3209,8 @@ extension SkGlyphClusterInfoExtension on SkGlyphClusterInfo {
   external SkTextRange get _textRange;
 
   ui.GlyphInfo get _glyphInfo {
-    final ui.Rect bounds = fromSkRect(_bounds.toDart);
+    final List<JSNumber> list = _bounds.toDart.cast<JSNumber>();
+    final ui.Rect bounds = ui.Rect.fromLTRB(list[0].toDartDouble, list[1].toDartDouble, list[2].toDartDouble, list[3].toDartDouble);
     final ui.TextRange textRange = ui.TextRange(start: _textRange.start.toInt(), end: _textRange.end.toInt());
     return ui.GlyphInfo(bounds, textRange, ui.TextDirection.values[_direction.value.toInt()]);
   }
