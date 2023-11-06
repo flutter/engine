@@ -102,5 +102,43 @@ TEST(GaussianBlurFilterContentsTest, FilterSourceCoverage) {
   ASSERT_EQ(coverage, Rect::MakeLTRB(100 - 2, 100 - 2, 200 + 2, 200 + 2));
 }
 
+TEST_P(GaussianBlurFilterContentsTest,
+       RenderCoverageMatchesGetCoverage) {
+  TextureDescriptor desc = {
+      .format = PixelFormat::kB8G8R8A8UNormInt,
+      .size = ISize(100, 100),
+  };
+  std::shared_ptr<Texture> texture =
+      GetContentContext()->GetContext()->GetResourceAllocator()->CreateTexture(
+          desc);
+  Scalar sigma_radius_1 = CalculateSigmaForBlurRadius(1.0);
+  auto contents = std::make_unique<GaussianBlurFilterContents>(sigma_radius_1);
+  contents->SetInputs({FilterInput::Make(texture)});
+  std::shared_ptr<ContentContext> renderer = GetContentContext();
+
+  Entity entity;
+  std::optional<Entity> result =
+      contents->GetEntity(*renderer, entity, /*coverage_hint=*/{});
+  EXPECT_TRUE(result.has_value());
+  if (result.has_value()) {
+    EXPECT_EQ(result.value().GetBlendMode(), BlendMode::kSourceOver);
+    std::optional<Rect> result_coverage = result.value().GetCoverage();
+    std::optional<Rect> contents_coverage = contents->GetCoverage(entity);
+    EXPECT_TRUE(result_coverage.has_value());
+    EXPECT_TRUE(contents_coverage.has_value());
+    if (result_coverage.has_value() && contents_coverage.has_value()) {
+      EXPECT_NEAR(result_coverage.value().GetLeft(),
+                  contents_coverage.value().GetLeft(), kEhCloseEnough);
+      EXPECT_NEAR(result_coverage.value().GetTop(),
+                  contents_coverage.value().GetTop(), kEhCloseEnough);
+      EXPECT_NEAR(result_coverage.value().GetRight(),
+                  contents_coverage.value().GetRight(), kEhCloseEnough);
+      EXPECT_NEAR(result_coverage.value().GetBottom(),
+                  contents_coverage.value().GetBottom(), kEhCloseEnough);
+    }
+  }
+}
+
+
 }  // namespace testing
 }  // namespace impeller

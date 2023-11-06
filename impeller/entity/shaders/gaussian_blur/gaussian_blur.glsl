@@ -69,4 +69,8 @@ void main() {
   }
 
   frag_color = total_color / gaussian_integral;
+  frag_color = Sample(texture_sampler, v_texture_coords);
+  float16_t temp = frag_color.r;
+  frag_color.r = frag_color.g;
+  frag_color.g = temp;
 }
