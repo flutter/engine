@@ -96,6 +96,7 @@ class scoped_nsprotocol
                                    scoped_policy::OwnershipPolicy::kRetain) {}
 #endif
 
+  // NOLINTNEXTLINE(google-explicit-constructor)
   scoped_nsprotocol(const scoped_nsprotocol<NST>& that)
       : ScopedTypeRef<NST, Traits>(that) {}
 
@@ -103,6 +104,7 @@ class scoped_nsprotocol
   explicit scoped_nsprotocol(const scoped_nsprotocol<NSR>& that_as_subclass)
       : ScopedTypeRef<NST, Traits>(that_as_subclass) {}
 
+  // NOLINTNEXTLINE(google-explicit-constructor)
   scoped_nsprotocol(scoped_nsprotocol<NST>&& that)
       : ScopedTypeRef<NST, Traits>(std::move(that)) {}
 
@@ -161,6 +163,7 @@ class scoped_nsobject : public scoped_nsprotocol<NST*> {
       : scoped_nsprotocol<NST*>(object) {}
 #endif
 
+  // NOLINTNEXTLINE(google-explicit-constructor)
   scoped_nsobject(const scoped_nsobject<NST>& that)
       : scoped_nsprotocol<NST*>(that) {}
 
@@ -168,6 +171,7 @@ class scoped_nsobject : public scoped_nsprotocol<NST*> {
   explicit scoped_nsobject(const scoped_nsobject<NSR>& that_as_subclass)
       : scoped_nsprotocol<NST*>(that_as_subclass) {}
 
+  // NOLINTNEXTLINE(google-explicit-constructor)
   scoped_nsobject(scoped_nsobject<NST>&& that)
       : scoped_nsprotocol<NST*>(std::move(that)) {}
 
@@ -210,6 +214,7 @@ class scoped_nsobject<id> : public scoped_nsprotocol<id> {
       : scoped_nsprotocol<id>(object) {}
 #endif
 
+  // NOLINTNEXTLINE(google-explicit-constructor)
   scoped_nsobject(const scoped_nsobject<id>& that)
       : scoped_nsprotocol<id>(that) {}
 
@@ -217,6 +222,7 @@ class scoped_nsobject<id> : public scoped_nsprotocol<id> {
   explicit scoped_nsobject(const scoped_nsobject<NSR>& that_as_subclass)
       : scoped_nsprotocol<id>(that_as_subclass) {}
 
+  // NOLINTNEXTLINE(google-explicit-constructor)
   scoped_nsobject(scoped_nsobject<id>&& that)
       : scoped_nsprotocol<id>(std::move(that)) {}
 
