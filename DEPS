@@ -143,7 +143,7 @@ vars = {
   "upstream_boringssl_gen": "https://github.com/dart-lang/boringssl_gen.git",
   "upstream_boringssl": "https://github.com/openssl/openssl.git",
   "upstream_browser_launcher": "https://github.com/dart-lang/browser_launcher.git",
-  "upstream_buildroot": "https://github.com/gmackall/buildroot.git",
+  "upstream_buildroot": "https://github.com/flutter/buildroot.git",
   "upstream_cli_util": "https://github.com/dart-lang/cli_util.git",
   "upstream_clock": "https://github.com/dart-lang/clock.git",
   "upstream_collection": "https://github.com/dart-lang/collection.git",
@@ -262,7 +262,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/gmackall/buildroot.git' + '@' + '302769cc2f56a0898ce67274ac8543c8b80e5d9a',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '6508cc599e7b72c282bec5360ea7b6063f557882',
 
   'src/flutter/third_party/rapidjson':
    Var('fuchsia_git') + '/third_party/rapidjson' + '@' + 'ef3564c5c8824989393b87df25355baf35ff544b',
