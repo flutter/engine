@@ -6,6 +6,7 @@
 
 #include "flutter/testing/testing.h"
 #include "gtest/gtest.h"
+#include "impeller/core/formats.h"
 #include "impeller/entity/entity_pass_target.h"
 #include "impeller/entity/entity_playground.h"
 
@@ -27,7 +28,7 @@ TEST_P(EntityPassTargetTest, SwapWithMSAATexture) {
       *content_context->GetContext(),
       *GetContentContext()->GetRenderTargetCache(), {100, 100});
 
-  auto entity_pass_target = EntityPassTarget(render_target, false);
+  auto entity_pass_target = EntityPassTarget(render_target, false, false);
 
   auto color0 = entity_pass_target.GetRenderTarget()
                     .GetColorAttachments()
@@ -49,18 +50,43 @@ TEST_P(EntityPassTargetTest, SwapWithMSAATexture) {
 }
 
 TEST_P(EntityPassTargetTest, SwapWithMSAAImplicitResolve) {
-  if (!GetContentContext()
-           ->GetDeviceCapabilities()
-           .SupportsImplicitResolvingMSAA()) {
-    GTEST_SKIP() << "Implicit MSAA is not used on this device.";
-  }
   auto content_context = GetContentContext();
   auto buffer = content_context->GetContext()->CreateCommandBuffer();
-  auto render_target = RenderTarget::CreateOffscreenMSAA(
-      *content_context->GetContext(),
-      *GetContentContext()->GetRenderTargetCache(), {100, 100});
+  auto context = content_context->GetContext();
+  auto& allocator = *context->GetResourceAllocator();
 
-  auto entity_pass_target = EntityPassTarget(render_target, false);
+  // Emulate implicit MSAA resolve by making color resolve and msaa texture the
+  // same.
+  RenderTarget render_target;
+  {
+    PixelFormat pixel_format =
+        context->GetCapabilities()->GetDefaultColorFormat();
+
+    // Create MSAA color texture.
+
+    TextureDescriptor color0_tex_desc;
+    color0_tex_desc.storage_mode = StorageMode::kDevicePrivate;
+    color0_tex_desc.type = TextureType::kTexture2DMultisample;
+    color0_tex_desc.sample_count = SampleCount::kCount4;
+    color0_tex_desc.format = pixel_format;
+    color0_tex_desc.size = ISize{100, 100};
+    color0_tex_desc.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget);
+
+    auto color0_msaa_tex = allocator.CreateTexture(color0_tex_desc);
+
+    // Color attachment.
+
+    ColorAttachment color0;
+    color0.load_action = LoadAction::kDontCare;
+    color0.store_action = StoreAction::kStoreAndMultisampleResolve;
+    color0.texture = color0_msaa_tex;
+    color0.resolve_texture = color0_msaa_tex;
+
+    render_target.SetColorAttachment(color0, 0u);
+    render_target.SetStencilAttachment(std::nullopt);
+  }
+
+  auto entity_pass_target = EntityPassTarget(render_target, false, true);
 
   auto color0 = entity_pass_target.GetRenderTarget()
                     .GetColorAttachments()
@@ -79,9 +105,9 @@ TEST_P(EntityPassTargetTest, SwapWithMSAAImplicitResolve) {
                .find(0u)
                ->second;
 
-  ASSERT_EQ(msaa_tex, color0.texture);
+  ASSERT_NE(msaa_tex, color0.texture);
   ASSERT_NE(resolve_tex, color0.resolve_texture);
-  ASSERT_TRUE(false);  // see if this runs.
+  ASSERT_EQ(color0.texture, color0.resolve_texture);
 }
 
 }  // namespace testing

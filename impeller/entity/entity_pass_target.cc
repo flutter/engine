@@ -11,9 +11,11 @@
 namespace impeller {
 
 EntityPassTarget::EntityPassTarget(const RenderTarget& render_target,
-                                   bool supports_read_from_resolve)
+                                   bool supports_read_from_resolve,
+                                   bool supports_implicit_msaa)
     : target_(render_target),
-      supports_read_from_resolve_(supports_read_from_resolve) {}
+      supports_read_from_resolve_(supports_read_from_resolve),
+      supports_implicit_msaa_(supports_implicit_msaa) {}
 
 std::shared_ptr<Texture> EntityPassTarget::Flip(Allocator& allocator) {
   auto color0 = target_.GetColorAttachments().find(0)->second;
@@ -47,7 +49,7 @@ std::shared_ptr<Texture> EntityPassTarget::Flip(Allocator& allocator) {
 
   // If the color0 resolve texture is the same as the texture, then we're
   // running on the GLES backend with implicit resolve.
-  if (color0.resolve_texture == color0.texture) {
+  if (supports_implicit_msaa_) {
     auto new_secondary = color0.resolve_texture;
     color0.resolve_texture = secondary_color_texture_;
     color0.texture = secondary_color_texture_;
