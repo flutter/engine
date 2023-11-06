@@ -183,7 +183,7 @@ void testMain() {
       expect(paragraph.getGlyphInfoAt(200), isNull);
     });
 
-    test('Basic glyph metrics 2', () {
+    test('Basic glyph metrics - hit test', () {
       const double fontSize = 10.0;
       final ui.ParagraphBuilder builder = ui.ParagraphBuilder(CkParagraphStyle(
         fontSize: fontSize,
@@ -201,7 +201,6 @@ void testMain() {
       expect(bottomRight?.graphemeClusterCodeUnitRange, const ui.TextRange(start: 8, end: 9));
       expect(bottomRight?.writingDirection, ui.TextDirection.ltr);
     });
-
 
     test('rounding hack disabled by default', () {
       expect(ui.ParagraphBuilder.shouldDisableRoundingHack, isTrue);

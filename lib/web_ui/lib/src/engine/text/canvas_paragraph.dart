@@ -206,7 +206,7 @@ class CanvasParagraph implements ui.Paragraph {
   }
 
   @override
-  ui.GlyphInfo? getClosestGlyphInfoForOffset(ui.Offset offset) => _layoutService.getClosestGlyphCluster(offset);
+  ui.GlyphInfo? getClosestGlyphInfoForOffset(ui.Offset offset) => _layoutService.getClosestGlyphInfo(offset);
 
   @override
   ui.GlyphInfo? getGlyphInfoAt(int codeUnitOffset) {

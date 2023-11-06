@@ -594,15 +594,16 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
     return x;
   }
 
-  // A naive implementation that only accounts for valid surrogate pairs. This
-  // is only used if Intl.Segmenter() is not supported so _fromDomSegmenter can't
-  // be called.
+  // This is the fallback graphme breaker that is only used if Intl.Segmenter()
+  // is not supported so _fromDomSegmenter can't be called. This implementation
+  // breaks the text into UTF-16 codepoints instead of graphme clusters.
   List<int> _fallbackGraphemeStartIterable(String fragmentText) {
     final List<int> graphemeStarts = <int>[];
     bool precededByHighSurrogate = false;
     for (int i = 0; i < fragmentText.length; i++) {
       final int maskedCodeUnit = fragmentText.codeUnitAt(i) & 0xFC00;
-      if (maskedCodeUnit != 0xDC00 || precededByHighSurrogate) {
+      // Only skip `i` if it points to a low surrogate in a valid surrogate pair.
+      if (maskedCodeUnit != 0xDC00 || !precededByHighSurrogate) {
         graphemeStarts.add(start + i);
       }
       precededByHighSurrogate = maskedCodeUnit == 0xD800;
@@ -625,7 +626,7 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
     return graphemeStarts;
   }
 
-  // This List is an ordered (ascending) sequence of UTF16 offsets that points to
+  // This List contains an ascending sequence of UTF16 offsets that points to
   // grapheme starts within the fragment. Each UTF16 offset is relative to the
   // start of the paragraph, instead of the start of the fragment.
   late final List<int> _graphemeStarts = _breakFragmentText(
@@ -640,10 +641,8 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
     return graphemeStarts;
   }
 
-  // Returns the GlyphCluster within the range
-  // [_graphemeStarts[startIndex], _graphemeStarts[endIndex]) in the fragment
-  // that's visually closeset to the given horizontal offset `x` (in the
-  // paragraph's coordinates).
+  // Returns the GlyphInfo within the range [_graphemeStarts[startIndex], _graphemeStarts[endIndex]),
+  // that's visually closeset to the given horizontal offset `x` (in the paragraph's coordinates).
   ui.GlyphInfo _getClosestCharacterInRange(double x, int startIndex, int endIndex) {
     final ui.TextRange fullRange = ui.TextRange(start: _graphemeStarts[startIndex], end: _graphemeStarts[endIndex]);
     final ui.TextBox fullBox = toTextBox(start: fullRange.start, end: fullRange.end);
@@ -652,8 +651,11 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
     }
     assert(startIndex + 1 < endIndex);
     final ui.TextBox(:double left, :double right) = fullBox;
-    // The toTextBox call is potentially expensive so we'll try avoiding
-    // measuring every character in the fragment.
+
+    // The toTextBox call is potentially expensive so we'll try reducing the
+    // search steps with a binary search.
+    //
+    // x ∈ (left, right),
     if (left < x && x < right) {
       final int midIndex = (startIndex + endIndex) ~/ 2;
       // endIndex >= startIndex + 2, so midIndex >= start + 1
@@ -672,15 +674,14 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
       return distanceToFirst > distanceToSecond ? firstHalf : secondHalf;
     }
 
-    // Whether the first character or the last character is the closest.
+    // x ∉ (left, right), it's either the first character or the last, since
+    // there can only be one writing direction in the fragment.
     final ui.TextRange range = switch ((fullBox.direction, x <= left)) {
-      (ui.TextDirection.ltr, true) ||
-      (ui.TextDirection.rtl, false) => ui.TextRange(
+      (ui.TextDirection.ltr, true) || (ui.TextDirection.rtl, false) => ui.TextRange(
         start: start + _graphemeStarts[startIndex],
         end: start + _graphemeStarts[startIndex + 1],
       ),
-      (ui.TextDirection.ltr, false) ||
-      (ui.TextDirection.rtl, true) => ui.TextRange(
+      (ui.TextDirection.ltr, false) || (ui.TextDirection.rtl, true) => ui.TextRange(
         start: start + _graphemeStarts[endIndex - 1],
         end: start + _graphemeStarts[endIndex],
       ),
@@ -689,6 +690,8 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
     return ui.GlyphInfo(box.toRect(), range, box.direction);
   }
 
+  /// Returns the UTF-16 range of the character that encloses the code unit at
+  /// the given offset.
   ui.TextRange? getCharacterRangeAt(int codeUnitOffset) {
     if (end == start) {
       return null;
@@ -710,8 +713,8 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
     return null;
   }
 
-  // There doesn't seem to be na easy way to get GlyphClusters using the web API.
-  // Pretend each grapheme cluster corresponds to a glyph cluster.
+  /// Returns the GlyphInfo of the character in the fragment that is closest to
+  /// the given offset x.
   ui.GlyphInfo? getClosestCharacterBox(double x) {
     if (end == start) {
       return null;

@@ -208,16 +208,16 @@ class ParagraphLine {
     return buffer.toString();
   }
 
-  // Find the closest [LayoutFragment] to the given horizontal offset `dx`, that
+  // Finds the closest [LayoutFragment] to the given horizontal offset `dx`, that
   // is not an [EllipsisFragment].
   LayoutFragment? closestFragmentAtOffset(double dx) {
-    final List<LayoutFragment> fs = switch (fragments) {
+    final List<LayoutFragment> fragments = switch (this.fragments) {
       [...final List<LayoutFragment> rest, EllipsisFragment()]
       || final List<LayoutFragment> rest => rest,
     };
 
     ({LayoutFragment fragment, double distance})? closestFragment;
-    for (final LayoutFragment fragment in fs) {
+    for (final LayoutFragment fragment in fragments) {
       assert(fragment is! EllipsisFragment);
       final double distance;
       if (dx < fragment.left) {

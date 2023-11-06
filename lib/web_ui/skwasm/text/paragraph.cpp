@@ -70,6 +70,7 @@ SKWASM_EXPORT bool paragraph_getClosestGlyphInfoAtCoordinate(
     bool* booleanFlags) {
   Paragraph::GlyphInfo glyphInfo;
   if (!paragraph->getClosestUTF16GlyphInfoAt(offsetX, offsetY, &glyphInfo)) {
+    delete glyphInfo;
     return false;
   }
   // This is more verbose than memcpying the whole struct but ideally we don't
@@ -90,6 +91,7 @@ SKWASM_EXPORT bool paragraph_getGlyphInfoAt(Paragraph* paragraph,
                                             bool* booleanFlags) {
   Paragraph::GlyphInfo glyphInfo;
   if (!paragraph->getGlyphInfoAtUTF16Offset(index, &glyphInfo)) {
+    delete glyphInfo;
     return false;
   }
   std::memcpy(graphemeLayoutBounds, &glyphInfo.fGraphemeLayoutBounds,

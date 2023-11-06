@@ -136,6 +136,25 @@ Future<void> testMain() async {
     expect(paragraph.getGlyphInfoAt(200), isNull);
   });
 
+  test('Basic glyph metrics - hit test', () {
+    const double fontSize = 10.0;
+    final ParagraphBuilder builder = ParagraphBuilder(CkParagraphStyle(
+      fontSize: fontSize,
+      fontFamily: 'FlutterTest',
+    ))..addText('Test\nTest');
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: double.infinity));
+
+    final GlyphInfo? bottomRight = paragraph.getClosestGlyphInfoForOffset(const Offset(99.0, 99.0));
+    final GlyphInfo? last = paragraph.getGlyphInfoAt(8);
+    expect(bottomRight, equals(last));
+    expect(bottomRight, isNot(paragraph.getGlyphInfoAt(0)));
+
+    expect(bottomRight?.graphemeClusterLayoutBounds, const Rect.fromLTWH(30, 10, 10, 10));
+    expect(bottomRight?.graphemeClusterCodeUnitRange, const TextRange(start: 8, end: 9));
+    expect(bottomRight?.writingDirection, TextDirection.ltr);
+  });
+
   test('Can disable rounding hack', () {
     if (!ParagraphBuilder.shouldDisableRoundingHack) {
       ParagraphBuilder.setDisableRoundingHack(true);

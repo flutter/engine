@@ -419,7 +419,7 @@ class TextLayoutService {
     return ui.TextPosition(offset: line.startIndex);
   }
 
-  ui.GlyphInfo? getClosestGlyphCluster(ui.Offset offset) {
+  ui.GlyphInfo? getClosestGlyphInfo(ui.Offset offset) {
     return _findLineForY(offset.dy)
       ?.closestFragmentAtOffset(offset.dx)
       ?.getClosestCharacterBox(offset.dx);
