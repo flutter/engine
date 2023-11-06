@@ -108,20 +108,20 @@ TEST_P(DirectionalGaussianBlurFilterContentsTest,
   EXPECT_TRUE(result.has_value());
   if (result.has_value()) {
     EXPECT_EQ(result.value().GetBlendMode(), BlendMode::kSourceOver);
-  }
-  std::optional<Rect> result_coverage = result.value().GetCoverage();
-  std::optional<Rect> contents_coverage = contents->GetCoverage(entity);
-  EXPECT_TRUE(result_coverage.has_value());
-  EXPECT_TRUE(contents_coverage.has_value());
-  if (result_coverage.has_value() && contents_coverage.has_value()) {
-    EXPECT_NEAR(result_coverage.value().GetLeft(),
-                contents_coverage.value().GetLeft(), kEhCloseEnough);
-    EXPECT_NEAR(result_coverage.value().GetTop(),
-                contents_coverage.value().GetTop(), kEhCloseEnough);
-    EXPECT_NEAR(result_coverage.value().GetRight(),
-                contents_coverage.value().GetRight(), kEhCloseEnough);
-    EXPECT_NEAR(result_coverage.value().GetBottom(),
-                contents_coverage.value().GetBottom(), kEhCloseEnough);
+    std::optional<Rect> result_coverage = result.value().GetCoverage();
+    std::optional<Rect> contents_coverage = contents->GetCoverage(entity);
+    EXPECT_TRUE(result_coverage.has_value());
+    EXPECT_TRUE(contents_coverage.has_value());
+    if (contents_coverage.has_value()) {
+      EXPECT_NEAR(result_coverage.value().GetLeft(),
+                  contents_coverage.value().GetLeft(), kEhCloseEnough);
+      EXPECT_NEAR(result_coverage.value().GetTop(),
+                  contents_coverage.value().GetTop(), kEhCloseEnough);
+      EXPECT_NEAR(result_coverage.value().GetRight(),
+                  contents_coverage.value().GetRight(), kEhCloseEnough);
+      EXPECT_NEAR(result_coverage.value().GetBottom(),
+                  contents_coverage.value().GetBottom(), kEhCloseEnough);
+    }
   }
 }
 
