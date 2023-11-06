@@ -63,11 +63,11 @@ class KeyData {
   const KeyData({
     required this.timeStamp,
     required this.type,
-    required this.deviceType,
     required this.physical,
     required this.logical,
     required this.character,
     required this.synthesized,
+    this.deviceType = KeyEventDeviceType.keyboard,
   });
 
   /// Time of event dispatch, relative to an arbitrary timeline.
