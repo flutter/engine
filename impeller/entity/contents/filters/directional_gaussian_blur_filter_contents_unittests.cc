@@ -112,7 +112,7 @@ TEST_P(DirectionalGaussianBlurFilterContentsTest,
     std::optional<Rect> contents_coverage = contents->GetCoverage(entity);
     EXPECT_TRUE(result_coverage.has_value());
     EXPECT_TRUE(contents_coverage.has_value());
-    if (contents_coverage.has_value()) {
+    if (result_coverage.has_value() && contents_coverage.has_value()) {
       EXPECT_NEAR(result_coverage.value().GetLeft(),
                   contents_coverage.value().GetLeft(), kEhCloseEnough);
       EXPECT_NEAR(result_coverage.value().GetTop(),
