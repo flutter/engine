@@ -13,8 +13,7 @@ namespace impeller {
 
 EntityPassTarget::EntityPassTarget(const RenderTarget& render_target,
                                    bool supports_implicit_msaa)
-    : target_(render_target),
-      supports_implicit_msaa_(supports_implicit_msaa) {}
+    : target_(render_target), supports_implicit_msaa_(supports_implicit_msaa) {}
 
 std::shared_ptr<Texture> EntityPassTarget::Flip(
     RenderTargetAllocator& allocator) {
