@@ -556,21 +556,22 @@ class BrowserPlatform extends PlatformPlugin {
       final String link = '<link rel="x-dart-test" href="$scriptBase"${linkSkwasm ? " skwasm" : ""}>';
 
       final String testRunner = isWasm ? '/test_dart2wasm.js' : '/test_dart2js.js';
-
+      final String flutterConfigSetupScript = isWasm ? '''
+<script>
+  window.flutterConfiguration = {
+    canvasKitBaseUrl: "/canvaskit/",
+    // Some of our tests rely on color emoji
+    useColorEmoji: true,
+    canvasKitVariant: "${getCanvasKitVariant()}",
+  };
+</script>
+      ''' : '<script src="/flutter_js/flutter.js"></script>';
       return shelf.Response.ok('''
         <!DOCTYPE html>
         <html>
         <head>
           <meta name="assetBase" content="/">
-          <script src="/flutter_js/flutter.js"></script>
-          <script>
-            window.flutterConfiguration = {
-              canvasKitBaseUrl: "/canvaskit/",
-              // Some of our tests rely on color emoji
-              useColorEmoji: true,
-              canvasKitVariant: "${getCanvasKitVariant()}",
-            };
-          </script>
+          $flutterConfigSetupScript
           $link
           <script src="$testRunner"></script>
         </head>
