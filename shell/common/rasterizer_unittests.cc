@@ -218,9 +218,10 @@ TEST(RasterizerTest,
                          /*raster_thread_merger=*/
                          fml::RefPtr<fml::RasterThreadMerger>(nullptr)))
       .Times(1);
-  EXPECT_CALL(*external_view_embedder,
-              PrepareView(/*view_id=*/kImplicitViewId, /*frame_size=*/SkISize(),
-                          /*device_pixel_ratio=*/2.0))
+  EXPECT_CALL(
+      *external_view_embedder,
+      PrepareView(/*native_view_id=*/kImplicitViewId, /*frame_size=*/SkISize(),
+                  /*device_pixel_ratio=*/2.0))
       .Times(1);
   EXPECT_CALL(*external_view_embedder, SubmitView).Times(1);
   EXPECT_CALL(
@@ -292,9 +293,10 @@ TEST(
   EXPECT_CALL(*external_view_embedder, BeginFrame(/*context=*/nullptr,
                                                   /*raster_thread_merger=*/_))
       .Times(1);
-  EXPECT_CALL(*external_view_embedder,
-              PrepareView(/*view_id=*/kImplicitViewId, /*frame_size=*/SkISize(),
-                          /*device_pixel_ratio=*/2.0))
+  EXPECT_CALL(
+      *external_view_embedder,
+      PrepareView(/*native_view_id=*/kImplicitViewId, /*frame_size=*/SkISize(),
+                  /*device_pixel_ratio=*/2.0))
       .Times(1);
   EXPECT_CALL(*external_view_embedder, SubmitView).Times(0);
   EXPECT_CALL(*external_view_embedder, EndFrame(/*should_resubmit_frame=*/false,
@@ -369,9 +371,10 @@ TEST(
   EXPECT_CALL(*external_view_embedder, BeginFrame(/*context=*/nullptr,
                                                   /*raster_thread_merger=*/_))
       .Times(1);
-  EXPECT_CALL(*external_view_embedder,
-              PrepareView(/*view_id=*/kImplicitViewId, /*frame_size=*/SkISize(),
-                          /*device_pixel_ratio=*/2.0))
+  EXPECT_CALL(
+      *external_view_embedder,
+      PrepareView(/*native_view_id=*/kImplicitViewId, /*frame_size=*/SkISize(),
+                  /*device_pixel_ratio=*/2.0))
       .Times(1);
   EXPECT_CALL(*external_view_embedder, SubmitView).Times(1);
   EXPECT_CALL(*external_view_embedder, EndFrame(/*should_resubmit_frame=*/false,
@@ -449,9 +452,10 @@ TEST(RasterizerTest,
   EXPECT_CALL(*external_view_embedder, BeginFrame(/*context=*/nullptr,
                                                   /*raster_thread_merger=*/_))
       .Times(2);
-  EXPECT_CALL(*external_view_embedder,
-              PrepareView(/*view_id=*/kImplicitViewId, /*frame_size=*/SkISize(),
-                          /*device_pixel_ratio=*/2.0))
+  EXPECT_CALL(
+      *external_view_embedder,
+      PrepareView(/*native_view_id=*/kImplicitViewId, /*frame_size=*/SkISize(),
+                  /*device_pixel_ratio=*/2.0))
       .Times(2);
   EXPECT_CALL(*external_view_embedder, SubmitView).Times(2);
   EXPECT_CALL(*external_view_embedder, EndFrame(/*should_resubmit_frame=*/false,
@@ -561,9 +565,10 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNotUsedThisFrame) {
   EXPECT_CALL(*external_view_embedder, BeginFrame(/*context=*/nullptr,
                                                   /*raster_thread_merger=*/_))
       .Times(0);
-  EXPECT_CALL(*external_view_embedder,
-              PrepareView(/*view_id=*/kImplicitViewId, /*frame_size=*/SkISize(),
-                          /*device_pixel_ratio=*/2.0))
+  EXPECT_CALL(
+      *external_view_embedder,
+      PrepareView(/*native_view_id=*/kImplicitViewId, /*frame_size=*/SkISize(),
+                  /*device_pixel_ratio=*/2.0))
       .Times(0);
   EXPECT_CALL(
       *external_view_embedder,
