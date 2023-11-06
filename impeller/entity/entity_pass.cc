@@ -397,7 +397,10 @@ bool EntityPass::Render(ContentContext& renderer,
         entity.SetContents(contents);
         entity.SetBlendMode(BlendMode::kSource);
 
-        entity.Render(renderer, *render_pass);
+        if (!entity.Render(renderer, *render_pass)) {
+          VALIDATION_LOG << "Failed to render EntityPass root blit.";
+          return false;
+        }
       }
 
       if (!render_pass->EncodeCommands()) {

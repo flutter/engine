@@ -45,7 +45,16 @@ std::shared_ptr<Texture> EntityPassTarget::Flip(Allocator& allocator) {
     }
   }
 
-  std::swap(color0.resolve_texture, secondary_color_texture_);
+  // If the color0 resolve texture is the same as the texture, then we're running
+  // on the GLES backend with implicit resolve.
+  if (color0.resolve_texture == color0.texture) {
+    auto new_secondary = color0.resolve_texture;
+    color0.resolve_texture = secondary_color_texture_;
+    color0.texture = secondary_color_texture_;
+    secondary_color_texture_ = new_secondary;
+  } else {
+    std::swap(color0.resolve_texture, secondary_color_texture_);
+  }
 
   target_.SetColorAttachment(color0, 0);
 
