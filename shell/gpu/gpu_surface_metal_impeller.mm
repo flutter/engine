@@ -51,7 +51,7 @@ GPUSurfaceMetalImpeller::~GPUSurfaceMetalImpeller() = default;
 
 // |Surface|
 bool GPUSurfaceMetalImpeller::IsValid() {
-  return !!aiks_context_;
+  return !!aiks_context_ && aiks_context_->IsValid();
 }
 
 // |Surface|
@@ -100,7 +100,6 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
   auto drawable = impeller::SurfaceMTL::GetMetalDrawableAndValidate(
       impeller_renderer_->GetContext(), mtl_layer);
   if (!drawable) {
-    FML_LOG(ERROR) << "Failed to acquire next drawable.";
     return nullptr;
   }
   if (Settings::kSurfaceDataAccessible) {
