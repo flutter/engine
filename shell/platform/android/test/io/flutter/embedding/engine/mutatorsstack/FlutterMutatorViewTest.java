@@ -240,5 +240,6 @@ public class FlutterMutatorViewTest {
   }
 
   @Implements(FrameLayout.class)
-  public static class ShadowFrameLayout extends io.flutter.plugin.platform.PlatformViewWrapperTest.ShadowViewGroup {}
+  public static class ShadowFrameLayout
+      extends io.flutter.plugin.platform.PlatformViewWrapperTest.ShadowViewGroup {}
 }
