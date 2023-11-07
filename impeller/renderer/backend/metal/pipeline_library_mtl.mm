@@ -9,7 +9,6 @@
 
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/container.h"
-#include "fml/synchronization/count_down_latch.h"
 #include "impeller/base/promise.h"
 #include "impeller/renderer/backend/metal/compute_pipeline_mtl.h"
 #include "impeller/renderer/backend/metal/formats_mtl.h"
@@ -70,7 +69,7 @@ static void GetMTLRenderPipelineDescriptor(const PipelineDescriptor& desc,
         ShaderFunctionMTL::Cast(*entry.second)
             .GetMTLFunctionSpecialized(
                 constants,
-                [callback, descriptor, latch](id<MTLFunction> function) {
+                [callback, descriptor](id<MTLFunction> function) {
                   descriptor.fragmentFunction = function;
                   callback(descriptor);
                 });
