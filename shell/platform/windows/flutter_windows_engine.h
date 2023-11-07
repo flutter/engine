@@ -102,7 +102,7 @@ class FlutterWindowsEngine {
   bool Run(std::string_view entrypoint);
 
   // Returns true if the engine is currently running.
-  bool running() { return engine_ != nullptr; }
+  virtual bool running() { return engine_ != nullptr; }
 
   // Stops the engine. This invalidates the pointer returned by engine().
   //
