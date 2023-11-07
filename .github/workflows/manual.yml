@@ -28,6 +28,7 @@ jobs:
           token: ${{ secrets.PAT }}
           commit-message: Roll engine to ${{ github.event.inputs.engine_sha }}
           committer: GitHub <noreply@github.com>
+          reviewers: itsjustkevin
           title: 'Roll engine to ${{ github.event.inputs.engine_sha }}'
           body: |
             flutter engine->framework roll
