@@ -684,15 +684,13 @@ TEST(RasterizerTest, drawMultipleViewsWithExternalViewEmbedder) {
   EXPECT_CALL(*external_view_embedder, BeginFrame(/*context=*/nullptr,
                                                   /*raster_thread_merger=*/_))
       .Times(1);
-  EXPECT_CALL(
-      *external_view_embedder,
-      PrepareView(/*native_view_id=*/0, /*frame_size=*/SkISize(),
-                  /*device_pixel_ratio=*/1.5))
+  EXPECT_CALL(*external_view_embedder,
+              PrepareView(/*native_view_id=*/0, /*frame_size=*/SkISize(),
+                          /*device_pixel_ratio=*/1.5))
       .Times(1);
-  EXPECT_CALL(
-      *external_view_embedder,
-      PrepareView(/*native_view_id=*/1, /*frame_size=*/SkISize(),
-                  /*device_pixel_ratio=*/2.0))
+  EXPECT_CALL(*external_view_embedder,
+              PrepareView(/*native_view_id=*/1, /*frame_size=*/SkISize(),
+                          /*device_pixel_ratio=*/2.0))
       .Times(1);
   EXPECT_CALL(*external_view_embedder, SubmitView).Times(2);
   EXPECT_CALL(*external_view_embedder, EndFrame(/*should_resubmit_frame=*/false,
@@ -709,8 +707,7 @@ TEST(RasterizerTest, drawMultipleViewsWithExternalViewEmbedder) {
     tasks.push_back(std::make_unique<LayerTreeTask>(
         1, std::make_unique<LayerTree>(LayerTree::Config(), SkISize()), 2.0));
     auto layer_tree_item = std::make_unique<FrameItem>(
-        std::move(tasks),
-        CreateFinishedBuildRecorder());
+        std::move(tasks), CreateFinishedBuildRecorder());
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
