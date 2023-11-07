@@ -68,8 +68,7 @@ static void GetMTLRenderPipelineDescriptor(const PipelineDescriptor& desc,
         created_specialized_function = true;
         ShaderFunctionMTL::Cast(*entry.second)
             .GetMTLFunctionSpecialized(
-                constants,
-                [callback, descriptor](id<MTLFunction> function) {
+                constants, [callback, descriptor](id<MTLFunction> function) {
                   descriptor.fragmentFunction = function;
                   callback(descriptor);
                 });
