@@ -100,8 +100,8 @@ if (is_mac) {
     ]
 
     deps = [
-           "//flutter/testing",
-           ":gpu_surface_metal",
-         ] + gpu_common_deps
+             "//flutter/testing",
+             ":gpu_surface_metal",
+           ] + gpu_common_deps
   }
 }
