@@ -19,6 +19,7 @@
 #include "flutter/shell/platform/android/android_surface_software.h"
 #include "flutter/shell/platform/android/image_external_texture_gl.h"
 #include "flutter/shell/platform/android/surface_texture_external_texture_gl.h"
+#include "flutter/shell/platform/android/surface_texture_external_texture_vk.h"
 #if IMPELLER_ENABLE_VULKAN  // b/258506856 for why this is behind an if
 #include "flutter/shell/platform/android/android_surface_vulkan_impeller.h"
 #include "flutter/shell/platform/android/image_external_texture_vk.h"
@@ -321,9 +322,11 @@ void PlatformViewAndroid::RegisterExternalTexture(
             /*jni_facade=*/jni_facade_);
         return;
       case AndroidRenderingAPI::kVulkan:
-        // FIXME: Implement this!
-        FML_LOG(ERROR) << "Attempted to use a SurfaceTexture texture with a "
-                          "Vulkan rendering API. Nothing will be rendered.";
+        texture = std::make_shared<SurfaceTextureExternalTextureImpellerVK>(
+            /*context=*/std::static_pointer_cast<impeller::ContextVK>(impeller),
+            /*id=*/texture_id,
+            /*surface_texture=*/surface_texture,
+            /*jni_facade=*/jni_facade_);
         return;
       case AndroidRenderingAPI::kAutoselect:
         // Autoselect should have been resolved to GLES or Vulkan by now.

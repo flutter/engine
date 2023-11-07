@@ -125,6 +125,8 @@ source_set("flutter_shell_native_src") {
     "surface_texture_external_texture.h",
     "surface_texture_external_texture_gl.cc",
     "surface_texture_external_texture_gl.h",
+    "surface_texture_external_texture_vk.cc",
+    "surface_texture_external_texture_vk.h",
     "vsync_waiter_android.cc",
     "vsync_waiter_android.h",
   ]
