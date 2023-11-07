@@ -72,6 +72,7 @@ static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
     const std::optional<std::string>& impeller_backend,
     bool enable_vulkan_validation,
     bool enable_opengl_gpu_tracing) {
+  FML_LOG(ERROR) << "CreateAndroidContext";
   if (use_software_rendering) {
     return std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
   }

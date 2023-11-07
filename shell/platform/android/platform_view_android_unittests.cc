@@ -1,3 +1,4 @@
+#include "common/settings.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/platform/android/context/android_context.h"
@@ -103,10 +104,25 @@ class MockDelegate final : public ::flutter::PlatformView::Delegate {
               (const, override));
 };
 
+using ::testing::_;
+using ::testing::AllOf;
+using ::testing::ByMove;
+using ::testing::Field;
+using ::testing::ReturnRef;
+
 class AndroidPlatformViewTest : public ThreadTest {
  public:
   MockDelegate& Delegate() { return *delegate_; }
 
+  std::shared_ptr<PlatformViewAndroid> InitSkia() {
+    auto settings = Settings{};
+    settings.enable_impeller = false;
+    EXPECT_CALL(Delegate(), OnPlatformViewGetSettings())
+        .WillRepeatedly(ReturnRef(settings));
+    return Init(AndroidRenderingAPI::kOpenGLES);
+  }
+
+ private:
   std::shared_ptr<PlatformViewAndroid> Init(AndroidRenderingAPI api) {
     return std::make_shared<PlatformViewAndroid>(
         Delegate(),
@@ -115,10 +131,9 @@ class AndroidPlatformViewTest : public ThreadTest {
                     /*raster=*/CreateNewThread("raster"),
                     /*ui=*/CreateNewThread("ui"),
                     /*io=*/CreateNewThread("io")),
-        std::make_shared<JNIMock>(), std::make_shared<AndroidContext>(api));
+        std::make_shared<JNIMock>(), true, 1);
   }
 
- private:
   // A mocked delegate to use for testing.
   std::shared_ptr<MockDelegate> delegate_ = std::make_shared<MockDelegate>();
 };
@@ -126,8 +141,7 @@ class AndroidPlatformViewTest : public ThreadTest {
 }  // namespace
 
 TEST_F(AndroidPlatformViewTest, Create) {
-  MockDelegate();
-  Init(AndroidRenderingAPI::kVulkan);
+  InitSkia();
 }
 
 }  // namespace testing
