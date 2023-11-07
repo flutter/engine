@@ -909,10 +909,7 @@ TEST_F(FlutterWindowsEngineTest, EnableApplicationLifecycle) {
   EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
   auto handler = std::make_unique<MockWindowsLifecycleManager>(engine.get());
-  ON_CALL(*handler, IsLastWindowOfProcess).WillByDefault([]() {
-    return false;
-  });
-  EXPECT_CALL(*handler, IsLastWindowOfProcess).Times(1);
+  EXPECT_CALL(*handler, IsLastWindowOfProcess).WillOnce(Return(false));
   modifier.SetLifecycleManager(std::move(handler));
   engine->lifecycle_manager()->BeginProcessingExit();
 
@@ -932,10 +929,7 @@ TEST_F(FlutterWindowsEngineTest, ApplicationLifecycleExternalWindow) {
   EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
   auto handler = std::make_unique<MockWindowsLifecycleManager>(engine.get());
-  ON_CALL(*handler, IsLastWindowOfProcess).WillByDefault([]() {
-    return false;
-  });
-  EXPECT_CALL(*handler, IsLastWindowOfProcess).Times(1);
+  EXPECT_CALL(*handler, IsLastWindowOfProcess).WillOnce(Return(false));
   modifier.SetLifecycleManager(std::move(handler));
   engine->lifecycle_manager()->BeginProcessingExit();
 
