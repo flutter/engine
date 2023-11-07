@@ -90,7 +90,7 @@ source_set("gpu_surface_metal") {
 }
 
 if (is_mac) {
-  executable("gpu_surface_metal_unittests") {
+  impeller_component("gpu_surface_metal_unittests") {
     testonly = true
     sources = [ "gpu_surface_metal_impeller_unittests.mm" ]
 

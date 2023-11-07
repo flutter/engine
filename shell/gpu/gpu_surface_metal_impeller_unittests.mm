@@ -23,7 +23,7 @@ class TestGPUSurfaceMetalDelegate : public GPUSurfaceMetalDelegate {
 
   ~TestGPUSurfaceMetalDelegate() = default;
 
-  GPUCAMetalLayerHandle GetCAMetalLayer(const SkISize& frame_info) const override { return layer_; }
+  GPUCAMetalLayerHandle GetCAMetalLayer(const SkISize& frame_info) const override { return (__bridge GPUCAMetalLayerHandle)(layer_); }
 
   bool PresentDrawable(GrMTLHandle drawable) const override { return true; }
 
