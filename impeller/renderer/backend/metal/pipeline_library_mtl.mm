@@ -53,9 +53,6 @@ static void GetMTLRenderPipelineDescriptor(const PipelineDescriptor& desc,
   descriptor.stencilAttachmentPixelFormat =
       ToMTLPixelFormat(desc.GetStencilPixelFormat());
 
-  // This latch is used to ensure that GetMTLFunctionSpecialized does not finish
-  // before the descriptor is completely set up.
-  auto latch = std::make_shared<fml::CountDownLatch>(1u);
   const auto& constants = desc.GetSpecializationConstants();
   for (const auto& entry : desc.GetStageEntrypoints()) {
     if (entry.first == ShaderStage::kVertex) {
@@ -81,7 +78,6 @@ static void GetMTLRenderPipelineDescriptor(const PipelineDescriptor& desc,
     }
   }
 
-  latch->CountDown();
   if (!created_specialized_function) {
     callback(descriptor);
   }
