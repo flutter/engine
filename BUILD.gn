@@ -165,7 +165,6 @@ group("unittests") {
       "//flutter/runtime:no_dart_plugin_registrant_unittests",
       "//flutter/runtime:runtime_unittests",
       "//flutter/shell/common:shell_unittests",
-      "//flutter/shell/gpu:gpu_surface_unittests",
       "//flutter/shell/platform/embedder:embedder_a11y_unittests",
       "//flutter/shell/platform/embedder:embedder_proctable_unittests",
       "//flutter/shell/platform/embedder:embedder_unittests",
@@ -198,6 +197,7 @@ group("unittests") {
         "//flutter/impeller/golden_tests:impeller_golden_tests",
         "//flutter/shell/platform/darwin/common:framework_common_unittests",
         "//flutter/third_party/spring_animation:spring_animation_unittests",
+        "//flutter/shell/gpu:gpu_surface_unittests",
       ]
     }
 

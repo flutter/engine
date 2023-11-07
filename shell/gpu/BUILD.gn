@@ -89,21 +89,19 @@ source_set("gpu_surface_metal") {
   }
 }
 
-executable("gpu_surface_unittests") {
-  testonly = true
-  sources = []
-
-  if (is_mac) {
-    sources += [ "gpu_surface_metal_impeller_unittests.mm" ]
+if (is_mac) {
+  executable("gpu_surface_metal_unittests") {
+    testonly = true
+    sources = [ "gpu_surface_metal_impeller_unittests.mm" ]
 
     frameworks = [
       "AppKit.framework",
       "QuartzCore.framework",
     ]
-  }
 
-  deps = [
+    deps = [
            "//flutter/testing",
            ":gpu_surface_metal",
          ] + gpu_common_deps
+  }
 }
