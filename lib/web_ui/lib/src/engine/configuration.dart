@@ -51,9 +51,14 @@ import 'canvaskit/renderer.dart';
 import 'dom.dart';
 
 /// The Web Engine configuration for the current application.
-FlutterConfiguration get configuration =>
-  _configuration ??= FlutterConfiguration.legacy(_jsConfiguration);
+FlutterConfiguration get configuration {
+  if (_debugConfiguration != null) {
+    return _debugConfiguration!;
+  }
+  return _configuration ??= FlutterConfiguration.legacy(_jsConfiguration);
+}
 FlutterConfiguration? _configuration;
+FlutterConfiguration? _debugConfiguration;
 
 /// Overrides the initial test configuration with new values coming from `newConfig`.
 ///
@@ -81,11 +86,11 @@ void debugOverrideJsConfiguration(JsFlutterConfiguration? newConfig) {
       _jsConfiguration.jsify(),
       newConfig.jsify(),
     );
-    _configuration = FlutterConfiguration()
+    _debugConfiguration = FlutterConfiguration()
         ..setUserConfiguration(newJsConfig as JsFlutterConfiguration);
     print('Overridden engine JS config to: ${newJsConfig.dartify()}');
   } else {
-    _configuration = null;
+    _debugConfiguration = null;
   }
 }
 

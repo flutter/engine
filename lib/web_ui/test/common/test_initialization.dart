@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' as engine;
+import 'package:ui/src/engine/initialization.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
@@ -22,7 +23,8 @@ void setUpUnitTests({
     }
 
     debugFontsScope = configureDebugFontsAssetScope(fakeAssetManager);
-    await engine.initializeEngine(assetManager: fakeAssetManager);
+    await bootstrapAndWait();
+    debugOnlyAssetManager = fakeAssetManager;
     engine.renderer.fontCollection.fontFallbackManager?.downloadQueue.fallbackFontUrlPrefixOverride = 'assets/fallback_fonts/';
 
     if (setUpTestViewDimensions) {
