@@ -120,8 +120,9 @@ Dart_Handle Paragraph::getPositionForOffset(double dx, double dy) {
   return tonic::DartConverter<decltype(result)>::ToDart(result);
 }
 
-Dart_Handle glyphInfoFrom(Dart_Handle constructor,
-                          skia::textlayout::Paragraph::GlyphInfo& glyphInfo) {
+Dart_Handle glyphInfoFrom(
+    Dart_Handle constructor,
+    const skia::textlayout::Paragraph::GlyphInfo& glyphInfo) {
   std::array<Dart_Handle, 7> arguments = {
       Dart_NewDouble(glyphInfo.fGraphemeLayoutBounds.fLeft),
       Dart_NewDouble(glyphInfo.fGraphemeLayoutBounds.fTop),
