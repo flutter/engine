@@ -21,6 +21,23 @@ SamplerDescriptor MakeSamplerDescriptor(MinMagFilter filter,
   sampler_desc.width_address_mode = address_mode;
   return sampler_desc;
 }
+
+/// @brief This performs the conversion from an entity's local coordinates to
+///        a subpasses uv coordinates.
+/// @param subpass_size The size of the subpass in pixels.
+/// @param entity_transform The local transform of the entity.
+/// @return A quad in uv coordinates.
+std::array<Point, 4> CalculateUVs(const ISize& subpass_size,
+                                  const Matrix& entity_transform) {
+  Point offset = Matrix::MakeScale({1.0f / subpass_size.width,
+                                    1.0f / subpass_size.height, 1.0f}) *
+                 (entity_transform.Invert() * Point(0.0, 0.0));
+  std::array<Point, 4> input_uvs = {Point(0, 0), Point(1, 0), Point(0, 1),
+                                    Point(1, 1)};
+  return {input_uvs[0] + offset, input_uvs[1] + offset, input_uvs[2] + offset,
+          input_uvs[3] + offset};
+}
+
 }  // namespace
 
 GaussianBlurFilterContents::GaussianBlurFilterContents(Scalar sigma)
@@ -91,17 +108,14 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
 
     HostBuffer& host_buffer = pass.GetTransientsBuffer();
 
-    Point offset = Matrix::MakeScale({1.0f / subpass_size.width,
-                                      1.0f / subpass_size.height, 1.0f}) *
-                   (entity.GetTransformation().Invert() * Point(0.0, 0.0));
-    std::array<Point, 4> input_uvs = {Point(0, 0), Point(1, 0), Point(0, 1),
-                                      Point(1, 1)};
+    std::array<Point, 4> uvs =
+        CalculateUVs(subpass_size, entity.GetTransformation());
     VertexBufferBuilder<GaussianBlurVertexShader::PerVertexData> vtx_builder;
     vtx_builder.AddVertices({
-        {Point(0, 0), input_uvs[0] + offset},
-        {Point(1, 0), input_uvs[1] + offset},
-        {Point(0, 1), input_uvs[2] + offset},
-        {Point(1, 1), input_uvs[3] + offset},
+        {Point(0, 0), uvs[0]},
+        {Point(1, 0), uvs[1]},
+        {Point(0, 1), uvs[2]},
+        {Point(1, 1), uvs[3]},
     });
     auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
