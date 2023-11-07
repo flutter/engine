@@ -313,7 +313,7 @@ TEST(FlutterWindowTest, AlertNode) {
   std::unique_ptr<MockFlutterWindow> win32window =
       std::make_unique<MockFlutterWindow>();
   EXPECT_CALL(*win32window.get(), GetAxFragmentRootDelegate())
-      .WillOnce(Return(nullptr));
+      .WillRepeatedly(Return(nullptr));
   EXPECT_CALL(*win32window.get(), OnWindowStateEvent).Times(AnyNumber());
   MockFlutterWindowsView view(std::move(win32window));
   std::wstring message = L"Test alert";

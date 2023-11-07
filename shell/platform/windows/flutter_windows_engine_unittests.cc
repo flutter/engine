@@ -641,7 +641,7 @@ TEST_F(FlutterWindowsEngineTest, AlertPlatformMessage) {
   ui::AXPlatformNodeDelegateBase parent_delegate;
   AlertPlatformNodeDelegate delegate(parent_delegate);
   EXPECT_CALL(*window_binding_handler, GetAlertDelegate)
-      .WillOnce(Return(&delegate));
+      .WillRepeatedly(Return(&delegate));
   MockFlutterWindowsView view(std::move(window_binding_handler));
   view.SetEngine(engine.get());
 
@@ -717,7 +717,7 @@ TEST_F(FlutterWindowsEngineTest, TestExit) {
                             std::optional<WPARAM> wparam,
                             std::optional<LPARAM> lparam,
                             UINT exit_code) { finished = exit_code == 0; });
-  EXPECT_CALL(*handler, IsLastWindowOfProcess).WillOnce(Return(true));
+  EXPECT_CALL(*handler, IsLastWindowOfProcess).WillRepeatedly(Return(true));
   modifier.SetLifecycleManager(std::move(handler));
 
   engine->lifecycle_manager()->BeginProcessingExit();
@@ -749,7 +749,7 @@ TEST_F(FlutterWindowsEngineTest, TestExitCancel) {
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
   auto handler = std::make_unique<MockWindowsLifecycleManager>(engine.get());
   EXPECT_CALL(*handler, SetLifecycleState(AppLifecycleState::kResumed));
-  EXPECT_CALL(*handler, IsLastWindowOfProcess).WillOnce(Return(true));
+  EXPECT_CALL(*handler, IsLastWindowOfProcess).WillRepeatedly(Return(true));
   EXPECT_CALL(*handler, Quit).Times(0);
   modifier.SetLifecycleManager(std::move(handler));
   engine->lifecycle_manager()->BeginProcessingExit();
