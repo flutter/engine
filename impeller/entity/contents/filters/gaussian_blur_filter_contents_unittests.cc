@@ -102,8 +102,7 @@ TEST(GaussianBlurFilterContentsTest, FilterSourceCoverage) {
   ASSERT_EQ(coverage, Rect::MakeLTRB(100 - 2, 100 - 2, 200 + 2, 200 + 2));
 }
 
-TEST_P(GaussianBlurFilterContentsTest,
-       RenderCoverageMatchesGetCoverage) {
+TEST_P(GaussianBlurFilterContentsTest, RenderCoverageMatchesGetCoverage) {
   TextureDescriptor desc = {
       .format = PixelFormat::kB8G8R8A8UNormInt,
       .size = ISize(100, 100),
@@ -138,7 +137,6 @@ TEST_P(GaussianBlurFilterContentsTest,
     }
   }
 }
-
 
 }  // namespace testing
 }  // namespace impeller
