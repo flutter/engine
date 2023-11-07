@@ -307,49 +307,112 @@ void PlatformViewAndroid::UpdateSemantics(
 void PlatformViewAndroid::RegisterExternalTexture(
     int64_t texture_id,
     const fml::jni::ScopedJavaGlobalRef<jobject>& surface_texture) {
-  if (android_context_->RenderingApi() == AndroidRenderingAPI::kOpenGLES) {
-    if (android_context_->GetImpellerContext()) {
-      // Impeller GLES.
-      RegisterTexture(std::make_shared<SurfaceTextureExternalTextureImpellerGL>(
-          std::static_pointer_cast<impeller::ContextGLES>(
-              android_context_->GetImpellerContext()),
-          texture_id, surface_texture, jni_facade_));
-    } else {
-      // Legacy GL.
-      RegisterTexture(std::make_shared<SurfaceTextureExternalTextureGL>(
-          texture_id, surface_texture, jni_facade_));
+  std::shared_ptr<flutter::Texture> texture;
+
+  // TODO(https://github.com/flutter/flutter/issues/137798): Refactor.
+  if (auto const impeller = android_context_->GetImpellerContext()) {
+    switch (android_context_->RenderingApi()) {
+      case AndroidRenderingAPI::kOpenGLES:
+        texture = std::make_shared<SurfaceTextureExternalTextureImpellerGL>(
+            /*context=*/std::static_pointer_cast<impeller::ContextGLES>(
+                impeller),
+            /*id=*/texture_id,
+            /*surface_texture=*/surface_texture,
+            /*jni_facade=*/jni_facade_);
+        return;
+      case AndroidRenderingAPI::kVulkan:
+        // FIXME: Implement this!
+        FML_LOG(ERROR) << "Attempted to use a SurfaceTexture texture with a "
+                          "Vulkan rendering API. Nothing will be rendered.";
+        return;
+      case AndroidRenderingAPI::kAutoselect:
+        // Autoselect should have been resolved to GLES or Vulkan by now.
+        [[fallthrough]];
+      case AndroidRenderingAPI::kSoftware:
+        // Impeller does not have a software backend.
+        FML_UNREACHABLE();
+        break;
     }
-  } else {
-    FML_LOG(INFO) << "Attempted to use a SurfaceTextureExternalTexture with an "
-                     "unsupported rendering API.";
   }
+
+  // Skia backend always uses GLES, so fail on anything else.
+  switch (android_context_->RenderingApi()) {
+    case AndroidRenderingAPI::kOpenGLES:
+      texture = std::make_shared<SurfaceTextureExternalTextureGL>(
+          /*id=*/texture_id,
+          /*surface_texture=*/surface_texture,
+          /*jni_facade=*/jni_facade_);
+      return;
+    case AndroidRenderingAPI::kSoftware:
+      FML_LOG(INFO) << "Attempted to use a SurfaceTexture texture with a "
+                       "software rendering API. Nothing will be rendered.";
+      return;
+    case AndroidRenderingAPI::kVulkan:
+      [[fallthrough]];
+    case AndroidRenderingAPI::kAutoselect:
+      FML_UNREACHABLE();
+  }
+
+  FML_DCHECK(texture) << "Expected a texture to be created.";
+  RegisterTexture(texture);
 }
 
 void PlatformViewAndroid::RegisterImageTexture(
     int64_t texture_id,
     const fml::jni::ScopedJavaGlobalRef<jobject>& image_texture_entry) {
-  if (android_context_->RenderingApi() == AndroidRenderingAPI::kOpenGLES) {
-    if (android_context_->GetImpellerContext()) {
-      // Impeller GLES.
-      RegisterTexture(std::make_shared<ImageExternalTextureGLImpeller>(
-          std::static_pointer_cast<impeller::ContextGLES>(
-              android_context_->GetImpellerContext()),
-          texture_id, image_texture_entry, jni_facade_));
-    } else {
-      // Legacy GL.
-      RegisterTexture(std::make_shared<ImageExternalTextureGLSkia>(
-          std::static_pointer_cast<AndroidContextGLSkia>(android_context_),
-          texture_id, image_texture_entry, jni_facade_));
+  std::shared_ptr<flutter::Texture> texture;
+
+  // TODO(https://github.com/flutter/flutter/issues/137798): Refactor.
+  if (auto const impeller = android_context_->GetImpellerContext()) {
+    switch (android_context_->RenderingApi()) {
+      case AndroidRenderingAPI::kOpenGLES:
+        texture = std::make_shared<ImageExternalTextureGLImpeller>(
+            /*context=*/std::static_pointer_cast<impeller::ContextGLES>(
+                impeller),
+            /*id=*/texture_id,
+            /*hardware_buffer_texture_entry=*/image_texture_entry,
+            /*jni_facade=*/jni_facade_);
+        return;
+      case AndroidRenderingAPI::kVulkan:
+        texture = std::make_shared<ImageExternalTextureVK>(
+            /*context=*/std::static_pointer_cast<impeller::ContextVK>(impeller),
+            /*id=*/texture_id,
+            /*hardware_buffer_texture_entry=*/image_texture_entry,
+            /*jni_facade=*/jni_facade_);
+        break;
+      case AndroidRenderingAPI::kAutoselect:
+        // Autoselect should have been resolved to GLES or Vulkan by now.
+        [[fallthrough]];
+      case AndroidRenderingAPI::kSoftware:
+        // Impeller does not have a software backend.
+        FML_UNREACHABLE();
+        break;
     }
-  } else if (android_context_->RenderingApi() == AndroidRenderingAPI::kVulkan) {
-    RegisterTexture(std::make_shared<ImageExternalTextureVK>(
-        std::static_pointer_cast<impeller::ContextVK>(
-            android_context_->GetImpellerContext()),
-        texture_id, image_texture_entry, jni_facade_));
-  } else {
-    FML_LOG(INFO) << "Attempted to use a HardwareBuffer texture with an "
-                     "unsupported rendering API.";
   }
+
+  switch (android_context_->RenderingApi()) {
+    case AndroidRenderingAPI::kOpenGLES:
+      texture = std::make_shared<ImageExternalTextureGLSkia>(
+          /*context=*/std::static_pointer_cast<AndroidContextGLSkia>(
+              android_context_),
+          /*id=*/texture_id,
+          /*hardware_buffer_texture_entry=*/image_texture_entry,
+          /*jni_facade=*/jni_facade_);
+      return;
+    case AndroidRenderingAPI::kVulkan:
+      [[fallthrough]];
+    case AndroidRenderingAPI::kAutoselect:
+      // Skia backend always uses GLES, so fail on anything else.
+      FML_UNREACHABLE();
+      break;
+    case AndroidRenderingAPI::kSoftware:
+      FML_LOG(INFO) << "Attempted to use a HardwareBuffer with a software "
+                    << "rendering API. Nothing will be rendered.";
+      return;
+  }
+
+  FML_DCHECK(texture) << "Expected a texture to be created.";
+  RegisterTexture(texture);
 }
 
 // |PlatformView|
