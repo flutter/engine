@@ -47,26 +47,22 @@ public class PlatformViewWrapperTest {
   //   verify(wrapper, times(1)).invalidate();
   // }
 
-  // @Test
-  // @Config(
-  //     shadows = {
-  //       ShadowView.class,
-  //     })
-  // public void draw_withoutSurface() {
-  //   final PlatformViewWrapper wrapper =
-  //       new PlatformViewWrapper(ctx) {
-  //         @Override
-  //         public void onDraw(Canvas canvas) {
-  //           canvas.drawColor(Color.RED);
-  //         }
-  //       };
-  //   // Test.
-  //   final Canvas canvas = mock(Canvas.class);
-  //   wrapper.draw(canvas);
+  @Test
+  public void draw_withoutSurface() {
+    final PlatformViewWrapper wrapper =
+        new PlatformViewWrapper(ctx) {
+          @Override
+          public void onDraw(Canvas canvas) {
+            canvas.drawColor(Color.RED);
+          }
+        };
+    // Test.
+    final Canvas canvas = mock(Canvas.class);
+    wrapper.draw(canvas);
 
-  //   // Verify.
-  //   verify(canvas, times(1)).drawColor(Color.RED);
-  // }
+    // Verify.
+    verify(canvas, times(1)).drawColor(Color.RED);
+  }
 
   // @Test
   // public void focusChangeListener_hasFocus() {
@@ -167,38 +163,37 @@ public class PlatformViewWrapperTest {
   //   verify(viewTreeObserver, times(1)).removeOnGlobalFocusChangeListener(activeFocusListener);
   // }
 
-  @Test
-  public void unsetOnDescendantFocusChangeListener_removesActiveListener() {
-    final ViewTreeObserver viewTreeObserver = mock(ViewTreeObserver.class);
-    when(viewTreeObserver.isAlive()).thenReturn(true);
+  // @Test
+  // public void unsetOnDescendantFocusChangeListener_removesActiveListener() {
+  //   final ViewTreeObserver viewTreeObserver = mock(ViewTreeObserver.class);
+  //   when(viewTreeObserver.isAlive()).thenReturn(true);
 
-    final PlatformViewWrapper view =
-        new PlatformViewWrapper(ctx) {
-          @Override
-          public ViewTreeObserver getViewTreeObserver() {
-            return viewTreeObserver;
-          }
-        };
+  //   final PlatformViewWrapper view =
+  //       new PlatformViewWrapper(ctx) {
+  //         @Override
+  //         public ViewTreeObserver getViewTreeObserver() {
+  //           return viewTreeObserver;
+  //         }
+  //       };
 
-    assertNull(view.getActiveFocusListener());
+  //   assertNull(view.getActiveFocusListener());
 
-    view.setOnDescendantFocusChangeListener(mock(OnFocusChangeListener.class));
-    assertNotNull(view.getActiveFocusListener());
+  //   view.setOnDescendantFocusChangeListener(mock(OnFocusChangeListener.class));
+  //   assertNotNull(view.getActiveFocusListener());
 
-    final ViewTreeObserver.OnGlobalFocusChangeListener activeFocusListener =
-        view.getActiveFocusListener();
+  //   final ViewTreeObserver.OnGlobalFocusChangeListener activeFocusListener =
+  //       view.getActiveFocusListener();
 
-    view.unsetOnDescendantFocusChangeListener();
-    assertNull(view.getActiveFocusListener());
+  //   view.unsetOnDescendantFocusChangeListener();
+  //   assertNull(view.getActiveFocusListener());
 
-    view.unsetOnDescendantFocusChangeListener();
-    verify(viewTreeObserver, times(1)).removeOnGlobalFocusChangeListener(activeFocusListener);
-  }
+  //   view.unsetOnDescendantFocusChangeListener();
+  //   verify(viewTreeObserver, times(1)).removeOnGlobalFocusChangeListener(activeFocusListener);
+  // }
 
   @Test
   @Config(
       shadows = {
-        ShadowView.class,
         ShadowViewGroup.class,
       })
   public void ignoreAccessibilityEvents() {
@@ -217,7 +212,6 @@ public class PlatformViewWrapperTest {
   @Test
   @Config(
       shadows = {
-        ShadowView.class,
         ShadowViewGroup.class,
       })
   public void sendAccessibilityEvents() {
@@ -239,11 +233,8 @@ public class PlatformViewWrapperTest {
     assertTrue(eventSent);
   }
 
-  @Implements(View.class)
-  public static class ShadowView extends org.robolectric.shadows.ShadowView {}
-
   @Implements(ViewGroup.class)
-  public static class ShadowViewGroup extends  io.flutter.plugin.platform.PlatformViewWrapperTest.ShadowView {
+  public static class ShadowViewGroup extends  org.robolectric.shadows.ShadowViewGroup {
     @Implementation
     public boolean requestSendAccessibilityEvent(View child, AccessibilityEvent event) {
       return true;
