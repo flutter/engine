@@ -2396,9 +2396,9 @@ TEST_P(AiksTest, DrawRectAbsorbsClears) {
 
 TEST_P(AiksTest, DrawRectAbsorbsClearsNegativeRRect) {
   Canvas canvas;
-  canvas.DrawRRect(Rect::MakeXYWH(0, 0, 300, 300), 5.0,
+  canvas.DrawRRect(Rect::MakeXYWH(0, 0, 300, 300), {5.0, 5.0},
                    {.color = Color::Red(), .blend_mode = BlendMode::kSource});
-  canvas.DrawRRect(Rect::MakeXYWH(0, 0, 300, 300), 5.0,
+  canvas.DrawRRect(Rect::MakeXYWH(0, 0, 300, 300), {5.0, 5.0},
                    {.color = Color::CornflowerBlue().WithAlpha(0.75),
                     .blend_mode = BlendMode::kSourceOver});
 
@@ -3066,7 +3066,7 @@ TEST_P(AiksTest, CanRenderBackdropBlurInteractive) {
     canvas.DrawCircle({300, 200}, 100, {.color = Color::GreenYellow()});
     canvas.DrawCircle({140, 170}, 75, {.color = Color::DarkMagenta()});
     canvas.DrawCircle({180, 120}, 100, {.color = Color::OrangeRed()});
-    canvas.ClipRRect(Rect::MakeLTRB(a.x, a.y, b.x, b.y), 20);
+    canvas.ClipRRect(Rect::MakeLTRB(a.x, a.y, b.x, b.y), {20, 20});
     canvas.SaveLayer({.blend_mode = BlendMode::kSource}, std::nullopt,
                      ImageFilter::MakeBlur(Sigma(20.0), Sigma(20.0),
                                            FilterContents::BlurStyle::kNormal,
@@ -3085,7 +3085,7 @@ TEST_P(AiksTest, CanRenderBackdropBlur) {
   canvas.DrawCircle({300, 200}, 100, {.color = Color::GreenYellow()});
   canvas.DrawCircle({140, 170}, 75, {.color = Color::DarkMagenta()});
   canvas.DrawCircle({180, 120}, 100, {.color = Color::OrangeRed()});
-  canvas.ClipRRect(Rect::MakeLTRB(75, 50, 375, 275), 20);
+  canvas.ClipRRect(Rect::MakeLTRB(75, 50, 375, 275), {20, 20});
   canvas.SaveLayer({.blend_mode = BlendMode::kSource}, std::nullopt,
                    ImageFilter::MakeBlur(Sigma(30.0), Sigma(30.0),
                                          FilterContents::BlurStyle::kNormal,
@@ -3191,7 +3191,7 @@ TEST_P(AiksTest, CanRenderClippedRuntimeEffects) {
 
   Canvas canvas;
   canvas.Save();
-  canvas.ClipRRect(Rect::MakeXYWH(0, 0, 400, 400), 10.0,
+  canvas.ClipRRect(Rect::MakeXYWH(0, 0, 400, 400), {10.0, 10.0},
                    Entity::ClipOperation::kIntersect);
   canvas.DrawRect(Rect::MakeXYWH(0, 0, 400, 400), paint);
   canvas.Restore();
@@ -3469,7 +3469,7 @@ TEST_P(AiksTest, DrawPictureWithText) {
 
 TEST_P(AiksTest, DrawPictureClipped) {
   Canvas subcanvas;
-  subcanvas.ClipRRect(Rect::MakeLTRB(100, 100, 400, 400), 15);
+  subcanvas.ClipRRect(Rect::MakeLTRB(100, 100, 400, 400), {15, 15});
   subcanvas.DrawPaint({.color = Color::Red()});
   auto picture = subcanvas.EndRecordingAsPicture();
 
@@ -3481,7 +3481,7 @@ TEST_P(AiksTest, DrawPictureClipped) {
 
   // Draw over the picture with a larger green rectangle, completely covering it
   // up.
-  canvas.ClipRRect(Rect::MakeLTRB(100, 100, 400, 400).Expand(20), 15);
+  canvas.ClipRRect(Rect::MakeLTRB(100, 100, 400, 400).Expand(20), {15, 15});
   canvas.DrawPaint({.color = Color::Green()});
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
