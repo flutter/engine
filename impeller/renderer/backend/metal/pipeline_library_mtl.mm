@@ -9,7 +9,6 @@
 
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/container.h"
-#include "fml/synchronization/count_down_latch.h"
 #include "impeller/base/promise.h"
 #include "impeller/renderer/backend/metal/compute_pipeline_mtl.h"
 #include "impeller/renderer/backend/metal/formats_mtl.h"
@@ -53,9 +52,6 @@ static void GetMTLRenderPipelineDescriptor(const PipelineDescriptor& desc,
   descriptor.stencilAttachmentPixelFormat =
       ToMTLPixelFormat(desc.GetStencilPixelFormat());
 
-  // This latch is used to ensure that GetMTLFunctionSpecialized does not finish
-  // before the descriptor is completely set up.
-  auto latch = std::make_shared<fml::CountDownLatch>(1u);
   const auto& constants = desc.GetSpecializationConstants();
   for (const auto& entry : desc.GetStageEntrypoints()) {
     if (entry.first == ShaderStage::kVertex) {
@@ -72,8 +68,7 @@ static void GetMTLRenderPipelineDescriptor(const PipelineDescriptor& desc,
         created_specialized_function = true;
         ShaderFunctionMTL::Cast(*entry.second)
             .GetMTLFunctionSpecialized(
-                constants,
-                [callback, descriptor, latch](id<MTLFunction> function) {
+                constants, [callback, descriptor](id<MTLFunction> function) {
                   descriptor.fragmentFunction = function;
                   callback(descriptor);
                 });
@@ -81,7 +76,6 @@ static void GetMTLRenderPipelineDescriptor(const PipelineDescriptor& desc,
     }
   }
 
-  latch->CountDown();
   if (!created_specialized_function) {
     callback(descriptor);
   }
