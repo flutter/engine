@@ -95,9 +95,7 @@ executable("gpu_surface_unittests") {
 
   if (is_mac) {
     sources += [ "gpu_surface_metal_impeller_unittests.mm" ]
-  }
 
-  if (is_mac) {
     frameworks = [
       "AppKit.framework",
       "QuartzCore.framework",
