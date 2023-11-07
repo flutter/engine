@@ -1,0 +1,35 @@
+on: 
+  workflow_dispatch:
+    inputs:
+      engine_sha:
+        description: 'engine hash'     
+        required: true
+      branch:
+        description: 'branch to be cherry picked onto'     
+        required: false
+        default: 'master'
+
+jobs:
+  roll-engine-to-framework:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Flutter Release
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+          repository: flutter/flutter
+          token: ${{ github.token }}
+      - name: Update Engine version
+        run: |
+          echo "${{ github.event.inputs.engine_sha }}" > bin/internal/engine.version
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.PAT }}
+          commit-message: Roll engine to ${{ github.event.inputs.engine_sha }}
+          committer: GitHub <noreply@github.com>
+          title: 'Roll engine to ${{ github.event.inputs.engine_sha }}'
+          body: |
+            flutter engine->framework roll
+            - branch: ${{ github.event.inputs.branch }}
+            - engine hash: ${{ github.event.inputs.engine_sha }}
