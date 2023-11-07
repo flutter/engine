@@ -96,8 +96,8 @@ class ScopedTypeRef {
   // This is to be used only to take ownership of objects that are created
   // by pass-by-pointer create functions. To enforce this, require that the
   // object be reset to NULL before this may be used.
-  T* InitializeInto() WARN_UNUSED_RESULT {
-    DCHECK(!object_);
+  [[nodiscard]] T* InitializeInto() {
+    FML_DCHECK(!object_);
     return &object_;
   }
 
