@@ -8,6 +8,7 @@
 #include "flutter/impeller/renderer/backend/vulkan/context_vk.h"
 #include "flutter/impeller/renderer/backend/vulkan/texture_vk.h"
 #include "flutter/shell/platform/android/surface_texture_external_texture.h"
+#include "include/core/SkRect.h"
 
 namespace flutter {
 
