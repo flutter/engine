@@ -514,6 +514,7 @@ public class PlatformPlugin {
 
     if (!clipboard.hasPrimaryClip()) return null;
 
+    CharSequence charSequence = null;
     try {
       ClipData clip = clipboard.getPrimaryClip();
       if (clip == null) return null;
@@ -525,7 +526,7 @@ public class PlatformPlugin {
               activity
                   .getContentResolver()
                   .openTypedAssetFileDescriptor(item.getUri(), "text/*", null);
-        CharSequence charSequence = item.coerceToText(activity);
+        charSequence = item.coerceToText(activity);
         if (assetFileDescriptor != null) assetFileDescriptor.close();
         return charSequence;
       }
@@ -541,7 +542,7 @@ public class PlatformPlugin {
       return null;
     } catch (IOException e) {
       Log.w(TAG, "Failed to close AssetFileDescriptor while accessing clipboard data.", e);
-      return null;
+      return charSequence;
     }
 
     return null;
