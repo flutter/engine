@@ -1343,7 +1343,7 @@ class ViewConfiguration {
   const ViewConfiguration({
     this.view,
     this.devicePixelRatio = 1.0,
-    this.geometry = ui.Rect.zero,
+    this.size = ui.Size.zero,
     this.visible = false,
     this.viewInsets = ui.ViewPadding.zero as ViewPadding,
     this.viewPadding = ui.ViewPadding.zero as ViewPadding,
@@ -1356,7 +1356,7 @@ class ViewConfiguration {
   ViewConfiguration copyWith({
     EngineFlutterView? view,
     double? devicePixelRatio,
-    ui.Rect? geometry,
+    ui.Size? size,
     bool? visible,
     ViewPadding? viewInsets,
     ViewPadding? viewPadding,
@@ -1368,7 +1368,7 @@ class ViewConfiguration {
     return ViewConfiguration(
       view: view ?? this.view,
       devicePixelRatio: devicePixelRatio ?? this.devicePixelRatio,
-      geometry: geometry ?? this.geometry,
+      size: size ?? this.size,
       visible: visible ?? this.visible,
       viewInsets: viewInsets ?? this.viewInsets,
       viewPadding: viewPadding ?? this.viewPadding,
@@ -1381,7 +1381,7 @@ class ViewConfiguration {
 
   final EngineFlutterView? view;
   final double devicePixelRatio;
-  final ui.Rect geometry;
+  final ui.Size size;
   final bool visible;
   final ViewPadding viewInsets;
   final ViewPadding viewPadding;
@@ -1392,7 +1392,7 @@ class ViewConfiguration {
 
   @override
   String toString() {
-    return '$runtimeType[view: $view, geometry: $geometry]';
+    return '$runtimeType[view: $view, size: $size]';
   }
 }
 

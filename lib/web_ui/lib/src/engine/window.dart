@@ -236,9 +236,6 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow implements EngineFlu
   }
 
   @override
-  ui.Rect get physicalGeometry => _viewConfiguration.geometry;
-
-  @override
   ViewPadding get viewPadding => _viewConfiguration.viewPadding;
 
   @override
