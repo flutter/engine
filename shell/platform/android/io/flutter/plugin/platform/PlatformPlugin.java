@@ -25,6 +25,7 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import io.flutter.Log;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.List;
 
 /** Android implementation of the platform plugin. */
@@ -517,9 +518,12 @@ public class PlatformPlugin {
       if (clip == null) return null;
       if (format == null || format == PlatformChannel.ClipboardContentFormat.PLAIN_TEXT) {
         ClipData.Item item = clip.getItemAt(0);
+        AssetFileDescriptor assetFileDescriptor = null;
         if (item.getUri() != null)
-          activity.getContentResolver().openTypedAssetFileDescriptor(item.getUri(), "text/*", null);
-        return item.coerceToText(activity);
+          assetFileDescriptor = activity.getContentResolver().openTypedAssetFileDescriptor(item.getUri(), "text/*", null);
+        CharSequence charSequence = item.coerceToText(activity);
+        if (assetFileDescriptor != null) assetFileDescriptor.close();
+        return charSequence;
       }
     } catch (SecurityException e) {
       Log.w(
@@ -530,6 +534,9 @@ public class PlatformPlugin {
           e);
       return null;
     } catch (FileNotFoundException e) {
+      return null;
+    } catch (IOException e) {
+      Log.w(TAG, "Failed to close AssetFileDescriptor while accessing clipboard data.", e);
       return null;
     }
 
