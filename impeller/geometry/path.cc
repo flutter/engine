@@ -269,26 +269,12 @@ bool Path::UpdateContourComponentAtIndex(size_t index,
   return true;
 }
 
-Path::Polyline Path::CreatePolyline(Scalar scale) const {
-  Polyline polyline;
+Path::Polyline::Polyline(std::vector<Point>& point_buffer)
+    : points(point_buffer) {}
 
-  std::optional<Point> previous_contour_point;
-  auto collect_points = [&polyline, &previous_contour_point](
-                            const std::vector<Point>& collection) {
-    if (collection.empty()) {
-      return;
-    }
-
-    for (const auto& point : collection) {
-      if (previous_contour_point.has_value() &&
-          previous_contour_point.value() == point) {
-        // Skip over duplicate points in the same contour.
-        continue;
-      }
-      previous_contour_point = point;
-      polyline.points.push_back(point);
-    }
-  };
+Path::Polyline Path::CreatePolyline(Scalar scale,
+                                    std::vector<Point>& point_buffer) const {
+  Polyline polyline(point_buffer);
 
   auto get_path_component = [this](size_t component_i) -> PathComponentVariant {
     if (component_i >= components_.size()) {
@@ -370,7 +356,7 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
             .component_start_index = polyline.points.size() - 1,
             .is_curve = false,
         });
-        collect_points(linears_[component.index].CreatePolyline());
+        linears_[component.index].CreatePolyline(polyline.points);
         previous_path_component_index = component_i;
         break;
       case ComponentType::kQuadratic:
@@ -378,7 +364,7 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
             .component_start_index = polyline.points.size() - 1,
             .is_curve = true,
         });
-        collect_points(quads_[component.index].CreatePolyline(scale));
+        quads_[component.index].CreatePolyline(scale, polyline.points);
         previous_path_component_index = component_i;
         break;
       case ComponentType::kCubic:
@@ -386,7 +372,7 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
             .component_start_index = polyline.points.size() - 1,
             .is_curve = true,
         });
-        collect_points(cubics_[component.index].CreatePolyline(scale));
+        cubics_[component.index].CreatePolyline(scale, polyline.points);
         previous_path_component_index = component_i;
         break;
       case ComponentType::kContour:
@@ -403,8 +389,8 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
                                      .is_closed = contour.is_closed,
                                      .start_direction = start_direction,
                                      .components = components});
-        previous_contour_point = std::nullopt;
-        collect_points({contour.destination});
+
+        polyline.points.push_back(contour.destination);
         break;
     }
   }

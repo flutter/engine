@@ -128,9 +128,9 @@ StrokePathGeometry::JoinProc StrokePathGeometry::GetJoinProc(Join stroke_join) {
                                PathBuilder::kArcApproximationMagic * alignment *
                                dir;
 
-        auto arc_points = CubicPathComponent(start_offset, start_handle,
-                                             middle_handle, middle)
-                              .CreatePolyline(scale);
+        std::vector<Point> arc_points;
+        CubicPathComponent(start_offset, start_handle, middle_handle, middle)
+            .CreatePolyline(scale, arc_points);
 
         VS::PerVertexData vtx;
         for (const auto& point : arc_points) {
@@ -192,7 +192,9 @@ StrokePathGeometry::CapProc StrokePathGeometry::GetCapProc(Cap stroke_cap) {
         vtx_builder.AppendVertex(vtx);
         vtx.position = position - orientation;
         vtx_builder.AppendVertex(vtx);
-        for (const auto& point : arc.CreatePolyline(scale)) {
+        std::vector<Point> arc_points;
+        arc.CreatePolyline(scale, arc_points);
+        for (const auto& point : arc_points) {
           vtx.position = position + point;
           vtx_builder.AppendVertex(vtx);
           vtx.position = position + (-point).Reflect(forward_normal);
@@ -234,7 +236,9 @@ StrokePathGeometry::CreateSolidStrokeVertices(
     const StrokePathGeometry::CapProc& cap_proc,
     Scalar scale) {
   VertexBufferBuilder<VS::PerVertexData> vtx_builder;
-  auto polyline = path.CreatePolyline(scale);
+  std::vector<Point> point_buffer;
+  point_buffer.reserve(512);
+  auto polyline = path.CreatePolyline(scale, point_buffer);
 
   VS::PerVertexData vtx;
 

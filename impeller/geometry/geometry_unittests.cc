@@ -599,7 +599,8 @@ TEST(GeometryTest, EmptyPath) {
   path.GetContourComponentAtIndex(0, c);
   ASSERT_POINT_NEAR(c.destination, Point());
 
-  Path::Polyline polyline = path.CreatePolyline(1.0f);
+  std::vector<Point> polyline_points;
+  Path::Polyline polyline = path.CreatePolyline(1.0f, polyline_points);
   ASSERT_TRUE(polyline.points.empty());
   ASSERT_TRUE(polyline.contours.empty());
 }
@@ -2099,7 +2100,8 @@ TEST(GeometryTest, RectRoundOut) {
 
 TEST(GeometryTest, CubicPathComponentPolylineDoesNotIncludePointOne) {
   CubicPathComponent component({10, 10}, {20, 35}, {35, 20}, {40, 40});
-  auto polyline = component.CreatePolyline(1.0f);
+  std::vector<Point> polyline;
+  component.CreatePolyline(1.0f, polyline);
   ASSERT_NE(polyline.front().x, 10);
   ASSERT_NE(polyline.front().y, 10);
   ASSERT_EQ(polyline.back().x, 40);
@@ -2114,7 +2116,8 @@ TEST(GeometryTest, PathCreatePolyLineDoesNotDuplicatePoints) {
   builder.MoveTo({40, 40});
   builder.LineTo({50, 50});
 
-  auto polyline = builder.TakePath().CreatePolyline(1.0f);
+  std::vector<Point> points;
+  auto polyline = builder.TakePath().CreatePolyline(1.0f, points);
 
   ASSERT_EQ(polyline.contours.size(), 2u);
   ASSERT_EQ(polyline.points.size(), 5u);
@@ -2196,6 +2199,7 @@ TEST(GeometryTest, PathBuilderSetsCorrectContourPropertiesForAddCommands) {
 }
 
 TEST(GeometryTest, PathCreatePolylineGeneratesCorrectContourData) {
+  std::vector<Point> polyline_points;
   Path::Polyline polyline = PathBuilder{}
                                 .AddLine({100, 100}, {200, 100})
                                 .MoveTo({100, 200})
@@ -2203,7 +2207,7 @@ TEST(GeometryTest, PathCreatePolylineGeneratesCorrectContourData) {
                                 .LineTo({200, 200})
                                 .Close()
                                 .TakePath()
-                                .CreatePolyline(1.0f);
+                                .CreatePolyline(1.0f, polyline_points);
   ASSERT_EQ(polyline.points.size(), 6u);
   ASSERT_EQ(polyline.contours.size(), 2u);
   ASSERT_EQ(polyline.contours[0].is_closed, false);
@@ -2213,6 +2217,7 @@ TEST(GeometryTest, PathCreatePolylineGeneratesCorrectContourData) {
 }
 
 TEST(GeometryTest, PolylineGetContourPointBoundsReturnsCorrectRanges) {
+  std::vector<Point> polyline_points;
   Path::Polyline polyline = PathBuilder{}
                                 .AddLine({100, 100}, {200, 100})
                                 .MoveTo({100, 200})
@@ -2220,7 +2225,7 @@ TEST(GeometryTest, PolylineGetContourPointBoundsReturnsCorrectRanges) {
                                 .LineTo({200, 200})
                                 .Close()
                                 .TakePath()
-                                .CreatePolyline(1.0f);
+                                .CreatePolyline(1.0f, polyline_points);
   size_t a1, a2, b1, b2;
   std::tie(a1, a2) = polyline.GetContourPointBounds(0);
   std::tie(b1, b2) = polyline.GetContourPointBounds(1);
@@ -2231,10 +2236,11 @@ TEST(GeometryTest, PolylineGetContourPointBoundsReturnsCorrectRanges) {
 }
 
 TEST(GeometryTest, PathAddRectPolylineHasCorrectContourData) {
+  std::vector<Point> polyline_points;
   Path::Polyline polyline = PathBuilder{}
                                 .AddRect(Rect::MakeLTRB(50, 60, 70, 80))
                                 .TakePath()
-                                .CreatePolyline(1.0f);
+                                .CreatePolyline(1.0f, polyline_points);
   ASSERT_EQ(polyline.contours.size(), 1u);
   ASSERT_TRUE(polyline.contours[0].is_closed);
   ASSERT_EQ(polyline.contours[0].start_index, 0u);
@@ -2247,6 +2253,7 @@ TEST(GeometryTest, PathAddRectPolylineHasCorrectContourData) {
 }
 
 TEST(GeometryTest, PathPolylineDuplicatesAreRemovedForSameContour) {
+  std::vector<Point> polyline_points;
   Path::Polyline polyline =
       PathBuilder{}
           .MoveTo({50, 50})
@@ -2259,7 +2266,7 @@ TEST(GeometryTest, PathPolylineDuplicatesAreRemovedForSameContour) {
           .LineTo({0, 100})
           .LineTo({0, 100})  // Insert duplicate at end of contour.
           .TakePath()
-          .CreatePolyline(1.0f);
+          .CreatePolyline(1.0f, polyline_points);
   ASSERT_EQ(polyline.contours.size(), 2u);
   ASSERT_EQ(polyline.contours[0].start_index, 0u);
   ASSERT_TRUE(polyline.contours[0].is_closed);

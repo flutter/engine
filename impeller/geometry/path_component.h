@@ -34,7 +34,7 @@ struct LinearPathComponent {
 
   Point Solve(Scalar time) const;
 
-  std::vector<Point> CreatePolyline() const;
+  void CreatePolyline(std::vector<Point>& points) const;
 
   std::vector<Point> Extrema() const;
 
@@ -75,11 +75,7 @@ struct QuadraticPathComponent {
   //   making it trivially parallelizable.
   //
   // See also the implementation in kurbo: https://github.com/linebender/kurbo.
-  std::vector<Point> CreatePolyline(Scalar scale) const;
-
-  size_t FillPointsForPolyline(std::vector<Point>& points,
-                               Scalar scale_factor,
-                               size_t prev_count = 0) const;
+  void CreatePolyline(Scalar scale_factor, std::vector<Point>& points) const;
 
   std::vector<Point> Extrema() const;
 
@@ -122,7 +118,7 @@ struct CubicPathComponent {
   // generates a polyline from those quadratics.
   //
   // See the note on QuadraticPathComponent::CreatePolyline for references.
-  std::vector<Point> CreatePolyline(Scalar scale) const;
+  void CreatePolyline(Scalar scale, std::vector<Point>& points) const;
 
   std::vector<Point> Extrema() const;
 

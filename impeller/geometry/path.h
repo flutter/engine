@@ -91,9 +91,12 @@ class Path {
   /// One or more contours represented as a series of points and indices in
   /// the point vector representing the start of a new contour.
   struct Polyline {
+    explicit Polyline(std::vector<Point>& point_buffer);
+
     /// Points in the polyline, which may represent multiple contours specified
     /// by indices in |breaks|.
-    std::vector<Point> points;
+    std::vector<Point>& points;
+
     std::vector<PolylineContour> contours;
 
     /// Convenience method to compute the start (inclusive) and end (exclusive)
@@ -138,7 +141,7 @@ class Path {
   ///
   /// It is suitable to use the max basis length of the matrix used to transform
   /// the path. If the provided scale is 0, curves will revert to lines.
-  Polyline CreatePolyline(Scalar scale) const;
+  Polyline CreatePolyline(Scalar scale, std::vector<Point>& point_buffer) const;
 
   std::optional<Rect> GetBoundingBox() const;
 

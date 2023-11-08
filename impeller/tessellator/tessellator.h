@@ -30,7 +30,8 @@ enum class WindingOrder {
 /// @brief      A utility that generates triangles of the specified fill type
 ///             given a polyline. This happens on the CPU.
 ///
-/// @bug        This should just be called a triangulator.
+///             This object is implemented in such a way that there must be
+///             only one per thread.
 ///
 class Tessellator {
  public:
@@ -58,18 +59,23 @@ class Tessellator {
                                              size_t indices_count)>;
 
   //----------------------------------------------------------------------------
-  /// @brief      Generates filled triangles from the polyline. A callback is
+  /// @brief      Generates filled triangles from the path. A callback is
   ///             invoked once for the entire tessellation.
   ///
-  /// @param[in]  fill_type The fill rule to use when filling.
-  /// @param[in]  polyline  The polyline
+  /// @param[in]  The path to tessellate.
   /// @param[in]  callback  The callback, return false to indicate failure.
   ///
   /// @return The result status of the tessellation.
   ///
-  Tessellator::Result Tessellate(FillType fill_type,
-                                 const Path::Polyline& polyline,
-                                 const BuilderCallback& callback) const;
+  Tessellator::Result Tessellate(const Path& path,
+                                 Scalar scale,
+                                 const BuilderCallback& callback);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Given a convex path, create a triangle fan structure.
+  std::pair<std::vector<Point>, std::vector<uint16_t>> TessellateConvex(
+      const Path& path,
+      Scalar scale);
 
  private:
   CTessellator c_tessellator_;

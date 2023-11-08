@@ -59,8 +59,8 @@ Point LinearPathComponent::Solve(Scalar time) const {
   };
 }
 
-std::vector<Point> LinearPathComponent::CreatePolyline() const {
-  return {p2};
+void LinearPathComponent::CreatePolyline(std::vector<Point>& points) const {
+  points.push_back(p2);
 }
 
 std::vector<Point> LinearPathComponent::Extrema() const {
@@ -100,15 +100,8 @@ static Scalar ApproximateParabolaIntegral(Scalar x) {
   return x / (1.0 - d + sqrt(sqrt(pow(d, 4) + 0.25 * x * x)));
 }
 
-std::vector<Point> QuadraticPathComponent::CreatePolyline(Scalar scale) const {
-  std::vector<Point> points;
-  FillPointsForPolyline(points, scale);
-  return points;
-}
-
-size_t QuadraticPathComponent::FillPointsForPolyline(std::vector<Point>& points,
-                                                     Scalar scale_factor,
-                                                     size_t prev_count) const {
+void QuadraticPathComponent::CreatePolyline(Scalar scale_factor,
+                                            std::vector<Point>& points) const {
   auto tolerance = kDefaultCurveTolerance / scale_factor;
   auto sqrt_tolerance = sqrt(tolerance);
 
@@ -139,7 +132,6 @@ size_t QuadraticPathComponent::FillPointsForPolyline(std::vector<Point>& points,
   auto uscale = 1 / (u2 - u0);
 
   auto line_count = std::max(1., ceil(0.5 * val / sqrt_tolerance));
-  points.reserve(line_count + 1 + prev_count);
   auto step = 1 / line_count;
   for (size_t i = 1; i < line_count; i += 1) {
     auto u = i * step;
@@ -148,8 +140,6 @@ size_t QuadraticPathComponent::FillPointsForPolyline(std::vector<Point>& points,
     points.emplace_back(Solve(t));
   }
   points.emplace_back(p2);
-
-  return line_count + 1 + prev_count;
 }
 
 std::vector<Point> QuadraticPathComponent::Extrema() const {
@@ -191,14 +181,12 @@ Point CubicPathComponent::SolveDerivative(Scalar time) const {
   };
 }
 
-std::vector<Point> CubicPathComponent::CreatePolyline(Scalar scale) const {
+void CubicPathComponent::CreatePolyline(Scalar scale,
+                                        std::vector<Point>& points) const {
   auto quads = ToQuadraticPathComponents(.1);
-  std::vector<Point> points;
-  size_t running_count = 0;
   for (const auto& quad : quads) {
-    running_count = quad.FillPointsForPolyline(points, scale, running_count);
+    quad.CreatePolyline(scale, points);
   }
-  return points;
 }
 
 inline QuadraticPathComponent CubicPathComponent::Lower() const {

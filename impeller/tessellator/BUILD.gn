@@ -12,7 +12,10 @@ impeller_component("tessellator") {
 
   public_deps = [ "../geometry" ]
 
-  deps = [ "//third_party/libtess2" ]
+  deps = [
+    "//flutter/fml",
+    "//third_party/libtess2",
+  ]
 }
 
 impeller_component("tessellator_shared") {
@@ -32,6 +35,7 @@ impeller_component("tessellator_shared") {
 
   deps = [
     "../geometry",
+    "//flutter/fml",
     "//third_party/libtess2",
   ]
 
