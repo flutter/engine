@@ -22,19 +22,9 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
 
   if (path_.GetFillType() == FillType::kNonZero &&  //
       path_.IsConvex()) {
-    auto [points, indices] = TessellateConvex(
-        path_.CreatePolyline(entity.GetTransformation().GetMaxBasisLength()));
-
-    vertex_buffer.vertex_buffer = host_buffer.Emplace(
-        points.data(), points.size() * sizeof(Point), alignof(Point));
-    vertex_buffer.index_buffer = host_buffer.Emplace(
-        indices.data(), indices.size() * sizeof(uint16_t), alignof(uint16_t));
-    vertex_buffer.vertex_count = indices.size();
-    vertex_buffer.index_type = IndexType::k16bit;
-
     return GeometryResult{
         .type = PrimitiveType::kTriangle,
-        .vertex_buffer = vertex_buffer,
+        .vertex_buffer = TessellateConvex(path_.CreatePolyline(entity.GetTransformation().GetMaxBasisLength()), host_buffer),
         .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                      entity.GetTransformation(),
         .prevent_overdraw = false,

@@ -47,9 +47,15 @@ GeometryResult ComputeUVGeometryForRect(Rect source_rect,
                                         RenderPass& pass);
 
 /// @brief Given a polyline created from a convex filled path, perform a
-/// tessellation.
+///        tessellation.
 std::pair<std::vector<Point>, std::vector<uint16_t>> TessellateConvex(
     Path::Polyline polyline);
+
+/// @brief Given a polyline created from a convex filled path, perform a
+///        directly into the host buffer.
+VertexBuffer TessellateConvex(
+    const Path::Polyline& polyline,
+    HostBuffer& host_buffer);
 
 class Geometry {
  public:

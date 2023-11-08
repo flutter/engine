@@ -4,8 +4,11 @@
 
 #include "impeller/entity/geometry/geometry.h"
 
+#include <cstdint>
 #include <optional>
 
+#include "impeller/core/formats.h"
+#include "impeller/core/host_buffer.h"
 #include "impeller/entity/geometry/cover_geometry.h"
 #include "impeller/entity/geometry/fill_path_geometry.h"
 #include "impeller/entity/geometry/point_field_geometry.h"
@@ -17,33 +20,56 @@ namespace impeller {
 
 /// Given a convex polyline, create a triangle fan structure.
 std::pair<std::vector<Point>, std::vector<uint16_t>> TessellateConvex(
-    Path::Polyline polyline) {
-  std::vector<Point> output;
+    const Path::Polyline& polyline) {
   std::vector<uint16_t> indices;
+  // Reserve an upper bound of index buffer size.
+  indices.reserve(polyline.contours.size() * 3);
 
   for (auto j = 0u; j < polyline.contours.size(); j++) {
     auto [start, end] = polyline.GetContourPointBounds(j);
-    auto center = polyline.points[start];
-
-    // Some polygons will not self close and an additional triangle
-    // must be inserted, others will self close and we need to avoid
-    // inserting an extra triangle.
-    if (polyline.points[end - 1] == polyline.points[start]) {
-      end--;
-    }
-    output.emplace_back(center);
-    output.emplace_back(polyline.points[start + 1]);
 
     for (auto i = start + 2; i < end; i++) {
-      const auto& point_b = polyline.points[i];
-      output.emplace_back(point_b);
-
-      indices.emplace_back(0);
+      indices.emplace_back(start);
       indices.emplace_back(i - 1);
       indices.emplace_back(i);
     }
   }
-  return std::make_pair(output, indices);
+  return std::make_pair(polyline.points, indices);
+}
+
+VertexBuffer TessellateConvex(const Path::Polyline& polyline,
+                              HostBuffer& host_buffer) {
+  auto vertex_data = host_buffer.Emplace(polyline.points.data(),
+                                         polyline.points.size() * sizeof(Point),
+                                         alignof(Point));
+
+  // The maximum amount of index data this polyline can generate is 3 * point
+  // count. We might not use all of this space if there are multiple contours,
+  // but its okay to allocate a little extra so that we don't have to reallocate
+  // ever.
+  auto index_count = 0u;
+  auto upper_bound = polyline.points.size() * 3;
+  auto index_data = host_buffer.Emplace(
+      upper_bound * sizeof(uint16_t), alignof(uint16_t),
+      [&polyline, &index_count](uint8_t* buffer) {
+        auto offset = 0u;
+        uint16_t* typed_buffer = reinterpret_cast<uint16_t*>(buffer);
+        for (auto j = 0u; j < polyline.contours.size(); j++) {
+          auto [start, end] = polyline.GetContourPointBounds(j);
+          for (auto i = start + 2; i < end; i++) {
+            typed_buffer[offset++] = start;
+            typed_buffer[offset++] = i - 1;
+            typed_buffer[offset++] = i;
+            index_count += 3;
+          }
+        }
+      });
+  return VertexBuffer{
+      .vertex_buffer = vertex_data,
+      .index_buffer = index_data,
+      .vertex_count = index_count,
+      .index_type = IndexType::k16bit,
+  };
 }
 
 VertexBufferBuilder<TextureFillVertexShader::PerVertexData>
