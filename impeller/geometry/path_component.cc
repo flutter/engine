@@ -229,7 +229,7 @@ CubicPathComponent::ToQuadraticPathComponents(Scalar accuracy) const {
   auto p = p2x2 - p1x2;
   auto err = p.Dot(p);
   auto quad_count = std::max(1., ceil(pow(err / max_hypot2, 1. / 6.0)));
-
+  quads.reserve(quad_count);
   for (size_t i = 0; i < quad_count; i++) {
     auto t0 = i / quad_count;
     auto t1 = (i + 1) / quad_count;
