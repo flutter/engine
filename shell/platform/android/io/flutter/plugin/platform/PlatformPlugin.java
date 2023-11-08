@@ -11,6 +11,7 @@ import android.content.ClipData;
 import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.res.AssetFileDescriptor;
 import android.os.Build;
 import android.view.HapticFeedbackConstants;
 import android.view.SoundEffectConstants;
@@ -517,8 +518,12 @@ public class PlatformPlugin {
       if (clip == null) return null;
       if (format == null || format == PlatformChannel.ClipboardContentFormat.PLAIN_TEXT) {
         ClipData.Item item = clip.getItemAt(0);
+        AssetFileDescriptor assetFileDescriptor;
         if (item.getUri() != null)
-          activity.getContentResolver().openTypedAssetFileDescriptor(item.getUri(), "text/*", null);
+          assetFileDescriptor = activity.getContentResolver().openTypedAssetFileDescriptor(item.getUri(), "text/*", null);
+        CharSequence charSequence = item.coerceToText(activity);
+        if (assetFileDescriptor != null) 
+          assetFileDescriptor.close();
         return item.coerceToText(activity);
       }
     } catch (SecurityException e) {
