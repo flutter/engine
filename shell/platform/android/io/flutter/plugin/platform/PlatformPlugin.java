@@ -520,10 +520,12 @@ public class PlatformPlugin {
         ClipData.Item item = clip.getItemAt(0);
         AssetFileDescriptor assetFileDescriptor;
         if (item.getUri() != null)
-          assetFileDescriptor = activity.getContentResolver().openTypedAssetFileDescriptor(item.getUri(), "text/*", null);
+          assetFileDescriptor =
+              activity
+                  .getContentResolver()
+                  .openTypedAssetFileDescriptor(item.getUri(), "text/*", null);
         CharSequence charSequence = item.coerceToText(activity);
-        if (assetFileDescriptor != null)
-          assetFileDescriptor.close();
+        if (assetFileDescriptor != null) assetFileDescriptor.close();
         return item.coerceToText(activity);
       }
     } catch (SecurityException e) {

@@ -330,13 +330,17 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
                 case SplitInstallErrorCode.NETWORK_ERROR:
                   flutterJNI.deferredComponentInstallFailure(
                       loadingUnitId,
-                      "Install of deferred component module \"" + componentName + "\" failed with a network error",
+                      "Install of deferred component module \""
+                          + componentName
+                          + "\" failed with a network error",
                       true);
                   break;
                 case SplitInstallErrorCode.MODULE_UNAVAILABLE:
                   flutterJNI.deferredComponentInstallFailure(
                       loadingUnitId,
-                      "Install of deferred component module \"" + componentName + "\" failed as it is unavailable",
+                      "Install of deferred component module \""
+                          + componentName
+                          + "\" failed as it is unavailable",
                       false);
                   break;
                 default:
