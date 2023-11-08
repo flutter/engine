@@ -19,8 +19,9 @@ namespace testing {
  * To retrieve the bitfield of recorded log levels, use
  * `fl_get_received_gtk_log_levels()`.
  *
- * @param[in] writer The custom log writer function to use. If `nullptr`, the
- *               default log writer function will be used.
+ * @param[in] writer The custom log writer function to use. If `nullptr`, or it
+ *      returns G_LOG_WRITER_UNHANDLED, the default log writer function will be
+ *      called.
  *
  * @brief Ensures that GTK has been initialized and starts monitoring logs.
  */
