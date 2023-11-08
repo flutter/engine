@@ -90,13 +90,20 @@ class Path {
 
   /// One or more contours represented as a series of points and indices in
   /// the point vector representing the start of a new contour.
+  ///
+  /// Polylines are ephemeral and meant to be used by the tessellator. They do
+  /// not allocate their own point vectors to allow for optimizations around
+  /// allocation and reuse of arenas.
   struct Polyline {
+    /// The buffer must remain valid for the lifetime of this object.
     explicit Polyline(std::vector<Point>& point_buffer);
 
     /// Points in the polyline, which may represent multiple contours specified
     /// by indices in |breaks|.
     std::vector<Point>& points;
 
+    /// Contours are disconnected pieces of a polyline, such as when a MoveTo
+    /// was issued on a PathBuilder.
     std::vector<PolylineContour> contours;
 
     /// Convenience method to compute the start (inclusive) and end (exclusive)
