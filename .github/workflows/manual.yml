@@ -5,32 +5,57 @@ on:
         description: 'engine hash'     
         required: true
       branch:
-        description: 'branch to be cherry picked onto'     
-        required: false
-        default: 'master'
+        description: 'the release branch name where engine->flutter roll happens'     
+        required: true
 
 jobs:
   roll-engine-to-framework:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Flutter Release
-        uses: actions/checkout@v4
+      - name: Checkout Framework Branch
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
         with:
           ref: ${{ github.event.inputs.branch }}
           repository: flutter/flutter
           token: ${{ github.token }}
+          path: flutter
       - name: Update Engine version
+        working-directory: ./flutter
         run: |
+          echo "PREV_VERSION=$(cat bin/internal/engine.version | tr -d '\n')" >> $GITHUB_ENV
           echo "${{ github.event.inputs.engine_sha }}" > bin/internal/engine.version
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
+      - name: Checkout Engine History
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
         with:
+          ref: ${{ github.event.inputs.branch }}
+          repository: flutter/engine
+          token: ${{ github.token }}
+          path: engine
+          fetch-depth: 100
+      - name: Log Engine Commits
+        working-directory: ./engine
+        run: |
+          git branch
+          git log --oneline -10
+          git log --no-decorate --oneline $PREV_VERSION..$ENGINE_SHA
+          {
+            echo 'COMMIT_HISTORY<<EOF'
+            git log --no-decorate --oneline $PREV_VERSION..${{ github.event.inputs.engine_sha }}
+            echo EOF
+          } >> "$GITHUB_ENV"
+        env:
+          ENGINE_SHA: ${{ github.event.inputs.engine_sha }}
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@153407881ec5c347639a548ade7d8ad1d6740e38
+        with:
+          path: flutter
           token: ${{ secrets.PAT }}
           commit-message: Roll engine to ${{ github.event.inputs.engine_sha }}
           committer: GitHub <noreply@github.com>
-          reviewers: itsjustkevin
           title: 'Roll engine to ${{ github.event.inputs.engine_sha }}'
           body: |
             flutter engine->framework roll
             - branch: ${{ github.event.inputs.branch }}
             - engine hash: ${{ github.event.inputs.engine_sha }}
+            commit history: 
+            ${{ env.COMMIT_HISTORY }}
