@@ -540,11 +540,7 @@ public class PlatformPlugin {
     } catch (FileNotFoundException e) {
       return null;
     } catch (IOException e) {
-      Log.w(
-        TAG,
-        "Failed to close AssetFileDescriptor while accessing clipboard data.",
-        e
-      );
+      Log.w(TAG, "Failed to close AssetFileDescriptor while accessing clipboard data.", e);
       return null;
     }
 
