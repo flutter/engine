@@ -104,7 +104,7 @@ if (is_mac) {
     deps = [
              "//flutter/testing",
              ":gpu_surface_metal",
-            "//flutter/impeller/fixtures",
+             "//flutter/impeller/fixtures",
            ] + gpu_common_deps
   }
 }
