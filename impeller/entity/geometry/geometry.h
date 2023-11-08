@@ -53,9 +53,8 @@ std::pair<std::vector<Point>, std::vector<uint16_t>> TessellateConvex(
 
 /// @brief Given a polyline created from a convex filled path, perform a
 ///        directly into the host buffer.
-VertexBuffer TessellateConvex(
-    const Path::Polyline& polyline,
-    HostBuffer& host_buffer);
+VertexBuffer TessellateConvex(const Path::Polyline& polyline,
+                              HostBuffer& host_buffer);
 
 class Geometry {
  public:

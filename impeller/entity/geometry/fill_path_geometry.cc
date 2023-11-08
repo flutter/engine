@@ -24,7 +24,10 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
       path_.IsConvex()) {
     return GeometryResult{
         .type = PrimitiveType::kTriangle,
-        .vertex_buffer = TessellateConvex(path_.CreatePolyline(entity.GetTransformation().GetMaxBasisLength()), host_buffer),
+        .vertex_buffer = TessellateConvex(
+            path_.CreatePolyline(
+                entity.GetTransformation().GetMaxBasisLength()),
+            host_buffer),
         .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                      entity.GetTransformation(),
         .prevent_overdraw = false,
