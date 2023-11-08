@@ -11,7 +11,6 @@ import android.content.ClipData;
 import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.Context;
-import android.content.res.AssetFileDescriptor;
 import android.os.Build;
 import android.view.HapticFeedbackConstants;
 import android.view.SoundEffectConstants;
