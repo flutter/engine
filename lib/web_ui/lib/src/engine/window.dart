@@ -38,18 +38,129 @@ const int kImplicitViewId = 0;
 ///
 /// In addition to everything defined in [ui.FlutterView], this class adds
 /// a few web-specific properties.
-abstract interface class EngineFlutterView extends ui.FlutterView {
-  ContextMenu get contextMenu;
-  DomManager get dom;
-  MouseCursor get mouseCursor;
-  PlatformViewMessageHandler get platformViewMessageHandler;
+abstract mixin class EngineFlutterView implements ui.FlutterView {
+  factory EngineFlutterView(
+    int viewId,
+    EnginePlatformDispatcher platformDispatcher,
+  ) = _EngineFlutterViewImpl;
+
+  @override
+  EnginePlatformDispatcher get platformDispatcher;
+
+  final ViewConfiguration _viewConfiguration = const ViewConfiguration();
+
+  @override
+  void render(ui.Scene scene) => platformDispatcher.render(scene, this);
+
+  @override
+  void updateSemantics(ui.SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
+
+  late final MouseCursor mouseCursor = MouseCursor(dom.rootElement);
+
+  late final ContextMenu contextMenu = ContextMenu(dom.rootElement);
+
+  late final DomManager dom =
+      DomManager.fromFlutterViewEmbedderDEPRECATED(flutterViewEmbedder);
+
+  late final PlatformViewMessageHandler platformViewMessageHandler =
+      PlatformViewMessageHandler(platformViewsContainer: dom.platformViewsHost);
+
+  @override
+  ui.Rect get physicalGeometry => _viewConfiguration.geometry;
+
+  @override
+  ui.Size get physicalSize {
+    if (_physicalSize == null) {
+      computePhysicalSize();
+    }
+    assert(_physicalSize != null);
+    return _physicalSize!;
+  }
+
+  /// Lazily populated and cleared at the end of the frame.
+  ui.Size? _physicalSize;
+
+  ui.Size? debugPhysicalSizeOverride;
+
+  /// Computes the physical size of the screen from [domWindow].
+  ///
+  /// This function is expensive. It triggers browser layout if there are
+  /// pending DOM writes.
+  void computePhysicalSize() {
+    bool override = false;
+
+    assert(() {
+      if (debugPhysicalSizeOverride != null) {
+        _physicalSize = debugPhysicalSizeOverride;
+        override = true;
+      }
+      return true;
+    }());
+
+    if (!override) {
+      _physicalSize = _dimensionsProvider.computePhysicalSize();
+    }
+  }
+
+  /// Forces the view to recompute its physical size. Useful for tests.
+  void debugForceResize() {
+    computePhysicalSize();
+  }
+
+  @override
+  ViewPadding get viewInsets => _viewInsets;
+  ViewPadding _viewInsets = ui.ViewPadding.zero as ViewPadding;
+
+  @override
+  ViewPadding get viewPadding => _viewConfiguration.viewPadding;
+
+  @override
+  ViewPadding get systemGestureInsets => _viewConfiguration.systemGestureInsets;
+
+  @override
+  ViewPadding get padding => _viewConfiguration.padding;
+
+  @override
+  ui.GestureSettings get gestureSettings => _viewConfiguration.gestureSettings;
+
+  @override
+  List<ui.DisplayFeature> get displayFeatures => _viewConfiguration.displayFeatures;
+
+  @override
+  EngineFlutterDisplay get display => EngineFlutterDisplay.instance;
+
+  @override
+  double get devicePixelRatio => display.devicePixelRatio;
+
+  late DimensionsProvider _dimensionsProvider;
+  void configureDimensionsProvider(DimensionsProvider dimensionsProvider) {
+    _dimensionsProvider = dimensionsProvider;
+  }
+
+  Stream<ui.Size?> get onResize => _dimensionsProvider.onResize;
+}
+
+class _EngineFlutterViewImpl extends ui.FlutterView with EngineFlutterView {
+  _EngineFlutterViewImpl(this.viewId, this.platformDispatcher) {
+    platformDispatcher.registerView(this);
+    registerHotRestartListener(() {
+      // TODO(harryterkelsen): What should we do about this in multi-view?
+      renderer.clearFragmentProgramCache();
+      _dimensionsProvider.close();
+    });
+  }
+
+  @override
+  final int viewId;
+
+  @override
+  final EnginePlatformDispatcher platformDispatcher;
 }
 
 /// The Web implementation of [ui.SingletonFlutterWindow].
-class EngineFlutterWindow extends ui.SingletonFlutterWindow implements EngineFlutterView {
+class EngineFlutterWindow extends ui.SingletonFlutterWindow with EngineFlutterView {
   EngineFlutterWindow(this.viewId, this.platformDispatcher) {
-    platformDispatcher.viewData[viewId] = this;
-    platformDispatcher.windowConfigurations[viewId] = const ViewConfiguration();
+    platformDispatcher.registerView(this);
     if (ui_web.isCustomUrlStrategySet) {
       _browserHistory = createHistoryForExistingState(ui_web.urlStrategy);
     }
@@ -61,27 +172,10 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow implements EngineFlu
   }
 
   @override
-  EngineFlutterDisplay get display => EngineFlutterDisplay.instance;
-
-  @override
   final int viewId;
 
   @override
   final EnginePlatformDispatcher platformDispatcher;
-
-  @override
-  late final MouseCursor mouseCursor = MouseCursor(dom.rootElement);
-
-  @override
-  late final ContextMenu contextMenu = ContextMenu(dom.rootElement);
-
-  @override
-  late final DomManager dom =
-      DomManager.fromFlutterViewEmbedderDEPRECATED(flutterViewEmbedder);
-
-  @override
-  late final PlatformViewMessageHandler platformViewMessageHandler =
-      PlatformViewMessageHandler(platformViewsContainer: dom.platformViewsHost);
 
   /// Handles the browser history integration to allow users to use the back
   /// button, etc.
@@ -229,38 +323,6 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow implements EngineFlu
     });
   }
 
-  ViewConfiguration get _viewConfiguration {
-    assert(platformDispatcher.windowConfigurations.containsKey(viewId));
-    return platformDispatcher.windowConfigurations[viewId] ??
-        const ViewConfiguration();
-  }
-
-  @override
-  ui.Rect get physicalGeometry => _viewConfiguration.geometry;
-
-  @override
-  ViewPadding get viewPadding => _viewConfiguration.viewPadding;
-
-  @override
-  ViewPadding get systemGestureInsets => _viewConfiguration.systemGestureInsets;
-
-  @override
-  ViewPadding get padding => _viewConfiguration.padding;
-
-  @override
-  ui.GestureSettings get gestureSettings => _viewConfiguration.gestureSettings;
-
-  @override
-  List<ui.DisplayFeature> get displayFeatures => _viewConfiguration.displayFeatures;
-
-  late DimensionsProvider _dimensionsProvider;
-  void configureDimensionsProvider(DimensionsProvider dimensionsProvider) {
-    _dimensionsProvider = dimensionsProvider;
-  }
-
-  @override
-  double get devicePixelRatio => display.devicePixelRatio;
-
   // TODO(mdebbar): Deprecate this and remove it.
   // https://github.com/flutter/flutter/issues/127395
   void debugOverrideDevicePixelRatio(double? value) {
@@ -273,42 +335,6 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow implements EngineFlu
       return true;
     }());
     display.debugOverrideDevicePixelRatio(value);
-  }
-
-  Stream<ui.Size?> get onResize => _dimensionsProvider.onResize;
-
-  @override
-  ui.Size get physicalSize {
-    if (_physicalSize == null) {
-      computePhysicalSize();
-    }
-    assert(_physicalSize != null);
-    return _physicalSize!;
-  }
-
-  /// Computes the physical size of the screen from [domWindow].
-  ///
-  /// This function is expensive. It triggers browser layout if there are
-  /// pending DOM writes.
-  void computePhysicalSize() {
-    bool override = false;
-
-    assert(() {
-      if (debugPhysicalSizeOverride != null) {
-        _physicalSize = debugPhysicalSizeOverride;
-        override = true;
-      }
-      return true;
-    }());
-
-    if (!override) {
-      _physicalSize = _dimensionsProvider.computePhysicalSize();
-    }
-  }
-
-  /// Forces the window to recompute its physical size. Useful for tests.
-  void debugForceResize() {
-    computePhysicalSize();
   }
 
   void computeOnScreenKeyboardInsets(bool isEditingOnMobile) {
@@ -351,13 +377,6 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow implements EngineFlu
     return false;
   }
 
-  @override
-  ViewPadding get viewInsets => _viewInsets;
-  ViewPadding _viewInsets = ui.ViewPadding.zero as ViewPadding;
-
-  /// Lazily populated and cleared at the end of the frame.
-  ui.Size? _physicalSize;
-
   // TODO(mdebbar): Deprecate this and remove it.
   // https://github.com/flutter/flutter/issues/127395
   ui.Size? get webOnlyDebugPhysicalSizeOverride {
@@ -387,8 +406,6 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow implements EngineFlu
     }());
     debugPhysicalSizeOverride = value;
   }
-
-  ui.Size? debugPhysicalSizeOverride;
 }
 
 /// The window singleton.
