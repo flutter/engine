@@ -101,7 +101,8 @@ public class PlatformPluginTest {
 
   @Config(sdk = 29)
   @Test
-  public void platformPlugin_getClipboardDataSucceedsOnFileDescriptorIOException() throws IOException {
+  public void platformPlugin_getClipboardDataSucceedsOnFileDescriptorIOException()
+      throws IOException {
     ClipboardManager clipboardManager = ctx.getSystemService(ClipboardManager.class);
 
     View fakeDecorView = mock(View.class);
@@ -125,7 +126,8 @@ public class PlatformPluginTest {
     ContentResolver fakeContentResolver = mock(ContentResolver.class);
     AssetFileDescriptor fakeAssetFileDescriptor = mock(AssetFileDescriptor.class);
     when(fakeActivity.getContentResolver()).thenReturn(fakeContentResolver);
-    when(fakeContentResolver.openTypedAssetFileDescriptor(uri, anyString(), null)).thenReturn(fakeAssetFileDescriptor);
+    when(fakeContentResolver.openTypedAssetFileDescriptor(uri, anyString(), null))
+        .thenReturn(fakeAssetFileDescriptor);
     when(fakeAssetFileDescriptor.close()).thenThrow(IOException);
     assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
   }
