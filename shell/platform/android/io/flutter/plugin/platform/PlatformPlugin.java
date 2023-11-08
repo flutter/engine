@@ -522,7 +522,7 @@ public class PlatformPlugin {
         if (item.getUri() != null)
           assetFileDescriptor = activity.getContentResolver().openTypedAssetFileDescriptor(item.getUri(), "text/*", null);
         CharSequence charSequence = item.coerceToText(activity);
-        if (assetFileDescriptor != null) 
+        if (assetFileDescriptor != null)
           assetFileDescriptor.close();
         return item.coerceToText(activity);
       }
