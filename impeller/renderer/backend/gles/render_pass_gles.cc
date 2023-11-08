@@ -4,11 +4,18 @@
 
 #include "impeller/renderer/backend/gles/render_pass_gles.h"
 
+#include <cstdint>
+
+#include "GLES3/gl3.h"
 #include "flutter/fml/trace_event.h"
 #include "fml/closure.h"
+#include "fml/logging.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/texture_descriptor.h"
+#include "impeller/renderer/backend/gles/context_gles.h"
 #include "impeller/renderer/backend/gles/device_buffer_gles.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
+#include "impeller/renderer/backend/gles/gpu_tracer_gles.h"
 #include "impeller/renderer/backend/gles/pipeline_gles.h"
 #include "impeller/renderer/backend/gles/texture_gles.h"
 
@@ -141,7 +148,8 @@ struct RenderPassData {
     const RenderPassData& pass_data,
     const std::shared_ptr<Allocator>& transients_allocator,
     const ReactorGLES& reactor,
-    const std::vector<Command>& commands) {
+    const std::vector<Command>& commands,
+    const std::shared_ptr<GPUTracerGLES>& tracer) {
   TRACE_EVENT0("impeller", "RenderPassGLES::EncodeCommandsInReactor");
 
   if (commands.empty()) {
@@ -149,6 +157,9 @@ struct RenderPassData {
   }
 
   const auto& gl = reactor.GetProcTable();
+#ifdef IMPELLER_DEBUG
+  tracer->MarkFrameStart(gl);
+#endif  // IMPELLER_DEBUG
 
   fml::ScopedCleanupClosure pop_pass_debug_marker(
       [&gl]() { gl.PopDebugGroup(); });
@@ -176,19 +187,20 @@ struct RenderPassData {
 
     if (auto color = TextureGLES::Cast(pass_data.color_attachment.get())) {
       if (!color->SetAsFramebufferAttachment(
-              GL_FRAMEBUFFER, fbo, TextureGLES::AttachmentPoint::kColor0)) {
+              GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kColor0)) {
         return false;
       }
     }
+
     if (auto depth = TextureGLES::Cast(pass_data.depth_attachment.get())) {
       if (!depth->SetAsFramebufferAttachment(
-              GL_FRAMEBUFFER, fbo, TextureGLES::AttachmentPoint::kDepth)) {
+              GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kDepth)) {
         return false;
       }
     }
     if (auto stencil = TextureGLES::Cast(pass_data.stencil_attachment.get())) {
       if (!stencil->SetAsFramebufferAttachment(
-              GL_FRAMEBUFFER, fbo, TextureGLES::AttachmentPoint::kStencil)) {
+              GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kStencil)) {
         return false;
       }
     }
@@ -364,7 +376,7 @@ struct RenderPassData {
       return false;
     }
 
-    const auto& vertex_desc_gles = pipeline.GetBufferBindings();
+    auto vertex_desc_gles = pipeline.GetBufferBindings();
 
     //--------------------------------------------------------------------------
     /// Bind vertex and index buffers.
@@ -493,6 +505,12 @@ struct RenderPassData {
     );
   }
 
+#ifdef IMPELLER_DEBUG
+  if (is_default_fbo) {
+    tracer->MarkFrameEnd(gl);
+  }
+#endif  // IMPELLER_DEBUG
+
   return true;
 }
 
@@ -525,6 +543,14 @@ bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
   pass_data->discard_color_attachment =
       CanDiscardAttachmentWhenDone(color0.store_action);
 
+  // When we are using EXT_multisampled_render_to_texture, it is implicitly
+  // resolved when we bind the texture to the framebuffer. We don't need to
+  // discard the attachment when we are done.
+  if (color0.resolve_texture) {
+    FML_DCHECK(context.GetCapabilities()->SupportsImplicitResolvingMSAA());
+    pass_data->discard_color_attachment = false;
+  }
+
   //----------------------------------------------------------------------------
   /// Setup depth data.
   ///
@@ -537,7 +563,7 @@ bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
   }
 
   //----------------------------------------------------------------------------
-  /// Setup depth data.
+  /// Setup stencil data.
   ///
   if (stencil0.has_value()) {
     pass_data->stencil_attachment = stencil0->texture;
@@ -549,12 +575,13 @@ bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
   }
 
   std::shared_ptr<const RenderPassGLES> shared_this = shared_from_this();
+  auto tracer = ContextGLES::Cast(context).GetGPUTracer();
   return reactor_->AddOperation([pass_data,
                                  allocator = context.GetResourceAllocator(),
-                                 render_pass = std::move(shared_this)](
-                                    const auto& reactor) {
+                                 render_pass = std::move(shared_this),
+                                 tracer](const auto& reactor) {
     auto result = EncodeCommandsInReactor(*pass_data, allocator, reactor,
-                                          render_pass->commands_);
+                                          render_pass->commands_, tracer);
     FML_CHECK(result) << "Must be able to encode GL commands without error.";
   });
 }

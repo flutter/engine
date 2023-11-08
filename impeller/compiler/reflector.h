@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <optional>
 
@@ -169,7 +170,9 @@ class Reflector {
     return compiler_->type_struct_member_array_stride(struct_type, index);
   };
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Reflector);
+  Reflector(const Reflector&) = delete;
+
+  Reflector& operator=(const Reflector&) = delete;
 };
 
 }  // namespace compiler

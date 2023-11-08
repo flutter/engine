@@ -187,16 +187,16 @@ PathBuilder& PathBuilder::AddRect(Rect rect) {
   auto tr = rect.origin + Point{rect.size.width, 0.0};
 
   MoveTo(tl);
-  prototype_.AddLinearComponent(tl, tr)
-      .AddLinearComponent(tr, br)
-      .AddLinearComponent(br, bl);
+  LineTo(tr);
+  LineTo(br);
+  LineTo(bl);
   Close();
 
   return *this;
 }
 
 PathBuilder& PathBuilder::AddCircle(const Point& c, Scalar r) {
-  return AddOval(Rect{c.x - r, c.y - r, 2.0f * r, 2.0f * r});
+  return AddOval(Rect::MakeXYWH(c.x - r, c.y - r, 2.0f * r, 2.0f * r));
 }
 
 PathBuilder& PathBuilder::AddRoundedRect(Rect rect, Scalar radius) {

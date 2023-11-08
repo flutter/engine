@@ -46,7 +46,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
 
   // Configures the window instance with an instance of a running Flutter
   // engine.
-  void SetEngine(std::unique_ptr<FlutterWindowsEngine> engine);
+  void SetEngine(FlutterWindowsEngine* engine);
 
   // Creates rendering surface for Flutter engine to draw into.
   // Should be called before calling FlutterEngineRun using this view.
@@ -82,14 +82,11 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // Send initial bounds to embedder.  Must occur after engine has initialized.
   void SendInitialBounds();
 
-  // Send the initial accessibility features to the window
-  void SendInitialAccessibilityFeatures();
-
   // Set the text of the alert, and create it if it does not yet exist.
   void AnnounceAlert(const std::wstring& text);
 
   // |WindowBindingHandlerDelegate|
-  void UpdateHighContrastEnabled(bool enabled) override;
+  void OnHighContrastChanged() override;
 
   // Returns the frame buffer id for the engine to render to.
   uint32_t GetFrameBufferId(size_t width, size_t height);
@@ -364,7 +361,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   std::unique_ptr<WindowsRenderTarget> render_target_;
 
   // The engine associated with this view.
-  std::unique_ptr<FlutterWindowsEngine> engine_;
+  FlutterWindowsEngine* engine_ = nullptr;
 
   // Keeps track of pointer states in relation to the window.
   std::unordered_map<int32_t, std::unique_ptr<PointerState>> pointer_states_;

@@ -27,9 +27,6 @@ class DlDispatcher final : public flutter::DlOpReceiver {
   void setAntiAlias(bool aa) override;
 
   // |flutter::DlOpReceiver|
-  void setDither(bool dither) override;
-
-  // |flutter::DlOpReceiver|
   void setDrawStyle(flutter::DlDrawStyle style) override;
 
   // |flutter::DlOpReceiver|
@@ -229,7 +226,9 @@ class DlDispatcher final : public flutter::DlOpReceiver {
   CanvasType canvas_;
   Matrix initial_matrix_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(DlDispatcher);
+  DlDispatcher(const DlDispatcher&) = delete;
+
+  DlDispatcher& operator=(const DlDispatcher&) = delete;
 };
 
 }  // namespace impeller

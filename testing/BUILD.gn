@@ -25,6 +25,8 @@ source_set("testing_lib") {
     "mock_canvas.h",
     "post_task_sync.cc",
     "post_task_sync.h",
+    "stream_capture.cc",
+    "stream_capture.h",
     "test_args.cc",
     "test_args.h",
     "test_timeout_listener.cc",
@@ -70,9 +72,9 @@ source_set("dart") {
     "//flutter/common",
     "//flutter/runtime",
     "//flutter/runtime:libdart",
+    "//flutter/skia",
     "//flutter/third_party/tonic",
     "//third_party/dart/runtime/bin:elf_loader",
-    "//third_party/skia",
   ]
 }
 
@@ -87,7 +89,7 @@ source_set("skia") {
 
   public_deps = [
     ":testing_lib",
-    "//third_party/skia",
+    "//flutter/skia",
   ]
 }
 
@@ -121,6 +123,19 @@ source_set("fixture_test") {
 
   if (flutter_runtime_mode == "profile") {
     public_deps += [ ":vmservice_snapshot" ]
+  }
+}
+
+if (is_mac || is_ios) {
+  source_set("autoreleasepool_test") {
+    testonly = true
+
+    sources = [ "autoreleasepool_test.h" ]
+
+    deps = [
+      "//flutter/fml",
+      "//third_party/googletest:gtest",
+    ]
   }
 }
 
