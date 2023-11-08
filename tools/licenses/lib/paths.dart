@@ -44,6 +44,15 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/gn',
   r'flutter/third_party/imgui',
   r'flutter/third_party/ninja', // build system
+  r'flutter/third_party/pkg/archive', // contains nothing that ends up in the binary executable
+  r'flutter/third_party/pkg/equatable',
+  r'flutter/third_party/pkg/flutter_packages',
+  r'flutter/third_party/pkg/gcloud',
+  r'flutter/third_party/pkg/googleapis',
+  r'flutter/third_party/pkg/platform',
+  r'flutter/third_party/pkg/process',
+  r'flutter/third_party/pkg/process_runner',
+  r'flutter/third_party/pkg/vector_math',
   r'flutter/third_party/rapidjson/contrib', // contains nothing that ends up in the binary executable
   r'flutter/third_party/rapidjson/doc', // documentation
   r'flutter/third_party/shaderc/third_party/LICENSE.glslang', // unclear what the purpose of this file is
@@ -87,11 +96,15 @@ final Set<String> skippedPaths = <String>{
   r'third_party/dart/pkg', // packages that don't become part of the binary (e.g. the analyzer)
   r'third_party/dart/runtime/bin/ffi_test',
   r'third_party/dart/runtime/docs',
-  r'third_party/dart/runtime/third_party/binary_size', // not linked in either
-  r'third_party/dart/runtime/third_party/d3', // Siva says "that is the charting library used by the binary size tool"
+  // TODO(aam): remove as a dup
+  r'third_party/dart/runtime/third_party/binary_size',
+  // TODO(aam): remove as a dup
+  r'third_party/dart/runtime/third_party/d3',
   r'third_party/dart/runtime/vm/service',
   r'third_party/dart/sdk/lib/html/doc',
+  r'third_party/dart/third_party/binary_size', // not linked in
   r'third_party/dart/third_party/binaryen', // not linked in
+  r'third_party/dart/third_party/d3', // Siva says "that is the charting library used by the binary size tool"
   r'third_party/dart/third_party/d8', // testing tool for dart2js
   r'third_party/dart/third_party/devtools', // not linked in
   r'third_party/dart/third_party/firefox_jsshell', // testing tool for dart2js
@@ -152,17 +165,6 @@ final Set<String> skippedPaths = <String>{
   r'third_party/perfetto/src/traced', // contains nothing that ends up in the binary executable
   r'third_party/perfetto/src/tracing', // contains nothing that ends up in the binary executable
   r'third_party/protobuf', // build-time dependency only
-  r'third_party/pkg/archive', // contains nothing that ends up in the binary executable
-  r'third_party/pkg/equatable',
-  r'third_party/pkg/file',
-  r'third_party/pkg/flutter_packages',
-  r'third_party/pkg/gcloud',
-  r'third_party/pkg/googleapis',
-  r'third_party/pkg/platform',
-  r'third_party/pkg/process',
-  r'third_party/pkg/process_runner',
-  r'third_party/pkg/quiver',
-  r'third_party/pkg/vector_math',
   r'third_party/pyyaml', // build-time dependency only
   r'third_party/root_certificates/certdata.pem',
   r'third_party/root_certificates/certdata.txt',
