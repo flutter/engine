@@ -83,7 +83,7 @@ GeometryResult FillPathGeometry::GetPositionUVBuffer(
   using VS = TextureFillVertexShader;
 
   auto uv_transform =
-      effect_transform * texture_coverage.GetNormalizingTransform();
+      texture_coverage.GetNormalizingTransform() * effect_transform;
 
   if (path_.GetFillType() == FillType::kNonZero &&  //
       path_.IsConvex()) {

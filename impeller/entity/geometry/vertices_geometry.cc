@@ -228,7 +228,7 @@ GeometryResult VerticesGeometry::GetPositionUVBuffer(
   auto index_count = indices_.size();
   auto vertex_count = vertices_.size();
   auto uv_transform =
-      effect_transform * texture_coverage.GetNormalizingTransform();
+      texture_coverage.GetNormalizingTransform() * effect_transform;
   auto has_texture_coordinates = HasTextureCoordinates();
   std::vector<VS::PerVertexData> vertex_data(vertex_count);
   {
