@@ -350,12 +350,6 @@ void AngleSurfaceManager::SetVSyncEnabled(bool enabled) {
     LogEglError("Unable to update the swap interval");
     return;
   }
-
-  if (!ClearCurrent()) {
-    LogEglError(
-        "Unable to clear current surface after updating the swap interval");
-    return;
-  }
 }
 
 bool AngleSurfaceManager::GetDevice(ID3D11Device** device) {

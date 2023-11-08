@@ -46,8 +46,11 @@ static void UpdateVsync(FlutterWindowsEngine& engine,
     return;
   }
 
-  // Switch to the raster thread if the engine is running
-  // as updating the vsync makes the render surface current.
+  // Updating the vsync makes the EGL context and render surface current.
+  // If the engine is running, the render surface should only be made current on
+  // the raster thread. If the engine is initializing, the raster thread doesn't
+  // exist yet and the render surface can be made current on the platform
+  // thread.
   auto needs_vsync = window.NeedsVSync();
   if (engine.running()) {
     engine.PostRasterThreadTask([surface_manager, needs_vsync]() {
@@ -55,6 +58,13 @@ static void UpdateVsync(FlutterWindowsEngine& engine,
     });
   } else {
     surface_manager->SetVSyncEnabled(needs_vsync);
+
+    // Release the EGL context so that the raster thread can use it.
+    if (!surface_manager->ClearCurrent()) {
+      FML_LOG(ERROR)
+          << "Unable to clear current surface after updating the swap interval";
+      return;
+    }
   }
 }
 

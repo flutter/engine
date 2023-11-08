@@ -133,6 +133,7 @@ class MockAngleSurfaceManager : public AngleSurfaceManager {
   MOCK_METHOD(void, DestroySurface, (), (override));
 
   MOCK_METHOD(bool, MakeCurrent, (), (override));
+  MOCK_METHOD(bool, ClearCurrent, (), (override));
   MOCK_METHOD(void, SetVSyncEnabled, (bool), (override));
 
  private:
@@ -1244,6 +1245,7 @@ TEST(FlutterWindowsViewTest, DisablesVSyncAtStartup) {
       .Times(1)
       .WillOnce(Return(true));
   EXPECT_CALL(*surface_manager.get(), SetVSyncEnabled(false)).Times(1);
+  EXPECT_CALL(*surface_manager.get(), ClearCurrent).Times(1);
 
   EXPECT_CALL(*engine.get(), Stop).Times(1);
   EXPECT_CALL(*surface_manager.get(), DestroySurface).Times(1);
@@ -1276,6 +1278,7 @@ TEST(FlutterWindowsViewTest, EnablesVSyncAtStartup) {
       .Times(1)
       .WillOnce(Return(true));
   EXPECT_CALL(*surface_manager.get(), SetVSyncEnabled(true)).Times(1);
+  EXPECT_CALL(*surface_manager.get(), ClearCurrent).Times(1);
 
   EXPECT_CALL(*engine.get(), Stop).Times(1);
   EXPECT_CALL(*surface_manager.get(), DestroySurface).Times(1);
