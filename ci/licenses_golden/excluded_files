@@ -150,6 +150,7 @@
 ../../../flutter/impeller/geometry/geometry_unittests.cc
 ../../../flutter/impeller/geometry/matrix_unittests.cc
 ../../../flutter/impeller/geometry/rect_unittests.cc
+../../../flutter/impeller/geometry/size_unittests.cc
 ../../../flutter/impeller/golden_tests/README.md
 ../../../flutter/impeller/golden_tests_harvester/.dart_tool
 ../../../flutter/impeller/golden_tests_harvester/.gitignore
@@ -255,6 +256,7 @@
 ../../../flutter/shell/common/switches_unittests.cc
 ../../../flutter/shell/common/variable_refresh_rate_display_unittests.cc
 ../../../flutter/shell/common/vsync_waiter_unittests.cc
+../../../flutter/shell/gpu/gpu_surface_metal_impeller_unittests.mm
 ../../../flutter/shell/platform/android/.gitignore
 ../../../flutter/shell/platform/android/android_context_gl_impeller_unittests.cc
 ../../../flutter/shell/platform/android/android_context_gl_unittests.cc
@@ -1811,13 +1813,6 @@
 ../../../third_party/dart/runtime/observatory/update_sources.py
 ../../../third_party/dart/runtime/observatory/web/third_party/README.md
 ../../../third_party/dart/runtime/tests
-../../../third_party/dart/runtime/third_party/binary_size
-../../../third_party/dart/runtime/third_party/d3
-../../../third_party/dart/runtime/third_party/double-conversion/.gitignore
-../../../third_party/dart/runtime/third_party/double-conversion/AUTHORS
-../../../third_party/dart/runtime/third_party/double-conversion/Changelog
-../../../third_party/dart/runtime/third_party/double-conversion/README.dart
-../../../third_party/dart/runtime/third_party/double-conversion/README.md
 ../../../third_party/dart/runtime/tools/.gitignore
 ../../../third_party/dart/runtime/tools/android_finder.py
 ../../../third_party/dart/runtime/tools/benchmark.py
@@ -2018,10 +2013,17 @@
 ../../../third_party/dart/tests
 ../../../third_party/dart/third_party/.gitignore
 ../../../third_party/dart/third_party/OWNERS
+../../../third_party/dart/third_party/binary_size
 ../../../third_party/dart/third_party/binaryen
 ../../../third_party/dart/third_party/clang.tar.gz.sha1
+../../../third_party/dart/third_party/d3
 ../../../third_party/dart/third_party/d8
 ../../../third_party/dart/third_party/devtools
+../../../third_party/dart/third_party/double-conversion/.gitignore
+../../../third_party/dart/third_party/double-conversion/AUTHORS
+../../../third_party/dart/third_party/double-conversion/Changelog
+../../../third_party/dart/third_party/double-conversion/README.dart
+../../../third_party/dart/third_party/double-conversion/README.md
 ../../../third_party/dart/third_party/firefox_jsshell
 ../../../third_party/dart/third_party/mdn/browser-compat-data/README.google
 ../../../third_party/dart/third_party/pkg
