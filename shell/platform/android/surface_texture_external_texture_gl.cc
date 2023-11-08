@@ -64,16 +64,16 @@ void SurfaceTextureExternalTextureGL::Detach() {
 }
 
 SurfaceTextureExternalTextureImpellerGL::
-    SurfaceTextureExternalTextureImpellerGL(
-        const std::shared_ptr<impeller::ContextGLES>& context,
-        int64_t id,
-        const fml::jni::ScopedJavaGlobalRef<jobject>& surface_texture,
-        const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade)
+SurfaceTextureExternalTextureImpellerGL(
+    const std::shared_ptr<impeller::ContextGLES>& context,
+    int64_t id,
+    const fml::jni::ScopedJavaGlobalRef<jobject>& surface_texture,
+    const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade)
     : SurfaceTextureExternalTexture(id, surface_texture, jni_facade),
       impeller_context_(context) {}
 
-SurfaceTextureExternalTextureImpellerGL::
-    ~SurfaceTextureExternalTextureImpellerGL() {}
+SurfaceTextureExternalTextureImpellerGL::~
+SurfaceTextureExternalTextureImpellerGL() {}
 
 void SurfaceTextureExternalTextureImpellerGL::ProcessFrame(
     PaintContext& context,

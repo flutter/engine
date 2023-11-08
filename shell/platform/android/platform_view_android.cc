@@ -320,14 +320,14 @@ void PlatformViewAndroid::RegisterExternalTexture(
             /*id=*/texture_id,
             /*surface_texture=*/surface_texture,
             /*jni_facade=*/jni_facade_);
-        return;
+        break;
       case AndroidRenderingAPI::kVulkan:
         texture = std::make_shared<SurfaceTextureExternalTextureImpellerVK>(
             /*context=*/std::static_pointer_cast<impeller::ContextVK>(impeller),
             /*id=*/texture_id,
             /*surface_texture=*/surface_texture,
             /*jni_facade=*/jni_facade_);
-        return;
+        break;
       case AndroidRenderingAPI::kAutoselect:
         // Autoselect should have been resolved to GLES or Vulkan by now.
         [[fallthrough]];
@@ -336,24 +336,24 @@ void PlatformViewAndroid::RegisterExternalTexture(
         FML_UNREACHABLE();
         break;
     }
-  }
-
-  // Skia backend always uses GLES, so fail on anything else.
-  switch (android_context_->RenderingApi()) {
-    case AndroidRenderingAPI::kOpenGLES:
-      texture = std::make_shared<SurfaceTextureExternalTextureGL>(
-          /*id=*/texture_id,
-          /*surface_texture=*/surface_texture,
-          /*jni_facade=*/jni_facade_);
-      return;
-    case AndroidRenderingAPI::kSoftware:
-      FML_LOG(INFO) << "Attempted to use a SurfaceTexture texture with a "
-                       "software rendering API. Nothing will be rendered.";
-      return;
-    case AndroidRenderingAPI::kVulkan:
-      [[fallthrough]];
-    case AndroidRenderingAPI::kAutoselect:
-      FML_UNREACHABLE();
+  } else {
+    // Skia backend always uses GLES, so fail on anything else.
+    switch (android_context_->RenderingApi()) {
+      case AndroidRenderingAPI::kOpenGLES:
+        texture = std::make_shared<SurfaceTextureExternalTextureGL>(
+            /*id=*/texture_id,
+            /*surface_texture=*/surface_texture,
+            /*jni_facade=*/jni_facade_);
+        break;
+      case AndroidRenderingAPI::kSoftware:
+        FML_LOG(INFO) << "Attempted to use a SurfaceTexture texture with a "
+                         "software rendering API. Nothing will be rendered.";
+        return;
+      case AndroidRenderingAPI::kVulkan:
+        [[fallthrough]];
+      case AndroidRenderingAPI::kAutoselect:
+        FML_UNREACHABLE();
+    }
   }
 
   FML_DCHECK(texture) << "Expected a texture to be created.";
@@ -375,7 +375,7 @@ void PlatformViewAndroid::RegisterImageTexture(
             /*id=*/texture_id,
             /*hardware_buffer_texture_entry=*/image_texture_entry,
             /*jni_facade=*/jni_facade_);
-        return;
+        break;
       case AndroidRenderingAPI::kVulkan:
         texture = std::make_shared<ImageExternalTextureVK>(
             /*context=*/std::static_pointer_cast<impeller::ContextVK>(impeller),
@@ -391,27 +391,27 @@ void PlatformViewAndroid::RegisterImageTexture(
         FML_UNREACHABLE();
         break;
     }
-  }
-
-  switch (android_context_->RenderingApi()) {
-    case AndroidRenderingAPI::kOpenGLES:
-      texture = std::make_shared<ImageExternalTextureGLSkia>(
-          /*context=*/std::static_pointer_cast<AndroidContextGLSkia>(
-              android_context_),
-          /*id=*/texture_id,
-          /*hardware_buffer_texture_entry=*/image_texture_entry,
-          /*jni_facade=*/jni_facade_);
-      return;
-    case AndroidRenderingAPI::kVulkan:
-      [[fallthrough]];
-    case AndroidRenderingAPI::kAutoselect:
-      // Skia backend always uses GLES, so fail on anything else.
-      FML_UNREACHABLE();
-      break;
-    case AndroidRenderingAPI::kSoftware:
-      FML_LOG(INFO) << "Attempted to use a HardwareBuffer with a software "
-                    << "rendering API. Nothing will be rendered.";
-      return;
+  } else {
+    switch (android_context_->RenderingApi()) {
+      case AndroidRenderingAPI::kOpenGLES:
+        texture = std::make_shared<ImageExternalTextureGLSkia>(
+            /*context=*/std::static_pointer_cast<AndroidContextGLSkia>(
+                android_context_),
+            /*id=*/texture_id,
+            /*hardware_buffer_texture_entry=*/image_texture_entry,
+            /*jni_facade=*/jni_facade_);
+        break;
+      case AndroidRenderingAPI::kVulkan:
+        [[fallthrough]];
+      case AndroidRenderingAPI::kAutoselect:
+        // Skia backend always uses GLES, so fail on anything else.
+        FML_UNREACHABLE();
+        break;
+      case AndroidRenderingAPI::kSoftware:
+        FML_LOG(INFO) << "Attempted to use a HardwareBuffer with a software "
+                      << "rendering API. Nothing will be rendered.";
+        return;
+    }
   }
 
   FML_DCHECK(texture) << "Expected a texture to be created.";
