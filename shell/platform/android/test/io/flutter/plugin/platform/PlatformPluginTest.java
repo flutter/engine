@@ -24,6 +24,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.res.AssetFileDescriptor;
 import android.net.Uri;
 import android.os.Build;
 import android.view.View;
@@ -120,15 +121,15 @@ public class PlatformPluginTest {
     clipboardManager.setPrimaryClip(clip);
     assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
 
+    ContentResolver contentResolver = spy(ctx.getContentResolver());
     Uri uri = Uri.parse("content://media/external_primary/images/media/");
     clip = ClipData.newUri(contentResolver, "URI", uri);
     clipboardManager.setPrimaryClip(clip);
-    ContentResolver fakeContentResolver = mock(ContentResolver.class);
     AssetFileDescriptor fakeAssetFileDescriptor = mock(AssetFileDescriptor.class);
-    when(fakeActivity.getContentResolver()).thenReturn(fakeContentResolver);
-    when(fakeContentResolver.openTypedAssetFileDescriptor(uri, anyString(), null))
+    when(fakeActivity.getContentResolver()).thenReturn(contentResolver);
+    when(contentResolver.openTypedAssetFileDescriptor(uri, anyString(), null))
         .thenReturn(fakeAssetFileDescriptor);
-    when(fakeAssetFileDescriptor.close()).thenThrow(IOException);
+    when(fakeAssetFileDescriptor.close()).thenThrow(IOException.class);
     assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
   }
 
