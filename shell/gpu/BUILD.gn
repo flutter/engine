@@ -90,8 +90,10 @@ source_set("gpu_surface_metal") {
 }
 
 if (is_mac) {
+  print("there")
   impeller_component("gpu_surface_metal_unittests") {
     testonly = true
+    target_type = "executable"
     sources = [ "gpu_surface_metal_impeller_unittests.mm" ]
 
     frameworks = [
