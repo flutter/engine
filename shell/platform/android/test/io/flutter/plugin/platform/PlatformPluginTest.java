@@ -11,6 +11,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -95,6 +96,37 @@ public class PlatformPluginTest {
     Uri uri = Uri.parse("content://media/external_primary/images/media/");
     clip = ClipData.newUri(contentResolver, "URI", uri);
     clipboardManager.setPrimaryClip(clip);
+    assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
+  }
+
+  @Config(sdk = 29)
+  @Test
+  public void platformPlugin_getClipboardDataSucceedsOnFileDescriptorIOException() throws IOException {
+    ClipboardManager clipboardManager = ctx.getSystemService(ClipboardManager.class);
+
+    View fakeDecorView = mock(View.class);
+    Window fakeWindow = mock(Window.class);
+    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+    Activity fakeActivity = mock(Activity.class);
+    when(fakeActivity.getWindow()).thenReturn(fakeWindow);
+    when(fakeActivity.getSystemService(Context.CLIPBOARD_SERVICE)).thenReturn(clipboardManager);
+    PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
+    PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
+
+    ClipboardContentFormat clipboardFormat = ClipboardContentFormat.PLAIN_TEXT;
+    assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
+    ClipData clip = ClipData.newPlainText("label", "Text");
+    clipboardManager.setPrimaryClip(clip);
+    assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
+
+    Uri uri = Uri.parse("content://media/external_primary/images/media/");
+    clip = ClipData.newUri(contentResolver, "URI", uri);
+    clipboardManager.setPrimaryClip(clip);
+    ContentResolver fakeContentResolver = mock(ContentResolver.class);
+    AssetFileDescriptor fakeAssetFileDescriptor = mock(AssetFileDescriptor.class);
+    when(fakeActivity.getContentResolver()).thenReturn(fakeContentResolver);
+    when(fakeContentResolver.openTypedAssetFileDescriptor(uri, anyString(), null)).thenReturn(fakeAssetFileDescriptor);
+    when(fakeAssetFileDescriptor.close()).thenThrow(IOException);
     assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
   }
 
