@@ -77,8 +77,9 @@ struct QuadraticPathComponent {
   // See also the implementation in kurbo: https://github.com/linebender/kurbo.
   std::vector<Point> CreatePolyline(Scalar scale) const;
 
-  void FillPointsForPolyline(std::vector<Point>& points,
-                             Scalar scale_factor) const;
+  size_t FillPointsForPolyline(std::vector<Point>& points,
+                               Scalar scale_factor,
+                               size_t prev_count = 0) const;
 
   std::vector<Point> Extrema() const;
 
