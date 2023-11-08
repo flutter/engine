@@ -2101,7 +2101,7 @@ TEST(GeometryTest, RectRoundOut) {
 TEST(GeometryTest, CubicPathComponentPolylineDoesNotIncludePointOne) {
   CubicPathComponent component({10, 10}, {20, 35}, {35, 20}, {40, 40});
   std::vector<Point> polyline;
-  component.CreatePolyline(1.0f, polyline);
+  component.AppendPolylinePoints(1.0f, polyline);
   ASSERT_NE(polyline.front().x, 10);
   ASSERT_NE(polyline.front().y, 10);
   ASSERT_EQ(polyline.back().x, 40);

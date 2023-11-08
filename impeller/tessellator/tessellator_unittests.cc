@@ -28,11 +28,10 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
   {
     Tessellator t;
     auto path = PathBuilder{}.LineTo({0, 0}).TakePath(FillType::kPositive);
-    Tessellator::Result result =
-        t.Tessellate(path, 1.0f,
-                     [](const float* vertices, size_t vertices_count,
-                        const uint16_t* indices_count,
-                        size_t indices_size) { return true; });
+    Tessellator::Result result = t.Tessellate(
+        path, 1.0f,
+        [](const float* vertices, size_t vertices_count,
+           const uint16_t* indices, size_t indices_count) { return true; });
 
     ASSERT_EQ(result, Tessellator::Result::kSuccess);
   }
@@ -42,11 +41,10 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
     Tessellator t;
     auto path =
         PathBuilder{}.AddLine({0, 0}, {0, 1}).TakePath(FillType::kPositive);
-    Tessellator::Result result =
-        t.Tessellate(path, 1.0f,
-                     [](const float* vertices, size_t vertices_count,
-                        const uint16_t* indices_count,
-                        size_t indices_size) { return true; });
+    Tessellator::Result result = t.Tessellate(
+        path, 1.0f,
+        [](const float* vertices, size_t vertices_count,
+           const uint16_t* indices, size_t indices_count) { return true; });
 
     ASSERT_EQ(result, Tessellator::Result::kSuccess);
   }
@@ -59,12 +57,11 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
       auto coord = i * 1.0f;
       builder.AddLine({coord, coord}, {coord + 1, coord + 1});
     }
-    auto path = PathBuilder{}.TakePath(FillType::kPositive);
-    Tessellator::Result result =
-        t.Tessellate(path, 1.0f,
-                     [](const float* vertices, size_t vertices_count,
-                        const uint16_t* indices_count,
-                        size_t indices_size) { return true; });
+    auto path = builder.TakePath(FillType::kPositive);
+    Tessellator::Result result = t.Tessellate(
+        path, 1.0f,
+        [](const float* vertices, size_t vertices_count,
+           const uint16_t* indices, size_t indices_count) { return true; });
 
     ASSERT_EQ(result, Tessellator::Result::kSuccess);
   }
@@ -74,11 +71,10 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
     Tessellator t;
     auto path =
         PathBuilder{}.AddLine({0, 0}, {0, 1}).TakePath(FillType::kPositive);
-    Tessellator::Result result =
-        t.Tessellate(path, 1.0f,
-                     [](const float* vertices, size_t vertices_count,
-                        const uint16_t* indices_count,
-                        size_t indices_size) { return false; });
+    Tessellator::Result result = t.Tessellate(
+        path, 1.0f,
+        [](const float* vertices, size_t vertices_count,
+           const uint16_t* indices, size_t indices_count) { return false; });
 
     ASSERT_EQ(result, Tessellator::Result::kInputError);
   }

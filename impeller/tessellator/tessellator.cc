@@ -206,12 +206,14 @@ Tessellator::Result Tessellator::Tessellate(const Path& path,
 
       int vertex_item_count = tessGetVertexCount(tessellator) * kVertexSize;
       auto vertices = tessGetVertices(tessellator);
+      points.reserve(vertex_item_count);
       for (int i = 0; i < vertex_item_count; i += 2) {
         points.emplace_back(vertices[i], vertices[i + 1]);
       }
 
       int element_item_count = tessGetElementCount(tessellator) * kPolygonSize;
       auto elements = tessGetElements(tessellator);
+      data.reserve(element_item_count);
       for (int i = 0; i < element_item_count; i++) {
         data.emplace_back(points[elements[i]].x);
         data.emplace_back(points[elements[i]].y);

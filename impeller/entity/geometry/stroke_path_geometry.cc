@@ -130,7 +130,7 @@ StrokePathGeometry::JoinProc StrokePathGeometry::GetJoinProc(Join stroke_join) {
 
         std::vector<Point> arc_points;
         CubicPathComponent(start_offset, start_handle, middle_handle, middle)
-            .CreatePolyline(scale, arc_points);
+            .AppendPolylinePoints(scale, arc_points);
 
         VS::PerVertexData vtx;
         for (const auto& point : arc_points) {
@@ -193,7 +193,7 @@ StrokePathGeometry::CapProc StrokePathGeometry::GetCapProc(Cap stroke_cap) {
         vtx.position = position - orientation;
         vtx_builder.AppendVertex(vtx);
         std::vector<Point> arc_points;
-        arc.CreatePolyline(scale, arc_points);
+        arc.AppendPolylinePoints(scale, arc_points);
         for (const auto& point : arc_points) {
           vtx.position = position + point;
           vtx_builder.AppendVertex(vtx);

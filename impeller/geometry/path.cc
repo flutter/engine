@@ -314,8 +314,8 @@ Path::Polyline Path::CreatePolyline(Scalar scale,
   std::optional<size_t> previous_path_component_index;
   auto end_contour = [&polyline, &previous_path_component_index,
                       &get_path_component, &components]() {
-    // Whenever a contour has ended, extract the exact end direction from the
-    // last component.
+    // Whenever a contour has ended, extract the exact end direction from
+    // the last component.
     if (polyline.contours.empty()) {
       return;
     }
@@ -356,7 +356,7 @@ Path::Polyline Path::CreatePolyline(Scalar scale,
             .component_start_index = polyline.points.size() - 1,
             .is_curve = false,
         });
-        linears_[component.index].CreatePolyline(polyline.points);
+        linears_[component.index].AppendPolylinePoints(polyline.points);
         previous_path_component_index = component_i;
         break;
       case ComponentType::kQuadratic:
@@ -364,7 +364,7 @@ Path::Polyline Path::CreatePolyline(Scalar scale,
             .component_start_index = polyline.points.size() - 1,
             .is_curve = true,
         });
-        quads_[component.index].CreatePolyline(scale, polyline.points);
+        quads_[component.index].AppendPolylinePoints(scale, polyline.points);
         previous_path_component_index = component_i;
         break;
       case ComponentType::kCubic:
@@ -372,7 +372,7 @@ Path::Polyline Path::CreatePolyline(Scalar scale,
             .component_start_index = polyline.points.size() - 1,
             .is_curve = true,
         });
-        cubics_[component.index].CreatePolyline(scale, polyline.points);
+        cubics_[component.index].AppendPolylinePoints(scale, polyline.points);
         previous_path_component_index = component_i;
         break;
       case ComponentType::kContour:
