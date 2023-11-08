@@ -3204,7 +3204,7 @@ void _testClickDebouncer() {
     // so that the debouncer does not debounce events and simply lets
     // everything through.
     final DomElement testElement = createDomElement('flt-semantics');
-    window.dom.semanticsHost.appendChild(testElement);
+    EnginePlatformDispatcher.instance.implicitView!.dom.semanticsHost.appendChild(testElement);
 
     testElement.dispatchEvent(context.primaryDown());
     testElement.dispatchEvent(context.primaryUp());
@@ -3224,7 +3224,7 @@ void _testClickDebouncer() {
 
     final DomElement testElement = createDomElement('flt-semantics');
     testElement.setAttribute('flt-tappable', '');
-    window.dom.semanticsHost.appendChild(testElement);
+    EnginePlatformDispatcher.instance.implicitView!.dom.semanticsHost.appendChild(testElement);
 
     testElement.dispatchEvent(context.primaryDown());
     expect(
@@ -3282,7 +3282,7 @@ void _testClickDebouncer() {
 
     final DomElement testElement = createDomElement('flt-semantics');
     testElement.setAttribute('flt-tappable', '');
-    window.dom.semanticsHost.appendChild(testElement);
+    EnginePlatformDispatcher.instance.implicitView!.dom.semanticsHost.appendChild(testElement);
 
     testElement.dispatchEvent(context.primaryDown());
     expect(
@@ -3293,7 +3293,7 @@ void _testClickDebouncer() {
 
     final DomElement newTarget = createDomElement('flt-semantics');
     newTarget.setAttribute('flt-tappable', '');
-    window.dom.semanticsHost.appendChild(newTarget);
+    EnginePlatformDispatcher.instance.implicitView!.dom.semanticsHost.appendChild(newTarget);
     newTarget.dispatchEvent(context.primaryUp());
 
     expect(
@@ -3323,7 +3323,7 @@ void _testClickDebouncer() {
 
     final DomElement testElement = createDomElement('flt-semantics');
     testElement.setAttribute('flt-tappable', '');
-    window.dom.semanticsHost.appendChild(testElement);
+    EnginePlatformDispatcher.instance.implicitView!.dom.semanticsHost.appendChild(testElement);
 
     final DomEvent click = createDomMouseEvent(
       'click',
@@ -3346,7 +3346,7 @@ void _testClickDebouncer() {
 
     final DomElement testElement = createDomElement('flt-semantics');
     testElement.setAttribute('flt-tappable', '');
-    window.dom.semanticsHost.appendChild(testElement);
+    EnginePlatformDispatcher.instance.implicitView!.dom.semanticsHost.appendChild(testElement);
     testElement.dispatchEvent(context.primaryDown());
     expect(binding.clickDebouncer.isDebouncing, true);
 
@@ -3370,7 +3370,7 @@ void _testClickDebouncer() {
 
     final DomElement testElement = createDomElement('flt-semantics');
     testElement.setAttribute('flt-tappable', '');
-    window.dom.semanticsHost.appendChild(testElement);
+    EnginePlatformDispatcher.instance.implicitView!.dom.semanticsHost.appendChild(testElement);
     testElement.dispatchEvent(context.primaryDown());
     expect(binding.clickDebouncer.isDebouncing, true);
 
@@ -3402,7 +3402,7 @@ void _testClickDebouncer() {
 
     final DomElement testElement = createDomElement('flt-semantics');
     testElement.setAttribute('flt-tappable', '');
-    window.dom.semanticsHost.appendChild(testElement);
+    EnginePlatformDispatcher.instance.implicitView!.dom.semanticsHost.appendChild(testElement);
 
     testElement.dispatchEvent(context.primaryDown());
 
@@ -3457,7 +3457,7 @@ void _testClickDebouncer() {
 
     final DomElement testElement = createDomElement('flt-semantics');
     testElement.setAttribute('flt-tappable', '');
-    window.dom.semanticsHost.appendChild(testElement);
+    EnginePlatformDispatcher.instance.implicitView!.dom.semanticsHost.appendChild(testElement);
 
     testElement.dispatchEvent(context.primaryDown());
 
