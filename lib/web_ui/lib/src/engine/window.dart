@@ -38,14 +38,22 @@ const int kImplicitViewId = 0;
 ///
 /// In addition to everything defined in [ui.FlutterView], this class adds
 /// a few web-specific properties.
-abstract mixin class EngineFlutterView implements ui.FlutterView {
+base class EngineFlutterView implements ui.FlutterView {
   factory EngineFlutterView(
     int viewId,
     EnginePlatformDispatcher platformDispatcher,
   ) = _EngineFlutterViewImpl;
 
+  EngineFlutterView._(
+    this.viewId,
+    this.platformDispatcher,
+  );
+
   @override
-  EnginePlatformDispatcher get platformDispatcher;
+  final int viewId;
+
+  @override
+  final EnginePlatformDispatcher platformDispatcher;
 
   final ViewConfiguration _viewConfiguration = const ViewConfiguration();
 
@@ -140,8 +148,11 @@ abstract mixin class EngineFlutterView implements ui.FlutterView {
   Stream<ui.Size?> get onResize => _dimensionsProvider.onResize;
 }
 
-class _EngineFlutterViewImpl extends ui.FlutterView with EngineFlutterView {
-  _EngineFlutterViewImpl(this.viewId, this.platformDispatcher) {
+final class _EngineFlutterViewImpl extends EngineFlutterView {
+  _EngineFlutterViewImpl(
+    int viewId,
+    EnginePlatformDispatcher platformDispatcher,
+  ) : super._(viewId, platformDispatcher) {
     platformDispatcher.registerView(this);
     registerHotRestartListener(() {
       // TODO(harryterkelsen): What should we do about this in multi-view?
@@ -149,17 +160,14 @@ class _EngineFlutterViewImpl extends ui.FlutterView with EngineFlutterView {
       _dimensionsProvider.close();
     });
   }
-
-  @override
-  final int viewId;
-
-  @override
-  final EnginePlatformDispatcher platformDispatcher;
 }
 
 /// The Web implementation of [ui.SingletonFlutterWindow].
-class EngineFlutterWindow extends ui.SingletonFlutterWindow with EngineFlutterView {
-  EngineFlutterWindow(this.viewId, this.platformDispatcher) {
+final class EngineFlutterWindow extends EngineFlutterView implements ui.SingletonFlutterWindow {
+  EngineFlutterWindow(
+    int viewId,
+    EnginePlatformDispatcher platformDispatcher,
+  ) : super._(viewId, platformDispatcher) {
     platformDispatcher.registerView(this);
     if (ui_web.isCustomUrlStrategySet) {
       _browserHistory = createHistoryForExistingState(ui_web.urlStrategy);
@@ -172,10 +180,159 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow with EngineFlutterVi
   }
 
   @override
-  final int viewId;
+  ui.VoidCallback? get onMetricsChanged => platformDispatcher.onMetricsChanged;
+  @override
+  set onMetricsChanged(ui.VoidCallback? callback) {
+    platformDispatcher.onMetricsChanged = callback;
+  }
 
   @override
-  final EnginePlatformDispatcher platformDispatcher;
+  ui.Locale get locale => platformDispatcher.locale;
+  @override
+  List<ui.Locale> get locales => platformDispatcher.locales;
+
+  @override
+  ui.Locale? computePlatformResolvedLocale(List<ui.Locale> supportedLocales) {
+    return platformDispatcher.computePlatformResolvedLocale(supportedLocales);
+  }
+
+  @override
+  ui.VoidCallback? get onLocaleChanged => platformDispatcher.onLocaleChanged;
+  @override
+  set onLocaleChanged(ui.VoidCallback? callback) {
+    platformDispatcher.onLocaleChanged = callback;
+  }
+
+  @override
+  String get initialLifecycleState => platformDispatcher.initialLifecycleState;
+
+  @override
+  double get textScaleFactor => platformDispatcher.textScaleFactor;
+
+  @override
+  bool get nativeSpellCheckServiceDefined => platformDispatcher.nativeSpellCheckServiceDefined;
+
+  @override
+  bool get brieflyShowPassword => platformDispatcher.brieflyShowPassword;
+
+  @override
+  bool get alwaysUse24HourFormat => platformDispatcher.alwaysUse24HourFormat;
+
+  @override
+  ui.VoidCallback? get onTextScaleFactorChanged => platformDispatcher.onTextScaleFactorChanged;
+  @override
+  set onTextScaleFactorChanged(ui.VoidCallback? callback) {
+    platformDispatcher.onTextScaleFactorChanged = callback;
+  }
+
+  @override
+  ui.Brightness get platformBrightness => platformDispatcher.platformBrightness;
+
+  @override
+  ui.VoidCallback? get onPlatformBrightnessChanged => platformDispatcher.onPlatformBrightnessChanged;
+  @override
+  set onPlatformBrightnessChanged(ui.VoidCallback? callback) {
+    platformDispatcher.onPlatformBrightnessChanged = callback;
+  }
+
+  @override
+  String? get systemFontFamily => platformDispatcher.systemFontFamily;
+
+  @override
+  ui.VoidCallback? get onSystemFontFamilyChanged => platformDispatcher.onSystemFontFamilyChanged;
+  @override
+  set onSystemFontFamilyChanged(ui.VoidCallback? callback) {
+    platformDispatcher.onSystemFontFamilyChanged = callback;
+  }
+
+  @override
+  ui.FrameCallback? get onBeginFrame => platformDispatcher.onBeginFrame;
+  @override
+  set onBeginFrame(ui.FrameCallback? callback) {
+    platformDispatcher.onBeginFrame = callback;
+  }
+
+  @override
+  ui.VoidCallback? get onDrawFrame => platformDispatcher.onDrawFrame;
+  @override
+  set onDrawFrame(ui.VoidCallback? callback) {
+    platformDispatcher.onDrawFrame = callback;
+  }
+
+  @override
+  ui.TimingsCallback? get onReportTimings => platformDispatcher.onReportTimings;
+  @override
+  set onReportTimings(ui.TimingsCallback? callback) {
+    platformDispatcher.onReportTimings = callback;
+  }
+
+  @override
+  ui.PointerDataPacketCallback? get onPointerDataPacket => platformDispatcher.onPointerDataPacket;
+  @override
+  set onPointerDataPacket(ui.PointerDataPacketCallback? callback) {
+    platformDispatcher.onPointerDataPacket = callback;
+  }
+
+  @override
+  ui.KeyDataCallback? get onKeyData => platformDispatcher.onKeyData;
+  @override
+  set onKeyData(ui.KeyDataCallback? callback) {
+    platformDispatcher.onKeyData = callback;
+  }
+
+  @override
+  String get defaultRouteName => platformDispatcher.defaultRouteName;
+
+  @override
+  void scheduleFrame() => platformDispatcher.scheduleFrame();
+
+  @override
+  bool get semanticsEnabled => platformDispatcher.semanticsEnabled;
+
+  @override
+  ui.VoidCallback? get onSemanticsEnabledChanged => platformDispatcher.onSemanticsEnabledChanged;
+  @override
+  set onSemanticsEnabledChanged(ui.VoidCallback? callback) {
+    platformDispatcher.onSemanticsEnabledChanged = callback;
+  }
+
+  @override
+  ui.FrameData get frameData => const ui.FrameData.webOnly();
+
+  @override
+  ui.VoidCallback? get onFrameDataChanged => null;
+  @override
+  set onFrameDataChanged(ui.VoidCallback? callback) {}
+
+  @override
+  ui.AccessibilityFeatures get accessibilityFeatures => platformDispatcher.accessibilityFeatures;
+
+  @override
+  ui.VoidCallback? get onAccessibilityFeaturesChanged =>
+      platformDispatcher.onAccessibilityFeaturesChanged;
+  @override
+  set onAccessibilityFeaturesChanged(ui.VoidCallback? callback) {
+    platformDispatcher.onAccessibilityFeaturesChanged = callback;
+  }
+
+  @override
+  void sendPlatformMessage(
+    String name,
+    ByteData? data,
+    ui.PlatformMessageResponseCallback? callback,
+  ) {
+    platformDispatcher.sendPlatformMessage(name, data, callback);
+  }
+
+  @override
+  ui.PlatformMessageCallback? get onPlatformMessage => platformDispatcher.onPlatformMessage;
+  @override
+  set onPlatformMessage(ui.PlatformMessageCallback? callback) {
+    platformDispatcher.onPlatformMessage = callback;
+  }
+
+  @override
+  void setIsolateDebugName(String name) => ui.PlatformDispatcher.instance.setIsolateDebugName(name);
 
   /// Handles the browser history integration to allow users to use the back
   /// button, etc.
