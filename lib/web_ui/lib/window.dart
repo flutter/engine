@@ -169,8 +169,6 @@ abstract final class IsolateNameServer {
 SingletonFlutterWindow get window => engine.window;
 
 class FrameData {
-  const FrameData._();
-
   const FrameData.webOnly();
 
   int get frameNumber => -1;
