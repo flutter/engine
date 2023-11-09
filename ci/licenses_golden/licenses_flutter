@@ -2795,6 +2795,8 @@ ORIGIN: ../../../flutter/fml/platform/darwin/scoped_nsautorelease_pool.cc + ../.
 ORIGIN: ../../../flutter/fml/platform/darwin/scoped_nsautorelease_pool.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/platform/darwin/scoped_nsobject.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/platform/darwin/scoped_nsobject.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/fml/platform/darwin/scoped_policy.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/fml/platform/darwin/scoped_typeref.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/platform/darwin/string_range_sanitization.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/platform/darwin/string_range_sanitization.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/platform/fuchsia/message_loop_fuchsia.cc + ../../../flutter/LICENSE
@@ -3767,7 +3769,7 @@ ORIGIN: ../../../flutter/lib/ui/window/pointer_data_packet_converter.cc + ../../
 ORIGIN: ../../../flutter/lib/ui/window/pointer_data_packet_converter.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/window/viewport_metrics.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/window/viewport_metrics.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/lib/web_ui/flutter_js/flutter.js + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/flutter_js/src/flutter.js + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/annotations.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/canvas.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/channel_buffers.dart + ../../../flutter/LICENSE
@@ -5051,6 +5053,7 @@ ORIGIN: ../../../flutter/shell/platform/linux/fl_view_accessible.cc + ../../../f
 ORIGIN: ../../../flutter/shell/platform/linux/fl_view_accessible.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/fl_view_accessible_test.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/fl_view_private.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/linux/fl_view_test.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/key_mapping.g.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/key_mapping.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_basic_message_channel.h + ../../../flutter/LICENSE
@@ -5549,6 +5552,8 @@ FILE: ../../../flutter/fml/platform/darwin/scoped_nsautorelease_pool.cc
 FILE: ../../../flutter/fml/platform/darwin/scoped_nsautorelease_pool.h
 FILE: ../../../flutter/fml/platform/darwin/scoped_nsobject.h
 FILE: ../../../flutter/fml/platform/darwin/scoped_nsobject.mm
+FILE: ../../../flutter/fml/platform/darwin/scoped_policy.h
+FILE: ../../../flutter/fml/platform/darwin/scoped_typeref.h
 FILE: ../../../flutter/fml/platform/darwin/string_range_sanitization.h
 FILE: ../../../flutter/fml/platform/darwin/string_range_sanitization.mm
 FILE: ../../../flutter/fml/platform/fuchsia/message_loop_fuchsia.cc
@@ -6526,7 +6531,7 @@ FILE: ../../../flutter/lib/ui/window/pointer_data_packet_converter.cc
 FILE: ../../../flutter/lib/ui/window/pointer_data_packet_converter.h
 FILE: ../../../flutter/lib/ui/window/viewport_metrics.cc
 FILE: ../../../flutter/lib/ui/window/viewport_metrics.h
-FILE: ../../../flutter/lib/web_ui/flutter_js/flutter.js
+FILE: ../../../flutter/lib/web_ui/flutter_js/src/flutter.js
 FILE: ../../../flutter/lib/web_ui/lib/annotations.dart
 FILE: ../../../flutter/lib/web_ui/lib/canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/channel_buffers.dart
@@ -7831,6 +7836,7 @@ FILE: ../../../flutter/shell/platform/linux/fl_view_accessible.cc
 FILE: ../../../flutter/shell/platform/linux/fl_view_accessible.h
 FILE: ../../../flutter/shell/platform/linux/fl_view_accessible_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_view_private.h
+FILE: ../../../flutter/shell/platform/linux/fl_view_test.cc
 FILE: ../../../flutter/shell/platform/linux/key_mapping.g.cc
 FILE: ../../../flutter/shell/platform/linux/key_mapping.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_basic_message_channel.h

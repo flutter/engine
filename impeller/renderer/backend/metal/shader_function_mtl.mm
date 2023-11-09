@@ -17,8 +17,9 @@ ShaderFunctionMTL::ShaderFunctionMTL(UniqueID parent_library_id,
 
 ShaderFunctionMTL::~ShaderFunctionMTL() = default;
 
-id<MTLFunction> ShaderFunctionMTL::GetMTLFunctionSpecialized(
-    const std::vector<int>& constants) const {
+void ShaderFunctionMTL::GetMTLFunctionSpecialized(
+    const std::vector<int>& constants,
+    const CompileCallback& callback) const {
   MTLFunctionConstantValues* constantValues =
       [[MTLFunctionConstantValues alloc] init];
   size_t index = 0;
@@ -29,14 +30,13 @@ id<MTLFunction> ShaderFunctionMTL::GetMTLFunctionSpecialized(
                              atIndex:index];
     index++;
   }
-  NSError* error = nil;
-  auto result = [library_ newFunctionWithName:@(GetName().data())
-                               constantValues:constantValues
-                                        error:&error];
-  if (error != nil) {
-    return nil;
-  }
-  return result;
+  CompileCallback callback_value = callback;
+  [library_ newFunctionWithName:@(GetName().data())
+                 constantValues:constantValues
+              completionHandler:^(id<MTLFunction> _Nullable function,
+                                  NSError* _Nullable error) {
+                callback_value(function);
+              }];
 }
 
 id<MTLFunction> ShaderFunctionMTL::GetMTLFunction() const {
