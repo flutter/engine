@@ -24,8 +24,8 @@ void setUpUnitTests({
 
     debugFontsScope = configureDebugFontsAssetScope(fakeAssetManager);
     debugOnlyAssetManager = fakeAssetManager;
-    engine.renderer.fontCollection.fontFallbackManager?.downloadQueue.fallbackFontUrlPrefixOverride = 'assets/fallback_fonts/';
     await bootstrapAndWait();
+    engine.renderer.fontCollection.fontFallbackManager?.downloadQueue.fallbackFontUrlPrefixOverride = 'assets/fallback_fonts/';
 
     if (setUpTestViewDimensions) {
       // Force-initialize FlutterViewEmbedder so it doesn't overwrite test pixel ratio.
