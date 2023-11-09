@@ -66,7 +66,9 @@ if set -o pipefail && xcodebuild -sdk iphonesimulator \
   -resultBundlePath "$RESULT_BUNDLE_PATH/ios_scenario.xcresult" \
   -destination 'platform=iOS Simulator,OS=16.2,name=iPhone SE (3rd generation)' \
   clean test \
-  FLUTTER_ENGINE="$FLUTTER_ENGINE"; then
+  FLUTTER_ENGINE="$FLUTTER_ENGINE" \
+  # TODO(vashworth): Stop skipping once https://github.com/flutter/flutter/issues/138193 is resolved
+  -skip-testing ScenariosUITests/UnobstructedPlatformViewTests/testMultiplePlatformViewsWithOverlays; then
   echo "test success."
 else
   echo "test failed."
