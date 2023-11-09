@@ -29,7 +29,7 @@ GeometryResult CircleGeometry::GetPositionBuffer(const ContentContext& renderer,
   }
 
   return {
-      .type = PrimitiveType::kTriangle,
+      .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer = GetPositionBufferCPU(renderer, entity, pass),
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransformation(),
@@ -58,7 +58,7 @@ GeometryResult CircleGeometry::GetPositionUVBuffer(
 
   auto& host_buffer = pass.GetTransientsBuffer();
   return {
-      .type = PrimitiveType::kTriangle,
+      .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer = uv_vtx_builder.CreateVertexBuffer(host_buffer),
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransformation(),
@@ -83,7 +83,8 @@ VertexBuffer CircleGeometry::GetPositionBufferCPU(
 
   auto vertices_per_geom = ComputeCircleDivisions(
       entity.GetTransformation().GetMaxBasisLength() * radius, round_);
-  auto points_per_circle = 3 + (vertices_per_geom - 3) * 3;
+
+  auto points_per_circle = vertices_per_geom * 2 + 1;
   auto total = points_per_circle * points_.size();
   auto radian_start = round_ ? 0.0f : 0.785398f;
   auto radian_step = k2Pi / vertices_per_geom;
@@ -104,22 +105,11 @@ VertexBuffer CircleGeometry::GetPositionBufferCPU(
         auto offset = 0u;
         for (auto i = 0u; i < points_.size(); i++) {
           auto center = points_[i];
-
-          auto origin = center + angle_table[0];
-          points[offset++] = origin;
-
-          auto pt1 = center + angle_table[1];
-          points[offset++] = pt1;
-
-          auto pt2 = center + angle_table[2];
-          points[offset++] = pt2;
-
-          for (auto j = 0u; j < vertices_per_geom - 3; j++) {
-            points[offset++] = origin;
-            points[offset++] = pt2;
-            pt2 = center + angle_table[j + 3];
-            points[offset++] = pt2;
+          for (auto j = 0u; j < vertices_per_geom; j++) {
+            points[offset++] = center + angle_table[j];
+            points[offset++] = center;
           }
+          points[offset++] = center + angle_table[0];
         }
       });
 
@@ -147,7 +137,7 @@ CircleGeometry::GetPositionUVBufferCPU(const ContentContext& renderer,
 
   auto vertices_per_geom = ComputeCircleDivisions(
       entity.GetTransformation().GetMaxBasisLength() * radius, round_);
-  auto points_per_circle = 3 + (vertices_per_geom - 3) * 3;
+  auto points_per_circle = 2 * vertices_per_geom + 1;
   auto total = points_per_circle * points_.size();
   auto radian_start = round_ ? 0.0f : 0.785398f;
   auto radian_step = k2Pi / vertices_per_geom;
@@ -165,23 +155,11 @@ CircleGeometry::GetPositionUVBufferCPU(const ContentContext& renderer,
 
   for (auto i = 0u; i < points_.size(); i++) {
     auto center = points_[i];
-
-    auto origin = center + angle_table[0];
-    vtx_builder.AppendVertex({origin});
-
-    auto pt1 = center + angle_table[1];
-    vtx_builder.AppendVertex({pt1});
-
-    auto pt2 = center + angle_table[2];
-    vtx_builder.AppendVertex({pt2});
-
-    for (auto j = 0u; j < vertices_per_geom - 3; j++) {
-      vtx_builder.AppendVertex({origin});
-      vtx_builder.AppendVertex({pt2});
-
-      pt2 = center + angle_table[j + 3];
-      vtx_builder.AppendVertex({pt2});
+    for (auto j = 0u; j < vertices_per_geom; j++) {
+      vtx_builder.AppendVertex({center + angle_table[j]});
+      vtx_builder.AppendVertex({center});
     }
+    vtx_builder.AppendVertex({center + angle_table[0]});
   }
   return vtx_builder;
 }
@@ -207,7 +185,7 @@ GeometryResult CircleGeometry::GetPositionBufferGPU(
   auto vertices_per_geom = ComputeCircleDivisions(
       entity.GetTransformation().GetMaxBasisLength() * radius, round_);
 
-  auto points_per_circle = 3 + (vertices_per_geom - 3) * 3;
+  auto points_per_circle = 2 * vertices_per_geom + 1;
   auto total = points_per_circle * points_.size();
 
   auto cmd_buffer = renderer.GetContext()->CreateCommandBuffer();
@@ -292,7 +270,7 @@ GeometryResult CircleGeometry::GetPositionBufferGPU(
   }
 
   return {
-      .type = PrimitiveType::kTriangle,
+      .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer = {.vertex_buffer = output,
                         .vertex_count = total,
                         .index_type = IndexType::kNone},
