@@ -18,27 +18,12 @@ String buildCssFontString({
   required double? fontSize,
   required String fontFamily,
 }) {
-  final StringBuffer result = StringBuffer();
-
-  // Font style
   final String cssFontStyle = fontStyle?.toCssString() ?? StyleManager.defaultFontStyle;
-  result.write(cssFontStyle);
-  result.write(' ');
-
-  // Font weight.
   final String cssFontWeight = fontWeight?.toCssString() ?? StyleManager.defaultFontWeight;
-  result.write(cssFontWeight);
-  result.write(' ');
-
-  // Font size.
   final num cssFontSize = fontSize?.floor() ?? StyleManager.defaultFontSize;
-  result.write(cssFontSize);
-  result.write('px ');
+  final String cssFontFamily = canonicalizeFontFamily(fontFamily)!;
 
-  // Font family.
-  result.write(canonicalizeFontFamily(fontFamily));
-
-  return result.toString();
+  return '$cssFontStyle $cssFontWeight ${cssFontSize}px $cssFontFamily';
 }
 
 /// Contains all styles that have an effect on the height of text.
