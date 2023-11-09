@@ -128,7 +128,8 @@ TEST(RefCountedTest, Constructors) {
     was_destroyed = false;
     RefPtr<MyClass> r1(MakeRefCounted<MyClass>(&created, &was_destroyed));
     // Copy.
-    const RefPtr<MyClass>& r2(r1);
+    RefPtr<MyClass> r2(
+        r1);  // NOLINT(performance-unnecessary-copy-initialization)
     EXPECT_TRUE(created);
     EXPECT_EQ(created, r1.get());
     EXPECT_EQ(created, r2.get());
@@ -543,6 +544,8 @@ TEST(RefCountedTest, Mix) {
     RefPtr<MyClass> r3 = r2;
     EXPECT_FALSE(created->HasOneRef());
     {
+      RefPtr<MyClass> r4(
+          r3);  // NOLINT(performance-unnecessary-copy-initialization)
       r2 = nullptr;
       ASSERT_FALSE(was_destroyed);
       EXPECT_FALSE(created->HasOneRef());
