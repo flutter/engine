@@ -4,12 +4,9 @@
 
 #include "impeller/tessellator/tessellator.h"
 
-#include "flutter/fml/thread_local.h"
 #include "third_party/libtess2/Include/tesselator.h"
 
 namespace impeller {
-
-FML_THREAD_LOCAL std::vector<Point> tls_point_buffer;
 
 static void* HeapAlloc(void* userData, unsigned int size) {
   return malloc(size);
@@ -34,8 +31,10 @@ static const TESSalloc kAlloc = {
     0                                    /* =extraVertices */
 };
 
-Tessellator::Tessellator() : c_tessellator_(nullptr, &DestroyTessellator) {
-  tls_point_buffer.reserve(2048);
+Tessellator::Tessellator()
+    : point_buffer_(std::make_unique<std::vector<Point>>()),
+      c_tessellator_(nullptr, &DestroyTessellator) {
+  point_buffer_->reserve(2048);
   TESSalloc alloc = kAlloc;
   {
     // libTess2 copies the TESSalloc despite the non-const argument.
@@ -63,17 +62,22 @@ static int ToTessWindingRule(FillType fill_type) {
 }
 
 Tessellator::Result Tessellator::Tessellate(const Path& path,
-                                            Scalar scale,
+                                            Scalar tolerance,
                                             const BuilderCallback& callback) {
   if (!callback) {
     return Result::kInputError;
   }
 
-  tls_point_buffer.clear();
-  auto polyline = path.CreatePolyline(scale, tls_point_buffer);
+  point_buffer_->clear();
+  auto polyline =
+      path.CreatePolyline(tolerance, std::move(point_buffer_),
+                          [&](Path::Polyline::PointBufferPointer point_buffer) {
+                            point_buffer_ = std::move(point_buffer);
+                          });
+
   auto fill_type = path.GetFillType();
 
-  if (polyline.points.empty()) {
+  if (polyline.points->empty()) {
     return Result::kInputError;
   }
 
@@ -106,9 +110,9 @@ Tessellator::Result Tessellator::Tessellate(const Path& path,
 
       ::tessAddContour(tessellator,  // the C tessellator
                        kVertexSize,  //
-                       polyline.points.data() + start_point_index,  //
-                       sizeof(Point),                               //
-                       end_point_index - start_point_index          //
+                       polyline.points->data() + start_point_index,  //
+                       sizeof(Point),                                //
+                       end_point_index - start_point_index           //
       );
 
       //----------------------------------------------------------------------------
@@ -157,9 +161,9 @@ Tessellator::Result Tessellator::Tessellate(const Path& path,
 
       ::tessAddContour(tessellator,  // the C tessellator
                        kVertexSize,  //
-                       polyline.points.data() + start_point_index,  //
-                       sizeof(Point),                               //
-                       end_point_index - start_point_index          //
+                       polyline.points->data() + start_point_index,  //
+                       sizeof(Point),                                //
+                       end_point_index - start_point_index           //
       );
     }
 
@@ -228,28 +232,32 @@ Tessellator::Result Tessellator::Tessellate(const Path& path,
 }
 
 std::pair<std::vector<Point>, std::vector<uint16_t>>
-Tessellator::TessellateConvex(const Path& path, Scalar scale) {
+Tessellator::TessellateConvex(const Path& path, Scalar tolerance) {
   std::vector<Point> output;
   std::vector<uint16_t> indices;
 
-  tls_point_buffer.clear();
-  auto polyline = path.CreatePolyline(scale, tls_point_buffer);
+  point_buffer_->clear();
+  auto polyline =
+      path.CreatePolyline(tolerance, std::move(point_buffer_),
+                          [&](Path::Polyline::PointBufferPointer point_buffer) {
+                            point_buffer_ = std::move(point_buffer);
+                          });
 
   for (auto j = 0u; j < polyline.contours.size(); j++) {
     auto [start, end] = polyline.GetContourPointBounds(j);
-    auto center = polyline.points[start];
+    auto center = (*polyline.points)[start];
 
     // Some polygons will not self close and an additional triangle
     // must be inserted, others will self close and we need to avoid
     // inserting an extra triangle.
-    if (polyline.points[end - 1] == polyline.points[start]) {
+    if ((*polyline.points)[end - 1] == (*polyline.points)[start]) {
       end--;
     }
     output.emplace_back(center);
-    output.emplace_back(polyline.points[start + 1]);
+    output.emplace_back((*polyline.points)[start + 1]);
 
     for (auto i = start + 2; i < end; i++) {
-      const auto& point_b = polyline.points[i];
+      const auto& point_b = (*polyline.points)[i];
       output.emplace_back(point_b);
 
       indices.emplace_back(0);

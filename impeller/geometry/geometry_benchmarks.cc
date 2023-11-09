@@ -28,8 +28,8 @@ static void BM_Polyline(benchmark::State& state, Args&&... args) {
 
   size_t point_count = 0u;
   size_t single_point_count = 0u;
-  std::vector<Point> points;
-  points.reserve(2048);
+  auto points = std::make_unique<std::vector<Point>>();
+  points->reserve(2048);
   while (state.KeepRunning()) {
     if (tessellate) {
       tess.Tessellate(path, 1.0f,
@@ -46,10 +46,13 @@ static void BM_Polyline(benchmark::State& state, Args&&... args) {
                         return true;
                       });
     } else {
-      auto polyline = path.CreatePolyline(1.0f, points);
-      single_point_count = polyline.points.size();
+      auto polyline = path.CreatePolyline(
+          1.0f, std::move(points),
+          [&points](Path::Polyline::PointBufferPointer reclaimed) {
+            points = std::move(reclaimed);
+          });
+      single_point_count = polyline.points->size();
       point_count += single_point_count;
-      points.clear();
     }
   }
   state.counters["SinglePointCount"] = single_point_count;

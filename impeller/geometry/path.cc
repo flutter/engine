@@ -8,6 +8,7 @@
 #include <variant>
 
 #include "impeller/geometry/path_component.h"
+#include "impeller/geometry/point.h"
 
 namespace impeller {
 
@@ -20,11 +21,11 @@ Path::~Path() = default;
 std::tuple<size_t, size_t> Path::Polyline::GetContourPointBounds(
     size_t contour_index) const {
   if (contour_index >= contours.size()) {
-    return {points.size(), points.size()};
+    return {points->size(), points->size()};
   }
   const size_t start_index = contours.at(contour_index).start_index;
   const size_t end_index = (contour_index >= contours.size() - 1)
-                               ? points.size()
+                               ? points->size()
                                : contours.at(contour_index + 1).start_index;
   return std::make_tuple(start_index, end_index);
 }
@@ -269,12 +270,28 @@ bool Path::UpdateContourComponentAtIndex(size_t index,
   return true;
 }
 
-Path::Polyline::Polyline(std::vector<Point>& point_buffer)
-    : points(point_buffer) {}
+Path::Polyline::Polyline(Path::Polyline::PointBufferPointer point_buffer,
+                         Path::Polyline::ReclaimPointBuffer reclaim)
+    : points(std::move(point_buffer)), reclaim_points(reclaim) {}
 
-Path::Polyline Path::CreatePolyline(Scalar scale,
-                                    std::vector<Point>& point_buffer) const {
-  Polyline polyline(point_buffer);
+Path::Polyline::Polyline(Path::Polyline&& other) {
+  points = std::move(other.points);
+  reclaim_points = std::move(other.reclaim_points);
+  contours = std::move(other.contours);
+}
+
+Path::Polyline::~Polyline() {
+  if (reclaim_points) {
+    points->clear();
+    reclaim_points(std::move(points));
+  }
+}
+
+Path::Polyline Path::CreatePolyline(
+    Scalar scale,
+    Path::Polyline::PointBufferPointer point_buffer,
+    Path::Polyline::ReclaimPointBuffer reclaim) const {
+  Polyline polyline(std::move(point_buffer), reclaim);
 
   auto get_path_component = [this](size_t component_i) -> PathComponentVariant {
     if (component_i >= components_.size()) {
@@ -353,26 +370,26 @@ Path::Polyline Path::CreatePolyline(Scalar scale,
     switch (component.type) {
       case ComponentType::kLinear:
         components.push_back({
-            .component_start_index = polyline.points.size() - 1,
+            .component_start_index = polyline.points->size() - 1,
             .is_curve = false,
         });
-        linears_[component.index].AppendPolylinePoints(polyline.points);
+        linears_[component.index].AppendPolylinePoints(*polyline.points);
         previous_path_component_index = component_i;
         break;
       case ComponentType::kQuadratic:
         components.push_back({
-            .component_start_index = polyline.points.size() - 1,
+            .component_start_index = polyline.points->size() - 1,
             .is_curve = true,
         });
-        quads_[component.index].AppendPolylinePoints(scale, polyline.points);
+        quads_[component.index].AppendPolylinePoints(scale, *polyline.points);
         previous_path_component_index = component_i;
         break;
       case ComponentType::kCubic:
         components.push_back({
-            .component_start_index = polyline.points.size() - 1,
+            .component_start_index = polyline.points->size() - 1,
             .is_curve = true,
         });
-        cubics_[component.index].AppendPolylinePoints(scale, polyline.points);
+        cubics_[component.index].AppendPolylinePoints(scale, *polyline.points);
         previous_path_component_index = component_i;
         break;
       case ComponentType::kContour:
@@ -385,12 +402,12 @@ Path::Polyline Path::CreatePolyline(Scalar scale,
 
         Vector2 start_direction = compute_contour_start_direction(component_i);
         const auto& contour = contours_[component.index];
-        polyline.contours.push_back({.start_index = polyline.points.size(),
+        polyline.contours.push_back({.start_index = polyline.points->size(),
                                      .is_closed = contour.is_closed,
                                      .start_direction = start_direction,
                                      .components = components});
 
-        polyline.points.push_back(contour.destination);
+        polyline.points->push_back(contour.destination);
         break;
     }
   }

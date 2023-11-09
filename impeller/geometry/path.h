@@ -95,12 +95,21 @@ class Path {
   /// not allocate their own point vectors to allow for optimizations around
   /// allocation and reuse of arenas.
   struct Polyline {
-    /// The buffer must remain valid for the lifetime of this object.
-    explicit Polyline(std::vector<Point>& point_buffer);
+    /// The signature of a method called when it is safe to reclaim the point
+    /// buffer provided to the constructor of this object.
+    using PointBufferPointer = std::unique_ptr<std::vector<Point>>;
+    using ReclaimPointBuffer = std::function<void(PointBufferPointer)>;
+
+    /// The buffer will be cleared and returned at the destruction of this
+    /// polyline.
+    Polyline(PointBufferPointer point_buffer, ReclaimPointBuffer reclaim);
+
+    Polyline(Polyline&& other);
+    ~Polyline();
 
     /// Points in the polyline, which may represent multiple contours specified
-    /// by indices in |breaks|.
-    std::vector<Point>& points;
+    /// by indices in |contours|.
+    PointBufferPointer points;
 
     /// Contours are disconnected pieces of a polyline, such as when a MoveTo
     /// was issued on a PathBuilder.
@@ -112,6 +121,9 @@ class Path {
     /// The contour_index parameter is clamped to contours.size().
     std::tuple<size_t, size_t> GetContourPointBounds(
         size_t contour_index) const;
+
+   private:
+    ReclaimPointBuffer reclaim_points;
   };
 
   Path();
@@ -147,8 +159,12 @@ class Path {
   /// transformed.
   ///
   /// It is suitable to use the max basis length of the matrix used to transform
-  /// the path. If the provided scale is 0, curves will revert to lines.
-  Polyline CreatePolyline(Scalar scale, std::vector<Point>& point_buffer) const;
+  /// the path. If the provided scale is 0, curves will revert to straight
+  /// lines.
+  Polyline CreatePolyline(Scalar scale,
+                          Polyline::PointBufferPointer point_buffer =
+                              std::make_unique<std::vector<Point>>(),
+                          Polyline::ReclaimPointBuffer reclaim = nullptr) const;
 
   std::optional<Rect> GetBoundingBox() const;
 
