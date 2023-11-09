@@ -9,6 +9,7 @@
 #import <os/log.h>
 #include <memory>
 
+#include "flutter/common/constants.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/platform/darwin/platform_version.h"
