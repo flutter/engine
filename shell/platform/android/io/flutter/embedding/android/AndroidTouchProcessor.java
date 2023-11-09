@@ -79,7 +79,6 @@ public class AndroidTouchProcessor {
     int SCALE = 3;
     int UNKNOWN = 4;
   }
-
   // This value must match kPointerDataFieldCount in pointer_data.cc.
   private static final int POINTER_DATA_FIELD_COUNT = 36;
   @VisibleForTesting static final int BYTES_PER_FIELD = 8;
@@ -91,6 +90,8 @@ public class AndroidTouchProcessor {
   // This value must match the value in framework's platform_view.dart.
   // This flag indicates whether the original Android pointer events were batched together.
   private static final int POINTER_DATA_FLAG_BATCHED = 1;
+
+  private static final int IMPLICIT_VIEW_ID = 0;
 
   @NonNull private final FlutterRenderer renderer;
   @NonNull private final MotionEventTracker motionEventTracker;
@@ -255,6 +256,10 @@ public class AndroidTouchProcessor {
     if (pointerChange == -1) {
       return;
     }
+    // TODO(dkwingsmt): Use the correct source view ID once Android supports
+    // multiple views.
+    // https://github.com/flutter/flutter/issues/138167
+    final int viewId = IMPLICIT_VIEW_ID;
     final int pointerId = event.getPointerId(pointerIndex);
 
     int pointerKind = getPointerDeviceTypeForToolType(event.getToolType(pointerIndex));
@@ -413,9 +418,7 @@ public class AndroidTouchProcessor {
     packet.putDouble(0.0); // pan_delta_y
     packet.putDouble(1.0); // scale
     packet.putDouble(0.0); // rotation
-    // TODO(loicsharma): This assumes all pointer events are on the implicit
-    // view and should be updated to support multiple views.
-    packet.putLong(0); // view_id
+    packet.putLong(viewId); // view_id
 
     if (isTrackpadPan && (panZoomType == PointerChange.PAN_ZOOM_END)) {
       ongoingPans.remove(pointerId);

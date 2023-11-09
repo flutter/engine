@@ -833,8 +833,9 @@ void fl_engine_send_pointer_pan_zoom_event(FlEngine* self,
   fl_event.rotation = rotation;
   fl_event.device = kPointerPanZoomDeviceId;
   fl_event.device_kind = kFlutterPointerDeviceKindTrackpad;
-  // TODO(loicsharma): This assumes all pointer events are on the implicit
-  // view and should be updated to support multiple views.
+  // TODO(dkwingsmt): Assign the correct view ID once the Linux embedder
+  // supports multiple views.
+  // https://github.com/flutter/flutter/issues/138178
   fl_event.view_id = flutter::kFlutterImplicitViewId;
   self->embedder_api.SendPointerEvent(self->engine, &fl_event, 1);
 }
