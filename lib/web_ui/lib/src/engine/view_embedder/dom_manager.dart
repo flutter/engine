@@ -4,7 +4,6 @@
 
 import 'package:ui/ui.dart' as ui;
 
-import '../display.dart';
 import '../dom.dart';
 import '../embedder.dart';
 import '../global_styles.dart';
@@ -121,20 +120,25 @@ class StyleManager {
     }
   }
 
-  static void styleSemanticsHost(DomElement semanticsHost) {
+  static void styleSemanticsHost(
+    DomElement semanticsHost,
+    double devicePixelRatio,
+  ) {
     assert(semanticsHost.tagName.toLowerCase() == DomManager.semanticsHostTagName.toLowerCase());
     semanticsHost.style
       ..position = 'absolute'
       ..transformOrigin = '0 0 0';
-    scaleSemanticsHost(semanticsHost);
+    scaleSemanticsHost(semanticsHost, devicePixelRatio);
   }
 
   /// The framework specifies semantics in physical pixels, but CSS uses
   /// logical pixels. To compensate, an inverse scale is injected at the root
   /// level.
-  static void scaleSemanticsHost(DomElement semanticsHost) {
+  static void scaleSemanticsHost(
+    DomElement semanticsHost,
+    double devicePixelRatio,
+  ) {
     assert(semanticsHost.tagName.toLowerCase() == DomManager.semanticsHostTagName.toLowerCase());
-    final double dpr = EngineFlutterDisplay.instance.devicePixelRatio;
-    semanticsHost.style.transform = 'scale(${1 / dpr})';
+    semanticsHost.style.transform = 'scale(${1 / devicePixelRatio})';
   }
 }

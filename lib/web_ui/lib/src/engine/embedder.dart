@@ -192,7 +192,10 @@ class FlutterViewEmbedder {
     renderer.reset(this);
 
     _semanticsHostElement = domDocument.createElement(DomManager.semanticsHostTagName);
-    StyleManager.styleSemanticsHost(_semanticsHostElement);
+    StyleManager.scaleSemanticsHost(
+      _semanticsHostElement,
+      window.devicePixelRatio,
+    );
 
     final DomElement accessibilityPlaceholder = EngineSemanticsOwner
         .instance.semanticsHelper
@@ -241,7 +244,10 @@ class FlutterViewEmbedder {
   /// Note: always check for rotations for a mobile device. Update the physical
   /// size if the change is caused by a rotation.
   void _metricsDidChange(ui.Size? newSize) {
-    StyleManager.scaleSemanticsHost(_semanticsHostElement);
+    StyleManager.scaleSemanticsHost(
+      _semanticsHostElement,
+      window.devicePixelRatio,
+    );
     // TODO(dit): Do not computePhysicalSize twice, https://github.com/flutter/flutter/issues/117036
     if (isMobile && !window.isRotation() && textEditing.isEditing) {
       window.computeOnScreenKeyboardInsets(true);
