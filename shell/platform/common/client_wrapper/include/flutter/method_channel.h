@@ -17,9 +17,15 @@
 
 namespace flutter {
 
-static constexpr char kControlChannelName[] = "dev.flutter/channel-buffers";
-static constexpr char kResizeMethod[] = "resize";
-static constexpr char kOverflowMethod[] = "overflow";
+namespace {
+
+void ResizeChannel(BinaryMessenger* messenger, std::string name, int new_size);
+
+void SetChannelWarnsOnOverflow(BinaryMessenger* messenger,
+                               std::string name,
+                               bool warns);
+
+}  // namespace
 
 class EncodableValue;
 
@@ -131,20 +137,7 @@ class MethodChannel {
   // to channels that aren't fully set up yet. For example, the engine isn't
   // running yet or the channel's message handler isn't set up on the Dart side
   // yet.
-  //
-  // |new_size] is an int because the deserialization logic handles only 32 bits
-  // values, see
-  // https://github.com/flutter/engine/blob/93e8901490e78c7ba7e319cce4470d9c6478c6dc/lib/ui/channel_buffers.dart#L495.
-  void Resize(int new_size) {
-    auto control_channel = std::make_unique<MethodChannel<EncodableValue>>(
-        messenger_, kControlChannelName, &StandardMethodCodec::GetInstance());
-
-    control_channel->InvokeMethod(
-        kResizeMethod, std::make_unique<EncodableValue>(EncodableList{
-                           EncodableValue(name_),
-                           EncodableValue(new_size),
-                       }));
-  }
+  void Resize(int new_size) { ResizeChannel(messenger_, name_, new_size); }
 
   // Defines whether the channel should show warning messages when discarding
   // messages due to overflow.
@@ -152,14 +145,7 @@ class MethodChannel {
   // When |warns| is false, the channel is expected to overflow and warning
   // messages will not be shown.
   void SetWarnsOnOverflow(bool warns) {
-    auto control_channel = std::make_unique<MethodChannel<EncodableValue>>(
-        messenger_, kControlChannelName, &StandardMethodCodec::GetInstance());
-
-    control_channel->InvokeMethod(
-        kOverflowMethod, std::make_unique<EncodableValue>(EncodableList{
-                             EncodableValue(name_),
-                             EncodableValue(!warns),
-                         }));
+    SetChannelWarnsOnOverflow(messenger_, name_, warns);
   }
 
  private:
@@ -167,6 +153,49 @@ class MethodChannel {
   std::string name_;
   const MethodCodec<T>* codec_;
 };
+
+namespace {
+
+static constexpr char kControlChannelName[] = "dev.flutter/channel-buffers";
+static constexpr char kResizeMethod[] = "resize";
+static constexpr char kOverflowMethod[] = "overflow";
+
+// Adjusts the number of messages that will get buffered when sending messages
+// to channels that aren't fully set up yet. For example, the engine isn't
+// running yet or the channel's message handler isn't set up on the Dart side
+// yet.
+void ResizeChannel(BinaryMessenger* messenger, std::string name, int new_size) {
+  auto control_channel = std::make_unique<MethodChannel<EncodableValue>>(
+      messenger, kControlChannelName, &StandardMethodCodec::GetInstance());
+
+  // The deserialization logic handles only 32 bits values, see
+  // https://github.com/flutter/engine/blob/93e8901490e78c7ba7e319cce4470d9c6478c6dc/lib/ui/channel_buffers.dart#L495.
+  control_channel->InvokeMethod(
+      kResizeMethod, std::make_unique<EncodableValue>(EncodableList{
+                         EncodableValue(name),
+                         EncodableValue(static_cast<int32_t>(new_size)),
+                     }));
+}
+
+// Defines whether the channel should show warning messages when discarding
+// messages due to overflow.
+//
+// When |warns| is false, the channel is expected to overflow and warning
+// messages will not be shown.
+void SetChannelWarnsOnOverflow(BinaryMessenger* messenger,
+                               std::string name,
+                               bool warns) {
+  auto control_channel = std::make_unique<MethodChannel<EncodableValue>>(
+      messenger, kControlChannelName, &StandardMethodCodec::GetInstance());
+
+  control_channel->InvokeMethod(kOverflowMethod,
+                                std::make_unique<EncodableValue>(EncodableList{
+                                    EncodableValue(name),
+                                    EncodableValue(!warns),
+                                }));
+}
+
+}  // namespace
 
 }  // namespace flutter
 
