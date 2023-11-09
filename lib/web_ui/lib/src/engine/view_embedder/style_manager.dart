@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'browser_detection.dart';
-import 'dom.dart';
-import 'text_editing/text_editing.dart';
-import 'view_embedder/dom_manager.dart';
+import '../browser_detection.dart';
+import '../dom.dart';
+import '../text_editing/text_editing.dart';
+import 'dom_manager.dart';
 
 // Applies the required global CSS to an incoming [DomCSSStyleSheet] `sheet`.
 void applyGlobalCssRulesToSheet(
