@@ -6,7 +6,6 @@ import 'package:ui/ui.dart' as ui;
 
 import '../dom.dart';
 import '../embedder.dart';
-import '../global_styles.dart';
 
 /// Manages DOM elements and the DOM structure for a [ui.FlutterView].
 ///
@@ -79,66 +78,4 @@ class DomManager {
   /// Otherwise, the phone will disable focusing by touch, only by tabbing
   /// around the UI.
   DomElement get semanticsHost => _embedder.semanticsHostElementDEPRECATED;
-}
-
-/// Manages the CSS styles of the Flutter View.
-class StyleManager {
-  static const String defaultFontStyle = 'normal';
-  static const String defaultFontWeight = 'normal';
-  static const double defaultFontSize = 14;
-  static const String defaultFontFamily = 'sans-serif';
-  static const String defaultCssFont = '$defaultFontStyle $defaultFontWeight ${defaultFontSize}px $defaultFontFamily';
-
-  static void attachGlobalStyles({
-    required DomNode node,
-    required String styleId,
-    required String? styleNonce,
-    required String cssSelectorPrefix,
-  }) {
-    final DomHTMLStyleElement styleElement = createDomHTMLStyleElement(styleNonce);
-    styleElement.id = styleId;
-    // The style element must be appended to the DOM, or its `sheet` will be null later.
-    node.appendChild(styleElement);
-    applyGlobalCssRulesToSheet(
-      styleElement,
-      defaultCssFont: StyleManager.defaultCssFont,
-      cssSelectorPrefix: cssSelectorPrefix,
-    );
-  }
-
-  static void styleSceneHost(
-    DomElement sceneHost, {
-    bool debugShowSemanticsNodes = false,
-  }) {
-    assert(sceneHost.tagName.toLowerCase() == DomManager.sceneHostTagName.toLowerCase());
-    // Don't allow the scene to receive pointer events.
-    sceneHost.style.pointerEvents = 'none';
-    // When debugging semantics, make the scene semi-transparent so that the
-    // semantics tree is more prominent.
-    if (debugShowSemanticsNodes) {
-      sceneHost.style.opacity = '0.3';
-    }
-  }
-
-  static void styleSemanticsHost(
-    DomElement semanticsHost,
-    double devicePixelRatio,
-  ) {
-    assert(semanticsHost.tagName.toLowerCase() == DomManager.semanticsHostTagName.toLowerCase());
-    semanticsHost.style
-      ..position = 'absolute'
-      ..transformOrigin = '0 0 0';
-    scaleSemanticsHost(semanticsHost, devicePixelRatio);
-  }
-
-  /// The framework specifies semantics in physical pixels, but CSS uses
-  /// logical pixels. To compensate, an inverse scale is injected at the root
-  /// level.
-  static void scaleSemanticsHost(
-    DomElement semanticsHost,
-    double devicePixelRatio,
-  ) {
-    assert(semanticsHost.tagName.toLowerCase() == DomManager.semanticsHostTagName.toLowerCase());
-    semanticsHost.style.transform = 'scale(${1 / devicePixelRatio})';
-  }
 }

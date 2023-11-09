@@ -17,6 +17,7 @@ import 'text_editing/text_editing.dart';
 import 'view_embedder/dimensions_provider/dimensions_provider.dart';
 import 'view_embedder/dom_manager.dart';
 import 'view_embedder/embedding_strategy/embedding_strategy.dart';
+import 'view_embedder/style_manager.dart';
 
 /// Controls the placement and lifecycle of a Flutter view on the web page.
 ///
