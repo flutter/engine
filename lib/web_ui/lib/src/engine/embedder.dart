@@ -193,7 +193,7 @@ class FlutterViewEmbedder {
     renderer.reset(this);
 
     _semanticsHostElement = domDocument.createElement(DomManager.semanticsHostTagName);
-    StyleManager.scaleSemanticsHost(
+    StyleManager.styleSemanticsHost(
       _semanticsHostElement,
       window.devicePixelRatio,
     );
