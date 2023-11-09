@@ -11,6 +11,8 @@
 namespace flutter {
 namespace testing {
 
+static constexpr int64_t kImplicitViewId = 0;
+
 void CreateSimulatedPointerData(PointerData& data,  // NOLINT
                                 PointerData::Change change,
                                 int64_t device,
@@ -129,7 +131,7 @@ void CreateSimulatedTrackpadGestureData(PointerData& data,  // NOLINT
   data.pan_delta_y = 0.0;
   data.scale = scale;
   data.rotation = rotation;
-  data.view_id = 0;
+  data.view_id = kImplicitViewId;
 }
 
 void UnpackPointerPacket(std::vector<PointerData>& output,  // NOLINT

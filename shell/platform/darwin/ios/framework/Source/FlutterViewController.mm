@@ -1176,9 +1176,10 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
     pointer_data.device = reinterpret_cast<int64_t>(touch);
 
-    // TODO(loicsharma): This assumes all pointer events are on the implicit
-    // view and should be updated to support multiple views.
-    pointer_data.view_id = 0;
+    // TODO(dkwingsmt): Use the correct view ID once the iOS shell supports
+    // multiple views.
+    // https://github.com/flutter/flutter/issues/138168
+    pointer_data.view_id = flutter::kFlutterImplicitViewId;
 
     // Pointer will be generated in pointer_data_packet_converter.cc.
     pointer_data.pointer_identifier = 0;

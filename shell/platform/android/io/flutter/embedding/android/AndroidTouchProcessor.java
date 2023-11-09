@@ -79,6 +79,7 @@ public class AndroidTouchProcessor {
     int SCALE = 3;
     int UNKNOWN = 4;
   }
+
   // This value must match kPointerDataFieldCount in pointer_data.cc.
   private static final int POINTER_DATA_FIELD_COUNT = 36;
   @VisibleForTesting static final int BYTES_PER_FIELD = 8;
@@ -91,6 +92,7 @@ public class AndroidTouchProcessor {
   // This flag indicates whether the original Android pointer events were batched together.
   private static final int POINTER_DATA_FLAG_BATCHED = 1;
 
+  // The view ID for the only view in a single-view Flutter app.
   private static final int IMPLICIT_VIEW_ID = 0;
 
   @NonNull private final FlutterRenderer renderer;
