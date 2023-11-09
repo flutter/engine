@@ -7,6 +7,7 @@
 #include <optional>
 #include <variant>
 
+#include "flutter/fml/logging.h"
 #include "impeller/geometry/path_component.h"
 #include "impeller/geometry/point.h"
 
@@ -215,7 +216,9 @@ bool Path::GetContourComponentAtIndex(size_t index,
 
 Path::Polyline::Polyline(Path::Polyline::PointBufferPtr point_buffer,
                          Path::Polyline::ReclaimPointBufferCallback reclaim)
-    : points(std::move(point_buffer)), reclaim_points(reclaim) {}
+    : points(std::move(point_buffer)), reclaim_points(reclaim) {
+  FML_DCHECK(points);
+}
 
 Path::Polyline::Polyline(Path::Polyline&& other) {
   points = std::move(other.points);
