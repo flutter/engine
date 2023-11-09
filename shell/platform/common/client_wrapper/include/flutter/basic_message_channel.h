@@ -106,18 +106,16 @@ class BasicMessageChannel {
   // to channels that aren't fully set up yet. For example, the engine isn't
   // running yet or the channel's message handler isn't set up on the Dart side
   // yet.
-  //
-  // |new_size] is an int because the deserialization logic handles only 32 bits
-  // values, see
-  // https://github.com/flutter/engine/blob/93e8901490e78c7ba7e319cce4470d9c6478c6dc/lib/ui/channel_buffers.dart#L495.
   void Resize(int new_size) {
     auto control_channel = std::make_unique<MethodChannel<EncodableValue>>(
         messenger_, kControlChannelName, &StandardMethodCodec::GetInstance());
 
+    // The deserialization logic handles only 32 bits values, see
+    // https://github.com/flutter/engine/blob/93e8901490e78c7ba7e319cce4470d9c6478c6dc/lib/ui/channel_buffers.dart#L495.
     control_channel->InvokeMethod(
         kResizeMethod, std::make_unique<EncodableValue>(EncodableList{
                            EncodableValue(name_),
-                           EncodableValue(new_size),
+                           EncodableValue(static_cast<int32_t>(new_size)),
                        }));
   }
 

@@ -25,10 +25,8 @@ class TestBinaryMessenger : public BinaryMessenger {
     send_called_ = true;
     last_reply_handler_ = reply;
     int length = static_cast<int>(message_size);
-    last_message_size_ = length;
-    std::vector<uint8_t> last_message(length);
-    memcpy(&last_message[0], &message[0], length * sizeof(uint8_t));
-    last_message_ = last_message;
+    last_message_ =
+        std::vector<uint8_t>(message, message + length * sizeof(uint8_t));
   }
 
   void SetMessageHandler(const std::string& channel,
@@ -49,15 +47,12 @@ class TestBinaryMessenger : public BinaryMessenger {
 
   std::vector<uint8_t> last_message() { return last_message_; }
 
-  int last_message_size() { return last_message_size_; }
-
  private:
   mutable bool send_called_ = false;
   mutable BinaryReply last_reply_handler_;
   std::string last_message_handler_channel_;
   BinaryMessageHandler last_message_handler_;
   mutable std::vector<uint8_t> last_message_;
-  mutable int last_message_size_;
 };
 
 }  // namespace
@@ -183,7 +178,8 @@ TEST(MethodChannelTest, Resize) {
   const int expected_message_size = 29;
 
   EXPECT_EQ(messenger.send_called(), true);
-  EXPECT_EQ(messenger.last_message_size(), expected_message_size);
+  EXPECT_EQ(static_cast<int>(messenger.last_message().size()),
+            expected_message_size);
 
   int expected[expected_message_size] = {
       7,   6,   114, 101, 115, 105, 122, 101, 12,  2, 7, 12, 102, 108, 117,
@@ -210,7 +206,8 @@ TEST(MethodChannelTest, SetWarnsOnOverflow) {
   const int expected_message_size = 27;
 
   EXPECT_EQ(messenger.send_called(), true);
-  EXPECT_EQ(messenger.last_message_size(), expected_message_size);
+  EXPECT_EQ(static_cast<int>(messenger.last_message().size()),
+            expected_message_size);
 
   int expected[expected_message_size] = {
       7,   8,   111, 118, 101, 114, 102, 108, 111, 119, 12,  2,   7, 12,
