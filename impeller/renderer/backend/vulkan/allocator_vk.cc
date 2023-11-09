@@ -279,7 +279,6 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
                             supports_memoryless_textures);
     image_info.sharingMode = vk::SharingMode::eExclusive;
 
-
     vk::ImageCompressionControlEXT compression = {};
     bool use_compression = desc.compression_type == CompressionType::kLossy &&
                            supports_lossy_compression;
