@@ -47,6 +47,9 @@ static void BM_Polyline(benchmark::State& state, Args&&... args) {
                       });
     } else {
       auto polyline = path.CreatePolyline(
+          // Clang-tidy doesn't know that the points get moved back before
+          // getting moved again in this loop.
+          // NOLINTNEXTLINE(clang-analyzer-cplusplus.Move)
           1.0f, std::move(points),
           [&points](Path::Polyline::PointBufferPtr reclaimed) {
             points = std::move(reclaimed);
