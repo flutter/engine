@@ -10,7 +10,7 @@ import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 import '../browser_detection.dart';
 import '../dom.dart';
 import '../util.dart';
-import '../view_embedder/dom_manager.dart';
+import '../view_embedder/style_manager.dart';
 import 'canvas_paragraph.dart';
 import 'layout_fragmenter.dart';
 import 'ruler.dart';

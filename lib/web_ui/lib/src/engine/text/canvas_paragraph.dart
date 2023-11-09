@@ -7,7 +7,7 @@ import 'package:ui/ui.dart' as ui;
 import '../dom.dart';
 import '../html/bitmap_canvas.dart';
 import '../profiler.dart';
-import '../view_embedder/dom_manager.dart';
+import '../view_embedder/style_manager.dart';
 import 'layout_fragmenter.dart';
 import 'layout_service.dart';
 import 'paint_service.dart';
