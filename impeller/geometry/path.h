@@ -111,6 +111,8 @@ class Path {
     /// by indices in |contours|.
     PointBufferPointer points;
 
+    Point& GetPoint(size_t index) const { return (*points)[index]; }
+
     /// Contours are disconnected pieces of a polyline, such as when a MoveTo
     /// was issued on a PathBuilder.
     std::vector<PolylineContour> contours;

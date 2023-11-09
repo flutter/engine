@@ -69,11 +69,11 @@ Tessellator::Result Tessellator::Tessellate(const Path& path,
   }
 
   point_buffer_->clear();
-  auto polyline =
-      path.CreatePolyline(tolerance, std::move(point_buffer_),
-                          [&](Path::Polyline::PointBufferPointer point_buffer) {
-                            point_buffer_ = std::move(point_buffer);
-                          });
+  auto polyline = path.CreatePolyline(
+      tolerance, std::move(point_buffer_),
+      [this](Path::Polyline::PointBufferPointer point_buffer) {
+        point_buffer_ = std::move(point_buffer);
+      });
 
   auto fill_type = path.GetFillType();
 
@@ -237,27 +237,27 @@ Tessellator::TessellateConvex(const Path& path, Scalar tolerance) {
   std::vector<uint16_t> indices;
 
   point_buffer_->clear();
-  auto polyline =
-      path.CreatePolyline(tolerance, std::move(point_buffer_),
-                          [&](Path::Polyline::PointBufferPointer point_buffer) {
-                            point_buffer_ = std::move(point_buffer);
-                          });
+  auto polyline = path.CreatePolyline(
+      tolerance, std::move(point_buffer_),
+      [this](Path::Polyline::PointBufferPointer point_buffer) {
+        point_buffer_ = std::move(point_buffer);
+      });
 
   for (auto j = 0u; j < polyline.contours.size(); j++) {
     auto [start, end] = polyline.GetContourPointBounds(j);
-    auto center = (*polyline.points)[start];
+    auto center = polyline.GetPoint(start);
 
     // Some polygons will not self close and an additional triangle
     // must be inserted, others will self close and we need to avoid
     // inserting an extra triangle.
-    if ((*polyline.points)[end - 1] == (*polyline.points)[start]) {
+    if (polyline.GetPoint(end - 1) == polyline.GetPoint(start)) {
       end--;
     }
     output.emplace_back(center);
-    output.emplace_back((*polyline.points)[start + 1]);
+    output.emplace_back(polyline.GetPoint(start + 1));
 
     for (auto i = start + 2; i < end; i++) {
-      const auto& point_b = (*polyline.points)[i];
+      const auto& point_b = polyline.GetPoint(i);
       output.emplace_back(point_b);
 
       indices.emplace_back(0);
