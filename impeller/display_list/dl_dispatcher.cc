@@ -759,14 +759,8 @@ void DlDispatcher::drawPaint() {
 
 // |flutter::DlOpReceiver|
 void DlDispatcher::drawLine(const SkPoint& p0, const SkPoint& p1) {
-  auto path =
-      PathBuilder{}
-          .AddLine(skia_conversions::ToPoint(p0), skia_conversions::ToPoint(p1))
-          .SetConvexity(Convexity::kConvex)
-          .TakePath();
-  Paint paint = paint_;
-  paint.style = Paint::Style::kStroke;
-  canvas_.DrawPath(path, paint);
+  canvas_.DrawLine(skia_conversions::ToPoint(p0), skia_conversions::ToPoint(p1),
+                   paint_);
 }
 
 // |flutter::DlOpReceiver|

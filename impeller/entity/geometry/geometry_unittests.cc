@@ -36,5 +36,25 @@ TEST(EntityGeometryTest, FillPathGeometryCoversAreaNoInnerRect) {
   ASSERT_FALSE(geometry->CoversArea({}, Rect()));
 }
 
+TEST(EntityGeometryTest, LineGeometryCoverage) {
+  {
+    auto geometry = Geometry::MakeLine({10, 10}, {20, 10}, 2, Cap::kButt);
+    auto matrix = Matrix();
+    EXPECT_EQ(geometry->GetCoverage(matrix), Rect::MakeLTRB(10, 9, 20, 11));
+  }
+
+  {
+    auto geometry = Geometry::MakeLine({10, 10}, {20, 10}, 2, Cap::kSquare);
+    auto matrix = Matrix();
+    EXPECT_EQ(geometry->GetCoverage(matrix), Rect::MakeLTRB(9, 9, 21, 11));
+  }
+
+  {
+    auto geometry = Geometry::MakeLine({10, 10}, {20, 10}, 2, Cap::kRound);
+    auto matrix = Matrix();
+    EXPECT_EQ(geometry->GetCoverage(matrix), Rect::MakeLTRB(9, 9, 21, 11));
+  }
+}
+
 }  // namespace testing
 }  // namespace impeller

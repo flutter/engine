@@ -226,6 +226,17 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
   return true;
 }
 
+void Canvas::DrawLine(const Point& p0, const Point& p1, const Paint& paint) {
+  Entity entity;
+  entity.SetTransformation(GetCurrentTransformation());
+  entity.SetClipDepth(GetClipDepth());
+  entity.SetBlendMode(paint.blend_mode);
+  entity.SetContents(paint.WithFilters(paint.CreateContentsForGeometry(
+      Geometry::MakeLine(p0, p1, paint.stroke_width, paint.stroke_cap))));
+
+  GetCurrentPass().AddEntity(entity);
+}
+
 void Canvas::DrawRect(Rect rect, const Paint& paint) {
   if (paint.style == Paint::Style::kStroke) {
     DrawPath(PathBuilder{}.AddRect(rect).TakePath(), paint);
