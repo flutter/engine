@@ -128,8 +128,8 @@ class FlutterViewEmbedder {
   DomElement get textEditingHostNodeDEPRECATED => _textEditingHostNode;
   late DomElement _textEditingHostNode;
 
-  AccessibilityAnnouncements get accessibilityAnnouncements => _accessibilityAnnouncements;
-  late AccessibilityAnnouncements _accessibilityAnnouncements;
+  DomElement get announcementsHostDEPRECATED => _announcementsHost;
+  late DomElement _announcementsHost;
 
   void reset() {
     // How was the current renderer selected?
@@ -202,12 +202,11 @@ class FlutterViewEmbedder {
         .instance.semanticsHelper
         .prepareAccessibilityPlaceholder();
 
-    final DomElement announcementsElement = createDomElement(DomManager.announcementsHostTagName);
-    _accessibilityAnnouncements = AccessibilityAnnouncements(hostElement: announcementsElement);
+    _announcementsHost = createDomElement(DomManager.announcementsHostTagName);
 
     shadowRoot.append(accessibilityPlaceholder);
     shadowRoot.append(_sceneHostElement);
-    shadowRoot.append(announcementsElement);
+    shadowRoot.append(_announcementsHost);
 
     // The semantic host goes last because hit-test order-wise it must be
     // first. If semantics goes under the scene host, platform views will
@@ -228,11 +227,6 @@ class FlutterViewEmbedder {
     );
 
     window.onResize.listen(_metricsDidChange);
-  }
-
-  /// For tests only.
-  void debugOverrideAccessibilityAnnouncements(AccessibilityAnnouncements override) {
-    _accessibilityAnnouncements = override;
   }
 
   /// Called immediately after browser window metrics change.
