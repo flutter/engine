@@ -623,10 +623,10 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   // TODO(hellohuanlin): remove iOS 17 check. The same logic should apply to older iOS version.
   if (@available(iOS 17.0, *)) {
     // If querying the line from end of document in forward direction, report not found.
-    // This is an undocumented behavior of the default `UITextInputStringTokenizer`.
     FlutterTextPosition* flutterPosition = (FlutterTextPosition*)position;
-    if (flutterPosition.index >= _textInputView.text.length &&
-        direction == UITextStorageDirectionForward) {
+    if (flutterPosition.index > _textInputView.text.length ||
+        (flutterPosition.index == _textInputView.text.length &&
+         direction == UITextStorageDirectionForward)) {
       return nil;
     }
   }

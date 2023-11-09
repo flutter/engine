@@ -2720,6 +2720,24 @@ FLUTTER_ASSERT_ARC
   }
 }
 
+- (void)testFlutterTokenizerLineEnclosingOutOfRangePositionShouldReturnNilOnIOS17 {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  [inputView insertText:@"0123456789\n012345"];
+  id<UITextInputTokenizer> tokenizer = [inputView tokenizer];
+
+  FlutterTextPosition* position = [FlutterTextPosition positionWithIndex:100];
+  FlutterTextRange* range =
+      (FlutterTextRange*)[tokenizer rangeEnclosingPosition:position
+                                           withGranularity:UITextGranularityLine
+                                               inDirection:UITextStorageDirectionForward];
+  if (@available(iOS 17.0, *)) {
+    XCTAssertNil(range);
+  } else {
+    XCTAssertEqual(range.range.location, 0u);
+    XCTAssertEqual(range.range.length, 0u);
+  }
+}
+
 - (void)testFlutterTextInputPluginRetainsFlutterTextInputView {
   FlutterViewController* flutterViewController = [[FlutterViewController alloc] init];
   FlutterTextInputPlugin* myInputPlugin = [[FlutterTextInputPlugin alloc] initWithDelegate:engine];
