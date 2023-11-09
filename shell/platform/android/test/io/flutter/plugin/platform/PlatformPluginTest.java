@@ -12,6 +12,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -86,15 +88,25 @@ public class PlatformPluginTest {
     PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
     PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
 
+    // Successfully get the contents of the primary clip when they contain text.
     ClipboardContentFormat clipboardFormat = ClipboardContentFormat.PLAIN_TEXT;
     assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
     ClipData clip = ClipData.newPlainText("label", "Text");
     clipboardManager.setPrimaryClip(clip);
     assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
 
-    ContentResolver contentResolver = ctx.getContentResolver();
+    // Return null when the primary clip contains non-text media.
+    ContentResolver contentResolver = spy(ctx.getContentResolver());
     when(fakeActivity.getContentResolver()).thenReturn(contentResolver);
     Uri uri = Uri.parse("content://media/external_primary/images/media/");
+    clip = ClipData.newUri(contentResolver, "URI", uri);
+    clipboardManager.setPrimaryClip(clip);
+    assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
+
+    // Still return text when the AssetFileDescriptor throws an IOException.
+    when(fakeActivity.getContentResolver()).thenReturn(contentResolver);
+    Uri textUri = Uri.parse("content://text/");
+    when(contentResolver.getType(eq(textUri))).thenReturn("text/plain");
     clip = ClipData.newUri(contentResolver, "URI", uri);
     clipboardManager.setPrimaryClip(clip);
     assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
@@ -127,9 +139,10 @@ public class PlatformPluginTest {
     clipboardManager.setPrimaryClip(clip);
     AssetFileDescriptor fakeAssetFileDescriptor = mock(AssetFileDescriptor.class);
     when(fakeActivity.getContentResolver()).thenReturn(contentResolver);
-    when(contentResolver.openTypedAssetFileDescriptor(uri, anyString(), null))
+    when(contentResolver.openTypedAssetFileDescriptor(eq(uri), anyString(), eq(null)))
         .thenReturn(fakeAssetFileDescriptor);
-    when(fakeAssetFileDescriptor.close()).thenThrow(IOException.class);
+    //when(fakeAssetFileDescriptor.close()).thenThrow(IOException.class);
+    doThrow(new IOException()).when(fakeAssetFileDescriptor).close();
     assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
   }
 
