@@ -738,12 +738,18 @@ class ParagraphPlaceholder {
   final ui.TextBaseline baseline;
 }
 
-/// Converts [fontWeight] to its CSS equivalent value.
-String? fontWeightToCss(ui.FontWeight? fontWeight) {
-  if (fontWeight == null) {
-    return null;
+extension FontStyleExtension on ui.FontStyle {
+  /// Converts a [ui.FontStyle] value to its CSS equivalent.
+  String toCssString() {
+    return this == ui.FontStyle.normal ? 'normal' : 'italic';
   }
-  return fontWeightIndexToCss(fontWeightIndex: fontWeight.index);
+}
+
+extension FontWeightExtension on ui.FontWeight {
+  /// Converts a [ui.FontWeight] value to its CSS equivalent.
+  String toCssString() {
+    return fontWeightIndexToCss(fontWeightIndex: index);
+  }
 }
 
 String fontWeightIndexToCss({int fontWeightIndex = 3}) {
@@ -813,11 +819,10 @@ void applyTextStyleToElement({
     cssStyle.fontSize = '${fontSize.floor()}px';
   }
   if (style.fontWeight != null) {
-    cssStyle.fontWeight = fontWeightToCss(style.fontWeight)!;
+    cssStyle.fontWeight = style.fontWeight!.toCssString();
   }
   if (style.fontStyle != null) {
-    cssStyle.fontStyle =
-        style.fontStyle == ui.FontStyle.normal ? 'normal' : 'italic';
+    cssStyle.fontStyle = style.fontStyle!.toCssString();
   }
   // For test environment use effectiveFontFamily since we need to
   // consistently use the correct test font.

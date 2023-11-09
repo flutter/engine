@@ -21,27 +21,21 @@ String buildCssFontString({
   final StringBuffer result = StringBuffer();
 
   // Font style
-  if (fontStyle != null) {
-    result.write(fontStyle == ui.FontStyle.normal ? 'normal' : 'italic');
-  } else {
-    result.write(StyleManager.defaultFontStyle);
-  }
+  final String cssFontStyle = fontStyle?.toCssString() ?? StyleManager.defaultFontStyle;
+  result.write(cssFontStyle);
   result.write(' ');
 
   // Font weight.
-  if (fontWeight != null) {
-    result.write(fontWeightToCss(fontWeight));
-  } else {
-    result.write(StyleManager.defaultFontWeight);
-  }
+  final String cssFontWeight = fontWeight?.toCssString() ?? StyleManager.defaultFontWeight;
+  result.write(cssFontWeight);
   result.write(' ');
 
-  if (fontSize != null) {
-    result.write(fontSize.floor());
-  } else {
-    result.write(StyleManager.defaultFontSize);
-  }
+  // Font size.
+  final num cssFontSize = fontSize?.floor() ?? StyleManager.defaultFontSize;
+  result.write(cssFontSize);
   result.write('px ');
+
+  // Font family.
   result.write(canonicalizeFontFamily(fontFamily));
 
   return result.toString();
