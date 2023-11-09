@@ -216,7 +216,7 @@ bool Path::GetContourComponentAtIndex(size_t index,
 
 Path::Polyline::Polyline(Path::Polyline::PointBufferPtr point_buffer,
                          Path::Polyline::ReclaimPointBufferCallback reclaim)
-    : points(std::move(point_buffer)), reclaim_points(reclaim) {
+    : points(std::move(point_buffer)), reclaim_points(std::move(reclaim)) {
   FML_DCHECK(points);
 }
 
@@ -237,7 +237,7 @@ Path::Polyline Path::CreatePolyline(
     Scalar scale,
     Path::Polyline::PointBufferPtr point_buffer,
     Path::Polyline::ReclaimPointBufferCallback reclaim) const {
-  Polyline polyline(std::move(point_buffer), reclaim);
+  Polyline polyline(std::move(point_buffer), std::move(reclaim));
 
   auto get_path_component = [this](size_t component_i) -> PathComponentVariant {
     if (component_i >= components_.size()) {
