@@ -114,6 +114,16 @@ Vector2 CalculateIntegerScale(Scalar scalar, ISize size) {
                  size.height / static_cast<Scalar>(new_size.height));
 }
 
+/// Calculate how much to scale down the texture depending on the blur radius.
+/// This curve was taken from |DirectionalGaussianBlurFilterContents|.
+Scalar CalculateScale(Scalar radius) {
+  constexpr Scalar decay = 4.0;   // Larger is more gradual.
+  constexpr Scalar limit = 0.95;  // The maximum percentage of the scaledown.
+  const Scalar curve =
+      std::min(1.0, decay / (std::max(1.0f, radius) + decay - 1.0));
+  return (curve - 1) * limit + 1;
+};
+
 }  // namespace
 
 GaussianBlurFilterContents::GaussianBlurFilterContents(Scalar sigma)
@@ -168,8 +178,9 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   Scalar blur_radius = CalculateBlurRadius(sigma_);
   Size input_pixel_size(1.0 / input_snapshot->texture->GetSize().width,
                         1.0 / input_snapshot->texture->GetSize().height);
+  Scalar desired_scale = 1.0 / CalculateScale(blur_radius);
   Vector2 downsample =
-      CalculateIntegerScale(2.0, input_snapshot->texture->GetSize());
+      CalculateIntegerScale(desired_scale, input_snapshot->texture->GetSize());
 
   std::shared_ptr<Texture> pass1_out_texture = MakeBlurSubpass(
       renderer, input_snapshot->texture, input_snapshot->sampler_descriptor,
