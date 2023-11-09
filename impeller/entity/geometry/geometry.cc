@@ -8,7 +8,7 @@
 
 #include "impeller/entity/geometry/cover_geometry.h"
 #include "impeller/entity/geometry/fill_path_geometry.h"
-#include "impeller/entity/geometry/point_field_geometry.h"
+#include "impeller/entity/geometry/circle_geometry.h"
 #include "impeller/entity/geometry/rect_geometry.h"
 #include "impeller/entity/geometry/stroke_path_geometry.h"
 #include "impeller/geometry/rect.h"
@@ -117,10 +117,10 @@ std::unique_ptr<Geometry> Geometry::MakeFillPath(
   return std::make_unique<FillPathGeometry>(path, inner_rect);
 }
 
-std::unique_ptr<Geometry> Geometry::MakePointField(std::vector<Point> points,
+std::unique_ptr<Geometry> Geometry::MakeCircle(std::vector<Point> points,
                                                    Scalar radius,
                                                    bool round) {
-  return std::make_unique<PointFieldGeometry>(std::move(points), radius, round);
+  return std::make_unique<CircleGeometry>(std::move(points), radius, round);
 }
 
 std::unique_ptr<Geometry> Geometry::MakeStrokePath(const Path& path,

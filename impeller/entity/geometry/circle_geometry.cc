@@ -2,54 +2,54 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "impeller/entity/geometry/point_field_geometry.h"
+#include "impeller/entity/geometry/circle_geometry.h"
 
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/compute_command.h"
 
 namespace impeller {
 
-PointFieldGeometry::PointFieldGeometry(std::vector<Point> points,
-                                       Scalar radius,
-                                       bool round)
+// The minimum number of points before compute is used to fill out the geometry.
+// This number was arbitrarily chosen.
+static constexpr size_t kMinComputeSize = 32;
+
+CircleGeometry::CircleGeometry(std::vector<Point> points,
+                               Scalar radius,
+                               bool round)
     : points_(std::move(points)), radius_(radius), round_(round) {}
 
-PointFieldGeometry::~PointFieldGeometry() = default;
+CircleGeometry::~CircleGeometry() = default;
 
-GeometryResult PointFieldGeometry::GetPositionBuffer(
-    const ContentContext& renderer,
-    const Entity& entity,
-    RenderPass& pass) {
-  if (renderer.GetDeviceCapabilities().SupportsCompute()) {
+GeometryResult CircleGeometry::GetPositionBuffer(const ContentContext& renderer,
+                                                 const Entity& entity,
+                                                 RenderPass& pass) {
+  if (points_.size() > kMinComputeSize &&
+      renderer.GetDeviceCapabilities().SupportsCompute()) {
     return GetPositionBufferGPU(renderer, entity, pass);
   }
-  auto vtx_builder = GetPositionBufferCPU(renderer, entity, pass);
-  if (!vtx_builder.has_value()) {
-    return {};
-  }
 
-  auto& host_buffer = pass.GetTransientsBuffer();
   return {
       .type = PrimitiveType::kTriangle,
-      .vertex_buffer = vtx_builder->CreateVertexBuffer(host_buffer),
+      .vertex_buffer = GetPositionBufferCPU(renderer, entity, pass),
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransformation(),
       .prevent_overdraw = false,
   };
 }
 
-GeometryResult PointFieldGeometry::GetPositionUVBuffer(
+GeometryResult CircleGeometry::GetPositionUVBuffer(
     Rect texture_coverage,
     Matrix effect_transform,
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) {
-  if (renderer.GetDeviceCapabilities().SupportsCompute()) {
+  if (points_.size() > kMinComputeSize &&
+      renderer.GetDeviceCapabilities().SupportsCompute()) {
     return GetPositionBufferGPU(renderer, entity, pass, texture_coverage,
                                 effect_transform);
   }
 
-  auto vtx_builder = GetPositionBufferCPU(renderer, entity, pass);
+  auto vtx_builder = GetPositionUVBufferCPU(renderer, entity, pass);
   if (!vtx_builder.has_value()) {
     return {};
   }
@@ -66,10 +66,74 @@ GeometryResult PointFieldGeometry::GetPositionUVBuffer(
   };
 }
 
+VertexBuffer CircleGeometry::GetPositionBufferCPU(
+    const ContentContext& renderer,
+    const Entity& entity,
+    RenderPass& pass) {
+  if (radius_ < 0.0) {
+    return {};
+  }
+  auto determinant = entity.GetTransformation().GetDeterminant();
+  if (determinant == 0) {
+    return {};
+  }
+
+  Scalar min_size = 1.0f / sqrt(std::abs(determinant));
+  Scalar radius = std::max(radius_, min_size);
+
+  auto vertices_per_geom = ComputeCircleDivisions(
+      entity.GetTransformation().GetMaxBasisLength() * radius, round_);
+  auto points_per_circle = 3 + (vertices_per_geom - 3) * 3;
+  auto total = points_per_circle * points_.size();
+  auto radian_start = round_ ? 0.0f : 0.785398f;
+  auto radian_step = k2Pi / vertices_per_geom;
+
+  auto& host_buffer = pass.GetTransientsBuffer();
+
+  /// Precompute all relative points and angles for a fixed geometry size.
+  auto elapsed_angle = radian_start;
+  std::vector<Point> angle_table(vertices_per_geom);
+  for (auto i = 0u; i < vertices_per_geom; i++) {
+    angle_table[i] = Point(cos(elapsed_angle), sin(elapsed_angle)) * radius;
+    elapsed_angle += radian_step;
+  }
+
+  auto vertex_buffer = host_buffer.Emplace(
+      total * sizeof(Point), alignof(Point), [&](uint8_t* buffer) {
+        Point* points = reinterpret_cast<Point*>(buffer);
+        auto offset = 0u;
+        for (auto i = 0u; i < points_.size(); i++) {
+          auto center = points_[i];
+
+          auto origin = center + angle_table[0];
+          points[offset++] = origin;
+
+          auto pt1 = center + angle_table[1];
+          points[offset++] = pt1;
+
+          auto pt2 = center + angle_table[2];
+          points[offset++] = pt2;
+
+          for (auto j = 0u; j < vertices_per_geom - 3; j++) {
+            points[offset++] = origin;
+            points[offset++] = pt2;
+            pt2 = center + angle_table[j + 3];
+            points[offset++] = pt2;
+          }
+        }
+      });
+
+  return VertexBuffer{
+      .vertex_buffer = vertex_buffer,
+      .vertex_count = total,
+      .index_type = IndexType::kNone,
+  };
+}
+
 std::optional<VertexBufferBuilder<SolidFillVertexShader::PerVertexData>>
-PointFieldGeometry::GetPositionBufferCPU(const ContentContext& renderer,
-                                         const Entity& entity,
-                                         RenderPass& pass) {
+CircleGeometry::GetPositionUVBufferCPU(const ContentContext& renderer,
+                                       const Entity& entity,
+                                       RenderPass& pass) {
   if (radius_ < 0.0) {
     return std::nullopt;
   }
@@ -122,7 +186,7 @@ PointFieldGeometry::GetPositionBufferCPU(const ContentContext& renderer,
   return vtx_builder;
 }
 
-GeometryResult PointFieldGeometry::GetPositionBufferGPU(
+GeometryResult CircleGeometry::GetPositionBufferGPU(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass,
@@ -241,8 +305,8 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
 /// @brief Compute the number of vertices to divide each circle into.
 ///
 /// @return the number of vertices.
-size_t PointFieldGeometry::ComputeCircleDivisions(Scalar scaled_radius,
-                                                  bool round) {
+size_t CircleGeometry::ComputeCircleDivisions(Scalar scaled_radius,
+                                              bool round) {
   if (!round) {
     return 4;
   }
@@ -265,13 +329,12 @@ size_t PointFieldGeometry::ComputeCircleDivisions(Scalar scaled_radius,
 }
 
 // |Geometry|
-GeometryVertexType PointFieldGeometry::GetVertexType() const {
+GeometryVertexType CircleGeometry::GetVertexType() const {
   return GeometryVertexType::kPosition;
 }
 
 // |Geometry|
-std::optional<Rect> PointFieldGeometry::GetCoverage(
-    const Matrix& transform) const {
+std::optional<Rect> CircleGeometry::GetCoverage(const Matrix& transform) const {
   if (points_.size() > 0) {
     // Doesn't use MakePointBounds as this isn't resilient to points that
     // all lie along the same axis.

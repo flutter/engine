@@ -277,6 +277,18 @@ void Canvas::DrawCircle(Point center, Scalar radius, const Paint& paint) {
           paint)) {
     return;
   }
+  if (paint.style == Paint::Style::kFill) {
+    Entity entity;
+    entity.SetTransformation(GetCurrentTransformation());
+    entity.SetClipDepth(GetClipDepth());
+    entity.SetBlendMode(paint.blend_mode);
+    entity.SetContents(paint.WithFilters(paint.CreateContentsForGeometry(
+        Geometry::MakeCircle({center}, radius, true))));
+
+    GetCurrentPass().AddEntity(entity);
+    return;
+  }
+
   auto circle_path =
       PathBuilder{}
           .AddCircle(center, radius)
@@ -434,8 +446,8 @@ void Canvas::DrawPoints(std::vector<Point> points,
   entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.WithFilters(paint.CreateContentsForGeometry(
-      Geometry::MakePointField(std::move(points), radius,
-                               /*round=*/point_style == PointStyle::kRound))));
+      Geometry::MakeCircle(std::move(points), radius,
+                           /*round=*/point_style == PointStyle::kRound))));
 
   GetCurrentPass().AddEntity(entity);
 }

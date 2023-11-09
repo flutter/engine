@@ -8,11 +8,11 @@
 
 namespace impeller {
 
-class PointFieldGeometry : public Geometry {
+class CircleGeometry : public Geometry {
  public:
-  PointFieldGeometry(std::vector<Point> points, Scalar radius, bool round);
+  CircleGeometry(std::vector<Point> points, Scalar radius, bool round);
 
-  ~PointFieldGeometry();
+  ~CircleGeometry();
 
   static size_t ComputeCircleDivisions(Scalar scaled_radius, bool round);
 
@@ -42,18 +42,21 @@ class PointFieldGeometry : public Geometry {
       std::optional<Rect> texture_coverage = std::nullopt,
       std::optional<Matrix> effect_transform = std::nullopt);
 
-  std::optional<VertexBufferBuilder<SolidFillVertexShader::PerVertexData>>
-  GetPositionBufferCPU(const ContentContext& renderer,
-                       const Entity& entity,
-                       RenderPass& pass);
+  VertexBuffer GetPositionBufferCPU(const ContentContext& renderer,
+                                    const Entity& entity,
+                                    RenderPass& pass);
+
+  std::optional<VertexBufferBuilder<SolidFillVertexShader::PerVertexData>> GetPositionUVBufferCPU(const ContentContext& renderer,
+                                      const Entity& entity,
+                                      RenderPass& pass);
 
   std::vector<Point> points_;
   Scalar radius_;
   bool round_;
 
-  PointFieldGeometry(const PointFieldGeometry&) = delete;
+  CircleGeometry(const CircleGeometry&) = delete;
 
-  PointFieldGeometry& operator=(const PointFieldGeometry&) = delete;
+  CircleGeometry& operator=(const CircleGeometry&) = delete;
 };
 
 }  // namespace impeller

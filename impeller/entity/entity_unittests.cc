@@ -31,7 +31,7 @@
 #include "impeller/entity/entity_pass_delegate.h"
 #include "impeller/entity/entity_playground.h"
 #include "impeller/entity/geometry/geometry.h"
-#include "impeller/entity/geometry/point_field_geometry.h"
+#include "impeller/entity/geometry/circle_geometry.h"
 #include "impeller/entity/geometry/stroke_path_geometry.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/geometry_asserts.h"
@@ -2390,27 +2390,27 @@ TEST_P(EntityTest, TessellateConvex) {
   }
 }
 
-TEST_P(EntityTest, PointFieldGeometryDivisions) {
+TEST_P(EntityTest, CircleGeometryDivisions) {
   // Square always gives 4 divisions.
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(24.0, false), 4u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(2.0, false), 4u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(200.0, false), 4u);
+  ASSERT_EQ(CircleGeometry::ComputeCircleDivisions(24.0, false), 4u);
+  ASSERT_EQ(CircleGeometry::ComputeCircleDivisions(2.0, false), 4u);
+  ASSERT_EQ(CircleGeometry::ComputeCircleDivisions(200.0, false), 4u);
 
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(0.5, true), 4u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(1.5, true), 8u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(5.5, true), 24u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(12.5, true), 34u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(22.3, true), 22u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(40.5, true), 40u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(100.0, true), 100u);
+  ASSERT_EQ(CircleGeometry::ComputeCircleDivisions(0.5, true), 4u);
+  ASSERT_EQ(CircleGeometry::ComputeCircleDivisions(1.5, true), 8u);
+  ASSERT_EQ(CircleGeometry::ComputeCircleDivisions(5.5, true), 24u);
+  ASSERT_EQ(CircleGeometry::ComputeCircleDivisions(12.5, true), 34u);
+  ASSERT_EQ(CircleGeometry::ComputeCircleDivisions(22.3, true), 22u);
+  ASSERT_EQ(CircleGeometry::ComputeCircleDivisions(40.5, true), 40u);
+  ASSERT_EQ(CircleGeometry::ComputeCircleDivisions(100.0, true), 100u);
   // Caps at 140.
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(1000.0, true), 140u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(20000.0, true), 140u);
+  ASSERT_EQ(CircleGeometry::ComputeCircleDivisions(1000.0, true), 140u);
+  ASSERT_EQ(CircleGeometry::ComputeCircleDivisions(20000.0, true), 140u);
 }
 
-TEST_P(EntityTest, PointFieldGeometryCoverage) {
+TEST_P(EntityTest, CircleGeometryCoverage) {
   std::vector<Point> points = {{10, 20}, {100, 200}};
-  auto geometry = Geometry::MakePointField(points, 5.0, false);
+  auto geometry = Geometry::MakeCircle(points, 5.0, false);
   ASSERT_EQ(*geometry->GetCoverage(Matrix()), Rect::MakeLTRB(5, 15, 105, 205));
   ASSERT_EQ(*geometry->GetCoverage(Matrix::MakeTranslation({30, 0, 0})),
             Rect::MakeLTRB(35, 15, 135, 205));
