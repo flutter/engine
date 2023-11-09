@@ -196,12 +196,18 @@ PathBuilder& PathBuilder::AddRect(Rect rect) {
 }
 
 PathBuilder& PathBuilder::AddCircle(const Point& c, Scalar r) {
-  return AddOval(Rect{c.x - r, c.y - r, 2.0f * r, 2.0f * r});
+  return AddOval(Rect::MakeXYWH(c.x - r, c.y - r, 2.0f * r, 2.0f * r));
 }
 
 PathBuilder& PathBuilder::AddRoundedRect(Rect rect, Scalar radius) {
   return radius <= 0.0 ? AddRect(rect)
-                       : AddRoundedRect(rect, {radius, radius, radius, radius});
+                       : AddRoundedRect(rect, RoundingRadii(radius));
+}
+
+PathBuilder& PathBuilder::AddRoundedRect(Rect rect, Point radii) {
+  return radii.x <= 0 || radii.y <= 0
+             ? AddRect(rect)
+             : AddRoundedRect(rect, RoundingRadii(radii));
 }
 
 PathBuilder& PathBuilder::AddRoundedRect(Rect rect, RoundingRadii radii) {

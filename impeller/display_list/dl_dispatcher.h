@@ -27,9 +27,6 @@ class DlDispatcher final : public flutter::DlOpReceiver {
   void setAntiAlias(bool aa) override;
 
   // |flutter::DlOpReceiver|
-  void setDither(bool dither) override;
-
-  // |flutter::DlOpReceiver|
   void setDrawStyle(flutter::DlDrawStyle style) override;
 
   // |flutter::DlOpReceiver|
@@ -228,6 +225,10 @@ class DlDispatcher final : public flutter::DlOpReceiver {
   Paint paint_;
   CanvasType canvas_;
   Matrix initial_matrix_;
+
+  static void SimplifyOrDrawPath(CanvasType& canvas,
+                                 const SkPath& path,
+                                 const Paint& paint);
 
   DlDispatcher(const DlDispatcher&) = delete;
 

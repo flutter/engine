@@ -77,6 +77,9 @@ class CapabilitiesGLES final
   bool SupportsOffscreenMSAA() const override;
 
   // |Capabilities|
+  bool SupportsImplicitResolvingMSAA() const override;
+
+  // |Capabilities|
   bool SupportsSSBO() const override;
 
   // |Capabilities|
@@ -93,9 +96,6 @@ class CapabilitiesGLES final
 
   // |Capabilities|
   bool SupportsComputeSubgroups() const override;
-
-  // |Capabilities|
-  bool SupportsReadFromOnscreenTexture() const override;
 
   // |Capabilities|
   bool SupportsReadFromResolve() const override;
@@ -119,6 +119,7 @@ class CapabilitiesGLES final
   bool supports_framebuffer_fetch_ = false;
   bool supports_decal_sampler_address_mode_ = false;
   bool supports_offscreen_msaa_ = false;
+  bool supports_implicit_msaa_ = false;
 };
 
 }  // namespace impeller
