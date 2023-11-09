@@ -9,21 +9,6 @@ import '../dom.dart';
 import '../embedder.dart';
 import '../global_styles.dart';
 
-/// The tag name for the Flutter View root element.
-const String kFlutterViewTagName = 'flutter-view';
-
-/// The tag name for the glass-pane.
-const String kGlassPaneTagName = 'flt-glass-pane';
-
-/// The tag name for the scene host.
-const String kSceneHostTagName = 'flt-scene-host';
-
-/// The tag name for the semantics host.
-const String kSemanticsHostTagName = 'flt-semantics-host';
-
-/// The tag name for the accessibility announcements host.
-const String kAnnouncementsHostTagName = 'flt-announcement-host';
-
 /// Manages DOM elements and the DOM structure for a [ui.FlutterView].
 ///
 /// Here's the general DOM structure of a Flutter View:
@@ -54,6 +39,21 @@ const String kAnnouncementsHostTagName = 'flt-announcement-host';
 ///
 class DomManager {
   DomManager.fromFlutterViewEmbedderDEPRECATED(this._embedder);
+
+  /// The tag name for the Flutter View root element.
+  static const String flutterViewTagName = 'flutter-view';
+
+  /// The tag name for the glass-pane.
+  static const String glassPaneTagName = 'flt-glass-pane';
+
+  /// The tag name for the scene host.
+  static const String sceneHostTagName = 'flt-scene-host';
+
+  /// The tag name for the semantics host.
+  static const String semanticsHostTagName = 'flt-semantics-host';
+
+  /// The tag name for the accessibility announcements host.
+  static const String announcementsHostTagName = 'flt-announcement-host';
 
   final FlutterViewEmbedder _embedder;
 
@@ -111,7 +111,7 @@ class StyleManager {
     DomElement sceneHost, {
     bool debugShowSemanticsNodes = false,
   }) {
-    assert(sceneHost.tagName.toLowerCase() == kSceneHostTagName.toLowerCase());
+    assert(sceneHost.tagName.toLowerCase() == DomManager.sceneHostTagName.toLowerCase());
     // Don't allow the scene to receive pointer events.
     sceneHost.style.pointerEvents = 'none';
     // When debugging semantics, make the scene semi-transparent so that the
@@ -122,7 +122,7 @@ class StyleManager {
   }
 
   static void styleSemanticsHost(DomElement semanticsHost) {
-    assert(semanticsHost.tagName.toLowerCase() == kSemanticsHostTagName.toLowerCase());
+    assert(semanticsHost.tagName.toLowerCase() == DomManager.semanticsHostTagName.toLowerCase());
     semanticsHost.style
       ..position = 'absolute'
       ..transformOrigin = '0 0 0';
@@ -133,7 +133,7 @@ class StyleManager {
   /// logical pixels. To compensate, an inverse scale is injected at the root
   /// level.
   static void scaleSemanticsHost(DomElement semanticsHost) {
-    assert(semanticsHost.tagName.toLowerCase() == kSemanticsHostTagName.toLowerCase());
+    assert(semanticsHost.tagName.toLowerCase() == DomManager.semanticsHostTagName.toLowerCase());
     final double dpr = EngineFlutterDisplay.instance.devicePixelRatio;
     semanticsHost.style.transform = 'scale(${1 / dpr})';
   }

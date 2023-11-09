@@ -148,8 +148,8 @@ class FlutterViewEmbedder {
     );
 
     // Create and inject the [_glassPaneElement].
-    _flutterViewElement = domDocument.createElement(kFlutterViewTagName);
-    _glassPaneElement = domDocument.createElement(kGlassPaneTagName);
+    _flutterViewElement = domDocument.createElement(DomManager.flutterViewTagName);
+    _glassPaneElement = domDocument.createElement(DomManager.glassPaneTagName);
 
     // This must be attached to the DOM now, so the engine can create a host
     // node (ShadowDOM or a fallback) next.
@@ -183,7 +183,7 @@ class FlutterViewEmbedder {
     _textEditingHostNode =
         createTextEditingHostNode(_flutterViewElement, configuration.nonce);
 
-    _sceneHostElement = domDocument.createElement(kSceneHostTagName);
+    _sceneHostElement = domDocument.createElement(DomManager.sceneHostTagName);
     StyleManager.styleSceneHost(
       _sceneHostElement,
       debugShowSemanticsNodes: configuration.debugShowSemanticsNodes,
@@ -191,14 +191,14 @@ class FlutterViewEmbedder {
 
     renderer.reset(this);
 
-    _semanticsHostElement = domDocument.createElement(kSemanticsHostTagName);
+    _semanticsHostElement = domDocument.createElement(DomManager.semanticsHostTagName);
     StyleManager.styleSemanticsHost(_semanticsHostElement);
 
     final DomElement accessibilityPlaceholder = EngineSemanticsOwner
         .instance.semanticsHelper
         .prepareAccessibilityPlaceholder();
 
-    final DomElement announcementsElement = createDomElement(kAnnouncementsHostTagName);
+    final DomElement announcementsElement = createDomElement(DomManager.announcementsHostTagName);
     _accessibilityAnnouncements = AccessibilityAnnouncements(hostElement: announcementsElement);
 
     shadowRoot.append(accessibilityPlaceholder);
@@ -319,7 +319,7 @@ DomElement createTextEditingHostNode(DomElement root, String? nonce) {
     node: root,
     styleId: 'flt-text-editing-stylesheet',
     styleNonce: nonce,
-    cssSelectorPrefix: kFlutterViewTagName,
+    cssSelectorPrefix: DomManager.flutterViewTagName,
   );
 
   final DomElement domElement =

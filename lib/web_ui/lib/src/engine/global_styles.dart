@@ -21,7 +21,7 @@ void applyGlobalCssRulesToSheet(
 
   // Fixes #115216 by ensuring that our parameters only affect the flt-scene-host children.
   sheet.insertRule('''
-    $cssSelectorPrefix $kSceneHostTagName {
+    $cssSelectorPrefix ${DomManager.sceneHostTagName} {
       font: $defaultCssFont;
     }
   ''', sheet.cssRules.length);

@@ -19,7 +19,7 @@ const bool debugTest = false;
 
 DomElement get sceneHost =>
     EnginePlatformDispatcher.instance.implicitView!.dom.renderingHost
-        .querySelector(kSceneHostTagName)!;
+        .querySelector(DomManager.sceneHostTagName)!;
 
 Future<void> main() async {
   if (!debugTest) {
