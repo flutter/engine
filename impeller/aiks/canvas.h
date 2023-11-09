@@ -105,7 +105,7 @@ class Canvas {
 
   void DrawRect(Rect rect, const Paint& paint);
 
-  void DrawRRect(Rect rect, Scalar corner_radius, const Paint& paint);
+  void DrawRRect(Rect rect, Point corner_radii, const Paint& paint);
 
   void DrawCircle(Point center, Scalar radius, const Paint& paint);
 
@@ -135,7 +135,7 @@ class Canvas {
 
   void ClipRRect(
       const Rect& rect,
-      Scalar corner_radius,
+      Point corner_radii,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
 
   void DrawPicture(const Picture& picture);
@@ -189,7 +189,9 @@ class Canvas {
                                Scalar corner_radius,
                                const Paint& paint);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Canvas);
+  Canvas(const Canvas&) = delete;
+
+  Canvas& operator=(const Canvas&) = delete;
 };
 
 }  // namespace impeller

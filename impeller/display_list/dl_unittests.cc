@@ -1390,7 +1390,7 @@ TEST_P(DisplayListTest, DrawVerticesSolidColorTrianglesWithoutIndices) {
 
   auto vertices = flutter::DlVertices::Make(
       flutter::DlVertexMode::kTriangles, 3, positions.data(),
-      /*texture_coorindates=*/nullptr, colors.data());
+      /*texture_coordinates=*/nullptr, colors.data());
 
   flutter::DisplayListBuilder builder;
   flutter::DlPaint paint;
@@ -1409,7 +1409,7 @@ TEST_P(DisplayListTest, DrawVerticesLinearGradientWithoutIndices) {
 
   auto vertices = flutter::DlVertices::Make(
       flutter::DlVertexMode::kTriangles, 3, positions.data(),
-      /*texture_coorindates=*/nullptr, /*colors=*/nullptr);
+      /*texture_coordinates=*/nullptr, /*colors=*/nullptr);
 
   std::vector<flutter::DlColor> colors = {flutter::DlColor::kBlue(),
                                           flutter::DlColor::kRed()};
@@ -1519,7 +1519,7 @@ TEST_P(DisplayListTest, DrawVerticesSolidColorTrianglesWithIndices) {
 
   auto vertices = flutter::DlVertices::Make(
       flutter::DlVertexMode::kTriangles, 6, positions.data(),
-      /*texture_coorindates=*/nullptr, /*colors=*/nullptr, 6, indices.data());
+      /*texture_coordinates=*/nullptr, /*colors=*/nullptr, 6, indices.data());
 
   flutter::DisplayListBuilder builder;
   flutter::DlPaint paint;
@@ -1540,7 +1540,7 @@ TEST_P(DisplayListTest, DrawVerticesPremultipliesColors) {
 
   auto vertices = flutter::DlVertices::Make(
       flutter::DlVertexMode::kTriangles, 6, positions.data(),
-      /*texture_coorindates=*/nullptr, colors.data(), 6, indices.data());
+      /*texture_coordinates=*/nullptr, colors.data(), 6, indices.data());
 
   flutter::DisplayListBuilder builder;
   flutter::DlPaint paint;
@@ -1588,6 +1588,68 @@ TEST_P(DisplayListTest, DrawShapes) {
     builder.DrawCircle({350, 200}, 50, stroke_paint);
     builder.Translate(0, 300);
   }
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, ClipDrawRRectWithNonCircularRadii) {
+  flutter::DisplayListBuilder builder;
+
+  flutter::DlPaint fill_paint =                       //
+      flutter::DlPaint()                              //
+          .setColor(flutter::DlColor::kBlue())        //
+          .setDrawStyle(flutter::DlDrawStyle::kFill)  //
+          .setStrokeWidth(10);
+  flutter::DlPaint stroke_paint =                       //
+      flutter::DlPaint()                                //
+          .setColor(flutter::DlColor::kGreen())         //
+          .setDrawStyle(flutter::DlDrawStyle::kStroke)  //
+          .setStrokeWidth(10);
+
+  builder.DrawRRect(
+      SkRRect::MakeRectXY(SkRect::MakeXYWH(500, 100, 300, 300), 120, 40),
+      fill_paint);
+  builder.DrawRRect(
+      SkRRect::MakeRectXY(SkRect::MakeXYWH(500, 100, 300, 300), 120, 40),
+      stroke_paint);
+
+  builder.DrawRRect(
+      SkRRect::MakeRectXY(SkRect::MakeXYWH(100, 500, 300, 300), 40, 120),
+      fill_paint);
+  builder.DrawRRect(
+      SkRRect::MakeRectXY(SkRect::MakeXYWH(100, 500, 300, 300), 40, 120),
+      stroke_paint);
+
+  flutter::DlPaint reference_paint =                  //
+      flutter::DlPaint()                              //
+          .setColor(flutter::DlColor::kMidGrey())     //
+          .setDrawStyle(flutter::DlDrawStyle::kFill)  //
+          .setStrokeWidth(10);
+
+  builder.DrawRRect(
+      SkRRect::MakeRectXY(SkRect::MakeXYWH(500, 500, 300, 300), 40, 40),
+      reference_paint);
+  builder.DrawRRect(
+      SkRRect::MakeRectXY(SkRect::MakeXYWH(100, 100, 300, 300), 120, 120),
+      reference_paint);
+
+  flutter::DlPaint clip_fill_paint =                  //
+      flutter::DlPaint()                              //
+          .setColor(flutter::DlColor::kCyan())        //
+          .setDrawStyle(flutter::DlDrawStyle::kFill)  //
+          .setStrokeWidth(10);
+
+  builder.Save();
+  builder.ClipRRect(
+      SkRRect::MakeRectXY(SkRect::MakeXYWH(900, 100, 300, 300), 120, 40));
+  builder.DrawPaint(clip_fill_paint);
+  builder.Restore();
+
+  builder.Save();
+  builder.ClipRRect(
+      SkRRect::MakeRectXY(SkRect::MakeXYWH(100, 900, 300, 300), 40, 120));
+  builder.DrawPaint(clip_fill_paint);
+  builder.Restore();
+
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
@@ -1668,7 +1730,7 @@ TEST_P(DisplayListTest, DrawVerticesBlendModes) {
 
     auto vertices = flutter::DlVertices::Make(
         flutter::DlVertexMode::kTriangles, 3, positions.data(),
-        /*texture_coorindates=*/nullptr, colors.data());
+        /*texture_coordinates=*/nullptr, colors.data());
 
     flutter::DisplayListBuilder builder;
     flutter::DlPaint paint;

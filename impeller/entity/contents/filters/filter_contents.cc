@@ -16,7 +16,7 @@
 #include "impeller/core/formats.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/border_mask_blur_filter_contents.h"
-#include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
+#include "impeller/entity/contents/filters/directional_gaussian_blur_filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/filters/local_matrix_filter_contents.h"
 #include "impeller/entity/contents/filters/matrix_filter_contents.h"
@@ -55,11 +55,22 @@ std::shared_ptr<FilterContents> FilterContents::MakeGaussianBlur(
     Sigma sigma_y,
     BlurStyle blur_style,
     Entity::TileMode tile_mode) {
-  auto x_blur = MakeDirectionalGaussianBlur(
-      input, sigma_x, Point(1, 0), BlurStyle::kNormal, tile_mode, false, {});
-  auto y_blur = MakeDirectionalGaussianBlur(FilterInput::Make(x_blur), sigma_y,
-                                            Point(0, 1), blur_style, tile_mode,
-                                            true, sigma_x);
+  std::shared_ptr<FilterContents> x_blur = MakeDirectionalGaussianBlur(
+      /*input=*/input,
+      /*sigma=*/sigma_x,
+      /*direction=*/Point(1, 0),
+      /*blur_style=*/BlurStyle::kNormal,
+      /*tile_mode=*/tile_mode,
+      /*is_second_pass=*/false,
+      /*secondary_sigma=*/{});
+  std::shared_ptr<FilterContents> y_blur = MakeDirectionalGaussianBlur(
+      /*input=*/FilterInput::Make(x_blur),
+      /*sigma=*/sigma_y,
+      /*direction=*/Point(0, 1),
+      /*blur_style=*/blur_style,
+      /*tile_mode=*/tile_mode,
+      /*is_second_pass=*/true,
+      /*secondary_sigma=*/sigma_x);
   return y_blur;
 }
 
@@ -216,6 +227,28 @@ std::optional<Rect> FilterContents::GetFilterCoverage(
     result = result->Union(coverage.value());
   }
   return result;
+}
+
+std::optional<Rect> FilterContents::GetSourceCoverage(
+    const Matrix& effect_transform,
+    const Rect& output_limit) const {
+  auto filter_input_coverage =
+      GetFilterSourceCoverage(effect_transform_, output_limit);
+
+  if (!filter_input_coverage.has_value()) {
+    return std::nullopt;
+  }
+
+  std::optional<Rect> inputs_coverage;
+  for (auto input : inputs_) {
+    auto input_coverage = input->GetSourceCoverage(
+        effect_transform, filter_input_coverage.value());
+    if (!input_coverage.has_value()) {
+      return std::nullopt;
+    }
+    inputs_coverage = Rect::Union(inputs_coverage, input_coverage.value());
+  }
+  return inputs_coverage;
 }
 
 std::optional<Entity> FilterContents::GetEntity(

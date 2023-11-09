@@ -419,6 +419,11 @@ bool CapabilitiesVK::SupportsOffscreenMSAA() const {
 }
 
 // |Capabilities|
+bool CapabilitiesVK::SupportsImplicitResolvingMSAA() const {
+  return false;
+}
+
+// |Capabilities|
 bool CapabilitiesVK::SupportsSSBO() const {
   return true;
 }
@@ -452,11 +457,6 @@ bool CapabilitiesVK::SupportsComputeSubgroups() const {
 
 // |Capabilities|
 bool CapabilitiesVK::SupportsReadFromResolve() const {
-  return false;
-}
-
-// |Capabilities|
-bool CapabilitiesVK::SupportsReadFromOnscreenTexture() const {
   return false;
 }
 

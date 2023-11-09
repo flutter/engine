@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <string>
 #include "flutter/fml/hash_combine.h"
 #include "flutter/fml/macros.h"
 #include "impeller/base/comparable.h"
@@ -17,6 +18,8 @@ class ShaderFunction : public Comparable<ShaderFunction> {
   virtual ~ShaderFunction();
 
   ShaderStage GetStage() const;
+
+  const std::string& GetName() const;
 
   // |Comparable<ShaderFunction>|
   std::size_t GetHash() const override;
@@ -34,7 +37,9 @@ class ShaderFunction : public Comparable<ShaderFunction> {
   std::string name_;
   ShaderStage stage_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ShaderFunction);
+  ShaderFunction(const ShaderFunction&) = delete;
+
+  ShaderFunction& operator=(const ShaderFunction&) = delete;
 };
 
 }  // namespace impeller

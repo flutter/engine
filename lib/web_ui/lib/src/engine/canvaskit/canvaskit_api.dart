@@ -161,6 +161,13 @@ extension CanvasKitExtension on CanvasKit {
       DomCanvasElement canvas, SkWebGLContextOptions options) =>
         _GetWebGLContext(canvas, options).toDartDouble;
 
+  @JS('GetWebGLContext')
+  external JSNumber _GetOffscreenWebGLContext(
+      DomOffscreenCanvas canvas, SkWebGLContextOptions options);
+  double GetOffscreenWebGLContext(
+          DomOffscreenCanvas canvas, SkWebGLContextOptions options) =>
+      _GetOffscreenWebGLContext(canvas, options).toDartDouble;
+
   @JS('MakeGrContext')
   external SkGrContext _MakeGrContext(JSNumber glContext);
   SkGrContext MakeGrContext(double glContext) =>
@@ -198,6 +205,9 @@ extension CanvasKitExtension on CanvasKit {
   ) => _MakeRenderTarget(grContext, width.toJS, height.toJS);
 
   external SkSurface MakeSWCanvasSurface(DomCanvasElement canvas);
+
+  @JS('MakeSWCanvasSurface')
+  external SkSurface MakeOffscreenSWCanvasSurface(DomOffscreenCanvas canvas);
 
   /// Creates an image from decoded pixels represented as a list of bytes.
   ///
@@ -3226,6 +3236,18 @@ extension SkParagraphExtension on SkParagraph {
   external JSArray _getLineMetrics();
   List<SkLineMetrics> getLineMetrics() =>
       _getLineMetrics().toDart.cast<SkLineMetrics>();
+
+  @JS('getLineMetricsAt')
+  external SkLineMetrics? _getLineMetricsAt(JSNumber index);
+  SkLineMetrics? getLineMetricsAt(double index) => _getLineMetricsAt(index.toJS);
+
+  @JS('getNumberOfLines')
+  external JSNumber _getNumberOfLines();
+  double getNumberOfLines() => _getNumberOfLines().toDartDouble;
+
+  @JS('getLineNumberAt')
+  external JSNumber _getLineNumberAt(JSNumber index);
+  double getLineNumberAt(double index) => _getLineNumberAt(index.toJS).toDartDouble;
 
   @JS('getLongestLine')
   external JSNumber _getLongestLine();

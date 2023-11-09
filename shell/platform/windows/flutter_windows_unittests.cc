@@ -10,9 +10,12 @@
 
 #include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/synchronization/waitable_event.h"
+#include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
+#include "flutter/shell/platform/windows/testing/engine_modifier.h"
 #include "flutter/shell/platform/windows/testing/windows_test.h"
 #include "flutter/shell/platform/windows/testing/windows_test_config_builder.h"
 #include "flutter/shell/platform/windows/testing/windows_test_context.h"
+#include "flutter/testing/stream_capture.h"
 #include "gtest/gtest.h"
 #include "third_party/tonic/converter/dart_converter.h"
 
@@ -43,27 +46,20 @@ TEST_F(WindowsTest, LaunchMain) {
 // Verify there is no unexpected output from launching main.
 TEST_F(WindowsTest, LaunchMainHasNoOutput) {
   // Replace stdout & stderr stream buffers with our own.
-  std::stringstream cout_buffer;
-  std::stringstream cerr_buffer;
-  std::streambuf* old_cout_buffer = std::cout.rdbuf();
-  std::streambuf* old_cerr_buffer = std::cerr.rdbuf();
-  std::cout.rdbuf(cout_buffer.rdbuf());
-  std::cerr.rdbuf(cerr_buffer.rdbuf());
+  StreamCapture stdout_capture(&std::cout);
+  StreamCapture stderr_capture(&std::cerr);
 
   auto& context = GetContext();
   WindowsConfigBuilder builder(context);
   ViewControllerPtr controller{builder.Run()};
   ASSERT_NE(controller, nullptr);
 
-  // Restore original stdout & stderr stream buffer.
-  std::cout.rdbuf(old_cout_buffer);
-  std::cerr.rdbuf(old_cerr_buffer);
+  stdout_capture.Stop();
+  stderr_capture.Stop();
 
   // Verify stdout & stderr have no output.
-  std::string cout = cout_buffer.str();
-  std::string cerr = cerr_buffer.str();
-  EXPECT_TRUE(cout.empty());
-  EXPECT_TRUE(cerr.empty());
+  EXPECT_TRUE(stdout_capture.GetOutput().empty());
+  EXPECT_TRUE(stderr_capture.GetOutput().empty());
 }
 
 // Verify we can successfully launch a custom entry point.
@@ -97,6 +93,27 @@ TEST_F(WindowsTest, LaunchHeadlessEngine) {
   ASSERT_NE(engine, nullptr);
 
   ASSERT_TRUE(FlutterDesktopEngineRun(engine.get(), nullptr));
+}
+
+// Verify that accessibility features are initialized when a view is created.
+TEST_F(WindowsTest, LaunchRefreshesAccessibility) {
+  auto& context = GetContext();
+  WindowsConfigBuilder builder(context);
+  EnginePtr engine{builder.InitializeEngine()};
+  EngineModifier modifier{
+      reinterpret_cast<FlutterWindowsEngine*>(engine.get())};
+
+  auto called = false;
+  modifier.embedder_api().UpdateAccessibilityFeatures = MOCK_ENGINE_PROC(
+      UpdateAccessibilityFeatures, ([&called](auto engine, auto flags) {
+        called = true;
+        return kSuccess;
+      }));
+
+  ViewControllerPtr controller{
+      FlutterDesktopViewControllerCreate(0, 0, engine.release())};
+
+  ASSERT_TRUE(called);
 }
 
 // Verify that engine fails to launch when a conflicting entrypoint in
