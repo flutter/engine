@@ -61,6 +61,7 @@ void EmbedderExternalViewEmbedder::PrepareView(int64_t native_view_id,
                                                double device_pixel_ratio) {
   // TODO(dkwingsmt): This class only supports rendering into the implicit view.
   // Properly support multi-view in the future.
+  // https://github.com/flutter/flutter/issues/135530 item 4
   FML_DCHECK(native_view_id == kFlutterImplicitViewId);
   Reset();
 
