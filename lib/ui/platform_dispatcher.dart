@@ -414,12 +414,7 @@ class PlatformDispatcher {
     }
   }
 
-  // If this value changes, update the encoding code in the following files:
-  //
-  //  * pointer_data.h
-  //  * pointer_data.cc
-  //  * pointer.dart
-  //  * AndroidTouchProcessor.java
+  // This value must match kPointerDataFieldCount in pointer_data.cc.
   static const int _kPointerDataFieldCount = 36;
 
   static PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
@@ -431,7 +426,7 @@ class PlatformDispatcher {
     for (int i = 0; i < length; ++i) {
       int offset = i * _kPointerDataFieldCount;
       data.add(PointerData(
-        // TODO(goderbauer): Wire up viewId.
+        // The unpacking code must match the struct in pointer_data.h.
         embedderId: packet.getInt64(kStride * offset++, _kFakeHostEndian),
         timeStamp: Duration(microseconds: packet.getInt64(kStride * offset++, _kFakeHostEndian)),
         change: PointerChange.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],

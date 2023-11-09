@@ -9,10 +9,6 @@
 
 namespace flutter {
 
-// If this value changes, update the pointer data unpacking code in
-// platform_dispatcher.dart.
-static constexpr int kPointerDataFieldCount = 36;
-static constexpr int kBytesPerField = sizeof(int64_t);
 // Must match the button constants in events.dart.
 enum PointerButtonMouse : int64_t {
   kPointerButtonMousePrimary = 1 << 0,
@@ -101,6 +97,11 @@ struct alignas(8) PointerData {
   double scale;
   double rotation;
   int64_t view_id;
+
+  // If this struct changes, update:
+  //
+  //  * the unpacking code in platform_dispatcher.dart
+  //  * the packing code in AndroidTouchProcessor.java
 
   void Clear();
 };

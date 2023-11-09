@@ -8,6 +8,13 @@
 
 namespace flutter {
 
+// If kPointerDataFieldCount changes, update the corresponding values in:
+//
+//  * platform_dispatcher.dart
+//  * AndroidTouchProcessor.java
+static constexpr int kPointerDataFieldCount = 36;
+static constexpr int kBytesPerField = sizeof(int64_t);
+
 static_assert(sizeof(PointerData) == kBytesPerField * kPointerDataFieldCount,
               "PointerData has the wrong size");
 

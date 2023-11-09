@@ -80,7 +80,7 @@ public class AndroidTouchProcessor {
     int UNKNOWN = 4;
   }
 
-  // Must match the unpacking code in platform_dispatcher.dart.
+  // This value must match kPointerDataFieldCount in pointer_data.cc.
   private static final int POINTER_DATA_FIELD_COUNT = 36;
   @VisibleForTesting static final int BYTES_PER_FIELD = 8;
 
@@ -133,6 +133,8 @@ public class AndroidTouchProcessor {
    */
   public boolean onTouchEvent(@NonNull MotionEvent event, @NonNull Matrix transformMatrix) {
     int pointerCount = event.getPointerCount();
+
+    // The following packing code must match the struct in pointer_data.h.
 
     // Prepare a data packet of the appropriate size and order.
     ByteBuffer packet =
