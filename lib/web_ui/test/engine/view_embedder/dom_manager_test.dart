@@ -25,7 +25,7 @@ void doTests() {
       expect(domManager.announcementsHost, embedder.announcementsHostDEPRECATED);
     });
 
-    test('insertScene', () {
+    test('setScene', () {
       final FlutterViewEmbedder embedder = FlutterViewEmbedder();
       final DomManager domManager =
           DomManager.fromFlutterViewEmbedderDEPRECATED(embedder);
@@ -34,16 +34,16 @@ void doTests() {
           domManager.renderingHost.querySelector('flt-scene-host')!;
 
       final DomElement scene1 = createDomElement('flt-scene');
-      domManager.insertScene(scene1);
+      domManager.setScene(scene1);
       expect(sceneHost.children, <DomElement>[scene1]);
 
       // Insert the same scene again.
-      domManager.insertScene(scene1);
+      domManager.setScene(scene1);
       expect(sceneHost.children, <DomElement>[scene1]);
 
       // Insert a different scene.
       final DomElement scene2 = createDomElement('flt-scene');
-      domManager.insertScene(scene2);
+      domManager.setScene(scene2);
       expect(sceneHost.children, <DomElement>[scene2]);
       expect(scene1.parent, isNull);
     });

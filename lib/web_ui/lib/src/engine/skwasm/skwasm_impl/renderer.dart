@@ -408,7 +408,7 @@ class SkwasmRenderer implements Renderer {
   void reset(FlutterViewEmbedder embedder) {
     // TODO(harryterkelsen): Do this operation on the appropriate Flutter View.
     final EngineFlutterView implicitView = EnginePlatformDispatcher.instance.implicitView!;
-    implicitView.dom.insertScene(sceneView.sceneElement);
+    implicitView.dom.setScene(sceneView.sceneElement);
   }
 
   static final Map<String, Future<ui.FragmentProgram>> _programs = <String, Future<ui.FragmentProgram>>{};

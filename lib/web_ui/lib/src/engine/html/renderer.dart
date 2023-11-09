@@ -325,7 +325,7 @@ class HtmlRenderer implements Renderer {
   @override
   void renderScene(ui.Scene scene) {
     final EngineFlutterView implicitView = EnginePlatformDispatcher.instance.implicitView!;
-    implicitView.dom.insertScene((scene as SurfaceScene).webOnlyRootElement!);
+    implicitView.dom.setScene((scene as SurfaceScene).webOnlyRootElement!);
     frameTimingsOnRasterFinish();
   }
 
