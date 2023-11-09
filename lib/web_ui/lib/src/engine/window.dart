@@ -2,11 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-@JS()
-library window;
-
 import 'dart:async';
-import 'dart:js_interop';
 import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
@@ -16,7 +12,6 @@ import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 import '../engine.dart' show DimensionsProvider, registerHotRestartListener, renderer;
 import 'display.dart';
 import 'dom.dart';
-import 'embedder.dart';
 import 'mouse/context_menu.dart';
 import 'mouse/cursor.dart';
 import 'navigation/history.dart';
@@ -43,18 +38,25 @@ base class EngineFlutterView implements ui.FlutterView {
   factory EngineFlutterView(
     int viewId,
     EnginePlatformDispatcher platformDispatcher,
+    DomElement hostElement,
   ) = _EngineFlutterViewImpl;
 
   EngineFlutterView._(
     this.viewId,
     this.platformDispatcher,
-  );
+    this.hostElement,
+  ) {
+    platformDispatcher.registerView(this);
+    hostElement.appendChild(dom.rootElement);
+  }
 
   @override
   final int viewId;
 
   @override
   final EnginePlatformDispatcher platformDispatcher;
+
+  final DomElement hostElement;
 
   final ViewConfiguration _viewConfiguration = const ViewConfiguration();
 
@@ -73,8 +75,7 @@ base class EngineFlutterView implements ui.FlutterView {
 
   late final ContextMenu contextMenu = ContextMenu(dom.rootElement);
 
-  late final DomManager dom =
-      DomManager.fromFlutterViewEmbedderDEPRECATED(flutterViewEmbedder);
+  late final DomManager dom = DomManager(devicePixelRatio: devicePixelRatio);
 
   late final PlatformViewMessageHandler platformViewMessageHandler =
       PlatformViewMessageHandler(platformViewsContainer: dom.platformViewsHost);
@@ -153,10 +154,10 @@ base class EngineFlutterView implements ui.FlutterView {
 
 final class _EngineFlutterViewImpl extends EngineFlutterView {
   _EngineFlutterViewImpl(
-    int viewId,
-    EnginePlatformDispatcher platformDispatcher,
-  ) : super._(viewId, platformDispatcher) {
-    platformDispatcher.registerView(this);
+    super.viewId,
+    super.platformDispatcher,
+    super.hostElement,
+  ) : super._() {
     registerHotRestartListener(() {
       // TODO(harryterkelsen): What should we do about this in multi-view?
       renderer.clearFragmentProgramCache();
@@ -168,10 +169,10 @@ final class _EngineFlutterViewImpl extends EngineFlutterView {
 /// The Web implementation of [ui.SingletonFlutterWindow].
 final class EngineFlutterWindow extends EngineFlutterView implements ui.SingletonFlutterWindow {
   EngineFlutterWindow(
-    int viewId,
-    EnginePlatformDispatcher platformDispatcher,
-  ) : super._(viewId, platformDispatcher) {
-    platformDispatcher.registerView(this);
+    super.viewId,
+    super.platformDispatcher,
+    super.hostElement,
+  ) : super._() {
     if (ui_web.isCustomUrlStrategySet) {
       _browserHistory = createHistoryForExistingState(ui_web.urlStrategy);
     }
@@ -585,9 +586,14 @@ EngineFlutterWindow? _window;
 
 /// Initializes the [window] (aka the implicit view), if it's not already
 /// initialized.
-EngineFlutterWindow ensureImplicitViewInitialized() {
-  return _window ??=
-      EngineFlutterWindow(kImplicitViewId, EnginePlatformDispatcher.instance);
+EngineFlutterWindow ensureImplicitViewInitialized({
+  DomElement? hostElement,
+}) {
+  return _window ??= EngineFlutterWindow(
+    kImplicitViewId,
+    EnginePlatformDispatcher.instance,
+    hostElement ?? domDocument.body!,
+  );
 }
 
 /// The Web implementation of [ui.ViewPadding].

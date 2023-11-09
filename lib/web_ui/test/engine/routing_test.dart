@@ -36,7 +36,11 @@ void testMain() {
 
   setUp(() {
     savedWindow = EnginePlatformDispatcher.instance.implicitView;
-    myWindow = EngineFlutterWindow(0, EnginePlatformDispatcher.instance);
+    myWindow = EngineFlutterWindow(
+      0,
+      EnginePlatformDispatcher.instance,
+      createDomHTMLDivElement(),
+    );
   });
 
   tearDown(() async {
