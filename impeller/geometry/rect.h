@@ -123,8 +123,7 @@ struct TRect {
     return Union(o).size == size;
   }
 
-  constexpr bool IsZero() const { return size.IsZero(); }
-
+  /// Returns true if either of the width or height are 0, negative, or NaN.
   constexpr bool IsEmpty() const { return size.IsEmpty(); }
 
   constexpr bool IsMaximum() const { return *this == MakeMaximum(); }
@@ -213,6 +212,35 @@ struct TRect {
   constexpr TRect TransformBounds(const Matrix& transform) const {
     auto points = GetTransformedPoints(transform);
     return TRect::MakePointBounds(points.begin(), points.end()).value();
+  }
+
+  /// @brief  Constructs a Matrix that will map all points in the coordinate
+  ///         space of the rectangle into a new normalized coordinate space
+  ///         where the upper left corner of the rectangle maps to (0, 0)
+  ///         and the lower right corner of the rectangle maps to (1, 1).
+  ///
+  ///         Empty and non-finite rectangles will return a zero-scaling
+  ///         transform that maps all points to (0, 0).
+  constexpr Matrix GetNormalizingTransform() const {
+    if (!IsEmpty()) {
+      Scalar sx = 1.0 / size.width;
+      Scalar sy = 1.0 / size.height;
+      Scalar tx = origin.x * -sx;
+      Scalar ty = origin.y * -sy;
+
+      // Exclude NaN and infinities and either scale underflowing to zero
+      if (sx != 0.0 && sy != 0.0 && 0.0 * sx * sy * tx * ty == 0.0) {
+        // clang-format off
+        return Matrix(  sx, 0.0f, 0.0f, 0.0f,
+                      0.0f,   sy, 0.0f, 0.0f,
+                      0.0f, 0.0f, 1.0f, 0.0f,
+                        tx,   ty, 0.0f, 1.0f);
+        // clang-format on
+      }
+    }
+
+    // Map all coordinates to the origin.
+    return Matrix::MakeScale({0.0f, 0.0f, 1.0f});
   }
 
   constexpr TRect Union(const TRect& o) const {
