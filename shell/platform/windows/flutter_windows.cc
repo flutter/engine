@@ -72,20 +72,29 @@ static FlutterDesktopTextureRegistrarRef HandleForTextureRegistrar(
   return reinterpret_cast<FlutterDesktopTextureRegistrarRef>(registrar);
 }
 
-FlutterDesktopViewControllerRef FlutterDesktopViewControllerCreate(
+static FlutterDesktopViewControllerRef CreateViewController(
+    FlutterDesktopEngineRef engine_ref,
     int width,
     int height,
-    FlutterDesktopEngineRef engine_ref) {
+    bool owns_engine) {
   flutter::FlutterWindowsEngine* engine_ptr = EngineFromHandle(engine_ref);
   std::unique_ptr<flutter::WindowBindingHandler> window_wrapper =
       std::make_unique<flutter::FlutterWindow>(
           width, height, engine_ptr->windows_proc_table());
 
-  auto engine = std::unique_ptr<flutter::FlutterWindowsEngine>(engine_ptr);
   auto view =
       std::make_unique<flutter::FlutterWindowsView>(std::move(window_wrapper));
-  auto controller = std::make_unique<flutter::FlutterWindowsViewController>(
-      std::move(engine), std::move(view));
+
+  // Create a view controller that owns the engine if necessary.
+  std::unique_ptr<flutter::FlutterWindowsViewController> controller;
+  if (owns_engine) {
+    auto engine = std::unique_ptr<flutter::FlutterWindowsEngine>(engine_ptr);
+    controller = std::make_unique<flutter::FlutterWindowsViewController>(
+        std::move(engine), std::move(view));
+  } else {
+    controller = std::make_unique<flutter::FlutterWindowsViewController>(
+        std::move(view));
+  }
 
   controller->view()->SetEngine(controller->engine());
   controller->view()->CreateRenderSurface();
@@ -104,6 +113,13 @@ FlutterDesktopViewControllerRef FlutterDesktopViewControllerCreate(
   controller->engine()->UpdateAccessibilityFeatures();
 
   return HandleForViewController(controller.release());
+}
+
+FlutterDesktopViewControllerRef FlutterDesktopViewControllerCreate(
+    int width,
+    int height,
+    FlutterDesktopEngineRef engine_ref) {
+  return CreateViewController(engine_ref, width, height, /*owns_engine=*/true);
 }
 
 void FlutterDesktopViewControllerDestroy(FlutterDesktopViewControllerRef ref) {
@@ -164,6 +180,13 @@ bool FlutterDesktopEngineDestroy(FlutterDesktopEngineRef engine_ref) {
   return result;
 }
 
+FlutterDesktopViewControllerRef FlutterDesktopEngineCreateViewController(
+    int width,
+    int height,
+    FlutterDesktopEngineRef engine_ref) {
+  return CreateViewController(engine_ref, width, height, /*owns_engine=*/true);
+}
+
 bool FlutterDesktopEngineRun(FlutterDesktopEngineRef engine,
                              const char* entry_point) {
   std::string_view entry_point_view{""};
@@ -172,6 +195,13 @@ bool FlutterDesktopEngineRun(FlutterDesktopEngineRef engine,
   }
 
   return EngineFromHandle(engine)->Run(entry_point_view);
+}
+
+FlutterDesktopViewControllerRef FlutterDesktopEngineCreateViewController(
+    FlutterDesktopEngineRef engine,
+    const FlutterDesktopViewControllerProperties* properties) {
+  return CreateViewController(engine, properties->width, properties->height,
+                              /*owns_engine=*/false);
 }
 
 uint64_t FlutterDesktopEngineProcessMessages(FlutterDesktopEngineRef engine) {

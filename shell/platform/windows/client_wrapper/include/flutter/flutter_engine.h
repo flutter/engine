@@ -95,14 +95,13 @@ class FlutterEngine : public PluginRegistry {
                                                       LPARAM lparam);
 
  private:
-  // For access to RelinquishEngine.
+  // For access to engine.
   friend class FlutterViewController;
 
-  // Gives up ownership of |engine_|, but keeps a weak reference to it.
+  // Get a handle for interacting with the C API's engine reference.
   //
-  // This is intended to be used by FlutterViewController, since the underlying
-  // C API for view controllers takes over engine ownership.
-  FlutterDesktopEngineRef RelinquishEngine();
+  // This is intended to be used by FlutterViewController.
+  FlutterDesktopEngineRef engine() const { return engine_; };
 
   // Handle for interacting with the C API's engine reference.
   FlutterDesktopEngineRef engine_ = nullptr;
@@ -110,12 +109,7 @@ class FlutterEngine : public PluginRegistry {
   // Messenger for communicating with the engine.
   std::unique_ptr<BinaryMessenger> messenger_;
 
-  // Whether or not this wrapper owns |engine_|.
-  bool owns_engine_ = true;
-
-  // Whether the engine has been run. This will be true if Run has been called,
-  // or if RelinquishEngine has been called (since the view controller will
-  // run the engine if it hasn't already been run).
+  // Whether the engine has been run. This will be true if Run has been called.
   bool has_been_run_ = false;
 
   // The callback to execute once the next frame is drawn.

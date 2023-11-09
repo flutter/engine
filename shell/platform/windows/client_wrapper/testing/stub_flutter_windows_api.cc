@@ -108,6 +108,16 @@ bool FlutterDesktopEngineRun(FlutterDesktopEngineRef engine,
   return true;
 }
 
+FlutterDesktopViewControllerRef FlutterDesktopEngineCreateViewController(
+    FlutterDesktopEngineRef engine,
+    const FlutterDesktopViewControllerProperties* properties) {
+  if (s_stub_implementation) {
+    return s_stub_implementation->EngineCreateViewController(engine,
+                                                             properties);
+  }
+  return nullptr;
+}
+
 uint64_t FlutterDesktopEngineProcessMessages(FlutterDesktopEngineRef engine) {
   if (s_stub_implementation) {
     return s_stub_implementation->EngineProcessMessages();

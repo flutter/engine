@@ -65,9 +65,11 @@ TEST(FlutterViewControllerTest, CreateDestroy) {
   auto test_api = static_cast<TestWindowsApi*>(scoped_api_stub.stub());
   { FlutterViewController controller(100, 100, project); }
   EXPECT_TRUE(test_api->view_controller_destroyed());
-  // Per the C API, once a view controller has taken ownership of an engine
-  // the engine destruction method should not be called.
-  EXPECT_FALSE(test_api->engine_destroyed());
+
+  // In the latest C API, the engine's destroy method must be called.
+  // In the deprecated C API, the view controller took ownership
+  // of the engine and the engine's destroy method would not be called.
+  EXPECT_TRUE(test_api->engine_destroyed());
 }
 
 TEST(FlutterViewControllerTest, GetEngine) {

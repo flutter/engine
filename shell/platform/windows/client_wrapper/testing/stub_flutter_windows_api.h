@@ -62,6 +62,13 @@ class StubFlutterWindowsApi {
   // Called for FlutterDesktopEngineRun.
   virtual bool EngineRun(const char* entry_point) { return true; }
 
+  // Called for FlutterDesktopEngineCreateViewController.
+  virtual FlutterDesktopViewControllerRef EngineCreateViewController(
+      FlutterDesktopEngineRef engine,
+      const FlutterDesktopViewControllerProperties* properties) {
+    return nullptr;
+  }
+
   // Called for FlutterDesktopEngineProcessMessages.
   virtual uint64_t EngineProcessMessages() { return 0; }
 
