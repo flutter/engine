@@ -213,8 +213,8 @@ bool Path::GetContourComponentAtIndex(size_t index,
   return true;
 }
 
-Path::Polyline::Polyline(Path::Polyline::PointBufferPointer point_buffer,
-                         Path::Polyline::ReclaimPointBuffer reclaim)
+Path::Polyline::Polyline(Path::Polyline::PointBufferPtr point_buffer,
+                         Path::Polyline::ReclaimPointBufferCallback reclaim)
     : points(std::move(point_buffer)), reclaim_points(reclaim) {}
 
 Path::Polyline::Polyline(Path::Polyline&& other) {
@@ -232,8 +232,8 @@ Path::Polyline::~Polyline() {
 
 Path::Polyline Path::CreatePolyline(
     Scalar scale,
-    Path::Polyline::PointBufferPointer point_buffer,
-    Path::Polyline::ReclaimPointBuffer reclaim) const {
+    Path::Polyline::PointBufferPtr point_buffer,
+    Path::Polyline::ReclaimPointBufferCallback reclaim) const {
   Polyline polyline(std::move(point_buffer), reclaim);
 
   auto get_path_component = [this](size_t component_i) -> PathComponentVariant {

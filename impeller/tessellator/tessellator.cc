@@ -69,11 +69,11 @@ Tessellator::Result Tessellator::Tessellate(const Path& path,
   }
 
   point_buffer_->clear();
-  auto polyline = path.CreatePolyline(
-      tolerance, std::move(point_buffer_),
-      [this](Path::Polyline::PointBufferPointer point_buffer) {
-        point_buffer_ = std::move(point_buffer);
-      });
+  auto polyline =
+      path.CreatePolyline(tolerance, std::move(point_buffer_),
+                          [this](Path::Polyline::PointBufferPtr point_buffer) {
+                            point_buffer_ = std::move(point_buffer);
+                          });
 
   auto fill_type = path.GetFillType();
 
@@ -237,11 +237,11 @@ Tessellator::TessellateConvex(const Path& path, Scalar tolerance) {
   std::vector<uint16_t> indices;
 
   point_buffer_->clear();
-  auto polyline = path.CreatePolyline(
-      tolerance, std::move(point_buffer_),
-      [this](Path::Polyline::PointBufferPointer point_buffer) {
-        point_buffer_ = std::move(point_buffer);
-      });
+  auto polyline =
+      path.CreatePolyline(tolerance, std::move(point_buffer_),
+                          [this](Path::Polyline::PointBufferPtr point_buffer) {
+                            point_buffer_ = std::move(point_buffer);
+                          });
 
   for (auto j = 0u; j < polyline.contours.size(); j++) {
     auto [start, end] = polyline.GetContourPointBounds(j);

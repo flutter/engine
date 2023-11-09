@@ -97,19 +97,19 @@ class Path {
   struct Polyline {
     /// The signature of a method called when it is safe to reclaim the point
     /// buffer provided to the constructor of this object.
-    using PointBufferPointer = std::unique_ptr<std::vector<Point>>;
-    using ReclaimPointBuffer = std::function<void(PointBufferPointer)>;
+    using PointBufferPtr = std::unique_ptr<std::vector<Point>>;
+    using ReclaimPointBufferCallback = std::function<void(PointBufferPtr)>;
 
     /// The buffer will be cleared and returned at the destruction of this
     /// polyline.
-    Polyline(PointBufferPointer point_buffer, ReclaimPointBuffer reclaim);
+    Polyline(PointBufferPtr point_buffer, ReclaimPointBufferCallback reclaim);
 
     Polyline(Polyline&& other);
     ~Polyline();
 
     /// Points in the polyline, which may represent multiple contours specified
     /// by indices in |contours|.
-    PointBufferPointer points;
+    PointBufferPtr points;
 
     Point& GetPoint(size_t index) const { return (*points)[index]; }
 
@@ -125,7 +125,7 @@ class Path {
         size_t contour_index) const;
 
    private:
-    ReclaimPointBuffer reclaim_points;
+    ReclaimPointBufferCallback reclaim_points;
   };
 
   Path();
@@ -163,10 +163,11 @@ class Path {
   /// It is suitable to use the max basis length of the matrix used to transform
   /// the path. If the provided scale is 0, curves will revert to straight
   /// lines.
-  Polyline CreatePolyline(Scalar scale,
-                          Polyline::PointBufferPointer point_buffer =
-                              std::make_unique<std::vector<Point>>(),
-                          Polyline::ReclaimPointBuffer reclaim = nullptr) const;
+  Polyline CreatePolyline(
+      Scalar scale,
+      Polyline::PointBufferPtr point_buffer =
+          std::make_unique<std::vector<Point>>(),
+      Polyline::ReclaimPointBufferCallback reclaim = nullptr) const;
 
   std::optional<Rect> GetBoundingBox() const;
 

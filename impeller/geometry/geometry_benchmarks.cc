@@ -48,7 +48,7 @@ static void BM_Polyline(benchmark::State& state, Args&&... args) {
     } else {
       auto polyline = path.CreatePolyline(
           1.0f, std::move(points),
-          [&points](Path::Polyline::PointBufferPointer reclaimed) {
+          [&points](Path::Polyline::PointBufferPtr reclaimed) {
             points = std::move(reclaimed);
           });
       single_point_count = polyline.points->size();
