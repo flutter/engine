@@ -25,10 +25,10 @@ constexpr std::chrono::milliseconds kWindowResizeTimeout{100};
 /// to be blocked until the frame with the right size has been rendered. It
 /// should be kept in-sync with how the engine deals with a new surface request
 /// as seen in `CreateOrUpdateSurface` in `GPUSurfaceGL`.
-static bool SurfaceWillUpdate(size_t cur_width,
-                              size_t cur_height,
-                              size_t target_width,
-                              size_t target_height) {
+bool SurfaceWillUpdate(size_t cur_width,
+                       size_t cur_height,
+                       size_t target_width,
+                       size_t target_height) {
   // TODO (https://github.com/flutter/flutter/issues/65061) : Avoid special
   // handling for zero dimensions.
   bool non_zero_target_dims = target_height > 0 && target_width > 0;
@@ -39,8 +39,8 @@ static bool SurfaceWillUpdate(size_t cur_width,
 
 /// Update the surface's swap interval to block until the v-blank iff
 /// the system compositor is disabled.
-static void UpdateVsync(FlutterWindowsEngine& engine,
-                        WindowBindingHandler& window) {
+void UpdateVsync(const FlutterWindowsEngine& engine,
+                 const WindowBindingHandler& window) {
   AngleSurfaceManager* surface_manager = engine.surface_manager();
   if (!surface_manager) {
     return;
