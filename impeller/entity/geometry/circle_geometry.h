@@ -46,9 +46,10 @@ class CircleGeometry : public Geometry {
                                     const Entity& entity,
                                     RenderPass& pass);
 
-  std::optional<VertexBufferBuilder<SolidFillVertexShader::PerVertexData>> GetPositionUVBufferCPU(const ContentContext& renderer,
-                                      const Entity& entity,
-                                      RenderPass& pass);
+  std::optional<VertexBufferBuilder<SolidFillVertexShader::PerVertexData>>
+  GetPositionUVBufferCPU(const ContentContext& renderer,
+                         const Entity& entity,
+                         RenderPass& pass);
 
   std::vector<Point> points_;
   Scalar radius_;

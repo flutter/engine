@@ -6,9 +6,9 @@
 
 #include <optional>
 
+#include "impeller/entity/geometry/circle_geometry.h"
 #include "impeller/entity/geometry/cover_geometry.h"
 #include "impeller/entity/geometry/fill_path_geometry.h"
-#include "impeller/entity/geometry/circle_geometry.h"
 #include "impeller/entity/geometry/rect_geometry.h"
 #include "impeller/entity/geometry/stroke_path_geometry.h"
 #include "impeller/geometry/rect.h"
@@ -118,8 +118,8 @@ std::unique_ptr<Geometry> Geometry::MakeFillPath(
 }
 
 std::unique_ptr<Geometry> Geometry::MakeCircle(std::vector<Point> points,
-                                                   Scalar radius,
-                                                   bool round) {
+                                               Scalar radius,
+                                               bool round) {
   return std::make_unique<CircleGeometry>(std::move(points), radius, round);
 }
 
