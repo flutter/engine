@@ -803,6 +803,10 @@ void fl_engine_send_mouse_pointer_event(FlEngine* self,
   fl_event.device_kind = kFlutterPointerDeviceKindMouse;
   fl_event.buttons = buttons;
   fl_event.device = kMousePointerDeviceId;
+  // TODO(dkwingsmt): Assign the correct view ID once the Linux embedder
+  // supports multiple views.
+  // https://github.com/flutter/flutter/issues/138178
+  fl_event.view_id = flutter::kFlutterImplicitViewId;
   self->embedder_api.SendPointerEvent(self->engine, &fl_event, 1);
 }
 
