@@ -1245,7 +1245,7 @@ TEST(FlutterWindowsViewTest, DisablesVSyncAtStartup) {
       .Times(1)
       .WillOnce(Return(true));
   EXPECT_CALL(*surface_manager.get(), SetVSyncEnabled(false)).Times(1);
-  EXPECT_CALL(*surface_manager.get(), ClearCurrent).Times(1);
+  EXPECT_CALL(*surface_manager.get(), ClearCurrent).WillOnce(Return(true));
 
   EXPECT_CALL(*engine.get(), Stop).Times(1);
   EXPECT_CALL(*surface_manager.get(), DestroySurface).Times(1);
@@ -1278,7 +1278,7 @@ TEST(FlutterWindowsViewTest, EnablesVSyncAtStartup) {
       .Times(1)
       .WillOnce(Return(true));
   EXPECT_CALL(*surface_manager.get(), SetVSyncEnabled(true)).Times(1);
-  EXPECT_CALL(*surface_manager.get(), ClearCurrent).Times(1);
+  EXPECT_CALL(*surface_manager.get(), ClearCurrent).WillOnce(Return(true));
 
   EXPECT_CALL(*engine.get(), Stop).Times(1);
   EXPECT_CALL(*surface_manager.get(), DestroySurface).Times(1);
@@ -1315,6 +1315,7 @@ TEST(FlutterWindowsViewTest, DisablesVSyncAfterStartup) {
         return true;
       });
   EXPECT_CALL(*surface_manager.get(), SetVSyncEnabled(true)).Times(1);
+  EXPECT_CALL(*surface_manager.get(), ClearCurrent).Times(0);
 
   EXPECT_CALL(*engine.get(), Stop).Times(1);
   EXPECT_CALL(*surface_manager.get(), DestroySurface).Times(1);
@@ -1352,6 +1353,7 @@ TEST(FlutterWindowsViewTest, EnablesVSyncAfterStartup) {
         return true;
       });
   EXPECT_CALL(*surface_manager.get(), SetVSyncEnabled(true)).Times(1);
+  EXPECT_CALL(*surface_manager.get(), ClearCurrent).Times(0);
 
   EXPECT_CALL(*engine.get(), Stop).Times(1);
   EXPECT_CALL(*surface_manager.get(), DestroySurface).Times(1);
@@ -1384,6 +1386,8 @@ TEST(FlutterWindowsViewTest, UpdatesVSyncOnDwmUpdates) {
   EXPECT_CALL(*window_binding_handler.get(), NeedsVSync)
       .WillOnce(Return(true))
       .WillOnce(Return(false));
+
+  EXPECT_CALL(*surface_manager.get(), ClearCurrent).Times(0);
 
   EngineModifier modifier(engine.get());
   FlutterWindowsView view(std::move(window_binding_handler));
