@@ -54,6 +54,7 @@ platform_properties:
       device_type: none
       cpu: x86
       os: Mac-12
+      # TODO(vashworth): Remove specific toolchain_ver once https://github.com/flutter/flutter/issues/138109 is resolved.
       $flutter/osx_sdk : >-
         {
           "sdk_version": "14e300c",
