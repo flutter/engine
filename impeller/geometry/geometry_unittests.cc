@@ -664,6 +664,55 @@ TEST(GeometryTest, SimplePath) {
       });
 }
 
+TEST(GeometryTest, PathHorizontalLine) {
+  PathBuilder builder;
+  auto path = builder.HorizontalLineTo(10).TakePath();
+
+  LinearPathComponent linear;
+  path.GetLinearComponentAtIndex(1, linear);
+
+  EXPECT_EQ(linear.p1, Point(0, 0));
+  EXPECT_EQ(linear.p2, Point(10, 0));
+}
+
+TEST(GeometryTest, PathVerticalLine) {
+  PathBuilder builder;
+  auto path = builder.VerticalLineTo(10).TakePath();
+
+  LinearPathComponent linear;
+  path.GetLinearComponentAtIndex(1, linear);
+
+  EXPECT_EQ(linear.p1, Point(0, 0));
+  EXPECT_EQ(linear.p2, Point(0, 10));
+}
+
+TEST(GeometryTest, QuadradicPath) {
+  PathBuilder builder;
+  auto path = builder.QuadraticCurveTo(Point(10, 10), Point(20, 20)).TakePath();
+
+  QuadraticPathComponent quad;
+  path.GetQuadraticComponentAtIndex(1, quad);
+
+  EXPECT_EQ(quad.p1, Point(0, 0));
+  EXPECT_EQ(quad.cp, Point(10, 10));
+  EXPECT_EQ(quad.p2, Point(20, 20));
+}
+
+TEST(GeometryTest, CubicPath) {
+  PathBuilder builder;
+  auto path =
+      builder.CubicCurveTo(Point(10, 10), Point(-10, -10), Point(20, 20))
+          .TakePath();
+
+  CubicPathComponent cubic;
+  path.GetCubicComponentAtIndex(1, cubic);
+
+  EXPECT_EQ(cubic.p1, Point(0, 0));
+  EXPECT_EQ(cubic.cp1, Point(10, 10));
+  EXPECT_EQ(cubic.cp2, Point(-10, -10));
+  EXPECT_EQ(cubic.p2, Point(20, 20));
+}
+
 TEST(GeometryTest, BoundingBoxCubic) {
   PathBuilder builder;
   auto path =
