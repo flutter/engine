@@ -79,6 +79,9 @@ typedef struct {
 
 // ========== View Controller ==========
 
+// DEPRECATED: Use |FlutterDesktopEngineCreateViewController| instead,
+// which does not take ownership of the |engine|.
+//
 // Creates a view that hosts and displays the given engine instance.
 //
 // This takes ownership of |engine|, so FlutterDesktopEngineDestroy should no
@@ -93,8 +96,8 @@ typedef struct {
 // FlutterDesktopViewControllerDestroy. Returns a null pointer in the event of
 // an error.
 //
-// The Win32 implementation accepts width, height with view hookup explicitly
-// performed using the caller using HWND parenting.
+// Accepts width, height with view hookup explicitly performed using the caller
+// using HWND parenting.
 FLUTTER_EXPORT FlutterDesktopViewControllerRef
 FlutterDesktopViewControllerCreate(int width,
                                    int height,
