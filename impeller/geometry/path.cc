@@ -30,20 +30,20 @@ std::tuple<size_t, size_t> Path::Polyline::GetContourPointBounds(
 }
 
 size_t Path::GetComponentCount(std::optional<ComponentType> type) const {
-  // if (type.has_value()) {
-  //   switch (type.value()) {
-  //     case ComponentType::kLinear:
-  //       return linears_.size();
-  //     case ComponentType::kQuadratic:
-  //       return quads_.size();
-  //     case ComponentType::kCubic:
-  //       return cubics_.size();
-  //     case ComponentType::kContour:
-  //       return contours_.size();
-  //   }
-  // }
-  // return components_.size();
-  return 0;
+  if (!type.has_value()) {
+    return components_.size();
+  }
+  auto type_value = type.value();
+  if (type_value == ComponentType::kContour) {
+    return contours_.size();
+  }
+  size_t count = 0u;
+  for (const auto& component : components_) {
+    if (component.type == type_value) {
+      count++;
+    }
+  }
+  return count;
 }
 
 void Path::SetFillType(FillType fill) {
