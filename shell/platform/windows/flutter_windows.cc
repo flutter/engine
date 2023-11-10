@@ -180,13 +180,6 @@ bool FlutterDesktopEngineDestroy(FlutterDesktopEngineRef engine_ref) {
   return result;
 }
 
-FlutterDesktopViewControllerRef FlutterDesktopEngineCreateViewController(
-    int width,
-    int height,
-    FlutterDesktopEngineRef engine_ref) {
-  return CreateViewController(engine_ref, width, height, /*owns_engine=*/true);
-}
-
 bool FlutterDesktopEngineRun(FlutterDesktopEngineRef engine,
                              const char* entry_point) {
   std::string_view entry_point_view{""};
