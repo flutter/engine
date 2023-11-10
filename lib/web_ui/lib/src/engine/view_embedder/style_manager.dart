@@ -13,7 +13,7 @@ import 'dom_manager.dart';
 class StyleManager {
   static const String defaultFontStyle = 'normal';
   static const String defaultFontWeight = 'normal';
-  static const double defaultFontSize = 14;
+  static const double defaultFontSize = 14.0;
   static const String defaultFontFamily = 'sans-serif';
   static const String defaultCssFont = '$defaultFontStyle $defaultFontWeight ${defaultFontSize}px $defaultFontFamily';
 

@@ -20,7 +20,7 @@ String buildCssFontString({
 }) {
   final String cssFontStyle = fontStyle?.toCssString() ?? StyleManager.defaultFontStyle;
   final String cssFontWeight = fontWeight?.toCssString() ?? StyleManager.defaultFontWeight;
-  final num cssFontSize = fontSize?.floor() ?? StyleManager.defaultFontSize;
+  final int cssFontSize = (fontSize ?? StyleManager.defaultFontSize).floor();
   final String cssFontFamily = canonicalizeFontFamily(fontFamily)!;
 
   return '$cssFontStyle $cssFontWeight ${cssFontSize}px $cssFontFamily';
