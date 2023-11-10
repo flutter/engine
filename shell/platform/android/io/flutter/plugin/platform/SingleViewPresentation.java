@@ -7,7 +7,6 @@ package io.flutter.plugin.platform;
 import static android.content.Context.WINDOW_SERVICE;
 import static android.view.View.OnFocusChangeListener;
 
-import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.app.Presentation;
 import android.content.Context;
@@ -51,7 +50,6 @@ import java.lang.reflect.Proxy;
  *   EmbeddedView
  */
 @Keep
-@TargetApi(Build.VERSION_CODES.KITKAT)
 class SingleViewPresentation extends Presentation {
   private static final String TAG = "PlatformViewsController";
 
