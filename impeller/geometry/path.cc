@@ -97,8 +97,8 @@ Path& Path::AddCubicComponent(const Point& p1,
   auto index = points_.size();
   points_.emplace_back(p1);
   points_.emplace_back(cp1);
-  points_.emplace_back(p2);
   points_.emplace_back(cp2);
+  points_.emplace_back(p2);
   components_.emplace_back(ComponentType::kCubic, index);
   return *this;
 }
