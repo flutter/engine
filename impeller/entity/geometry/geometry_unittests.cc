@@ -39,20 +39,26 @@ TEST(EntityGeometryTest, FillPathGeometryCoversAreaNoInnerRect) {
 TEST(EntityGeometryTest, LineGeometryCoverage) {
   {
     auto geometry = Geometry::MakeLine({10, 10}, {20, 10}, 2, Cap::kButt);
-    auto matrix = Matrix();
-    EXPECT_EQ(geometry->GetCoverage(matrix), Rect::MakeLTRB(10, 9, 20, 11));
+    EXPECT_EQ(geometry->GetCoverage({}), Rect::MakeLTRB(10, 9, 20, 11));
+    EXPECT_TRUE(geometry->CoversArea({}, Rect::MakeLTRB(10, 9, 20, 11)));
   }
 
   {
     auto geometry = Geometry::MakeLine({10, 10}, {20, 10}, 2, Cap::kSquare);
-    auto matrix = Matrix();
-    EXPECT_EQ(geometry->GetCoverage(matrix), Rect::MakeLTRB(9, 9, 21, 11));
+    EXPECT_EQ(geometry->GetCoverage({}), Rect::MakeLTRB(9, 9, 21, 11));
+    EXPECT_TRUE(geometry->CoversArea({}, Rect::MakeLTRB(9, 9, 21, 11)));
   }
 
   {
-    auto geometry = Geometry::MakeLine({10, 10}, {20, 10}, 2, Cap::kRound);
-    auto matrix = Matrix();
-    EXPECT_EQ(geometry->GetCoverage(matrix), Rect::MakeLTRB(9, 9, 21, 11));
+    auto geometry = Geometry::MakeLine({10, 10}, {10, 20}, 2, Cap::kButt);
+    EXPECT_EQ(geometry->GetCoverage({}), Rect::MakeLTRB(9, 10, 11, 20));
+    EXPECT_TRUE(geometry->CoversArea({}, Rect::MakeLTRB(9, 10, 11, 20)));
+  }
+
+  {
+    auto geometry = Geometry::MakeLine({10, 10}, {10, 20}, 2, Cap::kSquare);
+    EXPECT_EQ(geometry->GetCoverage({}), Rect::MakeLTRB(9, 9, 11, 21));
+    EXPECT_TRUE(geometry->CoversArea({}, Rect::MakeLTRB(9, 9, 11, 21)));
   }
 }
 

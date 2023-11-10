@@ -873,8 +873,7 @@ void DlDispatcher::drawPoints(PointMode mode,
       for (uint32_t i = 1; i < count; i += 2) {
         Point p0 = skia_conversions::ToPoint(points[i - 1]);
         Point p1 = skia_conversions::ToPoint(points[i]);
-        auto path = PathBuilder{}.AddLine(p0, p1).TakePath();
-        canvas_.DrawPath(path, paint);
+        canvas_.DrawLine(p0, p1, paint);
       }
       break;
     case flutter::DlCanvas::PointMode::kPolygon:
@@ -882,8 +881,7 @@ void DlDispatcher::drawPoints(PointMode mode,
         Point p0 = skia_conversions::ToPoint(points[0]);
         for (uint32_t i = 1; i < count; i++) {
           Point p1 = skia_conversions::ToPoint(points[i]);
-          auto path = PathBuilder{}.AddLine(p0, p1).TakePath();
-          canvas_.DrawPath(path, paint);
+          canvas_.DrawLine(p0, p1, paint);
           p0 = p1;
         }
       }

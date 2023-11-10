@@ -7,41 +7,68 @@
 namespace impeller {
 
 LineGeometry::LineGeometry(Point p0, Point p1, Scalar width, Cap cap)
-    : p0_(p0), p1_(p1) {
-  Point along = (p1 - p0).Normalize();
-  if (width < 1) {
-    width = 1;
-  }
-  along *= width * 0.5f;
-  Point across = {along.y, -along.x};
-  switch (cap) {
-    case Cap::kButt:
-      corners_[0] = p0 - across;
-      corners_[1] = p1 - across;
-      corners_[2] = p0 + across;
-      corners_[3] = p1 + across;
-      break;
-
-    case Cap::kSquare:
-    case Cap::kRound:
-      corners_[0] = p0 - across - along;
-      corners_[1] = p1 - across + along;
-      corners_[2] = p0 + across - along;
-      corners_[3] = p1 + across + along;
-  }
+    : p0_(p0), p1_(p1), width_(width), cap_(cap) {
+  // Some of the code below is prepared to deal with things like coverage
+  // of a line with round caps, but more work is needed to deal with drawing
+  // the round end caps
+  FML_DCHECK(width >= 0);
+  FML_DCHECK(cap != Cap::kRound);
 }
 
 LineGeometry::~LineGeometry() = default;
+
+bool LineGeometry::ComputeCorners(Point corners[4],
+                                  const Matrix& transform,
+                                  bool extend_endpoints) const {
+  auto determinant = transform.GetDeterminant();
+  if (determinant == 0) {
+    return false;
+  }
+
+  Scalar min_size = 1.0f / sqrt(std::abs(determinant));
+  Scalar stroke_half_width = std::max(width_, min_size) * 0.5f;
+
+  Point along = p1_ - p0_;
+  Scalar length = along.GetLength();
+  if (length < kEhCloseEnough) {
+    if (!extend_endpoints) {
+      // We won't enclose any pixels unless the endpoints are extended
+      return false;
+    }
+    along = {stroke_half_width, 0};
+  } else {
+    along *= stroke_half_width / length;
+  }
+  Point across = {along.y, -along.x};
+  corners[0] = p0_ - across;
+  corners[1] = p1_ - across;
+  corners[2] = p0_ + across;
+  corners[3] = p1_ + across;
+  if (extend_endpoints) {
+    corners[0] -= along;
+    corners[1] += along;
+    corners[2] -= along;
+    corners[3] += along;
+  }
+  return true;
+}
 
 GeometryResult LineGeometry::GetPositionBuffer(const ContentContext& renderer,
                                                const Entity& entity,
                                                RenderPass& pass) {
   auto& host_buffer = pass.GetTransientsBuffer();
+
+  Point corners[4];
+  if (!ComputeCorners(corners, entity.GetTransformation(),
+                      cap_ == Cap::kSquare)) {
+    return {};
+  }
+
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer =
           {
-              .vertex_buffer = host_buffer.Emplace(corners_, 8 * sizeof(float),
+              .vertex_buffer = host_buffer.Emplace(corners, 8 * sizeof(float),
                                                    alignof(float)),
               .vertex_count = 4,
               .index_type = IndexType::kNone,
@@ -62,10 +89,16 @@ GeometryResult LineGeometry::GetPositionUVBuffer(Rect texture_coverage,
 
   auto uv_transform =
       texture_coverage.GetNormalizingTransform() * effect_transform;
+  Point corners[4];
+  if (!ComputeCorners(corners, entity.GetTransformation(),
+                      cap_ == Cap::kSquare)) {
+    return {};
+  }
+
   std::vector<Point> data(8);
   for (auto i = 0u, j = 0u; i < 8; i += 2, j++) {
-    data[i] = corners_[j];
-    data[i + 1] = uv_transform * corners_[j];
+    data[i] = corners[j];
+    data[i + 1] = uv_transform * corners[j];
   }
 
   return GeometryResult{
@@ -88,8 +121,15 @@ GeometryVertexType LineGeometry::GetVertexType() const {
 }
 
 std::optional<Rect> LineGeometry::GetCoverage(const Matrix& transform) const {
-  auto rect = Rect::MakePointBounds(std::begin(corners_), std::end(corners_));
-  return rect.has_value() ? rect->TransformBounds(transform) : rect;
+  Point corners[4];
+  if (!ComputeCorners(corners, transform, cap_ != Cap::kButt)) {
+    return {};
+  }
+
+  for (int i = 0; i < 4; i++) {
+    corners[i] = transform * corners[i];
+  }
+  return Rect::MakePointBounds(std::begin(corners), std::end(corners));
 }
 
 bool LineGeometry::CoversArea(const Matrix& transform, const Rect& rect) const {
