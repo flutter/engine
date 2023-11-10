@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 
+#include <atomic>
 #include "flutter/fml/macros.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
@@ -286,6 +287,42 @@ TEST_F(FlutterWindowsEngineTest, SendPlatformMessageWithoutResponse) {
   engine->SendPlatformMessage(channel, test_message.data(), test_message.size(),
                               nullptr, nullptr);
   EXPECT_TRUE(called);
+}
+
+TEST_F(FlutterWindowsEngineTest,
+       SendPlatformMessageWithoutResponseOnDifferentThread) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
+  EngineModifier modifier(engine.get());
+
+  const char* channel = "test";
+  const std::vector<uint8_t> test_message = {1, 2, 3, 4};
+
+  auto platform_thread_id = GetCurrentThreadId();
+  std::atomic<bool> called = false;
+  modifier.embedder_api().SendPlatformMessage = MOCK_ENGINE_PROC(
+      SendPlatformMessage,
+      ([&called, test_message, platform_thread_id](auto engine, auto message) {
+        called = true;
+        EXPECT_EQ(GetCurrentThreadId(), platform_thread_id);
+        EXPECT_STREQ(message->channel, "test");
+        EXPECT_EQ(message->message_size, test_message.size());
+        EXPECT_EQ(memcmp(message->message, test_message.data(),
+                         message->message_size),
+                  0);
+        EXPECT_EQ(message->response_handle, nullptr);
+        return kSuccess;
+      }));
+
+  std::thread([&]() {
+    engine->SendPlatformMessage(channel, test_message.data(),
+                                test_message.size(), nullptr, nullptr);
+  }).detach();
+
+  // Rely on timeout mechanism in CI.
+  while (!called) {
+    engine->task_runner()->ProcessTasks();
+  }
 }
 
 TEST_F(FlutterWindowsEngineTest, PlatformMessageRoundTrip) {

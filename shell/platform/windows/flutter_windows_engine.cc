@@ -12,6 +12,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/platform/win/wstring_conversion.h"
+#include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/shell/platform/common/client_wrapper/binary_messenger_impl.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/standard_message_codec.h"
 #include "flutter/shell/platform/common/path_utils.h"
@@ -549,8 +550,20 @@ bool FlutterWindowsEngine::SendPlatformMessage(
       response_handle,
   };
 
-  FlutterEngineResult message_result =
-      embedder_api_.SendPlatformMessage(engine_, &platform_message);
+  FlutterEngineResult message_result;
+  if (task_runner_->RunsTasksOnCurrentThread()) {
+    message_result =
+        embedder_api_.SendPlatformMessage(engine_, &platform_message);
+  } else {
+    fml::AutoResetWaitableEvent latch;
+    task_runner_->PostTask([&]() {
+      message_result =
+          embedder_api_.SendPlatformMessage(engine_, &platform_message);
+      latch.Signal();
+    });
+    latch.Wait();
+  }
+
   if (response_handle != nullptr) {
     embedder_api_.PlatformMessageReleaseResponseHandle(engine_,
                                                        response_handle);
