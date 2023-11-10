@@ -8163,19 +8163,19 @@
               "load_store"
             ],
             "total_cycles": [
-              0.28125,
-              0.234375,
+              0.296875,
+              0.296875,
               0.28125,
               0.1875,
-              3.0,
+              5.0,
               0.0
             ]
           },
           "shared_storage_used": 0,
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
-          "uniform_registers_used": 16,
-          "work_registers_used": 14
+          "uniform_registers_used": 20,
+          "work_registers_used": 16
         }
       }
     }
