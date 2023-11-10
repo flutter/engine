@@ -57,6 +57,7 @@ Path ToPath(const SkPath& path, Point shift) {
 
   PathBuilder builder;
   PathData data;
+  builder.Reserve(path.countPoints() + 16, path.countVerbs() + 16);
   auto verb = SkPath::Verb::kDone_Verb;
   do {
     verb = iterator.next(data.points);
