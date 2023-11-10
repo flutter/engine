@@ -2582,7 +2582,7 @@ Future<void> testMain() async {
       expect(username.name, 'username');
       expect(password.name, 'current-password');
 
-      // pointer events are none on the form and all non-focused elements 
+      // pointer events are none on the form and all non-focused elements
       expect(autofillForm.formElement.style.pointerEvents, 'none');
       expect(username.style.pointerEvents, 'none');
       expect(password.style.pointerEvents, 'none');
