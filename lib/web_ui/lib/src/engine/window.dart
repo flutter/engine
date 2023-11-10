@@ -573,8 +573,20 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
 /// `dart:ui` window delegates to this value. However, this value has a wider
 /// API surface, providing Web-specific functionality that the standard
 /// `dart:ui` version does not.
-final EngineFlutterWindow window =
-    EngineFlutterWindow(kImplicitViewId, EnginePlatformDispatcher.instance);
+EngineFlutterWindow get window {
+  if (_window == null) {
+    throw StateError('Trying to access the implicit flutter view, but it has not been initialized.');
+  }
+  return _window!;
+}
+EngineFlutterWindow? _window;
+
+/// Initializes the [window] (aka the implicit view), if it's not already
+/// initialized.
+EngineFlutterWindow ensureImplicitViewInitialized() {
+  return _window ??=
+      EngineFlutterWindow(kImplicitViewId, EnginePlatformDispatcher.instance);
+}
 
 /// The Web implementation of [ui.ViewPadding].
 class ViewPadding implements ui.ViewPadding {
