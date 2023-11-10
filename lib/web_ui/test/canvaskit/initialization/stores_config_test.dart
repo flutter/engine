@@ -15,12 +15,15 @@ void testMain() {
   group('initializeEngineServices', () {
     test('stores user configuration', () async {
       final JsFlutterConfiguration config = JsFlutterConfiguration();
+      js_util.setProperty(config, 'nonce', 'some_nonce');
+      // Set a non-existing property to verify our js-interop doesn't crash.
       js_util.setProperty(config, 'canvasKitMaximumSurfaces', 32.0);
-      js_util.setProperty(config, 'canvasKitBaseUrl', '/canvaskit/');
+      // Remove window.flutterConfiguration (if it's there)
       js_util.setProperty(domWindow, 'flutterConfiguration', null);
+
       await initializeEngineServices(jsConfiguration: config);
 
-      expect(configuration.canvasKitMaximumSurfaces, 32);
+      expect(configuration.nonce, 'some_nonce');
     });
   });
 }

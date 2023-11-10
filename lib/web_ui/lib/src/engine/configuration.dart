@@ -267,17 +267,6 @@ class FlutterConfiguration {
     'FLUTTER_WEB_CANVASKIT_FORCE_CPU_ONLY',
   );
 
-  /// This is deprecated. The CanvasKit renderer will only ever create one
-  /// WebGL context, obviating the problem this configuration was meant to
-  /// solve originally.
-  @Deprecated('Setting canvasKitMaximumSurfaces has no effect')
-  int get canvasKitMaximumSurfaces =>
-      _configuration?.canvasKitMaximumSurfaces?.toInt() ?? _defaultCanvasKitMaximumSurfaces;
-  static const int _defaultCanvasKitMaximumSurfaces = int.fromEnvironment(
-    'FLUTTER_WEB_MAXIMUM_SURFACES',
-    defaultValue: 8,
-  );
-
   /// Set this flag to `true` to cause the engine to visualize the semantics tree
   /// on the screen for debugging.
   ///
@@ -346,10 +335,6 @@ extension JsFlutterConfigurationExtension on JsFlutterConfiguration {
   @JS('canvasKitForceCpuOnly')
   external JSBoolean? get _canvasKitForceCpuOnly;
   bool? get canvasKitForceCpuOnly => _canvasKitForceCpuOnly?.toDart;
-
-  @JS('canvasKitMaximumSurfaces')
-  external JSNumber? get _canvasKitMaximumSurfaces;
-  double? get canvasKitMaximumSurfaces => _canvasKitMaximumSurfaces?.toDartDouble;
 
   @JS('debugShowSemanticsNodes')
   external JSBoolean? get _debugShowSemanticsNodes;

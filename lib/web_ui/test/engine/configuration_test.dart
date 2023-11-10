@@ -22,16 +22,16 @@ void testMain() {
     test('initializes with null', () async {
       final FlutterConfiguration config = FlutterConfiguration.legacy(null);
 
-      expect(config.canvasKitMaximumSurfaces, 8); // _defaultCanvasKitMaximumSurfaces
+      expect(config.canvasKitBaseUrl, 'canvaskit/'); // _defaultCanvasKitBaseUrl
     });
 
     test('legacy constructor initializes with a Js Object', () async {
       final FlutterConfiguration config = FlutterConfiguration.legacy(
         js_util.jsify(<String, Object?>{
-          'canvasKitMaximumSurfaces': 16,
+          'canvasKitBaseUrl': 'some_other_url/',
         }) as JsFlutterConfiguration);
 
-      expect(config.canvasKitMaximumSurfaces, 16);
+      expect(config.canvasKitBaseUrl, 'some_other_url/');
     });
   });
 
@@ -39,13 +39,13 @@ void testMain() {
     test('throws assertion error if already initialized from JS', () async {
       final FlutterConfiguration config = FlutterConfiguration.legacy(
         js_util.jsify(<String, Object?>{
-          'canvasKitMaximumSurfaces': 12,
+          'canvasKitBaseUrl': 'some_other_url/',
         }) as JsFlutterConfiguration);
 
       expect(() {
         config.setUserConfiguration(
           js_util.jsify(<String, Object?>{
-            'canvasKitMaximumSurfaces': 16,
+            'canvasKitBaseUrl': 'yet_another_url/',
           }) as JsFlutterConfiguration);
       }, throwsAssertionError);
     });
@@ -55,10 +55,21 @@ void testMain() {
 
       config.setUserConfiguration(
         js_util.jsify(<String, Object?>{
-          'canvasKitMaximumSurfaces': 16,
+          'canvasKitBaseUrl': 'one_more_url/',
         }) as JsFlutterConfiguration);
 
-      expect(config.canvasKitMaximumSurfaces, 16);
+      expect(config.canvasKitBaseUrl, 'one_more_url/');
+    });
+
+    test('can receive non-existing properties without crashing', () async {
+      final FlutterConfiguration config = FlutterConfiguration.legacy(null);
+
+      expect(() {
+        config.setUserConfiguration(
+          js_util.jsify(<String, Object?>{
+            'canvasKitMaximumSurfaces': 32.0,
+          }) as JsFlutterConfiguration);
+      }, returnsNormally);
     });
   });
 
