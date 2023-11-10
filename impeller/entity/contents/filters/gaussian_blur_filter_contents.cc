@@ -5,6 +5,8 @@
 #include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
 
 #include "impeller/entity/contents/content_context.h"
+#include "impeller/entity/texture_fill.frag.h"
+#include "impeller/entity/texture_fill.vert.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
@@ -52,6 +54,60 @@ void BindVertices(Command& cmd,
   vtx_builder.AddVertices(vertices);
   auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
   cmd.BindVertices(vtx_buffer);
+}
+
+std::shared_ptr<Texture> MakeDownsampleSubpass(
+    const ContentContext& renderer,
+    std::shared_ptr<Texture> input_texture,
+    const SamplerDescriptor& sampler_descriptor,
+    const Matrix& effect_transform,
+    const Matrix& entity_transform,
+    const Vector2& downsample) {
+  ISize subpass_size = ISize(input_texture->GetSize().width / downsample.x,
+                             input_texture->GetSize().height / downsample.y);
+  ContentContext::SubpassCallback subpass_callback =
+      [&](const ContentContext& renderer, RenderPass& pass) {
+        HostBuffer& host_buffer = pass.GetTransientsBuffer();
+
+        std::array<Point, 4> uvs =
+            CalculateUVs(subpass_size,
+                         Matrix::MakeScale({downsample.x, downsample.y, 1.0}) *
+                             effect_transform,
+                         entity_transform);
+
+        Command cmd;
+        DEBUG_COMMAND_INFO(cmd, "Gaussian blur downsample");
+        auto pipeline_options = OptionsFromPass(pass);
+        pipeline_options.primitive_type = PrimitiveType::kTriangleStrip;
+        cmd.pipeline = renderer.GetTexturePipeline(pipeline_options);
+
+        TextureFillVertexShader::FrameInfo frame_info;
+        frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
+        frame_info.texture_sampler_y_coord_scale = 1.0;
+        frame_info.alpha = 1.0;
+
+        BindVertices<TextureFillVertexShader>(cmd, host_buffer,
+                                              {
+                                                  {Point(0, 0), uvs[0]},
+                                                  {Point(1, 0), uvs[1]},
+                                                  {Point(0, 1), uvs[2]},
+                                                  {Point(1, 1), uvs[3]},
+                                              });
+
+        TextureFillVertexShader::BindFrameInfo(
+            cmd, host_buffer.EmplaceUniform(frame_info));
+        TextureFillFragmentShader::BindTextureSampler(
+            cmd, input_texture,
+            renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+                sampler_descriptor));
+
+        pass.AddCommand(std::move(cmd));
+
+        return true;
+      };
+  std::shared_ptr<Texture> out_texture = renderer.MakeSubpass(
+      "Gaussian Blur Filter", subpass_size, subpass_callback);
+  return out_texture;
 }
 
 std::shared_ptr<Texture> MakeBlurSubpass(
@@ -176,27 +232,31 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   }
 
   Scalar blur_radius = CalculateBlurRadius(sigma_);
-  Size input_pixel_size(1.0 / input_snapshot->texture->GetSize().width,
-                        1.0 / input_snapshot->texture->GetSize().height);
   Scalar desired_scale = 1.0 / CalculateScale(blur_radius);
   Vector2 downsample =
-      CalculateIntegerScale(desired_scale, input_snapshot->texture->GetSize());
+       CalculateIntegerScale(desired_scale, input_snapshot->texture->GetSize());
 
-  std::shared_ptr<Texture> pass1_out_texture = MakeBlurSubpass(
+  std::shared_ptr<Texture> pass1_out_texture = MakeDownsampleSubpass(
       renderer, input_snapshot->texture, input_snapshot->sampler_descriptor,
-      effect_transform, entity.GetTransformation(),
-      GaussianBlurFragmentShader::BlurInfo{
-          .blur_uv_offset = Point(0.0, input_pixel_size.height),
-          .blur_sigma = sigma_,
-          .blur_radius = blur_radius,
-      },
-      downsample);
+      effect_transform, entity.GetTransformation(), downsample);
 
   Size pass1_pixel_size(1.0 / pass1_out_texture->GetSize().width,
                         1.0 / pass1_out_texture->GetSize().height);
 
   std::shared_ptr<Texture> pass2_out_texture = MakeBlurSubpass(
       renderer, pass1_out_texture, input_snapshot->sampler_descriptor,
+      /*effect_transform=*/Matrix(),
+      /*entity_transform=*/Matrix(),
+      GaussianBlurFragmentShader::BlurInfo{
+          .blur_uv_offset = Point(0.0, pass1_pixel_size.height),
+          .blur_sigma = sigma_ / downsample.y,
+          .blur_radius = blur_radius / downsample.y,
+      },
+      /*downsample=*/Vector2(1.0, 1.0));
+
+  // TODO(gaaclarke): Make this pass reuse the texture from pass1.
+  std::shared_ptr<Texture> pass3_out_texture = MakeBlurSubpass(
+      renderer, pass2_out_texture, input_snapshot->sampler_descriptor,
       /*effect_transform=*/Matrix(), /*entity_transform=*/Matrix(),
       GaussianBlurFragmentShader::BlurInfo{
           .blur_uv_offset = Point(pass1_pixel_size.width, 0.0),
@@ -208,7 +268,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   SamplerDescriptor sampler_desc = MakeSamplerDescriptor(
       MinMagFilter::kLinear, SamplerAddressMode::kClampToEdge);
 
-  return Entity::FromSnapshot(Snapshot{.texture = pass2_out_texture,
+  return Entity::FromSnapshot(Snapshot{.texture = pass3_out_texture,
                                        .transform = Matrix::MakeScale(
                                            {downsample.x, downsample.y, 1.0}),
                                        .sampler_descriptor = sampler_desc,
