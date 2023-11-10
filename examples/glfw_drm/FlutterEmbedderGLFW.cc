@@ -96,16 +96,15 @@ static void GLFWKeyCallback(GLFWwindow* window,
 }
 
 void GLFWwindowSizeCallback(GLFWwindow* window, int width, int height) {
-  // TODO(dkwingsmt): The GLFW embedder doesn't support multi-view for now. Use
-  // the real view ID when it does.
-  int64_t view_id = kImplicitViewId;
   FlutterWindowMetricsEvent event = {};
   memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
   event.struct_size = sizeof(event);
   event.width = width * g_pixelRatio;
   event.height = height * g_pixelRatio;
   event.pixel_ratio = g_pixelRatio;
-  event.view_id = view_id;
+  // This example only supports a single window, therefore we assume the event
+  // occurred in the only view, the implicit view.
+  event.view_id = kImplicitViewId;
   FlutterEngineSendWindowMetricsEvent(
       reinterpret_cast<FlutterEngine>(glfwGetWindowUserPointer(window)),
       &event);
