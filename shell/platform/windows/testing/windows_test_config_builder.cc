@@ -71,7 +71,7 @@ EnginePtr WindowsConfigBuilder::InitializeEngine() const {
   return EnginePtr(FlutterDesktopEngineCreate(&engine_properties));
 }
 
-ViewControllerPtr WindowsConfigBuilder::Run() const {
+ViewControllerPtr WindowsConfigBuilder::Run() {
   InitializeCOM();
 
   EnginePtr engine = InitializeEngine();
@@ -85,14 +85,16 @@ ViewControllerPtr WindowsConfigBuilder::Run() const {
   windows_engine->SetRootIsolateCreateCallback(
       context_.GetRootIsolateCallback());
 
-  int width = 600;
-  int height = 400;
+  FlutterDesktopViewControllerProperties properties = {};
+  properties.width = 600;
+  properties.height = 400;
   ViewControllerPtr controller(
-      FlutterDesktopViewControllerCreate(width, height, engine.release()));
+      FlutterDesktopEngineCreateViewController(engine.get(), &properties));
   if (!controller) {
     return {};
   }
 
+  engines_.push_back(std::move(engine));
   return controller;
 }
 

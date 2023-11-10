@@ -85,6 +85,22 @@ static FlutterDesktopViewControllerRef CreateViewController(
   auto view =
       std::make_unique<flutter::FlutterWindowsView>(std::move(window_wrapper));
 
+  view->SetEngine(engine_ptr);
+  view->CreateRenderSurface();
+  if (!engine_ptr->running()) {
+    if (!engine_ptr->Run()) {
+      return nullptr;
+    }
+  }
+
+  // Must happen after engine is running.
+  engine_ptr->view()->SendInitialBounds();
+
+  // The Windows embedder listens to accessibility updates using the
+  // view's HWND. The embedder's accessibility features may be stale if
+  // the app was in headless mode.
+  engine_ptr->UpdateAccessibilityFeatures();
+
   // Create a view controller that owns the engine if necessary.
   std::unique_ptr<flutter::FlutterWindowsViewController> controller;
   if (owns_engine) {
@@ -95,22 +111,6 @@ static FlutterDesktopViewControllerRef CreateViewController(
     controller = std::make_unique<flutter::FlutterWindowsViewController>(
         std::move(view));
   }
-
-  controller->view()->SetEngine(controller->engine());
-  controller->view()->CreateRenderSurface();
-  if (!controller->engine()->running()) {
-    if (!controller->engine()->Run()) {
-      return nullptr;
-    }
-  }
-
-  // Must happen after engine is running.
-  controller->view()->SendInitialBounds();
-
-  // The Windows embedder listens to accessibility updates using the
-  // view's HWND. The embedder's accessibility features may be stale if
-  // the app was in headless mode.
-  controller->engine()->UpdateAccessibilityFeatures();
 
   return HandleForViewController(controller.release());
 }

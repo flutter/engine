@@ -110,8 +110,9 @@ TEST_F(WindowsTest, LaunchRefreshesAccessibility) {
         return kSuccess;
       }));
 
+  FlutterDesktopViewControllerProperties properties = {};
   ViewControllerPtr controller{
-      FlutterDesktopViewControllerCreate(0, 0, engine.release())};
+      FlutterDesktopEngineCreateViewController(engine.get(), &properties)};
 
   ASSERT_TRUE(called);
 }
