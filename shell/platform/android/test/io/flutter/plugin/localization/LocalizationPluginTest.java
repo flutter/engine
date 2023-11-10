@@ -351,35 +351,35 @@ public class LocalizationPluginTest {
   }
 
   // Tests the legacy pre API 21 algorithm.
-  @Config(sdk = 19)
+  @Config(sdk = Build.VERSION_CODES.KITKAT)
   @Test
   public void localeFromString_languageOnly() {
     Locale locale = LocalizationPlugin.localeFromString("en");
     assertEquals(locale, new Locale("en"));
   }
 
-  @Config(sdk = 19)
+  @Config(sdk = Build.VERSION_CODES.KITKAT)
   @Test
   public void localeFromString_languageAndCountry() {
     Locale locale = LocalizationPlugin.localeFromString("en-US");
     assertEquals(locale, new Locale("en", "US"));
   }
 
-  @Config(sdk = 19)
+  @Config(sdk = Build.VERSION_CODES.KITKAT)
   @Test
   public void localeFromString_languageCountryAndVariant() {
     Locale locale = LocalizationPlugin.localeFromString("zh-Hans-CN");
     assertEquals(locale, new Locale("zh", "CN", "Hans"));
   }
 
-  @Config(sdk = 19)
+  @Config(sdk = Build.VERSION_CODES.KITKAT)
   @Test
   public void localeFromString_underscore() {
     Locale locale = LocalizationPlugin.localeFromString("zh_Hans_CN");
     assertEquals(locale, new Locale("zh", "CN", "Hans"));
   }
 
-  @Config(sdk = 19)
+  @Config(sdk = Build.VERSION_CODES.KITKAT)
   @Test
   public void localeFromString_additionalVariantsAreIgnored() {
     Locale locale = LocalizationPlugin.localeFromString("de-DE-u-co-phonebk");

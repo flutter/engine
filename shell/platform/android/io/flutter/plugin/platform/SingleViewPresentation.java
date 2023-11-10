@@ -49,6 +49,7 @@ import java.lang.reflect.Proxy;
  *   EmbeddedView
  */
 @Keep
+@TargetApi(Build.VERSION_CODES.KITKAT)
 class SingleViewPresentation extends Presentation {
   private static final String TAG = "PlatformViewsController";
 
