@@ -7,6 +7,7 @@ package io.flutter.plugin.platform;
 import static android.content.Context.WINDOW_SERVICE;
 import static android.view.View.OnFocusChangeListener;
 
+import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.app.Presentation;
 import android.content.Context;
@@ -14,6 +15,7 @@ import android.content.ContextWrapper;
 import android.content.MutableContextWrapper;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.Display;
 import android.view.Gravity;
