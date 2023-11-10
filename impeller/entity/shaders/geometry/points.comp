@@ -39,7 +39,6 @@ void main() {
   vec2 center = point_data.points[ident];
   uint bufer_offset = ident * frame_info.points_per_circle;
   float16_t elapsed_angle = frame_info.radian_start;
-
   for (int i = 0; i < frame_info.divisions_per_circle; i++) {
     geometry_data.geometry[bufer_offset++] =
         center +
@@ -48,7 +47,6 @@ void main() {
 
     elapsed_angle += frame_info.radian_step;
   }
-
   geometry_data.geometry[bufer_offset++] =
       center +
       vec2(cos(frame_info.radian_start), sin(frame_info.radian_start)) *

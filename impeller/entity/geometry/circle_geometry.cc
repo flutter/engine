@@ -11,7 +11,7 @@ namespace impeller {
 
 // The minimum number of points before compute is used to fill out the geometry.
 // This number was arbitrarily chosen.
-static constexpr size_t kMinComputeSize = 4;
+static constexpr size_t kMinComputeSize = 32;
 
 CircleGeometry::CircleGeometry(std::vector<Point> points,
                                Scalar radius,
