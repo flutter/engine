@@ -92,8 +92,7 @@ struct Bindings {
 ///             * Specify any stage bindings.
 ///             * (Optional) Specify a debug label.
 ///
-///             Command are very lightweight objects and can be created
-///             frequently and on demand. The resources referenced in commands
+///             Command are objects and can be created frequently and on demand. The resources referenced in commands
 ///             views into buffers managed by other allocators and resource
 ///             managers.
 ///

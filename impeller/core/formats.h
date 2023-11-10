@@ -311,13 +311,13 @@ enum class TextureCoordinateSystem {
   kRenderToTexture,
 };
 
-enum class CullMode {
+enum class CullMode : uint8_t {
   kNone,
   kFrontFace,
   kBackFace,
 };
 
-enum class IndexType {
+enum class IndexType : uint8_t {
   kUnknown,
   k16bit,
   k32bit,
