@@ -7,7 +7,9 @@
 #include <optional>
 #include <variant>
 
+#include "flutter/fml/logging.h"
 #include "impeller/geometry/path_component.h"
+#include "impeller/geometry/point.h"
 
 namespace impeller {
 
@@ -20,11 +22,11 @@ Path::~Path() = default;
 std::tuple<size_t, size_t> Path::Polyline::GetContourPointBounds(
     size_t contour_index) const {
   if (contour_index >= contours.size()) {
-    return {points.size(), points.size()};
+    return {points->size(), points->size()};
   }
   const size_t start_index = contours.at(contour_index).start_index;
   const size_t end_index = (contour_index >= contours.size() - 1)
-                               ? points.size()
+                               ? points->size()
                                : contours.at(contour_index + 1).start_index;
   return std::make_tuple(start_index, end_index);
 }
@@ -224,26 +226,30 @@ bool Path::GetContourComponentAtIndex(size_t index,
   return true;
 }
 
-Path::Polyline Path::CreatePolyline(Scalar scale) const {
-  Polyline polyline;
+Path::Polyline::Polyline(Path::Polyline::PointBufferPtr point_buffer,
+                         Path::Polyline::ReclaimPointBufferCallback reclaim)
+    : points(std::move(point_buffer)), reclaim_points(std::move(reclaim)) {
+  FML_DCHECK(points);
+}
 
-  std::optional<Point> previous_contour_point;
-  auto collect_points = [&polyline, &previous_contour_point](
-                            const std::vector<Point>& collection) {
-    if (collection.empty()) {
-      return;
-    }
+Path::Polyline::Polyline(Path::Polyline&& other) {
+  points = std::move(other.points);
+  reclaim_points = std::move(other.reclaim_points);
+  contours = std::move(other.contours);
+}
 
-    for (const auto& point : collection) {
-      if (previous_contour_point.has_value() &&
-          previous_contour_point.value() == point) {
-        // Skip over duplicate points in the same contour.
-        continue;
-      }
-      previous_contour_point = point;
-      polyline.points.push_back(point);
-    }
-  };
+Path::Polyline::~Polyline() {
+  if (reclaim_points) {
+    points->clear();
+    reclaim_points(std::move(points));
+  }
+}
+
+Path::Polyline Path::CreatePolyline(
+    Scalar scale,
+    Path::Polyline::PointBufferPtr point_buffer,
+    Path::Polyline::ReclaimPointBufferCallback reclaim) const {
+  Polyline polyline(std::move(point_buffer), std::move(reclaim));
 
   auto get_path_component = [this](size_t component_i) -> PathComponentVariant {
     if (component_i >= components_.size()) {
@@ -286,8 +292,8 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
   std::optional<size_t> previous_path_component_index;
   auto end_contour = [&polyline, &previous_path_component_index,
                       &get_path_component, &components]() {
-    // Whenever a contour has ended, extract the exact end direction from the
-    // last component.
+    // Whenever a contour has ended, extract the exact end direction from
+    // the last component.
     if (polyline.contours.empty()) {
       return;
     }
@@ -325,32 +331,30 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
     switch (component.type) {
       case ComponentType::kLinear:
         components.push_back({
-            .component_start_index = polyline.points.size() - 1,
+            .component_start_index = polyline.points->size() - 1,
             .is_curve = false,
         });
-        collect_points(reinterpret_cast<const LinearPathComponent*>(
-                           &points_[component.index])
-                           ->CreatePolyline());
+        reinterpret_cast<const LinearPathComponent*>(&points_[component.index])
+            ->AppendPolylinePoints(*polyline.points);
         previous_path_component_index = component_i;
         break;
       case ComponentType::kQuadratic:
         components.push_back({
-            .component_start_index = polyline.points.size() - 1,
+            .component_start_index = polyline.points->size() - 1,
             .is_curve = true,
         });
-        collect_points(reinterpret_cast<const QuadraticPathComponent*>(
-                           &points_[component.index])
-                           ->CreatePolyline(scale));
+        reinterpret_cast<const QuadraticPathComponent*>(
+            &points_[component.index])
+            ->AppendPolylinePoints(scale, *polyline.points);
         previous_path_component_index = component_i;
         break;
       case ComponentType::kCubic:
         components.push_back({
-            .component_start_index = polyline.points.size() - 1,
+            .component_start_index = polyline.points->size() - 1,
             .is_curve = true,
         });
-        collect_points(reinterpret_cast<const CubicPathComponent*>(
-                           &points_[component.index])
-                           ->CreatePolyline(scale));
+        reinterpret_cast<const CubicPathComponent*>(&points_[component.index])
+            ->AppendPolylinePoints(scale, *polyline.points);
         previous_path_component_index = component_i;
         break;
       case ComponentType::kContour:
@@ -363,12 +367,12 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
 
         Vector2 start_direction = compute_contour_start_direction(component_i);
         const auto& contour = contours_[component.index];
-        polyline.contours.push_back({.start_index = polyline.points.size(),
+        polyline.contours.push_back({.start_index = polyline.points->size(),
                                      .is_closed = contour.is_closed,
                                      .start_direction = start_direction,
                                      .components = components});
-        previous_contour_point = std::nullopt;
-        collect_points({contour.destination});
+
+        polyline.points->push_back(contour.destination);
         break;
     }
   }
