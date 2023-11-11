@@ -5,6 +5,7 @@
 #import <OCMock/OCMock.h>
 #import <XCTest/XCTest.h>
 
+#import "flutter/fml/platform/darwin/weak_nsobject.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
@@ -34,15 +35,15 @@
   OCMStub([mockApplication sharedApplication]).andReturn(mockApplication);
 
   FlutterEngine* engine = [[[FlutterEngine alloc] initWithName:@"test" project:nil] autorelease];
-  std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
-      std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
+  std::unique_ptr<fml::WeakNSObjectFactory<FlutterEngine>> _weakFactory =
+      std::make_unique<fml::WeakNSObjectFactory<FlutterEngine>>(engine);
   [engine runWithEntrypoint:nil];
 
   XCTestExpectation* invokeExpectation =
       [self expectationWithDescription:@"Web search launched with escaped search term"];
 
   FlutterPlatformPlugin* plugin =
-      [[[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakPtr()] autorelease];
+      [[[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakNSObject()] autorelease];
   FlutterPlatformPlugin* mockPlugin = OCMPartialMock(plugin);
 
   FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"SearchWeb.invoke"
@@ -68,15 +69,15 @@
   OCMStub([mockApplication sharedApplication]).andReturn(mockApplication);
 
   FlutterEngine* engine = [[[FlutterEngine alloc] initWithName:@"test" project:nil] autorelease];
-  std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
-      std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
+  std::unique_ptr<fml::WeakNSObjectFactory<FlutterEngine>> _weakFactory =
+      std::make_unique<fml::WeakNSObjectFactory<FlutterEngine>>(engine);
   [engine runWithEntrypoint:nil];
 
   XCTestExpectation* invokeExpectation =
       [self expectationWithDescription:@"Web search launched with non escaped search term"];
 
   FlutterPlatformPlugin* plugin =
-      [[[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakPtr()] autorelease];
+      [[[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakNSObject()] autorelease];
   FlutterPlatformPlugin* mockPlugin = OCMPartialMock(plugin);
 
   FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"SearchWeb.invoke"
@@ -100,8 +101,8 @@
 - (void)testLookUpCallInitiated {
   FlutterEngine* engine = [[[FlutterEngine alloc] initWithName:@"test" project:nil] autorelease];
   [engine runWithEntrypoint:nil];
-  std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
-      std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
+  std::unique_ptr<fml::WeakNSObjectFactory<FlutterEngine>> _weakFactory =
+      std::make_unique<fml::WeakNSObjectFactory<FlutterEngine>>(engine);
 
   XCTestExpectation* presentExpectation =
       [self expectationWithDescription:@"Look Up view controller presented"];
@@ -111,7 +112,7 @@
   FlutterViewController* mockEngineViewController = OCMPartialMock(engineViewController);
 
   FlutterPlatformPlugin* plugin =
-      [[[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakPtr()] autorelease];
+      [[[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakNSObject()] autorelease];
   FlutterPlatformPlugin* mockPlugin = OCMPartialMock(plugin);
 
   FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"LookUp.invoke"
@@ -130,8 +131,8 @@
 - (void)testShareScreenInvoked {
   FlutterEngine* engine = [[[FlutterEngine alloc] initWithName:@"test" project:nil] autorelease];
   [engine runWithEntrypoint:nil];
-  std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
-      std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
+  std::unique_ptr<fml::WeakNSObjectFactory<FlutterEngine>> _weakFactory =
+      std::make_unique<fml::WeakNSObjectFactory<FlutterEngine>>(engine);
 
   XCTestExpectation* presentExpectation =
       [self expectationWithDescription:@"Share view controller presented"];
@@ -145,7 +146,7 @@
                  completion:nil]);
 
   FlutterPlatformPlugin* plugin =
-      [[[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakPtr()] autorelease];
+      [[[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakNSObject()] autorelease];
   FlutterPlatformPlugin* mockPlugin = OCMPartialMock(plugin);
 
   FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"Share.invoke"
@@ -164,10 +165,10 @@
 - (void)testClipboardHasCorrectStrings {
   [UIPasteboard generalPasteboard].string = nil;
   FlutterEngine* engine = [[[FlutterEngine alloc] initWithName:@"test" project:nil] autorelease];
-  std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
-      std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
+  std::unique_ptr<fml::WeakNSObjectFactory<FlutterEngine>> _weakFactory =
+      std::make_unique<fml::WeakNSObjectFactory<FlutterEngine>>(engine);
   FlutterPlatformPlugin* plugin =
-      [[[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakPtr()] autorelease];
+      [[[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakNSObject()] autorelease];
 
   XCTestExpectation* setStringExpectation = [self expectationWithDescription:@"setString"];
   FlutterResult resultSet = ^(id result) {
@@ -203,10 +204,10 @@
 - (void)testClipboardSetDataToNullDoNotCrash {
   [UIPasteboard generalPasteboard].string = nil;
   FlutterEngine* engine = [[[FlutterEngine alloc] initWithName:@"test" project:nil] autorelease];
-  std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
-      std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
+  std::unique_ptr<fml::WeakNSObjectFactory<FlutterEngine>> _weakFactory =
+      std::make_unique<fml::WeakNSObjectFactory<FlutterEngine>>(engine);
   FlutterPlatformPlugin* plugin =
-      [[[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakPtr()] autorelease];
+      [[[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakNSObject()] autorelease];
 
   XCTestExpectation* setStringExpectation = [self expectationWithDescription:@"setData"];
   FlutterResult resultSet = ^(id result) {
@@ -237,10 +238,10 @@
       initWithRootViewController:flutterViewController] autorelease];
   UITabBarController* tabBarController = [[[UITabBarController alloc] init] autorelease];
   tabBarController.viewControllers = @[ navigationController ];
-  std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
-      std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
+  std::unique_ptr<fml::WeakNSObjectFactory<FlutterEngine>> _weakFactory =
+      std::make_unique<fml::WeakNSObjectFactory<FlutterEngine>>(engine);
   FlutterPlatformPlugin* plugin =
-      [[[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakPtr()] autorelease];
+      [[[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakNSObject()] autorelease];
 
   id navigationControllerMock = OCMPartialMock(navigationController);
   OCMStub([navigationControllerMock popViewControllerAnimated:YES]);
@@ -261,12 +262,12 @@
 
 - (void)testWhetherDeviceHasLiveTextInputInvokeCorrectly {
   FlutterEngine* engine = [[[FlutterEngine alloc] initWithName:@"test" project:nil] autorelease];
-  std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
-      std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
+  std::unique_ptr<fml::WeakNSObjectFactory<FlutterEngine>> _weakFactory =
+      std::make_unique<fml::WeakNSObjectFactory<FlutterEngine>>(engine);
   XCTestExpectation* invokeExpectation =
       [self expectationWithDescription:@"isLiveTextInputAvailableInvoke"];
   FlutterPlatformPlugin* plugin =
-      [[[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakPtr()] autorelease];
+      [[[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakNSObject()] autorelease];
   FlutterPlatformPlugin* mockPlugin = OCMPartialMock(plugin);
   FlutterMethodCall* methodCall =
       [FlutterMethodCall methodCallWithMethodName:@"LiveText.isLiveTextInputAvailable"
