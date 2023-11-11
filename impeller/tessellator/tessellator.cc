@@ -5,6 +5,7 @@
 #include "impeller/tessellator/tessellator.h"
 
 #include "third_party/libtess2/Include/tesselator.h"
+#include "flutter/fml/logging.h"
 
 namespace impeller {
 
@@ -231,10 +232,9 @@ Tessellator::Result Tessellator::Tessellate(const Path& path,
   return Result::kSuccess;
 }
 
-std::pair<std::vector<Point>, std::vector<uint16_t>>
-Tessellator::TessellateConvex(const Path& path, Scalar tolerance) {
+std::vector<Point> Tessellator::TessellateConvex(const Path& path,
+                                                 Scalar tolerance) {
   std::vector<Point> output;
-  std::vector<uint16_t> indices;
 
   point_buffer_->clear();
   auto polyline =
@@ -243,29 +243,37 @@ Tessellator::TessellateConvex(const Path& path, Scalar tolerance) {
                             point_buffer_ = std::move(point_buffer);
                           });
 
+  output.reserve(polyline.points->size() + (4 * (polyline.contours.size() - 1)));
   for (auto j = 0u; j < polyline.contours.size(); j++) {
     auto [start, end] = polyline.GetContourPointBounds(j);
-    auto center = polyline.GetPoint(start);
+    auto origin = polyline.GetPoint(start);
 
     // Some polygons will not self close and an additional triangle
     // must be inserted, others will self close and we need to avoid
     // inserting an extra triangle.
-    if (polyline.GetPoint(end - 1) == polyline.GetPoint(start)) {
+    if (polyline.GetPoint(end - 1) == origin) {
       end--;
     }
-    output.emplace_back(center);
-    output.emplace_back(polyline.GetPoint(start + 1));
+    if (j > 0) {
+      // Triangle strip break.
+      output.emplace_back(output.back());
+      output.emplace_back(origin);
+      output.emplace_back(origin);
+      output.emplace_back(polyline.GetPoint(start + 1));
+    } else {
+      output.emplace_back(origin);
+    }
 
-    for (auto i = start + 2; i < end; i++) {
-      const auto& point_b = polyline.GetPoint(i);
-      output.emplace_back(point_b);
-
-      indices.emplace_back(0);
-      indices.emplace_back(i - 1);
-      indices.emplace_back(i);
+    size_t a, b;
+    for (a = start + 1, b = end - 1; a < b; a++, b--) {
+      output.emplace_back(polyline.GetPoint(a));
+      output.emplace_back(polyline.GetPoint(b));
+    }
+    if (a == b) {
+      output.emplace_back(polyline.GetPoint(a));
     }
   }
-  return std::make_pair(output, indices);
+  return output;
 }
 
 void DestroyTessellator(TESStesselator* tessellator) {

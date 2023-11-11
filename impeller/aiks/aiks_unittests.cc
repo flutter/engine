@@ -29,6 +29,7 @@
 #include "impeller/geometry/constants.h"
 #include "impeller/geometry/geometry_asserts.h"
 #include "impeller/geometry/matrix.h"
+#include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/golden_tests/golden_playground_test.h"
 #include "impeller/playground/widgets.h"
@@ -3488,6 +3489,19 @@ TEST_P(AiksTest, CanCanvasDrawPictureWithAdvancedBlend) {
   canvas.DrawPaint({.color = Color::Black()});
   canvas.DrawCircle(Point::MakeXY(150, 150), 25, {.color = Color::Red()});
   canvas.DrawPicture(picture);
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanDrawMultiContourConvexPath) {
+  PathBuilder builder = {};
+  for (auto i = 0; i < 10; i++) {
+    builder.AddCircle(Point(100 + 10 * i, 100 + 10 * i), 100);
+  }
+  builder.SetConvexity(Convexity::kConvex);
+
+  Canvas canvas;
+  canvas.DrawPath(builder.TakePath(), {.color = Color::Red().WithAlpha(0.4)});
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
