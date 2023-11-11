@@ -25,6 +25,7 @@ TEST(WeakNSObjectTest, MultipleWeakNSObject) {
   scoped_nsobject<NSObject> p1([[NSObject alloc] init]);
   WeakNSObjectFactory factory(p1.get());
   WeakNSObject<NSObject> w1 = factory.GetWeakNSObject();
+  // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
   WeakNSObject<NSObject> w2(w1);
   EXPECT_TRUE(w1);
   EXPECT_TRUE(w2);
@@ -69,6 +70,7 @@ TEST(WeakNSObjectTest, WeakNSObjectCopy) {
   scoped_nsobject<NSObject> p1([[NSObject alloc] init]);
   WeakNSObjectFactory factory(p1.get());
   WeakNSObject<NSObject> w1 = factory.GetWeakNSObject();
+  // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
   WeakNSObject<NSObject> w2(w1);
   EXPECT_TRUE(w1);
   EXPECT_TRUE(w2);
@@ -81,6 +83,7 @@ TEST(WeakNSObjectTest, WeakNSObjectAssignment) {
   scoped_nsobject<NSObject> p1([[NSObject alloc] init]);
   WeakNSObjectFactory factory(p1.get());
   WeakNSObject<NSObject> w1 = factory.GetWeakNSObject();
+  // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
   WeakNSObject<NSObject> w2 = w1;
   EXPECT_TRUE(w1);
   EXPECT_TRUE(w2);

@@ -25,8 +25,9 @@ char sentinelObserverKey_;
 + (fml::RefPtr<fml::WeakContainer>)containerForObject:(id)object
                                         threadChecker:
                                             (std::shared_ptr<debug::DebugThreadChecker>)checker {
-  if (object == nil)
+  if (object == nil) {
     return nullptr;
+  }
   // The autoreleasePool is needed here as the call to objc_getAssociatedObject
   // returns an autoreleased object which is better released sooner than later.
   fml::ScopedNSAutoreleasePool pool;
