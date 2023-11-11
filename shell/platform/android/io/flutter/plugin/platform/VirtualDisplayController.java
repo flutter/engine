@@ -13,6 +13,7 @@ import android.hardware.display.VirtualDisplay;
 import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.View;
+import android.os.Build;
 import android.view.View.OnFocusChangeListener;
 import android.view.ViewTreeObserver;
 import androidx.annotation.NonNull;
