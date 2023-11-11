@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/stopwatch.h"
-#include "fml/trace_event.h"
 
 namespace flutter {
 
@@ -89,7 +88,6 @@ fml::TimeDelta Stopwatch::AverageDelta() const {
 }
 
 fml::Milliseconds Stopwatch::GetFrameBudget() const {
-  TRACE_EVENT0("flutter", "Stopwatch::GetFrameBudget");
   return refresh_rate_updater_.GetFrameBudget();
 }
 
