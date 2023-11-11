@@ -287,6 +287,16 @@ class FlutterConfiguration {
   /// to render, or `null` if the user hasn't specified anything.
   DomElement? get hostElement => _configuration?.hostElement;
 
+  /// Sets Flutter Web in "multi-view" mode.
+  ///
+  /// Multi-view mode allows apps to:
+  ///
+  ///  * Start without a `hostElement`.
+  ///  * Add/remove views (`hostElements`) from JS while the application is running.
+  ///  * ...
+  ///  * PROFIT?
+  bool get multiViewEnabled => _configuration?.multiViewEnabled ?? false;
+
   /// Returns a `nonce` to allowlist the inline styles that Flutter web needs.
   ///
   /// See: https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/nonce
@@ -341,6 +351,10 @@ extension JsFlutterConfigurationExtension on JsFlutterConfiguration {
   bool? get debugShowSemanticsNodes => _debugShowSemanticsNodes?.toDart;
 
   external DomElement? get hostElement;
+
+  @JS('multiViewEnabled')
+  external JSBoolean? get _multiViewEnabled;
+  bool? get multiViewEnabled => _multiViewEnabled?.toDart;
 
   @JS('nonce')
   external JSString? get _nonce;

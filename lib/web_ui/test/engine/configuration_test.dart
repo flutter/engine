@@ -73,63 +73,80 @@ void testMain() {
     });
   });
 
-  group('CanvasKit config', () {
-    test('default canvasKitVariant', () {
-      final FlutterConfiguration config = FlutterConfiguration();
-
-      expect(config.canvasKitVariant, CanvasKitVariant.auto);
-    });
-
-    test('default canvasKitVariant when it is undefined', () {
-      final FlutterConfiguration config = FlutterConfiguration();
-      config.setUserConfiguration(
-        // With an empty map, the canvasKitVariant is undefined in JS.
+  group('Default configuration values', () {
+    late FlutterConfiguration defaultConfig;
+    setUp(() {
+      defaultConfig = FlutterConfiguration();
+      defaultConfig.setUserConfiguration(
         js_util.jsify(<String, Object?>{}) as JsFlutterConfiguration,
       );
-
-      expect(config.canvasKitVariant, CanvasKitVariant.auto);
     });
 
-    test('validates canvasKitVariant', () {
-      final FlutterConfiguration config = FlutterConfiguration();
-
-      config.setUserConfiguration(
-        js_util.jsify(<String, Object?>{'canvasKitVariant': 'foo'}) as JsFlutterConfiguration,
-      );
-      expect(() => config.canvasKitVariant, throwsArgumentError);
-
-      config.setUserConfiguration(
-        js_util.jsify(<String, Object?>{'canvasKitVariant': 'auto'}) as JsFlutterConfiguration,
-      );
-      expect(config.canvasKitVariant, CanvasKitVariant.auto);
-
-      config.setUserConfiguration(
-        js_util.jsify(<String, Object?>{'canvasKitVariant': 'full'}) as JsFlutterConfiguration,
-      );
-      expect(config.canvasKitVariant, CanvasKitVariant.full);
-
-      config.setUserConfiguration(
-        js_util.jsify(<String, Object?>{'canvasKitVariant': 'chromium'}) as JsFlutterConfiguration,
-      );
-      expect(config.canvasKitVariant, CanvasKitVariant.chromium);
+    test('canvasKitVariant', () {
+      expect(defaultConfig.canvasKitVariant, CanvasKitVariant.auto);
     });
+
+    test('useColorEmoji', () {
+      expect(defaultConfig.useColorEmoji, isFalse);
+    });
+
+    test('multiViewEnabled', () {
+      expect(defaultConfig.multiViewEnabled, isFalse);
+    });
+
   });
 
-  group('useColorEmoji', () {
-    test('defaults to false', () {
-      final FlutterConfiguration config = FlutterConfiguration();
-      config.setUserConfiguration(
-        js_util.jsify(<String, Object?>{}) as JsFlutterConfiguration,
-      );
-      expect(config.useColorEmoji, isFalse);
+  group('setUserConfiguration (values)', () {
+    group('canvasKitVariant', () {
+      test('value undefined - defaults to "auto"', () {
+        final FlutterConfiguration config = FlutterConfiguration();
+        config.setUserConfiguration(
+          // With an empty map, the canvasKitVariant is undefined in JS.
+          js_util.jsify(<String, Object?>{}) as JsFlutterConfiguration,
+        );
+
+        expect(config.canvasKitVariant, CanvasKitVariant.auto);
+      });
+
+      test('value - converts to CanvasKitVariant enum (or throw)', () {
+        final FlutterConfiguration config = FlutterConfiguration();
+
+        config.setUserConfiguration(
+          js_util.jsify(<String, Object?>{'canvasKitVariant': 'foo'}) as JsFlutterConfiguration,
+        );
+        expect(() => config.canvasKitVariant, throwsArgumentError);
+
+        config.setUserConfiguration(
+          js_util.jsify(<String, Object?>{'canvasKitVariant': 'auto'}) as JsFlutterConfiguration,
+        );
+        expect(config.canvasKitVariant, CanvasKitVariant.auto);
+
+        config.setUserConfiguration(
+          js_util.jsify(<String, Object?>{'canvasKitVariant': 'full'}) as JsFlutterConfiguration,
+        );
+        expect(config.canvasKitVariant, CanvasKitVariant.full);
+
+        config.setUserConfiguration(
+          js_util.jsify(<String, Object?>{'canvasKitVariant': 'chromium'}) as JsFlutterConfiguration,
+        );
+        expect(config.canvasKitVariant, CanvasKitVariant.chromium);
+      });
     });
 
-    test('can be set to true', () {
+    test('useColorEmoji', () {
       final FlutterConfiguration config = FlutterConfiguration();
       config.setUserConfiguration(
         js_util.jsify(<String, Object?>{'useColorEmoji': true}) as JsFlutterConfiguration,
       );
       expect(config.useColorEmoji, isTrue);
+    });
+
+    test('multiViewEnabled', () {
+      final FlutterConfiguration config = FlutterConfiguration();
+      config.setUserConfiguration(
+        js_util.jsify(<String, Object?>{'multiViewEnabled': true}) as JsFlutterConfiguration,
+      );
+      expect(config.multiViewEnabled, isTrue);
     });
   });
 }
