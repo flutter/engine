@@ -129,7 +129,7 @@ class VirtualDisplayController {
   }
 
   public void resize(final int width, final int height, final Runnable onNewSizeFrameAvailable) {
-    // When 'hot reload', although the resize method is triggered, the size of the native View has 
+    // When 'hot reload', although the resize method is triggered, the size of the native View has
     // not changed.
     if (width == getRenderTargetWidth() && height == getRenderTargetHeight()) {
       getView().postDelayed(onNewSizeFrameAvailable, 0);
@@ -214,7 +214,7 @@ class VirtualDisplayController {
     View embeddedView, int width, int height, final Runnable onNewSizeFrameAvailable) {
     renderTarget.resize(width, height);
     // https://android.googlesource.com/platform/prebuilts/fullsdk/sources/android-30/+/refs/heads/master/android/app/Presentation.java#293
-    // Based on the implementation of the Presentation, 
+    // Based on the implementation of the Presentation,
     // you can directly use the resize method of VirtualDisplay on Android31 and above.
     // Fix in: https://github.com/flutter/flutter/issues/128920
     virtualDisplay.resize(width, height, densityDpi);
