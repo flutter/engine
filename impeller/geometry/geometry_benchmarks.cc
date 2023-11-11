@@ -92,8 +92,8 @@ namespace {
 
 Path CreateRRect() {
   return PathBuilder{}
-    .AddRoundedRect(Rect::MakeLTRB(0, 0, 400, 400), 16)
-    .TakePath();
+      .AddRoundedRect(Rect::MakeLTRB(0, 0, 400, 400), 16)
+      .TakePath();
 }
 
 Path CreateCubic() {
