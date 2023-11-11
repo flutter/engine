@@ -35,7 +35,9 @@ def remote_filename(exec_path):
 def exists_remotely(remote_path):
   gsutil = os.path.join(os.environ['DEPOT_TOOLS'], 'gsutil.py')
   command = ['python3', gsutil, '--', 'stat', remote_path]
-  process = subprocess.Popen(command, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+  process = subprocess.Popen(
+      command, stderr=subprocess.PIPE, stdout=subprocess.PIPE
+  )
   stdout, stderr = process.communicate()
   return_code = process.wait()
   if return_code == 0:
@@ -97,7 +99,6 @@ def main():
     engine_version = 'HEAD'
     should_upload = False
 
-  should_upload = True  # Remove before landing.
   process_symbols(should_upload, args.symbol_dir)
   return 0
 
