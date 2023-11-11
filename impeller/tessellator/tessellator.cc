@@ -4,7 +4,6 @@
 
 #include "impeller/tessellator/tessellator.h"
 
-#include "flutter/fml/logging.h"
 #include "third_party/libtess2/Include/tesselator.h"
 
 namespace impeller {
