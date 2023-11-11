@@ -211,7 +211,7 @@ class VirtualDisplayController {
   }
 
   private void resizeAboveAndroidS(
-    View embeddedView, int width, int height, final Runnable onNewSizeFrameAvailable) {
+      View embeddedView, int width, int height, final Runnable onNewSizeFrameAvailable) {
     renderTarget.resize(width, height);
     // https://android.googlesource.com/platform/prebuilts/fullsdk/sources/android-30/+/refs/heads/master/android/app/Presentation.java#293
     // Based on the implementation of the Presentation,
