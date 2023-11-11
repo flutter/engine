@@ -10,10 +10,10 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
+import android.os.Build;
 import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.View;
-import android.os.Build;
 import android.view.View.OnFocusChangeListener;
 import android.view.ViewTreeObserver;
 import androidx.annotation.NonNull;
@@ -129,14 +129,15 @@ class VirtualDisplayController {
   }
 
   public void resize(final int width, final int height, final Runnable onNewSizeFrameAvailable) {
-    // When 'hot reload', although the resize method is triggered, the size of the native View has not changed.
+    // When 'hot reload', although the resize method is triggered, the size of the native View has 
+    // not changed.
     if (width == getRenderTargetWidth() && height == getRenderTargetHeight()) {
       getView().postDelayed(onNewSizeFrameAvailable, 0);
       return;
     }
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        resizeAboveAndroidS(getView(), width, height, onNewSizeFrameAvailable);
-        return;
+      resizeAboveAndroidS(getView(), width, height, onNewSizeFrameAvailable);
+      return;
     }
     boolean isFocused = getView().isFocused();
     final SingleViewPresentation.PresentationState presentationState = presentation.detachState();
@@ -209,11 +210,13 @@ class VirtualDisplayController {
     renderTarget.release();
   }
 
-  private void resizeAboveAndroidS(View embeddedView, int width, int height, final Runnable onNewSizeFrameAvailable) {
+  private void resizeAboveAndroidS(
+    View embeddedView, int width, int height, final Runnable onNewSizeFrameAvailable) {
     renderTarget.resize(width, height);
-    //https://android.googlesource.com/platform/prebuilts/fullsdk/sources/android-30/+/refs/heads/master/android/app/Presentation.java#293
-    //Based on the implementation of the Presentation, you can directly use the resize method of VirtualDisplay on Android31 and above.
-    //Fix in: https://github.com/flutter/flutter/issues/128920
+    // https://android.googlesource.com/platform/prebuilts/fullsdk/sources/android-30/+/refs/heads/master/android/app/Presentation.java#293
+    // Based on the implementation of the Presentation, 
+    // you can directly use the resize method of VirtualDisplay on Android31 and above.
+    // Fix in: https://github.com/flutter/flutter/issues/128920
     virtualDisplay.resize(width, height, densityDpi);
     embeddedView.postDelayed(onNewSizeFrameAvailable, 0);
   }
