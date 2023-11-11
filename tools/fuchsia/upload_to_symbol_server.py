@@ -37,7 +37,7 @@ def exists_remotely(remote_path):
   command = ['python3', gsutil, '--', 'stat', remote_path]
   process = subprocess.Popen(command, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
   stdout, stderr = process.communicate()
-  return_code = (process.wait()).returncode
+  return_code = process.wait()
   if return_code == 0:
     print('%s exists - skipping copy' % remote_path)
   return return_code == 0
