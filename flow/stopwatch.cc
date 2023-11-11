@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/stopwatch.h"
+#include "fml/trace_event.h"
 
 namespace flutter {
 
@@ -57,7 +58,7 @@ size_t Stopwatch::GetCurrentSample() const {
 }
 
 double StopwatchVisualizer::UnitFrameInterval(double raster_time_ms) const {
-  return raster_time_ms / stopwatch_.GetFrameBudget().count();
+  return raster_time_ms / frame_budget_.count();
 }
 
 double StopwatchVisualizer::UnitHeight(double raster_time_ms,
@@ -88,6 +89,7 @@ fml::TimeDelta Stopwatch::AverageDelta() const {
 }
 
 fml::Milliseconds Stopwatch::GetFrameBudget() const {
+  TRACE_EVENT0("flutter", "Stopwatch::GetFrameBudget");
   return refresh_rate_updater_.GetFrameBudget();
 }
 
