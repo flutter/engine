@@ -86,9 +86,7 @@ class Tessellator {
   ///
   /// @return A point vector containing the vertices in triangle strip format.
   ///
-  std::vector<Point> TessellateConvex(
-      const Path& path,
-      Scalar tolerance);
+  std::vector<Point> TessellateConvex(const Path& path, Scalar tolerance);
 
  private:
   /// Used for polyline generation.

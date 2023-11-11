@@ -4,8 +4,8 @@
 
 #include "impeller/tessellator/tessellator.h"
 
-#include "third_party/libtess2/Include/tesselator.h"
 #include "flutter/fml/logging.h"
+#include "third_party/libtess2/Include/tesselator.h"
 
 namespace impeller {
 
@@ -243,7 +243,8 @@ std::vector<Point> Tessellator::TessellateConvex(const Path& path,
                             point_buffer_ = std::move(point_buffer);
                           });
 
-  output.reserve(polyline.points->size() + (4 * (polyline.contours.size() - 1)));
+  output.reserve(polyline.points->size() +
+                 (4 * (polyline.contours.size() - 1)));
   for (auto j = 0u; j < polyline.contours.size(); j++) {
     auto [start, end] = polyline.GetContourPointBounds(j);
     auto origin = polyline.GetPoint(start);

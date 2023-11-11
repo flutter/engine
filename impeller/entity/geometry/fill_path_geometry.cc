@@ -27,8 +27,7 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
 
     vertex_buffer.vertex_buffer = host_buffer.Emplace(
         points.data(), points.size() * sizeof(Point), alignof(Point));
-    vertex_buffer.index_buffer = {},
-    vertex_buffer.vertex_count = points.size();
+    vertex_buffer.index_buffer = {}, vertex_buffer.vertex_count = points.size();
     vertex_buffer.index_type = IndexType::kNone;
 
     return GeometryResult{
