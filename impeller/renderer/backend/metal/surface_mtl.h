@@ -34,26 +34,28 @@ class SurfaceMTL final : public Surface {
   ///
   /// @return     A pointer to the wrapped surface or null.
   ///
-  static id<CAMetalDrawable> GetMetalDrawableAndValidate(
+  // static id<CAMetalDrawable> GetMetalDrawableAndValidate(
+  //     const std::shared_ptr<Context>& context,
+  //     CAMetalLayer* layer);
+
+  // static std::unique_ptr<SurfaceMTL> MakeFromMetalLayerDrawable(
+  //     const std::shared_ptr<Context>& context,
+  //     id<CAMetalDrawable> drawable,
+  //     std::optional<IRect> clip_rect = std::nullopt);
+
+  static std::unique_ptr<SurfaceMTL> MakeFromMetalLayer(
       const std::shared_ptr<Context>& context,
       CAMetalLayer* layer);
 
-  static std::unique_ptr<SurfaceMTL> MakeFromMetalLayerDrawable(
-      const std::shared_ptr<Context>& context,
-      id<CAMetalDrawable> drawable,
-      std::optional<IRect> clip_rect = std::nullopt);
-
-  static std::unique_ptr<SurfaceMTL> MakeFromTexture(
-      const std::shared_ptr<Context>& context,
-      id<MTLTexture> texture,
-      std::optional<IRect> clip_rect,
-      id<CAMetalDrawable> drawable = nil);
+  // static std::unique_ptr<SurfaceMTL> MakeFromTexture(
+  //     const std::shared_ptr<Context>& context,
+  //     id<MTLTexture> texture,
+  //     std::optional<IRect> clip_rect,
+  //     id<CAMetalDrawable> drawable = nil);
 #pragma GCC diagnostic pop
 
   // |Surface|
   ~SurfaceMTL() override;
-
-  id<MTLDrawable> drawable() const { return drawable_; }
 
   // Returns a Rect defining the area of the surface in device pixels
   IRect coverage() const;
@@ -64,22 +66,10 @@ class SurfaceMTL final : public Surface {
  private:
   std::weak_ptr<Context> context_;
   std::shared_ptr<Texture> resolve_texture_;
-  id<CAMetalDrawable> drawable_ = nil;
-  std::shared_ptr<Texture> source_texture_;
-  std::shared_ptr<Texture> destination_texture_;
-  bool requires_blit_ = false;
-  std::optional<IRect> clip_rect_;
-
-  static bool ShouldPerformPartialRepaint(std::optional<IRect> damage_rect);
 
   SurfaceMTL(const std::weak_ptr<Context>& context,
              const RenderTarget& target,
-             std::shared_ptr<Texture> resolve_texture,
-             id<CAMetalDrawable> drawable,
-             std::shared_ptr<Texture> source_texture,
-             std::shared_ptr<Texture> destination_texture,
-             bool requires_blit,
-             std::optional<IRect> clip_rect);
+             std::shared_ptr<Texture> resolve_texture);
 
   SurfaceMTL(const SurfaceMTL&) = delete;
 

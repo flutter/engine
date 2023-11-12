@@ -5,6 +5,7 @@
 #include "impeller/renderer/command_buffer.h"
 
 #include "flutter/fml/trace_event.h"
+#include "impeller/core/allocator.h"
 #include "impeller/renderer/compute_pass.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
@@ -37,14 +38,26 @@ void CommandBuffer::WaitUntilScheduled() {
 }
 
 bool CommandBuffer::SubmitCommandsAsync(
-    std::shared_ptr<RenderPass>
-        render_pass  // NOLINT(performance-unnecessary-value-param)
-) {
+    const std::shared_ptr<RenderPass>& render_pass) {
   TRACE_EVENT0("impeller", "CommandBuffer::SubmitCommandsAsync");
   if (!render_pass->IsValid() || !IsValid()) {
     return false;
   }
   if (!render_pass->EncodeCommands()) {
+    return false;
+  }
+
+  return SubmitCommands(nullptr);
+}
+
+bool CommandBuffer::SubmitCommandsAsync(
+    const std::shared_ptr<BlitPass>& blit_pass,
+    const std::shared_ptr<Allocator>& allocator) {
+  TRACE_EVENT0("impeller", "CommandBuffer::SubmitCommandsAsync");
+  if (!blit_pass->IsValid() || !IsValid()) {
+    return false;
+  }
+  if (!blit_pass->EncodeCommands(allocator)) {
     return false;
   }
 

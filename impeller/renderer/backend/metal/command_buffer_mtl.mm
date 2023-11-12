@@ -12,6 +12,7 @@
 #include "impeller/renderer/backend/metal/compute_pass_mtl.h"
 #include "impeller/renderer/backend/metal/context_mtl.h"
 #include "impeller/renderer/backend/metal/render_pass_mtl.h"
+#include "impeller/renderer/backend/metal/texture_mtl.h"
 
 namespace impeller {
 
@@ -184,7 +185,7 @@ bool CommandBufferMTL::OnSubmitCommands(CompletionCallback callback) {
 }
 
 bool CommandBufferMTL::SubmitCommandsAsync(
-    std::shared_ptr<RenderPass> render_pass) {
+    const std::shared_ptr<RenderPass>& render_pass) {
   TRACE_EVENT0("impeller", "CommandBufferMTL::SubmitCommandsAsync");
   if (!IsValid() || !render_pass->IsValid()) {
     return false;
@@ -204,22 +205,25 @@ bool CommandBufferMTL::SubmitCommandsAsync(
   auto worker_task_runner = ContextMTL::Cast(*context).GetWorkerTaskRunner();
   auto mtl_render_pass = static_cast<RenderPassMTL*>(render_pass.get());
 
-  // Render command encoder creation has been observed to exceed the stack size
-  // limit for worker threads, and therefore is intentionally constructed on the
-  // raster thread.
-  auto render_command_encoder =
-      [buffer renderCommandEncoderWithDescriptor:mtl_render_pass->desc_];
-  if (!render_command_encoder) {
-    return false;
-  }
-
   auto task = fml::MakeCopyable(
-      [render_pass, buffer, render_command_encoder, weak_context = context_]() {
+      [mtl_render_pass, render_pass, buffer, weak_context = context_]() {
         auto context = weak_context.lock();
         if (!context) {
-          [render_command_encoder endEncoding];
           return;
         }
+
+        // Render command encoder creation has been observed to exceed the stack
+        // size limit for worker threads, and therefore is intentionally
+        // constructed on the raster thread.
+        if (mtl_render_pass->deferred_drawable_) {
+          mtl_render_pass->desc_.colorAttachments[0].resolveTexture =
+              TextureMTL::Cast(
+                  *mtl_render_pass->render_target_.GetRenderTargetTexture())
+                  .GetMTLTexture();
+        }
+
+        auto render_command_encoder =
+            [buffer renderCommandEncoderWithDescriptor:mtl_render_pass->desc_];
 
         auto mtl_render_pass = static_cast<RenderPassMTL*>(render_pass.get());
         if (!mtl_render_pass->label_.empty()) {
@@ -230,6 +234,43 @@ bool CommandBufferMTL::SubmitCommandsAsync(
             context->GetResourceAllocator(), render_command_encoder);
         [render_command_encoder endEncoding];
         if (result) {
+          [buffer commit];
+        } else {
+          VALIDATION_LOG << "Failed to encode command buffer";
+        }
+      });
+  worker_task_runner->PostTask(task);
+  return true;
+}
+
+bool CommandBufferMTL::SubmitCommandsAsync(
+    const std::shared_ptr<BlitPass>& blit_pass,
+    const std::shared_ptr<Allocator>& allocator) {
+  TRACE_EVENT0("impeller", "CommandBufferMTL::SubmitCommandsAsync");
+  if (!IsValid() || !blit_pass->IsValid()) {
+    return false;
+  }
+  auto context = context_.lock();
+  if (!context) {
+    return false;
+  }
+  [buffer_ enqueue];
+  auto buffer = buffer_;
+  buffer_ = nil;
+
+#ifdef IMPELLER_DEBUG
+  ContextMTL::Cast(*context).GetGPUTracer()->RecordCmdBuffer(buffer);
+#endif  // IMPELLER_DEBUG
+
+  auto worker_task_runner = ContextMTL::Cast(*context).GetWorkerTaskRunner();
+  auto task = fml::MakeCopyable(
+      [blit_pass, buffer, weak_context = context_, allocator]() {
+        auto context = weak_context.lock();
+        if (!context) {
+          return;
+        }
+
+        if (blit_pass->EncodeCommands(allocator)) {
           [buffer commit];
         } else {
           VALIDATION_LOG << "Failed to encode command buffer";

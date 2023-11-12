@@ -190,32 +190,6 @@ FLUTTER_ASSERT_ARC
   id<MTLTexture> uvTex = CVMetalTextureGetTexture(uvMetalTexture);
   CVBufferRelease(uvMetalTexture);
 
-  if (_enableImpeller) {
-    impeller::TextureDescriptor yDesc;
-    yDesc.storage_mode = impeller::StorageMode::kHostVisible;
-    yDesc.format = impeller::PixelFormat::kR8UNormInt;
-    yDesc.size = {textureSize.width(), textureSize.height()};
-    yDesc.mip_count = 1;
-    auto yTexture = impeller::TextureMTL::Wrapper(yDesc, yTex);
-    yTexture->SetCoordinateSystem(impeller::TextureCoordinateSystem::kUploadFromHost);
-
-    impeller::TextureDescriptor uvDesc;
-    uvDesc.storage_mode = impeller::StorageMode::kHostVisible;
-    uvDesc.format = impeller::PixelFormat::kR8G8UNormInt;
-    uvDesc.size = {textureSize.width() / 2, textureSize.height() / 2};
-    uvDesc.mip_count = 1;
-    auto uvTexture = impeller::TextureMTL::Wrapper(uvDesc, uvTex);
-    uvTexture->SetCoordinateSystem(impeller::TextureCoordinateSystem::kUploadFromHost);
-
-    impeller::YUVColorSpace yuvColorSpace =
-        _pixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
-            ? impeller::YUVColorSpace::kBT601LimitedRange
-            : impeller::YUVColorSpace::kBT601FullRange;
-
-    return impeller::DlImageImpeller::MakeFromYUVTextures(context.aiks_context, yTexture, uvTexture,
-                                                          yuvColorSpace);
-  }
-
   SkYUVColorSpace colorSpace = _pixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
                                    ? kRec601_Limited_SkYUVColorSpace
                                    : kJPEG_Full_SkYUVColorSpace;
@@ -256,17 +230,6 @@ FLUTTER_ASSERT_ARC
 
   id<MTLTexture> rgbaTex = CVMetalTextureGetTexture(metalTexture);
   CVBufferRelease(metalTexture);
-
-  if (_enableImpeller) {
-    impeller::TextureDescriptor desc;
-    desc.storage_mode = impeller::StorageMode::kHostVisible;
-    desc.format = impeller::PixelFormat::kB8G8R8A8UNormInt;
-    desc.size = {textureSize.width(), textureSize.height()};
-    desc.mip_count = 1;
-    auto texture = impeller::TextureMTL::Wrapper(desc, rgbaTex);
-    texture->SetCoordinateSystem(impeller::TextureCoordinateSystem::kUploadFromHost);
-    return impeller::DlImageImpeller::Make(texture);
-  }
 
   auto skImage = [FlutterDarwinExternalTextureSkImageWrapper wrapRGBATexture:rgbaTex
                                                                    grContext:context.gr_context

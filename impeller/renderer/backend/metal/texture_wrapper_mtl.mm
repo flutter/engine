@@ -14,9 +14,7 @@ namespace impeller {
 std::shared_ptr<Texture> WrapTextureMTL(TextureDescriptor desc,
                                         const void* mtl_texture,
                                         std::function<void()> deletion_proc) {
-  auto texture = (__bridge id<MTLTexture>)mtl_texture;
-  desc.format = FromMTLPixelFormat(texture.pixelFormat);
-  return TextureMTL::Wrapper(desc, texture, std::move(deletion_proc));
+  return nullptr;
 }
 
 }  // namespace impeller

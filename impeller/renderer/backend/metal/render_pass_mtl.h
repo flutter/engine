@@ -24,6 +24,7 @@ class RenderPassMTL final : public RenderPass {
   MTLRenderPassDescriptor* desc_ = nil;
   std::string label_;
   bool is_valid_ = false;
+  bool deferred_drawable_ = false;
 
   RenderPassMTL(std::weak_ptr<const Context> context,
                 const RenderTarget& target,

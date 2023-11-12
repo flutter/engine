@@ -3,32 +3,40 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/metal/texture_mtl.h"
+#include <memory>
 
+#include "fml/synchronization/count_down_latch.h"
+#include "fml/trace_event.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/texture_descriptor.h"
 
 namespace impeller {
 
-std::shared_ptr<Texture> WrapperMTL(TextureDescriptor desc,
-                                    const void* mtl_texture,
-                                    std::function<void()> deletion_proc) {
-  return TextureMTL::Wrapper(desc, (__bridge id<MTLTexture>)mtl_texture,
-                             std::move(deletion_proc));
-}
+// std::shared_ptr<Texture> WrapperMTL(TextureDescriptor desc,
+//                                     const void* mtl_texture,
+//                                     std::function<void()> deletion_proc,) {
+//   return TextureMTL::Wrapper(desc, (__bridge id<MTLTexture>)mtl_texture,
+//                              std::move(deletion_proc));
+// }
 
 TextureMTL::TextureMTL(TextureDescriptor p_desc,
                        id<MTLTexture> texture,
-                       bool wrapped)
-    : Texture(p_desc), texture_(texture) {
+                       bool wrapped,
+                       CAMetalLayer* layer)
+    : Texture(p_desc), texture_(texture), layer_(layer) {
   const auto& desc = GetTextureDescriptor();
 
-  if (!desc.IsValid() || !texture_) {
+  if (!desc.IsValid() || (!texture_ && !layer_)) {
     return;
   }
 
-  if (desc.size != GetSize()) {
+  if (desc.size != GetSize() && !layer_) {
     VALIDATION_LOG << "The texture and its descriptor disagree about its size.";
     return;
+  }
+
+  if (layer_) {
+    latch_ = std::make_shared<fml::CountDownLatch>(1u);
   }
 
   is_wrapped_ = wrapped;
@@ -37,17 +45,18 @@ TextureMTL::TextureMTL(TextureDescriptor p_desc,
 
 std::shared_ptr<TextureMTL> TextureMTL::Wrapper(
     TextureDescriptor desc,
-    id<MTLTexture> texture,
+    CAMetalLayer* layer,
     std::function<void()> deletion_proc) {
   if (deletion_proc) {
     return std::shared_ptr<TextureMTL>(
-        new TextureMTL(desc, texture, true),
+        new TextureMTL(desc, nullptr, true, layer),
         [deletion_proc = std::move(deletion_proc)](TextureMTL* t) {
           deletion_proc();
           delete t;
         });
   }
-  return std::shared_ptr<TextureMTL>(new TextureMTL(desc, texture, true));
+  return std::shared_ptr<TextureMTL>(
+      new TextureMTL(desc, nullptr, true, layer));
 }
 
 TextureMTL::~TextureMTL() = default;
@@ -93,11 +102,28 @@ bool TextureMTL::OnSetContents(const uint8_t* contents,
 }
 
 ISize TextureMTL::GetSize() const {
+  if (is_wrapped_) {
+    return {static_cast<ISize::Type>(layer_.drawableSize.width),
+            static_cast<ISize::Type>(layer_.drawableSize.height)};
+  }
   return {static_cast<ISize::Type>(texture_.width),
           static_cast<ISize::Type>(texture_.height)};
 }
 
 id<MTLTexture> TextureMTL::GetMTLTexture() const {
+  if (is_wrapped_) {
+    TRACE_EVENT0("texture", "TextureMTL::GetMTLTexture");
+    if (!texture_) {
+      drawable_ = [layer_ nextDrawable];
+      if (!drawable_) {
+        FML_LOG(ERROR) << "FAILED WAITING FOR DRAWABLE";
+      } else {
+        FML_LOG(ERROR) << "GOT DRAWABLE";
+      }
+      texture_ = drawable_.texture;
+      latch_->CountDown();
+    }
+  }
   return texture_;
 }
 
