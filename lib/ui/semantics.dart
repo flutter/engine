@@ -730,6 +730,9 @@ abstract class SemanticsUpdateBuilder {
   /// [PlatformDispatcher.onSemanticsActionEvent] callback might be called with
   /// an action that is no longer possible.
   ///
+  /// The `identifier` is a string that describes the node for UI automation.
+  /// It's not exposed to users.
+  ///
   /// The `label` is a string that describes this node. The `value` property
   /// describes the current value of the node as a string. The `increasedValue`
   /// string will become the `value` string after a [SemanticsAction.increase]
@@ -803,6 +806,7 @@ abstract class SemanticsUpdateBuilder {
     required double elevation,
     required double thickness,
     required Rect rect,
+    String identifier,
     required String label,
     required List<StringAttribute> labelAttributes,
     required String value,
@@ -872,6 +876,7 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
     required double elevation,
     required double thickness,
     required Rect rect,
+    String? identifier,
     required String label,
     required List<StringAttribute> labelAttributes,
     required String value,
@@ -910,6 +915,7 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
       rect.bottom,
       elevation,
       thickness,
+      identifier ?? '',
       label,
       labelAttributes,
       value,
@@ -961,6 +967,7 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
           Handle,
           Handle,
           Handle,
+          Handle,
           Int32,
           Handle,
           Handle,
@@ -986,6 +993,7 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
       double bottom,
       double elevation,
       double thickness,
+      String? identifier,
       String label,
       List<StringAttribute> labelAttributes,
       String value,
