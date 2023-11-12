@@ -364,6 +364,7 @@ Future<void> a11y_string_attributes() async {
       decreasedValueAttributes: <StringAttribute>[],
       tooltip: 'tooltip',
       additionalActions: Int32List(0),
+      headingLevel: -1,
     );
 
   PlatformDispatcher.instance.views.first.updateSemantics(builder.build());
