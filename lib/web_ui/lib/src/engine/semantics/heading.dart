@@ -24,14 +24,14 @@ class Heading extends PrimaryRoleManager {
     }
 
     if (semanticsObject.headingLevel != -1) {
-      addHeadingLevel(semanticsObject.headingLevel ?? defaultHeadingLevel);
+      addHeadingLevel(semanticsObject.headingLevel);
     } else {
       addHeadingLevel(defaultHeadingLevel);
     }
   }
 
   void addHeadingRole() {
-    semanticsObject.setAriaRole('heading');
+    setAriaRole('heading');
   }
 
   void addHeadingLevel(int headingLevel) {
