@@ -230,7 +230,7 @@ class SemanticsNodeUpdate {
     required this.childrenInTraversalOrder,
     required this.childrenInHitTestOrder,
     required this.additionalActions,
-    this.headingLevel,
+    required this.headingLevel,
   });
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
@@ -330,7 +330,7 @@ class SemanticsNodeUpdate {
   final double thickness;
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
-  final int? headingLevel;
+  final int headingLevel;
 }
 
 /// Identifies [PrimaryRoleManager] implementations.
@@ -985,8 +985,8 @@ class SemanticsObject {
   }
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
-  int? get headingLevel => _headingLevel;
-  int? _headingLevel = -1;
+  int get headingLevel => _headingLevel;
+  int _headingLevel = -1;
 
   static const int _headingLevelIndex = 1 << 24;
 
