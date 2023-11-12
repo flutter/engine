@@ -163,6 +163,7 @@ source_set("ui") {
     "//flutter/flow",
     "//flutter/shell/common:display",
     "//flutter/shell/common:platform_message_handler",
+    "//flutter/skia/modules/skparagraph",
     "//flutter/third_party/txt",
   ]
 
@@ -175,10 +176,10 @@ source_set("ui") {
     "//flutter/impeller/runtime_stage",
     "//flutter/runtime:dart_plugin_registrant",
     "//flutter/runtime:test_font",
+    "//flutter/skia",
+    "//flutter/third_party/rapidjson",
     "//flutter/third_party/tonic",
     "//third_party/dart/runtime/bin:dart_io_api",
-    "//third_party/rapidjson",
-    "//third_party/skia",
     "//third_party/zlib:zlib",
   ]
 
@@ -233,6 +234,7 @@ if (enable_unittests) {
       "fixtures/hello_loop_2.gif",
       "fixtures/hello_loop_2.webp",
       "fixtures/FontManifest.json",
+      "fixtures/WideGamutIndexed.png",
       "//flutter/third_party/txt/third_party/fonts/Roboto-Medium.ttf",
     ]
   }
@@ -262,6 +264,8 @@ if (enable_unittests) {
     sources = [
       "compositing/scene_builder_unittests.cc",
       "hooks_unittests.cc",
+      "painting/image_decoder_no_gl_unittests.cc",
+      "painting/image_decoder_no_gl_unittests.h",
       "painting/image_dispose_unittests.cc",
       "painting/image_encoding_unittests.cc",
       "painting/image_generator_registry_unittests.cc",

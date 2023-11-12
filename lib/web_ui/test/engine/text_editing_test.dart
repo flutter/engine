@@ -12,12 +12,14 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' show flutterViewEmbedder;
 import 'package:ui/src/engine/browser_detection.dart';
 import 'package:ui/src/engine/dom.dart';
+import 'package:ui/src/engine/raw_keyboard.dart';
 import 'package:ui/src/engine/services.dart';
 import 'package:ui/src/engine/text_editing/autofill_hint.dart';
 import 'package:ui/src/engine/text_editing/input_type.dart';
 import 'package:ui/src/engine/text_editing/text_editing.dart';
 import 'package:ui/src/engine/util.dart';
 import 'package:ui/src/engine/vector_math.dart';
+import 'package:ui/ui.dart' as ui;
 
 import '../common/spy.dart';
 import '../common/test_initialization.dart';
@@ -368,6 +370,52 @@ Future<void> testMain() async {
         keyCode: _kReturnKeyCode,
       );
       expect(lastInputAction, 'TextInputAction.done');
+    });
+
+   test('handling keyboard event prevents triggering input action', () {
+      final ui.PlatformMessageCallback? savedCallback = ui.window.onPlatformMessage;
+
+      bool markTextEventHandled = false;
+      ui.window.onPlatformMessage = (String channel, ByteData? data,
+          ui.PlatformMessageResponseCallback? callback) {
+        final ByteData response = const JSONMessageCodec()
+            .encodeMessage(<String, dynamic>{'handled': markTextEventHandled})!;
+        callback!(response);
+      };
+      RawKeyboard.initialize();
+
+      final InputConfiguration config = InputConfiguration();
+      editingStrategy!.enable(
+        config,
+        onChange: trackEditingState,
+        onAction: trackInputAction,
+      );
+
+      // No input action so far.
+      expect(lastInputAction, isNull);
+
+      markTextEventHandled = true;
+      dispatchKeyboardEvent(
+        editingStrategy!.domElement!,
+        'keydown',
+        keyCode: _kReturnKeyCode,
+      );
+
+      // Input action prevented by platform message callback.
+      expect(lastInputAction, isNull);
+
+      markTextEventHandled = false;
+      dispatchKeyboardEvent(
+        editingStrategy!.domElement!,
+        'keydown',
+        keyCode: _kReturnKeyCode,
+      );
+
+      // Input action received.
+      expect(lastInputAction, 'TextInputAction.done');
+
+      ui.window.onPlatformMessage = savedCallback;
+      RawKeyboard.instance?.dispose();
     });
 
     test('Triggers input action in multi-line mode', () {
@@ -2614,6 +2662,12 @@ Future<void> testMain() async {
       expect(testInputElement.getAttribute('autocomplete'),'on');
       expect(testInputElement.placeholder, 'enter your password');
     });
+
+    // Regression test for https://github.com/flutter/flutter/issues/135542
+    test('autofill with middleName hint', () {
+      expect(BrowserAutofillHints.instance.flutterToEngine('middleName'),
+          'additional-name');
+    });
   });
 
   group('EditingState', () {
@@ -2726,14 +2780,17 @@ Future<void> testMain() async {
       final DomHTMLInputElement input =
           defaultTextEditingRoot.querySelector('input')! as DomHTMLInputElement;
       input.value = 'Test';
-      input.selectionStart = 1;
-      input.selectionEnd = 2;
 
+      input.setSelectionRange(1, 2);
       editingState = EditingState.fromDomElement(input);
-
       expect(editingState.text, 'Test');
       expect(editingState.baseOffset, 1);
       expect(editingState.extentOffset, 2);
+
+      input.setSelectionRange(1, 2, 'backward');
+      editingState = EditingState.fromDomElement(input);
+      expect(editingState.baseOffset, 2);
+      expect(editingState.extentOffset, 1);
     });
 
     test('Get Editing State from text area element', () {
@@ -2747,14 +2804,17 @@ Future<void> testMain() async {
       final DomHTMLTextAreaElement input =
           defaultTextEditingRoot.querySelector('textarea')! as DomHTMLTextAreaElement;
       input.value = 'Test';
-      input.selectionStart = 1;
-      input.selectionEnd = 2;
 
+      input.setSelectionRange(1, 2);
       editingState = EditingState.fromDomElement(input);
-
       expect(editingState.text, 'Test');
       expect(editingState.baseOffset, 1);
       expect(editingState.extentOffset, 2);
+
+      input.setSelectionRange(1, 2, 'backward');
+      editingState = EditingState.fromDomElement(input);
+      expect(editingState.baseOffset, 2);
+      expect(editingState.extentOffset, 1);
     });
 
     group('comparing editing states', () {

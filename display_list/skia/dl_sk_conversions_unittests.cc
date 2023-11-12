@@ -26,6 +26,21 @@ TEST(DisplayListImageFilter, LocalImageSkiaNull) {
   ASSERT_EQ(ToSk(dl_local_matrix_filter), nullptr);
 }
 
+TEST(DisplayListSkConversions, ToSkColor) {
+  // Red
+  ASSERT_EQ(ToSk(DlColor::kRed()), SK_ColorRED);
+
+  // Green
+  ASSERT_EQ(ToSk(DlColor::kGreen()), SK_ColorGREEN);
+
+  // Blue
+  ASSERT_EQ(ToSk(DlColor::kBlue()), SK_ColorBLUE);
+
+  // Half transparent grey
+  auto const grey_hex_half_opaque = 0x7F999999;
+  ASSERT_EQ(ToSk(DlColor(grey_hex_half_opaque)), SkColor(grey_hex_half_opaque));
+}
+
 TEST(DisplayListSkConversions, ToSkTileMode) {
   ASSERT_EQ(ToSk(DlTileMode::kClamp), SkTileMode::kClamp);
   ASSERT_EQ(ToSk(DlTileMode::kRepeat), SkTileMode::kRepeat);
@@ -136,7 +151,8 @@ TEST(DisplayListSkConversions, ToSkBlendMode) {
 TEST(DisplayListSkConversions, BlendColorFilterModifiesTransparency) {
   auto test_mode_color = [](DlBlendMode mode, DlColor color) {
     std::stringstream desc_str;
-    desc_str << "blend[" << static_cast<int>(mode) << ", " << color << "]";
+    desc_str << "blend[" << static_cast<int>(mode) << ", " << color.argb()
+             << "]";
     std::string desc = desc_str.str();
     DlBlendColorFilter filter(color, mode);
     if (filter.modifies_transparent_black()) {
@@ -270,42 +286,32 @@ TEST(DisplayListSkConversions, MatrixColorFilterModifiesTransparency) {
   }
 }
 
-TEST(DisplayListSkConversions, ToSkDitheringDisabledForGradients) {
-  // Test that when using the utility method "ToSk", the resulting SkPaint
-  // does not have "isDither" set to true, even if it's requested by the
-  // Flutter (dart:ui) paint, because it's not a supported feature in the
-  // Impeller backend.
-
-  // Create a new DlPaint with isDither set to true.
-  //
-  // This mimics the behavior of ui.Paint.enableDithering = true.
-  DlPaint dl_paint;
-  dl_paint.setDither(true);
-
-  SkPaint sk_paint = ToSk(dl_paint);
-
-  EXPECT_FALSE(sk_paint.isDither());
-}
-
 TEST(DisplayListSkConversions, ToSkDitheringEnabledForGradients) {
   // Test that when using the utility method "ToSk", the resulting SkPaint
   // has "isDither" set to true, if the paint is a gradient, because it's
   // a supported feature in the Impeller backend.
 
-  // Create a new DlPaint with isDither set to true.
-  //
-  // This mimics the behavior of ui.Paint.enableDithering = true.
   DlPaint dl_paint;
-  dl_paint.setDither(true);
 
   // Set the paint to be a gradient.
   dl_paint.setColorSource(DlColorSource::MakeLinear(SkPoint::Make(0, 0),
                                                     SkPoint::Make(100, 100), 0,
                                                     0, 0, DlTileMode::kClamp));
 
-  SkPaint sk_paint = ToSk(dl_paint);
+  {
+    SkPaint sk_paint = ToSk(dl_paint);
+    EXPECT_TRUE(sk_paint.isDither());
+  }
 
-  EXPECT_TRUE(sk_paint.isDither());
+  {
+    SkPaint sk_paint = ToStrokedSk(dl_paint);
+    EXPECT_TRUE(sk_paint.isDither());
+  }
+
+  {
+    SkPaint sk_paint = ToNonShaderSk(dl_paint);
+    EXPECT_FALSE(sk_paint.isDither());
+  }
 }
 
 }  // namespace testing

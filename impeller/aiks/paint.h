@@ -26,7 +26,7 @@ struct Paint {
   using ImageFilterProc = std::function<std::shared_ptr<FilterContents>(
       FilterInput::Ref,
       const Matrix& effect_transform,
-      bool is_subpass)>;
+      Entity::RenderingMode rendering_mode)>;
   using MaskFilterProc = std::function<std::shared_ptr<FilterContents>(
       FilterInput::Ref,
       bool is_solid_color,
@@ -67,6 +67,8 @@ struct Paint {
   std::shared_ptr<ColorFilter> color_filter;
   std::optional<MaskBlurDescriptor> mask_blur_descriptor;
 
+  std::shared_ptr<ColorFilter> GetColorFilter() const;
+
   /// @brief      Wrap this paint's configured filters to the given contents.
   /// @param[in]  input           The contents to wrap with paint's filters.
   /// @return     The filter-wrapped contents. If there are no filters that need
@@ -98,16 +100,16 @@ struct Paint {
   std::shared_ptr<Contents> WithMaskBlur(std::shared_ptr<Contents> input,
                                          bool is_solid_color) const;
 
+  std::shared_ptr<FilterContents> WithImageFilter(
+      const FilterInput::Variant& input,
+      const Matrix& effect_transform,
+      Entity::RenderingMode rendering_mode) const;
+
  private:
-  std::shared_ptr<Contents> WithImageFilter(std::shared_ptr<Contents> input,
-                                            const Matrix& effect_transform,
-                                            bool is_subpass) const;
-
-  std::shared_ptr<Contents> WithColorFilter(std::shared_ptr<Contents> input,
-                                            bool absorb_opacity = false) const;
-
-  std::shared_ptr<Contents> WithInvertFilter(
-      std::shared_ptr<Contents> input) const;
+  std::shared_ptr<Contents> WithColorFilter(
+      std::shared_ptr<Contents> input,
+      ColorFilterContents::AbsorbOpacity absorb_opacity =
+          ColorFilterContents::AbsorbOpacity::kNo) const;
 };
 
 }  // namespace impeller

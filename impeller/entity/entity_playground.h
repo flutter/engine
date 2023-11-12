@@ -32,10 +32,14 @@ class EntityPlayground : public PlaygroundTest {
 
   bool OpenPlaygroundHere(EntityPlaygroundCallback callback);
 
+  std::shared_ptr<ContentContext> GetContentContext() const;
+
  private:
   std::shared_ptr<TypographerContext> typographer_context_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(EntityPlayground);
+  EntityPlayground(const EntityPlayground&) = delete;
+
+  EntityPlayground& operator=(const EntityPlayground&) = delete;
 };
 
 }  // namespace impeller

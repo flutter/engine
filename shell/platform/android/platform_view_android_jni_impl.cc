@@ -31,7 +31,7 @@
 #include "flutter/shell/platform/android/android_shell_holder.h"
 #include "flutter/shell/platform/android/apk_asset_provider.h"
 #include "flutter/shell/platform/android/flutter_main.h"
-#include "flutter/shell/platform/android/hardware_buffer_external_texture_gl.h"
+#include "flutter/shell/platform/android/image_external_texture_gl.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/platform_view_android.h"
 #include "flutter/shell/platform/android/surface_texture_external_texture_gl.h"
@@ -483,6 +483,11 @@ static jboolean GetIsSoftwareRendering(JNIEnv* env, jobject jcaller) {
   return FlutterMain::Get().GetSettings().enable_software_rendering;
 }
 
+static jboolean GetDisableImageReaderPlatformViews(JNIEnv* env,
+                                                   jobject jcaller) {
+  return FlutterMain::Get().GetSettings().disable_image_reader_platform_views;
+}
+
 static void RegisterTexture(JNIEnv* env,
                             jobject jcaller,
                             jlong shell_holder,
@@ -777,6 +782,11 @@ bool RegisterApi(JNIEnv* env) {
           .name = "nativeGetIsSoftwareRenderingEnabled",
           .signature = "()Z",
           .fnPtr = reinterpret_cast<void*>(&GetIsSoftwareRendering),
+      },
+      {
+          .name = "nativeGetDisableImageReaderPlatformViews",
+          .signature = "()Z",
+          .fnPtr = reinterpret_cast<void*>(&GetDisableImageReaderPlatformViews),
       },
       {
           .name = "nativeRegisterTexture",

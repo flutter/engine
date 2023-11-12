@@ -4,13 +4,14 @@
 
 import 'package:ui/src/engine/dom.dart';
 
+import '../hot_restart_cache_handler.dart' show registerElementForCleanup;
 import 'embedding_strategy.dart';
 
 /// An [EmbeddingStrategy] that renders flutter inside a target host element.
 ///
 /// This strategy attempts to minimize DOM modifications outside of the host
 /// element, so it plays "nice" with other web frameworks.
-class CustomElementEmbeddingStrategy extends EmbeddingStrategy {
+class CustomElementEmbeddingStrategy implements EmbeddingStrategy {
   /// Creates a [CustomElementEmbeddingStrategy] to embed a Flutter view into [_hostElement].
   CustomElementEmbeddingStrategy(this._hostElement) {
     _hostElement.clearChildren();
@@ -50,12 +51,6 @@ class CustomElementEmbeddingStrategy extends EmbeddingStrategy {
 
     registerElementForCleanup(resourceHost);
   }
-
-  @override
-  void disableContextMenu() => disableContextMenuOn(_hostElement);
-
-  @override
-  void enableContextMenu() => enableContextMenuOn(_hostElement);
 
   void _setHostAttribute(String name, String value) {
     _hostElement.setAttribute(name, value);

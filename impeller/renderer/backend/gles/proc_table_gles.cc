@@ -6,9 +6,12 @@
 
 #include <sstream>
 
+#include "fml/closure.h"
 #include "impeller/base/allocation.h"
 #include "impeller/base/comparable.h"
 #include "impeller/base/validation.h"
+#include "impeller/renderer/backend/gles/capabilities_gles.h"
+#include "impeller/renderer/capabilities.h"
 
 namespace impeller {
 
@@ -30,6 +33,20 @@ const char* GLErrorToString(GLenum value) {
       return "GL_OUT_OF_MEMORY";
   }
   return "Unknown.";
+}
+
+bool GLErrorIsFatal(GLenum value) {
+  switch (value) {
+    case GL_NO_ERROR:
+      return false;
+    case GL_INVALID_ENUM:
+    case GL_INVALID_VALUE:
+    case GL_INVALID_OPERATION:
+    case GL_INVALID_FRAMEBUFFER_OPERATION:
+    case GL_OUT_OF_MEMORY:
+      return true;
+  }
+  return false;
 }
 
 ProcTableGLES::Resolver WrappedResolver(
@@ -111,7 +128,7 @@ ProcTableGLES::ProcTableGLES(Resolver resolver) {
     DiscardFramebufferEXT.Reset();
   }
 
-  capabilities_ = std::make_unique<CapabilitiesGLES>(*this);
+  capabilities_ = std::make_shared<CapabilitiesGLES>(*this);
 
   is_valid_ = true;
 }
@@ -122,20 +139,60 @@ bool ProcTableGLES::IsValid() const {
   return is_valid_;
 }
 
-void ProcTableGLES::ShaderSourceMapping(GLuint shader,
-                                        const fml::Mapping& mapping) const {
+void ProcTableGLES::ShaderSourceMapping(
+    GLuint shader,
+    const fml::Mapping& mapping,
+    const std::vector<int32_t>& defines) const {
+  if (defines.empty()) {
+    const GLchar* sources[] = {
+        reinterpret_cast<const GLchar*>(mapping.GetMapping())};
+    const GLint lengths[] = {static_cast<GLint>(mapping.GetSize())};
+    ShaderSource(shader, 1u, sources, lengths);
+    return;
+  }
+  const auto& shader_source = ComputeShaderWithDefines(mapping, defines);
+  if (!shader_source.has_value()) {
+    VALIDATION_LOG << "Failed to append constant data to shader";
+    return;
+  }
+
   const GLchar* sources[] = {
-      reinterpret_cast<const GLchar*>(mapping.GetMapping())};
-  const GLint lengths[] = {static_cast<GLint>(mapping.GetSize())};
+      reinterpret_cast<const GLchar*>(shader_source->c_str())};
+  const GLint lengths[] = {static_cast<GLint>(shader_source->size())};
   ShaderSource(shader, 1u, sources, lengths);
+}
+
+// Visible For testing.
+std::optional<std::string> ProcTableGLES::ComputeShaderWithDefines(
+    const fml::Mapping& mapping,
+    const std::vector<int32_t>& defines) const {
+  auto shader_source = std::string{
+      reinterpret_cast<const char*>(mapping.GetMapping()), mapping.GetSize()};
+
+  // Look for the first newline after the '#version' header, which impellerc
+  // will always emit as the first line of a compiled shader.
+  auto index = shader_source.find('\n');
+  if (index == std::string::npos) {
+    VALIDATION_LOG << "Failed to append constant data to shader";
+    return std::nullopt;
+  }
+
+  std::stringstream ss;
+  for (auto i = 0u; i < defines.size(); i++) {
+    ss << "#define SPIRV_CROSS_CONSTANT_ID_" << i << " " << defines[i] << '\n';
+  }
+  auto define_string = ss.str();
+  shader_source.insert(index + 1, define_string);
+  return shader_source;
 }
 
 const DescriptionGLES* ProcTableGLES::GetDescription() const {
   return description_.get();
 }
 
-const CapabilitiesGLES* ProcTableGLES::GetCapabilities() const {
-  return capabilities_.get();
+const std::shared_ptr<const CapabilitiesGLES>& ProcTableGLES::GetCapabilities()
+    const {
+  return capabilities_;
 }
 
 static const char* FramebufferStatusToString(GLenum status) {
@@ -305,9 +362,11 @@ bool ProcTableGLES::SetDebugLabel(DebugResourceType type,
 }
 
 void ProcTableGLES::PushDebugGroup(const std::string& label) const {
+#ifdef IMPELLER_DEBUG
   if (debug_label_max_length_ <= 0) {
     return;
   }
+
   UniqueID id;
   const auto label_length =
       std::min<GLsizei>(debug_label_max_length_ - 1, label.size());
@@ -316,13 +375,17 @@ void ProcTableGLES::PushDebugGroup(const std::string& label) const {
                     label_length,                     // length
                     label.data()                      // message
   );
+#endif  // IMPELLER_DEBUG
 }
 
 void ProcTableGLES::PopDebugGroup() const {
+#ifdef IMPELLER_DEBUG
   if (debug_label_max_length_ <= 0) {
     return;
   }
+
   PopDebugGroupKHR();
+#endif  // IMPELLER_DEBUG
 }
 
 std::string ProcTableGLES::GetProgramInfoLogString(GLuint program) const {

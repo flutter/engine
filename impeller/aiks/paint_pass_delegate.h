@@ -32,10 +32,17 @@ class PaintPassDelegate final : public EntityPassDelegate {
       std::shared_ptr<Texture> target,
       const Matrix& effect_transform) override;
 
+  // |EntityPassDelgate|
+  std::shared_ptr<FilterContents> WithImageFilter(
+      const FilterInput::Variant& input,
+      const Matrix& effect_transform) const override;
+
  private:
   const Paint paint_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(PaintPassDelegate);
+  PaintPassDelegate(const PaintPassDelegate&) = delete;
+
+  PaintPassDelegate& operator=(const PaintPassDelegate&) = delete;
 };
 
 /// A delegate that attempts to forward opacity from a save layer to
@@ -61,10 +68,18 @@ class OpacityPeepholePassDelegate final : public EntityPassDelegate {
       std::shared_ptr<Texture> target,
       const Matrix& effect_transform) override;
 
+  // |EntityPassDelgate|
+  std::shared_ptr<FilterContents> WithImageFilter(
+      const FilterInput::Variant& input,
+      const Matrix& effect_transform) const override;
+
  private:
   const Paint paint_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(OpacityPeepholePassDelegate);
+  OpacityPeepholePassDelegate(const OpacityPeepholePassDelegate&) = delete;
+
+  OpacityPeepholePassDelegate& operator=(const OpacityPeepholePassDelegate&) =
+      delete;
 };
 
 }  // namespace impeller

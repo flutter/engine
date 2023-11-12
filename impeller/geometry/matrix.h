@@ -62,7 +62,7 @@ struct Matrix {
             Vector4(m12, m13, m14, m15)} {}
   // clang-format on
 
-  Matrix(const MatrixDecomposition& decomposition);
+  explicit Matrix(const MatrixDecomposition& decomposition);
 
   // clang-format off
   static constexpr Matrix MakeColumn(
@@ -219,6 +219,7 @@ struct Matrix {
     // clang-format on
   }
 
+  /// The Matrix without its `w` components (without translation).
   constexpr Matrix Basis() const {
     // clang-format off
     return Matrix(

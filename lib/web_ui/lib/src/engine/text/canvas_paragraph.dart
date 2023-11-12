@@ -5,9 +5,9 @@
 import 'package:ui/ui.dart' as ui;
 
 import '../dom.dart';
-import '../embedder.dart';
 import '../html/bitmap_canvas.dart';
 import '../profiler.dart';
+import '../view_embedder/style_manager.dart';
 import 'layout_fragmenter.dart';
 import 'layout_service.dart';
 import 'paint_service.dart';
@@ -40,7 +40,7 @@ class CanvasParagraph implements ui.Paragraph {
   final EngineParagraphStyle paragraphStyle;
 
   /// The full textual content of the paragraph.
-  late String plainText;
+  final String plainText;
 
   /// Whether this paragraph can be drawn on a bitmap canvas.
   ///
@@ -221,23 +221,44 @@ class CanvasParagraph implements ui.Paragraph {
 
   @override
   ui.TextRange getLineBoundary(ui.TextPosition position) {
-    final int index = position.offset;
-
-    int i;
-    for (i = 0; i < lines.length - 1; i++) {
-      final ParagraphLine line = lines[i];
-      if (index >= line.startIndex && index < line.endIndex) {
-        break;
-      }
+    if (lines.isEmpty) {
+      return ui.TextRange.empty;
     }
-
-    final ParagraphLine line = lines[i];
+    final int? lineNumber = getLineNumberAt(position.offset);
+    // Fallback to the last line for backward compatibility.
+    final ParagraphLine line = lineNumber != null ? lines[lineNumber] : lines.last;
     return ui.TextRange(start: line.startIndex, end: line.endIndex - line.trailingNewlines);
   }
 
   @override
   List<EngineLineMetrics> computeLineMetrics() {
     return lines.map((ParagraphLine line) => line.lineMetrics).toList();
+  }
+
+  @override
+  EngineLineMetrics? getLineMetricsAt(int lineNumber) {
+    return 0 <= lineNumber && lineNumber < lines.length
+      ? lines[lineNumber].lineMetrics
+      : null;
+  }
+
+  @override
+  int get numberOfLines => lines.length;
+
+  @override
+  int? getLineNumberAt(int codeUnitOffset) => _findLine(codeUnitOffset, 0, lines.length);
+
+  int? _findLine(int codeUnitOffset, int startLine, int endLine) {
+    if (endLine <= startLine || codeUnitOffset < lines[startLine].startIndex || lines[endLine - 1].endIndex <= codeUnitOffset) {
+      return null;
+    }
+    if (endLine == startLine + 1) {
+      return startLine;
+    }
+    // endLine >= startLine + 2 thus we have
+    // startLine + 1 <= midIndex <= endLine - 1
+    final int midIndex = (startLine + endLine) ~/ 2;
+    return _findLine(codeUnitOffset, midIndex, endLine) ?? _findLine(codeUnitOffset, startLine, midIndex);
   }
 
   bool _disposed = false;
@@ -518,7 +539,7 @@ class RootStyleNode extends StyleNode {
   ui.TextBaseline? get _textBaseline => null;
 
   @override
-  String get _fontFamily => paragraphStyle.fontFamily ?? FlutterViewEmbedder.defaultFontFamily;
+  String get _fontFamily => paragraphStyle.fontFamily ?? StyleManager.defaultFontFamily;
 
   @override
   List<String>? get _fontFamilyFallback => null;
@@ -530,7 +551,7 @@ class RootStyleNode extends StyleNode {
   List<ui.FontVariation>? get _fontVariations => null;
 
   @override
-  double get _fontSize => paragraphStyle.fontSize ?? FlutterViewEmbedder.defaultFontSize;
+  double get _fontSize => paragraphStyle.fontSize ?? StyleManager.defaultFontSize;
 
   @override
   double? get _letterSpacing => null;
@@ -645,6 +666,12 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
 
   void _updateCanDrawOnCanvas(EngineTextStyle style) {
     if (!_canDrawOnCanvas) {
+      return;
+    }
+
+    final double? letterSpacing = style.letterSpacing;
+    if (letterSpacing != null && letterSpacing != 0.0) {
+      _canDrawOnCanvas = false;
       return;
     }
 

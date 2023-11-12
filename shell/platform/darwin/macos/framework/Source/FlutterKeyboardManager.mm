@@ -275,7 +275,7 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
 
   std::map<uint32_t, LayoutGoal> mandatoryGoalsByChar;
   std::map<uint32_t, LayoutGoal> usLayoutGoalsByKeyCode;
-  for (const LayoutGoal& goal : flutter::layoutGoals) {
+  for (const LayoutGoal& goal : flutter::kLayoutGoals) {
     if (goal.mandatory) {
       mandatoryGoalsByChar[goal.keyChar] = goal;
     } else {
@@ -337,10 +337,9 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
 
 - (void)syncModifiersIfNeeded:(NSEventModifierFlags)modifierFlags
                     timestamp:(NSTimeInterval)timestamp {
-  // The embedder responder is the first element in _primaryResponders.
-  FlutterEmbedderKeyResponder* embedderResponder =
-      (FlutterEmbedderKeyResponder*)_primaryResponders[0];
-  [embedderResponder syncModifiersIfNeeded:modifierFlags timestamp:timestamp];
+  for (id<FlutterKeyPrimaryResponder> responder in _primaryResponders) {
+    [responder syncModifiersIfNeeded:modifierFlags timestamp:timestamp];
+  }
 }
 
 /**

@@ -34,8 +34,18 @@ class DefaultEntityPassDelegate final : public EntityPassDelegate {
     FML_UNREACHABLE();
   }
 
+  // |EntityPassDelgate|
+  std::shared_ptr<FilterContents> WithImageFilter(
+      const FilterInput::Variant& input,
+      const Matrix& effect_transform) const override {
+    return nullptr;
+  }
+
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(DefaultEntityPassDelegate);
+  DefaultEntityPassDelegate(const DefaultEntityPassDelegate&) = delete;
+
+  DefaultEntityPassDelegate& operator=(const DefaultEntityPassDelegate&) =
+      delete;
 };
 
 std::unique_ptr<EntityPassDelegate> EntityPassDelegate::MakeDefault() {

@@ -110,7 +110,7 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
       return;
     }
     DlPaint paint;
-    paint.setColor(color);
+    paint.setColor(DlColor(color));
     if (blur_sigma > 0.0) {
       DlBlurMaskFilter filter(DlBlurStyle::kNormal, blur_sigma, false);
       paint.setMaskFilter(&filter);
@@ -213,7 +213,7 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
     // filters rely on having the glyph coverage, whereas regular text is
     // drawn as rectangular texture samples.
     return ((paint.getColorSource() && !paint.getColorSource()->asColor()) ||
-            paint.getDrawStyle() == DlDrawStyle::kStroke);
+            paint.getDrawStyle() != DlDrawStyle::kFill);
   }
 
   DlPaint toDlPaint(const DecorationStyle& decor_style,
@@ -221,7 +221,7 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
     DlPaint paint;
     paint.setDrawStyle(draw_style);
     paint.setAntiAlias(true);
-    paint.setColor(decor_style.getColor());
+    paint.setColor(DlColor(decor_style.getColor()));
     paint.setStrokeWidth(decor_style.getStrokeWidth());
     return paint;
   }
@@ -301,6 +301,11 @@ std::vector<LineMetrics>& ParagraphSkia::GetLineMetrics() {
   return line_metrics_.value();
 }
 
+bool ParagraphSkia::GetLineMetricsAt(int lineNumber,
+                                     skt::LineMetrics* lineMetrics) const {
+  return paragraph_->getLineMetricsAt(lineNumber, lineMetrics);
+};
+
 double ParagraphSkia::GetMinIntrinsicWidth() {
   return SkScalarToDouble(paragraph_->getMinIntrinsicWidth());
 }
@@ -376,6 +381,14 @@ Paragraph::PositionWithAffinity ParagraphSkia::GetGlyphPositionAtCoordinate(
 Paragraph::Range<size_t> ParagraphSkia::GetWordBoundary(size_t offset) {
   skt::SkRange<size_t> range = paragraph_->getWordBoundary(offset);
   return Paragraph::Range<size_t>(range.start, range.end);
+}
+
+size_t ParagraphSkia::GetNumberOfLines() const {
+  return paragraph_->lineNumber();
+}
+
+int ParagraphSkia::GetLineNumberAt(size_t codeUnitIndex) const {
+  return paragraph_->getLineNumberAtUTF16Offset(codeUnitIndex);
 }
 
 TextStyle ParagraphSkia::SkiaToTxt(const skt::TextStyle& skia) {

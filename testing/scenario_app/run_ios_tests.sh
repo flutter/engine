@@ -61,12 +61,15 @@ zip_and_upload_xcresult_to_luci () {
 echo "Running simulator tests with Skia"
 echo ""
 
+# TODO(vashworth): Stop skipping testMultiplePlatformViewsWithOverlays once
+# https://github.com/flutter/flutter/issues/138193 is resolved
 if set -o pipefail && xcodebuild -sdk iphonesimulator \
   -scheme Scenarios \
   -resultBundlePath "$RESULT_BUNDLE_PATH/ios_scenario.xcresult" \
   -destination 'platform=iOS Simulator,OS=16.2,name=iPhone SE (3rd generation)' \
   clean test \
-  FLUTTER_ENGINE="$FLUTTER_ENGINE"; then
+  FLUTTER_ENGINE="$FLUTTER_ENGINE" \
+  -skip-testing ScenariosUITests/UnobstructedPlatformViewTests/testMultiplePlatformViewsWithOverlays; then
   echo "test success."
 else
   echo "test failed."
@@ -109,7 +112,9 @@ if set -o pipefail && xcodebuild -sdk iphonesimulator \
   -skip-testing ScenariosUITests/TwoPlatformViewClipRRectTests/testPlatformView \
   -skip-testing ScenariosUITests/TwoPlatformViewsWithOtherBackDropFilterTests/testPlatformView \
   -skip-testing ScenariosUITests/UnobstructedPlatformViewTests/testMultiplePlatformViewsWithOverlays \
-  INFOPLIST_FILE="Scenarios/Info_Impeller.plist"; then # Plist with FLTEnableImpeller=YES
+  # Plist with FLTEnableImpeller=YES, all projects in the workspace requires this file.
+  # For example, FlutterAppExtensionTestHost has a dummy file under the below directory.
+  INFOPLIST_FILE="Scenarios/Info_Impeller.plist"; then
   echo "test success."
 else
   echo "test failed."

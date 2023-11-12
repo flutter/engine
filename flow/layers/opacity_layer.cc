@@ -36,13 +36,12 @@ void OpacityLayer::Diff(DiffContext* context, const Layer* old_layer) {
 }
 
 void OpacityLayer::Preroll(PrerollContext* context) {
-  FML_DCHECK(!layers().empty());  // We can't be a leaf.
-
   auto mutator = context->state_stack.save();
   mutator.translate(offset_);
   mutator.applyOpacity(SkRect(), DlColor::toOpacity(alpha_));
 
-  AutoCache auto_cache(*this, context);
+  AutoCache auto_cache = AutoCache(layer_raster_cache_item_.get(), context,
+                                   context->state_stack.transform_3x3());
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
 
@@ -77,7 +76,7 @@ void OpacityLayer::Paint(PaintContext& context) const {
 
   mutator.applyOpacity(child_paint_bounds(), opacity());
 
-  if (context.raster_cache && !children_can_accept_opacity()) {
+  if (!children_can_accept_opacity()) {
     DlPaint paint;
     if (layer_raster_cache_item_->Draw(context,
                                        context.state_stack.fill(paint))) {

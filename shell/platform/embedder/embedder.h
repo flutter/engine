@@ -757,6 +757,11 @@ typedef struct {
   /// The queue family index of the VkQueue supplied in the next field.
   uint32_t queue_family_index;
   /// VkQueue handle.
+  /// The queue should not be used without protection from a mutex to make sure
+  /// it is not used simultaneously with other threads. That mutex should match
+  /// the one injected via the |get_instance_proc_address_callback|.
+  /// There is a proposal to remove the need for the mutex at
+  /// https://github.com/flutter/flutter/issues/134573.
   FlutterVulkanQueueHandle queue;
   /// The number of instance extensions available for enumerating in the next
   /// field.
@@ -780,6 +785,12 @@ typedef struct {
   /// For example: VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME
   const char** enabled_device_extensions;
   /// The callback invoked when resolving Vulkan function pointers.
+  /// At a bare minimum this should be used to swap out any calls that operate
+  /// on vkQueue's for threadsafe variants that obtain locks for their duration.
+  /// The functions to swap out are "vkQueueSubmit" and "vkQueueWaitIdle".  An
+  /// example of how to do that can be found in the test
+  /// "EmbedderTest.CanSwapOutVulkanCalls" unit-test in
+  /// //shell/platform/embedder/tests/embedder_vk_unittests.cc.
   FlutterVulkanInstanceProcAddressCallback get_instance_proc_address_callback;
   /// The callback invoked when the engine requests a VkImage from the embedder
   /// for rendering the next frame.
@@ -958,6 +969,14 @@ typedef enum {
   kFlutterKeyEventTypeRepeat,
 } FlutterKeyEventType;
 
+typedef enum {
+  kFlutterKeyEventDeviceTypeKeyboard = 1,
+  kFlutterKeyEventDeviceTypeDirectionalPad,
+  kFlutterKeyEventDeviceTypeGamepad,
+  kFlutterKeyEventDeviceTypeJoystick,
+  kFlutterKeyEventDeviceTypeHdmi,
+} FlutterKeyEventDeviceType;
+
 /// A structure to represent a key event.
 ///
 /// Sending `FlutterKeyEvent` via `FlutterEngineSendKeyEvent` results in a
@@ -1021,6 +1040,8 @@ typedef struct {
   /// An event being synthesized means that the `timestamp` might greatly
   /// deviate from the actual time when the event occurs physically.
   bool synthesized;
+  /// The source device for the key event.
+  FlutterKeyEventDeviceType device_type;
 } FlutterKeyEvent;
 
 typedef void (*FlutterKeyEventCallback)(bool /* handled */,

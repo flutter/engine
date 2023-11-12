@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <set>
 #include <string>
@@ -61,6 +62,9 @@ class CapabilitiesVK final : public Capabilities,
   bool SupportsOffscreenMSAA() const override;
 
   // |Capabilities|
+  bool SupportsImplicitResolvingMSAA() const override;
+
+  // |Capabilities|
   bool SupportsSSBO() const override;
 
   // |Capabilities|
@@ -82,9 +86,6 @@ class CapabilitiesVK final : public Capabilities,
   bool SupportsReadFromResolve() const override;
 
   // |Capabilities|
-  bool SupportsReadFromOnscreenTexture() const override;
-
-  // |Capabilities|
   bool SupportsDecalSamplerAddressMode() const override;
 
   // |Capabilities|
@@ -100,7 +101,7 @@ class CapabilitiesVK final : public Capabilities,
   PixelFormat GetDefaultDepthStencilFormat() const override;
 
  private:
-  const bool enable_validations_;
+  bool validations_enabled_ = false;
   std::map<std::string, std::set<std::string>> exts_;
   std::set<OptionalDeviceExtensionVK> optional_device_extensions_;
   mutable PixelFormat default_color_format_ = PixelFormat::kUnknown;
@@ -115,7 +116,9 @@ class CapabilitiesVK final : public Capabilities,
 
   bool HasLayer(const std::string& layer) const;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(CapabilitiesVK);
+  CapabilitiesVK(const CapabilitiesVK&) = delete;
+
+  CapabilitiesVK& operator=(const CapabilitiesVK&) = delete;
 };
 
 }  // namespace impeller

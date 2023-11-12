@@ -19,14 +19,13 @@ constexpr float kInvertColorMatrix[20] = {
 };
 // clang-format on
 
-SkPaint ToSk(const DlPaint& paint, bool force_stroke) {
+SkPaint ToSk(const DlPaint& paint) {
   SkPaint sk_paint;
 
   sk_paint.setAntiAlias(paint.isAntiAlias());
-  sk_paint.setColor(paint.getColor());
+  sk_paint.setColor(ToSk(paint.getColor()));
   sk_paint.setBlendMode(ToSk(paint.getBlendMode()));
-  sk_paint.setStyle(force_stroke ? SkPaint::kStroke_Style
-                                 : ToSk(paint.getDrawStyle()));
+  sk_paint.setStyle(ToSk(paint.getDrawStyle()));
   sk_paint.setStrokeWidth(paint.getStrokeWidth());
   sk_paint.setStrokeMiter(paint.getStrokeMiter());
   sk_paint.setStrokeCap(ToSk(paint.getStrokeCap()));
@@ -44,18 +43,8 @@ SkPaint ToSk(const DlPaint& paint, bool force_stroke) {
 
   auto color_source = paint.getColorSourcePtr();
   if (color_source) {
-    // On the Impeller backend, we will only support dithering of *gradients*,
-    // and it will be enabled by default (without the option to disable it).
-    // Until Skia support is completely removed, we only want to respect the
-    // dither flag for gradients (otherwise it will also apply to, for example,
-    // images, which is not supported in Impeller).
-    //
-    // See https://github.com/flutter/flutter/issues/112498.
-    if (color_source->isGradient()) {
-      // Originates from `dart:ui#Paint.enableDithering`.
-      auto user_specified_dither = paint.isDither();
-      sk_paint.setDither(user_specified_dither);
-    }
+    // Unconditionally set dither to true for gradient shaders.
+    sk_paint.setDither(color_source->isGradient());
     sk_paint.setShader(ToSk(color_source));
   }
 
@@ -63,6 +52,18 @@ SkPaint ToSk(const DlPaint& paint, bool force_stroke) {
   sk_paint.setPathEffect(ToSk(paint.getPathEffectPtr()));
 
   return sk_paint;
+}
+
+SkPaint ToStrokedSk(const DlPaint& paint) {
+  DlPaint stroked_paint = paint;
+  stroked_paint.setDrawStyle(DlDrawStyle::kStroke);
+  return ToSk(stroked_paint);
+}
+
+SkPaint ToNonShaderSk(const DlPaint& paint) {
+  DlPaint non_shader_paint = paint;
+  non_shader_paint.setColorSource(nullptr);
+  return ToSk(non_shader_paint);
 }
 
 sk_sp<SkShader> ToSk(const DlColorSource* source) {
@@ -76,7 +77,7 @@ sk_sp<SkShader> ToSk(const DlColorSource* source) {
     case DlColorSourceType::kColor: {
       const DlColorColorSource* color_source = source->asColor();
       FML_DCHECK(color_source != nullptr);
-      return SkShaders::Color(color_source->color());
+      return SkShaders::Color(ToSk(color_source->color()));
     }
     case DlColorSourceType::kImage: {
       const DlImageColorSource* image_source = source->asImage();
@@ -240,7 +241,7 @@ sk_sp<SkColorFilter> ToSk(const DlColorFilter* filter) {
     case DlColorFilterType::kBlend: {
       const DlBlendColorFilter* blend_filter = filter->asBlend();
       FML_DCHECK(blend_filter != nullptr);
-      return SkColorFilters::Blend(blend_filter->color(),
+      return SkColorFilters::Blend(ToSk(blend_filter->color()),
                                    ToSk(blend_filter->mode()));
     }
     case DlColorFilterType::kMatrix: {

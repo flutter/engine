@@ -58,5 +58,50 @@ TEST(ResourceManagerVKTest, ReclaimMovesAResourceAndDestroysIt) {
   waiter.Wait();
 }
 
+// Regression test for https://github.com/flutter/flutter/issues/134482.
+TEST(ResourceManagerVKTest, TerminatesWhenOutOfScope) {
+  // Originally, this shared_ptr was never destroyed, and the thread never
+  // terminated. This test ensures that the thread terminates when the
+  // ResourceManagerVK is out of scope.
+  std::weak_ptr<ResourceManagerVK> manager;
+
+  {
+    auto shared = ResourceManagerVK::Create();
+    manager = shared;
+  }
+
+  // The thread should have terminated.
+  EXPECT_EQ(manager.lock(), nullptr);
+}
+
+TEST(ResourceManagerVKTest, IsThreadSafe) {
+  // In a typical app, there is a single ResourceManagerVK per app, shared b/w
+  // threads.
+  //
+  // This test ensures that the ResourceManagerVK is thread-safe.
+  std::weak_ptr<ResourceManagerVK> manager;
+
+  {
+    auto const manager = ResourceManagerVK::Create();
+
+    // Spawn two threads, and have them both put resources into the manager.
+    struct MockResource {};
+
+    std::thread thread1([&manager]() {
+      UniqueResourceVKT<MockResource>(manager, MockResource{});
+    });
+
+    std::thread thread2([&manager]() {
+      UniqueResourceVKT<MockResource>(manager, MockResource{});
+    });
+
+    thread1.join();
+    thread2.join();
+  }
+
+  // The thread should have terminated.
+  EXPECT_EQ(manager.lock(), nullptr);
+}
+
 }  // namespace testing
 }  // namespace impeller

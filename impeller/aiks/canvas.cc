@@ -4,11 +4,11 @@
 
 #include "impeller/aiks/canvas.h"
 
-#include <algorithm>
 #include <optional>
 #include <utility>
 
 #include "flutter/fml/logging.h"
+#include "flutter/fml/trace_event.h"
 #include "impeller/aiks/image_filter.h"
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/entity/contents/atlas_contents.h"
@@ -62,9 +62,9 @@ void Canvas::Save(bool create_subpass,
   auto entry = CanvasStackEntry{};
   entry.xformation = xformation_stack_.back().xformation;
   entry.cull_rect = xformation_stack_.back().cull_rect;
-  entry.stencil_depth = xformation_stack_.back().stencil_depth;
+  entry.clip_depth = xformation_stack_.back().clip_depth;
   if (create_subpass) {
-    entry.is_subpass = true;
+    entry.rendering_mode = Entity::RenderingMode::kSubpass;
     auto subpass = std::make_unique<EntityPass>();
     subpass->SetEnableOffscreenCheckerboard(
         debug_options.offscreen_texture_checkerboard);
@@ -72,10 +72,10 @@ void Canvas::Save(bool create_subpass,
       EntityPass::BackdropFilterProc backdrop_filter_proc =
           [backdrop_filter = backdrop_filter->Clone()](
               const FilterInput::Ref& input, const Matrix& effect_transform,
-              bool is_subpass) {
+              Entity::RenderingMode rendering_mode) {
             auto filter = backdrop_filter->WrapInput(input);
             filter->SetEffectTransform(effect_transform);
-            filter->SetIsForSubpass(is_subpass);
+            filter->SetRenderingMode(rendering_mode);
             return filter;
           };
       subpass->SetBackdropFilter(backdrop_filter_proc);
@@ -83,7 +83,7 @@ void Canvas::Save(bool create_subpass,
     subpass->SetBlendMode(blend_mode);
     current_pass_ = GetCurrentPass().AddSubpass(std::move(subpass));
     current_pass_->SetTransformation(xformation_stack_.back().xformation);
-    current_pass_->SetStencilDepth(xformation_stack_.back().stencil_depth);
+    current_pass_->SetClipDepth(xformation_stack_.back().clip_depth);
   }
   xformation_stack_.emplace_back(entry);
 }
@@ -93,7 +93,8 @@ bool Canvas::Restore() {
   if (xformation_stack_.size() == 1) {
     return false;
   }
-  if (xformation_stack_.back().is_subpass) {
+  if (xformation_stack_.back().rendering_mode ==
+      Entity::RenderingMode::kSubpass) {
     current_pass_ = GetCurrentPass().GetSuperpass();
     FML_DCHECK(current_pass_);
   }
@@ -172,7 +173,7 @@ void Canvas::RestoreToCount(size_t count) {
 void Canvas::DrawPath(const Path& path, const Paint& paint) {
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
-  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.WithFilters(paint.CreateContentsForEntity(path)));
 
@@ -182,7 +183,7 @@ void Canvas::DrawPath(const Path& path, const Paint& paint) {
 void Canvas::DrawPaint(const Paint& paint) {
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
-  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.CreateContentsForEntity({}, true));
 
@@ -216,13 +217,35 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
 
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
-  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(new_paint.blend_mode);
   entity.SetContents(new_paint.WithFilters(std::move(contents)));
 
   GetCurrentPass().AddEntity(entity);
 
   return true;
+}
+
+void Canvas::DrawLine(const Point& p0, const Point& p1, const Paint& paint) {
+  if (paint.stroke_cap == Cap::kRound) {
+    auto path = PathBuilder{}
+                    .AddLine((p0), (p1))
+                    .SetConvexity(Convexity::kConvex)
+                    .TakePath();
+    Paint stroke_paint = paint;
+    stroke_paint.style = Paint::Style::kStroke;
+    DrawPath(path, stroke_paint);
+    return;
+  }
+
+  Entity entity;
+  entity.SetTransformation(GetCurrentTransformation());
+  entity.SetClipDepth(GetClipDepth());
+  entity.SetBlendMode(paint.blend_mode);
+  entity.SetContents(paint.WithFilters(paint.CreateContentsForGeometry(
+      Geometry::MakeLine(p0, p1, paint.stroke_width, paint.stroke_cap))));
+
+  GetCurrentPass().AddEntity(entity);
 }
 
 void Canvas::DrawRect(Rect rect, const Paint& paint) {
@@ -237,7 +260,7 @@ void Canvas::DrawRect(Rect rect, const Paint& paint) {
 
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
-  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.WithFilters(
       paint.CreateContentsForGeometry(Geometry::MakeRect(rect))));
@@ -245,18 +268,20 @@ void Canvas::DrawRect(Rect rect, const Paint& paint) {
   GetCurrentPass().AddEntity(entity);
 }
 
-void Canvas::DrawRRect(Rect rect, Scalar corner_radius, const Paint& paint) {
-  if (AttemptDrawBlurredRRect(rect, corner_radius, paint)) {
+void Canvas::DrawRRect(Rect rect, Point corner_radii, const Paint& paint) {
+  if (corner_radii.x == corner_radii.y &&
+      AttemptDrawBlurredRRect(rect, corner_radii.x, paint)) {
     return;
   }
   auto path = PathBuilder{}
                   .SetConvexity(Convexity::kConvex)
-                  .AddRoundedRect(rect, corner_radius)
+                  .AddRoundedRect(rect, corner_radii)
+                  .SetBounds(rect)
                   .TakePath();
   if (paint.style == Paint::Style::kFill) {
     Entity entity;
     entity.SetTransformation(GetCurrentTransformation());
-    entity.SetStencilDepth(GetStencilDepth());
+    entity.SetClipDepth(GetClipDepth());
     entity.SetBlendMode(paint.blend_mode);
     entity.SetContents(paint.WithFilters(
         paint.CreateContentsForGeometry(Geometry::MakeFillPath(path))));
@@ -269,14 +294,18 @@ void Canvas::DrawRRect(Rect rect, Scalar corner_radius, const Paint& paint) {
 
 void Canvas::DrawCircle(Point center, Scalar radius, const Paint& paint) {
   Size half_size(radius, radius);
-  if (AttemptDrawBlurredRRect(Rect(center - half_size, half_size * 2), radius,
-                              paint)) {
+  if (AttemptDrawBlurredRRect(
+          Rect::MakeOriginSize(center - half_size, half_size * 2), radius,
+          paint)) {
     return;
   }
-  auto circle_path = PathBuilder{}
-                         .AddCircle(center, radius)
-                         .SetConvexity(Convexity::kConvex)
-                         .TakePath();
+  auto circle_path =
+      PathBuilder{}
+          .AddCircle(center, radius)
+          .SetConvexity(Convexity::kConvex)
+          .SetBounds(Rect::MakeLTRB(center.x - radius, center.y - radius,
+                                    center.x + radius, center.y + radius))
+          .TakePath();
   DrawPath(circle_path, paint);
 }
 
@@ -312,16 +341,20 @@ void Canvas::ClipRect(const Rect& rect, Entity::ClipOperation clip_op) {
 }
 
 void Canvas::ClipRRect(const Rect& rect,
-                       Scalar corner_radius,
+                       Point corner_radii,
                        Entity::ClipOperation clip_op) {
   auto path = PathBuilder{}
                   .SetConvexity(Convexity::kConvex)
-                  .AddRoundedRect(rect, corner_radius)
+                  .AddRoundedRect(rect, corner_radii)
+                  .SetBounds(rect)
                   .TakePath();
 
-  std::optional<Rect> inner_rect = (corner_radius * 2 < rect.size.width &&
-                                    corner_radius * 2 < rect.size.height)
-                                       ? rect.Expand(-corner_radius)
+  auto size = rect.GetSize();
+  // Does the rounded rect have a flat part on the top/bottom or left/right?
+  bool flat_on_TB = corner_radii.x * 2 < size.width;
+  bool flat_on_LR = corner_radii.y * 2 < size.height;
+  std::optional<Rect> inner_rect = (flat_on_LR && flat_on_TB)
+                                       ? rect.Expand(-corner_radii)
                                        : std::make_optional<Rect>();
   auto geometry = Geometry::MakeFillPath(path, inner_rect);
   auto& cull_rect = xformation_stack_.back().cull_rect;
@@ -338,7 +371,7 @@ void Canvas::ClipRRect(const Rect& rect,
       IntersectCulling(rect);
       break;
     case Entity::ClipOperation::kDifference:
-      if (corner_radius <= 0) {
+      if (corner_radii.x <= 0.0 || corner_radii.y <= 0) {
         SubtractCulling(rect);
       } else {
         // We subtract the inner "tall" and "wide" rectangle pieces
@@ -346,15 +379,11 @@ void Canvas::ClipRRect(const Rect& rect,
         // without involving the curved corners
         // Since this is a subtract operation, we can subtract each
         // rectangle piece individually without fear of interference.
-        if (corner_radius * 2 < rect.size.width) {
-          SubtractCulling(Rect::MakeLTRB(
-              rect.GetLeft() + corner_radius, rect.GetTop(),
-              rect.GetRight() - corner_radius, rect.GetBottom()));
+        if (flat_on_TB) {
+          SubtractCulling(rect.Expand({-corner_radii.x, 0.0}));
         }
-        if (corner_radius * 2 < rect.size.height) {
-          SubtractCulling(Rect::MakeLTRB(
-              rect.GetLeft(), rect.GetTop() + corner_radius,  //
-              rect.GetRight(), rect.GetBottom() - corner_radius));
+        if (flat_on_LR) {
+          SubtractCulling(rect.Expand({0.0, -corner_radii.y}));
         }
       }
       break;
@@ -370,11 +399,11 @@ void Canvas::ClipGeometry(std::unique_ptr<Geometry> geometry,
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetContents(std::move(contents));
-  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetClipDepth(GetClipDepth());
 
   GetCurrentPass().AddEntity(entity);
 
-  ++xformation_stack_.back().stencil_depth;
+  ++xformation_stack_.back().clip_depth;
   xformation_stack_.back().contains_clips = true;
 }
 
@@ -409,7 +438,7 @@ void Canvas::RestoreClip() {
   // This path is empty because ClipRestoreContents just generates a quad that
   // takes up the full render target.
   entity.SetContents(std::make_shared<ClipRestoreContents>());
-  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetClipDepth(GetClipDepth());
 
   GetCurrentPass().AddEntity(entity);
 }
@@ -424,7 +453,7 @@ void Canvas::DrawPoints(std::vector<Point> points,
 
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
-  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.WithFilters(paint.CreateContentsForGeometry(
       Geometry::MakePointField(std::move(points), radius,
@@ -443,15 +472,15 @@ void Canvas::DrawPicture(const Picture& picture) {
 
   pass->IterateAllElements([&](auto& element) -> bool {
     if (auto entity = std::get_if<Entity>(&element)) {
-      entity->IncrementStencilDepth(GetStencilDepth());
+      entity->IncrementStencilDepth(GetClipDepth());
       entity->SetTransformation(GetCurrentTransformation() *
                                 entity->GetTransformation());
       return true;
     }
 
     if (auto subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
-      subpass->get()->SetStencilDepth(subpass->get()->GetStencilDepth() +
-                                      GetStencilDepth());
+      subpass->get()->SetClipDepth(subpass->get()->GetClipDepth() +
+                                   GetClipDepth());
       return true;
     }
 
@@ -472,8 +501,7 @@ void Canvas::DrawImage(const std::shared_ptr<Image>& image,
   }
 
   const auto source = Rect::MakeSize(image->GetSize());
-  const auto dest =
-      Rect::MakeXYWH(offset.x, offset.y, source.size.width, source.size.height);
+  const auto dest = source.Shift(offset);
 
   DrawImageRect(image, source, dest, paint, std::move(sampler));
 }
@@ -483,7 +511,7 @@ void Canvas::DrawImageRect(const std::shared_ptr<Image>& image,
                            Rect dest,
                            const Paint& paint,
                            SamplerDescriptor sampler) {
-  if (!image || source.size.IsEmpty() || dest.size.IsEmpty()) {
+  if (!image || source.IsEmpty() || dest.IsEmpty()) {
     return;
   }
 
@@ -502,7 +530,7 @@ void Canvas::DrawImageRect(const std::shared_ptr<Image>& image,
 
   Entity entity;
   entity.SetBlendMode(paint.blend_mode);
-  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetClipDepth(GetClipDepth());
   entity.SetContents(paint.WithFilters(contents));
   entity.SetTransformation(GetCurrentTransformation());
 
@@ -524,13 +552,14 @@ EntityPass& Canvas::GetCurrentPass() {
   return *current_pass_;
 }
 
-size_t Canvas::GetStencilDepth() const {
-  return xformation_stack_.back().stencil_depth;
+size_t Canvas::GetClipDepth() const {
+  return xformation_stack_.back().clip_depth;
 }
 
 void Canvas::SaveLayer(const Paint& paint,
                        std::optional<Rect> bounds,
                        const std::shared_ptr<ImageFilter>& backdrop_filter) {
+  TRACE_EVENT0("flutter", "Canvas::saveLayer");
   Save(true, paint.blend_mode, backdrop_filter);
 
   auto& new_layer_pass = GetCurrentPass();
@@ -549,7 +578,7 @@ void Canvas::DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
                            Point position,
                            const Paint& paint) {
   Entity entity;
-  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
 
   auto text_contents = std::make_shared<TextContents>();
@@ -600,7 +629,7 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
 
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
-  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
 
   // If there are no vertex color or texture coordinates. Or if there
@@ -673,7 +702,7 @@ void Canvas::DrawAtlas(const std::shared_ptr<Image>& atlas,
 
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
-  entity.SetStencilDepth(GetStencilDepth());
+  entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.WithFilters(contents));
 

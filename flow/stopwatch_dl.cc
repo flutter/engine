@@ -36,7 +36,7 @@ void DlStopwatchVisualizer::Visualize(DlCanvas* canvas,
   auto const sample_unit_width = (1.0 / kMaxSamples);
 
   // Provide a semi-transparent background for the graph.
-  painter.DrawRect(rect, 0x99FFFFFF);
+  painter.DrawRect(rect, DlColor(0x99FFFFFF));
 
   // Prepare a path for the data; we start at the height of the last point so
   // it looks like we wrap around.
@@ -50,11 +50,11 @@ void DlStopwatchVisualizer::Visualize(DlCanvas* canvas,
       auto const bar_height = height * sample_unit_height;
       auto const bar_left = x + width * sample_unit_width * i;
 
-      painter.DrawRect(SkRect::MakeLTRB(/*left=*/bar_left,
-                                        /*top=*/y + bar_height,
-                                        /*right=*/bar_left + bar_width,
-                                        /*bottom=*/bottom),
-                       0xAA0000FF);
+      painter.DrawRect(SkRect::MakeLTRB(/*l=*/bar_left,
+                                        /*t=*/y + bar_height,
+                                        /*r=*/bar_left + bar_width,
+                                        /*b=*/bottom),
+                       DlColor(0xAA0000FF));
     }
   }
 
@@ -75,11 +75,11 @@ void DlStopwatchVisualizer::Visualize(DlCanvas* canvas,
                                 max_unit_interval);
 
         // Draw a skinny rectangle (i.e. a line).
-        painter.DrawRect(SkRect::MakeLTRB(/*left=*/x,
-                                          /*top=*/y + frame_height,
-                                          /*right=*/width,
-                                          /*bottom=*/y + frame_height + 1),
-                         0xCC000000);
+        painter.DrawRect(SkRect::MakeLTRB(/*l=*/x,
+                                          /*t=*/y + frame_height,
+                                          /*r=*/width,
+                                          /*b=*/y + frame_height + 1),
+                         DlColor(0xCC000000));
       }
     }
   }

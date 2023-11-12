@@ -43,27 +43,43 @@
 @implementation FlutterViewTest
 
 - (void)testFlutterViewEnableSemanticsWhenIsAccessibilityElementIsCalled {
-  FakeDelegate* delegate = [[FakeDelegate alloc] init];
-  FlutterView* view = [[FlutterView alloc] initWithDelegate:delegate opaque:NO enableWideGamut:NO];
+  FakeDelegate* delegate = [[[FakeDelegate alloc] init] autorelease];
+  FlutterView* view = [[[FlutterView alloc] initWithDelegate:delegate opaque:NO
+                                             enableWideGamut:NO] autorelease];
   delegate.callbackCalled = NO;
   XCTAssertFalse(view.isAccessibilityElement);
   XCTAssertTrue(delegate.callbackCalled);
 }
 
 - (void)testFlutterViewBackgroundColorIsNotNil {
-  FakeDelegate* delegate = [[FakeDelegate alloc] init];
-  FlutterView* view = [[FlutterView alloc] initWithDelegate:delegate opaque:NO enableWideGamut:NO];
+  FakeDelegate* delegate = [[[FakeDelegate alloc] init] autorelease];
+  FlutterView* view = [[[FlutterView alloc] initWithDelegate:delegate opaque:NO
+                                             enableWideGamut:NO] autorelease];
   XCTAssertNotNil(view.backgroundColor);
 }
 
 - (void)testIgnoreWideColorWithoutImpeller {
-  FakeDelegate* delegate = [[FakeDelegate alloc] init];
+  FakeDelegate* delegate = [[[FakeDelegate alloc] init] autorelease];
   delegate.isUsingImpeller = NO;
-  FlutterView* view = [[FlutterView alloc] initWithDelegate:delegate opaque:NO enableWideGamut:YES];
+  FlutterView* view = [[[FlutterView alloc] initWithDelegate:delegate opaque:NO
+                                             enableWideGamut:YES] autorelease];
   [view layoutSubviews];
   XCTAssertTrue([view.layer isKindOfClass:NSClassFromString(@"CAMetalLayer")]);
   CAMetalLayer* layer = (CAMetalLayer*)view.layer;
   XCTAssertEqual(layer.pixelFormat, MTLPixelFormatBGRA8Unorm);
+}
+
+- (void)testLayerScalesMatchScreenAfterLayoutSubviews {
+  FakeDelegate* delegate = [[[FakeDelegate alloc] init] autorelease];
+  FlutterView* view = [[FlutterView alloc] initWithDelegate:delegate opaque:NO enableWideGamut:NO];
+  view.layer.contentsScale = CGFloat(-99.0);
+  view.layer.rasterizationScale = CGFloat(-99.0);
+  UIScreen* screen = [view screen];
+  XCTAssertNotEqual(view.layer.contentsScale, screen.scale);
+  XCTAssertNotEqual(view.layer.rasterizationScale, screen.scale);
+  [view layoutSubviews];
+  XCTAssertEqual(view.layer.contentsScale, screen.scale);
+  XCTAssertEqual(view.layer.rasterizationScale, screen.scale);
 }
 
 @end

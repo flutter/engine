@@ -157,10 +157,17 @@ FlutterLocale CovertToFlutterLocale(const LanguageInfo& info) {
 
 }  // namespace
 
-FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
+FlutterWindowsEngine::FlutterWindowsEngine(
+    const FlutterProjectBundle& project,
+    std::shared_ptr<WindowsProcTable> windows_proc_table)
     : project_(std::make_unique<FlutterProjectBundle>(project)),
+      windows_proc_table_(std::move(windows_proc_table)),
       aot_data_(nullptr, nullptr),
       lifecycle_manager_(std::make_unique<WindowsLifecycleManager>(this)) {
+  if (windows_proc_table_ == nullptr) {
+    windows_proc_table_ = std::make_shared<WindowsProcTable>();
+  }
+
   embedder_api_.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&embedder_api_);
 
@@ -390,6 +397,10 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
     args.aot_data = aot_data_.get();
   }
 
+  // The platform thread creates OpenGL contexts. These
+  // must be released to be used by the engine's threads.
+  FML_DCHECK(!surface_manager_ || !surface_manager_->HasContextCurrent());
+
   FlutterRendererConfig renderer_config;
 
   if (enable_impeller_) {
@@ -565,8 +576,7 @@ void FlutterWindowsEngine::HandlePlatformMessage(
 
   auto message = ConvertToDesktopMessage(*engine_message);
 
-  message_dispatcher_->HandleMessage(
-      message, [this] {}, [this] {});
+  message_dispatcher_->HandleMessage(message, [this] {}, [this] {});
 }
 
 void FlutterWindowsEngine::ReloadSystemFonts() {
@@ -601,7 +611,7 @@ void FlutterWindowsEngine::SetLifecycleState(flutter::AppLifecycleState state) {
 
 void FlutterWindowsEngine::SendSystemLocales() {
   std::vector<LanguageInfo> languages =
-      GetPreferredLanguageInfo(windows_proc_table_);
+      GetPreferredLanguageInfo(*windows_proc_table_);
   std::vector<FlutterLocale> flutter_locales;
   flutter_locales.reserve(languages.size());
   for (const auto& info : languages) {
@@ -733,34 +743,27 @@ std::string FlutterWindowsEngine::GetExecutableName() const {
   return "Flutter";
 }
 
-void FlutterWindowsEngine::UpdateAccessibilityFeatures(
-    FlutterAccessibilityFeature flags) {
-  embedder_api_.UpdateAccessibilityFeatures(engine_, flags);
+void FlutterWindowsEngine::UpdateAccessibilityFeatures() {
+  UpdateHighContrastMode();
 }
 
-void FlutterWindowsEngine::UpdateHighContrastEnabled(bool enabled) {
-  high_contrast_enabled_ = enabled;
-  int flags = EnabledAccessibilityFeatures();
-  if (enabled) {
-    flags |=
-        FlutterAccessibilityFeature::kFlutterAccessibilityFeatureHighContrast;
-  } else {
-    flags &=
-        ~FlutterAccessibilityFeature::kFlutterAccessibilityFeatureHighContrast;
-  }
-  UpdateAccessibilityFeatures(static_cast<FlutterAccessibilityFeature>(flags));
-  settings_plugin_->UpdateHighContrastMode(enabled);
+void FlutterWindowsEngine::UpdateHighContrastMode() {
+  high_contrast_enabled_ = windows_proc_table_->GetHighContrastEnabled();
+
+  SendAccessibilityFeatures();
+  settings_plugin_->UpdateHighContrastMode(high_contrast_enabled_);
 }
 
-int FlutterWindowsEngine::EnabledAccessibilityFeatures() const {
+void FlutterWindowsEngine::SendAccessibilityFeatures() {
   int flags = 0;
-  if (high_contrast_enabled()) {
+
+  if (high_contrast_enabled_) {
     flags |=
         FlutterAccessibilityFeature::kFlutterAccessibilityFeatureHighContrast;
   }
-  // As more accessibility features are enabled for Windows,
-  // the corresponding checks and flags should be added here.
-  return flags;
+
+  embedder_api_.UpdateAccessibilityFeatures(
+      engine_, static_cast<FlutterAccessibilityFeature>(flags));
 }
 
 void FlutterWindowsEngine::HandleAccessibilityMessage(

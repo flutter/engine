@@ -56,7 +56,6 @@ namespace flutter {
 
 #define FOR_EACH_DISPLAY_LIST_OP(V) \
   V(SetAntiAlias)                   \
-  V(SetDither)                      \
   V(SetInvertColors)                \
                                     \
   V(SetStrokeCap)                   \
@@ -160,7 +159,8 @@ class SaveLayerOptions {
 
   SaveLayerOptions() : flags_(0) {}
   SaveLayerOptions(const SaveLayerOptions& options) : flags_(options.flags_) {}
-  SaveLayerOptions(const SaveLayerOptions* options) : flags_(options->flags_) {}
+  explicit SaveLayerOptions(const SaveLayerOptions* options)
+      : flags_(options->flags_) {}
 
   SaveLayerOptions without_optimizations() const {
     SaveLayerOptions options;

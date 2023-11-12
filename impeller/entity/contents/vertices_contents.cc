@@ -4,12 +4,8 @@
 
 #include "vertices_contents.h"
 
-#include "impeller/core/formats.h"
-#include "impeller/core/vertex_buffer.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
-#include "impeller/entity/contents/filters/filter_contents.h"
-#include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/position_color.vert.h"
 #include "impeller/entity/vertices.frag.h"
 #include "impeller/geometry/color.h"
@@ -73,6 +69,7 @@ bool VerticesContents::Render(const ContentContext& renderer,
 
   std::shared_ptr<Contents> contents;
   if (blend_mode_ == BlendMode::kDestination) {
+    dst_contents->SetAlpha(alpha_);
     contents = dst_contents;
   } else {
     auto color_filter_contents = ColorFilterContents::MakeBlend(
@@ -137,7 +134,7 @@ bool VerticesUVContents::Render(const ContentContext& renderer,
   auto opts = OptionsFromPassAndEntity(pass, entity);
   opts.primitive_type = geometry_result.type;
   cmd.pipeline = renderer.GetTexturePipeline(opts);
-  cmd.stencil_reference = entity.GetStencilDepth();
+  cmd.stencil_reference = entity.GetClipDepth();
   cmd.BindVertices(geometry_result.vertex_buffer);
 
   VS::FrameInfo frame_info;
@@ -187,7 +184,7 @@ bool VerticesColorContents::Render(const ContentContext& renderer,
   auto opts = OptionsFromPassAndEntity(pass, entity);
   opts.primitive_type = geometry_result.type;
   cmd.pipeline = renderer.GetGeometryColorPipeline(opts);
-  cmd.stencil_reference = entity.GetStencilDepth();
+  cmd.stencil_reference = entity.GetClipDepth();
   cmd.BindVertices(geometry_result.vertex_buffer);
 
   VS::FrameInfo frame_info;

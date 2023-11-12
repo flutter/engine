@@ -5,12 +5,15 @@
 import 'dart:convert' show LineSplitter, jsonDecode;
 import 'dart:io' as io show File, stderr, stdout;
 
+import 'package:engine_repo_tools/engine_repo_tools.dart';
+import 'package:git_repo_tools/git_repo_tools.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
+import 'package:process/process.dart';
 import 'package:process_runner/process_runner.dart';
 
 import 'src/command.dart';
-import 'src/git_repo.dart';
+import 'src/lint_target.dart';
 import 'src/options.dart';
 
 const String _linterOutputHeader = '''
@@ -43,51 +46,78 @@ class _SetStatusCommand {
 /// A class that runs clang-tidy on all or only the changed files in a git
 /// repo.
 class ClangTidy {
-  /// Given the path to the build commands for a repo and its root, builds
-  /// an instance of [ClangTidy].
+  /// Builds an instance of [ClangTidy] using a repo's [buildCommandPath].
   ///
-  /// `buildCommandsPath` is the path to the build_commands.json file.
-  /// `repoPath` is the path to the Engine repo.
-  /// `checksArg` are specific checks for clang-tidy to do.
-  /// `lintAll` when true indicates that all files should be linted.
-  /// `outSink` when provided is the destination for normal log messages, which
-  /// will otherwise go to stdout.
-  /// `errSink` when provided is the destination for error messages, which
-  /// will otherwise go to stderr.
+  /// ## Required
+  ///
+  /// - [buildCommandsPath] is the path to the build_commands.json file.
+  ///
+  /// ## Optional
+  ///
+  /// - [checksArg] are specific checks for clang-tidy to do.
+  ///
+  ///   If omitted, checks will be determined by the `.clang-tidy` file in the
+  ///   repo.
+  ///
+  /// - [lintTarget] is what files to lint.
+  ///
+  /// ## Optional (Test Overrides)
+  ///
+  /// _Most usages of this class will not need to override the following, which
+  /// are primarily used for testing (i.e. to avoid real interaction with I/O)._
+  ///
+  /// - [outSink] when provided is the destination for normal log messages.
+  ///
+  ///   If omitted, [io.stdout] will be used.
+  ///
+  /// - [errSink] when provided is the destination for error messages.
+  ///
+  ///   If omitted, [io.stderr] will be used.
+  ///
+  /// - [processManager] when provided is delegated to for running processes.
+  ///
+  ///   If omitted, [LocalProcessManager] will be used.
   ClangTidy({
     required io.File buildCommandsPath,
     String checksArg = '',
-    bool lintAll = false,
-    bool lintHead = false,
+    LintTarget lintTarget = const LintChanged(),
     bool fix = false,
     StringSink? outSink,
     StringSink? errSink,
+    ProcessManager processManager = const LocalProcessManager(),
   }) :
     options = Options(
       buildCommandsPath: buildCommandsPath,
       checksArg: checksArg,
-      lintAll: lintAll,
-      lintHead: lintHead,
+      lintTarget: lintTarget,
       fix: fix,
       errSink: errSink,
     ),
     _outSink = outSink ?? io.stdout,
-    _errSink = errSink ?? io.stderr;
+    _errSink = errSink ?? io.stderr,
+    _processManager = processManager,
+    _engine = null;
 
   /// Builds an instance of [ClangTidy] from a command line.
   ClangTidy.fromCommandLine(
     List<String> args, {
+    Engine? engine,
     StringSink? outSink,
     StringSink? errSink,
+    ProcessManager processManager = const LocalProcessManager(),
   }) :
-    options = Options.fromCommandLine(args, errSink: errSink),
+    options = Options.fromCommandLine(args, errSink: errSink, engine: engine),
     _outSink = outSink ?? io.stdout,
-    _errSink = errSink ?? io.stderr;
+    _errSink = errSink ?? io.stderr,
+    _processManager = processManager,
+    _engine = engine;
 
   /// The [Options] that specify how this [ClangTidy] operates.
   final Options options;
   final StringSink _outSink;
   final StringSink _errSink;
+  final ProcessManager _processManager;
+  final Engine? _engine;
 
   late final DateTime _startTime;
 
@@ -96,12 +126,12 @@ class ClangTidy {
     _startTime = DateTime.now();
 
     if (options.help) {
-      options.printUsage();
+      options.printUsage(engine: _engine);
       return 0;
     }
 
     if (options.errorMessage != null) {
-      options.printUsage(message: options.errorMessage);
+      options.printUsage(message: options.errorMessage, engine: _engine);
       return 1;
     }
 
@@ -115,12 +145,23 @@ class ClangTidy {
         _outSink.writeln('Checking for specific checks: ${options.checks}.');
       }
       final int changedFilesCount = filesOfInterest.length;
-      if (options.lintAll) {
-        _outSink.writeln('Checking all $changedFilesCount files the repo dir.');
-      } else {
-        _outSink.writeln(
-          'Dectected $changedFilesCount files that have changed',
-        );
+      switch (options.lintTarget) {
+        case LintAll():
+          _outSink.writeln('Checking all $changedFilesCount files in the repo.');
+        case LintChanged():
+          _outSink.writeln(
+            'Checking $changedFilesCount files that have changed since the '
+            'last commit.',
+          );
+        case LintHead():
+          _outSink.writeln(
+            'Checking $changedFilesCount files that have changed compared to '
+            'HEAD.',
+          );
+        case LintRegex(:final String regex):
+          _outSink.writeln(
+            'Checking $changedFilesCount files that match the regex "$regex".',
+          );
       }
     }
 
@@ -172,25 +213,39 @@ class ClangTidy {
     return computeResult + runResult > 0 ? 1 : 0;
   }
 
-  /// The files with local modifications or all the files if `lintAll` was
-  /// specified.
+  /// The files with local modifications or all/a subset of all files.
+  ///
+  /// See [LintTarget] for more information.
   @visibleForTesting
   Future<List<io.File>> computeFilesOfInterest() async {
-    if (options.lintAll) {
-      return options.repoPath
-        .listSync(recursive: true)
-        .whereType<io.File>()
-        .toList();
+    switch (options.lintTarget) {
+      case LintAll():
+        return options.repoPath
+          .listSync(recursive: true)
+          .whereType<io.File>()
+          .toList();
+      case LintRegex(:final String regex):
+        final RegExp pattern = RegExp(regex);
+        return options.repoPath
+          .listSync(recursive: true)
+          .whereType<io.File>()
+          .where((io.File file) => pattern.hasMatch(file.path))
+          .toList();
+      case LintChanged():
+        final GitRepo repo = GitRepo.fromRoot(
+          options.repoPath,
+          processManager: _processManager,
+          verbose: options.verbose,
+        );
+        return repo.changedFiles;
+      case LintHead():
+        final GitRepo repo = GitRepo.fromRoot(
+          options.repoPath,
+          processManager: _processManager,
+          verbose: options.verbose,
+        );
+        return repo.changedFilesAtHead;
     }
-
-    final GitRepo repo = GitRepo(
-      options.repoPath,
-      verbose: options.verbose,
-    );
-    if (options.lintHead) {
-      return repo.changedFilesAtHead;
-    }
-    return repo.changedFiles;
   }
 
   /// Returns f(n) = value(n * [shardCount] + [id]).
@@ -351,7 +406,10 @@ class ClangTidy {
         totalJobs, completed, inProgress, pending, failed));
     }
 
-    final ProcessPool pool = ProcessPool(printReport: reporter);
+    final ProcessPool pool = ProcessPool(
+      printReport: reporter,
+      processRunner: ProcessRunner(processManager: _processManager),
+    );
     await for (final WorkerJob job in pool.startWorkers(jobs)) {
       pendingJobs.remove(job.name);
       if (pendingJobs.isNotEmpty && pendingJobs.length <= 3) {

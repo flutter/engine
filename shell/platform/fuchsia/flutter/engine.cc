@@ -27,6 +27,7 @@
 #include "flutter/shell/common/thread_host.h"
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkSerialProcs.h"
+#include "third_party/skia/include/gpu/GrTypes.h"
 #include "third_party/skia/include/ports/SkFontMgr_fuchsia.h"
 
 #include "../runtime/dart/utils/files.h"
@@ -107,16 +108,16 @@ void SetThreadConfig(
   // the role naming scheme.
   std::string role;
   switch (config.priority) {
-    case fml::Thread::ThreadPriority::BACKGROUND:
+    case fml::Thread::ThreadPriority::kBackground:
       role = name_prefix + ".thread.background";
       break;
-    case fml::Thread::ThreadPriority::DISPLAY:
+    case fml::Thread::ThreadPriority::kDisplay:
       role = name_prefix + ".thread.display";
       break;
-    case fml::Thread::ThreadPriority::RASTER:
+    case fml::Thread::ThreadPriority::kRaster:
       role = name_prefix + ".thread.raster";
       break;
-    case fml::Thread::ThreadPriority::NORMAL:
+    case fml::Thread::ThreadPriority::kNormal:
       role = name_prefix + ".thread.normal";
       break;
     default:
@@ -185,15 +186,15 @@ flutter::ThreadHost Engine::CreateThreadHost(
   thread_host_config.SetRasterConfig(
       {flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
            flutter::ThreadHost::Type::RASTER, name_prefix),
-       fml::Thread::ThreadPriority::RASTER});
+       fml::Thread::ThreadPriority::kRaster});
   thread_host_config.SetUIConfig(
       {flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
            flutter::ThreadHost::Type::UI, name_prefix),
-       fml::Thread::ThreadPriority::DISPLAY});
+       fml::Thread::ThreadPriority::kDisplay});
   thread_host_config.SetIOConfig(
       {flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
            flutter::ThreadHost::Type::IO, name_prefix),
-       fml::Thread::ThreadPriority::NORMAL});
+       fml::Thread::ThreadPriority::kNormal});
 
   return flutter::ThreadHost(thread_host_config);
 }
@@ -944,7 +945,8 @@ void Engine::WarmupSkps(
             };
 
             surface_producer->gr_context()->flush(flush_info);
-            surface_producer->gr_context()->submit(synchronous);
+            surface_producer->gr_context()->submit(
+                synchronous ? GrSyncCpu::kYes : GrSyncCpu::kNo);
           }
         } else {
           if (i == count - 1) {

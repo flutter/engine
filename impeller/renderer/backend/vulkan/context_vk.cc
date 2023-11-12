@@ -4,6 +4,8 @@
 
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 
+#include "fml/concurrent_message_loop.h"
+
 #ifdef FML_OS_ANDROID
 #include <pthread.h>
 #include <sys/resource.h>
@@ -13,11 +15,10 @@
 #include <map>
 #include <memory>
 #include <optional>
-#include <set>
 #include <string>
 #include <vector>
 
-#include "flutter/fml/build_config.h"
+#include "flutter/fml/cpu_affinity.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/allocator_vk.h"
@@ -27,6 +28,7 @@
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/debug_report_vk.h"
 #include "impeller/renderer/backend/vulkan/fence_waiter_vk.h"
+#include "impeller/renderer/backend/vulkan/gpu_tracer_vk.h"
 #include "impeller/renderer/backend/vulkan/resource_manager_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_context_vk.h"
 #include "impeller/renderer/capabilities.h"
@@ -114,7 +116,7 @@ ContextVK::~ContextVK() {
   if (device_holder_ && device_holder_->device) {
     [[maybe_unused]] auto result = device_holder_->device->waitIdle();
   }
-  CommandPoolVK::ClearAllPools(this);
+  CommandPoolRecyclerVK::DestroyThreadLocalPools(this);
 }
 
 Context::BackendType ContextVK::GetBackendType() const {
@@ -128,15 +130,24 @@ void ContextVK::Setup(Settings settings) {
     return;
   }
 
+  queue_submit_thread_ = std::make_unique<fml::Thread>("QueueSubmitThread");
+  queue_submit_thread_->GetTaskRunner()->PostTask([]() {
+    // submitKHR is extremely cheap and mostly blocks on an internal fence.
+    fml::RequestAffinity(fml::CpuAffinity::kEfficiency);
+  });
+
   raster_message_loop_ = fml::ConcurrentMessageLoop::Create(
       std::min(4u, std::thread::hardware_concurrency()));
-#ifdef FML_OS_ANDROID
   raster_message_loop_->PostTaskToAllWorkers([]() {
+    // Currently we only use the worker task pool for small parts of a frame
+    // workload, if this changes this setting may need to be adjusted.
+    fml::RequestAffinity(fml::CpuAffinity::kNotPerformance);
+#ifdef FML_OS_ANDROID
     if (::setpriority(PRIO_PROCESS, gettid(), -5) != 0) {
       FML_LOG(ERROR) << "Failed to set Workers task runner priority";
     }
-  });
 #endif  // FML_OS_ANDROID
+  });
 
   auto& dispatcher = VULKAN_HPP_DEFAULT_DISPATCHER;
   dispatcher.init(settings.proc_address_callback);
@@ -331,14 +342,12 @@ void ContextVK::Setup(Settings settings) {
   /// Create the allocator.
   ///
   auto allocator = std::shared_ptr<AllocatorVK>(new AllocatorVK(
-      weak_from_this(),                  //
-      application_info.apiVersion,       //
-      device_holder->physical_device,    //
-      device_holder,                     //
-      device_holder->instance.get(),     //
-      dispatcher.vkGetInstanceProcAddr,  //
-      dispatcher.vkGetDeviceProcAddr,    //
-      *caps                              //
+      weak_from_this(),                //
+      application_info.apiVersion,     //
+      device_holder->physical_device,  //
+      device_holder,                   //
+      device_holder->instance.get(),   //
+      *caps                            //
       ));
 
   if (!allocator->IsValid()) {
@@ -379,17 +388,20 @@ void ContextVK::Setup(Settings settings) {
   ///
   auto fence_waiter =
       std::shared_ptr<FenceWaiterVK>(new FenceWaiterVK(device_holder));
-  if (!fence_waiter->IsValid()) {
-    VALIDATION_LOG << "Could not create fence waiter.";
-    return;
-  }
 
   //----------------------------------------------------------------------------
-  /// Create the resource manager.
+  /// Create the resource manager and command pool recycler.
   ///
   auto resource_manager = ResourceManagerVK::Create();
   if (!resource_manager) {
     VALIDATION_LOG << "Could not create resource manager.";
+    return;
+  }
+
+  auto command_pool_recycler =
+      std::make_shared<CommandPoolRecyclerVK>(weak_from_this());
+  if (!command_pool_recycler) {
+    VALIDATION_LOG << "Could not create command pool recycler.";
     return;
   }
 
@@ -423,8 +435,13 @@ void ContextVK::Setup(Settings settings) {
   device_capabilities_ = std::move(caps);
   fence_waiter_ = std::move(fence_waiter);
   resource_manager_ = std::move(resource_manager);
+  command_pool_recycler_ = std::move(command_pool_recycler);
   device_name_ = std::string(physical_device_properties.deviceName);
   is_valid_ = true;
+
+  // Create the GPU Tracer later because it depends on state from
+  // the ContextVK.
+  gpu_tracer_ = std::make_shared<GPUTracerVK>(GetDeviceHolder());
 
   //----------------------------------------------------------------------------
   /// Label all the relevant objects. This happens after setup so that the
@@ -477,12 +494,25 @@ const vk::Device& ContextVK::GetDevice() const {
   return device_holder_->device.get();
 }
 
+const fml::RefPtr<fml::TaskRunner> ContextVK::GetQueueSubmitRunner() const {
+  return queue_submit_thread_->GetTaskRunner();
+}
+
 const std::shared_ptr<fml::ConcurrentTaskRunner>
 ContextVK::GetConcurrentWorkerTaskRunner() const {
   return raster_message_loop_->GetTaskRunner();
 }
 
 void ContextVK::Shutdown() {
+  // There are multiple objects, for example |CommandPoolVK|, that in their
+  // destructors make a strong reference to |ContextVK|. Resetting these shared
+  // pointers ensures that cleanup happens in a correct order.
+  //
+  // tl;dr: Without it, we get thread::join failures on shutdown.
+  fence_waiter_.reset();
+  resource_manager_.reset();
+
+  queue_submit_thread_->Join();
   raster_message_loop_->Terminate();
 }
 
@@ -510,9 +540,18 @@ std::shared_ptr<ResourceManagerVK> ContextVK::GetResourceManager() const {
   return resource_manager_;
 }
 
+std::shared_ptr<CommandPoolRecyclerVK> ContextVK::GetCommandPoolRecycler()
+    const {
+  return command_pool_recycler_;
+}
+
 std::unique_ptr<CommandEncoderFactoryVK>
 ContextVK::CreateGraphicsCommandEncoderFactory() const {
   return std::make_unique<CommandEncoderFactoryVK>(weak_from_this());
+}
+
+std::shared_ptr<GPUTracerVK> ContextVK::GetGPUTracer() const {
+  return gpu_tracer_;
 }
 
 }  // namespace impeller

@@ -26,6 +26,11 @@ class FilterContentsFilterInput final : public FilterInput {
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
 
   // |FilterInput|
+  std::optional<Rect> GetSourceCoverage(
+      const Matrix& effect_transform,
+      const Rect& output_limit) const override;
+
+  // |FilterInput|
   Matrix GetLocalTransform(const Entity& entity) const override;
 
   // |FilterInput|
@@ -37,6 +42,9 @@ class FilterContentsFilterInput final : public FilterInput {
       Scalar scale) override;
 
   // |FilterInput|
+  bool IsTranslationOnly() const override;
+
+  // |FilterInput|
   bool IsLeaf() const override;
 
   // |FilterInput|
@@ -46,7 +54,7 @@ class FilterContentsFilterInput final : public FilterInput {
   virtual void SetEffectTransform(const Matrix& matrix) override;
 
   // |FilterInput|
-  virtual void SetIsForSubpass(bool is_for_subpass) override;
+  virtual void SetRenderingMode(Entity::RenderingMode rendering_mode) override;
 
  private:
   explicit FilterContentsFilterInput(std::shared_ptr<FilterContents> filter);

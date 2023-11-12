@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
 
 #include "flutter/fml/macros.h"
@@ -58,7 +59,9 @@ class DeviceBufferGLES final
   // |DeviceBuffer|
   bool SetLabel(const std::string& label, Range range) override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(DeviceBufferGLES);
+  DeviceBufferGLES(const DeviceBufferGLES&) = delete;
+
+  DeviceBufferGLES& operator=(const DeviceBufferGLES&) = delete;
 };
 
 }  // namespace impeller

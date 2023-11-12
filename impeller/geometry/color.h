@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <algorithm>
 #include <array>
+#include <cstdint>
 #include <cstdlib>
 #include <ostream>
 #include <type_traits>
@@ -144,7 +145,7 @@ struct Color {
 
   explicit Color(const ColorHSB& hsbColor);
 
-  Color(const Vector4& value);
+  explicit Color(const Vector4& value);
 
   constexpr Color(Scalar r, Scalar g, Scalar b, Scalar a)
       : red(r), green(g), blue(b), alpha(a) {}

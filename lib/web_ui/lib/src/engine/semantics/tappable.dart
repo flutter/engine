@@ -8,7 +8,7 @@ import 'package:ui/ui.dart' as ui;
 /// Sets the "button" ARIA role.
 class Button extends PrimaryRoleManager {
   Button(SemanticsObject semanticsObject) : super.withBasics(PrimaryRole.button, semanticsObject) {
-    semanticsObject.setAriaRole('button');
+    setAriaRole('button');
   }
 
   @override
@@ -16,9 +16,9 @@ class Button extends PrimaryRoleManager {
     super.update();
 
     if (semanticsObject.enabledState() == EnabledState.disabled) {
-      semanticsObject.element.setAttribute('aria-disabled', 'true');
+      setAttribute('aria-disabled', 'true');
     } else {
-      semanticsObject.element.removeAttribute('aria-disabled');
+      removeAttribute('aria-disabled');
     }
   }
 }
@@ -30,7 +30,8 @@ class Button extends PrimaryRoleManager {
 /// the browser may not send us pointer events. In that mode we forward HTML
 /// click as [ui.SemanticsAction.tap].
 class Tappable extends RoleManager {
-  Tappable(SemanticsObject semanticsObject) : super(Role.tappable, semanticsObject) {
+  Tappable(SemanticsObject semanticsObject, PrimaryRoleManager owner)
+      : super(Role.tappable, semanticsObject, owner) {
     _clickListener = createDomEventListener((DomEvent click) {
       PointerBinding.instance!.clickDebouncer.onClick(
         click,
@@ -38,7 +39,7 @@ class Tappable extends RoleManager {
         _isListening,
       );
     });
-    semanticsObject.element.addEventListener('click', _clickListener);
+    owner.element.addEventListener('click', _clickListener);
   }
 
   DomEventListener? _clickListener;
@@ -59,15 +60,15 @@ class Tappable extends RoleManager {
     // contract is that the element that has this attribute is also the element
     // that receives pointer and "click" events.
     if (_isListening) {
-      semanticsObject.element.setAttribute('flt-tappable', '');
+      owner.element.setAttribute('flt-tappable', '');
     } else {
-      semanticsObject.element.removeAttribute('flt-tappable');
+      owner.element.removeAttribute('flt-tappable');
     }
   }
 
   @override
   void dispose() {
-    semanticsObject.element.removeEventListener('click', _clickListener);
+    owner.removeEventListener('click', _clickListener);
     _clickListener = null;
     super.dispose();
   }
