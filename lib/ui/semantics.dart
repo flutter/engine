@@ -828,7 +828,7 @@ abstract class SemanticsUpdateBuilder {
     required Int32List childrenInTraversalOrder,
     required Int32List childrenInHitTestOrder,
     required Int32List additionalActions,
-    int headingLevel,
+    required int headingLevel,
   });
 
   /// Update the custom semantics action associated with the given `id`.
