@@ -131,8 +131,8 @@ for platform in "${platforms[@]}"; do
   rm -rf $upload_dir/ndk-bundle
 
   if [[ ! -d "$upload_dir/ndk" ]]; then
-  echo "Failure to bundle ndk for platform"
-  exit 1
+    echo "Failure to bundle ndk for platform"
+    exit 1
   fi
 
   # Accept all licenses to ensure they are generated and uploaded.
