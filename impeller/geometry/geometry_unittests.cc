@@ -1977,14 +1977,14 @@ TEST(GeometryTest, RectGetTransformedPoints) {
 TEST(GeometryTest, RectMakePointBounds) {
   {
     std::vector<Point> points{{1, 5}, {4, -1}, {0, 6}};
-    Rect r = Rect::MakePointBounds(points.begin(), points.end()).value();
+    Rect r = Rect::MakePointBounds(points.begin(), points.end());
     auto expected = Rect::MakeXYWH(0, -1, 4, 7);
-    ASSERT_RECT_NEAR(r, expected);
+    EXPECT_RECT_NEAR(r, expected);
   }
   {
     std::vector<Point> points;
-    std::optional<Rect> r = Rect::MakePointBounds(points.begin(), points.end());
-    ASSERT_FALSE(r.has_value());
+    Rect r = Rect::MakePointBounds(points.begin(), points.end());
+    EXPECT_TRUE(r.IsEmpty());
   }
 }
 

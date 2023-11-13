@@ -840,10 +840,10 @@ struct Color {
 
   static Color Random() {
     return {
-        static_cast<Scalar>((std::rand() % 255) / 255.0f),  //
-        static_cast<Scalar>((std::rand() % 255) / 255.0f),  //
-        static_cast<Scalar>((std::rand() % 255) / 255.0f),  //
-        1.0f                                                //
+        static_cast<Scalar>((arc4random() % 255) / 255.0f),  //
+        static_cast<Scalar>((arc4random() % 255) / 255.0f),  //
+        static_cast<Scalar>((arc4random() % 255) / 255.0f),  //
+        1.0f                                                 //
     };
   }
 

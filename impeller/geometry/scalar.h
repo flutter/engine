@@ -6,11 +6,12 @@
 
 #include <cfloat>
 #include <type_traits>
-#include <valarray>
 
 #include "impeller/geometry/constants.h"
 
 namespace impeller {
+
+// NOLINTBEGIN(google-explicit-constructor)
 
 using Scalar = float;
 
@@ -37,7 +38,7 @@ struct Radians {
 
   constexpr Radians() = default;
 
-  explicit constexpr Radians(Scalar p_radians) : radians(p_radians) {}
+  constexpr Radians(Scalar p_radians) : radians(p_radians) {}
 };
 
 struct Degrees {
@@ -51,5 +52,7 @@ struct Degrees {
     return Radians{degrees * kPi / 180.0f};
   };
 };
+
+// NOLINTEND(google-explicit-constructor)
 
 }  // namespace impeller

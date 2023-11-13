@@ -648,7 +648,7 @@ void DlDispatcher::scale(SkScalar sx, SkScalar sy) {
 
 // |flutter::DlOpReceiver|
 void DlDispatcher::rotate(SkScalar degrees) {
-  canvas_.Rotate(Degrees{degrees});
+  canvas_.Rotate(Radians{Degrees{degrees}});
 }
 
 // |flutter::DlOpReceiver|
@@ -846,8 +846,9 @@ void DlDispatcher::drawArc(const SkRect& oval_bounds,
                            SkScalar sweep_degrees,
                            bool use_center) {
   PathBuilder builder;
-  builder.AddArc(skia_conversions::ToRect(oval_bounds), Degrees(start_degrees),
-                 Degrees(sweep_degrees), use_center);
+  builder.AddArc(skia_conversions::ToRect(oval_bounds),
+                 Radians(Degrees(start_degrees)),
+                 Radians(Degrees(sweep_degrees)), use_center);
   canvas_.DrawPath(builder.TakePath(), paint_);
 }
 

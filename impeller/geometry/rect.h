@@ -49,10 +49,10 @@ struct TRect {
   }
 
   template <typename PointIter>
-  constexpr static std::optional<TRect> MakePointBounds(const PointIter first,
-                                                        const PointIter last) {
+  constexpr static TRect MakePointBounds(const PointIter first,
+                                         const PointIter last) {
     if (first == last) {
-      return std::nullopt;
+      return TRect::MakeLTRB(0, 0, 0, 0);
     }
     auto left = first->x;
     auto top = first->y;
@@ -211,7 +211,7 @@ struct TRect {
   ///         rectangle.
   constexpr TRect TransformBounds(const Matrix& transform) const {
     auto points = GetTransformedPoints(transform);
-    return TRect::MakePointBounds(points.begin(), points.end()).value();
+    return TRect::MakePointBounds(points.begin(), points.end());
   }
 
   /// @brief  Constructs a Matrix that will map all points in the coordinate

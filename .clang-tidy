@@ -51,4 +51,4 @@ CheckOptions:
 #
 # Note this is because of our buildroot setup, so the full path of a lint is:
 # "../../flutter/impeller/core/runtime_types.h:1:1" as reported.
-HeaderFilterRegex: "(!third_party/)(!gen/).*/flutter/.*"
+HeaderFilterRegex: "[..\/]+\/flutter\/.*"
