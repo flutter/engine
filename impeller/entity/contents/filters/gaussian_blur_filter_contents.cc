@@ -234,7 +234,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   Scalar blur_radius = CalculateBlurRadius(sigma_);
   Scalar desired_scale = 1.0 / CalculateScale(blur_radius);
   Vector2 downsample =
-       CalculateIntegerScale(desired_scale, input_snapshot->texture->GetSize());
+      CalculateIntegerScale(desired_scale, input_snapshot->texture->GetSize());
 
   std::shared_ptr<Texture> pass1_out_texture = MakeDownsampleSubpass(
       renderer, input_snapshot->texture, input_snapshot->sampler_descriptor,
@@ -251,6 +251,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
           .blur_uv_offset = Point(0.0, pass1_pixel_size.height),
           .blur_sigma = sigma_ / downsample.y,
           .blur_radius = blur_radius / downsample.y,
+          .step_size = 1.0,
       },
       /*downsample=*/Vector2(1.0, 1.0));
 
@@ -262,6 +263,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
           .blur_uv_offset = Point(pass1_pixel_size.width, 0.0),
           .blur_sigma = sigma_ / downsample.x,
           .blur_radius = blur_radius / downsample.x,
+          .step_size = 1.0,
       },
       /*downsample=*/Vector2(1.0, 1.0));
 
