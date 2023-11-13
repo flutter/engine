@@ -408,7 +408,6 @@ Future<void> testMain() async {
   });
 
   group('test fonts in flutterTester environment', () {
-    ensureImplicitViewInitialized();
     final bool resetValue = ui_web.debugEmulateFlutterTesterEnvironment;
     ui_web.debugEmulateFlutterTesterEnvironment = true;
     tearDownAll(() {

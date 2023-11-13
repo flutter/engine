@@ -17,7 +17,6 @@ void main() {
 const ui.Rect kDefaultRegion = ui.Rect.fromLTRB(0, 0, 500, 250);
 
 void testMain() {
-  ensureImplicitViewInitialized();
   ui_web.debugEmulateFlutterTesterEnvironment = true;
 
   group('flutter_tester emulation', () {
