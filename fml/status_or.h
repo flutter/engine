@@ -31,8 +31,8 @@ namespace fml {
 template <typename T>
 class StatusOr {
  public:
-  StatusOr(const T& value) : status_(), value_(value) {}
-  StatusOr(const Status& status) : status_(status), value_() {}
+  explicit StatusOr(const T& value) : status_(), value_(value) {}
+  explicit StatusOr(const Status& status) : status_(status), value_() {}
 
   StatusOr(const StatusOr&) = default;
   StatusOr(StatusOr&&) = default;
@@ -63,13 +63,17 @@ class StatusOr {
   bool ok() const { return status_.ok(); }
 
   const T& value() const {
-    FML_CHECK(status_.ok());
-    return value_.value();
+    if (status_.ok()) {
+      return value_.value();
+    }
+    FML_LOG(FATAL) << "StatusOr::value() called on error Status";
   }
 
   T& value() {
-    FML_CHECK(status_.ok());
-    return value_.value();
+    if (status_.ok()) {
+      return value_.value();
+    }
+    FML_LOG(FATAL) << "StatusOr::value() called on error Status";
   }
 
  private:
