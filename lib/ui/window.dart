@@ -156,8 +156,6 @@ class FlutterView {
   /// system UI. The [padding] and [viewInsets] properties provide information
   /// about how much of each side of the view may be obscured by system UI.
   ///
-  /// This value is the same as the `size` member of [physicalGeometry].
-  ///
   /// See also:
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
