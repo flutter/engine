@@ -27,7 +27,12 @@ class CommandBufferMock : public CommandBuffer {
 
   MOCK_METHOD(bool,
               SubmitCommandsAsync,
-              (std::shared_ptr<RenderPass> render_pass),
+              (const std::shared_ptr<RenderPass>& render_pass),
+              (override));
+
+  MOCK_METHOD(bool,
+              SubmitCommandsAsync,
+              (const std::shared_ptr<BlitPass>& render_pass, const std::shared_ptr<Allocator>& allocator),
               (override));
 
   MOCK_METHOD(std::shared_ptr<RenderPass>,

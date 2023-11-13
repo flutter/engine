@@ -140,12 +140,10 @@ bool SurfaceMTL::Present() const {
   } else {
     auto resolve_texture = resolve_texture_;
     [command_buffer addScheduledHandler:^(id<MTLCommandBuffer> _Nonnull) {
-      FML_LOG(ERROR) << "Scheduled handled";
       auto mtl_texture = TextureMTL::Cast(resolve_texture.get());
       mtl_texture->WaitForNextDrawable();
       auto drawable = mtl_texture->GetDrawable();
       if (drawable) {
-        FML_LOG(ERROR) << "Present";
         [drawable present];
       }
     }];

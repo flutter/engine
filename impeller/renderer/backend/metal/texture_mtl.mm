@@ -112,13 +112,12 @@ ISize TextureMTL::GetSize() const {
 
 id<MTLTexture> TextureMTL::GetMTLTexture() const {
   if (is_wrapped_) {
-    TRACE_EVENT0("texture", "TextureMTL::GetMTLTexture");
+    TRACE_EVENT0("texture", "TextureMTL::WaitForNextDrawable");
     if (!texture_) {
       drawable_ = [layer_ nextDrawable];
       if (!drawable_) {
-        FML_LOG(ERROR) << "FAILED WAITING FOR DRAWABLE";
-      } else {
-        FML_LOG(ERROR) << "GOT DRAWABLE";
+        latch_->CountDown();
+        return nil;
       }
       texture_ = drawable_.texture;
       latch_->CountDown();
