@@ -574,12 +574,11 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
 /// API surface, providing Web-specific functionality that the standard
 /// `dart:ui` version does not.
 EngineFlutterWindow get window {
-  if (_window == null) {
-    throw StateError(
-      'Trying to access the implicit FlutterView, but it is not available.\n'
-      'Note: the implicit FlutterView is not available in multi-view mode.',
-    );
-  }
+  assert(
+    _window != null,
+    'Trying to access the implicit FlutterView, but it is not available.\n'
+    'Note: the implicit FlutterView is not available in multi-view mode.',
+  );
   return _window!;
 }
 EngineFlutterWindow? _window;
