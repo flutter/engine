@@ -21,7 +21,7 @@ class Dialog extends PrimaryRoleManager {
     // focus on something inside it. There could be two possibilities:
     //
     // 1. The framework explicitly marked a node inside the dialog as focused
-    //    via the `isFocusabe` and `isFocused` flags. In this case, the node
+    //    via the `isFocusable` and `isFocused` flags. In this case, the node
     //    will request focus directly and there's nothing to do on top of that.
     // 2. No node inside the route takes focus explicitly. In this case, the
     //    expectation is to look through all nodes in traversal order and focus
@@ -45,7 +45,7 @@ class Dialog extends PrimaryRoleManager {
       }
 
       // If the node does not take focus (e.g. focusing on it does not make
-      // sense at all), depair not. Keep looking.
+      // sense at all). Despair not. Keep looking.
       final bool didTakeFocus = roleManager.focusAsRouteDefault();
       return !didTakeFocus;
     });
@@ -94,7 +94,7 @@ class Dialog extends PrimaryRoleManager {
   @override
   bool focusAsRouteDefault() {
     // Dialogs are the ones that look inside themselves to find elements to
-    // focus one. It doesn't make sense to focus on the dialog itself.
+    // focus on. It doesn't make sense to focus on the dialog itself.
     return false;
   }
 }

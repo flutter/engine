@@ -34,8 +34,16 @@ class Focusable extends RoleManager {
 
   final AccessibilityFocusManager _focusManager;
 
+  /// Requests focus as a result of a route (e.g. dialog) deciding that the node
+  /// managed by this class should be focused by default when nothing requests
+  /// focus explicitly.
+  ///
+  /// This method of taking focus is different from the regular method of using
+  /// the [SemanticsObject.hasFocus] flag, as in this case the framework is not
+  /// explicitly request focus. Instead, the DOM element is being focus directly
+  /// programmatically, simulating the screen reader choosing a default element
+  /// to focus on.
   bool focusAsRouteDefault() {
-    print('>>> ${semanticsObject.id} is taking default route focus (label: ${semanticsObject.label})');
     owner.element.focus();
     return true;
   }
@@ -237,7 +245,6 @@ class AccessibilityFocusManager {
         return;
       }
 
-      print('>>> calling focus on ${target.element} id="${target.element.id}"');
       target.element.focus();
     });
   }
