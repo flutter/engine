@@ -15,6 +15,7 @@ print_usage () {
   echo ""
   echo "This script downloads the packages specified in packages.txt and uploads"
   echo "them to CIPD for linux, mac, and windows."
+  echo "To confirm you have write permissions run 'cipd acl-check flutter/android/sdk/all/ -writer'."
   echo ""
   echo "Manage the packages to download in 'packages.txt'. You can use"
   echo "'sdkmanager --list --include_obsolete' in cmdline-tools to list all available packages."
@@ -26,13 +27,13 @@ print_usage () {
   echo "and should only be run on linux or macos hosts."
 }
 
-# Validate version is provided
+# Validate version or argument is provided.
 if [[ $1 == "" ]]; then
   print_usage
   exit 1
 fi
 
-#Validate version contains only lower case letters and numbers
+# Validate version contains only lower case letters and numbers.
 if ! [[ $1 =~ ^[[:lower:][:digit:]]+$ ]]; then
   echo "Version tag can only consist of lower case letters and digits.";
   print_usage
@@ -54,11 +55,21 @@ if [[ ! -d "$sdk_path" ]]; then
   print_usage
   exit 1
 fi
+
+# Validate caller has cipd.
 if [[ ! -d "$sdk_path/cmdline-tools" ]]; then
   echo "SDK directory does not contain $sdk_path/cmdline-tools."
   print_usage
   exit 1
 fi
+
+# Validate cipd credentials exist.
+# cipdAclCheck=("cipd acl-check flutter/android/sdk/all/")
+# if [[ ! cipdAclCheck =~ 'WRITE']]; then
+#   echo "Visit go/flutter-luci-cipd to request write access"
+#   print_usage
+#   exit 1
+# fi
 
 platforms=("linux" "macosx" "windows")
 package_file_name="packages.txt"
@@ -116,11 +127,19 @@ for platform in "${platforms[@]}"; do
   done
 
   # Special treatment for NDK to move to expected directory.
+  # This is because the engine imports darts GN files which also inlcude
+  # a copy of the ndk. See https://github.com/flutter/flutter/issues/136666#issuecomment-1805467578
+  # for more information.
   mv $upload_dir/sdk/ndk $upload_dir/ndk-bundle
   ndk_sub_paths=`find $upload_dir/ndk-bundle -maxdepth 1 -type d`
   ndk_sub_paths_arr=($ndk_sub_paths)
   mv ${ndk_sub_paths_arr[1]} $upload_dir/ndk
   rm -rf $upload_dir/ndk-bundle
+
+  if [[ ! -d "$upload_dir/ndk" ]]; then
+  echo "Failure to bundle ndk for platform"
+  exit 1
+  fi
 
   # Accept all licenses to ensure they are generated and uploaded.
   yes "y" | $sdkmanager_path --licenses --sdk_root=$sdk_root
@@ -137,11 +156,16 @@ for platform in "${platforms[@]}"; do
     if [[ $platform == "macosx" ]]; then
       cipd_name="mac-$arch"
     fi
-    echo "Uploading $cipd_name to CIPD"
+
+    echo "Uploading $upload_dir as $cipd_name to CIPD"
     cipd create -in $upload_dir -name "flutter/android/sdk/all/$cipd_name" -install-mode copy -tag version:$version_tag
   done
 
   rm -rf $sdk_root
   rm -rf $upload_dir
+
+  # This variable changes the behvaior of sdkmanager.
+  # Unset to clean up after script.
+  unset REPO_OS_OVERRIDE
 done
 rm -rf $temp_dir
