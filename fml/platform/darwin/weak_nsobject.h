@@ -73,8 +73,7 @@ class WeakNSObjectFactory;
 // receives nullify() from the object's sentinel.
 class WeakContainer : public fml::RefCountedThreadSafe<WeakContainer> {
  public:
-  explicit WeakContainer(id object, debug::DebugThreadChecker checker)
-      : checker_(checker), object_(object) {}
+  explicit WeakContainer(id object, debug::DebugThreadChecker checker);
 
   id object() {
     CheckThreadSafety();
@@ -85,10 +84,10 @@ class WeakContainer : public fml::RefCountedThreadSafe<WeakContainer> {
 
  private:
   friend fml::RefCountedThreadSafe<WeakContainer>;
-  ~WeakContainer() {}
+  ~WeakContainer();
 
   debug::DebugThreadChecker checker_;
-  id object_;
+  __unsafe_unretained id object_;
 
   void CheckThreadSafety() const { FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker); }
 };

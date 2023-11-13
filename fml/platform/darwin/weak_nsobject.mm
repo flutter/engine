@@ -11,6 +11,15 @@ namespace {
 char sentinelObserverKey_;
 }  // namespace
 
+namespace fml {
+
+WeakContainer::WeakContainer(id object, debug::DebugThreadChecker checker)
+    : checker_(checker), object_(object) {}
+
+WeakContainer::~WeakContainer() {}
+
+}  // namespace fml
+
 @interface CRBWeakNSProtocolSentinel ()
 // Container to notify on dealloc.
 @property(readonly, assign) fml::RefPtr<fml::WeakContainer> container;
