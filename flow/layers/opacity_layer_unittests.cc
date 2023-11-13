@@ -27,14 +27,6 @@ namespace testing {
 using OpacityLayerTest = LayerTest;
 
 #ifndef NDEBUG
-TEST_F(OpacityLayerTest, LeafLayer) {
-  auto layer =
-      std::make_shared<OpacityLayer>(SK_AlphaOPAQUE, SkPoint::Make(0.0f, 0.0f));
-
-  EXPECT_DEATH_IF_SUPPORTED(layer->Preroll(preroll_context()),
-                            "\\!layers\\(\\)\\.empty\\(\\)");
-}
-
 TEST_F(OpacityLayerTest, PaintingEmptyLayerDies) {
   auto mock_layer = std::make_shared<MockLayer>(SkPath());
   auto layer =
@@ -659,7 +651,7 @@ using OpacityLayerDiffTest = DiffContextTest;
 
 TEST_F(OpacityLayerDiffTest, FractionalTranslation) {
   auto picture = CreateDisplayListLayer(
-      CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), 1));
+      CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60)));
   auto layer = CreateOpacityLater({picture}, 128, SkPoint::Make(0.5, 0.5));
 
   MockLayerTree tree1;
@@ -672,7 +664,7 @@ TEST_F(OpacityLayerDiffTest, FractionalTranslation) {
 
 TEST_F(OpacityLayerDiffTest, FractionalTranslationWithRasterCache) {
   auto picture = CreateDisplayListLayer(
-      CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), 1));
+      CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60)));
   auto layer = CreateOpacityLater({picture}, 128, SkPoint::Make(0.5, 0.5));
 
   MockLayerTree tree1;

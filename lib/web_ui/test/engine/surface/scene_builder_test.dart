@@ -13,6 +13,7 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import '../../common/matchers.dart';
 
@@ -22,7 +23,7 @@ void main() {
 
 void testMain() {
   setUpAll(() async {
-    await ui.webOnlyInitializePlatform();
+    await ui_web.bootstrapEngine();
   });
 
   group('SceneBuilder', () {
@@ -37,7 +38,7 @@ void testMain() {
     test('pushTransform implements surface lifecycle', () {
       testLayerLifeCycle((ui.SceneBuilder sceneBuilder, ui.EngineLayer? oldLayer) {
         return sceneBuilder.pushTransform(
-            (Matrix4.identity()..scale(domWindow.devicePixelRatio)).toFloat64());
+            (Matrix4.identity()..scale(EngineFlutterDisplay.instance.browserDevicePixelRatio)).toFloat64());
       }, () {
         return '''<s><flt-transform></flt-transform></s>''';
       });

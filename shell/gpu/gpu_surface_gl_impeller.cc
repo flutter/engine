@@ -5,9 +5,10 @@
 #include "flutter/shell/gpu/gpu_surface_gl_impeller.h"
 
 #include "flutter/fml/make_copyable.h"
-#include "flutter/impeller/display_list/dl_dispatcher.h"
-#include "flutter/impeller/renderer/backend/gles/surface_gles.h"
-#include "flutter/impeller/renderer/renderer.h"
+#include "impeller/display_list/dl_dispatcher.h"
+#include "impeller/renderer/backend/gles/surface_gles.h"
+#include "impeller/renderer/renderer.h"
+#include "impeller/typographer/backends/skia/typographer_context_skia.h"
 
 namespace flutter {
 
@@ -28,7 +29,8 @@ GPUSurfaceGLImpeller::GPUSurfaceGLImpeller(
     return;
   }
 
-  auto aiks_context = std::make_shared<impeller::AiksContext>(context);
+  auto aiks_context = std::make_shared<impeller::AiksContext>(
+      context, impeller::TypographerContextSkia::Make());
 
   if (!aiks_context->IsValid()) {
     return;
@@ -83,7 +85,6 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
   GLFrameInfo frame_info = {static_cast<uint32_t>(size.width()),
                             static_cast<uint32_t>(size.height())};
   const GLFBOInfo fbo_info = delegate_->GLContextFBO(frame_info);
-
   auto surface = impeller::SurfaceGLES::WrapFBO(
       impeller_context_,                            // context
       swap_callback,                                // swap_callback
@@ -109,8 +110,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
 
         auto cull_rect =
             surface->GetTargetRenderPassDescriptor().GetRenderTargetSize();
-
-        impeller::DlDispatcher impeller_dispatcher;
+        impeller::Rect dl_cull_rect = impeller::Rect::MakeSize(cull_rect);
+        impeller::DlDispatcher impeller_dispatcher(dl_cull_rect);
         display_list->Dispatch(
             impeller_dispatcher,
             SkIRect::MakeWH(cull_rect.width, cull_rect.height));

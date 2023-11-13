@@ -78,12 +78,11 @@ static const std::string kAllowedDartFlags[] = {
 // of the engine's own symbols on some older versions of Android.
 #if FML_OS_ANDROID
 extern uint8_t _binary_icudtl_dat_start[];
-extern uint8_t _binary_icudtl_dat_end[];
+extern size_t _binary_icudtl_dat_size;
 
 static std::unique_ptr<fml::Mapping> GetICUStaticMapping() {
-  return std::make_unique<fml::NonOwnedMapping>(
-      _binary_icudtl_dat_start,
-      _binary_icudtl_dat_end - _binary_icudtl_dat_start);
+  return std::make_unique<fml::NonOwnedMapping>(_binary_icudtl_dat_start,
+                                                _binary_icudtl_dat_size);
 }
 #endif
 
@@ -354,6 +353,9 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   settings.trace_systrace =
       command_line.HasOption(FlagForSwitch(Switch::TraceSystrace));
 
+  command_line.GetOptionValue(FlagForSwitch(Switch::TraceToFile),
+                              &settings.trace_to_file);
+
   settings.skia_deterministic_rendering_on_cpu =
       command_line.HasOption(FlagForSwitch(Switch::SkiaDeterministicRendering));
 
@@ -453,6 +455,17 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   }
 
   {
+    std::string disable_image_reader_platform_views_value;
+    if (command_line.GetOptionValue(
+            FlagForSwitch(Switch::DisableImageReaderPlatformViews),
+            &disable_image_reader_platform_views_value)) {
+      settings.disable_image_reader_platform_views =
+          disable_image_reader_platform_views_value.empty() ||
+          "true" == disable_image_reader_platform_views_value;
+    }
+  }
+
+  {
     std::string impeller_backend_value;
     if (command_line.GetOptionValue(FlagForSwitch(Switch::ImpellerBackend),
                                     &impeller_backend_value)) {
@@ -464,6 +477,8 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
 
   settings.enable_vulkan_validation =
       command_line.HasOption(FlagForSwitch(Switch::EnableVulkanValidation));
+  settings.enable_opengl_gpu_tracing =
+      command_line.HasOption(FlagForSwitch(Switch::EnableOpenGLGPUTracing));
 
   settings.enable_embedder_api =
       command_line.HasOption(FlagForSwitch(Switch::EnableEmbedderAPI));
@@ -476,7 +491,7 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
                                   &all_dart_flags)) {
     // Assume that individual flags are comma separated.
     std::vector<std::string> flags = ParseCommaDelimited(all_dart_flags);
-    for (auto flag : flags) {
+    for (const auto& flag : flags) {
       if (!IsAllowedDartVMFlag(flag)) {
         FML_LOG(FATAL) << "Encountered disallowed Dart VM flag: " << flag;
       }

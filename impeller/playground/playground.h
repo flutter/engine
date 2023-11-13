@@ -92,6 +92,8 @@ class Playground {
 
   virtual bool ShouldKeepRendering() const;
 
+  void SetWindowSize(ISize size);
+
  private:
   struct GLFWInitializer;
 
@@ -105,9 +107,9 @@ class Playground {
 
   void SetCursorPosition(Point pos);
 
-  void SetWindowSize(ISize size);
+  Playground(const Playground&) = delete;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Playground);
+  Playground& operator=(const Playground&) = delete;
 };
 
 }  // namespace impeller

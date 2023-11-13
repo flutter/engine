@@ -1,3 +1,7 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 package io.flutter.plugin.platform;
 
 import static android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
@@ -48,7 +52,7 @@ import org.robolectric.shadows.ShadowLooper;
 public class PlatformPluginTest {
   private final Context ctx = ApplicationProvider.getApplicationContext();
 
-  @Config(sdk = 16)
+  @Config(sdk = Build.VERSION_CODES.KITKAT)
   @Test
   public void itIgnoresNewHapticEventsOnOldAndroidPlatforms() {
     View fakeDecorView = mock(View.class);
@@ -66,7 +70,7 @@ public class PlatformPluginTest {
     platformPlugin.vibrateHapticFeedback(PlatformChannel.HapticFeedbackType.SELECTION_CLICK);
   }
 
-  @Config(sdk = 29)
+  @Config(sdk = Build.VERSION_CODES.Q)
   @Test
   public void platformPlugin_getClipboardData() throws IOException {
     ClipboardManager clipboardManager = ctx.getSystemService(ClipboardManager.class);
@@ -94,7 +98,9 @@ public class PlatformPluginTest {
     assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
   }
 
-  @Config(sdk = 28)
+  @SuppressWarnings("deprecation")
+  // ClipboardManager.getText
+  @Config(sdk = Build.VERSION_CODES.P)
   @Test
   public void platformPlugin_hasStrings() {
     ClipboardManager clipboardManager = spy(ctx.getSystemService(ClipboardManager.class));
@@ -148,7 +154,7 @@ public class PlatformPluginTest {
     verify(clipboardManager, never()).getText();
   }
 
-  @Config(sdk = 29)
+  @Config(sdk = Build.VERSION_CODES.Q)
   @Test
   public void setNavigationBarDividerColor() {
     View fakeDecorView = mock(View.class);
@@ -223,7 +229,7 @@ public class PlatformPluginTest {
     }
   }
 
-  @Config(sdk = 30)
+  @Config(sdk = Build.VERSION_CODES.R)
   @Test
   public void setNavigationBarIconBrightness() {
     if (Build.VERSION.SDK_INT >= 30) {
@@ -270,7 +276,7 @@ public class PlatformPluginTest {
     }
   }
 
-  @Config(sdk = 30)
+  @Config(sdk = Build.VERSION_CODES.R)
   @Test
   public void setStatusBarIconBrightness() {
     if (Build.VERSION.SDK_INT >= 30) {
@@ -315,7 +321,9 @@ public class PlatformPluginTest {
     }
   }
 
-  @Config(sdk = 29)
+  @SuppressWarnings("deprecation")
+  // SYSTEM_UI_FLAG_*, setSystemUiVisibility
+  @Config(sdk = Build.VERSION_CODES.Q)
   @Test
   public void setSystemUiMode() {
     View fakeDecorView = mock(View.class);
@@ -371,6 +379,8 @@ public class PlatformPluginTest {
     }
   }
 
+  @SuppressWarnings("deprecation")
+  // SYSTEM_UI_FLAG_FULLSCREEN
   @Test
   public void setSystemUiModeListener_overlaysAreHidden() {
     ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class);
@@ -400,6 +410,8 @@ public class PlatformPluginTest {
     verify(fakePlatformChannel).systemChromeChanged(false);
   }
 
+  @SuppressWarnings("deprecation")
+  // dispatchSystemUiVisibilityChanged
   @Test
   public void setSystemUiModeListener_overlaysAreVisible() {
     ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class);
@@ -426,7 +438,9 @@ public class PlatformPluginTest {
     verify(fakePlatformChannel).systemChromeChanged(true);
   }
 
-  @Config(sdk = 28)
+  @SuppressWarnings("deprecation")
+  // SYSTEM_UI_FLAG_*, setSystemUiVisibility
+  @Config(sdk = Build.VERSION_CODES.P)
   @Test
   public void doNotEnableEdgeToEdgeOnOlderSdk() {
     View fakeDecorView = mock(View.class);
@@ -446,7 +460,9 @@ public class PlatformPluginTest {
                 | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
   }
 
-  @Config(sdk = 29)
+  @SuppressWarnings("deprecation")
+  // FLAG_TRANSLUCENT_STATUS, FLAG_TRANSLUCENT_NAVIGATION
+  @Config(sdk = Build.VERSION_CODES.Q)
   @Test
   public void verifyWindowFlagsSetToStyleOverlays() {
     View fakeDecorView = mock(View.class);
@@ -513,8 +529,12 @@ public class PlatformPluginTest {
     verify(mockActivity, never()).finish();
   }
 
+  @SuppressWarnings("deprecation")
+  // Robolectric.setupActivity.
+  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void popSystemNavigatorFlutterFragment() {
+    // Migrate to ActivityScenario by following https://github.com/robolectric/robolectric/pull/4736
     FragmentActivity activity = spy(Robolectric.setupActivity(FragmentActivity.class));
     final AtomicBoolean onBackPressedCalled = new AtomicBoolean(false);
     OnBackPressedCallback backCallback =
@@ -539,6 +559,9 @@ public class PlatformPluginTest {
     assertTrue(onBackPressedCalled.get());
   }
 
+  @SuppressWarnings("deprecation")
+  // Robolectric.setupActivity.
+  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void doesNotDoAnythingByDefaultIfFragmentPopSystemNavigatorOverridden() {
     FragmentActivity activity = spy(Robolectric.setupActivity(FragmentActivity.class));

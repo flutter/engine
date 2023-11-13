@@ -1029,6 +1029,8 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
   static final RegExp _licenseNamePattern = RegExp(r'^(?!.*\.py$)(?!.*(?:no|update)-copyright)(?!.*mh-bsd-gcc).*\b_*(?:license(?!\.html)|copying|copyright|notice|l?gpl|GPLv2|bsd|mit|mpl?|ftl|Apache)_*\b', caseSensitive: false);
 
   static const Map<String, _Constructor> _specialCaseFiles = <String, _Constructor>{
+    '/flutter/third_party/rapidjson/LICENSE': _RepositoryOpaqueLicenseFile.new,
+    '/flutter/third_party/rapidjson/license.txt': _RepositoryOpaqueLicenseFile.new,
     '/fuchsia/sdk/linux/LICENSE.vulkan': _RepositoryFuchsiaSdkLinuxLicenseFile.new,
     '/fuchsia/sdk/mac/LICENSE.vulkan': _RepositoryFuchsiaSdkLinuxLicenseFile.new,
     '/third_party/boringssl/src/LICENSE': _RepositoryOpenSSLLicenseFile.new,
@@ -1041,11 +1043,9 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
     '/third_party/libjpeg-turbo/LICENSE': _RepositoryLibJpegTurboLicenseFile.new,
     '/third_party/libjpeg-turbo/README.ijg': _RepositoryReadmeIjgFile.new,
     '/third_party/libpng/LICENSE': _RepositoryLibPngLicenseFile.new,
-    '/third_party/rapidjson/LICENSE': _RepositoryOpaqueLicenseFile.new,
-    '/third_party/rapidjson/license.txt': _RepositoryOpaqueLicenseFile.new,
     '/third_party/root_certificates/LICENSE': _RepositoryMpl2File.new,
     '/third_party/vulkan-deps/vulkan-validation-layers/src/LICENSE.txt': _RepositoryVulkanApacheLicenseFile.new,
-    '/third_party/inja/third_party/include/nlohmann/json.hpp': _RepositoryInjaJsonFile.new,
+    '/flutter/third_party/inja/third_party/include/nlohmann/json.hpp': _RepositoryInjaJsonFile.new,
   };
 
   _RepositoryFile createFile(fs.IoNode entry) {
@@ -1451,7 +1451,11 @@ class _EngineSrcDirectory extends _RepositoryDirectory {
     // is therefore represented as a separate top-level component.
     final fs.Directory thirdPartyNode = findChildDirectory(ioDirectory, 'third_party')!;
     final fs.Directory skiaNode = findChildDirectory(thirdPartyNode, 'skia')!;
-    return <_RepositoryDirectory>[_RepositorySkiaDirectory(this, skiaNode)];
+    final fs.Directory dartNode = findChildDirectory(thirdPartyNode, 'dart')!;
+    return <_RepositoryDirectory>[
+      _RepositorySkiaDirectory(this, skiaNode),
+      _RepositorySkiaDirectory(this, dartNode),
+    ];
   }
 }
 
@@ -1468,6 +1472,7 @@ class _RepositoryRootThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
   @override
   bool shouldRecurse(fs.IoNode entry) {
     return entry.name != 'skia' // handled as a virtual directory of the root
+        && entry.name != 'dart' // handled as a virtual directory of the root
         && super.shouldRecurse(entry);
   }
 

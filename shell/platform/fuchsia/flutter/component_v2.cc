@@ -12,8 +12,6 @@
 #include <lib/fdio/directory.h>
 #include <lib/fdio/io.h>
 #include <lib/fdio/namespace.h>
-#include <lib/ui/scenic/cpp/view_ref_pair.h>
-#include <lib/ui/scenic/cpp/view_token_pair.h>
 #include <lib/vfs/cpp/composed_service_dir.h>
 #include <lib/vfs/cpp/remote_dir.h>
 #include <lib/vfs/cpp/service.h>
@@ -627,36 +625,6 @@ void ComponentV2::OnEngineTerminate(const Engine* shell_holder) {
   }
 }
 
-void ComponentV2::CreateViewWithViewRef(
-    zx::eventpair view_token,
-    fuchsia::ui::views::ViewRefControl control_ref,
-    fuchsia::ui::views::ViewRef view_ref) {
-  if (!svc_) {
-    FML_LOG(ERROR)
-        << "Component incoming services was invalid when attempting to "
-           "create a shell for a view provider request.";
-    return;
-  }
-
-  shell_holders_.emplace(std::make_unique<Engine>(
-      *this,                      // delegate
-      debug_label_,               // thread label
-      svc_,                       // Component incoming services
-      runner_incoming_services_,  // Runner incoming services
-      settings_,                  // settings
-      scenic::ToViewToken(std::move(view_token)),  // view token
-      scenic::ViewRefPair{
-          .control_ref = std::move(control_ref),
-          .view_ref = std::move(view_ref),
-      },
-      std::move(fdio_ns_),            // FDIO namespace
-      std::move(directory_request_),  // outgoing request
-      product_config_,                // product configuration
-      std::vector<std::string>(),     // dart entrypoint args
-      false                           // not a v1 component
-      ));
-}
-
 void ComponentV2::CreateView2(fuchsia::ui::app::CreateView2Args view_args) {
   if (!svc_) {
     FML_LOG(ERROR)
@@ -664,6 +632,18 @@ void ComponentV2::CreateView2(fuchsia::ui::app::CreateView2Args view_args) {
            "create a shell for a view provider request.";
     return;
   }
+
+  fuchsia::ui::views::ViewRefControl view_ref_control;
+  fuchsia::ui::views::ViewRef view_ref;
+  auto status = zx::eventpair::create(
+      /*options*/ 0u, &view_ref_control.reference, &view_ref.reference);
+  ZX_ASSERT(status == ZX_OK);
+  view_ref_control.reference.replace(
+      ZX_DEFAULT_EVENTPAIR_RIGHTS & (~ZX_RIGHT_DUPLICATE),
+      &view_ref_control.reference);
+  view_ref.reference.replace(ZX_RIGHTS_BASIC, &view_ref.reference);
+  auto view_ref_pair =
+      std::make_pair(std::move(view_ref_control), std::move(view_ref));
 
   shell_holders_.emplace(std::make_unique<Engine>(
       *this,                      // delegate
@@ -673,12 +653,11 @@ void ComponentV2::CreateView2(fuchsia::ui::app::CreateView2Args view_args) {
       settings_,                  // settings
       std::move(
           *view_args.mutable_view_creation_token()),  // view creation token
-      scenic::ViewRefPair::New(),                     // view ref pair
+      std::move(view_ref_pair),                       // view ref pair
       std::move(fdio_ns_),                            // FDIO namespace
       std::move(directory_request_),                  // outgoing request
       product_config_,                                // product configuration
-      std::vector<std::string>(),                     // dart entrypoint args
-      false                                           // not a v1 component
+      std::vector<std::string>()                      // dart entrypoint args
       ));
 }
 

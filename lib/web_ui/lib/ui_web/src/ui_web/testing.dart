@@ -5,6 +5,20 @@
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
+extension SingletonFlutterWindowExtension on ui.SingletonFlutterWindow {
+  /// Overrides the value of [physicalSize] in tests.
+  set debugPhysicalSizeOverride(ui.Size? value) {
+    (this as EngineFlutterWindow).debugPhysicalSizeOverride = value;
+  }
+}
+
+/// Overrides the value of [ui.FlutterView.devicePixelRatio] in tests.
+///
+/// Passing `null` resets the device pixel ratio to the browser's default.
+void debugOverrideDevicePixelRatio(double? value) {
+  EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(value);
+}
+
 /// Whether the Flutter engine is running in `flutter test` emulation mode.
 ///
 /// When true, the engine will emulate a specific screen size, and always
@@ -18,8 +32,7 @@ set debugEmulateFlutterTesterEnvironment(bool value) {
   _debugEmulateFlutterTesterEnvironment = value;
   if (_debugEmulateFlutterTesterEnvironment) {
     const ui.Size logicalSize = ui.Size(800.0, 600.0);
-    window.webOnlyDebugPhysicalSizeOverride =
-        logicalSize * window.devicePixelRatio;
+    window.debugPhysicalSizeOverride = logicalSize * window.devicePixelRatio;
   }
   debugDisableFontFallbacks = value;
 }

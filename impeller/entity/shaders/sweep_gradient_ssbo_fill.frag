@@ -4,6 +4,7 @@
 
 #include <impeller/color.glsl>
 #include <impeller/constants.glsl>
+#include <impeller/dithering.glsl>
 #include <impeller/gradient.glsl>
 #include <impeller/texture.glsl>
 #include <impeller/types.glsl>
@@ -59,5 +60,7 @@ void main() {
       }
     }
   }
+
   frag_color = IPPremultiply(result_color) * frag_info.alpha;
+  frag_color = IPOrderedDither8x8(frag_color, v_position);
 }

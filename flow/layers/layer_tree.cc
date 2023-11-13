@@ -139,6 +139,7 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
       .raster_cache                  = cache,
       .layer_snapshot_store          = snapshot_store,
       .enable_leaf_layer_tracing     = enable_leaf_layer_tracing_,
+      .impeller_enabled              = !!frame.aiks_context(),
       .aiks_context                  = frame.aiks_context(),
       // clang-format on
   };

@@ -12,6 +12,7 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/aiks/image.h"
+#include "impeller/aiks/image_filter.h"
 #include "impeller/aiks/paint.h"
 #include "impeller/aiks/picture.h"
 #include "impeller/core/sampler_descriptor.h"
@@ -33,8 +34,8 @@ struct CanvasStackEntry {
   Matrix xformation;
   // |cull_rect| is conservative screen-space bounds of the clipped output area
   std::optional<Rect> cull_rect;
-  size_t stencil_depth = 0u;
-  bool is_subpass = false;
+  size_t clip_depth = 0u;
+  Entity::RenderingMode rendering_mode = Entity::RenderingMode::kDirect;
   bool contains_clips = false;
 };
 
@@ -68,7 +69,7 @@ class Canvas {
 
   void SaveLayer(const Paint& paint,
                  std::optional<Rect> bounds = std::nullopt,
-                 const Paint::ImageFilterProc& backdrop_filter = nullptr);
+                 const std::shared_ptr<ImageFilter>& backdrop_filter = nullptr);
 
   bool Restore();
 
@@ -102,9 +103,11 @@ class Canvas {
 
   void DrawPaint(const Paint& paint);
 
+  void DrawLine(const Point& p0, const Point& p1, const Paint& paint);
+
   void DrawRect(Rect rect, const Paint& paint);
 
-  void DrawRRect(Rect rect, Scalar corner_radius, const Paint& paint);
+  void DrawRRect(Rect rect, Point corner_radii, const Paint& paint);
 
   void DrawCircle(Point center, Scalar radius, const Paint& paint);
 
@@ -134,12 +137,12 @@ class Canvas {
 
   void ClipRRect(
       const Rect& rect,
-      Scalar corner_radius,
+      Point corner_radii,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
 
   void DrawPicture(const Picture& picture);
 
-  void DrawTextFrame(const TextFrame& text_frame,
+  void DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
                      Point position,
                      const Paint& paint);
 
@@ -170,7 +173,7 @@ class Canvas {
 
   EntityPass& GetCurrentPass();
 
-  size_t GetStencilDepth() const;
+  size_t GetClipDepth() const;
 
   void ClipGeometry(std::unique_ptr<Geometry> geometry,
                     Entity::ClipOperation clip_op);
@@ -180,7 +183,7 @@ class Canvas {
 
   void Save(bool create_subpass,
             BlendMode = BlendMode::kSourceOver,
-            EntityPass::BackdropFilterProc backdrop_filter = nullptr);
+            const std::shared_ptr<ImageFilter>& backdrop_filter = nullptr);
 
   void RestoreClip();
 
@@ -188,7 +191,9 @@ class Canvas {
                                Scalar corner_radius,
                                const Paint& paint);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Canvas);
+  Canvas(const Canvas&) = delete;
+
+  Canvas& operator=(const Canvas&) = delete;
 };
 
 }  // namespace impeller

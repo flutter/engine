@@ -5,9 +5,11 @@
 #include "flutter/shell/gpu/gpu_surface_vulkan_impeller.h"
 
 #include "flutter/fml/make_copyable.h"
-#include "flutter/impeller/display_list/dl_dispatcher.h"
-#include "flutter/impeller/renderer/renderer.h"
-#include "impeller/renderer/backend/vulkan/context_vk.h"
+#include "impeller/display_list/dl_dispatcher.h"
+#include "impeller/renderer/backend/vulkan/surface_context_vk.h"
+#include "impeller/renderer/renderer.h"
+#include "impeller/renderer/surface.h"
+#include "impeller/typographer/backends/skia/typographer_context_skia.h"
 
 namespace flutter {
 
@@ -22,7 +24,8 @@ GPUSurfaceVulkanImpeller::GPUSurfaceVulkanImpeller(
     return;
   }
 
-  auto aiks_context = std::make_shared<impeller::AiksContext>(context);
+  auto aiks_context = std::make_shared<impeller::AiksContext>(
+      context, impeller::TypographerContextSkia::Make());
   if (!aiks_context->IsValid()) {
     return;
   }
@@ -54,8 +57,13 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
     return nullptr;
   }
 
-  auto& context_vk = impeller::ContextVK::Cast(*impeller_context_);
+  auto& context_vk = impeller::SurfaceContextVK::Cast(*impeller_context_);
   std::unique_ptr<impeller::Surface> surface = context_vk.AcquireNextSurface();
+
+  if (!surface) {
+    FML_LOG(ERROR) << "No surface available.";
+    return nullptr;
+  }
 
   SurfaceFrame::SubmitCallback submit_callback =
       fml::MakeCopyable([renderer = impeller_renderer_,  //
@@ -74,8 +82,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
 
         auto cull_rect =
             surface->GetTargetRenderPassDescriptor().GetRenderTargetSize();
-
-        impeller::DlDispatcher impeller_dispatcher;
+        impeller::Rect dl_cull_rect = impeller::Rect::MakeSize(cull_rect);
+        impeller::DlDispatcher impeller_dispatcher(dl_cull_rect);
         display_list->Dispatch(
             impeller_dispatcher,
             SkIRect::MakeWH(cull_rect.width, cull_rect.height));

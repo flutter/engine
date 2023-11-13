@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:js_util' as js_util;
-
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' as engine;
 import 'package:ui/ui.dart' as ui;
@@ -21,14 +19,6 @@ void setUpUnitTests({
       ui_web.debugEmulateFlutterTesterEnvironment = true;
     }
 
-    // Some of our tests rely on color emoji
-    final engine.FlutterConfiguration config = engine.FlutterConfiguration()
-      ..setUserConfiguration(
-        js_util.jsify(<String, Object?>{
-          'useColorEmoji': true,
-        }) as engine.JsFlutterConfiguration);
-    engine.debugSetConfiguration(config);
-
     debugFontsScope = configureDebugFontsAssetScope(fakeAssetManager);
     await engine.initializeEngine(assetManager: fakeAssetManager);
     engine.renderer.fontCollection.fontFallbackManager?.downloadQueue.fallbackFontUrlPrefixOverride = 'assets/fallback_fonts/';
@@ -42,7 +32,7 @@ void setUpUnitTests({
       // this stuff in.
       const double devicePixelRatio = 3.0;
       engine.window.debugOverrideDevicePixelRatio(devicePixelRatio);
-      engine.window.webOnlyDebugPhysicalSizeOverride =
+      engine.window.debugPhysicalSizeOverride =
           const ui.Size(800 * devicePixelRatio, 600 * devicePixelRatio);
       engine.scheduleFrameCallback = () {};
     }

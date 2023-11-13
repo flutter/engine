@@ -219,6 +219,74 @@ void main() {
     expect(line.end, 10);
   });
 
+  test('getLineMetricsAt', () {
+    const double fontSize = 10.0;
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontSize: fontSize,
+      textDirection: TextDirection.rtl,
+      height: 2.0,
+    ));
+    builder.addText('Test\npppp');
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: 100.0));
+    final LineMetrics? line = paragraph.getLineMetricsAt(1);
+    expect(line?.hardBreak, isTrue);
+    expect(line?.ascent, 15.0);
+    expect(line?.descent, 5.0);
+    expect(line?.height, 20.0);
+    expect(line?.width, 4 * 10.0);
+    expect(line?.left, 100.0 - 40.0);
+    expect(line?.baseline, 20.0 + 15.0);
+    expect(line?.lineNumber, 1);
+  });
+
+  test('line number', () {
+    const double fontSize = 10.0;
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize));
+    builder.addText('Test\n\nTest');
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: 100.0));
+    expect(paragraph.numberOfLines, 3);
+    expect(paragraph.getLineNumberAt(4), 0); // first LF
+    expect(paragraph.getLineNumberAt(5), 1); // second LF
+    expect(paragraph.getLineNumberAt(6), 2); // "T" in the second "Test"
+  });
+
+  test('empty paragraph', () {
+    const double fontSize = 10.0;
+    final Paragraph paragraph = ParagraphBuilder(ParagraphStyle(
+      fontSize: fontSize,
+    )).build();
+    paragraph.layout(const ParagraphConstraints(width: double.infinity));
+
+    expect(paragraph.getLineMetricsAt(0), isNull);
+    expect(paragraph.numberOfLines, 0);
+    expect(paragraph.getLineNumberAt(0), isNull);
+  });
+
+  test('OOB indices as input', () {
+    const double fontSize = 10.0;
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontSize: fontSize,
+      maxLines: 1,
+      ellipsis: 'BBB',
+    ))..addText('A' * 100);
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: 100));
+
+    expect(paragraph.numberOfLines, 1);
+
+    expect(paragraph.getLineMetricsAt(-1), isNull);
+    expect(paragraph.getLineMetricsAt(0), isNotNull);
+    expect(paragraph.getLineMetricsAt(1), isNull);
+
+    expect(paragraph.getLineNumberAt(-1), isNull);
+    expect(paragraph.getLineNumberAt(0), 0);
+    expect(paragraph.getLineNumberAt(6), 0);
+    // The last 3 characters on the first line are ellipsized with BBB.
+    expect(paragraph.getLineMetricsAt(7), isNull);
+  });
+
   test('painting a disposed paragraph does not crash', () {
     final Paragraph paragraph = ParagraphBuilder(ParagraphStyle()).build();
     paragraph.dispose();
@@ -234,17 +302,46 @@ void main() {
     }
   });
 
-  test('disableRoundingHack works', () {
+  test('can set disableRoundingHack to false in tests', () {
+    bool assertsEnabled = false;
+    assert(() {
+      assertsEnabled = true;
+      return true;
+    }());
+    if (!assertsEnabled){
+      return;
+    }
     const double fontSize = 1.25;
     const String text = '12345';
     assert((fontSize * text.length).truncate() != fontSize * text.length);
+    // ignore: deprecated_member_use
     final bool roundingHackWasDisabled = ParagraphBuilder.shouldDisableRoundingHack;
-    ParagraphBuilder.setDisableRoundingHack(true);
+    if (roundingHackWasDisabled) {
+      ParagraphBuilder.setDisableRoundingHack(false);
+    }
+    // ignore: deprecated_member_use
+    assert(!ParagraphBuilder.shouldDisableRoundingHack);
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize));
     builder.addText(text);
     final Paragraph paragraph = builder.build()
       ..layout(const ParagraphConstraints(width: text.length * fontSize));
+    expect(paragraph.computeLineMetrics().length, greaterThan(1));
 
+    if (roundingHackWasDisabled) {
+      ParagraphBuilder.setDisableRoundingHack(true);
+    }
+  });
+
+  test('rounding hack disabled by default', () {
+    const double fontSize = 1.25;
+    const String text = '12345';
+    assert((fontSize * text.length).truncate() != fontSize * text.length);
+    // ignore: deprecated_member_use
+    expect(ParagraphBuilder.shouldDisableRoundingHack, isTrue);
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize));
+    builder.addText(text);
+    final Paragraph paragraph = builder.build()
+      ..layout(const ParagraphConstraints(width: text.length * fontSize));
     expect(paragraph.maxIntrinsicWidth, text.length * fontSize);
     switch (paragraph.computeLineMetrics()) {
       case [LineMetrics(width: final double width)]:
@@ -252,6 +349,5 @@ void main() {
       case final List<LineMetrics> metrics:
         expect(metrics, hasLength(1));
     }
-    ParagraphBuilder.setDisableRoundingHack(roundingHackWasDisabled);
   });
 }

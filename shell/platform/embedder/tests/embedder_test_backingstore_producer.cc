@@ -11,12 +11,20 @@
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/GpuTypes.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
+#include "third_party/skia/include/gpu/ganesh/gl/GrGLBackendSurface.h"
+#include "third_party/skia/include/gpu/gl/GrGLTypes.h"
+#include "third_party/skia/include/gpu/vk/GrVkTypes.h"
 
 #include <cstdlib>
 #include <memory>
 #include <utility>
+
+#ifdef SHELL_ENABLE_VULKAN
+#include "third_party/skia/include/gpu/ganesh/vk/GrVkBackendSurface.h"
+#endif  // SHELL_ENABLE_VULKAN
 
 // TODO(zanderso): https://github.com/flutter/flutter/issues/127701
 // NOLINTBEGIN(bugprone-unchecked-optional-access)
@@ -111,7 +119,8 @@ bool EmbedderTestBackingStoreProducer::CreateFramebuffer(
   }
 
   GrGLFramebufferInfo framebuffer_info = {};
-  if (!render_target.getGLFramebufferInfo(&framebuffer_info)) {
+  if (!GrBackendRenderTargets::GetGLFramebufferInfo(render_target,
+                                                    &framebuffer_info)) {
     FML_LOG(ERROR) << "Could not access backend framebuffer info.";
     return false;
   }
@@ -164,7 +173,7 @@ bool EmbedderTestBackingStoreProducer::CreateTexture(
   }
 
   GrGLTextureInfo texture_info = {};
-  if (!render_texture.getGLTextureInfo(&texture_info)) {
+  if (!GrBackendTextures::GetGLTextureInfo(render_texture, &texture_info)) {
     FML_LOG(ERROR) << "Could not access backend texture info.";
     return false;
   }
@@ -273,7 +282,7 @@ bool EmbedderTestBackingStoreProducer::CreateMTLTexture(
   GrMtlTextureInfo skia_texture_info;
   skia_texture_info.fTexture.reset(SkCFSafeRetain(texture_info.texture));
   GrBackendTexture backend_texture(surface_size.width(), surface_size.height(),
-                                   GrMipmapped::kNo, skia_texture_info);
+                                   skgpu::Mipmapped::kNo, skia_texture_info);
 
   sk_sp<SkSurface> surface = SkSurfaces::WrapBackendTexture(
       context_.get(), backend_texture, kTopLeft_GrSurfaceOrigin, 1,
@@ -325,8 +334,8 @@ bool EmbedderTestBackingStoreProducer::CreateVulkanImage(
       .fSampleCount = 1,
       .fLevelCount = 1,
   };
-  GrBackendTexture backend_texture(surface_size.width(), surface_size.height(),
-                                   image_info);
+  auto backend_texture = GrBackendTextures::MakeVk(
+      surface_size.width(), surface_size.height(), image_info);
 
   SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
 

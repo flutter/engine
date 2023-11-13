@@ -55,14 +55,38 @@ FlutterConfiguration get configuration =>
   _configuration ??= FlutterConfiguration.legacy(_jsConfiguration);
 FlutterConfiguration? _configuration;
 
-/// Sets the given configuration as the current one.
+/// Overrides the initial test configuration with new values coming from `newConfig`.
+///
+/// The initial test configuration (AKA `_jsConfiguration`) is set in the
+/// `test_platform.dart` file. See: `window.flutterConfiguration` in `_testBootstrapHandler`.
+///
+/// The result of calling this method each time is:
+///
+///     [configuration] = _jsConfiguration + newConfig
+///
+/// Subsequent calls to this method don't *add* more to an already overridden
+/// configuration; this method always starts from an original `_jsConfiguration`,
+/// and adds `newConfig` to it.
+///
+/// If `newConfig` is null, [configuration] resets to the initial `_jsConfiguration`.
 ///
 /// This must be called before the engine is initialized. Calling it after the
 /// engine is initialized will result in some of the properties not taking
 /// effect because they are consumed during initialization.
 @visibleForTesting
-void debugSetConfiguration(FlutterConfiguration configuration) {
-  _configuration = configuration;
+void debugOverrideJsConfiguration(JsFlutterConfiguration? newConfig) {
+  if (newConfig != null) {
+    final JSObject newJsConfig = objectConstructor.assign(
+      <String, Object>{}.jsify(),
+      _jsConfiguration.jsify(),
+      newConfig.jsify(),
+    );
+    _configuration = FlutterConfiguration()
+        ..setUserConfiguration(newJsConfig as JsFlutterConfiguration);
+    print('Overridden engine JS config to: ${newJsConfig.dartify()}');
+  } else {
+    _configuration = null;
+  }
 }
 
 /// Supplies Web Engine configuration properties.
@@ -233,15 +257,10 @@ class FlutterConfiguration {
     'FLUTTER_WEB_CANVASKIT_FORCE_CPU_ONLY',
   );
 
-  /// The maximum number of overlay surfaces that the CanvasKit renderer will use.
-  ///
-  /// Overlay surfaces are extra WebGL `<canvas>` elements used to paint on top
-  /// of platform views. Too many platform views can cause the browser to run
-  /// out of resources (memory, CPU, GPU) to handle the content efficiently.
-  /// The number of overlay surfaces is therefore limited.
-  ///
-  /// This value can be specified using either the `FLUTTER_WEB_MAXIMUM_SURFACES`
-  /// environment variable, or using the runtime configuration.
+  /// This is deprecated. The CanvasKit renderer will only ever create one
+  /// WebGL context, obviating the problem this configuration was meant to
+  /// solve originally.
+  @Deprecated('Setting canvasKitMaximumSurfaces has no effect')
   int get canvasKitMaximumSurfaces =>
       _configuration?.canvasKitMaximumSurfaces?.toInt() ?? _defaultCanvasKitMaximumSurfaces;
   static const int _defaultCanvasKitMaximumSurfaces = int.fromEnvironment(

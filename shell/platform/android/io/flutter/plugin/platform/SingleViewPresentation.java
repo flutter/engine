@@ -51,7 +51,7 @@ import java.lang.reflect.Proxy;
  *   EmbeddedView
  */
 @Keep
-@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
+@TargetApi(Build.VERSION_CODES.KITKAT)
 class SingleViewPresentation extends Presentation {
   private static final String TAG = "PlatformViewsController";
 
@@ -213,8 +213,13 @@ class SingleViewPresentation extends Presentation {
   }
 
   public PresentationState detachState() {
-    container.removeAllViews();
-    rootView.removeAllViews();
+    // These views can be null before onCreate() is called
+    if (container != null) {
+      container.removeAllViews();
+    }
+    if (rootView != null) {
+      rootView.removeAllViews();
+    }
     return state;
   }
 

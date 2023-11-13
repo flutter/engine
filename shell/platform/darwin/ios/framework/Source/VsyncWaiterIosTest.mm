@@ -11,9 +11,9 @@
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
 
-FLUTTER_ASSERT_NOT_ARC
+FLUTTER_ASSERT_ARC
 namespace {
-fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
+fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   auto thread = std::make_unique<fml::Thread>(name);
   auto runner = thread->GetTaskRunner();
   return runner;
@@ -34,10 +34,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 
 - (void)testSetAllowPauseAfterVsyncCorrect {
   auto thread_task_runner = CreateNewThread("VsyncWaiterIosTest");
-  VSyncClient* vsyncClient = [[[VSyncClient alloc]
+  VSyncClient* vsyncClient = [[VSyncClient alloc]
       initWithTaskRunner:thread_task_runner
-                callback:[](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {}]
-      autorelease];
+                callback:[](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {}];
   CADisplayLink* link = [vsyncClient getDisplayLink];
   vsyncClient.allowPauseAfterVsync = NO;
   [vsyncClient await];
@@ -48,8 +47,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   [vsyncClient await];
   [vsyncClient onDisplayLink:link];
   XCTAssertTrue(link.isPaused);
-
-  [vsyncClient release];
 }
 
 - (void)testSetCorrectVariableRefreshRates {
@@ -62,8 +59,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   double maxFrameRate = 120;
   [[[mockDisplayLinkManager stub] andReturnValue:@(maxFrameRate)] displayRefreshRate];
 
-  VSyncClient* vsyncClient = [[[VSyncClient alloc] initWithTaskRunner:thread_task_runner
-                                                             callback:callback] autorelease];
+  VSyncClient* vsyncClient = [[VSyncClient alloc] initWithTaskRunner:thread_task_runner
+                                                            callback:callback];
   CADisplayLink* link = [vsyncClient getDisplayLink];
   if (@available(iOS 15.0, *)) {
     XCTAssertEqualWithAccuracy(link.preferredFrameRateRange.maximum, maxFrameRate, 0.1);
@@ -72,7 +69,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   } else {
     XCTAssertEqualWithAccuracy(link.preferredFramesPerSecond, maxFrameRate, 0.1);
   }
-  [vsyncClient release];
 }
 
 - (void)testDoNotSetVariableRefreshRatesIfCADisableMinimumFrameDurationOnPhoneIsNotOn {
@@ -85,8 +81,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   double maxFrameRate = 120;
   [[[mockDisplayLinkManager stub] andReturnValue:@(maxFrameRate)] displayRefreshRate];
 
-  VSyncClient* vsyncClient = [[[VSyncClient alloc] initWithTaskRunner:thread_task_runner
-                                                             callback:callback] autorelease];
+  VSyncClient* vsyncClient = [[VSyncClient alloc] initWithTaskRunner:thread_task_runner
+                                                            callback:callback];
   CADisplayLink* link = [vsyncClient getDisplayLink];
   if (@available(iOS 15.0, *)) {
     XCTAssertEqualWithAccuracy(link.preferredFrameRateRange.maximum, 0, 0.1);
@@ -95,7 +91,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   } else {
     XCTAssertEqualWithAccuracy(link.preferredFramesPerSecond, 0, 0.1);
   }
-  [vsyncClient release];
 }
 
 - (void)testDoNotSetVariableRefreshRatesIfCADisableMinimumFrameDurationOnPhoneIsNotSet {
@@ -104,8 +99,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   id mockDisplayLinkManager = [OCMockObject mockForClass:[DisplayLinkManager class]];
   double maxFrameRate = 120;
   [[[mockDisplayLinkManager stub] andReturnValue:@(maxFrameRate)] displayRefreshRate];
-  VSyncClient* vsyncClient = [[[VSyncClient alloc] initWithTaskRunner:thread_task_runner
-                                                             callback:callback] autorelease];
+  VSyncClient* vsyncClient = [[VSyncClient alloc] initWithTaskRunner:thread_task_runner
+                                                            callback:callback];
   CADisplayLink* link = [vsyncClient getDisplayLink];
   if (@available(iOS 15.0, *)) {
     XCTAssertEqualWithAccuracy(link.preferredFrameRateRange.maximum, 0, 0.1);
@@ -114,15 +109,13 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   } else {
     XCTAssertEqualWithAccuracy(link.preferredFramesPerSecond, 0, 0.1);
   }
-  [vsyncClient release];
 }
 
 - (void)testAwaitAndPauseWillWorkCorrectly {
   auto thread_task_runner = CreateNewThread("VsyncWaiterIosTest");
-  VSyncClient* vsyncClient = [[[VSyncClient alloc]
+  VSyncClient* vsyncClient = [[VSyncClient alloc]
       initWithTaskRunner:thread_task_runner
-                callback:[](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {}]
-      autorelease];
+                callback:[](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {}];
 
   CADisplayLink* link = [vsyncClient getDisplayLink];
   XCTAssertTrue(link.isPaused);
@@ -132,8 +125,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 
   [vsyncClient pause];
   XCTAssertTrue(link.isPaused);
-
-  [vsyncClient release];
 }
 
 - (void)testRefreshRateUpdatedTo80WhenThraedsMerge {
@@ -186,6 +177,37 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     XCTAssertEqualWithAccuracy(link.preferredFrameRateRange.minimum, maxFrameRate / 2, 0.1);
   } else {
     XCTAssertEqualWithAccuracy(link.preferredFramesPerSecond, maxFrameRate, 0.1);
+  }
+
+  if (@available(iOS 14.0, *)) {
+    // Fake response that we are running on Mac.
+    id processInfo = [NSProcessInfo processInfo];
+    id processInfoPartialMock = OCMPartialMock(processInfo);
+    bool iOSAppOnMac = true;
+    [OCMStub([processInfoPartialMock isiOSAppOnMac]) andReturnValue:OCMOCK_VALUE(iOSAppOnMac)];
+
+    merger->MergeWithLease(5);
+    vsync_waiter.AwaitVSync();
+
+    // On Mac, framerate should be uncapped.
+    if (@available(iOS 15.0, *)) {
+      XCTAssertEqualWithAccuracy(link.preferredFrameRateRange.maximum, maxFrameRate, 0.1);
+      XCTAssertEqualWithAccuracy(link.preferredFrameRateRange.preferred, maxFrameRate, 0.1);
+      XCTAssertEqualWithAccuracy(link.preferredFrameRateRange.minimum, maxFrameRate / 2, 0.1);
+    } else {
+      XCTAssertEqualWithAccuracy(link.preferredFramesPerSecond, 80, 0.1);
+    }
+
+    merger->UnMergeNowIfLastOne();
+    vsync_waiter.AwaitVSync();
+
+    if (@available(iOS 15.0, *)) {
+      XCTAssertEqualWithAccuracy(link.preferredFrameRateRange.maximum, maxFrameRate, 0.1);
+      XCTAssertEqualWithAccuracy(link.preferredFrameRateRange.preferred, maxFrameRate, 0.1);
+      XCTAssertEqualWithAccuracy(link.preferredFrameRateRange.minimum, maxFrameRate / 2, 0.1);
+    } else {
+      XCTAssertEqualWithAccuracy(link.preferredFramesPerSecond, maxFrameRate, 0.1);
+    }
   }
 }
 

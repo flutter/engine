@@ -107,6 +107,7 @@ enum class PixelFormat {
   kB10G10R10A10XR,
   // Depth and stencil formats.
   kS8UInt,
+  kD24UnormS8Uint,
   kD32FloatS8UInt,
 };
 
@@ -140,6 +141,8 @@ constexpr const char* PixelFormatToString(PixelFormat format) {
       return "B10G10R10A10XR";
     case PixelFormat::kS8UInt:
       return "S8UInt";
+    case PixelFormat::kD24UnormS8Uint:
+      return "D24UnormS8Uint";
     case PixelFormat::kD32FloatS8UInt:
       return "D32FloatS8UInt";
   }
@@ -234,6 +237,7 @@ enum class TextureType {
   kTexture2D,
   kTexture2DMultisample,
   kTextureCube,
+  kTextureExternalOES,
 };
 
 constexpr const char* TextureTypeToString(TextureType type) {
@@ -244,6 +248,8 @@ constexpr const char* TextureTypeToString(TextureType type) {
       return "Texture2DMultisample";
     case TextureType::kTextureCube:
       return "TextureCube";
+    case TextureType::kTextureExternalOES:
+      return "TextureExternalOES";
   }
   FML_UNREACHABLE();
 }
@@ -252,6 +258,7 @@ constexpr bool IsMultisampleCapable(TextureType type) {
   switch (type) {
     case TextureType::kTexture2D:
     case TextureType::kTextureCube:
+    case TextureType::kTextureExternalOES:
       return false;
     case TextureType::kTexture2DMultisample:
       return true;
@@ -293,8 +300,14 @@ constexpr const char* TextureUsageToString(TextureUsage usage) {
 
 std::string TextureUsageMaskToString(TextureUsageMask mask);
 
-enum class TextureIntent {
+// Texture coordinate system.
+enum class TextureCoordinateSystem {
+  // Alternative coordinate system used when uploading texture data from the
+  // host.
+  // (0, 0) is the bottom-left of the image with +Y going up.
   kUploadFromHost,
+  // Default coordinate system.
+  // (0, 0) is the top-left of the image with +Y going down.
   kRenderToTexture,
 };
 
@@ -312,11 +325,33 @@ enum class IndexType {
   kNone,
 };
 
+/// Decides how backend draws pixels based on input vertices.
 enum class PrimitiveType {
+  /// Draws a triage for each separate set of three vertices.
+  ///
+  /// Vertices [A, B, C, D, E, F] will produce triages
+  /// [ABC, DEF].
   kTriangle,
+
+  /// Draws a triage for every adjacent three vertices.
+  ///
+  /// Vertices [A, B, C, D, E, F] will produce triages
+  /// [ABC, BCD, CDE, DEF].
   kTriangleStrip,
+
+  /// Draws a line for each separate set of two vertices.
+  ///
+  /// Vertices [A, B, C] will produce discontinued line
+  /// [AB, BC].
   kLine,
+
+  /// Draws a continuous line that connect every input vertices
+  ///
+  /// Vertices [A, B, C] will produce one continuous line
+  /// [ABC].
   kLineStrip,
+
+  /// Draws a point at each input vertex.
   kPoint,
   // Triangle fans are implementation dependent and need extra extensions
   // checks. Hence, they are not supported here.
@@ -370,7 +405,7 @@ enum class SamplerAddressMode {
   // supported) defaults.
 
   /// @brief decal sampling mode is only supported on devices that pass
-  ///        the Capabilities.SupportsDecalTileMode check.
+  ///        the `Capabilities.SupportsDecalSamplerAddressMode` check.
   kDecal,
 };
 
@@ -399,6 +434,8 @@ constexpr size_t BytesPerPixelForPixelFormat(PixelFormat format) {
     case PixelFormat::kB8G8R8A8UNormIntSRGB:
     case PixelFormat::kB10G10R10XRSRGB:
     case PixelFormat::kB10G10R10XR:
+      return 4u;
+    case PixelFormat::kD24UnormS8Uint:
       return 4u;
     case PixelFormat::kD32FloatS8UInt:
       return 5u;

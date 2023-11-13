@@ -38,8 +38,8 @@ class Dialog extends PrimaryRoleManager {
         }
         return true;
       }());
-      semanticsObject.element.setAttribute('aria-label', label ?? '');
-      semanticsObject.setAriaRole('dialog');
+      setAttribute('aria-label', label ?? '');
+      setAriaRole('dialog');
     }
   }
 
@@ -51,8 +51,8 @@ class Dialog extends PrimaryRoleManager {
       return;
     }
 
-    semanticsObject.setAriaRole('dialog');
-    semanticsObject.element.setAttribute(
+    setAriaRole('dialog');
+    setAttribute(
       'aria-describedby',
       routeName.semanticsObject.element.id,
     );
@@ -61,7 +61,10 @@ class Dialog extends PrimaryRoleManager {
 
 /// Supplies a description for the nearest ancestor [Dialog].
 class RouteName extends RoleManager {
-  RouteName(SemanticsObject semanticsObject) : super(Role.routeName, semanticsObject);
+  RouteName(
+    SemanticsObject semanticsObject,
+    PrimaryRoleManager owner,
+  ) : super(Role.routeName, semanticsObject, owner);
 
   Dialog? _dialog;
 
@@ -76,6 +79,10 @@ class RouteName extends RoleManager {
     // semantics code. Since reparenting can be done with no update to either
     // the Dialog or RouteName we'd have to scan intermediate nodes for
     // structural changes.
+    if (!semanticsObject.namesRoute) {
+      return;
+    }
+
     if (semanticsObject.isLabelDirty) {
       final Dialog? dialog = _dialog;
       if (dialog != null) {

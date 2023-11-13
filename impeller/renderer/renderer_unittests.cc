@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/fml/logging.h"
 #include "flutter/testing/testing.h"
 #include "impeller/base/strings.h"
 #include "impeller/core/device_buffer_descriptor.h"
@@ -57,6 +58,7 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
   auto desc = BoxPipelineBuilder::MakeDefaultPipelineDescriptor(*context);
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
+  desc->SetStencilAttachmentDescriptors(std::nullopt);
 
   // Vertex buffer.
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
@@ -90,7 +92,7 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
     assert(pipeline && pipeline->IsValid());
 
     Command cmd;
-    cmd.label = "Box";
+    DEBUG_COMMAND_INFO(cmd, "Box");
     cmd.pipeline = pipeline;
 
     cmd.BindVertices(vertex_buffer);
@@ -129,6 +131,7 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
   desc->SetCullMode(CullMode::kBackFace);
   desc->SetWindingOrder(WindingOrder::kCounterClockwise);
   desc->SetSampleCount(SampleCount::kCount4);
+  desc->SetStencilAttachmentDescriptors(std::nullopt);
   auto pipeline =
       context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
   ASSERT_TRUE(pipeline);
@@ -184,7 +187,7 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
     ImGui::End();
 
     Command cmd;
-    cmd.label = "Perspective Cube";
+    DEBUG_COMMAND_INFO(cmd, "Perspective Cube");
     cmd.pipeline = pipeline;
 
     cmd.BindVertices(vertex_buffer);
@@ -218,6 +221,7 @@ TEST_P(RendererTest, CanRenderMultiplePrimitives) {
   auto desc = BoxPipelineBuilder::MakeDefaultPipelineDescriptor(*context);
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
+  desc->SetStencilAttachmentDescriptors(std::nullopt);
   auto box_pipeline =
       context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
   ASSERT_TRUE(box_pipeline);
@@ -245,7 +249,7 @@ TEST_P(RendererTest, CanRenderMultiplePrimitives) {
 
   SinglePassCallback callback = [&](RenderPass& pass) {
     Command cmd;
-    cmd.label = "Box";
+    DEBUG_COMMAND_INFO(cmd, "Box");
     cmd.pipeline = box_pipeline;
 
     cmd.BindVertices(vertex_buffer);
@@ -269,7 +273,7 @@ TEST_P(RendererTest, CanRenderMultiplePrimitives) {
                        Matrix::MakeTranslation({i * 50.0f, j * 50.0f, 0.0f});
         VS::BindUniformBuffer(
             cmd, pass.GetTransientsBuffer().EmplaceUniform(uniforms));
-        if (!pass.AddCommand(cmd)) {
+        if (!pass.AddCommand(std::move(cmd))) {
           return false;
         }
       }
@@ -359,7 +363,7 @@ TEST_P(RendererTest, CanRenderToTexture) {
   }
 
   Command cmd;
-  cmd.label = "Box";
+  DEBUG_COMMAND_INFO(cmd, "Box");
   cmd.pipeline = box_pipeline;
 
   cmd.BindVertices(vertex_buffer);
@@ -395,19 +399,18 @@ TEST_P(RendererTest, CanRenderInstanced) {
 
   ASSERT_EQ(Tessellator::Result::kSuccess,
             Tessellator{}.Tessellate(
-                FillType::kPositive,
                 PathBuilder{}
                     .AddRect(Rect::MakeXYWH(10, 10, 100, 100))
-                    .TakePath()
-                    .CreatePolyline(1.0f),
-                [&builder](const float* vertices, size_t vertices_size,
-                           const uint16_t* indices, size_t indices_size) {
-                  for (auto i = 0u; i < vertices_size; i += 2) {
+                    .TakePath(FillType::kPositive),
+                1.0f,
+                [&builder](const float* vertices, size_t vertices_count,
+                           const uint16_t* indices, size_t indices_count) {
+                  for (auto i = 0u; i < vertices_count * 2; i += 2) {
                     VS::PerVertexData data;
                     data.vtx = {vertices[i], vertices[i + 1]};
                     builder.AppendVertex(data);
                   }
-                  for (auto i = 0u; i < indices_size; i++) {
+                  for (auto i = 0u; i < indices_count; i++) {
                     builder.AppendIndex(indices[i]);
                   }
                   return true;
@@ -419,13 +422,15 @@ TEST_P(RendererTest, CanRenderInstanced) {
           ->GetPipelineLibrary()
           ->GetPipeline(PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(
                             *GetContext())
-                            ->SetSampleCount(SampleCount::kCount4))
+                            ->SetSampleCount(SampleCount::kCount4)
+                            .SetStencilAttachmentDescriptors(std::nullopt))
+
           .Get();
   ASSERT_TRUE(pipeline && pipeline->IsValid());
 
   Command cmd;
   cmd.pipeline = pipeline;
-  cmd.label = "InstancedDraw";
+  DEBUG_COMMAND_INFO(cmd, "InstancedDraw");
 
   static constexpr size_t kInstancesCount = 5u;
   VS::InstanceInfo<kInstancesCount> instances;
@@ -444,7 +449,7 @@ TEST_P(RendererTest, CanRenderInstanced) {
     cmd.BindVertices(builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
 
     cmd.instance_count = kInstancesCount;
-    pass.AddCommand(cmd);
+    pass.AddCommand(std::move(cmd));
     return true;
   }));
 }
@@ -458,6 +463,7 @@ TEST_P(RendererTest, CanBlitTextureToTexture) {
   auto desc = PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
+  desc->SetStencilAttachmentDescriptors(std::nullopt);
   auto mipmaps_pipeline =
       context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
   ASSERT_TRUE(mipmaps_pipeline);
@@ -529,7 +535,7 @@ TEST_P(RendererTest, CanBlitTextureToTexture) {
       pass->SetLabel("Playground Render Pass");
       {
         Command cmd;
-        cmd.label = "Image";
+        DEBUG_COMMAND_INFO(cmd, "Image");
         cmd.pipeline = mipmaps_pipeline;
 
         cmd.BindVertices(vertex_buffer);
@@ -570,6 +576,7 @@ TEST_P(RendererTest, CanBlitTextureToBuffer) {
   auto desc = PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
+  desc->SetStencilAttachmentDescriptors(std::nullopt);
   auto mipmaps_pipeline =
       context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
   ASSERT_TRUE(mipmaps_pipeline);
@@ -653,7 +660,7 @@ TEST_P(RendererTest, CanBlitTextureToBuffer) {
       pass->SetLabel("Playground Render Pass");
       {
         Command cmd;
-        cmd.label = "Image";
+        DEBUG_COMMAND_INFO(cmd, "Image");
         cmd.pipeline = mipmaps_pipeline;
 
         cmd.BindVertices(vertex_buffer);
@@ -701,6 +708,7 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
   auto desc = PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
+  desc->SetStencilAttachmentDescriptors(std::nullopt);
   auto mipmaps_pipeline =
       context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
   ASSERT_TRUE(mipmaps_pipeline);
@@ -773,7 +781,7 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
       pass->SetLabel("Playground Render Pass");
       {
         Command cmd;
-        cmd.label = "Image LOD";
+        DEBUG_COMMAND_INFO(cmd, "Image LOD");
         cmd.pipeline = mipmaps_pipeline;
 
         cmd.BindVertices(vertex_buffer);
@@ -817,6 +825,7 @@ TEST_P(RendererTest, TheImpeller) {
       PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
   ASSERT_TRUE(pipeline_descriptor.has_value());
   pipeline_descriptor->SetSampleCount(SampleCount::kCount4);
+  pipeline_descriptor->SetStencilAttachmentDescriptors(std::nullopt);
   auto pipeline =
       context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).Get();
   ASSERT_TRUE(pipeline && pipeline->IsValid());
@@ -839,7 +848,7 @@ TEST_P(RendererTest, TheImpeller) {
 
     Command cmd;
     cmd.pipeline = pipeline;
-    cmd.label = "Impeller SDF scene";
+    DEBUG_COMMAND_INFO(cmd, "Impeller SDF scene");
     VertexBufferBuilder<VS::PerVertexData> builder;
     builder.AddVertices({{Point()},
                          {Point(0, size.height)},
@@ -862,7 +871,7 @@ TEST_P(RendererTest, TheImpeller) {
     FS::BindBlueNoise(cmd, blue_noise, noise_sampler);
     FS::BindCubeMap(cmd, cube_map, cube_map_sampler);
 
-    pass.AddCommand(cmd);
+    pass.AddCommand(std::move(cmd));
     return true;
   };
   OpenPlaygroundHere(callback);
@@ -877,6 +886,7 @@ TEST_P(RendererTest, ArrayUniforms) {
       PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
   ASSERT_TRUE(pipeline_descriptor.has_value());
   pipeline_descriptor->SetSampleCount(SampleCount::kCount4);
+  pipeline_descriptor->SetStencilAttachmentDescriptors(std::nullopt);
   auto pipeline =
       context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).Get();
   ASSERT_TRUE(pipeline && pipeline->IsValid());
@@ -886,7 +896,7 @@ TEST_P(RendererTest, ArrayUniforms) {
 
     Command cmd;
     cmd.pipeline = pipeline;
-    cmd.label = "Google Dots";
+    DEBUG_COMMAND_INFO(cmd, "Google Dots");
     VertexBufferBuilder<VS::PerVertexData> builder;
     builder.AddVertices({{Point()},
                          {Point(0, size.height)},
@@ -918,7 +928,7 @@ TEST_P(RendererTest, ArrayUniforms) {
     FS::BindFragInfo(cmd,
                      pass.GetTransientsBuffer().EmplaceUniform(fs_uniform));
 
-    pass.AddCommand(cmd);
+    pass.AddCommand(std::move(cmd));
     return true;
   };
   OpenPlaygroundHere(callback);
@@ -933,6 +943,7 @@ TEST_P(RendererTest, InactiveUniforms) {
       PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
   ASSERT_TRUE(pipeline_descriptor.has_value());
   pipeline_descriptor->SetSampleCount(SampleCount::kCount4);
+  pipeline_descriptor->SetStencilAttachmentDescriptors(std::nullopt);
   auto pipeline =
       context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).Get();
   ASSERT_TRUE(pipeline && pipeline->IsValid());
@@ -942,7 +953,7 @@ TEST_P(RendererTest, InactiveUniforms) {
 
     Command cmd;
     cmd.pipeline = pipeline;
-    cmd.label = "Inactive Uniform";
+    DEBUG_COMMAND_INFO(cmd, "Inactive Uniform");
     VertexBufferBuilder<VS::PerVertexData> builder;
     builder.AddVertices({{Point()},
                          {Point(0, size.height)},
@@ -963,7 +974,7 @@ TEST_P(RendererTest, InactiveUniforms) {
     FS::BindFragInfo(cmd,
                      pass.GetTransientsBuffer().EmplaceUniform(fs_uniform));
 
-    pass.AddCommand(cmd);
+    pass.AddCommand(std::move(cmd));
     return true;
   };
   OpenPlaygroundHere(callback);
@@ -1046,6 +1057,54 @@ TEST_P(RendererTest, VertexBufferBuilder) {
   ASSERT_EQ(vertex_builder.GetVertexCount(), 4u);
 }
 
+class CompareFunctionUIData {
+ public:
+  CompareFunctionUIData() {
+    labels_.push_back("Never");
+    functions_.push_back(CompareFunction::kNever);
+    labels_.push_back("Always");
+    functions_.push_back(CompareFunction::kAlways);
+    labels_.push_back("Less");
+    functions_.push_back(CompareFunction::kLess);
+    labels_.push_back("Equal");
+    functions_.push_back(CompareFunction::kEqual);
+    labels_.push_back("LessEqual");
+    functions_.push_back(CompareFunction::kLessEqual);
+    labels_.push_back("Greater");
+    functions_.push_back(CompareFunction::kGreater);
+    labels_.push_back("NotEqual");
+    functions_.push_back(CompareFunction::kNotEqual);
+    labels_.push_back("GreaterEqual");
+    functions_.push_back(CompareFunction::kGreaterEqual);
+    assert(labels_.size() == functions_.size());
+  }
+
+  const char* const* labels() const { return &labels_[0]; }
+
+  int size() const { return labels_.size(); }
+
+  int IndexOf(CompareFunction func) const {
+    for (size_t i = 0; i < functions_.size(); i++) {
+      if (functions_[i] == func) {
+        return i;
+      }
+    }
+    FML_UNREACHABLE();
+    return -1;
+  }
+
+  CompareFunction FunctionOf(int index) const { return functions_[index]; }
+
+ private:
+  std::vector<const char*> labels_;
+  std::vector<CompareFunction> functions_;
+};
+
+static const CompareFunctionUIData& CompareFunctionUI() {
+  static CompareFunctionUIData data;
+  return data;
+}
+
 TEST_P(RendererTest, StencilMask) {
   using VS = BoxFadeVertexShader;
   using FS = BoxFadeFragmentShader;
@@ -1071,6 +1130,7 @@ TEST_P(RendererTest, StencilMask) {
   ASSERT_TRUE(vertex_buffer);
 
   desc->SetSampleCount(SampleCount::kCount4);
+  desc->SetStencilAttachmentDescriptors(std::nullopt);
 
   auto bridge = CreateTextureForFixture("bay_bridge.jpg");
   auto boston = CreateTextureForFixture("boston.jpg");
@@ -1083,6 +1143,10 @@ TEST_P(RendererTest, StencilMask) {
   static int stencil_reference_read = 0x1;
   std::vector<uint8_t> stencil_contents;
   static int last_stencil_contents_reference_value = 0;
+  static int current_front_compare =
+      CompareFunctionUI().IndexOf(CompareFunction::kLessEqual);
+  static int current_back_compare =
+      CompareFunctionUI().IndexOf(CompareFunction::kLessEqual);
   Renderer::RenderCallback callback = [&](RenderTarget& render_target) {
     auto buffer = context->CreateCommandBuffer();
     if (!buffer) {
@@ -1096,7 +1160,9 @@ TEST_P(RendererTest, StencilMask) {
       stencil_config.load_action = LoadAction::kLoad;
       stencil_config.store_action = StoreAction::kDontCare;
       stencil_config.storage_mode = StorageMode::kHostVisible;
-      render_target.SetupStencilAttachment(*context,
+      auto render_target_allocator =
+          RenderTargetAllocator(context->GetResourceAllocator());
+      render_target.SetupStencilAttachment(*context, render_target_allocator,
                                            render_target.GetRenderTargetSize(),
                                            true, "stencil", stencil_config);
       // Fill the stencil buffer with an checkerboard pattern.
@@ -1133,17 +1199,26 @@ TEST_P(RendererTest, StencilMask) {
                        0xFF);
       ImGui::SliderInt("Stencil Compare Value", &stencil_reference_read, 0,
                        0xFF);
-      ImGui::Checkbox("Mirror", &mirror);
+      ImGui::Checkbox("Back face mode", &mirror);
+      ImGui::ListBox("Front face compare function", &current_front_compare,
+                     CompareFunctionUI().labels(), CompareFunctionUI().size());
+      ImGui::ListBox("Back face compare function", &current_back_compare,
+                     CompareFunctionUI().labels(), CompareFunctionUI().size());
       ImGui::End();
-      StencilAttachmentDescriptor front_and_back;
-      front_and_back.stencil_compare = CompareFunction::kLessEqual;
-      desc->SetStencilAttachmentDescriptors(front_and_back);
+
+      StencilAttachmentDescriptor front;
+      front.stencil_compare =
+          CompareFunctionUI().FunctionOf(current_front_compare);
+      StencilAttachmentDescriptor back;
+      back.stencil_compare =
+          CompareFunctionUI().FunctionOf(current_back_compare);
+      desc->SetStencilAttachmentDescriptors(front, back);
       auto pipeline = context->GetPipelineLibrary()->GetPipeline(desc).Get();
 
       assert(pipeline && pipeline->IsValid());
 
       Command cmd;
-      cmd.label = "Box";
+      DEBUG_COMMAND_INFO(cmd, "Box");
       cmd.pipeline = pipeline;
       cmd.stencil_reference = stencil_reference_read;
 
@@ -1153,7 +1228,7 @@ TEST_P(RendererTest, StencilMask) {
       uniforms.mvp = Matrix::MakeOrthographic(pass->GetRenderTargetSize()) *
                      Matrix::MakeScale(GetContentScale());
       if (mirror) {
-        uniforms.mvp = Matrix::MakeScale(Vector2(-1, -1)) * uniforms.mvp;
+        uniforms.mvp = Matrix::MakeScale(Vector2(-1, 1)) * uniforms.mvp;
       }
       VS::BindUniformBuffer(
           cmd, pass->GetTransientsBuffer().EmplaceUniform(uniforms));

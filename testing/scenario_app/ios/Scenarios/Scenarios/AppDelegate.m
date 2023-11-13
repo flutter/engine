@@ -9,6 +9,20 @@
 #import "ScreenBeforeFlutter.h"
 #import "TextPlatformView.h"
 
+// A UIViewController that sets YES for its preferedStatusBarHidden property.
+// StatusBar includes current time, which is non-deterministic. This ViewController
+// removes the StatusBar to make the screenshot deterministic.
+@interface NoStatusBarViewController : UIViewController
+
+@end
+
+@implementation NoStatusBarViewController
+- (BOOL)prefersStatusBarHidden {
+  return YES;
+}
+@end
+
+// The FlutterViewController version of NoStatusBarViewController
 @interface NoStatusBarFlutterViewController : FlutterViewController
 
 @end
@@ -76,6 +90,7 @@
     @"--two-platform-view-clip-rect" : @"two_platform_view_clip_rect",
     @"--two-platform-view-clip-rrect" : @"two_platform_view_clip_rrect",
     @"--two-platform-view-clip-path" : @"two_platform_view_clip_path",
+    @"--darwin-system-font" : @"darwin_system_font",
   };
   __block NSString* flutterViewControllerTestName = nil;
   [launchArgsMap
@@ -166,7 +181,7 @@
   UIViewController* rootViewController = flutterViewController;
   // Make Flutter View's origin x/y not 0.
   if ([scenarioIdentifier isEqualToString:@"non_full_screen_flutter_view_platform_view"]) {
-    rootViewController = [UIViewController new];
+    rootViewController = [[NoStatusBarViewController alloc] init];
     [rootViewController.view addSubview:flutterViewController.view];
     flutterViewController.view.frame = CGRectMake(150, 150, 500, 500);
   }

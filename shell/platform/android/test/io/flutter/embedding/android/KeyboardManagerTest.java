@@ -19,6 +19,7 @@ import android.view.KeyEvent;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import io.flutter.embedding.android.KeyData.DeviceType;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.JSONMessageCodec;
 import io.flutter.util.FakeKeyEvent;
@@ -29,7 +30,6 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import junit.framework.Assert;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -316,12 +316,14 @@ public class KeyboardManagerTest {
       long physicalKey,
       long logicalKey,
       String character,
-      boolean synthesized) {
+      boolean synthesized,
+      DeviceType deviceType) {
     assertEquals(type, data.type);
     assertEquals(physicalKey, data.physicalKey);
     assertEquals(logicalKey, data.logicalKey);
     assertEquals(character, data.character);
     assertEquals(synthesized, data.synthesized);
+    assertEquals(deviceType, data.deviceType);
   }
 
   static void verifyEmbedderEvents(List<CallRecord> receivedCalls, KeyData[] expectedData) {
@@ -334,7 +336,8 @@ public class KeyboardManagerTest {
           data.physicalKey,
           data.logicalKey,
           data.character,
-          data.synthesized);
+          data.synthesized,
+          data.deviceType);
     }
   }
 
@@ -343,7 +346,8 @@ public class KeyboardManagerTest {
       long physicalKey,
       long logicalKey,
       @Nullable String characters,
-      boolean synthesized) {
+      boolean synthesized,
+      DeviceType deviceType) {
     final KeyData result = new KeyData();
     result.physicalKey = physicalKey;
     result.logicalKey = logicalKey;
@@ -351,6 +355,7 @@ public class KeyboardManagerTest {
     result.type = type;
     result.character = characters;
     result.synthesized = synthesized;
+    result.deviceType = deviceType;
     return result;
   }
 
@@ -406,6 +411,7 @@ public class KeyboardManagerTest {
     data.physicalKey = isLeft ? PHYSICAL_SHIFT_LEFT : PHYSICAL_SHIFT_RIGHT;
     data.logicalKey = isLeft ? LOGICAL_SHIFT_LEFT : LOGICAL_SHIFT_RIGHT;
     data.synthesized = isSynthesized;
+    data.deviceType = KeyData.DeviceType.kKeyboard;
     return data;
   }
 
@@ -440,6 +446,7 @@ public class KeyboardManagerTest {
     data1.type = Type.kRepeat;
     data1.character = "A";
     data1.synthesized = true;
+    data1.deviceType = DeviceType.kKeyboard;
 
     final ByteBuffer data1Buffer = data1.toBytes();
 
@@ -451,10 +458,11 @@ public class KeyboardManagerTest {
             + "0a00000000000000"
             + "0b00000000000000"
             + "0100000000000000"
+            + "0000000000000000"
             + "41",
         printBufferBytes(data1Buffer));
     // `position` is considered as the message size.
-    assertEquals(49, data1Buffer.position());
+    assertEquals(57, data1Buffer.position());
 
     data1Buffer.rewind();
     final KeyData data1Loaded = new KeyData(data1Buffer);
@@ -468,6 +476,7 @@ public class KeyboardManagerTest {
     data2.type = Type.kUp;
     data2.character = null;
     data2.synthesized = false;
+    data2.deviceType = DeviceType.kDirectionalPad;
 
     final ByteBuffer data2Buffer = data2.toBytes();
 
@@ -478,7 +487,8 @@ public class KeyboardManagerTest {
             + "0100000000000000"
             + "ccccbbbbaaaa0000"
             + "8888777766660000"
-            + "0000000000000000",
+            + "0000000000000000"
+            + "0100000000000000",
         printBufferBytes(data2Buffer));
 
     data2Buffer.rewind();
@@ -489,25 +499,25 @@ public class KeyboardManagerTest {
   @Test
   public void basicCombingCharactersTest() {
     final KeyboardManager.CharacterCombiner combiner = new KeyboardManager.CharacterCombiner();
-    Assert.assertEquals(0, (int) combiner.applyCombiningCharacterToBaseCharacter(0));
-    Assert.assertEquals('A', (int) combiner.applyCombiningCharacterToBaseCharacter('A'));
-    Assert.assertEquals('B', (int) combiner.applyCombiningCharacterToBaseCharacter('B'));
-    Assert.assertEquals('B', (int) combiner.applyCombiningCharacterToBaseCharacter('B'));
-    Assert.assertEquals(0, (int) combiner.applyCombiningCharacterToBaseCharacter(0));
-    Assert.assertEquals(0, (int) combiner.applyCombiningCharacterToBaseCharacter(0));
+    assertEquals(0, (int) combiner.applyCombiningCharacterToBaseCharacter(0));
+    assertEquals('B', (int) combiner.applyCombiningCharacterToBaseCharacter('B'));
+    assertEquals('B', (int) combiner.applyCombiningCharacterToBaseCharacter('B'));
+    assertEquals('A', (int) combiner.applyCombiningCharacterToBaseCharacter('A'));
+    assertEquals(0, (int) combiner.applyCombiningCharacterToBaseCharacter(0));
+    assertEquals(0, (int) combiner.applyCombiningCharacterToBaseCharacter(0));
 
-    Assert.assertEquals('`', (int) combiner.applyCombiningCharacterToBaseCharacter(DEAD_KEY));
-    Assert.assertEquals('`', (int) combiner.applyCombiningCharacterToBaseCharacter(DEAD_KEY));
-    Assert.assertEquals('À', (int) combiner.applyCombiningCharacterToBaseCharacter('A'));
+    assertEquals('`', (int) combiner.applyCombiningCharacterToBaseCharacter(DEAD_KEY));
+    assertEquals('`', (int) combiner.applyCombiningCharacterToBaseCharacter(DEAD_KEY));
+    assertEquals('À', (int) combiner.applyCombiningCharacterToBaseCharacter('A'));
 
-    Assert.assertEquals('`', (int) combiner.applyCombiningCharacterToBaseCharacter(DEAD_KEY));
-    Assert.assertEquals(0, (int) combiner.applyCombiningCharacterToBaseCharacter(0));
+    assertEquals('`', (int) combiner.applyCombiningCharacterToBaseCharacter(DEAD_KEY));
+    assertEquals(0, (int) combiner.applyCombiningCharacterToBaseCharacter(0));
     // The 0 input should remove the combining state.
-    Assert.assertEquals('A', (int) combiner.applyCombiningCharacterToBaseCharacter('A'));
+    assertEquals('A', (int) combiner.applyCombiningCharacterToBaseCharacter('A'));
 
-    Assert.assertEquals(0, (int) combiner.applyCombiningCharacterToBaseCharacter(0));
-    Assert.assertEquals('`', (int) combiner.applyCombiningCharacterToBaseCharacter(DEAD_KEY));
-    Assert.assertEquals('À', (int) combiner.applyCombiningCharacterToBaseCharacter('A'));
+    assertEquals(0, (int) combiner.applyCombiningCharacterToBaseCharacter(0));
+    assertEquals('`', (int) combiner.applyCombiningCharacterToBaseCharacter(DEAD_KEY));
+    assertEquals('À', (int) combiner.applyCombiningCharacterToBaseCharacter('A'));
   }
 
   @Test
@@ -569,7 +579,13 @@ public class KeyboardManagerTest {
     assertEquals(true, result);
     assertEquals(calls.size(), 1);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kDown, PHYSICAL_KEY_A, LOGICAL_KEY_A, "a", false);
+        calls.get(0).keyData,
+        Type.kDown,
+        PHYSICAL_KEY_A,
+        LOGICAL_KEY_A,
+        "a",
+        false,
+        DeviceType.kKeyboard);
 
     // Don't send the key event to the text plugin if the only primary responder
     // hasn't responded.
@@ -599,7 +615,13 @@ public class KeyboardManagerTest {
     assertEquals(true, result);
     assertEquals(calls.size(), 2);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kDown, PHYSICAL_KEY_A, LOGICAL_KEY_A, "a", false);
+        calls.get(0).keyData,
+        Type.kDown,
+        PHYSICAL_KEY_A,
+        LOGICAL_KEY_A,
+        "a",
+        false,
+        DeviceType.kKeyboard);
     assertChannelEventEquals(calls.get(1).channelObject, "keydown", KEYCODE_A);
 
     verify(tester.mockView, times(0)).onTextInputKeyEvent(any(KeyEvent.class));
@@ -717,7 +739,7 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kDown, PHYSICAL_KEY_A, LOGICAL_KEY_A, "a", false),
+          buildKeyData(Type.kDown, PHYSICAL_KEY_A, LOGICAL_KEY_A, "a", false, DeviceType.kKeyboard),
         });
     calls.clear();
 
@@ -728,7 +750,8 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kRepeat, PHYSICAL_KEY_A, LOGICAL_KEY_A, "a", false),
+          buildKeyData(
+              Type.kRepeat, PHYSICAL_KEY_A, LOGICAL_KEY_A, "a", false, DeviceType.kKeyboard),
         });
     calls.clear();
 
@@ -739,7 +762,7 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kUp, PHYSICAL_KEY_A, LOGICAL_KEY_A, null, false),
+          buildKeyData(Type.kUp, PHYSICAL_KEY_A, LOGICAL_KEY_A, null, false, DeviceType.kKeyboard),
         });
     calls.clear();
   }
@@ -760,7 +783,13 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kDown, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, false),
+          buildKeyData(
+              Type.kDown,
+              PHYSICAL_SHIFT_LEFT,
+              LOGICAL_SHIFT_LEFT,
+              null,
+              false,
+              DeviceType.kKeyboard),
         });
     calls.clear();
 
@@ -771,7 +800,7 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kDown, PHYSICAL_KEY_A, LOGICAL_KEY_A, "A", false),
+          buildKeyData(Type.kDown, PHYSICAL_KEY_A, LOGICAL_KEY_A, "A", false, DeviceType.kKeyboard),
         });
     calls.clear();
 
@@ -782,7 +811,7 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kUp, PHYSICAL_KEY_A, LOGICAL_KEY_A, null, false),
+          buildKeyData(Type.kUp, PHYSICAL_KEY_A, LOGICAL_KEY_A, null, false, DeviceType.kKeyboard),
         });
     calls.clear();
 
@@ -794,7 +823,8 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kUp, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, false),
+          buildKeyData(
+              Type.kUp, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, false, DeviceType.kKeyboard),
         });
     calls.clear();
   }
@@ -815,7 +845,7 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kDown, 0x1100000042L, LOGICAL_ENTER, "\n", false),
+          buildKeyData(Type.kDown, 0x1100000042L, LOGICAL_ENTER, "\n", false, DeviceType.kKeyboard),
         });
     calls.clear();
 
@@ -825,7 +855,7 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kDown, 0, 0, null, true),
+          buildKeyData(Type.kDown, 0, 0, null, true, DeviceType.kKeyboard),
         });
     calls.clear();
 
@@ -837,7 +867,7 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kDown, 0x11DEADBEEFL, 0x1100000000L, null, false),
+          buildKeyData(Type.kDown, 0x11DEADBEEFL, 0x1100000000L, null, false, DeviceType.kKeyboard),
         });
     calls.clear();
 
@@ -849,7 +879,8 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kDown, PHYSICAL_ARROW_LEFT, 0x1100000000L, null, false),
+          buildKeyData(
+              Type.kDown, PHYSICAL_ARROW_LEFT, 0x1100000000L, null, false, DeviceType.kKeyboard),
         });
     calls.clear();
 
@@ -861,7 +892,8 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kDown, PHYSICAL_ARROW_RIGHT, 0x11DEADBEEFL, null, false),
+          buildKeyData(
+              Type.kDown, PHYSICAL_ARROW_RIGHT, 0x11DEADBEEFL, null, false, DeviceType.kKeyboard),
         });
     calls.clear();
   }
@@ -881,7 +913,7 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kDown, PHYSICAL_KEY_A, LOGICAL_KEY_A, "a", false),
+          buildKeyData(Type.kDown, PHYSICAL_KEY_A, LOGICAL_KEY_A, "a", false, DeviceType.kKeyboard),
         });
     calls.clear();
 
@@ -891,9 +923,21 @@ public class KeyboardManagerTest {
             new FakeKeyEvent(ACTION_DOWN, SCAN_KEY_A, KEYCODE_A, 0, 'a', 0)));
     assertEquals(calls.size(), 2);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kUp, PHYSICAL_KEY_A, LOGICAL_KEY_A, null, true);
+        calls.get(0).keyData,
+        Type.kUp,
+        PHYSICAL_KEY_A,
+        LOGICAL_KEY_A,
+        null,
+        true,
+        DeviceType.kKeyboard);
     assertEmbedderEventEquals(
-        calls.get(1).keyData, Type.kDown, PHYSICAL_KEY_A, LOGICAL_KEY_A, "a", false);
+        calls.get(1).keyData,
+        Type.kDown,
+        PHYSICAL_KEY_A,
+        LOGICAL_KEY_A,
+        "a",
+        false,
+        DeviceType.kKeyboard);
     calls.clear();
   }
 
@@ -912,7 +956,7 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kDown, 0l, 0l, null, true),
+          buildKeyData(Type.kDown, 0l, 0l, null, true, DeviceType.kKeyboard),
         });
     calls.clear();
   }
@@ -931,7 +975,13 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kDown, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, false),
+          buildKeyData(
+              Type.kDown,
+              PHYSICAL_SHIFT_LEFT,
+              LOGICAL_SHIFT_LEFT,
+              null,
+              false,
+              DeviceType.kKeyboard),
         });
     calls.clear();
 
@@ -940,7 +990,8 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kUp, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, false),
+          buildKeyData(
+              Type.kUp, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, false, DeviceType.kKeyboard),
         });
     calls.clear();
 
@@ -950,7 +1001,13 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kDown, PHYSICAL_SHIFT_RIGHT, LOGICAL_SHIFT_RIGHT, null, false),
+          buildKeyData(
+              Type.kDown,
+              PHYSICAL_SHIFT_RIGHT,
+              LOGICAL_SHIFT_RIGHT,
+              null,
+              false,
+              DeviceType.kKeyboard),
         });
     calls.clear();
 
@@ -959,7 +1016,13 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kUp, PHYSICAL_SHIFT_RIGHT, LOGICAL_SHIFT_RIGHT, null, false),
+          buildKeyData(
+              Type.kUp,
+              PHYSICAL_SHIFT_RIGHT,
+              LOGICAL_SHIFT_RIGHT,
+              null,
+              false,
+              DeviceType.kKeyboard),
         });
     calls.clear();
 
@@ -969,7 +1032,13 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kDown, PHYSICAL_CONTROL_LEFT, LOGICAL_CONTROL_LEFT, null, false),
+          buildKeyData(
+              Type.kDown,
+              PHYSICAL_CONTROL_LEFT,
+              LOGICAL_CONTROL_LEFT,
+              null,
+              false,
+              DeviceType.kKeyboard),
         });
     calls.clear();
 
@@ -978,7 +1047,13 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kUp, PHYSICAL_CONTROL_LEFT, LOGICAL_CONTROL_LEFT, null, false),
+          buildKeyData(
+              Type.kUp,
+              PHYSICAL_CONTROL_LEFT,
+              LOGICAL_CONTROL_LEFT,
+              null,
+              false,
+              DeviceType.kKeyboard),
         });
     calls.clear();
 
@@ -988,7 +1063,13 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kDown, PHYSICAL_CONTROL_RIGHT, LOGICAL_CONTROL_RIGHT, null, false),
+          buildKeyData(
+              Type.kDown,
+              PHYSICAL_CONTROL_RIGHT,
+              LOGICAL_CONTROL_RIGHT,
+              null,
+              false,
+              DeviceType.kKeyboard),
         });
     calls.clear();
 
@@ -997,7 +1078,13 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kUp, PHYSICAL_CONTROL_RIGHT, LOGICAL_CONTROL_RIGHT, null, false),
+          buildKeyData(
+              Type.kUp,
+              PHYSICAL_CONTROL_RIGHT,
+              LOGICAL_CONTROL_RIGHT,
+              null,
+              false,
+              DeviceType.kKeyboard),
         });
     calls.clear();
 
@@ -1007,7 +1094,8 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kDown, PHYSICAL_ALT_LEFT, LOGICAL_ALT_LEFT, null, false),
+          buildKeyData(
+              Type.kDown, PHYSICAL_ALT_LEFT, LOGICAL_ALT_LEFT, null, false, DeviceType.kKeyboard),
         });
     calls.clear();
 
@@ -1016,7 +1104,8 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kUp, PHYSICAL_ALT_LEFT, LOGICAL_ALT_LEFT, null, false),
+          buildKeyData(
+              Type.kUp, PHYSICAL_ALT_LEFT, LOGICAL_ALT_LEFT, null, false, DeviceType.kKeyboard),
         });
     calls.clear();
 
@@ -1026,7 +1115,8 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kDown, PHYSICAL_ALT_RIGHT, LOGICAL_ALT_RIGHT, null, false),
+          buildKeyData(
+              Type.kDown, PHYSICAL_ALT_RIGHT, LOGICAL_ALT_RIGHT, null, false, DeviceType.kKeyboard),
         });
     calls.clear();
 
@@ -1035,7 +1125,8 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kUp, PHYSICAL_ALT_RIGHT, LOGICAL_ALT_RIGHT, null, false),
+          buildKeyData(
+              Type.kUp, PHYSICAL_ALT_RIGHT, LOGICAL_ALT_RIGHT, null, false, DeviceType.kKeyboard),
         });
     calls.clear();
   }
@@ -1054,7 +1145,8 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kDown, PHYSICAL_DIGIT1, LOGICAL_DIGIT1, "1", false),
+          buildKeyData(
+              Type.kDown, PHYSICAL_DIGIT1, LOGICAL_DIGIT1, "1", false, DeviceType.kKeyboard),
         });
     calls.clear();
 
@@ -1063,7 +1155,8 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kUp, PHYSICAL_DIGIT1, LOGICAL_DIGIT1, null, false),
+          buildKeyData(
+              Type.kUp, PHYSICAL_DIGIT1, LOGICAL_DIGIT1, null, false, DeviceType.kKeyboard),
         });
     calls.clear();
 
@@ -1077,7 +1170,8 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kDown, PHYSICAL_DIGIT1, LOGICAL_DIGIT1, "&", false),
+          buildKeyData(
+              Type.kDown, PHYSICAL_DIGIT1, LOGICAL_DIGIT1, "&", false, DeviceType.kKeyboard),
         });
     calls.clear();
 
@@ -1086,7 +1180,8 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kUp, PHYSICAL_DIGIT1, LOGICAL_DIGIT1, null, false),
+          buildKeyData(
+              Type.kUp, PHYSICAL_DIGIT1, LOGICAL_DIGIT1, null, false, DeviceType.kKeyboard),
         });
     calls.clear();
 
@@ -1100,7 +1195,7 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kDown, PHYSICAL_KEY_A, LOGICAL_KEY_A, "ф", false),
+          buildKeyData(Type.kDown, PHYSICAL_KEY_A, LOGICAL_KEY_A, "ф", false, DeviceType.kKeyboard),
         });
     calls.clear();
 
@@ -1109,7 +1204,7 @@ public class KeyboardManagerTest {
     verifyEmbedderEvents(
         calls,
         new KeyData[] {
-          buildKeyData(Type.kUp, PHYSICAL_KEY_A, LOGICAL_KEY_A, null, false),
+          buildKeyData(Type.kUp, PHYSICAL_KEY_A, LOGICAL_KEY_A, null, false, DeviceType.kKeyboard),
         });
     calls.clear();
   }
@@ -1132,7 +1227,13 @@ public class KeyboardManagerTest {
                 ACTION_DOWN, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', SHIFT_LEFT_ON)));
     assertEquals(calls.size(), 2);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kDown, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, true);
+        calls.get(0).keyData,
+        Type.kDown,
+        PHYSICAL_SHIFT_LEFT,
+        LOGICAL_SHIFT_LEFT,
+        null,
+        true,
+        DeviceType.kKeyboard);
     calls.clear();
 
     assertEquals(
@@ -1141,7 +1242,13 @@ public class KeyboardManagerTest {
             new FakeKeyEvent(ACTION_UP, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', 0)));
     assertEquals(calls.size(), 2);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kUp, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, true);
+        calls.get(0).keyData,
+        Type.kUp,
+        PHYSICAL_SHIFT_LEFT,
+        LOGICAL_SHIFT_LEFT,
+        null,
+        true,
+        DeviceType.kKeyboard);
     calls.clear();
   }
 
@@ -1166,7 +1273,13 @@ public class KeyboardManagerTest {
                 ACTION_DOWN, SCAN_SHIFT_LEFT, KEYCODE_SHIFT_LEFT, 1, '\0', SHIFT_LEFT_ON)));
     assertEquals(calls.size(), 1);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kDown, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, false);
+        calls.get(0).keyData,
+        Type.kDown,
+        PHYSICAL_SHIFT_LEFT,
+        LOGICAL_SHIFT_LEFT,
+        null,
+        false,
+        DeviceType.kKeyboard);
     calls.clear();
 
     // Down event when the current state is 1.
@@ -1177,9 +1290,21 @@ public class KeyboardManagerTest {
                 ACTION_DOWN, SCAN_SHIFT_LEFT, KEYCODE_SHIFT_LEFT, 0, '\0', SHIFT_LEFT_ON)));
     assertEquals(calls.size(), 2);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kUp, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, true);
+        calls.get(0).keyData,
+        Type.kUp,
+        PHYSICAL_SHIFT_LEFT,
+        LOGICAL_SHIFT_LEFT,
+        null,
+        true,
+        DeviceType.kKeyboard);
     assertEmbedderEventEquals(
-        calls.get(1).keyData, Type.kDown, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, false);
+        calls.get(1).keyData,
+        Type.kDown,
+        PHYSICAL_SHIFT_LEFT,
+        LOGICAL_SHIFT_LEFT,
+        null,
+        false,
+        DeviceType.kKeyboard);
     calls.clear();
 
     // Up event when the current state is 1.
@@ -1189,7 +1314,13 @@ public class KeyboardManagerTest {
             new FakeKeyEvent(ACTION_UP, SCAN_SHIFT_LEFT, KEYCODE_SHIFT_LEFT, 0, '\0', 0)));
     assertEquals(calls.size(), 1);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kUp, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, false);
+        calls.get(0).keyData,
+        Type.kUp,
+        PHYSICAL_SHIFT_LEFT,
+        LOGICAL_SHIFT_LEFT,
+        null,
+        false,
+        DeviceType.kKeyboard);
     calls.clear();
 
     // Up event when the current state is 0.
@@ -1198,7 +1329,8 @@ public class KeyboardManagerTest {
         tester.keyboardManager.handleEvent(
             new FakeKeyEvent(ACTION_UP, SCAN_SHIFT_LEFT, KEYCODE_SHIFT_LEFT, 0, '\0', 0)));
     assertEquals(calls.size(), 1);
-    assertEmbedderEventEquals(calls.get(0).keyData, Type.kDown, 0l, 0l, null, true);
+    assertEmbedderEventEquals(
+        calls.get(0).keyData, Type.kDown, 0l, 0l, null, true, DeviceType.kKeyboard);
     calls.clear();
 
     // Down event when the current state is 0.
@@ -1209,7 +1341,13 @@ public class KeyboardManagerTest {
                 ACTION_DOWN, SCAN_SHIFT_LEFT, KEYCODE_SHIFT_LEFT, 0, '\0', SHIFT_LEFT_ON)));
     assertEquals(calls.size(), 1);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kDown, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, false);
+        calls.get(0).keyData,
+        Type.kDown,
+        PHYSICAL_SHIFT_LEFT,
+        LOGICAL_SHIFT_LEFT,
+        null,
+        false,
+        DeviceType.kKeyboard);
     calls.clear();
 
     // Repeat event when the current state is 1.
@@ -1220,7 +1358,13 @@ public class KeyboardManagerTest {
                 ACTION_DOWN, SCAN_SHIFT_LEFT, KEYCODE_SHIFT_LEFT, 1, '\0', SHIFT_LEFT_ON)));
     assertEquals(calls.size(), 1);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kRepeat, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, false);
+        calls.get(0).keyData,
+        Type.kRepeat,
+        PHYSICAL_SHIFT_LEFT,
+        LOGICAL_SHIFT_LEFT,
+        null,
+        false,
+        DeviceType.kKeyboard);
     calls.clear();
   }
 
@@ -1315,7 +1459,13 @@ public class KeyboardManagerTest {
                 ACTION_DOWN, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', META_CTRL_ON)));
     assertEquals(calls.size(), 2);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kDown, PHYSICAL_CONTROL_LEFT, LOGICAL_CONTROL_LEFT, null, true);
+        calls.get(0).keyData,
+        Type.kDown,
+        PHYSICAL_CONTROL_LEFT,
+        LOGICAL_CONTROL_LEFT,
+        null,
+        true,
+        DeviceType.kKeyboard);
     calls.clear();
 
     assertEquals(
@@ -1324,7 +1474,13 @@ public class KeyboardManagerTest {
             new FakeKeyEvent(ACTION_UP, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', 0)));
     assertEquals(calls.size(), 2);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kUp, PHYSICAL_CONTROL_LEFT, LOGICAL_CONTROL_LEFT, null, true);
+        calls.get(0).keyData,
+        Type.kUp,
+        PHYSICAL_CONTROL_LEFT,
+        LOGICAL_CONTROL_LEFT,
+        null,
+        true,
+        DeviceType.kKeyboard);
     calls.clear();
 
     assertEquals(
@@ -1334,7 +1490,13 @@ public class KeyboardManagerTest {
                 ACTION_DOWN, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', META_ALT_ON)));
     assertEquals(calls.size(), 2);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kDown, PHYSICAL_ALT_LEFT, LOGICAL_ALT_LEFT, null, true);
+        calls.get(0).keyData,
+        Type.kDown,
+        PHYSICAL_ALT_LEFT,
+        LOGICAL_ALT_LEFT,
+        null,
+        true,
+        DeviceType.kKeyboard);
     calls.clear();
 
     assertEquals(
@@ -1343,7 +1505,13 @@ public class KeyboardManagerTest {
             new FakeKeyEvent(ACTION_UP, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', 0)));
     assertEquals(calls.size(), 2);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kUp, PHYSICAL_ALT_LEFT, LOGICAL_ALT_LEFT, null, true);
+        calls.get(0).keyData,
+        Type.kUp,
+        PHYSICAL_ALT_LEFT,
+        LOGICAL_ALT_LEFT,
+        null,
+        true,
+        DeviceType.kKeyboard);
     calls.clear();
   }
 
@@ -1368,9 +1536,21 @@ public class KeyboardManagerTest {
             new FakeKeyEvent(ACTION_DOWN, SCAN_SHIFT_LEFT, KEYCODE_SHIFT_LEFT, 0, '\0', 0)));
     assertEquals(calls.size(), 2);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kDown, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, false);
+        calls.get(0).keyData,
+        Type.kDown,
+        PHYSICAL_SHIFT_LEFT,
+        LOGICAL_SHIFT_LEFT,
+        null,
+        false,
+        DeviceType.kKeyboard);
     assertEmbedderEventEquals(
-        calls.get(1).keyData, Type.kUp, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, true);
+        calls.get(1).keyData,
+        Type.kUp,
+        PHYSICAL_SHIFT_LEFT,
+        LOGICAL_SHIFT_LEFT,
+        null,
+        true,
+        DeviceType.kKeyboard);
     calls.clear();
 
     // A normal down event.
@@ -1381,7 +1561,13 @@ public class KeyboardManagerTest {
                 ACTION_DOWN, SCAN_SHIFT_LEFT, KEYCODE_SHIFT_LEFT, 0, '\0', SHIFT_LEFT_ON)));
     assertEquals(calls.size(), 1);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kDown, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, false);
+        calls.get(0).keyData,
+        Type.kDown,
+        PHYSICAL_SHIFT_LEFT,
+        LOGICAL_SHIFT_LEFT,
+        null,
+        false,
+        DeviceType.kKeyboard);
     calls.clear();
 
     // Test: Repeat event when the current state is 0.
@@ -1391,9 +1577,21 @@ public class KeyboardManagerTest {
             new FakeKeyEvent(ACTION_DOWN, SCAN_SHIFT_LEFT, KEYCODE_SHIFT_LEFT, 1, '\0', 0)));
     assertEquals(calls.size(), 2);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kRepeat, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, false);
+        calls.get(0).keyData,
+        Type.kRepeat,
+        PHYSICAL_SHIFT_LEFT,
+        LOGICAL_SHIFT_LEFT,
+        null,
+        false,
+        DeviceType.kKeyboard);
     assertEmbedderEventEquals(
-        calls.get(1).keyData, Type.kUp, PHYSICAL_SHIFT_LEFT, LOGICAL_SHIFT_LEFT, null, true);
+        calls.get(1).keyData,
+        Type.kUp,
+        PHYSICAL_SHIFT_LEFT,
+        LOGICAL_SHIFT_LEFT,
+        null,
+        true,
+        DeviceType.kKeyboard);
     calls.clear();
   }
 
@@ -1416,9 +1614,21 @@ public class KeyboardManagerTest {
     assertEquals(tester.keyboardManager.handleEvent(keyEvent), true);
     assertEquals(calls.size(), 2);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kDown, physicalKey, LOGICAL_SHIFT_LEFT, null, false);
+        calls.get(0).keyData,
+        Type.kDown,
+        physicalKey,
+        LOGICAL_SHIFT_LEFT,
+        null,
+        false,
+        DeviceType.kKeyboard);
     assertEmbedderEventEquals(
-        calls.get(1).keyData, Type.kUp, physicalKey, LOGICAL_SHIFT_LEFT, null, true);
+        calls.get(1).keyData,
+        Type.kUp,
+        physicalKey,
+        LOGICAL_SHIFT_LEFT,
+        null,
+        true,
+        DeviceType.kKeyboard);
     calls.clear();
   }
 
@@ -1440,7 +1650,13 @@ public class KeyboardManagerTest {
                 ACTION_DOWN, SCAN_CAPS_LOCK, KEYCODE_CAPS_LOCK, 0, '\0', META_CAPS_LOCK_ON)));
     assertEquals(calls.size(), 1);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kDown, PHYSICAL_CAPS_LOCK, LOGICAL_CAPS_LOCK, null, false);
+        calls.get(0).keyData,
+        Type.kDown,
+        PHYSICAL_CAPS_LOCK,
+        LOGICAL_CAPS_LOCK,
+        null,
+        false,
+        DeviceType.kKeyboard);
     calls.clear();
 
     assertEquals(
@@ -1449,7 +1665,13 @@ public class KeyboardManagerTest {
             new FakeKeyEvent(ACTION_UP, SCAN_CAPS_LOCK, KEYCODE_CAPS_LOCK, 0, '\0', 0)));
     assertEquals(calls.size(), 1);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kUp, PHYSICAL_CAPS_LOCK, LOGICAL_CAPS_LOCK, null, false);
+        calls.get(0).keyData,
+        Type.kUp,
+        PHYSICAL_CAPS_LOCK,
+        LOGICAL_CAPS_LOCK,
+        null,
+        false,
+        DeviceType.kKeyboard);
     calls.clear();
 
     assertEquals(
@@ -1459,7 +1681,13 @@ public class KeyboardManagerTest {
                 ACTION_DOWN, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', META_CAPS_LOCK_ON)));
     assertEquals(calls.size(), 1);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kDown, PHYSICAL_ARROW_LEFT, LOGICAL_ARROW_LEFT, null, false);
+        calls.get(0).keyData,
+        Type.kDown,
+        PHYSICAL_ARROW_LEFT,
+        LOGICAL_ARROW_LEFT,
+        null,
+        false,
+        DeviceType.kKeyboard);
     calls.clear();
 
     assertEquals(
@@ -1469,7 +1697,13 @@ public class KeyboardManagerTest {
                 ACTION_UP, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', META_CAPS_LOCK_ON)));
     assertEquals(calls.size(), 1);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kUp, PHYSICAL_ARROW_LEFT, LOGICAL_ARROW_LEFT, null, false);
+        calls.get(0).keyData,
+        Type.kUp,
+        PHYSICAL_ARROW_LEFT,
+        LOGICAL_ARROW_LEFT,
+        null,
+        false,
+        DeviceType.kKeyboard);
     calls.clear();
 
     assertEquals(
@@ -1479,7 +1713,13 @@ public class KeyboardManagerTest {
                 ACTION_DOWN, SCAN_CAPS_LOCK, KEYCODE_CAPS_LOCK, 0, '\0', META_CAPS_LOCK_ON)));
     assertEquals(calls.size(), 1);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kDown, PHYSICAL_CAPS_LOCK, LOGICAL_CAPS_LOCK, null, false);
+        calls.get(0).keyData,
+        Type.kDown,
+        PHYSICAL_CAPS_LOCK,
+        LOGICAL_CAPS_LOCK,
+        null,
+        false,
+        DeviceType.kKeyboard);
     calls.clear();
 
     assertEquals(
@@ -1488,7 +1728,13 @@ public class KeyboardManagerTest {
             new FakeKeyEvent(ACTION_UP, SCAN_CAPS_LOCK, KEYCODE_CAPS_LOCK, 0, '\0', 0)));
     assertEquals(calls.size(), 1);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kUp, PHYSICAL_CAPS_LOCK, LOGICAL_CAPS_LOCK, null, false);
+        calls.get(0).keyData,
+        Type.kUp,
+        PHYSICAL_CAPS_LOCK,
+        LOGICAL_CAPS_LOCK,
+        null,
+        false,
+        DeviceType.kKeyboard);
     calls.clear();
 
     assertEquals(
@@ -1497,7 +1743,13 @@ public class KeyboardManagerTest {
             new FakeKeyEvent(ACTION_DOWN, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', 0)));
     assertEquals(calls.size(), 1);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kDown, PHYSICAL_ARROW_LEFT, LOGICAL_ARROW_LEFT, null, false);
+        calls.get(0).keyData,
+        Type.kDown,
+        PHYSICAL_ARROW_LEFT,
+        LOGICAL_ARROW_LEFT,
+        null,
+        false,
+        DeviceType.kKeyboard);
     calls.clear();
 
     assertEquals(
@@ -1506,7 +1758,13 @@ public class KeyboardManagerTest {
             new FakeKeyEvent(ACTION_UP, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', 0)));
     assertEquals(calls.size(), 1);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kUp, PHYSICAL_ARROW_LEFT, LOGICAL_ARROW_LEFT, null, false);
+        calls.get(0).keyData,
+        Type.kUp,
+        PHYSICAL_ARROW_LEFT,
+        LOGICAL_ARROW_LEFT,
+        null,
+        false,
+        DeviceType.kKeyboard);
     calls.clear();
   }
 
@@ -1525,11 +1783,29 @@ public class KeyboardManagerTest {
                 ACTION_DOWN, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', META_CAPS_LOCK_ON)));
     assertEquals(calls.size(), 3);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kDown, PHYSICAL_CAPS_LOCK, LOGICAL_CAPS_LOCK, null, true);
+        calls.get(0).keyData,
+        Type.kDown,
+        PHYSICAL_CAPS_LOCK,
+        LOGICAL_CAPS_LOCK,
+        null,
+        true,
+        DeviceType.kKeyboard);
     assertEmbedderEventEquals(
-        calls.get(1).keyData, Type.kUp, PHYSICAL_CAPS_LOCK, LOGICAL_CAPS_LOCK, null, true);
+        calls.get(1).keyData,
+        Type.kUp,
+        PHYSICAL_CAPS_LOCK,
+        LOGICAL_CAPS_LOCK,
+        null,
+        true,
+        DeviceType.kKeyboard);
     assertEmbedderEventEquals(
-        calls.get(2).keyData, Type.kDown, PHYSICAL_ARROW_LEFT, LOGICAL_ARROW_LEFT, null, false);
+        calls.get(2).keyData,
+        Type.kDown,
+        PHYSICAL_ARROW_LEFT,
+        LOGICAL_ARROW_LEFT,
+        null,
+        false,
+        DeviceType.kKeyboard);
     calls.clear();
 
     assertEquals(
@@ -1539,7 +1815,13 @@ public class KeyboardManagerTest {
                 ACTION_DOWN, SCAN_CAPS_LOCK, KEYCODE_CAPS_LOCK, 0, '\0', META_CAPS_LOCK_ON)));
     assertEquals(calls.size(), 1);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kDown, PHYSICAL_CAPS_LOCK, LOGICAL_CAPS_LOCK, null, false);
+        calls.get(0).keyData,
+        Type.kDown,
+        PHYSICAL_CAPS_LOCK,
+        LOGICAL_CAPS_LOCK,
+        null,
+        false,
+        DeviceType.kKeyboard);
     calls.clear();
 
     assertEquals(
@@ -1549,11 +1831,29 @@ public class KeyboardManagerTest {
                 ACTION_UP, SCAN_ARROW_LEFT, KEYCODE_DPAD_LEFT, 0, '\0', META_CAPS_LOCK_ON)));
     assertEquals(calls.size(), 3);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kUp, PHYSICAL_CAPS_LOCK, LOGICAL_CAPS_LOCK, null, true);
+        calls.get(0).keyData,
+        Type.kUp,
+        PHYSICAL_CAPS_LOCK,
+        LOGICAL_CAPS_LOCK,
+        null,
+        true,
+        DeviceType.kKeyboard);
     assertEmbedderEventEquals(
-        calls.get(1).keyData, Type.kDown, PHYSICAL_CAPS_LOCK, LOGICAL_CAPS_LOCK, null, true);
+        calls.get(1).keyData,
+        Type.kDown,
+        PHYSICAL_CAPS_LOCK,
+        LOGICAL_CAPS_LOCK,
+        null,
+        true,
+        DeviceType.kKeyboard);
     assertEmbedderEventEquals(
-        calls.get(2).keyData, Type.kUp, PHYSICAL_ARROW_LEFT, LOGICAL_ARROW_LEFT, null, false);
+        calls.get(2).keyData,
+        Type.kUp,
+        PHYSICAL_ARROW_LEFT,
+        LOGICAL_ARROW_LEFT,
+        null,
+        false,
+        DeviceType.kKeyboard);
     calls.clear();
 
     assertEquals(
@@ -1562,7 +1862,13 @@ public class KeyboardManagerTest {
             new FakeKeyEvent(ACTION_UP, SCAN_CAPS_LOCK, KEYCODE_CAPS_LOCK, 0, '\0', 0)));
     assertEquals(calls.size(), 1);
     assertEmbedderEventEquals(
-        calls.get(0).keyData, Type.kUp, PHYSICAL_CAPS_LOCK, LOGICAL_CAPS_LOCK, null, false);
+        calls.get(0).keyData,
+        Type.kUp,
+        PHYSICAL_CAPS_LOCK,
+        LOGICAL_CAPS_LOCK,
+        null,
+        false,
+        DeviceType.kKeyboard);
     calls.clear();
   }
 

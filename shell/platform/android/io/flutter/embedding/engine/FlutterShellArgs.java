@@ -20,6 +20,7 @@ import java.util.*;
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class FlutterShellArgs {
+  private static final String TAG = "FlutterShellArgs";
   public static final String ARG_KEY_TRACE_STARTUP = "trace-startup";
   public static final String ARG_TRACE_STARTUP = "--trace-startup";
   public static final String ARG_KEY_START_PAUSED = "start-paused";
@@ -38,10 +39,16 @@ public class FlutterShellArgs {
   public static final String ARG_SKIA_DETERMINISTIC_RENDERING = "--skia-deterministic-rendering";
   public static final String ARG_KEY_TRACE_SKIA = "trace-skia";
   public static final String ARG_TRACE_SKIA = "--trace-skia";
+  public static final String ARG_KEY_DISABLE_IMAGE_READER_PLATFORM_VIEWS =
+      "disable-image-reader-platform-views";
+  public static final String ARG_DISABLE_IMAGE_READER_PLATFORM_VIEWS =
+      "--disable-image-reader-platform-views";
   public static final String ARG_KEY_TRACE_SKIA_ALLOWLIST = "trace-skia-allowlist";
   public static final String ARG_TRACE_SKIA_ALLOWLIST = "--trace-skia-allowlist=";
   public static final String ARG_KEY_TRACE_SYSTRACE = "trace-systrace";
   public static final String ARG_TRACE_SYSTRACE = "--trace-systrace";
+  public static final String ARG_KEY_TRACE_TO_FILE = "trace-to-file";
+  public static final String ARG_TRACE_TO_FILE = "--trace-to-file";
   public static final String ARG_KEY_ENABLE_IMPELLER = "enable-impeller";
   public static final String ARG_ENABLE_IMPELLER = "--enable-impeller";
   public static final String ARG_KEY_ENABLE_VULKAN_VALIDATION = "enable-vulkan-validation";
@@ -120,8 +127,14 @@ public class FlutterShellArgs {
     if (intent.getBooleanExtra(ARG_KEY_TRACE_SYSTRACE, false)) {
       args.add(ARG_TRACE_SYSTRACE);
     }
+    if (intent.hasExtra(ARG_KEY_TRACE_TO_FILE)) {
+      args.add(ARG_TRACE_TO_FILE + "=" + intent.getStringExtra(ARG_KEY_TRACE_TO_FILE));
+    }
     if (intent.getBooleanExtra(ARG_KEY_ENABLE_IMPELLER, false)) {
       args.add(ARG_ENABLE_IMPELLER);
+    }
+    if (intent.getBooleanExtra(ARG_KEY_DISABLE_IMAGE_READER_PLATFORM_VIEWS, false)) {
+      args.add(ARG_DISABLE_IMAGE_READER_PLATFORM_VIEWS);
     }
     if (intent.getBooleanExtra(ARG_KEY_ENABLE_VULKAN_VALIDATION, false)) {
       args.add(ARG_ENABLE_VULKAN_VALIDATION);

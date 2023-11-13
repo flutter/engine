@@ -8,13 +8,12 @@
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/pass_bindings_cache.h"
 #include "impeller/renderer/backend/vulkan/shared_object_vk.h"
-#include "impeller/renderer/backend/vulkan/texture_vk.h"
-#include "impeller/renderer/backend/vulkan/vk.h"
-#include "impeller/renderer/command.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
 
 namespace impeller {
+
+class CommandBufferVK;
 
 class RenderPassVK final : public RenderPass {
  public:
@@ -24,14 +23,14 @@ class RenderPassVK final : public RenderPass {
  private:
   friend class CommandBufferVK;
 
-  std::weak_ptr<CommandEncoderVK> encoder_;
+  std::weak_ptr<CommandBufferVK> command_buffer_;
   std::string debug_label_;
   bool is_valid_ = false;
   mutable PassBindingsCache pass_bindings_cache_;
 
   RenderPassVK(const std::shared_ptr<const Context>& context,
                const RenderTarget& target,
-               std::weak_ptr<CommandEncoderVK> encoder);
+               std::weak_ptr<CommandBufferVK> command_buffer);
 
   // |RenderPass|
   bool IsValid() const override;
@@ -43,13 +42,16 @@ class RenderPassVK final : public RenderPass {
   bool OnEncodeCommands(const Context& context) const override;
 
   SharedHandleVK<vk::RenderPass> CreateVKRenderPass(
-      const ContextVK& context) const;
+      const ContextVK& context,
+      const std::shared_ptr<CommandBufferVK>& command_buffer) const;
 
   SharedHandleVK<vk::Framebuffer> CreateVKFramebuffer(
       const ContextVK& context,
       const vk::RenderPass& pass) const;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(RenderPassVK);
+  RenderPassVK(const RenderPassVK&) = delete;
+
+  RenderPassVK& operator=(const RenderPassVK&) = delete;
 };
 
 }  // namespace impeller

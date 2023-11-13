@@ -62,7 +62,7 @@ struct Matrix {
             Vector4(m12, m13, m14, m15)} {}
   // clang-format on
 
-  Matrix(const MatrixDecomposition& decomposition);
+  explicit Matrix(const MatrixDecomposition& decomposition);
 
   // clang-format off
   static constexpr Matrix MakeColumn(
@@ -219,6 +219,7 @@ struct Matrix {
     // clang-format on
   }
 
+  /// The Matrix without its `w` components (without translation).
   constexpr Matrix Basis() const {
     // clang-format off
     return Matrix(
@@ -311,6 +312,10 @@ struct Matrix {
   constexpr bool IsAffine() const {
     return (m[2] == 0 && m[3] == 0 && m[6] == 0 && m[7] == 0 && m[8] == 0 &&
             m[9] == 0 && m[10] == 1 && m[11] == 0 && m[14] == 0 && m[15] == 1);
+  }
+
+  constexpr bool HasPerspective() const {
+    return m[3] != 0 || m[7] != 0 || m[11] != 0 || m[15] != 1;
   }
 
   constexpr bool IsAligned(Scalar tolerance = 0) const {

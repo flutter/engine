@@ -9,8 +9,8 @@
 #include "flutter/shell/common/dl_op_spy.h"
 
 #ifdef IMPELLER_SUPPORTS_RENDERING
-#include "impeller/display_list/dl_dispatcher.h"
-#endif  // IMPELLER_SUPPORTS_RENDERING
+#include "impeller/display_list/dl_dispatcher.h"  // nogncheck
+#endif                                            // IMPELLER_SUPPORTS_RENDERING
 
 namespace flutter {
 
@@ -60,6 +60,11 @@ bool EmbedderExternalView::IsRootView() const {
 
 bool EmbedderExternalView::HasPlatformView() const {
   return view_identifier_.platform_view_id.has_value();
+}
+
+std::list<SkRect> EmbedderExternalView::GetEngineRenderedContentsRegion(
+    const SkRect& query) const {
+  return slice_->searchNonOverlappingDrawnRects(query);
 }
 
 bool EmbedderExternalView::HasEngineRenderedContents() {

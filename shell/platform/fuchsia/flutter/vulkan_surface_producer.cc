@@ -19,6 +19,8 @@
 #include "third_party/skia/include/gpu/GrBackendSemaphore.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
+#include "third_party/skia/include/gpu/ganesh/vk/GrVkBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/vk/GrVkDirectContext.h"
 #include "third_party/skia/include/gpu/vk/GrVkBackendContext.h"
 #include "third_party/skia/include/gpu/vk/GrVkExtensions.h"
 #include "third_party/skia/include/gpu/vk/GrVkTypes.h"
@@ -40,8 +42,8 @@ constexpr size_t kGrCacheMaxByteSize = 1024 * 600 * 12 * 4;
 
 }  // namespace
 
-VulkanSurfaceProducer::VulkanSurfaceProducer(scenic::Session* scenic_session) {
-  valid_ = Initialize(scenic_session);
+VulkanSurfaceProducer::VulkanSurfaceProducer() {
+  valid_ = Initialize();
 
   if (!valid_) {
     FML_LOG(FATAL) << "VulkanSurfaceProducer: Initialization failed";
@@ -57,7 +59,7 @@ VulkanSurfaceProducer::~VulkanSurfaceProducer() {
   }
 };
 
-bool VulkanSurfaceProducer::Initialize(scenic::Session* scenic_session) {
+bool VulkanSurfaceProducer::Initialize() {
   vk_ = fml::MakeRefCounted<vulkan::VulkanProcTable>();
 
   std::vector<std::string> extensions = {
@@ -152,7 +154,7 @@ bool VulkanSurfaceProducer::Initialize(scenic::Session* scenic_session) {
   GrContextOptions options;
   options.fReduceOpsTaskSplitting = GrContextOptions::Enable::kNo;
 
-  context_ = GrDirectContext::MakeVulkan(backend_context, options);
+  context_ = GrDirectContexts::MakeVulkan(backend_context, options);
 
   if (context_ == nullptr) {
     FML_LOG(ERROR)
@@ -163,8 +165,7 @@ bool VulkanSurfaceProducer::Initialize(scenic::Session* scenic_session) {
   // Use local limits specified in this file above instead of flutter defaults.
   context_->setResourceCacheLimit(kGrCacheMaxByteSize);
 
-  surface_pool_ =
-      std::make_unique<VulkanSurfacePool>(*this, context_, scenic_session);
+  surface_pool_ = std::make_unique<VulkanSurfacePool>(*this, context_);
 
   return true;
 }
@@ -229,27 +230,26 @@ bool VulkanSurfaceProducer::TransitionSurfacesToExternal(
       return false;
     }
     GrVkImageInfo imageInfo;
-    if (!backendRT.getVkImageInfo(&imageInfo)) {
+    if (!GrBackendRenderTargets::GetVkImageInfo(backendRT, &imageInfo)) {
       return false;
     }
 
     VkImageMemoryBarrier image_barrier = {
-      .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-      .pNext = nullptr,
-      .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-      .dstAccessMask = 0,
-      .oldLayout = imageInfo.fImageLayout,
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+        .pNext = nullptr,
+        .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+        .dstAccessMask = 0,
+        .oldLayout = imageInfo.fImageLayout,
     // Understand why this is causing issues on Intel. TODO(fxb/53449)
 #if defined(__aarch64__)
-      .newLayout = imageInfo.fImageLayout,
+        .newLayout = imageInfo.fImageLayout,
 #else
-      .newLayout = VK_IMAGE_LAYOUT_GENERAL,
+        .newLayout = VK_IMAGE_LAYOUT_GENERAL,
 #endif
-      .srcQueueFamilyIndex = 0,
-      .dstQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL_KHR,
-      .image = vk_surface->GetVkImage(),
-      .subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1}
-    };
+        .srcQueueFamilyIndex = 0,
+        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL_KHR,
+        .image = vk_surface->GetVkImage(),
+        .subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1}};
 
     if (!command_buffer->InsertPipelineBarrier(
             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -260,7 +260,8 @@ bool VulkanSurfaceProducer::TransitionSurfacesToExternal(
             1, &image_barrier))
       return false;
 
-    backendRT.setVkImageLayout(image_barrier.newLayout);
+    GrBackendRenderTargets::SetVkImageLayout(&backendRT,
+                                             image_barrier.newLayout);
 
     if (!command_buffer->End())
       return false;

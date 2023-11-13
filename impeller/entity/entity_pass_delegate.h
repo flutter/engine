@@ -9,6 +9,8 @@
 #include "flutter/fml/macros.h"
 #include "impeller/core/texture.h"
 #include "impeller/entity/contents/contents.h"
+#include "impeller/entity/contents/filters/filter_contents.h"
+#include "impeller/entity/contents/filters/inputs/filter_input.h"
 
 namespace impeller {
 
@@ -19,8 +21,6 @@ class EntityPassDelegate {
   static std::unique_ptr<EntityPassDelegate> MakeDefault();
 
   EntityPassDelegate();
-
-  virtual std::optional<Rect> GetCoverageRect() = 0;
 
   virtual ~EntityPassDelegate();
 
@@ -34,8 +34,14 @@ class EntityPassDelegate {
       std::shared_ptr<Texture> target,
       const Matrix& effect_transform) = 0;
 
+  virtual std::shared_ptr<FilterContents> WithImageFilter(
+      const FilterInput::Variant& input,
+      const Matrix& effect_transform) const = 0;
+
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(EntityPassDelegate);
+  EntityPassDelegate(const EntityPassDelegate&) = delete;
+
+  EntityPassDelegate& operator=(const EntityPassDelegate&) = delete;
 };
 
 }  // namespace impeller

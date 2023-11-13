@@ -167,7 +167,7 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
   {
     using PS = PointsComputeShader;
     ComputeCommand cmd;
-    cmd.label = "Points Geometry";
+    DEBUG_COMMAND_INFO(cmd, "Points Geometry");
     cmd.pipeline = renderer.GetPointComputePipeline();
 
     PS::FrameInfo frame_info;
@@ -201,7 +201,7 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
     using UV = UvComputeShader;
 
     ComputeCommand cmd;
-    cmd.label = "UV Geometry";
+    DEBUG_COMMAND_INFO(cmd, "UV Geometry");
     cmd.pipeline = renderer.GetUvComputePipeline();
 
     UV::FrameInfo frame_info;
@@ -287,8 +287,9 @@ std::optional<Rect> PointFieldGeometry::GetCoverage(
       right = std::max(right, it->x);
       bottom = std::max(bottom, it->y);
     }
-    return Rect::MakeLTRB(left - radius_, top - radius_, right + radius_,
-                          bottom + radius_);
+    auto coverage = Rect::MakeLTRB(left - radius_, top - radius_,
+                                   right + radius_, bottom + radius_);
+    return coverage.TransformBounds(transform);
   }
   return std::nullopt;
 }

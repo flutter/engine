@@ -4,7 +4,6 @@
 
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 
-#include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
 
 namespace impeller {
@@ -40,6 +39,9 @@ bool DeviceBufferVK::OnCopyHostBuffer(const uint8_t* source,
   if (source) {
     ::memmove(dest + offset, source + source_range.offset, source_range.length);
   }
+  ::vmaFlushAllocation(resource_->buffer.get().allocator,
+                       resource_->buffer.get().allocation, offset,
+                       source_range.length);
 
   return true;
 }

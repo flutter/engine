@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/UIViewController+FlutterScreenAndSceneIfLoaded.h"
 
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
@@ -19,6 +20,13 @@ static const char kTextAffinityUpstream[] = "TextAffinity.upstream";
 // A delay before enabling the accessibility of FlutterTextInputView after
 // it is activated.
 static constexpr double kUITextInputAccessibilityEnablingDelaySeconds = 0.5;
+
+// A delay before reenabling the UIView areAnimationsEnabled to YES
+// in order for becomeFirstResponder to receive the proper value.
+static const NSTimeInterval kKeyboardAnimationDelaySeconds = 0.1;
+
+// A time set for the screenshot to animate back to the assigned position.
+static const NSTimeInterval kKeyboardAnimationTimeToCompleteion = 0.3;
 
 // The "canonical" invalid CGRect, similar to CGRectNull, used to
 // indicate a CGRect involved in firstRectForRange calculation is
@@ -45,6 +53,10 @@ static NSString* const kDeprecatedSetSelectionRectsMethod = @"TextInput.setSelec
 static NSString* const kSetSelectionRectsMethod = @"Scribble.setSelectionRects";
 static NSString* const kStartLiveTextInputMethod = @"TextInput.startLiveTextInput";
 static NSString* const kUpdateConfigMethod = @"TextInput.updateConfig";
+static NSString* const kOnInteractiveKeyboardPointerMoveMethod =
+    @"TextInput.onPointerMoveForInteractiveKeyboard";
+static NSString* const kOnInteractiveKeyboardPointerUpMethod =
+    @"TextInput.onPointerUpForInteractiveKeyboard";
 
 #pragma mark - TextInputConfiguration Field Names
 static NSString* const kSecureTextEntry = @"obscureText";
@@ -759,8 +771,11 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 @property(nonatomic, copy) NSString* autofillId;
 @property(nonatomic, readonly) CATransform3D editableTransform;
 @property(nonatomic, assign) CGRect markedRect;
+// Disables the cursor from dismissing when firstResponder is resigned
+@property(nonatomic, assign) BOOL preventCursorDismissWhenResignFirstResponder;
 @property(nonatomic) BOOL isVisibleToAutofill;
 @property(nonatomic, assign) BOOL accessibilityEnabled;
+@property(nonatomic, assign) int textInputClient;
 // The composed character that is temporarily removed by the keyboard API.
 // This is cleared at the start of each keyboard interaction. (Enter a character, delete a character
 // etc)
@@ -795,14 +810,15 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     _textInputPlugin = textInputPlugin;
     _textInputClient = 0;
     _selectionAffinity = kTextAffinityUpstream;
+    _preventCursorDismissWhenResignFirstResponder = NO;
 
     // UITextInput
     _text = [[NSMutableString alloc] init];
-    _markedText = [[NSMutableString alloc] init];
     _selectedTextRange = [[FlutterTextRange alloc] initWithNSRange:NSMakeRange(0, 0)];
     _markedRect = kInvalidFirstRect;
     _cachedFirstRect = kInvalidFirstRect;
     _scribbleInteractionStatus = FlutterScribbleInteractionStatusNone;
+    _pendingDeltas = [[NSMutableArray alloc] init];
     // Initialize with the zero matrix which is not
     // an affine transform.
     _editableTransform = CATransform3D();
@@ -861,9 +877,11 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     self.keyboardAppearance = UIKeyboardAppearanceDefault;
   }
   NSString* autocorrect = configuration[kAutocorrectionType];
-  self.autocorrectionType = autocorrect && ![autocorrect boolValue]
-                                ? UITextAutocorrectionTypeNo
-                                : UITextAutocorrectionTypeDefault;
+  bool autocorrectIsDisabled = autocorrect && ![autocorrect boolValue];
+  self.autocorrectionType =
+      autocorrectIsDisabled ? UITextAutocorrectionTypeNo : UITextAutocorrectionTypeDefault;
+  self.spellCheckingType =
+      autocorrectIsDisabled ? UITextSpellCheckingTypeNo : UITextSpellCheckingTypeDefault;
   self.autofillId = AutofillIdFromDictionary(configuration);
   if (autofill == nil) {
     self.textContentType = @"";
@@ -883,7 +901,14 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 
 // Prevent UIKit from showing selection handles or highlights. This is needed
 // because Scribble interactions require the view to have it's actual frame on
-// the screen.
+// the screen. They're not needed on iOS 17 with the new
+// UITextSelectionDisplayInteraction API.
+//
+// These are undocumented methods. On iOS 17, the insertion point color is also
+// used as the highlighted background of the selected IME candidate:
+// https://github.com/flutter/flutter/issues/132548
+// So the respondsToSelector method is overridden to return NO for this method
+// on iOS 17+.
 - (UIColor*)insertionPointColor {
   return [UIColor clearColor];
 }
@@ -909,6 +934,16 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 
 - (id<FlutterTextInputDelegate>)textInputDelegate {
   return _textInputPlugin.textInputDelegate;
+}
+
+- (BOOL)respondsToSelector:(SEL)selector {
+  if (@available(iOS 17.0, *)) {
+    // See the comment on this method.
+    if (selector == @selector(insertionPointColor)) {
+      return NO;
+    }
+  }
+  return [super respondsToSelector:selector];
 }
 
 - (void)setTextInputClient:(int)client {
@@ -1087,8 +1122,10 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 - (BOOL)resignFirstResponder {
   BOOL success = [super resignFirstResponder];
   if (success) {
-    [self.textInputDelegate flutterTextInputView:self
-        didResignFirstResponderWithTextInputClient:_textInputClient];
+    if (!_preventCursorDismissWhenResignFirstResponder) {
+      [self.textInputDelegate flutterTextInputView:self
+          didResignFirstResponderWithTextInputClient:_textInputClient];
+    }
   }
   return success;
 }
@@ -1211,25 +1248,17 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 // Replace the text within the specified range with the given text,
 // without notifying the framework.
 - (void)replaceRangeLocal:(NSRange)range withText:(NSString*)text {
-  NSRange selectedRange = _selectedTextRange.range;
-
-  // Adjust the text selection:
-  // * reduce the length by the intersection length
-  // * adjust the location by newLength - oldLength + intersectionLength
-  NSRange intersectionRange = NSIntersectionRange(range, selectedRange);
-  if (range.location <= selectedRange.location) {
-    selectedRange.location += text.length - range.length;
-  }
-  if (intersectionRange.location != NSNotFound) {
-    selectedRange.location += intersectionRange.length;
-    selectedRange.length -= intersectionRange.length;
-  }
-
   [self.text replaceCharactersInRange:[self clampSelection:range forText:self.text]
                            withString:text];
-  [self setSelectedTextRangeLocal:[FlutterTextRange
-                                      rangeWithNSRange:[self clampSelection:selectedRange
-                                                                    forText:self.text]]];
+
+  // Adjust the selected range and the marked text range. There's no
+  // documentation but UITextField always sets markedTextRange to nil,
+  // and collapses the selection to the end of the new replacement text.
+  const NSRange newSelectionRange =
+      [self clampSelection:NSMakeRange(range.location + text.length, 0) forText:self.text];
+
+  [self setSelectedTextRangeLocal:[FlutterTextRange rangeWithNSRange:newSelectionRange]];
+  self.markedTextRange = nil;
 }
 
 - (void)replaceRange:(UITextRange*)range withText:(NSString*)text {
@@ -1251,7 +1280,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 
 - (BOOL)shouldChangeTextInRange:(UITextRange*)range replacementText:(NSString*)text {
   // `temporarilyDeletedComposedCharacter` should only be used during a single text change session.
-  // So it needs to be cleared at the start of each text editting session.
+  // So it needs to be cleared at the start of each text editing session.
   self.temporarilyDeletedComposedCharacter = nil;
 
   if (self.returnKeyType == UIReturnKeyDefault && [text isEqualToString:@"\n"]) {
@@ -1307,11 +1336,10 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   return YES;
 }
 
+// Either replaces the existing marked text or, if none is present, inserts it in
+// place of the current selection.
 - (void)setMarkedText:(NSString*)markedText selectedRange:(NSRange)markedSelectedRange {
   NSString* textBeforeChange = [self.text copy];
-  NSRange selectedRange = _selectedTextRange.range;
-  NSRange markedTextRange = ((FlutterTextRange*)self.markedTextRange).range;
-  NSRange actualReplacedRange;
 
   if (_scribbleInteractionStatus != FlutterScribbleInteractionStatusNone ||
       _scribbleFocusStatus != FlutterScribbleFocusStatusUnfocused) {
@@ -1322,26 +1350,24 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     markedText = @"";
   }
 
-  if (markedTextRange.length > 0) {
-    // Replace text in the marked range with the new text.
-    [self replaceRangeLocal:markedTextRange withText:markedText];
-    actualReplacedRange = markedTextRange;
-    markedTextRange.length = markedText.length;
-  } else {
-    // Replace text in the selected range with the new text.
-    actualReplacedRange = selectedRange;
-    [self replaceRangeLocal:selectedRange withText:markedText];
-    markedTextRange = NSMakeRange(selectedRange.location, markedText.length);
-  }
+  const FlutterTextRange* currentMarkedTextRange = (FlutterTextRange*)self.markedTextRange;
+  const NSRange& actualReplacedRange = currentMarkedTextRange && !currentMarkedTextRange.isEmpty
+                                           ? currentMarkedTextRange.range
+                                           : _selectedTextRange.range;
+  // No need to call replaceRangeLocal as this method always adjusts the
+  // selected/marked text ranges anyways.
+  [self.text replaceCharactersInRange:actualReplacedRange withString:markedText];
 
+  const NSRange newMarkedRange = NSMakeRange(actualReplacedRange.location, markedText.length);
   self.markedTextRange =
-      markedTextRange.length > 0 ? [FlutterTextRange rangeWithNSRange:markedTextRange] : nil;
+      newMarkedRange.length > 0 ? [FlutterTextRange rangeWithNSRange:newMarkedRange] : nil;
 
-  NSUInteger selectionLocation = markedSelectedRange.location + markedTextRange.location;
-  selectedRange = NSMakeRange(selectionLocation, markedSelectedRange.length);
-  [self setSelectedTextRangeLocal:[FlutterTextRange
-                                      rangeWithNSRange:[self clampSelection:selectedRange
-                                                                    forText:self.text]]];
+  [self setSelectedTextRangeLocal:
+            [FlutterTextRange
+                rangeWithNSRange:[self clampSelection:NSMakeRange(markedSelectedRange.location +
+                                                                      newMarkedRange.location,
+                                                                  markedSelectedRange.length)
+                                              forText:self.text]]];
   if (_enableDeltaModel) {
     NSRange nextReplaceRange = [self clampSelection:actualReplacedRange forText:textBeforeChange];
     [self updateEditingStateWithDelta:flutter::TextEditingDelta(
@@ -1598,6 +1624,8 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 // and to position the
 // candidates view for multi-stage input methods (e.g., Japanese) when using a
 // physical keyboard.
+// Returns the rect for the queried range, or a subrange through the end of line, if
+// the range encompasses multiple lines.
 - (CGRect)firstRectForRange:(UITextRange*)range {
   NSAssert([range.start isKindOfClass:[FlutterTextPosition class]],
            @"Expected a FlutterTextPosition for range.start (got %@).", [range.start class]);
@@ -1631,16 +1659,35 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 
   if (_scribbleInteractionStatus == FlutterScribbleInteractionStatusNone &&
       _scribbleFocusStatus == FlutterScribbleFocusStatusUnfocused) {
-    [self.textInputDelegate flutterTextInputView:self
-            showAutocorrectionPromptRectForStart:start
-                                             end:end
-                                      withClient:_textInputClient];
+    if (@available(iOS 17.0, *)) {
+      // Disable auto-correction highlight feature for iOS 17+.
+      // In iOS 17+, whenever a character is inserted or deleted, the system will always query
+      // the rect for every single character of the current word.
+      // GitHub Issue: https://github.com/flutter/flutter/issues/128406
+    } else {
+      // This tells the framework to show the highlight for incorrectly spelled word that is
+      // about to be auto-corrected.
+      // There is no other UITextInput API that informs about the auto-correction highlight.
+      // So we simply add the call here as a workaround.
+      [self.textInputDelegate flutterTextInputView:self
+              showAutocorrectionPromptRectForStart:start
+                                               end:end
+                                        withClient:_textInputClient];
+    }
   }
 
   NSUInteger first = start;
   if (end < start) {
     first = end;
   }
+
+  CGRect startSelectionRect = CGRectNull;
+  CGRect endSelectionRect = CGRectNull;
+  // Selection rects from different langauges may have different minY/maxY.
+  // So we need to iterate through each rects to update minY/maxY.
+  CGFloat minY = CGFLOAT_MAX;
+  CGFloat maxY = CGFLOAT_MIN;
+
   FlutterTextRange* textRange = [FlutterTextRange
       rangeWithNSRange:fml::RangeForCharactersInRange(self.text, NSMakeRange(0, self.text.length))];
   for (NSUInteger i = 0; i < [_selectionRects count]; i++) {
@@ -1651,11 +1698,38 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
         !isLastSelectionRect && _selectionRects[i + 1].position > first;
     if (startsOnOrBeforeStartOfRange &&
         (endOfTextIsAfterStartOfRange || nextSelectionRectIsAfterStartOfRange)) {
-      return _selectionRects[i].rect;
+      // TODO(hellohaunlin): Remove iOS 17 check. The logic should also work for older versions.
+      if (@available(iOS 17, *)) {
+        startSelectionRect = _selectionRects[i].rect;
+      } else {
+        return _selectionRects[i].rect;
+      }
+    }
+    if (!CGRectIsNull(startSelectionRect)) {
+      minY = fmin(minY, CGRectGetMinY(_selectionRects[i].rect));
+      maxY = fmax(maxY, CGRectGetMaxY(_selectionRects[i].rect));
+      BOOL endsOnOrAfterEndOfRange = _selectionRects[i].position >= end - 1;  // end is exclusive
+      BOOL nextSelectionRectIsOnNextLine =
+          !isLastSelectionRect &&
+          // Selection rects from different langauges in 2 lines may overlap with each other.
+          // A good approximation is to check if the center of next rect is below the bottom of
+          // current rect.
+          // TODO(hellohuanlin): Consider passing the line break info from framework.
+          CGRectGetMidY(_selectionRects[i + 1].rect) > CGRectGetMaxY(_selectionRects[i].rect);
+      if (endsOnOrAfterEndOfRange || isLastSelectionRect || nextSelectionRectIsOnNextLine) {
+        endSelectionRect = _selectionRects[i].rect;
+        break;
+      }
     }
   }
-
-  return CGRectZero;
+  if (CGRectIsNull(startSelectionRect) || CGRectIsNull(endSelectionRect)) {
+    return CGRectZero;
+  } else {
+    // fmin/fmax to support both LTR and RTL languages.
+    CGFloat minX = fmin(CGRectGetMinX(startSelectionRect), CGRectGetMinX(endSelectionRect));
+    CGFloat maxX = fmax(CGRectGetMaxX(startSelectionRect), CGRectGetMaxX(endSelectionRect));
+    return CGRectMake(minX, minY, maxX - minX, maxY - minY);
+  }
 }
 
 - (CGRect)caretRectForPosition:(UITextPosition*)position {
@@ -1965,13 +2039,24 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     @"composingExtent" : @(composingExtent),
   };
 
-  NSDictionary* deltas = @{
-    @"deltas" : @[ deltaToFramework ],
-  };
+  [_pendingDeltas addObject:deltaToFramework];
 
-  [self.textInputDelegate flutterTextInputView:self
-                           updateEditingClient:_textInputClient
-                                     withDelta:deltas];
+  if (_pendingDeltas.count == 1) {
+    __weak FlutterTextInputView* weakSelf = self;
+    dispatch_async(dispatch_get_main_queue(), ^{
+      __strong FlutterTextInputView* strongSelf = weakSelf;
+      if (strongSelf && strongSelf.pendingDeltas.count > 0) {
+        NSDictionary* deltas = @{
+          @"deltas" : strongSelf.pendingDeltas,
+        };
+
+        [strongSelf.textInputDelegate flutterTextInputView:strongSelf
+                                       updateEditingClient:strongSelf->_textInputClient
+                                                 withDelta:deltas];
+        [strongSelf.pendingDeltas removeAllObjects];
+      }
+    });
+  }
 }
 
 - (BOOL)hasText {
@@ -2191,6 +2276,13 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 @property(nonatomic, retain) FlutterTextInputView* activeView;
 @property(nonatomic, retain) FlutterTextInputViewAccessibilityHider* inputHider;
 @property(nonatomic, readonly, weak) id<FlutterViewResponder> viewResponder;
+
+@property(nonatomic, strong) UIView* keyboardViewContainer;
+@property(nonatomic, strong) UIView* keyboardView;
+@property(nonatomic, strong) UIView* cachedFirstResponder;
+@property(nonatomic, assign) CGRect keyboardRect;
+@property(nonatomic, assign) CGFloat previousPointerYPosition;
+@property(nonatomic, assign) CGFloat pointerYVelocity;
 @end
 
 @implementation FlutterTextInputPlugin {
@@ -2199,16 +2291,27 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 
 - (instancetype)initWithDelegate:(id<FlutterTextInputDelegate>)textInputDelegate {
   self = [super init];
-
   if (self) {
     // `_textInputDelegate` is a weak reference because it should retain FlutterTextInputPlugin.
     _textInputDelegate = textInputDelegate;
     _autofillContext = [[NSMutableDictionary alloc] init];
     _inputHider = [[FlutterTextInputViewAccessibilityHider alloc] init];
     _scribbleElements = [[NSMutableDictionary alloc] init];
+    _keyboardViewContainer = [[UIView alloc] init];
+
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(handleKeyboardWillShow:)
+                                                 name:UIKeyboardWillShowNotification
+                                               object:nil];
   }
 
   return self;
+}
+
+- (void)handleKeyboardWillShow:(NSNotification*)notification {
+  NSDictionary* keyboardInfo = [notification userInfo];
+  NSValue* keyboardFrameEnd = [keyboardInfo valueForKey:UIKeyboardFrameEndUserInfoKey];
+  _keyboardRect = [keyboardFrameEnd CGRectValue];
 }
 
 - (void)dealloc {
@@ -2272,24 +2375,150 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   } else if ([method isEqualToString:kUpdateConfigMethod]) {
     [self updateConfig:args];
     result(nil);
+  } else if ([method isEqualToString:kOnInteractiveKeyboardPointerMoveMethod]) {
+    CGFloat pointerY = (CGFloat)[args[@"pointerY"] doubleValue];
+    [self handlePointerMove:pointerY];
+    result(nil);
+  } else if ([method isEqualToString:kOnInteractiveKeyboardPointerUpMethod]) {
+    CGFloat pointerY = (CGFloat)[args[@"pointerY"] doubleValue];
+    [self handlePointerUp:pointerY];
+    result(nil);
   } else {
     result(FlutterMethodNotImplemented);
   }
 }
 
+- (void)handlePointerUp:(CGFloat)pointerY {
+  if (_keyboardView.superview != nil) {
+    // Done to avoid the issue of a pointer up done without a screenshot
+    // View must be loaded at this point.
+    UIScreen* screen = _viewController.flutterScreenIfViewLoaded;
+    CGFloat screenHeight = screen.bounds.size.height;
+    CGFloat keyboardHeight = _keyboardRect.size.height;
+    // Negative velocity indicates a downward movement
+    BOOL shouldDismissKeyboardBasedOnVelocity = _pointerYVelocity < 0;
+    [UIView animateWithDuration:kKeyboardAnimationTimeToCompleteion
+        animations:^{
+          double keyboardDestination =
+              shouldDismissKeyboardBasedOnVelocity ? screenHeight : screenHeight - keyboardHeight;
+          _keyboardViewContainer.frame = CGRectMake(
+              0, keyboardDestination, _viewController.flutterScreenIfViewLoaded.bounds.size.width,
+              _keyboardViewContainer.frame.size.height);
+        }
+        completion:^(BOOL finished) {
+          if (shouldDismissKeyboardBasedOnVelocity) {
+            [self.textInputDelegate flutterTextInputView:self.activeView
+                didResignFirstResponderWithTextInputClient:self.activeView.textInputClient];
+            [self dismissKeyboardScreenshot];
+          } else {
+            [self showKeyboardAndRemoveScreenshot];
+          }
+        }];
+  }
+}
+
+- (void)dismissKeyboardScreenshot {
+  for (UIView* subView in _keyboardViewContainer.subviews) {
+    [subView removeFromSuperview];
+  }
+}
+
+- (void)showKeyboardAndRemoveScreenshot {
+  [UIView setAnimationsEnabled:NO];
+  [_cachedFirstResponder becomeFirstResponder];
+  // UIKit does not immediately access the areAnimationsEnabled Boolean so a delay is needed before
+  // returned
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, kKeyboardAnimationDelaySeconds * NSEC_PER_SEC),
+                 dispatch_get_main_queue(), ^{
+                   [UIView setAnimationsEnabled:YES];
+                   [self dismissKeyboardScreenshot];
+                 });
+}
+
+- (void)handlePointerMove:(CGFloat)pointerY {
+  // View must be loaded at this point.
+  UIScreen* screen = _viewController.flutterScreenIfViewLoaded;
+  CGFloat screenHeight = screen.bounds.size.height;
+  CGFloat keyboardHeight = _keyboardRect.size.height;
+  if (screenHeight - keyboardHeight <= pointerY) {
+    // If the pointer is within the bounds of the keyboard.
+    if (_keyboardView.superview == nil) {
+      // If no screenshot has been taken.
+      [self takeKeyboardScreenshotAndDisplay];
+      [self hideKeyboardWithoutAnimationAndAvoidCursorDismissUpdate];
+    } else {
+      [self setKeyboardContainerHeight:pointerY];
+      _pointerYVelocity = _previousPointerYPosition - pointerY;
+    }
+  } else {
+    if (_keyboardView.superview != nil) {
+      // Keeps keyboard at proper height.
+      _keyboardViewContainer.frame = _keyboardRect;
+      _pointerYVelocity = _previousPointerYPosition - pointerY;
+    }
+  }
+  _previousPointerYPosition = pointerY;
+}
+
+- (void)setKeyboardContainerHeight:(CGFloat)pointerY {
+  CGRect frameRect = _keyboardRect;
+  frameRect.origin.y = pointerY;
+  _keyboardViewContainer.frame = frameRect;
+}
+
+- (void)hideKeyboardWithoutAnimationAndAvoidCursorDismissUpdate {
+  [UIView setAnimationsEnabled:NO];
+  _cachedFirstResponder = UIApplication.sharedApplication.keyWindow.flutterFirstResponder;
+  _activeView.preventCursorDismissWhenResignFirstResponder = YES;
+  [_cachedFirstResponder resignFirstResponder];
+  _activeView.preventCursorDismissWhenResignFirstResponder = NO;
+  [UIView setAnimationsEnabled:YES];
+}
+
+- (void)takeKeyboardScreenshotAndDisplay {
+  // View must be loaded at this point
+  UIScreen* screen = _viewController.flutterScreenIfViewLoaded;
+  UIView* keyboardSnap = [screen snapshotViewAfterScreenUpdates:YES];
+  keyboardSnap = [keyboardSnap resizableSnapshotViewFromRect:_keyboardRect
+                                          afterScreenUpdates:YES
+                                               withCapInsets:UIEdgeInsetsZero];
+  _keyboardView = keyboardSnap;
+  [_keyboardViewContainer addSubview:_keyboardView];
+  if (_keyboardViewContainer.superview == nil) {
+    [UIApplication.sharedApplication.delegate.window.rootViewController.view
+        addSubview:_keyboardViewContainer];
+  }
+  _keyboardViewContainer.layer.zPosition = NSIntegerMax;
+  _keyboardViewContainer.frame = _keyboardRect;
+}
+
 - (void)setEditableSizeAndTransform:(NSDictionary*)dictionary {
-  [_activeView setEditableTransform:dictionary[@"transform"]];
+  NSArray* transform = dictionary[@"transform"];
+  [_activeView setEditableTransform:transform];
+  const int leftIndex = 12;
+  const int topIndex = 13;
   if ([_activeView isScribbleAvailable]) {
     // This is necessary to set up where the scribble interactable element will be.
-    int leftIndex = 12;
-    int topIndex = 13;
     _inputHider.frame =
-        CGRectMake([dictionary[@"transform"][leftIndex] intValue],
-                   [dictionary[@"transform"][topIndex] intValue], [dictionary[@"width"] intValue],
-                   [dictionary[@"height"] intValue]);
+        CGRectMake([transform[leftIndex] intValue], [transform[topIndex] intValue],
+                   [dictionary[@"width"] intValue], [dictionary[@"height"] intValue]);
     _activeView.frame =
         CGRectMake(0, 0, [dictionary[@"width"] intValue], [dictionary[@"height"] intValue]);
     _activeView.tintColor = [UIColor clearColor];
+  } else {
+    // TODO(hellohuanlin): Also need to handle iOS 16 case, where the auto-correction highlight does
+    // not match the size of text.
+    // See https://github.com/flutter/flutter/issues/131695
+    if (@available(iOS 17, *)) {
+      // Move auto-correction highlight to overlap with the actual text.
+      // This is to fix an issue where the system auto-correction highlight is displayed at
+      // the top left corner of the screen on iOS 17+.
+      // This problem also happens on iOS 16, but the size of highlight does not match the text.
+      // See https://github.com/flutter/flutter/issues/131695
+      // TODO(hellohuanlin): Investigate if we can use non-zero size.
+      _inputHider.frame =
+          CGRectMake([transform[leftIndex] intValue], [transform[topIndex] intValue], 0, 0);
+    }
   }
 }
 
@@ -2317,6 +2546,10 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
                                                          ? NSWritingDirectionLeftToRight
                                                          : NSWritingDirectionRightToLeft]];
   }
+
+  // TODO(hellohuanlin): Investigate why notifying the text input system about text changes (via
+  // textWillChange and textDidChange APIs) causes a bug where we cannot enter text with IME
+  // keyboards. Issue: https://github.com/flutter/flutter/issues/133908
   _activeView.selectionRects = rectsAsRect;
 }
 
@@ -2712,7 +2945,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 
 #pragma mark - Methods related to Scribble support
 
-- (void)setupIndirectScribbleInteraction:(id<FlutterViewResponder>)viewResponder {
+- (void)setUpIndirectScribbleInteraction:(id<FlutterViewResponder>)viewResponder {
   if (_viewResponder != viewResponder) {
     if (@available(iOS 14.0, *)) {
       UIView* parentView = viewResponder.view;
@@ -2739,5 +2972,23 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
  */
 - (BOOL)handlePress:(nonnull FlutterUIPressProxy*)press API_AVAILABLE(ios(13.4)) {
   return NO;
+}
+@end
+
+/**
+ * Recursively searches the UIView's subviews to locate the First Responder
+ */
+@implementation UIView (FindFirstResponder)
+- (id)flutterFirstResponder {
+  if (self.isFirstResponder) {
+    return self;
+  }
+  for (UIView* subView in self.subviews) {
+    UIView* firstResponder = subView.flutterFirstResponder;
+    if (firstResponder) {
+      return firstResponder;
+    }
+  }
+  return nil;
 }
 @end

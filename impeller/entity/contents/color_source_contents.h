@@ -90,12 +90,10 @@ class ColorSourceContents : public Contents {
   ///
   Scalar GetOpacityFactor() const;
 
-  // |Contents|
-  std::optional<Rect> GetCoverage(const Entity& entity) const override;
+  virtual bool IsSolidColor() const;
 
   // |Contents|
-  bool ShouldRender(const Entity& entity,
-                    const std::optional<Rect>& stencil_coverage) const override;
+  std::optional<Rect> GetCoverage(const Entity& entity) const override;
 
   // |Contents|
   bool CanInheritOpacity(const Entity& entity) const override;
@@ -109,7 +107,9 @@ class ColorSourceContents : public Contents {
   Scalar opacity_ = 1.0;
   Scalar inherited_opacity_ = 1.0;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ColorSourceContents);
+  ColorSourceContents(const ColorSourceContents&) = delete;
+
+  ColorSourceContents& operator=(const ColorSourceContents&) = delete;
 };
 
 }  // namespace impeller

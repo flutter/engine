@@ -46,7 +46,8 @@ class DiffContext {
   explicit DiffContext(SkISize frame_size,
                        PaintRegionMap& this_frame_paint_region_map,
                        const PaintRegionMap& last_frame_paint_region_map,
-                       bool has_raster_cache);
+                       bool has_raster_cache,
+                       bool impeller_enabled);
 
   // Starts a new subtree.
   void BeginSubtree();
@@ -122,8 +123,12 @@ class DiffContext {
   // The idea of readback region is that if any part of the readback region
   // needs to be repainted, then the whole readback region must be repainted;
   //
-  // Readback rect is in screen coordinates.
-  void AddReadbackRegion(const SkIRect& rect);
+  // paint_rect - rectangle where the filter paints contents (in screen
+  //              coordinates)
+  // readback_rect - rectangle where the filter samples from (in screen
+  //                 coordinates)
+  void AddReadbackRegion(const SkIRect& paint_rect,
+                         const SkIRect& readback_rect);
 
   // Returns the paint region for current subtree; Each rect in paint region is
   // in screen coordinates; Once a layer accumulates the paint regions of its
@@ -160,6 +165,8 @@ class DiffContext {
   // all transformations to physical pixels if the layer may be raster
   // cached.
   bool has_raster_cache() const { return has_raster_cache_; }
+
+  bool impeller_enabled() const { return impeller_enabled_; }
 
   class Statistics {
    public:
@@ -245,6 +252,7 @@ class DiffContext {
   PaintRegionMap& this_frame_paint_region_map_;
   const PaintRegionMap& last_frame_paint_region_map_;
   bool has_raster_cache_;
+  bool impeller_enabled_;
 
   void AddDamage(const SkRect& rect);
 
@@ -257,8 +265,11 @@ class DiffContext {
     // determine if subtree has any readback
     size_t position;
 
-    // readback area, in screen coordinates
-    SkIRect rect;
+    // Paint region of the filter performing readback, in screen coordinates.
+    SkIRect paint_rect;
+
+    // Readback area of the filter, in screen coordinates.
+    SkIRect readback_rect;
   };
 
   std::vector<Readback> readbacks_;

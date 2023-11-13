@@ -273,9 +273,16 @@ void platformMessagePortResponseTest() async {
 @pragma('vm:entry-point')
 void platformMessageResponseTest() {
   _callPlatformMessageResponseDart((ByteData? result) {
-    if (result is UnmodifiableByteDataView &&
-        result.lengthInBytes == 100) {
-      _finishCallResponse(true);
+    if (result is ByteData && result.lengthInBytes == 100) {
+      int value = result.getInt8(0);
+      bool didThrowOnModify = false;
+      try {
+        result.setInt8(0, value);
+      } catch (e) {
+        didThrowOnModify = true;
+      }
+      // This should be a read only buffer.
+      _finishCallResponse(didThrowOnModify);
     } else {
       _finishCallResponse(false);
     }
@@ -310,7 +317,7 @@ Future<void> encodeImageProducesExternalUint8List() async {
   canvas.drawCircle(c, 25.0, paint);
   final Picture picture = pictureRecorder.endRecording();
   final Image image = await picture.toImage(100, 100);
-  _encodeImage(image, ImageByteFormat.png.index, (Uint8List result) {
+  _encodeImage(image, ImageByteFormat.png.index, (Uint8List result, String? error) {
     // The buffer should be non-null and writable.
     result[0] = 0;
     // The buffer should be external typed data.
@@ -319,9 +326,65 @@ Future<void> encodeImageProducesExternalUint8List() async {
 }
 
 @pragma('vm:external-name', 'EncodeImage')
-external void _encodeImage(Image i, int format, void Function(Uint8List result));
+external void _encodeImage(Image i, int format, void Function(Uint8List result, String? error));
 @pragma('vm:external-name', 'ValidateExternal')
 external void _validateExternal(Uint8List result);
+@pragma('vm:external-name', 'ValidateError')
+external void _validateError(String? error);
+@pragma('vm:external-name', 'TurnOffGPU')
+external void _turnOffGPU(bool value);
+@pragma('vm:external-name', 'FlushGpuAwaitingTasks')
+external void _flushGpuAwaitingTasks();
+@pragma('vm:external-name', 'ValidateNotNull')
+external void _validateNotNull(Object? object);
+
+@pragma('vm:entry-point')
+Future<void> toByteDataWithoutGPU() async {
+  final PictureRecorder pictureRecorder = PictureRecorder();
+  final Canvas canvas = Canvas(pictureRecorder);
+  final Paint paint = Paint()
+    ..color = Color.fromRGBO(255, 255, 255, 1.0)
+    ..style = PaintingStyle.fill;
+  final Offset c = Offset(50.0, 50.0);
+  canvas.drawCircle(c, 25.0, paint);
+  final Picture picture = pictureRecorder.endRecording();
+  final Image image = await picture.toImage(100, 100);
+  _turnOffGPU(true);
+  Timer flusher = Timer.periodic(Duration(milliseconds: 1), (timer) {
+    _flushGpuAwaitingTasks();
+  });
+  try {
+    ByteData? byteData = await image.toByteData();
+    _validateError(null);
+  } catch (error) {
+    _validateError(error.toString());
+  } finally {
+    flusher.cancel();
+  }
+}
+
+@pragma('vm:entry-point')
+Future<void> toByteDataRetries() async {
+  final PictureRecorder pictureRecorder = PictureRecorder();
+  final Canvas canvas = Canvas(pictureRecorder);
+  final Paint paint = Paint()
+    ..color = Color.fromRGBO(255, 255, 255, 1.0)
+    ..style = PaintingStyle.fill;
+  final Offset c = Offset(50.0, 50.0);
+  canvas.drawCircle(c, 25.0, paint);
+  final Picture picture = pictureRecorder.endRecording();
+  final Image image = await picture.toImage(100, 100);
+  _turnOffGPU(true);
+  Future<void>.delayed(Duration(milliseconds: 10), () {
+    _turnOffGPU(false);
+  });
+  try {
+    ByteData? byteData = await image.toByteData();
+    _validateNotNull(byteData);
+  } catch (error) {
+    _validateNotNull(null);
+  }
+}
 
 @pragma('vm:entry-point')
 Future<void> pumpImage() async {
@@ -539,33 +602,7 @@ void hooksTests() async {
   });
 
   await test('PlatformDispatcher.view getter returns view with provided ID', () {
-    const int viewId = 123456789;
-    _callHook(
-      '_updateWindowMetrics',
-      21,
-      viewId, // window Id
-      1.0, // devicePixelRatio
-      800.0, // width
-      600.0, // height
-      50.0, // paddingTop
-      0.0, // paddingRight
-      40.0, // paddingBottom
-      0.0, // paddingLeft
-      0.0, // insetTop
-      0.0, // insetRight
-      0.0, // insetBottom
-      0.0, // insetLeft
-      0.0, // systemGestureInsetTop
-      0.0, // systemGestureInsetRight
-      0.0, // systemGestureInsetBottom
-      0.0, // systemGestureInsetLeft
-      22.0, // physicalTouchSlop
-      <double>[],  // display features bounds
-      <int>[],     // display features types
-      <int>[],     // display features states
-      0, // Display ID
-    );
-
+    const int viewId = 0;
     expectEquals(PlatformDispatcher.instance.view(id: viewId)?.viewId, viewId);
   });
 

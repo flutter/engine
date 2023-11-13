@@ -9,6 +9,7 @@
 
 #include "flutter/shell/platform/common/geometry.h"
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/windows/windows_lifecycle_manager.h"
 #include "flutter/third_party/accessibility/ax/platform/ax_fragment_root_delegate_win.h"
 #include "flutter/third_party/accessibility/gfx/native_widget_types.h"
 
@@ -135,8 +136,8 @@ class WindowBindingHandlerDelegate {
   // Returns the root view accessibility node, or nullptr if none.
   virtual gfx::NativeViewAccessible GetNativeViewAccessible() = 0;
 
-  // Update the status of the high contrast feature
-  virtual void UpdateHighContrastEnabled(bool enabled) = 0;
+  // Update the status of the high contrast feature.
+  virtual void OnHighContrastChanged() = 0;
 
   // Obtain a pointer to the fragment root delegate.
   // This is required by UIA in order to obtain the fragment root that
@@ -144,6 +145,10 @@ class WindowBindingHandlerDelegate {
   // MSAA, UIA elements do not explicitly store or enumerate their
   // children and parents, so a method such as this is required.
   virtual ui::AXFragmentRootDelegateWin* GetAxFragmentRootDelegate() = 0;
+
+  // Called when a window receives an event that may alter application lifecycle
+  // state.
+  virtual void OnWindowStateEvent(HWND hwnd, WindowStateEvent event) = 0;
 };
 
 }  // namespace flutter

@@ -56,7 +56,6 @@ namespace flutter {
 
 #define FOR_EACH_DISPLAY_LIST_OP(V) \
   V(SetAntiAlias)                   \
-  V(SetDither)                      \
   V(SetInvertColors)                \
                                     \
   V(SetStrokeCap)                   \
@@ -136,6 +135,7 @@ namespace flutter {
                                     \
   V(DrawDisplayList)                \
   V(DrawTextBlob)                   \
+  V(DrawTextFrame)                  \
                                     \
   V(DrawShadow)                     \
   V(DrawShadowTransparentOccluder)
@@ -159,7 +159,8 @@ class SaveLayerOptions {
 
   SaveLayerOptions() : flags_(0) {}
   SaveLayerOptions(const SaveLayerOptions& options) : flags_(options.flags_) {}
-  SaveLayerOptions(const SaveLayerOptions* options) : flags_(options->flags_) {}
+  explicit SaveLayerOptions(const SaveLayerOptions* options)
+      : flags_(options->flags_) {}
 
   SaveLayerOptions without_optimizations() const {
     SaveLayerOptions options;
@@ -265,6 +266,19 @@ class DisplayList : public SkRefCnt {
   bool can_apply_group_opacity() const { return can_apply_group_opacity_; }
   bool isUIThreadSafe() const { return is_ui_thread_safe_; }
 
+  /// @brief     Indicates if there are any rendering operations in this
+  ///            DisplayList that will modify a surface of transparent black
+  ///            pixels.
+  ///
+  /// This condition can be used to determine whether to create a cleared
+  /// surface, render a DisplayList into it, and then composite the
+  /// result into a scene. It is not uncommon for code in the engine to
+  /// come across such degenerate DisplayList objects when slicing up a
+  /// frame between platform views.
+  bool modifies_transparent_black() const {
+    return modifies_transparent_black_;
+  }
+
  private:
   DisplayList(DisplayListStorage&& ptr,
               size_t byte_count,
@@ -274,6 +288,7 @@ class DisplayList : public SkRefCnt {
               const SkRect& bounds,
               bool can_apply_group_opacity,
               bool is_ui_thread_safe,
+              bool modifies_transparent_black,
               sk_sp<const DlRTree> rtree);
 
   static uint32_t next_unique_id();
@@ -292,6 +307,8 @@ class DisplayList : public SkRefCnt {
 
   const bool can_apply_group_opacity_;
   const bool is_ui_thread_safe_;
+  const bool modifies_transparent_black_;
+
   const sk_sp<const DlRTree> rtree_;
 
   void Dispatch(DlOpReceiver& ctx,

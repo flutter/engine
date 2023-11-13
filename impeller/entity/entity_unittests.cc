@@ -2,22 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <algorithm>
 #include <cstring>
 #include <memory>
 #include <optional>
-#include <unordered_map>
+#include <utility>
 #include <vector>
 
-#include "flutter/testing/testing.h"
 #include "fml/logging.h"
-#include "fml/time/time_point.h"
 #include "gtest/gtest.h"
+#include "impeller/core/texture_descriptor.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/conical_gradient_contents.h"
 #include "impeller/entity/contents/contents.h"
-#include "impeller/entity/contents/filters/blend_filter_contents.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
@@ -26,11 +23,9 @@
 #include "impeller/entity/contents/runtime_effect_contents.h"
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/contents/solid_rrect_blur_contents.h"
-#include "impeller/entity/contents/sweep_gradient_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
-#include "impeller/entity/contents/vertices_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/entity_pass.h"
 #include "impeller/entity/entity_pass_delegate.h"
@@ -42,15 +37,14 @@
 #include "impeller/geometry/geometry_asserts.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/sigma.h"
+#include "impeller/geometry/vector.h"
 #include "impeller/playground/playground.h"
 #include "impeller/playground/widgets.h"
+#include "impeller/renderer/command.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
-#include "impeller/runtime_stage/runtime_stage.h"
-#include "impeller/tessellator/tessellator.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
-#include "impeller/typographer/backends/skia/text_render_context_skia.h"
-#include "include/core/SkBlendMode.h"
+#include "impeller/typographer/backends/skia/typographer_context_skia.h"
 #include "third_party/imgui/imgui.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 
@@ -70,14 +64,10 @@ TEST_P(EntityTest, CanCreateEntity) {
 
 class TestPassDelegate final : public EntityPassDelegate {
  public:
-  explicit TestPassDelegate(std::optional<Rect> coverage, bool collapse = false)
-      : coverage_(coverage), collapse_(collapse) {}
+  explicit TestPassDelegate(bool collapse = false) : collapse_(collapse) {}
 
   // |EntityPassDelegate|
   ~TestPassDelegate() override = default;
-
-  // |EntityPassDelegate|
-  std::optional<Rect> GetCoverageRect() override { return coverage_; }
 
   // |EntityPassDelgate|
   bool CanElide() override { return false; }
@@ -94,6 +84,13 @@ class TestPassDelegate final : public EntityPassDelegate {
     return nullptr;
   }
 
+  // |EntityPassDelegate|
+  std::shared_ptr<FilterContents> WithImageFilter(
+      const FilterInput::Variant& input,
+      const Matrix& effect_transform) const override {
+    return nullptr;
+  }
+
  private:
   const std::optional<Rect> coverage_;
   const bool collapse_;
@@ -107,12 +104,12 @@ auto CreatePassWithRectPath(Rect rect,
   entity.SetContents(SolidColorContents::Make(
       PathBuilder{}.AddRect(rect).TakePath(), Color::Red()));
   subpass->AddEntity(entity);
-  subpass->SetDelegate(
-      std::make_unique<TestPassDelegate>(bounds_hint, collapse));
+  subpass->SetDelegate(std::make_unique<TestPassDelegate>(collapse));
+  subpass->SetBoundsLimit(bounds_hint);
   return subpass;
 }
 
-TEST_P(EntityTest, EntityPassCoverageRespectsDelegateBoundsHint) {
+TEST_P(EntityTest, EntityPassRespectsSubpassBoundsLimit) {
   EntityPass pass;
 
   auto subpass0 = CreatePassWithRectPath(Rect::MakeLTRB(0, 0, 100, 100),
@@ -217,7 +214,7 @@ TEST_P(EntityTest, FilterCoverageRespectsCropRect) {
 
 TEST_P(EntityTest, CanDrawRect) {
   auto contents = std::make_shared<SolidColorContents>();
-  contents->SetGeometry(Geometry::MakeRect({100, 100, 100, 100}));
+  contents->SetGeometry(Geometry::MakeRect(Rect::MakeXYWH(100, 100, 100, 100)));
   contents->SetColor(Color::Red());
 
   Entity entity;
@@ -231,7 +228,7 @@ TEST_P(EntityTest, CanDrawRRect) {
   auto contents = std::make_shared<SolidColorContents>();
   auto path = PathBuilder{}
                   .SetConvexity(Convexity::kConvex)
-                  .AddRoundedRect({100, 100, 100, 100}, 10.0)
+                  .AddRoundedRect(Rect::MakeXYWH(100, 100, 100, 100), 10.0)
                   .TakePath();
   contents->SetGeometry(Geometry::MakeFillPath(path));
   contents->SetColor(Color::Red());
@@ -244,11 +241,11 @@ TEST_P(EntityTest, CanDrawRRect) {
 }
 
 TEST_P(EntityTest, GeometryBoundsAreTransformed) {
-  auto geometry = Geometry::MakeRect({100, 100, 100, 100});
+  auto geometry = Geometry::MakeRect(Rect::MakeXYWH(100, 100, 100, 100));
   auto transform = Matrix::MakeScale({2.0, 2.0, 2.0});
 
   ASSERT_RECT_NEAR(geometry->GetCoverage(transform).value(),
-                   Rect(200, 200, 200, 200));
+                   Rect::MakeXYWH(200, 200, 200, 200));
 }
 
 TEST_P(EntityTest, ThreeStrokesInOnePath) {
@@ -857,7 +854,6 @@ TEST_P(EntityTest, BlendingModeOptions) {
     auto draw_rect = [&context, &pass, &world_matrix](
                          Rect rect, Color color, BlendMode blend_mode) -> bool {
       using VS = SolidFillPipeline::VertexShader;
-      using FS = SolidFillPipeline::FragmentShader;
 
       VertexBufferBuilder<VS::PerVertexData> vtx_builder;
       {
@@ -873,7 +869,7 @@ TEST_P(EntityTest, BlendingModeOptions) {
       }
 
       Command cmd;
-      cmd.label = "Blended Rectangle";
+      DEBUG_COMMAND_INFO(cmd, "Blended Rectangle");
       auto options = OptionsFromPass(pass);
       options.blend_mode = blend_mode;
       options.primitive_type = PrimitiveType::kTriangle;
@@ -884,13 +880,9 @@ TEST_P(EntityTest, BlendingModeOptions) {
       VS::FrameInfo frame_info;
       frame_info.mvp =
           Matrix::MakeOrthographic(pass.GetRenderTargetSize()) * world_matrix;
+      frame_info.color = color.Premultiply();
       VS::BindFrameInfo(cmd,
                         pass.GetTransientsBuffer().EmplaceUniform(frame_info));
-
-      FS::FragInfo frag_info;
-      frag_info.color = color.Premultiply();
-      FS::BindFragInfo(cmd,
-                       pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
       return pass.AddCommand(std::move(cmd));
     };
@@ -913,9 +905,10 @@ TEST_P(EntityTest, BlendingModeOptions) {
         Point(470, 190), Point(270, 390), 20, Color::White(), Color::White());
 
     bool result = true;
-    result = result && draw_rect(Rect(0, 0, pass.GetRenderTargetSize().width,
+    result = result &&
+             draw_rect(Rect::MakeXYWH(0, 0, pass.GetRenderTargetSize().width,
                                       pass.GetRenderTargetSize().height),
-                                 Color(), BlendMode::kClear);
+                       Color(), BlendMode::kClear);
     result = result && draw_rect(Rect::MakeLTRB(a.x, a.y, b.x, b.y), color1,
                                  BlendMode::kSourceOver);
     result = result && draw_rect(Rect::MakeLTRB(c.x, c.y, d.x, d.y), color2,
@@ -1199,12 +1192,11 @@ TEST_P(EntityTest, MorphologyFilter) {
     input = texture;
     input_size = input_rect.size;
 
-    auto effect_transform = Matrix::MakeScale(
-        Vector2{effect_transform_scale, effect_transform_scale});
-
     auto contents = FilterContents::MakeMorphology(
         FilterInput::Make(input), Radius{radius[0]}, Radius{radius[1]},
-        morphology_types[selected_morphology_type], effect_transform);
+        morphology_types[selected_morphology_type]);
+    contents->SetEffectTransform(Matrix::MakeScale(
+        Vector2{effect_transform_scale, effect_transform_scale}));
 
     auto ctm = Matrix::MakeScale(GetContentScale()) *
                Matrix::MakeTranslation(Vector3(offset[0], offset[1])) *
@@ -1630,12 +1622,12 @@ TEST_P(EntityTest, ClipContentsShouldRenderIsCorrect) {
   }
 }
 
-TEST_P(EntityTest, ClipContentsGetStencilCoverageIsCorrect) {
+TEST_P(EntityTest, ClipContentsGetClipCoverageIsCorrect) {
   // Intersection: No stencil coverage, no geometry.
   {
     auto clip = std::make_shared<ClipContents>();
     clip->SetClipOperation(Entity::ClipOperation::kIntersect);
-    auto result = clip->GetStencilCoverage(Entity{}, Rect{});
+    auto result = clip->GetClipCoverage(Entity{}, Rect{});
 
     ASSERT_FALSE(result.coverage.has_value());
   }
@@ -1646,7 +1638,7 @@ TEST_P(EntityTest, ClipContentsGetStencilCoverageIsCorrect) {
     clip->SetClipOperation(Entity::ClipOperation::kIntersect);
     clip->SetGeometry(Geometry::MakeFillPath(
         PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 100, 100)).TakePath()));
-    auto result = clip->GetStencilCoverage(Entity{}, Rect{});
+    auto result = clip->GetClipCoverage(Entity{}, Rect{});
 
     ASSERT_FALSE(result.coverage.has_value());
   }
@@ -1656,7 +1648,7 @@ TEST_P(EntityTest, ClipContentsGetStencilCoverageIsCorrect) {
     auto clip = std::make_shared<ClipContents>();
     clip->SetClipOperation(Entity::ClipOperation::kIntersect);
     auto result =
-        clip->GetStencilCoverage(Entity{}, Rect::MakeLTRB(0, 0, 100, 100));
+        clip->GetClipCoverage(Entity{}, Rect::MakeLTRB(0, 0, 100, 100));
 
     ASSERT_FALSE(result.coverage.has_value());
   }
@@ -1668,11 +1660,11 @@ TEST_P(EntityTest, ClipContentsGetStencilCoverageIsCorrect) {
     clip->SetGeometry(Geometry::MakeFillPath(
         PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 50, 50)).TakePath()));
     auto result =
-        clip->GetStencilCoverage(Entity{}, Rect::MakeLTRB(0, 0, 100, 100));
+        clip->GetClipCoverage(Entity{}, Rect::MakeLTRB(0, 0, 100, 100));
 
     ASSERT_TRUE(result.coverage.has_value());
     ASSERT_RECT_NEAR(result.coverage.value(), Rect::MakeLTRB(0, 0, 50, 50));
-    ASSERT_EQ(result.type, Contents::StencilCoverage::Type::kAppend);
+    ASSERT_EQ(result.type, Contents::ClipCoverage::Type::kAppend);
   }
 
   // Difference: With stencil coverage, with geometry.
@@ -1682,11 +1674,11 @@ TEST_P(EntityTest, ClipContentsGetStencilCoverageIsCorrect) {
     clip->SetGeometry(Geometry::MakeFillPath(
         PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 50, 50)).TakePath()));
     auto result =
-        clip->GetStencilCoverage(Entity{}, Rect::MakeLTRB(0, 0, 100, 100));
+        clip->GetClipCoverage(Entity{}, Rect::MakeLTRB(0, 0, 100, 100));
 
     ASSERT_TRUE(result.coverage.has_value());
     ASSERT_RECT_NEAR(result.coverage.value(), Rect::MakeLTRB(0, 0, 100, 100));
-    ASSERT_EQ(result.type, Contents::StencilCoverage::Type::kAppend);
+    ASSERT_EQ(result.type, Contents::ClipCoverage::Type::kAppend);
   }
 }
 
@@ -2182,9 +2174,10 @@ TEST_P(EntityTest, InheritOpacityTest) {
   SkFont font;
   font.setSize(30);
   auto blob = SkTextBlob::MakeFromString("A", font);
-  auto frame = TextFrameFromTextBlob(blob);
-  auto lazy_glyph_atlas = std::make_shared<LazyGlyphAtlas>();
-  lazy_glyph_atlas->AddTextFrame(frame, 1.0f);
+  auto frame = MakeTextFrameFromTextBlobSkia(blob);
+  auto lazy_glyph_atlas =
+      std::make_shared<LazyGlyphAtlas>(TypographerContextSkia::Make());
+  lazy_glyph_atlas->AddTextFrame(*frame, 1.0f);
 
   auto text_contents = std::make_shared<TextContents>();
   text_contents->SetTextFrame(frame);
@@ -2361,42 +2354,6 @@ TEST_P(EntityTest, TiledTextureContentsIsOpaque) {
   ASSERT_FALSE(contents.IsOpaque());
 }
 
-TEST_P(EntityTest, TessellateConvex) {
-  {
-    // Sanity check simple rectangle.
-    auto [pts, indices] =
-        TessellateConvex(PathBuilder{}
-                             .AddRect(Rect::MakeLTRB(0, 0, 10, 10))
-                             .TakePath()
-                             .CreatePolyline(1.0));
-
-    std::vector<Point> expected = {
-        {0, 0}, {10, 0}, {10, 10}, {0, 10},  //
-    };
-    std::vector<uint16_t> expected_indices = {0, 1, 2, 0, 2, 3};
-    ASSERT_EQ(pts, expected);
-    ASSERT_EQ(indices, expected_indices);
-  }
-
-  {
-    auto [pts, indices] =
-        TessellateConvex(PathBuilder{}
-                             .AddRect(Rect::MakeLTRB(0, 0, 10, 10))
-                             .AddRect(Rect::MakeLTRB(20, 20, 30, 30))
-                             .TakePath()
-                             .CreatePolyline(1.0));
-
-    std::vector<Point> expected = {
-        {0, 0},   {10, 0},  {10, 10}, {0, 10},  //
-        {20, 20}, {30, 20}, {30, 30}, {20, 30}  //
-    };
-    std::vector<uint16_t> expected_indices = {0, 1, 2, 0, 2, 3,
-                                              0, 6, 7, 0, 7, 8};
-    ASSERT_EQ(pts, expected);
-    ASSERT_EQ(indices, expected_indices);
-  }
-}
-
 TEST_P(EntityTest, PointFieldGeometryDivisions) {
   // Square always gives 4 divisions.
   ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(24.0, false), 4u);
@@ -2413,6 +2370,14 @@ TEST_P(EntityTest, PointFieldGeometryDivisions) {
   // Caps at 140.
   ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(1000.0, true), 140u);
   ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(20000.0, true), 140u);
+}
+
+TEST_P(EntityTest, PointFieldGeometryCoverage) {
+  std::vector<Point> points = {{10, 20}, {100, 200}};
+  auto geometry = Geometry::MakePointField(points, 5.0, false);
+  ASSERT_EQ(*geometry->GetCoverage(Matrix()), Rect::MakeLTRB(5, 15, 105, 205));
+  ASSERT_EQ(*geometry->GetCoverage(Matrix::MakeTranslation({30, 0, 0})),
+            Rect::MakeLTRB(35, 15, 135, 205));
 }
 
 TEST_P(EntityTest, ColorFilterContentsWithLargeGeometry) {
@@ -2433,6 +2398,116 @@ TEST_P(EntityTest, ColorFilterContentsWithLargeGeometry) {
                                FilterInput::Make(src_contents, false)});
   entity.SetContents(std::move(contents));
   ASSERT_TRUE(OpenPlaygroundHere(entity));
+}
+
+TEST_P(EntityTest, TextContentsCeilsGlyphScaleToDecimal) {
+  ASSERT_EQ(TextFrame::RoundScaledFontSize(0.4321111f, 12), 0.43f);
+  ASSERT_EQ(TextFrame::RoundScaledFontSize(0.5321111f, 12), 0.53f);
+  ASSERT_EQ(TextFrame::RoundScaledFontSize(2.1f, 12), 2.1f);
+  ASSERT_EQ(TextFrame::RoundScaledFontSize(0.0f, 12), 0.0f);
+}
+
+class TestRenderTargetAllocator : public RenderTargetAllocator {
+ public:
+  explicit TestRenderTargetAllocator(std::shared_ptr<Allocator> allocator)
+      : RenderTargetAllocator(std::move(allocator)) {}
+
+  ~TestRenderTargetAllocator() = default;
+
+  std::shared_ptr<Texture> CreateTexture(
+      const TextureDescriptor& desc) override {
+    allocated_.push_back(desc);
+    return RenderTargetAllocator::CreateTexture(desc);
+  }
+
+  void Start() override { RenderTargetAllocator::Start(); }
+
+  void End() override { RenderTargetAllocator::End(); }
+
+  std::vector<TextureDescriptor> GetDescriptors() const { return allocated_; }
+
+ private:
+  std::vector<TextureDescriptor> allocated_;
+};
+
+TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
+  if (GetContext()->GetCapabilities()->SupportsFramebufferFetch()) {
+    GTEST_SKIP() << "Backends that support framebuffer fetch dont use coverage "
+                    "for advanced blends.";
+  }
+
+  auto contents = std::make_shared<SolidColorContents>();
+  contents->SetGeometry(Geometry::MakeRect(Rect::MakeXYWH(100, 100, 100, 100)));
+  contents->SetColor(Color::Red());
+
+  Entity entity;
+  entity.SetTransformation(Matrix::MakeScale(Vector3(2, 2, 1)));
+  entity.SetBlendMode(BlendMode::kColorBurn);
+  entity.SetContents(contents);
+
+  auto coverage = entity.GetCoverage();
+  EXPECT_TRUE(coverage.has_value());
+
+  auto pass = std::make_unique<EntityPass>();
+  auto test_allocator = std::make_shared<TestRenderTargetAllocator>(
+      GetContext()->GetResourceAllocator());
+  auto stencil_config = RenderTarget::AttachmentConfig{
+      .storage_mode = StorageMode::kDevicePrivate,
+      .load_action = LoadAction::kClear,
+      .store_action = StoreAction::kDontCare,
+      .clear_color = Color::BlackTransparent()};
+  auto rt = RenderTarget::CreateOffscreen(
+      *GetContext(), *test_allocator, ISize::MakeWH(1000, 1000), "Offscreen",
+      RenderTarget::kDefaultColorAttachmentConfig, stencil_config);
+  auto content_context = ContentContext(
+      GetContext(), TypographerContextSkia::Make(), test_allocator);
+  pass->AddEntity(entity);
+
+  EXPECT_TRUE(pass->Render(content_context, rt));
+
+  if (test_allocator->GetDescriptors().size() == 6u) {
+    EXPECT_EQ(test_allocator->GetDescriptors()[0].size, ISize(1000, 1000));
+    EXPECT_EQ(test_allocator->GetDescriptors()[1].size, ISize(1000, 1000));
+
+    EXPECT_EQ(test_allocator->GetDescriptors()[2].size, ISize(200, 200));
+    EXPECT_EQ(test_allocator->GetDescriptors()[3].size, ISize(200, 200));
+    EXPECT_EQ(test_allocator->GetDescriptors()[4].size, ISize(200, 200));
+    EXPECT_EQ(test_allocator->GetDescriptors()[5].size, ISize(200, 200));
+  } else if (test_allocator->GetDescriptors().size() == 9u) {
+    // Onscreen render target.
+    EXPECT_EQ(test_allocator->GetDescriptors()[0].size, ISize(1000, 1000));
+    EXPECT_EQ(test_allocator->GetDescriptors()[1].size, ISize(1000, 1000));
+    EXPECT_EQ(test_allocator->GetDescriptors()[2].size, ISize(1000, 1000));
+    EXPECT_EQ(test_allocator->GetDescriptors()[3].size, ISize(1000, 1000));
+    EXPECT_EQ(test_allocator->GetDescriptors()[4].size, ISize(1000, 1000));
+
+    EXPECT_EQ(test_allocator->GetDescriptors()[5].size, ISize(200, 200));
+    EXPECT_EQ(test_allocator->GetDescriptors()[5].size, ISize(200, 200));
+    EXPECT_EQ(test_allocator->GetDescriptors()[6].size, ISize(200, 200));
+    EXPECT_EQ(test_allocator->GetDescriptors()[7].size, ISize(200, 200));
+  } else {
+    EXPECT_TRUE(false);
+  }
+}
+
+TEST_P(EntityTest, SpecializationConstantsAreAppliedToVariants) {
+  auto content_context =
+      ContentContext(GetContext(), TypographerContextSkia::Make());
+
+  auto default_color_burn = content_context.GetBlendColorBurnPipeline(
+      {.has_stencil_attachment = false});
+  auto alt_color_burn = content_context.GetBlendColorBurnPipeline(
+      {.has_stencil_attachment = true});
+
+  ASSERT_NE(default_color_burn, alt_color_burn);
+  ASSERT_EQ(default_color_burn->GetDescriptor().GetSpecializationConstants(),
+            alt_color_burn->GetDescriptor().GetSpecializationConstants());
+
+  auto decal_supported = static_cast<int32_t>(
+      GetContext()->GetCapabilities()->SupportsDecalSamplerAddressMode());
+  std::vector<int32_t> expected_constants = {5, decal_supported};
+  ASSERT_EQ(default_color_burn->GetDescriptor().GetSpecializationConstants(),
+            expected_constants);
 }
 
 }  // namespace testing

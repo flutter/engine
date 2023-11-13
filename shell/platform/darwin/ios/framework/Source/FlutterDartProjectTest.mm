@@ -73,6 +73,158 @@ FLUTTER_ASSERT_ARC
   XCTAssertNotNil(found);
 }
 
+- (void)testFLTGetApplicationBundleWhenCurrentTargetIsNotExtension {
+  NSBundle* bundle = FLTGetApplicationBundle();
+  XCTAssertEqual(bundle, [NSBundle mainBundle]);
+}
+
+- (void)testFLTGetApplicationBundleWhenCurrentTargetIsExtension {
+  id mockMainBundle = OCMPartialMock([NSBundle mainBundle]);
+  NSURL* url = [[NSBundle mainBundle].bundleURL URLByAppendingPathComponent:@"foo/ext.appex"];
+  OCMStub([mockMainBundle bundleURL]).andReturn(url);
+  NSBundle* bundle = FLTGetApplicationBundle();
+  [mockMainBundle stopMocking];
+  XCTAssertEqualObjects(bundle.bundleURL, [NSBundle mainBundle].bundleURL);
+}
+
+- (void)testFLTAssetsURLFromBundle {
+  {
+    // Found asset path in info.plist
+    id mockBundle = OCMClassMock([NSBundle class]);
+    OCMStub([mockBundle objectForInfoDictionaryKey:@"FLTAssetsPath"]).andReturn(@"foo/assets");
+    NSString* resultAssetsPath = @"path/to/foo/assets";
+    OCMStub([mockBundle pathForResource:@"foo/assets" ofType:nil]).andReturn(resultAssetsPath);
+    NSString* path = FLTAssetsPathFromBundle(mockBundle);
+    XCTAssertEqualObjects(path, @"path/to/foo/assets");
+  }
+  {
+    // Found asset path in info.plist, is not overriden by main bundle
+    id mockBundle = OCMClassMock([NSBundle class]);
+    id mockMainBundle = OCMPartialMock(NSBundle.mainBundle);
+    OCMStub([mockBundle objectForInfoDictionaryKey:@"FLTAssetsPath"]).andReturn(@"foo/assets");
+    OCMStub([mockMainBundle objectForInfoDictionaryKey:@"FLTAssetsPath"]).andReturn(nil);
+    NSString* resultAssetsPath = @"path/to/foo/assets";
+    OCMStub([mockBundle pathForResource:@"foo/assets" ofType:nil]).andReturn(resultAssetsPath);
+    NSString* path = FLTAssetsPathFromBundle(mockBundle);
+    XCTAssertEqualObjects(path, @"path/to/foo/assets");
+    [mockMainBundle stopMocking];
+  }
+  {
+    // No asset path in info.plist, defaults to main bundle
+    id mockBundle = OCMClassMock([NSBundle class]);
+    id mockMainBundle = OCMPartialMock([NSBundle mainBundle]);
+    NSString* resultAssetsPath = @"path/to/foo/assets";
+    OCMStub([mockBundle pathForResource:@"Frameworks/App.framework/flutter_assets" ofType:nil])
+        .andReturn(nil);
+    OCMStub([mockMainBundle pathForResource:@"Frameworks/App.framework/flutter_assets" ofType:nil])
+        .andReturn(resultAssetsPath);
+    NSString* path = FLTAssetsPathFromBundle(mockBundle);
+    XCTAssertEqualObjects(path, @"path/to/foo/assets");
+    [mockMainBundle stopMocking];
+  }
+}
+
+- (void)testFLTAssetPathReturnsTheCorrectValue {
+  {
+    // Found assets path in info.plist
+    id mockBundle = OCMClassMock([NSBundle class]);
+    OCMStub([mockBundle objectForInfoDictionaryKey:@"FLTAssetsPath"]).andReturn(@"foo/assets");
+    XCTAssertEqualObjects(FLTAssetPath(mockBundle), @"foo/assets");
+  }
+  {
+    // No assets path in info.plist, use default value
+    id mockBundle = OCMClassMock([NSBundle class]);
+    OCMStub([mockBundle objectForInfoDictionaryKey:@"FLTAssetsPath"]).andReturn(nil);
+    XCTAssertEqualObjects(FLTAssetPath(mockBundle), kDefaultAssetPath);
+  }
+}
+
+- (void)testLookUpForAssets {
+  {
+    id mockBundle = OCMPartialMock([NSBundle mainBundle]);
+    // Found assets path in info.plist
+    OCMStub([mockBundle objectForInfoDictionaryKey:@"FLTAssetsPath"]).andReturn(@"foo/assets");
+    NSString* assetsPath = [FlutterDartProject lookupKeyForAsset:@"bar"];
+    // This is testing public API, changing this assert is likely to break plugins.
+    XCTAssertEqualObjects(assetsPath, @"foo/assets/bar");
+    [mockBundle stopMocking];
+  }
+  {
+    id mockBundle = OCMPartialMock([NSBundle mainBundle]);
+    // No assets path in info.plist, use default value
+    OCMStub([mockBundle objectForInfoDictionaryKey:@"FLTAssetsPath"]).andReturn(nil);
+    NSString* assetsPath = [FlutterDartProject lookupKeyForAsset:@"bar"];
+    // This is testing public API, changing this assert is likely to break plugins.
+    XCTAssertEqualObjects(assetsPath, @"Frameworks/App.framework/flutter_assets/bar");
+    [mockBundle stopMocking];
+  }
+}
+
+- (void)testLookUpForAssetsFromBundle {
+  {
+    id mockBundle = OCMClassMock([NSBundle class]);
+    // Found assets path in info.plist
+    OCMStub([mockBundle objectForInfoDictionaryKey:@"FLTAssetsPath"]).andReturn(@"foo/assets");
+    NSString* assetsPath = [FlutterDartProject lookupKeyForAsset:@"bar" fromBundle:mockBundle];
+    // This is testing public API, changing this assert is likely to break plugins.
+    XCTAssertEqualObjects(assetsPath, @"foo/assets/bar");
+  }
+  {
+    // No assets path in info.plist, use default value
+    id mockBundle = OCMClassMock([NSBundle class]);
+    OCMStub([mockBundle objectForInfoDictionaryKey:@"FLTAssetsPath"]).andReturn(nil);
+    NSString* assetsPath = [FlutterDartProject lookupKeyForAsset:@"bar" fromBundle:mockBundle];
+    // This is testing public API, changing this assert is likely to break plugins.
+    XCTAssertEqualObjects(assetsPath, @"Frameworks/App.framework/flutter_assets/bar");
+  }
+}
+
+- (void)testLookUpForAssetsFromPackage {
+  {
+    id mockBundle = OCMPartialMock([NSBundle mainBundle]);
+    // Found assets path in info.plist
+    OCMStub([mockBundle objectForInfoDictionaryKey:@"FLTAssetsPath"]).andReturn(@"foo/assets");
+    NSString* assetsPath = [FlutterDartProject lookupKeyForAsset:@"bar" fromPackage:@"bar_package"];
+    // This is testing public API, changing this assert is likely to break plugins.
+    XCTAssertEqualObjects(assetsPath, @"foo/assets/packages/bar_package/bar");
+    [mockBundle stopMocking];
+  }
+  {
+    id mockBundle = OCMPartialMock([NSBundle mainBundle]);
+    // No assets path in info.plist, use default value
+    OCMStub([mockBundle objectForInfoDictionaryKey:@"FLTAssetsPath"]).andReturn(nil);
+    NSString* assetsPath = [FlutterDartProject lookupKeyForAsset:@"bar" fromPackage:@"bar_package"];
+    // This is testing public API, changing this assert is likely to break plugins.
+    XCTAssertEqualObjects(assetsPath,
+                          @"Frameworks/App.framework/flutter_assets/packages/bar_package/bar");
+    [mockBundle stopMocking];
+  }
+}
+
+- (void)testLookUpForAssetsFromPackageFromBundle {
+  {
+    id mockBundle = OCMClassMock([NSBundle class]);
+    // Found assets path in info.plist
+    OCMStub([mockBundle objectForInfoDictionaryKey:@"FLTAssetsPath"]).andReturn(@"foo/assets");
+    NSString* assetsPath = [FlutterDartProject lookupKeyForAsset:@"bar"
+                                                     fromPackage:@"bar_package"
+                                                      fromBundle:mockBundle];
+    // This is testing public API, changing this assert is likely to break plugins.
+    XCTAssertEqualObjects(assetsPath, @"foo/assets/packages/bar_package/bar");
+  }
+  {
+    id mockBundle = OCMClassMock([NSBundle class]);
+    // No assets path in info.plist, use default value
+    OCMStub([mockBundle objectForInfoDictionaryKey:@"FLTAssetsPath"]).andReturn(nil);
+    NSString* assetsPath = [FlutterDartProject lookupKeyForAsset:@"bar"
+                                                     fromPackage:@"bar_package"
+                                                      fromBundle:mockBundle];
+    // This is testing public API, changing this assert is likely to break plugins.
+    XCTAssertEqualObjects(assetsPath,
+                          @"Frameworks/App.framework/flutter_assets/packages/bar_package/bar");
+  }
+}
+
 - (void)testDisableImpellerSettingIsCorrectlyParsed {
   id mockMainBundle = OCMPartialMock([NSBundle mainBundle]);
   OCMStub([mockMainBundle objectForInfoDictionaryKey:@"FLTEnableImpeller"]).andReturn(@"NO");

@@ -20,7 +20,8 @@ sk_sp<DisplayList> GetSampleNestedDisplayList() {
   DlPaint paint;
   for (int y = 10; y <= 60; y += 10) {
     for (int x = 10; x <= 60; x += 10) {
-      paint.setColor(((x + y) % 20) == 10 ? SK_ColorRED : SK_ColorBLUE);
+      paint.setColor(((x + y) % 20) == 10 ? DlColor(SK_ColorRED)
+                                          : DlColor(SK_ColorBLUE));
       builder.DrawRect(SkRect::MakeXYWH(x, y, 80, 80), paint);
     }
   }
@@ -47,11 +48,6 @@ std::vector<DisplayListInvocationGroup> CreateAllAttributesOps() {
        {
            {0, 8, 0, 0, [](DlOpReceiver& r) { r.setAntiAlias(true); }},
            {0, 0, 0, 0, [](DlOpReceiver& r) { r.setAntiAlias(false); }},
-       }},
-      {"SetDither",
-       {
-           {0, 8, 0, 0, [](DlOpReceiver& r) { r.setDither(true); }},
-           {0, 0, 0, 0, [](DlOpReceiver& r) { r.setDither(false); }},
        }},
       {"SetInvertColors",
        {
@@ -101,9 +97,12 @@ std::vector<DisplayListInvocationGroup> CreateAllAttributesOps() {
        }},
       {"SetColor",
        {
-           {0, 8, 0, 0, [](DlOpReceiver& r) { r.setColor(SK_ColorGREEN); }},
-           {0, 8, 0, 0, [](DlOpReceiver& r) { r.setColor(SK_ColorBLUE); }},
-           {0, 0, 0, 0, [](DlOpReceiver& r) { r.setColor(SK_ColorBLACK); }},
+           {0, 8, 0, 0,
+            [](DlOpReceiver& r) { r.setColor(DlColor(SK_ColorGREEN)); }},
+           {0, 8, 0, 0,
+            [](DlOpReceiver& r) { r.setColor(DlColor(SK_ColorBLUE)); }},
+           {0, 0, 0, 0,
+            [](DlOpReceiver& r) { r.setColor(DlColor(SK_ColorBLACK)); }},
        }},
       {"SetBlendMode",
        {
@@ -212,11 +211,11 @@ std::vector<DisplayListInvocationGroup> CreateAllAttributesOps() {
             }},
            {0, 16, 0, 0,
             [](DlOpReceiver& r) {
-              r.setColorFilter(DlSrgbToLinearGammaColorFilter::instance.get());
+              r.setColorFilter(DlSrgbToLinearGammaColorFilter::kInstance.get());
             }},
            {0, 16, 0, 0,
             [](DlOpReceiver& r) {
-              r.setColorFilter(DlLinearToSrgbGammaColorFilter::instance.get());
+              r.setColorFilter(DlLinearToSrgbGammaColorFilter::kInstance.get());
             }},
            {0, 0, 0, 0, [](DlOpReceiver& r) { r.setColorFilter(nullptr); }},
        }},
@@ -513,15 +512,15 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
            // cv.drawColor becomes cv.drawPaint(paint)
            {1, 16, 1, 24,
             [](DlOpReceiver& r) {
-              r.drawColor(SK_ColorBLUE, DlBlendMode::kSrcIn);
+              r.drawColor(DlColor(SK_ColorBLUE), DlBlendMode::kSrcIn);
             }},
            {1, 16, 1, 24,
             [](DlOpReceiver& r) {
-              r.drawColor(SK_ColorBLUE, DlBlendMode::kDstIn);
+              r.drawColor(DlColor(SK_ColorBLUE), DlBlendMode::kDstOut);
             }},
            {1, 16, 1, 24,
             [](DlOpReceiver& r) {
-              r.drawColor(SK_ColorCYAN, DlBlendMode::kSrcIn);
+              r.drawColor(DlColor(SK_ColorCYAN), DlBlendMode::kSrcIn);
             }},
        }},
       {"DrawLine",
@@ -902,13 +901,21 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
       {"DrawTextBlob",
        {
            {1, 24, 1, 24,
-            [](DlOpReceiver& r) { r.drawTextBlob(TestBlob1, 10, 10); }},
+            [](DlOpReceiver& r) {
+              r.drawTextBlob(GetTestTextBlob(1), 10, 10);
+            }},
            {1, 24, 1, 24,
-            [](DlOpReceiver& r) { r.drawTextBlob(TestBlob1, 20, 10); }},
+            [](DlOpReceiver& r) {
+              r.drawTextBlob(GetTestTextBlob(1), 20, 10);
+            }},
            {1, 24, 1, 24,
-            [](DlOpReceiver& r) { r.drawTextBlob(TestBlob1, 10, 20); }},
+            [](DlOpReceiver& r) {
+              r.drawTextBlob(GetTestTextBlob(1), 10, 20);
+            }},
            {1, 24, 1, 24,
-            [](DlOpReceiver& r) { r.drawTextBlob(TestBlob2, 10, 10); }},
+            [](DlOpReceiver& r) {
+              r.drawTextBlob(GetTestTextBlob(2), 10, 10);
+            }},
        }},
       // The -1 op counts below are to indicate to the framework not to test
       // SkCanvas conversion of these ops as it converts the operation into a
@@ -921,27 +928,27 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
            // exposed
            {1, 32, -1, 32,
             [](DlOpReceiver& r) {
-              r.drawShadow(kTestPath1, SK_ColorGREEN, 1.0, false, 1.0);
+              r.drawShadow(kTestPath1, DlColor(SK_ColorGREEN), 1.0, false, 1.0);
             }},
            {1, 32, -1, 32,
             [](DlOpReceiver& r) {
-              r.drawShadow(kTestPath2, SK_ColorGREEN, 1.0, false, 1.0);
+              r.drawShadow(kTestPath2, DlColor(SK_ColorGREEN), 1.0, false, 1.0);
             }},
            {1, 32, -1, 32,
             [](DlOpReceiver& r) {
-              r.drawShadow(kTestPath1, SK_ColorBLUE, 1.0, false, 1.0);
+              r.drawShadow(kTestPath1, DlColor(SK_ColorBLUE), 1.0, false, 1.0);
             }},
            {1, 32, -1, 32,
             [](DlOpReceiver& r) {
-              r.drawShadow(kTestPath1, SK_ColorGREEN, 2.0, false, 1.0);
+              r.drawShadow(kTestPath1, DlColor(SK_ColorGREEN), 2.0, false, 1.0);
             }},
            {1, 32, -1, 32,
             [](DlOpReceiver& r) {
-              r.drawShadow(kTestPath1, SK_ColorGREEN, 1.0, true, 1.0);
+              r.drawShadow(kTestPath1, DlColor(SK_ColorGREEN), 1.0, true, 1.0);
             }},
            {1, 32, -1, 32,
             [](DlOpReceiver& r) {
-              r.drawShadow(kTestPath1, SK_ColorGREEN, 1.0, false, 2.5);
+              r.drawShadow(kTestPath1, DlColor(SK_ColorGREEN), 1.0, false, 2.5);
             }},
        }},
   };
@@ -965,6 +972,27 @@ std::vector<DisplayListInvocationGroup> CreateAllGroups() {
   std::move(all_rendering_ops.begin(), all_rendering_ops.end(),
             std::back_inserter(result));
   return result;
+}
+
+SkFont CreateTestFontOfSize(SkScalar scalar) {
+  static constexpr const char* kTestFontFixture = "Roboto-Regular.ttf";
+  auto mapping = flutter::testing::OpenFixtureAsSkData(kTestFontFixture);
+  FML_CHECK(mapping);
+  return SkFont{SkTypeface::MakeFromData(mapping), scalar};
+}
+
+sk_sp<SkTextBlob> GetTestTextBlob(int index) {
+  static std::map<int, sk_sp<SkTextBlob>> text_blobs;
+  auto it = text_blobs.find(index);
+  if (it != text_blobs.end()) {
+    return it->second;
+  }
+  std::string text = "TestBlob" + std::to_string(index);
+  sk_sp<SkTextBlob> blob =
+      SkTextBlob::MakeFromText(text.c_str(), text.size(),
+                               CreateTestFontOfSize(20), SkTextEncoding::kUTF8);
+  text_blobs.insert(std::make_pair(index, blob));
+  return blob;
 }
 
 }  // namespace testing

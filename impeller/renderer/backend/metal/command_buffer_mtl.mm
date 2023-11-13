@@ -159,6 +159,13 @@ static CommandBuffer::Status ToCommitResult(MTLCommandBufferStatus status) {
 }
 
 bool CommandBufferMTL::OnSubmitCommands(CompletionCallback callback) {
+  auto context = context_.lock();
+  if (!context) {
+    return false;
+  }
+#ifdef IMPELLER_DEBUG
+  ContextMTL::Cast(*context).GetGPUTracer()->RecordCmdBuffer(buffer_);
+#endif  // IMPELLER_DEBUG
   if (callback) {
     [buffer_
         addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
@@ -190,6 +197,10 @@ bool CommandBufferMTL::SubmitCommandsAsync(
   auto buffer = buffer_;
   buffer_ = nil;
 
+#ifdef IMPELLER_DEBUG
+  ContextMTL::Cast(*context).GetGPUTracer()->RecordCmdBuffer(buffer);
+#endif  // IMPELLER_DEBUG
+
   auto worker_task_runner = ContextMTL::Cast(*context).GetWorkerTaskRunner();
   auto mtl_render_pass = static_cast<RenderPassMTL*>(render_pass.get());
 
@@ -209,31 +220,20 @@ bool CommandBufferMTL::SubmitCommandsAsync(
           [render_command_encoder endEncoding];
           return;
         }
-        auto is_gpu_disabled_sync_switch =
-            ContextMTL::Cast(*context).GetIsGpuDisabledSyncSwitch();
-        is_gpu_disabled_sync_switch->Execute(
-            fml::SyncSwitch::Handlers()
-                .SetIfFalse([&render_pass, &render_command_encoder, &buffer,
-                             &context] {
-                  auto mtl_render_pass =
-                      static_cast<RenderPassMTL*>(render_pass.get());
-                  if (!mtl_render_pass->label_.empty()) {
-                    [render_command_encoder
-                        setLabel:@(mtl_render_pass->label_.c_str())];
-                  }
 
-                  auto result = mtl_render_pass->EncodeCommands(
-                      context->GetResourceAllocator(), render_command_encoder);
-                  [render_command_encoder endEncoding];
-                  if (result) {
-                    [buffer commit];
-                  } else {
-                    VALIDATION_LOG << "Failed to encode command buffer";
-                  }
-                })
-                .SetIfTrue([&render_command_encoder] {
-                  [render_command_encoder endEncoding];
-                }));
+        auto mtl_render_pass = static_cast<RenderPassMTL*>(render_pass.get());
+        if (!mtl_render_pass->label_.empty()) {
+          [render_command_encoder setLabel:@(mtl_render_pass->label_.c_str())];
+        }
+
+        auto result = mtl_render_pass->EncodeCommands(
+            context->GetResourceAllocator(), render_command_encoder);
+        [render_command_encoder endEncoding];
+        if (result) {
+          [buffer commit];
+        } else {
+          VALIDATION_LOG << "Failed to encode command buffer";
+        }
       });
   worker_task_runner->PostTask(task);
   return true;
@@ -256,7 +256,7 @@ std::shared_ptr<RenderPass> CommandBufferMTL::OnCreateRenderPass(
   return pass;
 }
 
-std::shared_ptr<BlitPass> CommandBufferMTL::OnCreateBlitPass() const {
+std::shared_ptr<BlitPass> CommandBufferMTL::OnCreateBlitPass() {
   if (!buffer_) {
     return nullptr;
   }
@@ -269,7 +269,7 @@ std::shared_ptr<BlitPass> CommandBufferMTL::OnCreateBlitPass() const {
   return pass;
 }
 
-std::shared_ptr<ComputePass> CommandBufferMTL::OnCreateComputePass() const {
+std::shared_ptr<ComputePass> CommandBufferMTL::OnCreateComputePass() {
   if (!buffer_) {
     return nullptr;
   }

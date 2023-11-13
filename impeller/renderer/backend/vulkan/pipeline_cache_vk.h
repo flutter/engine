@@ -6,10 +6,8 @@
 
 #include "flutter/fml/file.h"
 #include "flutter/fml/macros.h"
-#include "impeller/base/thread.h"
 #include "impeller/renderer/backend/vulkan/capabilities_vk.h"
 #include "impeller/renderer/backend/vulkan/device_holder.h"
-#include "impeller/renderer/backend/vulkan/vk.h"
 
 namespace impeller {
 
@@ -44,7 +42,9 @@ class PipelineCacheVK {
 
   std::shared_ptr<fml::Mapping> CopyPipelineCacheData() const;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(PipelineCacheVK);
+  PipelineCacheVK(const PipelineCacheVK&) = delete;
+
+  PipelineCacheVK& operator=(const PipelineCacheVK&) = delete;
 };
 
 }  // namespace impeller

@@ -161,6 +161,13 @@ extension CanvasKitExtension on CanvasKit {
       DomCanvasElement canvas, SkWebGLContextOptions options) =>
         _GetWebGLContext(canvas, options).toDartDouble;
 
+  @JS('GetWebGLContext')
+  external JSNumber _GetOffscreenWebGLContext(
+      DomOffscreenCanvas canvas, SkWebGLContextOptions options);
+  double GetOffscreenWebGLContext(
+          DomOffscreenCanvas canvas, SkWebGLContextOptions options) =>
+      _GetOffscreenWebGLContext(canvas, options).toDartDouble;
+
   @JS('MakeGrContext')
   external SkGrContext _MakeGrContext(JSNumber glContext);
   SkGrContext MakeGrContext(double glContext) =>
@@ -199,6 +206,9 @@ extension CanvasKitExtension on CanvasKit {
 
   external SkSurface MakeSWCanvasSurface(DomCanvasElement canvas);
 
+  @JS('MakeSWCanvasSurface')
+  external SkSurface MakeOffscreenSWCanvasSurface(DomOffscreenCanvas canvas);
+
   /// Creates an image from decoded pixels represented as a list of bytes.
   ///
   /// The pixel data must be encoded according to the image info in [info].
@@ -219,14 +229,31 @@ extension CanvasKitExtension on CanvasKit {
   ) => _MakeImage(info, pixels.toJS, bytesPerRow.toJS);
 
   @JS('MakeLazyImageFromTextureSource')
-  external SkImage? _MakeLazyImageFromTextureSource(
+  external SkImage? _MakeLazyImageFromTextureSource2(
     JSAny src,
     SkPartialImageInfo info,
   );
-  SkImage? MakeLazyImageFromTextureSource(
+
+  @JS('MakeLazyImageFromTextureSource')
+  external SkImage? _MakeLazyImageFromTextureSource3(
+    JSAny src,
+    JSNumber zeroSecondArgument,
+    JSBoolean srcIsPremultiplied,
+  );
+
+  SkImage? MakeLazyImageFromTextureSourceWithInfo(
     Object src,
     SkPartialImageInfo info,
-  ) => _MakeLazyImageFromTextureSource(src.toJSAnyShallow, info);
+  ) => _MakeLazyImageFromTextureSource2(src.toJSAnyShallow, info);
+
+  SkImage? MakeLazyImageFromImageBitmap(
+    DomImageBitmap imageBitmap,
+    bool hasPremultipliedAlpha,
+  ) => _MakeLazyImageFromTextureSource3(
+    imageBitmap as JSObject,
+    0.toJS,
+    hasPremultipliedAlpha.toJS,
+  );
 }
 
 @JS('window.CanvasKitInit')
@@ -1472,6 +1499,12 @@ class SkImageFilter {}
 
 extension SkImageFilterExtension on SkImageFilter {
   external JSVoid delete();
+
+
+  @JS('getOutputBounds')
+  external JSInt32Array _getOutputBounds(JSFloat32Array bounds);
+  Int32List getOutputBounds(Float32List bounds) =>
+      _getOutputBounds(bounds.toJS).toDart;
 }
 
 @JS()
@@ -2195,8 +2228,10 @@ class SkPictureRecorder {
 
 extension SkPictureRecorderExtension on SkPictureRecorder {
   @JS('beginRecording')
-  external SkCanvas _beginRecording(JSFloat32Array bounds);
-  SkCanvas beginRecording(Float32List bounds) => _beginRecording(bounds.toJS);
+  external SkCanvas _beginRecording(
+      JSFloat32Array bounds, JSBoolean computeBounds);
+  SkCanvas beginRecording(Float32List bounds) =>
+      _beginRecording(bounds.toJS, true.toJS);
 
   external SkPicture finishRecordingAsPicture();
   external JSVoid delete();
@@ -2594,6 +2629,14 @@ class SkPicture {}
 
 extension SkPictureExtension on SkPicture {
   external JSVoid delete();
+
+  @JS('cullRect')
+  external JSFloat32Array _cullRect();
+  Float32List cullRect() => _cullRect().toDart;
+
+  @JS('approximateBytesUsed')
+  external JSNumber _approximateBytesUsed();
+  int approximateBytesUsed() => _approximateBytesUsed().toDartInt;
 }
 
 @JS()
@@ -3193,6 +3236,18 @@ extension SkParagraphExtension on SkParagraph {
   external JSArray _getLineMetrics();
   List<SkLineMetrics> getLineMetrics() =>
       _getLineMetrics().toDart.cast<SkLineMetrics>();
+
+  @JS('getLineMetricsAt')
+  external SkLineMetrics? _getLineMetricsAt(JSNumber index);
+  SkLineMetrics? getLineMetricsAt(double index) => _getLineMetricsAt(index.toJS);
+
+  @JS('getNumberOfLines')
+  external JSNumber _getNumberOfLines();
+  double getNumberOfLines() => _getNumberOfLines().toDartDouble;
+
+  @JS('getLineNumberAt')
+  external JSNumber _getLineNumberAt(JSNumber index);
+  double getLineNumberAt(double index) => _getLineNumberAt(index.toJS).toDartDouble;
 
   @JS('getLongestLine')
   external JSNumber _getLongestLine();

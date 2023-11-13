@@ -13,7 +13,7 @@ import 'package:litetest/litetest.dart';
 /// Helper method to turn a [String] into a [ByteData] containing the
 /// text of the string encoded as UTF-8.
 ByteData utf8Bytes(final String text) {
-  return ByteData.view(Uint8List.fromList(utf8.encode(text)).buffer);
+  return ByteData.sublistView(utf8.encode(text));
 }
 
 // Take from zircon constants in zircon/errors.h, zircon/rights.h, zircon/types.h
@@ -589,7 +589,7 @@ void main() {
       expect(fileResult.status, equals(ZX.OK));
       MapResult mapResult = System.vmoMap(fileResult.handle);
       expect(mapResult.status, equals(ZX.OK));
-      Uint8List fileData = UnmodifiableUint8ListView(mapResult.data);
+      Uint8List fileData = mapResult.data.asUnmodifiableView();
       String fileString = utf8.decode(fileData.sublist(0, fileResult.numBytes));
       expect(fileString, equals(fuchsia));
     });
@@ -610,7 +610,7 @@ void main() {
       // Read from the duplicate.
       MapResult mapResult = System.vmoMap(duplicate);
       expect(mapResult.status, equals(ZX.OK));
-      Uint8List vmoData = UnmodifiableUint8ListView(mapResult.data);
+      Uint8List vmoData = mapResult.data.asUnmodifiableView();
       String vmoString = utf8.decode(vmoData.sublist(0, data.length));
       expect(vmoString, equals(fuchsia));
     });

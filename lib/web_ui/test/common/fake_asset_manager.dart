@@ -81,7 +81,7 @@ class FakeAssetScope {
       return fetcher();
     }
     if (_parent != null) {
-      return _parent!.getAssetData(assetKey);
+      return _parent.getAssetData(assetKey);
     }
     return null;
   }
@@ -90,7 +90,7 @@ class FakeAssetScope {
 FakeAssetManager fakeAssetManager = FakeAssetManager();
 
 ByteData stringAsUtf8Data(String string) {
-  return ByteData.view(Uint8List.fromList(utf8.encode(string)).buffer);
+  return ByteData.sublistView(utf8.encode(string));
 }
 
 const String ahemFontFamily = 'Ahem';

@@ -34,15 +34,14 @@ class SolidColorContents final : public ColorSourceContents {
 
   Color GetColor() const;
 
+  // |ColorSourceContents|
+  bool IsSolidColor() const override;
+
   // |Contents|
   bool IsOpaque() const override;
 
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
-
-  // |Contents|
-  bool ShouldRender(const Entity& entity,
-                    const std::optional<Rect>& stencil_coverage) const override;
 
   // |Contents|
   bool Render(const ContentContext& renderer,
@@ -59,7 +58,9 @@ class SolidColorContents final : public ColorSourceContents {
  private:
   Color color_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(SolidColorContents);
+  SolidColorContents(const SolidColorContents&) = delete;
+
+  SolidColorContents& operator=(const SolidColorContents&) = delete;
 };
 
 }  // namespace impeller

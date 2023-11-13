@@ -12,6 +12,7 @@
 namespace impeller {
 
 class CommandEncoderVK;
+class CommandBufferVK;
 
 class BlitPassVK final : public BlitPass {
  public:
@@ -21,11 +22,11 @@ class BlitPassVK final : public BlitPass {
  private:
   friend class CommandBufferVK;
 
-  std::weak_ptr<CommandEncoderVK> encoder_;
+  std::weak_ptr<CommandBufferVK> command_buffer_;
   std::vector<std::unique_ptr<BlitEncodeVK>> commands_;
   std::string label_;
 
-  BlitPassVK(std::weak_ptr<CommandEncoderVK> encoder);
+  BlitPassVK(std::weak_ptr<CommandBufferVK> command_buffer);
 
   // |BlitPass|
   bool IsValid() const override;
@@ -60,7 +61,9 @@ class BlitPassVK final : public BlitPass {
   bool OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
                                std::string label) override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(BlitPassVK);
+  BlitPassVK(const BlitPassVK&) = delete;
+
+  BlitPassVK& operator=(const BlitPassVK&) = delete;
 };
 
 }  // namespace impeller

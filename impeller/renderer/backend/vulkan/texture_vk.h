@@ -40,9 +40,6 @@ class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
  private:
   std::weak_ptr<Context> context_;
   std::shared_ptr<TextureSourceVK> source_;
-  mutable RWMutex layout_mutex_;
-  mutable vk::ImageLayout layout_ IPLR_GUARDED_BY(layout_mutex_) =
-      vk::ImageLayout::eUndefined;
 
   // |Texture|
   void SetLabel(std::string_view label) override;
@@ -62,7 +59,9 @@ class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
   // |Texture|
   ISize GetSize() const override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(TextureVK);
+  TextureVK(const TextureVK&) = delete;
+
+  TextureVK& operator=(const TextureVK&) = delete;
 };
 
 }  // namespace impeller

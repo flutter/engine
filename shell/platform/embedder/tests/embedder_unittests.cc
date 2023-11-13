@@ -671,12 +671,26 @@ TEST_F(EmbedderTest,
           backing_store.did_update = true;
           backing_store.software.height = 600;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(0, 0, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[0], layer);
         }
@@ -704,12 +718,26 @@ TEST_F(EmbedderTest,
           backing_store.did_update = true;
           backing_store.software.height = 600;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(30, 30, 80, 180),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[2], layer);
         }
@@ -737,12 +765,26 @@ TEST_F(EmbedderTest,
           backing_store.did_update = true;
           backing_store.software.height = 600;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(50, 50, 100, 200),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[4], layer);
         }
@@ -847,12 +889,26 @@ TEST_F(EmbedderTest, NoLayerCreatedForTransparentOverlayOnTopOfPlatformLayer) {
           backing_store.did_update = true;
           backing_store.software.height = 600;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(0, 0, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[0], layer);
         }
@@ -969,12 +1025,26 @@ TEST_F(EmbedderTest, NoLayerCreatedForNoOverlayOnTopOfPlatformLayer) {
           backing_store.did_update = true;
           backing_store.software.height = 600;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(0, 0, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[0], layer);
         }
@@ -1235,12 +1305,26 @@ TEST_F(EmbedderTest, VerifyB143464703WithSoftwareBackend) {
           backing_store.type = kFlutterBackingStoreTypeSoftware;
           backing_store.did_update = true;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(0, 0, 1024, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(1024.0, 600.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[0], layer);
         }
@@ -1267,12 +1351,26 @@ TEST_F(EmbedderTest, VerifyB143464703WithSoftwareBackend) {
           backing_store.type = kFlutterBackingStoreTypeSoftware;
           backing_store.did_update = true;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(135, 0, 1024, 60),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(1024.0, 600.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[2], layer);
         }
@@ -1581,7 +1679,7 @@ TEST_F(EmbedderTest, CanSuccessfullyPopulateSpecificJITSnapshotCallbacks) {
 // TODO(#107263): Inconsistent snapshot paths in the Linux Fuchsia FEMU test.
 #if defined(OS_FUCHSIA)
   GTEST_SKIP() << "Inconsistent paths in Fuchsia.";
-#endif  // OS_FUCHSIA
+#else
 
   // This test is only relevant in JIT mode.
   if (DartVM::IsRunningPrecompiledCode()) {
@@ -1624,6 +1722,7 @@ TEST_F(EmbedderTest, CanSuccessfullyPopulateSpecificJITSnapshotCallbacks) {
   ASSERT_NE(settings.isolate_snapshot_data(), nullptr);
   ASSERT_NE(settings.isolate_snapshot_instr(), nullptr);
   ASSERT_NE(settings.dart_library_sources_kernel(), nullptr);
+#endif  // OS_FUCHSIA
 }
 
 //------------------------------------------------------------------------------
@@ -1636,7 +1735,7 @@ TEST_F(EmbedderTest, JITSnapshotCallbacksFailWithInvalidLocation) {
 // TODO(#107263): Inconsistent snapshot paths in the Linux Fuchsia FEMU test.
 #if defined(OS_FUCHSIA)
   GTEST_SKIP() << "Inconsistent paths in Fuchsia.";
-#endif  // OS_FUCHSIA
+#else
 
   // This test is only relevant in JIT mode.
   if (DartVM::IsRunningPrecompiledCode()) {
@@ -1667,6 +1766,7 @@ TEST_F(EmbedderTest, JITSnapshotCallbacksFailWithInvalidLocation) {
   ASSERT_EQ(settings.vm_snapshot_instr(), nullptr);
   ASSERT_EQ(settings.isolate_snapshot_data(), nullptr);
   ASSERT_EQ(settings.isolate_snapshot_instr(), nullptr);
+#endif  // OS_FUCHSIA
 }
 
 //------------------------------------------------------------------------------
@@ -1982,7 +2082,7 @@ typedef struct {
 //
 // It performs a revesed mapping from `_serializeKeyEventType`
 // in shell/platform/embedder/fixtures/main.dart.
-FlutterKeyEventType UnserializeKeyEventKind(uint64_t kind) {
+FlutterKeyEventType UnserializeKeyEventType(uint64_t kind) {
   switch (kind) {
     case 1:
       return kFlutterKeyEventTypeUp;
@@ -1996,6 +2096,28 @@ FlutterKeyEventType UnserializeKeyEventKind(uint64_t kind) {
   }
 }
 
+// Convert `source` in integer form to its enum form.
+//
+// It performs a revesed mapping from `_serializeKeyEventDeviceType`
+// in shell/platform/embedder/fixtures/main.dart.
+FlutterKeyEventDeviceType UnserializeKeyEventDeviceType(uint64_t source) {
+  switch (source) {
+    case 1:
+      return kFlutterKeyEventDeviceTypeKeyboard;
+    case 2:
+      return kFlutterKeyEventDeviceTypeDirectionalPad;
+    case 3:
+      return kFlutterKeyEventDeviceTypeGamepad;
+    case 4:
+      return kFlutterKeyEventDeviceTypeJoystick;
+    case 5:
+      return kFlutterKeyEventDeviceTypeHdmi;
+    default:
+      FML_UNREACHABLE();
+      return kFlutterKeyEventDeviceTypeKeyboard;
+  }
+}
+
 // Checks the equality of two `FlutterKeyEvent` by each of their members except
 // for `character`. The `character` must be checked separately.
 void ExpectKeyEventEq(const FlutterKeyEvent& subject,
@@ -2005,16 +2127,18 @@ void ExpectKeyEventEq(const FlutterKeyEvent& subject,
   EXPECT_EQ(subject.physical, baseline.physical);
   EXPECT_EQ(subject.logical, baseline.logical);
   EXPECT_EQ(subject.synthesized, baseline.synthesized);
+  EXPECT_EQ(subject.device_type, baseline.device_type);
 }
 
 TEST_F(EmbedderTest, KeyDataIsCorrectlySerialized) {
   auto message_latch = std::make_shared<fml::AutoResetWaitableEvent>();
   uint64_t echoed_char;
   FlutterKeyEvent echoed_event;
+  echoed_event.struct_size = sizeof(FlutterKeyEvent);
 
   auto native_echo_event = [&](Dart_NativeArguments args) {
     echoed_event.type =
-        UnserializeKeyEventKind(tonic::DartConverter<uint64_t>::FromDart(
+        UnserializeKeyEventType(tonic::DartConverter<uint64_t>::FromDart(
             Dart_GetNativeArgument(args, 0)));
     echoed_event.timestamp =
         static_cast<double>(tonic::DartConverter<uint64_t>::FromDart(
@@ -2027,6 +2151,9 @@ TEST_F(EmbedderTest, KeyDataIsCorrectlySerialized) {
         Dart_GetNativeArgument(args, 4));
     echoed_event.synthesized =
         tonic::DartConverter<bool>::FromDart(Dart_GetNativeArgument(args, 5));
+    echoed_event.device_type =
+        UnserializeKeyEventDeviceType(tonic::DartConverter<uint64_t>::FromDart(
+            Dart_GetNativeArgument(args, 6)));
 
     message_latch->Signal();
   };
@@ -2057,6 +2184,7 @@ TEST_F(EmbedderTest, KeyDataIsCorrectlySerialized) {
       .logical = 0x00000000061,
       .character = "A",
       .synthesized = false,
+      .device_type = kFlutterKeyEventDeviceTypeKeyboard,
   };
   FlutterEngineSendKeyEvent(engine.get(), &down_event_upper_a, nullptr,
                             nullptr);
@@ -2074,6 +2202,7 @@ TEST_F(EmbedderTest, KeyDataIsCorrectlySerialized) {
       .logical = 0x00000000062,
       .character = "∆",
       .synthesized = false,
+      .device_type = kFlutterKeyEventDeviceTypeKeyboard,
   };
   FlutterEngineSendKeyEvent(engine.get(), &repeat_event_wide_char, nullptr,
                             nullptr);
@@ -2091,6 +2220,7 @@ TEST_F(EmbedderTest, KeyDataIsCorrectlySerialized) {
       .logical = 0x00000000063,
       .character = nullptr,
       .synthesized = true,
+      .device_type = kFlutterKeyEventDeviceTypeKeyboard,
   };
   FlutterEngineSendKeyEvent(engine.get(), &up_event, nullptr, nullptr);
   message_latch->Wait();
@@ -2109,7 +2239,7 @@ TEST_F(EmbedderTest, KeyDataAreBuffered) {
             static_cast<double>(tonic::DartConverter<uint64_t>::FromDart(
                 Dart_GetNativeArgument(args, 1))),
         .type =
-            UnserializeKeyEventKind(tonic::DartConverter<uint64_t>::FromDart(
+            UnserializeKeyEventType(tonic::DartConverter<uint64_t>::FromDart(
                 Dart_GetNativeArgument(args, 0))),
         .physical = tonic::DartConverter<uint64_t>::FromDart(
             Dart_GetNativeArgument(args, 2)),
@@ -2117,6 +2247,9 @@ TEST_F(EmbedderTest, KeyDataAreBuffered) {
             Dart_GetNativeArgument(args, 3)),
         .synthesized = tonic::DartConverter<bool>::FromDart(
             Dart_GetNativeArgument(args, 5)),
+        .device_type = UnserializeKeyEventDeviceType(
+            tonic::DartConverter<uint64_t>::FromDart(
+                Dart_GetNativeArgument(args, 6))),
     });
 
     message_latch->Signal();
@@ -2146,6 +2279,7 @@ TEST_F(EmbedderTest, KeyDataAreBuffered) {
       .logical = 0x00000000061,
       .character = "A",
       .synthesized = false,
+      .device_type = kFlutterKeyEventDeviceTypeKeyboard,
   };
 
   // Send an event.
@@ -2229,6 +2363,7 @@ TEST_F(EmbedderTest, KeyDataResponseIsCorrectlyInvoked) {
       .physical = 0x00070005,
       .logical = 0x00000000062,
       .character = nullptr,
+      .device_type = kFlutterKeyEventDeviceTypeKeyboard,
   };
 
   KeyEventUserData user_data1{
@@ -2305,6 +2440,7 @@ TEST_F(EmbedderTest, BackToBackKeyEventResponsesCorrectlyInvoked) {
       .logical = 0x00000000062,
       .character = nullptr,
       .synthesized = false,
+      .device_type = kFlutterKeyEventDeviceTypeKeyboard,
   };
 
   // Dispatch two events back to back, using the same callback on different
@@ -2477,7 +2613,7 @@ static void MockThreadConfigSetter(const fml::Thread::ThreadConfig& config) {
   struct sched_param param;
   int policy = SCHED_OTHER;
   switch (config.priority) {
-    case fml::Thread::ThreadPriority::DISPLAY:
+    case fml::Thread::ThreadPriority::kDisplay:
       param.sched_priority = 10;
       break;
     default:
@@ -2558,6 +2694,37 @@ TEST_F(EmbedderTest, CanSendPointer) {
 
   count_latch.Wait();
   message_latch.Wait();
+}
+
+TEST_F(EmbedderTest, RegisterChannelListener) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+
+  fml::AutoResetWaitableEvent latch;
+  fml::AutoResetWaitableEvent latch2;
+  bool listening = false;
+  context.AddNativeCallback(
+      "SignalNativeTest",
+      CREATE_NATIVE_ENTRY([&](Dart_NativeArguments) { latch.Signal(); }));
+  context.SetChannelUpdateCallback([&](const FlutterChannelUpdate* update) {
+    EXPECT_STREQ(update->channel, "test/listen");
+    EXPECT_TRUE(update->listening);
+    listening = true;
+    latch2.Signal();
+  });
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+  builder.SetDartEntrypoint("channel_listener_response");
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  latch.Wait();
+  // Drain tasks posted to platform thread task runner.
+  fml::MessageLoop::GetCurrent().RunExpiredTasksNow();
+  latch2.Wait();
+
+  ASSERT_TRUE(listening);
 }
 
 }  // namespace testing

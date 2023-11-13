@@ -15,7 +15,7 @@ CoverGeometry::~CoverGeometry() = default;
 GeometryResult CoverGeometry::GetPositionBuffer(const ContentContext& renderer,
                                                 const Entity& entity,
                                                 RenderPass& pass) {
-  auto rect = Rect(Size(pass.GetRenderTargetSize()));
+  auto rect = Rect::MakeSize(pass.GetRenderTargetSize());
   constexpr uint16_t kRectIndicies[4] = {0, 1, 2, 3};
   auto& host_buffer = pass.GetTransientsBuffer();
   return GeometryResult{
@@ -23,13 +23,16 @@ GeometryResult CoverGeometry::GetPositionBuffer(const ContentContext& renderer,
       .vertex_buffer =
           {
               .vertex_buffer = host_buffer.Emplace(
-                  rect.GetPoints().data(), 8 * sizeof(float), alignof(float)),
+                  rect.GetTransformedPoints(entity.GetTransformation().Invert())
+                      .data(),
+                  8 * sizeof(float), alignof(float)),
               .index_buffer = host_buffer.Emplace(
                   kRectIndicies, 4 * sizeof(uint16_t), alignof(uint16_t)),
               .vertex_count = 4,
               .index_type = IndexType::k16bit,
           },
-      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()),
+      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                   entity.GetTransformation(),
       .prevent_overdraw = false,
   };
 }
@@ -41,7 +44,7 @@ GeometryResult CoverGeometry::GetPositionUVBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) {
-  auto rect = Rect(Size(pass.GetRenderTargetSize()));
+  auto rect = Rect::MakeSize(pass.GetRenderTargetSize());
   return ComputeUVGeometryForRect(rect, texture_coverage, effect_transform,
                                   renderer, entity, pass);
 }

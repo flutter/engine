@@ -73,7 +73,7 @@ const String _kFlutterKeyDataChannel = 'flutter/keydata';
 
 @pragma('vm:entry-point')
 ByteData? _wrapUnmodifiableByteData(ByteData? byteData) =>
-    byteData == null ? null : UnmodifiableByteDataView(byteData);
+    byteData?.asUnmodifiableView();
 
 /// A token that represents a root isolate.
 class RootIsolateToken {
@@ -185,9 +185,6 @@ class PlatformDispatcher {
   /// otherwise.
   FlutterView? view({required int id}) => _views[id];
 
-  // A map of opaque platform view identifiers to view configurations.
-  final Map<Object, _ViewConfiguration> _viewConfigurations = <Object, _ViewConfiguration>{};
-
   /// The [FlutterView] provided by the engine if the platform is unable to
   /// create windows, or, for backwards compatibility.
   ///
@@ -213,10 +210,29 @@ class PlatformDispatcher {
   /// * [View.of], for accessing the current view.
   /// * [PlatformDispatcher.views] for a list of all [FlutterView]s provided
   ///   by the platform.
-  FlutterView? get implicitView => _implicitViewEnabled() ? _views[0] : null;
-
-  @Native<Handle Function()>(symbol: 'PlatformConfigurationNativeApi::ImplicitViewEnabled')
-  external static bool _implicitViewEnabled();
+  FlutterView? get implicitView {
+    final FlutterView? result = _views[_implicitViewId];
+    // Make sure [implicitView] agrees with `_implicitViewId`.
+    assert((result != null) == (_implicitViewId != null),
+      (_implicitViewId != null) ?
+        'The implicit view ID is $_implicitViewId, but the implicit view does not exist.' :
+        'The implicit view ID is null, but the implicit view exists.');
+    // Make sure [implicitView] never chages.
+    assert(() {
+      if (_debugRecordedLastImplicitView) {
+        assert(identical(_debugLastImplicitView, result),
+          'The implicitView has changed:\n'
+          'Last: $_debugLastImplicitView\nCurrent: $result');
+      } else {
+        _debugLastImplicitView = result;
+        _debugRecordedLastImplicitView = true;
+      }
+      return true;
+    }());
+    return result;
+  }
+  FlutterView? _debugLastImplicitView;
+  bool _debugRecordedLastImplicitView = false;
 
   /// A callback that is invoked whenever the [ViewConfiguration] of any of the
   /// [views] changes.
@@ -244,6 +260,34 @@ class PlatformDispatcher {
     _onMetricsChangedZone = Zone.current;
   }
 
+  // Called from the engine, via hooks.dart
+  //
+  // Adds a new view with the specific view configuration.
+  //
+  // The implicit view must be added before [implicitView] is first called,
+  // which is typically the main function.
+  void _addView(int id, _ViewConfiguration viewConfiguration) {
+    assert(!_views.containsKey(id), 'View ID $id already exists.');
+    _views[id] = FlutterView._(id, this, viewConfiguration);
+    _invoke(onMetricsChanged, _onMetricsChangedZone);
+  }
+
+  // Called from the engine, via hooks.dart
+  //
+  // Removes the specific view.
+  //
+  // The target view must must exist. The implicit view must not be removed,
+  // or an assertion will be triggered.
+  void _removeView(int id) {
+    assert(id != _implicitViewId, 'The implicit view #$id can not be removed.');
+    if (id == _implicitViewId) {
+      return;
+    }
+    assert(_views.containsKey(id), 'View ID $id does not exist.');
+    _views.remove(id);
+    _invoke(onMetricsChanged, _onMetricsChangedZone);
+  }
+
   // Called from the engine, via hooks.dart.
   //
   // Updates the available displays.
@@ -258,103 +302,26 @@ class PlatformDispatcher {
   // Called from the engine, via hooks.dart
   //
   // Updates the metrics of the window with the given id.
-  void _updateWindowMetrics(
-    int id,
-    double devicePixelRatio,
-    double width,
-    double height,
-    double viewPaddingTop,
-    double viewPaddingRight,
-    double viewPaddingBottom,
-    double viewPaddingLeft,
-    double viewInsetTop,
-    double viewInsetRight,
-    double viewInsetBottom,
-    double viewInsetLeft,
-    double systemGestureInsetTop,
-    double systemGestureInsetRight,
-    double systemGestureInsetBottom,
-    double systemGestureInsetLeft,
-    double physicalTouchSlop,
-    List<double> displayFeaturesBounds,
-    List<int> displayFeaturesType,
-    List<int> displayFeaturesState,
-    int displayId,
-  ) {
-    final _ViewConfiguration previousConfiguration =
-        _viewConfigurations[id] ?? const _ViewConfiguration();
-    if (!_views.containsKey(id)) {
-      _views[id] = FlutterView._(id, this);
-    }
-    _viewConfigurations[id] = previousConfiguration.copyWith(
-      view: _views[id],
-      devicePixelRatio: devicePixelRatio,
-      geometry: Rect.fromLTWH(0.0, 0.0, width, height),
-      viewPadding: ViewPadding._(
-        top: viewPaddingTop,
-        right: viewPaddingRight,
-        bottom: viewPaddingBottom,
-        left: viewPaddingLeft,
-      ),
-      viewInsets: ViewPadding._(
-        top: viewInsetTop,
-        right: viewInsetRight,
-        bottom: viewInsetBottom,
-        left: viewInsetLeft,
-      ),
-      padding: ViewPadding._(
-        top: math.max(0.0, viewPaddingTop - viewInsetTop),
-        right: math.max(0.0, viewPaddingRight - viewInsetRight),
-        bottom: math.max(0.0, viewPaddingBottom - viewInsetBottom),
-        left: math.max(0.0, viewPaddingLeft - viewInsetLeft),
-      ),
-      systemGestureInsets: ViewPadding._(
-        top: math.max(0.0, systemGestureInsetTop),
-        right: math.max(0.0, systemGestureInsetRight),
-        bottom: math.max(0.0, systemGestureInsetBottom),
-        left: math.max(0.0, systemGestureInsetLeft),
-      ),
-      // -1 is used as a sentinel for an undefined touch slop
-      gestureSettings: GestureSettings(
-        physicalTouchSlop: physicalTouchSlop == _kUnsetGestureSetting ? null : physicalTouchSlop,
-      ),
-      displayFeatures: _decodeDisplayFeatures(
-        bounds: displayFeaturesBounds,
-        type: displayFeaturesType,
-        state: displayFeaturesState,
-        devicePixelRatio: devicePixelRatio,
-      ),
-      displayId: displayId,
-    );
+  void _updateWindowMetrics(int viewId, _ViewConfiguration viewConfiguration) {
+    assert(_views.containsKey(viewId), 'View $viewId does not exist.');
+    _views[viewId]!._viewConfiguration = viewConfiguration;
     _invoke(onMetricsChanged, _onMetricsChangedZone);
   }
 
-  List<DisplayFeature> _decodeDisplayFeatures({
-    required List<double> bounds,
-    required List<int> type,
-    required List<int> state,
-    required double devicePixelRatio,
-  }) {
-    assert(bounds.length / 4 == type.length, 'Bounds are rectangles, requiring 4 measurements each');
-    assert(type.length == state.length);
-    final List<DisplayFeature> result = <DisplayFeature>[];
-    for(int i = 0; i < type.length; i++) {
-      final int rectOffset = i * 4;
-      result.add(DisplayFeature(
-        bounds: Rect.fromLTRB(
-          bounds[rectOffset] / devicePixelRatio,
-          bounds[rectOffset + 1] / devicePixelRatio,
-          bounds[rectOffset + 2] / devicePixelRatio,
-          bounds[rectOffset + 3] / devicePixelRatio,
-        ),
-        type: DisplayFeatureType.values[type[i]],
-        state: state[i] < DisplayFeatureState.values.length
-            ? DisplayFeatureState.values[state[i]]
-            : DisplayFeatureState.unknown,
-      ));
-    }
-    return result;
-  }
+  // The [FlutterView]s for which [FlutterView.render] has already been called
+  // during the current [onBeginFrame]/[onDrawFrame] callback sequence.
+  //
+  // It is null outside the scope of those callbacks indicating that calls to
+  // [FlutterView.render] must be ignored. Furthermore, if a given [FlutterView]
+  // is already present in this set when its [FlutterView.render] is called
+  // again, that call must be ignored as a duplicate.
+  //
+  // Between [onBeginFrame] and [onDrawFrame] the properties value is
+  // temporarily stored in `_renderedViewsBetweenCallbacks` so that it survives
+  // the gap between the two callbacks.
+  Set<FlutterView>? _renderedViews;
+  // The `_renderedViews` value between `_beginFrame` and `_drawFrame`.
+  Set<FlutterView>? _renderedViewsBetweenCallbacks;
 
   /// A callback invoked when any view begins a frame.
   ///
@@ -376,11 +343,20 @@ class PlatformDispatcher {
 
   // Called from the engine, via hooks.dart
   void _beginFrame(int microseconds) {
+    assert(_renderedViews == null);
+    assert(_renderedViewsBetweenCallbacks == null);
+    _renderedViews = <FlutterView>{};
+
     _invoke1<Duration>(
       onBeginFrame,
       _onBeginFrameZone,
       Duration(microseconds: microseconds),
     );
+
+    assert(_renderedViews != null);
+    assert(_renderedViewsBetweenCallbacks == null);
+    _renderedViewsBetweenCallbacks = _renderedViews;
+    _renderedViews = null;
   }
 
   /// A callback that is invoked for each frame after [onBeginFrame] has
@@ -398,7 +374,16 @@ class PlatformDispatcher {
 
   // Called from the engine, via hooks.dart
   void _drawFrame() {
+    assert(_renderedViews == null);
+    assert(_renderedViewsBetweenCallbacks != null);
+    _renderedViews = _renderedViewsBetweenCallbacks;
+    _renderedViewsBetweenCallbacks = null;
+
     _invoke(onDrawFrame, _onDrawFrameZone);
+
+    assert(_renderedViews != null);
+    assert(_renderedViewsBetweenCallbacks == null);
+    _renderedViews = null;
   }
 
   /// A callback that is invoked when pointer data is available.
@@ -521,11 +506,9 @@ class PlatformDispatcher {
 
   // If this value changes, update the encoding code in the following files:
   //
-  //  * key_data.h
-  //  * key.dart (ui)
-  //  * key.dart (web_ui)
-  //  * HardwareKeyboard.java
-  static const int _kKeyDataFieldCount = 5;
+  //  * key_data.h (kKeyDataFieldCount)
+  //  * KeyData.java (KeyData.FIELD_COUNT)
+  static const int _kKeyDataFieldCount = 6;
 
   // The packet structure is described in `key_data_packet.h`.
   static KeyData _unpackKeyData(ByteData packet) {
@@ -1097,17 +1080,19 @@ class PlatformDispatcher {
     if (brieflyShowPassword != null) {
       _brieflyShowPassword = brieflyShowPassword;
     }
-    final Brightness platformBrightness =
-    data['platformBrightness']! as String == 'dark' ? Brightness.dark : Brightness.light;
+    final Brightness platformBrightness = switch (data['platformBrightness']) {
+      'dark'              => Brightness.dark,
+      'light'             => Brightness.light,
+      final Object? value => throw StateError('$value is not a valid platformBrightness.'),
+    };
     final String? systemFontFamily = data['systemFontFamily'] as String?;
+    final int? configurationId = data['configurationId'] as int?;
     final _PlatformConfiguration previousConfiguration = _configuration;
     final bool platformBrightnessChanged = previousConfiguration.platformBrightness != platformBrightness;
     final bool textScaleFactorChanged = previousConfiguration.textScaleFactor != textScaleFactor;
-    final bool alwaysUse24HourFormatChanged =
-        previousConfiguration.alwaysUse24HourFormat != alwaysUse24HourFormat;
-    final bool systemFontFamilyChanged =
-        previousConfiguration.systemFontFamily != systemFontFamily;
-    if (!platformBrightnessChanged && !textScaleFactorChanged && !alwaysUse24HourFormatChanged && !systemFontFamilyChanged) {
+    final bool alwaysUse24HourFormatChanged = previousConfiguration.alwaysUse24HourFormat != alwaysUse24HourFormat;
+    final bool systemFontFamilyChanged = previousConfiguration.systemFontFamily != systemFontFamily;
+    if (!platformBrightnessChanged && !textScaleFactorChanged && !alwaysUse24HourFormatChanged && !systemFontFamilyChanged && configurationId == null) {
       return;
     }
     _configuration = previousConfiguration.copyWith(
@@ -1115,9 +1100,11 @@ class PlatformDispatcher {
       alwaysUse24HourFormat: alwaysUse24HourFormat,
       platformBrightness: platformBrightness,
       systemFontFamily: systemFontFamily,
+      configurationId: configurationId,
     );
     _invoke(onPlatformConfigurationChanged, _onPlatformConfigurationChangedZone);
     if (textScaleFactorChanged) {
+      _cachedFontSizes = null;
       _invoke(onTextScaleFactorChanged, _onTextScaleFactorChangedZone);
     }
     if (platformBrightnessChanged) {
@@ -1275,7 +1262,7 @@ class PlatformDispatcher {
   /// ## iOS
   ///
   /// On iOS, calling
-  /// [`FlutterViewController.setInitialRoute`](/objcdoc/Classes/FlutterViewController.html#/c:objc%28cs%29FlutterViewController%28im%29setInitialRoute:)
+  /// [`FlutterViewController.setInitialRoute`](/ios-embedder/interface_flutter_view_controller.html#a7f269c2da73312f856d42611cc12a33f)
   /// will set this value. The value must be set sufficiently early, i.e. before
   /// the [runApp] call is executed in Dart, for this to have any effect on the
   /// framework. The `application:didFinishLaunchingWithOptions:` method is a
@@ -1290,6 +1277,99 @@ class PlatformDispatcher {
 
   @Native<Handle Function()>(symbol: 'PlatformConfigurationNativeApi::DefaultRouteName')
   external static String _defaultRouteName();
+
+  /// Computes the scaled font size from the given `unscaledFontSize`, according
+  /// to the user's platform preferences.
+  ///
+  /// Many platforms allow users to scale text globally for better readability.
+  /// Given the font size the app developer specified in logical pixels, this
+  /// method converts it to the preferred font size (also in logical pixels) that
+  /// accounts for platform-wide text scaling. The return value is always
+  /// non-negative.
+  ///
+  /// The scaled value of the same font size input may change if the user changes
+  /// the text scaling preference (in system settings for example). The
+  /// [onTextScaleFactorChanged] callback can be used to monitor such changes.
+  ///
+  /// Instead of directly calling this method, applications should typically use
+  /// [MediaQuery.textScalerOf] to retrive the scaled font size in a widget tree,
+  /// so text in the app resizes properly when the text scaling preference
+  /// changes.
+  double scaleFontSize(double unscaledFontSize) {
+    assert(unscaledFontSize >= 0);
+    assert(unscaledFontSize.isFinite);
+
+    if (textScaleFactor == 1.0) {
+      return unscaledFontSize;
+    }
+
+    final int unscaledFloor = unscaledFontSize.floor();
+    final int unscaledCeil = unscaledFontSize.ceil();
+    if (unscaledFloor == unscaledCeil) {
+      // No need to interpolate if the input value is an integer.
+      return _scaleAndMemoize(unscaledFloor) ?? unscaledFontSize * textScaleFactor;
+    }
+    assert(unscaledCeil - unscaledFloor == 1, 'Unexpected interpolation range: $unscaledFloor - $unscaledCeil.');
+
+    return switch ((_scaleAndMemoize(unscaledFloor), _scaleAndMemoize(unscaledCeil))) {
+      (null, _) || (_, null)                   => unscaledFontSize * textScaleFactor,
+      (final double lower, final double upper) => lower + (upper - lower) * (unscaledFontSize - unscaledFloor),
+    };
+  }
+
+  // The cache is cleared when the text scale factor changes.
+  Map<int, double>? _cachedFontSizes;
+  // This method returns null if an error is encountered.
+  double? _scaleAndMemoize(int unscaledFontSize) {
+    final int? configurationId = _configuration.configurationId;
+    if (configurationId == null) {
+      // The platform uses linear scaling, or the platform hasn't sent us a
+      // configuration yet.
+      return null;
+    }
+    final double? cachedValue = _cachedFontSizes?[unscaledFontSize];
+    if (cachedValue != null) {
+      assert(cachedValue >= 0);
+      return cachedValue;
+    }
+
+    final double unscaledFontSizeDouble = unscaledFontSize.toDouble();
+    final double fontSize = PlatformDispatcher._getScaledFontSize(unscaledFontSizeDouble, configurationId);
+    if (fontSize >= 0) {
+      return (_cachedFontSizes ??= <int, double>{})[unscaledFontSize] = fontSize;
+    }
+    switch (fontSize) {
+      case -1:
+        // Invalid configuration id. This error can be unrecoverable as the
+        // _getScaledFontSize function can be destructive.
+        assert(false, 'Flutter Error: incorrect configuration id: $configurationId.');
+      case final double errorCode:
+        assert(false, 'Unknown error: GetScaledFontSize failed with $errorCode.');
+    }
+    return null;
+  }
+
+  // Calls the platform's text scaling implementation to scale the given
+  // `unscaledFontSize`.
+  //
+  // The `configurationId` parameter tells the embedder which platform
+  // configuration to use for computing the scaled font size. When the user
+  // changes the platform configuration, the configuration data will first be
+  // made available on the platform thread before being dispatched asynchronously
+  // to the Flutter UI thread. Since this call is synchronous, without this
+  // identifier, it could call into the embber who's using a newer configuration
+  // that Flutter has not received yet. The `configurationId` parameter must be
+  // the lastest configuration id received from the platform
+  // (`_configuration.configurationId`). Using an incorrect id could result in
+  // an unrecoverable error.
+  //
+  // Currently this is only implemented on newer versions of Android (SDK level
+  // 34, using the `TypedValue#applyDimension` API). Platforms that do not have
+  // the capability will never send a `configurationId` to [PlatformDispatcher],
+  // and should not call this method. This method returns -1 when the specified
+  // configurationId does not match any configuration.
+  @Native<Double Function(Double, Int)>(symbol: 'PlatformConfigurationNativeApi::GetScaledFontSize')
+  external static double _getScaledFontSize(double unscaledFontSize, int configurationId);
 }
 
 /// Configuration of the platform.
@@ -1305,6 +1385,7 @@ class _PlatformConfiguration {
     this.locales = const <Locale>[],
     this.defaultRouteName,
     this.systemFontFamily,
+    this.configurationId,
   });
 
   _PlatformConfiguration copyWith({
@@ -1316,6 +1397,7 @@ class _PlatformConfiguration {
     List<Locale>? locales,
     String? defaultRouteName,
     String? systemFontFamily,
+    int? configurationId,
   }) {
     return _PlatformConfiguration(
       accessibilityFeatures: accessibilityFeatures ?? this.accessibilityFeatures,
@@ -1326,6 +1408,7 @@ class _PlatformConfiguration {
       locales: locales ?? this.locales,
       defaultRouteName: defaultRouteName ?? this.defaultRouteName,
       systemFontFamily: systemFontFamily ?? this.systemFontFamily,
+      configurationId: configurationId ?? this.configurationId,
     );
   }
 
@@ -1357,15 +1440,29 @@ class _PlatformConfiguration {
 
   /// The system-reported default font family.
   final String? systemFontFamily;
+
+  /// A unique identifier for this [_PlatformConfiguration].
+  ///
+  /// This unique identifier is optionally assigned by the platform embedder.
+  /// Dart code that runs on the Flutter UI thread and synchronously invokes
+  /// platform APIs can use this identifier to tell the embedder to use the
+  /// configuration that matches the current [_PlatformConfiguration] in
+  /// dart:ui. See the [_getScaledFontSize] function for an example.
+  ///
+  /// This field's nullability also indicates whether the platform supports
+  /// nonlinear text scaling (as it's the only feature that requires synchronous
+  /// invocation of platform APIs). This field is always null if the platform
+  /// does not use nonlinear text scaling, or when dart:ui has not received any
+  /// configuration updates from the embedder yet. The _getScaledFontSize
+  /// function should not be called in either case.
+  final int? configurationId;
 }
 
 /// An immutable view configuration.
 class _ViewConfiguration {
   const _ViewConfiguration({
-    this.view,
     this.devicePixelRatio = 1.0,
-    this.geometry = Rect.zero,
-    this.visible = false,
+    this.size = Size.zero,
     this.viewInsets = ViewPadding.zero,
     this.viewPadding = ViewPadding.zero,
     this.systemGestureInsets = ViewPadding.zero,
@@ -1375,37 +1472,6 @@ class _ViewConfiguration {
     this.displayId = 0,
   });
 
-  /// Copy this configuration with some fields replaced.
-  _ViewConfiguration copyWith({
-    FlutterView? view,
-    double? devicePixelRatio,
-    Rect? geometry,
-    bool? visible,
-    ViewPadding? viewInsets,
-    ViewPadding? viewPadding,
-    ViewPadding? systemGestureInsets,
-    ViewPadding? padding,
-    GestureSettings? gestureSettings,
-    List<DisplayFeature>? displayFeatures,
-    int? displayId,
-  }) {
-    return _ViewConfiguration(
-      view: view ?? this.view,
-      devicePixelRatio: devicePixelRatio ?? this.devicePixelRatio,
-      geometry: geometry ?? this.geometry,
-      visible: visible ?? this.visible,
-      viewInsets: viewInsets ?? this.viewInsets,
-      viewPadding: viewPadding ?? this.viewPadding,
-      systemGestureInsets: systemGestureInsets ?? this.systemGestureInsets,
-      padding: padding ?? this.padding,
-      gestureSettings: gestureSettings ?? this.gestureSettings,
-      displayFeatures: displayFeatures ?? this.displayFeatures,
-      displayId: displayId ?? this.displayId,
-    );
-  }
-
-  final FlutterView?  view;
-
   /// The identifier for a display for this view, in
   /// [PlatformDispatcher._displays].
   final int displayId;
@@ -1413,12 +1479,8 @@ class _ViewConfiguration {
   /// The pixel density of the output surface.
   final double devicePixelRatio;
 
-  /// The geometry requested for the view on the screen or within its parent
-  /// window, in logical pixels.
-  final Rect geometry;
-
-  /// Whether or not the view is currently visible on the screen.
-  final bool visible;
+  /// The size requested for the view in logical pixels.
+  final Size size;
 
   /// The number of physical pixels on each side of the display rectangle into
   /// which the view can render, but over which the operating system will likely
@@ -1488,7 +1550,7 @@ class _ViewConfiguration {
 
   @override
   String toString() {
-    return '$runtimeType[view: $view, geometry: $geometry]';
+    return '$runtimeType[size: $size]';
   }
 }
 
@@ -2342,8 +2404,9 @@ class Locale {
     if (scriptCode != null && scriptCode!.isNotEmpty) {
       out.write('$separator$scriptCode');
     }
-    if (_countryCode != null && _countryCode!.isNotEmpty) {
-      out.write('$separator$countryCode');
+    final String? countryCode = _countryCode;
+    if (countryCode != null && countryCode.isNotEmpty) {
+      out.write('$separator${this.countryCode}');
     }
     return out.toString();
   }

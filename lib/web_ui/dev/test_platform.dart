@@ -540,16 +540,16 @@ class BrowserPlatform extends PlatformPlugin {
 
       final String testRunner = isWasm ? '/test_dart2wasm.js' : 'packages/test/dart.js';
 
-
       return shelf.Response.ok('''
         <!DOCTYPE html>
         <html>
         <head>
-          <title>${htmlEscape.convert(test)} Test</title>
           <meta name="assetBase" content="/">
           <script>
             window.flutterConfiguration = {
               canvasKitBaseUrl: "/canvaskit/",
+              // Some of our tests rely on color emoji
+              useColorEmoji: true,
               canvasKitVariant: "${getCanvasKitVariant()}",
             };
           </script>
@@ -1004,7 +1004,7 @@ class BrowserManager {
           final String pathToTest = p.dirname(path);
 
           final String mapPath = p.join(
-            _sourceMapDirectory!.path,
+            _sourceMapDirectory.path,
             pathToTest,
             sourceMapFileName
           );

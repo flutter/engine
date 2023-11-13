@@ -8,8 +8,11 @@
 #include <string>
 
 #include "flutter/fml/macros.h"
+#include "impeller/core/capture.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/host_buffer.h"
 #include "impeller/renderer/capabilities.h"
+#include "impeller/renderer/pool.h"
 
 namespace impeller {
 
@@ -43,10 +46,39 @@ class Allocator;
 ///             `//impeller/renderer/backend`.
 class Context {
  public:
+  enum class BackendType {
+    kMetal,
+    kOpenGLES,
+    kVulkan,
+  };
+
+  /// The maximum number of tasks that should ever be stored for
+  /// `StoreTaskForGPU`.
+  ///
+  /// This number was arbitrarily chosen. The idea is that this is a somewhat
+  /// rare situation where tasks happen to get executed in that tiny amount of
+  /// time while an app is being backgrounded but still executing.
+  static constexpr int32_t kMaxTasksAwaitingGPU = 10;
+
   //----------------------------------------------------------------------------
   /// @brief      Destroys an Impeller context.
   ///
   virtual ~Context();
+
+  //----------------------------------------------------------------------------
+  /// @brief      Get the graphics backend of an Impeller context.
+  ///
+  ///             This is useful for cases where a renderer needs to track and
+  ///             lookup backend-specific resources, like shaders or uniform
+  ///             layout information.
+  ///
+  ///             It's not recommended to use this as a substitute for
+  ///             per-backend capability checking. Instead, check for specific
+  ///             capabilities via `GetCapabilities()`.
+  ///
+  /// @return     The graphics backend of the `Context`.
+  ///
+  virtual BackendType GetBackendType() const = 0;
 
   // TODO(129920): Refactor and move to capabilities.
   virtual std::string DescribeGpuModel() const = 0;
@@ -137,11 +169,45 @@ class Context {
   ///
   virtual void Shutdown() = 0;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Force the Vulkan presentation (submitKHR) to be performed on
+  ///             the raster task runner.
+  ///
+  ///             This is required for correct rendering on Android when using
+  ///             the hybrid composition mode. This has no effect on other
+  ///             backends. This is analogous to the check for isMainThread in
+  ///             surface_mtl.mm to block presentation on scheduling of all
+  ///             pending work.
+  virtual void SetSyncPresentation(bool value) {}
+
+  //----------------------------------------------------------------------------
+  /// @brief Accessor for a pool of HostBuffers.
+  Pool<HostBuffer>& GetHostBufferPool() const { return host_buffer_pool_; }
+
+  CaptureContext capture;
+
+  /// Stores a task on the `ContextMTL` that is awaiting access for the GPU.
+  ///
+  /// The task will be executed in the event that the GPU access has changed to
+  /// being available or that the task has been canceled. The task should
+  /// operate with the `SyncSwitch` to make sure the GPU is accessible.
+  ///
+  /// Threadsafe.
+  ///
+  /// `task` will be executed on the platform thread.
+  virtual void StoreTaskForGPU(std::function<void()> task) {
+    FML_CHECK(false && "not supported in this context");
+  }
+
  protected:
   Context();
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(Context);
+  mutable Pool<HostBuffer> host_buffer_pool_ = Pool<HostBuffer>(1'000'000);
+
+  Context(const Context&) = delete;
+
+  Context& operator=(const Context&) = delete;
 };
 
 }  // namespace impeller

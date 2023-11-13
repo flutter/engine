@@ -30,7 +30,7 @@ static std::optional<SamplerAddressMode> TileModeToAddressMode(
       return SamplerAddressMode::kRepeat;
       break;
     case Entity::TileMode::kDecal:
-      if (capabilities.SupportsDecalTileMode()) {
+      if (capabilities.SupportsDecalSamplerAddressMode()) {
         return SamplerAddressMode::kDecal;
       }
       return std::nullopt;
@@ -128,7 +128,7 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
   auto& host_buffer = pass.GetTransientsBuffer();
 
   auto geometry_result = GetGeometry()->GetPositionUVBuffer(
-      Rect({0, 0}, Size(texture_size)), GetInverseEffectTransform(), renderer,
+      Rect::MakeSize(texture_size), GetInverseEffectTransform(), renderer,
       entity, pass);
   bool uses_emulated_tile_mode =
       UsesEmulatedTileMode(renderer.GetDeviceCapabilities());
@@ -136,10 +136,16 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
   VS::FrameInfo frame_info;
   frame_info.mvp = geometry_result.transform;
   frame_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
+  frame_info.alpha = GetOpacityFactor();
 
   Command cmd;
-  cmd.label = uses_emulated_tile_mode ? "TiledTextureFill" : "TextureFill";
-  cmd.stencil_reference = entity.GetStencilDepth();
+  if (uses_emulated_tile_mode) {
+    DEBUG_COMMAND_INFO(cmd, "TiledTextureFill");
+  } else {
+    DEBUG_COMMAND_INFO(cmd, "TextureFill");
+  }
+
+  cmd.stencil_reference = entity.GetClipDepth();
 
   auto options = OptionsFromPassAndEntity(pass, entity);
   if (geometry_result.prevent_overdraw) {
@@ -158,13 +164,7 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
     FS::FragInfo frag_info;
     frag_info.x_tile_mode = static_cast<Scalar>(x_tile_mode_);
     frag_info.y_tile_mode = static_cast<Scalar>(y_tile_mode_);
-    frag_info.alpha = GetOpacityFactor();
     FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
-  } else {
-    TextureFillFragmentShader::FragInfo frag_info;
-    frag_info.alpha = GetOpacityFactor();
-    TextureFillFragmentShader::BindFragInfo(
-        cmd, host_buffer.EmplaceUniform(frag_info));
   }
 
   if (color_filter_) {
@@ -202,10 +202,18 @@ std::optional<Snapshot> TiledTextureContents::RenderToSnapshot(
     const std::optional<SamplerDescriptor>& sampler_descriptor,
     bool msaa_enabled,
     const std::string& label) const {
-  if (GetInverseEffectTransform().IsIdentity()) {
+  if (GetInverseEffectTransform().IsIdentity() &&
+      GetGeometry()->IsAxisAlignedRect()) {
+    auto coverage = GetCoverage(entity);
+    if (!coverage.has_value()) {
+      return std::nullopt;
+    }
+    auto scale = Vector2(coverage->size / Size(texture_->GetSize()));
+
     return Snapshot{
         .texture = texture_,
-        .transform = entity.GetTransformation(),
+        .transform = Matrix::MakeTranslation(coverage->origin) *
+                     Matrix::MakeScale(scale),
         .sampler_descriptor = sampler_descriptor.value_or(sampler_descriptor_),
         .opacity = GetOpacityFactor(),
     };

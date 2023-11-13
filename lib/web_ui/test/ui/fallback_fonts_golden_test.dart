@@ -165,59 +165,55 @@ void testMain() {
       // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
     });
 
+    /// Attempts to render [text] and verifies that [expectedFamilies] are downloaded.
+    ///
+    /// Then it does the same, but asserts that the families aren't downloaded again
+    /// (because they already exist in memory).
+    Future<void> checkDownloadedFamiliesForString(String text, List<String> expectedFamilies) async {
+      // Try rendering text that requires fallback fonts, initially before the fonts are loaded.
+      ui.ParagraphBuilder pb = ui.ParagraphBuilder(ui.ParagraphStyle());
+      pb.addText(text);
+      pb.build().layout(const ui.ParagraphConstraints(width: 1000));
+
+      await renderer.fontCollection.fontFallbackManager!.debugWhenIdle();
+      expect(
+        downloadedFontFamilies,
+        expectedFamilies,
+      );
+
+      // Do the same thing but this time with loaded fonts.
+      downloadedFontFamilies.clear();
+      pb = ui.ParagraphBuilder(ui.ParagraphStyle());
+      pb.addText(text);
+      pb.build().layout(const ui.ParagraphConstraints(width: 1000));
+
+      await renderer.fontCollection.fontFallbackManager!.debugWhenIdle();
+      expect(downloadedFontFamilies, isEmpty);
+    }
+
     // Regression test for https://github.com/flutter/flutter/issues/75836
     // When we had this bug our font fallback resolution logic would end up in an
     // infinite loop and this test would freeze and time out.
     test(
-        'Can find fonts for two adjacent unmatched code points from different fonts',
+        'can find fonts for two adjacent unmatched code points from different fonts',
         () async {
-      // Try rendering text that requires fallback fonts, initially before the fonts are loaded.
-
-      ui.ParagraphBuilder pb = ui.ParagraphBuilder(ui.ParagraphStyle());
-      pb.addText('ヽಠ');
-      pb.build().layout(const ui.ParagraphConstraints(width: 1000));
-
-      await renderer.fontCollection.fontFallbackManager!.debugWhenIdle();
-      expect(
-        downloadedFontFamilies,
-        <String>[
-          'Noto Sans SC',
-          'Noto Sans Kannada',
-        ],
-      );
-
-      // Do the same thing but this time with loaded fonts.
-      downloadedFontFamilies.clear();
-      pb = ui.ParagraphBuilder(ui.ParagraphStyle());
-      pb.addText('ヽಠ');
-      pb.build().layout(const ui.ParagraphConstraints(width: 1000));
-      await renderer.fontCollection.fontFallbackManager!.debugWhenIdle();
-      expect(downloadedFontFamilies, isEmpty);
+      await checkDownloadedFamiliesForString('ヽಠ', <String>[
+        'Noto Sans SC',
+        'Noto Sans Kannada',
+      ]);
     });
 
     test('can find glyph for 2/3 symbol', () async {
-      // Try rendering text that requires fallback fonts, initially before the fonts are loaded.
+      await checkDownloadedFamiliesForString('⅔', <String>[
+        'Noto Sans',
+      ]);
+    });
 
-      ui.ParagraphBuilder pb = ui.ParagraphBuilder(ui.ParagraphStyle());
-      pb.addText('⅔');
-      pb.build().layout(const ui.ParagraphConstraints(width: 1000));
-
-      await renderer.fontCollection.fontFallbackManager!.debugWhenIdle();
-      expect(
-        downloadedFontFamilies,
-        <String>[
-          'Noto Sans',
-        ],
-      );
-
-      // Do the same thing but this time with loaded fonts.
-      downloadedFontFamilies.clear();
-      pb = ui.ParagraphBuilder(ui.ParagraphStyle());
-      pb.addText('⅔');
-      pb.build().layout(const ui.ParagraphConstraints(width: 1000));
-
-      await renderer.fontCollection.fontFallbackManager!.debugWhenIdle();
-      expect(downloadedFontFamilies, isEmpty);
+    // https://github.com/flutter/devtools/issues/6149
+    test('can find glyph for treble clef', () async {
+      await checkDownloadedFamiliesForString('𝄞', <String>[
+        'Noto Music',
+      ]);
     });
 
     test('findMinimumFontsForCodePoints for all supported code points', () async {
@@ -225,24 +221,32 @@ void testMain() {
       // font tree.
       final Set<String> testedFonts = <String>{};
       final Set<int> supportedUniqueCodePoints = <int>{};
-      final IntervalTree<NotoFont> notoTree =
-          renderer.fontCollection.fontFallbackManager!.notoTree;
-      for (final NotoFont font in renderer.fontCollection.fontFallbackManager!.fallbackFonts) {
-        testedFonts.add(font.name);
-        for (final CodePointRange range in font.computeUnicodeRanges()) {
-          for (int codePoint = range.start; codePoint < range.end; codePoint++) {
-            supportedUniqueCodePoints.add(codePoint);
+      renderer.fontCollection.fontFallbackManager!.codePointToComponents
+          .forEachRange((int start, int end, FallbackFontComponent component) {
+        if (component.fonts.isNotEmpty) {
+          bool componentHasEnabledFont = false;
+          for (final NotoFont font in component.fonts) {
+            if (font.enabled) {
+              testedFonts.add(font.name);
+              componentHasEnabledFont = true;
+            }
+          }
+          if (componentHasEnabledFont) {
+            for (int codePoint = start; codePoint <= end; codePoint++) {
+              supportedUniqueCodePoints.add(codePoint);
+            }
           }
         }
-      }
+      });
 
       expect(
           supportedUniqueCodePoints.length, greaterThan(10000)); // sanity check
       expect(
           testedFonts,
           unorderedEquals(<String>{
-            'Noto Sans',
             'Noto Color Emoji',
+            'Noto Music',
+            'Noto Sans',
             'Noto Sans Symbols',
             'Noto Sans Symbols 2',
             'Noto Sans Adlam',
@@ -402,7 +406,10 @@ void testMain() {
         }
         final Set<NotoFont> fonts = <NotoFont>{};
         for (final int codePoint in codePoints) {
-          final List<NotoFont> fontsForPoint = notoTree.intersections(codePoint);
+          final List<NotoFont> fontsForPoint = renderer
+              .fontCollection.fontFallbackManager!.codePointToComponents
+              .lookup(codePoint)
+              .fonts;
 
           // All code points are extracted from the same tree, so there must
           // be at least one font supporting each code point
@@ -411,10 +418,11 @@ void testMain() {
         }
 
         try {
-          renderer.fontCollection.fontFallbackManager!.findMinimumFontsForCodePoints(codePoints, fonts);
+          renderer.fontCollection.fontFallbackManager!
+              .findFontsForMissingCodePoints(codePoints.toList());
         } catch (e) {
           print(
-            'findMinimumFontsForCodePoints failed:\n'
+            'findFontsForMissingCodePoints failed:\n'
             '  Code points: ${codePoints.join(', ')}\n'
             '  Fonts: ${fonts.map((NotoFont f) => f.name).join(', ')}',
           );
