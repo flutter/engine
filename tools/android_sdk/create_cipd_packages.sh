@@ -63,14 +63,6 @@ if [[ ! -d "$sdk_path/cmdline-tools" ]]; then
   exit 1
 fi
 
-# Validate cipd credentials exist.
-# cipdAclCheck=("cipd acl-check flutter/android/sdk/all/")
-# if [[ ! cipdAclCheck =~ 'WRITE']]; then
-#   echo "Visit go/flutter-luci-cipd to request write access"
-#   print_usage
-#   exit 1
-# fi
-
 platforms=("linux" "macosx" "windows")
 package_file_name="packages.txt"
 
