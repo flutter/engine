@@ -94,6 +94,9 @@ class StopwatchVisualizer {
  public:
   explicit StopwatchVisualizer(const Stopwatch& stopwatch)
       : stopwatch_(stopwatch) {
+    // Looking up the frame budget from the stopwatch delegate class may call
+    // into JNI or make platform calls which are slow. This value is safe to
+    // cache since the StopwatchVisualizer is recreated on each frame.
     frame_budget_ = stopwatch_.GetFrameBudget();
   }
 
