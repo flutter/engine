@@ -210,6 +210,7 @@ class VirtualDisplayController {
     renderTarget.release();
   }
 
+  @TargetApi(21)
   private void resizeAboveAndroidS(
       View embeddedView, int width, int height, final Runnable onNewSizeFrameAvailable) {
     renderTarget.resize(width, height);
