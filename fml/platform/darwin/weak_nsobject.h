@@ -58,6 +58,11 @@ struct DebugThreadChecker {
 // a single thread, namely the same thread as the "originating"
 // |WeakNSObjectFactory| (which can invalidate the WeakNSObjects that it
 // generates).
+//
+// However, WeakNSObject may be passed to other threads, reset on other
+// threads, or destroyed on other threads. They may also be reassigned on
+// other threads (in which case they should then only be used on the thread
+// corresponding to the new "originating" |WeakNSObjectFactory|).
 namespace fml {
 
 // Forward declaration, so |WeakNSObject<NST>| can friend it.
@@ -68,7 +73,7 @@ class WeakNSObjectFactory;
 // receives nullify() from the object's sentinel.
 class WeakContainer : public fml::RefCountedThreadSafe<WeakContainer> {
  public:
-  explicit WeakContainer(id object, std::shared_ptr<debug::DebugThreadChecker> checker = nullptr)
+  explicit WeakContainer(id object, debug::DebugThreadChecker checker)
       : checker_(checker), object_(object) {}
 
   id object() {
@@ -76,24 +81,16 @@ class WeakContainer : public fml::RefCountedThreadSafe<WeakContainer> {
     return object_;
   }
 
-  void nullify() {
-    CheckThreadSafety();
-    object_ = nil;
-  }
+  void nullify() { object_ = nil; }
 
  private:
   friend fml::RefCountedThreadSafe<WeakContainer>;
   ~WeakContainer() {}
 
-  std::shared_ptr<debug::DebugThreadChecker> checker_;
+  debug::DebugThreadChecker checker_;
   id object_;
 
-  void CheckThreadSafety() const {
-    if (!checker_) {
-      return;
-    }
-    FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_->checker);
-  }
+  void CheckThreadSafety() const { FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker); }
 };
 
 }  // namespace fml
@@ -105,8 +102,7 @@ class WeakContainer : public fml::RefCountedThreadSafe<WeakContainer> {
 // Return the only associated container for this object. There can be only one.
 // Will return null if object is nil .
 + (fml::RefPtr<fml::WeakContainer>)containerForObject:(id)object
-                                        threadChecker:
-                                            (std::shared_ptr<debug::DebugThreadChecker>)checker;
+                                        threadChecker:(debug::DebugThreadChecker)checker;
 @end
 
 namespace fml {
@@ -117,16 +113,14 @@ class WeakNSProtocol {
  public:
   WeakNSProtocol() = default;
 
-  WeakNSProtocol(const WeakNSProtocol<NST>& that) {
-    // A WeakNSProtocol object can be copied on one thread and used on
-    // another.
-    container_ = that.container_;
-  }
+  // A WeakNSProtocol object can be copied on one thread and used on
+  // another.
+  WeakNSProtocol(const WeakNSProtocol<NST>& that)
+      : container_(that.container_), checker_(that.checker_) {}
 
   ~WeakNSProtocol() = default;
 
   void reset() {
-    CheckThreadSafety();
     container_ = [CRBWeakNSProtocolSentinel containerForObject:nil threadChecker:checker_];
   }
 
@@ -142,6 +136,7 @@ class WeakNSProtocol {
     // A WeakNSProtocol object can be copied on one thread and used on
     // another.
     container_ = that.container_;
+    checker_ = that.checker_;
     return *this;
   }
 
@@ -163,22 +158,16 @@ class WeakNSProtocol {
  protected:
   friend class WeakNSObjectFactory<NST>;
 
-  explicit WeakNSProtocol(std::shared_ptr<debug::DebugThreadChecker> checker, NST object = nil)
-      : checker_(checker) {
+  explicit WeakNSProtocol(debug::DebugThreadChecker checker, NST object = nil) : checker_(checker) {
     container_ = [CRBWeakNSProtocolSentinel containerForObject:object threadChecker:checker];
   }
 
   // Refecounted reference to the container tracking the ObjectiveC object this
   // class encapsulates.
   RefPtr<fml::WeakContainer> container_;
-  std::shared_ptr<debug::DebugThreadChecker> checker_;
+  debug::DebugThreadChecker checker_;
 
-  void CheckThreadSafety() const {
-    if (!checker_) {
-      return;
-    }
-    FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_->checker);
-  }
+  void CheckThreadSafety() const { FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker); }
 };
 
 // Free functions
@@ -206,7 +195,7 @@ class WeakNSObject : public WeakNSProtocol<NST*> {
  private:
   friend class WeakNSObjectFactory<NST>;
 
-  explicit WeakNSObject(std::shared_ptr<debug::DebugThreadChecker> checker, NST* object = nil)
+  explicit WeakNSObject(debug::DebugThreadChecker checker, NST* object = nil)
       : WeakNSProtocol<NST*>(checker, object) {}
 };
 
@@ -225,7 +214,7 @@ class WeakNSObject<id> : public WeakNSProtocol<id> {
  private:
   friend class WeakNSObjectFactory<id>;
 
-  explicit WeakNSObject(std::shared_ptr<debug::DebugThreadChecker> checker, id object = nil)
+  explicit WeakNSObject(debug::DebugThreadChecker checker, id object = nil)
       : WeakNSProtocol<id>(checker, object) {}
 };
 
@@ -256,10 +245,7 @@ class WeakNSObject<id> : public WeakNSProtocol<id> {
 template <typename NST>
 class WeakNSObjectFactory {
  public:
-  explicit WeakNSObjectFactory(NST* object) : object_(object) {
-    FML_DCHECK(object_);
-    checker_ = std::make_shared<debug::DebugThreadChecker>();
-  }
+  explicit WeakNSObjectFactory(NST* object) : object_(object) { FML_DCHECK(object_); }
 
   ~WeakNSObjectFactory() { CheckThreadSafety(); }
 
@@ -270,14 +256,9 @@ class WeakNSObjectFactory {
  private:
   NST* object_;
 
-  void CheckThreadSafety() const {
-    if (!checker_) {
-      return;
-    }
-    FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_->checker);
-  }
+  void CheckThreadSafety() const { FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker); }
 
-  std::shared_ptr<debug::DebugThreadChecker> checker_;
+  debug::DebugThreadChecker checker_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(WeakNSObjectFactory);
 };

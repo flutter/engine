@@ -290,8 +290,8 @@
     [engine runWithEntrypoint:nil];
     FlutterViewController* flutterViewController =
         [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
-    std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
-        std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
+    std::unique_ptr<fml::WeakNSObjectFactory<FlutterEngine>> _weakFactory =
+        std::make_unique<fml::WeakNSObjectFactory<FlutterEngine>>(engine);
     XCTAssertFalse(flutterViewController.prefersStatusBarHidden);
 
     // Update to hidden.
@@ -331,8 +331,8 @@
     [engine runWithEntrypoint:nil];
     FlutterViewController* flutterViewController =
         [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
-    std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
-        std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
+    std::unique_ptr<fml::WeakNSObjectFactory<FlutterEngine>> _weakFactory =
+        std::make_unique<fml::WeakNSObjectFactory<FlutterEngine>>(engine);
     XCTAssertFalse(flutterViewController.prefersStatusBarHidden);
 
     // Update to hidden.

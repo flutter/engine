@@ -23,8 +23,7 @@ char sentinelObserverKey_;
 @synthesize container = container_;
 
 + (fml::RefPtr<fml::WeakContainer>)containerForObject:(id)object
-                                        threadChecker:
-                                            (std::shared_ptr<debug::DebugThreadChecker>)checker {
+                                        threadChecker:(debug::DebugThreadChecker)checker {
   if (object == nil) {
     return nullptr;
   }
