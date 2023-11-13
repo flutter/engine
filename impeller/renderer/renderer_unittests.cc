@@ -1161,9 +1161,9 @@ TEST_P(RendererTest, StencilMask) {
       stencil_config.storage_mode = StorageMode::kHostVisible;
       auto render_target_allocator =
           RenderTargetAllocator(context->GetResourceAllocator());
-      render_target.SetupStencilAttachment(*context, render_target_allocator,
-                                           render_target.GetRenderTargetSize(),
-                                           true, "stencil", stencil_config);
+      render_target.SetupDepthStencilAttachments(
+          *context, render_target_allocator,
+          render_target.GetRenderTargetSize(), true, "stencil", stencil_config);
       // Fill the stencil buffer with an checkerboard pattern.
       const auto target_width = render_target.GetRenderTargetSize().width;
       const auto target_height = render_target.GetRenderTargetSize().height;
