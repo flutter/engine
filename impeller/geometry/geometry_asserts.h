@@ -39,7 +39,8 @@ inline ::testing::AssertionResult MatrixNear(impeller::Matrix a,
                && NumberNear(a.m[15], b.m[15]);
 
   return equal ? ::testing::AssertionSuccess()
-               : ::testing::AssertionFailure() << "Matrixes are not equal.";
+               : ::testing::AssertionFailure()
+                     << "Matrixes are not equal " << a << " " << b;
 }
 
 inline ::testing::AssertionResult QuaternionNear(impeller::Quaternion a,
@@ -52,10 +53,10 @@ inline ::testing::AssertionResult QuaternionNear(impeller::Quaternion a,
 }
 
 inline ::testing::AssertionResult RectNear(impeller::Rect a, impeller::Rect b) {
-  auto equal = NumberNear(a.origin.x, b.origin.x) &&
-               NumberNear(a.origin.y, b.origin.y) &&
-               NumberNear(a.size.width, b.size.width) &&
-               NumberNear(a.size.height, b.size.height);
+  auto equal = NumberNear(a.GetOrigin().x, b.GetOrigin().x) &&
+               NumberNear(a.GetOrigin().y, b.GetOrigin().y) &&
+               NumberNear(a.GetSize().width, b.GetSize().width) &&
+               NumberNear(a.GetSize().height, b.GetSize().height);
 
   return equal ? ::testing::AssertionSuccess()
                : ::testing::AssertionFailure() << "Rects are not equal.";
@@ -160,3 +161,15 @@ inline ::testing::AssertionResult ColorsNear(std::vector<impeller::Color> a,
 #define ASSERT_ARRAY_4_NEAR(a, b) ASSERT_PRED2(&::Array4Near, a, b)
 #define ASSERT_COLOR_BUFFER_NEAR(a, b) ASSERT_PRED2(&::ColorBufferNear, a, b)
 #define ASSERT_COLORS_NEAR(a, b) ASSERT_PRED2(&::ColorsNear, a, b)
+
+#define EXPECT_MATRIX_NEAR(a, b) EXPECT_PRED2(&::MatrixNear, a, b)
+#define EXPECT_QUATERNION_NEAR(a, b) EXPECT_PRED2(&::QuaternionNear, a, b)
+#define EXPECT_RECT_NEAR(a, b) EXPECT_PRED2(&::RectNear, a, b)
+#define EXPECT_COLOR_NEAR(a, b) EXPECT_PRED2(&::ColorNear, a, b)
+#define EXPECT_POINT_NEAR(a, b) EXPECT_PRED2(&::PointNear, a, b)
+#define EXPECT_VECTOR3_NEAR(a, b) EXPECT_PRED2(&::Vector3Near, a, b)
+#define EXPECT_VECTOR4_NEAR(a, b) EXPECT_PRED2(&::Vector4Near, a, b)
+#define EXPECT_SIZE_NEAR(a, b) EXPECT_PRED2(&::SizeNear, a, b)
+#define EXPECT_ARRAY_4_NEAR(a, b) EXPECT_PRED2(&::Array4Near, a, b)
+#define EXPECT_COLOR_BUFFER_NEAR(a, b) EXPECT_PRED2(&::ColorBufferNear, a, b)
+#define EXPECT_COLORS_NEAR(a, b) EXPECT_PRED2(&::ColorsNear, a, b)

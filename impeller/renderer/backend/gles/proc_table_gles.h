@@ -8,7 +8,6 @@
 #include <string>
 
 #include "flutter/fml/logging.h"
-#include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "impeller/renderer/backend/gles/capabilities_gles.h"
 #include "impeller/renderer/backend/gles/description_gles.h"
@@ -185,23 +184,24 @@ struct GLProc {
   PROC(UseProgram);                          \
   PROC(VertexAttribPointer);                 \
   PROC(Viewport);                            \
+  PROC(GetShaderSource);                     \
   PROC(ReadPixels);
 
 #define FOR_EACH_IMPELLER_GLES3_PROC(PROC) PROC(BlitFramebuffer);
 
-#define FOR_EACH_IMPELLER_EXT_PROC(PROC)   \
-  PROC(DebugMessageControlKHR);            \
-  PROC(DiscardFramebufferEXT);             \
-  PROC(FramebufferTexture2DMultisampleEXT) \
-  PROC(PushDebugGroupKHR);                 \
-  PROC(PopDebugGroupKHR);                  \
-  PROC(ObjectLabelKHR);                    \
-  PROC(RenderbufferStorageMultisampleEXT); \
-  PROC(GenQueriesEXT);                     \
-  PROC(DeleteQueriesEXT);                  \
-  PROC(GetQueryObjectui64vEXT);            \
-  PROC(BeginQueryEXT);                     \
-  PROC(EndQueryEXT);                       \
+#define FOR_EACH_IMPELLER_EXT_PROC(PROC)    \
+  PROC(DebugMessageControlKHR);             \
+  PROC(DiscardFramebufferEXT);              \
+  PROC(FramebufferTexture2DMultisampleEXT); \
+  PROC(PushDebugGroupKHR);                  \
+  PROC(PopDebugGroupKHR);                   \
+  PROC(ObjectLabelKHR);                     \
+  PROC(RenderbufferStorageMultisampleEXT);  \
+  PROC(GenQueriesEXT);                      \
+  PROC(DeleteQueriesEXT);                   \
+  PROC(GetQueryObjectui64vEXT);             \
+  PROC(BeginQueryEXT);                      \
+  PROC(EndQueryEXT);                        \
   PROC(GetQueryObjectuivEXT);
 
 enum class DebugResourceType {
@@ -232,7 +232,14 @@ class ProcTableGLES {
 
   bool IsValid() const;
 
-  void ShaderSourceMapping(GLuint shader, const fml::Mapping& mapping) const;
+  /// @brief Set the source for the attached [shader].
+  ///
+  /// Optionally, [defines] may contain a string value that will be
+  /// append to the shader source after the version marker. This can be used to
+  /// support static specialization. For example, setting "#define Foo 1".
+  void ShaderSourceMapping(GLuint shader,
+                           const fml::Mapping& mapping,
+                           const std::vector<int32_t>& defines = {}) const;
 
   const DescriptionGLES* GetDescription() const;
 
@@ -252,13 +259,20 @@ class ProcTableGLES {
 
   void PopDebugGroup() const;
 
+  // Visible For testing.
+  std::optional<std::string> ComputeShaderWithDefines(
+      const fml::Mapping& mapping,
+      const std::vector<int32_t>& defines) const;
+
  private:
   bool is_valid_ = false;
   std::unique_ptr<DescriptionGLES> description_;
   std::shared_ptr<const CapabilitiesGLES> capabilities_;
   GLint debug_label_max_length_ = 0;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ProcTableGLES);
+  ProcTableGLES(const ProcTableGLES&) = delete;
+
+  ProcTableGLES& operator=(const ProcTableGLES&) = delete;
 };
 
 }  // namespace impeller

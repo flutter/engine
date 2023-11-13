@@ -9,14 +9,15 @@ import '../engine.dart' show buildMode, renderer, window;
 import 'browser_detection.dart';
 import 'configuration.dart';
 import 'dom.dart';
-import 'global_styles.dart';
 import 'keyboard_binding.dart';
 import 'platform_dispatcher.dart';
 import 'pointer_binding.dart';
 import 'semantics.dart';
 import 'text_editing/text_editing.dart';
 import 'view_embedder/dimensions_provider/dimensions_provider.dart';
+import 'view_embedder/dom_manager.dart';
 import 'view_embedder/embedding_strategy/embedding_strategy.dart';
+import 'view_embedder/style_manager.dart';
 
 /// Controls the placement and lifecycle of a Flutter view on the web page.
 ///
@@ -62,12 +63,6 @@ class FlutterViewEmbedder {
   /// Abstracts all the DOM manipulations required to embed a Flutter app in an user-supplied `hostElement`.
   final EmbeddingStrategy _embeddingStrategy;
 
-  // The tag name for the Flutter View, which hosts the app.
-  static const String flutterViewTagName = 'flutter-view';
-
-  // The tag name for the glass-pane.
-  static const String glassPaneTagName = 'flt-glass-pane';
-
   /// The element that contains the [sceneElement].
   ///
   /// This element is created and inserted in the HTML DOM once. It is never
@@ -75,8 +70,8 @@ class FlutterViewEmbedder {
   ///
   /// This element is inserted after the [semanticsHostElement] so that
   /// platform views take precedence in DOM event handling.
-  DomElement? get sceneHostElement => _sceneHostElement;
-  DomElement? _sceneHostElement;
+  DomElement get sceneHostElement => _sceneHostElement;
+  late DomElement _sceneHostElement;
 
   /// A child element of body outside the shadowroot that hosts
   /// global resources such svg filters and clip paths when using webkit.
@@ -95,8 +90,8 @@ class FlutterViewEmbedder {
   ///
   /// This element is inserted before the [semanticsHostElement] so that
   /// platform views take precedence in DOM event handling.
-  DomElement? get semanticsHostElement => _semanticsHostElement;
-  DomElement? _semanticsHostElement;
+  DomElement get semanticsHostElementDEPRECATED => _semanticsHostElement;
+  late DomElement _semanticsHostElement;
 
   /// The last scene element rendered by the [render] method.
   DomElement? get sceneElement => _sceneElement;
@@ -110,7 +105,7 @@ class FlutterViewEmbedder {
     if (sceneElement != _sceneElement) {
       _sceneElement?.remove();
       _sceneElement = sceneElement;
-      _sceneHostElement!.append(sceneElement!);
+      _sceneHostElement.append(sceneElement!);
     }
   }
 
@@ -120,28 +115,21 @@ class FlutterViewEmbedder {
   /// which captures semantics input events. The semantics DOM tree must be a
   /// child of the glass pane element so that events bubble up to the glass pane
   /// if they are not handled by semantics.
-  DomElement get flutterViewElement => _flutterViewElement;
+  DomElement get flutterViewElementDEPRECATED => _flutterViewElement;
   late DomElement _flutterViewElement;
 
-  DomElement get glassPaneElement => _glassPaneElement;
+  DomElement get glassPaneElementDEPRECATED => _glassPaneElement;
   late DomElement _glassPaneElement;
 
   /// The shadow root of the [glassPaneElement], which contains the whole Flutter app.
-  DomShadowRoot get glassPaneShadow => _glassPaneShadow;
+  DomShadowRoot get glassPaneShadowDEPRECATED => _glassPaneShadow;
   late DomShadowRoot _glassPaneShadow;
 
-  DomElement get textEditingHostNode => _textEditingHostNode;
+  DomElement get textEditingHostNodeDEPRECATED => _textEditingHostNode;
   late DomElement _textEditingHostNode;
 
-  AccessibilityAnnouncements get accessibilityAnnouncements => _accessibilityAnnouncements;
-  late AccessibilityAnnouncements _accessibilityAnnouncements;
-
-  static const String defaultFontStyle = 'normal';
-  static const String defaultFontWeight = 'normal';
-  static const double defaultFontSize = 14;
-  static const String defaultFontFamily = 'sans-serif';
-  static const String defaultCssFont =
-      '$defaultFontStyle $defaultFontWeight ${defaultFontSize}px $defaultFontFamily';
+  DomElement get announcementsHostDEPRECATED => _announcementsHost;
+  late DomElement _announcementsHost;
 
   void reset() {
     // How was the current renderer selected?
@@ -161,24 +149,24 @@ class FlutterViewEmbedder {
     );
 
     // Create and inject the [_glassPaneElement].
-    _flutterViewElement = domDocument.createElement(flutterViewTagName);
-    _glassPaneElement = domDocument.createElement(glassPaneTagName);
+    _flutterViewElement = domDocument.createElement(DomManager.flutterViewTagName);
+    _glassPaneElement = domDocument.createElement(DomManager.glassPaneTagName);
 
     // This must be attached to the DOM now, so the engine can create a host
     // node (ShadowDOM or a fallback) next.
     //
     // The embeddingStrategy will take care of cleaning up the glassPane on hot
     // restart.
-    _embeddingStrategy.attachGlassPane(flutterViewElement);
-    flutterViewElement.appendChild(glassPaneElement);
+    _embeddingStrategy.attachGlassPane(_flutterViewElement);
+    _flutterViewElement.appendChild(_glassPaneElement);
 
-    if (getJsProperty<Object?>(glassPaneElement, 'attachShadow') == null) {
+    if (getJsProperty<Object?>(_glassPaneElement, 'attachShadow') == null) {
       throw UnsupportedError('ShadowDOM is not supported in this browser.');
     }
 
     // Create a [HostNode] under the glass pane element, and attach everything
     // there, instead of directly underneath the glass panel.
-    final DomShadowRoot shadowRoot = glassPaneElement.attachShadow(<String, dynamic>{
+    final DomShadowRoot shadowRoot = _glassPaneElement.attachShadow(<String, dynamic>{
       'mode': 'open',
       // This needs to stay false to prevent issues like this:
       // - https://github.com/flutter/flutter/issues/85759
@@ -186,42 +174,39 @@ class FlutterViewEmbedder {
     });
     _glassPaneShadow = shadowRoot;
 
-    final DomHTMLStyleElement shadowRootStyleElement = createDomHTMLStyleElement(configuration.nonce);
-    shadowRootStyleElement.id = 'flt-internals-stylesheet';
-    // The shadowRootStyleElement must be appended to the DOM, or its `sheet` will be null later.
-    shadowRoot.appendChild(shadowRootStyleElement);
-    applyGlobalCssRulesToSheet(
-      shadowRootStyleElement,
-      defaultCssFont: defaultCssFont,
+    StyleManager.attachGlobalStyles(
+      node: shadowRoot,
+      styleId: 'flt-internals-stylesheet',
+      styleNonce: configuration.nonce,
+      cssSelectorPrefix: '',
     );
 
     _textEditingHostNode =
-        createTextEditingHostNode(flutterViewElement, defaultCssFont, configuration.nonce);
+        createTextEditingHostNode(_flutterViewElement, configuration.nonce);
 
-    // Don't allow the scene to receive pointer events.
-    _sceneHostElement = domDocument.createElement('flt-scene-host')
-      ..style.pointerEvents = 'none';
+    _sceneHostElement = domDocument.createElement(DomManager.sceneHostTagName);
+    StyleManager.styleSceneHost(
+      _sceneHostElement,
+      debugShowSemanticsNodes: configuration.debugShowSemanticsNodes,
+    );
 
     renderer.reset(this);
 
-    final DomElement semanticsHostElement =
-        domDocument.createElement('flt-semantics-host');
-    semanticsHostElement.style
-      ..position = 'absolute'
-      ..transformOrigin = '0 0 0';
-    _semanticsHostElement = semanticsHostElement;
-    updateSemanticsScreenProperties();
+    _semanticsHostElement = domDocument.createElement(DomManager.semanticsHostTagName);
+    StyleManager.styleSemanticsHost(
+      _semanticsHostElement,
+      window.devicePixelRatio,
+    );
 
     final DomElement accessibilityPlaceholder = EngineSemanticsOwner
         .instance.semanticsHelper
         .prepareAccessibilityPlaceholder();
 
-    final DomElement announcementsElement = createDomElement('flt-announcement-host');
-    _accessibilityAnnouncements = AccessibilityAnnouncements(hostElement: announcementsElement);
+    _announcementsHost = createDomElement(DomManager.announcementsHostTagName);
 
     shadowRoot.append(accessibilityPlaceholder);
-    shadowRoot.append(_sceneHostElement!);
-    shadowRoot.append(announcementsElement);
+    shadowRoot.append(_sceneHostElement);
+    shadowRoot.append(_announcementsHost);
 
     // The semantic host goes last because hit-test order-wise it must be
     // first. If semantics goes under the scene host, platform views will
@@ -233,34 +218,15 @@ class FlutterViewEmbedder {
     // elements transparent. This way, if a platform view appears among other
     // interactive Flutter widgets, as long as those widgets do not intersect
     // with the platform view, the platform view will be reachable.
-    flutterViewElement.appendChild(semanticsHostElement);
-
-    // When debugging semantics, make the scene semi-transparent so that the
-    // semantics tree is more prominent.
-    if (configuration.debugShowSemanticsNodes) {
-      _sceneHostElement!.style.opacity = '0.3';
-    }
+    _flutterViewElement.appendChild(_semanticsHostElement);
 
     KeyboardBinding.initInstance();
     PointerBinding.initInstance(
-      flutterViewElement,
+      _flutterViewElement,
       KeyboardBinding.instance!.converter,
     );
 
     window.onResize.listen(_metricsDidChange);
-  }
-
-  /// For tests only.
-  void debugOverrideAccessibilityAnnouncements(AccessibilityAnnouncements override) {
-    _accessibilityAnnouncements = override;
-  }
-
-  /// The framework specifies semantics in physical pixels, but CSS uses
-  /// logical pixels. To compensate, an inverse scale is injected at the root
-  /// level.
-  void updateSemanticsScreenProperties() {
-    _semanticsHostElement!.style
-        .setProperty('transform', 'scale(${1 / window.devicePixelRatio})');
   }
 
   /// Called immediately after browser window metrics change.
@@ -273,7 +239,10 @@ class FlutterViewEmbedder {
   /// Note: always check for rotations for a mobile device. Update the physical
   /// size if the change is caused by a rotation.
   void _metricsDidChange(ui.Size? newSize) {
-    updateSemanticsScreenProperties();
+    StyleManager.scaleSemanticsHost(
+      _semanticsHostElement,
+      window.devicePixelRatio,
+    );
     // TODO(dit): Do not computePhysicalSize twice, https://github.com/flutter/flutter/issues/117036
     if (isMobile && !window.isRotation() && textEditing.isEditing) {
       window.computeOnScreenKeyboardInsets(true);
@@ -301,9 +270,9 @@ class FlutterViewEmbedder {
       if (isWebKit) {
         // The resourcesHost *must* be a sibling of the glassPaneElement.
         _embeddingStrategy.attachResourcesHost(resourcesHost,
-            nextTo: flutterViewElement);
+            nextTo: _flutterViewElement);
       } else {
-        glassPaneShadow.insertBefore(resourcesHost, glassPaneShadow.firstChild);
+        _glassPaneShadow.insertBefore(resourcesHost, _glassPaneShadow.firstChild);
       }
       _resourcesHost = resourcesHost;
     }
@@ -346,19 +315,16 @@ FlutterViewEmbedder ensureFlutterViewEmbedderInitialized() =>
 
 /// Creates a node to host text editing elements and applies a stylesheet
 /// to Flutter nodes that exist outside of the shadowDOM.
-DomElement createTextEditingHostNode(DomElement root, String defaultFont, String? nonce) {
-  final DomElement domElement =
-      domDocument.createElement('flt-text-editing-host');
-  final DomHTMLStyleElement styleElement = createDomHTMLStyleElement(nonce);
-
-  styleElement.id = 'flt-text-editing-stylesheet';
-  root.appendChild(styleElement);
-  applyGlobalCssRulesToSheet(
-    styleElement,
-    cssSelectorPrefix: FlutterViewEmbedder.flutterViewTagName,
-    defaultCssFont: defaultFont,
+DomElement createTextEditingHostNode(DomElement root, String? nonce) {
+  StyleManager.attachGlobalStyles(
+    node: root,
+    styleId: 'flt-text-editing-stylesheet',
+    styleNonce: nonce,
+    cssSelectorPrefix: DomManager.flutterViewTagName,
   );
 
+  final DomElement domElement =
+      domDocument.createElement('flt-text-editing-host');
   root.appendChild(domElement);
 
   return domElement;

@@ -4,24 +4,23 @@
 
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <optional>
 #include <vector>
 
-#include "flutter/fml/macros.h"
-#include "impeller/core/texture.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/entity_pass_delegate.h"
 #include "impeller/entity/inline_pass_context.h"
 #include "impeller/renderer/render_target.h"
-#include "impeller/typographer/lazy_glyph_atlas.h"
 
 namespace impeller {
 
 class ContentContext;
+class EntityPassClipRecorder;
 
 class EntityPass {
  public:
@@ -189,6 +188,14 @@ class EntityPass {
     static EntityResult Skip() { return {{}, kSkip}; }
   };
 
+  bool RenderElement(Entity& element_entity,
+                     size_t clip_depth_floor,
+                     InlinePassContext& pass_context,
+                     int32_t pass_depth,
+                     ContentContext& renderer,
+                     ClipCoverageStack& clip_coverage_stack,
+                     Point global_pass_position) const;
+
   EntityResult GetEntityForElement(const EntityPass::Element& element,
                                    ContentContext& renderer,
                                    Capture& capture,
@@ -280,6 +287,8 @@ class EntityPass {
   bool flood_clip_ = false;
   bool enable_offscreen_debug_checkerboard_ = false;
   std::optional<Rect> bounds_limit_;
+  std::unique_ptr<EntityPassClipRecorder> clip_replay_ =
+      std::make_unique<EntityPassClipRecorder>();
 
   /// These values are incremented whenever something is added to the pass that
   /// requires reading from the backdrop texture. Currently, this can happen in
@@ -299,7 +308,29 @@ class EntityPass {
   std::shared_ptr<EntityPassDelegate> delegate_ =
       EntityPassDelegate::MakeDefault();
 
-  FML_DISALLOW_COPY_AND_ASSIGN(EntityPass);
+  EntityPass(const EntityPass&) = delete;
+
+  EntityPass& operator=(const EntityPass&) = delete;
+};
+
+/// @brief A class that tracks all clips that have been recorded in the current
+///        entity pass stencil.
+///
+///        These clips are replayed when restoring the backdrop so that the
+///        stencil buffer is left in an identical state.
+class EntityPassClipRecorder {
+ public:
+  EntityPassClipRecorder();
+
+  ~EntityPassClipRecorder() = default;
+
+  /// @brief Record the entity based on the provided coverage [type].
+  void RecordEntity(const Entity& entity, Contents::ClipCoverage::Type type);
+
+  const std::vector<Entity>& GetReplayEntities() const;
+
+ private:
+  std::vector<Entity> rendered_clip_entities_;
 };
 
 }  // namespace impeller

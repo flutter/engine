@@ -21,17 +21,26 @@ class ShaderFunctionMTL final
 
   id<MTLFunction> GetMTLFunction() const;
 
+  using CompileCallback = std::function<void(id<MTLFunction>)>;
+
+  void GetMTLFunctionSpecialized(const std::vector<int>& constants,
+                                 const CompileCallback& callback) const;
+
  private:
   friend class ShaderLibraryMTL;
 
   id<MTLFunction> function_ = nullptr;
+  id<MTLLibrary> library_ = nullptr;
 
   ShaderFunctionMTL(UniqueID parent_library_id,
                     id<MTLFunction> function,
+                    id<MTLLibrary> library,
                     std::string name,
                     ShaderStage stage);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ShaderFunctionMTL);
+  ShaderFunctionMTL(const ShaderFunctionMTL&) = delete;
+
+  ShaderFunctionMTL& operator=(const ShaderFunctionMTL&) = delete;
 };
 
 }  // namespace impeller

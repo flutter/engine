@@ -15,10 +15,10 @@
 
 namespace impeller {
 
+class MultiArchShaderArchive;
+
 class ShaderArchive {
  public:
-  explicit ShaderArchive(std::shared_ptr<fml::Mapping> payload);
-
   ShaderArchive(ShaderArchive&&);
 
   ~ShaderArchive();
@@ -37,6 +37,8 @@ class ShaderArchive {
       const;
 
  private:
+  friend MultiArchShaderArchive;
+
   struct ShaderKey {
     ArchiveShaderType type = ArchiveShaderType::kFragment;
     std::string name;
@@ -61,11 +63,15 @@ class ShaderArchive {
                                      ShaderKey::Hash,
                                      ShaderKey::Equal>;
 
-  std::shared_ptr<fml::Mapping> payload_;
+  std::shared_ptr<const fml::Mapping> payload_;
   Shaders shaders_;
   bool is_valid_ = false;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ShaderArchive);
+  explicit ShaderArchive(std::shared_ptr<const fml::Mapping> payload);
+
+  ShaderArchive(const ShaderArchive&) = delete;
+
+  ShaderArchive& operator=(const ShaderArchive&) = delete;
 };
 
 }  // namespace impeller

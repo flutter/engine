@@ -14,7 +14,6 @@ import '../alarm_clock.dart';
 import '../browser_detection.dart';
 import '../configuration.dart';
 import '../dom.dart';
-import '../embedder.dart';
 import '../platform_dispatcher.dart';
 import '../util.dart';
 import '../vector_math.dart';
@@ -427,6 +426,7 @@ abstract class PrimaryRoleManager {
   /// Initializes a role for a [semanticsObject] that includes basic
   /// functionality for focus, labels, live regions, and route names.
   PrimaryRoleManager.withBasics(this.role, this.semanticsObject) {
+    element = _initElement(createElement(), semanticsObject);
     addFocusManagement();
     addLiveRegion();
     addRouteName();
@@ -439,9 +439,11 @@ abstract class PrimaryRoleManager {
   /// Use this constructor for highly specialized cases where
   /// [RoleManager.withBasics] does not work, for example when the default focus
   /// management intereferes with the widget's functionality.
-  PrimaryRoleManager.blank(this.role, this.semanticsObject);
+  PrimaryRoleManager.blank(this.role, this.semanticsObject) {
+    element = _initElement(createElement(), semanticsObject);
+  }
 
-  late final DomElement element = _initElement(createElement(), semanticsObject);
+  late final DomElement element;
 
   /// The primary role identifier.
   final PrimaryRole role;
@@ -2029,8 +2031,9 @@ class EngineSemanticsOwner {
   }
 
   /// Receives DOM events from the pointer event system to correlate with the
-  /// semantics events; returns true if the event should be forwarded to the
-  /// framework.
+  /// semantics events.
+  ///
+  /// Returns true if the event should be forwarded to the framework.
   ///
   /// The browser sends us both raw pointer events and gestures from
   /// [SemanticsObject.element]s. There could be three possibilities:
@@ -2198,7 +2201,10 @@ class EngineSemanticsOwner {
     if (_rootSemanticsElement == null) {
       final SemanticsObject root = _semanticsTree[0]!;
       _rootSemanticsElement = root.element;
-      flutterViewEmbedder.semanticsHostElement!.append(root.element);
+      // TODO(mdebbar): There could be multiple views with multiple semantics hosts.
+      //                https://github.com/flutter/flutter/issues/137344
+      final DomElement semanticsHost = EnginePlatformDispatcher.instance.implicitView!.dom.semanticsHost;
+      semanticsHost.append(root.element);
     }
 
     _finalizeTree();

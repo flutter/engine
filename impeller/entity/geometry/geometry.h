@@ -46,11 +46,6 @@ GeometryResult ComputeUVGeometryForRect(Rect source_rect,
                                         const Entity& entity,
                                         RenderPass& pass);
 
-/// @brief Given a polyline created from a convex filled path, perform a
-/// tessellation.
-std::pair<std::vector<Point>, std::vector<uint16_t>> TessellateConvex(
-    Path::Polyline polyline);
-
 class Geometry {
  public:
   Geometry();
@@ -71,6 +66,11 @@ class Geometry {
   static std::unique_ptr<Geometry> MakeCover();
 
   static std::unique_ptr<Geometry> MakeRect(Rect rect);
+
+  static std::unique_ptr<Geometry> MakeLine(Point p0,
+                                            Point p1,
+                                            Scalar width,
+                                            Cap cap);
 
   static std::unique_ptr<Geometry> MakePointField(std::vector<Point> points,
                                                   Scalar radius,
@@ -101,6 +101,8 @@ class Geometry {
   ///           given `rect`. May return `false` in many undetected cases where
   ///           the transformed geometry does in fact cover the `rect`.
   virtual bool CoversArea(const Matrix& transform, const Rect& rect) const;
+
+  virtual bool IsAxisAlignedRect() const;
 };
 
 }  // namespace impeller

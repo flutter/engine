@@ -3,9 +3,12 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/vulkan/test/mock_vulkan.h"
+
+#include <cstdint>
 #include <cstring>
 #include <utility>
 #include <vector>
+
 #include "fml/macros.h"
 #include "fml/thread_local.h"
 #include "impeller/base/thread_safety.h"
@@ -70,7 +73,9 @@ class MockDevice final {
   }
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(MockDevice);
+  MockDevice(const MockDevice&) = delete;
+
+  MockDevice& operator=(const MockDevice&) = delete;
 
   Mutex called_functions_mutex_;
   std::shared_ptr<std::vector<std::string>> called_functions_

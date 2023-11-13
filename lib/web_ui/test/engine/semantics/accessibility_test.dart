@@ -7,10 +7,7 @@ import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/src/engine/dom.dart';
-import 'package:ui/src/engine/embedder.dart';
-import 'package:ui/src/engine/semantics.dart';
-import 'package:ui/src/engine/services.dart';
+import 'package:ui/src/engine.dart';
 
 const StandardMessageCodec codec = StandardMessageCodec();
 
@@ -19,26 +16,24 @@ void main() {
 }
 
 void testMain() {
-  late FlutterViewEmbedder embedder;
   late AccessibilityAnnouncements accessibilityAnnouncements;
 
   setUp(() {
-    embedder = FlutterViewEmbedder();
-    accessibilityAnnouncements = embedder.accessibilityAnnouncements;
+    final DomElement announcementsHost = createDomElement('flt-announcement-host');
+    accessibilityAnnouncements = AccessibilityAnnouncements(hostElement: announcementsHost);
     setLiveMessageDurationForTest(const Duration(milliseconds: 10));
     expect(
-      embedder.glassPaneShadow.querySelector('flt-announcement-polite'),
+      announcementsHost.querySelector('flt-announcement-polite'),
       accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.polite),
     );
     expect(
-      embedder.glassPaneShadow.querySelector('flt-announcement-assertive'),
+      announcementsHost.querySelector('flt-announcement-assertive'),
       accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.assertive),
     );
   });
 
   tearDown(() async {
     await Future<void>.delayed(liveMessageDuration * 2);
-    embedder.glassPaneElement.remove();
   });
 
   group('$AccessibilityAnnouncements', () {

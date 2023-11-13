@@ -119,9 +119,11 @@ for platform in "${platforms[@]}"; do
   done
 
   # Special treatment for NDK to move to expected directory.
-  # This is because the engine imports darts GN files which also inlcude
-  # a copy of the ndk. See https://github.com/flutter/flutter/issues/136666#issuecomment-1805467578
-  # for more information.
+  # Instead of the ndk being in `sdk/ndk/<major>.<minor>.<patch>/`, it will be
+  # in `ndk/`.
+  # This simplifies the build scripts, and enables version difference between
+  # the Dart and Flutter build while reusing the same build rules.
+  # See https://github.com/flutter/flutter/issues/136666#issuecomment-1805467578
   mv $upload_dir/sdk/ndk $upload_dir/ndk-bundle
   ndk_sub_paths=`find $upload_dir/ndk-bundle -maxdepth 1 -type d`
   ndk_sub_paths_arr=($ndk_sub_paths)
