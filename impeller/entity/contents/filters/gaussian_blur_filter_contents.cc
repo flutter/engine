@@ -36,13 +36,16 @@ SamplerDescriptor MakeSamplerDescriptor(MinMagFilter filter,
 /// @param entity_transform The local transform of the entity.
 /// @return A quad in uv coordinates representing the whole |subpass_size|.
 std::array<Point, 4> CalculateUVs(const ISize& subpass_size,
+                                  const Matrix& scale,
                                   const Matrix& effect_transform,
                                   const Matrix& entity_transform) {
   Rect pass_rect =
-      Rect::MakeSize(subpass_size).TransformBounds(effect_transform);
+      Rect::MakeSize(subpass_size).TransformBounds(scale * effect_transform);
+  Vector3 translated_origin =
+      effect_transform * entity_transform.Invert() * Vector3(0, 0, 1);
   Matrix transform = Matrix::MakeScale({1.0f / pass_rect.size.width,
                                         1.0f / pass_rect.size.height, 1.0f}) *
-                     entity_transform.Invert();
+                     Matrix::MakeTranslation(translated_origin);
   return pass_rect.GetTransformedPoints(transform);
 }
 
@@ -69,11 +72,9 @@ std::shared_ptr<Texture> MakeDownsampleSubpass(
       [&](const ContentContext& renderer, RenderPass& pass) {
         HostBuffer& host_buffer = pass.GetTransientsBuffer();
 
-        std::array<Point, 4> uvs =
-            CalculateUVs(subpass_size,
-                         Matrix::MakeScale({downsample.x, downsample.y, 1.0}) *
-                             effect_transform,
-                         entity_transform);
+        std::array<Point, 4> uvs = CalculateUVs(
+            subpass_size, Matrix::MakeScale({downsample.x, downsample.y, 1.0}),
+            effect_transform, entity_transform);
 
         Command cmd;
         DEBUG_COMMAND_INFO(cmd, "Gaussian blur downsample");
@@ -128,11 +129,9 @@ std::shared_ptr<Texture> MakeBlurSubpass(
 
         HostBuffer& host_buffer = pass.GetTransientsBuffer();
 
-        std::array<Point, 4> uvs =
-            CalculateUVs(subpass_size,
-                         Matrix::MakeScale({downsample.x, downsample.y, 1.0}) *
-                             effect_transform,
-                         entity_transform);
+        std::array<Point, 4> uvs = CalculateUVs(
+            subpass_size, Matrix::MakeScale({downsample.x, downsample.y, 1.0}),
+            effect_transform, entity_transform);
 
         Command cmd;
         auto options = OptionsFromPass(pass);
@@ -231,6 +230,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     return std::nullopt;
   }
 
+  // TODO(gaaclarke): Scale the blur radius based on the entity transform.
   Scalar blur_radius = CalculateBlurRadius(sigma_);
   Scalar desired_scale = 1.0 / CalculateScale(blur_radius);
   Vector2 downsample =
