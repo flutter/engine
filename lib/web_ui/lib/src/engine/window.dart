@@ -575,7 +575,10 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
 /// `dart:ui` version does not.
 EngineFlutterWindow get window {
   if (_window == null) {
-    throw StateError('Trying to access the implicit flutter view, but it has not been initialized.');
+    throw StateError(
+      'Trying to access the implicit FlutterView, but it is not available.\n'
+      'Note: the implicit FlutterView is not available in multi-view mode.',
+    );
   }
   return _window!;
 }

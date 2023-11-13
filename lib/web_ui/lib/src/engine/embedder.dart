@@ -311,7 +311,8 @@ FlutterViewEmbedder? _flutterViewEmbedder;
 
 /// Initializes the [FlutterViewEmbedder], if it's not already initialized.
 FlutterViewEmbedder ensureFlutterViewEmbedderInitialized() {
-  // FlutterViewEmbedder needs the implicit view to be initialized.
+  // FlutterViewEmbedder needs the implicit view to be initialized because it
+  // uses some of its methods e.g. `configureDimensionsProvider`, `onResize`.
   ensureImplicitViewInitialized();
   return _flutterViewEmbedder ??=
       FlutterViewEmbedder(hostElement: configuration.hostElement);
