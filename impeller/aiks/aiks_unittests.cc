@@ -3496,7 +3496,14 @@ TEST_P(AiksTest, CanCanvasDrawPictureWithAdvancedBlend) {
 TEST_P(AiksTest, CanDrawMultiContourConvexPath) {
   PathBuilder builder = {};
   for (auto i = 0; i < 10; i++) {
-    builder.AddCircle(Point(100 + 10 * i, 100 + 10 * i), 100);
+    if (i % 2 == 0) {
+      builder.AddCircle(Point(100 + 50 * i, 100 + 50 * i), 100);
+    } else {
+      builder.MoveTo({100.f + 50.f * i - 100, 100.f + 50.f * i});
+      builder.LineTo({100.f + 50.f * i, 100.f + 50.f * i - 100});
+      builder.LineTo({100.f + 50.f * i - 100, 100.f + 50.f * i - 100});
+      builder.Close();
+    }
   }
   builder.SetConvexity(Convexity::kConvex);
 

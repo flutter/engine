@@ -4,7 +4,6 @@
 
 #include "impeller/tessellator/tessellator.h"
 
-#include "flutter/fml/logging.h"
 #include "third_party/libtess2/Include/tesselator.h"
 
 namespace impeller {
@@ -247,26 +246,26 @@ std::vector<Point> Tessellator::TessellateConvex(const Path& path,
                  (4 * (polyline.contours.size() - 1)));
   for (auto j = 0u; j < polyline.contours.size(); j++) {
     auto [start, end] = polyline.GetContourPointBounds(j);
-    auto origin = polyline.GetPoint(start);
+    auto first_point = polyline.GetPoint(start);
 
     // Some polygons will not self close and an additional triangle
     // must be inserted, others will self close and we need to avoid
     // inserting an extra triangle.
-    if (polyline.GetPoint(end - 1) == origin) {
+    if (polyline.GetPoint(end - 1) == first_point) {
       end--;
     }
     if (j > 0) {
       // Triangle strip break.
       output.emplace_back(output.back());
-      output.emplace_back(origin);
-      output.emplace_back(origin);
+      output.emplace_back(first_point);
+      output.emplace_back(first_point);
       output.emplace_back(polyline.GetPoint(start + 1));
     } else {
-      output.emplace_back(origin);
+      output.emplace_back(first_point);
     }
 
     size_t a, b;
-    for (a = start + 1, b = end - 1; a < b; a++, b--) {
+    for (a = start + 1, b = end; a < b; a++, b--) {
       output.emplace_back(polyline.GetPoint(a));
       output.emplace_back(polyline.GetPoint(b));
     }
