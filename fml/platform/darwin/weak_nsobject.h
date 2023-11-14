@@ -86,10 +86,15 @@ class WeakContainer : public fml::RefCountedThreadSafe<WeakContainer> {
   friend fml::RefCountedThreadSafe<WeakContainer>;
   ~WeakContainer();
 
-  debug::DebugThreadChecker checker_;
   __unsafe_unretained id object_;
 
   void CheckThreadSafety() const { FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker); }
+
+// checker_ is unused in non-unopt mode.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-private-field"
+  debug::DebugThreadChecker checker_;
+#pragma clang diagnostic pop
 };
 
 }  // namespace fml
@@ -157,16 +162,15 @@ class WeakNSProtocol {
  protected:
   friend class WeakNSObjectFactory<NST>;
 
-  explicit WeakNSProtocol(debug::DebugThreadChecker checker, NST object = nil) : checker_(checker) {
-    container_ = [CRBWeakNSProtocolSentinel containerForObject:object threadChecker:checker];
-  }
+  explicit WeakNSProtocol(RefPtr<fml::WeakContainer> container, debug::DebugThreadChecker checker)
+      : container_(container), checker_(checker) {}
 
   // Refecounted reference to the container tracking the ObjectiveC object this
   // class encapsulates.
   RefPtr<fml::WeakContainer> container_;
-  debug::DebugThreadChecker checker_;
-
   void CheckThreadSafety() const { FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker); }
+
+  debug::DebugThreadChecker checker_;
 };
 
 // Free functions
@@ -194,8 +198,8 @@ class WeakNSObject : public WeakNSProtocol<NST*> {
  private:
   friend class WeakNSObjectFactory<NST>;
 
-  explicit WeakNSObject(debug::DebugThreadChecker checker, NST* object = nil)
-      : WeakNSProtocol<NST*>(checker, object) {}
+  explicit WeakNSObject(RefPtr<fml::WeakContainer> container, debug::DebugThreadChecker checker)
+      : WeakNSProtocol<NST*>(container, checker) {}
 };
 
 // Specialization to make WeakNSObject<id> work.
@@ -213,8 +217,8 @@ class WeakNSObject<id> : public WeakNSProtocol<id> {
  private:
   friend class WeakNSObjectFactory<id>;
 
-  explicit WeakNSObject(debug::DebugThreadChecker checker, id object = nil)
-      : WeakNSProtocol<id>(checker, object) {}
+  explicit WeakNSObject(RefPtr<fml::WeakContainer> container, debug::DebugThreadChecker checker)
+      : WeakNSProtocol<id>(container, checker) {}
 };
 
 // Class that produces (valid) |WeakNSObject<NST>|s. Typically, this is used as a
@@ -244,16 +248,21 @@ class WeakNSObject<id> : public WeakNSProtocol<id> {
 template <typename NST>
 class WeakNSObjectFactory {
  public:
-  explicit WeakNSObjectFactory(NST* object) : object_(object) { FML_DCHECK(object_); }
+  explicit WeakNSObjectFactory(NST* object) {
+    FML_DCHECK(object);
+    container_ = [CRBWeakNSProtocolSentinel containerForObject:object threadChecker:checker_];
+  }
 
   ~WeakNSObjectFactory() { CheckThreadSafety(); }
 
   // Gets a new weak pointer, which will be valid until this object is
-  // destroyed.
-  WeakNSObject<NST> GetWeakNSObject() const { return WeakNSObject<NST>(checker_, object_); }
+  // destroyed.e
+  WeakNSObject<NST> GetWeakNSObject() const { return WeakNSObject<NST>(container_, checker_); }
 
  private:
-  NST* object_;
+  // Refecounted reference to the container tracking the ObjectiveC object this
+  // class encapsulates.
+  RefPtr<fml::WeakContainer> container_;
 
   void CheckThreadSafety() const { FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker); }
 

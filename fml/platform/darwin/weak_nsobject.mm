@@ -14,7 +14,7 @@ char sentinelObserverKey_;
 namespace fml {
 
 WeakContainer::WeakContainer(id object, debug::DebugThreadChecker checker)
-    : checker_(checker), object_(object) {}
+    : object_(object), checker_(checker) {}
 
 WeakContainer::~WeakContainer() {}
 
