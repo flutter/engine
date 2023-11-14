@@ -254,20 +254,23 @@ std::vector<Point> Tessellator::TessellateConvex(const Path& path,
     if (polyline.GetPoint(end - 1) == first_point) {
       end--;
     }
+
     if (j > 0) {
       // Triangle strip break.
       output.emplace_back(output.back());
       output.emplace_back(first_point);
       output.emplace_back(first_point);
-      output.emplace_back(polyline.GetPoint(start + 1));
     } else {
       output.emplace_back(first_point);
     }
 
-    size_t a, b;
-    for (a = start + 1, b = end; a < b; a++, b--) {
+    size_t a = start + 1;
+    size_t b = end - 1;
+    while (a < b) {
       output.emplace_back(polyline.GetPoint(a));
       output.emplace_back(polyline.GetPoint(b));
+      a++;
+      b--;
     }
     if (a == b) {
       output.emplace_back(polyline.GetPoint(a));
