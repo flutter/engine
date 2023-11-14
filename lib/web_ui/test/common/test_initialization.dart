@@ -24,7 +24,7 @@ void setUpUnitTests({
 
     debugFontsScope = configureDebugFontsAssetScope(fakeAssetManager);
     debugOnlyAssetManager = fakeAssetManager;
-    await bootstrapAndWait();
+    await bootstrapAndRunApp();
     engine.renderer.fontCollection.fontFallbackManager?.downloadQueue.fallbackFontUrlPrefixOverride = 'assets/fallback_fonts/';
 
     if (setUpTestViewDimensions) {
@@ -47,7 +47,7 @@ void setUpUnitTests({
   });
 }
 
-Future<void> bootstrapAndWait() async {
+Future<void> bootstrapAndRunApp() async {
   final Completer<void> completer = Completer<void>();
   await ui_web.bootstrapEngine(runApp: () => completer.complete());
   await completer.future;

@@ -22,7 +22,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  await bootstrapAndWait();
+  await bootstrapAndRunApp();
 
   test('onTextScaleFactorChanged preserves the zone', () {
     final Zone innerZone = Zone.current.fork();

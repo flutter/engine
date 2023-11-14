@@ -17,7 +17,7 @@ void main() {
 void testMain() {
   group('$LayerScene', () {
     setUpAll(() async {
-      await bootstrapAndWait();
+      await bootstrapAndRunApp();
     });
 
     test('toImage returns an image', () async {

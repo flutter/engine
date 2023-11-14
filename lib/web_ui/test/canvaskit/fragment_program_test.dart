@@ -184,7 +184,7 @@ const String kJsonIPLR = r'''
 
 void testMain() {
   setUpAll(() async {
-    await bootstrapAndWait();
+    await bootstrapAndRunApp();
   });
 
   test('FragmentProgram can be created from JSON IPLR bundle', () {

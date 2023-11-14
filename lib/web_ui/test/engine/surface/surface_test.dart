@@ -16,7 +16,7 @@ void main() {
 void testMain() {
   group('Surface', () {
     setUpAll(() async {
-      await bootstrapAndWait();
+      await bootstrapAndRunApp();
     });
 
     setUp(() {

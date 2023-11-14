@@ -25,7 +25,7 @@ void testMain() {
       ')';
 
   setUpAll(() async {
-    await bootstrapAndWait();
+    await bootstrapAndRunApp();
   });
 
   group('Shader Declarations', () {

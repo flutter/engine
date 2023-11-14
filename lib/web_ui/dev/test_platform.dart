@@ -84,9 +84,6 @@ class BrowserPlatform extends PlatformPlugin {
         .add(createSimpleDirectoryHandler(getTestSetDirectory(suite.testBundle.testSet)))
         .add(_testImageListingHandler)
 
-        // Serves the configuration for a test.
-        .add(_testConfigurationHandler)
-
         // Serves the initial HTML for the test.
         .add(_testBootstrapHandler)
 
@@ -529,20 +526,6 @@ class BrowserPlatform extends PlatformPlugin {
     }
   }
 
-  shelf.Response _testConfigurationHandler(shelf.Request request) {
-    final String path = p.fromUri(request.url);
-    if (path.endsWith('.config.json')) {
-      return shelf.Response.ok('''
-{
-  "canvasKitBaseUrl": "/canvaskit/",
-  "useColorEmoji": true,
-  "canvasKitVariant": "${getCanvasKitVariant()}"
-}
-      ''');
-    }
-    return shelf.Response.notFound('Not found.');
-  }
-
   /// Serves the HTML file that bootstraps the test.
   shelf.Response _testBootstrapHandler(shelf.Request request) {
     final String path = p.fromUri(request.url);
@@ -555,8 +538,7 @@ class BrowserPlatform extends PlatformPlugin {
       final String scriptBase = htmlEscape.convert(p.basename(test));
       final String link = '<link rel="x-dart-test" href="$scriptBase"${linkSkwasm ? " skwasm" : ""}>';
 
-      final String testRunner = isWasm ? '/test_dart2wasm.js' : '/test_dart2js.js';
-      final String flutterConfigSetupScript = isWasm ? '''
+      final String bootstrapScript = isWasm ? '''
 <script>
   window.flutterConfiguration = {
     canvasKitBaseUrl: "/canvaskit/",
@@ -565,15 +547,27 @@ class BrowserPlatform extends PlatformPlugin {
     canvasKitVariant: "${getCanvasKitVariant()}",
   };
 </script>
-      ''' : '<script src="/flutter_js/flutter.js"></script>';
+<script src="/test_dart2wasm.js"></script>
+      ''' : '''
+<script src="/flutter_js/flutter.js"></script>
+<script type="module">
+  import { runTest } from "/test_dart2js.js";
+
+  runTest({
+    canvasKitBaseUrl: "/canvaskit/",
+    // Some of our tests rely on color emoji
+    useColorEmoji: true,
+    canvasKitVariant: "${getCanvasKitVariant()}",
+  });
+</script>
+''';
       return shelf.Response.ok('''
         <!DOCTYPE html>
         <html>
         <head>
           <meta name="assetBase" content="/">
-          $flutterConfigSetupScript
           $link
-          <script src="$testRunner"></script>
+          $bootstrapScript
         </head>
         </html>
       ''', headers: <String, String>{

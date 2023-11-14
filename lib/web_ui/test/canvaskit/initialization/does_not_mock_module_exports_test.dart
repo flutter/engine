@@ -16,7 +16,7 @@ void testMain() {
   group('initializeEngineServices', () {
     test('does not mock module loaders', () async {
       // Initialize CanvasKit...
-      await bootstrapAndWait();
+      await bootstrapAndRunApp();
 
       // CanvasKitInit should be defined...
       expect(

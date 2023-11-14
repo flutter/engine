@@ -55,14 +55,6 @@ void debugEmulateHotRestart() {
   }
 }
 
-/// Fully initializes the engine, including services and UI.
-Future<void> initializeEngine({
-  ui_web.AssetManager? assetManager,
-}) async {
-  await initializeEngineServices(assetManager: assetManager);
-  await initializeEngineUi();
-}
-
 /// How far along the initialization process the engine is currently is.
 ///
 /// The initialization process starts with [none] and proceeds in increasing

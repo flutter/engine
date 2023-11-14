@@ -16,7 +16,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  await bootstrapAndWait();
+  await bootstrapAndRunApp();
 
   // Test successful HTTP roundtrips where the server returns a happy status
   // code and a payload.
