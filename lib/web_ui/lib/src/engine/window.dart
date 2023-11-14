@@ -21,6 +21,7 @@ import 'semantics/accessibility.dart';
 import 'services.dart';
 import 'util.dart';
 import 'view_embedder/dom_manager.dart';
+import 'view_embedder/embedding_strategy/embedding_strategy.dart';
 
 typedef _HandleMessageCallBack = Future<bool> Function();
 
@@ -35,6 +36,10 @@ const int kImplicitViewId = 0;
 /// In addition to everything defined in [ui.FlutterView], this class adds
 /// a few web-specific properties.
 base class EngineFlutterView implements ui.FlutterView {
+  /// Creates a [ui.FlutterView] that can be used in multi-view mode.
+  ///
+  /// The [hostElement] parameter specifies the container in the DOM into which
+  /// the Flutter view will be rendered.
   factory EngineFlutterView(
     int viewId,
     EnginePlatformDispatcher platformDispatcher,
@@ -44,10 +49,14 @@ base class EngineFlutterView implements ui.FlutterView {
   EngineFlutterView._(
     this.viewId,
     this.platformDispatcher,
-    this.hostElement,
-  ) {
+    // This is nullable to accommodate the legacy `EngineFlutterWindow`. In
+    // multi-view mode, the host element is required for each view (as reflected
+    // by the public `EngineFlutterView` constructor).
+    DomElement? hostElement,
+  )   : embeddingStrategy = EmbeddingStrategy.create(hostElement: hostElement),
+        _dimensionsProvider = DimensionsProvider.create(hostElement: hostElement) {
     platformDispatcher.registerView(this);
-    hostElement.appendChild(dom.rootElement);
+    embeddingStrategy.attachGlassPane(dom.rootElement);
   }
 
   @override
@@ -56,7 +65,8 @@ base class EngineFlutterView implements ui.FlutterView {
   @override
   final EnginePlatformDispatcher platformDispatcher;
 
-  final DomElement hostElement;
+  /// Abstracts all the DOM manipulations required to embed a Flutter view in a user-supplied `hostElement`.
+  final EmbeddingStrategy embeddingStrategy;
 
   final ViewConfiguration _viewConfiguration = const ViewConfiguration();
 
@@ -144,10 +154,7 @@ base class EngineFlutterView implements ui.FlutterView {
   @override
   double get devicePixelRatio => display.devicePixelRatio;
 
-  late DimensionsProvider _dimensionsProvider;
-  void configureDimensionsProvider(DimensionsProvider dimensionsProvider) {
-    _dimensionsProvider = dimensionsProvider;
-  }
+  final DimensionsProvider _dimensionsProvider;
 
   Stream<ui.Size?> get onResize => _dimensionsProvider.onResize;
 }
@@ -592,7 +599,7 @@ EngineFlutterWindow ensureImplicitViewInitialized({
   return _window ??= EngineFlutterWindow(
     kImplicitViewId,
     EnginePlatformDispatcher.instance,
-    hostElement ?? domDocument.body!,
+    hostElement,
   );
 }
 

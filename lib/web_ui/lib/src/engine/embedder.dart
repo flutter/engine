@@ -12,8 +12,6 @@ import 'keyboard_binding.dart';
 import 'platform_dispatcher.dart';
 import 'pointer_binding.dart';
 import 'text_editing/text_editing.dart';
-import 'view_embedder/dimensions_provider/dimensions_provider.dart';
-import 'view_embedder/embedding_strategy/embedding_strategy.dart';
 import 'view_embedder/style_manager.dart';
 import 'window.dart';
 
@@ -37,29 +35,9 @@ import 'window.dart';
 /// multiple instances in a multi-view scenario. (One ViewEmbedder per FlutterView).
 class FlutterViewEmbedder {
   /// Creates a FlutterViewEmbedder.
-  ///
-  /// The incoming [hostElement] parameter specifies the root element in the DOM
-  /// into which Flutter will be rendered.
-  ///
-  /// The hostElement is abstracted by an [EmbeddingStrategy] instance, which has
-  /// different behavior depending on the `hostElement` value:
-  ///
-  /// - A `null` `hostElement` will cause Flutter to take over the whole page.
-  /// - A non-`null` `hostElement` will render flutter inside that element.
-  FlutterViewEmbedder({DomElement? hostElement})
-      : _embeddingStrategy =
-            EmbeddingStrategy.create(hostElement: hostElement) {
-    // Configure the EngineWindow so it knows how to measure itself.
-    // TODO(dit): Refactor ownership according to new design, https://github.com/flutter/flutter/issues/117098
-    window.configureDimensionsProvider(DimensionsProvider.create(
-      hostElement: hostElement,
-    ));
-
+  FlutterViewEmbedder() {
     reset();
   }
-
-  /// Abstracts all the DOM manipulations required to embed a Flutter app in an user-supplied `hostElement`.
-  final EmbeddingStrategy _embeddingStrategy;
 
   DomElement get _sceneHostElement => window.dom.sceneHost;
 
@@ -95,7 +73,7 @@ class FlutterViewEmbedder {
         : 'requested explicitly';
 
     // Initializes the embeddingStrategy so it can host a single-view Flutter app.
-    _embeddingStrategy.initialize(
+    window.embeddingStrategy.initialize(
       hostElementAttributes: <String, String>{
         'flt-renderer': '${renderer.rendererTag} ($rendererSelection)',
         'flt-build-mode': buildMode,
@@ -112,7 +90,7 @@ class FlutterViewEmbedder {
     //
     // The embeddingStrategy will take care of cleaning up the glassPane on hot
     // restart.
-    _embeddingStrategy.attachGlassPane(_flutterViewElement);
+    window.embeddingStrategy.attachGlassPane(_flutterViewElement);
 
     renderer.reset(this);
 
@@ -167,7 +145,7 @@ class FlutterViewEmbedder {
         ..style.visibility = 'hidden';
       if (isWebKit) {
         // The resourcesHost *must* be a sibling of the glassPaneElement.
-        _embeddingStrategy.attachResourcesHost(resourcesHost,
+        window.embeddingStrategy.attachResourcesHost(resourcesHost,
             nextTo: _flutterViewElement);
       } else {
         _glassPaneShadow.insertBefore(resourcesHost, _glassPaneShadow.firstChild);
@@ -209,8 +187,7 @@ FlutterViewEmbedder? _flutterViewEmbedder;
 /// Initializes the [FlutterViewEmbedder], if it's not already initialized.
 FlutterViewEmbedder ensureFlutterViewEmbedderInitialized() {
   // FlutterViewEmbedder needs the implicit view to be initialized because it
-  // uses some of its methods e.g. `configureDimensionsProvider`, `onResize`.
+  // uses some of its members e.g. `embeddingStrategy`, `onResize`.
   ensureImplicitViewInitialized();
-  return _flutterViewEmbedder ??=
-      FlutterViewEmbedder(hostElement: configuration.hostElement);
+  return _flutterViewEmbedder ??= FlutterViewEmbedder();
 }
