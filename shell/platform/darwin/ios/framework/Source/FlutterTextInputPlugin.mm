@@ -622,7 +622,9 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
                           inDirection:(UITextDirection)direction {
   // TODO(hellohuanlin): remove iOS 17 check. The same logic should apply to older iOS version.
   if (@available(iOS 17.0, *)) {
-    // If querying the line from end of document in forward direction, report not found.
+    // According to the API doc if the text position is at a text-unit boundary, it is considered
+    // enclosed only if the next position in the given direction is entirely enclosed. Link:
+    // https://developer.apple.com/documentation/uikit/uitextinputtokenizer/1614464-rangeenclosingposition?language=objc
     FlutterTextPosition* flutterPosition = (FlutterTextPosition*)position;
     if (flutterPosition.index > _textInputView.text.length ||
         (flutterPosition.index == _textInputView.text.length &&
