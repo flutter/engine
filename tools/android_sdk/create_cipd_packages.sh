@@ -27,27 +27,27 @@ print_usage () {
   echo "and should only be run on linux or macos hosts."
 }
 
+first_argument=$1
 # Validate version or argument is provided.
-if [[ $1 == "" ]]; then
+if [[ $first_argument == "" ]]; then
   print_usage
   exit 1
 fi
 
 # Validate version contains only lower case letters and numbers.
-if ! [[ $1 =~ ^[[:lower:][:digit:]]+$ ]]; then
+if ! [[ $first_argument =~ ^[[:lower:][:digit:]]+$ ]]; then
   echo "Version tag can only consist of lower case letters and digits.";
   print_usage
   exit 1
 fi
 
-# Validate path contains depot_tools
+# Validate environment has cipd installed.
 if [[ `which cipd` == "" ]]; then
   echo "'cipd' command not found. depot_tools should be on the path."
   exit 1
 fi
 
 sdk_path=${2:-$ANDROID_SDK_ROOT}
-version_tag=$1
 
 # Validate directory contains all SDK packages
 if [[ ! -d "$sdk_path" ]]; then
@@ -84,7 +84,7 @@ while [ ! -f "$sdkmanager_path" ]; do
 done
 
 # list available packages
-if [ $version_tag == "list" ]; then
+if [ $first_argument == "list" ]; then
   $sdkmanager_path  --list --include_obsolete
   exit 0
 fi
@@ -152,7 +152,7 @@ for platform in "${platforms[@]}"; do
     fi
 
     echo "Uploading $upload_dir as $cipd_name to CIPD"
-    cipd create -in $upload_dir -name "flutter/android/sdk/all/$cipd_name" -install-mode copy -tag version:$version_tag
+    cipd create -in $upload_dir -name "flutter/android/sdk/all/$cipd_name" -install-mode copy -tag version:$first_argument
   done
 
   rm -rf $sdk_root
