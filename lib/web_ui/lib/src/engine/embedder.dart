@@ -83,15 +83,6 @@ class FlutterViewEmbedder {
       },
     );
 
-    // TODO(mdebbar): Inserting into the DOM should be done by EngineFlutterView.
-
-    // This must be attached to the DOM now, so the engine can create a host
-    // node (ShadowDOM or a fallback) next.
-    //
-    // The embeddingStrategy will take care of cleaning up the glassPane on hot
-    // restart.
-    window.embeddingStrategy.attachGlassPane(_flutterViewElement);
-
     renderer.reset(this);
 
     // TODO(mdebbar): Move these to `engine/initialization.dart`.

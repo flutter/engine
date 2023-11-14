@@ -56,6 +56,8 @@ base class EngineFlutterView implements ui.FlutterView {
   )   : embeddingStrategy = EmbeddingStrategy.create(hostElement: hostElement),
         _dimensionsProvider = DimensionsProvider.create(hostElement: hostElement) {
     platformDispatcher.registerView(this);
+    // The embeddingStrategy will take care of cleaning up the rootElement on
+    // hot restart.
     embeddingStrategy.attachGlassPane(dom.rootElement);
   }
 
