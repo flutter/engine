@@ -16,8 +16,9 @@ void testMain() {
     test('stores user configuration', () async {
       final JsFlutterConfiguration config = JsFlutterConfiguration();
       js_util.setProperty(config, 'canvasKitMaximumSurfaces', 32.0);
+      js_util.setProperty(config, 'canvasKitBaseUrl', '/canvaskit/');
       js_util.setProperty(domWindow, 'flutterConfiguration', null);
-      debugOverrideJsConfiguration(config);
+      await initializeEngineServices(jsConfiguration: config);
 
       expect(configuration.canvasKitMaximumSurfaces, 32);
     });

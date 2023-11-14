@@ -125,7 +125,9 @@ class FlutterConfiguration {
       _configuration.jsify(),
       overrides.jsify(),
     ) as JsFlutterConfiguration;
-    return FlutterConfiguration.legacy(newJsConfig);
+    final FlutterConfiguration newConfig = FlutterConfiguration();
+    newConfig._configuration = newJsConfig;
+    return newConfig;
   }
 
   bool _usedLegacyConfigStyle = false;
