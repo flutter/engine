@@ -58,6 +58,7 @@ FlutterConfiguration get configuration {
   return _configuration ??= FlutterConfiguration.legacy(_jsConfiguration);
 }
 FlutterConfiguration? _configuration;
+
 FlutterConfiguration? _debugConfiguration;
 
 /// Overrides the initial test configuration with new values coming from `newConfig`.
@@ -81,14 +82,7 @@ FlutterConfiguration? _debugConfiguration;
 @visibleForTesting
 void debugOverrideJsConfiguration(JsFlutterConfiguration? newConfig) {
   if (newConfig != null) {
-    final JSObject newJsConfig = objectConstructor.assign(
-      <String, Object>{}.jsify(),
-      _jsConfiguration.jsify(),
-      newConfig.jsify(),
-    );
-    _debugConfiguration = FlutterConfiguration()
-        ..setUserConfiguration(newJsConfig as JsFlutterConfiguration);
-    print('Overridden engine JS config to: ${newJsConfig.dartify()}');
+    _debugConfiguration = configuration.withOverrides(newConfig);
   } else {
     _debugConfiguration = null;
   }
@@ -123,6 +117,15 @@ class FlutterConfiguration {
       }
       return true;
     }());
+  }
+
+  FlutterConfiguration withOverrides(JsFlutterConfiguration? overrides) {
+    final JsFlutterConfiguration newJsConfig = objectConstructor.assign(
+      <String, Object>{}.jsify(),
+      _jsConfiguration.jsify(),
+      overrides.jsify(),
+    ) as JsFlutterConfiguration;
+    return FlutterConfiguration.legacy(newJsConfig);
   }
 
   bool _usedLegacyConfigStyle = false;
