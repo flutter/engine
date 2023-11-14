@@ -190,7 +190,6 @@ class MockCapabilities : public Capabilities {
   MOCK_METHOD(bool, SupportsFramebufferFetch, (), (const, override));
   MOCK_METHOD(bool, SupportsCompute, (), (const, override));
   MOCK_METHOD(bool, SupportsComputeSubgroups, (), (const, override));
-  MOCK_METHOD(bool, SupportsReadFromOnscreenTexture, (), (const, override));
   MOCK_METHOD(bool, SupportsReadFromResolve, (), (const, override));
   MOCK_METHOD(bool, SupportsDecalSamplerAddressMode, (), (const, override));
   MOCK_METHOD(bool, SupportsDeviceTransientTextures, (), (const, override));

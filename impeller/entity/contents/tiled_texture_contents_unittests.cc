@@ -4,55 +4,82 @@
 
 #include <memory>
 
-#include "impeller/core/sampler_descriptor.h"
+#include "impeller/core/formats.h"
 #include "impeller/core/texture_descriptor.h"
-#include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
-#include "impeller/renderer/capabilities.h"
-#include "impeller/renderer/sampler_library.h"
-#include "impeller/renderer/testing/mocks.h"
-#include "impeller/typographer/backends/skia/typographer_context_skia.h"
+#include "impeller/entity/entity_playground.h"
+#include "impeller/playground/playground_test.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace impeller {
 namespace testing {
 
-TEST(TiledTextureContentsTest, RenderAppendsExpectedCommands) {
-  auto context = std::make_shared<MockImpellerContext>();
+using EntityTest = EntityPlayground;
+INSTANTIATE_PLAYGROUND_SUITE(EntityTest);
 
-  auto sampler_library = std::make_shared<MockSamplerLibrary>();
-  SamplerDescriptor sampler_desc;
-  auto sampler = std::make_shared<MockSampler>(sampler_desc);
-  EXPECT_CALL(*sampler_library, GetSampler)
-      .WillRepeatedly(::testing::Return(sampler));
-
-  EXPECT_CALL(*context, GetSamplerLibrary)
-      .WillRepeatedly(::testing::Return(sampler_library));
-
-  const std::shared_ptr<const Capabilities> capabilities =
-      std::make_shared<const MockCapabilities>();
-  EXPECT_CALL(*context, GetCapabilities)
-      .WillRepeatedly(::testing::ReturnRef(capabilities));
-
-  auto content_context =
-      ContentContext(context, TypographerContextSkia::Make());
-  auto render_pass = MockRenderPass(context, {});
-
+TEST_P(EntityTest, TiledTextureContentsRendersWithCorrectPipeline) {
   TextureDescriptor texture_desc;
-  auto texture = std::make_shared<MockTexture>(texture_desc);
-  EXPECT_CALL(*texture, GetSize).WillOnce(::testing::Return(ISize(100, 100)));
+  texture_desc.size = {100, 100};
+  texture_desc.type = TextureType::kTexture2D;
+  texture_desc.format = PixelFormat::kR8G8B8A8UNormInt;
+  texture_desc.storage_mode = StorageMode::kDevicePrivate;
+  auto texture =
+      GetContext()->GetResourceAllocator()->CreateTexture(texture_desc);
 
   TiledTextureContents contents;
   contents.SetTexture(texture);
   contents.SetGeometry(Geometry::MakeCover());
 
-  ASSERT_TRUE(contents.Render(content_context, {}, render_pass));
-  const std::vector<Command>& commands = render_pass.GetCommands();
+  auto content_context = GetContentContext();
+  auto buffer = content_context->GetContext()->CreateCommandBuffer();
+  auto render_target = RenderTarget::CreateOffscreenMSAA(
+      *content_context->GetContext(),
+      *GetContentContext()->GetRenderTargetCache(), {100, 100});
+  auto render_pass = buffer->CreateRenderPass(render_target);
+
+  ASSERT_TRUE(contents.Render(*GetContentContext(), {}, *render_pass));
+  const std::vector<Command>& commands = render_pass->GetCommands();
 
   ASSERT_EQ(commands.size(), 1u);
   ASSERT_STREQ(commands[0].pipeline->GetDescriptor().GetLabel().c_str(),
-               "Something");
+               "TextureFill Pipeline V#1");
 }
+
+// GL_OES_EGL_image_external isn't supported on MacOS hosts.
+#if !defined(FML_OS_MACOSX)
+TEST_P(EntityTest, TiledTextureContentsRendersWithCorrectPipelineExternalOES) {
+  if (GetParam() != PlaygroundBackend::kOpenGLES) {
+    GTEST_SKIP_(
+        "External OES textures are only valid for the OpenGLES backend.");
+  }
+
+  TextureDescriptor texture_desc;
+  texture_desc.size = {100, 100};
+  texture_desc.type = TextureType::kTextureExternalOES;
+  texture_desc.format = PixelFormat::kR8G8B8A8UNormInt;
+  texture_desc.storage_mode = StorageMode::kDevicePrivate;
+  auto texture =
+      GetContext()->GetResourceAllocator()->CreateTexture(texture_desc);
+
+  TiledTextureContents contents;
+  contents.SetTexture(texture);
+  contents.SetGeometry(Geometry::MakeCover());
+
+  auto content_context = GetContentContext();
+  auto buffer = content_context->GetContext()->CreateCommandBuffer();
+  auto render_target = RenderTarget::CreateOffscreenMSAA(
+      *content_context->GetContext(),
+      *GetContentContext()->GetRenderTargetCache(), {100, 100});
+  auto render_pass = buffer->CreateRenderPass(render_target);
+
+  ASSERT_TRUE(contents.Render(*GetContentContext(), {}, *render_pass));
+  const std::vector<Command>& commands = render_pass->GetCommands();
+
+  ASSERT_EQ(commands.size(), 1u);
+  ASSERT_STREQ(commands[0].pipeline->GetDescriptor().GetLabel().c_str(),
+               "TextureFill Pipeline V#1");
+}
+#endif
 
 }  // namespace testing
 }  // namespace impeller
