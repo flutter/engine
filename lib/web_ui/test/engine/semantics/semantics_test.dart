@@ -22,8 +22,6 @@ DateTime _testTime = DateTime(2018, 12, 17);
 
 EngineSemanticsOwner semantics() => EngineSemanticsOwner.instance;
 
-DomShadowRoot get renderingHost =>
-    EnginePlatformDispatcher.instance.implicitView!.dom.renderingHost;
 DomElement get platformViewsHost =>
     EnginePlatformDispatcher.instance.implicitView!.dom.platformViewsHost;
 
@@ -225,14 +223,14 @@ void _testEngineSemanticsOwner() {
   });
 
   test('placeholder enables semantics', () async {
-    flutterViewEmbedder.reset(); // triggers `autoEnableOnTap` to be called
+    final DomManager domManager = DomManager(devicePixelRatio: 3.0);
     expect(semantics().semanticsEnabled, isFalse);
 
     // Synthesize a click on the placeholder.
     final DomElement placeholder =
-        renderingHost.querySelector('flt-semantics-placeholder')!;
+        domManager.renderingHost.querySelector('flt-semantics-placeholder')!;
 
-    expect(placeholder.isConnected, isTrue);
+    expect(domManager.renderingHost.contains(placeholder), isTrue);
 
     final DomRect rect = placeholder.getBoundingClientRect();
     placeholder.dispatchEvent(createDomMouseEvent('click', <Object?, Object?>{
@@ -242,12 +240,12 @@ void _testEngineSemanticsOwner() {
 
     // On mobile semantics is enabled asynchronously.
     if (isMobile) {
-      while (placeholder.isConnected!) {
+      while (domManager.renderingHost.contains(placeholder)) {
         await Future<void>.delayed(const Duration(milliseconds: 50));
       }
     }
     expect(semantics().semanticsEnabled, isTrue);
-    expect(placeholder.isConnected, isFalse);
+    expect(domManager.renderingHost.contains(placeholder), isFalse);
   });
 
   test('accessibilityFeatures copyWith function works', () {
@@ -318,7 +316,7 @@ void _testEngineSemanticsOwner() {
   });
 
   test('auto-enables semantics', () async {
-    flutterViewEmbedder.reset(); // triggers `autoEnableOnTap` to be called
+    final DomManager domManager = DomManager(devicePixelRatio: 3.0);
     expect(semantics().semanticsEnabled, isFalse);
     expect(
         EnginePlatformDispatcher
@@ -326,9 +324,7 @@ void _testEngineSemanticsOwner() {
         isFalse);
 
     final DomElement placeholder =
-        renderingHost.querySelector('flt-semantics-placeholder')!;
-
-    expect(placeholder.isConnected, isTrue);
+        domManager.renderingHost.querySelector('flt-semantics-placeholder')!;
 
     // Sending a semantics update should auto-enable engine semantics.
     final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
@@ -342,7 +338,7 @@ void _testEngineSemanticsOwner() {
         isTrue);
 
     // The placeholder should be removed
-    expect(placeholder.isConnected, isFalse);
+    expect(domManager.renderingHost.contains(placeholder), isFalse);
   });
 
   void renderSemantics({String? label, String? tooltip, Set<ui.SemanticsFlag> flags = const <ui.SemanticsFlag>{}}) {
