@@ -2,4 +2,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-flutter_js_source_list = [ "src/flutter.js" ]
+flutter_js_source_list = [
+  "src/entrypoint_loader.js",
+  "src/flutter.js",
+  "src/loader.js",
+  "src/service_worker_loader.js",
+  "src/trusted_types.js",
+]
