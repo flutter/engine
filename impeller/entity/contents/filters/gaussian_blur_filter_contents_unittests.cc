@@ -3,9 +3,11 @@
 // found in the LICENSE file.
 
 #include "flutter/testing/testing.h"
+#include "fml/status_or.h"
 #include "gmock/gmock.h"
 #include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
 #include "impeller/entity/entity_playground.h"
+#include "impeller/geometry/geometry_asserts.h"
 #include "impeller/renderer/testing/mocks.h"
 
 namespace impeller {
@@ -17,6 +19,7 @@ Scalar CalculateSigmaForBlurRadius(Scalar blur_radius) {
   // See Sigma.h
   return (blur_radius / kKernelRadiusPerSigma) + 0.5;
 }
+
 }  // namespace
 
 using GaussianBlurFilterContentsTest = EntityPlayground;
@@ -126,14 +129,38 @@ TEST_P(GaussianBlurFilterContentsTest, RenderCoverageMatchesGetCoverage) {
     EXPECT_TRUE(result_coverage.has_value());
     EXPECT_TRUE(contents_coverage.has_value());
     if (result_coverage.has_value() && contents_coverage.has_value()) {
-      EXPECT_NEAR(result_coverage.value().GetLeft(),
-                  contents_coverage.value().GetLeft(), kEhCloseEnough);
-      EXPECT_NEAR(result_coverage.value().GetTop(),
-                  contents_coverage.value().GetTop(), kEhCloseEnough);
-      EXPECT_NEAR(result_coverage.value().GetRight(),
-                  contents_coverage.value().GetRight(), kEhCloseEnough);
-      EXPECT_NEAR(result_coverage.value().GetBottom(),
-                  contents_coverage.value().GetBottom(), kEhCloseEnough);
+      EXPECT_TRUE(RectNear(result_coverage.value(), contents_coverage.value()));
+    }
+  }
+}
+
+TEST_P(GaussianBlurFilterContentsTest, RenderCoverageMatchesGetCoverageTranslate) {
+  TextureDescriptor desc = {
+      .format = PixelFormat::kB8G8R8A8UNormInt,
+      .size = ISize(100, 100),
+  };
+  std::shared_ptr<Texture> texture =
+      GetContentContext()->GetContext()->GetResourceAllocator()->CreateTexture(
+          desc);
+  Scalar sigma_radius_1 = CalculateSigmaForBlurRadius(1.0);
+  auto contents = std::make_unique<GaussianBlurFilterContents>(sigma_radius_1);
+  contents->SetInputs({FilterInput::Make(texture)});
+  std::shared_ptr<ContentContext> renderer = GetContentContext();
+
+  Entity entity;
+  entity.SetTransformation(Matrix::MakeTranslation({100, 200, 0}));
+  std::optional<Entity> result =
+      contents->GetEntity(*renderer, entity, /*coverage_hint=*/{});
+  EXPECT_TRUE(result.has_value());
+  if (result.has_value()) {
+    EXPECT_EQ(result.value().GetBlendMode(), BlendMode::kSourceOver);
+    std::optional<Rect> result_coverage = result.value().GetCoverage();
+    std::optional<Rect> contents_coverage = contents->GetCoverage(entity);
+    EXPECT_TRUE(result_coverage.has_value());
+    EXPECT_TRUE(contents_coverage.has_value());
+    if (result_coverage.has_value() && contents_coverage.has_value()) {
+      EXPECT_TRUE(RectNear(result_coverage.value(), contents_coverage.value()));
+      EXPECT_TRUE(RectNear(result_coverage.value(), Rect::MakeLTRB(99, 199, 201, 301)));
     }
   }
 }
