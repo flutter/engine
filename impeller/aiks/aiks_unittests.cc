@@ -206,12 +206,23 @@ void CanRenderTiledTexture(AiksTest* aiks_test,
     canvas.DrawRect(Rect::MakeXYWH(0, 0, 600, 600), paint);
   }
 
-  // Should not change the image.
-  PathBuilder path_builder;
-  path_builder.AddCircle({150, 150}, 150);
-  path_builder.AddRoundedRect(Rect::MakeLTRB(300, 300, 600, 600), 10);
-  paint.style = Paint::Style::kFill;
-  canvas.DrawPath(path_builder.TakePath(), paint);
+  {
+    // Should not change the image.
+    PathBuilder path_builder;
+    path_builder.AddCircle({150, 150}, 150);
+    path_builder.AddRoundedRect(Rect::MakeLTRB(300, 300, 600, 600), 10);
+    paint.style = Paint::Style::kFill;
+    canvas.DrawPath(path_builder.TakePath(), paint);
+  }
+
+  {
+    // Should not change the image. Tests the Convex short-cut code.
+    PathBuilder path_builder;
+    path_builder.AddCircle({150, 450}, 150);
+    path_builder.SetConvexity(Convexity::kConvex);
+    paint.style = Paint::Style::kFill;
+    canvas.DrawPath(path_builder.TakePath(), paint);
+  }
 
   ASSERT_TRUE(aiks_test->OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
@@ -1967,6 +1978,70 @@ TEST_P(AiksTest, SolidStrokesRenderCorrectly) {
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
+TEST_P(AiksTest, DrawLinesRenderCorrectly) {
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  Paint paint;
+  paint.color = Color::Blue();
+  paint.stroke_width = 10;
+
+  auto draw = [&canvas](Paint& paint) {
+    for (auto cap : {Cap::kButt, Cap::kSquare, Cap::kRound}) {
+      paint.stroke_cap = cap;
+      Point origin = {100, 100};
+      Point p0 = {50, 0};
+      Point p1 = {150, 0};
+      canvas.DrawLine({150, 100}, {250, 100}, paint);
+      for (int d = 15; d < 90; d += 15) {
+        Matrix m = Matrix::MakeRotationZ(Degrees(d));
+        canvas.DrawLine(origin + m * p0, origin + m * p1, paint);
+      }
+      canvas.DrawLine({100, 150}, {100, 250}, paint);
+      canvas.DrawCircle({origin}, 35, paint);
+
+      canvas.DrawLine({250, 250}, {250, 250}, paint);
+
+      canvas.Translate({250, 0});
+    }
+    canvas.Translate({-750, 250});
+  };
+
+  std::vector<Color> colors = {
+      Color{0x1f / 255.0, 0.0, 0x5c / 255.0, 1.0},
+      Color{0x5b / 255.0, 0.0, 0x60 / 255.0, 1.0},
+      Color{0x87 / 255.0, 0x01 / 255.0, 0x60 / 255.0, 1.0},
+      Color{0xac / 255.0, 0x25 / 255.0, 0x53 / 255.0, 1.0},
+      Color{0xe1 / 255.0, 0x6b / 255.0, 0x5c / 255.0, 1.0},
+      Color{0xf3 / 255.0, 0x90 / 255.0, 0x60 / 255.0, 1.0},
+      Color{0xff / 255.0, 0xb5 / 255.0, 0x6b / 250.0, 1.0}};
+  std::vector<Scalar> stops = {
+      0.0,
+      (1.0 / 6.0) * 1,
+      (1.0 / 6.0) * 2,
+      (1.0 / 6.0) * 3,
+      (1.0 / 6.0) * 4,
+      (1.0 / 6.0) * 5,
+      1.0,
+  };
+
+  auto texture = CreateTextureForFixture("airplane.jpg",
+                                         /*enable_mipmapping=*/true);
+
+  draw(paint);
+
+  paint.color_source = ColorSource::MakeRadialGradient(
+      {100, 100}, 200, std::move(colors), std::move(stops),
+      Entity::TileMode::kMirror, {});
+  draw(paint);
+
+  paint.color_source = ColorSource::MakeImage(
+      texture, Entity::TileMode::kRepeat, Entity::TileMode::kRepeat, {},
+      Matrix::MakeTranslation({-150, 75}));
+  draw(paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, GradientStrokesRenderCorrectly) {
   // Compare with https://fiddle.skia.org/c/027392122bec8ac2b5d5de00a4b9bbe2
   auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
@@ -2396,9 +2471,9 @@ TEST_P(AiksTest, DrawRectAbsorbsClears) {
 
 TEST_P(AiksTest, DrawRectAbsorbsClearsNegativeRRect) {
   Canvas canvas;
-  canvas.DrawRRect(Rect::MakeXYWH(0, 0, 300, 300), 5.0,
+  canvas.DrawRRect(Rect::MakeXYWH(0, 0, 300, 300), {5.0, 5.0},
                    {.color = Color::Red(), .blend_mode = BlendMode::kSource});
-  canvas.DrawRRect(Rect::MakeXYWH(0, 0, 300, 300), 5.0,
+  canvas.DrawRRect(Rect::MakeXYWH(0, 0, 300, 300), {5.0, 5.0},
                    {.color = Color::CornflowerBlue().WithAlpha(0.75),
                     .blend_mode = BlendMode::kSourceOver});
 
@@ -3066,7 +3141,7 @@ TEST_P(AiksTest, CanRenderBackdropBlurInteractive) {
     canvas.DrawCircle({300, 200}, 100, {.color = Color::GreenYellow()});
     canvas.DrawCircle({140, 170}, 75, {.color = Color::DarkMagenta()});
     canvas.DrawCircle({180, 120}, 100, {.color = Color::OrangeRed()});
-    canvas.ClipRRect(Rect::MakeLTRB(a.x, a.y, b.x, b.y), 20);
+    canvas.ClipRRect(Rect::MakeLTRB(a.x, a.y, b.x, b.y), {20, 20});
     canvas.SaveLayer({.blend_mode = BlendMode::kSource}, std::nullopt,
                      ImageFilter::MakeBlur(Sigma(20.0), Sigma(20.0),
                                            FilterContents::BlurStyle::kNormal,
@@ -3085,7 +3160,7 @@ TEST_P(AiksTest, CanRenderBackdropBlur) {
   canvas.DrawCircle({300, 200}, 100, {.color = Color::GreenYellow()});
   canvas.DrawCircle({140, 170}, 75, {.color = Color::DarkMagenta()});
   canvas.DrawCircle({180, 120}, 100, {.color = Color::OrangeRed()});
-  canvas.ClipRRect(Rect::MakeLTRB(75, 50, 375, 275), 20);
+  canvas.ClipRRect(Rect::MakeLTRB(75, 50, 375, 275), {20, 20});
   canvas.SaveLayer({.blend_mode = BlendMode::kSource}, std::nullopt,
                    ImageFilter::MakeBlur(Sigma(30.0), Sigma(30.0),
                                          FilterContents::BlurStyle::kNormal,
@@ -3191,7 +3266,7 @@ TEST_P(AiksTest, CanRenderClippedRuntimeEffects) {
 
   Canvas canvas;
   canvas.Save();
-  canvas.ClipRRect(Rect::MakeXYWH(0, 0, 400, 400), 10.0,
+  canvas.ClipRRect(Rect::MakeXYWH(0, 0, 400, 400), {10.0, 10.0},
                    Entity::ClipOperation::kIntersect);
   canvas.DrawRect(Rect::MakeXYWH(0, 0, 400, 400), paint);
   canvas.Restore();
@@ -3469,7 +3544,7 @@ TEST_P(AiksTest, DrawPictureWithText) {
 
 TEST_P(AiksTest, DrawPictureClipped) {
   Canvas subcanvas;
-  subcanvas.ClipRRect(Rect::MakeLTRB(100, 100, 400, 400), 15);
+  subcanvas.ClipRRect(Rect::MakeLTRB(100, 100, 400, 400), {15, 15});
   subcanvas.DrawPaint({.color = Color::Red()});
   auto picture = subcanvas.EndRecordingAsPicture();
 
@@ -3481,7 +3556,7 @@ TEST_P(AiksTest, DrawPictureClipped) {
 
   // Draw over the picture with a larger green rectangle, completely covering it
   // up.
-  canvas.ClipRRect(Rect::MakeLTRB(100, 100, 400, 400).Expand(20), 15);
+  canvas.ClipRRect(Rect::MakeLTRB(100, 100, 400, 400).Expand(20), {15, 15});
   canvas.DrawPaint({.color = Color::Green()});
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
@@ -3730,6 +3805,29 @@ TEST_P(AiksTest, VerticesGeometryUVPositionData) {
 
   paint.color_source = ColorSource::MakeImage(texture, Entity::TileMode::kClamp,
                                               Entity::TileMode::kClamp, {}, {});
+
+  auto vertices = {Point(0, 0), Point(texture->GetSize().width, 0),
+                   Point(0, texture->GetSize().height)};
+  std::vector<uint16_t> indices = {0u, 1u, 2u};
+  std::vector<Point> texture_coordinates = {};
+  std::vector<Color> vertex_colors = {};
+  auto geometry = std::make_shared<VerticesGeometry>(
+      vertices, indices, texture_coordinates, vertex_colors,
+      Rect::MakeLTRB(0, 0, 1, 1), VerticesGeometry::VertexMode::kTriangleStrip);
+
+  canvas.DrawVertices(geometry, BlendMode::kSourceOver, paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+// Regression test for https://github.com/flutter/flutter/issues/135441 .
+TEST_P(AiksTest, VerticesGeometryUVPositionDataWithTranslate) {
+  Canvas canvas;
+  Paint paint;
+  auto texture = CreateTextureForFixture("table_mountain_nx.png");
+
+  paint.color_source = ColorSource::MakeImage(
+      texture, Entity::TileMode::kClamp, Entity::TileMode::kClamp, {},
+      Matrix::MakeTranslation({100.0, 100.0}));
 
   auto vertices = {Point(0, 0), Point(texture->GetSize().width, 0),
                    Point(0, texture->GetSize().height)};

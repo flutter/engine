@@ -146,6 +146,7 @@ class CopyArtifactsStep implements PipelineStep {
   Future<void> copySkiaTestImages() async {
     final io.Directory testImagesDir = io.Directory(pathlib.join(
       environment.engineSrcDir.path,
+      'flutter',
       'third_party',
       'skia',
       'resources',

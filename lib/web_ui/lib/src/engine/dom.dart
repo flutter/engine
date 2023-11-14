@@ -344,7 +344,7 @@ external DomHTMLDocument get domDocument;
 
 @JS()
 @staticInterop
-class DomEventTarget implements JSObject {}
+class DomEventTarget {}
 
 extension DomEventTargetExtension on DomEventTarget {
   @JS('addEventListener')
@@ -1157,7 +1157,7 @@ extension WebGLContextExtension on WebGLContext {
 
 @JS()
 @staticInterop
-abstract class DomCanvasImageSource implements JSObject {}
+abstract class DomCanvasImageSource {}
 
 @JS()
 @staticInterop
@@ -1453,7 +1453,7 @@ extension DomImageDataExtension on DomImageData {
 
 @JS('ImageBitmap')
 @staticInterop
-class DomImageBitmap implements JSObject {}
+class DomImageBitmap {}
 
 extension DomImageBitmapExtension on DomImageBitmap {
   external JSNumber get width;
@@ -1831,7 +1831,7 @@ class HttpFetchError implements Exception {
 
 @JS()
 @staticInterop
-class DomResponse implements JSObject {}
+class DomResponse {}
 
 extension DomResponseExtension on DomResponse {
   @JS('status')
@@ -1868,7 +1868,7 @@ extension DomHeadersExtension on DomHeaders {
 
 @JS()
 @staticInterop
-class _DomReadableStream implements JSObject {}
+class _DomReadableStream {}
 
 extension _DomReadableStreamExtension on _DomReadableStream {
   external _DomStreamReader getReader();
@@ -2631,14 +2631,6 @@ DomTouch createDomTouch([Map<dynamic, dynamic>? init]) {
     return DomTouch.arg1();
   } else {
     return DomTouch.arg2(init.toJSAnyDeep);
-  }
-}
-
-DomTouchEvent createDomTouchEvent(String type, [Map<dynamic, dynamic>? init]) {
-  if (init == null) {
-    return DomTouchEvent.arg1(type.toJS);
-  } else {
-    return DomTouchEvent.arg2(type.toJS, init.toJSAnyDeep);
   }
 }
 

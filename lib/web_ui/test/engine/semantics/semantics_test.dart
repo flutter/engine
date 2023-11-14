@@ -391,7 +391,7 @@ void _testEngineSemanticsOwner() {
     expectSemanticsTree('''
 <sem style="$rootSemanticStyle">
   <sem-c>
-    <sem aria-label="Hello"></sem>
+    <sem role="text" aria-label="Hello"></sem>
   </sem-c>
 </sem>''');
 
@@ -401,7 +401,7 @@ void _testEngineSemanticsOwner() {
     expectSemanticsTree('''
 <sem style="$rootSemanticStyle">
   <sem-c>
-    <sem aria-label="World"></sem>
+    <sem role="text" aria-label="World"></sem>
   </sem-c>
 </sem>''');
 
@@ -411,7 +411,7 @@ void _testEngineSemanticsOwner() {
     expectSemanticsTree('''
 <sem style="$rootSemanticStyle">
   <sem-c>
-    <sem></sem>
+    <sem role="text"></sem>
   </sem-c>
 </sem>''');
 
@@ -434,7 +434,7 @@ void _testEngineSemanticsOwner() {
     expectSemanticsTree('''
 <sem style="$rootSemanticStyle">
   <sem-c>
-    <sem aria-label="Hello"></sem>
+    <sem aria-label="Hello" role="text"></sem>
   </sem-c>
 </sem>''');
 
@@ -449,7 +449,7 @@ void _testEngineSemanticsOwner() {
     expectSemanticsTree('''
 <sem style="$rootSemanticStyle">
   <sem-c>
-    <a aria-label="Hello" role="button" style="display: block;"></a>
+    <a aria-label="Hello" style="display: block;"></a>
   </sem-c>
 </sem>''');
     expect(existingParent, tree[1]!.element.parent);
@@ -483,7 +483,7 @@ void _testEngineSemanticsOwner() {
     expectSemanticsTree('''
 <sem style="$rootSemanticStyle">
   <sem-c>
-    <sem aria-label="tooltip\nHello"></sem>
+    <sem role="text" aria-label="tooltip\nHello"></sem>
   </sem-c>
 </sem>''');
 
@@ -493,7 +493,7 @@ void _testEngineSemanticsOwner() {
     expectSemanticsTree('''
 <sem style="$rootSemanticStyle">
   <sem-c>
-    <sem></sem>
+    <sem role="text"></sem>
   </sem-c>
 </sem>''');
 
@@ -1441,7 +1441,7 @@ void _testIncrementables() {
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
 <sem style="$rootSemanticStyle">
-  <input aria-valuenow="1" aria-valuetext="d" aria-valuemax="1" aria-valuemin="1">
+  <input role="slider" aria-valuenow="1" aria-valuetext="d" aria-valuemax="1" aria-valuemin="1">
 </sem>''');
 
     final SemanticsObject node = semantics().debugSemanticsTree![0]!;
@@ -1474,7 +1474,7 @@ void _testIncrementables() {
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
 <sem style="$rootSemanticStyle">
-  <input aria-valuenow="1" aria-valuetext="d" aria-valuemax="2" aria-valuemin="1">
+  <input role="slider" aria-valuenow="1" aria-valuetext="d" aria-valuemax="2" aria-valuemin="1">
 </sem>''');
 
     final DomHTMLInputElement input =
@@ -1507,7 +1507,7 @@ void _testIncrementables() {
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
 <sem style="$rootSemanticStyle">
-  <input aria-valuenow="1" aria-valuetext="d" aria-valuemax="1" aria-valuemin="0">
+  <input role="slider" aria-valuenow="1" aria-valuetext="d" aria-valuemax="1" aria-valuemin="0">
 </sem>''');
 
     final DomHTMLInputElement input =
@@ -1542,7 +1542,7 @@ void _testIncrementables() {
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
 <sem style="$rootSemanticStyle">
-  <input aria-valuenow="1" aria-valuetext="d" aria-valuemax="2" aria-valuemin="0">
+  <input role="slider" aria-valuenow="1" aria-valuetext="d" aria-valuemax="2" aria-valuemin="0">
 </sem>''');
 
     semantics().semanticsEnabled = false;
@@ -1685,7 +1685,7 @@ void _testCheckables() {
 
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
-<sem aria-label="test label" role="switch" aria-checked="true" style="$rootSemanticStyle"></sem>
+<sem aria-label="test label" flt-tappable role="switch" aria-checked="true" style="$rootSemanticStyle"></sem>
 ''');
 
     final SemanticsObject node = semantics().debugSemanticsTree![0]!;
@@ -1743,7 +1743,7 @@ void _testCheckables() {
 
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
-<sem role="switch" aria-checked="false" style="$rootSemanticStyle"></sem>
+<sem role="switch" flt-tappable aria-checked="false" style="$rootSemanticStyle"></sem>
 ''');
 
     semantics().semanticsEnabled = false;
@@ -1769,7 +1769,7 @@ void _testCheckables() {
 
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
-<sem role="checkbox" aria-checked="true" style="$rootSemanticStyle"></sem>
+<sem role="checkbox" flt-tappable aria-checked="true" style="$rootSemanticStyle"></sem>
 ''');
 
     semantics().semanticsEnabled = false;
@@ -1819,7 +1819,7 @@ void _testCheckables() {
 
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
-<sem role="checkbox" aria-checked="false" style="$rootSemanticStyle"></sem>
+<sem role="checkbox" flt-tappable aria-checked="false" style="$rootSemanticStyle"></sem>
 ''');
 
     semantics().semanticsEnabled = false;
@@ -1846,7 +1846,7 @@ void _testCheckables() {
 
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
-<sem role="radio" aria-checked="true" style="$rootSemanticStyle"></sem>
+<sem role="radio" flt-tappable aria-checked="true" style="$rootSemanticStyle"></sem>
 ''');
 
     semantics().semanticsEnabled = false;
@@ -1898,7 +1898,7 @@ void _testCheckables() {
 
     semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
-<sem role="radio" aria-checked="false" style="$rootSemanticStyle"></sem>
+<sem role="radio" flt-tappable aria-checked="false" style="$rootSemanticStyle"></sem>
 ''');
 
     semantics().semanticsEnabled = false;
@@ -1971,7 +1971,7 @@ void _testTappable() {
     tester.apply();
 
     expectSemanticsTree('''
-<sem role="button" style="$rootSemanticStyle"></sem>
+<sem role="button" flt-tappable style="$rootSemanticStyle"></sem>
 ''');
 
     final SemanticsObject node = semantics().debugSemanticsTree![0]!;
@@ -2032,14 +2032,14 @@ void _testTappable() {
         '<sem role="button" aria-disabled="true" style="$rootSemanticStyle"></sem>');
 
     updateTappable(enabled: true);
-    expectSemanticsTree('<sem role="button" style="$rootSemanticStyle"></sem>');
+    expectSemanticsTree('<sem role="button" flt-tappable style="$rootSemanticStyle"></sem>');
 
     updateTappable(enabled: false);
     expectSemanticsTree(
         '<sem role="button" aria-disabled="true" style="$rootSemanticStyle"></sem>');
 
     updateTappable(enabled: true);
-    expectSemanticsTree('<sem role="button" style="$rootSemanticStyle"></sem>');
+    expectSemanticsTree('<sem role="button" flt-tappable style="$rootSemanticStyle"></sem>');
 
     semantics().semanticsEnabled = false;
   });
@@ -2109,6 +2109,89 @@ void _testTappable() {
       (0, ui.SemanticsAction.didGainAccessibilityFocus, null),
       (0, ui.SemanticsAction.didLoseAccessibilityFocus, null),
     ]);
+
+    semantics().semanticsEnabled = false;
+  });
+
+  // Regression test for: https://github.com/flutter/flutter/issues/134842
+  //
+  // If the click event is allowed to propagate through the hierarchy, then both
+  // the descendant and the parent will generate a SemanticsAction.tap, causing
+  // a double-tap to happen on the framework side.
+  test('inner tappable overrides ancestor tappable', () async {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final List<CapturedAction> capturedActions = <CapturedAction>[];
+    EnginePlatformDispatcher.instance.onSemanticsActionEvent = (ui.SemanticsActionEvent event) {
+      capturedActions.add((event.nodeId, event.type, event.arguments));
+    };
+
+    final SemanticsTester tester = SemanticsTester(semantics());
+    tester.updateNode(
+      id: 0,
+      isFocusable: true,
+      hasTap: true,
+      hasEnabledState: true,
+      isEnabled: true,
+      isButton: true,
+      rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+      children: <SemanticsNodeUpdate>[
+        tester.updateNode(
+          id: 1,
+          isFocusable: true,
+          hasTap: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          isButton: true,
+          rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+        ),
+      ],
+    );
+    tester.apply();
+
+    expectSemanticsTree('''
+<sem flt-tappable role="button" style="$rootSemanticStyle">
+  <sem-c>
+    <sem flt-tappable role="button"></sem>
+  </sem-c>
+</sem>
+''');
+
+    // Tap on the outer element
+    {
+      final DomElement element = tester.getSemanticsObject(0).element;
+      final DomRect rect = element.getBoundingClientRect();
+
+      element.dispatchEvent(createDomMouseEvent('click', <Object?, Object?>{
+        'clientX': (rect.left + (rect.right - rect.left) / 2).floor(),
+        'clientY': (rect.top + (rect.bottom - rect.top) / 2).floor(),
+      }));
+
+      expect(capturedActions, <CapturedAction>[
+        (0, ui.SemanticsAction.tap, null),
+      ]);
+    }
+
+    // Tap on the inner element
+    {
+      capturedActions.clear();
+      final DomElement element = tester.getSemanticsObject(1).element;
+      final DomRect rect = element.getBoundingClientRect();
+
+      element.dispatchEvent(createDomMouseEvent('click', <Object?, Object?>{
+        'bubbles': true,
+        'clientX': (rect.left + (rect.right - rect.left) / 2).floor(),
+        'clientY': (rect.top + (rect.bottom - rect.top) / 2).floor(),
+      }));
+
+      // The click on the inner element should not propagate to the parent to
+      // avoid sending a second SemanticsAction.tap action to the framework.
+      expect(capturedActions, <CapturedAction>[
+        (1, ui.SemanticsAction.tap, null),
+      ]);
+    }
 
     semantics().semanticsEnabled = false;
   });
@@ -2249,6 +2332,10 @@ class MockAccessibilityAnnouncements implements AccessibilityAnnouncements {
 }
 
 void _testLiveRegion() {
+  tearDown(() {
+    LiveRegion.debugOverrideAccessibilityAnnouncements(null);
+  });
+
   test('announces the label after an update', () async {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
@@ -2256,7 +2343,7 @@ void _testLiveRegion() {
 
     final MockAccessibilityAnnouncements mockAccessibilityAnnouncements =
         MockAccessibilityAnnouncements();
-    flutterViewEmbedder.debugOverrideAccessibilityAnnouncements(mockAccessibilityAnnouncements);
+    LiveRegion.debugOverrideAccessibilityAnnouncements(mockAccessibilityAnnouncements);
 
     final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     updateNode(
@@ -2279,7 +2366,7 @@ void _testLiveRegion() {
 
     final MockAccessibilityAnnouncements mockAccessibilityAnnouncements =
         MockAccessibilityAnnouncements();
-    flutterViewEmbedder.debugOverrideAccessibilityAnnouncements(mockAccessibilityAnnouncements);
+    LiveRegion.debugOverrideAccessibilityAnnouncements(mockAccessibilityAnnouncements);
 
     final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     updateNode(
@@ -2301,7 +2388,7 @@ void _testLiveRegion() {
 
     final MockAccessibilityAnnouncements mockAccessibilityAnnouncements =
         MockAccessibilityAnnouncements();
-    flutterViewEmbedder.debugOverrideAccessibilityAnnouncements(mockAccessibilityAnnouncements);
+    LiveRegion.debugOverrideAccessibilityAnnouncements(mockAccessibilityAnnouncements);
 
     ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     updateNode(
@@ -2427,16 +2514,15 @@ void _testPlatformView() {
       width: 20,
       height: 30,
     );
-    ui.window.render(sceneBuilder.build());
+    ui.PlatformDispatcher.instance.render(sceneBuilder.build());
 
     final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+    final double dpr = EngineFlutterDisplay.instance.devicePixelRatio;
     updateNode(builder,
         rect: const ui.Rect.fromLTRB(0, 0, 20, 60),
         childrenInTraversalOrder: Int32List.fromList(<int>[1, 2, 3]),
         childrenInHitTestOrder: Int32List.fromList(<int>[1, 2, 3]),
-        transform: Float64List.fromList(Matrix4.diagonal3Values(
-                ui.window.devicePixelRatio, ui.window.devicePixelRatio, 1)
-            .storage));
+        transform: Float64List.fromList(Matrix4.diagonal3Values(dpr, dpr, 1).storage));
     updateNode(
       builder,
       id: 1,
@@ -2676,11 +2762,11 @@ void _testDialog() {
       tester.apply();
 
       expectSemanticsTree('''
-        <sem aria-describedby="flt-semantic-node-2" style="$rootSemanticStyle">
+        <sem role="dialog" aria-describedby="flt-semantic-node-2" style="$rootSemanticStyle">
           <sem-c>
             <sem>
               <sem-c>
-                <sem aria-label="$label"></sem>
+                <sem role="text" aria-label="$label"></sem>
               </sem-c>
             </sem>
           </sem-c>
@@ -2769,7 +2855,7 @@ void _testDialog() {
         <sem-c>
           <sem>
             <sem-c>
-              <sem aria-label="Hello"></sem>
+              <sem role="text" aria-label="Hello"></sem>
             </sem-c>
           </sem>
         </sem-c>
@@ -2906,9 +2992,9 @@ void _testFocusable() {
     }
 
     expectSemanticsTree('''
-<sem role="group" style="$rootSemanticStyle">
+<sem style="$rootSemanticStyle">
   <sem-c>
-    <sem aria-label="focusable text"></sem>
+    <sem role="text" aria-label="focusable text"></sem>
   </sem-c>
 </sem>
 ''');
@@ -3051,7 +3137,7 @@ const MethodCodec codec = StandardMethodCodec();
 /// Sends a platform message to create a Platform View with the given id and viewType.
 Future<void> createPlatformView(int id, String viewType) {
   final Completer<void> completer = Completer<void>();
-  ui.window.sendPlatformMessage(
+  ui.PlatformDispatcher.instance.sendPlatformMessage(
     'flutter/platform_views',
     codec.encodeMethodCall(MethodCall(
       'create',
@@ -3068,7 +3154,7 @@ Future<void> createPlatformView(int id, String viewType) {
 /// Disposes of the platform view with the given [id].
 Future<void> disposePlatformView(int id) {
   final Completer<void> completer = Completer<void>();
-  window.sendPlatformMessage(
+  ui.PlatformDispatcher.instance.sendPlatformMessage(
     'flutter/platform_views',
     codec.encodeMethodCall(MethodCall('dispose', id)),
     (dynamic _) => completer.complete(),
