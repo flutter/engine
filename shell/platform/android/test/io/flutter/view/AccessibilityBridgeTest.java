@@ -2184,6 +2184,7 @@ public class AccessibilityBridgeTest {
     float scrollPosition = 0.0f;
     float scrollExtentMax = 0.0f;
     float scrollExtentMin = 0.0f;
+    String identifier = null;
     String label = null;
     List<TestStringAttribute> labelAttributes;
     String value = null;
@@ -2241,6 +2242,12 @@ public class AccessibilityBridgeTest {
       bytes.putFloat(scrollPosition);
       bytes.putFloat(scrollExtentMax);
       bytes.putFloat(scrollExtentMin);
+      if (identifier == null) {
+        bytes.putInt(-1);
+      } else {
+        strings.add(identifier);
+        bytes.putInt(strings.size() - 1);
+      }
       updateString(label, labelAttributes, bytes, strings, stringAttributeArgs);
       updateString(value, valueAttributes, bytes, strings, stringAttributeArgs);
       updateString(increasedValue, increasedValueAttributes, bytes, strings, stringAttributeArgs);
