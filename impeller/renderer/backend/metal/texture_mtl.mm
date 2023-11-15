@@ -133,6 +133,38 @@ class BetterNameTextureMTL final : public TextureMTL {
   BetterNameTextureMTL& operator=(const BetterNameTextureMTL&) = delete;
 };
 
+/// @brief A class that holds the mutable state of the DrawableTextureMTL.
+class DrawableHolder {
+ public:
+  DrawableHolder() = default;
+
+  ~DrawableHolder() = default;
+
+  bool AcquireNextDrawable(CAMetalLayer* layer) {
+    id<CAMetalDrawable> current_drawable = nil;
+    {
+      TRACE_EVENT0("impeller", "WaitForNextDrawable");
+      current_drawable = [layer nextDrawable];
+    }
+    has_drawable_ = true;
+    drawable_latch_->CountDown();
+    if (!current_drawable) {
+      VALIDATION_LOG << "Could not acquire current drawable.";
+      return false;
+    }
+    drawable_ = current_drawable;
+    texture_ = drawable_.texture;
+
+    return true;
+  }
+
+  bool has_drawable_ = false;
+  id<CAMetalDrawable> drawable_ = nullptr;
+  id<MTLTexture> texture_ = nullptr;
+  std::shared_ptr<fml::CountDownLatch> drawable_latch_ =
+      std::make_shared<fml::CountDownLatch>(1u);
+};
+
 /// @brief an implementation of TextureMTL that is backed by a CAMetalLayer.
 ///
 /// When asked for a Metal texture, this texture class will reference and cache
@@ -144,7 +176,7 @@ class DrawableTextureMTL final : public TextureMTL {
   DrawableTextureMTL(const TextureDescriptor& p_desc, CAMetalLayer* layer)
       : TextureMTL(p_desc),
         layer_(layer),
-        drawable_latch_(std::make_shared<fml::CountDownLatch>(1u)) {
+        drawable_holder_(std::make_shared<DrawableHolder>()) {
     const auto& desc = GetTextureDescriptor();
 
     if (!desc.IsValid() || !layer) {
@@ -167,40 +199,28 @@ class DrawableTextureMTL final : public TextureMTL {
  private:
   CAMetalLayer* layer_;
   bool is_valid_ = false;
-
-  mutable bool acquired_drawable_ = false;
-  mutable id<CAMetalDrawable> drawable_ = nullptr;
-  mutable id<MTLTexture> texture_ = nullptr;
-  mutable std::shared_ptr<fml::CountDownLatch> drawable_latch_;
+  std::shared_ptr<DrawableHolder> drawable_holder_;
 
   id<CAMetalDrawable> WaitForNextDrawable() const override {
-    drawable_latch_->Wait();
-    return drawable_;
+    if (drawable_holder_->has_drawable_) {
+      return drawable_holder_->drawable_;
+    }
+    drawable_holder_->drawable_latch_->Wait();
+    return drawable_holder_->drawable_;
   }
 
   // |TextureMTL|
   id<MTLTexture> GetMTLTexture() const override {
     // If the drawable has already been acquired, then return the cached Metal
     // texture. If next drawable returned a nil texture, this value will be nil.
-    if (acquired_drawable_) {
-      return texture_;
+    if (drawable_holder_->has_drawable_) {
+      return drawable_holder_->texture_;
     }
 
-    id<CAMetalDrawable> current_drawable = nil;
-    {
-      TRACE_EVENT0("impeller", "WaitForNextDrawable");
-      current_drawable = [layer_ nextDrawable];
+    if (drawable_holder_->AcquireNextDrawable(layer_)) {
+      return drawable_holder_->texture_;
     }
-    acquired_drawable_ = true;
-    drawable_latch_->CountDown();
-
-    if (!current_drawable) {
-      VALIDATION_LOG << "Could not acquire current drawable.";
-      return nullptr;
-    }
-    drawable_ = current_drawable;
-    texture_ = drawable_.texture;
-    return texture_;
+    return nullptr;
   }
 
   // |TextureMTL|

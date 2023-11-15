@@ -61,9 +61,7 @@ impeller_component("metal") {
 impeller_component("metal_unittests") {
   testonly = true
 
-  sources = [
-    "texture_mtl_unittests.mm"
-  ]
+  sources = [ "texture_mtl_unittests.mm" ]
 
   deps = [
     ":metal",
@@ -74,5 +72,4 @@ impeller_component("metal_unittests") {
     "AppKit.framework",
     "QuartzCore.framework",
   ]
-
 }
