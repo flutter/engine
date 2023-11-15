@@ -14,6 +14,7 @@
 #include "flutter/flow/raster_cache_item.h"
 #include "flutter/fml/time/time_point.h"
 #include "flutter/fml/trace_event.h"
+#include "include/core/SkColorSpace.h"
 
 namespace flutter {
 
@@ -55,7 +56,7 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       .gr_context                    = frame.gr_context(),
       .view_embedder                 = frame.view_embedder(),
       .state_stack                   = state_stack,
-      .dst_color_space               = sk_ref_sp(color_space),
+      .dst_color_space               = sk_ref_sp<SkColorSpace>(color_space),
       .surface_needs_readback        = false,
       .raster_time                   = frame.context().raster_time(),
       .ui_time                       = frame.context().ui_time(),
