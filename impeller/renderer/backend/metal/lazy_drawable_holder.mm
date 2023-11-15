@@ -20,19 +20,21 @@ namespace impeller {
 // above which is well below Flutters support level.
 #pragma GCC diagnostic ignored "-Wunguarded-availability-new"
 
-std::shared_future<id<CAMetalDrawable>> GetDrawableDeferred(CAMetalLayer* layer) {
-  auto future = std::async(std::launch::deferred, [layer]() -> id<CAMetalDrawable> {
-    id<CAMetalDrawable> current_drawable = nil;
-    {
-      TRACE_EVENT0("impeller", "WaitForNextDrawable");
-      current_drawable = [layer nextDrawable];
-    }
-    if (!current_drawable) {
-      VALIDATION_LOG << "Could not acquire current drawable.";
-      return nullptr;
-    }
-    return current_drawable;
-  });
+std::shared_future<id<CAMetalDrawable>> GetDrawableDeferred(
+    CAMetalLayer* layer) {
+  auto future =
+      std::async(std::launch::deferred, [layer]() -> id<CAMetalDrawable> {
+        id<CAMetalDrawable> current_drawable = nil;
+        {
+          TRACE_EVENT0("impeller", "WaitForNextDrawable");
+          current_drawable = [layer nextDrawable];
+        }
+        if (!current_drawable) {
+          VALIDATION_LOG << "Could not acquire current drawable.";
+          return nullptr;
+        }
+        return current_drawable;
+      });
   return std::shared_future<id<CAMetalDrawable>>(std::move(future));
 }
 
