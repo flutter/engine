@@ -9,11 +9,11 @@
 
 namespace flutter {
 
-SingleFrameCodec::SingleFrameCodec(fml::RefPtr<ImageDescriptor> descriptor,
-                                   uint32_t target_width,
-                                   uint32_t target_height)
-    : status_(Status::kNew),
-      descriptor_(std::move(descriptor)),
+SingleFrameCodec::SingleFrameCodec(
+    const fml::RefPtr<ImageDescriptor>& descriptor,
+    uint32_t target_width,
+    uint32_t target_height)
+    : descriptor_(std::move(descriptor)),
       target_width_(target_width),
       target_height_(target_height) {}
 

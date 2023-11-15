@@ -15,7 +15,7 @@ namespace flutter {
 
 class SingleFrameCodec : public Codec {
  public:
-  SingleFrameCodec(fml::RefPtr<ImageDescriptor> descriptor,
+  SingleFrameCodec(const fml::RefPtr<ImageDescriptor>& descriptor,
                    uint32_t target_width,
                    uint32_t target_height);
 
