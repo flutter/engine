@@ -62,7 +62,7 @@ WeakContainer::~WeakContainer() {}
 }
 
 - (void)dealloc {
-  self.container->nullify();
+  _container->nullify();
   [super dealloc];
 }
 
