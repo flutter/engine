@@ -130,23 +130,27 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     EngineFlutterDisplay.instance,
   ];
 
+  /// Adds [view] to the platform dispatcher's registry of [views].
+  void registerView(EngineFlutterView view) {
+    viewData[view.viewId] = view;
+  }
+
+  /// Removes [view] from the platform dispatcher's registry of [views].
+  ///
+  /// Nothing happens if the view is not already registered.
+  void unregisterView(EngineFlutterView view) {
+    viewData.remove(view.viewId);
+  }
+
   /// The current list of windows.
   @override
   Iterable<EngineFlutterView> get views => viewData.values;
   final Map<int, EngineFlutterView> viewData = <int, EngineFlutterView>{};
 
-  /// Returns the [FlutterView] with the provided ID if one exists, or null
+  /// Returns the [EngineFlutterView] with the provided ID if one exists, or null
   /// otherwise.
   @override
   EngineFlutterView? view({required int id}) => viewData[id];
-
-  /// A map of opaque platform window identifiers to window configurations.
-  ///
-  /// This should be considered a protected member, only to be used by
-  /// [PlatformDispatcher] subclasses.
-  Map<Object, ViewConfiguration> get windowConfigurations => _windowConfigurations;
-  final Map<Object, ViewConfiguration> _windowConfigurations =
-      <Object, ViewConfiguration>{};
 
   /// The [FlutterView] provided by the engine if the platform is unable to
   /// create windows, or, for backwards compatibility.
@@ -604,7 +608,9 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       case 'flutter/accessibility':
         // In widget tests we want to bypass processing of platform messages.
         const StandardMessageCodec codec = StandardMessageCodec();
-        flutterViewEmbedder.accessibilityAnnouncements.handleMessage(codec, data);
+        // TODO(yjbanov): Dispatch the announcement to the correct view?
+        //                https://github.com/flutter/flutter/issues/137445
+        implicitView!.accessibilityAnnouncements.handleMessage(codec, data);
         replyToPlatformMessage(callback, codec.encodeMessage(true));
         return;
 
@@ -1343,7 +1349,6 @@ class ViewConfiguration {
   const ViewConfiguration({
     this.view,
     this.devicePixelRatio = 1.0,
-    this.geometry = ui.Rect.zero,
     this.visible = false,
     this.viewInsets = ui.ViewPadding.zero as ViewPadding,
     this.viewPadding = ui.ViewPadding.zero as ViewPadding,
@@ -1356,7 +1361,6 @@ class ViewConfiguration {
   ViewConfiguration copyWith({
     EngineFlutterView? view,
     double? devicePixelRatio,
-    ui.Rect? geometry,
     bool? visible,
     ViewPadding? viewInsets,
     ViewPadding? viewPadding,
@@ -1368,7 +1372,6 @@ class ViewConfiguration {
     return ViewConfiguration(
       view: view ?? this.view,
       devicePixelRatio: devicePixelRatio ?? this.devicePixelRatio,
-      geometry: geometry ?? this.geometry,
       visible: visible ?? this.visible,
       viewInsets: viewInsets ?? this.viewInsets,
       viewPadding: viewPadding ?? this.viewPadding,
@@ -1381,7 +1384,6 @@ class ViewConfiguration {
 
   final EngineFlutterView? view;
   final double devicePixelRatio;
-  final ui.Rect geometry;
   final bool visible;
   final ViewPadding viewInsets;
   final ViewPadding viewPadding;
@@ -1392,7 +1394,7 @@ class ViewConfiguration {
 
   @override
   String toString() {
-    return '$runtimeType[view: $view, geometry: $geometry]';
+    return '$runtimeType[view: $view]';
   }
 }
 

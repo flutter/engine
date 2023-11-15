@@ -286,7 +286,8 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
   }
 
   return EntityPassTarget(
-      target, renderer.GetDeviceCapabilities().SupportsReadFromResolve());
+      target, renderer.GetDeviceCapabilities().SupportsReadFromResolve(),
+      renderer.GetDeviceCapabilities().SupportsImplicitResolvingMSAA());
 }
 
 uint32_t EntityPass::GetTotalPassReads(ContentContext& renderer) const {
@@ -322,7 +323,7 @@ bool EntityPass::Render(ContentContext& renderer,
 
   IterateAllEntities([lazy_glyph_atlas =
                           renderer.GetLazyGlyphAtlas()](const Entity& entity) {
-    if (auto contents = entity.GetContents()) {
+    if (const auto& contents = entity.GetContents()) {
       contents->PopulateGlyphAtlas(lazy_glyph_atlas, entity.DeriveTextScale());
     }
     return true;
@@ -332,16 +333,11 @@ bool EntityPass::Render(ContentContext& renderer,
       .coverage = Rect::MakeSize(root_render_target.GetRenderTargetSize()),
       .clip_depth = 0}};
 
-  bool supports_onscreen_backdrop_reads =
-      renderer.GetDeviceCapabilities().SupportsReadFromOnscreenTexture() &&
-      // If the backend doesn't have `SupportsReadFromResolve`, we need to flip
-      // between two textures when restoring a previous MSAA pass.
-      renderer.GetDeviceCapabilities().SupportsReadFromResolve();
   bool reads_from_onscreen_backdrop = GetTotalPassReads(renderer) > 0;
   // In this branch path, we need to render everything to an offscreen texture
   // and then blit the results onto the onscreen texture. If using this branch,
   // there's no need to set up a stencil attachment on the root render target.
-  if (!supports_onscreen_backdrop_reads && reads_from_onscreen_backdrop) {
+  if (reads_from_onscreen_backdrop) {
     auto offscreen_target =
         CreateRenderTarget(renderer, root_render_target.GetRenderTargetSize(),
                            GetClearColor(render_target.GetRenderTargetSize()));
@@ -375,8 +371,8 @@ bool EntityPass::Render(ContentContext& renderer,
           offscreen_target.GetRenderTarget().GetRenderTargetTexture(),
           root_render_target.GetRenderTargetTexture());
 
-      if (!blit_pass->EncodeCommands(
-              renderer.GetContext()->GetResourceAllocator())) {
+      if (!command_buffer->EncodeAndSubmit(
+              blit_pass, renderer.GetContext()->GetResourceAllocator())) {
         VALIDATION_LOG << "Failed to encode root pass blit command.";
         return false;
       }
@@ -397,17 +393,16 @@ bool EntityPass::Render(ContentContext& renderer,
         entity.SetContents(contents);
         entity.SetBlendMode(BlendMode::kSource);
 
-        entity.Render(renderer, *render_pass);
+        if (!entity.Render(renderer, *render_pass)) {
+          VALIDATION_LOG << "Failed to render EntityPass root blit.";
+          return false;
+        }
       }
 
-      if (!render_pass->EncodeCommands()) {
+      if (!command_buffer->EncodeAndSubmit(render_pass)) {
         VALIDATION_LOG << "Failed to encode root pass command buffer.";
         return false;
       }
-    }
-    if (!command_buffer->SubmitCommands()) {
-      VALIDATION_LOG << "Failed to submit root pass command buffer.";
-      return false;
     }
 
     return true;
@@ -455,7 +450,8 @@ bool EntityPass::Render(ContentContext& renderer,
 
   EntityPassTarget pass_target(
       root_render_target,
-      renderer.GetDeviceCapabilities().SupportsReadFromResolve());
+      renderer.GetDeviceCapabilities().SupportsReadFromResolve(),
+      renderer.GetDeviceCapabilities().SupportsImplicitResolvingMSAA());
 
   return OnRender(                               //
       renderer,                                  // renderer

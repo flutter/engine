@@ -13,6 +13,7 @@ void main() {
 void doTests() {
   group('DomManager', () {
     test('fromFlutterViewEmbedderDEPRECATED', () {
+      ensureImplicitViewInitialized();
       final FlutterViewEmbedder embedder = FlutterViewEmbedder();
       final DomManager domManager =
           DomManager.fromFlutterViewEmbedderDEPRECATED(embedder);
@@ -22,6 +23,7 @@ void doTests() {
       expect(domManager.platformViewsHost, embedder.glassPaneElementDEPRECATED);
       expect(domManager.textEditingHost, embedder.textEditingHostNodeDEPRECATED);
       expect(domManager.semanticsHost, embedder.semanticsHostElementDEPRECATED);
+      expect(domManager.announcementsHost, embedder.announcementsHostDEPRECATED);
     });
   });
 }

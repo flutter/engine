@@ -22,18 +22,16 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
 
   if (path_.GetFillType() == FillType::kNonZero &&  //
       path_.IsConvex()) {
-    auto [points, indices] = TessellateConvex(
-        path_.CreatePolyline(entity.GetTransformation().GetMaxBasisLength()));
+    auto points = renderer.GetTessellator()->TessellateConvex(
+        path_, entity.GetTransformation().GetMaxBasisLength());
 
     vertex_buffer.vertex_buffer = host_buffer.Emplace(
         points.data(), points.size() * sizeof(Point), alignof(Point));
-    vertex_buffer.index_buffer = host_buffer.Emplace(
-        indices.data(), indices.size() * sizeof(uint16_t), alignof(uint16_t));
-    vertex_buffer.vertex_count = indices.size();
-    vertex_buffer.index_type = IndexType::k16bit;
+    vertex_buffer.index_buffer = {}, vertex_buffer.vertex_count = points.size();
+    vertex_buffer.index_type = IndexType::kNone;
 
     return GeometryResult{
-        .type = PrimitiveType::kTriangle,
+        .type = PrimitiveType::kTriangleStrip,
         .vertex_buffer = vertex_buffer,
         .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                      entity.GetTransformation(),
@@ -42,8 +40,7 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
   }
 
   auto tesselation_result = renderer.GetTessellator()->Tessellate(
-      path_.GetFillType(),
-      path_.CreatePolyline(entity.GetTransformation().GetMaxBasisLength()),
+      path_, entity.GetTransformation().GetMaxBasisLength(),
       [&vertex_buffer, &host_buffer](
           const float* vertices, size_t vertices_count, const uint16_t* indices,
           size_t indices_count) {
@@ -82,28 +79,25 @@ GeometryResult FillPathGeometry::GetPositionUVBuffer(
     RenderPass& pass) {
   using VS = TextureFillVertexShader;
 
+  auto uv_transform =
+      texture_coverage.GetNormalizingTransform() * effect_transform;
+
   if (path_.GetFillType() == FillType::kNonZero &&  //
       path_.IsConvex()) {
-    auto [points, indices] = TessellateConvex(
-        path_.CreatePolyline(entity.GetTransformation().GetMaxBasisLength()));
+    auto points = renderer.GetTessellator()->TessellateConvex(
+        path_, entity.GetTransformation().GetMaxBasisLength());
 
     VertexBufferBuilder<VS::PerVertexData> vertex_builder;
     vertex_builder.Reserve(points.size());
-    vertex_builder.ReserveIndices(indices.size());
     for (auto i = 0u; i < points.size(); i++) {
       VS::PerVertexData data;
       data.position = points[i];
-      data.texture_coords = effect_transform *
-                            (points[i] - texture_coverage.origin) /
-                            texture_coverage.size;
+      data.texture_coords = uv_transform * points[i];
       vertex_builder.AppendVertex(data);
-    }
-    for (auto i = 0u; i < indices.size(); i++) {
-      vertex_builder.AppendIndex(indices[i]);
     }
 
     return GeometryResult{
-        .type = PrimitiveType::kTriangle,
+        .type = PrimitiveType::kTriangleStrip,
         .vertex_buffer =
             vertex_builder.CreateVertexBuffer(pass.GetTransientsBuffer()),
         .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
@@ -114,18 +108,15 @@ GeometryResult FillPathGeometry::GetPositionUVBuffer(
 
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
   auto tesselation_result = renderer.GetTessellator()->Tessellate(
-      path_.GetFillType(),
-      path_.CreatePolyline(entity.GetTransformation().GetMaxBasisLength()),
-      [&vertex_builder, &texture_coverage, &effect_transform](
+      path_, entity.GetTransformation().GetMaxBasisLength(),
+      [&vertex_builder, &uv_transform](
           const float* vertices, size_t vertices_count, const uint16_t* indices,
           size_t indices_count) {
         for (auto i = 0u; i < vertices_count * 2; i += 2) {
           VS::PerVertexData data;
           Point vtx = {vertices[i], vertices[i + 1]};
           data.position = vtx;
-          data.texture_coords = effect_transform *
-                                (vtx - texture_coverage.origin) /
-                                texture_coverage.size;
+          data.texture_coords = uv_transform * vtx;
           vertex_builder.AppendVertex(data);
         }
         FML_DCHECK(vertex_builder.GetVertexCount() == vertices_count);
