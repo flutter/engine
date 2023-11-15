@@ -26,9 +26,17 @@ class TextureMTL : public Texture, public BackendCast<TextureMTL, Texture> {
   static std::shared_ptr<TextureMTL> Create(TextureDescriptor desc,
                                             id<MTLTexture> texture);
 
+#pragma GCC diagnostic push
+// Disable the diagnostic for iOS Simulators. Metal without emulation isn't
+// available prior to iOS 13 and that's what the simulator headers say when
+// support for CAMetalLayer begins. CAMetalLayer is available on iOS 8.0 and
+// above which is well below Flutters support level.
+#pragma GCC diagnostic ignored "-Wunguarded-availability-new"
+
   /// @brief Create a new texture backed by a lazily acquired drawable
   static std::shared_ptr<TextureMTL> WrapDrawable(TextureDescriptor desc,
                                                   CAMetalLayer* layer);
+#pragma GCC diagnostic pop
 
   virtual id<MTLTexture> GetMTLTexture() const = 0;
 
