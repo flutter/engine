@@ -9,6 +9,7 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/status.h"
+#include "platform/assert.h"
 
 namespace fml {
 
@@ -72,6 +73,7 @@ class StatusOr {
       return value_.value();
     }
     FML_LOG(FATAL) << "StatusOr::value() called on error Status";
+    FML_UNREACHABLE();
   }
 
   T& value() {
@@ -79,6 +81,7 @@ class StatusOr {
       return value_.value();
     }
     FML_LOG(FATAL) << "StatusOr::value() called on error Status";
+    FML_UNREACHABLE();
   }
 
  private:
