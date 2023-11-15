@@ -16,6 +16,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.util.DisplayMetrics;
+import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.flutter.BuildConfig;
@@ -46,8 +47,6 @@ public class FlutterLoader {
       "io.flutter.embedding.android.ImpellerBackend";
   private static final String IMPELLER_OPENGL_GPU_TRACING_DATA_KEY =
       "io.flutter.embedding.android.EnableOpenGLGPUTracing";
-  private static final String DISABLE_IMAGE_READER_PLATFORM_VIEWS_KEY =
-      "io.flutter.embedding.android.DisableImageReaderPlatformViews";
 
   /**
    * Set whether leave or clean up the VM after the last shell shuts down. It can be set from app's
@@ -169,9 +168,17 @@ public class FlutterLoader {
       flutterApplicationInfo = ApplicationInfoLoader.load(appContext);
 
       VsyncWaiter waiter;
-      final DisplayManager dm =
-          (DisplayManager) appContext.getSystemService(Context.DISPLAY_SERVICE);
-      waiter = VsyncWaiter.getInstance(dm, flutterJNI);
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 /* 17 */) {
+        final DisplayManager dm =
+            (DisplayManager) appContext.getSystemService(Context.DISPLAY_SERVICE);
+        waiter = VsyncWaiter.getInstance(dm, flutterJNI);
+      } else {
+        float fps =
+            ((WindowManager) appContext.getSystemService(Context.WINDOW_SERVICE))
+                .getDefaultDisplay()
+                .getRefreshRate();
+        waiter = VsyncWaiter.getInstance(fps, flutterJNI);
+      }
       waiter.init();
 
       // Use a background thread for initialization tasks that require disk access.
@@ -325,9 +332,6 @@ public class FlutterLoader {
       if (metaData != null) {
         if (metaData.getBoolean(ENABLE_IMPELLER_META_DATA_KEY, false)) {
           shellArgs.add("--enable-impeller");
-        }
-        if (metaData.getBoolean(DISABLE_IMAGE_READER_PLATFORM_VIEWS_KEY, false)) {
-          shellArgs.add("--disable-image-reader-platform-views");
         }
         if (metaData.getBoolean(
             ENABLE_VULKAN_VALIDATION_META_DATA_KEY, areValidationLayersOnByDefault())) {
