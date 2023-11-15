@@ -37,22 +37,6 @@ void BindVertices(Command& cmd,
   cmd.BindVertices(vtx_buffer);
 }
 
-/// @brief This performs the conversion from an entity's local coordinates to
-///        a subpasses uv coordinates.
-// std::array<Point, 4> CalculateUVs(const std::array<Point, 4>& coverage,
-//                                   const ISize& pass_size,
-//                                   const Matrix& entity_transform) {
-//   Matrix transform = Matrix::MakeScale({1.0f / pass_size.width,
-//                                         1.0f / pass_size.height, 1.0f}) *
-//                      entity_transform.Invert();
-//   return {
-//       transform * coverage[0],
-//       transform * coverage[1],
-//       transform * coverage[2],
-//       transform * coverage[3],
-//   };
-// }
-
 std::shared_ptr<Texture> MakeDownsampleSubpass(
     const ContentContext& renderer,
     std::shared_ptr<Texture> input_texture,
@@ -226,19 +210,9 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
       ISize(input_snapshot->texture->GetSize().width / downsample.x,
             input_snapshot->texture->GetSize().height / downsample.y);
 
-  ///////////////////////////////
-  Matrix input_transform = inputs[0]->GetLocalTransform(entity);
-  Rect snapshot_rect =
-      Rect::MakeXYWH(0, 0, input_snapshot->texture->GetSize().width,
-                     input_snapshot->texture->GetSize().height);
-  Quad coverage_quad = snapshot_rect.GetTransformedPoints(input_transform);
+  Quad uvs =
+      CalculateUVs(inputs[0], entity, input_snapshot->texture->GetSize());
 
-  Matrix uv_transform = Matrix::MakeScale(
-      {1.0f / input_snapshot->texture->GetSize().width,
-       1.0f / input_snapshot->texture->GetSize().height, 1.0f});
-  Quad uvs = uv_transform.Transform(coverage_quad);
-
-  /////////////////////////////////
   std::shared_ptr<Texture> pass1_out_texture = MakeDownsampleSubpass(
       renderer, input_snapshot->texture, input_snapshot->sampler_descriptor,
       uvs, subpass_size);
@@ -280,6 +254,20 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
 
 Scalar GaussianBlurFilterContents::CalculateBlurRadius(Scalar sigma) {
   return static_cast<Radius>(Sigma(sigma)).radius;
+}
+
+Quad GaussianBlurFilterContents::CalculateUVs(
+    const std::shared_ptr<FilterInput>& filter_input,
+    const Entity& entity,
+    const ISize& texture_size) {
+  Matrix input_transform = filter_input->GetLocalTransform(entity);
+  Rect snapshot_rect =
+      Rect::MakeXYWH(0, 0, texture_size.width, texture_size.height);
+  Quad coverage_quad = snapshot_rect.GetTransformedPoints(input_transform);
+
+  Matrix uv_transform = Matrix::MakeScale(
+      {1.0f / texture_size.width, 1.0f / texture_size.height, 1.0f});
+  return uv_transform.Transform(coverage_quad);
 }
 
 }  // namespace impeller

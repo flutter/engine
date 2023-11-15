@@ -179,5 +179,24 @@ TEST_P(GaussianBlurFilterContentsTest,
   }
 }
 
+TEST_P(GaussianBlurFilterContentsTest, CalculateUVsSimple) {
+  TextureDescriptor desc = {
+      .format = PixelFormat::kB8G8R8A8UNormInt,
+      .size = ISize(100, 100),
+  };
+  std::shared_ptr<Texture> texture =
+      GetContentContext()->GetContext()->GetResourceAllocator()->CreateTexture(
+          desc);
+  auto filter_input = FilterInput::Make(texture);
+  Entity entity;
+  Quad uvs = GaussianBlurFilterContents::CalculateUVs(filter_input, entity,
+                                                      ISize(100, 100));
+  std::optional<Rect> uvs_bounds = Rect::MakePointBounds(uvs);
+  EXPECT_TRUE(uvs_bounds.has_value());
+  if (uvs_bounds.has_value()) {
+    EXPECT_TRUE(RectNear(uvs_bounds.value(), Rect::MakeXYWH(0, 0, 1, 1)));
+  }
+}
+
 }  // namespace testing
 }  // namespace impeller
