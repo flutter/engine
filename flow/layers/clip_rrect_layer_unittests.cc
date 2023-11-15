@@ -27,7 +27,7 @@ TEST_F(ClipRRectLayerTest, ClipNoneBehaviorDies) {
   const SkRRect layer_rrect = SkRRect::MakeEmpty();
   EXPECT_DEATH_IF_SUPPORTED(
       auto clip = std::make_shared<ClipRRectLayer>(layer_rrect, Clip::kNone),
-      "clip_behavior != Clip::none");
+      "clip_behavior != Clip::kNone");
 }
 
 TEST_F(ClipRRectLayerTest, PaintingEmptyLayerDies) {
