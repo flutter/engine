@@ -33,8 +33,7 @@ MultiFrameCodec::State::State(std::shared_ptr<ImageGenerator> generator)
                                ImageGenerator::kInfinitePlayCount
                            ? -1
                            : generator_->GetPlayCount() - 1),
-      is_impeller_enabled_(UIDartState::Current()->IsImpellerEnabled()),
-      nextFrameIndex_(0) {}
+      is_impeller_enabled_(UIDartState::Current()->IsImpellerEnabled()) {}
 
 static void InvokeNextFrameCallback(
     const fml::RefPtr<CanvasImage>& image,
