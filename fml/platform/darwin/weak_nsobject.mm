@@ -29,8 +29,6 @@ WeakContainer::~WeakContainer() {}
 
 @implementation CRBWeakNSProtocolSentinel
 
-@synthesize container = container_;
-
 + (fml::RefPtr<fml::WeakContainer>)containerForObject:(id)object
                                         threadChecker:(debug::DebugThreadChecker)checker {
   if (object == nil) {
@@ -53,10 +51,10 @@ WeakContainer::~WeakContainer() {}
 }
 
 - (id)initWithContainer:(fml::RefPtr<fml::WeakContainer>)container {
-  FML_DCHECK(container.get());
+  FML_DCHECK(_container.get());
   self = [super init];
   if (self) {
-    container_ = container;
+    _container = container;
   }
   return self;
 }
