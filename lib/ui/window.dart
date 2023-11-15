@@ -373,13 +373,11 @@ class FlutterView {
     // https://github.com/flutter/flutter/issues/137073
     final bool validRender = platformDispatcher._renderedViews?.add(this) ?? false;
     if (validRender) {
-      // TODO(goderbauer): Wire "size" through to the embedder when we actually
-      //   support support embedder-provided constraints.
-      _render(viewId, scene as _NativeScene);
+      _render(viewId, scene as _NativeScene, size?.width ?? physicalSize.width, size?.height ?? physicalSize.height);
     }
   }
 
-  @Native<Void Function(Int64, Pointer<Void>)>(symbol: 'PlatformConfigurationNativeApi::Render')
+  @Native<Void Function(Int64, Pointer<Void>, Double, Double)>(symbol: 'PlatformConfigurationNativeApi::Render')
   external static void _render(int viewId, _NativeScene scene, Double, Double);
 
   /// Change the retained semantics data about this [FlutterView].
