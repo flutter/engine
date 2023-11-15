@@ -11,16 +11,21 @@ import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import '../../common/matchers.dart';
+import '../../common/test_initialization.dart';
 
 const MethodCodec codec = StandardMethodCodec();
-final EngineFlutterWindow window = EngineFlutterWindow(0, EnginePlatformDispatcher.instance);
+final EngineFlutterWindow window = EngineFlutterWindow(
+  0,
+  EnginePlatformDispatcher.instance,
+  createDomHTMLDivElement(),
+);
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 Future<void> testMain() async {
-  await ui_web.bootstrapEngine();
+  await bootstrapAndRunApp();
 
   late PersistedPlatformView view;
 
