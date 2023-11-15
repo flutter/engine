@@ -11,6 +11,7 @@
 #include "impeller/core/texture.h"
 
 @protocol CAMetalDrawable;
+@class CAMetalLayer;
 
 namespace impeller {
 
@@ -21,8 +22,13 @@ class TextureMTL : public Texture, public BackendCast<TextureMTL, Texture> {
       id<MTLTexture> texture,
       std::function<void()> deletion_proc = nullptr);
 
-  static std::shared_ptr<TextureMTL> BetterName(TextureDescriptor desc,
-                                                id<MTLTexture> texture);
+  /// @brief Create a new metal texture.
+  static std::shared_ptr<TextureMTL> Create(TextureDescriptor desc,
+                                            id<MTLTexture> texture);
+
+  /// @brief Create a new texture backed by a lazily acquired drawable
+  static std::shared_ptr<TextureMTL> WrapDrawable(TextureDescriptor desc,
+                                                  CAMetalLayer* layer);
 
   virtual id<MTLTexture> GetMTLTexture() const = 0;
 

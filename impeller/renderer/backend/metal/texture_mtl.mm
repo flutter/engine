@@ -5,6 +5,7 @@
 #include "impeller/renderer/backend/metal/texture_mtl.h"
 
 #include <QuartzCore/CAMetalLayer.h>
+#include <memory>
 
 #include "fml/synchronization/count_down_latch.h"
 #include "fml/trace_event.h"
@@ -12,6 +13,13 @@
 #include "impeller/core/texture_descriptor.h"
 
 namespace impeller {
+
+#pragma GCC diagnostic push
+// Disable the diagnostic for iOS Simulators. Metal without emulation isn't
+// available prior to iOS 13 and that's what the simulator headers say when
+// support for CAMetalLayer begins. CAMetalLayer is available on iOS 8.0 and
+// above which is well below Flutters support level.
+#pragma GCC diagnostic ignored "-Wunguarded-availability-new"
 
 TextureMTL::TextureMTL(const TextureDescriptor& desc) : Texture(desc) {}
 
@@ -257,9 +265,16 @@ std::shared_ptr<TextureMTL> TextureMTL::Wrapper(
   return std::make_shared<BetterNameTextureMTL>(desc, texture, true);
 }
 
-std::shared_ptr<TextureMTL> TextureMTL::BetterName(TextureDescriptor desc,
-                                                   id<MTLTexture> texture) {
+std::shared_ptr<TextureMTL> TextureMTL::Create(TextureDescriptor desc,
+                                               id<MTLTexture> texture) {
   return std::make_shared<BetterNameTextureMTL>(desc, texture, false);
 }
+
+std::shared_ptr<TextureMTL> TextureMTL::WrapDrawable(TextureDescriptor desc,
+                                                     CAMetalLayer* layer) {
+  return std::make_shared<DrawableTextureMTL>(desc, layer);
+}
+
+#pragma GCC diagnostic pop
 
 }  // namespace impeller
