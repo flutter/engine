@@ -22,7 +22,15 @@ Scalar CalculateSigmaForBlurRadius(Scalar blur_radius) {
 
 }  // namespace
 
-using GaussianBlurFilterContentsTest = EntityPlayground;
+class GaussianBlurFilterContentsTest : public EntityPlayground {
+ public:
+  std::shared_ptr<Texture> MakeTexture(const TextureDescriptor& desc) {
+    return GetContentContext()
+        ->GetContext()
+        ->GetResourceAllocator()
+        ->CreateTexture(desc);
+  }
+};
 INSTANTIATE_PLAYGROUND_SUITE(GaussianBlurFilterContentsTest);
 
 TEST(GaussianBlurFilterContentsTest, Create) {
@@ -184,9 +192,7 @@ TEST_P(GaussianBlurFilterContentsTest, CalculateUVsSimple) {
       .format = PixelFormat::kB8G8R8A8UNormInt,
       .size = ISize(100, 100),
   };
-  std::shared_ptr<Texture> texture =
-      GetContentContext()->GetContext()->GetResourceAllocator()->CreateTexture(
-          desc);
+  std::shared_ptr<Texture> texture = MakeTexture(desc);
   auto filter_input = FilterInput::Make(texture);
   Entity entity;
   Quad uvs = GaussianBlurFilterContents::CalculateUVs(filter_input, entity,
