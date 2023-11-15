@@ -11,7 +11,8 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
-import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
+
+import '../common/test_initialization.dart';
 
 const int kPhysicalKeyA = 0x00070004;
 const int kLogicalKeyA = 0x00000000061;
@@ -21,7 +22,18 @@ void main() {
 }
 
 Future<void> testMain() async {
-  await ui_web.bootstrapEngine();
+  await bootstrapAndRunApp();
+
+  late EngineFlutterWindow myWindow;
+
+  setUp(() {
+    myWindow = EngineFlutterWindow(99, EnginePlatformDispatcher.instance, createDomHTMLDivElement());
+  });
+
+  tearDown(() async {
+    await myWindow.resetHistory();
+    EnginePlatformDispatcher.instance.unregisterView(myWindow);
+  });
 
   test('onTextScaleFactorChanged preserves the zone', () {
     final Zone innerZone = Zone.current.fork();
@@ -30,10 +42,10 @@ Future<void> testMain() async {
       void callback() {
         expect(Zone.current, innerZone);
       }
-      window.onTextScaleFactorChanged = callback;
+      myWindow.onTextScaleFactorChanged = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
-      expect(window.onTextScaleFactorChanged, same(callback));
+      expect(myWindow.onTextScaleFactorChanged, same(callback));
     });
 
     EnginePlatformDispatcher.instance.invokeOnTextScaleFactorChanged();
@@ -46,10 +58,10 @@ Future<void> testMain() async {
       void callback() {
         expect(Zone.current, innerZone);
       }
-      window.onPlatformBrightnessChanged = callback;
+      myWindow.onPlatformBrightnessChanged = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
-      expect(window.onPlatformBrightnessChanged, same(callback));
+      expect(myWindow.onPlatformBrightnessChanged, same(callback));
     });
 
     EnginePlatformDispatcher.instance.invokeOnPlatformBrightnessChanged();
@@ -62,10 +74,10 @@ Future<void> testMain() async {
       void callback() {
         expect(Zone.current, innerZone);
       }
-      window.onMetricsChanged = callback;
+      myWindow.onMetricsChanged = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
-      expect(window.onMetricsChanged, same(callback));
+      expect(myWindow.onMetricsChanged, same(callback));
     });
 
     EnginePlatformDispatcher.instance.invokeOnMetricsChanged();
@@ -78,10 +90,10 @@ Future<void> testMain() async {
       void callback() {
         expect(Zone.current, innerZone);
       }
-      window.onLocaleChanged = callback;
+      myWindow.onLocaleChanged = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
-      expect(window.onLocaleChanged, same(callback));
+      expect(myWindow.onLocaleChanged, same(callback));
     });
 
     EnginePlatformDispatcher.instance.invokeOnLocaleChanged();
@@ -94,10 +106,10 @@ Future<void> testMain() async {
       void callback(Duration _) {
         expect(Zone.current, innerZone);
       }
-      window.onBeginFrame = callback;
+      myWindow.onBeginFrame = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
-      expect(window.onBeginFrame, same(callback));
+      expect(myWindow.onBeginFrame, same(callback));
     });
 
     EnginePlatformDispatcher.instance.invokeOnBeginFrame(Duration.zero);
@@ -110,10 +122,10 @@ Future<void> testMain() async {
       void callback(List<dynamic> _) {
         expect(Zone.current, innerZone);
       }
-      window.onReportTimings = callback;
+      myWindow.onReportTimings = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
-      expect(window.onReportTimings, same(callback));
+      expect(myWindow.onReportTimings, same(callback));
     });
 
     EnginePlatformDispatcher.instance.invokeOnReportTimings(<ui.FrameTiming>[]);
@@ -126,10 +138,10 @@ Future<void> testMain() async {
       void callback() {
         expect(Zone.current, innerZone);
       }
-      window.onDrawFrame = callback;
+      myWindow.onDrawFrame = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
-      expect(window.onDrawFrame, same(callback));
+      expect(myWindow.onDrawFrame, same(callback));
     });
 
     EnginePlatformDispatcher.instance.invokeOnDrawFrame();
@@ -142,10 +154,10 @@ Future<void> testMain() async {
       void callback(ui.PointerDataPacket _) {
         expect(Zone.current, innerZone);
       }
-      window.onPointerDataPacket = callback;
+      myWindow.onPointerDataPacket = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
-      expect(window.onPointerDataPacket, same(callback));
+      expect(myWindow.onPointerDataPacket, same(callback));
     });
 
     EnginePlatformDispatcher.instance.invokeOnPointerDataPacket(const ui.PointerDataPacket());
@@ -175,11 +187,11 @@ Future<void> testMain() async {
         expect(Zone.current, innerZone);
         return false;
       }
-      window.onKeyData = onKeyData;
+      myWindow.onKeyData = onKeyData;
 
       // Test that the getter returns the exact same onKeyData, e.g. it doesn't
       // wrap it.
-      expect(window.onKeyData, same(onKeyData));
+      expect(myWindow.onKeyData, same(onKeyData));
     });
 
     const  ui.KeyData keyData = ui.KeyData(
@@ -194,7 +206,7 @@ Future<void> testMain() async {
       expect(result, isFalse);
     });
 
-    window.onKeyData = null;
+    myWindow.onKeyData = null;
   });
 
   test('onSemanticsEnabledChanged preserves the zone', () {
@@ -204,10 +216,10 @@ Future<void> testMain() async {
       void callback() {
         expect(Zone.current, innerZone);
       }
-      window.onSemanticsEnabledChanged = callback;
+      myWindow.onSemanticsEnabledChanged = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
-      expect(window.onSemanticsEnabledChanged, same(callback));
+      expect(myWindow.onSemanticsEnabledChanged, same(callback));
     });
 
     EnginePlatformDispatcher.instance.invokeOnSemanticsEnabledChanged();
@@ -236,10 +248,10 @@ Future<void> testMain() async {
       void callback() {
         expect(Zone.current, innerZone);
       }
-      window.onAccessibilityFeaturesChanged = callback;
+      myWindow.onAccessibilityFeaturesChanged = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
-      expect(window.onAccessibilityFeaturesChanged, same(callback));
+      expect(myWindow.onAccessibilityFeaturesChanged, same(callback));
     });
 
     EnginePlatformDispatcher.instance.invokeOnAccessibilityFeaturesChanged();
@@ -252,10 +264,10 @@ Future<void> testMain() async {
       void callback(String _, ByteData? __, void Function(ByteData?)? ___) {
         expect(Zone.current, innerZone);
       }
-      window.onPlatformMessage = callback;
+      myWindow.onPlatformMessage = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
-      expect(window.onPlatformMessage, same(callback));
+      expect(myWindow.onPlatformMessage, same(callback));
     });
 
     EnginePlatformDispatcher.instance.invokeOnPlatformMessage('foo', null, (ByteData? data) {
@@ -270,7 +282,7 @@ Future<void> testMain() async {
     innerZone.runGuarded(() {
       final ByteData inputData = ByteData(4);
       inputData.setUint32(0, 42);
-      window.sendPlatformMessage(
+      myWindow.sendPlatformMessage(
         'flutter/debug-echo',
         inputData,
         (ByteData? outputData) {
@@ -288,7 +300,7 @@ Future<void> testMain() async {
 
     final ByteData inputData = ByteData(4);
     inputData.setUint32(0, 42);
-    window.sendPlatformMessage(
+    myWindow.sendPlatformMessage(
       'flutter/__unknown__channel__',
       null,
       (ByteData? outputData) {
@@ -309,7 +321,7 @@ Future<void> testMain() async {
       orientations,
     ));
 
-    window.sendPlatformMessage(
+    myWindow.sendPlatformMessage(
       'flutter/platform',
       inputData,
       (ByteData? outputData) {
@@ -411,7 +423,7 @@ Future<void> testMain() async {
   test('SingletonFlutterWindow implements locale, locales, and locale change notifications', () async {
     // This will count how many times we notified about locale changes.
     int localeChangedCount = 0;
-    window.onLocaleChanged = () {
+    myWindow.onLocaleChanged = () {
       localeChangedCount += 1;
     };
 
@@ -420,18 +432,18 @@ Future<void> testMain() async {
     // We populate the initial list of locales automatically (only test that we
     // got some locales; some contributors may be in different locales, so we
     // can't test the exact contents).
-    expect(window.locale, isA<ui.Locale>());
-    expect(window.locales, isNotEmpty);
+    expect(myWindow.locale, isA<ui.Locale>());
+    expect(myWindow.locales, isNotEmpty);
 
     // Trigger a change notification (reset locales because the notification
     // doesn't actually change the list of languages; the test only observes
     // that the list is populated again).
     EnginePlatformDispatcher.instance.debugResetLocales();
-    expect(window.locales, isEmpty);
-    expect(window.locale, equals(const ui.Locale.fromSubtags()));
+    expect(myWindow.locales, isEmpty);
+    expect(myWindow.locale, equals(const ui.Locale.fromSubtags()));
     expect(localeChangedCount, 0);
     domWindow.dispatchEvent(createDomEvent('Event', 'languagechange'));
-    expect(window.locales, isNotEmpty);
+    expect(myWindow.locales, isNotEmpty);
     expect(localeChangedCount, 1);
   });
 
@@ -442,7 +454,7 @@ Future<void> testMain() async {
     final Zone innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
-      window.sendPlatformMessage(
+      myWindow.sendPlatformMessage(
         'flutter/service_worker',
         ByteData(0),
         (ByteData? outputData) { },
