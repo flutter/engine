@@ -10,55 +10,39 @@
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/texture.h"
 
+@protocol CAMetalDrawable;
+
 namespace impeller {
 
-class TextureMTL final : public Texture,
-                         public BackendCast<TextureMTL, Texture> {
+class TextureMTL : public Texture, public BackendCast<TextureMTL, Texture> {
  public:
-  TextureMTL(TextureDescriptor desc,
-             id<MTLTexture> texture,
-             bool wrapped = false);
-
   static std::shared_ptr<TextureMTL> Wrapper(
       TextureDescriptor desc,
       id<MTLTexture> texture,
       std::function<void()> deletion_proc = nullptr);
 
-  // |Texture|
-  ~TextureMTL() override;
+  static std::shared_ptr<TextureMTL> BetterName(TextureDescriptor desc,
+                                                id<MTLTexture> texture);
 
-  id<MTLTexture> GetMTLTexture() const;
+  virtual id<MTLTexture> GetMTLTexture() const = 0;
 
-  bool IsWrapped() const;
+  /// @brief Return the backing Metal drawable (if it has been acquired) or
+  ///        otherwise block on drawable aquisition.
+  ///
+  ///        This is only valud for textures that return true from
+  ///        [IsDrawableBacked].
+  virtual id<CAMetalDrawable> WaitForNextDrawable() const = 0;
 
-  bool GenerateMipmap(id<MTLBlitCommandEncoder> encoder);
+  virtual bool IsWrapped() const = 0;
 
- private:
-  id<MTLTexture> texture_ = nullptr;
-  bool is_valid_ = false;
-  bool is_wrapped_ = false;
+  /// @brief Whether or not this texture is backed by a CAMetalLayer and needs
+  ///        to acquire a drawable before a texture can be returned.
+  virtual bool IsDrawableBacked() const = 0;
 
-  // |Texture|
-  void SetLabel(std::string_view label) override;
+  virtual bool GenerateMipmap(id<MTLBlitCommandEncoder> encoder) = 0;
 
-  // |Texture|
-  bool OnSetContents(const uint8_t* contents,
-                     size_t length,
-                     size_t slice) override;
-
-  // |Texture|
-  bool OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
-                     size_t slice) override;
-
-  // |Texture|
-  bool IsValid() const override;
-
-  // |Texture|
-  ISize GetSize() const override;
-
-  TextureMTL(const TextureMTL&) = delete;
-
-  TextureMTL& operator=(const TextureMTL&) = delete;
+ protected:
+  explicit TextureMTL(const TextureDescriptor& desc);
 };
 
 }  // namespace impeller
