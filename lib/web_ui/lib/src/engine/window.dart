@@ -682,10 +682,10 @@ class ViewConstraints implements ui.ViewConstraints {
     return (minWidth <= size.width) && (size.width <= maxWidth) &&
            (minHeight <= size.height) && (size.height <= maxHeight);
   }
-  
+
   @override
   bool get isTight => minWidth >= maxWidth && minHeight >= maxHeight;
-  
+
   @override
   ViewConstraints operator/(double factor) {
     return ViewConstraints(
