@@ -6,37 +6,25 @@
 
 #include <Metal/Metal.h>
 
-#include <memory>
-#include <optional>
-#include "fml/synchronization/count_down_latch.h"
-#include "impeller/base/thread.h"
-#include "impeller/base/thread_safety.h"
-#include "impeller/geometry/scalar.h"
+#include <future>
+#include "impeller/core/texture_descriptor.h"
+#include "impeller/renderer/backend/metal/texture_mtl.h"
 
 @protocol CAMetalDrawable;
 @class CAMetalLayer;
 
 namespace impeller {
 
-/// @brief The drawable holder manages requesting and caching the next drawable
-///        and its texture from a CAMetalLayer.
-class LazyDrawableHolder {
- public:
-  explicit LazyDrawableHolder(CAMetalLayer* layer);
+/// @brief Create a deferred drawable from a CAMetalLayer.
+std::shared_future<id<CAMetalDrawable>> GetDrawableDeferred(
+    CAMetalLayer* layer);
 
-  ~LazyDrawableHolder() = default;
-
-  id<MTLTexture> AcquireNextDrawable();
-
-  id<CAMetalDrawable> GetDrawable() const;
-
- private:
-  CAMetalLayer* layer_ = nullptr;
-  bool acquired_ = false;
-  id<CAMetalDrawable> drawable_ = nullptr;
-  id<MTLTexture> texture_ = nullptr;
-  std::shared_ptr<fml::CountDownLatch> drawable_latch_ =
-      std::make_shared<fml::CountDownLatch>(1u);
-};
+/// @brief Create a TextureMTL from a deferred drawable.
+///
+///        This function is safe to call multiple times and will only call
+///        nextDrawable once.
+std::shared_ptr<TextureMTL> CreateTextureFromDrawableFuture(
+    TextureDescriptor desc,
+    const std::shared_future<id<CAMetalDrawable>>& drawble_future);
 
 }  // namespace impeller

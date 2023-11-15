@@ -5,6 +5,8 @@
 #include "impeller/renderer/backend/metal/lazy_drawable_holder.h"
 
 #include <QuartzCore/CAMetalLayer.h>
+#include <future>
+#include <memory>
 
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/validation.h"
@@ -18,35 +20,28 @@ namespace impeller {
 // above which is well below Flutters support level.
 #pragma GCC diagnostic ignored "-Wunguarded-availability-new"
 
-LazyDrawableHolder::LazyDrawableHolder(CAMetalLayer* layer) : layer_(layer) {}
-
-id<CAMetalDrawable> LazyDrawableHolder::GetDrawable() const {
-  if (acquired_) {
-    return drawable_;
-  }
-  drawable_latch_->Wait();
-  return drawable_;
+std::shared_future<id<CAMetalDrawable>> GetDrawableDeferred(CAMetalLayer* layer) {
+  auto future = std::async(std::launch::deferred, [layer]() -> id<CAMetalDrawable> {
+    id<CAMetalDrawable> current_drawable = nil;
+    {
+      TRACE_EVENT0("impeller", "WaitForNextDrawable");
+      current_drawable = [layer nextDrawable];
+    }
+    if (!current_drawable) {
+      VALIDATION_LOG << "Could not acquire current drawable.";
+      return nullptr;
+    }
+    return current_drawable;
+  });
+  return std::shared_future<id<CAMetalDrawable>>(std::move(future));
 }
 
-id<MTLTexture> LazyDrawableHolder::AcquireNextDrawable() {
-  if (acquired_) {
-    return texture_;
-  }
-  id<CAMetalDrawable> current_drawable = nil;
-  {
-    TRACE_EVENT0("impeller", "WaitForNextDrawable");
-    current_drawable = [layer_ nextDrawable];
-  }
-  acquired_ = true;
-  drawable_latch_->CountDown();
-  if (!current_drawable) {
-    VALIDATION_LOG << "Could not acquire current drawable.";
-    return nullptr;
-  }
-  drawable_ = current_drawable;
-  texture_ = drawable_.texture;
-
-  return texture_;
+std::shared_ptr<TextureMTL> CreateTextureFromDrawableFuture(
+    TextureDescriptor desc,
+    const std::shared_future<id<CAMetalDrawable>>& drawble_future) {
+  return std::make_shared<TextureMTL>(
+      desc, [drawble_future]() { return drawble_future.get().texture; },
+      /*wrapped=*/false, /*drawable=*/true);
 }
 
 #pragma GCC diagnostic pop

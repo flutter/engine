@@ -28,12 +28,9 @@ TEST(TextureMTL, CreateFromDrawable) {
   TextureDescriptor desc;
   desc.size = {100, 100};
   desc.format = PixelFormat::kB8G8R8A8UNormInt;
-
-  auto drawble_holder = std::make_shared<LazyDrawableHolder>(layer);
-  auto drawable_texture = std::make_shared<TextureMTL>(
-      desc,
-      [&drawble_holder]() { return drawble_holder->AcquireNextDrawable(); },
-      /*wrapped=*/false, /*drawable=*/true);
+  auto drawable_future = GetDrawableDeferred(layer);
+  auto drawable_texture =
+      CreateTextureFromDrawableFuture(desc, drawable_future);
 
   ASSERT_TRUE(drawable_texture->IsValid());
   EXPECT_TRUE(drawable_texture->IsDrawable());
@@ -45,8 +42,10 @@ TEST(TextureMTL, CreateFromDrawable) {
   });
   thread.join();
   // Block until drawable is acquired.
-  EXPECT_TRUE(drawble_holder->GetDrawable() != nil);
+  EXPECT_TRUE(drawable_future.get() != nil);
   // Drawable is cached.
+  EXPECT_TRUE(drawable_texture->GetMTLTexture() != nil);
+  // Once more for good measure.
   EXPECT_TRUE(drawable_texture->GetMTLTexture() != nil);
 }
 
