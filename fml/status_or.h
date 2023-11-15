@@ -32,12 +32,12 @@ template <typename T>
 class StatusOr {
  public:
   // These constructors are intended be compatible with absl::status_or.
-  // NOLINTBEGIN(google-explicit-constructor)
-
+  // NOLINTNEXTLINE(google-explicit-constructor)
   StatusOr(const T& value) : status_(), value_(value) {}
-  StatusOr(const Status& status) : status_(status), value_() {}
 
-  // NOLINTEND(google-explicit-constructor)
+  // These constructors are intended be compatible with absl::status_or.
+  // NOLINTNEXTLINE(google-explicit-constructor)
+  StatusOr(const Status& status) : status_(status), value_() {}
 
   StatusOr(const StatusOr&) = default;
   StatusOr(StatusOr&&) = default;
