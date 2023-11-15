@@ -220,24 +220,18 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
             input_snapshot->texture->GetSize().height / downsample.y);
 
   ///////////////////////////////
-  Matrix input_transform = inputs[0]->GetTransform(entity);
+  Matrix input_transform = inputs[0]->GetLocalTransform(entity);
   Rect snapshot_rect =
       Rect::MakeXYWH(0, 0, input_snapshot->texture->GetSize().width,
                      input_snapshot->texture->GetSize().height);
-  std::array<Point, 4> coverage_quad =
+  Quad coverage_quad =
       snapshot_rect.GetTransformedPoints(input_transform);
 
   Matrix uv_transform =
       Matrix::MakeScale({1.0f / input_snapshot->texture->GetSize().width,
                          1.0f / input_snapshot->texture->GetSize().height,
-                         1.0f}) *
-      entity.GetTransformation().Invert();
-  std::array<Point, 4> uvs = {
-      uv_transform * coverage_quad[0],
-      uv_transform * coverage_quad[1],
-      uv_transform * coverage_quad[2],
-      uv_transform * coverage_quad[3],
-  };
+                         1.0f});
+  Quad uvs = uv_transform.Transform(coverage_quad);
 
   /////////////////////////////////
   std::shared_ptr<Texture> pass1_out_texture = MakeDownsampleSubpass(
