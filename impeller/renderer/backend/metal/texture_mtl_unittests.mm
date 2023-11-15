@@ -46,6 +46,8 @@ TEST(TextureMTL, CreateFromDrawable) {
 }
 
 TEST(TextureMTL, CreateFromInvalidDescriptor) {
+  ScopedValidationDisable validation;
+
   auto device = MTLCreateSystemDefaultDevice();
   auto layer = [[CAMetalLayer alloc] init];
   layer.device = device;
