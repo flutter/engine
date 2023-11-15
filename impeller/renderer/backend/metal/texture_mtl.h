@@ -10,53 +10,55 @@
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/texture.h"
 
-@protocol CAMetalDrawable;
-@class CAMetalLayer;
-
 namespace impeller {
 
-class TextureMTL : public Texture, public BackendCast<TextureMTL, Texture> {
+class TextureMTL final : public Texture,
+                         public BackendCast<TextureMTL, Texture> {
  public:
+  TextureMTL(TextureDescriptor desc,
+             id<MTLTexture> texture,
+             bool wrapped = false);
+
   static std::shared_ptr<TextureMTL> Wrapper(
       TextureDescriptor desc,
       id<MTLTexture> texture,
       std::function<void()> deletion_proc = nullptr);
 
-  /// @brief Create a new metal texture.
-  static std::shared_ptr<TextureMTL> Create(TextureDescriptor desc,
-                                            id<MTLTexture> texture);
+  // |Texture|
+  ~TextureMTL() override;
 
-#pragma GCC diagnostic push
-// Disable the diagnostic for iOS Simulators. Metal without emulation isn't
-// available prior to iOS 13 and that's what the simulator headers say when
-// support for CAMetalLayer begins. CAMetalLayer is available on iOS 8.0 and
-// above which is well below Flutters support level.
-#pragma GCC diagnostic ignored "-Wunguarded-availability-new"
+  id<MTLTexture> GetMTLTexture() const;
 
-  /// @brief Create a new texture backed by a lazily acquired drawable
-  static std::shared_ptr<TextureMTL> WrapDrawable(TextureDescriptor desc,
-                                                  CAMetalLayer* layer);
-#pragma GCC diagnostic pop
+  bool IsWrapped() const;
 
-  virtual id<MTLTexture> GetMTLTexture() const = 0;
+  bool GenerateMipmap(id<MTLBlitCommandEncoder> encoder);
 
-  /// @brief Return the backing Metal drawable (if it has been acquired) or
-  ///        otherwise block on drawable aquisition.
-  ///
-  ///        This is only valud for textures that return true from
-  ///        [IsDrawableBacked].
-  virtual id<CAMetalDrawable> WaitForNextDrawable() const = 0;
+ private:
+  id<MTLTexture> texture_ = nullptr;
+  bool is_valid_ = false;
+  bool is_wrapped_ = false;
 
-  virtual bool IsWrapped() const = 0;
+  // |Texture|
+  void SetLabel(std::string_view label) override;
 
-  /// @brief Whether or not this texture is backed by a CAMetalLayer and needs
-  ///        to acquire a drawable before a texture can be returned.
-  virtual bool IsDrawableBacked() const = 0;
+  // |Texture|
+  bool OnSetContents(const uint8_t* contents,
+                     size_t length,
+                     size_t slice) override;
 
-  virtual bool GenerateMipmap(id<MTLBlitCommandEncoder> encoder) = 0;
+  // |Texture|
+  bool OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
+                     size_t slice) override;
 
- protected:
-  explicit TextureMTL(const TextureDescriptor& desc);
+  // |Texture|
+  bool IsValid() const override;
+
+  // |Texture|
+  ISize GetSize() const override;
+
+  TextureMTL(const TextureMTL&) = delete;
+
+  TextureMTL& operator=(const TextureMTL&) = delete;
 };
 
 }  // namespace impeller
