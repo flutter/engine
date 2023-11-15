@@ -392,7 +392,7 @@ class ExternalViewEmbedder {
       SkISize frame_size,
       GrDirectContext* context,
       double device_pixel_ratio,
-      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) = 0;
+      const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) = 0;
 
   virtual void PrerollCompositeEmbeddedView(
       int64_t view_id,

@@ -44,7 +44,7 @@ void ShellTestExternalViewEmbedder::BeginFrame(
     SkISize frame_size,
     GrDirectContext* context,
     double device_pixel_ratio,
-    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+    const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
   visited_platform_views_.clear();
   mutators_stacks_.clear();
   current_composition_params_.clear();
@@ -109,7 +109,7 @@ void ShellTestExternalViewEmbedder::SubmitFrame(
 // |ExternalViewEmbedder|
 void ShellTestExternalViewEmbedder::EndFrame(
     bool should_resubmit_frame,
-    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+    const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
   end_frame_call_back_(should_resubmit_frame, raster_thread_merger);
 }
 
