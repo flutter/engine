@@ -29,10 +29,8 @@ class TextureMTL final : public Texture,
       id<MTLTexture> texture,
       std::function<void()> deletion_proc = nullptr);
 
-  static std::shared_ptr<TextureMTL> Create(
-      TextureDescriptor desc,
-      id<MTLTexture> texture
-  );
+  static std::shared_ptr<TextureMTL> Create(TextureDescriptor desc,
+                                            id<MTLTexture> texture);
 
   // |Texture|
   ~TextureMTL() override;

@@ -30,9 +30,10 @@ TEST(TextureMTL, CreateFromDrawable) {
   desc.format = PixelFormat::kB8G8R8A8UNormInt;
 
   auto drawble_holder = std::make_shared<LazyDrawableHolder>(layer);
-  auto drawable_texture = std::make_shared<TextureMTL>(desc, [&drawble_holder]() {
-    return drawble_holder->AcquireNextDrawable();
-  }, /*wrapped=*/false, /*drawable=*/true);
+  auto drawable_texture = std::make_shared<TextureMTL>(
+      desc,
+      [&drawble_holder]() { return drawble_holder->AcquireNextDrawable(); },
+      /*wrapped=*/false, /*drawable=*/true);
 
   ASSERT_TRUE(drawable_texture->IsValid());
   EXPECT_TRUE(drawable_texture->IsDrawable());

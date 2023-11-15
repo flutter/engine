@@ -26,6 +26,8 @@ impeller_component("metal") {
     "formats_mtl.mm",
     "gpu_tracer_mtl.h",
     "gpu_tracer_mtl.mm",
+    "lazy_drawable_holder.h",
+    "lazy_drawable_holder.mm",
     "pipeline_library_mtl.h",
     "pipeline_library_mtl.mm",
     "pipeline_mtl.h",
@@ -48,8 +50,6 @@ impeller_component("metal") {
     "texture_wrapper_mtl.mm",
     "vertex_descriptor_mtl.h",
     "vertex_descriptor_mtl.mm",
-    "lazy_drawable_holder.h",
-    "lazy_drawable_holder.mm",
   ]
 
   public_deps = [
