@@ -48,6 +48,8 @@ impeller_component("metal") {
     "texture_wrapper_mtl.mm",
     "vertex_descriptor_mtl.h",
     "vertex_descriptor_mtl.mm",
+    "lazy_drawable_holder.h",
+    "lazy_drawable_holder.mm",
   ]
 
   public_deps = [
