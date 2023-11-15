@@ -1682,10 +1682,8 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   // at least 1 character's width is required.
   if (@available(iOS 17, *)) {
     // No-op
-  } else {
-    if (![self isScribbleAvailable]) {
-      return CGRectZero;
-    }
+  } else if (![self isScribbleAvailable]) {
+    return CGRectZero;
   }
 
   NSUInteger first = start;
