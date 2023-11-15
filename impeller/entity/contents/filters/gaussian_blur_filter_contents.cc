@@ -103,6 +103,7 @@ std::shared_ptr<Texture> MakeBlurSubpass(
     std::shared_ptr<Texture> input_texture,
     const SamplerDescriptor& sampler_descriptor,
     const GaussianBlurFragmentShader::BlurInfo& blur_info) {
+  // TODO(gaaclarke): This doesn't render if the blur_info.sigma == 0.
   ISize subpass_size = input_texture->GetSize();
   ContentContext::SubpassCallback subpass_callback =
       [&](const ContentContext& renderer, RenderPass& pass) {
@@ -215,6 +216,12 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   Vector2 downsample =
       CalculateIntegerScale(desired_scale, input_snapshot->texture->GetSize());
 
+  // TODO(gaaclarke): This isn't taking into account the blur radius to expand
+  //                  the rendered size, so blurred objects are clipped. In
+  //                  order for that to be implemented correctly we'll need to
+  //                  start adjusting the geometry coordinates in the downsample
+  //                  step so that there is a border of transparency around it
+  //                  before the blur steps.
   ISize subpass_size =
       ISize(input_snapshot->texture->GetSize().width / downsample.x,
             input_snapshot->texture->GetSize().height / downsample.y);
@@ -224,13 +231,11 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   Rect snapshot_rect =
       Rect::MakeXYWH(0, 0, input_snapshot->texture->GetSize().width,
                      input_snapshot->texture->GetSize().height);
-  Quad coverage_quad =
-      snapshot_rect.GetTransformedPoints(input_transform);
+  Quad coverage_quad = snapshot_rect.GetTransformedPoints(input_transform);
 
-  Matrix uv_transform =
-      Matrix::MakeScale({1.0f / input_snapshot->texture->GetSize().width,
-                         1.0f / input_snapshot->texture->GetSize().height,
-                         1.0f});
+  Matrix uv_transform = Matrix::MakeScale(
+      {1.0f / input_snapshot->texture->GetSize().width,
+       1.0f / input_snapshot->texture->GetSize().height, 1.0f});
   Quad uvs = uv_transform.Transform(coverage_quad);
 
   /////////////////////////////////
