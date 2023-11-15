@@ -9,7 +9,6 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/status.h"
-#include "platform/assert.h"
 
 namespace fml {
 
