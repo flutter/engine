@@ -61,7 +61,7 @@ void ShellTestExternalViewEmbedder::PrerollCompositeEmbeddedView(
 
 // |ExternalViewEmbedder|
 PostPrerollResult ShellTestExternalViewEmbedder::PostPrerollAction(
-    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+    const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
   FML_DCHECK(raster_thread_merger);
   return post_preroll_result_;
 }
@@ -73,7 +73,7 @@ void ShellTestExternalViewEmbedder::PushVisitedPlatformView(int64_t view_id) {
 
 // |ExternalViewEmbedder|
 void ShellTestExternalViewEmbedder::PushFilterToVisitedPlatformViews(
-    std::shared_ptr<const DlImageFilter> filter,
+    const std::shared_ptr<const DlImageFilter>& filter,
     const SkRect& filter_rect) {
   for (int64_t id : visited_platform_views_) {
     EmbeddedViewParams params = current_composition_params_[id];
