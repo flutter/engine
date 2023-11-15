@@ -22,11 +22,11 @@ TEST(TextureMTL, CreateFromDrawable) {
   auto layer = [[CAMetalLayer alloc] init];
   layer.device = device;
   layer.drawableSize = CGSize{100, 100};
-  layer.pixelFormat = ToMTLPixelFormat(PixelFormat::kR8G8B8A8UNormInt);
+  layer.pixelFormat = ToMTLPixelFormat(PixelFormat::kB8G8R8A8UNormInt);
 
   TextureDescriptor desc;
   desc.size = {100, 100};
-  desc.format = PixelFormat::kR8G8B8A8UNormInt;
+  desc.format = PixelFormat::kB8G8R8A8UNormInt;
 
   auto drawable_texture = TextureMTL::WrapDrawable(desc, layer);
 
@@ -50,12 +50,12 @@ TEST(TextureMTL, CreateFromInvalidDescriptor) {
   auto layer = [[CAMetalLayer alloc] init];
   layer.device = device;
   layer.drawableSize = CGSize{100, 100};
-  layer.pixelFormat = ToMTLPixelFormat(PixelFormat::kR8G8B8A8UNormInt);
+  layer.pixelFormat = ToMTLPixelFormat(PixelFormat::kB8G8R8A8UNormInt);
 
   TextureDescriptor desc;
   // Size is mismatched.
   desc.size = {200, 200};
-  desc.format = PixelFormat::kR8G8B8A8UNormInt;
+  desc.format = PixelFormat::kB8G8R8A8UNormInt;
 
   auto drawable_texture_a = TextureMTL::WrapDrawable(desc, layer);
   EXPECT_FALSE(drawable_texture_a->IsValid());
