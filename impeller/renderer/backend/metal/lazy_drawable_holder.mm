@@ -12,10 +12,10 @@
 namespace impeller {
 
 #pragma GCC diagnostic push
-  // Disable the diagnostic for iOS Simulators. Metal without emulation isn't
-  // available prior to iOS 13 and that's what the simulator headers say when
-  // support for CAMetalLayer begins. CAMetalLayer is available on iOS 8.0 and
-  // above which is well below Flutters support level.
+// Disable the diagnostic for iOS Simulators. Metal without emulation isn't
+// available prior to iOS 13 and that's what the simulator headers say when
+// support for CAMetalLayer begins. CAMetalLayer is available on iOS 8.0 and
+// above which is well below Flutters support level.
 #pragma GCC diagnostic ignored "-Wunguarded-availability-new"
 
 LazyDrawableHolder::LazyDrawableHolder(CAMetalLayer* layer) : layer_(layer) {}
