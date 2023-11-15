@@ -57,3 +57,22 @@ impeller_component("metal") {
 
   frameworks = [ "Metal.framework" ]
 }
+
+impeller_component("metal_unittests") {
+  testonly = true
+
+  sources = [
+    "texture_mtl_unittests.mm"
+  ]
+
+  deps = [
+    ":metal",
+    "//flutter/testing:testing_lib",
+  ]
+
+  frameworks = [
+    "AppKit.framework",
+    "QuartzCore.framework",
+  ]
+
+}

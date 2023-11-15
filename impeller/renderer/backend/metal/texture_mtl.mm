@@ -11,6 +11,7 @@
 #include "fml/trace_event.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/texture_descriptor.h"
+#include "impeller/renderer/backend/metal/formats_mtl.h"
 
 namespace impeller {
 
@@ -150,11 +151,10 @@ class DrawableTextureMTL final : public TextureMTL {
       return;
     }
 
-    if (ISize{static_cast<ISize::Type>(layer.drawableSize.width),
-              static_cast<ISize::Type>(layer.drawableSize.height)} !=
-        GetSize()) {
-      VALIDATION_LOG
-          << "The texture and its descriptor disagree about its size.";
+    if (desc.size != GetSize() ||
+        ToMTLPixelFormat(desc.format) != layer_.pixelFormat) {
+      VALIDATION_LOG << "The texture and its descriptor disagree about its "
+                        "size and/or format.";
       return;
     }
 
@@ -215,9 +215,7 @@ class DrawableTextureMTL final : public TextureMTL {
   }
 
   // |Texture|
-  void SetLabel(std::string_view label) override {
-    // NOOP
-  }
+  void SetLabel(std::string_view label) override {}
 
   // |Texture|
   bool OnSetContents(const uint8_t* contents,
