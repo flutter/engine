@@ -226,17 +226,6 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                      input_snapshot->texture->GetSize().height);
   std::array<Point, 4> coverage_quad =
       snapshot_rect.GetTransformedPoints(input_transform);
-  if (coverage_hint.has_value()) {
-    // Perform an intersection with the quad and the rect.  If the coverage_hint
-    // doesn't contain any of the coverage_quads points that means it inside of
-    // the quad (or they are completely disjoint which isn't considered here).
-    if (!coverage_hint.value().Contains(coverage_quad[0]) &&
-        !coverage_hint.value().Contains(coverage_quad[1]) &&
-        !coverage_hint.value().Contains(coverage_quad[2]) &&
-        !coverage_hint.value().Contains(coverage_quad[3])) {
-      coverage_quad = coverage_hint.value().GetPoints();
-    }
-  }
 
   Matrix uv_transform =
       Matrix::MakeScale({1.0f / input_snapshot->texture->GetSize().width,
@@ -281,17 +270,12 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
       MinMagFilter::kLinear, SamplerAddressMode::kClampToEdge);
 
   return Entity::FromSnapshot(
-      Snapshot{.texture = pass3_out_texture,
-               .transform =
-                   // TODO(gaaclarke): Put the entity rotation into here to
-                   // capture rotations.
-               Matrix::MakeTranslation(coverage.origin) *
-               Matrix::MakeScale(
-                   {coverage.size.width / pass1_out_texture->GetSize().width,
-                    coverage.size.height / pass1_out_texture->GetSize().height,
-                    1.0}),
-               .sampler_descriptor = sampler_desc,
-               .opacity = input_snapshot->opacity},
+      Snapshot{
+          .texture = pass3_out_texture,
+          .transform = entity.GetTransformation() *
+                       Matrix::MakeScale({downsample.x, downsample.y, 1.0}),
+          .sampler_descriptor = sampler_desc,
+          .opacity = input_snapshot->opacity},
       entity.GetBlendMode(), entity.GetClipDepth());
 }
 
