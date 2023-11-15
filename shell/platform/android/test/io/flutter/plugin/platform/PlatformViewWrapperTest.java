@@ -1,3 +1,7 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 package io.flutter.plugin.platform;
 
 import static android.view.View.OnFocusChangeListener;
@@ -15,6 +19,7 @@ import android.view.View.OnFocusChangeListener;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.accessibility.AccessibilityEvent;
+import android.widget.FrameLayout;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import org.junit.Test;
@@ -41,10 +46,6 @@ public class PlatformViewWrapperTest {
   }
 
   @Test
-  @Config(
-      shadows = {
-        ShadowView.class,
-      })
   public void draw_withoutSurface() {
     final PlatformViewWrapper wrapper =
         new PlatformViewWrapper(ctx) {
@@ -191,6 +192,7 @@ public class PlatformViewWrapperTest {
   @Test
   @Config(
       shadows = {
+        ShadowFrameLayout.class,
         ShadowViewGroup.class,
       })
   public void ignoreAccessibilityEvents() {
@@ -209,6 +211,7 @@ public class PlatformViewWrapperTest {
   @Test
   @Config(
       shadows = {
+        ShadowFrameLayout.class,
         ShadowViewGroup.class,
       })
   public void sendAccessibilityEvents() {
@@ -230,14 +233,15 @@ public class PlatformViewWrapperTest {
     assertTrue(eventSent);
   }
 
-  @Implements(View.class)
-  public static class ShadowView {}
-
   @Implements(ViewGroup.class)
-  public static class ShadowViewGroup extends org.robolectric.shadows.ShadowView {
+  public static class ShadowViewGroup extends org.robolectric.shadows.ShadowViewGroup {
     @Implementation
-    public boolean requestSendAccessibilityEvent(View child, AccessibilityEvent event) {
+    protected boolean requestSendAccessibilityEvent(View child, AccessibilityEvent event) {
       return true;
     }
   }
+
+  @Implements(FrameLayout.class)
+  public static class ShadowFrameLayout
+      extends io.flutter.plugin.platform.PlatformViewWrapperTest.ShadowViewGroup {}
 }

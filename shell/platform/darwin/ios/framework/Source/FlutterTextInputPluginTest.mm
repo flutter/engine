@@ -786,6 +786,36 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(inputView.spellCheckingType, UITextSpellCheckingTypeNo);
 }
 
+- (void)testReplaceTestLocalAdjustSelectionAndMarkedTextRange {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  [inputView setMarkedText:@"test text" selectedRange:NSMakeRange(0, 5)];
+  NSRange selectedTextRange = ((FlutterTextRange*)inputView.selectedTextRange).range;
+  const NSRange markedTextRange = ((FlutterTextRange*)inputView.markedTextRange).range;
+  XCTAssertEqual(selectedTextRange.location, 0ul);
+  XCTAssertEqual(selectedTextRange.length, 5ul);
+  XCTAssertEqual(markedTextRange.location, 0ul);
+  XCTAssertEqual(markedTextRange.length, 9ul);
+
+  // Replaces space with space.
+  [inputView replaceRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(4, 1)] withText:@" "];
+  selectedTextRange = ((FlutterTextRange*)inputView.selectedTextRange).range;
+
+  XCTAssertEqual(selectedTextRange.location, 5ul);
+  XCTAssertEqual(selectedTextRange.length, 0ul);
+  XCTAssertEqual(inputView.markedTextRange, nil);
+}
+
+- (void)testFlutterTextInputViewOnlyRespondsToInsertionPointColorBelowIOS17 {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  BOOL respondsToInsertionPointColor =
+      [inputView respondsToSelector:@selector(insertionPointColor)];
+  if (@available(iOS 17, *)) {
+    XCTAssertFalse(respondsToInsertionPointColor);
+  } else {
+    XCTAssertTrue(respondsToInsertionPointColor);
+  }
+}
+
 #pragma mark - TextEditingDelta tests
 - (void)testTextEditingDeltasAreGeneratedOnTextInput {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
@@ -2658,6 +2688,54 @@ FLUTTER_ASSERT_ARC
   range = [self getLineRangeFromTokenizer:tokenizer atIndex:32];
   XCTAssertEqual(range.range.location, 12u);
   XCTAssertEqual(range.range.length, 20u);
+}
+
+- (void)testFlutterTokenizerLineEnclosingEndOfDocumentInBackwardDirectionShouldNotReturnNil {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  [inputView insertText:@"0123456789\n012345"];
+  id<UITextInputTokenizer> tokenizer = [inputView tokenizer];
+
+  FlutterTextRange* range =
+      (FlutterTextRange*)[tokenizer rangeEnclosingPosition:[inputView endOfDocument]
+                                           withGranularity:UITextGranularityLine
+                                               inDirection:UITextStorageDirectionBackward];
+  XCTAssertEqual(range.range.location, 11u);
+  XCTAssertEqual(range.range.length, 6u);
+}
+
+- (void)testFlutterTokenizerLineEnclosingEndOfDocumentInForwardDirectionShouldReturnNilOnIOS17 {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  [inputView insertText:@"0123456789\n012345"];
+  id<UITextInputTokenizer> tokenizer = [inputView tokenizer];
+
+  FlutterTextRange* range =
+      (FlutterTextRange*)[tokenizer rangeEnclosingPosition:[inputView endOfDocument]
+                                           withGranularity:UITextGranularityLine
+                                               inDirection:UITextStorageDirectionForward];
+  if (@available(iOS 17.0, *)) {
+    XCTAssertNil(range);
+  } else {
+    XCTAssertEqual(range.range.location, 11u);
+    XCTAssertEqual(range.range.length, 6u);
+  }
+}
+
+- (void)testFlutterTokenizerLineEnclosingOutOfRangePositionShouldReturnNilOnIOS17 {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  [inputView insertText:@"0123456789\n012345"];
+  id<UITextInputTokenizer> tokenizer = [inputView tokenizer];
+
+  FlutterTextPosition* position = [FlutterTextPosition positionWithIndex:100];
+  FlutterTextRange* range =
+      (FlutterTextRange*)[tokenizer rangeEnclosingPosition:position
+                                           withGranularity:UITextGranularityLine
+                                               inDirection:UITextStorageDirectionForward];
+  if (@available(iOS 17.0, *)) {
+    XCTAssertNil(range);
+  } else {
+    XCTAssertEqual(range.range.location, 0u);
+    XCTAssertEqual(range.range.length, 0u);
+  }
 }
 
 - (void)testFlutterTextInputPluginRetainsFlutterTextInputView {

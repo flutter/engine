@@ -13,6 +13,8 @@ import android.content.MutableContextWrapper;
 import android.os.Build;
 import android.util.SparseArray;
 import android.view.MotionEvent;
+import android.view.MotionEvent.PointerCoords;
+import android.view.MotionEvent.PointerProperties;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
@@ -147,7 +149,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   // Whether software rendering is used.
   private boolean usesSoftwareRendering = false;
 
-  private static boolean enableHardwareBufferRenderingTarget = false;
+  private static boolean enableHardwareBufferRenderingTarget = true;
 
   private final PlatformViewsChannel.PlatformViewsHandler channelHandler =
       new PlatformViewsChannel.PlatformViewsHandler() {
@@ -181,12 +183,14 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           }
           if (textureRegistry == null) {
             throw new IllegalStateException(
-                "Texture registry is null. This means that platform views controller was detached, view id: "
+                "Texture registry is null. This means that platform views controller was detached,"
+                    + " view id: "
                     + viewId);
           }
           if (flutterView == null) {
             throw new IllegalStateException(
-                "Flutter view is null. This means the platform views controller doesn't have an attached view, view id: "
+                "Flutter view is null. This means the platform views controller doesn't have an"
+                    + " attached view, view id: "
                     + viewId);
           }
 
@@ -195,7 +199,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           final View embeddedView = platformView.getView();
           if (embeddedView.getParent() != null) {
             throw new IllegalStateException(
-                "The Android view returned from PlatformView#getView() was already added to a parent view.");
+                "The Android view returned from PlatformView#getView() was already added to a"
+                    + " parent view.");
           }
 
           // The newer Texture Layer Hybrid Composition mode isn't suppported if any of the
@@ -773,10 +778,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     usesSoftwareRendering = useSoftwareRendering;
   }
 
-  public void setDisableImageReaderPlatformViews(boolean disableImageReaderPlatformViews) {
-    enableHardwareBufferRenderingTarget = !disableImageReaderPlatformViews;
-  }
-
   /**
    * Detaches this platform views controller.
    *
@@ -1024,12 +1025,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     coords.orientation = (float) (double) coordsList.get(0);
     coords.pressure = (float) (double) coordsList.get(1);
     coords.size = (float) (double) coordsList.get(2);
-    coords.toolMajor = (float) (double) coordsList.get(3) * density;
-    coords.toolMinor = (float) (double) coordsList.get(4) * density;
-    coords.touchMajor = (float) (double) coordsList.get(5) * density;
-    coords.touchMinor = (float) (double) coordsList.get(6) * density;
-    coords.x = (float) (double) coordsList.get(7) * density;
-    coords.y = (float) (double) coordsList.get(8) * density;
+    coords.toolMajor = (float) ((double) coordsList.get(3) * density);
+    coords.toolMinor = (float) ((double) coordsList.get(4) * density);
+    coords.touchMajor = (float) ((double) coordsList.get(5) * density);
+    coords.touchMinor = (float) ((double) coordsList.get(6) * density);
+    coords.x = (float) ((double) coordsList.get(7) * density);
+    coords.y = (float) ((double) coordsList.get(8) * density);
     return coords;
   }
 
@@ -1098,7 +1099,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     }
     if (embeddedView.getParent() != null) {
       throw new IllegalStateException(
-          "The Android view returned from PlatformView#getView() was already added to a parent view.");
+          "The Android view returned from PlatformView#getView() was already added to a parent"
+              + " view.");
     }
     final FlutterMutatorView parentView =
         new FlutterMutatorView(

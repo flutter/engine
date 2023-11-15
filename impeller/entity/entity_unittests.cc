@@ -2,24 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <algorithm>
 #include <cstring>
 #include <memory>
 #include <optional>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
-#include "flutter/testing/testing.h"
 #include "fml/logging.h"
-#include "fml/time/time_point.h"
 #include "gtest/gtest.h"
 #include "impeller/core/texture_descriptor.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/conical_gradient_contents.h"
 #include "impeller/entity/contents/contents.h"
-#include "impeller/entity/contents/filters/blend_filter_contents.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
@@ -28,11 +23,9 @@
 #include "impeller/entity/contents/runtime_effect_contents.h"
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/contents/solid_rrect_blur_contents.h"
-#include "impeller/entity/contents/sweep_gradient_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
-#include "impeller/entity/contents/vertices_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/entity_pass.h"
 #include "impeller/entity/entity_pass_delegate.h"
@@ -50,11 +43,8 @@
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
-#include "impeller/runtime_stage/runtime_stage.h"
-#include "impeller/tessellator/tessellator.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"
-#include "include/core/SkBlendMode.h"
 #include "third_party/imgui/imgui.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 
@@ -224,7 +214,7 @@ TEST_P(EntityTest, FilterCoverageRespectsCropRect) {
 
 TEST_P(EntityTest, CanDrawRect) {
   auto contents = std::make_shared<SolidColorContents>();
-  contents->SetGeometry(Geometry::MakeRect({100, 100, 100, 100}));
+  contents->SetGeometry(Geometry::MakeRect(Rect::MakeXYWH(100, 100, 100, 100)));
   contents->SetColor(Color::Red());
 
   Entity entity;
@@ -238,7 +228,7 @@ TEST_P(EntityTest, CanDrawRRect) {
   auto contents = std::make_shared<SolidColorContents>();
   auto path = PathBuilder{}
                   .SetConvexity(Convexity::kConvex)
-                  .AddRoundedRect({100, 100, 100, 100}, 10.0)
+                  .AddRoundedRect(Rect::MakeXYWH(100, 100, 100, 100), 10.0)
                   .TakePath();
   contents->SetGeometry(Geometry::MakeFillPath(path));
   contents->SetColor(Color::Red());
@@ -251,11 +241,11 @@ TEST_P(EntityTest, CanDrawRRect) {
 }
 
 TEST_P(EntityTest, GeometryBoundsAreTransformed) {
-  auto geometry = Geometry::MakeRect({100, 100, 100, 100});
+  auto geometry = Geometry::MakeRect(Rect::MakeXYWH(100, 100, 100, 100));
   auto transform = Matrix::MakeScale({2.0, 2.0, 2.0});
 
   ASSERT_RECT_NEAR(geometry->GetCoverage(transform).value(),
-                   Rect(200, 200, 200, 200));
+                   Rect::MakeXYWH(200, 200, 200, 200));
 }
 
 TEST_P(EntityTest, ThreeStrokesInOnePath) {
@@ -915,9 +905,10 @@ TEST_P(EntityTest, BlendingModeOptions) {
         Point(470, 190), Point(270, 390), 20, Color::White(), Color::White());
 
     bool result = true;
-    result = result && draw_rect(Rect(0, 0, pass.GetRenderTargetSize().width,
+    result = result &&
+             draw_rect(Rect::MakeXYWH(0, 0, pass.GetRenderTargetSize().width,
                                       pass.GetRenderTargetSize().height),
-                                 Color(), BlendMode::kClear);
+                       Color(), BlendMode::kClear);
     result = result && draw_rect(Rect::MakeLTRB(a.x, a.y, b.x, b.y), color1,
                                  BlendMode::kSourceOver);
     result = result && draw_rect(Rect::MakeLTRB(c.x, c.y, d.x, d.y), color2,
@@ -2363,42 +2354,6 @@ TEST_P(EntityTest, TiledTextureContentsIsOpaque) {
   ASSERT_FALSE(contents.IsOpaque());
 }
 
-TEST_P(EntityTest, TessellateConvex) {
-  {
-    // Sanity check simple rectangle.
-    auto [pts, indices] =
-        TessellateConvex(PathBuilder{}
-                             .AddRect(Rect::MakeLTRB(0, 0, 10, 10))
-                             .TakePath()
-                             .CreatePolyline(1.0));
-
-    std::vector<Point> expected = {
-        {0, 0}, {10, 0}, {10, 10}, {0, 10},  //
-    };
-    std::vector<uint16_t> expected_indices = {0, 1, 2, 0, 2, 3};
-    ASSERT_EQ(pts, expected);
-    ASSERT_EQ(indices, expected_indices);
-  }
-
-  {
-    auto [pts, indices] =
-        TessellateConvex(PathBuilder{}
-                             .AddRect(Rect::MakeLTRB(0, 0, 10, 10))
-                             .AddRect(Rect::MakeLTRB(20, 20, 30, 30))
-                             .TakePath()
-                             .CreatePolyline(1.0));
-
-    std::vector<Point> expected = {
-        {0, 0},   {10, 0},  {10, 10}, {0, 10},  //
-        {20, 20}, {30, 20}, {30, 30}, {20, 30}  //
-    };
-    std::vector<uint16_t> expected_indices = {0, 1, 2, 0, 2, 3,
-                                              0, 6, 7, 0, 7, 8};
-    ASSERT_EQ(pts, expected);
-    ASSERT_EQ(indices, expected_indices);
-  }
-}
-
 TEST_P(EntityTest, PointFieldGeometryDivisions) {
   // Square always gives 4 divisions.
   ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(24.0, false), 4u);
@@ -2482,7 +2437,7 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
   }
 
   auto contents = std::make_shared<SolidColorContents>();
-  contents->SetGeometry(Geometry::MakeRect({100, 100, 100, 100}));
+  contents->SetGeometry(Geometry::MakeRect(Rect::MakeXYWH(100, 100, 100, 100)));
   contents->SetColor(Color::Red());
 
   Entity entity;
@@ -2533,6 +2488,26 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
   } else {
     EXPECT_TRUE(false);
   }
+}
+
+TEST_P(EntityTest, SpecializationConstantsAreAppliedToVariants) {
+  auto content_context =
+      ContentContext(GetContext(), TypographerContextSkia::Make());
+
+  auto default_color_burn = content_context.GetBlendColorBurnPipeline(
+      {.has_stencil_attachment = false});
+  auto alt_color_burn = content_context.GetBlendColorBurnPipeline(
+      {.has_stencil_attachment = true});
+
+  ASSERT_NE(default_color_burn, alt_color_burn);
+  ASSERT_EQ(default_color_burn->GetDescriptor().GetSpecializationConstants(),
+            alt_color_burn->GetDescriptor().GetSpecializationConstants());
+
+  auto decal_supported = static_cast<int32_t>(
+      GetContext()->GetCapabilities()->SupportsDecalSamplerAddressMode());
+  std::vector<int32_t> expected_constants = {5, decal_supported};
+  ASSERT_EQ(default_color_burn->GetDescriptor().GetSpecializationConstants(),
+            expected_constants);
 }
 
 }  // namespace testing

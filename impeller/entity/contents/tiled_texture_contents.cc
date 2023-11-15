@@ -128,7 +128,7 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
   auto& host_buffer = pass.GetTransientsBuffer();
 
   auto geometry_result = GetGeometry()->GetPositionUVBuffer(
-      Rect({0, 0}, Size(texture_size)), GetInverseEffectTransform(), renderer,
+      Rect::MakeSize(texture_size), GetInverseEffectTransform(), renderer,
       entity, pass);
   bool uses_emulated_tile_mode =
       UsesEmulatedTileMode(renderer.GetDeviceCapabilities());
@@ -202,10 +202,18 @@ std::optional<Snapshot> TiledTextureContents::RenderToSnapshot(
     const std::optional<SamplerDescriptor>& sampler_descriptor,
     bool msaa_enabled,
     const std::string& label) const {
-  if (GetInverseEffectTransform().IsIdentity()) {
+  if (GetInverseEffectTransform().IsIdentity() &&
+      GetGeometry()->IsAxisAlignedRect()) {
+    auto coverage = GetCoverage(entity);
+    if (!coverage.has_value()) {
+      return std::nullopt;
+    }
+    auto scale = Vector2(coverage->size / Size(texture_->GetSize()));
+
     return Snapshot{
         .texture = texture_,
-        .transform = entity.GetTransformation(),
+        .transform = Matrix::MakeTranslation(coverage->origin) *
+                     Matrix::MakeScale(scale),
         .sampler_descriptor = sampler_descriptor.value_or(sampler_descriptor_),
         .opacity = GetOpacityFactor(),
     };

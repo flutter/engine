@@ -39,7 +39,7 @@ class ShaderLibraryMTL final : public ShaderLibrary {
   ShaderFunctionMap functions_;
   bool is_valid_ = false;
 
-  ShaderLibraryMTL(NSArray<id<MTLLibrary>>* libraries);
+  explicit ShaderLibraryMTL(NSArray<id<MTLLibrary>>* libraries);
 
   // |ShaderLibrary|
   std::shared_ptr<const ShaderFunction> GetFunction(std::string_view name,
@@ -58,7 +58,9 @@ class ShaderLibraryMTL final : public ShaderLibrary {
 
   void RegisterLibrary(id<MTLLibrary> library);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ShaderLibraryMTL);
+  ShaderLibraryMTL(const ShaderLibraryMTL&) = delete;
+
+  ShaderLibraryMTL& operator=(const ShaderLibraryMTL&) = delete;
 };
 
 }  // namespace impeller

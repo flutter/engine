@@ -73,7 +73,7 @@ const String _kFlutterKeyDataChannel = 'flutter/keydata';
 
 @pragma('vm:entry-point')
 ByteData? _wrapUnmodifiableByteData(ByteData? byteData) =>
-    byteData == null ? null : UnmodifiableByteDataView(byteData);
+    byteData?.asUnmodifiableView();
 
 /// A token that represents a root isolate.
 class RootIsolateToken {
@@ -308,20 +308,19 @@ class PlatformDispatcher {
     _invoke(onMetricsChanged, _onMetricsChangedZone);
   }
 
-  // [FlutterView]s for which [FlutterView.render] has already been called
+  // The [FlutterView]s for which [FlutterView.render] has already been called
   // during the current [onBeginFrame]/[onDrawFrame] callback sequence.
   //
-  // The field is null outside the scope of those callbacks indicating that
-  // calls to [FlutterView.render] must be ignored. Furthermore, if a given
-  // [FlutterView] is already present in this set when its [FlutterView.render]
-  // is called again, that call must be ignored as a duplicate.
+  // It is null outside the scope of those callbacks indicating that calls to
+  // [FlutterView.render] must be ignored. Furthermore, if a given [FlutterView]
+  // is already present in this set when its [FlutterView.render] is called
+  // again, that call must be ignored as a duplicate.
   //
   // Between [onBeginFrame] and [onDrawFrame] the properties value is
   // temporarily stored in `_renderedViewsBetweenCallbacks` so that it survives
   // the gap between the two callbacks.
   Set<FlutterView>? _renderedViews;
-  // Temporary storage of the `_renderedViews` value between `_beginFrame` and
-  // `_drawFrame`.
+  // The `_renderedViews` value between `_beginFrame` and `_drawFrame`.
   Set<FlutterView>? _renderedViewsBetweenCallbacks;
 
   /// A callback invoked when any view begins a frame.
@@ -346,18 +345,18 @@ class PlatformDispatcher {
   void _beginFrame(int microseconds) {
     assert(_renderedViews == null);
     assert(_renderedViewsBetweenCallbacks == null);
-
     _renderedViews = <FlutterView>{};
+
     _invoke1<Duration>(
       onBeginFrame,
       _onBeginFrameZone,
       Duration(microseconds: microseconds),
     );
+
+    assert(_renderedViews != null);
+    assert(_renderedViewsBetweenCallbacks == null);
     _renderedViewsBetweenCallbacks = _renderedViews;
     _renderedViews = null;
-
-    assert(_renderedViews == null);
-    assert(_renderedViewsBetweenCallbacks != null);
   }
 
   /// A callback that is invoked for each frame after [onBeginFrame] has
@@ -377,14 +376,14 @@ class PlatformDispatcher {
   void _drawFrame() {
     assert(_renderedViews == null);
     assert(_renderedViewsBetweenCallbacks != null);
-
     _renderedViews = _renderedViewsBetweenCallbacks;
     _renderedViewsBetweenCallbacks = null;
-    _invoke(onDrawFrame, _onDrawFrameZone);
-    _renderedViews = null;
 
-    assert(_renderedViews == null);
+    _invoke(onDrawFrame, _onDrawFrameZone);
+
+    assert(_renderedViews != null);
     assert(_renderedViewsBetweenCallbacks == null);
+    _renderedViews = null;
   }
 
   /// A callback that is invoked when pointer data is available.
@@ -507,11 +506,9 @@ class PlatformDispatcher {
 
   // If this value changes, update the encoding code in the following files:
   //
-  //  * key_data.h
-  //  * key.dart (ui)
-  //  * key.dart (web_ui)
-  //  * HardwareKeyboard.java
-  static const int _kKeyDataFieldCount = 5;
+  //  * key_data.h (kKeyDataFieldCount)
+  //  * KeyData.java (KeyData.FIELD_COUNT)
+  static const int _kKeyDataFieldCount = 6;
 
   // The packet structure is described in `key_data_packet.h`.
   static KeyData _unpackKeyData(ByteData packet) {
@@ -1465,7 +1462,7 @@ class _PlatformConfiguration {
 class _ViewConfiguration {
   const _ViewConfiguration({
     this.devicePixelRatio = 1.0,
-    this.geometry = Rect.zero,
+    this.size = Size.zero,
     this.viewInsets = ViewPadding.zero,
     this.viewPadding = ViewPadding.zero,
     this.systemGestureInsets = ViewPadding.zero,
@@ -1482,9 +1479,8 @@ class _ViewConfiguration {
   /// The pixel density of the output surface.
   final double devicePixelRatio;
 
-  /// The geometry requested for the view on the screen or within its parent
-  /// window, in logical pixels.
-  final Rect geometry;
+  /// The size requested for the view in logical pixels.
+  final Size size;
 
   /// The number of physical pixels on each side of the display rectangle into
   /// which the view can render, but over which the operating system will likely
@@ -1554,7 +1550,7 @@ class _ViewConfiguration {
 
   @override
   String toString() {
-    return '$runtimeType[geometry: $geometry]';
+    return '$runtimeType[size: $size]';
   }
 }
 

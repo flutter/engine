@@ -21,6 +21,9 @@ class StandardCapabilities final : public Capabilities {
   }
 
   // |Capabilities|
+  bool SupportsImplicitResolvingMSAA() const override { return false; }
+
+  // |Capabilities|
   bool SupportsSSBO() const override { return supports_ssbo_; }
 
   // |Capabilities|
@@ -44,11 +47,6 @@ class StandardCapabilities final : public Capabilities {
   // |Capabilities|
   bool SupportsComputeSubgroups() const override {
     return supports_compute_subgroups_;
-  }
-
-  // |Capabilities|
-  bool SupportsReadFromOnscreenTexture() const override {
-    return supports_read_from_onscreen_texture_;
   }
 
   // |Capabilities|
@@ -88,7 +86,6 @@ class StandardCapabilities final : public Capabilities {
                        bool supports_framebuffer_fetch,
                        bool supports_compute,
                        bool supports_compute_subgroups,
-                       bool supports_read_from_onscreen_texture,
                        bool supports_read_from_resolve,
                        bool supports_decal_sampler_address_mode,
                        bool supports_device_transient_textures,
@@ -102,8 +99,6 @@ class StandardCapabilities final : public Capabilities {
         supports_framebuffer_fetch_(supports_framebuffer_fetch),
         supports_compute_(supports_compute),
         supports_compute_subgroups_(supports_compute_subgroups),
-        supports_read_from_onscreen_texture_(
-            supports_read_from_onscreen_texture),
         supports_read_from_resolve_(supports_read_from_resolve),
         supports_decal_sampler_address_mode_(
             supports_decal_sampler_address_mode),
@@ -121,7 +116,6 @@ class StandardCapabilities final : public Capabilities {
   bool supports_framebuffer_fetch_ = false;
   bool supports_compute_ = false;
   bool supports_compute_subgroups_ = false;
-  bool supports_read_from_onscreen_texture_ = false;
   bool supports_read_from_resolve_ = false;
   bool supports_decal_sampler_address_mode_ = false;
   bool supports_device_transient_textures_ = false;
@@ -129,7 +123,9 @@ class StandardCapabilities final : public Capabilities {
   PixelFormat default_stencil_format_ = PixelFormat::kUnknown;
   PixelFormat default_depth_stencil_format_ = PixelFormat::kUnknown;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(StandardCapabilities);
+  StandardCapabilities(const StandardCapabilities&) = delete;
+
+  StandardCapabilities& operator=(const StandardCapabilities&) = delete;
 };
 
 CapabilitiesBuilder::CapabilitiesBuilder() = default;
@@ -175,18 +171,6 @@ CapabilitiesBuilder& CapabilitiesBuilder::SetSupportsComputeSubgroups(
   return *this;
 }
 
-CapabilitiesBuilder& CapabilitiesBuilder::SetSupportsReadFromOnscreenTexture(
-    bool read_from_onscreen_texture) {
-  supports_read_from_onscreen_texture_ = read_from_onscreen_texture;
-  return *this;
-}
-
-CapabilitiesBuilder& CapabilitiesBuilder::SetSupportsReadFromResolve(
-    bool read_from_resolve) {
-  supports_read_from_resolve_ = read_from_resolve;
-  return *this;
-}
-
 CapabilitiesBuilder& CapabilitiesBuilder::SetDefaultColorFormat(
     PixelFormat value) {
   default_color_format_ = value;
@@ -202,6 +186,12 @@ CapabilitiesBuilder& CapabilitiesBuilder::SetDefaultStencilFormat(
 CapabilitiesBuilder& CapabilitiesBuilder::SetDefaultDepthStencilFormat(
     PixelFormat value) {
   default_depth_stencil_format_ = value;
+  return *this;
+}
+
+CapabilitiesBuilder& CapabilitiesBuilder::SetSupportsReadFromResolve(
+    bool read_from_resolve) {
+  supports_read_from_resolve_ = read_from_resolve;
   return *this;
 }
 
@@ -226,7 +216,6 @@ std::unique_ptr<Capabilities> CapabilitiesBuilder::Build() {
       supports_framebuffer_fetch_,                                        //
       supports_compute_,                                                  //
       supports_compute_subgroups_,                                        //
-      supports_read_from_onscreen_texture_,                               //
       supports_read_from_resolve_,                                        //
       supports_decal_sampler_address_mode_,                               //
       supports_device_transient_textures_,                                //

@@ -275,14 +275,15 @@ DEF_SWITCH(EnableVulkanValidation,
            "Enable loading Vulkan validation layers. The layers must be "
            "available to the application and loadable. On non-Vulkan backends, "
            "this flag does nothing.")
+DEF_SWITCH(EnableOpenGLGPUTracing,
+           "enable-opengl-gpu-tracing",
+           "Enable tracing of GPU execution time when using the Impeller "
+           "OpenGLES backend.")
 DEF_SWITCH(LeakVM,
            "leak-vm",
            "When the last shell shuts down, the shared VM is leaked by default "
            "(the leak_vm in VM settings is true). To clean up the leak VM, set "
            "this value to false.")
-DEF_SWITCH(DisableImageReaderPlatformViews,
-           "disable-image-reader-platform-views",
-           "Disables the use of ImageReader backed Platform Views on Android.")
 DEF_SWITCH(
     MsaaSamples,
     "msaa-samples",

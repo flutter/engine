@@ -106,16 +106,12 @@ def is_host_build(args):
 
 
 # Determines whether a prebuilt Dart SDK can be used instead of building one.
-# We can use a prebuilt Dart SDK when:
-# 1. It is a host build, a build targeting Fuchsia, or a build targeting desktop.
-# 2. The prebuilt SDK exists under //flutter/prebuilts/$OS-$ARCH.
 def can_use_prebuilt_dart(args):
   prebuilt = None
-  # In a Fuchsia build, we can use a prebuilt Dart SDK for the host to build
-  # platform agnostic artifacts (e.g. kernel snapshots), and a Dart SDK
-  # targeting Fuchsia is not needed. So, it is safe to say that the prebuilt
-  # Dart SDK in a Fuchsia build is the host prebuilt Dart SDK.
-  if args.target_os is None or args.target_os == 'fuchsia':
+  # When doing a 'host' build (args.target_os is None), or a build when the
+  # target OS and host OS are different, the prebuilt Dart SDK is the Dart SDK
+  # for the host system's OS and archetecture.
+  if args.target_os is None or args.target_os in ['android', 'ios', 'fuchsia']:
     if sys.platform.startswith(('cygwin', 'win')):
       prebuilt = 'windows-x64'
     elif sys.platform == 'darwin':
@@ -545,10 +541,6 @@ def to_gn_args(args):
     gn_args['skia_use_gl'] = False
     gn_args['shell_enable_metal'] = True
     gn_args['skia_use_metal'] = True
-    # Bitcode enabled builds using the current version of the toolchain leak
-    # C++ symbols decorated with the availability attribute. Disable these
-    # attributes in release modes till the toolchain is updated.
-    gn_args['skia_enable_api_available_macro'] = args.runtime_mode != 'release'
   else:
     gn_args['skia_use_gl'] = args.target_os != 'fuchsia'
 
@@ -776,7 +768,7 @@ def to_gn_wasm_args(args, gn_args):
   gn_args['skia_enable_fontmgr_custom_embedded'] = True
   gn_args['skia_enable_fontmgr_custom_empty'] = True
   gn_args['skia_fontmgr_factory'
-         ] = '//third_party/skia:fontmgr_custom_empty_factory'
+         ] = '//flutter/skia:fontmgr_custom_empty_factory'
   gn_args['skia_enable_skshaper'] = True
   gn_args['skia_enable_skparagraph'] = True
   gn_args['skia_canvaskit_force_tracing'] = False

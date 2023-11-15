@@ -63,15 +63,14 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
   vtx_builder.AddVertices({
       {Point(0, 0), Point(0, 0)},
       {Point(size.width, 0), Point(1, 0)},
-      {Point(size.width, size.height), Point(1, 1)},
-      {Point(0, 0), Point(0, 0)},
-      {Point(size.width, size.height), Point(1, 1)},
       {Point(0, size.height), Point(0, 1)},
+      {Point(size.width, size.height), Point(1, 1)},
   });
   auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
   auto options = OptionsFromPass(pass);
   options.blend_mode = BlendMode::kSource;
+  options.primitive_type = PrimitiveType::kTriangleStrip;
 
   Command cmd;
   DEBUG_COMMAND_INFO(cmd, "Framebuffer Advanced Blend Filter");
@@ -132,12 +131,10 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
   FS::FragInfo frag_info;
 
   auto src_sampler_descriptor = src_snapshot->sampler_descriptor;
-  if (!renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode()) {
-    // No known devices that support framebuffer fetch but not decal tile mode.
-    return false;
+  if (renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode()) {
+    src_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
+    src_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
   }
-  src_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
-  src_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
   auto src_sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler(
       src_sampler_descriptor);
   FS::BindTextureSamplerSrc(cmd, src_snapshot->texture, src_sampler);

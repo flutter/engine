@@ -11,7 +11,6 @@ import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
 import '../dom.dart';
-import '../embedder.dart';
 import '../mouse/prevent_default.dart';
 import '../platform_dispatcher.dart';
 import '../safe_browser_api.dart';
@@ -51,8 +50,9 @@ void _emptyCallback(dynamic _) {}
 
 /// The default [HostNode] that hosts all DOM required for text editing when a11y is not enabled.
 @visibleForTesting
-DomElement get defaultTextEditingRoot =>
-    flutterViewEmbedder.textEditingHostNode;
+// TODO(mdebbar): There could be multiple views with multiple text editing hosts.
+//                https://github.com/flutter/flutter/issues/137344
+DomElement get defaultTextEditingRoot => EnginePlatformDispatcher.instance.implicitView!.dom.textEditingHost;
 
 /// These style attributes are constant throughout the life time of an input
 /// element.
@@ -321,6 +321,14 @@ class EngineAutofillForm {
   }
 
   void placeForm(DomHTMLElement mainTextEditingElement) {
+    // Since we're disabling pointer events on the form to fix Safari autofill,
+    // we need to explicitly set pointer events on the active input element in
+    // order to calculate the correct pointer event offsets.
+    // See: https://github.com/flutter/flutter/issues/136006
+    if(textEditing.strategy is SafariDesktopTextEditingStrategy) {
+      mainTextEditingElement.style.pointerEvents = 'all';
+    }
+
     formElement.insertBefore(mainTextEditingElement, insertionReferenceNode);
     defaultTextEditingRoot.append(formElement);
   }
