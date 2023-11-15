@@ -39,14 +39,19 @@ void BindVertices(Command& cmd,
 
 /// @brief This performs the conversion from an entity's local coordinates to
 ///        a subpasses uv coordinates.
-std::array<Point, 4> CalculateUVs(const Rect& coverage,
-                                  const ISize& pass_size,
-                                  const Matrix& entity_transform) {
-  return coverage.GetTransformedPoints(
-      Matrix::MakeScale(
-          {1.0f / pass_size.width, 1.0f / pass_size.height, 1.0f}) *
-      entity_transform.Invert());
-}
+// std::array<Point, 4> CalculateUVs(const std::array<Point, 4>& coverage,
+//                                   const ISize& pass_size,
+//                                   const Matrix& entity_transform) {
+//   Matrix transform = Matrix::MakeScale({1.0f / pass_size.width,
+//                                         1.0f / pass_size.height, 1.0f}) *
+//                      entity_transform.Invert();
+//   return {
+//       transform * coverage[0],
+//       transform * coverage[1],
+//       transform * coverage[2],
+//       transform * coverage[3],
+//   };
+// }
 
 std::shared_ptr<Texture> MakeDownsampleSubpass(
     const ContentContext& renderer,
@@ -200,7 +205,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
 
   std::optional<Snapshot> input_snapshot =
       inputs[0]->GetSnapshot("GaussianBlur", renderer, entity,
-                             /*coverage_hint=*/{});
+                             /*coverage_hint=*/coverage_hint);
   if (!input_snapshot.has_value()) {
     return std::nullopt;
   }
@@ -213,8 +218,39 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   ISize subpass_size =
       ISize(input_snapshot->texture->GetSize().width / downsample.x,
             input_snapshot->texture->GetSize().height / downsample.y);
-  std::array<Point, 4> uvs = CalculateUVs(
-      coverage, input_snapshot->texture->GetSize(), entity.GetTransformation());
+
+  ///////////////////////////////
+  Matrix input_transform = inputs[0]->GetTransform(entity);
+  Rect snapshot_rect =
+      Rect::MakeXYWH(0, 0, input_snapshot->texture->GetSize().width,
+                     input_snapshot->texture->GetSize().height);
+  std::array<Point, 4> coverage_quad =
+      snapshot_rect.GetTransformedPoints(input_transform);
+  if (coverage_hint.has_value()) {
+    // Perform an intersection with the quad and the rect.  If the coverage_hint
+    // doesn't contain any of the coverage_quads points that means it inside of
+    // the quad (or they are completely disjoint which isn't considered here).
+    if (!coverage_hint.value().Contains(coverage_quad[0]) &&
+        !coverage_hint.value().Contains(coverage_quad[1]) &&
+        !coverage_hint.value().Contains(coverage_quad[2]) &&
+        !coverage_hint.value().Contains(coverage_quad[3])) {
+      coverage_quad = coverage_hint.value().GetPoints();
+    }
+  }
+
+  Matrix uv_transform =
+      Matrix::MakeScale({1.0f / input_snapshot->texture->GetSize().width,
+                         1.0f / input_snapshot->texture->GetSize().height,
+                         1.0f}) *
+      entity.GetTransformation().Invert();
+  std::array<Point, 4> uvs = {
+      uv_transform * coverage_quad[0],
+      uv_transform * coverage_quad[1],
+      uv_transform * coverage_quad[2],
+      uv_transform * coverage_quad[3],
+  };
+
+  /////////////////////////////////
   std::shared_ptr<Texture> pass1_out_texture = MakeDownsampleSubpass(
       renderer, input_snapshot->texture, input_snapshot->sampler_descriptor,
       uvs, subpass_size);
@@ -245,16 +281,17 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
       MinMagFilter::kLinear, SamplerAddressMode::kClampToEdge);
 
   return Entity::FromSnapshot(
-      Snapshot{
-          .texture = pass3_out_texture,
-          .transform =
-              Matrix::MakeTranslation(coverage.origin) *
-              Matrix::MakeScale(
-                  {coverage.size.width / pass1_out_texture->GetSize().width,
-                   coverage.size.height / pass1_out_texture->GetSize().height,
-                   1.0}),
-          .sampler_descriptor = sampler_desc,
-          .opacity = input_snapshot->opacity},
+      Snapshot{.texture = pass3_out_texture,
+               .transform =
+                   // TODO(gaaclarke): Put the entity rotation into here to
+                   // capture rotations.
+               Matrix::MakeTranslation(coverage.origin) *
+               Matrix::MakeScale(
+                   {coverage.size.width / pass1_out_texture->GetSize().width,
+                    coverage.size.height / pass1_out_texture->GetSize().height,
+                    1.0}),
+               .sampler_descriptor = sampler_desc,
+               .opacity = input_snapshot->opacity},
       entity.GetBlendMode(), entity.GetClipDepth());
 }
 
