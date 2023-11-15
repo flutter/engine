@@ -134,7 +134,8 @@ TEST_P(GaussianBlurFilterContentsTest, RenderCoverageMatchesGetCoverage) {
   }
 }
 
-TEST_P(GaussianBlurFilterContentsTest, RenderCoverageMatchesGetCoverageTranslate) {
+TEST_P(GaussianBlurFilterContentsTest,
+       RenderCoverageMatchesGetCoverageTranslate) {
   TextureDescriptor desc = {
       .format = PixelFormat::kB8G8R8A8UNormInt,
       .size = ISize(100, 100),
@@ -160,7 +161,8 @@ TEST_P(GaussianBlurFilterContentsTest, RenderCoverageMatchesGetCoverageTranslate
     EXPECT_TRUE(contents_coverage.has_value());
     if (result_coverage.has_value() && contents_coverage.has_value()) {
       EXPECT_TRUE(RectNear(result_coverage.value(), contents_coverage.value()));
-      EXPECT_TRUE(RectNear(result_coverage.value(), Rect::MakeLTRB(99, 199, 201, 301)));
+      EXPECT_TRUE(
+          RectNear(result_coverage.value(), Rect::MakeLTRB(99, 199, 201, 301)));
     }
   }
 }
