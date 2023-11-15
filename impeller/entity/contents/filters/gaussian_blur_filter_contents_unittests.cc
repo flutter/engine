@@ -132,7 +132,8 @@ TEST_P(GaussianBlurFilterContentsTest, RenderCoverageMatchesGetCoverage) {
       // TODO(gaaclarke): This test won't pass until the blur_radius is used to
       //                  expand the coverage. See note inside of
       //                  gaussian_blur_filter_contents.cc.
-      // EXPECT_TRUE(RectNear(result_coverage.value(), contents_coverage.value()));
+      // EXPECT_TRUE(RectNear(result_coverage.value(),
+      //                      contents_coverage.value()));
     }
   }
 }
@@ -166,9 +167,10 @@ TEST_P(GaussianBlurFilterContentsTest,
       // TODO(gaaclarke): This test won't pass until the blur_radius is used to
       //                  expand the coverage. See note inside of
       //                  gaussian_blur_filter_contents.cc.
-      // EXPECT_TRUE(RectNear(result_coverage.value(), contents_coverage.value()));
-      // EXPECT_TRUE(
-      //     RectNear(result_coverage.value(), Rect::MakeLTRB(99, 199, 201, 301)));
+      // EXPECT_TRUE(RectNear(result_coverage.value(),
+      //                      contents_coverage.value()));
+      // EXPECT_TRUE(RectNear(result_coverage.value(),
+      //                      Rect::MakeLTRB(99, 199, 201, 301)));
     }
   }
 }
