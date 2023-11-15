@@ -95,7 +95,7 @@
                     "script": "flutter/testing/run_tests.py",
                     "parameters": [
                             "--android-variant",
-                            "android_debug_x64",
+                            "android_debug_x86",
                             "--type",
                             "android"
                     ]
