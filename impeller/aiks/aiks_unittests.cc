@@ -176,7 +176,7 @@ bool GenerateMipmap(const std::shared_ptr<Context>& context,
   }
   pass->GenerateMipmap(std::move(texture), std::move(label));
   if (async_submit) {
-    return buffer->SubmitCommandsAsync(pass, context->GetResourceAllocator());
+    return buffer->EncodeAndSubmit(pass, context->GetResourceAllocator());
   }
 
   pass->EncodeCommands(context->GetResourceAllocator());

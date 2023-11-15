@@ -371,7 +371,7 @@ bool EntityPass::Render(ContentContext& renderer,
           offscreen_target.GetRenderTarget().GetRenderTargetTexture(),
           root_render_target.GetRenderTargetTexture());
 
-      if (!command_buffer->SubmitCommandsAsync(
+      if (!command_buffer->EncodeAndSubmit(
               blit_pass, renderer.GetContext()->GetResourceAllocator())) {
         VALIDATION_LOG << "Failed to encode root pass blit command.";
         return false;
@@ -399,7 +399,7 @@ bool EntityPass::Render(ContentContext& renderer,
         }
       }
 
-      if (!command_buffer->SubmitCommandsAsync(render_pass)) {
+      if (!command_buffer->EncodeAndSubmit(render_pass)) {
         VALIDATION_LOG << "Failed to encode root pass command buffer.";
         return false;
       }

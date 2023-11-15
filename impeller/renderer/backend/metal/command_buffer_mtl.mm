@@ -183,9 +183,9 @@ bool CommandBufferMTL::OnSubmitCommands(CompletionCallback callback) {
   return true;
 }
 
-bool CommandBufferMTL::SubmitCommandsAsync(
+bool CommandBufferMTL::EncodeAndSubmit(
     const std::shared_ptr<RenderPass>& render_pass) {
-  TRACE_EVENT0("impeller", "CommandBufferMTL::SubmitCommandsAsync");
+  TRACE_EVENT0("impeller", "CommandBufferMTL::EncodeAndSubmit");
   if (!IsValid() || !render_pass->IsValid()) {
     return false;
   }
@@ -239,7 +239,7 @@ bool CommandBufferMTL::SubmitCommandsAsync(
   return true;
 }
 
-bool CommandBufferMTL::SubmitCommandsAsync(
+bool CommandBufferMTL::EncodeAndSubmit(
     const std::shared_ptr<BlitPass>& blit_pass,
     const std::shared_ptr<Allocator>& allocator) {
   if (!IsValid() || !blit_pass->IsValid()) {

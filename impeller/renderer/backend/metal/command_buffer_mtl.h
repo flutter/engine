@@ -38,13 +38,11 @@ class CommandBufferMTL final : public CommandBuffer {
   void OnWaitUntilScheduled() override;
 
   // |CommandBuffer|
-  bool SubmitCommandsAsync(
-      const std::shared_ptr<RenderPass>& render_pass) override;
+  bool EncodeAndSubmit(const std::shared_ptr<RenderPass>& render_pass) override;
 
   // |CommandBuffer|
-  bool SubmitCommandsAsync(
-      const std::shared_ptr<BlitPass>& blit_ass,
-      const std::shared_ptr<Allocator>& allocator) override;
+  bool EncodeAndSubmit(const std::shared_ptr<BlitPass>& blit_ass,
+                       const std::shared_ptr<Allocator>& allocator) override;
 
   // |CommandBuffer|
   std::shared_ptr<RenderPass> OnCreateRenderPass(RenderTarget target) override;
