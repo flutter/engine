@@ -96,8 +96,9 @@ base class EngineFlutterView implements ui.FlutterView {
   }
 
   @override
-  void render(ui.Scene scene) {
+  void render(ui.Scene scene, {ui.Size? size}) {
     assert(!isDisposed, 'Trying to render a disposed EngineFlutterView.');
+    // TODO(goderbauer): Resepct the provided size when "physicalConstraints" are not allways tight. See TODO on "physicalConstraints".
     platformDispatcher.render(scene, this);
   }
 
@@ -120,6 +121,9 @@ base class EngineFlutterView implements ui.FlutterView {
 
   late final PlatformViewMessageHandler platformViewMessageHandler =
       PlatformViewMessageHandler(platformViewsContainer: dom.platformViewsHost);
+
+  // TODO(goderbauer): Provide API to configure constraints. See also TODO in "render".
+  ViewConstraints get physicalConstraints => ViewConstraints.tight(physicalSize);
 
   @override
   ui.Size get physicalSize {
@@ -648,4 +652,47 @@ class ViewPadding implements ui.ViewPadding {
   final double right;
   @override
   final double bottom;
+}
+
+class ViewConstraints implements ui.ViewConstraints {
+  const ViewConstraints({
+    this.minWidth = 0.0,
+    this.maxWidth = double.infinity,
+    this.minHeight = 0.0,
+    this.maxHeight = double.infinity,
+  });
+
+  ViewConstraints.tight(ui.Size size)
+    : minWidth = size.width,
+      maxWidth = size.width,
+      minHeight = size.height,
+      maxHeight = size.height;
+
+  @override
+  final double minWidth;
+  @override
+  final double maxWidth;
+  @override
+  final double minHeight;
+  @override
+  final double maxHeight;
+
+  @override
+  bool isSatisfiedBy(ui.Size size) {
+    return (minWidth <= size.width) && (size.width <= maxWidth) &&
+           (minHeight <= size.height) && (size.height <= maxHeight);
+  }
+  
+  @override
+  bool get isTight => minWidth >= maxWidth && minHeight >= maxHeight;
+  
+  @override
+  ViewConstraints operator/(double factor) {
+    return ViewConstraints(
+      minWidth: minWidth / factor,
+      maxWidth: maxWidth / factor,
+      minHeight: minHeight / factor,
+      maxHeight: maxHeight / factor,
+    );
+  }
 }

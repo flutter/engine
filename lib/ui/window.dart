@@ -161,8 +161,10 @@ class FlutterView {
   /// See also:
   ///
   ///  * [physicalSize], which returns the current size of the view.
-  // TODO(goderbauer): Wire this up so embedders can configure it.
-  ViewConstraints get physicalConstraints => ViewConstraints.fromSize(physicalSize);
+  // TODO(goderbauer): Wire this up so embedders can configure it. This will
+  //   also require to message the size provided to the render call back to the
+  //   embedder.
+  ViewConstraints get physicalConstraints => ViewConstraints.tight(physicalSize);
 
   /// The current dimensions of the rectangle as last reported by the platform
   /// into which scenes rendered in this view are drawn.
@@ -378,7 +380,7 @@ class FlutterView {
   }
 
   @Native<Void Function(Int64, Pointer<Void>, Double, Double)>(symbol: 'PlatformConfigurationNativeApi::Render')
-  external static void _render(int viewId, _NativeScene scene, Double, Double);
+  external static void _render(int viewId, _NativeScene scene, double width, double height);
 
   /// Change the retained semantics data about this [FlutterView].
   ///

@@ -2040,8 +2040,8 @@ class ViewConstraints {
   bool get isTight => minWidth >= maxWidth && minHeight >= maxHeight;
 
   /// Scales each constraint parameter by the inverse of the given factor.
-  BoxConstraints operator/(double factor) {
-    return BoxConstraints(
+  ViewConstraints operator/(double factor) {
+    return ViewConstraints(
       minWidth: minWidth / factor,
       maxWidth: maxWidth / factor,
       minHeight: minHeight / factor,
