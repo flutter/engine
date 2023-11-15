@@ -11,6 +11,7 @@ import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import '../common/matchers.dart';
+import '../common/test_initialization.dart';
 import 'history_test.dart';
 
 const MethodCodec codec = JSONMethodCodec();
@@ -31,12 +32,12 @@ void testMain() {
   late EngineFlutterWindow myWindow;
 
   setUpAll(() async {
-    await initializeEngine();
+    await bootstrapAndRunApp();
   });
 
   setUp(() {
     savedWindow = EnginePlatformDispatcher.instance.implicitView;
-    myWindow = EngineFlutterWindow(0, EnginePlatformDispatcher.instance);
+    myWindow = EngineFlutterWindow(0, EnginePlatformDispatcher.instance, createDomHTMLDivElement());
   });
 
   tearDown(() async {
