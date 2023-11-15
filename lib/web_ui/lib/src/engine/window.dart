@@ -123,6 +123,7 @@ base class EngineFlutterView implements ui.FlutterView {
       PlatformViewMessageHandler(platformViewsContainer: dom.platformViewsHost);
 
   // TODO(goderbauer): Provide API to configure constraints. See also TODO in "render".
+  @override
   ViewConstraints get physicalConstraints => ViewConstraints.tight(physicalSize);
 
   @override
