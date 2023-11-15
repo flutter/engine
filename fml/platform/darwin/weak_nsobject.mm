@@ -51,7 +51,7 @@ WeakContainer::~WeakContainer() {}
 }
 
 - (id)initWithContainer:(fml::RefPtr<fml::WeakContainer>)container {
-  FML_DCHECK(_container.get());
+  FML_DCHECK(container.get());
   self = [super init];
   if (self) {
     _container = container;
