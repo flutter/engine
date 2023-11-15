@@ -46,6 +46,7 @@ void doTests() {
 
     test('hide placeholder text for textfield', () {
       final DomManager domManager = DomManager(devicePixelRatio: 3.0);
+      domDocument.body!.append(domManager.rootElement);
 
       final DomHTMLInputElement regularTextField = createDomHTMLInputElement();
       regularTextField.placeholder = 'Now you see me';
@@ -69,6 +70,11 @@ void doTests() {
           '::placeholder');
       expect(style, isNotNull);
       expect(style.opacity, '0');
+
+      domManager.rootElement.remove();
+
+      // For some reason, only Firefox is able to correctly compute styles for
+      // the `::placeholder` pseudo-element.
     }, skip: browserEngine != BrowserEngine.firefox);
   });
 
