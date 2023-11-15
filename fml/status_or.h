@@ -31,8 +31,13 @@ namespace fml {
 template <typename T>
 class StatusOr {
  public:
-  explicit StatusOr(const T& value) : status_(), value_(value) {}
-  explicit StatusOr(const Status& status) : status_(status), value_() {}
+  // These constructors are intended be compatible with absl::status_or.
+  // NOLINTBEGIN(google-explicit-constructor)
+
+  StatusOr(const T& value) : status_(), value_(value) {}
+  StatusOr(const Status& status) : status_(status), value_() {}
+
+  // NOLINTEND(google-explicit-constructor)
 
   StatusOr(const StatusOr&) = default;
   StatusOr(StatusOr&&) = default;
