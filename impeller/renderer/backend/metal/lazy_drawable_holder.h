@@ -18,8 +18,7 @@ namespace impeller {
 using DeferredDrawable = std::shared_future<id<CAMetalDrawable>>;
 
 /// @brief Create a deferred drawable from a CAMetalLayer.
-DeferredDrawable GetDrawableDeferred(
-    CAMetalLayer* layer);
+DeferredDrawable GetDrawableDeferred(CAMetalLayer* layer);
 
 /// @brief Create a TextureMTL from a deferred drawable.
 ///
