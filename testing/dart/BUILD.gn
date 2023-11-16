@@ -52,8 +52,13 @@ foreach(test, tests) {
   flutter_frontend_server("compile_$test") {
     main_dart = test
     kernel_output = "$root_gen_dir/$test.dill"
-    extra_args = [ "-DkSkiaGoldWorkDirectory=$skia_gold_work_dir" ]
+    extra_args = [
+      "-DkFlutterBuildDirectory=$root_gen_dir",
+      "-DkSkiaGoldWorkDirectory=$skia_gold_work_dir",
+    ]
     package_config = ".dart_tool/package_config.json"
+    deps = [ "//flutter/third_party/txt:txt_fixtures" ]
+    testonly = true
   }
 }
 

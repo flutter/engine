@@ -124,10 +124,15 @@ void testNoCrashes() {
   });
 }
 
+const String kFlutterBuildDirectory = 'kFlutterBuildDirectory';
+
 String get _flutterBuildPath {
-  final String? buildPath = Platform.environment['FLUTTER_BUILD_DIRECTORY'];
-  if (buildPath == null) {
-    throw StateError('FLUTTER_BUILD_DIRECTORY environment variable is not set.');
+  const String buildPath = String.fromEnvironment(kFlutterBuildDirectory);
+  if (buildPath.isEmpty) {
+    throw StateError('kFlutterBuildDirectory -D variable is not set.');
+  }
+  if (buildPath.startsWith('//')) {
+    return buildPath.substring(2);
   }
   return buildPath;
 }
@@ -538,7 +543,7 @@ void main() async {
     // Skia renders a tofu if the font does not have a glyph for a character.
     // However, Flutter opts-in to a Skia feature to render tabs as a single space.
     // See: https://github.com/flutter/flutter/issues/79153
-    final File file = File(path.join(_flutterBuildPath, 'gen', 'flutter', 'testing', 'resources', 'RobotoSlab-VariableFont_wght.ttf'));
+    final File file = File(path.join(_flutterBuildPath, 'flutter', 'third_party', 'txt', 'assets', 'Roboto-Regular.ttf'));
     final Uint8List fontData = await file.readAsBytes();
     await loadFontFromList(fontData, fontFamily: 'RobotoSerif');
 
@@ -1041,7 +1046,7 @@ void main() async {
   });
 
   test('TextDecoration renders non-solid lines', () async {
-    final File file = File(path.join(_flutterBuildPath, 'gen', 'flutter', 'testing', 'resources', 'RobotoSlab-VariableFont_wght.ttf'));
+    final File file = File(path.join(_flutterBuildPath, 'flutter', 'third_party', 'txt', 'assets', 'Roboto-Regular.ttf'));
     final Uint8List fontData = await file.readAsBytes();
     await loadFontFromList(fontData, fontFamily: 'RobotoSlab');
 
