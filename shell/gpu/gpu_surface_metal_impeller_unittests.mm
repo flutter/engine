@@ -12,6 +12,10 @@
 #include "impeller/entity/mtl/modern_shaders.h"
 #include "impeller/renderer/backend/metal/context_mtl.h"
 
+#if IMPELLER_ENABLE_3D
+#include "impeller/scene/shaders/mtl/scene_shaders.h"  // nogncheck
+#endif                                                 // IMPELLER_ENABLE_3D
+
 namespace flutter {
 namespace testing {
 
@@ -45,6 +49,10 @@ static std::shared_ptr<impeller::ContextMTL> CreateImpellerContext() {
                                              impeller_entity_shaders_length),
       std::make_shared<fml::NonOwnedMapping>(impeller_modern_shaders_data,
                                              impeller_modern_shaders_length),
+#if IMPELLER_ENABLE_3D
+      std::make_shared<fml::NonOwnedMapping>(impeller_scene_shaders_data,
+                                             impeller_scene_shaders_length),
+#endif  // IMPELLER_ENABLE_3D
       std::make_shared<fml::NonOwnedMapping>(impeller_framebuffer_blend_shaders_data,
                                              impeller_framebuffer_blend_shaders_length),
   };
@@ -66,7 +74,7 @@ TEST(GPUSurfaceMetalImpeller, CanCreateValidSurface) {
   ASSERT_TRUE(surface->IsValid());
 }
 
-TEST(GPUSurfaceMetalImpeller, AcquireFrameFromCAMetalLayerNullChecksDrawable) {
+TEST(GPUSurfaceMetalImpeller, AcquireFrameDoesNotAccessDrawableProperties) {
   auto delegate = std::make_shared<TestGPUSurfaceMetalDelegate>();
   std::shared_ptr<Surface> surface =
       std::make_shared<GPUSurfaceMetalImpeller>(delegate.get(), CreateImpellerContext());
@@ -74,7 +82,7 @@ TEST(GPUSurfaceMetalImpeller, AcquireFrameFromCAMetalLayerNullChecksDrawable) {
   ASSERT_TRUE(surface->IsValid());
 
   auto frame = surface->AcquireFrame(SkISize::Make(100, 100));
-  ASSERT_EQ(frame, nullptr);
+  ASSERT_TRUE(frame != nullptr);
 }
 
 }  // namespace testing
