@@ -1054,7 +1054,7 @@ void main() async {
       builder.addText(style.name);
       final Paragraph paragraph = builder.build();
       paragraph.layout(const ParagraphConstraints(width: 1000));
-      
+
       // Draw and layout based on the index vertically.
       canvas.drawParagraph(paragraph, Offset(0, index * 40.0));
     }
