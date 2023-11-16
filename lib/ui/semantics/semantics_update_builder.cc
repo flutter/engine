@@ -93,8 +93,8 @@ void SemanticsUpdateBuilder::updateNode(
   node.identifier = std::move(identifier);
   node.label = std::move(label);
 
-  FML_LOG(ERROR) << "label: " << node.label
-                 << ", identifier: " << node.identifier;
+  // FML_LOG(ERROR) << "label: " << node.label
+  //                << ", identifier: " << node.identifier;
 
   pushStringAttributes(node.labelAttributes, labelAttributes);
   node.value = std::move(value);
