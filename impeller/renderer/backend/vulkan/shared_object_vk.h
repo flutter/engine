@@ -25,8 +25,6 @@ class SharedObjectVKT : public SharedObjectVK {
 
   explicit SharedObjectVKT(UniqueResource res) : resource_(std::move(res)) {}
 
-  operator Resource() const { return Get(); }
-
   const Resource& Get() const { return *resource_; }
 
  private:

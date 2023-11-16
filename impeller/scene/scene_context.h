@@ -6,6 +6,7 @@
 
 #include <memory>
 
+#include "fml/logging.h"
 #include "impeller/renderer/context.h"
 #include "impeller/renderer/pipeline.h"
 #include "impeller/renderer/pipeline_descriptor.h"
@@ -68,9 +69,12 @@ class SceneContext {
     explicit PipelineVariantsT(Context& context) {
       auto desc = PipelineT::Builder::MakeDefaultPipelineDescriptor(context);
       // Apply default ContentContextOptions to the descriptor.
-      SceneContextOptions{}.ApplyToPipelineDescriptor(
-          *context.GetCapabilities(), *desc);
-      variants_[{}] = std::make_unique<PipelineT>(context, desc);
+      if (desc.has_value()) {
+        SceneContextOptions{}.ApplyToPipelineDescriptor(
+            *context.GetCapabilities(), desc.get_value());
+        variants_[{}] = std::make_unique<PipelineT>(context, desc);
+      }
+      FML_UNREACHABLE()
     };
 
     // |PipelineVariants|
