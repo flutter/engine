@@ -17,6 +17,13 @@ namespace impeller {
 
 using DeferredDrawable = std::shared_future<id<CAMetalDrawable>>;
 
+#pragma GCC diagnostic push
+// Disable the diagnostic for iOS Simulators. Metal without emulation isn't
+// available prior to iOS 13 and that's what the simulator headers say when
+// support for CAMetalLayer begins. CAMetalLayer is available on iOS 8.0 and
+// above which is well below Flutters support level.
+#pragma GCC diagnostic ignored "-Wunguarded-availability-new"
+
 /// @brief Create a deferred drawable from a CAMetalLayer.
 DeferredDrawable GetDrawableDeferred(CAMetalLayer* layer);
 
@@ -27,5 +34,8 @@ DeferredDrawable GetDrawableDeferred(CAMetalLayer* layer);
 std::shared_ptr<Texture> CreateTextureFromDrawableFuture(
     TextureDescriptor desc,
     const DeferredDrawable& drawble_future);
+
+#pragma GCC diagnostic pop
+
 
 }  // namespace impeller
