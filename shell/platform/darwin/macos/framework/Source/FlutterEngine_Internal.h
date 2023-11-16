@@ -66,6 +66,9 @@ typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
                                result:(nullable FlutterResult)result;
 @end
 
+/**
+ * An NSPasteboard wrapper object to allow for substitution of a fake in unit tests.
+ */
 @interface FlutterPasteboard : NSObject
 - (NSInteger)clearContents;
 - (NSString*)stringForType:(NSPasteboardType)dataType;

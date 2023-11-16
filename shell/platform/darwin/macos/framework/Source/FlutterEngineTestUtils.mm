@@ -10,8 +10,10 @@
 
 #include "flutter/testing/testing.h"
 
-// Fake pasteboard implementation to allow tests to work in environments without a real
-// pasteboard.
+/**
+ * Fake pasteboard implementation to allow tests to work in environments without a real
+ * pasteboard.
+ */
 @interface FakePasteboard : FlutterPasteboard
 @end
 
@@ -19,16 +21,10 @@
   NSString* _result;
 }
 
-- (instancetype)init {
-  self = [super init];
-  if (self != nil) {
-    _result = nil;
-  }
-  return self;
-}
-
 - (NSInteger)clearContents {
-  return 1;
+  size_t changeCount = (_result != nil) ? 1 : 0;
+  _result = nil;
+  return changeCount;
 }
 
 - (NSString*)stringForType:(NSPasteboardType)dataType {
