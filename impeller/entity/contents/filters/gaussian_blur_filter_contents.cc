@@ -81,12 +81,15 @@ std::shared_ptr<Texture> MakeDownsampleSubpass(
                                                   {vertices[3], uvs[3]},
                                               });
 
+        SamplerDescriptor linear_sampler_descriptor = sampler_descriptor;
+        linear_sampler_descriptor.mag_filter = MinMagFilter::kLinear;
+        linear_sampler_descriptor.min_filter = MinMagFilter::kLinear;
         TextureFillVertexShader::BindFrameInfo(
             cmd, host_buffer.EmplaceUniform(frame_info));
         TextureFillFragmentShader::BindTextureSampler(
             cmd, input_texture,
             renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-                sampler_descriptor));
+                linear_sampler_descriptor));
 
         pass.AddCommand(std::move(cmd));
 
