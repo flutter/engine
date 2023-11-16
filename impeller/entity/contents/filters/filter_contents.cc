@@ -50,6 +50,8 @@ std::shared_ptr<FilterContents> FilterContents::MakeDirectionalGaussianBlur(
   return blur;
 }
 
+#define IMPELLER_ENABLE_NEW_GAUSSIAN_FILTER 1
+
 std::shared_ptr<FilterContents> FilterContents::MakeGaussianBlur(
     const FilterInput::Ref& input,
     Sigma sigma_x,

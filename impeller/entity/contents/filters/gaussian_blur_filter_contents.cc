@@ -58,12 +58,26 @@ std::shared_ptr<Texture> MakeDownsampleSubpass(
         frame_info.texture_sampler_y_coord_scale = 1.0;
         frame_info.alpha = 1.0;
 
+        Quad vertices = {Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1)};
+
+        // Insert transparent gutter around the downsampled image so the blur
+        // creates a halo effect.
+        ISize texture_size = input_texture->GetSize();
+        vertices =
+            (Matrix::MakeTranslation({0.5, 0.5, 0}) *
+             Matrix::MakeScale(
+                 {texture_size.width / (texture_size.width + blur_radius * 2),
+                  texture_size.height / (texture_size.height + blur_radius * 2),
+                  1.0}) *
+             Matrix::MakeTranslation({-0.5, -0.5, 0}))
+                .Transform(vertices);
+
         BindVertices<TextureFillVertexShader>(cmd, host_buffer,
                                               {
-                                                  {Point(0, 0), uvs[0]},
-                                                  {Point(1, 0), uvs[1]},
-                                                  {Point(0, 1), uvs[2]},
-                                                  {Point(1, 1), uvs[3]},
+                                                  {vertices[0], uvs[0]},
+                                                  {vertices[1], uvs[1]},
+                                                  {vertices[2], uvs[2]},
+                                                  {vertices[3], uvs[3]},
                                               });
 
         TextureFillVertexShader::BindFrameInfo(
@@ -204,22 +218,18 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   Vector2 downsample =
       CalculateIntegerScale(desired_scale, input_snapshot->texture->GetSize());
 
-  // TODO(gaaclarke): This isn't taking into account the blur radius to expand
-  //                  the rendered size, so blurred objects are clipped. In
-  //                  order for that to be implemented correctly we'll need to
-  //                  start adjusting the geometry coordinates in the downsample
-  //                  step so that there is a border of transparency around it
-  //                  before the blur steps.
-  ISize subpass_size =
-      ISize(input_snapshot->texture->GetSize().width / downsample.x,
-            input_snapshot->texture->GetSize().height / downsample.y);
+  ISize expanded_size(
+      input_snapshot->texture->GetSize().width + 2.0 * blur_radius,
+      input_snapshot->texture->GetSize().height + 2.0 * blur_radius);
+  ISize subpass_size = ISize(expanded_size.width / downsample.x,
+                             expanded_size.height / downsample.y);
 
   Quad uvs =
       CalculateUVs(inputs[0], entity, input_snapshot->texture->GetSize());
 
   std::shared_ptr<Texture> pass1_out_texture = MakeDownsampleSubpass(
       renderer, input_snapshot->texture, input_snapshot->sampler_descriptor,
-      uvs, subpass_size);
+      uvs, subpass_size, blur_radius);
 
   Size pass1_pixel_size(1.0 / pass1_out_texture->GetSize().width,
                         1.0 / pass1_out_texture->GetSize().height);
@@ -248,9 +258,11 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
 
   return Entity::FromSnapshot(
       Snapshot{
-          .texture = pass3_out_texture,
+          .texture = pass1_out_texture,
           .transform =
-              entity.GetTransform() *
+              entity.GetTransformation() *
+              // There has to be an offset somewhere to account for the extra blur radius
+              //Matrix::MakeTranslation({-20, -20, 0}) *
               Matrix::MakeScale(
                   {input_snapshot->texture->GetSize().width /
                        static_cast<Scalar>(pass1_out_texture->GetSize().width),
