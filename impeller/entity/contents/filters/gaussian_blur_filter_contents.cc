@@ -42,7 +42,8 @@ std::shared_ptr<Texture> MakeDownsampleSubpass(
     std::shared_ptr<Texture> input_texture,
     const SamplerDescriptor& sampler_descriptor,
     const Quad& uvs,
-    const ISize& subpass_size) {
+    const ISize& subpass_size,
+    Scalar blur_radius) {
   ContentContext::SubpassCallback subpass_callback =
       [&](const ContentContext& renderer, RenderPass& pass) {
         HostBuffer& host_buffer = pass.GetTransientsBuffer();
