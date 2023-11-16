@@ -1031,6 +1031,38 @@ void main() async {
     canvas.restoreToCount(canvas.getSaveCount() + 1);
     expect(canvas.getSaveCount(), equals(6));
   });
+
+  test('TextDecoration renders non-solid lines', () async {
+    final File file = File(path.join('flutter', 'testing', 'resources', 'RobotoSlab-VariableFont_wght.ttf'));
+    final Uint8List fontData = await file.readAsBytes();
+    await loadFontFromList(fontData, fontFamily: 'RobotoSlab');
+
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+
+    for (final (int index, TextDecorationStyle style) in TextDecorationStyle.values.indexed) {
+      final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle());
+      builder.pushStyle(TextStyle(
+        decoration: TextDecoration.underline,
+        decorationStyle: style,
+        decorationThickness: 1.0,
+        decorationColor: const Color(0xFFFF0000),
+        fontFamily: 'RobotoSlab',
+        fontSize: 24.0,
+      ));
+
+      builder.addText(style.name);
+      final Paragraph paragraph = builder.build();
+      paragraph.layout(const ParagraphConstraints(width: 1000));
+      
+      // Draw and layout based on the index vertically.
+      canvas.drawParagraph(paragraph, Offset(0, index * 40.0));
+    }
+
+    final Picture picture = recorder.endRecording();
+    final Image image = await picture.toImage(200, 200);
+    await comparer.addGoldenImage(image, 'text_decoration.png');
+  });
 }
 
 Matcher listEquals(ByteData expected) => (dynamic v) {
