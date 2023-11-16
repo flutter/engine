@@ -15,7 +15,7 @@ namespace impeller {
 /// Note: This will replace `DirectionalGaussianBlurFilterContents`.
 class GaussianBlurFilterContents final : public FilterContents {
  public:
-  GaussianBlurFilterContents(Scalar sigma = 0.0f);
+  explicit GaussianBlurFilterContents(Scalar sigma = 0.0f);
 
   Scalar GetSigma() const { return sigma_; }
 
