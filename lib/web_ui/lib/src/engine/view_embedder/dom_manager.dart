@@ -152,32 +152,32 @@ class DomManager {
   ///
   /// If semantics is enabled, this element also contains the semantics DOM tree,
   /// which captures semantics input events.
-  DomElement rootElement;
+  final DomElement rootElement;
 
   /// Hosts all platform view elements.
-  DomElement platformViewsHost;
+  final DomElement platformViewsHost;
 
   /// Hosts all rendering elements and canvases.
-  DomShadowRoot renderingHost;
+  final DomShadowRoot renderingHost;
 
   /// Hosts the <flt-scene> element.
   ///
   /// This element is created and inserted in the HTML DOM once. It is never
   /// removed or moved. However the <flt-scene> inside of it may be replaced.
-  DomElement sceneHost;
+  final DomElement sceneHost;
 
   /// Hosts all text editing elements.
-  DomElement textEditingHost;
+  final DomElement textEditingHost;
 
   /// Hosts the semantics tree.
   ///
   /// This element is in front of the [renderingHost] and [platformViewsHost].
   /// Otherwise, the phone will disable focusing by touch, only by tabbing
   /// around the UI.
-  DomElement semanticsHost;
+  final DomElement semanticsHost;
 
   /// This is where accessibility announcements are inserted.
-  DomElement announcementsHost;
+  final DomElement announcementsHost;
 }
 
 DomShadowRoot _attachShadowRoot(DomElement element) {
