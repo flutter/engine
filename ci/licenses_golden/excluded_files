@@ -151,6 +151,7 @@
 ../../../flutter/impeller/geometry/README.md
 ../../../flutter/impeller/geometry/geometry_unittests.cc
 ../../../flutter/impeller/geometry/matrix_unittests.cc
+../../../flutter/impeller/geometry/path_unittests.cc
 ../../../flutter/impeller/geometry/rect_unittests.cc
 ../../../flutter/impeller/geometry/size_unittests.cc
 ../../../flutter/impeller/golden_tests/README.md
@@ -164,6 +165,7 @@
 ../../../flutter/impeller/image/README.md
 ../../../flutter/impeller/playground
 ../../../flutter/impeller/renderer/backend/gles/test
+../../../flutter/impeller/renderer/backend/metal/texture_mtl_unittests.mm
 ../../../flutter/impeller/renderer/backend/vulkan/blit_command_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/command_encoder_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk_unittests.cc
@@ -269,6 +271,7 @@
 ../../../flutter/shell/platform/android/flutter_shell_native_unittests.cc
 ../../../flutter/shell/platform/android/jni/jni_mock_unittest.cc
 ../../../flutter/shell/platform/android/platform_view_android_delegate/platform_view_android_delegate_unittests.cc
+../../../flutter/shell/platform/android/platform_view_android_unittests.cc
 ../../../flutter/shell/platform/android/test
 ../../../flutter/shell/platform/android/test_runner
 ../../../flutter/shell/platform/common/accessibility_bridge_unittests.cc
