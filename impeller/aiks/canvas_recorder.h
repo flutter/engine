@@ -16,6 +16,7 @@ namespace impeller {
 /// golden tests can be written at a higher level, migrate these to
 /// flutter::DisplayListOpType.
 enum CanvasRecorderOp : uint16_t {
+  // NOLINTBEGIN(readability-identifier-naming)
   New,
   Save,
   SaveLayer,
@@ -45,6 +46,7 @@ enum CanvasRecorderOp : uint16_t {
   DrawTextFrame,
   DrawVertices,
   DrawAtlas,
+  // NOLINTEND(readability-identifier-naming)
 };
 
 // Canvas recorder should only be used when IMPELLER_TRACE_CANVAS is defined
