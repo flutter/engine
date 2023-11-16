@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
+import 'package:ui/src/engine/js_interop/js_app.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
@@ -45,6 +46,17 @@ base class EngineFlutterView implements ui.FlutterView {
     EnginePlatformDispatcher platformDispatcher,
     DomElement hostElement,
   ) = _EngineFlutterViewImpl;
+
+  factory EngineFlutterView.implicit(
+    int viewId,
+    EnginePlatformDispatcher platformDispatcher,
+  ) = _EngineFlutterViewImpl;
+
+  EngineFlutterView.fromJsOptions(this.viewId, JsFlutterViewOptions options)
+    : platformDispatcher = EnginePlatformDispatcher.instance {
+      // Do things with `options`...
+      domWindow.console.debug(options);
+  }
 
   EngineFlutterView._(
     this.viewId,
