@@ -28,7 +28,7 @@ class ArchiveVector : public Archivable {
 
   ArchiveVector();
 
-  ArchiveVector(std::vector<int64_t> keys);
+  explicit ArchiveVector(std::vector<int64_t> keys);
 
   ArchiveVector(const ArchiveVector&) = delete;
 

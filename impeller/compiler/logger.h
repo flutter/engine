@@ -15,7 +15,7 @@ namespace compiler {
 
 class AutoLogger {
  public:
-  AutoLogger(std::stringstream& logger) : logger_(logger) {}
+  explicit AutoLogger(std::stringstream& logger) : logger_(logger) {}
 
   ~AutoLogger() {
     logger_ << std::endl;

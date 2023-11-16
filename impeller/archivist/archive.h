@@ -21,7 +21,7 @@ class ArchiveDatabase;
 
 class Archive {
  public:
-  Archive(const std::string& path);
+  explicit Archive(const std::string& path);
 
   ~Archive();
 
@@ -45,7 +45,7 @@ class Archive {
 
   template <class T,
             class = std::enable_if_t<std::is_base_of<Archivable, T>::value>>
-  [[nodiscard]] size_t Read(UnarchiveStep stepper) {
+  [[nodiscard]] size_t Read(const UnarchiveStep& stepper) {
     const ArchiveDef& def = T::kArchiveDefinition;
     return UnarchiveInstances(def, stepper);
   }
