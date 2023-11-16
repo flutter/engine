@@ -131,9 +131,6 @@ String get _flutterBuildPath {
   if (buildPath.isEmpty) {
     throw StateError('kFlutterBuildDirectory -D variable is not set.');
   }
-  if (buildPath.startsWith('//')) {
-    return buildPath.substring(2);
-  }
   return buildPath;
 }
 
