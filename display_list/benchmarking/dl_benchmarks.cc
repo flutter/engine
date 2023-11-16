@@ -4,7 +4,7 @@
 
 #include "flutter/display_list/benchmarking/dl_benchmarks.h"
 #include "flutter/display_list/dl_builder.h"
-#include "flutter/display_list/dl_ops.h"
+#include "flutter/display_list/dl_op_flags.h"
 #include "flutter/display_list/skia/dl_sk_canvas.h"
 #include "flutter/display_list/testing/dl_test_snippets.h"
 
