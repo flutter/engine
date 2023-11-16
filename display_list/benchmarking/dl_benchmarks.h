@@ -21,11 +21,11 @@ namespace flutter {
 namespace testing {
 
 enum BenchmarkAttributes {
-  kEmpty_Flag = 0,
-  kStrokedStyle_Flag = 1 << 0,
-  kFilledStyle_Flag = 1 << 1,
-  kHairlineStroke_Flag = 1 << 2,
-  kAntiAliasing_Flag = 1 << 3
+  kEmpty = 0,
+  kStrokedStyle = 1 << 0,
+  kFilledStyle = 1 << 1,
+  kHairlineStroke = 1 << 2,
+  kAntiAliasing = 1 << 3
 };
 
 DlPaint GetPaintForRun(unsigned attributes);
