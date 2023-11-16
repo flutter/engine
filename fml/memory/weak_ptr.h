@@ -117,7 +117,7 @@ class WeakPtr {
 
   explicit WeakPtr(T* ptr,
                    fml::RefPtr<fml::internal::WeakPtrFlag>&& flag,
-                   DebugThreadChecker checker)
+                   const DebugThreadChecker& checker)
       : ptr_(ptr), flag_(std::move(flag)), checker_(checker) {}
   T* ptr_;
   fml::RefPtr<fml::internal::WeakPtrFlag> flag_;
@@ -204,7 +204,7 @@ class TaskRunnerAffineWeakPtr {
       T* ptr,
       fml::RefPtr<fml::internal::WeakPtrFlag>&& flag,
       DebugTaskRunnerChecker checker)
-      : ptr_(ptr), flag_(std::move(flag)), checker_(checker) {}
+      : ptr_(ptr), flag_(std::move(flag)), checker_(std::move(checker)) {}
 
   T* ptr_;
   fml::RefPtr<fml::internal::WeakPtrFlag> flag_;
