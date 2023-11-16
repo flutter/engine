@@ -41,7 +41,7 @@ std::shared_ptr<Texture> MakeDownsampleSubpass(
     const ContentContext& renderer,
     std::shared_ptr<Texture> input_texture,
     const SamplerDescriptor& sampler_descriptor,
-    const std::array<Point, 4>& uvs,
+    const Quad& uvs,
     const ISize& subpass_size) {
   ContentContext::SubpassCallback subpass_callback =
       [&](const ContentContext& renderer, RenderPass& pass) {
