@@ -190,7 +190,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
 
   std::optional<Snapshot> input_snapshot =
       inputs[0]->GetSnapshot("GaussianBlur", renderer, entity,
-                             /*coverage_hint=*/coverage_hint);
+                             /*coverage_limit=*/coverage_hint);
   if (!input_snapshot.has_value()) {
     return std::nullopt;
   }

@@ -57,17 +57,17 @@ std::shared_ptr<FilterContents> FilterContents::MakeGaussianBlur(
     BlurStyle blur_style,
     Entity::TileMode tile_mode) {
   constexpr bool use_new_filter =
-// #ifdef IMPELLER_ENABLE_NEW_GAUSSIAN_FILTER
+#ifdef IMPELLER_ENABLE_NEW_GAUSSIAN_FILTER
       true;
-// #else
-//       false;
-// #endif
+#else
+      false;
+#endif
 
   // TODO(https://github.com/flutter/flutter/issues/131580): Remove once the new
   // blur handles all cases.
   if (use_new_filter) {
     auto blur = std::make_shared<GaussianBlurFilterContents>(sigma_x.sigma);
-    blur->SetInputs({std::move(input)});
+    blur->SetInputs({input});
     return blur;
   } else {
     std::shared_ptr<FilterContents> x_blur = MakeDirectionalGaussianBlur(
