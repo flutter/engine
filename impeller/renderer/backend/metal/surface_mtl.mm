@@ -8,6 +8,7 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/impeller/renderer/command_buffer.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/formats.h"
 #include "impeller/core/texture_descriptor.h"
 #include "impeller/renderer/backend/metal/context_mtl.h"
 #include "impeller/renderer/backend/metal/formats_mtl.h"
@@ -20,12 +21,14 @@ namespace impeller {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunguarded-availability-new"
 
-static std::optional<RenderTarget> WrapLayerWithRenderTarget(
+static std::optional<RenderTarget> WrapWithRenderTarget(
     Allocator& allocator,
-    CAMetalLayer* layer,
-    const DeferredDrawable& deferred_drawable,
+    PixelFormat pixel_format,
+    ISize texture_size,
     bool requires_blit,
-    std::optional<IRect> clip_rect) {
+    std::optional<IRect> clip_rect,
+    const std::function<std::shared_ptr<Texture>(TextureDescriptor)>&
+        texture_proc) {
   // compositor_context.cc will offset the rendering by the clip origin. Here we
   // shrink to the size of the clip. This has the same effect as clipping the
   // rendering but also creates smaller intermediate passes.
@@ -37,12 +40,12 @@ static std::optional<RenderTarget> WrapLayerWithRenderTarget(
     }
     root_size = ISize(clip_rect->size.width, clip_rect->size.height);
   } else {
-    root_size = {static_cast<ISize::Type>(layer.drawableSize.width),
-                 static_cast<ISize::Type>(layer.drawableSize.height)};
+    root_size = {static_cast<ISize::Type>(texture_size.width),
+                 static_cast<ISize::Type>(texture_size.height)};
   }
 
   TextureDescriptor resolve_tex_desc;
-  resolve_tex_desc.format = FromMTLPixelFormat(layer.pixelFormat);
+  resolve_tex_desc.format = pixel_format;
   resolve_tex_desc.size = root_size;
   resolve_tex_desc.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget) |
                            static_cast<uint64_t>(TextureUsage::kShaderRead);
@@ -60,84 +63,7 @@ static std::optional<RenderTarget> WrapLayerWithRenderTarget(
     resolve_tex_desc.compression_type = CompressionType::kLossy;
     resolve_tex = allocator.CreateTexture(resolve_tex_desc);
   } else {
-    resolve_tex =
-        CreateTextureFromDrawableFuture(resolve_tex_desc, deferred_drawable);
-  }
-
-  if (!resolve_tex) {
-    VALIDATION_LOG << "Could not wrap resolve texture.";
-    return std::nullopt;
-  }
-  resolve_tex->SetLabel("ImpellerOnscreenResolve");
-
-  TextureDescriptor msaa_tex_desc;
-  msaa_tex_desc.storage_mode = StorageMode::kDeviceTransient;
-  msaa_tex_desc.type = TextureType::kTexture2DMultisample;
-  msaa_tex_desc.sample_count = SampleCount::kCount4;
-  msaa_tex_desc.format = resolve_tex->GetTextureDescriptor().format;
-  msaa_tex_desc.size = resolve_tex->GetSize();
-  msaa_tex_desc.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget);
-
-  auto msaa_tex = allocator.CreateTexture(msaa_tex_desc);
-  if (!msaa_tex) {
-    VALIDATION_LOG << "Could not allocate MSAA color texture.";
-    return std::nullopt;
-  }
-  msaa_tex->SetLabel("ImpellerOnscreenColorMSAA");
-
-  ColorAttachment color0;
-  color0.texture = msaa_tex;
-  color0.clear_color = Color::DarkSlateGray();
-  color0.load_action = LoadAction::kClear;
-  color0.store_action = StoreAction::kMultisampleResolve;
-  color0.resolve_texture = std::move(resolve_tex);
-
-  auto render_target_desc = std::make_optional<RenderTarget>();
-  render_target_desc->SetColorAttachment(color0, 0u);
-
-  return render_target_desc;
-}
-
-static std::optional<RenderTarget> WrapTextureWithRenderTarget(
-    Allocator& allocator,
-    id<MTLTexture> texture,
-    bool requires_blit,
-    std::optional<IRect> clip_rect) {
-  // compositor_context.cc will offset the rendering by the clip origin. Here we
-  // shrink to the size of the clip. This has the same effect as clipping the
-  // rendering but also creates smaller intermediate passes.
-  ISize root_size;
-  if (requires_blit) {
-    if (!clip_rect.has_value()) {
-      VALIDATION_LOG << "Missing clip rectangle.";
-      return std::nullopt;
-    }
-    root_size = ISize(clip_rect->size.width, clip_rect->size.height);
-  } else {
-    root_size = {static_cast<ISize::Type>(texture.width),
-                 static_cast<ISize::Type>(texture.height)};
-  }
-
-  TextureDescriptor resolve_tex_desc;
-  resolve_tex_desc.format = FromMTLPixelFormat(texture.pixelFormat);
-  resolve_tex_desc.size = root_size;
-  resolve_tex_desc.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget) |
-                           static_cast<uint64_t>(TextureUsage::kShaderRead);
-  resolve_tex_desc.sample_count = SampleCount::kCount1;
-  resolve_tex_desc.storage_mode = StorageMode::kDevicePrivate;
-
-  if (resolve_tex_desc.format == PixelFormat::kUnknown) {
-    VALIDATION_LOG << "Unknown drawable color format.";
-    return std::nullopt;
-  }
-
-  // Create color resolve texture.
-  std::shared_ptr<Texture> resolve_tex;
-  if (requires_blit) {
-    resolve_tex_desc.compression_type = CompressionType::kLossy;
-    resolve_tex = allocator.CreateTexture(resolve_tex_desc);
-  } else {
-    resolve_tex = TextureMTL::Wrapper(resolve_tex_desc, texture);
+    resolve_tex = texture_proc(resolve_tex_desc);
   }
 
   if (!resolve_tex) {
@@ -184,9 +110,14 @@ std::unique_ptr<SurfaceMTL> SurfaceMTL::MakeFromMetalLayer(
   // The returned render target is the texture that Impeller will render the
   // root pass to. If partial repaint is in use, this may be a new texture which
   // is smaller than the given MTLTexture.
-  auto render_target = WrapLayerWithRenderTarget(
-      *context->GetResourceAllocator(), layer, deferred_drawable,
-      partial_repaint_blit_required, clip_rect);
+  ISize texture_size = {static_cast<ISize::Type>(layer.drawableSize.width),
+                        static_cast<ISize::Type>(layer.drawableSize.height)};
+  auto render_target = WrapWithRenderTarget(
+      *context->GetResourceAllocator(), FromMTLPixelFormat(layer.pixelFormat),
+      texture_size, partial_repaint_blit_required, clip_rect,
+      [deferred_drawable](TextureDescriptor desc) {
+        return CreateTextureFromDrawableFuture(desc, deferred_drawable);
+      });
   if (!render_target) {
     return nullptr;
   }
@@ -239,9 +170,14 @@ std::unique_ptr<SurfaceMTL> SurfaceMTL::MakeFromTexture(
   // The returned render target is the texture that Impeller will render the
   // root pass to. If partial repaint is in use, this may be a new texture which
   // is smaller than the given MTLTexture.
-  auto render_target =
-      WrapTextureWithRenderTarget(*context->GetResourceAllocator(), texture,
-                                  partial_repaint_blit_required, clip_rect);
+  ISize texture_size = {static_cast<ISize::Type>(texture.width),
+                        static_cast<ISize::Type>(texture.height)};
+  auto render_target = WrapWithRenderTarget(
+      *context->GetResourceAllocator(), FromMTLPixelFormat(texture.pixelFormat),
+      texture_size, partial_repaint_blit_required, clip_rect,
+      [texture](TextureDescriptor desc) {
+        return TextureMTL::Wrapper(desc, texture);
+      });
   if (!render_target) {
     return nullptr;
   }
