@@ -6,10 +6,9 @@
 #import <XCTest/XCTest.h>
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/SemanticsObjectTestMocks.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTouchInterceptingView_Test.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTouchInterceptingView_Test.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/SemanticsObjectTestMocks.h"
 
 FLUTTER_ASSERT_ARC
@@ -936,8 +935,8 @@ FLUTTER_ASSERT_ARC
       [[FlutterTouchInterceptingView alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];
   FlutterPlatformViewSemanticsContainer* platformViewSemanticsContainer =
       [[FlutterPlatformViewSemanticsContainer alloc] initWithBridge:bridge
-                                                                 uid:1
-                                                        platformView:platformView];
+                                                                uid:1
+                                                       platformView:platformView];
 
   object0.children = @[ object1 ];
   object0.childrenInHitTestOrder = @[ object1 ];
@@ -972,6 +971,26 @@ FLUTTER_ASSERT_ARC
   id hitTestResult = [object0 _accessibilityHitTest:point withEvent:nil];
 
   XCTAssertEqual(hitTestResult, platformView);
+}
+
+- (void)testFlutterPlatformViewSemanticsContainer {
+  fml::WeakPtrFactory<flutter::MockAccessibilityBridge> factory(
+      new flutter::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::MockAccessibilityBridge> bridge = factory.GetWeakPtr();
+  __weak FlutterTouchInterceptingView* weakPlatformView;
+  @autoreleasepool {
+    FlutterTouchInterceptingView* platformView = [[FlutterTouchInterceptingView alloc] init];
+    weakPlatformView = platformView;
+    FlutterPlatformViewSemanticsContainer* container =
+        [[FlutterPlatformViewSemanticsContainer alloc] initWithBridge:bridge
+                                                                  uid:1
+                                                         platformView:platformView];
+    XCTAssertEqualObjects(platformView.accessibilityContainer, container);
+    XCTAssertNotNil(weakPlatformView);
+  }
+  // Check if there's no more strong references to `platformView` after container and platformView
+  // are released.
+  XCTAssertNil(weakPlatformView);
 }
 
 @end

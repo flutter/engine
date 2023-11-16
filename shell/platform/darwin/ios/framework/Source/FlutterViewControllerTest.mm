@@ -17,9 +17,9 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/UIViewController+FlutterScreenAndSceneIfLoaded.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 #import "flutter/third_party/spring_animation/spring_animation.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
 
 FLUTTER_ASSERT_ARC
 
@@ -125,7 +125,6 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 @property(nonatomic, assign) BOOL keyboardAnimationIsShowing;
 @property(nonatomic, strong) VSyncClient* keyboardAnimationVSyncClient;
 @property(nonatomic, strong) VSyncClient* touchRateCorrectionVSyncClient;
-
 
 - (void)createTouchRateCorrectionVSyncClientIfNeeded;
 - (void)surfaceUpdated:(BOOL)appeared;
@@ -2033,7 +2032,6 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   [self waitForExpectationsWithTimeout:5.0 handler:nil];
 }
 
-
 - (void)testSetupKeyboardAnimationVsyncClientWillCreateNewVsyncClientForFlutterViewController {
   id bundleMock = OCMPartialMock([NSBundle mainBundle]);
   OCMStub([bundleMock objectForInfoDictionaryKey:@"CADisableMinimumFrameDurationOnPhone"])
@@ -2043,8 +2041,9 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   [[[mockDisplayLinkManager stub] andReturnValue:@(maxFrameRate)] displayRefreshRate];
   FlutterEngine* engine = [[FlutterEngine alloc] init];
   [engine runWithEntrypoint:nil];
-  FlutterViewController* viewController =
-      [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
   FlutterKeyboardAnimationCallback callback = ^(fml::TimePoint targetTime) {
   };
   [viewController setUpKeyboardAnimationVsyncClient:callback];
@@ -2067,8 +2066,9 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   [[[mockDisplayLinkManager stub] andReturnValue:@(maxFrameRate)] displayRefreshRate];
   FlutterEngine* engine = [[FlutterEngine alloc] init];
   [engine runWithEntrypoint:nil];
-  FlutterViewController* viewController =
-      [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
   [viewController createTouchRateCorrectionVSyncClientIfNeeded];
   XCTAssertNotNil(viewController.touchRateCorrectionVSyncClient);
 }
@@ -2080,8 +2080,9 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 
   FlutterEngine* engine = [[FlutterEngine alloc] init];
   [engine runWithEntrypoint:nil];
-  FlutterViewController* viewController =
-      [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
   [viewController createTouchRateCorrectionVSyncClientIfNeeded];
   VSyncClient* clientBefore = viewController.touchRateCorrectionVSyncClient;
   XCTAssertNotNil(clientBefore);
@@ -2099,8 +2100,9 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   [[[mockDisplayLinkManager stub] andReturnValue:@(maxFrameRate)] displayRefreshRate];
   FlutterEngine* engine = [[FlutterEngine alloc] init];
   [engine runWithEntrypoint:nil];
-  FlutterViewController* viewController =
-      [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
   [viewController createTouchRateCorrectionVSyncClientIfNeeded];
   XCTAssertNil(viewController.touchRateCorrectionVSyncClient);
 }
@@ -2111,8 +2113,9 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   [[[mockDisplayLinkManager stub] andReturnValue:@(maxFrameRate)] displayRefreshRate];
   FlutterEngine* engine = [[FlutterEngine alloc] init];
   [engine runWithEntrypoint:nil];
-  FlutterViewController* viewController =
-      [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
   [viewController loadView];
   [viewController viewDidLoad];
 
@@ -2153,8 +2156,8 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   XCTAssertFalse(link.isPaused);
 
   [viewController
-      triggerTouchRateCorrectionIfNeeded:[[NSSet alloc]
-                                             initWithObjects:fakeTouchEnd, fakeTouchCancelled, nil]];
+      triggerTouchRateCorrectionIfNeeded:[[NSSet alloc] initWithObjects:fakeTouchEnd,
+                                                                        fakeTouchCancelled, nil]];
   XCTAssertTrue(link.isPaused);
 
   [viewController
@@ -2166,8 +2169,9 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 - (void)testFlutterViewControllerStartKeyboardAnimationWillCreateVsyncClientCorrectly {
   FlutterEngine* engine = [[FlutterEngine alloc] init];
   [engine runWithEntrypoint:nil];
-  FlutterViewController* viewController =
-      [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
   viewController.targetViewInsetBottom = 100;
   [viewController startKeyBoardAnimation:0.25];
   XCTAssertNotNil(viewController.keyboardAnimationVSyncClient);
@@ -2177,8 +2181,9 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
     testSetupKeyboardAnimationVsyncClientWillNotCreateNewVsyncClientWhenKeyboardAnimationCallbackIsNil {
   FlutterEngine* engine = [[FlutterEngine alloc] init];
   [engine runWithEntrypoint:nil];
-  FlutterViewController* viewController =
-      [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
   [viewController setUpKeyboardAnimationVsyncClient:nil];
   XCTAssertNil(viewController.keyboardAnimationVSyncClient);
 }

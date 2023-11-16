@@ -15,9 +15,9 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
-FLUTTER_ASSERT_NOT_ARC
+FLUTTER_ASSERT_ARC
 @class FlutterPlatformViewsTestMockPlatformView;
-static FlutterPlatformViewsTestMockPlatformView* gMockPlatformView = nil;
+__weak static FlutterPlatformViewsTestMockPlatformView* gMockPlatformView = nil;
 const float kFloatCompareEpsilon = 0.001;
 
 @interface FlutterPlatformViewsTestMockPlatformView : UIView
@@ -34,7 +34,6 @@ const float kFloatCompareEpsilon = 0.001;
 
 - (void)dealloc {
   gMockPlatformView = nil;
-  [super dealloc];
 }
 
 @end
@@ -66,12 +65,6 @@ const float kFloatCompareEpsilon = 0.001;
   self.viewCreated = YES;
 }
 
-- (void)dealloc {
-  [_view release];
-  _view = nil;
-  [super dealloc];
-}
-
 @end
 
 @interface FlutterPlatformViewsTestMockFlutterPlatformFactory
@@ -82,7 +75,7 @@ const float kFloatCompareEpsilon = 0.001;
 - (NSObject<FlutterPlatformView>*)createWithFrame:(CGRect)frame
                                    viewIdentifier:(int64_t)viewId
                                         arguments:(id _Nullable)args {
-  return [[[FlutterPlatformViewsTestMockFlutterPlatformView alloc] init] autorelease];
+  return [[FlutterPlatformViewsTestMockFlutterPlatformView alloc] init];
 }
 
 @end
@@ -156,7 +149,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*is_gpu_disabled_sync_switch=*/nil);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -167,7 +160,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
           methodCallWithMethodName:@"create"
                          arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
       result);
-  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)] autorelease];
+  UIView* mockFlutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
   // Create embedded view params
   flutter::MutatorsStack stack;
@@ -212,7 +205,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*is_gpu_disabled_sync_switch=*/nil);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -229,8 +222,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
 - (void)testChildClippingViewHitTests {
   ChildClippingView* childClippingView =
-      [[[ChildClippingView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)] autorelease];
-  UIView* childView = [[[UIView alloc] initWithFrame:CGRectMake(100, 100, 100, 100)] autorelease];
+      [[ChildClippingView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)];
+  UIView* childView = [[UIView alloc] initWithFrame:CGRectMake(100, 100, 100, 100)];
   [childClippingView addSubview:childView];
 
   XCTAssertFalse([childClippingView pointInside:CGPointMake(50, 50) withEvent:nil]);
@@ -266,7 +259,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*is_gpu_disabled_sync_switch=*/nil);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -280,7 +273,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
   XCTAssertNotNil(gMockPlatformView);
 
-  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)] autorelease];
+  UIView* mockFlutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
   // Create embedded view params
   flutter::MutatorsStack stack;
@@ -338,7 +331,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*is_gpu_disabled_sync_switch=*/nil);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -352,7 +345,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
   XCTAssertNotNil(gMockPlatformView);
 
-  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)] autorelease];
+  UIView* mockFlutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
   // Create embedded view params
   flutter::MutatorsStack stack;
@@ -410,7 +403,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*is_gpu_disabled_sync_switch=*/nil);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -424,7 +417,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
   XCTAssertNotNil(gMockPlatformView);
 
-  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)] autorelease];
+  UIView* mockFlutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
   // Create embedded view params
   flutter::MutatorsStack stack;
@@ -483,7 +476,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*is_gpu_disabled_sync_switch=*/nil);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -497,7 +490,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
   XCTAssertNotNil(gMockPlatformView);
 
-  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)] autorelease];
+  UIView* mockFlutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
   // Create embedded view params
   flutter::MutatorsStack stack;
@@ -521,7 +514,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   [mockFlutterView setNeedsLayout];
   [mockFlutterView layoutIfNeeded];
 
-  NSMutableArray* originalVisualEffectViews = [[[NSMutableArray alloc] init] autorelease];
+  NSMutableArray* originalVisualEffectViews = [[NSMutableArray alloc] init];
   for (UIView* subview in childClippingView.subviews) {
     if (![subview isKindOfClass:[UIVisualEffectView class]]) {
       continue;
@@ -554,7 +547,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   [mockFlutterView setNeedsLayout];
   [mockFlutterView layoutIfNeeded];
 
-  NSMutableArray* newVisualEffectViews = [[[NSMutableArray alloc] init] autorelease];
+  NSMutableArray* newVisualEffectViews = [[NSMutableArray alloc] init];
   for (UIView* subview in childClippingView.subviews) {
     if (![subview isKindOfClass:[UIVisualEffectView class]]) {
       continue;
@@ -596,7 +589,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*is_gpu_disabled_sync_switch=*/nil);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -610,7 +603,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
   XCTAssertNotNil(gMockPlatformView);
 
-  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)] autorelease];
+  UIView* mockFlutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
   // Create embedded view params
   flutter::MutatorsStack stack;
@@ -636,7 +629,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   [mockFlutterView setNeedsLayout];
   [mockFlutterView layoutIfNeeded];
 
-  NSMutableArray* originalVisualEffectViews = [[[NSMutableArray alloc] init] autorelease];
+  NSMutableArray* originalVisualEffectViews = [[NSMutableArray alloc] init];
   for (UIView* subview in childClippingView.subviews) {
     if (![subview isKindOfClass:[UIVisualEffectView class]]) {
       continue;
@@ -667,7 +660,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   [mockFlutterView setNeedsLayout];
   [mockFlutterView layoutIfNeeded];
 
-  NSMutableArray* newVisualEffectViews = [[[NSMutableArray alloc] init] autorelease];
+  NSMutableArray* newVisualEffectViews = [[NSMutableArray alloc] init];
   for (UIView* subview in childClippingView.subviews) {
     if (![subview isKindOfClass:[UIVisualEffectView class]]) {
       continue;
@@ -733,7 +726,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*is_gpu_disabled_sync_switch=*/nil);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -747,7 +740,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
   XCTAssertNotNil(gMockPlatformView);
 
-  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)] autorelease];
+  UIView* mockFlutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
   // Create embedded view params
   flutter::MutatorsStack stack;
@@ -773,7 +766,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   [mockFlutterView setNeedsLayout];
   [mockFlutterView layoutIfNeeded];
 
-  NSMutableArray* originalVisualEffectViews = [[[NSMutableArray alloc] init] autorelease];
+  NSMutableArray* originalVisualEffectViews = [[NSMutableArray alloc] init];
   for (UIView* subview in childClippingView.subviews) {
     if (![subview isKindOfClass:[UIVisualEffectView class]]) {
       continue;
@@ -813,7 +806,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   [mockFlutterView setNeedsLayout];
   [mockFlutterView layoutIfNeeded];
 
-  NSMutableArray* newVisualEffectViews = [[[NSMutableArray alloc] init] autorelease];
+  NSMutableArray* newVisualEffectViews = [[NSMutableArray alloc] init];
   for (UIView* subview in childClippingView.subviews) {
     if (![subview isKindOfClass:[UIVisualEffectView class]]) {
       continue;
@@ -1010,7 +1003,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*is_gpu_disabled_sync_switch=*/nil);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -1024,7 +1017,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
   XCTAssertNotNil(gMockPlatformView);
 
-  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)] autorelease];
+  UIView* mockFlutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
   // Create embedded view params
   flutter::MutatorsStack stack;
@@ -1209,29 +1202,29 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   // The gaussianBlur filter is extracted from UIVisualEffectView.
   // Each test requires a new PlatformViewFilter
   // Valid UIVisualEffectView API
-  UIVisualEffectView* visualEffectView = [[[UIVisualEffectView alloc]
-      initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]] autorelease];
+  UIVisualEffectView* visualEffectView = [[UIVisualEffectView alloc]
+      initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
   PlatformViewFilter* platformViewFilter =
-      [[[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
-                                      blurRadius:5
-                                visualEffectView:visualEffectView] autorelease];
+      [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
+                                     blurRadius:5
+                               visualEffectView:visualEffectView];
   XCTAssertNotNil(platformViewFilter);
 }
 
 - (void)testApplyBackdropFilterAPIChangedInvalidUIVisualEffectView {
   [PlatformViewFilter resetPreparation];
-  UIVisualEffectView* visualEffectView = [[[UIVisualEffectView alloc] init] autorelease];
+  UIVisualEffectView* visualEffectView = [[UIVisualEffectView alloc] init];
   PlatformViewFilter* platformViewFilter =
-      [[[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
-                                      blurRadius:5
-                                visualEffectView:visualEffectView] autorelease];
+      [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
+                                     blurRadius:5
+                               visualEffectView:visualEffectView];
   XCTAssertNil(platformViewFilter);
 }
 
 - (void)testApplyBackdropFilterAPIChangedNoGaussianBlurFilter {
   [PlatformViewFilter resetPreparation];
-  UIVisualEffectView* editedUIVisualEffectView = [[[UIVisualEffectView alloc]
-      initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]] autorelease];
+  UIVisualEffectView* editedUIVisualEffectView = [[UIVisualEffectView alloc]
+      initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
   NSArray* subviews = editedUIVisualEffectView.subviews;
   for (UIView* view in subviews) {
     if ([NSStringFromClass([view class]) hasSuffix:@"BackdropView"]) {
@@ -1245,16 +1238,16 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
     }
   }
   PlatformViewFilter* platformViewFilter =
-      [[[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
-                                      blurRadius:5
-                                visualEffectView:editedUIVisualEffectView] autorelease];
+      [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
+                                     blurRadius:5
+                               visualEffectView:editedUIVisualEffectView];
   XCTAssertNil(platformViewFilter);
 }
 
 - (void)testApplyBackdropFilterAPIChangedInvalidInputRadius {
   [PlatformViewFilter resetPreparation];
-  UIVisualEffectView* editedUIVisualEffectView = [[[UIVisualEffectView alloc]
-      initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]] autorelease];
+  UIVisualEffectView* editedUIVisualEffectView = [[UIVisualEffectView alloc]
+      initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
   NSArray* subviews = editedUIVisualEffectView.subviews;
   for (UIView* view in subviews) {
     if ([NSStringFromClass([view class]) hasSuffix:@"BackdropView"]) {
@@ -1269,19 +1262,19 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   }
 
   PlatformViewFilter* platformViewFilter =
-      [[[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
-                                      blurRadius:5
-                                visualEffectView:editedUIVisualEffectView] autorelease];
+      [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
+                                     blurRadius:5
+                               visualEffectView:editedUIVisualEffectView];
   XCTAssertNil(platformViewFilter);
 }
 
 - (void)testBackdropFilterVisualEffectSubviewBackgroundColor {
-  UIVisualEffectView* visualEffectView = [[[UIVisualEffectView alloc]
-      initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]] autorelease];
+  UIVisualEffectView* visualEffectView = [[UIVisualEffectView alloc]
+      initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
   PlatformViewFilter* platformViewFilter =
-      [[[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
-                                      blurRadius:5
-                                visualEffectView:visualEffectView] autorelease];
+      [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
+                                     blurRadius:5
+                               visualEffectView:visualEffectView];
   CGColorRef visualEffectSubviewBackgroundColor = nil;
   for (UIView* view in [platformViewFilter backdropFilterView].subviews) {
     if ([NSStringFromClass([view class]) hasSuffix:@"VisualEffectSubview"]) {
@@ -1310,7 +1303,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*is_gpu_disabled_sync_switch=*/nil);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -1324,7 +1317,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
   XCTAssertNotNil(gMockPlatformView);
 
-  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)] autorelease];
+  UIView* mockFlutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
   // Create embedded view params
   flutter::MutatorsStack stack;
@@ -1366,7 +1359,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*is_gpu_disabled_sync_switch=*/nil);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -1380,7 +1373,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
   XCTAssertNotNil(gMockPlatformView);
 
-  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)] autorelease];
+  UIView* mockFlutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
   // Create embedded view params
   flutter::MutatorsStack stack;
@@ -1460,7 +1453,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*is_gpu_disabled_sync_switch=*/nil);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -1474,7 +1467,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
   XCTAssertNotNil(gMockPlatformView);
 
-  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)] autorelease];
+  UIView* mockFlutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
   // Create embedded view params
   flutter::MutatorsStack stack;
@@ -1531,7 +1524,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*is_gpu_disabled_sync_switch=*/nil);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -1545,7 +1538,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
   XCTAssertNotNil(gMockPlatformView);
 
-  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 30, 30)] autorelease];
+  UIView* mockFlutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 30, 30)];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
   // Create embedded view params.
   flutter::MutatorsStack stack;
@@ -1598,7 +1591,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*is_gpu_disabled_sync_switch=*/nil);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -1612,7 +1605,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
   XCTAssertNotNil(gMockPlatformView);
 
-  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 30, 30)] autorelease];
+  UIView* mockFlutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 30, 30)];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
   // Create embedded view params
   flutter::MutatorsStack stack;
@@ -1664,7 +1657,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*is_gpu_disabled_sync_switch=*/nil);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -1678,7 +1671,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
   XCTAssertNotNil(gMockPlatformView);
 
-  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)] autorelease];
+  UIView* mockFlutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
   // Create embedded view params
   flutter::MutatorsStack stack;
@@ -1737,7 +1730,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*is_gpu_disabled_sync_switch=*/nil);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -1751,7 +1744,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
   XCTAssertNotNil(gMockPlatformView);
 
-  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)] autorelease];
+  UIView* mockFlutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
   // Create embedded view params
   flutter::MutatorsStack stack;
@@ -1810,7 +1803,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*is_gpu_disabled_sync_switch=*/nil);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -1824,7 +1817,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
   XCTAssertNotNil(gMockPlatformView);
 
-  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)] autorelease];
+  UIView* mockFlutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
   // Create embedded view params
   flutter::MutatorsStack stack;
@@ -1884,7 +1877,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*is_gpu_disabled_sync_switch=*/nil);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -1916,14 +1909,14 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   }
 
   // Before setting flutter view controller, events are not dispatched.
-  NSSet* touches1 = [[[NSSet alloc] init] autorelease];
+  NSSet* touches1 = [[NSSet alloc] init];
   id event1 = OCMClassMock([UIEvent class]);
   id mockFlutterViewContoller = OCMClassMock([FlutterViewController class]);
   [forwardGectureRecognizer touchesBegan:touches1 withEvent:event1];
   OCMReject([mockFlutterViewContoller touchesBegan:touches1 withEvent:event1]);
 
   // Set flutter view controller allows events to be dispatched.
-  NSSet* touches2 = [[[NSSet alloc] init] autorelease];
+  NSSet* touches2 = [[NSSet alloc] init];
   id event2 = OCMClassMock([UIEvent class]);
   flutterPlatformViewsController->SetFlutterViewController(mockFlutterViewContoller);
   [forwardGectureRecognizer touchesBegan:touches2 withEvent:event2];
@@ -1948,7 +1941,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*is_gpu_disabled_sync_switch=*/nil);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -1983,7 +1976,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
     // ***** Sequence 1, finishing touch event with touchEnded ***** //
     flutterPlatformViewsController->SetFlutterViewController(mockFlutterViewContoller);
 
-    NSSet* touches1 = [[[NSSet alloc] init] autorelease];
+    NSSet* touches1 = [[NSSet alloc] init];
     id event1 = OCMClassMock([UIEvent class]);
     [forwardGectureRecognizer touchesBegan:touches1 withEvent:event1];
     OCMVerify([mockFlutterViewContoller touchesBegan:touches1 withEvent:event1]);
@@ -1991,23 +1984,23 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
     flutterPlatformViewsController->SetFlutterViewController(nil);
 
     // Allow the touch events to finish
-    NSSet* touches2 = [[[NSSet alloc] init] autorelease];
+    NSSet* touches2 = [[NSSet alloc] init];
     id event2 = OCMClassMock([UIEvent class]);
     [forwardGectureRecognizer touchesMoved:touches2 withEvent:event2];
     OCMVerify([mockFlutterViewContoller touchesMoved:touches2 withEvent:event2]);
 
-    NSSet* touches3 = [[[NSSet alloc] init] autorelease];
+    NSSet* touches3 = [[NSSet alloc] init];
     id event3 = OCMClassMock([UIEvent class]);
     [forwardGectureRecognizer touchesEnded:touches3 withEvent:event3];
     OCMVerify([mockFlutterViewContoller touchesEnded:touches3 withEvent:event3]);
 
     // Now the 2nd touch sequence should not be allowed.
-    NSSet* touches4 = [[[NSSet alloc] init] autorelease];
+    NSSet* touches4 = [[NSSet alloc] init];
     id event4 = OCMClassMock([UIEvent class]);
     [forwardGectureRecognizer touchesBegan:touches4 withEvent:event4];
     OCMReject([mockFlutterViewContoller touchesBegan:touches4 withEvent:event4]);
 
-    NSSet* touches5 = [[[NSSet alloc] init] autorelease];
+    NSSet* touches5 = [[NSSet alloc] init];
     id event5 = OCMClassMock([UIEvent class]);
     [forwardGectureRecognizer touchesEnded:touches5 withEvent:event5];
     OCMReject([mockFlutterViewContoller touchesEnded:touches5 withEvent:event5]);
@@ -2017,7 +2010,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
     // ***** Sequence 2, finishing touch event with touchCancelled ***** //
     flutterPlatformViewsController->SetFlutterViewController(mockFlutterViewContoller);
 
-    NSSet* touches1 = [[[NSSet alloc] init] autorelease];
+    NSSet* touches1 = [[NSSet alloc] init];
     id event1 = OCMClassMock([UIEvent class]);
     [forwardGectureRecognizer touchesBegan:touches1 withEvent:event1];
     OCMVerify([mockFlutterViewContoller touchesBegan:touches1 withEvent:event1]);
@@ -2025,23 +2018,23 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
     flutterPlatformViewsController->SetFlutterViewController(nil);
 
     // Allow the touch events to finish
-    NSSet* touches2 = [[[NSSet alloc] init] autorelease];
+    NSSet* touches2 = [[NSSet alloc] init];
     id event2 = OCMClassMock([UIEvent class]);
     [forwardGectureRecognizer touchesMoved:touches2 withEvent:event2];
     OCMVerify([mockFlutterViewContoller touchesMoved:touches2 withEvent:event2]);
 
-    NSSet* touches3 = [[[NSSet alloc] init] autorelease];
+    NSSet* touches3 = [[NSSet alloc] init];
     id event3 = OCMClassMock([UIEvent class]);
     [forwardGectureRecognizer touchesCancelled:touches3 withEvent:event3];
     OCMVerify([mockFlutterViewContoller forceTouchesCancelled:touches3]);
 
     // Now the 2nd touch sequence should not be allowed.
-    NSSet* touches4 = [[[NSSet alloc] init] autorelease];
+    NSSet* touches4 = [[NSSet alloc] init];
     id event4 = OCMClassMock([UIEvent class]);
     [forwardGectureRecognizer touchesBegan:touches4 withEvent:event4];
     OCMReject([mockFlutterViewContoller touchesBegan:touches4 withEvent:event4]);
 
-    NSSet* touches5 = [[[NSSet alloc] init] autorelease];
+    NSSet* touches5 = [[NSSet alloc] init];
     id event5 = OCMClassMock([UIEvent class]);
     [forwardGectureRecognizer touchesEnded:touches5 withEvent:event5];
     OCMReject([mockFlutterViewContoller touchesEnded:touches5 withEvent:event5]);
@@ -2069,7 +2062,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*is_gpu_disabled_sync_switch=*/nil);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -2180,7 +2173,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*is_gpu_disabled_sync_switch=*/nil);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -2242,7 +2235,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*is_gpu_disabled_sync_switch=*/nil);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -2303,11 +2296,11 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*worker_task_runner=*/nil,
       /*is_gpu_disabled_sync_switch=*/nil);
 
-  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)] autorelease];
+  UIView* mockFlutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -2353,11 +2346,11 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*worker_task_runner=*/nil,
       /*is_gpu_disabled_sync_switch=*/nil);
 
-  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)] autorelease];
+  UIView* mockFlutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -2409,11 +2402,11 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*worker_task_runner=*/nil,
       /*is_gpu_disabled_sync_switch=*/nil);
 
-  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)] autorelease];
+  UIView* mockFlutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -2507,11 +2500,11 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*worker_task_runner=*/nil,
       /*is_gpu_disabled_sync_switch=*/nil);
 
-  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)] autorelease];
+  UIView* mockFlutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -2605,11 +2598,11 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*worker_task_runner=*/nil,
       /*is_gpu_disabled_sync_switch=*/nil);
 
-  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)] autorelease];
+  UIView* mockFlutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -2669,8 +2662,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
 - (void)testHasFirstResponderInViewHierarchySubtree_viewItselfBecomesFirstResponder {
   // For view to become the first responder, it must be a descendant of a UIWindow
-  UIWindow* window = [[[UIWindow alloc] init] autorelease];
-  UITextField* textField = [[[UITextField alloc] init] autorelease];
+  UIWindow* window = [[UIWindow alloc] init];
+  UITextField* textField = [[UITextField alloc] init];
   [window addSubview:textField];
 
   [textField becomeFirstResponder];
@@ -2683,10 +2676,10 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
 - (void)testHasFirstResponderInViewHierarchySubtree_descendantViewBecomesFirstResponder {
   // For view to become the first responder, it must be a descendant of a UIWindow
-  UIWindow* window = [[[UIWindow alloc] init] autorelease];
-  UIView* view = [[[UIView alloc] init] autorelease];
-  UIView* childView = [[[UIView alloc] init] autorelease];
-  UITextField* textField = [[[UITextField alloc] init] autorelease];
+  UIWindow* window = [[UIWindow alloc] init];
+  UIView* view = [[UIView alloc] init];
+  UIView* childView = [[UIView alloc] init];
+  UITextField* textField = [[UITextField alloc] init];
   [window addSubview:view];
   [view addSubview:childView];
   [childView addSubview:textField];
@@ -2700,8 +2693,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 }
 
 - (void)testFlutterClippingMaskViewPoolReuseViewsAfterRecycle {
-  FlutterClippingMaskViewPool* pool =
-      [[[FlutterClippingMaskViewPool alloc] initWithCapacity:2] autorelease];
+  FlutterClippingMaskViewPool* pool = [[FlutterClippingMaskViewPool alloc] initWithCapacity:2];
   FlutterClippingMaskView* view1 = [pool getMaskViewWithFrame:CGRectZero];
   FlutterClippingMaskView* view2 = [pool getMaskViewWithFrame:CGRectZero];
   [pool insertViewToPoolIfNeeded:view1];
@@ -2718,8 +2710,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 }
 
 - (void)testFlutterClippingMaskViewPoolAllocsNewMaskViewsAfterReachingCapacity {
-  FlutterClippingMaskViewPool* pool =
-      [[[FlutterClippingMaskViewPool alloc] initWithCapacity:2] autorelease];
+  FlutterClippingMaskViewPool* pool = [[FlutterClippingMaskViewPool alloc] initWithCapacity:2];
   FlutterClippingMaskView* view1 = [pool getMaskViewWithFrame:CGRectZero];
   FlutterClippingMaskView* view2 = [pool getMaskViewWithFrame:CGRectZero];
   FlutterClippingMaskView* view3 = [pool getMaskViewWithFrame:CGRectZero];
@@ -2728,18 +2719,14 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 }
 
 - (void)testMaskViewsReleasedWhenPoolIsReleased {
-  UIView* retainedView;
+  __weak UIView* weakView;
   @autoreleasepool {
-    FlutterClippingMaskViewPool* pool =
-        [[[FlutterClippingMaskViewPool alloc] initWithCapacity:2] autorelease];
+    FlutterClippingMaskViewPool* pool = [[FlutterClippingMaskViewPool alloc] initWithCapacity:2];
     FlutterClippingMaskView* view = [pool getMaskViewWithFrame:CGRectZero];
-    retainedView = [view retain];
-    XCTAssertGreaterThan(retainedView.retainCount, 1u);
+    weakView = view;
+    XCTAssertNotNil(weakView);
   }
-  // The only retain left is our manual retain called inside the autorelease pool, meaning the
-  // maskViews are dealloc'd.
-  XCTAssertEqual(retainedView.retainCount, 1u);
-  [retainedView release];
+  XCTAssertNil(weakView);
 }
 
 - (void)testClipMaskViewIsReused {
@@ -2760,7 +2747,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*is_gpu_disabled_sync_switch=*/nil);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -2773,7 +2760,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       result);
 
   XCTAssertNotNil(gMockPlatformView);
-  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)] autorelease];
+  UIView* mockFlutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
   // Create embedded view params
   flutter::MutatorsStack stack1;
@@ -2842,7 +2829,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*is_gpu_disabled_sync_switch=*/nil);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -2865,7 +2852,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   UIView* view2 = gMockPlatformView;
 
   XCTAssertNotNil(gMockPlatformView);
-  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)] autorelease];
+  UIView* mockFlutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
   // Create embedded view params
   flutter::MutatorsStack stack1;
@@ -2941,11 +2928,11 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*worker_task_runner=*/nil,
       /*is_gpu_disabled_sync_switch=*/nil);
 
-  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)] autorelease];
+  UIView* mockFlutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -3050,7 +3037,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*is_gpu_disabled_sync_switch=*/nil);
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
-      [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
   flutterPlatformViewsController->RegisterViewFactory(
       factory, @"MockFlutterPlatformView",
       FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -3061,7 +3048,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
           methodCallWithMethodName:@"create"
                          arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
       result);
-  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)] autorelease];
+  UIView* mockFlutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
   // Create embedded view params
   flutter::MutatorsStack stack;
@@ -3092,7 +3079,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
   flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface));
 
-  UIView* someView = [[[UIView alloc] init] autorelease];
+  UIView* someView = [[UIView alloc] init];
   [mockFlutterView addSubview:someView];
 
   flutterPlatformViewsController->Reset();
@@ -3101,9 +3088,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 }
 
 - (void)testFlutterTouchInterceptingViewLinksToAccessibilityContainer {
-  FlutterTouchInterceptingView* touchInteceptorView =
-      [[[FlutterTouchInterceptingView alloc] init] autorelease];
-  NSObject* container = [[[NSObject alloc] init] autorelease];
+  FlutterTouchInterceptingView* touchInteceptorView = [[FlutterTouchInterceptingView alloc] init];
+  NSObject* container = [[NSObject alloc] init];
   [touchInteceptorView setFlutterAccessibilityContainer:container];
   XCTAssertEqualObjects([touchInteceptorView accessibilityContainer], container);
 }
