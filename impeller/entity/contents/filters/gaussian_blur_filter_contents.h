@@ -30,6 +30,8 @@ class GaussianBlurFilterContents final : public FilterContents {
       const Entity& entity,
       const Matrix& effect_transform) const override;
 
+  /// Given a sigma (standard deviation) calculate the blur radius (1/2 the
+  /// kernel size).
   static Scalar CalculateBlurRadius(Scalar sigma);
 
   /// Calculate the UV coordinates for rendering the filter_input.

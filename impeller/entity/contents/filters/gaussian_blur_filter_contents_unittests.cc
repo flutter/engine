@@ -175,8 +175,8 @@ TEST_P(GaussianBlurFilterContentsTest,
       //                  gaussian_blur_filter_contents.cc.
       // EXPECT_TRUE(RectNear(result_coverage.value(),
       //                      contents_coverage.value()));
-      // EXPECT_TRUE(RectNear(result_coverage.value(),
-      //                      Rect::MakeLTRB(99, 199, 201, 301)));
+      EXPECT_TRUE(RectNear(contents_coverage.value(),
+                           Rect::MakeLTRB(99, 199, 201, 301)));
       EXPECT_TRUE(RectNear(result_coverage.value(),
                            Rect::MakeLTRB(100, 200, 200, 300)));
     }
@@ -213,8 +213,8 @@ TEST_P(GaussianBlurFilterContentsTest,
       //                  gaussian_blur_filter_contents.cc.
       // EXPECT_TRUE(RectNear(result_coverage.value(),
       //                      contents_coverage.value()));
-      // EXPECT_TRUE(RectNear(result_coverage.value(),
-      //                      Rect::MakeLTRB(99, 199, 201, 301)));
+      EXPECT_TRUE(RectNear(contents_coverage.value(),
+                           Rect::MakeLTRB(99, 99, 401, 501)));
       EXPECT_TRUE(RectNear(result_coverage.value(),
                            Rect::MakeLTRB(100, 100, 400, 500)));
     }
