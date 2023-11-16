@@ -571,16 +571,16 @@ void BM_SaveLayer(benchmark::State& state,
   SAVE_LAYER_BENCHMARKS(BACKEND, ATTRIBUTES)
 
 #define RUN_DISPLAYLIST_BENCHMARKS(BACKEND)                              \
-  STROKE_BENCHMARKS(BACKEND, kStrokedStyle_Flag)                         \
-  STROKE_BENCHMARKS(BACKEND, kStrokedStyle_Flag | kAntiAliasing_Flag)    \
-  STROKE_BENCHMARKS(BACKEND, kStrokedStyle_Flag | kHairlineStroke_Flag)  \
-  STROKE_BENCHMARKS(BACKEND, kStrokedStyle_Flag | kHairlineStroke_Flag | \
-                             kAntiAliasing_Flag)                         \
-  FILL_BENCHMARKS(BACKEND, kFilledStyle_Flag)                            \
-  FILL_BENCHMARKS(BACKEND, kFilledStyle_Flag | kAntiAliasing_Flag)       \
-  ANTI_ALIASING_BENCHMARKS(BACKEND, kEmpty_Flag)                         \
-  ANTI_ALIASING_BENCHMARKS(BACKEND, kAntiAliasing_Flag)                  \
-  OTHER_BENCHMARKS(BACKEND, kEmpty_Flag)
+  STROKE_BENCHMARKS(BACKEND, kStrokedStyle)                         \
+  STROKE_BENCHMARKS(BACKEND, kStrokedStyle | kAntiAliasing)    \
+  STROKE_BENCHMARKS(BACKEND, kStrokedStyle | kHairlineStroke)  \
+  STROKE_BENCHMARKS(BACKEND, kStrokedStyle| kHairlineStroke | \
+                             kAntiAliasing)                         \
+  FILL_BENCHMARKS(BACKEND, kFilledStyle)                            \
+  FILL_BENCHMARKS(BACKEND, kFilledStyle | kAntiAliasing)       \
+  ANTI_ALIASING_BENCHMARKS(BACKEND, kEmpty)                         \
+  ANTI_ALIASING_BENCHMARKS(BACKEND, kAntiAliasing)                  \
+  OTHER_BENCHMARKS(BACKEND, kEmpty)
 
 // clang-format on
 
