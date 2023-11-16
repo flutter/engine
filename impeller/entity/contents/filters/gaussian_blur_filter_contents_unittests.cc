@@ -169,8 +169,8 @@ TEST_P(GaussianBlurFilterContentsTest,
     if (result_coverage.has_value() && contents_coverage.has_value()) {
       EXPECT_TRUE(RectNear(contents_coverage.value(),
                            Rect::MakeLTRB(99, 199, 201, 301)));
-      EXPECT_TRUE(RectNear(result_coverage.value(),
-                           Rect::MakeLTRB(99, 199, 201, 301)));
+      EXPECT_TRUE(
+          RectNear(result_coverage.value(), Rect::MakeLTRB(99, 199, 201, 301)));
     }
   }
 }
@@ -202,8 +202,8 @@ TEST_P(GaussianBlurFilterContentsTest,
     if (result_coverage.has_value() && contents_coverage.has_value()) {
       EXPECT_TRUE(RectNear(contents_coverage.value(),
                            Rect::MakeLTRB(99, 99, 401, 501)));
-      EXPECT_TRUE(RectNear(result_coverage.value(),
-                           Rect::MakeLTRB(99, 99, 401, 501)));
+      EXPECT_TRUE(
+          RectNear(result_coverage.value(), Rect::MakeLTRB(99, 99, 401, 501)));
     }
   }
 }
