@@ -71,7 +71,7 @@ class SceneContext {
       // Apply default ContentContextOptions to the descriptor.
       if (desc.has_value()) {
         SceneContextOptions{}.ApplyToPipelineDescriptor(
-            *context.GetCapabilities(), desc.get_value());
+            *context.GetCapabilities(), desc.value());
         variants_[{}] = std::make_unique<PipelineT>(context, desc);
       }
       FML_UNREACHABLE()
