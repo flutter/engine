@@ -23,6 +23,7 @@ class RenderPassMTL final : public RenderPass {
   id<MTLCommandBuffer> buffer_ = nil;
   MTLRenderPassDescriptor* desc_ = nil;
   std::string label_;
+  bool deferred_drawable_ = false;
   bool is_valid_ = false;
 
   RenderPassMTL(std::weak_ptr<const Context> context,

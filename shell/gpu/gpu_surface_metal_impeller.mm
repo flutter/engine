@@ -96,24 +96,15 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
   }
 
   auto* mtl_layer = (CAMetalLayer*)layer;
-
-  auto drawable = impeller::SurfaceMTL::GetMetalDrawableAndValidate(
-      impeller_renderer_->GetContext(), mtl_layer);
-  if (!drawable) {
+  if (!mtl_layer) {
     return nullptr;
   }
-  if (Settings::kSurfaceDataAccessible) {
-    last_texture_.reset([drawable.texture retain]);
-  }
 
-  id<MTLTexture> last_texture = static_cast<id<MTLTexture>>(last_texture_);
   SurfaceFrame::SubmitCallback submit_callback =
       fml::MakeCopyable([this,                           //
                          renderer = impeller_renderer_,  //
                          aiks_context = aiks_context_,   //
-                         drawable,                       //
-                         last_texture                    //
-  ](SurfaceFrame& surface_frame, DlCanvas* canvas) mutable -> bool {
+                         mtl_layer](SurfaceFrame& surface_frame, DlCanvas* canvas) mutable -> bool {
         if (!aiks_context) {
           return false;
         }
@@ -124,30 +115,9 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
           return false;
         }
 
-        if (!disable_partial_repaint_) {
-          uintptr_t texture = reinterpret_cast<uintptr_t>(last_texture);
-
-          for (auto& entry : damage_) {
-            if (entry.first != texture) {
-              // Accumulate damage for other framebuffers
-              if (surface_frame.submit_info().frame_damage) {
-                entry.second.join(*surface_frame.submit_info().frame_damage);
-              }
-            }
-          }
-          // Reset accumulated damage for current framebuffer
-          damage_[texture] = SkIRect::MakeEmpty();
-        }
-
-        std::optional<impeller::IRect> clip_rect;
-        if (surface_frame.submit_info().buffer_damage.has_value()) {
-          auto buffer_damage = surface_frame.submit_info().buffer_damage;
-          clip_rect = impeller::IRect::MakeXYWH(buffer_damage->x(), buffer_damage->y(),
-                                                buffer_damage->width(), buffer_damage->height());
-        }
-
-        auto surface = impeller::SurfaceMTL::MakeFromMetalLayerDrawable(
-            impeller_renderer_->GetContext(), drawable, clip_rect);
+        std::optional<impeller::IRect> clip_rect = std::nullopt;
+        auto surface = impeller::SurfaceMTL::MakeFromMetalLayer(impeller_renderer_->GetContext(),
+                                                                mtl_layer, clip_rect);
 
         if (clip_rect && (clip_rect->size.width == 0 || clip_rect->size.height == 0)) {
           return surface->Present();
@@ -168,19 +138,6 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
       });
 
   SurfaceFrame::FramebufferInfo framebuffer_info;
-  framebuffer_info.supports_readback = true;
-
-  if (!disable_partial_repaint_) {
-    // Provide accumulated damage to rasterizer (area in current framebuffer that lags behind
-    // front buffer)
-    uintptr_t texture = reinterpret_cast<uintptr_t>(drawable.texture);
-    auto i = damage_.find(texture);
-    if (i != damage_.end()) {
-      framebuffer_info.existing_damage = i->second;
-    }
-    framebuffer_info.supports_partial_repaint = true;
-  }
-
   return std::make_unique<SurfaceFrame>(nullptr,           // surface
                                         framebuffer_info,  // framebuffer info
                                         submit_callback,   // submit callback
@@ -272,18 +229,6 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
       });
 
   SurfaceFrame::FramebufferInfo framebuffer_info;
-  framebuffer_info.supports_readback = true;
-
-  if (!disable_partial_repaint_) {
-    // Provide accumulated damage to rasterizer (area in current framebuffer that lags behind
-    // front buffer)
-    uintptr_t texture = reinterpret_cast<uintptr_t>(mtl_texture);
-    auto i = damage_.find(texture);
-    if (i != damage_.end()) {
-      framebuffer_info.existing_damage = i->second;
-    }
-    framebuffer_info.supports_partial_repaint = true;
-  }
 
   return std::make_unique<SurfaceFrame>(nullptr,           // surface
                                         framebuffer_info,  // framebuffer info

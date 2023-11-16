@@ -32,21 +32,22 @@ TEST(TextureMTL, CreateFromDrawable) {
   auto drawable_texture =
       CreateTextureFromDrawableFuture(desc, drawable_future);
 
+  auto& mtl_texture = TextureMTL::Cast(*drawable_texture);
   ASSERT_TRUE(drawable_texture->IsValid());
-  EXPECT_TRUE(drawable_texture->IsDrawable());
+  EXPECT_TRUE(mtl_texture.IsDrawable());
 
   // Spawn a thread and acquire the drawable in the thread.
-  auto thread = std::thread([&drawable_texture]() {
+  auto thread = std::thread([&mtl_texture]() {
     // Force the drawable to be acquired.
-    drawable_texture->GetMTLTexture();
+    mtl_texture.GetMTLTexture();
   });
   thread.join();
   // Block until drawable is acquired.
   EXPECT_TRUE(drawable_future.get() != nil);
   // Drawable is cached.
-  EXPECT_TRUE(drawable_texture->GetMTLTexture() != nil);
+  EXPECT_TRUE(mtl_texture.GetMTLTexture() != nil);
   // Once more for good measure.
-  EXPECT_TRUE(drawable_texture->GetMTLTexture() != nil);
+  EXPECT_TRUE(mtl_texture.GetMTLTexture() != nil);
 }
 
 }  // namespace testing

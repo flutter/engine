@@ -45,8 +45,10 @@ static bool ConfigureResolveTextureAttachment(
     return true;
   }
 
-  attachment.resolveTexture =
-      TextureMTL::Cast(*desc.resolve_texture).GetMTLTexture();
+  if (!TextureMTL::Cast(*desc.resolve_texture).IsDrawable()) {
+    attachment.resolveTexture =
+        TextureMTL::Cast(*desc.resolve_texture).GetMTLTexture();
+  }
 
   return true;
 }
@@ -142,6 +144,9 @@ RenderPassMTL::RenderPassMTL(std::weak_ptr<const Context> context,
   if (!buffer_ || !desc_ || !render_target_.IsValid()) {
     return;
   }
+  if (TextureMTL::Cast(*target.GetRenderTargetTexture()).IsDrawable()) {
+    deferred_drawable_ = true;
+  }
   is_valid_ = true;
 }
 
@@ -178,6 +183,12 @@ bool RenderPassMTL::OnEncodeCommands(const Context& context) const {
   // at a time.
   fml::ScopedCleanupClosure auto_end(
       [render_command_encoder]() { [render_command_encoder endEncoding]; });
+
+  if (deferred_drawable_) {
+    desc_.colorAttachments[0].resolveTexture =
+        TextureMTL::Cast(*render_target_.GetRenderTargetTexture())
+            .GetMTLTexture();
+  }
 
   return EncodeCommands(context.GetResourceAllocator(), render_command_encoder);
 }

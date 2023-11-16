@@ -38,7 +38,7 @@ std::shared_future<id<CAMetalDrawable>> GetDrawableDeferred(
   return std::shared_future<id<CAMetalDrawable>>(std::move(future));
 }
 
-std::shared_ptr<TextureMTL> CreateTextureFromDrawableFuture(
+std::shared_ptr<Texture> CreateTextureFromDrawableFuture(
     TextureDescriptor desc,
     const std::shared_future<id<CAMetalDrawable>>& drawble_future) {
   return std::make_shared<TextureMTL>(

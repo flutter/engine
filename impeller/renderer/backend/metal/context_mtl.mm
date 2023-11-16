@@ -89,8 +89,7 @@ ContextMTL::ContextMTL(
 
   // Worker task runner.
   {
-    raster_message_loop_ = fml::ConcurrentMessageLoop::Create(
-        std::min(4u, std::thread::hardware_concurrency()));
+    raster_message_loop_ = fml::ConcurrentMessageLoop::Create(1u);
     raster_message_loop_->PostTaskToAllWorkers([]() {
       // See https://github.com/flutter/flutter/issues/65752
       // Intentionally opt out of QoS for raster task workloads.

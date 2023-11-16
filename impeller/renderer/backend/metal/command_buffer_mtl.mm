@@ -12,6 +12,7 @@
 #include "impeller/renderer/backend/metal/compute_pass_mtl.h"
 #include "impeller/renderer/backend/metal/context_mtl.h"
 #include "impeller/renderer/backend/metal/render_pass_mtl.h"
+#include "impeller/renderer/backend/metal/texture_mtl.h"
 
 namespace impeller {
 
@@ -202,26 +203,30 @@ bool CommandBufferMTL::EncodeAndSubmit(
 #endif  // IMPELLER_DEBUG
 
   auto worker_task_runner = ContextMTL::Cast(*context).GetWorkerTaskRunner();
-  auto mtl_render_pass = static_cast<RenderPassMTL*>(render_pass.get());
 
-  // Render command encoder creation has been observed to exceed the stack size
-  // limit for worker threads, and therefore is intentionally constructed on the
-  // raster thread.
-  auto render_command_encoder =
-      [buffer renderCommandEncoderWithDescriptor:mtl_render_pass->desc_];
-  if (!render_command_encoder) {
-    return false;
-  }
-
-  auto task = fml::MakeCopyable(
-      [render_pass, buffer, render_command_encoder, weak_context = context_]() {
+  auto task =
+      fml::MakeCopyable([render_pass, buffer, weak_context = context_]() {
         auto context = weak_context.lock();
         if (!context) {
-          [render_command_encoder endEncoding];
+          return;
+        }
+        auto mtl_render_pass = static_cast<RenderPassMTL*>(render_pass.get());
+        if (mtl_render_pass->deferred_drawable_) {
+          mtl_render_pass->desc_.colorAttachments[0].resolveTexture =
+              TextureMTL::Cast(
+                  *mtl_render_pass->render_target_.GetRenderTargetTexture())
+                  .GetMTLTexture();
+        }
+
+        // Render command encoder creation has been observed to exceed the stack
+        // size limit for worker threads, and therefore is intentionally
+        // constructed on the raster thread.
+        auto render_command_encoder =
+            [buffer renderCommandEncoderWithDescriptor:mtl_render_pass->desc_];
+        if (!render_command_encoder) {
           return;
         }
 
-        auto mtl_render_pass = static_cast<RenderPassMTL*>(render_pass.get());
         if (!mtl_render_pass->label_.empty()) {
           [render_command_encoder setLabel:@(mtl_render_pass->label_.c_str())];
         }
