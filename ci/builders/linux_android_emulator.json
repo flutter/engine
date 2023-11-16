@@ -3,7 +3,9 @@
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Linux"
+                "os=Linux",
+                "kvm=\"1\"",
+                "cores=8"
             ],
             "gn": [
                 "--android",
@@ -63,7 +65,9 @@
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Linux"
+                "os=Linux",
+                "kvm=\"1\"",
+                "cores=8"
             ],
             "gn": [
                 "--android",
