@@ -218,11 +218,11 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   Vector2 downsample =
       CalculateIntegerScale(desired_scale, input_snapshot->texture->GetSize());
 
-  ISize expanded_size(
+  Size expanded_size(
       input_snapshot->texture->GetSize().width + 2.0 * blur_radius,
       input_snapshot->texture->GetSize().height + 2.0 * blur_radius);
-  ISize subpass_size = ISize(expanded_size.width / downsample.x,
-                             expanded_size.height / downsample.y);
+  ISize subpass_size = ISize(round(expanded_size.width / downsample.x),
+                             round(expanded_size.height / downsample.y));
 
   Quad uvs =
       CalculateUVs(inputs[0], entity, input_snapshot->texture->GetSize());
@@ -257,20 +257,13 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
       MinMagFilter::kLinear, SamplerAddressMode::kClampToEdge);
 
   return Entity::FromSnapshot(
-      Snapshot{
-          .texture = pass1_out_texture,
-          .transform =
-              entity.GetTransformation() *
-              // There has to be an offset somewhere to account for the extra blur radius
-              //Matrix::MakeTranslation({-20, -20, 0}) *
-              Matrix::MakeScale(
-                  {input_snapshot->texture->GetSize().width /
-                       static_cast<Scalar>(pass1_out_texture->GetSize().width),
-                   input_snapshot->texture->GetSize().height /
-                       static_cast<Scalar>(pass1_out_texture->GetSize().height),
-                   1.0}),
-          .sampler_descriptor = sampler_desc,
-          .opacity = input_snapshot->opacity},
+      Snapshot{.texture = pass3_out_texture,
+               .transform =
+                   entity.GetTransformation() *
+                   Matrix::MakeTranslation({-blur_radius, -blur_radius, 0}) *
+                   Matrix::MakeScale({downsample.x, downsample.y, 1.0}),
+               .sampler_descriptor = sampler_desc,
+               .opacity = input_snapshot->opacity},
       entity.GetBlendMode(), entity.GetClipDepth());
 }
 
