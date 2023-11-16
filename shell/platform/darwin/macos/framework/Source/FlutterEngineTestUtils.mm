@@ -4,10 +4,43 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngineTestUtils.h"
+
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 
 #include "flutter/testing/testing.h"
+
+// Fake pasteboard implementation to allow tests to work in environments without a real
+// pasteboard.
+@interface FakePasteboard : FlutterPasteboard
+@end
+
+@implementation FakePasteboard {
+  NSString* _result;
+}
+
+- (instancetype)init {
+  self = [super init];
+  if (self != nil) {
+    _result = nil;
+  }
+  return self;
+}
+
+- (NSInteger)clearContents {
+  return 1;
+}
+
+- (NSString*)stringForType:(NSPasteboardType)dataType {
+  return _result;
+}
+
+- (BOOL)setString:(NSString*)string forType:(NSPasteboardType)dataType {
+  _result = string;
+  return YES;
+}
+
+@end
 
 namespace flutter::testing {
 
@@ -45,26 +78,19 @@ void FlutterEngineTest::AddNativeCallback(const char* name, Dart_NativeFunction 
 }
 
 id CreateMockFlutterEngine(NSString* pasteboardString) {
-  {
-    NSString* fixtures = @(testing::GetFixturesPath());
-    FlutterDartProject* project = [[FlutterDartProject alloc]
-        initWithAssetsPath:fixtures
-               ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
-    FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test"
-                                                        project:project
-                                         allowHeadlessExecution:true];
+  NSString* fixtures = @(testing::GetFixturesPath());
+  FlutterDartProject* project = [[FlutterDartProject alloc]
+      initWithAssetsPath:fixtures
+             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test"
+                                                      project:project
+                                       allowHeadlessExecution:true];
 
-    // Mock pasteboard so that this test will work in environments without a
-    // real pasteboard.
-    id pasteboardMock = OCMClassMock([NSPasteboard class]);
-    OCMExpect([pasteboardMock stringForType:[OCMArg any]]).andDo(^(NSInvocation* invocation) {
-      NSString* returnValue = pasteboardString.length > 0 ? pasteboardString : nil;
-      [invocation setReturnValue:&returnValue];
-    });
-    id engineMock = OCMPartialMock(engine);
-    OCMStub([engineMock pasteboard]).andReturn(pasteboardMock);
-    return engineMock;
-  }
+  FakePasteboard* pasteboardMock = [[FakePasteboard alloc] init];
+  [pasteboardMock setString:pasteboardString forType:NSPasteboardTypeString];
+  engine.pasteboard = pasteboardMock;
+  id engineMock = OCMPartialMock(engine);
+  return engineMock;
 }
 
 MockFlutterEngineTest::MockFlutterEngineTest() = default;
