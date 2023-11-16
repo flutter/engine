@@ -691,7 +691,7 @@ void Canvas::DrawAtlas(const std::shared_ptr<Image>& atlas,
   }
 
   std::shared_ptr<AtlasContents> contents = std::make_shared<AtlasContents>();
-  contents->SetColors({});
+  contents->SetColors(std::move(colors));
   contents->SetTransforms(std::move(transforms));
   contents->SetTextureCoordinates(std::move(texture_coordinates));
   contents->SetTexture(atlas->GetTexture());
