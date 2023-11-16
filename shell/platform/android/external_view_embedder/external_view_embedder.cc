@@ -18,7 +18,11 @@ AndroidExternalViewEmbedder::AndroidExternalViewEmbedder(
       jni_facade_(std::move(jni_facade)),
       surface_factory_(std::move(surface_factory)),
       surface_pool_(std::make_unique<SurfacePool>()),
-      task_runners_(task_runners) {}
+      task_runners_(task_runners) {
+  // This is a dummy addition to test `runIfNot`.
+  // https://github.com/flutter/flutter/issues/138559
+  FML_CHECK(jni_facade_);
+}
 
 // |ExternalViewEmbedder|
 void AndroidExternalViewEmbedder::PrerollCompositeEmbeddedView(

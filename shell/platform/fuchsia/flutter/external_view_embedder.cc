@@ -64,6 +64,10 @@ ExternalViewEmbedder::ExternalViewEmbedder(
                                     *input_interceptor_transform_);
     child_transforms_.emplace_back(*input_interceptor_transform_);
   }
+
+  // This is a dummy addition to test `runIfNot`.
+  // https://github.com/flutter/flutter/issues/138559
+  FML_CHECK(surface_producer);
 }
 
 ExternalViewEmbedder::~ExternalViewEmbedder() = default;
