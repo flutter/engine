@@ -13,6 +13,7 @@
 #include "impeller/core/formats.h"
 #include "impeller/core/texture_descriptor.h"
 #include "impeller/geometry/color.h"
+#include "flutter/fml/build_config.h"
 
 namespace impeller {
 
