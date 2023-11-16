@@ -23,7 +23,7 @@ SamplerDescriptor MakeSamplerDescriptor(MinMagFilter filter,
   sampler_desc.min_filter = filter;
   sampler_desc.mag_filter = filter;
   sampler_desc.width_address_mode = address_mode;
-  sampler_desc.width_address_mode = address_mode;
+  sampler_desc.height_address_mode = address_mode;
   return sampler_desc;
 }
 
@@ -87,7 +87,6 @@ std::shared_ptr<Texture> MakeBlurSubpass(
     std::shared_ptr<Texture> input_texture,
     const SamplerDescriptor& sampler_descriptor,
     const GaussianBlurFragmentShader::BlurInfo& blur_info) {
-  // TODO(gaaclarke): This doesn't render if the blur_info.sigma == 0.
   ISize subpass_size = input_texture->GetSize();
   ContentContext::SubpassCallback subpass_callback =
       [&](const ContentContext& renderer, RenderPass& pass) {
@@ -193,6 +192,11 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                              /*coverage_limit=*/coverage_hint);
   if (!input_snapshot.has_value()) {
     return std::nullopt;
+  }
+
+  if (sigma_ < kEhCloseEnough) {
+    return Entity::FromSnapshot(input_snapshot.value(), entity.GetBlendMode(),
+                                entity.GetClipDepth());  // No blur to render.
   }
 
   Scalar blur_radius = CalculateBlurRadius(sigma_);

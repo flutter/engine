@@ -69,25 +69,24 @@ std::shared_ptr<FilterContents> FilterContents::MakeGaussianBlur(
     auto blur = std::make_shared<GaussianBlurFilterContents>(sigma_x.sigma);
     blur->SetInputs({input});
     return blur;
-  } else {
-    std::shared_ptr<FilterContents> x_blur = MakeDirectionalGaussianBlur(
-        /*input=*/input,
-        /*sigma=*/sigma_x,
-        /*direction=*/Point(1, 0),
-        /*blur_style=*/BlurStyle::kNormal,
-        /*tile_mode=*/tile_mode,
-        /*is_second_pass=*/false,
-        /*secondary_sigma=*/{});
-    std::shared_ptr<FilterContents> y_blur = MakeDirectionalGaussianBlur(
-        /*input=*/FilterInput::Make(x_blur),
-        /*sigma=*/sigma_y,
-        /*direction=*/Point(0, 1),
-        /*blur_style=*/blur_style,
-        /*tile_mode=*/tile_mode,
-        /*is_second_pass=*/true,
-        /*secondary_sigma=*/sigma_x);
-    return y_blur;
   }
+  std::shared_ptr<FilterContents> x_blur = MakeDirectionalGaussianBlur(
+      /*input=*/input,
+      /*sigma=*/sigma_x,
+      /*direction=*/Point(1, 0),
+      /*blur_style=*/BlurStyle::kNormal,
+      /*tile_mode=*/tile_mode,
+      /*is_second_pass=*/false,
+      /*secondary_sigma=*/{});
+  std::shared_ptr<FilterContents> y_blur = MakeDirectionalGaussianBlur(
+      /*input=*/FilterInput::Make(x_blur),
+      /*sigma=*/sigma_y,
+      /*direction=*/Point(0, 1),
+      /*blur_style=*/blur_style,
+      /*tile_mode=*/tile_mode,
+      /*is_second_pass=*/true,
+      /*secondary_sigma=*/sigma_x);
+  return y_blur;
 }
 
 std::shared_ptr<FilterContents> FilterContents::MakeBorderMaskBlur(
