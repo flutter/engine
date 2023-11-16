@@ -37,5 +37,4 @@ std::shared_ptr<Texture> CreateTextureFromDrawableFuture(
 
 #pragma GCC diagnostic pop
 
-
 }  // namespace impeller
