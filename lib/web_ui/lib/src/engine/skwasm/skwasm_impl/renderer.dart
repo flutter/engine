@@ -399,7 +399,8 @@ class SkwasmRenderer implements Renderer {
   }
 
   @override
-  Future<void> renderScene(ui.Scene scene) => sceneView.renderScene(scene as EngineScene);
+  Future<void> renderScene(ui.Scene scene, [ui.FlutterView? view]) =>
+      sceneView.renderScene(scene as EngineScene);
 
   @override
   String get rendererTag => 'skwasm';

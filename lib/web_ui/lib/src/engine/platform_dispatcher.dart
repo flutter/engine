@@ -717,7 +717,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///    painting.
   @override
   void render(ui.Scene scene, [ui.FlutterView? view]) {
-    renderer.renderScene(scene);
+    renderer.renderScene(scene, view);
   }
 
   /// Additional accessibility features that may be enabled by the platform.

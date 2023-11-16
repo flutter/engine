@@ -40,13 +40,12 @@ class CanvasKitRenderer implements Renderer {
   @override
   SkiaFontCollection get fontCollection => _fontCollection;
 
-  /// The scene host, where the root canvas and overlay canvases are added to.
-  DomElement? _sceneHost;
-  DomElement? get sceneHost => _sceneHost;
+  /// This is an SkSurface backed by an OffScreenCanvas. This single Surface is
+  /// used to render to many RenderCanvases to produce the rendered scene.
+  final Surface offscreenSurface = Surface();
 
-  late Rasterizer rasterizer = Rasterizer();
-
-  set resourceCacheMaxBytes(int bytes) => rasterizer.setSkiaResourceCacheMaxBytes(bytes);
+  set resourceCacheMaxBytes(int bytes) =>
+      offscreenSurface.setSkiaResourceCacheMaxBytes(bytes);
 
   @override
   Future<void> initialize() async {
@@ -371,7 +370,7 @@ class CanvasKitRenderer implements Renderer {
     CkParagraphBuilder(style);
 
   @override
-  void renderScene(ui.Scene scene) {
+  void renderScene(ui.Scene scene, [ui.FlutterView? view]) {
     // "Build finish" and "raster start" happen back-to-back because we
     // render on the same thread, so there's no overhead from hopping to
     // another thread.

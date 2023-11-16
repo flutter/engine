@@ -327,7 +327,7 @@ class HtmlRenderer implements Renderer {
     CanvasParagraphBuilder(style as EngineParagraphStyle);
 
   @override
-  void renderScene(ui.Scene scene) {
+  void renderScene(ui.Scene scene, [ui.FlutterView? view]) {
     _viewEmbedder.addSceneToSceneHost((scene as SurfaceScene).webOnlyRootElement);
     frameTimingsOnRasterFinish();
   }
