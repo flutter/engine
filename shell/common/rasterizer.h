@@ -344,6 +344,7 @@ class Rasterizer final : public SnapshotDelegate,
   ///             rendered layer tree.
   ///
   enum class ScreenshotType {
+    // NOLINTBEGIN(readability-identifier-naming)
     //--------------------------------------------------------------------------
     /// A format used to denote a Skia picture. A Skia picture is a serialized
     /// representation of an `SkPicture` that can be used to introspect the
@@ -373,6 +374,7 @@ class Rasterizer final : public SnapshotDelegate,
     /// is determined from the surface. This is the only way to read wide gamut
     /// color data, but isn't supported everywhere.
     SurfaceData,
+    // NOLINTEND(readability-identifier-naming)
   };
 
   //----------------------------------------------------------------------------
