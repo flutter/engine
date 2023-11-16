@@ -17,6 +17,7 @@ import 'mouse/cursor.dart';
 import 'navigation/history.dart';
 import 'platform_dispatcher.dart';
 import 'platform_views/message_handler.dart';
+import 'pointer_binding.dart';
 import 'semantics/accessibility.dart';
 import 'services.dart';
 import 'util.dart';
@@ -56,6 +57,7 @@ base class EngineFlutterView implements ui.FlutterView {
     DomElement? hostElement,
   )   : embeddingStrategy = EmbeddingStrategy.create(hostElement: hostElement),
         dimensionsProvider = DimensionsProvider.create(hostElement: hostElement) {
+    pointerBinding = PointerBinding(this);
     // The embeddingStrategy will take care of cleaning up the rootElement on
     // hot restart.
     embeddingStrategy.attachGlassPane(dom.rootElement);
@@ -90,6 +92,7 @@ base class EngineFlutterView implements ui.FlutterView {
     }
     isDisposed = true;
     dimensionsProvider.close();
+    pointerBinding.dispose();
     dom.rootElement.remove();
     // TODO(harryterkelsen): What should we do about this in multi-view?
     renderer.clearFragmentProgramCache();
@@ -121,6 +124,8 @@ base class EngineFlutterView implements ui.FlutterView {
 
   late final PlatformViewMessageHandler platformViewMessageHandler =
       PlatformViewMessageHandler(platformViewsContainer: dom.platformViewsHost);
+
+  late final PointerBinding pointerBinding;
 
   // TODO(goderbauer): Provide API to configure constraints. See also TODO in "render".
   @override
