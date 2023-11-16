@@ -70,15 +70,4 @@ void main() {
   }
 
   frag_color = total_color / gaussian_integral;
-  // Override for debugging.
-  // frag_color = Sample(texture_sampler, v_texture_coords);
-  // if (blur_info.blur_uv_offset.x > 0.0) {
-  //   float16_t temp = frag_color.r;
-  //   frag_color.r = frag_color.g;
-  //   frag_color.g = temp;
-  // } else {
-  //   float16_t temp = frag_color.g;
-  //   frag_color.g = frag_color.b;
-  //   frag_color.b = temp;
-  // }
 }
