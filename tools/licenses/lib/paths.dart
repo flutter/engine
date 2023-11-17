@@ -456,23 +456,17 @@ final List<Pattern> skippedFilePatterns = <Pattern>[
   RegExp(r'/CHANGELOG(?:\.[.A-Z0-9]+)?$', caseSensitive: false),
   RegExp(r'/INSTALL(?:\.[a-zA-Z0-9]+)?$'),
   RegExp(r'/Makefile(?:\.[.A-Z0-9]+)?$', caseSensitive: false),
-  RegExp(r'\.~[0-9]+~$',
-      expectNoMatch:
-          true), // files that end in ".~1~", a backup convention of some IDEs
+  RegExp(r'\.~[0-9]+~$', expectNoMatch: true), // files that end in ".~1~", a backup convention of some IDEs
   RegExp(r'\bmanual\.txt$'),
   RegExp(r'^flutter/(?:.+/)*[^/]+_unittests?\.[^/]+$'),
-  RegExp(r'^flutter/lib/web_ui/lib/assets/ahem\.ttf$',
-      expectNoMatch:
-          true), // this gitignored file exists only for testing purposes
-  RegExp(
-      r'^flutter/sky/packages/sky_engine/LICENSE$'), // that is the output of this script
+  RegExp(r'^flutter/lib/web_ui/lib/assets/ahem\.ttf$', expectNoMatch: true), // this gitignored file exists only for testing purposes
+  RegExp(r'^flutter/sky/packages/sky_engine/LICENSE$'), // that is the output of this script
   RegExp(r'^third_party/abseil-cpp/(?:.+/)*[^/]+_test\.[^/]+$'),
   RegExp(r'^third_party/angle/(?:.+/)*[^/]+_unittest\.[^/]+$'),
   RegExp(r'^third_party/boringssl/(?:.+/)*[^/]+_test\.[^/]+$'),
   RegExp(r'^third_party/boringssl/src/crypto/fipsmodule/bn/[^/]+.go$'),
   RegExp(r'^third_party/boringssl/src/crypto/fipsmodule/ec/[^/]+.go$'),
   RegExp(r'^third_party/dart/(?:.+/)*[^/]+_test\.[^/]+$'),
-  RegExp(
-      r'^third_party/freetype2/docs/(?!FTL\.TXT$).+'), // ignore all documentation except the license
+  RegExp(r'^third_party/freetype2/docs/(?!FTL\.TXT$).+'), // ignore all documentation except the license
   RegExp(r'^third_party/zlib/(?:.+/)*[^/]+_unittest\.[^/]+$'),
 ];
