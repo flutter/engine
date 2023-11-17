@@ -34,7 +34,7 @@ impeller_component("typographer") {
     "../renderer",
   ]
 
-  deps = [ "//flutter/fml"]
+  deps = [ "//flutter/fml" ]
 }
 
 impeller_component("typographer_unittests") {
@@ -46,6 +46,6 @@ impeller_component("typographer_unittests") {
     "../playground:playground_test",
     "backends/skia:typographer_skia_backend",
     "backends/stb:typographer_stb_backend",
-          "//flutter/third_party/txt",
+    "//flutter/third_party/txt",
   ]
 }
