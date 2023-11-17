@@ -79,7 +79,7 @@ class ExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
   // |ExternalViewEmbedder|
   void PrepareView(int64_t native_view_id,
                    SkISize frame_size,
-                   double device_pixel_ratio);
+                   double device_pixel_ratio) override;
 
   // |ExternalViewEmbedder|
   void EndFrame(bool should_resubmit_frame,
