@@ -163,7 +163,6 @@ vars = {
   "upstream_file": "https://github.com/google/file.dart.git",
   "upstream_fixnum": "https://github.com/dart-lang/fixnum.git",
   "upstream_flatbuffers": "https://github.com/google/flatbuffers.git",
-  "upstream_fontconfig": "https://gitlab.freedesktop.org/fontconfig/fontconfig.git",
   "upstream_freetype2": "https://gitlab.freedesktop.org/freetype/freetype.git",
   "upstream_gcloud": "https://github.com/dart-lang/gcloud.git",
   "upstream_glfw": "https://github.com/glfw/glfw.git",
@@ -644,12 +643,6 @@ deps = {
 
   'src/third_party/wuffs':
    Var('skia_git') + '/external/github.com/google/wuffs-mirror-release-c.git' + '@' + '600cd96cf47788ee3a74b40a6028b035c9fd6a61',
-
-  'src/third_party/fontconfig/src':
-   Var('chromium_git') + '/external/fontconfig.git' + '@' + 'c336b8471877371f0190ba06f7547c54e2b890ba',
-
-  'src/third_party/fontconfig':
-   Var('flutter_git') + '/third_party/fontconfig' + '@' + '81c83d510ae3aa75589435ce32a5de05139aacb0',
 
   'src/third_party/libxml':
    Var('flutter_git') + '/third_party/libxml' + '@' + 'a143e452b5fc7d872813eeadc8db421694058098',
