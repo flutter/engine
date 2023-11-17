@@ -574,7 +574,7 @@ void BM_SaveLayer(benchmark::State& state,
   STROKE_BENCHMARKS(BACKEND, kStrokedStyle)                         \
   STROKE_BENCHMARKS(BACKEND, kStrokedStyle | kAntiAliasing)    \
   STROKE_BENCHMARKS(BACKEND, kStrokedStyle | kHairlineStroke)  \
-  STROKE_BENCHMARKS(BACKEND, kStrokedStyle| kHairlineStroke | \
+  STROKE_BENCHMARKS(BACKEND, kStrokedStyle | kHairlineStroke | \
                              kAntiAliasing)                         \
   FILL_BENCHMARKS(BACKEND, kFilledStyle)                            \
   FILL_BENCHMARKS(BACKEND, kFilledStyle | kAntiAliasing)       \
