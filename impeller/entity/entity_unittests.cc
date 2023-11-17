@@ -972,8 +972,8 @@ TEST_P(EntityTest, Filters) {
 
     Entity entity;
     entity.SetTransform(Matrix::MakeScale(GetContentScale()) *
-                             Matrix::MakeTranslation({500, 300}) *
-                             Matrix::MakeScale(Vector2{0.5, 0.5}));
+                        Matrix::MakeTranslation({500, 300}) *
+                        Matrix::MakeScale(Vector2{0.5, 0.5}));
     entity.SetContents(blend1);
     return entity.Render(context, pass);
   };
@@ -1856,8 +1856,8 @@ TEST_P(EntityTest, LinearToSrgbFilter) {
     // filter with no filter at all.
     Entity entity_left;
     entity_left.SetTransform(Matrix::MakeScale(GetContentScale()) *
-                                  Matrix::MakeTranslation({100, 300}) *
-                                  Matrix::MakeScale(Vector2{0.5, 0.5}));
+                             Matrix::MakeTranslation({100, 300}) *
+                             Matrix::MakeScale(Vector2{0.5, 0.5}));
     auto unfiltered = FilterContents::MakeGaussianBlur(FilterInput::Make(image),
                                                        Sigma{0}, Sigma{0});
     entity_left.SetContents(unfiltered);
@@ -1865,8 +1865,8 @@ TEST_P(EntityTest, LinearToSrgbFilter) {
     // Define the entity that will be filtered from linear to sRGB.
     Entity entity_right;
     entity_right.SetTransform(Matrix::MakeScale(GetContentScale()) *
-                                   Matrix::MakeTranslation({500, 300}) *
-                                   Matrix::MakeScale(Vector2{0.5, 0.5}));
+                              Matrix::MakeTranslation({500, 300}) *
+                              Matrix::MakeScale(Vector2{0.5, 0.5}));
     entity_right.SetContents(filtered);
     return entity_left.Render(context, pass) &&
            entity_right.Render(context, pass);
@@ -1908,8 +1908,8 @@ TEST_P(EntityTest, SrgbToLinearFilter) {
     // filter with no filter at all.
     Entity entity_left;
     entity_left.SetTransform(Matrix::MakeScale(GetContentScale()) *
-                                  Matrix::MakeTranslation({100, 300}) *
-                                  Matrix::MakeScale(Vector2{0.5, 0.5}));
+                             Matrix::MakeTranslation({100, 300}) *
+                             Matrix::MakeScale(Vector2{0.5, 0.5}));
     auto unfiltered = FilterContents::MakeGaussianBlur(FilterInput::Make(image),
                                                        Sigma{0}, Sigma{0});
     entity_left.SetContents(unfiltered);
@@ -1917,8 +1917,8 @@ TEST_P(EntityTest, SrgbToLinearFilter) {
     // Define the entity that will be filtered from sRGB to linear.
     Entity entity_right;
     entity_right.SetTransform(Matrix::MakeScale(GetContentScale()) *
-                                   Matrix::MakeTranslation({500, 300}) *
-                                   Matrix::MakeScale(Vector2{0.5, 0.5}));
+                              Matrix::MakeTranslation({500, 300}) *
+                              Matrix::MakeScale(Vector2{0.5, 0.5}));
     entity_right.SetContents(filtered);
     return entity_left.Render(context, pass) &&
            entity_right.Render(context, pass);
@@ -2211,8 +2211,8 @@ TEST_P(EntityTest, ColorFilterWithForegroundColorAdvancedBlend) {
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
     Entity entity;
     entity.SetTransform(Matrix::MakeScale(GetContentScale()) *
-                             Matrix::MakeTranslation({500, 300}) *
-                             Matrix::MakeScale(Vector2{0.5, 0.5}));
+                        Matrix::MakeTranslation({500, 300}) *
+                        Matrix::MakeScale(Vector2{0.5, 0.5}));
     entity.SetContents(filter);
     return entity.Render(context, pass);
   };
@@ -2227,8 +2227,8 @@ TEST_P(EntityTest, ColorFilterWithForegroundColorClearBlend) {
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
     Entity entity;
     entity.SetTransform(Matrix::MakeScale(GetContentScale()) *
-                             Matrix::MakeTranslation({500, 300}) *
-                             Matrix::MakeScale(Vector2{0.5, 0.5}));
+                        Matrix::MakeTranslation({500, 300}) *
+                        Matrix::MakeScale(Vector2{0.5, 0.5}));
     entity.SetContents(filter);
     return entity.Render(context, pass);
   };
@@ -2243,8 +2243,8 @@ TEST_P(EntityTest, ColorFilterWithForegroundColorSrcBlend) {
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
     Entity entity;
     entity.SetTransform(Matrix::MakeScale(GetContentScale()) *
-                             Matrix::MakeTranslation({500, 300}) *
-                             Matrix::MakeScale(Vector2{0.5, 0.5}));
+                        Matrix::MakeTranslation({500, 300}) *
+                        Matrix::MakeScale(Vector2{0.5, 0.5}));
     entity.SetContents(filter);
     return entity.Render(context, pass);
   };
@@ -2259,8 +2259,8 @@ TEST_P(EntityTest, ColorFilterWithForegroundColorDstBlend) {
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
     Entity entity;
     entity.SetTransform(Matrix::MakeScale(GetContentScale()) *
-                             Matrix::MakeTranslation({500, 300}) *
-                             Matrix::MakeScale(Vector2{0.5, 0.5}));
+                        Matrix::MakeTranslation({500, 300}) *
+                        Matrix::MakeScale(Vector2{0.5, 0.5}));
     entity.SetContents(filter);
     return entity.Render(context, pass);
   };
@@ -2275,8 +2275,8 @@ TEST_P(EntityTest, ColorFilterWithForegroundColorSrcInBlend) {
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
     Entity entity;
     entity.SetTransform(Matrix::MakeScale(GetContentScale()) *
-                             Matrix::MakeTranslation({500, 300}) *
-                             Matrix::MakeScale(Vector2{0.5, 0.5}));
+                        Matrix::MakeTranslation({500, 300}) *
+                        Matrix::MakeScale(Vector2{0.5, 0.5}));
     entity.SetContents(filter);
     return entity.Render(context, pass);
   };

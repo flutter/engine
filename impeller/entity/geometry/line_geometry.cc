@@ -59,8 +59,7 @@ GeometryResult LineGeometry::GetPositionBuffer(const ContentContext& renderer,
   auto& host_buffer = pass.GetTransientsBuffer();
 
   Point corners[4];
-  if (!ComputeCorners(corners, entity.GetTransform(),
-                      cap_ == Cap::kSquare)) {
+  if (!ComputeCorners(corners, entity.GetTransform(), cap_ == Cap::kSquare)) {
     return {};
   }
 
@@ -90,8 +89,7 @@ GeometryResult LineGeometry::GetPositionUVBuffer(Rect texture_coverage,
   auto uv_transform =
       texture_coverage.GetNormalizingTransform() * effect_transform;
   Point corners[4];
-  if (!ComputeCorners(corners, entity.GetTransform(),
-                      cap_ == Cap::kSquare)) {
+  if (!ComputeCorners(corners, entity.GetTransform(), cap_ == Cap::kSquare)) {
     return {};
   }
 

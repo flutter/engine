@@ -197,7 +197,7 @@ TEST_P(GaussianBlurFilterContentsTest,
 
   Entity entity;
   entity.SetTransform(Matrix::MakeTranslation({400, 100, 0}) *
-                           Matrix::MakeRotationZ(Degrees(90.0)));
+                      Matrix::MakeRotationZ(Degrees(90.0)));
   std::optional<Entity> result =
       contents->GetEntity(*renderer, entity, /*coverage_hint=*/{});
   EXPECT_TRUE(result.has_value());

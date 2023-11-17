@@ -322,8 +322,8 @@ void Canvas::ClipPath(const Path& path, Entity::ClipOperation clip_op) {
 void Canvas::ClipRect(const Rect& rect, Entity::ClipOperation clip_op) {
   auto geometry = Geometry::MakeRect(rect);
   auto& cull_rect = transform_stack_.back().cull_rect;
-  if (clip_op == Entity::ClipOperation::kIntersect &&                        //
-      cull_rect.has_value() &&                                               //
+  if (clip_op == Entity::ClipOperation::kIntersect &&                      //
+      cull_rect.has_value() &&                                             //
       geometry->CoversArea(transform_stack_.back().transform, *cull_rect)  //
   ) {
     return;  // This clip will do nothing, so skip it.
@@ -358,8 +358,8 @@ void Canvas::ClipRRect(const Rect& rect,
                                        : std::make_optional<Rect>();
   auto geometry = Geometry::MakeFillPath(path, inner_rect);
   auto& cull_rect = transform_stack_.back().cull_rect;
-  if (clip_op == Entity::ClipOperation::kIntersect &&                        //
-      cull_rect.has_value() &&                                               //
+  if (clip_op == Entity::ClipOperation::kIntersect &&                      //
+      cull_rect.has_value() &&                                             //
       geometry->CoversArea(transform_stack_.back().transform, *cull_rect)  //
   ) {
     return;  // This clip will do nothing, so skip it.
@@ -473,8 +473,7 @@ void Canvas::DrawPicture(const Picture& picture) {
   pass->IterateAllElements([&](auto& element) -> bool {
     if (auto entity = std::get_if<Entity>(&element)) {
       entity->IncrementStencilDepth(GetClipDepth());
-      entity->SetTransform(GetCurrentTransform() *
-                                entity->GetTransform());
+      entity->SetTransform(GetCurrentTransform() * entity->GetTransform());
       return true;
     }
 
@@ -586,7 +585,7 @@ void Canvas::DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
   text_contents->SetColor(paint.color);
 
   entity.SetTransform(GetCurrentTransform() *
-                           Matrix::MakeTranslation(position));
+                      Matrix::MakeTranslation(position));
 
   // TODO(bdero): This mask blur application is a hack. It will always wind up
   //              doing a gaussian blur that affects the color source itself

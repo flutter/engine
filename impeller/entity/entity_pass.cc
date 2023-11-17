@@ -947,8 +947,7 @@ bool EntityPass::OnRender(
         }
 
         FilterInput::Vector inputs = {
-            FilterInput::Make(texture,
-                              result.entity.GetTransform().Invert()),
+            FilterInput::Make(texture, result.entity.GetTransform().Invert()),
             FilterInput::Make(result.entity.GetContents())};
         auto contents = ColorFilterContents::MakeBlend(
             result.entity.GetBlendMode(), inputs);
