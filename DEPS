@@ -662,9 +662,6 @@ deps = {
   'src/third_party/pkg/vector_math':
   Var('dart_git') + '/external/github.com/google/vector_math.dart.git' + '@' + '0a5fd95449083d404df9768bc1b321b88a7d2eef', # 2.1.0
 
-  'src/third_party/pkg/pc-dart':
-  Var('github_git') + '/bcgit/pc-dart.git' + '@' + '6ff86a9d0c81ad92a4a879acad84ed9b96536240', # 3.6.2
-
   'src/flutter/third_party/imgui':
   Var('github_git') + '/ocornut/imgui.git' + '@' + '3ea0fad204e994d669f79ed29dcaf61cd5cb571d',
 
@@ -676,6 +673,9 @@ deps = {
 
   'src/third_party/stb':
   Var('github_git') + '/nothings/stb.git' + '@' + '5736b15f7ea0ffb08dd38af21067c314d6a3aae9',
+
+  'src/third_party/pc-dart':
+  Var('github_git') + '/bcgit/pc-dart.git' + '@' + '6ff86a9d0c81ad92a4a879acad84ed9b96536240', # 3.6.2
 
   'src/third_party/gradle': {
     'packages': [
