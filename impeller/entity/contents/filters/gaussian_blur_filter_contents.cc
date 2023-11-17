@@ -224,8 +224,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
       input_snapshot->texture->GetSize().width + 2.0 * padding.x,
       input_snapshot->texture->GetSize().height + 2.0 * padding.y);
   // TODO(gaaclarke): I don't think we are correctly handling this fractional
-  //                  amount we are throwing away. It should be incorporated in
-  //                  the uv calculation I believe.
+  //                  amount we are throwing away.
   ISize subpass_size = ISize(round(expanded_size.width * downsample_scalar.x),
                              round(expanded_size.height * downsample_scalar.y));
 
