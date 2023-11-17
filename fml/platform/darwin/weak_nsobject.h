@@ -222,9 +222,9 @@ class WeakNSObject<id> : public WeakNSProtocol<id> {
  private:
   friend class WeakNSObjectFactory<id>;
 
-  explicit WeakNSObject(RefPtr<fml::WeakContainer> container,
+  explicit WeakNSObject(const RefPtr<fml::WeakContainer>& container,
                         const debug::DebugThreadChecker& checker)
-      : WeakNSProtocol<id>(std::move(container), checker) {}
+      : WeakNSProtocol<id>(container, checker) {}
 };
 
 // Class that produces (valid) |WeakNSObject<NST>|s. Typically, this is used as a
