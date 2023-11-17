@@ -126,7 +126,7 @@ std::optional<Rect> EntityPass::GetElementsCoverage(
         std::shared_ptr<FilterContents> backdrop_filter =
             subpass.backdrop_filter_proc_(
                 FilterInput::Make(accumulated_coverage.value()),
-                subpass.xformation_, Entity::RenderingMode::kSubpass);
+                subpass.transform_, Entity::RenderingMode::kSubpass);
         if (backdrop_filter) {
           auto backdrop_coverage = backdrop_filter->GetCoverage({});
           unfiltered_coverage =
@@ -151,10 +151,10 @@ std::optional<Rect> EntityPass::GetElementsCoverage(
       // we could potentially detect this case as zero coverage in the future.
       std::shared_ptr<FilterContents> image_filter =
           subpass.delegate_->WithImageFilter(*unfiltered_coverage,
-                                             subpass.xformation_);
+                                             subpass.transform_);
       if (image_filter) {
         Entity subpass_entity;
-        subpass_entity.SetTransformation(subpass.xformation_);
+        subpass_entity.SetTransformation(subpass.transform_);
         element_coverage = image_filter->GetCoverage(subpass_entity);
       } else {
         element_coverage = unfiltered_coverage;
@@ -174,13 +174,13 @@ std::optional<Rect> EntityPass::GetSubpassCoverage(
     const EntityPass& subpass,
     std::optional<Rect> coverage_limit) const {
   std::shared_ptr<FilterContents> image_filter =
-      subpass.delegate_->WithImageFilter(Rect(), subpass.xformation_);
+      subpass.delegate_->WithImageFilter(Rect(), subpass.transform_);
 
   // If the subpass has an image filter, then its coverage space may deviate
   // from the parent pass and make intersecting with the pass coverage limit
   // unsafe.
   if (image_filter && coverage_limit.has_value()) {
-    coverage_limit = image_filter->GetSourceCoverage(subpass.xformation_,
+    coverage_limit = image_filter->GetSourceCoverage(subpass.transform_,
                                                      coverage_limit.value());
   }
 
@@ -194,7 +194,7 @@ std::optional<Rect> EntityPass::GetSubpassCoverage(
     return entities_coverage;
   }
   auto user_bounds_coverage =
-      subpass.bounds_limit_->TransformBounds(subpass.xformation_);
+      subpass.bounds_limit_->TransformBounds(subpass.transform_);
   return entities_coverage->Intersection(user_bounds_coverage);
 }
 
@@ -535,7 +535,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       const auto& proc = subpass->backdrop_filter_proc_;
       subpass_backdrop_filter_contents =
           proc(FilterInput::Make(std::move(texture)),
-               subpass->xformation_.Basis(), Entity::RenderingMode::kSubpass);
+               subpass->transform_.Basis(), Entity::RenderingMode::kSubpass);
 
       // If the very first thing we render in this EntityPass is a subpass that
       // happens to have a backdrop filter, than that backdrop filter will end
@@ -648,7 +648,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
         subpass->delegate_->CreateContentsForSubpassTarget(
             subpass_texture,
             Matrix::MakeTranslation(Vector3{-global_pass_position}) *
-                subpass->xformation_);
+                subpass->transform_);
 
     if (!offscreen_texture_contents) {
       // This is an error because the subpass delegate said the pass couldn't
@@ -1109,8 +1109,8 @@ std::unique_ptr<EntityPass> EntityPass::Clone() const {
   return pass;
 }
 
-void EntityPass::SetTransformation(Matrix xformation) {
-  xformation_ = xformation;
+void EntityPass::SetTransformation(Matrix transform) {
+  transform_ = transform;
 }
 
 void EntityPass::SetClipDepth(size_t clip_depth) {

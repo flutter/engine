@@ -693,14 +693,14 @@ void DlDispatcher::transformFullPerspective(SkScalar mxx,
   // The order of arguments is row-major but Impeller matrices are
   // column-major.
   // clang-format off
-  auto xformation = Matrix{
+  auto transform = Matrix{
     mxx, myx, mzx, mwx,
     mxy, myy, mzy, mwy,
     mxz, myz, mzz, mwz,
     mxt, myt, mzt, mwt
   };
   // clang-format on
-  canvas_.Transform(xformation);
+  canvas_.Transform(transform);
 }
 
 // |flutter::DlOpReceiver|

@@ -41,7 +41,7 @@ void Canvas::Initialize(std::optional<Rect> cull_rect) {
   initial_cull_rect_ = cull_rect;
   base_pass_ = std::make_unique<EntityPass>();
   current_pass_ = base_pass_.get();
-  xformation_stack_.emplace_back(CanvasStackEntry{.cull_rect = cull_rect});
+  transform_stack_.emplace_back(CanvasStackEntry{.cull_rect = cull_rect});
   FML_DCHECK(GetSaveCount() == 1u);
   FML_DCHECK(base_pass_->GetSubpassesDepth() == 1u);
 }
@@ -49,7 +49,7 @@ void Canvas::Initialize(std::optional<Rect> cull_rect) {
 void Canvas::Reset() {
   base_pass_ = nullptr;
   current_pass_ = nullptr;
-  xformation_stack_ = {};
+  transform_stack_ = {};
 }
 
 void Canvas::Save() {
@@ -60,9 +60,9 @@ void Canvas::Save(bool create_subpass,
                   BlendMode blend_mode,
                   const std::shared_ptr<ImageFilter>& backdrop_filter) {
   auto entry = CanvasStackEntry{};
-  entry.xformation = xformation_stack_.back().xformation;
-  entry.cull_rect = xformation_stack_.back().cull_rect;
-  entry.clip_depth = xformation_stack_.back().clip_depth;
+  entry.transform = transform_stack_.back().transform;
+  entry.cull_rect = transform_stack_.back().cull_rect;
+  entry.clip_depth = transform_stack_.back().clip_depth;
   if (create_subpass) {
     entry.rendering_mode = Entity::RenderingMode::kSubpass;
     auto subpass = std::make_unique<EntityPass>();
@@ -82,25 +82,25 @@ void Canvas::Save(bool create_subpass,
     }
     subpass->SetBlendMode(blend_mode);
     current_pass_ = GetCurrentPass().AddSubpass(std::move(subpass));
-    current_pass_->SetTransformation(xformation_stack_.back().xformation);
-    current_pass_->SetClipDepth(xformation_stack_.back().clip_depth);
+    current_pass_->SetTransformation(transform_stack_.back().transform);
+    current_pass_->SetClipDepth(transform_stack_.back().clip_depth);
   }
-  xformation_stack_.emplace_back(entry);
+  transform_stack_.emplace_back(entry);
 }
 
 bool Canvas::Restore() {
-  FML_DCHECK(xformation_stack_.size() > 0);
-  if (xformation_stack_.size() == 1) {
+  FML_DCHECK(transform_stack_.size() > 0);
+  if (transform_stack_.size() == 1) {
     return false;
   }
-  if (xformation_stack_.back().rendering_mode ==
+  if (transform_stack_.back().rendering_mode ==
       Entity::RenderingMode::kSubpass) {
     current_pass_ = GetCurrentPass().GetSuperpass();
     FML_DCHECK(current_pass_);
   }
 
-  bool contains_clips = xformation_stack_.back().contains_clips;
-  xformation_stack_.pop_back();
+  bool contains_clips = transform_stack_.back().contains_clips;
+  transform_stack_.pop_back();
 
   if (contains_clips) {
     RestoreClip();
@@ -109,30 +109,30 @@ bool Canvas::Restore() {
   return true;
 }
 
-void Canvas::Concat(const Matrix& xformation) {
-  xformation_stack_.back().xformation = GetCurrentTransformation() * xformation;
+void Canvas::Concat(const Matrix& transform) {
+  transform_stack_.back().transform = GetCurrentTransformation() * transform;
 }
 
-void Canvas::PreConcat(const Matrix& xformation) {
-  xformation_stack_.back().xformation = xformation * GetCurrentTransformation();
+void Canvas::PreConcat(const Matrix& transform) {
+  transform_stack_.back().transform = transform * GetCurrentTransformation();
 }
 
 void Canvas::ResetTransform() {
-  xformation_stack_.back().xformation = {};
+  transform_stack_.back().transform = {};
 }
 
-void Canvas::Transform(const Matrix& xformation) {
-  Concat(xformation);
+void Canvas::Transform(const Matrix& transform) {
+  Concat(transform);
 }
 
 const Matrix& Canvas::GetCurrentTransformation() const {
-  return xformation_stack_.back().xformation;
+  return transform_stack_.back().transform;
 }
 
 const std::optional<Rect> Canvas::GetCurrentLocalCullingBounds() const {
-  auto cull_rect = xformation_stack_.back().cull_rect;
+  auto cull_rect = transform_stack_.back().cull_rect;
   if (cull_rect.has_value()) {
-    Matrix inverse = xformation_stack_.back().xformation.Invert();
+    Matrix inverse = transform_stack_.back().transform.Invert();
     cull_rect = cull_rect.value().TransformBounds(inverse);
   }
   return cull_rect;
@@ -159,7 +159,7 @@ void Canvas::Rotate(Radians radians) {
 }
 
 size_t Canvas::GetSaveCount() const {
-  return xformation_stack_.size();
+  return transform_stack_.size();
 }
 
 void Canvas::RestoreToCount(size_t count) {
@@ -321,10 +321,10 @@ void Canvas::ClipPath(const Path& path, Entity::ClipOperation clip_op) {
 
 void Canvas::ClipRect(const Rect& rect, Entity::ClipOperation clip_op) {
   auto geometry = Geometry::MakeRect(rect);
-  auto& cull_rect = xformation_stack_.back().cull_rect;
+  auto& cull_rect = transform_stack_.back().cull_rect;
   if (clip_op == Entity::ClipOperation::kIntersect &&                        //
       cull_rect.has_value() &&                                               //
-      geometry->CoversArea(xformation_stack_.back().xformation, *cull_rect)  //
+      geometry->CoversArea(transform_stack_.back().transform, *cull_rect)  //
   ) {
     return;  // This clip will do nothing, so skip it.
   }
@@ -357,10 +357,10 @@ void Canvas::ClipRRect(const Rect& rect,
                                        ? rect.Expand(-corner_radii)
                                        : std::make_optional<Rect>();
   auto geometry = Geometry::MakeFillPath(path, inner_rect);
-  auto& cull_rect = xformation_stack_.back().cull_rect;
+  auto& cull_rect = transform_stack_.back().cull_rect;
   if (clip_op == Entity::ClipOperation::kIntersect &&                        //
       cull_rect.has_value() &&                                               //
-      geometry->CoversArea(xformation_stack_.back().xformation, *cull_rect)  //
+      geometry->CoversArea(transform_stack_.back().transform, *cull_rect)  //
   ) {
     return;  // This clip will do nothing, so skip it.
   }
@@ -403,13 +403,13 @@ void Canvas::ClipGeometry(std::unique_ptr<Geometry> geometry,
 
   GetCurrentPass().AddEntity(entity);
 
-  ++xformation_stack_.back().clip_depth;
-  xformation_stack_.back().contains_clips = true;
+  ++transform_stack_.back().clip_depth;
+  transform_stack_.back().contains_clips = true;
 }
 
 void Canvas::IntersectCulling(Rect clip_rect) {
   clip_rect = clip_rect.TransformBounds(GetCurrentTransformation());
-  std::optional<Rect>& cull_rect = xformation_stack_.back().cull_rect;
+  std::optional<Rect>& cull_rect = transform_stack_.back().cull_rect;
   if (cull_rect.has_value()) {
     cull_rect = cull_rect
                     .value()                  //
@@ -421,7 +421,7 @@ void Canvas::IntersectCulling(Rect clip_rect) {
 }
 
 void Canvas::SubtractCulling(Rect clip_rect) {
-  std::optional<Rect>& cull_rect = xformation_stack_.back().cull_rect;
+  std::optional<Rect>& cull_rect = transform_stack_.back().cull_rect;
   if (cull_rect.has_value()) {
     clip_rect = clip_rect.TransformBounds(GetCurrentTransformation());
     cull_rect = cull_rect
@@ -553,7 +553,7 @@ EntityPass& Canvas::GetCurrentPass() {
 }
 
 size_t Canvas::GetClipDepth() const {
-  return xformation_stack_.back().clip_depth;
+  return transform_stack_.back().clip_depth;
 }
 
 void Canvas::SaveLayer(const Paint& paint,
