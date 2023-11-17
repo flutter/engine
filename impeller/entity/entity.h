@@ -71,10 +71,10 @@ class Entity {
   ~Entity();
 
   /// @brief  Get the global transformation matrix for this Entity.
-  const Matrix& GetTransformation() const;
+  const Matrix& GetTransform() const;
 
   /// @brief  Set the global transformation matrix for this Entity.
-  void SetTransformation(const Matrix& transformation);
+  void SetTransform(const Matrix& transformation);
 
   std::optional<Rect> GetCoverage() const;
 

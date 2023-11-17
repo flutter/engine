@@ -37,7 +37,7 @@ std::optional<Entity> Entity::FromSnapshot(
   Entity entity;
   entity.SetBlendMode(blend_mode);
   entity.SetClipDepth(clip_depth);
-  entity.SetTransformation(snapshot->transform);
+  entity.SetTransform(snapshot->transform);
   entity.SetContents(contents);
   return entity;
 }
@@ -46,11 +46,11 @@ Entity::Entity() = default;
 
 Entity::~Entity() = default;
 
-const Matrix& Entity::GetTransformation() const {
+const Matrix& Entity::GetTransform() const {
   return transformation_;
 }
 
-void Entity::SetTransformation(const Matrix& transformation) {
+void Entity::SetTransform(const Matrix& transformation) {
   transformation_ = transformation;
 }
 
@@ -167,7 +167,7 @@ bool Entity::Render(const ContentContext& renderer,
 }
 
 Scalar Entity::DeriveTextScale() const {
-  return GetTransformation().GetMaxBasisLengthXY();
+  return GetTransform().GetMaxBasisLengthXY();
 }
 
 Capture& Entity::GetCapture() const {

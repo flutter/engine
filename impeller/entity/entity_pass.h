@@ -126,7 +126,7 @@ class EntityPass {
   ///
   size_t GetElementCount() const;
 
-  void SetTransformation(Matrix transform);
+  void SetTransform(Matrix transform);
 
   void SetClipDepth(size_t clip_depth);
 

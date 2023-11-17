@@ -82,7 +82,7 @@ void Canvas::Save(bool create_subpass,
     }
     subpass->SetBlendMode(blend_mode);
     current_pass_ = GetCurrentPass().AddSubpass(std::move(subpass));
-    current_pass_->SetTransformation(transform_stack_.back().transform);
+    current_pass_->SetTransform(transform_stack_.back().transform);
     current_pass_->SetClipDepth(transform_stack_.back().clip_depth);
   }
   transform_stack_.emplace_back(entry);
@@ -110,11 +110,11 @@ bool Canvas::Restore() {
 }
 
 void Canvas::Concat(const Matrix& transform) {
-  transform_stack_.back().transform = GetCurrentTransformation() * transform;
+  transform_stack_.back().transform = GetCurrentTransform() * transform;
 }
 
 void Canvas::PreConcat(const Matrix& transform) {
-  transform_stack_.back().transform = transform * GetCurrentTransformation();
+  transform_stack_.back().transform = transform * GetCurrentTransform();
 }
 
 void Canvas::ResetTransform() {
@@ -125,7 +125,7 @@ void Canvas::Transform(const Matrix& transform) {
   Concat(transform);
 }
 
-const Matrix& Canvas::GetCurrentTransformation() const {
+const Matrix& Canvas::GetCurrentTransform() const {
   return transform_stack_.back().transform;
 }
 
@@ -172,7 +172,7 @@ void Canvas::RestoreToCount(size_t count) {
 
 void Canvas::DrawPath(const Path& path, const Paint& paint) {
   Entity entity;
-  entity.SetTransformation(GetCurrentTransformation());
+  entity.SetTransform(GetCurrentTransform());
   entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.WithFilters(paint.CreateContentsForEntity(path)));
@@ -182,7 +182,7 @@ void Canvas::DrawPath(const Path& path, const Paint& paint) {
 
 void Canvas::DrawPaint(const Paint& paint) {
   Entity entity;
-  entity.SetTransformation(GetCurrentTransformation());
+  entity.SetTransform(GetCurrentTransform());
   entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.CreateContentsForEntity({}, true));
@@ -216,7 +216,7 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
   new_paint.mask_blur_descriptor = std::nullopt;
 
   Entity entity;
-  entity.SetTransformation(GetCurrentTransformation());
+  entity.SetTransform(GetCurrentTransform());
   entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(new_paint.blend_mode);
   entity.SetContents(new_paint.WithFilters(std::move(contents)));
@@ -239,7 +239,7 @@ void Canvas::DrawLine(const Point& p0, const Point& p1, const Paint& paint) {
   }
 
   Entity entity;
-  entity.SetTransformation(GetCurrentTransformation());
+  entity.SetTransform(GetCurrentTransform());
   entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.WithFilters(paint.CreateContentsForGeometry(
@@ -259,7 +259,7 @@ void Canvas::DrawRect(Rect rect, const Paint& paint) {
   }
 
   Entity entity;
-  entity.SetTransformation(GetCurrentTransformation());
+  entity.SetTransform(GetCurrentTransform());
   entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.WithFilters(
@@ -280,7 +280,7 @@ void Canvas::DrawRRect(Rect rect, Point corner_radii, const Paint& paint) {
                   .TakePath();
   if (paint.style == Paint::Style::kFill) {
     Entity entity;
-    entity.SetTransformation(GetCurrentTransformation());
+    entity.SetTransform(GetCurrentTransform());
     entity.SetClipDepth(GetClipDepth());
     entity.SetBlendMode(paint.blend_mode);
     entity.SetContents(paint.WithFilters(
@@ -397,7 +397,7 @@ void Canvas::ClipGeometry(std::unique_ptr<Geometry> geometry,
   contents->SetClipOperation(clip_op);
 
   Entity entity;
-  entity.SetTransformation(GetCurrentTransformation());
+  entity.SetTransform(GetCurrentTransform());
   entity.SetContents(std::move(contents));
   entity.SetClipDepth(GetClipDepth());
 
@@ -408,7 +408,7 @@ void Canvas::ClipGeometry(std::unique_ptr<Geometry> geometry,
 }
 
 void Canvas::IntersectCulling(Rect clip_rect) {
-  clip_rect = clip_rect.TransformBounds(GetCurrentTransformation());
+  clip_rect = clip_rect.TransformBounds(GetCurrentTransform());
   std::optional<Rect>& cull_rect = transform_stack_.back().cull_rect;
   if (cull_rect.has_value()) {
     cull_rect = cull_rect
@@ -423,7 +423,7 @@ void Canvas::IntersectCulling(Rect clip_rect) {
 void Canvas::SubtractCulling(Rect clip_rect) {
   std::optional<Rect>& cull_rect = transform_stack_.back().cull_rect;
   if (cull_rect.has_value()) {
-    clip_rect = clip_rect.TransformBounds(GetCurrentTransformation());
+    clip_rect = clip_rect.TransformBounds(GetCurrentTransform());
     cull_rect = cull_rect
                     .value()            //
                     .Cutout(clip_rect)  //
@@ -434,7 +434,7 @@ void Canvas::SubtractCulling(Rect clip_rect) {
 
 void Canvas::RestoreClip() {
   Entity entity;
-  entity.SetTransformation(GetCurrentTransformation());
+  entity.SetTransform(GetCurrentTransform());
   // This path is empty because ClipRestoreContents just generates a quad that
   // takes up the full render target.
   entity.SetContents(std::make_shared<ClipRestoreContents>());
@@ -452,7 +452,7 @@ void Canvas::DrawPoints(std::vector<Point> points,
   }
 
   Entity entity;
-  entity.SetTransformation(GetCurrentTransformation());
+  entity.SetTransform(GetCurrentTransform());
   entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.WithFilters(paint.CreateContentsForGeometry(
@@ -473,8 +473,8 @@ void Canvas::DrawPicture(const Picture& picture) {
   pass->IterateAllElements([&](auto& element) -> bool {
     if (auto entity = std::get_if<Entity>(&element)) {
       entity->IncrementStencilDepth(GetClipDepth());
-      entity->SetTransformation(GetCurrentTransformation() *
-                                entity->GetTransformation());
+      entity->SetTransform(GetCurrentTransform() *
+                                entity->GetTransform());
       return true;
     }
 
@@ -532,7 +532,7 @@ void Canvas::DrawImageRect(const std::shared_ptr<Image>& image,
   entity.SetBlendMode(paint.blend_mode);
   entity.SetClipDepth(GetClipDepth());
   entity.SetContents(paint.WithFilters(contents));
-  entity.SetTransformation(GetCurrentTransformation());
+  entity.SetTransform(GetCurrentTransform());
 
   GetCurrentPass().AddEntity(entity);
 }
@@ -585,7 +585,7 @@ void Canvas::DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
   text_contents->SetTextFrame(text_frame);
   text_contents->SetColor(paint.color);
 
-  entity.SetTransformation(GetCurrentTransformation() *
+  entity.SetTransform(GetCurrentTransform() *
                            Matrix::MakeTranslation(position));
 
   // TODO(bdero): This mask blur application is a hack. It will always wind up
@@ -628,7 +628,7 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
   }
 
   Entity entity;
-  entity.SetTransformation(GetCurrentTransformation());
+  entity.SetTransform(GetCurrentTransform());
   entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
 
@@ -701,7 +701,7 @@ void Canvas::DrawAtlas(const std::shared_ptr<Image>& atlas,
   contents->SetAlpha(paint.color.alpha);
 
   Entity entity;
-  entity.SetTransformation(GetCurrentTransformation());
+  entity.SetTransform(GetCurrentTransform());
   entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.WithFilters(contents));

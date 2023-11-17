@@ -77,7 +77,7 @@ class Canvas {
 
   void RestoreToCount(size_t count);
 
-  const Matrix& GetCurrentTransformation() const;
+  const Matrix& GetCurrentTransform() const;
 
   const std::optional<Rect> GetCurrentLocalCullingBounds() const;
 

@@ -57,7 +57,7 @@ std::optional<Entity> MatrixFilterContents::RenderFilter(
 
   auto transform = rendering_mode_ == Entity::RenderingMode::kSubpass
                        ? effect_transform
-                       : entity.GetTransformation();
+                       : entity.GetTransform();
   snapshot->transform = transform *           //
                         matrix_ *             //
                         transform.Invert() *  //

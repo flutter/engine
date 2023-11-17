@@ -153,7 +153,7 @@ GeometryResult VerticesGeometry::GetPositionBuffer(
                   index_count > 0 ? IndexType::k16bit : IndexType::kNone,
           },
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation(),
+                   entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }
@@ -212,7 +212,7 @@ GeometryResult VerticesGeometry::GetPositionColorBuffer(
                   index_count > 0 ? IndexType::k16bit : IndexType::kNone,
           },
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation(),
+                   entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }
@@ -283,7 +283,7 @@ GeometryResult VerticesGeometry::GetPositionUVBuffer(
                   index_count > 0 ? IndexType::k16bit : IndexType::kNone,
           },
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation(),
+                   entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }

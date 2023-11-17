@@ -83,9 +83,9 @@ TEST_P(AiksTest, RotateColorFilteredPath) {
 TEST_P(AiksTest, CanvasCTMCanBeUpdated) {
   Canvas canvas;
   Matrix identity;
-  ASSERT_MATRIX_NEAR(canvas.GetCurrentTransformation(), identity);
+  ASSERT_MATRIX_NEAR(canvas.GetCurrentTransform(), identity);
   canvas.Translate(Size{100, 100});
-  ASSERT_MATRIX_NEAR(canvas.GetCurrentTransformation(),
+  ASSERT_MATRIX_NEAR(canvas.GetCurrentTransform(),
                      Matrix::MakeTranslation({100.0, 100.0, 0.0}));
 }
 
@@ -97,11 +97,11 @@ TEST_P(AiksTest, CanvasCanPushPopCTM) {
   canvas.Translate(Size{100, 100});
   canvas.Save();
   ASSERT_EQ(canvas.GetSaveCount(), 2u);
-  ASSERT_MATRIX_NEAR(canvas.GetCurrentTransformation(),
+  ASSERT_MATRIX_NEAR(canvas.GetCurrentTransform(),
                      Matrix::MakeTranslation({100.0, 100.0, 0.0}));
   ASSERT_TRUE(canvas.Restore());
   ASSERT_EQ(canvas.GetSaveCount(), 1u);
-  ASSERT_MATRIX_NEAR(canvas.GetCurrentTransformation(),
+  ASSERT_MATRIX_NEAR(canvas.GetCurrentTransform(),
                      Matrix::MakeTranslation({100.0, 100.0, 0.0}));
 }
 
@@ -1889,12 +1889,12 @@ TEST_P(AiksTest, ColorWheel) {
 
 TEST_P(AiksTest, TransformMultipliesCorrectly) {
   Canvas canvas;
-  ASSERT_MATRIX_NEAR(canvas.GetCurrentTransformation(), Matrix());
+  ASSERT_MATRIX_NEAR(canvas.GetCurrentTransform(), Matrix());
 
   // clang-format off
   canvas.Translate(Vector3(100, 200));
   ASSERT_MATRIX_NEAR(
-    canvas.GetCurrentTransformation(),
+    canvas.GetCurrentTransform(),
     Matrix(  1,   0,   0,   0,
              0,   1,   0,   0,
              0,   0,   1,   0,
@@ -1902,7 +1902,7 @@ TEST_P(AiksTest, TransformMultipliesCorrectly) {
 
   canvas.Rotate(Radians(kPiOver2));
   ASSERT_MATRIX_NEAR(
-    canvas.GetCurrentTransformation(),
+    canvas.GetCurrentTransform(),
     Matrix(  0,   1,   0,   0,
             -1,   0,   0,   0,
              0,   0,   1,   0,
@@ -1910,7 +1910,7 @@ TEST_P(AiksTest, TransformMultipliesCorrectly) {
 
   canvas.Scale(Vector3(2, 3));
   ASSERT_MATRIX_NEAR(
-    canvas.GetCurrentTransformation(),
+    canvas.GetCurrentTransform(),
     Matrix(  0,   2,   0,   0,
             -3,   0,   0,   0,
              0,   0,   0,   0,
@@ -1918,7 +1918,7 @@ TEST_P(AiksTest, TransformMultipliesCorrectly) {
 
   canvas.Translate(Vector3(100, 200));
   ASSERT_MATRIX_NEAR(
-    canvas.GetCurrentTransformation(),
+    canvas.GetCurrentTransform(),
     Matrix(   0,   2,   0,   0,
              -3,   0,   0,   0,
               0,   0,   0,   0,
@@ -1964,7 +1964,7 @@ TEST_P(AiksTest, SolidStrokesRenderCorrectly) {
       auto [handle_a, handle_b] = IMPELLER_PLAYGROUND_LINE(
           Point(60, 300), Point(600, 300), 20, Color::Red(), Color::Red());
 
-      auto screen_to_canvas = canvas.GetCurrentTransformation().Invert();
+      auto screen_to_canvas = canvas.GetCurrentTransform().Invert();
       Point point_a = screen_to_canvas * handle_a * GetContentScale();
       Point point_b = screen_to_canvas * handle_b * GetContentScale();
 
@@ -2105,7 +2105,7 @@ TEST_P(AiksTest, GradientStrokesRenderCorrectly) {
       auto [handle_a, handle_b] = IMPELLER_PLAYGROUND_LINE(
           Point(60, 300), Point(600, 300), 20, Color::Red(), Color::Red());
 
-      auto screen_to_canvas = canvas.GetCurrentTransformation().Invert();
+      auto screen_to_canvas = canvas.GetCurrentTransform().Invert();
       Point point_a = screen_to_canvas * handle_a * GetContentScale();
       Point point_b = screen_to_canvas * handle_b * GetContentScale();
 
@@ -3102,7 +3102,7 @@ TEST_P(AiksTest, OpaqueEntitiesGetCoercedToSource) {
   Entity entity;
   std::shared_ptr<SolidColorContents> contents;
   picture.pass->IterateAllEntities([&e = entity, &contents](Entity& entity) {
-    if (ScalarNearlyEqual(entity.GetTransformation().GetScale().x, 1.618f)) {
+    if (ScalarNearlyEqual(entity.GetTransform().GetScale().x, 1.618f)) {
       e = entity;
       contents =
           std::static_pointer_cast<SolidColorContents>(entity.GetContents());

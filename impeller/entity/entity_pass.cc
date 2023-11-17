@@ -154,7 +154,7 @@ std::optional<Rect> EntityPass::GetElementsCoverage(
                                              subpass.transform_);
       if (image_filter) {
         Entity subpass_entity;
-        subpass_entity.SetTransformation(subpass.transform_);
+        subpass_entity.SetTransform(subpass.transform_);
         element_coverage = image_filter->GetCoverage(subpass_entity);
       } else {
         element_coverage = unfiltered_coverage;
@@ -487,9 +487,9 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       // If the pass image is going to be rendered with a non-zero position,
       // apply the negative translation to entity copies before rendering them
       // so that they'll end up rendering to the correct on-screen position.
-      element_entity.SetTransformation(
+      element_entity.SetTransform(
           Matrix::MakeTranslation(Vector3(-global_pass_position)) *
-          element_entity.GetTransformation());
+          element_entity.GetTransform());
     }
     return EntityPass::EntityResult::Success(element_entity);
   }
@@ -667,7 +667,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     element_entity.SetContents(std::move(offscreen_texture_contents));
     element_entity.SetClipDepth(subpass->clip_depth_);
     element_entity.SetBlendMode(subpass->blend_mode_);
-    element_entity.SetTransformation(subpass_texture_capture.AddMatrix(
+    element_entity.SetTransform(subpass_texture_capture.AddMatrix(
         "Transform", Matrix::MakeTranslation(Vector3(subpass_coverage->origin -
                                                      global_pass_position))));
 
@@ -862,7 +862,7 @@ bool EntityPass::OnRender(
 
     Entity backdrop_entity;
     backdrop_entity.SetContents(std::move(backdrop_filter_contents));
-    backdrop_entity.SetTransformation(
+    backdrop_entity.SetTransform(
         Matrix::MakeTranslation(Vector3(-local_pass_position)));
     backdrop_entity.SetClipDepth(clip_depth_floor);
 
@@ -948,7 +948,7 @@ bool EntityPass::OnRender(
 
         FilterInput::Vector inputs = {
             FilterInput::Make(texture,
-                              result.entity.GetTransformation().Invert()),
+                              result.entity.GetTransform().Invert()),
             FilterInput::Make(result.entity.GetContents())};
         auto contents = ColorFilterContents::MakeBlend(
             result.entity.GetBlendMode(), inputs);
@@ -1109,7 +1109,7 @@ std::unique_ptr<EntityPass> EntityPass::Clone() const {
   return pass;
 }
 
-void EntityPass::SetTransformation(Matrix transform) {
+void EntityPass::SetTransform(Matrix transform) {
   transform_ = transform;
 }
 

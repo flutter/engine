@@ -33,7 +33,7 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
       .type = PrimitiveType::kTriangle,
       .vertex_buffer = vtx_builder->CreateVertexBuffer(host_buffer),
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation(),
+                   entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }
@@ -61,7 +61,7 @@ GeometryResult PointFieldGeometry::GetPositionUVBuffer(
       .type = PrimitiveType::kTriangle,
       .vertex_buffer = uv_vtx_builder.CreateVertexBuffer(host_buffer),
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation(),
+                   entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }
@@ -73,7 +73,7 @@ PointFieldGeometry::GetPositionBufferCPU(const ContentContext& renderer,
   if (radius_ < 0.0) {
     return std::nullopt;
   }
-  auto determinant = entity.GetTransformation().GetDeterminant();
+  auto determinant = entity.GetTransform().GetDeterminant();
   if (determinant == 0) {
     return std::nullopt;
   }
@@ -82,7 +82,7 @@ PointFieldGeometry::GetPositionBufferCPU(const ContentContext& renderer,
   Scalar radius = std::max(radius_, min_size);
 
   auto vertices_per_geom = ComputeCircleDivisions(
-      entity.GetTransformation().GetMaxBasisLength() * radius, round_);
+      entity.GetTransform().GetMaxBasisLength() * radius, round_);
   auto points_per_circle = 3 + (vertices_per_geom - 3) * 3;
   auto total = points_per_circle * points_.size();
   auto radian_start = round_ ? 0.0f : 0.785398f;
@@ -132,7 +132,7 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
   if (radius_ < 0.0) {
     return {};
   }
-  auto determinant = entity.GetTransformation().GetDeterminant();
+  auto determinant = entity.GetTransform().GetDeterminant();
   if (determinant == 0) {
     return {};
   }
@@ -141,7 +141,7 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
   Scalar radius = std::max(radius_, min_size);
 
   auto vertices_per_geom = ComputeCircleDivisions(
-      entity.GetTransformation().GetMaxBasisLength() * radius, round_);
+      entity.GetTransform().GetMaxBasisLength() * radius, round_);
 
   auto points_per_circle = 3 + (vertices_per_geom - 3) * 3;
   auto total = points_per_circle * points_.size();
@@ -233,7 +233,7 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
                         .vertex_count = total,
                         .index_type = IndexType::kNone},
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation(),
+                   entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }

@@ -59,7 +59,7 @@ GeometryResult LineGeometry::GetPositionBuffer(const ContentContext& renderer,
   auto& host_buffer = pass.GetTransientsBuffer();
 
   Point corners[4];
-  if (!ComputeCorners(corners, entity.GetTransformation(),
+  if (!ComputeCorners(corners, entity.GetTransform(),
                       cap_ == Cap::kSquare)) {
     return {};
   }
@@ -74,7 +74,7 @@ GeometryResult LineGeometry::GetPositionBuffer(const ContentContext& renderer,
               .index_type = IndexType::kNone,
           },
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation(),
+                   entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }
@@ -90,7 +90,7 @@ GeometryResult LineGeometry::GetPositionUVBuffer(Rect texture_coverage,
   auto uv_transform =
       texture_coverage.GetNormalizingTransform() * effect_transform;
   Point corners[4];
-  if (!ComputeCorners(corners, entity.GetTransformation(),
+  if (!ComputeCorners(corners, entity.GetTransform(),
                       cap_ == Cap::kSquare)) {
     return {};
   }
@@ -111,7 +111,7 @@ GeometryResult LineGeometry::GetPositionUVBuffer(Rect texture_coverage,
               .index_type = IndexType::kNone,
           },
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation(),
+                   entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }

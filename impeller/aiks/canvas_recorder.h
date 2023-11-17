@@ -118,8 +118,8 @@ class CanvasRecorder {
                                count);
   }
 
-  const Matrix& GetCurrentTransformation() const {
-    return canvas_.GetCurrentTransformation();
+  const Matrix& GetCurrentTransform() const {
+    return canvas_.GetCurrentTransform();
   }
 
   const std::optional<Rect> GetCurrentLocalCullingBounds() const {

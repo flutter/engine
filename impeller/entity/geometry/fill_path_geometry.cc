@@ -23,7 +23,7 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
   if (path_.GetFillType() == FillType::kNonZero &&  //
       path_.IsConvex()) {
     auto points = renderer.GetTessellator()->TessellateConvex(
-        path_, entity.GetTransformation().GetMaxBasisLength());
+        path_, entity.GetTransform().GetMaxBasisLength());
 
     vertex_buffer.vertex_buffer = host_buffer.Emplace(
         points.data(), points.size() * sizeof(Point), alignof(Point));
@@ -34,13 +34,13 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
         .type = PrimitiveType::kTriangleStrip,
         .vertex_buffer = vertex_buffer,
         .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     entity.GetTransformation(),
+                     entity.GetTransform(),
         .prevent_overdraw = false,
     };
   }
 
   auto tesselation_result = renderer.GetTessellator()->Tessellate(
-      path_, entity.GetTransformation().GetMaxBasisLength(),
+      path_, entity.GetTransform().GetMaxBasisLength(),
       [&vertex_buffer, &host_buffer](
           const float* vertices, size_t vertices_count, const uint16_t* indices,
           size_t indices_count) {
@@ -65,7 +65,7 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
       .type = PrimitiveType::kTriangle,
       .vertex_buffer = vertex_buffer,
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation(),
+                   entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }
@@ -85,7 +85,7 @@ GeometryResult FillPathGeometry::GetPositionUVBuffer(
   if (path_.GetFillType() == FillType::kNonZero &&  //
       path_.IsConvex()) {
     auto points = renderer.GetTessellator()->TessellateConvex(
-        path_, entity.GetTransformation().GetMaxBasisLength());
+        path_, entity.GetTransform().GetMaxBasisLength());
 
     VertexBufferBuilder<VS::PerVertexData> vertex_builder;
     vertex_builder.Reserve(points.size());
@@ -101,14 +101,14 @@ GeometryResult FillPathGeometry::GetPositionUVBuffer(
         .vertex_buffer =
             vertex_builder.CreateVertexBuffer(pass.GetTransientsBuffer()),
         .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     entity.GetTransformation(),
+                     entity.GetTransform(),
         .prevent_overdraw = false,
     };
   }
 
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
   auto tesselation_result = renderer.GetTessellator()->Tessellate(
-      path_, entity.GetTransformation().GetMaxBasisLength(),
+      path_, entity.GetTransform().GetMaxBasisLength(),
       [&vertex_builder, &uv_transform](
           const float* vertices, size_t vertices_count, const uint16_t* indices,
           size_t indices_count) {
@@ -135,7 +135,7 @@ GeometryResult FillPathGeometry::GetPositionUVBuffer(
       .vertex_buffer =
           vertex_builder.CreateVertexBuffer(pass.GetTransientsBuffer()),
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation(),
+                   entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }
