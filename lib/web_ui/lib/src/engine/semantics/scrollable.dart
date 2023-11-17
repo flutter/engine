@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
+
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
@@ -61,8 +63,9 @@ class Scrollable extends PrimaryRoleManager {
 
   /// Responds to browser-detected "scroll" gestures.
   void _recomputeScrollPosition() {
+    print('>>> _domScrollPosition ($_domScrollPosition) != _effectiveNeutralScrollPosition ($_effectiveNeutralScrollPosition)');
     if (_domScrollPosition != _effectiveNeutralScrollPosition) {
-      if (!semanticsObject.owner.shouldAcceptBrowserGesture('scroll')) {
+      if (!EngineSemantics.instance.shouldAcceptBrowserGesture('scroll')) {
         return;
       }
       final bool doScrollForward =
@@ -121,10 +124,11 @@ class Scrollable extends PrimaryRoleManager {
       _gestureModeListener = (_) {
         _gestureModeDidChange();
       };
-      semanticsObject.owner.addGestureModeListener(_gestureModeListener);
+      EngineSemantics.instance.addGestureModeListener(_gestureModeListener);
 
+      final Zone zone = Zone.current;
       _scrollListener = createDomEventListener((_) {
-        _recomputeScrollPosition();
+        zone.run(_recomputeScrollPosition);
       });
       addEventListener('scroll', _scrollListener);
     }
@@ -196,7 +200,7 @@ class Scrollable extends PrimaryRoleManager {
   }
 
   void _gestureModeDidChange() {
-    switch (semanticsObject.owner.gestureMode) {
+    switch (EngineSemantics.instance.gestureMode) {
       case GestureMode.browserGestures:
         // overflow:scroll will cause the browser report "scroll" events when
         // the accessibility focus shifts outside the visible bounds.
@@ -233,7 +237,7 @@ class Scrollable extends PrimaryRoleManager {
     if (_scrollListener != null) {
       removeEventListener('scroll', _scrollListener);
     }
-    semanticsObject.owner.removeGestureModeListener(_gestureModeListener);
+    EngineSemantics.instance.removeGestureModeListener(_gestureModeListener);
     _gestureModeListener = null;
   }
 }

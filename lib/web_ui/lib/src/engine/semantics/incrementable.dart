@@ -55,7 +55,7 @@ class Incrementable extends PrimaryRoleManager {
     _gestureModeListener = (GestureMode mode) {
       update();
     };
-    semanticsObject.owner.addGestureModeListener(_gestureModeListener);
+    EngineSemantics.instance.addGestureModeListener(_gestureModeListener);
     _focusManager.manage(semanticsObject.id, _element);
   }
 
@@ -89,7 +89,7 @@ class Incrementable extends PrimaryRoleManager {
   void update() {
     super.update();
 
-    switch (semanticsObject.owner.gestureMode) {
+    switch (EngineSemantics.instance.gestureMode) {
       case GestureMode.browserGestures:
         _enableBrowserGestureHandling();
         _updateInputValues();
@@ -100,7 +100,7 @@ class Incrementable extends PrimaryRoleManager {
   }
 
   void _enableBrowserGestureHandling() {
-    assert(semanticsObject.owner.gestureMode == GestureMode.browserGestures);
+    assert(EngineSemantics.instance.gestureMode == GestureMode.browserGestures);
     if (!_element.disabled!) {
       return;
     }
@@ -108,7 +108,7 @@ class Incrementable extends PrimaryRoleManager {
   }
 
   void _updateInputValues() {
-    assert(semanticsObject.owner.gestureMode == GestureMode.browserGestures);
+    assert(EngineSemantics.instance.gestureMode == GestureMode.browserGestures);
 
     final bool updateNeeded = _pendingResync ||
         semanticsObject.isValueDirty ||
@@ -151,7 +151,7 @@ class Incrementable extends PrimaryRoleManager {
     assert(_gestureModeListener != null);
     super.dispose();
     _focusManager.stopManaging();
-    semanticsObject.owner.removeGestureModeListener(_gestureModeListener);
+    EngineSemantics.instance.removeGestureModeListener(_gestureModeListener);
     _gestureModeListener = null;
     _disableBrowserGestureHandling();
     _element.remove();
