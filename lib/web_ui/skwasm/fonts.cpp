@@ -6,6 +6,7 @@
 #include "third_party/skia/include/core/SkFontMgr.h"
 #include "third_party/skia/modules/skparagraph/include/FontCollection.h"
 #include "third_party/skia/modules/skparagraph/include/TypefaceFontProvider.h"
+#include "third_party/txt/platform.h"
 #include "wrappers.h"
 
 #include <memory>
@@ -30,7 +31,7 @@ SKWASM_EXPORT void fontCollection_dispose(FlutterFontCollection* collection) {
 
 SKWASM_EXPORT SkTypeface* typeface_create(SkData* fontData) {
   auto typeface =
-      SkFontMgr::RefDefault()->makeFromData(sk_ref_sp<SkData>(fontData));
+      txt::GetDefaultFontManager()->makeFromData(sk_ref_sp<SkData>(fontData));
   return typeface.release();
 }
 
