@@ -26,7 +26,7 @@ void MockViewEmbedder::CancelFrame() {}
 // |ExternalViewEmbedder|
 void MockViewEmbedder::BeginFrame(
     GrDirectContext* context,
-    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {}
+    const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {}
 
 // |ExternalViewEmbedder|
 void MockViewEmbedder::PrepareView(int64_t native_view_id,

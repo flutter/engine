@@ -31,7 +31,10 @@ static const TESSalloc kAlloc = {
     0                                    /* =extraVertices */
 };
 
-Tessellator::Tessellator() : c_tessellator_(nullptr, &DestroyTessellator) {
+Tessellator::Tessellator()
+    : point_buffer_(std::make_unique<std::vector<Point>>()),
+      c_tessellator_(nullptr, &DestroyTessellator) {
+  point_buffer_->reserve(2048);
   TESSalloc alloc = kAlloc;
   {
     // libTess2 copies the TESSalloc despite the non-const argument.
@@ -58,15 +61,23 @@ static int ToTessWindingRule(FillType fill_type) {
   return TESS_WINDING_ODD;
 }
 
-Tessellator::Result Tessellator::Tessellate(
-    FillType fill_type,
-    const Path::Polyline& polyline,
-    const BuilderCallback& callback) const {
+Tessellator::Result Tessellator::Tessellate(const Path& path,
+                                            Scalar tolerance,
+                                            const BuilderCallback& callback) {
   if (!callback) {
     return Result::kInputError;
   }
 
-  if (polyline.points.empty()) {
+  point_buffer_->clear();
+  auto polyline =
+      path.CreatePolyline(tolerance, std::move(point_buffer_),
+                          [this](Path::Polyline::PointBufferPtr point_buffer) {
+                            point_buffer_ = std::move(point_buffer);
+                          });
+
+  auto fill_type = path.GetFillType();
+
+  if (polyline.points->empty()) {
     return Result::kInputError;
   }
 
@@ -99,9 +110,9 @@ Tessellator::Result Tessellator::Tessellate(
 
       ::tessAddContour(tessellator,  // the C tessellator
                        kVertexSize,  //
-                       polyline.points.data() + start_point_index,  //
-                       sizeof(Point),                               //
-                       end_point_index - start_point_index          //
+                       polyline.points->data() + start_point_index,  //
+                       sizeof(Point),                                //
+                       end_point_index - start_point_index           //
       );
 
       //----------------------------------------------------------------------------
@@ -150,9 +161,9 @@ Tessellator::Result Tessellator::Tessellate(
 
       ::tessAddContour(tessellator,  // the C tessellator
                        kVertexSize,  //
-                       polyline.points.data() + start_point_index,  //
-                       sizeof(Point),                               //
-                       end_point_index - start_point_index          //
+                       polyline.points->data() + start_point_index,  //
+                       sizeof(Point),                                //
+                       end_point_index - start_point_index           //
       );
     }
 
@@ -199,12 +210,14 @@ Tessellator::Result Tessellator::Tessellate(
 
       int vertex_item_count = tessGetVertexCount(tessellator) * kVertexSize;
       auto vertices = tessGetVertices(tessellator);
+      points.reserve(vertex_item_count);
       for (int i = 0; i < vertex_item_count; i += 2) {
         points.emplace_back(vertices[i], vertices[i + 1]);
       }
 
       int element_item_count = tessGetElementCount(tessellator) * kPolygonSize;
       auto elements = tessGetElements(tessellator);
+      data.reserve(element_item_count);
       for (int i = 0; i < element_item_count; i++) {
         data.emplace_back(points[elements[i]].x);
         data.emplace_back(points[elements[i]].y);
@@ -216,6 +229,54 @@ Tessellator::Result Tessellator::Tessellate(
   }
 
   return Result::kSuccess;
+}
+
+std::vector<Point> Tessellator::TessellateConvex(const Path& path,
+                                                 Scalar tolerance) {
+  std::vector<Point> output;
+
+  point_buffer_->clear();
+  auto polyline =
+      path.CreatePolyline(tolerance, std::move(point_buffer_),
+                          [this](Path::Polyline::PointBufferPtr point_buffer) {
+                            point_buffer_ = std::move(point_buffer);
+                          });
+
+  output.reserve(polyline.points->size() +
+                 (4 * (polyline.contours.size() - 1)));
+  for (auto j = 0u; j < polyline.contours.size(); j++) {
+    auto [start, end] = polyline.GetContourPointBounds(j);
+    auto first_point = polyline.GetPoint(start);
+
+    // Some polygons will not self close and an additional triangle
+    // must be inserted, others will self close and we need to avoid
+    // inserting an extra triangle.
+    if (polyline.GetPoint(end - 1) == first_point) {
+      end--;
+    }
+
+    if (j > 0) {
+      // Triangle strip break.
+      output.emplace_back(output.back());
+      output.emplace_back(first_point);
+      output.emplace_back(first_point);
+    } else {
+      output.emplace_back(first_point);
+    }
+
+    size_t a = start + 1;
+    size_t b = end - 1;
+    while (a < b) {
+      output.emplace_back(polyline.GetPoint(a));
+      output.emplace_back(polyline.GetPoint(b));
+      a++;
+      b--;
+    }
+    if (a == b) {
+      output.emplace_back(polyline.GetPoint(a));
+    }
+  }
+  return output;
 }
 
 void DestroyTessellator(TESStesselator* tessellator) {

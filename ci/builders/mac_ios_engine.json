@@ -3,7 +3,7 @@
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12|Mac-13",
+                "os=Mac-12",
                 "cpu=x86"
             ],
             "gn": [
@@ -19,14 +19,16 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14e300c"
+                    "sdk_version": "14e300c",
+                    "toolchain_ver_arm": "JiMOaZvCH66lnGWMJdLScE-7lkUnKaw3COdWwqXmjWEC",
+                    "toolchain_ver_intel": "Zp2HmSx7_-pu-yHqYqzoEpo0JRwNZGGwSj5V1SnLFmoC"
                 }
             }
         },
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12|Mac-13",
+                "os=Mac-12",
                 "cpu=x86"
             ],
             "gn": [
@@ -43,14 +45,16 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14e300c"
+                    "sdk_version": "14e300c",
+                    "toolchain_ver_arm": "JiMOaZvCH66lnGWMJdLScE-7lkUnKaw3COdWwqXmjWEC",
+                    "toolchain_ver_intel": "Zp2HmSx7_-pu-yHqYqzoEpo0JRwNZGGwSj5V1SnLFmoC"
                 }
             }
         },
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12|Mac-13",
+                "os=Mac-12",
                 "cpu=x86"
             ],
             "gn": [
@@ -67,14 +71,16 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14e300c"
+                    "sdk_version": "14e300c",
+                    "toolchain_ver_arm": "JiMOaZvCH66lnGWMJdLScE-7lkUnKaw3COdWwqXmjWEC",
+                    "toolchain_ver_intel": "Zp2HmSx7_-pu-yHqYqzoEpo0JRwNZGGwSj5V1SnLFmoC"
                 }
             }
         },
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12|Mac-13",
+                "os=Mac-12",
                 "cpu=x86"
             ],
             "gn": [
@@ -92,14 +98,16 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14e300c"
+                    "sdk_version": "14e300c",
+                    "toolchain_ver_arm": "JiMOaZvCH66lnGWMJdLScE-7lkUnKaw3COdWwqXmjWEC",
+                    "toolchain_ver_intel": "Zp2HmSx7_-pu-yHqYqzoEpo0JRwNZGGwSj5V1SnLFmoC"
                 }
             }
         },
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12|Mac-13",
+                "os=Mac-12",
                 "cpu=x86"
             ],
             "gn": [
@@ -117,14 +125,16 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14e300c"
+                    "sdk_version": "14e300c",
+                    "toolchain_ver_arm": "JiMOaZvCH66lnGWMJdLScE-7lkUnKaw3COdWwqXmjWEC",
+                    "toolchain_ver_intel": "Zp2HmSx7_-pu-yHqYqzoEpo0JRwNZGGwSj5V1SnLFmoC"
                 }
             }
         },
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12|Mac-13",
+                "os=Mac-12",
                 "cpu=x86"
             ],
             "gn": [
@@ -141,14 +151,16 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14e300c"
+                    "sdk_version": "14e300c",
+                    "toolchain_ver_arm": "JiMOaZvCH66lnGWMJdLScE-7lkUnKaw3COdWwqXmjWEC",
+                    "toolchain_ver_intel": "Zp2HmSx7_-pu-yHqYqzoEpo0JRwNZGGwSj5V1SnLFmoC"
                 }
             }
         },
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12|Mac-13",
+                "os=Mac-12",
                 "cpu=x86"
             ],
             "gn": [
@@ -166,14 +178,16 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14e300c"
+                    "sdk_version": "14e300c",
+                    "toolchain_ver_arm": "JiMOaZvCH66lnGWMJdLScE-7lkUnKaw3COdWwqXmjWEC",
+                    "toolchain_ver_intel": "Zp2HmSx7_-pu-yHqYqzoEpo0JRwNZGGwSj5V1SnLFmoC"
                 }
             }
         },
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12|Mac-13",
+                "os=Mac-12",
                 "cpu=x86"
             ],
             "gn": [
@@ -191,14 +205,16 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14e300c"
+                    "sdk_version": "14e300c",
+                    "toolchain_ver_arm": "JiMOaZvCH66lnGWMJdLScE-7lkUnKaw3COdWwqXmjWEC",
+                    "toolchain_ver_intel": "Zp2HmSx7_-pu-yHqYqzoEpo0JRwNZGGwSj5V1SnLFmoC"
                 }
             }
         },
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12|Mac-13",
+                "os=Mac-12",
                 "cpu=x86"
             ],
             "gn": [
@@ -217,14 +233,16 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14e300c"
+                    "sdk_version": "14e300c",
+                    "toolchain_ver_arm": "JiMOaZvCH66lnGWMJdLScE-7lkUnKaw3COdWwqXmjWEC",
+                    "toolchain_ver_intel": "Zp2HmSx7_-pu-yHqYqzoEpo0JRwNZGGwSj5V1SnLFmoC"
                 }
             }
         },
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12|Mac-13",
+                "os=Mac-12",
                 "cpu=x86"
             ],
             "gn": [
@@ -243,7 +261,9 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14e300c"
+                    "sdk_version": "14e300c",
+                    "toolchain_ver_arm": "JiMOaZvCH66lnGWMJdLScE-7lkUnKaw3COdWwqXmjWEC",
+                    "toolchain_ver_intel": "Zp2HmSx7_-pu-yHqYqzoEpo0JRwNZGGwSj5V1SnLFmoC"
                 }
             }
         }

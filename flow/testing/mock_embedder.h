@@ -25,9 +25,9 @@ class MockViewEmbedder : public ExternalViewEmbedder {
   void CancelFrame() override;
 
   // |ExternalViewEmbedder|
-  void BeginFrame(
-      GrDirectContext* context,
-      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
+  void BeginFrame(GrDirectContext* context,
+                  const fml::RefPtr<fml::RasterThreadMerger>&
+                      raster_thread_merger) override;
 
   // |ExternalViewEmbedder|
   void PrepareView(int64_t native_view_id,

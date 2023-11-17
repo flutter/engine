@@ -1120,14 +1120,18 @@ TEST_P(EntityTest, GaussianBlurFilter) {
 
     // Renders a green bounding rect of the target filter.
     Entity bounds_entity;
-    bounds_entity.SetContents(SolidColorContents::Make(
-        PathBuilder{}
-            .AddRect(target_contents->GetCoverage(entity).value())
-            .TakePath(),
-        bounds_color));
-    bounds_entity.SetTransformation(Matrix());
+    std::optional<Rect> target_contents_coverage =
+        target_contents->GetCoverage(entity);
+    if (target_contents_coverage.has_value()) {
+      bounds_entity.SetContents(SolidColorContents::Make(
+          PathBuilder{}
+              .AddRect(target_contents->GetCoverage(entity).value())
+              .TakePath(),
+          bounds_color));
+      bounds_entity.SetTransformation(Matrix());
 
-    bounds_entity.Render(context, pass);
+      bounds_entity.Render(context, pass);
+    }
 
     return true;
   };
@@ -2352,42 +2356,6 @@ TEST_P(EntityTest, TiledTextureContentsIsOpaque) {
   // (whether in Flutter or the playground), and so this should currently always
   // return false in practice.
   ASSERT_FALSE(contents.IsOpaque());
-}
-
-TEST_P(EntityTest, TessellateConvex) {
-  {
-    // Sanity check simple rectangle.
-    auto [pts, indices] =
-        TessellateConvex(PathBuilder{}
-                             .AddRect(Rect::MakeLTRB(0, 0, 10, 10))
-                             .TakePath()
-                             .CreatePolyline(1.0));
-
-    std::vector<Point> expected = {
-        {0, 0}, {10, 0}, {10, 10}, {0, 10},  //
-    };
-    std::vector<uint16_t> expected_indices = {0, 1, 2, 0, 2, 3};
-    ASSERT_EQ(pts, expected);
-    ASSERT_EQ(indices, expected_indices);
-  }
-
-  {
-    auto [pts, indices] =
-        TessellateConvex(PathBuilder{}
-                             .AddRect(Rect::MakeLTRB(0, 0, 10, 10))
-                             .AddRect(Rect::MakeLTRB(20, 20, 30, 30))
-                             .TakePath()
-                             .CreatePolyline(1.0));
-
-    std::vector<Point> expected = {
-        {0, 0},   {10, 0},  {10, 10}, {0, 10},  //
-        {20, 20}, {30, 20}, {30, 30}, {20, 30}  //
-    };
-    std::vector<uint16_t> expected_indices = {0, 1, 2, 0, 2, 3,
-                                              0, 6, 7, 0, 7, 8};
-    ASSERT_EQ(pts, expected);
-    ASSERT_EQ(indices, expected_indices);
-  }
 }
 
 TEST_P(EntityTest, PointFieldGeometryDivisions) {

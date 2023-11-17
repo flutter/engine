@@ -89,11 +89,12 @@ class MockExternalViewEmbedder : public ExternalViewEmbedder {
  public:
   MOCK_METHOD(DlCanvas*, GetRootCanvas, (), (override));
   MOCK_METHOD(void, CancelFrame, (), (override));
-  MOCK_METHOD(void,
-              BeginFrame,
-              (GrDirectContext * context,
-               fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger),
-              (override));
+  MOCK_METHOD(
+      void,
+      BeginFrame,
+      (GrDirectContext * context,
+       const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger),
+      (override));
   MOCK_METHOD(void,
               PrepareView,
               (int64_t native_view_id,
@@ -104,10 +105,11 @@ class MockExternalViewEmbedder : public ExternalViewEmbedder {
               PrerollCompositeEmbeddedView,
               (int64_t view_id, std::unique_ptr<EmbeddedViewParams> params),
               (override));
-  MOCK_METHOD(PostPrerollResult,
-              PostPrerollAction,
-              (fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger),
-              (override));
+  MOCK_METHOD(
+      PostPrerollResult,
+      PostPrerollAction,
+      (const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger),
+      (override));
   MOCK_METHOD(DlCanvas*, CompositeEmbeddedView, (int64_t view_id), (override));
   MOCK_METHOD(void,
               SubmitView,
@@ -115,11 +117,12 @@ class MockExternalViewEmbedder : public ExternalViewEmbedder {
                const std::shared_ptr<impeller::AiksContext>& aiks_context,
                std::unique_ptr<SurfaceFrame> frame),
               (override));
-  MOCK_METHOD(void,
-              EndFrame,
-              (bool should_resubmit_frame,
-               fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger),
-              (override));
+  MOCK_METHOD(
+      void,
+      EndFrame,
+      (bool should_resubmit_frame,
+       const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger),
+      (override));
   MOCK_METHOD(bool, SupportsDynamicThreadMerging, (), (override));
 };
 }  // namespace
