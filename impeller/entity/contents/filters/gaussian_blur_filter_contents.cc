@@ -216,8 +216,8 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   Size expanded_size(
       input_snapshot->texture->GetSize().width + 2.0 * blur_radius,
       input_snapshot->texture->GetSize().height + 2.0 * blur_radius);
-  ISize subpass_size = ISize(round(expanded_size.width * downsample_scalar.x),
-                             round(expanded_size.height * downsample_scalar.y));
+  ISize subpass_size = ISize(expanded_size.width * downsample_scalar.x,
+                             expanded_size.height * downsample_scalar.y);
 
   Quad uvs =
       CalculateUVs(inputs[0], entity, input_snapshot->texture->GetSize());
@@ -251,13 +251,18 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   SamplerDescriptor sampler_desc = MakeSamplerDescriptor(
       MinMagFilter::kLinear, SamplerAddressMode::kClampToEdge);
 
+  Vector3 final_scale = {
+      expanded_size.width /
+          static_cast<Scalar>(pass1_out_texture->GetSize().width),
+      expanded_size.height /
+          static_cast<Scalar>(pass1_out_texture->GetSize().height),
+      1.0};
   return Entity::FromSnapshot(
       Snapshot{.texture = pass3_out_texture,
                .transform =
                    entity.GetTransformation() *
                    Matrix::MakeTranslation({-blur_radius, -blur_radius, 0}) *
-                   Matrix::MakeScale({1.0f / downsample_scalar.x,
-                                      1.0f / downsample_scalar.y, 1.0}),
+                   Matrix::MakeScale(final_scale),
                .sampler_descriptor = sampler_desc,
                .opacity = input_snapshot->opacity},
       entity.GetBlendMode(), entity.GetClipDepth());
