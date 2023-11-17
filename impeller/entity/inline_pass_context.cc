@@ -151,9 +151,9 @@ InlinePassContext::RenderPassResult InlinePassContext::GetRenderPass(
     VALIDATION_LOG << "Could not create render pass.";
     return {};
   }
-  // Commands are fairly large (500B) objects, so re-allocation of the command buffer
-  // while encoding can add a surprising amount of overhead. We make a conservative npot
-  // estimate to avoid this case.
+  // Commands are fairly large (500B) objects, so re-allocation of the command
+  // buffer while encoding can add a surprising amount of overhead. We make a
+  // conservative npot estimate to avoid this case.
   pass_->ReserveCommands(Allocation::NextPowerOfTwoSize(entity_count_));
   pass_->SetLabel(
       "EntityPass Render Pass: Depth=" + std::to_string(pass_depth) +
