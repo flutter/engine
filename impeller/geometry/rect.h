@@ -9,6 +9,7 @@
 #include <ostream>
 #include <vector>
 
+#include "fml/logging.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/scalar.h"
@@ -46,6 +47,11 @@ struct TRect {
   template <class U>
   constexpr static TRect MakeSize(const TSize<U>& size) {
     return TRect(0.0, 0.0, size.width, size.height);
+  }
+
+  template <typename U>
+  constexpr static std::optional<TRect> MakePointBounds(const U& value) {
+    return MakePointBounds(value.begin(), value.end());
   }
 
   template <typename PointIter>
@@ -211,7 +217,11 @@ struct TRect {
   ///         rectangle.
   constexpr TRect TransformBounds(const Matrix& transform) const {
     auto points = GetTransformedPoints(transform);
-    return TRect::MakePointBounds(points.begin(), points.end()).value();
+    auto bounds = TRect::MakePointBounds(points.begin(), points.end());
+    if (bounds.has_value()) {
+      return bounds.value();
+    }
+    FML_UNREACHABLE();
   }
 
   /// @brief  Constructs a Matrix that will map all points in the coordinate
