@@ -2799,6 +2799,8 @@ ORIGIN: ../../../flutter/fml/platform/darwin/scoped_policy.h + ../../../flutter/
 ORIGIN: ../../../flutter/fml/platform/darwin/scoped_typeref.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/platform/darwin/string_range_sanitization.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/platform/darwin/string_range_sanitization.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/fml/platform/darwin/weak_nsobject.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/fml/platform/darwin/weak_nsobject.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/platform/fuchsia/message_loop_fuchsia.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/platform/fuchsia/message_loop_fuchsia.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/platform/fuchsia/paths_fuchsia.cc + ../../../flutter/LICENSE
@@ -3060,6 +3062,8 @@ ORIGIN: ../../../flutter/impeller/entity/contents/filters/directional_gaussian_b
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/directional_gaussian_blur_filter_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/filter_contents.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/filter_contents.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/contents/filters/gaussian_blur_filter_contents.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/contents/filters/gaussian_blur_filter_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/inputs/contents_filter_input.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/inputs/contents_filter_input.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/inputs/filter_contents_filter_input.cc + ../../../flutter/LICENSE
@@ -3317,6 +3321,8 @@ ORIGIN: ../../../flutter/impeller/renderer/backend/metal/formats_mtl.h + ../../.
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/formats_mtl.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/gpu_tracer_mtl.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/gpu_tracer_mtl.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/metal/lazy_drawable_holder.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/metal/lazy_drawable_holder.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/pipeline_library_mtl.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/pipeline_library_mtl.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/pipeline_mtl.h + ../../../flutter/LICENSE
@@ -3744,7 +3750,6 @@ ORIGIN: ../../../flutter/lib/ui/text/paragraph.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/text/paragraph.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/text/paragraph_builder.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/text/paragraph_builder.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/lib/ui/text/text_box.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/ui.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/ui_benchmarks.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/ui_dart_state.cc + ../../../flutter/LICENSE
@@ -4712,6 +4717,7 @@ ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterVie
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewProvider.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewTest.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/KeyCodeMap.g.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/KeyCodeMapTest.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/KeyCodeMap_Internal.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/NSView+ClipsToBounds.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/TestFlutterPlatformView.h + ../../../flutter/LICENSE
@@ -5061,6 +5067,7 @@ ORIGIN: ../../../flutter/shell/platform/linux/fl_view_private.h + ../../../flutt
 ORIGIN: ../../../flutter/shell/platform/linux/fl_view_test.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/key_mapping.g.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/key_mapping.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/linux/key_mapping_test.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_basic_message_channel.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_binary_codec.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_binary_messenger.h + ../../../flutter/LICENSE
@@ -5561,6 +5568,8 @@ FILE: ../../../flutter/fml/platform/darwin/scoped_policy.h
 FILE: ../../../flutter/fml/platform/darwin/scoped_typeref.h
 FILE: ../../../flutter/fml/platform/darwin/string_range_sanitization.h
 FILE: ../../../flutter/fml/platform/darwin/string_range_sanitization.mm
+FILE: ../../../flutter/fml/platform/darwin/weak_nsobject.h
+FILE: ../../../flutter/fml/platform/darwin/weak_nsobject.mm
 FILE: ../../../flutter/fml/platform/fuchsia/message_loop_fuchsia.cc
 FILE: ../../../flutter/fml/platform/fuchsia/message_loop_fuchsia.h
 FILE: ../../../flutter/fml/platform/fuchsia/paths_fuchsia.cc
@@ -5822,6 +5831,8 @@ FILE: ../../../flutter/impeller/entity/contents/filters/directional_gaussian_blu
 FILE: ../../../flutter/impeller/entity/contents/filters/directional_gaussian_blur_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/filter_contents.h
+FILE: ../../../flutter/impeller/entity/contents/filters/gaussian_blur_filter_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/filters/gaussian_blur_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/contents_filter_input.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/contents_filter_input.h
 FILE: ../../../flutter/impeller/entity/contents/filters/inputs/filter_contents_filter_input.cc
@@ -6079,6 +6090,8 @@ FILE: ../../../flutter/impeller/renderer/backend/metal/formats_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/formats_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/gpu_tracer_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/gpu_tracer_mtl.mm
+FILE: ../../../flutter/impeller/renderer/backend/metal/lazy_drawable_holder.h
+FILE: ../../../flutter/impeller/renderer/backend/metal/lazy_drawable_holder.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/pipeline_library_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/pipeline_library_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/pipeline_mtl.h
@@ -6511,7 +6524,6 @@ FILE: ../../../flutter/lib/ui/text/paragraph.cc
 FILE: ../../../flutter/lib/ui/text/paragraph.h
 FILE: ../../../flutter/lib/ui/text/paragraph_builder.cc
 FILE: ../../../flutter/lib/ui/text/paragraph_builder.h
-FILE: ../../../flutter/lib/ui/text/text_box.h
 FILE: ../../../flutter/lib/ui/ui.dart
 FILE: ../../../flutter/lib/ui/ui_benchmarks.cc
 FILE: ../../../flutter/lib/ui/ui_dart_state.cc
@@ -7494,6 +7506,7 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewE
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewProvider.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/KeyCodeMap.g.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/KeyCodeMapTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/KeyCodeMap_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/NSView+ClipsToBounds.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/TestFlutterPlatformView.h
@@ -7849,6 +7862,7 @@ FILE: ../../../flutter/shell/platform/linux/fl_view_private.h
 FILE: ../../../flutter/shell/platform/linux/fl_view_test.cc
 FILE: ../../../flutter/shell/platform/linux/key_mapping.g.cc
 FILE: ../../../flutter/shell/platform/linux/key_mapping.h
+FILE: ../../../flutter/shell/platform/linux/key_mapping_test.cc
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_basic_message_channel.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_binary_codec.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_binary_messenger.h
