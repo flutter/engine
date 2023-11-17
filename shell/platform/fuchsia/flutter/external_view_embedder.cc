@@ -108,13 +108,16 @@ flutter::PostPrerollResult ExternalViewEmbedder::PostPrerollAction(
 }
 
 void ExternalViewEmbedder::BeginFrame(
-    SkISize frame_size,
     GrDirectContext* context,
-    double device_pixel_ratio,
     const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
   TRACE_EVENT0("flutter", "ExternalViewEmbedder::BeginFrame");
+}
 
-  // Reset for new frame.
+// |ExternalViewEmbedder|
+void ExternalViewEmbedder::PrepareView(int64_t native_view_id,
+                                       SkISize frame_size,
+                                       double device_pixel_ratio) {
+  // Reset for new view.
   Reset();
   frame_size_ = frame_size;
   frame_dpr_ = device_pixel_ratio;

@@ -72,11 +72,14 @@ class ExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
       override;
 
   // |ExternalViewEmbedder|
-  void BeginFrame(SkISize frame_size,
-                  GrDirectContext* context,
-                  double device_pixel_ratio,
+  void BeginFrame(GrDirectContext* context,
                   const fml::RefPtr<fml::RasterThreadMerger>&
                       raster_thread_merger) override;
+
+  // |ExternalViewEmbedder|
+  void PrepareView(int64_t native_view_id,
+                   SkISize frame_size,
+                   double device_pixel_ratio);
 
   // |ExternalViewEmbedder|
   void EndFrame(bool should_resubmit_frame,
