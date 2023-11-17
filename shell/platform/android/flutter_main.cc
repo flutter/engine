@@ -25,7 +25,7 @@
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/switches.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
-#include "third_party/txt/platform.h"
+#include "txt/platform.h"
 
 namespace flutter {
 
