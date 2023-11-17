@@ -119,9 +119,7 @@ void doTests() {
     });
 
     test('setScene', () {
-      final FlutterViewEmbedder embedder = FlutterViewEmbedder();
-      final DomManager domManager =
-          DomManager.fromFlutterViewEmbedderDEPRECATED(embedder);
+      final DomManager domManager = DomManager(devicePixelRatio: 3.0);
 
       final DomElement sceneHost =
           domManager.renderingHost.querySelector('flt-scene-host')!;
