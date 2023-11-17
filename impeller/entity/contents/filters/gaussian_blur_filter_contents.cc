@@ -153,6 +153,12 @@ Scalar CalculateScale(Scalar radius) {
   return (curve - 1) * limit + 1;
 };
 
+template <typename T, typename U>
+Vector2 CalculateSizeRatio(const T& x, const U& y) {
+  return Vector2{x.width / static_cast<Scalar>(y.width),
+                 x.height / static_cast<Scalar>(y.height)};
+}
+
 }  // namespace
 
 GaussianBlurFilterContents::GaussianBlurFilterContents(Scalar sigma)
@@ -255,12 +261,8 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   SamplerDescriptor sampler_desc = MakeSamplerDescriptor(
       MinMagFilter::kLinear, SamplerAddressMode::kClampToEdge);
 
-  Vector3 final_scale = {
-      expanded_size.width /
-          static_cast<Scalar>(pass1_out_texture->GetSize().width),
-      expanded_size.height /
-          static_cast<Scalar>(pass1_out_texture->GetSize().height),
-      1.0};
+  Vector2 final_scale =
+      CalculateSizeRatio(expanded_size, pass1_out_texture->GetSize());
   return Entity::FromSnapshot(
       Snapshot{
           .texture = pass3_out_texture,
