@@ -126,7 +126,7 @@ std::optional<Rect> EntityPass::GetElementsCoverage(
         std::shared_ptr<FilterContents> backdrop_filter =
             subpass.backdrop_filter_proc_(
                 FilterInput::Make(accumulated_coverage.value()),
-                subpass.xformation_, Entity::RenderingMode::kSubpass);
+                subpass.transform_, Entity::RenderingMode::kSubpass);
         if (backdrop_filter) {
           auto backdrop_coverage = backdrop_filter->GetCoverage({});
           unfiltered_coverage =
@@ -151,10 +151,10 @@ std::optional<Rect> EntityPass::GetElementsCoverage(
       // we could potentially detect this case as zero coverage in the future.
       std::shared_ptr<FilterContents> image_filter =
           subpass.delegate_->WithImageFilter(*unfiltered_coverage,
-                                             subpass.xformation_);
+                                             subpass.transform_);
       if (image_filter) {
         Entity subpass_entity;
-        subpass_entity.SetTransformation(subpass.xformation_);
+        subpass_entity.SetTransform(subpass.transform_);
         element_coverage = image_filter->GetCoverage(subpass_entity);
       } else {
         element_coverage = unfiltered_coverage;
@@ -174,13 +174,13 @@ std::optional<Rect> EntityPass::GetSubpassCoverage(
     const EntityPass& subpass,
     std::optional<Rect> coverage_limit) const {
   std::shared_ptr<FilterContents> image_filter =
-      subpass.delegate_->WithImageFilter(Rect(), subpass.xformation_);
+      subpass.delegate_->WithImageFilter(Rect(), subpass.transform_);
 
   // If the subpass has an image filter, then its coverage space may deviate
   // from the parent pass and make intersecting with the pass coverage limit
   // unsafe.
   if (image_filter && coverage_limit.has_value()) {
-    coverage_limit = image_filter->GetSourceCoverage(subpass.xformation_,
+    coverage_limit = image_filter->GetSourceCoverage(subpass.transform_,
                                                      coverage_limit.value());
   }
 
@@ -194,7 +194,7 @@ std::optional<Rect> EntityPass::GetSubpassCoverage(
     return entities_coverage;
   }
   auto user_bounds_coverage =
-      subpass.bounds_limit_->TransformBounds(subpass.xformation_);
+      subpass.bounds_limit_->TransformBounds(subpass.transform_);
   return entities_coverage->Intersection(user_bounds_coverage);
 }
 
@@ -286,7 +286,8 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
   }
 
   return EntityPassTarget(
-      target, renderer.GetDeviceCapabilities().SupportsReadFromResolve());
+      target, renderer.GetDeviceCapabilities().SupportsReadFromResolve(),
+      renderer.GetDeviceCapabilities().SupportsImplicitResolvingMSAA());
 }
 
 uint32_t EntityPass::GetTotalPassReads(ContentContext& renderer) const {
@@ -322,7 +323,7 @@ bool EntityPass::Render(ContentContext& renderer,
 
   IterateAllEntities([lazy_glyph_atlas =
                           renderer.GetLazyGlyphAtlas()](const Entity& entity) {
-    if (auto contents = entity.GetContents()) {
+    if (const auto& contents = entity.GetContents()) {
       contents->PopulateGlyphAtlas(lazy_glyph_atlas, entity.DeriveTextScale());
     }
     return true;
@@ -332,16 +333,11 @@ bool EntityPass::Render(ContentContext& renderer,
       .coverage = Rect::MakeSize(root_render_target.GetRenderTargetSize()),
       .clip_depth = 0}};
 
-  bool supports_onscreen_backdrop_reads =
-      renderer.GetDeviceCapabilities().SupportsReadFromOnscreenTexture() &&
-      // If the backend doesn't have `SupportsReadFromResolve`, we need to flip
-      // between two textures when restoring a previous MSAA pass.
-      renderer.GetDeviceCapabilities().SupportsReadFromResolve();
   bool reads_from_onscreen_backdrop = GetTotalPassReads(renderer) > 0;
   // In this branch path, we need to render everything to an offscreen texture
   // and then blit the results onto the onscreen texture. If using this branch,
   // there's no need to set up a stencil attachment on the root render target.
-  if (!supports_onscreen_backdrop_reads && reads_from_onscreen_backdrop) {
+  if (reads_from_onscreen_backdrop) {
     auto offscreen_target =
         CreateRenderTarget(renderer, root_render_target.GetRenderTargetSize(),
                            GetClearColor(render_target.GetRenderTargetSize()));
@@ -375,8 +371,8 @@ bool EntityPass::Render(ContentContext& renderer,
           offscreen_target.GetRenderTarget().GetRenderTargetTexture(),
           root_render_target.GetRenderTargetTexture());
 
-      if (!blit_pass->EncodeCommands(
-              renderer.GetContext()->GetResourceAllocator())) {
+      if (!command_buffer->EncodeAndSubmit(
+              blit_pass, renderer.GetContext()->GetResourceAllocator())) {
         VALIDATION_LOG << "Failed to encode root pass blit command.";
         return false;
       }
@@ -397,17 +393,16 @@ bool EntityPass::Render(ContentContext& renderer,
         entity.SetContents(contents);
         entity.SetBlendMode(BlendMode::kSource);
 
-        entity.Render(renderer, *render_pass);
+        if (!entity.Render(renderer, *render_pass)) {
+          VALIDATION_LOG << "Failed to render EntityPass root blit.";
+          return false;
+        }
       }
 
-      if (!render_pass->EncodeCommands()) {
+      if (!command_buffer->EncodeAndSubmit(render_pass)) {
         VALIDATION_LOG << "Failed to encode root pass command buffer.";
         return false;
       }
-    }
-    if (!command_buffer->SubmitCommands()) {
-      VALIDATION_LOG << "Failed to submit root pass command buffer.";
-      return false;
     }
 
     return true;
@@ -455,7 +450,8 @@ bool EntityPass::Render(ContentContext& renderer,
 
   EntityPassTarget pass_target(
       root_render_target,
-      renderer.GetDeviceCapabilities().SupportsReadFromResolve());
+      renderer.GetDeviceCapabilities().SupportsReadFromResolve(),
+      renderer.GetDeviceCapabilities().SupportsImplicitResolvingMSAA());
 
   return OnRender(                               //
       renderer,                                  // renderer
@@ -491,9 +487,9 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       // If the pass image is going to be rendered with a non-zero position,
       // apply the negative translation to entity copies before rendering them
       // so that they'll end up rendering to the correct on-screen position.
-      element_entity.SetTransformation(
+      element_entity.SetTransform(
           Matrix::MakeTranslation(Vector3(-global_pass_position)) *
-          element_entity.GetTransformation());
+          element_entity.GetTransform());
     }
     return EntityPass::EntityResult::Success(element_entity);
   }
@@ -539,7 +535,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       const auto& proc = subpass->backdrop_filter_proc_;
       subpass_backdrop_filter_contents =
           proc(FilterInput::Make(std::move(texture)),
-               subpass->xformation_.Basis(), Entity::RenderingMode::kSubpass);
+               subpass->transform_.Basis(), Entity::RenderingMode::kSubpass);
 
       // If the very first thing we render in this EntityPass is a subpass that
       // happens to have a backdrop filter, than that backdrop filter will end
@@ -652,7 +648,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
         subpass->delegate_->CreateContentsForSubpassTarget(
             subpass_texture,
             Matrix::MakeTranslation(Vector3{-global_pass_position}) *
-                subpass->xformation_);
+                subpass->transform_);
 
     if (!offscreen_texture_contents) {
       // This is an error because the subpass delegate said the pass couldn't
@@ -671,7 +667,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     element_entity.SetContents(std::move(offscreen_texture_contents));
     element_entity.SetClipDepth(subpass->clip_depth_);
     element_entity.SetBlendMode(subpass->blend_mode_);
-    element_entity.SetTransformation(subpass_texture_capture.AddMatrix(
+    element_entity.SetTransform(subpass_texture_capture.AddMatrix(
         "Transform", Matrix::MakeTranslation(Vector3(subpass_coverage->origin -
                                                      global_pass_position))));
 
@@ -866,7 +862,7 @@ bool EntityPass::OnRender(
 
     Entity backdrop_entity;
     backdrop_entity.SetContents(std::move(backdrop_filter_contents));
-    backdrop_entity.SetTransformation(
+    backdrop_entity.SetTransform(
         Matrix::MakeTranslation(Vector3(-local_pass_position)));
     backdrop_entity.SetClipDepth(clip_depth_floor);
 
@@ -951,8 +947,7 @@ bool EntityPass::OnRender(
         }
 
         FilterInput::Vector inputs = {
-            FilterInput::Make(texture,
-                              result.entity.GetTransformation().Invert()),
+            FilterInput::Make(texture, result.entity.GetTransform().Invert()),
             FilterInput::Make(result.entity.GetContents())};
         auto contents = ColorFilterContents::MakeBlend(
             result.entity.GetBlendMode(), inputs);
@@ -1113,8 +1108,8 @@ std::unique_ptr<EntityPass> EntityPass::Clone() const {
   return pass;
 }
 
-void EntityPass::SetTransformation(Matrix xformation) {
-  xformation_ = xformation;
+void EntityPass::SetTransform(Matrix transform) {
+  transform_ = transform;
 }
 
 void EntityPass::SetClipDepth(size_t clip_depth) {

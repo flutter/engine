@@ -34,12 +34,16 @@ source_set("gpu") {
     sources = [
       "context.cc",
       "context.h",
+      "device_buffer.cc",
+      "device_buffer.h",
       "export.cc",
       "export.h",
       "host_buffer.cc",
       "host_buffer.h",
       "smoketest.cc",
       "smoketest.h",
+      "texture.cc",
+      "texture.h",
     ]
   }
   deps = [

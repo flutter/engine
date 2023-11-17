@@ -32,6 +32,19 @@ def remote_filename(exec_path):
   return ''.join(parts[-2:])
 
 
+def exists_remotely(remote_path):
+  gsutil = os.path.join(os.environ['DEPOT_TOOLS'], 'gsutil.py')
+  command = ['python3', gsutil, '--', 'stat', remote_path]
+  process = subprocess.Popen(
+      command, stderr=subprocess.PIPE, stdout=subprocess.PIPE
+  )
+  stdout, stderr = process.communicate()
+  return_code = process.wait()
+  if return_code == 0:
+    print('%s exists - skipping copy' % remote_path)
+  return return_code == 0
+
+
 def process_symbols(should_upload, symbol_dir):
   full_path = os.path.join(BUILD_ROOT_DIR, symbol_dir)
 
@@ -39,15 +52,20 @@ def process_symbols(should_upload, symbol_dir):
   for (dirpath, dirnames, filenames) in os.walk(full_path):
     files.extend([os.path.join(dirpath, f) for f in filenames])
 
+  print('List of files to upload')
+  print('\n'.join(files))
+
   # Remove dbg_files
   files = [f for f in files if 'dbg_success' not in f]
 
   for file in files:
-    remote_path = 'gs://%s/%s' % (
-        FUCHSIA_ARTIFACTS_BUCKET_NAME, remote_filename(file)
+    remote_path = 'gs://%s/%s/%s' % (
+        FUCHSIA_ARTIFACTS_BUCKET_NAME, FUCHSIA_ARTIFACTS_DEBUG_NAMESPACE,
+        remote_filename(file)
     )
-    if should_upload:
-      command = 'gsutil cp %s %s' % (full_path, remote_path)
+    if should_upload and not exists_remotely(remote_path):
+      gsutil = os.path.join(os.environ['DEPOT_TOOLS'], 'gsutil.py')
+      command = ['python3', gsutil, '--', 'cp', file, remote_path]
       subprocess.check_call(command)
     else:
       print(remote_path)

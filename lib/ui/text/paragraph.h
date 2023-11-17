@@ -9,7 +9,6 @@
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/canvas.h"
 #include "flutter/lib/ui/text/line_metrics.h"
-#include "flutter/lib/ui/text/text_box.h"
 #include "flutter/third_party/txt/src/txt/paragraph.h"
 
 namespace flutter {
@@ -60,7 +59,7 @@ class Paragraph : public RefCountedDartWrappable<Paragraph> {
   void dispose();
 
  private:
-  std::unique_ptr<txt::Paragraph> m_paragraph;
+  std::unique_ptr<txt::Paragraph> m_paragraph_;
 
   explicit Paragraph(std::unique_ptr<txt::Paragraph> paragraph);
 };
