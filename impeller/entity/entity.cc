@@ -47,11 +47,11 @@ Entity::Entity() = default;
 Entity::~Entity() = default;
 
 const Matrix& Entity::GetTransform() const {
-  return transformation_;
+  return transform_;
 }
 
-void Entity::SetTransform(const Matrix& transformation) {
-  transformation_ = transformation;
+void Entity::SetTransform(const Matrix& transform) {
+  transform_ = transform;
 }
 
 std::optional<Rect> Entity::GetCoverage() const {
