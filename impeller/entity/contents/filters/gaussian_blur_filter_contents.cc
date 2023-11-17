@@ -43,7 +43,7 @@ std::shared_ptr<Texture> MakeDownsampleSubpass(
     const SamplerDescriptor& sampler_descriptor,
     const Quad& uvs,
     const ISize& subpass_size,
-    Scalar blur_radius) {
+    const Vector2 padding) {
   ContentContext::SubpassCallback subpass_callback =
       [&](const ContentContext& renderer, RenderPass& pass) {
         HostBuffer& host_buffer = pass.GetTransientsBuffer();
@@ -67,8 +67,8 @@ std::shared_ptr<Texture> MakeDownsampleSubpass(
         vertices =
             (Matrix::MakeTranslation({0.5, 0.5, 0}) *
              Matrix::MakeScale(
-                 {texture_size.width / (texture_size.width + blur_radius * 2),
-                  texture_size.height / (texture_size.height + blur_radius * 2),
+                 {texture_size.width / (texture_size.width + padding.x * 2),
+                  texture_size.height / (texture_size.height + padding.y * 2),
                   1.0}) *
              Matrix::MakeTranslation({-0.5, -0.5, 0}))
                 .Transform(vertices);
@@ -212,19 +212,20 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   Scalar blur_radius = CalculateBlurRadius(sigma_);
   Scalar desired_scalar = CalculateScale(blur_radius);
   Vector2 downsample_scalar(desired_scalar, desired_scalar);
+  Vector2 padding(ceil(blur_radius), ceil(blur_radius));
 
   Size expanded_size(
-      input_snapshot->texture->GetSize().width + 2.0 * blur_radius,
-      input_snapshot->texture->GetSize().height + 2.0 * blur_radius);
-  ISize subpass_size = ISize(expanded_size.width * downsample_scalar.x,
-                             expanded_size.height * downsample_scalar.y);
+      input_snapshot->texture->GetSize().width + 2.0 * padding.x,
+      input_snapshot->texture->GetSize().height + 2.0 * padding.y);
+  ISize subpass_size = ISize(round(expanded_size.width * downsample_scalar.x),
+                             round(expanded_size.height * downsample_scalar.y));
 
   Quad uvs =
       CalculateUVs(inputs[0], entity, input_snapshot->texture->GetSize());
 
   std::shared_ptr<Texture> pass1_out_texture = MakeDownsampleSubpass(
       renderer, input_snapshot->texture, input_snapshot->sampler_descriptor,
-      uvs, subpass_size, blur_radius);
+      uvs, subpass_size, padding);
 
   Size pass1_pixel_size(1.0 / pass1_out_texture->GetSize().width,
                         1.0 / pass1_out_texture->GetSize().height);
@@ -258,13 +259,13 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
           static_cast<Scalar>(pass1_out_texture->GetSize().height),
       1.0};
   return Entity::FromSnapshot(
-      Snapshot{.texture = pass3_out_texture,
-               .transform =
-                   entity.GetTransformation() *
-                   Matrix::MakeTranslation({-blur_radius, -blur_radius, 0}) *
-                   Matrix::MakeScale(final_scale),
-               .sampler_descriptor = sampler_desc,
-               .opacity = input_snapshot->opacity},
+      Snapshot{
+          .texture = pass3_out_texture,
+          .transform = entity.GetTransformation() *
+                       Matrix::MakeTranslation({-padding.x, -padding.y, 0}) *
+                       Matrix::MakeScale(final_scale),
+          .sampler_descriptor = sampler_desc,
+          .opacity = input_snapshot->opacity},
       entity.GetBlendMode(), entity.GetClipDepth());
 }
 
