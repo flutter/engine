@@ -16,6 +16,7 @@
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
 FLUTTER_ASSERT_ARC
+
 @class FlutterPlatformViewsTestMockPlatformView;
 __weak static FlutterPlatformViewsTestMockPlatformView* gMockPlatformView = nil;
 const float kFloatCompareEpsilon = 0.001;

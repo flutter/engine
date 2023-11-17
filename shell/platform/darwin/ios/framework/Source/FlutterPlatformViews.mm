@@ -187,7 +187,7 @@ void FlutterPlatformViewsController::OnMethodCall(FlutterMethodCall* call, Flutt
   }
 }
 
-void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterResult& result) {
+void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterResult result) {
   NSDictionary<NSString*, id>* args = [call arguments];
 
   int64_t viewId = [args[@"id"] longLongValue];
@@ -252,7 +252,7 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
   result(nil);
 }
 
-void FlutterPlatformViewsController::OnDispose(FlutterMethodCall* call, FlutterResult& result) {
+void FlutterPlatformViewsController::OnDispose(FlutterMethodCall* call, FlutterResult result) {
   NSNumber* arg = [call arguments];
   int64_t viewId = [arg longLongValue];
 
@@ -268,7 +268,7 @@ void FlutterPlatformViewsController::OnDispose(FlutterMethodCall* call, FlutterR
 }
 
 void FlutterPlatformViewsController::OnAcceptGesture(FlutterMethodCall* call,
-                                                     FlutterResult& result) {
+                                                     FlutterResult result) {
   NSDictionary<NSString*, id>* args = [call arguments];
   int64_t viewId = [args[@"id"] longLongValue];
 
@@ -286,7 +286,7 @@ void FlutterPlatformViewsController::OnAcceptGesture(FlutterMethodCall* call,
 }
 
 void FlutterPlatformViewsController::OnRejectGesture(FlutterMethodCall* call,
-                                                     FlutterResult& result) {
+                                                     FlutterResult result) {
   NSDictionary<NSString*, id>* args = [call arguments];
   int64_t viewId = [args[@"id"] longLongValue];
 

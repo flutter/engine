@@ -14,6 +14,8 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
+FLUTTER_ASSERT_ARC
+
 @class MockPlatformView;
 __weak static MockPlatformView* gMockPlatformView = nil;
 

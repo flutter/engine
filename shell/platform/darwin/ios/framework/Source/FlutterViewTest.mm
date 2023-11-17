@@ -4,8 +4,11 @@
 
 #import <XCTest/XCTest.h>
 
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
+
+FLUTTER_ASSERT_ARC
 
 @interface FakeDelegate : NSObject <FlutterViewEngineDelegate>
 @property(nonatomic) BOOL callbackCalled;

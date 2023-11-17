@@ -279,10 +279,10 @@ class FlutterPlatformViewsController {
 
   using LayersMap = std::map<int64_t, std::vector<std::shared_ptr<FlutterPlatformViewLayer>>>;
 
-  void OnCreate(FlutterMethodCall* call, FlutterResult& result);
-  void OnDispose(FlutterMethodCall* call, FlutterResult& result);
-  void OnAcceptGesture(FlutterMethodCall* call, FlutterResult& result);
-  void OnRejectGesture(FlutterMethodCall* call, FlutterResult& result);
+  void OnCreate(FlutterMethodCall* call, FlutterResult result);
+  void OnDispose(FlutterMethodCall* call, FlutterResult result);
+  void OnAcceptGesture(FlutterMethodCall* call, FlutterResult result);
+  void OnRejectGesture(FlutterMethodCall* call, FlutterResult result);
   // Dispose the views in `views_to_dispose_`.
   void DisposeViews();
 

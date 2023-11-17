@@ -12,6 +12,9 @@
 #import "flutter/lib/ui/window/platform_message.h"
 #import "flutter/lib/ui/window/platform_message_response.h"
 #import "flutter/shell/common/thread_host.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
+
+FLUTTER_ASSERT_ARC
 
 namespace {
 using namespace flutter;
