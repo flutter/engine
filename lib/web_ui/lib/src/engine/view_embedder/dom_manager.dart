@@ -181,9 +181,10 @@ class DomManager {
 }
 
 DomShadowRoot _attachShadowRoot(DomElement element) {
-  if (getJsProperty<Object?>(element, 'attachShadow') == null) {
-    throw UnsupportedError('ShadowDOM is not supported in this browser.');
-  }
+  assert(
+    getJsProperty<Object?>(element, 'attachShadow') != null,
+    'ShadowDOM is not supported in this browser.',
+  );
 
   return element.attachShadow(<String, dynamic>{
     'mode': 'open',

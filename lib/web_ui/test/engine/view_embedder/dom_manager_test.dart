@@ -10,6 +10,8 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 
+import '../../common/matchers.dart';
+
 void main() {
   internalBootstrapBrowserTest(() => doTests);
 }
@@ -85,7 +87,7 @@ void doTests() {
 
       attachShadow = null; // Break ShadowDOM
 
-      expect(() => DomManager(devicePixelRatio: 3.0), throwsUnsupportedError);
+      expect(() => DomManager(devicePixelRatio: 3.0), throwsAssertionError);
       attachShadow = oldAttachShadow; // Restore ShadowDOM
     });
 
