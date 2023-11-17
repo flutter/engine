@@ -54,8 +54,8 @@ using TessellatedPointProc = std::function<void(const Point& p)>;
 ///         triangles are rendered for maximum tessellation fidelity.
 class CircleTessellator {
  public:
-  /// @brief   Constructs a CircleDivider that produces enough segments to
-  ///          reasonably approximate a circle with a specified |radius|
+  /// @brief   Constructs a CircleTessellator that produces enough segments
+  ///          to reasonably approximate a circle with a specified |radius|
   ///          when viewed under the specified |transform|.
   constexpr CircleTessellator(const Matrix& transform, Scalar radius)
       : CircleTessellator(transform.GetMaxBasisLength() * radius) {}
@@ -102,8 +102,8 @@ class CircleTessellator {
  private:
   const size_t quadrant_divisions_;
 
-  /// @brief   Constructs a CircleDivider that produces enough segments to
-  ///          reasonably approximate a circle with a specified radius
+  /// @brief   Constructs a CircleTessellator that produces enough segments
+  ///          to reasonably approximate a circle with a specified radius
   ///          in pixels.
   constexpr explicit CircleTessellator(Scalar pixel_radius)
       : quadrant_divisions_(ComputeQuadrantDivisions(pixel_radius)) {}
