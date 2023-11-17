@@ -45,11 +45,18 @@ size_t Texture::GetBytesPerTexel() {
 }
 
 Dart_Handle Texture::AsImage() const {
+  // DlImageImpeller isn't compiled in builds with Impeller disabled. If
+  // Impeller is disabled, it's impossible to get here anyhow, so just ifdef it
+  // out.
+#if IMPELLER_SUPPORTS_RENDERING
   auto image = flutter::CanvasImage::Create();
   auto dl_image = impeller::DlImageImpeller::Make(texture_);
   image->set_image(dl_image);
   auto wrapped = image->CreateOuterWrapping();
   return wrapped;
+#else
+  return Dart_Null();
+#endif
 }
 
 }  // namespace gpu
