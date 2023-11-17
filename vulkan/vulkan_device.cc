@@ -220,7 +220,7 @@ bool VulkanDevice::GetSurfaceCapabilities(
   }
 
   bool success =
-      VK_CALL_LOG_ERROR(vk.GetPhysicalDeviceSurfaceCapabilitiesKHR(
+      VK_CALL_LOG_ERROR(vk_.GetPhysicalDeviceSurfaceCapabilitiesKHR(
           physical_device_, surface.Handle(), capabilities)) == VK_SUCCESS;
 
   if (!success) {
@@ -310,7 +310,7 @@ int VulkanDevice::ChooseSurfaceFormat(
   }
 
   uint32_t format_count = 0;
-  if (VK_CALL_LOG_ERROR(vk.GetPhysicalDeviceSurfaceFormatsKHR(
+  if (VK_CALL_LOG_ERROR(vk_.GetPhysicalDeviceSurfaceFormatsKHR(
           physical_device_, surface.Handle(), &format_count, nullptr)) !=
       VK_SUCCESS) {
     return -1;
@@ -323,7 +323,7 @@ int VulkanDevice::ChooseSurfaceFormat(
   std::vector<VkSurfaceFormatKHR> formats;
   formats.resize(format_count);
 
-  if (VK_CALL_LOG_ERROR(vk.GetPhysicalDeviceSurfaceFormatsKHR(
+  if (VK_CALL_LOG_ERROR(vk_.GetPhysicalDeviceSurfaceFormatsKHR(
           physical_device_, surface.Handle(), &format_count, formats.data())) !=
       VK_SUCCESS) {
     return -1;
