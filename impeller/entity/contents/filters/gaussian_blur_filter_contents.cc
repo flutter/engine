@@ -37,6 +37,12 @@ void BindVertices(Command& cmd,
   cmd.BindVertices(vtx_buffer);
 }
 
+Matrix MakeAnchorScale(const Point& anchor, Vector2 scale) {
+  return Matrix::MakeTranslation({anchor.x, anchor.y, 0}) *
+         Matrix::MakeScale(scale) *
+         Matrix::MakeTranslation({-anchor.x, -anchor.y, 0});
+}
+
 std::shared_ptr<Texture> MakeDownsampleSubpass(
     const ContentContext& renderer,
     std::shared_ptr<Texture> input_texture,
@@ -59,19 +65,14 @@ std::shared_ptr<Texture> MakeDownsampleSubpass(
         frame_info.texture_sampler_y_coord_scale = 1.0;
         frame_info.alpha = 1.0;
 
-        Quad vertices = {Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1)};
-
         // Insert transparent gutter around the downsampled image so the blur
         // creates a halo effect.
-        ISize texture_size = input_texture->GetSize();
-        vertices =
-            (Matrix::MakeTranslation({0.5, 0.5, 0}) *
-             Matrix::MakeScale(
-                 {texture_size.width / (texture_size.width + padding.x * 2),
-                  texture_size.height / (texture_size.height + padding.y * 2),
-                  1.0}) *
-             Matrix::MakeTranslation({-0.5, -0.5, 0}))
-                .Transform(vertices);
+        Vector2 texture_size = Vector2(input_texture->GetSize());
+        Quad vertices =
+            MakeAnchorScale({0.5, 0.5},
+                            texture_size / (texture_size + padding * 2))
+                .Transform(
+                    {Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1)});
 
         BindVertices<TextureFillVertexShader>(cmd, host_buffer,
                                               {
@@ -153,12 +154,6 @@ Scalar CalculateScale(Scalar radius) {
   return (curve - 1) * limit + 1;
 };
 
-template <typename T, typename U>
-Vector2 CalculateSizeRatio(const T& x, const U& y) {
-  return Vector2{x.width / static_cast<Scalar>(y.width),
-                 x.height / static_cast<Scalar>(y.height)};
-}
-
 }  // namespace
 
 GaussianBlurFilterContents::GaussianBlurFilterContents(Scalar sigma)
@@ -220,13 +215,13 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   Vector2 downsample_scalar(desired_scalar, desired_scalar);
   Vector2 padding(ceil(blur_radius), ceil(blur_radius));
 
-  Size expanded_size(
-      input_snapshot->texture->GetSize().width + 2.0 * padding.x,
-      input_snapshot->texture->GetSize().height + 2.0 * padding.y);
+  Vector2 padded_size =
+      Vector2(input_snapshot->texture->GetSize()) + 2.0 * padding;
   // TODO(gaaclarke): I don't think we are correctly handling this fractional
   //                  amount we are throwing away.
-  ISize subpass_size = ISize(round(expanded_size.width * downsample_scalar.x),
-                             round(expanded_size.height * downsample_scalar.y));
+  Vector2 downsampled_size = padded_size * downsample_scalar;
+  ISize subpass_size =
+      ISize(round(downsampled_size.x), round(downsampled_size.y));
 
   Quad uvs =
       CalculateUVs(inputs[0], entity, input_snapshot->texture->GetSize());
@@ -235,13 +230,12 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
       renderer, input_snapshot->texture, input_snapshot->sampler_descriptor,
       uvs, subpass_size, padding);
 
-  Size pass1_pixel_size(1.0 / pass1_out_texture->GetSize().width,
-                        1.0 / pass1_out_texture->GetSize().height);
+  Vector2 pass1_pixel_size = 1.0 / Vector2(pass1_out_texture->GetSize());
 
   std::shared_ptr<Texture> pass2_out_texture = MakeBlurSubpass(
       renderer, pass1_out_texture, input_snapshot->sampler_descriptor,
       GaussianBlurFragmentShader::BlurInfo{
-          .blur_uv_offset = Point(0.0, pass1_pixel_size.height),
+          .blur_uv_offset = Point(0.0, pass1_pixel_size.y),
           .blur_sigma = sigma_ * downsample_scalar.y,
           .blur_radius = blur_radius * downsample_scalar.y,
           .step_size = 1.0,
@@ -251,7 +245,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   std::shared_ptr<Texture> pass3_out_texture = MakeBlurSubpass(
       renderer, pass2_out_texture, input_snapshot->sampler_descriptor,
       GaussianBlurFragmentShader::BlurInfo{
-          .blur_uv_offset = Point(pass1_pixel_size.width, 0.0),
+          .blur_uv_offset = Point(pass1_pixel_size.x, 0.0),
           .blur_sigma = sigma_ * downsample_scalar.x,
           .blur_radius = blur_radius * downsample_scalar.x,
           .step_size = 1.0,
@@ -260,14 +254,13 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   SamplerDescriptor sampler_desc = MakeSamplerDescriptor(
       MinMagFilter::kLinear, SamplerAddressMode::kClampToEdge);
 
-  Vector2 final_scale =
-      CalculateSizeRatio(expanded_size, pass1_out_texture->GetSize());
   return Entity::FromSnapshot(
       Snapshot{
           .texture = pass3_out_texture,
           .transform = entity.GetTransformation() *
                        Matrix::MakeTranslation({-padding.x, -padding.y, 0}) *
-                       Matrix::MakeScale(final_scale),
+                       Matrix::MakeScale(padded_size /
+                                         Vector2(pass1_out_texture->GetSize())),
           .sampler_descriptor = sampler_desc,
           .opacity = input_snapshot->opacity},
       entity.GetBlendMode(), entity.GetClipDepth());
