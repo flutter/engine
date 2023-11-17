@@ -155,7 +155,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
@@ -213,7 +213,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
@@ -269,7 +269,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
@@ -343,7 +343,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
@@ -417,7 +417,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
@@ -492,7 +492,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
@@ -607,7 +607,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
@@ -746,7 +746,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
@@ -1025,7 +1025,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
@@ -1327,7 +1327,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
@@ -1385,7 +1385,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
@@ -1481,7 +1481,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
@@ -1554,7 +1554,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
@@ -1623,7 +1623,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
@@ -1691,7 +1691,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
@@ -1766,7 +1766,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
@@ -1841,7 +1841,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
@@ -1917,7 +1917,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
@@ -1983,7 +1983,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
@@ -2106,7 +2106,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
@@ -2219,7 +2219,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
@@ -2283,7 +2283,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
@@ -2347,7 +2347,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)] autorelease];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
@@ -2399,7 +2399,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)] autorelease];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
@@ -2457,7 +2457,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)] autorelease];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
@@ -2557,7 +2557,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)] autorelease];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
@@ -2657,7 +2657,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)] autorelease];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
@@ -2813,7 +2813,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
@@ -2897,7 +2897,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
@@ -2999,7 +2999,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)] autorelease];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
@@ -3109,7 +3109,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
       /*platform_views_controller=*/flutterPlatformViewsController,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
 
   FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
       [[[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init] autorelease];
