@@ -30,7 +30,7 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
 
   auto& host_buffer = pass.GetTransientsBuffer();
   return {
-      .type = PrimitiveType::kTriangle,
+      .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer = vtx_builder->CreateVertexBuffer(host_buffer),
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransform(),
@@ -59,7 +59,7 @@ GeometryResult PointFieldGeometry::GetPositionUVBuffer(
 
   auto& host_buffer = pass.GetTransientsBuffer();
   return {
-      .type = PrimitiveType::kTriangle,
+      .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer = uv_vtx_builder.CreateVertexBuffer(host_buffer),
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransform(),
@@ -85,30 +85,50 @@ PointFieldGeometry::GetPositionBufferCPU(const ContentContext& renderer,
   VertexBufferBuilder<SolidFillVertexShader::PerVertexData> vtx_builder;
 
   if (round_) {
-    CircleTessellator divider(entity.GetTransform(), radius);
+    CircleTessellator tessellator(entity.GetTransform(), radius);
 
     // Get polygon relative to {0, 0} so we can translate it to each point
     // in turn.
-    auto vertices = divider.GetCircleTriangles({}, radius);
-    FML_DCHECK(vertices.size() == divider.GetCircleVertexCount());
+    std::vector<Point> vertices;
+    tessellator.GenerateCircleTriangleStrip(
+        [&vertices](const Point& p) {  //
+          vertices.push_back(p);
+        },
+        {}, radius);
+    FML_DCHECK(vertices.size() == tessellator.GetCircleVertexCount());
     vtx_builder.Reserve(vertices.size() * points_.size());
 
+    bool first = true;
+    Point prev;
     for (auto& center : points_) {
+      if (first) {
+        first = false;
+      } else {
+        vtx_builder.AppendVertex({prev});
+        vtx_builder.AppendVertex({center + vertices[0]});
+      }
       for (auto& vertex : vertices) {
-        vtx_builder.AppendVertex({center + vertex});
+        prev = center + vertex;
+        vtx_builder.AppendVertex({prev});
       }
     }
   } else {
     vtx_builder.Reserve(6 * points_.size());
+    bool first = true;
+    Point prev;
     for (auto& point : points_) {
-      // Upper left -> Upper right -> Lower right (-> Upper left)
+      if (first) {
+        first = false;
+      } else {
+        vtx_builder.AppendVertex({prev});
+        vtx_builder.AppendVertex({{point.x - radius, point.y - radius}});
+      }
+
+      // Z pattern from UL -> UR -> LL -> LR
       vtx_builder.AppendVertex({{point.x - radius, point.y - radius}});
       vtx_builder.AppendVertex({{point.x + radius, point.y - radius}});
-      vtx_builder.AppendVertex({{point.x + radius, point.y + radius}});
-      // Upper left -> Lower right -> Lower left (-> Upper left)
-      vtx_builder.AppendVertex({{point.x - radius, point.y - radius}});
-      vtx_builder.AppendVertex({{point.x + radius, point.y + radius}});
       vtx_builder.AppendVertex({{point.x - radius, point.y + radius}});
+      vtx_builder.AppendVertex({prev = {point.x + radius, point.y + radius}});
     }
   }
 

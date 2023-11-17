@@ -62,83 +62,68 @@ TEST(CircleTessellator, TrigAngles) {
 }
 
 TEST(CircleTessellator, DivisionVertexCounts) {
-  auto test = [](Scalar pixel_radius, size_t quadrant_divisions) {
-    CircleTessellator tessellator(pixel_radius);
+  auto test = [](const Matrix& matrix, Scalar radius,
+                 size_t quadrant_divisions) {
+    CircleTessellator tessellator(matrix, radius);
 
     EXPECT_EQ(tessellator.GetQuadrantDivisionCount(), quadrant_divisions)
-        << "pixel radius = " << pixel_radius;
-    EXPECT_EQ(tessellator.GetCircleDivisionCount(), quadrant_divisions * 4)
-        << "pixel radius = " << pixel_radius;
+        << "transform = " << matrix << ", radius = " << radius;
 
-    EXPECT_EQ(tessellator.GetQuadrantVertexCount(), quadrant_divisions * 3)
-        << "pixel radius = " << pixel_radius;
-    EXPECT_EQ(tessellator.GetCircleVertexCount(), quadrant_divisions * 12)
-        << "pixel radius = " << pixel_radius;
+    EXPECT_EQ(tessellator.GetCircleVertexCount(), (quadrant_divisions + 1) * 4)
+        << "transform = " << matrix << ", radius = " << radius;
   };
 
-  test(0.0, 1u);
-  test(0.9, 1u);
-  test(1.0, 2u);
-  test(1.9, 2u);
-  test(2.0, 6u);
-  test(11.9, 6u);
-  test(12.0, 9u);
-  test(35.9, 9u);
+  test({}, 0.0, 1u);
+  test({}, 0.9, 1u);
+  test({}, 1.0, 2u);
+  test({}, 1.9, 2u);
+  test(Matrix::MakeScale(Vector2(2.0, 2.0)), 0.95, 2u);
+  test({}, 2.0, 6u);
+  test(Matrix::MakeScale(Vector2(2.0, 2.0)), 1.0, 6u);
+  test({}, 11.9, 6u);
+  test({}, 12.0, 9u);
+  test({}, 35.9, 9u);
   for (int i = 36; i < 140; i += 4) {
-    test(i, i / 4);
-    test(i + .1, i / 4 + 1);
+    test({}, i, i / 4);
+    test({}, i + .1, i / 4 + 1);
   }
   for (int i = 140; i <= 1000; i++) {
-    test(i, 35u);
+    test({}, i, 35u);
   }
 }
 
-TEST(CircleTessellator, TessellationVertices) {
+TEST(CircleTessellator, CircleTessellationVertices) {
   auto test = [](Scalar pixel_radius, Point center, Scalar radius) {
-    CircleTessellator tessellator(pixel_radius);
+    CircleTessellator tessellator({}, pixel_radius);
 
-    auto divisions = tessellator.GetCircleDivisionCount();
-    auto points = tessellator.GetCircleTriangles(center, radius);
-    ASSERT_EQ(points.size(), divisions * 3);
-    ASSERT_EQ(divisions % 4, 0u);
+    auto vertex_count = tessellator.GetCircleVertexCount();
+    auto vertices = std::vector<Point>();
+    tessellator.GenerateCircleTriangleStrip(
+        [&vertices](const Point& p) {  //
+          vertices.push_back(p);
+        },
+        center, radius);
+    ASSERT_EQ(vertices.size(), vertex_count);
+    ASSERT_EQ(vertex_count % 4, 0u);
 
-    Point expect_center = center;
-    Point expect_prev = center - Point(0, radius);
-    for (size_t i = 0; i < divisions; i++) {
-      double angle = (k2Pi * (i + 1)) / divisions - kPiOver2;
-      Point expect_next =
-          center + Point(cos(angle) * radius, sin(angle) * radius);
-      auto quadrant = i / (divisions / 4);
-      Point test_center, test_prev, test_next;
-      switch (quadrant) {
-        case 0:
-        case 2:
-          // Quadrants 0 and 2 are ordered (center, prev, next);
-          test_center = points[i * 3 + 0];
-          test_prev = points[i * 3 + 1];
-          test_next = points[i * 3 + 2];
-          break;
-
-        case 1:
-        case 3:
-          // Quadrants 1 and 3 are ordered (prev, next, center);
-          test_center = points[i * 3 + 2];
-          test_prev = points[i * 3 + 0];
-          test_next = points[i * 3 + 1];
-          break;
-      }
-      EXPECT_EQ(test_center, expect_center)            //
-          << "point " << i << " out of " << divisions  //
-          << ", center = " << center << ", radius = " << radius;
-      EXPECT_POINT_NEAR(test_prev, expect_prev)        //
-          << "point " << i << " out of " << divisions  //
-          << ", center = " << center << ", radius = " << radius;
-      EXPECT_POINT_NEAR(test_next, expect_next)        //
-          << "point " << i << " out of " << divisions  //
-          << ", center = " << center << ", radius = " << radius;
-      expect_prev = expect_next;
+    auto quadrant_count = vertex_count / 4;
+    for (size_t i = 0; i < quadrant_count; i++) {
+      double angle = kPiOver2 * i / (quadrant_count - 1);
+      double rsin = sin(angle) * radius;
+      double rcos = cos(angle) * radius;
+      EXPECT_POINT_NEAR(vertices[i * 2],
+                        Point(center.x - rcos, center.y + rsin))
+          << "vertex " << i << ", angle = " << angle * 180.0 / kPi << std::endl;
+      EXPECT_POINT_NEAR(vertices[i * 2 + 1],
+                        Point(center.x - rcos, center.y - rsin))
+          << "vertex " << i << ", angle = " << angle * 180.0 / kPi << std::endl;
+      EXPECT_POINT_NEAR(vertices[vertex_count - i * 2 - 1],
+                        Point(center.x + rcos, center.y - rsin))
+          << "vertex " << i << ", angle = " << angle * 180.0 / kPi << std::endl;
+      EXPECT_POINT_NEAR(vertices[vertex_count - i * 2 - 2],
+                        Point(center.x + rcos, center.y + rsin))
+          << "vertex " << i << ", angle = " << angle * 180.0 / kPi << std::endl;
     }
-    EXPECT_POINT_NEAR(expect_prev, center - Point(0, radius));
   };
 
   test(2.0, {}, 2.0);

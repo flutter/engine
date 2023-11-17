@@ -40,8 +40,8 @@ class LineGeometry final : public Geometry {
                       const Matrix& transform,
                       bool extend_endpoints) const;
 
-  Point ComputeAlongVector(const Matrix& transform,
-                           bool allow_zero_length) const;
+  Vector2 ComputeAlongVector(const Matrix& transform,
+                             bool allow_zero_length) const;
 
   Scalar ComputeHalfWidth(const Matrix& transform) const;
 
@@ -49,12 +49,6 @@ class LineGeometry final : public Geometry {
   GeometryResult GetPositionBuffer(const ContentContext& renderer,
                                    const Entity& entity,
                                    RenderPass& pass) const override;
-
-  PrimitiveType FillRoundCapVertices(std::vector<Point>& vertices,
-                                     const Matrix& transform) const;
-
-  PrimitiveType FillRectCapVertices(std::vector<Point>& vertices,
-                                    const Matrix& transform) const;
 
   // |Geometry|
   GeometryVertexType GetVertexType() const override;

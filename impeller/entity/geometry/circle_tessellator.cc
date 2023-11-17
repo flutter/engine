@@ -52,79 +52,57 @@ const std::vector<Trig>& CircleTessellator::GetTrigForDivisions(
   return trigs;
 }
 
-void CircleTessellator::ExtendRelativeQuadrantToAbsoluteCircle(
-    std::vector<Point>& points,
-    const Point& center) {
-  auto quadrant_points = points.size();
-
-  // The 1st quadrant points are reversed in order, reflected around
-  // the Y axis, and translated to become absolute 2nd quadrant points.
-  for (size_t i = 1; i <= quadrant_points; i++) {
-    auto point = points[quadrant_points - i];
-    points.emplace_back(center.x + point.x, center.y - point.y);
-  }
-
-  // The 1st quadrant points are reflected around the X & Y axes
-  // and translated to become absolute 3rd quadrant points.
-  for (size_t i = 0; i < quadrant_points; i++) {
-    auto point = points[i];
-    points.emplace_back(center.x - point.x, center.y - point.y);
-  }
-
-  // The 1st quadrant points are reversed in order, reflected around
-  // the X axis and translated to become absolute 4th quadrant points.
-  // The 1st quadrant points are also translated to the center point as
-  // well since this is the last time we will use them.
-  for (size_t i = 1; i <= quadrant_points; i++) {
-    auto point = points[quadrant_points - i];
-    points.emplace_back(center.x - point.x, center.y + point.y);
-
-    // This is the last loop where we need the first quadrant to be
-    // relative so we convert them to absolute as we go.
-    points[quadrant_points - i] = center + point;
-  }
-}
-
-void CircleTessellator::FillQuadrantTriangles(std::vector<Point>& points,
-                                              const Point& center,
-                                              const Point& start_vector,
-                                              const Point& end_vector) const {
-  // We only deal with circles for now
-  FML_DCHECK(start_vector.GetLength() - end_vector.GetLength() <
-             kEhCloseEnough);
-  // And only for perpendicular vectors
-  FML_DCHECK(start_vector.Dot(end_vector) < kEhCloseEnough);
-
+void CircleTessellator::GenerateCircleTriangleStrip(
+    const TessellatedPointProc& proc,
+    const Point& center,
+    Scalar radius) const {
   auto trigs = GetTrigForDivisions(quadrant_divisions_);
 
-  auto prev = center + (trigs[0].cos * start_vector +  //
-                        trigs[0].sin * end_vector);
-  for (size_t i = 1; i < trigs.size(); i++) {
-    points.emplace_back(center);
-    points.emplace_back(prev);
-    prev = center + (trigs[i].cos * start_vector +  //
-                     trigs[i].sin * end_vector);
-    points.emplace_back(prev);
+  for (auto& trig : trigs) {
+    auto offset = trig * radius;
+    proc({center.x - offset.x, center.y + offset.y});
+    proc({center.x - offset.x, center.y - offset.y});
+  }
+  // The second half of the circle should be iterated in reverse, but
+  // we can instead iterate forward and swap the x/y values of the
+  // offset as the angles should be symmetric and thus should generate
+  // symmetrically reversed offset vectors.
+  for (auto& trig : trigs) {
+    auto offset = trig * radius;
+    proc({center.x + offset.y, center.y + offset.x});
+    proc({center.x + offset.y, center.y - offset.x});
   }
 }
 
-std::vector<Point> CircleTessellator::GetCircleTriangles(const Point& center,
-                                                         Scalar radius) const {
-  std::vector<Point> points = std::vector<Point>();
-  const size_t quadrant_points = quadrant_divisions_ * 3;
-  points.reserve(quadrant_points * 4);
+void CircleTessellator::GenerateRoundCapLineTriangleStrip(
+    const TessellatedPointProc& proc,
+    const Point& p0,
+    const Point& p1,
+    Scalar radius) const {
+  auto trigs = GetTrigForDivisions(quadrant_divisions_);
+  auto along = p1 - p0;
+  auto length = along.GetLength();
+  if (length < kEhCloseEnough) {
+    return GenerateCircleTriangleStrip(proc, p0, radius);
+  }
+  along *= radius / length;
+  auto across = Point(-along.y, along.x);
 
-  // Start with the quadrant top-center to right-center using coordinates
-  // relative to the (0, 0). The coordinates will be made absolute relative
-  // to the center during the extend method below.
-  FillQuadrantTriangles(points, {}, {0, -radius}, {radius, 0});
-  FML_DCHECK(points.size() == quadrant_points);
-
-  ExtendRelativeQuadrantToAbsoluteCircle(points, center);
-
-  FML_DCHECK(points.size() == quadrant_points * 4);
-
-  return points;
+  for (auto& trig : trigs) {
+    auto relative_across = across * trig.cos;
+    auto relative_along = along * trig.sin;
+    proc({p0 + relative_across - relative_along});
+    proc({p1 + relative_across + relative_along});
+  }
+  // The second half of the round caps should be iterated in reverse, but
+  // we can instead iterate forward and swap the sin/cos values as they
+  // should be symmetric.
+  for (auto& trig : trigs) {
+    auto relative_across = across * trig.sin;
+    auto relative_along = along * trig.cos;
+    proc({p0 - relative_across - relative_along});
+    proc({p1 - relative_across + relative_along});
+  }
 }
 
 }  // namespace impeller

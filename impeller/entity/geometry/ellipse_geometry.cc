@@ -19,16 +19,19 @@ GeometryResult EllipseGeometry::GetPositionBuffer(
     RenderPass& pass) const {
   auto& host_buffer = pass.GetTransientsBuffer();
 
-  CircleTessellator divider(entity.GetTransform(), radius_);
-  auto points = divider.GetCircleTriangles(center_, radius_);
+  CircleTessellator tessellator(entity.GetTransform(), radius_);
+  auto vertices = std::vector<Point>(tessellator.GetCircleVertexCount());
+  tessellator.GenerateCircleTriangleStrip(
+      [&vertices](const Point& p) { vertices.push_back(p); }, center_, radius_);
 
   return GeometryResult{
-      .type = PrimitiveType::kTriangle,
+      .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer =
           {
               .vertex_buffer = host_buffer.Emplace(
-                  points.data(), points.size() * sizeof(Point), alignof(float)),
-              .vertex_count = points.size(),
+                  vertices.data(), vertices.size() * sizeof(Point),
+                  alignof(float)),
+              .vertex_count = vertices.size(),
               .index_type = IndexType::kNone,
           },
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
@@ -46,24 +49,26 @@ GeometryResult EllipseGeometry::GetPositionUVBuffer(
     RenderPass& pass) const {
   auto& host_buffer = pass.GetTransientsBuffer();
 
-  CircleTessellator divider(entity.GetTransform(), radius_);
-  auto points = divider.GetCircleTriangles(center_, radius_);
   auto uv_transform =
       texture_coverage.GetNormalizingTransform() * effect_transform;
 
-  std::vector<Point> data(points.size() * 2);
-  for (auto i = 0u, j = 0u; j < points.size(); i += 2, j++) {
-    data[i] = points[j];
-    data[i + 1] = uv_transform * points[j];
-  }
+  CircleTessellator tessellator(entity.GetTransform(), radius_);
+  auto vertices = std::vector<Point>(tessellator.GetCircleVertexCount());
+  tessellator.GenerateCircleTriangleStrip(
+      [&vertices, &uv_transform](const Point& p) {
+        vertices.push_back(p);
+        vertices.push_back(uv_transform * p);
+      },
+      center_, radius_);
 
   return GeometryResult{
-      .type = PrimitiveType::kTriangle,
+      .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer =
           {
               .vertex_buffer = host_buffer.Emplace(
-                  data.data(), data.size() * sizeof(Point), alignof(float)),
-              .vertex_count = points.size(),
+                  vertices.data(), vertices.size() * sizeof(Point),
+                  alignof(float)),
+              .vertex_count = vertices.size() / 2,
               .index_type = IndexType::kNone,
           },
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *

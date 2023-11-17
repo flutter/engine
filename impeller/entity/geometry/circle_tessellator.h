@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <functional>
 #include <vector>
 
 #include "flutter/impeller/geometry/matrix.h"
@@ -22,33 +23,37 @@ struct Trig {
 
   double cos;
   double sin;
+
+  Vector2 operator*(Scalar radius) const {
+    return Vector2(cos * radius, sin * radius);
+  }
+
+  Vector2 interpolate(Vector2 start_vector, Vector2 end_vector) {
+    return start_vector * cos + end_vector * sin;
+  }
 };
+
+using TessellatedPointProc = std::function<void(const Point& p)>;
 
 /// @brief  A utility class to compute the number of divisions for a circle
 ///         given a transform-adjusted pixel radius and methods for generating
 ///         a tessellated set of triangles for a quarter or full circle.
 ///
-///         A helper constructor is provided which can compute the device
-///         pixel radius size for a geometry-space radius when viewed under
-///         a specified geometry-to-device transform.
+///         The constructor will compute the device pixel radius size for
+///         the specified geometry-space |radius| when viewed under
+///         a specified geometry-to-device |transform|.
 ///
-///         The object should be constructed with the expected radius of the
-///         circle in pixels, but can then be used to generate a triangular
-///         tessellation with the indicated number of divisions for any
+///         The object should be constructed with the expected transform and
+///         radius of the circle, but can then be used to generate a triangular
+///         tessellation with the computed number of divisions for any
 ///         radius after that. Since the coordinate space in which the
 ///         circle being tessellated is not necessarily device pixel space,
 ///         the radius supplied during tessellation might not match the
-///         pixel radius supplied during construction, but the two values
+///         pixel radius computed during construction, but the two values
 ///         should be related by the transform in place when the tessellated
 ///         triangles are rendered for maximum tessellation fidelity.
 class CircleTessellator {
  public:
-  /// @brief   Constructs a CircleDivider that produces enough segments to
-  ///          reasonably approximate a circle with a specified radius
-  ///          in pixels.
-  constexpr explicit CircleTessellator(Scalar pixel_radius)
-      : quadrant_divisions_(ComputeQuadrantDivisions(pixel_radius)) {}
-
   /// @brief   Constructs a CircleDivider that produces enough segments to
   ///          reasonably approximate a circle with a specified |radius|
   ///          when viewed under the specified |transform|.
@@ -62,39 +67,46 @@ class CircleTessellator {
   size_t GetQuadrantDivisionCount() const { return quadrant_divisions_; }
 
   /// @brief   Return the number of vertices that will be generated to
-  ///          tessellate a single quarter circle.
-  size_t GetQuadrantVertexCount() const { return quadrant_divisions_ * 3; }
-
-  /// @brief   Return the number of divisions computed by the algorithm for
-  ///          a full circle.
-  size_t GetCircleDivisionCount() const { return quadrant_divisions_ * 4; }
-
-  /// @brief   Return the number of vertices that will be generated to
-  ///          tessellate a full circle.
-  size_t GetCircleVertexCount() const { return quadrant_divisions_ * 12; }
-
-  /// @brief   Compute the points of a triangular tesselation of the full
-  ///          circle of the given radius and center.
+  ///          tessellate a full circle with a triangle strip.
   ///
-  /// @return  the list of points on the polygonal approximation.
-  std::vector<Point> GetCircleTriangles(const Point& center,
-                                        Scalar radius) const;
+  ///          This value can be used to pre-allocate space in a vector
+  ///          to hold the vertices that will be produced by the
+  ///          |GenerateCircleTriangleStrip| and
+  ///          |GenerateRoundCapLineTriangleStrip| methods.
+  size_t GetCircleVertexCount() const { return (quadrant_divisions_ + 1) * 4; }
 
-  /// @brief   Adds entries in an existing vector of |vertices| to represent
-  ///          the triangular tessellation of the quarter circle that sweeps
-  ///          from the |start_vector| to the |end_vector| around an origin
-  ///          specified by |center|. The length of the start and end vectors
-  ///          controls the size of the quarter circle.
+  /// @brief   Generate the vertices for a triangle strip that covers the
+  ///          circle at a given |radius| from a given |center|, delivering
+  ///          the computed coordinates to the supplied |proc|.
   ///
-  ///          The axes must be of the same length and perpendicular. The new
-  ///          points will be appended to the end of the vector.
-  void FillQuadrantTriangles(std::vector<Point>& vertices,
-                             const Point& center,
-                             const Point& start_vector,
-                             const Point& end_vector) const;
+  ///          This procedure will generate no more than the number of
+  ///          vertices returned by |GetCircleVertexCount| in an order
+  ///          appropriate for rendering as a triangle strip.
+  void GenerateCircleTriangleStrip(const TessellatedPointProc& proc,
+                                   const Point& center,
+                                   Scalar radius) const;
+
+  /// @brief   Generate the vertices for a triangle strip that covers the
+  ///          line from |p0| to |p1| with round caps of the specified
+  ///          |radius|, delivering the computed coordinates to the supplied
+  ///          |proc|.
+  ///
+  ///          This procedure will generate no more than the number of
+  ///          vertices returned by |GetCircleVertexCount| in an order
+  ///          appropriate for rendering as a triangle strip.
+  void GenerateRoundCapLineTriangleStrip(const TessellatedPointProc& proc,
+                                         const Point& p0,
+                                         const Point& p1,
+                                         Scalar radius) const;
 
  private:
   const size_t quadrant_divisions_;
+
+  /// @brief   Constructs a CircleDivider that produces enough segments to
+  ///          reasonably approximate a circle with a specified radius
+  ///          in pixels.
+  constexpr explicit CircleTessellator(Scalar pixel_radius)
+      : quadrant_divisions_(ComputeQuadrantDivisions(pixel_radius)) {}
 
   CircleTessellator(const CircleTessellator&) = delete;
 
@@ -115,20 +127,6 @@ class CircleTessellator {
   ///
   /// @return  The vector of (divisions + 1) trig values.
   static const std::vector<Trig>& GetTrigForDivisions(size_t divisions);
-
-  /// @brief   Extend a list of |points| in the vector containing relative
-  ///          coordinates for the first quadrant (top-center to right-center)
-  ///          into the remaining 3 quadrants and adjust them to be relative
-  ///          to the supplied |center|.
-  ///
-  ///          The incoming coordinates are assumed to be relative to a
-  ///          center point of (0, 0) and the method will duplicate and
-  ///          reflect them around that origin to fill in the remaining
-  ///          3 quadrants. As the method works, it will also adjust every
-  ///          point (including the pre-existing 1st quadrant points) to
-  ///          be relative to the new center.
-  static void ExtendRelativeQuadrantToAbsoluteCircle(std::vector<Point>& points,
-                                                     const Point& center = {});
 
   static constexpr int MAX_DIVISIONS_ = 35;
 
