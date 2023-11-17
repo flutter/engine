@@ -217,9 +217,9 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
 
   Vector2 padded_size =
       Vector2(input_snapshot->texture->GetSize()) + 2.0 * padding;
+  Vector2 downsampled_size = padded_size * downsample_scalar;
   // TODO(gaaclarke): I don't think we are correctly handling this fractional
   //                  amount we are throwing away.
-  Vector2 downsampled_size = padded_size * downsample_scalar;
   ISize subpass_size =
       ISize(round(downsampled_size.x), round(downsampled_size.y));
 
@@ -257,7 +257,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   return Entity::FromSnapshot(
       Snapshot{
           .texture = pass3_out_texture,
-          .transform = entity.GetTransformation() *
+          .transform = entity.GetTransform() *
                        Matrix::MakeTranslation({-padding.x, -padding.y, 0}) *
                        Matrix::MakeScale(padded_size /
                                          Vector2(pass1_out_texture->GetSize())),
