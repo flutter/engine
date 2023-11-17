@@ -2965,11 +2965,13 @@ ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/color.glsl + ../.
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/constants.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/conversions.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/dithering.glsl + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/external_texture_oes.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/gaussian.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/gradient.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/path.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/prefix_sum.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/texture.glsl + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/tile_mode.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/transform.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/types.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/source_options.cc + ../../../flutter/LICENSE
@@ -3193,6 +3195,7 @@ ORIGIN: ../../../flutter/impeller/entity/shaders/texture_fill.frag + ../../../fl
 ORIGIN: ../../../flutter/impeller/entity/shaders/texture_fill.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/texture_fill_external.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/tiled_texture_fill.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/tiled_texture_fill_external.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/vertices.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/yuv_to_rgb_filter.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/yuv_to_rgb_filter.vert + ../../../flutter/LICENSE
@@ -3610,8 +3613,11 @@ ORIGIN: ../../../flutter/lib/gpu/lib/src/buffer.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/gpu/lib/src/context.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/gpu/lib/src/formats.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/gpu/lib/src/smoketest.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/gpu/lib/src/texture.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/gpu/smoketest.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/gpu/smoketest.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/gpu/texture.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/gpu/texture.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/io/dart_io.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/io/dart_io.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/snapshot/snapshot.h + ../../../flutter/LICENSE
@@ -5734,11 +5740,13 @@ FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/color.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/constants.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/conversions.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/dithering.glsl
+FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/external_texture_oes.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/gaussian.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/gradient.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/path.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/prefix_sum.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/texture.glsl
+FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/tile_mode.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/transform.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/types.glsl
 FILE: ../../../flutter/impeller/compiler/source_options.cc
@@ -5962,6 +5970,7 @@ FILE: ../../../flutter/impeller/entity/shaders/texture_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/texture_fill.vert
 FILE: ../../../flutter/impeller/entity/shaders/texture_fill_external.frag
 FILE: ../../../flutter/impeller/entity/shaders/tiled_texture_fill.frag
+FILE: ../../../flutter/impeller/entity/shaders/tiled_texture_fill_external.frag
 FILE: ../../../flutter/impeller/entity/shaders/vertices.frag
 FILE: ../../../flutter/impeller/entity/shaders/yuv_to_rgb_filter.frag
 FILE: ../../../flutter/impeller/entity/shaders/yuv_to_rgb_filter.vert
@@ -6383,8 +6392,11 @@ FILE: ../../../flutter/lib/gpu/lib/src/buffer.dart
 FILE: ../../../flutter/lib/gpu/lib/src/context.dart
 FILE: ../../../flutter/lib/gpu/lib/src/formats.dart
 FILE: ../../../flutter/lib/gpu/lib/src/smoketest.dart
+FILE: ../../../flutter/lib/gpu/lib/src/texture.dart
 FILE: ../../../flutter/lib/gpu/smoketest.cc
 FILE: ../../../flutter/lib/gpu/smoketest.h
+FILE: ../../../flutter/lib/gpu/texture.cc
+FILE: ../../../flutter/lib/gpu/texture.h
 FILE: ../../../flutter/lib/io/dart_io.cc
 FILE: ../../../flutter/lib/io/dart_io.h
 FILE: ../../../flutter/lib/snapshot/libraries_experimental.json
