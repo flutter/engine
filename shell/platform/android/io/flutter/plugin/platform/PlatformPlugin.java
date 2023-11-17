@@ -517,8 +517,18 @@ public class PlatformPlugin {
       if (clip == null) return null;
       if (format == null || format == PlatformChannel.ClipboardContentFormat.PLAIN_TEXT) {
         ClipData.Item item = clip.getItemAt(0);
-        if (item.getUri() != null)
-          activity.getContentResolver().openTypedAssetFileDescriptor(item.getUri(), "text/*", null);
+        // First, try getting clipboard as text.
+        CharSequence itemText = item.getText();
+        if (itemText == null) {
+          // Clipboard does not contain text, so check whether or not we will be
+          // able to retrieve text from URI. FileNotFoundException will be thrown
+          // if not, and then null will be returned.
+          if (item.getUri() != null) {
+            activity.getContentResolver().openTypedAssetFileDescriptor(item.getUri(), "*/*", null);
+          }
+        }
+        // Safely return clipbaord item into text by returning itemText or text retrieved
+        // from its URI.
         return item.coerceToText(activity);
       }
     } catch (SecurityException e) {
