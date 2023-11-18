@@ -60,17 +60,7 @@
     self.layer.allowsGroupOpacity = NO;
     self.layer.contentsScale = contentsScale;
     self.layer.rasterizationScale = contentsScale;
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunguarded-availability-new"
-    CAMetalLayer* layer = (CAMetalLayer*)self.layer;
-#pragma clang diagnostic pop
-    layer.pixelFormat = pixelFormat;
-    if (pixelFormat == MTLPixelFormatRGBA16Float) {
-      CGColorSpaceRef srgb = CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB);
-      layer.colorspace = srgb;
-    }
   }
-
   return self;
 }
 
