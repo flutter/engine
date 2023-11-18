@@ -96,10 +96,8 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetLayer
 
     if (!gr_context) {
       CGFloat screenScale = [UIScreen mainScreen].scale;
-      overlay_view.reset([[FlutterOverlayView alloc] initWithContentsScale:screenScale
-                                                               pixelFormat:pixel_format]);
-      overlay_view_wrapper.reset([[FlutterOverlayView alloc] initWithContentsScale:screenScale
-                                                                       pixelFormat:pixel_format]);
+      overlay_view.reset([[FlutterOverlayView alloc] init pixelFormat:pixel_format]);
+      overlay_view_wrapper.reset([[FlutterOverlayView alloc] init pixelFormat:pixel_format]);
 
       auto ca_layer = fml::scoped_nsobject<CALayer>{[[overlay_view.get() layer] retain]};
       std::unique_ptr<IOSSurface> ios_surface = IOSSurface::Create(ios_context, ca_layer);
